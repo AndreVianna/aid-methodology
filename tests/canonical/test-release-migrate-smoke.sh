@@ -52,6 +52,10 @@ seed_old_repo() {  # $1 = code_home (the dir where bin/aid lives)
     cp "${REF_SETTINGS}" "${r}/.aid/settings.yml"
     # Ensure settings.yml has NO format_version line (stamp-less = era-a).
     sed -i '/^format_version:/d' "${r}/.aid/settings.yml" 2>/dev/null || true
+    # Add a minimal manifest so this repo is "tracked" -- the format gate only
+    # warns "Run: aid update" for tracked repos (manifest present).
+    printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}' \
+        > "${r}/.aid/.aid-manifest.json"
     printf '%s\n' "${r}"
 }
 # Assert feature-001 lazy-stamp behavior:

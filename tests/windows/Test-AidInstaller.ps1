@@ -1487,6 +1487,137 @@ Assert-Eq "$($script:_LastRC)" '0' 'T42g remove absent path -> exit 0 (idempoten
 Assert-Contains $script:_LastOut 'was not registered' 'T42h no-op: "was not registered" message emitted'
 Write-Host ""
 
+# ---------------------------------------------------------------------------
+# T43: state-home exclusion -- running aid.ps1 from a dir whose .aid/ IS the
+# CLI state home must give the "aid add" offer, no registration, no "older format".
+# Mirror of bash REG-SH regression tests (BUG-1).
+# ---------------------------------------------------------------------------
+Write-Host "--- T43: state-home exclusion (BUG-1 regression) ---"
+
+$AidHomeT43 = Join-Path $TmpRoot 'aid-home-t43'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT43 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT43 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT43 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT43 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT43 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+# Create a fake HOME with .aid/ that acts as the state home (no settings.yml -- not a project).
+$FakeHomeT43  = Join-Path $TmpRoot 'fake-home-t43'
+$FakeAidT43   = Join-Path $FakeHomeT43 '.aid'
+New-Item -ItemType Directory -Path $FakeAidT43 -Force | Out-Null
+# Populate state home: only registry.yml (what a state home holds).
+[System.IO.File]::WriteAllText((Join-Path $FakeAidT43 'registry.yml'), "schema: 1`nprojects:`n")
+
+# Run bare aid.ps1 from FakeHomeT43 where FakeHomeT43/.aid IS the state home.
+# AID_HOME is the state-home override the CLI honors (-> _AidStateHome = FakeAidT43);
+# the code home is self-located from the aid.ps1 path (AidHomeT43), independent of
+# AID_HOME. This makes the state-home exclusion match via _AidStateHome on every
+# platform (PowerShell's automatic $HOME is %USERPROFILE% on Windows and would NOT
+# track $env:HOME, so the prior AID_HOME=code-home + $env:HOME setup only worked on
+# Linux).
+$savedHomeT43    = $env:HOME
+$savedAidHomeT43 = $env:AID_HOME
+$savedSHT43      = $env:AID_STATE_HOME
+$savedNoUpdT43   = $env:AID_NO_UPDATE_CHECK
+$env:AID_HOME            = $FakeAidT43
+$env:AID_STATE_HOME      = $FakeAidT43
+$env:AID_NO_UPDATE_CHECK = '1'
+if ($env:HOME -ne $null) { $env:HOME = $FakeHomeT43 }
+Push-Location $FakeHomeT43
+$t43Lines = & $PwshExe -NoProfile -File (Join-Path $AidHomeT43 'bin' 'aid.ps1') 2>&1
+$t43RC    = $LASTEXITCODE
+Pop-Location
+$env:HOME            = $savedHomeT43
+$env:AID_HOME        = $savedAidHomeT43
+$env:AID_STATE_HOME  = $savedSHT43
+$env:AID_NO_UPDATE_CHECK = $savedNoUpdT43
+
+$t43Out = ($t43Lines | ForEach-Object { [string]$_ }) -join "`n"
+$t43Out = [System.Text.RegularExpressions.Regex]::Replace($t43Out, $_AnsiPattern, '')
+
+Assert-Eq    "$t43RC" '0'                   'T43a bare aid.ps1 from state-home dir -> exit 0'
+Assert-Contains    $t43Out 'no AID project here' 'T43b bare aid.ps1 from state-home: aid add offer shown'
+Assert-NotContains $t43Out 'older format'        'T43c bare aid.ps1 from state-home: no older-format WARN'
+Assert-NotContains $t43Out 'Registered'          'T43d bare aid.ps1 from state-home: no registration'
+
+Write-Host ""
+
+# ---------------------------------------------------------------------------
+# T44: format-gate manifest guard (BUG-3 regression).
+# "WARN: older format ... Run: aid update" fires ONLY for tracked repos
+# (manifest present). Untracked repos (.aid/ present, no manifest) stay silent.
+# Mirror of bash REG-FG regression tests.
+# ---------------------------------------------------------------------------
+Write-Host "--- T44: format-gate manifest guard (BUG-3 regression) ---"
+
+$AidHomeT44 = Join-Path $TmpRoot 'aid-home-t44'
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT44 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $AidHomeT44 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $AidHomeT44 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $AidHomeT44 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $AidHomeT44 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+$AidStateT44 = Join-Path $TmpRoot 'aid-state-t44'
+New-Item -ItemType Directory -Path $AidStateT44 -Force | Out-Null
+
+# T44a/b: untracked repo -- .aid/ present, NO manifest.
+# aid.ps1 status must NOT print "older format" WARN.
+$UntrackedT44 = Join-Path $TmpRoot 'fg-untracked-t44'
+New-Item -ItemType Directory -Path (Join-Path $UntrackedT44 '.aid') -Force | Out-Null
+$settingsUntrackedT44 = "project:`n  name: untracked-t44`n  type: brownfield`ntools:`n  installed: []`n"
+[System.IO.File]::WriteAllText((Join-Path $UntrackedT44 '.aid' 'settings.yml'), $settingsUntrackedT44)
+# No .aid/.aid-manifest.json -- this is the untracked case.
+
+$savedAidHomeT44 = $env:AID_HOME
+$savedSHT44      = $env:AID_STATE_HOME
+$savedNoUpdT44   = $env:AID_NO_UPDATE_CHECK
+$env:AID_HOME            = $AidHomeT44
+$env:AID_STATE_HOME      = $AidStateT44
+$env:AID_NO_UPDATE_CHECK = '1'
+Push-Location $UntrackedT44
+$t44aLines = & $PwshExe -NoProfile -File (Join-Path $AidHomeT44 'bin' 'aid.ps1') status 2>&1
+Pop-Location
+$env:AID_HOME            = $savedAidHomeT44
+$env:AID_STATE_HOME      = $savedSHT44
+$env:AID_NO_UPDATE_CHECK = $savedNoUpdT44
+
+$t44aOut = ($t44aLines | ForEach-Object { [string]$_ }) -join "`n"
+$t44aOut = [System.Text.RegularExpressions.Regex]::Replace($t44aOut, $_AnsiPattern, '')
+Assert-NotContains $t44aOut 'older format' 'T44a aid.ps1 status in untracked repo: no older-format WARN'
+
+# T44b/c: tracked old-format repo -- manifest present, no format_version stamp.
+# aid.ps1 status MUST print "older format ... Run: aid update".
+$TrackedT44 = Join-Path $TmpRoot 'fg-tracked-t44'
+New-Item -ItemType Directory -Path (Join-Path $TrackedT44 '.aid') -Force | Out-Null
+$settingsTrackedT44 = "project:`n  name: tracked-t44`n  type: brownfield`ntools:`n  installed: []`n"
+[System.IO.File]::WriteAllText((Join-Path $TrackedT44 '.aid' 'settings.yml'), $settingsTrackedT44)
+$manifestContentT44 = '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}'
+[System.IO.File]::WriteAllText((Join-Path $TrackedT44 '.aid' '.aid-manifest.json'), $manifestContentT44)
+
+$savedAidHomeT44b = $env:AID_HOME
+$savedSHT44b      = $env:AID_STATE_HOME
+$savedNoUpdT44b   = $env:AID_NO_UPDATE_CHECK
+$env:AID_HOME            = $AidHomeT44
+$env:AID_STATE_HOME      = $AidStateT44
+$env:AID_NO_UPDATE_CHECK = '1'
+Push-Location $TrackedT44
+$t44bLines = & $PwshExe -NoProfile -File (Join-Path $AidHomeT44 'bin' 'aid.ps1') status 2>&1
+Pop-Location
+$env:AID_HOME            = $savedAidHomeT44b
+$env:AID_STATE_HOME      = $savedSHT44b
+$env:AID_NO_UPDATE_CHECK = $savedNoUpdT44b
+
+$t44bOut = ($t44bLines | ForEach-Object { [string]$_ }) -join "`n"
+$t44bOut = [System.Text.RegularExpressions.Regex]::Replace($t44bOut, $_AnsiPattern, '')
+Assert-Contains $t44bOut 'older format' 'T44b aid.ps1 status in tracked old-format repo: WARN older format printed'
+
+Write-Host ""
+
 # ===========================================================================
 # Summary
 # ===========================================================================

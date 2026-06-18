@@ -554,7 +554,8 @@ assert_output_contains "$OUT" "${_V02_REPO_X}" "REG-V02b per-user collapse: repo
 assert_output_not_contains "$OUT" "${_V02_REPO_Y}" "REG-V02c per-user collapse: repo Y (not registered) absent"
 
 # REG-V03: Best-effort write degrade -- unwritable shared tier (chmod 555) + register
-#          -> warns, returns 0, entry preserved in user/fallback tier.
+#          -> returns 0; degrade WARN is silent by default, visible under verbose.
+#          Entry lands in fallback user tier regardless of verbosity.
 echo "--- REG-V03: best-effort write degrade ---"
 _V03_HOME=$(mktemp -d "${TMP}/v03_home.XXXXXX")
 _V03_SHARED=$(mktemp -d "${TMP}/v03_shared.XXXXXX")
@@ -562,6 +563,7 @@ chmod 555 "${_V03_SHARED}"
 _V03_REPO=$(mktemp -d "${TMP}/v03_repo.XXXXXX")
 mkdir -p "${_V03_REPO}/.aid"
 
+# Run with _AID_VERBOSE=0 (default): WARN must be suppressed.
 _V03_WARN_OUT=$(bash -c '
     BIN_AID="'"$BIN_AID"'"
     HOME="'"${_V03_HOME}"'"
@@ -579,7 +581,28 @@ _V03_WARN_OUT=$(bash -c '
 ' 2>&1)
 _V03_RC=$?
 assert_exit_eq "$_V03_RC" 0 "REG-V03a degrade: register returns 0 even when AID_STATE_HOME not writable"
-assert_output_contains "$_V03_WARN_OUT" "WARN:" "REG-V03b degrade: WARN emitted when primary not writable"
+assert_output_not_contains "$_V03_WARN_OUT" "WARN:" \
+    "REG-V03b degrade: WARN suppressed by default (_AID_VERBOSE=0)"
+
+# Run with _AID_VERBOSE=1: WARN must be shown.
+_V03_VERBOSE_OUT=$(bash -c '
+    BIN_AID="'"$BIN_AID"'"
+    HOME="'"${_V03_HOME}"'"
+    AID_STATE_HOME="'"${_V03_SHARED}"'"
+    export HOME AID_STATE_HOME
+    START=$(grep -n "# Registry helpers (DR-1" "$BIN_AID" | head -1 | cut -d: -f1)
+    END=$(grep -n "# Parse subcommand and dispatch" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_START=$(grep -n "^_aid_priv_run()" "$BIN_AID" | head -1 | cut -d: -f1)
+    _PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+    [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]] && \
+        eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+    _AID_VERBOSE=1
+    eval "$(sed -n "${START},${END}p" "$BIN_AID")"
+    registry_register "'"${_V03_REPO}"'"
+' 2>&1)
+assert_output_contains "$_V03_VERBOSE_OUT" "WARN:" \
+    "REG-V03b2 degrade: WARN emitted under _AID_VERBOSE=1"
+
 # Host (caller) completed; entry lands in fallback ($HOME/.aid).
 _V03_FALLBACK_REG="${_V03_HOME}/.aid/registry.yml"
 if [[ -f "${_V03_FALLBACK_REG}" ]]; then
@@ -587,7 +610,7 @@ if [[ -f "${_V03_FALLBACK_REG}" ]]; then
         "REG-V03c degrade: entry preserved in fallback user tier"
 else
     # Some implementations may WARN and not write at all (also acceptable).
-    # What matters is that the function returned 0 and emitted WARN -- that is the contract.
+    # What matters is that the function returned 0 -- that is the contract.
     pass "REG-V03c degrade: fallback not written (WARN path -- acceptable per task-010 contract)"
 fi
 chmod 755 "${_V03_SHARED}" 2>/dev/null || true  # restore for cleanup
@@ -978,6 +1001,14 @@ _PRIV_START=$(grep -n '^_aid_priv_run()' "$BIN_AID" | head -1 | cut -d: -f1)
 _PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
 if [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]]; then
     eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+fi
+
+# Extract _aid_is_project_dir (defined before the registry section; needed by
+# _cmd_projects_list footnote and _aid_cwd_classify callers).
+_IPD_START=$(grep -n '^_aid_is_project_dir()' "$BIN_AID" | head -1 | cut -d: -f1)
+_IPD_END=$(awk "NR>=${_IPD_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+if [[ -n "$_IPD_START" && -n "$_IPD_END" ]]; then
+    eval "$(sed -n "${_IPD_START},${_IPD_END}p" "$BIN_AID")" 2>/dev/null || true
 fi
 
 # Extract registry helpers section.
@@ -1529,6 +1560,226 @@ assert_file_contains "${_P07_STATE}/registry.yml" "${_P07_PROJ_B}" \
     "REG-P07i after re-key: project B still in registry"
 assert_file_contains "${_P07_STATE}/registry.yml" "${_P07_NEW_PROJ}" \
     "REG-P07j after re-key: new project also in registry"
+
+# ===========================================================================
+# REG-SH: state-home exclusion -- bare 'aid' / 'aid status' from a dir whose
+# .aid/ IS the CLI state home must behave as a non-project dir.
+#
+# ISOLATION CONTRACT:
+#   HOME is pinned to a throwaway so the state home ($HOME/.aid) is entirely
+#   synthetic.  An escape canary asserts the real HOME/.aid is untouched.
+# ===========================================================================
+echo ""
+echo "=== REG-SH: state-home exclusion (BUG-1 regression) ==="
+
+_SH_HOME=$(mktemp -d "${TMP}/sh_home.XXXXXX")
+_SH_AID_DIR="${_SH_HOME}/.aid"
+mkdir -p "${_SH_AID_DIR}"
+# Populate the state home .aid/ dir with the expected state files (not a project).
+printf 'schema: 1\nprojects:\n' > "${_SH_AID_DIR}/registry.yml"
+
+# REG-SH01: Build a minimal aid home for CLI invocation.
+_SH_AID_HOME=$(newhome)
+setup_aid_home "${_SH_AID_HOME}"
+
+# Helper: run aid CLI with HOME=_SH_HOME (so AID_STATE_HOME defaults to $HOME/.aid).
+run_aid_from_statehome() {
+    local _cmd="$1"; shift
+    OUT=$(HOME="${_SH_HOME}" \
+          AID_HOME="${_SH_AID_HOME}" \
+          AID_STATE_HOME="${_SH_AID_HOME}" \
+          AID_NO_UPDATE_CHECK=1 \
+          bash "${_SH_AID_HOME}/bin/aid" $_cmd "$@" 2>&1)
+    RC=$?
+}
+
+# For the state-home exclusion test, we need to run from a directory whose .aid/
+# IS the state home.  We achieve this by running from _SH_HOME with AID_STATE_HOME
+# pointing to _SH_HOME/.aid (the same as HOME/.aid).
+run_aid_from_shdir() {
+    local _cmd="$1"; shift
+    # cd into the fake home; AID_STATE_HOME == HOME/.aid == the .aid/ in that dir.
+    OUT=$(cd "${_SH_HOME}" && \
+          HOME="${_SH_HOME}" \
+          AID_HOME="${_SH_AID_HOME}" \
+          AID_STATE_HOME="${_SH_HOME}/.aid" \
+          AID_NO_UPDATE_CHECK=1 \
+          bash "${_SH_AID_HOME}/bin/aid" $_cmd "$@" 2>&1)
+    RC=$?
+}
+
+# REG-SH01: bare 'aid' from a dir whose .aid/ is the state home -> "aid add" offer,
+#           no registration, no "older format" WARN.
+run_aid_from_shdir ""
+assert_exit_eq "$RC" 0 "REG-SH01a bare aid from state-home dir -> exit 0"
+assert_output_contains "$OUT" "no AID project here" "REG-SH01b bare aid from state-home: aid add offer"
+assert_output_not_contains "$OUT" "older format" "REG-SH01c bare aid from state-home: no older-format WARN"
+assert_output_not_contains "$OUT" "Registered" "REG-SH01d bare aid from state-home: no registration"
+
+# REG-SH02: 'aid status' from a dir whose .aid/ is the state home -> same offer.
+run_aid_from_shdir "status"
+assert_exit_eq "$RC" 0 "REG-SH02a aid status from state-home dir -> exit 0"
+assert_output_contains "$OUT" "no AID project here" "REG-SH02b aid status from state-home: aid add offer"
+assert_output_not_contains "$OUT" "older format" "REG-SH02c aid status from state-home: no older-format WARN"
+assert_output_not_contains "$OUT" "Registered" "REG-SH02d aid status from state-home: no registration"
+
+# REG-SH03: a REAL project (its .aid/ != state home) is still detected correctly.
+_SH_REAL_PROJ=$(mktemp -d "${TMP}/sh_realproj.XXXXXX")
+mkdir -p "${_SH_REAL_PROJ}/.aid"
+printf 'project:\n  name: real\nformat_version: 1\n' > "${_SH_REAL_PROJ}/.aid/settings.yml"
+OUT=$(HOME="${_SH_HOME}" \
+      AID_HOME="${_SH_AID_HOME}" \
+      AID_STATE_HOME="${_SH_HOME}/.aid" \
+      AID_NO_UPDATE_CHECK=1 \
+      bash "${_SH_AID_HOME}/bin/aid" status --target "${_SH_REAL_PROJ}" 2>&1)
+_SH03_RC=$?
+# Should NOT print the "no AID project here" offer (it IS a real project).
+assert_output_not_contains "$OUT" "no AID project here" \
+    "REG-SH03a real project not falsely excluded by state-home guard"
+
+# REG-SH04: 'aid projects add' must ALSO honor the state-home guard (explicit-command
+# path, not just auto-classify): adding the state-home dir is rejected; a real project
+# is accepted.
+OUT=$(HOME="${_SH_HOME}" AID_HOME="${_SH_AID_HOME}" AID_STATE_HOME="${_SH_HOME}/.aid" \
+      AID_NO_UPDATE_CHECK=1 \
+      bash "${_SH_AID_HOME}/bin/aid" projects add "${_SH_HOME}" 2>&1); _SH04_RC=$?
+assert_exit_eq "$_SH04_RC" 2 "REG-SH04a 'projects add' on state-home dir -> exit 2 (rejected)"
+assert_output_contains "$OUT" "is not an AID project" "REG-SH04b 'projects add' state-home: clear rejection"
+if grep -qxF "  - ${_SH_HOME}" "${_SH_HOME}/.aid/registry.yml" 2>/dev/null; then
+    fail "REG-SH04c 'projects add' state-home: NOT registered (state-home found in registry)"
+else
+    pass "REG-SH04c 'projects add' state-home: NOT registered"
+fi
+OUT=$(HOME="${_SH_HOME}" AID_HOME="${_SH_AID_HOME}" AID_STATE_HOME="${_SH_HOME}/.aid" \
+      AID_NO_UPDATE_CHECK=1 \
+      bash "${_SH_AID_HOME}/bin/aid" projects add "${_SH_REAL_PROJ}" 2>&1); _SH04R_RC=$?
+assert_exit_eq "$_SH04R_RC" 0 "REG-SH04d 'projects add' on a real project -> exit 0 (accepted)"
+
+# ===========================================================================
+# REG-FG: format-gate manifest guard (BUG-3 regression).
+# "WARN: older format ... Run: aid update" must fire ONLY for tracked repos
+# (manifest present at <repo>/.aid/.aid-manifest.json).  Untracked repos
+# (.aid/ present but no manifest) must be silent; the "no AID tools installed
+# ... run aid add" path handles them.
+#
+# ISOLATION: HOME is pinned to throwaway; escape canary already in place.
+# ===========================================================================
+echo ""
+echo "=== REG-FG: format-gate manifest guard (BUG-3 regression) ==="
+
+_FG_AID_HOME=$(newhome)
+setup_aid_home "${_FG_AID_HOME}"
+_FG_STATE=$(mktemp -d "${TMP}/fg_state.XXXXXX")
+
+# REG-FG01: untracked repo -- .aid/ present, NO manifest.
+# bare 'aid' and 'aid status' must NOT print "older format" WARN.
+_FG_UNTRACKED=$(mktemp -d "${TMP}/fg_untracked.XXXXXX")
+mkdir -p "${_FG_UNTRACKED}/.aid"
+cat > "${_FG_UNTRACKED}/.aid/settings.yml" << 'FGUNTRACKEDEOF'
+project:
+  name: untracked-fg-test
+  description: era-a repo with no manifest (untracked)
+  type: brownfield
+tools:
+  installed: []
+FGUNTRACKEDEOF
+# No .aid/.aid-manifest.json -- this is the untracked case.
+
+_FG01_OUT=$(cd "${_FG_UNTRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" 2>&1 || true)
+assert_output_not_contains "$_FG01_OUT" "older format" \
+    "REG-FG01a bare aid in untracked repo: no older-format WARN"
+
+_FG02_OUT=$(cd "${_FG_UNTRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" status 2>&1 || true)
+assert_output_not_contains "$_FG02_OUT" "older format" \
+    "REG-FG02a aid status in untracked repo: no older-format WARN"
+
+# REG-FG03: tracked old-format repo -- manifest present, no format_version stamp.
+# bare 'aid' and 'aid status' MUST print "older format ... Run: aid update".
+_FG_TRACKED=$(mktemp -d "${TMP}/fg_tracked.XXXXXX")
+mkdir -p "${_FG_TRACKED}/.aid"
+cat > "${_FG_TRACKED}/.aid/settings.yml" << 'FGTRACKEDEOF'
+project:
+  name: tracked-fg-test
+  description: era-a repo with manifest (tracked) but no format_version stamp
+  type: brownfield
+tools:
+  installed: []
+FGTRACKEDEOF
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}' \
+    > "${_FG_TRACKED}/.aid/.aid-manifest.json"
+
+_FG03_OUT=$(cd "${_FG_TRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" 2>&1 || true)
+assert_output_contains "$_FG03_OUT" "older format" \
+    "REG-FG03a bare aid in tracked old-format repo: WARN older format printed"
+
+_FG04_OUT=$(cd "${_FG_TRACKED}" && \
+    AID_HOME="${_FG_AID_HOME}" AID_STATE_HOME="${_FG_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_FG_AID_HOME}/bin/aid" status 2>&1 || true)
+assert_output_contains "$_FG04_OUT" "older format" \
+    "REG-FG04a aid status in tracked old-format repo: WARN older format printed"
+
+# ===========================================================================
+# REG-DW: degrade WARN verbosity gate (BUG-2 regression).
+# The "could not write to state home ... using ..." WARN is silent by default
+# and shown only under --verbose.
+# Hard failures (mktemp/write/mv failed) remain unconditional.
+# ===========================================================================
+echo ""
+echo "=== REG-DW: degrade WARN verbosity gate (BUG-2 regression) ==="
+
+_DW_HOME=$(mktemp -d "${TMP}/dw_home.XXXXXX")
+_DW_SHARED=$(mktemp -d "${TMP}/dw_shared.XXXXXX")
+chmod 555 "${_DW_SHARED}"  # make shared state non-writable -> trigger degrade path
+
+_DW_REPO=$(mktemp -d "${TMP}/dw_repo.XXXXXX")
+mkdir -p "${_DW_REPO}/.aid"
+
+# Helper: run register in the degrade path via inline subshell (no full CLI needed).
+run_register_degrade() {
+    local verbose="${1:-0}"
+    bash -c '
+        BIN_AID="'"$BIN_AID"'"
+        HOME="'"${_DW_HOME}"'"
+        AID_STATE_HOME="'"${_DW_SHARED}"'"
+        export HOME AID_STATE_HOME
+        _AID_VERBOSE="'"${verbose}"'"
+        START=$(grep -n "# Registry helpers (DR-1" "$BIN_AID" | head -1 | cut -d: -f1)
+        END=$(grep -n "# Parse subcommand and dispatch" "$BIN_AID" | head -1 | cut -d: -f1)
+        _PRIV_START=$(grep -n "^_aid_priv_run()" "$BIN_AID" | head -1 | cut -d: -f1)
+        _PRIV_END=$(awk "NR>=${_PRIV_START:-0} && /^\}$/{print NR; exit}" "$BIN_AID")
+        [[ -n "$_PRIV_START" && -n "$_PRIV_END" ]] && \
+            eval "$(sed -n "${_PRIV_START},${_PRIV_END}p" "$BIN_AID")" 2>/dev/null || true
+        eval "$(sed -n "${START},${END}p" "$BIN_AID")"
+        registry_register "'"${_DW_REPO}"'"
+    ' 2>&1
+}
+
+# REG-DW01: degrade WARN suppressed by default (no --verbose).
+_DW01_OUT=$(run_register_degrade "0")
+assert_output_not_contains "$_DW01_OUT" "could not write to state home" \
+    "REG-DW01 degrade WARN silent by default (no verbose)"
+
+# REG-DW02: degrade WARN shown under _AID_VERBOSE=1.
+_DW02_OUT=$(run_register_degrade "1")
+assert_output_contains "$_DW02_OUT" "could not write to state home" \
+    "REG-DW02 degrade WARN shown under verbose (_AID_VERBOSE=1)"
+
+# REG-DW03: functionality unchanged -- entry still lands in fallback $HOME/.aid.
+_DW_FALLBACK_REG="${_DW_HOME}/.aid/registry.yml"
+if [[ -f "${_DW_FALLBACK_REG}" ]]; then
+    assert_file_contains "${_DW_FALLBACK_REG}" "${_DW_REPO}" \
+        "REG-DW03 degrade: repo still registered in fallback HOME/.aid"
+else
+    pass "REG-DW03 degrade: WARN-path acceptable (function returned 0 -- contract satisfied)"
+fi
+
+chmod 755 "${_DW_SHARED}" 2>/dev/null || true  # restore for cleanup
 
 # ===========================================================================
 # ESCAPE CANARY (real-HOME): assert developer's real ~/.aid/registry.yml

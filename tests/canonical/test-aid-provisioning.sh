@@ -345,9 +345,10 @@ assert_file_exists "${_R02_HOME}/.aid/registry.yml" \
     "PRV-R02b entry written to user tier ${_R02_HOME}/.aid/registry.yml"
 assert_file_contains "${_R02_HOME}/.aid/registry.yml" "/tmp/r02-repo" \
     "PRV-R02c entry PRESERVED in user tier"
-# Exactly one WARN: emitted.
-_R02_WARN_COUNT="$(printf '%s\n' "$OUT_R02" | grep -c '^WARN:' || echo 0)"
-assert_eq "$_R02_WARN_COUNT" "1" "PRV-R02d exactly one WARN: line emitted on degrade"
+# The degrade WARN is verbose-gated (BUG-2 fix): SILENT by default. The
+# shown-under---verbose case is covered by REG-DW in test-registry.sh.
+_R02_WARN_COUNT="$(printf '%s\n' "$OUT_R02" | grep -c '^WARN:' || true)"
+assert_eq "$_R02_WARN_COUNT" "0" "PRV-R02d degrade WARN suppressed by default (verbose-gated)"
 # No temp file left behind.
 _R02_TMP_COUNT="$(find "${_R02_HOME}/.aid" -name '*.aid-tmp.*' 2>/dev/null | wc -l || echo 0)"
 assert_eq "$_R02_TMP_COUNT" "0" "PRV-R02e no temp leak in user tier after degrade"
