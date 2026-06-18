@@ -1,6 +1,6 @@
 # Work State — work-004-worktree-tracking
 
-> **Status:** Executing — delivery-001 (worktree aid/work-004-delivery-001)
+> **Status:** Implementation complete — run-all 52/52; delivery A+ gate pending
 > **Phase:** Execute
 > **Minimum Grade:** A+ (per user directive)
 > **Started:** 2026-06-18
@@ -53,7 +53,7 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 12 | Reader (Node reader.mjs): mirror 009-011 (parity) | IMPLEMENT | 6 | Done | clean | — | parity 15/15 + 117/117; home.html anchor; State/Status dual |
 | 13 | Idempotent migration helper (bash + PS) + fixture | MIGRATE | 3 | Done | clean | — | bash+PS twins; round-trip verified; LOW: relocate fixture out of canonical (wave 4) |
 | 14 | Reader fixtures: hierarchy/legacy/multi-worktree/reconcile | TEST | 6 | Done | clean | — | 77 new tests (519 total); all scenarios + SD-2 boundaries + parity; task-010 LOW #4 covered |
-| 15 | Cross-cutting: disjoint-merge proof, parity, render-drift, run-all | TEST | 7 | In Progress | — | — | multi-step: A=relocate-fixture+regen+sync; B=triage run-all; C=fix broken suites (test-writeback-state.sh 91 + schema/naming-change); D=nits+disjoint-merge proof; E=final run-all green |
+| 15 | Cross-cutting: disjoint-merge proof, parity, render-drift, run-all | TEST | 7 | Done | clean | — | A-E all done; run-all 52/52; disjoint-merge proof 23/23; render-drift+§7a clean; parity green |
 
 ## Lifecycle History
 
@@ -83,3 +83,4 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 2026-06-18 | Wave 6 complete (012 parity, 014 fixtures 519 tests). Committed (597bfc15). Wave 7 task-015 (multi-step): 015-A dispatched — relocate migration fixtures out of canonical/scripts/migrate→tests/ (wave-3 LOW; don't ship), then single FULL regen propagating all wave-4→6 canonical changes (aid-execute/writeback/interview/specify/deploy/residual/templates/migrate) + dogfood sync + render-drift + §7a. |
 | 2026-06-18 | 015-A complete (fixtures relocated, regen clean, §7a clean). 015-B triage (run-all HOME-pinned): 9/51 suites fail. Cause map: (naming/schema) test-writeback-state (91: --field State + per-unit), test-work-state-template WS17 (Deploy State now AUTHORED not DERIVED per 016b), test-pipeline-status-walkthrough (## Pipeline State), test-delivery-gate-aggregate (--block→per-delivery ## Delivery Gate, work view derived); (home.html VND sync cascade) test-home-html-source-sync + test-aid-migrate-trigger + test-release + test-release-install-e2e + test-install-parity (dashboard/home.html edited by 012, vendored copies not synced → VND guard fails release.sh). 015-C: 3 cluster-agents dispatched (writeback test / schema-naming tests / home.html-VND-release). |
 | 2026-06-18 | 015-C complete: writeback test rewritten to per-unit contract (245/0); schema/naming suites fixed (WS17 Deploy-State-AUTHORED, ## Pipeline State, per-delivery gate; 79/166/19); home.html vendored copy synced (HS03 + VND-D01 + install-parity 84/84). test-release "failure" diagnosed as HEAD-render-drift (015-A regen was uncommitted) — RESOLVED by committing. Wave-7 part 1 committed (a9eb855f, 418 files: regen + fixes + home.html). 015-D dispatched (disjoint-merge proof test + schemas.md doc nits). Then 015-E final run-all + delivery A+ gate. |
+| 2026-06-18 | 015-D complete (disjoint-merge proof test-disjoint-merge.sh 23/23 — two-branch zero-conflict merge, SD-5 Q&A partition; schemas.md FK+ER nits). Committed (074e435b). 015-E: FINAL run-all ALL 52 CANONICAL SUITES PASSED (incl. disjoint-merge), exit 0. ALL 16 TASKS DONE. → delivery A+ gate. 1 accepted non-blocking MINOR (pre-existing aid-housekeep partial-ASCII, regen-gated). |
