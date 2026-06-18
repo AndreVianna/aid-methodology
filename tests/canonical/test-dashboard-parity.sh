@@ -86,6 +86,12 @@ FIXTURE_EMPTY="${REPO_ROOT}/dashboard/server/tests/fixtures/pt1-no-aid"
 declare -a _BGPIDS=()
 PT1_TMP="$(mktemp -d /tmp/pt1_XXXXXX)"
 
+# Pinned HOME for server processes: no .aid/registry.yml -> server sees only AID_HOME tier.
+# This prevents the developer's real ~/.aid/registry.yml from bleeding into the union read,
+# which would cause repos[0] to no longer be the fixture repo (R7/registry-union fix).
+PT1_PINNED_HOME="${PT1_TMP}/pinned-home"
+mkdir -p "${PT1_PINNED_HOME}"
+
 cleanup() {
     for pid in "${_BGPIDS[@]+"${_BGPIDS[@]}"}"; do
         kill "$pid" 2>/dev/null || true
@@ -162,7 +168,9 @@ REGEOF
 start_python_server() {
     local port="$1"
     local aid_home="$2"
-    AID_HOME="$aid_home" python3 "${REPO_ROOT}/dashboard/server/server.py" \
+    # Pin HOME to a throwaway dir so the server's user-tier fallback reads an absent
+    # $HOME/.aid/registry.yml (empty) rather than the developer's real one (registry-union fix).
+    HOME="${PT1_PINNED_HOME}" AID_HOME="$aid_home" python3 "${REPO_ROOT}/dashboard/server/server.py" \
         --host 127.0.0.1 --port "$port" \
         >/dev/null 2>&1 &
     _BGPIDS+=($!)
@@ -171,7 +179,8 @@ start_python_server() {
 start_node_server() {
     local port="$1"
     local aid_home="$2"
-    AID_HOME="$aid_home" node "${REPO_ROOT}/dashboard/server/server.mjs" \
+    # Pin HOME to a throwaway dir (same reason as above).
+    HOME="${PT1_PINNED_HOME}" AID_HOME="$aid_home" node "${REPO_ROOT}/dashboard/server/server.mjs" \
         --host 127.0.0.1 --port "$port" \
         >/dev/null 2>&1 &
     _BGPIDS+=($!)

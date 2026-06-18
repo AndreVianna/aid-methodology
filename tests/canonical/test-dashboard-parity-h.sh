@@ -100,6 +100,13 @@ PT1H_TMP="$(mktemp -d /tmp/pt1h_XXXXXX)"
 
 declare -a _BGPIDS=()
 
+# Pinned HOME for server processes: no .aid/registry.yml -> server sees only AID_HOME tier.
+# Prevents the developer's real ~/.aid/registry.yml from bleeding into the union read
+# and inflating repo counts / changing ids (registry-union fix, Section 7 new tests
+# use their own HOME; the existing sections need isolation too).
+PT1H_PINNED_HOME="${PT1H_TMP}/pinned-home"
+mkdir -p "${PT1H_PINNED_HOME}"
+
 cleanup() {
     for pid in "${_BGPIDS[@]+"${_BGPIDS[@]}"}"; do
         kill "$pid" 2>/dev/null || true
@@ -192,7 +199,9 @@ wait_for_port_h() {
 start_python_server_h() {
     local port="$1"
     local aid_home="$2"
-    AID_HOME="$aid_home" python3 "${SERVER_PY}" \
+    # Pin HOME to a throwaway dir so the server's user-tier fallback reads an absent
+    # $HOME/.aid/registry.yml (empty) rather than the developer's real one (registry-union fix).
+    HOME="${PT1H_PINNED_HOME}" AID_HOME="$aid_home" python3 "${SERVER_PY}" \
         --host 127.0.0.1 --port "$port" \
         >/dev/null 2>&1 &
     _BGPIDS+=($!)
@@ -201,7 +210,8 @@ start_python_server_h() {
 start_node_server_h() {
     local port="$1"
     local aid_home="$2"
-    AID_HOME="$aid_home" node "${SERVER_MJS}" \
+    # Pin HOME to a throwaway dir (same reason as above).
+    HOME="${PT1H_PINNED_HOME}" AID_HOME="$aid_home" node "${SERVER_MJS}" \
         --host 127.0.0.1 --port "$port" \
         >/dev/null 2>&1 &
     _BGPIDS+=($!)
@@ -840,14 +850,14 @@ SYMEOF
     SYM_PY_PID="" SYM_NODE_PID=""
 
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        AID_HOME="$SYMLINK_AID_HOME" python3 "${SERVER_PY}" \
+        HOME="${PT1H_PINNED_HOME}" AID_HOME="$SYMLINK_AID_HOME" python3 "${SERVER_PY}" \
             --host 127.0.0.1 --port "$SPYPORT" \
             >/dev/null 2>&1 &
         SYM_PY_PID=$!
         _BGPIDS+=($SYM_PY_PID)
     fi
     if [[ $HAS_NODE -eq 1 ]]; then
-        AID_HOME="$SYMLINK_AID_HOME" node "${SERVER_MJS}" \
+        HOME="${PT1H_PINNED_HOME}" AID_HOME="$SYMLINK_AID_HOME" node "${SERVER_MJS}" \
             --host 127.0.0.1 --port "$SNODEPORT" \
             >/dev/null 2>&1 &
         SYM_NODE_PID=$!
@@ -1170,7 +1180,7 @@ REOF
 
     if [[ $HAS_PYTHON -eq 1 ]]; then
         kb_py_port=$(find_free_port)
-        AID_HOME="$kb_aid_home" python3 "${SERVER_PY}" \
+        HOME="${PT1H_PINNED_HOME}" AID_HOME="$kb_aid_home" python3 "${SERVER_PY}" \
             --host 127.0.0.1 --port "$kb_py_port" \
             >/dev/null 2>&1 &
         kb_py_pid=$!
@@ -1181,7 +1191,7 @@ REOF
         while [[ $HAS_PYTHON -eq 1 && "$kb_node_port" == "$kb_py_port" ]]; do
             kb_node_port=$(find_free_port)
         done
-        AID_HOME="$kb_aid_home" node "${SERVER_MJS}" \
+        HOME="${PT1H_PINNED_HOME}" AID_HOME="$kb_aid_home" node "${SERVER_MJS}" \
             --host 127.0.0.1 --port "$kb_node_port" \
             >/dev/null 2>&1 &
         kb_node_pid=$!
@@ -1551,7 +1561,7 @@ DEOF
 
     if [[ $HAS_PYTHON -eq 1 ]]; then
         D_PY_PORT=$(find_free_port)
-        AID_HOME="$DETAIL_AID_HOME" python3 "${SERVER_PY}" \
+        HOME="${PT1H_PINNED_HOME}" AID_HOME="$DETAIL_AID_HOME" python3 "${SERVER_PY}" \
             --host 127.0.0.1 --port "$D_PY_PORT" \
             >/dev/null 2>&1 &
         D_PY_PID=$!
@@ -1562,7 +1572,7 @@ DEOF
         while [[ $HAS_PYTHON -eq 1 && "$D_NODE_PORT" == "$D_PY_PORT" ]]; do
             D_NODE_PORT=$(find_free_port)
         done
-        AID_HOME="$DETAIL_AID_HOME" node "${SERVER_MJS}" \
+        HOME="${PT1H_PINNED_HOME}" AID_HOME="$DETAIL_AID_HOME" node "${SERVER_MJS}" \
             --host 127.0.0.1 --port "$D_NODE_PORT" \
             >/dev/null 2>&1 &
         D_NODE_PID=$!
@@ -1888,6 +1898,314 @@ sys.exit(0)
         _BGPIDS=("${_BGPIDS[@]/$D_NODE_PID}")
     fi
 fi
+
+# ---------------------------------------------------------------------------
+# Section 7: split-tier union regression (registry-union fix)
+#
+# Scenario A -- split-tier: shared AID_HOME (state) lists repo-A; user
+#   $HOME/.aid lists repo-B.  The server must return BOTH in /api/home
+#   (union), each with a distinct id.
+#
+# Scenario B -- per-user collapse: AID_HOME == $HOME/.aid; a project listed
+#   once must appear exactly once in /api/home (no double-count).
+#
+# Both scenarios cover Python and Node at parity, with a throwaway HOME
+#   (escape canary: real $HOME/.aid must not be touched).
+# ---------------------------------------------------------------------------
+
+echo ""
+echo "--- Section 7: split-tier registry union regression ---"
+
+# Save real HOME for the escape canary.
+REAL_HOME_S7="$HOME"
+
+# Throwaway HOME: never touches the developer's real ~/.aid.
+S7_TMP="$(mktemp -d "${PT1H_TMP}/s7_XXXXXX")"
+S7_HOME="${S7_TMP}/home"
+mkdir -p "${S7_HOME}/.aid"
+
+# Two minimal "repos" for the test -- directories that just need to exist
+# (available=true so the server can build the id from the path).
+S7_REPO_A="${S7_TMP}/repo-a"
+S7_REPO_B="${S7_TMP}/repo-b"
+mkdir -p "${S7_REPO_A}/.aid" "${S7_REPO_B}/.aid"
+
+# Shared state-home (primary tier): lists only repo-A.
+S7_STATE_HOME="${S7_TMP}/state-home"
+mkdir -p "${S7_STATE_HOME}"
+printf 'schema: 1\nrepos:\n  - %s\n' "${S7_REPO_A}" > "${S7_STATE_HOME}/registry.yml"
+
+# User tier ($HOME/.aid/registry.yml): lists only repo-B.
+printf 'schema: 1\nrepos:\n  - %s\n' "${S7_REPO_B}" > "${S7_HOME}/.aid/registry.yml"
+
+# Escape canary: assert real HOME was not modified during this section.
+_s7_escape_check() {
+    if [[ "$HOME" != "$REAL_HOME_S7" ]]; then
+        fail "[s7-canary] HOME escaped pinning: got $HOME, expected $REAL_HOME_S7"
+    fi
+}
+
+# Helper: count repos from a /api/home JSON by path substring.
+_s7_count_repos_matching() {
+    local json_file="$1"
+    local pattern="$2"
+    python3 -c "
+import json, sys
+data = json.load(open('$json_file'))
+count = sum(1 for r in data.get('repos', []) if '$pattern' in r.get('path', ''))
+print(count)
+"
+}
+
+_s7_get_repo_ids() {
+    local json_file="$1"
+    python3 -c "
+import json, sys
+data = json.load(open('$json_file'))
+ids = sorted(r['id'] for r in data.get('repos', []))
+print(' '.join(ids))
+"
+}
+
+# ---------------------------------------------------------------------------
+# Scenario A: split-tier -- start servers with AID_HOME=state-home and
+#   HOME=S7_HOME (which has its own .aid/registry.yml listing repo-B).
+# ---------------------------------------------------------------------------
+
+echo "  --- 7a: split-tier union (state lists A, user lists B -> both visible) ---"
+
+S7A_PY_PORT="" S7A_NODE_PORT="" S7A_PY_PID="" S7A_NODE_PID=""
+
+if [[ $HAS_PYTHON -eq 1 ]]; then
+    S7A_PY_PORT=$(find_free_port)
+    HOME="${S7_HOME}" AID_HOME="${S7_STATE_HOME}" \
+        python3 "${SERVER_PY}" --host 127.0.0.1 --port "$S7A_PY_PORT" \
+        >/dev/null 2>&1 &
+    S7A_PY_PID=$!
+    _BGPIDS+=($S7A_PY_PID)
+fi
+
+if [[ $HAS_NODE -eq 1 ]]; then
+    S7A_NODE_PORT=$(find_free_port)
+    while [[ $HAS_PYTHON -eq 1 && "$S7A_NODE_PORT" == "$S7A_PY_PORT" ]]; do
+        S7A_NODE_PORT=$(find_free_port)
+    done
+    HOME="${S7_HOME}" AID_HOME="${S7_STATE_HOME}" \
+        node "${SERVER_MJS}" --host 127.0.0.1 --port "$S7A_NODE_PORT" \
+        >/dev/null 2>&1 &
+    S7A_NODE_PID=$!
+    _BGPIDS+=($S7A_NODE_PID)
+fi
+
+S7A_PY_OK=0 S7A_NODE_OK=0
+if [[ $HAS_PYTHON -eq 1 ]]; then
+    if wait_for_port_h "$S7A_PY_PORT" 12; then
+        S7A_PY_OK=1
+        pass "[s7a] python split-tier server started"
+    else
+        fail "[s7a] python split-tier server did not start"
+    fi
+fi
+if [[ $HAS_NODE -eq 1 ]]; then
+    if wait_for_port_h "$S7A_NODE_PORT" 12; then
+        S7A_NODE_OK=1
+        pass "[s7a] node split-tier server started"
+    else
+        fail "[s7a] node split-tier server did not start"
+    fi
+fi
+
+# Fetch /api/home and assert repo-A and repo-B both appear (distinct ids).
+if [[ $HAS_PYTHON -eq 1 && $S7A_PY_OK -eq 1 ]]; then
+    S7A_PY_HOME="${PT1H_TMP}/s7a_py_home.json"
+    if fetch_url "$S7A_PY_PORT" "/api/home" "$S7A_PY_HOME"; then
+        s7a_py_count=$(python3 -c "
+import json; d=json.load(open('$S7A_PY_HOME')); print(len(d.get('repos',[])))
+")
+        assert_eq "$s7a_py_count" "2" "[s7a] python /api/home: repo count == 2 (A union B)"
+
+        s7a_py_a=$(_s7_count_repos_matching "$S7A_PY_HOME" "repo-a")
+        s7a_py_b=$(_s7_count_repos_matching "$S7A_PY_HOME" "repo-b")
+        assert_eq "$s7a_py_a" "1" "[s7a] python: repo-A appears in union"
+        assert_eq "$s7a_py_b" "1" "[s7a] python: repo-B appears in union"
+
+        # ids must be distinct
+        s7a_py_ids=$(_s7_get_repo_ids "$S7A_PY_HOME")
+        s7a_py_unique_count=$(echo "$s7a_py_ids" | tr ' ' '\n' | sort -u | grep -c .)
+        assert_eq "$s7a_py_unique_count" "2" "[s7a] python: both repos have distinct ids"
+
+        # Both repos are reachable via /r/<id>/api/model
+        s7a_id_a=$(python3 -c "
+import json, sys; d=json.load(open('$S7A_PY_HOME'))
+for r in d.get('repos',[]):
+    if 'repo-a' in r['path']: print(r['id']); sys.exit(0)
+sys.exit(1)")
+        s7a_id_b=$(python3 -c "
+import json, sys; d=json.load(open('$S7A_PY_HOME'))
+for r in d.get('repos',[]):
+    if 'repo-b' in r['path']: print(r['id']); sys.exit(0)
+sys.exit(1)")
+        if [[ -n "$s7a_id_a" && -n "$s7a_id_b" ]]; then
+            st_a=$(fetch_status "$S7A_PY_PORT" "/r/${s7a_id_a}/api/model")
+            st_b=$(fetch_status "$S7A_PY_PORT" "/r/${s7a_id_b}/api/model")
+            assert_eq "$st_a" "200" "[s7a] python: /r/<id-A>/api/model -> 200"
+            assert_eq "$st_b" "200" "[s7a] python: /r/<id-B>/api/model -> 200"
+        else
+            fail "[s7a] python: could not extract repo ids from /api/home"
+        fi
+    else
+        fail "[s7a] python: /api/home fetch failed"
+    fi
+fi
+
+if [[ $HAS_NODE -eq 1 && $S7A_NODE_OK -eq 1 ]]; then
+    S7A_NODE_HOME="${PT1H_TMP}/s7a_node_home.json"
+    if fetch_url "$S7A_NODE_PORT" "/api/home" "$S7A_NODE_HOME"; then
+        s7a_nd_count=$(python3 -c "
+import json; d=json.load(open('$S7A_NODE_HOME')); print(len(d.get('repos',[])))
+")
+        assert_eq "$s7a_nd_count" "2" "[s7a] node /api/home: repo count == 2 (A union B)"
+
+        s7a_nd_a=$(_s7_count_repos_matching "$S7A_NODE_HOME" "repo-a")
+        s7a_nd_b=$(_s7_count_repos_matching "$S7A_NODE_HOME" "repo-b")
+        assert_eq "$s7a_nd_a" "1" "[s7a] node: repo-A appears in union"
+        assert_eq "$s7a_nd_b" "1" "[s7a] node: repo-B appears in union"
+
+        s7a_nd_unique=$(  _s7_get_repo_ids "$S7A_NODE_HOME" | tr ' ' '\n' | sort -u | grep -c .)
+        assert_eq "$s7a_nd_unique" "2" "[s7a] node: both repos have distinct ids"
+
+        # Both repos are reachable via /r/<id>/api/model
+        s7a_nd_id_a=$(python3 -c "
+import json, sys; d=json.load(open('$S7A_NODE_HOME'))
+for r in d.get('repos',[]):
+    if 'repo-a' in r['path']: print(r['id']); sys.exit(0)
+sys.exit(1)")
+        s7a_nd_id_b=$(python3 -c "
+import json, sys; d=json.load(open('$S7A_NODE_HOME'))
+for r in d.get('repos',[]):
+    if 'repo-b' in r['path']: print(r['id']); sys.exit(0)
+sys.exit(1)")
+        if [[ -n "$s7a_nd_id_a" && -n "$s7a_nd_id_b" ]]; then
+            st_a=$(fetch_status "$S7A_NODE_PORT" "/r/${s7a_nd_id_a}/api/model")
+            st_b=$(fetch_status "$S7A_NODE_PORT" "/r/${s7a_nd_id_b}/api/model")
+            assert_eq "$st_a" "200" "[s7a] node: /r/<id-A>/api/model -> 200"
+            assert_eq "$st_b" "200" "[s7a] node: /r/<id-B>/api/model -> 200"
+        else
+            fail "[s7a] node: could not extract repo ids from /api/home"
+        fi
+    else
+        fail "[s7a] node: /api/home fetch failed"
+    fi
+fi
+
+# Cross-runtime parity for scenario A
+if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $S7A_PY_OK -eq 1 && $S7A_NODE_OK -eq 1 ]]; then
+    if [[ -f "${PT1H_TMP}/s7a_py_home.json" && -f "${PT1H_TMP}/s7a_node_home.json" ]]; then
+        normalize_home_json "${PT1H_TMP}/s7a_py_home.json" "${PT1H_TMP}/s7a_py_home_norm.json"
+        normalize_home_json "${PT1H_TMP}/s7a_node_home.json" "${PT1H_TMP}/s7a_node_home_norm.json"
+        if cmp -s "${PT1H_TMP}/s7a_py_home_norm.json" "${PT1H_TMP}/s7a_node_home_norm.json"; then
+            pass "[s7a] parity: python == node (byte-identical union /api/home after normalize)"
+        else
+            fail "[s7a] parity: python != node (split-tier /api/home differs)"
+            if [[ "$VERBOSE" -eq 1 ]]; then
+                diff "${PT1H_TMP}/s7a_py_home_norm.json" "${PT1H_TMP}/s7a_node_home_norm.json" || true
+            fi
+        fi
+    fi
+fi
+
+# Clean up scenario A servers.
+[[ -n "$S7A_PY_PID" ]] && { kill "$S7A_PY_PID" 2>/dev/null || true; _BGPIDS=("${_BGPIDS[@]/$S7A_PY_PID}"); }
+[[ -n "$S7A_NODE_PID" ]] && { kill "$S7A_NODE_PID" 2>/dev/null || true; _BGPIDS=("${_BGPIDS[@]/$S7A_NODE_PID}"); }
+
+# ---------------------------------------------------------------------------
+# Scenario B: per-user collapse -- AID_HOME == $HOME/.aid
+#   A project listed once in that single registry must appear exactly once
+#   (no double-counting from naive dual-read).
+# ---------------------------------------------------------------------------
+
+echo "  --- 7b: per-user collapse (AID_HOME == HOME/.aid -> no double-count) ---"
+
+# Use S7_HOME as both HOME and AID_HOME parent; user registry lists only repo-A.
+S7B_AID_HOME="${S7_HOME}/.aid"
+mkdir -p "${S7B_AID_HOME}"
+printf 'schema: 1\nrepos:\n  - %s\n' "${S7_REPO_A}" > "${S7B_AID_HOME}/registry.yml"
+
+S7B_PY_PORT="" S7B_NODE_PORT="" S7B_PY_PID="" S7B_NODE_PID=""
+
+if [[ $HAS_PYTHON -eq 1 ]]; then
+    S7B_PY_PORT=$(find_free_port)
+    HOME="${S7_HOME}" AID_HOME="${S7B_AID_HOME}" \
+        python3 "${SERVER_PY}" --host 127.0.0.1 --port "$S7B_PY_PORT" \
+        >/dev/null 2>&1 &
+    S7B_PY_PID=$!
+    _BGPIDS+=($S7B_PY_PID)
+fi
+
+if [[ $HAS_NODE -eq 1 ]]; then
+    S7B_NODE_PORT=$(find_free_port)
+    while [[ $HAS_PYTHON -eq 1 && "$S7B_NODE_PORT" == "$S7B_PY_PORT" ]]; do
+        S7B_NODE_PORT=$(find_free_port)
+    done
+    HOME="${S7_HOME}" AID_HOME="${S7B_AID_HOME}" \
+        node "${SERVER_MJS}" --host 127.0.0.1 --port "$S7B_NODE_PORT" \
+        >/dev/null 2>&1 &
+    S7B_NODE_PID=$!
+    _BGPIDS+=($S7B_NODE_PID)
+fi
+
+S7B_PY_OK=0 S7B_NODE_OK=0
+if [[ $HAS_PYTHON -eq 1 ]]; then
+    if wait_for_port_h "$S7B_PY_PORT" 12; then
+        S7B_PY_OK=1
+        pass "[s7b] python per-user-collapse server started"
+    else
+        fail "[s7b] python per-user-collapse server did not start"
+    fi
+fi
+if [[ $HAS_NODE -eq 1 ]]; then
+    if wait_for_port_h "$S7B_NODE_PORT" 12; then
+        S7B_NODE_OK=1
+        pass "[s7b] node per-user-collapse server started"
+    else
+        fail "[s7b] node per-user-collapse server did not start"
+    fi
+fi
+
+if [[ $HAS_PYTHON -eq 1 && $S7B_PY_OK -eq 1 ]]; then
+    S7B_PY_HOME="${PT1H_TMP}/s7b_py_home.json"
+    if fetch_url "$S7B_PY_PORT" "/api/home" "$S7B_PY_HOME"; then
+        s7b_py_count=$(python3 -c "
+import json; d=json.load(open('$S7B_PY_HOME')); print(len(d.get('repos',[])))
+")
+        assert_eq "$s7b_py_count" "1" "[s7b] python /api/home: repo count == 1 (no double-count)"
+        s7b_py_a=$(_s7_count_repos_matching "$S7B_PY_HOME" "repo-a")
+        assert_eq "$s7b_py_a" "1" "[s7b] python: repo-A appears exactly once"
+    else
+        fail "[s7b] python: /api/home fetch failed"
+    fi
+fi
+
+if [[ $HAS_NODE -eq 1 && $S7B_NODE_OK -eq 1 ]]; then
+    S7B_NODE_HOME="${PT1H_TMP}/s7b_node_home.json"
+    if fetch_url "$S7B_NODE_PORT" "/api/home" "$S7B_NODE_HOME"; then
+        s7b_nd_count=$(python3 -c "
+import json; d=json.load(open('$S7B_NODE_HOME')); print(len(d.get('repos',[])))
+")
+        assert_eq "$s7b_nd_count" "1" "[s7b] node /api/home: repo count == 1 (no double-count)"
+        s7b_nd_a=$(_s7_count_repos_matching "$S7B_NODE_HOME" "repo-a")
+        assert_eq "$s7b_nd_a" "1" "[s7b] node: repo-A appears exactly once"
+    else
+        fail "[s7b] node: /api/home fetch failed"
+    fi
+fi
+
+# Escape canary: real HOME must not have been modified.
+_s7_escape_check
+
+# Clean up scenario B servers.
+[[ -n "$S7B_PY_PID" ]] && { kill "$S7B_PY_PID" 2>/dev/null || true; _BGPIDS=("${_BGPIDS[@]/$S7B_PY_PID}"); }
+[[ -n "$S7B_NODE_PID" ]] && { kill "$S7B_NODE_PID" 2>/dev/null || true; _BGPIDS=("${_BGPIDS[@]/$S7B_NODE_PID}"); }
 
 # ---------------------------------------------------------------------------
 # Stop servers

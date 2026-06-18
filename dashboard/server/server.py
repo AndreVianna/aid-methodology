@@ -12,7 +12,9 @@
 #   *                           -> 404
 #   non-GET                     -> 405
 #
-# Registry: $AID_STATE_HOME/registry.yml line-scan; mtime+size-keyed id->path map cache (NFR4).
+# Registry: two-tier union of $AID_STATE_HOME/registry.yml (primary) and $HOME/.aid/registry.yml
+#   (user fallback) -- mirrors _registry_read_raw_union in bin/aid.  Per-user collapse when both
+#   resolve to the same path.  mtime+size+path-set-keyed id->path map cache (NFR4).
 # No write/append/remove primitive anywhere (SEC-3).
 # No agent/LLM import anywhere (SEC-4).
 # CAN-1 site 3: stored path used verbatim (no realpath/resolve -- SEC-2/DD-5).
@@ -141,38 +143,126 @@ def build_id_map(repos: list[str]) -> dict[str, str]:
 
 
 # ---------------------------------------------------------------------------
-# mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
+# Two-tier registry union (mirrors _registry_read_raw_union in bin/aid)
 # ---------------------------------------------------------------------------
 
-_cache_key: tuple | None = None          # (mtime_ns, size)
+def _reg_stat_key(path: Path) -> tuple | None:
+    """Return (mtime_ns, size) or None if file is absent."""
+    try:
+        st = path.stat()
+        return (st.st_mtime_ns, st.st_size)
+    except FileNotFoundError:
+        return None
+
+
+def _load_union_repos(aid_home: str) -> tuple[list[str], list[str], Path, Path | None]:
+    """Return (repos, warnings, primary_path, fallback_path_or_None).
+
+    Mirrors _registry_read_raw_union from bin/aid (non-pruning raw union):
+      primary  = aid_home/registry.yml  (= AID_STATE_HOME/registry.yml)
+      fallback = $HOME/.aid/registry.yml
+
+    Per-user collapse: when aid_home resolves to the same path as $HOME/.aid,
+    read primary only (single tier, no double-read / double-count).
+
+    Otherwise: union primary + fallback, deduped by path (preserving order of
+    first occurrence -- equivalent to sort -u on a combined stream since the
+    CLI does sort -u, but we use dict.fromkeys to maintain insertion order AND
+    avoid duplicates, which is a safe superset: distinct-path dedup).
+
+    The fallback file is gracefully absent (NFR10): missing = treat as empty.
+    """
+    primary_path = Path(aid_home) / "registry.yml"
+
+    # Determine the user-tier path.
+    user_home = os.environ.get("HOME", "")
+    user_aid_path = os.path.join(user_home, ".aid") if user_home else ""
+
+    # Per-user collapse: aid_home IS the user tier -- single-tier, no double-read.
+    # Compare resolved strings (aid_home is verbatim; user_aid_path is computed).
+    # Use os.path.normpath for the comparison ONLY (not stored -- CAN-1 / DD-5).
+    is_per_user = bool(
+        user_aid_path
+        and os.path.normpath(aid_home) == os.path.normpath(user_aid_path)
+    )
+
+    if is_per_user:
+        # Single tier: read primary only.
+        repos, warnings = load_registry(primary_path)
+        return repos, warnings, primary_path, None
+
+    # Global / shared install: union primary + $HOME/.aid fallback.
+    fallback_path: Path | None = Path(user_aid_path) / "registry.yml" if user_aid_path else None
+
+    primary_repos, primary_warnings = load_registry(primary_path)
+    fallback_repos, fallback_warnings = (
+        load_registry(fallback_path) if fallback_path is not None else ([], [])
+    )
+
+    # Dedup by path, preserving first-occurrence order (mirrors sort -u semantics
+    # for sets; sort -u is stable on sorted input so order matches sorted paths).
+    seen: dict[str, None] = dict.fromkeys(primary_repos)
+    for p in fallback_repos:
+        seen.setdefault(p, None)
+    repos = list(seen.keys())
+    warnings = primary_warnings + fallback_warnings
+
+    return repos, warnings, primary_path, fallback_path
+
+
+# ---------------------------------------------------------------------------
+# mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
+#
+# Cache key now covers BOTH tiers: (primary_key, fallback_key, frozenset_paths).
+# A change in either tier's mtime/size OR the path-set invalidates the cache.
+# ---------------------------------------------------------------------------
+
+_cache_key: tuple | None = None          # (primary_stat_key, fallback_stat_key, frozenset(paths))
 _cache_id_map: dict[str, str] = {}       # id -> canon_path
 _cache_warnings: list[str] = []
 _cache_lock = threading.Lock()
 
 
-def _get_id_map(reg_path: Path) -> tuple[dict[str, str], list[str]]:
-    """Return (id_map, warnings), rebuilding only when registry mtime+size changes."""
+def _get_id_map(aid_home: str) -> tuple[dict[str, str], list[str]]:
+    """Return (id_map, warnings), rebuilding only when either registry tier changes.
+
+    Uses the two-tier union (_load_union_repos) and keys the cache on:
+      (primary_mtime_ns+size, fallback_mtime_ns+size, frozenset(union_path_set))
+    so a change in either file OR the deduped path-set invalidates the cache.
+    """
     global _cache_key, _cache_id_map, _cache_warnings
 
-    # One stat per request (O(1)).
-    try:
-        st = reg_path.stat()
-        key = (st.st_mtime_ns, st.st_size)
-    except FileNotFoundError:
-        key = None   # absent == empty
+    # Stat both tiers (O(1) each, before taking the lock).
+    primary_path = Path(aid_home) / "registry.yml"
+    user_home = os.environ.get("HOME", "")
+    user_aid_path = os.path.join(user_home, ".aid") if user_home else ""
+    is_per_user = bool(
+        user_aid_path
+        and os.path.normpath(aid_home) == os.path.normpath(user_aid_path)
+    )
+
+    primary_stat = _reg_stat_key(primary_path)
+    if is_per_user or not user_aid_path:
+        fallback_stat = None
+    else:
+        fallback_stat = _reg_stat_key(Path(user_aid_path) / "registry.yml")
+
+    # Build a probe key using just the stat data; we'll extend it with the path-set
+    # after the rebuild below if we actually need to rebuild.
+    probe_key = (primary_stat, fallback_stat)
 
     with _cache_lock:
-        if key == _cache_key:
-            return _cache_id_map, _cache_warnings
+        # Fast path: if the stat portion of the key matches, return cached result.
+        if _cache_key is not None and _cache_key[:2] == probe_key:
+            return _cache_id_map, list(_cache_warnings)
+
         # Rebuild.
-        if key is None:
-            _cache_id_map = {}
-            _cache_warnings = []
-        else:
-            repos, warnings = load_registry(reg_path)
-            _cache_id_map = build_id_map(repos)
-            _cache_warnings = warnings
-        _cache_key = key
+        repos, warnings, _, _ = _load_union_repos(aid_home)
+        _cache_id_map = build_id_map(repos)
+        _cache_warnings = warnings
+        # Full cache key includes the frozen path-set so a reorder/dedup change
+        # also invalidates (defensive; in practice stat changes cover this).
+        _cache_key = (primary_stat, fallback_stat, frozenset(repos))
         return _cache_id_map, list(_cache_warnings)
 
 
@@ -752,10 +842,12 @@ class _DashboardHandler(BaseHTTPRequestHandler):
     def _serve_api_home(self) -> None:
         """GET /api/home -> DM-2 model."""
         try:
-            reg_path = Path(self.server.aid_home) / "registry.yml"  # type: ignore[attr-defined]
-            id_map, warnings = _get_id_map(reg_path)
+            aid_home: str = self.server.aid_home  # type: ignore[attr-defined]
+            id_map, warnings = _get_id_map(aid_home)
+            # registry_path in the machine block shows the primary (state-home) path.
+            reg_path = Path(aid_home) / "registry.yml"
             model = build_home_model(
-                aid_home=self.server.aid_home,  # type: ignore[attr-defined]
+                aid_home=aid_home,
                 reg_path=reg_path,
                 id_map=id_map,
                 warnings=warnings,
@@ -774,8 +866,8 @@ class _DashboardHandler(BaseHTTPRequestHandler):
 
     def _serve_repo_route(self, rid: str, leaf: str, query_string: str = "") -> None:
         """Handle /r/<id>/{home.html,kb.html,api/model}."""
-        reg_path = Path(self.server.aid_home) / "registry.yml"  # type: ignore[attr-defined]
-        id_map, _ = _get_id_map(reg_path)
+        aid_home: str = self.server.aid_home  # type: ignore[attr-defined]
+        id_map, _ = _get_id_map(aid_home)
 
         canon_path = id_map.get(rid)
         if canon_path is None:
