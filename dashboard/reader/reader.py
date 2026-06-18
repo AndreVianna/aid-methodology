@@ -7,7 +7,8 @@
 #   3. LEVEL-1    parse .aid/settings.yml + stat .aid/knowledge/          -> RepoInfo
 #   4. ENUMERATE  glob .aid/work-NNN-*/ (dirs only; FR12)                -> work_id list
 #   5. PER WORK   read STATE.md once; parse normalized block + tasks + Q&A -> WorkModel list
-#   6. ASSEMBLE   RepoModel{tool, repo, works, read=ReadMeta}             -> return
+#   6. RECONCILE  merge same-work_id roots (work-004 Pillar 5 / SD-2)    -> deduplicated list
+#   7. ASSEMBLE   RepoModel{tool, repo, works, read=ReadMeta}             -> return
 #
 # This module is the ONLY place that performs filesystem I/O for the whole pass.
 # LC-1 Locator is in locator.py; LC-2 Parsers are in parsers.py.
@@ -17,6 +18,16 @@
 # NFR4 (overhead):  single bounded pass; ReadMeta.bytes_read records total bytes read.
 #
 # Python 3.11+ stdlib only. Zero third-party deps.
+#
+# work-004 Pillar 5 -- same-work reconcile (SD-2, task-011):
+#   SD2_RANK     -- authoritative SD-2 state advancement ordering (most advanced = lowest rank int).
+#                   Encoded ONCE here; the Node twin (task-012) must mirror this exact ordered list.
+#                   Order: Done(0) > Canceled(1) > In Review(2) > In Progress(3) >
+#                          Blocked(4) > Failed(5) > Pending(6) > Unknown(7)
+#   _reconcile_same_work() -- merges N same-work_id WorkModels into one (no winner):
+#                   * per task: most-advanced State by SD2_RANK
+#                   * work-level Pipeline State: newest Updated; tie -> branch-label sort, main first
+#                   * derived views (tasks, pending_inputs, deliverables, features): union
 
 from __future__ import annotations
 
@@ -63,6 +74,238 @@ from .parsers import (
     parse_task_state_md,
     parse_tool_info,
 )
+
+
+# ---------------------------------------------------------------------------
+# work-004 Pillar 5 / SD-2: State advancement ordering (LOCKED)
+#
+# Authoritative ordered list (most-advanced first, index = rank int):
+#   Done(0) > Canceled(1) > In Review(2) > In Progress(3) >
+#   Blocked(4) > Failed(5) > Pending(6) > Unknown(7)
+#
+# Rationale (from SPEC.md SD-2):
+#   Done/Canceled are terminal-resolved (highest rank).
+#   In Review is past In Progress (review is a later pipeline stage).
+#   Blocked outranks Failed: blocked = recoverable-in-place + needs attention;
+#   Failed = completed-but-rejected attempt (parallel branch may have superseded it).
+#   Both Blocked and Failed outrank Pending (work was attempted; more informative).
+#   Unknown is the reader-only sentinel and is ranked last.
+#
+# The Node twin (task-012) MUST mirror this exact ordering verbatim.
+# ---------------------------------------------------------------------------
+SD2_RANK: dict[str, int] = {
+    "Done":        0,
+    "Canceled":    1,
+    "In Review":   2,
+    "In Progress": 3,
+    "Blocked":     4,
+    "Failed":      5,
+    "Pending":     6,
+    "Unknown":     7,
+}
+
+# Sentinel rank for any state string not in SD2_RANK (treat as least advanced)
+_SD2_RANK_DEFAULT = 7
+
+
+def _sd2_rank(state: "TaskStatus") -> int:
+    """Return the SD-2 rank for a TaskStatus (lower = more advanced).
+
+    Uses the .value string so the comparison is independent of the enum wrapper.
+    Unknown and unrecognized values return _SD2_RANK_DEFAULT (least advanced).
+    Never throws.
+    """
+    try:
+        return SD2_RANK.get(state.value, _SD2_RANK_DEFAULT)
+    except Exception:  # noqa: BLE001
+        return _SD2_RANK_DEFAULT
+
+
+# ---------------------------------------------------------------------------
+# work-004 Pillar 5: Same-work reconcile (no winner) -- task-011
+# ---------------------------------------------------------------------------
+
+def _reconcile_same_work(
+    copies: list[tuple["WorkModel", str, str]],
+) -> tuple["WorkModel", str, str]:
+    """Merge N WorkModel copies for the same work_id into one reconciled model.
+
+    Args:
+        copies: list of (WorkModel, state_text, state_label) tuples,
+                one per worktree/main root that contains this work_id.
+                The list MUST be non-empty (caller guarantees this).
+
+    Returns:
+        (reconciled_WorkModel, winning_state_text, winning_state_label)
+
+    Reconcile rules (Pillar 5 / SD-2):
+      1. Per-task State: most-advanced by SD2_RANK (lower rank wins).
+      2. Work-level Pipeline State (updated, lifecycle, phase, active_skill,
+         pause_reason, block_reason, block_artifact): copy with the newest
+         `updated` timestamp.  On a tie (equal or both None): break by
+         branch_label lexical sort, "main" sorts first (before any other label).
+      3. Derived views (tasks, pending_inputs, deliverables, features): UNION
+         of all copies' contributions (dedup task_ids by SD-2 in step 1).
+      4. Identity fields (work_id, name, number, title, description, objective,
+         work_path, recipe): taken from the Pipeline-State winner (step 2)
+         because those fields come from work-level files (REQUIREMENTS/SPEC),
+         which are identical across all copies of the same work_id.
+      5. source_mode: if any copy is Normalized -> Normalized; else Fallback.
+
+    Merge is DETERMINISTIC and ORDER-INDEPENDENT:
+      - Step 1 is a per-task max() by rank -> independent of input order.
+      - Step 2 uses a total-order key that never produces a tie: the primary
+        key (ISO-8601 updated) is string-comparable; ties are broken by a
+        stable secondary key (branch_label sort, "main" first).
+      - Steps 3-5 are commutative set/union operations.
+
+    Read-only. Never throws.
+    """
+    if len(copies) == 1:
+        # Trivial case: nothing to merge
+        return copies[0]
+
+    # ------------------------------------------------------------------
+    # Step 1: union tasks, picking the most-advanced state per task_id
+    # ------------------------------------------------------------------
+    # Map task_id (lower-cased for robustness) -> best TaskModel seen so far
+    best_task: dict[str, TaskModel] = {}
+    for wm, _, _ in copies:
+        for task in wm.tasks:
+            tid = task.task_id.lower()
+            if tid not in best_task:
+                best_task[tid] = task
+            else:
+                current_rank = _sd2_rank(best_task[tid].status)
+                candidate_rank = _sd2_rank(task.status)
+                if candidate_rank < current_rank:
+                    best_task[tid] = task
+    # Preserve the original case order from the first copy that introduced each task
+    # (stable across shuffles because best_task is keyed by lower-case, but we emit
+    # the TaskModel objects which carry their own task_id).
+    # Sort deterministically: by task_id string so order is input-order-independent.
+    merged_tasks: list[TaskModel] = sorted(
+        best_task.values(),
+        key=lambda t: t.task_id.lower(),
+    )
+
+    # ------------------------------------------------------------------
+    # Step 2: pick the Pipeline-State winner by newest `updated` timestamp.
+    # Tie-break: branch_label lexical sort, "main" sorting first.
+    #
+    # Sort ascending by a key where "better" (newer timestamp, main branch) maps
+    # to a SMALLER value, so sorted()[0] is the winner.
+    #
+    # Key structure: (tier, inv_updated, secondary)
+    #   tier=0 if timestamp is present, tier=1 if absent (present wins over absent).
+    #   inv_updated: char-complement of the ISO-8601 string so that a LARGER
+    #     (newer) timestamp maps to a SMALLER key (ascending sort picks newest first).
+    #     ISO-8601 characters are ASCII (digits, 'T', 'Z', '-', ':'); guard against
+    #     corrupt non-ASCII by clamping ord(c) to [0, 0x7F] before complement.
+    #   secondary: (0, "") for "main", else (1, label) for lexical sort.
+    # ------------------------------------------------------------------
+    def _pipeline_winner_key(entry: tuple[WorkModel, str, str]) -> tuple:
+        wm = entry[0]
+        updated = wm.updated or ""
+        label = wm.branch_label or ""
+        secondary = (0, "") if label == "main" else (1, label)
+        if updated:
+            inv_updated = "".join(
+                chr(0x7F - min(ord(c), 0x7F)) for c in updated
+            )
+            return (0, inv_updated, secondary)
+        else:
+            return (1, "", secondary)
+
+    sorted_copies = sorted(copies, key=_pipeline_winner_key)
+    winner_wm, winner_text, winner_label = sorted_copies[0]
+
+    # ------------------------------------------------------------------
+    # Step 3: union pending_inputs (all copies contribute)
+    # ------------------------------------------------------------------
+    seen_qids: set[str] = set()
+    merged_pending: list[PendingInput] = []
+    for wm, _, _ in copies:
+        for pi in wm.pending_inputs:
+            if pi.question_id not in seen_qids:
+                seen_qids.add(pi.question_id)
+                merged_pending.append(pi)
+
+    # ------------------------------------------------------------------
+    # Step 3b: union deliverables (by delivery number; winner's entry wins
+    # on duplicate numbers since the winner's Pipeline State is authoritative)
+    # ------------------------------------------------------------------
+    seen_del: set[int] = set()
+    merged_deliverables: list[DeliverableRef] = []
+    # Winner's deliverables first (authoritative on duplicates)
+    for dr in winner_wm.deliverables:
+        if dr.number not in seen_del:
+            seen_del.add(dr.number)
+            merged_deliverables.append(dr)
+    for wm, _, _ in copies:
+        if wm is winner_wm:
+            continue
+        for dr in wm.deliverables:
+            if dr.number not in seen_del:
+                seen_del.add(dr.number)
+                merged_deliverables.append(dr)
+    merged_deliverables.sort(key=lambda d: d.number)
+
+    # ------------------------------------------------------------------
+    # Step 3c: union features (by feature number; winner first)
+    # ------------------------------------------------------------------
+    seen_feat: set[int] = set()
+    merged_features = []
+    for fr in winner_wm.features:
+        if fr.number not in seen_feat:
+            seen_feat.add(fr.number)
+            merged_features.append(fr)
+    for wm, _, _ in copies:
+        if wm is winner_wm:
+            continue
+        for fr in wm.features:
+            if fr.number not in seen_feat:
+                seen_feat.add(fr.number)
+                merged_features.append(fr)
+
+    # ------------------------------------------------------------------
+    # Step 4 + 5: build the reconciled WorkModel from the winner's fields,
+    # replacing tasks/pending_inputs/deliverables/features with merged views.
+    # source_mode: Normalized if any copy is Normalized.
+    # ------------------------------------------------------------------
+    merged_source_mode = winner_wm.source_mode
+    for wm, _, _ in copies:
+        if wm.source_mode == SourceMode.Normalized:
+            merged_source_mode = SourceMode.Normalized
+            break
+
+    reconciled = WorkModel(
+        work_id=winner_wm.work_id,
+        name=winner_wm.name,
+        lifecycle=winner_wm.lifecycle,
+        phase=winner_wm.phase,
+        active_skill=winner_wm.active_skill,
+        updated=winner_wm.updated,
+        created=winner_wm.created,
+        pause_reason=winner_wm.pause_reason,
+        block_reason=winner_wm.block_reason,
+        block_artifact=winner_wm.block_artifact,
+        tasks=merged_tasks,
+        pending_inputs=merged_pending,
+        source_mode=merged_source_mode,
+        number=winner_wm.number,
+        title=winner_wm.title,
+        description=winner_wm.description,
+        objective=winner_wm.objective,
+        work_path=winner_wm.work_path,
+        recipe=winner_wm.recipe,
+        features=merged_features,
+        deliverables=merged_deliverables,
+        # branch_label: None on a reconciled model (multiple branches contributed);
+        # provenance is retained on each TaskModel via its wave/delivery field.
+        branch_label=None,
+    )
+    return reconciled, winner_text, winner_label
 
 
 def read_repo(aid_root: Union[str, Path]) -> RepoModel:
@@ -180,13 +423,14 @@ def _read_repo_full(
     # Cross-root merge of same work_id is task-011; duplicates are fine here.
     worktree_roots = enumerate_worktree_roots(root)
 
-    # Steps 5a-5g: PER WORK -- parse STATE.md; build WorkModel list
-    works: list[WorkModel] = []
-    fallback_works: list[str] = []
-    # Build per-work STATE.md cache as a by-product of the always-on pass.
-    # DR-1/DD-3/NFR4: read_repo_detail reuses these bytes; zero extra disk I/O.
-    # Cache key: "branch_label/work_id" to distinguish same-named works across roots.
-    state_text_cache: dict[str, tuple[str, str]] = {}
+    # Steps 5a-5g: PER WORK -- parse STATE.md; build WorkModel list (pre-reconcile).
+    # After enumeration across all worktree roots, Step 6 reconciles same-work_id copies
+    # (work-004 Pillar 5 / SD-2 / task-011).
+    #
+    # Intermediate accumulator: maps work_id -> [(WorkModel, state_text, state_label), ...]
+    # so that every copy of a work that appears on multiple roots is gathered before
+    # _reconcile_same_work() collapses them into one model.
+    work_copies: dict[str, list[tuple[WorkModel, str, str]]] = {}
 
     for branch_label, wt_aid_dir in worktree_roots:
         # Resolve the worktree's repo root from the aid_dir (aid_dir is <root>/.aid)
@@ -204,33 +448,46 @@ def _read_repo_full(
             )
             # Tag the work model with the branch that owns this worktree
             work_model.branch_label = branch_label
-            works.append(work_model)
             parse_warnings.extend(work_warnings)
             bytes_read += work_bytes
-            # Cache key includes branch_label so same-named works across roots don't collide.
-            # read_repo_detail uses work_id key; retain bare work_id key for the main/primary
-            # root so the existing detail-drill path continues to work unchanged.
-            state_text_cache[work_id] = (state_text, state_label)
-            if work_model.source_mode != SourceMode.Normalized:
-                fallback_works.append(work_id)
+            if work_id not in work_copies:
+                work_copies[work_id] = []
+            work_copies[work_id].append((work_model, state_text, state_label))
 
     # If worktree enumeration yielded NO results (all worktrees had no .aid/), fall
     # back to the main root so a bare repo without worktrees still renders correctly.
-    if not works and loc.aid_exists:
+    if not work_copies and loc.aid_exists:
         for work_dir in loc.work_dirs:
             work_id = work_dir.name
             work_model, work_warnings, work_bytes, state_text, state_label = _read_work(
                 work_dir, work_id
             )
             work_model.branch_label = None  # indeterminate; worktree list gave no data
-            works.append(work_model)
             parse_warnings.extend(work_warnings)
             bytes_read += work_bytes
-            state_text_cache[work_id] = (state_text, state_label)
-            if work_model.source_mode != SourceMode.Normalized:
-                fallback_works.append(work_id)
+            work_copies[work_id] = [(work_model, state_text, state_label)]
 
-    # Step 6: ASSEMBLE
+    # Step 6: RECONCILE -- for each work_id, merge all copies (Pillar 5 / task-011).
+    # Single-copy works pass through _reconcile_same_work unchanged (trivial case).
+    # Outcome: one WorkModel per work_id, plus the state_text/label from the
+    # Pipeline-State winner (newest Updated) for use by read_repo_detail.
+    works: list[WorkModel] = []
+    fallback_works: list[str] = []
+    # DR-1/DD-3/NFR4: read_repo_detail reuses STATE.md text already read this pass;
+    # cache key is bare work_id (the detail caller uses work_id, not branch_label/work_id).
+    # After reconcile, the cache holds the text from the Pipeline-State winner
+    # (newest Updated across all worktree copies of that work_id).
+    # For a work that exists only on one root the cache trivially holds that root's text.
+    state_text_cache: dict[str, tuple[str, str]] = {}
+
+    for work_id, copies in work_copies.items():
+        reconciled_wm, winning_text, winning_label = _reconcile_same_work(copies)
+        works.append(reconciled_wm)
+        state_text_cache[work_id] = (winning_text, winning_label)
+        if reconciled_wm.source_mode != SourceMode.Normalized:
+            fallback_works.append(work_id)
+
+    # Step 7: ASSEMBLE
     repo_model = RepoModel(
         tool=tool_info,
         repo=repo_info,
