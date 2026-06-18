@@ -14,7 +14,7 @@
 #
 # Registry: two-tier union of $AID_STATE_HOME/registry.yml (primary) and $HOME/.aid/registry.yml
 #   (user fallback) -- mirrors _registry_read_raw_union in bin/aid.  Per-user collapse when both
-#   resolve to the same path.  mtime+size+path-set-keyed id->path map cache (NFR4).
+#   resolve to the same path.  mtime+size-keyed id->path map cache (NFR4).
 # No write/append/remove primitive anywhere (SEC-3).
 # No agent/LLM import anywhere (SEC-4).
 # CAN-1 site 3: stored path used verbatim (no realpath/resolve -- SEC-2/DD-5).
@@ -147,11 +147,11 @@ def build_id_map(repos: list[str]) -> dict[str, str]:
 # ---------------------------------------------------------------------------
 
 def _reg_stat_key(path: Path) -> tuple | None:
-    """Return (mtime_ns, size) or None if file is absent."""
+    """Return (mtime_ns, size) or None if file is absent or unreadable."""
     try:
         st = path.stat()
         return (st.st_mtime_ns, st.st_size)
-    except FileNotFoundError:
+    except OSError:
         return None
 
 
@@ -213,11 +213,13 @@ def _load_union_repos(aid_home: str) -> tuple[list[str], list[str], Path, Path |
 # ---------------------------------------------------------------------------
 # mtime+size-keyed registry cache (NFR4 / DD-1 SS 3.4)
 #
-# Cache key now covers BOTH tiers: (primary_key, fallback_key, frozenset_paths).
-# A change in either tier's mtime/size OR the path-set invalidates the cache.
+# Cache key: (primary_stat_key, fallback_stat_key).
+# A change in either tier's mtime/size invalidates the cache.  The path-set is
+# NOT stored or compared separately: any path-set change requires editing the
+# registry.yml which changes mtime or size, so stat-keying is sufficient.
 # ---------------------------------------------------------------------------
 
-_cache_key: tuple | None = None          # (primary_stat_key, fallback_stat_key, frozenset(paths))
+_cache_key: tuple | None = None          # (primary_stat_key, fallback_stat_key)
 _cache_id_map: dict[str, str] = {}       # id -> canon_path
 _cache_warnings: list[str] = []
 _cache_lock = threading.Lock()
@@ -226,9 +228,9 @@ _cache_lock = threading.Lock()
 def _get_id_map(aid_home: str) -> tuple[dict[str, str], list[str]]:
     """Return (id_map, warnings), rebuilding only when either registry tier changes.
 
-    Uses the two-tier union (_load_union_repos) and keys the cache on:
-      (primary_mtime_ns+size, fallback_mtime_ns+size, frozenset(union_path_set))
-    so a change in either file OR the deduped path-set invalidates the cache.
+    Uses the two-tier union (_load_union_repos) and keys the cache on
+    (primary_mtime_ns+size, fallback_mtime_ns+size).  A stat change in either
+    tier triggers a full rebuild.
     """
     global _cache_key, _cache_id_map, _cache_warnings
 
@@ -247,22 +249,18 @@ def _get_id_map(aid_home: str) -> tuple[dict[str, str], list[str]]:
     else:
         fallback_stat = _reg_stat_key(Path(user_aid_path) / "registry.yml")
 
-    # Build a probe key using just the stat data; we'll extend it with the path-set
-    # after the rebuild below if we actually need to rebuild.
     probe_key = (primary_stat, fallback_stat)
 
     with _cache_lock:
-        # Fast path: if the stat portion of the key matches, return cached result.
-        if _cache_key is not None and _cache_key[:2] == probe_key:
+        # Fast path: stat key unchanged -> return cached result.
+        if _cache_key is not None and _cache_key == probe_key:
             return _cache_id_map, list(_cache_warnings)
 
         # Rebuild.
         repos, warnings, _, _ = _load_union_repos(aid_home)
         _cache_id_map = build_id_map(repos)
         _cache_warnings = warnings
-        # Full cache key includes the frozen path-set so a reorder/dedup change
-        # also invalidates (defensive; in practice stat changes cover this).
-        _cache_key = (primary_stat, fallback_stat, frozenset(repos))
+        _cache_key = probe_key
         return _cache_id_map, list(_cache_warnings)
 
 

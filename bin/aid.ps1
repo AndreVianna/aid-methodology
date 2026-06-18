@@ -708,28 +708,16 @@ function script:Invoke-AidRemoteExpose {
         }
     }
 
-    # Step 5: Print FR18 step-by-step ACL-grant guidance to STDERR (informational only).
+    # Step 5: Print FR18 ACL-grant guidance to STDERR (informational only).
     $srcPlaceholder = '<you@example.com>'
     $dstPlaceholder = if ($nodeShort)    { $nodeShort }    else { '<this-host>' }
-    $urlPlaceholder = $privateUrl
 
     [Console]::Error.WriteLine('')
-    [Console]::Error.WriteLine('Remote exposure is UP (tailnet-private). To restrict it to ONLY you (C3), add a')
-    [Console]::Error.WriteLine('deny-by-default tailnet ACL grant -- without it, any tailnet device can reach this host.')
-    [Console]::Error.WriteLine('Step 1. Open the tailnet policy file:')
-    [Console]::Error.WriteLine('          https://login.tailscale.com/admin/acls/file')
-    [Console]::Error.WriteLine('Step 2. Add this grant (replace the identity with yours or a group):')
-    [Console]::Error.WriteLine("          {`"grants`":[{`"src`":[`"$srcPlaceholder`"],`"dst`":[`"$dstPlaceholder`"],`"ip`":[`"tcp:443`"]}]}")
-    [Console]::Error.WriteLine('          (src = your identity/group; dst = THIS host only, never "*"; ip = the serve port.)')
-    [Console]::Error.WriteLine('Step 3. Save. Tailscale is deny-by-default once any grant exists, so every other device is')
-    [Console]::Error.WriteLine('        now denied.')
-    [Console]::Error.WriteLine("Step 4. Verify from your laptop: open $urlPlaceholder -- it should load for you, and a")
-    [Console]::Error.WriteLine('        non-authorized device should get connection-refused/forbidden.')
-    [Console]::Error.WriteLine('(AID cannot edit your tailnet policy for you -- it is admin-plane, and the dashboard never')
-    [Console]::Error.WriteLine("runs an agent/LLM at runtime. See 'aid dashboard' docs / feature-005 SEC-2.)")
-    [Console]::Error.WriteLine('Note (SEC-6): the exposed surface is the CLI home -- all registered projects (paths/names) are')
-    [Console]::Error.WriteLine('visible to the granted identities. This is the accepted trade-off (OQ5): grantees are trusted')
-    [Console]::Error.WriteLine('operators of this host. Never-public and host/user-ACL scoping (C1/C3) are unchanged.')
+    [Console]::Error.WriteLine('Remote exposure is UP (tailnet-private). Every device on your tailnet can now reach this host.')
+    [Console]::Error.WriteLine('To restrict access to only you, add a deny-by-default ACL grant in the tailnet policy file:')
+    [Console]::Error.WriteLine('  https://login.tailscale.com/admin/acls/file')
+    [Console]::Error.WriteLine("  {`"grants`":[{`"src`":[`"$srcPlaceholder`"],`"dst`":[`"$dstPlaceholder`"],`"ip`":[`"tcp:443`"]}]}")
+    [Console]::Error.WriteLine("Note: granted identities see all registered project paths/names. See 'aid dashboard --help'.")
     [Console]::Error.WriteLine('')
 
     # Step 6: Emit handle + URL on stdout, exit 0.
