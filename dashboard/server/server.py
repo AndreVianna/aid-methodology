@@ -4,7 +4,7 @@
 # Stdlib-only. Binds 127.0.0.1 only -- never a wildcard or non-loopback address (SEC-1).
 #
 # Routes (NEW closed allowlist -- replaces feature-003 two-route server):
-#   GET /                       -> CLI-home index.html from $AID_HOME/dashboard/index.html
+#   GET /                       -> CLI-home index.html from $AID_CODE_HOME/dashboard/index.html
 #   GET /api/home               -> build DM-2 model -> 200 JSON
 #   GET /r/<id>/home.html       -> <repo(id)>/.aid/dashboard/home.html  (SEC-2 by construction)
 #   GET /r/<id>/kb.html         -> <repo(id)>/.aid/dashboard/kb.html    (SEC-2 by construction)
@@ -12,7 +12,7 @@
 #   *                           -> 404
 #   non-GET                     -> 405
 #
-# Registry: $AID_HOME/registry.yml line-scan; mtime+size-keyed id->path map cache (NFR4).
+# Registry: $AID_STATE_HOME/registry.yml line-scan; mtime+size-keyed id->path map cache (NFR4).
 # No write/append/remove primitive anywhere (SEC-3).
 # No agent/LLM import anywhere (SEC-4).
 # CAN-1 site 3: stored path used verbatim (no realpath/resolve -- SEC-2/DD-5).
@@ -20,9 +20,13 @@
 # Invocation:
 #   python3 server.py --host 127.0.0.1 --port <n>
 #
-# AID_HOME resolution (env-or-self-locate):
-#   1. AID_HOME environment variable if set and non-empty.
-#   2. Self-locate: server.py -> server/ -> dashboard/ -> $AID_HOME.
+# AID_HOME (state home) resolution for registry.yml:
+#   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
+#   2. Self-locate fallback (direct invocation without env): server.py -> server/ -> dashboard/ -> parent.
+#
+# Code/static asset resolution (index.html, VERSION, lib/tools-catalog.txt):
+#   Always self-located from _DASHBOARD_DIR / _DASHBOARD_DIR.parent ($AID_CODE_HOME),
+#   independent of AID_HOME. These are shipped install-tree assets, NOT per-machine state.
 #
 # Python 3.11+ required. Zero third-party deps.
 
@@ -232,21 +236,31 @@ def _read_manifest(repo_path: str) -> tuple[str | None, list[str]]:
         return None, []
 
 
-def _read_aid_version(aid_home: str) -> str | None:
-    """Read $AID_HOME/VERSION (trimmed). None if absent."""
+def _read_aid_version() -> str | None:
+    """Read VERSION from the code home ($AID_CODE_HOME/VERSION). None if absent.
+
+    The VERSION file is a code/static asset shipped with the install tree, NOT a
+    per-machine state artifact. It lives at $AID_CODE_HOME/VERSION, resolved via
+    self-location: _DASHBOARD_DIR.parent is $AID_CODE_HOME.
+    """
     try:
-        return (Path(aid_home) / "VERSION").read_text(encoding="utf-8").strip() or None
+        return (_DASHBOARD_DIR.parent / "VERSION").read_text(encoding="utf-8").strip() or None
     except Exception:
         return None
 
 
-def _tools_catalog(aid_home: str) -> list[str]:
-    """Read manageable-tool catalog from $AID_HOME (best-effort)."""
+def _tools_catalog() -> list[str]:
+    """Read manageable-tool catalog from the code home (best-effort).
+
+    The catalog file is a code/static asset shipped with the install tree, NOT a
+    per-machine state artifact. It lives at $AID_CODE_HOME/lib/tools-catalog.txt,
+    resolved via self-location: _DASHBOARD_DIR.parent is $AID_CODE_HOME.
+    """
     # Aid's manageable tools: the five host tools aid add knows how to install
     # (antigravity, claude-code, codex, copilot-cli, cursor). We read the catalog
     # from the install tree if a catalog file is present, else fall back to the
     # static known list.
-    catalog_path = Path(aid_home) / "lib" / "tools-catalog.txt"
+    catalog_path = _DASHBOARD_DIR.parent / "lib" / "tools-catalog.txt"
     if catalog_path.is_file():
         try:
             lines = catalog_path.read_text(encoding="utf-8").splitlines()
@@ -340,9 +354,9 @@ def build_home_model(
         "schema_version": 1,
         "generated_by":   runtime,
         "machine": {
-            "aid_version":    _read_aid_version(aid_home),
+            "aid_version":    _read_aid_version(),
             "aid_home":       aid_home,
-            "tools_catalog":  _tools_catalog(aid_home),
+            "tools_catalog":  _tools_catalog(),
             "registry_path":  str(reg_path),
             "cli_runtime":    runtime,
         },
@@ -706,12 +720,17 @@ class _DashboardHandler(BaseHTTPRequestHandler):
     # ---- route handlers ----------------------------------------------------
 
     def _serve_cli_home(self) -> None:
-        """GET / -> $AID_HOME/dashboard/index.html (task-053 lands the real file)."""
-        # server.aid_home is the resolved $AID_HOME set at startup.
-        index_html = Path(self.server.aid_home) / "dashboard" / "index.html"  # type: ignore[attr-defined]
+        """GET / -> $AID_CODE_HOME/dashboard/index.html (code asset, self-located).
+
+        index.html is a CODE asset shipped with the install tree -- it resolves from
+        the server's own location (_DASHBOARD_DIR), NOT from the per-machine state home.
+        _DASHBOARD_DIR = server.py/../ = $AID_CODE_HOME/dashboard/.
+        """
+        index_html = _DASHBOARD_DIR / "index.html"
         if not index_html.is_file():
-            # Graceful 503 -- task-053 lands index.html; do NOT crash.
-            body = b"503 CLI home not yet available (task-053 will provide index.html)"
+            # Graceful 503: the file is genuinely missing from the install tree.
+            # This should not happen in a healthy install; run 'aid update' to repair.
+            body = b"503 dashboard index.html missing from install tree; run 'aid update' to repair"
             self.send_response(503)
             self.send_header("Content-Type", "text/plain; charset=utf-8")
             self.send_header("Content-Length", str(len(body)))
@@ -857,12 +876,14 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> None:
     args = _parse_args(argv)
 
-    # Resolve aid_home WITHOUT following symlinks, to byte-match the Node server (DD-5/SEC-5):
-    #   (1) AID_HOME env var verbatim if set and non-empty (Node uses process.env.AID_HOME as-is);
-    #   (2) else self-locate LOGICALLY: server.py -> server/ -> dashboard/ -> $AID_HOME, via
-    #       os.path (NOT Path.resolve(), which realpath-follows symlinks and would diverge from
-    #       Node's join(__dirname, "..", "..") on a symlinked $AID_HOME -> machine.aid_home /
-    #       machine.registry_path parity break).
+    # Resolve the STATE home (aid_home) WITHOUT following symlinks, to byte-match the
+    # Node server (DD-5/SEC-5). aid_home is used ONLY for state: registry.yml + registry_path
+    # in the /api/home machine block. Code assets resolve from _DASHBOARD_DIR (self-located).
+    #   (1) AID_HOME env var verbatim if set and non-empty (Node uses process.env.AID_HOME as-is;
+    #       bin/aid always passes AID_HOME=$AID_STATE_HOME so (1) is the normal path).
+    #   (2) Fallback for direct invocation without env: self-locate via os.path
+    #       (NOT Path.resolve(), which realpath-follows symlinks and would diverge from
+    #       Node's join(__dirname, "..", "..") on a symlinked AID_HOME -> parity break).
     aid_home = os.environ.get("AID_HOME") or os.path.abspath(
         os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..")
     )

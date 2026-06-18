@@ -6,12 +6,16 @@
  * Entry-point:
  *   node dashboard/server/server.mjs --host 127.0.0.1 --port <n>
  *
- * AID_HOME resolution (env-or-self-locate):
- *   1. AID_HOME environment variable if set and non-empty.
- *   2. Self-locate: server.mjs -> server/ -> dashboard/ -> $AID_HOME (join(__dirname, "..", "..")).
+ * AID_HOME (state home) resolution for registry.yml:
+ *   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
+ *   2. Self-locate fallback (direct invocation without env): join(__dirname, "..", "..").
+ *
+ * Code/static asset resolution (index.html, VERSION, lib/tools-catalog.txt):
+ *   Always self-located from _DASHBOARD_DIR_MJS / _CODE_HOME (derived from __filename),
+ *   independent of AID_HOME. These are shipped install-tree assets, NOT per-machine state.
  *
  * Routes (NEW closed allowlist -- replaces feature-003 two-route server):
- *   GET /                    -> CLI-home index.html from $AID_HOME/dashboard/index.html
+ *   GET /                    -> CLI-home index.html from $AID_CODE_HOME/dashboard/index.html
  *   GET /api/home            -> build DM-2 model -> 200 JSON
  *   GET /r/<id>/home.html    -> <repo(id)>/.aid/dashboard/home.html (SEC-2 by construction)
  *   GET /r/<id>/kb.html      -> <repo(id)>/.aid/dashboard/kb.html  (SEC-2 by construction)
@@ -298,16 +302,28 @@ function readManifest(repoPath) {
   }
 }
 
-function readAidVersion(aidHome) {
+// _CODE_HOME: $AID_CODE_HOME resolved via self-location.
+// server.mjs lives at $AID_CODE_HOME/dashboard/server/server.mjs, so:
+//   __dirname_srv             = $AID_CODE_HOME/dashboard/server/
+//   join(__dirname_srv, "..")  = $AID_CODE_HOME/dashboard/
+//   join(__dirname_srv, "..", "..") = $AID_CODE_HOME
+// Used for CODE assets (VERSION, lib/tools-catalog.txt, dashboard/index.html)
+// which are shipped with the install tree, NOT per-machine state artifacts.
+const _DASHBOARD_DIR_MJS = join(__dirname_srv, "..");
+const _CODE_HOME = join(__dirname_srv, "..", "..");
+
+function readAidVersion() {
+  // VERSION is a CODE asset at $AID_CODE_HOME/VERSION, NOT in the state home.
   try {
-    return readFileSync(join(aidHome, "VERSION"), "utf8").trim() || null;
+    return readFileSync(join(_CODE_HOME, "VERSION"), "utf8").trim() || null;
   } catch (_) {
     return null;
   }
 }
 
-function toolsCatalog(aidHome) {
-  const catalogPath = join(aidHome, "lib", "tools-catalog.txt");
+function toolsCatalog() {
+  // tools-catalog.txt is a CODE asset at $AID_CODE_HOME/lib/tools-catalog.txt, NOT in state home.
+  const catalogPath = join(_CODE_HOME, "lib", "tools-catalog.txt");
   try {
     const lines = readFileSync(catalogPath, "utf8").split(/\r?\n/);
     return lines.map((l) => l.trim()).filter((l) => l && !l.startsWith("#"));
@@ -393,9 +409,9 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime) {
     schema_version: 1,
     generated_by:   runtime,
     machine: {
-      aid_version:    readAidVersion(aidHome),
+      aid_version:    readAidVersion(),
       aid_home:       aidHome,
-      tools_catalog:  toolsCatalog(aidHome),
+      tools_catalog:  toolsCatalog(),
       registry_path:  regPath,
       cli_runtime:    runtime,
     },
@@ -549,10 +565,15 @@ function handler(req, res) {
 }
 
 function serveCliHome(res) {
-  // GET / -> $AID_HOME/dashboard/index.html (task-053 lands the real file).
-  const indexPath = join(AID_HOME, "dashboard", "index.html");
+  // GET / -> $AID_CODE_HOME/dashboard/index.html (code asset, self-located).
+  // index.html is a CODE asset shipped with the install tree -- it resolves from
+  // _DASHBOARD_DIR_MJS (= server.mjs/../../ = $AID_CODE_HOME/dashboard/), NOT from
+  // the per-machine AID_HOME (state home).
+  const indexPath = join(_DASHBOARD_DIR_MJS, "index.html");
   if (!existsSync(indexPath)) {
-    const body = Buffer.from("503 CLI home not yet available (task-053 will provide index.html)", "utf-8");
+    // Graceful 503: the file is genuinely missing from the install tree.
+    // This should not happen in a healthy install; run 'aid update' to repair.
+    const body = Buffer.from("503 dashboard index.html missing from install tree; run 'aid update' to repair", "utf-8");
     res.writeHead(503, {
       "Content-Type": "text/plain; charset=utf-8",
       "Content-Length": body.length,

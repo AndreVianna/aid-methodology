@@ -844,6 +844,178 @@ assert_exit_eq "$RC_DC" 0 "T-15c: stop from any dir succeeds exit 0"
 assert_output_contains "$OUT_DC" "aid: dashboard stopped." "T-15c: stopped message"
 
 # ---------------------------------------------------------------------------
+# T-16: Code/state home split regression (release-blocker fix)
+#
+# Verifies that server code assets (index.html, VERSION, lib/tools-catalog.txt)
+# resolve from the SERVER'S OWN INSTALL LOCATION ($AID_CODE_HOME/dashboard/),
+# NOT from the per-machine state home (AID_HOME = AID_STATE_HOME).
+#
+# Prior to the fix: GET / returned 503 ("task-053 will provide index.html")
+# whenever AID_STATE_HOME had no dashboard/index.html, because the server looked
+# in the wrong place.
+#
+# Setup:
+#   H16     = code home: has dashboard/server/server.py, dashboard/index.html, VERSION
+#   S16     = state home (separate dir): has registry.yml, NO dashboard/index.html
+#
+# The test invokes bin/aid from H16 with AID_HOME=S16, which causes bin/aid to
+# set AID_CODE_HOME=H16 and AID_STATE_HOME=S16, then launch the server with
+# AID_HOME=S16. The server must serve GET / from H16/dashboard/index.html.
+#
+# T-16a: python server GET / returns 200 (code asset resolved from code home)
+# T-16b: node server   GET / returns 200 (code asset resolved from code home)
+# T-16c: /api/home machine.aid_version is non-null (VERSION in code home)
+# T-16d: /api/home machine.tools_catalog is non-empty (fallback used; code home ok)
+# ---------------------------------------------------------------------------
+echo "--- T-16: code/state home split regression (GET / from code home) ---"
+
+# Helper: HTTP GET with status code printed to stdout (no curl needed -- python3 stdlib).
+http_get_status() {
+    local url="$1"
+    python3 -c "
+import urllib.request, urllib.error, sys
+try:
+    resp = urllib.request.urlopen('${url}', timeout=8)
+    print(resp.status)
+except urllib.error.HTTPError as e:
+    print(e.code)
+except Exception as e:
+    sys.stderr.write('http_get_status: ' + str(e) + '\n')
+    print(-1)
+" 2>/dev/null
+}
+
+# Helper: HTTP GET returning body (prints body; exits 1 if error).
+http_get_body() {
+    local url="$1"
+    python3 -c "
+import urllib.request, sys
+try:
+    resp = urllib.request.urlopen('${url}', timeout=8)
+    sys.stdout.buffer.write(resp.read())
+except Exception as e:
+    sys.stderr.write('http_get_body: ' + str(e) + '\n')
+    sys.exit(1)
+" 2>/dev/null
+}
+
+# Helper: wait for port to accept HTTP on /api/home.
+wait_port_ready() {
+    local port="$1"
+    local i=0
+    while [[ $i -lt 60 ]]; do
+        local st
+        st="$(http_get_status "http://127.0.0.1:${port}/api/home")"
+        if [[ "$st" == "200" ]]; then return 0; fi
+        sleep 0.1
+        i=$((i+1))
+    done
+    return 1
+}
+
+H16="$(new_aid_home)"
+S16="$(mktemp -d "${TMP}/state16.XXXXXX")"
+# State home: has registry.yml with a dummy entry, but NO dashboard/index.html.
+mkdir -p "${S16}"
+cat > "${S16}/registry.yml" << 'REGEOF16'
+schema: 1
+repos:
+REGEOF16
+# Double-check: S16 must NOT have dashboard/index.html.
+assert_eq "$(test -f "${S16}/dashboard/index.html" && echo exists || echo absent)" "absent" \
+    "T-16 setup: state home has no dashboard/index.html (verifying test fixture)"
+
+# T-16a: python server GET / must return 200 (code asset in code home).
+echo "--- T-16a: python server GET / from code home ---"
+PORT16a="$(pick_free_port)"
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+
+# Run bin/aid from code home (H16), but with AID_HOME pointing to state home (S16).
+# bin/aid will set AID_CODE_HOME=H16 and AID_STATE_HOME=S16.
+OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
+          bash "${H16}/bin/aid" dashboard start python --port "$PORT16a" 2>&1)"
+RC_DC=$?
+assert_exit_eq "$RC_DC" 0 "T-16a: start python with split homes exits 0"
+
+_T16A_PID="$(grep '"pid"' "$PINNED_PID_FILE" 2>/dev/null | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+[[ -n "$_T16A_PID" ]] && SPAWNED_PIDS+=("$_T16A_PID")
+
+if wait_port_ready "$PORT16a"; then
+    _T16A_STATUS="$(http_get_status "http://127.0.0.1:${PORT16a}/")"
+    assert_eq "$_T16A_STATUS" "200" \
+        "T-16a: python GET / returns 200 (index.html resolved from code home, NOT state home)"
+
+    # Verify the body is actually HTML (not the 503 error string).
+    _T16A_BODY="$(http_get_body "http://127.0.0.1:${PORT16a}/")"
+    if echo "$_T16A_BODY" | grep -qiF "task-053"; then
+        fail "T-16a: python GET / body contains stale 503 task-053 wording (old code path hit)"
+    else
+        pass "T-16a: python GET / body does not contain stale task-053 wording"
+    fi
+
+    # T-16c: /api/home machine.aid_version is non-null (VERSION exists in code home).
+    _T16A_HOME_BODY="$(http_get_body "http://127.0.0.1:${PORT16a}/api/home")"
+    _T16A_AID_VER="$(echo "$_T16A_HOME_BODY" | python3 -c \
+        'import json,sys; d=json.load(sys.stdin); print(d.get("machine",{}).get("aid_version","null") or "null")' 2>/dev/null)"
+    if [[ "$_T16A_AID_VER" != "null" && -n "$_T16A_AID_VER" ]]; then
+        pass "T-16c: python /api/home machine.aid_version is non-null (VERSION from code home: ${_T16A_AID_VER})"
+    else
+        fail "T-16c: python /api/home machine.aid_version is null (VERSION not found from code home)"
+    fi
+
+    # T-16d: /api/home machine.tools_catalog is non-empty (static fallback or real file).
+    _T16A_CAT_LEN="$(echo "$_T16A_HOME_BODY" | python3 -c \
+        'import json,sys; d=json.load(sys.stdin); print(len(d.get("machine",{}).get("tools_catalog",[])))' 2>/dev/null)"
+    if [[ "${_T16A_CAT_LEN:-0}" -gt 0 ]]; then
+        pass "T-16d: python /api/home machine.tools_catalog is non-empty (${_T16A_CAT_LEN} entries)"
+    else
+        fail "T-16d: python /api/home machine.tools_catalog is empty"
+    fi
+else
+    fail "T-16a: python server did not become ready on port ${PORT16a}"
+fi
+
+# Stop python server.
+HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
+    bash "${H16}/bin/aid" dashboard stop >/dev/null 2>&1
+
+# T-16b: node server GET / must return 200 (code asset in code home).
+echo "--- T-16b: node server GET / from code home ---"
+PORT16b="$(pick_free_port)"
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+
+if ! command -v node >/dev/null 2>&1; then
+    pass "T-16b: node not present; skipping node split-home GET / check"
+else
+    OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
+              bash "${H16}/bin/aid" dashboard start node --port "$PORT16b" 2>&1)"
+    RC_DC=$?
+    assert_exit_eq "$RC_DC" 0 "T-16b: start node with split homes exits 0"
+
+    _T16B_PID="$(grep '"pid"' "$PINNED_PID_FILE" 2>/dev/null | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+    [[ -n "$_T16B_PID" ]] && SPAWNED_PIDS+=("$_T16B_PID")
+
+    if wait_port_ready "$PORT16b"; then
+        _T16B_STATUS="$(http_get_status "http://127.0.0.1:${PORT16b}/")"
+        assert_eq "$_T16B_STATUS" "200" \
+            "T-16b: node GET / returns 200 (index.html resolved from code home, NOT state home)"
+
+        _T16B_BODY="$(http_get_body "http://127.0.0.1:${PORT16b}/")"
+        if echo "$_T16B_BODY" | grep -qiF "task-053"; then
+            fail "T-16b: node GET / body contains stale 503 task-053 wording (old code path hit)"
+        else
+            pass "T-16b: node GET / body does not contain stale task-053 wording"
+        fi
+    else
+        fail "T-16b: node server did not become ready on port ${PORT16b}"
+    fi
+
+    # Stop node server.
+    HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
+        bash "${H16}/bin/aid" dashboard stop >/dev/null 2>&1
+fi
+
+# ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
 test_summary
