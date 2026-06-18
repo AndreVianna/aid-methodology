@@ -206,14 +206,15 @@ function script:Show-AidUsage {
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
         'dashboard' {
-            Write-Host 'aid dashboard start <node|python> [--remote] [--port <n>] [--target <dir>]'
-            Write-Host 'aid dashboard stop                [--target <dir>]'
-            Write-Host '  Start or stop the local pipeline dashboard for the current project.'
+            Write-Host 'aid dashboard start <node|python> [--remote] [--port <n>]'
+            Write-Host 'aid dashboard stop'
+            Write-Host '  Start or stop the machine-level pipeline dashboard (serves all registered projects).'
             Write-Host '  <node|python>  select the server runtime to launch.'
             Write-Host '  --remote       also expose it to authorized users over a private channel (never public);'
             Write-Host '                 fails clearly if that mechanism is unavailable -- never binds publicly.'
             Write-Host '  --port <n>     listen port on 127.0.0.1 (default 8787).'
             Write-Host "  The dashboard binds to 127.0.0.1 only. 'stop' is idempotent and also tears down --remote."
+            Write-Host '  Works from any directory (not tied to the current project).'
         }
         'projects' {
             Write-Host 'aid projects [list] [--local|--shared] [--verbose]'
@@ -793,8 +794,8 @@ function script:Invoke-AidRemoteTeardown {
 function script:Invoke-AidDashboardCtl {
     param([string[]]$DcArgs)
 
-    $verb = if ($DcArgs.Count -gt 0) { $DcArgs[0] } else { '' }
-    $rest = if ($DcArgs.Count -gt 1) { $DcArgs[1..($DcArgs.Count - 1)] } else { @() }
+    $verb = if ($DcArgs -and $DcArgs.Count -gt 0) { $DcArgs[0] } else { '' }
+    $rest = [string[]]@(if ($DcArgs -and $DcArgs.Count -gt 1) { $DcArgs[1..($DcArgs.Count - 1)] } else { @() })
 
     # Top-level help.
     if ($verb -in @('-h', '--help', '-Help')) {
@@ -812,7 +813,6 @@ function script:Invoke-AidDashboardCtl {
     }
 
     # --- shared arg parsing ---
-    $dcTarget  = ''
     $dcVerbose = $false
     $dcPort    = 8787
     $dcRemote  = $false
@@ -833,14 +833,6 @@ function script:Invoke-AidDashboardCtl {
             { $_ -in @('-h', '--help', '-Help') } {
                 script:Show-AidUsage 'dashboard'
                 script:Exit-Aid 0
-            }
-            { $_ -in @('-Target', '--target') } {
-                $idx++
-                if ($idx -ge $rest.Count) {
-                    [Console]::Error.WriteLine('ERROR: aid: dashboard: --target requires a value')
-                    script:Exit-Aid 2
-                }
-                $dcTarget = $rest[$idx]
             }
             { $_ -in @('-Verbose', '--verbose') } { $dcVerbose = $true }
             { $_ -in @('-Remote', '--remote') } {
@@ -880,24 +872,15 @@ function script:Invoke-AidDashboardCtl {
         $idx++
     }
 
-    # Apply env-var fallback for target.
-    if (-not $dcTarget -and $env:AID_TARGET) { $dcTarget = $env:AID_TARGET }
-    if (-not $dcTarget) { $dcTarget = '.' }
-    if (-not (Test-Path $dcTarget -PathType Container)) {
-        [Console]::Error.WriteLine("ERROR: aid: dashboard: target directory does not exist: $dcTarget")
-        script:Exit-Aid 2
-    }
-    $dcTarget = (Resolve-Path -LiteralPath $dcTarget).Path
-
     if ($verb -eq 'start') {
-        script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -Target $dcTarget -Verbose $dcVerbose
+        script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -Verbose $dcVerbose
     } else {
-        script:Invoke-DcStop -Target $dcTarget -Verbose $dcVerbose
+        script:Invoke-DcStop -Verbose $dcVerbose
     }
 }
 
 function script:Invoke-DcStart {
-    param([string]$Runtime, [int]$Port, [bool]$Remote, [string]$Target, [bool]$Verbose)
+    param([string]$Runtime, [int]$Port, [bool]$Remote, [bool]$Verbose)
 
     # Step 1: validate runtime.
     if ([string]::IsNullOrEmpty($Runtime)) {
@@ -909,18 +892,10 @@ function script:Invoke-DcStart {
         script:Exit-Aid 2
     }
 
-    # Step 3: check target is an AID project (excludes the CLI state home).
-    if (-not (script:Test-AidIsProjectDir -Dir $Target)) {
-        [Console]::Error.WriteLine("ERROR: aid: dashboard: no AID install found at $Target (run 'aid add <tool>' first)")
-        script:Exit-Aid 7
-    }
-
-    # C6': format gate before operating (refuse on newer-format repo).
-    $gateRc = script:Invoke-AidFormatGate -Repo $Target
-    if ($gateRc -ne 0) { script:Exit-Aid $gateRc }
-
-    $pidFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
-    $logFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.log'))
+    # pid/log live in the per-user state home (.temp), always writable.
+    # FR10 precedent: always per-user $HOME/.aid, never AID_STATE_HOME on global installs.
+    $pidFile = Join-Path $HOME (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
+    $logFile = Join-Path $HOME (Join-Path '.aid' (Join-Path '.temp' 'dashboard.log'))
 
     # Step 4: already-running guard (stale-record reclaim included).
     if (Test-Path $pidFile -PathType Leaf) {
@@ -974,8 +949,8 @@ function script:Invoke-DcStart {
         script:Exit-Aid 7
     }
 
-    # Ensure log dir exists.
-    $tempDir = Join-Path $Target (Join-Path '.aid' '.temp')
+    # Ensure log dir exists (per-user state home, always writable).
+    $tempDir = Join-Path $HOME (Join-Path '.aid' '.temp')
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
     # Step 7: spawn the server child (detached daemon).
@@ -1063,7 +1038,6 @@ function script:Invoke-DcStart {
   "remote": false,
   "remote_handle": null,
   "started_at": "$startedAt",
-  "target": "$($Target.Replace('\', '\\'))",
   "logfile": "$($logFile.Replace('\', '\\'))"
 }
 "@
@@ -1102,7 +1076,6 @@ function script:Invoke-DcStart {
   "remote": true,
   "remote_handle": "$exposeHandle",
   "started_at": "$startedAt",
-  "target": "$($Target.Replace('\', '\\'))",
   "logfile": "$($logFile.Replace('\', '\\'))"
 }
 "@
@@ -1114,24 +1087,18 @@ function script:Invoke-DcStart {
         } else {
             Write-Host "Remote exposure is UP (tailnet-private), but the .ts.net URL could not be auto-detected -- run 'tailscale status' on this host to find it."
         }
-        # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
-        # Always routes to the user tier: dashboard auto-register is never-elevate.
-        script:Registry-Register -Repo $Target -Tier 'user'
         script:Exit-Aid 0
     }
 
     # Step 11: print success (local-only).
     Write-Host "Dashboard ($Runtime) running at http://127.0.0.1:${Port} -- stop with: aid dashboard stop"
-    # DR-1 registry side-effect: auto-register the dashboard target repo (idempotent).
-    # Always routes to the user tier: dashboard auto-register is never-elevate.
-    script:Registry-Register -Repo $Target -Tier 'user'
     script:Exit-Aid 0
 }
 
 function script:Invoke-DcStop {
-    param([string]$Target, [bool]$Verbose)
+    param([bool]$Verbose)
 
-    $pidFile = Join-Path $Target (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
+    $pidFile = Join-Path $HOME (Join-Path '.aid' (Join-Path '.temp' 'dashboard.pid'))
 
     # Step 3: read record; absent or stale -> idempotent exit 0.
     if (-not (Test-Path $pidFile -PathType Leaf)) {

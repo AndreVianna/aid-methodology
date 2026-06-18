@@ -51,8 +51,15 @@ DASHBOARD_INIT_PY="${REPO_ROOT}/dashboard/__init__.py"
 
 # ---------------------------------------------------------------------------
 # Temp workspace -- cleaned on exit.
+# HOME is pinned to a throwaway dir so dashboard.pid writes never touch the
+# real ~/.aid/.temp. All spawned processes inherit the pinned HOME.
 # ---------------------------------------------------------------------------
 TMP="$(mktemp -d)"
+PINNED_HOME="${TMP}/home"
+mkdir -p "${PINNED_HOME}/.aid/.temp"
+export HOME="${PINNED_HOME}"
+PINNED_PID_FILE="${PINNED_HOME}/.aid/.temp/dashboard.pid"
+
 SPAWNED_PIDS=()
 
 cleanup_all() {
@@ -427,8 +434,11 @@ exit 127
 ABSEOF
 chmod +x "${_absent_wrapper}/tailscale"
 
+# dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
+# Ensure no stale pid before this test.
+rm -f "$PINNED_PID_FILE"
 PATH="${_absent_wrapper}:${PATH}" AID_HOME="$H3" AID_NO_UPDATE_CHECK=1 \
-    bash "${H3}/bin/aid" dashboard start python --port "$PORT3I" --remote --target "$R3" \
+    bash "${H3}/bin/aid" dashboard start python --port "$PORT3I" --remote \
     >"$_o3i" 2>"$_e3i"
 _rc3i=$?
 _out3i="$(cat "$_o3i")"; _err3i="$(cat "$_e3i")"
@@ -442,18 +452,18 @@ assert_output_contains "$_err3i" "NOT exposed" \
 assert_output_contains "$_err3i" "Local server still running" \
     "T-3: feature-004 local server still running message"
 
-PID3I_FILE="${R3}/.aid/.temp/dashboard.pid"
-assert_file_exists "$PID3I_FILE" "T-3: dashboard.pid written (server was started)"
-assert_file_contains "$PID3I_FILE" '"remote": false' \
+# pid written to $HOME/.aid/.temp/ (pinned HOME)
+assert_file_exists "$PINNED_PID_FILE" "T-3: dashboard.pid written (server was started)"
+assert_file_contains "$PINNED_PID_FILE" '"remote": false' \
     "T-3: dashboard.pid.remote=false after --remote failure"
 
 # Record the server pid for cleanup.
-_T3I_PID="$(grep '"pid"' "$PID3I_FILE" 2>/dev/null | sed 's/[^0-9]*\([0-9]*\).*/\1/' | head -1)"
+_T3I_PID="$(grep '"pid"' "$PINNED_PID_FILE" 2>/dev/null | sed 's/[^0-9]*\([0-9]*\).*/\1/' | head -1)"
 [[ -n "$_T3I_PID" ]] && SPAWNED_PIDS+=("$_T3I_PID")
 
 # Stop the local server so the port is freed.
 AID_HOME="$H3" AID_NO_UPDATE_CHECK=1 \
-    bash "${H3}/bin/aid" dashboard stop --target "$R3" >/dev/null 2>&1 || true
+    bash "${H3}/bin/aid" dashboard stop >/dev/null 2>&1 || true
 
 # ---------------------------------------------------------------------------
 # T-4: NEVER-FUNNEL guard (SEC-1 -- structural).
@@ -624,9 +634,12 @@ ABS8EOF
         pass "T-8: PS-T1-parity handle shape [SKIPPED: Linux PS WindowStyle unsupported]"
         pass "T-8: PS-T3-parity start --remote exit 10 [SKIPPED: Linux PS WindowStyle unsupported]"
     else
+        # dashboard is now machine-level: no --target flag
+        # Ensure no stale pid before PS test.
+        rm -f "$PINNED_PID_FILE"
         PATH="${_absent8}:${PATH}" AID_HOME="$H8_PS" AID_NO_UPDATE_CHECK=1 \
             "$PWSH" -NoProfile -File "${H8_PS}/bin/aid.ps1" \
-            dashboard start python --port "$PORT8" --remote --target "$R8_PS" \
+            dashboard start python --port "$PORT8" --remote \
             >"$_o8" 2>"$_e8"
         _rc8_ps=$?
         _err8_ps="$(cat "$_e8")"
@@ -638,7 +651,7 @@ ABS8EOF
 
         # Stop any server that may have started.
         AID_HOME="$H8_PS" AID_NO_UPDATE_CHECK=1 \
-            bash "${H8_PS}/bin/aid" dashboard stop --target "$R8_PS" >/dev/null 2>&1 || true
+            bash "${H8_PS}/bin/aid" dashboard stop >/dev/null 2>&1 || true
     fi
     rm -f "$_o8" "$_e8"
 
@@ -648,13 +661,12 @@ ABS8EOF
     _o8b="$(mktemp "${TMP}/o8b.XXXXXX")"
     _e8b="$(mktemp "${TMP}/e8b.XXXXXX")"
     # The PS teardown function is in bin/aid.ps1; extract and invoke it.
-    # Simplest approach: call 'aid dashboard stop' on a fresh empty repo (nothing running
-    # -> idempotent exit 0) which exercises the same code path as T-5.
+    # Simplest approach: call 'aid dashboard stop' (nothing running -> idempotent exit 0)
+    # which exercises the same code path as T-5.
     H8_PS5="$(new_aid_home)"
-    R8_PS5="$(new_fixture_repo)"
     AID_HOME="$H8_PS5" AID_NO_UPDATE_CHECK=1 \
         "$PWSH" -NoProfile -File "${H8_PS5}/bin/aid.ps1" \
-        dashboard stop --target "$R8_PS5" \
+        dashboard stop \
         >"$_o8b" 2>"$_e8b"
     _rc8b_ps=$?
     assert_exit_eq "$_rc8b_ps" 0 "T-8: PS dashboard stop nothing-running -> exit 0 (T-5 parity)"

@@ -582,7 +582,8 @@ fi
 # PAR023-M01/M02: T-1 parity — start python (Bash always; PS skip on absent/linux)
 # ---------------------------------------------------------------------------
 PORT_M1="$(pick_dash_port)"
-run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1" --target "${DASH_REPO_M}"
+# dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
+run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
 SH_OUT_M1="$OUT_SH"; SH_RC_M1=$RC_SH
 
 assert_exit_eq "$SH_RC_M1" 0 "PAR023-M01 Bash dashboard start python -> exit 0"
@@ -590,11 +591,11 @@ assert_output_contains "$SH_OUT_M1" "Dashboard (python) running at http://127.0.
     "PAR023-M02 Bash start python: URL printed"
 
 if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
-    # PS side uses a separate home/repo (independent server child).
+    # PS side: stop Bash server first (ONE dashboard per user -- shared HOME).
+    run_sh "${SH_HOME_M}" dashboard stop
     PS_HOME_M1="$(newhome)"; setup_ps1_home "${PS_HOME_M1}"
-    DASH_REPO_PS1="$(new_dash_repo)"
     PORT_M1PS="$(pick_dash_port)"
-    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS" --target "${DASH_REPO_PS1}"
+    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS"
     PS_OUT_M1="$OUT_PS1"; PS_RC_M1=$RC_PS1
     assert_exit_eq "$PS_RC_M1" 0 "PAR023-M03 PS1 dashboard start python -> exit 0"
     assert_output_contains "$PS_OUT_M1" "Dashboard (python) running at http://127.0.0.1:${PORT_M1PS}" \
@@ -610,9 +611,16 @@ fi
 
 # ---------------------------------------------------------------------------
 # PAR023-M06/M07: T-3 parity — second start while running -> exit 8
-# (DASH_REPO_M has python running from M01 above via Bash)
+# The Bash server from M01 is still running (or was restarted after PS stop).
+# Ensure Bash server is running for this section.
 # ---------------------------------------------------------------------------
-run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1" --target "${DASH_REPO_M}"
+# If PS side ran and stopped the Bash server, restart it.
+if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
+    # Restart Bash server (PS side stopped it; PS server may still be running -- stop it first).
+    run_ps1 "${PS_HOME_M1}" dashboard stop 2>/dev/null || true
+    run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+fi
+run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
 SH_OUT_M6="$OUT_SH"; SH_RC_M6=$RC_SH
 
 assert_exit_eq "$SH_RC_M6" 8 "PAR023-M06 Bash second start -> exit 8"
@@ -620,8 +628,7 @@ assert_output_contains "$SH_OUT_M6" "already running" \
     "PAR023-M07 Bash second start: 'already running' message"
 
 if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
-    # PS_HOME_M1/DASH_REPO_PS1 were set in the block above (PS start succeeded).
-    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS" --target "${DASH_REPO_PS1}"
+    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS"
     PS_OUT_M6="$OUT_PS1"; PS_RC_M6=$RC_PS1
     assert_exit_eq "$PS_RC_M6" 8 "PAR023-M08 PS1 second start -> exit 8"
     assert_output_contains "$PS_OUT_M6" "already running" \
@@ -638,7 +645,7 @@ fi
 # ---------------------------------------------------------------------------
 # PAR023-M11/M12: T-4 parity — stop after start -> exit 0
 # ---------------------------------------------------------------------------
-run_sh "${SH_HOME_M}" dashboard stop --target "${DASH_REPO_M}"
+run_sh "${SH_HOME_M}" dashboard stop
 SH_OUT_M11="$OUT_SH"; SH_RC_M11=$RC_SH
 
 assert_exit_eq "$SH_RC_M11" 0 "PAR023-M11 Bash dashboard stop -> exit 0"
@@ -646,7 +653,7 @@ assert_output_contains "$SH_OUT_M11" "aid: dashboard stopped." \
     "PAR023-M12 Bash stop: 'dashboard stopped.' message"
 
 if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
-    run_ps1 "${PS_HOME_M1}" dashboard stop --target "${DASH_REPO_PS1}"
+    run_ps1 "${PS_HOME_M1}" dashboard stop
     PS_OUT_M11="$OUT_PS1"; PS_RC_M11=$RC_PS1
     assert_exit_eq "$PS_RC_M11" 0 "PAR023-M13 PS1 dashboard stop -> exit 0"
     assert_output_contains "$PS_OUT_M11" "aid: dashboard stopped." \
@@ -662,10 +669,10 @@ fi
 
 # ---------------------------------------------------------------------------
 # PAR023-M16/M17: T-5 parity — stop with nothing running -> exit 0, idempotent
-# (DASH_REPO_M was just stopped above via Bash; stop again for nothing-to-stop)
+# Dashboard was just stopped above. Stop again for nothing-to-stop.
 # This scenario does NOT require spawning a server, so PS runs even on Linux.
 # ---------------------------------------------------------------------------
-run_sh "${SH_HOME_M}" dashboard stop --target "${DASH_REPO_M}"
+run_sh "${SH_HOME_M}" dashboard stop
 SH_OUT_M16="$OUT_SH"; SH_RC_M16=$RC_SH
 
 assert_exit_eq "$SH_RC_M16" 0 "PAR023-M16 Bash stop nothing -> exit 0"
@@ -673,9 +680,8 @@ assert_output_contains "$SH_OUT_M16" "not running (nothing to stop)" \
     "PAR023-M17 Bash stop nothing: nothing-to-stop message"
 
 if [[ "$PS_ABSENT_M" -eq 0 ]]; then
-    # T-5 uses PS_HOME_M with a fresh nothing-running repo.
-    DASH_REPO_M5="$(new_dash_repo)"
-    run_ps1 "${PS_HOME_M}" dashboard stop --target "${DASH_REPO_M5}"
+    # T-5 uses PS_HOME_M with a clean HOME (nothing running).
+    run_ps1 "${PS_HOME_M}" dashboard stop
     PS_OUT_M16="$OUT_PS1"; PS_RC_M16=$RC_PS1
     assert_exit_eq "$PS_RC_M16" 0 "PAR023-M18 PS1 stop nothing -> exit 0"
     assert_output_contains "$PS_OUT_M16" "not running (nothing to stop)" \
@@ -692,13 +698,12 @@ fi
 # These do NOT spawn a server so they run whenever pwsh is present.
 # Note: assert_output_contains uses grep -F; avoid patterns starting with '--'.
 # ---------------------------------------------------------------------------
-DASH_REPO_M7="$(new_dash_repo)"
 
 # T-7a: bad runtime.
-run_sh "${SH_HOME_M}" dashboard start foo --target "${DASH_REPO_M7}"
+run_sh "${SH_HOME_M}" dashboard start foo
 SH_RC_M7A=$RC_SH
 if [[ "$PS_ABSENT_M" -eq 0 ]]; then
-    run_ps1 "${PS_HOME_M}" dashboard start foo --target "${DASH_REPO_M7}"
+    run_ps1 "${PS_HOME_M}" dashboard start foo
     PS_RC_M7A=$RC_PS1
 fi
 assert_exit_eq "$SH_RC_M7A" 2 "PAR023-M21 Bash bad runtime -> exit 2"
@@ -711,10 +716,10 @@ else
 fi
 
 # T-7b: missing runtime.
-run_sh "${SH_HOME_M}" dashboard start --target "${DASH_REPO_M7}"
+run_sh "${SH_HOME_M}" dashboard start
 SH_RC_M7B=$RC_SH
 if [[ "$PS_ABSENT_M" -eq 0 ]]; then
-    run_ps1 "${PS_HOME_M}" dashboard start --target "${DASH_REPO_M7}"
+    run_ps1 "${PS_HOME_M}" dashboard start
     PS_RC_M7B=$RC_PS1
 fi
 assert_exit_eq "$SH_RC_M7B" 2 "PAR023-M24 Bash missing runtime -> exit 2"
@@ -727,10 +732,10 @@ else
 fi
 
 # T-7c: unknown flag.
-run_sh "${SH_HOME_M}" dashboard start python --unknown-flag --target "${DASH_REPO_M7}"
+run_sh "${SH_HOME_M}" dashboard start python --unknown-flag
 SH_RC_M7C=$RC_SH
 if [[ "$PS_ABSENT_M" -eq 0 ]]; then
-    run_ps1 "${PS_HOME_M}" dashboard start python --unknown-flag --target "${DASH_REPO_M7}"
+    run_ps1 "${PS_HOME_M}" dashboard start python --unknown-flag
     PS_RC_M7C=$RC_PS1
 fi
 assert_exit_eq "$SH_RC_M7C" 2 "PAR023-M27 Bash unknown flag -> exit 2"
@@ -743,10 +748,10 @@ else
 fi
 
 # T-7d: bad --port.
-run_sh "${SH_HOME_M}" dashboard start python --port abc --target "${DASH_REPO_M7}"
+run_sh "${SH_HOME_M}" dashboard start python --port abc
 SH_RC_M7D=$RC_SH
 if [[ "$PS_ABSENT_M" -eq 0 ]]; then
-    run_ps1 "${PS_HOME_M}" dashboard start python --port abc --target "${DASH_REPO_M7}"
+    run_ps1 "${PS_HOME_M}" dashboard start python --port abc
     PS_RC_M7D=$RC_PS1
 fi
 assert_exit_eq "$SH_RC_M7D" 2 "PAR023-M30 Bash bad port -> exit 2"
@@ -832,14 +837,14 @@ fi
 # (Bash always runs; PS skip on absent or Linux PS WindowStyle limitation)
 # ---------------------------------------------------------------------------
 SH_HOME_N01="$(new_dash_home_par005)"
-REPO_N01="$(new_dash_repo_par005)"
 PORT_N01="$(pick_dash_port)"
 
 _o_n01sh="$(mktemp "${TMP}/on01sh.XXXXXX")"
 _e_n01sh="$(mktemp "${TMP}/en01sh.XXXXXX")"
+# dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
 PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
     bash "${SH_HOME_N01}/bin/aid" dashboard start python \
-    --port "$PORT_N01" --remote --target "${REPO_N01}" \
+    --port "$PORT_N01" --remote \
     >"$_o_n01sh" 2>"$_e_n01sh"
 SH_RC_N01=$?
 SH_ERR_N01="$(cat "$_e_n01sh")"
@@ -852,7 +857,7 @@ assert_output_contains "$SH_ERR_N01" "NOT exposed" \
 
 # Stop the local server that was started.
 AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_N01}/bin/aid" dashboard stop --target "${REPO_N01}" \
+    bash "${SH_HOME_N01}/bin/aid" dashboard stop \
     >/dev/null 2>&1 || true
 
 if [[ -z "$PWSH" ]]; then
@@ -867,14 +872,13 @@ elif [[ "$PS_WIN_STYLE_PAR005" -eq 0 ]]; then
     pass "PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism [SKIPPED: Linux PS WindowStyle unsupported]"
 else
     PS_HOME_N01="$(new_dash_home_par005)"
-    REPO_N01_PS="$(new_dash_repo_par005)"
     PORT_N01_PS="$(pick_dash_port)"
     _o_n01ps="$(mktemp "${TMP}/on01ps.XXXXXX")"
     _e_n01ps="$(mktemp "${TMP}/en01ps.XXXXXX")"
     PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
         "$PWSH" -NoProfile -File "${PS_HOME_N01}/bin/aid.ps1" \
         dashboard start python \
-        --port "$PORT_N01_PS" --remote --target "${REPO_N01_PS}" \
+        --port "$PORT_N01_PS" --remote \
         >"$_o_n01ps" 2>"$_e_n01ps"
     PS_RC_N01=$?
     PS_ERR_N01="$(cat "$_e_n01ps")"
@@ -888,7 +892,7 @@ else
         "PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism"
 
     AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
-        bash "${PS_HOME_N01}/bin/aid" dashboard stop --target "${REPO_N01_PS}" \
+        bash "${PS_HOME_N01}/bin/aid" dashboard stop \
         >/dev/null 2>&1 || true
 fi
 
@@ -897,11 +901,11 @@ fi
 # (no server-spawn required; runs even on Linux PS when pwsh is present)
 # ---------------------------------------------------------------------------
 SH_HOME_N06="$(new_dash_home_par005)"
-REPO_N06="$(new_dash_repo_par005)"
 
 _o_n06sh="$(mktemp "${TMP}/on06sh.XXXXXX")"
+# dashboard is now machine-level: no --target flag
 AID_HOME="${SH_HOME_N06}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_N06}/bin/aid" dashboard stop --target "${REPO_N06}" \
+    bash "${SH_HOME_N06}/bin/aid" dashboard stop \
     >"$_o_n06sh" 2>&1
 SH_RC_N06=$?
 SH_OUT_N06="$(cat "$_o_n06sh")"
@@ -919,11 +923,10 @@ if [[ -z "$PWSH" ]]; then
     pass "PAR005-N10 Bash<->PS1 exit code parity: stop nothing-running [SKIPPED: pwsh absent]"
 else
     PS_HOME_N06="$(new_dash_home_par005)"
-    REPO_N06_PS="$(new_dash_repo_par005)"
     _o_n06ps="$(mktemp "${TMP}/on06ps.XXXXXX")"
     AID_HOME="${PS_HOME_N06}" AID_NO_UPDATE_CHECK=1 \
         "$PWSH" -NoProfile -File "${PS_HOME_N06}/bin/aid.ps1" \
-        dashboard stop --target "${REPO_N06_PS}" \
+        dashboard stop \
         >"$_o_n06ps" 2>&1
     PS_RC_N06=$?
     PS_OUT_N06="$(cat "$_o_n06ps")"
@@ -1291,25 +1294,28 @@ fi
 # ===========================================================================
 
 SH_HOME_R="$(new_dash_home_par005)"
-REPO_R="$(new_dash_repo_par005)"
 PORT_R="$(pick_dash_port)"
 _absent_ts_dir_r="${_absent_ts_dir_par005}"
 
 # Start the local server first (Bash, no --remote).
-run_sh "${SH_HOME_R}" dashboard start python --port "$PORT_R" --target "${REPO_R}"
+# dashboard is now machine-level: no --target flag
+run_sh "${SH_HOME_R}" dashboard start python --port "$PORT_R"
 SH_RC_R_START=$RC_SH
 assert_exit_eq "$SH_RC_R_START" 0 "PAR057-R01 Bash dashboard start python (before --remote test) -> exit 0"
 
-# Now attempt --remote with absent tailscale on the already-running server.
-# The server is already running so we start with a fresh target + port for the --remote test.
-REPO_R2="$(new_dash_repo_par005)"
+# Stop R01 server before testing --remote (ONE dashboard per user -- shared HOME).
+AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
+    bash "${SH_HOME_R}/bin/aid" dashboard stop \
+    >/dev/null 2>&1 || true
+
+# Now start fresh with --remote and absent tailscale.
 PORT_R2="$(pick_dash_port)"
 
 _o_r2sh="$(mktemp "${TMP}/or2sh.XXXXXX")"
 _e_r2sh="$(mktemp "${TMP}/er2sh.XXXXXX")"
 PATH="${_absent_ts_dir_r}:${PATH}" AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
     bash "${SH_HOME_R}/bin/aid" dashboard start python \
-    --port "$PORT_R2" --remote --target "${REPO_R2}" \
+    --port "$PORT_R2" --remote \
     >"$_o_r2sh" 2>"$_e_r2sh"
 SH_RC_R2=$?
 SH_ERR_R2="$(cat "$_e_r2sh")"
@@ -1323,19 +1329,15 @@ assert_output_contains "$SH_ERR_R2" "NOT exposed" \
 assert_output_contains "$SH_ERR_R2" "the dashboard is NOT exposed" \
     "PAR057-R04 Bash --remote failure msg: 'the dashboard is NOT exposed' in stderr (never-public guarantee)"
 
-# Stop the REPO_R server (the one we started in R01).
+# Stop the R2 server (started with --remote but stayed local).
 AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_R}/bin/aid" dashboard stop --target "${REPO_R}" \
-    >/dev/null 2>&1 || true
-# Stop the REPO_R2 server (if started).
-AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_R}/bin/aid" dashboard stop --target "${REPO_R2}" \
+    bash "${SH_HOME_R}/bin/aid" dashboard stop \
     >/dev/null 2>&1 || true
 
-# R05: Idempotent teardown — 2nd stop of an already-stopped server -> exit 0.
+# R05: Idempotent teardown -- 2nd stop of an already-stopped server -> exit 0.
 _o_r5sh="$(mktemp "${TMP}/or5sh.XXXXXX")"
 AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_R}/bin/aid" dashboard stop --target "${REPO_R}" \
+    bash "${SH_HOME_R}/bin/aid" dashboard stop \
     >"$_o_r5sh" 2>&1
 SH_RC_R5=$?
 SH_OUT_R5="$(cat "$_o_r5sh")"
@@ -1346,13 +1348,12 @@ assert_output_contains "$SH_OUT_R5" "not running (nothing to stop)" \
     "PAR057-R06 Bash idempotent stop: nothing-to-stop message"
 
 if [[ -n "$PWSH" ]]; then
-    # PS1 idempotent teardown: stop a never-started repo.
+    # PS1 idempotent teardown: stop a never-started (nothing running).
     SH_HOME_R_PS="$(new_dash_home_par005)"
-    REPO_R_PS="$(new_dash_repo_par005)"
     _o_r5ps="$(mktemp "${TMP}/or5ps.XXXXXX")"
     AID_HOME="${SH_HOME_R_PS}" AID_NO_UPDATE_CHECK=1 \
         "$PWSH" -NoProfile -File "${SH_HOME_R_PS}/bin/aid.ps1" \
-        dashboard stop --target "${REPO_R_PS}" \
+        dashboard stop \
         >"$_o_r5ps" 2>&1
     PS_RC_R5=$?
     PS_OUT_R5="$(cat "$_o_r5ps")"
