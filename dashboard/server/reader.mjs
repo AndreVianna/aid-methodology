@@ -1280,11 +1280,13 @@ function numberFromWorkId(workId) {
 // STATE.md parser (mirrors parsers.py parse_state_md)
 // ---------------------------------------------------------------------------
 
-const RE_PIPELINE_STATUS = /^##\s+Pipeline Status\s*$/i;
-const RE_TASKS_STATUS = /^##\s+Tasks Status\s*$/i;
+// Accept BOTH new "State" names (work-004 rename) and legacy "Status" names
+// (Pillar 3 / Pillar 6 coexistence: new works use "State"; old works keep "Status").
+const RE_PIPELINE_STATUS = /^##\s+Pipeline (?:State|Status)\s*$/i;
+const RE_TASKS_STATUS = /^##\s+Tasks (?:State|Status)\s*$/i;
 const RE_CROSSPHASE_QA = /^##\s+Cross-phase Q&A/i;
 const RE_TRIAGE = /^##\s+Triage\s*$/i;
-const RE_FEATURES_STATUS = /^##\s+Features Status\s*$/i;
+const RE_FEATURES_STATUS = /^##\s+Features (?:State|Status)\s*$/i;
 // RE_PLAN_DELIVERIES already declared in derivation helpers above (reused here)
 const RE_LIFECYCLE_HISTORY_SECTION = /^##\s+Lifecycle History\s*$/i;
 const RE_SECTION = /^##\s+\S/;
@@ -1524,7 +1526,9 @@ function parseStateText(text, workId, workDir) {
         continue;
       }
       if (currentQId) {
-        if ((m = line.match(RE_QN_STATUS))) {
+        // Accept both "Status:" (legacy) and "State:" (new, Pillar 3) for Q&A state
+        if ((m = line.match(RE_QN_STATUS)) ||
+            (m = line.match(/^\s*-\s*\*\*State:\*\*\s*(.+)/i))) {
           currentQ.status = m[1].trim();
           continue;
         }
@@ -1798,25 +1802,65 @@ function _readRepoFull(root) {
 
   const repoInfo = { project_name: projectName, aid_dir: loc.aidDir, kb_state: kbState };
 
-  // Steps 4-5: ENUMERATE + PER WORK
+  // Step 4: ENUMERATE worktrees + work folders (work-004 Pillar 4 / SD-3)
+  // _enumerateWorktreeRoots returns [[branchLabel, aidDir], ...] with main root first.
+  // Degrades to main-root-only on any git failure (never throws).
+  // For each (branchLabel, aidDir) root, locate work-NNN-*/ dirs. Each resulting
+  // WorkModel is tagged with branchLabel. Cross-root merge of same work_id is Step 6.
+  const worktreeRoots = _enumerateWorktreeRoots(resolvedRoot);
+
+  // Steps 5a-5g: PER WORK -- parse STATE.md; build WorkModel list (pre-reconcile).
+  // Intermediate accumulator: maps work_id -> [[WorkModel, stateText, stateLabel], ...]
+  const workCopies = {}; // work_id -> array of [WorkModel, stateText, stateLabel]
+
+  for (const [branchLabel, wtAidDir] of worktreeRoots) {
+    const wtRoot = join(wtAidDir, "..");
+    const wtLoc = locateAidRoot(wtRoot);
+    if (!wtLoc.aidExists) continue;
+
+    for (const workDir of wtLoc.workDirs) {
+      const workId = basename(workDir);
+      const [workModel, workWarnings, workBytes, stateText, statePathLabel] = readWork(workDir, workId);
+      // Tag the work model with the branch that owns this worktree
+      workModel.branch_label = branchLabel;
+      parseWarnings.push(...workWarnings);
+      bytesRead += workBytes;
+      if (!(workId in workCopies)) workCopies[workId] = [];
+      workCopies[workId].push([workModel, stateText, statePathLabel]);
+    }
+  }
+
+  // If worktree enumeration yielded NO results (all worktrees had no .aid/), fall back
+  // to the main root so a bare repo without worktrees still renders correctly.
+  if (Object.keys(workCopies).length === 0 && loc.aidExists) {
+    for (const workDir of loc.workDirs) {
+      const workId = basename(workDir);
+      const [workModel, workWarnings, workBytes, stateText, statePathLabel] = readWork(workDir, workId);
+      workModel.branch_label = null; // indeterminate; worktree list gave no data
+      parseWarnings.push(...workWarnings);
+      bytesRead += workBytes;
+      workCopies[workId] = [[workModel, stateText, statePathLabel]];
+    }
+  }
+
+  // Step 6: RECONCILE -- for each work_id, merge all copies (Pillar 5 / task-011).
+  // Single-copy works pass through _reconcileSameWork unchanged (trivial case).
   const works = [];
   const fallbackWorks = [];
   // Build per-work STATE.md cache as a by-product of the always-on pass.
   const stateCache = {};
 
-  for (const workDir of loc.workDirs) {
-    const workId = basename(workDir);
-    const [workModel, workWarnings, workBytes, stateText, statePathLabel] = readWork(workDir, workId);
-    works.push(workModel);
-    parseWarnings.push(...workWarnings);
-    bytesRead += workBytes;
-    stateCache[workId] = [stateText, statePathLabel];
-    if (workModel.source_mode !== SourceMode.Normalized) {
+  for (const workId of Object.keys(workCopies)) {
+    const copies = workCopies[workId];
+    const [reconciledWm, winningText, winningLabel] = _reconcileSameWork(copies);
+    works.push(reconciledWm);
+    stateCache[workId] = [winningText, winningLabel];
+    if (reconciledWm.source_mode !== SourceMode.Normalized) {
       fallbackWorks.push(workId);
     }
   }
 
-  // Step 6: ASSEMBLE
+  // Step 7: ASSEMBLE
   const model = _buildRepoModel({
     tool: toolInfo,
     repo: repoInfo,
@@ -1833,6 +1877,12 @@ function _readRepoFull(root) {
 }
 
 function readWork(workDir, workId) {
+  // Pillar 6: hierarchy detection (per-work, presence-based)
+  if (_detectHierarchy(workDir)) {
+    return _readWorkHierarchical(workDir, workId);
+  }
+
+  // --- Legacy monolithic path (preserved behavior) ---
   const statePath = join(workDir, "STATE.md");
   const statePathLabel = ".aid/" + workId + "/STATE.md";
   const parseWarnings = [];
@@ -1846,7 +1896,7 @@ function readWork(workDir, workId) {
   }
 
   if (!isFile) {
-    parseWarnings.push(`${workId}: STATE.md not found; returning minimal WorkModel.`);
+    parseWarnings.push(workId + ": STATE.md not found; returning minimal WorkModel.");
     return [_minimalWorkModel(workId), parseWarnings, 0, "", statePathLabel];
   }
 
@@ -1857,7 +1907,7 @@ function readWork(workDir, workId) {
     bytesRead = raw.length;
     text = raw.toString("utf-8");
   } catch (exc) {
-    parseWarnings.push(`${workId}: STATE.md read error (${exc}); returning minimal WorkModel.`);
+    parseWarnings.push(workId + ": STATE.md read error (" + exc + "); returning minimal WorkModel.");
     return [_minimalWorkModel(workId), parseWarnings, 0, "", statePathLabel];
   }
 
@@ -1982,6 +2032,974 @@ function _minimalWorkModel(workId) {
 }
 
 // ---------------------------------------------------------------------------
+// work-004 Pillar 5 / SD-2: State advancement ordering (LOCKED)
+//
+// Authoritative ordered list (most-advanced first, index = rank int):
+//   Done(0) > Canceled(1) > In Review(2) > In Progress(3) >
+//   Blocked(4) > Failed(5) > Pending(6) > Unknown(7)
+//
+// Rationale (from SPEC.md SD-2):
+//   Done/Canceled are terminal-resolved (highest rank).
+//   In Review is past In Progress (review is a later pipeline stage).
+//   Blocked outranks Failed: blocked = recoverable-in-place + needs attention;
+//   Failed = completed-but-rejected attempt (parallel branch may have superseded it).
+//   Both Blocked and Failed outrank Pending (work was attempted; more informative).
+//   Unknown is the reader-only sentinel and is ranked last.
+//
+// The Python twin (reader.py) encodes this SAME ordering verbatim.
+// ---------------------------------------------------------------------------
+const SD2_RANK = {
+  "Done":        0,
+  "Canceled":    1,
+  "In Review":   2,
+  "In Progress": 3,
+  "Blocked":     4,
+  "Failed":      5,
+  "Pending":     6,
+  "Unknown":     7,
+};
+const _SD2_RANK_DEFAULT = 7; // sentinel for any state not in SD2_RANK
+
+function _sd2Rank(taskStatus) {
+  // Return the SD-2 rank for a task status string. Lower = more advanced.
+  // Never throws.
+  try {
+    const r = SD2_RANK[taskStatus];
+    return r !== undefined ? r : _SD2_RANK_DEFAULT;
+  } catch (_) {
+    return _SD2_RANK_DEFAULT;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// work-004 Pillar 4 / SD-3: Worktree enumeration helpers
+//
+// Delegates via the EXISTING runGitCommand fixed-argv / execFileSync no-shell
+// pattern (verb hard-coded in argv). No allow-list is enforced (none exists in
+// reader.mjs today; safety rests on fixed-argv by construction).
+// ---------------------------------------------------------------------------
+
+// Branch name label for the main worktree (must match Python _detect_main_branch_label)
+function _detectMainBranchLabel(repoRoot) {
+  // Try: git -C <repoRoot> symbolic-ref --short HEAD
+  const ref = runGitCommand(
+    ["-C", repoRoot, "symbolic-ref", "--short", "HEAD"],
+    null
+  );
+  if (ref) return ref;
+  return "main"; // fallback default
+}
+
+function _isGitToplevel(repoRoot) {
+  // Return true if repoRoot is the git worktree toplevel (not a subdirectory of one).
+  // Mirrors Python derivation.py _is_git_toplevel (same guard).
+  // Prevents a fixture or nested dir from inheriting the host repo's worktrees.
+  // Never throws.
+  try {
+    const toplevel = runGitCommand(
+      ["-C", repoRoot, "rev-parse", "--show-toplevel"],
+      null
+    );
+    if (!toplevel) return false;
+    // Resolve both paths for reliable comparison
+    const resolvedToplevel = resolve(toplevel.trim());
+    const resolvedRoot = resolve(repoRoot);
+    return resolvedToplevel === resolvedRoot;
+  } catch (_) {
+    return false;
+  }
+}
+
+function _runWorktreeList(repoRoot) {
+  // Run: git -C <repoRoot> worktree list --porcelain
+  // Verb hard-coded in argv (no shell). 2s timeout via runGitCommand.
+  // Safety guard: verifies repoRoot IS the git toplevel before running worktree list.
+  // If repoRoot is a subdirectory of a git repo (e.g. a fixture directory nested inside
+  // a larger repo), git would walk up and report the enclosing repo's worktrees -- wrong.
+  // The guard degrades to null (caller falls back to main-root-only).
+  // Returns stdout string or null on any failure.
+  if (!_isGitToplevel(repoRoot)) return null;
+  return runGitCommand(
+    ["-C", repoRoot, "worktree", "list", "--porcelain"],
+    null
+  );
+}
+
+function _parseWorktreePorcelain(output) {
+  // Parse `git worktree list --porcelain` output.
+  // Returns [ [absPath, branchLabel], ... ]
+  // absPath is an absolute path string; branchLabel is branch name or "(detached)".
+  // Returns [] on any parse failure. Never throws.
+  const DETACHED_LABEL = "(detached)";
+  try {
+    const records = [];
+    let currentPath = null;
+    let currentBranch = null;
+
+    for (const rawLine of output.split("\n")) {
+      const line = rawLine.replace(/\r$/, "");
+
+      if (!line) {
+        // Blank line: flush current record
+        if (currentPath !== null) {
+          const label = currentBranch !== null ? currentBranch : DETACHED_LABEL;
+          records.push([currentPath, label]);
+        }
+        currentPath = null;
+        currentBranch = null;
+        continue;
+      }
+
+      const wtM = line.match(/^worktree\s+(.+)$/);
+      if (wtM) {
+        // Flush pending record without trailing blank
+        if (currentPath !== null) {
+          const label = currentBranch !== null ? currentBranch : DETACHED_LABEL;
+          records.push([currentPath, label]);
+          currentBranch = null;
+        }
+        currentPath = wtM[1].trim();
+        continue;
+      }
+
+      const brM = line.match(/^branch\s+refs\/heads\/(.+)$/);
+      if (brM) {
+        currentBranch = brM[1].trim();
+      }
+    }
+
+    // Flush trailing record (output may not end with blank line)
+    if (currentPath !== null) {
+      const label = currentBranch !== null ? currentBranch : DETACHED_LABEL;
+      records.push([currentPath, label]);
+    }
+
+    return records;
+  } catch (_) {
+    return [];
+  }
+}
+
+function _enumerateWorktreeRoots(repoRoot) {
+  // Mirror Python locator.enumerate_worktree_roots.
+  // Returns [[branchLabel, aidDir], ...] with main root always first.
+  // Degrades to main-root-only on any git failure (never throws).
+  const mainAid = join(repoRoot, ".aid");
+  const mainLabel = _detectMainBranchLabel(repoRoot);
+  const mainFallback = [[mainLabel, mainAid]];
+
+  const porcelain = _runWorktreeList(repoRoot);
+  if (porcelain === null) return mainFallback;
+
+  const parsed = _parseWorktreePorcelain(porcelain);
+  if (!parsed || parsed.length === 0) return mainFallback;
+
+  const results = [];
+  for (const [wtPath, branchLabel] of parsed) {
+    const wtAid = join(wtPath, ".aid");
+    results.push([branchLabel, wtAid]);
+  }
+
+  return results.length > 0 ? results : mainFallback;
+}
+
+// ---------------------------------------------------------------------------
+// work-004 Pillar 6: Hierarchy detection + hierarchical work read
+// ---------------------------------------------------------------------------
+
+const RE_DELIVERY_DIR = /^delivery-(\d+)$/i;
+const RE_TASK_DIR_H = /^(task-\d+)$/i;
+
+function _detectHierarchy(workDir) {
+  // Return true if this work has the new per-unit STATE.md hierarchy.
+  // Detection: if ANY delivery-NNN/tasks/task-NNN/STATE.md exists under workDir.
+  // Presence-based, per-work. Never throws.
+  try {
+    let entries;
+    try { entries = readdirSync(workDir); } catch (_) { return false; }
+    for (const name of entries) {
+      if (!RE_DELIVERY_DIR.test(name)) continue;
+      const deliveryPath = join(workDir, name);
+      let isDir = false;
+      try { isDir = statSync(deliveryPath).isDirectory(); } catch (_) { isDir = false; }
+      if (!isDir) continue;
+      const tasksDir = join(deliveryPath, "tasks");
+      let tasksDirExists = false;
+      try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
+      if (!tasksDirExists) continue;
+      let taskEntries;
+      try { taskEntries = readdirSync(tasksDir); } catch (_) { continue; }
+      for (const tname of taskEntries) {
+        if (!RE_TASK_DIR_H.test(tname)) continue;
+        const taskStatePath = join(tasksDir, tname, "STATE.md");
+        let isFile = false;
+        try { isFile = statSync(taskStatePath).isFile(); } catch (_) { isFile = false; }
+        if (isFile) return true;
+      }
+    }
+  } catch (_) {
+    // pass
+  }
+  return false;
+}
+
+// Regexes for hierarchical parsers (mirror parsers.py)
+const RE_TASK_STATE_SECTION = /^##\s+Task State\s*$/i;
+const RE_TS_STATE   = /^\s*-\s*\*\*State:\*\*\s*(.+)/i;
+const RE_TS_REVIEW  = /^\s*-\s*\*\*Review:\*\*\s*(.+)/i;
+const RE_TS_ELAPSED = /^\s*-\s*\*\*Elapsed:\*\*\s*(.+)/i;
+const RE_TS_NOTES   = /^\s*-\s*\*\*Notes:\*\*\s*(.+)/i;
+
+const RE_DELIVERY_LIFECYCLE_SECTION = /^##\s+Delivery Lifecycle\s*$/i;
+const RE_DELIVERY_GATE_SECTION      = /^##\s+Delivery Gate\s*$/i;
+const RE_DELIVERY_CROSSPHASE_QA     = /^##\s+Cross-phase Q&A/i;
+const RE_DELIVERY_TASKS_STATE_H     = /^##\s+Tasks State\s*$/i;
+
+const RE_DL_STATE        = /^\s*-\s*\*\*State:\*\*\s*(.+)/i;
+const RE_DL_UPDATED      = /^\s*-\s*\*\*Updated:\*\*\s*(.+)/i;
+const RE_DL_BLOCK_REASON = /^\s*-\s*\*\*Block Reason:\*\*\s*(.+)/i;
+const RE_DL_BLOCK_ART    = /^\s*-\s*\*\*Block Artifact:\*\*\s*(.+)/i;
+
+const RE_DG_REVIEWER_TIER = /^\s*-\s*\*\*Reviewer Tier:\*\*\s*(.+)/i;
+const RE_DG_GRADE         = /^\s*-\s*\*\*Grade:\*\*\s*(.+)/i;
+const RE_DG_TIMESTAMP     = /^\s*-\s*\*\*Timestamp:\*\*\s*(.+)/i;
+
+const DELIVERY_STATE_VALUES = new Set([
+  "Pending-Spec", "Specified", "Executing", "Gated", "Done", "Blocked",
+]);
+
+function _parseTaskStateMd(text, taskId) {
+  // Mirror parsers.py parse_task_state_md.
+  // Returns { state, review, elapsed, notes, parseWarnings }
+  const pts = {
+    state: TaskStatus.Unknown,
+    review: null,
+    elapsed: null,
+    notes: null,
+    parseWarnings: [],
+  };
+
+  try {
+    let inTaskState = false;
+    for (const line of text.split("\n")) {
+      if (RE_TASK_STATE_SECTION.test(line)) {
+        inTaskState = true;
+        continue;
+      }
+      if (RE_SECTION.test(line)) {
+        inTaskState = false;
+        continue;
+      }
+      if (!inTaskState) continue;
+
+      let m;
+      if ((m = line.match(RE_TS_STATE))) {
+        pts.state = parseTaskStatus(m[1].trim());
+        continue;
+      }
+      if ((m = line.match(RE_TS_REVIEW))) {
+        const val = m[1].trim();
+        pts.review = isNull(val) ? null : val;
+        continue;
+      }
+      if ((m = line.match(RE_TS_ELAPSED))) {
+        const val = m[1].trim();
+        pts.elapsed = isNull(val) ? null : val;
+        continue;
+      }
+      if ((m = line.match(RE_TS_NOTES))) {
+        const val = m[1].trim();
+        pts.notes = isNull(val) ? null : val;
+        continue;
+      }
+    }
+  } catch (exc) {
+    pts.parseWarnings.push(
+      taskId + ": error parsing task STATE.md (" + exc + "); returning best-effort task state"
+    );
+  }
+
+  return pts;
+}
+
+function _parseDeliveryStateMd(text, deliveryId) {
+  // Mirror parsers.py parse_delivery_state_md.
+  // Returns { deliveryState, updated, blockReason, blockArtifact,
+  //           gateGrade, gateReviewerTier, gateTimestamp, pendingInputs, tasks, parseWarnings }
+  const pds = {
+    deliveryState: null,
+    updated: null,
+    blockReason: null,
+    blockArtifact: null,
+    gateGrade: null,
+    gateReviewerTier: null,
+    gateTimestamp: null,
+    pendingInputs: [],
+    tasks: [],
+    parseWarnings: [],
+  };
+
+  try {
+    let inLifecycle = false;
+    let inGate = false;
+    let inCrossphase = false;
+    let inTasks = false;
+    let tasksHeaderSeen = false;
+    let currentQId = null;
+    let currentQ = {};
+
+    function flushQ() {
+      if (currentQId && (currentQ.state || "").toLowerCase() === "pending") {
+        pds.pendingInputs.push({
+          question_id: currentQId,
+          category: currentQ.category || null,
+          impact: currentQ.impact || null,
+          context: currentQ.context || null,
+          suggested: currentQ.suggested || null,
+        });
+      }
+      currentQId = null;
+      currentQ = {};
+    }
+
+    for (const line of text.split("\n")) {
+      if (RE_DELIVERY_LIFECYCLE_SECTION.test(line)) {
+        flushQ();
+        inLifecycle = true; inGate = false; inCrossphase = false; inTasks = false;
+        continue;
+      }
+      if (RE_DELIVERY_GATE_SECTION.test(line)) {
+        flushQ();
+        inLifecycle = false; inGate = true; inCrossphase = false; inTasks = false;
+        continue;
+      }
+      if (RE_DELIVERY_CROSSPHASE_QA.test(line)) {
+        flushQ();
+        inLifecycle = false; inGate = false; inCrossphase = true; inTasks = false;
+        continue;
+      }
+      if (RE_DELIVERY_TASKS_STATE_H.test(line)) {
+        flushQ();
+        inLifecycle = false; inGate = false; inCrossphase = false; inTasks = true;
+        tasksHeaderSeen = false;
+        continue;
+      }
+      if (RE_SECTION.test(line)) {
+        flushQ();
+        inLifecycle = false; inGate = false; inCrossphase = false; inTasks = false;
+        continue;
+      }
+
+      if (inLifecycle) {
+        let m;
+        if ((m = line.match(RE_DL_STATE))) {
+          const raw = m[1].trim();
+          if (DELIVERY_STATE_VALUES.has(raw)) {
+            pds.deliveryState = raw;
+          } else if (!raw.includes("|") && raw) {
+            pds.parseWarnings.push(
+              deliveryId + ": unknown Delivery Lifecycle State '" + raw + "'"
+            );
+          }
+          continue;
+        }
+        if ((m = line.match(RE_DL_UPDATED))) {
+          const val = m[1].trim();
+          pds.updated = isNull(val) ? null : val;
+          continue;
+        }
+        if ((m = line.match(RE_DL_BLOCK_REASON))) {
+          const val = m[1].trim();
+          pds.blockReason = isNull(val) ? null : val;
+          continue;
+        }
+        if ((m = line.match(RE_DL_BLOCK_ART))) {
+          const val = m[1].trim();
+          pds.blockArtifact = isNull(val) ? null : val;
+          continue;
+        }
+        continue;
+      }
+
+      if (inGate) {
+        let m;
+        if ((m = line.match(RE_DG_REVIEWER_TIER)) && pds.gateReviewerTier === null) {
+          const val = m[1].trim();
+          const split = val ? val.split(/\s+/)[0] : null;
+          pds.gateReviewerTier = split && !isNull(split) ? split : null;
+          continue;
+        }
+        if ((m = line.match(RE_DG_GRADE)) && pds.gateGrade === null) {
+          const val = m[1].trim();
+          const split = val ? val.split(/\s+/)[0] : null;
+          if (split && !isNull(split) && split.toLowerCase() !== "pending") {
+            pds.gateGrade = split;
+          }
+          continue;
+        }
+        if ((m = line.match(RE_DG_TIMESTAMP)) && pds.gateTimestamp === null) {
+          const val = m[1].trim();
+          pds.gateTimestamp = isNull(val) ? null : val;
+          continue;
+        }
+        continue;
+      }
+
+      if (inCrossphase) {
+        let m;
+        if ((m = line.match(RE_QN_HEADER))) {
+          flushQ();
+          currentQId = m[1];
+          currentQ = {};
+          continue;
+        }
+        if (currentQId) {
+          // Accept both "State:" (new) and "Status:" (legacy) for Q&A state
+          m = line.match(/^\s*-\s*\*\*(?:State|Status):\*\*\s*(.+)/i);
+          if (m) { currentQ.state = m[1].trim(); continue; }
+          if ((m = line.match(RE_QN_CAT)))     { currentQ.category  = m[1].trim(); continue; }
+          if ((m = line.match(RE_QN_IMPACT)))   { currentQ.impact    = m[1].trim(); continue; }
+          if ((m = line.match(RE_QN_CONTEXT)))  { currentQ.context   = m[1].trim(); continue; }
+          if ((m = line.match(RE_QN_SUGGEST)))  { currentQ.suggested = m[1].trim(); continue; }
+        }
+        continue;
+      }
+
+      if (inTasks) {
+        // Parse derived task rollup table (same column layout as work-level Tasks table)
+        const stripped = line.trim();
+        if (!stripped.startsWith("|")) continue;
+        if (RE_TABLE_SEP.test(stripped)) continue;
+        const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+        if (cols.length < 2) continue;
+        if ((cols[0] === "#" || cols[0] === "") && !tasksHeaderSeen) {
+          tasksHeaderSeen = true;
+          continue;
+        }
+        tasksHeaderSeen = true;
+        if (cols.some(c => c.includes(NONE_YET))) continue;
+        function dcol(idx) {
+          if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
+          return null;
+        }
+        const taskId = dcol(1) || dcol(0) || "";
+        if (!taskId || taskId === "#") continue;
+        const statusStr = dcol(4) || "";
+        pds.tasks.push({
+          task_id: taskId,
+          type: dcol(2) || "",
+          wave: dcol(3),
+          status: parseTaskStatus(statusStr),
+          review_grade: dcol(5),
+          elapsed: dcol(6),
+          notes: dcol(7),
+        });
+        continue;
+      }
+    }
+
+    flushQ();
+  } catch (exc) {
+    pds.parseWarnings.push(
+      deliveryId + ": error parsing delivery STATE.md (" + exc + "); returning best-effort delivery state"
+    );
+  }
+
+  return pds;
+}
+
+function _parseTaskSpecShortName(specText) {
+  // Extract the short name from a task-level SPEC.md.
+  // Mirror parsers.py _parse_task_spec_short_name.
+  // Reads: '# task-NNN: {Title}' -- returns the title portion, or null.
+  try {
+    const RE_TITLE = /^#\s+task-\d+\s*:\s*(.+)$/i;
+    for (const line of specText.split("\n")) {
+      const stripped = line.trim();
+      if (!stripped) continue;
+      const m = stripped.match(RE_TITLE);
+      if (m) {
+        const title = m[1].trim().replace(/\.$/, "");
+        return title || null;
+      }
+      break; // first non-blank line didn't match
+    }
+  } catch (_) {
+    // pass
+  }
+  return null;
+}
+
+function _parseTaskSpecType(specText) {
+  // Extract the task type from a task-level SPEC.md.
+  // Mirror parsers.py _parse_task_spec_type.
+  // Reads: '**Type:** VALUE' line -- returns the type string, or ''.
+  try {
+    const RE_TYPE = /^\*\*Type:\*\*\s*(.+)/i;
+    for (const line of specText.split("\n")) {
+      const m = line.trim().match(RE_TYPE);
+      if (m) {
+        const parts = m[1].trim().split(/\s+/);
+        return parts[0] || "";
+      }
+    }
+  } catch (_) {
+    // pass
+  }
+  return "";
+}
+
+function _parseDeliverySpecTitle(specText) {
+  // Extract the delivery title from a delivery-level SPEC.md.
+  // Mirror parsers.py _parse_delivery_spec_title.
+  // Returns the title portion after '# ... delivery-NNN: Title', or null.
+  try {
+    for (const line of specText.split("\n")) {
+      const stripped = line.trim();
+      if (!stripped.startsWith("#")) continue;
+      const m = stripped.match(/^#+\s+.*delivery-\d+\s*:\s*(.+)$/i);
+      if (m) {
+        const title = m[1].trim();
+        if (title && !title.startsWith("{")) return title;
+      }
+      break; // only check the first heading line
+    }
+  } catch (_) {
+    // pass
+  }
+  return null;
+}
+
+function _readWorkHierarchical(workDir, workId) {
+  // Mirror reader.py _read_work_hierarchical.
+  // Assemble a WorkModel from the per-unit STATE.md hierarchy.
+  // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel].
+  const stateLabel = ".aid/" + workId + "/STATE.md";
+  const parseWarnings = [];
+  let bytesRead = 0;
+
+  // Read work-level STATE.md (for Pipeline State / Lifecycle History / Triage)
+  const statePath = join(workDir, "STATE.md");
+  let workText = "";
+  let workIsFile = false;
+  try { workIsFile = statSync(statePath).isFile(); } catch (_) { workIsFile = false; }
+
+  if (!workIsFile) {
+    parseWarnings.push(
+      workId + ": STATE.md not found (hierarchical mode); work-level lifecycle will be Unknown."
+    );
+  } else {
+    try {
+      const raw = readFileSync(statePath);
+      bytesRead += raw.length;
+      workText = raw.toString("utf-8");
+    } catch (exc) {
+      parseWarnings.push(
+        workId + ": STATE.md read error (" + exc + "); work-level lifecycle will be Unknown."
+      );
+    }
+  }
+
+  // Parse work-level STATE.md for pipeline/lifecycle/triage fields
+  // (tasks[] from this parse are IGNORED in hierarchical mode; per-unit task STATE.md files
+  // are authoritative)
+  const pw = parseStateText(workText, workId, workDir);
+  parseWarnings.push(...pw.parseWarnings);
+
+  const name = slugFromWorkId(workId);
+  const workNumber = numberFromWorkId(workId);
+
+  // Parse REQUIREMENTS.md / SPEC.md for identity fields
+  const reqPath = join(workDir, "REQUIREMENTS.md");
+  let [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
+  bytesRead += reqBytes;
+
+  if (reqTitle === null || reqDescription === null) {
+    const specPath = join(workDir, "SPEC.md");
+    const [specTitle, specDescription, specH1, specBytes] = parseSpecMd(specPath);
+    bytesRead += specBytes;
+    if (reqTitle === null) {
+      if (specTitle !== null) {
+        reqTitle = specTitle;
+      } else if (specH1 !== null) {
+        reqTitle = specH1;
+      }
+    }
+    if (reqDescription === null && specDescription !== null) {
+      reqDescription = specDescription;
+    }
+  }
+
+  // Parse PLAN.md for lane assignments
+  const planPath = join(workDir, "PLAN.md");
+  const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
+  bytesRead += planBytes;
+
+  // Enumerate deliveries and their tasks from the hierarchy
+  const allTasks = [];
+  const allDeliverables = [];
+  const allPendingInputs = [];
+
+  let deliveryEntries = [];
+  try {
+    const entries = readdirSync(workDir);
+    for (const name of entries) {
+      if (!RE_DELIVERY_DIR.test(name)) continue;
+      const fullPath = join(workDir, name);
+      let isDir = false;
+      try { isDir = statSync(fullPath).isDirectory(); } catch (_) { isDir = false; }
+      if (isDir) deliveryEntries.push([name, fullPath]);
+    }
+    deliveryEntries.sort((a, b) => a[0].localeCompare(b[0]));
+  } catch (exc) {
+    parseWarnings.push(workId + ": could not enumerate delivery dirs (" + exc + "); tasks will be empty.");
+    deliveryEntries = [];
+  }
+
+  for (const [deliveryId, deliveryDir] of deliveryEntries) {
+    const dm = deliveryId.match(RE_DELIVERY_DIR);
+    const deliveryNumber = dm ? parseInt(dm[1], 10) : 0;
+
+    // Read delivery-level STATE.md
+    const deliveryStatePath = join(deliveryDir, "STATE.md");
+    let deliveryStateText = "";
+    let deliveryStateIsFile = false;
+    try { deliveryStateIsFile = statSync(deliveryStatePath).isFile(); } catch (_) { deliveryStateIsFile = false; }
+
+    if (deliveryStateIsFile) {
+      try {
+        const raw = readFileSync(deliveryStatePath);
+        bytesRead += raw.length;
+        deliveryStateText = raw.toString("utf-8");
+      } catch (exc) {
+        parseWarnings.push(
+          workId + "/" + deliveryId + ": STATE.md read error (" + exc + "); delivery lifecycle will be unknown."
+        );
+      }
+    }
+
+    const pds = _parseDeliveryStateMd(deliveryStateText, deliveryId);
+    parseWarnings.push(...pds.parseWarnings);
+    allPendingInputs.push(...pds.pendingInputs);
+
+    // Enumerate tasks under this delivery
+    const tasksDir = join(deliveryDir, "tasks");
+    let taskDirEntries = [];
+    let tasksDirExists = false;
+    try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
+
+    if (tasksDirExists) {
+      try {
+        const entries = readdirSync(tasksDir);
+        for (const tname of entries) {
+          if (!RE_TASK_DIR_H.test(tname)) continue;
+          const tpath = join(tasksDir, tname);
+          let isDir = false;
+          try { isDir = statSync(tpath).isDirectory(); } catch (_) { isDir = false; }
+          if (isDir) taskDirEntries.push([tname, tpath]);
+        }
+        taskDirEntries.sort((a, b) => a[0].localeCompare(b[0]));
+      } catch (exc) {
+        parseWarnings.push(workId + "/" + deliveryId + ": could not enumerate task dirs (" + exc + ").");
+        taskDirEntries = [];
+      }
+    }
+
+    let deliveryTaskCount = 0;
+    for (const [taskIdStr, taskDir] of taskDirEntries) {
+      deliveryTaskCount++;
+
+      // Read task-level STATE.md
+      const taskStatePath = join(taskDir, "STATE.md");
+      let taskStateText = "";
+      let taskStateIsFile = false;
+      try { taskStateIsFile = statSync(taskStatePath).isFile(); } catch (_) { taskStateIsFile = false; }
+
+      if (taskStateIsFile) {
+        try {
+          const raw = readFileSync(taskStatePath);
+          bytesRead += raw.length;
+          taskStateText = raw.toString("utf-8");
+        } catch (exc) {
+          parseWarnings.push(
+            workId + "/" + deliveryId + "/" + taskIdStr + ": STATE.md read error (" + exc + "); task state will be Unknown."
+          );
+        }
+      }
+
+      const pts = _parseTaskStateMd(taskStateText, taskIdStr);
+      parseWarnings.push(...pts.parseWarnings);
+
+      // Read task SPEC.md for short_name and type
+      const taskSpecPath = join(taskDir, "SPEC.md");
+      let shortName = null;
+      let taskType = "";
+      let taskSpecIsFile = false;
+      try { taskSpecIsFile = statSync(taskSpecPath).isFile(); } catch (_) { taskSpecIsFile = false; }
+
+      if (taskSpecIsFile) {
+        try {
+          const raw = readFileSync(taskSpecPath);
+          bytesRead += raw.length;
+          const specText = raw.toString("utf-8");
+          shortName = _parseTaskSpecShortName(specText);
+          taskType = _parseTaskSpecType(specText);
+        } catch (_) {
+          // pass
+        }
+      }
+
+      // Lane from PLAN.md wave-map
+      const laneVal = taskLaneMap[taskIdStr.toLowerCase()];
+      const lane = laneVal !== undefined ? laneVal : null;
+
+      allTasks.push({
+        task_id: taskIdStr,
+        type: taskType,
+        wave: deliveryId,        // wave = delivery-NNN in hierarchical works
+        status: pts.state,
+        review_grade: pts.review,
+        elapsed: pts.elapsed,
+        notes: pts.notes,
+        short_name: shortName,
+        delivery: deliveryNumber,
+        lane: lane,
+      });
+    }
+
+    // Build DeliverableRef for this delivery
+    const deliverySpecPath = join(deliveryDir, "SPEC.md");
+    let deliveryName = deliveryId;
+    let deliverySpecIsFile = false;
+    try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
+
+    if (deliverySpecIsFile) {
+      try {
+        const raw = readFileSync(deliverySpecPath);
+        bytesRead += raw.length;
+        const specText = raw.toString("utf-8");
+        const specName = _parseDeliverySpecTitle(specText);
+        if (specName) deliveryName = specName;
+      } catch (_) {
+        // pass
+      }
+    }
+
+    allDeliverables.push({
+      number: deliveryNumber,
+      name: deliveryName,
+      task_count: deliveryTaskCount,
+      delivery_state: pds.deliveryState,
+    });
+  }
+
+  // Work-level pending_inputs: union of work-level Q&A + per-delivery Q&A
+  const unionPendingInputs = [...pw.pendingInputs, ...allPendingInputs];
+
+  const workModel = _buildWorkModel({
+    work_id: workId,
+    name,
+    lifecycle: pw.lifecycle,
+    phase: pw.phase,
+    active_skill: pw.activeSkill,
+    updated: pw.updated,
+    created: pw.created,
+    pause_reason: pw.pauseReason,
+    block_reason: pw.blockReason,
+    block_artifact: pw.blockArtifact,
+    tasks: allTasks,
+    pending_inputs: unionPendingInputs,
+    source_mode: pw.sourceMode,
+    number: workNumber,
+    title: reqTitle,
+    description: reqDescription,
+    objective: reqObjective,
+    work_path: pw.workPath,
+    recipe: pw.recipe,
+    features: pw.features,
+    deliverables: allDeliverables,
+  });
+
+  return [workModel, parseWarnings, bytesRead, workText, stateLabel];
+}
+
+// ---------------------------------------------------------------------------
+// work-004 Pillar 5: Same-work reconcile (no winner) -- mirror reader.py
+// ---------------------------------------------------------------------------
+
+function _reconcileSameWork(copies) {
+  // Merge N WorkModel copies for the same work_id into one reconciled model.
+  //
+  // copies: array of [WorkModel, stateText, stateLabel] tuples.
+  // Returns [reconciledWorkModel, winningStateText, winningStateLabel].
+  //
+  // Reconcile rules (Pillar 5 / SD-2):
+  //   1. Per-task State: most-advanced by SD2_RANK (lower rank wins).
+  //   2. Work-level Pipeline State: newest Updated; tie -> branch_label sort, "main" first.
+  //   3. Derived views (tasks, pending_inputs, deliverables, features): UNION.
+  //   4. Identity fields: from the Pipeline-State winner.
+  //   5. source_mode: Normalized if any copy is Normalized.
+  //
+  // Deterministic and order-independent. Never throws.
+
+  if (copies.length === 1) return copies[0];
+
+  // Step 1: union tasks, picking the most-advanced state per task_id
+  const bestTask = {}; // lower-cased task_id -> task model
+  for (const [wm] of copies) {
+    for (const task of wm.tasks) {
+      const tid = task.task_id.toLowerCase();
+      if (!(tid in bestTask)) {
+        bestTask[tid] = task;
+      } else {
+        const currentRank = _sd2Rank(bestTask[tid].status);
+        const candidateRank = _sd2Rank(task.status);
+        if (candidateRank < currentRank) {
+          bestTask[tid] = task;
+        }
+      }
+    }
+  }
+  // Sort deterministically by task_id (input-order-independent)
+  const mergedTasks = Object.values(bestTask).sort(
+    (a, b) => a.task_id.toLowerCase().localeCompare(b.task_id.toLowerCase())
+  );
+
+  // Step 2: pick the Pipeline-State winner by newest Updated timestamp.
+  // Tie-break: branch_label lexical sort, "main" sorting first.
+  //
+  // Key: (tier, inv_updated, secondary)
+  //   tier=0 if updated present, tier=1 if absent.
+  //   inv_updated: char-complement so larger (newer) timestamp sorts smaller (ascending).
+  //   secondary: [0, ""] for "main", else [1, label].
+  function _pipelineWinnerKey(entry) {
+    const wm = entry[0];
+    const updated = wm.updated || "";
+    const label = wm.branch_label || "";
+    const secondary = label === "main" ? [0, ""] : [1, label];
+    if (updated) {
+      // Char-complement: clamped to [0, 0x7F]
+      const invUpdated = updated.split("").map(c => {
+        const cp = c.charCodeAt(0);
+        return String.fromCharCode(0x7F - Math.min(cp, 0x7F));
+      }).join("");
+      return [0, invUpdated, secondary];
+    }
+    return [1, "", secondary];
+  }
+
+  function _keyCmp(a, b) {
+    // Compare two keys returned by _pipelineWinnerKey
+    const ka = _pipelineWinnerKey(a);
+    const kb = _pipelineWinnerKey(b);
+    // tier
+    if (ka[0] !== kb[0]) return ka[0] - kb[0];
+    // inv_updated (string compare)
+    if (ka[1] < kb[1]) return -1;
+    if (ka[1] > kb[1]) return 1;
+    // secondary: [tier, label]
+    const [sat, sal] = ka[2];
+    const [sbt, sbl] = kb[2];
+    if (sat !== sbt) return sat - sbt;
+    if (sal < sbl) return -1;
+    if (sal > sbl) return 1;
+    return 0;
+  }
+
+  const sortedCopies = copies.slice().sort(_keyCmp);
+  const [winnerWm, winnerText, winnerLabel] = sortedCopies[0];
+
+  // Step 3: union pending_inputs (all copies contribute)
+  const seenQIds = new Set();
+  const mergedPending = [];
+  for (const [wm] of copies) {
+    for (const pi of wm.pending_inputs) {
+      if (!seenQIds.has(pi.question_id)) {
+        seenQIds.add(pi.question_id);
+        mergedPending.push(pi);
+      }
+    }
+  }
+
+  // Step 3b: union deliverables (by delivery number; winner's entry wins on duplicates)
+  const seenDel = new Set();
+  const mergedDeliverables = [];
+  for (const dr of winnerWm.deliverables) {
+    if (!seenDel.has(dr.number)) {
+      seenDel.add(dr.number);
+      mergedDeliverables.push(dr);
+    }
+  }
+  for (const [wm] of copies) {
+    if (wm === winnerWm) continue;
+    for (const dr of wm.deliverables) {
+      if (!seenDel.has(dr.number)) {
+        seenDel.add(dr.number);
+        mergedDeliverables.push(dr);
+      }
+    }
+  }
+  mergedDeliverables.sort((a, b) => a.number - b.number);
+
+  // Step 3c: union features (by feature number; winner first)
+  const seenFeat = new Set();
+  const mergedFeatures = [];
+  for (const fr of winnerWm.features) {
+    if (!seenFeat.has(fr.number)) {
+      seenFeat.add(fr.number);
+      mergedFeatures.push(fr);
+    }
+  }
+  for (const [wm] of copies) {
+    if (wm === winnerWm) continue;
+    for (const fr of wm.features) {
+      if (!seenFeat.has(fr.number)) {
+        seenFeat.add(fr.number);
+        mergedFeatures.push(fr);
+      }
+    }
+  }
+
+  // Step 4 + 5: build reconciled WorkModel from winner's fields + merged views.
+  // source_mode: Normalized if any copy is Normalized.
+  let mergedSourceMode = winnerWm.source_mode;
+  for (const [wm] of copies) {
+    if (wm.source_mode === SourceMode.Normalized) {
+      mergedSourceMode = SourceMode.Normalized;
+      break;
+    }
+  }
+
+  const reconciled = _buildWorkModel({
+    work_id: winnerWm.work_id,
+    name: winnerWm.name,
+    lifecycle: winnerWm.lifecycle,
+    phase: winnerWm.phase,
+    active_skill: winnerWm.active_skill,
+    updated: winnerWm.updated,
+    created: winnerWm.created,
+    pause_reason: winnerWm.pause_reason,
+    block_reason: winnerWm.block_reason,
+    block_artifact: winnerWm.block_artifact,
+    tasks: mergedTasks,
+    pending_inputs: mergedPending,
+    source_mode: mergedSourceMode,
+    number: winnerWm.number,
+    title: winnerWm.title,
+    description: winnerWm.description,
+    objective: winnerWm.objective,
+    work_path: winnerWm.work_path,
+    recipe: winnerWm.recipe,
+    features: mergedFeatures,
+    deliverables: mergedDeliverables,
+    // branch_label: null on a reconciled model (multiple branches contributed)
+    branch_label: null,
+  });
+
+  return [reconciled, winnerText, winnerLabel];
+}
+
+// ---------------------------------------------------------------------------
 // Object builders -- FIELD ORDER matches Python dataclasses EXACTLY (DM-3)
 // V8 preserves string-key insertion order; order here IS the serialization order.
 // ---------------------------------------------------------------------------
@@ -2067,6 +3085,9 @@ function _buildFeatureRef(f) {
 
 function _buildDeliverableRef(d) {
   // DeliverableRef field order: number, name, task_count
+  // NOTE: delivery_state (work-004 Pillar 1) is tracked internally but NOT
+  // serialized here -- Python server.py _ser_deliverable_ref omits it for parity.
+  // Both runtimes emit the same key set until server.py is updated to serialize it.
   return {
     number: d.number,
     name: d.name,
@@ -2078,7 +3099,12 @@ function _buildWorkModel(wm) {
   // WorkModel field order: work_id, name, lifecycle, phase, active_skill, updated, created,
   //   pause_reason, block_reason, block_artifact, tasks, pending_inputs, source_mode,
   //   number, title, description, objective, work_path, recipe, features, deliverables
-  return {
+  //
+  // NOTE: branch_label is an internal reconcile field (work-004 Pillar 4) tracked
+  // directly on raw objects between readWork() and _reconcileSameWork(); it is NOT
+  // included in the serialized output (Python server.py _ser_work omits it for
+  // parity -- both runtimes emit the same key set).
+  const built = {
     work_id: wm.work_id,
     name: wm.name,
     lifecycle: wm.lifecycle,
@@ -2102,6 +3128,16 @@ function _buildWorkModel(wm) {
     features: (wm.features || []).map(_buildFeatureRef),
     deliverables: (wm.deliverables || []).map(_buildDeliverableRef),
   };
+  // Carry branch_label as a non-enumerable property so the reconcile logic can
+  // read it (wm.branch_label) without it appearing in JSON.stringify output.
+  // This matches Python server.py _ser_work which omits the field entirely.
+  Object.defineProperty(built, "branch_label", {
+    value: wm.branch_label !== undefined ? wm.branch_label : null,
+    writable: true,
+    enumerable: false, // excluded from JSON.stringify
+    configurable: true,
+  });
+  return built;
 }
 
 function _buildReadMeta(rm) {
