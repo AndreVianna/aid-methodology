@@ -39,8 +39,8 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
 | 1 | Per-level STATE/SPEC template set + naming contract | DESIGN | 1 | Done | clean | — | foundation; 5 templates; 80/80 test; render-drift+§7a clean |
-| 2 | KB: schemas.md + project-structure.md | DOCUMENT | 2 | Pending | — | — | deps 001 |
-| 3 | writeback-state.sh canonical: retarget to per-unit STATE | REFACTOR | 2 | Pending | — | — | deps 001; `--delivery-id` contract |
+| 2 | KB: schemas.md + project-structure.md | DOCUMENT | 2 | Done | clean | — | deps 001; schemas §4 rebuilt; 2 doc nits (pre-gate sweep) |
+| 3 | writeback-state.sh canonical: retarget to per-unit STATE | REFACTOR | 2 | Done | clean | — | disjoint writes VERIFIED; 1 cosmetic nit |
 | 4 | Propagate EXECUTE writeback to 5 profile copies + dogfood (summarize EXCLUDED) | REFACTOR | 3 | Pending | — | — | deps 003; render-drift |
 | 5 | aid-detail: create task folders (SPEC+STATE) | REFACTOR | 3 | Pending | — | — | deps 001,002 |
 | 6 | aid-plan: create delivery folders (SPEC+STATE) | REFACTOR | 3 | Pending | — | — | deps 001,002 |
@@ -52,7 +52,7 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 12 | Reader (Node reader.mjs): mirror 009-011 (parity) | IMPLEMENT | 6 | Pending | — | — | deps 009,010,011 |
 | 13 | Idempotent migration helper (bash + PS) + fixture | MIGRATE | 3 | Pending | — | — | deps 001,002 |
 | 14 | Reader fixtures: hierarchy/legacy/multi-worktree/reconcile | TEST | 6 | Pending | — | — | deps 009-011,013 |
-| 15 | Cross-cutting: disjoint-merge proof, parity, render-drift, run-all | TEST | 7 | Pending | — | — | deps 004,007,008,012,013,014 |
+| 15 | Cross-cutting: disjoint-merge proof, parity, render-drift, run-all | TEST | 7 | Pending | — | — | deps 004,007,008,012,013,014; MUST fix test-writeback-state.sh (91 fails from task-003 retarget: --field State, ## Pipeline State, per-unit targets) + any other suites broken by the schema change |
 
 ## Lifecycle History
 
@@ -67,4 +67,6 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 2026-06-18 | Fix cycle applied: #1 summarize-EXCLUDED (execute-only propagation), #2 no-allow-list premise corrected (fixed-argv pattern + optional hardening), #3 Cross-phase Q&A partitioned to delivery STATE, #4 task-014 re-waved to W6, #5 task-013 delivery-derivation from Source line, #6 home.html added, #7 Pipeline tiebreak, #8 lock-scope note. Folded SD-8 (delivery lifecycle enum) + SD-9 (independent delivery lifecycle / SPIKE-defines-sibling scenario). |
 | 2026-06-18 | A+ gate #2: CLEAN — all 8 findings Fixed, refinement sound, disjoint-writes verified. Ready for /aid-execute. |
 | 2026-06-18 | #93 (work-003) merged → work-004 plan path-refreshed onto post-#93 nested layout (EXECUTE writeback copies now `.../aid/scripts/execute/`; task-004 + SPEC + ANALYSIS). /aid-execute started in worktree aid/work-004-delivery-001 (off updated master). Version stays 1.1.0 (no bump — user directive). Wave 1: task-001 dispatched. |
-| 2026-06-18 | Wave 1 complete (task-001): 5 per-level templates (work/delivery/task STATE + delivery/task SPEC), state-naming contract (no Status remains), SD-8 enum, SD-2 authoritative ordering; render-drift + §7a clean; template test 80/80. Committed. Wave 2: task-002 (KB) + task-003 (writeback retarget) dispatched. |
+| 2026-06-18 | Wave 1 complete (task-001): 5 per-level templates (work/delivery/task STATE + delivery/task SPEC), state-naming contract (no Status remains), SD-8 enum, SD-2 authoritative ordering; render-drift + §7a clean; template test 80/80. Committed (5052bdd4). Wave 2: task-002 (KB) + task-003 (writeback retarget) dispatched. |
+| 2026-06-18 | task-003 complete (writeback retarget): 5 modes → per-unit STATE (--field/--findings→task, --block→delivery SD-5, --pipeline→work ## Pipeline State); delivery auto-resolve from Source; guards/enum/exit-codes preserved; 10/10 ad-hoc fixtures; bash -n + ASCII clean. test-writeback-state.sh DEFERRED to task-015 (91 fails = clean retarget consequences, NOT gutted). Awaiting task-002. |
+| 2026-06-18 | task-002 complete (KB: schemas §4.0-4.7 rebuilt + project-structure hierarchy tree + SD-1/2/3/5/6/8/9 + INDEX regen; KB-hygiene green). Wave-1-2 review CLEAN — disjoint writes adversarially VERIFIED (each mode writes only its per-unit target). Wave 2 committed. KNOWN NITS for pre-gate sweep: schemas.md stale Foreign-keys note (LOW) + ER-diagram detail (MINOR); writeback missing-blank-line before a trailing heading (MINOR). Wave 3 (004,005,006,009,013) next; regen (004) serialized after the canonical edits (005,006,013). |

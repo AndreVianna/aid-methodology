@@ -18,7 +18,12 @@ contracts:
   - "Frontmatter schema for KB docs requires kb-category + source + intent; generator required iff source=generated"
   - "Recipe slot syntax: {{slot-name}} where slot-name matches POSIX ERE [a-z][a-z0-9-]*"
   - "Task templates have 6 sections: title heading, Type, Source, Depends on, Scope, Acceptance Criteria"
+  - "Uniform unit hierarchy: every execution unit (work/delivery/task) is a folder; delivery and task units carry both SPEC.md (immutable definition) + STATE.md (mutable state); work units carry STATE.md and may have SPEC.md (lite) or REQUIREMENTS.md+PLAN.md (full)"
+  - "Delivery lifecycle enum (SD-8, independently authored): Pending-Spec | Specified | Executing | Gated | Done | Blocked"
+  - "State advancement ordering (SD-2, for reconcile): Done > Canceled > In Review > In Progress > Blocked > Failed > Pending"
+  - "DERIVED-view rule: work ## Tasks State, ## Plan / Deliveries, ## Delivery Gates, ## Cross-phase Q&A assembled/unioned at read time; never written"
 changelog:
+  - 2026-06-18: work-004-worktree-tracking task-002 — updated §4 (Work State) for the uniform unit hierarchy (work/delivery/task folder layout), per-level STATE/SPEC schemas, DERIVED-view rule (work Tasks State/Plan Deliveries/Delivery Gates/Cross-phase Q&A derived at read), delivery independent lifecycle enum (SD-8), per-delivery Cross-phase Q&A partition (SD-5), state-not-status naming, SD-2/SD-3/SD-8/SD-9/migration rules; updated §11 (Task File) for new path delivery-NNN/tasks/task-NNN/SPEC.md + sibling STATE.md; updated §12 (Delivery Issues Log) path reference.
   - 2026-06-10: work-001-aid-dashboard task-001 (KI-002) — corrected §13 IMPEDIMENT path from `.aid/{work}/task-NNN/IMPEDIMENT.md` (wrong subdirectory shape) to `.aid/{work}/IMPEDIMENT-task-NNN.md` (flat, hyphenated; matches producer `canonical/skills/aid-execute/references/state-execute.md:322,368` and `pipeline-contracts.md ### IMPEDIMENT-task-NNN.md Contract`). Doc-only fix; no producer behavior change.
   - 2026-06-05: work-002-auto-installer — added §8a install-manifest schema (`<project>/.aid/.aid-manifest.json`, written by the `aid` CLI per `lib/aid-install-core.sh` `manifest_write`); re-pointed the §2 `tools.installed` note off the deleted `setup.sh` menu to the `aid add <tool>` CLI and named the install manifest as the authoritative installed-state record.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Work Type enum updated to {bug-fix, new-feature, refactor}; applies-to enum updated to {bug-fix, new-feature, refactor, *}.
@@ -153,30 +158,122 @@ The actual active set for any given project is whatever was confirmed in Step 0d
 
 ---
 
-## 4. Work State — `.aid/work-NNN-{name}/STATE.md`
+## 4. Work State — Uniform Unit Hierarchy
+
+### 4.0 Hierarchy Overview (SD-1)
+
+Every AID execution unit is a **folder** containing its own `SPEC.md` (immutable
+definition) and `STATE.md` (mutable state). Tasks nest under their delivery; deliveries
+nest under their work. This uniform pattern governs the **execution axis only** —
+`features/` is the specification axis and retains its own shape (see §4.1 below).
+
+```
+.aid/work-NNN-{name}/
+  SPEC.md                               # work definition (lite path); OR
+  REQUIREMENTS.md + PLAN.md             # work definition (full path); both MAY coexist
+  STATE.md                              # work-level state: AUTHORED header + DERIVED views
+  delivery-NNN/
+    SPEC.md                             # delivery definition (scope, gate criteria)
+    STATE.md                            # delivery state: lifecycle + gate + Q&A + derived task rollup
+    delivery-NNN-issues.md              # deferred [HIGH] issues log (already disjoint)
+    tasks/
+      task-NNN/
+        SPEC.md                         # task definition (the former flat tasks/task-NNN.md)
+        STATE.md                        # task mutable cells: State/Review/Elapsed/Notes + logs
+  features/{feature}/
+    SPEC.md                             # feature specification (spec axis; no STATE.md)
+```
+
+**SD-1 boundary (features/ vs delivery/):** `features/` is a specification decomposition
+(produced by `/aid-specify`); `delivery-NNN/` is an execution decomposition (produced by
+`/aid-plan`). Feature progress is tracked in the work-level derived `## Features State`
+view only. Features gain no `STATE.md`; no new unit types are introduced.
+
+**SD-1 work-level SPEC.md rule:** On the **lite path** the work `SPEC.md` is the sole
+definition artifact. On the **full path** `REQUIREMENTS.md` + `PLAN.md` remain the
+definition artifacts; the work `SPEC.md` is optional (the reader resolves identity from
+`REQUIREMENTS.md` first, `SPEC.md` fallback). Every work unit MUST have `STATE.md`.
+
+**Migration / coexistence (SD-6):** Per-work detection is presence-based. If
+`delivery-NNN/tasks/task-NNN/STATE.md` exists for a work, the reader derives views from
+the per-unit files. Otherwise the reader falls back to the legacy monolithic `STATE.md`
+inline tables (current behavior). Works of mixed vintage in the same repo all render
+correctly.
+
+---
+
+### 4.1 Disjoint Writes + Derived Parents
+
+Each unit's `STATE.md` is written by **exactly one branch** — the branch that owns that
+delivery or task. No two branches ever write the same `STATE.md`. Merge-back is
+conflict-free by construction.
+
+**DERIVED-view rule.** A parent unit's `STATE.md` has two distinct zones:
+
+1. **AUTHORED zone** — the unit's own lifecycle/header state, written by the single
+   branch that owns the unit.
+2. **DERIVED zone** — a read-only view assembled at READ TIME from per-child STATE.md
+   files. Never written. The dashboard reader unions child contributions; no agent
+   writes to these sections directly.
+
+The work-level `## Tasks State`, `## Plan / Deliveries`, `## Delivery Gates`, and
+`## Cross-phase Q&A` are **DERIVED views** — they are never write targets. Each
+delivery branch writes ONLY into its own `delivery-NNN/STATE.md` (and its tasks'
+STATE.md files). The work-level Pipeline State header is authored solely by the work
+owner on the work's active branch.
+
+**Cross-phase Q&A partition (SD-5).** To prevent the two-branch write collision on the
+shared work file, the delivery gate writes its SPEC Q&A into the delivery's OWN
+`delivery-NNN/STATE.md ## Cross-phase Q&A` section. The work-level `## Cross-phase Q&A`
+is the DERIVED union of all delivery Q&A sections plus any work-owner-authored
+work-level entries (written on the work's active branch, single writer).
+
+---
+
+### 4.2 Work-Level STATE.md — `.aid/work-NNN-{name}/STATE.md`
 
 **Source of truth:** `canonical/templates/work-state-template.md`.
 
-**Purpose:** the single per-area state hub for one work item; absorbs former
-`INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md`
-× N + (future) `DEPLOYMENT-STATE.md` per `work-state-template.md` "single state file for **this work**" preamble.
+**Purpose:** the single per-area state hub for one work item, covering the full dev
+lifecycle from requirement to spec to plan to implementation to deploy.
 
-**Schema (Markdown):**
+**Two zones:**
+- **AUTHORED** (single-writer): `## Pipeline State`, `## Triage`, `## Escalation Carry`,
+  `## Interview State`, `## Lifecycle History`.
+- **DERIVED** (read-only, assembled at read time from per-delivery and per-task
+  STATE.md files): `## Features State`, `## Plan / Deliveries`, `## Tasks State`,
+  `## Deploy State`, `## Delivery Gates`, `## Cross-phase Q&A`, `## Calibration Log`,
+  `## Dispatches`.
+
+**AUTHORED section schema:**
 
 | Section | Shape | Cardinality |
 |---------|-------|-------------|
-| Top-level metadata (blockquote) | `Status:`, `Phase:`, `Minimum Grade:`, `Started:`, `User Approved:` | 1 |
+| Top-level metadata (blockquote) | `State:`, `Phase:`, `Minimum Grade:`, `Started:`, `User Approved:` | 1 |
+| `## Pipeline State` | Bullets: `Lifecycle:` enum, `Phase:` enum, `Active Skill:` enum, `Updated:`, `Pause Reason:` (conditional), `Block Reason:` (conditional), `Block Artifact:` (conditional) | 1 |
 | `## Triage` | Bullets: `Path:` (lite/full), `Work Type:` enum, `Sub-path:` enum, `Sub-path (auto):`, `Decision rationale:`, `Override:`, `Recipe:` | 1 |
 | `## Escalation Carry` | Conditional — only when work was escalated from lite to full | 0 or 1 |
-| `## Interview Status` | Table: 10 standard sections (Objective / Problem Statement / Users & Stakeholders / Scope / Functional Requirements / Non-Functional Requirements / Constraints / Assumptions & Dependencies / Acceptance Criteria / Priority) with Status + Last Updated | Fixed 10 rows |
-| `## Features Status` | Table: `# | Feature | Spec Status | Spec Grade | Q&A Count | Notes` | 0..N |
-| `## Plan / Deliveries` | Table: `Delivery | Status | Tasks | Notes` | 0..N |
-| `## Tasks Status` | Table: `# | Task | Type | Wave | Status | Review | Elapsed | Notes` | 0..N |
-| `## Deploy Status` | Table: `Delivery | State | PR | KB Updated | Tag | Notes` | 0..N |
-| `## Cross-phase Q&A (Pending)` | Free-form Q-blocks (same shape as discovery-state Q&A) | 0..N |
-| `## Delivery Gates` | Free-form per-delivery blocks: `Reviewer Tier`, `Grade`, `Issue List`, `Timestamp` | 0..N |
-| `## Quick Check Findings` | Free-form per-task blocks: `Reviewer Tier`, `Findings` list with severity tags | 0..N |
+| `## Interview State` | Table: 10 standard sections with State + Last Updated | Fixed 10 rows |
 | `## Lifecycle History` | Append-only table: `Date | Phase Transition / Gate | Grade | Notes` | 1..N |
+
+**DERIVED section schema:**
+
+| Section | Shape | Source |
+|---------|-------|--------|
+| `## Features State` | Table: `# | Feature | Spec State | Spec Grade | Q&A Count | Notes` | Per `features/{feature}/SPEC.md` progress |
+| `## Plan / Deliveries` | Table: `Delivery | State | Tasks | Notes` | Per `delivery-NNN/STATE.md` lifecycle fields |
+| `## Tasks State` | Table: `# | Task | Type | Wave | State | Review | Elapsed | Notes` | Per `delivery-NNN/tasks/task-NNN/STATE.md` mutable cells |
+| `## Deploy State` | Table: `Delivery | State | PR | KB Updated | Tag | Notes` | Per `delivery-NNN/STATE.md` deploy entries |
+| `## Delivery Gates` | Per-delivery gate blocks | Union of per `delivery-NNN/STATE.md ## Delivery Gate` |
+| `## Cross-phase Q&A` | Q-blocks (same shape as discovery-state Q&A) | Union of per-delivery Q&A + work-owner-authored entries (SD-5) |
+| `## Calibration Log` | Table: `Date | Agent | Task / Cycle | ETA Band | Actual | Notes` | Union of per-task `## Dispatch Log` sections |
+| `## Dispatches` | Per-task sub-sections | Union of per-task dispatch logs |
+
+**Pipeline State enum values** (per `work-state-template.md` `## Pipeline State`):
+
+- `Lifecycle:` ∈ {`Running`, `Paused-Awaiting-Input`, `Blocked`, `Completed`, `Canceled`}
+- `Phase:` ∈ {`Interview`, `Specify`, `Plan`, `Detail`, `Execute`, `Deploy`, `Monitor`}
+- `Active Skill:` — `aid-{skill}` or `none`
 
 **Triage enum values** (per `work-state-template.md` `## Triage`):
 
@@ -185,13 +282,183 @@ The actual active set for any given project is whatever was confirmed in Step 0d
 - `Sub-path:` ∈ {`LITE-BUG-FIX`, `LITE-REFACTOR`, `LITE-FEATURE`, `—`}
 - `Override:` ∈ {`yes`, `no`}
 
-**Task `Type` enum** (per `work-state-template.md` `## Tasks Status` Type column + `canonical/templates/delivery-plans/task-template.md` `**Type:**` line):
-8 values — `RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`.
+**State naming rule:** All section/field names use "state" not "status" (work-004 naming
+contract). Legacy sections `## Tasks Status`, `## Pipeline Status`, `## Features Status`,
+`## Interview Status`, `## Deploy Status` are renamed `## Tasks State`, `## Pipeline State`,
+`## Features State`, `## Interview State`, `## Deploy State` respectively. Per-task field
+"Status" is renamed "State". **Closed enum VALUES are unchanged:**
+`Pending | In Progress | In Review | Blocked | Done | Failed | Canceled`.
 
-**Quick-Check finding severity enum** (per `work-state-template.md` `## Quick Check Findings`):
-`[CRITICAL]` (Fixed-on-spot), `[HIGH]` (Deferred-to-gate); no `[MEDIUM]` /
-`[LOW]` / `[MINOR]` appear in quick-check (they remain inline in the broader
-delivery gate per `canonical/scripts/grade.sh` header comment on Severity/Status columns).
+---
+
+### 4.3 Delivery-Level STATE.md — `.aid/work-NNN-{name}/delivery-NNN/STATE.md`
+
+**Source of truth:** `canonical/templates/delivery-state-template.md`.
+
+**Purpose:** the state hub for one delivery; carries the delivery's independent lifecycle,
+its delivery gate block, its Cross-phase Q&A (SD-5), and a derived task rollup.
+
+**Two zones:**
+- **AUTHORED** (single writer = this delivery's branch): `## Delivery Lifecycle`,
+  `## Delivery Gate`, `## Cross-phase Q&A`.
+- **DERIVED** (read-only): `## Tasks State` (rollup from per-task STATE.md files).
+
+**Schema:**
+
+| Section | Shape | Zone | Cardinality |
+|---------|-------|------|-------------|
+| Header blockquote | `Delivery:`, `Work:`, `Branch:` | n/a | 1 |
+| `## Delivery Lifecycle` | Bullets: `State:` (SD-8 enum), `Updated:`, `Block Reason:` (conditional), `Block Artifact:` (conditional) | AUTHORED | 1 |
+| `## Delivery Gate` | Bullets: `Reviewer Tier:`, `Grade:`, `Issue List:`, `Timestamp:` | AUTHORED | 1 |
+| `## Cross-phase Q&A` | Q-blocks (per §4.3a below) — written by delivery-gate step of `aid-execute` (SD-5) | AUTHORED | 0..N |
+| `## Tasks State` | Table: `# | Task | Type | Wave | State | Review | Elapsed | Notes` | DERIVED | 0..N |
+
+**Delivery lifecycle enum (SD-8 — independently authored, NOT derived from task rollup):**
+
+```
+Pending-Spec   -- delivery folder created; awaiting aid-specify
+Specified      -- aid-specify complete; tasks defined
+Executing      -- aid-execute in progress (at least one task dispatched)
+Gated          -- delivery gate running
+Done           -- gate passed; delivery complete
+Blocked        -- impediment raised; awaiting resolution
+```
+
+`aid-plan` creates the delivery folder with `State: Pending-Spec`. `aid-specify` advances
+it to `Specified`. `aid-execute` advances `Executing → Gated → Done`, or `Blocked` on an
+impediment.
+
+**SD-9 rationale (why independently authored):** A SPIKE `delivery-001` may define
+`delivery-002`; `delivery-002` then sits at `Pending-Spec` with ZERO tasks while
+`delivery-001`'s tasks are `In Progress`. A pure task-rollup derivation cannot represent
+a task-less but in-flight delivery — there are no task states to roll up — so the
+delivery lifecycle MUST be independently authored.
+
+**Cross-phase Q&A entry shape (§4.3a):**
+
+| Field | Value |
+|-------|-------|
+| `Category:` | e.g., Architecture, Requirements, Security |
+| `Impact:` | `High` / `Medium` / `Low` / `Required` |
+| `State:` | `Pending` / `Answered` / `Skipped` |
+| `Context:` | Why this matters; what the downstream phase observed |
+| `Suggested:` | Answer if inferrable, or `--` |
+| `Answer:` | Filled when State is Answered |
+| `Applied to:` | Artifact(s) the answer was applied to |
+
+---
+
+### 4.4 Task-Level STATE.md — `.../delivery-NNN/tasks/task-NNN/STATE.md`
+
+**Source of truth:** `canonical/templates/task-state-template.md`.
+
+**Purpose:** the sole write target for all per-task mutable state. ALL sections are
+AUTHORED by a single writer: the delivery branch that owns this task.
+
+**Schema:**
+
+| Section | Shape | Cardinality |
+|---------|-------|-------------|
+| Header blockquote | `Task:`, `Delivery:`, `Work:` | 1 |
+| `## Task State` | Bullets: `State:` (closed enum), `Review:`, `Elapsed:`, `Notes:` | 1 |
+| `## Quick Check Findings` | Bullets: `Reviewer Tier:`, `Findings:` (severity-tagged list) | 1 |
+| `## Dispatch Log` | Append-only table: `Date | Agent | ETA Band | Actual | Outcome` | 1 table |
+
+**Task State closed enum (values unchanged):**
+`Pending | In Progress | In Review | Blocked | Done | Failed | Canceled`
+
+**Quick-Check finding severity enum:**
+`[CRITICAL]` (Fixed-on-spot), `[HIGH]` (Deferred-to-gate).
+
+**SD-2 State Advancement Ordering (authoritative — for same-work reconcile):**
+
+```
+Done  >  Canceled  >  In Review  >  In Progress  >  Blocked  >  Failed  >  Pending
+```
+
+Rationale: the dashboard "most-advanced wins" reconcile answers "how far has this work
+gotten across all worktree branches." `Done`/`Canceled` are terminal-resolved and rank
+highest. `In Review` outranks `In Progress` (review is a later pipeline stage). `Blocked`
+outranks `Failed` because a blocked task is recoverable-in-place and signals "needs
+attention now," whereas a failed task represents a completed-but-rejected attempt that a
+parallel branch may have already superseded. Both `Blocked` and `Failed` rank above
+`Pending` because they represent work that was attempted and surfaced information.
+`Canceled` ranks just below `Done` (terminal-resolved). This ordering is encoded ONCE in
+`canonical/templates/work-state-template.md` and both reader twins (Python + Node) derive
+it from schemas.md.
+
+---
+
+### 4.5 Delivery SPEC.md — `.../delivery-NNN/SPEC.md`
+
+**Source of truth:** `canonical/templates/delivery-spec-template.md`.
+
+**Purpose:** the immutable definition for a delivery. Written once by `aid-plan` /
+`aid-specify`. State lives in the sibling `delivery-NNN/STATE.md`.
+
+**Schema (6 sections):**
+
+| Section | Shape |
+|---------|-------|
+| Header blockquote | `Delivery:`, `Work:`, `Created:` |
+| `## Objective` | One paragraph: what this delivery achieves |
+| `## Scope` | Bounded deliverables list + "Out of scope:" note |
+| `## Gate Criteria` | Ordered acceptance criteria checklist |
+| `## Tasks` | Navigational table: `Task | Type | Title` |
+| `## Dependencies` | `Depends on:` + `Blocks:` bullets |
+| `## Notes` | Design notes, constraints, references |
+
+---
+
+### 4.6 Task SPEC.md — `.../delivery-NNN/tasks/task-NNN/SPEC.md`
+
+**Source of truth:** `canonical/templates/task-spec-template.md`.
+
+**Purpose:** the immutable definition for a task. Written once by `aid-detail`. State
+lives in the sibling `task-NNN/STATE.md`. Shape mirrors
+`canonical/templates/delivery-plans/task-template.md` (6 sections, nothing else).
+
+**Schema (6 sections):**
+
+1. `# task-NNN: {Title}` — heading
+2. `**Type:**` — one of 8 enum values (RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE)
+3. `**Source:**` — `work-NNN-{name} -> delivery-NNN`
+4. `**Depends on:**` — `task-NNN[, task-NNN]` or `-- (none)`
+5. `**Scope:**` — bullet list, type-dependent
+6. `**Acceptance Criteria:**` — checklist bullets
+
+---
+
+### 4.7 Worktree Discovery (SD-3)
+
+**Purpose:** the dashboard reader discovers persistent git worktrees and aggregates all
+same-work pipelines from all branches in a single project view.
+
+**Discovery method:** for each registered repo root, the reader runs read-only
+`git -C <root> worktree list --porcelain` via the existing fixed-argv / no-shell
+subprocess pattern (verb hard-coded in argv; safe by construction). Parses `worktree
+<path>` and `branch refs/heads/<branch>` lines. For each worktree path, locates its
+`.aid/` and enumerates `work-*` folders.
+
+**Allow-list status:** there is currently NO enforced git-verb allow-list. Node's
+`runGitCommand` has none; Python's `_GIT_ALLOWED_VERBS` (`derivation.py`) is documentary,
+never referenced. Discovery does NOT depend on adding `worktree` to an allow-list. If a
+hardening verb-guard is wanted, it must be made REAL (enforced at the call site in both
+twins, with `worktree` permitted) — a documentary-only list is not a guard.
+
+**Degradation:** if git is unavailable, the root is not a git repo, or the subprocess
+times out (2 s bound, matching KB-freshness) → fall back to the main root only (current
+behavior). Never throws.
+
+**Same-work reconcile (Pillar 5):** when a `work_id` appears across N worktrees + main:
+- Per task: take the MOST-ADVANCED `State` by the SD-2 ordering (§4.4).
+- Work-level Pipeline State: take the copy with the newest `Updated:` timestamp; on a
+  timestamp tie, break deterministically by a stable secondary key (branch-label lexical
+  sort, main root first).
+- Derived views: union the per-task/per-delivery contributions across worktrees; no winner.
+
+**Task `Type` enum** (per `task-spec-template.md` `**Type:**` line):
+8 values — `RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`.
 
 ---
 
@@ -457,31 +724,50 @@ The dataclasses mirror this schema 1:1 in `.claude/skills/generate-profile/scrip
 
 ---
 
-## 11. Task Template — `canonical/templates/delivery-plans/task-template.md`
+## 11. Task SPEC — Path + Template
 
-**Source of truth:** `canonical/templates/delivery-plans/task-template.md`.
+**Template source of truth:** `canonical/templates/task-spec-template.md`
+(mirrors shape of `canonical/templates/delivery-plans/task-template.md`).
+
+**Path (new hierarchy):** `.aid/work-NNN-{name}/delivery-NNN/tasks/task-NNN/SPEC.md`
+(sibling `STATE.md` at same path: `.../tasks/task-NNN/STATE.md`).
+
+**Legacy path (monolithic works):** `.aid/work-NNN-{name}/tasks/task-NNN.md` (flat).
+
+The reader detects the hierarchy via presence of `delivery-NNN/tasks/task-NNN/STATE.md`.
+For monolithic works (no per-task STATE.md present) the reader falls back to the flat
+`tasks/task-NNN.md` shape (current behavior). Both coexist per-work.
 
 **Schema (Markdown, 6 sections — flat, no nesting):**
 
 1. `# task-NNN: {Title}` — heading
 2. `**Type:**` — one of 8 enum values (RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE)
-3. `**Source:**` — `feature-NNN-{name} → delivery-NNN`
-4. `**Depends on:**` — `task-NNN[, task-NNN]` or `— (none)`
+3. `**Source:**` — `work-NNN-{name} -> delivery-NNN`
+4. `**Depends on:**` — `task-NNN[, task-NNN]` or `-- (none)`
 5. `**Scope:**` — bullet list, type-dependent
 6. `**Acceptance Criteria:**` — checklist bullets
 
-**Invariants** (per `task-template.md` "Six sections … Nothing else." note):
+**Invariants** (per `task-spec-template.md`):
 - Six sections, nothing else.
 - One Type per task; never mix.
 - Every task except the first declares at least one `Depends on` entry.
+- State lives in the sibling `STATE.md`, not in this file (this file is immutable once created).
 
 ---
 
-## 12. Delivery Issues Log — `.aid/work-NNN/delivery-NNN-issues.md`
+## 12. Delivery Issues Log — `.aid/work-NNN-{name}/delivery-NNN/delivery-NNN-issues.md`
 
 **Source of truth:** `canonical/templates/delivery-issues.md`.
 
-**Purpose:** aggregates all `[HIGH]` findings deferred from per-task quick-checks. Input to the delivery-gate reviewer (per `delivery-issues.md` "input to the delivery gate reviewer" note).
+**Purpose:** aggregates all `[HIGH]` findings deferred from per-task quick-checks. Input
+to the delivery-gate reviewer (per `delivery-issues.md` "input to the delivery gate
+reviewer" note). This file is already disjoint by construction (one file per delivery, one
+writer = the delivery branch) and is RETAINED as-is under the new hierarchy — it now sits
+inside the `delivery-NNN/` folder alongside `SPEC.md` and `STATE.md`.
+
+**Path:** `.aid/work-NNN-{name}/delivery-NNN/delivery-NNN-issues.md`
+(legacy path was `.aid/work-NNN/delivery-NNN-issues.md` — same physical location, now
+consistently described as inside the `delivery-NNN/` folder in the uniform hierarchy).
 
 **Schema (Markdown, single table):**
 
@@ -553,13 +839,16 @@ erDiagram
     PROJECT ||--|| DISCOVERY_STATE : "tracks"
     DISCOVERY_STATE ||--o{ KB_DOC : "lists active primary docs"
     PROJECT ||--o{ WORK : "contains"
-    WORK ||--|| WORK_STATE : "tracks"
-    WORK ||--|| REQUIREMENTS : "produces"
-    WORK ||--o{ FEATURE : "decomposes into"
-    FEATURE ||--|| FEATURE_SPEC : "specified by"
-    WORK ||--|| PLAN : "planned by"
-    PLAN ||--o{ DELIVERY : "groups"
+    WORK ||--|| WORK_STATE : "tracks (AUTHORED header + DERIVED views)"
+    WORK ||--o| WORK_SPEC : "defined by (lite path; OR REQUIREMENTS+PLAN)"
+    WORK ||--o{ FEATURE : "decomposes into (spec axis)"
+    FEATURE ||--|| FEATURE_SPEC : "specified by (no STATE.md)"
+    WORK ||--o{ DELIVERY : "execution-decomposed into (SD-1)"
+    DELIVERY ||--|| DELIVERY_SPEC : "defined by"
+    DELIVERY ||--|| DELIVERY_STATE : "tracked by (AUTHORED lifecycle + DERIVED task rollup)"
     DELIVERY ||--o{ TASK : "decomposes into"
+    TASK ||--|| TASK_SPEC : "defined by"
+    TASK ||--|| TASK_STATE : "tracked by (all AUTHORED)"
     TASK ||--o| IMPEDIMENT : "may raise"
     DELIVERY ||--o| DELIVERY_ISSUES : "aggregates HIGH"
     PROJECT ||--o{ INSTALL_TREE : "renders to"
