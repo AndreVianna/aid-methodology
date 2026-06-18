@@ -36,7 +36,7 @@
     Print what would be done without writing files.
 
 .EXAMPLE
-    pwsh -NoProfile -File migrate-work-hierarchy.ps1 -WorkDir ./fixture/work-999-migration-test
+    pwsh -NoProfile -File migrate-work-hierarchy.ps1 -WorkDir tests/canonical/fixtures/migrate/fixture-source/work-999-migration-test
 
 .NOTES
     ASCII-only output. PowerShell twin of migrate-work-hierarchy.sh.

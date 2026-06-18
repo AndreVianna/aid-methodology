@@ -1,6 +1,6 @@
 # State: CONTINUE
 
-Work STATE.md `## Features Status` shows this feature `In Discussion`; find first `Pending` or `In Discussion` section in SPEC.md and resume **The Loop** for that section.
+Work STATE.md `## Features State` shows this feature `In Discussion`; find first `Pending` or `In Discussion` section in SPEC.md and resume **The Loop** for that section.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
@@ -30,7 +30,7 @@ If changing something that exists, call it out.}
 What do you think?
 ```
 
-Update section status to `In Discussion` in work STATE.md `## Features Status`.
+Update section status to `In Discussion` in work STATE.md `## Features State`.
 
 **Proposal quality rules:**
 - Reference specific files, classes, patterns from the codebase
@@ -59,7 +59,7 @@ Continue until the user is satisfied.
 When agreed:
 
 1. Write section to SPEC.md under `## Technical Specification`
-2. Update work STATE.md `## Features Status` section status → `Written`
+2. Update work STATE.md `## Features State` section status → `Written`
 3. Add Change Log entry to SPEC.md
 4. **KB Seeding (greenfield):** If the decision fills a gap in an empty KB doc,
    update that KB doc + INDEX.md + README.md. Log which KB docs were seeded.
@@ -84,7 +84,7 @@ calculated — worst issue dominates. Compare to minimum grade from `bash .curso
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum | Mark `Complete` in work STATE.md `## Features Status`. Next section. |
+| Grade ≥ minimum | Mark `Complete` in work STATE.md `## Features State`. Next section. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 | Grade < minimum, systemic | Loopback (KB/Requirements issue). |
 
@@ -104,7 +104,7 @@ in coding-standards.md §3.2 (composite indices discouraged). Let me re-propose.
 
 - More Pending sections → Propose next one (step 1)
 - All sections Complete:
-  - Set feature status to `Ready` in work STATE.md `## Features Status`
+  - Set feature status to `Ready` in work STATE.md `## Features State`
   - Print summary with all completed sections
   - `/aid-specify` on this feature now enters **REVIEW** (step 4 on all sections)
 

@@ -84,7 +84,7 @@ Every task has exactly ONE type. Never mix types in a single task.
 
 When proposing tasks, the agent reads the feature SPEC and automatically detects types:
 
-1. **Spike Needed** in work STATE.md `## Features Status` → RESEARCH task first
+1. **Spike Needed** in work STATE.md `## Features State` → RESEARCH task first
 2. **UI Specs** section in SPEC.md → DESIGN task before IMPLEMENT
 3. **Data Model / Feature Flow / Layers & Components** → IMPLEMENT task(s)
 4. **Integration points / acceptance criteria** → TEST task(s) after IMPLEMENT

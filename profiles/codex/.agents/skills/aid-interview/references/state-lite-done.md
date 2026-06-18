@@ -63,10 +63,10 @@ Add entry to `STATE.md ## Lifecycle History`:
 | {today} | LITE-DONE — lite path complete; {N} tasks ready | /aid-interview LITE-DONE |
 ```
 
-Also update the work STATUS header in STATE.md (the `> **Status:**` line):
+Also update the work state header in STATE.md (the `> **State:**` line):
 
 ```
-> **Status:** Interview Complete
+> **State:** Interview Complete
 > **Phase:** Interview
 ```
 
@@ -75,13 +75,14 @@ Also update the work STATUS header in STATE.md (the `> **Status:**` line):
 ## Step 3: Print hand-off
 
 ```
-Lite path complete for {work-NNN-name}. {N} tasks ready in tasks/.
-Delivery descriptor: .aid/{work-NNN-name}/SPEC.md
+Lite path complete for {work-NNN-name}. {N} tasks ready in delivery-001/.
+Work descriptor:     .aid/{work-NNN-name}/SPEC.md
+Delivery descriptor: .aid/{work-NNN-name}/delivery-001/SPEC.md
 
 Sub-path completed: {Sub-path}
 
 Tasks ready:
-  task-001 [{Type}] — {title}
+  task-001 [{Type}] — {title}    (.aid/{work-NNN-name}/delivery-001/tasks/task-001/SPEC.md)
   task-002 [{Type}] — {title}    ← only if present
   ...
 
@@ -106,8 +107,9 @@ When escalation is triggered from LITE-DONE:
    `Ready`) before invoking the escalation procedure — the full path will manage
    SPEC.md status independently.
 2. Invoke `references/lite-to-full-escalation.md`. Pass current state name (`LITE-DONE`)
-   and all captured info: the work-root `SPEC.md`, all task files in `tasks/`, and the
-   `LITE-REVIEW` grade (if recorded in `STATE.md ## Delivery Gates`).
+   and all captured info: the work-root `SPEC.md`, all task files in
+   `delivery-001/tasks/task-NNN/SPEC.md`, and the `LITE-REVIEW` grade (if recorded
+   in `delivery-001/STATE.md ## Delivery Gate`).
 
 The `{work-NNN-name}` work id leads the `/aid-execute` command so that
 multi-work `.aid/` directories resolve unambiguously.
@@ -133,4 +135,4 @@ Terminal state. No further state advance. The user's next step is:
 | SPEC.md has `*(pending)*` Name at LITE-DONE | Step 0 composes Name from H1 and writes it before setting Status=Ready |
 | SPEC.md missing Description at LITE-DONE | Step 0 composes Description from ## Goal body and writes it |
 | LITE-DONE entry already in lifecycle | Prints hand-off again; exits (idempotent) |
-| User selects [E] Escalate at LITE-DONE | SPEC.md reset to Draft; `lite-to-full-escalation.md` invoked; SPEC.md + tasks/ + LITE-REVIEW grade carried; `Path: escalated` written; REQUIREMENTS.md seeded; next state = CONTINUE |
+| User selects [E] Escalate at LITE-DONE | SPEC.md reset to Draft; `lite-to-full-escalation.md` invoked; SPEC.md + delivery-001/tasks/ + LITE-REVIEW grade carried; `Path: escalated` written; REQUIREMENTS.md seeded; next state = CONTINUE |

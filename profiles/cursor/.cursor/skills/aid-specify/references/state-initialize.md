@@ -78,10 +78,10 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 
 ### Step 3: Register in work STATE.md
 
-In the work's `.aid/{work}/STATE.md`, update the `## Features Status` table:
+In the work's `.aid/{work}/STATE.md`, update the `## Features State` table:
 - Find or add a row for this feature
-- Set Status to `In Discussion`, Started date to today
-- Columns: Feature | Status | Sections | Started | Last Updated | Notes
+- Set State to `In Discussion`, Started date to today
+- Columns: Feature | State | Sections | Started | Last Updated | Notes
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
@@ -113,6 +113,6 @@ I've analyzed {feature} against the KB and codebase.
 Does this look right? Answer the questions, and tell me if I'm missing anything.
 ```
 
-Process response → update work STATE.md `## Features Status` → begin **The Loop** for first Pending section.
+Process response → update work STATE.md `## Features State` → begin **The Loop** for first Pending section.
 
 **Advance:** **CHAIN** → [State: CONTINUE] (continue inline).

@@ -8,18 +8,18 @@ that arise during the propose→discuss→write→review loop.
 **Simple fix:** Fix the KB document directly, note in work STATE.md `## Cross-phase Q&A`.
 
 **Needs re-discovery:** Add Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)`,
-note the loopback in work STATE.md `## Features Status`, continue with non-blocked sections.
+note the loopback in work STATE.md `## Features State`, continue with non-blocked sections.
 
 ## Requirements are Wrong or Incomplete
 
 **Simple fix:** Fix REQUIREMENTS.md and SPEC.md directly, add Change Log entries.
 
 **Needs re-interview:** Add Q&A entry to `.aid/{work}/STATE.md` `## Cross-phase Q&A`,
-note the loopback in work STATE.md `## Features Status`.
+note the loopback in work STATE.md `## Features State`.
 
 ## Spike Needed (State 3)
 
-1. Update STATE.md: `**Status:** Spike Needed` with What/Why/Scope/Blocked Sections
+1. Update STATE.md: `**State:** Spike Needed` with What/Why/Scope/Blocked Sections
 2. Print spike details and exit
 
 On return: read spike results, record in SPEC.md, resume loop.

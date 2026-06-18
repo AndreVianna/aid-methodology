@@ -2,7 +2,7 @@
 
 Spec is Ready and has met the minimum grade; this feature's specification is complete.
 
-The feature spec is marked `Ready` in work STATE.md `## Features Status` and has met the minimum grade.
+The feature spec is marked `Ready` in work STATE.md `## Features State` and has met the minimum grade.
 No further action is required for this feature.
 
 ### Ledger cleanup

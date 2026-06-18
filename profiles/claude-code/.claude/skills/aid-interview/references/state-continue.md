@@ -12,7 +12,7 @@ What are we building? Tell me the goal and what success looks like.
 Otherwise: resume the conversational interview — assess sections, ask next question, update files.
 The Interview Loop below applies.
 
-Read STATE.md `## Interview Status` section status table to know where to continue.
+Read STATE.md `## Interview State` section status table to know where to continue.
 Read REQUIREMENTS.md to know what's already captured.
 
 ---

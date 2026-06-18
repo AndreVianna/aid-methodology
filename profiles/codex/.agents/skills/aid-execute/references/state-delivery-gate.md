@@ -20,6 +20,11 @@ aid-execute  ▸ you are here
 
 Print this state-entry banner before proceeding to Step 0.
 
+Advance delivery lifecycle to Gated (silent state-write -- no output, no gate):
+```bash
+bash .agents/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
+```
+
 ## DELIVERY-GATE State Machine
 
 ```
@@ -105,7 +110,7 @@ Parse the `| Task | Depends On |` table to build the dependency map.
 |--------|--------|--------------|
 | Task count | tasks in this delivery (Execution Graph) | +1 per task |
 | Graph depth | longest dependency chain (longest path in DAG) | +1 per edge on the longest chain |
-| Risk-weighted types | each task's `Type` field (`task-NNN.md`) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
+| Risk-weighted types | each task's `Type` field (`delivery-NNN/tasks/task-NNN/SPEC.md`) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
 | Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from `## Quick Check Findings`) + tasks whose Agent-Selection row triggers an `aid-researcher` analysis consult | +1 each |
 
 ### Tier Selection
@@ -168,7 +173,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 
 - **All delivery artifacts** — every file produced or modified by tasks in the
   delivery (code, docs, configs, tests, etc.)
-- **All `task-NNN.md` files** for this delivery — Definition zones (Type,
+- **All `delivery-NNN/tasks/task-NNN/SPEC.md` files** for this delivery — Definition zones (Type,
   Source, Scope, Acceptance Criteria)
 - **Feature SPEC(s):**
   - Full path: per-feature `SPEC.md` files (`.aid/{work}/features/*/SPEC.md`)
@@ -275,17 +280,20 @@ Gate grade below minimum. Next steps:
 
 **Non-CODE issues (TASK, SPEC, KB):**
 - **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Write Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A` →
+- **SPEC** → Write Q&A to `delivery-NNN/STATE.md` `## Cross-phase Q&A` (SD-5:
+  the delivery gate writes to its OWN delivery STATE.md, not the shared work STATE.md,
+  to preserve the disjoint-write property -- two delivery branches cannot collide) →
   suggest `/aid-specify`
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
 
 **If ONLY non-CODE issues remain:** **STOP.** The delivery is as good as it
-can be — the problem is upstream. Present what needs to change and where.
-Emit pipeline pause signal (silent state-write — no output, no gate):
+can be -- the problem is upstream. Present what needs to change and where.
+Emit delivery and pipeline pause signals (silent state-writes -- no output, no gate):
 ```bash
+bash .agents/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
 bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues — upstream fix required (SPEC/TASK/KB)"
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues -- upstream fix required (SPEC/TASK/KB)"
 bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
@@ -329,10 +337,11 @@ Options:
 ```
 
 Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
-is written, emit the pipeline block signal (silent state-write — no output, no gate):
+is written, emit the delivery and pipeline block signals (silent state-writes -- no output, no gate):
 ```bash
+bash .agents/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
 bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered — grade not improving after 3 cycles"
+bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
 bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
 bash .agents/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -360,7 +369,7 @@ Compose the final gate block:
   {gate reviewer's issue list, all severities, or "none" if A+}
 ```
 
-### 6b: Write to `## Delivery Gates` in Work STATE.md
+### 6b: Write to `## Delivery Gate` in Delivery STATE.md
 
 Use the writeback helper:
 
@@ -369,9 +378,16 @@ writeback-state.sh --delivery-id NNN --block "BLOCK"
 ```
 
 > **Helper target:** `writeback-state.sh --delivery-id NNN --block BLOCK`
-> writes the `### delivery-NNN` block under `## Delivery Gates` in the work
-> `STATE.md`. Task files are not modified. This is the canonical write target
-> per feature-004 Alignment Update and SPEC L240-260.
+> writes the `## Delivery Gate` block in `delivery-NNN/STATE.md` (SD-5:
+> the delivery gate block is authored by this delivery's branch only; it is NOT
+> written into the shared work STATE.md). The work-level `## Delivery Gates`
+> view is DERIVED at read time as the union of all delivery gate blocks.
+
+### 6b-2: Advance delivery lifecycle to Done
+
+```bash
+bash .agents/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Done
+```
 
 ### 6c: Mark Deferred Issues Resolved/Accepted
 
@@ -383,15 +399,15 @@ For each row in `delivery-NNN-issues.md`:
 
 Update the file directly (no helper needed — single writer by construction).
 
-### 6d: Update Delivery Row in STATE.md
+### 6d: Update Delivery Row in Work STATE.md
 
-Update the `## Plan / Deliveries` row for this delivery:
+The work-level `## Plan / Deliveries` derived view is computed at read time from
+the per-delivery `## Delivery Lifecycle` State values. Since we already advanced the
+delivery lifecycle to Done in step 6b-2, the dashboard reader will reflect `Done`
+in the work-level view automatically. No additional writeback is needed here.
 
-```bash
-writeback-state.sh --task-id NNN --field Status --value "Done"
-```
-
-_(Uses the delivery's gate-record task id to mark the delivery row done.)_
+_(Previously this step wrote a "Status: Done" row to the work STATE.md; under the
+hierarchical layout, the delivery's lifecycle State is the authoritative source.)_
 
 ### 6e: Delete Ledger
 
@@ -415,8 +431,8 @@ Print the final delivery snapshot:
 ```
 delivery-NNN  ·  {N} tasks  ·  gate grade {grade}  ·  Done at {timestamp}
 
-| Task | Type | Status | Quick-Check | Notes |
-|------|------|--------|-------------|-------|
+| Task | Type | State | Quick-Check | Notes |
+|------|------|-------|-------------|-------|
 | task-NNN | IMPLEMENT | Done | [HIGH] × 1 (Resolved) | — |
 | task-NNN | TEST | Done | none | — |
 ```

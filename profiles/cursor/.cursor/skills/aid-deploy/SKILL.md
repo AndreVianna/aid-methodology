@@ -33,7 +33,7 @@ Required: work ID. If only one work exists, auto-select it.
   knowledge/
     STATE.md                   ← Q&A, Review History (settings → .aid/settings.yml), Q&A (Pending)
 .aid/{work}/
-  STATE.md                     ← § Deploy Status (current operation status, history)
+  STATE.md                     ← § Deploy State (current operation status, history)
   packages/                    ← product (one file per release)
     package-001-{name}.md
     package-002-{name}.md
@@ -46,14 +46,14 @@ Required: work ID. If only one work exists, auto-select it.
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory (same routing as other skills).
-3. Read work `STATE.md` `## Deploy Status` section (or create it if absent).
+3. Read work `STATE.md` `## Deploy State` section (or create it if absent).
 4. Read `PLAN.md` — identify deliveries and their statuses.
-5. Check work `STATE.md` `## Tasks Status` — check statuses and grades.
-6. If Deploy Status shows an active package → resume from that step (see State Detection).
+5. Check work `STATE.md` `## Tasks State` — check statuses and grades.
+6. If Deploy State shows an active package → resume from that step (see State Detection).
 
 ## State Detection
 
-Read work `STATE.md` `## Deploy Status`:
+Read work `STATE.md` `## Deploy State`:
 - **Status: Idle** → IDLE state (start new package; see `references/state-idle.md`)
 - **Status: Selecting** → SELECTING state (resume delivery selection; see `references/state-selecting.md`)
 - **Status: Verifying** → VERIFYING state (resume verification; see `references/state-verifying.md`)
@@ -102,7 +102,7 @@ aid-deploy  ▸ you are here
 - `.aid/{work}/PLAN.md` — deliveries, sequencing, success criteria
 - `.aid/{work}/tasks/task-*.md` — task statuses and scope
 - `.aid/{work}/features/*/SPEC.md` — what was specified
-- Work `STATE.md` `## Tasks Status` table — review grades per task
+- Work `STATE.md` `## Tasks State` table — review grades per task
 - `known-issues.md` — if exists, check for Critical/High blockers
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, pull:
   - `infrastructure.md` § Deployment — how to package, where to publish
@@ -147,4 +147,4 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 - [ ] Release notes generated in package file
 - [ ] KB updates routed to `.aid/knowledge/STATE.md` `## Q&A (Pending)` (not direct edits)
 - [ ] Delivery and task statuses updated to Shipped in work STATE.md
-- [ ] Work STATE.md `## Deploy Status` updated (Done + History entry)
+- [ ] Work STATE.md `## Deploy State` updated (Done + History entry)

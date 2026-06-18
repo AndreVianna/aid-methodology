@@ -180,6 +180,9 @@ the reproduction + intended-behavior pair.
 
 ## Tasks
 
+> Tasks live under `delivery-001/tasks/task-NNN/SPEC.md`; each task folder also contains
+> `STATE.md` for mutable task state. The table below is the navigational index.
+
 | Task | Type | Title |
 |------|------|-------|
 | task-001 | IMPLEMENT | Apply fix + add regression test |
@@ -209,6 +212,7 @@ the reproduction + intended-behavior pair.
 > L1 completion; they are filled in full by State L2 (TASK-BREAKDOWN). L1 only
 > writes: `## Goal`, `## Context`, `## Acceptance Criteria`. The scaffold rows
 > above are pre-populated so the file is valid Markdown — L2 overwrites them.
+> The `delivery-001/` hierarchy (SPEC.md + STATE.md + task folders) is created by L2.
 
 ---
 
@@ -289,6 +293,9 @@ describes both the intent and the definition of done.
 
 ## Tasks
 
+> Tasks live under `delivery-001/tasks/task-NNN/SPEC.md`; each task folder also contains
+> `STATE.md` for mutable task state. The table below is the navigational index.
+
 | Task | Type | Title |
 |------|------|-------|
 | task-001 | REFACTOR | {scope} refactor |
@@ -316,6 +323,7 @@ describes both the intent and the definition of done.
 
 > Note: L1 writes `## Goal`, `## Context`, `## Acceptance Criteria`.
 > `## Tasks` / `## Execution Graph` scaffold rows are placeholders — L2 overwrites them.
+> The `delivery-001/` hierarchy (SPEC.md + STATE.md + task folders) is created by L2.
 
 ---
 
@@ -399,6 +407,9 @@ LITE-REFACTOR with additional AC prompts.
 
 ## Tasks
 
+> Tasks live under `delivery-001/tasks/task-NNN/SPEC.md`; each task folder also contains
+> `STATE.md` for mutable task state. The table below is the navigational index.
+
 | Task | Type | Title |
 |------|------|-------|
 | task-001 | IMPLEMENT | {feature-title} implementation |
@@ -426,6 +437,7 @@ LITE-REFACTOR with additional AC prompts.
 
 > Note: L1 writes `## Goal`, `## Context`, `## Acceptance Criteria`.
 > `## Tasks` / `## Execution Graph` scaffold rows are placeholders — L2 overwrites them.
+> The `delivery-001/` hierarchy (SPEC.md + STATE.md + task folders) is created by L2.
 
 ---
 
@@ -453,8 +465,8 @@ After writing SPEC.md, update `STATE.md ## Lifecycle History`:
 **CHAIN** → [State: TASK-BREAKDOWN] (continue inline).
 
 The TASK-BREAKDOWN state (L2) reads the work-root `SPEC.md` and produces the
-final `tasks/task-NNN.md` files plus the filled `## Tasks` and `## Execution Graph`
-sections of `SPEC.md`.
+`delivery-001/` hierarchy (SPEC.md + STATE.md + tasks/task-NNN/{SPEC,STATE}.md) plus
+the filled `## Tasks` and `## Execution Graph` sections of the work-root `SPEC.md`.
 
 ---
 

@@ -29,7 +29,7 @@
 #   WS14  task-state-template has the 4 mutable cells (State/Review/Elapsed/Notes)
 #   WS15  task-state-template has ## Quick Check Findings section
 #   WS16  task-state-template has ## Dispatch Log section
-#   WS17  work-state-template derived sections are marked DERIVED / read-only
+#   WS17  work-state-template 7 derived sections are marked DERIVED / read-only (Deploy State is AUTHORED)
 #   WS18  SD-2 ordering (Done > ... > Pending) present as authoritative list
 #   WS19  aid-interview state-first-run seeds Pipeline State fields (Lifecycle/Phase/Active Skill)
 #   WS20  The seed prose does not introduce any new user-facing output
@@ -262,9 +262,11 @@ assert_file_contains \
 
 # ---------------------------------------------------------------------------
 # WS17: work-state-template derived sections are marked DERIVED / read-only
+# work-004 (task-016b): Deploy State was reclassified AUTHORED (single-writer
+# aid-deploy; not hierarchy-migrated). The 7 remaining sections are DERIVED.
 # ---------------------------------------------------------------------------
-# Check each of the 8 DERIVED sections contains the DERIVED marker
-for section in "Features State" "Plan / Deliveries" "Tasks State" "Deploy State" \
+# Check each of the 7 DERIVED sections contains the DERIVED marker
+for section in "Features State" "Plan / Deliveries" "Tasks State" \
                "Delivery Gates" "Cross-phase Q&A" "Calibration Log" "Dispatches"; do
     # Find the section header and check that DERIVED appears in that vicinity
     if grep -q "## ${section}" "$WORK_STATE" 2>/dev/null; then

@@ -2,9 +2,10 @@
 
 [!NOTE]
 This is the WORK-LEVEL STATE.md template. It is divided into two zones:
-  AUTHORED (single-writer) -- Pipeline State, Triage, Escalation Carry, Interview State, Lifecycle History.
+  AUTHORED (single-writer) -- Pipeline State, Triage, Escalation Carry, Interview State, Lifecycle History,
+    Deploy State.
   DERIVED (read-only, assembled at read time) -- Features State, Plan/Deliveries, Tasks State,
-    Deploy State, Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches.
+    Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches.
 The DERIVED sections are NEVER written directly; they are union views over the per-delivery and
 per-task STATE.md files. Agents that write state must target the per-unit STATE.md files instead.
 
@@ -144,6 +145,19 @@ different places.
 
 ---
 
+## Deploy State
+
+<!-- AUTHORED -- written ONLY by `aid-deploy` at each delivery deploy (single writer; one row
+     per delivery). Never derived from child files; aid-deploy is the sole author. Future work
+     may migrate this to a per-delivery hierarchy view, but until then it is AUTHORED here.
+     One row per delivery from /aid-deploy. -->
+
+| Delivery | State | PR | KB Updated | Tag | Notes |
+|----------|-------|----|-----------|-----|-------|
+| _none yet_ | | | | | |
+
+---
+
 <!-- ============================================================
      DERIVED / READ-ONLY VIEWS
      The sections below are assembled at READ TIME from per-delivery and per-task STATE.md files.
@@ -182,15 +196,6 @@ different places.
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
 | _none yet_ | | | | | | | |
-
-## Deploy State
-
-<!-- DERIVED -- read-only view assembled from delivery-NNN/STATE.md deploy entries.
-     Never written here. One row per delivery from /aid-deploy. -->
-
-| Delivery | State | PR | KB Updated | Tag | Notes |
-|----------|-------|----|-----------|-----|-------|
-| _none yet_ | | | | | |
 
 ## Delivery Gates
 

@@ -77,7 +77,7 @@ Each deliverable follows the same cycle:
 ### Check 2: Verify Feature SPECs
 
 1. Scan `.aid/{work}/features/*/SPEC.md`
-2. Check work STATE.md `## Features Status` — each feature should be `Ready`
+2. Check work STATE.md `## Features State` — each feature should be `Ready`
 3. No features → **STOP.** "Run `/aid-interview` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
 

@@ -59,10 +59,12 @@ pipeline_write() {
         bash "$WRITEBACK" --pipeline --field "$field" --value "$val" 2>/dev/null
 }
 
-# Helper: extract the ## Pipeline Status block from a STATE.md.
+# Helper: extract the ## Pipeline State block from a STATE.md.
+# Accepts both "## Pipeline State" (work-004 rename) and the legacy
+# "## Pipeline Status" heading so the helper stays robust against both.
 get_block() {
     local f="$1"
-    awk '/^## Pipeline Status/{in_ps=1; next} in_ps && /^## /{in_ps=0} in_ps{print}' "$f"
+    awk '/^## Pipeline Stat(e|us)$/{in_ps=1; next} in_ps && /^## /{in_ps=0} in_ps{print}' "$f"
 }
 
 # ===========================================================================

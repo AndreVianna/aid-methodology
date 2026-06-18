@@ -1,6 +1,6 @@
 # State: COMPLETION
 
-All sections are Complete or N/A in STATE.md `## Interview Status`; run quality check, KB hydration, and present requirements for approval.
+All sections are Complete or N/A in STATE.md `## Interview State`; run quality check, KB hydration, and present requirements for approval.
 
 ### Step 1: Quality Check
 
@@ -108,9 +108,9 @@ Is there anything else we should consider, or are the requirements ready?
 ### Step 5: Process Approval Response
 
 - **[1] Approved:**
-  - Set `**Interview Status:** Approved` in STATE.md `## Interview Status`
+  - Set `**Interview State:** Approved` in STATE.md `## Interview State`
   - Add Change Log entry in REQUIREMENTS.md: `| {today} | Interview complete — approved | /aid-interview |`
-  - Add Review History entry in STATE.md `## Interview Status`
+  - Add Review History entry in STATE.md `## Interview State`
   - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
     if they exist
   - If `infrastructure.md § Project Management` defines a tool → create an Epic for this work
@@ -125,7 +125,7 @@ Is there anything else we should consider, or are the requirements ready?
 
 - **[2] Additional consideration:**
   - Incorporate into relevant section(s) of REQUIREMENTS.md
-  - Update STATE.md `## Interview Status` section statuses if needed
+  - Update STATE.md `## Interview State` section statuses if needed
   - Return to Interview Loop for any new gaps
 
 **Advance:** **PAUSE-FOR-USER-DECISION** (contracted checkpoint per feature-002 SPEC IQ9 resolution 2026-05-24) — on approval, print the pause reason + resume command and exit. User re-invokes `/aid-interview` to continue to [State: FEATURE-DECOMPOSITION]. Do NOT chain — this is the only explicit no-auto-advance contract in the AID methodology.

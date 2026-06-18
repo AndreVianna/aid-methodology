@@ -2,7 +2,7 @@
 
 All sections complete; re-review entire spec against current KB and codebase.
 
-The spec was completed previously (feature status `Ready` in work STATE.md `## Features Status`).
+The spec was completed previously (feature status `Ready` in work STATE.md `## Features State`).
 
 **Ask first:** _"This feature spec is marked Ready. Do you want to reopen it for review?
 Is there something specific you want to re-examine?"_
@@ -31,7 +31,7 @@ For each section in SPEC.md, run step 4 of the loop against current state:
 
 Render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = `SPEC.md` path + the section list under review (or "full SPEC")
-- `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features Status\` row. This is the final review pass before the feature is marked Ready.`
+- `{{CONTEXT}}` = `SPEC.md for feature-NNN-{name} in work-NNN-{name}. All sections marked Complete in the work STATE.md \`## Features State\` row. This is the final review pass before the feature is marked Ready.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/specify-<feature>.md` if it

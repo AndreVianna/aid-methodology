@@ -113,11 +113,18 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 ### PD-1: Initialize State
 
 Compute the **ready set** — every task whose `Depends On` list is `—` (no deps)
-or whose every dependency already has Status `Done` in the work `STATE.md ## Tasks
-Status` table.
+or whose every dependency already has `State: Done` in its respective
+`delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section.
 
 Mark all other tasks **Pending** (no state write needed — absence of `Done` implies
 Pending). The **in-flight set** starts empty. The **blocked set** starts empty.
+
+**Advance delivery lifecycle to Executing** (silent state-write -- fires once when
+the first task is dispatched, idempotent if already Executing):
+```bash
+bash .github/aid/scripts/execute/writeback-state.sh \
+    --delivery-id DDD --lifecycle Executing
+```
 
 Print the initial EXECUTE-WAVE snapshot (see **EXECUTE-WAVE Snapshot** in
 `SKILL.md`):
@@ -125,8 +132,8 @@ Print the initial EXECUTE-WAVE snapshot (see **EXECUTE-WAVE Snapshot** in
 ```
 Wave ∞ (pool) · 0/{T} done
 
-| Task | Type | Status | Time |
-|------|------|--------|------|
+| Task | Type | State | Time |
+|------|------|-------|------|
 | task-001 | IMPLEMENT | (queued) | — |
 | task-002 | IMPLEMENT | (queued) | — |
 ...
@@ -160,9 +167,9 @@ While `|in-flight| < MaxConcurrent` and the ready set is non-empty:
    > sub-agent returns. Treat the returned result as the completion event and
    > proceed directly to PD-4 for that task, then loop back to PD-2.
 
-5. Update work `STATE.md` row Status to `In Progress` via:
+5. Update task State to `In Progress` via:
    ```
-   writeback-state.sh --task-id NNN --field Status --value "In Progress"
+   writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "In Progress"
    ```
 
 6. Pre-create heartbeat file: `.aid/.heartbeat/<executor>-<unix-ts>.txt`
@@ -179,16 +186,19 @@ Each dispatched agent receives:
 
 ```
 TASK: task-{NNN}
+DELIVERY: delivery-{DDD}
 WORK: .aid/{work}/
 WORKTREE: .aid/.worktrees/task-{NNN}/
 HEARTBEAT_FILE: .aid/.heartbeat/{executor}-{ts}.txt
 HEARTBEAT_INTERVAL: 1m
 
-Execute task-{NNN} using the aid-execute skill in per-task mode — full pipeline
-EXECUTE → QUICK CHECK → REVIEW → cycles until DONE.
-Read task-{NNN}.md from .aid/{work}/tasks/. Follow the type-specific executor
-rules from references/task-type-rules.md. On completion, commit to the delivery
-branch in the worktree. Report: DONE or FAILED with reason.
+Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
+EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
+Read task definition from .aid/{work}/delivery-{DDD}/tasks/task-{NNN}/SPEC.md.
+Read task state from .aid/{work}/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
+Follow the type-specific executor rules from references/task-type-rules.md.
+On completion, commit to the delivery branch in the worktree.
+Report: DONE or FAILED with reason.
 ```
 
 ### PD-3: Wait for One Completion
@@ -225,11 +235,11 @@ Remove `task-{NNN}` from the in-flight set.
    ```
    (Expected output: the sub-agent's commits, already on the delivery branch.)
 
-2. **Update STATUS to Done:**
+2. **Update State to Done:**
    ```bash
-   writeback-state.sh --task-id NNN --field Status --value "Done"
+   writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Done"
    ```
-   _(The per-task full pipeline EXECUTE → QUICK CHECK → REVIEW ran inside the
+   _(The per-task full pipeline EXECUTE -> QUICK CHECK -> REVIEW ran inside the
    dispatched sub-agent; by the time DONE is reported, the sub-agent has already
    completed its own review cycles.)_
 
@@ -251,15 +261,20 @@ Remove `task-{NNN}` from the in-flight set.
 
 1. Emit `✗ <executor> FAILED for task-{NNN} after <elapsed>`.
 
-2. Update status:
+2. Update state:
    ```bash
-   writeback-state.sh --task-id NNN --field Status --value "Failed"
+   writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
    ```
 
-   Emit pipeline block signal (silent state-write — no output, no gate):
+   Advance delivery lifecycle to Blocked (silent state-write -- no output, no gate):
+   ```bash
+   bash .github/aid/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
+   ```
+
+   Emit pipeline block signal (silent state-write -- no output, no gate):
    ```bash
    bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment — task-{NNN}"
+   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
    bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
    bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
@@ -316,8 +331,8 @@ Remove `task-{NNN}` from the in-flight set.
 
    - Mark it Blocked via:
      ```bash
-     writeback-state.sh --task-id B --field Status --value "Blocked"
-     writeback-state.sh --task-id B --field Notes \
+     writeback-state.sh --delivery-id DDD --task-id B --field State --value "Blocked"
+     writeback-state.sh --delivery-id DDD --task-id B --field Notes \
        --value "Blocked: transitive dependency on failed task-{NNN}"
      ```
    - Remove `B` from the ready set if present (blocked tasks are never dispatched).
@@ -392,12 +407,13 @@ Next steps:
 
 **State invariants at fixed point (Case B):**
 
-- Every task in the failed set has Status `Failed` in work `STATE.md`.
-- Every task in the blocked set has Status `Blocked` in work `STATE.md` with
-  a Notes entry naming its failed ancestor.
+- Every task in the failed set has `State: Failed` in its `delivery-NNN/tasks/task-NNN/STATE.md`.
+- Every task in the blocked set has `State: Blocked` in its `delivery-NNN/tasks/task-NNN/STATE.md`
+  with a Notes entry naming its failed ancestor.
+- The delivery `STATE.md` `## Delivery Lifecycle` has `State: Blocked`.
 - No Blocked task was dispatched (Blocked tasks never enter the ready set).
 - Every task NOT in the failed or blocked sets and not already `Done` has
-  Status `Pending` — it was not reached this run because it was not yet ready
+  `State: Pending` -- it was not reached this run because it was not yet ready
   when the pool exhausted all forward progress. This is normal for partially-
   ordered deliveries and is NOT the same as being Blocked.
 
@@ -473,9 +489,19 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 ## Step 1: EXECUTE (Do the Work)
 
-Update work `STATE.md` `## Tasks Status` table: set this task's row Status to `In Progress`.
+Update the task State to `In Progress` (silent state-write -- no output):
+```bash
+bash .github/aid/scripts/execute/writeback-state.sh \
+    --delivery-id DDD --task-id NNN --field State --value "In Progress"
+```
 
-Emit pipeline phase (silent state-write only — no output, no gate):
+Advance delivery lifecycle to Executing (silent state-write -- no output, idempotent):
+```bash
+bash .github/aid/scripts/execute/writeback-state.sh \
+    --delivery-id DDD --lifecycle Executing
+```
+
+Emit pipeline phase (silent state-write only -- no output, no gate):
 ```
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
@@ -483,19 +509,24 @@ bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Active S
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
-**Pick the executor by task Type from the Agent Selection table above** (RESEARCH → `aid-researcher`, DESIGN → `aid-architect`, IMPLEMENT/TEST/REFACTOR → `aid-developer`, DOCUMENT → `aid-tech-writer`, MIGRATE → `aid-developer`, CONFIGURE → `aid-developer`).
+**Pick the executor by task Type from the Agent Selection table above** (RESEARCH -> `aid-researcher`, DESIGN -> `aid-architect`, IMPLEMENT/TEST/REFACTOR -> `aid-developer`, DOCUMENT -> `aid-tech-writer`, MIGRATE -> `aid-developer`, CONFIGURE -> `aid-developer`).
 
-Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor — this overrides the skill's default `agent: aid-developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: aid-architect`; an IMPLEMENT task uses `subagent_type: aid-developer` (matches the default).
+Dispatch with the Task tool, setting `subagent_type` explicitly to the chosen executor -- this overrides the skill's default `agent: aid-developer` from frontmatter. Example: a DESIGN task dispatches with `subagent_type: aid-architect`; an IMPLEMENT task uses `subagent_type: aid-developer` (matches the default).
 
-**Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task → subagent_type={executor}` (substituting actual values).
+**Before dispatching, print:** `[Step 1] Dispatching {executor} for {Type} task -> subagent_type={executor}` (substituting actual values).
 
-Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule — always, not conditional).
+Dispatch metadata is logged via the Calibration Log appendix in STATE.md (per work-003 traceability rule -- always, not conditional).
 
 ▶ {executor} starting (~{time band per rough-time-hints})
 Load the section matching the task's Type from `references/task-type-rules.md` and pass it to the executor as the type-specific RULES it must follow.
 
-**When agent reports done:** verify relevant gates pass (build, lint, tests — as applicable to the type).
-✓ {executor} done (record actual time) — or ✗ {executor} failed: {reason}
-When execution passes → update work `STATE.md` `## Tasks Status` row Status to `In Review` → proceed to Step 2 (REVIEW).
+**When agent reports done:** verify relevant gates pass (build, lint, tests -- as applicable to the type).
+✓ {executor} done (record actual time) -- or ✗ {executor} failed: {reason}
+When execution passes → update task State to `In Review`:
+```bash
+bash .github/aid/scripts/execute/writeback-state.sh \
+    --delivery-id DDD --task-id NNN --field State --value "In Review"
+```
+Then proceed to Step 2 (REVIEW).
 
-**Advance:** **CHAIN** → [State: REVIEW] (continue inline).
+**Advance:** **CHAIN** -> [State: REVIEW] (continue inline).

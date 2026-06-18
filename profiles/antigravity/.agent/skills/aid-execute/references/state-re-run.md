@@ -14,7 +14,7 @@ aid-execute  ▸ you are here
 
 1. Ask: _"This task is marked Done. Do you want to reopen it for review?
    Is there something specific you want to re-examine?"_
-2. If user confirms → set Status to `In Review` in work `STATE.md` `## Tasks Status`, proceed to Step 2 (REVIEW)
+2. If user confirms → set State to `In Review` in work `STATE.md` `## Tasks State`, proceed to Step 2 (REVIEW)
 3. If user has a specific concern → record it as context for the reviewer
 
 **Advance:** **PAUSE-FOR-USER-DECISION** → this is a human-gated decision point. The router prints the prompt above and exits; the user re-invokes `/aid-execute` with their answer to continue to [State: REVIEW] or [State: DONE] depending on the decision.

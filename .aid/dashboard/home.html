@@ -3135,7 +3135,8 @@ footer {
 
   // Deep-anchor within the raw-state pre: find the task's block and scroll to it (DD-3)
   function _anchorRawState(preEl, taskId) {
-    // Look for "### <task_id>" or "## Tasks Status" row matching task_id
+    // Look for "### <task_id>" or "## Tasks State/Status" row matching task_id
+    // Tolerates BOTH "## Tasks Status" (legacy) and "## Tasks State" (new, work-004 rename).
     var text = preEl.textContent || '';
     var lines = text.split('\n');
     var targetLine = -1;
@@ -3146,11 +3147,25 @@ footer {
         break;
       }
     }
-    // Second try: any line containing the task_id
+    // Second try: "## Tasks State" or "## Tasks Status" section containing task_id
     if (targetLine < 0) {
+      var inTasksSection = false;
       for (var j = 0; j < lines.length; j++) {
-        if (lines[j].indexOf(taskId) !== -1) {
-          targetLine = j;
+        if (/^##\s+Tasks\s+(?:State|Status)\s*$/i.test(lines[j])) {
+          inTasksSection = true;
+          continue;
+        }
+        if (inTasksSection) {
+          if (/^##\s+/.test(lines[j])) { inTasksSection = false; continue; }
+          if (lines[j].indexOf(taskId) !== -1) { targetLine = j; break; }
+        }
+      }
+    }
+    // Third try: any line containing the task_id
+    if (targetLine < 0) {
+      for (var k = 0; k < lines.length; k++) {
+        if (lines[k].indexOf(taskId) !== -1) {
+          targetLine = k;
           break;
         }
       }
@@ -3201,7 +3216,7 @@ footer {
       var steps = [
         'The dashboard server\'s own log is at .aid/.temp/dashboard.log (created by aid dashboard start; records server boot/errors, not task execution).',
         'For pipeline/task troubleshooting, re-run the relevant skill (e.g. /aid-execute) and watch its live terminal output.',
-        'AID writes task forensics to this work\'s STATE.md (see Quick Check Findings, Delivery Gates above) — shown on this page.',
+        'AID writes task forensics to this work\'s STATE.md (see Quick Check Findings, Delivery Gates / Delivery Gate above) — shown on this page.',
         'After a re-run, this page\'s Findings/Ledger sections update on the next refresh (within the poll interval).'
       ];
       for (var s = 0; s < steps.length; s++) {

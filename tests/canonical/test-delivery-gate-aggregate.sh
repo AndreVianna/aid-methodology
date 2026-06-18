@@ -8,6 +8,8 @@
 #   4. Grade computation via grade.sh (deterministic output verification)
 #   5. Loopback guard (grade < min does NOT re-run quick-checks, only loops review)
 #   6. FR6 interlock (gate must not fire while any task has status Failed or Blocked)
+#   7. RECORD — --delivery-id --block writes ## Delivery Gate into delivery-NNN/STATE.md (SD-5 / work-004)
+#              per-delivery model: work-level ## Delivery Gates is DERIVED (not written by helper)
 #
 # Usage:
 #   test-delivery-gate-aggregate.sh [--verbose]
@@ -139,8 +141,8 @@ run_test_2() {
              "File was not created at $issues_file"
     fi
 
-    # Verify the header is correct
-    if grep -q "# Delivery Issue Log — delivery-003" "$issues_file"; then
+    # Verify the header is correct (writeback creates file with double-hyphen separator "--")
+    if grep -q "# Delivery Issue Log -- delivery-003" "$issues_file"; then
         pass "Test 2: Created file has correct header"
     else
         fail "Test 2: Created file has correct header" \
@@ -427,22 +429,47 @@ EOF
 
 # ---------------------------------------------------------------------------
 # Test 7: RECORD — writeback-state.sh --delivery-id --block writes
-#          the ## Delivery Gates block correctly
+#          the per-delivery ## Delivery Gate block correctly (SD-5 / work-004).
+#
+# work-004 (task-003/007) retargeted --delivery-id --block to write the gate
+# into delivery-NNN/STATE.md ## Delivery Gate (per-delivery, single-writer).
+# The work-level ## Delivery Gates section is now a DERIVED read-only view
+# assembled by the reader -- the helper no longer writes to it.
 # ---------------------------------------------------------------------------
 run_test_7() {
     local ws
     ws=$(make_workspace)
 
-    # Create a task file (gate-record task — highest numbered)
-    cat > "$ws/.aid/work/tasks/task-002-test.md" <<'EOF'
-# task-002: Test task
+    # Create the per-delivery STATE.md that the helper now targets (SD-5).
+    # The file must exist; the helper writes ## Delivery Gate into it.
+    mkdir -p "$ws/.aid/work/delivery-003"
+    cat > "$ws/.aid/work/delivery-003/STATE.md" <<'EOF'
+# Delivery State -- delivery-003
 
-**Type:** TEST
-**Source:** feature-001 → delivery-003
-**Depends on:** task-001
-**Scope:** Write tests.
-**Acceptance Criteria:**
-- [ ] Tests pass.
+> **Delivery:** delivery-003
+> **Work:** work-001-test
+> **Branch:** aid/work-001-delivery-003
+
+---
+
+## Delivery Lifecycle
+
+- **State:** Executing
+- **Updated:** 2026-05-24T11:00:00Z
+
+---
+
+## Delivery Gate
+
+_None yet._
+
+---
+
+## Tasks State
+
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
+| _none yet_ | | | | | | | |
 EOF
 
     local gate_block
@@ -457,16 +484,11 @@ EOF
 )"
 
     AID_STATE_FILE="$ws/.aid/work/STATE.md" \
-    AID_TASKS_DIR="$ws/.aid/work/tasks" \
     AID_DELIVERY_ISSUES_DIR="$ws/.aid/work" \
-    AID_LOCK_DIR="$ws/.aid/work" \
+    AID_LOCK_DIR="$ws/.aid/work/delivery-003" \
     "$WRITEBACK" --delivery-id 003 --block "$gate_block" \
         > /dev/null 2>&1
     local rc=$?
-
-    # Per feature-004 Alignment Update + wave-7+8 fix-batch, the canonical
-    # target for writeback-state.sh --delivery-id --block is work STATE.md
-    # ## Delivery Gates section (NOT the task file). Test 7b/7c assert that.
 
     # Helper should exit 0
     if [[ "$rc" -eq 0 ]]; then
@@ -476,20 +498,30 @@ EOF
              "Helper exited with code $rc"
     fi
 
-    # work STATE.md ## Delivery Gates section should contain the block
-    local state_file="$ws/.aid/work/STATE.md"
-    if grep -q "## Delivery Gates" "$state_file" 2>/dev/null && grep -q "### delivery-003" "$state_file" 2>/dev/null; then
-        pass "Test 7b: STATE.md ## Delivery Gates contains ### delivery-NNN block"
+    # Per-delivery STATE.md ## Delivery Gate section should contain the block (SD-5).
+    local delivery_state_file="$ws/.aid/work/delivery-003/STATE.md"
+    if grep -q "^## Delivery Gate" "$delivery_state_file" 2>/dev/null; then
+        pass "Test 7b: delivery-003/STATE.md has ## Delivery Gate section"
     else
-        fail "Test 7b: STATE.md ## Delivery Gates contains ### delivery-NNN block" \
-             "## Delivery Gates / ### delivery-003 not found in $state_file"
+        fail "Test 7b: delivery-003/STATE.md has ## Delivery Gate section" \
+             "## Delivery Gate not found in $delivery_state_file"
     fi
 
-    if grep -q "Reviewer Tier" "$state_file" 2>/dev/null; then
-        pass "Test 7c: Gate block content written correctly (Reviewer Tier present)"
+    if grep -q "Reviewer Tier" "$delivery_state_file" 2>/dev/null; then
+        pass "Test 7c: Gate block content written to delivery-003/STATE.md (Reviewer Tier present)"
     else
-        fail "Test 7c: Gate block content written correctly" \
-             "Reviewer Tier not found in $state_file"
+        fail "Test 7c: Gate block content written to delivery-003/STATE.md" \
+             "Reviewer Tier not found in $delivery_state_file"
+    fi
+
+    # work-level STATE.md ## Delivery Gates must NOT be modified by the helper
+    # (it is a DERIVED view assembled by the reader, not a write target).
+    local work_state_file="$ws/.aid/work/STATE.md"
+    if ! grep -q "### delivery-003" "$work_state_file" 2>/dev/null; then
+        pass "Test 7d: work STATE.md ## Delivery Gates NOT written by helper (DERIVED view preserved)"
+    else
+        fail "Test 7d: work STATE.md ## Delivery Gates NOT written by helper (DERIVED view preserved)" \
+             "### delivery-003 found in work STATE.md -- helper incorrectly wrote to work-level file"
     fi
 
     cleanup "$ws"
