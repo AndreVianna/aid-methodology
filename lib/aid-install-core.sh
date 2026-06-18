@@ -1565,6 +1565,167 @@ _provision_shared_state_home() {
 }
 
 # ---------------------------------------------------------------------------
+# Orphan prune (Pillar 2 - R7)
+# ---------------------------------------------------------------------------
+
+# _prune_tool_dirs <target> <tool> <manifest_set_var>
+#
+# Removes stale AID-owned files from the tool's scoped directories AFTER a
+# fresh install/update.  Prune basis = aid- prefix + new-manifest membership.
+# Reads NO previous manifest; compares against the path set just written.
+#
+# Arguments:
+#   target           - the repo root (absolute path)
+#   tool             - canonical tool id
+#   manifest_set_var - name of an associative array (declared by the caller)
+#                      mapping each manifest path -> 1 (for O(1) lookup)
+#
+# Tool-native dirs (agents/, skills/, rules/):
+#   (a) aid-prefixed FILE not in the manifest set -> remove
+#   (b) aid-prefixed DIRECTORY with NO files in the manifest set -> remove dir
+#       (kept when ANY of its files appear in the set)
+#   Non-aid-prefixed entries are never touched (user content).
+#
+# AID-own subtree (aid/ inside the tool root):
+#   (c) any FILE under aid/ not in the manifest set -> remove
+#   (d) now-empty aid/ subdirs pruned after file removals
+#
+# Scoping (R1): copilot-cli walks only .github/{agents,skills,aid}, never .github root.
+# Never removes directories outside the tool's scoped AID directories.
+_prune_tool_dirs() {
+    local target="$1"
+    local tool="$2"
+    local manifest_set_var="$3"
+
+    # _in_set <path> - return 0 when path is in the manifest set
+    _in_set() {
+        local _p="$1"
+        eval "local _v=\"\${${manifest_set_var}[\$_p]+x}\""
+        [[ -n "$_v" ]]
+    }
+
+    local _prune_removed=0
+
+    # ------------------------------------------------------------------
+    # _prune_native_dir <native_dir_abs>
+    # Walk one tool-native directory; apply rules (a) and (b).
+    # <native_dir_abs> is absolute (e.g. /path/to/repo/.claude/agents).
+    # ------------------------------------------------------------------
+    _prune_native_dir() {
+        local ndir="$1"
+        [[ -d "$ndir" ]] || return 0
+
+        # Enumerate immediate children of the native dir.
+        local child child_rel
+        for child in "$ndir"/aid-*; do
+            [[ -e "$child" ]] || continue
+            child_rel="${child#${target}/}"
+
+            if [[ -f "$child" ]]; then
+                # Rule (a): aid-prefixed file not in manifest -> remove.
+                if ! _in_set "$child_rel"; then
+                    rm -f "$child"
+                    _prune_removed=$((_prune_removed + 1))
+                    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned: ${child}"
+                fi
+            elif [[ -d "$child" ]]; then
+                # Rule (b): aid-prefixed dir -> keep only if any file inside is in manifest.
+                local has_live=0
+                local member
+                while IFS= read -r -d '' member; do
+                    local member_rel="${member#${target}/}"
+                    if _in_set "$member_rel"; then
+                        has_live=1
+                        break
+                    fi
+                done < <(find "$child" -type f -print0 2>/dev/null)
+                if [[ "$has_live" -eq 0 ]]; then
+                    rm -rf "$child"
+                    _prune_removed=$((_prune_removed + 1))
+                    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned dir: ${child}"
+                fi
+            fi
+        done
+    }
+
+    # ------------------------------------------------------------------
+    # _prune_aid_subtree <aid_root_abs>
+    # Walk the aid/ subtree; apply rule (c) and prune empty subdirs (d).
+    # <aid_root_abs> is absolute (e.g. /path/to/repo/.claude/aid).
+    # ------------------------------------------------------------------
+    _prune_aid_subtree() {
+        local adir="$1"
+        [[ -d "$adir" ]] || return 0
+
+        # Rule (c): remove files not in manifest.
+        local fpath fpath_rel
+        while IFS= read -r -d '' fpath; do
+            fpath_rel="${fpath#${target}/}"
+            if ! _in_set "$fpath_rel"; then
+                rm -f "$fpath"
+                _prune_removed=$((_prune_removed + 1))
+                [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned: ${fpath}"
+            fi
+        done < <(find "$adir" -type f -print0 2>/dev/null)
+
+        # Rule (d): prune now-empty subdirs (deepest first, skip the root itself).
+        local dpath
+        while IFS= read -r dpath; do
+            [[ "$dpath" == "$adir" ]] && continue
+            if [[ -d "$dpath" ]]; then
+                local rem
+                rem="$(find "$dpath" -mindepth 1 2>/dev/null | head -1)"
+                if [[ -z "$rem" ]]; then
+                    rmdir "$dpath" 2>/dev/null || true
+                    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Pruned dir: ${dpath}"
+                fi
+            fi
+        done < <(find "$adir" -mindepth 1 -type d 2>/dev/null | sort -r)
+    }
+
+    # ------------------------------------------------------------------
+    # Per-tool scoping: which native dirs + which aid/ root to walk.
+    # ------------------------------------------------------------------
+    case "$tool" in
+        claude-code)
+            _prune_native_dir "${target}/.claude/agents"
+            _prune_native_dir "${target}/.claude/skills"
+            _prune_aid_subtree "${target}/.claude/aid"
+            ;;
+        codex)
+            # .codex ships only agents/; .agents ships skills/ + aid/ subtree.
+            _prune_native_dir "${target}/.codex/agents"
+            _prune_native_dir "${target}/.agents/skills"
+            _prune_aid_subtree "${target}/.agents/aid"
+            ;;
+        cursor)
+            _prune_native_dir "${target}/.cursor/agents"
+            _prune_native_dir "${target}/.cursor/skills"
+            _prune_native_dir "${target}/.cursor/rules"
+            _prune_aid_subtree "${target}/.cursor/aid"
+            ;;
+        copilot-cli)
+            # R1: scope to .github/{agents,skills,aid} ONLY -- never .github root.
+            _prune_native_dir "${target}/.github/agents"
+            _prune_native_dir "${target}/.github/skills"
+            _prune_aid_subtree "${target}/.github/aid"
+            ;;
+        antigravity)
+            _prune_native_dir "${target}/.agent/rules"
+            _prune_native_dir "${target}/.agent/skills"
+            _prune_aid_subtree "${target}/.agent/aid"
+            ;;
+    esac
+
+    if [[ "$_prune_removed" -gt 0 ]]; then
+        [[ "${AID_VERBOSE:-0}" -eq 1 ]] || echo "  ${_prune_removed} stale AID file(s) pruned"
+    fi
+
+    # Unset nested helpers to avoid polluting caller's scope.
+    unset -f _in_set _prune_native_dir _prune_aid_subtree
+}
+
+# ---------------------------------------------------------------------------
 # Version marker
 # ---------------------------------------------------------------------------
 
@@ -1683,6 +1844,16 @@ install_tool() {
 
     # Write manifest (merge).
     manifest_write "$manifest" "$tool" "$version" "install_paths" "root_entries"
+
+    # Prune stale AID-owned files (Pillar 2, R7).
+    # Build an associative array from the new manifest path set for O(1) lookup.
+    declare -A _prune_manifest_set=()
+    local _p
+    for _p in "${install_paths[@]+"${install_paths[@]}"}"; do
+        _prune_manifest_set["$_p"]=1
+    done
+    _prune_tool_dirs "$target" "$tool" "_prune_manifest_set"
+    unset _prune_manifest_set
 
     # Write version marker.
     write_version_marker "$target" "$version"
