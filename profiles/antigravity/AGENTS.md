@@ -4,6 +4,21 @@
 <!-- AID-DISCOVER — Replace with project name, purpose, tech stack, and target platform -->
 (pending discovery)
 
+## Tracking discipline (IMPERATIVE)
+
+Every project, task, and deliverable is tracked in a state file — the work's
+`.aid/work-NNN-*/STATE.md` (plus `.aid/knowledge/STATE.md` for knowledge-base and
+cross-phase process state). Keeping it current is **not optional**:
+
+- **ANY and ALL** changes to the state of a project, task, or deliverable —
+  status, phase, grade, review outcome, or artifacts produced — MUST be written
+  to the proper tracking file **IMMEDIATELY**, as part of the same action that
+  made the change. Untracked work is incomplete work.
+- This binds **EVERY agent, without exception** — whether invoked by a SKILL or
+  by a DIRECT PROMPT, and whether on the FULL or the LITE path.
+- If no tracking file exists for the work yet, **create it first** (from the
+  work-state template) before doing anything else.
+
 ## Knowledge Base
 
 This project uses the [AID methodology](https://github.com/AndreVianna/aid-methodology).
