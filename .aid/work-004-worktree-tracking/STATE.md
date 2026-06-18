@@ -1,7 +1,7 @@
 # Work State — work-004-worktree-tracking
 
-> **Status:** Implementation complete — run-all 52/52; delivery A+ gate pending
-> **Phase:** Execute
+> **Status:** Delivered — A+ gate clean; PR open for merge
+> **Phase:** Deploy
 > **Minimum Grade:** A+ (per user directive)
 > **Started:** 2026-06-18
 > **User Approved:** pending
@@ -10,11 +10,11 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 
 ## Pipeline Status
 
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-18T16:00:00Z
-- **Pause Reason:** —
+- **Lifecycle:** Paused-Awaiting-Input
+- **Phase:** Deploy
+- **Active Skill:** none
+- **Updated:** 2026-06-18T18:00:00Z
+- **Pause Reason:** delivery A+ gate clean (0 blocking); PR open — awaiting user merge
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -85,3 +85,4 @@ Worktree-aware pipeline tracking + state-file partitioning (per work → deliver
 | 2026-06-18 | 015-C complete: writeback test rewritten to per-unit contract (245/0); schema/naming suites fixed (WS17 Deploy-State-AUTHORED, ## Pipeline State, per-delivery gate; 79/166/19); home.html vendored copy synced (HS03 + VND-D01 + install-parity 84/84). test-release "failure" diagnosed as HEAD-render-drift (015-A regen was uncommitted) — RESOLVED by committing. Wave-7 part 1 committed (a9eb855f, 418 files: regen + fixes + home.html). 015-D dispatched (disjoint-merge proof test + schemas.md doc nits). Then 015-E final run-all + delivery A+ gate. |
 | 2026-06-18 | 015-D complete (disjoint-merge proof test-disjoint-merge.sh 23/23 — two-branch zero-conflict merge, SD-5 Q&A partition; schemas.md FK+ER nits). Committed (074e435b). 015-E: FINAL run-all ALL 52 CANONICAL SUITES PASSED (incl. disjoint-merge), exit 0. ALL 16 TASKS DONE. → delivery A+ gate. 1 accepted non-blocking MINOR (pre-existing aid-housekeep partial-ASCII, regen-gated). |
 | 2026-06-18 | Delivery A+ gate #1: NOT clean — 0 CRIT, 1 HIGH (AC-Migrate: migration helper has NO automated test invoking it; idempotency/no-data-loss unguarded in CI — helper works manually), 0 MED, 1 LOW (migrate .ps1 not in ASCII-guard allowlist), 1 MINOR (move-vs-retain, accepted). Cornerstone PROVEN (gate re-ran disjoint-merge + Playwright-validated dashboard both twins). Fix cycle: add migration-helper CI test (bash+PS, fixture, idempotency, no-data-loss) + ASCII-guard allowlist. |
+| 2026-06-18 | Gate-fix committed (e901b079): test-migrate-hierarchy.sh (122 assertions) + ASCII guard. run-all 53/53. Delivery A+ gate #2 (re-gate): CLEAN — 0 CRIT/HIGH/MED; HIGH+LOW Fixed, MINOR Accepted; no regression (53 suites, disjoint-merge 23/0, writeback 245/0, parity, render-drift+§7a clean). work-004 DELIVERED. PR opened (aid/work-004-delivery-001 → master). Version stays 1.1.0. |
