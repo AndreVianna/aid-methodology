@@ -54,6 +54,16 @@ fi
 TMP=$(mktemp -d)
 trap 'rm -rf "$TMP"' EXIT
 
+# ISOLATION (see memory: aid-scan-tests-must-pin-home): pin HOME for the WHOLE suite so the
+# update-check cache ($HOME/.aid/.update-check, written by the PS029-* tests that set
+# AID_NO_UPDATE_CHECK=0 with a fake 9.9.9 release) lands in a throwaway, never the developer's
+# real $HOME. Per-invocation HOME overrides still win. Crash-safe (HOME redirected for the whole
+# process). End-of-suite canary asserts the real $HOME cache was untouched.
+REAL_HOME="${HOME}"
+_CANARY_UPDCHK_BEFORE="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
+export HOME="${TMP}/home"
+mkdir -p "${HOME}/.aid"
+
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
 
@@ -1029,5 +1039,13 @@ PS1_RM_H=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidI
     "$PWSH" -NoProfile -File "${PS029J_HOME_PS}/bin/aid.ps1" remove -h 2>&1 | sed 's/\x1b\[[0-9;]*m//g')
 assert_output_contains "$SH_RM_H"  "self" "PS029-J07 Bash remove -h: mentions 'self'"
 assert_output_contains "$PS1_RM_H" "self" "PS029-J08 PS1 remove -h: mentions 'self'"
+
+# ISOLATION CANARY: the real $HOME's update-check cache must be byte-unchanged by this suite.
+_CANARY_UPDCHK_AFTER="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
+if [[ "${_CANARY_UPDCHK_BEFORE}" == "${_CANARY_UPDCHK_AFTER}" ]]; then
+    pass "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"
+else
+    fail "ISOL-HOME real \$HOME/.aid/.update-check MODIFIED by suite (isolation escape: '${_CANARY_UPDCHK_BEFORE}' -> '${_CANARY_UPDCHK_AFTER}')"
+fi
 
 test_summary

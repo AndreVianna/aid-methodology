@@ -2136,10 +2136,15 @@ function script:Invoke-AidMigrateRepo {
     $era = ''
     if (Test-Path $settingsPath -PathType Leaf) {
         $era = 'a'
-    } elseif ((Test-Path $dsA -PathType Leaf) -or (Test-Path $dsB -PathType Leaf) -or (Test-Path $dsC -PathType Leaf)) {
+    } elseif ((Test-Path $dsA -PathType Leaf) -or (Test-Path $dsB -PathType Leaf) -or (Test-Path $dsC -PathType Leaf) -or (Test-Path (Join-Path $aidDir '.aid-manifest.json') -PathType Leaf)) {
+        # Era-b: KB-state present, OR a tracked repo (manifest present) with no
+        # settings.yml yet (the `aid add`-only state). Synthesize a fresh stamped
+        # settings.yml so the format gate stops warning and the repo is brought
+        # current. Mirrors bin/aid. Without the manifest clause such repos warn
+        # forever and are never stamped.
         $era = 'b'
     } else {
-        return 0   # bare .aid/ -- not a candidate
+        return 0   # bare .aid/ (no settings.yml, no KB state, no manifest) -- not a candidate
     }
 
     $repoName  = Split-Path $Repo -Leaf

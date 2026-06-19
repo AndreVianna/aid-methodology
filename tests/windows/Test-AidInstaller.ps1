@@ -550,6 +550,33 @@ Assert (-not (Test-Path (Join-Path $ProjT47 'CLAUDE.md.aid-new'))) `
 Write-Host ""
 
 # ===========================================================================
+# T48: manifest-only repo (aid add, no settings.yml) -- v1.1.1 regression.
+# A repo with .aid-manifest.json but no settings.yml: `aid update` must synthesize a
+# stamped settings.yml (era-b via the manifest marker) so the format gate stops warning
+# on every run. Before the fix the migrate bailed ("not a candidate") and the WARN recurred.
+# ===========================================================================
+Write-Host "=== T48: manifest-only repo gets a stamped settings.yml on update ==="
+
+$ProjT48 = Join-Path $TmpRoot 'project-t48'
+New-Item -ItemType Directory -Path (Join-Path $ProjT48 '.aid') -Force | Out-Null
+[System.IO.File]::WriteAllText((Join-Path $ProjT48 '.aid' '.aid-manifest.json'),
+    '{"manifest_version":1,"aid_version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":[],"root_agent_files":[]}}}')
+Assert (-not (Test-Path (Join-Path $ProjT48 '.aid' 'settings.yml'))) `
+    'T48a precondition: manifest-only repo has no settings.yml' 'settings.yml must be absent'
+
+$savedNoUpdT48 = $env:AID_NO_UPDATE_CHECK
+$env:AID_NO_UPDATE_CHECK = '1'
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
+Assert-FileExists (Join-Path $ProjT48 '.aid' 'settings.yml') 'T48b settings.yml synthesized by update (era-b via manifest)'
+$s48 = Get-Content -LiteralPath (Join-Path $ProjT48 '.aid' 'settings.yml') -Raw
+Assert-Contains $s48 'format_version: 1' 'T48c format_version: 1 stamped'
+# Second update: the gate must no longer warn (stamp current now).
+Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
+Assert-NotContains $script:_LastOut 'older format' 'T48d no recurring older-format WARN after stamp'
+$env:AID_NO_UPDATE_CHECK = $savedNoUpdT48
+Write-Host ""
+
+# ===========================================================================
 # T45: prune - stale aid-prefixed file removed on update; user file untouched
 # ===========================================================================
 Write-Host "=== T45: prune (stale aid-prefixed file removed, user file kept) ==="

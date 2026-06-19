@@ -18,6 +18,7 @@ changelog:
   - 2026-06-17: Added Unreleased entry for work-002 aid projects command (list/add/remove/help, deterministic tier, repos:→projects: key + terminology change), delivery-002.
   - 2026-06-17: Renamed Unreleased -> v1.1.0 (release): consolidated dashboard + registry as [NEW] (adopter never saw v1.0.0 without them), dropped internal churn (repos:->projects: key rename, dashboard file relocations, kb_baseline-as-setting), added [CHANGE] release-source mirror-override + [FIX] global-install permission + [NOTE] repo->project wording.
   - 2026-06-18: Added work-003 (content isolation) + work-004 (worktree-aware tracking) v1.1.0 items: [NEW] self-cleaning install/update prune; [CHANGE] aid/-nest + aid- prefix content isolation; [CHANGE] in-place lossless CLAUDE.md/AGENTS.md marker updates (no .aid-new); [CHANGE] dashboard worktree discovery + same-work merge; [FIX] disjoint delivery-branch state files. Internal mechanics (status->state naming, per-unit hierarchy, migration helper, canonical churn) deliberately omitted as non-adopter-facing.
+  - 2026-06-19: v1.1.1 patch — [FIX] recurring "older format" WARN on aid add-only repos (manifest present, no settings.yml): migrate now treats a manifest as an era-b marker and synthesizes a stamped settings.yml so the warning clears after one `aid update`. Internal-only changes (test-suite HOME-pinning isolation; aid.ps1 self-update parity + root-agent injection already shipped in 1.1.0) omitted as non-adopter-facing.
 ---
 
 # Release Tracking
@@ -30,6 +31,10 @@ changelog:
 > planned target.
 
 ## Unreleased
+
+## v1.1.1 - 2026-06-19
+
+- [FIX] A project set up with `aid add <tool>` alone (a manifest but no `settings.yml`) no longer warns `this project uses an older format` on **every** `aid update`. The first `aid update` now synthesizes a stamped `settings.yml` for it, so the warning clears and stays cleared. (Repos created through the full `/aid-config` pipeline were unaffected.) Supersedes v1.1.0.
 
 ## v1.1.0 - 2026-06-17
 
