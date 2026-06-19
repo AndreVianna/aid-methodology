@@ -525,6 +525,31 @@ Assert (-not ($updatedContent15 -like '*OLD tracking content that will be replac
 Write-Host ""
 
 # ===========================================================================
+# T47: Branch C2 - marker-less file with NO AID sections to anchor the region.
+# A pure brownfield user CLAUDE.md (no AID:BEGIN/END, none of the AID heading
+# stems). The AID region must still be injected (appended at end), with user
+# content preserved. Regression: the region was silently dropped because it was
+# only ever inserted at an AID heading position that did not exist here.
+# ===========================================================================
+Write-Host "=== T47: root-agent region injected into pure-user file (no AID sections) ==="
+
+$ProjT47 = Join-Path $TmpRoot 'project-t47'
+New-Item -ItemType Directory -Path $ProjT47 -Force | Out-Null
+$userOnlyContent = "# CLAUDE.md`n`n## My Project`nMy own instructions, nothing from AID.`n"
+[System.IO.File]::WriteAllBytes((Join-Path $ProjT47 'CLAUDE.md'),
+    [System.Text.Encoding]::UTF8.GetBytes($userOnlyContent))
+
+Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT47)
+Assert-Eq "$($script:_LastRC)" '0' 'T47a install into pure-user CLAUDE.md -> exit 0'
+$updatedContent47 = Get-Content -LiteralPath (Join-Path $ProjT47 'CLAUDE.md') -Raw
+Assert-Contains $updatedContent47 '<!-- AID:BEGIN -->' 'T47b AID region injected (BEGIN) - not dropped'
+Assert-Contains $updatedContent47 '<!-- AID:END -->'   'T47c AID region injected (END)'
+Assert-Contains $updatedContent47 'My own instructions, nothing from AID.' 'T47d user content preserved'
+Assert (-not (Test-Path (Join-Path $ProjT47 'CLAUDE.md.aid-new'))) `
+    'T47e no .aid-new written' '.aid-new must not exist'
+Write-Host ""
+
+# ===========================================================================
 # T45: prune - stale aid-prefixed file removed on update; user file untouched
 # ===========================================================================
 Write-Host "=== T45: prune (stale aid-prefixed file removed, user file kept) ==="
