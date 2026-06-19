@@ -1,3 +1,4 @@
+format_version: 1
 # .aid/settings.yml — AID pipeline configuration (single source of truth)
 #
 # This file is the AUTHORITATIVE source for all AID pipeline settings.
