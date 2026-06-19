@@ -195,12 +195,12 @@ irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install
 
 ```bash
 # Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version 1.0.0
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version 1.1.0
 ```
 
 ```powershell
 # Windows
-$env:AID_VERSION = '1.0.0'
+$env:AID_VERSION = '1.1.0'
 irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
@@ -220,14 +220,14 @@ aid status
 ```
 
 ```
-AID 1.0.0  (project: /path/to/your/project)
+AID 1.1.0  (project: /path/to/your/project)
 Installed tools:
-  claude-code   v1.0.0   root: CLAUDE.md (owned)
+  claude-code   v1.1.0   root: CLAUDE.md (owned)
 ```
 
-Bare `aid` (no subcommand) shows a dashboard: the installed CLI version, the project
+Bare `aid` (no subcommand) shows a text status screen: the installed CLI version, the project
 status, the full command list, and any pending update notice. Exit 7 when no AID install
-is found in the current directory.
+is found in the current directory. For the browser-based web dashboard, use `aid dashboard start node` or `aid dashboard start python`.
 
 ### Install a tool into this project
 
@@ -246,7 +246,7 @@ aid add codex,cursor
 Pin to a specific version:
 
 ```bash
-aid add claude-code --version 1.0.0
+aid add claude-code --version 1.1.0
 ```
 
 Without `--version` the installer resolves the latest GitHub Release
@@ -359,9 +359,9 @@ use `aid add --from-bundle` — no network required.
 ### Download and verify
 
 ```bash
-# Download (example: claude-code at v1.0.0)
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/aid-claude-code-v1.0.0.tar.gz
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.0.0/SHA256SUMS
+# Download (example: claude-code at v1.1.0)
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.1.0/aid-claude-code-v1.1.0.tar.gz
+curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.1.0/SHA256SUMS
 
 # Verify (Linux)
 sha256sum --check --ignore-missing SHA256SUMS
@@ -373,7 +373,7 @@ shasum -a 256 -c SHA256SUMS
 ```powershell
 # Verify (Windows)
 $expected = (Get-Content SHA256SUMS | Where-Object { $_ -match 'aid-claude-code' }) -split '\s+' | Select-Object -First 1
-$actual   = (Get-FileHash .\aid-claude-code-v1.0.0.tar.gz -Algorithm SHA256).Hash.ToLower()
+$actual   = (Get-FileHash .\aid-claude-code-v1.1.0.tar.gz -Algorithm SHA256).Hash.ToLower()
 if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
 ```
 
@@ -381,7 +381,7 @@ if ($expected -ne $actual) { Write-Error "Checksum mismatch"; exit 4 }
 
 ```bash
 # After bootstrapping the CLI (see Step 1)
-aid add claude-code --from-bundle aid-claude-code-v1.0.0.tar.gz
+aid add claude-code --from-bundle aid-claude-code-v1.1.0.tar.gz
 ```
 
 For multiple tools, pass a directory containing the per-tool tarballs
@@ -404,43 +404,58 @@ The files written depend on the tool.
 
 Installs into `.claude/`:
 
-- `.claude/skills/` — 11 skill markdown files
-- `.claude/agents/` — 9 agent markdown files
-- `CLAUDE.md` — project-context file at the project root
+- `.claude/aid/scripts/` — helper scripts (phase-specific, e.g. interview, summarize)
+- `.claude/aid/templates/` — KB document templates and task templates
+- `.claude/aid/recipes/` — 51 lite-path recipe files
+- `.claude/skills/` — 12 `aid-`-prefixed skill markdown files
+- `.claude/agents/` — 9 `aid-`-prefixed agent markdown files
+- `CLAUDE.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Codex CLI
 
 Installs into `.codex/` and `.agents/`:
 
-- `.codex/agents/` — agent TOML files
-- `.agents/` — agent TOML files (alternate path Codex probes)
-- `AGENTS.md` — project-context file at the project root
+- `.codex/agents/` — agent TOML files (`aid-`-prefixed)
+- `.agents/` — agent TOML files (alternate path Codex probes; `aid-`-prefixed)
+- `.agents/skills/` — `aid-`-prefixed skill markdown files
+- `.agents/aid/scripts/`, `.agents/aid/templates/`, `.agents/aid/recipes/` — AID-own support files
+- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Cursor
 
 Installs into `.cursor/`:
 
-- `.cursor/rules/` — skill and agent `.mdc` rule files
-- `AGENTS.md` — project-context file at the project root
+- `.cursor/rules/` — `aid-`-prefixed skill and agent `.mdc` rule files
+- `.cursor/aid/scripts/`, `.cursor/aid/templates/`, `.cursor/aid/recipes/` — AID-own support files
+- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### GitHub Copilot CLI
 
 Installs into `.github/`:
 
-- `.github/copilot-agents/` — agent `.agent.md` files
-- `AGENTS.md` — project-context file at the project root
+- `.github/copilot-agents/` — `aid-`-prefixed agent `.agent.md` files
+- `.github/aid/scripts/`, `.github/aid/templates/`, `.github/aid/recipes/` — AID-own support files
+- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Antigravity
 
 Installs into `.agent/`:
 
-- `.agent/` — skill and agent files with `trigger:` frontmatter
-- `AGENTS.md` — project-context file at the project root
+- `.agent/` — `aid-`-prefixed skill and agent files with `trigger:` frontmatter
+- `.agent/aid/scripts/`, `.agent/aid/templates/`, `.agent/aid/recipes/` — AID-own support files
+- `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Notes
 
 All five profiles contain byte-identical skill and agent bodies — only the wrapper format
 differs per tool. The source of truth is `canonical/`; `profiles/` are generated output.
+
+**Content isolation:** AID's own support folders (`scripts/`, `templates/`, `recipes/`)
+nest under an `aid/` subtree inside each profile's assets root. AID files in tool-native
+directories (`agents/`, `skills/`, `rules/`) all carry the `aid-` prefix. Your files in
+those same directories are never touched. AID's section in root agent files (`CLAUDE.md`/
+`AGENTS.md`) is fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->` markers and updated
+in place, preserving your content outside the fence.
 
 `.aid/` is appended to your `.gitignore` by default (the Knowledge Base stays out of git;
 remove the entry if you want to commit it).
@@ -615,11 +630,11 @@ into that repo. A human-readable convenience file is also written: `.aid/.aid-ve
 ```json
 {
   "manifest_version": 1,
-  "aid_version": "1.0.0",
+  "aid_version": "1.1.0",
   "installed_at": "2026-06-04T12:00:00Z",
   "tools": {
     "claude-code": {
-      "version": "1.0.0",
+      "version": "1.1.0",
       "installed_at": "2026-06-04T12:00:00Z",
       "paths": [".claude/skills/...", "CLAUDE.md"],
       "root_agent_files": [
@@ -681,6 +696,10 @@ aid status                       Show AID state of the current project
 aid add <tool>[,...]             Add tool(s): claude-code, codex, cursor, copilot-cli, antigravity
 aid update [<tool>... | self]    Update to latest; no arg = all installed tools; 'self' = the aid CLI
 aid remove [<tool>... | self]    Remove; no arg = ALL AID from the project (asks to confirm); 'self' = the aid CLI (asks to confirm)
+aid dashboard start node|python [--port N] [--remote]
+                                 Start the local web dashboard (pipeline status, KB freshness, task drill-down); --remote exposes the machine-level dashboard over your private tailnet
+aid dashboard stop               Stop the running dashboard (and any tailnet exposure)
+aid projects [list|add|remove]   Manage the projects this AID install tracks; list shows state, tools, tier, and current-directory marker
 aid <command> -h | --help        Per-command help
 ```
 
@@ -691,7 +710,7 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 
 | Flag | Applies to | Default | Description |
 |------|-----------|---------|-------------|
-| `--version <v>` | `add`, `update` | latest release | Pin to a release version (`1.0.0` or `v1.0.0`). Mutually exclusive with `--from-bundle`. |
+| `--version <v>` | `add`, `update` | latest release | Pin to a release version (`1.1.0` or `v1.1.0`). Mutually exclusive with `--from-bundle`. |
 | `--from-bundle <path>` | `add`, `update` | — | Offline install from a tarball (single tool) or a directory of tarballs. No network required. |
 | `--force` | `add`, `update`, `remove` | off | Overwrite differing files and skip confirmation prompts. |
 | `--verbose` | all | off | Print per-file `Copied:` / `Up to date:` / `Updated:` / `Removed:` lines. Default: concise summary. |

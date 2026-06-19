@@ -381,6 +381,11 @@ assert_eq "$([[ -f "${TL}/AGENTS.md.aid-new" ]] && echo exists || echo none)" "n
 assert_file_contains "${TL}/AGENTS.md" "User AGENTS.md" "CLI027-L03 user content preserved in AGENTS.md"
 assert_output_not_contains "$OUT" "Install complete with warnings" "CLI027-L04 no warning banner"
 assert_output_not_contains "$OUT" "pending-merge" "CLI027-L05 no pending-merge mention"
+# The AID region MUST be injected even when the pre-placed file has no AID
+# headings to anchor it (brownfield user file). Regression: previously the
+# region was silently dropped, so AGENTS.md never gained AID instructions.
+assert_file_contains "${TL}/AGENTS.md" "<!-- AID:BEGIN -->" "CLI027-L06 AID region injected into marker-less user AGENTS.md (no drop)"
+assert_file_contains "${TL}/AGENTS.md" "<!-- AID:END -->" "CLI027-L07 AID region closing marker present"
 
 # ===========================================================================
 # CLI027-M: aid version → exit 0, prints version

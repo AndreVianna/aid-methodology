@@ -108,6 +108,26 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
 	white-space: nowrap;
 }
 .top-bar .brand .dot { color: var(--accent); margin: 0 0.4em; }
+.app-title {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5em;
+	font-weight: 700;
+	font-size: 0.95rem;
+	color: var(--text);
+	white-space: nowrap;
+}
+.app-title .beta-pill {
+	font-size: 0.6rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--accent);
+	border: 1px solid var(--accent);
+	border-radius: 999px;
+	padding: 0.1em 0.5em;
+	line-height: 1.4;
+}
 .breadcrumb {
 	flex: 1;
 	color: var(--text-dim);

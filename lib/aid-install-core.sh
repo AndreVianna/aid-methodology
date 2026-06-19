@@ -534,6 +534,16 @@ _copy_root_agent_file() {
     }
     in_aid_section { next }
     { print }
+    END {
+        # No AID section existed to anchor the region (a brownfield file with no
+        # prior AID content) -> append the marked region at end of file. Without
+        # this the AID block would be silently dropped and the file never gains
+        # AID instructions.
+        if (!region_inserted) {
+            print ""
+            print new_region
+        }
+    }
     ' "$dst" > "$tmp"
 
     mv "$tmp" "$dst"

@@ -13,15 +13,24 @@ This page is the command reference for the `aid` CLI. For full installation and 
 ## Command surface
 
 ```
-aid                              Show the dashboard (status + help + update notice)
+aid                              Show the text status screen (project state + update notice)
 aid -h | --help                  Show help
 aid version                      Print the CLI version
 aid status                       Show AID state of the current project
 aid add <tool>[,...]             Add tool(s): claude-code, codex, cursor, copilot-cli, antigravity
 aid update [<tool>... | self]    Update to latest; no arg = all installed tools; 'self' = the aid CLI
 aid remove [<tool>... | self]    Remove; no arg = ALL AID from the project (asks to confirm); 'self' = the aid CLI
+aid dashboard start|stop ...     Start/stop the local web dashboard
+aid projects [list|add|remove]   List, register, or unregister AID projects
 aid <command> -h | --help        Per-command help
 ```
+
+:::note[Bare `aid` vs `aid dashboard start`]
+Running `aid` (no arguments) shows the **text status screen** — a terminal summary for the
+current project. The **web dashboard** is a separate, browser-based UI and must be started
+explicitly with `aid dashboard start node` or `aid dashboard start python`. The two are
+independent; starting the web dashboard does not affect the text status screen.
+:::
 
 ---
 
@@ -34,8 +43,8 @@ Install one or more AID tool profiles into the current project.
 ```bash
 aid add claude-code
 aid add codex,cursor            # multiple tools at once
-aid add claude-code --version 1.0.0   # pin to a specific version
-aid add claude-code --from-bundle aid-claude-code-v1.0.0.tar.gz  # offline
+aid add claude-code --version 1.1.0   # pin to a specific version
+aid add claude-code --from-bundle aid-claude-code-v1.1.0.tar.gz  # offline
 ```
 
 ### `aid update`
@@ -45,17 +54,17 @@ Update installed tool profiles to the latest release, or update the `aid` CLI it
 ```bash
 aid update                       # update all installed tools
 aid update claude-code           # update one tool
-aid update --version 0.8.0       # update to a pinned version
+aid update --version 1.1.0       # update to a pinned version
 aid update self                  # update the aid CLI (channel-aware)
 ```
 
-`aid update self` detects the install channel and prints the correct upgrade command:
+`aid update self` detects the install channel and performs the upgrade automatically:
 
 | Channel | What `aid update self` does |
 |---------|------------------------------|
-| `curl`/`irm` bootstrap | Re-runs the bootstrap script |
-| npm | Prints: `npm install -g aid-installer@latest` |
-| PyPI/pipx | Prints: `pipx upgrade aid-installer` |
+| `curl`/`irm` bootstrap | Re-runs the bootstrap script (`install.sh` / `install.ps1`) |
+| npm | Runs `npm install -g aid-installer@latest` (elevates with `sudo` if the install location is root-owned) |
+| PyPI/pipx | Runs `pipx upgrade aid-installer` |
 
 ### `aid remove`
 
@@ -79,9 +88,9 @@ aid status
 
 Output example:
 ```
-AID 1.0.0  (project: /path/to/your/project)
+AID 1.1.0  (project: /path/to/your/project)
 Installed tools:
-  claude-code   v1.0.0   root: CLAUDE.md (owned)
+  claude-code   v1.1.0   root: CLAUDE.md (owned)
 ```
 
 Exit 7 when no AID install is found in the current directory.
@@ -95,6 +104,95 @@ aid version
 ```
 
 This prints the CLI version from `~/.aid/VERSION` — not the version of tools installed in the current project (those are in `.aid/.aid-manifest.json`).
+
+### `aid dashboard`
+
+Start or stop the local web dashboard. The dashboard is a read-only browser UI that shows
+all registered AID projects and their pipeline state. It is separate from the bare `aid`
+text status screen.
+
+```bash
+aid dashboard start node              # start using Node as the server runtime
+aid dashboard start python            # start using Python (python3) as the server runtime
+aid dashboard start node --port 9000  # use a custom port (default: 8787)
+aid dashboard start node --remote     # also expose over your private tailnet
+aid dashboard stop                    # stop the running dashboard (idempotent)
+```
+
+**Syntax:**
+```
+aid dashboard start <node|python> [--port <n>] [--remote]
+aid dashboard stop
+```
+
+| Argument / Flag | `start` | `stop` | Description |
+|-----------------|:-------:|:------:|-------------|
+| `node` \| `python` | required | — | Server runtime. Uses `node` or `python3` from `PATH`. |
+| `--port <n>` | optional | — | Listen port on `127.0.0.1`. Integer `1024`–`65535`, default `8787`. |
+| `--remote` | optional | — | Expose the dashboard over a private tailnet (Tailscale). Never binds publicly. |
+
+The server always binds to `127.0.0.1` only. `stop` is idempotent — it is safe to call
+when the dashboard is already stopped. `stop` also tears down any active `--remote`
+tailnet exposure.
+
+`--remote` requires Tailscale to be installed, running, and logged in on the host. If those
+conditions are not met, the command fails with an explicit error and the local server
+continues running. See the [Dashboard guide](/guides/dashboard) for ACL-grant setup.
+
+Exit codes specific to `dashboard`:
+- `8` — dashboard is already running (run `aid dashboard stop` first).
+- `9` — the requested runtime (`node` or `python3`) is not on `PATH`.
+- `10` — `--remote` requested but the tailnet exposure mechanism is unavailable.
+
+### `aid projects`
+
+Manage the set of projects this `aid` installation tracks. The registry stores project
+paths only; it does not install or remove tools.
+
+```bash
+aid projects                          # list all registered projects (same as list)
+aid projects list                     # list: state, tools, tier; * marks cwd
+aid projects list --verbose           # also print the registry source file for each entry
+aid projects add                      # register cwd (requires .aid/ to exist)
+aid projects add /path/to/project     # register a specific path
+aid projects add --local              # force user tier
+aid projects add --shared             # force shared tier (global install only)
+aid projects remove                   # unregister cwd
+aid projects remove /path/to/project  # unregister a specific path
+```
+
+**Syntax:**
+```
+aid projects [list] [--local|--shared] [--verbose]
+aid projects add  [<path>] [--local|--shared]
+aid projects remove [<path>]
+```
+
+`list` output columns:
+
+| Column | Values |
+|--------|--------|
+| Marker | `*` = current directory; blank otherwise |
+| Path | full absolute path (always shown) |
+| State | `vX.Y.Z` (tracked) / `untracked` / `no-aid` / `missing` |
+| Tools | comma-separated installed tool IDs |
+| Tier | `user` or `shared` |
+
+With `--verbose`, each entry is followed by an indented `registry: <file>` line identifying the registry file that contains it.
+
+Unregistered projects whose `cwd` has a `.aid/` directory appear as a footnote in `list`
+output, with a prompt to run `aid projects add`.
+
+Tier is resolved deterministically — no interactive prompt. A path under `$HOME` on any
+install type resolves to `user`. A path outside `$HOME` on a global install resolves to
+`shared`. Use `--local` or `--shared` to override.
+
+`add` is idempotent. `remove` is idempotent and works even when the project directory no
+longer exists (stale entry cleanup).
+
+`aid add <tool>` and `aid remove` automatically register and unregister the project in the
+registry; you only need `aid projects add` to manually register a project that was set up
+outside the normal `aid add` flow.
 
 ---
 

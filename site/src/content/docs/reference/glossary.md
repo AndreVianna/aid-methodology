@@ -10,7 +10,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 11 skills across 5 groups; delivery (Deploy, Monitor) and the summary skill are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 12 skills across 5 groups; delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A skill are optional. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`.
 
@@ -70,6 +70,8 @@ Terms and concepts used throughout the AID methodology.
 ## Off-Pipeline Skills
 
 **aid-housekeep:** The 11th user-facing skill. On-demand, off the mandatory pipeline — run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
+
+**aid-ask:** The 12th user-facing skill. On-demand, read-only Q&A — answers free-form questions about the project from the Knowledge Base, codebase, and in-flight works, with source citations. Never writes any file. Run from any directory at any phase.
 
 **aid-summarize:** Optional, idempotent skill that generates `knowledge-summary.html` — an offline HTML viewer of the Knowledge Base. Can be run after any discovery cycle.
 

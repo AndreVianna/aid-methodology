@@ -183,17 +183,17 @@ bash release.sh --dry-run
 Expected output:
 
 ```
-[release.sh] version: 1.0.0  tag: v1.0.0
+[release.sh] version: 1.1.0  tag: v1.1.0
 [release.sh] checking worktree is clean...  ok
-[release.sh] checking tag v1.0.0 does not exist...  ok
+[release.sh] checking tag v1.1.0 does not exist...  ok
 [release.sh] verifying render-drift gate...  ok
-[release.sh] staging dir: .aid/.temp/release-1.0.0/
-[release.sh] packaging aid-antigravity-v1.0.0.tar.gz...  ok
-[release.sh] packaging aid-claude-code-v1.0.0.tar.gz...  ok
-[release.sh] packaging aid-codex-v1.0.0.tar.gz...  ok
-[release.sh] packaging aid-copilot-cli-v1.0.0.tar.gz...  ok
-[release.sh] packaging aid-cursor-v1.0.0.tar.gz...  ok
-[release.sh] packaging aid-cli-v1.0.0.tar.gz...  ok
+[release.sh] staging dir: .aid/.temp/release-1.1.0/
+[release.sh] packaging aid-antigravity-v1.1.0.tar.gz...  ok
+[release.sh] packaging aid-claude-code-v1.1.0.tar.gz...  ok
+[release.sh] packaging aid-codex-v1.1.0.tar.gz...  ok
+[release.sh] packaging aid-copilot-cli-v1.1.0.tar.gz...  ok
+[release.sh] packaging aid-cursor-v1.1.0.tar.gz...  ok
+[release.sh] packaging aid-cli-v1.1.0.tar.gz...  ok
 [release.sh] writing SHA256SUMS...  ok
 [release.sh] --dry-run: staging complete. Run without --dry-run to create the GitHub Release.
 ```
@@ -205,7 +205,7 @@ Common failures and fixes:
 | Dirty worktree | `working tree has uncommitted changes` | `git stash` or commit the changes |
 | Render drift | `profiles/ is out of sync with canonical/` | `python .claude/skills/generate-profile/scripts/run_generator.py && git add profiles/ && git commit -m "..."` |
 | Version mismatch | `--version X does not match VERSION file (Y)` | Drop `--version` or update `./VERSION` |
-| Tag already exists | `tag v1.0.0 already exists` | The release was already cut; see [Recovery](#recovery-and-idempotency) |
+| Tag already exists | `tag v1.1.0 already exists` | The release was already cut; see [Recovery](#recovery-and-idempotency) |
 
 ---
 
@@ -268,17 +268,17 @@ is safe.
 If `github-release` fails mid-upload:
 
 1. Delete the draft release: GitHub web UI → Releases → Edit → Delete.
-2. Delete the local tag: `git tag -d v1.0.0`
-3. Delete the remote tag: `git push origin :refs/tags/v1.0.0`
+2. Delete the local tag: `git tag -d v1.1.0`
+3. Delete the remote tag: `git push origin :refs/tags/v1.1.0`
 4. Fix the root cause and re-run from [Step 1](#step-1--verify-preconditions).
 
 ### If the tag already exists but no release exists
 
 ```bash
-git tag -d v1.0.0
-git push origin :refs/tags/v1.0.0
+git tag -d v1.1.0
+git push origin :refs/tags/v1.1.0
 # Then re-run
-git tag v1.0.0 && git push origin v1.0.0
+git tag v1.1.0 && git push origin v1.1.0
 ```
 
 ### Staging directory cleanup

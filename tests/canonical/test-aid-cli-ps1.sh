@@ -459,6 +459,10 @@ assert_exit_eq "$RC" 0 "PS028-L01 PS1 add with pre-placed AGENTS.md → exit 0 (
 assert_eq "$([[ -f "${TL}/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none" \
     "PS028-L02 no .aid-new created (in-place update, no protect-on-diff)"
 assert_file_contains "${TL}/AGENTS.md" "User AGENTS.md" "PS028-L03 original user content preserved in AGENTS.md"
+# The AID region MUST be injected even with no AID headings to anchor it
+# (brownfield user file). Regression: region was silently dropped before.
+assert_file_contains "${TL}/AGENTS.md" "<!-- AID:BEGIN -->" "PS028-L04 AID region injected into marker-less user AGENTS.md (no drop)"
+assert_file_contains "${TL}/AGENTS.md" "<!-- AID:END -->" "PS028-L05 AID region closing marker present"
 
 # ===========================================================================
 # PS028-M: aid.ps1 version → exit 0, prints version

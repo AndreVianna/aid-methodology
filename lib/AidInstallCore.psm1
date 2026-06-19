@@ -641,6 +641,16 @@ function script:Copy-RootAgentFile {
             [void]$sb.Append("`n")
         }
 
+        # No AID section existed to anchor the region (a brownfield file with no
+        # prior AID content) -> append the marked region at end of file. Without
+        # this the AID block would be silently dropped and the file never gains
+        # AID instructions. Mirrors the END block in bin/aid (aid-install-core.sh).
+        if (-not $regionInserted) {
+            [void]$sb.Append("`n")
+            [void]$sb.Append($newRegion)
+            $regionInserted = $true
+        }
+
         $bytes = [System.Text.Encoding]::UTF8.GetBytes($sb.ToString())
         [System.IO.File]::WriteAllBytes($tmpPath, $bytes)
         Move-Item -LiteralPath $tmpPath -Destination $Dst -Force

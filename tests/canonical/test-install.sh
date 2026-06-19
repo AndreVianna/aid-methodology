@@ -355,6 +355,9 @@ assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none
     "IN14b no AGENTS.md.aid-new created (sidecar eliminated)"
 # Original user text must still appear (user content preserved).
 assert_file_contains "$T/AGENTS.md" "user AGENTS.md" "IN14c user content preserved in AGENTS.md"
+# The AID region MUST be injected even with no AID headings to anchor it
+# (brownfield user file). Regression: region was silently dropped before.
+assert_file_contains "$T/AGENTS.md" "<!-- AID:BEGIN -->" "IN14c2 AID region injected into marker-less user AGENTS.md (no drop)"
 # Manifest status must be "owned" (pending-merge eliminated).
 MANIFEST="${T}/.aid/.aid-manifest.json"
 assert_file_contains "$MANIFEST" '"status": "owned"' "IN14d manifest status is owned (not pending-merge)"
