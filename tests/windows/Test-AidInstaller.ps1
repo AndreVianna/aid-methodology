@@ -276,6 +276,43 @@ function Run-AidPs1 {
     $env:AID_LIB_PATH = $savedLib
 }
 
+# Run-AidPs1Home: like Run-AidPs1 but forces $HOME inside the child pwsh so the
+# per-user .update-check cache read ($HOME/.aid/.update-check, FR10) is hermetic
+# and never touches the real user home. Used by the self-update-preamble tests (T46).
+function Run-AidPs1Home {
+    param([string]$AidHome, [string]$FakeHome, [string[]]$AidArgs)
+    $aidPs1Path = Join-Path $AidHome 'bin' 'aid.ps1'
+    if (-not (Test-Path $aidPs1Path -PathType Leaf)) {
+        $aidPs1Path = Join-Path $RepoRoot 'bin' 'aid.ps1'
+    }
+    $savedHome = $env:AID_HOME
+    $savedLib  = $env:AID_LIB_PATH
+    $savedUP   = $env:USERPROFILE
+    $savedEH   = $env:HOME
+    $savedHD   = $env:HOMEDRIVE
+    $savedHP   = $env:HOMEPATH
+    $env:AID_HOME     = $AidHome
+    $env:AID_LIB_PATH = $LocalLibPath
+    # Redirect the child pwsh's automatic $HOME to the throwaway via every env var it
+    # consults to derive it: $env:HOME on Unix; $env:HOMEDRIVE+$env:HOMEPATH (then
+    # $env:USERPROFILE) on Windows. -File (not -Command) so aid.ps1 self-locates its
+    # code home from $PSCommandPath correctly.
+    $env:HOME        = $FakeHome
+    $env:USERPROFILE = $FakeHome
+    $env:HOMEDRIVE   = (Split-Path -Qualifier $FakeHome)
+    $env:HOMEPATH    = (Split-Path -NoQualifier $FakeHome)
+    $outLines = & $PwshExe -NoProfile -File $aidPs1Path @AidArgs 2>&1
+    $script:_LastRC  = $LASTEXITCODE
+    $script:_LastOut = ($outLines | ForEach-Object { [string]$_ }) -join "`n"
+    $script:_LastOut = [System.Text.RegularExpressions.Regex]::Replace($script:_LastOut, $_AnsiPattern, '')
+    $env:AID_HOME     = $savedHome
+    $env:AID_LIB_PATH = $savedLib
+    $env:USERPROFILE  = $savedUP
+    $env:HOME         = $savedEH
+    $env:HOMEDRIVE    = $savedHD
+    $env:HOMEPATH     = $savedHP
+}
+
 # ---------------------------------------------------------------------------
 # Build fixture tarballs for the tools used in tests.
 # ---------------------------------------------------------------------------
@@ -1676,6 +1713,99 @@ $env:AID_NO_UPDATE_CHECK = $savedNoUpdT44b
 $t44bOut = ($t44bLines | ForEach-Object { [string]$_ }) -join "`n"
 $t44bOut = [System.Text.RegularExpressions.Regex]::Replace($t44bOut, $_AnsiPattern, '')
 Assert-Contains $t44bOut 'older format' 'T44b aid.ps1 status in tracked old-format repo: WARN older format printed'
+
+Write-Host ""
+
+# ---------------------------------------------------------------------------
+# T46: self-update-if-stale preamble parity with bin/aid (Bash/PS1 parity bug).
+#
+# 'aid update [<tool>]' runs a self-update-if-stale preamble (Invoke-AidUpdateSelfIfStale)
+# that compares the installed CLI VERSION against the cached latest in
+# $HOME/.aid/.update-check (line 2). The PowerShell twin must match bin/aid:
+#   (a) BUNDLE BYPASS: --from-bundle never phones the channel to self-update.
+#   (b) SEMVER GUARD: only self-update when installed is STRICTLY OLDER than cached
+#       latest -- a newer installed (unreleased dev build) is never downgraded.
+# Regression for the Windows-only bug where installed 1.1.0 vs stale cache 1.0.0
+# wrongly printed "CLI is not current ... self-updating".
+#
+# Hermetic: AID_SKIP_SELF_INSTALL=1 makes the actual self-update a no-op (the
+# preamble's decision line still prints first), AID_NO_UPDATE_CHECK=1 suppresses
+# the background fetch, the target is a non-project dir (update exits 6 after the
+# preamble -- no network, no prompt), and $HOME is forced to a throwaway so the
+# planted .update-check cache is read instead of the real user's.
+# ---------------------------------------------------------------------------
+Write-Host "--- T46: self-update-if-stale preamble (bundle bypass + semver guard) ---"
+
+function script:New-AidCodeHomeT46 {
+    param([string]$Dir, [string]$Version)
+    New-Item -ItemType Directory -Path (Join-Path $Dir 'bin') -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $Dir 'lib') -Force | Out-Null
+    Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+              -Destination (Join-Path $Dir 'bin' 'aid.ps1') -Force
+    Copy-Item -LiteralPath $LocalLibPath `
+              -Destination (Join-Path $Dir 'lib' 'AidInstallCore.psm1') -Force
+    [System.IO.File]::WriteAllText((Join-Path $Dir 'VERSION'), "$Version`n")
+}
+
+function script:New-AidFakeHomeT46 {
+    param([string]$Dir, [string]$CachedLatest)
+    New-Item -ItemType Directory -Path (Join-Path $Dir '.aid') -Force | Out-Null
+    # .update-check: line 1 = timestamp (ignored), line 2 = cached latest version.
+    [System.IO.File]::WriteAllText((Join-Path $Dir '.aid' '.update-check'), "0`n$CachedLatest`n")
+}
+
+# Target: a project (.aid/settings.yml, NO manifest) so 'aid update' reaches the
+# self-update preamble, then exits cleanly (no manifest -> nothing to install ->
+# exit 6) without any network or prompt. A non-project dir would exit even earlier
+# ("set it up?"), before the preamble.
+$ProjT46 = Join-Path $TmpRoot 'proj-t46'
+New-Item -ItemType Directory -Path (Join-Path $ProjT46 '.aid') -Force | Out-Null
+[System.IO.File]::WriteAllText((Join-Path $ProjT46 '.aid' 'settings.yml'),
+    "project:`n  name: proj-t46`n  type: brownfield`ntools:`n  installed: []`n")
+$BundleDirT46 = Join-Path $TmpRoot 'bundle-dir-t46'
+New-Item -ItemType Directory -Path $BundleDirT46 -Force | Out-Null
+
+$savedSkipT46 = $env:AID_SKIP_SELF_INSTALL
+$savedNoUpdT46 = $env:AID_NO_UPDATE_CHECK
+$savedNoMigT46 = $env:AID_NO_MIGRATE
+$env:AID_SKIP_SELF_INSTALL = '1'
+$env:AID_NO_UPDATE_CHECK   = '1'
+$env:AID_NO_MIGRATE        = '1'
+
+# --- T46a: positive control -- dev-BEHIND, non-bundle -> preamble MUST fire.
+# Proves the planted cache is actually read (guards against a trivial false pass).
+$AidHomeT46Behind = Join-Path $TmpRoot 'aid-home-t46-behind'
+script:New-AidCodeHomeT46 -Dir $AidHomeT46Behind -Version '1.0.0'
+$FakeHomeT46Newer = Join-Path $TmpRoot 'fakehome-t46-newer'
+script:New-AidFakeHomeT46 -Dir $FakeHomeT46Newer -CachedLatest '1.1.0'
+
+Run-AidPs1Home -AidHome $AidHomeT46Behind -FakeHome $FakeHomeT46Newer `
+    -AidArgs @('update', '-Target', $ProjT46)
+Assert-Contains $script:_LastOut 'CLI is not current' `
+    'T46a positive control (installed 1.0.0 < cached 1.1.0, non-bundle): preamble self-update fires'
+
+# --- T46b: dev-AHEAD, non-bundle -> preamble MUST NOT fire (semver guard).
+# This is the Windows bug: string-inequality wrongly treated 1.1.0 != 1.0.0 as stale.
+$AidHomeT46Ahead = Join-Path $TmpRoot 'aid-home-t46-ahead'
+script:New-AidCodeHomeT46 -Dir $AidHomeT46Ahead -Version '1.1.0'
+$FakeHomeT46Older = Join-Path $TmpRoot 'fakehome-t46-older'
+script:New-AidFakeHomeT46 -Dir $FakeHomeT46Older -CachedLatest '1.0.0'
+
+Run-AidPs1Home -AidHome $AidHomeT46Ahead -FakeHome $FakeHomeT46Older `
+    -AidArgs @('update', '-Target', $ProjT46)
+Assert-NotContains $script:_LastOut 'CLI is not current' `
+    'T46b semver guard (installed 1.1.0 >= cached 1.0.0): no spurious self-update (never downgrade)'
+
+# --- T46c: bundle bypass -- dev-BEHIND + cache newer (would fire) BUT --from-bundle.
+# Mirrors bin/aid: a bundle install never phones the channel to self-update.
+Run-AidPs1Home -AidHome $AidHomeT46Behind -FakeHome $FakeHomeT46Newer `
+    -AidArgs @('update', '--from-bundle', $BundleDirT46, '-Target', $ProjT46)
+Assert-NotContains $script:_LastOut 'CLI is not current' `
+    'T46c bundle bypass (--from-bundle): no self-update even when cache is newer'
+
+$env:AID_SKIP_SELF_INSTALL = $savedSkipT46
+$env:AID_NO_UPDATE_CHECK   = $savedNoUpdT46
+$env:AID_NO_MIGRATE        = $savedNoMigT46
 
 Write-Host ""
 

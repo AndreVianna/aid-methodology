@@ -477,6 +477,14 @@ function script:Invoke-AidUpdateSelf {
 #   - Called only on 'update [<tool>]', not 'update self' or 'add'.
 #   - WARN-not-fail: self-update failure is logged; tool-install continues (NFR12).
 function script:Invoke-AidUpdateSelfIfStale {
+    param([string]$FromBundle = '')
+
+    # Offline / explicit bundle install: when the caller supplied a local bundle, do NOT
+    # phone the package channel to self-update. The bundle is the source of truth for this
+    # install; reaching out to the registry would defeat an air-gapped or pre-release
+    # install (and could replace the running CLI behind the user's back). Mirrors bin/aid.
+    if ($FromBundle) { return }
+
     # Read installed version from the code payload (read-only).
     $verFile = Join-Path $script:_AidCodeHome 'VERSION'
     $installed = ''
@@ -496,8 +504,20 @@ function script:Invoke-AidUpdateSelfIfStale {
     }
     if (-not $cachedLatest) { return }  # no cached latest known -> skip (no network call here)
 
-    # Skip if already current (string equality).
+    # Skip if already current (string equality fast-path).
     if ($installed -eq $cachedLatest) { return }
+
+    # Only self-update when the installed CLI is strictly OLDER than the cached latest.
+    # A newer installed version (e.g. an unreleased dev build) must never be downgraded
+    # to "latest". Parse both as [version]; if either is unparseable, skip conservatively.
+    # Mirrors the `sort -V` guard in bin/aid (never downgrade).
+    $installedVer = $null
+    $latestVer = $null
+    if (-not ([version]::TryParse($installed, [ref]$installedVer)) -or
+        -not ([version]::TryParse($cachedLatest, [ref]$latestVer))) {
+        return  # unparseable version -> conservatively skip (never risk a downgrade)
+    }
+    if ($installedVer -ge $latestVer) { return }  # installed >= latest -> nothing to do
 
     # Stale: call the channel-appropriate self-update logic.
     # WARN-not-fail: failure must not abort the tool-update.
@@ -2830,7 +2850,7 @@ if ($SUBCMD -eq 'update' -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
 # For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI
 # is current before the per-repo migration runs (FR38 / OQ-6).  WARN-not-fail.
 if ($SUBCMD -eq 'update') {
-    script:Invoke-AidUpdateSelfIfStale
+    script:Invoke-AidUpdateSelfIfStale -FromBundle $_AidFromBundle
 }
 
 # Strip leading 'v' from version.
