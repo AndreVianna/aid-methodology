@@ -461,6 +461,50 @@ else
 fi
 
 # ---------------------------------------------------------------------------
+# TRG-MO: manifest-only repo (the `aid add`-only state) -- v1.1.1 regression.
+#   A repo with .aid/.aid-manifest.json but NO settings.yml and NO knowledge/STATE.md.
+#   The format gate treats it as tracked+old and warns; before the fix, migrate STEP 0
+#   returned 0 ("not a candidate") so settings.yml was never synthesized/stamped and
+#   the WARN recurred on EVERY `aid update` forever. The fix adds the manifest as an
+#   era-b qualifying marker -> synthesize a fresh stamped settings.yml.
+#   (Shipped in v1.1.0; this is the missing coverage that let it ship.)
+# ---------------------------------------------------------------------------
+_MO_BASE="$(mktemp -d "${TMP}/mo.XXXXXX")"
+_MO_CODE="${_MO_BASE}/code"; _MO_STATE="${_MO_BASE}/state"; _MO_REPO="${_MO_BASE}/repo"
+_make_code_home "${_MO_CODE}"
+_make_state_home "${_MO_STATE}"
+mkdir -p "${_MO_REPO}/.aid"
+# Manifest present (tracked) but NO settings.yml, NO knowledge/ -- the `aid add`-only state.
+printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":[],"root_agent_files":[]}}}' \
+    > "${_MO_REPO}/.aid/.aid-manifest.json"
+
+if [[ -e "${_MO_REPO}/.aid/settings.yml" ]]; then
+    fail "TRG-MO00 precondition: manifest-only repo unexpectedly has settings.yml"
+else
+    pass "TRG-MO00 precondition: manifest-only repo has no settings.yml"
+fi
+
+env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_MO_CODE}/bin/aid" __migrate-repo "${_MO_REPO}" >/dev/null 2>&1 || true
+
+if [[ -f "${_MO_REPO}/.aid/settings.yml" ]]; then
+    pass "TRG-MO01 manifest-only: settings.yml synthesized by migrate (era-b via manifest)"
+else
+    fail "TRG-MO01 manifest-only: settings.yml NOT created (era-b manifest trigger missing)"
+fi
+_MO_FV="$(grep -m1 '^format_version:' "${_MO_REPO}/.aid/settings.yml" 2>/dev/null | tr -d ' ' | cut -d: -f2)"
+assert_eq "${_MO_FV}" "1" "TRG-MO02 manifest-only: format_version: 1 stamped"
+
+# Idempotent: 'aid status' must NOT warn now (stamp current) -- the recurrence is gone.
+_MO_OUT2="$(cd "${_MO_REPO}" && env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
+    bash "${_MO_CODE}/bin/aid" status 2>&1 </dev/null)" || true
+if echo "${_MO_OUT2}" | grep -qE "older format"; then
+    fail "TRG-MO03 manifest-only: gate STILL warns after migrate (recurrence not fixed)"
+else
+    pass "TRG-MO03 manifest-only: gate silent after migrate (no recurring WARN)"
+fi
+
+# ---------------------------------------------------------------------------
 # TRG-E: AID_HOME redirects STATE only; code still resolves from AID_CODE_HOME
 #   Run status with AID_HOME pointing at isolated STATE dir; confirm that
 #   registry writes land in STATE dir (not in code home).

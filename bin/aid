@@ -1875,10 +1875,16 @@ _aid_migrate_repo() {
         _era="a"
     elif [[ -f "${repo}/.aid/knowledge/DISCOVERY_STATE.md" ]] \
       || [[ -f "${repo}/.aid/knowledge/DISCOVERY-STATE.md" ]] \
-      || [[ -f "${repo}/.aid/knowledge/STATE.md" ]]; then
+      || [[ -f "${repo}/.aid/knowledge/STATE.md" ]] \
+      || [[ -f "${repo}/.aid/.aid-manifest.json" ]]; then
+        # Era-b: KB-state present, OR a tracked repo (manifest present) that has no
+        # settings.yml yet -- the `aid add`-only state. Synthesize a fresh stamped
+        # settings.yml so the format gate stops warning every run and the repo is
+        # brought current. Without the manifest clause such repos warn forever and
+        # are never stamped (gate says "tracked + old"; migrate said "not a candidate").
         _era="b"
     else
-        # Bare .aid/ -- not a candidate, no mutation.
+        # Bare .aid/ (no settings.yml, no KB state, no manifest) -- not a candidate.
         return 0
     fi
 
