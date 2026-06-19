@@ -90,6 +90,7 @@ export default defineConfig({
           items: [
             { label: 'Installation', slug: 'guides/installation' },
             { label: 'Working the pipeline', slug: 'guides/pipeline' },
+            { label: 'Web dashboard', slug: 'guides/dashboard' },
             { label: 'Maintainer', slug: 'guides/maintainer' },
           ],
         },

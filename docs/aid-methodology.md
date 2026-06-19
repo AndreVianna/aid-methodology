@@ -68,7 +68,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*Eleven user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Interview. `/aid-interview`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance.*
+*Twelve user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Interview. `/aid-interview`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-ask` answers project questions on demand without writing.*
 
 ### The Full Path
 
@@ -82,7 +82,7 @@ When the work is small and well-scoped, TRIAGE (the opening state of every Inter
 
 ### Skill Inventory
 
-*All 11 user-facing skills, their groups, phase numbers, and mandatory pipeline membership.*
+*All 12 user-facing skills, their groups, phase numbers, and mandatory pipeline membership.*
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
@@ -97,6 +97,7 @@ When the work is small and well-scoped, TRIAGE (the opening state of every Inter
 | `aid-deploy` | Deliver | — (optional) | On demand; not a numbered phase |
 | `aid-monitor` | Deliver | — (optional) | On demand; not a numbered phase |
 | `aid-housekeep` | Off-pipeline | — | On demand; off the pipeline entirely |
+| `aid-ask` | Off-pipeline | — | On demand; read-only Q&A — never writes |
 
 ---
 
@@ -840,7 +841,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (11 user-facing skills)
+  ├── skills/        (12 user-facing skills)
   ├── agents/        (9 agents)
   ├── templates/     (KB templates, document templates)
   ├── recipes/       (51 lite-path recipes — add-/change-/fix- families)

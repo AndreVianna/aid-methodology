@@ -358,7 +358,7 @@ stateDiagram-v2
 | State | What happens |
 |-------|-------------|
 | **LOAD** | Parse each profile TOML; load the previous emission manifest (if any). |
-| **VALIDATE** | Confirm canonical completeness — the full skill and agent set (11 skills, 9 agents) and non-empty templates. |
+| **VALIDATE** | Confirm canonical completeness — the full skill and agent set (12 skills, 9 agents) and non-empty templates. |
 | **RENDER** | Run the three renderers (`render_agents.py`, `render_skills.py`, `render_templates.py`) per profile; write the emission manifest; run the deletion pass (live mode only). |
 | **VERIFY** | Hard-gate: byte-identical re-render check + presence audit + frontmatter parse. Advisory: conformance check (always exits 0; surfaces warnings in REPORT). |
 | **REPORT** | Print a summary: profiles rendered, files emitted/deleted per profile, verify results, `git diff --stat`. |

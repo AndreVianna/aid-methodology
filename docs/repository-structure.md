@@ -19,7 +19,7 @@ aid-methodology/
 |   |-- npm/                    <- npm: aid-installer (Node wrapper that puts aid on PATH)
 |   `-- pypi/                   <- PyPI: aid-installer (Python wrapper that puts aid on PATH)
 |-- canonical/                  <- single source of truth (never edit profiles/ directly)
-|   |-- skills/                 <- 11 skill definitions
+|   |-- skills/                 <- 12 skill definitions
 |   |-- agents/                 <- 9 agent definitions
 |   |-- templates/              <- KB templates and document templates
 |   |-- recipes/                <- 51 lite-path recipes (add-/change-/fix- families)
@@ -70,7 +70,7 @@ aid-methodology/
 
 All skill, agent, template, and recipe content lives here. The generator (`run_generator.py`) renders `canonical/` into the five `profiles/` install trees. **Never edit `profiles/` directly** — your changes will be overwritten on the next generator run.
 
-- `canonical/skills/` — 11 skill definitions, one directory per skill
+- `canonical/skills/` — 12 skill definitions, one directory per skill
 - `canonical/agents/` — 9 agent definitions
 - `canonical/templates/` — KB document templates, grading rubric, and task templates
 - `canonical/recipes/` — 51 pre-filled lite-path recipe files
