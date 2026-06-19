@@ -1,12 +1,8 @@
 # CLAUDE.md
 
 ## Project
-
-**AID (AI Integrated Development)** — a methodology and multi-tool distribution for
-structured AI-assisted software development: a phased skill + specialized-agent pipeline
-over a per-project Knowledge Base, rendered from a single `canonical/` source into five
-byte-identical host-tool install trees (Claude Code, Codex, Cursor, GitHub Copilot CLI,
-Antigravity) and installed via the persistent `aid` CLI.
+AID - AI Integrated Development
+A full-lifecycle methodology for building software with AI agents
 
 <!-- AID:BEGIN -->
 ## Tracking discipline (IMPERATIVE)
