@@ -214,6 +214,105 @@ def _run_git_log(repo_root: Path, branch: str) -> Optional[str]:
 
 
 # ---------------------------------------------------------------------------
+# SD-3: Worktree enumeration subprocess helpers (work-004 Pillar 4)
+#
+# These are the ONLY two git subprocess calls added for worktree discovery.
+# Both use the same fixed-argv / no-shell / 2s-timeout / degrade pattern as
+# _run_git_log above.  Locator.py calls these functions; it does NOT import
+# subprocess itself (per the existing subprocess-in-derivation-only architecture).
+# ---------------------------------------------------------------------------
+
+
+def run_worktree_list(repo_root: Path) -> Optional[str]:
+    """Run: git -C <repo_root> worktree list --porcelain
+
+    SD-3: Fixed-argv / no-shell / 2 s-bounded subprocess (twin of _run_git_log).
+    Returns raw stdout string on success, None on every failure mode.
+    Degradation modes: ENOENT (git absent), nonzero exit (non-git dir), timeout, OSError.
+    Never throws.
+
+    Safety guard: verifies that repo_root IS the git toplevel before running worktree
+    list.  If repo_root is a subdirectory of a git repo (e.g. a fixture directory
+    nested inside a larger repo), git would walk up and report the enclosing repo's
+    worktrees -- which is wrong.  The guard degrades to None in that case so the
+    caller falls back to main-root-only.
+
+    The verb "worktree" is hard-coded in the argv list; no shell is used and no
+    user-supplied string is executed -- the call is safe by construction (SD-3).
+    """
+    # Guard: only run worktree list if repo_root is the git toplevel.
+    # This prevents a fixture dir nested inside a repo from inheriting the host
+    # repo's worktrees.
+    if not _is_git_toplevel(repo_root):
+        return None
+
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "worktree", "list", "--porcelain"],
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+        if result.returncode != 0:
+            return None
+        return result.stdout
+    except FileNotFoundError:
+        # git binary absent (ENOENT)
+        return None
+    except subprocess.TimeoutExpired:
+        return None
+    except OSError:
+        return None
+
+
+def _is_git_toplevel(path: Path) -> bool:
+    """Return True if path is the git worktree toplevel (not a subdirectory of one).
+
+    Runs: git -C <path> rev-parse --show-toplevel
+    Compares the resolved result with path.resolve().
+    Returns False on any failure (git absent, not a git repo, timeout, mismatch).
+    Never throws.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(path), "rev-parse", "--show-toplevel"],
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+        if result.returncode != 0:
+            return False
+        toplevel = Path(result.stdout.strip()).resolve()
+        return toplevel == path.resolve()
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return False
+
+
+def detect_main_branch_label(repo_root: Path) -> str:
+    """Best-effort detection of the current branch name for the main worktree.
+
+    Used as the branch_label for the fallback main-root-only result in locator.py.
+    Fixed-argv / no-shell / 2 s-bounded (same pattern as _run_git_log).
+    Falls back to the literal string "main" on any failure.
+    Never throws.
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "symbolic-ref", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+        if result.returncode == 0:
+            label = result.stdout.strip()
+            if label:
+                return label
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        pass
+    return "main"
+
+
+# ---------------------------------------------------------------------------
 # FF-A3: KB 5-state status waterfall (task-064, feature-007 DM-A2)
 # ---------------------------------------------------------------------------
 

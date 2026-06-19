@@ -43,7 +43,7 @@ session. This includes:
 
 ## Step 3: Write `## Escalation Carry` block to STATE.md
 
-Append the following section to `STATE.md` (after `## Triage`, before `## Interview Status`
+Append the following section to `STATE.md` (after `## Triage`, before `## Interview State`
 if that section exists, otherwise at the end of the Triage block):
 
 ```markdown
@@ -117,18 +117,18 @@ Log entry.
 
 ---
 
-## Step 6: Ensure `## Interview Status` scaffold exists in STATE.md
+## Step 6: Ensure `## Interview State` scaffold exists in STATE.md
 
-If `STATE.md` does not have an `## Interview Status` section (lite-path works omit it),
+If `STATE.md` does not have an `## Interview State` section (lite-path works omit it),
 insert the standard scaffold from `../../templates/work-state-template.md`:
 
 ```markdown
-## Interview Status
+## Interview State
 
-**Status:** In Progress · **Grade:** Pending
+**State:** In Progress  **Grade:** Pending
 
-| # | Section | Status | Last Updated |
-|---|---------|--------|--------------|
+| # | Section | State | Last Updated |
+|---|---------|-------|--------------|
 | 1 | Objective | Pending | — |
 | 2 | Problem Statement | Pending | — |
 | 3 | Users & Stakeholders | Pending | — |
@@ -169,7 +169,7 @@ Use the slot values as a starting point — the full-path interview will deepen 
 | `ac` / `ac-1` / `ac-additional` / `intended-behavior` | § Acceptance Criteria | Slot values as checklist items, prefixed "[lite-carry]" |
 | `outline-bullets` | § Functional Requirements | Slot value verbatim |
 
-**Write immediately. Mark each seeded section in `## Interview Status` as `Partial`.**
+**Write immediately. Mark each seeded section in `## Interview State` as `Partial`.**
 
 ---
 
@@ -273,8 +273,8 @@ and `## Escalation Carry`.
 > If `**Path:** full` (or `escalated`) — route through full-path detection
 
 This means `Path: escalated` causes State Detection to enter the full-path branch, reading
-`## Interview Status` to determine whether to enter CONTINUE, COMPLETION, etc. Because
-Step 6 above ensures `## Interview Status` exists with `In Progress` status and some
+`## Interview State` to determine whether to enter CONTINUE, COMPLETION, etc. Because
+Step 6 above ensures `## Interview State` exists with `In Progress` status and some
 `Partial` sections, the first post-escalation invocation always enters **State 3: CONTINUE**.
 
 **Coexistence invariant:** After Step 9c completes, the workspace contains ONLY the

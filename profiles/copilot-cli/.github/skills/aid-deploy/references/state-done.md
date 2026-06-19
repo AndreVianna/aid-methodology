@@ -13,7 +13,7 @@ bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated -
 ```
 
 This is the **M6 normalized-Completed emit**: it writes the authoritative `Lifecycle: Completed`
-literal to `## Pipeline Status` so the dashboard reader can derive Completed from the normalized
+literal to `## Pipeline State` so the dashboard reader can derive Completed from the normalized
 block (not from legacy fallback signals). It mirrors the same silent-state-write pattern that
 M4/M5 use for Running/Paused/Blocked — existing transition, no new prompt, no new gate,
 no observable behavior change.

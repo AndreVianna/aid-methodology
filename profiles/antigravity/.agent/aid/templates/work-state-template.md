@@ -1,21 +1,63 @@
-# Work State — work-NNN-{name}
+# Work State -- work-NNN-{name}
 
-> **Status:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
+[!NOTE]
+This is the WORK-LEVEL STATE.md template. It is divided into two zones:
+  AUTHORED (single-writer) -- Pipeline State, Triage, Escalation Carry, Interview State, Lifecycle History,
+    Deploy State.
+  DERIVED (read-only, assembled at read time) -- Features State, Plan/Deliveries, Tasks State,
+    Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches.
+The DERIVED sections are NEVER written directly; they are union views over the per-delivery and
+per-task STATE.md files. Agents that write state must target the per-unit STATE.md files instead.
+
+<!-- SD-2 STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
+
+Ordered from most-advanced to least-advanced:
+  1. Done           -- task completed and accepted; all subtasks resolved
+  2. Canceled       -- resolved terminal (explicitly abandoned); ranks just below Done
+  3. In Review      -- work submitted; awaiting reviewer decision
+  4. In Progress    -- actively being executed on its delivery branch
+  5. Blocked        -- attempted but impeded; recoverable-in-place; more actionable than Failed
+  6. Failed         -- completed attempt rejected; a parallel branch may have superseded
+  7. Pending        -- not yet started
+
+Rationale: the dashboard "most-advanced wins" reconcile answers "how far has this work
+gotten across all worktree branches." Done/Canceled are terminal-resolved and rank highest.
+In Review outranks In Progress (review is a later pipeline stage). Blocked outranks Failed
+because a blocked task is recoverable-in-place and signals "needs attention now," whereas a
+failed task represents a completed-but-rejected attempt that a parallel branch may have already
+superseded -- surfacing "blocked" is the more actionable signal. Both Blocked and Failed rank
+above Pending because they represent work that was attempted and surfaced information (more
+informative than "not started").
+
+Closed enum VALUES (unchanged): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+
+This ordering is encoded ONCE here. Both reader twins (Python + Node) reference schemas.md for
+the ordered list at runtime; schemas.md carries an inline copy derived from this source.
+-->
+
+> **State:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
 > **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy
 > **Minimum Grade:** {resolved at runtime by `bash .agent/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** {YYYY-MM-DD}
 > **User Approved:** yes | no
 
-This is the single state file for **this work** — the full dev lifecycle from req → spec → plan → impl → deploy. One STATE.md per `.aid/work-NNN-{name}/` directory. Absorbs what used to be `INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N + (future) `DEPLOYMENT-STATE.md`.
+This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
+to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory. See also: per-delivery
+`delivery-NNN/STATE.md` (delivery lifecycle + gate + delivery-scoped Q&A + derived task rollup)
+and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 
-Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep their inline `## Change Log` sections — that's *content history* (what changed in the document), distinct from *process state* (where are we in the workflow). Both are useful; they live in different places.
+Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task SPEC.md) keep their
+inline `## Change Log` sections -- that is content history (what changed in the document),
+distinct from process state (where are we in the workflow). Both are useful; they live in
+different places.
 
-## Pipeline Status
+---
 
-> Single-source derivation summary for read-only consumers (the dashboard reader, FR16).
-> Written ONLY by the helper `writeback-state.sh --pipeline ...` (new mode) at every existing
-> phase/state transition the pipeline already performs. Never hand-edited. All values are
-> closed enums so a deterministic reader needs no inference.
+## Pipeline State
+
+<!-- AUTHORED -- written ONLY by `writeback-state.sh --pipeline ...` at every phase/state
+     transition the pipeline performs. Never hand-edited. All values are closed enums so a
+     deterministic reader needs no inference. -->
 >
 > Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
@@ -25,28 +67,34 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 - **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 - **Active Skill:** aid-{skill} | none
 - **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
-- **Pause Reason:** {short text} | —          (present only when Lifecycle = Paused-Awaiting-Input)
-- **Block Reason:** {short text} | —          (present only when Lifecycle = Blocked)
-- **Block Artifact:** {relative path} | —     (e.g. IMPEDIMENT-task-NNN.md, or the failed gate)
+- **Pause Reason:** {short text} | --          (present only when Lifecycle = Paused-Awaiting-Input)
+- **Block Reason:** {short text} | --          (present only when Lifecycle = Blocked)
+- **Block Artifact:** {relative path} | --     (e.g. IMPEDIMENT-task-NNN.md, or the failed gate)
+
+---
 
 ## Triage
 
-> Populated by `aid-interview` TRIAGE state for lite-path works. Left empty for full-path works (aid-interview runs the full interview flow instead).
+<!-- AUTHORED -- populated by `aid-interview` TRIAGE state for lite-path works.
+     Left empty for full-path works (aid-interview runs the full interview flow instead). -->
 
 - **Path:** lite | full
 - **Work Type:** bug-fix | new-feature | refactor | {omitted for full path}
-- **Sub-path:** LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE | — (absent for full path)
-- **Sub-path (auto):** {auto-detected sub-path label, or — if overridden or full path}
+- **Sub-path:** LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE | -- (absent for full path)
+- **Sub-path (auto):** {auto-detected sub-path label, or -- if overridden or full path}
 - **Decision rationale:** {one sentence: why this path/sub-path was selected}
 - **Override:** yes | no (yes = human changed auto-detected sub-path)
 - **Recipe:** {recipe-name} | none
 
+---
+
 ## Escalation Carry
 
-> Written by `aid-interview` lite→full escalation (Steps 3–9 of `lite-to-full-escalation.md`).
-> Present only when a work started on the lite path and was escalated to full.
-> The CONTINUE state reads this section to avoid re-asking questions already answered
-> during the lite-path session. See `references/state-continue.md § Escalation Carry`.
+<!-- AUTHORED -- written by `aid-interview` lite to full escalation (Steps 3-9 of
+     `lite-to-full-escalation.md`). Present only when a work started on the lite path
+     and was escalated to full. The CONTINUE state reads this section to avoid re-asking
+     questions already answered during the lite-path session. See
+     `references/state-continue.md # Escalation Carry`. -->
 
 - **Escalated from:** {state name} (Sub-path: {sub-path value})
 - **Escalated at:** {YYYY-MM-DDTHH:MM:SSZ}
@@ -55,124 +103,135 @@ Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, task-NNN.md) keep
 ### Captured Slot Values
 
 - **{slot-name}:** {slot-value}
-- (no slots captured — escalation before CONDENSED-INTAKE)
+- (no slots captured -- escalation before CONDENSED-INTAKE)
 
 ### Artifacts at Escalation
 
-- **SPEC.md:** present | absent — {notes on content available for seeding}
+- **SPEC.md:** present | absent -- {notes on content available for seeding}
 - **tasks/:** {N} task files present | absent
 
-## Interview Status
+---
 
-**Status:** In Progress | Complete | Approved · **Grade:** {grade or Pending}
+## Interview State
 
-| # | Section | Status | Last Updated |
-|---|---------|--------|--------------|
-| 1 | Objective | Pending | — |
-| 2 | Problem Statement | Pending | — |
-| 3 | Users & Stakeholders | Pending | — |
-| 4 | Scope | Pending | — |
-| 5 | Functional Requirements | Pending | — |
-| 6 | Non-Functional Requirements | Pending | — |
-| 7 | Constraints | Pending | — |
-| 8 | Assumptions & Dependencies | Pending | — |
-| 9 | Acceptance Criteria | Pending | — |
-| 10 | Priority | Pending | — |
+<!-- AUTHORED -- updated by `aid-interview` as each section is completed. -->
 
-## Features Status
+**State:** In Progress | Complete | Approved  **Grade:** {grade or Pending}
 
-> One row per feature. Tracks /aid-specify progress per feature.
+| # | Section | State | Last Updated |
+|---|---------|-------|--------------|
+| 1 | Objective | Pending | -- |
+| 2 | Problem Statement | Pending | -- |
+| 3 | Users & Stakeholders | Pending | -- |
+| 4 | Scope | Pending | -- |
+| 5 | Functional Requirements | Pending | -- |
+| 6 | Non-Functional Requirements | Pending | -- |
+| 7 | Constraints | Pending | -- |
+| 8 | Assumptions & Dependencies | Pending | -- |
+| 9 | Acceptance Criteria | Pending | -- |
+| 10 | Priority | Pending | -- |
 
-| # | Feature | Spec Status | Spec Grade | Q&A Count | Notes |
-|---|---------|-------------|------------|-----------|-------|
+---
+
+## Lifecycle History
+
+<!-- AUTHORED -- written by the orchestrator on the work's active branch (single writer).
+     Append-only audit trail of phase transitions and gate approvals.
+     Newest entry last (append to bottom). -->
+
+| Date | Phase Transition / Gate | Grade | Notes |
+|------|------------------------|-------|-------|
+| {YYYY-MM-DD} | Work created | -- | Initial scaffold by aid-config |
+
+---
+
+## Deploy State
+
+<!-- AUTHORED -- written ONLY by `aid-deploy` at each delivery deploy (single writer; one row
+     per delivery). Never derived from child files; aid-deploy is the sole author. Future work
+     may migrate this to a per-delivery hierarchy view, but until then it is AUTHORED here.
+     One row per delivery from /aid-deploy. -->
+
+| Delivery | State | PR | KB Updated | Tag | Notes |
+|----------|-------|----|-----------|-----|-------|
+| _none yet_ | | | | | |
+
+---
+
+<!-- ============================================================
+     DERIVED / READ-ONLY VIEWS
+     The sections below are assembled at READ TIME from per-delivery and per-task STATE.md files.
+     They are NEVER written directly. Agents MUST target the per-unit STATE.md files instead.
+     Dashboard readers union the child contributions; no agent writes to these sections.
+     ============================================================ -->
+
+## Features State
+
+<!-- DERIVED -- read-only view assembled from features/{feature}/SPEC.md progress.
+     Never written here; feature progress is tracked via /aid-specify per-feature.
+     One row per feature. Tracks /aid-specify progress per feature. -->
+
+| # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
+|---|---------|------------|------------|-----------|-------|
 | _none yet_ | | | | | |
 
 ## Plan / Deliveries
 
-> One row per delivery from PLAN.md. Tracks /aid-plan + /aid-detail completion.
+<!-- DERIVED -- read-only view assembled from delivery-NNN/STATE.md lifecycle fields.
+     Never written here; the delivery-level STATE.md is the authoritative source.
+     One row per delivery from PLAN.md. -->
 
-| Delivery | Status | Tasks | Notes |
-|----------|--------|-------|-------|
+| Delivery | State | Tasks | Notes |
+|----------|-------|-------|-------|
 | _none yet_ | | | |
 
-## Tasks Status
+## Tasks State
 
-> One row per task from PLAN.md execution graph. Tracks /aid-execute progress per task. This is the iteration source for FR1's AC4 sub-unit drill-down on aid-execute/EXECUTE-WAVE.
->
-> Status enum (closed; single source of truth — feature-002 TaskStatus imports this vocabulary):
->   Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-> Written only by `writeback-state.sh --field Status --value VALUE` (enum-validated; feature-001 M3).
-> The `_none yet_` placeholder row is accepted but skipped by the state reader (feature-002 DM-5).
-> Canceled is a reserved member with no current task-level producer.
+<!-- DERIVED -- read-only view assembled at read time from per-task STATE.md files
+     (delivery-NNN/tasks/task-NNN/STATE.md). Never written directly into this file.
+     The state reader unions all delivery branches using the SD-2 ordering (most-advanced wins).
+     One row per task from PLAN.md execution graph.
+     State enum (closed): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled -->
 
-| # | Task | Type | Wave | Status | Review | Elapsed | Notes |
-|---|------|------|------|--------|--------|---------|-------|
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
 | _none yet_ | | | | | | | |
-
-## Deploy Status
-
-> One row per delivery from /aid-deploy. Tracks deploy lifecycle.
-
-| Delivery | State | PR | KB Updated | Tag | Notes |
-|----------|-------|----|-----------|----|----|
-| _none yet_ | | | | | |
-
-## Cross-phase Q&A (Pending)
-
-> Consolidated open questions across all phases of this work. Each entry: ID, category, impact, suggested answer, status. Cross-phase because the same question may originate in /aid-specify and apply to /aid-plan, etc.
-
-### Q{N}
-
-- **Category:** {category, e.g., Architecture, Requirements, Security}
-- **Impact:** {High|Medium|Low|Required}
-- **Status:** Pending | Answered | Skipped
-- **Context:** {why this matters; what the downstream phase observed; cite phase/skill that raised it, e.g., "Surfaced by /aid-specify feature-001"}
-- **Suggested:** {answer if inferrable, or —}
-- **Answer:** {filled when status is Answered}
-- **Applied to:** {artifact(s) the answer was applied to}
 
 ## Delivery Gates
 
-> One block per delivery from PLAN.md (or the single work-root SPEC.md delivery on the lite path), written by the delivery-gate closing step of `aid-execute`. Distinct from per-task quick-check findings — the gate aggregates those deferred [HIGH] rows (via `delivery-NNN-issues.md`) and runs a full grade.sh pass. Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`; see `.agent/aid/templates/delivery-issues.md` for the template.
+<!-- DERIVED -- read-only union of each delivery-NNN/STATE.md ## Delivery Gate section.
+     The per-delivery gate block is the authoritative source (single writer per delivery branch).
+     Never written here. -->
 
-### delivery-NNN
+_None yet. Each delivery-NNN/STATE.md carries its own gate block._
 
-- **Reviewer Tier:** Small | Medium | Large
-- **Grade:** {grade or Pending}
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
-- **Timestamp:** {YYYY-MM-DDTHH:MM:SSZ}
+## Cross-phase Q&A
 
-## Quick Check Findings
+<!-- DERIVED -- read-only union of:
+       (a) each delivery-NNN/STATE.md ## Cross-phase Q&A section (delivery-gate Q&A), and
+       (b) any work-owner-authored Q&A entries in this work's active branch (written below
+           this comment by the work owner only; the work owner is the single writer here).
+     Delivery branches write Q&A into their OWN delivery-NNN/STATE.md, not here (SD-5).
+     The dashboard reader unions all delivery contributions plus (b) into this view.
+     WORK-OWNER-AUTHORED entries may appear below this block (single writer, work active branch). -->
 
-> One block per task, keyed by task-id. Written by `writeback-state.sh --findings` during the per-task quick-check step of `aid-execute`. Records the reviewer tier used and all [HIGH] / [CRITICAL] findings for that task. [CRITICAL] findings trigger an immediate fix-on-spot; [HIGH] findings are deferred to the delivery gate via `delivery-NNN-issues.md`. No grade is recorded here — grading is per-delivery, not per-task.
-
-### task-NNN
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} — {source-file:line} — Fixed-on-spot
-  - [HIGH] {description} — {source-file:line} — Deferred-to-gate
-
-## Lifecycle History
-
-> One row per phase transition or gate approval. Append-only audit trail.
-
-| Date | Phase Transition / Gate | Grade | Notes |
-|------|------------------------|-------|-------|
-| {YYYY-MM-DD} | Work created | — | Initial scaffold by aid-config |
+_None yet._
 
 ## Calibration Log
 
-> Appended by every dispatcher on subagent completion (L1+L2+L3 traceability; always-on, never optional). One row per dispatch. Created on first use ("create section if missing"). Source: `.agent/skills/aid-discover/SKILL.md ## Dispatch Protocol`.
+<!-- DERIVED -- read-only union of per-task ## Dispatch Log entries from
+     delivery-NNN/tasks/task-NNN/STATE.md files.
+     Appended by dispatchers at subagent completion (L1+L2+L3 traceability; always-on).
+     One row per dispatch. Never written directly here; assemble from per-task logs at read time. -->
 
 | Date | Agent | Task / Cycle | ETA Band | Actual | Notes |
 |------|-------|-------------|----------|--------|-------|
 
 ## Dispatches
 
-> Records the per-task dispatch log for subagents invoked during execution of this work. One sub-section per task that triggered at least one dispatch; each sub-section lists the dispatches with their outcome. Updated by the dispatcher on subagent completion alongside the `## Calibration Log` row.
+<!-- DERIVED -- read-only union of per-task dispatch logs assembled from
+     delivery-NNN/tasks/task-NNN/STATE.md ## Dispatch Log sections.
+     Never written here; one sub-section per task that triggered at least one dispatch.
+     Updated by the dispatcher on subagent completion alongside the Calibration Log row. -->
 
-### task-NNN
-
-| Date | Agent | ETA Band | Actual | Outcome |
-|------|-------|----------|--------|---------|
+_None yet. Delivery task dispatch logs live in delivery-NNN/tasks/task-NNN/STATE.md._

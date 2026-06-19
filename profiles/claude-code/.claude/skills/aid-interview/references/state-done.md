@@ -15,7 +15,7 @@ Interview for {work} is complete and approved.
 - **[1] Add more information:**
   - Ask: _"What would you like to add or change?"_
   - Record the user's input into the relevant REQUIREMENTS.md section
-  - Update STATE.md `## Interview Status` section statuses if needed
+  - Update STATE.md `## Interview State` section statuses if needed
   - Update affected feature SPEC.md files if the change impacts a feature
   - Update KB documents if the new info is KB-relevant
   - Print: `✅ Updated. Run /aid-interview {work} again to re-validate.`

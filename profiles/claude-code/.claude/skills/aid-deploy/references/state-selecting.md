@@ -22,7 +22,7 @@ Which deliveries should be in this release? [all ready / select / cancel]
 
 If user selects "all ready" → include all eligible.
 If user selects specific ones → include only those.
-If user cancels → reset work `STATE.md` `## Deploy Status` to Idle, stop.
+If user cancels → reset work `STATE.md` `## Deploy State` to Idle, stop.
 
 Ask for:
 - Version/tag name (suggest based on versioning scheme from KB)
@@ -33,6 +33,6 @@ Create the package file from template (`../../templates/package.md`):
 - Determine package number (next sequential after existing packages)
 - Save to `.aid/{work}/packages/package-NNN-{slug}.md`
 
-Update work `STATE.md` `## Deploy Status`: Status → Verifying, Active Package → package-NNN.
+Update work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.
 
 **Advance:** **CHAIN** → [State: VERIFYING] (continue inline).

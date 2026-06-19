@@ -221,10 +221,16 @@ class FeatureRef:
 
 @dataclass
 class DeliverableRef:
-    """A single row from ## Plan / Deliveries in STATE.md (prototype field)."""
+    """A single row from ## Plan / Deliveries in STATE.md (prototype field).
+
+    delivery_state: the SD-8 lifecycle enum from delivery-NNN/STATE.md ## Delivery Lifecycle
+    (Pending-Spec | Specified | Executing | Gated | Done | Blocked).
+    None when the delivery STATE.md is absent or the field is unparseable (legacy works).
+    """
     number: int
     name: str
     task_count: int
+    delivery_state: Optional[str] = None
 
 
 @dataclass
@@ -257,6 +263,9 @@ class WorkModel:
     recipe: Optional[str] = None           # lite-path recipe from Triage, else None
     features: list[FeatureRef] = field(default_factory=list)      # from ## Features Status
     deliverables: list[DeliverableRef] = field(default_factory=list)  # from ## Plan / Deliveries
+    # work-004 Pillar 4: branch label from the worktree that owns this work folder.
+    # "main" for the main worktree; branch name for persistent worktrees; None if unknown.
+    branch_label: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

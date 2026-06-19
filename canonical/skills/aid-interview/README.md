@@ -16,7 +16,7 @@ Each interview creates a *work* — a self-contained unit of scope:
 .aid/
   knowledge/                    ← shared KB (from Discovery)
   work-NNN-{name}/              ← one work per interview
-    work `STATE.md` `## Interview Status`          ← process (section status, Q&A, grade, review history)
+    work `STATE.md` `## Interview State`           ← process (section status, Q&A, grade, review history)
     REQUIREMENTS.md             ← product (stakeholder requirements)
     features/
       feature-NNN-{name}/
@@ -36,7 +36,7 @@ Multiple works can coexist — a client requests auth now, reporting later. Each
 
 - `.aid/knowledge/` directory (if brownfield — pre-fills technical fields and informs questions).
 - Project description or brief (if greenfield).
-- For targeted interview: Q&A entries in work `STATE.md` `## Interview Status` from downstream phases.
+- For targeted interview: Q&A entries in work `STATE.md` `## Interview State` from downstream phases.
 - For cross-reference: existing REQUIREMENTS.md + full KB.
 
 ## REQUIREMENTS.md Structure
@@ -144,7 +144,7 @@ Conversational, not interrogative. Show understanding: "Got it — so the core p
 
 ### Downstream Loopback
 
-Downstream phases (Specify, Plan, Detail) can inject Q&A entries into work `STATE.md` `## Interview Status`'s `## Pending Q&A`. The next Interview run picks these up — in Q&A state if requirements are already approved, or woven into the ongoing interview if still in progress.
+Downstream phases (Specify, Plan, Detail) can inject Q&A entries into work `STATE.md` `## Interview State`'s `## Pending Q&A`. The next Interview run picks these up — in Q&A state if requirements are already approved, or woven into the ongoing interview if still in progress.
 
 ## Brownfield vs Greenfield
 
@@ -155,7 +155,7 @@ Downstream phases (Specify, Plan, Detail) can inject Q&A entries into work `STAT
 ## Output
 
 - `.aid/{work}/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections.
-- `.aid/{work}/work `STATE.md` `## Interview Status`` — process tracking (section status, Q&A, grade, review history).
+- `.aid/{work}/work `STATE.md` `## Interview State`` — process tracking (section status, Q&A, grade, review history).
 - `.aid/{work}/features/feature-NNN-{name}/SPEC.md` — per-feature requirements side (description, user stories, priority, acceptance criteria).
 
 ## Feedback Loops
@@ -166,7 +166,7 @@ An answer reveals the KB is wrong or incomplete. Pause, trigger targeted discove
 
 ### ← Specify / Plan / Detail
 
-Downstream phases find requirements are wrong, incomplete, or contradictory. They write Q&A entries to work `STATE.md` `## Interview Status`. Next Interview run picks them up.
+Downstream phases find requirements are wrong, incomplete, or contradictory. They write Q&A entries to work `STATE.md` `## Interview State`. Next Interview run picks them up.
 
 ## Quality Checklist
 

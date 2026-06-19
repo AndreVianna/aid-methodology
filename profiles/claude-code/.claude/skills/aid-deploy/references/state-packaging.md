@@ -71,9 +71,9 @@ For each KB update needed:
 
 - Package file → Status: Shipped, add date
 - Each included delivery in PLAN.md → add `Shipped in: package-NNN` and date
-- Work `STATE.md` `## Tasks Status` rows for included tasks → Status: Shipped
-- Work `STATE.md` `## Deploy Status` → Status: Done, Active Package: —
-- Work `STATE.md` `## Deploy Status` History → add entry with package name, date, delivery count
+- Work `STATE.md` `## Tasks State` rows for included tasks → Status: Shipped
+- Work `STATE.md` `## Deploy State` → Status: Done, Active Package: —
+- Work `STATE.md` `## Deploy State` History → add entry with package name, date, delivery count
 
 ### Step 8: Project Management Sync (conditional)
 

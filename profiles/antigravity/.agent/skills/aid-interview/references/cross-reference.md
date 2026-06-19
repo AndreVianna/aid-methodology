@@ -21,7 +21,7 @@ Validate against KB and codebase.
 ## 6a. Load Context
 
 1. Read REQUIREMENTS.md (in the work folder)
-2. Read STATE.md `## Interview Status` and `## Cross-phase Q&A`
+2. Read STATE.md `## Interview State` and `## Cross-phase Q&A`
 3. Read `.aid/knowledge/INDEX.md` (if exists)
 4. Read ALL KB documents listed in INDEX.md
 5. Read all SPEC.md files in the work's `features/` subdirectories
@@ -44,7 +44,7 @@ by severity (Minor/Low/Medium/High/Critical). Grade is calculated — worst issu
 
 Compare to minimum grade from `bash .agent/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`.
 
-**Update `**Interview Grade:**` in STATE.md `## Interview Status`.**
+**Update `**Interview Grade:**` in STATE.md `## Interview State`.**
 
 ## 6d. Present Findings
 
@@ -92,6 +92,6 @@ After each answer:
 
 After all questions answered:
 
-1. Add Review History entry in STATE.md `## Interview Status`
+1. Add Review History entry in STATE.md `## Interview State`
 2. Add Change Log entry in REQUIREMENTS.md
 3. Print: `✅ Cross-reference complete. Run /aid-interview again to verify.`

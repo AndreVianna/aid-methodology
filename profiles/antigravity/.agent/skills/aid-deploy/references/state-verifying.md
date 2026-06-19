@@ -41,12 +41,12 @@ If any failures logged (grade below A+):
 - Show the failure clearly
 - Ask user: fix here (minor) or loop back to aid-execute (non-trivial)?
 - If fixing here: fix → re-verify → re-run grade.sh (max 3 attempts, then must loop to execute)
-- If looping back: set work `STATE.md` `## Deploy Status` → Idle, keep package file as Draft
+- If looping back: set work `STATE.md` `## Deploy State` → Idle, keep package file as Draft
   Delete ledger: `rm -f .aid/.temp/review-pending/deploy.md`
 
 If all pass (ledger is empty → grade A+): proceed to PACKAGING.
 Delete ledger on success: `rm -f .aid/.temp/review-pending/deploy.md`
 
-Update work `STATE.md` `## Deploy Status`: Status → Packaging.
+Update work `STATE.md` `## Deploy State`: Status → Packaging.
 
 **Advance:** **CHAIN** → [State: PACKAGING] (continue inline).

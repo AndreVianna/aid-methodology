@@ -1,6 +1,6 @@
 # State: FIRST-RUN
 
-This state runs only when STATE.md `## Interview Status` does not exist in the work folder; it creates the scaffolding so that TRIAGE can ask the 3 path-determination questions before the conversational interview begins.
+This state runs only when STATE.md `## Interview State` does not exist in the work folder; it creates the scaffolding so that TRIAGE can ask the 3 path-determination questions before the conversational interview begins.
 
 ### 1a. Read KB (if it exists)
 
@@ -11,15 +11,15 @@ If no KB exists, that's fine — this is a greenfield project.
 
 ### 1b. Create or update STATE.md
 
-Ensure `.aid/{work}/STATE.md` exists and has an `## Interview Status` section and a
+Ensure `.aid/{work}/STATE.md` exists and has an `## Interview State` section and a
 `## Cross-phase Q&A` section. Copy from `../../templates/work-state-template.md` if
 the file does not yet exist.
 
-### 1b-ii. Seed the `## Pipeline Status` block
+### 1b-ii. Seed the `## Pipeline State` block
 
 After the STATE.md file exists (created from the template above or already present), write
-the opening `## Pipeline Status` field values directly into `.aid/{work}/STATE.md`, replacing
-the template placeholder lines under `## Pipeline Status` with the actual opening values:
+the opening `## Pipeline State` field values directly into `.aid/{work}/STATE.md`, replacing
+the template placeholder lines under `## Pipeline State` with the actual opening values:
 
 ```
 - **Lifecycle:** Running
@@ -37,7 +37,7 @@ The `Pause Reason`, `Block Reason`, and `Block Artifact` lines are included with
 value `—` so the grep-recoverable `**Field:** value` format is structurally complete from the
 start. All values are valid opening members of the closed enums declared in the template.
 
-**Idempotency:** if `## Pipeline Status` already has `Lifecycle: Running` (the work was
+**Idempotency:** if `## Pipeline State` already has `Lifecycle: Running` (the work was
 previously scaffolded), skip this step — do not overwrite values that may have been advanced
 by a later phase.
 
@@ -75,7 +75,7 @@ If there is no Monitor finding (the normal case — a human-initiated interview)
 step. TRIAGE still asks its questions; the seed only pre-fills answers, it never overrides
 the deterministic routing rule.
 
-**Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview Status` tracks
+**Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview State` tracks
 which sections have been filled.
 
 ---

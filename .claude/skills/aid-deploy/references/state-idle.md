@@ -19,7 +19,7 @@ If infrastructure.md has no Deployment section or it's a placeholder:
 → Ask the user how this project gets packaged and deployed.
 → Write a Q&A entry to `.aid/knowledge/STATE.md` `## Q&A (Pending)` to capture the answer.
 
-Update work `STATE.md` `## Deploy Status`: Status → Selecting.
+Update work `STATE.md` `## Deploy State`: Status → Selecting.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```

@@ -31,8 +31,8 @@ Rendered on every sub-unit transition (PD-2 dispatch, PD-4 completion/failure):
 ```
 Wave ∞ (pool) · {K}/{T} done
 
-| Task | Type | Status | Time |
-|------|------|--------|------|
+| Task | Type | State | Time |
+|------|------|-------|------|
 | task-001 | IMPLEMENT | ✓ done    | 4m 12s   |
 | task-002 | RESEARCH  | ● running | ~3–8 min |
 | task-003 | DOCUMENT  | ● running | ~1–3 min |
@@ -43,11 +43,11 @@ Done: {D}  In-flight: {I}  Queued: {Q}  Blocked: {B}  Failed: {F}
 ```
 
 **Counts summary line** appears at the bottom of every snapshot. Values:
-- `Done` — tasks with Status `Done`
-- `In-flight` — tasks in the in-flight set (Status `In Progress`)
+- `Done` — tasks with State `Done`
+- `In-flight` — tasks in the in-flight set (State `In Progress`)
 - `Queued` — tasks in the ready set waiting for a pool slot
-- `Blocked` — tasks in the blocked set (Status `Blocked`)
-- `Failed` — tasks with Status `Failed`
+- `Blocked` — tasks in the blocked set (State `Blocked`)
+- `Failed` — tasks with State `Failed`
 
 ### Snapshot Format — Drill-down View (per-in-flight-task detail)
 
@@ -61,8 +61,8 @@ sub-row with per-agent detail:
 ```
 Wave ∞ (pool) · {K}/{T} done
 
-| Task | Type | Status | Time |
-|------|------|--------|------|
+| Task | Type | State | Time |
+|------|------|-------|------|
 | task-001 | IMPLEMENT | ✓ done    | 4m 12s        |
 | task-002 | RESEARCH  | ● running | 6m 40s (↑ ~8m)|
 |          |           | agent: aid-researcher · heartbeat: RUNNING · elapsed: 6m 40s · ETA: ~8 min |
@@ -121,7 +121,7 @@ heartbeat field — do not fail the render.
 
 Apply these failure-tolerance rules unconditionally:
 
-- **Missing data:** if a task row is missing Type, Status, or Time information,
+- **Missing data:** if a task row is missing Type, State, or Time information,
   render the available fields and leave the unknown field as `—`.
 - **Malformed heartbeat file:** treat as `unknown` heartbeat state; do not parse
   further; do not raise an error.
