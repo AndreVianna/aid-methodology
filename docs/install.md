@@ -194,13 +194,13 @@ irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install
 ### Pinned-version bootstrap (recommended for teams and CI)
 
 ```bash
-# Linux / macOS
-curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version 1.1.0
+# Linux / macOS  (replace X.Y.Z with the version to pin; omit --version entirely for the latest)
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash -s -- --version X.Y.Z
 ```
 
 ```powershell
-# Windows
-$env:AID_VERSION = '1.1.0'
+# Windows  (set the version to pin; omit AID_VERSION for the latest)
+$env:AID_VERSION = 'X.Y.Z'
 irm https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1 | iex
 ```
 
@@ -359,9 +359,11 @@ use `aid add --from-bundle` — no network required.
 ### Download and verify
 
 ```bash
-# Download (example: claude-code at v1.1.0)
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.1.0/aid-claude-code-v1.1.0.tar.gz
-curl -LO https://github.com/AndreVianna/aid-methodology/releases/download/v1.1.0/SHA256SUMS
+# Resolve the latest release tag (or set VERSION manually from the Releases page)
+VERSION="$(curl -fsSL https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest | grep -oP '"tag_name":\s*"v\K[^"]+')"
+# Download (example: claude-code)
+curl -LO "https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}/aid-claude-code-v${VERSION}.tar.gz"
+curl -LO "https://github.com/AndreVianna/aid-methodology/releases/download/v${VERSION}/SHA256SUMS"
 
 # Verify (Linux)
 sha256sum --check --ignore-missing SHA256SUMS

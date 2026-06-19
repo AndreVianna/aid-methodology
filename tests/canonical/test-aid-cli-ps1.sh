@@ -298,7 +298,7 @@ assert_exit_eq "$RC" 0 "PS028-G2-01 bare aid.ps1 in empty dir → exit 0 (offer)
 assert_output_contains "$OUT" "no AID project here" "PS028-G2-02 PS1 empty dir: offer message printed"
 assert_output_contains "$OUT" "aid add" "PS028-G2-03 PS1 empty dir: 'aid add' suggested"
 # G2-04/05 were dashboard content checks; now assert the dashboard header is NOT shown.
-assert_output_not_contains "$OUT" "Agentic Iterative Development" "PS028-G2-04 PS1 empty dir: no dashboard header"
+assert_output_not_contains "$OUT" "AI Integrated Development" "PS028-G2-04 PS1 empty dir: no dashboard header"
 assert_output_not_contains "$OUT" "Install, update, and manage AID" "PS028-G2-05 PS1 empty dir: no dashboard description"
 # G2-06 slot: aid add still referenced via the offer message.
 assert_output_contains "$OUT" "aid add" "PS028-G2-06 PS1 empty dir offer: 'aid add' present"

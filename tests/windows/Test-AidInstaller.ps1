@@ -680,7 +680,7 @@ $env:AID_LIB_PATH = $savedLib18
 
 Assert-Eq     "$rc18"    '0'  'T18a bare aid.ps1 with .aid/ fixture → exit 0'
 Assert-Contains $out18 "AID v$Ver"                        'T18b dashboard: header contains AID v<ver>'
-Assert-Contains $out18 'Agentic Iterative Development'    'T18c dashboard: header contains description tag'
+Assert-Contains $out18 'AI Integrated Development'        'T18c dashboard: header contains description tag'
 Assert-Contains $out18 'Install, update, and manage AID'  'T18d dashboard: description line'
 Assert-Contains $out18 'yet'                              'T18e dashboard: friendly no-tools message'
 Assert-Contains $out18 'aid add'                          'T18f dashboard: usage block contains aid add'

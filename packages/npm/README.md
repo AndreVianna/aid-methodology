@@ -1,7 +1,7 @@
 # aid-installer
 
-Install [AID](https://github.com/AndreVianna/aid-methodology) (Agentic Iterative Development)
-into your repository. Current release: **v1.1.0**.
+Install [AID](https://github.com/AndreVianna/aid-methodology) (AI Integrated Development)
+into your repository. This package always installs the matching AID release.
 
 `npm i -g aid-installer` (or `npx aid-installer ...`) puts an `aid` command on your PATH.
 Then, inside a project:

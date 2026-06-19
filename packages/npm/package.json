@@ -1,7 +1,9 @@
 {
   "name": "aid-installer",
   "version": "1.1.1",
-  "description": "AID CLI installer - puts the persistent aid command on PATH via npm",
+  "description": "AID (AI Integrated Development) CLI installer - puts the persistent aid command on PATH via npm",
+  "author": "Andre Vianna",
+  "homepage": "https://aid.casuloailabs.com",
   "bin": {
     "aid": "bin/aid.js"
   },
@@ -18,18 +20,19 @@
     "bin/",
     "lib/",
     "dashboard/",
-    "scripts/",
+    "scripts/postinstall.js",
     "VERSION",
     "README.md",
     "LICENSE"
   ],
   "keywords": [
     "aid",
-    "agentic",
-    "iterative",
+    "AI",
+    "integrated",
     "development",
     "cli",
-    "installer"
+    "installer",
+    "methodology"
   ],
   "license": "MIT",
   "repository": {
