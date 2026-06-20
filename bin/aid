@@ -2579,7 +2579,7 @@ _cmd_dashboard() {
     if [[ -f "$ver_file" ]]; then
         cli_version="$(tr -d '[:space:]' < "$ver_file")"
     fi
-    printf 'AID v%s - Agentic Iterative Development\n' "$cli_version"
+    printf 'AID v%s - AI Integrated Development\n' "$cli_version"
     printf 'Install, update, and manage AID across your projects.\n'
 
     # C6: format gate for cwd repo (.aid/ is guaranteed present here -- the

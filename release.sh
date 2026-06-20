@@ -132,10 +132,18 @@ if [[ "$DRY_RUN" -eq 0 ]] && git rev-parse -q --verify "refs/tags/${TAG}" >/dev/
     fi
 fi
 
-# Assert no existing GitHub Release for this tag (only when not dry-run and gh is available).
+# A pre-existing GitHub Release for this tag is NOT fatal. The tag-triggered CD may
+# re-run after a PARTIAL publish (e.g. github-release succeeded but npm/PyPI failed on
+# a transient error); since npm-publish/pypi-publish depend on github-release, dying
+# here would strand the release with no way to finish via a re-run. Instead we RECORD
+# that it exists and refresh the assets idempotently in Step 8, so the dependent jobs
+# can complete. The genuine-conflict case (tag at a DIFFERENT commit) is already caught
+# above; a same-commit re-run is a safe, idempotent recovery.
+RELEASE_EXISTS=0
 if [[ "$DRY_RUN" -eq 0 ]] && command -v gh >/dev/null 2>&1; then
     if gh release view "${TAG}" >/dev/null 2>&1; then
-        die "GitHub Release ${TAG} already exists. Delete it or choose a different version." 4
+        RELEASE_EXISTS=1
+        echo "release.sh: GitHub Release ${TAG} already exists -- recovery re-run; assets will be refreshed (--clobber)." >&2
     fi
 fi
 
@@ -457,9 +465,20 @@ ASSETS+=("${STAGE_DIR}/aid-install-core.sh")
 ASSETS+=("${STAGE_DIR}/AidInstallCore.psm1")
 ASSETS+=("${SUMS_FILE}")
 
-echo "release.sh: creating GitHub Release ${TAG} ..."
-gh release create "${GH_ARGS[@]}" "${ASSETS[@]}"
-
-echo ""
-echo "release.sh: Release ${TAG} created successfully."
-echo "  Assets uploaded: ${#ASSETS[@]}"
+if [[ "$RELEASE_EXISTS" -eq 1 ]]; then
+    # Idempotent recovery path: the Release already exists (re-run after a partial
+    # publish). Refresh its assets with --clobber instead of failing, so the dependent
+    # npm-publish / pypi-publish jobs run on the re-run and the npm idempotency guard
+    # can take over. Existing notes/title are left untouched.
+    echo "release.sh: GitHub Release ${TAG} exists -- uploading/refreshing assets (--clobber) ..."
+    gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+    echo ""
+    echo "release.sh: Release ${TAG} assets refreshed (idempotent recovery re-run)."
+    echo "  Assets uploaded: ${#ASSETS[@]}"
+else
+    echo "release.sh: creating GitHub Release ${TAG} ..."
+    gh release create "${GH_ARGS[@]}" "${ASSETS[@]}"
+    echo ""
+    echo "release.sh: Release ${TAG} created successfully."
+    echo "  Assets uploaded: ${#ASSETS[@]}"
+fi

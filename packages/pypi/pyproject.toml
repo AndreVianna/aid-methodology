@@ -5,18 +5,31 @@ build-backend = "hatchling.build"
 [project]
 name = "aid-installer"
 version = "1.1.1"
-description = "AID CLI installer - puts the persistent aid command on PATH via pipx or pip"
+description = "AID (AI Integrated Development) CLI installer - puts the persistent aid command on PATH via pipx or pip"
+readme = "README.md"
 requires-python = ">=3.8"
 dependencies = []
-keywords = ["aid", "agentic", "iterative", "development", "cli", "installer"]
-license = { text = "MIT" }
+keywords = ["aid", "AI", "integrated", "development", "cli", "installer"]
+license = "MIT"
+license-files = ["LICENSE"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Build Tools",
+]
 
 [[project.authors]]
 name = "Andre Vianna"
 email = "andre.vianna.rj@hotmail.com"
 
 [project.urls]
+Homepage = "https://aid.casuloailabs.com"
+Documentation = "https://aid.casuloailabs.com"
 Repository = "https://github.com/AndreVianna/aid-methodology"
+Issues = "https://github.com/AndreVianna/aid-methodology/issues"
 
 [project.scripts]
 aid = "aid_installer.__main__:main"

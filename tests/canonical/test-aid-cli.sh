@@ -254,7 +254,7 @@ OUT=$(cd "${TG}" && AID_HOME="${CLI027G_HOME}" AID_LIB_PATH="${CLI027G_HOME}/lib
      bash "${CLI027G_HOME}/bin/aid" 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "CLI027-G01 bare aid in repo with .aid/ → exit 0 (dashboard)"
 assert_output_contains "$OUT" "AID v${VERSION}" "CLI027-G02 dashboard header contains 'AID v<ver>'"
-assert_output_contains "$OUT" "Agentic Iterative Development" "CLI027-G03 dashboard header contains description tag"
+assert_output_contains "$OUT" "AI Integrated Development" "CLI027-G03 dashboard header contains description tag"
 assert_output_contains "$OUT" "Install, update, and manage AID" "CLI027-G04 dashboard description line"
 assert_output_contains "$OUT" "yet" "CLI027-G05 dashboard: no-tools dir shows friendly no-tools message"
 assert_output_contains "$OUT" "aid add" "CLI027-G06 dashboard: usage block contains 'aid add'"

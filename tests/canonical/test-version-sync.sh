@@ -237,4 +237,29 @@ else
 ${UNPINNED_USES}"
 fi
 
+# ---------------------------------------------------------------------------
+# VS09  Shipped READMEs carry NO hardcoded release version (regression guard).
+#   Version strings baked into README badges / prose / download URLs go stale on
+#   every release and are NOT covered by check-version-sync.sh (it only checks
+#   VERSION + package.json + pyproject + tag). v1.1.0/v1.1.1 shipped a stale
+#   "Current release: v1.1.0" line on the npm page AND a root-README offline-install
+#   example pointing at the (later broken) v1.1.0 download. The READMEs are now
+#   de-versioned (dynamic shields.io github/v/release badge, latest-tag resolution,
+#   no "Current release: vX"); this guard fails if a hardcoded version is reintroduced.
+#   Forbidden: "Current release: vX.Y.Z" | releases/download/vX.Y.Z/ | badge/version-X.Y.Z
+#   (Historical headings like "What's New in v1.1.0" are intentionally NOT matched.)
+# ---------------------------------------------------------------------------
+VS09_HITS=""
+for _rdme in "${REPO_ROOT}/README.md" "${REPO_ROOT}/packages/npm/README.md" "${REPO_ROOT}/packages/pypi/README.md"; do
+    [[ -f "$_rdme" ]] || continue
+    _h="$(grep -nE 'Current release:.*v[0-9]+\.[0-9]+\.[0-9]+|releases/download/v[0-9]+\.[0-9]+\.[0-9]+/|badge/version-[0-9]+\.[0-9]+\.[0-9]+' "$_rdme" 2>/dev/null || true)"
+    [[ -n "$_h" ]] && VS09_HITS+="${_rdme}:"$'\n'"${_h}"$'\n'
+done
+if [[ -z "${VS09_HITS}" ]]; then
+    pass "VS09 shipped READMEs carry no hardcoded release version (de-versioned)"
+else
+    fail "VS09 hardcoded version string(s) in shipped README(s) -- de-version (dynamic badge / latest-tag / drop 'Current release: vX'):
+${VS09_HITS}"
+fi
+
 test_summary

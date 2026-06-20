@@ -2006,7 +2006,7 @@ if ($script:_RawArgs.Count -eq 0) {
     if (Test-Path $verFile -PathType Leaf) {
         $cliVersion = (Get-Content -LiteralPath $verFile -Raw).Trim()
     }
-    Write-Host "AID v$cliVersion - Agentic Iterative Development"
+    Write-Host "AID v$cliVersion - AI Integrated Development"
     Write-Host "Install, update, and manage AID across your projects."
 
     # C6': format gate for cwd repo (.aid/ is guaranteed present here -- the
