@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 ## Project
-AID - AI Integrated Development
+AID — AI Integrated Development
 A full-lifecycle methodology for building software with AI agents
 
 <!-- AID:BEGIN -->
@@ -41,4 +41,3 @@ No narrative or summary sections in the ledger.
 - Run build and test commands
 - Do NOT modify files outside the project root
 <!-- AID:END -->
-
