@@ -1231,6 +1231,8 @@ function Invoke-PruneToolDirs {
     #       that map points copilot-cli at the .github ROOT (forbidden by R1).
     #       Scope is the R1-compliant set: .github/{agents,skills,aid} only.
     # -----------------------------------------------------------------------
+    # Per-tool scoping: new layout (work-005/delivery-001).
+    # Codex unified under .codex/; cursor and antigravity no longer ship rules/.
     switch ($Tool) {
         'claude-code' {
             & $pruneNativeDir (Join-Path $Target '.claude\agents')
@@ -1238,15 +1240,15 @@ function Invoke-PruneToolDirs {
             & $pruneAidSubtree (Join-Path $Target '.claude\aid')
         }
         'codex' {
-            # .codex ships only agents/; .agents ships skills/ + aid/ subtree.
+            # New unified layout: everything under .codex/ (agents, skills, aid).
             & $pruneNativeDir (Join-Path $Target '.codex\agents')
-            & $pruneNativeDir (Join-Path $Target '.agents\skills')
-            & $pruneAidSubtree (Join-Path $Target '.agents\aid')
+            & $pruneNativeDir (Join-Path $Target '.codex\skills')
+            & $pruneAidSubtree (Join-Path $Target '.codex\aid')
         }
         'cursor' {
+            # rules/ dir removed from new layout; agents/skills/aid remain.
             & $pruneNativeDir (Join-Path $Target '.cursor\agents')
             & $pruneNativeDir (Join-Path $Target '.cursor\skills')
-            & $pruneNativeDir (Join-Path $Target '.cursor\rules')
             & $pruneAidSubtree (Join-Path $Target '.cursor\aid')
         }
         'copilot-cli' {
@@ -1256,7 +1258,8 @@ function Invoke-PruneToolDirs {
             & $pruneAidSubtree (Join-Path $Target '.github\aid')
         }
         'antigravity' {
-            & $pruneNativeDir (Join-Path $Target '.agent\rules')
+            # rules/ dir removed from new layout; agents/skills/aid remain.
+            & $pruneNativeDir (Join-Path $Target '.agent\agents')
             & $pruneNativeDir (Join-Path $Target '.agent\skills')
             & $pruneAidSubtree (Join-Path $Target '.agent\aid')
         }
@@ -1264,6 +1267,116 @@ function Invoke-PruneToolDirs {
 
     if ($script:_PruneRemoved -gt 0) {
         if (-not $AidVerbose) { Write-Host "  $($script:_PruneRemoved) stale AID file(s) pruned" }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Retired-root migration sweep (FR7/FR7a)
+# ---------------------------------------------------------------------------
+
+# Invoke-MigrateRetiredLayout <target> <tool> [aidVerbose]
+#
+# Complete-replacement migration: removes AID-owned content from the static
+# list of retired AID roots that no longer exist in the new bundle layout.
+# Called from Install-AidTool BEFORE Invoke-PruneToolDirs (same aid update pass).
+#
+# Retired roots swept per tool:
+#   codex:       .agents\                     (split layout retired)
+#   cursor:      .cursor\rules\               (rules dir retired)
+#   antigravity: .agent\rules\                (rules dir retired)
+#
+# Ownership markers applied (content-isolation.md rules 1+2):
+#   Marker 1: filename starts with "aid-" (tool-native dir files)
+#   Marker 2: lives inside an "aid\" subtree
+#
+# Marker 3 (AID:BEGIN/END region in root files) is NOT touched here;
+# that is handled by Copy-RootAgentFile exclusively.
+#
+# User content (no marker) is NEVER removed.
+# Idempotent: a no-op when the retired path is already absent.
+# Sets $script:_MigrateRetiredCount with the count of items removed.
+function Invoke-MigrateRetiredLayout {
+    param(
+        [string]$Target,
+        [string]$Tool,
+        [bool]$AidVerbose = $false
+    )
+
+    $script:_MigrateRetiredCount = 0
+
+    # Determine whether a file is AID-owned (markers 1 or 2).
+    $isAidOwned = {
+        param([System.IO.FileInfo]$File)
+        # Marker 1: filename starts with "aid-".
+        if ($File.Name -like 'aid-*') { return $true }
+        # Marker 2: lives inside an "aid" folder (any ancestor named "aid").
+        $dir = $File.Directory
+        while ($dir -ne $null -and $dir.FullName -ne $Target -and $dir.FullName -ne $dir.Root.FullName) {
+            if ($dir.Name -eq 'aid') { return $true }
+            $dir = $dir.Parent
+        }
+        return $false
+    }
+
+    # Sweep one retired root directory: remove AID-owned files, prune empty dirs,
+    # then remove the retired root itself if now empty.
+    $sweepRetiredRoot = {
+        param([string]$RDir)
+        if (-not (Test-Path $RDir -PathType Container)) { return }
+
+        # Walk all files; remove AID-owned ones.
+        $files = @(Get-ChildItem -LiteralPath $RDir -Recurse -File -ErrorAction SilentlyContinue)
+        foreach ($f in $files) {
+            if (& $isAidOwned $f) {
+                Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
+                $script:_MigrateRetiredCount++
+                if ($AidVerbose) { Write-Host "Retired: $($f.FullName)" }
+            }
+        }
+
+        # Prune now-empty subdirs (deepest first).
+        $subdirs = @(Get-ChildItem -LiteralPath $RDir -Recurse -Directory -ErrorAction SilentlyContinue)
+        $subPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
+        [System.Array]::Sort($subPaths, [System.StringComparer]::Ordinal)
+        [System.Array]::Reverse($subPaths)
+        foreach ($dp in $subPaths) {
+            if (Test-Path $dp -PathType Container) {
+                $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
+                if (-not $rem) {
+                    Remove-Item -LiteralPath $dp -Force -ErrorAction SilentlyContinue
+                    if ($AidVerbose) { Write-Host "Retired dir: $dp" }
+                }
+            }
+        }
+
+        # Remove the retired root itself if now empty.
+        if (Test-Path $RDir -PathType Container) {
+            $rem = @(Get-ChildItem -LiteralPath $RDir -ErrorAction SilentlyContinue) | Select-Object -First 1
+            if (-not $rem) {
+                Remove-Item -LiteralPath $RDir -Force -ErrorAction SilentlyContinue
+                if ($AidVerbose) { Write-Host "Retired root dir: $RDir" }
+            }
+        }
+    }
+
+    switch ($Tool) {
+        'codex' {
+            # Retired root: .agents\ (old split layout -- skills\ + aid\ lived here).
+            & $sweepRetiredRoot (Join-Path $Target '.agents')
+        }
+        'cursor' {
+            # Retired root: .cursor\rules\ (rules dir no longer in new layout).
+            & $sweepRetiredRoot (Join-Path $Target '.cursor\rules')
+        }
+        'antigravity' {
+            # Retired root: .agent\rules\ (rules dir no longer in new layout).
+            & $sweepRetiredRoot (Join-Path $Target '.agent\rules')
+        }
+        # claude-code and copilot-cli have no retired roots in this migration.
+    }
+
+    if ($script:_MigrateRetiredCount -gt 0) {
+        Write-Host "  $($script:_MigrateRetiredCount) retired AID file(s) removed"
     }
 }
 
@@ -1339,15 +1452,12 @@ function Install-AidTool {
             }
         }
         'codex' {
+            # New unified layout: .codex\ only (agents, skills, aid all under .codex\).
+            # .agents\ is the RETIRED split layout -- handled by Invoke-MigrateRetiredLayout.
             $codexDir  = Join-Path $StagingDir '.codex'
-            $agentsDir = Join-Path $StagingDir '.agents'
             if (Test-Path $codexDir -PathType Container) {
                 Copy-AidDir -SrcDir $codexDir -DstDir (Join-Path $Target '.codex') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $codexDir $StagingDir $installPaths
-            }
-            if (Test-Path $agentsDir -PathType Container) {
-                Copy-AidDir -SrcDir $agentsDir -DstDir (Join-Path $Target '.agents') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $agentsDir $StagingDir $installPaths
             }
         }
         'cursor' {
@@ -1392,6 +1502,26 @@ function Install-AidTool {
     # Write manifest (merge).
     Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
         -Paths @($installPaths) -RootEntries @($rootEntries)
+
+    # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
+    # Assert that the new bundle's path set does NOT contain any retired roots.
+    # If a retired path leaked into the new manifest, fail loudly -- do not prune
+    # against a contaminated manifest (content-isolation cornerstone).
+    $retiredRoots = @('.agents/', '.cursor/rules/', '.agent/rules/')
+    foreach ($rr in $retiredRoots) {
+        foreach ($p in $installPaths) {
+            $pNorm = $p -replace '\\', '/'
+            if ($pNorm.StartsWith($rr, [System.StringComparison]::Ordinal)) {
+                [Console]::Error.WriteLine("ERROR: aid-install-core: manifest-seam violation: retired root '$rr' leaked into the new bundle manifest (path: $p). Aborting install to protect user content.")
+                return 1
+            }
+        }
+    }
+
+    # Retired-root migration sweep (FR7/FR7a).
+    # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
+    # so that old .agents\, .cursor\rules\, .agent\rules\ trees are cleaned up.
+    Invoke-MigrateRetiredLayout -Target $Target -Tool $Tool -AidVerbose $AidVerbose
 
     # Prune stale AID-owned files (Pillar 2, R7).
     # Build a HashSet from the new manifest path set for O(1) lookup.
