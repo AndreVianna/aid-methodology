@@ -156,8 +156,6 @@
 {"dst": ".cursor/aid/templates/task-spec-template.md", "profile": "cursor", "sha256": "3bea215119f865cfaac390ba96eb8cd256c17c7e446f46199740d9730d9b97e5", "src": "canonical/templates/task-spec-template.md"}
 {"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "9c62665a7414a6aa054f27561856a4b34c93ba0cdadb58a00e25851ee08c9fde", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "176e25411ca396aa37cddb194a2b905bf6d09350f38c57340391a7f7e1973589", "src": "canonical/templates/work-state-template.md"}
-{"dst": ".cursor/rules/aid-methodology.mdc", "profile": "cursor", "sha256": "6ea97db1c0f8a897fb9b1afa6a91b5bfbb5b7cdcd467849fbe2b7eb966e7918c", "src": "canonical/rules/aid-methodology.mdc"}
-{"dst": ".cursor/rules/aid-review.mdc", "profile": "cursor", "sha256": "dd8784fc66b2b2b3b5f9c488a9235777b47b9b667673b05686cead8ce31e2d9b", "src": "canonical/rules/aid-review.mdc"}
 {"dst": ".cursor/skills/aid-ask/SKILL.md", "profile": "cursor", "sha256": "781fcb0e607016f3f07af76ca68ce23a2d4cfb022bbeaa5da7c16b3629da7e2d", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".cursor/skills/aid-config/SKILL.md", "profile": "cursor", "sha256": "471dddd97324fda7b2ca86fd076838937af06829a4b0b35f35e17b75e9a197b1", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".cursor/skills/aid-deploy/SKILL.md", "profile": "cursor", "sha256": "45c7860411ed84ce3029520ab15467e62cf13a60f3fb477eb1f6758680e8d3ab", "src": "canonical/skills/aid-deploy/SKILL.md"}

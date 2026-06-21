@@ -9,7 +9,6 @@ skills_dir           = "skills"                          # skills → .agent/ski
 templates_dir        = "templates"                       # bare leaf → builder nests to .agent/aid/templates/ (SD-1: aid/ in builder, not in key)
 # scripts_dir intentionally unset → schema default "scripts" → .agent/aid/scripts/ (SD-1 nest; bare leaf in key, aid/ in builder)
 recipes_dir          = "recipes"                          # bare leaf → builder nests to .agent/aid/recipes/ (SD-1; render_recipes runs unconditionally)
-rules_dir            = "rules"                            # .agent/rules/ — target of [[extras.rules]] methodology .md rules; same dir as agents_dir (Q-D: sub-agents live as rules)
 project_context_file = "AGENTS.md"                       # AGENTS.md (Q-H, single cross-tool pick). NB: a filename-substitution token only; the AGENTS.md doc itself is a profile-local committed file, NOT emitted — see Context-file convention (Q-J).
 
 [agent]
@@ -66,38 +65,6 @@ open_questions_file  = "additional-info.md"
 
 # No [mcp] table — MCP is [omit] for all profiles: AID ships no MCP servers
 # (zero `mcp` matches in canonical/ + profiles/*.toml; FR1 Q-B).
-
-# [extras] — reuse the cursor _render_cursor_extras path to place AID's methodology rules
-# into .agent/rules/. Q-I: Antigravity rules are .md (NOT .mdc) with trigger: frontmatter.
-# Because the canonical sources are .mdc, output_filename must differ from the source name —
-# RuleEntry.output_filename (task-012 / aid_profile.py) handles this; cursor leaves it unset →
-# source name preserved, so cursor is byte-identical.
-#
-# rules_frontmatter = "trigger": delivery-003 gate — when set, _render_cursor_extras strips the
-# source .mdc frontmatter and regenerates it from RuleEntry fields using trigger:/description/globs
-# keys (always_apply=true→trigger: always_on; always_apply=false→trigger: glob + globs).
-# Default None (cursor has no [extras] rules_frontmatter) → verbatim source copy → cursor
-# byte-identical. This gate is DECOUPLED from [agent].format (extras-rules and agent emission
-# are separate paths). Source: delivery-003 task §Fix#1.
-[extras]
-rules_frontmatter = "trigger"
-
-# Per-rule literals match disk truth (read canonical/rules/aid-methodology.mdc + aid-review.mdc):
-#   aid-methodology.mdc: alwaysApply: true, no globs  → always_apply=true, globs=[]
-#   aid-review.mdc:      alwaysApply: false, globs: "**/*.{java,py,ts,js,cs,go,rs}"
-[[extras.rules]]
-filename        = "aid-methodology.mdc"     # canonical source (canonical/rules/)
-output_filename = "aid-methodology.md"      # Q-I: .md output (cursor omits → source name preserved)
-description     = "AID methodology workflow and Knowledge Base integration"
-always_apply    = true                      # disk: alwaysApply: true → trigger: always_on
-globs           = []                        # disk: no globs on aid-methodology.mdc
-
-[[extras.rules]]
-filename        = "aid-review.mdc"          # canonical source
-output_filename = "aid-review.md"           # Q-I: .md output
-description     = "Code review standards for AID methodology"
-always_apply    = false                     # disk: alwaysApply: false → trigger: glob
-globs           = ["**/*.{java,py,ts,js,cs,go,rs}"]  # disk: aid-review.mdc globs preserved
 
 [capabilities]
 # Q-G: all 4 flags sourced from provider-mapping.md Q-G / FR1 crosswalk row 8.

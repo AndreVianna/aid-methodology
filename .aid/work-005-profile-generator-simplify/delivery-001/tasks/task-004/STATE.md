@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS (after 1 FIX) — Small-tier quick-check found 1 [HIGH] (claude-code CLAUDE.md missing the always-on substance the 4 AGENTS.md got); fixed on-spot + re-verified. 0 open CRITICAL/HIGH.
+- **Elapsed:** ~00:40
+- **Notes:** Deleted canonical/rules/ + [extras.rules]/rules_dir from cursor+antigravity TOMLs; folded methodology+KB+Workflow substance into all 4 profile AGENTS.md (byte-identical, FR12) AND profiles/claude-code/CLAUDE.md (the FIX — format ⊥ behavior: kept claude-code's @-import, added the behavioral substance). aid-review.mdc correctly excluded (alwaysApply:false). G1 verified durable (generator does not clobber the root files). 53/53 suites pass. Kept the generator-pruned rules outputs in the tree (render-consistent); task-006 owns the full new-layout re-render.
 
 ---
 
@@ -51,3 +51,6 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-06-21 | aid-developer | ~4–8m | ~34m | delete rules machinery + reconcile 4 AGENTS.md; 53/53 suites |
+| 2026-06-21 | aid-reviewer (Small) | ~2–3m | ~10m | quick-check: 1 [HIGH] (claude-code CLAUDE.md gap) |
+| 2026-06-21 | orchestrator (FIX) | — | ~3m | folded substance into claude-code CLAUDE.md; re-verified G1 + 53/53 |

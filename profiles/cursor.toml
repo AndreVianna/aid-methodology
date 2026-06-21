@@ -7,7 +7,6 @@ output_root    = "profiles/cursor/.cursor"
 agents_dir     = "agents"
 skills_dir     = "skills"
 templates_dir  = "templates"
-rules_dir      = "rules"  # Cursor-specific: .mdc rule files (always-on methodology rules)
 # project_context_file is installed at the repo root, not inside output_root
 project_context_file = "AGENTS.md"
 
@@ -50,21 +49,6 @@ Bash = "Terminal"
 project_context_file  = "AGENTS.md"
 reviewer_output_file  = "STATE.md"   # was DISCOVERY-STATE.md pre-FR2 (CW6 consolidation, work-003 feature-002)
 open_questions_file   = "additional-info.md"
-
-[extras]
-# Cursor-specific: .mdc always-on rule files.
-# The renderer must emit these into profiles/cursor/.cursor/rules/ when processing the Cursor profile.
-[[extras.rules]]
-filename     = "aid-methodology.mdc"
-description  = "AID methodology workflow and Knowledge Base integration"
-always_apply = true
-globs        = []  # alwaysApply: true → globs not needed
-
-[[extras.rules]]
-filename     = "aid-review.mdc"
-description  = "AID review standards and grading criteria"
-always_apply = true
-globs        = []  # alwaysApply: true → globs not needed
 
 [capabilities]
 # Values based on host-tools-matrix.md and external-sources.md Rows 5-6.

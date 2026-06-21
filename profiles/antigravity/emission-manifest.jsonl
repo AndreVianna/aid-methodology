@@ -151,11 +151,9 @@
 {"dst": ".agent/rules/aid-clerk.md", "profile": "antigravity", "sha256": "a3891635832dd7bacb6ffdba7bfa9f7f3191d3910ad5bd04fb26f97d8aa01119", "src": "canonical/agents/aid-clerk/AGENT.md"}
 {"dst": ".agent/rules/aid-developer.md", "profile": "antigravity", "sha256": "37ff441c01ccaf1e949645e968a168a97a9aee3504f8a902a8d4b7e20a15d0a3", "src": "canonical/agents/aid-developer/AGENT.md"}
 {"dst": ".agent/rules/aid-interviewer.md", "profile": "antigravity", "sha256": "ff9447ca97e82383bbfa95df134d25a382bcf4b0b95407ba64b90eae1437d602", "src": "canonical/agents/aid-interviewer/AGENT.md"}
-{"dst": ".agent/rules/aid-methodology.md", "profile": "antigravity", "sha256": "fbed661c246097f5fba67d79ecf04c4832dc6ba0221d773575b8ccd8d945aa86", "src": "canonical/rules/aid-methodology.mdc"}
 {"dst": ".agent/rules/aid-operator.md", "profile": "antigravity", "sha256": "ceed9565c1a884a5ac35928df93002b13478e9d0fdf88fbb5376579e3294d18e", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".agent/rules/aid-orchestrator.md", "profile": "antigravity", "sha256": "ad7caba2f72859048ec5afe6af59cc68bb628555ef05ef699f64daeca10b289f", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".agent/rules/aid-researcher.md", "profile": "antigravity", "sha256": "a44f1ee5192c0802e238926358ff8a26dc36a7e0081b3859c7e545e2bc0358e8", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".agent/rules/aid-review.md", "profile": "antigravity", "sha256": "d283a82c2897fd4c6b174292a28f64e65ac79aaed06040c0a9e7e8abae5b55a2", "src": "canonical/rules/aid-review.mdc"}
 {"dst": ".agent/rules/aid-reviewer.md", "profile": "antigravity", "sha256": "ee2582893d8f20a24f1ffbd79552bac05e8f39a4d5dace75ca09d0ddbaecfa9a", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".agent/rules/aid-tech-writer.md", "profile": "antigravity", "sha256": "033859fd68c83beaa90d9c057c766485a1fd31ba46d5e5a80e32ea5d0883d133", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".agent/skills/aid-ask/SKILL.md", "profile": "antigravity", "sha256": "cda9708b7454c36e10a94ea1d09063702e8d9c1eac88146c3fb1d4a51399930b", "src": "canonical/skills/aid-ask/SKILL.md"}
