@@ -16,6 +16,7 @@ contracts:
   - "Root-agent AID-managed content is fenced by <!-- AID:BEGIN --> / <!-- AID:END --> markers; updates replace only the marked region in place"
 changelog:
   - 2026-06-18: Created — work-003-content-isolation task-009
+  - 2026-06-21: R6 revised (deliberate cornerstone evolution) — work-005-profile-generator-simplify delivery-003 task-016; Codex unified under .codex/ (FR2); .agents/ split retired; rewrite_install_paths reduced to minimal {root}-prefix substitution (FR5 Option (c)); cornerstone invariant unchanged. Cross-ref Q3 paper trail — see feature-004-lockstep-ci-closeout SPEC §B.3.i.
 ---
 
 # AID Content Isolation Cornerstone
@@ -57,7 +58,7 @@ the profile's assets root:
 | Profile | Assets root | AID-own install path |
 |---------|-------------|----------------------|
 | claude-code | `.claude/` | `.claude/aid/{scripts,templates,recipes}` |
-| codex | `.agents/` | `.agents/aid/{scripts,templates,recipes}` (NOT under `.codex/`) |
+| codex | `.codex/` | `.codex/aid/{scripts,templates,recipes}` |
 | cursor | `.cursor/` | `.cursor/aid/{scripts,templates,recipes}` |
 | copilot-cli | `.github/` | `.github/aid/{scripts,templates,recipes}` |
 | antigravity | `.agent/` | `.agent/aid/{scripts,templates,recipes}` |
@@ -68,14 +69,23 @@ the profile's assets root:
   user content; AID-own content lands under `.github/aid/` ONLY;
   `.github/{agents,skills}` are tool-native; nothing AID-owned is placed
   at the `.github` root level.
-- **Codex split (R6):** the nest applies to `.agents/`; `.codex/` ships
-  only `agents/` (no `aid/` subtree under `.codex/`).
+- **Codex unified layout (R6, revised — work-005 FR2):** Codex is unified
+  under `.codex/`; the `aid/` nest applies to `.codex/aid/`, and
+  agents/skills live at `.codex/{agents,skills}`. The former `.agents/`
+  split (the original R6) is **retired** by work-005 FR2 — recorded here
+  as a deliberate cornerstone evolution, not a silent drift. See the
+  CHANGELOG entry below.
 
-The nest is implemented at the single generator chokepoint
-(`render_lib.py rewrite_install_paths`) plus the three dst builders
-(`render_canonical_scripts`, `render_templates`, `render_recipes`).
-The chokepoint constant, the builders, and the toml `*_dir` keys stay
-lockstep (SD-1 in SPEC.md).
+The nest is now implemented structurally: the generator copies
+`canonical/aid/` → `{root}/aid/` directly (the `{agents,skills,aid}`
+shape is already in `canonical/`). `render_lib.rewrite_install_paths`
+is reduced to the minimal single `{root}`-prefix substitution (FR5
+Option (c) — no `{AID_ROOT}` placeholder, no multi-dir branching). The
+irreducible layout dispatch — AID-own dirs (`scripts`, `templates`,
+`recipes`) nest under `aid/`; tool-native dirs (`agents`, `skills`) sit
+at the tool root — is the only branching that remains, because it
+cannot be removed without rewriting canonical content (which Option (c)
+forbids).
 
 ---
 
@@ -169,8 +179,9 @@ adds or moves an AID-delivered file:
 2. Is the file inside a tool-native directory without the `aid-` prefix?
    → Flag as isolation violation.
 3. Does any new AID content appear at the `.github` root level
-   (copilot-cli) or under `.codex/aid/` (codex)? → Flag as scoping
-   violation.
+   (copilot-cli)? → Flag as scoping violation. (Note: `.codex/aid/` is the
+   correct AID-own location for codex since the work-005 FR2 unification —
+   it is NOT a violation; see the R6 note + CHANGELOG above.)
 4. Does the prune logic use the correct basis (new-manifest membership,
    not old-manifest diff)? → Flag any old-manifest-diff approach.
 5. Does any root-agent update write a `.aid-new` sidecar? → Flag as
@@ -178,3 +189,36 @@ adds or moves an AID-delivered file:
 
 **Citation:** cite this document (`content-isolation.md`) when raising
 any of the above issues in a review ledger.
+
+---
+
+## CHANGELOG
+
+### 2026-06-21 — R6 Cornerstone Evolution (work-005 / delivery-003 / task-016)
+
+**What changed:** Rule 1 (the `aid/` nest rule) revised for Codex. The
+former `.agents/` split layout (original R6 — Codex AID-own content in
+`.agents/aid/`, tool-native in `.codex/`) is **retired** and replaced
+with a single unified root: `.codex/{agents,skills,aid}`. The Rule 1
+nest table, the R6 scope note, and the implementation note are updated
+accordingly. The `rewrite_install_paths` implementation is noted as
+reduced to the minimal single `{root}`-prefix substitution (FR5 Option
+(c)).
+
+**Decision trail (cross-ref Q3):** work-005-profile-generator-simplify
+FR2 unified Codex under `.codex/`; recorded as an explicit cross-ref
+question in feature-004-lockstep-ci-closeout SPEC §B.3.i and the Change
+Log entry dated 2026-06-20 ("Cross-ref Q3: added scope to revise
+content-isolation cornerstone R6").
+
+**Cornerstone invariant status: UNCHANGED.** The core invariant —
+every AID-delivered file is either nested under an `aid/` subtree OR
+carries the `aid-` prefix — continues to hold exactly as before. The
+Codex layout change is an implementation-detail evolution of WHERE the
+`aid/` subtree lives (`.agents/aid/` → `.codex/aid/`), not a relaxation
+of the isolation rule. AID content is still namespaced and
+marker-owned; the two populations (AID-managed vs. user-owned) remain
+mutually exclusive by path.
+
+**This entry satisfies C1/D1:** the cornerstone evolves on purpose,
+with a documented paper trail, not as silent drift.
