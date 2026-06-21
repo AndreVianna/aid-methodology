@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** In Progress
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** aid-developer dispatched — re-render profiles/* (new layout, codex unify, rules out, antigravity agents->.agent/agents/) + dogfood .claude/ byte-twin + EMISSION-MANIFEST update. Leave uncommitted; orchestrator commits after quick-check.
+- **State:** Done
+- **Review:** PASS (after 1 FIX) — quick-check root-caused the 2 "failing" suites (test-release.sh + test-release-install-e2e.sh) to a [CRITICAL] **regression** (NOT pre-existing infra as the dev claimed): release.sh:281 still hardcoded the retired codex `.agents/` root, so the Codex unify made it abort. Fixed release.sh:281 + comments :191/:280 (pulled forward from task-014). Re-verified: 53/53 suites, both release suites green (70/0, 95/0), render-drift CLEAN at HEAD.
+- **Elapsed:** ~27m (dev) + ~5m quick-check + fix
+- **Notes:** Re-rendered all 5 trees to uniform {agents,skills,aid}; codex unified .codex/ (.agents/ retired, 241 files); rules outputs gone; antigravity .agent/agents/ (9 md agents); copilot .md (FR4); dogfood .claude/ byte-twin; EMISSION-MANIFEST updated; new manifests omit retired paths (delivery-002 seam); idempotent. Committed 390ac593.
 
 ---
 
@@ -51,3 +51,6 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-06-21 | aid-developer | ~6–12m | ~27m | re-render all 5 trees + dogfood + EMISSION-MANIFEST; idempotent |
+| 2026-06-21 | aid-reviewer (Small) | ~2–3m | ~5m | quick-check: 1 [CRITICAL] (release.sh codex-root regression, root-caused) |
+| 2026-06-21 | orchestrator (FIX) | — | ~5m | fixed release.sh:281 + comments; 53/53 + both release suites green |
