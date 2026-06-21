@@ -2034,6 +2034,7 @@ Assert ($T49AidRemains.Count -eq 0) `
 # AC5-b: new .codex\ unified layout present.
 Assert-DirExists (Join-Path $ProjT49 '.codex' 'agents') 'T49-05 (AC5) new .codex\agents\ present'
 Assert-DirExists (Join-Path $ProjT49 '.codex' 'aid')    'T49-06 (AC5) new .codex\aid\ present'
+Assert-DirExists (Join-Path $ProjT49 '.codex' 'skills') 'T49-06b (AC5) new .codex\skills\ present'
 $T49NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.codex' 'agents') `
     -Filter 'aid-*.toml' -File -ErrorAction SilentlyContinue)
 Assert ($T49NewAgents.Count -gt 0) `
@@ -2122,6 +2123,7 @@ Assert (-not (Test-Path (Join-Path $ProjT50 '.cursor' 'rules' 'aid-clerk.mdc') -
 # AC5-b: new .cursor\ unified layout present.
 Assert-DirExists (Join-Path $ProjT50 '.cursor' 'agents') 'T50-04 (AC5) new .cursor\agents\ present'
 Assert-DirExists (Join-Path $ProjT50 '.cursor' 'aid')    'T50-05 (AC5) new .cursor\aid\ present'
+Assert-DirExists (Join-Path $ProjT50 '.cursor' 'skills') 'T50-05b (AC5) new .cursor\skills\ present'
 $T50NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT50 '.cursor' 'agents') `
     -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
 Assert ($T50NewAgents.Count -gt 0) `
@@ -2217,6 +2219,7 @@ Assert (-not (Test-Path (Join-Path $ProjT51 '.agent' 'rules' 'aid-clerk.md') -Pa
 # AC5-b: new .agent\ unified layout present.
 Assert-DirExists (Join-Path $ProjT51 '.agent' 'agents') 'T51-04 (AC5) new .agent\agents\ present'
 Assert-DirExists (Join-Path $ProjT51 '.agent' 'aid')    'T51-05 (AC5) new .agent\aid\ present'
+Assert-DirExists (Join-Path $ProjT51 '.agent' 'skills') 'T51-05b (AC5) new .agent\skills\ present'
 $T51NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT51 '.agent' 'agents') `
     -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
 Assert ($T51NewAgents.Count -gt 0) `

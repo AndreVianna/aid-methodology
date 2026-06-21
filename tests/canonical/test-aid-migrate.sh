@@ -1129,6 +1129,8 @@ assert_dir_exists "${G10_REPO}/.codex/agents" \
     "G10-05 (AC5) new .codex/agents/ directory present after migration"
 assert_dir_exists "${G10_REPO}/.codex/aid" \
     "G10-06 (AC5) new .codex/aid/ directory present after migration"
+assert_dir_exists "${G10_REPO}/.codex/skills" \
+    "G10-06b (AC5) new .codex/skills/ directory present after migration"
 # At least one new aid- prefixed agent file exists under .codex/agents/.
 G10_NEW_AGENTS="$(find "${G10_REPO}/.codex/agents" -name 'aid-*.toml' 2>/dev/null | wc -l | tr -d ' ')"
 if [[ "${G10_NEW_AGENTS}" -gt 0 ]]; then
@@ -1231,6 +1233,8 @@ assert_dir_exists "${G11_REPO}/.cursor/agents" \
     "G11-04 (AC5) new .cursor/agents/ directory present after migration"
 assert_dir_exists "${G11_REPO}/.cursor/aid" \
     "G11-05 (AC5) new .cursor/aid/ directory present after migration"
+assert_dir_exists "${G11_REPO}/.cursor/skills" \
+    "G11-05b (AC5) new .cursor/skills/ directory present after migration"
 G11_NEW_AGENTS="$(find "${G11_REPO}/.cursor/agents" -name 'aid-*.md' 2>/dev/null | wc -l | tr -d ' ')"
 if [[ "${G11_NEW_AGENTS}" -gt 0 ]]; then
     pass "G11-06 (AC5) new .cursor/agents/ contains aid- agent files from new bundle"
@@ -1336,6 +1340,8 @@ assert_dir_exists "${G12_REPO}/.agent/agents" \
     "G12-04 (AC5) new .agent/agents/ directory present after migration"
 assert_dir_exists "${G12_REPO}/.agent/aid" \
     "G12-05 (AC5) new .agent/aid/ directory present after migration"
+assert_dir_exists "${G12_REPO}/.agent/skills" \
+    "G12-05b (AC5) new .agent/skills/ directory present after migration"
 G12_NEW_AGENTS="$(find "${G12_REPO}/.agent/agents" -name 'aid-*.md' 2>/dev/null | wc -l | tr -d ' ')"
 if [[ "${G12_NEW_AGENTS}" -gt 0 ]]; then
     pass "G12-06 (AC5) new .agent/agents/ contains aid- agent files from new bundle"
