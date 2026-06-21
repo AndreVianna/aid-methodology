@@ -166,12 +166,12 @@ assert_output_not_contains "${LISTING}" "emission-manifest.jsonl" \
 assert_output_not_contains "${LISTING}" "aid-claude-code/" \
     "RL03 claude-code tarball has no wrapping aid-claude-code/ prefix"
 
-# codex: .agents/ + .codex/ + AGENTS.md
+# codex: .codex/ + AGENTS.md (Codex unified to .codex/ per FR2; .agents/ retired)
 TARBALL="${STAGE_DIR}/aid-codex-v${STAGE_VERSION}.tar.gz"
 LISTING="$(tar -tzf "${TARBALL}")"
 
-assert_output_contains "${LISTING}" "./.agents/" \
-    "RL02 codex tarball contains .agents/ dir"
+assert_output_not_contains "${LISTING}" "./.agents/" \
+    "RL02 codex tarball does NOT contain .agents/ (Codex unified to .codex/ per FR2)"
 assert_output_contains "${LISTING}" "./.codex/" \
     "RL02 codex tarball contains .codex/ dir"
 assert_output_contains "${LISTING}" "./AGENTS.md" \

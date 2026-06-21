@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** In Progress
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** aid-developer dispatched — re-render profiles/* (new layout, codex unify, rules out, antigravity agents->.agent/agents/) + dogfood .claude/ byte-twin + EMISSION-MANIFEST update. Leave uncommitted; orchestrator commits after quick-check.
 
 ---
 

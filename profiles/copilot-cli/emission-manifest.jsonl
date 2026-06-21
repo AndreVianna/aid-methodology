@@ -1,13 +1,13 @@
 {"_manifest_version": 1}
-{"dst": ".github/agents/aid-architect.agent.md", "profile": "copilot-cli", "sha256": "6f55788956af1cd1f335a3ad343ef5e93978376c1070fc71f3a36bbad428e285", "src": "canonical/agents/aid-architect/AGENT.md"}
-{"dst": ".github/agents/aid-clerk.agent.md", "profile": "copilot-cli", "sha256": "d7e4e89ada9c98d4eddd4ad03b60c7c62dfadd00df0aafd1e8836d9bf5228f69", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".github/agents/aid-developer.agent.md", "profile": "copilot-cli", "sha256": "6c8ce764001ff4607a4f5454366ec7a5fc4a7116a0a3130f771ba78805271ae9", "src": "canonical/agents/aid-developer/AGENT.md"}
-{"dst": ".github/agents/aid-interviewer.agent.md", "profile": "copilot-cli", "sha256": "9fee77deb84a6dac2b0ab0c919af1d5581a384402b13625ab3c046ba115a6758", "src": "canonical/agents/aid-interviewer/AGENT.md"}
-{"dst": ".github/agents/aid-operator.agent.md", "profile": "copilot-cli", "sha256": "e71be002b3654c65eb2e301276630f15000fa066ee197cb04565bd2d83591617", "src": "canonical/agents/aid-operator/AGENT.md"}
-{"dst": ".github/agents/aid-orchestrator.agent.md", "profile": "copilot-cli", "sha256": "b235081cfcc4540dc9fdabb1a3c1b8bf7d6ef0f729a8e7dd795c1335c9b6c964", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".github/agents/aid-researcher.agent.md", "profile": "copilot-cli", "sha256": "0af534160a013128a4b939bf4a52e5442772de21525e432204bba139398b32c8", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".github/agents/aid-reviewer.agent.md", "profile": "copilot-cli", "sha256": "e1e57eeb0a87d4a4bf41da73a2ff74a9991055d3f5c3d8873aa3cda25ae82e79", "src": "canonical/agents/aid-reviewer/AGENT.md"}
-{"dst": ".github/agents/aid-tech-writer.agent.md", "profile": "copilot-cli", "sha256": "ef09de1d296523dfcea5b0b8412b2556fdeff698739acb3e7f7ec18a70711784", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
+{"dst": ".github/agents/aid-architect.md", "profile": "copilot-cli", "sha256": "bd2c202b1fb07de931e7322532027fb4bafefe2a5a751b05ee3273cfadfa50fa", "src": "canonical/agents/aid-architect/AGENT.md"}
+{"dst": ".github/agents/aid-clerk.md", "profile": "copilot-cli", "sha256": "f23d8e482ac5f9fbdd179a3d3dfbedb660767e41a18f1ee75ff9760b50b79ba9", "src": "canonical/agents/aid-clerk/AGENT.md"}
+{"dst": ".github/agents/aid-developer.md", "profile": "copilot-cli", "sha256": "ba7b190411ef62fe37cad00c1114dc64845061b3b239053ec111b6cb497a3451", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".github/agents/aid-interviewer.md", "profile": "copilot-cli", "sha256": "9b041a5fe873471773559df6acee8a61910dd175d44bc2c243b634be29258bb1", "src": "canonical/agents/aid-interviewer/AGENT.md"}
+{"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "b50135b6ecb17b0d28259afbe607ca42d2b8b981b2c1c8bbf2a5e2e9933d0e02", "src": "canonical/agents/aid-operator/AGENT.md"}
+{"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "3e66a6e4e6747885b8f2ae8c46709fbed6594337780e164edcfc088347c56cac", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
+{"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "d0ff247a348f8aefdd0009d02e11ba7d79b7bb2eacfc43bc367470a27b38e685", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "2ab74fdf16423bc4bcd814fac15e060a6e3497456c5756ca3810d07027b06429", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "fb47e7652cd641f27c256a20004616c9decd3cc1721ec62fbc6d73b17664b306", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".github/aid/recipes/README.md", "profile": "copilot-cli", "sha256": "5d7a9d410f0bf5304fe90e502b80adaa4d47019b1c2365487d6c86260a0ea800", "src": "canonical/recipes/README.md"}
 {"dst": ".github/aid/recipes/add-api-endpoint.md", "profile": "copilot-cli", "sha256": "f796874afb08a04b88372469088cf03e4ce8b452055e820fd8033b43a6a6ddf2", "src": "canonical/recipes/add-api-endpoint.md"}
 {"dst": ".github/aid/recipes/add-api-middleware.md", "profile": "copilot-cli", "sha256": "d0bda1fac7b680612e58fa44fa4356e771e848410570e5ce4d413172daad562b", "src": "canonical/recipes/add-api-middleware.md"}

@@ -188,7 +188,7 @@ echo "release.sh: staging dir: ${STAGE_DIR}"
 #
 # Tool → profile dir map (fixed five entries; SPEC §S2.2):
 #   claude-code  → profiles/claude-code   install roots: .claude/  + CLAUDE.md
-#   codex        → profiles/codex         install roots: .agents/ + .codex/ + AGENTS.md
+#   codex        → profiles/codex         install roots: .codex/   + AGENTS.md
 #   cursor       → profiles/cursor        install roots: .cursor/  + AGENTS.md
 #   copilot-cli  → profiles/copilot-cli   install roots: .github/  + AGENTS.md
 #   antigravity  → profiles/antigravity   install roots: .agent/   + AGENTS.md
@@ -277,8 +277,8 @@ echo "release.sh: packaging tarballs ..."
 # claude-code: .claude/ + CLAUDE.md
 build_tarball "claude-code" "profiles/claude-code" ".claude" "CLAUDE.md"
 
-# codex: .agents/ + .codex/ + AGENTS.md
-build_tarball "codex" "profiles/codex" ".agents" ".codex" "AGENTS.md"
+# codex: .codex/ + AGENTS.md (FR2 — Codex unified to a single .codex/ root, work-005)
+build_tarball "codex" "profiles/codex" ".codex" "AGENTS.md"
 
 # cursor: .cursor/ + AGENTS.md
 build_tarball "cursor" "profiles/cursor" ".cursor" "AGENTS.md"
