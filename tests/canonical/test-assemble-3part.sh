@@ -14,7 +14,7 @@ VERBOSE=0
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUT="${SCRIPT_DIR}/../../canonical/scripts/summarize/assemble-3part.sh"
+SUT="${SCRIPT_DIR}/../../canonical/aid/scripts/summarize/assemble-3part.sh"
 
 [[ -f "$SUT" ]] || { echo "ERROR: assemble-3part.sh not found at $SUT" >&2; exit 1; }
 [[ -x "$SUT" ]] || chmod +x "$SUT"

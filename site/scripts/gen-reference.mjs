@@ -24,7 +24,7 @@ const MANIFEST_PATH = join(__dirname, '.reference-manifest.json');
 
 const SKILLS_DIR = join(REPO_ROOT, 'canonical', 'skills');
 const AGENTS_DIR = join(REPO_ROOT, 'canonical', 'agents');
-const KB_DIR = join(REPO_ROOT, 'canonical', 'templates', 'knowledge-base');
+const KB_DIR = join(REPO_ROOT, 'canonical', 'aid', 'templates', 'knowledge-base');
 const SETTINGS_FILE = join(REPO_ROOT, '.aid', 'settings.yml');
 
 // ── YAML frontmatter parser (minimal — no deps) ───────────────────────────────
@@ -254,7 +254,7 @@ function generateKbPage() {
     const h1Match = afterFm.match(/^# (.+)/m);
     const title = h1Match ? h1Match[1].trim() : basename(file, '.md');
     const docType = basename(file, '.md');
-    const srcPath = `canonical/templates/knowledge-base/${file}`;
+    const srcPath = `canonical/aid/templates/knowledge-base/${file}`;
     return { docType, title, srcPath };
   });
 
@@ -269,7 +269,7 @@ function generateKbPage() {
   const fm = serializeFrontmatter({
     title: 'Knowledge Base Doc Types',
     description: 'All 14 standard AID Knowledge Base document types — what each captures and where its template lives.',
-    generatedFrom: 'canonical/templates/knowledge-base/*.md',
+    generatedFrom: 'canonical/aid/templates/knowledge-base/*.md',
   });
 
   const intro =
@@ -279,7 +279,7 @@ function generateKbPage() {
     'seed and is configurable per project via `discovery.doc_set` in `.aid/settings.yml`. Each row ' +
     'links to the template the document is generated from.';
 
-  const note = `\n<!-- generated — do not edit; source: canonical/templates/knowledge-base/*.md -->\n\n`;
+  const note = `\n<!-- generated — do not edit; source: canonical/aid/templates/knowledge-base/*.md -->\n\n`;
   return fm + note + intro + '\n\n' + table + '\n';
 }
 
@@ -405,7 +405,7 @@ function main() {
   const pages = [
     { file: 'skills.md', generator: generateSkillsPage, src: 'canonical/skills/*/SKILL.md' },
     { file: 'agents.md', generator: generateAgentsPage, src: 'canonical/agents/*/AGENT.md' },
-    { file: 'kb.md', generator: generateKbPage, src: 'canonical/templates/knowledge-base/*.md' },
+    { file: 'kb.md', generator: generateKbPage, src: 'canonical/aid/templates/knowledge-base/*.md' },
     { file: 'settings.md', generator: generateSettingsPage, src: '.aid/settings.yml' },
   ];
 

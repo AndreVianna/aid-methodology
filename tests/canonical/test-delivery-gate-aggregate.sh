@@ -29,8 +29,8 @@ VERBOSE=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SUTs moved in 2026-05-26 consolidation
-WRITEBACK="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-state.sh"
-GRADE="${SCRIPT_DIR}/../../canonical/scripts/grade.sh"
+WRITEBACK="${SCRIPT_DIR}/../../canonical/aid/scripts/execute/writeback-state.sh"
+GRADE="${SCRIPT_DIR}/../../canonical/aid/scripts/grade.sh"
 
 # ---------------------------------------------------------------------------
 # Helpers

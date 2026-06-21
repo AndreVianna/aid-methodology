@@ -83,7 +83,7 @@ def render_canonical_scripts(
     """
     canonical_root = Path(canonical_root)
     output_base = Path(output_base)
-    scripts_src = canonical_root / "canonical" / "scripts"
+    scripts_src = canonical_root / "canonical" / "aid" / "scripts"
     scripts_dst = _scripts_output_root(profile, output_base)
     install_root = profile.layout.install_root()
 
@@ -128,6 +128,10 @@ def render_canonical_scripts(
                 pass  # Best-effort; Windows doesn't honor +x anyway
 
         src_rel = str(src_file.relative_to(canonical_root)).replace("\\", "/")
+        # Normalize: canonical/aid/scripts/ -> canonical/scripts/ for manifest src
+        # stability across the A4 canonical/aid/ reshape (task-003 — structural move only,
+        # no manifest src change so downstream consumers see unchanged traceability paths).
+        src_rel = src_rel.replace("canonical/aid/scripts/", "canonical/scripts/", 1)
         dst_rel = str(dst_file.relative_to(output_base / common_parent)).replace("\\", "/")
         manifest.add(
             profile=profile.name,

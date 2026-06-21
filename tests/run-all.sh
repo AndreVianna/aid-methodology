@@ -24,7 +24,7 @@ esac
 
 # Several suites invoke their SUT directly (e.g. "$WRITEBACK"); the repo is authored on
 # Windows (committed 100644), so ensure the exec bit on Linux. Idempotent.
-find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
+find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} + 2>/dev/null || true
 
 # GitHub Actions log folding + error annotations when running under CI; plain output locally.
 in_ci="${GITHUB_ACTIONS:-}"

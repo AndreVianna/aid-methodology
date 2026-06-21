@@ -64,8 +64,12 @@ _CANONICAL_PATH_DIRS = _CANONICAL_PATH_DIRS_AID_OWN + _CANONICAL_PATH_DIRS_TOOL_
 # Single regex matching ALL known canonical subdirectories (word boundary so
 # substrings like "foocanonical/..." do not match). The replacement function
 # dispatches to the correct install path based on which group matched.
+# Matches both:
+#   canonical/<dir>/     (flat layout, legacy)
+#   canonical/aid/<dir>/ (nested layout, A4 reshape — task-003)
+# Both map to the same install path: <install_root>/aid/<dir>/  (AID-own dirs)
 _CANONICAL_PATH_RE = re.compile(
-    r"\bcanonical/(" + "|".join(_CANONICAL_PATH_DIRS) + r")/"
+    r"\bcanonical/(?:aid/)?(" + "|".join(_CANONICAL_PATH_DIRS) + r")/"
 )
 
 
@@ -134,6 +138,7 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
 def rewrite_install_paths(body: str, install_root: str) -> str:
     """
     Rewrite ``canonical/{scripts,templates,skills,agents,rules,recipes}/...``
+    (and the A4-nested ``canonical/aid/{scripts,templates,recipes}/...`` forms)
     path references in *body* to the per-profile install-tree path.
 
     Adopters install the bundle under ``.claude/`` / ``.agents/`` / ``.cursor/``;
@@ -142,11 +147,15 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     output contains install-rooted paths instead.
 
     AID-own dirs (``scripts``, ``templates``, ``recipes``) are nested under
-    ``aid/`` in the install tree to isolate them from user content:
+    ``aid/`` in the install tree to isolate them from user content.
+    Both the flat and nested canonical forms map to the same install path:
 
-        canonical/scripts/...   -> <install_root>/aid/scripts/...
-        canonical/templates/... -> <install_root>/aid/templates/...
-        canonical/recipes/...   -> <install_root>/aid/recipes/...
+        canonical/scripts/...       -> <install_root>/aid/scripts/...
+        canonical/aid/scripts/...   -> <install_root>/aid/scripts/...
+        canonical/templates/...     -> <install_root>/aid/templates/...
+        canonical/aid/templates/... -> <install_root>/aid/templates/...
+        canonical/recipes/...       -> <install_root>/aid/recipes/...
+        canonical/aid/recipes/...   -> <install_root>/aid/recipes/...
 
     Tool-native dirs (``skills``, ``agents``, ``rules``) keep their path
     (unchanged behavior):
@@ -663,6 +672,34 @@ def main() -> int:
         failures.append(
             f"rewrite_install_paths: tool-native not idempotent, "
             f"once={once_tn!r}, twice={twice_tn!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths — nested canonical/aid/<dir>/ form (A4 reshape)
+    # canonical/aid/templates/ -> <install_root>/aid/templates/  (same dst as flat form)
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "local d=${REPO}/canonical/aid/templates/knowledge-base\n", ".claude"
+    )
+    if out != "local d=${REPO}/.claude/aid/templates/knowledge-base\n":
+        failures.append(
+            f"rewrite_install_paths: canonical/aid/templates/ nested rewrite wrong, got {out!r}"
+        )
+
+    out = rewrite_install_paths(
+        "bash canonical/aid/scripts/grade.sh foo\n", ".claude"
+    )
+    if out != "bash .claude/aid/scripts/grade.sh foo\n":
+        failures.append(
+            f"rewrite_install_paths: canonical/aid/scripts/ nested rewrite wrong, got {out!r}"
+        )
+
+    out = rewrite_install_paths(
+        "see canonical/aid/recipes/add-api.md\n", ".cursor"
+    )
+    if out != "see .cursor/aid/recipes/add-api.md\n":
+        failures.append(
+            f"rewrite_install_paths: canonical/aid/recipes/ nested rewrite wrong, got {out!r}"
         )
 
     # -----------------------------------------------------------------------

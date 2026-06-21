@@ -95,7 +95,7 @@ def render_recipes(
     """
     canonical_root = Path(canonical_root)
     output_base = Path(output_base)
-    recipes_src = canonical_root / "canonical" / "recipes"
+    recipes_src = canonical_root / "canonical" / "aid" / "recipes"
     recipes_dst = _recipes_output_root(profile, output_base)
 
     common_parent = Path(profile.layout.common_parent())
@@ -140,6 +140,10 @@ def render_recipes(
 
         # Manifest record
         src_rel = str(src_file.relative_to(canonical_root)).replace("\\", "/")
+        # Normalize: canonical/aid/recipes/ -> canonical/recipes/ for manifest src
+        # stability across the A4 canonical/aid/ reshape (task-003 — structural move only,
+        # no manifest src change so downstream consumers see unchanged traceability paths).
+        src_rel = src_rel.replace("canonical/aid/recipes/", "canonical/recipes/", 1)
         dst_rel = str(dst_file.relative_to(output_base / common_parent)).replace("\\", "/")
         manifest.add(
             profile=profile.name,

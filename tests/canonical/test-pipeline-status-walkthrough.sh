@@ -14,7 +14,7 @@ set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-WRITEBACK="${REPO_ROOT}/canonical/scripts/execute/writeback-state.sh"
+WRITEBACK="${REPO_ROOT}/canonical/aid/scripts/execute/writeback-state.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
@@ -364,7 +364,7 @@ done
 echo ""
 echo "--- B2: M5 pause emits present in canonical files ---"
 
-CHAINING_FILE="${REPO_ROOT}/canonical/templates/state-machine-chaining.md"
+CHAINING_FILE="${REPO_ROOT}/canonical/aid/templates/state-machine-chaining.md"
 SPECIFY_BLOCKED="${REPO_ROOT}/canonical/skills/aid-specify/references/state-blocked.md"
 DELIVERY_GATE="${REPO_ROOT}/canonical/skills/aid-execute/references/state-delivery-gate.md"
 

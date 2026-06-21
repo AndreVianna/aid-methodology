@@ -19,11 +19,11 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Paused-Awaiting-Input
+- **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-06-21T00:41:45Z
-- **Pause Reason:** delivery-001 task-001+002 (AC4b gate) Done; code tasks 003-020 need a clean working tree + the delivery branch — awaiting user git decision (commit planning artifacts + delivery-branch base)
+- **Updated:** 2026-06-21T01:49:00Z
+- **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
 

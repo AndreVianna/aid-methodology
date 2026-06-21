@@ -14,7 +14,7 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-GRADE_SH="${SCRIPT_DIR}/../../canonical/scripts/grade.sh"
+GRADE_SH="${SCRIPT_DIR}/../../canonical/aid/scripts/grade.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1

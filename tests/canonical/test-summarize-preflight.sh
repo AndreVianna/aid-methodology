@@ -25,8 +25,8 @@
 set -u
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PREFLIGHT_SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/summarize/summarize-preflight.sh"
-STALE_CHECK_SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/summarize/stale-check.sh"
+PREFLIGHT_SCRIPT="${SCRIPT_DIR}/../../canonical/aid/scripts/summarize/summarize-preflight.sh"
+STALE_CHECK_SCRIPT="${SCRIPT_DIR}/../../canonical/aid/scripts/summarize/stale-check.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1

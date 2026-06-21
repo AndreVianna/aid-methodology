@@ -10,6 +10,7 @@ generatedFrom: '.aid/settings.yml'
 
 | Key Path | Value | Description |
 |----------|-------|-------------|
+| `format_version` | `1` |  |
 | `project.name` | `AID` | set during /aid-config INIT |
 | `project.description` | `AI Integrated Development` |  |
 | `project.type` | `brownfield` | brownfield | greenfield |

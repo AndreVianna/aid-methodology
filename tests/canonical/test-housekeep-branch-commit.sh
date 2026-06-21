@@ -26,7 +26,7 @@ set -u
 
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SUT="${SCRIPT_DIR}/../../canonical/scripts/housekeep/branch-commit.sh"
+SUT="${SCRIPT_DIR}/../../canonical/aid/scripts/housekeep/branch-commit.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1

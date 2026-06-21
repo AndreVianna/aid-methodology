@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH (full A+ grade at the delivery gate)
+- **Elapsed:** ~00:50
+- **Notes:** canonical/{scripts,templates,recipes} -> canonical/aid/ via git mv (149 renames); generator re-pointed (render_{canonical_scripts,templates,recipes,agents,lib}.py) + 27 callers/tests + regenerated derived artifacts. VERIFIED byte-identical profiles (git diff --exit-code = 0), 53/53 canonical suites pass. Carried MINOR to gate: em-dashes in dev-generator comments (out of ASCII-CI-guard scope); cosmetic stale flat-path docstrings.
 
 ---
 
@@ -51,3 +51,5 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-06-21 | aid-developer | ~4–8m | ~50m | canonical/aid reshape; byte-identical profiles; 53/53 suites |
+| 2026-06-21 | aid-reviewer (Small) | ~2–3m | ~10m | quick-check PASS, 0 CRITICAL/HIGH |

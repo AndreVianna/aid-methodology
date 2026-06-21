@@ -18,7 +18,7 @@ const MANIFEST_PATH = join(SITE_ROOT, 'scripts', '.reference-manifest.json');
 // Source directories
 const SKILLS_DIR = join(REPO_ROOT, 'canonical', 'skills');
 const AGENTS_DIR = join(REPO_ROOT, 'canonical', 'agents');
-const KB_DIR = join(REPO_ROOT, 'canonical', 'templates', 'knowledge-base');
+const KB_DIR = join(REPO_ROOT, 'canonical', 'aid', 'templates', 'knowledge-base');
 
 // Generated reference pages
 const GENERATED_PAGES = [

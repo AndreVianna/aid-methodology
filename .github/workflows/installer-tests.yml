@@ -70,7 +70,7 @@ jobs:
 
       - name: Make scripts executable (Linux/macOS)
         if: matrix.mode == 'bash-harness'
-        run: find canonical/scripts tests/canonical bin packages/npm/scripts -type f \( -name '*.sh' -o -name '*.js' -o -name 'aid' \) -exec chmod +x {} +
+        run: find canonical/aid/scripts tests/canonical bin packages/npm/scripts -type f \( -name '*.sh' -o -name '*.js' -o -name 'aid' \) -exec chmod +x {} +
 
       - name: Install Python build tools (bash-harness)
         if: matrix.mode == 'bash-harness'

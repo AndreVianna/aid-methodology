@@ -57,7 +57,7 @@ VERBOSE=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-WRITEBACK="${REPO_ROOT}/canonical/scripts/execute/writeback-state.sh"
+WRITEBACK="${REPO_ROOT}/canonical/aid/scripts/execute/writeback-state.sh"
 
 [[ -f "$WRITEBACK" ]] || { echo "ERROR: writeback-state.sh not found at $WRITEBACK" >&2; exit 1; }
 

@@ -58,11 +58,11 @@ jobs:
           path: .aid/knowledge/.cache/mermaid.min.js
           key: mermaid-v11.15.0
       - name: Pre-seed pinned Mermaid (SHA-verified; hermetic after first run)
-        run: bash canonical/scripts/summarize/fetch-mermaid.sh
+        run: bash canonical/aid/scripts/summarize/fetch-mermaid.sh
       - name: Make helper + test scripts executable
         # Committed 100644 (the repo is authored on Windows); several suites invoke
         # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
-        run: find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
+        run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
       - name: Assert test runtimes present (node + pwsh)
         shell: bash
         # The .mjs and *-ps1 suites skip (exit 0) if their runtime is missing — good for
@@ -118,7 +118,7 @@ jobs:
       - name: INDEX.md is fresh (regenerate + diff, timestamps filtered)
         shell: bash
         run: |
-          bash canonical/scripts/kb/build-kb-index.sh --root .aid/knowledge --output /tmp/INDEX.regen.md
+          bash canonical/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output /tmp/INDEX.regen.md
           filt='AUTO-GENERATED|Generated at:|: Generated$'
           if ! diff <(grep -vE "$filt" .aid/knowledge/INDEX.md) <(grep -vE "$filt" /tmp/INDEX.regen.md); then
             echo "::error::INDEX.md is stale — run build-kb-index.sh and commit"

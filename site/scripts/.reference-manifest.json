@@ -10,7 +10,7 @@
       "dest": "site/src/content/docs/reference/agents.md"
     },
     {
-      "src": "canonical/templates/knowledge-base/*.md",
+      "src": "canonical/aid/templates/knowledge-base/*.md",
       "dest": "site/src/content/docs/reference/kb.md"
     },
     {

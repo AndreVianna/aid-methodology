@@ -38,8 +38,8 @@ SHIPPED_SCRIPTS=(
     "dashboard/server/server.py"
     "dashboard/server/server.mjs"
     "dashboard/server/reader.mjs"
-    "canonical/scripts/migrate/migrate-work-hierarchy.sh"
-    "canonical/scripts/migrate/migrate-work-hierarchy.ps1"
+    "canonical/aid/scripts/migrate/migrate-work-hierarchy.sh"
+    "canonical/aid/scripts/migrate/migrate-work-hierarchy.ps1"
 )
 
 echo "=== ASCII-only guard ==="

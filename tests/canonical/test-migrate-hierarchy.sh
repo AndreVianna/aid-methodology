@@ -34,8 +34,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
-MIGRATE_SH="${REPO_ROOT}/canonical/scripts/migrate/migrate-work-hierarchy.sh"
-MIGRATE_PS1="${REPO_ROOT}/canonical/scripts/migrate/migrate-work-hierarchy.ps1"
+MIGRATE_SH="${REPO_ROOT}/canonical/aid/scripts/migrate/migrate-work-hierarchy.sh"
+MIGRATE_PS1="${REPO_ROOT}/canonical/aid/scripts/migrate/migrate-work-hierarchy.ps1"
 FIXTURE_SRC="${REPO_ROOT}/tests/canonical/fixtures/migrate/fixture-source/work-999-migration-test"
 GOLDEN_DIR="${REPO_ROOT}/tests/canonical/fixtures/migrate/fixture/work-999-migration-test"
 

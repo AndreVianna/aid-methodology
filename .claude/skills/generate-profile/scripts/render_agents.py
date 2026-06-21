@@ -355,7 +355,7 @@ def _resolve_includes(body: str, canonical_root: Path, install_root: str) -> str
     """
     def _replace_include(match: re.Match) -> str:  # type: ignore[type-arg]
         name = match.group(1).strip()
-        template_path = canonical_root / "canonical" / "templates" / f"{name}.md"
+        template_path = canonical_root / "canonical" / "aid" / "templates" / f"{name}.md"
         template_content = template_path.read_text(encoding="utf-8")
         # Apply path-rewrite to the injected boilerplate so canonical/templates/...
         # references inside it become <install_root>/templates/... in the output.

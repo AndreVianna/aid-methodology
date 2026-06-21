@@ -96,7 +96,7 @@ def render_templates(
     """
     canonical_root = Path(canonical_root)
     output_base = Path(output_base)
-    templates_src = canonical_root / "canonical" / "templates"
+    templates_src = canonical_root / "canonical" / "aid" / "templates"
     templates_dst = _templates_output_root(profile, output_base)
 
     common_parent = Path(profile.layout.common_parent())
@@ -133,6 +133,10 @@ def render_templates(
 
         # Manifest record
         src_rel = str(src_file.relative_to(canonical_root)).replace("\\", "/")
+        # Normalize: canonical/aid/templates/ -> canonical/templates/ for manifest src
+        # stability across the A4 canonical/aid/ reshape (task-003 — structural move only,
+        # no manifest src change so downstream consumers see unchanged traceability paths).
+        src_rel = src_rel.replace("canonical/aid/templates/", "canonical/templates/", 1)
         dst_rel = str(dst_file.relative_to(output_base / common_parent)).replace("\\", "/")
         manifest.add(
             profile=profile.name,
