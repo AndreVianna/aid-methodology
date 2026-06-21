@@ -10,8 +10,8 @@
 
 <!-- AUTHORED -- single writer: this delivery's branch only. -->
 
-- **State:** Executing
-- **Updated:** 2026-06-21T18:42:26Z
+- **State:** Gated
+- **Updated:** 2026-06-21T20:30:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -21,10 +21,11 @@
 
 <!-- AUTHORED -- written by the delivery-gate closing step of aid-execute. -->
 
-- **Reviewer Tier:** {set at gate}
-- **Grade:** Pending
-- **Issue List:** {set at gate}
-- **Timestamp:** {set at gate}
+- **Reviewer Tier:** graded (Large, review-only)
+- **Grade:** A+ (gate cycle 1 = A on 1 [HIGH] + 1 [MEDIUM] + 1 [LOW]; all FIXED -> re-graded A+; 2 carried issues + 1 summary-residual Accepted)
+- **Issue List:** .aid/.temp/review-pending/work-005-delivery-003-gate.md (#1/#2/#3 Fixed; carried #1/#2 + summary-src residual Accepted -> delivery-003-issues.md)
+- **Timestamp:** 2026-06-21T20:30:00Z
+- **Notes:** 7 tasks (014 verify + 015-020). Human-prose + KB lockstep to the unified layout (30+->0 retired refs in shipped docs); content-isolation R6 cornerstone revision + paper trail; KB term-retirement + 3 PowerShell gotchas; host-tool-capabilities.md promoted; INDEX regen; multitool-isolation suite (run-all 54->55). AC1 (byte-identity) + AC3 (run-all 55/55 + Playwright web-gate on the 2 site pages) + AC4 (structural T01-T30 + behavioral by byte-identity construction) discharged. Gate HIGH: shipped reviewer still enforced the OLD R6 -> corrected canonical + re-rendered 5 profiles + dogfood (render-drift clean). Closes the Release-Safety Gate on merge. Ready for PR.
 
 ---
 

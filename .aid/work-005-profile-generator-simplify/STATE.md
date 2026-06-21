@@ -22,9 +22,9 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-06-21T18:42:26Z
+- **Updated:** 2026-06-21T20:30:00Z
 - **Pause Reason:** --
-- **Context:** delivery-001 merged (#100), delivery-002 merged (#101). Executing delivery-003 (FINAL — lockstep dependents + final acceptance gate; closes the Release-Safety Gate). task-014 release.sh fix was pulled forward into delivery-001 (verify-only). FOLLOW-UP folded into delivery-003: document the 3 PS gotchas (StrictMode+absent-property, `return if`, empty-pipeline->$null) in known-issues/coding-standards (task-017 KB lockstep).
+- **Context:** delivery-001 merged (#100), delivery-002 merged (#101). delivery-003 (FINAL) COMPLETE + gated A+ (7 tasks, 7 commits); PR opening against master. On merge it CLOSES the Release-Safety Gate -> a release can then be cut. 3 PS gotchas documented (coding-standards §15). Residuals deferred to /aid-housekeep + /aid-summarize (delivery-003-issues.md): cursor README path, builder dead-pointer, visual-summary split-layout refs, KB numeric counts.
 - **Block Reason:** --
 - **Block Artifact:** --
 
