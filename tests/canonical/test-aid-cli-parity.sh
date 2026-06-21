@@ -387,7 +387,7 @@ assert_output_contains "$OUT_SH"  "Uninstall complete." "PAR029-F07 Bash remove 
 assert_output_contains "$OUT_PS1" "Uninstall complete." "PAR029-F08 PS1 remove message"
 
 # ===========================================================================
-# PAR029-G: Update parity — same-version update produces same state
+# PAR029-G: Update parity — per-tool positional rejected; all-tools update works
 # ===========================================================================
 SH_HOME_G=$(newhome); setup_sh_home "${SH_HOME_G}"
 PS_HOME_G=$(newhome); setup_ps1_home "${PS_HOME_G}"
@@ -401,16 +401,16 @@ run_ps1 "${PS_HOME_G}" add cursor \
 assert_exit_eq "$RC_SH"  0 "PAR029-G01 Bash add cursor → exit 0"
 assert_exit_eq "$RC_PS1" 0 "PAR029-G02 PS1 add cursor → exit 0"
 
-# Update with same version → both should report "up to date" and exit 0.
+# FR10: per-tool positional on 'update' is now a usage error (exit 2) in both twins.
 run_sh  "${SH_HOME_G}" update cursor \
     --from-bundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" --target "${T_SH_G}"
 run_ps1 "${PS_HOME_G}" update cursor \
     -FromBundle "${FIXTURE_DIR}/aid-cursor-v${VERSION}.tar.gz" -Target "${T_PS1_G}"
 
-assert_exit_eq "$RC_SH"  0 "PAR029-G03 Bash update same version → exit 0"
-assert_exit_eq "$RC_PS1" 0 "PAR029-G04 PS1 update same version → exit 0"
-assert_output_contains "$OUT_SH"  "up to date" "PAR029-G05 Bash update: 'up to date'"
-assert_output_contains "$OUT_PS1" "up to date" "PAR029-G06 PS1 update: 'up to date'"
+assert_exit_eq "$RC_SH"  2 "PAR029-G03 Bash update <tool> positional → exit 2 (usage error)"
+assert_exit_eq "$RC_PS1" 2 "PAR029-G04 PS1 update <tool> positional → exit 2 (usage error)"
+assert_eq "$RC_SH" "$RC_PS1" "PAR029-G05 Bash/PS1 update-positional exit code parity"
+assert_output_contains "$OUT_SH"  "unexpected argument" "PAR029-G06 Bash update <tool>: error message"
 
 # ===========================================================================
 # PAR029-H: Convenience-chain first-action parity
@@ -2443,20 +2443,13 @@ _PS_OFFER_W=$(printf '%s\n' "$OUT_PS1" | grep "no AID project here" || true)
 assert_eq "$_SH_OFFER_W" "$_PS_OFFER_W" \
     "PAR029-W05 Bash↔PS1 bare-aid offer line byte-identical"
 
-# W06/W07: aid update (no tool, no .aid/) -> offer + exit 0 (Bash and PS1).
+# W06/W07: FR10 aid update (no tool, no .aid/) -> update CLI only + exit 0 (Bash and PS1).
 run_sh  "${SH_HOME_W}" update --target "${T_W}"
 run_ps1 "${PS_HOME_W}" update -Target "${T_W}"
 
-assert_exit_eq "$RC_SH"  0 "PAR029-W06 Bash aid-update no-.aid/ dir -> exit 0 (offer)"
-assert_exit_eq "$RC_PS1" 0 "PAR029-W07 PS1 aid-update no-.aid/ dir -> exit 0 (offer)"
-assert_output_contains "$OUT_SH"  "no AID project here -- set it up? (aid add)" \
-    "PAR029-W08 Bash aid-update no-.aid/: offer text printed"
-assert_output_contains "$OUT_PS1" "no AID project here -- set it up? (aid add)" \
-    "PAR029-W09 PS1 aid-update no-.aid/: offer text printed"
-_SH_UPD_OFFER_W=$(printf '%s\n' "$OUT_SH"  | grep "no AID project here" || true)
-_PS_UPD_OFFER_W=$(printf '%s\n' "$OUT_PS1" | grep "no AID project here" || true)
-assert_eq "$_SH_UPD_OFFER_W" "$_PS_UPD_OFFER_W" \
-    "PAR029-W10 Bash↔PS1 aid-update no-.aid/ offer line byte-identical"
+assert_exit_eq "$RC_SH"  0 "PAR029-W06 Bash aid-update no-.aid/ dir -> exit 0 (CLI-only)"
+assert_exit_eq "$RC_PS1" 0 "PAR029-W07 PS1 aid-update no-.aid/ dir -> exit 0 (CLI-only)"
+assert_eq "$RC_SH" "$RC_PS1" "PAR029-W08 Bash/PS1 aid-update no-.aid/ exit code parity"
 
 # W11/W12: format-gate refuse message parity — refuse text identical across runtimes.
 # Run aid status in a repo with format_version: 2 (newer than supported).

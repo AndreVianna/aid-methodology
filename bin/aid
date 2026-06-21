@@ -144,15 +144,19 @@ _aid_usage() {
             printf '  --dry-run: print the exact command(s) it would run, then exit (no changes).\n'
             ;;
         update)
-            printf 'aid update [<tool>...] [--version <v>] [--from-bundle <path>] [--force] [--target <dir>]\n'
+            printf 'aid update [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
             printf 'aid update self [--from-bundle <path>] [--dry-run]\n'
-            printf '  Update to latest. No args: update all installed tools.\n'
+            printf '  Update to latest.\n'
+            printf '  Outside an AID repo: updates the CLI only (no-op if already latest).\n'
+            printf '  Inside an AID repo: updates the CLI first, then ALL installed tools to one version.\n'
+            printf '  No per-tool selection -- any tool positional is an error (use "self" only).\n'
             printf '  self: COMPLETELY update the aid CLI, channel-aware:\n'
             printf '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.sh.\n'
             printf '        Auto-elevates with sudo only when the install location needs root.\n'
-            printf '  --from-bundle <path>: install the CLI from a local artifact instead of @latest\n'
+            printf '  --version <v>:       pin ALL tools (and CLI) to version v.\n'
+            printf '  --from-bundle <path>: install from a local artifact instead of @latest\n'
             printf '        (npm .tgz | pypi .whl | curl release-staging dir with install.sh).\n'
-            printf '  --dry-run: print the exact command(s) it would run, then exit (no changes).\n'
+            printf '  --dry-run: print the full plan (tools updated, files copied, paths pruned) and exit.\n'
             ;;
         version)
             printf 'aid version\n'
@@ -194,7 +198,7 @@ _aid_usage() {
             printf '  aid version                      Print the CLI version\n'
             printf '  aid status                       Show AID state of the current project\n'
             printf '  aid add <tool>[,...]             Add tool(s) to the current project\n'
-            printf '  aid update [<tool>... | self]    Update to latest; no arg = all tools\n'
+            printf '  aid update [self]                Update to latest; inside repo = all tools\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
             printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
@@ -2855,6 +2859,7 @@ esac
 # Collect positional tool args (comma-separated or space-separated before flags).
 _AID_POSITIONAL_TOOLS=""
 _AID_REMOVE_FORCE=0
+_AID_DRY_RUN=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -2870,6 +2875,7 @@ while [[ $# -gt 0 ]]; do
             [[ $# -lt 2 ]] && _aid_die "--target requires a value" 2
             _AID_TARGET="$2"; shift 2 ;;
         --no-path) _AID_NO_PATH=1; shift ;;
+        --dry-run) _AID_DRY_RUN=1; shift ;;
         -h|--help) _aid_usage "$SUBCMD"; exit 0 ;;
         -*)        _aid_die "unknown flag: $1" 2 ;;
         *)
@@ -2895,6 +2901,16 @@ if [[ "$_AID_FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == 
 fi
 export AID_VERBOSE="$_AID_VERBOSE"
 
+# FR10: 'update' no longer accepts a per-tool positional (other than 'self' which
+# was already consumed above).  Any non-flag positional on 'aid update' is a usage error.
+if [[ "$SUBCMD" == "update" && -n "$_AID_TOOL_ARG" ]]; then
+    echo "ERROR: aid update: unexpected argument: '${_AID_TOOL_ARG}'" >&2
+    echo "       'aid update' updates all installed tools -- no per-tool selection." >&2
+    echo "       Use 'aid update self' to update the CLI only." >&2
+    echo "       See 'aid update -h' for usage." >&2
+    exit 2
+fi
+
 _AID_TARGET="${_AID_TARGET:-.}"
 # Validate target dir.
 if [[ ! -d "$_AID_TARGET" ]]; then
@@ -2902,20 +2918,32 @@ if [[ ! -d "$_AID_TARGET" ]]; then
 fi
 _AID_TARGET="$(cd "$_AID_TARGET" && pwd)"
 
-# ---- C-table pre-check for 'update [tool]': missing .aid/ -> offer + exit 0 ----
-# Must run BEFORE _resolve_tools_for_aid so we never reach exit-6 when no .aid/ exists.
-# 'add' uses the B-table (checked inside the dispatch case); 'remove' is not in C-table.
+# ---- FR10: 'update' outside an AID repo -> update the CLI only (not offer-and-exit) ----
+# Outside a repo: delegates to the CLI-only update path; no tool loop.
+# Inside a repo: fall through to the full tool-update pass below.
 # _aid_is_project_dir excludes the CLI state home from the "is project" classification.
 if [[ "$SUBCMD" == "update" ]]; then
     if ! _aid_is_project_dir "${_AID_TARGET}"; then
-        _aid_cwd_no_aid_offer "${_AID_TARGET}"
-        # _aid_cwd_no_aid_offer always exits 0.
+        # FR10 outside-repo: update the CLI only; no tool loop.
+        # For a dry-run preview of the CLI self-update, use 'aid update self --dry-run'.
+        _UPD_CLI_VER=""
+        [[ -f "${AID_CODE_HOME}/VERSION" ]] && _UPD_CLI_VER="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION")"
+        # Check if already latest using cached update-check result (no network call).
+        _UPD_CACHE_FILE="${HOME}/.aid/.update-check"
+        _UPD_CACHED_LATEST=""
+        [[ -f "${_UPD_CACHE_FILE}" ]] && _UPD_CACHED_LATEST="$(awk 'NR==2{print $1}' "${_UPD_CACHE_FILE}" 2>/dev/null)" || true
+        if [[ -n "$_UPD_CLI_VER" && -n "$_UPD_CACHED_LATEST" && "$_UPD_CLI_VER" == "$_UPD_CACHED_LATEST" ]]; then
+            echo "CLI is current (v${_UPD_CLI_VER})"
+            exit 0
+        fi
+        _aid_update_self_if_stale
+        exit 0
     fi
 fi
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
-# For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI
-# is current before the per-repo migration runs (FR38 / OQ-6).  WARN-not-fail.
+# For 'update' inside an AID repo only (not 'add', not 'update self').
+# Ensures the CLI is current before the per-repo tool-update runs.  WARN-not-fail.
 if [[ "$SUBCMD" == "update" ]]; then
     _aid_update_self_if_stale
 fi
@@ -3118,7 +3146,7 @@ case "$SUBCMD" in
             fi
         fi
 
-        # C-table (for 'update [tool]'): register-on-encounter + format gate.
+        # C-table (for 'update'): register-on-encounter + format gate.
         # The missing-.aid/ case was already intercepted above (pre-resolve-tools).
         if [[ "$SUBCMD" == "update" ]]; then
             # C-table register-on-encounter (best-effort).
@@ -3127,15 +3155,67 @@ case "$SUBCMD" in
             _aid_format_gate "${_AID_TARGET}" || exit $?
         fi
 
+        # ---------------------------------------------------------------------------
+        # FR10 Stage-all-first atomicity (task-009):
+        # PHASE 1: Stage ALL tools (resolve version, fetch, checksum-verify, extract
+        #          to temp) BEFORE any destination write.  A failure here aborts with
+        #          zero destination mutation.
+        # ---------------------------------------------------------------------------
+        declare -A _STAGE_MAP=()   # tool -> staging_dir
+        _STAGE_VERSION=""          # single resolved version for all tools
+
+        for _tool in "${_AID_TOOLS[@]}"; do
+            _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
+            _STAGE_MAP["$_tool"]="$_AID_STAGING_DIR"
+            # All tools must be at the same version (the first resolved wins, the rest
+            # confirm by the same --version / bundle arg).
+            if [[ -z "$_STAGE_VERSION" ]]; then
+                _STAGE_VERSION="$_AID_RESOLVED_VERSION"
+            fi
+        done
+
+        # ---------------------------------------------------------------------------
+        # FR10 --dry-run: print the plan and exit with no writes.
+        # ---------------------------------------------------------------------------
+        if [[ "${_AID_DRY_RUN:-0}" -eq 1 ]]; then
+            echo "--- aid ${SUBCMD} --dry-run plan (no writes) ---"
+            echo "Target: ${_AID_TARGET}"
+            echo "Version: ${_STAGE_VERSION:-<current>}"
+            for _tool in "${_AID_TOOLS[@]}"; do
+                echo ""
+                echo "Tool: ${_tool}"
+                _dry_staging="${_STAGE_MAP[$_tool]}"
+                # List files that would be copied.
+                while IFS= read -r -d '' _dry_f; do
+                    echo "  copy: ${_dry_f#${_dry_staging}/} -> ${_AID_TARGET}"
+                done < <(find "${_dry_staging}" -type f -print0 2>/dev/null | sort -z)
+            done
+            echo ""
+            echo "--- end dry-run plan ---"
+            rm -rf "$_AID_STAGING_BASE"
+            exit 0
+        fi
+
+        # ---------------------------------------------------------------------------
+        # PHASE 2: Commit all staged tools.
+        # If any commit fails, exit non-zero with a re-run-to-heal message.
+        # aid update is idempotent: re-running drives every tool to the target version.
+        # ---------------------------------------------------------------------------
         for _tool in "${_AID_TOOLS[@]}"; do
             echo ""
-            _prepare_tool_staging_aid "$_tool" "$_AID_VERSION_ARG" "$_AID_FROM_BUNDLE"
-            echo "Installing ${_tool} v${_AID_RESOLVED_VERSION} -> ${_AID_TARGET}"
-            install_tool "$_AID_STAGING_DIR" "$_tool" "$_AID_TARGET" "$_AID_RESOLVED_VERSION" "$_AID_FORCE" || exit $?
+            echo "Installing ${_tool} v${_STAGE_VERSION} -> ${_AID_TARGET}"
+            install_tool "${_STAGE_MAP[$_tool]}" "$_tool" "$_AID_TARGET" "$_STAGE_VERSION" "$_AID_FORCE" || {
+                _COMMIT_RC=$?
+                echo "" >&2
+                echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
+                echo "       The repo may be at mixed versions. Re-run 'aid update' to heal." >&2
+                rm -rf "$_AID_STAGING_BASE"
+                exit "${_COMMIT_RC}"
+            }
         done
 
         echo ""
-        echo "Done. AID ${_AID_RESOLVED_VERSION:-} installed into: ${_AID_TARGET}"
+        echo "Done. AID ${_STAGE_VERSION:-} installed into: ${_AID_TARGET}"
 
         # B-table (for 'add'): tier-aware registration after successful install.
         # Decision #3 (unwritable) already handled above with error+abort.
@@ -3145,7 +3225,7 @@ case "$SUBCMD" in
             _btab_tier="$(_aid_resolve_tier "$_AID_TARGET")"
             registry_register "$_AID_TARGET" "$_btab_tier"
         else
-            # 'update [tool]': C-table register-on-encounter already ran above.
+            # 'update': C-table register-on-encounter already ran above.
             # The post-install register is idempotent; route via user tier.
             registry_register "$_AID_TARGET" "user"
         fi

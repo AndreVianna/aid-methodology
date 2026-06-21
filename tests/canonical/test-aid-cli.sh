@@ -326,7 +326,7 @@ assert_file_exists "${TI}/CLAUDE.md" "CLI027-I04 CLAUDE.md created"
 assert_file_exists "${TI}/AGENTS.md" "CLI027-I05 AGENTS.md created"
 
 # ===========================================================================
-# CLI027-J: aid update (named tool + all-from-manifest; empty → exit 6)
+# CLI027-J: aid update (all-from-manifest; per-tool positional → exit 2; empty → CLI-only)
 # ===========================================================================
 CLI027J_HOME=$(newhome)
 setup_aid_home "${CLI027J_HOME}"
@@ -338,12 +338,12 @@ run_aid "${CLI027J_HOME}" add codex \
     --target "${TJ}"
 assert_exit_eq "$RC" 0 "CLI027-J01 add codex for update test → exit 0"
 
-# Update named: same version → "up to date".
+# FR10: per-tool positional on 'update' is now a usage error (exit 2).
 run_aid "${CLI027J_HOME}" update codex \
     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
     --target "${TJ}"
-assert_exit_eq "$RC" 0 "CLI027-J02 aid update codex (same version) → exit 0"
-assert_output_contains "$OUT" "up to date" "CLI027-J03 update same version shows 'up to date'"
+assert_exit_eq "$RC" 2 "CLI027-J02 aid update <tool> positional → exit 2 (usage error)"
+assert_output_contains "$OUT" "unexpected argument" "CLI027-J03 aid update <tool>: error mentions 'unexpected argument'"
 
 # Update all (no tool arg) — same version → still 0.
 run_aid "${CLI027J_HOME}" update \
@@ -351,10 +351,10 @@ run_aid "${CLI027J_HOME}" update \
     --target "${TJ}"
 assert_exit_eq "$RC" 0 "CLI027-J04 aid update all tools → exit 0"
 
-# Update on dir with no .aid/ → offer-and-exit 0 (new behavior).
+# FR10: Update on dir with no .aid/ → update CLI only (exit 0).
 TJ_EMPTY=$(newtarget)
 run_aid "${CLI027J_HOME}" update --target "${TJ_EMPTY}"
-assert_exit_eq "$RC" 0 "CLI027-J05 aid update empty dir → exit 0 (offer-and-exit)"
+assert_exit_eq "$RC" 0 "CLI027-J05 aid update empty dir → exit 0 (CLI-only update)"
 
 # ===========================================================================
 # CLI027-K: aid remove (no arg, all tools) — with --force to skip prompt

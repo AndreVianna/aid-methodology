@@ -415,17 +415,16 @@ OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.
      update codex \
      -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
      -Target "${TJ}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_exit_eq "$RC" 0 "PS028-J02 PS1 update codex (same version) → exit 0"
-assert_output_contains "$OUT" "up to date" "PS028-J03 PS1 update same version shows 'up to date'"
+assert_exit_eq "$RC" 2 "PS028-J02 PS1 update <tool> positional → exit 2 (usage error)"
+assert_output_contains "$OUT" "unexpected argument" "PS028-J03 PS1 update <tool>: error mentions 'unexpected argument'"
 
-# Dir with no .aid/ → exit 0 + offer (decision #5: no hard refuse).
+# FR10: Dir with no .aid/ → update CLI only (exit 0).
 TJ_EMPTY=$(newtarget)
 OUT=$(AID_HOME="${PS028J_HOME}" AID_LIB_PATH="${PS028J_HOME}/lib/AidInstallCore.psm1" \
      "$PWSH" -NoProfile -File "${PS028J_HOME}/bin/aid.ps1" \
      update \
      -Target "${TJ_EMPTY}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-assert_exit_eq "$RC" 0 "PS028-J04 PS1 update dir with no .aid/ → exit 0 (offer, not exit 6)"
-assert_output_contains "$OUT" "no AID project here" "PS028-J04b PS1 update no-.aid/ dir: offer message"
+assert_exit_eq "$RC" 0 "PS028-J04 PS1 update dir with no .aid/ → exit 0 (CLI-only update)"
 
 # ===========================================================================
 # PS028-K: aid.ps1 remove (no arg, all tools) — with -Force to skip prompt
