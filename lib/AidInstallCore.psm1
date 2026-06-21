@@ -1233,15 +1233,20 @@ function Invoke-PruneToolDirs {
         # Rule (d): prune now-empty subdirs (deepest first, skip the root itself).
         $subdirs = @(Get-ChildItem -LiteralPath $ADir -Recurse -Directory -ErrorAction SilentlyContinue)
         # Sort deepest first (longest path first by ordinal).
-        $subdirPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
-        [System.Array]::Sort($subdirPaths, [System.StringComparer]::Ordinal)
-        [System.Array]::Reverse($subdirPaths)
-        foreach ($dp in $subdirPaths) {
-            if (Test-Path $dp -PathType Container) {
-                $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
-                if (-not $rem) {
-                    Remove-Item -LiteralPath $dp -Force
-                    if ($AidVerbose) { Write-Host "Pruned dir: $dp" }
+        # Guard: pipeline over an empty @() returns $null on PowerShell; [System.Array]::Sort($null)
+        # throws "Value cannot be null" (reproduces on pwsh when the dir has no subdirectories,
+        # e.g. cursor/antigravity idempotent re-run after retired roots are already gone).
+        if ($subdirs.Count -gt 0) {
+            $subdirPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
+            [System.Array]::Sort($subdirPaths, [System.StringComparer]::Ordinal)
+            [System.Array]::Reverse($subdirPaths)
+            foreach ($dp in $subdirPaths) {
+                if (Test-Path $dp -PathType Container) {
+                    $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
+                    if (-not $rem) {
+                        Remove-Item -LiteralPath $dp -Force
+                        if ($AidVerbose) { Write-Host "Pruned dir: $dp" }
+                    }
                 }
             }
         }
@@ -1358,15 +1363,21 @@ function Invoke-MigrateRetiredLayout {
 
         # Prune now-empty subdirs (deepest first).
         $subdirs = @(Get-ChildItem -LiteralPath $RDir -Recurse -Directory -ErrorAction SilentlyContinue)
-        $subPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
-        [System.Array]::Sort($subPaths, [System.StringComparer]::Ordinal)
-        [System.Array]::Reverse($subPaths)
-        foreach ($dp in $subPaths) {
-            if (Test-Path $dp -PathType Container) {
-                $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
-                if (-not $rem) {
-                    Remove-Item -LiteralPath $dp -Force -ErrorAction SilentlyContinue
-                    if ($AidVerbose) { Write-Host "Retired dir: $dp" }
+        # Guard: pipeline over an empty @() returns $null on PowerShell; [System.Array]::Sort($null)
+        # throws "Value cannot be null" when the retired root has no subdirectories (e.g. cursor
+        # .cursor/rules/ contains only files, no nested dirs; or on idempotent re-run when the dir
+        # is already absent). Mirrors bash rm -rf / rmdir which silently no-op on absent paths.
+        if ($subdirs.Count -gt 0) {
+            $subPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
+            [System.Array]::Sort($subPaths, [System.StringComparer]::Ordinal)
+            [System.Array]::Reverse($subPaths)
+            foreach ($dp in $subPaths) {
+                if (Test-Path $dp -PathType Container) {
+                    $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
+                    if (-not $rem) {
+                        Remove-Item -LiteralPath $dp -Force -ErrorAction SilentlyContinue
+                        if ($AidVerbose) { Write-Host "Retired dir: $dp" }
+                    }
                 }
             }
         }
