@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. Green: 504/504, suite auto-discovered (54 total). Red: proven loud on 4 seeds (content drift, missing-fwd, extra-rev, profile drift) + exit 1. Manifest-driven (no blind diff) + both-directions confirmed. CARRIED TO GATE: [MEDIUM] third-direction gap (repo-side orphan not swept); [LOW] DBI- vs T-prefixed IDs; CAVEAT flaky install suites (test-install-parity/test-install fail in run-all, pass standalone — gate to determine pre-existing vs introduced).
+- **Elapsed:** ~00:16
+- **Notes:** New tests/canonical/test-dogfood-byte-identity.sh (manifest-driven, awk-based, no python dep); ASCII-only; no workflow edit (glob auto-discovery); real trees pristine.
 
 ---
 
