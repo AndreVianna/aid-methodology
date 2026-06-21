@@ -415,19 +415,19 @@ Installs into `.claude/`:
 
 ### Codex CLI
 
-Installs into `.codex/` and `.agents/`:
+Installs into `.codex/`:
 
 - `.codex/agents/` — agent TOML files (`aid-`-prefixed)
-- `.agents/` — agent TOML files (alternate path Codex probes; `aid-`-prefixed)
-- `.agents/skills/` — `aid-`-prefixed skill markdown files
-- `.agents/aid/scripts/`, `.agents/aid/templates/`, `.agents/aid/recipes/` — AID-own support files
+- `.codex/skills/` — `aid-`-prefixed skill markdown files
+- `.codex/aid/scripts/`, `.codex/aid/templates/`, `.codex/aid/recipes/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Cursor
 
 Installs into `.cursor/`:
 
-- `.cursor/rules/` — `aid-`-prefixed skill and agent `.mdc` rule files
+- `.cursor/skills/` — `aid-`-prefixed skill markdown files
+- `.cursor/agents/` — `aid-`-prefixed agent markdown files
 - `.cursor/aid/scripts/`, `.cursor/aid/templates/`, `.cursor/aid/recipes/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
@@ -435,7 +435,8 @@ Installs into `.cursor/`:
 
 Installs into `.github/`:
 
-- `.github/copilot-agents/` — `aid-`-prefixed agent `.agent.md` files
+- `.github/agents/` — `aid-`-prefixed agent markdown files
+- `.github/skills/` — `aid-`-prefixed skill markdown files
 - `.github/aid/scripts/`, `.github/aid/templates/`, `.github/aid/recipes/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
@@ -443,7 +444,8 @@ Installs into `.github/`:
 
 Installs into `.agent/`:
 
-- `.agent/` — `aid-`-prefixed skill and agent files with `trigger:` frontmatter
+- `.agent/agents/` — `aid-`-prefixed agent markdown files
+- `.agent/skills/` — `aid-`-prefixed skill markdown files
 - `.agent/aid/scripts/`, `.agent/aid/templates/`, `.agent/aid/recipes/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
@@ -454,7 +456,7 @@ differs per tool. The source of truth is `canonical/`; `profiles/` are generated
 
 **Content isolation:** AID's own support folders (`scripts/`, `templates/`, `recipes/`)
 nest under an `aid/` subtree inside each profile's assets root. AID files in tool-native
-directories (`agents/`, `skills/`, `rules/`) all carry the `aid-` prefix. Your files in
+directories (`agents/`, `skills/`) all carry the `aid-` prefix. Your files in
 those same directories are never touched. AID's section in root agent files (`CLAUDE.md`/
 `AGENTS.md`) is fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->` markers and updated
 in place, preserving your content outside the fence.
@@ -766,7 +768,7 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 | Tool id | Installs into | Root agent file |
 |---------|--------------|-----------------|
 | `claude-code` | `.claude/` | `CLAUDE.md` |
-| `codex` | `.codex/` + `.agents/` | `AGENTS.md` |
+| `codex` | `.codex/` | `AGENTS.md` |
 | `cursor` | `.cursor/` | `AGENTS.md` |
 | `copilot-cli` | `.github/` | `AGENTS.md` |
 | `antigravity` | `.agent/` | `AGENTS.md` |
@@ -782,7 +784,7 @@ per-tool markers:
 | Marker present in target | Detected tool |
 |--------------------------|---------------|
 | `.claude/` dir | `claude-code` |
-| `.codex/` dir or `.agents/` dir | `codex` |
+| `.codex/` dir | `codex` |
 | `.cursor/` dir | `cursor` |
 | `.github/` with AID-specific children (`agents/` or `skills/`) | `copilot-cli` |
 | `.agent/` dir | `antigravity` |

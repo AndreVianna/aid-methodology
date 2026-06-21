@@ -106,7 +106,7 @@ AID ships install bundles for five host AI tools:
 | Profile | Install directory | Context file |
 |---------|-------------------|--------------|
 | **Claude Code** | `.claude/` | `CLAUDE.md` |
-| **Codex CLI** | `.codex/agents/` + `.agents/` | `AGENTS.md` |
+| **Codex CLI** | `.codex/` | `AGENTS.md` |
 | **Cursor** | `.cursor/` | `AGENTS.md` |
 | **GitHub Copilot CLI** | `.github/` | `AGENTS.md` |
 | **Antigravity** | `.agent/` | `AGENTS.md` |

@@ -29,7 +29,7 @@ Run `/aid-config` first — regardless of whether it's greenfield or brownfield.
 ### What AI tools does AID work with?
 AID ships install bundles for five host tools:
 1. **Claude Code** — installs to `.claude/`
-2. **OpenAI Codex CLI** — installs to `.codex/agents/` + `.agents/`
+2. **OpenAI Codex CLI** — installs to `.codex/`
 3. **Cursor** — installs to `.cursor/`
 4. **GitHub Copilot CLI** — installs to `.github/`
 5. **Antigravity** — installs to `.agent/`

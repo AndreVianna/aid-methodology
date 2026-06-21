@@ -822,12 +822,10 @@ The tier→model mapping is declared per profile in `profiles/{tool}.toml` and r
 
 ### Agent Formats
 
-The four agent formats emitted by the generator correspond to the four ways host tools represent sub-agents:
+The two agent formats emitted by the generator correspond to the ways host tools represent sub-agents:
 
-- **markdown** — Claude Code and Cursor: the canonical source is `AGENT.md`, rendered into the install tree as `aid-`-prefixed files (`aid-developer.md`, `aid-architect.md`, etc.) with markdown frontmatter.
+- **markdown** — Claude Code, Cursor, GitHub Copilot CLI, and Antigravity: the canonical source is `AGENT.md`, rendered into the install tree as `aid-`-prefixed files (`aid-developer.md`, `aid-architect.md`, etc.) with markdown frontmatter.
 - **toml** — Codex: `.codex/agents/*.toml` files.
-- **copilot-agent** — GitHub Copilot CLI: `.github/agents/*.agent.md` with `name/description/tools/model` frontmatter.
-- **antigravity-rule** — Antigravity: `.agent/rules/*.md` with `trigger:`-style frontmatter (personas → `trigger: always_on`).
 
 ### The Five Profiles
 
@@ -836,10 +834,10 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 | **#** | Profile | Install root | Context file | Agent format |
 |------|---------|-------------|--------------|-------------|
 | 1 | Claude Code | `.claude/` | `CLAUDE.md` | markdown |
-| 2 | Codex CLI | `.codex/agents/` + `.agents/` | `AGENTS.md` | TOML |
-| 3 | Cursor | `.cursor/` | `AGENTS.md` | markdown + `.mdc` rules |
-| 4 | GitHub Copilot CLI | `.github/` | `AGENTS.md` | copilot-agent |
-| 5 | Antigravity | `.agent/` | `AGENTS.md` | antigravity-rule |
+| 2 | Codex CLI | `.codex/` | `AGENTS.md` | TOML |
+| 3 | Cursor | `.cursor/` | `AGENTS.md` | markdown |
+| 4 | GitHub Copilot CLI | `.github/` | `AGENTS.md` | markdown |
+| 5 | Antigravity | `.agent/` | `AGENTS.md` | markdown |
 
 **The build pipeline:**
 
@@ -861,7 +859,7 @@ profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/
         │  (--tool <name> or auto-detect; diff-aware copy; protect-on-diff)
         │
 /path/to/user-project/
-  {.claude/ | .codex/+.agents/ | .cursor/ | .github/ | .agent/}
+  {.claude/ | .codex/ | .cursor/ | .github/ | .agent/}
 ```
 
 A VERIFY (deterministic) gate re-renders all five profiles into a scratch directory and byte-compares them against the committed install trees after every `run_generator.py` execution. Any byte mismatch is a hard failure. This ensures `canonical/` is always the source of truth.

@@ -10,8 +10,8 @@
 
 <!-- AUTHORED -- single writer: this delivery's branch only. -->
 
-- **State:** Pending-Spec
-- **Updated:** 2026-06-20T21:10:18Z
+- **State:** Executing
+- **Updated:** 2026-06-21T18:42:26Z
 - **Block Reason:** --
 - **Block Artifact:** --
 

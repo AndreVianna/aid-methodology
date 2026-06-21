@@ -203,7 +203,7 @@ No re-piping.
 
     **What gets installed:**
     - `.codex/agents/` — agent TOML files
-    - `.agents/` — agent TOML files (alternate path Codex probes)
+    - `.codex/skills/` — skill markdown files
     - `AGENTS.md` — project-context file at the project root
   </TabItem>
   <TabItem label="Cursor">
@@ -212,7 +212,8 @@ No re-piping.
     ```
 
     **What gets installed:**
-    - `.cursor/rules/` — skill and agent `.mdc` rule files
+    - `.cursor/skills/` — skill markdown files
+    - `.cursor/agents/` — agent markdown files
     - `AGENTS.md` — project-context file at the project root
   </TabItem>
   <TabItem label="Copilot CLI">
@@ -221,7 +222,8 @@ No re-piping.
     ```
 
     **What gets installed:**
-    - `.github/copilot-agents/` — agent `.agent.md` files
+    - `.github/agents/` — agent markdown files
+    - `.github/skills/` — skill markdown files
     - `AGENTS.md` — project-context file at the project root
   </TabItem>
   <TabItem label="Antigravity">
@@ -230,7 +232,8 @@ No re-piping.
     ```
 
     **What gets installed:**
-    - `.agent/` — skill and agent files with `trigger:` frontmatter
+    - `.agent/agents/` — agent markdown files
+    - `.agent/skills/` — skill markdown files
     - `AGENTS.md` — project-context file at the project root
   </TabItem>
 </Tabs>

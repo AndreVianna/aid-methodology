@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** PULLED FORWARD into delivery-001/task-006 (commit 390ac593): release.sh:281 codex roots `.agents .codex` -> `.codex` + comments :191/:280 already fixed there (task-006's Codex unify broke release.sh; a green delivery-001 PR required the fix). When delivery-003 executes, this task is a VERIFY-only (confirm release.sh codex roots already correct; handle any residual codex comment/doc only).
+- **State:** Done
+- **Review:** PASS (verify-only) — release.sh codex fix was pulled forward into delivery-001/task-006 (commit 390ac593) and is on master. Verified 2026-06-21: release.sh:281 = `build_tarball "codex" "profiles/codex" ".codex" "AGENTS.md"` (.codex-only); comments :191/:280 correct (FR2 unified .codex); no .agents codex refs remain. No residual edits needed.
+- **Elapsed:** ~00:01
+- **Notes:** No new change in delivery-003 — the deliverable landed in delivery-001 (merged #100). This row records the verification.
 
 ---
 

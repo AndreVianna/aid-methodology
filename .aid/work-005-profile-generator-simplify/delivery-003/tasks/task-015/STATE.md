@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. Independent class-wide grep: 0 live retired refs (30+ -> 0). sync-docs idempotent (proven 2 ways). Accuracy verified vs real profiles/* trees (codex/cursor/antigravity/copilot). MDX well-formed. Scope clean (no KB/code/test). 1 non-blocking MINOR (stale templates/scripts/grade.sh support-path in cursor README) -> gate.
+- **Elapsed:** ~00:05
+- **Notes:** docs/{install,faq,repository-structure,glossary,aid-methodology}.md + CONTRIBUTING.md + profiles/{cursor,codex}/README.md + site installation.mdx/cli.mdx hand-edits + 4 sync-regenerated site pages. Formats four->two; codex unified; rules sections removed.
 
 ---
 
