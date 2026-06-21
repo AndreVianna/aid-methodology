@@ -36,7 +36,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-SUT="${REPO_ROOT}/canonical/scripts/release/check-version-sync.sh"
+SUT="${REPO_ROOT}/canonical/aid/scripts/release/check-version-sync.sh"
 RELEASE_YML="${REPO_ROOT}/.github/workflows/release.yml"
 
 [[ -f "$SUT" ]] || { echo "ERROR: check-version-sync.sh not found at $SUT" >&2; exit 1; }

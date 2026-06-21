@@ -98,7 +98,7 @@ and not synthesized from templates. (The `skill-self` owner value denotes the sk
 #
 # REPO must be set to the repository root before calling (or defaults to the CWD).
 synth_default_seed() {
-  local tmpl_dir="${REPO:-$(pwd)}/canonical/templates/knowledge-base"
+  local tmpl_dir="${REPO:-$(pwd)}/canonical/aid/templates/knowledge-base"
   # Ownership map: pairs of "filename owner" (no commas, no pipes — safe for IFS split)
   # This is the §2.2 single source; edit here to change the default ownership.
   local -a MAP=(

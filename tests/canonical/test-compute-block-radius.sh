@@ -33,7 +33,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # SUT moved to canonical/scripts/execute/ in 2026-05-26 consolidation
-SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/compute-block-radius.sh"
+SCRIPT="${SCRIPT_DIR}/../../canonical/aid/scripts/execute/compute-block-radius.sh"
 
 [[ -f "$SCRIPT" ]] || { echo "ERROR: compute-block-radius.sh not found at $SCRIPT" >&2; exit 1; }
 [[ -x "$SCRIPT" ]] || chmod +x "$SCRIPT"
@@ -289,7 +289,7 @@ fi
 # T17: state-execute.md degradation notice has the stable format scrapers expect
 # Format: [degradation] MaxConcurrent={N} requested, host capability=sequential — running effective=1
 # ---------------------------------------------------------------------------
-STATE_EXEC="$(cd "$(dirname "$SCRIPT")/../../skills/aid-execute/references" && pwd)/state-execute.md"
+STATE_EXEC="${SCRIPT_DIR}/../../canonical/skills/aid-execute/references/state-execute.md"
 if [[ -f "$STATE_EXEC" ]] \
     && grep -q "\[degradation\] MaxConcurrent=" "$STATE_EXEC" \
     && grep -q "host capability=sequential" "$STATE_EXEC" \

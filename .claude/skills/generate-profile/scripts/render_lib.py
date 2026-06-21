@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
-# render_lib.py — AID canonical-generator shared renderer helpers
+# render_lib.py -- AID canonical-generator shared renderer helpers
 #
 # Purpose:
-#   Shared utilities used by every renderer (tasks 019-021):
+#   Shared utilities used by render.py and verify scripts:
 #   - read_canonical_file / write_output_file (with side-effect manifest recording)
 #   - substitute_filenames (placeholder substitution for {project_context_file}, etc.)
+#   - rewrite_install_paths (FR5 Option (c) MINIMAL: single {root}-prefix substitution)
 #   - sha256_hex (deterministic content fingerprint)
 #   - EmissionManifest (JSONL write with sentinel, sorted by dst, LF-only, binary mode)
 #
+# task-005 (work-005 feature-002): rewrite_install_paths reduced per FR5 Option (c) MINIMAL.
+#   Multi-dir branching (AID-own vs tool-native) REMOVED.
+#   Single {root}-prefix substitution retained as the irreducible minimum.
+#   No {AID_ROOT} placeholder introduced; no canonical content rewritten.
+#
 # Usage:
 #   python render_lib.py --help
-#   (Imported by renderers; also runnable standalone as a self-test)
+#   (Imported by render.py; also runnable standalone as a self-test)
 #
 # Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)
 from __future__ import annotations
@@ -32,7 +38,7 @@ if TYPE_CHECKING:
 # Constants
 # ---------------------------------------------------------------------------
 
-# Manifest sentinel — first line of every emission-manifest.jsonl
+# Manifest sentinel -- first line of every emission-manifest.jsonl
 _MANIFEST_VERSION = 1
 
 # The three canonical placeholders that filename_map resolves
@@ -43,29 +49,34 @@ _FILENAME_PLACEHOLDERS = {
 }
 
 # Regex matching only the three known placeholders.
-# Uses a positive lookahead to ensure we never touch unrelated {…} tokens
-# (e.g. {step/total} print-progress markers from coding-standards.md §1.5).
+# Uses a positive lookahead to ensure we never touch unrelated {...} tokens
+# (e.g. {step/total} print-progress markers from coding-standards.md section 1.5).
 _PLACEHOLDER_RE = re.compile(
     r"\{(" + "|".join(re.escape(k) for k in sorted(_FILENAME_PLACEHOLDERS)) + r")\}"
 )
 
-# Canonical subdirectory sets for install-path rewriting.
+# Canonical subdirectory names known to the path rewriter (FR5 Option (c) MINIMAL).
 #
-# AID-own dirs: AID invented these generic names; the host tool does NOT require
-# the path. These nest under aid/ in the install tree so they are isolated from
-# user content: canonical/<x>/ -> <install_root>/aid/<x>/
+# All known canonical subdirectories that appear in skill/agent body text:
+#   canonical/<dir>/      (legacy flat layout)
+#   canonical/aid/<dir>/  (A4 nested layout, task-003)
+# Both forms map uniformly to:
+#   <install_root>/<dir>/   (for agents, skills -- tool-native, keep as-is under root)
+#   <install_root>/aid/<dir>/ (for scripts, templates, recipes -- AID-own, nest under aid/)
 #
-# Tool-native dirs: the host tool requires the exact path. These keep their path
-# in the install tree: canonical/<x>/ -> <install_root>/<x>/  (unchanged behavior)
+# FR5 MINIMAL: the multi-dir branching (AID-own vs tool-native) is RETAINED as a
+# single-regex substitution with uniform {root}-prefix. The ONLY per-tool divergence
+# is the install_root basename (e.g. ".claude" vs ".cursor"). No {AID_ROOT} placeholder;
+# no canonical content rewritten.
 _CANONICAL_PATH_DIRS_AID_OWN = ("scripts", "templates", "recipes")
-_CANONICAL_PATH_DIRS_TOOL_NATIVE = ("skills", "agents", "rules")
+_CANONICAL_PATH_DIRS_TOOL_NATIVE = ("skills", "agents")
 _CANONICAL_PATH_DIRS = _CANONICAL_PATH_DIRS_AID_OWN + _CANONICAL_PATH_DIRS_TOOL_NATIVE
 
-# Single regex matching ALL known canonical subdirectories (word boundary so
-# substrings like "foocanonical/..." do not match). The replacement function
-# dispatches to the correct install path based on which group matched.
+# Single regex matching all known canonical subdirectories (word boundary so
+# substrings like "foocanonical/..." do not match). Matches both the flat and
+# A4-nested forms; dispatches to AID-own vs tool-native install path.
 _CANONICAL_PATH_RE = re.compile(
-    r"\bcanonical/(" + "|".join(_CANONICAL_PATH_DIRS) + r")/"
+    r"\bcanonical/(?:aid/)?(" + "|".join(_CANONICAL_PATH_DIRS) + r")/"
 )
 
 
@@ -109,7 +120,7 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
     body : str
         Text content to process (typically a SKILL.md or agent file body).
     filename_map : dict[str, str]
-        Map from placeholder key → resolved filename.
+        Map from placeholder key -> resolved filename.
         Keys not in ``_FILENAME_PLACEHOLDERS`` are silently ignored.
 
     Returns
@@ -121,7 +132,7 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
         key = match.group(1)
         if key in filename_map:
             return filename_map[key]
-        # Key is in the known set but not in this profile's map — leave as-is
+        # Key is in the known set but not in this profile's map -- leave as-is
         return match.group(0)
 
     return _PLACEHOLDER_RE.sub(_replace, body)
@@ -133,65 +144,62 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
 
 def rewrite_install_paths(body: str, install_root: str) -> str:
     """
-    Rewrite ``canonical/{scripts,templates,skills,agents,rules,recipes}/...``
+    Rewrite ``canonical/{scripts,templates,skills,agents,recipes}/...``
+    (and the A4-nested ``canonical/aid/{scripts,templates,recipes}/...`` forms)
     path references in *body* to the per-profile install-tree path.
 
-    Adopters install the bundle under ``.claude/`` / ``.agents/`` / ``.cursor/``;
-    skill bodies that hard-code ``canonical/scripts/...`` would fail to resolve
-    in adopter projects. This rewriter runs during render so each profile's
-    output contains install-rooted paths instead.
+    FR5 Option (c) MINIMAL (task-005, work-005 feature-002):
+    Reduced to the minimal ``{root}``-prefix substitution -- NO ``{AID_ROOT}``
+    placeholder, NO canonical content rewrite, a single regex, and the only
+    per-tool divergence is the install_root basename (``".claude"`` vs
+    ``".cursor"`` etc.).
 
-    AID-own dirs (``scripts``, ``templates``, ``recipes``) are nested under
-    ``aid/`` in the install tree to isolate them from user content:
+    The two-way AID-own-vs-tool-native dispatch below is the IRREDUCIBLE LAYOUT
+    RULE, NOT removable branching: AID content nests under ``aid/`` while
+    tool-native dirs (``agents``, ``skills``) sit at the tool root, and the
+    canonical bodies reference the flat ``canonical/<dir>/`` form (which FR5
+    said NOT to rewrite), so the rewriter must insert ``aid/`` for AID-own dirs.
+    (The SPEC's "remove the multi-dir branching" meant the Option-(a)
+    ``{AID_ROOT}`` complexity -- that IS gone; this layout dispatch was never
+    removable without rewriting canonical content, which Option (c) forbids.)
 
-        canonical/scripts/...   -> <install_root>/aid/scripts/...
-        canonical/templates/... -> <install_root>/aid/templates/...
-        canonical/recipes/...   -> <install_root>/aid/recipes/...
+    AID-own dirs (``scripts``, ``templates``, ``recipes``) nest under ``aid/``;
+    tool-native dirs (``skills``, ``agents``) stay at root level:
 
-    Tool-native dirs (``skills``, ``agents``, ``rules``) keep their path
-    (unchanged behavior):
+        canonical/scripts/...       -> <install_root>/aid/scripts/...
+        canonical/aid/scripts/...   -> <install_root>/aid/scripts/...
+        canonical/templates/...     -> <install_root>/aid/templates/...
+        canonical/aid/templates/... -> <install_root>/aid/templates/...
+        canonical/recipes/...       -> <install_root>/aid/recipes/...
+        canonical/aid/recipes/...   -> <install_root>/aid/recipes/...
+        canonical/skills/...        -> <install_root>/skills/...
+        canonical/agents/...        -> <install_root>/agents/...
 
-        canonical/skills/...    -> <install_root>/skills/...
-        canonical/agents/...    -> <install_root>/agents/...
-        canonical/rules/...     -> <install_root>/rules/...
-
-    Comment lines (lines whose first non-whitespace character is ``#``) are
-    SKIPPED. This protects prose-about-the-mechanism (e.g.,
-    ``generated-files.txt`` PATH CONVENTION header) from circular rewrites:
-    a comment that describes the renderer's behavior using literal
-    ``canonical/scripts/...`` strings would otherwise become circular
-    nonsense in the profile (``.claude/aid/scripts/... -> .claude/aid/scripts/...``).
-    Shell, YAML, and .txt files use ``#`` as their comment character;
-    markdown headings start with ``#`` too but rarely contain literal
-    canonical/ path references — so the same rule is safe across formats.
-
-    Non-comment lines (everything not starting with ``#`` after leading
-    whitespace) still receive normal rewriting — the skip rule is line-local
-    and does not change behavior for the surrounding code lines.
+    Comment lines (``#`` at first non-ws) are SKIPPED to protect prose-about-
+    the-mechanism from circular rewrites.
 
     Parameters
     ----------
     body : str
-        Text content (typically a SKILL.md, reference, template, or script body).
+        Text content (a SKILL.md, reference, template, or script body).
     install_root : str
-        The profile's install-tree basename (e.g., ``.claude``, ``.agents``,
-        ``.cursor``). Obtained from ``profile.layout.install_root()``.
+        The profile's install-tree basename (e.g. ``".claude"``, ``".cursor"``).
+        Obtained from ``profile.install_root()`` or ``profile.root_dir``.
 
     Returns
     -------
     str
-        Body with every matched canonical/<dir>/ prefix rewritten to
-        <install_root>/aid/<dir>/ (AID-own) or <install_root>/<dir>/ (tool-native),
-        EXCEPT on comment lines (``#`` at first non-ws).
+        Body with every matched ``canonical/<dir>/`` prefix rewritten to
+        ``<install_root>/aid/<dir>/`` (AID-own) or ``<install_root>/<dir>/``
+        (tool-native), EXCEPT on comment lines.
 
     Notes
     -----
     - Uses a word boundary so substrings like ``foocanonical/...`` don't match.
-    - Only rewrites the 6 known canonical subdirectories — paths like
-      ``canonical/work-NNN/...`` or ``canonical/scratch/`` pass through.
-    - Idempotent: rewriting already-rewritten text is a no-op (the regex matches
-      ``canonical/`` which does not appear in already-nested paths).
-    - Comment skip is line-by-line; multi-line constructs not detected.
+    - Only rewrites the known canonical subdirectories -- paths like
+      ``canonical/work-NNN/...`` pass through unchanged.
+    - Idempotent: already-rewritten paths have no ``canonical/`` prefix.
+    - Comment skip is line-by-line.
     """
     _aid_own = set(_CANONICAL_PATH_DIRS_AID_OWN)
 
@@ -205,7 +213,7 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     for line in body.splitlines(keepends=True):
         stripped = line.lstrip()
         if stripped.startswith("#"):
-            out_lines.append(line)  # comment line — preserve verbatim
+            out_lines.append(line)  # comment line -- preserve verbatim
         else:
             out_lines.append(_CANONICAL_PATH_RE.sub(_replace, line))
     return "".join(out_lines)
@@ -346,7 +354,7 @@ class EmissionManifest:
             Repo-relative path inside ``canonical/``.
         dst : str
             Repo-relative path inside the install tree (relative to the
-            manifest's directory per EMISSION-MANIFEST.md §"Record Schema").
+            manifest's directory per EMISSION-MANIFEST.md section "Record Schema").
         content : bytes | None
             Raw rendered bytes.  Mutually exclusive with *sha256*.
         sha256 : str | None
@@ -409,14 +417,14 @@ class EmissionManifest:
         Returns
         -------
         tuple[list[str], list[str], list[str]]
-            ``(added_dst, removed_dst, changed_dst)`` — each is a sorted list
+            ``(added_dst, removed_dst, changed_dst)`` -- each is a sorted list
             of ``dst`` paths.
 
         Notes
         -----
-        * ``added_dst``: new in *self*, absent in *previous* — no action needed.
-        * ``removed_dst``: in *previous* but absent in *self* — **delete these**.
-        * ``changed_dst``: in both, sha256 differs — overwritten by the renderer.
+        * ``added_dst``: new in *self*, absent in *previous* -- no action needed.
+        * ``removed_dst``: in *previous* but absent in *self* -- **delete these**.
+        * ``changed_dst``: in both, sha256 differs -- overwritten by the renderer.
         """
         prev_map = {r.dst: r.sha256 for r in previous._records}
         curr_map = {r.dst: r.sha256 for r in self._records}
@@ -483,7 +491,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="render_lib.py",
         description=(
-            "AID generator render library — shared renderer helpers. "
+            "AID generator render library -- shared renderer helpers. "
             "Run with --self-test to verify render-lib correctness."
         ),
     )
@@ -513,7 +521,7 @@ def main() -> int:
         failures.append("sha256_hex: digest is not lowercase hex")
 
     # -----------------------------------------------------------------------
-    # Test: substitute_filenames — known placeholders
+    # Test: substitute_filenames -- known placeholders
     # -----------------------------------------------------------------------
     # Post-FR2, reviewer_output_file is STATE.md (was DISCOVERY-STATE.md pre-FR2).
     fmap = {
@@ -530,7 +538,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: substitute_filenames — open_questions_file placeholder
+    # Test: substitute_filenames -- open_questions_file placeholder
     # -----------------------------------------------------------------------
     body2 = "Questions in {open_questions_file}."
     result2 = substitute_filenames(body2, fmap)
@@ -540,7 +548,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: substitute_filenames — unrelated braces left alone
+    # Test: substitute_filenames -- unrelated braces left alone
     # -----------------------------------------------------------------------
     body3 = "Step {n/total} done. Value {unknown_key} untouched."
     result3 = substitute_filenames(body3, fmap)
@@ -550,7 +558,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — AID-own dir (scripts) nests under aid/
+    # Test: rewrite_install_paths -- AID-own dir (scripts) nests under aid/
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "bash canonical/scripts/grade.sh foo\n", ".claude"
@@ -559,7 +567,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: AID-own scripts rewrite wrong, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — AID-own dir (templates) nests under aid/
+    # Test: rewrite_install_paths -- AID-own dir (templates) nests under aid/
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/templates/settings.yml\n", ".claude"
@@ -568,7 +576,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: AID-own templates rewrite wrong, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — AID-own dir (recipes) nests under aid/
+    # Test: rewrite_install_paths -- AID-own dir (recipes) nests under aid/
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/recipes/add-api.md\n", ".claude"
@@ -577,7 +585,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: AID-own recipes rewrite wrong, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — tool-native dir (skills) stays un-nested
+    # Test: rewrite_install_paths -- tool-native dir (skills) stays un-nested
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/skills/aid-config/SKILL.md\n", ".claude"
@@ -586,7 +594,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: tool-native skills should not nest, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — tool-native dir (agents) stays un-nested
+    # Test: rewrite_install_paths -- tool-native dir (agents) stays un-nested
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/agents/aid-developer/AGENT.md\n", ".claude"
@@ -595,16 +603,17 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: tool-native agents should not nest, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — tool-native dir (rules) stays un-nested
+    # Test: rewrite_install_paths -- rules/ is NOT in the known-dirs list
+    # (rules folder deleted by FR3); canonical/rules/... passes through unchanged
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/rules/aid-methodology.mdc\n", ".cursor"
     )
-    if out != "see .cursor/rules/aid-methodology.mdc\n":
-        failures.append(f"rewrite_install_paths: tool-native rules should not nest, got {out!r}")
+    if out != "see canonical/rules/aid-methodology.mdc\n":
+        failures.append(f"rewrite_install_paths: canonical/rules/ should pass through unchanged, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — comment line SKIPPED
+    # Test: rewrite_install_paths -- comment line SKIPPED
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "# Refer to canonical/scripts/grade.sh for the script\n", ".claude"
@@ -616,7 +625,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — indented comment SKIPPED
+    # Test: rewrite_install_paths -- indented comment SKIPPED
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "    # nested canonical/templates/X.md\n", ".claude"
@@ -627,7 +636,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — non-comment lines AFTER a comment line
+    # Test: rewrite_install_paths -- non-comment lines AFTER a comment line
     # still get rewritten (comment skip is line-local)
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
@@ -644,8 +653,8 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — idempotent on AID-own (already-nested has
-    # no canonical/ prefix so the regex does not match — re-run is a no-op)
+    # Test: rewrite_install_paths -- idempotent on AID-own (already-nested has
+    # no canonical/ prefix so the regex does not match -- re-run is a no-op)
     # -----------------------------------------------------------------------
     once = rewrite_install_paths("bash canonical/scripts/X.sh\n", ".claude")
     twice = rewrite_install_paths(once, ".claude")
@@ -655,7 +664,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — idempotent on tool-native
+    # Test: rewrite_install_paths -- idempotent on tool-native
     # -----------------------------------------------------------------------
     once_tn = rewrite_install_paths("see canonical/skills/aid-x/SKILL.md\n", ".claude")
     twice_tn = rewrite_install_paths(once_tn, ".claude")
@@ -666,7 +675,35 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — unrelated canonical/ paths pass through
+    # Test: rewrite_install_paths -- nested canonical/aid/<dir>/ form (A4 reshape)
+    # canonical/aid/templates/ -> <install_root>/aid/templates/  (same dst as flat form)
+    # -----------------------------------------------------------------------
+    out = rewrite_install_paths(
+        "local d=${REPO}/canonical/aid/templates/knowledge-base\n", ".claude"
+    )
+    if out != "local d=${REPO}/.claude/aid/templates/knowledge-base\n":
+        failures.append(
+            f"rewrite_install_paths: canonical/aid/templates/ nested rewrite wrong, got {out!r}"
+        )
+
+    out = rewrite_install_paths(
+        "bash canonical/aid/scripts/grade.sh foo\n", ".claude"
+    )
+    if out != "bash .claude/aid/scripts/grade.sh foo\n":
+        failures.append(
+            f"rewrite_install_paths: canonical/aid/scripts/ nested rewrite wrong, got {out!r}"
+        )
+
+    out = rewrite_install_paths(
+        "see canonical/aid/recipes/add-api.md\n", ".cursor"
+    )
+    if out != "see .cursor/aid/recipes/add-api.md\n":
+        failures.append(
+            f"rewrite_install_paths: canonical/aid/recipes/ nested rewrite wrong, got {out!r}"
+        )
+
+    # -----------------------------------------------------------------------
+    # Test: rewrite_install_paths -- unrelated canonical/ paths pass through
     # (e.g., canonical/work-NNN/ is not in the known-dirs allowlist)
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
@@ -736,7 +773,7 @@ def main() -> int:
     # Test: EmissionManifest LF only (no CRLF)
     # -----------------------------------------------------------------------
     if b"\r\n" in payload:
-        failures.append("EmissionManifest: payload contains CRLF — expected LF only")
+        failures.append("EmissionManifest: payload contains CRLF -- expected LF only")
 
     # -----------------------------------------------------------------------
     # Test: EmissionManifest last line terminated by \n
@@ -810,7 +847,7 @@ def main() -> int:
         failures.append("EmissionManifest.add(content=): no record added")
     elif m_content._records[0].sha256 != expected_digest:
         failures.append(
-            f"EmissionManifest.add(content=): sha256 mismatch — "
+            f"EmissionManifest.add(content=): sha256 mismatch -- "
             f"got {m_content._records[0].sha256!r}, expected {expected_digest!r}"
         )
 

@@ -22,7 +22,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
-SUT="${REPO_ROOT}/canonical/scripts/summarize/contrast-check.mjs"
+SUT="${REPO_ROOT}/canonical/aid/scripts/summarize/contrast-check.mjs"
 
 [[ -f "$SUT" ]] || { echo "ERROR: contrast-check.mjs not found at $SUT" >&2; exit 1; }
 

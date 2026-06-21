@@ -111,7 +111,7 @@ jobs:
           NPM_ENABLED: ${{ vars.NPM_ENABLED || 'false' }}
           PYPI_ENABLED: ${{ vars.PYPI_ENABLED || 'false' }}
         run: |
-          bash canonical/scripts/release/check-version-sync.sh --expect "${VERSION}"
+          bash canonical/aid/scripts/release/check-version-sync.sh --expect "${VERSION}"
 
       - name: Ignore exec-bit changes (repo is maintained with core.fileMode=false)
         run: git config core.fileMode false
@@ -138,10 +138,10 @@ jobs:
           key: mermaid-v11.15.0
 
       - name: Pre-seed pinned Mermaid (SHA-verified; hermetic after first run)
-        run: bash canonical/scripts/summarize/fetch-mermaid.sh
+        run: bash canonical/aid/scripts/summarize/fetch-mermaid.sh
 
       - name: Make helper + test scripts executable
-        run: find canonical/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
+        run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
 
       # Verbatim from test.yml canonical-tests: fail loudly if node/pwsh absent.
       - name: Assert test runtimes present (node + pwsh)
@@ -160,11 +160,9 @@ jobs:
         run: |
           python .claude/skills/generate-profile/scripts/render_lib.py --self-test
           python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
-          python .claude/skills/generate-profile/scripts/render_canonical_scripts.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
-          python .claude/skills/generate-profile/scripts/test_copilot_emitter.py --self-test --canonical-root .
-          python .claude/skills/generate-profile/scripts/test_antigravity_emitter.py --self-test --canonical-root .
 
   # --------------------------------------------------------------------------
   # github-release — build the 5 profile tarballs + CLI bundle + SHA256SUMS

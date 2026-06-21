@@ -37,7 +37,7 @@ set -u
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 # SUT moved to canonical/scripts/interview/ in 2026-05-26 consolidation
-SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/interview/parse-recipe.sh"
+SCRIPT="${SCRIPT_DIR}/../../canonical/aid/scripts/interview/parse-recipe.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
@@ -797,7 +797,7 @@ assert_output_contains "$out" "actual-name" "--validate name mismatch: filename 
 echo ""
 echo "=== Unit 15: --validate seed recipe 'fix-application' ==="
 # Seed recipes live at SCRIPT_DIR/../../../recipes/ (canonical/recipes/)
-SEED_RECIPES_DIR="${SCRIPT_DIR}/../../canonical/recipes"
+SEED_RECIPES_DIR="${SCRIPT_DIR}/../../canonical/aid/recipes"
 
 SEED_FILE="${SEED_RECIPES_DIR}/fix-application.md"
 if [[ -f "$SEED_FILE" ]]; then

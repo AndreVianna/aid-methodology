@@ -22,7 +22,7 @@ VERBOSE=0
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/complexity-score.sh"
+SCRIPT="${SCRIPT_DIR}/../../canonical/aid/scripts/execute/complexity-score.sh"
 [[ -f "$SCRIPT" ]] || { echo "ERROR: complexity-score.sh not found at $SCRIPT" >&2; exit 1; }
 [[ -x "$SCRIPT" ]] || chmod +x "$SCRIPT"
 

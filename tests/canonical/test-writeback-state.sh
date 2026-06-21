@@ -43,7 +43,7 @@ set -u
 
 # ---------------------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-SCRIPT="${SCRIPT_DIR}/../../canonical/scripts/execute/writeback-state.sh"
+SCRIPT="${SCRIPT_DIR}/../../canonical/aid/scripts/execute/writeback-state.sh"
 
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1

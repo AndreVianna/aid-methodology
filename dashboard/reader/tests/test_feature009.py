@@ -515,7 +515,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
 # ---------------------------------------------------------------------------
 
 _CANONICAL_REQUIREMENTS_TEMPLATE = (
-    _REPO_ROOT / "canonical" / "templates" / "requirements.md"
+    _REPO_ROOT / "canonical" / "aid" / "templates" / "requirements.md"
 )
 _CANONICAL_TASK_DECOMPOSITION = (
     _REPO_ROOT / "canonical" / "skills" / "aid-detail" / "references"

@@ -21,10 +21,9 @@ One manifest per profile, placed at the **deepest common parent** of the profile
 | `profiles/codex.toml` | `codex/emission-manifest.jsonl` |
 | `profiles/cursor.toml` | `cursor/emission-manifest.jsonl` |
 
-For Codex (split layout: `profiles/codex/.codex/` + `profiles/codex/.agents/`), the single manifest at
-`codex/emission-manifest.jsonl` covers both output roots. Record paths in the manifest
-are relative to that common parent (`codex/`) so the safety boundary covers both roots from
-one manifest. (Resolves OQ2 — one manifest per profile.)
+For Codex (unified layout: `profiles/codex/.codex/`), the manifest at
+`codex/emission-manifest.jsonl` covers the single output root. Record paths in the manifest
+are relative to that common parent (`codex/`). (Resolves OQ2 — one manifest per profile.)
 
 The manifest is **committed alongside the install tree** it describes. It is a generated
 artifact, not a source file.
@@ -107,27 +106,26 @@ JSON Lines was chosen because it is:
 The generator recognises the following canonical asset kinds. Each kind maps to
 an install-tree sub-directory per the profile's layout configuration.
 
-| Canonical source | Claude Code | Codex (split) | Cursor | Renderer |
-|-----------------|-------------|---------------|--------|----------|
-| `canonical/agents/` | `.claude/agents/` | `.codex/agents/` | `.cursor/agents/` | `render_agents.py` |
-| `canonical/skills/` | `.claude/skills/` | `.agents/skills/` | `.cursor/skills/` | `render_skills.py` |
-| `canonical/scripts/` | `.claude/aid/scripts/` | `.agents/aid/scripts/` | `.cursor/aid/scripts/` | `render_canonical_scripts.py` |
-| `canonical/templates/` | `.claude/aid/templates/` | `.agents/aid/templates/` | `.cursor/aid/templates/` | `render_templates.py` |
-| `canonical/recipes/` | `.claude/aid/recipes/` | `.agents/aid/recipes/` | `.cursor/aid/recipes/` | `render_recipes.py` |
+| Canonical source | Claude Code | Codex | Cursor | Generator |
+|-----------------|-------------|-------|--------|-----------|
+| `canonical/agents/` | `.claude/agents/` | `.codex/agents/` | `.cursor/agents/` | `render.py` |
+| `canonical/skills/` | `.claude/skills/` | `.codex/skills/` | `.cursor/skills/` | `render.py` |
+| `canonical/aid/scripts/` | `.claude/aid/scripts/` | `.codex/aid/scripts/` | `.cursor/aid/scripts/` | `render.py` |
+| `canonical/aid/templates/` | `.claude/aid/templates/` | `.codex/aid/templates/` | `.cursor/aid/templates/` | `render.py` |
+| `canonical/aid/recipes/` | `.claude/aid/recipes/` | `.codex/aid/recipes/` | `.cursor/aid/recipes/` | `render.py` |
 
 ### Recipes asset kind (FR8 — feature-011-recipes back-port, work-001)
 
-`canonical/recipes/` holds pre-filled lite-path templates with `{{slot}}`
+`canonical/aid/recipes/` holds pre-filled lite-path templates with `{{slot}}`
 placeholders. Recipes are plain Markdown files (passthrough renderer — no
 format conversion or frontmatter injection). They follow the same profile-
 emission contract as templates:
 
-- **Single-root profiles** (Claude Code, Cursor): emit under `{output_root}/aid/recipes/`
-- **Split-root profile** (Codex): emit under `{assets_root}/aid/recipes/`
-- **Idempotent**: if `canonical/recipes/` is empty or absent, the generator
+- **All profiles** (uniform layout): emit under `{root_dir}/aid/recipes/`
+- **Idempotent**: if `canonical/aid/recipes/` is empty or absent, the generator
   emits nothing and records no manifest entries for this kind.
 - **Mirror-deletion**: removing a recipe and re-running the generator deletes
-  the rendered copy from all 3 install trees via the normal manifest diff.
+  the rendered copy from all install trees via the normal manifest diff.
 
 ## Worked Example
 
@@ -143,14 +141,13 @@ emission contract as templates:
 
 The five example records cover:
 1. An agent file
-2. A recipe file (new — FR8)
-3. A skill `SKILL.md`
-4. A skill `references/*.md` sub-file
-5. A template
+2. A recipe file (FR8)
+3. A script file (under `aid/scripts/`)
+4. A skill `SKILL.md`
+5. A skill `references/*.md` sub-file
 
-For Codex (split layout), records under `.codex/` and `.agents/` both appear in
-`codex/emission-manifest.jsonl` with `dst` values like `.codex/agents/aid-architect.toml`,
-`.agents/aid/recipes/new-feature.md`, `.agents/aid/scripts/config/read-setting.sh`,
-`.agents/aid/templates/grading-rubric.md`, and `.agents/skills/aid-deploy/SKILL.md` — all
-relative to `codex/`. AID-own dirs (scripts, templates, recipes) nest under `.agents/aid/`;
-tool-native dirs (agents, skills) keep their exact path.
+For Codex (unified layout), all records appear in `codex/emission-manifest.jsonl` with
+`dst` values like `.codex/agents/aid-architect.toml`, `.codex/aid/recipes/new-feature.md`,
+`.codex/aid/scripts/config/read-setting.sh`, `.codex/aid/templates/grading-rubric.md`,
+and `.codex/skills/aid-deploy/SKILL.md` — all relative to `codex/`. The uniform
+`{agents, skills, aid}` shape applies under `.codex/` just as under all other host roots.

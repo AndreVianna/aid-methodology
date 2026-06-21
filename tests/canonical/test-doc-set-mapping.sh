@@ -34,7 +34,7 @@ VERBOSE=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${SCRIPT_DIR}/../.."
-SUT_SCRIPT="${REPO}/canonical/scripts/config/read-setting.sh"
+SUT_SCRIPT="${REPO}/canonical/aid/scripts/config/read-setting.sh"
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
 

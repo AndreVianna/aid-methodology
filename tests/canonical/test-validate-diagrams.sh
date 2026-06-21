@@ -18,7 +18,7 @@ VERBOSE=0
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SUT="${SCRIPT_DIR}/../../canonical/scripts/summarize/validate-diagrams.mjs"
+SUT="${SCRIPT_DIR}/../../canonical/aid/scripts/summarize/validate-diagrams.mjs"
 
 [[ -f "$SUT" ]] || { echo "ERROR: validate-diagrams.mjs not found at $SUT" >&2; exit 1; }
 

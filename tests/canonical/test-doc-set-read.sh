@@ -37,7 +37,7 @@ VERBOSE=0
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${SCRIPT_DIR}/../.."
-SUT_SCRIPT="${REPO}/canonical/scripts/config/read-setting.sh"
+SUT_SCRIPT="${REPO}/canonical/aid/scripts/config/read-setting.sh"
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
 
@@ -187,7 +187,7 @@ assert_output_contains "$filenames" "feature-inventory.md" "T01 default seed con
 # ---------------------------------------------------------------------------
 # T02: default seed count matches templates on disk
 # ---------------------------------------------------------------------------
-template_count=$(find "$REPO/canonical/templates/knowledge-base" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
+template_count=$(find "$REPO/canonical/aid/templates/knowledge-base" -maxdepth 1 -name '*.md' | wc -l | tr -d ' ')
 seed_count=$(echo "$tsv" | grep -c .)
 assert_eq "$seed_count" "$template_count" "T02 default seed row-count matches template count ($template_count)"
 

@@ -147,7 +147,8 @@ run_install --tool codex \
     --target "$T"
 assert_exit_eq "$RC" 0 "IN05 fresh install codex → exit 0"
 assert_dir_exists "$T/.codex" "IN05b .codex/ created"
-assert_dir_exists "$T/.agents" "IN05c .agents/ created"
+assert_eq "$([[ -d "$T/.agents" ]] && echo exists || echo gone)" "gone" \
+    "IN05c .agents/ NOT created (Codex unified to .codex/ per FR2)"
 assert_file_exists "$T/AGENTS.md" "IN05d AGENTS.md created"
 assert_eq "$(cmp -s "$T/AGENTS.md" "${PROFILES_DIR}/codex/AGENTS.md" && echo same || echo diff)" \
     "same" "IN05e installed AGENTS.md byte-identical to codex source"
@@ -323,7 +324,7 @@ assert_output_contains "$OUT" "Uninstall complete." "IN13d uninstall complete ba
 assert_eq "$([[ -d "$T/.codex" ]] && echo exists || echo gone)" "gone" \
     "IN13e .codex/ removed after uninstall"
 assert_eq "$([[ -d "$T/.agents" ]] && echo exists || echo gone)" "gone" \
-    "IN13f .agents/ removed after uninstall"
+    "IN13f .agents/ absent (Codex unified to .codex/ per FR2)"
 assert_eq "$([[ -f "$T/AGENTS.md" ]] && echo exists || echo gone)" "gone" \
     "IN13g AGENTS.md removed after uninstall"
 # Manifest itself is removed when no tools remain.
@@ -414,7 +415,8 @@ assert_eq "$([[ -f "$T/AGENTS.md.aid-new" ]] && echo exists || echo none)" "none
     "IN17b no AGENTS.md.aid-new when second AGENTS.md is byte-identical (FR12)"
 # codex dirs should have been installed.
 assert_dir_exists "$T/.codex" "IN17c .codex/ created by codex"
-assert_dir_exists "$T/.agents" "IN17d .agents/ created by codex"
+assert_eq "$([[ -d "$T/.agents" ]] && echo exists || echo gone)" "gone" \
+    "IN17d .agents/ NOT created by codex (unified to .codex/ per FR2)"
 # cursor dirs should have been installed.
 assert_dir_exists "$T/.cursor" "IN17e .cursor/ created by cursor"
 

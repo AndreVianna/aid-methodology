@@ -61,8 +61,8 @@ from dashboard.reader.models import SourceMode
 # Locate the producer script and bash
 # ---------------------------------------------------------------------------
 
-_WRITEBACK_PATH = _REPO_ROOT / "canonical" / "scripts" / "execute" / "writeback-state.sh"
-_WORK_STATE_TEMPLATE = _REPO_ROOT / "canonical" / "templates" / "work-state-template.md"
+_WRITEBACK_PATH = _REPO_ROOT / "canonical" / "aid" / "scripts" / "execute" / "writeback-state.sh"
+_WORK_STATE_TEMPLATE = _REPO_ROOT / "canonical" / "aid" / "templates" / "work-state-template.md"
 
 _BASH = shutil.which("bash")
 _PRODUCER_AVAILABLE = _WRITEBACK_PATH.is_file() and _BASH is not None

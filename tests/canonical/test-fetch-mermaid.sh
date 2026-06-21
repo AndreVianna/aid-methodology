@@ -28,7 +28,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-SUT="$REPO_ROOT/canonical/scripts/summarize/fetch-mermaid.sh"
+SUT="$REPO_ROOT/canonical/aid/scripts/summarize/fetch-mermaid.sh"
 REAL_CACHE="$REPO_ROOT/.aid/knowledge/.cache"
 
 VERBOSE=0

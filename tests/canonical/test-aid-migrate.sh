@@ -38,7 +38,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 BIN_AID="${REPO_ROOT}/bin/aid"
 LIB_CORE="${REPO_ROOT}/lib/aid-install-core.sh"
-READ_SETTING="${REPO_ROOT}/canonical/scripts/config/read-setting.sh"
+READ_SETTING="${REPO_ROOT}/canonical/aid/scripts/config/read-setting.sh"
 
 [[ -f "$BIN_AID" ]]    || { echo "ERROR: bin/aid not found at $BIN_AID" >&2; exit 1; }
 [[ -f "$LIB_CORE" ]]   || { echo "ERROR: lib/aid-install-core.sh not found" >&2; exit 1; }
