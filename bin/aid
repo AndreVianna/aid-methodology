@@ -13,7 +13,7 @@
 #   aid version                      Print the CLI version
 #   aid status                       Show AID state of the current project
 #   aid add <tool>[,...]             Add tool(s) to the current project
-#   aid update [<tool>... | self]    Update to latest; no arg = all tools; 'self' = the aid CLI
+#   aid update [self]                Update to latest; inside repo = CLI + all tools; 'self' = CLI only
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
 #   aid projects [list|add|remove|help] [path] [--local|--shared] [--verbose]
 #                                    List, register, or unregister AID projects
