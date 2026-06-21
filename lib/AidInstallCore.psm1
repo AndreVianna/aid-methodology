@@ -1346,14 +1346,16 @@ function Invoke-MigrateRetiredLayout {
         return $false
     }
 
-    # Sweep one retired root directory: remove AID-owned files, prune empty dirs,
-    # then remove the retired root itself if now empty.
-    # In ListOnly mode: enumerate would-be-removed files, make no changes.
+    # Sweep one retired root directory: move AID-owned files to trash, prune empty
+    # dirs, then remove the retired root itself if now empty.
+    # In ListOnly mode: enumerate would-be-moved files, make no changes.
     $sweepRetiredRoot = {
         param([string]$RDir)
         if (-not (Test-Path $RDir -PathType Container)) { return }
 
-        # Walk all files; remove (or collect) AID-owned ones.
+        $trashBase = Join-Path $Target (Join-Path '.aid' '.trash')
+
+        # Walk all files; move (or collect) AID-owned ones.
         $files = @(Get-ChildItem -LiteralPath $RDir -Recurse -File -ErrorAction SilentlyContinue |
                    Sort-Object FullName)
         foreach ($f in $files) {
@@ -1363,9 +1365,14 @@ function Invoke-MigrateRetiredLayout {
                     Write-Output $f.FullName
                     $script:_MigrateRetiredCount++
                 } else {
-                    Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
+                    # Compute relative path from $Target and move to trash.
+                    $rel = $f.FullName.Substring($Target.Length).TrimStart([char]'\', [char]'/')
+                    $dest = Join-Path $trashBase $rel
+                    $destDir = Split-Path $dest -Parent
+                    New-Item -ItemType Directory -Path $destDir -Force -ErrorAction SilentlyContinue | Out-Null
+                    Move-Item -LiteralPath $f.FullName -Destination $dest -Force -ErrorAction SilentlyContinue
                     $script:_MigrateRetiredCount++
-                    if ($AidVerbose) { Write-Host "Retired: $($f.FullName)" }
+                    if ($AidVerbose) { Write-Host "Trashed: $($f.FullName) -> $dest" }
                 }
             }
         }
@@ -1420,7 +1427,7 @@ function Invoke-MigrateRetiredLayout {
     }
 
     if (-not $ListOnly -and $script:_MigrateRetiredCount -gt 0) {
-        Write-Host "  $($script:_MigrateRetiredCount) retired AID file(s) removed"
+        Write-Host "  $($script:_MigrateRetiredCount) retired AID file(s) moved to .aid/.trash/"
     }
 }
 

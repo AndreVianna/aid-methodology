@@ -2018,13 +2018,13 @@ Write-OldSettings -SettingsPath (Join-Path $ProjT49 '.aid' 'settings.yml') -Tool
 Run-MigUpdate -BundleFile $MigFixCodex -TargetRepo $ProjT49
 Assert-Eq "$($script:_LastRC)" '0' 'T49-01 aid update on codex old-layout -> exit 0'
 
-# AC5-a: retired .agents\ AID-owned content GONE.
+# AC5-a: retired .agents\ AID-owned content GONE from original location.
 Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'skills' 'aid-orchestrator.md') -PathType Leaf)) `
-    'T49-02 (AC5) .agents\skills\aid-orchestrator.md removed (AID-owned, marker 1)' `
-    'aid-orchestrator.md must be removed by retired-root sweep'
+    'T49-02 (AC5) .agents\skills\aid-orchestrator.md moved out (AID-owned, marker 1)' `
+    'aid-orchestrator.md must be moved out of retired root by sweep'
 Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'aid' 'shared.md') -PathType Leaf)) `
-    'T49-03 (AC5) .agents\aid\shared.md removed (AID-owned, marker 2)' `
-    'shared.md must be removed by retired-root sweep'
+    'T49-03 (AC5) .agents\aid\shared.md moved out (AID-owned, marker 2)' `
+    'shared.md must be moved out of retired root by sweep'
 $T49AidRemains = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.agents') -Recurse -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -like 'aid-*' -or ($_.FullName -match '[\\/]aid[\\/]') })
 Assert ($T49AidRemains.Count -eq 0) `
@@ -2057,6 +2057,16 @@ if (Test-Path $T49ManifestPath -PathType Leaf) {
     $T49Ver = $T49ManObj.tools.codex.version
     Assert-Eq "$T49Ver" "$Ver" 'T49-10 (AC8) tools.codex.version == current version (uniform)'
 }
+
+# W3: reversibility -- AID-owned files moved to .aid\.trash\ (not deleted).
+Assert-FileExists (Join-Path $ProjT49 '.aid' '.trash' '.agents' 'skills' 'aid-orchestrator.md') `
+    'T49-11 (W3) aid-orchestrator.md in .aid\.trash\ (reversible move, not delete)'
+Assert-FileExists (Join-Path $ProjT49 '.aid' '.trash' '.agents' 'aid' 'shared.md') `
+    'T49-12 (W3) .agents\aid\shared.md in .aid\.trash\ (reversible move, not delete)'
+# W3: user-file.txt must NOT be in the trash.
+Assert (-not (Test-Path (Join-Path $ProjT49 '.aid' '.trash' '.agents' 'user-file.txt') -PathType Leaf)) `
+    'T49-13 (W3) user-file.txt absent from .aid\.trash\ (user content never trashed)' `
+    'user-file.txt must NOT appear in .aid\.trash\ -- only AID-owned files are trashed'
 Write-Host ""
 
 # ===========================================================================
@@ -2112,13 +2122,13 @@ Write-OldSettings -SettingsPath (Join-Path $ProjT50 '.aid' 'settings.yml') -Tool
 Run-MigUpdate -BundleFile $MigFixCursor -TargetRepo $ProjT50
 Assert-Eq "$($script:_LastRC)" '0' 'T50-01 aid update on cursor old-layout -> exit 0'
 
-# AC5-a: retired .cursor\rules\ AID-owned files GONE.
+# AC5-a: retired .cursor\rules\ AID-owned files GONE from original location.
 Assert (-not (Test-Path (Join-Path $ProjT50 '.cursor' 'rules' 'aid-architect.mdc') -PathType Leaf)) `
-    'T50-02 (AC5) .cursor\rules\aid-architect.mdc removed (AID-owned, marker 1)' `
-    'aid-architect.mdc must be removed by retired-root sweep'
+    'T50-02 (AC5) .cursor\rules\aid-architect.mdc moved out (AID-owned, marker 1)' `
+    'aid-architect.mdc must be moved out of retired root by sweep'
 Assert (-not (Test-Path (Join-Path $ProjT50 '.cursor' 'rules' 'aid-clerk.mdc') -PathType Leaf)) `
-    'T50-03 (AC5) .cursor\rules\aid-clerk.mdc removed (AID-owned, marker 1)' `
-    'aid-clerk.mdc must be removed by retired-root sweep'
+    'T50-03 (AC5) .cursor\rules\aid-clerk.mdc moved out (AID-owned, marker 1)' `
+    'aid-clerk.mdc must be moved out of retired root by sweep'
 
 # AC5-b: new .cursor\ unified layout present.
 Assert-DirExists (Join-Path $ProjT50 '.cursor' 'agents') 'T50-04 (AC5) new .cursor\agents\ present'
@@ -2154,6 +2164,16 @@ if (Test-Path $T50ManifestPath -PathType Leaf) {
     $T50Ver = $T50ManObj.tools.cursor.version
     Assert-Eq "$T50Ver" "$Ver" 'T50-15 (AC8) tools.cursor.version == current version (uniform)'
 }
+
+# W3: reversibility -- AID-owned cursor files moved to .aid\.trash\ (not deleted).
+Assert-FileExists (Join-Path $ProjT50 '.aid' '.trash' '.cursor' 'rules' 'aid-architect.mdc') `
+    'T50-16 (W3) aid-architect.mdc in .aid\.trash\ (reversible move, not delete)'
+Assert-FileExists (Join-Path $ProjT50 '.aid' '.trash' '.cursor' 'rules' 'aid-clerk.mdc') `
+    'T50-17 (W3) aid-clerk.mdc in .aid\.trash\ (reversible move, not delete)'
+# W3: user my.mdc must NOT be in the trash.
+Assert (-not (Test-Path (Join-Path $ProjT50 '.aid' '.trash' '.cursor' 'rules' 'my.mdc') -PathType Leaf)) `
+    'T50-18 (W3) my.mdc absent from .aid\.trash\ (user content never trashed)' `
+    'my.mdc must NOT appear in .aid\.trash\ -- only AID-owned files are trashed'
 Write-Host ""
 
 # ===========================================================================
@@ -2208,13 +2228,13 @@ Write-OldSettings -SettingsPath (Join-Path $ProjT51 '.aid' 'settings.yml') -Tool
 Run-MigUpdate -BundleFile $MigFixAntigrav -TargetRepo $ProjT51
 Assert-Eq "$($script:_LastRC)" '0' 'T51-01 aid update on antigravity old-layout -> exit 0'
 
-# AC5-a: retired .agent\rules\ AID-owned files GONE.
+# AC5-a: retired .agent\rules\ AID-owned files GONE from original location.
 Assert (-not (Test-Path (Join-Path $ProjT51 '.agent' 'rules' 'aid-architect.md') -PathType Leaf)) `
-    'T51-02 (AC5) .agent\rules\aid-architect.md removed (AID-owned, marker 1)' `
-    'aid-architect.md must be removed by retired-root sweep'
+    'T51-02 (AC5) .agent\rules\aid-architect.md moved out (AID-owned, marker 1)' `
+    'aid-architect.md must be moved out of retired root by sweep'
 Assert (-not (Test-Path (Join-Path $ProjT51 '.agent' 'rules' 'aid-clerk.md') -PathType Leaf)) `
-    'T51-03 (AC5) .agent\rules\aid-clerk.md removed (AID-owned, marker 1)' `
-    'aid-clerk.md must be removed by retired-root sweep'
+    'T51-03 (AC5) .agent\rules\aid-clerk.md moved out (AID-owned, marker 1)' `
+    'aid-clerk.md must be moved out of retired root by sweep'
 
 # AC5-b: new .agent\ unified layout present.
 Assert-DirExists (Join-Path $ProjT51 '.agent' 'agents') 'T51-04 (AC5) new .agent\agents\ present'
@@ -2249,6 +2269,16 @@ if (Test-Path $T51ManifestPath -PathType Leaf) {
     $T51Ver = $T51ManObj.tools.antigravity.version
     Assert-Eq "$T51Ver" "$Ver" 'T51-14 (AC8) tools.antigravity.version == current version (uniform)'
 }
+
+# W3: reversibility -- AID-owned antigravity files moved to .aid\.trash\ (not deleted).
+Assert-FileExists (Join-Path $ProjT51 '.aid' '.trash' '.agent' 'rules' 'aid-architect.md') `
+    'T51-15 (W3) aid-architect.md in .aid\.trash\ (reversible move, not delete)'
+Assert-FileExists (Join-Path $ProjT51 '.aid' '.trash' '.agent' 'rules' 'aid-clerk.md') `
+    'T51-16 (W3) aid-clerk.md in .aid\.trash\ (reversible move, not delete)'
+# W3: user my-team-rules.md must NOT be in the trash.
+Assert (-not (Test-Path (Join-Path $ProjT51 '.aid' '.trash' '.agent' 'rules' 'my-team-rules.md') -PathType Leaf)) `
+    'T51-17 (W3) my-team-rules.md absent from .aid\.trash\ (user content never trashed)' `
+    'my-team-rules.md must NOT appear in .aid\.trash\ -- only AID-owned files are trashed'
 Write-Host ""
 
 # ===========================================================================
@@ -2315,6 +2345,12 @@ if (Test-Path (Join-Path $ProjT49 '.agents' 'user-file.txt') -PathType Leaf) {
     Assert-Eq "$T52UserHashAfter2" "$T49UserHashBefore" `
         'T52-05b user-file.txt SHA256 still byte-identical after second update (user content untouched)'
 }
+
+# W3: idempotency of trash -- second run must not re-trash or wipe .aid\.trash\.
+Assert-FileExists (Join-Path $ProjT49 '.aid' '.trash' '.agents' 'skills' 'aid-orchestrator.md') `
+    'T52-06 (W3) .aid\.trash\ persists after second update (idempotent -- trash not wiped)'
+Assert-FileExists (Join-Path $ProjT49 '.aid' '.trash' '.agents' 'aid' 'shared.md') `
+    'T52-07 (W3) trash\shared.md persists after second update (idempotent)'
 Write-Host ""
 
 # ===========================================================================

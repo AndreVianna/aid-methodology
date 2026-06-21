@@ -67,3 +67,8 @@ desktop.ini
 # Transient AID lifecycle scratch + review-pending ledgers (explicit dir entry,
 # not just the *.temp glob above — resilient to a future rename)
 .aid/.temp/
+
+# Reversible-migration trash dir (W3): retired AID-owned files moved here by
+# _migrate_retired_layout; never committed so users can inspect/restore but
+# don't accidentally track recovered files.
+.aid/.trash/

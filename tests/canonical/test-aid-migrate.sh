@@ -1102,16 +1102,16 @@ _write_old_settings "${G10_REPO}/.aid/settings.yml" "codex"
 run_update "${G10_CODE_HOME}" "${G10_STATE_HOME}" "${G10_REPO}"
 assert_exit_eq "$UPD_RC" 0 "G10-01 aid update on codex old-layout -> exit 0"
 
-# AC5-a: retired .agents/ AID-owned content is GONE.
+# AC5-a: retired .agents/ AID-owned content is GONE from original location.
 if [[ -f "${G10_REPO}/.agents/skills/aid-orchestrator.md" ]]; then
-    fail "G10-02 (AC5) .agents/skills/aid-orchestrator.md must be removed (AID-owned, marker 1)"
+    fail "G10-02 (AC5) .agents/skills/aid-orchestrator.md must be moved out (AID-owned, marker 1)"
 else
-    pass "G10-02 (AC5) .agents/skills/aid-orchestrator.md removed by retired-root sweep"
+    pass "G10-02 (AC5) .agents/skills/aid-orchestrator.md moved out of retired root by sweep"
 fi
 if [[ -f "${G10_REPO}/.agents/aid/shared.md" ]]; then
-    fail "G10-03 (AC5) .agents/aid/shared.md must be removed (AID-owned, marker 2)"
+    fail "G10-03 (AC5) .agents/aid/shared.md must be moved out (AID-owned, marker 2)"
 else
-    pass "G10-03 (AC5) .agents/aid/shared.md removed by retired-root sweep"
+    pass "G10-03 (AC5) .agents/aid/shared.md moved out of retired root by sweep"
 fi
 # AC5-a: retired .agents/ root retains ONLY the user file (no AID content remains).
 # The directory itself is NOT removed because user-file.txt still lives there -- the
@@ -1157,6 +1157,18 @@ assert_file_exists "$G10_MANIFEST" "G10-09 (AC8) manifest exists after aid updat
 G10_VER="$(grep -A 10 '"codex"' "$G10_MANIFEST" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')"
 assert_eq "$G10_VER" "${VERSION_STR}" \
     "G10-10 (AC8) tools.codex.version == current version (uniform, no mixed-version)"
+
+# W3: reversibility -- AID-owned files moved to .aid/.trash/ (not deleted).
+assert_file_exists "${G10_REPO}/.aid/.trash/.agents/skills/aid-orchestrator.md" \
+    "G10-11 (W3) aid-orchestrator.md in .aid/.trash/ (reversible move, not delete)"
+assert_file_exists "${G10_REPO}/.aid/.trash/.agents/aid/shared.md" \
+    "G10-12 (W3) .agents/aid/shared.md in .aid/.trash/ (reversible move, not delete)"
+# W3: user-file.txt must NOT be in the trash (user content is never trashed).
+if [[ -f "${G10_REPO}/.aid/.trash/.agents/user-file.txt" ]]; then
+    fail "G10-13 (W3) user-file.txt must NOT be in .aid/.trash/ (user content untouched)"
+else
+    pass "G10-13 (W3) user-file.txt absent from .aid/.trash/ (user content never trashed)"
+fi
 
 # ===========================================================================
 # Gate 11 -- Cursor old-layout fixture (AC5: retired .cursor/rules/ swept)
@@ -1216,16 +1228,16 @@ _write_old_settings "${G11_REPO}/.aid/settings.yml" "cursor"
 run_update "${G11_CODE_HOME}" "${G11_STATE_HOME}" "${G11_REPO}"
 assert_exit_eq "$UPD_RC" 0 "G11-01 aid update on cursor old-layout -> exit 0"
 
-# AC5-a: retired .cursor/rules/ AID-owned files are gone.
+# AC5-a: retired .cursor/rules/ AID-owned files are gone from original location.
 if [[ -f "${G11_REPO}/.cursor/rules/aid-architect.mdc" ]]; then
-    fail "G11-02 (AC5) .cursor/rules/aid-architect.mdc must be removed (AID-owned, marker 1)"
+    fail "G11-02 (AC5) .cursor/rules/aid-architect.mdc must be moved out (AID-owned, marker 1)"
 else
-    pass "G11-02 (AC5) .cursor/rules/aid-architect.mdc removed by retired-root sweep"
+    pass "G11-02 (AC5) .cursor/rules/aid-architect.mdc moved out of retired root by sweep"
 fi
 if [[ -f "${G11_REPO}/.cursor/rules/aid-clerk.mdc" ]]; then
-    fail "G11-03 (AC5) .cursor/rules/aid-clerk.mdc must be removed (AID-owned, marker 1)"
+    fail "G11-03 (AC5) .cursor/rules/aid-clerk.mdc must be moved out (AID-owned, marker 1)"
 else
-    pass "G11-03 (AC5) .cursor/rules/aid-clerk.mdc removed by retired-root sweep"
+    pass "G11-03 (AC5) .cursor/rules/aid-clerk.mdc moved out of retired root by sweep"
 fi
 
 # AC5-b: new .cursor/agents/ layout present.
@@ -1271,6 +1283,18 @@ assert_file_exists "$G11_MANIFEST" "G11-15 (AC8) manifest exists after aid updat
 G11_VER="$(grep -A 10 '"cursor"' "$G11_MANIFEST" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')"
 assert_eq "$G11_VER" "${VERSION_STR}" \
     "G11-16 (AC8) tools.cursor.version == current version (uniform)"
+
+# W3: reversibility -- AID-owned cursor files moved to .aid/.trash/ (not deleted).
+assert_file_exists "${G11_REPO}/.aid/.trash/.cursor/rules/aid-architect.mdc" \
+    "G11-17 (W3) aid-architect.mdc in .aid/.trash/ (reversible move, not delete)"
+assert_file_exists "${G11_REPO}/.aid/.trash/.cursor/rules/aid-clerk.mdc" \
+    "G11-18 (W3) aid-clerk.mdc in .aid/.trash/ (reversible move, not delete)"
+# W3: user my.mdc must NOT be in the trash (user content never trashed).
+if [[ -f "${G11_REPO}/.aid/.trash/.cursor/rules/my.mdc" ]]; then
+    fail "G11-19 (W3) my.mdc must NOT be in .aid/.trash/ (user content untouched)"
+else
+    pass "G11-19 (W3) my.mdc absent from .aid/.trash/ (user content never trashed)"
+fi
 
 # ===========================================================================
 # Gate 12 -- Antigravity old-layout fixture (AC5: retired .agent/rules/ swept)
@@ -1323,16 +1347,16 @@ _write_old_settings "${G12_REPO}/.aid/settings.yml" "antigravity"
 run_update "${G12_CODE_HOME}" "${G12_STATE_HOME}" "${G12_REPO}"
 assert_exit_eq "$UPD_RC" 0 "G12-01 aid update on antigravity old-layout -> exit 0"
 
-# AC5-a: retired .agent/rules/ AID-owned files are gone.
+# AC5-a: retired .agent/rules/ AID-owned files are gone from original location.
 if [[ -f "${G12_REPO}/.agent/rules/aid-architect.md" ]]; then
-    fail "G12-02 (AC5) .agent/rules/aid-architect.md must be removed (AID-owned, marker 1)"
+    fail "G12-02 (AC5) .agent/rules/aid-architect.md must be moved out (AID-owned, marker 1)"
 else
-    pass "G12-02 (AC5) .agent/rules/aid-architect.md removed by retired-root sweep"
+    pass "G12-02 (AC5) .agent/rules/aid-architect.md moved out of retired root by sweep"
 fi
 if [[ -f "${G12_REPO}/.agent/rules/aid-clerk.md" ]]; then
-    fail "G12-03 (AC5) .agent/rules/aid-clerk.md must be removed (AID-owned, marker 1)"
+    fail "G12-03 (AC5) .agent/rules/aid-clerk.md must be moved out (AID-owned, marker 1)"
 else
-    pass "G12-03 (AC5) .agent/rules/aid-clerk.md removed by retired-root sweep"
+    pass "G12-03 (AC5) .agent/rules/aid-clerk.md moved out of retired root by sweep"
 fi
 
 # AC5-b: new .agent/agents/ and .agent/aid/ present.
@@ -1374,6 +1398,18 @@ assert_file_exists "$G12_MANIFEST" "G12-14 (AC8) manifest exists after aid updat
 G12_VER="$(grep -A 10 '"antigravity"' "$G12_MANIFEST" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')"
 assert_eq "$G12_VER" "${VERSION_STR}" \
     "G12-15 (AC8) tools.antigravity.version == current version (uniform)"
+
+# W3: reversibility -- AID-owned antigravity files moved to .aid/.trash/ (not deleted).
+assert_file_exists "${G12_REPO}/.aid/.trash/.agent/rules/aid-architect.md" \
+    "G12-16 (W3) aid-architect.md in .aid/.trash/ (reversible move, not delete)"
+assert_file_exists "${G12_REPO}/.aid/.trash/.agent/rules/aid-clerk.md" \
+    "G12-17 (W3) aid-clerk.md in .aid/.trash/ (reversible move, not delete)"
+# W3: user my-team-rules.md must NOT be in the trash.
+if [[ -f "${G12_REPO}/.aid/.trash/.agent/rules/my-team-rules.md" ]]; then
+    fail "G12-18 (W3) my-team-rules.md must NOT be in .aid/.trash/ (user content untouched)"
+else
+    pass "G12-18 (W3) my-team-rules.md absent from .aid/.trash/ (user content never trashed)"
+fi
 
 # ===========================================================================
 # Gate 13 -- Idempotency: second `aid update` on a migrated old-layout repo
@@ -1427,14 +1463,21 @@ else
     fail "G13-05 user-file.txt unexpectedly missing after second update -- content-isolation violation"
 fi
 
+# W3: idempotency of trash -- second run must not re-trash or wipe .aid/.trash/.
+# The trash files from the first run must still exist, unchanged.
+assert_file_exists "${G10_REPO}/.aid/.trash/.agents/skills/aid-orchestrator.md" \
+    "G13-06 (W3) .aid/.trash/ persists after second update (idempotent -- trash not wiped)"
+assert_file_exists "${G10_REPO}/.aid/.trash/.agents/aid/shared.md" \
+    "G13-07 (W3) trash/shared.md persists after second update (idempotent)"
+
 # ===========================================================================
-# Gate 14 -- dry-run preview of retired-root deletions (post-eval #1)
+# Gate 14 -- dry-run preview of retired-root trash moves (post-eval #1, W3 update)
 #
 # Asserts that `aid update --dry-run` on a repo with an old-layout retired root:
-#   (a) LISTS the would-be-removed AID-owned file in its output (the "Would REMOVE"
-#       block must appear with a "remove:" entry for the retired path).
+#   (a) LISTS the would-be-moved AID-owned file in its output (the "Would MOVE TO TRASH"
+#       block must appear with a "move to trash:" entry for the retired path).
 #   (b) Writes NOTHING: the retired AID file is still present after the dry-run
-#       (no actual removal happened).
+#       (no actual move happened, no .aid/.trash/ dir created).
 #   (c) The new bundle files have NOT been copied into the target (dry-run == no writes).
 #
 # Fixture: a codex repo with a retired .agents/skills/aid-orchestrator.md file.
@@ -1471,17 +1514,17 @@ G14_DRY_RC=$?
 
 assert_exit_eq "$G14_DRY_RC" 0 "G14-01 aid update --dry-run on old-layout codex repo -> exit 0"
 
-# (a) Output must contain the "Would REMOVE" block and a "remove:" entry for
+# (a) Output must contain the "Would MOVE TO TRASH" block and a "move to trash:" entry for
 #     one of the retired AID paths.
-if echo "$G14_DRY_OUT" | grep -q "Would REMOVE"; then
-    pass "G14-02 dry-run output contains 'Would REMOVE (retired-layout migration):' header"
+if echo "$G14_DRY_OUT" | grep -q "Would MOVE TO TRASH"; then
+    pass "G14-02 dry-run output contains 'Would MOVE TO TRASH (retired-layout migration):' header"
 else
-    fail "G14-02 dry-run output missing 'Would REMOVE (retired-layout migration):' header"
+    fail "G14-02 dry-run output missing 'Would MOVE TO TRASH (retired-layout migration):' header"
     if [[ "${VERBOSE:-0}" -eq 1 ]]; then printf "DRY OUTPUT:\n%s\n" "$G14_DRY_OUT"; fi
 fi
 
-if echo "$G14_DRY_OUT" | grep -q "remove:.*aid-orchestrator"; then
-    pass "G14-03 dry-run output lists the retired AID file (aid-orchestrator.md) in the remove set"
+if echo "$G14_DRY_OUT" | grep -q "move to trash:.*aid-orchestrator"; then
+    pass "G14-03 dry-run output lists the retired AID file (aid-orchestrator.md) in the move-to-trash set"
 else
     fail "G14-03 dry-run output does NOT list the retired AID file (aid-orchestrator.md)"
     if [[ "${VERBOSE:-0}" -eq 1 ]]; then printf "DRY OUTPUT:\n%s\n" "$G14_DRY_OUT"; fi
@@ -1489,9 +1532,9 @@ fi
 
 # (b) Dry-run must make zero writes: the retired AID file must still exist.
 if [[ -f "${G14_REPO}/.agents/skills/aid-orchestrator.md" ]]; then
-    pass "G14-04 retired AID file still present after dry-run (no actual removal)"
+    pass "G14-04 retired AID file still present after dry-run (no actual move)"
 else
-    fail "G14-04 retired AID file was DELETED by dry-run -- dry-run must make zero writes"
+    fail "G14-04 retired AID file was MOVED by dry-run -- dry-run must make zero writes"
 fi
 
 # (b) User file must still exist and be byte-identical (no mutation at all).
@@ -1503,12 +1546,19 @@ else
     fail "G14-05 user-file.txt missing after dry-run -- dry-run must not remove user content"
 fi
 
+# (b) Dry-run must NOT create .aid/.trash/ (zero writes means no trash dir).
+if [[ -d "${G14_REPO}/.aid/.trash" ]]; then
+    fail "G14-06 .aid/.trash/ created by dry-run -- dry-run must make zero writes"
+else
+    pass "G14-06 .aid/.trash/ NOT created during dry-run (zero writes confirmed)"
+fi
+
 # (c) New bundle files must NOT have been copied into the target.
 G14_NEW_LAYOUT="$(find "${G14_REPO}/.codex" -type f 2>/dev/null | head -1)"
 if [[ -z "$G14_NEW_LAYOUT" ]]; then
-    pass "G14-06 new-layout .codex/ NOT written during dry-run (zero copy writes)"
+    pass "G14-07 new-layout .codex/ NOT written during dry-run (zero copy writes)"
 else
-    fail "G14-06 new-layout .codex/ was written by dry-run -- dry-run must make zero writes"
+    fail "G14-07 new-layout .codex/ was written by dry-run -- dry-run must make zero writes"
 fi
 
 # --- Isolation canary: confirm no real repo was touched ----------------------

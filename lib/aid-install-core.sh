@@ -1788,19 +1788,24 @@ _migrate_retired_layout() {
         return 1
     }
 
-    # Remove one file that is AID-owned (marker 1 or 2).
-    # In list_only mode: print the path instead of removing it.
+    # Move one AID-owned file (marker 1 or 2) to <target>/.aid/.trash/<rel-path>.
+    # In list_only mode: print the path instead of moving it (no writes).
     _retire_file() {
         local f="$1"
         [[ -f "$f" ]] || return 0
         if _is_aid_owned_file "$f"; then
             if [[ "$list_only" -eq 1 ]]; then
-                echo "  remove: ${f}"
+                echo "  move to trash: ${f}"
                 _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
             else
-                rm -f "$f"
+                # Compute path relative to $target and move to the trash dir.
+                local rel dest
+                rel="${f#${target}/}"
+                dest="${target}/.aid/.trash/${rel}"
+                mkdir -p "$(dirname "$dest")"
+                mv -f "$f" "$dest"
                 _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
-                if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Retired: ${f}"; fi
+                if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Trashed: ${f} -> ${dest}"; fi
             fi
         fi
         return 0
@@ -1859,7 +1864,7 @@ _migrate_retired_layout() {
     esac
 
     if [[ "$list_only" -eq 0 && "$_MIGRATE_RETIRED_COUNT" -gt 0 ]]; then
-        echo "  ${_MIGRATE_RETIRED_COUNT} retired AID file(s) removed"
+        echo "  ${_MIGRATE_RETIRED_COUNT} retired AID file(s) moved to .aid/.trash/"
     fi
 
     unset -f _is_aid_owned_file _retire_file _sweep_retired_root
