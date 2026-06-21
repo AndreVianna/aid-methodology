@@ -570,7 +570,7 @@ Codex + Antigravity use a `[model_tiers.<tier>]` sub-table with `model` + `reaso
 | Profile | Manifest path |
 |---------|---------------|
 | `claude-code` | `profiles/claude-code/emission-manifest.jsonl` |
-| `codex` | `profiles/codex/emission-manifest.jsonl` (covers BOTH `.codex/` and `.agents/` split roots) |
+| `codex` | `profiles/codex/emission-manifest.jsonl` (covers the unified `.codex/` root) |
 | `cursor` | `profiles/cursor/emission-manifest.jsonl` |
 | `copilot-cli` | `profiles/copilot-cli/emission-manifest.jsonl` (single `.github/` root) |
 | `antigravity` | `profiles/antigravity/emission-manifest.jsonl` (single `.agent/` root) |

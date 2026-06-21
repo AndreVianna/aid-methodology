@@ -6,7 +6,7 @@
 {"dst": ".cursor/agents/aid-operator.md", "profile": "cursor", "sha256": "b3fa7e23e8f12e238d6e9b7817e722a0ab16c52337cb6150d3eaad1b6f073878", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".cursor/agents/aid-orchestrator.md", "profile": "cursor", "sha256": "70348febd60352b0c4879caba3a809092811fa733b33bf036fcb2f99afd463ca", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".cursor/agents/aid-researcher.md", "profile": "cursor", "sha256": "940b953fc373820d3b8eae04cca471bd03e379c850580658f19d5186d3a36c61", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "48250d72492cddb7e6625a57b9d41ee5423cf7dca2cec15cd1feea03349fc8b0", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "198e186cfa1f95a94b243c2d44ff506ac5175522898c262cbc268aeec80522ff", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".cursor/agents/aid-tech-writer.md", "profile": "cursor", "sha256": "333234895108afa84f8fcfaddbc2574c82ceb7b1621a5e18c1984c82083988e4", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".cursor/aid/recipes/README.md", "profile": "cursor", "sha256": "177ff100e83b12113ba359bc664c1fdd10d6098c09e8400a7f1c6004bed4477e", "src": "canonical/recipes/README.md"}
 {"dst": ".cursor/aid/recipes/add-api-endpoint.md", "profile": "cursor", "sha256": "f796874afb08a04b88372469088cf03e4ce8b452055e820fd8033b43a6a6ddf2", "src": "canonical/recipes/add-api-endpoint.md"}

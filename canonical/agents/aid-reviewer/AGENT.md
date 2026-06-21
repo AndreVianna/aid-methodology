@@ -48,7 +48,7 @@ Per KB doc `content-isolation.md`: every AID-delivered file must satisfy exactly
 
 Additionally flag:
 - Any new AID content placed at the `.github` root level (copilot-cli scoping violation — R1).
-- Any AID-own dir emitted under `.codex/` (codex split — R6; nest applies to `.agents/`, not `.codex/`).
+- Any AID-own content placed at the `.codex/` root level but NOT nested under `aid/` (R6 revised — `.codex/aid/` is the correct AID-own location; content outside that nest is a scoping violation).
 - Any prune logic that diffs old-manifest instead of using `aid-` prefix + new-manifest membership as the prune basis.
 - Any root-agent update that writes a `.aid-new` sidecar instead of performing an in-place region update between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
 

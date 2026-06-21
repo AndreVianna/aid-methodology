@@ -80,7 +80,7 @@ aid-methodology/                       (repo root)
 │   ├── claude-code.toml               ← profile config
 │   ├── claude-code/                   ← generated tree mirroring .claude/ + CLAUDE.md + README.md + emission-manifest.jsonl
 │   ├── codex.toml                     ← profile config
-│   ├── codex/                         ← split layout: .codex/agents/ (TOML) + .agents/ (skills, scripts, recipes, templates)
+│   ├── codex/                         ← unified layout: .codex/{agents/ (TOML), skills/, aid/} — no separate .agents/ tree
 │   ├── copilot-cli.toml               ← profile config — GitHub Copilot CLI
 │   ├── copilot-cli/                   ← generated .github/ tree (output_root `.github`): agents/*.agent.md (copilot-agent format) + skills/ + scripts/ + recipes/ + templates/ + AGENTS.md
 │   ├── cursor.toml                    ← profile config
@@ -390,7 +390,7 @@ Tests `tests/skills/` (skill-level e2e) and `tests/canonical/pool-dispatch.sh` w
 | File | Type | Purpose | Evidence |
 |------|------|---------|----------|
 | `profiles/claude-code.toml` | TOML profile | Generator config: output_root, frontmatter schema, model tiers, filename_map, capabilities | `profiles/claude-code.toml` `[layout]` |
-| `profiles/codex.toml` | TOML profile | Same — Codex CLI (split-root: `.codex/agents/` for TOML, `.agents/{skills,scripts,recipes,templates}` for markdown) | `profiles/codex.toml`, `CONTRIBUTING.md` `## Repository Structure` |
+| `profiles/codex.toml` | TOML profile | Same — Codex CLI (unified root: `.codex/` containing `agents/` for TOML agent definitions, `skills/`, and `aid/` for scripts/recipes/templates) | `profiles/codex.toml`, `CONTRIBUTING.md` `## Repository Structure` |
 | `profiles/cursor.toml` | TOML profile | Same — Cursor IDE (`.cursor/`, `.mdc` rule files) | `profiles/cursor.toml` |
 | `profiles/copilot-cli.toml` | TOML profile | Same — GitHub Copilot CLI (output_root `.github`; `[agent].format = copilot-agent` → `.agent.md` sub-agents) | `profiles/copilot-cli.toml` `[agent]` |
 | `profiles/antigravity.toml` | TOML profile | Same — Google Antigravity (output_root `.agent`; `[agent].format = antigravity-rule` → sub-agents reshaped to `rules/*.md`) | `profiles/antigravity.toml` `[agent]` |
@@ -459,7 +459,7 @@ Installed at `.claude/agents/` (Claude Code) / `.cursor/agents/` (Cursor) / `.co
 
 ## Recipes (51)
 
-Lite-path templates at `canonical/recipes/`, rendered into all 5 profile install trees (`profiles/claude-code/.claude/aid/recipes/`, `profiles/codex/.agents/aid/recipes/`, `profiles/cursor/.cursor/aid/recipes/`, `profiles/copilot-cli/.github/aid/recipes/`, `profiles/antigravity/.agent/aid/recipes/`). The catalog ships **51** recipes named by the change they make, plus `README.md` documenting the catalog. (The repo-root `.claude/` dogfood install is rendered separately and is not one of the 5 profile trees — see line 54.):
+Lite-path templates at `canonical/recipes/`, rendered into all 5 profile install trees (`profiles/claude-code/.claude/aid/recipes/`, `profiles/codex/.codex/aid/recipes/`, `profiles/cursor/.cursor/aid/recipes/`, `profiles/copilot-cli/.github/aid/recipes/`, `profiles/antigravity/.agent/aid/recipes/`). The catalog ships **51** recipes named by the change they make, plus `README.md` documenting the catalog. (The repo-root `.claude/` dogfood install is rendered separately and is not one of the 5 profile trees — see line 54.):
 
 | Group | Naming | Count |
 |-------|--------|-------|
@@ -501,7 +501,7 @@ The 40 `add-`/`change-` recipes span 11 target-kind families. See `canonical/rec
 
 2. **Dogfood `.claude/` tree.** Unique among AID-using projects: this repo applies AID to itself. The top-level `.claude/` is functionally identical to `profiles/claude-code/.claude/` (the install bundle) but is the one the dev environment actually uses.
 
-3. **Split Codex layout.** `profiles/codex/.codex/agents/` holds TOML agent definitions; `profiles/codex/.agents/{skills,scripts,recipes,templates}/` holds the markdown bodies. A single `profiles/codex/emission-manifest.jsonl` covers both roots (per `canonical/EMISSION-MANIFEST.md` `## Filename and Location`).
+3. **Unified Codex layout.** `profiles/codex/.codex/` is the single root: `agents/` holds TOML agent definitions, `skills/` holds markdown skill bodies, and `aid/` holds scripts, recipes, and templates. There is no separate `.agents/` tree. A single `profiles/codex/emission-manifest.jsonl` covers the entire `.codex/` root (per `canonical/EMISSION-MANIFEST.md` `## Filename and Location`).
 
 4. **Generator lives in `.claude/skills/generate-profile/`, not in repo root.** It is a skill that ships with itself; the `run_generator.py` entrypoint sits in `.claude/skills/generate-profile/scripts/` alongside the renderers it imports (`run_generator.py` `sys.path.insert(0, str(Path(__file__).parent))`). Invoke it from the repo root: `python .claude/skills/generate-profile/scripts/run_generator.py`.
 

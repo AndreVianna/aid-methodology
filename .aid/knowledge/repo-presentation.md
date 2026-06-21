@@ -320,7 +320,7 @@ Five tool-specific install bundles live in `profiles/` (`ls profiles/*.toml | wc
 | Profile | Install root | What users see |
 |---------|-------------|----------------|
 | **Claude Code** | `profiles/claude-code/` | `.claude/` directory containing `skills/`, `agents/`, `templates/`, `recipes/`, `scripts/`; plus `CLAUDE.md` at project root |
-| **Codex CLI** | `profiles/codex/` | Split layout: `.codex/agents/` (TOML agent definitions) + `.agents/` (skills, scripts, recipes, templates); plus `AGENTS.md` at project root |
+| **Codex CLI** | `profiles/codex/` | Unified layout: `.codex/` containing `agents/` (TOML agent definitions), `skills/`, and `aid/` (scripts, recipes, templates); plus `AGENTS.md` at project root |
 | **Cursor** | `profiles/cursor/` | `.cursor/` directory with `.mdc` rule files; plus `AGENTS.md` at project root |
 | **GitHub Copilot CLI** | `profiles/copilot-cli/` | `.github/` directory (`output_root` `.github`) with `agents/*.agent.md` (copilot-agent format), `skills/`, `scripts/`, `recipes/`, `templates/`; plus `AGENTS.md` at project root |
 | **Antigravity** | `profiles/antigravity/` | `.agent/` directory (`output_root` `.agent`) with sub-agents reshaped into `rules/*.md` (antigravity-rule format, `trigger:`-style frontmatter), plus `skills/`, `scripts/`, `recipes/`, `templates/`; plus `AGENTS.md` at project root |
@@ -339,7 +339,7 @@ at end of every render (see `architecture.md` `verify_deterministic.py` for the 
 
 After `aid add <tool>`, the target project gains (`docs/install.md` `## What gets installed per tool`):
 
-- The tool-appropriate hidden directory (`.claude/`, `.codex/`+`.agents/`, `.cursor/`,
+- The tool-appropriate hidden directory (`.claude/`, `.codex/`, `.cursor/`,
   `.github/` for Copilot CLI, or `.agent/` for Antigravity)
   containing all 12 user-facing skills (the six numbered phases + `aid-config` + the three
   optional skills + the off-pipeline `aid-housekeep` and `aid-ask`), 9 agents, 51 recipes, templates, and
