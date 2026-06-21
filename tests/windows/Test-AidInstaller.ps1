@@ -31,6 +31,20 @@
 #   T41  aid projects add idempotent (double add → single registry entry)
 #   T42  aid projects remove unregisters / repairs stale entry / idempotent no-op
 #
+# Old-layout migration acceptance (AC5 + AC8 -- mirrors task-012 bash Gates 10-13):
+#   T49  Codex old-layout: .agents/ retired AID trees gone; new .codex/{agents,aid} present;
+#        user-file.txt byte-identical; tools.codex.version uniform; HOME/USERPROFILE pinned
+#   T50  Cursor old-layout: .cursor/rules/ retired aid-*.mdc gone; new .cursor/{agents,aid}
+#        present; user .mdc byte-identical; AGENTS.md user lines outside region preserved;
+#        tools.cursor.version uniform; HOME/USERPROFILE pinned
+#   T51  Antigravity old-layout: .agent/rules/ retired aid-*.md gone; new .agent/{agents,aid}
+#        present; user file byte-identical; AGENTS.md user lines preserved;
+#        tools.antigravity.version uniform; HOME/USERPROFILE pinned
+#   T52  Idempotency: second aid update on a migrated old-layout repo (codex) is a no-op;
+#        retired dirs absent; manifest version stable; witness file sha256 unchanged;
+#        user file still byte-identical; HOME/USERPROFILE pinned
+#   T53  Escape canary: real USERPROFILE/HOME was never touched by any T49-T52 fixture run
+#
 # Windows-only guards:
 #   Assertions involving $env:LOCALAPPDATA (AID_HOME default) are skipped when
 #   that variable is absent (i.e. on pwsh-on-Linux smoke runs) but are active
@@ -1858,6 +1872,469 @@ Assert-NotContains $script:_LastOut 'CLI is not current' `
 $env:AID_SKIP_SELF_INSTALL = $savedSkipT46
 $env:AID_NO_UPDATE_CHECK   = $savedNoUpdT46
 $env:AID_NO_MIGRATE        = $savedNoMigT46
+
+Write-Host ""
+
+
+# ===========================================================================
+# T49-T53: Old-layout migration acceptance (AC5 + AC8)
+#
+# These gates mirror task-012 bash Gates 10-13.  They build a real
+# pre-work-005 old-layout repo (retired .agents\, .cursor\rules\,
+# .agent\rules\ AID content) and run `aid update` (via aid.ps1 /
+# AidInstallCore.psm1, -FromBundle for offline/deterministic operation)
+# asserting:
+#   (AC5) Retired AID trees are GONE; new layout present; user content
+#         byte-identical (Get-FileHash SHA256).
+#   (AC8) tools.*.version is uniform after migration (no mixed-version).
+#   Idempotency: second `aid update` is a no-op.
+#
+# Every fixture run pins $HOME / $env:USERPROFILE to a throwaway via
+# Run-AidPs1Home, so the migration scanner never touches the real user home.
+# T53 is an escape canary that confirms the real USERPROFILE was untouched.
+# ===========================================================================
+Write-Host "=== T49-T53: Old-layout migration acceptance ==="
+
+# ---------------------------------------------------------------------------
+# Snapshot the real USERPROFILE (canary baseline) BEFORE any fixture run.
+# ---------------------------------------------------------------------------
+$_T49_REAL_UP = $env:USERPROFILE
+if (-not $_T49_REAL_UP) { $_T49_REAL_UP = $env:HOME }
+# Snapshot the .aid dirs that exist in the real user home right now.
+$_T49_CANARY_BEFORE = ''
+if ($_T49_REAL_UP -and (Test-Path $_T49_REAL_UP -PathType Container)) {
+    try {
+        $items = @(Get-ChildItem -LiteralPath $_T49_REAL_UP -Recurse -Depth 6 `
+            -Filter '.aid' -Directory -ErrorAction SilentlyContinue)
+        $_T49_CANARY_BEFORE = ($items | ForEach-Object { $_.FullName } | Sort-Object) -join "`n"
+    } catch { $_T49_CANARY_BEFORE = '' }
+}
+
+# ---------------------------------------------------------------------------
+# Build fixture tarballs for codex, cursor, antigravity (offline bundles).
+# Reuse the existing Build-FixtureTarball helper (already defined above).
+# ---------------------------------------------------------------------------
+$MigFixtureDir = Join-Path $TmpRoot 'mig-fixtures'
+New-Item -ItemType Directory -Path $MigFixtureDir -Force | Out-Null
+
+Write-Host "Building migration fixture tarballs..."
+$MigFixCodex      = Build-FixtureTarball 'codex'      $MigFixtureDir
+$MigFixCursor     = Build-FixtureTarball 'cursor'     $MigFixtureDir
+$MigFixAntigrav   = Build-FixtureTarball 'antigravity' $MigFixtureDir
+Write-Host "  codex      : $MigFixCodex"
+Write-Host "  cursor     : $MigFixCursor"
+Write-Host "  antigravity: $MigFixAntigrav"
+Write-Host ""
+
+# Shared AID_HOME for all migration tests (reuse AidHomeT08 pattern).
+$MigAidHome = Join-Path $TmpRoot 'aid-home-mig'
+New-Item -ItemType Directory -Path (Join-Path $MigAidHome 'bin') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $MigAidHome 'lib') -Force | Out-Null
+Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+          -Destination (Join-Path $MigAidHome 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath $LocalLibPath `
+          -Destination (Join-Path $MigAidHome 'lib' 'AidInstallCore.psm1') -Force
+[System.IO.File]::WriteAllBytes((Join-Path $MigAidHome 'VERSION'),
+    [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
+
+# Throwaway fake-home for all migration fixture runs (reuses Run-AidPs1Home).
+$MigFakeHome = Join-Path $TmpRoot 'mig-fake-home'
+New-Item -ItemType Directory -Path $MigFakeHome -Force | Out-Null
+
+# Helper: write a minimal pre-work-005 manifest (era-b shape; old version).
+function Write-OldManifest {
+    param([string]$ManifestPath, [string]$Tool, [string]$OldVer = '0.7.0')
+    $json = "{`"schema`":1,`"tools`":{`"$Tool`":{`"version`":`"$OldVer`",`"status`":`"active`",`"installed_at`":`"2025-01-01T00:00:00Z`",`"paths`":[]}}}`n"
+    [System.IO.File]::WriteAllText($ManifestPath, $json)
+}
+
+# Helper: write a minimal settings.yml (era-a, no format_version stamp).
+function Write-OldSettings {
+    param([string]$SettingsPath, [string]$Tool)
+    $yml = "project:`n  name: OldLayoutFixture`n  description: Pre-work-005 old layout`n  type: brownfield`n`ntools:`n  installed:`n    - $Tool`n`nreview:`n  minimum_grade: A`n`nexecution:`n  max_parallel_tasks: 5`n`ntraceability:`n  heartbeat_interval: 1`n"
+    [System.IO.File]::WriteAllText($SettingsPath, $yml)
+}
+
+# Helper: run 'aid update --from-bundle <dir> --target <repo>' via aid.ps1,
+# with $HOME / $env:USERPROFILE pinned to a throwaway (migration-scan safety).
+# Captures output in $script:_LastOut and exit code in $script:_LastRC.
+function Run-MigUpdate {
+    param([string]$BundleFile, [string]$TargetRepo)
+    # Derive the bundle directory from the tarball path (aid update takes a dir).
+    $bundleDir = Split-Path -Parent $BundleFile
+    Run-AidPs1Home -AidHome $MigAidHome -FakeHome $MigFakeHome `
+        -AidArgs @('update', '-FromBundle', $bundleDir, '-Target', $TargetRepo)
+}
+
+# ===========================================================================
+# T49: Codex old-layout fixture (mirrors bash Gate 10)
+#
+# Fixture: pre-work-005 codex repo with:
+#   .agents\skills\aid-orchestrator.md  (AID content, marker 1: aid- prefix)
+#   .agents\aid\shared.md               (AID content, marker 2: inside aid\)
+#   .agents\user-file.txt               (USER content: no AID marker)
+#   .codex\agents\aid-orchestrator.toml (old split agents dir)
+#   AGENTS.md -- no AID:BEGIN/END region (aid update installs it fresh)
+#
+# Asserts (AC5):
+#   T49-02  .agents\skills\aid-orchestrator.md GONE
+#   T49-03  .agents\aid\shared.md GONE
+#   T49-04  No remaining aid-owned content under .agents\
+#   T49-05  New .codex\agents\ present
+#   T49-06  New .codex\aid\ present
+#   T49-07  .codex\agents\ contains aid-*.toml files
+#   T49-08  user-file.txt byte-identical (SHA256)
+# Asserts (AC8):
+#   T49-09  manifest exists
+#   T49-10  tools.codex.version == $Ver (uniform)
+# ===========================================================================
+Write-Host "--- T49: Codex old-layout migration ---"
+
+$ProjT49 = Join-Path $TmpRoot 'project-t49'
+New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.agents' 'skills') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.agents' 'aid') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.codex' 'agents') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.aid') -Force | Out-Null
+
+# AID-owned content under retired .agents\ (marker 1: aid- prefix).
+[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.agents' 'skills' 'aid-orchestrator.md'),
+    "old codex orchestrator skill`n")
+# AID-owned content under .agents\ (marker 2: inside aid\ subdir).
+[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.agents' 'aid' 'shared.md'),
+    "old shared aid config`n")
+# USER content: no AID marker -- must survive byte-identical.
+$T49UserContent = "USER-FILE-T49-SENTINEL`n"
+[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.agents' 'user-file.txt'), $T49UserContent)
+$T49UserHashBefore = (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+    -Algorithm SHA256).Hash
+
+# Old .codex\agents\ split (aid- prefix -- will be replaced by new layout).
+[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.codex' 'agents' 'aid-orchestrator.toml'),
+    "old codex agent toml`n")
+
+Write-OldManifest -ManifestPath (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -Tool 'codex'
+Write-OldSettings -SettingsPath (Join-Path $ProjT49 '.aid' 'settings.yml') -Tool 'codex'
+
+Run-MigUpdate -BundleFile $MigFixCodex -TargetRepo $ProjT49
+Assert-Eq "$($script:_LastRC)" '0' 'T49-01 aid update on codex old-layout -> exit 0'
+
+# AC5-a: retired .agents\ AID-owned content GONE.
+Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'skills' 'aid-orchestrator.md') -PathType Leaf)) `
+    'T49-02 (AC5) .agents\skills\aid-orchestrator.md removed (AID-owned, marker 1)' `
+    'aid-orchestrator.md must be removed by retired-root sweep'
+Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'aid' 'shared.md') -PathType Leaf)) `
+    'T49-03 (AC5) .agents\aid\shared.md removed (AID-owned, marker 2)' `
+    'shared.md must be removed by retired-root sweep'
+$T49AidRemains = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.agents') -Recurse -ErrorAction SilentlyContinue |
+    Where-Object { $_.Name -like 'aid-*' -or ($_.FullName -match '[\\/]aid[\\/]') })
+Assert ($T49AidRemains.Count -eq 0) `
+    'T49-04 (AC5) .agents\ has no remaining AID-owned content' `
+    "found $($T49AidRemains.Count) AID-owned item(s) still under .agents\"
+
+# AC5-b: new .codex\ unified layout present.
+Assert-DirExists (Join-Path $ProjT49 '.codex' 'agents') 'T49-05 (AC5) new .codex\agents\ present'
+Assert-DirExists (Join-Path $ProjT49 '.codex' 'aid')    'T49-06 (AC5) new .codex\aid\ present'
+$T49NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.codex' 'agents') `
+    -Filter 'aid-*.toml' -File -ErrorAction SilentlyContinue)
+Assert ($T49NewAgents.Count -gt 0) `
+    'T49-07 (AC5) .codex\agents\ contains aid-*.toml files from new bundle' `
+    '.codex\agents\ should contain aid-*.toml files'
+
+# AC5-c: user-file.txt byte-identical (SHA256).
+Assert-FileExists (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+    'T49-08a (AC5) user-file.txt still exists under .agents\'
+$T49UserHashAfter = (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+    -Algorithm SHA256).Hash
+Assert-Eq "$T49UserHashAfter" "$T49UserHashBefore" `
+    'T49-08b (AC5) user-file.txt SHA256 byte-identical (user content untouched)'
+
+# AC8: tools.codex.version == $Ver (uniform).
+$T49ManifestPath = Join-Path $ProjT49 '.aid' '.aid-manifest.json'
+Assert-FileExists $T49ManifestPath 'T49-09 (AC8) manifest exists after aid update'
+if (Test-Path $T49ManifestPath -PathType Leaf) {
+    $T49ManObj = Get-Content -LiteralPath $T49ManifestPath -Raw | ConvertFrom-Json
+    $T49Ver = $T49ManObj.tools.codex.version
+    Assert-Eq "$T49Ver" "$Ver" 'T49-10 (AC8) tools.codex.version == current version (uniform)'
+}
+Write-Host ""
+
+# ===========================================================================
+# T50: Cursor old-layout fixture (mirrors bash Gate 11)
+#
+# Fixture: pre-work-005 cursor repo with:
+#   .cursor\rules\aid-architect.mdc  (AID content, marker 1: aid- prefix)
+#   .cursor\rules\aid-clerk.mdc      (AID content, marker 1: aid- prefix)
+#   .cursor\rules\my.mdc             (USER content: no aid- prefix)
+#   AGENTS.md with AID:BEGIN..END + user lines outside the region
+#
+# Asserts (AC5):
+#   T50-02  .cursor\rules\aid-architect.mdc GONE
+#   T50-03  .cursor\rules\aid-clerk.mdc GONE
+#   T50-04  New .cursor\agents\ present
+#   T50-05  New .cursor\aid\ present
+#   T50-06  .cursor\agents\ contains aid-*.md files
+#   T50-07  .cursor\rules\my.mdc exists
+#   T50-08  .cursor\rules\my.mdc SHA256 byte-identical
+#   T50-09  AGENTS.md exists
+#   T50-10  USER-LINE-BEFORE-REGION preserved
+#   T50-11  USER-LINE-AFTER-REGION preserved
+#   T50-12  AID:BEGIN marker present
+#   T50-13  AID:END marker present
+# Asserts (AC8):
+#   T50-14  manifest exists
+#   T50-15  tools.cursor.version == $Ver (uniform)
+# ===========================================================================
+Write-Host "--- T50: Cursor old-layout migration ---"
+
+$ProjT50 = Join-Path $TmpRoot 'project-t50'
+New-Item -ItemType Directory -Path (Join-Path $ProjT50 '.cursor' 'rules') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT50 '.aid') -Force | Out-Null
+
+# AID-owned content under retired .cursor\rules\ (marker 1: aid- prefix).
+[System.IO.File]::WriteAllText((Join-Path $ProjT50 '.cursor' 'rules' 'aid-architect.mdc'),
+    "old cursor architect rule`n")
+[System.IO.File]::WriteAllText((Join-Path $ProjT50 '.cursor' 'rules' 'aid-clerk.mdc'),
+    "old cursor clerk rule`n")
+# USER content: no AID marker -- must survive byte-identical.
+$T50UserContent = "USER-CURSOR-MY-RULE-SENTINEL`n"
+[System.IO.File]::WriteAllText((Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc'), $T50UserContent)
+$T50UserHashBefore = (Get-FileHash -LiteralPath (Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc') `
+    -Algorithm SHA256).Hash
+
+# AGENTS.md: AID:BEGIN..END region + user lines outside it.
+$T50AgentsContent = "# AGENTS.md`n`n## My Project Notes`nUSER-LINE-BEFORE-REGION`n`n<!-- AID:BEGIN -->`n## Old AID section (will be replaced by migration)`nThis is old AID content inside the region.`n<!-- AID:END -->`n`n## My Custom Section`nUSER-LINE-AFTER-REGION`n"
+[System.IO.File]::WriteAllText((Join-Path $ProjT50 'AGENTS.md'), $T50AgentsContent)
+
+Write-OldManifest -ManifestPath (Join-Path $ProjT50 '.aid' '.aid-manifest.json') -Tool 'cursor'
+Write-OldSettings -SettingsPath (Join-Path $ProjT50 '.aid' 'settings.yml') -Tool 'cursor'
+
+Run-MigUpdate -BundleFile $MigFixCursor -TargetRepo $ProjT50
+Assert-Eq "$($script:_LastRC)" '0' 'T50-01 aid update on cursor old-layout -> exit 0'
+
+# AC5-a: retired .cursor\rules\ AID-owned files GONE.
+Assert (-not (Test-Path (Join-Path $ProjT50 '.cursor' 'rules' 'aid-architect.mdc') -PathType Leaf)) `
+    'T50-02 (AC5) .cursor\rules\aid-architect.mdc removed (AID-owned, marker 1)' `
+    'aid-architect.mdc must be removed by retired-root sweep'
+Assert (-not (Test-Path (Join-Path $ProjT50 '.cursor' 'rules' 'aid-clerk.mdc') -PathType Leaf)) `
+    'T50-03 (AC5) .cursor\rules\aid-clerk.mdc removed (AID-owned, marker 1)' `
+    'aid-clerk.mdc must be removed by retired-root sweep'
+
+# AC5-b: new .cursor\ unified layout present.
+Assert-DirExists (Join-Path $ProjT50 '.cursor' 'agents') 'T50-04 (AC5) new .cursor\agents\ present'
+Assert-DirExists (Join-Path $ProjT50 '.cursor' 'aid')    'T50-05 (AC5) new .cursor\aid\ present'
+$T50NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT50 '.cursor' 'agents') `
+    -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
+Assert ($T50NewAgents.Count -gt 0) `
+    'T50-06 (AC5) .cursor\agents\ contains aid-*.md files from new bundle' `
+    '.cursor\agents\ should contain aid-*.md files'
+
+# AC5-c: user .cursor\rules\my.mdc byte-identical (SHA256).
+Assert-FileExists (Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc') `
+    'T50-07 (AC5) .cursor\rules\my.mdc (user content) still exists'
+$T50UserHashAfter = (Get-FileHash -LiteralPath (Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc') `
+    -Algorithm SHA256).Hash
+Assert-Eq "$T50UserHashAfter" "$T50UserHashBefore" `
+    'T50-08 (AC5) .cursor\rules\my.mdc SHA256 byte-identical (user content untouched)'
+
+# AC5-d: user lines outside AID:BEGIN..END in AGENTS.md preserved.
+Assert-FileExists (Join-Path $ProjT50 'AGENTS.md') 'T50-09 (AC5) AGENTS.md still exists'
+$T50AgentsAfter = Get-Content -LiteralPath (Join-Path $ProjT50 'AGENTS.md') -Raw -ErrorAction SilentlyContinue
+Assert-Contains "$T50AgentsAfter" 'USER-LINE-BEFORE-REGION' 'T50-10 (AC5) AGENTS.md: user line BEFORE region preserved'
+Assert-Contains "$T50AgentsAfter" 'USER-LINE-AFTER-REGION'  'T50-11 (AC5) AGENTS.md: user line AFTER region preserved'
+Assert-Contains "$T50AgentsAfter" '<!-- AID:BEGIN -->'       'T50-12 (AC5) AGENTS.md: AID:BEGIN marker present after region merge'
+Assert-Contains "$T50AgentsAfter" '<!-- AID:END -->'         'T50-13 (AC5) AGENTS.md: AID:END marker present after region merge'
+
+# AC8: tools.cursor.version == $Ver (uniform).
+$T50ManifestPath = Join-Path $ProjT50 '.aid' '.aid-manifest.json'
+Assert-FileExists $T50ManifestPath 'T50-14 (AC8) manifest exists after aid update'
+if (Test-Path $T50ManifestPath -PathType Leaf) {
+    $T50ManObj = Get-Content -LiteralPath $T50ManifestPath -Raw | ConvertFrom-Json
+    $T50Ver = $T50ManObj.tools.cursor.version
+    Assert-Eq "$T50Ver" "$Ver" 'T50-15 (AC8) tools.cursor.version == current version (uniform)'
+}
+Write-Host ""
+
+# ===========================================================================
+# T51: Antigravity old-layout fixture (mirrors bash Gate 12)
+#
+# Fixture: pre-work-005 antigravity repo with:
+#   .agent\rules\aid-architect.md    (AID content, marker 1: aid- prefix)
+#   .agent\rules\aid-clerk.md        (AID content, marker 1: aid- prefix)
+#   .agent\rules\my-team-rules.md    (USER content: no AID marker)
+#   AGENTS.md with AID:BEGIN..END + user lines outside the region
+#
+# Asserts (AC5):
+#   T51-02  .agent\rules\aid-architect.md GONE
+#   T51-03  .agent\rules\aid-clerk.md GONE
+#   T51-04  New .agent\agents\ present
+#   T51-05  New .agent\aid\ present
+#   T51-06  .agent\agents\ contains aid-*.md files
+#   T51-07  .agent\rules\my-team-rules.md exists
+#   T51-08  .agent\rules\my-team-rules.md SHA256 byte-identical
+#   T51-09  AGENTS.md: user line BEFORE region preserved
+#   T51-10  AGENTS.md: user line AFTER region preserved
+#   T51-11  AGENTS.md: AID:BEGIN present
+#   T51-12  AGENTS.md: AID:END present
+# Asserts (AC8):
+#   T51-13  manifest exists
+#   T51-14  tools.antigravity.version == $Ver (uniform)
+# ===========================================================================
+Write-Host "--- T51: Antigravity old-layout migration ---"
+
+$ProjT51 = Join-Path $TmpRoot 'project-t51'
+New-Item -ItemType Directory -Path (Join-Path $ProjT51 '.agent' 'rules') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path $ProjT51 '.aid') -Force | Out-Null
+
+# AID-owned content under retired .agent\rules\ (marker 1: aid- prefix).
+[System.IO.File]::WriteAllText((Join-Path $ProjT51 '.agent' 'rules' 'aid-architect.md'),
+    "old antigravity architect rule`n")
+[System.IO.File]::WriteAllText((Join-Path $ProjT51 '.agent' 'rules' 'aid-clerk.md'),
+    "old antigravity clerk rule`n")
+# USER content: no AID marker -- must survive byte-identical.
+$T51UserContent = "USER-AGENT-RULES-SENTINEL`n"
+[System.IO.File]::WriteAllText((Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md'), $T51UserContent)
+$T51UserHashBefore = (Get-FileHash -LiteralPath (Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md') `
+    -Algorithm SHA256).Hash
+
+# AGENTS.md: AID:BEGIN..END region + user content outside.
+$T51AgentsContent = "# AGENTS.md`n`nUSER-ANTIGRAVITY-LINE-BEFORE`n`n<!-- AID:BEGIN -->`n## Old AID agents section`nSome old AID content.`n<!-- AID:END -->`n`nUSER-ANTIGRAVITY-LINE-AFTER`n"
+[System.IO.File]::WriteAllText((Join-Path $ProjT51 'AGENTS.md'), $T51AgentsContent)
+
+Write-OldManifest -ManifestPath (Join-Path $ProjT51 '.aid' '.aid-manifest.json') -Tool 'antigravity'
+Write-OldSettings -SettingsPath (Join-Path $ProjT51 '.aid' 'settings.yml') -Tool 'antigravity'
+
+Run-MigUpdate -BundleFile $MigFixAntigrav -TargetRepo $ProjT51
+Assert-Eq "$($script:_LastRC)" '0' 'T51-01 aid update on antigravity old-layout -> exit 0'
+
+# AC5-a: retired .agent\rules\ AID-owned files GONE.
+Assert (-not (Test-Path (Join-Path $ProjT51 '.agent' 'rules' 'aid-architect.md') -PathType Leaf)) `
+    'T51-02 (AC5) .agent\rules\aid-architect.md removed (AID-owned, marker 1)' `
+    'aid-architect.md must be removed by retired-root sweep'
+Assert (-not (Test-Path (Join-Path $ProjT51 '.agent' 'rules' 'aid-clerk.md') -PathType Leaf)) `
+    'T51-03 (AC5) .agent\rules\aid-clerk.md removed (AID-owned, marker 1)' `
+    'aid-clerk.md must be removed by retired-root sweep'
+
+# AC5-b: new .agent\ unified layout present.
+Assert-DirExists (Join-Path $ProjT51 '.agent' 'agents') 'T51-04 (AC5) new .agent\agents\ present'
+Assert-DirExists (Join-Path $ProjT51 '.agent' 'aid')    'T51-05 (AC5) new .agent\aid\ present'
+$T51NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT51 '.agent' 'agents') `
+    -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
+Assert ($T51NewAgents.Count -gt 0) `
+    'T51-06 (AC5) .agent\agents\ contains aid-*.md files from new bundle' `
+    '.agent\agents\ should contain aid-*.md files'
+
+# AC5-c: user .agent\rules\my-team-rules.md byte-identical (SHA256).
+Assert-FileExists (Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md') `
+    'T51-07 (AC5) .agent\rules\my-team-rules.md (user content) still exists'
+$T51UserHashAfter = (Get-FileHash -LiteralPath (Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md') `
+    -Algorithm SHA256).Hash
+Assert-Eq "$T51UserHashAfter" "$T51UserHashBefore" `
+    'T51-08 (AC5) .agent\rules\my-team-rules.md SHA256 byte-identical (user content untouched)'
+
+# AC5-d: user lines outside AGENTS.md region preserved.
+$T51AgentsAfter = Get-Content -LiteralPath (Join-Path $ProjT51 'AGENTS.md') -Raw -ErrorAction SilentlyContinue
+Assert-Contains "$T51AgentsAfter" 'USER-ANTIGRAVITY-LINE-BEFORE' 'T51-09 (AC5) AGENTS.md: user line BEFORE region preserved'
+Assert-Contains "$T51AgentsAfter" 'USER-ANTIGRAVITY-LINE-AFTER'  'T51-10 (AC5) AGENTS.md: user line AFTER region preserved'
+Assert-Contains "$T51AgentsAfter" '<!-- AID:BEGIN -->'             'T51-11 (AC5) AGENTS.md: AID:BEGIN marker present'
+Assert-Contains "$T51AgentsAfter" '<!-- AID:END -->'               'T51-12 (AC5) AGENTS.md: AID:END marker present'
+
+# AC8: tools.antigravity.version == $Ver (uniform).
+$T51ManifestPath = Join-Path $ProjT51 '.aid' '.aid-manifest.json'
+Assert-FileExists $T51ManifestPath 'T51-13 (AC8) manifest exists after aid update'
+if (Test-Path $T51ManifestPath -PathType Leaf) {
+    $T51ManObj = Get-Content -LiteralPath $T51ManifestPath -Raw | ConvertFrom-Json
+    $T51Ver = $T51ManObj.tools.antigravity.version
+    Assert-Eq "$T51Ver" "$Ver" 'T51-14 (AC8) tools.antigravity.version == current version (uniform)'
+}
+Write-Host ""
+
+# ===========================================================================
+# T52: Idempotency -- second aid update on migrated old-layout repo (mirrors bash Gate 13)
+#
+# Reuses the T49 (codex) project fixture post-migration: run aid update a second
+# time and assert that sha256 of relevant files is unchanged.
+#
+# Asserts:
+#   T52-01  second aid update -> exit 0
+#   T52-02  .agents\skills\ remains absent (no resurrection)
+#   T52-03  tools.codex.version still == $Ver
+#   T52-04  new-layout witness file sha256 unchanged
+#   T52-05  user-file.txt SHA256 still byte-identical
+# ===========================================================================
+Write-Host "--- T52: Idempotency -- second aid update on migrated old-layout (codex) ---"
+
+# Snapshot manifest and witness file sha256 before the second run.
+$T52ManifestSha1 = if (Test-Path (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -PathType Leaf) {
+    (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -Algorithm SHA256).Hash
+} else { '' }
+
+$T52WitnessFile = $null
+$T52WitnessSha1 = ''
+$T52CandidateAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.codex' 'agents') `
+    -Filter 'aid-*.toml' -File -ErrorAction SilentlyContinue | Sort-Object Name)
+if ($T52CandidateAgents.Count -gt 0) {
+    $T52WitnessFile = $T52CandidateAgents[0].FullName
+    $T52WitnessSha1 = (Get-FileHash -LiteralPath $T52WitnessFile -Algorithm SHA256).Hash
+}
+
+# Run second aid update (same bundle, same target).
+Run-MigUpdate -BundleFile $MigFixCodex -TargetRepo $ProjT49
+Assert-Eq "$($script:_LastRC)" '0' 'T52-01 second aid update on migrated codex repo -> exit 0'
+
+# .agents\skills\ must remain absent (no resurrection).
+Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'skills') -PathType Container)) `
+    'T52-02 .agents\skills\ remains absent after second update (idempotent, no resurrection)' `
+    '.agents\skills\ must not reappear after second update'
+
+# tools.codex.version still == $Ver.
+if (Test-Path (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -PathType Leaf) {
+    $T52ManObj = Get-Content -LiteralPath (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -Raw | ConvertFrom-Json
+    Assert-Eq "$($T52ManObj.tools.codex.version)" "$Ver" `
+        'T52-03 tools.codex.version still correct after second update (idempotent)'
+}
+
+# New-layout witness file sha256 unchanged (files are up-to-date, no re-copy).
+if ($T52WitnessFile -and $T52WitnessSha1) {
+    $T52WitnessSha2 = (Get-FileHash -LiteralPath $T52WitnessFile -Algorithm SHA256).Hash
+    Assert-Eq "$T52WitnessSha2" "$T52WitnessSha1" `
+        'T52-04 new-layout witness file sha256 unchanged after second update (idempotent)'
+} else {
+    # T49-07 would have caught a missing agent file; skip here.
+    script:RecordPass 'T52-04 new-layout witness file check skipped (no agent file -- T49-07 would catch)'
+}
+
+# User-file.txt SHA256 still byte-identical after second update.
+Assert-FileExists (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+    'T52-05a user-file.txt still exists after second update'
+if (Test-Path (Join-Path $ProjT49 '.agents' 'user-file.txt') -PathType Leaf) {
+    $T52UserHashAfter2 = (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+        -Algorithm SHA256).Hash
+    Assert-Eq "$T52UserHashAfter2" "$T49UserHashBefore" `
+        'T52-05b user-file.txt SHA256 still byte-identical after second update (user content untouched)'
+}
+Write-Host ""
+
+# ===========================================================================
+# T53: Escape canary -- real USERPROFILE/HOME untouched by T49-T52 fixture runs
+#
+# Confirms that every Run-MigUpdate call (which uses Run-AidPs1Home) properly
+# isolated $HOME / $env:USERPROFILE to the MigFakeHome throwaway, and the real
+# user home gained no new .aid directories during the fixture runs above.
+# ===========================================================================
+Write-Host "--- T53: Escape canary -- real HOME/USERPROFILE untouched ---"
+
+$_T53_CANARY_AFTER = ''
+if ($_T49_REAL_UP -and (Test-Path $_T49_REAL_UP -PathType Container)) {
+    try {
+        $items = @(Get-ChildItem -LiteralPath $_T49_REAL_UP -Recurse -Depth 6 `
+            -Filter '.aid' -Directory -ErrorAction SilentlyContinue)
+        $_T53_CANARY_AFTER = ($items | ForEach-Object { $_.FullName } | Sort-Object) -join "`n"
+    } catch { $_T53_CANARY_AFTER = '' }
+}
+
+Assert ($_T53_CANARY_AFTER -eq $_T49_CANARY_BEFORE) `
+    'T53 escape canary: real USERPROFILE/HOME gained no .aid dirs during T49-T52 fixture runs' `
+    "real HOME blast surface: new .aid dirs appeared under $_T49_REAL_UP during migration test runs"
 
 Write-Host ""
 

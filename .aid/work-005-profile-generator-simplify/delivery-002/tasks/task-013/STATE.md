@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. ParseFile 0 errors; PS↔bash parity 1:1 (T49-T53 ↔ Gates 10-13 + canary, no coverage gap); byte-identity Get-FileHash SHA256 (not presence-only); HOME-pin REAL (Run-AidPs1Home pins HOME/USERPROFILE/HOMEDRIVE/HOMEPATH; T53 real-home canary); ASCII-clean (new section); scope clean. 3 sub-HIGH notes -> delivery-002-issues.md for the gate. Real green proof = PR's installer/CLI (windows-latest).
+- **Elapsed:** ~00:06
+- **Notes:** tests/windows/Test-AidInstaller.ps1 T49-T53 (codex/cursor/antigravity migration + idempotency + escape canary), Windows-runner-only (not in run-all.sh).
 
 ---
 
