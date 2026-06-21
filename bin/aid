@@ -3146,6 +3146,52 @@ case "$SUBCMD" in
             fi
         fi
 
+        # ---------------------------------------------------------------------------
+        # FR11: aid add version selection (same-version invariant).
+        # First-tool  (no existing tools in manifest): install at the CLI version.
+        # Additional-tool (manifest already has >=1 tool): install at the EXISTING
+        # tools' version to keep the repo uniform.  add does NOT force a repo-wide
+        # update.  --version on add must apply to ALL tools or error (mixed-version
+        # repo would result if the requested version differs from the existing one).
+        # ---------------------------------------------------------------------------
+        if [[ "$SUBCMD" == "add" ]]; then
+            _FR11_CLI_VER=""
+            [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
+                _FR11_CLI_VER="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION")"
+            _FR11_EXISTING_VER=""
+            if [[ -f "$_AID_MANIFEST" ]]; then
+                _FR11_FIRST_TOOL="$(manifest_list_tools "$_AID_MANIFEST" | head -1)"
+                if [[ -n "$_FR11_FIRST_TOOL" ]]; then
+                    _FR11_EXISTING_VER="$(manifest_read_tool_version "$_AID_MANIFEST" "$_FR11_FIRST_TOOL")"
+                fi
+            fi
+
+            if [[ -n "$_AID_VERSION_ARG" ]]; then
+                # --version on add: validate it won't create a mixed-version repo.
+                if [[ -n "$_FR11_EXISTING_VER" && "$_AID_VERSION_ARG" != "$_FR11_EXISTING_VER" ]]; then
+                    echo "ERROR: aid add: --version ${_AID_VERSION_ARG} would create a mixed-version repo." >&2
+                    echo "       Existing tools are at v${_FR11_EXISTING_VER}. Either:" >&2
+                    echo "         - Omit --version to install at the repo version (v${_FR11_EXISTING_VER}), or" >&2
+                    echo "         - Run 'aid update --version ${_AID_VERSION_ARG}' first to advance the whole repo." >&2
+                    rm -rf "$_AID_STAGING_BASE"
+                    exit 2
+                fi
+                # --version provided and no conflict: apply to all tools (passed through to staging).
+            elif [[ -n "$_FR11_EXISTING_VER" ]]; then
+                # Additional-tool: pin staging to the existing repo version (not the CLI version).
+                _AID_VERSION_ARG="$_FR11_EXISTING_VER"
+                # Skew notice when CLI is ahead of the repo version.
+                if [[ -n "$_FR11_CLI_VER" ]] && _semver_lt "$_FR11_EXISTING_VER" "$_FR11_CLI_VER"; then
+                    echo "repo is at v${_FR11_EXISTING_VER}; new tool(s) installed at v${_FR11_EXISTING_VER} to keep the repo uniform. Run 'aid update' to advance all tools to v${_FR11_CLI_VER}."
+                fi
+            else
+                # First-tool: pin to CLI version (bundle supplies its own version; skip if so).
+                if [[ -z "$_AID_FROM_BUNDLE" && -n "$_FR11_CLI_VER" ]]; then
+                    _AID_VERSION_ARG="$_FR11_CLI_VER"
+                fi
+            fi
+        fi
+
         # C-table (for 'update'): register-on-encounter + format gate.
         # The missing-.aid/ case was already intercepted above (pre-resolve-tools).
         if [[ "$SUBCMD" == "update" ]]; then

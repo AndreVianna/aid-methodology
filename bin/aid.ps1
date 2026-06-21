@@ -3070,6 +3070,66 @@ try {
                 }
             }
 
+            # ---------------------------------------------------------------------------
+            # FR11: aid add version selection (same-version invariant).
+            # First-tool  (no existing tools in manifest): install at the CLI version.
+            # Additional-tool (manifest already has >=1 tool): install at the EXISTING
+            # tools' version to keep the repo uniform.  add does NOT force a repo-wide
+            # update.  -Version on add must apply to ALL tools or error (mixed-version
+            # repo would result if the requested version differs from the existing one).
+            # ---------------------------------------------------------------------------
+            if ($SUBCMD -eq 'add') {
+                $_fr11CliVer = ''
+                $fr11VerFile = Join-Path $script:_AidCodeHome 'VERSION'
+                if (Test-Path $fr11VerFile -PathType Leaf) {
+                    $_fr11CliVer = (Get-Content -LiteralPath $fr11VerFile -Raw -ErrorAction SilentlyContinue).Trim()
+                }
+                $_fr11ExistingVer = ''
+                if (Test-Path $_AidManifest -PathType Leaf) {
+                    $fr11FirstTool = (Get-ManifestToolList -ManifestPath $_AidManifest | Select-Object -First 1)
+                    if ($fr11FirstTool) {
+                        $_fr11ExistingVer = Read-ManifestToolVersion -ManifestPath $_AidManifest -Tool $fr11FirstTool.Id
+                    }
+                }
+
+                if ($_AidVersionArg) {
+                    # -Version on add: validate it won't create a mixed-version repo.
+                    if ($_fr11ExistingVer -and $_AidVersionArg -ne $_fr11ExistingVer) {
+                        [Console]::Error.WriteLine("ERROR: aid add: -Version $_AidVersionArg would create a mixed-version repo.")
+                        [Console]::Error.WriteLine("       Existing tools are at v$_fr11ExistingVer. Either:")
+                        [Console]::Error.WriteLine("         - Omit -Version to install at the repo version (v$_fr11ExistingVer), or")
+                        [Console]::Error.WriteLine("         - Run 'aid update -Version $_AidVersionArg' first to advance the whole repo.")
+                        script:Exit-Aid 2
+                    }
+                    # -Version provided and no conflict: apply to all tools (passed through to staging).
+                } elseif ($_fr11ExistingVer) {
+                    # Additional-tool: pin staging to the existing repo version (not the CLI version).
+                    $_AidVersionArg = $_fr11ExistingVer
+                    # Skew notice when CLI is ahead of the repo version.
+                    if ($_fr11CliVer) {
+                        $fr11PartsA = $_fr11ExistingVer -split '\.'
+                        $fr11PartsB = $_fr11CliVer      -split '\.'
+                        $fr11IsLt   = $false
+                        for ($fr11i = 0; $fr11i -lt 3; $fr11i++) {
+                            $fr11rA = if ($fr11i -lt $fr11PartsA.Count) { $fr11PartsA[$fr11i] } else { '0' }
+                            $fr11rB = if ($fr11i -lt $fr11PartsB.Count) { $fr11PartsB[$fr11i] } else { '0' }
+                            if ($fr11rA -match '^(\d+)') { $fr11vA = [int]$Matches[1] } else { $fr11vA = 0 }
+                            if ($fr11rB -match '^(\d+)') { $fr11vB = [int]$Matches[1] } else { $fr11vB = 0 }
+                            if ($fr11vA -lt $fr11vB) { $fr11IsLt = $true; break }
+                            if ($fr11vA -gt $fr11vB) { break }
+                        }
+                        if ($fr11IsLt) {
+                            Write-Host "repo is at v$_fr11ExistingVer; new tool(s) installed at v$_fr11ExistingVer to keep the repo uniform. Run 'aid update' to advance all tools to v$_fr11CliVer."
+                        }
+                    }
+                } else {
+                    # First-tool: pin to CLI version (bundle supplies its own version; skip if so).
+                    if (-not $_AidFromBundle -and $_fr11CliVer) {
+                        $_AidVersionArg = $_fr11CliVer
+                    }
+                }
+            }
+
             # C-table (for 'update'): register-on-encounter.
             # The missing-.aid/ case was already intercepted above (pre-resolve-tools).
             if ($SUBCMD -eq 'update') {
