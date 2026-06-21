@@ -19,11 +19,11 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Running
+- **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-06-21T13:25:31Z
-- **Pause Reason:** --
+- **Updated:** 2026-06-21T14:57:17Z
+- **Pause Reason:** delivery-002 COMPLETE + gated A+ (5 tasks, 6 commits); PR #101 open against master. delivery-001 merged (#100). delivery-003 (lockstep + final gate) NOT yet executed -- note task-014 release.sh fix was pulled forward into delivery-001. Release-Safety Gate: no release until delivery-003 merges.
 - **Block Reason:** --
 - **Block Artifact:** --
 
