@@ -2,7 +2,7 @@
 # test-dogfood-byte-identity.sh -- SS7a / C2 dogfood byte-identity guard.
 #
 # Asserts that the repo-root .claude/ tree and profiles/claude-code/.claude/
-# are byte-identical for EVERY file that the generator owns -- both directions:
+# are byte-identical for EVERY file that the generator owns -- THREE directions:
 #
 #   Direction 1 (forward):  for each dst entry in the emission manifest that
 #       starts with ".claude/", assert the corresponding file under repo-root
@@ -13,11 +13,18 @@
 #       manifest (i.e. the manifest is complete -- no generator-produced file
 #       was silently omitted from the manifest).
 #
-# The manifest is the authoritative comparison set.  Non-generator files that
-# legitimately exist in the dogfood .claude/ (settings.json, projects/,
-# worktrees/, skills/README.md, the skills/generate-profile/ toolchain) are
-# NOT in the manifest and are therefore NOT compared -- this avoids false
-# positives on those user-owned files.
+#   Direction 3 (repo-orphan sweep):  for each file present under the repo-root
+#       dogfood .claude/, assert it is EITHER a generator-owned manifest dst OR
+#       an explicitly DOCUMENTED non-generator file (the closed allowlist in
+#       dbi_allowlisted below) -- so a generator-shaped repo-side orphan that
+#       bypassed the manifest is caught (SS7a: the guard excludes nothing in
+#       the AID-owned tree; the only un-compared files are the documented ones).
+#
+# The manifest is the authoritative comparison set.  The non-generator files
+# that legitimately live in the dogfood .claude/ (Claude Code settings +
+# session/memory state, and the maintainer-only generate-profile toolchain +
+# its README) are DOCUMENTED in the Direction-3 allowlist rather than blindly
+# skipped.
 #
 # On any mismatch the suite fails loudly, naming the first divergent path.
 #
@@ -161,6 +168,50 @@ while IFS= read -r profile_file; do
         pass "DBI-REV ${dst}"
     fi
 done < <(find "$PROFILE_CLAUDE" -type f | sort)
+
+# ---------------------------------------------------------------------------
+# Direction 3 (repo-orphan sweep): every file under the repo-root dogfood
+# .claude/ must be EITHER a generator-owned manifest dst (asserted in
+# Direction 1) OR an explicitly DOCUMENTED non-generator file. A
+# generator-shaped repo-side orphan -- a file that bypassed the manifest --
+# fails loudly. This closes the SS7a requirement that the guard excludes
+# nothing in the AID-owned tree: nothing is blindly skipped; the only files
+# not compared are the closed, documented allowlist below.
+# ---------------------------------------------------------------------------
+log "Direction 3: repo .claude/ -> manifest-or-allowlist (orphan sweep)"
+
+# Allowlist = the non-generator files that legitimately live in the dogfood
+# .claude/ (no profile counterpart, not emitted by render.py):
+#   settings.json / settings.local.json : Claude Code settings
+#   projects/**                          : Claude Code session + memory state
+#   worktrees/**                         : git worktree metadata
+#   skills/README.md                     : maintainer index of skills (AID doc, not profile-emitted)
+#   skills/generate-profile/**           : the generate-profile toolchain itself (render.py et al + caches)
+dbi_allowlisted() {
+    local rel="$1"
+    case "$rel" in
+        settings.json | settings.local.json) return 0 ;;
+        projects/*)                return 0 ;;
+        worktrees/*)               return 0 ;;
+        skills/README.md)          return 0 ;;
+        skills/generate-profile/*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+orphan_found=0
+while IFS= read -r dogfood_file; do
+    rel="${dogfood_file#${DOGFOOD_CLAUDE}/}"
+    dst=".claude/${rel}"
+    [[ -n "${MANIFEST_SET[$dst]+_}" ]] && continue   # generator-owned: covered by Direction 1
+    if dbi_allowlisted "$rel"; then
+        [[ $VERBOSE -eq 1 ]] && log "DBI-ORPHAN skip (documented non-generator): ${dst}"
+        continue
+    fi
+    fail "DBI-ORPHAN ${dst} -- generator-shaped file in repo .claude/ is NOT in the manifest and NOT in the documented allowlist (a repo-side orphan that bypassed the generator)"
+    orphan_found=1
+done < <(find "$DOGFOOD_CLAUDE" -type f | sort)
+[[ $orphan_found -eq 0 ]] && pass "DBI-ORPHAN repo .claude/ has no undocumented generator-shaped orphans"
 
 # ---------------------------------------------------------------------------
 # Summary

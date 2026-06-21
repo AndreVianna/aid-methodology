@@ -21,10 +21,10 @@
 
 <!-- AUTHORED -- written by the delivery-gate closing step of aid-execute. -->
 
-- **Reviewer Tier:** {set at gate}
-- **Grade:** Pending
-- **Issue List:** {set at gate}
-- **Timestamp:** {set at gate}
+- **Reviewer Tier:** graded (Opus 4.8 reviewer, read-only code-quality gate)
+- **Grade:** C+ (one Pending [MEDIUM] = issue #5 guard orphan-coverage gap; all else MINOR/LOW)
+- **Issue List:** .aid/.temp/review-pending/work-005-delivery-001-gate.md
+- **Timestamp:** 2026-06-21T00:40:00Z
 
 ---
 

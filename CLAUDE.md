@@ -24,6 +24,16 @@ cross-phase process state). Keeping it current is **not optional**:
 
 @.aid/knowledge.
 
+- Always consult relevant KB documents before making changes.
+- The KB is the single source of truth for architecture, conventions, and patterns.
+
+## Workflow
+
+- Every change should be traceable to a task or requirement.
+- Follow the current phase: Init → Discover → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy → Track → Triage.
+- Produce verifiable artifacts at each phase.
+- Quality gates must pass before proceeding.
+
 ## Review output format (global)
 
 Any review output you produce — dispatched sub-agent, script validator, or

@@ -38,7 +38,7 @@ if TYPE_CHECKING:
 # Constants
 # ---------------------------------------------------------------------------
 
-# Manifest sentinel — first line of every emission-manifest.jsonl
+# Manifest sentinel -- first line of every emission-manifest.jsonl
 _MANIFEST_VERSION = 1
 
 # The three canonical placeholders that filename_map resolves
@@ -49,8 +49,8 @@ _FILENAME_PLACEHOLDERS = {
 }
 
 # Regex matching only the three known placeholders.
-# Uses a positive lookahead to ensure we never touch unrelated {…} tokens
-# (e.g. {step/total} print-progress markers from coding-standards.md §1.5).
+# Uses a positive lookahead to ensure we never touch unrelated {...} tokens
+# (e.g. {step/total} print-progress markers from coding-standards.md section 1.5).
 _PLACEHOLDER_RE = re.compile(
     r"\{(" + "|".join(re.escape(k) for k in sorted(_FILENAME_PLACEHOLDERS)) + r")\}"
 )
@@ -120,7 +120,7 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
     body : str
         Text content to process (typically a SKILL.md or agent file body).
     filename_map : dict[str, str]
-        Map from placeholder key → resolved filename.
+        Map from placeholder key -> resolved filename.
         Keys not in ``_FILENAME_PLACEHOLDERS`` are silently ignored.
 
     Returns
@@ -132,7 +132,7 @@ def substitute_filenames(body: str, filename_map: dict[str, str]) -> str:
         key = match.group(1)
         if key in filename_map:
             return filename_map[key]
-        # Key is in the known set but not in this profile's map — leave as-is
+        # Key is in the known set but not in this profile's map -- leave as-is
         return match.group(0)
 
     return _PLACEHOLDER_RE.sub(_replace, body)
@@ -344,7 +344,7 @@ class EmissionManifest:
             Repo-relative path inside ``canonical/``.
         dst : str
             Repo-relative path inside the install tree (relative to the
-            manifest's directory per EMISSION-MANIFEST.md §"Record Schema").
+            manifest's directory per EMISSION-MANIFEST.md section "Record Schema").
         content : bytes | None
             Raw rendered bytes.  Mutually exclusive with *sha256*.
         sha256 : str | None
@@ -407,14 +407,14 @@ class EmissionManifest:
         Returns
         -------
         tuple[list[str], list[str], list[str]]
-            ``(added_dst, removed_dst, changed_dst)`` — each is a sorted list
+            ``(added_dst, removed_dst, changed_dst)`` -- each is a sorted list
             of ``dst`` paths.
 
         Notes
         -----
-        * ``added_dst``: new in *self*, absent in *previous* — no action needed.
-        * ``removed_dst``: in *previous* but absent in *self* — **delete these**.
-        * ``changed_dst``: in both, sha256 differs — overwritten by the renderer.
+        * ``added_dst``: new in *self*, absent in *previous* -- no action needed.
+        * ``removed_dst``: in *previous* but absent in *self* -- **delete these**.
+        * ``changed_dst``: in both, sha256 differs -- overwritten by the renderer.
         """
         prev_map = {r.dst: r.sha256 for r in previous._records}
         curr_map = {r.dst: r.sha256 for r in self._records}
@@ -481,7 +481,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         prog="render_lib.py",
         description=(
-            "AID generator render library — shared renderer helpers. "
+            "AID generator render library -- shared renderer helpers. "
             "Run with --self-test to verify render-lib correctness."
         ),
     )
@@ -511,7 +511,7 @@ def main() -> int:
         failures.append("sha256_hex: digest is not lowercase hex")
 
     # -----------------------------------------------------------------------
-    # Test: substitute_filenames — known placeholders
+    # Test: substitute_filenames -- known placeholders
     # -----------------------------------------------------------------------
     # Post-FR2, reviewer_output_file is STATE.md (was DISCOVERY-STATE.md pre-FR2).
     fmap = {
@@ -528,7 +528,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: substitute_filenames — open_questions_file placeholder
+    # Test: substitute_filenames -- open_questions_file placeholder
     # -----------------------------------------------------------------------
     body2 = "Questions in {open_questions_file}."
     result2 = substitute_filenames(body2, fmap)
@@ -538,7 +538,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: substitute_filenames — unrelated braces left alone
+    # Test: substitute_filenames -- unrelated braces left alone
     # -----------------------------------------------------------------------
     body3 = "Step {n/total} done. Value {unknown_key} untouched."
     result3 = substitute_filenames(body3, fmap)
@@ -548,7 +548,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — AID-own dir (scripts) nests under aid/
+    # Test: rewrite_install_paths -- AID-own dir (scripts) nests under aid/
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "bash canonical/scripts/grade.sh foo\n", ".claude"
@@ -557,7 +557,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: AID-own scripts rewrite wrong, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — AID-own dir (templates) nests under aid/
+    # Test: rewrite_install_paths -- AID-own dir (templates) nests under aid/
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/templates/settings.yml\n", ".claude"
@@ -566,7 +566,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: AID-own templates rewrite wrong, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — AID-own dir (recipes) nests under aid/
+    # Test: rewrite_install_paths -- AID-own dir (recipes) nests under aid/
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/recipes/add-api.md\n", ".claude"
@@ -575,7 +575,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: AID-own recipes rewrite wrong, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — tool-native dir (skills) stays un-nested
+    # Test: rewrite_install_paths -- tool-native dir (skills) stays un-nested
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/skills/aid-config/SKILL.md\n", ".claude"
@@ -584,7 +584,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: tool-native skills should not nest, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — tool-native dir (agents) stays un-nested
+    # Test: rewrite_install_paths -- tool-native dir (agents) stays un-nested
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "see canonical/agents/aid-developer/AGENT.md\n", ".claude"
@@ -593,7 +593,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: tool-native agents should not nest, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — rules/ is NOT in the known-dirs list
+    # Test: rewrite_install_paths -- rules/ is NOT in the known-dirs list
     # (rules folder deleted by FR3); canonical/rules/... passes through unchanged
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
@@ -603,7 +603,7 @@ def main() -> int:
         failures.append(f"rewrite_install_paths: canonical/rules/ should pass through unchanged, got {out!r}")
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — comment line SKIPPED
+    # Test: rewrite_install_paths -- comment line SKIPPED
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "# Refer to canonical/scripts/grade.sh for the script\n", ".claude"
@@ -615,7 +615,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — indented comment SKIPPED
+    # Test: rewrite_install_paths -- indented comment SKIPPED
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
         "    # nested canonical/templates/X.md\n", ".claude"
@@ -626,7 +626,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — non-comment lines AFTER a comment line
+    # Test: rewrite_install_paths -- non-comment lines AFTER a comment line
     # still get rewritten (comment skip is line-local)
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
@@ -643,8 +643,8 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — idempotent on AID-own (already-nested has
-    # no canonical/ prefix so the regex does not match — re-run is a no-op)
+    # Test: rewrite_install_paths -- idempotent on AID-own (already-nested has
+    # no canonical/ prefix so the regex does not match -- re-run is a no-op)
     # -----------------------------------------------------------------------
     once = rewrite_install_paths("bash canonical/scripts/X.sh\n", ".claude")
     twice = rewrite_install_paths(once, ".claude")
@@ -654,7 +654,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — idempotent on tool-native
+    # Test: rewrite_install_paths -- idempotent on tool-native
     # -----------------------------------------------------------------------
     once_tn = rewrite_install_paths("see canonical/skills/aid-x/SKILL.md\n", ".claude")
     twice_tn = rewrite_install_paths(once_tn, ".claude")
@@ -665,7 +665,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — nested canonical/aid/<dir>/ form (A4 reshape)
+    # Test: rewrite_install_paths -- nested canonical/aid/<dir>/ form (A4 reshape)
     # canonical/aid/templates/ -> <install_root>/aid/templates/  (same dst as flat form)
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
@@ -693,7 +693,7 @@ def main() -> int:
         )
 
     # -----------------------------------------------------------------------
-    # Test: rewrite_install_paths — unrelated canonical/ paths pass through
+    # Test: rewrite_install_paths -- unrelated canonical/ paths pass through
     # (e.g., canonical/work-NNN/ is not in the known-dirs allowlist)
     # -----------------------------------------------------------------------
     out = rewrite_install_paths(
@@ -763,7 +763,7 @@ def main() -> int:
     # Test: EmissionManifest LF only (no CRLF)
     # -----------------------------------------------------------------------
     if b"\r\n" in payload:
-        failures.append("EmissionManifest: payload contains CRLF — expected LF only")
+        failures.append("EmissionManifest: payload contains CRLF -- expected LF only")
 
     # -----------------------------------------------------------------------
     # Test: EmissionManifest last line terminated by \n
@@ -837,7 +837,7 @@ def main() -> int:
         failures.append("EmissionManifest.add(content=): no record added")
     elif m_content._records[0].sha256 != expected_digest:
         failures.append(
-            f"EmissionManifest.add(content=): sha256 mismatch — "
+            f"EmissionManifest.add(content=): sha256 mismatch -- "
             f"got {m_content._records[0].sha256!r}, expected {expected_digest!r}"
         )
 
