@@ -678,7 +678,7 @@ function Read-ManifestToolPaths {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.paths) {
+        if ($toolData -and $toolData.PSObject.Properties['paths'] -and $toolData.paths) {
             return @($toolData.paths)
         }
     } catch {}
@@ -693,7 +693,7 @@ function Read-ManifestToolVersion {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.version) { return $toolData.version }
+        if ($toolData -and $toolData.PSObject.Properties['version'] -and $toolData.version) { return [string]$toolData.version }
     } catch {}
     return ''
 }
@@ -706,9 +706,15 @@ function Read-ManifestRootAgent {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.root_agent_files) {
-            foreach ($entry in $toolData.root_agent_files) {
-                if ($entry.path -eq $FileName) { return $entry.sha256 }
+        # Guard root_agent_files: absent on old-format manifests; PSObject.Properties['key'] is
+        # safe under Set-StrictMode -Version Latest unlike direct property access.
+        $raf = if ($toolData -and $toolData.PSObject.Properties['root_agent_files']) { $toolData.root_agent_files } else { $null }
+        if ($raf) {
+            foreach ($entry in $raf) {
+                if ($entry.PSObject.Properties['path'] -and $entry.path -eq $FileName) {
+                    $sha = if ($entry.PSObject.Properties['sha256']) { $entry.sha256 } else { '' }
+                    return $sha
+                }
             }
         }
     } catch {}
@@ -723,9 +729,10 @@ function Read-ManifestRootAgentStatus {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.root_agent_files) {
-            foreach ($entry in $toolData.root_agent_files) {
-                if ($entry.path -eq $FileName) {
+        $raf = if ($toolData -and $toolData.PSObject.Properties['root_agent_files']) { $toolData.root_agent_files } else { $null }
+        if ($raf) {
+            foreach ($entry in $raf) {
+                if ($entry.PSObject.Properties['path'] -and $entry.path -eq $FileName) {
                     if ($entry.PSObject.Properties['status']) { return $entry.status }
                     return 'owned'
                 }
@@ -880,8 +887,11 @@ function Write-AidManifest {
     }
 
     # Top-level installed_at: preserve existing.
+    # Guard via PSObject.Properties['key'] -- Set-StrictMode -Version Latest (active in this module)
+    # throws PropertyNotFoundException on direct access of absent properties.  Old-format manifests
+    # (schema:1) have no root-level installed_at; new-format ones (manifest_version:1) do.
     $topInstalledAt = $now
-    if ($existingData -and $existingData.installed_at) {
+    if ($existingData -and $existingData.PSObject.Properties['installed_at'] -and $existingData.installed_at) {
         $topInstalledAt = $existingData.installed_at
     }
 
@@ -895,17 +905,22 @@ function Write-AidManifest {
             $tid = $_.Name
             if ($tid -ne $Tool) {
                 $t   = $_.Value
-                $tP  = if ($t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
+                # Guard per-tool properties: old manifests lack root_agent_files; use
+                # PSObject.Properties['key'] check before direct access (StrictMode-safe).
+                $tP  = if ($t.PSObject.Properties['paths'] -and $t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
                 $tR  = [System.Collections.Generic.List[hashtable]]::new()
-                if ($t.root_agent_files) {
-                    foreach ($e in $t.root_agent_files) {
+                $tRaf = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
+                if ($tRaf) {
+                    foreach ($e in $tRaf) {
+                        $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
+                        $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
                         $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-                        $tR.Add(@{ path = $e.path; sha256 = $e.sha256; status = $st })
+                        if ($ePath) { $tR.Add(@{ path = $ePath; sha256 = $eSha256; status = $st }) }
                     }
                 }
                 $toolsMap[$tid] = @{
-                    Version       = if ($t.version) { $t.version } else { '' }
-                    InstalledAt   = if ($t.installed_at) { $t.installed_at } else { $now }
+                    Version       = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
+                    InstalledAt   = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { $t.installed_at } else { $now }
                     Paths         = $tP
                     RootAgentFiles = $tR
                 }
@@ -921,14 +936,14 @@ function Write-AidManifest {
 
     # tool installed_at: preserve existing.
     $toolInstalledAt = $now
-    if ($existingTool -and $existingTool.installed_at) {
+    if ($existingTool -and $existingTool.PSObject.Properties['installed_at'] -and $existingTool.installed_at) {
         $toolInstalledAt = $existingTool.installed_at
     }
 
     # De-duplicate paths (union, preserving order: existing first, then new).
     $seenPaths   = [System.Collections.Generic.HashSet[string]]::new()
     $mergedPaths = [System.Collections.Generic.List[string]]::new()
-    if ($existingTool -and $existingTool.paths) {
+    if ($existingTool -and $existingTool.PSObject.Properties['paths'] -and $existingTool.paths) {
         foreach ($p in $existingTool.paths) {
             if ($seenPaths.Add($p)) { $mergedPaths.Add($p) }
         }
@@ -939,10 +954,13 @@ function Write-AidManifest {
 
     # Merge root_agent_files: update or add per path.
     $rafMap = [System.Collections.Specialized.OrderedDictionary]::new()
-    if ($existingTool -and $existingTool.root_agent_files) {
-        foreach ($e in $existingTool.root_agent_files) {
+    $existingRaf = if ($existingTool -and $existingTool.PSObject.Properties['root_agent_files']) { $existingTool.root_agent_files } else { $null }
+    if ($existingRaf) {
+        foreach ($e in $existingRaf) {
+            $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
+            $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
             $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-            $rafMap[$e.path] = @{ path = $e.path; sha256 = $e.sha256; status = $st }
+            if ($ePath) { $rafMap[$ePath] = @{ path = $ePath; sha256 = $eSha256; status = $st } }
         }
     }
     foreach ($entry in $RootEntries) {
@@ -995,23 +1013,27 @@ function Remove-ManifestTool {
     }
 
     # Build tools map without the target tool.
+    # Guard all per-tool property accesses via PSObject.Properties['key'] (StrictMode-safe).
     $toolsMap = [System.Collections.Specialized.OrderedDictionary]::new()
     if ($data.tools) {
         $data.tools.PSObject.Properties | ForEach-Object {
             $tid = $_.Name
             if ($tid -ne $Tool) {
                 $t  = $_.Value
-                $tP = if ($t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
+                $tP = if ($t.PSObject.Properties['paths'] -and $t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
                 $tR = [System.Collections.Generic.List[hashtable]]::new()
-                if ($t.root_agent_files) {
-                    foreach ($e in $t.root_agent_files) {
+                $tRaf = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
+                if ($tRaf) {
+                    foreach ($e in $tRaf) {
+                        $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
+                        $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
                         $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-                        $tR.Add(@{ path = $e.path; sha256 = $e.sha256; status = $st })
+                        if ($ePath) { $tR.Add(@{ path = $ePath; sha256 = $eSha256; status = $st }) }
                     }
                 }
                 $toolsMap[$tid] = @{
-                    Version        = if ($t.version) { $t.version } else { '' }
-                    InstalledAt    = if ($t.installed_at) { $t.installed_at } else { '' }
+                    Version        = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
+                    InstalledAt    = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { $t.installed_at } else { '' }
                     Paths          = $tP
                     RootAgentFiles = $tR
                 }
@@ -1024,8 +1046,8 @@ function Remove-ManifestTool {
         return
     }
 
-    $topIat = if ($data.installed_at) { $data.installed_at } else { ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')) }
-    $topVer = if ($data.aid_version) { $data.aid_version } else { '0.0.0' }
+    $topIat = if ($data.PSObject.Properties['installed_at'] -and $data.installed_at) { $data.installed_at } else { ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')) }
+    $topVer = if ($data.PSObject.Properties['aid_version'] -and $data.aid_version) { $data.aid_version } else { '0.0.0' }
 
     $json = script:Build-ManifestJson -TopInstalledAt $topIat -TopVersion $topVer -ToolsMap $toolsMap
 
@@ -1211,15 +1233,20 @@ function Invoke-PruneToolDirs {
         # Rule (d): prune now-empty subdirs (deepest first, skip the root itself).
         $subdirs = @(Get-ChildItem -LiteralPath $ADir -Recurse -Directory -ErrorAction SilentlyContinue)
         # Sort deepest first (longest path first by ordinal).
-        $subdirPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
-        [System.Array]::Sort($subdirPaths, [System.StringComparer]::Ordinal)
-        [System.Array]::Reverse($subdirPaths)
-        foreach ($dp in $subdirPaths) {
-            if (Test-Path $dp -PathType Container) {
-                $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
-                if (-not $rem) {
-                    Remove-Item -LiteralPath $dp -Force
-                    if ($AidVerbose) { Write-Host "Pruned dir: $dp" }
+        # Guard: pipeline over an empty @() returns $null on PowerShell; [System.Array]::Sort($null)
+        # throws "Value cannot be null" (reproduces on pwsh when the dir has no subdirectories,
+        # e.g. cursor/antigravity idempotent re-run after retired roots are already gone).
+        if ($subdirs.Count -gt 0) {
+            $subdirPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
+            [System.Array]::Sort($subdirPaths, [System.StringComparer]::Ordinal)
+            [System.Array]::Reverse($subdirPaths)
+            foreach ($dp in $subdirPaths) {
+                if (Test-Path $dp -PathType Container) {
+                    $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
+                    if (-not $rem) {
+                        Remove-Item -LiteralPath $dp -Force
+                        if ($AidVerbose) { Write-Host "Pruned dir: $dp" }
+                    }
                 }
             }
         }
@@ -1231,6 +1258,8 @@ function Invoke-PruneToolDirs {
     #       that map points copilot-cli at the .github ROOT (forbidden by R1).
     #       Scope is the R1-compliant set: .github/{agents,skills,aid} only.
     # -----------------------------------------------------------------------
+    # Per-tool scoping: new layout (work-005/delivery-001).
+    # Codex unified under .codex/; cursor and antigravity no longer ship rules/.
     switch ($Tool) {
         'claude-code' {
             & $pruneNativeDir (Join-Path $Target '.claude\agents')
@@ -1238,15 +1267,15 @@ function Invoke-PruneToolDirs {
             & $pruneAidSubtree (Join-Path $Target '.claude\aid')
         }
         'codex' {
-            # .codex ships only agents/; .agents ships skills/ + aid/ subtree.
+            # New unified layout: everything under .codex/ (agents, skills, aid).
             & $pruneNativeDir (Join-Path $Target '.codex\agents')
-            & $pruneNativeDir (Join-Path $Target '.agents\skills')
-            & $pruneAidSubtree (Join-Path $Target '.agents\aid')
+            & $pruneNativeDir (Join-Path $Target '.codex\skills')
+            & $pruneAidSubtree (Join-Path $Target '.codex\aid')
         }
         'cursor' {
+            # rules/ dir removed from new layout; agents/skills/aid remain.
             & $pruneNativeDir (Join-Path $Target '.cursor\agents')
             & $pruneNativeDir (Join-Path $Target '.cursor\skills')
-            & $pruneNativeDir (Join-Path $Target '.cursor\rules')
             & $pruneAidSubtree (Join-Path $Target '.cursor\aid')
         }
         'copilot-cli' {
@@ -1256,7 +1285,8 @@ function Invoke-PruneToolDirs {
             & $pruneAidSubtree (Join-Path $Target '.github\aid')
         }
         'antigravity' {
-            & $pruneNativeDir (Join-Path $Target '.agent\rules')
+            # rules/ dir removed from new layout; agents/skills/aid remain.
+            & $pruneNativeDir (Join-Path $Target '.agent\agents')
             & $pruneNativeDir (Join-Path $Target '.agent\skills')
             & $pruneAidSubtree (Join-Path $Target '.agent\aid')
         }
@@ -1264,6 +1294,133 @@ function Invoke-PruneToolDirs {
 
     if ($script:_PruneRemoved -gt 0) {
         if (-not $AidVerbose) { Write-Host "  $($script:_PruneRemoved) stale AID file(s) pruned" }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Retired-root migration sweep (FR7/FR7a)
+# ---------------------------------------------------------------------------
+
+# Invoke-MigrateRetiredLayout <target> <tool> [aidVerbose]
+#
+# Complete-replacement migration: removes AID-owned content from the static
+# list of retired AID roots that no longer exist in the new bundle layout.
+# Called from Install-AidTool BEFORE Invoke-PruneToolDirs (same aid update pass).
+#
+# Retired roots swept per tool:
+#   codex:       .agents\                     (split layout retired)
+#   cursor:      .cursor\rules\               (rules dir retired)
+#   antigravity: .agent\rules\                (rules dir retired)
+#
+# Ownership markers applied (content-isolation.md rules 1+2):
+#   Marker 1: filename starts with "aid-" (tool-native dir files)
+#   Marker 2: lives inside an "aid\" subtree
+#
+# Marker 3 (AID:BEGIN/END region in root files) is NOT touched here;
+# that is handled by Copy-RootAgentFile exclusively.
+#
+# User content (no marker) is NEVER removed.
+# Idempotent: a no-op when the retired path is already absent.
+# Sets $script:_MigrateRetiredCount with the count of items removed.
+function Invoke-MigrateRetiredLayout {
+    param(
+        [string]$Target,
+        [string]$Tool,
+        [bool]$AidVerbose = $false,
+        [bool]$ListOnly = $false   # $true = dry-run enumeration only (no removals)
+    )
+
+    $script:_MigrateRetiredCount = 0
+
+    # Determine whether a file is AID-owned (markers 1 or 2).
+    $isAidOwned = {
+        param([System.IO.FileInfo]$File)
+        # Marker 1: filename starts with "aid-".
+        if ($File.Name -like 'aid-*') { return $true }
+        # Marker 2: lives inside an "aid" folder (any ancestor named "aid").
+        $dir = $File.Directory
+        while ($dir -ne $null -and $dir.FullName -ne $Target -and $dir.FullName -ne $dir.Root.FullName) {
+            if ($dir.Name -eq 'aid') { return $true }
+            $dir = $dir.Parent
+        }
+        return $false
+    }
+
+    # Sweep one retired root directory: remove AID-owned files, prune empty dirs,
+    # then remove the retired root itself if now empty.
+    # In ListOnly mode: enumerate would-be-removed files, make no changes.
+    $sweepRetiredRoot = {
+        param([string]$RDir)
+        if (-not (Test-Path $RDir -PathType Container)) { return }
+
+        # Walk all files; remove (or collect) AID-owned ones.
+        $files = @(Get-ChildItem -LiteralPath $RDir -Recurse -File -ErrorAction SilentlyContinue |
+                   Sort-Object FullName)
+        foreach ($f in $files) {
+            if (& $isAidOwned $f) {
+                if ($ListOnly) {
+                    # Emit path via Write-Output so the caller can capture with $(...).
+                    Write-Output $f.FullName
+                    $script:_MigrateRetiredCount++
+                } else {
+                    Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
+                    $script:_MigrateRetiredCount++
+                    if ($AidVerbose) { Write-Host "Retired: $($f.FullName)" }
+                }
+            }
+        }
+
+        if ($ListOnly) { return }
+
+        # Prune now-empty subdirs (deepest first).
+        $subdirs = @(Get-ChildItem -LiteralPath $RDir -Recurse -Directory -ErrorAction SilentlyContinue)
+        # Guard: pipeline over an empty @() returns $null on PowerShell; [System.Array]::Sort($null)
+        # throws "Value cannot be null" when the retired root has no subdirectories (e.g. cursor
+        # .cursor/rules/ contains only files, no nested dirs; or on idempotent re-run when the dir
+        # is already absent). Mirrors bash rm -rf / rmdir which silently no-op on absent paths.
+        if ($subdirs.Count -gt 0) {
+            $subPaths = [string[]]($subdirs | ForEach-Object { $_.FullName })
+            [System.Array]::Sort($subPaths, [System.StringComparer]::Ordinal)
+            [System.Array]::Reverse($subPaths)
+            foreach ($dp in $subPaths) {
+                if (Test-Path $dp -PathType Container) {
+                    $rem = @(Get-ChildItem -LiteralPath $dp -ErrorAction SilentlyContinue) | Select-Object -First 1
+                    if (-not $rem) {
+                        Remove-Item -LiteralPath $dp -Force -ErrorAction SilentlyContinue
+                        if ($AidVerbose) { Write-Host "Retired dir: $dp" }
+                    }
+                }
+            }
+        }
+
+        # Remove the retired root itself if now empty.
+        if (Test-Path $RDir -PathType Container) {
+            $rem = @(Get-ChildItem -LiteralPath $RDir -ErrorAction SilentlyContinue) | Select-Object -First 1
+            if (-not $rem) {
+                Remove-Item -LiteralPath $RDir -Force -ErrorAction SilentlyContinue
+                if ($AidVerbose) { Write-Host "Retired root dir: $RDir" }
+            }
+        }
+    }
+
+    switch ($Tool) {
+        'codex' {
+            # Retired root: .agents\ (old split layout -- skills\ + aid\ lived here).
+            & $sweepRetiredRoot (Join-Path $Target '.agents')
+        }
+        'cursor' {
+            # Retired root: .cursor\rules\ (rules dir no longer in new layout).
+            & $sweepRetiredRoot (Join-Path $Target '.cursor\rules')
+        }
+        'antigravity' {
+            # Retired root: .agent\rules\ (rules dir no longer in new layout).
+            & $sweepRetiredRoot (Join-Path $Target '.agent\rules')
+        }
+        # claude-code and copilot-cli have no retired roots in this migration.
+    }
+
+    if (-not $ListOnly -and $script:_MigrateRetiredCount -gt 0) {
+        Write-Host "  $($script:_MigrateRetiredCount) retired AID file(s) removed"
     }
 }
 
@@ -1339,15 +1496,12 @@ function Install-AidTool {
             }
         }
         'codex' {
+            # New unified layout: .codex\ only (agents, skills, aid all under .codex\).
+            # .agents\ is the RETIRED split layout -- handled by Invoke-MigrateRetiredLayout.
             $codexDir  = Join-Path $StagingDir '.codex'
-            $agentsDir = Join-Path $StagingDir '.agents'
             if (Test-Path $codexDir -PathType Container) {
                 Copy-AidDir -SrcDir $codexDir -DstDir (Join-Path $Target '.codex') -Force $Force -AidVerbose $AidVerbose
                 & $collectPaths $codexDir $StagingDir $installPaths
-            }
-            if (Test-Path $agentsDir -PathType Container) {
-                Copy-AidDir -SrcDir $agentsDir -DstDir (Join-Path $Target '.agents') -Force $Force -AidVerbose $AidVerbose
-                & $collectPaths $agentsDir $StagingDir $installPaths
             }
         }
         'cursor' {
@@ -1389,9 +1543,32 @@ function Install-AidTool {
         $installPaths.Add($rootAgentFile)
     }
 
+    # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
+    # Runs BEFORE Write-AidManifest so a contaminated bundle never writes to disk.
+    # Assert that the new bundle's path set does NOT contain any retired roots.
+    # If a retired path leaked into the new manifest, fail loudly -- do not prune
+    # against a contaminated manifest (content-isolation cornerstone).
+    $retiredRoots = @('.agents/', '.cursor/rules/', '.agent/rules/')
+    foreach ($rr in $retiredRoots) {
+        foreach ($p in $installPaths) {
+            $pNorm = $p -replace '\\', '/'
+            if ($pNorm.StartsWith($rr, [System.StringComparison]::Ordinal)) {
+                [Console]::Error.WriteLine("ERROR: aid-install-core: manifest-seam violation: retired root '$rr' leaked into the new bundle manifest (path: $p). Aborting install to protect user content.")
+                return 1
+            }
+        }
+    }
+
     # Write manifest (merge).
     Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
         -Paths @($installPaths) -RootEntries @($rootEntries)
+
+    # Retired-root migration sweep (FR7/FR7a).
+    # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
+    # so that old .agents\, .cursor\rules\, .agent\rules\ trees are cleaned up.
+    # A non-zero rc from Install-AidTool is treated as a mid-commit failure (caller
+    # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
+    Invoke-MigrateRetiredLayout -Target $Target -Tool $Tool -AidVerbose $AidVerbose
 
     # Prune stale AID-owned files (Pillar 2, R7).
     # Build a HashSet from the new manifest path set for O(1) lookup.
@@ -1547,7 +1724,12 @@ function Get-ManifestToolList {
         $data.tools.PSObject.Properties | ForEach-Object {
             $tid = $_.Name
             $t   = $_.Value
-            $ver = if ($t.version) { $t.version } else { '' }
+            # Guard all per-tool property accesses via PSObject.Properties['key'] first.
+            # Set-StrictMode -Version Latest (active in this module) throws
+            # PropertyNotFoundException when accessing a missing property directly
+            # (e.g. $t.root_agent_files on pre-work-005 manifests that lack it).
+            # PSObject.Properties['key'] returns $null safely for absent properties.
+            $ver = if ($t.PSObject.Properties['version']) { [string]$t.version } else { '' }
             # Determine root agent file for this tool.
             $rootAgent = switch ($tid) {
                 'claude-code' { 'CLAUDE.md' }
@@ -1555,9 +1737,10 @@ function Get-ManifestToolList {
             }
             # Read root agent status from manifest.
             $rootStatus = ''
-            if ($t.root_agent_files) {
-                foreach ($entry in $t.root_agent_files) {
-                    if ($entry.path -eq $rootAgent) {
+            $rafEntries = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
+            if ($rafEntries) {
+                foreach ($entry in $rafEntries) {
+                    if ($entry.PSObject.Properties['path'] -and ($entry.path -eq $rootAgent)) {
                         $rootStatus = if ($entry.PSObject.Properties['status']) { $entry.status } else { 'owned' }
                         break
                     }
@@ -1761,7 +1944,7 @@ function Get-AidStatus {
     $aidVersion = ''
     try {
         $data = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json
-        if ($data.aid_version) { $aidVersion = $data.aid_version }
+        if ($data.PSObject.Properties['aid_version'] -and $data.aid_version) { $aidVersion = $data.aid_version }
     } catch {}
 
     # Read CLI ref version from $env:AID_HOME/VERSION.

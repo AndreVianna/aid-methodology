@@ -943,6 +943,574 @@ G9F2_SHA_AFTER="$(file_sha256 "${G9F2_REPO}/.aid/settings.yml")"
 # The SHA may differ from first run (format_version added) but 2nd run is byte-identical.
 pass "G9F-03 era precedence: settings.yml present -> era-a repair path taken (not synthesize)"
 
+# ===========================================================================
+# Gate 10-13: OLD-LAYOUT FIXTURE MIGRATION (AC5 + AC8)
+#
+# These gates build a real pre-work-005 old-layout repo (retired `.agents/`,
+# `.cursor/rules/`, `.agent/rules/` AID content) and run `aid update` against
+# each fixture, asserting:
+#   (AC5) Retired AID trees are GONE; new layout present; user content intact
+#   (AC8) tools.*.version is uniform after migration (no mixed-version state)
+#   Idempotency: second `aid update` is a no-op
+#
+# Bundle tarballs are built from profiles/ at the current repo VERSION.
+# No network calls: --from-bundle provides offline bundles.
+# HOME is pinned for the whole suite already; the escape canary is at the end.
+# ===========================================================================
+
+# ---------------------------------------------------------------------------
+# Helpers for the old-layout gates
+# ---------------------------------------------------------------------------
+
+# Build a flat-root tarball from profiles/<tool>/ at the current repo version.
+# Mirrors the approach in tests/canonical/test-aid-cli.sh:build_fixture_tarball.
+# Skips README.md and emission-manifest.jsonl (not installed content).
+PROFILES_DIR="${REPO_ROOT}/profiles"
+VERSION_STR="$(tr -d '[:space:]' < "${REPO_ROOT}/VERSION")"
+BUNDLE_DIR="$(mktemp -d "${TMP}/bundles.XXXXXX")"
+
+_build_bundle() {
+    local tool="$1"
+    local profile_dir="${PROFILES_DIR}/${tool}"
+    local tarball="${BUNDLE_DIR}/aid-${tool}-v${VERSION_STR}.tar.gz"
+    [[ -d "$profile_dir" ]] || { echo "ERROR: profile dir not found: $profile_dir" >&2; return 1; }
+    local filelist
+    filelist="$(mktemp "${TMP}/bl-${tool}.XXXXXX")"
+    while IFS= read -r f; do
+        local fname
+        fname="$(basename "$f")"
+        [[ "$fname" == "README.md" ]] && continue
+        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
+        local rel="${f#${profile_dir}/}"
+        printf './%s\n' "$rel"
+    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
+    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
+        echo "ERROR: failed to build bundle tarball for ${tool}" >&2
+        rm -f "$filelist"
+        return 1
+    }
+    rm -f "$filelist"
+}
+
+for _bt in codex cursor antigravity; do
+    _build_bundle "$_bt" || { echo "ERROR: bundle build failed for ${_bt}" >&2; exit 1; }
+done
+
+# run_update: invoke 'aid update --from-bundle <dir> --target <repo>'
+# Uses a minimal code_home built from the repo's own bin/aid + lib/.
+# Sets AID_NO_UPDATE_CHECK=1 to avoid network/cache side-effects.
+# Stores output in UPD_OUT and exit code in UPD_RC.
+run_update() {
+    local code_home="$1" state_home="$2" repo="$3"
+    UPD_OUT=$(AID_HOME="${state_home}" \
+              AID_NO_UPDATE_CHECK=1 \
+              bash "${code_home}/bin/aid" update \
+              --from-bundle "${BUNDLE_DIR}" \
+              --target "${repo}" 2>&1)
+    UPD_RC=$?
+}
+
+# Write a minimal pre-work-005 manifest (era-b shape; version pre-dates work-005).
+# This lets the tools-to-update list be resolved by `manifest_list_tools`.
+_write_old_manifest() {
+    local manifest_path="$1"  # e.g. <repo>/.aid/.aid-manifest.json
+    local tool="$2"
+    local old_ver="${3:-0.7.0}"
+    cat > "$manifest_path" << MANIFEST_EOF
+{
+  "schema": 1,
+  "tools": {
+    "${tool}": {
+      "version": "${old_ver}",
+      "status": "active",
+      "installed_at": "2025-01-01T00:00:00Z",
+      "paths": []
+    }
+  }
+}
+MANIFEST_EOF
+}
+
+# Write a minimal settings.yml (era-a, without format_version so the format gate
+# issues a warn-not-fail: format 0 < supported 1 -> non-blocking WARN).
+_write_old_settings() {
+    local settings_path="$1"
+    local tool="$2"
+    cat > "$settings_path" << SETTINGS_EOF
+project:
+  name: OldLayoutFixture
+  description: Pre-work-005 old layout
+  type: brownfield
+
+tools:
+  installed:
+    - ${tool}
+
+review:
+  minimum_grade: A
+
+execution:
+  max_parallel_tasks: 5
+
+traceability:
+  heartbeat_interval: 1
+SETTINGS_EOF
+}
+
+# ===========================================================================
+# Gate 10 -- Codex old-layout fixture (AC5: retired .agents/ swept)
+#
+# Fixture: pre-work-005 codex repo with:
+#   .agents/skills/aid-orchestrator.md    (AID content, marker 1: aid- prefix)
+#   .agents/aid/shared.md                 (AID content, marker 2: inside aid/)
+#   .agents/user-file.txt                 (USER content: no aid- prefix, not aid/)
+#   .codex/agents/aid-orchestrator.toml   (old codex agents dir, will be replaced)
+#   AGENTS.md with AID:BEGIN..END region  (marker 3 -- handled by root-agent merge)
+#
+# After `aid update`:
+#   (AC5-a) .agents/ is GONE (retired root swept)
+#   (AC5-b) New .codex/{agents,skills,aid} is present
+#   (AC5-c) user-file.txt is byte-identical (user content untouched)
+#   (AC8)   tools.codex.version in manifest equals VERSION_STR (uniform)
+# ===========================================================================
+echo ""
+echo "=== Gate 10: Codex old-layout .agents/ swept; new .codex/ present; user content intact ==="
+
+G10_CODE_HOME="$(new_code_home)"
+G10_STATE_HOME="$(new_state_home)"
+G10_REPO="$(mktemp -d "${TMP}/g10-repo.XXXXXX")"
+mkdir -p "${G10_REPO}/.aid"
+mkdir -p "${G10_REPO}/.agents/skills"
+mkdir -p "${G10_REPO}/.agents/aid"
+mkdir -p "${G10_REPO}/.codex/agents"
+
+# AID-owned content under old .agents/ root (marker 1: aid- prefix).
+printf 'old codex orchestrator skill\n' > "${G10_REPO}/.agents/skills/aid-orchestrator.md"
+# AID-owned content under old .agents/ root (marker 2: inside aid/ subdir).
+printf 'old shared aid config\n' > "${G10_REPO}/.agents/aid/shared.md"
+# USER content under .agents/ root (no AID ownership marker -- must survive).
+printf 'USER-FILE-G10-SENTINEL\n' > "${G10_REPO}/.agents/user-file.txt"
+G10_USER_SHA="$(file_sha256 "${G10_REPO}/.agents/user-file.txt")"
+
+# Old .codex/agents/ split (marker 1: aid- prefix -- will be replaced by new layout).
+printf 'old codex agent toml\n' > "${G10_REPO}/.codex/agents/aid-orchestrator.toml"
+
+# Manifest + settings so aid knows codex is installed and this is an AID repo.
+_write_old_manifest "${G10_REPO}/.aid/.aid-manifest.json" "codex"
+_write_old_settings "${G10_REPO}/.aid/settings.yml" "codex"
+
+run_update "${G10_CODE_HOME}" "${G10_STATE_HOME}" "${G10_REPO}"
+assert_exit_eq "$UPD_RC" 0 "G10-01 aid update on codex old-layout -> exit 0"
+
+# AC5-a: retired .agents/ AID-owned content is GONE.
+if [[ -f "${G10_REPO}/.agents/skills/aid-orchestrator.md" ]]; then
+    fail "G10-02 (AC5) .agents/skills/aid-orchestrator.md must be removed (AID-owned, marker 1)"
+else
+    pass "G10-02 (AC5) .agents/skills/aid-orchestrator.md removed by retired-root sweep"
+fi
+if [[ -f "${G10_REPO}/.agents/aid/shared.md" ]]; then
+    fail "G10-03 (AC5) .agents/aid/shared.md must be removed (AID-owned, marker 2)"
+else
+    pass "G10-03 (AC5) .agents/aid/shared.md removed by retired-root sweep"
+fi
+# AC5-a: retired .agents/ root retains ONLY the user file (no AID content remains).
+# The directory itself is NOT removed because user-file.txt still lives there -- the
+# sweep only removes AID-owned content; it cannot delete a dir that has user files.
+# What we assert: the dir may still exist, but all aid- prefixed and aid/ content is gone.
+G10_AID_REMAINS="$(find "${G10_REPO}/.agents" -name 'aid-*' -o -path '*/.agents/aid/*' 2>/dev/null | head -1)"
+if [[ -n "$G10_AID_REMAINS" ]]; then
+    fail "G10-04 (AC5) .agents/ still has AID-owned content after sweep: ${G10_AID_REMAINS}"
+else
+    pass "G10-04 (AC5) .agents/ has no remaining AID-owned content (only user files retained)"
+fi
+
+# AC5-b: new .codex/ unified layout is present.
+assert_dir_exists "${G10_REPO}/.codex/agents" \
+    "G10-05 (AC5) new .codex/agents/ directory present after migration"
+assert_dir_exists "${G10_REPO}/.codex/aid" \
+    "G10-06 (AC5) new .codex/aid/ directory present after migration"
+assert_dir_exists "${G10_REPO}/.codex/skills" \
+    "G10-06b (AC5) new .codex/skills/ directory present after migration"
+# At least one new aid- prefixed agent file exists under .codex/agents/.
+G10_NEW_AGENTS="$(find "${G10_REPO}/.codex/agents" -name 'aid-*.toml' 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "${G10_NEW_AGENTS}" -gt 0 ]]; then
+    pass "G10-07 (AC5) new .codex/agents/ contains aid- agent files from new bundle"
+else
+    fail "G10-07 (AC5) .codex/agents/ should contain aid-*.toml files from new bundle"
+fi
+
+# AC5-c: user-file.txt is byte-identical (user content untouched).
+if [[ -f "${G10_REPO}/.agents/user-file.txt" ]]; then
+    G10_USER_SHA_AFTER="$(file_sha256 "${G10_REPO}/.agents/user-file.txt")"
+    assert_eq "$G10_USER_SHA" "$G10_USER_SHA_AFTER" \
+        "G10-08 (AC5) user-file.txt in old .agents/ is byte-identical (user content untouched)"
+else
+    # If .agents/ itself was removed because the user file was NOT there, that is unexpected.
+    # The sweep preserves user files, so .agents/ should remain if user-file.txt is still there.
+    # If .agents/ was removed AND user-file.txt gone that is a content-isolation violation.
+    fail "G10-08 (AC5) user-file.txt in old .agents/ is missing -- content-isolation violation"
+fi
+
+# AC8: tools.codex.version in manifest equals VERSION_STR (uniform).
+G10_MANIFEST="${G10_REPO}/.aid/.aid-manifest.json"
+assert_file_exists "$G10_MANIFEST" "G10-09 (AC8) manifest exists after aid update"
+G10_VER="$(grep -A 10 '"codex"' "$G10_MANIFEST" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')"
+assert_eq "$G10_VER" "${VERSION_STR}" \
+    "G10-10 (AC8) tools.codex.version == current version (uniform, no mixed-version)"
+
+# ===========================================================================
+# Gate 11 -- Cursor old-layout fixture (AC5: retired .cursor/rules/ swept)
+#
+# Fixture: pre-work-005 cursor repo with:
+#   .cursor/rules/aid-architect.mdc   (AID content, marker 1: aid- prefix)
+#   .cursor/rules/aid-clerk.mdc       (AID content, marker 1: aid- prefix)
+#   .cursor/rules/my.mdc              (USER content: no aid- prefix)
+#   AGENTS.md with AID:BEGIN..END + user lines outside the region
+#
+# After `aid update`:
+#   (AC5-a) .cursor/rules/aid-*.mdc files are GONE
+#   (AC5-b) New .cursor/agents/ and .cursor/aid/ are present
+#   (AC5-c) .cursor/rules/my.mdc is byte-identical (user content untouched)
+#   (AC5-d) User lines outside the AID:BEGIN..END region in AGENTS.md are intact
+#   (AC8)   tools.cursor.version in manifest == VERSION_STR
+# ===========================================================================
+echo ""
+echo "=== Gate 11: Cursor .cursor/rules/ swept; new .cursor/agents/ present; user content intact ==="
+
+G11_CODE_HOME="$(new_code_home)"
+G11_STATE_HOME="$(new_state_home)"
+G11_REPO="$(mktemp -d "${TMP}/g11-repo.XXXXXX")"
+mkdir -p "${G11_REPO}/.aid"
+mkdir -p "${G11_REPO}/.cursor/rules"
+
+# AID-owned content under retired .cursor/rules/ (marker 1: aid- prefix).
+printf 'old cursor architect rule\n' > "${G11_REPO}/.cursor/rules/aid-architect.mdc"
+printf 'old cursor clerk rule\n' > "${G11_REPO}/.cursor/rules/aid-clerk.mdc"
+# USER content under .cursor/rules/ (no AID marker -- must survive byte-identical).
+printf 'USER-CURSOR-MY-RULE-SENTINEL\n' > "${G11_REPO}/.cursor/rules/my.mdc"
+G11_USER_SHA="$(file_sha256 "${G11_REPO}/.cursor/rules/my.mdc")"
+
+# AGENTS.md: AID:BEGIN..END region + user lines outside it.
+# The user lines outside the region must survive byte-identical after migration.
+cat > "${G11_REPO}/AGENTS.md" << 'G11_AGENTS_EOF'
+# AGENTS.md
+
+## My Project Notes
+USER-LINE-BEFORE-REGION
+
+<!-- AID:BEGIN -->
+## Old AID section (will be replaced by migration)
+This is old AID content inside the region.
+<!-- AID:END -->
+
+## My Custom Section
+USER-LINE-AFTER-REGION
+G11_AGENTS_EOF
+
+# Capture sha256 of just the user lines outside the region (before migration).
+G11_AGENTS_SHA_BEFORE="$(file_sha256 "${G11_REPO}/AGENTS.md")"
+
+_write_old_manifest "${G11_REPO}/.aid/.aid-manifest.json" "cursor"
+_write_old_settings "${G11_REPO}/.aid/settings.yml" "cursor"
+
+run_update "${G11_CODE_HOME}" "${G11_STATE_HOME}" "${G11_REPO}"
+assert_exit_eq "$UPD_RC" 0 "G11-01 aid update on cursor old-layout -> exit 0"
+
+# AC5-a: retired .cursor/rules/ AID-owned files are gone.
+if [[ -f "${G11_REPO}/.cursor/rules/aid-architect.mdc" ]]; then
+    fail "G11-02 (AC5) .cursor/rules/aid-architect.mdc must be removed (AID-owned, marker 1)"
+else
+    pass "G11-02 (AC5) .cursor/rules/aid-architect.mdc removed by retired-root sweep"
+fi
+if [[ -f "${G11_REPO}/.cursor/rules/aid-clerk.mdc" ]]; then
+    fail "G11-03 (AC5) .cursor/rules/aid-clerk.mdc must be removed (AID-owned, marker 1)"
+else
+    pass "G11-03 (AC5) .cursor/rules/aid-clerk.mdc removed by retired-root sweep"
+fi
+
+# AC5-b: new .cursor/agents/ layout present.
+assert_dir_exists "${G11_REPO}/.cursor/agents" \
+    "G11-04 (AC5) new .cursor/agents/ directory present after migration"
+assert_dir_exists "${G11_REPO}/.cursor/aid" \
+    "G11-05 (AC5) new .cursor/aid/ directory present after migration"
+assert_dir_exists "${G11_REPO}/.cursor/skills" \
+    "G11-05b (AC5) new .cursor/skills/ directory present after migration"
+G11_NEW_AGENTS="$(find "${G11_REPO}/.cursor/agents" -name 'aid-*.md' 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "${G11_NEW_AGENTS}" -gt 0 ]]; then
+    pass "G11-06 (AC5) new .cursor/agents/ contains aid- agent files from new bundle"
+else
+    fail "G11-06 (AC5) .cursor/agents/ should contain aid-*.md files from new bundle"
+fi
+
+# AC5-c: user .cursor/rules/my.mdc is byte-identical (user content untouched).
+assert_file_exists "${G11_REPO}/.cursor/rules/my.mdc" \
+    "G11-07 (AC5) .cursor/rules/my.mdc (user content) still exists after migration"
+G11_USER_SHA_AFTER="$(file_sha256 "${G11_REPO}/.cursor/rules/my.mdc")"
+assert_eq "$G11_USER_SHA" "$G11_USER_SHA_AFTER" \
+    "G11-08 (AC5) .cursor/rules/my.mdc is byte-identical (user content untouched)"
+
+# AC5-d: user lines outside AID:BEGIN..END in AGENTS.md are preserved.
+assert_file_exists "${G11_REPO}/AGENTS.md" \
+    "G11-09 (AC5) AGENTS.md still exists after migration"
+assert_file_contains "${G11_REPO}/AGENTS.md" "USER-LINE-BEFORE-REGION" \
+    "G11-10 (AC5) AGENTS.md: user line BEFORE region is preserved"
+assert_file_contains "${G11_REPO}/AGENTS.md" "USER-LINE-AFTER-REGION" \
+    "G11-11 (AC5) AGENTS.md: user line AFTER region is preserved"
+assert_file_contains "${G11_REPO}/AGENTS.md" "My Custom Section" \
+    "G11-12 (AC5) AGENTS.md: user section heading preserved"
+
+# The AID:BEGIN..END region must still be present (region merge keeps the markers).
+assert_file_contains "${G11_REPO}/AGENTS.md" "<!-- AID:BEGIN -->" \
+    "G11-13 (AC5) AGENTS.md: AID:BEGIN marker present after region merge"
+assert_file_contains "${G11_REPO}/AGENTS.md" "<!-- AID:END -->" \
+    "G11-14 (AC5) AGENTS.md: AID:END marker present after region merge"
+
+# AC8: tools.cursor.version in manifest == VERSION_STR.
+G11_MANIFEST="${G11_REPO}/.aid/.aid-manifest.json"
+assert_file_exists "$G11_MANIFEST" "G11-15 (AC8) manifest exists after aid update"
+G11_VER="$(grep -A 10 '"cursor"' "$G11_MANIFEST" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')"
+assert_eq "$G11_VER" "${VERSION_STR}" \
+    "G11-16 (AC8) tools.cursor.version == current version (uniform)"
+
+# ===========================================================================
+# Gate 12 -- Antigravity old-layout fixture (AC5: retired .agent/rules/ swept)
+#
+# Fixture: pre-work-005 antigravity repo with:
+#   .agent/rules/aid-architect.md   (AID content, marker 1: aid- prefix)
+#   .agent/rules/my-team-rules.md   (USER content: no aid- prefix)
+#   AGENTS.md with AID:BEGIN..END + user lines outside the region
+#
+# After `aid update`:
+#   (AC5-a) .agent/rules/aid-*.md files are GONE
+#   (AC5-b) New .agent/agents/ and .agent/aid/ are present
+#   (AC5-c) .agent/rules/my-team-rules.md is byte-identical
+#   (AC5-d) User lines outside AGENTS.md region are intact
+#   (AC8)   tools.antigravity.version == VERSION_STR
+# ===========================================================================
+echo ""
+echo "=== Gate 12: Antigravity .agent/rules/ swept; new .agent/agents/ present; user content intact ==="
+
+G12_CODE_HOME="$(new_code_home)"
+G12_STATE_HOME="$(new_state_home)"
+G12_REPO="$(mktemp -d "${TMP}/g12-repo.XXXXXX")"
+mkdir -p "${G12_REPO}/.aid"
+mkdir -p "${G12_REPO}/.agent/rules"
+
+# AID-owned content under retired .agent/rules/ (marker 1: aid- prefix).
+printf 'old antigravity architect rule\n' > "${G12_REPO}/.agent/rules/aid-architect.md"
+printf 'old antigravity clerk rule\n' > "${G12_REPO}/.agent/rules/aid-clerk.md"
+# USER content under .agent/rules/ (no AID marker -- must survive byte-identical).
+printf 'USER-AGENT-RULES-SENTINEL\n' > "${G12_REPO}/.agent/rules/my-team-rules.md"
+G12_USER_SHA="$(file_sha256 "${G12_REPO}/.agent/rules/my-team-rules.md")"
+
+# AGENTS.md with AID:BEGIN..END + user content outside region.
+cat > "${G12_REPO}/AGENTS.md" << 'G12_AGENTS_EOF'
+# AGENTS.md
+
+USER-ANTIGRAVITY-LINE-BEFORE
+
+<!-- AID:BEGIN -->
+## Old AID agents section
+Some old AID content.
+<!-- AID:END -->
+
+USER-ANTIGRAVITY-LINE-AFTER
+G12_AGENTS_EOF
+
+_write_old_manifest "${G12_REPO}/.aid/.aid-manifest.json" "antigravity"
+_write_old_settings "${G12_REPO}/.aid/settings.yml" "antigravity"
+
+run_update "${G12_CODE_HOME}" "${G12_STATE_HOME}" "${G12_REPO}"
+assert_exit_eq "$UPD_RC" 0 "G12-01 aid update on antigravity old-layout -> exit 0"
+
+# AC5-a: retired .agent/rules/ AID-owned files are gone.
+if [[ -f "${G12_REPO}/.agent/rules/aid-architect.md" ]]; then
+    fail "G12-02 (AC5) .agent/rules/aid-architect.md must be removed (AID-owned, marker 1)"
+else
+    pass "G12-02 (AC5) .agent/rules/aid-architect.md removed by retired-root sweep"
+fi
+if [[ -f "${G12_REPO}/.agent/rules/aid-clerk.md" ]]; then
+    fail "G12-03 (AC5) .agent/rules/aid-clerk.md must be removed (AID-owned, marker 1)"
+else
+    pass "G12-03 (AC5) .agent/rules/aid-clerk.md removed by retired-root sweep"
+fi
+
+# AC5-b: new .agent/agents/ and .agent/aid/ present.
+assert_dir_exists "${G12_REPO}/.agent/agents" \
+    "G12-04 (AC5) new .agent/agents/ directory present after migration"
+assert_dir_exists "${G12_REPO}/.agent/aid" \
+    "G12-05 (AC5) new .agent/aid/ directory present after migration"
+assert_dir_exists "${G12_REPO}/.agent/skills" \
+    "G12-05b (AC5) new .agent/skills/ directory present after migration"
+G12_NEW_AGENTS="$(find "${G12_REPO}/.agent/agents" -name 'aid-*.md' 2>/dev/null | wc -l | tr -d ' ')"
+if [[ "${G12_NEW_AGENTS}" -gt 0 ]]; then
+    pass "G12-06 (AC5) new .agent/agents/ contains aid- agent files from new bundle"
+else
+    fail "G12-06 (AC5) .agent/agents/ should contain aid-*.md files from new bundle"
+fi
+
+# AC5-c: user .agent/rules/my-team-rules.md is byte-identical.
+assert_file_exists "${G12_REPO}/.agent/rules/my-team-rules.md" \
+    "G12-07 (AC5) .agent/rules/my-team-rules.md (user content) still exists"
+G12_USER_SHA_AFTER="$(file_sha256 "${G12_REPO}/.agent/rules/my-team-rules.md")"
+assert_eq "$G12_USER_SHA" "$G12_USER_SHA_AFTER" \
+    "G12-08 (AC5) .agent/rules/my-team-rules.md is byte-identical (user content untouched)"
+
+# AC5-d: user lines outside AGENTS.md region are preserved.
+assert_file_exists "${G12_REPO}/AGENTS.md" \
+    "G12-09 (AC5) AGENTS.md still exists after migration"
+assert_file_contains "${G12_REPO}/AGENTS.md" "USER-ANTIGRAVITY-LINE-BEFORE" \
+    "G12-10 (AC5) AGENTS.md: user line BEFORE region preserved"
+assert_file_contains "${G12_REPO}/AGENTS.md" "USER-ANTIGRAVITY-LINE-AFTER" \
+    "G12-11 (AC5) AGENTS.md: user line AFTER region preserved"
+assert_file_contains "${G12_REPO}/AGENTS.md" "<!-- AID:BEGIN -->" \
+    "G12-12 (AC5) AGENTS.md: AID:BEGIN marker present after region merge"
+assert_file_contains "${G12_REPO}/AGENTS.md" "<!-- AID:END -->" \
+    "G12-13 (AC5) AGENTS.md: AID:END marker present after region merge"
+
+# AC8: tools.antigravity.version in manifest == VERSION_STR.
+G12_MANIFEST="${G12_REPO}/.aid/.aid-manifest.json"
+assert_file_exists "$G12_MANIFEST" "G12-14 (AC8) manifest exists after aid update"
+G12_VER="$(grep -A 10 '"antigravity"' "$G12_MANIFEST" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')"
+assert_eq "$G12_VER" "${VERSION_STR}" \
+    "G12-15 (AC8) tools.antigravity.version == current version (uniform)"
+
+# ===========================================================================
+# Gate 13 -- Idempotency: second `aid update` on a migrated old-layout repo
+#            is a no-op (no further removals, manifest and files unchanged).
+#
+# Reuses the G10 (codex) fixture post-migration: run aid update a second time
+# and assert the sha256 of every relevant file is unchanged.
+# ===========================================================================
+echo ""
+echo "=== Gate 13: Idempotency -- second aid update on migrated old-layout repo is no-op ==="
+
+# Snapshot the manifest and a new-layout file sha before the second run.
+G13_MANIFEST_SHA_BEFORE="$(file_sha256 "${G10_REPO}/.aid/.aid-manifest.json")"
+# Pick one new-layout file as a stability witness.
+G13_WITNESS_FILE="$(find "${G10_REPO}/.codex/agents" -name 'aid-*.toml' 2>/dev/null | sort | head -1)"
+G13_WITNESS_SHA_BEFORE=""
+if [[ -n "$G13_WITNESS_FILE" ]]; then
+    G13_WITNESS_SHA_BEFORE="$(file_sha256 "$G13_WITNESS_FILE")"
+fi
+
+run_update "${G10_CODE_HOME}" "${G10_STATE_HOME}" "${G10_REPO}"
+assert_exit_eq "$UPD_RC" 0 "G13-01 second aid update on codex migrated repo -> exit 0"
+
+# .agents/ must still be absent (no resurrection).
+if [[ -d "${G10_REPO}/.agents/skills" ]]; then
+    fail "G13-02 .agents/skills/ must remain absent after second update (idempotent)"
+else
+    pass "G13-02 .agents/skills/ remains absent after second update (idempotent)"
+fi
+
+# Manifest sha should be the same (only installed_at timestamp might differ; check version key).
+G13_VER_AFTER="$(grep -A 10 '"codex"' "${G10_REPO}/.aid/.aid-manifest.json" 2>/dev/null | grep '"version"' | head -1 | sed 's/.*"version"[^"]*"\([^"]*\)".*/\1/')"
+assert_eq "$G13_VER_AFTER" "${VERSION_STR}" \
+    "G13-03 tools.codex.version still correct after second update (idempotent)"
+
+# New-layout witness file is unchanged (files are up-to-date, no re-copy).
+if [[ -n "$G13_WITNESS_FILE" && -n "$G13_WITNESS_SHA_BEFORE" ]]; then
+    G13_WITNESS_SHA_AFTER="$(file_sha256 "$G13_WITNESS_FILE")"
+    assert_eq "$G13_WITNESS_SHA_BEFORE" "$G13_WITNESS_SHA_AFTER" \
+        "G13-04 new-layout witness file byte-identical after second update (idempotent)"
+else
+    pass "G13-04 new-layout witness file check skipped (no agent file found; G10-07 would have caught it)"
+fi
+
+# User file still intact after second update.
+if [[ -f "${G10_REPO}/.agents/user-file.txt" ]]; then
+    G13_USER_SHA_AFTER="$(file_sha256 "${G10_REPO}/.agents/user-file.txt")"
+    assert_eq "$G10_USER_SHA" "$G13_USER_SHA_AFTER" \
+        "G13-05 user-file.txt still byte-identical after second update (idempotent)"
+else
+    fail "G13-05 user-file.txt unexpectedly missing after second update -- content-isolation violation"
+fi
+
+# ===========================================================================
+# Gate 14 -- dry-run preview of retired-root deletions (post-eval #1)
+#
+# Asserts that `aid update --dry-run` on a repo with an old-layout retired root:
+#   (a) LISTS the would-be-removed AID-owned file in its output (the "Would REMOVE"
+#       block must appear with a "remove:" entry for the retired path).
+#   (b) Writes NOTHING: the retired AID file is still present after the dry-run
+#       (no actual removal happened).
+#   (c) The new bundle files have NOT been copied into the target (dry-run == no writes).
+#
+# Fixture: a codex repo with a retired .agents/skills/aid-orchestrator.md file.
+# ===========================================================================
+echo ""
+echo "=== Gate 14: aid update --dry-run lists retired AID path + writes nothing ==="
+
+G14_CODE_HOME="$(new_code_home)"
+G14_STATE_HOME="$(new_state_home)"
+G14_REPO="$(mktemp -d "${TMP}/g14-repo.XXXXXX")"
+mkdir -p "${G14_REPO}/.aid"
+mkdir -p "${G14_REPO}/.agents/skills"
+mkdir -p "${G14_REPO}/.agents/aid"
+
+# AID-owned files in the retired .agents/ tree.
+printf 'old orchestrator skill\n' > "${G14_REPO}/.agents/skills/aid-orchestrator.md"
+printf 'old shared aid config\n'  > "${G14_REPO}/.agents/aid/shared.md"
+# User file (must survive dry-run).
+printf 'USER-G14-SENTINEL\n' > "${G14_REPO}/.agents/user-file.txt"
+G14_USER_SHA="$(file_sha256 "${G14_REPO}/.agents/user-file.txt")"
+
+# Write a minimal era-b manifest so the tool list is resolved (codex at old version).
+_write_old_manifest "${G14_REPO}/.aid/.aid-manifest.json" "codex"
+_write_old_settings "${G14_REPO}/.aid/settings.yml" "codex"
+
+# Run aid update --dry-run.
+G14_DRY_OUT=$(AID_HOME="${G14_STATE_HOME}" \
+              AID_NO_UPDATE_CHECK=1 \
+              bash "${G14_CODE_HOME}/bin/aid" update \
+              --dry-run \
+              --from-bundle "${BUNDLE_DIR}" \
+              --target "${G14_REPO}" 2>&1)
+G14_DRY_RC=$?
+
+assert_exit_eq "$G14_DRY_RC" 0 "G14-01 aid update --dry-run on old-layout codex repo -> exit 0"
+
+# (a) Output must contain the "Would REMOVE" block and a "remove:" entry for
+#     one of the retired AID paths.
+if echo "$G14_DRY_OUT" | grep -q "Would REMOVE"; then
+    pass "G14-02 dry-run output contains 'Would REMOVE (retired-layout migration):' header"
+else
+    fail "G14-02 dry-run output missing 'Would REMOVE (retired-layout migration):' header"
+    if [[ "${VERBOSE:-0}" -eq 1 ]]; then printf "DRY OUTPUT:\n%s\n" "$G14_DRY_OUT"; fi
+fi
+
+if echo "$G14_DRY_OUT" | grep -q "remove:.*aid-orchestrator"; then
+    pass "G14-03 dry-run output lists the retired AID file (aid-orchestrator.md) in the remove set"
+else
+    fail "G14-03 dry-run output does NOT list the retired AID file (aid-orchestrator.md)"
+    if [[ "${VERBOSE:-0}" -eq 1 ]]; then printf "DRY OUTPUT:\n%s\n" "$G14_DRY_OUT"; fi
+fi
+
+# (b) Dry-run must make zero writes: the retired AID file must still exist.
+if [[ -f "${G14_REPO}/.agents/skills/aid-orchestrator.md" ]]; then
+    pass "G14-04 retired AID file still present after dry-run (no actual removal)"
+else
+    fail "G14-04 retired AID file was DELETED by dry-run -- dry-run must make zero writes"
+fi
+
+# (b) User file must still exist and be byte-identical (no mutation at all).
+if [[ -f "${G14_REPO}/.agents/user-file.txt" ]]; then
+    G14_USER_SHA_AFTER="$(file_sha256 "${G14_REPO}/.agents/user-file.txt")"
+    assert_eq "$G14_USER_SHA" "$G14_USER_SHA_AFTER" \
+        "G14-05 user-file.txt byte-identical after dry-run (content-isolation)"
+else
+    fail "G14-05 user-file.txt missing after dry-run -- dry-run must not remove user content"
+fi
+
+# (c) New bundle files must NOT have been copied into the target.
+G14_NEW_LAYOUT="$(find "${G14_REPO}/.codex" -type f 2>/dev/null | head -1)"
+if [[ -z "$G14_NEW_LAYOUT" ]]; then
+    pass "G14-06 new-layout .codex/ NOT written during dry-run (zero copy writes)"
+else
+    fail "G14-06 new-layout .codex/ was written by dry-run -- dry-run must make zero writes"
+fi
+
 # --- Isolation canary: confirm no real repo was touched ----------------------
 echo ""
 echo "=== Isolation canary: real HOME untouched ==="

@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. Green 141/0 (independent re-run, all 54 suites). RED proven (reviewer broke _retire_file to delete unmarked files -> G11-08/G12-08 byte-identity assertions fired loudly, 135/6) — not toothless. Fixtures real old-layout; migration is real `aid update --from-bundle`; byte-identity sha256-compared; HOME-pin + canary genuinely fires; deterministic; ASCII; scope clean (only the test file).
+- **Elapsed:** ~00:14
+- **Notes:** test-aid-migrate.sh Gates 10-13 (46 new assertions): codex/cursor/antigravity old-layout migration + idempotency; user content byte-identical + AID region preserved + version uniform (AC5/AC8).
 
 ---
 

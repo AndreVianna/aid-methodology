@@ -191,15 +191,19 @@ function script:Show-AidUsage {
             Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
         }
         'update' {
-            Write-Host 'aid update [<tool>...] [-Version <v>] [-FromBundle <path>] [-Force] [-Target <dir>]'
+            Write-Host 'aid update [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
             Write-Host 'aid update self [-FromBundle <path>] [-DryRun]'
-            Write-Host '  Update to latest. No args: update all installed tools.'
+            Write-Host '  Update to latest.'
+            Write-Host '  Outside an AID repo: updates the CLI only (no-op if already latest).'
+            Write-Host '  Inside an AID repo: updates the CLI first, then ALL installed tools to one version.'
+            Write-Host '  No per-tool selection -- any tool positional is an error (use "self" only).'
             Write-Host '  self: COMPLETELY update the aid CLI, channel-aware:'
             Write-Host '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.ps1.'
             Write-Host '        On Windows, elevation is the caller''s responsibility (no sudo).'
-            Write-Host '  -FromBundle <path>: install the CLI from a local artifact instead of @latest'
+            Write-Host '  -Version <v>:        pin ALL tools (and CLI) to version v.'
+            Write-Host '  -FromBundle <path>:  install from a local artifact instead of @latest'
             Write-Host '        (npm .tgz | pypi .whl | curl release-staging dir with install.ps1).'
-            Write-Host '  -DryRun: print the exact command(s) it would run, then exit (no changes).'
+            Write-Host '  -DryRun: print the full plan (tools updated, files copied, paths pruned) and exit.'
         }
         'version' {
             Write-Host 'aid version'
@@ -241,7 +245,7 @@ function script:Show-AidUsage {
             Write-Host '  aid version                      Print the CLI version'
             Write-Host '  aid status                       Show AID state of the current project'
             Write-Host '  aid add <tool>[,...]             Add tool(s) to the current project'
-            Write-Host '  aid update [<tool>... | self]    Update to latest; no arg = all tools'
+            Write-Host '  aid update [self]                Update to latest; inside repo = all tools'
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
             Write-Host '  aid projects [list|add|remove]   List/register/unregister AID projects'
@@ -2774,6 +2778,7 @@ $_AidFromBundle  = ''
 $_AidForce       = $false
 $_AidRemoveForce = $false
 $_AidTarget      = ''
+$_AidDryRun      = $false
 $_AidPosTools    = [System.Collections.Generic.List[string]]::new()
 
 $remIdx = 0
@@ -2800,8 +2805,9 @@ while ($remIdx -lt $script:_RemArgs.Count) {
             $_AidTarget = $script:_RemArgs[$remIdx]
             break
         }
-        '^(-NoPath|--no-path)$' { break <# bootstrap-only; silently ignore here #> }
-        '^(-h|--help|-Help)$'   { script:Show-AidUsage $SUBCMD; script:Exit-Aid 0 }
+        '^(-NoPath|--no-path)$'   { break <# bootstrap-only; silently ignore here #> }
+        '^(-DryRun|--dry-run)$'   { $_AidDryRun = $true; break }
+        '^(-h|--help|-Help)$'     { script:Show-AidUsage $SUBCMD; script:Exit-Aid 0 }
         '^-' {
             script:Fail-Aid "unknown flag: $a" 2
         }
@@ -2825,6 +2831,16 @@ if (-not $_AidForce -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true'))
 }
 if ($script:_AidVerbose) { $env:AID_VERBOSE = '1' }
 
+# FR10: 'update' no longer accepts a per-tool positional (other than 'self' which
+# was already consumed above).  Any non-flag positional on 'aid update' is a usage error.
+if ($SUBCMD -eq 'update' -and $_AidToolArg) {
+    [Console]::Error.WriteLine("ERROR: aid update: unexpected argument: '$_AidToolArg'")
+    [Console]::Error.WriteLine("       'aid update' updates all installed tools -- no per-tool selection.")
+    [Console]::Error.WriteLine("       Use 'aid update self' to update the CLI only.")
+    [Console]::Error.WriteLine("       See 'aid update -h' for usage.")
+    script:Exit-Aid 2
+}
+
 if (-not $_AidTarget) { $_AidTarget = '.' }
 
 # Validate target directory.
@@ -2833,14 +2849,31 @@ if (-not (Test-Path $_AidTarget -PathType Container)) {
 }
 $_AidTarget = (Resolve-Path -LiteralPath $_AidTarget).Path
 
-# ---- C-table pre-check for 'update [tool]': non-project -> offer + exit 0 ----
-# Must run BEFORE resolve-tools so we never reach exit-6 when no .aid/ exists.
-# 'add' uses the B-table (checked inside the dispatch case); 'remove' is not in C-table.
+# ---- FR10: 'update' outside an AID repo -> update the CLI only (not offer-and-exit) ----
+# Outside a repo: delegates to the CLI-only update path; no tool loop.
+# Inside a repo: fall through to the full tool-update pass below.
 # Test-AidIsProjectDir excludes the CLI state home from "is project" classification.
 if ($SUBCMD -eq 'update') {
     if (-not (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
-        script:Invoke-AidCwdNoAidOffer -Target $_AidTarget
-        # Invoke-AidCwdNoAidOffer always calls Exit-Aid 0.
+        # FR10 outside-repo: update the CLI only; no tool loop.
+        $updCliVer = ''
+        $updVerFile = Join-Path $script:_AidCodeHome 'VERSION'
+        if (Test-Path $updVerFile -PathType Leaf) {
+            $updCliVer = (Get-Content -LiteralPath $updVerFile -Raw -ErrorAction SilentlyContinue).Trim()
+        }
+        # Check if already latest using cached update-check result (no network call).
+        $updCacheFile = Join-Path $HOME (Join-Path '.aid' '.update-check')
+        $updCachedLatest = ''
+        if (Test-Path $updCacheFile -PathType Leaf) {
+            $updLines = Get-Content -LiteralPath $updCacheFile -ErrorAction SilentlyContinue
+            if ($updLines -and $updLines.Count -ge 2) { $updCachedLatest = $updLines[1].Trim() }
+        }
+        if ($updCliVer -and $updCachedLatest -and ($updCliVer -eq $updCachedLatest)) {
+            Write-Host "CLI is current (v$updCliVer)"
+            script:Exit-Aid 0
+        }
+        script:Invoke-AidUpdateSelfIfStale -FromBundle $_AidFromBundle
+        script:Exit-Aid 0
     }
 }
 
@@ -2852,8 +2885,8 @@ if ($SUBCMD -eq 'update' -and (script:Test-AidIsProjectDir -Dir $_AidTarget)) {
 }
 
 # ---- Self-update-if-needed preamble (FF-3 / CLI-2 / task-079) --------------
-# For 'update [<tool>]' only (not 'add', not 'update self').  Ensures the CLI
-# is current before the per-repo migration runs (FR38 / OQ-6).  WARN-not-fail.
+# For 'update' inside an AID repo only (not 'add', not 'update self').
+# Ensures the CLI is current before the per-repo tool-update runs.  WARN-not-fail.
 if ($SUBCMD -eq 'update') {
     script:Invoke-AidUpdateSelfIfStale -FromBundle $_AidFromBundle
 }
@@ -3022,8 +3055,6 @@ function script:Prepare-AidToolStaging {
 # Dispatch to engine.
 # ---------------------------------------------------------------------------
 try {
-    $overallBlocked = $false
-
     switch ($SUBCMD) {
         { $_ -in @('add', 'update') } {
             # B-table (for 'add'): writability pre-check BEFORE any .aid/ is created.
@@ -3039,33 +3070,142 @@ try {
                 }
             }
 
-            # C-table (for 'update [tool]'): register-on-encounter.
+            # ---------------------------------------------------------------------------
+            # FR11: aid add version selection (same-version invariant).
+            # First-tool  (no existing tools in manifest): install at the CLI version.
+            # Additional-tool (manifest already has >=1 tool): install at the EXISTING
+            # tools' version to keep the repo uniform.  add does NOT force a repo-wide
+            # update.  -Version on add must apply to ALL tools or error (mixed-version
+            # repo would result if the requested version differs from the existing one).
+            # ---------------------------------------------------------------------------
+            if ($SUBCMD -eq 'add') {
+                $_fr11CliVer = ''
+                $fr11VerFile = Join-Path $script:_AidCodeHome 'VERSION'
+                if (Test-Path $fr11VerFile -PathType Leaf) {
+                    $_fr11CliVer = (Get-Content -LiteralPath $fr11VerFile -Raw -ErrorAction SilentlyContinue).Trim()
+                }
+                $_fr11ExistingVer = ''
+                if (Test-Path $_AidManifest -PathType Leaf) {
+                    $fr11FirstTool = (Get-ManifestToolList -ManifestPath $_AidManifest | Select-Object -First 1)
+                    if ($fr11FirstTool) {
+                        $_fr11ExistingVer = Read-ManifestToolVersion -ManifestPath $_AidManifest -Tool $fr11FirstTool.Id
+                    }
+                }
+
+                if ($_AidVersionArg) {
+                    # -Version on add: validate it won't create a mixed-version repo.
+                    if ($_fr11ExistingVer -and $_AidVersionArg -ne $_fr11ExistingVer) {
+                        [Console]::Error.WriteLine("ERROR: aid add: -Version $_AidVersionArg would create a mixed-version repo.")
+                        [Console]::Error.WriteLine("       Existing tools are at v$_fr11ExistingVer. Either:")
+                        [Console]::Error.WriteLine("         - Omit -Version to install at the repo version (v$_fr11ExistingVer), or")
+                        [Console]::Error.WriteLine("         - Run 'aid update -Version $_AidVersionArg' first to advance the whole repo.")
+                        script:Exit-Aid 2
+                    }
+                    # -Version provided and no conflict: apply to all tools (passed through to staging).
+                } elseif ($_fr11ExistingVer) {
+                    # Additional-tool: pin staging to the existing repo version (not the CLI version).
+                    $_AidVersionArg = $_fr11ExistingVer
+                    # Skew notice when CLI is ahead of the repo version.
+                    if ($_fr11CliVer) {
+                        $fr11PartsA = $_fr11ExistingVer -split '\.'
+                        $fr11PartsB = $_fr11CliVer      -split '\.'
+                        $fr11IsLt   = $false
+                        for ($fr11i = 0; $fr11i -lt 3; $fr11i++) {
+                            $fr11rA = if ($fr11i -lt $fr11PartsA.Count) { $fr11PartsA[$fr11i] } else { '0' }
+                            $fr11rB = if ($fr11i -lt $fr11PartsB.Count) { $fr11PartsB[$fr11i] } else { '0' }
+                            if ($fr11rA -match '^(\d+)') { $fr11vA = [int]$Matches[1] } else { $fr11vA = 0 }
+                            if ($fr11rB -match '^(\d+)') { $fr11vB = [int]$Matches[1] } else { $fr11vB = 0 }
+                            if ($fr11vA -lt $fr11vB) { $fr11IsLt = $true; break }
+                            if ($fr11vA -gt $fr11vB) { break }
+                        }
+                        if ($fr11IsLt) {
+                            Write-Host "repo is at v$_fr11ExistingVer; new tool(s) installed at v$_fr11ExistingVer to keep the repo uniform. Run 'aid update' to advance all tools to v$_fr11CliVer."
+                        }
+                    }
+                } else {
+                    # First-tool: pin to CLI version (bundle supplies its own version; skip if so).
+                    if (-not $_AidFromBundle -and $_fr11CliVer) {
+                        $_AidVersionArg = $_fr11CliVer
+                    }
+                }
+            }
+
+            # C-table (for 'update'): register-on-encounter.
             # The missing-.aid/ case was already intercepted above (pre-resolve-tools).
             if ($SUBCMD -eq 'update') {
                 script:Invoke-AidCwdClassify -Target $_AidTarget
             }
 
+            # ---------------------------------------------------------------------------
+            # FR10 Stage-all-first atomicity (task-009):
+            # PHASE 1: Stage ALL tools (resolve version, fetch, checksum-verify, extract
+            #          to temp) BEFORE any destination write.  A failure here aborts with
+            #          zero destination mutation.
+            # ---------------------------------------------------------------------------
+            $stageMap     = [System.Collections.Generic.Dictionary[string,string]]::new()
+            $stageVersion = ''
+
+            foreach ($t in $_AidTools) {
+                script:Prepare-AidToolStaging -Tool $t -Version $_AidVersionArg -Bundle $_AidFromBundle
+                $stageMap[$t] = $script:_DispStagingDir
+                if (-not $stageVersion) { $stageVersion = $script:_DispResolvedVersion }
+            }
+
+            # ---------------------------------------------------------------------------
+            # FR10 -DryRun: print the plan and exit with no writes.
+            # ---------------------------------------------------------------------------
+            if ($_AidDryRun) {
+                Write-Host "--- aid $SUBCMD -DryRun plan (no writes) ---"
+                Write-Host "Target: $_AidTarget"
+                Write-Host "Version: $(if ($stageVersion) { $stageVersion } else { '<current>' })"
+                foreach ($t in $_AidTools) {
+                    Write-Host ""
+                    Write-Host "Tool: $t"
+                    $dryStaging = $stageMap[$t]
+                    $dryFiles = @(Get-ChildItem -LiteralPath $dryStaging -Recurse -File -ErrorAction SilentlyContinue |
+                                  Sort-Object FullName)
+                    foreach ($df in $dryFiles) {
+                        $rel = $df.FullName.Substring($dryStaging.Length).TrimStart([char]'\', [char]'/')
+                        Write-Host "  copy: $rel -> $_AidTarget"
+                    }
+                    # List files that would be REMOVED by the retired-root migration sweep
+                    # (marker 1: aid-* prefix; marker 2: inside an aid\ subtree).
+                    # Uses ListOnly=$true mode of Invoke-MigrateRetiredLayout (no writes).
+                    # The function emits paths via Write-Output; capture then display.
+                    $dryRemovePaths = @(Invoke-MigrateRetiredLayout -Target $_AidTarget -Tool $t -ListOnly $true)
+                    if ($dryRemovePaths.Count -gt 0) {
+                        Write-Host "  Would REMOVE (retired-layout migration):"
+                        foreach ($rp in $dryRemovePaths) {
+                            Write-Host "  remove: $rp"
+                        }
+                    }
+                }
+                Write-Host ""
+                Write-Host "--- end dry-run plan ---"
+                script:Exit-Aid 0
+            }
+
+            # ---------------------------------------------------------------------------
+            # PHASE 2: Commit all staged tools.
+            # If any commit fails, exit non-zero with a re-run-to-heal message.
+            # aid update is idempotent: re-running drives every tool to the target version.
+            # ---------------------------------------------------------------------------
             foreach ($t in $_AidTools) {
                 Write-Host ""
-                script:Prepare-AidToolStaging -Tool $t -Version $_AidVersionArg -Bundle $_AidFromBundle
-                Write-Host "Installing $t v$($script:_DispResolvedVersion) -> $_AidTarget"
-                $rc = Install-AidTool -StagingDir $script:_DispStagingDir -Tool $t -Target $_AidTarget `
-                         -Version $script:_DispResolvedVersion -Force ([bool]$_AidForce) `
+                Write-Host "Installing $t v$stageVersion -> $_AidTarget"
+                $rc = Install-AidTool -StagingDir $stageMap[$t] -Tool $t -Target $_AidTarget `
+                         -Version $stageVersion -Force ([bool]$_AidForce) `
                          -AidVerbose $script:_AidVerbose
-                if ($rc -eq 5) {
-                    $overallBlocked = $true
-                } elseif ($rc -ne 0) {
+                if ($rc -ne 0) {
+                    Write-Host ""
+                    [Console]::Error.WriteLine("ERROR: aid $SUBCMD failed mid-commit for tool '$t' (rc=$rc).")
+                    [Console]::Error.WriteLine("       The repo may be at mixed versions. Re-run 'aid update' to heal.")
                     script:Exit-Aid $rc
                 }
             }
 
             Write-Host ""
-            if ($overallBlocked) {
-                Write-Host "Install complete with warnings: one or more root agent files were not overwritten."
-                Write-Host "Review the *.aid-new file(s) and merge, or re-run with -Force to overwrite."
-                script:Exit-Aid 5
-            }
-            Write-Host "Done. AID $($script:_DispResolvedVersion) installed into: $_AidTarget"
+            Write-Host "Done. AID $stageVersion installed into: $_AidTarget"
 
             # B-table (for 'add'): tier-aware registration after successful install.
             # Decision #3 (unwritable) already handled above with error+abort.
@@ -3074,7 +3214,7 @@ try {
                 $_btabTier = script:Resolve-AidTier -CanonPath $_AidTarget
                 script:Registry-Register -Repo $_AidTarget -Tier $_btabTier
             } else {
-                # 'update [tool]': C-table register-on-encounter already ran above.
+                # 'update': C-table register-on-encounter already ran above.
                 # The post-install register is idempotent; route via user tier.
                 script:Registry-Register -Repo $_AidTarget -Tier 'user'
             }

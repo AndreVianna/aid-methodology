@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. Parity verified (twins mirror; PS dropped an old PS-only branch = parity improvement); stage-all-first atomicity REAL (Phase 1 staging / Phase 2 commit genuinely split — staging failure = zero mutation); --dry-run no-writes (between phases, exit 0); ASCII clean; scope clean (lib/ unchanged, no FR11/migration); test edits tightened not loosened; 374/374 parity re-run (pwsh present).
+- **Elapsed:** ~00:14
+- **Notes:** bin/aid + bin/aid.ps1: drop per-tool positional (update <tool> -> exit 2; update self intact), outside-repo CLI-only, stage-all-first (Phase 1 _STAGE_MAP / Phase 2 install_tool), shared --dry-run flag, mid-commit heal message. Tests updated (test-aid-cli{,-ps1,-parity}.sh). 197/166/374 pass.
 
 ---
 

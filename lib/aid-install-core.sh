@@ -1695,6 +1695,8 @@ _prune_tool_dirs() {
 
     # ------------------------------------------------------------------
     # Per-tool scoping: which native dirs + which aid/ root to walk.
+    # New layout (work-005/delivery-001): codex is unified under .codex/;
+    # cursor and antigravity no longer ship rules/ dirs.
     # ------------------------------------------------------------------
     case "$tool" in
         claude-code)
@@ -1703,15 +1705,15 @@ _prune_tool_dirs() {
             _prune_aid_subtree "${target}/.claude/aid"
             ;;
         codex)
-            # .codex ships only agents/; .agents ships skills/ + aid/ subtree.
+            # New unified layout: everything under .codex/ (agents, skills, aid).
             _prune_native_dir "${target}/.codex/agents"
-            _prune_native_dir "${target}/.agents/skills"
-            _prune_aid_subtree "${target}/.agents/aid"
+            _prune_native_dir "${target}/.codex/skills"
+            _prune_aid_subtree "${target}/.codex/aid"
             ;;
         cursor)
+            # rules/ dir removed from new layout; agents/skills/aid remain.
             _prune_native_dir "${target}/.cursor/agents"
             _prune_native_dir "${target}/.cursor/skills"
-            _prune_native_dir "${target}/.cursor/rules"
             _prune_aid_subtree "${target}/.cursor/aid"
             ;;
         copilot-cli)
@@ -1721,7 +1723,8 @@ _prune_tool_dirs() {
             _prune_aid_subtree "${target}/.github/aid"
             ;;
         antigravity)
-            _prune_native_dir "${target}/.agent/rules"
+            # rules/ dir removed from new layout; agents/skills/aid remain.
+            _prune_native_dir "${target}/.agent/agents"
             _prune_native_dir "${target}/.agent/skills"
             _prune_aid_subtree "${target}/.agent/aid"
             ;;
@@ -1733,6 +1736,133 @@ _prune_tool_dirs() {
 
     # Unset nested helpers to avoid polluting caller's scope.
     unset -f _in_set _prune_native_dir _prune_aid_subtree
+}
+
+# ---------------------------------------------------------------------------
+# Retired-root migration sweep (FR7/FR7a)
+# ---------------------------------------------------------------------------
+
+# _migrate_retired_layout <target> <tool>
+#
+# Complete-replacement migration: removes AID-owned content from the static
+# list of retired AID roots that no longer exist in the new bundle layout.
+# Called from install_tool BEFORE _prune_tool_dirs (same aid update pass).
+#
+# Retired roots swept per tool:
+#   codex:       .agents/                     (split layout retired)
+#   cursor:      .cursor/rules/               (rules dir retired)
+#   antigravity: .agent/rules/                (rules dir retired)
+#   all tools:   .cursor/rules/, .agent/rules/ are cursor/antigravity only
+#
+# Ownership markers applied (content-isolation.md rules 1+2):
+#   Marker 1: filename starts with "aid-" (tool-native dir files)
+#   Marker 2: lives inside an "aid/" subtree
+#
+# Marker 3 (AID:BEGIN/END region in root files) is NOT touched here;
+# that is handled by _copy_root_agent_file exclusively.
+#
+# User content (no marker) is NEVER removed.
+# Idempotent: a no-op when the retired path is already absent.
+# Returns count of retired items removed (written to _MIGRATE_RETIRED_COUNT).
+_migrate_retired_layout() {
+    local target="$1"
+    local tool="$2"
+    local list_only="${3:-0}"   # 1 = dry-run enumeration only (no removals)
+    _MIGRATE_RETIRED_COUNT=0
+
+    # Return 1 if a file is AID-owned (marker 1 or 2); 0 if user content.
+    _is_aid_owned_file() {
+        local f="$1"
+        local base
+        base="$(basename "$f")"
+        # Marker 1: aid- prefix.
+        if [[ "$base" == aid-* ]]; then return 0; fi
+        # Marker 2: lives inside an aid/ folder (any path component named "aid").
+        local dir
+        dir="$(dirname "$f")"
+        while [[ "$dir" != "$target" && "$dir" != "/" && "$dir" != "." ]]; do
+            if [[ "$(basename "$dir")" == "aid" ]]; then return 0; fi
+            dir="$(dirname "$dir")"
+        done
+        # No marker -- user content.
+        return 1
+    }
+
+    # Remove one file that is AID-owned (marker 1 or 2).
+    # In list_only mode: print the path instead of removing it.
+    _retire_file() {
+        local f="$1"
+        [[ -f "$f" ]] || return 0
+        if _is_aid_owned_file "$f"; then
+            if [[ "$list_only" -eq 1 ]]; then
+                echo "  remove: ${f}"
+                _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
+            else
+                rm -f "$f"
+                _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
+                if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Retired: ${f}"; fi
+            fi
+        fi
+        return 0
+    }
+
+    # Sweep one retired root directory: remove AID-owned files, then prune
+    # now-empty subdirs, then remove the root dir itself if now empty.
+    # In list_only mode: enumerate would-be-removed files, make no changes.
+    _sweep_retired_root() {
+        local rdir="$1"
+        [[ -d "$rdir" ]] || return 0
+        # Walk all files under the retired root.
+        local fpath
+        while IFS= read -r -d '' fpath; do
+            _retire_file "$fpath"
+        done < <(find "$rdir" -type f -print0 2>/dev/null | sort -z)
+        if [[ "$list_only" -eq 1 ]]; then return 0; fi
+        # Prune now-empty subdirs (deepest first).
+        local dpath
+        while IFS= read -r dpath; do
+            if [[ -d "$dpath" ]]; then
+                local rem
+                rem="$(find "$dpath" -mindepth 1 2>/dev/null | head -1)"
+                if [[ -z "$rem" ]]; then
+                    rmdir "$dpath" 2>/dev/null || true
+                    if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Retired dir: ${dpath}"; fi
+                fi
+            fi
+        done < <(find "$rdir" -mindepth 1 -type d 2>/dev/null | sort -r)
+        # Remove the retired root itself if now empty.
+        if [[ -d "$rdir" ]]; then
+            local rem
+            rem="$(find "$rdir" -mindepth 1 2>/dev/null | head -1)"
+            if [[ -z "$rem" ]]; then
+                rmdir "$rdir" 2>/dev/null || true
+                if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Retired root dir: ${rdir}"; fi
+            fi
+        fi
+        return 0
+    }
+
+    case "$tool" in
+        codex)
+            # Retired root: .agents/ (old split layout -- skills/ + aid/ lived here).
+            _sweep_retired_root "${target}/.agents"
+            ;;
+        cursor)
+            # Retired root: .cursor/rules/ (rules dir no longer in new layout).
+            _sweep_retired_root "${target}/.cursor/rules"
+            ;;
+        antigravity)
+            # Retired root: .agent/rules/ (rules dir no longer in new layout).
+            _sweep_retired_root "${target}/.agent/rules"
+            ;;
+        # claude-code and copilot-cli have no retired roots in this migration.
+    esac
+
+    if [[ "$list_only" -eq 0 && "$_MIGRATE_RETIRED_COUNT" -gt 0 ]]; then
+        echo "  ${_MIGRATE_RETIRED_COUNT} retired AID file(s) removed"
+    fi
+
+    unset -f _is_aid_owned_file _retire_file _sweep_retired_root
 }
 
 # ---------------------------------------------------------------------------
@@ -1786,20 +1916,14 @@ install_tool() {
             fi
             ;;
         codex)
-            # .codex/ + .agents/ + AGENTS.md
+            # New unified layout: .codex/ only (agents, skills, aid all under .codex/).
+            # .agents/ is the RETIRED split layout -- handled by _migrate_retired_layout.
             if [[ -d "${staging}/.codex" ]]; then
                 copy_dir "${staging}/.codex" "${target}/.codex" "$force"
                 while IFS= read -r -d '' f; do
                     local rel="${f#${staging}/}"
                     install_paths+=("$rel")
                 done < <(find "${staging}/.codex" -type f -print0 2>/dev/null | sort -z)
-            fi
-            if [[ -d "${staging}/.agents" ]]; then
-                copy_dir "${staging}/.agents" "${target}/.agents" "$force"
-                while IFS= read -r -d '' f; do
-                    local rel="${f#${staging}/}"
-                    install_paths+=("$rel")
-                done < <(find "${staging}/.agents" -type f -print0 2>/dev/null | sort -z)
             fi
             ;;
         cursor)
@@ -1852,8 +1976,36 @@ install_tool() {
         fi
     fi
 
+    # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
+    # Runs BEFORE manifest_write so a contaminated bundle never writes to disk.
+    # Assert that the new bundle's path set does NOT contain any retired roots.
+    # If a retired path leaked into the new manifest, fail loudly -- do not prune
+    # against a contaminated manifest (content-isolation cornerstone).
+    local _retired_roots=(".agents/" ".cursor/rules/" ".agent/rules/")
+    local _rr _leaked
+    for _rr in "${_retired_roots[@]}"; do
+        for _p in "${install_paths[@]+"${install_paths[@]}"}"; do
+            if [[ "$_p" == "${_rr}"* ]]; then
+                _leaked="$_p"
+                break
+            fi
+        done
+        if [[ -n "${_leaked:-}" ]]; then
+            echo "ERROR: aid-install-core: manifest-seam violation: retired root '${_rr}' leaked into the new bundle manifest (path: ${_leaked}). Aborting install to protect user content." >&2
+            return 1
+        fi
+    done
+    unset _rr _leaked
+
     # Write manifest (merge).
     manifest_write "$manifest" "$tool" "$version" "install_paths" "root_entries"
+
+    # Retired-root migration sweep (FR7/FR7a).
+    # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
+    # so that old .agents/, .cursor/rules/, .agent/rules/ trees are cleaned up.
+    # A non-zero rc from install_tool is treated as a mid-commit failure (caller
+    # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
+    _migrate_retired_layout "$target" "$tool"
 
     # Prune stale AID-owned files (Pillar 2, R7).
     # Build an associative array from the new manifest path set for O(1) lookup.

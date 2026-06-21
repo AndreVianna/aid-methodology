@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. CONTENT-ISOLATION verified by independent re-seed: unmarked user files SURVIVE byte-identical, only aid-prefix/inside-aid removed (aid-but-mine.md edge removed by-cornerstone-design, reported). HOME/scope SAFE — sweep roots only from the target arg, no default-to-$HOME (hazard closed). Manifest gate hard-fails on leak. Parity holds; idempotent; call-site before prune; detect_tool keeps .agents; ASCII clean; test-aid-migrate 95/95. (pwsh parse already verified by developer; Windows CI + task-013 exercise the PS twin.)
+- **Elapsed:** ~00:13
+- **Notes:** lib/aid-install-core.sh (_migrate_retired_layout @1767, gate @1973, call-site @1995) + AidInstallCore.psm1 (Invoke-MigrateRetiredLayout @1298) re-pointed prune/copy + sweep. Vendored npm/pypi copies updated on disk (gitignored).
 
 ---
 

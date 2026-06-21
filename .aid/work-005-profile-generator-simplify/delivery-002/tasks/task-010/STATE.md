@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. Parity verified (PS semver inline justified — Test-SemverLt is script-scoped); version-selection CORRECT (additional tool truly gets repo version, no mixing path); --version all-or-error (exit 2, no silent-mix); skew notice present + pins repo version; --dry-run inherited not re-plumbed; ASCII + scope clean (lib/ unchanged); 374/374 parity. 1 non-blocking note (PS redundant manifest read, harmless).
+- **Elapsed:** ~00:12
+- **Notes:** bin/aid + bin/aid.ps1 FR11 block (first->CLI ver, additional->existing repo ver, skew notice, --version all-or-error) before the staging loop. 1151 tests across 6 suites pass (HOME-pinned).
 
 ---
 
