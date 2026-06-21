@@ -27,14 +27,22 @@ The simplification is **real but partial**: the genuine core-logic reduction is
 residual generator complexities survive by design: the **Codex TOML branch** and the
 **`aid/`-nest layout dispatch**.
 
-> ## ⚠️ Correction applied (2026-06-21) — the python3 premise was wrong
+> ## ⚠️ Corrections applied (2026-06-21) — TWO of the three drafted wins collapsed on verification
 >
-> An earlier draft of this study ranked "de-duplicate the install-core manifest
-> parsers" as the **highest-value win**, on the assumption that machines without
-> `python3` are *rare* and the pure-shell JSON parser is a redundant fallback.
-> **That assumption is false** — the evidence shows the opposite, and the win largely
-> collapses (see [W1](#w1)). The corrected top win is the `Set-StrictMode` downgrade
-> ([W2](#w2)). This correction is recorded here rather than silently edited away.
+> An earlier draft ranked **W1** (de-duplicate the manifest parsers) the highest-value win
+> and **W2** (`Set-StrictMode Latest → 3`) the clear top win. **Both premises proved false
+> on verification** and are recorded here, not silently edited away:
+> - **W1** assumed no-`python3` machines are *rare* and the pure-shell parser is redundant.
+>   The opposite is true — it is the deliberate no-dependency baseline, and the Windows twin
+>   has *no* python3 path at all. The "win" is a capability trade, not a simplification.
+> - **W2** assumed `-Version 3` is "less aggressive about property access." Empirically
+>   (`pwsh` on this box) `Latest ≡ 3.0` (so the change is a **no-op**), and only `-Version 1.0`
+>   avoids the throw — at the cost of real protection. Drop it.
+>
+> **Net result: only W3 (reversible migration) survives — and it is the marginal "optional
+> hardening" item, not a real simplification.** The honest finding is that work-005's
+> install layer has **essentially no free simplification left**; its complexity is largely
+> irreducible (the price of a dependency-free, two-platform install). See [W1](#w1)/[W2](#w2).
 
 ---
 
@@ -76,26 +84,42 @@ This is an **over-simplification boundary**, not a win.
 **Verdict: do not pursue as a simplification.** At most a deliberate capability decision
 (drop dependency-free bash installs) — and even then only half the LOC, none on Windows.
 
-### W2 — `Set-StrictMode -Version Latest` → `-Version 3` — ✅ THE CLEAR TOP WIN {#w2}
+### W2 — `Set-StrictMode -Version Latest` → `-Version 3` — ❌ DROP (premise false on verification) {#w2}
 
-**The idea:** the PowerShell install core runs `Set-StrictMode -Version Latest` (4
-directives), the strictest mode, which throws on access to any absent property. AID reads
-heterogeneous-shape JSON manifests (old vs new format) where properties are *legitimately*
-sometimes absent, so every such read needs a `PSObject.Properties['key']` guard — **42**
-such idioms. Worse, `Latest` *caused* 3 of the delivery-002 Windows bugs (absent-property
-throw; `[Array]::Sort($null)` on an empty collection) while catching nothing of value.
-Downgrade to `-Version 3`, which keeps the genuinely useful checks (undefined variables /
-bad references) but drops the aggressive absent-property throwing.
+> **⚠️ Correction applied (2026-06-21).** An earlier draft ranked this the *clear top
+> win* ("downgrade to `-Version 3` drops the aggressive absent-property throwing"). That is
+> **wrong** — verified empirically on the repo's pwsh. Recorded, not silently edited.
 
-| Pros | Cons |
+**The idea (as drafted):** the PowerShell install core runs `Set-StrictMode -Version Latest`
+(4 directives); AID reads heterogeneous JSON manifests where properties are legitimately
+absent, forcing **42** `PSObject.Properties['key']` guard idioms. The draft claimed
+downgrading to `-Version 3` would stop the absent-property throwing and let the guards go.
+
+**Why it does NOT hold up (empirical, `pwsh` on this box):**
+- `-Version Latest` **currently resolves to `3.0`** — so `Latest → 3` is a **no-op** (both
+  THREW `PropertyNotFoundException` on absent-property access in the test).
+- Absent-property throwing was introduced in **`2.0`**, so `2.0` and `3.0` both throw; only
+  **`-Version 1.0`** returns `$null` instead of throwing.
+- The empty-array→`$null` failure (delivery-002 bug #3, `[Array]::Sort($null)`) is
+  **StrictMode-*independent*** — `$null` under both `1.0` and `Latest` — so its `Count -gt 0`
+  guard must stay regardless of version. (Only bug #1, absent-property, was version-related;
+  bug #2 `return if` was a parser issue.)
+
+**So the realizable change is `Latest → 1.0`, and that is a net-negative trade:** to delete
+~42 absent-property guards you give up StrictMode's genuine protection across a ~2,000-line
+install core — non-existent-property typos (2.0), out-of-bounds array indexes (3.0),
+method-call-syntax mistakes, uninitialized variables. The guards are not a "tax"; under any
+StrictMode ≥ 2.0 they are the **correct** way to read heterogeneous JSON.
+
+| Pros (of `Latest → 1.0`) | Cons |
 |---|---|
-| Removes the 42-site guard tax and the exact failure mode behind 3 shipped Windows bugs | Slightly less strict — gives up missing-property detection (which was net-negative here) |
-| Keeps the real safety (undefined-variable protection) | Must re-run the **Windows-only** installer suite (not in run-all) — same surface those bugs hit |
-| Low risk, no capability loss | — |
+| Could remove ~42 absent-property guard idioms | Loses property-typo + array-bounds + method-syntax detection across the whole install core |
+| | The empty-array guards must stay anyway (StrictMode-independent) |
+| | `Latest → 3` (as drafted) is a pure no-op — zero benefit |
 
-**Verdict: do it.** `Latest` created more bugs than it prevented and imposed a real tax;
-`-Version 3` (or scoping `Latest` to a few hot functions) is a clean win. Re-verify on a
-Windows runner.
+**Verdict: DROP.** Keep `Set-StrictMode -Version Latest` and the guards — they are correct
+defensive code earning their keep, not removable tax. This is the second drafted "win"
+(after W1) to collapse under verification.
 
 ### W3 — Reversible migration (`rm -f` → move-to-`.aid/.trash/`) — ✅ CHEAP HARDENING {#w3}
 
@@ -148,16 +172,21 @@ Four things must stay or capability/safety is lost:
 
 | Rank | Candidate | Value | Risk | Verdict |
 |---|---|---|---|---|
-| 1 | **W2** — `Set-StrictMode Latest → 3` | Medium (−42 guards, kills a bug class) | Low (re-test Windows) | **Do it** |
-| 2 | **W3** — reversible migration | Low (safety) | Very low | Optional hardening |
-| 3 | **W1** — drop pure-shell manifest parser | ~0 / negative | Medium–High (loses dependency-free + does nothing for Windows) | **Do not** — capability trade, not a win |
+| 1 | **W3** — reversible migration (`rm`→`.aid/.trash/`) | Low (safety/recoverability) | Very low | Optional hardening — the only survivor; being implemented |
+| ✗ | **W2** — `Set-StrictMode Latest → 3` | None (`Latest ≡ 3`, no-op); `→ 1.0` is net-negative | — | **Dropped** — premise false on verification |
+| ✗ | **W1** — drop pure-shell manifest parser | ~0 / negative | Medium–High (loses dependency-free; nothing for Windows) | **Dropped** — capability trade, not a win |
 | — | Symlinks; delete Codex TOML branch | Negative | Very high | Over-simplification traps — avoid |
 
-**Bottom line.** work-005 landed near the right point on the generator and did **not**
-over-simplify anywhere (it correctly *kept* the Codex branch and the layout dispatch,
-dormant/documented). The install layer carries genuine complexity, but most of it —
-including the ~1,200 lines of "duplicated" JSON parsing — is **irreducible**: it is the
-price of AID's dependency-free, two-platform install promise. The one clean remaining win
-is **W2 (the StrictMode downgrade)**; W3 is cheap hardening; W1 and the symlink/Codex cuts
-would cross into capability or safety loss. The corrected posture: **downgrade StrictMode,
-optionally make the migration reversible, and otherwise leave the system at rest.**
+**Bottom line (post-verification).** work-005 landed near the right point on the generator
+and did **not** over-simplify anywhere (it correctly *kept* the Codex branch and the layout
+dispatch, dormant/documented). Crucially, on closer inspection the install layer has
+**essentially no free simplification left**: the ~1,200 lines of "duplicated" JSON parsing
+are irreducible (the price of a dependency-free, two-platform install — W1), and the
+`Set-StrictMode` guards are correct defensive code, not removable tax (W2 is a no-op as
+drafted and a net-negative trade as `→1.0`). Of the three drafted "wins," **two collapsed
+under verification and only W3 (reversible migration) survives — and it is hardening, not
+simplification.** The corrected posture: **make the migration reversible (W3) and otherwise
+leave the system at rest — it is already close to its irreducible minimum.** The broader
+lesson: file-count/LOC "simplification" candidates must be verified against what the code
+actually requires (dependency-free installs; heterogeneous-JSON safety) before they are
+called wins.
