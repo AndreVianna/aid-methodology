@@ -19,6 +19,7 @@ changelog:
   - 2026-06-17: Renamed Unreleased -> v1.1.0 (release): consolidated dashboard + registry as [NEW] (adopter never saw v1.0.0 without them), dropped internal churn (repos:->projects: key rename, dashboard file relocations, kb_baseline-as-setting), added [CHANGE] release-source mirror-override + [FIX] global-install permission + [NOTE] repo->project wording.
   - 2026-06-18: Added work-003 (content isolation) + work-004 (worktree-aware tracking) v1.1.0 items: [NEW] self-cleaning install/update prune; [CHANGE] aid/-nest + aid- prefix content isolation; [CHANGE] in-place lossless CLAUDE.md/AGENTS.md marker updates (no .aid-new); [CHANGE] dashboard worktree discovery + same-work merge; [FIX] disjoint delivery-branch state files. Internal mechanics (status->state naming, per-unit hierarchy, migration helper, canonical churn) deliberately omitted as non-adopter-facing.
   - 2026-06-19: v1.1.1 patch — [FIX] recurring "older format" WARN on aid add-only repos (manifest present, no settings.yml): migrate now treats a manifest as an era-b marker and synthesizes a stamped settings.yml so the warning clears after one `aid update`. Internal-only changes (test-suite HOME-pinning isolation; aid.ps1 self-update parity + root-agent injection already shipped in 1.1.0) omitted as non-adopter-facing.
+  - 2026-06-21: Added Unreleased [CHANGE] entries for work-005 (Codex .codex/ unification, uniform layout, generator 13->7 simplification, atomic aid update replacement) — work-005-profile-generator-simplify delivery-003 task-018.
 ---
 
 # Release Tracking
@@ -31,6 +32,11 @@ changelog:
 > planned target.
 
 ## Unreleased
+
+- [CHANGE] Codex profile now installs exclusively under `.codex/` — the former `.agents/` split root is retired; all Codex agents, skills, and AID-own files live under the unified `.codex/{agents,skills,aid}` tree (work-005 FR2).
+- [CHANGE] All five host tools now use a uniform `{agents,skills,aid}` layout under their own root (`.claude/`, `.cursor/`, `.codex/`, `.github/`, `.agent/`) — agent format branches collapsed to uniform markdown; Codex TOML branch retained dormant pending E-CODEX-1 verification (work-005 FR1/FR4).
+- [CHANGE] Profile generator simplified from 13 Python files to 7 — tool-specific emitter scripts replaced by a single copy-based generator that renders profiles via file-level copy + minimal path substitution, with no per-tool branching logic outside the profiles themselves (work-005 FR1/FR5/FR6).
+- [CHANGE] `aid update` now replaces a profile's managed files atomically in a single pass and removes stale files left by previous versions — ensures a clean, complete layout after every update with no orphaned tool files from older generator shapes (work-005 FR7).
 
 ## v1.1.1 - 2026-06-19
 
