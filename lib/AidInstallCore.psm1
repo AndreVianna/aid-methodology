@@ -678,7 +678,7 @@ function Read-ManifestToolPaths {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.paths) {
+        if ($toolData -and $toolData.PSObject.Properties['paths'] -and $toolData.paths) {
             return @($toolData.paths)
         }
     } catch {}
@@ -693,7 +693,7 @@ function Read-ManifestToolVersion {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.version) { return $toolData.version }
+        if ($toolData -and $toolData.PSObject.Properties['version'] -and $toolData.version) { return [string]$toolData.version }
     } catch {}
     return ''
 }
@@ -706,9 +706,14 @@ function Read-ManifestRootAgent {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.root_agent_files) {
-            foreach ($entry in $toolData.root_agent_files) {
-                if ($entry.path -eq $FileName) { return $entry.sha256 }
+        # Guard root_agent_files: absent on old-format manifests; PSObject.Properties['key'] is
+        # safe under Set-StrictMode -Version Latest unlike direct property access.
+        $raf = if ($toolData -and $toolData.PSObject.Properties['root_agent_files']) { $toolData.root_agent_files } else { $null }
+        if ($raf) {
+            foreach ($entry in $raf) {
+                if ($entry.PSObject.Properties['path'] -and $entry.path -eq $FileName) {
+                    return if ($entry.PSObject.Properties['sha256']) { $entry.sha256 } else { '' }
+                }
             }
         }
     } catch {}
@@ -723,9 +728,10 @@ function Read-ManifestRootAgentStatus {
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
         $toolData = if ($data.tools -and ($data.tools.PSObject.Properties.Name -contains $Tool)) { $data.tools.$Tool } else { $null }
-        if ($toolData -and $toolData.root_agent_files) {
-            foreach ($entry in $toolData.root_agent_files) {
-                if ($entry.path -eq $FileName) {
+        $raf = if ($toolData -and $toolData.PSObject.Properties['root_agent_files']) { $toolData.root_agent_files } else { $null }
+        if ($raf) {
+            foreach ($entry in $raf) {
+                if ($entry.PSObject.Properties['path'] -and $entry.path -eq $FileName) {
                     if ($entry.PSObject.Properties['status']) { return $entry.status }
                     return 'owned'
                 }
@@ -880,8 +886,11 @@ function Write-AidManifest {
     }
 
     # Top-level installed_at: preserve existing.
+    # Guard via PSObject.Properties['key'] -- Set-StrictMode -Version Latest (active in this module)
+    # throws PropertyNotFoundException on direct access of absent properties.  Old-format manifests
+    # (schema:1) have no root-level installed_at; new-format ones (manifest_version:1) do.
     $topInstalledAt = $now
-    if ($existingData -and $existingData.installed_at) {
+    if ($existingData -and $existingData.PSObject.Properties['installed_at'] -and $existingData.installed_at) {
         $topInstalledAt = $existingData.installed_at
     }
 
@@ -895,17 +904,22 @@ function Write-AidManifest {
             $tid = $_.Name
             if ($tid -ne $Tool) {
                 $t   = $_.Value
-                $tP  = if ($t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
+                # Guard per-tool properties: old manifests lack root_agent_files; use
+                # PSObject.Properties['key'] check before direct access (StrictMode-safe).
+                $tP  = if ($t.PSObject.Properties['paths'] -and $t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
                 $tR  = [System.Collections.Generic.List[hashtable]]::new()
-                if ($t.root_agent_files) {
-                    foreach ($e in $t.root_agent_files) {
+                $tRaf = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
+                if ($tRaf) {
+                    foreach ($e in $tRaf) {
+                        $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
+                        $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
                         $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-                        $tR.Add(@{ path = $e.path; sha256 = $e.sha256; status = $st })
+                        if ($ePath) { $tR.Add(@{ path = $ePath; sha256 = $eSha256; status = $st }) }
                     }
                 }
                 $toolsMap[$tid] = @{
-                    Version       = if ($t.version) { $t.version } else { '' }
-                    InstalledAt   = if ($t.installed_at) { $t.installed_at } else { $now }
+                    Version       = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
+                    InstalledAt   = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { $t.installed_at } else { $now }
                     Paths         = $tP
                     RootAgentFiles = $tR
                 }
@@ -921,14 +935,14 @@ function Write-AidManifest {
 
     # tool installed_at: preserve existing.
     $toolInstalledAt = $now
-    if ($existingTool -and $existingTool.installed_at) {
+    if ($existingTool -and $existingTool.PSObject.Properties['installed_at'] -and $existingTool.installed_at) {
         $toolInstalledAt = $existingTool.installed_at
     }
 
     # De-duplicate paths (union, preserving order: existing first, then new).
     $seenPaths   = [System.Collections.Generic.HashSet[string]]::new()
     $mergedPaths = [System.Collections.Generic.List[string]]::new()
-    if ($existingTool -and $existingTool.paths) {
+    if ($existingTool -and $existingTool.PSObject.Properties['paths'] -and $existingTool.paths) {
         foreach ($p in $existingTool.paths) {
             if ($seenPaths.Add($p)) { $mergedPaths.Add($p) }
         }
@@ -939,10 +953,13 @@ function Write-AidManifest {
 
     # Merge root_agent_files: update or add per path.
     $rafMap = [System.Collections.Specialized.OrderedDictionary]::new()
-    if ($existingTool -and $existingTool.root_agent_files) {
-        foreach ($e in $existingTool.root_agent_files) {
+    $existingRaf = if ($existingTool -and $existingTool.PSObject.Properties['root_agent_files']) { $existingTool.root_agent_files } else { $null }
+    if ($existingRaf) {
+        foreach ($e in $existingRaf) {
+            $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
+            $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
             $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-            $rafMap[$e.path] = @{ path = $e.path; sha256 = $e.sha256; status = $st }
+            if ($ePath) { $rafMap[$ePath] = @{ path = $ePath; sha256 = $eSha256; status = $st } }
         }
     }
     foreach ($entry in $RootEntries) {
@@ -995,23 +1012,27 @@ function Remove-ManifestTool {
     }
 
     # Build tools map without the target tool.
+    # Guard all per-tool property accesses via PSObject.Properties['key'] (StrictMode-safe).
     $toolsMap = [System.Collections.Specialized.OrderedDictionary]::new()
     if ($data.tools) {
         $data.tools.PSObject.Properties | ForEach-Object {
             $tid = $_.Name
             if ($tid -ne $Tool) {
                 $t  = $_.Value
-                $tP = if ($t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
+                $tP = if ($t.PSObject.Properties['paths'] -and $t.paths) { [System.Collections.Generic.List[string]]($t.paths) } else { [System.Collections.Generic.List[string]]::new() }
                 $tR = [System.Collections.Generic.List[hashtable]]::new()
-                if ($t.root_agent_files) {
-                    foreach ($e in $t.root_agent_files) {
+                $tRaf = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
+                if ($tRaf) {
+                    foreach ($e in $tRaf) {
+                        $ePath   = if ($e.PSObject.Properties['path'])   { $e.path }   else { '' }
+                        $eSha256 = if ($e.PSObject.Properties['sha256']) { $e.sha256 } else { '' }
                         $st = if ($e.PSObject.Properties['status']) { $e.status } else { 'owned' }
-                        $tR.Add(@{ path = $e.path; sha256 = $e.sha256; status = $st })
+                        if ($ePath) { $tR.Add(@{ path = $ePath; sha256 = $eSha256; status = $st }) }
                     }
                 }
                 $toolsMap[$tid] = @{
-                    Version        = if ($t.version) { $t.version } else { '' }
-                    InstalledAt    = if ($t.installed_at) { $t.installed_at } else { '' }
+                    Version        = if ($t.PSObject.Properties['version'] -and $t.version) { [string]$t.version } else { '' }
+                    InstalledAt    = if ($t.PSObject.Properties['installed_at'] -and $t.installed_at) { $t.installed_at } else { '' }
                     Paths          = $tP
                     RootAgentFiles = $tR
                 }
@@ -1024,8 +1045,8 @@ function Remove-ManifestTool {
         return
     }
 
-    $topIat = if ($data.installed_at) { $data.installed_at } else { ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')) }
-    $topVer = if ($data.aid_version) { $data.aid_version } else { '0.0.0' }
+    $topIat = if ($data.PSObject.Properties['installed_at'] -and $data.installed_at) { $data.installed_at } else { ([System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')) }
+    $topVer = if ($data.PSObject.Properties['aid_version'] -and $data.aid_version) { $data.aid_version } else { '0.0.0' }
 
     $json = script:Build-ManifestJson -TopInstalledAt $topIat -TopVersion $topVer -ToolsMap $toolsMap
 
@@ -1677,7 +1698,12 @@ function Get-ManifestToolList {
         $data.tools.PSObject.Properties | ForEach-Object {
             $tid = $_.Name
             $t   = $_.Value
-            $ver = if ($t.version) { $t.version } else { '' }
+            # Guard all per-tool property accesses via PSObject.Properties['key'] first.
+            # Set-StrictMode -Version Latest (active in this module) throws
+            # PropertyNotFoundException when accessing a missing property directly
+            # (e.g. $t.root_agent_files on pre-work-005 manifests that lack it).
+            # PSObject.Properties['key'] returns $null safely for absent properties.
+            $ver = if ($t.PSObject.Properties['version']) { [string]$t.version } else { '' }
             # Determine root agent file for this tool.
             $rootAgent = switch ($tid) {
                 'claude-code' { 'CLAUDE.md' }
@@ -1685,9 +1711,10 @@ function Get-ManifestToolList {
             }
             # Read root agent status from manifest.
             $rootStatus = ''
-            if ($t.root_agent_files) {
-                foreach ($entry in $t.root_agent_files) {
-                    if ($entry.path -eq $rootAgent) {
+            $rafEntries = if ($t.PSObject.Properties['root_agent_files']) { $t.root_agent_files } else { $null }
+            if ($rafEntries) {
+                foreach ($entry in $rafEntries) {
+                    if ($entry.PSObject.Properties['path'] -and ($entry.path -eq $rootAgent)) {
                         $rootStatus = if ($entry.PSObject.Properties['status']) { $entry.status } else { 'owned' }
                         break
                     }
@@ -1891,7 +1918,7 @@ function Get-AidStatus {
     $aidVersion = ''
     try {
         $data = Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json
-        if ($data.aid_version) { $aidVersion = $data.aid_version }
+        if ($data.PSObject.Properties['aid_version'] -and $data.aid_version) { $aidVersion = $data.aid_version }
     } catch {}
 
     # Read CLI ref version from $env:AID_HOME/VERSION.
