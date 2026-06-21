@@ -20,6 +20,7 @@ changelog:
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix; §3 tier model updated to 4 large / 4 medium / 1 small; counts updated at lines 38, 64; agent canonical paths updated to aid-<name>/ dirs; boilerplate now shared-include via canonical/templates/agent-boilerplate.md.
   - 2026-06-03: methodology v3.2 — aid-deploy and aid-monitor reclassified from mandatory numbered phases (7/8) to OPTIONAL end-of-pipeline Deliver skills; numbered development phases 8→6 (Discover→Execute); skill taxonomy now 7 core-pipeline (aid-config + 6 phases) + 4 optional (aid-summarize, aid-deploy, aid-monitor, aid-housekeep) + maintainer-only generate-profile
   - 2026-06-03: post-merge update for work-001-aid-housekeep (PR #49) — added aid-housekeep (11th user-facing canonical skill, optional/on-demand, NOT in the mandatory pipeline flow); skill framing 10→11 user-facing / 11→12 total counting generate-profile; canonical SKILL.md body total 2,242→2,498 lines across 11 skills
+  - 2026-06-21: work-005-profile-generator-simplify delivery-003 task-017 — retired 4-agent-formats claim (copilot-agent + antigravity-rule formats deleted by FR3/FR4); updated profiles/ tree view to drop codex/.agents/ split and rules/ folder; updated asset-renderer inventory and generator self-tests rows to the 7-file post-collapse set (render.py + render_lib.py + aid_profile.py + run_generator.py + verify_deterministic.py + verify_advisory.py + test_manifest_safety.py).
   - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — 3→5 render profiles (added copilot-cli + antigravity), 2→4 agent formats (added copilot-agent + antigravity-rule), 10→12 generator Python files, setup menu now 5 tools + Done=6 with Option-A AGENTS.md collision handler
   - 2026-05-31: delivery-002 — added declared-doc-set mechanism: Step 0d propose→confirm, data-driven dispatch, de-hardcoded doc-set (varies by project)
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
@@ -80,21 +81,20 @@ aid-methodology/                    (repo root)
 │   └── EMISSION-MANIFEST.md        ← deletion-safety spec
 ├── profiles/                       ← generator output + per-tool TOML config (5 profiles)
 │   ├── claude-code.toml            ← profile 1 — single output_root layout
-│   ├── claude-code/.claude/        ← rendered tree mirroring canonical/
-│   ├── codex.toml                  ← profile 2 — split agents_root/assets_root
-│   ├── codex/.codex/agents/        ← TOML agent files
-│   ├── codex/.agents/              ← skills/, templates/, recipes/, scripts/
-│   ├── cursor.toml                 ← profile 3 — single output_root + rules/ extras
-│   ├── cursor/.cursor/             ← rendered tree
-│   ├── copilot-cli.toml            ← profile 4 — output_root .github, format copilot-agent
-│   ├── copilot-cli/.github/        ← rendered tree: agents/ skills/ scripts/ templates/ recipes/
+│   ├── claude-code/.claude/        ← rendered tree: agents/ skills/ aid/{scripts,templates,recipes}/
+│   ├── codex.toml                  ← profile 2 — unified .codex/ root (agents + skills + aid/)
+│   ├── codex/.codex/               ← rendered tree: agents/ (TOML) + skills/ + aid/{scripts,templates,recipes}/
+│   ├── cursor.toml                 ← profile 3 — single output_root layout
+│   ├── cursor/.cursor/             ← rendered tree: agents/ skills/ aid/ + rules/ (Cursor .mdc extras)
+│   ├── copilot-cli.toml            ← profile 4 — output_root .github, uniform markdown agents
+│   ├── copilot-cli/.github/        ← rendered tree: agents/ skills/ aid/{scripts,templates,recipes}/
 │   ├── copilot-cli/AGENTS.md       ← root project-context file (Copilot CLI)
-│   ├── antigravity.toml            ← profile 5 — output_root .agent, format antigravity-rule
-│   ├── antigravity/.agent/         ← rendered tree: rules/ skills/ scripts/ templates/ recipes/
+│   ├── antigravity.toml            ← profile 5 — output_root .agent, uniform markdown agents
+│   ├── antigravity/.agent/         ← rendered tree: agents/ skills/ aid/{scripts,templates,recipes}/
 │   └── antigravity/AGENTS.md       ← root project-context file (Antigravity)
 ├── .claude/                        ← DOGFOOD install tree (AID applied to itself)
 │   └── skills/generate-profile/        ← maintainer-only generator (NOT in canonical/)
-│       └── scripts/                ← 12 Python files (render_lib.py, aid_profile.py, render_*.py, test_*_emitter.py, …)
+│       └── scripts/                ← generator scripts: render.py (copy core) + render_lib.py + aid_profile.py + run_generator.py + verify_deterministic.py + verify_advisory.py + test_manifest_safety.py
 ├── tests/
 │   ├── canonical/                  ← currently 35 helper-script + installer/CLI/release test suites (test-*.sh, bash)
 │   ├── windows/                    ← native-Windows PowerShell installer test (Test-AidInstaller.ps1)
@@ -128,9 +128,9 @@ The project applies **four interlocking patterns**:
 ### 1. Single-source compilation with pure-mirror safety boundary
 
 The dominant pattern. **`canonical/` is the only place a maintainer edits**; `run_generator.py`
-calls per-asset renderers (`render_agents.py`, `render_skills.py`, `render_templates.py`,
-`render_canonical_scripts.py`, `render_recipes.py`) to emit byte-identical output into each profile's
-install tree. Output paths are recorded per profile in `{profile}/emission-manifest.jsonl`;
+calls `render.py` (the unified copy core) to emit byte-identical output into each profile's
+install tree, with frontmatter injection handled by `render_lib.py` and profile parsing by
+`aid_profile.py`. Output paths are recorded per profile in `{profile}/emission-manifest.jsonl`;
 the deletion pass only removes files that **were** in the previous manifest but are no longer
 in the current one. Files outside any manifest are never touched.
 
@@ -245,14 +245,14 @@ Evidence:
 | **Methodology spec** | `docs/aid-methodology.md` | Authoritative human-readable methodology document (`*Version 3.2*` header; line count is volatile and not pinned here) | — |
 | **Canonical source** | `canonical/` | Single source of truth for everything that ships into install trees | (manually edited by maintainer) |
 | **Generator harness** | `.claude/skills/generate-profile/scripts/render_lib.py` + `aid_profile.py` | Profile parsing, placeholder substitution, manifest read/write/diff, SHA-256 fingerprinting | Python stdlib only (`tomllib`, `hashlib`, `json`, `pathlib`) |
-| **Asset renderers** | `render_agents.py`, `render_skills.py`, `render_templates.py`, `render_canonical_scripts.py`, `render_recipes.py` | One renderer per asset kind; each reads `canonical/<kind>/` and writes into the profile-specific install path. `render_agents.py` emits one of 4 agent formats per `[agent].format` (markdown / toml / copilot-agent / antigravity-rule); `render_skills.py` `_render_cursor_extras` handles per-rule `output_filename` + a gated trigger-frontmatter dialect | `render_lib`, `aid_profile` |
+| **Copy core** | `render.py` | Unified renderer: reads `canonical/<kind>/` and copies byte-identical bodies into each profile's install tree; TOML frontmatter injection for Codex agents handled by `render_lib.py`; all 5 asset kinds (agents, skills, templates, recipes, scripts) go through this single renderer | `render_lib`, `aid_profile` |
 | **VERIFY (deterministic)** | `verify_deterministic.py` | Byte-identical re-render audit + file-presence audit + frontmatter parse | All renderers (re-runs them into a scratch dir) |
 | **VERIFY (advisory)** | `verify_advisory.py` | Non-fatal advisory checks logged separately | `render_lib`, `aid_profile` |
-| **Generator self-tests** | `test_manifest_safety.py`, `test_copilot_emitter.py`, `test_antigravity_emitter.py` | Manifest-deletion-boundary tests + per-format emitter unit tests for the copilot-agent and antigravity-rule frontmatter builders | `render_lib`, all renderers |
-| **Entry point** | `run_generator.py` | 87-line glue: iterate `profiles/*.toml` (5 profiles), run renderers per profile, deletion pass, then VERIFY (deterministic) + VERIFY (advisory) | All of the above |
+| **Generator self-tests** | `test_manifest_safety.py` | Manifest-deletion-boundary tests | `render_lib` |
+| **Entry point** | `run_generator.py` | Glue: iterate `profiles/*.toml` (5 profiles), run `render.py` per profile, deletion pass, then VERIFY (deterministic) + VERIFY (advisory) | All of the above |
 | **End-user installer (`aid` CLI)** | `bin/aid` (+ `bin/aid.ps1` / `bin/aid.cmd`) → cores `lib/aid-install-core.sh` / `lib/AidInstallCore.psm1`; bootstrap `install.sh` / `install.ps1` | Persistent global CLI: per-project `aid add/update/remove <tool>` fetches+verifies the matching release tarball (or `--from-bundle`), copies the profile subtree into the target, applies FR11 protect-on-diff to root agent files, and records `.aid/.aid-manifest.json` | curl/irm + tar + sha256sum/shasum (Bash) or PowerShell built-ins; no Python required (python3 used only as an optional manifest fast-path) |
 | **Helper script library** | `canonical/scripts/{config,execute,interview,kb,summarize}/` + top-level `grade.sh` | Runtime helpers used by skill bodies (read-setting, parse-recipe, writeback-state, build-project-index, summarize pipeline, …) | bash 4+, occasionally Node 18+ for `.mjs` validators |
-| **Per-tool profile config** | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}.toml` (5) | Per-host conventions: layout, agent frontmatter shape + format, model tier names, tool-name remapping, filename map, extras (incl. `rules_frontmatter` + per-rule `output_filename`) | Consumed by `aid_profile.py` |
+| **Per-tool profile config** | `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}.toml` (5) | Per-host conventions: layout, agent frontmatter shape + format, model tier names, tool-name remapping, filename map | Consumed by `aid_profile.py` |
 | **HTML viewer asset bundle** | `canonical/templates/knowledge-summary/` | The optional offline KB viewer template + JS + CSS + Mermaid init + section profiles — see `canonical/templates/knowledge-summary/` for the bundle details | Inlined Mermaid (pinned v11.15.0, SHA-verified) at render time, fetched by `fetch-mermaid.sh` |
 
 Dependency direction (no cycles):
@@ -433,7 +433,7 @@ mechanism was found in any source file.
 | Audience | Entry point | What it does |
 |----------|-------------|--------------|
 | **Maintainer build** | `python .claude/skills/generate-profile/scripts/run_generator.py` | Renders all 5 install trees from `canonical/`, runs VERIFY (deterministic, hard) + VERIFY (advisory). Evidence: `run_generator.py` (`"""Live generator run` module docstring). |
-| **Maintainer one-tree render** | `python .claude/skills/generate-profile/scripts/render_skills.py --canonical-root . --profile profiles/claude-code.toml --output-root profiles/claude-code/.claude` | Renderers are each runnable standalone with `--canonical-root` / `--profile` / `--output-root`. Evidence: `.claude/skills/generate-profile/scripts/render_skills.py` (`# Usage:` header). |
+| **Maintainer one-tree render** | `python .claude/skills/generate-profile/scripts/render.py --canonical-root . --profile profiles/claude-code.toml --output-root profiles/claude-code/.claude` | The unified `render.py` is runnable standalone with `--canonical-root` / `--profile` / `--output-root`. Evidence: `.claude/skills/generate-profile/scripts/render.py` (`# Usage:` header). |
 | **Maintainer verify-only** | `python .claude/skills/generate-profile/scripts/verify_deterministic.py` | VERIFY (deterministic) hard gate. Re-renders to scratch tmpdir, byte-compares against committed install trees, parses every frontmatter. Exit code 0 on full pass; 1 on any sub-check failure. Evidence: `verify_deterministic.py` `def run_verify`. |
 | **Maintainer release** | `bash release.sh` (or tag-push → `.github/workflows/release.yml`) | Packages the five per-profile tarballs + `SHA256SUMS` for a GitHub Release. Evidence: `release.sh`; `test-release.sh` header. |
 | **End-user CLI bootstrap** | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` / `npm i -g aid-installer` / `pipx install aid-installer` | Installs the persistent global `aid` CLI once per machine (extracts `bin/` + `lib/` into `$AID_HOME`, wires PATH). Evidence: `install.sh` / `install.ps1`; `README.md` `## Install`. |
@@ -492,7 +492,7 @@ caveats worth flagging:
    (`profiles/copilot-cli.toml` `[tool_names]`); Claude Code, Codex, and Antigravity use
    identity passthrough (Antigravity ships an empty `[tool_names]` map — `profiles/antigravity.toml`
    `Q-F: empty map`). The renderer applies the remap to every `allowed-tools:` frontmatter
-   line via `render_agents.py` `_remap_tools_list` — see `coding-standards.md §2.3`.
+   line via `render.py` (the unified copy core) — see `coding-standards.md §2.3`.
 
 ## Access Limitations
 
