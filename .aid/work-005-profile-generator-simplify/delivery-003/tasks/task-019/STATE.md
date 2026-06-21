@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS (inline — deterministic CONFIGURE regen + small README edit; verified directly, gate CI INDEX-fresh check is the final validator). INDEX regenerated via the canonical builder (canonical/aid/scripts/kb/), idempotent (2 runs byte-identical), host-tool-capabilities.md present, 0 retired terms leaked. README: 15->16 active docs, new doc row 16, revision-history row 24, regen-path pointer fixed to the real canonical/aid/scripts/kb/. 1 LOW carried (builder embeds a dead self-reference path into INDEX -> gate issue #2).
+- **Elapsed:** ~00:05
+- **Notes:** Ran `canonical/aid/scripts/kb/build-kb-index.sh` (NOT the .claude copy, per INDEX-md-canonical-regen). README.md completeness tracker + revision history updated. Numeric script/suite counts untouched (OQ2).
 
 ---
 
