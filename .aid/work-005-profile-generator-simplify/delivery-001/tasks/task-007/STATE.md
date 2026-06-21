@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. 7 files deleted (5 renderers + 2 emitter tests); CI self-tests re-pointed in test.yml + release.yml (render_canonical_scripts->render.py; 2 emitter invocations removed; render_lib kept); dangling-ref grep clean (only #-comments); 53/53 suites + render-drift CLEAN. Surviving generator scripts: 7 (13->7 collapse, AC2). Informational (cross-delivery): KB prose (architecture/coding-standards/domain-glossary) still names the deleted renderers -> delivery-003 task-017 term-retirement.
+- **Elapsed:** ~00:13
+- **Notes:** REFACTOR clean — deletion + CI wiring only; render.py/render_lib/aid_profile logic untouched; render-drift job shape unchanged; task-008 not authored.
 
 ---
 
@@ -51,3 +51,5 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-06-21 | aid-developer | ~3–6m | ~13m | delete 7 files + CI de-wire; 53/53; render-drift clean |
+| 2026-06-21 | aid-reviewer (Small) | ~2–3m | ~9m | quick-check PASS, 0 CRITICAL/HIGH; 13->7 scripts |

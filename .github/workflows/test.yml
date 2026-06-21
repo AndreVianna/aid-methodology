@@ -91,11 +91,9 @@ jobs:
         run: |
           python .claude/skills/generate-profile/scripts/render_lib.py --self-test
           python .claude/skills/generate-profile/scripts/test_manifest_safety.py --self-test
-          python .claude/skills/generate-profile/scripts/render_canonical_scripts.py --self-test --canonical-root .
+          python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
           python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
-          python .claude/skills/generate-profile/scripts/test_copilot_emitter.py --self-test --canonical-root .
-          python .claude/skills/generate-profile/scripts/test_antigravity_emitter.py --self-test --canonical-root .
 
   kb-hygiene:
     name: KB + repo hygiene
