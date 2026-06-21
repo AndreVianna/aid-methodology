@@ -712,7 +712,8 @@ function Read-ManifestRootAgent {
         if ($raf) {
             foreach ($entry in $raf) {
                 if ($entry.PSObject.Properties['path'] -and $entry.path -eq $FileName) {
-                    return if ($entry.PSObject.Properties['sha256']) { $entry.sha256 } else { '' }
+                    $sha = if ($entry.PSObject.Properties['sha256']) { $entry.sha256 } else { '' }
+                    return $sha
                 }
             }
         }
