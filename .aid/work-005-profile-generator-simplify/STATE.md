@@ -23,7 +23,7 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 - **Phase:** Execute
 - **Active Skill:** aid-execute
 - **Updated:** 2026-06-21T14:57:17Z
-- **Pause Reason:** delivery-002 COMPLETE + gated A+ (5 tasks, 6 commits); PR #101 open against master. delivery-001 merged (#100). delivery-003 (lockstep + final gate) NOT yet executed -- note task-014 release.sh fix was pulled forward into delivery-001. Release-Safety Gate: no release until delivery-003 merges.
+- **Pause Reason:** delivery-002 COMPLETE + gated A+; PR #101 GREEN (all 7 checks incl. installer/CLI windows-latest) -- MERGEABLE. delivery-001 merged (#100). The Windows CI surfaced + fixed 3 REAL PS bugs (4 commits): (1) StrictMode PropertyNotFoundException on old-format manifests -> aid update exit 6; (2) `return if(...)` fell through to '' -> uninstall deleted modified root files; (3) [Array]::Sort($null) on empty subdir set -> migration exit 1 on cursor/antigravity/idempotency. All caught by the new migration acceptance tests. FOLLOW-UP for delivery-003 KB: document the 3 PS gotchas (StrictMode+absent-property, `return if`, empty-pipeline->$null) in known-issues/coding-standards. delivery-003 (lockstep + final gate) NOT yet executed (task-014 release.sh pulled forward into d001). Release-Safety Gate: no release until delivery-003 merges.
 - **Block Reason:** --
 - **Block Artifact:** --
 
