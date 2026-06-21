@@ -1,15 +1,26 @@
 #!/usr/bin/env python3
-# aid_profile.py — AID canonical-generator profile parser
+# aid_profile.py -- AID canonical-generator profile parser (shrunk schema, task-005)
 #
 # Purpose:
 #   Load a per-tool profile TOML and expose it as a typed Profile dataclass.
-#   Run `validate(profile)` to surface schema problems before rendering begins.
+#   Run validate(profile) to surface schema problems before rendering begins.
+#
+#   Schema (shrunk from work-005 feature-002):
+#     root_dir     = ".claude"   # host-required root basename
+#     root_file    = "CLAUDE.md" # AGENTS.md for non-claude tools (install lib uses it)
+#     agent_format = "markdown"  # "markdown" for 4 tools; "toml" dormant for Codex (E-CODEX-1)
+#     [tool_names]               # surviving translation: Bash->Terminal (cursor), Bash->shell (copilot)
+#     [model_tiers]              # feeds agent execution-metadata translation
+#     [capabilities]             # 4 flags consumed by skills graceful-degradation
+#
+#   Dropped: [layout] (*_dir/*_root/rules_dir/[extras]), [skill], [agent.frontmatter],
+#            filename_map, LayoutConfig split-root, ExtrasConfig, RuleEntry.
+#   Kept dormant: agent_format="toml" validator value (E-CODEX-1 gated).
 #
 # Usage:
 #   python aid_profile.py --profile profiles/claude-code.toml
-#   python -c "from aid_profile import load_profile, validate; p = load_profile('profiles/claude-code.toml'); print(validate(p))"
 #
-# Requirements: Python 3.11+ (tomllib is stdlib from 3.11)
+# Requirements: Python 3.11+ (tomllib is stdlib)
 from __future__ import annotations
 
 import argparse
@@ -22,156 +33,20 @@ from typing import Any
 
 
 # ---------------------------------------------------------------------------
-# Dataclasses mirroring the TOML schema
+# Dataclasses mirroring the shrunk TOML schema
 # ---------------------------------------------------------------------------
 
 @dataclass
-class LayoutConfig:
-    """[layout] table — where rendered files go."""
-    # Single-root tools (Claude Code, Cursor)
-    output_root: str | None = None
-    # Split-root tool (Codex)
-    agents_root: str | None = None
-    assets_root: str | None = None
-    # Sub-directory names (relative to their root)
-    agents_dir: str = "agents"
-    skills_dir: str = "skills"
-    templates_dir: str = "templates"
-    recipes_dir: str = "recipes"
-    scripts_dir: str = "scripts"
-    # Cursor-specific
-    rules_dir: str | None = None
-    # Repo-root file name for the project-context document
-    project_context_file: str = "CLAUDE.md"
-
-    def install_root(self) -> str:
-        """
-        Return the install-root path adopters see from their project root.
-
-        This is the basename of the directory where renderer output lands
-        (e.g., ``.claude`` for Claude Code, ``.agents`` for Codex assets,
-        ``.cursor`` for Cursor). Skill bodies that reference
-        ``canonical/scripts/...`` or ``canonical/templates/...`` get rewritten
-        to ``<install_root>/scripts/...`` / ``<install_root>/templates/...``
-        so they resolve in any adopter project (not just the dogfood repo).
-
-        For Codex's split layout, returns the *assets_root* basename
-        (``.agents``) since scripts + templates + skills all live there;
-        ``.codex`` only holds agent TOMLs and has no scripts/.
-
-        Examples
-        --------
-        - Claude Code: ``output_root="profiles/claude-code/.claude"`` → ``".claude"``
-        - Codex split: ``assets_root="profiles/codex/.agents"`` → ``".agents"``
-        - Cursor: ``output_root="profiles/cursor/.cursor"`` → ``".cursor"``
-        """
-        from pathlib import PurePosixPath
-
-        target = self.assets_root if self.assets_root is not None else self.output_root
-        if target is None:
-            raise ValueError(
-                "LayoutConfig has neither assets_root nor output_root — cannot determine install_root"
-            )
-        return PurePosixPath(target).name
-
-    def common_parent(self) -> str:
-        """
-        Return the deepest common parent directory of the profile's output roots.
-
-        This is the directory where ``emission-manifest.jsonl`` is placed
-        (per EMISSION-MANIFEST.md §"Filename and Location").
-
-        Examples
-        --------
-        - Claude Code: ``output_root="profiles/claude-code/.claude"`` → ``"profiles/claude-code"``
-        - Codex split: ``agents_root="profiles/codex/.codex"`` → ``"profiles/codex"``
-        - Cursor: ``output_root="profiles/cursor/.cursor"`` → ``"profiles/cursor"``
-
-        Raises
-        ------
-        ValueError
-            If neither ``output_root`` nor ``agents_root`` is set (invalid layout).
-        """
-        from pathlib import PurePosixPath
-
-        if self.output_root is not None:
-            parent = str(PurePosixPath(self.output_root).parent)
-            return "." if parent == "." else parent
-        if self.agents_root is not None:
-            parent = str(PurePosixPath(self.agents_root).parent)
-            return "." if parent == "." else parent
-        raise ValueError(
-            "LayoutConfig has neither output_root nor agents_root — cannot determine common_parent"
-        )
-
-
-@dataclass
-class FrontmatterConfig:
-    """[agent.frontmatter] or [skill.frontmatter] table."""
-    required: list[str] = field(default_factory=list)
-    optional: list[str] = field(default_factory=list)
-    # Claude Code-specific optional fields injected by the renderer
-    claude_code_optional: list[str] = field(default_factory=list)
-
-
-@dataclass
-class AgentConfig:
-    """[agent] table."""
-    format: str = "markdown"  # "markdown" | "toml"
-    frontmatter: FrontmatterConfig = field(default_factory=FrontmatterConfig)
-
-
-@dataclass
-class SkillConfig:
-    """[skill] table."""
-    decomposition: str = "references"  # always "references" per Decision F
-    frontmatter: FrontmatterConfig = field(default_factory=FrontmatterConfig)
-
-
-@dataclass
 class ModelTierSimple:
-    """Single string value for a tier (Claude Code / Cursor style)."""
+    """Single string value for a tier (Claude Code / Cursor / Copilot style)."""
     model: str
 
 
 @dataclass
 class ModelTierDetailed:
-    """Sub-table value for a tier with model + reasoning_effort (Codex style)."""
+    """Sub-table value for a tier with model + reasoning_effort (Codex / Antigravity)."""
     model: str
     reasoning_effort: str
-
-
-@dataclass
-class RuleEntry:
-    """One [[extras.rules]] entry (Cursor/Antigravity)."""
-    filename: str
-    always_apply: bool
-    description: str = ""
-    globs: list[str] = field(default_factory=list)
-    # Optional output filename override (task-012 / feature-003-antigravity / Q-I):
-    # When set, _render_cursor_extras writes the source (rule.filename) to the
-    # output path named rule.output_filename — enabling .mdc → .md renames for
-    # Antigravity (Q-I: Antigravity uses .md, not .mdc; source stays .mdc).
-    # Default None → source name preserved, so cursor is byte-identical.
-    output_filename: str | None = None
-
-
-@dataclass
-class ExtrasConfig:
-    """[extras] table."""
-    rules: list[RuleEntry] = field(default_factory=list)
-    # Optional frontmatter dialect for extras.rules emission (task-012 / delivery-003 gate):
-    # - None (default) → verbatim source copy; the source .mdc frontmatter is carried
-    #   through unchanged.  This preserves cursor's byte-identical behavior: cursor.toml
-    #   has no [extras] rules_frontmatter key → defaults to None → verbatim path.
-    # - "trigger" → Antigravity dialect: the source frontmatter is stripped and
-    #   regenerated from RuleEntry fields using trigger:/description/globs keys:
-    #     always_apply=True  → trigger: always_on
-    #     always_apply=False → trigger: glob (+ globs block-sequence)
-    #   The rule BODY (after the source frontmatter) is preserved unchanged.
-    # Do NOT key this off [agent].format — extras-rules emission is separate from agent
-    # emission and must remain decoupled (per delivery-003 task contract).
-    rules_frontmatter: str | None = None
 
 
 @dataclass
@@ -186,78 +61,54 @@ class CapabilitiesConfig:
 @dataclass
 class Profile:
     """
-    Top-level profile dataclass.  All data from a single *.toml profile file.
+    Top-level profile dataclass (shrunk to the minimal copy-generator schema).
 
-    model_tiers is typed as dict[str, ModelTierSimple | ModelTierDetailed]
-    to accommodate both:
-      [model_tiers]           (Claude Code / Cursor — simple string values)
-      large = "opus"
-    and:
-      [model_tiers.large]     (Codex — sub-tables with model + reasoning_effort)
-      model = "gpt-5.5"
-      reasoning_effort = "high"
+    Fields:
+      name          -- derived from the filename stem (e.g. "claude-code")
+      root_dir      -- host-required root basename (e.g. ".claude", ".cursor")
+      root_file     -- root context filename (e.g. "CLAUDE.md", "AGENTS.md")
+      agent_format  -- "markdown" for 4 tools; "toml" dormant for Codex
+      tool_names    -- the one surviving translate step (Bash->Terminal, Bash->shell)
+      model_tiers   -- tier aliases to model strings (feeds frontmatter translate)
+      capabilities  -- 4 capability flags (consumed by skills graceful-degradation)
     """
-    name: str  # derived from the filename stem
-    layout: LayoutConfig = field(default_factory=LayoutConfig)
-    agent: AgentConfig = field(default_factory=AgentConfig)
-    skill: SkillConfig = field(default_factory=SkillConfig)
-    model_tiers: dict[str, ModelTierSimple | ModelTierDetailed] = field(default_factory=dict)
+    name: str
+    root_dir: str = ".claude"
+    root_file: str = "CLAUDE.md"
+    agent_format: str = "markdown"
     tool_names: dict[str, str] = field(default_factory=dict)
-    filename_map: dict[str, str] = field(default_factory=dict)
-    extras: ExtrasConfig = field(default_factory=ExtrasConfig)
+    model_tiers: dict[str, ModelTierSimple | ModelTierDetailed] = field(default_factory=dict)
     capabilities: CapabilitiesConfig = field(default_factory=CapabilitiesConfig)
     # Raw TOML dict preserved for lossless round-trip checks
     _raw: dict[str, Any] = field(default_factory=dict, repr=False, compare=False)
+
+    # -----------------------------------------------------------------------
+    # Compatibility shim: install_root() used by rewrite_install_paths callers
+    # -----------------------------------------------------------------------
+    def install_root(self) -> str:
+        """Return the root basename (e.g. '.claude') -- same as root_dir."""
+        return self.root_dir
+
+    def common_parent(self) -> str:
+        """
+        Return the common parent directory for this profile's output.
+
+        Format: profiles/<name>
+        This is where the emission-manifest.jsonl is placed.
+        """
+        return f"profiles/{self.name}"
 
 
 # ---------------------------------------------------------------------------
 # Loader
 # ---------------------------------------------------------------------------
 
-def _parse_layout(raw: dict[str, Any]) -> LayoutConfig:
-    return LayoutConfig(
-        output_root=raw.get("output_root"),
-        agents_root=raw.get("agents_root"),
-        assets_root=raw.get("assets_root"),
-        agents_dir=raw.get("agents_dir", "agents"),
-        skills_dir=raw.get("skills_dir", "skills"),
-        templates_dir=raw.get("templates_dir", "templates"),
-        recipes_dir=raw.get("recipes_dir", "recipes"),
-        rules_dir=raw.get("rules_dir"),
-        project_context_file=raw.get("project_context_file", "CLAUDE.md"),
-    )
-
-
-def _parse_frontmatter(raw: dict[str, Any]) -> FrontmatterConfig:
-    return FrontmatterConfig(
-        required=raw.get("required", []),
-        optional=raw.get("optional", []),
-        claude_code_optional=raw.get("claude_code_optional", []),
-    )
-
-
-def _parse_agent(raw: dict[str, Any]) -> AgentConfig:
-    fm_raw = raw.get("frontmatter", {})
-    return AgentConfig(
-        format=raw.get("format", "markdown"),
-        frontmatter=_parse_frontmatter(fm_raw),
-    )
-
-
-def _parse_skill(raw: dict[str, Any]) -> SkillConfig:
-    fm_raw = raw.get("frontmatter", {})
-    return SkillConfig(
-        decomposition=raw.get("decomposition", "references"),
-        frontmatter=_parse_frontmatter(fm_raw),
-    )
-
-
 def _parse_model_tiers(raw: dict[str, Any]) -> dict[str, ModelTierSimple | ModelTierDetailed]:
     """
     Handle both:
-      large = "opus"           → ModelTierSimple("opus")
+      large = "opus"           -> ModelTierSimple("opus")
       [large]
-        model = "gpt-5.5"     → ModelTierDetailed("gpt-5.5", "high")
+        model = "gpt-5.5"     -> ModelTierDetailed("gpt-5.5", "high")
         reasoning_effort = "high"
     """
     result: dict[str, ModelTierSimple | ModelTierDetailed] = {}
@@ -269,26 +120,7 @@ def _parse_model_tiers(raw: dict[str, Any]) -> dict[str, ModelTierSimple | Model
                 model=tier_value.get("model", ""),
                 reasoning_effort=tier_value.get("reasoning_effort", ""),
             )
-        # else: unexpected type — validation will catch it
     return result
-
-
-def _parse_extras(raw: dict[str, Any]) -> ExtrasConfig:
-    rules_raw = raw.get("rules", [])
-    rules = [
-        RuleEntry(
-            filename=r.get("filename", ""),
-            always_apply=r.get("always_apply", False),
-            description=r.get("description", ""),
-            globs=r.get("globs", []),
-            output_filename=r.get("output_filename"),  # None when absent → cursor byte-identical
-        )
-        for r in rules_raw
-    ]
-    return ExtrasConfig(
-        rules=rules,
-        rules_frontmatter=raw.get("rules_frontmatter"),  # None when absent → verbatim (cursor)
-    )
 
 
 def _parse_capabilities(raw: dict[str, Any]) -> CapabilitiesConfig:
@@ -300,7 +132,7 @@ def _parse_capabilities(raw: dict[str, Any]) -> CapabilitiesConfig:
     )
 
 
-def load_profile(path: str) -> Profile:
+def load_profile(path: str) -> "Profile":
     """
     Load a profile TOML file and return a typed Profile dataclass.
 
@@ -329,13 +161,11 @@ def load_profile(path: str) -> Profile:
 
     return Profile(
         name=name,
-        layout=_parse_layout(raw.get("layout", {})),
-        agent=_parse_agent(raw.get("agent", {})),
-        skill=_parse_skill(raw.get("skill", {})),
-        model_tiers=_parse_model_tiers(raw.get("model_tiers", {})),
+        root_dir=raw.get("root_dir", ".claude"),
+        root_file=raw.get("root_file", "CLAUDE.md"),
+        agent_format=raw.get("agent_format", "markdown"),
         tool_names=raw.get("tool_names", {}),
-        filename_map=raw.get("filename_map", {}),
-        extras=_parse_extras(raw.get("extras", {})),
+        model_tiers=_parse_model_tiers(raw.get("model_tiers", {})),
         capabilities=_parse_capabilities(raw.get("capabilities", {})),
         _raw=raw,
     )
@@ -345,141 +175,58 @@ def load_profile(path: str) -> Profile:
 # Validator
 # ---------------------------------------------------------------------------
 
-_CANONICAL_FILENAME_MAP_KEYS = {
-    "project_context_file",
-    "reviewer_output_file",
-    "open_questions_file",
-}
-
 _KNOWN_TIERS = {"large", "medium", "small"}
 
-# "copilot-agent" added by task-005 (feature-002-copilot-cli / delivery-002):
-#   Registers the E1 agent-format value so the validator accepts
-#   `[agent].format = "copilot-agent"` in profiles/copilot-cli.toml.
-#   E2 ([skill].emit_as knob) is NOT added — skills are native Agent Skills,
-#   emitted as folders by the existing render_skills pass (FR1 Q-A ruling).
-#   E3 (MCP table / mcp-config.json) is NOT added — AID ships no MCP servers;
-#   grep -ri mcp canonical/ profiles/*.toml returns zero matches (FR1 Q-B ruling).
-#   Both omissions are intentional and sourced to provider-mapping.md Q-A / Q-B.
-# "antigravity-rule" added by task-012 (feature-003-antigravity / delivery-003):
-#   Registers the sub-agents→.agent/rules/ reshape format so the validator accepts
-#   `[agent].format = "antigravity-rule"` in profiles/antigravity.toml.
-#   This reuses feature-002's E1 new-agent-format-branch mechanism; it is a second
-#   branch on the same dispatch (NOT a reuse of copilot-agent output, NOT the deleted
-#   E2). Source: SPEC §"Renderer Increment" + provider-mapping.md Q-D.
-_KNOWN_AGENT_FORMATS = {"markdown", "toml", "copilot-agent", "antigravity-rule"}
-
-_KNOWN_DECOMPOSITIONS = {"references"}
+# "toml" retained DORMANT for Codex (E-CODEX-1 not yet high-confidence).
+# All other format branches (copilot-agent, antigravity-rule) deleted per task-005.
+_KNOWN_AGENT_FORMATS = {"markdown", "toml"}
 
 
-def validate(profile: Profile) -> list[str]:
+def validate(profile: "Profile") -> list[str]:
     """
     Validate a loaded Profile and return a list of error strings.
     An empty list means the profile is valid.
-
-    Parameters
-    ----------
-    profile : Profile
-        The profile to validate.
-
-    Returns
-    -------
-    list[str]
-        Zero or more human-readable error messages.
     """
     errors: list[str] = []
     name = profile.name
 
-    # -----------------------------------------------------------------------
-    # Layout checks
-    # -----------------------------------------------------------------------
-    layout = profile.layout
-    has_output_root = layout.output_root is not None
-    has_split_roots = layout.agents_root is not None or layout.assets_root is not None
+    # root_dir must be set and relative
+    if not profile.root_dir:
+        errors.append(f"[{name}] root_dir is missing or empty")
+    elif profile.root_dir.startswith("/") or profile.root_dir.startswith("\\"):
+        errors.append(f"[{name}] root_dir must be a relative basename, got: {profile.root_dir!r}")
 
-    if not has_output_root and not has_split_roots:
-        errors.append(
-            f"[{name}] [layout] must declare either output_root or "
-            f"(agents_root + assets_root)"
-        )
-    if has_output_root and has_split_roots:
-        errors.append(
-            f"[{name}] [layout] cannot declare both output_root and "
-            f"agents_root/assets_root — choose one layout style"
-        )
-    if has_split_roots:
-        if layout.agents_root is None:
-            errors.append(f"[{name}] [layout] agents_root missing (required with assets_root)")
-        if layout.assets_root is None:
-            errors.append(f"[{name}] [layout] assets_root missing (required with agents_root)")
+    # root_file must be set
+    if not profile.root_file:
+        errors.append(f"[{name}] root_file is missing or empty")
 
-    # Paths must be relative (no leading /)
-    for field_name, value in [
-        ("output_root", layout.output_root),
-        ("agents_root", layout.agents_root),
-        ("assets_root", layout.assets_root),
-    ]:
-        if value is not None and (value.startswith("/") or value.startswith("\\")):
-            errors.append(
-                f"[{name}] [layout].{field_name} must be a relative path, got: {value!r}"
-            )
-
-    # -----------------------------------------------------------------------
-    # Agent format check
-    # -----------------------------------------------------------------------
-    if profile.agent.format not in _KNOWN_AGENT_FORMATS:
+    # agent_format check
+    if profile.agent_format not in _KNOWN_AGENT_FORMATS:
         errors.append(
-            f"[{name}] [agent].format must be one of {sorted(_KNOWN_AGENT_FORMATS)}, "
-            f"got: {profile.agent.format!r}"
+            f"[{name}] agent_format must be one of {sorted(_KNOWN_AGENT_FORMATS)}, "
+            f"got: {profile.agent_format!r}"
         )
 
-    # -----------------------------------------------------------------------
-    # Skill decomposition check
-    # -----------------------------------------------------------------------
-    if profile.skill.decomposition not in _KNOWN_DECOMPOSITIONS:
-        errors.append(
-            f"[{name}] [skill].decomposition must be one of {sorted(_KNOWN_DECOMPOSITIONS)}, "
-            f"got: {profile.skill.decomposition!r}"
-        )
-
-    # -----------------------------------------------------------------------
-    # Model-tier checks
-    # -----------------------------------------------------------------------
+    # model_tiers: at least one tier required
     if not profile.model_tiers:
-        errors.append(f"[{name}] [model_tiers] is empty — at least one tier alias required")
+        errors.append(f"[{name}] [model_tiers] is empty -- at least one tier alias required")
     else:
         for tier_name, tier_val in profile.model_tiers.items():
             if tier_name not in _KNOWN_TIERS:
                 errors.append(
-                    f"[{name}] [model_tiers] unknown tier {tier_name!r} — "
+                    f"[{name}] [model_tiers] unknown tier {tier_name!r} -- "
                     f"expected one of {sorted(_KNOWN_TIERS)}"
                 )
             if isinstance(tier_val, ModelTierSimple):
                 if not tier_val.model:
-                    errors.append(
-                        f"[{name}] [model_tiers].{tier_name} is empty string"
-                    )
+                    errors.append(f"[{name}] [model_tiers].{tier_name} is empty string")
             elif isinstance(tier_val, ModelTierDetailed):
                 if not tier_val.model:
-                    errors.append(
-                        f"[{name}] [model_tiers.{tier_name}].model is empty"
-                    )
+                    errors.append(f"[{name}] [model_tiers.{tier_name}].model is empty")
                 if not tier_val.reasoning_effort:
                     errors.append(
                         f"[{name}] [model_tiers.{tier_name}].reasoning_effort is empty"
                     )
-
-    # -----------------------------------------------------------------------
-    # filename_map checks
-    # -----------------------------------------------------------------------
-    missing_keys = _CANONICAL_FILENAME_MAP_KEYS - set(profile.filename_map.keys())
-    if missing_keys:
-        errors.append(
-            f"[{name}] [filename_map] missing required keys: {sorted(missing_keys)}"
-        )
-    for key, value in profile.filename_map.items():
-        if not value:
-            errors.append(f"[{name}] [filename_map].{key} is empty")
 
     return errors
 
@@ -506,7 +253,7 @@ def main() -> int:
         "--json",
         dest="as_json",
         action="store_true",
-        help="Print the parsed profile as JSON and exit (structural fields only)",
+        help="Print the parsed profile as JSON and exit",
     )
     args = parser.parse_args()
 
@@ -520,26 +267,12 @@ def main() -> int:
         return 1
 
     if args.as_json:
-        # Emit structural fields as JSON (for round-trip / spot-check use)
         summary = {
             "name": profile.name,
-            "layout": {
-                "output_root": profile.layout.output_root,
-                "agents_root": profile.layout.agents_root,
-                "assets_root": profile.layout.assets_root,
-                "agents_dir": profile.layout.agents_dir,
-                "skills_dir": profile.layout.skills_dir,
-                "templates_dir": profile.layout.templates_dir,
-                "recipes_dir": profile.layout.recipes_dir,
-                "rules_dir": profile.layout.rules_dir,
-                "project_context_file": profile.layout.project_context_file,
-            },
-            "agent": {
-                "format": profile.agent.format,
-            },
-            "skill": {
-                "decomposition": profile.skill.decomposition,
-            },
+            "root_dir": profile.root_dir,
+            "root_file": profile.root_file,
+            "agent_format": profile.agent_format,
+            "tool_names": profile.tool_names,
             "model_tiers": {
                 tier: (
                     {"model": v.model}
@@ -547,19 +280,6 @@ def main() -> int:
                     else {"model": v.model, "reasoning_effort": v.reasoning_effort}
                 )
                 for tier, v in profile.model_tiers.items()
-            },
-            "tool_names": profile.tool_names,
-            "filename_map": profile.filename_map,
-            "extras": {
-                "rules": [
-                    {
-                        "filename": r.filename,
-                        "always_apply": r.always_apply,
-                        "description": r.description,
-                        "globs": r.globs,
-                    }
-                    for r in profile.extras.rules
-                ]
             },
             "capabilities": {
                 "hooks": profile.capabilities.hooks,
@@ -578,7 +298,7 @@ def main() -> int:
             print(f"  - {err}", file=sys.stderr)
         return 1
 
-    print(f"OK: {args.profile} — profile {profile.name!r} is valid")
+    print(f"OK: {args.profile} -- profile {profile.name!r} is valid")
     return 0
 
 

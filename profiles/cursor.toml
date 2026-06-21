@@ -1,59 +1,22 @@
 # Profile: Cursor (Cursor IDE)
 # Encodes the Cursor IDE host tool's install conventions.
-# Consumed by the render scripts (tasks 019-021) to emit the profiles/cursor/.cursor/ tree.
+# Consumed by render.py to emit the profiles/cursor/.cursor/ tree.
 
-[layout]
-output_root    = "profiles/cursor/.cursor"
-agents_dir     = "agents"
-skills_dir     = "skills"
-templates_dir  = "templates"
-# project_context_file is installed at the repo root, not inside output_root
-project_context_file = "AGENTS.md"
+root_dir     = ".cursor"
+root_file    = "AGENTS.md"
+agent_format = "markdown"
 
-[agent]
-# Agent files are Markdown with YAML frontmatter (same format as Claude Code)
-format = "markdown"
-
-[agent.frontmatter]
-# Required fields (same shape as Claude Code)
-required = ["name", "description", "tools", "model"]
-# Optional fields
-optional = ["permissionMode", "background"]
-# Cursor does NOT use context: / agent: harness hints (same as Codex)
-
-[skill]
-# Skills externalize references into references/ subdirectories (Decision F)
-decomposition = "references"
-
-[skill.frontmatter]
-# Required fields
-required = ["name", "description", "allowed-tools"]
-# Optional fields
-optional = ["argument-hint"]
-# Cursor omits context: and agent: (same as Codex)
+[tool_names]
+# Cursor uses "Terminal" instead of "Bash" for shell execution.
+Bash = "Terminal"
 
 [model_tiers]
-# Cursor uses Anthropic models (same aliases as Claude Code — verified via tech-debt.md L6)
 large  = "opus"
 medium = "sonnet"
 small  = "haiku"
 
-[tool_names]
-# Cursor uses "Terminal" instead of "Bash" for shell execution (coding-standards.md §2.3,
-# tech-debt.md M6, Q52). This is the ONLY non-identity entry across all three profiles.
-Bash = "Terminal"
-
-[filename_map]
-# Per-tool filename substitutions for canonical placeholders.
-# Cursor uses canonical names (same as Claude Code).
-project_context_file  = "AGENTS.md"
-reviewer_output_file  = "STATE.md"   # was DISCOVERY-STATE.md pre-FR2 (CW6 consolidation, work-003 feature-002)
-open_questions_file   = "additional-info.md"
-
 [capabilities]
-# Values based on host-tools-matrix.md and external-sources.md Rows 5-6.
-# TODO: confirm background_execution and stop_hook_autocontinue against Cursor vendor docs.
-hooks                  = true   # Cursor hooks documented (hooks.json, beta per PLAN task 4 note)
-skill_chaining         = true   # Cursor supports skill invocation
-background_execution   = false  # TODO: confirm — not confirmed for Cursor
-stop_hook_autocontinue = false  # TODO: confirm — not confirmed for Cursor
+hooks                  = true
+skill_chaining         = true
+background_execution   = false
+stop_hook_autocontinue = false

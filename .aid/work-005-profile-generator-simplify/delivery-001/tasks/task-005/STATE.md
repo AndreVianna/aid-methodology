@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. Manifest schema byte-identical (delivery-002 seam intact); uniform layout + Codex unify confirmed; FR5 minimal + Codex-TOML dormant + aid_profile shrink verified; 53/53 suites. FLAG: the 5 superseded renderers are orphaned -> task-007 SPEC widened to delete all 5 files + de-wire 3 CI self-tests. verify_advisory.py correctly unchanged (no rules/extras check to drop, A5).
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** render.py copy core built (T1-T8 all pass, 250 records/run). aid_profile.py shrunk to ~230 LOC (flat schema: root_dir/root_file/agent_format/tool_names/model_tiers/capabilities). run_generator.py slimmed (single render_profile call). verify_deterministic.py re-pointed. render_lib.py FR5 MINIMAL (rules removed from tool-native). Codex TOML dormant. profiles/*.toml migrated to flat schema. profiles/ generated content reverted (task-006 owns re-render). 53/53 canonical tests pass.
 
 ---
 

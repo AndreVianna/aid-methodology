@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
-# verify_deterministic.py — AID generator deterministic verify hard gate
+# verify_deterministic.py -- AID generator deterministic verify hard gate
 #
 # Purpose:
 #   Three sub-checks that MUST all pass before a render run is considered valid:
 #   1. Byte-identical re-render: two independent render passes produce identical output.
 #   2. File-presence audit: every file in the manifest exists; no extra generator files.
 #   3. Frontmatter parse: every *.md and *.toml emitted parses without error.
+#
+# task-005 (work-005 feature-002): re-pointed to use render.py copy-based generator.
+#   - _render_all now calls render_profile() (single copy pass) instead of 5 renderers.
+#   - _profile_output_dirs loses the Codex split-layout branch (FR2 unify).
+#   - Imports: dropped render_agents/render_skills/render_templates/render_recipes.
 #
 # Usage:
 #   python verify_deterministic.py --canonical-root <repo-root> [--report-path <path>]
@@ -30,26 +35,23 @@ if str(_SCRIPT_DIR) not in sys.path:
 
 from aid_profile import load_profile, validate as validate_profile, Profile  # noqa: E402
 from render_lib import EmissionManifest  # noqa: E402
-from render_agents import render_agents  # noqa: E402
-from render_skills import render_skills  # noqa: E402
-from render_templates import render_templates  # noqa: E402
-from render_recipes import render_recipes  # noqa: E402
+from render import render_profile  # noqa: E402
 
 
 # ---------------------------------------------------------------------------
-# Minimal YAML frontmatter parser (same subset as render_agents.py)
+# Minimal YAML frontmatter parser (same subset as render.py)
 # ---------------------------------------------------------------------------
 
 def _parse_yaml_frontmatter(text: str) -> dict[str, Any] | None:
     """
-    Parse YAML frontmatter from a ``---``-delimited block.
+    Parse YAML frontmatter from a ---delimited block.
 
     Returns None if no frontmatter is present or the block is malformed.
     Returns a dict (possibly empty) on success.
     """
     lines = text.splitlines(keepends=True)
     if not lines or lines[0].strip() != "---":
-        return {}  # No frontmatter → treat as valid (body-only file)
+        return {}  # No frontmatter -> treat as valid (body-only file)
 
     end_idx = None
     for i, line in enumerate(lines[1:], start=1):
@@ -58,9 +60,8 @@ def _parse_yaml_frontmatter(text: str) -> dict[str, Any] | None:
             break
 
     if end_idx is None:
-        return None  # Unclosed frontmatter block → malformed
+        return None  # Unclosed frontmatter block -> malformed
 
-    # Minimal key:value parse (just check it doesn't blow up)
     fm: dict[str, Any] = {}
     i = 0
     fm_lines = lines[1:end_idx]
@@ -72,7 +73,6 @@ def _parse_yaml_frontmatter(text: str) -> dict[str, Any] | None:
                 key = key.strip()
                 val = val.strip()
                 if val == ">":
-                    # Collect folded block continuation
                     block = []
                     i += 1
                     while i < len(fm_lines) and fm_lines[i] and fm_lines[i][0].isspace():
@@ -88,7 +88,7 @@ def _parse_yaml_frontmatter(text: str) -> dict[str, Any] | None:
 
 
 # ---------------------------------------------------------------------------
-# Full render helper
+# Full render helper (re-pointed to copy-based render_profile)
 # ---------------------------------------------------------------------------
 
 def _render_all(canonical_root: Path, profiles: list[Profile], output_dir: Path) -> list[EmissionManifest]:
@@ -96,10 +96,7 @@ def _render_all(canonical_root: Path, profiles: list[Profile], output_dir: Path)
     manifests = []
     for profile in profiles:
         manifest = EmissionManifest(profile_name=profile.name)
-        render_agents(canonical_root, profile, manifest, output_dir)
-        render_skills(canonical_root, profile, manifest, output_dir)
-        render_templates(canonical_root, profile, manifest, output_dir)
-        render_recipes(canonical_root, profile, manifest, output_dir)
+        render_profile(canonical_root, profile, manifest, output_dir)
         manifests.append(manifest)
     return manifests
 
@@ -143,32 +140,22 @@ def _check_byte_identical(canonical_root: Path, profiles: list[Profile]) -> dict
 def _recursive_compare(dir_a: Path, dir_b: Path, offenders: list[str], limit: int) -> None:
     """
     Recursively compare two directory trees; append differing paths to offenders.
-
-    Uses content comparison (not shallow mtime/size) to ensure correctness
-    even when files are created at the same instant (avoids filecmp shallow=True
-    false-same race).
     """
     if len(offenders) >= limit:
         return
 
-    # Use shallow=False to force content comparison
     dcmp = filecmp.dircmp(str(dir_a), str(dir_b))
-    # filecmp.dircmp doesn't expose shallow as a constructor param in all versions;
-    # we use report_full_closure to force comparison, then manually content-check.
 
-    # Files only in A (missing from B)
     for name in dcmp.left_only:
         offenders.append(f"only in A: {dir_a / name}")
         if len(offenders) >= limit:
             return
 
-    # Files only in B (missing from A)
     for name in dcmp.right_only:
         offenders.append(f"only in B: {dir_b / name}")
         if len(offenders) >= limit:
             return
 
-    # Force content comparison for all common files (bypasses shallow=True default)
     for name in dcmp.common_files:
         fa = dir_a / name
         fb = dir_b / name
@@ -177,7 +164,6 @@ def _recursive_compare(dir_a: Path, dir_b: Path, offenders: list[str], limit: in
             if len(offenders) >= limit:
                 return
 
-    # Recurse into subdirectories
     for sub in dcmp.common_dirs:
         _recursive_compare(dir_a / sub, dir_b / sub, offenders, limit)
         if len(offenders) >= limit:
@@ -194,10 +180,8 @@ def _check_presence_audit(
 ) -> dict[str, Any]:
     """
     For each profile: render into a temp dir, write the manifest, then verify
-    that every manifest dst exists on disk (no missing files) and that no extra
-    files exist within the generator-owned subtrees (no files outside manifest).
-
-    Returns result dict.
+    that every manifest dst exists on disk and no extra files exist within the
+    generator-owned subtrees.
     """
     offenders: list[str] = []
 
@@ -206,13 +190,10 @@ def _check_presence_audit(
         manifests = _render_all(canonical_root, profiles, tmp_path)
 
         for profile, manifest in zip(profiles, manifests):
-            common_parent = Path(profile.layout.common_parent())
-            out_root = tmp_path / common_parent
+            common_parent = Path(profile.common_parent())
 
-            # Build expected set from manifest
             expected_dst = {r.dst for r in manifest._records}
 
-            # Build actual set: walk all files under the profile's output roots
             actual_dst: set[str] = set()
             for out_dir in _profile_output_dirs(profile, tmp_path):
                 for f in out_dir.rglob("*"):
@@ -220,12 +201,10 @@ def _check_presence_audit(
                         rel = str(f.relative_to(tmp_path / common_parent)).replace("\\", "/")
                         actual_dst.add(rel)
 
-            # Missing: in manifest but not on disk
             missing = expected_dst - actual_dst
             for dst in sorted(missing)[:5]:
                 offenders.append(f"[{profile.name}] MISSING: {dst}")
 
-            # Extra: on disk but not in manifest (within generator-owned tree)
             extra = actual_dst - expected_dst
             for dst in sorted(extra)[:5]:
                 offenders.append(f"[{profile.name}] EXTRA: {dst}")
@@ -238,15 +217,13 @@ def _check_presence_audit(
 
 
 def _profile_output_dirs(profile: Profile, output_base: Path) -> list[Path]:
-    """Return the list of output root directories for a profile."""
-    if profile.layout.output_root is not None:
-        return [output_base / profile.layout.output_root]
-    else:
-        # Codex split layout
-        return [
-            output_base / profile.layout.agents_root,  # type: ignore[arg-type]
-            output_base / profile.layout.assets_root,  # type: ignore[arg-type]
-        ]
+    """
+    Return the list of output root directories for a profile.
+
+    FR2 Codex unify: Codex now has a single root_dir (.codex) instead of split layout.
+    All profiles use the single output_base/profiles/<name>/<root_dir> path.
+    """
+    return [output_base / profile.common_parent() / profile.root_dir]
 
 
 # ---------------------------------------------------------------------------
@@ -319,7 +296,7 @@ def run_verify(
     Returns
     -------
     tuple[bool, dict]
-        ``(overall_passed, report_dict)``.
+        (overall_passed, report_dict).
     """
     canonical_root = Path(canonical_root)
     profiles = _load_profiles(canonical_root)
@@ -333,19 +310,19 @@ def run_verify(
     r1 = _check_byte_identical(canonical_root, profiles)
     results.append(r1)
     print(f"        {'PASS' if r1['passed'] else 'FAIL'}" +
-          (f" — {len(r1['offenders'])} offender(s)" if not r1["passed"] else ""))
+          (f" -- {len(r1['offenders'])} offender(s)" if not r1["passed"] else ""))
 
     print("  [2/3] File-presence audit...")
     r2 = _check_presence_audit(canonical_root, profiles)
     results.append(r2)
     print(f"        {'PASS' if r2['passed'] else 'FAIL'}" +
-          (f" — {len(r2['offenders'])} offender(s)" if not r2["passed"] else ""))
+          (f" -- {len(r2['offenders'])} offender(s)" if not r2["passed"] else ""))
 
     print("  [3/3] Frontmatter parse...")
     r3 = _check_frontmatter_parse(canonical_root, profiles)
     results.append(r3)
     print(f"        {'PASS' if r3['passed'] else 'FAIL'}" +
-          (f" — {len(r3['offenders'])} offender(s)" if not r3["passed"] else ""))
+          (f" -- {len(r3['offenders'])} offender(s)" if not r3["passed"] else ""))
 
     overall = all(r["passed"] for r in results)
 
@@ -388,7 +365,7 @@ def main() -> int:
         "--report-path",
         metavar="PATH",
         default=".aid/work-002-canonical-generator/verify-deterministic-report.json",
-        help="Where to write the JSON report (default: .aid/work-002-canonical-generator/verify-deterministic-report.json)",
+        help="Where to write the JSON report",
     )
     parser.add_argument("--self-test", action="store_true", help="Run failure-mode smoke tests")
     args = parser.parse_args()
@@ -426,7 +403,7 @@ def _self_test(canonical_root_arg: str) -> int:
     failures: list[str] = []
 
     # -----------------------------------------------------------------------
-    # Smoke test (b): missing file → presence audit fails
+    # Smoke test (b): missing file -> presence audit fails
     # -----------------------------------------------------------------------
     print("Self-test (b): missing file detection...")
     with tempfile.TemporaryDirectory() as tmp:
@@ -438,18 +415,15 @@ def _self_test(canonical_root_arg: str) -> int:
         first_profile = profiles[0]
         first_manifest = manifests[0]
         if first_manifest._records:
-            common_parent = first_profile.layout.common_parent()
+            common_parent = first_profile.common_parent()
             first_dst = first_manifest._records[0].dst
             target = tmp_path / common_parent / first_dst
             if target.exists():
                 target.unlink()
 
-        # Re-run presence audit (using the same temp dir, manifest recorded)
-        # Simulate by building a manifest from what we rendered and checking vs disk
         offenders: list[str] = []
         for profile, manifest in zip(profiles, manifests):
-            cp = Path(profile.layout.common_parent())
-            out_root = tmp_path / cp
+            cp = Path(profile.common_parent())
             expected_dst = {r.dst for r in manifest._records}
             actual_dst: set[str] = set()
             for out_dir in _profile_output_dirs(profile, tmp_path):
@@ -471,7 +445,7 @@ def _self_test(canonical_root_arg: str) -> int:
     # -----------------------------------------------------------------------
     print("Self-test (c): malformed frontmatter detection...")
     malformed_tests = [
-        "---\nname: test\ndescription: good\n",  # unclosed frontmatter → None
+        "---\nname: test\ndescription: good\n",  # unclosed frontmatter -> None
     ]
     for text in malformed_tests:
         result = _parse_yaml_frontmatter(text)
@@ -483,13 +457,12 @@ def _self_test(canonical_root_arg: str) -> int:
     # -----------------------------------------------------------------------
     # Smoke test (a): byte-identical check with non-determinism
     # -----------------------------------------------------------------------
-    # We test the comparison function directly rather than patching a renderer
     print("Self-test (a): byte-identical comparison logic...")
     with tempfile.TemporaryDirectory() as dir_a, tempfile.TemporaryDirectory() as dir_b:
         pa = Path(dir_a) / "file.txt"
         pb = Path(dir_b) / "file.txt"
         pa.write_bytes(b"content-a")
-        pb.write_bytes(b"content-b")  # different content = non-determinism
+        pb.write_bytes(b"content-b")
 
         test_offenders: list[str] = []
         _recursive_compare(Path(dir_a), Path(dir_b), test_offenders, limit=10)
