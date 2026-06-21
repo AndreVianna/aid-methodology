@@ -1427,6 +1427,90 @@ else
     fail "G13-05 user-file.txt unexpectedly missing after second update -- content-isolation violation"
 fi
 
+# ===========================================================================
+# Gate 14 -- dry-run preview of retired-root deletions (post-eval #1)
+#
+# Asserts that `aid update --dry-run` on a repo with an old-layout retired root:
+#   (a) LISTS the would-be-removed AID-owned file in its output (the "Would REMOVE"
+#       block must appear with a "remove:" entry for the retired path).
+#   (b) Writes NOTHING: the retired AID file is still present after the dry-run
+#       (no actual removal happened).
+#   (c) The new bundle files have NOT been copied into the target (dry-run == no writes).
+#
+# Fixture: a codex repo with a retired .agents/skills/aid-orchestrator.md file.
+# ===========================================================================
+echo ""
+echo "=== Gate 14: aid update --dry-run lists retired AID path + writes nothing ==="
+
+G14_CODE_HOME="$(new_code_home)"
+G14_STATE_HOME="$(new_state_home)"
+G14_REPO="$(mktemp -d "${TMP}/g14-repo.XXXXXX")"
+mkdir -p "${G14_REPO}/.aid"
+mkdir -p "${G14_REPO}/.agents/skills"
+mkdir -p "${G14_REPO}/.agents/aid"
+
+# AID-owned files in the retired .agents/ tree.
+printf 'old orchestrator skill\n' > "${G14_REPO}/.agents/skills/aid-orchestrator.md"
+printf 'old shared aid config\n'  > "${G14_REPO}/.agents/aid/shared.md"
+# User file (must survive dry-run).
+printf 'USER-G14-SENTINEL\n' > "${G14_REPO}/.agents/user-file.txt"
+G14_USER_SHA="$(file_sha256 "${G14_REPO}/.agents/user-file.txt")"
+
+# Write a minimal era-b manifest so the tool list is resolved (codex at old version).
+_write_old_manifest "${G14_REPO}/.aid/.aid-manifest.json" "codex"
+_write_old_settings "${G14_REPO}/.aid/settings.yml" "codex"
+
+# Run aid update --dry-run.
+G14_DRY_OUT=$(AID_HOME="${G14_STATE_HOME}" \
+              AID_NO_UPDATE_CHECK=1 \
+              bash "${G14_CODE_HOME}/bin/aid" update \
+              --dry-run \
+              --from-bundle "${BUNDLE_DIR}" \
+              --target "${G14_REPO}" 2>&1)
+G14_DRY_RC=$?
+
+assert_exit_eq "$G14_DRY_RC" 0 "G14-01 aid update --dry-run on old-layout codex repo -> exit 0"
+
+# (a) Output must contain the "Would REMOVE" block and a "remove:" entry for
+#     one of the retired AID paths.
+if echo "$G14_DRY_OUT" | grep -q "Would REMOVE"; then
+    pass "G14-02 dry-run output contains 'Would REMOVE (retired-layout migration):' header"
+else
+    fail "G14-02 dry-run output missing 'Would REMOVE (retired-layout migration):' header"
+    if [[ "${VERBOSE:-0}" -eq 1 ]]; then printf "DRY OUTPUT:\n%s\n" "$G14_DRY_OUT"; fi
+fi
+
+if echo "$G14_DRY_OUT" | grep -q "remove:.*aid-orchestrator"; then
+    pass "G14-03 dry-run output lists the retired AID file (aid-orchestrator.md) in the remove set"
+else
+    fail "G14-03 dry-run output does NOT list the retired AID file (aid-orchestrator.md)"
+    if [[ "${VERBOSE:-0}" -eq 1 ]]; then printf "DRY OUTPUT:\n%s\n" "$G14_DRY_OUT"; fi
+fi
+
+# (b) Dry-run must make zero writes: the retired AID file must still exist.
+if [[ -f "${G14_REPO}/.agents/skills/aid-orchestrator.md" ]]; then
+    pass "G14-04 retired AID file still present after dry-run (no actual removal)"
+else
+    fail "G14-04 retired AID file was DELETED by dry-run -- dry-run must make zero writes"
+fi
+
+# (b) User file must still exist and be byte-identical (no mutation at all).
+if [[ -f "${G14_REPO}/.agents/user-file.txt" ]]; then
+    G14_USER_SHA_AFTER="$(file_sha256 "${G14_REPO}/.agents/user-file.txt")"
+    assert_eq "$G14_USER_SHA" "$G14_USER_SHA_AFTER" \
+        "G14-05 user-file.txt byte-identical after dry-run (content-isolation)"
+else
+    fail "G14-05 user-file.txt missing after dry-run -- dry-run must not remove user content"
+fi
+
+# (c) New bundle files must NOT have been copied into the target.
+G14_NEW_LAYOUT="$(find "${G14_REPO}/.codex" -type f 2>/dev/null | head -1)"
+if [[ -z "$G14_NEW_LAYOUT" ]]; then
+    pass "G14-06 new-layout .codex/ NOT written during dry-run (zero copy writes)"
+else
+    fail "G14-06 new-layout .codex/ was written by dry-run -- dry-run must make zero writes"
+fi
+
 # --- Isolation canary: confirm no real repo was touched ----------------------
 echo ""
 echo "=== Isolation canary: real HOME untouched ==="

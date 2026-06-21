@@ -1767,39 +1767,48 @@ _prune_tool_dirs() {
 _migrate_retired_layout() {
     local target="$1"
     local tool="$2"
+    local list_only="${3:-0}"   # 1 = dry-run enumeration only (no removals)
     _MIGRATE_RETIRED_COUNT=0
 
-    # Remove one file that is AID-owned (marker 1 or 2).
-    _retire_file() {
+    # Return 1 if a file is AID-owned (marker 1 or 2); 0 if user content.
+    _is_aid_owned_file() {
         local f="$1"
-        [[ -f "$f" ]] || return 0
         local base
         base="$(basename "$f")"
         # Marker 1: aid- prefix.
-        if [[ "$base" == aid-* ]]; then
-            rm -f "$f"
-            _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
-            if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Retired: ${f}"; fi
-            return 0
-        fi
+        if [[ "$base" == aid-* ]]; then return 0; fi
         # Marker 2: lives inside an aid/ folder (any path component named "aid").
         local dir
         dir="$(dirname "$f")"
         while [[ "$dir" != "$target" && "$dir" != "/" && "$dir" != "." ]]; do
-            if [[ "$(basename "$dir")" == "aid" ]]; then
+            if [[ "$(basename "$dir")" == "aid" ]]; then return 0; fi
+            dir="$(dirname "$dir")"
+        done
+        # No marker -- user content.
+        return 1
+    }
+
+    # Remove one file that is AID-owned (marker 1 or 2).
+    # In list_only mode: print the path instead of removing it.
+    _retire_file() {
+        local f="$1"
+        [[ -f "$f" ]] || return 0
+        if _is_aid_owned_file "$f"; then
+            if [[ "$list_only" -eq 1 ]]; then
+                echo "  remove: ${f}"
+                _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
+            else
                 rm -f "$f"
                 _MIGRATE_RETIRED_COUNT=$((_MIGRATE_RETIRED_COUNT + 1))
                 if [[ "${AID_VERBOSE:-0}" -eq 1 ]]; then echo "Retired: ${f}"; fi
-                return 0
             fi
-            dir="$(dirname "$dir")"
-        done
-        # No marker -- user content; leave it in place.
+        fi
         return 0
     }
 
     # Sweep one retired root directory: remove AID-owned files, then prune
     # now-empty subdirs, then remove the root dir itself if now empty.
+    # In list_only mode: enumerate would-be-removed files, make no changes.
     _sweep_retired_root() {
         local rdir="$1"
         [[ -d "$rdir" ]] || return 0
@@ -1807,7 +1816,8 @@ _migrate_retired_layout() {
         local fpath
         while IFS= read -r -d '' fpath; do
             _retire_file "$fpath"
-        done < <(find "$rdir" -type f -print0 2>/dev/null)
+        done < <(find "$rdir" -type f -print0 2>/dev/null | sort -z)
+        if [[ "$list_only" -eq 1 ]]; then return 0; fi
         # Prune now-empty subdirs (deepest first).
         local dpath
         while IFS= read -r dpath; do
@@ -1848,11 +1858,11 @@ _migrate_retired_layout() {
         # claude-code and copilot-cli have no retired roots in this migration.
     esac
 
-    if [[ "$_MIGRATE_RETIRED_COUNT" -gt 0 ]]; then
+    if [[ "$list_only" -eq 0 && "$_MIGRATE_RETIRED_COUNT" -gt 0 ]]; then
         echo "  ${_MIGRATE_RETIRED_COUNT} retired AID file(s) removed"
     fi
 
-    unset -f _retire_file _sweep_retired_root
+    unset -f _is_aid_owned_file _retire_file _sweep_retired_root
 }
 
 # ---------------------------------------------------------------------------
@@ -1966,10 +1976,8 @@ install_tool() {
         fi
     fi
 
-    # Write manifest (merge).
-    manifest_write "$manifest" "$tool" "$version" "install_paths" "root_entries"
-
     # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
+    # Runs BEFORE manifest_write so a contaminated bundle never writes to disk.
     # Assert that the new bundle's path set does NOT contain any retired roots.
     # If a retired path leaked into the new manifest, fail loudly -- do not prune
     # against a contaminated manifest (content-isolation cornerstone).
@@ -1989,9 +1997,14 @@ install_tool() {
     done
     unset _rr _leaked
 
+    # Write manifest (merge).
+    manifest_write "$manifest" "$tool" "$version" "install_paths" "root_entries"
+
     # Retired-root migration sweep (FR7/FR7a).
     # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
     # so that old .agents/, .cursor/rules/, .agent/rules/ trees are cleaned up.
+    # A non-zero rc from install_tool is treated as a mid-commit failure (caller
+    # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
     _migrate_retired_layout "$target" "$tool"
 
     # Prune stale AID-owned files (Pillar 2, R7).

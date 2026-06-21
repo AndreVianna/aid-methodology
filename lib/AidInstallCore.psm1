@@ -1326,7 +1326,8 @@ function Invoke-MigrateRetiredLayout {
     param(
         [string]$Target,
         [string]$Tool,
-        [bool]$AidVerbose = $false
+        [bool]$AidVerbose = $false,
+        [bool]$ListOnly = $false   # $true = dry-run enumeration only (no removals)
     )
 
     $script:_MigrateRetiredCount = 0
@@ -1347,19 +1348,29 @@ function Invoke-MigrateRetiredLayout {
 
     # Sweep one retired root directory: remove AID-owned files, prune empty dirs,
     # then remove the retired root itself if now empty.
+    # In ListOnly mode: enumerate would-be-removed files, make no changes.
     $sweepRetiredRoot = {
         param([string]$RDir)
         if (-not (Test-Path $RDir -PathType Container)) { return }
 
-        # Walk all files; remove AID-owned ones.
-        $files = @(Get-ChildItem -LiteralPath $RDir -Recurse -File -ErrorAction SilentlyContinue)
+        # Walk all files; remove (or collect) AID-owned ones.
+        $files = @(Get-ChildItem -LiteralPath $RDir -Recurse -File -ErrorAction SilentlyContinue |
+                   Sort-Object FullName)
         foreach ($f in $files) {
             if (& $isAidOwned $f) {
-                Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
-                $script:_MigrateRetiredCount++
-                if ($AidVerbose) { Write-Host "Retired: $($f.FullName)" }
+                if ($ListOnly) {
+                    # Emit path via Write-Output so the caller can capture with $(...).
+                    Write-Output $f.FullName
+                    $script:_MigrateRetiredCount++
+                } else {
+                    Remove-Item -LiteralPath $f.FullName -Force -ErrorAction SilentlyContinue
+                    $script:_MigrateRetiredCount++
+                    if ($AidVerbose) { Write-Host "Retired: $($f.FullName)" }
+                }
             }
         }
+
+        if ($ListOnly) { return }
 
         # Prune now-empty subdirs (deepest first).
         $subdirs = @(Get-ChildItem -LiteralPath $RDir -Recurse -Directory -ErrorAction SilentlyContinue)
@@ -1408,7 +1419,7 @@ function Invoke-MigrateRetiredLayout {
         # claude-code and copilot-cli have no retired roots in this migration.
     }
 
-    if ($script:_MigrateRetiredCount -gt 0) {
+    if (-not $ListOnly -and $script:_MigrateRetiredCount -gt 0) {
         Write-Host "  $($script:_MigrateRetiredCount) retired AID file(s) removed"
     }
 }
@@ -1532,11 +1543,8 @@ function Install-AidTool {
         $installPaths.Add($rootAgentFile)
     }
 
-    # Write manifest (merge).
-    Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
-        -Paths @($installPaths) -RootEntries @($rootEntries)
-
     # Manifest-seam entry gate (PLAN risk #3, delivery-001->002 seam).
+    # Runs BEFORE Write-AidManifest so a contaminated bundle never writes to disk.
     # Assert that the new bundle's path set does NOT contain any retired roots.
     # If a retired path leaked into the new manifest, fail loudly -- do not prune
     # against a contaminated manifest (content-isolation cornerstone).
@@ -1551,9 +1559,15 @@ function Install-AidTool {
         }
     }
 
+    # Write manifest (merge).
+    Write-AidManifest -ManifestPath $manifest -Tool $Tool -Version $Version `
+        -Paths @($installPaths) -RootEntries @($rootEntries)
+
     # Retired-root migration sweep (FR7/FR7a).
     # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
     # so that old .agents\, .cursor\rules\, .agent\rules\ trees are cleaned up.
+    # A non-zero rc from Install-AidTool is treated as a mid-commit failure (caller
+    # prints the "re-run to heal" message); this function returns 0 (WARN-not-fail).
     Invoke-MigrateRetiredLayout -Target $Target -Tool $Tool -AidVerbose $AidVerbose
 
     # Prune stale AID-owned files (Pillar 2, R7).
