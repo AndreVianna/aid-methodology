@@ -149,9 +149,19 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
     path references in *body* to the per-profile install-tree path.
 
     FR5 Option (c) MINIMAL (task-005, work-005 feature-002):
-    Multi-dir branching removed. The surviving substitution is the irreducible
-    minimum: a single regex keyed on the ``{root}`` basename. The ONLY per-tool
-    divergence is the install_root value (e.g. ``".claude"`` vs ``".cursor"``).
+    Reduced to the minimal ``{root}``-prefix substitution -- NO ``{AID_ROOT}``
+    placeholder, NO canonical content rewrite, a single regex, and the only
+    per-tool divergence is the install_root basename (``".claude"`` vs
+    ``".cursor"`` etc.).
+
+    The two-way AID-own-vs-tool-native dispatch below is the IRREDUCIBLE LAYOUT
+    RULE, NOT removable branching: AID content nests under ``aid/`` while
+    tool-native dirs (``agents``, ``skills``) sit at the tool root, and the
+    canonical bodies reference the flat ``canonical/<dir>/`` form (which FR5
+    said NOT to rewrite), so the rewriter must insert ``aid/`` for AID-own dirs.
+    (The SPEC's "remove the multi-dir branching" meant the Option-(a)
+    ``{AID_ROOT}`` complexity -- that IS gone; this layout dispatch was never
+    removable without rewriting canonical content, which Option (c) forbids.)
 
     AID-own dirs (``scripts``, ``templates``, ``recipes``) nest under ``aid/``;
     tool-native dirs (``skills``, ``agents``) stay at root level:

@@ -39,5 +39,5 @@ _none yet_ -- aid-detail will fill this.
 ## Notes
 
 - This delivery's `release.sh` root fix is the **last piece** of the Release-Safety Gate — once it merges (with 001 + 002), the new layout is release-safe and `aid-deploy` may run.
-- numeric count drift (13→4 scripts, suite count) is reconciled via `/aid-housekeep`, not inline here.
+- numeric count drift (13→7 scripts — actual delivered, not the ~4-script headline; suite count) is reconciled via `/aid-housekeep`, not inline here.
 - **AC4 is two-part:** the structural no-contamination suite (`test-multitool-isolation.sh`) is **task-020**; the **behavioral** 3-tool check (Cursor + Claude Code + Codex; Codex gated on E-CODEX-1; Copilot/Antigravity asserted-via-Finding-D1, not exercised) is a **manual delivery-gate step**, NOT a task (it produces no file artifact). **AC3** (all-green CI + version-sync) is likewise the delivery gate, not a task. The 7 authored tasks are task-014..020.

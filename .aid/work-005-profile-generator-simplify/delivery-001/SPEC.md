@@ -8,7 +8,7 @@
 
 ## Objective
 
-Deliver the radically simpler **copy-based generator** on the symmetric per-tool layout, resting on an evidence-based format decision. This delivery makes the decision (feature-001: the capability study + the uniform-markdown, verify-first FR4 decision) and acts on it (feature-002: collapse the 13-script / ~7,000-LOC compiler to ~4 scripts / ~900–1,300 LOC, unify Codex `.agents/`→`.codex/`, delete all rules-folder machinery, FR5 minimal `{root}`-prefix). The repo renders the new `profiles/*` trees + re-renders the dogfood `.claude/`, drift-clean, and adds a mechanized §7a/C2 byte-identity guard. It is internally complete but is not released alone (see the Release-Safety Gate in PLAN.md).
+Deliver the radically simpler **copy-based generator** on the symmetric per-tool layout, resting on an evidence-based format decision. This delivery makes the decision (feature-001: the capability study + the uniform-markdown, verify-first FR4 decision) and acts on it (feature-002: collapse the 13-file / ~6,980-LOC compiler — **DELIVERED: 7 files / ~3,381 LOC, a ~52% cut** (the ~4-script / ~900–1,300-LOC headline undercounted the retained `render_lib.py`/`aid_profile.py` helpers + the verify/manifest gates), unify Codex `.agents/`→`.codex/`, delete all rules-folder machinery, FR5 minimal `{root}`-prefix). The repo renders the new `profiles/*` trees + re-renders the dogfood `.claude/`, drift-clean, and adds a mechanized §7a/C2 byte-identity guard. It is internally complete but is not released alone (see the Release-Safety Gate in PLAN.md).
 
 ## Scope
 

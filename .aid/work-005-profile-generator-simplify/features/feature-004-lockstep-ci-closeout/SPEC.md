@@ -93,7 +93,7 @@ owning feature. **feature-004 owns only the rows marked "004 (residual)".**
 | Dependent surface | Owner | Why / boundary |
 |-------------------|-------|----------------|
 | `canonical/` content reshape (`canonical/aid/` nest; FR5 keeps the minimal `{root}`-prefix substitution — no `{AID_ROOT}` placeholder, no canonical content rewrite), `canonical/rules/` deletion, `[extras]` mechanism | **002** | Generator collapse (FR1/FR3/FR5/FR6). |
-| Generator scripts `.claude/skills/generate-profile/scripts/*` (13→4), dead-test deletion (`test_copilot_emitter.py`, `test_antigravity_emitter.py`) + **their CI de-wire** (`test.yml:97-98`, `release.yml:166-167`) | **002** | Feature-002 §Layers explicitly owns the CI de-wiring of the deleted self-tests. |
+| Generator scripts `.claude/skills/generate-profile/scripts/*` (13→7), dead-test deletion (`test_copilot_emitter.py`, `test_antigravity_emitter.py`) + **their CI de-wire** (`test.yml:97-98`, `release.yml:166-167`) | **002** | Feature-002 §Layers explicitly owns the CI de-wiring of the deleted self-tests. |
 | `profiles/*` rendered trees (Codex unify, rules removal, dogfood `.claude/` re-render) | **002** | Output-tree reshape. |
 | `canonical/EMISSION-MANIFEST.md` (drop `rules` row, collapse Codex split column) | **002** | Feature-002 §Data Model explicitly updates it. |
 | New `tests/canonical/test-dogfood-byte-identity.sh` (§7a/C2 guard) | **002** | Feature-002 §"§7a/C2 Guard" owns it. |
@@ -199,7 +199,7 @@ prose): retire the "**4 agent formats** (`markdown/toml/copilot-agent/antigravit
 prose (`pipeline-contracts.md:40-41,555`); update `architecture.md`'s `profiles/` tree view
 (`:79,84-93` — drop `rules/`, the split `agents_root/assets_root`, the `codex/.agents/` line,
 the antigravity `.agent/rules/`), the per-asset-renderer inventory + the 4 agent formats
-(`architecture.md:248`) and the emitter self-tests (`:251`) → the 4-script set; `integration-map.md`'s renderer LOC/file list (`:194-199`).
+(`architecture.md:248`) and the emitter self-tests (`:251`) → the 7-file generator set (actual delivered); `integration-map.md`'s renderer LOC/file list (`:194-199`).
 *(module-map.md "13 renderer Python files" and test-landscape's "49 suites" counts also drift
 — but those track generator/test inventory that **feature-002 changes**; see Open Question 2
 on whether the count reconciliation is inline here or deferred to `/aid-housekeep`.)*
@@ -309,7 +309,7 @@ on-disk glob at gate time, not by the doc.
 
 > **Confirmed (2026-06-20) — Open Question 2 (reconciliation route) → inline semantics + housekeep numerics:** the stale counts live in **`test-landscape.md` ("49 suites")**, **`module-map.md`
 > ("13 renderer Python files", "12/13 skills")**, and **INDEX.md summaries** that mirror them.
-> These are *generator/test inventory* facts that **feature-002 changes** (13→4 scripts) and
+> These are *generator/test inventory* facts that **feature-002 changes** (13→7 scripts) and
 > **002/003 grow** (new suites). Per the AID precedent that count-drift across many KB docs is
 > reconciled via **`/aid-housekeep`** (memory: "adding-skill-kb-count-drift", Q26/Q27), the
 > recommended route is: **feature-004 fixes the layout/term references inline** (R6, formats,

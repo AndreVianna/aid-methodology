@@ -3,7 +3,7 @@
 ## Deliverables
 
 ### delivery-001: Format Decision + Symmetric Copy Generator
-- **What it delivers:** The radically simpler copy-based generator (13→4 scripts, ~7,000→~900–1,300 LOC) on the symmetric per-tool layout, resting on the evidence-based FR4 format decision (uniform markdown, verify-first). The repo renders the new `profiles/*` trees + dogfood `.claude/`, drift-clean, with a new §7a byte-identity guard.
+- **What it delivers:** The simpler copy-based generator (**DELIVERED: 13→7 files, ~6,980→~3,381 LOC, a ~52% reduction** — the original ~4-script / ~900–1,300-LOC target undercounted the retained `render_lib.py`/`aid_profile.py` helpers + verify/manifest gates) on the symmetric per-tool layout, resting on the evidence-based FR4 format decision (uniform markdown, verify-first). The repo renders the new `profiles/*` trees + dogfood `.claude/`, drift-clean, with a new §7a byte-identity guard.
 - **Features:** feature-001-behavioral-parity-format, feature-002-symmetric-copy-generator
 - **Depends on:** --
 - **Priority:** Must

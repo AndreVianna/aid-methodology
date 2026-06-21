@@ -1,7 +1,7 @@
 # Per-Tool Capability Study (FR4a)
 
 > **Work:** work-005-profile-generator-simplify · **Feature:** feature-001-behavioral-parity-format · **Task:** task-001 (RESEARCH)
-> **Status:** Study + matrix only. This document does **NOT** carry the FR4 decision section (deferred to task-002/DESIGN) and modifies no generator / profile / KB file.
+> **Status:** Study + matrix (task-001) **plus** the FR4 Format Decision section appended by task-002/DESIGN (see `## FR4 Format Decision` below — the AC4b gate). Modifies no generator / profile / KB file.
 
 ## Purpose & Method
 

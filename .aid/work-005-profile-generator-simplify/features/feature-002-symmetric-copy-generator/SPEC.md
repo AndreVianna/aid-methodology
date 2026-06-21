@@ -172,12 +172,21 @@ token. Two facts frame the FR5 reduction:
    (Option (a)); the irreducible one-line `{root}`-prefix substitution suffices (Option (c)).
 
 **Decision (FR5, intent-review → Option (c) MINIMAL):** `rewrite_install_paths` is **reduced to
-the minimal one-line `{root}`-prefix substitution** — *not deleted*. Only its **multi-dir branching
-logic is removed**; the single regex keyed on the `{root}` basename (the irreducible minimum FR5
-explicitly permits) stays, because the canonical source is already tool-agnostic and the per-tool
-difference is just that one prefix token. No `{AID_ROOT}` placeholder is introduced and **no
-canonical content is rewritten** (Option (a) FULL would have churned ~93 files + risked the §7a
-byte-identity invariant for an aesthetic gain). `substitute_filenames` (the
+the minimal one-line `{root}`-prefix substitution** — *not deleted*. The removable complexity is the
+Option-(a) `{AID_ROOT}` placeholder machinery; that is gone. No `{AID_ROOT}` placeholder is
+introduced and **no canonical content is rewritten** (Option (a) FULL would have churned ~93 files +
+risked the §7a byte-identity invariant for an aesthetic gain).
+
+> **[DELIVERED — correction, post-execution]** The original phrasing "only its multi-dir branching
+> logic is removed" was **imprecise/infeasible**. The AID-own-vs-tool-native dispatch
+> (`canonical/{scripts,templates,recipes}/ → {root}/aid/…` vs `canonical/{skills,agents}/ →
+> {root}/…`) is the **irreducible LAYOUT RULE**, not removable branching: the canonical bodies carry
+> **282 flat-form `canonical/<dir>/` references** which Option (c)'s own "no canonical content
+> rewrite" rule forbids changing, so the rewriter MUST insert `aid/` for AID-own dirs. What shipped
+> is FR5's real goal — a single `{root}`-keyed regex, no `{AID_ROOT}`, zero content churn — with the
+> 6-line layout dispatch **retained** (see `render_lib.rewrite_install_paths`). "Remove all branching"
+> was self-contradictory under Option (c)'s constraints; the implementation is correct, the original
+> wording was not. `substitute_filenames` (the
 `{project_context_file}`/`{reviewer_output_file}`/`{open_questions_file}` placeholders) is the
 **other** remaining text transform on copied files; even those collapse toward a single value since
 all non-claude tools share `AGENTS.md`/`STATE.md`/`additional-info.md` (claude-code differs only on
@@ -295,6 +304,16 @@ translate + manifest + diff/prune), `run_generator.py` (driver), `verify_determi
 ~900–1,300 LOC** (deletes ~2,133 LOC of dead conformance tests outright + the 4 format branches +
 `rewrite_install_paths`'s multi-dir branching; the bulk that remains is the manifest + verify gates
 that must stay).
+
+> **[DELIVERED — actuals, post-execution]** The `~900–1,300 LOC` / "4-script" estimate was
+> optimistic. **Shipped: 7 files / ~3,381 LOC — a ~52% cut from ~6,980.** `render.py` alone is
+> ~1,012 LOC (it carries real frontmatter translation + an in-file self-test harness, not a trivial
+> copy), and `render_lib.py` (~870) + `aid_profile.py` (~230) are **retained as separate modules**
+> (the A6 "5-script alternative" — independently CI-testable), which the "4-script" headline did not
+> count. `rewrite_install_paths`'s multi-dir branching was **not** removed (it is the irreducible
+> layout rule — see the FR5 `[DELIVERED — correction]` note above). The reduction is real and solid,
+> but **not** the radical ~1k-LOC collapse the headline advertised — recorded so the artifact does
+> not over-claim.
 
 > **Confirmed (2026-06-20) — A6 (script decomposition):** consolidate to the **4-script set above**
 > (one `render.py` core). Alternatives: keep `render_lib.py` + `render.py` as 2 files (manifest lib
