@@ -10,14 +10,13 @@ path/to/aid-methodology/setup.sh /path/to/your/project
 
 # Manual
 cp -r path/to/aid-methodology/profiles/codex/.codex  .codex/
-cp -r path/to/aid-methodology/profiles/codex/.agents .agents/
 cp path/to/aid-methodology/codex/AGENTS.md  AGENTS.md
 ```
 
 This gives you:
-- `.agents/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills: 10 pipeline + 1 optional `aid-summarize`)
+- `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills: 10 pipeline + 1 optional `aid-summarize`)
 - `.codex/agents/{name}.toml` — Agent definitions in Codex TOML format (9 agents with `aid-` prefix)
-- `.agents/templates/` — Templates and bash scripts (grading rubric, `grade.sh`, `build-project-index.sh`)
+- `.codex/aid/scripts/`, `.codex/aid/templates/`, `.codex/aid/recipes/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 
 ## Model Tiers
@@ -50,12 +49,12 @@ The Reviewer ≥ Executor invariant is enforced: the agent that grades is never 
 
 10 pipeline skills (Phase 0 Init through Phase 9 Triage) plus an optional
 `aid-summarize` for generating a single-file visual HTML summary of the
-Knowledge Base after discovery. See [`.agents/skills/aid-README.md`](.agents/skills/aid-README.md)
-for the full list. Skills live in `.agents/skills/` — Codex reads skills from this directory.
+Knowledge Base after discovery. See [`.codex/skills/aid-README.md`](.codex/skills/aid-README.md)
+for the full list. Skills live in `.codex/skills/` — Codex reads skills from this directory.
 
 Notable mechanisms:
-- **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `.agents/templates/scripts/grade.sh` from the Reviewer's structured issue list.
-- **aid-discover** runs `.agents/templates/scripts/build-project-index.sh` as a Step 0c pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel.
+- **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `.codex/aid/scripts/grade.sh` from the Reviewer's structured issue list.
+- **aid-discover** runs `.codex/aid/scripts/build-project-index.sh` as a Step 0c pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel.
 
 ## Usage
 
@@ -69,12 +68,12 @@ The `aid-init` skill scaffolds the Knowledge Base (16 documents) and sets up AGE
 
 ## File Format
 
-- **Skills:** Markdown with YAML frontmatter (`name`, `description` required; `agents:` block optional) — lives in `.agents/skills/`
+- **Skills:** Markdown with YAML frontmatter (`name`, `description` required; `agents:` block optional) — lives in `.codex/skills/`
 - **Agents:** TOML with `name`, `description`, `developer_instructions`, `model`, and `model_reasoning_effort` fields — lives in `.codex/agents/`
 
 ## Notes
 
 - Skill bodies are shared with the claude-code versions; frontmatter uses Codex-specific fields
 - Human-readable documentation lives in the repo's `skills/` and `agents/` directories
-- Templates and scripts live in `.agents/templates/` (and the source-of-truth at `templates/` in the AID repo)
-- The grading script (`.agents/templates/scripts/grade.sh`) is deterministic — same issue list always produces the same grade
+- Templates and scripts live in `.codex/aid/` (and the source-of-truth at `canonical/` in the AID repo)
+- The grading script (`.codex/aid/scripts/grade.sh`) is deterministic — same issue list always produces the same grade

@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS (after 1 FIX) — Small-tier quick-check: 3 R6 spots accurate vs disk + master rewriter docstring; paper-trail + cornerstone-invariant-UNCHANGED confirmed (C1/D1); no current retired-split ref; scope clean. 1 [HIGH] FIXED on-spot: reviewer-check #3 (:182) forbade `.codex/aid/` while the revised doc blesses it (internal contradiction the revision exposed) -> dropped the stale codex clause + clarifying note.
+- **Elapsed:** ~00:04
+- **Notes:** content-isolation.md R6: nest table + scope note + impl note revised (codex unified .codex/; FR5 minimal rewriter; irreducible AID-own/tool-native dispatch); CHANGELOG (frontmatter + body) records deliberate evolution w/ cross-ref Q3 paper trail; cornerstone invariant unchanged.
 
 ---
 

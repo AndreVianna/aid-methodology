@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS (after 2 FIX) — Small-tier quick-check: 121->0 live retired terms WITHIN THE 5 NAMED DOCS (broader-KB semantic residuals in 4 more docs were swept at the delivery gate [HIGH#2]; rest tombstoned/history); codex paths .codex/; 3 PS gotchas (coding-standards §15) technically correct; 7-file set accurate; scope clean. 2 [HIGH] FIXED on-spot: (1) dropped the bare "7 Python files" count from architecture/integration-map (it silently contradicted module-map's deferred "13"; file LIST kept, count -> housekeep); (2) de-conflated the integration-map tombstone (live-7 vs the 7 deleted files).
+- **Elapsed:** ~00:08
+- **Notes:** domain-glossary/pipeline-contracts/architecture/integration-map/coding-standards.md term-retirement + render.py renderer refs + .codex/ paths; numeric counts (module-map "13", test-landscape "49") UNTOUCHED -> /aid-housekeep (OQ2). coding-standards §15 = the 3 PS gotchas.
 
 ---
 

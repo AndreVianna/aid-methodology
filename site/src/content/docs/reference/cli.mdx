@@ -276,7 +276,7 @@ PowerShell flags use the same words; the `-` prefix is accepted alongside `--`:
 | Tool ID | Installs into | Root agent file |
 |---------|--------------|-----------------|
 | `claude-code` | `.claude/` | `CLAUDE.md` |
-| `codex` | `.codex/` + `.agents/` | `AGENTS.md` |
+| `codex` | `.codex/` | `AGENTS.md` |
 | `cursor` | `.cursor/` | `AGENTS.md` |
 | `copilot-cli` | `.github/` | `AGENTS.md` |
 | `antigravity` | `.agent/` | `AGENTS.md` |
@@ -292,7 +292,7 @@ When `aid add` is run without a tool name, the CLI probes the current directory:
 | Marker present | Detected tool |
 |----------------|---------------|
 | `.claude/` dir | `claude-code` |
-| `.codex/` or `.agents/` dir | `codex` |
+| `.codex/` dir | `codex` |
 | `.cursor/` dir | `cursor` |
 | `.github/` with AID-specific children | `copilot-cli` |
 | `.agent/` dir | `antigravity` |

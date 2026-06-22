@@ -14,6 +14,7 @@ changelog:
   - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run. Production re-entry unified: L9 (bug) and L10 (change request) now route Monitor → Interview (bugs via the LITE-BUG-FIX triage; CRs as new/changed requirements), replacing the prior Monitor→Execute / Monitor→Discover targets.
   - 2026-06-03: housekeep run-state relocation (PR #51) — corrected the aid-housekeep State-File R/W row: run-state moved from the work-area STATE.md to the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; CLEANUP offers every work folder + stale artifact for user-confirmed deletion.
   - 2026-06-03: aid-housekeep merge (PR #49) — skill enumeration 10→11 user-facing (added optional off-pipeline aid-housekeep) + maintainer-only generate-profile; documented aid-housekeep as a filesystem-state choreography participant (STATE.md Q&A handshake with /aid-discover, work-area ## Housekeep Status run-state block, /aid-summarize delegation)
+  - 2026-06-21: work-005-profile-generator-simplify delivery-003 task-017 — updated renderer file inventory to 7-file post-collapse set (render.py + render_lib.py + aid_profile.py + run_generator.py + verify_deterministic.py + verify_advisory.py + test_manifest_safety.py); updated Codex row to unified .codex/ root; updated Codex split-layout section to match unified layout.
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — distribution now 5 profile trees (added copilot-cli → `.github/`, antigravity → `.agent/`); documented Copilot native Agent Skills + Antigravity rules mapping + Option-A AGENTS.md collision handler
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
 ---
@@ -192,25 +193,20 @@ canonical/                          ← single source of truth (maintainer edits
   └── EMISSION-MANIFEST.md          ← safety-boundary spec
 
 .claude/skills/generate-profile/scripts/  ← the renderer (maintainer-only; not rendered into trees)
-       ├── run_generator.py           ← entrypoint (87 lines; invoke from repo root)
-       ├── render_lib.py              (756 lines — emission-manifest + pure-mirror deletion)
-       ├── aid_profile.py             (550 lines — parses profiles/*.toml)
-       ├── render_agents.py           (522 lines)
-       ├── render_skills.py           (469 lines)
-       ├── render_recipes.py          (261 lines)
-       ├── render_canonical_scripts.py (224 lines)
-       ├── render_templates.py        (252 lines)
-       ├── verify_deterministic.py    (VERIFY (deterministic) byte-identity)
-       ├── verify_advisory.py         (VERIFY (advisory) advisory)
-       ├── test_manifest_safety.py    (generator self-test)
-       ├── test_copilot_emitter.py    (Copilot-CLI emitter self-test — CI-wired)
-       └── test_antigravity_emitter.py (Antigravity emitter self-test — CI-wired)
+       ├── run_generator.py           ← entrypoint (invoke from repo root)
+       ├── render.py                  ← unified copy core (all 5 asset kinds)
+       ├── render_lib.py              ← emission-manifest + pure-mirror deletion + placeholder substitution
+       ├── aid_profile.py             ← parses profiles/*.toml
+       ├── verify_deterministic.py    ← VERIFY (deterministic) byte-identity hard gate
+       ├── verify_advisory.py         ← VERIFY (advisory) advisory checks
+       └── test_manifest_safety.py    ← generator self-test (manifest deletion boundary)
 ```
 
-(13 Python files under `scripts/`, incl. the `run_generator.py` entrypoint = 13 renderer files total;
- `test_copilot_emitter.py` + `test_antigravity_emitter.py` run as generator self-tests in
- `.github/workflows/test.yml` `test_copilot_emitter.py --self-test` /
- `test_antigravity_emitter.py --self-test`.)
+(History: the 5 per-asset per-profile renderers (`render_agents.py`, `render_skills.py`,
+ `render_templates.py`, `render_canonical_scripts.py`, `render_recipes.py`) and the 2
+ format-emitter self-tests (`test_copilot_emitter.py`, `test_antigravity_emitter.py`) were
+ deleted/collapsed into `render.py` by work-005 FR1/FR2/FR3 — the live generator scripts are
+ the set listed in the tree above. Full KB count reconciliation is deferred to /aid-housekeep.)
 
 Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer-only, ...)`
 
@@ -233,10 +229,10 @@ Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer
 | **canonical** | `canonical/` | Source of truth (humans edit here) | YAML (markdown) |
 | **dogfood** | `.claude/` (top-level) | AID applied to AID itself | Same as Claude Code |
 | **claude-code** | `profiles/claude-code/.claude/` + repo-root `CLAUDE.md` | Anthropic Claude Code install bundle | Markdown + YAML |
-| **codex** | `profiles/codex/.codex/agents/*.toml` + `profiles/codex/.agents/{skills,scripts,recipes,templates}/*` | OpenAI Codex CLI bundle (split layout) | TOML (agents only) |
+| **codex** | `profiles/codex/.codex/{agents,skills,aid}/*` | OpenAI Codex CLI bundle (unified `.codex/` layout) | TOML (agents only); markdown (skills + aid) |
 | **cursor** | `profiles/cursor/.cursor/*` + repo-root `AGENTS.md` | Cursor IDE bundle | Markdown + `.mdc` rules |
-| **copilot-cli** | `profiles/copilot-cli/.github/*` (`agents/*.agent.md`, native `skills/<slug>/`, `templates/`, `scripts/`, `recipes/`) + `profiles/copilot-cli/AGENTS.md` | GitHub Copilot CLI bundle | `copilot-agent` (agents); native Agent Skills folders; MCP omitted |
-| **antigravity** | `profiles/antigravity/.agent/*` (`rules/*.md` for sub-agents + methodology, native `skills/<slug>/`, `templates/`, `scripts/`, `recipes/`) + `profiles/antigravity/AGENTS.md` | Google Antigravity bundle | `antigravity-rule` (sub-agents → `trigger:` rules); native Skills folders |
+| **copilot-cli** | `profiles/copilot-cli/.github/*` (`agents/` (Markdown), native `skills/<slug>/`, `aid/{templates,scripts,recipes}/`) + `profiles/copilot-cli/AGENTS.md` | GitHub Copilot CLI bundle | Uniform markdown (agents); native Agent Skills folders; MCP omitted |
+| **antigravity** | `profiles/antigravity/.agent/*` (`agents/` (Markdown), native `skills/<slug>/`, `aid/{templates,scripts,recipes}/`) + `profiles/antigravity/AGENTS.md` | Google Antigravity bundle | Uniform markdown (agents + skills); native Skills folders |
 
 Source: `.aid/knowledge/project-structure.md` `## Top-Level Directory Tree (depth 3)`,
 `canonical/EMISSION-MANIFEST.md` `## Asset Kinds`, `profiles/copilot-cli.toml` `[layout]`,
@@ -244,40 +240,31 @@ Source: `.aid/knowledge/project-structure.md` `## Top-Level Directory Tree (dept
 
 ### Copilot CLI mapping (host-tool conventions)
 
-- **Sub-agents** → `.github/agents/*.agent.md` (`[agent].format = "copilot-agent"`;
-  frontmatter `name/description/tools/model`; `Bash`→`shell` via `[tool_names]`).
+- **Sub-agents** → `.github/agents/` (uniform Markdown; `Bash`→`shell` via `[tool_names]`).
 - **Skills** → **native Copilot Agent Skills** `.github/skills/<slug>/SKILL.md` (folder copy
-  by the existing `render_skills` pass; no `emit_as` knob).
+  via the `render.py` copy core; no `emit_as` knob).
 - **MCP** → **omitted** — no `[mcp]` table; the repo ships zero MCP servers, so no
   `mcp-config.json` is emitted.
 - **Context** → profile-local **committed** `AGENTS.md` (filename-map token only; NOT emitted
   by the renderer).
 - Source: `profiles/copilot-cli.toml` (`[layout]`, `[agent]`, `[skill]`, `[tool_names]`, the
-  "No [mcp] table" comment), `profiles/copilot-cli/.github/agents/aid-architect.agent.md`.
+  "No [mcp] table" comment), `profiles/copilot-cli/.github/agents/`.
 
 ### Antigravity mapping (host-tool conventions)
 
+- **Sub-agents** → `.agent/agents/` (uniform Markdown).
 - **Skills** → native `.agent/skills/<slug>/SKILL.md` folders ([data]).
-- **Sub-agents** → `.agent/rules/*.md` (`[agent].format = "antigravity-rule"`; reshaped to
-  `trigger: always_on` frontmatter).
-- **Methodology rules** → `.agent/rules/*.md` via `RuleEntry.output_filename` (`.md`, NOT
-  `.mdc`) under a gated `[extras] rules_frontmatter = "trigger"` dialect that strips the
-  source `.mdc` frontmatter and regenerates `trigger:/description/globs`
-  (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs). DECOUPLED from
-  `[agent].format`. Sub-agent rules and methodology rules share `.agent/rules/` (disjoint
-  stems: `aid-<role>` names for sub-agents vs `aid-methodology` for methodology rules).
 - **Context** → profile-local committed `AGENTS.md`.
-- Source: `profiles/antigravity.toml` (`[layout]`, `[agent]`, `[extras]`, `[[extras.rules]]`),
-  `profiles/antigravity/.agent/rules/aid-reviewer.md`, `profiles/antigravity/.agent/rules/aid-methodology.md`.
+- Source: `profiles/antigravity.toml` (`[layout]`, `[agent]`, `[skill]`),
+  `profiles/antigravity/.agent/agents/`.
 
-### Codex split-layout exception
+### Codex unified layout
 
-Codex is unique among the three tools — agent TOML files go under one root
-(`profiles/codex/.codex/agents/`), everything else goes under a separate root
-(`profiles/codex/.agents/{skills,scripts,recipes,templates}/`). A single
-`profiles/codex/emission-manifest.jsonl` covers both roots; record paths in the
-manifest are relative to the common parent (`codex/`) so the safety boundary covers
-both roots from one manifest. (Resolves OQ2.)
+Codex is unique in using **TOML** for agent definitions while all other asset kinds use
+markdown. Since work-005 FR2, Codex uses a single root `.codex/` for all content:
+`profiles/codex/.codex/agents/*.toml` (TOML agent definitions) + `profiles/codex/.codex/{skills,aid}/*`
+(markdown skills + aid templates/recipes/scripts). A single `profiles/codex/emission-manifest.jsonl`
+covers the unified `.codex/` root.
 
 Source: `canonical/EMISSION-MANIFEST.md` `## Filename and Location`, `profiles/codex.toml` `[layout]`
 

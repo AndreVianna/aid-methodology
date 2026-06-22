@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. 30/30 standalone; glob-discovered (no run-all edit); full run-all 54->55 all green. Foreign-root grep scope (aid/scripts/) adjudicated JUSTIFIED (only real runtime isolation surface; agents/templates carry own-root rewritten paths + shared prose would false-positive on whole-tree grep). Escape canary verified REAL (fired on injected real-home touch). HOME+USERPROFILE pinned early. Byte-identity a genuine 3-way comparison. ASCII + scope clean.
+- **Elapsed:** ~00:23
+- **Notes:** tests/canonical/test-multitool-isolation.sh (T01-T30): uniform {agents,skills,aid} per tool; AC1 byte-identity across .claude/.cursor/.codex; aid/scripts/ no-foreign-root; HOME-pin + escape canary; AID_NO_UPDATE_CHECK.
 
 ---
 

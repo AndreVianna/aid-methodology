@@ -14,10 +14,9 @@ cp path/to/aid-methodology/cursor/AGENTS.md   AGENTS.md
 ```
 
 This gives you:
-- `.cursor/rules/` — Always-on rules (methodology workflow, code review standards)
 - `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills: 10 pipeline + 1 optional `aid-summarize`)
 - `.cursor/agents/{name}.md` — Agent definitions (9 agents with `aid-` prefix), dispatched via Task tool when available
-- `.cursor/templates/` — Templates and bash scripts (grading rubric, `grade.sh`, `build-project-index.sh`)
+- `.cursor/aid/scripts/`, `.cursor/aid/templates/`, `.cursor/aid/recipes/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 
 ## Agents
@@ -65,29 +64,12 @@ Discovery → Interview → Specify → Plan → Detail → Implement → Review
     └──────────────────────── feedback loops (Q&A entries, IMPEDIMENT.md) ──────────────────────────┘
 ```
 
-## Rules (`.cursor/rules/`)
-
-Cursor-specific addition. Always-on contextual rules loaded into every conversation or on file match.
-
-### `aid-methodology.mdc` (always applied)
-
-Tells Cursor to:
-- Read `.aid/knowledge/INDEX.md` before making changes
-- Treat the Knowledge Base as the single source of truth
-- Follow AID phases and produce artifacts at each gate
-
-When Cursor reviews code it will:
-- Check against task acceptance criteria
-- Verify against `.aid/knowledge/coding-standards.md` and `.aid/knowledge/architecture.md`
-- Tag issues by severity (`[CRITICAL]`/`[HIGH]`/`[MEDIUM]`/`[LOW]`/`[MINOR]`) — grade computed deterministically by `grade.sh`
-
 ## Usage
 
 1. Run `setup.sh` to install into your project
 2. Edit `AGENTS.md` with your project description, build commands, and conventions
 3. Run Discovery: tell Cursor "run aid-discover" to generate the Knowledge Base
-4. Cursor automatically applies the always-on rules on every conversation
-5. Invoke phase skills as needed: "run aid-interview", "run aid-execute", etc.
+4. Invoke phase skills as needed: "run aid-interview", "run aid-execute", etc.
 
 ### Skills
 Skills are loaded automatically when matched by description. Each SKILL.md contains YAML frontmatter with `name` and `description` fields.
@@ -100,13 +82,11 @@ Agent files define specialized roles with constrained tool access and focused sy
 
 ## File Format
 
-- **Rules:** `.mdc` files for always-on constraints — lives in `.cursor/rules/`
 - **Skills:** Markdown with YAML frontmatter (`name`, `description` required) — lives in `.cursor/skills/`
 - **Agents:** Markdown with YAML frontmatter (`name`, `description`, `tools`, `model`) — lives in `.cursor/agents/`
 
 ## Notes
 
-- **Rules** (`.mdc`) are for always-on constraints; **Skills** (`SKILL.md`) are for on-demand workflows
 - Cursor also reads skills from `.claude/skills/` and `.codex/skills/` — cross-tool compatible
 - Cursor does not use `CLAUDE.md` — all project context goes into `AGENTS.md`
 - Templates and scripts live in the repo's `templates/` directory — reference them from your project

@@ -17,6 +17,7 @@ changelog:
   - 2026-06-03: methodology v3.2 — aid-deploy/aid-monitor reclassified as optional, on-demand end-of-pipeline Deliver skills (not mandatory phases 7/8); contract list reframed as aid-config + 6 numbered phases + optional deploy/monitor/summarize + off-pipeline housekeep. Per-skill state-machine contracts unchanged.
   - 2026-06-03: housekeep run-state relocation (PR #51) — /aid-housekeep run-state moved out of the work-area STATE.md to the transient project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; dropped the `## Housekeep Status` work-state-section row; cleanup now offers every work folder for user-confirmed deletion (signals informational).
   - 2026-06-03: aid-housekeep merge (PR #49) — added /aid-housekeep as an optional off-pipeline skill with its consume/produce contracts (the STATE.md Impact:Required Q&A handshake with /aid-discover, the work-area ## Housekeep Status run-state block, the /aid-summarize delegation, the housekeep-state.sh / branch-commit.sh / cleanup-classify.sh CLI contracts); slash-command count 10→11 user-facing
+  - 2026-06-21: work-005-profile-generator-simplify delivery-003 task-017 — retired 4-agent-formats claim (copilot-agent + antigravity-rule formats deleted by FR3/FR4; now uniform markdown + TOML-for-Codex); updated Codex skill path to .codex/ (unified, no .agents/ split); updated renderer table Codex column; updated manifest location (Codex now covers single .codex/ root).
   - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — renderer contract now spans 5 profiles (added copilot-cli + antigravity) and 4 agent formats (markdown/toml/copilot-agent/antigravity-rule); emission-manifest profile enum + manifest-locations updated
   - 2026-05-31: delivery-002 — added discovery.doc_set to settings read contract; added declared-set → dispatch contract section
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
@@ -37,8 +38,8 @@ changelog:
 ## Exposed APIs — End-User Slash Commands
 
 These are the only "endpoints" the user invokes. Each is an AID skill installed at
-`.claude/skills/<skill>/SKILL.md` (Claude Code), `.codex/agents/*` + `.agents/skills/<skill>/`
-(Codex split layout), `.cursor/skills/<skill>/` (Cursor), `.github/skills/<slug>/SKILL.md`
+`.claude/skills/<skill>/SKILL.md` (Claude Code), `.codex/skills/<skill>/SKILL.md`
+(Codex unified layout), `.cursor/skills/<skill>/` (Cursor), `.github/skills/<slug>/SKILL.md`
 (Copilot CLI native Agent Skills), or `.agent/skills/<slug>/SKILL.md` (Antigravity).
 
 There are **12 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
@@ -552,7 +553,7 @@ The authoritative safety boundary for the generator's pure-mirror deletion logic
 - **Ordering:** Lexicographic by `dst` (byte-stable across re-runs — preserves AC2)
 - **Locations:**
   - `profiles/claude-code/emission-manifest.jsonl` (Claude Code)
-  - `profiles/codex/emission-manifest.jsonl` (Codex — covers both `.codex/` and `.agents/` roots)
+  - `profiles/codex/emission-manifest.jsonl` (Codex — covers the unified `.codex/` root)
   - `profiles/cursor/emission-manifest.jsonl` (Cursor)
   - `profiles/copilot-cli/emission-manifest.jsonl` (Copilot CLI — covers the `.github/` root)
   - `profiles/antigravity/emission-manifest.jsonl` (Antigravity — covers the `.agent/` root)
@@ -699,39 +700,34 @@ The next run of the owning phase detects the pending entry and resolves it in Q&
 
 The generator (`run_generator.py` → `.claude/skills/generate-profile/scripts/*.py`) implements
 a **pure-mirror** contract across **5 profiles** (claude-code, codex, cursor, copilot-cli,
-antigravity) and **4 agent formats** (`markdown | toml | copilot-agent | antigravity-rule`;
-`.claude/skills/generate-profile/scripts/aid_profile.py` `_KNOWN_AGENT_FORMATS`):
+antigravity) with **uniform markdown** agent output for Claude Code, Cursor, Copilot CLI, and
+Antigravity, and **TOML** for Codex (`.claude/skills/generate-profile/scripts/aid_profile.py`
+`_KNOWN_AGENT_FORMATS`). The former `copilot-agent` and `antigravity-rule` format branches are
+**retired** (work-005 FR3/FR4).
 
 | Canonical source | Renderer | Claude Code | Codex | Cursor | Copilot CLI | Antigravity |
 |------------------|----------|-------------|-------|--------|-------------|-------------|
-| `canonical/agents/` | `render_agents.py` | `.claude/agents/` (Markdown) | `.codex/agents/` (TOML) | `.cursor/agents/` (Markdown) | `.github/agents/*.agent.md` (`copilot-agent`) | `.agent/rules/*.md` (`antigravity-rule`) |
-| `canonical/skills/` | `render_skills.py` | `.claude/skills/` | `.agents/skills/` | `.cursor/skills/` | `.github/skills/<slug>/SKILL.md` (native Agent Skills) | `.agent/skills/<slug>/SKILL.md` (native Skills) |
-| `canonical/templates/` | `render_templates.py` | `.claude/aid/templates/` | `.agents/aid/templates/` | `.cursor/aid/templates/` | `.github/aid/templates/` | `.agent/aid/templates/` |
-| `canonical/recipes/` | `render_recipes.py` | `.claude/aid/recipes/` | `.agents/aid/recipes/` | `.cursor/aid/recipes/` | `.github/aid/recipes/` | `.agent/aid/recipes/` |
-| `canonical/scripts/` | `render_canonical_scripts.py` | `.claude/aid/scripts/` | `.agents/aid/scripts/` | `.cursor/aid/scripts/` | `.github/aid/scripts/` | `.agent/aid/scripts/` |
+| `canonical/agents/` | `render.py` (copy core) | `.claude/agents/` (Markdown) | `.codex/agents/` (TOML) | `.cursor/agents/` (Markdown) | `.github/agents/` (Markdown) | `.agent/agents/` (Markdown) |
+| `canonical/skills/` | `render.py` (copy core) | `.claude/skills/` | `.codex/skills/` | `.cursor/skills/` | `.github/skills/<slug>/SKILL.md` (native Agent Skills) | `.agent/skills/<slug>/SKILL.md` (native Skills) |
+| `canonical/templates/` | `render.py` (copy core) | `.claude/aid/templates/` | `.codex/aid/templates/` | `.cursor/aid/templates/` | `.github/aid/templates/` | `.agent/aid/templates/` |
+| `canonical/recipes/` | `render.py` (copy core) | `.claude/aid/recipes/` | `.codex/aid/recipes/` | `.cursor/aid/recipes/` | `.github/aid/recipes/` | `.agent/aid/recipes/` |
+| `canonical/scripts/` | `render.py` (copy core) | `.claude/aid/scripts/` | `.codex/aid/scripts/` | `.cursor/aid/scripts/` | `.github/aid/scripts/` | `.agent/aid/scripts/` |
 
 **Source:** `canonical/EMISSION-MANIFEST.md` `## Asset Kinds`, `profiles/copilot-cli.toml`
 `[layout]`, `profiles/antigravity.toml` `[layout]`
 
 > **Copilot CLI host-tool mapping** (`profiles/copilot-cli.toml`): AID sub-agents →
-> `.github/agents/*.agent.md` (`[agent].format = "copilot-agent"`, frontmatter
-> `name/description/tools/model`, `Bash`→`shell` rename via `[tool_names]`); AID skills →
-> **native Copilot Agent Skills** at `.github/skills/<slug>/SKILL.md` (folder copy via the
-> existing `render_skills` pass — no `emit_as` knob); MCP → **omitted** (no `[mcp]` table;
-> repo ships zero MCP servers); methodology rules → `.github/aid/recipes/`/`aid/templates/` as
-> verbatim `[data]`; context file → profile-local committed `AGENTS.md` (token only, NOT
+> `.github/agents/` (uniform Markdown, `Bash`→`shell` rename via `[tool_names]`); AID skills →
+> **native Copilot Agent Skills** at `.github/skills/<slug>/SKILL.md` (folder copy via
+> `render.py` copy core — no `emit_as` knob); MCP → **omitted** (no `[mcp]` table;
+> repo ships zero MCP servers); context file → profile-local committed `AGENTS.md` (token only, NOT
 > emitted by the renderer). ⚠️ Model slug spelling (`claude-opus-4.8` etc.) docs-only-noted
 > as GitHub's lowercase-dotted model-id convention (`profiles/copilot-cli.toml` `[model_tiers]`).
 >
 > **Antigravity host-tool mapping** (`profiles/antigravity.toml`): AID sub-agents →
-> `.agent/rules/*.md` (`[agent].format = "antigravity-rule"`; reshaped to `trigger:`-style
-> frontmatter — `always_on` for personas); AID skills → **native** `.agent/skills/<slug>/SKILL.md`
-> folders ([data]); methodology rules → `.agent/rules/*.md` via `RuleEntry.output_filename`
-> (`.md` output, NOT `.mdc`) driven by a gated `[extras] rules_frontmatter = "trigger"` dialect
-> that strips the source `.mdc` frontmatter and regenerates `trigger:/description/globs`
-> (`always_apply=true`→`trigger: always_on`; `false`→`trigger: glob` + globs); context file →
-> profile-local committed `AGENTS.md`. The extras-rules path is DECOUPLED from `[agent].format`.
-> ⚠️ Gemini model-id/effort tokenization docs-only-noted (`profiles/antigravity.toml`
+> `.agent/agents/` (uniform Markdown); AID skills → **native** `.agent/skills/<slug>/SKILL.md`
+> folders ([data]); context file → profile-local committed `AGENTS.md`. ⚠️ Gemini
+> model-id/effort tokenization docs-only-noted (`profiles/antigravity.toml`
 > `[model_tiers.large]`); `[tool_names]` empty → identity passthrough.
 
 **Invariants:**
@@ -749,9 +745,9 @@ antigravity) and **4 agent formats** (`markdown | toml | copilot-agent | antigra
 
 | Field | Claude Code | Codex | Cursor | Copilot CLI | Antigravity |
 |-------|-------------|-------|--------|-------------|-------------|
-| Agent file format | Markdown + YAML (`markdown`) | TOML (`toml`) | Markdown + YAML (`markdown`) | `.agent.md` (`copilot-agent`) | `.agent/rules/*.md` (`antigravity-rule`) |
-| Required agent fields | `name, description, tools, model` | `name, description, model, model_reasoning_effort, developer_instructions` | (per `profiles/cursor.toml`) | `name, description, tools, model` | `trigger, description` (+ optional `globs`; lists parsed-but-dead — reshape is in the format branch) |
-| Required skill fields | `name, description, allowed-tools` | `name, description, allowed-tools` | (per `profiles/cursor.toml`) | `name, description, allowed-tools` | `name, description` (lists dead-for-emission — skills preserve canonical frontmatter verbatim) |
+| Agent file format | Markdown + YAML (`markdown`) | TOML (`toml`) | Markdown + YAML (`markdown`) | Markdown + YAML (`markdown`) | Markdown + YAML (`markdown`) |
+| Required agent fields | `name, description, tools, model` | `name, description, model, model_reasoning_effort, developer_instructions` | (per `profiles/cursor.toml`) | `name, description, tools, model` | `name, description, tools, model` |
+| Required skill fields | `name, description, allowed-tools` | `name, description, allowed-tools` | (per `profiles/cursor.toml`) | `name, description, allowed-tools` | `name, description, allowed-tools` |
 | Source | `profiles/claude-code.toml` `[agent.frontmatter]` | `profiles/codex.toml` `[agent.frontmatter]` | `profiles/cursor.toml` | `profiles/copilot-cli.toml` `[agent.frontmatter]` | `profiles/antigravity.toml` `[agent.frontmatter]` |
 
 **Filename-map contract** (substitution in canonical templates):

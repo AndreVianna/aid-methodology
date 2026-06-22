@@ -87,7 +87,7 @@ Each subdirectory is one rendered tool profile. The layout inside mirrors what `
 | Profile | Installs into | Root agent file |
 |---------|--------------|-----------------|
 | `claude-code/` | `.claude/` | `CLAUDE.md` |
-| `codex/` | `.codex/` + `.agents/` | `AGENTS.md` |
+| `codex/` | `.codex/` | `AGENTS.md` |
 | `cursor/` | `.cursor/` | `AGENTS.md` |
 | `copilot-cli/` | `.github/` | `AGENTS.md` |
 | `antigravity/` | `.agent/` | `AGENTS.md` |

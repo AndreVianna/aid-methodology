@@ -13,7 +13,7 @@
 #   aid version                      Print the CLI version
 #   aid status                       Show AID state of the current project
 #   aid add <tool>[,...]             Add tool(s) to the current project
-#   aid update [<tool>... | self]    Update to latest; no arg = all tools; 'self' = the aid CLI
+#   aid update [self]                Update to latest; inside repo = CLI + all tools; 'self' = CLI only
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
 #   aid projects [list|add|remove|help] [path] [--local|--shared] [--verbose]
 #                                    List, register, or unregister AID projects
@@ -3235,12 +3235,12 @@ case "$SUBCMD" in
                 while IFS= read -r -d '' _dry_f; do
                     echo "  copy: ${_dry_f#${_dry_staging}/} -> ${_AID_TARGET}"
                 done < <(find "${_dry_staging}" -type f -print0 2>/dev/null | sort -z)
-                # List files that would be REMOVED by the retired-root migration sweep
+                # List files that would be MOVED TO TRASH by the retired-root migration sweep
                 # (marker 1: aid-* prefix; marker 2: inside an aid/ subtree).
                 # Uses list_only=1 mode of _migrate_retired_layout (no writes).
                 _dry_removed_out="$(_migrate_retired_layout "${_AID_TARGET}" "${_tool}" 1 2>/dev/null)"
                 if [[ -n "$_dry_removed_out" ]]; then
-                    echo "  Would REMOVE (retired-layout migration):"
+                    echo "  Would MOVE TO TRASH (retired-layout migration):"
                     printf '%s\n' "$_dry_removed_out"
                 fi
             done

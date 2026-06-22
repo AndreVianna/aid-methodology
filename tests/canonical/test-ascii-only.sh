@@ -40,6 +40,10 @@ SHIPPED_SCRIPTS=(
     "dashboard/server/reader.mjs"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.sh"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.ps1"
+    # Maintainer test harness, but now run under Windows PowerShell 5.1 in CI
+    # (installer-tests.yml 5.1 lane), which mis-parses non-ASCII in no-BOM files
+    # via the ANSI codepage -- so it must stay ASCII like the shipped PS.
+    "tests/windows/Test-AidInstaller.ps1"
 )
 
 echo "=== ASCII-only guard ==="

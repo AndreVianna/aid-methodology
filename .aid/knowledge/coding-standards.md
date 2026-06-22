@@ -20,6 +20,7 @@ contracts:
 changelog:
   - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.
   - 2026-06-04: work-001-agents-review (task-013) — §2a agent-dir naming updated to aid-* prefix; §8e agent-authoring updated to shared-include boilerplate (canonical/templates/agent-boilerplate.md via {{include:agent-boilerplate}}); §11c security model updated to new 9-agent roster; §10 convention table updated to 9 agents; old bare agent-name evidence cites replaced with aid-* paths.
+  - 2026-06-21: work-005-profile-generator-simplify delivery-003 task-017 — §7a updated Codex split-layout line to unified .codex/; §8a removed render_agents.py reference; added §15 PowerShell gotchas (three work-005 delivery-002 Windows CI lessons: StrictMode absent-property, return-if parse trap, empty-array-sort).
   - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5; updated §7a multi-tree render set to include copilot-cli (.github) + antigravity (.agent), and §7d helper-script copy count (4→7 trees).
   - 2026-05-31: delivery-002 — added pipe-delimited-list-in-settings convention note to §6a (discovery.doc_set uses this pattern)
   - 2026-05-27: Initial generation (cycle-1)
@@ -56,7 +57,7 @@ changelog:
 - **All agent directories carry the `aid-` prefix**, kebab-case: `aid-architect`, `aid-developer`, `aid-researcher`, `aid-clerk` (per `canonical/agents/` and REQUIREMENTS.md §7 collision-avoidance constraint).
 - **Skill state files are `state-<state-name>.md`** — lowercase kebab-case state name, e.g., `state-generate.md`, `state-q-and-a.md`, `state-delivery-gate.md` (per `canonical/skills/aid-discover/references/`).
 - **Helper scripts are kebab-case verb-noun** with `.sh` (or `.mjs` / `.ps1`) extension: `read-setting.sh`, `build-project-index.sh`, `compute-block-radius.sh`, `writeback-state.sh`, `validate-diagrams.mjs`, `contrast-check.mjs`.
-- **Python files are snake_case** with `.py` extension: `render_agents.py`, `verify_deterministic.py`, `test_manifest_safety.py`, `run_generator.py`.
+- **Python files are snake_case** with `.py` extension: `render.py`, `render_lib.py`, `verify_deterministic.py`, `test_manifest_safety.py`, `run_generator.py`.
 - **Templates are kebab-case** with `.md` extension: `task-template.md`, `discovery-state-template.md`, `recipe-template.md`, `subagent-heartbeat-protocol.md`.
 - **Capitalized markdown filenames** are reserved for project-root files (`CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `LICENSE`) and for inside-work artifacts (`SPEC.md`, `PLAN.md`, `REQUIREMENTS.md`, `STATE.md`, `INDEX.md`, `AGENT.md`, `SKILL.md`, `IMPEDIMENT.md`, `EMISSION-MANIFEST.md`).
 - **Generated files live under `.aid/generated/`** with kebab-case names: `project-index.md`, `metrics.md`, `INDEX.md` (note: `INDEX.md` keeps its capitalized form even when generated).
@@ -211,7 +212,7 @@ done
 
 ### 3e. Python script header
 
-Every Python file starts with a shebang + module docstring-style comment + `from __future__ import annotations` (per `.claude/skills/generate-profile/scripts/render_lib.py` header comment, `aid_profile.py` header comment, `render_agents.py` header comment, `render_skills.py` header comment):
+Every Python file starts with a shebang + module docstring-style comment + `from __future__ import annotations` (per `.claude/skills/generate-profile/scripts/render_lib.py` header comment, `aid_profile.py` header comment, `render.py` header comment):
 
 ```python
 #!/usr/bin/env python3
@@ -342,7 +343,7 @@ There are no `.env` files, no credential templates, no secrets handling (CONFIRM
 **Never edit `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/` directly** (CONFIRMED per `canonical/EMISSION-MANIFEST.md` §Safety-Boundary Semantics). Edit `canonical/` and run `python .claude/skills/generate-profile/scripts/run_generator.py`. The render reads `canonical/` (the source) and emits byte-identical bodies into the **5 profile trees**:
 
 - `profiles/claude-code/.claude/`
-- `profiles/codex/.codex/` + `profiles/codex/.agents/` (split layout)
+- `profiles/codex/.codex/` (unified layout — agents + skills + aid/ content)
 - `profiles/cursor/.cursor/`
 - `profiles/copilot-cli/.github/`
 - `profiles/antigravity/.agent/`
@@ -376,7 +377,7 @@ Commit work-NNN to ONE persistent branch (off master); no per-task worktrees or 
 
 ### 8a. Python
 
-- **`pathlib.Path` over `os.path`** (per `.claude/skills/generate-profile/scripts/render_lib.py` `from pathlib import Path`, `aid_profile.py` `from pathlib import Path`, `render_agents.py` `from pathlib import Path`).
+- **`pathlib.Path` over `os.path`** (per `.claude/skills/generate-profile/scripts/render_lib.py` `from pathlib import Path`, `aid_profile.py` `from pathlib import Path`, `render.py` `from pathlib import Path`).
 - **`@dataclass` for value objects** (per `aid_profile.py` `class LayoutConfig`, `class FrontmatterConfig`, `class AgentConfig`).
 - **`tomllib` stdlib for TOML parsing** (per `aid_profile.py` `import tomllib`) — no third-party `toml` package.
 - **`hashlib.sha256` for content fingerprints** (per `render_lib.py` `def sha256_hex`) — used for `EmissionManifest` sha256 field.
@@ -602,3 +603,72 @@ prevents the recurrence — see also `tech-debt.md` changelog.
 - The pattern keeps recurring with glyphs; the text-for-machine principle eliminates the class.
 
 This rule was added 2026-05-28 (cycle-7 closeout glyph analysis). Memory: `feedback_text-for-machine-glyphs-for-display`. Both build-metrics.sh and feature-inventory.md were migrated to text in commit `bf4e814+` (the schema rollout + this convention).
+
+---
+
+## 15. PowerShell gotchas (Windows CI — delivery-002 lessons)
+
+Three issues each cost a CI cycle during work-005 delivery-002 Windows debugging. Recorded
+here so they do not recur when editing `bin/aid.ps1`, `install.ps1`, or `lib/AidInstallCore.psm1`.
+
+### 15a. StrictMode + absent JSON property throws, not returns `$null`
+
+Under `Set-StrictMode -Version Latest`, accessing a property that does not exist on a
+PSCustomObject throws `PropertyNotFoundException` rather than returning `$null`. Reading
+heterogeneous JSON (e.g., an old manifest format that lacks a key a new format added) silently
+blows up inside a `try{}` if the guard is missing.
+
+**Pattern to use** for optional JSON properties:
+
+```powershell
+# WRONG (throws under StrictMode if key absent):
+$value = $obj.missingKey
+
+# CORRECT:
+$value = if ($obj.PSObject.Properties['missingKey']) { $obj.missingKey } else { $defaultValue }
+```
+
+Source: `lib/AidInstallCore.psm1` (guard pattern applied throughout); observed during
+work-005 delivery-002 Windows manifest-parsing debugging.
+
+### 15b. `return if (...)` is a CommandNotFoundException, not an early return
+
+PowerShell parses `if` following `return` as a **command name**, not a control-flow keyword.
+The result is a `CommandNotFoundException` that is silently swallowed inside a `try{}`, and
+execution falls through to the wrong return value.
+
+**Pattern to use:**
+
+```powershell
+# WRONG (silently falls through):
+return if ($condition) { $valueA } else { $valueB }
+
+# CORRECT:
+$result = if ($condition) { $valueA } else { $valueB }
+return $result
+```
+
+Source: `lib/AidInstallCore.psm1` / `bin/aid.ps1` (corrected during work-005 delivery-002
+Windows debugging).
+
+### 15c. Empty array piped through `ForEach-Object` yields `$null`, not an empty array
+
+`@() | ForEach-Object { ... }` yields `$null` in PowerShell, not an empty collection.
+Passing `$null` to `[System.Array]::Sort(...)` or any method expecting an array throws.
+
+**Pattern to use:**
+
+```powershell
+# WRONG (throws if $arr is empty):
+$arr | ForEach-Object { ... }
+[System.Array]::Sort($arr, $comparer)
+
+# CORRECT — guard before iterating or sorting:
+if ($arr.Count -gt 0) {
+    [System.Array]::Sort($arr, $comparer)
+    foreach ($item in $arr) { ... }
+}
+```
+
+Source: `lib/AidInstallCore.psm1` (guard applied during work-005 delivery-002 Windows
+manifest-sort debugging).

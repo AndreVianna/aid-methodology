@@ -14,7 +14,7 @@ Understanding the structure is key to contributing in the right place:
 | `profiles/` | Generator | .toml | Per-tool rendering conventions (one profile per tool) |
 | `profiles/claude-code/.claude/` | LLMs | .md (YAML frontmatter) | Generated — Claude Code install tree |
 | `profiles/codex/.codex/agents/` | LLMs | .toml | Generated — Codex CLI agent definitions |
-| `profiles/codex/.agents/skills/` | LLMs | SKILL.md | Generated — Codex CLI skill files |
+| `profiles/codex/.codex/skills/` | LLMs | SKILL.md | Generated — Codex CLI skill files |
 | `profiles/cursor/.cursor/` | LLMs | .md / .mdc | Generated — Cursor IDE install tree |
 | `templates/` | Both | Markdown | Fill-in templates (canonical source in `canonical/templates/`) |
 | `examples/` | Humans | Markdown | Real-world case studies |
@@ -22,7 +22,7 @@ Understanding the structure is key to contributing in the right place:
 
 **Important:** To update a skill, agent, or template, edit the canonical source under
 `canonical/` and run `/generate-profile`. The five install trees (`profiles/claude-code/.claude/`,
-`profiles/codex/.codex/` + `profiles/codex/.agents/`, `profiles/cursor/.cursor/`,
+`profiles/codex/.codex/`, `profiles/cursor/.cursor/`,
 `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`) are **generated artifacts** —
 do not hand-edit them directly. Your changes will be overwritten on the next generator run.
 See `canonical/EMISSION-MANIFEST.md` for the deletion safety boundary and

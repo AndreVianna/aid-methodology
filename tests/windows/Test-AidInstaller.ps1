@@ -1,5 +1,5 @@
 #Requires -Version 5.1
-# Test-AidInstaller.ps1 — Native PowerShell integration test for the AID installer.
+# Test-AidInstaller.ps1 -- Native PowerShell integration test for the AID installer.
 #
 # Runs entirely via pwsh or Windows PowerShell 5.1.  No Pester dependency.
 # Self-contained: defines its own Assert / Assert-Match / Assert-FileLF helpers.
@@ -22,13 +22,13 @@
 #   T14  root-agent in-place update (branch C2: marker-less sha-mismatch -> excise + re-wrap)
 #   T15  root-agent in-place update (branch B: dst has AID:BEGIN/END -> replace region only)
 #   T16  Uninstall removes install roots (dirs actually GONE)
-#   T17  Uninstall with no manifest → exit 6
+#   T17  Uninstall with no manifest -> exit 6
 #   T45  prune: stale aid-prefixed file removed on update; user file untouched
-#   T37  aid projects help / -h → exit 0 + usage strings
+#   T37  aid projects help / -h -> exit 0 + usage strings
 #   T38  aid projects list renders registered project + ASCII * cwd marker
 #   T39  aid projects add registers existing .aid/ project (tools untouched)
-#   T40  aid projects add non-.aid/ path → exit 2 + error message
-#   T41  aid projects add idempotent (double add → single registry entry)
+#   T40  aid projects add non-.aid/ path -> exit 2 + error message
+#   T41  aid projects add idempotent (double add -> single registry entry)
 #   T42  aid projects remove unregisters / repairs stale entry / idempotent no-op
 #
 # Old-layout migration acceptance (AC5 + AC8 -- mirrors task-012 bash Gates 10-13):
@@ -124,7 +124,7 @@ function Assert-FileLF {
     if ($hasBom) { script:RecordFail "$Label (no-BOM)" "file has UTF-8 BOM (EF BB BF): $Path" }
     else         { script:RecordPass "$Label (no-BOM)" }
 
-    # CR check — count manually to avoid Where-Object scalar/array ambiguity.
+    # CR check -- count manually to avoid Where-Object scalar/array ambiguity.
     $crCount = 0
     foreach ($b in $bytes) { if ($b -eq 0x0D) { $crCount++ } }
     if ($crCount -gt 0) { script:RecordFail "$Label (LF-only)" "file contains $crCount CR byte(s) (CRLF): $Path" }
@@ -204,7 +204,7 @@ Write-Host ""
 # Paths to scripts under test.
 # ---------------------------------------------------------------------------
 $InstallPs1   = Join-Path $RepoRoot 'install.ps1'
-$LocalLibPath = Join-Path $RepoRoot 'lib' 'AidInstallCore.psm1'
+$LocalLibPath = Join-Path (Join-Path $RepoRoot 'lib') 'AidInstallCore.psm1'
 
 if (-not (Test-Path $InstallPs1 -PathType Leaf)) {
     [Console]::Error.WriteLine("ERROR: install.ps1 not found at $InstallPs1")
@@ -218,7 +218,7 @@ if (-not (Test-Path $InstallPs1 -PathType Leaf)) {
 # ---------------------------------------------------------------------------
 function Build-FixtureTarball {
     param([string]$Tool, [string]$DestDir)
-    $profileDir = Join-Path $RepoRoot 'profiles' $Tool
+    $profileDir = Join-Path (Join-Path $RepoRoot 'profiles') $Tool
     if (-not (Test-Path $profileDir -PathType Container)) {
         [Console]::Error.WriteLine("ERROR: profile dir not found: $profileDir")
         exit 1
@@ -251,8 +251,8 @@ function Build-FixtureTarball {
 
 # ---------------------------------------------------------------------------
 # Helpers: invoke install.ps1 or aid.ps1 as a sub-process.
-# Output (stdout+stderr merged) → $script:_LastOut (ANSI stripped).
-# Exit code                     → $script:_LastRC.
+# Output (stdout+stderr merged) -> $script:_LastOut (ANSI stripped).
+# Exit code                     -> $script:_LastRC.
 # AID_LIB_PATH is set to the local lib so no remote fetch is needed.
 # ---------------------------------------------------------------------------
 $script:_LastOut = ''
@@ -273,10 +273,10 @@ function Run-Install {
 
 function Run-AidPs1 {
     param([string]$AidHome, [string[]]$AidArgs)
-    $aidPs1Path = Join-Path $AidHome 'bin' 'aid.ps1'
+    $aidPs1Path = Join-Path (Join-Path $AidHome 'bin') 'aid.ps1'
     # Fallback to repo bin/aid.ps1 if not yet installed in AidHome.
     if (-not (Test-Path $aidPs1Path -PathType Leaf)) {
-        $aidPs1Path = Join-Path $RepoRoot 'bin' 'aid.ps1'
+        $aidPs1Path = Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1'
     }
     $savedHome = $env:AID_HOME
     $savedLib  = $env:AID_LIB_PATH
@@ -295,9 +295,9 @@ function Run-AidPs1 {
 # and never touches the real user home. Used by the self-update-preamble tests (T46).
 function Run-AidPs1Home {
     param([string]$AidHome, [string]$FakeHome, [string[]]$AidArgs)
-    $aidPs1Path = Join-Path $AidHome 'bin' 'aid.ps1'
+    $aidPs1Path = Join-Path (Join-Path $AidHome 'bin') 'aid.ps1'
     if (-not (Test-Path $aidPs1Path -PathType Leaf)) {
-        $aidPs1Path = Join-Path $RepoRoot 'bin' 'aid.ps1'
+        $aidPs1Path = Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1'
     }
     $savedHome = $env:AID_HOME
     $savedLib  = $env:AID_LIB_PATH
@@ -349,22 +349,22 @@ $ProjT01 = Join-Path $TmpRoot 'project-t01'
 New-Item -ItemType Directory -Path $ProjT01 -Force | Out-Null
 
 Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT01)
-Assert-Eq "$($script:_LastRC)" '0' 'T01 install claude-code → exit 0'
+Assert-Eq "$($script:_LastRC)" '0' 'T01 install claude-code -> exit 0'
 
 # T02: Install tree exists.
 Assert-DirExists  (Join-Path $ProjT01 '.claude')                     'T02a .claude/ created'
 Assert-FileExists (Join-Path $ProjT01 'CLAUDE.md')                   'T02b CLAUDE.md created'
-Assert-FileExists (Join-Path $ProjT01 '.aid' '.aid-manifest.json')   'T02c manifest exists'
-Assert-FileExists (Join-Path $ProjT01 '.aid' '.aid-version')         'T02d .aid-version exists'
+Assert-FileExists (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json')   'T02c manifest exists'
+Assert-FileExists (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version')         'T02d .aid-version exists'
 
 # T03: Manifest bytes are LF-only, no BOM.
-Assert-FileLF (Join-Path $ProjT01 '.aid' '.aid-manifest.json') 'T03 manifest'
+Assert-FileLF (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json') 'T03 manifest'
 
 # T04: .aid-version bytes are LF-only, no BOM.
-Assert-FileLF (Join-Path $ProjT01 '.aid' '.aid-version') 'T04 .aid-version'
+Assert-FileLF (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version') 'T04 .aid-version'
 
 # T05: Manifest JSON parses; contains claude-code tool + "status":"owned".
-$mPathT05 = Join-Path $ProjT01 '.aid' '.aid-manifest.json'
+$mPathT05 = Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json'
 if (Test-Path $mPathT05 -PathType Leaf) {
     $mRaw = Get-Content -LiteralPath $mPathT05 -Raw
     try {
@@ -380,9 +380,9 @@ if (Test-Path $mPathT05 -PathType Leaf) {
     script:RecordFail 'T05 manifest parse' 'manifest file missing, cannot parse'
 }
 
-# T06: Idempotent re-install → exit 0 + "up to date".
+# T06: Idempotent re-install -> exit 0 + "up to date".
 Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT01)
-Assert-Eq    "$($script:_LastRC)" '0' 'T06a idempotent re-install → exit 0'
+Assert-Eq    "$($script:_LastRC)" '0' 'T06a idempotent re-install -> exit 0'
 Assert-Contains $script:_LastOut 'up to date' 'T06b idempotent shows "up to date"'
 
 # T07: aid status shows the tool.
@@ -392,11 +392,11 @@ $AidBinT07  = Join-Path $AidHomeT07 'bin'
 $AidLibT07  = Join-Path $AidHomeT07 'lib'
 New-Item -ItemType Directory -Path $AidBinT07 -Force | Out-Null
 New-Item -ItemType Directory -Path $AidLibT07 -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') -Destination (Join-Path $AidBinT07 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') -Destination (Join-Path $AidBinT07 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath -Destination (Join-Path $AidLibT07 'AidInstallCore.psm1') -Force
 
 Run-AidPs1 -AidHome $AidHomeT07 -AidArgs @('status', '-Target', $ProjT01)
-Assert-Eq "$($script:_LastRC)" '0' 'T07a aid status → exit 0'
+Assert-Eq "$($script:_LastRC)" '0' 'T07a aid status -> exit 0'
 Assert-Contains $script:_LastOut 'claude-code' 'T07b aid status lists claude-code'
 Write-Host ""
 
@@ -405,7 +405,7 @@ Write-Host ""
 # ===========================================================================
 Write-Host "=== T08-T13: CLI bootstrap + full lifecycle ==="
 
-# T08: install.ps1 with no args + AID_HOME set → bootstrap from repo disk.
+# T08: install.ps1 with no args + AID_HOME set -> bootstrap from repo disk.
 # AID_NO_PATH=1 to skip PATH wiring (avoids registry writes in test).
 $AidHomeT08  = Join-Path $TmpRoot 'aid-home-t08'
 $savedHome   = $env:AID_HOME
@@ -424,14 +424,14 @@ $env:AID_HOME     = $savedHome
 $env:AID_NO_PATH  = $savedNoPath
 $env:AID_LIB_PATH = $savedLib
 
-Assert-Eq "$rc08" '0' 'T08a CLI bootstrap → exit 0'
-Assert-FileExists (Join-Path $AidHomeT08 'bin' 'aid.ps1')                    'T08b aid.ps1 in AID_HOME/bin'
-Assert-FileExists (Join-Path $AidHomeT08 'lib' 'AidInstallCore.psm1')        'T08c AidInstallCore.psm1 in AID_HOME/lib'
+Assert-Eq "$rc08" '0' 'T08a CLI bootstrap -> exit 0'
+Assert-FileExists (Join-Path (Join-Path $AidHomeT08 'bin') 'aid.ps1')                    'T08b aid.ps1 in AID_HOME/bin'
+Assert-FileExists (Join-Path (Join-Path $AidHomeT08 'lib') 'AidInstallCore.psm1')        'T08c AidInstallCore.psm1 in AID_HOME/lib'
 Assert-FileExists (Join-Path $AidHomeT08 'VERSION')                           'T08d VERSION in AID_HOME'
 
 # aid.cmd is present on Windows only (repo ships bin/aid.cmd).
-if (Test-Path (Join-Path $RepoRoot 'bin' 'aid.cmd') -PathType Leaf) {
-    Assert-FileExists (Join-Path $AidHomeT08 'bin' 'aid.cmd') 'T08e aid.cmd in AID_HOME/bin (Windows)'
+if (Test-Path (Join-Path (Join-Path $RepoRoot 'bin') 'aid.cmd') -PathType Leaf) {
+    Assert-FileExists (Join-Path (Join-Path $AidHomeT08 'bin') 'aid.cmd') 'T08e aid.cmd in AID_HOME/bin (Windows)'
 }
 
 # T09: aid add codex.
@@ -439,19 +439,19 @@ $ProjT09 = Join-Path $TmpRoot 'project-t09'
 New-Item -ItemType Directory -Path $ProjT09 -Force | Out-Null
 
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT09)
-Assert-Eq "$($script:_LastRC)" '0' 'T09a aid add codex → exit 0'
+Assert-Eq "$($script:_LastRC)" '0' 'T09a aid add codex -> exit 0'
 Assert-DirExists  (Join-Path $ProjT09 '.codex')                   'T09b .codex/ created'
 Assert-FileExists (Join-Path $ProjT09 'AGENTS.md')                'T09c AGENTS.md created'
-Assert-FileExists (Join-Path $ProjT09 '.aid' '.aid-manifest.json') 'T09d manifest created'
+Assert-FileExists (Join-Path (Join-Path $ProjT09 '.aid') '.aid-manifest.json') 'T09d manifest created'
 
 # T10: aid status shows codex.
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('status', '-Target', $ProjT09)
-Assert-Eq      "$($script:_LastRC)" '0' 'T10a aid status → exit 0'
+Assert-Eq      "$($script:_LastRC)" '0' 'T10a aid status -> exit 0'
 Assert-Contains $script:_LastOut 'codex' 'T10b status lists codex'
 
 # T11: aid remove codex.
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('remove', 'codex', '-Target', $ProjT09)
-Assert-Eq      "$($script:_LastRC)" '0' 'T11a aid remove codex → exit 0'
+Assert-Eq      "$($script:_LastRC)" '0' 'T11a aid remove codex -> exit 0'
 Assert-DirGone (Join-Path $ProjT09 '.codex') 'T11b .codex/ removed'
 
 # Re-add codex for the remove (all) test.
@@ -459,7 +459,7 @@ Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'codex', '-FromBundle', $FixCo
 
 # T12: aid remove (no arg) with -Force to skip prompt.
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('remove', '-Force', '-Target', $ProjT09)
-Assert-Eq      "$($script:_LastRC)" '0' 'T12a aid remove -Force (all) → exit 0'
+Assert-Eq      "$($script:_LastRC)" '0' 'T12a aid remove -Force (all) -> exit 0'
 Assert-Contains $script:_LastOut 'Uninstall complete.' 'T12b remove banner'
 Assert-DirGone (Join-Path $ProjT09 '.codex') 'T12c .codex/ gone after remove'
 
@@ -467,8 +467,8 @@ Assert-DirGone (Join-Path $ProjT09 '.codex') 'T12c .codex/ gone after remove'
 $ProjT13 = Join-Path $TmpRoot 'project-t13'
 New-Item -ItemType Directory -Path $ProjT13 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT13)
-Assert-FileLF (Join-Path $ProjT13 '.aid' '.aid-manifest.json') 'T13a manifest after aid add'
-Assert-FileLF (Join-Path $ProjT13 '.aid' '.aid-version')       'T13b .aid-version after aid add'
+Assert-FileLF (Join-Path (Join-Path $ProjT13 '.aid') '.aid-manifest.json') 'T13a manifest after aid add'
+Assert-FileLF (Join-Path (Join-Path $ProjT13 '.aid') '.aid-version')       'T13b .aid-version after aid add'
 Assert-FileLF (Join-Path $AidHomeT08 'VERSION')                'T13c AID_HOME/VERSION'
 Write-Host ""
 
@@ -505,7 +505,7 @@ Assert-Contains $updatedContent14 '<!-- AID:END -->'   'T14d CLAUDE.md now has A
 Assert-Contains $updatedContent14 'My project description.' 'T14e user ## Project content preserved'
 
 # Manifest status must be 'owned' (pending-merge path eliminated).
-$m14 = Get-Content -LiteralPath (Join-Path $ProjT14 '.aid' '.aid-manifest.json') -Raw
+$m14 = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT14 '.aid') '.aid-manifest.json') -Raw
 Assert-Contains $m14 '"owned"' 'T14f manifest status is owned (not pending-merge)'
 
 # T15: Branch B - destination already has AID:BEGIN/END markers.
@@ -573,16 +573,16 @@ Write-Host "=== T48: manifest-only repo gets a stamped settings.yml on update ==
 
 $ProjT48 = Join-Path $TmpRoot 'project-t48'
 New-Item -ItemType Directory -Path (Join-Path $ProjT48 '.aid') -Force | Out-Null
-[System.IO.File]::WriteAllText((Join-Path $ProjT48 '.aid' '.aid-manifest.json'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path $ProjT48 '.aid') '.aid-manifest.json'),
     '{"manifest_version":1,"aid_version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","tools":{"claude-code":{"version":"1.0.0","installed_at":"2026-01-01T00:00:00Z","paths":[],"root_agent_files":[]}}}')
-Assert (-not (Test-Path (Join-Path $ProjT48 '.aid' 'settings.yml'))) `
+Assert (-not (Test-Path (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml'))) `
     'T48a precondition: manifest-only repo has no settings.yml' 'settings.yml must be absent'
 
 $savedNoUpdT48 = $env:AID_NO_UPDATE_CHECK
 $env:AID_NO_UPDATE_CHECK = '1'
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
-Assert-FileExists (Join-Path $ProjT48 '.aid' 'settings.yml') 'T48b settings.yml synthesized by update (era-b via manifest)'
-$s48 = Get-Content -LiteralPath (Join-Path $ProjT48 '.aid' 'settings.yml') -Raw
+Assert-FileExists (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') 'T48b settings.yml synthesized by update (era-b via manifest)'
+$s48 = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') -Raw
 Assert-Contains $s48 'format_version: 1' 'T48c format_version: 1 stamped'
 # Second update: the gate must no longer warn (stamp current now).
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
@@ -604,12 +604,12 @@ Assert-Eq "$($script:_LastRC)" '0' 'T45-pre install claude-code -> exit 0'
 
 # Plant a stale aid-prefixed file in .claude/skills/ (simulating a file from an older profile
 # version that the new profile no longer ships).
-$stalePath45 = Join-Path $ProjT45 '.claude' 'skills' 'aid-stale-old-skill.md'
+$stalePath45 = Join-Path (Join-Path (Join-Path $ProjT45 '.claude') 'skills') 'aid-stale-old-skill.md'
 $staleBytes45 = [System.Text.Encoding]::UTF8.GetBytes("# stale old skill`n")
 [System.IO.File]::WriteAllBytes($stalePath45, $staleBytes45)
 
 # Plant a user (non-aid-prefixed) file in .claude/skills/ - must NOT be pruned.
-$userPath45 = Join-Path $ProjT45 '.claude' 'skills' 'my-custom-skill.md'
+$userPath45 = Join-Path (Join-Path (Join-Path $ProjT45 '.claude') 'skills') 'my-custom-skill.md'
 $userBytes45 = [System.Text.Encoding]::UTF8.GetBytes("# user custom skill`n")
 [System.IO.File]::WriteAllBytes($userPath45, $userBytes45)
 
@@ -635,28 +635,28 @@ Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDir
 Assert-DirExists (Join-Path $ProjT16 '.claude') 'T16-pre .claude/ present before uninstall'
 
 Run-Install @('-Uninstall', '-Tool', 'claude-code', '-TargetDirectory', $ProjT16)
-Assert-Eq "$($script:_LastRC)" '0' 'T16a uninstall → exit 0'
+Assert-Eq "$($script:_LastRC)" '0' 'T16a uninstall -> exit 0'
 Assert-DirGone (Join-Path $ProjT16 '.claude') 'T16b .claude/ gone after uninstall'
 Assert-DirGone (Join-Path $ProjT16 '.aid')    'T16c .aid/ gone after full uninstall'
 Write-Host ""
 
 # ===========================================================================
-# T17: Uninstall with no manifest → exit 6
+# T17: Uninstall with no manifest -> exit 6
 # ===========================================================================
 Write-Host "=== T17: Uninstall with no manifest ==="
 
 $ProjT17 = Join-Path $TmpRoot 'project-t17'
 New-Item -ItemType Directory -Path $ProjT17 -Force | Out-Null
 Run-Install @('-Uninstall', '-Tool', 'claude-code', '-TargetDirectory', $ProjT17)
-Assert-Eq "$($script:_LastRC)" '6' 'T17 uninstall with no manifest → exit 6'
+Assert-Eq "$($script:_LastRC)" '6' 'T17 uninstall with no manifest -> exit 6'
 Write-Host ""
 
 # ===========================================================================
-# T18-T19: bare aid.ps1 (no args) → dashboard landing screen
+# T18-T19: bare aid.ps1 (no args) -> dashboard landing screen
 # ===========================================================================
 Write-Host "=== T18-T19: bare aid.ps1 dashboard ==="
 
-# T18: dir with .aid/ fixture → exit 0, header + friendly no-tools message + usage block.
+# T18: dir with .aid/ fixture -> exit 0, header + friendly no-tools message + usage block.
 # Per decision #5: bare aid in a dir with NO .aid/ shows the offer-and-exit-0 path.
 # To keep testing the dashboard landing we provide a minimal .aid/ fixture so the
 # repo-command path renders the header, description, no-tools message, and usage block.
@@ -665,7 +665,7 @@ $AidBinT18  = Join-Path $AidHomeT18 'bin'
 $AidLibT18  = Join-Path $AidHomeT18 'lib'
 New-Item -ItemType Directory -Path $AidBinT18 -Force | Out-Null
 New-Item -ItemType Directory -Path $AidLibT18 -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1')       -Destination (Join-Path $AidBinT18 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1')       -Destination (Join-Path $AidBinT18 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath -Destination (Join-Path $AidLibT18 'AidInstallCore.psm1') -Force
 # Write a VERSION file so the header can read the CLI version.
 $verBytes = [System.Text.Encoding]::UTF8.GetBytes("$Ver`n")
@@ -676,7 +676,7 @@ New-Item -ItemType Directory -Path $ProjT18 -Force | Out-Null
 # Add minimal .aid/ fixture so bare aid enters the dashboard (not the no-.aid/ offer path).
 New-Item -ItemType Directory -Path (Join-Path $ProjT18 '.aid') -Force | Out-Null
 $settingsBytes18 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT18 '.aid' 'settings.yml'), $settingsBytes18)
+[System.IO.File]::WriteAllBytes((Join-Path (Join-Path $ProjT18 '.aid') 'settings.yml'), $settingsBytes18)
 
 # Run bare aid.ps1 (no args) from ProjT18 as cwd (so '.' resolves to an empty project dir).
 $savedHome18 = $env:AID_HOME
@@ -692,20 +692,20 @@ $out18 = [System.Text.RegularExpressions.Regex]::Replace($out18, $_AnsiPattern, 
 $env:AID_HOME     = $savedHome18
 $env:AID_LIB_PATH = $savedLib18
 
-Assert-Eq     "$rc18"    '0'  'T18a bare aid.ps1 with .aid/ fixture → exit 0'
+Assert-Eq     "$rc18"    '0'  'T18a bare aid.ps1 with .aid/ fixture -> exit 0'
 Assert-Contains $out18 "AID v$Ver"                        'T18b dashboard: header contains AID v<ver>'
 Assert-Contains $out18 'AI Integrated Development'        'T18c dashboard: header contains description tag'
 Assert-Contains $out18 'Install, update, and manage AID'  'T18d dashboard: description line'
 Assert-Contains $out18 'yet'                              'T18e dashboard: friendly no-tools message'
 Assert-Contains $out18 'aid add'                          'T18f dashboard: usage block contains aid add'
 
-# T19: project with tool → exit 0, installed tool visible in dashboard.
+# T19: project with tool -> exit 0, installed tool visible in dashboard.
 $AidHomeT19 = Join-Path $TmpRoot 'aid-home-t19'
 $AidBinT19  = Join-Path $AidHomeT19 'bin'
 $AidLibT19  = Join-Path $AidHomeT19 'lib'
 New-Item -ItemType Directory -Path $AidBinT19 -Force | Out-Null
 New-Item -ItemType Directory -Path $AidLibT19 -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1')       -Destination (Join-Path $AidBinT19 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1')       -Destination (Join-Path $AidBinT19 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath -Destination (Join-Path $AidLibT19 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT19 'VERSION'), $verBytes)
 
@@ -714,7 +714,7 @@ New-Item -ItemType Directory -Path $ProjT19 -Force | Out-Null
 
 # Install codex into ProjT19 first.
 Run-AidPs1 -AidHome $AidHomeT19 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT19)
-Assert-Eq "$($script:_LastRC)" '0' 'T19-pre add codex → exit 0'
+Assert-Eq "$($script:_LastRC)" '0' 'T19-pre add codex -> exit 0'
 
 # Now run bare aid.ps1 (no args) with ProjT19 as current working directory.
 $savedHome19 = $env:AID_HOME
@@ -730,7 +730,7 @@ $out19 = [System.Text.RegularExpressions.Regex]::Replace($out19, $_AnsiPattern, 
 $env:AID_HOME     = $savedHome19
 $env:AID_LIB_PATH = $savedLib19
 
-Assert-Eq       "$rc19"    '0'                         'T19a bare aid.ps1 with tool → exit 0'
+Assert-Eq       "$rc19"    '0'                         'T19a bare aid.ps1 with tool -> exit 0'
 Assert-Contains  $out19   "AID v$Ver"                  'T19b dashboard with tool: header'
 Assert-Contains  $out19   'Installed tools (in'        'T19c dashboard with tool: installed tools section'
 Assert-Contains  $out19   'codex'                      'T19d dashboard with tool: codex listed'
@@ -746,25 +746,25 @@ Write-Host "=== T20-T24: collapse-when-uniform display ==="
 $AidHomeT20 = Join-Path $TmpRoot 'aid-home-t20'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT20 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT20 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT20 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT20 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT20 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT20 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT20 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
-# T20: uniform case — two tools at the same version, ref == version.
-# → header "all at v<V>:", per-tool lines have ONLY the tool name.
+# T20: uniform case -- two tools at the same version, ref == version.
+# -> header "all at v<V>:", per-tool lines have ONLY the tool name.
 $ProjT20 = Join-Path $TmpRoot 'project-t20'
 New-Item -ItemType Directory -Path $ProjT20 -Force | Out-Null
 
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT20)
-Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre1 add claude-code → exit 0'
+Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre1 add claude-code -> exit 0'
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT20)
-Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre2 add codex → exit 0'
+Assert-Eq  "$($script:_LastRC)" '0' 'T20-pre2 add codex -> exit 0'
 
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT20)
-Assert-Eq  "$($script:_LastRC)" '0' 'T20a uniform status → exit 0'
+Assert-Eq  "$($script:_LastRC)" '0' 'T20a uniform status -> exit 0'
 Assert-Contains $script:_LastOut "all at v$Ver" 'T20b uniform: header contains "all at v<V>"'
 Assert-Contains $script:_LastOut 'claude-code'  'T20c uniform: claude-code listed'
 Assert-Contains $script:_LastOut 'codex'        'T20d uniform: codex listed'
@@ -778,13 +778,13 @@ Assert-NotContains $script:_LastOut 'AGENTS.md'  'T20f uniform: no AGENTS.md sho
 Assert-NotContains $script:_LastOut 'CLAUDE.md'  'T20g uniform: no CLAUDE.md shown (owned)'
 Write-Host ""
 
-# T21: uniform-behind case — tool version < ref version.
+# T21: uniform-behind case -- tool version < ref version.
 # Patch manifest so both tools appear at v0.0.1.
 $ProjT21 = Join-Path $TmpRoot 'project-t21'
 New-Item -ItemType Directory -Path $ProjT21 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT21)
 
-$mPathT21 = Join-Path $ProjT21 '.aid' '.aid-manifest.json'
+$mPathT21 = Join-Path (Join-Path $ProjT21 '.aid') '.aid-manifest.json'
 $mDataT21 = Get-Content -LiteralPath $mPathT21 -Raw | ConvertFrom-Json
 $mDataT21.tools.PSObject.Properties | ForEach-Object { $_.Value.version = '0.0.1' }
 # Re-serialize and write.
@@ -792,27 +792,27 @@ $mJsonT21 = ($mDataT21 | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
 [System.IO.File]::WriteAllText($mPathT21, $mJsonT21 + "`n")
 
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT21)
-Assert-Eq      "$($script:_LastRC)" '0'       'T21a uniform-behind status → exit 0'
+Assert-Eq      "$($script:_LastRC)" '0'       'T21a uniform-behind status -> exit 0'
 Assert-Contains $script:_LastOut 'all at v0.0.1' 'T21b uniform-behind: "all at v0.0.1" in header'
 Assert-Contains $script:_LastOut 'update'         'T21c uniform-behind: update hint present'
 Assert-Contains $script:_LastOut "v$Ver"           'T21d uniform-behind: ref version in hint'
 Write-Host ""
 
-# T22: divergent case — two tools at different versions.
+# T22: divergent case -- two tools at different versions.
 $ProjT22 = Join-Path $TmpRoot 'project-t22'
 New-Item -ItemType Directory -Path $ProjT22 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT22)
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('add', 'codex',       '-FromBundle', $FixCodex,      '-Target', $ProjT22)
 
 # Patch claude-code to an older version.
-$mPathT22 = Join-Path $ProjT22 '.aid' '.aid-manifest.json'
+$mPathT22 = Join-Path (Join-Path $ProjT22 '.aid') '.aid-manifest.json'
 $mDataT22 = Get-Content -LiteralPath $mPathT22 -Raw | ConvertFrom-Json
 $mDataT22.tools.'claude-code'.version = '0.1.0'
 $mJsonT22 = ($mDataT22 | ConvertTo-Json -Depth 10) -replace "`r`n", "`n"
 [System.IO.File]::WriteAllText($mPathT22, $mJsonT22 + "`n")
 
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT22)
-Assert-Eq         "$($script:_LastRC)" '0' 'T22a divergent status → exit 0'
+Assert-Eq         "$($script:_LastRC)" '0' 'T22a divergent status -> exit 0'
 Assert-NotContains $script:_LastOut 'all at v'   'T22b divergent: no "all at v" header'
 Assert-Contains    $script:_LastOut 'v0.1.0'     'T22c divergent: claude-code version shown'
 Assert-Contains    $script:_LastOut "v$Ver"      'T22d divergent: codex version shown'
@@ -824,32 +824,32 @@ if ($codexLine22) {
 }
 Write-Host ""
 
-# T23: aid status empty dir → exit 0 + offer message (decision #5 new behavior).
+# T23: aid status empty dir -> exit 0 + offer message (decision #5 new behavior).
 $ProjT23 = Join-Path $TmpRoot 'project-t23'
 New-Item -ItemType Directory -Path $ProjT23 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT20 -AidArgs @('status', '-Target', $ProjT23)
-Assert-Eq "$($script:_LastRC)" '0' 'T23 empty dir status → exit 0 (offer-and-exit, new behavior)'
+Assert-Eq "$($script:_LastRC)" '0' 'T23 empty dir status -> exit 0 (offer-and-exit, new behavior)'
 Assert-Contains $script:_LastOut 'no AID project here' 'T23b empty dir status prints offer message'
 Write-Host ""
 
-# T24: parity — Bash uniform output == PS1 uniform output (key header line).
+# T24: parity -- Bash uniform output == PS1 uniform output (key header line).
 # Build a separate Bash-capable AID_HOME.
 $AidHomeT24 = Join-Path $TmpRoot 'aid-home-t24'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT24 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT24 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid')        -Destination (Join-Path $AidHomeT24 'bin' 'aid')          -Force -ErrorAction SilentlyContinue
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1')    -Destination (Join-Path $AidHomeT24 'bin' 'aid.ps1')      -Force
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'lib' 'aid-install-core.sh') `
-          -Destination (Join-Path $AidHomeT24 'lib' 'aid-install-core.sh') -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid')        -Destination (Join-Path (Join-Path $AidHomeT24 'bin') 'aid')          -Force -ErrorAction SilentlyContinue
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1')    -Destination (Join-Path (Join-Path $AidHomeT24 'bin') 'aid.ps1')      -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'lib') 'aid-install-core.sh') `
+          -Destination (Join-Path (Join-Path $AidHomeT24 'lib') 'aid-install-core.sh') -Force -ErrorAction SilentlyContinue
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT24 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT24 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT24 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
 $ProjT24 = Join-Path $TmpRoot 'project-t24'
 New-Item -ItemType Directory -Path $ProjT24 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT24 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT24)
-Assert-Eq "$($script:_LastRC)" '0' 'T24-pre PS1 add codex → exit 0'
+Assert-Eq "$($script:_LastRC)" '0' 'T24-pre PS1 add codex -> exit 0'
 
 Run-AidPs1 -AidHome $AidHomeT24 -AidArgs @('status', '-Target', $ProjT24)
 $ps1HeaderT24 = $script:_LastOut -split "`n" | Where-Object { $_ -match 'Installed tools' } | Select-Object -First 1
@@ -858,7 +858,7 @@ Assert-Contains $ps1HeaderT24 "all at v$Ver" 'T24a PS1 uniform header contains "
 Write-Host ""
 
 # ===========================================================================
-# T25-T30: Update check + aid update self (hermetic — no real network)
+# T25-T30: Update check + aid update self (hermetic -- no real network)
 # ===========================================================================
 Write-Host "=== T25-T30: Update check + aid update self ==="
 
@@ -876,12 +876,12 @@ function New-FakeReleaseJson {
 $AidHomeT25 = Join-Path $TmpRoot 'aid-home-t25'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT25 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT25 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT25 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT25 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT25 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT25 'lib') 'AidInstallCore.psm1') -Force
 
-# T25: NEWER version available → notice shown on bare aid.ps1 (dashboard).
+# T25: NEWER version available -> notice shown on bare aid.ps1 (dashboard).
 # Force installed version to 0.1.0 so any published version is newer.
 [System.IO.File]::WriteAllText((Join-Path $AidHomeT25 'VERSION'), "0.1.0`n")
 
@@ -895,7 +895,7 @@ New-Item -ItemType Directory -Path $ProjT25 -Force | Out-Null
 # enabling the update-notice to render (per decision #5 / PS029-A pattern).
 New-Item -ItemType Directory -Path (Join-Path $ProjT25 '.aid') -Force | Out-Null
 $settingsBytes25 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT25 '.aid' 'settings.yml'), $settingsBytes25)
+[System.IO.File]::WriteAllBytes((Join-Path (Join-Path $ProjT25 '.aid') 'settings.yml'), $settingsBytes25)
 
 $savedHome25 = $env:AID_HOME; $savedLib25 = $env:AID_LIB_PATH
 $env:AID_HOME             = $AidHomeT25
@@ -903,7 +903,7 @@ $env:AID_LIB_PATH         = $LocalLibPath
 $env:AID_NO_UPDATE_CHECK  = '0'
 $env:AID_UPDATE_CHECK_URL = $checkUrlT25
 Push-Location $ProjT25
-$outLines25 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT25 'bin' 'aid.ps1') 2>&1
+$outLines25 = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT25 'bin') 'aid.ps1') 2>&1
 $rc25 = $LASTEXITCODE
 Pop-Location
 $out25 = ($outLines25 | ForEach-Object { [string]$_ }) -join "`n"
@@ -913,21 +913,21 @@ $env:AID_LIB_PATH         = $savedLib25
 $env:AID_NO_UPDATE_CHECK  = $null
 $env:AID_UPDATE_CHECK_URL = $null
 
-Assert-Eq      "$rc25"  '0'                               'T25a bare aid.ps1 newer version → exit 0'
+Assert-Eq      "$rc25"  '0'                               'T25a bare aid.ps1 newer version -> exit 0'
 Assert-Contains $out25  'A newer aid CLI is available'    'T25b notice: "A newer aid CLI is available"'
 Assert-Contains $out25  'v9.9.9'                          'T25c notice: latest version shown'
 Assert-Contains $out25  'v0.1.0'                          'T25d notice: current version shown'
 Assert-Contains $out25  'aid update self'                 'T25e notice: "aid update self" mentioned'
 Write-Host ""
 
-# T26: SAME version → no notice.
+# T26: SAME version -> no notice.
 $AidHomeT26 = Join-Path $TmpRoot 'aid-home-t26'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT26 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT26 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT26 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT26 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT26 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT26 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllText((Join-Path $AidHomeT26 'VERSION'), "$Ver`n")
 
 $JsonDirT26 = Join-Path $TmpRoot 'json-t26'
@@ -943,7 +943,7 @@ $env:AID_LIB_PATH         = $LocalLibPath
 $env:AID_NO_UPDATE_CHECK  = '0'
 $env:AID_UPDATE_CHECK_URL = $checkUrlT26
 Push-Location $ProjT26
-$outLines26 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT26 'bin' 'aid.ps1') 2>&1
+$outLines26 = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT26 'bin') 'aid.ps1') 2>&1
 $rc26 = $LASTEXITCODE
 Pop-Location
 $out26 = ($outLines26 | ForEach-Object { [string]$_ }) -join "`n"
@@ -953,18 +953,18 @@ $env:AID_LIB_PATH         = $savedLib26
 $env:AID_NO_UPDATE_CHECK  = $null
 $env:AID_UPDATE_CHECK_URL = $null
 
-Assert-Eq          "$rc26"  '0'                              'T26a same version → exit 0'
+Assert-Eq          "$rc26"  '0'                              'T26a same version -> exit 0'
 Assert-NotContains  $out26  'A newer aid CLI is available'   'T26b same version: no notice'
 Write-Host ""
 
-# T27: AID_NO_UPDATE_CHECK=1 → no notice.
+# T27: AID_NO_UPDATE_CHECK=1 -> no notice.
 $AidHomeT27 = Join-Path $TmpRoot 'aid-home-t27'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT27 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT27 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT27 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT27 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT27 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT27 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllText((Join-Path $AidHomeT27 'VERSION'), "0.1.0`n")
 
 $ProjT27 = Join-Path $TmpRoot 'project-t27'
@@ -975,7 +975,7 @@ $env:AID_HOME             = $AidHomeT27
 $env:AID_LIB_PATH         = $LocalLibPath
 $env:AID_NO_UPDATE_CHECK  = '1'
 Push-Location $ProjT27
-$outLines27 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT27 'bin' 'aid.ps1') 2>&1
+$outLines27 = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT27 'bin') 'aid.ps1') 2>&1
 $rc27 = $LASTEXITCODE
 Pop-Location
 $out27 = ($outLines27 | ForEach-Object { [string]$_ }) -join "`n"
@@ -988,14 +988,14 @@ Assert-Eq          "$rc27" '0'                            'T27a opt-out: exit 0'
 Assert-NotContains  $out27 'A newer aid CLI is available' 'T27b opt-out: no notice'
 Write-Host ""
 
-# T28: Failing check URL → command still exits 0 (fail-silent).
+# T28: Failing check URL -> command still exits 0 (fail-silent).
 $AidHomeT28 = Join-Path $TmpRoot 'aid-home-t28'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT28 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT28 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT28 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT28 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT28 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT28 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllText((Join-Path $AidHomeT28 'VERSION'), "0.1.0`n")
 
 $ProjT28 = Join-Path $TmpRoot 'project-t28'
@@ -1007,7 +1007,7 @@ $env:AID_LIB_PATH         = $LocalLibPath
 $env:AID_NO_UPDATE_CHECK  = '0'
 $env:AID_UPDATE_CHECK_URL = 'file:///no/such/path/does-not-exist.json'
 Push-Location $ProjT28
-$outLines28 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT28 'bin' 'aid.ps1') 2>&1
+$outLines28 = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT28 'bin') 'aid.ps1') 2>&1
 $rc28 = $LASTEXITCODE
 Pop-Location
 $out28 = ($outLines28 | ForEach-Object { [string]$_ }) -join "`n"
@@ -1017,17 +1017,17 @@ $env:AID_LIB_PATH         = $savedLib28
 $env:AID_NO_UPDATE_CHECK  = $null
 $env:AID_UPDATE_CHECK_URL = $null
 
-Assert-Eq "$rc28" '0' 'T28 failing check URL → exit 0 (fail-silent)'
+Assert-Eq "$rc28" '0' 'T28 failing check URL -> exit 0 (fail-silent)'
 Write-Host ""
 
 # T29: Notice shown on 'aid status' (not just dashboard).
 $AidHomeT29 = Join-Path $TmpRoot 'aid-home-t29'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT29 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT29 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT29 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT29 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT29 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT29 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllText((Join-Path $AidHomeT29 'VERSION'), "0.1.0`n")
 
 $JsonDirT29 = Join-Path $TmpRoot 'json-t29'
@@ -1038,14 +1038,14 @@ $ProjT29 = Join-Path $TmpRoot 'project-t29'
 New-Item -ItemType Directory -Path $ProjT29 -Force | Out-Null
 # Install codex so status exits 0.
 Run-AidPs1 -AidHome $AidHomeT29 -AidArgs @('add', 'codex', '-FromBundle', $FixCodex, '-Target', $ProjT29)
-Assert-Eq "$($script:_LastRC)" '0' 'T29-pre add codex → exit 0'
+Assert-Eq "$($script:_LastRC)" '0' 'T29-pre add codex -> exit 0'
 
 $savedHome29 = $env:AID_HOME; $savedLib29 = $env:AID_LIB_PATH
 $env:AID_HOME             = $AidHomeT29
 $env:AID_LIB_PATH         = $LocalLibPath
 $env:AID_NO_UPDATE_CHECK  = '0'
 $env:AID_UPDATE_CHECK_URL = $checkUrlT29
-$outLines29 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT29 'bin' 'aid.ps1') `
+$outLines29 = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT29 'bin') 'aid.ps1') `
                   'status' '-Target' $ProjT29 2>&1
 $rc29 = $LASTEXITCODE
 $out29 = ($outLines29 | ForEach-Object { [string]$_ }) -join "`n"
@@ -1055,19 +1055,19 @@ $env:AID_LIB_PATH         = $savedLib29
 $env:AID_NO_UPDATE_CHECK  = $null
 $env:AID_UPDATE_CHECK_URL = $null
 
-Assert-Eq      "$rc29" '0'                            'T29a aid status with newer version → exit 0'
+Assert-Eq      "$rc29" '0'                            'T29a aid status with newer version -> exit 0'
 Assert-Contains $out29 'A newer aid CLI is available' 'T29b aid status shows notice'
 Write-Host ""
 
-# T30: aid update self — prints 'Updating the aid CLI...' then relays exit code.
-# Use a non-existent URL so Invoke-RestMethod fails immediately → exit 3.
+# T30: aid update self -- prints 'Updating the aid CLI...' then relays exit code.
+# Use a non-existent URL so Invoke-RestMethod fails immediately -> exit 3.
 $AidHomeT30 = Join-Path $TmpRoot 'aid-home-t30'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT30 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT30 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT30 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT30 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT30 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT30 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllText((Join-Path $AidHomeT30 'VERSION'), "$Ver`n")
 
 $savedHome30 = $env:AID_HOME; $savedLib30 = $env:AID_LIB_PATH
@@ -1075,7 +1075,7 @@ $env:AID_HOME            = $AidHomeT30
 $env:AID_LIB_PATH        = $LocalLibPath
 $env:AID_NO_UPDATE_CHECK = '1'
 $env:AID_INSTALL_URL     = 'https://nonexistent.invalid/install.ps1'
-$outLines30 = & $PwshExe -NoProfile -File (Join-Path $AidHomeT30 'bin' 'aid.ps1') `
+$outLines30 = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT30 'bin') 'aid.ps1') `
                   'update' 'self' 2>&1
 $rc30 = $LASTEXITCODE
 $out30 = ($outLines30 | ForEach-Object { [string]$_ }) -join "`n"
@@ -1086,11 +1086,11 @@ $env:AID_NO_UPDATE_CHECK = $null
 $env:AID_INSTALL_URL     = $null
 
 Assert-Contains $out30 'Updating the aid CLI' 'T30a update self prints update message'
-Assert-Eq "$rc30" '3' 'T30b update self with bad URL → exit 3'
+Assert-Eq "$rc30" '3' 'T30b update self with bad URL -> exit 3'
 Write-Host ""
 
 # ===========================================================================
-# T31-T34: Upgrade regression — stale lib gets replaced on re-bootstrap
+# T31-T34: Upgrade regression -- stale lib gets replaced on re-bootstrap
 # ===========================================================================
 Write-Host "=== T31-T34: Upgrade regression (stale lib replaced on re-bootstrap) ==="
 
@@ -1107,7 +1107,7 @@ $stalePs1Bytes = [System.Text.Encoding]::UTF8.GetBytes("#Requires -Version 5.1`n
 [System.IO.File]::WriteAllBytes((Join-Path $AidBinT31 'aid.ps1'), $stalePs1Bytes)
 
 # Seed a stale lib that does NOT export Get-AidStatusBody.
-$staleModBytes = [System.Text.Encoding]::UTF8.GetBytes("# stale module — missing Get-AidStatusBody`nfunction Stale-Fn { }`n")
+$staleModBytes = [System.Text.Encoding]::UTF8.GetBytes("# stale module -- missing Get-AidStatusBody`nfunction Stale-Fn { }`n")
 [System.IO.File]::WriteAllBytes((Join-Path $AidLibT31 'AidInstallCore.psm1'), $staleModBytes)
 
 # Seed an old VERSION.
@@ -1130,7 +1130,7 @@ $env:AID_HOME     = $savedHome31
 $env:AID_NO_PATH  = $savedNoPath31
 $env:AID_LIB_PATH = $savedLib31
 
-Assert-Eq "$rc31" '0' 'T31a re-bootstrap over stale install → exit 0'
+Assert-Eq "$rc31" '0' 'T31a re-bootstrap over stale install -> exit 0'
 
 $installedLibContent31 = ''
 $installedLibPath31 = Join-Path $AidLibT31 'AidInstallCore.psm1'
@@ -1144,7 +1144,7 @@ Assert-Eq (Get-Content -LiteralPath (Join-Path $AidHomeT31 'VERSION') -Raw).Trim
 Write-Host ""
 
 # T32: Post-copy verify catches a deliberately-corrupted/empty lib source.
-# Pass a bad AID_LIB_PATH (empty file) → installer must exit non-zero with clear error.
+# Pass a bad AID_LIB_PATH (empty file) -> installer must exit non-zero with clear error.
 $AidHomeT32   = Join-Path $TmpRoot 'aid-home-t32'
 $BadLibT32    = Join-Path $TmpRoot 'bad-lib-t32.psm1'
 # Empty lib: no sentinel, no functions.
@@ -1166,7 +1166,7 @@ $env:AID_HOME     = $savedHome32
 $env:AID_NO_PATH  = $savedNoPath32
 $env:AID_LIB_PATH = $savedLib32
 
-Assert ($rc32 -ne 0) 'T32a corrupted lib (empty) → installer exits non-zero' "expected non-zero exit, got $rc32"
+Assert ($rc32 -ne 0) 'T32a corrupted lib (empty) -> installer exits non-zero' "expected non-zero exit, got $rc32"
 Assert-Contains $out32 'Get-AidStatusBody' `
     'T32b corrupted lib: error message mentions sentinel Get-AidStatusBody'
 Assert-Contains $out32 'installer could not refresh' `
@@ -1181,10 +1181,10 @@ $AidBinT33  = Join-Path $AidHomeT33 'bin'
 $AidLibT33  = Join-Path $AidHomeT33 'lib'
 New-Item -ItemType Directory -Path $AidBinT33 -Force | Out-Null
 New-Item -ItemType Directory -Path $AidLibT33 -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') -Destination (Join-Path $AidBinT33 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') -Destination (Join-Path $AidBinT33 'aid.ps1') -Force
 
 # Stub lib that loads without error but does NOT define Get-AidStatusBody.
-$stubModBytes = [System.Text.Encoding]::UTF8.GetBytes("# stub module — no Get-AidStatusBody`nfunction Stub-Fn { }`n")
+$stubModBytes = [System.Text.Encoding]::UTF8.GetBytes("# stub module -- no Get-AidStatusBody`nfunction Stub-Fn { }`n")
 [System.IO.File]::WriteAllBytes((Join-Path $AidLibT33 'AidInstallCore.psm1'), $stubModBytes)
 [System.IO.File]::WriteAllText((Join-Path $AidHomeT33 'VERSION'), "$Ver`n")
 
@@ -1201,7 +1201,7 @@ $out33 = ($outLines33 | ForEach-Object { [string]$_ }) -join "`n"
 $out33 = [System.Text.RegularExpressions.Regex]::Replace($out33, $_AnsiPattern, '')
 $env:AID_HOME = $savedHome33
 
-Assert ($rc33 -ne 0) 'T33a dispatcher with stale-core lib → exits non-zero' "expected non-zero exit, got $rc33"
+Assert ($rc33 -ne 0) 'T33a dispatcher with stale-core lib -> exits non-zero' "expected non-zero exit, got $rc33"
 Assert-Contains $out33 'failed to load the CLI core' `
     'T33b dispatcher stale-core: error says failed to load the CLI core'
 Assert-Contains $out33 'reinstall' `
@@ -1235,16 +1235,16 @@ $rc34bs = $LASTEXITCODE
 $env:AID_HOME     = $savedHome34
 $env:AID_NO_PATH  = $savedNoPath34
 $env:AID_LIB_PATH = $savedLib34
-Assert-Eq "$rc34bs" '0' 'T34a re-bootstrap for dashboard test → exit 0'
+Assert-Eq "$rc34bs" '0' 'T34a re-bootstrap for dashboard test -> exit 0'
 
-# Run bare aid.ps1 (dashboard) → should succeed with the fresh lib.
+# Run bare aid.ps1 (dashboard) -> should succeed with the fresh lib.
 $ProjT34 = Join-Path $TmpRoot 'project-t34'
 New-Item -ItemType Directory -Path $ProjT34 -Force | Out-Null
 # Add minimal .aid/ fixture so bare aid enters the dashboard path (not the no-.aid/ offer path),
 # enabling T34c to assert the landing header renders correctly (per decision #5).
 New-Item -ItemType Directory -Path (Join-Path $ProjT34 '.aid') -Force | Out-Null
 $settingsBytes34 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT34 '.aid' 'settings.yml'), $settingsBytes34)
+[System.IO.File]::WriteAllBytes((Join-Path (Join-Path $ProjT34 '.aid') 'settings.yml'), $settingsBytes34)
 
 $savedHome34b = $env:AID_HOME
 $savedLib34b  = $env:AID_LIB_PATH
@@ -1259,12 +1259,12 @@ $out34 = [System.Text.RegularExpressions.Regex]::Replace($out34, $_AnsiPattern, 
 $env:AID_HOME     = $savedHome34b
 $env:AID_LIB_PATH = $savedLib34b
 
-Assert-Eq "$rc34" '0' 'T34b bare aid.ps1 after re-bootstrap → exit 0 (no stale-core error)'
+Assert-Eq "$rc34" '0' 'T34b bare aid.ps1 after re-bootstrap -> exit 0 (no stale-core error)'
 Assert-Contains $out34 'AID v' 'T34c dashboard header present after re-bootstrap'
 Write-Host ""
 
 # ===========================================================================
-# T35: Dot-source load path — Get-AidStatusBody is available in script scope
+# T35: Dot-source load path -- Get-AidStatusBody is available in script scope
 # Verifies that the cache-proof dot-source path in aid.ps1 exposes the function
 # so it is callable from within the dispatcher's script scope.
 # ===========================================================================
@@ -1275,7 +1275,7 @@ $AidBinT35  = Join-Path $AidHomeT35 'bin'
 $AidLibT35  = Join-Path $AidHomeT35 'lib'
 New-Item -ItemType Directory -Path $AidBinT35 -Force | Out-Null
 New-Item -ItemType Directory -Path $AidLibT35 -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') -Destination (Join-Path $AidBinT35 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') -Destination (Join-Path $AidBinT35 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath -Destination (Join-Path $AidLibT35 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT35 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
@@ -1301,7 +1301,7 @@ if (Get-Command 'Get-AidStatusBody' -ErrorAction SilentlyContinue) {
 $rc35 = $LASTEXITCODE
 $out35probe = ($probe35 | ForEach-Object { [string]$_ }) -join "`n"
 
-Assert-Eq "$rc35" '0' 'T35a dot-source exposes Get-AidStatusBody → exit 0'
+Assert-Eq "$rc35" '0' 'T35a dot-source exposes Get-AidStatusBody -> exit 0'
 Assert-Contains $out35probe 'Get-AidStatusBody: FOUND' 'T35b Get-AidStatusBody visible after dot-source'
 
 # Also verify bare aid.ps1 (dashboard) exits 0, confirming dispatch works end-to-end.
@@ -1311,7 +1311,7 @@ New-Item -ItemType Directory -Path $ProjT35 -Force | Out-Null
 # enabling T35d to assert the landing header renders (per decision #5).
 New-Item -ItemType Directory -Path (Join-Path $ProjT35 '.aid') -Force | Out-Null
 $settingsBytes35 = [System.Text.Encoding]::UTF8.GetBytes("format_version: 1`n")
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT35 '.aid' 'settings.yml'), $settingsBytes35)
+[System.IO.File]::WriteAllBytes((Join-Path (Join-Path $ProjT35 '.aid') 'settings.yml'), $settingsBytes35)
 
 $savedHome35 = $env:AID_HOME
 $savedLib35  = $env:AID_LIB_PATH
@@ -1328,18 +1328,18 @@ $env:AID_HOME            = $savedHome35
 $env:AID_LIB_PATH        = $savedLib35
 $env:AID_NO_UPDATE_CHECK = $null
 
-Assert-Eq     "$rc35d" '0'     'T35c bare aid.ps1 with dot-source → exit 0 (no cache-error)'
+Assert-Eq     "$rc35d" '0'     'T35c bare aid.ps1 with dot-source -> exit 0 (no cache-error)'
 Assert-Contains $out35 "AID v$Ver" 'T35d dashboard header present (dot-source load path)'
 Write-Host ""
 
 # ===========================================================================
-# T36: sha256 installer verify — truncated dest lib fails, correct dest passes
+# T36: sha256 installer verify -- truncated dest lib fails, correct dest passes
 # Confirms that the new sha256 post-copy verify in install.ps1 catches a
-# corrupted/truncated installed lib (mismatch source ≠ dest).
+# corrupted/truncated installed lib (mismatch source != dest).
 # ===========================================================================
 Write-Host "=== T36: sha256 installer verify catches truncated install ==="
 
-# T36a: Good install (correct source) → verify passes (exit 0 on full bootstrap).
+# T36a: Good install (correct source) -> verify passes (exit 0 on full bootstrap).
 # This is implicitly tested by T08/T31 already.  Re-confirm with a direct hash check.
 $AidHomeT36 = Join-Path $TmpRoot 'aid-home-t36'
 New-Item -ItemType Directory -Path $AidHomeT36 -Force | Out-Null
@@ -1358,10 +1358,10 @@ $env:AID_HOME     = $savedHome36
 $env:AID_NO_PATH  = $savedNoPath36
 $env:AID_LIB_PATH = $savedLib36
 
-Assert-Eq "$rc36a" '0' 'T36a good install → sha256 verify passes (exit 0)'
+Assert-Eq "$rc36a" '0' 'T36a good install -> sha256 verify passes (exit 0)'
 
 # Verify the installed lib sha256 matches the source.
-$installedLib36 = Join-Path $AidHomeT36 'lib' 'AidInstallCore.psm1'
+$installedLib36 = Join-Path (Join-Path $AidHomeT36 'lib') 'AidInstallCore.psm1'
 if (Test-Path $installedLib36 -PathType Leaf) {
     $srcHash36  = (Get-FileHash -LiteralPath $LocalLibPath   -Algorithm SHA256).Hash
     $destHash36 = (Get-FileHash -LiteralPath $installedLib36 -Algorithm SHA256).Hash
@@ -1379,7 +1379,7 @@ $AidBinT36c  = Join-Path $AidHomeT36c 'bin'
 $AidLibT36c  = Join-Path $AidHomeT36c 'lib'
 New-Item -ItemType Directory -Path $AidBinT36c -Force | Out-Null
 New-Item -ItemType Directory -Path $AidLibT36c -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') -Destination (Join-Path $AidBinT36c 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') -Destination (Join-Path $AidBinT36c 'aid.ps1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT36c 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
@@ -1402,7 +1402,7 @@ $out36c = ($outLines36c | ForEach-Object { [string]$_ }) -join "`n"
 $out36c = [System.Text.RegularExpressions.Regex]::Replace($out36c, $_AnsiPattern, '')
 $env:AID_HOME = $savedHome36c
 
-Assert ($rc36c -ne 0) 'T36c truncated lib in AID_HOME → aid dispatcher exits non-zero' `
+Assert ($rc36c -ne 0) 'T36c truncated lib in AID_HOME -> aid dispatcher exits non-zero' `
     "expected non-zero exit from aid.ps1 with truncated lib, got $rc36c"
 Assert-Contains $out36c 'failed to load the CLI core' `
     'T36d truncated lib: aid.ps1 reports failed to load the CLI core'
@@ -1424,7 +1424,7 @@ $AidBinTP  = Join-Path $AidHomeTP 'bin'
 $AidLibTP  = Join-Path $AidHomeTP 'lib'
 New-Item -ItemType Directory -Path $AidBinTP -Force | Out-Null
 New-Item -ItemType Directory -Path $AidLibTP -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
           -Destination (Join-Path $AidBinTP 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
           -Destination (Join-Path $AidLibTP 'AidInstallCore.psm1') -Force
@@ -1441,9 +1441,9 @@ function Run-AidProjects {
     $env:AID_HOME            = $AidHome
     $env:AID_LIB_PATH        = $LocalLibPath
     $env:AID_NO_UPDATE_CHECK = '1'
-    $aidPs1Path = Join-Path $AidHome 'bin' 'aid.ps1'
+    $aidPs1Path = Join-Path (Join-Path $AidHome 'bin') 'aid.ps1'
     if (-not (Test-Path $aidPs1Path -PathType Leaf)) {
-        $aidPs1Path = Join-Path $RepoRoot 'bin' 'aid.ps1'
+        $aidPs1Path = Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1'
     }
     if ($FromDir -and (Test-Path $FromDir -PathType Container)) {
         Push-Location $FromDir
@@ -1494,7 +1494,7 @@ $manifestT38 = @{
     manifest_version = 1
 } | ConvertTo-Json -Depth 5
 $manifestBytesT38 = [System.Text.Encoding]::UTF8.GetBytes($manifestT38 + "`n")
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT38 '.aid' '.aid-manifest.json'), $manifestBytesT38)
+[System.IO.File]::WriteAllBytes((Join-Path (Join-Path $ProjT38 '.aid') '.aid-manifest.json'), $manifestBytesT38)
 
 # Register the project via aid projects add.
 Run-AidProjects -AidHome $AidHomeTP -AidArgs @('projects', 'add', $ProjT38)
@@ -1530,10 +1530,10 @@ Write-Host "--- T39: aid projects add (register) ---"
 $AidHomeT39 = Join-Path $TmpRoot 'aid-home-t39'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT39 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT39 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT39 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT39 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT39 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT39 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT39 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
@@ -1542,7 +1542,7 @@ New-Item -ItemType Directory -Path $ProjT39 -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjT39 '.aid') -Force | Out-Null
 # Sentinel file: tools must be untouched by projects add.
 $sentinelT39Bytes = [System.Text.Encoding]::UTF8.GetBytes("sentinel`n")
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT39 '.aid' 'sentinel.txt'), $sentinelT39Bytes)
+[System.IO.File]::WriteAllBytes((Join-Path (Join-Path $ProjT39 '.aid') 'sentinel.txt'), $sentinelT39Bytes)
 
 Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT39)
 Assert-Eq "$($script:_LastRC)" '0' 'T39a aid projects add existing .aid/ project -> exit 0'
@@ -1555,7 +1555,7 @@ $regContT39 = Get-Content -LiteralPath $regT39 -Raw -ErrorAction SilentlyContinu
 Assert-Contains "$regContT39" $ProjT39 'T39d registry.yml contains the registered project path'
 
 # Sentinel file must be untouched (projects add does NOT modify tools).
-Assert-FileExists (Join-Path $ProjT39 '.aid' 'sentinel.txt') 'T39e tools untouched: sentinel.txt still present'
+Assert-FileExists (Join-Path (Join-Path $ProjT39 '.aid') 'sentinel.txt') 'T39e tools untouched: sentinel.txt still present'
 Write-Host ""
 
 # ---------------------------------------------------------------------------
@@ -1600,10 +1600,10 @@ Write-Host "--- T42: aid projects remove ---"
 $AidHomeT42 = Join-Path $TmpRoot 'aid-home-t42'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT42 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT42 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT42 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT42 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT42 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT42 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT42 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
@@ -1611,7 +1611,7 @@ $ProjT42 = Join-Path $TmpRoot 'project-t42'
 New-Item -ItemType Directory -Path $ProjT42 -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjT42 '.aid') -Force | Out-Null
 $sentinelT42Bytes = [System.Text.Encoding]::UTF8.GetBytes("sentinel`n")
-[System.IO.File]::WriteAllBytes((Join-Path $ProjT42 '.aid' 'sentinel.txt'), $sentinelT42Bytes)
+[System.IO.File]::WriteAllBytes((Join-Path (Join-Path $ProjT42 '.aid') 'sentinel.txt'), $sentinelT42Bytes)
 $regT42 = Join-Path $AidHomeT42 'registry.yml'
 
 # Pre-register.
@@ -1624,7 +1624,7 @@ Assert-Eq "$($script:_LastRC)" '0' 'T42a aid projects remove -> exit 0'
 $regContT42a = Get-Content -LiteralPath $regT42 -Raw -ErrorAction SilentlyContinue
 Assert-NotContains "$regContT42a" $ProjT42 'T42b remove: project path absent from registry after remove'
 # Sentinel file must still exist (projects remove does NOT touch tools).
-Assert-FileExists (Join-Path $ProjT42 '.aid' 'sentinel.txt') 'T42c tools untouched: sentinel.txt still present after remove'
+Assert-FileExists (Join-Path (Join-Path $ProjT42 '.aid') 'sentinel.txt') 'T42c tools untouched: sentinel.txt still present after remove'
 
 # (b) Stale entry repair: manually write a non-existent path and remove it by path.
 $stalePathT42 = Join-Path $TmpRoot 'stale-t42-does-not-exist'
@@ -1661,10 +1661,10 @@ Write-Host "--- T43: state-home exclusion (BUG-1 regression) ---"
 $AidHomeT43 = Join-Path $TmpRoot 'aid-home-t43'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT43 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT43 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT43 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT43 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT43 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT43 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT43 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
@@ -1691,7 +1691,7 @@ $env:AID_STATE_HOME      = $FakeAidT43
 $env:AID_NO_UPDATE_CHECK = '1'
 if ($env:HOME -ne $null) { $env:HOME = $FakeHomeT43 }
 Push-Location $FakeHomeT43
-$t43Lines = & $PwshExe -NoProfile -File (Join-Path $AidHomeT43 'bin' 'aid.ps1') 2>&1
+$t43Lines = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT43 'bin') 'aid.ps1') 2>&1
 $t43RC    = $LASTEXITCODE
 Pop-Location
 $env:HOME            = $savedHomeT43
@@ -1720,10 +1720,10 @@ Write-Host "--- T44: format-gate manifest guard (BUG-3 regression) ---"
 $AidHomeT44 = Join-Path $TmpRoot 'aid-home-t44'
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT44 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $AidHomeT44 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $AidHomeT44 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $AidHomeT44 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $AidHomeT44 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $AidHomeT44 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeT44 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 $AidStateT44 = Join-Path $TmpRoot 'aid-state-t44'
@@ -1734,7 +1734,7 @@ New-Item -ItemType Directory -Path $AidStateT44 -Force | Out-Null
 $UntrackedT44 = Join-Path $TmpRoot 'fg-untracked-t44'
 New-Item -ItemType Directory -Path (Join-Path $UntrackedT44 '.aid') -Force | Out-Null
 $settingsUntrackedT44 = "project:`n  name: untracked-t44`n  type: brownfield`ntools:`n  installed: []`n"
-[System.IO.File]::WriteAllText((Join-Path $UntrackedT44 '.aid' 'settings.yml'), $settingsUntrackedT44)
+[System.IO.File]::WriteAllText((Join-Path (Join-Path $UntrackedT44 '.aid') 'settings.yml'), $settingsUntrackedT44)
 # No .aid/.aid-manifest.json -- this is the untracked case.
 
 $savedAidHomeT44 = $env:AID_HOME
@@ -1744,7 +1744,7 @@ $env:AID_HOME            = $AidHomeT44
 $env:AID_STATE_HOME      = $AidStateT44
 $env:AID_NO_UPDATE_CHECK = '1'
 Push-Location $UntrackedT44
-$t44aLines = & $PwshExe -NoProfile -File (Join-Path $AidHomeT44 'bin' 'aid.ps1') status 2>&1
+$t44aLines = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT44 'bin') 'aid.ps1') status 2>&1
 Pop-Location
 $env:AID_HOME            = $savedAidHomeT44
 $env:AID_STATE_HOME      = $savedSHT44
@@ -1759,9 +1759,9 @@ Assert-NotContains $t44aOut 'older format' 'T44a aid.ps1 status in untracked rep
 $TrackedT44 = Join-Path $TmpRoot 'fg-tracked-t44'
 New-Item -ItemType Directory -Path (Join-Path $TrackedT44 '.aid') -Force | Out-Null
 $settingsTrackedT44 = "project:`n  name: tracked-t44`n  type: brownfield`ntools:`n  installed: []`n"
-[System.IO.File]::WriteAllText((Join-Path $TrackedT44 '.aid' 'settings.yml'), $settingsTrackedT44)
+[System.IO.File]::WriteAllText((Join-Path (Join-Path $TrackedT44 '.aid') 'settings.yml'), $settingsTrackedT44)
 $manifestContentT44 = '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code":{"version":"1.0.0"}}}'
-[System.IO.File]::WriteAllText((Join-Path $TrackedT44 '.aid' '.aid-manifest.json'), $manifestContentT44)
+[System.IO.File]::WriteAllText((Join-Path (Join-Path $TrackedT44 '.aid') '.aid-manifest.json'), $manifestContentT44)
 
 $savedAidHomeT44b = $env:AID_HOME
 $savedSHT44b      = $env:AID_STATE_HOME
@@ -1770,7 +1770,7 @@ $env:AID_HOME            = $AidHomeT44
 $env:AID_STATE_HOME      = $AidStateT44
 $env:AID_NO_UPDATE_CHECK = '1'
 Push-Location $TrackedT44
-$t44bLines = & $PwshExe -NoProfile -File (Join-Path $AidHomeT44 'bin' 'aid.ps1') status 2>&1
+$t44bLines = & $PwshExe -NoProfile -File (Join-Path (Join-Path $AidHomeT44 'bin') 'aid.ps1') status 2>&1
 Pop-Location
 $env:AID_HOME            = $savedAidHomeT44b
 $env:AID_STATE_HOME      = $savedSHT44b
@@ -1806,10 +1806,10 @@ function script:New-AidCodeHomeT46 {
     param([string]$Dir, [string]$Version)
     New-Item -ItemType Directory -Path (Join-Path $Dir 'bin') -Force | Out-Null
     New-Item -ItemType Directory -Path (Join-Path $Dir 'lib') -Force | Out-Null
-    Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-              -Destination (Join-Path $Dir 'bin' 'aid.ps1') -Force
+    Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+              -Destination (Join-Path (Join-Path $Dir 'bin') 'aid.ps1') -Force
     Copy-Item -LiteralPath $LocalLibPath `
-              -Destination (Join-Path $Dir 'lib' 'AidInstallCore.psm1') -Force
+              -Destination (Join-Path (Join-Path $Dir 'lib') 'AidInstallCore.psm1') -Force
     [System.IO.File]::WriteAllText((Join-Path $Dir 'VERSION'), "$Version`n")
 }
 
@@ -1817,7 +1817,7 @@ function script:New-AidFakeHomeT46 {
     param([string]$Dir, [string]$CachedLatest)
     New-Item -ItemType Directory -Path (Join-Path $Dir '.aid') -Force | Out-Null
     # .update-check: line 1 = timestamp (ignored), line 2 = cached latest version.
-    [System.IO.File]::WriteAllText((Join-Path $Dir '.aid' '.update-check'), "0`n$CachedLatest`n")
+    [System.IO.File]::WriteAllText((Join-Path (Join-Path $Dir '.aid') '.update-check'), "0`n$CachedLatest`n")
 }
 
 # Target: a project (.aid/settings.yml, NO manifest) so 'aid update' reaches the
@@ -1826,7 +1826,7 @@ function script:New-AidFakeHomeT46 {
 # ("set it up?"), before the preamble.
 $ProjT46 = Join-Path $TmpRoot 'proj-t46'
 New-Item -ItemType Directory -Path (Join-Path $ProjT46 '.aid') -Force | Out-Null
-[System.IO.File]::WriteAllText((Join-Path $ProjT46 '.aid' 'settings.yml'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path $ProjT46 '.aid') 'settings.yml'),
     "project:`n  name: proj-t46`n  type: brownfield`ntools:`n  installed: []`n")
 $BundleDirT46 = Join-Path $TmpRoot 'bundle-dir-t46'
 New-Item -ItemType Directory -Path $BundleDirT46 -Force | Out-Null
@@ -1930,10 +1930,10 @@ Write-Host ""
 $MigAidHome = Join-Path $TmpRoot 'aid-home-mig'
 New-Item -ItemType Directory -Path (Join-Path $MigAidHome 'bin') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $MigAidHome 'lib') -Force | Out-Null
-Copy-Item -LiteralPath (Join-Path $RepoRoot 'bin' 'aid.ps1') `
-          -Destination (Join-Path $MigAidHome 'bin' 'aid.ps1') -Force
+Copy-Item -LiteralPath (Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1') `
+          -Destination (Join-Path (Join-Path $MigAidHome 'bin') 'aid.ps1') -Force
 Copy-Item -LiteralPath $LocalLibPath `
-          -Destination (Join-Path $MigAidHome 'lib' 'AidInstallCore.psm1') -Force
+          -Destination (Join-Path (Join-Path $MigAidHome 'lib') 'AidInstallCore.psm1') -Force
 [System.IO.File]::WriteAllBytes((Join-Path $MigAidHome 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
@@ -1991,40 +1991,40 @@ function Run-MigUpdate {
 Write-Host "--- T49: Codex old-layout migration ---"
 
 $ProjT49 = Join-Path $TmpRoot 'project-t49'
-New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.agents' 'skills') -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.agents' 'aid') -Force | Out-Null
-New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.codex' 'agents') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path (Join-Path $ProjT49 '.agents') 'skills') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path (Join-Path $ProjT49 '.agents') 'aid') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path (Join-Path $ProjT49 '.codex') 'agents') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjT49 '.aid') -Force | Out-Null
 
 # AID-owned content under retired .agents\ (marker 1: aid- prefix).
-[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.agents' 'skills' 'aid-orchestrator.md'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT49 '.agents') 'skills') 'aid-orchestrator.md'),
     "old codex orchestrator skill`n")
 # AID-owned content under .agents\ (marker 2: inside aid\ subdir).
-[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.agents' 'aid' 'shared.md'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT49 '.agents') 'aid') 'shared.md'),
     "old shared aid config`n")
 # USER content: no AID marker -- must survive byte-identical.
 $T49UserContent = "USER-FILE-T49-SENTINEL`n"
-[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.agents' 'user-file.txt'), $T49UserContent)
-$T49UserHashBefore = (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+[System.IO.File]::WriteAllText((Join-Path (Join-Path $ProjT49 '.agents') 'user-file.txt'), $T49UserContent)
+$T49UserHashBefore = (Get-FileHash -LiteralPath (Join-Path (Join-Path $ProjT49 '.agents') 'user-file.txt') `
     -Algorithm SHA256).Hash
 
 # Old .codex\agents\ split (aid- prefix -- will be replaced by new layout).
-[System.IO.File]::WriteAllText((Join-Path $ProjT49 '.codex' 'agents' 'aid-orchestrator.toml'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT49 '.codex') 'agents') 'aid-orchestrator.toml'),
     "old codex agent toml`n")
 
-Write-OldManifest -ManifestPath (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -Tool 'codex'
-Write-OldSettings -SettingsPath (Join-Path $ProjT49 '.aid' 'settings.yml') -Tool 'codex'
+Write-OldManifest -ManifestPath (Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json') -Tool 'codex'
+Write-OldSettings -SettingsPath (Join-Path (Join-Path $ProjT49 '.aid') 'settings.yml') -Tool 'codex'
 
 Run-MigUpdate -BundleFile $MigFixCodex -TargetRepo $ProjT49
 Assert-Eq "$($script:_LastRC)" '0' 'T49-01 aid update on codex old-layout -> exit 0'
 
-# AC5-a: retired .agents\ AID-owned content GONE.
-Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'skills' 'aid-orchestrator.md') -PathType Leaf)) `
-    'T49-02 (AC5) .agents\skills\aid-orchestrator.md removed (AID-owned, marker 1)' `
-    'aid-orchestrator.md must be removed by retired-root sweep'
-Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'aid' 'shared.md') -PathType Leaf)) `
-    'T49-03 (AC5) .agents\aid\shared.md removed (AID-owned, marker 2)' `
-    'shared.md must be removed by retired-root sweep'
+# AC5-a: retired .agents\ AID-owned content GONE from original location.
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.agents') 'skills') 'aid-orchestrator.md') -PathType Leaf)) `
+    'T49-02 (AC5) .agents\skills\aid-orchestrator.md moved out (AID-owned, marker 1)' `
+    'aid-orchestrator.md must be moved out of retired root by sweep'
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.agents') 'aid') 'shared.md') -PathType Leaf)) `
+    'T49-03 (AC5) .agents\aid\shared.md moved out (AID-owned, marker 2)' `
+    'shared.md must be moved out of retired root by sweep'
 $T49AidRemains = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.agents') -Recurse -ErrorAction SilentlyContinue |
     Where-Object { $_.Name -like 'aid-*' -or ($_.FullName -match '[\\/]aid[\\/]') })
 Assert ($T49AidRemains.Count -eq 0) `
@@ -2032,31 +2032,41 @@ Assert ($T49AidRemains.Count -eq 0) `
     "found $($T49AidRemains.Count) AID-owned item(s) still under .agents\"
 
 # AC5-b: new .codex\ unified layout present.
-Assert-DirExists (Join-Path $ProjT49 '.codex' 'agents') 'T49-05 (AC5) new .codex\agents\ present'
-Assert-DirExists (Join-Path $ProjT49 '.codex' 'aid')    'T49-06 (AC5) new .codex\aid\ present'
-Assert-DirExists (Join-Path $ProjT49 '.codex' 'skills') 'T49-06b (AC5) new .codex\skills\ present'
-$T49NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.codex' 'agents') `
+Assert-DirExists (Join-Path (Join-Path $ProjT49 '.codex') 'agents') 'T49-05 (AC5) new .codex\agents\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT49 '.codex') 'aid')    'T49-06 (AC5) new .codex\aid\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT49 '.codex') 'skills') 'T49-06b (AC5) new .codex\skills\ present'
+$T49NewAgents = @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $ProjT49 '.codex') 'agents') `
     -Filter 'aid-*.toml' -File -ErrorAction SilentlyContinue)
 Assert ($T49NewAgents.Count -gt 0) `
     'T49-07 (AC5) .codex\agents\ contains aid-*.toml files from new bundle' `
     '.codex\agents\ should contain aid-*.toml files'
 
 # AC5-c: user-file.txt byte-identical (SHA256).
-Assert-FileExists (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+Assert-FileExists (Join-Path (Join-Path $ProjT49 '.agents') 'user-file.txt') `
     'T49-08a (AC5) user-file.txt still exists under .agents\'
-$T49UserHashAfter = (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+$T49UserHashAfter = (Get-FileHash -LiteralPath (Join-Path (Join-Path $ProjT49 '.agents') 'user-file.txt') `
     -Algorithm SHA256).Hash
 Assert-Eq "$T49UserHashAfter" "$T49UserHashBefore" `
     'T49-08b (AC5) user-file.txt SHA256 byte-identical (user content untouched)'
 
 # AC8: tools.codex.version == $Ver (uniform).
-$T49ManifestPath = Join-Path $ProjT49 '.aid' '.aid-manifest.json'
+$T49ManifestPath = Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json'
 Assert-FileExists $T49ManifestPath 'T49-09 (AC8) manifest exists after aid update'
 if (Test-Path $T49ManifestPath -PathType Leaf) {
     $T49ManObj = Get-Content -LiteralPath $T49ManifestPath -Raw | ConvertFrom-Json
     $T49Ver = $T49ManObj.tools.codex.version
     Assert-Eq "$T49Ver" "$Ver" 'T49-10 (AC8) tools.codex.version == current version (uniform)'
 }
+
+# W3: reversibility -- AID-owned files moved to .aid\.trash\ (not deleted).
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.aid') '.trash') '.agents') 'skills') 'aid-orchestrator.md') `
+    'T49-11 (W3) aid-orchestrator.md in .aid\.trash\ (reversible move, not delete)'
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.aid') '.trash') '.agents') 'aid') 'shared.md') `
+    'T49-12 (W3) .agents\aid\shared.md in .aid\.trash\ (reversible move, not delete)'
+# W3: user-file.txt must NOT be in the trash.
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.aid') '.trash') '.agents') 'user-file.txt') -PathType Leaf)) `
+    'T49-13 (W3) user-file.txt absent from .aid\.trash\ (user content never trashed)' `
+    'user-file.txt must NOT appear in .aid\.trash\ -- only AID-owned files are trashed'
 Write-Host ""
 
 # ===========================================================================
@@ -2088,52 +2098,52 @@ Write-Host ""
 Write-Host "--- T50: Cursor old-layout migration ---"
 
 $ProjT50 = Join-Path $TmpRoot 'project-t50'
-New-Item -ItemType Directory -Path (Join-Path $ProjT50 '.cursor' 'rules') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjT50 '.aid') -Force | Out-Null
 
 # AID-owned content under retired .cursor\rules\ (marker 1: aid- prefix).
-[System.IO.File]::WriteAllText((Join-Path $ProjT50 '.cursor' 'rules' 'aid-architect.mdc'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'aid-architect.mdc'),
     "old cursor architect rule`n")
-[System.IO.File]::WriteAllText((Join-Path $ProjT50 '.cursor' 'rules' 'aid-clerk.mdc'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'aid-clerk.mdc'),
     "old cursor clerk rule`n")
 # USER content: no AID marker -- must survive byte-identical.
 $T50UserContent = "USER-CURSOR-MY-RULE-SENTINEL`n"
-[System.IO.File]::WriteAllText((Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc'), $T50UserContent)
-$T50UserHashBefore = (Get-FileHash -LiteralPath (Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc') `
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'my.mdc'), $T50UserContent)
+$T50UserHashBefore = (Get-FileHash -LiteralPath (Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'my.mdc') `
     -Algorithm SHA256).Hash
 
 # AGENTS.md: AID:BEGIN..END region + user lines outside it.
 $T50AgentsContent = "# AGENTS.md`n`n## My Project Notes`nUSER-LINE-BEFORE-REGION`n`n<!-- AID:BEGIN -->`n## Old AID section (will be replaced by migration)`nThis is old AID content inside the region.`n<!-- AID:END -->`n`n## My Custom Section`nUSER-LINE-AFTER-REGION`n"
 [System.IO.File]::WriteAllText((Join-Path $ProjT50 'AGENTS.md'), $T50AgentsContent)
 
-Write-OldManifest -ManifestPath (Join-Path $ProjT50 '.aid' '.aid-manifest.json') -Tool 'cursor'
-Write-OldSettings -SettingsPath (Join-Path $ProjT50 '.aid' 'settings.yml') -Tool 'cursor'
+Write-OldManifest -ManifestPath (Join-Path (Join-Path $ProjT50 '.aid') '.aid-manifest.json') -Tool 'cursor'
+Write-OldSettings -SettingsPath (Join-Path (Join-Path $ProjT50 '.aid') 'settings.yml') -Tool 'cursor'
 
 Run-MigUpdate -BundleFile $MigFixCursor -TargetRepo $ProjT50
 Assert-Eq "$($script:_LastRC)" '0' 'T50-01 aid update on cursor old-layout -> exit 0'
 
-# AC5-a: retired .cursor\rules\ AID-owned files GONE.
-Assert (-not (Test-Path (Join-Path $ProjT50 '.cursor' 'rules' 'aid-architect.mdc') -PathType Leaf)) `
-    'T50-02 (AC5) .cursor\rules\aid-architect.mdc removed (AID-owned, marker 1)' `
-    'aid-architect.mdc must be removed by retired-root sweep'
-Assert (-not (Test-Path (Join-Path $ProjT50 '.cursor' 'rules' 'aid-clerk.mdc') -PathType Leaf)) `
-    'T50-03 (AC5) .cursor\rules\aid-clerk.mdc removed (AID-owned, marker 1)' `
-    'aid-clerk.mdc must be removed by retired-root sweep'
+# AC5-a: retired .cursor\rules\ AID-owned files GONE from original location.
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'aid-architect.mdc') -PathType Leaf)) `
+    'T50-02 (AC5) .cursor\rules\aid-architect.mdc moved out (AID-owned, marker 1)' `
+    'aid-architect.mdc must be moved out of retired root by sweep'
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'aid-clerk.mdc') -PathType Leaf)) `
+    'T50-03 (AC5) .cursor\rules\aid-clerk.mdc moved out (AID-owned, marker 1)' `
+    'aid-clerk.mdc must be moved out of retired root by sweep'
 
 # AC5-b: new .cursor\ unified layout present.
-Assert-DirExists (Join-Path $ProjT50 '.cursor' 'agents') 'T50-04 (AC5) new .cursor\agents\ present'
-Assert-DirExists (Join-Path $ProjT50 '.cursor' 'aid')    'T50-05 (AC5) new .cursor\aid\ present'
-Assert-DirExists (Join-Path $ProjT50 '.cursor' 'skills') 'T50-05b (AC5) new .cursor\skills\ present'
-$T50NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT50 '.cursor' 'agents') `
+Assert-DirExists (Join-Path (Join-Path $ProjT50 '.cursor') 'agents') 'T50-04 (AC5) new .cursor\agents\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT50 '.cursor') 'aid')    'T50-05 (AC5) new .cursor\aid\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT50 '.cursor') 'skills') 'T50-05b (AC5) new .cursor\skills\ present'
+$T50NewAgents = @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $ProjT50 '.cursor') 'agents') `
     -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
 Assert ($T50NewAgents.Count -gt 0) `
     'T50-06 (AC5) .cursor\agents\ contains aid-*.md files from new bundle' `
     '.cursor\agents\ should contain aid-*.md files'
 
 # AC5-c: user .cursor\rules\my.mdc byte-identical (SHA256).
-Assert-FileExists (Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc') `
+Assert-FileExists (Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'my.mdc') `
     'T50-07 (AC5) .cursor\rules\my.mdc (user content) still exists'
-$T50UserHashAfter = (Get-FileHash -LiteralPath (Join-Path $ProjT50 '.cursor' 'rules' 'my.mdc') `
+$T50UserHashAfter = (Get-FileHash -LiteralPath (Join-Path (Join-Path (Join-Path $ProjT50 '.cursor') 'rules') 'my.mdc') `
     -Algorithm SHA256).Hash
 Assert-Eq "$T50UserHashAfter" "$T50UserHashBefore" `
     'T50-08 (AC5) .cursor\rules\my.mdc SHA256 byte-identical (user content untouched)'
@@ -2147,13 +2157,23 @@ Assert-Contains "$T50AgentsAfter" '<!-- AID:BEGIN -->'       'T50-12 (AC5) AGENT
 Assert-Contains "$T50AgentsAfter" '<!-- AID:END -->'         'T50-13 (AC5) AGENTS.md: AID:END marker present after region merge'
 
 # AC8: tools.cursor.version == $Ver (uniform).
-$T50ManifestPath = Join-Path $ProjT50 '.aid' '.aid-manifest.json'
+$T50ManifestPath = Join-Path (Join-Path $ProjT50 '.aid') '.aid-manifest.json'
 Assert-FileExists $T50ManifestPath 'T50-14 (AC8) manifest exists after aid update'
 if (Test-Path $T50ManifestPath -PathType Leaf) {
     $T50ManObj = Get-Content -LiteralPath $T50ManifestPath -Raw | ConvertFrom-Json
     $T50Ver = $T50ManObj.tools.cursor.version
     Assert-Eq "$T50Ver" "$Ver" 'T50-15 (AC8) tools.cursor.version == current version (uniform)'
 }
+
+# W3: reversibility -- AID-owned cursor files moved to .aid\.trash\ (not deleted).
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT50 '.aid') '.trash') '.cursor') 'rules') 'aid-architect.mdc') `
+    'T50-16 (W3) aid-architect.mdc in .aid\.trash\ (reversible move, not delete)'
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT50 '.aid') '.trash') '.cursor') 'rules') 'aid-clerk.mdc') `
+    'T50-17 (W3) aid-clerk.mdc in .aid\.trash\ (reversible move, not delete)'
+# W3: user my.mdc must NOT be in the trash.
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT50 '.aid') '.trash') '.cursor') 'rules') 'my.mdc') -PathType Leaf)) `
+    'T50-18 (W3) my.mdc absent from .aid\.trash\ (user content never trashed)' `
+    'my.mdc must NOT appear in .aid\.trash\ -- only AID-owned files are trashed'
 Write-Host ""
 
 # ===========================================================================
@@ -2184,52 +2204,52 @@ Write-Host ""
 Write-Host "--- T51: Antigravity old-layout migration ---"
 
 $ProjT51 = Join-Path $TmpRoot 'project-t51'
-New-Item -ItemType Directory -Path (Join-Path $ProjT51 '.agent' 'rules') -Force | Out-Null
+New-Item -ItemType Directory -Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') -Force | Out-Null
 New-Item -ItemType Directory -Path (Join-Path $ProjT51 '.aid') -Force | Out-Null
 
 # AID-owned content under retired .agent\rules\ (marker 1: aid- prefix).
-[System.IO.File]::WriteAllText((Join-Path $ProjT51 '.agent' 'rules' 'aid-architect.md'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'aid-architect.md'),
     "old antigravity architect rule`n")
-[System.IO.File]::WriteAllText((Join-Path $ProjT51 '.agent' 'rules' 'aid-clerk.md'),
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'aid-clerk.md'),
     "old antigravity clerk rule`n")
 # USER content: no AID marker -- must survive byte-identical.
 $T51UserContent = "USER-AGENT-RULES-SENTINEL`n"
-[System.IO.File]::WriteAllText((Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md'), $T51UserContent)
-$T51UserHashBefore = (Get-FileHash -LiteralPath (Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md') `
+[System.IO.File]::WriteAllText((Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'my-team-rules.md'), $T51UserContent)
+$T51UserHashBefore = (Get-FileHash -LiteralPath (Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'my-team-rules.md') `
     -Algorithm SHA256).Hash
 
 # AGENTS.md: AID:BEGIN..END region + user content outside.
 $T51AgentsContent = "# AGENTS.md`n`nUSER-ANTIGRAVITY-LINE-BEFORE`n`n<!-- AID:BEGIN -->`n## Old AID agents section`nSome old AID content.`n<!-- AID:END -->`n`nUSER-ANTIGRAVITY-LINE-AFTER`n"
 [System.IO.File]::WriteAllText((Join-Path $ProjT51 'AGENTS.md'), $T51AgentsContent)
 
-Write-OldManifest -ManifestPath (Join-Path $ProjT51 '.aid' '.aid-manifest.json') -Tool 'antigravity'
-Write-OldSettings -SettingsPath (Join-Path $ProjT51 '.aid' 'settings.yml') -Tool 'antigravity'
+Write-OldManifest -ManifestPath (Join-Path (Join-Path $ProjT51 '.aid') '.aid-manifest.json') -Tool 'antigravity'
+Write-OldSettings -SettingsPath (Join-Path (Join-Path $ProjT51 '.aid') 'settings.yml') -Tool 'antigravity'
 
 Run-MigUpdate -BundleFile $MigFixAntigrav -TargetRepo $ProjT51
 Assert-Eq "$($script:_LastRC)" '0' 'T51-01 aid update on antigravity old-layout -> exit 0'
 
-# AC5-a: retired .agent\rules\ AID-owned files GONE.
-Assert (-not (Test-Path (Join-Path $ProjT51 '.agent' 'rules' 'aid-architect.md') -PathType Leaf)) `
-    'T51-02 (AC5) .agent\rules\aid-architect.md removed (AID-owned, marker 1)' `
-    'aid-architect.md must be removed by retired-root sweep'
-Assert (-not (Test-Path (Join-Path $ProjT51 '.agent' 'rules' 'aid-clerk.md') -PathType Leaf)) `
-    'T51-03 (AC5) .agent\rules\aid-clerk.md removed (AID-owned, marker 1)' `
-    'aid-clerk.md must be removed by retired-root sweep'
+# AC5-a: retired .agent\rules\ AID-owned files GONE from original location.
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'aid-architect.md') -PathType Leaf)) `
+    'T51-02 (AC5) .agent\rules\aid-architect.md moved out (AID-owned, marker 1)' `
+    'aid-architect.md must be moved out of retired root by sweep'
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'aid-clerk.md') -PathType Leaf)) `
+    'T51-03 (AC5) .agent\rules\aid-clerk.md moved out (AID-owned, marker 1)' `
+    'aid-clerk.md must be moved out of retired root by sweep'
 
 # AC5-b: new .agent\ unified layout present.
-Assert-DirExists (Join-Path $ProjT51 '.agent' 'agents') 'T51-04 (AC5) new .agent\agents\ present'
-Assert-DirExists (Join-Path $ProjT51 '.agent' 'aid')    'T51-05 (AC5) new .agent\aid\ present'
-Assert-DirExists (Join-Path $ProjT51 '.agent' 'skills') 'T51-05b (AC5) new .agent\skills\ present'
-$T51NewAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT51 '.agent' 'agents') `
+Assert-DirExists (Join-Path (Join-Path $ProjT51 '.agent') 'agents') 'T51-04 (AC5) new .agent\agents\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT51 '.agent') 'aid')    'T51-05 (AC5) new .agent\aid\ present'
+Assert-DirExists (Join-Path (Join-Path $ProjT51 '.agent') 'skills') 'T51-05b (AC5) new .agent\skills\ present'
+$T51NewAgents = @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $ProjT51 '.agent') 'agents') `
     -Filter 'aid-*.md' -File -ErrorAction SilentlyContinue)
 Assert ($T51NewAgents.Count -gt 0) `
     'T51-06 (AC5) .agent\agents\ contains aid-*.md files from new bundle' `
     '.agent\agents\ should contain aid-*.md files'
 
 # AC5-c: user .agent\rules\my-team-rules.md byte-identical (SHA256).
-Assert-FileExists (Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md') `
+Assert-FileExists (Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'my-team-rules.md') `
     'T51-07 (AC5) .agent\rules\my-team-rules.md (user content) still exists'
-$T51UserHashAfter = (Get-FileHash -LiteralPath (Join-Path $ProjT51 '.agent' 'rules' 'my-team-rules.md') `
+$T51UserHashAfter = (Get-FileHash -LiteralPath (Join-Path (Join-Path (Join-Path $ProjT51 '.agent') 'rules') 'my-team-rules.md') `
     -Algorithm SHA256).Hash
 Assert-Eq "$T51UserHashAfter" "$T51UserHashBefore" `
     'T51-08 (AC5) .agent\rules\my-team-rules.md SHA256 byte-identical (user content untouched)'
@@ -2242,13 +2262,23 @@ Assert-Contains "$T51AgentsAfter" '<!-- AID:BEGIN -->'             'T51-11 (AC5)
 Assert-Contains "$T51AgentsAfter" '<!-- AID:END -->'               'T51-12 (AC5) AGENTS.md: AID:END marker present'
 
 # AC8: tools.antigravity.version == $Ver (uniform).
-$T51ManifestPath = Join-Path $ProjT51 '.aid' '.aid-manifest.json'
+$T51ManifestPath = Join-Path (Join-Path $ProjT51 '.aid') '.aid-manifest.json'
 Assert-FileExists $T51ManifestPath 'T51-13 (AC8) manifest exists after aid update'
 if (Test-Path $T51ManifestPath -PathType Leaf) {
     $T51ManObj = Get-Content -LiteralPath $T51ManifestPath -Raw | ConvertFrom-Json
     $T51Ver = $T51ManObj.tools.antigravity.version
     Assert-Eq "$T51Ver" "$Ver" 'T51-14 (AC8) tools.antigravity.version == current version (uniform)'
 }
+
+# W3: reversibility -- AID-owned antigravity files moved to .aid\.trash\ (not deleted).
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT51 '.aid') '.trash') '.agent') 'rules') 'aid-architect.md') `
+    'T51-15 (W3) aid-architect.md in .aid\.trash\ (reversible move, not delete)'
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT51 '.aid') '.trash') '.agent') 'rules') 'aid-clerk.md') `
+    'T51-16 (W3) aid-clerk.md in .aid\.trash\ (reversible move, not delete)'
+# W3: user my-team-rules.md must NOT be in the trash.
+Assert (-not (Test-Path (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT51 '.aid') '.trash') '.agent') 'rules') 'my-team-rules.md') -PathType Leaf)) `
+    'T51-17 (W3) my-team-rules.md absent from .aid\.trash\ (user content never trashed)' `
+    'my-team-rules.md must NOT appear in .aid\.trash\ -- only AID-owned files are trashed'
 Write-Host ""
 
 # ===========================================================================
@@ -2267,13 +2297,13 @@ Write-Host ""
 Write-Host "--- T52: Idempotency -- second aid update on migrated old-layout (codex) ---"
 
 # Snapshot manifest and witness file sha256 before the second run.
-$T52ManifestSha1 = if (Test-Path (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -PathType Leaf) {
-    (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -Algorithm SHA256).Hash
+$T52ManifestSha1 = if (Test-Path (Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json') -PathType Leaf) {
+    (Get-FileHash -LiteralPath (Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json') -Algorithm SHA256).Hash
 } else { '' }
 
 $T52WitnessFile = $null
 $T52WitnessSha1 = ''
-$T52CandidateAgents = @(Get-ChildItem -LiteralPath (Join-Path $ProjT49 '.codex' 'agents') `
+$T52CandidateAgents = @(Get-ChildItem -LiteralPath (Join-Path (Join-Path $ProjT49 '.codex') 'agents') `
     -Filter 'aid-*.toml' -File -ErrorAction SilentlyContinue | Sort-Object Name)
 if ($T52CandidateAgents.Count -gt 0) {
     $T52WitnessFile = $T52CandidateAgents[0].FullName
@@ -2285,13 +2315,13 @@ Run-MigUpdate -BundleFile $MigFixCodex -TargetRepo $ProjT49
 Assert-Eq "$($script:_LastRC)" '0' 'T52-01 second aid update on migrated codex repo -> exit 0'
 
 # .agents\skills\ must remain absent (no resurrection).
-Assert (-not (Test-Path (Join-Path $ProjT49 '.agents' 'skills') -PathType Container)) `
+Assert (-not (Test-Path (Join-Path (Join-Path $ProjT49 '.agents') 'skills') -PathType Container)) `
     'T52-02 .agents\skills\ remains absent after second update (idempotent, no resurrection)' `
     '.agents\skills\ must not reappear after second update'
 
 # tools.codex.version still == $Ver.
-if (Test-Path (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -PathType Leaf) {
-    $T52ManObj = Get-Content -LiteralPath (Join-Path $ProjT49 '.aid' '.aid-manifest.json') -Raw | ConvertFrom-Json
+if (Test-Path (Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json') -PathType Leaf) {
+    $T52ManObj = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT49 '.aid') '.aid-manifest.json') -Raw | ConvertFrom-Json
     Assert-Eq "$($T52ManObj.tools.codex.version)" "$Ver" `
         'T52-03 tools.codex.version still correct after second update (idempotent)'
 }
@@ -2307,14 +2337,20 @@ if ($T52WitnessFile -and $T52WitnessSha1) {
 }
 
 # User-file.txt SHA256 still byte-identical after second update.
-Assert-FileExists (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+Assert-FileExists (Join-Path (Join-Path $ProjT49 '.agents') 'user-file.txt') `
     'T52-05a user-file.txt still exists after second update'
-if (Test-Path (Join-Path $ProjT49 '.agents' 'user-file.txt') -PathType Leaf) {
-    $T52UserHashAfter2 = (Get-FileHash -LiteralPath (Join-Path $ProjT49 '.agents' 'user-file.txt') `
+if (Test-Path (Join-Path (Join-Path $ProjT49 '.agents') 'user-file.txt') -PathType Leaf) {
+    $T52UserHashAfter2 = (Get-FileHash -LiteralPath (Join-Path (Join-Path $ProjT49 '.agents') 'user-file.txt') `
         -Algorithm SHA256).Hash
     Assert-Eq "$T52UserHashAfter2" "$T49UserHashBefore" `
         'T52-05b user-file.txt SHA256 still byte-identical after second update (user content untouched)'
 }
+
+# W3: idempotency of trash -- second run must not re-trash or wipe .aid\.trash\.
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.aid') '.trash') '.agents') 'skills') 'aid-orchestrator.md') `
+    'T52-06 (W3) .aid\.trash\ persists after second update (idempotent -- trash not wiped)'
+Assert-FileExists (Join-Path (Join-Path (Join-Path (Join-Path (Join-Path $ProjT49 '.aid') '.trash') '.agents') 'aid') 'shared.md') `
+    'T52-07 (W3) trash\shared.md persists after second update (idempotent)'
 Write-Host ""
 
 # ===========================================================================

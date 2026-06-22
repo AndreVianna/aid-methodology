@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** PASS — Small-tier quick-check, 0 CRITICAL/HIGH. Frontmatter schema-valid (reviewer dry-ran build-kb-index.sh -> exit 0). Faithful promotion (3/3 matrix rows match source; confidence distribution identical; copied not re-derived). Codex unified. 6th-tool extensibility explicit. release-tracking 4 [CHANGE] additive + correct. Scope clean (2 files, no INDEX).
+- **Elapsed:** ~00:04
+- **Notes:** .aid/knowledge/host-tool-capabilities.md (new primary KB doc: 5-tool matrix + FR4 decision + AC4b discharge + adding-a-6th-tool pattern) + release-tracking.md Unreleased entries. INDEX regen deferred to task-019.
 
 ---
 

@@ -183,7 +183,7 @@ Python in the repo.
 Bash (Shell) + Node (JavaScript) + PowerShell helpers consumed by skills at
 slash-command invocation. Every script has 7 byte-identical copies on disk
 (canonical + `.claude/aid/scripts/` dogfood + the 5 profile-tree scripts dirs:
-`profiles/claude-code/.claude/aid/scripts/`, `profiles/codex/.agents/aid/scripts/`,
+`profiles/claude-code/.claude/aid/scripts/`, `profiles/codex/.codex/aid/scripts/`,
 `profiles/cursor/.cursor/aid/scripts/`, `profiles/copilot-cli/.github/aid/scripts/`,
 `profiles/antigravity/.agent/aid/scripts/`)
 — verified by `verify_deterministic.py`. Repo totals are recorded in `.aid/generated/project-index.md`.

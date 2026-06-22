@@ -11,6 +11,7 @@ changelog:
   - 2026-06-01: cycle-9 post-merge re-discovery for work-001-add-providers (PRs #42/#43/#44) — banner, completeness table, and revision history updated for the 3→5 profile reality
   - 2026-06-03: cycle-10 targeted re-discovery via /aid-housekeep — KB-delta refresh for the new aid-housekeep skill (10→11 user-facing skills) + housekeep scripts + 5 new test suites (18→24); 9 docs refreshed
   - 2026-06-09: cycle-12 targeted re-discovery via /aid-housekeep KB-DELTA — aid-ask added (11→12 user-facing skills) + /aid-execute argument order corrected to work-first (PR #70); pipeline-contracts.md refreshed (new /aid-ask contract block)
+  - 2026-06-21: work-005 delivery-003 KB lockstep — host-tool-capabilities.md added (15→16 active docs), content-isolation R6 revised for the Codex unification, retired-term sweep, INDEX regenerated
 ---
 
 # Knowledge Base — AID
@@ -18,7 +19,7 @@ changelog:
 > **Project:** AID — AI Integrated Development
 > **Discovery cycle:** 10 (targeted re-discovery via /aid-housekeep KB-DELTA — KB refreshed for the new optional `aid-housekeep` skill (10→11 user-facing skills), the `canonical/scripts/housekeep/` helpers, and 5 new test suites (18→24); 9 docs refreshed, FIX complete, awaiting re-REVIEW)
 > **Last KB review:** 2026-06-01 (cycle-9 REVIEW — graded D- pre-FIX: 3→5 profile drift across ~13 docs; FIX applied; cycle-10 re-REVIEW pending)
-> **Status:** 15 active KB documents (unchanged doc-set — `aid-housekeep` is a *skill*, not a KB doc, like the providers before it; 16 originally generated in cycle-1; 2 deleted in Q3 FIX — `security-model.md` merged into `coding-standards.md §11`, `ui-architecture.md` replaced by `repo-presentation.md`; 2 renamed: `data-model.md → schemas.md`, `api-contracts.md → pipeline-contracts.md`).
+> **Status:** 16 active KB documents (work-005 delivery-003 added `host-tool-capabilities.md` — the 16th; the prior 15 were an unchanged doc-set — `aid-housekeep` is a *skill*, not a KB doc, like the providers before it; 16 originally generated in cycle-1; 2 deleted in Q3 FIX — `security-model.md` merged into `coding-standards.md §11`, `ui-architecture.md` replaced by `repo-presentation.md`; 2 renamed: `data-model.md → schemas.md`, `api-contracts.md → pipeline-contracts.md`).
 
 Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
@@ -43,6 +44,7 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 | 13 | [infrastructure.md](infrastructure.md) | Populated | 2026-06-03 | aid-researcher (quality doc-set); cycle-10 §9a fixes — setup line counts stripped, branch de-pinned, stale merge-history removed, branch-protection reconciled live (Q27) |
 | 14 | [repo-presentation.md](repo-presentation.md) | Populated | 2026-06-03 | aid-researcher (architecture doc-set); cycle-10 aid-housekeep (pipeline-10 vs installed-11 distinction; skill-counts subsection) |
 | 15 | [feature-inventory.md](feature-inventory.md) | Populated | 2026-06-03 | orchestrator; cycle-10 aid-housekeep (11th user-facing skill row + engineering work-item) |
+| 16 | [host-tool-capabilities.md](host-tool-capabilities.md) | Populated | 2026-06-21 | work-005 delivery-003 task-018 — NEW primary doc: per-tool capability matrix + always-on/format verdicts + FR4 decision + adding-a-6th-tool pattern; promoted (copied) from the verified work-005 capability study |
 
 **Removed in cycle-1 FIX Phase A (Q3):**
 - ~~`security-model.md`~~ — content extracted to `coding-standards.md §11 Security-By-Design Conventions` (gitignore policy, shell `set -euo pipefail` discipline, agent-permission allowlist pattern); dedicated security doc is contortion for a non-runtime methodology repo
@@ -50,7 +52,7 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 
 **Meta-documents:**
 - [STATE.md](STATE.md) — Discovery-area state ledger (Q&A, Review History, Calibration Log)
-- [INDEX.md](INDEX.md) — Auto-generated per-doc summaries (regenerate via `bash canonical/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`)
+- [INDEX.md](INDEX.md) — Auto-generated per-doc summaries (regenerate via `bash canonical/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md`)
 
 ## Revision History
 
@@ -79,3 +81,4 @@ Read [`INDEX.md`](INDEX.md) first for a one-paragraph summary of each KB doc.
 | 21 | 2026-06-09 | cycle-12 | Targeted re-discovery complete (via /aid-housekeep KB-DELTA) | KB-DELTA drift from the **new `aid-ask` skill** (PR for aid-ask: optional, on-demand, read-only off-pipeline Q&A skill; 11→12 user-facing skills) **and** the **/aid-execute argument-order correction** (PR #70: now work-first `/aid-execute <work-NNN> <task-NNN>`, single-work shorthand preserved). Surgically refreshed 2 docs: `pipeline-contracts.md` (12 user-facing count + corrected aid-execute contract heading/body + new /aid-ask consume/produce contract block) and this README. Not a full re-discovery — historical cycle rows untouched. |
 | 22 | 2026-06-20 | interview | KB hydrated (via /aid-interview work-005) | Added 1 durable term to `domain-glossary.md` — "Format ⊥ behavior (behavioral metadata)" (work-005 `FR4-distinction`). Additive only; built-state generator/format terms left unchanged pending ship. No re-discovery; historical rows untouched. |
 | 23 | 2026-06-20 | interview | Feature decomposition (via /aid-interview work-005) | work-005 approved + decomposed into **4 features** (corrected from a 7-feature proposal via an adversarial A+ gate). Features live in the work folder; no KB doc content changed. |
+| 24 | 2026-06-21 | execute | KB lockstep (via /aid-execute work-005 delivery-003) | Final-delivery KB lockstep for the profile-generator simplification: `content-isolation.md` R6 revised for the Codex unification (task-016); rules-mechanism + multi-format terms + deleted-renderer names retired across glossary/pipeline-contracts/architecture/integration-map/coding-standards (task-017; +3 PowerShell gotchas in coding-standards §15); NEW `host-tool-capabilities.md` promoted from the verified capability study (task-018; 15→16 active docs); INDEX regenerated (task-019). Numeric script/suite counts deferred to /aid-housekeep (OQ2). Execute-phase lockstep — not a discovery cycle; historical rows untouched. |

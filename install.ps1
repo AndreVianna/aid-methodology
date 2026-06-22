@@ -106,6 +106,10 @@ param(
 # Treat unhandled exceptions as fatal exit 1.
 $ErrorActionPreference = 'Stop'
 
+# Enable TLS 1.2 for HTTPS. Windows PowerShell 5.1 (.NET Framework) can default to
+# SSL3/TLS1.0, which GitHub/npm/pypi reject -> downloads fail. Harmless on PS7/.NET Core.
+try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch {}
+
 # ---------------------------------------------------------------------------
 # Piped-mode detection.
 #
