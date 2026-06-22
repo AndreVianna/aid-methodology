@@ -80,3 +80,7 @@ traceability:
 #   minimum_grade: A+
 # monitor:
 #   minimum_grade: A
+
+kb_baseline:
+  branch: master
+  tip_date: 2026-06-21T22:23:47-04:00

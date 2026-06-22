@@ -16,24 +16,24 @@ flowchart TB
     classDef verify  fill:#2E7D32,stroke:#1B5E20,color:#fff,stroke-width:2px;
     classDef release fill:#92400E,stroke:#78350F,color:#fff,stroke-width:2px;
 
-    SRC["canonical/<br/>agents, skills, templates,<br/>scripts, recipes"]:::src
+    SRC["canonical/<br/>agents, skills, aid<br/>(templates, scripts, recipes)"]:::src
 
-    GEN["run_generator.py<br/>87 lines — loads 5 *.toml profiles<br/>calls 5 renderers per profile"]:::render
+    GEN["run_generator.py<br/>loads 5 *.toml profiles<br/>calls render.py copy core per profile"]:::render
 
     subgraph Profiles["Profile TOML configs (5)"]
         P1["claude-code.toml<br/>format markdown"]:::profile
-        P2["codex.toml<br/>format toml"]:::profile
-        P3["cursor.toml<br/>format markdown + rules"]:::profile
-        P4["copilot-cli.toml<br/>format copilot-agent"]:::profile
-        P5["antigravity.toml<br/>format antigravity-rule"]:::profile
+        P2["codex.toml<br/>format toml (dormant)"]:::profile
+        P3["cursor.toml<br/>format markdown"]:::profile
+        P4["copilot-cli.toml<br/>format markdown"]:::profile
+        P5["antigravity.toml<br/>format markdown"]:::profile
     end
 
     subgraph Trees["Install trees (5, byte-identical output)"]
-        T1["profiles/claude-code/<br/>.claude/"]:::install
-        T2["profiles/codex/<br/>.codex/ + .agents/"]:::install
-        T3["profiles/cursor/<br/>.cursor/"]:::install
-        T4["profiles/copilot-cli/<br/>.github/ + AGENTS.md"]:::install
-        T5["profiles/antigravity/<br/>.agent/ + AGENTS.md"]:::install
+        T1["profiles/claude-code/<br/>.claude/{agents,skills,aid}"]:::install
+        T2["profiles/codex/<br/>.codex/{agents,skills,aid}"]:::install
+        T3["profiles/cursor/<br/>.cursor/{agents,skills,aid}"]:::install
+        T4["profiles/copilot-cli/<br/>.github/{agents,skills,aid} + AGENTS.md"]:::install
+        T5["profiles/antigravity/<br/>.agent/{agents,skills,aid} + AGENTS.md"]:::install
     end
 
     VFY["verify_deterministic.py<br/>VERIFY (deterministic) hard gate<br/>byte-identical re-render"]:::verify
@@ -42,7 +42,7 @@ flowchart TB
 
     CLI["aid CLI<br/>aid add TOOL<br/>(curl/irm | npm | PyPI | --from-bundle)"]:::install
 
-    ADOPTER["Any adopter repo<br/>.claude/ | .codex/+.agents/ | .cursor/<br/>| .github/ | .agent/"]:::adopter
+    ADOPTER["Any adopter repo<br/>.claude/ | .codex/ | .cursor/<br/>| .github/ | .agent/"]:::adopter
 
     SRC --> GEN
     P1 --> GEN
@@ -64,14 +64,14 @@ flowchart TB
     REL --> CLI
     CLI -.->|copies profile subtree| ADOPTER
 		</div>
-		<p class="caption">Fig 3 — Canonical-to-5-install-trees pipeline: one canonical source, five profile TOML configs (claude-code, codex, cursor, copilot-cli, antigravity), five renderers per profile, VERIFY (deterministic) hard gate. Profile trees are packaged by release.sh into GitHub Release tarballs; adopters run aid add &lt;tool&gt; (via the persistent aid CLI, bootstrapped once per machine via curl/irm, npm, or PyPI) to copy the profile subtree into their repo. (per architecture.md, infrastructure.md)</p>
+		<p class="caption">Fig 3 — Canonical-to-5-install-trees pipeline: one canonical source, five profile TOML configs (claude-code, codex, cursor, copilot-cli, antigravity), one render.py copy core per profile, VERIFY (deterministic) hard gate. All five tools use uniform markdown agent format except Codex (TOML, dormant). All five install trees share the same {agents,skills,aid} layout under their tool root. Profile trees are packaged by release.sh into GitHub Release tarballs; adopters run aid add &lt;tool&gt; (via the persistent aid CLI, bootstrapped once per machine via curl/irm, npm, or PyPI) to copy the profile subtree into their repo. (per architecture.md, infrastructure.md)</p>
 	</div>
 
 	<div class="grid g3">
 		<div class="card">
 			<div class="kicker">Generator</div>
-			<h3><code>run_generator.py</code></h3>
-			<p>87-line orchestrator. Loops all 5 <code>profiles/*.toml</code>, calls <code>render_agents</code>, <code>render_skills</code>, <code>render_templates</code>, <code>render_canonical_scripts</code>, <code>render_recipes</code> per profile, performs deletion pass via emission manifest diff, then runs VERIFY (deterministic) (hard) and VERIFY (advisory). Python 3.11+ stdlib only. (per module-map.md §3, infrastructure.md)</p>
+			<h3><code>run_generator.py</code> + <code>render.py</code></h3>
+			<p>7-file Python generator. <code>run_generator.py</code> is the entrypoint: loops all 5 <code>profiles/*.toml</code>, calls <code>render_profile</code> (the <code>render.py</code> copy core) once per profile, performs deletion pass via emission-manifest diff, then runs VERIFY (deterministic) (hard) and VERIFY (advisory). <code>render.py</code> is the single copy core: one <code>copy_tree</code> pass over <code>canonical/{agents,skills,aid}</code> — agents and skills receive per-tool frontmatter translation; <code>aid/</code> is copied verbatim. The 5 per-type renderer functions and 2 emitter self-tests were deleted in work-005 and folded into this single pass. Python 3.11+ stdlib only. (per module-map.md §3)</p>
 		</div>
 		<div class="card">
 			<div class="kicker">End-user install</div>
@@ -79,9 +79,9 @@ flowchart TB
 			<p>Bootstrapped once per machine: <code>curl … | bash</code> / <code>irm … | iex</code>, or <code>npm install -g aid-installer</code> / <code>pip install aid-installer</code> (PyPI). Per project: <code>aid add &lt;tool&gt;</code> fetches and verifies the release tarball then copies the profile subtree; <code>aid status</code>, <code>aid update [self]</code>, <code>aid remove [self]</code>; bare <code>aid</code> shows a project dashboard. Idempotent — identical files are skipped. Offline: <code>aid add &lt;tool&gt; --from-bundle &lt;tar&gt;</code>. Bash 4+ (Linux/macOS/Git Bash) or PowerShell 5.1+ (Windows). (per infrastructure.md)</p>
 		</div>
 		<div class="card">
-			<div class="kicker">4 agent formats / split roots</div>
+			<div class="kicker">Uniform layout / 2 agent formats</div>
 			<h3>Per-tool layouts</h3>
-			<p><code>render_agents</code> emits one of 4 formats per <code>[agent].format</code>: <code>markdown</code> (Claude Code, Cursor), <code>toml</code> (Codex split layout — <code>.codex/agents/</code> + <code>.agents/</code>), <code>copilot-agent</code> (Copilot CLI native Agent Skills under <code>.github/</code>), and <code>antigravity-rule</code> (Antigravity <code>.agent/rules</code> reshape). Cursor + Copilot CLI also remap the <code>Bash</code> tool name (Terminal / shell); MCP-style tools are omitted on hosts that lack them. (per architecture.md, schemas.md §7, §9)</p>
+			<p>All 5 install trees share the same <code>{agents,skills,aid}</code> structure under their tool root (<code>.claude/</code>, <code>.codex/</code>, <code>.cursor/</code>, <code>.github/</code>, <code>.agent/</code>). Agent format is <strong>uniform markdown</strong> for Claude Code, Cursor, Copilot CLI, and Antigravity; Codex uses native <strong>TOML</strong> (<code>agent_format = "toml"</code>, dormant pending E-CODEX-1). Cursor and Copilot CLI remap the <code>Bash</code> tool name (<code>Terminal</code> / <code>shell</code>); MCP-style tools are omitted on hosts that lack them. (per architecture.md, schemas.md §9)</p>
 		</div>
 	</div>
 
