@@ -12,6 +12,7 @@ intent: |
   installed, released, and operated on a local workstation.
 contracts: []
 changelog:
+  - 2026-06-22: housekeep KB-DELTA (Q30) — work-005-profile-generator-simplify (merged). Build-pipeline component table rewritten to the 7-file copy-core model: the 5 per-type renderer rows (render_agents/render_skills/render_templates/render_canonical_scripts/render_recipes) + the 2 emitter self-test rows (test_copilot_emitter/test_antigravity_emitter) DELETED; added the render.py copy-core row; refreshed line counts + the pipeline-flow diagram (now a single render_profile copy_tree pass). CI gate: generator-selftests now render.py --self-test + test_manifest_safety.py; suite count 35->56. Installer CI: documented the new real Windows PowerShell 5.1 lane (re-runs Test-AidInstaller.ps1 under `shell: powershell`) + the static test-ps51-compat.sh AST lint.
   - 2026-06-05: work-002-auto-installer — installer evolved from setup.sh/setup.ps1 clone+run to a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, shared libs `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`); four install channels (curl/irm bootstrap, npm `aid-installer`, PyPI `aid-installer`, offline `--from-bundle`); added the release pipeline (`release.sh` + `.github/workflows/release.yml`, tag-triggered, OIDC publish) and the cross-platform installer CI (`.github/workflows/installer-tests.yml`); GitHub Releases v0.7.0-v0.7.5 now exist (`VERSION` = 0.7.5). `setup.sh`/`setup.ps1` removed.
   - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — canonical render pipeline 3→5 profiles (added copilot-cli + antigravity); install menu now 5 tools with the Option-A AGENTS.md last-installed-wins non-interactive collision handler; build-pipeline component table gained the 2 new emitter self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) now wired into the CI generator-selftests step. Verified profiles=5 (`ls profiles/*.toml`).
   - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
@@ -76,9 +77,9 @@ The closest analog is the **AID parallel pool dispatch model** (work-001 feature
 
 The repo runs **three GitHub Actions workflows**: the PR-gate (`test.yml`), the cross-platform installer suite (`installer-tests.yml`), and the tag-triggered release pipeline (`release.yml`).
 
-**CI gate (enforced).** `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 35; see `test-landscape.md`). The `generator-selftests` job additionally runs three Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `test_manifest_safety.py`, plus the two emitter tests `test_copilot_emitter.py` (Copilot real-YAML round-trip) and `test_antigravity_emitter.py` (Antigravity rule reshape).
+**CI gate (enforced).** `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 56; see `test-landscape.md`). The `generator-selftests` job additionally runs the Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `render.py --self-test` (8 copy-core tests) and `test_manifest_safety.py` (pure-mirror deletion safety). (The former per-format emitter self-tests `test_copilot_emitter.py` / `test_antigravity_emitter.py` were deleted with the per-type renderers in work-005-profile-generator-simplify.)
 
-**Installer CI (cross-platform).** `.github/workflows/installer-tests.yml` (`name: Installer CI (cross-platform)`) runs a two-leg matrix: `ubuntu-latest` (`mode: bash-harness`) drives the bash installer/CLI/release suites, and `windows-latest` (`mode: native-ps1`) runs the native PowerShell installer test plus the npm + PyPI Windows channel smokes (pack/build → global install → `aid status`/`aid add`). Both legs assert `pwsh` is present so PowerShell coverage cannot silently skip (the `Assert pwsh present` step). This is the runner that exercises the real-Windows path the Linux bash harness cannot.
+**Installer CI (cross-platform).** `.github/workflows/installer-tests.yml` (`name: Installer CI (cross-platform)`) runs a two-leg matrix: `ubuntu-latest` (`mode: bash-harness`) drives the bash installer/CLI/release suites, and `windows-latest` (`mode: native-ps1`) runs the native PowerShell installer test (under pwsh 7) plus the npm + PyPI Windows channel smokes (pack/build → global install → `aid status`/`aid add`), and additionally re-runs `Test-AidInstaller.ps1` under the built-in `powershell.exe` (**Windows PowerShell 5.1** — the version a fresh Windows box ships — via `shell: powershell`) to catch runtime 5.1 breaks (BOM divergence, TLS handshake) that static analysis cannot. That runtime lane complements the static `tests/canonical/test-ps51-compat.sh` AST lint (in the bash harness). Both legs assert `pwsh` is present so PowerShell coverage cannot silently skip (the `Assert pwsh present` step). This is the runner that exercises the real-Windows path the Linux bash harness cannot.
 
 **Release pipeline (tag-triggered).** `.github/workflows/release.yml` (`name: Release`) fires on `push` of a `v*` tag (with a `workflow_dispatch` escape hatch carrying `ref` + `dry_run` inputs). A `gate` job re-runs the same correctness invariants as `test.yml` (render-drift + canonical suites + generator self-tests) plus the **FR10 version-sync** check (`VERSION` == `packages/npm/package.json` == `packages/pypi/pyproject.toml` == tag) on the tagged commit; all publish jobs sit behind `needs: [gate]` so nothing publishes from an ungated state. Three publish jobs follow: `github-release` (runs `release.sh` to build tarballs + `SHA256SUMS` and `gh release create`), `npm-publish` (gated on repo variable `NPM_ENABLED == 'true'`; `npm publish --provenance --access public`), and `pypi-publish` (gated on `PYPI_ENABLED == 'true'`; `pypa/gh-action-pypi-publish` via Trusted Publishing). The workflow declares least-privilege `permissions: contents: write` (release upload) + `id-token: write` (OIDC for npm provenance + PyPI Trusted Publishing); no long-lived PyPI token is stored. Real GitHub Releases **v0.7.0 through v0.7.5** exist (`gh release list`); `VERSION` = `1.1.0`.
 
@@ -92,19 +93,13 @@ The canonical → 5-profiles render is the **only build artifact pipeline** in t
 
 | Component | Path | Lines | Purpose |
 |-----------|------|-------|---------|
-| Generator entrypoint | `.claude/skills/generate-profile/scripts/run_generator.py` | 87 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls each renderer, runs VERIFY (deterministic) + VERIFY (advisory) |
-| Profile parser | `.claude/skills/generate-profile/scripts/aid_profile.py` | 550 | Parses TOML, validates schema |
-| Manifest harness | `.claude/skills/generate-profile/scripts/render_lib.py` | 756 | Emission-manifest implementation; pure-mirror deletion logic |
-| Agent renderer | `.claude/skills/generate-profile/scripts/render_agents.py` | 522 | Renders `canonical/agents/` per profile |
-| Skill renderer | `.claude/skills/generate-profile/scripts/render_skills.py` | 469 | Renders `canonical/skills/` per profile (Thin-Router + references/) |
-| Recipe renderer | `.claude/skills/generate-profile/scripts/render_recipes.py` | 261 | Renders `canonical/recipes/` (passthrough) |
-| Script renderer | `.claude/skills/generate-profile/scripts/render_canonical_scripts.py` | 224 | Renders `canonical/scripts/` per profile |
-| Template renderer | `.claude/skills/generate-profile/scripts/render_templates.py` | 252 | Renders `canonical/templates/` per profile |
-| Strict verifier | `.claude/skills/generate-profile/scripts/verify_deterministic.py` | 515 | VERIFY (deterministic) — re-run byte-identical guarantee |
-| Advisory verifier | `.claude/skills/generate-profile/scripts/verify_advisory.py` | 343 | VERIFY (advisory) — advisory checks |
+| Generator entrypoint | `.claude/skills/generate-profile/scripts/run_generator.py` | 90 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls `render_profile` (single copy pass per profile), runs VERIFY (deterministic) + VERIFY (advisory) |
+| Profile parser | `.claude/skills/generate-profile/scripts/aid_profile.py` | 306 | Parses TOML, validates schema |
+| Manifest harness | `.claude/skills/generate-profile/scripts/render_lib.py` | 883 | Emission-manifest + shared utils (`rewrite_install_paths`, `sha256_hex`, `write_output_file`); pure-mirror deletion logic |
+| Copy core | `.claude/skills/generate-profile/scripts/render.py` | 1012 | The single copy generator — `copy_tree` over `canonical/{agents,skills,aid}` (agents/skills translated, aid verbatim) + dormant Codex-TOML branch. Replaced the 5 deleted per-type renderers (work-005-profile-generator-simplify). Carries `render.py --self-test` (8 copy-core tests). |
+| Strict verifier | `.claude/skills/generate-profile/scripts/verify_deterministic.py` | 488 | VERIFY (deterministic) — re-renders via `render_profile`, re-run byte-identical guarantee |
+| Advisory verifier | `.claude/skills/generate-profile/scripts/verify_advisory.py` | 358 | VERIFY (advisory) — advisory checks |
 | Generator self-tests | `.claude/skills/generate-profile/scripts/test_manifest_safety.py` | 254 | Internal correctness tests (pure-mirror deletion safety) |
-| Copilot emitter self-test | `.claude/skills/generate-profile/scripts/test_copilot_emitter.py` | — | Copilot agent-format emitter — real-YAML round-trip (CI `generator-selftests`, `--self-test`) |
-| Antigravity emitter self-test | `.claude/skills/generate-profile/scripts/test_antigravity_emitter.py` | — | Antigravity rule-format reshape (CI `generator-selftests`, `--self-test`) |
 
 Pipeline flow (per `run_generator.py`, the `for profile_path in sorted(profiles_dir.glob('*.toml'))` loop):
 
@@ -113,7 +108,7 @@ profiles/*.toml ─┐
                  ▼
           load_profile + validate
                  ▼
-   render_agents → render_skills → render_templates → render_scripts → render_recipes
+   render_profile (single copy_tree pass: canonical/agents + canonical/skills + canonical/aid)
                  ▼
    diff prev manifest → delete removed files → prune empty parents
                  ▼
