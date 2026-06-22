@@ -29,6 +29,11 @@
 # Bootstrap URL - single place to update when the branch merges to master.
 # Override with $env:AID_INSTALL_URL for tests.
 # ---------------------------------------------------------------------------
+
+# Enable TLS 1.2 for HTTPS. Windows PowerShell 5.1 (.NET Framework) can default to
+# SSL3/TLS1.0, which GitHub/npm/pypi reject -> downloads fail. Harmless on PS7/.NET Core.
+try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch {}
+
 $script:_AidInstallUrl = if ($env:AID_INSTALL_URL) { $env:AID_INSTALL_URL } else {
     'https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.ps1'
 }
@@ -1452,7 +1457,7 @@ function script:Get-AidProjectState {
 # Mirror of bash _aid_project_tools.
 function script:Get-AidProjectTools {
     param([string]$Path)
-    $manifest = Join-Path $Path '.aid' '.aid-manifest.json'
+    $manifest = Join-Path (Join-Path $Path '.aid') '.aid-manifest.json'
     if (-not (Test-Path $manifest -PathType Leaf)) { return '' }
     $lines = Get-Content -LiteralPath $manifest -Encoding utf8 -ErrorAction SilentlyContinue
     if (-not $lines) { return '' }
@@ -1486,7 +1491,7 @@ function script:Get-AidProjectTools {
 function script:Get-WhichTierHolds {
     param([string]$Path)
     $primaryReg = Join-Path $script:_AidStateHome 'registry.yml'
-    $userReg    = Join-Path $HOME '.aid' 'registry.yml'
+    $userReg    = Join-Path (Join-Path $HOME '.aid') 'registry.yml'
 
     $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
     $userNorm    = [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid'))
@@ -1543,7 +1548,7 @@ function script:Invoke-AidProjectsList {
                 ([System.IO.Path]::GetFullPath($script:_AidStateHome) -ne [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid')))) {
                 Join-Path $script:_AidStateHome 'registry.yml'
             } else {
-                Join-Path $HOME '.aid' 'registry.yml'
+                Join-Path (Join-Path $HOME '.aid') 'registry.yml'
             }
             Write-Host ('      registry: {0}' -f $regSrc)
         }
@@ -1603,7 +1608,7 @@ function script:Invoke-AidProjectsAdd {
         $regFile = if ($tier -eq 'shared' -and $primaryNorm -ne $userNorm) {
             Join-Path $script:_AidStateHome 'registry.yml'
         } else {
-            Join-Path $HOME '.aid' 'registry.yml'
+            Join-Path (Join-Path $HOME '.aid') 'registry.yml'
         }
         Write-Host ("aid projects: registry file: $regFile")
     }
@@ -1628,7 +1633,7 @@ function script:Invoke-AidProjectsRemove {
 
     # Check if registered before unregistering (for idempotency message).
     $primaryReg = Join-Path $script:_AidStateHome 'registry.yml'
-    $userReg    = Join-Path $HOME '.aid' 'registry.yml'
+    $userReg    = Join-Path (Join-Path $HOME '.aid') 'registry.yml'
     $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
     $userNorm    = [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid'))
     $found = $false
@@ -1795,7 +1800,7 @@ function script:Registry-Register {
             $lns.Add("schema: 1")
             $lns.Add("projects:")
             foreach ($p in ($repos | Where-Object { $_ } | Sort-Object -Unique)) { $lns.Add("  - $p") }
-            Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
+            [System.IO.File]::WriteAllText($tmp, (($lns.ToArray()) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
             Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
             return $true
         } catch {
@@ -1908,7 +1913,7 @@ function script:Registry-Unregister {
             $lns.Add("schema: 1")
             $lns.Add("projects:")
             if ($remaining) { foreach ($p in $remaining) { $lns.Add("  - $p") } }
-            Set-Content -LiteralPath $tmp -Value $lns.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
+            [System.IO.File]::WriteAllText($tmp, (($lns.ToArray()) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
             Move-Item -LiteralPath $tmp -Destination $regPath -Force -ErrorAction Stop
             return $true
         } catch {
@@ -2407,7 +2412,7 @@ function script:Invoke-AidRepairSettingsEraA {
     $sfDir = Split-Path $SettingsFile -Parent
     $tmp   = Join-Path $sfDir ("settings.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
-        Set-Content -LiteralPath $tmp -Value $lines.ToArray() -Encoding utf8NoBOM -ErrorAction Stop
+        [System.IO.File]::WriteAllText($tmp, (($lines.ToArray()) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
         Move-Item -LiteralPath $tmp -Destination $SettingsFile -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue

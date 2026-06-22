@@ -47,6 +47,10 @@
 
 Set-StrictMode -Version Latest
 
+# Enable TLS 1.2 for HTTPS. Windows PowerShell 5.1 (.NET Framework) can default to
+# SSL3/TLS1.0, which GitHub/npm/pypi reject -> downloads fail. Harmless on PS7/.NET Core.
+try { [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12 } catch {}
+
 # Guard against being imported more than once.
 # Use Get-Variable with -ErrorAction SilentlyContinue to avoid strict-mode failure on first load.
 $_aidLoadedVar = Get-Variable -Name '_AID_INSTALL_CORE_LOADED' -Scope Global -ErrorAction SilentlyContinue
@@ -1121,7 +1125,7 @@ function Invoke-AidProvisionSharedStateHome {
             "schema: 1",
             "projects:"
         )
-        Set-Content -LiteralPath $tmp -Value $seedLines -Encoding utf8NoBOM -ErrorAction Stop
+        [System.IO.File]::WriteAllText($tmp, (($seedLines) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
         Move-Item -LiteralPath $tmp -Destination $reg -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
