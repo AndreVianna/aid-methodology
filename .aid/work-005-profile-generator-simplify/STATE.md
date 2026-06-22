@@ -19,12 +19,12 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-21T20:30:00Z
+- **Lifecycle:** Done
+- **Phase:** Deploy
+- **Active Skill:** none
+- **Updated:** 2026-06-22T02:26:29Z
 - **Pause Reason:** --
-- **Context:** delivery-001 merged (#100), delivery-002 merged (#101). delivery-003 (FINAL) COMPLETE + gated A+ (7 tasks, 7 commits); PR opening against master. On merge it CLOSES the Release-Safety Gate -> a release can then be cut. 3 PS gotchas documented (coding-standards §15). Residuals deferred to /aid-housekeep + /aid-summarize (delivery-003-issues.md): cursor README path, builder dead-pointer, visual-summary split-layout refs, KB numeric counts.
+- **Context:** COMPLETE -- all 3 deliveries merged: delivery-001 (#100, copy-based generator + uniform {agents,skills,aid} layout), delivery-002 (#101, atomic `aid update` + complete-replacement migration), delivery-003 (#102, docs/KB lockstep + final acceptance gate). Folded into #102 post-completion: W3 reversible migration (rm -> .aid/.trash/) and full WinPS 5.1 compatibility (TLS 1.2 + BOM-free writes + nested Join-Path in the shipped PS) backed by an AST lint (test-ps51-compat.sh) and a real Windows-PowerShell-5.1 CI lane. **Release-Safety Gate CLOSED** -> a release can now be cut via /aid-deploy. Research trail: research/further-simplification-study.md (the W1 python3-dedup and W2 StrictMode "wins" both collapsed on verification; only W3 + the 5.1 hardening were real). Residuals tracked in delivery-003-issues.md -> /aid-housekeep + /aid-summarize.
 - **Block Reason:** --
 - **Block Artifact:** --
 
