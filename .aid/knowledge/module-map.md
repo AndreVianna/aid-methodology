@@ -3,8 +3,9 @@ kb-category: primary
 source: hand-authored
 intent: |
   Maps the major code/content modules in AID — the 12 user-facing aid-* skills,
-  the 13th maintainer-only generate-profile skill, the 9 agents, the 13 renderer
-  Python files (12 under .claude/skills/generate-profile/scripts/ + run_generator.py),
+  the 13th maintainer-only generate-profile skill, the 9 agents, the 7 generator
+  Python files under .claude/skills/generate-profile/scripts/ (the render.py copy core +
+  run_generator.py entrypoint),
   and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview,housekeep}.
   Each entry lists purpose, directory path, dependencies, and associated tests.
   Read this when you need to know what a directory holds and who consumes it.
@@ -13,10 +14,11 @@ intent: |
 contracts:
   - "12 user-facing aid-* skills + 1 maintainer-only generate-profile skill = 13 total"
   - "9 agents under canonical/agents/ (4 large / 4 medium / 1 small)"
-  - "12 renderer Python files under .claude/skills/generate-profile/scripts/ (render_agents, render_skills, render_templates, render_canonical_scripts, render_recipes) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + test_copilot_emitter + test_antigravity_emitter + run_generator.py (the entrypoint, moved here from repo root by work-001)"
+  - "7 generator Python files under .claude/skills/generate-profile/scripts/: render.py (single copy core + dormant Codex-TOML branch) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + run_generator.py (the entrypoint, moved here from repo root by work-001)"
   - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-22: work-005-profile-generator-simplify (merged) — §3 rewritten to the single copy-core model: render.py is now the sole copy generator (copy_tree over 3 trees: agents/skills translated, canonical/aid/ verbatim) + dormant Codex-TOML branch; the 5 per-type renderers (render_agents/render_skills/render_templates/render_recipes/render_canonical_scripts) + 2 emitter self-tests (test_copilot_emitter/test_antigravity_emitter) DELETED. Renderer .py count 13->7; §3 table, intent, contract, and Module-classes entry updated. Via /aid-housekeep KB-DELTA (Q30).
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — added Module class 6 (Installer / CLI): the `aid` CLI dispatcher (bin/aid + bin/aid.ps1 + bin/aid.cmd), the shared install-core libs (lib/aid-install-core.sh + lib/AidInstallCore.psm1), the curl/irm bootstrap (install.sh + install.ps1), and the npm/PyPI shim packages (packages/npm + packages/pypi). Fixed the §4g test-coverage table: the removed test-setup.sh/test-setup-ps1.sh rows replaced with the installer/CLI suites.
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix (feature-002); §2 per-tier rosters replaced with new 4/4/1 tier split; boilerplate-presence claim updated to shared-include via canonical/templates/agent-boilerplate.md; all old bare agent names removed.
@@ -40,12 +42,12 @@ The repo contains six module classes, each with its own conventions:
 
 1. **Skills** — 12 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
 2. **Agents** — 9 specialist agents — under `canonical/agents/<name>/`
-3. **Renderer (Python)** — 13 files under `.claude/skills/generate-profile/scripts/` (incl. the `run_generator.py` entrypoint)
+3. **Generator (Python)** — 7 files under `.claude/skills/generate-profile/scripts/` (the `render.py` copy core + `run_generator.py` entrypoint)
 4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
 5. **Templates + Recipes** — content fixtures consumed by skills — under `canonical/templates/` + `canonical/recipes/`
 6. **Installer / CLI** — the persistent global `aid` CLI + its install-core libs + bootstrap + the npm/PyPI shim packages — under `bin/`, `lib/`, repo-root `install.sh`/`install.ps1`, and `packages/`
 
-The render pipeline (Module 3) emits Modules 1, 2, 4, 5 into 5 install trees
+The generator (Module 3) emits Modules 1, 2, 4, 5 into 5 install trees
 (`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`) and the dogfood
 `.claude/` tree. Source-of-truth is `canonical/`; every other copy is
 byte-identical output verified by
@@ -137,43 +139,52 @@ Three tiers, per the `tier:` frontmatter field:
 
 ---
 
-## 3. Renderer (Python) — `.claude/skills/generate-profile/scripts/` + repo root
+## 3. Generator (Python) — `.claude/skills/generate-profile/scripts/`
 
 The generator lives in `.claude/skills/generate-profile/scripts/`, NOT in
 `canonical/skills/`, because it CANNOT be regenerated from itself
 (chicken-and-egg per `.claude/skills/generate-profile/SKILL.md` `chicken-and-egg deployment problem`). It is the only
 Python in the repo.
 
-**Path:** `.claude/skills/generate-profile/scripts/*.py` (13 files, incl. the `run_generator.py` entrypoint).
+**Path:** `.claude/skills/generate-profile/scripts/*.py` (7 files, incl. the `run_generator.py` entrypoint).
+
+**Architecture (post work-005-profile-generator-simplify):** the generator is a
+**single copy core** — `render.py` walks each canonical source tree and copies it
+verbatim, applying a per-file *translate* only where a tool needs one. The old
+per-type renderer scripts (`render_agents` / `render_skills` / `render_templates` /
+`render_recipes` / `render_canonical_scripts`) and the two emitter self-tests
+(`test_copilot_emitter` / `test_antigravity_emitter`) were **deleted** and folded
+into `render.py`'s `copy_tree` pass. `render_profile()` copies exactly three trees:
+`canonical/agents/` (translate=agents — frontmatter `tools:`/`model:` remap),
+`canonical/skills/` (translate=skills — `allowed-tools:` remap + CC-optional strip),
+and `canonical/aid/` (translate=none — verbatim; this subtree contains the former
+templates / recipes / helper-scripts content, now copied byte-for-byte rather than
+re-rendered). Codex's TOML agent format is a **dormant branch** in `render.py`
+(`agent_format="toml"` -> `_render_codex_toml`), retained until E-CODEX-1 reaches
+high confidence.
 
 | File | Purpose | Key entry points |
 |------|---------|------------------|
-| `render_lib.py` | Shared utilities — `read_canonical_file`, `write_output_file`, `substitute_filenames`, `rewrite_install_paths`, `sha256_hex`, `EmissionManifest` (JSONL writer per `canonical/EMISSION-MANIFEST.md`) | `EmissionManifest.{add,diff,load,write}`, `sha256_hex`, regex constants `_PLACEHOLDER_RE`, `_CANONICAL_PATH_RE` |
-| `aid_profile.py` | Loads + validates a per-tool profile TOML; dataclasses `Profile`, `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed`, `RuleEntry`, `ExtrasConfig`, `CapabilitiesConfig`; `_KNOWN_AGENT_FORMATS = {markdown, toml, copilot-agent, antigravity-rule}` | `load_profile(path)`, `validate(profile)`, `_KNOWN_AGENT_FORMATS` |
-| `render_agents.py` | Renders `canonical/agents/<name>/AGENT.md` per profile; output format branches on `agent.format` — `markdown` / `toml` / `copilot-agent` (`.agent.md` + name/description/tools/model frontmatter) / `antigravity-rule` (`.agent/rules/*.md` with trigger:-style frontmatter) per `canonical/EMISSION-MANIFEST.md` `## Asset Kinds` | `render_agents(repo, profile, manifest, repo_root)`, `_parse_frontmatter`, `_build_frontmatter_md_copilot`, `_build_frontmatter_md_antigravity`, `_yaml_scalar`, `_remap_tools_list` |
-| `render_skills.py` | Renders `canonical/skills/aid-*/SKILL.md` + `references/*.md` per profile; preserves frontmatter formatting verbatim (folded `description:` blocks); `_render_cursor_extras` emits `[[extras.rules]]` honoring per-rule `output_filename` + gated trigger-dialect frontmatter | `render_skills(...)`, `_split_frontmatter_raw`, `_rewrite_skill_frontmatter`, `_render_cursor_extras`, `_split_rule_body`, `_build_trigger_frontmatter` |
-| `render_templates.py` | Renders `canonical/templates/` per profile (passthrough with path rewriting) | `render_templates(...)` |
-| `render_canonical_scripts.py` | Renders `canonical/scripts/` (Bash + JS + PS1) per profile; preserves shebang + line endings | `render_canonical_scripts(...)` |
-| `render_recipes.py` | Renders `canonical/recipes/` (passthrough, no frontmatter injection, no slot resolution at render time per `canonical/EMISSION-MANIFEST.md` `### Recipes asset kind`) | `render_recipes(...)` |
-| `verify_deterministic.py` | VERIFY (deterministic) — strict; re-renders to a scratch dir, compares byte-by-byte against committed install trees; non-zero exit if any drift | `run_verify(repo_root, report_path)` |
+| `render.py` | The single copy core. `copy_tree(src, dst, profile, manifest, translate)` walks one canonical tree and copies every file, applying the per-file translate. translate=agents rewrites agent frontmatter (`tools:` remap via `_remap_tools`, `model:`/`reasoning_effort` resolution, `{{include:...}}` resolution); translate=skills rewrites `allowed-tools:` and strips Claude-Code-only fields; translate=none copies verbatim. Includes the **dormant** Codex-TOML branch (`_render_codex_toml`, gated on `agent_format="toml"`) and the YAML-lite frontmatter parser/serializer. | `render_profile(canonical_root, profile, manifest, output_base)`, `copy_tree(...)`, `_translate_agent`, `_rewrite_skill_frontmatter`, `_parse_frontmatter`, `_build_frontmatter_md`, `_render_codex_toml`, `_resolve_model`, `_resolve_includes` |
+| `render_lib.py` | Shared utilities — `read_canonical_file`, `write_output_file`, `substitute_filenames`, `rewrite_install_paths` (FR5 Option (c) MINIMAL: single `{root}`-prefix substitution), `sha256_hex`, `EmissionManifest` (JSONL writer per `canonical/EMISSION-MANIFEST.md`) | `EmissionManifest.{add,diff,load,write}`, `sha256_hex`, `rewrite_install_paths`, `substitute_filenames` |
+| `aid_profile.py` | Loads + validates a per-tool profile TOML (shrunk schema, work-005); surviving dataclasses `Profile` (`name`/`root_dir`/`root_file`/`agent_format`/`tool_names`/`model_tiers`/`capabilities`), `ModelTierSimple`, `ModelTierDetailed`, `CapabilitiesConfig` (`LayoutConfig`/`FrontmatterConfig`/`AgentConfig`/`SkillConfig`/`RuleEntry`/`ExtrasConfig` were dropped); `_KNOWN_AGENT_FORMATS = {markdown, toml}` (the `toml` value dormant for Codex; `copilot-agent`/`antigravity-rule` retired) | `load_profile(path)`, `validate(profile)`, `_KNOWN_AGENT_FORMATS` |
+| `verify_deterministic.py` | VERIFY (deterministic) — strict; re-renders to a scratch dir via `render_profile` (single copy pass), compares byte-by-byte against committed install trees; non-zero exit if any drift | `run_verify(repo_root, report_path)`, `_render_all` |
 | `verify_advisory.py` | VERIFY (advisory) — additional checks (frontmatter shape, install-path rewrites, etc.) | `run_advisory(repo_root, report_path)` |
 | `test_manifest_safety.py` | Self-tests for the EmissionManifest deletion logic | (pytest-style; run standalone) |
-| `test_copilot_emitter.py` | Self-tests for the `copilot-agent` format branch (`.agent.md` suffix + name/description/tools/model frontmatter); CI-wired in `.github/workflows/test.yml` | (run standalone) |
-| `test_antigravity_emitter.py` | Self-tests for the `antigravity-rule` format branch + the gated trigger-dialect `[[extras.rules]]` emission; CI-wired in `.github/workflows/test.yml` | (run standalone) |
-| `.claude/skills/generate-profile/scripts/run_generator.py` | Generator entrypoint — loads every `profiles/*.toml`, calls renderers in sequence, performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))` |
+| `run_generator.py` | Generator entrypoint — loads every `profiles/*.toml`, calls `render_profile` (single copy pass per profile), performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))`, `render_profile`, `manifest.diff`, `run_verify`, `run_advisory` |
 
 **Dependencies:**
 
 - Python 3.11+ (stdlib `tomllib` per `.claude/skills/generate-profile/scripts/aid_profile.py` `Requirements: Python 3.11+`).
 - No third-party packages (no `requirements.txt`, no `pyproject.toml`; confirmed by repo-wide search).
-- `render_lib.py` is imported by every `render_*.py` via `sys.path.insert(0, str(_SCRIPT_DIR))` (per `render_agents.py` `sys.path.insert`, `render_skills.py` `sys.path.insert`).
-- `run_generator.py` `sys.path.insert` inserts `.claude/skills/generate-profile/scripts` on the Python path and imports the renderers directly.
+- Every module inserts its own dir on `sys.path` (`_SCRIPT_DIR = Path(__file__).parent`) so `render.py`, `verify_deterministic.py`, and `run_generator.py` can `from render_lib import ...` / `from aid_profile import ...` / `from render import render_profile` regardless of CWD.
+- `render.py` is imported by `run_generator.py` and `verify_deterministic.py` (both call `render_profile`); `render.py` in turn imports `aid_profile` + `render_lib`.
 
 **Test coverage:**
 
+- `render.py --self-test` runs 8 in-process tests (verbatim-copy byte-identity, two-run determinism per translate mode, tool_names remap), wired in CI (`.github/workflows/test.yml`).
 - `test_manifest_safety.py` covers `EmissionManifest` round-trip + diff edge cases.
-- `test_copilot_emitter.py` + `test_antigravity_emitter.py` are generator self-tests for the two new agent-format branches, run in CI (`.github/workflows/test.yml`).
-- `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py` `run_verify`). It exercises the entire renderer chain end-to-end against the committed trees.
+- `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py` `run_verify`). It re-renders via `render_profile` and compares end-to-end against the committed trees; it also has a `--self-test` mode wired in CI.
 - No standalone Python test runner configured (no `pytest.ini`, per project-structure.md §6). Tests are invoked manually per `tests/README.md`.
 
 ---

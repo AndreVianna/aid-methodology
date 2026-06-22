@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 intent: |
   Inventory of test suites that protect the canonical helper scripts AID skills
-  depend on plus the `aid` CLI installer/release surface. Currently 49 unit/integration
+  depend on plus the `aid` CLI installer/release surface. Currently 56 unit/integration
   suites under tests/canonical/ (plus the native-Windows tests/windows/Test-AidInstaller.ps1),
   discovered by glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
   a few shell out to node (.mjs validators) or pwsh (PowerShell mirrors + the install.ps1 /
@@ -14,11 +14,12 @@ intent: |
   understand what changes to canonical/scripts/ are guarded by tests vs require
   manual verification.
 contracts:
-  - "currently 49 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l) + tests/windows/Test-AidInstaller.ps1 (native Windows), no skill-level tests"
+  - "currently 56 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l) + tests/windows/Test-AidInstaller.ps1 (native Windows, now run under both pwsh 7 and Windows PowerShell 5.1 on installer-tests.yml), no skill-level tests"
   - "tests/run-all.sh is the single aggregator (glob-discovers tests/canonical/test-*.sh)"
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, several need pwsh (the *-ps1.sh mirrors + the install.ps1 / aid.ps1 CLI suites) — each skips if absent; CI installer-tests.yml runs the native-Windows path"
 changelog:
+  - 2026-06-22: housekeep KB-DELTA (Q30) — suite count 49->56 (verified `ls tests/canonical/test-*.sh | wc -l` = 56 on disk). Documented test-multitool-isolation.sh (structural multi-tool isolation acceptance, feature-004 AC4) and test-ps51-compat.sh (AST-based WinPS 5.1 compatibility lint). Added the new real Windows PowerShell 5.1 CI lane in installer-tests.yml (re-runs Test-AidInstaller.ps1 under `shell: powershell`, complementing the ps51-compat static lint). Refreshed the generator self-test references for work-005-profile-generator-simplify: the per-format emitter self-tests test_copilot_emitter.py / test_antigravity_emitter.py were DELETED with the per-type renderers; coverage is now render.py --self-test (8 copy-core tests) + test_manifest_safety.py. Kept qualitative — no per-suite assertion counts (§9a).
   - 2026-06-14: housekeep KB-DELTA — VERSION 1.0.0—1.1.0 era; suite count 35→49 (verified `ls tests/canonical/test-*.sh | wc -l` = 49 on disk). Documented the 14 suites that landed across delivery-007/008/010/011 but were missing from this inventory: the dashboard surface (`test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-dashboard-reader.sh`, `test-aid-dashboard-cli.sh`, `test-aid-remote.sh`, `test-producer-completeness.sh`, `test-pipeline-status-walkthrough.sh`, `test-work-state-template.sh`, `test-summarize-preflight.sh`, `test-registry.sh`, `test-home-html-source-sync.sh`), and the 1.0.0→1.1.0 migration surface (`test-aid-migrate.sh`, `test-aid-migrate-trigger.sh`, `test-release-migrate-smoke.sh`). Kept qualitative — no per-suite assertion counts (§9a).
   - 2026-06-05: work-002-auto-installer — the former `setup.sh`/`setup.ps1` installers were removed and replaced by the persistent `aid` CLI; deleted the `test-setup.sh` / `test-setup-ps1.sh` suite docs and added the real installer/CLI/release suites: `test-install.sh`, `test-install-ps1.sh`, `test-install-parity.sh`, `test-aid-cli.sh`, `test-aid-cli-ps1.sh`, `test-aid-cli-parity.sh`, `test-release.sh`, `test-release-install-e2e.sh`, `test-version-sync.sh`, `test-ascii-only.sh`, `test-agents-md-invariant.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh`, plus the native-Windows `tests/windows/Test-AidInstaller.ps1`. Suite count 24→35 (verified `ls tests/canonical/test-*.sh | wc -l` = 35 on disk). Added the new `.github/workflows/installer-tests.yml` cross-platform runner to the CI notes; documented that the installer/CLI/release suites run on `installer-tests.yml` (cross-platform) in addition to the `test.yml` `canonical-tests` aggregator.
   - 2026-06-03: housekeep KB-delta (Q29) — work-001 (PR #56) expanded the recipe catalog 5→51 and migrated/renamed the old seed recipes; updated the test-parse-recipe.sh description so the dogfood note reflects the migrated catalog (validates the migrated seed basenames fix-application/add-docs/change-member/add-api-endpoint/add-test-coverage as representatives, per the suite's Units 15–19) rather than implying the old 5-recipe seed set. Kept qualitative — no per-suite assertion count added (§9a).
@@ -49,14 +50,16 @@ What is NOT tested here:
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven; no
   scripted harness exists or is planned. `aid-reviewer` dispatched from `/aid-discover`
   acts as the closest adversarial integration check each cycle.
-- **Renderer** (`run_generator.py`) — covered by its own VERIFY (deterministic)
-  determinism gate (`verify_deterministic.py`); see `architecture.md`. The renderer also
-  has **generator self-tests** (Python, NOT under `tests/canonical/`) wired into the CI
+- **Generator** (`run_generator.py`) — covered by its own VERIFY (deterministic)
+  determinism gate (`verify_deterministic.py`); see `architecture.md`. The generator also
+  has **self-tests** (Python, NOT under `tests/canonical/`) wired into the CI
   `generator-selftests` job (`.github/workflows/test.yml`, the `--self-test` invocations):
-  `test_manifest_safety.py` (pure-mirror deletion safety),
-  `test_copilot_emitter.py` (Copilot agent-format emitter — real-YAML round-trip),
-  and `test_antigravity_emitter.py` (Antigravity rule-format reshape). All three under
-  `.claude/skills/generate-profile/scripts/`.
+  `render.py --self-test` (8 in-process copy-core tests — verbatim byte-identity, two-run
+  determinism per translate mode, tool_names remap) and `test_manifest_safety.py`
+  (pure-mirror deletion safety). Both under `.claude/skills/generate-profile/scripts/`.
+  (The former per-format emitter self-tests `test_copilot_emitter.py` /
+  `test_antigravity_emitter.py` were deleted with the per-type renderers in
+  work-005-profile-generator-simplify — see `module-map.md §3`.)
 - **Sub-agent definitions** — no test harness; verified by dogfooding. See
   `canonical/agents/*/AGENT.md`.
 - **Cross-tool consistency** (Claude Code vs Codex vs Cursor vs Copilot CLI vs Antigravity) —
@@ -167,7 +170,7 @@ and asserts both `node` and `pwsh` are present before running, and the runner sh
 
 ---
 
-## Suites (currently 49)
+## Suites (currently 56)
 
 All suites live under `tests/canonical/` and target scripts under `canonical/scripts/`
 (or the `aid` CLI installer/release surface — `bin/aid`, `lib/aid-install-core.sh`,
@@ -767,6 +770,32 @@ entry point likewise on first run. One seeded "old" repo + one assertion per cha
 an escape canary asserting the real repo is untouched. Catches packaging/wiring regressions
 (e.g. a missing `home.html` source on the bundle path).
 
+### test-multitool-isolation.sh
+
+**Target:** multi-tool install isolation (AC4 of feature-004-lockstep-ci-closeout).
+**Needs the install bundle.**
+
+Structural acceptance suite: installs claude-code + cursor + codex into one throwaway repo
+(`aid add --from-bundle`) and asserts three invariants — (T01-T12) each tool's tree exists
+with the uniform `{agents,skills,aid}` shape under its own root (`.claude/`, `.cursor/`,
+`.codex/`); (T13-T20) representative canonical files carrying no per-tool substitution are
+byte-identical across the three installed trees; (T21-T26) no operational script in any
+tree's `aid/scripts/` subtree references a foreign root basename (tool isolation). Qualitative
+coverage — see the suite header for the unit ranges.
+
+### test-ps51-compat.sh
+
+**Target:** all shipped PowerShell stays Windows PowerShell 5.1 compatible (the repo
+advertises "PowerShell 5.1+" and the PS files declare `#Requires -Version 5.1`).
+**Needs `pwsh`** (runs an AST lint).
+
+Runs an AST-based lint (`ps51-compat-check.ps1`) that fails on any PowerShell 6/7-only
+construct — 3-arg `Join-Path`, `utf8NoBOM` encoding, `$IsWindows`, 3-arg `String.Replace`,
+web calls without TLS 1.2, etc. Written because PSScriptAnalyzer's `PSUseCompatible*` rules
+silently miss several of these (verified), giving false confidence. This is a STATIC lint;
+the actual runtime-5.1 behavior is covered by the WinPS 5.1 CI lane in
+`.github/workflows/installer-tests.yml` (see ## Running).
+
 ---
 
 ## Running
@@ -798,9 +827,13 @@ are present so the node/PowerShell suites cannot silently skip.
 A second workflow, `.github/workflows/installer-tests.yml` (`Installer CI
 (cross-platform)`), runs a two-leg matrix dedicated to the installer surface: the
 `ubuntu-latest` / `bash-harness` leg drives the bash installer/CLI/release suites, and the
-`windows-latest` / `native-ps1` leg runs `tests/windows/Test-AidInstaller.ps1` plus the
-npm + PyPI Windows channel smokes. Both legs assert `pwsh` is present, so the real-Windows
-path the Linux bash harness cannot reach is always exercised.
+`windows-latest` / `native-ps1` leg runs `tests/windows/Test-AidInstaller.ps1` (under pwsh 7)
+plus the npm + PyPI Windows channel smokes. A dedicated **Windows PowerShell 5.1 lane**
+re-runs `Test-AidInstaller.ps1` under the built-in `powershell.exe` (5.1, the version a fresh
+Windows box ships) via `shell: powershell`, catching runtime 5.1 breaks (BOM divergence, TLS
+handshake, FileSystem-provider semantics) that static analysis cannot. It complements the
+static `test-ps51-compat.sh` AST lint (runs in the bash harness). Both legs assert `pwsh` is
+present, so the real-Windows path the Linux bash harness cannot reach is always exercised.
 
 ---
 
@@ -840,11 +873,11 @@ The genuinely untested surface is the prompt-driven / orchestration layer:
 - **Orchestration skills** (`/aid-discover`, `/aid-execute`, …) — prompt-driven and hard
   to test without an AI host. `aid-reviewer` dispatched from `/aid-discover` is the
   closest thing to integration verification, adversarially grading KB output each cycle.
-- **The renderer** (`run_generator.py`) — its own VERIFY (deterministic) check runs at
-  the end of every render and exits 1 on failure; not part of `tests/canonical/`. Its
-  format emitters carry their own generator self-tests run by the CI `generator-selftests`
-  job: `test_manifest_safety.py`, `test_copilot_emitter.py`, `test_antigravity_emitter.py`
-  (all under `.claude/skills/generate-profile/scripts/`, invoked with `--self-test`).
+- **The generator** (`run_generator.py`) — its own VERIFY (deterministic) check runs at
+  the end of every render and exits 1 on failure; not part of `tests/canonical/`. The
+  copy core carries its own self-tests run by the CI `generator-selftests` job:
+  `render.py --self-test` (8 copy-core tests) and `test_manifest_safety.py`
+  (both under `.claude/skills/generate-profile/scripts/`, invoked with `--self-test`).
 - **Sub-agent definitions** — see `canonical/agents/*/AGENT.md`; verified by dogfooding.
 - **Cross-tool consistency** (Claude Code vs Codex vs Cursor vs Copilot CLI vs Antigravity) —
   covered by the renderer's byte-identity assertion across the 5 profiles, not by a suite here.

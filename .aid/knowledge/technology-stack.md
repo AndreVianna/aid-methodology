@@ -15,6 +15,7 @@ contracts:
   - "The PyPI `aid-installer` package requires Python >=3.8 and builds with hatchling; the npm `aid-installer` package requires Node >=18. Both have zero runtime dependencies."
   - "package.json + pyproject.toml exist ONLY under `packages/npm/` and `packages/pypi/` (the published installer shims); none exists for application code"
 changelog:
+  - 2026-06-22: housekeep KB-DELTA (Q30) — work-005-profile-generator-simplify (merged). Python row: dropped the deleted test_copilot_emitter.py / test_antigravity_emitter.py mention; now points at the 7 generator scripts (render.py copy core + run_generator.py). Build-commands block: replaced the now-invalid `render_skills.py --output-root ...` per-tree example (the per-type renderers were deleted; render.py's CLI only exposes --self-test) with the `render.py --self-test` invocation. Build-system + config tables: run_generator now `render_profile` single copy pass; profile-TOML section list shrunk ([layout]/[agent.frontmatter]/[skill.frontmatter]/[filename_map]/[extras] dropped); retired the copilot-agent/antigravity-rule agent_format values + the Cursor [extras.rules] mention (all now agent_format=markdown).
   - 2026-06-05: work-002-auto-installer — the repo gained its first `package.json` (`packages/npm/package.json`) and `pyproject.toml` (`packages/pypi/pyproject.toml`, hatchling build), so the former "no package.json/pyproject at any level" claim is now FALSE and was corrected; added Node 18+ (npm `aid-installer`) and Python 3.8+ (PyPI `aid-installer`, hatchling) as build/packaging tooling, both zero runtime deps; replaced setup.sh/setup.ps1 evidence with the new `aid` CLI (`bin/aid` + `install.sh` / `bin/aid.ps1` + `install.ps1`).
   - 2026-06-03: §9a T3-count strip — removed all hardcoded file-count and line-count figures from frontmatter intent, Languages table, Development Tools table, Build System table, Configuration Files table, and Testing Infrastructure; replaced aggregate counts with pointer to `.aid/generated/project-index.md`; removed stale branch name
   - 2026-06-01: post-merge update for work-001-add-providers (PRs #42/#43/#44) — generator Python files 11→12 (added test_copilot_emitter.py + test_antigravity_emitter.py); TOML config files 3→5 profiles (added copilot-cli + antigravity); byte-identical mirror count canonical+.claude+3 → canonical+.claude+5 profiles
@@ -34,7 +35,7 @@ changelog:
 |----------|---------|------------------------|
 | **Markdown** | CommonMark + GFM tables (assumed; no validator pinned) | All docs, skills, agents, templates, recipes. For counts see `.aid/generated/project-index.md` `## Language Breakdown`. |
 | **Bash (shell)** | bash 4+ (uses `declare -A` associative arrays, `[[ ]]`, `${var:-}`) | Example: `lib/aid-install-core.sh` (the install-core engine sourced by `bin/aid`); every `canonical/scripts/**/*.sh`. |
-| **Python** | 3.11+ (required for `tomllib` stdlib) | Includes `test_copilot_emitter.py` and `test_antigravity_emitter.py` (added by work-001). Pinned by `.claude/skills/generate-profile/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
+| **Python** | 3.11+ (required for `tomllib` stdlib) | The 7 generator scripts under `.claude/skills/generate-profile/scripts/` — the `render.py` copy core + `run_generator.py` entrypoint. Pinned by `.claude/skills/generate-profile/scripts/render_lib.py` "Requirements: Python 3.11+ (tomllib is stdlib; no third-party deps)" and `aid_profile.py` "Requirements: Python 3.11+ (tomllib is stdlib from 3.11)". |
 | **JavaScript (ES modules + plain)** | ES2020+ (no explicit pin); `.mjs` for ESM scripts | `canonical/scripts/summarize/validate-diagrams.mjs`, `contrast-check.mjs`; `canonical/templates/knowledge-summary/lightbox.js`, `mermaid-init.js`. |
 | **PowerShell** | 5.1+ | `bin/aid.ps1`, `install.ps1`, `lib/AidInstallCore.psm1`, `canonical/scripts/summarize/assemble-3part.ps1`. PowerShell 5.1+ pin from `README.md` `### Bootstrap the `aid` CLI` (Windows). |
 | **CSS** | CSS3 (custom properties, `:focus-visible`, `@media (forced-colors)`, `@media (prefers-reduced-motion)`) | Single canonical source `canonical/templates/knowledge-summary/component-css.css` rendered into the render-target trees: canonical + `.claude` dogfood + 5 profile trees = **7 copies** on disk (a runtime `.aid/templates/` copy makes 8 total). |
@@ -97,8 +98,8 @@ for application code, and no `Cargo.toml`, `go.mod`, `requirements.txt`, or `pom
 
 | Tool | Config file location | Purpose |
 |------|----------------------|---------|
-| **`run_generator.py`** | `.claude/skills/generate-profile/scripts/run_generator.py` | The build. Iterates `profiles/*.toml` (5 profiles), calls each renderer per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
-| **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles) | Per-host conventions: `[layout]`, `[agent.frontmatter]` (incl. `format` ∈ markdown/toml/copilot-agent/antigravity-rule), `[skill.frontmatter]`, `[model_tiers]`, `[tool_names]`, `[filename_map]`, `[extras]` (incl. `rules_frontmatter` + per-rule `output_filename`), `[capabilities]`. |
+| **`run_generator.py`** | `.claude/skills/generate-profile/scripts/run_generator.py` | The build. Iterates `profiles/*.toml` (5 profiles), calls `render_profile` (a single `render.py` copy pass) per profile, performs the pure-mirror deletion pass, writes one emission manifest per profile, then runs VERIFY (deterministic) (hard) and VERIFY (advisory) (advisory). |
+| **Per-tool profile TOMLs** | `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles) | Per-host conventions (shrunk schema, work-005): top-level `root_dir` / `root_file` / `agent_format` (∈ markdown/toml; `toml` dormant for Codex) + `[tool_names]`, `[model_tiers]`, `[capabilities]`. The former `[layout]` / `[agent.frontmatter]` / `[skill.frontmatter]` / `[filename_map]` / `[extras]` sections were dropped — see `schemas.md §9`. |
 | **Emission manifest spec** | `canonical/EMISSION-MANIFEST.md` | Authoritative spec for the manifest format (JSONL, LF-only, sentinel first line `{"_manifest_version": 1}`, sorted by `dst`). |
 | **End-user installer** | `bin/aid` (Bash) / `bin/aid.ps1` (PowerShell) | The persistent global `aid` CLI that copies a built profile tree into a target project (not a build per se — consumes the rendered `profiles/` trees). |
 | **Installer-package builds** | `packages/npm/scripts/vendor.js` (npm `prepack`) / `packages/pypi/scripts/vendor.py` (hatchling build hook) | Vendor the `bin/` + `lib/` CLI payload into the published npm / PyPI `aid-installer` packages. |
@@ -110,11 +111,8 @@ for application code, and no `Cargo.toml`, `go.mod`, `requirements.txt`, or `pom
 # Full build (renders canonical → all 5 install trees + runs VERIFY (deterministic)/(advisory))
 python .claude/skills/generate-profile/scripts/run_generator.py
 
-# Build one tree only (rare)
-python .claude/skills/generate-profile/scripts/render_skills.py \
-    --canonical-root . \
-    --profile profiles/claude-code.toml \
-    --output-root profiles/claude-code/.claude
+# Run the copy-core self-tests (8 in-process tests: byte-identity + determinism + remap)
+python .claude/skills/generate-profile/scripts/render.py --self-test --canonical-root .
 
 # Build verification (byte-identical re-render audit; hard gate)
 python .claude/skills/generate-profile/scripts/verify_deterministic.py
@@ -206,9 +204,9 @@ Source: `project-structure.md` `## Build & Test System`; `tests/README.md`.
 |------|--------|---------|
 | `profiles/claude-code.toml` | TOML | Claude Code host conventions |
 | `profiles/codex.toml` | TOML | Codex CLI host conventions (split-root layout) |
-| `profiles/cursor.toml` | TOML | Cursor IDE host conventions (adds `[extras.rules]` for `.mdc` files) |
-| `profiles/copilot-cli.toml` | TOML | GitHub Copilot CLI host conventions (`output_root .github`, `[agent].format = copilot-agent`, `Bash → shell` remap) |
-| `profiles/antigravity.toml` | TOML | Antigravity host conventions (`output_root .agent`, `[agent].format = antigravity-rule`, `[model_tiers.large/medium/small]` detailed Gemini-3 form, empty `[tool_names]`) |
+| `profiles/cursor.toml` | TOML | Cursor IDE host conventions (`Bash → Terminal` remap) |
+| `profiles/copilot-cli.toml` | TOML | GitHub Copilot CLI host conventions (`root_dir .github`, `agent_format = markdown`, `Bash → shell` remap) |
+| `profiles/antigravity.toml` | TOML | Antigravity host conventions (`root_dir .agent`, `agent_format = markdown`, `[model_tiers.large/medium/small]` detailed Gemini-3 form, empty `[tool_names]`) |
 | `.claude/settings.json` | JSON | Claude Code permission allow-list |
 | `.claude/settings.local.json` | JSON | Personal Claude Code overrides (gitignored per `.gitignore` `.claude/settings.local.json`) |
 | `.aid/settings.yml` | YAML 1.2 | AID runtime config — project identity, review minimum_grade, parallelism, heartbeat interval, per-skill overrides |

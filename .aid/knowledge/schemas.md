@@ -23,6 +23,7 @@ contracts:
   - "State advancement ordering (SD-2, for reconcile): Done > Canceled > In Review > In Progress > Blocked > Failed > Pending"
   - "DERIVED-view rule: work ## Tasks State, ## Plan / Deliveries, ## Delivery Gates, ## Cross-phase Q&A assembled/unioned at read time; never written"
 changelog:
+  - 2026-06-22: housekeep KB-DELTA (Q30) — work-005-profile-generator-simplify (merged). §9 Profile TOML rewritten to the SHRUNK schema: the [layout], [agent]/[agent.frontmatter], [skill]/[skill.frontmatter], [filename_map], [extras] sections + the LayoutConfig/FrontmatterConfig/AgentConfig/SkillConfig/RuleEntry/ExtrasConfig dataclasses were DROPPED; profiles now carry only name/root_dir/root_file/agent_format (top-level) + [tool_names] + [model_tiers] + [capabilities] (surviving dataclasses: Profile, ModelTierSimple, ModelTierDetailed, CapabilitiesConfig). §6/§7 renderer-behavior citations re-pointed from the deleted render_skills.py/render_agents.py to render.py (copy_tree translate=skills/agents branches). §8 location-rule citation re-pointed from LayoutConfig.common_parent() to Profile.common_parent(). §6/§7 skill+agent frontmatter source-of-truth + schema headers re-pointed off the dropped `[skill.frontmatter]`/`[agent.frontmatter]` profile sections to the canonical SKILL.md/AGENT.md files (the CC-optional `context`/`agent` strip is now hardcoded in render.py `_rewrite_skill_frontmatter`, not a profile list). Emission-manifest record schema (§8) unchanged.
   - 2026-06-18: work-004-worktree-tracking task-015 — corrected §15 Foreign-keys note (stale "feature-NNN → delivery-NNN" Source format replaced with accurate "work-NNN-{name} -> delivery-NNN" + delivery/task structural FK via folder nesting); restored ER-diagram derivation relationships (WORK_STATE DERIVES from DELIVERY_STATE; DELIVERY_STATE DERIVES from TASK_STATE — the read-time union relationships omitted in the task-002 rewrite); corrected ER labels to name AUTHORED vs DERIVED sections per-entity.
   - 2026-06-18: work-004-worktree-tracking task-002 — updated §4 (Work State) for the uniform unit hierarchy (work/delivery/task folder layout), per-level STATE/SPEC schemas, DERIVED-view rule (work Tasks State/Plan Deliveries/Delivery Gates/Cross-phase Q&A derived at read), delivery independent lifecycle enum (SD-8), per-delivery Cross-phase Q&A partition (SD-5), state-not-status naming, SD-2/SD-3/SD-8/SD-9/migration rules; updated §11 (Task File) for new path delivery-NNN/tasks/task-NNN/SPEC.md + sibling STATE.md; updated §12 (Delivery Issues Log) path reference.
   - 2026-06-10: work-001-aid-dashboard task-001 (KI-002) — corrected §13 IMPEDIMENT path from `.aid/{work}/task-NNN/IMPEDIMENT.md` (wrong subdirectory shape) to `.aid/{work}/IMPEDIMENT-task-NNN.md` (flat, hyphenated; matches producer `canonical/skills/aid-execute/references/state-execute.md:322,368` and `pipeline-contracts.md ### IMPEDIMENT-task-NNN.md Contract`). Doc-only fix; no producer behavior change.
@@ -494,9 +495,9 @@ behavior). Never throws.
 
 ## 6. Skill Frontmatter
 
-**Source of truth:** `canonical/skills/*/SKILL.md` (10 user-facing + 1 maintainer-only) + `profiles/claude-code.toml` `[skill.frontmatter]` (skill frontmatter schema declaration).
+**Source of truth:** `canonical/skills/*/SKILL.md` (the frontmatter is authored directly on the canonical SKILL.md files; the per-profile `[skill.frontmatter]` schema-declaration section was dropped in work-005 — see `schemas.md §9`).
 
-**Schema (YAML, per `profiles/claude-code.toml` `[skill.frontmatter]`):**
+**Schema (YAML, as authored on `canonical/skills/*/SKILL.md`):**
 
 | Field | Type | Required? | Notes |
 |-------|------|-----------|-------|
@@ -504,10 +505,10 @@ behavior). Never throws.
 | `description` | folded string (YAML `>`) | YES | One paragraph describing the skill's purpose + state-machine summary |
 | `allowed-tools` | comma-separated string | YES | Subset of `Read, Glob, Grep, Bash, Write, Edit, Agent, AskUserQuestion` |
 | `argument-hint` | string | NO | Brief flag description shown by the host's slash-command help |
-| `context` | string | NO (claude-code-only) | Injected by renderer for Claude Code (per `profiles/claude-code.toml` `[skill.frontmatter]` `claude_code_optional`) |
+| `context` | string | NO (claude-code-only) | Claude-Code-only field; stripped by the renderer for non-Claude tools (the translate=skills CC-optional strip in `render.py`) |
 | `agent` | string | NO (claude-code-only) | Injected by renderer for Claude Code |
 
-**Renderer behavior** (per `.claude/skills/generate-profile/scripts/render_skills.py` `_rewrite_skill_frontmatter`):
+**Renderer behavior** (per `.claude/skills/generate-profile/scripts/render.py` `_rewrite_skill_frontmatter`, the translate=skills branch of `copy_tree`):
 
 - Tool name remapping applied to `allowed-tools:` line via the profile's `[tool_names]` table (identity map for Claude Code per `profiles/claude-code.toml` `[tool_names]`).
 - `claude_code_optional` fields are dropped from non-Claude-Code renders.
@@ -516,9 +517,9 @@ behavior). Never throws.
 
 ## 7. Agent Frontmatter
 
-**Source of truth:** `canonical/agents/aid-*/AGENT.md` (9 agents) + `profiles/claude-code.toml` `[agent.frontmatter]`.
+**Source of truth:** `canonical/agents/aid-*/AGENT.md` (9 agents). The frontmatter is authored directly on the canonical AGENT.md files; the per-profile `[agent.frontmatter]` schema-declaration section was dropped in work-005 — see `schemas.md §9`.
 
-**Schema (YAML, per `profiles/claude-code.toml` `[agent.frontmatter]`):**
+**Schema (YAML, as authored on `canonical/agents/aid-*/AGENT.md`):**
 
 | Field | Type | Required? | Notes |
 |-------|------|-----------|-------|
@@ -526,7 +527,7 @@ behavior). Never throws.
 | `description` | string OR folded YAML `>` | YES | One paragraph; for sub-agent-only utilities, must begin with `INTERNAL UTILITY (sub-agent only — do NOT invoke from a skill)` per `canonical/agents/aid-clerk/AGENT.md` `description:` line |
 | `tier` | enum | YES (canonical) | `large` / `medium` / `small` — maps to `model:` via the profile's `[model_tiers]` table |
 | `tools` | comma-separated string | YES | Subset of `Read, Glob, Grep, Bash, Write, Edit` |
-| `model` | string | YES (rendered output, NOT canonical input) | Derived by the renderer from `tier:` via `[model_tiers]` (per `.claude/skills/generate-profile/scripts/render_agents.py` `_resolve_model`) |
+| `model` | string | YES (rendered output, NOT canonical input) | Derived by the renderer from `tier:` via `[model_tiers]` (per `.claude/skills/generate-profile/scripts/render.py` `_resolve_model`, the translate=agents branch of `copy_tree`) |
 | `permissionMode` | enum | NO | `bypassPermissions` — set on `aid-researcher` when dispatched for parallel KB analysis (per the former discovery-* sub-agent pattern; confirm in `canonical/agents/aid-researcher/AGENT.md`) |
 | `background` | bool | NO | `true` — set on `aid-researcher` when dispatched for parallel KB analysis |
 
@@ -575,7 +576,7 @@ Codex + Antigravity use a `[model_tiers.<tier>]` sub-table with `model` + `reaso
 | `copilot-cli` | `profiles/copilot-cli/emission-manifest.jsonl` (single `.github/` root) |
 | `antigravity` | `profiles/antigravity/emission-manifest.jsonl` (single `.agent/` root) |
 
-⚠️ The location table in `canonical/EMISSION-MANIFEST.md` (`## Filename and Location`) still lists only the original 3 profiles; the 2 new manifests exist on disk and follow the same deepest-common-parent rule. The renderer derives the path from `LayoutConfig.common_parent()` (per `.claude/skills/generate-profile/scripts/aid_profile.py`), so the rule generalizes regardless of the doc's example set.
+⚠️ The location table in `canonical/EMISSION-MANIFEST.md` (`## Filename and Location`) still lists only the original 3 profiles; the 2 new manifests exist on disk and follow the same deepest-common-parent rule. The renderer derives the path from `Profile.common_parent()` (per `.claude/skills/generate-profile/scripts/aid_profile.py`; `LayoutConfig` was dropped in work-005 and `common_parent()` now lives on `Profile`), so the rule generalizes regardless of the doc's example set.
 
 **Safety-boundary algorithm** (per `EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`):
 
@@ -658,39 +659,31 @@ string (`write_version_marker` in `lib/aid-install-core.sh`).
 
 **Source of truth:** `profiles/claude-code.toml`, `profiles/codex.toml`, `profiles/cursor.toml`, `profiles/copilot-cli.toml`, `profiles/antigravity.toml` (5 profiles).
 
-**Schema (TOML 1.0, parsed by `.claude/skills/generate-profile/scripts/aid_profile.py` `_parse_layout` etc.):**
+**Schema (TOML 1.0, parsed by `.claude/skills/generate-profile/scripts/aid_profile.py` `load_profile` / `validate`):**
 
-| Section | Keys | Purpose |
-|---------|------|---------|
-| `[layout]` | `output_root` (single-root tools — `.claude` / `.cursor` / `.github` (Copilot CLI, per `profiles/copilot-cli.toml` `[layout]`) / `.agent` (Antigravity, per `profiles/antigravity.toml` `[layout]`)), `agents_root` + `assets_root` (split-root Codex), `agents_dir`, `skills_dir`, `templates_dir`, `recipes_dir`, `scripts_dir`, `rules_dir` (Cursor + Antigravity), `project_context_file` | Where rendered files go |
-| `[agent]` | `format` ∈ {`markdown`, `toml`, `copilot-agent`, `antigravity-rule`} (the `_KNOWN_AGENT_FORMATS` set in `aid_profile.py`); validated by `validate()` | Per-tool agent output format |
-| `[agent.frontmatter]` | `required` list, `optional` list, `claude_code_optional` list | Which frontmatter keys are required/optional in agent output |
-| `[skill]` | `decomposition` (always `"references"` per Decision F per `aid_profile.py` `decomposition` field) | Skill body decomposition strategy |
-| `[skill.frontmatter]` | `required` list, `optional` list, `claude_code_optional` list | Same as agent frontmatter |
-| `[model_tiers]` | `large`, `medium`, `small` — string (`ModelTierSimple`: Claude Code / Cursor / Copilot CLI) OR sub-table (`ModelTierDetailed` with `model` + `reasoning_effort`: Codex / Antigravity) | Tier-to-model mapping |
-| `[tool_names]` | flat map, e.g., `Read = "read_file"` (identity for Claude Code per `claude-code.toml` `[tool_names]`; empty map → identity passthrough, e.g., Antigravity per `profiles/antigravity.toml` `[tool_names]`) | Per-tool tool-name remapping |
-| `[filename_map]` | `project_context_file`, `reviewer_output_file`, `open_questions_file` | Per-tool placeholder substitutions for `{project_context_file}` etc. |
-| `[extras]` | `rules_frontmatter` (string\|None — e.g., `"trigger"` for Antigravity, controlling extras-rules frontmatter dialect; absent → verbatim source copy, e.g., Cursor) + `[[extras.rules]]` array of `{filename, always_apply, description, globs, output_filename?}` | Tool-specific extras (methodology rule files placed via `render_skills._render_cursor_extras`) |
-| `[capabilities]` | `hooks`, `skill_chaining`, `background_execution`, `stop_hook_autocontinue` (booleans) | Tool capabilities (verified against host docs) |
+> **Shrunk in work-005-profile-generator-simplify.** The copy-core generator no
+> longer needs per-tool layout/frontmatter/extras config — `render.py` copies the
+> canonical `{agents,skills,aid}` trees verbatim except for two surviving
+> translations (agent execution-metadata + `tool_names` remap). The `[layout]`,
+> `[agent]`/`[agent.frontmatter]`, `[skill]`/`[skill.frontmatter]`, `[filename_map]`,
+> and `[extras]` sections — and the `LayoutConfig`, `FrontmatterConfig`,
+> `AgentConfig`, `SkillConfig`, `RuleEntry`, `ExtrasConfig` dataclasses — were
+> **dropped** (per `aid_profile.py` header `Dropped: [layout] ... ExtrasConfig, RuleEntry`).
 
-The dataclasses mirror this schema 1:1 in `.claude/skills/generate-profile/scripts/aid_profile.py` (the `@dataclass` block from `class LayoutConfig` onward — `LayoutConfig`, `FrontmatterConfig`, `AgentConfig`, `SkillConfig`, `ModelTierSimple`, `ModelTierDetailed`, `RuleEntry`, `ExtrasConfig`, `CapabilitiesConfig`, `Profile`).
+| Section / key | Keys | Purpose |
+|---------------|------|---------|
+| `name` (top-level) | string | Profile name; output goes to `profiles/<name>/` |
+| `root_dir` (top-level) | string (default `.claude`) | Host-required root basename (`.claude` / `.codex` / `.cursor` / `.github` / `.agent`) |
+| `root_file` (top-level) | string (default `CLAUDE.md`) | Root instruction file (`AGENTS.md` for non-Claude tools; install lib uses it) |
+| `agent_format` (top-level) | `"markdown"` (4 tools) or `"toml"` (Codex, **dormant** — E-CODEX-1 gated); `_KNOWN_AGENT_FORMATS` still validates the value | Per-tool agent output format |
+| `[tool_names]` | flat map, e.g., `Bash = "Terminal"` (Cursor), `Bash = "shell"` (Copilot); empty/identity for Claude Code per `claude-code.toml` `[tool_names]` | The surviving tool-name remap, applied to agent `tools:` + skill `allowed-tools:` |
+| `[model_tiers]` | `large`, `medium`, `small` — string (`ModelTierSimple`: Claude Code / Cursor / Copilot CLI) OR sub-table (`ModelTierDetailed` with `model` + `reasoning_effort`: Codex / Antigravity) | Tier-to-model mapping (feeds agent execution-metadata translation) |
+| `[capabilities]` | `hooks`, `skill_chaining`, `background_execution`, `stop_hook_autocontinue` (booleans) | Tool capabilities consumed by skills for graceful degradation |
 
-**`[[extras.rules]]` → `RuleEntry`** (per `aid_profile.py` `class RuleEntry`):
-
-| Key | Type | Default | Purpose |
-|-----|------|---------|---------|
-| `filename` | string | (required) | Canonical source name under `canonical/rules/` (e.g., `aid-methodology.mdc`) |
-| `always_apply` | bool | `false` | `true` → `trigger: always_on`; `false` → `trigger: glob` (when trigger-dialect is active) |
-| `description` | string | `""` | Rule description carried into regenerated frontmatter |
-| `globs` | list of strings | `[]` | Glob patterns for `trigger: glob` rules |
-| `output_filename` | string \| None | `None` | Optional output-name override — when set, source is written to this name (enables `.mdc → .md` rename for Antigravity per `profiles/antigravity.toml` `[[extras.rules]]`); `None` → source name preserved, so Cursor stays byte-identical |
-
-**`[extras]` → `ExtrasConfig`** (per `aid_profile.py` `class ExtrasConfig`):
-
-| Key | Type | Default | Purpose |
-|-----|------|---------|---------|
-| `rules` | list of `RuleEntry` | `[]` | Methodology rule files to emit into the rules dir |
-| `rules_frontmatter` | string \| None | `None` | Frontmatter dialect for extras-rules emission. `None` → verbatim source copy (Cursor byte-identical path). `"trigger"` → Antigravity dialect: strip source `.mdc` frontmatter, regenerate from `RuleEntry` fields using `trigger:`/`description`/`globs` keys (`always_apply=true` → `trigger: always_on`; `always_apply=false` → `trigger: glob` + globs). DECOUPLED from `[agent].format` (extras-rules + agent emission are separate paths per delivery-003). |
+The surviving dataclasses in `.claude/skills/generate-profile/scripts/aid_profile.py`
+are `Profile` (fields `name`, `root_dir`, `root_file`, `agent_format`, `tool_names`,
+`model_tiers`, `capabilities`), `ModelTierSimple`, `ModelTierDetailed`, and
+`CapabilitiesConfig`.
 
 ---
 
