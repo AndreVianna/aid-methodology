@@ -10,8 +10,8 @@
 
 <!-- AUTHORED -- single writer: this delivery's branch only. -->
 
-- **State:** Gated
-- **Updated:** 2026-06-21T20:30:00Z
+- **State:** Done
+- **Updated:** 2026-06-22T02:26:29Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
