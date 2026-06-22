@@ -1,0 +1,837 @@
+# Requirements
+
+- **Name:** Knowledge Base Skills Overhaul
+- **Description:** Overhaul AID's KB-facing skills so the Knowledge Base captures a project's essence (its ubiquitous language and native concepts), routes agents and humans reliably, and stays fresh across greenfield and brownfield projects, with teach-back closure as the acceptance bar.
+
+## Change Log
+
+| Date | Change | Source |
+|------|--------|--------|
+| 2026-06-22 | Initial interview started | /aid-interview |
+| 2026-06-22 | §1 Objective written — comprehensive analysis, strategy, 3 paths | /aid-interview |
+| 2026-06-22 | §2 Problem Statement written — full detail, P1–P8 + net impact | /aid-interview |
+| 2026-06-22 | §3 Users & Stakeholders written — full detail + need matrix | /aid-interview |
+| 2026-06-22 | §4 Scope written — In/Out confirmed (S1–S9, O1–O6); one work | /aid-interview |
+| 2026-06-22 | §5 Functional Requirements written — FR-1…FR-29 (groups A–H) | /aid-interview |
+| 2026-06-22 | §5 revised — +FR-30…FR-35 (gap-closure G1–G6); FR-17 panel scales by path; FR-23/24/25 demoted to §6 | /aid-interview |
+| 2026-06-22 | §6 NFRs written — NFR-1…NFR-8 (cost/wall-clock/determinism budgets + quality) | /aid-interview |
+| 2026-06-22 | §7–§10 written — Constraints C1–C8, Assumptions/Deps, AC1–AC13, Priority (MoSCoW) | /aid-interview |
+| 2026-06-22 | COMPLETION — added AC14/AC15; identity set; interview complete — approved | /aid-interview |
+| 2026-06-22 | Cross-ref folds — Q1 `approved_at_commit:` (FR-4/5), Q2 C2 KB-scripts, FR-6 both readers, §1.5 scout slot | /aid-interview |
+
+## 1. Objective
+
+> This objective is intentionally **comprehensive** — it carries the full analysis,
+> reasoning, and strategy developed during the pre-interview design discussion so the
+> requirements are self-contained for the downstream phases. The living design note is
+> `.aid/design/kb-skills-improvements.md`.
+
+### 1.1 Goal
+
+Overhaul AID's **KB-facing skills** (`aid-discover`, `aid-summarize`, `aid-ask`,
+`aid-housekeep`, plus a new `aid-update-kb`) so the Knowledge Base:
+
+1. **Captures a project's *essence*** — its ubiquitous language and native concepts, not
+   just generic structure;
+2. **Routes both agents and humans** to the right knowledge quickly and reliably;
+3. **Stays fresh** over the project's whole life; and
+4. **Adapts** across greenfield and brownfield projects.
+
+The invariant acceptance bar across everything below is **teach-back closure**: a fresh
+reviewer, given *only the KB*, can explain how the project works in its own language and
+answer "what is X?" for the project's core native concepts.
+
+### 1.2 Background — why this work exists (the analysis)
+
+**The reported gap.** Discovery — *even when it passes an A+ gate* — captures the
+**basic/structural** but misses the **essence**: the project's anatomy, inner engines,
+internal jargon, and native concepts (its **ubiquitous language**, in the DDD sense).
+Domain vocabulary and key concepts come out incomplete. **Concrete miss:** in a project
+named *caprica*, discovery failed to capture the concept of **'Relative bus / Relative
+ME'** — load-bearing to understanding the system, yet absent from the KB.
+
+**Why the A+ gate doesn't catch it.** The gate grades *correctness* and
+*template/intent-coverage* — and **both are satisfied by generic content**. "Layered
+architecture, repository pattern, REST API" is true and fills the sections → A+. The
+gate therefore **actively selects for shallow-but-true**, because coverage is measured
+against the *template*, never against *what is actually in this source*. A correct-but-
+generic doc and a perfectly-calibrated one receive the same grade.
+
+**The reframe.** The target is **intrinsic** (the project's own conceptual model), **not
+comparative** "distinctiveness vs other projects." Decisive principle: **a KB doc's
+value is the *delta* from what a competent generalist already knows.** An agent already
+knows what a layered architecture is from training; restating it is **negative value**
+(tokens on the known, crowding the budget). The only content worth storing is what a
+smart newcomer **cannot infer**: the custom abstraction, the native concept, the
+constraint-forced workaround, the gotcha, the *why-it's-like-this*. **A generic doc has
+failed even if every sentence is true.**
+
+**Root cause.** Discovery does **structural cataloging** (a map of parts) instead of
+**conceptual-model reconstruction** (a model of ideas). A concept like 'Relative bus'
+isn't a module — it's an idea spread across files; a structural sweep glosses it as
+noise. This is compounded by **doc-ownership partitioning**: the 4 parallel researchers
+each work a lane, so **no agent owns the whole-system concept model**, and cross-cutting
+concepts fall between lanes.
+
+### 1.3 The KB model we are committing to
+
+- **KB = a summary + pointer layer.** The KB is a *summary* of the full-size source, not
+  a replacement for it. Chunks are small and digestible; when depth is needed, the chunk
+  **points to the authoritative source**. This dissolves the agent-vs-human chunking
+  "fork" — *both* want small chunks; depth is handled by summary+pointer (a PM stops at
+  the summary; an architect follows the pointer into code/spec/ADR), **not** by
+  layered-depth-within-a-doc or duplicate audience docs.
+- **Documents are derived from *concerns*, not from project *types*.** The unit we
+  standardize is the small, universal, stable set of **concerns** (the questions a
+  newcomer must answer: how is it built? what are the parts & how do they connect? what
+  conventions? what vocabulary? how is it tested? what's risky/owed? how does it ship?
+  what does it do for users?). The *documents* are derived per project (split a large
+  concern; add a project-specific doc), **proposed → confirmed** by the human. We do
+  **not** enumerate project types (impossible to enumerate; a per-type catalog is the
+  rigid-template trap in disguise).
+- **Audience & ownership is a first-class dimension.** Docs target agents AND humans of
+  multiple roles (junior dev, non-tech PM, senior architect, UX designer…) and must be
+  *understood and updatable by both*. A document boundary should fall where three forces
+  agree: **coverage** (a coherent concern), **fit** (right-sized for this project), and
+  **audience & ownership** (a natural owner-role + audience who can read and maintain
+  it). AID's existing `tier-model.md` ranks by *agent load-bearingness* — a different
+  axis from human audience, which appears missing today.
+- **New frontmatter field `sources:`** — the list of sources each chunk summarizes. It
+  is required by **three threads at once** (a strong signal it is the right primitive):
+  the INDEX "go-deeper" pointer (Item 1), per-doc source-keyed freshness, and the
+  calibration/coverage grading.
+- **The summary/source boundary (the "sweet spot").** *In the chunk:* durable,
+  synthesized, cross-cutting understanding you can't cheaply re-derive (the *why*, the
+  *how parts interact*, the gotchas). *Left in source (point to it):* volatile detail,
+  full signatures, exhaustive enumerations. **Too thin → link farm; too fat → rotting
+  duplicate.** The researcher/reviewer must calibrate this, and **the grading must
+  validate it**.
+
+### 1.4 Discovery quality — capturing the essence (research + review)
+
+**Research side — hunt the essence, don't fill the skeleton:**
+- **Mechanical anchor — salient coined-term detection.** Scan *all* sources for terms
+  that are project-coined (non-standard) × recurring × cross-source → the
+  candidate-concept list ("things the KB must explain"). 'Relative bus' lights up here.
+  Converts "did we miss a concept?" from unknowable into a checklist. Mechanical → cheap
+  + deterministic.
+- **Comprehension / closure loop (the heart).** Stop cataloging; **explain how the
+  system works in the project's own language** and loop: any native term reached-for but
+  ungrounded = a required investigation; repeat until the explanation **closes** (no
+  undefined project-specific term remains). Understanding is recursive — grounding one
+  concept reveals the next.
+- **The "can't-explain-it" tripwire.** Any project-specific term the researcher cannot
+  confidently define from general knowledge is a **mandatory** investigation, never
+  ignorable noise. (The root failure was treating 'Relative bus' as noise.)
+- **Read the *why* sources, not just code** — docs, ADRs, reports, data bundles,
+  commit/issue history. Code shows *what*; prose shows *why-here*, and *why-here* is the
+  essence.
+- **Expectations as open questions, not fill-in templates** — "Describe how this is
+  structured and why" (report what's there) vs "Fill in: Layers/Components/Diagram"
+  (invites bending).
+
+**Review side — a multi-mandate review *panel* (not one blended reviewer):**
+
+| Reviewer | Mandate | Fails when… |
+|---|---|---|
+| Correctness | claims true vs source | a claim contradicts the source |
+| Anatomy / coverage | what in the source is *unrepresented* | a load-bearing part is missing |
+| Concept-closure | every native term defined; salient-term coverage | a coined term ('Relative bus') is absent/undefined |
+| Teach-back | *using only the KB*, explain the engine + answer "what is X?" | it can't explain a core concept |
+| Calibration | summary vs transcription (the sweet spot) | generic / transcribed / hollow |
+
+- **Teach-back closure is THE keystone exit criterion** — not "severity distribution ≥
+  A+."
+- **Calibration dimension** (added to the rubric): *transcription* (too fat),
+  *hollowness* (too thin), *coverage-vs-source* (a load-bearing fact in the doc's
+  `sources:` is absent), *deferral-must-point*. Operationalized via a **round-trip
+  test** (forward orientation / reverse coverage / transcription scan).
+- **Evidence-anchored grading** — reviewers grade against mechanically-generated
+  evidence lists (salient terms, source files), not pure recall → repeatable.
+
+**The honest limit + human escape hatch.** A purely *implicit* concept — held in heads,
+never named in any artifact — cannot be recovered from sources. So the goal is not 100%:
+(a) exhaustively capture every **fingerprinted** concept (anchor + closure loop), and
+(b) when the researcher senses an **ungroundable** model gap, **raise it to the human**
+(Q&A / `aid-query-kb` gap capture) rather than silently ship shallow. This converts
+silent misses into caught concepts or explicit human questions.
+
+### 1.5 The discovery method and the three paths
+
+**Governing principle** (facing a project — *not even knowing the subject*): you cannot
+bring domain knowledge, so reconstruct it **bottom-up from evidence**; the deadly mistake
+is starting from the concern-template and filling it. **Understand first, write second,
+prove understanding third — concepts before template.**
+
+**The method (orchestrated by `aid-orchestrator`):**
+1. **RECON** (`aid-researcher` scout slot) — inventory every source type (code, docs, reports,
+   data, config, history), entry points, where knowledge lives. No writing.
+2. **LANGUAGE & CONCEPT HARVEST** — `aid-clerk` (mechanical coined-term scan →
+   candidate-concept list) + `aid-researcher` grounds the top candidates → the **concept
+   spine** (the shared backbone). *Biggest departure from today.*
+3. **PARALLEL DEEP DIVES** (the 4 `aid-researcher` concern-slots) — each armed with the
+   concept list, explains its area in native terms, grounds every concept it touches,
+   writes summary+pointer with `sources:`, feeds new terms back to the spine.
+4. **SYNTHESIS + CLOSURE LOOP** (`aid-architect`) — stitch a "how it works" narrative in
+   native terms; loop on ungrounded terms / unexplained flows until it closes.
+5. **REVIEW PANEL** (parallel `aid-reviewer` dispatches, the mandates above);
+   `aid-orchestrator` aggregates → FIX loop, or escalate ungroundable gaps to —
+6. **HUMAN GATE** (`aid-interviewer`) — questions for the un-fingerprinted concepts.
+
+**Three recon-selected paths** (a triage at the front, mirroring `aid-interview`'s
+lite/full triage). **Shared invariants across all paths:** concept spine first-class;
+summary+pointer + `sources:`; the review *mandates* (panel size scales, mandates don't);
+**teach-back closure as the exit**; human escape hatch; deterministic substrate; *KB
+value = delta from generalist knowledge*.
+
+| Dimension | Greenfield | Brownfield-Small | Brownfield-Large |
+|---|---|---|---|
+| Recon trigger | little/no source | source < complexity threshold | source ≥ threshold |
+| Source of truth | human intent + requirements/design | code + docs | code + docs + history/reports/data |
+| Concept acquisition | **elicit** (co-author; ties to interview/specify) | **extract**, single pass | **extract**: mechanical harvest → spine |
+| Generation shape | forward-authored, thin | one understand-pass, no fan-out | parallel fan-out by concern, concept-aware |
+| Closure | "intent coherent + specified + vocab set" | short | batched-parallel loop, capped |
+| Review | intent-graded mini-panel | collapsed: 1 reviewer, multi-mandate checklist | full parallel mandate panel |
+| Starting KB | thin (intent+vocab+design) | full anatomy (small) | full anatomy (large) |
+| Exit | teach-back **vs intent** | teach-back closure | teach-back closure |
+| Cost / wall-clock | low tokens, human-paced | low | high (justified) |
+| Primary risk | drift intent ↔ as-built | missing a fingerprinted concept | closure over/under-run; cost |
+
+**Triage = lifecycle.** The path is **measured, not declared** (recon quantifies
+source-availability/complexity → thresholds propose → human confirms; do not trust a
+static `project.type`). **Re-triaged every run**, so the paths are *stages a project
+passes through*: a greenfield's thin intent-KB becomes the spec the code is built
+against; as code lands, `aid-update-kb` **verifies intent vs as-built and fills
+anatomy**; crossing the threshold triggers a Brownfield-Large consolidation. The KB
+**persists and is progressively verified/enriched** across Greenfield → Brownfield-Small
+→ Brownfield-Large.
+
+### 1.6 Engineering principles — cost, wall-clock, determinism
+
+**Unifying lever: maximize the deterministic substrate; shrink + anchor the LLM
+judgment.** Most "expensive LLM" steps are actually mechanical.
+- **Cost:** mechanical-first (coined-term scan, closure self-containment check, salient
+  ranking are scripts, not agents); triage depth by salience; incremental re-runs via
+  `sources:`; bounded closure loop.
+- **Wall-clock:** batch the closure loop into parallel rounds (detect-all-gaps →
+  fill-all-parallel → re-check — N sequential iterations become ~2-3 rounds); speculative
+  overlap (start deep-dives on the provisional concept list); parallel concept-grounding;
+  fully parallel review panel.
+- **Determinism:** two-layer — a **deterministic harness** (control flow, gates,
+  closure-termination, dispatch) + **stateless LLM workers** fed mechanical inputs,
+  returning **schema-validated** output; evidence-anchored grading; teach-back as a
+  *fixed question set* derived from the harvest. **Honest floor:** synthesis / "did it
+  understand" are irreducibly judgment — shrink & anchor the surface, don't pretend to
+  eliminate it.
+
+### 1.7 INDEX routing table (Item 1)
+
+Replace today's prose-`intent:` `INDEX.md` list with a generated **routing table**:
+`Document(=link/Path) · Objective(purpose noun-phrase) · Summary(one-sentence scope) ·
+Tags(concrete keywords) · See-instead(negative routing)`. Backed by new frontmatter
+(`objective`, `summary`, `tags`, `see_also`), composed by `build-kb-index.sh`. Stays
+deterministic, git-diffable, dependency-free. **Rejected:** a libSQL/Turso vector-router
+over MCP (adds embedding model + binary + MCP server + ANN non-determinism; collides with
+AID's bare-box/deterministic ethos) — revisit only at hundreds of docs, and even then
+embed the INDEX *rows* and return *paths*, never chunk-RAG.
+
+### 1.8 Skill topology and the freshness loop
+
+- **Rename `aid-ask` → `aid-query-kb`** (read/query side; clearer name).
+- **Add `aid-update-kb`** — targeted/punctual KB updates (the "second pass" for the
+  precise deltas a finished work introduced), applied through the same review/calibration
+  gate as `aid-discover`. `aid-housekeep`'s KB-DELTA is too broad for an end-of-work diff.
+- **Topology:** `aid-discover` (bulk create/regen) · `aid-update-kb` (targeted) ·
+  `aid-query-kb` (read) · `aid-summarize` (render) · `aid-housekeep` (periodic broad
+  reconciliation + cleanup).
+- **Freshness loop has three holes today:** (1) **no trigger** — detection is pull-only,
+  human-memory-driven (evidence: this repo's KB sat stale after work-005 until housekeep
+  was run by hand); (2) **no precision** — `kb_baseline` is one whole-KB tip-date, no
+  per-doc/source linkage; (3) **no signal capture** — `aid-ask` discards the best free
+  drift signal ("KB can't answer this" / "KB contradicts code"). **Closers:** `sources:`
+  per doc → per-doc staleness; push/flag detection; query-side gap capture. **Principle:**
+  auto-*detect + flag*, keep *update* human-gated.
+
+### 1.9 Approach / verdict
+
+**Graft, don't replace.** The current `aid-discover` has real strengths (mature/CI-tested,
+bounded cost, parallel/fast, already adaptive on the doc-set, clean-context review, FIX
+loop, Q&A capture). Keep those bones; add the high-value pieces — **(must-have)** the
+concept-harvest front-half + concept spine, and the multi-mandate panel + teach-back
+exit; **(bounded)** the closure loop, capped; and **scale depth to project complexity**
+via the three paths.
+
+### 1.10 Success criteria (summary)
+
+- Discovery reliably captures native concepts and **passes teach-back closure** (a
+  'Relative bus'-type concept is not silently missed).
+- The `INDEX.md` routes reliably (Objective · Summary · Tags · See-instead).
+- The KB **freshness loop closes** (per-doc, source-keyed staleness + targeted
+  `aid-update-kb` updates; gap capture from `aid-query-kb`).
+- One method, **three recon-selected paths**, working correctly for greenfield,
+  brownfield-small, and brownfield-large — with teach-back as the invariant bar.
+- The whole design stays within AID's **deterministic, dependency-free, human-gated**
+  ethos.
+
+## 2. Problem Statement
+
+> Comprehensive, per §1's treatment. These are the **current** deficiencies in AID's
+> KB-facing skills that this work addresses. Solution *strategy* lives in §1; this section
+> states the problems, their evidence, and their impact. Each problem is tagged `P#` for
+> traceability into Functional Requirements (§5) and Acceptance Criteria (§9).
+
+### 2.1 (P1) Discovery captures structure, not essence
+
+**Problem.** `/aid-discover` reliably produces the *generic skeleton* of a project
+(architecture style, module list, tech stack) but misses the **essence** — the project's
+own inner engines, internal jargon, and native concepts (its **ubiquitous language**).
+The domain glossary and key concepts come out incomplete.
+
+**Evidence.** In project *caprica*, discovery never captured **'Relative bus / Relative
+ME'** — a concept you cannot understand the system without — even though the run passed
+its quality gate. This is reported across multiple projects, not a one-off.
+
+**Impact.** The KB describes what a competent generalist *already knows* and omits the
+only content with real value — what the project does *that a newcomer cannot infer*. An
+agent or human cannot actually understand the project from the KB, which defeats the KB's
+entire purpose (onboarding).
+
+### 2.2 (P2) The quality gate selects for shallow-but-true
+
+**Problem.** The review rubric grades **correctness** (claims true vs disk) and
+**template/intent-coverage** — and *both are satisfied by generic content*. There is no
+axis for essence, distinctiveness, or summarize-vs-transcribe calibration.
+
+**Evidence.** "Layered architecture, repository pattern, REST API" is true, cites
+resolve, and fills every section → **A+** — while saying nothing project-specific.
+caprica's KB passed the gate with the core concept missing.
+
+**Impact.** An A+ is **not** a signal that the KB is useful; it certifies "true +
+template-complete," which a shallow doc trivially meets. Teams trust a green gate that
+guarantees nothing about whether the KB captured the project. The gate actively rewards
+the path of least resistance (generic + correct).
+
+### 2.3 (P3) Cross-cutting concepts fall between lanes
+
+**Problem.** Discovery is **structural cataloging** (a map of parts), not
+**conceptual-model reconstruction** (a model of ideas). The four researchers are
+partitioned by **doc ownership** (architecture / analyst / integrator / quality), so **no
+agent owns the whole-system concept model**, and there is no shared *concept spine*.
+
+**Evidence.** A concept like 'Relative bus' isn't a module — it's an idea spread across
+many files; a per-lane structural sweep glosses it as noise, and no lane is responsible
+for it.
+
+**Impact.** Exactly the most important, cross-cutting concepts — the ones that define how
+the system actually works — are nobody's job and are silently dropped. The glossary,
+being just-another-doc owned by one lane, is not a backbone the other docs ground against.
+
+### 2.4 (P4) The summary/source calibration is ungraded
+
+**Problem.** The KB should be a *summary + pointer* layer, but nothing grades whether a
+doc sits at the right altitude. **Over-summarization** (faithful transcription of the
+source) and **under-summarization** (a hollow "see file X" link-farm) both pass today.
+Coverage is checked only against the doc's own declared `intent:`, never against the
+source.
+
+**Evidence.** A transcribed doc is "true" and its cites resolve → clean score; a hollow
+doc makes no false claims → nothing to flag. Neither failure mode is detectable under the
+current rubric.
+
+**Impact.** Docs drift toward either **rot** (fat duplicates that go stale every commit)
+or **hollowness** (no understanding conveyed), with no gate pressure pulling them to the
+useful middle. "The source has Y and the doc forgot it" is never caught.
+
+### 2.5 (P5) The KB freshness loop is open
+
+**Problem.** The skills perform every freshness *operation* (create, reconcile, render,
+consume) but nothing closes the freshness *loop*. Three holes:
+1. **No trigger** — drift detection is **pull-only**, driven by human memory; the
+   change-makers (`aid-execute`, `aid-deploy`) never flag the KB stale.
+2. **No precision** — `kb_baseline` is a single whole-KB tip-date with no per-doc/source
+   linkage, so detection is an expensive whole-KB judgment sweep (which discourages
+   running it).
+3. **No signal capture** — `aid-ask` discards the single best free drift signal there is
+   ("the KB can't answer this" / "the KB contradicts the code").
+
+**Evidence.** **This very repository's KB sat stale** (generator count 13→7, suites
+49→56) after work-005 shipped, and stayed stale until `/aid-housekeep` was run by hand.
+
+**Impact.** Staleness accumulates silently; the KB quietly diverges from the code;
+trust in it erodes; and the most informative drift signals are thrown away.
+
+### 2.6 (P6) INDEX routing is unreliable
+
+**Problem.** `INDEX.md` is a prose-`intent:` list. It has no structured tags, and its
+negative routing ("use this doc, not that one") is at best informal prose.
+
+**Evidence.** "Lost-in-summarization": when a task uses a specific term the prose summary
+didn't surface, the agent mis-picks or misses the doc. With no explicit "see-instead," an
+agent grabs one doc and misses a conflicting rule in another (the **siloed-logic trap**).
+
+**Impact.** Agents mis-route — read the wrong or extra docs, burn context budget, or miss
+load-bearing constraints — degrading every task that depends on finding the right
+knowledge fast.
+
+### 2.7 (P7) Discovery does not adapt to project shape
+
+**Problem.** The default doc-set is a **fixed ~15-doc seed** applied largely regardless of
+project shape, and discovery assumes there is **existing source to extract from**. There
+is no **greenfield** (forward-authoring) mode and no right-sizing for small repos.
+
+**Evidence.** A CLI tool, a React app, a data pipeline, and an IaC repo all get the same
+seed (wrong/missing docs for the project). A greenfield project has nothing to extract, so
+the extract-oriented flow has no purchase at all. A tiny repo pays for machinery sized for
+a large one.
+
+**Impact.** Wrong or missing documents for the project at hand; greenfield projects
+effectively cannot be discovered; and effort is mis-scaled (over-engineering small repos,
+under-serving large ones).
+
+### 2.8 (P8) Skill-topology gaps in the KB lifecycle
+
+**Problem.** There is no skill for **targeted, punctual KB updates**. `/aid-housekeep`'s
+KB-DELTA is a broad reconciliation sweep — too coarse for applying the *precise* deltas a
+just-finished work introduced. `aid-ask` is read-only and its gap signals are discarded.
+
+**Evidence.** Concluding work-005 required either a heavy full housekeep sweep or
+hand-editing — there is no clean "apply these specific, known changes to the KB through the
+review gate" path.
+
+**Impact.** The end-of-work KB update is awkward and over-broad; the cheapest, most
+accurate freshness inputs (a finished work's own diff; a user's failed query) have nowhere
+to go.
+
+### 2.9 Net impact
+
+Collectively, the KB **underdelivers on its core promise** — onboarding an agent or human
+to a specific project — because it captures the *generic* and misses the *particular*
+(P1–P4), certifies that gap with a gate that measures the wrong thing (P2, P4), then lets
+the result **silently rot** (P5) while being **hard to navigate** (P6), **mis-shaped for
+the project** (P7), and **awkward to keep current** (P8). Because every downstream AID
+phase loads the KB, these deficiencies propagate into specification, planning, and
+execution quality.
+
+## 3. Users & Stakeholders
+
+> Comprehensive. The KB is consumed by **both machines and humans of several roles**, and
+> that dual, multi-role audience is itself a load-bearing design driver for this work
+> (see §1.3 audience/ownership). Stakeholders are grouped by how they touch the KB.
+
+### 3.1 Primary consumer — AI agents
+
+The KB's first consumer is the **AI coding agent** (Claude Code, Codex, Cursor, Copilot
+CLI, Antigravity) that loads `INDEX.md` + the relevant docs before doing a task.
+- **Needs:** precise, low-cost routing to the right doc; and the project's **essence**
+  (the *delta* from what the agent already knows — §1.2). Generic content is noise/negative
+  value to this consumer.
+- **Pain today:** mis-routing (P6) and shallow/generic docs (P1) — the agent gets the
+  skeleton it already knew and misses the native concepts it needed.
+
+### 3.2 Human consumers — multiple roles, multiple altitudes
+
+Humans read the KB to onboard and to make decisions. They are **not one audience**:
+- **Junior developer** — needs orientation + where to go deeper.
+- **Senior architect** — needs the conceptual model + the *why*, then follows pointers to
+  source.
+- **Non-technical PM** — needs the capabilities/vocabulary level, must not drown in
+  internals.
+- **UX designer** — needs the user-flow / interaction slice.
+- **Common need:** small, digestible chunks they can both **understand at their level**
+  and **keep updatable** (the summary+pointer model serves all of them; audience decides
+  *which* chunks exist).
+- **Pain today:** no audience dimension; docs aren't shaped or filtered by role.
+
+### 3.3 Doc owners / maintainers (freshness accountability)
+
+Each KB doc should have a **natural owner-role** responsible for keeping it current
+(§1.3). Owners are the humans who can detect and fix drift in their area.
+- **Needs:** per-doc, source-keyed staleness signals (know *which* doc their change made
+  suspect); a targeted, low-friction way to apply updates (`aid-update-kb`).
+- **Pain today:** whole-KB coarse staleness + no targeted update path (P5, P8) → ownership
+  has no actionable signal, so docs rot.
+
+### 3.4 AID adopters / teams (the customers)
+
+Teams adopting AID who run these skills on their own projects — including **greenfield**
+teams (authoring forward) and **brownfield** teams (extracting from existing code).
+- **Needs:** discovery that fits *their* project shape and actually captures *their*
+  domain; a KB they can trust over time.
+- **Critical sub-segment — AI-skeptical adopters:** AID is positioned for adopters who
+  distrust AI "slop." For them, **deterministic, visible, predictable** behavior *is the
+  product*. Any non-determinism or hidden magic (e.g., an opaque vector router) erodes the
+  sale. This constrains the solution (§1.6, §1.7).
+- **Pain today:** one-size discovery (P7); a quality gate that certifies nothing about
+  usefulness (P2).
+
+### 3.5 AID maintainers (this project's developers)
+
+The people who build and maintain the KB-facing skills (us).
+- **Needs:** the design must fit AID's conventions — canonical→render pipeline,
+  deterministic substrate + CI-ability, the human-gated state-machine ethos, the
+  bare-box/dependency-free stance — so it's maintainable and testable.
+- **Pain today:** the freshness loop and review rigor are spread across skills with gaps
+  (P3, P5, P8); changes are hard to reason about.
+
+### 3.6 Downstream AID phases (indirect stakeholders)
+
+`/aid-specify`, `/aid-plan`, `/aid-detail`, `/aid-execute` all **load the KB** as input.
+They are indirect consumers whose output quality is bounded by KB quality.
+- **Need:** a KB that is accurate, essence-bearing, and fresh.
+- **Pain today:** KB deficiencies (P1–P8) propagate into every downstream artifact (§2.9).
+
+### 3.7 Stakeholder → need → what this work delivers
+
+| Stakeholder | Primary need | Delivered by |
+|---|---|---|
+| AI agents | precise routing + essence | INDEX routing table (Item 1); essence capture (§1.4) |
+| Human roles (jr/architect/PM/UX) | right-altitude, digestible, updatable slice | summary+pointer + audience/ownership (§1.3) |
+| Doc owners | actionable per-doc staleness + targeted update | `sources:` freshness + `aid-update-kb` (§1.8) |
+| AID adopters (incl. skeptics) | project-fit discovery; trustworthy, deterministic KB | 3 paths + teach-back gate + deterministic substrate (§1.5–§1.6) |
+| AID maintainers | conventions-fit, testable design | deterministic harness + canonical/render fit (§1.6) |
+| Downstream phases | accurate, fresh, essence-bearing KB | the whole work |
+
+## 4. Scope
+
+> Confirmed boundary (user, 2026-06-22). The full In-Scope set is **one work**; `/aid-plan`
+> will sequence it into deliveries. **Nothing is deferred** to a follow-up work. Scope items
+> are tagged `S#` for traceability.
+
+### In Scope
+
+- **S1 — INDEX routing table (Item 1).** Replace the prose-`intent:` `INDEX.md` with a
+  generated routing table (Objective · Summary · Tags · See-instead · Path); add frontmatter
+  `objective`/`summary`/`tags`/`see_also`; update `build-kb-index.sh`; update the
+  INDEX-fresh / KB-hygiene CI expectations. *(addresses P6)*
+- **S2 — `sources:` field + per-doc freshness.** New `sources:` frontmatter (the sources a
+  doc summarizes); per-doc, source-keyed staleness detection (each doc's sources'
+  last-changed commit vs the doc's approval commit). *(P5)*
+- **S3 — Aspect 1, KB document model.** Concerns-driven doc-set (propose→confirm; not
+  project-type-enumerated); the summary+pointer principle; the audience/ownership dimension
+  (+ `owner`/`audience` frontmatter); expectations phrased as open questions. *(P1, P3, P7)*
+- **S4 — Aspect 2, discovery quality.** Essence capture (mechanical coined-term anchor,
+  comprehension/closure loop, can't-explain tripwire, read the why-sources); the
+  **multi-mandate review panel**; the **teach-back-closure exit**; the **Calibration**
+  rubric dimension (transcription / hollowness / coverage-vs-source / deferral-must-point).
+  *(P1, P2, P3, P4)*
+- **S5 — The 3-path method + recon triage.** One method, three recon-selected paths
+  (greenfield / brownfield-small / brownfield-large); path **measured, not declared**;
+  re-triaged each run (lifecycle: greenfield→brownfield). *(P7)*
+- **S6 — Deterministic-substrate engineering.** Mechanical scans/checks (coined-term,
+  closure self-containment, salience ranking); batched-parallel closure rounds; the
+  two-layer harness (deterministic control flow + schema-validated LLM workers);
+  evidence-anchored grading; teach-back as a fixed question set. *(cost / wall-clock /
+  determinism)*
+- **S7 — Skill topology.** Rename `aid-ask` → `aid-query-kb`; add `aid-update-kb` (targeted
+  end-of-work updates through the review/calibration gate); query-side **gap capture** into
+  a KB-gap queue. *(P8)*
+- **S8 — Freshness-loop closers.** Change-triggered per-doc "suspect" flagging; minimal
+  dashboard surfacing of per-doc freshness; **auto-detect/flag, not auto-apply**. *(P5)*
+- **S9 — `aid-summarize` alignment.** Update the visual-summary rendering to the new KB
+  model (summary+pointer, concept spine, audience).
+
+### Out of Scope
+
+- **O1 — Vector-DB / MCP semantic router.** Explicitly rejected (embedding model + binary +
+  MCP server + ANN non-determinism; collides with the bare-box / deterministic ethos).
+  Revisit only at hundreds of docs — and even then embed INDEX *rows* and return *paths*,
+  never chunk-RAG.
+- **O2 — Fully-automatic KB rewriting.** Updates stay **human-gated**; the system
+  auto-detects and flags, but a human approves the change.
+- **O3 — Auto-running discovery/updates** from `aid-execute` / `aid-deploy`. Auto-*detect /
+  flag* is in scope (S8); auto-*apply* is not.
+- **O4 — Non-KB pipeline changes.** No re-architecting of `aid-specify` / `aid-plan` /
+  `aid-detail` / `aid-execute` / `aid-deploy` (beyond their consuming the improved KB) or
+  other non-KB skills.
+- **O5 — Dashboard work beyond** surfacing the per-doc freshness flag (no broader dashboard
+  overhaul).
+- **O6 — No follow-up deferral.** The full In-Scope set is this one work, sequenced into
+  deliveries by `/aid-plan`.
+
+## 5. Functional Requirements
+
+> Comprehensive. FRs are grouped by scope area and tagged `FR-N`, each tracing to the
+> scope item(s) `S#` and problem(s) `P#` it satisfies. These are the *what*, not the
+> *how* — implementation detail belongs to `/aid-specify`.
+
+### A. INDEX routing (S1 · P6)
+
+- **FR-1.** `INDEX.md` MUST be a generated **routing table** with columns
+  *Document (link = path) · Objective · Summary · Tags · See-instead · Audience*
+  (Audience lets a human filter to docs for their role).
+- **FR-2.** KB-doc frontmatter MUST gain `objective:` (one-line purpose), `summary:`
+  (one-sentence scope), `tags:` (list of concrete project terms), `see_also:` (optional
+  negative-routing pointers).
+- **FR-3.** `build-kb-index.sh` MUST compose the table deterministically from frontmatter
+  (no LLM); the INDEX-fresh / KB-hygiene CI checks MUST be updated to the new format.
+
+### B. `sources:` field + freshness (S2, S8 · P5)
+
+- **FR-4.** Every KB doc MUST declare `sources:` — the files/dirs/external docs it summarizes — and an **`approved_at_commit:`** stamp (the commit at which the doc was last approved), written on approval by `aid-discover`/`aid-update-kb`. *(Q1 — the freshness baseline primitive.)*
+- **FR-5.** A **deterministic per-doc staleness check** MUST compare each doc's `sources:`
+  last-changed commit against that doc's **`approved_at_commit:`** stamp (FR-4) and mark drifted docs *suspect*.
+- **FR-6.** Source changes MUST **trigger** per-doc suspect flagging; the dashboard MUST
+  surface per-doc freshness (replacing the single coarse whole-KB badge) in **both** the Python (`dashboard/reader/`) and Node (`dashboard/server/reader.mjs`) readers, for parity.
+- **FR-7.** Freshness MUST **auto-detect/flag but never auto-apply** — updates remain
+  human-gated.
+
+### C. KB document model — Aspect 1 (S3 · P1, P3, P7)
+
+- **FR-8.** The doc set MUST be derived from a fixed, universal set of **concerns** (not a
+  project-type enumeration) and **proposed → confirmed** with the user; a concern may
+  split into multiple docs or add a project-specific doc.
+- **FR-9.** KB docs MUST follow the **summary + pointer** model — synthesize the durable
+  cross-cutting understanding, point to `sources:` for volatile detail.
+- **FR-10.** KB docs MUST carry `owner:` (owner-role) and `audience:` frontmatter; the
+  audience/ownership dimension informs document boundaries and the INDEX (audience filter).
+- **FR-11.** Per-doc research **expectations MUST be phrased as open questions**, not
+  fill-in templates.
+
+### D. Discovery quality — Aspect 2 (S4 · P1, P2, P3, P4)
+
+- **FR-12.** A **mechanical coined-term / salient-concept harvest** MUST scan all source
+  types and emit a candidate-concept list (project-coined × recurring × cross-source).
+- **FR-13.** A **concept spine** (the grounded native concepts) MUST be built *before* the
+  per-concern docs and shared with every researcher.
+- **FR-14.** A **comprehension / closure loop** MUST iterate until the system is
+  explainable using only defined native concepts + general knowledge (closure reached).
+- **FR-15.** A **can't-explain-it tripwire** MUST treat any ungrounded project-specific
+  term as a mandatory investigation (never ignorable noise).
+- **FR-16.** Research MUST read **all source types** — code, docs/ADRs, reports, data
+  bundles, commit/issue history — not just code.
+- **FR-17.** Review MUST apply the **multi-mandate set** — Correctness, Anatomy/Coverage,
+  Concept-closure, Teach-back, Calibration. The mandates are **invariant across paths**;
+  the **panel size scales by path** (full parallel panel for brownfield-large; collapsed
+  onto fewer reviewers — down to one running the checklist — for brownfield-small /
+  greenfield).
+- **FR-18.** **Teach-back closure MUST be the keystone exit criterion** — a reviewer, given
+  only the KB, explains the engine and answers "what is X?" for the native concepts.
+- **FR-19.** The rubric MUST gain a **Calibration** dimension (transcription / hollowness /
+  coverage-vs-source / deferral-must-point), graded against mechanically-generated evidence
+  lists (evidence-anchored).
+
+### E. The 3 paths + recon triage (S5 · P7)
+
+- **FR-20.** A **recon pre-pass** MUST measure source-availability/complexity and
+  **propose** a path (greenfield / brownfield-small / brownfield-large), human-confirmed —
+  measured, not declared from a static `project.type`.
+- **FR-21.** Each path MUST configure the method (concept acquisition extract-vs-elicit,
+  generation shape, closure depth, panel size, source-of-truth, exit) per the agreed
+  matrix; **teach-back closure is the invariant exit** across all paths.
+- **FR-22.** The path MUST be **re-triaged every run**; the **greenfield→brownfield
+  transition** MUST be handled (as code lands, `aid-update-kb` verifies intent vs as-built
+  and fills anatomy).
+
+### F. Engineering targets (S6 · cost/wall-clock/determinism)
+
+- **FR-23.** The method MUST meet the **§6 NFR budgets** for cost, wall-clock, and
+  determinism. The **intended approach** is to maximize the deterministic/mechanical
+  substrate and minimize + anchor LLM judgment (see §1.6); the **specific mechanisms**
+  (scripted scans, batched-parallel closure, two-layer harness, etc.) are **design choices
+  for `/aid-specify`**, not fixed here.
+  *(FR-24 and FR-25 — the prescriptive "batched-parallel rounds" and "two-layer harness"
+  mechanisms — were demoted from FRs to NFR targets in §6 + the §1.6 approach, to avoid
+  locking implementation into the requirements.)*
+
+### G. Skill topology (S7 · P8)
+
+- **FR-26.** `aid-ask` MUST be **renamed `aid-query-kb`** (read-only Q&A; behavior
+  preserved).
+- **FR-27.** A new **`aid-update-kb`** skill MUST apply **targeted/punctual** KB updates
+  (e.g., a finished work's deltas) through the same review/calibration gate as
+  `aid-discover`.
+- **FR-28.** `aid-query-kb` MUST **capture gaps** ("KB can't answer" / "KB contradicts
+  code") into a KB-gap queue consumed by `aid-update-kb` / `aid-housekeep`.
+
+### H. `aid-summarize` alignment (S9)
+
+- **FR-29.** `aid-summarize` MUST render the **new KB model** (concept spine, summary +
+  pointer, audience) in the visual summary.
+
+### I. Adoption, escalation & integrity (gap-closure FRs)
+
+- **FR-30 (migration / backward-compat · G1).** Existing KBs — including AID's own and
+  adopters' — MUST be **migratable** to the new frontmatter schema and INDEX format. The
+  generator and skills MUST handle the transition (upgrade-in-place or a migration step),
+  following AID's existing migration precedent. No KB is stranded on the old format.
+- **FR-31 (concept model persisted · G2).** The concept spine MUST be **persisted as a
+  first-class KB document** (the ubiquitous-language / glossary doc, upgraded) that other
+  docs reference and the INDEX routes to — a durable artifact, not in-process scratch.
+- **FR-32 (human escalation · G3).** When a project-specific concept **cannot be grounded
+  from the artifacts**, discovery MUST **escalate it as a Q&A to the human** rather than
+  silently drop it — converting silent misses into explicit questions.
+- **FR-33 (housekeep ↔ update-kb boundary · G4).** `aid-housekeep` (KB-DELTA) is
+  **source-driven and global** (whole-KB reconcile against current source state — merge to
+  master / major change / periodic; uses FR-5 per-doc staleness to scope). `aid-update-kb`
+  is **prompt-driven and targeted** (a prompt specifies what to update; it analyzes how
+  best to fold that into the KB via the review/calibration gate). The two MUST NOT overlap;
+  per-doc staleness (FR-5) is the shared signal.
+- **FR-34 (closure as a standing invariant · G6).** Concept-closure (FR-14) MUST be a
+  **maintained invariant**, not a discovery-only check: `aid-update-kb` and `aid-housekeep`
+  MUST **re-verify closure** after they change the KB.
+- **FR-35 (validation against the failure case · G5).** The method MUST be **validated
+  against a known-missed-concept fixture** (a 'Relative bus'-style concept it is required
+  to capture), proving the essence-capture gap is closed and guarding against regression.
+
+## 6. Non-Functional Requirements
+
+> Quality attributes and **the budgets FR-23 references** (the cost/wall-clock/determinism
+> targets demoted from former FR-24/FR-25). Stated as *budgets and direction*, not
+> false-precision numbers; the §1.6 approach is the intended means, mechanism chosen at
+> `/aid-specify`.
+
+### Performance & cost
+
+- **NFR-1 (cost scales with project).** Discovery cost MUST scale with project
+  size/complexity via the triage (FR-20): **greenfield and brownfield-small are cheap**;
+  brownfield-large spends more, justified by complexity. Mechanical operations MUST run as
+  scripts, not LLM dispatches. For an equivalent brownfield project, total discovery cost
+  SHOULD stay **within the same order of magnitude as today's `aid-discover`**, not a
+  multiple of it.
+- **NFR-2 (wall-clock / critical path).** The method MUST keep the **sequential critical
+  path short** — parallel fan-out (deep dives), batched-parallel closure rounds, fully
+  parallel review panel. The closure loop MUST be **bounded** (K-consecutive-clean or token
+  budget) so wall-clock cannot run away.
+- **NFR-3 (determinism / repeatability).** Control flow, gates, closure-termination, and
+  all mechanical checks MUST be **deterministic and CI-able**. The LLM-judgment surface
+  MUST be **minimized and anchored** (fixed teach-back question sets; schema-validated
+  worker outputs; evidence-anchored grading). **Honest floor:** synthesis / "did it
+  understand" are irreducibly judgment — shrink & anchor the surface, don't eliminate it.
+
+### Quality attributes
+
+- **NFR-4 (maintainability / conventions-fit).** All changes MUST fit AID's
+  **canonical→render** pipeline and deterministic-helper conventions, and MUST be
+  **CI-guarded** (lints, render-drift, KB-hygiene, INDEX-fresh updated to the new format).
+- **NFR-5 (dual-audience usability).** Each KB doc MUST be **digestible by its target human
+  role** *and* **machine-routable**; the `INDEX.md` table MUST be scannable in one pass.
+- **NFR-6 (trust / visibility).** Behavior MUST be **predictable and visible** (the
+  AI-skeptic product promise). No hidden non-determinism, no opaque retrieval. Detection may
+  be automatic; **changes to the KB remain human-gated** (cross-ref O2).
+- **NFR-7 (backward-compatibility during migration).** The migration (FR-30) MUST NOT break
+  existing pipelines: an un-migrated old-format KB MUST keep functioning (degrade
+  gracefully) until upgraded, and the migration MUST be safe/reversible per AID precedent.
+- **NFR-8 (no new runtime dependency).** The solution MUST stay within AID's
+  **bare-box / dependency-free** stance — no embedding model, binary, MCP server, or
+  `python3`/`pwsh`-version escalation for the core path (cross-ref O1, O2).
+
+## 7. Constraints
+
+> Hard boundaries the solution MUST respect (distinct from NFR targets: these are
+> non-negotiable platform/process rules).
+
+- **C1 — Bare-box / dependency-free.** No new runtime for the core path: no embedding
+  model, no extra binary, no MCP server, no `python3`/`pwsh`-version escalation. (Enforces
+  O1, NFR-8.)
+- **C2 — ASCII-only + Windows-PowerShell-5.1-compatible** for any shipped installer/CLI
+  scripts touched (CI-guarded: `test-ascii-only.sh`, `test-ps51-compat.sh`, the 5.1 lane). This **includes the new mechanical KB scripts** (coined-term scan, closure check, salience) — they vendor into the install bundles and are therefore 'shipped' → ASCII-only applies (bash, so PS-5.1 is N/A). *(Q2)*
+- **C3 — canonical→render single source.** All skill / agent / template / script content
+  is authored in `canonical/` and rendered to the five host trees; **render-drift CI must
+  stay green** (no hand-edited rendered copies).
+- **C4 — Human-gated changes.** Detection/flagging may be automatic, but **every change to
+  KB content requires human approval** (the gated state-machine ethos; enforces O2/O3).
+- **C5 — Deterministic, CI-testable mechanical layer.** Every mechanical operation must be
+  a script runnable and assertable in CI (the canonical helper-suite pattern).
+- **C6 — Content-isolation cornerstone.** AID-delivered content stays namespaced/isolated
+  from user content (e.g. `aid-` prefixes, manifests); the new `aid-query-kb`/`aid-update-kb`
+  and any new templates/scripts follow it.
+- **C7 — KB-hygiene & INDEX-fresh CI must pass** under the new frontmatter/INDEX format
+  (the checks are updated, not bypassed).
+- **C8 — AID skill conventions.** New/changed skills follow the **thin-router `SKILL.md` +
+  `references/` state-machine** pattern and the one-step-per-turn, visible-discipline
+  contract.
+
+## 8. Assumptions & Dependencies
+
+### Assumptions
+
+- **A1.** Most **load-bearing concepts leave a textual fingerprint** (identifiers,
+  comments, tests, docs, commits) that the mechanical harvest can surface. Purely implicit
+  concepts are handled by the human escape hatch (FR-32), not assumed away.
+- **A2.** Agents can perform **teach-back / closure judgment** reliably **when anchored** to
+  a fixed question set + evidence list (NFR-3); unanchored free judgment is not assumed.
+- **A3.** The host agent runtime **supports parallel sub-agent dispatch** for the panel and
+  deep-dive fan-out; where it does not, the method **degrades gracefully to sequential**
+  (the `aid-execute` capability-probe precedent).
+- **A4.** A project's source-of-truth is reachable (repo, docs, history) for the brownfield
+  paths; for greenfield, the **human + requirements/design** are the source-of-truth.
+
+### Dependencies
+
+- **D1.** The AID **agent roster** — `aid-researcher` (scout/architecture/analyst/
+  integrator/quality), `aid-architect`, `aid-reviewer`, `aid-clerk`, `aid-orchestrator`,
+  `aid-interviewer`.
+- **D2.** The **canonical→render generator**, `build-kb-index.sh`, `read-setting.sh`,
+  `grade.sh`, and the `kb-authoring/` templates (frontmatter-schema, rubric, tier-model,
+  principles).
+- **D3.** The **dashboard reader** (`reader.py` / `reader.mjs`, `parsers.py`,
+  `derivation.py`) for surfacing per-doc freshness.
+- **D4.** AID's **migration precedent** (`migrate-work-hierarchy`, the content-isolation
+  migration) for FR-30.
+- **D5.** `.aid/settings.yml` keys — `discovery.doc_set`, `kb_baseline`, `*.minimum_grade`.
+- **D6.** **CI** — `test.yml` canonical suites, render-drift, KB-hygiene, INDEX-fresh,
+  installer/CLI lanes.
+
+## 9. Acceptance Criteria
+
+> The testable bar. Each AC names the FR/NFR it verifies. **Teach-back closure (AC1) is the
+> keystone**; AC2 is the regression guard for the original complaint.
+
+- **AC1 — Teach-back closure (keystone).** A fresh agent, given **only the KB**, can explain
+  how the project works in its own language and correctly answer "what is X?" for the
+  project's core native concepts. *(FR-18)*
+- **AC2 — Known-missed-concept fixture.** On a fixture project containing a planted
+  'Relative bus'-style coined concept, the method **captures and defines it**; a regression
+  test guards it. *(FR-35, FR-12)*
+- **AC3 — Concept closure / self-containment.** No project-specific term used anywhere in
+  the KB is left undefined (the deterministic self-containment check passes). *(FR-14, FR-34)*
+- **AC4 — INDEX routing table.** `INDEX.md` is the generated table (Objective · Summary ·
+  Tags · See-instead · Audience); the generator is deterministic; INDEX-fresh CI is green.
+  *(FR-1, FR-3)*
+- **AC5 — `sources:` + per-doc freshness.** Every KB doc declares `sources:`; the per-doc
+  staleness check flags drifted docs; the dashboard surfaces per-doc freshness. *(FR-4,
+  FR-5, FR-6)*
+- **AC6 — Calibration grading.** On planted fixtures, the rubric flags **transcription**
+  (too fat), **hollowness** (too thin), and **coverage-vs-source** gaps. *(FR-19)*
+- **AC7 — Three paths via triage.** The recon triage proposes the correct path on
+  greenfield / brownfield-small / brownfield-large fixtures; each path runs and reaches
+  **teach-back closure**. *(FR-20, FR-21)*
+- **AC8 — Skill topology.** `aid-ask`→`aid-query-kb` (behavior preserved); `aid-update-kb`
+  applies a prompt-driven targeted update through the review/calibration gate; a failed
+  `aid-query-kb` query **enqueues a gap**. *(FR-26, FR-27, FR-28)*
+- **AC9 — Migration.** AID's own KB (and a fixture old-format KB) migrates to the new
+  schema; an un-migrated KB **degrades gracefully** until upgraded. *(FR-30, NFR-7)*
+- **AC10 — Housekeep ↔ update-kb boundary.** `aid-housekeep` performs whole-KB source-driven
+  reconcile; `aid-update-kb` performs prompt-driven targeted update; no overlap. *(FR-33)*
+- **AC11 — Determinism / cost / wall-clock.** Mechanical checks are deterministic in CI;
+  the closure loop is bounded; equivalent-project cost stays within the same order of
+  magnitude as today's discover. *(NFR-1, NFR-2, NFR-3)*
+- **AC12 — Conventions & no new dependency.** No new runtime dependency; ASCII/5.1 honored;
+  canonical→render with render-drift + KB-hygiene CI green. *(NFR-4, NFR-8, C1–C3, C7)*
+- **AC13 — Human-gated.** KB content changes require human approval; only detection/flagging
+  is automatic. *(NFR-6, O2, C4)*
+- **AC14 — Concept model persisted.** The concept spine exists as a **first-class KB doc**
+  that other docs reference and the INDEX routes to (not in-process scratch). *(FR-31)*
+- **AC15 — Human escalation.** An ungroundable project-specific concept produces a **human
+  Q&A entry** (surfaced, not silently dropped). *(FR-32)*
+
+## 10. Priority
+
+> All items are **in this one work** (§4: nothing deferred to a follow-up). This MoSCoW is
+> **relative priority to guide `/aid-plan`'s delivery sequencing**, not a scope cut.
+
+- **Must (fix the reported pain — the essence + its proof):** Aspect-2 essence capture
+  (FR-12–FR-16), the multi-mandate panel + teach-back exit (FR-17, FR-18), the Calibration
+  dimension (FR-19), the INDEX routing table (FR-1–FR-3), `sources:` (FR-4),
+  concept-model persisted (FR-31), human escalation (FR-32), **migration** (FR-30), the
+  validation fixture (FR-35), and the **brownfield-small + brownfield-large** paths
+  (FR-20/FR-21 for those two).
+- **Should (keep it fresh + clean):** per-doc staleness + change-triggered flagging (FR-5,
+  FR-6, FR-7, FR-8), `aid-update-kb` + gap capture (FR-27, FR-28), `aid-ask` rename (FR-26),
+  housekeep↔update-kb boundary (FR-33), closure-as-standing-invariant (FR-34),
+  `aid-summarize` alignment (FR-29).
+- **Could (completeness, highest-risk / most speculative):** the **greenfield path**
+  (FR-20/FR-21 greenfield branch, elicit mode + greenfield→brownfield transition, FR-22);
+  audience-column polish; dashboard per-doc surfacing niceties.
+- **Won't (this work):** O1–O5 (vector router, auto-apply, auto-run from execute/deploy,
+  non-KB pipeline changes, broader dashboard work).
