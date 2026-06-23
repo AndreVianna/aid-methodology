@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Committed 2c5ff83c. state-generate.md repointed to objective:/summary: with intent: fallback + audience: badge. Concept-spine section added to all 7 profile templates. Generator re-run, DBI PASS.
 
 ---
 
