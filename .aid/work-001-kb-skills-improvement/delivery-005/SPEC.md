@@ -26,6 +26,13 @@ the greenfield path fixture is carved to delivery-009.
 
 In scope -- **feature-012, ENGINE + BROWNFIELD scope only**:
 
+- **AC1 -- teach-back closure fixture (TEST-C).** A teach-back pass-KB (every concept defined + the
+  engine narratable) and fail-KB (a load-bearing concept undefined / the engine un-narratable) plus a
+  regression suite (`test-teachback-fixtures.sh`) that runs f005's `kb-teachback-questions.sh` +
+  f004's `closure-check.sh`, asserting the pass-KB yields a PASS verdict and the fail-KB a FAIL --
+  including the **non-lexical engine-narration limb** (a FAIL even when every term is defined). This is
+  **engine-validation**: it exercises f005's teach-back keystone gate, so it belongs to this delivery's
+  engine scope.
 - **AC2 -- 'Relative bus' regression.** A fixture with a planted coined concept + a regression test
   asserting capture-and-define (end-to-end, over delivery-001's harvest/spine/closure engine).
 - **AC3 -- closure self-containment.** A proof that the KB produced for the fixture leaves no
@@ -36,7 +43,9 @@ In scope -- **feature-012, ENGINE + BROWNFIELD scope only**:
 - **AC7 -- brownfield path fixtures.** brownfield-small + brownfield-large fixtures that f006's
   triage must classify correctly and run to teach-back closure.
 
-**Out of scope (carved to delivery-009):** the **greenfield** path fixture (AC7 greenfield).
+**Out of scope (carved to delivery-009):** the **greenfield** path fixture (AC7 greenfield). The AC1
+teach-back fixture is **engine-validation and stays here** -- only the greenfield path-fixture is carved
+to delivery-009.
 **Out of scope (elsewhere):** the scripts/mandates/recon themselves (delivery-001 f004/f005,
 delivery-004 f006 -- f012 *exercises* them, it does not author or edit them). When a fixture proves a
 default wrong, the default is changed in the owning feature's file and this delivery's test

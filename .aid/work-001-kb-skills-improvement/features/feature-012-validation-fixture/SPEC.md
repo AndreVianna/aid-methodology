@@ -5,6 +5,7 @@
 | Date | Change | Source |
 |------|--------|--------|
 | 2026-06-22 | Feature identified from REQUIREMENTS.md §5 (FR-35) | /aid-interview |
+| 2026-06-23 | whole-work-revision oracle reconciliation: the dropped `kb-salient-coverage.sh` is replaced everywhere by f004's merged `closure-check.sh` 3-output contract (CAL-3 coverage reads output (b); CAL-1 transcription reads output (c)); the Judgment Boundary is made explicit — CAL-2 hollowness and the engine-narration teach-back limb are irreducible LLM judgment (runtime-anchored, NOT mechanical CI assertions), while CAL-1 transcription, CAL-3 coverage, and the lexical teach-back substrate are mechanically CI-asserted | whole-work revision / D5 task gate |
 
 ## Source
 
@@ -75,10 +76,15 @@ Must
 >
 > **Boundaries (NOT built here — f012 EXERCISES, it does not RE-SPEC).** The
 > `harvest-coined-terms.sh` / `coined-term-denylist.txt` / `closure-check.sh` scripts + the
-> phrase-survival rule + the spine = **f004** (f012 *runs* them over fixtures). The
-> five-mandate panel / teach-back exit / Calibration rubric / `kb-salient-coverage.sh` /
-> `kb-teachback-questions.sh` = **f005** (f012 *runs* those scripts and *asserts* the
-> mandate verdicts the rubric defines). The `recon-classify.sh` + `triage.*` thresholds =
+> phrase-survival rule + the spine + the **merged coverage oracle** (`closure-check.sh`'s
+> 3-output contract — (a) ungrounded set, (b) `sources:`-anchored per-doc coverage, (c)
+> transcription-ratio hint; the former `kb-salient-coverage.sh` was absorbed into it) = **f004**
+> (f012 *runs* them over fixtures). The
+> five-mandate panel / teach-back exit / Calibration rubric / `kb-teachback-questions.sh` =
+> **f005** (f012 *runs* those scripts and *consumes f004's `closure-check.sh` outputs (b)/(c) as
+> the coverage/transcription evidence* and *asserts* the
+> mandate verdicts the rubric defines; f005 ships **no** coverage script). The
+> `recon-classify.sh` + `triage.*` thresholds =
 > **f006** (f012 *runs* recon over path fixtures). The `sources:` frontmatter schema =
 > **f001**; the concern/doc-set model = **f003**; AID's own KB migration = **f011**. f012
 > owns ONLY: (a) the fixture corpus, (b) the AC1/AC2/AC6/AC7 regression tests, and (c) the
@@ -108,8 +114,9 @@ dispatch — every assertion runs a shipped bash script over a static fixture an
 output. The *judgment* halves of the ACs (does a reviewer flag a fat doc; does teach-back
 narrate the engine) are LLM-mediated at runtime and are NOT mechanically testable in CI; f012
 asserts the **mechanical substrate those judgments are anchored to** — the harvest surfaces
-the concept, the coverage helper reports the gap, the closure oracle reports the undefined
-term, recon classifies the shape — which is the deterministic floor REQUIREMENTS §1.6 commits
+the concept, f004's `closure-check.sh` reports the per-doc coverage gap (output (b)) and the
+transcription ratio (output (c)), the closure oracle reports the undefined
+term (output (a)), recon classifies the shape — which is the deterministic floor REQUIREMENTS §1.6 commits
 to (the irreducible "did it understand" judgment is anchored, not pretended away). This is
 spelled out per-AC under [The Judgment Boundary](#the-judgment-boundary).
 
@@ -147,7 +154,7 @@ tests/canonical/fixtures/kb-essence/
     knowledge/coverage-gap.md       # CAL-3: a salient/load-bearing fact in sources: is absent
     knowledge/well-calibrated.md    # CONTROL: summary+pointer at the right altitude (must NOT flag)
     src/payment-engine.ts           # the sources: target the fat/coverage docs reference
-    generated/candidate-concepts.md # the salient terms kb-salient-coverage.sh diffs against
+    generated/candidate-concepts.md # the salient terms closure-check.sh output (b) anchors against
   teachback/                    # AC1 — pass + fail KBs for the teach-back question-set
     pass-kb/knowledge/domain-glossary.md   # every cross-source candidate concept is DEFINED
     pass-kb/generated/candidate-concepts.md
@@ -232,24 +239,33 @@ depends on the git/history-file seam.
 
 #### F2 — The calibration docs (AC6)
 
-Four docs that exercise f005's Calibration rubric (CAL-1..CAL-4) against
-`kb-salient-coverage.sh`'s mechanical evidence:
+Four docs that exercise f005's Calibration rubric (CAL-1..CAL-4) against f004's merged
+`closure-check.sh` mechanical evidence (outputs (b)/(c) — f005 ships no coverage script):
 
 - **`transcription-fat.md` (CAL-1 — too fat).** Its body is a near-verbatim restatement of
   `src/payment-engine.ts` (high lexical overlap, no added *why*/*how-it-relates*). Its
   `sources:` frontmatter declares that file (a **local readable file** — the only kind the
-  offline helper scans; f005 SPEC: URL sources are N/A). The helper's **transcription-ratio
-  hint** (lexical overlap between body and the `sources:` file) must read HIGH.
+  offline oracle scans; f005/f004 SPEC: URL sources are N/A in (b)/(c)). `closure-check.sh`'s
+  **output (c) transcription-ratio hint** (lexical overlap between body and the `sources:` file)
+  must read HIGH. *(CAL-1 = the mechanical, CI-asserted half.)*
 - **`hollow-thin.md` (CAL-2 — too thin).** Mostly "see `src/...`" pointers, no synthesized
-  cross-cutting content. Its `sources:`/body ratio is the hollowness signal.
+  cross-cutting content. **CAL-2 hollowness is an irreducible LLM judgment** (f005 SPEC L455/L474:
+  "no synthesized cross-cutting content" — a reviewer assessment of *altitude*, no source span,
+  no shipped script emits a hollowness signal). It is **exercised + anchored at runtime** (the
+  Calibration reviewer M5 reads this doc), **NOT a mechanical CI assertion** — see
+  [The Judgment Boundary](#the-judgment-boundary). The doc is planted so the runtime reviewer
+  has the thin shape to grade; CI does not score it.
 - **`coverage-gap.md` (CAL-3 — coverage-vs-source).** Declares `sources: src/payment-engine.ts`
   but **omits** a salient/load-bearing term that the source (and `candidate-concepts.md`)
-  carries — "the source has Y and the doc forgot it." `kb-salient-coverage.sh` must report that
-  salient term as **absent from the doc body** for this doc.
+  carries — "the source has Y and the doc forgot it." `closure-check.sh`'s **output (b)** (the
+  per-doc `sources:`-anchored coverage table `term | doc | anchoring-source | present|absent`)
+  must report that salient term as an **`absent` row** for this doc. *(CAL-3 = the mechanical,
+  CI-asserted half.)*
 - **`well-calibrated.md` (CONTROL).** A summary+pointer doc at the right altitude — synthesizes
-  the *why*, points to `sources:` for detail, covers the salient terms. The helper must report
-  **no coverage gap and a LOW transcription ratio** — this is the **precision guard**: the
-  calibrated severity floors (f005 `[SPIKE-C1]`) must NOT false-positive a good doc.
+  the *why*, points to `sources:` for detail, covers the salient terms. `closure-check.sh` must
+  report **no `absent` row in (b) and a LOW transcription ratio in (c)** — this is the
+  **precision guard**: the calibrated severity floors (f005 `[SPIKE-C1]`) must NOT false-positive
+  a good doc.
 
 #### F3 — The teach-back pass/fail KBs (AC1)
 
@@ -266,11 +282,17 @@ spine:
   concept** (it is named/used but never defined). The question set contains a "what is X?" the
   KB cannot answer → teach-back FAIL shape.
 
-f012 mechanically asserts the **question-set substrate**: `kb-teachback-questions.sh` over each
-fixture's `candidate-concepts.md` emits the same fixed question set (deterministic), and a
-**self-containment check** (`closure-check.sh`) over each KB reports the pass-KB as closed
-(zero ungrounded) and the fail-KB as having the one undefined concept. The *reviewer's binary
-verdict* (does the LLM teach-back reviewer self-score PASS/FAIL) is the judgment half — see
+f012 mechanically asserts the **LEXICAL question-set substrate**: `kb-teachback-questions.sh`
+over each fixture's `candidate-concepts.md` emits the same fixed question set (deterministic),
+and a **self-containment check** (`closure-check.sh`) over each KB reports the pass-KB as closed
+(zero ungrounded — the term-defined PASS substrate) and the fail-KB as having the one undefined
+concept (the term-undefined FAIL substrate). The fail-KB is *additionally* planted to be
+un-narratable as an engine even when every term is lexically defined — but the
+**engine-narration limb is irreducibly LLM judgment** (f005 SPEC L434-435: "there is no
+mechanical check"; no shipped script returns this verdict), so it is **exercised + anchored at
+runtime** (the clean-context teach-back reviewer M4 attempts the engine narration over the
+planted fail-KB), **NOT a mechanical CI assertion**. The *reviewer's binary verdict* (does the
+LLM teach-back reviewer self-score PASS/FAIL, on either limb) is the judgment half — see
 [The Judgment Boundary](#the-judgment-boundary).
 
 #### F4 — The three path fixtures (AC7)
@@ -336,22 +358,24 @@ doc uses it undefined).
 
 #### TEST-B — AC6 calibration regression (`test-calibration-fixtures.sh`)
 
-Invokes f005's `kb-salient-coverage.sh` over the `calibration/` fixture:
+Invokes f004's merged `closure-check.sh` (outputs (b) coverage table + (c) transcription-ratio
+hint — f005 ships no coverage script) over the `calibration/` fixture:
 
 | # | Asserts | How |
 |---|---------|-----|
-| V-B1 | **CAL-3 coverage gap flagged.** The helper reports the planted salient term as **absent from `coverage-gap.md`**. | Run `kb-salient-coverage.sh` over the calibration fixture; assert the coverage-gap doc + the omitted salient term appear in the "absent from doc body" output. |
-| V-B2 | **CAL-1 transcription flagged.** The helper's **transcription-ratio hint** for `transcription-fat.md` (vs its `sources:` file) reads HIGH (above the calibrated floor). | Parse the transcription-ratio output for the fat doc; assert ratio `>=` the CAL-1 floor. |
-| V-B3 | **CAL-2 hollowness signal.** The hollow doc's pointers-vs-synthesis ratio reads thin (the CAL-2 evidence the reviewer grades against). | Parse the hollowness signal for the thin doc; assert below the synthesis floor. |
-| V-B4 | **Precision: the control is clean.** `well-calibrated.md` produces **no coverage gap** and a **LOW transcription ratio** — the calibrated floors do NOT false-positive a good doc. | Assert the control doc is absent from the gap output and its ratio is below the CAL-1 floor. |
+| V-B1 | **CAL-3 coverage gap flagged (MECHANICAL).** `closure-check.sh` **output (b)** reports the planted salient term as an **`absent` row for `coverage-gap.md`**. | Run `closure-check.sh` over the calibration fixture; assert the coverage-gap doc + the omitted salient term appear as an `absent` row in output (b). |
+| V-B2 | **CAL-1 transcription flagged (MECHANICAL).** `closure-check.sh` **output (c)** transcription-ratio hint for `transcription-fat.md` (vs its `sources:` file) reads HIGH (above the calibrated floor). | Parse output (c) for the fat doc; assert ratio `>=` the CAL-1 floor. |
+| V-B3 | **CAL-2 hollowness — JUDGMENT (NOT a CI assertion).** Hollowness is an irreducible LLM judgment (f005 L455/L474; no shipped script emits a hollowness signal — `closure-check.sh`'s 3 outputs are (a) ungrounded, (b) coverage, (c) transcription, none of which is a hollowness ratio). The `hollow-thin.md` doc is planted as the **runtime-anchored** substrate the Calibration reviewer M5 grades; CI does NOT assert a mechanical hollowness signal. | (No mechanical assertion — moved to [The Judgment Boundary](#the-judgment-boundary). The thin doc exists so the runtime reviewer has the shape to assess.) |
+| V-B4 | **Precision: the control is clean (MECHANICAL).** `well-calibrated.md` produces **no `absent` row in (b)** and a **LOW transcription ratio in (c)** — the calibrated floors do NOT false-positive a good doc. | Assert the control doc is absent from output (b)'s `absent` rows and its (c) ratio is below the CAL-1 floor. |
 | V-B5 | **Determinism.** Re-run byte-identical. | `diff` two runs. |
 
 These assert the **mechanical evidence** the Calibration reviewer (M5) grades against (f005
 SPEC: "the reviewer grades against this list, it does not recall from memory"). The
-*reviewer's MEDIUM/HIGH verdict* is the judgment half — but f012 pins the **severity floors**
-the verdict uses (Threshold Calibration, below). AC6's "the rubric flags transcription /
-hollowness / coverage-vs-source" is realized mechanically as "the evidence helper emits the
-signal at/above the calibrated floor for the planted docs and below it for the control."
+*reviewer's MEDIUM/HIGH verdict* — and **CAL-2 hollowness in full** — is the judgment half; f012
+pins the **severity floors** the verdict uses for the mechanical limbs (Threshold Calibration,
+below). AC6's "the rubric flags transcription / coverage-vs-source" is realized mechanically as
+"`closure-check.sh` emits the signal at/above the calibrated floor for the planted docs and
+below it for the control"; the hollowness limb is runtime-anchored, not mechanically asserted.
 
 #### TEST-C — AC1 teach-back regression (`test-teachback-fixtures.sh`)
 
@@ -364,10 +388,15 @@ Invokes f005's `kb-teachback-questions.sh` + f004's `closure-check.sh` over `tea
 | V-C3 | **Teach-back FAIL substrate.** `closure-check.sh` over `fail-kb` reports the **one undefined core concept** — the KB *cannot* answer that "what is X?" (the FAIL shape). | Run closure-check; assert the omitted concept is in the ungrounded set. |
 | V-C4 | **The fail-KB's missing concept is a question-set member.** The undefined concept in `fail-kb` is one the question generator asks about (so the FAIL is on a *required* question, not a noise term). | Cross-check: the V-C3 ungrounded term appears in the V-C1 question set. |
 
-V-C2/V-C3 are the **mechanically-assertable half** of the teach-back verdict: a KB whose spine
-grounds every question-set concept is closed (PASS-able); a KB missing one is not (FAIL). The
-*reviewer's clean-context narration self-score* (f005 M4) is the judgment half — f012 proves
-the substrate that makes PASS reachable and FAIL detectable.
+V-C2/V-C3 are the **mechanically-assertable LEXICAL half** of the teach-back verdict: a KB whose
+spine grounds every question-set concept is closed (term-defined PASS-able); a KB missing one is
+not (term-undefined FAIL). The **engine-narration limb** — "can the KB support a coherent
+end-to-end account of the engine?" — is *not* among the V-C assertions: it is irreducibly LLM
+judgment (f005 SPEC L434-435; no shipped script returns this verdict), exercised + anchored at
+runtime (the clean-context teach-back reviewer M4 attempts the narration over the planted
+fail-KB), NOT a CI gate. f012 proves the **lexical** substrate that makes a term PASS reachable
+and a term FAIL detectable, and **anchors** the engine-narration judgment to the fixed fail-KB
+shape — it does not mechanically score the narration.
 
 #### TEST-D — AC7 path-classification regression (`test-path-fixtures.sh`)
 
@@ -416,7 +445,7 @@ f012's test re-asserts the corrected behavior — f012 is the oracle, never the 
 | Deferred default | Owner / spike | The f012 fixture that pins it | The assertion (the pin) |
 |---|---|---|---|
 | **Denylist size + phrase salience floor** (the all-common-word-phrase survival rule) | f004 `[SPIKE-H2]` | `relative-bus/` (recall) + the `calibration/` control + a **noise floor** in the relative-bus fixture | **Recall:** V-A1/V-A2/V-A3 — the cross-source PHRASE `Relative Bus` MUST survive via f004's phrase-salience escape (spread `>= 2` phrase floor catches it; the joined identifier never survives as a unit). **Precision:** the phrase floor MUST be high enough that the fixture's incidental **capitalized** common-word phrases (e.g. `The System`, `This File` — the E4-extracted class, runs of `[A-Z][a-z]+` words, NOT lowercase pairs which E4 never extracts) that appear in only ONE channel do NOT flood the candidate list — asserted by a cap on the candidate count for the small fixture (the planted concept ranks above the single-channel incidental noise). The phrase salience floor default (spread `>= 2`) is **pinned by these two assertions**: lower it and the single-channel `The System` noise leaks (precision breaks); raise it and recall breaks on the 2-channel `Relative Bus`. |
-| **CAL-N severity floors** (transcription-ratio threshold; MEDIUM-vs-HIGH cut) | f005 `[SPIKE-C1]` | `calibration/` (the 3 planted docs + the control) | V-B2 — `transcription-fat.md` ratio `>=` CAL-1 floor (flag the fat doc); V-B4 — `well-calibrated.md` ratio `<` CAL-1 floor (do NOT flag the good doc). The **transcription-ratio floor default** is pinned to the value that separates the planted fat doc from the control. V-B1/V-B3 pin the coverage/hollowness signals analogously. |
+| **CAL-N severity floors** (transcription-ratio threshold; MEDIUM-vs-HIGH cut) | f005 `[SPIKE-C1]` | `calibration/` (the 3 planted docs + the control) | V-B2 — `transcription-fat.md` ratio `>=` CAL-1 floor (flag the fat doc); V-B4 — `well-calibrated.md` ratio `<` CAL-1 floor (do NOT flag the good doc). The **transcription-ratio floor default** (`closure-check.sh` output (c)) is pinned to the value that separates the planted fat doc from the control. V-B1 pins the coverage signal (output (b)) analogously. **CAL-2 hollowness has no mechanical floor to pin** — it is LLM judgment (no shipped signal); the hollow doc is runtime-anchored, not a pinned threshold. |
 | **Recon path thresholds** (`greenfield_max_source_files`/`_loc`, `large_min_source_loc`/`_dirs`/`_concepts`) | f006 `[SPIKE-T1]` | `paths/` (greenfield / brownfield-small / brownfield-large×3) | V-D1..V-D5 — each fixture MUST classify to its intended path under the **shipped `settings.yml` defaults**. The five `triage.*` defaults are pinned to the values that classify all three shapes correctly: the greenfield fixture sits below the greenfield ceilings, the small fixture between the ceilings and the large floors, each large variant trips exactly one large floor. |
 
 **How the calibration loop works in practice (and stays in-bounds).** During implementation,
@@ -449,8 +478,8 @@ proven input:
 | AC | Mechanical half (f012 asserts in CI) | Judgment half (runtime, anchored, NOT a CI assert) |
 |---|---|---|
 | AC2 | harvest surfaces `Relative Bus` (V-A1); closure reports it grounded/ungrounded (V-A4/V-A5) | a researcher writes the definition-as-used-here into the spine |
-| AC6 | coverage/transcription/hollowness signals at/above floor for planted, below for control (V-B1..B4) | the Calibration reviewer (M5) emits the `[CAL-*]` severity verdict |
-| AC1 | question set generated deterministically (V-C1); closure pass/fail substrate (V-C2/V-C3) | the clean-context teach-back reviewer (M4) self-scores PASS/FAIL |
+| AC6 | **CAL-1 transcription** ratio `>=` floor for the fat doc, `<` for the control (V-B2/V-B4, output (c)); **CAL-3 coverage** `absent` row for the gap doc, none for the control (V-B1/V-B4, output (b)) | the Calibration reviewer (M5) emits the `[CAL-*]` severity verdict; **CAL-2 hollowness** (V-B3) is *wholly* judgment — no shipped script emits a hollowness signal, so M5 reads the planted `hollow-thin.md` and grades it; the thin doc is anchored, not CI-scored |
+| AC1 | **lexical limb:** question set generated deterministically (V-C1); closure pass/fail substrate (V-C2/V-C3); term-defined PASS / term-undefined FAIL | the clean-context teach-back reviewer (M4) self-scores PASS/FAIL; the **engine-narration limb** is *wholly* judgment (f005 L434-435: "irreducibly an LLM judgment" — no shipped script returns this verdict), so M4 attempts the engine narration over the planted fail-KB; the un-narratable shape is anchored, not CI-scored |
 | AC7 | recon proposes the right path per fixture (V-D1..V-D5) | the path runs the full method to teach-back closure |
 
 This boundary is the design honesty REQUIREMENTS §1.6 demands: f012 maximizes the deterministic
@@ -492,7 +521,7 @@ verbatim so the fixtures can never touch the real repo or `$HOME`.
 |-----------|------|--------|
 | **NEW fixture corpus** | `tests/canonical/fixtures/kb-essence/{relative-bus,closed-kb,unclosed-kb,calibration,teachback,paths}/` | The planted fixtures (F1-F4): the 'Relative bus' cross-source concept + closed/unclosed spines; the 4 calibration docs + control; the teach-back pass/fail KBs; the 3 path-shape index+candidate tables (each `project-index.md` carrying BOTH Language Breakdown and Full File Inventory) + the `paths/settings.yml` shipped-`triage.*`-defaults fixture. All ASCII, checked-in, deterministic. |
 | **NEW** AC2 suite | `tests/canonical/test-essence-capture.sh` | V-A1..V-A6 — runs f004's `harvest-coined-terms.sh` + `closure-check.sh` over the relative-bus / closed-kb / unclosed-kb fixtures; asserts capture (spread `>= 2`) + define (closure passes) + the regression guard (unclosed reports the concept) + determinism. HOME-pinned, canary, `mktemp` scratch. |
-| **NEW** AC6 suite | `tests/canonical/test-calibration-fixtures.sh` | V-B1..V-B5 — runs f005's `kb-salient-coverage.sh` over the calibration fixture; asserts coverage-gap/transcription/hollowness signals fire for planted docs and NOT for the control; determinism. |
+| **NEW** AC6 suite | `tests/canonical/test-calibration-fixtures.sh` | V-B1/V-B2/V-B4/V-B5 — runs f004's merged `closure-check.sh` (outputs (b) coverage + (c) transcription; f005 ships no coverage script) over the calibration fixture; asserts the CAL-3 coverage `absent` row + CAL-1 transcription-ratio fire for the planted docs and NOT for the control; determinism. **CAL-2 hollowness (V-B3) is NOT a mechanical assertion** — it is LLM judgment (runtime-anchored); the hollow doc is planted as the reviewer's substrate, not CI-scored. |
 | **NEW** AC1 suite | `tests/canonical/test-teachback-fixtures.sh` | V-C1..V-C4 — runs f005's `kb-teachback-questions.sh` + f004's `closure-check.sh` over the teach-back pass/fail KBs; asserts deterministic question-set + closure PASS/FAIL substrate. |
 | **NEW** AC7 suite | `tests/canonical/test-path-fixtures.sh` | V-D1..V-D7 — runs f006's `recon-classify.sh` over the 3 path fixtures (with the checked-in `paths/settings.yml`); asserts correct path proposal per shape + determinism + shipped-defaults parity (V-D7). |
 | run-all auto-discovery | `tests/run-all.sh` | **No edit** — the four new `test-*.sh` are picked up by the existing `tests/canonical/test-*.sh` glob (line 33). |
@@ -555,7 +584,8 @@ verbatim so the fixtures can never touch the real repo or `$HOME`.
   globs `tests/canonical/fixtures/` (it should sweep only `SHIPPED_SCRIPTS`); the fixtures are
   ASCII regardless, so this is a no-risk confirmation, not a blocker.
 - **[SPIKE-V5 — sequencing.]** f012's four suites consume f004's `harvest-coined-terms.sh` +
-  `closure-check.sh`, f005's `kb-salient-coverage.sh` + `kb-teachback-questions.sh`, and f006's
+  `closure-check.sh` (incl. the merged coverage outputs (b)/(c)), f005's `kb-teachback-questions.sh`,
+  and f006's
   `recon-classify.sh`. All three features must land before f012's suites go green (a suite over a
   not-yet-shipped script fails). Confirm with PLAN.md that **f004 + f005 + f006 land before
   f012** (the §10 Must "validation fixture" sequences last in the essence cluster). Until then,

@@ -57,7 +57,22 @@ regression backbone); all of delivery-001's essence substrate.
 
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-051 | IMPLEMENT | Greenfield path behavior -- state-generate.md elicit-via-interview/specify wiring + collapsed panel + same f004 closure |
+| task-052 | TEST | Greenfield path fixture (the AC7 greenfield project shape) |
+| task-053 | TEST | V-D1 greenfield assertion in test-path-fixtures.sh (AC7 greenfield path-classification) |
+
+**Execution graph (intra-delivery + cross-delivery deps):**
+
+```
+task-051 (IMPLEMENT) <- task-025 (d004), task-011 (d001), task-014 (d001)
+task-052 (TEST)      <- task-029 (d005)
+task-053 (TEST)      <- task-052, task-032 (d005)
+```
+
+task-051 and task-052 are independent of each other (parallelizable). task-053 depends on
+task-052 (its greenfield fixture) + task-032 (the suite it extends). All three are gated by
+delivery-001 (f004 closure / f005 panel), delivery-004 (recon classifier + path-config), and
+delivery-005 (the f012 path-fixture pattern + suite) per the delivery Dependencies below.
 
 ## Dependencies
 

@@ -67,8 +67,8 @@ deliveries consume settled contracts.
 
 - **What it delivers:** the CI-anchored regression proof that locks in the essence engine -- the
   planted 'Relative bus' fixture proving capture-and-define, the closure self-containment proof, the
-  calibration-severity calibration, and the brownfield path fixtures.
-- **Features:** feature-012 -- **ENGINE + BROWNFIELD scope only**: AC2 'Relative bus' regression,
+  calibration-severity calibration, the teach-back closure proof (pass/fail KBs), and the brownfield path fixtures.
+- **Features:** feature-012 -- **ENGINE + BROWNFIELD scope only**: AC1 teach-back closure fixture, AC2 'Relative bus' regression,
   AC3 closure self-containment, AC6 calibration tuning, AC7 brownfield-small/large path fixtures
   (the greenfield path fixture is carved to delivery-009).
 - **Depends on:** delivery-001, delivery-004
@@ -126,3 +126,224 @@ deliveries consume settled contracts.
 | R1 | **f006/f012 scope-split** -- feature-006 and feature-012 are each split brownfield-vs-greenfield across delivery-004/005 (brownfield) and delivery-009 (greenfield). Greenfield scope could drift or be double-claimed between the deliveries. | delivery-004, delivery-005, delivery-009 | The split is scoped **explicitly** in each delivery SPEC's Scope section (brownfield ACs named in d004/d005; greenfield ACs named in d009, with the brownfield ACs listed as out-of-scope and vice versa), so no AC is unowned or double-owned. |
 | R2 | **f008+f009 inseparability** -- a release tag cut between feature-008 (canonical rename) and feature-009 (cross-tree propagation) would ship a half-renamed repo: canonical renamed but the 5 host trees, install manifests, and skill counts stale, with render-drift CI red. | delivery-007 | The two features are **one delivery** -- one branch, one PR, **no intervening release tag**. render-drift CI is RED on f008 alone and green only once f009 propagates, so the gate itself enforces "ship together." |
 | R3 | **calibration-floor back-patch** -- delivery-005 (validation fixtures) and delivery-009 (f006 greenfield/SPIKE-T1 thresholds) re-tune defaults that ALREADY shipped in merged delivery-001 (f004 SPIKE-H2 denylist/salience floor, f005 SPIKE-C1 calibration severity) and delivery-004 (f006 triage thresholds). Per the contract "the default lives in the owning feature's file; the fixture pins it," editing a constant in an already-shipped delivery can regress that delivery's gate. **Impact: M.** | delivery-001, delivery-004, delivery-005, delivery-009 | After any threshold/floor edit prompted by a later delivery's fixture, re-run the owning delivery's gate suite (the owning feature's canonical tests) to confirm no regression. |
+
+## Execution Graphs
+
+The graphs below are derived mechanically from the `Depends on:` line of every
+task SPEC (`delivery-NNN/tasks/task-NNN/SPEC.md`). Each delivery's `Depends On`
+table lists the task's FULL dependency set; dependencies that point into an
+**earlier** delivery are marked `(d-NNN)` and are pre-satisfied by the
+delivery-order sequence (d001 -> d009), so they do not affect intra-delivery
+wave ordering. The `wave-map` block is total over the delivery's own tasks.
+
+**Global-DAG validation (all 53 tasks assembled):** acyclic (53/53
+topo-sorted); every dependency resolves to an existing task; no forward
+reference across deliveries (no dep points into a later delivery); no
+intra-delivery dependency on a higher-numbered sibling. Roots (no deps):
+task-001, task-027, task-028, task-029, task-033, task-040, task-042.
+
+### delivery-001 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-001 | — |
+| task-002 | task-001 |
+| task-003 | task-002 |
+| task-004 | task-001 |
+| task-005 | task-001 |
+| task-006 | task-002 |
+| task-007 | task-006 |
+| task-008 | task-002, task-006 |
+| task-009 | task-008 |
+| task-010 | task-001, task-004 |
+| task-011 | task-006, task-008, task-010 |
+| task-012 | task-006 |
+| task-013 | task-008 |
+| task-014 | task-008, task-012 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-002, task-004, task-005 |
+| task-003, task-006, task-010 |
+| task-007, task-008, task-012 |
+| task-009, task-011, task-013, task-014 |
+
+```wave-map
+delivery: 001
+wave 1: task-001
+wave 2: task-002, task-004, task-005
+wave 3: task-003, task-006, task-010
+wave 4: task-007, task-008, task-012
+wave 5: task-009, task-011, task-013, task-014
+```
+
+### delivery-002 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-015 | task-002 (d001) |
+| task-016 | task-015 |
+| task-017 | task-015, task-016 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| — |
+
+```wave-map
+delivery: 002
+wave 1: task-015
+wave 2: task-016
+wave 3: task-017
+```
+
+### delivery-003 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-018 | task-001 (d001), task-003 (d001), task-015 (d002) |
+| task-019 | task-018 |
+| task-020 | task-003 (d001), task-018 |
+| task-021 | task-010 (d001), task-018 |
+| task-022 | task-018, task-019, task-020, task-021 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-019, task-020, task-021 |
+
+```wave-map
+delivery: 003
+wave 1: task-018
+wave 2: task-019, task-020, task-021
+wave 3: task-022
+```
+
+### delivery-004 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-023 | task-006 (d001) |
+| task-024 | task-023 |
+| task-025 | task-023, task-011 (d001) |
+| task-026 | task-014 (d001), task-025 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-024, task-025 |
+
+```wave-map
+delivery: 004
+wave 1: task-023
+wave 2: task-024, task-025
+wave 3: task-026
+```
+
+### delivery-005 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-027 | — |
+| task-028 | — |
+| task-029 | — |
+| task-030 | task-027, task-006 (d001), task-008 (d001) |
+| task-031 | task-028, task-008 (d001) |
+| task-032 | task-029, task-023 (d004) |
+| task-033 | — |
+| task-034 | task-033, task-012 (d001) |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-027, task-028, task-029, task-033 |
+| task-030, task-031, task-032, task-034 |
+
+```wave-map
+delivery: 005
+wave 1: task-027, task-028, task-029, task-033
+wave 2: task-030, task-031, task-032, task-034
+```
+
+### delivery-006 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-035 | task-001 (d001), task-002 (d001) |
+| task-036 | task-035 |
+| task-037 | task-035, task-001 (d001) |
+| task-038 | task-037 |
+| task-039 | task-037 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-036, task-037 |
+| task-038, task-039 |
+
+```wave-map
+delivery: 006
+wave 1: task-035
+wave 2: task-036, task-037
+wave 3: task-038, task-039
+```
+
+### delivery-007 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-040 | — |
+| task-041 | task-040 |
+| task-042 | — |
+| task-043 | task-042, task-014 (d001), task-035 (d006) |
+| task-044 | task-041, task-043 |
+| task-045 | task-044 |
+| task-046 | task-045 |
+| task-047 | task-044 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-040, task-042 |
+| task-041, task-043 |
+| task-045, task-047 |
+
+```wave-map
+delivery: 007
+wave 1: task-040, task-042
+wave 2: task-041, task-043
+wave 3: task-044
+wave 4: task-045, task-047
+wave 5: task-046
+```
+
+### delivery-008 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-048 | task-043 (d007) |
+| task-049 | task-048, task-035 (d006), task-008 (d001) |
+| task-050 | task-049 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| — |
+
+```wave-map
+delivery: 008
+wave 1: task-048
+wave 2: task-049
+wave 3: task-050
+```
+
+### delivery-009 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-051 | task-025 (d004), task-011 (d001), task-014 (d001) |
+| task-052 | task-029 (d005) |
+| task-053 | task-052, task-032 (d005), task-023 (d004) |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-051, task-052 |
+
+```wave-map
+delivery: 009
+wave 1: task-051, task-052
+wave 2: task-053
+```
