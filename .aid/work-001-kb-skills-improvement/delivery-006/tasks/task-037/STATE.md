@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Teach-back fixture corpus authored under tests/canonical/fixtures/kb-essence/teachback/. pass-kb: closure-check output (a) empty (all spread>=2 terms defined: TokenRouter, DispatchQueue, PriorityBand, dispatch-acknowledgement contract). fail-kb: closure-check reports tokenrouter as ungrounded (TokenRouter intentionally omitted from spine). Both candidate-concepts.md byte-identical. Engine-narration FAIL shape planted in fail-kb (all concepts defer mechanism to undefined TokenRouter). ASCII-only test PASS (27/27).
 
 ---
 
