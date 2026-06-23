@@ -54,6 +54,8 @@ SHIPPED_SCRIPTS=(
     "canonical/aid/scripts/kb/kb-teachback-questions.sh"
     # f006 task-023: recon-classify.sh recon pre-pass classifier
     "canonical/aid/scripts/kb/recon-classify.sh"
+    # f013 task-028: kb-actback-task.sh representative-task selector + presence check
+    "canonical/aid/scripts/kb/kb-actback-task.sh"
     # Maintainer test harness, but now run under Windows PowerShell 5.1 in CI
     # (installer-tests.yml 5.1 lane), which mis-parses non-ASCII in no-BOM files
     # via the ANSI codepage -- so it must stay ASCII like the shipped PS.
