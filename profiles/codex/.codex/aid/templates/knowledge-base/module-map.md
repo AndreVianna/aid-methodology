@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Per-module metadata map -- purpose, dependencies, owners, and key entry points for all modules in {project}.
+summary: Read this to navigate the codebase before any module-touching task.
+sources:
+  - src/                        # module source directories
+  - {path/to/module/config}     # package manifests, module boundaries
+tags: [modules, dependencies, entry-points, ownership]
+see_also: [architecture.md, pipeline-contracts.md]
+owner: architect
+audience: [developer, architect]
 intent: |
   Per-module metadata: purpose, dependencies, owners, and key entry points. Read this to navigate the codebase before any module-touching task.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

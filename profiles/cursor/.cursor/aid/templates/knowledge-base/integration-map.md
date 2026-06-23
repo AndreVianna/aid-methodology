@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: External integration topology for {project} -- what it consumes, exposes, and communication patterns between components.
+summary: Read this for integration-touching work to understand external dependencies and API surfaces.
+sources:
+  - src/                        # integration code
+  - {path/to/api/specs}         # e.g., openapi.yaml, graphql schema
+tags: [integrations, apis, external-deps, communication]
+see_also: [architecture.md, external-sources.md, pipeline-contracts.md]
+owner: architect
+audience: [developer, architect]
 intent: |
   External integration topology — what the project consumes, what it exposes, and the communication patterns between components. Read this for integration-touching work.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

@@ -1,10 +1,21 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Data schemas, artifact shapes, dataflow, and cardinality relationships for {project}.
+summary: Read this when modeling persistence, designing migrations, or tracing data lineage.
+sources:
+  - src/                        # schema definitions and data model source
+  - {path/to/migrations}        # database migrations
+  - {path/to/schema/files}      # e.g., *.prisma, schema.graphql, *.json schema
+tags: [schemas, data-model, persistence, migrations]
+see_also: [architecture.md, pipeline-contracts.md]
+owner: architect
+audience: [developer, architect]
 intent: |
   Data schemas, artifact shapes, dataflow across the pipeline, and cardinality relationships. Read this when modeling persistence, designing migrations, or tracing data lineage.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

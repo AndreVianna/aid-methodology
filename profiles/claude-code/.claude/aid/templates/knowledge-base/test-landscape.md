@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Test frameworks, coverage areas, and gaps for {project}.
+summary: Read this before writing or modifying tests to follow established patterns and avoid duplicating or breaking existing suites.
+sources:
+  - tests/                      # test suite directories
+  - {path/to/test/config}       # e.g., jest.config.js, pytest.ini, .rspec
+tags: [testing, coverage, frameworks, gaps]
+see_also: [technology-stack.md, coding-standards.md]
+owner: developer
+audience: [developer, architect]
 intent: |
   Test frameworks in use, coverage areas, and gaps. Read this before writing or modifying tests to follow established patterns.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

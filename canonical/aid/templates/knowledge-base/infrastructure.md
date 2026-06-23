@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Distribution model, environments, CI/CD setup, source-control conventions, and project management tooling for {project}.
+summary: Read this for deploy/release context before any infrastructure-touching work.
+sources:
+  - .github/workflows/          # CI/CD pipeline definitions
+  - {path/to/infra/config}      # e.g., Dockerfile, terraform/, helm/
+tags: [infrastructure, ci-cd, deployment, environments]
+see_also: [integration-map.md, technology-stack.md]
+owner: devops
+audience: [developer, devops, architect]
 intent: |
   Distribution model, environments, CI/CD setup, source-control conventions, and project management tooling. Read this for deploy/release context.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

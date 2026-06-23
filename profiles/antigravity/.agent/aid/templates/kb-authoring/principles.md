@@ -127,8 +127,12 @@ Every KB doc carries YAML frontmatter declaring how it should be reviewed:
 kb-category: primary | meta | extension
 source: hand-authored | generated
 generator: <script>            # required iff source: generated
+objective: One-line noun-phrase purpose (required for hand-authored primary/extension).
+summary: One-sentence scope (required for hand-authored primary/extension).
+sources:
+  - path/or/glob                # required for hand-authored primary/extension
 intent: |
-  What this doc is FOR. Drives the reviewer's relevance judgment.
+  (superseded) Kept during coexistence window; see frontmatter-schema.md.
 contracts:
   - "Structural claim 1 (verified by lint)"
   - "Structural claim 2"
@@ -137,10 +141,32 @@ changelog:
 ---
 ```
 
-**The whole frontmatter block is exempt from review.** Reviewer reads it for
-classification + intent; doesn't grade its content. Changelog drift, intent prose
-quality, contract count — none affect the grade. This gives docs a way to carry
-self-describing metadata without polluting the review surface.
+**The frontmatter block is partially exempt from review.** Most fields are exempt —
+the reviewer reads them for classification only and does not grade their content. However,
+there is a **P6 carve-out**: the required new fields (`objective:`, `summary:`,
+`sources:`) are graded for presence and shape by the lint (`lint-frontmatter.sh`), not
+by human reviewer judgment.
+
+**What stays exempt (no review impact):**
+- Legacy fields: `intent:`, `contracts:`, `changelog:`
+- Optional new fields: `tags:`, `see_also:`, `owner:`, `audience:`
+- Prose *quality* of `objective:` / `summary:` (only presence and mechanical shape are checked)
+
+**What the lint checks (P6 carve-out, for `source: hand-authored` docs with `kb-category:`
+in `{primary, extension}` that already carry any of the new fields):**
+- `objective:` and `summary:` are present and non-empty (single-line scalars).
+  Missing → `[FM-MISSING]` (HIGH).
+- `sources:` is present as a YAML list (possibly `[]`). Missing → `[FM-MISSING]` (HIGH).
+- Shape well-formedness of present fields. Malformed → `[FM-INVALID]` (HIGH).
+
+**Day-one soft-skip:** docs carrying NONE of the new fields (`objective:`, `summary:`,
+`sources:`, `tags:`, `see_also:`, `owner:`, `audience:`) are treated as pre-migration
+and skipped by the lint. This ensures CI stays green on un-migrated KBs (the lint
+becomes a hard gate only after f011 migrates AID's own docs).
+
+This gives docs a way to carry self-describing metadata without polluting the review
+surface, while ensuring the required routing/freshness primitive fields are mechanically
+enforced once a doc adopts the new schema.
 
 See [frontmatter-schema.md](frontmatter-schema.md) for the full schema specification.
 

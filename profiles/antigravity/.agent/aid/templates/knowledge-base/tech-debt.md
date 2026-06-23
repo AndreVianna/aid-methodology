@@ -1,10 +1,18 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Severity-tagged open technical debt items with remediation paths for {project}.
+summary: Read this before starting work in any area; declared debt items may affect approach or scope.
+sources: []
+tags: [tech-debt, remediation, risk]
+see_also: [architecture.md, feature-inventory.md]
+owner: architect
+audience: [developer, architect, pm]
 intent: |
   Severity-tagged technical debt items with remediation paths. Read this before starting work in any area; declared debt items may affect approach or scope.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

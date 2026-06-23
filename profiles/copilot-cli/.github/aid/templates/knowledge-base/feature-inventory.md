@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Canonical feature list with status and traceability to work items for {project}.
+summary: Read this to understand WHAT the project does at a feature level; status is Shipped / Partial / Deferred.
+sources:
+  - .aid/work-*/SPEC.md         # work-item specs that define features
+  - {path/to/product/backlog}   # any external backlog or requirements doc
+tags: [features, status, traceability]
+see_also: [architecture.md, tech-debt.md]
+owner: pm
+audience: [pm, developer, architect]
 intent: |
   Canonical feature list with status (Shipped / Partial / Deferred), source, and traceability to work items. Read this to understand WHAT the project does at a feature level.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

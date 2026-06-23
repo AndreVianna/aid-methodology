@@ -1,10 +1,18 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Project-specific vocabulary with definitions for all domain and AID-specific terms.
+summary: Canonical reference for naming -- disambiguates terms that mean different things in different contexts.
+sources: []
+tags: [glossary, vocabulary, terminology]
+see_also: [coding-standards.md]
+owner: architect
+audience: [developer, architect, pm]
 intent: |
   Project-specific vocabulary with definitions. Disambiguates terms that mean different things in different contexts; canonical reference for naming.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

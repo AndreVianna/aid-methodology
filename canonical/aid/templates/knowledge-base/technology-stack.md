@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Languages, runtimes, frameworks, build tools, and test infrastructure used by {project}.
+summary: Read this for language-version or tool-version questions before making any toolchain decisions.
+sources:
+  - package.json                # or Gemfile, pyproject.toml, go.mod, pom.xml, etc.
+  - {path/to/build/config}      # e.g., Makefile, build.gradle, CMakeLists.txt
+tags: [languages, runtimes, frameworks, build-tools, testing]
+see_also: [infrastructure.md, test-landscape.md]
+owner: architect
+audience: [developer, architect, devops]
 intent: |
   Languages, runtimes, frameworks, build tools, and test infrastructure the project uses. Read this for language-version or tool-version questions.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 

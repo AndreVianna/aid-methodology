@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Project-specific coding conventions mined from actual code -- naming, formatting, idioms, and process rules.
+summary: Read this before writing or reviewing code to follow established conventions.
+sources:
+  - src/                        # actual source files conventions are inferred from
+  - {path/to/linting/config}    # e.g., .eslintrc, .rubocop.yml, pyproject.toml
+tags: [conventions, naming, formatting, idioms]
+see_also: [architecture.md]
+owner: architect
+audience: [developer, reviewer]
 intent: |
   Project-specific authoring conventions mined from actual code: naming, formatting, idioms, and any process rules the project follows. Read this before writing or reviewing code.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 
