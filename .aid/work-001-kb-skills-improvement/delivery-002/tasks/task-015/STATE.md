@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Table emission flip committed c313ce2b. Verification: dogfood-byte-identity 529/529 pass, render-drift VERIFY PASS, INDEX-fresh diff clean, two-run determinism (timestamp-filtered) confirmed.
 
 ---
 

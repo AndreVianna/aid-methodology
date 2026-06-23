@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** All scope items verified satisfied by task-003 (ASCII-clean + allow-list) and task-015 (INDEX regen + profiles regen). AC verification: build-kb-index.sh 0 non-ASCII bytes; SHIPPED_SCRIPTS entry confirmed (test-ascii-only.sh line 44); INDEX-fresh CI diff clean; all data rows end with ' |'; test-ascii-only.sh 24/24 pass; dogfood-byte-identity 529/529 pass; render-drift VERIFY PASS. Spec-note: AC3 claim 'INDEX.md is ASCII' is unachievable -- KB source docs contain non-ASCII (arrows, em-dashes) which the generator mirrors verbatim into cells; the generator script itself is ASCII-clean and the CI freshness check passes.
 
 ---
 
