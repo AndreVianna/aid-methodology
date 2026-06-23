@@ -143,6 +143,32 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
 
 4. **CHAIN → Step 1** with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
 
+### Step 0e: Harvest Coined Terms
+
+Run the deterministic coined-term harvest after the doc-set is confirmed and before the
+researcher fan-out. This step has zero LLM cost and produces the
+`.aid/generated/candidate-concepts.md` anchor that all deep-dive agents receive.
+
+Print: `[0e] Harvesting coined terms...`
+
+```bash
+bash .github/aid/scripts/kb/harvest-coined-terms.sh \
+  --root . \
+  --output .aid/generated/candidate-concepts.md \
+  --denylist .github/aid/scripts/kb/coined-term-denylist.txt \
+  --top 60
+```
+
+On completion print: `[0e] Candidate concepts ready (K candidates, M cross-source)`.
+
+**Degrade-gracefully:** if the script fails (empty repo, no git, permission error) log a
+warning and continue with an empty `candidate-concepts.md` (same pattern as Step 0c). Never
+block the fan-out on a harvest failure.
+
+> The `harvest` partition of `candidate-concepts.md` is deterministic and byte-reproducible.
+> The `synthesis` partition (tagged `Source = synthesis`) is appended by `aid-architect` in
+> Step 5b. Both partitions feed the closure loop term universe and f005's teach-back gate.
+
 ## Step 1: Pre-scan (aid-researcher, pre-scan doc-set) — ALWAYS runs first, ALONE
 
 Produces `project-structure.md` and `external-sources.md` — foundation for all other agents.
@@ -213,7 +239,8 @@ See `references/agent-prompts.md` § "Custom-Doc Runtime Extension" for the full
 **Every agent receives the foundation reference block** (appended to prompt):
 ```
 REFERENCE DOCUMENTS (read these FIRST before analyzing):
-- .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+- .aid/generated/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+- .aid/generated/candidate-concepts.md — ranked candidate concepts (harvest + synthesis rows); the essence anchor — every term here MUST be grounded in the spine or explicitly dismissed
 - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 - .aid/knowledge/external-sources.md — external documentation inventory and findings
 ```
@@ -295,6 +322,53 @@ Confirm `count == size(list-filenames)` (not a literal) and cross-check names ag
 the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat until all declared files exist.
 
 Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `aid-reviewer` sub-agent — not as a separate shell script.
+
+### Step 5b: SYNTHESIS + CLOSURE
+
+**Run after ALL deep-dive agents (Steps 2-5) complete, before Step 6.**
+
+Dispatch `aid-architect` to run the comprehension/closure loop. The loop body is defined in
+`references/state-closure.md` (thin-router pattern). The orchestrator invokes it with the
+cap-override argument interface (defaults from `discovery.closure` in `.aid/settings.yml`;
+f006 path-config may supply per-run overrides):
+
+```
+--max-clean-passes <N>   default: discovery.closure.max_clean_passes (2)
+--max-rounds <N>         default: discovery.closure.max_rounds (4)
+--token-budget <N>       default: discovery.closure.token_budget (0 = use pass/round caps)
+```
+
+Read defaults from `.aid/settings.yml` directly under the `discovery.closure:` block (NOT
+via `read-setting.sh`, which resolves only 2-level `section.key` paths — the 3-level
+`discovery.closure.max_clean_passes` is outside its reach). Extract them with:
+
+```bash
+# Read discovery.closure defaults (3-level keys; read-setting.sh is 2-level only)
+max_clean_passes="$(grep -A5 'closure:' .aid/settings.yml 2>/dev/null \
+  | awk '/max_clean_passes:/{print $2; exit}')"
+max_rounds="$(grep -A5 'closure:' .aid/settings.yml 2>/dev/null \
+  | awk '/max_rounds:/{print $2; exit}')"
+token_budget="$(grep -A5 'closure:' .aid/settings.yml 2>/dev/null \
+  | awk '/token_budget:/{print $2; exit}')"
+# Apply defaults if absent
+max_clean_passes="${max_clean_passes:-2}"
+max_rounds="${max_rounds:-4}"
+token_budget="${token_budget:-0}"
+```
+
+Print: `[5b] SYNTHESIS + CLOSURE starting (max_clean_passes=${max_clean_passes}, max_rounds=${max_rounds})...`
+
+▶ aid-architect (SYNTHESIS + CLOSURE) starting (~variable)
+Follow `references/state-closure.md` for the full loop body.
+✓ aid-architect (SYNTHESIS + CLOSURE) done — or ✗ aid-architect (SYNTHESIS + CLOSURE) failed: {reason}
+
+**Ungroundable terms** discovered during the closure loop that cannot be grounded from any
+artifact after investigation are appended to `.aid/knowledge/.scout-questions.tmp` using the
+existing Q&A format (Category: `Concept`, Impact: `High`, Status: Pending) so Step 6b
+consolidates them into `STATE.md ## Q&A (Pending)`. **Step 6b is unchanged** — the closure
+loop simply feeds the same pipe.
+
+Print on completion: `[5b] CLOSURE complete — {N} concepts grounded, {M} terms escalated to Q&A.`
 
 ### Step 6: Generate README.md and INDEX.md
 
