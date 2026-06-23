@@ -21,6 +21,7 @@
 | 2026-06-23 | whole-work review 2026-06-23 — Dec.A: greenfield→brownfield transition now via re-triage (§1.5, FR-22, Could-item); verifier mechanism dropped. Dec.B: essence-capture spans lexical + non-lexical synthesis (FR-12); teach-back AC1 gains the non-lexical engine-narration limb | whole-work review |
 | 2026-06-23 | §1.5 matrix Greenfield cells aligned to the (already-corrected) prose — Review→`collapsed` (mini-panel removed); Exit→`teach-back closure` (invariant per FR-21/AC1); Primary-risk→`over-eager elicitation / thin intent-KB` (dropped-verifier "intent↔as-built drift" framing removed) | alignment pass |
 | 2026-06-23 | greenfield de-scope — greenfield is no longer a generation path: recon **detects** it (~0 source) and `aid-discover` **signposts to /aid-interview and halts**. The two generation paths are brownfield-small/large. §1.5 matrix/prose, FR-20/21/22, §4 (O7), §9 AC7, §10 updated; forward-authored greenfield KB-seed deferred to a future interview-side work | user decision |
+| 2026-06-23 | **operational-sufficiency / act-back gate added (post-detail)** — closes the **agent-actionability gap**: the existing gates (teach-back, calibration, closure, correctness) verify *comprehension* + *correctness* but none verifies *actionability* (could an agent, given only the KB, correctly DO a representative change, and where is it forced to guess / reach for source). Adds **FR-36** (the act-back mandate — a 6th panel mandate, the operational sibling of teach-back, reusing f005's panel + `grade.sh`) + **AC16** (the matching acceptance bar). KB's primary purpose is operating guidance for an AI agent, not just human onboarding; act-back certifies it. **feature-013-operational-sufficiency** (Must) extends f005/f003 | user decision |
 
 ## 1. Objective
 
@@ -639,6 +640,21 @@ They are indirect consumers whose output quality is bounded by KB quality.
 - **FR-19.** The rubric MUST gain a **Calibration** dimension (transcription / hollowness /
   coverage-vs-source / deferral-must-point), graded against mechanically-generated evidence
   lists (evidence-anchored).
+- **FR-36 (operational sufficiency / act-back).** Review MUST verify the KB is **sufficient
+  to act on**, not only to comprehend: an **act-back mandate** — the operational sibling of
+  teach-back (FR-18) — MUST give a **clean-context agent** ONLY the KB **+ a representative
+  project task** (drawn from the project's own domain) and require it to **(a)** produce a
+  correct plan/outline for that change AND **(b)** flag **every point where the KB was
+  insufficient** (every convention it had to assume, invariant it had to guess, gotcha it
+  could not anticipate, or contract it had to reach for source to find). Each insufficiency
+  is a finding at a severity that feeds the existing grader; **enough flags fail the gate**
+  (act-back is a **sibling keystone** to teach-back — either open gap holds REVIEW open). To
+  make the KB act-on-able, **operational guidance — conventions, invariants, gotchas,
+  contracts — MUST be first-class structure** (named, greppable sections per the FR-8/FR-9
+  doc model), not buried in prose, and the act-back mandate MUST check for that structure.
+  The mandate is **invariant across paths** (the panel *size* scales — FR-17); it reuses the
+  existing review panel + grader (no new grading infrastructure). *(extends FR-17/FR-18;
+  sharpens FR-9/FR-11.)*
 
 ### E. Recon triage + two brownfield paths (+ greenfield detect/signpost) (S5 · P7)
 
@@ -858,6 +874,18 @@ They are indirect consumers whose output quality is bounded by KB quality.
   that other docs reference and the INDEX routes to (not in-process scratch). *(FR-31)*
 - **AC15 — Human escalation.** An ungroundable project-specific concept produces a **human
   Q&A entry** (surfaced, not silently dropped). *(FR-32)*
+- **AC16 — Operational sufficiency (act-back).** A fresh agent, given **only the KB + a
+  representative project task**, can produce a correct plan/outline for the change (the
+  plan-correctness limb) **and** every point where the KB was insufficient — a convention it
+  had to assume, an invariant it had to guess, a gotcha it could not anticipate, or a
+  contract it had to reach for source to find — is **flagged** (the sufficiency limb); enough
+  flags fail the gate. Operational guidance (conventions / invariants / gotchas / contracts)
+  is **first-class greppable structure** in the relevant docs (the mechanical anchor the
+  mandate checks). Act-back is a **sibling keystone** to teach-back (AC1) — either an
+  explain-gap or an act-gap holds REVIEW open. The mechanical substrate (the representative
+  task is well-formed + deterministic; the named operational sections are present/absent) is
+  CI-asserted; the judgment half (does the plan succeed; are the flags well-founded) is
+  runtime-anchored (the same mechanical-vs-judgment boundary AC1/AC6 honor). *(FR-36)*
 
 ## 10. Priority
 
@@ -868,7 +896,9 @@ They are indirect consumers whose output quality is bounded by KB quality.
   (FR-12–FR-16), the multi-mandate panel + teach-back exit (FR-17, FR-18), the Calibration
   dimension (FR-19), the INDEX routing table (FR-1–FR-3), `sources:` (FR-4),
   concept-model persisted (FR-31), human escalation (FR-32), **migration** (FR-30), the
-  validation fixture (FR-35), and the recon triage with the **brownfield-small +
+  validation fixture (FR-35), the **operational-sufficiency / act-back gate** (FR-36 — the
+  operational sibling of teach-back: a 6th panel mandate + operational guidance as
+  first-class doc structure), and the recon triage with the **brownfield-small +
   brownfield-large** generation paths **plus greenfield detection + signpost** (FR-20/FR-21:
   greenfield detect/signpost and the two brownfield generation paths are all Must).
 - **Should (keep it fresh + clean):** per-doc staleness + change-triggered flagging (FR-5,
