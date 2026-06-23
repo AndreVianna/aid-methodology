@@ -1,0 +1,16 @@
+# Asserted harvest output for the relative-bus fixture
+#
+# The harvest-coined-terms.sh script run over this fixture MUST emit a
+# "Relative Bus" row in candidate-concepts.md with Spread >= 2.
+#
+# Survival mechanism: the phrase "Relative Bus" clears f004's phrase-salience
+# escape (spread >= 2 from code+docs channels alone, never depending on git
+# history). Both component words ("relative", "bus") are in the denylist;
+# the phrase survives as a unit because it is project-coined and cross-source.
+#
+# The history channel (.gitlog.txt) MAY add additional spread (if --history-file
+# is supported by the shipped harvest script), but it is NOT required for this
+# assertion. The load-bearing proof is code+docs spread >= 2.
+#
+# Format: Term=<term>, Spread>=<floor>
+Term=Relative Bus, Spread>=2

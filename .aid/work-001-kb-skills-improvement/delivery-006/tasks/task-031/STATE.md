@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Fixture corpus authored: relative-bus + closed-kb + unclosed-kb. Verified: closed-kb closure-check output (a) empty; unclosed-kb reports relative bus ungrounded. Harvest on isolated copy gives Relative Bus spread=3 >= 2.
 
 ---
 
