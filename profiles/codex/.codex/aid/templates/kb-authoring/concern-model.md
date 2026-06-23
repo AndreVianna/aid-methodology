@@ -183,6 +183,47 @@ maintain it; a concern that no one can own is a boundary smell raised at the gat
 
 ---
 
+---
+
+## Operational guidance is first-class structure
+
+A concern doc that carries operational guidance MUST express it as **named, greppable
+sections** within the doc -- not interleaved prose. This rule extends the summary+pointer
+model: just as summary+pointer prevents altitude drift, the named-section rule prevents
+operational guidance (the conventions, invariants, gotchas, and contracts an agent acts
+on) from being buried where it cannot be found or grepped.
+
+**The rule:** where a doc carries operational guidance of class X, it carries it as the
+named section for X. This is NOT "every doc carries all four sections" -- a glossary doc
+(C4) need not carry `## Contracts`. The rule is: **if a doc owns guidance of class X
+for its concern, that guidance lives in a named section for X**.
+
+### The four operational-guidance classes and their owning section headings
+
+| Class | Named section heading | What it states | Owning concern(s) | Default owning doc(s) |
+|-------|-----------------------|----------------|-------------------|-----------------------|
+| **Conventions** | `## Conventions` | The project's *own way* of doing a recurring change (naming, registration, wiring of a new endpoint/module/handler). Without it an agent invents a convention wrong for this project. | C3 Conventions; the relevant parts/contracts docs (C2, C5) | `coding-standards.md`; `module-map.md`, `pipeline-contracts.md` |
+| **Invariants** | `## Invariants` | What MUST always hold (an ordering, a non-null, a single-source-of-truth rule). Without it an agent violates an invariant the source enforces silently. | C1 Build & shape; C2 Parts & connections; C4 Vocabulary (for conceptual invariants in the spine) | `architecture.md`; `module-map.md`; `domain-glossary.md` |
+| **Gotchas** | `## Gotchas` | The non-obvious trap (a config that must change in lockstep, a build step, an ordering hazard) -- exactly the KB's §1.2 delta-value from what a newcomer cannot infer. | C7 Risk & debt; the concern the gotcha lives in | `tech-debt.md`; the relevant concern doc |
+| **Contracts** | `## Contracts` | The structural shape a change must satisfy (a schema, an interface, a pipeline contract). Without it an agent's change breaks integration. | C5 Data & contracts; C2 Parts & connections | `schemas.md`; `pipeline-contracts.md`, `integration-map.md` |
+
+**These headings are the single source of truth** for what `kb-actback-task.sh`'s
+operational-structure presence check greps and what the M6 act-back mandate names in its
+prompt. Any project-renamed equivalent (e.g. `## Naming rules` for Conventions in a
+project where that framing is more natural) must be enumerated in the project's
+`.aid/knowledge/.review-checklist.md` so the presence check can find it.
+
+### Scoping rule (prevents over-reporting)
+
+`kb-actback-task.sh`'s presence check consumes this owning-table to scope which classes
+each doc is **expected** to carry. It reports `present|absent` **only for expected classes**.
+A doc the table does not map as a Contracts owner (e.g. `domain-glossary.md`) is NOT
+reported `## Contracts absent` -- only a doc the table maps as a Contracts owner (e.g.
+`schemas.md`, `pipeline-contracts.md`) is checked for `## Contracts`. This prevents the
+presence check from over-reporting legitimate absences.
+
+---
+
 ## See also
 
 - [tier-model.md](tier-model.md) -- T1-T4 fact stability tiers (the tier axis)

@@ -243,6 +243,15 @@ smell; a doc that serves two incompatible audiences is a split signal. See
 [concern-model.md](concern-model.md) for the full rule, the propose->confirm flow, and
 the audience-vs-tier axis distinction.
 
+The summary+pointer model (durable synthesis in the doc; volatile detail left in
+`sources:`) is the altitude rule: a doc synthesises *why* and *how parts interact*, it
+does not transcribe source. **Operational guidance -- conventions / invariants / gotchas /
+contracts -- is first-class greppable structure, not prose:** where a doc carries
+operational guidance of class X, it carries it as the named section for X (see
+[concern-model.md](concern-model.md) "Operational guidance is first-class structure").
+These two rules are complementary: summary+pointer governs altitude; named-sections
+govern findability of the guidance an agent acts on.
+
 ## See also
 
 - [concern-model.md](concern-model.md) — 10 universal concerns + boundary rule + propose->confirm

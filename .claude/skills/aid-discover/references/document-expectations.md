@@ -34,6 +34,10 @@ code alone? Ground every claim in a file or path.
 to processing to persistence, the architectural patterns with evidence from code, module
 boundaries, DI registration, entry points -- but report what this project actually does,
 not a generic architecture checklist.)*
+**Operational open question:** What must a newcomer never break when changing this system's
+structure -- the invariants that must always hold (an ordering, a single-source-of-truth
+rule, a non-null guarantee) and the gotchas that will bite if violated? Surface these as
+a `## Invariants` section and a `## Gotchas` section.
 **Red flags:** Generic descriptions without file paths. Missing data flow.
 
 ---
@@ -61,6 +65,11 @@ module: what is it for, and what does it depend on? A module listed without its 
 or its dependencies tells the reader nothing useful.
 *(Investigate: every module listed with purpose, key classes, dependencies between
 modules.)*
+**Operational open question:** What must a newcomer follow, never break, and watch out for
+when changing this system's parts and connections -- the conventions for how a new module
+is named and wired in, the invariants that must hold across module boundaries, and the
+gotchas that will bite on a structural change? Surface these as a `## Conventions` section,
+a `## Invariants` section, and a `## Gotchas` section.
 **Red flags:** Module listed without purpose explanation. Missing dependency relationships.
 
 ---
@@ -73,6 +82,10 @@ error handling, logging, and testing: what does *this* project do and where is t
 evidence in the code? General advice ("use meaningful names") is not a finding.
 *(Investigate: naming conventions with examples from actual code, file layout, DI
 patterns, error handling patterns, logging patterns, test patterns.)*
+**Operational open question:** What are the project's own conventions for every recurring
+change -- the specific naming patterns, file-layout rules, registration steps, and wiring
+sequences a contributor must follow? Surface these as a `## Conventions` section so an
+agent making a change can follow the project's own way, not invent one.
 **Red flags:** Generic advice instead of project-specific conventions extracted from code.
 
 ---
@@ -85,6 +98,10 @@ many-to-many, inheritance)? Where does the data live and how is the schema manag
 time?
 *(Investigate: entity hierarchy, relationships -- 1:N, M:N -- base classes, key entities
 with purpose, database config, migration strategy.)*
+**Operational open question:** What structural contracts must a change to these data shapes
+satisfy -- the schema invariants, the field contracts, and the conventions for adding a
+new entity or field? Surface the contracts as a `## Contracts` section and any conventions
+for schema evolution as a `## Conventions` section.
 **Red flags:** Entity list without relationships. Missing how entities connect to each
 other.
 
@@ -97,6 +114,11 @@ Give real endpoint paths or URLs, not just class or action names. What is the au
 mechanism? What do request and response bodies look like? What happens on errors?
 *(Investigate: pipeline or API style, actual endpoint paths/URLs not just class names,
 auth mechanism, request and response formats, error patterns.)*
+**Operational open question:** What structural contracts must a new endpoint or pipeline
+stage satisfy -- the required fields, response shapes, auth constraints, and error
+contracts -- and what are the conventions for adding one (naming, registration, wiring)?
+Surface these as a `## Contracts` section and a `## Conventions` section so an agent
+adding a new endpoint knows exactly what to conform to.
 **Red flags:** Lists action classes without URLs. Missing how to actually call the
 pipeline or API.
 
@@ -110,6 +132,10 @@ how are errors handled, how are retries managed? This is not the same as
 module-map.md -- it is about connections outside the boundary of this project.
 *(Investigate: external systems with connection details, protocols, config locations,
 error handling, retry patterns.)*
+**Operational open question:** What contracts govern each external connection -- the
+required protocol, auth, and payload shape a new integration must satisfy -- and what are
+the gotchas (config that must change in lockstep, retry hazards, ordering constraints)?
+Surface these as a `## Contracts` section and a `## Gotchas` section.
 **Red flags:** Same content as module-map.md. Missing connection details for external
 systems.
 
@@ -128,6 +154,10 @@ project, abbreviations, product names with explanations -- not generic programmi
 vocabulary.)*
 *(The 'Relative bus' failure: a load-bearing coined concept treated as noise. This doc
 closes that gap; it is the concept spine.)*
+**Operational open question:** Which terms carry load-bearing conceptual invariants -- the
+concepts a newcomer must never confuse, conflate, or misuse (e.g. a coined term whose
+boundary distinguishes two subtly different roles)? Surface these as a `## Invariants`
+section so an agent using the vocabulary knows which term boundaries are non-negotiable.
 **Red flags:** Generic programming terms with no project-specific meaning. Missing
 project-specific vocabulary that appears throughout the codebase.
 
@@ -155,6 +185,11 @@ item?** For each debt item: where exactly is it, what is the risk if it stays, a
 would it take to resolve? Classify by severity so a reader knows where to look first.
 *(Investigate: categorized by severity -- Critical, High, Medium, Low -- each with
 location, risk, and resolution notes; observations about overall codebase health.)*
+**Operational open question:** What are the non-obvious traps a contributor will step on
+when changing this system -- the gotchas that are not obvious from code reading (config
+that must change in lockstep, build steps that must run, ordering hazards, workarounds
+that will break if touched)? Surface these as a `## Gotchas` section so an agent making
+a change is warned before hitting the trap, not after.
 **Red flags:** Missing severity classification. No actionable locations.
 
 ---

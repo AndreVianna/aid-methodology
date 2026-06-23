@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** DBI 535/535 PASS, ASCII 26/26 PASS, render-drift PASS. Owning-table authored in concern-model.md; principle cross-ref in principles.md; operational open-questions in 8 document-expectations entries.
 
 ---
 
