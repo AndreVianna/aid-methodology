@@ -72,7 +72,9 @@
 {"dst": ".agent/aid/scripts/kb/build-kb-index.sh", "profile": "antigravity", "sha256": "0eecad5f1998c000b654b978835cb3c6ad055b1abb913be1a99f9dc033b93744", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".agent/aid/scripts/kb/build-metrics.sh", "profile": "antigravity", "sha256": "09d3aee07f333d96352f78161ec4a9420cbca7c906213883f0a4a97a0c21300c", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".agent/aid/scripts/kb/build-project-index.sh", "profile": "antigravity", "sha256": "4ae990d8a87619ab94298094b95ec82a0751d0050817cd68eef58f7e3caeccbd", "src": "canonical/scripts/kb/build-project-index.sh"}
+{"dst": ".agent/aid/scripts/kb/coined-term-denylist.txt", "profile": "antigravity", "sha256": "75df781e823aa07d134143b3bad6cfb85c49dcecf3cd04bcafd977890c572003", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".agent/aid/scripts/kb/discover-preflight.sh", "profile": "antigravity", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
+{"dst": ".agent/aid/scripts/kb/harvest-coined-terms.sh", "profile": "antigravity", "sha256": "5f613af34e9bcddd9be687ebef13f40d552f7b9721482e0d56148fac9c99a30d", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".agent/aid/scripts/kb/lint-frontmatter.sh", "profile": "antigravity", "sha256": "4262a5d73b936045a38522bba0e6e3b4948587e6a52914c8cc9b5f154512ebe9", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".agent/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "antigravity", "sha256": "cb6daf1bd39b302c9620464b23a89e4c40ed6834f293d4080fdd053a16f6b078", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".agent/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "antigravity", "sha256": "c7afb1fe730466a51057228f6ed17aa5e8394743ffbf2a84d3902db77d8ade4e", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}

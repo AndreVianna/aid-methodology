@@ -72,7 +72,9 @@
 {"dst": ".claude/aid/scripts/kb/build-kb-index.sh", "profile": "claude-code", "sha256": "6a9fb977ea2844b6339e339e8f929f3d00be4b89a9baf8351271ccdc4103d8ab", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".claude/aid/scripts/kb/build-metrics.sh", "profile": "claude-code", "sha256": "61f1308af8e481ea457f9b87082e1d7bce5934cb35b1465f5cfede7ac73f0596", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".claude/aid/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "119e9f8598d569afd4b4c555745e8cc6eb655203721d5c46b330f5f03bf38d65", "src": "canonical/scripts/kb/build-project-index.sh"}
+{"dst": ".claude/aid/scripts/kb/coined-term-denylist.txt", "profile": "claude-code", "sha256": "75df781e823aa07d134143b3bad6cfb85c49dcecf3cd04bcafd977890c572003", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".claude/aid/scripts/kb/discover-preflight.sh", "profile": "claude-code", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
+{"dst": ".claude/aid/scripts/kb/harvest-coined-terms.sh", "profile": "claude-code", "sha256": "675710a021b61611bd9f4bcf7e443d5189c962546d0f0b2b788bd012c0fad9a8", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".claude/aid/scripts/kb/lint-frontmatter.sh", "profile": "claude-code", "sha256": "4262a5d73b936045a38522bba0e6e3b4948587e6a52914c8cc9b5f154512ebe9", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".claude/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "claude-code", "sha256": "cb6daf1bd39b302c9620464b23a89e4c40ed6834f293d4080fdd053a16f6b078", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".claude/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "claude-code", "sha256": "c7afb1fe730466a51057228f6ed17aa5e8394743ffbf2a84d3902db77d8ade4e", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
