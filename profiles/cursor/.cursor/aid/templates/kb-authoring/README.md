@@ -8,7 +8,8 @@
 
 | File | Purpose |
 |------|---------|
-| [principles.md](principles.md) | The 8 normative principles for KB authoring + review |
+| [principles.md](principles.md) | The normative principles for KB authoring + review |
+| [concern-model.md](concern-model.md) | The 10 universal concerns + boundary rule + propose->confirm rules (document-derivation model) |
 | [tier-model.md](tier-model.md) | T1-T4 fact stability tiers used inside KB docs |
 | [frontmatter-schema.md](frontmatter-schema.md) | YAML frontmatter spec for every KB doc |
 | [review-rubric.md](review-rubric.md) | Per-`kb-category` review treatment + temp-ledger format |
@@ -26,6 +27,15 @@
 7. **Review is read-only on the repo** — discovery WRITES only to `.aid/knowledge/`
 8. **Rigor follows value** — verify the load-bearing core with maximum rigor; scaffolding (frontmatter/changelog) gets present-and-parseable checks only
 9. **Resolved items leave no trace** — record current state only; a resolved item is removed entirely (inventory, detail, roll-call, changelog), git history is the audit trail
+
+**The document-derivation model** (full text in [concern-model.md](concern-model.md)):
+
+The KB doc set is derived from 10 universal concerns (C0, C1-C9) -- the stable questions
+a newcomer must answer -- and proposed -> confirmed with the user. Each concern maps to one
+or more default seed docs; a concern may split into project-specific docs or be marked
+conditional. The concern list is a T2 cardinality contract (fixed count: exactly 10).
+Document boundaries fall where coverage, fit, and audience/ownership agree (three-force
+boundary rule; see [principles.md](principles.md)).
 
 **The 4 fact tiers** (full text in [tier-model.md](tier-model.md)):
 

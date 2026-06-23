@@ -70,23 +70,27 @@ set self-describing from the templates that exist on disk.
 
 ### Ownership map (§2.2 single source of truth)
 
-| Template file | Owner |
-|---|---|
-| `project-structure.md` | `aid-researcher-scout` |
-| `external-sources.md` | `aid-researcher-scout` |
-| `architecture.md` | `aid-researcher-architecture` |
-| `technology-stack.md` | `aid-researcher-architecture` |
-| `module-map.md` | `aid-researcher-analyst` |
-| `coding-standards.md` | `aid-researcher-analyst` |
-| `schemas.md` | `aid-researcher-analyst` |
-| `pipeline-contracts.md` | `aid-researcher-integrator` |
-| `integration-map.md` | `aid-researcher-integrator` |
-| `domain-glossary.md` | `aid-researcher-integrator` |
-| `test-landscape.md` | `aid-researcher-quality` |
-| `tech-debt.md` | `aid-researcher-quality` |
-| `infrastructure.md` | `aid-researcher-quality` |
-| `feature-inventory.md` | `skill-self` |
-| `README.md` | `skill-self` |
+Concern ids follow the model in `.github/aid/templates/kb-authoring/concern-model.md`.
+The concern column is documentation only -- it is NOT a machine field; the emitted TSV
+stays `filename<TAB>owner<TAB>presence` (three fields only).
+
+| Template file | Owner | Concern |
+|---|---|---|
+| `project-structure.md` | `aid-researcher-scout` | C1 (Build & shape) |
+| `external-sources.md` | `aid-researcher-scout` | orientation / meta |
+| `architecture.md` | `aid-researcher-architecture` | C1 (Build & shape) |
+| `technology-stack.md` | `aid-researcher-architecture` | C0 (Technology) |
+| `module-map.md` | `aid-researcher-analyst` | C2 (Parts & connections) |
+| `coding-standards.md` | `aid-researcher-analyst` | C3 (Conventions) |
+| `schemas.md` | `aid-researcher-analyst` | C5 (Data & contracts) |
+| `pipeline-contracts.md` | `aid-researcher-integrator` | C2 (Parts & connections) |
+| `integration-map.md` | `aid-researcher-integrator` | C2 (Parts & connections) |
+| `domain-glossary.md` | `aid-researcher-integrator` | C4 (Vocabulary / concept spine) |
+| `test-landscape.md` | `aid-researcher-quality` | C6 (Quality & testing) |
+| `tech-debt.md` | `aid-researcher-quality` | C7 (Risk & debt) |
+| `infrastructure.md` | `aid-researcher-quality` | C8 (Shipping & operation) |
+| `feature-inventory.md` | `skill-self` | C9 (What it does for users) |
+| `README.md` | `skill-self` | orientation / meta |
 
 `INDEX.md` is generated meta-only (not a KB-template artifact); it is owned by `skill-self`
 and not synthesized from templates. (The `skill-self` owner value denotes the skill itself — not a dispatched agent.)
@@ -101,21 +105,39 @@ synth_default_seed() {
   local tmpl_dir="${REPO:-$(pwd)}/.github/aid/templates/knowledge-base"
   # Ownership map: pairs of "filename owner" (no commas, no pipes — safe for IFS split)
   # This is the §2.2 single source; edit here to change the default ownership.
+  # Concern annotations follow concern-model.md (documentation only -- NOT a 4th field;
+  # the emitted TSV stays filename<TAB>owner<TAB>presence with no change to parsing).
+  # Each concern comment is a standalone bash comment line before its entry.
   local -a MAP=(
+    # C1 Build & shape
     "project-structure.md    aid-researcher-scout"
+    # orientation / meta (cross-cutting, not a newcomer concern)
     "external-sources.md     aid-researcher-scout"
+    # C1 Build & shape
     "architecture.md         aid-researcher-architecture"
+    # C0 Technology
     "technology-stack.md     aid-researcher-architecture"
+    # C2 Parts & connections
     "module-map.md           aid-researcher-analyst"
+    # C3 Conventions
     "coding-standards.md     aid-researcher-analyst"
+    # C5 Data & contracts
     "schemas.md              aid-researcher-analyst"
+    # C2 Parts & connections
     "pipeline-contracts.md   aid-researcher-integrator"
+    # C2 Parts & connections
     "integration-map.md      aid-researcher-integrator"
+    # C4 Vocabulary / concept spine
     "domain-glossary.md      aid-researcher-integrator"
+    # C6 Quality & testing
     "test-landscape.md       aid-researcher-quality"
+    # C7 Risk & debt
     "tech-debt.md            aid-researcher-quality"
+    # C8 Shipping & operation
     "infrastructure.md       aid-researcher-quality"
+    # C9 What it does for users
     "feature-inventory.md    skill-self"
+    # orientation / meta
     "README.md               skill-self"
   )
   local entry fn owner
@@ -248,3 +270,36 @@ analyst_files="$(echo "$tsv" | awk -F'\t' -v a="aid-researcher-analyst" '$2==a{p
 > `synth_default_seed` functions are inlined into the caller (state-generate.md, state-review.md,
 > or any state that needs them) rather than living in a standalone script under
 > `.github/aid/scripts/kb/`.
+
+---
+
+## Propose->confirm flow (concern model)
+
+The default seed (`synth_default_seed`) is the **deterministic fallback** when no
+`discovery.doc_set` override exists. The **concern model** (see
+`.github/aid/templates/kb-authoring/concern-model.md`) adds an adaptivity layer above
+it: during the recon/triage phase, `aid-discover` walks the 10 universal concerns (C0,
+C1-C9) and for each concern proposes the default doc(s), a split, a project-specific
+addition, or `conditional`. The proposal is written into `discovery.doc_set` (this schema)
+and confirmed by the user.
+
+**Three proposal variants:**
+
+- **Split a large concern** -- propose multiple `discovery.doc_set` rows for the same
+  concern when one doc would be oversized (e.g. `module-map-frontend.md` +
+  `module-map-backend.md` for a monorepo's C2). Each row carries `conditional:<when>`.
+- **Add a project-specific doc** -- propose a new row mapped to the nearest concern when
+  the project has a concern-relevant area no seed doc covers (e.g. `ml-pipeline.md`
+  under C2/C5 for a data project).
+- **Mark conditional / drop** -- propose `conditional` for a concern whose default doc
+  does not apply (e.g. `infrastructure.md`/C8 for a library with no deployment).
+
+**Invariant:** the fallback path is untouched. A project that accepts the defaults (or
+never runs the propose step) gets `synth_default_seed`'s 15 docs exactly as before.
+Adaptivity is opt-in via the human-confirmed gate, never forced. The concern is the stable
+spine; the docs are derived per project -- every concern must be covered by at least one
+confirmed doc.
+
+`repo-presentation.md` is a **conditional extension example** -- NOT a default seed doc.
+A project MAY add it under C9 (capabilities / user-facing presentation) via this gate.
+It never appears in `synth_default_seed`.

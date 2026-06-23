@@ -233,8 +233,19 @@ generated view of it (e.g. `kb.html`) — is a defect.
 - **P7 + P3** — review is observation only; the temp ledger is the action queue, but
   it acts on the KB, never on the repo.
 
+## Document boundary rule
+
+When authoring or splitting KB docs, the three-force boundary rule from
+[concern-model.md](concern-model.md) applies: a doc boundary falls where **coverage**
+(coherent concern), **fit** (right-sized), and **audience & ownership** (a natural
+owner-role + readable audience) agree. A concern that no owner can maintain is a boundary
+smell; a doc that serves two incompatible audiences is a split signal. See
+[concern-model.md](concern-model.md) for the full rule, the propose->confirm flow, and
+the audience-vs-tier axis distinction.
+
 ## See also
 
+- [concern-model.md](concern-model.md) — 10 universal concerns + boundary rule + propose->confirm
 - [tier-model.md](tier-model.md) — T1-T4 stability tiers for individual facts within a doc
 - [frontmatter-schema.md](frontmatter-schema.md) — schema specification + per-field rules
 - [review-rubric.md](review-rubric.md) — per-category review treatment
