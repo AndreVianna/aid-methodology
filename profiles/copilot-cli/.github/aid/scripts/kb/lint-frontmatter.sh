@@ -1,17 +1,20 @@
 #!/usr/bin/env bash
 # lint-frontmatter.sh -- deterministic presence+shape check over KB frontmatter.
 #
-# Checks each hand-authored primary/extension KB doc for the f001 required fields
-# (objective:, summary:, sources:) and validates well-formedness of optional fields
-# when present.
+# In-scope predicate (f011 scope-widening, [SPIKE-M1] resolved):
+#   kb-category in {primary, extension} AND source: != generated
+# This covers hand-authored docs (source: hand-authored) AND promoted docs
+# (e.g. source: "promoted from work-local research ...") while keeping
+# generator-written docs (source: generated) permanently out of scope.
 #
-# Soft-skip rule (day-one compatibility):
+# Soft-skip rule (day-one compatibility, NFR-7 -- RETAINED verbatim):
 #   Any doc that carries NONE of the f001 new fields
 #   (objective, summary, sources, tags, see_also, owner, audience)
 #   is treated as "pre-migration" and skipped entirely.
 #   This keeps CI green on un-migrated KB docs until f011 migrates them.
+#   Adopters who upgrade but have not yet migrated remain degrade-graceful.
 #
-# Also skipped:
+# Always skipped:
 #   - docs with kb-category: meta
 #   - docs with source: generated
 #
@@ -42,8 +45,9 @@ while [[ $# -gt 0 ]]; do
             cat <<'HELP_EOF'
 lint-frontmatter.sh -- presence+shape lint for KB doc frontmatter.
 
-Checks each hand-authored primary/extension KB doc for required f001 fields
-and validates well-formedness. Day-one soft-skip: docs carrying none of the
+In-scope: kb-category in {primary, extension} AND source: != generated.
+Covers hand-authored docs and promoted docs; keeps generator-written docs
+permanently out of scope. Day-one soft-skip: docs carrying none of the
 new fields are skipped (pre-migration). meta docs and source:generated docs
 are always skipped.
 

@@ -346,4 +346,34 @@ else
 fi
 
 # ===========================================================================
+# FL20  Promoted doc (source: != generated, != hand-authored) -- in scope
+#       (f011 scope-widening: source: != generated covers promoted docs)
+# ===========================================================================
+D="${TMPDIR_FL}/fl20"; mkdir -p "$D"
+# A promoted doc that has migrated fields: should be in-scope and enforced, not skipped.
+make_kb "$D" "promoted.md" "kb-category: primary
+source: promoted from work-local research (work-005/research/study.md)
+objective: A noun-phrase objective for the promoted doc.
+summary: One sentence summary for the promoted doc.
+sources:
+  - work-005/research/study.md"
+
+out=$(run_lint "$D"); code=$?
+assert_exit_zero "$code"           "FL20 promoted doc in scope -- exit 0 when fields present"
+assert_output_not_contains "$out" "[FM-MISSING]" "FL20 promoted doc in scope -- no FM-MISSING"
+assert_output_not_contains "$out" "[FM-INVALID]" "FL20 promoted doc in scope -- no FM-INVALID"
+
+# A promoted doc without migrated fields: should be soft-skipped (pre-migration), not an error.
+D="${TMPDIR_FL}/fl20b"; mkdir -p "$D"
+make_kb "$D" "promoted-unmig.md" "kb-category: primary
+source: promoted from work-local research (work-005/research/study.md)
+intent: |
+  Legacy promoted doc with no f001 fields yet."
+
+out=$(run_lint "$D"); code=$?
+assert_exit_zero "$code"           "FL20b promoted doc pre-migration soft-skip -- exit 0"
+assert_output_not_contains "$out" "[FM-MISSING]" "FL20b promoted doc pre-migration soft-skip -- no FM-MISSING"
+assert_output_not_contains "$out" "[FM-INVALID]" "FL20b promoted doc pre-migration soft-skip -- no FM-INVALID"
+
+# ===========================================================================
 test_summary
