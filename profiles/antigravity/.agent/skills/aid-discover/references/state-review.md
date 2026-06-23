@@ -42,6 +42,21 @@ bash .agent/aid/scripts/kb/kb-teachback-questions.sh \
 If `candidate-concepts.md` does not exist, the output contains only the fixed engine
 question. This is not an error.
 
+Also run `kb-actback-task.sh` to produce the M6 representative-task spec and
+operational-structure presence check:
+
+```bash
+bash .agent/aid/scripts/kb/kb-actback-task.sh both \
+  --doc-set .aid/generated/doc-set.tsv \
+  --kb-dir .aid/knowledge \
+  --output .aid/.temp/review-pending/{{SCOPE}}-actback-task.md
+```
+
+This emits both the representative-task spec (function 1) and the operational-structure
+presence table (function 2) in a single output file. The doc-set TSV is the
+`filename<TAB>owner<TAB>presence` file produced by `resolve_doc_set` during GENERATE.
+If the TSV does not exist yet, `kb-actback-task.sh` will exit 1 — run GENERATE first.
+
 **Brief preparation**
 
 Render the universal brief from `references/reviewer-brief.md` ONCE, substituting:
@@ -61,16 +76,17 @@ mandate-specific ledger path is substituted per dispatch).
 Read the `review.panel` parameter supplied by the orchestrator from
 `references/path-config.md` (established at Step 0f triage). Two values:
 
-- **`panel: full`** — brownfield-large default; 5 parallel mandate dispatches.
-- **`panel: collapsed`** — brownfield-small only; 2 dispatches (sequential-passes
-  reviewer + clean-context teach-back). Greenfield never reaches the panel.
+- **`panel: full`** — brownfield-large default; 6 parallel mandate dispatches.
+- **`panel: collapsed`** — brownfield-small only; 3 dispatches (sequential-passes
+  reviewer + clean-context teach-back + clean-context act-back). Greenfield never
+  reaches the panel.
 
 ---
 
-#### `panel: full` — Five Parallel Mandate Dispatches
+#### `panel: full` — Six Parallel Mandate Dispatches
 
 For each mandate Mi in {Correctness, Anatomy/Coverage, Concept-closure, Teach-back,
-Calibration}, prepare a dispatch package:
+Calibration, Act-back}, prepare a dispatch package:
 
 **M1 — Correctness:**
 - Brief (rendered above) + `references/reviewer-prompt-correctness.md`
@@ -106,30 +122,45 @@ Calibration}, prepare a dispatch package:
 - Inline `closure-check.sh` output (c) for `{{CLOSURE_CHECK_C}}`.
 - Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-calibration.md`
 
-**Dispatch all 5 aid-reviewer sub-agents IN PARALLEL** (one message, 5 dispatches).
+**M6 — Operational Sufficiency (Act-back, keystone):**
+- Brief + `references/reviewer-prompt-actback.md`
+- Substitute `{{SCOPE}}` in the FOCUS body.
+- Inline the full contents of `.aid/.temp/review-pending/{{SCOPE}}-actback-task.md`
+  (both the representative-task spec and the operational-structure presence table, as
+  produced by `kb-actback-task.sh both` in the pre-dispatch step above) for
+  `{{ACTBACK_TASK_SPEC}}`.
+- **Stricter clean-context rule:** the M6 dispatch MUST NOT include project source
+  files, the project-index, candidate-concepts.md, or any generation artifacts — the
+  reviewer sees ONLY the KB + the representative-task spec and presence-check output.
+- Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-actback.md`
+
+**Dispatch all 6 aid-reviewer sub-agents IN PARALLEL** (one message, 6 dispatches).
 
 **A3 capability-probe:** if parallel dispatch is unavailable in the current execution
-environment, degrade to sequential — dispatch M1, wait, dispatch M2, wait, ... M5.
+environment, degrade to sequential — dispatch M1, wait, dispatch M2, wait, ... M6.
 Record which mode was used.
 
 Each mandate reviewer writes ONLY to its own scratch ledger (the `{{SCOPE}}-<mandate>.md`
-file named in its prompt). The five scratch ledgers are short-lived transients; the
+file named in its prompt). The six scratch ledgers are short-lived transients; the
 canonical `{{SCOPE}}.md` ledger (the file `grade.sh` and FIX use) is untouched
 until Step 2.
 
-Print: `[Review 1/3] Panel dispatched (5 mandates, parallel). Waiting for all 5...`
+Print: `[Review 1/3] Panel dispatched (6 mandates, parallel). Waiting for all 6...`
 
-Wait for all 5 to complete. Record per-mandate actual time.
+Wait for all 6 to complete. Record per-mandate actual time.
 
 ---
 
-#### `panel: collapsed` — Two Dispatches (Brownfield-Small Only)
+#### `panel: collapsed` — Three Dispatches (Brownfield-Small Only)
 
-All five mandates still run. The four content mandates (M1/M2/M3/M5) run as
+All six mandates still run. The four content mandates (M1/M2/M3/M5) run as
 **separate sequential passes** within ONE reviewer to reduce parallelism cost for
 small projects. The anti-P2 no-blending property is fully preserved: each mandate
-is adjudicated on its own before the next begins. M4 (teach-back) is always a
-separate clean-context dispatch (it cannot share context with the source-aware passes).
+is adjudicated on its own before the next begins. M4 (teach-back) and M6 (act-back)
+are always separate clean-context dispatches (they cannot share context with the
+source-aware passes; M4 and M6 may share a dispatch with each other only if both
+are clean-context — in practice dispatch them separately to keep their scratch ledgers
+independent and their verdicts un-conflated).
 
 **Dispatch 1 — Sequential-passes reviewer (M1, M2, M3, M5 in order):**
 
@@ -192,16 +223,29 @@ Dispatch ONE clean-context `aid-reviewer` (identical to the `panel: full` M4 dis
   reviewer sees ONLY the KB + the question set.
 - Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md`
 
-**Dispatch both IN PARALLEL** (one message, 2 dispatches). The sequential-passes
-reviewer handles M1/M2/M3/M5 internally; the clean-context reviewer handles M4
-concurrently.
+**Dispatch 3 — Clean-context act-back reviewer (M6):**
 
-**A3 capability-probe:** if parallel dispatch is unavailable, dispatch Dispatch 1
-first (wait for completion), then Dispatch 2.
+Dispatch ONE clean-context `aid-reviewer` (identical to the `panel: full` M6 dispatch):
+- Brief (rendered above) + `references/reviewer-prompt-actback.md`
+- Substitute `{{SCOPE}}` in the FOCUS body.
+- Inline the full contents of `.aid/.temp/review-pending/{{SCOPE}}-actback-task.md`
+  (both the representative-task spec and the operational-structure presence table) for
+  `{{ACTBACK_TASK_SPEC}}`.
+- **Stricter clean-context rule:** the M6 dispatch MUST NOT include project source
+  files, the project-index, candidate-concepts.md, or any generation artifacts — the
+  reviewer sees ONLY the KB + the representative-task spec and presence-check output.
+- Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-actback.md`
 
-Print: `[Review 1/3] Panel dispatched (collapsed: 2 dispatches, 5 mandates). Waiting...`
+**Dispatch all three IN PARALLEL** (one message, 3 dispatches). The sequential-passes
+reviewer handles M1/M2/M3/M5 internally; the clean-context teach-back reviewer handles
+M4 concurrently; the clean-context act-back reviewer handles M6 concurrently.
 
-Wait for both to complete. Record actual time per dispatch.
+**A3 capability-probe:** if parallel dispatch is unavailable, dispatch Dispatch 1 first
+(wait for completion), then Dispatch 2, then Dispatch 3.
+
+Print: `[Review 1/3] Panel dispatched (collapsed: 3 dispatches, 6 mandates). Waiting...`
+
+Wait for all three to complete. Record actual time per dispatch.
 
 ---
 
@@ -220,6 +264,14 @@ reviewer MUST see ONLY the KB (`.aid/knowledge/*.md`) and the question set. Do N
 pass project source files, project-index, candidate-concepts.md, or any generation
 artifacts.
 
+**⚠️ M6 ADDITIONAL CLEAN-CONTEXT RULE (both panel modes):** The Act-back mandate
+reviewer MUST see ONLY the KB (`.aid/knowledge/*.md`) and the representative-task spec
++ operational-structure presence check output (from `kb-actback-task.sh`). Do NOT pass
+project source files, project-index, candidate-concepts.md, or any generation artifacts.
+The reviewer may cite a KB doc's `sources:` frontmatter to note "the KB defers this to
+source" (which is itself an `[ACTBACK]` insufficiency finding), but does NOT read the
+source file.
+
 ---
 
 ### Step 2: Aggregate + Grade
@@ -231,35 +283,38 @@ Print: `[Review 2/3] Aggregating panel findings...`
 Collect all data rows from the scratch ledgers. The set of scratch ledgers depends on
 the `review.panel` mode used in Step 1:
 
-- **`panel: full`:** five scratch ledgers:
+- **`panel: full`:** six scratch ledgers:
   - `.aid/.temp/review-pending/{{SCOPE}}-correctness.md`
   - `.aid/.temp/review-pending/{{SCOPE}}-anatomy.md`
   - `.aid/.temp/review-pending/{{SCOPE}}-concept-closure.md`
   - `.aid/.temp/review-pending/{{SCOPE}}-teachback.md`
   - `.aid/.temp/review-pending/{{SCOPE}}-calibration.md`
-- **`panel: collapsed`:** two scratch ledgers:
+  - `.aid/.temp/review-pending/{{SCOPE}}-actback.md`
+- **`panel: collapsed`:** three scratch ledgers:
   - `.aid/.temp/review-pending/{{SCOPE}}-content.md` (M1/M2/M3/M5 rows from all four
     sequential passes — already concatenated in mandate order by the reviewer)
   - `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` (M4 rows from the clean-context
     teach-back reviewer)
+  - `.aid/.temp/review-pending/{{SCOPE}}-actback.md` (M6 rows from the clean-context
+    act-back reviewer)
 
 If `.aid/.temp/review-pending/{{SCOPE}}.md` already exists (cycle N>=2), read its
 existing rows first. Each mandate reviewer's rows are identified by their `#` ID prefix
-(M1-NNN, M2-NNN, M3-NNN, TB-NNN, M5-NNN) — the mandate reviewers have updated their
-own rows' Status in their scratch ledgers. Merge rule:
+(M1-NNN, M2-NNN, M3-NNN, TB-NNN, M5-NNN, AB-NNN) — the mandate reviewers have updated
+their own rows' Status in their scratch ledgers. Merge rule:
 
 1. For rows in the existing `{{SCOPE}}.md` that correspond to a mandate's scratch
    ledger, replace the row with the scratch ledger's version (Status updated by the
    reviewer).
 2. For new rows (new findings) in the scratch ledgers, append them with the next
-   available `MN-NNN` or `TB-NNN` ID within that mandate's namespace.
+   available `MN-NNN`, `TB-NNN`, or `AB-NNN` ID within that mandate's namespace.
 3. Assign **stable per-mandate IDs** in the `#` column: `M1-001`..`M1-NNN`,
-   `M2-001`..`M2-NNN`, `M3-001`..`M3-NNN`, `TB-001`..`TB-NNN`, `M5-001`..`M5-NNN`.
-   These IDs are monotonic within each mandate's namespace and never reassigned to a
-   different finding.
+   `M2-001`..`M2-NNN`, `M3-001`..`M3-NNN`, `TB-001`..`TB-NNN`, `M5-001`..`M5-NNN`,
+   `AB-001`..`AB-NNN`. These IDs are monotonic within each mandate's namespace and
+   never reassigned to a different finding.
 4. Each Description must carry its mandate marker prefix (`[M1]`, `[M2]`, `[M3]`,
-   `[M5]`, or `[TEACHBACK]`) — the mandate reviewers have written these; verify they
-   are present.
+   `[M5]`, `[TEACHBACK]`, or `[ACTBACK]`) — the mandate reviewers have written these;
+   verify they are present.
 
 Write the merged result to `.aid/.temp/review-pending/{{SCOPE}}.md` (the canonical
 ledger, 7-column schema).
@@ -290,7 +345,21 @@ Both per-term FAIL items and engine-narration FAIL items are ordinary `[HIGH]`
 rows make grade <= D in `grade.sh`) — the teach-back hard gate is realized entirely
 through the merged rows. No separate boolean, no AND to reconcile.
 
-**2d. Delete the transient scratch ledgers**
+**2d. Derive the act-back verdict**
+
+The act-back verdict is NOT a stored sentinel. Read it directly from
+`.aid/.temp/review-pending/{{SCOPE}}.md`:
+
+- Count rows where Description contains `[ACTBACK]` AND Status is in {Pending, Recurred}.
+- `act_back_verdict = PASS` iff count == 0, else `FAIL`.
+
+Both plan-correctness FAIL items and sufficiency FAIL items (convention / invariant /
+gotcha / contract) are ordinary `[HIGH]` `[ACTBACK]` rows. Any open `[ACTBACK]` row
+forces grade <= D (because `[HIGH]` rows make grade <= D in `grade.sh`) — the act-back
+hard gate is realized entirely through the merged rows, the sibling-keystone mechanism.
+No separate boolean, no AND to reconcile.
+
+**2e. Delete the transient scratch ledgers**
 
 After merging, delete the per-mandate scratch files and the oracle/question-set
 transients. The set of scratch files deleted depends on the `review.panel` mode used:
@@ -303,10 +372,12 @@ rm -f \
   .aid/.temp/review-pending/{{SCOPE}}-concept-closure.md \
   .aid/.temp/review-pending/{{SCOPE}}-teachback.md \
   .aid/.temp/review-pending/{{SCOPE}}-calibration.md \
+  .aid/.temp/review-pending/{{SCOPE}}-actback.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-a.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-b.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-c.md \
-  .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt
+  .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt \
+  .aid/.temp/review-pending/{{SCOPE}}-actback-task.md
 ```
 
 For **`panel: collapsed`**:
@@ -314,10 +385,12 @@ For **`panel: collapsed`**:
 rm -f \
   .aid/.temp/review-pending/{{SCOPE}}-content.md \
   .aid/.temp/review-pending/{{SCOPE}}-teachback.md \
+  .aid/.temp/review-pending/{{SCOPE}}-actback.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-a.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-b.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-c.md \
-  .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt
+  .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt \
+  .aid/.temp/review-pending/{{SCOPE}}-actback-task.md
 ```
 
 `{{SCOPE}}.md` is now the single source FIX reads, exactly as before.
@@ -337,7 +410,8 @@ bash .agent/aid/scripts/config/read-setting.sh --skill discover --key minimum_gr
 Compute:
 - `ready = (grade >= minimum_grade)`
 - `teach_back_display = PASS` or `FAIL` (from Step 2c)
-- If `ready` and `teach_back_verdict == PASS`: `outcome = "Ready"`
+- `act_back_display = PASS` or `FAIL` (from Step 2d)
+- If `ready` and `teach_back_verdict == PASS` and `act_back_verdict == PASS`: `outcome = "Ready"`
 - Otherwise: `outcome = "NOT Ready"`
 
 Update `.aid/knowledge/STATE.md` `## Review History` with the new entry. Record the
@@ -348,7 +422,7 @@ If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via
 
 Print:
 ```
-Grade: {grade} | Teach-back: {PASS|FAIL} -> {Ready|NOT Ready}
+Grade: {grade} | Teach-back: {PASS|FAIL} | Act-back: {PASS|FAIL} -> {Ready|NOT Ready}
 [Review 3/3] Grade: {grade}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.
 ```
 
@@ -361,49 +435,56 @@ exist; **CHAIN** → [State: FIX] otherwise. Both continue inline.
 
 ### Grade Aggregation Summary
 
-The merge-and-grade logic is the same regardless of `review.panel` mode. All five
-mandates produce rows in the merged `{{SCOPE}}.md`; the grader and teach-back gate
-are mode-agnostic.
+The merge-and-grade logic is the same regardless of `review.panel` mode. All six
+mandates produce rows in the merged `{{SCOPE}}.md`; the grader, teach-back gate,
+and act-back gate are mode-agnostic.
 
 ```
 panel: full  (brownfield-large)
-  1. Five mandate reviewers run in parallel (M1..M5), each writing to its own
+  1. Six mandate reviewers run in parallel (M1..M6), each writing to its own
      scratch ledger. M4 writes one [HIGH] [TEACHBACK] row per FAIL item (per-term
-     AND engine-narration FAILs alike -- no separate verdict sentinel).
-  2. Orchestrator MERGES all 5 scratch ledgers into {{SCOPE}}.md (stable per-mandate
-     IDs M1-NNN/M2-NNN/M3-NNN/TB-NNN/M5-NNN; [M1]/[M2]/[M3]/[M5]/[TEACHBACK]
-     description prefixes), then DELETES the 5 transient scratch ledgers.
+     AND engine-narration FAILs alike -- no separate verdict sentinel). M6 writes
+     one [HIGH] [ACTBACK] row per FAIL item (plan-correctness AND sufficiency FAILs
+     alike -- no separate verdict sentinel).
+  2. Orchestrator MERGES all 6 scratch ledgers into {{SCOPE}}.md (stable per-mandate
+     IDs M1-NNN/M2-NNN/M3-NNN/TB-NNN/M5-NNN/AB-NNN; [M1]/[M2]/[M3]/[M5]/[TEACHBACK]/
+     [ACTBACK] description prefixes), then DELETES the 6 transient scratch ledgers.
 
 panel: collapsed  (brownfield-small only)
   1. ONE reviewer runs M1/M2/M3/M5 as separate sequential passes in one agent,
      writing all four passes' findings to {{SCOPE}}-content.md (mandate rows
      M1-NNN/M2-NNN/M3-NNN/M5-NNN). ONE clean-context reviewer handles M4, writing
-     [HIGH] [TEACHBACK] rows to {{SCOPE}}-teachback.md. Both dispatches run in
-     parallel with each other (M1-M5 sequential WITHIN dispatch 1 only).
-  2. Orchestrator MERGES the 2 scratch ledgers ({{SCOPE}}-content.md +
-     {{SCOPE}}-teachback.md) into {{SCOPE}}.md (same stable per-mandate IDs and
-     [Mi]/[TEACHBACK] description prefixes as full mode), then DELETES both
-     transient scratch ledgers. The merged {{SCOPE}}.md is structurally identical
-     to the full-mode output -- same 7-column schema, same mandate ID namespaces.
+     [HIGH] [TEACHBACK] rows to {{SCOPE}}-teachback.md. ONE clean-context reviewer
+     handles M6, writing [HIGH] [ACTBACK] rows to {{SCOPE}}-actback.md. All three
+     dispatches run in parallel with each other (M1-M5 sequential WITHIN dispatch 1
+     only).
+  2. Orchestrator MERGES the 3 scratch ledgers ({{SCOPE}}-content.md +
+     {{SCOPE}}-teachback.md + {{SCOPE}}-actback.md) into {{SCOPE}}.md (same stable
+     per-mandate IDs and [Mi]/[TEACHBACK]/[ACTBACK] description prefixes as full
+     mode), then DELETES all three transient scratch ledgers. The merged {{SCOPE}}.md
+     is structurally identical to the full-mode output -- same 7-column schema, same
+     mandate ID namespaces.
 
 Both modes:
   3. grade = grade.sh {{SCOPE}}.md    # EXISTING grader, unchanged. Worst-severity
                                       # dominates, counts Status in {Pending,Recurred}.
-                                      # Any open [TEACHBACK] row forces grade <= D.
+                                      # Any open [TEACHBACK] OR [ACTBACK] row forces
+                                      # grade <= D.
 
-  4. READY iff grade >= minimum_grade # Single gate. An open teach-back gap is a
-                                      # [HIGH] row -> grade <= D -> not Ready.
-                                      # No second boolean, no AND to reconcile.
+  4. READY iff grade >= minimum_grade # Single gate. An open teach-back OR act-back
+                                      # gap is a [HIGH] row -> grade <= D -> not Ready.
+                                      # No second boolean, no AND/OR to reconcile.
 
-  5. verdict (for reporting) = FAIL iff any open [TEACHBACK] row, else PASS.
+  5. teach_back verdict = FAIL iff any open [TEACHBACK] row, else PASS.
+     act_back verdict   = FAIL iff any open [ACTBACK] row,   else PASS.
 
-  6. STATE + print report the PAIR: "Grade: <g> | Teach-back: <verdict>"
+  6. STATE + print report the TRIPLE: "Grade: <g> | Teach-back: <v> | Act-back: <v>"
 ```
 
-**Why merge rather than keep five ledgers:** FIX (`state-fix.md`) and `grade.sh` are
+**Why merge rather than keep six ledgers:** FIX (`state-fix.md`) and `grade.sh` are
 built around ONE `<scope>.md` per skill invocation. Merging to the single ledger keeps
 FIX, `grade.sh`, and the schema unchanged — the panel is an input-side fan-out that
 collapses back to the existing single-ledger contract before grading. The collapsed
 mode produces the same merged output — `{{SCOPE}}.md` with the same schema and the
-same per-mandate ID namespaces — so FIX, `grade.sh`, and the teach-back gate are
-entirely unaware of which panel mode was used.
+same per-mandate ID namespaces — so FIX, `grade.sh`, the teach-back gate, and the
+act-back gate are entirely unaware of which panel mode was used.

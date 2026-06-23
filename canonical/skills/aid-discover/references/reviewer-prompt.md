@@ -14,7 +14,7 @@ as if a stranger wrote it. No generation process, no prior state, no prior grade
 
 ---
 
-## The Five Mandate FOCUS Bodies
+## The Six Mandate FOCUS Bodies
 
 | # | Mandate | FOCUS file | Scratch ledger |
 |---|---------|-----------|----------------|
@@ -23,10 +23,11 @@ as if a stranger wrote it. No generation process, no prior state, no prior grade
 | M3 | Concept-closure | `reviewer-prompt-concept-closure.md` | `<scope>-concept-closure.md` |
 | M4 | Teach-back (keystone) | `reviewer-prompt-teachback.md` | `<scope>-teachback.md` |
 | M5 | Calibration | `reviewer-prompt-calibration.md` | `<scope>-calibration.md` |
+| M6 | Operational sufficiency (act-back, keystone) | `reviewer-prompt-actback.md` | `<scope>-actback.md` |
 
 Each FOCUS body instructs its reviewer to write to its **own transient scratch ledger**
 `.aid/.temp/review-pending/<scope>-<mandate>.md` (7-column schema). The orchestrator
-aggregates all five scratch ledgers into the single canonical `<scope>.md` ledger and
+aggregates all six scratch ledgers into the single canonical `<scope>.md` ledger and
 deletes the transients (Step 2 of `state-review.md`).
 
 **The `{{DOCUMENT_EXPECTATIONS}}` placeholder** (document-expectations.md contents) is

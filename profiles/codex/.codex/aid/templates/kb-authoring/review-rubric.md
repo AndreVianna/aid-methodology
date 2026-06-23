@@ -253,6 +253,7 @@ tool can extract severity programmatically without a translation table.
 | `[CAL-COVERAGE]` | HIGH | A salient term anchored to this doc's local-file `sources:` is absent from the doc body — an `absent` row in `closure-check.sh` output (b); URL sources are N/A |
 | `[CAL-DEFERRAL]` | LOW | Doc defers depth ("see source") without pointing to a concrete `sources:` entry — a deferral phrase that does not resolve to a declared source |
 | `[TEACHBACK]` | HIGH | A teach-back FAIL item — the KB does not support defining the cited concept from the KB alone (per-term limb), or the KB cannot support a coherent engine-narration (non-lexical limb); any open `[TEACHBACK]` row forces grade <= D |
+| `[ACTBACK]` | HIGH | An act-back FAIL item — using ONLY the KB, the agent cannot produce a correct plan for the representative change (plan-correctness limb), or it had to assume a convention, guess an invariant, hit an un-anticipated gotcha, or reach for source for a contract (sufficiency limb); any open `[ACTBACK]` row forces grade <= D |
 
 **`[FM-MISSING]` and `[FM-INVALID]` cover the new required fields (P6 carve-out) — no
 new lint tag is introduced.** The required new fields (`objective:`, `summary:`,
