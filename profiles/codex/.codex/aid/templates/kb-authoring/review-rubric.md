@@ -66,6 +66,62 @@ The bulk of the review effort.
 
 Worst-issue dominates the grade (per `.codex/aid/templates/grading-rubric.md`).
 
+## Rubric: Calibration (summary vs transcription) — Full Primary only
+
+**Applies after Full Primary.** Meta and generated docs are not calibration-graded.
+The Calibration dimension grades whether each Full Primary doc sits at the useful
+altitude — summary plus pointer — rather than transcribing its sources (too fat) or
+deferring to them without synthesising (too thin). Four checks, each evidence-anchored
+against a mechanically-generated list so grading is repeatable, not pure recall.
+
+| Check | Definition | Evidence anchor | Severity |
+|-------|------------|-----------------|----------|
+| **CAL-1 Transcription (too fat)** | The doc faithfully duplicates volatile source detail (full signatures, exhaustive enumerations) instead of synthesising — a "rotting duplicate". | **`closure-check.sh` output (c)** — per-doc transcription-ratio hint (lexical overlap of doc body vs each **local-file** `sources:` entry). A doc whose body is a near-verbatim restatement of a local source file, with high overlap and no added *why* / *how-it-relates*, is transcription. **URL `sources:` → N/A in (c) (skipped, not a finding)** — the offline helper cannot fetch them. | `[MEDIUM]` `[CAL-TRANSCRIPTION]` |
+| **CAL-2 Hollowness (too thin)** | A "see file X" link-farm conveying no durable understanding. | The doc's `sources:` vs body ratio: a doc that is mostly pointers with no synthesised cross-cutting content (no *why*, no *how parts interact*) is hollow. **Runtime judgment — NOT a mechanical assertion.** | `[MEDIUM]` `[CAL-HOLLOW]` |
+| **CAL-3 Coverage-vs-source** | A load-bearing fact present in the doc's `sources:` is absent from the doc — "the source has Y and the doc forgot it". | **`closure-check.sh` output (b)** — per-doc `sources:`-anchored coverage table `term | doc | anchoring-source | present|absent`: every `absent` row is a salient term anchored to this doc's local-file `sources:` that has no representation in the doc body. **URL `sources:` → N/A in (b)** — offline helper cannot fetch them. | `[HIGH]` `[CAL-COVERAGE]` |
+| **CAL-4 Deferral-must-point** | Where the doc defers depth ("see source"), it MUST point to a concrete `sources:` entry (durable, grep-recoverable anchor — the existing P1(d) anchor convention), not a vague "see the code". | The doc's `sources:` list: every deferral phrase must resolve to a declared source. | `[LOW]` `[CAL-DEFERRAL]` |
+
+**Mechanical vs judgment boundary.**
+CAL-1 (transcription) and CAL-3 (coverage-vs-source) are **mechanical-anchored**: the
+reviewer grades against `closure-check.sh`'s emitted outputs (c) and (b), not free recall.
+CAL-2 (hollowness) is **runtime LLM judgment**: no mechanical oracle exists for "does this
+doc convey durable understanding?" — this is the named, minimised judgment surface.
+
+**Severity rationale.** CAL-3 coverage-vs-source is `[HIGH]` (same weight as a broken
+contract — a load-bearing source fact absent from the doc is a genuine gap). CAL-1 and
+CAL-2 are `[MEDIUM]` (altitude nits that do not misstate facts). CAL-4 is `[LOW]` (a
+deferral without a concrete pointer is a usability issue, not an accuracy gap). The exact
+`[MEDIUM]` vs `[HIGH]` threshold for transcription/hollowness is **f012-calibrated** against
+planted fixtures — the tags and check shapes are authored here; the tuned floor is
+delivery-005.
+
+### Round-trip test (operationalisation)
+
+The four checks are run via the **round-trip test** — three passes the Calibration reviewer
+runs per Full Primary doc:
+
+1. **Forward orientation.** From the doc alone (summary side), can a reader orient — get the
+   *why* / *how parts interact* / the gotchas? A doc that is all pointers with no synthesised
+   content fails forward (**CAL-2 hollow**). *(Judgment, anchored: the reviewer reads the doc,
+   no source.)*
+
+2. **Reverse coverage.** From the doc's `sources:` (the authoritative side), are the
+   load-bearing facts and salient terms that those sources contain represented in the doc?
+   A `sources:` fact the doc forgot fails reverse (**CAL-3 coverage-vs-source**). *(Anchored to
+   `closure-check.sh` **output (b)** — the per-doc `sources:`-anchored coverage table
+   `term | doc | anchoring-source | present|absent`: every `absent` row is a salient term that
+   anchors to this doc's local-file `sources:` but is missing from the doc body. URL `sources:`
+   resolve to N/A in (b) — they yield no reverse-coverage finding.)*
+
+3. **Transcription scan.** Is the doc a near-verbatim copy of its `sources:` (fat) rather than
+   a synthesis? *(Mechanical signal: `closure-check.sh` **output (c)** — the per-doc
+   transcription-ratio hint, the lexical-overlap signal between the doc body and each
+   **local-file** `sources:` entry; the reviewer confirms. `sources:` that are URLs are N/A in
+   (c) — skipped by the offline helper, never flagged.)*
+
+Forward orientation catches *too thin*; reverse coverage and transcription scan catch *too fat*
+and *coverage gaps* — the sweet spot calibration the KB methodology commits to.
+
 ## Rubric: Full Primary + Build-Verify (generated, INDEX.md-class)
 
 Same as Full Primary, PLUS:
@@ -191,6 +247,12 @@ tool can extract severity programmatically without a translation table.
 | `[FM-INVALID]` | HIGH | Frontmatter field has invalid value (e.g., kb-category not in primary/meta/extension; or required new field has malformed shape: objective/summary not a single-line scalar; sources/tags/see_also/audience not a list; approved_at_commit not hex) |
 | `[KB-MISSING]` | HIGH | A standard primary KB document is not present on disk |
 | `[GEN-MISSING]` | HIGH | A registered generated file (per `generated-files.txt`) does not exist; the build command needs to be run |
+| `[CLOSURE-GAP]` | HIGH | A salient cross-source term (from `closure-check.sh` output (a)) is neither grounded in the KB nor explicitly dismissed — a coined or synthesis term with no KB definition |
+| `[CAL-TRANSCRIPTION]` | MEDIUM | Doc is a near-verbatim transcription of its `sources:` (too fat) rather than a synthesis — flagged by `closure-check.sh` output (c) transcription-ratio hint for local-file sources |
+| `[CAL-HOLLOW]` | MEDIUM | Doc is a link-farm that conveys no durable understanding (too thin) — a `sources:` vs body ratio finding; runtime LLM judgment, not a mechanical assertion |
+| `[CAL-COVERAGE]` | HIGH | A salient term anchored to this doc's local-file `sources:` is absent from the doc body — an `absent` row in `closure-check.sh` output (b); URL sources are N/A |
+| `[CAL-DEFERRAL]` | LOW | Doc defers depth ("see source") without pointing to a concrete `sources:` entry — a deferral phrase that does not resolve to a declared source |
+| `[TEACHBACK]` | HIGH | A teach-back FAIL item — the KB does not support defining the cited concept from the KB alone (per-term limb), or the KB cannot support a coherent engine-narration (non-lexical limb); any open `[TEACHBACK]` row forces grade <= D |
 
 **`[FM-MISSING]` and `[FM-INVALID]` cover the new required fields (P6 carve-out) — no
 new lint tag is introduced.** The required new fields (`objective:`, `summary:`,

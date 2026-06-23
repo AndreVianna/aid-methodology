@@ -111,7 +111,7 @@
 {"dst": ".cursor/aid/templates/kb-authoring/concern-model.md", "profile": "cursor", "sha256": "d757f436a7c463fb740189988c4d1b2941124b17e4c39f48b6445958e251e29d", "src": "canonical/templates/kb-authoring/concern-model.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/frontmatter-schema.md", "profile": "cursor", "sha256": "46aa227bcdad42071bc8d57a89afe3cac2c0c179509fa54954ec5fb5cf22dece", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/principles.md", "profile": "cursor", "sha256": "df72e603adf58d5a27d136de0f03aaee40bb9906cb4a01375eb47c92876492aa", "src": "canonical/templates/kb-authoring/principles.md"}
-{"dst": ".cursor/aid/templates/kb-authoring/review-rubric.md", "profile": "cursor", "sha256": "48f59ca3515d3b896b9f26a463a56f6eb15952f0aa20ed2d66d1ab54573c6e10", "src": "canonical/templates/kb-authoring/review-rubric.md"}
+{"dst": ".cursor/aid/templates/kb-authoring/review-rubric.md", "profile": "cursor", "sha256": "63970d158f1d47273a93008078afce53ccb0612d5ddf170e3f49018c2459fd7b", "src": "canonical/templates/kb-authoring/review-rubric.md"}
 {"dst": ".cursor/aid/templates/kb-authoring/tier-model.md", "profile": "cursor", "sha256": "697fc83c1eddc4d5cafb7190c0f03512a4a9edd06c0946978edc01545ed0865f", "src": "canonical/templates/kb-authoring/tier-model.md"}
 {"dst": ".cursor/aid/templates/knowledge-base/README.md", "profile": "cursor", "sha256": "380eb1ea58f191d220e5b26c3e4d71df2eca6180146f94ce1dce421d754b3cf4", "src": "canonical/templates/knowledge-base/README.md"}
 {"dst": ".cursor/aid/templates/knowledge-base/architecture.md", "profile": "cursor", "sha256": "9610aec02fd3d3b18a2c540b0ae2f1f950fa58b570f161d7870837abea188d24", "src": "canonical/templates/knowledge-base/architecture.md"}
