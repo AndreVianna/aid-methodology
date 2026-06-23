@@ -23,7 +23,8 @@ catalog replaces "API surface".
 | 8 | Test Landscape | | test-landscape.md |
 | 9 | Tech Debt | | tech-debt.md |
 | 10 | Build & Distribution | | infrastructure.md |
-| 11 | Knowledge Base Index | | INDEX.md |
+| 11 | Concept Spine | | domain-glossary.md |
+| 12 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -70,6 +71,21 @@ rules.
 ### §10 Build & Distribution
 Build commands + binary distribution (homebrew, scoop, github releases, npm,
 direct download).
+
+### §11 Concept Spine
+
+The project's native vocabulary — domain-specific and coined terms you must know to use
+and maintain the CLI. Drawn from `domain-glossary.md` (the C4 ubiquitous-language doc).
+
+For a CLI, include: any coined subcommand names whose meaning is not obvious from the
+verb alone, project-specific config key names, non-standard exit-code semantics, and
+internal state-machine terms (e.g. "workspace", "context", "lock file"). Render as a
+scannable definition list:
+
+- **{term}** — {one-line definition in this project's context}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder; do not omit
+the section. Wrap command-name terms in `<code>`.
 
 ## Skipped sections (vs web-app)
 

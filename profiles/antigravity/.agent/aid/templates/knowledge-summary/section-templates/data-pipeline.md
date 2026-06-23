@@ -23,7 +23,8 @@ sources/sinks are central.
 | 8 | Data Quality & Validation | | test-landscape.md, tech-debt.md |
 | 9 | Operational Concerns | | tech-debt.md |
 | 10 | Build & Deployment | | infrastructure.md |
-| 11 | Knowledge Base Index | | INDEX.md |
+| 11 | Concept Spine | | domain-glossary.md |
+| 12 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -78,6 +79,21 @@ Checks performed at each stage. Failure modes. Reconciliation queries. SLAs.
 - Audit trail
 - PII handling
 - Compliance (GDPR, CCPA, SOX) if applicable
+
+### §11 Concept Spine
+
+The project's native vocabulary — coined and domain-specific terms a new data engineer must
+understand to work with this pipeline. Drawn from `domain-glossary.md` (the C4 term map).
+
+For a data pipeline, include: the names of stages/transforms if they are project-coined
+(not just "Stage 1"), the terms for entity types in the domain (e.g. "event", "fact", "dim"),
+pipeline-specific SLA abbreviations, and any non-standard orchestration or scheduling terms.
+Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this project's context, not the general data-engineering meaning}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder noting the spine
+is not yet authored; do not omit the section.
 
 ## Differences from web-app
 

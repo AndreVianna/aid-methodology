@@ -24,7 +24,8 @@ inter-service contracts, and saga orchestration become central.
 | 9 | Test Landscape | | test-landscape.md |
 | 10 | Tech Debt | | tech-debt.md |
 | 11 | Infrastructure & Deployment | | infrastructure.md |
-| 12 | Knowledge Base Index | | INDEX.md |
+| 12 | Concept Spine | | domain-glossary.md |
+| 13 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -75,6 +76,22 @@ Cross-service business workflows. One diagram + narrative per major saga.
 ### §11 Infrastructure & Deployment
 Deployment manifests, cluster topology, observability stack, scaling
 strategy.
+
+### §12 Concept Spine
+
+The project's native vocabulary — the domain and system terms that span services and that
+every team member must share. Drawn from `domain-glossary.md` (the C4 ubiquitous-language doc).
+
+For microservices, include: the bounded-context names if they are project-coined rather
+than industry-standard, aggregate root names, event names (if event-driven and the names
+are non-obvious), and any cross-service protocol or pattern terms specific to this system
+(e.g. "saga", "outbox", "idempotency key" if the term is used in a project-specific way).
+Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this system's domain context}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder; do not omit the
+section.
 
 ## Differences from web-app
 

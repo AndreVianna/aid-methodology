@@ -126,3 +126,16 @@ When confidence is `low`:
 [PROFILE] Detection ambiguous (top scores: web-app=2, library=2).
           Using AskUserQuestion to resolve...
 ```
+
+## Concept Spine section (applies to all concrete profiles)
+
+Every concrete profile template (`agentic-pipeline`, `cli`, `data-pipeline`, `library`,
+`microservices`, `web-app`) includes a **Concept Spine** section (second-to-last, before
+the Knowledge Base Index). This section is drawn from `domain-glossary.md` (the C4
+ubiquitous-language doc) and renders the project's native terms with one-line definitions
+as a scannable list.
+
+`auto-detect` is not a section-layout template (it defines scoring rules, not sections).
+When auto-detection resolves to a concrete profile, that profile's section layout —
+including the Concept Spine section — applies. No concept-spine scoring signal is needed
+here: every profile renders the section regardless of detection score.

@@ -25,7 +25,8 @@ Distinct from `library` (no UI but exports an API; this profile exports *skills 
 | 9 | Test Landscape | | test-landscape.md |
 | 10 | Tech Debt | | tech-debt.md |
 | 11 | Documentation Surface | | repo-presentation.md |
-| 12 | Knowledge Base Index | | INDEX.md |
+| 12 | Concept Spine | | domain-glossary.md |
+| 13 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -70,6 +71,21 @@ How the project ships to adopters: install script (`install.sh` / `install.ps1` 
 ### §11 Documentation Surface
 
 How the project presents itself to adopters: README structure, docs/ taxonomy, examples/ catalog, methodology spec link, external references (blog posts, papers). This is the user-facing surface — what a first-time visitor sees before installing.
+
+### §12 Concept Spine
+
+The project's native vocabulary — the coined and domain-specific terms you must understand
+to understand the system. Drawn from `domain-glossary.md` (the C4 ubiquitous-language doc).
+
+For an agentic pipeline, include: the skill/agent/phase terminology, any coined names for
+pipeline states or contracts (e.g. "phase gate", "dispatch contract", "review-fix loop"),
+and any project-specific abbreviations. Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this project's context, not the general meaning}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder noting the spine
+is not yet authored; do not omit the section. Terms are scannable first — keep each
+definition to one line; link to the KB doc for deeper context.
 
 ## Skipped sections (vs web-app)
 

@@ -25,7 +25,8 @@ with 13 sections and 8 diagrams.
 | 10 | Test Landscape | | test-landscape.md |
 | 11 | Tech Debt | | tech-debt.md |
 | 12 | Infrastructure & Build | | infrastructure.md, technology-stack.md |
-| 13 | Knowledge Base Index | | INDEX.md |
+| 13 | Concept Spine | | domain-glossary.md |
+| 14 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -93,7 +94,22 @@ debt item: ID, title, evidence, effort.
 CLI command table with status badges (works / broken / no-op) + 4 cards (CI,
 artifact, backend build, frontend build).
 
-### §13 Knowledge Base Index
+### §13 Concept Spine
+
+The project's native vocabulary — domain-specific and coined terms that a new developer must
+understand to reason about the application. Drawn from `domain-glossary.md` (the C4 doc).
+
+For a web application, include: the domain entity names if they are project-coined (not
+industry-standard CRUD nouns), bounded-context terminology, any project-specific naming
+conventions for UI/API concerns (e.g. "module", "plugin", "namespace" if used in a specific
+way), and non-obvious workflow or state names. Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this application's domain context, not the general web meaning}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder; do not omit the
+section.
+
+### §14 Knowledge Base Index
 Full table of every `.aid/knowledge/*.md` with one-line summaries and links.
 
 ## Theme palette mapping (per-section accent)

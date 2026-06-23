@@ -31,11 +31,22 @@ Records in `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 ### 3. Read all KB documents
 
 Read every `.aid/knowledge/*.md` listed in INDEX.md. For each, extract:
-- **Document purpose** — first read the YAML frontmatter `intent:` field (per
-  `.cursor/aid/templates/kb-authoring/frontmatter-schema.md`). The `intent:`
-  paragraph is the authoritative source for the doc's section description in
-  the HTML summary. Fall back to "first paragraph after H1" only when frontmatter
-  is missing or `intent:` is empty (legacy docs pre-Phase-A migration).
+- **Document purpose** — read the YAML frontmatter using this priority order (the
+  same coexistence fallback rule f001/f002 use during the migration window):
+  1. `objective:` (purpose noun-phrase) + `summary:` (one-sentence scope), when
+     both are present — these are the authoritative sources for the doc's section
+     description in the HTML summary.
+  2. `objective:` alone, when `summary:` is absent — use the noun-phrase as the
+     description.
+  3. `intent:` field — when `objective:`/`summary:` are absent (un-migrated docs
+     pre-f001 migration). The `intent:` paragraph is the legacy authoritative source
+     and keeps un-migrated KBs rendering correctly (degrade-gracefully; NFR-7).
+  4. "First paragraph after H1" — fallback of last resort when all frontmatter
+     fields are missing or empty.
+  When a doc carries `audience:` (a free list of role strings added by f001), render
+  a small role badge alongside the section header (e.g. `[architect]` or
+  `[architect, developer]`). If `audience:` is absent, render nothing — no layout
+  change, no placeholder text (additive + optional; degrade-gracefully).
 - **Key facts** — numbers, names, version pins (T1+T2 tier facts; skip T3 line-counts
   per the kb-authoring tier model — those are tracked separately in metrics.md)
 - **Diagrams worth promoting** — look for ASCII art, mermaid blocks, or strong
