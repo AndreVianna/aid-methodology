@@ -1,0 +1,35 @@
+## Representative Task Spec
+
+**Act-back mandate (M6) -- clean-context operational probe**
+
+Using ONLY the KB docs provided, perform the following representative task
+for this project.  Produce a correct plan/outline for the change in the
+project's own conventions, AND flag every point where the KB was insufficient
+(every assumption made, every invariant guessed, every convention missing,
+every contract not stated).
+
+**Task shape: contract**
+
+**Task:** Add a new field to a data contract or schema.
+
+Specifically:
+1. Identify which contract/schema the new field belongs to, using the KB.
+2. Describe the exact steps to add the field: name, type, validation,
+   and any invariants it must satisfy.
+3. List all downstream consumers of the contract that must be updated,
+   as described in the KB.
+4. State the conventions for naming and typing the new field (from the KB).
+5. Flag every point where the KB did not provide the necessary guidance
+   and you had to assume or guess.
+
+**Scoring:**
+- PASS: a correct, executable plan is producible from the KB alone, with no
+  insufficiency flags.
+- FAIL: the plan cannot be produced correctly from the KB, OR any insufficiency
+  flag is raised.  Each flag is a [HIGH] [ACTBACK] finding.
+
+**Doc set used for this task (machine-readable substrate):**
+- coding-standards.md
+- domain-glossary.md
+- schemas.md
+- tech-debt.md
