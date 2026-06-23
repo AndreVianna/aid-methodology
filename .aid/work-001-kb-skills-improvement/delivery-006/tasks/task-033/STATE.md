@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Fixtures created: greenfield (GREENFIELD), brownfield-small (BROWNFIELD-SMALL), brownfield-large (BROWNFIELD-LARGE all 3 variants). settings.yml parity confirmed. ASCII pass. No canonical edits (DBI unaffected).
 
 ---
 
