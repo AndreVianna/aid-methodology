@@ -40,6 +40,9 @@ SHIPPED_SCRIPTS=(
     "dashboard/server/reader.mjs"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.sh"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.ps1"
+    # KB scripts shipped alongside the methodology (f001 task-003: add both to guard)
+    "canonical/aid/scripts/kb/build-kb-index.sh"
+    "canonical/aid/scripts/kb/lint-frontmatter.sh"
     # Maintainer test harness, but now run under Windows PowerShell 5.1 in CI
     # (installer-tests.yml 5.1 lane), which mis-parses non-ASCII in no-BOM files
     # via the ANSI codepage -- so it must stay ASCII like the shipped PS.

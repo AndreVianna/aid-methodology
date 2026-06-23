@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** lint-frontmatter.sh created; test-frontmatter-lint.sh (FL01-FL19); ascii-only allow-list updated; kb-hygiene CI step added; profiles regenerated; dogfood synced. All verification gates PASS.
 
 ---
 

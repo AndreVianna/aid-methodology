@@ -113,6 +113,10 @@ jobs:
         run: |
           git check-ignore -q .aid/.temp/probe || { echo "::error::.aid/.temp/ not gitignored"; exit 1; }
           [ -z "$(git ls-files .aid/.temp/)" ] || { echo "::error::tracked files under .aid/.temp/"; exit 1; }
+      - name: Frontmatter lint (f001 soft-skip -- stays green until f011 migrates docs)
+        shell: bash
+        run: |
+          bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
       - name: INDEX.md is fresh (regenerate + diff, timestamps filtered)
         shell: bash
         run: |

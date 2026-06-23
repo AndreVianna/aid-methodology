@@ -69,10 +69,11 @@
 {"dst": ".cursor/aid/scripts/housekeep/cleanup-classify.sh", "profile": "cursor", "sha256": "57d245ea1b8507296c6022e45d31ad4b0a8651ffe8ff792026dc57351f0fb231", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".cursor/aid/scripts/housekeep/housekeep-state.sh", "profile": "cursor", "sha256": "5ca9d4dc8a776246df530ca37a00a8f04a73e5786b0d86fc9845235287a850fc", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".cursor/aid/scripts/interview/parse-recipe.sh", "profile": "cursor", "sha256": "df1253bac77143c32248cb5b33a3a76755e337ff12ce0bd3659ece120d53aa8d", "src": "canonical/scripts/interview/parse-recipe.sh"}
-{"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "07106e5a440f17e87a1cf7ac845da548c51a7b50cca0f1c8bb1e69e07bc684e0", "src": "canonical/scripts/kb/build-kb-index.sh"}
+{"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "973ee3ce68252cd43f98cd7aa83a4167be0c2b7bcb328a992b93fc7e9d5a339f", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "dda7b8560cc623de133a3ae14a3408254143a31d9e1fe3cbd661eb021d625c85", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-project-index.sh", "profile": "cursor", "sha256": "2cdcecff0ad0a807aafad665e2331d8d63ebd7e51f48d4699f7a4150e6dcac82", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/discover-preflight.sh", "profile": "cursor", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
+{"dst": ".cursor/aid/scripts/kb/lint-frontmatter.sh", "profile": "cursor", "sha256": "4262a5d73b936045a38522bba0e6e3b4948587e6a52914c8cc9b5f154512ebe9", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "cursor", "sha256": "cb6daf1bd39b302c9620464b23a89e4c40ed6834f293d4080fdd053a16f6b078", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "cursor", "sha256": "c7afb1fe730466a51057228f6ed17aa5e8394743ffbf2a84d3902db77d8ade4e", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
 {"dst": ".cursor/aid/scripts/release/check-version-sync.sh", "profile": "cursor", "sha256": "e8154094c81a15a79261dc463b7df492eb2a8d4fe0203cfea5b9a847f4ee0e3c", "src": "canonical/scripts/release/check-version-sync.sh"}
