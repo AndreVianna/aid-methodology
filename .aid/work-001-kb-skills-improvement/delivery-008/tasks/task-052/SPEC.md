@@ -1,10 +1,10 @@
-# task-047: Docs-site gen-reference SKILL_GROUPS + skills.md regen + dogfood self-install
+# task-052: Docs-site gen-reference SKILL_GROUPS + skills.md regen + dogfood self-install
 
 **Type:** IMPLEMENT
 
-**Source:** work-001-kb-skills-improvement -> delivery-007
+**Source:** work-001-kb-skills-improvement -> delivery-008
 
-**Depends on:** task-044
+**Depends on:** task-049
 
 **Scope:**
 - f009 Part 4 (S7/S8) + Part 5 (S10, AC12) -- the docs-site generator/page and this repo's own
@@ -24,14 +24,14 @@
 - **Dogfood self-install (S10, Part 5 -- this repo's own AID install; NOT a render target, NOT
   render-drift-gated):**
   - `.claude/skills/aid-ask/` -> replace with the rendered `aid-query-kb/` + `aid-update-kb/` (copy
-    from `profiles/claude-code/.claude/skills/` after task-044, or re-run the AID install/migration
+    from `profiles/claude-code/.claude/skills/` after task-049, or re-run the AID install/migration
     against this repo -- SPIKE-B mechanism choice; either yields the same end state) and remove the
     orphaned `aid-ask/` dir.
   - `.aid/.aid-manifest.json` -> update the claude-code tool's path list (l.394
     `".claude/skills/aid-ask/SKILL.md"` -> `aid-query-kb`; add the `aid-update-kb` paths incl. its
     `references/state-*.md`).
-- **Out of scope:** KB-doc prose counts + INDEX + narrative (task-045); summary-src + kb.html
-  (task-046).
+- **Out of scope:** KB-doc prose counts + INDEX + narrative (task-050); summary-src + kb.html
+  (task-051).
 
 **Acceptance Criteria:**
 - [ ] `gen-reference.mjs` `SKILL_GROUPS` renames `aid-ask` -> `aid-query-kb` and adds

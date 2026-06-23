@@ -21,8 +21,9 @@ scaling the closure engine (delivery-001's f004 cap-override interface) and the 
 teach-back closure remains the invariant exit. This delivery delivers the two **brownfield**
 generation paths (brownfield-small and brownfield-large) PLUS **greenfield detect + signpost**:
 recon DETECTS greenfield (RM1/RM2), and on a greenfield verdict aid-discover prints a signpost
-and HALTS. There is **no greenfield generation engine** (greenfield de-scoped 2026-06-23;
-delivery-009 deleted) -- forward-authoring a KB-seed from intent is a future interview-side work.
+and HALTS. There is **no greenfield generation engine** (greenfield de-scoped 2026-06-23; the defunct
+pre-act-back greenfield-path delivery-009 was deleted -- NOT the current live delivery-009
+Governance) -- forward-authoring a KB-seed from intent is a future interview-side work.
 
 ## Scope
 
@@ -81,8 +82,9 @@ classification + teach-back closure (delivery-005, f012).
 
 ## Notes
 
-**Greenfield de-scope (2026-06-23):** greenfield is now **detect + signpost** only -- delivery-009
-(the greenfield generation path) is **deleted**. recon DETECTS greenfield (the classifier's first
+**Greenfield de-scope (2026-06-23):** greenfield is now **detect + signpost** only -- the defunct
+pre-act-back greenfield-path delivery-009 (NOT the current live delivery-009 Governance) is
+**deleted**. recon DETECTS greenfield (the classifier's first
 branch, built in task-023) and on a greenfield verdict aid-discover prints a signpost and HALTS;
 there is no greenfield generation engine, no elicit-via-`aid-interview`/`aid-specify` path, no
 greenfield closure, and no greenfield panel-collapse. All of feature-006's ACs are now owned here

@@ -1,78 +1,55 @@
-# task-037: per-doc freshness in both dashboard readers (Python + Node, byte-parity)
+# task-037: Teach-back pass/fail fixture corpus (AC1 substrate)
 
-**Type:** IMPLEMENT
+**Type:** TEST
 
 **Source:** work-001-kb-skills-improvement -> delivery-006
 
-**Depends on:** task-035, task-001 (delivery-001)
+**Depends on:** -- (none)
 
 **Scope:**
-- Add a **per-doc freshness read** to BOTH dashboard readers in lockstep so the byte-parity contract is
-  reviewable as one unit (f007 SPEC "Dashboard surfacing (both readers -- parity)"). The two readers
-  re-implement the SAME algorithm as `kb-freshness-check.sh` (task-035) -- same git verbs, same fold
-  rule, same degrade matrix -- because they cannot reliably shell out to the bundled script across the
-  five host trees + two runtimes (the same script-free duplication FF-A2 already uses).
-- **Python -- `dashboard/reader/derivation.py`:** add `derive_doc_freshness(kb_dir, repo_root) ->
-  list[DocFreshness]`, beside `git_freshness_check`. It enumerates the same hand-authored docs, reads
-  each doc's `sources:` + `approved_at_commit:`, and runs the same two git verbs the script uses --
-  `git -C <repo> log -1 --format=%H -- <src>` and `git -C <repo> merge-base --is-ancestor <C_src> <A>`
-  -- through the existing bounded-subprocess helper (`_run_git_log`, line 190). Add `merge-base` to the
-  **Python-only** `_GIT_ALLOWED_VERBS` allowlist (line 101; still read-only -- `merge-base` never
-  mutates). Same degrade-to-`unknown` matrix as the script (any git failure on a source -> `unknown`,
-  never a false `suspect`). FF-A2 `git_freshness_check` is RETAINED (coexists -- see Coexistence).
-- **Node (twin) -- `dashboard/server/reader.mjs`:** add the byte-parity twin
-  `deriveDocFreshness(kbDir, repoRoot)`, beside `gitFreshnessCheck`, using `runGitCommand`
-  (line 525) for the identical argv (`["-C", repo, "log", "-1", "--format=%H", "--", src]` and
-  `["-C", repo, "merge-base", "--is-ancestor", cSrc, a]`). The Node `runGitCommand` carries NO verb
-  allowlist (unlike Python), so it needs no parallel allowlist edit -- the parity contract is over the
-  OUTPUT `doc_freshness` arrays, not over a shared allowlist.
-- **Frontmatter scan (both):** add a small tolerant `sources:`/`approved_at_commit:` frontmatter scan
-  -- Python in `dashboard/reader/parsers.py` (mirroring its existing tolerant line-scans), Node inline
-  in `reader.mjs` -- producing identical parsed values for the same doc.
-- **Model + wiring (both):**
-  - Python: add a `DocFreshness` model + `KbStateRef.doc_freshness` / `KbStateRef.suspect_count` fields
-    (`dashboard/reader/models.py`, line ~138; additive, default empty list / 0 -- existing fields
-    untouched for back-compat). Wire: call `derive_doc_freshness` after `derive_kb_status`
-    (`dashboard/reader/reader.py`, line ~402) and attach to `kb_state`.
-  - Node: attach `doc_freshness` / `suspect_count` in `_buildKbStateRef` (line 3026) and the read
-    pipeline (line ~1790), additive.
-- **Output shape (both, identical):**
-  `kb_state.doc_freshness = [{ doc, verdict, suspect_sources }, ...]` with `verdict` in
-  `{current, suspect, unknown}`, plus `kb_state.suspect_count = <int>` rollup for the badge.
-- The dashboard reader/HTML files live under `dashboard/` (NOT canonical-rendered -- they are the
-  source tree the install bundles vendor); edit in place. No `run_generator.py` for these files
-  (C3/NFR-4 -- only `canonical/` is rendered; the readers have their own CI).
+- Author the hand-built, ASCII, checked-in `teachback/` fixture corpus that the AC1 teach-back
+  suite (task-038) runs over, under `tests/canonical/fixtures/kb-essence/teachback/` (f012 SPEC F3) --
+  two minimal KBs, each a `generated/candidate-concepts.md` (the term universe
+  `kb-teachback-questions.sh` derives the question set from) + a `knowledge/domain-glossary.md` spine:
+  - `pass-kb/generated/candidate-concepts.md` + `pass-kb/knowledge/domain-glossary.md` (the PASS
+    shape): every cross-source candidate concept (every emitted Spread `>= 2` `Term`) has a
+    definition-as-used-here concept entry in the spine, so the question set generated from the
+    candidates is fully answerable from the KB alone (closure passes -- zero ungrounded).
+  - `fail-kb/generated/candidate-concepts.md` + `fail-kb/knowledge/domain-glossary.md` (the FAIL
+    shape): an identical candidate list, but the spine OMITS the definition of one core concept (it
+    is named/used in the KB but never defined), so the question set contains a "what is X?" the KB
+    cannot answer (closure reports the one undefined concept).
+- The fail-KB ALSO carries the **runtime-judgment engine-narration shape**: plant the fail-KB so it
+  is un-narratable as an engine (the fixed engine question -- "narrate how this project works as a
+  running engine" -- is unsupportable by the spine) **even when every coined term is lexically
+  defined**. This shape is the RUNTIME-ANCHORED substrate the clean-context teach-back reviewer (M4)
+  attempts the engine narration over -- the **engine-narration limb is irreducibly LLM judgment**
+  (f005 SPEC L434-435: "there is no mechanical check"; no shipped script returns this verdict), so it
+  is NOT a mechanical CI assertion in task-038. (The MECHANICAL FAIL task-038 asserts is the LEXICAL
+  term-undefined FAIL from the omitted core-concept definition above -- detectable via
+  `closure-check.sh` output (a).) The un-narratable shape is planted so the runtime reviewer has it
+  to assess; it is not scored by CI.
+- Every `generated/candidate-concepts.md` MUST replicate f004's emitted table schema verbatim (f004
+  SPEC L275-289): a `## Summary` block carrying the `Cross-source (spread >= 2)` count row, and a
+  `## Ranked Candidates` table with the `# | Term | Class | Freq | Spread | Channels | Salience |
+  Example source` columns -- so `kb-teachback-questions.sh` extracts the Spread `>= 2` `Term` rows
+  against a real schema (a fixture missing the `Spread` column or the `## Ranked Candidates` table
+  yields an empty question set; f012 SPEC "Fixture schema fidelity").
 
-**SPIKE resolutions (per f007 SPEC):** SPIKE-1/SPIKE-3 are settled as **augment-and-supersede**
-(this task's design): per-doc `doc_freshness` is added additively, FF-A2 `git_freshness_check` and the
-5-state `KbStatus` waterfall are RETAINED (they carry non-freshness state and gate clickability), and
-the readers re-implement the scan rather than shell out -- pinned to one verdict by the task-039 parity
-suite. (`merge-base --is-ancestor` per SPIKE-4 requires git >= 1.8.0, universally present.)
-
-**Boundary:** f007 PROVIDES the freshness signal surfaced here. This task does NOT author the
-`home.html` per-doc badge/marker (task-038 -- the UI that reads `doc_freshness`), does NOT author the
-parity suite (task-039), and does NOT build the consumers `aid-update-kb`/`aid-housekeep`
-(f008/f010, delivery-007/008). It does NOT redefine `sources:`/`approved_at_commit:` (f001, d001).
+**Boundary (f012 EXERCISES, does not RE-SPEC):** this task authors ONLY fixture files. It does NOT
+author or edit `kb-teachback-questions.sh` (f005, shipped by delivery-001 task-012), `closure-check.sh`
+(f004, delivery-001), the teach-back exit gate, or the engine-narration question itself. The teach-back
+fixture is **engine-validation** (it exercises f005's teach-back keystone gate); the path fixtures
+(greenfield-detection + brownfield) are authored by sibling task-033, OUT of scope for THIS task. No
+numeric floor is chosen here; this task only plants the pass/fail KBs whose PASS/FAIL separation is
+mechanically checkable in task-038.
 
 **Acceptance Criteria:**
-- [ ] `dashboard/reader/derivation.py` gains `derive_doc_freshness(kb_dir, repo_root)` and
-  `dashboard/server/reader.mjs` gains the twin `deriveDocFreshness(kbDir, repoRoot)`; both implement
-  the same algorithm as task-035 (same `git log -1 --format=%H -- <src>` + `merge-base --is-ancestor`
-  verbs, same fold rule, same degrade-to-`unknown` matrix) and emit identical `doc_freshness` arrays
-  for the same repo state.
-- [ ] `merge-base` is added to the Python-only `_GIT_ALLOWED_VERBS` (derivation.py line 101);
-  the Node twin needs no allowlist edit; both stay read-only (no KB write, no `approved_at_commit:`
-  write -- human-gated, O3/NFR-6).
-- [ ] Both readers gain a tolerant `sources:`/`approved_at_commit:` frontmatter scan (Python in
-  `parsers.py`, Node inline) that returns identical parsed values for the same doc.
-- [ ] Additive model/wiring: Python `DocFreshness` model + `KbStateRef.doc_freshness` /
-  `suspect_count` fields (default empty/0), called after `derive_kb_status` in `reader.py`; Node
-  `doc_freshness`/`suspect_count` attached in `_buildKbStateRef` + read pipeline. The output shape is
-  `[{doc, verdict, suspect_sources}]` + `suspect_count` int, identical across the twins. Existing
-  reader fields and FF-A2 `git_freshness_check` are unchanged (coexist).
-- [ ] Degrade matrix matches task-035: a git failure / URL / untracked source / missing baseline never
-  manufactures a false `suspect` -- the reader degrades that source/doc to `unknown` (matching the
-  existing "every failure -> safe default" posture).
-- [ ] All section-6 quality gates pass (existing reader unit tests still pass; the dashboard reader CI
-  green). The Python===Node byte-parity is asserted by task-039 (this task makes parity achievable;
-  task-039 verifies it).
+- [ ] `tests/canonical/fixtures/kb-essence/teachback/` exists with `pass-kb/` and `fail-kb/`, each carrying `generated/candidate-concepts.md` and `knowledge/domain-glossary.md` per f012 SPEC F3; all files are ASCII and checked into git (no generation step).
+- [ ] `pass-kb`: every Spread `>= 2` `Term` in `pass-kb/generated/candidate-concepts.md` has a definition-as-used-here concept entry in `pass-kb/knowledge/domain-glossary.md` (the KB can answer every generated "what is X?"; closure passes with zero ungrounded).
+- [ ] `fail-kb`: the candidate list is identical to `pass-kb`, but `fail-kb/knowledge/domain-glossary.md` OMITS the definition of exactly one core concept that is named/used in the KB (closure reports that one undefined concept).
+- [ ] The fail-KB also carries the runtime-judgment engine-narration shape: it is planted so the fixed engine-narration question is unsupportable by the spine **even when every coined term is lexically defined**. This is the RUNTIME-ANCHORED substrate the M4 reviewer assesses (the engine-narration limb is irreducible LLM judgment, NOT a mechanical CI assertion); it is planted for the runtime reviewer to grade, not to feed a mechanical engine-narration FAIL assertion.
+- [ ] Both `generated/candidate-concepts.md` carry f004's documented schema: a `## Summary` block with a `Cross-source (spread >= 2)` count row AND a `## Ranked Candidates` table with the exact `# | Term | Class | Freq | Spread | Channels | Salience | Example source` columns (f004 SPEC L275-289), so the Spread `>= 2` `Term` filter has its columns to read.
+- [ ] The pass-KB and fail-KB share an identical candidate list, so the only difference task-038 mechanically measures is the spine's LEXICAL term-coverage (term defined vs omitted), not a candidate-set diff. (The engine-narratability difference is the runtime-judgment limb the M4 reviewer assesses, not a mechanical task-038 assertion.)
+- [ ] No fixture file is written or harvested at authoring time -- the trees are static read-only inputs (task-038 runs scripts over a `mktemp -d` copy, never these committed files).
+- [ ] All section-6 quality gates pass.

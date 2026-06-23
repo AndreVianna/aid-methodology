@@ -15,7 +15,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 ## Task State
 
-<!-- AUTHORED -- written ONLY by `writeback-state.sh --task-id NNN --field State --value VALUE`.
+<!-- AUTHORED -- written ONLY by `writeback-state.sh --task-id 036 --field State --value VALUE`.
      State enum (closed; single source of truth):
        Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
      Enum values are byte-identical to the legacy work-state-template.md set.
@@ -31,7 +31,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
+<!-- AUTHORED -- written by `writeback-state.sh --task-id 036 --findings ...` during the
      per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
      and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.

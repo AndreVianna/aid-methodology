@@ -9,9 +9,10 @@
 | Date | Change | Source |
 |------|--------|--------|
 | 2026-06-23 | Initial plan — 9 deliveries (essence-core-first → greenfield Could) | /aid-plan |
-| 2026-06-23 | greenfield de-scope — delivery-009 (Greenfield Path) removed; work is now 8 deliveries (delivery-001..008). Greenfield reduced to detect+signpost in delivery-004's recon (no generation engine / elicit path / closure / panel); f006/f012 brownfield-only scope notes updated; R1 (greenfield scope-split) retired. Forward-authored KB-seed deferred to a future interview-side work. | user decision |
+| 2026-06-23 | greenfield de-scope — the former greenfield-path delivery (then numbered delivery-009, a now-defunct identifier distinct from the current live delivery-009 Governance created in the later act-back insert) removed; work was 8 deliveries (delivery-001..008) at that point. Greenfield reduced to detect+signpost in delivery-004's recon (no generation engine / elicit path / closure / panel); f006/f012 brownfield-only scope notes updated; R1 (greenfield scope-split) retired. Forward-authored KB-seed deferred to a future interview-side work. | user decision |
+| 2026-06-23 | act-back insert — feature-013 (Operational-Sufficiency / act-back gate) inserted as the NEW delivery-005 (4 tasks, 027-030); the downstream paper deliveries shift down one (Validation 005->006, Freshness 006->007, Topology+Ship 007->008, Governance 008->009) and renumber contiguously. delivery-006 (Validation) gains ONE new task (task-039, the act-back V-E fixture family) and now depends on delivery-005. Work is now **9 deliveries / 55 tasks** (delivery-001..004 + tasks 001-026 are FROZEN/byte-untouched — delivery-001 is built). | user decision (feature-013) |
 
-This plan decomposes work-001 into **8 deliveries**. The sequence is user-approved.
+This plan decomposes work-001 into **9 deliveries**. The sequence is user-approved.
 Each delivery is one branch/PR (`aid/work-001-delivery-NNN`). The strategy: build the
 **essence engine end-to-end first** (delivery-001 = the 'Relative bus' capability), then
 flip AID's own surfaces onto the new schema (INDEX, migration), scale it to project shape
@@ -82,7 +83,29 @@ consume settled contracts.
 - **Depends on:** delivery-001
 - **Priority:** Must
 
-### delivery-005: Validation Fixture
+### delivery-005: Operational-Sufficiency (Act-Back Gate)
+
+- **What it delivers:** the **act-back gate** (FR-36) -- the operational sibling of teach-back. A 6th
+  mandate (M6) grafted onto delivery-001 f005's review panel in which a clean-context `aid-reviewer`,
+  given ONLY the KB + a representative project task, must produce a correct plan AND flag every point
+  of KB insufficiency (each a `[HIGH]` `[ACTBACK]` row the **existing** `grade.sh` already grades --
+  no new grading infra, no separate verdict sentinel). It also **tightens f003's doc model** so
+  operational guidance (conventions / invariants / gotchas / contracts) is first-class greppable
+  structure, and ships ONE small ASCII helper (`kb-actback-task.sh`: representative-task selector +
+  operational-structure presence check). After delivery-005, `/aid-discover`'s REVIEW reports the
+  **triple** `Grade | Teach-back | Act-back`, with act-back as a sibling keystone.
+- **Features:** feature-013 (operational sufficiency / act-back gate)
+- **Depends on:** delivery-001 (extends f005's panel + f003's doc model + consumes f001's `sources:`)
+- **Priority:** Must
+
+> **Note (extend, don't re-spec; [SPIKE-A4]):** f013 reuses f005's parallel-dispatch + merged-ledger +
+> `grade.sh` + `{{SCOPE}}` seam **verbatim** and *adds one mandate alongside them*; it *extends* f003's
+> doc model with one structural rule and *consumes* f001's `sources:`. It lands **after** delivery-001
+> (extend-after-base) and **before** delivery-006 (Validation), which builds + exercises the act-back
+> fixture shape f013 defines ([SPIKE-A5], provide-before-exercise). Because M6 joins the per-mandate
+> dispatch list, f006's brownfield-small panel collapse folds M6 in automatically ([SPIKE-A3]).
+
+### delivery-006: Validation Fixture
 
 - **What it delivers:** the CI-anchored regression proof that locks in the essence engine -- the
   planted 'Relative bus' fixture proving capture-and-define, the closure self-containment proof, the
@@ -92,11 +115,17 @@ consume settled contracts.
   AC3 closure self-containment, AC6 calibration tuning, AC7 the **two brownfield-small/large path
   fixtures + a greenfield detection/signpost test** (asserts the classifier detects ~0 source and
   that `aid-discover` emits the signpost and halts -- **not** a greenfield path-runs/reaches-closure
-  fixture, since greenfield is not a generation path).
-- **Depends on:** delivery-001, delivery-004
+  fixture, since greenfield is not a generation path), AND **AC16 -- the act-back V-E fixture family**
+  (the new task-039): the representative-task spec fixture + the `actback-pass-kb`/`actback-fail-kb`
+  pair + the V-E mechanical assertion that delivery-005's `kb-actback-task.sh` emits the task
+  byte-reproducibly and the presence check reports the operational sections present/absent; the M6
+  plan-success/flag judgment is runtime-anchored (Judgment-Boundary row), mirroring the
+  teach-back/calibration mechanical-vs-judgment split. f013 defines the fixture *shape*; f012 builds +
+  exercises it ([SPIKE-A5]).
+- **Depends on:** delivery-001, delivery-004, delivery-005
 - **Priority:** Must
 
-### delivery-006: Freshness Primitive
+### delivery-007: Freshness Primitive
 
 - **What it delivers:** a deterministic per-doc, source-keyed staleness check (each doc's `sources:`
   last-changed commit vs its approval commit -> suspect flag) and its surfacing in both dashboard
@@ -105,7 +134,7 @@ consume settled contracts.
 - **Depends on:** delivery-001
 - **Priority:** Should
 
-### delivery-007: Skill Topology + Ship
+### delivery-008: Skill Topology + Ship
 
 - **What it delivers:** the `aid-ask` -> `aid-query-kb` rename + the new `aid-update-kb` skill
   (reusing delivery-001's f005 review/calibration gate via the injectable-scope seam) + query-side
@@ -113,7 +142,7 @@ consume settled contracts.
   "N user-facing skills" count reconcile / docs-site propagation.
 - **Features:** feature-008 (skill topology, author/behavior side), feature-009 (skill-change
   propagation, ship side)
-- **Depends on:** delivery-001, delivery-006
+- **Depends on:** delivery-001, delivery-007
 - **Priority:** Should
 
 > **Note (f008 + f009 inseparable):** feature-008 and feature-009 are ONE delivery -- one branch,
@@ -121,28 +150,30 @@ consume settled contracts.
 > f008 alone (canonical renamed but host trees not re-rendered); f009 is what makes it green.
 > Cutting a release between them would ship a half-renamed repo. See Cross-Cutting Risks.
 
-### delivery-008: Lifecycle Governance
+### delivery-009: Lifecycle Governance
 
 - **What it delivers:** the non-overlapping `aid-housekeep` (KB-DELTA, source-driven, global) <->
   `aid-update-kb` (prompt-driven, targeted) boundary contract, with per-doc staleness (f007) as the
   shared scoping signal, AND concept-closure promoted from a discovery-only check to a standing
   invariant re-verified after every KB-mutating skill run.
 - **Features:** feature-010 (housekeep <-> update-kb boundary & standing closure)
-- **Depends on:** delivery-001, delivery-006, delivery-007
+- **Depends on:** delivery-001, delivery-007, delivery-008
 - **Priority:** Should
 
 ## Cross-Cutting Risks
 
 > **Retired R1 (greenfield scope-split).** The original R1 tracked the f006/f012
-> brownfield-vs-greenfield split across delivery-004/005 and the (now-deleted) delivery-009.
-> With greenfield reduced to detect + signpost inside delivery-004's recon (no separate
+> brownfield-vs-greenfield split across delivery-004 (Adaptive Paths) + the Validation delivery
+> (then delivery-005, now delivery-006 after the act-back insert) and the deleted greenfield-path
+> delivery (the defunct pre-act-back greenfield-path delivery -- NOT the current live delivery-009
+> Governance). With greenfield reduced to detect + signpost inside delivery-004's recon (no separate
 > greenfield delivery, no greenfield generation path), there is no split to manage and the
 > risk is moot. R2/R3 below retain their original numbering.
 
 | # | Risk | Affected deliveries | Mitigation |
 |---|------|---------------------|------------|
-| R2 | **f008+f009 inseparability** -- a release tag cut between feature-008 (canonical rename) and feature-009 (cross-tree propagation) would ship a half-renamed repo: canonical renamed but the 5 host trees, install manifests, and skill counts stale, with render-drift CI red. | delivery-007 | The two features are **one delivery** -- one branch, one PR, **no intervening release tag**. render-drift CI is RED on f008 alone and green only once f009 propagates, so the gate itself enforces "ship together." |
-| R3 | **calibration-floor back-patch** -- delivery-005 (validation fixtures) re-tunes defaults that ALREADY shipped in merged delivery-001 (f004 SPIKE-H2 denylist/salience floor, f005 SPIKE-C1 calibration severity) and delivery-004 (f006 triage thresholds). Per the contract "the default lives in the owning feature's file; the fixture pins it," editing a constant in an already-shipped delivery can regress that delivery's gate. **Impact: M.** | delivery-001, delivery-004, delivery-005 | After any threshold/floor edit prompted by a later delivery's fixture, re-run the owning delivery's gate suite (the owning feature's canonical tests) to confirm no regression. |
+| R2 | **f008+f009 inseparability** -- a release tag cut between feature-008 (canonical rename) and feature-009 (cross-tree propagation) would ship a half-renamed repo: canonical renamed but the 5 host trees, install manifests, and skill counts stale, with render-drift CI red. | delivery-008 | The two features are **one delivery** -- one branch, one PR, **no intervening release tag**. render-drift CI is RED on f008 alone and green only once f009 propagates, so the gate itself enforces "ship together." |
+| R3 | **calibration-floor back-patch** -- delivery-006 (validation fixtures) re-tunes defaults that ALREADY shipped in merged delivery-001 (f004 SPIKE-H2 denylist/salience floor, f005 SPIKE-C1 calibration severity) and delivery-004 (f006 triage thresholds). Per the contract "the default lives in the owning feature's file; the fixture pins it," editing a constant in an already-shipped delivery can regress that delivery's gate. **Impact: M.** | delivery-001, delivery-004, delivery-006 | After any threshold/floor edit prompted by a later delivery's fixture, re-run the owning delivery's gate suite (the owning feature's canonical tests) to confirm no regression. |
 
 ## Execution Graphs
 
@@ -150,16 +181,18 @@ The graphs below are derived mechanically from the `Depends on:` line of every
 task SPEC (`delivery-NNN/tasks/task-NNN/SPEC.md`). Each delivery's `Depends On`
 table lists the task's FULL dependency set; dependencies that point into an
 **earlier** delivery are marked `(d-NNN)` and are pre-satisfied by the
-delivery-order sequence (d001 -> d008), so they do not affect intra-delivery
+delivery-order sequence (d001 -> d009), so they do not affect intra-delivery
 wave ordering. The `wave-map` block is total over the delivery's own tasks.
 
-**Global-DAG validation (all 50 tasks assembled):** acyclic (50/50
+**Global-DAG validation (all 55 tasks assembled):** acyclic (55/55
 topo-sorted); every dependency resolves to an existing task; no forward
 reference across deliveries (no dep points into a later delivery); no
 intra-delivery dependency on a higher-numbered sibling. Roots (no deps):
-task-001, task-027, task-028, task-029, task-033, task-040, task-042.
-(The greenfield de-scope removed delivery-009's three tasks task-051/052/053;
-50 tasks remain across delivery-001..008.)
+task-001, task-031, task-032, task-033, task-037, task-045, task-047.
+(feature-013 / act-back was inserted as delivery-005 = tasks 027-030, all of
+which depend into delivery-001, so none is a root; the downstream paper
+deliveries shifted down one and renumbered contiguously. 55 tasks across
+delivery-001..009; tasks 001-026 / delivery-001..004 are FROZEN/byte-untouched.)
 
 ### delivery-001 execution graph
 
@@ -260,91 +293,112 @@ wave 3: task-026
 
 | Task | Depends On |
 |------|-----------|
-| task-027 | — |
-| task-028 | — |
-| task-029 | — |
-| task-030 | task-027, task-006 (d001), task-008 (d001) |
-| task-031 | task-028, task-008 (d001) |
-| task-032 | task-029, task-023 (d004) |
-| task-033 | — |
-| task-034 | task-033, task-012 (d001) |
+| task-027 | task-002 (d001), task-008 (d001) |
+| task-028 | task-004 (d001), task-010 (d001) |
+| task-029 | task-027, task-028, task-014 (d001) |
+| task-030 | task-027 |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-027, task-028, task-029, task-033 |
-| task-030, task-031, task-032, task-034 |
+| task-027, task-028 |
+| task-029, task-030 |
 
 ```wave-map
 delivery: 005
-wave 1: task-027, task-028, task-029, task-033
-wave 2: task-030, task-031, task-032, task-034
+wave 1: task-027, task-028
+wave 2: task-029, task-030
 ```
 
 ### delivery-006 execution graph
 
 | Task | Depends On |
 |------|-----------|
-| task-035 | task-001 (d001), task-002 (d001) |
-| task-036 | task-035 |
-| task-037 | task-035, task-001 (d001) |
-| task-038 | task-037 |
-| task-039 | task-037 |
+| task-031 | — |
+| task-032 | — |
+| task-033 | — |
+| task-034 | task-031, task-006 (d001), task-008 (d001) |
+| task-035 | task-032, task-008 (d001) |
+| task-036 | task-033, task-023 (d004) |
+| task-037 | — |
+| task-038 | task-037, task-012 (d001) |
+| task-039 | task-027 (d005), task-029 (d005) |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-036, task-037 |
-| task-038, task-039 |
+| task-031, task-032, task-033, task-037 |
+| task-034, task-035, task-036, task-038, task-039 |
 
 ```wave-map
 delivery: 006
-wave 1: task-035
-wave 2: task-036, task-037
-wave 3: task-038, task-039
+wave 1: task-031, task-032, task-033, task-037
+wave 2: task-034, task-035, task-036, task-038, task-039
 ```
 
 ### delivery-007 execution graph
 
 | Task | Depends On |
 |------|-----------|
-| task-040 | — |
+| task-040 | task-001 (d001), task-002 (d001) |
 | task-041 | task-040 |
-| task-042 | — |
-| task-043 | task-042, task-014 (d001), task-035 (d006) |
-| task-044 | task-041, task-043 |
-| task-045 | task-044 |
-| task-046 | task-045 |
-| task-047 | task-044 |
+| task-042 | task-040, task-001 (d001) |
+| task-043 | task-042 |
+| task-044 | task-042 |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-040, task-042 |
-| task-041, task-043 |
-| task-045, task-047 |
+| task-041, task-042 |
+| task-043, task-044 |
 
 ```wave-map
 delivery: 007
-wave 1: task-040, task-042
-wave 2: task-041, task-043
-wave 3: task-044
-wave 4: task-045, task-047
-wave 5: task-046
+wave 1: task-040
+wave 2: task-041, task-042
+wave 3: task-043, task-044
 ```
 
 ### delivery-008 execution graph
 
 | Task | Depends On |
 |------|-----------|
-| task-048 | task-043 (d007) |
-| task-049 | task-048, task-035 (d006), task-008 (d001) |
+| task-045 | — |
+| task-046 | task-045 |
+| task-047 | — |
+| task-048 | task-047, task-014 (d001), task-040 (d007) |
+| task-049 | task-046, task-048 |
 | task-050 | task-049 |
+| task-051 | task-050 |
+| task-052 | task-049 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-045, task-047 |
+| task-046, task-048 |
+| task-050, task-052 |
+
+```wave-map
+delivery: 008
+wave 1: task-045, task-047
+wave 2: task-046, task-048
+wave 3: task-049
+wave 4: task-050, task-052
+wave 5: task-051
+```
+
+### delivery-009 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-053 | task-048 (d008) |
+| task-054 | task-053, task-040 (d007), task-008 (d001) |
+| task-055 | task-054 |
 
 | Can Be Done In Parallel |
 |------------------------|
 | — |
 
 ```wave-map
-delivery: 008
-wave 1: task-048
-wave 2: task-049
-wave 3: task-050
+delivery: 009
+wave 1: task-053
+wave 2: task-054
+wave 3: task-055
 ```

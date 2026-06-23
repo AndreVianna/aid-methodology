@@ -4,7 +4,7 @@
 This is the TASK-LEVEL STATE.md template. All sections are AUTHORED by a single writer:
 the delivery branch that owns this task. This file is the SOLE write target for all
 per-task mutable state (state cell, review, elapsed, notes, findings, dispatch log).
-The parent delivery-NNN/STATE.md ## Tasks State and work-level ## Tasks State are
+The parent delivery-005/STATE.md ## Tasks State and work-level ## Tasks State are
 DERIVED read-only views assembled from this file at read time -- never written directly.
 
 > **Task:** task-030
@@ -34,7 +34,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
 <!-- AUTHORED -- written by `writeback-state.sh --task-id 030 --findings ...` during the
      per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
      and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
+     [HIGH] findings are deferred to the delivery gate via delivery-005-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)

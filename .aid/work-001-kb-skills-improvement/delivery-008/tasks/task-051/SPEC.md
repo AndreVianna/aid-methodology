@@ -1,10 +1,10 @@
-# task-046: summary-src sections + kb.html regen (Playwright visual gate)
+# task-051: summary-src sections + kb.html regen (Playwright visual gate)
 
 **Type:** IMPLEMENT
 
-**Source:** work-001-kb-skills-improvement -> delivery-007
+**Source:** work-001-kb-skills-improvement -> delivery-008
 
-**Depends on:** task-045
+**Depends on:** task-050
 
 **Scope:**
 - f009 Part 3 row 14 + Part 4 (S9/S12, AC12) -- the built KB-summary artifact and its source of
@@ -36,8 +36,8 @@
   regenerated `kb.html` renders to a web summary page, so the review MUST load it in Playwright,
   screenshot it, and confirm the pipeline mermaid figure + skill cards + the slash-command-contract
   table render with the new skills. **Source-only inspection is an automatic FAIL.**
-- **Out of scope:** KB-doc prose counts + INDEX + narrative (task-045); docs-site `gen-reference.mjs`
-  + `skills.md` + dogfood (task-047).
+- **Out of scope:** KB-doc prose counts + INDEX + narrative (task-050); docs-site `gen-reference.mjs`
+  + `skills.md` + dogfood (task-052).
 
 **Acceptance Criteria:**
 - [ ] `grep -rn 'aid-ask' .aid/knowledge/summary-src/sections/` is empty AND
@@ -59,5 +59,5 @@
   screenshotted; the pipeline mermaid figure, skill cards, and slash-command-contract table render
   correctly with the new skill set. (Source-only review of this artifact is an automatic FAIL.)
 - [ ] No KB-doc prose count / INDEX / docs-site / dogfood surface is edited in this task (those are
-  task-045 / task-047).
+  task-050 / task-052).
 - [ ] All section-6 quality gates pass.

@@ -1,4 +1,4 @@
-# Delivery SPEC -- delivery-008: Lifecycle Governance
+# Delivery SPEC -- delivery-008: Skill Topology + Ship
 
 [!NOTE]
 This is the DELIVERY-LEVEL SPEC.md. It is the IMMUTABLE DEFINITION for this delivery.
@@ -12,45 +12,45 @@ Written by aid-plan; not a state file. State lives in delivery-008/STATE.md.
 
 ## Objective
 
-Draw the clean, non-overlapping boundary between AID's two KB-mutating skills, and make
-concept-closure a standing invariant. Define `aid-housekeep` (KB-DELTA) as **source-driven and
-global** -- a whole-KB reconcile against current source state (merge-to-master / major change /
-periodic), prioritized by delivery-006's per-doc staleness (FR-5) as the shared scoping signal while
-retaining the whole-KB content re-review so the "subtly-wrong-all-along" guarantee is preserved.
-Define `aid-update-kb` as **prompt-driven and targeted** -- a prompt specifies what to update and the
-skill folds it into the KB via the review/calibration gate. The two MUST NOT overlap; per-doc
-staleness is the shared signal that distinguishes them. Finally, promote concept-closure from a
-discovery-only check to a maintained invariant: both `aid-update-kb` and `aid-housekeep` re-verify
-closure after they change the KB, so the KB cannot drift into an undefined project-specific term
-after a targeted edit or a reconcile sweep.
+Fill the skill-topology gaps in the KB lifecycle, AND ship the change in lockstep across the whole
+canonical->render machinery. Rename `aid-ask` -> `aid-query-kb` (read side; behavior preserved);
+add a new `aid-update-kb` skill for targeted/punctual KB updates -- the "second pass" for the
+precise deltas a finished work introduced -- applied through the **same review/calibration gate as
+`aid-discover`** by consuming delivery-001's f005 injectable ledger-`<scope>` + doc-set seam; and
+make `aid-query-kb` capture gaps ("KB can't answer" / "KB contradicts code") into a KB-gap queue
+consumed by `aid-update-kb` / `aid-housekeep`. Then propagate: render the changed/new skill into all
+five host trees with render-drift green, orphan-prune the retired `aid-ask` content by prefix,
+keep the five install manifests in lockstep, reconcile the ~10 KB-doc "N user-facing skills" count
+references, and update the docs site.
 
 ## Scope
 
-In scope:
+In scope -- **feature-008 (author/behavior) + feature-009 (ship/propagation) as ONE delivery**:
 
-- **feature-010 -- housekeep <-> update-kb boundary & standing closure.** Rewrite
-  `aid-housekeep`'s KB-DELTA stage to prioritize its whole-KB sweep via f007's
-  `kb-freshness-check.sh` per-doc suspect verdicts (replacing the git-date hint as the drift signal,
-  adding a fast no-drift exit) while retaining the whole-KB content re-review of all docs; add a
-  closure re-verify step (consuming f004's `closure-check.sh`) to **both** `aid-housekeep` (before it
-  commits a KB refresh) and `aid-update-kb` (before it commits a targeted edit); document the
-  non-overlap contract (housekeep = global source-driven; update-kb = targeted prompt-driven).
+- **feature-008:** the `aid-ask` -> `aid-query-kb` rename (canonical source); the new
+  `aid-update-kb` thin-router SKILL.md + state machine (reusing f005's review gate via the injectable
+  scope+doc-set seam); query-side gap-capture into the `STATE.md ## Q&A (Pending)` backlog.
+- **feature-009:** running the full generator to render `canonical/skills/` into all 5 host trees;
+  orphan-pruning the retired rendered `aid-ask/` dirs by prefix; re-bundling the 5 install manifests
+  in lockstep; reconciling the ~10 "N user-facing skills" KB-doc count references; updating the docs
+  site.
 
-**Out of scope:** the per-doc staleness check itself (delivery-006, f007 -- consumed as the shared
-signal); the `closure-check.sh` oracle itself (delivery-001, f004 -- consumed as the invariant
-re-verified); the `aid-update-kb` skill definition + `aid-query-kb` rename (delivery-007, f008 --
-this delivery draws the boundary around the already-shipped skill, it does not author it).
+**Out of scope:** f005's panel + injectable-scope seam itself (delivery-001 -- consumed as final);
+the housekeep<->update-kb non-overlap *contract* + standing closure (delivery-009, f010 -- this
+delivery ships the `aid-update-kb` skill, delivery-009 draws its boundary vs `aid-housekeep`).
 
 ## Gate Criteria
 
-- [ ] `aid-housekeep` performs a whole-KB source-driven reconcile and `aid-update-kb` performs a
-  prompt-driven targeted update, with no overlap and per-doc staleness (f007/FR-5) as the shared
-  signal scoping the housekeep sweep. *(f010, AC10)*
-- [ ] Given a KB change by `aid-update-kb` or `aid-housekeep`, on completion it re-verifies
-  concept-closure (closure is a standing invariant, not discovery-only) via f004's `closure-check.sh`.
-  *(f010, AC3 support)*
-- [ ] The housekeep sweep retains the whole-KB content re-review (the "subtly-wrong-all-along"
-  guarantee) while gaining a fast no-drift exit driven by f007's verdicts. *(f010)*
+- [ ] `aid-ask` has been renamed to `aid-query-kb` with behavior preserved. *(f008, AC8)*
+- [ ] Given a prompt-driven targeted update, `aid-update-kb` applies it through the same
+  review/calibration gate as `aid-discover` (via f005's injectable scope+doc-set seam). *(f008, AC8)*
+- [ ] Given a query the KB cannot answer (or that contradicts code), `aid-query-kb` enqueues a gap
+  into the KB-gap queue consumed by `aid-update-kb` / `aid-housekeep`. *(f008, AC8)*
+- [ ] The full generator renders the changed/new skill into all five host trees with render-drift CI
+  green; the retired `aid-ask` content is orphan-pruned by prefix; the five install manifests are
+  updated in lockstep. *(f009, AC12)*
+- [ ] The ~10 KB-doc "N user-facing skills" count references and the docs site are reconciled; the
+  rename/add lands as **one branch/PR with no intervening release tag**; KB-hygiene CI passes. *(f009, AC12)*
 - [ ] All section-6 quality gates pass
 
 ## Tasks
@@ -61,13 +61,16 @@ this delivery draws the boundary around the already-shipped skill, it does not a
 
 ## Dependencies
 
-- **Depends on:** delivery-001, delivery-006, delivery-007
-- **Blocks:** -- (none)
+- **Depends on:** delivery-001, delivery-007
+- **Blocks:** delivery-009
 
 ## Notes
 
-Consumes delivery-006's f007 per-doc staleness (the shared scoping signal that distinguishes
-housekeep from update-kb), delivery-001's f004 `closure-check.sh` (the closure invariant re-verified
-here), and delivery-007's f008 `aid-update-kb` skill (the skill whose boundary vs `aid-housekeep` this
-delivery draws). This is the last Should-priority delivery; it closes the lifecycle-governance loop
-so closure stays an invariant across every KB-mutating path, not just discovery.
+**f008 + f009 are inseparable (Cross-Cutting Risk R2):** ONE branch, ONE PR, **no release tag cut
+between them**. render-drift CI is RED on f008 alone (canonical renamed but host trees not
+re-rendered) and green only once f009 propagates; a release between them would ship a half-renamed
+repo. Consumes delivery-001's f005 injectable ledger-`<scope>` + doc-set seam (the `aid-update-kb`
+review gate) and delivery-007's per-doc freshness as part of the lifecycle the topology completes.
+The "adding a skill -> KB count drift" and "render-drift full generator" hazards both apply here --
+run the FULL generator, reconcile counts (precedent: /aid-housekeep Q26/Q27), keep the 5 manifests
+lockstep on the skill file set.

@@ -1,88 +1,53 @@
-# task-043: aid-update-kb state references (ANALYZE/APPLY/REVIEW/APPROVAL/DONE)
+# task-043: home.html per-doc suspect marker on the KB card (minimal UI)
 
 **Type:** IMPLEMENT
 
 **Source:** work-001-kb-skills-improvement -> delivery-007
 
-**Depends on:** task-042, task-014 (delivery-001), task-035 (delivery-006)
+**Depends on:** task-042
 
 **Scope:**
-- f008 Part 2 (FR-27, AC8, NFR-6/C4, FR-34) -- author the five
-  `canonical/skills/aid-update-kb/references/state-{analyze,apply,review,approval,done}.md`
-  reference docs (one per state), the human-gated UPDATE half of the freshness loop.
-- **Cross-delivery reuse (cite explicitly):**
-  - REVIEW reuses delivery-001 f005's review/calibration panel via the **injectable
-    `{{ARTIFACTS}}` / ledger-`<scope>` + doc-set seam** built in **task-014 (delivery-001)** --
-    SPIKE-2's confirmed one-line seam. REVIEW does NOT redefine the panel; it sets
-    `{{ARTIFACTS}}` = the changed-doc set and `<scope>` = `update-kb`.
-  - ANALYZE consumes **task-035 (delivery-006)**'s `kb-freshness-check.sh` suspect verdicts (f007)
-    to fold the prompt's named sources against per-doc drift.
-- **ANALYZE (`state-analyze.md`)** -- prompt -> (doc, change) set: (1) load `.aid/knowledge/INDEX.md`
-  (f002 routing table) to map the prompt onto candidate docs by Objective/Tags/Audience; (2) run
-  `kb-freshness-check.sh --root .aid/knowledge --format tsv` (task-035/f007) and intersect
-  prompt-implied docs with suspect docs (a prompt-named doc with no drift is still in scope if the
-  prompt asserts an unseen content change); (3) read each candidate + its `sources:`, decide the
-  concrete change (new summary+pointer entry / corrected fact / new `sources:` entry / new concept
-  on the spine), emit the change plan into the run-state file; (4) **closure escalation (FR-32/FR-34
-  hook):** an un-groundable project-specific concept is NOT invented -- append a Q&A to
-  `.aid/knowledge/STATE.md ## Q&A (Pending)` (Category `Update-KB / Ungroundable Concept`, Impact
-  `Required`, Status `Pending`) and PAUSE. Advance: CHAIN -> APPLY (or PAUSE on escalation).
-- **APPLY (`state-apply.md`)** -- per (doc, change): a targeted **summary+pointer** edit at KB
-  altitude (NOT a transcription -- authored to pass f005's CAL-1/CAL-2), preserving the doc's native
-  language/concept spine (reuse `domain-glossary.md` coined terms; FR-34 closure invariant); update
-  `sources:` (f001 schema) if a new underlying source is added; **do NOT restamp
-  `approved_at_commit:` in APPLY** (that is DONE, post-gate); edits in place on
-  `.aid/knowledge/` docs on an `aid/update-kb-*` branch; the skill NEVER pushes. Advance: CHAIN -> REVIEW.
-- **REVIEW (`state-review.md`)** -- REUSE f005's panel (task-014) scoped to the changed docs:
-  render the universal reviewer brief, dispatch the five mandate `aid-reviewer` sub-agents in
-  parallel against the changed docs (each to its per-mandate scratch ledger), **merge** into the
-  single canonical ledger `.aid/.temp/review-pending/update-kb.md` then **delete the scratch
-  ledgers** (f005 merge-then-delete; distinct `<scope>` from `discovery.md`), run the unchanged
-  `grade.sh`, evaluate the teach-back hard gate. Exit rule (identical to f005):
-  `READY iff grade(update-kb.md) >= minimum_grade AND teachback == PASS`; `minimum_grade` resolves
-  via `read-setting.sh --skill update-kb --key minimum_grade --default A` (new skill key, default
-  A). **Teach-back default = full whole-KB clean-context exit** (SPIKE-1 default -- FR-34 closure
-  re-verification; the scoped optimization is f010-tunable). FIX loop routes below-gate findings to
-  `aid-discover`'s existing `state-fix.md` over `update-kb.md`, re-REVIEW until the gate passes
-  (no new loop invented). Advance: CHAIN -> FIX if below gate; CHAIN -> APPROVAL if gate passes.
-- **APPROVAL (`state-approval.md`)** -- the human gate (NFR-6/C4/AC13): present the diff summary
-  (docs changed, grade, teach-back verdict), reuse `aid-discover/references/state-approval.md`'s
-  `[1] Approved` / `[2] Additional consideration` pattern. On `[1]` -> DONE; on `[2]` record the
-  consideration as a Q&A and loop back. **No auto-apply path** -- DONE is unreachable without an
-  explicit human `[1]`. Advance: PAUSE-FOR-USER-ACTION -> DONE on approval.
-- **DONE (`state-done.md`)** -- restamp each approved doc's `approved_at_commit:` to the commit
-  recording the approved edit (f001: generator-written on approval, never hand-authored), commit on
-  the `aid/update-kb-*` branch, print the closing summary, remove the transient run-state file.
-  **Closure re-verification (FR-34, shared with f010):** before committing, re-run f004's
-  `closure-check.sh` over the changed KB to confirm no native term left undefined (a standing
-  invariant; the who-runs-closure-when boundary vs `aid-housekeep` is f010, NOT here). Advance: HALT.
-- **Degrade-gracefully note:** if f005/f007 land later in the branch ordering, REVIEW falls back to
-  the single-blended reviewer until task-014 lands and ANALYZE skips the freshness fold until
-  task-035 lands; within this delivery both deps already exist (delivery-001 / delivery-006), so
-  the full path is expected.
-- ASCII-only (C2).
+- Surface the per-doc freshness signal in the existing per-repo KB card in `dashboard/home.html`
+  (`_renderKbCard`, line 1589) -- **no new page, no redesign** (O5, f007 SPEC "Minimal UI surface").
+- When `kb_state.suspect_count > 0`, render a **per-doc suspect marker** -- a small `badge badge-warn`
+  reading `N doc(s) suspect`, reusing the existing warn-badge style already used for the whole-KB
+  "Outdated" state (line 1700). List the suspect doc names in the card meta and, where present,
+  *which source* drifted (from `suspect_sources`). This is the actionable per-doc signal FR-6 / the
+  doc-owner story asks for ("which doc my change made suspect").
+- Update the existing whole-KB "Outdated" refresh-prompt copy (line 1730) to per-doc language
+  ("N doc(s) are suspect -- run /aid-housekeep to reconcile the affected docs"), KEEPING the
+  `/aid-housekeep` call-to-action (which f010/delivery-009 consumes).
+- `home.html` reads `kb_state.doc_freshness` / `suspect_count` **literally** (the existing
+  "never re-derive client-side" rule, line 1584) -- the readers (task-042) do all derivation; the UI
+  only displays.
+- Augment-and-supersede (SPIKE-1, settled in task-042): the per-doc suspect marker becomes the
+  primary freshness signal on the card, while the existing 5-state `KbStatus` waterfall / `outdated`
+  state is RETAINED as the coarse rollup. Do NOT hard-remove the whole-KB `outdated` badge (that would
+  enlarge the change beyond O5 and touch `derive_kb_status` / `kb_baseline`).
+- The multi-repo CLI home (`index.html`) shows only a coarse "KB" chip (line 870) and is **NOT**
+  changed (O5 -- per-doc detail belongs on the per-repo card).
+- `home.html` lives under `dashboard/` (NOT canonical-rendered); edit in place (C3/NFR-4 -- no
+  `run_generator.py`).
+
+**Boundary:** f007 PROVIDES + SURFACES the freshness signal. This task does NOT author the reader
+derivation (task-042 -- it consumes `kb_state.doc_freshness`/`suspect_count` literally), does NOT
+change `index.html`, and does NOT build `/aid-housekeep` itself (f010/delivery-009 -- only the existing
+call-to-action copy is repointed to per-doc language).
 
 **Acceptance Criteria:**
-- [ ] All five `references/state-{analyze,apply,review,approval,done}.md` exist, one per state.
-- [ ] ANALYZE loads INDEX.md, runs `kb-freshness-check.sh` (task-035/f007), intersects
-  prompt-implied with suspect docs, emits a (doc, change) plan, and escalates an un-groundable
-  concept to `.aid/knowledge/STATE.md ## Q&A (Pending)` (Category `Update-KB / Ungroundable
-  Concept`) + PAUSE rather than inventing it.
-- [ ] APPLY makes targeted summary+pointer edits preserving the native concept spine, updates
-  `sources:` when needed, and does NOT restamp `approved_at_commit:` (verified: only DONE restamps).
-- [ ] REVIEW invokes f005's five-mandate panel (task-014 seam) with `{{ARTIFACTS}}` = changed docs
-  and ledger `<scope>` = `update-kb`, merges the five scratch ledgers into
-  `.aid/.temp/review-pending/update-kb.md` then deletes the scratch ledgers, runs the unchanged
-  `grade.sh`, and applies the exit rule `READY iff grade >= minimum_grade AND teachback == PASS`
-  with `minimum_grade` from `read-setting.sh --skill update-kb --key minimum_grade --default A`.
-- [ ] REVIEW's teach-back is the full whole-KB clean-context exit (SPIKE-1 default); the FIX loop
-  reuses `aid-discover`'s `state-fix.md` over `update-kb.md` (no new loop).
-- [ ] APPROVAL is human-gated (`[1]`/`[2]`); DONE is unreachable without an explicit `[1]` (no
-  auto-apply path exists).
-- [ ] DONE restamps `approved_at_commit:` post-gate, commits on `aid/update-kb-*` (never pushes),
-  removes the transient run-state, and re-runs `closure-check.sh` (f004) over the changed KB
-  before committing (FR-34 re-verification).
-- [ ] The cross-delivery reuse is cited in the docs: REVIEW -> task-014 (delivery-001) f005 seam;
-  ANALYZE -> task-035 (delivery-006) f007 freshness check.
-- [ ] Reference docs are ASCII-only.
-- [ ] All section-6 quality gates pass.
+- [ ] `dashboard/home.html` `_renderKbCard` (line 1589): when `kb_state.suspect_count > 0`, renders a
+  `badge badge-warn` reading `N doc(s) suspect` (reusing the existing warn-badge style, line 1700) and
+  lists the suspect doc names (plus the drifted source where `suspect_sources` is present) in the card
+  meta.
+- [ ] The whole-KB "Outdated" refresh-prompt copy (line 1730) is updated to per-doc language and KEEPS
+  the `/aid-housekeep` call-to-action.
+- [ ] `home.html` reads `kb_state.doc_freshness` / `suspect_count` literally (no client-side
+  re-derivation, per line 1584); the existing 5-state `KbStatus` / `outdated` badge is RETAINED
+  (augment-and-supersede, not hard-removed).
+- [ ] `index.html` is unchanged (O5); no new page or redesign is introduced.
+- [ ] Web validation (per the project hard gate): render `home.html` in Playwright against a fixture
+  repo model with `suspect_count > 0` and confirm the per-doc suspect badge + suspect doc/source list
+  actually render, and against `suspect_count == 0` confirm the badge is absent -- a snapshot/screenshot
+  proves it, not source inspection.
+- [ ] All section-6 quality gates pass (existing dashboard tests still pass; no regression to the KB
+  card's other states).

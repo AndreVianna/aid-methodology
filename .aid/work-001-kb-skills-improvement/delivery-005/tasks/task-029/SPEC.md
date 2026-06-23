@@ -1,60 +1,64 @@
-# task-029: Path fixtures (brownfield + greenfield-detection) + shipped-defaults settings.yml
+# task-029: M6 act-back mandate wired into f005's panel (state-review 5->6 + reviewer-prompt-actback + [ACTBACK] rubric tag)
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
 **Source:** work-001-kb-skills-improvement -> delivery-005
 
-**Depends on:** -- (none)
+**Depends on:** task-027, task-028, task-014 (delivery-001)
 
 **Scope:**
-- Author the hand-built, ASCII, checked-in path fixtures that the AC7 suite (task-032) runs over,
-  under `tests/canonical/fixtures/kb-essence/paths/` (f012 SPEC F4) -- the `generated/`
-  index+candidate tables `recon-classify.sh` reads (NOT real source trees; recon does not re-scan).
-  This task authors the BROWNFIELD shapes AND a GREENFIELD-DETECTION shape:
-  - `greenfield/generated/project-index.md` + `candidate-concepts.md`: a **~0-source tree** --
-    Language Breakdown sums to `<= greenfield_max_source_files` source files AND
-    `<= greenfield_max_source_loc` LOC; Full File Inventory holds only a few `is_source` dir
-    prefixes; near-empty candidate list. Must classify **greenfield**. This is the
-    **detection-only** fixture: greenfield is detect-and-signpost (recon DETECTS greenfield and
-    aid-discover signposts to `/aid-interview` + halts), so this fixture exists ONLY for the
-    classification assertion (task-032 V-D1) -- there is **no greenfield generation path / closure**
-    to exercise and no greenfield path-runs fixture.
-  - `brownfield-small/generated/project-index.md` + `candidate-concepts.md`: source present, every
-    dimension under `large_min_*` (RM2 LOC in Language Breakdown; RM3 dir count in Full File
-    Inventory `< large_min_dirs`; RM4 concepts in Summary). Must classify **brownfield-small**.
-  - `brownfield-large/generated/project-index.md` + `candidate-concepts.md`: at least one large
-    dimension trips, exercising each OR-branch of f006's classifier as three independent variants --
-    **LOC variant** (RM2 `>= large_min_source_loc`, via Language Breakdown), **dirs variant** (RM3
-    `>= large_min_dirs`, via a Full File Inventory carrying `>= large_min_dirs` distinct top-2-level
-    `is_source` dir prefixes), **concepts variant** (RM4 `>= large_min_concepts`, via the candidate
-    Summary `Cross-source (spread >= 2)` count). All must classify **brownfield-large**.
-  - `paths/settings.yml`: a checked-in fixture carrying ONLY the `triage.*` block with the SHIPPED
-    default values (byte-identical to `canonical/aid/templates/settings.yml` `triage.*`), so TEST-D
-    runs fully isolated via `--settings paths/settings.yml` and never reads the live repo settings.
-- Each `project-index.md` MUST populate BOTH sections recon parses (f006 SPEC L179-181): the
-  `Language Breakdown` table (RM1 source-file count + RM2 source LOC over `is_source` rows) AND the
-  `Full File Inventory` section (RM3 -- distinct top-2-level `is_source` dir prefixes); omitting the
-  Full File Inventory would make the dirs-variant (V-D4) silently never trip `large_min_dirs`.
-- Each `candidate-concepts.md` carries f004's documented schema (`## Summary` with the `Cross-source
-  (spread >= 2)` count row + `## Ranked Candidates` columns, f004 SPEC L275-289) -- so RM4 reads a
-  real count.
+- **Additive edit to f005's panel orchestration (do NOT rewrite it)** in
+  `canonical/skills/aid-discover/references/state-review.md` -- the 5->6 mandate edit, reusing f005's
+  parallel-dispatch + merged-ledger + `grade.sh` + `{{SCOPE}}`/doc-set seam (task-014, delivery-001)
+  **verbatim**:
+  - **Step 1** mandate loop gains **M6 (act-back)** -> 6 PARALLEL `aid-reviewer` dispatches (full-panel
+    default; same A3 capability-probe degrade-to-sequential). Step 1b appends M6's FOCUS body + the
+    `kb-actback-task.sh` (task-027) representative-task spec + the operational-structure presence-check
+    output. Step 1d adds the M6 scratch ledger `.aid/.temp/review-pending/discovery-actback.md`.
+  - **Step 2** merges the 6th scratch ledger into the single `discovery.md` (M6 rows -> stable `AB-NNN`
+    IDs, `[ACTBACK]` description tag), runs the **UNCHANGED** `grade.sh`; evaluates BOTH sibling
+    keystones off `discovery.md` (teach-back PASS iff zero open `[TEACHBACK]` rows; act-back PASS iff
+    zero open `[ACTBACK]` rows -- **no stored sentinel for either**); deletes all 6 scratch ledgers.
+  - **Step 3** exit print + STATE report the **triple** `Grade: <g> | Teach-back: <v> | Act-back: <v>`.
+  - Invoke `kb-actback-task.sh` (and reference its siblings) with the full `canonical/aid/scripts/kb/...`
+    form + the render-token convention `state-generate.md`/`state-closure.md` use -- do NOT copy
+    f005's as-built dropped-`aid/` path bug. Clean-context + contamination blocks preserved (stronger
+    for M6, like M4): input = ONLY the KB + the representative-task spec; never the source/project-index.
+- **`canonical/skills/aid-discover/references/reviewer-prompt-actback.md` (NEW)** -- the M6 FOCUS body:
+  clean-context "given ONLY the KB + the representative task, produce the plan AND flag every
+  insufficiency"; the two FAIL limbs (plan-correctness + sufficiency); the four insufficiency classes
+  (convention/invariant/gotcha/contract -- matching task-028's owning-table); the binary bar; output
+  redirection to its OWN scratch ledger `discovery-actback.md` (7-column ledger schema), NOT STATE.md.
+  Add an M6 row to `reviewer-prompt.md`'s thin index.
+- **`canonical/aid/templates/kb-authoring/review-rubric.md`** -- add the **`[ACTBACK]`** (HIGH) tag to
+  the "Lint output -> severity mapping" table beside f005's `[TEACHBACK]` (L255), using the verbatim
+  f013-SPEC row (carrying the inline "any open `[ACTBACK]` row forces grade <= D" clause). Category
+  routing + existing rubrics + f005's mandate/calibration sections unchanged.
 
-**Boundary (f012 EXERCISES, does not RE-SPEC):** this task authors ONLY fixture files. It does NOT
-author or edit `recon-classify.sh` or the `triage.*` thresholds (f006, shipped by delivery-004). The
-**greenfield fixture is DETECTION-ONLY**: greenfield was de-scoped to detect-and-signpost on
-2026-06-23, so this task plants the greenfield shape **only for the classification assertion** (recon
-classifies it greenfield) -- there is **no greenfield path-runs / greenfield-closure fixture** (no
-greenfield generation engine to exercise), and the former delivery-009 greenfield carve-out is
-deleted along with delivery-009. The numeric `triage.*` floor values are not chosen here -- they are
-the shipped f006 defaults that task-032 pins ([SPIKE-T1] / [SPIKE-V2]); this task only carries them
-into `paths/settings.yml` and plants shapes (greenfield-detection + brownfield-small +
-brownfield-large) that bin under them.
+**Boundary (reuse, don't re-spec):** does NOT alter the 5-mandate bodies, the fan-out machinery,
+`grade.sh`, the `{{SCOPE}}` seam, or the `[TEACHBACK]` encoding (all f005/task-014, delivery-001 --
+reused verbatim). Does NOT author `kb-actback-task.sh` (task-027) or the doc-model rule (task-028) --
+it *invokes/consumes* them. Does NOT build the act-back fixture (delivery-006/f012). `grade.sh` is
+**unchanged** (no new grade computation; the keystone is the `[HIGH] [ACTBACK]` rows it already counts).
+Because M6 joins the per-mandate dispatch list, f006's brownfield-small collapse folds M6 in
+automatically ([SPIKE-A3]) -- no f006 edit here.
 
 **Acceptance Criteria:**
-- [ ] `tests/canonical/fixtures/kb-essence/paths/` exists containing `greenfield/generated/`, `brownfield-small/generated/`, and `brownfield-large/generated/` (with `project-index.md` + `candidate-concepts.md` each) plus `paths/settings.yml`; all ASCII, checked into git. The `greenfield/` fixture is the detection-only shape (no greenfield path-runs fixture).
-- [ ] Each `project-index.md` carries BOTH a `Language Breakdown` table (RM1/RM2 over `is_source` rows) AND a `Full File Inventory` section (RM3 distinct top-2-level `is_source` dir prefixes), per f006 SPEC L179-181.
-- [ ] `greenfield` is planted as a ~0-source tree so RM1/RM2 sit at/below `greenfield_max_source_files`/`greenfield_max_source_loc` (it must classify greenfield -- detection only, no greenfield path-runs fixture); `brownfield-small` is planted so every dimension (RM2 LOC, RM3 dirs, RM4 concepts) sits under the corresponding `large_min_*` shipped default; `brownfield-large` is planted in three variants, each tripping exactly one large floor (LOC, dirs, concepts) independently.
-- [ ] Each `candidate-concepts.md` carries f004's documented schema with a `## Summary` `Cross-source (spread >= 2)` count consistent with the fixture's intended RM4 binning.
-- [ ] `paths/settings.yml` carries a `triage.*` block whose keys/values are byte-identical to the shipped `canonical/aid/templates/settings.yml` `triage.*` block (so task-032 V-D7 can assert parity).
-- [ ] No fixture file is written/mutated at run time -- the trees are static read-only inputs copied into a `mktemp -d` scratch by task-032 before any script runs.
-- [ ] All section-6 quality gates pass.
+- [ ] `state-review.md` Step 1 fans out **6** parallel `aid-reviewer` dispatches (was 5), adds M6's
+  FOCUS + the `kb-actback-task.sh` representative-task spec + presence-check output, and adds the
+  `discovery-actback.md` scratch ledger; Step 2 merges the 6th ledger (AB-NNN IDs, `[ACTBACK]` tag) and
+  runs the UNCHANGED `grade.sh`; Step 3 reports the triple `Grade | Teach-back | Act-back`.
+- [ ] Act-back PASS iff zero open `[ACTBACK]` rows; any open `[ACTBACK]` row forces grade <= D (sibling
+  keystone, same mechanism as teach-back; no separate boolean, no AND/OR, no stored sentinel).
+- [ ] `reviewer-prompt-actback.md` exists with the clean-context FOCUS body, the two FAIL limbs, the
+  four insufficiency classes, and output redirection to `discovery-actback.md` (NOT STATE.md);
+  `reviewer-prompt.md`'s thin index gains an M6 row.
+- [ ] `review-rubric.md` carries the `[ACTBACK]` (HIGH) row beside `[TEACHBACK]` with the inline
+  "forces grade <= D" clause; category routing + existing rubrics unchanged.
+- [ ] `kb-actback-task.sh` and its siblings are invoked with the full `canonical/aid/scripts/kb/...`
+  path (not f005's dropped-`aid/` bug); clean-context block forbids reading project source for M6.
+- [ ] `grade.sh` is byte-unchanged; the four insufficiency classes named in the prompt match task-028's
+  owning-table classes and task-027's presence-check headings (single source of truth).
+- [ ] All section-6 quality gates pass; canonical edits render to all 5 trees (render-drift green via
+  `run_generator.py`; verify net-new `reviewer-prompt-actback.md` reference emits to all 5 trees per
+  [SPIKE-A2]).

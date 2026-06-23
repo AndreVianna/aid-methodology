@@ -8,7 +8,7 @@ The parent delivery-NNN/STATE.md ## Tasks State and work-level ## Tasks State ar
 DERIVED read-only views assembled from this file at read time -- never written directly.
 
 > **Task:** task-031
-> **Delivery:** delivery-005
+> **Delivery:** delivery-006
 > **Work:** work-001-kb-skills-improvement
 
 ---

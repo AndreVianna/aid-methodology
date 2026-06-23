@@ -1,4 +1,4 @@
-# Delivery SPEC -- delivery-007: Skill Topology + Ship
+# Delivery SPEC -- delivery-007: Freshness Primitive
 
 [!NOTE]
 This is the DELIVERY-LEVEL SPEC.md. It is the IMMUTABLE DEFINITION for this delivery.
@@ -12,45 +12,41 @@ Written by aid-plan; not a state file. State lives in delivery-007/STATE.md.
 
 ## Objective
 
-Fill the skill-topology gaps in the KB lifecycle, AND ship the change in lockstep across the whole
-canonical->render machinery. Rename `aid-ask` -> `aid-query-kb` (read side; behavior preserved);
-add a new `aid-update-kb` skill for targeted/punctual KB updates -- the "second pass" for the
-precise deltas a finished work introduced -- applied through the **same review/calibration gate as
-`aid-discover`** by consuming delivery-001's f005 injectable ledger-`<scope>` + doc-set seam; and
-make `aid-query-kb` capture gaps ("KB can't answer" / "KB contradicts code") into a KB-gap queue
-consumed by `aid-update-kb` / `aid-housekeep`. Then propagate: render the changed/new skill into all
-five host trees with render-drift green, orphan-prune the retired `aid-ask` content by prefix,
-keep the five install manifests in lockstep, reconcile the ~10 KB-doc "N user-facing skills" count
-references, and update the docs site.
+Close the KB freshness loop at per-document granularity. Building on the `sources:` primitive
+(delivery-001, f001), add a deterministic per-doc staleness check that compares each doc's
+`sources:` last-changed commit against that doc's `approved_at_commit:` baseline and marks drifted
+docs *suspect* -- replacing today's single coarse whole-KB tip-date judgment sweep that nobody runs.
+Source changes trigger per-doc suspect flagging, and the dashboard surfaces per-doc freshness in
+both readers (replacing the single coarse whole-KB badge) so a doc owner gets an actionable signal:
+which doc their change made suspect. The governing principle is auto-detect/flag, never auto-apply --
+detection is deterministic, but every change to KB content stays human-gated.
 
 ## Scope
 
-In scope -- **feature-008 (author/behavior) + feature-009 (ship/propagation) as ONE delivery**:
+In scope:
 
-- **feature-008:** the `aid-ask` -> `aid-query-kb` rename (canonical source); the new
-  `aid-update-kb` thin-router SKILL.md + state machine (reusing f005's review gate via the injectable
-  scope+doc-set seam); query-side gap-capture into the `STATE.md ## Q&A (Pending)` backlog.
-- **feature-009:** running the full generator to render `canonical/skills/` into all 5 host trees;
-  orphan-pruning the retired rendered `aid-ask/` dirs by prefix; re-bundling the 5 install manifests
-  in lockstep; reconciling the ~10 "N user-facing skills" KB-doc count references; updating the docs
-  site.
+- **feature-007 -- per-doc freshness loop.** A new canonical KB staleness script
+  (`kb-freshness-check.sh`) that, per doc, compares each `sources:` entry's last-changed commit
+  against the doc's `approved_at_commit:` and emits a per-doc suspect/fresh/unknown verdict
+  (deterministic, git-based); the surfacing of that per-doc verdict in **both** dashboard readers
+  (Python + Node), replacing the coarse whole-KB badge; the canonical test suite + CI wiring. An
+  un-stamped doc (no `approved_at_commit:`) degrades to verdict `unknown`, never an error.
 
-**Out of scope:** f005's panel + injectable-scope seam itself (delivery-001 -- consumed as final);
-the housekeep<->update-kb non-overlap *contract* + standing closure (delivery-008, f010 -- this
-delivery ships the `aid-update-kb` skill, delivery-008 draws its boundary vs `aid-housekeep`).
+**Out of scope:** the `sources:`/`approved_at_commit:` schema (delivery-001, f001 -- consumed); the
+production of the `approved_at_commit:` stamps for AID's own docs (delivery-003, f011); the
+housekeep<->update-kb boundary that *uses* this per-doc staleness as its shared scoping signal
+(delivery-009, f010).
 
 ## Gate Criteria
 
-- [ ] `aid-ask` has been renamed to `aid-query-kb` with behavior preserved. *(f008, AC8)*
-- [ ] Given a prompt-driven targeted update, `aid-update-kb` applies it through the same
-  review/calibration gate as `aid-discover` (via f005's injectable scope+doc-set seam). *(f008, AC8)*
-- [ ] Given a query the KB cannot answer (or that contradicts code), `aid-query-kb` enqueues a gap
-  into the KB-gap queue consumed by `aid-update-kb` / `aid-housekeep`. *(f008, AC8)*
-- [ ] The full generator renders the changed/new skill into all five host trees with render-drift CI
-  green; the retired `aid-ask` content is orphan-pruned by prefix; the five install manifests are
-  updated in lockstep. *(f009, AC12)*
-- [ ] The ~10 KB-doc "N user-facing skills" count references and the docs site are reconciled; the
-  rename/add lands as **one branch/PR with no intervening release tag**; KB-hygiene CI passes. *(f009, AC12)*
+- [ ] Given a doc with `sources:`, the staleness check compares each source's last-changed commit
+  against the doc's approval commit and marks drifted docs suspect (deterministic). *(f007, AC5)*
+- [ ] Given a source change, per-doc suspect flagging is triggered and the dashboard surfaces per-doc
+  freshness (replacing the coarse whole-KB badge) in both readers. *(f007, AC5)*
+- [ ] Given a suspect doc, freshness auto-detects/flags but never auto-applies -- the update remains
+  human-gated. *(f007)*
+- [ ] An un-stamped doc degrades to verdict `unknown` (never an error); the check is deterministic
+  and CI-asserted; render-drift / KB-hygiene CI green. *(f007)*
 - [ ] All section-6 quality gates pass
 
 ## Tasks
@@ -61,16 +57,14 @@ delivery ships the `aid-update-kb` skill, delivery-008 draws its boundary vs `ai
 
 ## Dependencies
 
-- **Depends on:** delivery-001, delivery-006
-- **Blocks:** delivery-008
+- **Depends on:** delivery-001
+- **Blocks:** delivery-008, delivery-009
 
 ## Notes
 
-**f008 + f009 are inseparable (Cross-Cutting Risk R2):** ONE branch, ONE PR, **no release tag cut
-between them**. render-drift CI is RED on f008 alone (canonical renamed but host trees not
-re-rendered) and green only once f009 propagates; a release between them would ship a half-renamed
-repo. Consumes delivery-001's f005 injectable ledger-`<scope>` + doc-set seam (the `aid-update-kb`
-review gate) and delivery-006's per-doc freshness as part of the lifecycle the topology completes.
-The "adding a skill -> KB count drift" and "render-drift full generator" hazards both apply here --
-run the FULL generator, reconcile counts (precedent: /aid-housekeep Q26/Q27), keep the 5 manifests
-lockstep on the skill file set.
+Consumes delivery-001's f001 `sources:` + `approved_at_commit:` schema. The per-doc staleness verdict
+this delivery produces is the **shared signal** that delivery-009's f010 uses to scope the
+`aid-housekeep` sweep and to distinguish housekeep (global) from update-kb (targeted). It reads the
+`approved_at_commit:` stamps delivery-003 produces for AID's own docs, but does not hard-depend on
+delivery-003: an un-stamped doc degrades to `unknown`. Both dashboard readers (the Python + Node
+twins) must be updated in lockstep for the per-doc surfacing.

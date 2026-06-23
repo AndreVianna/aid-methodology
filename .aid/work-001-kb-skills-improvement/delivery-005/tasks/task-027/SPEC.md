@@ -1,50 +1,61 @@
-# task-027: 'Relative bus' + closed/unclosed-KB fixture corpus
+# task-027: kb-actback-task.sh -- representative-task selector + operational-structure presence check
 
-**Type:** TEST
+**Type:** IMPLEMENT
 
 **Source:** work-001-kb-skills-improvement -> delivery-005
 
-**Depends on:** -- (none)
+**Depends on:** task-008 (delivery-001), task-028 (delivery-005)
 
 **Scope:**
-- Author the hand-built, ASCII, checked-in fixture corpus that the AC2/AC3 essence-capture
-  suite (task-030) runs over, under `tests/canonical/fixtures/kb-essence/`:
-  - `relative-bus/` (f012 SPEC F1) -- a small project tree that plants the coined cross-source
-    PHRASE `"Relative Bus"`: a quoted string in `src/bus/relative.ts` (code channel, E5) and again
-    in `src/bus/handlers.ts` (recurrence in code), prose in `docs/adr/0007-relative-bus.md` and
-    `README.md` (docs channel), so the phrase clears spread `>= 2` on the always-present
-    code+docs channels alone (never depending on git history -- [SPIKE-V1] resolution). The
-    CamelCase identifier `RelativeBus` MAY appear but is NOT the asserted survival mechanism.
-    Include `.gitlog.txt` (history-channel surrogate, optional input only) and
-    `expected/candidate-row.txt` recording the asserted harvest row (Term=`Relative Bus`,
-    Spread `>= 2`). Plant incidental single-channel capitalized common-word phrase noise (E4 class,
-    e.g. `The System`, `This File`) so the precision floor is exercisable.
-  - `closed-kb/` (f012 SPEC F1, AC2(b)+AC3) -- a CLOSED spine that DEFINES `Relative Bus`:
-    `knowledge/domain-glossary.md` (spine WITH a `Relative Bus` concept entry, definition-as-used-here),
-    `knowledge/architecture.md` (a doc that USES `Relative Bus`, resolved by the spine), and
-    `generated/candidate-concepts.md` (the term universe `closure-check.sh` reads).
-  - `unclosed-kb/` (f012 SPEC F1, AC3 negative) -- same shape but the spine OMITS the
-    `Relative Bus` entry while `architecture.md` still USES it (closure must report it ungrounded).
-- Every `generated/candidate-concepts.md` MUST replicate f004's emitted table schema verbatim
-  (f004 SPEC L275-289): a `## Summary` block carrying the `Cross-source (spread >= 2)` count row,
-  and a `## Ranked Candidates` table with the `# | Term | Class | Freq | Spread | Channels |
-  Salience | Example source` columns -- so closure-check / teach-back / recon parse a real schema,
-  not an ad-hoc shorthand.
+- Author the NEW ASCII bash helper `canonical/aid/scripts/kb/kb-actback-task.sh` (the `aid/` path
+  segment is MANDATORY -- its siblings `closure-check.sh` / `kb-teachback-questions.sh` live there;
+  do NOT copy f005's as-built `state-review.md` path bug that drops `aid/`). Pure coreutils
+  (`grep`/`awk`/`sort`) -- no LLM, no embedding, no `python3`/`pwsh` (C1/NFR-8). Two functions:
+  - **(1) Representative-task selection.** Emit a fixed, reproducible "do this change" representative-
+    task spec keyed to the project's own KB shape, reading **only machine-readable substrate**: the
+    resolved `discovery.doc_set` filenames + their `present|absent` status (the resolver TSV is
+    `filename<TAB>owner<TAB>presence` -- **three fields, NO concern column**, per
+    `doc-set-resolve.md` L73-75/L108-110) and the first-class operational sections actually present
+    (the `## Conventions`/`## Invariants`/`## Gotchas`/`## Contracts` headings from (2)). The
+    concern->task-shape mapping is a documented **tuning HINT in a comment, never a parsed field**.
+    The exact task-shape heuristic is the calibrated surface deferred via **[SPIKE-A1]** (f012-tuned
+    against the act-back fixtures); this task fixes the deterministic substrate (filenames + presence
+    + present sections -> same KB shape yields same task, byte-reproducibly) and the *shape*, not the
+    final heuristic weights.
+  - **(2) Operational-structure presence check.** For each Full-Primary KB doc, grep the named
+    operational sections and emit a per-doc table `doc | class | present|absent` (mirroring
+    `closure-check.sh`'s coverage-table shape). **Scoped per f003's owning-table** (consume the
+    `concern-model.md` four-classes->owning-concerns->docs map authored in task-028) so each doc is
+    reported `present|absent` ONLY for the classes it is *expected* to own (a `domain-glossary.md`
+    that owns no Contracts is NOT reported `## Contracts absent`). Stable-sorted, byte-reproducible.
+- Consume `closure-check.sh`'s output-shape conventions (task-008, delivery-001) as the sibling table
+  format to mirror, and task-028's owning-table (the `concern-model.md` four-classes->owning-concerns
+  ->docs map) to scope the presence check. This helper reads filenames + `present|absent` status +
+  operational sections, NOT frontmatter, so f001's `extract_field`/`extract_list` (task-002) is NOT a
+  dependency. Do NOT read project source.
 
-**Boundary (f012 EXERCISES, does not RE-SPEC):** this task authors ONLY fixture files. It does
-NOT author or edit `harvest-coined-terms.sh` / `closure-check.sh` / the denylist / the phrase-
-survival rule (all f004, shipped by delivery-001). The path fixtures (greenfield-detection +
-brownfield, task-029) and the AC1 teach-back pass/fail KBs (task-033) are OUT of scope for THIS task
-(they are authored by sibling delivery-005 tasks, not here).
-The numeric floor VALUES are not chosen here (that is task-030 / [SPIKE-V2]); this task only plants
-the inputs that make the separation measurable.
+**Boundary (this task ships ONLY the helper):** it does NOT wire M6 into `state-review.md` (task-029),
+does NOT author the doc-model rule or the owning-table (task-028 -- this script *consumes* it), does
+NOT author `reviewer-prompt-actback.md` or the `[ACTBACK]` rubric tag (task-029), and does NOT build
+the end-to-end pass/fail-KB corpus (delivery-006/f012). It edits NO f003/f005 machinery.
 
 **Acceptance Criteria:**
-- [ ] The three fixture trees exist under `tests/canonical/fixtures/kb-essence/{relative-bus,closed-kb,unclosed-kb}/` with the files enumerated in f012 SPEC F1; all files are ASCII and checked into git (no generation step).
-- [ ] The phrase `"Relative Bus"` appears in at least two distinct channels of `relative-bus/` (a quoted string in `src/bus/relative.ts` code AND prose in `docs/adr/0007-relative-bus.md` + `README.md`) so a spread `>= 2` is reachable from code+docs alone, with no dependency on `.gitlog.txt`/git history.
-- [ ] `relative-bus/` contains at least one incidental single-channel capitalized common-word phrase (E4 class, e.g. `The System`/`This File`) so the precision/noise-floor assertion in task-030 has noise to discriminate against.
-- [ ] `closed-kb/knowledge/domain-glossary.md` carries a `Relative Bus` concept entry; `unclosed-kb/knowledge/domain-glossary.md` omits it while both `architecture.md` files USE the term -- so closure passes on closed-kb and fails (reports `Relative Bus`) on unclosed-kb.
-- [ ] Every `generated/candidate-concepts.md` carries f004's documented schema: a `## Summary` block with a `Cross-source (spread >= 2)` count row AND a `## Ranked Candidates` table with the exact `# | Term | Class | Freq | Spread | Channels | Salience | Example source` columns (f004 SPEC L275-289).
-- [ ] `relative-bus/expected/candidate-row.txt` records Term=`Relative Bus` with Spread `>= 2`.
-- [ ] No fixture file is written or harvested at authoring time -- the trees are static read-only inputs (the harvest in task-030 runs over a `mktemp -d` copy, never these committed files).
-- [ ] All section-6 quality gates pass.
+- [ ] `canonical/aid/scripts/kb/kb-actback-task.sh` exists at the `aid/`-segment path, is pure
+  coreutils (no `python3`/`pwsh`/binary/LLM), ASCII-only, and is added to `test-ascii-only.sh`'s
+  `SHIPPED_SCRIPTS` allow-list (the allow-list edit; the assertion suite is task-030).
+- [ ] Function (1) emits a representative-task spec deterministically over the machine-readable
+  substrate (doc-set filenames + `present|absent` + present operational sections); the same KB shape
+  yields a byte-identical task spec on re-run. It parses NO concern field (the resolver TSV emits
+  none); any concern->task-shape mapping appears only as a code comment tagged the [SPIKE-A1] tuning
+  hint.
+- [ ] Function (2) greps the named operational sections (`## Conventions`/`## Invariants`/
+  `## Gotchas`/`## Contracts`, per `concern-model.md`'s enumerated headings) per Full-Primary doc and
+  emits a stable-sorted `doc | class | present|absent` table, **scoped to the classes each doc is
+  expected to own** via task-028's owning-table (no over-report of legitimately-absent classes).
+- [ ] Output is stable-sorted and byte-reproducible across runs (NFR-3); a re-run over the same input
+  produces identical bytes.
+- [ ] The script invocation/path follows the working `state-generate.md`/`state-closure.md` render-
+  token convention (full `canonical/aid/scripts/kb/...` form), not f005's `state-review.md` dropped-
+  `aid/` mistake.
+- [ ] All section-6 quality gates pass (unit-level coverage for both functions over a tiny in-script
+  or in-suite fixture; the full canonical assertion suite is task-030; build passes).

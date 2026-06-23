@@ -1,108 +1,53 @@
-# task-049: housekeep KB-DELTA suspect-scoping rewrite + closure re-verify before commit
+# task-049: Render to 5 host trees + orphan-prune aid-ask + release-tarball verification
 
 **Type:** IMPLEMENT
 
 **Source:** work-001-kb-skills-improvement -> delivery-008
 
-**Depends on:** task-048, task-035 (delivery-006), task-008 (delivery-001)
+**Depends on:** task-046, task-048
 
 **Scope:**
-- f010 Part 2 (FR-33) + Part 3 (FR-34) -- rewrite `aid-housekeep`'s KB-DELTA Steps 1-2 scoping and
-  wire a standing closure re-verify BEFORE the KB-DELTA commit, in
-  `canonical/skills/aid-housekeep/references/state-kb-delta.md`. The boundary contract record is
-  task-048; the behavioral grep guards are task-050.
-- **Cross-delivery reuse (cite explicitly):**
-  - Steps 1-2 consume **task-035 (delivery-006, f007)**'s `kb-freshness-check.sh` per-doc suspect
-    verdicts as the source-keyed drift signal (replacing the git-date hint as the cheap drift
-    signal). f010 adds NO flag to the script -- it calls `--root .aid/knowledge --format tsv`.
-  - The closure re-verify consumes **task-008 (delivery-001, f004)**'s `closure-check.sh` oracle
-    (the ungrounded-term set). f010 adds NO flag/behavior to the script -- it calls it as f004
-    defines it. **[SPIKE-C2]:** f004 pins the script inputs (candidate-concepts.md + spine + KB
-    docs) but not the literal flag names; wire the exact invocation as task-008/f004 ships it --
-    do NOT guess flags. The dependency holds for any input shape.
-  - Realizes the boundary recorded in **task-048** (this delivery).
-- **Step 1 rewrite (deterministic suspect pre-pass):** run
-  `bash .claude/aid/scripts/kb/kb-freshness-check.sh --root .aid/knowledge --format tsv` and
-  capture the per-doc `{current,suspect,unknown}` verdicts + `suspect_sources_csv`. The `suspect`
-  rows are the commit-graph-exact drifted-doc set (source-driven-global signal). The optional
-  `git fetch origin master` convenience is retained; offline = scope against the local graph, no
-  pause (no hard offline gate). The git-date range STOPS being the scoping boundary.
-- **Step 2 rewrite (two-tier; CRITICAL -- whole-KB review RETAINED):** Tier 1 = the `suspect` docs
-  are the priority re-review set (read doc + its `suspect_sources_csv`, plan the correction).
-  Tier 2 = **the autonomous whole-KB content re-review of ALL docs including `current` ones is
-  RETAINED** -- no doc is skipped (preserves AC1 "subtly-wrong-all-along"; a `current` verdict
-  proves only source-ancestry, not summary-correctness). The verdict sets PRIORITY only: suspect
-  first, unknown next (no baseline -- f011 unstamped), current still content-reviewed at lower
-  priority. The optimization is prioritization + a fast no-drift exit, NEVER skipping a doc's
-  content review.
-- **Step 3 banner edit:** the proposed scope at Step 3 names each drifted doc annotated by the
-  signal that flagged it (suspect: `<suspect_sources_csv>` drifted / content drift on a
-  current-verdict doc -- AC1 catch). Steps 3-6 (confirm-and-adjust gate, `Impact: Required` Q&A +
-  `/aid-discover` targeted re-entry, read-back/commit) are otherwise retained verbatim.
-- **No-drift exit (AC4) refined:** fires only when zero `suspect` docs AND the retained whole-KB
-  content review found nothing -- both the deterministic signal and the content review must be
-  clean before the run exits.
-- **Closure re-verify step (Part 3, new in f010):** insert into KB-DELTA's PASSED path BETWEEN the
-  staged KB edits and Step 6's `branch-commit.sh --commit` -- re-run `closure-check.sh` over the
-  refreshed-but-not-yet-committed KB (true f008 parity: verify before committing, never commit a
-  hole). Closure intact (empty output) -> write `**Closure:** verified` to the run-state, then let
-  Step 6 commit and CHAIN to SUMMARY-DELTA. Closure broken (non-empty) -> break-handling below,
-  refresh UNCOMMITTED. On the no-drift/skipped path the closure step is NOT run (nothing changed).
-- **Term-universe freshness contract (closure re-verify input):** `closure-check.sh`'s
-  term-universe input -- `candidate-concepts.md` -- is a TRANSIENT f004 artifact harvested during
-  `/aid-discover`; at housekeep-closure time it may be STALE or ABSENT, which would make the
-  closure verdict wrong (computed against the old KB's term universe, not the staged refresh). The
-  closure re-verify MUST therefore run against a **freshly-(re)generated `candidate-concepts.md`**:
-  it consumes the `candidate-concepts.md` produced by KB-DELTA's `/aid-discover` targeted re-entry
-  (Steps 3-6 / the break-handling re-entry), which re-runs f004's harvest over the staged-but-not-
-  committed KB so the term universe matches the current KB. If a run reaches the closure step
-  WITHOUT a fresh `candidate-concepts.md` (none was regenerated on this run, or it predates the
-  staged edits), the f004 harvest is (re)run FIRST -- before `closure-check.sh` -- to refresh the
-  term universe. The closure verdict is NEVER computed against a stale/absent term-universe. (No
-  new script: this is a wiring/ordering requirement reusing f004's harvest + closure-check.)
-- **Break-handling (reuses existing mechanisms, NO new mechanism):** on an ungrounded term, do NOT
-  auto-fix/commit/silently-proceed. Append one Q&A to `.aid/knowledge/STATE.md ## Q&A (Pending)`
-  (Style A: Category `Closure / Standing Invariant Break`, Impact `Required`, Status `Pending`,
-  naming the ungrounded term(s) @ doc:anchor). Route the `Impact: Required` Q&A to `/aid-discover`
-  targeted re-entry naming `domain-glossary.md` (the spine) + the using-doc (resolved routing, not
-  a spike). Then take the existing `stalled` exit (state-kb-delta "Exit -- stalled") with
-  `**Stall Reason:** closure invariant broken -- undefined native term in the staged KB refresh
-  (not committed)` and PAUSE-FOR-USER-ACTION with the refresh uncommitted. Re-running
-  `/aid-housekeep` resumes at KB-DELTA; once grounded and `closure-check.sh` is empty, the stage
-  advances and then commits.
-- **Thin-router (C8) preserved:** SKILL.md state machine, run-state file, branch/commit machinery,
-  Dispatch table, and chaining are untouched -- the only edits are inside `state-kb-delta.md`.
-- **Render note:** edits `canonical/` only; render-drift RED on this branch is by construction
-  (f009 renders, out of scope).
-- ASCII-only (C2): no non-ASCII glyphs introduced into `state-kb-delta.md`.
+- f009 Part 1 + Part 2 (S1/S2/S3, AC12) -- the RED->green core. Consumes f008's FINAL canonical
+  state (task-046 renamed+gap-capture `aid-query-kb`; task-048 the complete `aid-update-kb` skill +
+  references). f009 edits NO `canonical/skills/` content -- it only runs the generator over f008's
+  canonical.
+- **Render + prune (one command):**
+  `python .claude/skills/generate-profile/scripts/run_generator.py` -- iterates the 5 profiles
+  (claude-code/.claude, codex/.codex, cursor/.cursor, copilot-cli/.github, antigravity/.agent),
+  renders `canonical/` (skills are dir-globbed at `render.py:538`, so `aid-query-kb/SKILL.md` and
+  the new multi-file `aid-update-kb/` SKILL.md + `references/state-*.md` are emitted automatically
+  and `aid-ask/SKILL.md` stops being emitted), then the deletion pass (`run_generator.py:43-60`)
+  diffs against the previous `emission-manifest.jsonl`, unlinks the removed `aid-ask/SKILL.md`
+  record in each tree and rmdir's the emptied `aid-ask/` dir, and rewrites the 5
+  `emission-manifest.jsonl`. Commit the regenerated `profiles/` + 5 manifests.
+- **Run the FULL `run_generator.py`** (not a per-script renderer) -- the `render-drift-full-generator`
+  hazard.
+- **Orphan-prune verification (S2, SPIKE-A verify-on-run):** confirm `aid-ask`'s single-file
+  rendered dir prunes empty in all 5 trees and `aid-update-kb`'s multi-file new dir emits cleanly.
+- **Release-tarball surface (S3, Part 2):** the 5 per-profile tarballs auto-enumerate their file
+  list from the rendered `profiles/<host>/` tree (`release.sh:245-258` find), and `release.sh`
+  Step-2 itself re-runs `run_generator.py` + fails on `git diff -- profiles/` -- so once `profiles/`
+  is regenerated the tarballs ship the new set automatically. **No hand-listed skill set exists in
+  the packaging path.** This task VERIFIES the tarball set (no `aid-ask`, both new skills present),
+  it does not cut a release tag.
+- **Explicit non-surface (record, do not touch):** npm/pypi `vendor.js`/`vendor.py` vendor only the
+  CLI installer (bin/lib/dashboard), NOT the skill set (S4) -- not a propagation surface here.
+- This task makes `render-drift` CI green; the KB-count / docs-site / dogfood surfaces are
+  task-050/046/047. **No release tag is cut between f008 and f009** (PLAN R2) -- the two ship as one
+  branch/PR; this task is the green-maker, not a release step.
 
 **Acceptance Criteria:**
-- [ ] Step 1 of `state-kb-delta.md` runs `kb-freshness-check.sh --root .aid/knowledge --format tsv`
-  (task-035/f007) and captures per-doc verdicts + `suspect_sources_csv`; the git-date range is no
-  longer the scoping boundary (retained only as an optional convenience hint).
-- [ ] Step 2 RETAINS the autonomous whole-KB content re-review of ALL docs including `current`
-  ones (no doc is skipped); the suspect verdict sets review PRIORITY only (suspect first, unknown
-  next, current still reviewed). The two-tier structure is explicit and AC1 coverage is preserved.
-- [ ] The no-drift exit fires only when zero suspect docs AND the whole-KB content review found
-  nothing (both signals clean).
-- [ ] Step 3's proposed-scope banner names each drifted doc annotated by the flagging signal
-  (suspect-sources vs current-verdict content drift).
-- [ ] A CLOSURE re-verify step calling `closure-check.sh` (task-008/f004) is wired into the PASSED
-  path BEFORE Step 6's commit; closure-intact proceeds to commit, closure-broken stalls with the
-  refresh uncommitted (never commits a hole). The step is NOT run on the no-drift/skipped path.
-- [ ] The closure re-verify runs against a freshly-(re)generated `candidate-concepts.md`: it
-  consumes the harvest output of KB-DELTA's `/aid-discover` targeted re-entry over the staged KB,
-  and if the closure step is reached without a fresh `candidate-concepts.md` the f004 harvest is
-  (re)run FIRST so the term universe matches the staged refresh -- the closure verdict is never
-  computed against a stale/absent term-universe (no new script; reuses f004 harvest + closure-check).
-- [ ] On a closure break the skill appends a Style-A Q&A to `.aid/knowledge/STATE.md ## Q&A
-  (Pending)` (Category `Closure / Standing Invariant Break`, Impact `Required`) routed to
-  `/aid-discover` targeted re-entry naming `domain-glossary.md` + the using-doc, then takes the
-  existing stalled exit and PAUSEs -- reusing existing mechanisms (no new escalation invented).
-- [ ] No new script is added and no new flag is added to `kb-freshness-check.sh` or
-  `closure-check.sh` (pure reuse, NFR-3/C2 by reuse); the thin-router SKILL.md/run-state/Dispatch
-  shape is unchanged.
-- [ ] The cross-delivery reuse is cited in the doc: Steps 1-2 -> task-035 (f007); closure re-verify
-  -> task-008 (f004); boundary realized -> task-048.
-- [ ] `state-kb-delta.md` is ASCII-only.
+- [ ] After `run_generator.py` + commit, `git diff --exit-code -- profiles/` is clean (render-drift
+  CI's own generator run is a no-op -> green).
+- [ ] `find profiles -path '*/aid-ask/*'` returns nothing (orphan-pruned in all 5 trees);
+  `aid-query-kb/` and `aid-update-kb/` (incl. its `references/state-*.md`) are present in all 5
+  rendered trees.
+- [ ] The 5 `emission-manifest.jsonl` files are rewritten to the new set (no `aid-ask` record; new
+  `aid-query-kb` + `aid-update-kb` records present).
+- [ ] A built `aid-<tool>-v*.tar.gz` (verification build) contains `aid-query-kb`/`aid-update-kb`
+  and no `aid-ask`; `release.sh` Step-2 render-drift guard passes. (Verification only -- no release
+  tag cut.)
+- [ ] npm/pypi vendor scripts are recorded as a non-surface and left untouched.
+- [ ] The FULL `run_generator.py` was run (not a per-script renderer).
+- [ ] No `canonical/skills/` content was edited in this task (f009 consumes f008 final).
 - [ ] All section-6 quality gates pass.

@@ -1,53 +1,53 @@
-# task-044: Render to 5 host trees + orphan-prune aid-ask + release-tarball verification
+# task-044: reader-parity suite -- Python === Node doc_freshness
 
-**Type:** IMPLEMENT
+**Type:** TEST
 
 **Source:** work-001-kb-skills-improvement -> delivery-007
 
-**Depends on:** task-041, task-043
+**Depends on:** task-042
 
 **Scope:**
-- f009 Part 1 + Part 2 (S1/S2/S3, AC12) -- the RED->green core. Consumes f008's FINAL canonical
-  state (task-041 renamed+gap-capture `aid-query-kb`; task-043 the complete `aid-update-kb` skill +
-  references). f009 edits NO `canonical/skills/` content -- it only runs the generator over f008's
-  canonical.
-- **Render + prune (one command):**
-  `python .claude/skills/generate-profile/scripts/run_generator.py` -- iterates the 5 profiles
-  (claude-code/.claude, codex/.codex, cursor/.cursor, copilot-cli/.github, antigravity/.agent),
-  renders `canonical/` (skills are dir-globbed at `render.py:538`, so `aid-query-kb/SKILL.md` and
-  the new multi-file `aid-update-kb/` SKILL.md + `references/state-*.md` are emitted automatically
-  and `aid-ask/SKILL.md` stops being emitted), then the deletion pass (`run_generator.py:43-60`)
-  diffs against the previous `emission-manifest.jsonl`, unlinks the removed `aid-ask/SKILL.md`
-  record in each tree and rmdir's the emptied `aid-ask/` dir, and rewrites the 5
-  `emission-manifest.jsonl`. Commit the regenerated `profiles/` + 5 manifests.
-- **Run the FULL `run_generator.py`** (not a per-script renderer) -- the `render-drift-full-generator`
-  hazard.
-- **Orphan-prune verification (S2, SPIKE-A verify-on-run):** confirm `aid-ask`'s single-file
-  rendered dir prunes empty in all 5 trees and `aid-update-kb`'s multi-file new dir emits cleanly.
-- **Release-tarball surface (S3, Part 2):** the 5 per-profile tarballs auto-enumerate their file
-  list from the rendered `profiles/<host>/` tree (`release.sh:245-258` find), and `release.sh`
-  Step-2 itself re-runs `run_generator.py` + fails on `git diff -- profiles/` -- so once `profiles/`
-  is regenerated the tarballs ship the new set automatically. **No hand-listed skill set exists in
-  the packaging path.** This task VERIFIES the tarball set (no `aid-ask`, both new skills present),
-  it does not cut a release tag.
-- **Explicit non-surface (record, do not touch):** npm/pypi `vendor.js`/`vendor.py` vendor only the
-  CLI installer (bin/lib/dashboard), NOT the skill set (S4) -- not a propagation surface here.
-- This task makes `render-drift` CI green; the KB-count / docs-site / dogfood surfaces are
-  task-045/046/047. **No release tag is cut between f008 and f009** (PLAN R2) -- the two ship as one
-  branch/PR; this task is the green-maker, not a release step.
+- Extend the existing dashboard reader-parity test harness (which serializes both readers' `RepoModel`
+  and diffs them) so the new per-doc freshness field is covered (f007 SPEC "Parity verification" +
+  "Single source of truth"). This is the byte-parity gate FR-6 requires: the Python
+  `derive_doc_freshness` (task-042) and the Node `deriveDocFreshness` (task-042) MUST produce
+  byte-identical `doc_freshness` arrays (and `suspect_count`) for the same repo state.
+- Add a **parity fixture KB** (a scripted git fixture repo, so `merge-base --is-ancestor` ancestry is
+  deterministic) containing at least one doc of each verdict class so the assertion exercises the full
+  matrix:
+  - one `current` doc (source at-or-before `approved_at_commit:`),
+  - one `suspect` doc (source changed after `approved_at_commit:`, with a named drifted `suspect_sources`
+    entry),
+  - one `unknown` doc with a URL source,
+  - one pre-migration `unknown` doc (no `approved_at_commit:`).
+- Run BOTH readers over the fixture and assert their `doc_freshness` arrays + `suspect_count` are
+  byte-identical (the same mechanism the existing twin tests already enforce for `git_freshness_check`,
+  extended to the new field). Assert the order of `doc_freshness` entries is identical between the
+  twins (deterministic, path-sorted).
+- The parity suite is the agreed mechanism (SPIKE-3, settled in task-042) to keep
+  script === Python-reader === Node-reader on one verdict: task-041 pins the script to a golden
+  fixture; this suite pins the two readers to each other; together all three agree on one verdict.
+
+**Isolation discipline (load-bearing acceptance criteria):** HOME-pinned to a throwaway dir before any
+reader run; carry the real-HOME `.aid` canary snapshot (before/after, snapshot BEFORE per
+[[ci-runs-as-root-repo-under-home]]) and assert no `.aid` appeared; always pass explicit fixture paths;
+build the parity fixture git repo inside `mktemp -d` scratch with `trap ... EXIT` cleanup (never the AID
+repo's own git history); never mutate a committed fixture.
+
+**Boundary:** f007 EXERCISES the task-042 readers. This task does NOT author/edit the reader functions
+(task-042), the script (task-040), or the `home.html` UI (task-043). It asserts only that the two
+readers agree byte-for-byte on `doc_freshness` / `suspect_count` over the fixture.
 
 **Acceptance Criteria:**
-- [ ] After `run_generator.py` + commit, `git diff --exit-code -- profiles/` is clean (render-drift
-  CI's own generator run is a no-op -> green).
-- [ ] `find profiles -path '*/aid-ask/*'` returns nothing (orphan-pruned in all 5 trees);
-  `aid-query-kb/` and `aid-update-kb/` (incl. its `references/state-*.md`) are present in all 5
-  rendered trees.
-- [ ] The 5 `emission-manifest.jsonl` files are rewritten to the new set (no `aid-ask` record; new
-  `aid-query-kb` + `aid-update-kb` records present).
-- [ ] A built `aid-<tool>-v*.tar.gz` (verification build) contains `aid-query-kb`/`aid-update-kb`
-  and no `aid-ask`; `release.sh` Step-2 render-drift guard passes. (Verification only -- no release
-  tag cut.)
-- [ ] npm/pypi vendor scripts are recorded as a non-surface and left untouched.
-- [ ] The FULL `run_generator.py` was run (not a per-script renderer).
-- [ ] No `canonical/skills/` content was edited in this task (f009 consumes f008 final).
-- [ ] All section-6 quality gates pass.
+- [ ] The dashboard reader-parity harness is extended so `kb_state.doc_freshness` and
+  `kb_state.suspect_count` are part of the Python-vs-Node diff (it fails if the twins disagree).
+- [ ] A scripted git parity fixture KB contains at least one each of `current`, `suspect`
+  (with a named drifted `suspect_sources` entry), URL-source `unknown`, and pre-migration `unknown`
+  (no `approved_at_commit:`) docs.
+- [ ] Running both readers over the fixture yields byte-identical `doc_freshness` arrays and
+  `suspect_count` (the FR-6 parity gate), with identical (path-sorted, deterministic) entry ordering.
+- [ ] Isolation: HOME is pinned to a throwaway dir; the real-HOME `.aid` canary snapshots before/after
+  and asserts no `.aid` appeared; the parity fixture git repo lives in `mktemp -d` scratch with
+  `trap EXIT` cleanup; the AID repo's git history and committed fixtures are never mutated.
+- [ ] Tests are deterministic with clean setup/teardown; the FR-6 byte-parity acceptance criterion from
+  feature-007 is covered; all section-6 quality gates pass.
