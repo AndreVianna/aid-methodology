@@ -151,6 +151,7 @@ different places.
 | 2026-06-23 | revise+re-gate feature-004 | A+ | Conceptual-synthesis channel (tokenless, evidence-anchored) + closure-cap arg ownership + merged closure-check.sh 3-output oracle (a/b/c). D+→A+ |
 | 2026-06-23 | revise+re-gate feature-006 | A+ | Greenfield simplified (interview/specify reuse, verifier dropped, mini→collapsed) + P2 sequential-passes adjudication; REQUIREMENTS §1.5 matrix + seam cross-refs aligned. C→A+ |
 | 2026-06-23 | whole-work revision COMPLETE | A+ | f004/f005/f006 re-gated A+; REQUIREMENTS/upper-sections consistent; 5 items carried to /aid-plan (f008+f009 merge, is_source/extract_list shared-lib, salience-validate, skill-count CI guard). All 12 features Ready/A+ |
+| 2026-06-23 | aid-plan work-001 | A+ | PLAN.md + 9 deliveries written (D1 Essence Core foundation → D9 Greenfield Could); acyclic, MoSCoW-ordered, f008+f009 merged (D7), f006/f012 scope-split; C+→A+ (R3 calibration-back-patch risk + D4 attribution). Ready for /aid-detail |
 | 2026-06-22 | aid-specify feature-006 | A+ | Ready — recon triage + 3 paths + panel-scaling; A→A+ (2 MINOR fixed) |
 | 2026-06-22 | aid-specify feature-007 | A+ | Ready — per-doc freshness loop; D+→A+ (cross-feature f001↔f007 absence-contract reconciled; f001 spec line aligned) |
 | 2026-06-22 | aid-specify feature-008 | A+ | Ready — skill topology (aid-query-kb rename + aid-update-kb + gap-capture); A→A+ (3 MINOR fixed; SPIKE-2 f005-param seam → PLAN) |
@@ -159,6 +160,7 @@ different places.
 | 2026-06-22 | aid-specify feature-011 | A+ | Ready — KB migration; B→A+ (M5 resolved: shipped soft-skip retained per NFR-7 + AID-CI strict; sources:[] idempotency) |
 | 2026-06-22 | aid-specify feature-012 | A+ | Ready — validation fixture (AC2 'Relative Bus' regression + calibration/teach-back/path); D+→A+ (HIGH: phrase-survival path corrected to f004) |
 | 2026-06-22 | aid-specify ALL 12 features | A+ | All features Ready/A+ — Specify phase complete; ready for /aid-plan |
+| 2026-06-23 | aid-plan PROPOSE (sequence) | -- | Dependency graph mapped (acyclic, single-producer primitives confirmed) + 7-delivery sequence proposed for user reaction. f008+f009 merged into one delivery (D5) per whole-work carry. NOT yet committed — PLAN.md unwritten; phase stays Specify/Paused pending user decision |
 
 ---
 
