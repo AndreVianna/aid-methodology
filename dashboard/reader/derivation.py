@@ -60,7 +60,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-from .models import KbBaseline, KbStatus, Lifecycle, PendingInput, SourceMode, TaskModel, TaskStatus
+from .models import DocFreshness, KbBaseline, KbStatus, Lifecycle, PendingInput, SourceMode, TaskModel, TaskStatus
 
 
 # ---------------------------------------------------------------------------
@@ -96,9 +96,10 @@ def _normalize_to_utc_ms(iso_str: str) -> Optional[int]:
 # FF-A2: git freshness check (task-064, LC-A2 reader subprocess)
 # ---------------------------------------------------------------------------
 
-# Allowed git verbs: ONLY rev-parse, symbolic-ref, log (read-only)
+# Allowed git verbs: ONLY rev-parse, symbolic-ref, log, merge-base (read-only)
+# merge-base added task-042 (f007): --is-ancestor comparison for per-doc freshness.
 # NEVER: fetch, pull, commit, checkout, reset, push, merge, rebase, add, rm
-_GIT_ALLOWED_VERBS = frozenset({"rev-parse", "symbolic-ref", "log"})
+_GIT_ALLOWED_VERBS = frozenset({"rev-parse", "symbolic-ref", "log", "merge-base"})
 
 # Degradation timeout (seconds) -- bounded read, never blocks indefinitely
 _GIT_TIMEOUT_S = 2
@@ -365,6 +366,228 @@ def derive_kb_status(
 
     except Exception:  # noqa: BLE001 -- never raises (NFR7)
         return KbStatus.unknown
+
+
+# ---------------------------------------------------------------------------
+# f007 / task-042: per-doc freshness read
+# ---------------------------------------------------------------------------
+
+def derive_doc_freshness(kb_dir: Path, repo_root: Path) -> list[DocFreshness]:
+    """f007: Per-doc freshness read for all hand-authored primary/extension KB docs.
+
+    Same algorithm as kb-freshness-check.sh (task-040):
+      - Same doc routing (skip INDEX.md, README.md, STATE.md, meta, generated)
+      - Same absence gate (no approved_at_commit: -> unknown; no/empty sources: -> current)
+      - Same git verbs: git-log -1 --format=%H -- <src>  +  merge-base --is-ancestor
+      - Same fold rule: suspect > current > unknown
+      - Same degrade-to-unknown matrix (any git failure -> unknown, never false suspect)
+
+    Returns list[DocFreshness] sorted by doc path (same deterministic order as script).
+    Never raises (NFR7). No writes. No LLM. Read-only git only.
+
+    merge-base is in _GIT_ALLOWED_VERBS (added task-042; still read-only).
+    """
+    from .parsers import parse_doc_frontmatter, is_url_source
+
+    results: list[DocFreshness] = []
+
+    if not kb_dir.is_dir():
+        return results
+
+    # Collect docs: skip INDEX.md, README.md, STATE.md + meta + generated
+    # (same routing as build-kb-index.sh / lint-frontmatter.sh / kb-freshness-check.sh)
+    try:
+        candidate_paths = sorted(
+            p for p in kb_dir.iterdir()
+            if p.is_file() and p.suffix == ".md" and not p.name.startswith(".")
+        )
+    except OSError:
+        return results
+
+    # Always-skipped names
+    _SKIP_NAMES = {"INDEX.md", "README.md", "STATE.md"}
+
+    for doc_path in candidate_paths:
+        if doc_path.name in _SKIP_NAMES:
+            continue
+
+        # Check routing fields: kb-category and source
+        # Re-use parse_doc_frontmatter but we need the routing fields too.
+        # Read routing separately via a quick line-scan (same tolerance posture).
+        kb_cat, src_field = _read_routing_fields(doc_path)
+
+        if kb_cat == "meta":
+            continue
+        if src_field == "generated":
+            continue
+        # Only primary and extension with hand-authored (or absent) source
+        if kb_cat not in ("primary", "extension", ""):
+            continue
+
+        rel = doc_path.name  # relative path within kb_dir (top-level only)
+
+        # Parse frontmatter: approved_at_commit + sources
+        approved_at_commit, sources_list, sources_field_present = parse_doc_frontmatter(doc_path)
+
+        # Absence gate: missing/empty approved_at_commit -> unknown (never suspect)
+        if not approved_at_commit:
+            results.append(DocFreshness(doc=rel, verdict="unknown", suspect_sources=[]))
+            continue
+
+        # sources: absent or empty -> current (nothing to drift against)
+        if not sources_field_present or not sources_list:
+            results.append(DocFreshness(doc=rel, verdict="current", suspect_sources=[]))
+            continue
+
+        # Per-source staleness checks
+        n_current = 0
+        n_suspect = 0
+        n_unknown = 0
+        suspect_sources: list[str] = []
+
+        for entry in sources_list:
+            src_verdict = _check_source(entry, approved_at_commit, repo_root)
+            if src_verdict == "current":
+                n_current += 1
+            elif src_verdict == "suspect":
+                n_suspect += 1
+                suspect_sources.append(entry)
+            else:
+                n_unknown += 1
+
+        # Fold rule (identical to script)
+        if n_suspect > 0:
+            verdict = "suspect"
+        elif n_current > 0:
+            verdict = "current"
+        else:
+            verdict = "unknown"
+
+        results.append(DocFreshness(doc=rel, verdict=verdict, suspect_sources=suspect_sources))
+
+    return results
+
+
+def _read_routing_fields(doc_path: Path) -> tuple[str, str]:
+    """Read kb-category and source frontmatter scalars for routing.
+
+    Returns (kb_category, source_field). Absent fields return "".
+    Same degrade posture: any failure -> ("", "") -> treated as primary/hand-authored.
+    Never raises.
+    """
+    try:
+        raw = doc_path.read_bytes()
+        text = raw.decode("utf-8", errors="replace")
+    except OSError:
+        return "", ""
+
+    kb_cat = ""
+    src_field = ""
+    in_fm = False
+    fm_entered = False
+
+    for line in text.splitlines():
+        stripped_line = line.rstrip()
+        if stripped_line == "---":
+            if not fm_entered:
+                in_fm = True
+                fm_entered = True
+                continue
+            else:
+                break
+        if not in_fm:
+            break
+
+        m = re.match(r"^kb-category:\s*(.*)", stripped_line)
+        if m:
+            kb_cat = m.group(1).strip().strip('"').strip("'")
+            continue
+
+        m = re.match(r"^source:\s*(.*)", stripped_line)
+        if m:
+            src_field = m.group(1).strip().strip('"').strip("'")
+            continue
+
+    return kb_cat, src_field
+
+
+def _check_source(entry: str, approved_at_commit: str, repo_root: Path) -> str:
+    """Check one sources: entry against approved_at_commit.
+
+    Returns "current" | "suspect" | "unknown".
+    Same algorithm as check_source() in kb-freshness-check.sh:
+      - URL -> unknown (cannot git log a URL)
+      - Path/glob -> git log -1 --format=%H -- <entry>; empty -> unknown
+      - Compare with merge-base --is-ancestor C_src <approved_at_commit>
+        exit 0 -> current, exit 1 -> suspect, other -> unknown (never false suspect)
+
+    Uses the existing _GIT_TIMEOUT_S bound (same 2s limit as other git calls).
+    Never raises; any failure degrades to unknown.
+    """
+    from .parsers import is_url_source
+
+    # URL source -> unknown (cannot git log a URL)
+    if is_url_source(entry):
+        return "unknown"
+
+    # Path/glob source: get last-changed commit
+    c_src = _run_git_log_hash(repo_root, entry)
+    if c_src is None:
+        # Empty output (untracked / never existed) or git failure -> unknown
+        return "unknown"
+
+    # Compare: is C_src an ancestor of (or equal to) approved_at_commit?
+    return _run_merge_base_is_ancestor(repo_root, c_src, approved_at_commit)
+
+
+def _run_git_log_hash(repo_root: Path, pathspec: str) -> Optional[str]:
+    """Run: git -C <repo_root> log -1 --format=%H -- <pathspec>
+
+    Returns the commit SHA on success, None on every failure mode.
+    Same subprocess pattern as _run_git_log (bounded, no-shell).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "log", "-1", "--format=%H", "--", pathspec],
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+        if result.returncode != 0:
+            return None
+        sha = result.stdout.strip()
+        return sha if sha else None
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return None
+
+
+def _run_merge_base_is_ancestor(repo_root: Path, c_src: str, baseline: str) -> str:
+    """Run: git -C <repo_root> merge-base --is-ancestor <c_src> <baseline>
+
+    Returns:
+      "current"  -- exit 0 (c_src is ancestor of baseline; source unchanged since approval)
+      "suspect"  -- exit 1 (c_src is NOT ancestor; source changed after approval)
+      "unknown"  -- any other exit code (bad object, git absent, timeout, etc.)
+
+    Uses merge-base verb which is now in _GIT_ALLOWED_VERBS (task-042).
+    Never raises; unexpected exit codes degrade to unknown (never a false suspect).
+    """
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(repo_root), "merge-base", "--is-ancestor", c_src, baseline],
+            capture_output=True,
+            text=True,
+            timeout=_GIT_TIMEOUT_S,
+        )
+        if result.returncode == 0:
+            return "current"
+        elif result.returncode == 1:
+            return "suspect"
+        else:
+            # exit 128 (bad object), etc. -> unknown (never a false suspect)
+            return "unknown"
+    except (FileNotFoundError, subprocess.TimeoutExpired, OSError):
+        return "unknown"
 
 
 # ---------------------------------------------------------------------------

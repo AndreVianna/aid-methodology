@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** In Review
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Implementation complete; Python 519/519 pass, Node 324/324 (8 pre-existing failures unchanged), structural parity verified.
 
 ---
 

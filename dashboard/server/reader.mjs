@@ -643,6 +643,301 @@ function deriveKbStatus(kbDir, summaryApproved, summaryPresent, kbBaseline, repo
 }
 
 // ---------------------------------------------------------------------------
+// f007 / task-042: per-doc freshness (byte-parity twin of derivation.py)
+// ---------------------------------------------------------------------------
+
+const RE_FM_FENCE = /^---\s*$/;
+const RE_URL_SOURCE = /^[a-z][a-z0-9+.\-]*:\/\//;
+
+function isUrlSource(entry) {
+  // Twin of Python parsers.is_url_source() and kb-freshness-check.sh is_url().
+  return RE_URL_SOURCE.test(entry);
+}
+
+function parseDocFrontmatter(docPath) {
+  // Tolerant sources:/approved_at_commit: frontmatter scan for one KB doc.
+  // Twin of Python parsers.parse_doc_frontmatter().
+  //
+  // Returns [approvedAtCommit, sourcesList, sourcesFieldPresent].
+  //   approvedAtCommit:      string or null
+  //   sourcesList:           string[] (items from sources: list)
+  //   sourcesFieldPresent:   boolean (true even if sources: [])
+  //
+  // Never throws. Handles inline list [a,b] + block list (- a\n  - b).
+
+  let approvedAtCommit = null;
+  const sourcesList = [];
+  let sourcesFieldPresent = false;
+
+  let raw;
+  try {
+    raw = readFileSync(docPath, "utf-8");
+  } catch (_) {
+    return [null, [], false];
+  }
+
+  const lines = raw.split("\n");
+  let inFm = false;
+  let fmEntered = false;
+  let inSourcesBlock = false;
+
+  for (const line of lines) {
+    const stripped = line.replace(/\r$/, "");
+    if (RE_FM_FENCE.test(stripped)) {
+      if (!fmEntered) {
+        inFm = true;
+        fmEntered = true;
+        continue;
+      } else {
+        break;
+      }
+    }
+    if (!inFm) {
+      break;
+    }
+
+    if (inSourcesBlock) {
+      // Block-list item: leading whitespace + '-'
+      const mItem = /^[ \t]+-[ \t]*(.*)/.exec(stripped);
+      if (mItem) {
+        const item = mItem[1].trim().replace(/^['"]|['"]$/g, "");
+        if (item) sourcesList.push(item);
+        continue;
+      } else {
+        inSourcesBlock = false;
+        // fall through to check this line for other fields
+      }
+    }
+
+    // approved_at_commit: scalar
+    const mAac = /^approved_at_commit:\s*(.*)/.exec(stripped);
+    if (mAac) {
+      const val = mAac[1].trim().replace(/^['"]|['"]$/g, "");
+      approvedAtCommit = val || null;
+      continue;
+    }
+
+    // sources: field
+    const mSrc = /^sources:\s*(.*)/.exec(stripped);
+    if (mSrc) {
+      sourcesFieldPresent = true;
+      const rest = mSrc[1].trim();
+      if (rest === "[]") {
+        // Explicit empty inline list: sources: []
+        // sourcesFieldPresent already set; list stays empty
+        continue;
+      }
+      if (!rest) {
+        // Bare 'sources:' with nothing after -- block list follows
+        inSourcesBlock = true;
+        continue;
+      }
+      if (rest.startsWith("[")) {
+        // Inline list: [a, b, c]
+        const inner = rest.replace(/^\[/, "").replace(/\].*$/, "").trim();
+        if (inner) {
+          for (const item of inner.split(",")) {
+            const s = item.trim().replace(/^['"]|['"]$/g, "");
+            if (s) sourcesList.push(s);
+          }
+        }
+        continue;
+      }
+      // Block list -- following indented lines are items
+      inSourcesBlock = true;
+      continue;
+    }
+  }
+
+  return [approvedAtCommit, sourcesList, sourcesFieldPresent];
+}
+
+function _readRoutingFields(docPath) {
+  // Read kb-category and source frontmatter scalars for doc routing.
+  // Returns [kbCategory, sourceField]. Absent fields return "".
+  // Twin of Python derivation._read_routing_fields().
+  // Never throws.
+
+  let raw;
+  try {
+    raw = readFileSync(docPath, "utf-8");
+  } catch (_) {
+    return ["", ""];
+  }
+
+  const lines = raw.split("\n");
+  let inFm = false;
+  let fmEntered = false;
+  let kbCat = "";
+  let srcField = "";
+
+  for (const line of lines) {
+    const stripped = line.replace(/\r$/, "");
+    if (RE_FM_FENCE.test(stripped)) {
+      if (!fmEntered) {
+        inFm = true;
+        fmEntered = true;
+        continue;
+      } else {
+        break;
+      }
+    }
+    if (!inFm) break;
+
+    const mCat = /^kb-category:\s*(.*)/.exec(stripped);
+    if (mCat) {
+      kbCat = mCat[1].trim().replace(/^['"]|['"]$/g, "");
+      continue;
+    }
+    const mSrc = /^source:\s*(.*)/.exec(stripped);
+    if (mSrc) {
+      srcField = mSrc[1].trim().replace(/^['"]|['"]$/g, "");
+      continue;
+    }
+  }
+
+  return [kbCat, srcField];
+}
+
+function _runMergeBaseIsAncestor(repoRoot, cSrc, baseline) {
+  // Returns "current" | "suspect" | "unknown".
+  // execFileSync throws on non-zero exit; status 1 = NOT ancestor = suspect.
+  // Any other error (128 bad object, ENOENT, timeout) = unknown.
+  try {
+    execFileSync(
+      "git",
+      ["-C", repoRoot, "merge-base", "--is-ancestor", cSrc, baseline],
+      {
+        timeout: GIT_TIMEOUT_MS,
+        stdio: ["ignore", "pipe", "pipe"],
+        encoding: "utf-8",
+      }
+    );
+    // exit 0 = ancestor/equal = current
+    return "current";
+  } catch (err) {
+    // execFileSync throws with err.status for non-zero exit
+    if (err && err.status === 1) {
+      // exit 1 = NOT ancestor = source changed after baseline
+      return "suspect";
+    }
+    // exit 128 (bad object), ENOENT (git absent), timeout, etc. -> unknown
+    return "unknown";
+  }
+}
+
+const SKIP_NAMES = new Set(["INDEX.md", "README.md", "STATE.md"]);
+
+function deriveDocFreshness(kbDir, repoRoot) {
+  // f007: Per-doc freshness read for all hand-authored primary/extension KB docs.
+  // Twin of Python derivation.derive_doc_freshness().
+  //
+  // Same algorithm as kb-freshness-check.sh (task-040):
+  //   - Same doc routing (skip INDEX.md, README.md, STATE.md, meta, generated)
+  //   - Same absence gate (no approved_at_commit: -> unknown; no/empty sources: -> current)
+  //   - Same git verbs: git log -1 --format=%H -- <src> + merge-base --is-ancestor
+  //   - Same fold rule: suspect > current > unknown
+  //   - Same degrade-to-unknown matrix (any git failure -> unknown, never false suspect)
+  //
+  // Returns array of {doc, verdict, suspect_sources} sorted by doc path.
+  // Never throws. No writes.
+
+  const results = [];
+
+  let isDir = false;
+  try { isDir = statSync(kbDir).isDirectory(); } catch (_) { isDir = false; }
+  if (!isDir) return results;
+
+  let entries = [];
+  try { entries = readdirSync(kbDir); } catch (_) { return results; }
+
+  // Sort deterministically (same as Python sorted() + bash sort)
+  const mdFiles = entries
+    .filter(n => n.endsWith(".md") && !n.startsWith("."))
+    .sort();
+
+  for (const name of mdFiles) {
+    if (SKIP_NAMES.has(name)) continue;
+
+    const docPath = join(kbDir, name);
+
+    // Check routing fields: kb-category and source
+    const [kbCat, srcField] = _readRoutingFields(docPath);
+    if (kbCat === "meta") continue;
+    if (srcField === "generated") continue;
+    // Only primary and extension with hand-authored (or absent) source
+    if (kbCat !== "primary" && kbCat !== "extension" && kbCat !== "") continue;
+
+    const rel = name;
+
+    // Parse frontmatter: approved_at_commit + sources
+    const [approvedAtCommit, sourcesList, sourcesFieldPresent] =
+      parseDocFrontmatter(docPath);
+
+    // Absence gate: missing/empty approved_at_commit -> unknown (never suspect)
+    if (!approvedAtCommit) {
+      results.push({ doc: rel, verdict: "unknown", suspect_sources: [] });
+      continue;
+    }
+
+    // sources: absent or empty -> current (nothing to drift against)
+    if (!sourcesFieldPresent || sourcesList.length === 0) {
+      results.push({ doc: rel, verdict: "current", suspect_sources: [] });
+      continue;
+    }
+
+    // Per-source staleness checks
+    let nCurrent = 0;
+    let nSuspect = 0;
+    let nUnknown = 0;
+    const suspectSources = [];
+
+    for (const entry of sourcesList) {
+      const srcVerdict = _checkSourceNode(entry, approvedAtCommit, repoRoot);
+      if (srcVerdict === "current") {
+        nCurrent++;
+      } else if (srcVerdict === "suspect") {
+        nSuspect++;
+        suspectSources.push(entry);
+      } else {
+        nUnknown++;
+      }
+    }
+
+    // Fold rule (identical to script and Python twin)
+    let verdict;
+    if (nSuspect > 0) {
+      verdict = "suspect";
+    } else if (nCurrent > 0) {
+      verdict = "current";
+    } else {
+      verdict = "unknown";
+    }
+
+    results.push({ doc: rel, verdict, suspect_sources: suspectSources });
+  }
+
+  return results;
+}
+
+function _checkSourceNode(entry, approvedAtCommit, repoRoot) {
+  // Node implementation of check_source (twin of Python _check_source).
+  // Returns "current" | "suspect" | "unknown".
+
+  if (isUrlSource(entry)) return "unknown";
+
+  // Get last-changed commit for this path/glob
+  const cSrc = runGitCommand(
+    ["-C", repoRoot, "log", "-1", "--format=%H", "--", entry],
+    null
+  );
+  if (!cSrc) return "unknown";
+
+  // merge-base --is-ancestor: exit 0 = current, exit 1 = suspect, other = unknown
+  return _runMergeBaseIsAncestor(repoRoot, cSrc, approvedAtCommit);
+}
+
+// ---------------------------------------------------------------------------
 // Derivation helpers (mirrors derivation.py)
 // ---------------------------------------------------------------------------
 
@@ -1798,6 +2093,11 @@ function _readRepoFull(root) {
     );
     kbState.status = kbStatus;
     kbState.kb_baseline = kbBaseline;
+
+    // task-042: per-doc freshness (f007) -- additive; gitFreshnessCheck retained
+    const docFreshness = deriveDocFreshness(loc.kbDir, resolvedRoot);
+    kbState.doc_freshness = docFreshness;
+    kbState.suspect_count = docFreshness.filter(d => d.verdict === "suspect").length;
   }
 
   const repoInfo = { project_name: projectName, aid_dir: loc.aidDir, kb_state: kbState };
@@ -3028,6 +3328,7 @@ function _buildKbStateRef(kb) {
   // KbStateRef field order (DM-A3 deterministic, task-064):
   //   retained: summary_approved, last_summary_date, doc_count
   //   new:      status, summary_present, kb_baseline
+  // task-042 additions: doc_freshness, suspect_count
   return {
     summary_approved:  kb.summary_approved,
     last_summary_date: kb.last_summary_date,
@@ -3035,6 +3336,18 @@ function _buildKbStateRef(kb) {
     status:            kb.status !== undefined ? kb.status : KbStatus.unknown,
     summary_present:   kb.summary_present !== undefined ? kb.summary_present : false,
     kb_baseline:       _buildKbBaseline(kb.kb_baseline),
+    doc_freshness:     Array.isArray(kb.doc_freshness) ? kb.doc_freshness.map(_buildDocFreshness) : [],
+    suspect_count:     typeof kb.suspect_count === "number" ? kb.suspect_count : 0,
+  };
+}
+
+function _buildDocFreshness(df) {
+  // DocFreshness field order: doc, verdict, suspect_sources
+  // Twin of Python DocFreshness dataclass (models.py, task-042).
+  return {
+    doc:             df.doc,
+    verdict:         df.verdict,
+    suspect_sources: Array.isArray(df.suspect_sources) ? df.suspect_sources : [],
   };
 }
 
