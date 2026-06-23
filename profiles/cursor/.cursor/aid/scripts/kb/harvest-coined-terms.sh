@@ -710,7 +710,15 @@ if [[ -s "$EMIT" ]]; then
   top_harvest_count=$(wc -l < "$EMIT" | tr -d ' ')
 fi
 
-GEN_DATE=$(date +%Y-%m-%d)
+# SOURCE_DATE_EPOCH override for byte-reproducible output in tests/CI.
+# If set, use it instead of wall-clock date so re-runs are byte-identical.
+if [[ -n "${SOURCE_DATE_EPOCH:-}" ]]; then
+  GEN_DATE=$(date -u -d "@${SOURCE_DATE_EPOCH}" +%Y-%m-%d 2>/dev/null \
+             || date -u -r "${SOURCE_DATE_EPOCH}" +%Y-%m-%d 2>/dev/null \
+             || date +%Y-%m-%d)
+else
+  GEN_DATE=$(date +%Y-%m-%d)
+fi
 
 echo "[harvest] Emitting ${top_harvest_count} candidates (${cross_source_count} cross-source) to $OUTPUT" >&2
 
@@ -731,6 +739,17 @@ get_class_label() {
 }
 
 # ---------------------------------------------------------------------------
+# Count synthesis rows already present in any pre-existing output file.
+# Harvest emits only harvest rows, so this will be 0 on a fresh run.
+# Computed (not hardcoded) so the Summary stays accurate if synthesis rows
+# were appended by aid-architect and the file is re-examined.
+# ---------------------------------------------------------------------------
+synthesis_count=0
+if [[ -s "$OUTPUT" ]]; then
+  synthesis_count=$(grep -cE '^\| [0-9]+ \| synthesis \|' "$OUTPUT" 2>/dev/null || true)
+fi
+
+# ---------------------------------------------------------------------------
 # Emit markdown output
 # ---------------------------------------------------------------------------
 {
@@ -748,7 +767,7 @@ get_class_label() {
   echo "| Candidates (post-denylist) | ${total_post_denylist} |"
   echo "| Cross-source (spread >= 2) | ${cross_source_count} |"
   echo "| Top harvest emitted | ${top_harvest_count} |"
-  echo "| Synthesis concepts | 0 |"
+  echo "| Synthesis concepts | ${synthesis_count} |"
   echo "| Generated | ${GEN_DATE} |"
   echo
   echo "## Ranked Candidates"

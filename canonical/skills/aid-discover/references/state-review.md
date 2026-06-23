@@ -22,7 +22,7 @@ Before dispatching the panel, run `closure-check.sh` to produce the evidence inp
 that M3 and M5 consume:
 
 ```bash
-bash .claude/aid/scripts/kb/closure-check.sh \
+bash canonical/scripts/kb/closure-check.sh \
   --output-a .aid/.temp/review-pending/{{SCOPE}}-oracle-a.md \
   --output-b .aid/.temp/review-pending/{{SCOPE}}-oracle-b.md \
   --output-c .aid/.temp/review-pending/{{SCOPE}}-oracle-c.md
@@ -35,7 +35,7 @@ M4 falls back to the engine-narration question only). This is not an error.
 Also run `kb-teachback-questions.sh` to produce the M4 question set:
 
 ```bash
-bash .claude/aid/scripts/kb/kb-teachback-questions.sh \
+bash canonical/scripts/kb/kb-teachback-questions.sh \
   --output .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt
 ```
 
@@ -162,7 +162,7 @@ ledger, 7-column schema).
 **2b. Run the existing grade.sh unchanged**
 
 ```bash
-bash .claude/aid/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
+bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
 ```
 
 `grade.sh` counts worst-severity over Status in {Pending, Recurred} across ALL rows,
@@ -214,7 +214,7 @@ Print: `[Review 3/3] Review complete.`
 Resolve the minimum grade:
 
 ```bash
-bash .claude/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
+bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 Compute:
