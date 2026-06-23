@@ -77,6 +77,7 @@
 {"dst": ".codex/aid/scripts/kb/discover-preflight.sh", "profile": "codex", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".codex/aid/scripts/kb/harvest-coined-terms.sh", "profile": "codex", "sha256": "d4a2b8b482be6d7867717eeb9c2ad0773d37263ee89d2f54b1861adc8c1aafad", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".codex/aid/scripts/kb/kb-actback-task.sh", "profile": "codex", "sha256": "52266fdca68dd9ec46eab3e56592b3b1cebb4bf24a9c34fec95a57d0f78114b0", "src": "canonical/scripts/kb/kb-actback-task.sh"}
+{"dst": ".codex/aid/scripts/kb/kb-freshness-check.sh", "profile": "codex", "sha256": "7b4def4249f20690aa5d18b8aacbb62269afb925755d5300e396b15716f5dd46", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".codex/aid/scripts/kb/kb-teachback-questions.sh", "profile": "codex", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".codex/aid/scripts/kb/lint-frontmatter.sh", "profile": "codex", "sha256": "be2ab5d575c35e303c1f9c5089ac236cbe1b3fb8fd2057df859c68fa6bab1ec4", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".codex/aid/scripts/kb/recon-classify.sh", "profile": "codex", "sha256": "20f84683128b911987bf5bc2a86e47af7fef24b07def65156a2904e6c533fbbd", "src": "canonical/scripts/kb/recon-classify.sh"}

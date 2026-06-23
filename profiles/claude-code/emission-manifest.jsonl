@@ -77,6 +77,7 @@
 {"dst": ".claude/aid/scripts/kb/discover-preflight.sh", "profile": "claude-code", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".claude/aid/scripts/kb/harvest-coined-terms.sh", "profile": "claude-code", "sha256": "4ee5f4a4e4035a0c88be41452f5d6c5ed0adc54721cf6c474db34f4138b200ba", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-actback-task.sh", "profile": "claude-code", "sha256": "52266fdca68dd9ec46eab3e56592b3b1cebb4bf24a9c34fec95a57d0f78114b0", "src": "canonical/scripts/kb/kb-actback-task.sh"}
+{"dst": ".claude/aid/scripts/kb/kb-freshness-check.sh", "profile": "claude-code", "sha256": "7b4def4249f20690aa5d18b8aacbb62269afb925755d5300e396b15716f5dd46", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-teachback-questions.sh", "profile": "claude-code", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".claude/aid/scripts/kb/lint-frontmatter.sh", "profile": "claude-code", "sha256": "be2ab5d575c35e303c1f9c5089ac236cbe1b3fb8fd2057df859c68fa6bab1ec4", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".claude/aid/scripts/kb/recon-classify.sh", "profile": "claude-code", "sha256": "20f84683128b911987bf5bc2a86e47af7fef24b07def65156a2904e6c533fbbd", "src": "canonical/scripts/kb/recon-classify.sh"}
