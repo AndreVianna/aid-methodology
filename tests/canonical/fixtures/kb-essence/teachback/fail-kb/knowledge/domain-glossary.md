@@ -1,13 +1,14 @@
 ---
 kb-category: primary
 source: hand-authored
-objective: Teach-back FAIL fixture spine -- TokenRouter definition intentionally OMITTED.
+objective: Teach-back FAIL fixture spine -- TokenRouter definition intentionally OMITTED;
+  event-fanout contract synthesis concept intentionally OMITTED.
 summary: Unclosed spine that defines DispatchQueue, PriorityBand, and the dispatch-acknowledgement
-  contract, but OMITS the definition of TokenRouter. closure-check output (a) must report
-  TokenRouter as ungrounded. Additionally planted as the engine-narration FAIL shape: every
-  other concept defers to TokenRouter for the actual routing mechanism, so a coherent end-to-end
-  account of how this system works cannot be constructed from this KB alone even though
-  DispatchQueue and PriorityBand are lexically defined.
+  contract, but OMITS the definition of TokenRouter (lexical ungrounded term) AND the
+  event-fanout contract (synthesis-class ungrounded term). closure-check output (a) must
+  report both as ungrounded. The event-fanout contract is referenced in the DispatchQueue
+  prose below but has no spine heading -- providing a direct regression guard that the
+  non-lexical conceptual-synthesis channel catches synthesis-class spine omissions.
 sources: []
 tags: [test-fixture]
 ---
@@ -16,11 +17,19 @@ tags: [test-fixture]
 
 ## Concept Spine
 
-<!-- NOTE: TokenRouter is intentionally OMITTED from this spine.
+<!-- NOTE: TokenRouter is intentionally OMITTED from this spine (LEXICAL ungrounded term).
      This is the teach-back FAIL fixture: candidate-concepts.md names TokenRouter
      as a cross-source term (Spread=2), so kb-teachback-questions.sh emits
      "What is TokenRouter?", but this spine does not define it.
      closure-check.sh output (a) MUST report "TokenRouter" as ungrounded.
+
+     NOTE: event-fanout contract is intentionally OMITTED from this spine (SYNTHESIS-CLASS
+     ungrounded term). candidate-concepts.md names it as a synthesis concept (Source=synthesis),
+     and the DispatchQueue definition USES it in prose ("event-fanout contract" appears in the
+     body), but this spine has NO heading "### event-fanout contract".
+     closure-check.sh output (a) MUST also report "event-fanout contract" as ungrounded.
+     This is the direct regression guard for the non-lexical conceptual-synthesis channel:
+     a synthesis concept omitted from the spine IS caught by the closure check.
 
      ENGINE-NARRATION SHAPE: Every remaining concept defers the actual routing
      mechanism to TokenRouter. DispatchQueue says "owned by the TokenRouter" but
@@ -36,8 +45,10 @@ tags: [test-fixture]
 
 **Definition-as-used-here:** An ordered queue lane that the TokenRouter places tokens
 into for downstream delivery. Each lane maps to one PriorityBand. The queue is the
-back-pressure unit: when a lane is full, dispatch stalls. For the routing mechanism
-that feeds this queue, see the TokenRouter (not defined in this KB).
+back-pressure unit: when a lane is full, dispatch stalls. Each token delivery fans out
+to all registered downstream listeners under the event-fanout contract (not defined in
+this KB). For the routing mechanism that feeds this queue, see the TokenRouter (also
+not defined in this KB).
 
 **Relates-to:** TokenRouter (the queue owner -- see TokenRouter for how routing works),
 PriorityBand (one queue lane per band).

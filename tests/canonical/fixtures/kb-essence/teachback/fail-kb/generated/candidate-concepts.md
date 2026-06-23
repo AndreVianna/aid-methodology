@@ -9,10 +9,10 @@
 ## Summary
 | Metric | Value |
 |--------|-------|
-| Candidates (post-denylist) | 4 |
+| Candidates (post-denylist) | 5 |
 | Cross-source (spread >= 2) | 3 |
 | Top harvest emitted | 3 |
-| Synthesis concepts | 1 |
+| Synthesis concepts | 2 |
 | Generated | 2026-06-23 |
 
 ## Ranked Candidates
@@ -22,3 +22,4 @@
 | 2 | harvest | `DispatchQueue` | camel | 14 | 2 | code,docs | 42 | `src/router/token-router.ts` |
 | 3 | harvest | `PriorityBand` | camel | 11 | 2 | code,docs | 33 | `src/router/token-router.ts` |
 | 4 | synthesis | `dispatch-acknowledgement contract` | synthesis | -- | -- | -- | -- | `docs/adr/0012-token-router.md` "every dispatch must receive an acknowledgement before the next token is released" |
+| 5 | synthesis | `event-fanout contract` | synthesis | -- | -- | -- | -- | `src/router/token-router.ts` "each token delivery fans out to all registered downstream listeners under the event-fanout contract" |

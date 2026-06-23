@@ -11,12 +11,18 @@
 #              path-runs/closure assertion (the old V-D1 greenfield path assertion
 #              collapses into this detection-only check).
 #   T02  V-D2  brownfield-small fixture -> recon proposes BROWNFIELD-SMALL.
-#   T03  V-D3  brownfield-large (LOC variant, RM2 OR-branch): recon proposes
-#              BROWNFIELD-LARGE and RM2 >= large_min_source_loc (20000) trips.
-#   T04  V-D4  brownfield-large (dirs variant, RM3 OR-branch): recon proposes
-#              BROWNFIELD-LARGE and RM3 >= large_min_dirs (25) trips independently.
-#   T05  V-D5  brownfield-large (concepts variant, RM4 OR-branch): recon proposes
-#              BROWNFIELD-LARGE and RM4 >= large_min_concepts (40) trips independently.
+#   T03  V-D3  brownfield-loc-only fixture (single-dimension LOC): recon proposes
+#              BROWNFIELD-LARGE and ONLY RM2 >= large_min_source_loc (20000) trips.
+#              RM3 < 25 and RM4 < 40: the other two OR-branches do NOT fire.
+#              This independently proves the LOC OR-branch flips small->large.
+#   T04  V-D4  brownfield-dirs-only fixture (single-dimension dirs): recon proposes
+#              BROWNFIELD-LARGE and ONLY RM3 >= large_min_dirs (25) trips independently.
+#              RM2 < 20000 and RM4 < 40: the other two OR-branches do NOT fire.
+#              This independently proves the dirs OR-branch flips small->large.
+#   T05  V-D5  brownfield-concepts-only fixture (single-dimension concepts): recon proposes
+#              BROWNFIELD-LARGE and ONLY RM4 >= large_min_concepts (40) trips independently.
+#              RM2 < 20000 and RM3 < 25: the other two OR-branches do NOT fire.
+#              This independently proves the concepts OR-branch flips small->large.
 #   T06  V-D6  Determinism: two successive recon-classify runs over the same
 #              fixture copy produce byte-identical output (diff clean).
 #   T07  V-D7  Shipped-defaults parity: the fixture paths/settings.yml triage.*
@@ -28,10 +34,19 @@
 # f006 SPIKE-T1 floor values pinned (the oracle contract):
 #   greenfield_max_source_files: 5   -- greenfield fixture RM1=2 (2 <= 5, gate satisfied)
 #   greenfield_max_source_loc:   500 -- greenfield fixture RM2=100 (100 <= 500, gate satisfied)
-#   large_min_source_loc:        20000 -- brownfield-large RM2=25000 (25000 >= 20000, LOC variant)
-#   large_min_dirs:              25   -- brownfield-large RM3=45 (45 >= 25, dirs variant)
-#   large_min_concepts:          40   -- brownfield-large RM4=45 (45 >= 40, concepts variant)
+#   large_min_source_loc:        20000 -- brownfield-loc-only RM2=25000 (25000 >= 20000); ONLY LOC trips
+#   large_min_dirs:              25   -- brownfield-dirs-only RM3=30 (30 >= 25); ONLY dirs trips
+#   large_min_concepts:          40   -- brownfield-concepts-only RM4=45 (45 >= 40); ONLY concepts trips
 #   brownfield-small RM1=15,RM2=5000,RM3=8,RM4=10: above greenfield ceilings, below all large floors
+#
+# Per-dimension isolation contract (load-bearing for T03/T04/T05):
+#   brownfield-loc-only:      RM2=25000 (>= 20000 TRIPS), RM3=5  (< 25 NO), RM4=10 (< 40 NO)
+#   brownfield-dirs-only:     RM2=15000 (< 20000 NO),     RM3=30 (>= 25 TRIPS), RM4=10 (< 40 NO)
+#   brownfield-concepts-only: RM2=5000  (< 20000 NO),     RM3=8  (< 25 NO), RM4=45 (>= 40 TRIPS)
+# Each T03/T04/T05 asserts both the POSITIVE (the one OR-branch fires) and NEGATIVE (other
+# two OR-branches below floor). A regression where one OR-branch stops contributing the LARGE
+# verdict is caught: removing the LOC branch from the classifier would fail T03 negative
+# assertions but T04/T05 would still pass -- the isolation catches which branch broke.
 #
 # These floors are NOT held in this file -- they live in canonical/aid/templates/settings.yml
 # (f006, delivery-004). V-D7 keeps the fixture settings.yml honest against the shipped values.
@@ -82,6 +97,9 @@ FX_PATHS="${FIXTURES_BASE}/paths"
 FX_GREENFIELD="${FX_PATHS}/greenfield/generated"
 FX_SMALL="${FX_PATHS}/brownfield-small/generated"
 FX_LARGE="${FX_PATHS}/brownfield-large/generated"
+FX_LOC_ONLY="${FX_PATHS}/brownfield-loc-only/generated"
+FX_DIRS_ONLY="${FX_PATHS}/brownfield-dirs-only/generated"
+FX_CONCEPTS_ONLY="${FX_PATHS}/brownfield-concepts-only/generated"
 FX_SETTINGS="${FX_PATHS}/settings.yml"
 
 # Shipped settings for V-D7 parity check.
@@ -122,6 +140,30 @@ if [[ ! -f "${FX_LARGE}/candidate-concepts.md" ]]; then
   echo "FATAL: brownfield-large candidate-concepts.md not found at ${FX_LARGE}/candidate-concepts.md" >&2
   exit 2
 fi
+if [[ ! -f "${FX_LOC_ONLY}/project-index.md" ]]; then
+  echo "FATAL: brownfield-loc-only project-index.md not found at ${FX_LOC_ONLY}/project-index.md" >&2
+  exit 2
+fi
+if [[ ! -f "${FX_LOC_ONLY}/candidate-concepts.md" ]]; then
+  echo "FATAL: brownfield-loc-only candidate-concepts.md not found at ${FX_LOC_ONLY}/candidate-concepts.md" >&2
+  exit 2
+fi
+if [[ ! -f "${FX_DIRS_ONLY}/project-index.md" ]]; then
+  echo "FATAL: brownfield-dirs-only project-index.md not found at ${FX_DIRS_ONLY}/project-index.md" >&2
+  exit 2
+fi
+if [[ ! -f "${FX_DIRS_ONLY}/candidate-concepts.md" ]]; then
+  echo "FATAL: brownfield-dirs-only candidate-concepts.md not found at ${FX_DIRS_ONLY}/candidate-concepts.md" >&2
+  exit 2
+fi
+if [[ ! -f "${FX_CONCEPTS_ONLY}/project-index.md" ]]; then
+  echo "FATAL: brownfield-concepts-only project-index.md not found at ${FX_CONCEPTS_ONLY}/project-index.md" >&2
+  exit 2
+fi
+if [[ ! -f "${FX_CONCEPTS_ONLY}/candidate-concepts.md" ]]; then
+  echo "FATAL: brownfield-concepts-only candidate-concepts.md not found at ${FX_CONCEPTS_ONLY}/candidate-concepts.md" >&2
+  exit 2
+fi
 if [[ ! -f "$FX_SETTINGS" ]]; then
   echo "FATAL: fixture paths/settings.yml not found at $FX_SETTINGS" >&2
   exit 2
@@ -159,13 +201,22 @@ make_paths_copy() {
   mkdir -p "${dest}/greenfield/generated"
   mkdir -p "${dest}/brownfield-small/generated"
   mkdir -p "${dest}/brownfield-large/generated"
-  cp "${FX_GREENFIELD}/project-index.md"       "${dest}/greenfield/generated/"
-  cp "${FX_GREENFIELD}/candidate-concepts.md"  "${dest}/greenfield/generated/"
-  cp "${FX_SMALL}/project-index.md"            "${dest}/brownfield-small/generated/"
-  cp "${FX_SMALL}/candidate-concepts.md"       "${dest}/brownfield-small/generated/"
-  cp "${FX_LARGE}/project-index.md"            "${dest}/brownfield-large/generated/"
-  cp "${FX_LARGE}/candidate-concepts.md"       "${dest}/brownfield-large/generated/"
-  cp "$FX_SETTINGS"                            "${dest}/settings.yml"
+  mkdir -p "${dest}/brownfield-loc-only/generated"
+  mkdir -p "${dest}/brownfield-dirs-only/generated"
+  mkdir -p "${dest}/brownfield-concepts-only/generated"
+  cp "${FX_GREENFIELD}/project-index.md"              "${dest}/greenfield/generated/"
+  cp "${FX_GREENFIELD}/candidate-concepts.md"         "${dest}/greenfield/generated/"
+  cp "${FX_SMALL}/project-index.md"                   "${dest}/brownfield-small/generated/"
+  cp "${FX_SMALL}/candidate-concepts.md"              "${dest}/brownfield-small/generated/"
+  cp "${FX_LARGE}/project-index.md"                   "${dest}/brownfield-large/generated/"
+  cp "${FX_LARGE}/candidate-concepts.md"              "${dest}/brownfield-large/generated/"
+  cp "${FX_LOC_ONLY}/project-index.md"                "${dest}/brownfield-loc-only/generated/"
+  cp "${FX_LOC_ONLY}/candidate-concepts.md"           "${dest}/brownfield-loc-only/generated/"
+  cp "${FX_DIRS_ONLY}/project-index.md"               "${dest}/brownfield-dirs-only/generated/"
+  cp "${FX_DIRS_ONLY}/candidate-concepts.md"          "${dest}/brownfield-dirs-only/generated/"
+  cp "${FX_CONCEPTS_ONLY}/project-index.md"           "${dest}/brownfield-concepts-only/generated/"
+  cp "${FX_CONCEPTS_ONLY}/candidate-concepts.md"      "${dest}/brownfield-concepts-only/generated/"
+  cp "$FX_SETTINGS"                                   "${dest}/settings.yml"
   echo "$dest"
 }
 
@@ -298,110 +349,206 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# brownfield-large primary run (used by T03, T04, T05).
-# The brownfield-large fixture has RM2=25000, RM3=45, RM4=45 -- trips all three
-# large OR-branches simultaneously. T03/T04/T05 each assert one branch independently.
-# ---------------------------------------------------------------------------
-log "Running recon-classify.sh over brownfield-large fixture (primary run)..."
-run_recon "$PATHS_COPY_R1" "brownfield-large" "_r1"
-RECON_LARGE_R1="$RECON_OUT"
-
-if [[ ! -f "$RECON_LARGE_R1" ]]; then
-  fail "T03/T04/T05 -- recon-classify.sh did not produce output for brownfield-large fixture (all three assertions skip)"
-  RECON_LARGE_R1=""
-fi
-
-# ============================================================
-# T03 -- V-D3: brownfield-large (LOC variant, RM2 OR-branch).
+# T03: V-D3 -- brownfield-loc-only (single-dimension LOC fixture).
 #
-# The brownfield-large fixture has RM2=25000 >= large_min_source_loc=20000.
-# The LOC OR-branch trips independently.
-# recon-classify.sh must propose BROWNFIELD-LARGE and the LOC threshold must appear
-# in the Tripped thresholds row.
+# This fixture has RM2=25000 (>= 20000 TRIPS), RM3=5 (< 25 NO), RM4=10 (< 40 NO).
+# The LOC OR-branch independently flips small->large; the other two do NOT fire.
+# recon-classify.sh must propose BROWNFIELD-LARGE with ONLY large_min_source_loc tripped.
+#
+# Positive assertion (LOC branch fires):
+#   - Proposed path == BROWNFIELD-LARGE
+#   - RM2 >= 20000
+#   - "large_min_source_loc" in Tripped thresholds
+# Negative assertions (other two branches do NOT fire):
+#   - RM3 < 25 (dirs below floor)
+#   - RM4 < 40 (concepts below floor)
+#   - "large_min_dirs" NOT in Tripped thresholds
+#   - "large_min_concepts" NOT in Tripped thresholds
 #
 # SPIKE-T1 LOC floor pinned:
-#   large_min_source_loc=20000 (RM2=25000 >= 20000: LOC variant trips)
-# ============================================================
-log "T03: V-D3 -- brownfield-large (LOC variant): recon proposes BROWNFIELD-LARGE; RM2 >= 20000 trips"
-if [[ -z "${RECON_LARGE_R1:-}" || ! -f "$RECON_LARGE_R1" ]]; then
-  fail "T03 V-D3 -- brownfield-large recon output not available (skip)"
+#   large_min_source_loc=20000 (brownfield-loc-only RM2=25000 >= 20000: LOC variant trips ALONE)
+# ---------------------------------------------------------------------------
+log "T03: V-D3 -- brownfield-loc-only (single-dimension LOC): BROWNFIELD-LARGE; only LOC OR-branch fires"
+run_recon "$PATHS_COPY_R1" "brownfield-loc-only" "_r1"
+RECON_LOC_ONLY_R1="$RECON_OUT"
+
+if [[ ! -f "$RECON_LOC_ONLY_R1" ]]; then
+  fail "T03 V-D3 -- recon-classify.sh did not produce output for brownfield-loc-only fixture"
 else
-  lg_path="$(get_proposed_path "$RECON_LARGE_R1")"
-  rm2_val="$(get_rm_value "$RECON_LARGE_R1" "RM2 (source LOC)")"
-  if [[ "$lg_path" != "BROWNFIELD-LARGE" ]]; then
-    fail "T03 V-D3 -- brownfield-large classified '${lg_path}' instead of BROWNFIELD-LARGE (LOC variant)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
-  elif [[ -z "$rm2_val" ]] || [[ "$rm2_val" -lt 20000 ]]; then
-    fail "T03 V-D3 -- RM2=${rm2_val:-missing} < large_min_source_loc=20000 (LOC OR-branch not independently tripped)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
-  elif ! tripped_contains "$RECON_LARGE_R1" "large_min_source_loc"; then
-    fail "T03 V-D3 -- 'large_min_source_loc' not in Tripped thresholds row (LOC OR-branch not reported)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
+  loc_path="$(get_proposed_path "$RECON_LOC_ONLY_R1")"
+  loc_rm2="$(get_rm_value "$RECON_LOC_ONLY_R1" "RM2 (source LOC)")"
+  loc_rm3="$(get_rm_value "$RECON_LOC_ONLY_R1" "RM3 (directories)")"
+  loc_rm4="$(get_rm_value "$RECON_LOC_ONLY_R1" "RM4 (concepts)")"
+
+  # Positive: BROWNFIELD-LARGE + LOC branch trips
+  if [[ "$loc_path" != "BROWNFIELD-LARGE" ]]; then
+    fail "T03a V-D3 -- brownfield-loc-only classified '${loc_path}' instead of BROWNFIELD-LARGE"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LOC_ONLY_R1" && echo "---"
+  elif [[ -z "$loc_rm2" ]] || [[ "$loc_rm2" -lt 20000 ]]; then
+    fail "T03b V-D3 -- RM2=${loc_rm2:-missing} < 20000 (LOC floor not reached in loc-only fixture)"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LOC_ONLY_R1" && echo "---"
+  elif ! tripped_contains "$RECON_LOC_ONLY_R1" "large_min_source_loc"; then
+    fail "T03c V-D3 -- 'large_min_source_loc' not in Tripped thresholds (LOC OR-branch not reported)"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LOC_ONLY_R1" && echo "---"
   else
-    pass "T03 V-D3 -- brownfield-large classified BROWNFIELD-LARGE; RM2=${rm2_val} >= 20000 (LOC OR-branch trips independently; SPIKE-T1 large_min_source_loc=20000 pinned)"
+    pass "T03+ V-D3 -- brownfield-loc-only classified BROWNFIELD-LARGE; RM2=${loc_rm2} >= 20000 (LOC OR-branch fires; SPIKE-T1 large_min_source_loc=20000 pinned)"
+    # Negative: dirs and concepts branches do NOT fire
+    if [[ -n "$loc_rm3" ]] && [[ "$loc_rm3" -ge 25 ]]; then
+      fail "T03d V-D3 -- RM3=${loc_rm3} >= 25 in loc-only fixture (dirs branch should NOT fire; fixture is misconfigured)"
+    else
+      pass "T03d V-D3 -- RM3=${loc_rm3:-0} < 25 (dirs OR-branch does NOT fire in LOC-only fixture)"
+    fi
+    if [[ -n "$loc_rm4" ]] && [[ "$loc_rm4" -ge 40 ]]; then
+      fail "T03e V-D3 -- RM4=${loc_rm4} >= 40 in loc-only fixture (concepts branch should NOT fire; fixture is misconfigured)"
+    else
+      pass "T03e V-D3 -- RM4=${loc_rm4:-0} < 40 (concepts OR-branch does NOT fire in LOC-only fixture)"
+    fi
+    if tripped_contains "$RECON_LOC_ONLY_R1" "large_min_dirs"; then
+      fail "T03f V-D3 -- 'large_min_dirs' unexpectedly in Tripped thresholds for loc-only fixture"
+    else
+      pass "T03f V-D3 -- 'large_min_dirs' absent from Tripped thresholds (single-dimension LOC isolation confirmed)"
+    fi
+    if tripped_contains "$RECON_LOC_ONLY_R1" "large_min_concepts"; then
+      fail "T03g V-D3 -- 'large_min_concepts' unexpectedly in Tripped thresholds for loc-only fixture"
+    else
+      pass "T03g V-D3 -- 'large_min_concepts' absent from Tripped thresholds (single-dimension LOC isolation confirmed)"
+    fi
   fi
 fi
 
-# ============================================================
-# T04 -- V-D4: brownfield-large (dirs variant, RM3 OR-branch).
+# ---------------------------------------------------------------------------
+# T04: V-D4 -- brownfield-dirs-only (single-dimension dirs fixture).
 #
-# The brownfield-large fixture has RM3=45 >= large_min_dirs=25.
-# The dirs OR-branch trips independently (via Full File Inventory).
-# recon-classify.sh must propose BROWNFIELD-LARGE and the dirs threshold must appear
-# in the Tripped thresholds row.
+# This fixture has RM2=15000 (< 20000 NO), RM3=30 (>= 25 TRIPS), RM4=10 (< 40 NO).
+# The dirs OR-branch independently flips small->large; the other two do NOT fire.
+# recon-classify.sh must propose BROWNFIELD-LARGE with ONLY large_min_dirs tripped.
+#
+# Positive assertion (dirs branch fires):
+#   - Proposed path == BROWNFIELD-LARGE
+#   - RM3 >= 25
+#   - "large_min_dirs" in Tripped thresholds
+# Negative assertions (other two branches do NOT fire):
+#   - RM2 < 20000 (LOC below floor)
+#   - RM4 < 40 (concepts below floor)
+#   - "large_min_source_loc" NOT in Tripped thresholds
+#   - "large_min_concepts" NOT in Tripped thresholds
 #
 # SPIKE-T1 dirs floor pinned:
-#   large_min_dirs=25 (RM3=45 >= 25: dirs variant trips via Full File Inventory)
-# ============================================================
-log "T04: V-D4 -- brownfield-large (dirs variant): recon proposes BROWNFIELD-LARGE; RM3 >= 25 trips"
-if [[ -z "${RECON_LARGE_R1:-}" || ! -f "$RECON_LARGE_R1" ]]; then
-  fail "T04 V-D4 -- brownfield-large recon output not available (skip)"
+#   large_min_dirs=25 (brownfield-dirs-only RM3=30 >= 25: dirs variant trips ALONE)
+# ---------------------------------------------------------------------------
+log "T04: V-D4 -- brownfield-dirs-only (single-dimension dirs): BROWNFIELD-LARGE; only dirs OR-branch fires"
+run_recon "$PATHS_COPY_R1" "brownfield-dirs-only" "_r1"
+RECON_DIRS_ONLY_R1="$RECON_OUT"
+
+if [[ ! -f "$RECON_DIRS_ONLY_R1" ]]; then
+  fail "T04 V-D4 -- recon-classify.sh did not produce output for brownfield-dirs-only fixture"
 else
-  lg_path4="$(get_proposed_path "$RECON_LARGE_R1")"
-  rm3_val="$(get_rm_value "$RECON_LARGE_R1" "RM3 (directories)")"
-  if [[ "$lg_path4" != "BROWNFIELD-LARGE" ]]; then
-    fail "T04 V-D4 -- brownfield-large classified '${lg_path4}' instead of BROWNFIELD-LARGE (dirs variant)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
-  elif [[ -z "$rm3_val" ]] || [[ "$rm3_val" -lt 25 ]]; then
-    fail "T04 V-D4 -- RM3=${rm3_val:-missing} < large_min_dirs=25 (dirs OR-branch not independently tripped)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
-  elif ! tripped_contains "$RECON_LARGE_R1" "large_min_dirs"; then
-    fail "T04 V-D4 -- 'large_min_dirs' not in Tripped thresholds row (dirs OR-branch not reported)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
+  dirs_path="$(get_proposed_path "$RECON_DIRS_ONLY_R1")"
+  dirs_rm2="$(get_rm_value "$RECON_DIRS_ONLY_R1" "RM2 (source LOC)")"
+  dirs_rm3="$(get_rm_value "$RECON_DIRS_ONLY_R1" "RM3 (directories)")"
+  dirs_rm4="$(get_rm_value "$RECON_DIRS_ONLY_R1" "RM4 (concepts)")"
+
+  # Positive: BROWNFIELD-LARGE + dirs branch trips
+  if [[ "$dirs_path" != "BROWNFIELD-LARGE" ]]; then
+    fail "T04a V-D4 -- brownfield-dirs-only classified '${dirs_path}' instead of BROWNFIELD-LARGE"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_DIRS_ONLY_R1" && echo "---"
+  elif [[ -z "$dirs_rm3" ]] || [[ "$dirs_rm3" -lt 25 ]]; then
+    fail "T04b V-D4 -- RM3=${dirs_rm3:-missing} < 25 (dirs floor not reached in dirs-only fixture)"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_DIRS_ONLY_R1" && echo "---"
+  elif ! tripped_contains "$RECON_DIRS_ONLY_R1" "large_min_dirs"; then
+    fail "T04c V-D4 -- 'large_min_dirs' not in Tripped thresholds (dirs OR-branch not reported)"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_DIRS_ONLY_R1" && echo "---"
   else
-    pass "T04 V-D4 -- brownfield-large classified BROWNFIELD-LARGE; RM3=${rm3_val} >= 25 (dirs OR-branch trips independently via Full File Inventory; SPIKE-T1 large_min_dirs=25 pinned)"
+    pass "T04+ V-D4 -- brownfield-dirs-only classified BROWNFIELD-LARGE; RM3=${dirs_rm3} >= 25 (dirs OR-branch fires; SPIKE-T1 large_min_dirs=25 pinned)"
+    # Negative: LOC and concepts branches do NOT fire
+    if [[ -n "$dirs_rm2" ]] && [[ "$dirs_rm2" -ge 20000 ]]; then
+      fail "T04d V-D4 -- RM2=${dirs_rm2} >= 20000 in dirs-only fixture (LOC branch should NOT fire; fixture is misconfigured)"
+    else
+      pass "T04d V-D4 -- RM2=${dirs_rm2:-0} < 20000 (LOC OR-branch does NOT fire in dirs-only fixture)"
+    fi
+    if [[ -n "$dirs_rm4" ]] && [[ "$dirs_rm4" -ge 40 ]]; then
+      fail "T04e V-D4 -- RM4=${dirs_rm4} >= 40 in dirs-only fixture (concepts branch should NOT fire; fixture is misconfigured)"
+    else
+      pass "T04e V-D4 -- RM4=${dirs_rm4:-0} < 40 (concepts OR-branch does NOT fire in dirs-only fixture)"
+    fi
+    if tripped_contains "$RECON_DIRS_ONLY_R1" "large_min_source_loc"; then
+      fail "T04f V-D4 -- 'large_min_source_loc' unexpectedly in Tripped thresholds for dirs-only fixture"
+    else
+      pass "T04f V-D4 -- 'large_min_source_loc' absent from Tripped thresholds (single-dimension dirs isolation confirmed)"
+    fi
+    if tripped_contains "$RECON_DIRS_ONLY_R1" "large_min_concepts"; then
+      fail "T04g V-D4 -- 'large_min_concepts' unexpectedly in Tripped thresholds for dirs-only fixture"
+    else
+      pass "T04g V-D4 -- 'large_min_concepts' absent from Tripped thresholds (single-dimension dirs isolation confirmed)"
+    fi
   fi
 fi
 
-# ============================================================
-# T05 -- V-D5: brownfield-large (concepts variant, RM4 OR-branch).
+# ---------------------------------------------------------------------------
+# T05: V-D5 -- brownfield-concepts-only (single-dimension concepts fixture).
 #
-# The brownfield-large fixture has RM4=45 >= large_min_concepts=40.
-# The concepts OR-branch trips independently (via candidate Summary
-# "Cross-source (spread >= 2)" count).
-# recon-classify.sh must propose BROWNFIELD-LARGE and the concepts threshold must appear
-# in the Tripped thresholds row.
+# This fixture has RM2=5000 (< 20000 NO), RM3=8 (< 25 NO), RM4=45 (>= 40 TRIPS).
+# The concepts OR-branch independently flips small->large; the other two do NOT fire.
+# recon-classify.sh must propose BROWNFIELD-LARGE with ONLY large_min_concepts tripped.
+#
+# Positive assertion (concepts branch fires):
+#   - Proposed path == BROWNFIELD-LARGE
+#   - RM4 >= 40
+#   - "large_min_concepts" in Tripped thresholds
+# Negative assertions (other two branches do NOT fire):
+#   - RM2 < 20000 (LOC below floor)
+#   - RM3 < 25 (dirs below floor)
+#   - "large_min_source_loc" NOT in Tripped thresholds
+#   - "large_min_dirs" NOT in Tripped thresholds
 #
 # SPIKE-T1 concepts floor pinned:
-#   large_min_concepts=40 (RM4=45 >= 40: concepts variant trips)
-# ============================================================
-log "T05: V-D5 -- brownfield-large (concepts variant): recon proposes BROWNFIELD-LARGE; RM4 >= 40 trips"
-if [[ -z "${RECON_LARGE_R1:-}" || ! -f "$RECON_LARGE_R1" ]]; then
-  fail "T05 V-D5 -- brownfield-large recon output not available (skip)"
+#   large_min_concepts=40 (brownfield-concepts-only RM4=45 >= 40: concepts variant trips ALONE)
+# ---------------------------------------------------------------------------
+log "T05: V-D5 -- brownfield-concepts-only (single-dimension concepts): BROWNFIELD-LARGE; only concepts OR-branch fires"
+run_recon "$PATHS_COPY_R1" "brownfield-concepts-only" "_r1"
+RECON_CONCEPTS_ONLY_R1="$RECON_OUT"
+
+if [[ ! -f "$RECON_CONCEPTS_ONLY_R1" ]]; then
+  fail "T05 V-D5 -- recon-classify.sh did not produce output for brownfield-concepts-only fixture"
 else
-  lg_path5="$(get_proposed_path "$RECON_LARGE_R1")"
-  rm4_val="$(get_rm_value "$RECON_LARGE_R1" "RM4 (concepts)")"
-  if [[ "$lg_path5" != "BROWNFIELD-LARGE" ]]; then
-    fail "T05 V-D5 -- brownfield-large classified '${lg_path5}' instead of BROWNFIELD-LARGE (concepts variant)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
-  elif [[ -z "$rm4_val" ]] || [[ "$rm4_val" -lt 40 ]]; then
-    fail "T05 V-D5 -- RM4=${rm4_val:-missing} < large_min_concepts=40 (concepts OR-branch not independently tripped)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
-  elif ! tripped_contains "$RECON_LARGE_R1" "large_min_concepts"; then
-    fail "T05 V-D5 -- 'large_min_concepts' not in Tripped thresholds row (concepts OR-branch not reported)"
-    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_LARGE_R1" && echo "---"
+  con_path="$(get_proposed_path "$RECON_CONCEPTS_ONLY_R1")"
+  con_rm2="$(get_rm_value "$RECON_CONCEPTS_ONLY_R1" "RM2 (source LOC)")"
+  con_rm3="$(get_rm_value "$RECON_CONCEPTS_ONLY_R1" "RM3 (directories)")"
+  con_rm4="$(get_rm_value "$RECON_CONCEPTS_ONLY_R1" "RM4 (concepts)")"
+
+  # Positive: BROWNFIELD-LARGE + concepts branch trips
+  if [[ "$con_path" != "BROWNFIELD-LARGE" ]]; then
+    fail "T05a V-D5 -- brownfield-concepts-only classified '${con_path}' instead of BROWNFIELD-LARGE"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_CONCEPTS_ONLY_R1" && echo "---"
+  elif [[ -z "$con_rm4" ]] || [[ "$con_rm4" -lt 40 ]]; then
+    fail "T05b V-D5 -- RM4=${con_rm4:-missing} < 40 (concepts floor not reached in concepts-only fixture)"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_CONCEPTS_ONLY_R1" && echo "---"
+  elif ! tripped_contains "$RECON_CONCEPTS_ONLY_R1" "large_min_concepts"; then
+    fail "T05c V-D5 -- 'large_min_concepts' not in Tripped thresholds (concepts OR-branch not reported)"
+    [[ "$VERBOSE" -eq 1 ]] && echo "--- recon output ---" && cat "$RECON_CONCEPTS_ONLY_R1" && echo "---"
   else
-    pass "T05 V-D5 -- brownfield-large classified BROWNFIELD-LARGE; RM4=${rm4_val} >= 40 (concepts OR-branch trips independently; SPIKE-T1 large_min_concepts=40 pinned)"
+    pass "T05+ V-D5 -- brownfield-concepts-only classified BROWNFIELD-LARGE; RM4=${con_rm4} >= 40 (concepts OR-branch fires; SPIKE-T1 large_min_concepts=40 pinned)"
+    # Negative: LOC and dirs branches do NOT fire
+    if [[ -n "$con_rm2" ]] && [[ "$con_rm2" -ge 20000 ]]; then
+      fail "T05d V-D5 -- RM2=${con_rm2} >= 20000 in concepts-only fixture (LOC branch should NOT fire; fixture is misconfigured)"
+    else
+      pass "T05d V-D5 -- RM2=${con_rm2:-0} < 20000 (LOC OR-branch does NOT fire in concepts-only fixture)"
+    fi
+    if [[ -n "$con_rm3" ]] && [[ "$con_rm3" -ge 25 ]]; then
+      fail "T05e V-D5 -- RM3=${con_rm3} >= 25 in concepts-only fixture (dirs branch should NOT fire; fixture is misconfigured)"
+    else
+      pass "T05e V-D5 -- RM3=${con_rm3:-0} < 25 (dirs OR-branch does NOT fire in concepts-only fixture)"
+    fi
+    if tripped_contains "$RECON_CONCEPTS_ONLY_R1" "large_min_source_loc"; then
+      fail "T05f V-D5 -- 'large_min_source_loc' unexpectedly in Tripped thresholds for concepts-only fixture"
+    else
+      pass "T05f V-D5 -- 'large_min_source_loc' absent from Tripped thresholds (single-dimension concepts isolation confirmed)"
+    fi
+    if tripped_contains "$RECON_CONCEPTS_ONLY_R1" "large_min_dirs"; then
+      fail "T05g V-D5 -- 'large_min_dirs' unexpectedly in Tripped thresholds for concepts-only fixture"
+    else
+      pass "T05g V-D5 -- 'large_min_dirs' absent from Tripped thresholds (single-dimension concepts isolation confirmed)"
+    fi
   fi
 fi
 

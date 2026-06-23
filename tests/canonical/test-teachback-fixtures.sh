@@ -9,16 +9,17 @@
 #   T01  V-C1a  kb-teachback-questions.sh over pass-kb candidate-concepts.md emits
 #               "What is X?" for every Spread>=2 Term:
 #               TokenRouter (spread=2), DispatchQueue (spread=2), PriorityBand (spread=2).
-#   T02  V-C1b  The synthesis-tagged concept is also emitted:
+#   T02  V-C1b  The synthesis-tagged concepts are also emitted:
 #               "What is dispatch-acknowledgement contract?"
+#               "What is event-fanout contract?"
 #   T03  V-C1c  The fixed engine question is present:
 #               "Explain how this system works, in its own language."
 #   T04  V-C1d  Determinism: re-run over the same fixture copy is byte-identical (diff clean).
 #   T05  V-C2   closure-check.sh over pass-kb reports ZERO ungrounded terms (PASS substrate):
 #               output (a) has no data rows beyond the header.
 #   T06  V-C3   closure-check.sh over fail-kb reports TokenRouter as ungrounded (FAIL
-#               substrate): output (a) contains a row for "tokenrouter" (closure-check
-#               lowercases terms).
+#               substrate -- LEXICAL channel): output (a) contains a row for "tokenrouter"
+#               (closure-check lowercases terms).
 #   T07  V-C4   The V-C3 ungrounded term (TokenRouter) is a member of the V-C1 question set:
 #               the FAIL is on a required teach-back question, not a noise term.
 #   T08  Engine-narration boundary: the suite does NOT mechanically assert an
@@ -27,6 +28,15 @@
 #               PASS/FAIL is irreducibly LLM judgment (f005 SPEC L434-435; no shipped script
 #               returns this verdict) -- exercised + anchored at runtime by the M4 reviewer
 #               over the fail-KB, NOT a CI assertion.
+#   T09  V-C3-SYNTHESIS  closure-check.sh over fail-kb reports the SYNTHESIS-CLASS concept
+#               "event-fanout contract" as ungrounded (FAIL substrate -- NON-LEXICAL channel).
+#               This is the direct regression guard for the whole-work thesis: the engine
+#               catches a load-bearing CONCEPTUAL miss with no recurring coined token.
+#               event-fanout contract is a synthesis row in candidate-concepts.md (Source=synthesis)
+#               and is used in the fail-kb DispatchQueue prose, but has NO spine heading in
+#               fail-kb. closure-check output (a) MUST report it as ungrounded.
+#               The pass-kb defines it (### event-fanout contract) so pass-kb output (a) stays
+#               empty. This is the non-lexical analog of V-C3 (T06 asserts the lexical case).
 #   ISO-CANARY  Real HOME gained no .aid dirs during the suite run.
 #
 # Mechanical-vs-judgment boundary (load-bearing):
@@ -35,11 +45,12 @@
 #   (asserted T03) and is a MEMBER of the question set (asserted T07 cross-check covers
 #   only the lexical ungrounded term; the engine question is always present). The actual
 #   narration PASS/FAIL is LLM judgment exercised at runtime (M4 reviewer), not CI-scored.
-#   This suite asserts only the MECHANICAL LEXICAL substrate:
+#   This suite asserts BOTH the MECHANICAL LEXICAL and MECHANICAL SYNTHESIS substrates:
 #     - Question set is generated deterministically (T01-T04, V-C1)
-#     - pass-kb is lexically closed: zero ungrounded (T05, V-C2)
+#     - pass-kb is fully closed (lexical + synthesis): zero ungrounded (T05, V-C2)
 #     - fail-kb is lexically unclosed: TokenRouter ungrounded (T06, V-C3)
-#     - The ungrounded term is a question-set member (T07, V-C4)
+#     - fail-kb is synthesis-unclosed: event-fanout contract ungrounded (T09, V-C3-SYNTHESIS)
+#     - The lexical ungrounded term is a question-set member (T07, V-C4)
 #
 # Isolation discipline:
 #   HOME pinned to throwaway dir; real-HOME .aid canary (snapshot before/after);
@@ -168,11 +179,18 @@ else
   fail "T01c V-C1a spread=2 term PriorityBand -- 'What is PriorityBand?' not in output"
 fi
 
-# T02: V-C1b -- synthesis-tagged concept generates a "What is X?" question.
+# T02: V-C1b -- synthesis-tagged concepts generate "What is X?" questions.
+# Both synthesis rows in pass-kb candidate-concepts.md must produce questions.
 if echo "$QSET_CONTENT" | grep -qF "What is dispatch-acknowledgement contract?"; then
-  pass "T02 V-C1b synthesis concept dispatch-acknowledgement contract generates question"
+  pass "T02a V-C1b synthesis concept dispatch-acknowledgement contract generates question"
 else
-  fail "T02 V-C1b synthesis concept -- 'What is dispatch-acknowledgement contract?' not in output"
+  fail "T02a V-C1b synthesis concept -- 'What is dispatch-acknowledgement contract?' not in output"
+fi
+
+if echo "$QSET_CONTENT" | grep -qF "What is event-fanout contract?"; then
+  pass "T02b V-C1b synthesis concept event-fanout contract generates question (non-lexical channel regression guard)"
+else
+  fail "T02b V-C1b synthesis concept -- 'What is event-fanout contract?' not in output (non-lexical channel may not emit synthesis questions)"
 fi
 
 # T03: V-C1c -- fixed engine question is present.
@@ -331,6 +349,40 @@ if grep -qF "Explain how this system works, in its own language." "$QSET_OUT_1" 
   pass "T08 Engine-narration mechanical substrate: fixed engine question is a question-set member (T03 confirmed; V-C1c)"
 else
   fail "T08 Engine-narration mechanical substrate: fixed engine question not in question set"
+fi
+
+# ---------------------------------------------------------------------------
+# T09: V-C3-SYNTHESIS -- closure-check.sh over fail-kb reports the SYNTHESIS-CLASS
+#       concept "event-fanout contract" as ungrounded (NON-LEXICAL channel FAIL substrate).
+#
+# This is the direct regression guard for the whole-work thesis: the closure engine catches
+# a load-bearing CONCEPTUAL miss even when the concept has no recurring coined token.
+#
+# fail-kb/generated/candidate-concepts.md row 5 (Source=synthesis):
+#   | 5 | synthesis | `event-fanout contract` | ...
+# fail-kb/knowledge/domain-glossary.md DispatchQueue prose USES "event-fanout contract"
+# but there is NO "### event-fanout contract" heading in the spine.
+# closure-check output (a) MUST report "event-fanout contract" as ungrounded.
+#
+# Cross-check (pass-kb): pass-kb defines "### event-fanout contract" in its spine,
+# so pass-kb output (a) has ZERO ungrounded terms (already confirmed by T05).
+#
+# This is the non-lexical analog of V-C3 (T06 asserts the lexical TokenRouter case;
+# T09 asserts the synthesis-class event-fanout contract case).
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== T09: V-C3-SYNTHESIS -- synthesis-class concept is ungrounded in fail-kb ==="
+
+# FAIL_OUTPUT_A was produced in T06 above -- re-use it.
+if grep -qiF "event-fanout contract" "$FAIL_OUTPUT_A" 2>/dev/null; then
+  pass "T09 V-C3-SYNTHESIS -- fail-kb closure-check output (a) contains 'event-fanout contract' as ungrounded (SYNTHESIS-CLASS closure-FAIL regression guard ACTIVE; non-lexical channel catches conceptual spine omission)"
+else
+  fail "T09 V-C3-SYNTHESIS -- fail-kb closure-check output (a) does NOT contain 'event-fanout contract' (SYNTHESIS-CLASS closure-FAIL guard BROKEN -- non-lexical channel failed to catch synthesis concept omission from spine)"
+  if [[ "$VERBOSE" -eq 1 ]]; then
+    echo "--- output (a) ---"
+    cat "$FAIL_OUTPUT_A"
+    echo "---"
+  fi
 fi
 
 # ---------------------------------------------------------------------------
