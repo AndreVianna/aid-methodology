@@ -114,7 +114,7 @@
 {"dst": ".agent/aid/templates/knowledge-base/README.md", "profile": "antigravity", "sha256": "380eb1ea58f191d220e5b26c3e4d71df2eca6180146f94ce1dce421d754b3cf4", "src": "canonical/templates/knowledge-base/README.md"}
 {"dst": ".agent/aid/templates/knowledge-base/architecture.md", "profile": "antigravity", "sha256": "9610aec02fd3d3b18a2c540b0ae2f1f950fa58b570f161d7870837abea188d24", "src": "canonical/templates/knowledge-base/architecture.md"}
 {"dst": ".agent/aid/templates/knowledge-base/coding-standards.md", "profile": "antigravity", "sha256": "fb09b2767210108f31ce2ff0c8e6c40b14a06c099ab5d79bd46b17699ee968f4", "src": "canonical/templates/knowledge-base/coding-standards.md"}
-{"dst": ".agent/aid/templates/knowledge-base/domain-glossary.md", "profile": "antigravity", "sha256": "5152bc2c9c2e5730bdc875e5c52d106dec424105e6e8bd35a0c407644b9ab435", "src": "canonical/templates/knowledge-base/domain-glossary.md"}
+{"dst": ".agent/aid/templates/knowledge-base/domain-glossary.md", "profile": "antigravity", "sha256": "8917d1c7253f1fcabae12962d95ff7be9c943e707f584baaa1bdefde1245f0ee", "src": "canonical/templates/knowledge-base/domain-glossary.md"}
 {"dst": ".agent/aid/templates/knowledge-base/external-sources.md", "profile": "antigravity", "sha256": "04a0ff958258c017b2f38cb3770020a5922531a3fcc75159e2dd40d35d42db5a", "src": "canonical/templates/knowledge-base/external-sources.md"}
 {"dst": ".agent/aid/templates/knowledge-base/feature-inventory.md", "profile": "antigravity", "sha256": "cc0524f0abba8c5c0c56cca361e739985b8c5bf009bd8fcd9f533150726997fd", "src": "canonical/templates/knowledge-base/feature-inventory.md"}
 {"dst": ".agent/aid/templates/knowledge-base/infrastructure.md", "profile": "antigravity", "sha256": "399b65e799ff89a807fb2205da350d0859c81236dd99fd88f5a3d35b3cf4b83f", "src": "canonical/templates/knowledge-base/infrastructure.md"}
@@ -152,7 +152,7 @@
 {"dst": ".agent/aid/templates/reviewer-ledger-schema.md", "profile": "antigravity", "sha256": "956fbe768df33829afd29ed859ae5d652f483064fdb0330ab8d772d40eaccb90", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".agent/aid/templates/rough-time-hints.md", "profile": "antigravity", "sha256": "c2ade084bc1923ab0fad44ec6ae3cdc149f5d3efea6abab20bf2d50f3847dac2", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agent/aid/templates/self-review-protocol.md", "profile": "antigravity", "sha256": "10a9e6d79fec69e9f4865b37018813910a7c0d328ecb8431779c7c7dd8e55c00", "src": "canonical/templates/self-review-protocol.md"}
-{"dst": ".agent/aid/templates/settings.yml", "profile": "antigravity", "sha256": "e1808f2bff5e7bcb521c7b9038de5291401e29f089b4e986bc86544fbc1c56fd", "src": "canonical/templates/settings.yml"}
+{"dst": ".agent/aid/templates/settings.yml", "profile": "antigravity", "sha256": "6a9dbf5301905ab66c8d76cb57721b88af9def3c2343a860424f618de104b88b", "src": "canonical/templates/settings.yml"}
 {"dst": ".agent/aid/templates/specs/lite-spec-template.md", "profile": "antigravity", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}
 {"dst": ".agent/aid/templates/specs/spec-template.md", "profile": "antigravity", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".agent/aid/templates/state-machine-chaining.md", "profile": "antigravity", "sha256": "f2514b7f8baa61274fde0ba2feebee048f0d60dedfc8e8992de22e1f8bc5a584", "src": "canonical/templates/state-machine-chaining.md"}

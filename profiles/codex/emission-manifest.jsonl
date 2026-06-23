@@ -114,7 +114,7 @@
 {"dst": ".codex/aid/templates/knowledge-base/README.md", "profile": "codex", "sha256": "380eb1ea58f191d220e5b26c3e4d71df2eca6180146f94ce1dce421d754b3cf4", "src": "canonical/templates/knowledge-base/README.md"}
 {"dst": ".codex/aid/templates/knowledge-base/architecture.md", "profile": "codex", "sha256": "9610aec02fd3d3b18a2c540b0ae2f1f950fa58b570f161d7870837abea188d24", "src": "canonical/templates/knowledge-base/architecture.md"}
 {"dst": ".codex/aid/templates/knowledge-base/coding-standards.md", "profile": "codex", "sha256": "fb09b2767210108f31ce2ff0c8e6c40b14a06c099ab5d79bd46b17699ee968f4", "src": "canonical/templates/knowledge-base/coding-standards.md"}
-{"dst": ".codex/aid/templates/knowledge-base/domain-glossary.md", "profile": "codex", "sha256": "5152bc2c9c2e5730bdc875e5c52d106dec424105e6e8bd35a0c407644b9ab435", "src": "canonical/templates/knowledge-base/domain-glossary.md"}
+{"dst": ".codex/aid/templates/knowledge-base/domain-glossary.md", "profile": "codex", "sha256": "8917d1c7253f1fcabae12962d95ff7be9c943e707f584baaa1bdefde1245f0ee", "src": "canonical/templates/knowledge-base/domain-glossary.md"}
 {"dst": ".codex/aid/templates/knowledge-base/external-sources.md", "profile": "codex", "sha256": "04a0ff958258c017b2f38cb3770020a5922531a3fcc75159e2dd40d35d42db5a", "src": "canonical/templates/knowledge-base/external-sources.md"}
 {"dst": ".codex/aid/templates/knowledge-base/feature-inventory.md", "profile": "codex", "sha256": "cc0524f0abba8c5c0c56cca361e739985b8c5bf009bd8fcd9f533150726997fd", "src": "canonical/templates/knowledge-base/feature-inventory.md"}
 {"dst": ".codex/aid/templates/knowledge-base/infrastructure.md", "profile": "codex", "sha256": "399b65e799ff89a807fb2205da350d0859c81236dd99fd88f5a3d35b3cf4b83f", "src": "canonical/templates/knowledge-base/infrastructure.md"}
@@ -152,7 +152,7 @@
 {"dst": ".codex/aid/templates/reviewer-ledger-schema.md", "profile": "codex", "sha256": "c2729dc506aed2758e12e3b936da4b35928a4e14f59506d60c72b5737485df43", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".codex/aid/templates/rough-time-hints.md", "profile": "codex", "sha256": "e86ae0ad046dc94ee5f410554713c3a43bd84bd86be2ec3cfc0f76ab904fa2a6", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".codex/aid/templates/self-review-protocol.md", "profile": "codex", "sha256": "70eec7e2214c7d1d6bb83b352c65ff16460e588f638cc517e313dd632594c7eb", "src": "canonical/templates/self-review-protocol.md"}
-{"dst": ".codex/aid/templates/settings.yml", "profile": "codex", "sha256": "e1808f2bff5e7bcb521c7b9038de5291401e29f089b4e986bc86544fbc1c56fd", "src": "canonical/templates/settings.yml"}
+{"dst": ".codex/aid/templates/settings.yml", "profile": "codex", "sha256": "6a9dbf5301905ab66c8d76cb57721b88af9def3c2343a860424f618de104b88b", "src": "canonical/templates/settings.yml"}
 {"dst": ".codex/aid/templates/specs/lite-spec-template.md", "profile": "codex", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}
 {"dst": ".codex/aid/templates/specs/spec-template.md", "profile": "codex", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".codex/aid/templates/state-machine-chaining.md", "profile": "codex", "sha256": "8024b4d22bf7b0642619a5ff2949e6a931808062a09fc38bc5c6a5c9b979c2e3", "src": "canonical/templates/state-machine-chaining.md"}
