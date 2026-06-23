@@ -76,6 +76,7 @@
 {"dst": ".cursor/aid/scripts/kb/coined-term-denylist.txt", "profile": "cursor", "sha256": "75df781e823aa07d134143b3bad6cfb85c49dcecf3cd04bcafd977890c572003", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".cursor/aid/scripts/kb/discover-preflight.sh", "profile": "cursor", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "775caed65bcde52e6b684c1603147241358d2f284ef5835e3fc70359337945ab", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
+{"dst": ".cursor/aid/scripts/kb/kb-teachback-questions.sh", "profile": "cursor", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".cursor/aid/scripts/kb/lint-frontmatter.sh", "profile": "cursor", "sha256": "4262a5d73b936045a38522bba0e6e3b4948587e6a52914c8cc9b5f154512ebe9", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "cursor", "sha256": "cb6daf1bd39b302c9620464b23a89e4c40ed6834f293d4080fdd053a16f6b078", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "cursor", "sha256": "c7afb1fe730466a51057228f6ed17aa5e8394743ffbf2a84d3902db77d8ade4e", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}

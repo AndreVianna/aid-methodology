@@ -48,6 +48,8 @@ SHIPPED_SCRIPTS=(
     "canonical/aid/scripts/kb/coined-term-denylist.txt"
     # f004 task-008: closure-check.sh coverage oracle
     "canonical/aid/scripts/kb/closure-check.sh"
+    # f005 task-012: kb-teachback-questions.sh question-set generator
+    "canonical/aid/scripts/kb/kb-teachback-questions.sh"
     # Maintainer test harness, but now run under Windows PowerShell 5.1 in CI
     # (installer-tests.yml 5.1 lane), which mis-parses non-ASCII in no-BOM files
     # via the ANSI codepage -- so it must stay ASCII like the shipped PS.
