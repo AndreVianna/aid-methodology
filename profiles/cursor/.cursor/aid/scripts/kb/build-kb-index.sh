@@ -326,7 +326,7 @@ for negative routing (what NOT to use); Audience to filter by role.
 EOF
 
     # Group output by kb-category
-    declare -a all_docs
+    declare -a all_docs=()
 
     while IFS= read -r f; do
         all_docs+=("$f")

@@ -69,7 +69,7 @@
 {"dst": ".cursor/aid/scripts/housekeep/cleanup-classify.sh", "profile": "cursor", "sha256": "57d245ea1b8507296c6022e45d31ad4b0a8651ffe8ff792026dc57351f0fb231", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".cursor/aid/scripts/housekeep/housekeep-state.sh", "profile": "cursor", "sha256": "5ca9d4dc8a776246df530ca37a00a8f04a73e5786b0d86fc9845235287a850fc", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".cursor/aid/scripts/interview/parse-recipe.sh", "profile": "cursor", "sha256": "df1253bac77143c32248cb5b33a3a76755e337ff12ce0bd3659ece120d53aa8d", "src": "canonical/scripts/interview/parse-recipe.sh"}
-{"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "a67a19ad0afca453ee3ddea5d1d69c9e8e5b5e05afde02edbd55644d3a6c0830", "src": "canonical/scripts/kb/build-kb-index.sh"}
+{"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "da01d3b2f3a5fe523d86692ab875252f43606adbfcc1cecd1c73ed782023c373", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "dda7b8560cc623de133a3ae14a3408254143a31d9e1fe3cbd661eb021d625c85", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-project-index.sh", "profile": "cursor", "sha256": "2cdcecff0ad0a807aafad665e2331d8d63ebd7e51f48d4699f7a4150e6dcac82", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/closure-check.sh", "profile": "cursor", "sha256": "8321383bc8c7c5768db86a039f88be0aa3523e5d479ddc75ea9f366e54a9e103", "src": "canonical/scripts/kb/closure-check.sh"}
