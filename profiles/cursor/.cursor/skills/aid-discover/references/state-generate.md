@@ -563,6 +563,23 @@ Keep the comment markers for future re-discoveries.
 
 ### Step 8: Final Wrap-up
 
+**Persist the resolved doc-set TSV** so REVIEW's M6 pre-dispatch step has its required input.
+This MUST run on every brownfield path (large and small). Greenfield never reaches Step 8 — it
+halted at the Step 0f signpost — so the TSV is never written for a greenfield outcome (M6 is
+unreachable on greenfield).
+
+```bash
+mkdir -p .aid/generated
+# Re-use the already-resolved $raw from Step 0d / Step 0f on-confirm.
+# Sort for byte-reproducibility (NFR-3); LC_ALL=C already in effect.
+LC_ALL=C resolve_doc_set "$raw" | sort > .aid/generated/doc-set.tsv
+```
+
+The TSV format is `filename<TAB>owner<TAB>presence` — the exact shape `kb-actback-task.sh`
+consumes. Writing it here (producer-side, once, at the end of GENERATE) ensures the consumer
+in REVIEW always finds a fresh, authoritative copy that matches the confirmed doc-set for this
+run.
+
 Print: `[N/N] Generation complete — Knowledge Base ready. Run /aid-discover again to review.` (where N = declared-set size)
 
 (File-presence was confirmed in the **Verify All Declared Files** step above; semantic quality is the **REVIEW** state's job — no additional pre-REVIEW check needed.)

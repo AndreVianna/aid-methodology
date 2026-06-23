@@ -33,7 +33,7 @@ endpoint", "wire a new module", "add a field to the pipeline contract") and must
 where the KB was insufficient** — every place it had to *assume* a convention, *guess* an
 invariant, or *reach for source* because the KB did not say. Each insufficiency flag is a
 finding — a description-side `[ACTBACK]` tag at a severity that feeds the **existing**
-`grade.sh` (exactly like `[TEACHBACK]`) — and enough flags fail the gate.
+`grade.sh` (exactly like `[TEACHBACK]`) — and **any open `[ACTBACK]` row forces grade <= D** (fails the gate).
 
 To make the KB *act-on-able* (not just *explain-able*), feature-013 also **tightens the
 doc model (extends f003)**: the operational guidance an agent acts on — **conventions,
@@ -68,8 +68,9 @@ Must
 - [ ] Given a reviewed KB, when the panel runs, then it applies a **6th mandate
   (Operational sufficiency / act-back)**: a clean-context agent, given ONLY the KB + a
   representative project task, produces a plan AND flags every KB-insufficiency point;
-  each flag is a `[HIGH]` `[ACTBACK]` finding in the same merged ledger; enough flags fail
-  the gate (act-back composes with teach-back as a **sibling keystone**). *(FR-36)*
+  each flag is a `[HIGH]` `[ACTBACK]` finding in the same merged ledger; **any open
+  `[ACTBACK]` row forces grade <= D** (act-back composes with teach-back as a **sibling
+  keystone**). *(FR-36)*
 - [ ] Given a KB doc that carries operational guidance, when it is authored, then its
   **conventions / invariants / gotchas / contracts** are **first-class structure** (named,
   greppable section shape per the f003 doc model), not buried in prose; the act-back
