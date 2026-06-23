@@ -40,6 +40,8 @@ SHIPPED_SCRIPTS=(
     "dashboard/server/reader.mjs"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.sh"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.ps1"
+    # f011 task-018: KB frontmatter migration script
+    "canonical/aid/scripts/migrate/migrate-kb-frontmatter.sh"
     # KB scripts shipped alongside the methodology (f001 task-003: add both to guard)
     "canonical/aid/scripts/kb/build-kb-index.sh"
     "canonical/aid/scripts/kb/lint-frontmatter.sh"
