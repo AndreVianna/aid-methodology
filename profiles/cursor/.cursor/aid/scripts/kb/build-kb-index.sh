@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 # build-kb-index.sh - generate .aid/knowledge/INDEX.md from KB doc frontmatter.
 #
-# INDEX.md is the RAG (Retrieval-Augmented Generation) connection between agents and
-# the KB: every agent task prompt carries INDEX.md so the agent knows what KB doc to
-# load for what knowledge. It's composed from each KB doc's `intent:` field
-# (see canonical/templates/kb-authoring/frontmatter-schema.md).
+# INDEX.md is the RAG (Retrieval-Augmented Generation) routing table between agents
+# and the KB: every agent task prompt carries INDEX.md so the agent knows what KB
+# doc to load for what knowledge. It is composed mechanically from each KB doc's
+# frontmatter fields (objective, summary, tags, see_also, audience -- with intent:
+# coexistence fallbacks), so it stays deterministic, git-diffable, and dependency-
+# free. See canonical/templates/kb-authoring/frontmatter-schema.md for the field
+# schema (f001).
 #
-# New fields parsed (f001): objective, summary, tags, see_also, audience, sources, owner.
-# INDEX emission remains backward-compatible: falls back objective->intent when
-# objective: is absent; absent optional fields emit an empty cell.
-# The routing-table render (f002) is NOT present yet - INDEX shape is unchanged.
+# Coexistence fallbacks (f002): objective falls back to collapsed intent: when
+# objective: is absent; summary falls back to the first sentence of collapsed
+# intent:; tags/see_also/audience blank when absent. Un-migrated intent:-only
+# docs render a valid table row.
 #
 # Per canonical/templates/kb-authoring/principles.md P3, this script runs LAST in
 # any /aid-discover cycle (after all hand-edits land), so the index reflects final
@@ -37,7 +40,7 @@ while [[ $# -gt 0 ]]; do
             cat <<'HELP_EOF'
 build-kb-index.sh - generate .aid/knowledge/INDEX.md from KB doc frontmatter.
 
-Composes the RAG navigation index from each KB doc's `intent:` field.
+Composes the RAG routing table from each KB doc's frontmatter fields.
 INDEX.md is the agent-facing self-service map; every task prompt loads it.
 
 Per .cursor/aid/templates/kb-authoring/principles.md P3, this script runs LAST
@@ -175,6 +178,121 @@ extract_list() {
     ' "$f"
 }
 
+# Helper: collapse a multi-line string to a single space-joined line.
+# Joins lines with a single space and squeezes multiple spaces to one.
+# Reads from stdin.
+collapse_lines() {
+    tr '\n' ' ' | sed 's/  */ /g; s/^ //; s/ $//'
+}
+
+# Helper: extract first sentence from a single-line string using the bounded predicate:
+# first match of [.!?] immediately followed by (whitespace + uppercase ASCII) or end-of-string.
+# Truncates at 200 chars with ASCII "..." if needed. Reads from stdin.
+first_sentence() {
+    awk '
+    {
+        line = $0
+        # Remove leading/trailing whitespace
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+        if (length(line) == 0) { next }
+
+        # Find first sentence boundary: [.!?] followed by (space+uppercase or end)
+        # We scan char by char looking for . ! ? and check what follows.
+        found = 0
+        result = line
+        n = length(line)
+        for (i = 1; i <= n; i++) {
+            c = substr(line, i, 1)
+            if (c == "." || c == "!" || c == "?") {
+                # Check what follows
+                if (i == n) {
+                    # end of string - this is a boundary
+                    result = substr(line, 1, i)
+                    found = 1
+                    break
+                }
+                # Check next char(s): must be whitespace then uppercase ASCII
+                next_c = substr(line, i + 1, 1)
+                if (next_c == " " || next_c == "\t") {
+                    # Look past the whitespace for uppercase
+                    j = i + 1
+                    while (j <= n && (substr(line, j, 1) == " " || substr(line, j, 1) == "\t")) {
+                        j++
+                    }
+                    if (j <= n) {
+                        after = substr(line, j, 1)
+                        if (after >= "A" && after <= "Z") {
+                            result = substr(line, 1, i)
+                            found = 1
+                            break
+                        }
+                    } else {
+                        # Only whitespace after terminator - treat as end
+                        result = substr(line, 1, i)
+                        found = 1
+                        break
+                    }
+                }
+            }
+        }
+
+        # Cap at 200 chars
+        if (length(result) > 200) {
+            result = substr(result, 1, 200) "..."
+        }
+
+        print result
+    }
+    '
+}
+
+# Helper: escape literal pipe characters in a cell value.
+# Reads from stdin, writes escaped value to stdout.
+escape_pipe() {
+    sed 's/|/\\|/g'
+}
+
+# Helper: render a tags list (newline-separated items from extract_list) as
+# comma-joined inline-code. Empty input -> empty output.
+render_tags() {
+    awk '
+    BEGIN { first=1; out="" }
+    { gsub(/\|/, "\\|"); if (first) { out="`"$0"`"; first=0 } else { out=out", `"$0"`" } }
+    END { print out }
+    '
+}
+
+# Helper: render a see_also list (newline-separated items from extract_list) as
+# comma-joined doc-name links or verbatim prose. A .md entry or a bare token
+# (no spaces, looks like a doc name) is rendered as a link; other entries verbatim.
+render_see_also() {
+    awk '
+    BEGIN { first=1; out="" }
+    {
+        entry = $0
+        gsub(/\|/, "\\|", entry)
+        # Link if it ends in .md or contains no spaces (bare token)
+        if (entry ~ /\.md$/ || entry !~ / /) {
+            cell = "[" entry "](../knowledge/" entry ")"
+        } else {
+            cell = entry
+        }
+        if (first) { out=cell; first=0 } else { out=out", "cell }
+    }
+    END { print out }
+    '
+}
+
+# Helper: render an audience list (newline-separated items from extract_list) as
+# comma-joined verbatim labels. Empty input -> empty output.
+render_audience() {
+    awk '
+    BEGIN { first=1; out="" }
+    { gsub(/\|/, "\\|"); if (first) { out=$0; first=0 } else { out=out", "$0 } }
+    END { print out }
+    '
+}
+
 # --- Begin output -----------------------------------------------------------
 {
     cat <<EOF
@@ -183,9 +301,10 @@ kb-category: primary
 source: generated
 generator: build-kb-index.sh
 intent: |
-  RAG navigation index - every agent task prompt loads this file so the agent knows
-  which KB doc to read for what knowledge. Each entry is the source doc's frontmatter
-  intent: field. Regenerated on every /aid-discover cycle.
+  RAG routing table - every agent task prompt loads this file so the agent knows
+  which KB doc to read for what knowledge. Each row carries Document, Objective,
+  Summary, Tags, See-instead, and Audience columns composed from frontmatter.
+  Regenerated on every /aid-discover cycle.
 contracts:
   - "One entry per non-dot, non-recursive KB document under .aid/knowledge/"
 changelog:
@@ -197,10 +316,12 @@ changelog:
 
 # Knowledge Base Index
 
-> Auto-generated by \`build-kb-index.sh\` from each doc's \`intent:\` frontmatter field.
+> Auto-generated by \`build-kb-index.sh\` from each doc's frontmatter fields.
 > Do not edit by hand. Generated at: $TS.
 
-Each entry shows the document name, its \`kb-category:\`, and its declared intent.
+Routing table: each row is a KB doc with Objective, Summary, Tags, See-instead, and Audience columns
+composed mechanically from frontmatter. Use Objective+Tags to route to the right doc; See-instead
+for negative routing (what NOT to use); Audience to filter by role.
 
 EOF
 
@@ -231,48 +352,78 @@ EOF
                         extension) echo "## Extension - project-specific (outside the declared default seed)" ;;
                     esac
                     echo ""
+                    echo "| Document | Objective | Summary | Tags | See-instead | Audience |"
+                    echo "|----------|-----------|---------|------|-------------|----------|"
                     emitted_header=1
                 fi
 
-                # Parse new f001 fields (backward-compatible; absent fields = empty)
+                # --- Field extraction ---
                 objective=$(extract_field "$f" "objective")
                 summary=$(extract_field "$f" "summary")
-                tags=$(extract_list "$f" "tags" | tr '\n' ',' | sed 's/,$//')
-                see_also=$(extract_list "$f" "see_also" | tr '\n' ',' | sed 's/,$//')
-                audience=$(extract_list "$f" "audience" | tr '\n' ',' | sed 's/,$//')
-                sources=$(extract_list "$f" "sources" | tr '\n' ',' | sed 's/,$//')
-                owner=$(extract_field "$f" "owner")
+                tags_raw=$(extract_list "$f" "tags")
+                see_also_raw=$(extract_list "$f" "see_also")
+                audience_raw=$(extract_list "$f" "audience")
 
-                # Backward-compat: use objective->intent fallback for the description block.
-                # intent: is the legacy multi-line field; objective: is the new single-line one.
-                # When objective: is present, compose description from objective + summary;
-                # otherwise fall back to the literal intent: block.
+                # --- Coexistence fallbacks ---
+                # Collapse intent: literal to single line for fallback use
+                intent_collapsed=""
+                if [[ -z "$objective" ]] || [[ -z "$summary" ]]; then
+                    intent_collapsed=$(extract_literal "$f" "intent" | collapse_lines)
+                fi
+
+                # Objective: use objective: if present, else collapsed intent:, else marker
                 if [[ -n "$objective" ]]; then
-                    if [[ -n "$summary" ]]; then
-                        intent="${objective} ${summary}"
-                    else
-                        intent="$objective"
-                    fi
+                    obj_cell=$(printf '%s' "$objective" | escape_pipe)
+                elif [[ -n "$intent_collapsed" ]]; then
+                    obj_cell=$(printf '%s' "$intent_collapsed" | escape_pipe)
                 else
-                    intent=$(extract_literal "$f" "intent")
+                    obj_cell="*(no objective declared)*"
                 fi
-                if [[ -z "$intent" ]]; then
-                    intent="*(no intent: declared)*"
-                fi
-                source_field=$(extract_field "$f" "source")
-                source_field=${source_field:-hand-authored}
 
-                echo "### [$name](../knowledge/$name)"
-                if [[ "$source_field" == "generated" ]]; then
-                    generator=$(extract_field "$f" "generator")
-                    echo ""
-                    echo "*Generated by \`${generator:-unknown}\` - do not hand-edit.*"
+                # Summary: use summary: if present, else first sentence of collapsed intent:, else blank
+                if [[ -n "$summary" ]]; then
+                    sum_cell=$(printf '%s' "$summary" | escape_pipe)
+                elif [[ -n "$intent_collapsed" ]]; then
+                    sum_cell=$(printf '%s' "$intent_collapsed" | first_sentence | escape_pipe)
+                else
+                    sum_cell=""
                 fi
-                echo ""
-                echo "$intent"
-                echo ""
+
+                # Tags: inline-code, comma-joined; blank when empty
+                if [[ -n "$tags_raw" ]]; then
+                    tags_cell=$(printf '%s\n' "$tags_raw" | render_tags)
+                else
+                    tags_cell=""
+                fi
+
+                # See-instead: doc-name links or verbatim; blank when empty
+                if [[ -n "$see_also_raw" ]]; then
+                    see_cell=$(printf '%s\n' "$see_also_raw" | render_see_also)
+                else
+                    see_cell=""
+                fi
+
+                # Audience: verbatim comma-joined; blank when empty
+                if [[ -n "$audience_raw" ]]; then
+                    aud_cell=$(printf '%s\n' "$audience_raw" | render_audience)
+                else
+                    aud_cell=""
+                fi
+
+                # Empty cell renders as a single space (keeps table well-formed)
+                [[ -n "$obj_cell" ]] || obj_cell=" "
+                [[ -n "$sum_cell" ]] || sum_cell=" "
+                [[ -n "$tags_cell" ]] || tags_cell=" "
+                [[ -n "$see_cell" ]] || see_cell=" "
+                [[ -n "$aud_cell" ]] || aud_cell=" "
+
+                echo "| [${name}](../knowledge/${name}) | ${obj_cell} | ${sum_cell} | ${tags_cell} | ${see_cell} | ${aud_cell} |"
             fi
         done
+        # Add blank line after each category table (if any docs emitted)
+        if [[ $emitted_header -eq 1 ]]; then
+            echo ""
+        fi
     done
 
     echo "---"
