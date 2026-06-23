@@ -187,10 +187,31 @@ tool can extract severity programmatically without a translation table.
 
 | Lint tag | Severity | Meaning |
 |---|---|---|
-| `[FM-MISSING]` | HIGH | Frontmatter field absent (kb-category / source / intent / generator / AUTO-GENERATED marker missing) |
-| `[FM-INVALID]` | HIGH | Frontmatter field has invalid value (e.g., kb-category not in primary/meta/extension) |
+| `[FM-MISSING]` | HIGH | Frontmatter field absent (kb-category / source / intent / generator / AUTO-GENERATED marker missing; or required new field absent: objective / summary / sources) |
+| `[FM-INVALID]` | HIGH | Frontmatter field has invalid value (e.g., kb-category not in primary/meta/extension; or required new field has malformed shape: objective/summary not a single-line scalar; sources/tags/see_also/audience not a list; approved_at_commit not hex) |
 | `[KB-MISSING]` | HIGH | A standard primary KB document is not present on disk |
 | `[GEN-MISSING]` | HIGH | A registered generated file (per `generated-files.txt`) does not exist; the build command needs to be run |
+
+**`[FM-MISSING]` and `[FM-INVALID]` cover the new required fields (P6 carve-out) — no
+new lint tag is introduced.** The required new fields (`objective:`, `summary:`,
+`sources:`) are graded for presence/shape by `lint-frontmatter.sh` using these existing
+tags. Specifically:
+
+- **Presence check** (required for `source: hand-authored`, `kb-category: primary` or
+  `extension`, when the doc already carries any of the new fields): `objective:` and
+  `summary:` non-empty, `sources:` present as a YAML list. Missing → `[FM-MISSING]` HIGH.
+- **Shape check**: `objective:`/`summary:` are single-line scalars; list fields are lists;
+  each `sources:` entry is a path/glob/URL; `approved_at_commit:` (if present) is 7-40
+  lowercase hex. Malformed → `[FM-INVALID]` HIGH.
+
+**Scope:** `meta` docs and `source: generated` docs are **skipped** by this lint.
+Docs carrying NONE of the new fields are treated as pre-migration and skipped (soft-skip
+until f011; see [principles.md](principles.md) P6 and [frontmatter-schema.md](frontmatter-schema.md) for the
+coexistence/migration contract).
+
+**Optional fields stay exempt.** `tags:`, `see_also:`, `owner:`, `audience:` (when
+present) are shape-checked but NOT required; their absence is never a lint error.
+Prose quality of `objective:`/`summary:` is also exempt (shape only, not semantics).
 
 All current lint findings are HIGH severity by the rubric's check-1/3/5/8
 rules (frontmatter parse failure, contract mismatch, T2 structure mismatch,
