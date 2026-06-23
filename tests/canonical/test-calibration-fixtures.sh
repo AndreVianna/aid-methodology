@@ -174,7 +174,7 @@ make_kb_copy() {
 
 # Helper: run closure-check over a knowledge copy.
 # Usage: run_closure <kb_copy_dir> <suffix>
-# Sets:  OUT_B, OUT_C (absolute paths to the output files for outputs (b) and (c)).
+# Sets:  OUT_A, OUT_B, OUT_C (absolute paths to the output files for outputs (a)/(b)/(c)).
 run_closure() {
   local kb_copy="$1"
   local suffix="${2:-}"
