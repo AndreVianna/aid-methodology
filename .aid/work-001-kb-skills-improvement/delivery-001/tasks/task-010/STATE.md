@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Committed 6748c450 on aid/work-001-delivery-001. domain-glossary.md upgraded to concept-spine structure; discovery.closure block added to settings.yml. DBI: 513/513. Generator VERIFY: PASS.
 
 ---
 
