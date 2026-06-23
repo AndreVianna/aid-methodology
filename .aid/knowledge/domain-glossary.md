@@ -1,14 +1,24 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Authoritative glossary of AID-specific terms mined from the methodology spec, skill
-  frontmatter, agent definitions, templates, and scripts. Covers phase names (Discover through
-  Monitor), role names (Director, Orchestrator, Specialist), pipeline concepts (Phase Gate,
-  Lite Path, Two-Tier Review, Pool Dispatch), work-type taxonomy, traceability layers (L1–L3),
-  and rubric tiers. Read this when any AID term is unfamiliar.
+objective: Authoritative AID-specific term glossary: phase names, role names, pipeline concepts, work-type taxonomy, and traceability layers, including concept-spine entries for load-bearing native concepts.
+summary: Authoritative glossary of AID-specific terms mined from the methodology spec, skill frontmatter, agent definitions, templates, and scripts, with load-bearing concepts promoted to structured spine entries.
+sources:
+  - docs/aid-methodology.md
+  - docs/glossary.md
+  - canonical/skills/aid-config/SKILL.md
+  - canonical/skills/aid-discover/SKILL.md
+  - canonical/skills/aid-interview/SKILL.md
+  - canonical/skills/aid-specify/SKILL.md
+  - canonical/skills/aid-plan/SKILL.md
+  - canonical/skills/aid-detail/SKILL.md
+  - canonical/skills/aid-execute/SKILL.md
+  - canonical/agents/
+  - canonical/EMISSION-MANIFEST.md
+approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-23: Migrated body to concept-spine structure (task-021): load-bearing AID concepts promoted to spine entries; all lexicon tables retained additively. Frontmatter migration deferred to task-022.
   - 2026-06-20: work-005 profile-generator-simplify interview — added "Format ⊥ behavior (behavioral metadata)" term (REQUIREMENTS FR4-distinction); durable, additive (no existing term rewritten; built-state terms unchanged pending ship).
   - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.

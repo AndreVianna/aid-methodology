@@ -1,24 +1,24 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Inventory of test suites that protect the canonical helper scripts AID skills
-  depend on plus the `aid` CLI installer/release surface. Currently 56 unit/integration
-  suites under tests/canonical/ (plus the native-Windows tests/windows/Test-AidInstaller.ps1),
-  discovered by glob and run by the tests/run-all.sh aggregator. Most are pure bash (POSIX);
-  a few shell out to node (.mjs validators) or pwsh (PowerShell mirrors + the install.ps1 /
-  aid.ps1 CLI suites), each skipping if its runtime is absent. All suites source the shared
-  tests/lib/assert.sh assertion library. NO methodology/orchestration/E2E tests —
-  those don't exist and aren't needed (the methodology is exercised by
-  dogfooding, the renderer has its own VERIFY (deterministic) gate). Read this to
-  understand what changes to canonical/scripts/ are guarded by tests vs require
-  manual verification.
+objective: AID test suite landscape: 56 canonical suites plus native-Windows suite, aggregated by run-all.sh, covering canonical scripts and the aid CLI installer/release surface.
+summary: Inventory of all test suites that protect the canonical helper scripts and aid CLI installer/release surface, covering the 56 suites under tests/canonical/ plus the native-Windows Test-AidInstaller.ps1 and explaining what is guarded vs requires manual verification.
+sources:
+  - tests/canonical/
+  - tests/run-all.sh
+  - tests/lib/assert.sh
+  - tests/windows/Test-AidInstaller.ps1
+  - .github/workflows/test.yml
+  - .github/workflows/installer-tests.yml
+  - canonical/aid/scripts/
+approved_at_commit: ccb4e823
 contracts:
   - "currently 56 test suites under tests/canonical/ (glob-discovered; recount with ls tests/canonical/test-*.sh | wc -l) + tests/windows/Test-AidInstaller.ps1 (native Windows, now run under both pwsh 7 and Windows PowerShell 5.1 on installer-tests.yml), no skill-level tests"
   - "tests/run-all.sh is the single aggregator (glob-discovers tests/canonical/test-*.sh)"
   - "All suites source tests/lib/assert.sh (shared counters + asserts + test_summary)"
   - "Most suites are pure bash (POSIX, Git Bash on Windows); 2 need node, several need pwsh (the *-ps1.sh mirrors + the install.ps1 / aid.ps1 CLI suites) — each skips if absent; CI installer-tests.yml runs the native-Windows path"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-22: housekeep KB-DELTA (Q30) — suite count 49->56 (verified `ls tests/canonical/test-*.sh | wc -l` = 56 on disk). Documented test-multitool-isolation.sh (structural multi-tool isolation acceptance, feature-004 AC4) and test-ps51-compat.sh (AST-based WinPS 5.1 compatibility lint). Added the new real Windows PowerShell 5.1 CI lane in installer-tests.yml (re-runs Test-AidInstaller.ps1 under `shell: powershell`, complementing the ps51-compat static lint). Refreshed the generator self-test references for work-005-profile-generator-simplify: the per-format emitter self-tests test_copilot_emitter.py / test_antigravity_emitter.py were DELETED with the per-type renderers; coverage is now render.py --self-test (8 copy-core tests) + test_manifest_safety.py. Kept qualitative — no per-suite assertion counts (§9a).
   - 2026-06-14: housekeep KB-DELTA — VERSION 1.0.0—1.1.0 era; suite count 35→49 (verified `ls tests/canonical/test-*.sh | wc -l` = 49 on disk). Documented the 14 suites that landed across delivery-007/008/010/011 but were missing from this inventory: the dashboard surface (`test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-dashboard-reader.sh`, `test-aid-dashboard-cli.sh`, `test-aid-remote.sh`, `test-producer-completeness.sh`, `test-pipeline-status-walkthrough.sh`, `test-work-state-template.sh`, `test-summarize-preflight.sh`, `test-registry.sh`, `test-home-html-source-sync.sh`), and the 1.0.0→1.1.0 migration surface (`test-aid-migrate.sh`, `test-aid-migrate-trigger.sh`, `test-release-migrate-smoke.sh`). Kept qualitative — no per-suite assertion counts (§9a).
   - 2026-06-05: work-002-auto-installer — the former `setup.sh`/`setup.ps1` installers were removed and replaced by the persistent `aid` CLI; deleted the `test-setup.sh` / `test-setup-ps1.sh` suite docs and added the real installer/CLI/release suites: `test-install.sh`, `test-install-ps1.sh`, `test-install-parity.sh`, `test-aid-cli.sh`, `test-aid-cli-ps1.sh`, `test-aid-cli-parity.sh`, `test-release.sh`, `test-release-install-e2e.sh`, `test-version-sync.sh`, `test-ascii-only.sh`, `test-agents-md-invariant.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh`, plus the native-Windows `tests/windows/Test-AidInstaller.ps1`. Suite count 24→35 (verified `ls tests/canonical/test-*.sh | wc -l` = 35 on disk). Added the new `.github/workflows/installer-tests.yml` cross-platform runner to the CI notes; documented that the installer/CLI/release suites run on `installer-tests.yml` (cross-platform) in addition to the `test.yml` `canonical-tests` aggregator.

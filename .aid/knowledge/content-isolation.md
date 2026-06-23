@@ -1,13 +1,17 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Documents the AID content-isolation cornerstone: the two content classes
-  (AID-own vs. tool-native), the aid/-nest rule for AID-own folders, the
-  aid- prefix rule for tool-native AID files, the prune basis (aid- prefix
-  + new-manifest membership), and the root-agent AID:BEGIN/AID:END marker
-  boundary. Read this when authoring or reviewing any AID-delivered file to
-  confirm it is correctly isolated from user content.
+objective: AID content-isolation cornerstone: aid/-nest rule, aid- prefix rule, prune basis, and root-agent AID:BEGIN/AID:END marker boundary.
+summary: Documents the cornerstone convention that every AID-delivered file is either nested under an aid/ subtree or carries the aid- prefix, isolating it from user content across all profiles.
+sources:
+  - canonical/EMISSION-MANIFEST.md
+  - canonical/aid/
+  - profiles/claude-code/.claude/aid/
+  - profiles/codex/.codex/aid/
+  - profiles/cursor/.cursor/aid/
+  - profiles/copilot-cli/.github/aid/
+  - profiles/antigravity/.agent/aid/
+approved_at_commit: ccb4e823
 contracts:
   - "Every AID-delivered file is either nested under an aid/ subtree or carries the aid- prefix; nothing AID-owned is un-prefixed outside an aid/ subtree"
   - "AID-own folders (scripts/, templates/, recipes/) nest under <assets-root>/aid/{scripts,templates,recipes} in every profile"
@@ -15,6 +19,7 @@ contracts:
   - "Orphan prune basis is aid- prefix + new-manifest membership — NOT old-manifest diff"
   - "Root-agent AID-managed content is fenced by <!-- AID:BEGIN --> / <!-- AID:END --> markers; updates replace only the marked region in place"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-18: Created — work-003-content-isolation task-009
   - 2026-06-21: R6 revised (deliberate cornerstone evolution) — work-005-profile-generator-simplify delivery-003 task-016; Codex unified under .codex/ (FR2); .agents/ split retired; rewrite_install_paths reduced to minimal {root}-prefix substitution (FR5 Option (c)); cornerstone invariant unchanged. Cross-ref Q3 paper trail — see feature-004-lockstep-ci-closeout SPEC §B.3.i.
 ---

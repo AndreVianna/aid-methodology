@@ -1,17 +1,27 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Describes the hosting, runtime, build pipeline, distribution, CI/CD, and dev tooling for
-  the AID-methodology repo. There is no conventional runtime infrastructure (no Docker, no
-  cloud, no Terraform). "Infrastructure" here means: the persistent global `aid` CLI (and
-  its four install channels) that puts AID into a target project, the canonical→5-profiles
-  render pipeline driven by run_generator.py, the tag-triggered release pipeline (release.sh
-  + release.yml that cut GitHub Releases and publish the npm/PyPI packages), and the
-  local-filesystem conventions for runtime state. Read this to understand how AID is built,
-  installed, released, and operated on a local workstation.
+objective: AID-methodology repository hosting, build, distribution, CI/CD, and release infrastructure.
+summary: Describes the AID infrastructure: the persistent global aid CLI and its four install channels, the canonical-to-5-profiles render pipeline, the tag-triggered release pipeline, and local-filesystem runtime state conventions.
+sources:
+  - .github/workflows/test.yml
+  - .github/workflows/installer-tests.yml
+  - .github/workflows/release.yml
+  - bin/aid
+  - bin/aid.ps1
+  - bin/aid.cmd
+  - lib/aid-install-core.sh
+  - lib/AidInstallCore.psm1
+  - install.sh
+  - install.ps1
+  - release.sh
+  - packages/npm/
+  - packages/pypi/
+  - .claude/skills/generate-profile/scripts/run_generator.py
+approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-22: housekeep KB-DELTA (Q30) — work-005-profile-generator-simplify (merged). Build-pipeline component table rewritten to the 7-file copy-core model: the 5 per-type renderer rows (render_agents/render_skills/render_templates/render_canonical_scripts/render_recipes) + the 2 emitter self-test rows (test_copilot_emitter/test_antigravity_emitter) DELETED; added the render.py copy-core row; refreshed line counts + the pipeline-flow diagram (now a single render_profile copy_tree pass). CI gate: generator-selftests now render.py --self-test + test_manifest_safety.py; suite count 35->56. Installer CI: documented the new real Windows PowerShell 5.1 lane (re-runs Test-AidInstaller.ps1 under `shell: powershell`) + the static test-ps51-compat.sh AST lint.
   - 2026-06-05: work-002-auto-installer — installer evolved from setup.sh/setup.ps1 clone+run to a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, shared libs `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`); four install channels (curl/irm bootstrap, npm `aid-installer`, PyPI `aid-installer`, offline `--from-bundle`); added the release pipeline (`release.sh` + `.github/workflows/release.yml`, tag-triggered, OIDC publish) and the cross-platform installer CI (`.github/workflows/installer-tests.yml`); GitHub Releases v0.7.0-v0.7.5 now exist (`VERSION` = 0.7.5). `setup.sh`/`setup.ps1` removed.
   - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — canonical render pipeline 3→5 profiles (added copilot-cli + antigravity); install menu now 5 tools with the Option-A AGENTS.md last-installed-wins non-interactive collision handler; build-pipeline component table gained the 2 new emitter self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) now wired into the CI generator-selftests step. Verified profiles=5 (`ls profiles/*.toml`).

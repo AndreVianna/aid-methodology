@@ -1,16 +1,15 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Maps the major code/content modules in AID — the 12 user-facing aid-* skills,
-  the 13th maintainer-only generate-profile skill, the 9 agents, the 7 generator
-  Python files under .claude/skills/generate-profile/scripts/ (the render.py copy core +
-  run_generator.py entrypoint),
-  and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview,housekeep}.
-  Each entry lists purpose, directory path, dependencies, and associated tests.
-  Read this when you need to know what a directory holds and who consumes it.
-  NOT a tech-stack overview (see architecture.md) and NOT a per-script API
-  reference (see the script's own header comment block).
+objective: AID major module map: aid-* skills, agents, generator Python files, and canonical helper scripts with purpose, path, dependencies, and tests.
+summary: Maps all major code and content modules in AID, including the 12 user-facing aid-* skills, 9 agents, 7 generator Python files, and canonical helper scripts, with each entry's directory path, dependencies, and associated tests.
+sources:
+  - canonical/skills/
+  - canonical/agents/
+  - canonical/aid/scripts/
+  - .claude/skills/generate-profile/scripts/
+  - tests/canonical/
+approved_at_commit: ccb4e823
 contracts:
   - "12 user-facing aid-* skills + 1 maintainer-only generate-profile skill = 13 total"
   - "9 agents under canonical/agents/ (4 large / 4 medium / 1 small)"
@@ -18,6 +17,7 @@ contracts:
   - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-22: work-005-profile-generator-simplify (merged) — §3 rewritten to the single copy-core model: render.py is now the sole copy generator (copy_tree over 3 trees: agents/skills translated, canonical/aid/ verbatim) + dormant Codex-TOML branch; the 5 per-type renderers (render_agents/render_skills/render_templates/render_recipes/render_canonical_scripts) + 2 emitter self-tests (test_copilot_emitter/test_antigravity_emitter) DELETED. Renderer .py count 13->7; §3 table, intent, contract, and Module-classes entry updated. Via /aid-housekeep KB-DELTA (Q30).
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — added Module class 6 (Installer / CLI): the `aid` CLI dispatcher (bin/aid + bin/aid.ps1 + bin/aid.cmd), the shared install-core libs (lib/aid-install-core.sh + lib/AidInstallCore.psm1), the curl/irm bootstrap (install.sh + install.ps1), and the npm/PyPI shim packages (packages/npm + packages/pypi). Fixed the §4g test-coverage table: the removed test-setup.sh/test-setup-ps1.sh rows replaced with the installer/CLI suites.

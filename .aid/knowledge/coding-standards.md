@@ -1,16 +1,16 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Mines the de-facto coding conventions used across the AID repo by reading
-  the actual code: SKILL.md frontmatter shape, AGENT.md authoring pattern,
-  Python style in the renderer, Bash style in the helper scripts, Markdown
-  conventions inside skill/agent bodies, and the cross-cutting rules from
-  CLAUDE.md + canonical/templates/kb-authoring/principles.md. Read this when
-  you are authoring a NEW skill, agent, script, template, recipe, or KB doc
-  and need the existing-style fingerprint. NOT a tech-stack overview (see
-  architecture.md) and NOT a per-doc review rubric (see
-  canonical/templates/kb-authoring/review-rubric.md).
+objective: AID repository coding conventions: SKILL.md/AGENT.md/KB-doc frontmatter shapes, Python and Bash style, Markdown conventions, and cross-cutting authoring rules.
+summary: Documents the de-facto coding conventions used across the AID repo, covering skill/agent/KB authoring patterns, script style, and rules from CLAUDE.md and the kb-authoring templates.
+sources:
+  - canonical/skills/aid-config/SKILL.md
+  - canonical/agents/aid-architect/AGENT.md
+  - canonical/templates/kb-authoring/frontmatter-schema.md
+  - canonical/templates/kb-authoring/principles.md
+  - canonical/templates/kb-authoring/review-rubric.md
+  - CLAUDE.md
+approved_at_commit: ccb4e823
 contracts:
   - "Every aid-* SKILL.md begins with a YAML frontmatter block containing name, description, allowed-tools (and optionally argument-hint)"
   - "Every canonical AGENT.md begins with a YAML frontmatter block containing at minimum name, description, tier, tools (per `canonical/agents/aid-architect/AGENT.md` frontmatter block)"
@@ -18,6 +18,7 @@ contracts:
   - "Every helper script declares set -euo pipefail (or set -uo pipefail with documented rationale)"
   - "Every helper script supports -h | --help that prints its own header comment via sed"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.
   - 2026-06-04: work-001-agents-review (task-013) — §2a agent-dir naming updated to aid-* prefix; §8e agent-authoring updated to shared-include boilerplate (canonical/templates/agent-boilerplate.md via {{include:agent-boilerplate}}); §11c security model updated to new 9-agent roster; §10 convention table updated to 9 agents; old bare agent-name evidence cites replaced with aid-* paths.
   - 2026-06-21: work-005-profile-generator-simplify delivery-003 task-017 — §7a updated Codex split-layout line to unified .codex/; §8a removed render_agents.py reference; added §15 PowerShell gotchas (three work-005 delivery-002 Windows CI lessons: StrictMode absent-property, return-if parse trap, empty-array-sort).

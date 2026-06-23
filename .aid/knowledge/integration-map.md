@@ -1,14 +1,19 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Maps all external services and integrations the AID repo depends on. Because AID has no
-  application runtime, integrations are minimal: the Mermaid library fetched from npm/jsdelivr
-  CDN (consumed by aid-summarize), the gh GitHub CLI used in PR-creation workflows, and the
-  multi-tool distribution model that renders canonical source into 5 host-tool install trees.
-  Inter-skill choreography is implemented via filesystem state hand-offs (not a message broker).
+objective: AID repository external service and integration map: Mermaid CDN, gh CLI, multi-tool distribution, and install/release registries.
+summary: Maps all external services and integrations the AID repo depends on, including the Mermaid CDN consumed by aid-summarize, the gh CLI for PR workflows, and the npm/PyPI/GitHub Releases install registries.
+sources:
+  - canonical/skills/aid-summarize/SKILL.md
+  - .github/workflows/release.yml
+  - .github/workflows/installer-tests.yml
+  - packages/npm/
+  - packages/pypi/
+  - canonical/skills/
+approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — added the distribution/registry integrations: npm registry (`aid-installer`), PyPI (`aid-installer`), and GitHub Releases (release-asset download for install/bootstrap + OIDC publishing from `release.yml`). Replaced the `setup.sh`/`setup.ps1` adopter-install-flow + Option-A collision sections with the `aid` CLI + four channels + per-channel `aid update self` behavior + FR12 invariant root AGENTS.md.
   - 2026-06-03: methodology v3.2 — Phase Sequence diagram + skill-set composition reconciled: numbered phases 8→6 (Discover→Execute); aid-deploy/aid-monitor recast from Phases 7/8 to optional, on-demand end-of-pipeline Deliver skills (not required, not sequential); loops L8–L10 now apply only when those skills are run. Production re-entry unified: L9 (bug) and L10 (change request) now route Monitor → Interview (bugs via the LITE-BUG-FIX triage; CRs as new/changed requirements), replacing the prior Monitor→Execute / Monitor→Discover targets.

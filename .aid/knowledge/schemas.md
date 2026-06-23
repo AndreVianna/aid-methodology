@@ -1,15 +1,18 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Documents the document-and-config schemas that AID treats as its "data model":
-  .aid/settings.yml, the per-area STATE.md (discovery + work) markdown shapes,
-  the frontmatter contracts for SKILL.md / AGENT.md / KB docs, the emission-
-  manifest JSONL schema, the recipe + task templates, and the work-area
-  filesystem layout. There is NO relational database in AID — the project ships
-  methodology + tooling, no application. Read this when authoring or modifying
-  any of the above structured documents. NOT a module map (see module-map.md)
-  and NOT a coding-conventions reference (see coding-standards.md).
+objective: AID data-model schemas: settings.yml, STATE.md shapes, SKILL.md/AGENT.md/KB-doc frontmatter contracts, emission-manifest JSONL, recipe and task templates, and work-area filesystem layout.
+summary: Documents all AID structured-document and config schemas, covering settings.yml, discovery and work STATE.md shapes, frontmatter contracts for skill/agent/KB docs, the emission-manifest JSONL format, and the work-area filesystem layout.
+sources:
+  - .aid/settings.yml
+  - canonical/templates/
+  - canonical/EMISSION-MANIFEST.md
+  - canonical/skills/aid-config/SKILL.md
+  - canonical/agents/aid-architect/AGENT.md
+  - canonical/templates/kb-authoring/frontmatter-schema.md
+  - canonical/templates/work-state-template.md
+  - lib/aid-install-core.sh
+approved_at_commit: ccb4e823
 contracts:
   - "Settings file = .aid/settings.yml, YAML 1.2, with 5 mandatory top-level sections (project, tools, review, execution, traceability) plus optional discovery section"
   - "discovery.doc_set is a YAML block-list of pipe-delimited scalars (filename|owner|presence[:when]); absent section means use default seed"
@@ -23,6 +26,7 @@ contracts:
   - "State advancement ordering (SD-2, for reconcile): Done > Canceled > In Review > In Progress > Blocked > Failed > Pending"
   - "DERIVED-view rule: work ## Tasks State, ## Plan / Deliveries, ## Delivery Gates, ## Cross-phase Q&A assembled/unioned at read time; never written"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-22: housekeep KB-DELTA (Q30) — work-005-profile-generator-simplify (merged). §9 Profile TOML rewritten to the SHRUNK schema: the [layout], [agent]/[agent.frontmatter], [skill]/[skill.frontmatter], [filename_map], [extras] sections + the LayoutConfig/FrontmatterConfig/AgentConfig/SkillConfig/RuleEntry/ExtrasConfig dataclasses were DROPPED; profiles now carry only name/root_dir/root_file/agent_format (top-level) + [tool_names] + [model_tiers] + [capabilities] (surviving dataclasses: Profile, ModelTierSimple, ModelTierDetailed, CapabilitiesConfig). §6/§7 renderer-behavior citations re-pointed from the deleted render_skills.py/render_agents.py to render.py (copy_tree translate=skills/agents branches). §8 location-rule citation re-pointed from LayoutConfig.common_parent() to Profile.common_parent(). §6/§7 skill+agent frontmatter source-of-truth + schema headers re-pointed off the dropped `[skill.frontmatter]`/`[agent.frontmatter]` profile sections to the canonical SKILL.md/AGENT.md files (the CC-optional `context`/`agent` strip is now hardcoded in render.py `_rewrite_skill_frontmatter`, not a profile list). Emission-manifest record schema (§8) unchanged.
   - 2026-06-18: work-004-worktree-tracking task-015 — corrected §15 Foreign-keys note (stale "feature-NNN → delivery-NNN" Source format replaced with accurate "work-NNN-{name} -> delivery-NNN" + delivery/task structural FK via folder nesting); restored ER-diagram derivation relationships (WORK_STATE DERIVES from DELIVERY_STATE; DELIVERY_STATE DERIVES from TASK_STATE — the read-time union relationships omitted in the task-002 rewrite); corrected ER labels to name AUTHORED vs DERIVED sections per-entity.
   - 2026-06-18: work-004-worktree-tracking task-002 — updated §4 (Work State) for the uniform unit hierarchy (work/delivery/task folder layout), per-level STATE/SPEC schemas, DERIVED-view rule (work Tasks State/Plan Deliveries/Delivery Gates/Cross-phase Q&A derived at read), delivery independent lifecycle enum (SD-8), per-delivery Cross-phase Q&A partition (SD-5), state-not-status naming, SD-2/SD-3/SD-8/SD-9/migration rules; updated §11 (Task File) for new path delivery-NNN/tasks/task-NNN/SPEC.md + sibling STATE.md; updated §12 (Delivery Issues Log) path reference.

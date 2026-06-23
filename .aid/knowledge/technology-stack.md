@@ -1,20 +1,29 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Concrete inventory of languages, runtimes, libraries, build tools, and dev tooling used
-  by the AID-methodology repository. Covers: Markdown, Bash, Python 3.11+ (stdlib only,
-  no third-party deps), JavaScript/ES modules (Node built-ins only), PowerShell 5.1+,
-  CSS3, HTML5, TOML 1.0, YAML 1.2, JSON, and JSON Lines. The only runtime library is
-  Mermaid (fetched dynamically from npm/jsdelivr). Read this to understand what toolchain
-  is required to build, run, or contribute to AID. For file and line counts see
-  `.aid/generated/project-index.md` `## Language Breakdown`.
+objective: AID repository concrete technology-stack inventory: languages, runtimes, libraries, build tools, and dev tooling.
+summary: Concrete inventory of languages, runtimes, libraries, build tools, and dev tooling used by the AID-methodology repository, covering Bash, Python 3.11+, JavaScript/ES modules, PowerShell 5.1+, TOML, YAML, JSON, and Mermaid.
+sources:
+  - packages/npm/package.json
+  - packages/pypi/pyproject.toml
+  - bin/aid
+  - bin/aid.ps1
+  - install.sh
+  - install.ps1
+  - profiles/claude-code.toml
+  - profiles/codex.toml
+  - profiles/cursor.toml
+  - profiles/copilot-cli.toml
+  - profiles/antigravity.toml
+  - .claude/skills/generate-profile/scripts/run_generator.py
+approved_at_commit: ccb4e823
 contracts:
   - "Python 3.11+ required by the generator pipeline (tomllib stdlib dependency)"
   - "No third-party Python packages in the generator (stdlib only)"
   - "The PyPI `aid-installer` package requires Python >=3.8 and builds with hatchling; the npm `aid-installer` package requires Node >=18. Both have zero runtime dependencies."
   - "package.json + pyproject.toml exist ONLY under `packages/npm/` and `packages/pypi/` (the published installer shims); none exists for application code"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-22: housekeep KB-DELTA (Q30) — work-005-profile-generator-simplify (merged). Python row: dropped the deleted test_copilot_emitter.py / test_antigravity_emitter.py mention; now points at the 7 generator scripts (render.py copy core + run_generator.py). Build-commands block: replaced the now-invalid `render_skills.py --output-root ...` per-tree example (the per-type renderers were deleted; render.py's CLI only exposes --self-test) with the `render.py --self-test` invocation. Build-system + config tables: run_generator now `render_profile` single copy pass; profile-TOML section list shrunk ([layout]/[agent.frontmatter]/[skill.frontmatter]/[filename_map]/[extras] dropped); retired the copilot-agent/antigravity-rule agent_format values + the Cursor [extras.rules] mention (all now agent_format=markdown).
   - 2026-06-05: work-002-auto-installer — the repo gained its first `package.json` (`packages/npm/package.json`) and `pyproject.toml` (`packages/pypi/pyproject.toml`, hatchling build), so the former "no package.json/pyproject at any level" claim is now FALSE and was corrected; added Node 18+ (npm `aid-installer`) and Python 3.8+ (PyPI `aid-installer`, hatchling) as build/packaging tooling, both zero runtime deps; replaced setup.sh/setup.ps1 evidence with the new `aid` CLI (`bin/aid` + `install.sh` / `bin/aid.ps1` + `install.ps1`).
   - 2026-06-03: §9a T3-count strip — removed all hardcoded file-count and line-count figures from frontmatter intent, Languages table, Development Tools table, Build System table, Configuration Files table, and Testing Infrastructure; replaced aggregate counts with pointer to `.aid/generated/project-index.md`; removed stale branch name

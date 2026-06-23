@@ -1,17 +1,29 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Defines the interfaces between AID pipeline components. Because AID ships no HTTP services
-  or RPC endpoints, "contracts" here means: skill slash-command signatures and state-machine
-  contracts, script CLI signatures + exit codes, file-format contracts (settings.yml,
-  emission-manifest.jsonl, heartbeat files, STATE.md sections), subagent dispatch conventions,
-  and the canonical→5-profile renderer contract. Read this to understand what each pipeline
-  boundary expects and emits.
+objective: AID pipeline component interface contracts: skill slash-command signatures, script CLI contracts, file-format contracts, subagent dispatch conventions, and renderer contract.
+summary: Defines the interfaces between AID pipeline components, covering skill slash-command state-machine contracts, script CLI signatures and exit codes, file-format contracts for settings.yml and emission-manifest, and the canonical-to-5-profile renderer contract.
+sources:
+  - canonical/skills/aid-config/SKILL.md
+  - canonical/skills/aid-discover/SKILL.md
+  - canonical/skills/aid-interview/SKILL.md
+  - canonical/skills/aid-specify/SKILL.md
+  - canonical/skills/aid-plan/SKILL.md
+  - canonical/skills/aid-detail/SKILL.md
+  - canonical/skills/aid-execute/SKILL.md
+  - canonical/skills/aid-summarize/SKILL.md
+  - canonical/skills/aid-deploy/SKILL.md
+  - canonical/skills/aid-monitor/SKILL.md
+  - canonical/skills/aid-housekeep/SKILL.md
+  - canonical/skills/aid-ask/SKILL.md
+  - canonical/EMISSION-MANIFEST.md
+  - canonical/aid/scripts/
+approved_at_commit: ccb4e823
 contracts:
   - "12 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-ask) + maintainer-only generate-profile"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skill contracts) + /aid-execute argument order corrected to work-first (PR #70) via /aid-housekeep KB-DELTA.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Recipe File Front-matter Contract applies-to inline comment updated to {bug-fix | new-feature | refactor | *}.
   - 2026-06-03: methodology v3.2 — aid-deploy/aid-monitor reclassified as optional, on-demand end-of-pipeline Deliver skills (not mandatory phases 7/8); contract list reframed as aid-config + 6 numbered phases + optional deploy/monitor/summarize + off-pipeline housekeep. Per-skill state-machine contracts unchanged.

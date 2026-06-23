@@ -1,19 +1,27 @@
 ---
 kb-category: primary
 source: promoted from work-local research (work-005-profile-generator-simplify/research/capability-study.md)
-intent: |
-  Per-tool capability reference for every AID-supported host tool. Records how each
-  tool discovers and executes AID agents/skills, how behaviorally-significant metadata
-  is preserved, translated, or gapped under uniform markdown encoding, and the always-on
-  context verdict. Used as the gating reference for format decisions (FR4), 6th-tool
-  onboarding, and any future encoding change. Read this before authoring or deleting a
-  format branch, adding a new host tool, or asserting behavioral parity across tools.
+objective: Per-tool capability reference for all AID-supported host tools: dispatchability, behavioral metadata preservation, and always-on context verdicts.
+summary: Per-tool capability reference recording how each AID-supported host tool discovers and executes agents/skills, how behavioral metadata is preserved or gapped under uniform markdown encoding, and the always-on context verdict.
+sources:
+  - profiles/claude-code/.claude/
+  - profiles/codex/.codex/
+  - profiles/cursor/.cursor/
+  - profiles/copilot-cli/.github/
+  - profiles/antigravity/.agent/
+  - profiles/claude-code.toml
+  - profiles/codex.toml
+  - profiles/cursor.toml
+  - profiles/copilot-cli.toml
+  - profiles/antigravity.toml
+approved_at_commit: ccb4e823
 contracts:
   - "dispatchability is name-based and format-agnostic across all supported tools (Finding D1/D2)"
   - "uniform markdown is the default encoding; a native exception is kept only when (1) a behavioral axis is gap/un-translatable under markdown AND (2) AID relies on it AND (3) the finding is high-confidence"
   - "every (tool, axis) cell carries a Verification source and a Confidence level; no cell is undocumented"
   - "the Codex TOML branch is retained DORMANT (not deleted) until E-CODEX-1 reaches high confidence"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-21: Created — promoted from work-005-profile-generator-simplify delivery-003 task-018; content copied verbatim from the verified work-local study (capability-study.md, feature-001 task-001/task-002); Codex layout updated to unified .codex/ per delivery-001/002 (FR2).
 ---
 

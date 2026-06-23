@@ -1,10 +1,25 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Canonical feature list with status (Shipped / Partial / Pending / In Progress / Deprecated), source, and traceability to work items. Read this to understand WHAT the project does at a feature level.
+objective: AID canonical feature list with status and work-item traceability.
+summary: Canonical inventory of all user-facing AID skills and engineering features with shipped/pending status and traceability to the canonical skill sources.
+sources:
+  - canonical/skills/aid-config/SKILL.md
+  - canonical/skills/aid-discover/SKILL.md
+  - canonical/skills/aid-interview/SKILL.md
+  - canonical/skills/aid-specify/SKILL.md
+  - canonical/skills/aid-plan/SKILL.md
+  - canonical/skills/aid-detail/SKILL.md
+  - canonical/skills/aid-execute/SKILL.md
+  - canonical/skills/aid-summarize/SKILL.md
+  - canonical/skills/aid-deploy/SKILL.md
+  - canonical/skills/aid-monitor/SKILL.md
+  - canonical/skills/aid-housekeep/SKILL.md
+  - canonical/skills/aid-ask/SKILL.md
+approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-05-26: KB Authoring v2 template seed
   - 2026-05-27: Populated with 10 user-facing skills + 1 maintainer-only skill
   - 2026-06-03: Added /aid-housekeep (11th user-facing skill) via /aid-housekeep KB-delta refresh

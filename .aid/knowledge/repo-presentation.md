@@ -1,16 +1,21 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  How the AID methodology is presented to users in this GitHub repository: the
-  README's structure and key sections, the docs/ folder taxonomy, the examples/
-  case studies, the methodology specification document, and external blog/marketing
-  references. Read this to understand the user-facing surface of the repo (NOT
-  the internal architecture — see architecture.md for that). Replaces the former
-  ui-architecture.md (which was scoped wrong — described the KB-viewer UI rather
-  than the repo's documentation surface).
+objective: AID GitHub repository user-facing presentation: README structure, docs/ taxonomy, examples/, and methodology specification document.
+summary: Documents how the AID methodology is presented to users in the GitHub repository, covering the README structure, docs/ folder taxonomy, examples/ case studies, and the methodology specification at docs/aid-methodology.md.
+sources:
+  - README.md
+  - docs/aid-methodology.md
+  - docs/glossary.md
+  - docs/faq.md
+  - docs/install.md
+  - docs/release.md
+  - docs/repository-structure.md
+  - examples/
+approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total, 4->5 optional) via /aid-housekeep KB-DELTA.
   - 2026-05-27: Initial authoring during cycle-1 FIX Phase B (replaces deleted ui-architecture.md per Q3)
   - 2026-06-01: Post-merge update for work-001-add-providers (PRs #42/#43/#44) — install surface 3 profiles → 5 (added GitHub Copilot CLI + Antigravity); Option-A AGENTS.md collision handler documented; setup.sh/ps1 line counts refreshed (210/199).

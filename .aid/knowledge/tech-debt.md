@@ -1,13 +1,13 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Known technical debt items in the AID methodology repo: items that work but
-  carry future-cost or fragility risk. Each entry has severity (CRITICAL / HIGH /
-  MEDIUM / LOW), evidence (file:line), impact, and a resolution roadmap.
-  Read when planning the next refactor cycle or scoping a new work-NNN.
+objective: Known AID methodology repository technical debt: severity, evidence, impact, and resolution roadmap per item.
+summary: Documents known technical debt items in the AID methodology repo with severity, evidence, impact assessment, and resolution roadmap for each open item.
+sources: []
+approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-06: work-004-product-site (dogfooding) — added `[LOW] Release/installer hygiene` item (maintainer-only `check-version-sync.sh` is emitted into all profiles though only CI uses the canonical copy; `.aid/` manifest/version persistence undefined; `docs/install.md:445` claims an auto-`.gitignore` the installer doesn't do; root `.claude/` was missing the release script — restored). Corrected the Summary table + Debt Inventory intro (dropped the already-resolved ps1 item per the 2026-06-05 entry; open count stays 4).
   - 2026-06-05: work-002-auto-installer — RESOLVED + removed the `[LOW] ps1 setup parity (SPS05-08) pwsh-skips in CI` item (per P9: closed items leave the body, git history is the audit trail). It is moot: `setup.sh`/`setup.ps1` (and their `test-setup*.sh` suites) were deleted and replaced by the `aid` CLI; the PowerShell installer path is now covered by the native-Windows `tests/windows/Test-AidInstaller.ps1` on the dedicated `.github/workflows/installer-tests.yml` `windows-latest` runner, so PowerShell coverage no longer depends on a `pwsh` being present on a Linux host. Also refreshed the Metrics test-count to 35.
   - 2026-06-03: cycle-10 /aid-housekeep refresh — corrected stale "18 canonical suites" → 24 (5 test-housekeep-* added by PR #49) and de-pinned the count per §9a; refreshed Last Updated.

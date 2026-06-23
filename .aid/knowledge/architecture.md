@@ -1,20 +1,22 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Architectural map of the AID-methodology repository: the canonical→render→install pipeline
-  that emits one canonical source into five byte-identical host-tool install trees (Claude Code,
-  Codex, Cursor, GitHub Copilot CLI, Antigravity), the phase-to-skill mapping across 6 numbered pipeline phases (Discover→Execute) plus optional Deliver skills, the agent-tier model
-  (Opus/Sonnet/Haiku), the Thin-Router SKILL.md pattern, the two-tier review + parallel
-  pool dispatch execution model, and the declared-doc-set mechanism that makes the discovery
-  KB doc-set project-configurable (varies by project; default seed as fallback). Read this
-  to understand how the methodology pieces hang together; for raw file inventory see
-  project-structure.md.
+objective: AID-methodology repository architecture: canonical-to-render-to-install pipeline, phase-to-skill mapping, agent-tier model, Thin-Router pattern, and declared-doc-set mechanism.
+summary: Architectural map of the AID-methodology repository showing how the canonical source emits into five byte-identical host-tool install trees and how all methodology pieces fit together.
+sources:
+  - canonical/skills/
+  - canonical/agents/
+  - canonical/aid/
+  - profiles/
+  - .claude/skills/generate-profile/scripts/run_generator.py
+  - docs/aid-methodology.md
+approved_at_commit: ccb4e823
 contracts:
   - "12 user-facing AID skills (7 core-pipeline: aid-config + 6 numbered phases; 5 optional: aid-summarize, aid-deploy, aid-monitor, aid-housekeep, aid-ask) listed in Dispatch table"
   - "9 specialist agents across 3 tiers (4 large / 4 medium / 1 small)"
   - "5 rendered install trees: claude-code, codex, cursor, copilot-cli, antigravity"
 changelog:
+  - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total, 4->5 optional) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — end-user installer rewritten: the former clone+`setup.sh`/`setup.ps1` menu installers were removed and replaced by a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, cores `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`) with four install channels (curl/irm bootstrap, npm, PyPI, offline `--from-bundle`). Module-boundaries End-user-installer row, install-time data-flow section, and Entry-Points install rows rewritten to the `aid add <tool>` flow (fetch+verify tarball → copy → FR11 protect-on-diff → `.aid/.aid-manifest.json`). Methodology-spec metrics de-cited (volatile line-count dropped per KB convention; `docs/aid-methodology.md` is the flagship after `methodology/` consolidated into `docs/`).
   - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix; §3 tier model updated to 4 large / 4 medium / 1 small; counts updated at lines 38, 64; agent canonical paths updated to aid-<name>/ dirs; boilerplate now shared-include via canonical/templates/agent-boilerplate.md.
