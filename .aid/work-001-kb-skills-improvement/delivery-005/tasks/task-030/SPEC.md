@@ -4,11 +4,11 @@
 
 **Source:** work-001-kb-skills-improvement -> delivery-005
 
-**Depends on:** task-027
+**Depends on:** task-028
 
 **Scope:**
 - Author the NEW canonical suite `tests/canonical/test-actback-task.sh` (auto-discovered by
-  `tests/run-all.sh`'s `tests/canonical/test-*.sh` glob) asserting `kb-actback-task.sh` (task-027) over
+  `tests/run-all.sh`'s `tests/canonical/test-*.sh` glob) asserting `kb-actback-task.sh` (task-028) over
   a small, in-suite, ASCII fixture:
   - **Representative-task selection** is emitted **deterministically + byte-reproducibly** over the
     machine-readable substrate (a fixed `discovery.doc_set` filename+presence shape + the operational
@@ -20,10 +20,10 @@
   - The suite copies the fixture into a `mktemp -d` scratch before any script runs (the committed
     fixture is a static read-only input; nothing is written/harvested at run time).
 - Confirm `kb-actback-task.sh` is on `test-ascii-only.sh`'s `SHIPPED_SCRIPTS` allow-list (the allow-list
-  entry is added in task-027; this suite asserts the script passes the ascii-only gate).
+  entry is added in task-028; this suite asserts the script passes the ascii-only gate).
 
 **Boundary (this suite EXERCISES, does not RE-SPEC):** it does NOT author/edit `kb-actback-task.sh`
-(task-027), the doc-model owning-table (task-028), or the M6 panel wiring (task-029) -- it runs the
+(task-028), the doc-model owning-table (task-027), or the M6 panel wiring (task-029) -- it runs the
 shipped helper over an in-suite fixture and asserts its two mechanical functions. The **end-to-end
 act-back fixture** (the `actback-pass-kb`/`actback-fail-kb` pair + the representative-task spec fixture)
 and its **judgment-anchored V-E assertions** are **delivery-006 / f012**'s ([SPIKE-A5]); this task
@@ -41,5 +41,5 @@ ships only the helper's small in-suite unit fixture and must not duplicate/diver
   gate.
 - [ ] No reference to the delivery-006/f012 end-to-end pass/fail-KB corpus or the V-E family (those are
   f012's; this is the helper's unit suite only).
-- [ ] All section-6 quality gates pass (TEST defaults: deterministic, clean setup/teardown, all task-027
+- [ ] All section-6 quality gates pass (TEST defaults: deterministic, clean setup/teardown, all task-028
   acceptance criteria covered).

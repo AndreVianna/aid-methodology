@@ -293,20 +293,20 @@ wave 3: task-026
 
 | Task | Depends On |
 |------|-----------|
-| task-027 | task-002 (d001), task-008 (d001) |
-| task-028 | task-004 (d001), task-010 (d001) |
+| task-027 | task-004 (d001), task-010 (d001) |
+| task-028 | task-008 (d001), task-027 (d005) |
 | task-029 | task-027, task-028, task-014 (d001) |
-| task-030 | task-027 |
+| task-030 | task-028 |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-027, task-028 |
 | task-029, task-030 |
 
 ```wave-map
 delivery: 005
-wave 1: task-027, task-028
-wave 2: task-029, task-030
+wave 1: task-027
+wave 2: task-028
+wave 3: task-029, task-030
 ```
 
 ### delivery-006 execution graph
@@ -321,7 +321,7 @@ wave 2: task-029, task-030
 | task-036 | task-033, task-023 (d004) |
 | task-037 | — |
 | task-038 | task-037, task-012 (d001) |
-| task-039 | task-027 (d005), task-029 (d005) |
+| task-039 | task-028 (d005), task-029 (d005) |
 
 | Can Be Done In Parallel |
 |------------------------|

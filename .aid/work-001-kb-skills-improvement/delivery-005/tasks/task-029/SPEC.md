@@ -13,7 +13,7 @@
   **verbatim**:
   - **Step 1** mandate loop gains **M6 (act-back)** -> 6 PARALLEL `aid-reviewer` dispatches (full-panel
     default; same A3 capability-probe degrade-to-sequential). Step 1b appends M6's FOCUS body + the
-    `kb-actback-task.sh` (task-027) representative-task spec + the operational-structure presence-check
+    `kb-actback-task.sh` (task-028) representative-task spec + the operational-structure presence-check
     output. Step 1d adds the M6 scratch ledger `.aid/.temp/review-pending/discovery-actback.md`.
   - **Step 2** merges the 6th scratch ledger into the single `discovery.md` (M6 rows -> stable `AB-NNN`
     IDs, `[ACTBACK]` description tag), runs the **UNCHANGED** `grade.sh`; evaluates BOTH sibling
@@ -27,7 +27,7 @@
 - **`canonical/skills/aid-discover/references/reviewer-prompt-actback.md` (NEW)** -- the M6 FOCUS body:
   clean-context "given ONLY the KB + the representative task, produce the plan AND flag every
   insufficiency"; the two FAIL limbs (plan-correctness + sufficiency); the four insufficiency classes
-  (convention/invariant/gotcha/contract -- matching task-028's owning-table); the binary bar; output
+  (convention/invariant/gotcha/contract -- matching task-027's owning-table); the binary bar; output
   redirection to its OWN scratch ledger `discovery-actback.md` (7-column ledger schema), NOT STATE.md.
   Add an M6 row to `reviewer-prompt.md`'s thin index.
 - **`canonical/aid/templates/kb-authoring/review-rubric.md`** -- add the **`[ACTBACK]`** (HIGH) tag to
@@ -37,7 +37,7 @@
 
 **Boundary (reuse, don't re-spec):** does NOT alter the 5-mandate bodies, the fan-out machinery,
 `grade.sh`, the `{{SCOPE}}` seam, or the `[TEACHBACK]` encoding (all f005/task-014, delivery-001 --
-reused verbatim). Does NOT author `kb-actback-task.sh` (task-027) or the doc-model rule (task-028) --
+reused verbatim). Does NOT author `kb-actback-task.sh` (task-028) or the doc-model rule (task-027) --
 it *invokes/consumes* them. Does NOT build the act-back fixture (delivery-006/f012). `grade.sh` is
 **unchanged** (no new grade computation; the keystone is the `[HIGH] [ACTBACK]` rows it already counts).
 Because M6 joins the per-mandate dispatch list, f006's brownfield-small collapse folds M6 in
@@ -57,8 +57,8 @@ automatically ([SPIKE-A3]) -- no f006 edit here.
   "forces grade <= D" clause; category routing + existing rubrics unchanged.
 - [ ] `kb-actback-task.sh` and its siblings are invoked with the full `canonical/aid/scripts/kb/...`
   path (not f005's dropped-`aid/` bug); clean-context block forbids reading project source for M6.
-- [ ] `grade.sh` is byte-unchanged; the four insufficiency classes named in the prompt match task-028's
-  owning-table classes and task-027's presence-check headings (single source of truth).
+- [ ] `grade.sh` is byte-unchanged; the four insufficiency classes named in the prompt match task-027's
+  owning-table classes and task-028's presence-check headings (single source of truth).
 - [ ] All section-6 quality gates pass; canonical edits render to all 5 trees (render-drift green via
   `run_generator.py`; verify net-new `reviewer-prompt-actback.md` reference emits to all 5 trees per
   [SPIKE-A2]).

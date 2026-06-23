@@ -4,7 +4,7 @@
 
 **Source:** work-001-kb-skills-improvement -> delivery-006
 
-**Depends on:** task-027 (delivery-005), task-029 (delivery-005)
+**Depends on:** task-028 (delivery-005), task-029 (delivery-005)
 
 **Scope:**
 - Author the hand-built, ASCII, checked-in **act-back fixture** that joins f012's `kb-essence/` corpus
@@ -12,11 +12,11 @@
   ([SPIKE-A5]). Three parts:
   - A **representative-task spec fixture** -- a small fixed project shape (a confirmed
     `discovery.doc_set` -- filenames + `present|absent` -- plus the operational sections present in
-    its docs) over which delivery-005's `kb-actback-task.sh` (task-027) emits a stable, well-formed
+    its docs) over which delivery-005's `kb-actback-task.sh` (task-028) emits a stable, well-formed
     representative task. The fixture records the asserted task spec in `expected/` so the suite can
     diff against a byte-reproducible golden.
   - **`actback-pass-kb/`** -- a KB whose relevant docs carry the **first-class operational sections**
-    (`## Conventions` / `## Invariants` / `## Gotchas` / `## Contracts`, per delivery-005/task-028's
+    (`## Conventions` / `## Invariants` / `## Gotchas` / `## Contracts`, per delivery-005/task-027's
     `concern-model.md` owning-table) the representative task needs; the presence check reports them
     **present**; the clean-context agent can plan with no insufficiency flag (the PASS shape).
   - **`actback-fail-kb/`** -- the same KB with that operational guidance **buried in prose or omitted**
@@ -27,7 +27,7 @@
   V-A..V-D, auto-discovered by `tests/run-all.sh`'s `tests/canonical/test-*.sh` glob (NO edit to
   run-all.sh). Follow the `test-doc-set-mapping.sh` pattern (`set -u`, `source ../lib/assert.sh`,
   numbered `T..`/`V-E..` assertions, `mktemp -d` scratch, `trap ... EXIT` cleanup, `test_summary` +
-  `exit $?`). It runs delivery-005's SHIPPED `kb-actback-task.sh` (task-027) over a `mktemp -d` copy of
+  `exit $?`). It runs delivery-005's SHIPPED `kb-actback-task.sh` (task-028) over a `mktemp -d` copy of
   the fixture and asserts the **MECHANICAL half**:
   - **V-E1** -- representative-task selection is deterministic + byte-reproducible: `kb-actback-task.sh`
     over the representative-task spec fixture emits the recorded `expected/` task spec; re-run is
@@ -51,8 +51,8 @@ HOME="${TMP}/fakehome"`) before any script run; carry the `_CANARY_BEFORE`/`_CAN
 `mktemp -d` scratch + `trap ... EXIT` cleanup; never mutate the committed fixture.
 
 **Boundary:** f012 EXERCISES delivery-005's act-back gate -- this task does NOT author/edit
-`kb-actback-task.sh` (task-027/d005), the M6 panel wiring or `reviewer-prompt-actback.md` (task-029/d005),
-the `[ACTBACK]` rubric tag, or the doc-model owning-table (task-028/d005). It runs the SHIPPED helper
+`kb-actback-task.sh` (task-028/d005), the M6 panel wiring or `reviewer-prompt-actback.md` (task-029/d005),
+the `[ACTBACK]` rubric tag, or the doc-model owning-table (task-027/d005). It runs the SHIPPED helper
 over the fixture and asserts the mechanical present/absent + byte-reproducibility substrate. The M6
 clean-context plan-success / flag-well-foundedness self-score is the **judgment half**, runtime-anchored
 in f012's Judgment Boundary, NOT a CI assertion. The fixture is the single source -- delivery-005's
