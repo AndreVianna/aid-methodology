@@ -15,7 +15,7 @@ This is the DELIVERY-LEVEL STATE.md. Two zones:
 
 <!-- AUTHORED -- single writer: this delivery's branch only. Never derived from task rollup (SD-9). -->
 
-- **State:** Pending-Spec
+- **State:** Done
 - **Updated:** 2026-06-23T00:00:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
