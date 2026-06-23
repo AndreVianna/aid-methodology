@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** tests/canonical/test-essence-capture.sh written; all 8 assertions pass; SPIKE-H2 floor=spread>=2 pinned empirically.
 
 ---
 
