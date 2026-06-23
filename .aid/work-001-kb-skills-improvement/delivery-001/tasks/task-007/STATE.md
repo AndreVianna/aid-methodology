@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** T01-T10 all pass (18 assertions). Fixtures at tests/canonical/fixtures/harvest-coined-terms/relative-bus/. T09 'Relative Bus' surfaces in top 5 rows.
 
 ---
 
