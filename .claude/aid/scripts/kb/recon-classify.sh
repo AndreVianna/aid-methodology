@@ -316,8 +316,8 @@ PROPOSED_PATH=""
 
 if [[ $RM1 -le $GF_MAX_FILES && $RM2 -le $GF_MAX_LOC ]]; then
   PROPOSED_PATH="GREENFIELD"
-  # No thresholds tripped (both under greenfield ceiling)
-  TRIPPED="greenfield_max_source_files (<= ${GF_MAX_FILES}), greenfield_max_source_loc (<= ${GF_MAX_LOC})"
+  # No thresholds tripped -- both metrics under the greenfield ceiling (gate satisfied, not tripped)
+  TRIPPED="none -- greenfield gate satisfied (source_files <= ${GF_MAX_FILES} AND source_loc <= ${GF_MAX_LOC})"
 else
   # Check large dimensions
   LARGE_TRIGGERED=0
