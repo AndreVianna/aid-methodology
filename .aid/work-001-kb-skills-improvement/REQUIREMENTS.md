@@ -20,6 +20,7 @@
 | 2026-06-22 | Cross-ref folds — Q1 `approved_at_commit:` (FR-4/5), Q2 C2 KB-scripts, FR-6 both readers, §1.5 scout slot | /aid-interview |
 | 2026-06-23 | whole-work review 2026-06-23 — Dec.A: greenfield→brownfield transition now via re-triage (§1.5, FR-22, Could-item); verifier mechanism dropped. Dec.B: essence-capture spans lexical + non-lexical synthesis (FR-12); teach-back AC1 gains the non-lexical engine-narration limb | whole-work review |
 | 2026-06-23 | §1.5 matrix Greenfield cells aligned to the (already-corrected) prose — Review→`collapsed` (mini-panel removed); Exit→`teach-back closure` (invariant per FR-21/AC1); Primary-risk→`over-eager elicitation / thin intent-KB` (dropped-verifier "intent↔as-built drift" framing removed) | alignment pass |
+| 2026-06-23 | greenfield de-scope — greenfield is no longer a generation path: recon **detects** it (~0 source) and `aid-discover` **signposts to /aid-interview and halts**. The two generation paths are brownfield-small/large. §1.5 matrix/prose, FR-20/21/22, §4 (O7), §9 AC7, §10 updated; forward-authored greenfield KB-seed deferred to a future interview-side work | user decision |
 
 ## 1. Objective
 
@@ -158,7 +159,7 @@ never named in any artifact — cannot be recovered from sources. So the goal is
 (Q&A / `aid-query-kb` gap capture) rather than silently ship shallow. This converts
 silent misses into caught concepts or explicit human questions.
 
-### 1.5 The discovery method and the three paths
+### 1.5 The discovery method and the recon triage (two brownfield paths; greenfield detect+signpost)
 
 **Governing principle** (facing a project — *not even knowing the subject*): you cannot
 bring domain knowledge, so reconstruct it **bottom-up from evidence**; the deadly mistake
@@ -180,34 +181,45 @@ prove understanding third — concepts before template.**
    `aid-orchestrator` aggregates → FIX loop, or escalate ungroundable gaps to —
 6. **HUMAN GATE** (`aid-interviewer`) — questions for the un-fingerprinted concepts.
 
-**Three recon-selected paths** (a triage at the front, mirroring `aid-interview`'s
-lite/full triage). **Shared invariants across all paths:** concept spine first-class;
-summary+pointer + `sources:`; the review *mandates* (panel size scales, mandates don't);
-**teach-back closure as the exit**; human escape hatch; deterministic substrate; *KB
-value = delta from generalist knowledge*.
+**Recon selects among three outcomes** (a triage at the front, mirroring `aid-interview`'s
+lite/full triage): **greenfield → detect + signpost** (not a generation path), and the two
+*generation* paths **brownfield-small** and **brownfield-large**. **Shared invariants across
+the two generation paths:** concept spine first-class; summary+pointer + `sources:`; the
+review *mandates* (panel size scales, mandates don't); **teach-back closure as the exit**;
+human escape hatch; deterministic substrate; *KB value = delta from generalist knowledge*.
 
-| Dimension | Greenfield | Brownfield-Small | Brownfield-Large |
+| Dimension | Greenfield (detect + signpost) | Brownfield-Small | Brownfield-Large |
 |---|---|---|---|
-| Recon trigger | little/no source | source < complexity threshold | source ≥ threshold |
-| Source of truth | human intent + requirements/design | code + docs | code + docs + history/reports/data |
-| Concept acquisition | **elicit** (co-author; ties to interview/specify) | **extract**, single pass | **extract**: mechanical harvest → spine |
-| Generation shape | forward-authored, thin | one understand-pass, no fan-out | parallel fan-out by concern, concept-aware |
-| Closure | "intent coherent + specified + vocab set" | short | batched-parallel loop, capped |
-| Review | collapsed: 1 reviewer running the mandates as sequential passes + clean-context teach-back | collapsed: 1 reviewer, multi-mandate checklist | full parallel mandate panel |
-| Starting KB | thin (intent+vocab+design) | full anatomy (small) | full anatomy (large) |
-| Exit | teach-back closure | teach-back closure | teach-back closure |
-| Cost / wall-clock | low tokens, human-paced | low | high (justified) |
-| Primary risk | over-eager elicitation / thin intent-KB | missing a fingerprinted concept | closure over/under-run; cost |
+| Recon trigger | little/no source (~0 extractable) | source < complexity threshold | source ≥ threshold |
+| Outcome | **signpost + halt** — not a generation path | generation path | generation path |
+| Source of truth | n/a (nothing to extract yet) | code + docs | code + docs + history/reports/data |
+| Concept acquisition | none yet — **extract** begins once code lands (re-triage) | **extract**, single pass | **extract**: mechanical harvest → spine |
+| Generation shape | none — `aid-discover` emits a signpost and halts | one understand-pass, no fan-out | parallel fan-out by concern, concept-aware |
+| Closure | n/a | short | batched-parallel loop, capped |
+| Review | n/a | collapsed: 1 reviewer, multi-mandate checklist | full parallel mandate panel |
+| Starting KB | none (nothing discovered yet) | full anatomy (small) | full anatomy (large) |
+| Exit | signpost shown (no closure to reach) | teach-back closure | teach-back closure |
+| Cost / wall-clock | ~0 (detect + print) | low | high (justified) |
+| Primary risk | mis-detecting a buildable project as empty | missing a fingerprinted concept | closure over/under-run; cost |
+
+**The greenfield signpost.** When recon detects a from-scratch project (essentially no
+source to extract), `aid-discover` does **not** run a generation engine. It emits a
+**signpost and halts**: *"Nothing to discover yet — run /aid-interview to define the
+project; the KB fills in as you build, via re-triage once code lands."* There is no
+greenfield generation engine, no elicit-via-interview/specify discovery path, no greenfield
+closure loop, and no greenfield review panel. (A future, **out-of-scope** interview-side
+capability may *forward-author* a greenfield KB-seed — eliciting intended
+architecture/conventions/ubiquitous-language for a from-scratch project — but that is not
+this work; see §4 O7.)
 
 **Triage = lifecycle.** The path is **measured, not declared** (recon quantifies
 source-availability/complexity → thresholds propose → human confirms; do not trust a
-static `project.type`). **Re-triaged every run**, so the paths are *stages a project
-passes through*: a greenfield's thin intent-KB becomes the spec the code is built
-against; as code lands, **re-triage re-routes to the brownfield engine, which
-captures the now-extractable anatomy**; crossing the threshold triggers a
-Brownfield-Large consolidation. The KB
-**persists and is progressively verified/enriched** across Greenfield → Brownfield-Small
-→ Brownfield-Large.
+static `project.type`). **Re-triaged every run**, so the project moves through *stages*: a
+greenfield gets signposted to `/aid-interview`; as code lands, **re-triage re-routes to the
+brownfield engine, which captures the now-extractable anatomy**; crossing the threshold
+triggers a Brownfield-Large consolidation. The KB **comes into existence and is
+progressively verified/enriched** as the project crosses from greenfield (signpost only) →
+Brownfield-Small → Brownfield-Large.
 
 ### 1.6 Engineering principles — cost, wall-clock, determinism
 
@@ -262,7 +274,7 @@ bounded cost, parallel/fast, already adaptive on the doc-set, clean-context revi
 loop, Q&A capture). Keep those bones; add the high-value pieces — **(must-have)** the
 concept-harvest front-half + concept spine, and the multi-mandate panel + teach-back
 exit; **(bounded)** the closure loop, capped; and **scale depth to project complexity**
-via the three paths.
+via the recon triage (two brownfield generation paths; greenfield is detect + signpost).
 
 ### 1.10 Success criteria (summary)
 
@@ -271,8 +283,10 @@ via the three paths.
 - The `INDEX.md` routes reliably (Objective · Summary · Tags · See-instead).
 - The KB **freshness loop closes** (per-doc, source-keyed staleness + targeted
   `aid-update-kb` updates; gap capture from `aid-query-kb`).
-- One method, **three recon-selected paths**, working correctly for greenfield,
-  brownfield-small, and brownfield-large — with teach-back as the invariant bar.
+- One method with a recon triage: **greenfield is detected and signposted to
+  `/aid-interview`** (not a generation path), and the two generation paths
+  (**brownfield-small**, **brownfield-large**) work correctly — with teach-back as the
+  invariant bar for the generation paths.
 - The whole design stays within AID's **deterministic, dependency-free, human-gated**
   ethos.
 
@@ -490,7 +504,7 @@ They are indirect consumers whose output quality is bounded by KB quality.
 | AI agents | precise routing + essence | INDEX routing table (Item 1); essence capture (§1.4) |
 | Human roles (jr/architect/PM/UX) | right-altitude, digestible, updatable slice | summary+pointer + audience/ownership (§1.3) |
 | Doc owners | actionable per-doc staleness + targeted update | `sources:` freshness + `aid-update-kb` (§1.8) |
-| AID adopters (incl. skeptics) | project-fit discovery; trustworthy, deterministic KB | 3 paths + teach-back gate + deterministic substrate (§1.5–§1.6) |
+| AID adopters (incl. skeptics) | project-fit discovery; trustworthy, deterministic KB | recon triage (greenfield detect/signpost + 2 brownfield paths) + teach-back gate + deterministic substrate (§1.5–§1.6) |
 | AID maintainers | conventions-fit, testable design | deterministic harness + canonical/render fit (§1.6) |
 | Downstream phases | accurate, fresh, essence-bearing KB | the whole work |
 
@@ -517,9 +531,11 @@ They are indirect consumers whose output quality is bounded by KB quality.
   **multi-mandate review panel**; the **teach-back-closure exit**; the **Calibration**
   rubric dimension (transcription / hollowness / coverage-vs-source / deferral-must-point).
   *(P1, P2, P3, P4)*
-- **S5 — The 3-path method + recon triage.** One method, three recon-selected paths
-  (greenfield / brownfield-small / brownfield-large); path **measured, not declared**;
-  re-triaged each run (lifecycle: greenfield→brownfield). *(P7)*
+- **S5 — Recon triage + two brownfield generation paths (+ greenfield detect/signpost).**
+  One method with a recon triage: **greenfield is detected** (~0 extractable source) and
+  drives a **signpost to /aid-interview + halt** (not a generation path); the two
+  **generation** paths are **brownfield-small** and **brownfield-large**. Path **measured,
+  not declared**; re-triaged each run (lifecycle: greenfield-signpost → brownfield). *(P7)*
 - **S6 — Deterministic-substrate engineering.** Mechanical scans/checks (coined-term,
   closure self-containment, salience ranking); batched-parallel closure rounds; the
   two-layer harness (deterministic control flow + schema-validated LLM workers);
@@ -548,8 +564,16 @@ They are indirect consumers whose output quality is bounded by KB quality.
   other non-KB skills.
 - **O5 — Dashboard work beyond** surfacing the per-doc freshness flag (no broader dashboard
   overhaul).
-- **O6 — No follow-up deferral.** The full In-Scope set is this one work, sequenced into
-  deliveries by `/aid-plan`.
+- **O6 — No follow-up deferral (of the In-Scope generation set).** The full In-Scope set is
+  this one work, sequenced into deliveries by `/aid-plan`. *(The one explicit deferral is
+  O7's forward-authored greenfield KB-seed, which was never part of the In-Scope generation
+  work — greenfield here is detect + signpost only.)*
+- **O7 — Forward-authored greenfield KB-seed.** Eliciting a from-scratch project's
+  **intended** architecture, conventions, and ubiquitous-language to seed the KB *before any
+  code exists* (a co-authoring "elicit" discovery mode) is **out of scope** — it is a future
+  **interview-side** capability, not this work. This work's greenfield behavior is strictly
+  **detect + signpost to /aid-interview + halt** (S5, FR-20/FR-21). *(supersedes the earlier
+  greenfield generation-path framing; see Change Log 2026-06-23 greenfield de-scope)*
 
 ## 5. Functional Requirements
 
@@ -616,17 +640,25 @@ They are indirect consumers whose output quality is bounded by KB quality.
   coverage-vs-source / deferral-must-point), graded against mechanically-generated evidence
   lists (evidence-anchored).
 
-### E. The 3 paths + recon triage (S5 · P7)
+### E. Recon triage + two brownfield paths (+ greenfield detect/signpost) (S5 · P7)
 
-- **FR-20.** A **recon pre-pass** MUST measure source-availability/complexity and
-  **propose** a path (greenfield / brownfield-small / brownfield-large), human-confirmed —
-  measured, not declared from a static `project.type`.
-- **FR-21.** Each path MUST configure the method (concept acquisition extract-vs-elicit,
-  generation shape, closure depth, panel size, source-of-truth, exit) per the agreed
-  matrix; **teach-back closure is the invariant exit** across all paths.
+- **FR-20.** A **recon pre-pass** MUST measure source-availability/complexity and classify
+  the project as **greenfield / brownfield-small / brownfield-large**, human-confirmed —
+  measured, not declared from a static `project.type`. **Greenfield detection** (essentially
+  no extractable source) MUST drive the signpost (FR-21); brownfield-small/large are the two
+  **generation** paths proposed for confirmation.
+- **FR-21.** On **greenfield** detection, `aid-discover` MUST **emit a signpost and halt**
+  ("Nothing to discover yet — run /aid-interview to define the project; the KB fills in via
+  re-triage once code lands") — greenfield is **not** a generation path: no greenfield
+  generation engine, no elicit-via-interview/specify discovery path, no greenfield closure
+  loop, no greenfield review panel. The two **generation** paths (brownfield-small,
+  brownfield-large) MUST each configure the method (generation shape, closure depth, panel
+  size, source-of-truth, exit) per the agreed matrix; **teach-back closure is the invariant
+  exit** for both generation paths. *(Forward-authored greenfield KB-seed is a future
+  interview-side capability, out of scope — §4 O7.)*
 - **FR-22.** The path MUST be **re-triaged every run**; the **greenfield→brownfield
-  transition** MUST be handled (as code lands, re-triage re-routes to the brownfield
-  engine, which captures the now-extractable anatomy).
+  transition** MUST be handled (as code lands, re-triage re-routes from the signpost to the
+  brownfield engine, which captures the now-extractable anatomy).
 
 ### F. Engineering targets (S6 · cost/wall-clock/determinism)
 
@@ -760,7 +792,9 @@ They are indirect consumers whose output quality is bounded by KB quality.
   deep-dive fan-out; where it does not, the method **degrades gracefully to sequential**
   (the `aid-execute` capability-probe precedent).
 - **A4.** A project's source-of-truth is reachable (repo, docs, history) for the brownfield
-  paths; for greenfield, the **human + requirements/design** are the source-of-truth.
+  generation paths; a greenfield project has no extractable source yet, so discovery only
+  **signposts to `/aid-interview`** (the human defines the project there) and the KB is built
+  later via re-triage as code lands.
 
 ### Dependencies
 
@@ -800,9 +834,12 @@ They are indirect consumers whose output quality is bounded by KB quality.
   FR-5, FR-6)*
 - **AC6 — Calibration grading.** On planted fixtures, the rubric flags **transcription**
   (too fat), **hollowness** (too thin), and **coverage-vs-source** gaps. *(FR-19)*
-- **AC7 — Three paths via triage.** The recon triage proposes the correct path on
-  greenfield / brownfield-small / brownfield-large fixtures; each path runs and reaches
-  **teach-back closure**. *(FR-20, FR-21)*
+- **AC7 — Triage: two brownfield paths + greenfield detect/signpost.** The recon triage
+  proposes the correct **generation** path on **brownfield-small** and **brownfield-large**
+  fixtures, and each runs and reaches **teach-back closure**; on a **greenfield** fixture
+  (~0 extractable source) the triage **detects greenfield** and `aid-discover` **emits the
+  signpost and halts** (a detection/signpost test — NOT a greenfield path-runs-to-closure
+  fixture). *(FR-20, FR-21)*
 - **AC8 — Skill topology.** `aid-ask`→`aid-query-kb` (behavior preserved); `aid-update-kb`
   applies a prompt-driven targeted update through the review/calibration gate; a failed
   `aid-query-kb` query **enqueues a gap**. *(FR-26, FR-27, FR-28)*
@@ -831,15 +868,18 @@ They are indirect consumers whose output quality is bounded by KB quality.
   (FR-12–FR-16), the multi-mandate panel + teach-back exit (FR-17, FR-18), the Calibration
   dimension (FR-19), the INDEX routing table (FR-1–FR-3), `sources:` (FR-4),
   concept-model persisted (FR-31), human escalation (FR-32), **migration** (FR-30), the
-  validation fixture (FR-35), and the **brownfield-small + brownfield-large** paths
-  (FR-20/FR-21 for those two).
+  validation fixture (FR-35), and the recon triage with the **brownfield-small +
+  brownfield-large** generation paths **plus greenfield detection + signpost** (FR-20/FR-21:
+  greenfield detect/signpost and the two brownfield generation paths are all Must).
 - **Should (keep it fresh + clean):** per-doc staleness + change-triggered flagging (FR-5,
   FR-6, FR-7, FR-8), `aid-update-kb` + gap capture (FR-27, FR-28), `aid-ask` rename (FR-26),
   housekeep↔update-kb boundary (FR-33), closure-as-standing-invariant (FR-34),
   `aid-summarize` alignment (FR-29).
-- **Could (completeness, highest-risk / most speculative):** the **greenfield path**
-  (FR-20/FR-21 greenfield branch — elicit mode reuses `aid-interview`/`aid-specify` —
-  plus the greenfield→brownfield transition handled by re-triage, FR-22); audience-column
-  polish; dashboard per-doc surfacing niceties.
+- **Could (completeness, highest-risk / most speculative):** the greenfield→brownfield
+  transition handled by re-triage (FR-22, beyond the Must detect/signpost); audience-column
+  polish; dashboard per-doc surfacing niceties. *(The former "greenfield path" Could item is
+  removed — there is no greenfield generation path; greenfield is detect + signpost, part of
+  the Must recon, FR-20/FR-21.)*
 - **Won't (this work):** O1–O5 (vector router, auto-apply, auto-run from execute/deploy,
-  non-KB pipeline changes, broader dashboard work).
+  non-KB pipeline changes, broader dashboard work); **O7** — forward-authored greenfield
+  KB-seed (a future interview-side capability, not this work).

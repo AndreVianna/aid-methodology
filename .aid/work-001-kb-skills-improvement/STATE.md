@@ -162,6 +162,7 @@ different places.
 | 2026-06-22 | aid-specify feature-012 | A+ | Ready — validation fixture (AC2 'Relative Bus' regression + calibration/teach-back/path); D+→A+ (HIGH: phrase-survival path corrected to f004) |
 | 2026-06-22 | aid-specify ALL 12 features | A+ | All features Ready/A+ — Specify phase complete; ready for /aid-plan |
 | 2026-06-23 | aid-plan PROPOSE (sequence) | -- | Dependency graph mapped (acyclic, single-producer primitives confirmed) + 7-delivery sequence proposed for user reaction. f008+f009 merged into one delivery (D5) per whole-work carry. NOT yet committed — PLAN.md unwritten; phase stays Specify/Paused pending user decision |
+| 2026-06-23 | greenfield de-scoped | -- | delivery-009 (Greenfield Path) removed; work is now 8 deliveries (delivery-001..008), 50 tasks. Greenfield reduced to detect + signpost: recon detects ~0 source → aid-discover signposts to /aid-interview and halts; KB fills in via re-triage once code lands. No greenfield generation engine / elicit-via-interview-specify path / closure / panel. f006/f012 brownfield-only scope updated (f012 AC7 = brownfield path fixtures + greenfield detection/signpost test). PLAN R1 (greenfield scope-split) retired. KB-seed forward-authoring deferred to a future interview-side work (REQUIREMENTS O7). PLAN.md/REQUIREMENTS.md updated |
 
 ---
 
@@ -198,13 +199,13 @@ different places.
 | 3 | feature-003-kb-document-model | Ready | A+ | 0 | D+→A+: concern-model.md (10 concerns/15 seeds), byte-identical seed reframe, expectations→open-questions, summarize spine across 7 profiles |
 | 4 | feature-004-essence-capture-research | Ready | A+ | 0 | D+→A+: harvest-coined-terms.sh (phrase-survival closes 'Relative bus'), glossary→spine, bounded closure-check.sh, Step-6b escalation; salience arithmetic fixed |
 | 5 | feature-005-review-panel-and-rubric | Ready | A+ | 0 | C→A+: 5-mandate parallel panel→merged ledger, un-relaxable teach-back hard gate, Calibration dimension + round-trip; self-contained extraction |
-| 6 | feature-006-recon-triage-and-paths | Ready | A+ | 0 | A→A+: recon-classify.sh + triage thresholds, 3-path config matrix, f005 panel-scaling (5→2), closure-cap runtime-arg seam |
+| 6 | feature-006-recon-triage-and-paths | Ready | A+ | 0 | A→A+: recon-classify.sh + triage thresholds, f005 panel-scaling (5→2), closure-cap runtime-arg seam. **Greenfield de-scoped (2026-06-23):** greenfield = recon DETECTS (~0 source) → aid-discover signposts to /aid-interview + halts; NOT a generation path (no greenfield engine/elicit/closure/panel). Two generation paths: brownfield-small/large |
 | 7 | feature-007-per-doc-freshness-loop | Ready | A+ | 0 | D+→A+: kb-freshness-check.sh (merge-base ancestry), two-reader parity, degrade matrix; fixed f001↔f007 absence-contract contradiction |
 | 8 | feature-008-skill-topology | Ready | A+ | 0 | A→A+: aid-ask→aid-query-kb rename (canonical-only, grep-0), new aid-update-kb thin-router (reuses f005 gate), gap-capture into Q&A; SPIKE-2 (f005 param seam) carried to PLAN |
 | 9 | feature-009-skill-change-propagation | Ready | A+ | 0 | D+→A+: S1-S12 propagation table (orphan-prune verified), +.aid/dashboard/kb.html surface+Playwright, count labels (user-facing 12→13 vs total 13→14) |
 | 10 | feature-010-housekeep-update-boundary-and-standing-closure | Ready | A+ | 0 | D+→A+: source-driven-global vs prompt-driven-targeted boundary; AC1 preserved (whole-KB review retained, staleness = prioritization); closure re-verify before commit |
 | 11 | feature-011-kb-migration | Ready | A+ | 0 | B→A+: migrate-kb-frontmatter.sh (precedent-following, propose→confirm sources, --rollback), shipped soft-skip RETAINED (NFR-7) + AID-CI strict, sources:[] idempotency |
-| 12 | feature-012-validation-fixture | Ready | A+ | 0 | D+→A+: planted 'Relative Bus' phrase-survival regression (AC2) + calibration/teach-back/path fixtures, threshold-pinning oracle, HOME-pinned isolation; phrase-floor path corrected to match f004 |
+| 12 | feature-012-validation-fixture | Ready | A+ | 0 | D+→A+: planted 'Relative Bus' phrase-survival regression (AC2) + calibration/teach-back/path fixtures, threshold-pinning oracle, HOME-pinned isolation; phrase-floor path corrected to match f004. **Greenfield de-scoped (2026-06-23):** AC7 = two brownfield-small/large path fixtures + a greenfield DETECTION+signpost test (not a greenfield path-runs-to-closure fixture) |
 
 ## Plan / Deliveries
 

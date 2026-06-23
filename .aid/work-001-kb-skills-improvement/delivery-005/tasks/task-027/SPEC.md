@@ -33,8 +33,9 @@
 
 **Boundary (f012 EXERCISES, does not RE-SPEC):** this task authors ONLY fixture files. It does
 NOT author or edit `harvest-coined-terms.sh` / `closure-check.sh` / the denylist / the phrase-
-survival rule (all f004, shipped by delivery-001). The greenfield path fixture and AC1 teach-back
-pass/fail KBs are OUT of scope (AC7-greenfield -> delivery-009; AC1 teach-back -> not delivery-005).
+survival rule (all f004, shipped by delivery-001). The path fixtures (greenfield-detection +
+brownfield, task-029) and the AC1 teach-back pass/fail KBs (task-033) are OUT of scope for THIS task
+(they are authored by sibling delivery-005 tasks, not here).
 The numeric floor VALUES are not chosen here (that is task-030 / [SPIKE-V2]); this task only plants
 the inputs that make the separation measurable.
 

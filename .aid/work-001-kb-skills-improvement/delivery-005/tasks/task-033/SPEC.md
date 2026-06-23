@@ -39,10 +39,10 @@
 **Boundary (f012 EXERCISES, does not RE-SPEC):** this task authors ONLY fixture files. It does NOT
 author or edit `kb-teachback-questions.sh` (f005, shipped by delivery-001 task-012), `closure-check.sh`
 (f004, delivery-001), the teach-back exit gate, or the engine-narration question itself. The teach-back
-fixture is **engine-validation** (it exercises f005's teach-back keystone gate); the greenfield
-path fixture (AC7-greenfield) is OUT of scope -- it is carved to delivery-009. No numeric floor is
-chosen here; this task only plants the pass/fail KBs whose PASS/FAIL separation is mechanically
-checkable in task-034.
+fixture is **engine-validation** (it exercises f005's teach-back keystone gate); the path fixtures
+(greenfield-detection + brownfield) are authored by sibling task-029, OUT of scope for THIS task. No
+numeric floor is chosen here; this task only plants the pass/fail KBs whose PASS/FAIL separation is
+mechanically checkable in task-034.
 
 **Acceptance Criteria:**
 - [ ] `tests/canonical/fixtures/kb-essence/teachback/` exists with `pass-kb/` and `fail-kb/`, each carrying `generated/candidate-concepts.md` and `knowledge/domain-glossary.md` per f012 SPEC F3; all files are ASCII and checked into git (no generation step).

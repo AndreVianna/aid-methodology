@@ -1,4 +1,4 @@
-# task-029: Brownfield path fixtures + shipped-defaults settings.yml
+# task-029: Path fixtures (brownfield + greenfield-detection) + shipped-defaults settings.yml
 
 **Type:** TEST
 
@@ -7,9 +7,18 @@
 **Depends on:** -- (none)
 
 **Scope:**
-- Author the hand-built, ASCII, checked-in BROWNFIELD path fixtures that the AC7 suite (task-032)
-  runs over, under `tests/canonical/fixtures/kb-essence/paths/` (f012 SPEC F4) -- the `generated/`
-  index+candidate tables `recon-classify.sh` reads (NOT real source trees; recon does not re-scan):
+- Author the hand-built, ASCII, checked-in path fixtures that the AC7 suite (task-032) runs over,
+  under `tests/canonical/fixtures/kb-essence/paths/` (f012 SPEC F4) -- the `generated/`
+  index+candidate tables `recon-classify.sh` reads (NOT real source trees; recon does not re-scan).
+  This task authors the BROWNFIELD shapes AND a GREENFIELD-DETECTION shape:
+  - `greenfield/generated/project-index.md` + `candidate-concepts.md`: a **~0-source tree** --
+    Language Breakdown sums to `<= greenfield_max_source_files` source files AND
+    `<= greenfield_max_source_loc` LOC; Full File Inventory holds only a few `is_source` dir
+    prefixes; near-empty candidate list. Must classify **greenfield**. This is the
+    **detection-only** fixture: greenfield is detect-and-signpost (recon DETECTS greenfield and
+    aid-discover signposts to `/aid-interview` + halts), so this fixture exists ONLY for the
+    classification assertion (task-032 V-D1) -- there is **no greenfield generation path / closure**
+    to exercise and no greenfield path-runs fixture.
   - `brownfield-small/generated/project-index.md` + `candidate-concepts.md`: source present, every
     dimension under `large_min_*` (RM2 LOC in Language Breakdown; RM3 dir count in Full File
     Inventory `< large_min_dirs`; RM4 concepts in Summary). Must classify **brownfield-small**.
@@ -32,15 +41,19 @@
 
 **Boundary (f012 EXERCISES, does not RE-SPEC):** this task authors ONLY fixture files. It does NOT
 author or edit `recon-classify.sh` or the `triage.*` thresholds (f006, shipped by delivery-004). The
-**greenfield path fixture is OUT of scope -- it is carved to delivery-009 (AC7-greenfield)**; this
-task plants brownfield-small + brownfield-large only. The numeric `triage.*` floor values are not
-chosen here -- they are the shipped f006 defaults that task-032 pins ([SPIKE-T1] / [SPIKE-V2]); this
-task only carries them into `paths/settings.yml` and plants shapes that bin under them.
+**greenfield fixture is DETECTION-ONLY**: greenfield was de-scoped to detect-and-signpost on
+2026-06-23, so this task plants the greenfield shape **only for the classification assertion** (recon
+classifies it greenfield) -- there is **no greenfield path-runs / greenfield-closure fixture** (no
+greenfield generation engine to exercise), and the former delivery-009 greenfield carve-out is
+deleted along with delivery-009. The numeric `triage.*` floor values are not chosen here -- they are
+the shipped f006 defaults that task-032 pins ([SPIKE-T1] / [SPIKE-V2]); this task only carries them
+into `paths/settings.yml` and plants shapes (greenfield-detection + brownfield-small +
+brownfield-large) that bin under them.
 
 **Acceptance Criteria:**
-- [ ] `tests/canonical/fixtures/kb-essence/paths/` exists containing `brownfield-small/generated/` and `brownfield-large/generated/` (with `project-index.md` + `candidate-concepts.md` each) plus `paths/settings.yml`; all ASCII, checked into git. The `greenfield/` fixture is NOT present (delivery-009).
+- [ ] `tests/canonical/fixtures/kb-essence/paths/` exists containing `greenfield/generated/`, `brownfield-small/generated/`, and `brownfield-large/generated/` (with `project-index.md` + `candidate-concepts.md` each) plus `paths/settings.yml`; all ASCII, checked into git. The `greenfield/` fixture is the detection-only shape (no greenfield path-runs fixture).
 - [ ] Each `project-index.md` carries BOTH a `Language Breakdown` table (RM1/RM2 over `is_source` rows) AND a `Full File Inventory` section (RM3 distinct top-2-level `is_source` dir prefixes), per f006 SPEC L179-181.
-- [ ] `brownfield-small` is planted so every dimension (RM2 LOC, RM3 dirs, RM4 concepts) sits under the corresponding `large_min_*` shipped default; `brownfield-large` is planted in three variants, each tripping exactly one large floor (LOC, dirs, concepts) independently.
+- [ ] `greenfield` is planted as a ~0-source tree so RM1/RM2 sit at/below `greenfield_max_source_files`/`greenfield_max_source_loc` (it must classify greenfield -- detection only, no greenfield path-runs fixture); `brownfield-small` is planted so every dimension (RM2 LOC, RM3 dirs, RM4 concepts) sits under the corresponding `large_min_*` shipped default; `brownfield-large` is planted in three variants, each tripping exactly one large floor (LOC, dirs, concepts) independently.
 - [ ] Each `candidate-concepts.md` carries f004's documented schema with a `## Summary` `Cross-source (spread >= 2)` count consistent with the fixture's intended RM4 binning.
 - [ ] `paths/settings.yml` carries a `triage.*` block whose keys/values are byte-identical to the shipped `canonical/aid/templates/settings.yml` `triage.*` block (so task-032 V-D7 can assert parity).
 - [ ] No fixture file is written/mutated at run time -- the trees are static read-only inputs copied into a `mktemp -d` scratch by task-032 before any script runs.

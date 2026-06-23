@@ -51,7 +51,7 @@ the new schema and flipping the lint hard (delivery-003, f011); recon triage + p
 panel/closure-loop (delivery-004, f006); the validation fixtures + threshold calibration
 (delivery-005, f012); per-doc freshness (delivery-006, f007); the skill rename/add + propagation
 (delivery-007, f008/f009); the housekeep<->update-kb boundary + standing closure (delivery-008,
-f010); the greenfield branch (delivery-009).
+f010); greenfield reduced to detect+signpost in the recon (delivery-004 -- no separate delivery).
 
 ## Gate Criteria
 
@@ -87,7 +87,7 @@ f010); the greenfield branch (delivery-009).
 ## Dependencies
 
 - **Depends on:** -- (none)
-- **Blocks:** delivery-002, delivery-003, delivery-004, delivery-005, delivery-006, delivery-007, delivery-008, delivery-009
+- **Blocks:** delivery-002, delivery-003, delivery-004, delivery-005, delivery-006, delivery-007, delivery-008
 
 ## Notes
 

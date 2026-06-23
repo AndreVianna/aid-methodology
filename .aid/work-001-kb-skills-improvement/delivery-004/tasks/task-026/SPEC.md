@@ -15,7 +15,7 @@
   - **`panel: full` (brownfield-large):** the UNCHANGED f005 default -- 5 parallel `aid-reviewer`
     dispatches, one per mandate {Correctness, Anatomy/Coverage, Concept-closure, Teach-back,
     Calibration}, merged to `discovery.md`. No collapse.
-  - **`panel: collapsed` (brownfield-small + greenfield):** the panel collapses to **2 dispatches**:
+  - **`panel: collapsed` (brownfield-small only):** the panel collapses to **2 dispatches**:
     1. **ONE `aid-reviewer`** that runs the four content mandates (M1 Correctness / M2 Anatomy /
        M3 Concept-closure / M5 Calibration) as **SEPARATE SEQUENTIAL PASSES** within the single
        agent -- driven through each mandate's existing FOCUS body
@@ -29,13 +29,12 @@
     2. **ONE clean-context teach-back reviewer (M4)** -- teach-back stays its own clean-context
        dispatch on EVERY path (it cannot share a context that has seen the source), preserving the
        teach-back keystone exit (FR-18).
-  - **All five mandates still run on every path** (FR-17: mandates + the no-blending rule are
-    invariant; only the size/parallelism scales).
-  - **Greenfield deferral note:** this task builds the `review.panel` BRANCH LOGIC (the `full` vs
-    `collapsed` dispatch-count seam) only. Greenfield's `collapsed` panel value takes effect when
-    delivery-009 delivers the greenfield GENERATE/REVIEW path; D4 does NOT build greenfield behavior
-    (consistent with task-023/task-025, where the greenfield classifier row + route-note are D4 but
-    the greenfield path behavior is delivery-009).
+  - **All five mandates still run on every brownfield path** (FR-17: mandates + the no-blending rule
+    are invariant; only the size/parallelism scales).
+  - **Greenfield never reaches the panel.** On a greenfield verdict aid-discover halts at the Step 0f
+    signpost (task-025), so REVIEW only ever runs for the two brownfield paths. `collapsed` is a
+    **brownfield-small-only** value; there is no greenfield panel (greenfield is detect+signpost, not
+    a generation path).
   - **Do NOT touch** the f005 mandate bodies, the merge/grade (Step 2), or the teach-back hard gate
     -- this task edits only the dispatch-count branch f005 left as a seam.
 - Re-run `python .claude/skills/generate-profile/scripts/run_generator.py`; commit regenerated
@@ -48,10 +47,10 @@
 - [ ] For `collapsed`, dispatch 1 is ONE reviewer running M1/M2/M3/M5 as separate sequential passes
   (driven through the four existing FOCUS bodies one at a time, in order, each written to the
   ledger before the next), explicitly NOT one blended judgment.
-- [ ] For `collapsed`, dispatch 2 is ONE clean-context teach-back (M4) reviewer on every collapsed
-  path (brownfield-small + greenfield).
-- [ ] All five mandates run on every path; the no-blending (anti-P2) property is preserved at lower
-  parallelism.
+- [ ] For `collapsed`, dispatch 2 is ONE clean-context teach-back (M4) reviewer (brownfield-small --
+  the only collapsed path; greenfield never reaches the panel).
+- [ ] All five mandates run on every brownfield path; the no-blending (anti-P2) property is preserved
+  at lower parallelism. `collapsed` is brownfield-small-only.
 - [ ] The mandate bodies, the merge/grade (Step 2), and the teach-back hard gate are unchanged
   (this task touches only the dispatch-count branch).
 - [ ] `review.panel` is consumed as a runtime parameter (from path-config.md / the orchestrator),

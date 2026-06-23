@@ -423,7 +423,7 @@ and complete. Therefore:
   `.aid/knowledge/summary-src/sections/*.html` hand-authored sections are the **source of truth**,
   and the committed built artifact is **`.aid/dashboard/kb.html`** (meta `generator="aid-summarize"`;
   written per `canonical/skills/aid-summarize/references/state-writeback.md:19`; relocated to
-  `.aid/dashboard/kb.html` in delivery-009 — the earlier `knowledge-summary.html` name no longer
+  `.aid/dashboard/kb.html` — the earlier `knowledge-summary.html` name no longer
   exists). It carries the stale `aid-ask` refs (l.792/812/984/1176) and two "12 skills" counts
   (l.1160/1723), so it IS a committed surface that must be regenerated in lockstep — now enumerated
   as **S12** / Part 3 row 14: edit the `summary-src` sections (S9), re-run the `aid-summarize`

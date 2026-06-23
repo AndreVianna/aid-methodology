@@ -4,19 +4,33 @@
 > **Created:** 2026-06-23
 > **Source:** SPEC features feature-001..feature-012 (`features/`), REQUIREMENTS.md, whole-work-review.md
 
-This plan decomposes work-001 into **9 deliveries**. The sequence is user-approved.
+## Change Log
+
+| Date | Change | Source |
+|------|--------|--------|
+| 2026-06-23 | Initial plan — 9 deliveries (essence-core-first → greenfield Could) | /aid-plan |
+| 2026-06-23 | greenfield de-scope — delivery-009 (Greenfield Path) removed; work is now 8 deliveries (delivery-001..008). Greenfield reduced to detect+signpost in delivery-004's recon (no generation engine / elicit path / closure / panel); f006/f012 brownfield-only scope notes updated; R1 (greenfield scope-split) retired. Forward-authored KB-seed deferred to a future interview-side work. | user decision |
+
+This plan decomposes work-001 into **8 deliveries**. The sequence is user-approved.
 Each delivery is one branch/PR (`aid/work-001-delivery-NNN`). The strategy: build the
 **essence engine end-to-end first** (delivery-001 = the 'Relative bus' capability), then
 flip AID's own surfaces onto the new schema (INDEX, migration), scale it to project shape
 (adaptive paths), lock it in with a CI-anchored regression fixture, then layer the
-Should-priority lifecycle skills (freshness, topology+ship, governance), and finally the
-Could-priority greenfield path.
+Should-priority lifecycle skills (freshness, topology+ship, governance).
+
+**Greenfield is detect-and-signpost, not a generation path.** A from-scratch project
+(recon detects ~0 source) is not discovered by a bespoke greenfield engine; `aid-discover`
+emits a signpost and halts ("Nothing to discover yet — run /aid-interview to define the
+project; the KB fills in via re-triage once code lands"). The two generation paths this
+work builds are brownfield-small and brownfield-large. Forward-authored greenfield KB-seed
+(eliciting intended architecture/conventions/ubiquitous-language for a from-scratch
+project) is a **future interview-side capability, out of scope here.**
 
 The strategy is **provide-before-consume**: every feature's frontmatter/schema/oracle
 producer lands in or before the delivery that consumes it. delivery-001 establishes the
 whole essence substrate (frontmatter primitive f001, concern model f003, the
-harvest/spine/closure engine f004, the review panel f005) so the seven downstream
-deliveries consume settled contracts.
+harvest/spine/closure engine f004, the review panel f005) so the downstream deliveries
+consume settled contracts.
 
 ## Deliverables
 
@@ -57,9 +71,14 @@ deliveries consume settled contracts.
 - **What it delivers:** a recon pre-pass that **measures** source-availability/complexity and
   **proposes** a path (human-confirmed, not declared from `project.type`), then scales the closure
   engine + review panel to project size for the brownfield-small and brownfield-large paths.
-- **Features:** feature-006 -- **BROWNFIELD scope only**: recon classifier, brownfield-small path,
-  brownfield-large path (the greenfield elicit branch + greenfield->brownfield transition are
-  carved to delivery-009).
+- **Features:** feature-006 -- recon classifier (which **detects** greenfield, ~0 source),
+  brownfield-small path, brownfield-large path. **Greenfield = detect + signpost, not a path:**
+  when the classifier detects ~0 source, `aid-discover` emits a signpost and halts ("Nothing to
+  discover yet — run /aid-interview to define the project; the KB fills in via re-triage once code
+  lands"). There is **no** greenfield generation engine / elicit-via-interview-specify path /
+  greenfield closure / greenfield panel. The only two *generation* paths are brownfield-small and
+  brownfield-large. (Forward-authored greenfield KB-seed is a future interview-side work, out of
+  scope — see the work-level scope note.)
 - **Depends on:** delivery-001
 - **Priority:** Must
 
@@ -67,10 +86,13 @@ deliveries consume settled contracts.
 
 - **What it delivers:** the CI-anchored regression proof that locks in the essence engine -- the
   planted 'Relative bus' fixture proving capture-and-define, the closure self-containment proof, the
-  calibration-severity calibration, the teach-back closure proof (pass/fail KBs), and the brownfield path fixtures.
-- **Features:** feature-012 -- **ENGINE + BROWNFIELD scope only**: AC1 teach-back closure fixture, AC2 'Relative bus' regression,
-  AC3 closure self-containment, AC6 calibration tuning, AC7 brownfield-small/large path fixtures
-  (the greenfield path fixture is carved to delivery-009).
+  calibration-severity calibration, the teach-back closure proof (pass/fail KBs), the two brownfield
+  path fixtures, and a greenfield **detection + signpost** test.
+- **Features:** feature-012 -- AC1 teach-back closure fixture, AC2 'Relative bus' regression,
+  AC3 closure self-containment, AC6 calibration tuning, AC7 the **two brownfield-small/large path
+  fixtures + a greenfield detection/signpost test** (asserts the classifier detects ~0 source and
+  that `aid-discover` emits the signpost and halts -- **not** a greenfield path-runs/reaches-closure
+  fixture, since greenfield is not a generation path).
 - **Depends on:** delivery-001, delivery-004
 - **Priority:** Must
 
@@ -109,23 +131,18 @@ deliveries consume settled contracts.
 - **Depends on:** delivery-001, delivery-006, delivery-007
 - **Priority:** Should
 
-### delivery-009: Greenfield Path
-
-- **What it delivers:** the forward-authoring greenfield path (elicit intent + vocabulary + design
-  via the existing `aid-interview`/`aid-specify` skills, no bespoke greenfield engine) + the
-  greenfield->brownfield transition, plus its validation fixture -- a self-contained Could slice.
-- **Features:** feature-006 -- **GREENFIELD scope** (elicit branch + transition); feature-012 --
-  **GREENFIELD scope** (AC7 greenfield path fixture).
-- **Depends on:** delivery-001, delivery-004, delivery-005
-- **Priority:** Could
-
 ## Cross-Cutting Risks
+
+> **Retired R1 (greenfield scope-split).** The original R1 tracked the f006/f012
+> brownfield-vs-greenfield split across delivery-004/005 and the (now-deleted) delivery-009.
+> With greenfield reduced to detect + signpost inside delivery-004's recon (no separate
+> greenfield delivery, no greenfield generation path), there is no split to manage and the
+> risk is moot. R2/R3 below retain their original numbering.
 
 | # | Risk | Affected deliveries | Mitigation |
 |---|------|---------------------|------------|
-| R1 | **f006/f012 scope-split** -- feature-006 and feature-012 are each split brownfield-vs-greenfield across delivery-004/005 (brownfield) and delivery-009 (greenfield). Greenfield scope could drift or be double-claimed between the deliveries. | delivery-004, delivery-005, delivery-009 | The split is scoped **explicitly** in each delivery SPEC's Scope section (brownfield ACs named in d004/d005; greenfield ACs named in d009, with the brownfield ACs listed as out-of-scope and vice versa), so no AC is unowned or double-owned. |
 | R2 | **f008+f009 inseparability** -- a release tag cut between feature-008 (canonical rename) and feature-009 (cross-tree propagation) would ship a half-renamed repo: canonical renamed but the 5 host trees, install manifests, and skill counts stale, with render-drift CI red. | delivery-007 | The two features are **one delivery** -- one branch, one PR, **no intervening release tag**. render-drift CI is RED on f008 alone and green only once f009 propagates, so the gate itself enforces "ship together." |
-| R3 | **calibration-floor back-patch** -- delivery-005 (validation fixtures) and delivery-009 (f006 greenfield/SPIKE-T1 thresholds) re-tune defaults that ALREADY shipped in merged delivery-001 (f004 SPIKE-H2 denylist/salience floor, f005 SPIKE-C1 calibration severity) and delivery-004 (f006 triage thresholds). Per the contract "the default lives in the owning feature's file; the fixture pins it," editing a constant in an already-shipped delivery can regress that delivery's gate. **Impact: M.** | delivery-001, delivery-004, delivery-005, delivery-009 | After any threshold/floor edit prompted by a later delivery's fixture, re-run the owning delivery's gate suite (the owning feature's canonical tests) to confirm no regression. |
+| R3 | **calibration-floor back-patch** -- delivery-005 (validation fixtures) re-tunes defaults that ALREADY shipped in merged delivery-001 (f004 SPIKE-H2 denylist/salience floor, f005 SPIKE-C1 calibration severity) and delivery-004 (f006 triage thresholds). Per the contract "the default lives in the owning feature's file; the fixture pins it," editing a constant in an already-shipped delivery can regress that delivery's gate. **Impact: M.** | delivery-001, delivery-004, delivery-005 | After any threshold/floor edit prompted by a later delivery's fixture, re-run the owning delivery's gate suite (the owning feature's canonical tests) to confirm no regression. |
 
 ## Execution Graphs
 
@@ -133,14 +150,16 @@ The graphs below are derived mechanically from the `Depends on:` line of every
 task SPEC (`delivery-NNN/tasks/task-NNN/SPEC.md`). Each delivery's `Depends On`
 table lists the task's FULL dependency set; dependencies that point into an
 **earlier** delivery are marked `(d-NNN)` and are pre-satisfied by the
-delivery-order sequence (d001 -> d009), so they do not affect intra-delivery
+delivery-order sequence (d001 -> d008), so they do not affect intra-delivery
 wave ordering. The `wave-map` block is total over the delivery's own tasks.
 
-**Global-DAG validation (all 53 tasks assembled):** acyclic (53/53
+**Global-DAG validation (all 50 tasks assembled):** acyclic (50/50
 topo-sorted); every dependency resolves to an existing task; no forward
 reference across deliveries (no dep points into a later delivery); no
 intra-delivery dependency on a higher-numbered sibling. Roots (no deps):
 task-001, task-027, task-028, task-029, task-033, task-040, task-042.
+(The greenfield de-scope removed delivery-009's three tasks task-051/052/053;
+50 tasks remain across delivery-001..008.)
 
 ### delivery-001 execution graph
 
@@ -328,22 +347,4 @@ delivery: 008
 wave 1: task-048
 wave 2: task-049
 wave 3: task-050
-```
-
-### delivery-009 execution graph
-
-| Task | Depends On |
-|------|-----------|
-| task-051 | task-025 (d004), task-011 (d001), task-014 (d001) |
-| task-052 | task-029 (d005) |
-| task-053 | task-052, task-032 (d005), task-023 (d004) |
-
-| Can Be Done In Parallel |
-|------------------------|
-| task-051, task-052 |
-
-```wave-map
-delivery: 009
-wave 1: task-051, task-052
-wave 2: task-053
 ```

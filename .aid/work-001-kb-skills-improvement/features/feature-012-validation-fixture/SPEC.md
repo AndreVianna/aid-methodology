@@ -6,6 +6,7 @@
 |------|--------|--------|
 | 2026-06-22 | Feature identified from REQUIREMENTS.md §5 (FR-35) | /aid-interview |
 | 2026-06-23 | whole-work-revision oracle reconciliation: the dropped `kb-salient-coverage.sh` is replaced everywhere by f004's merged `closure-check.sh` 3-output contract (CAL-3 coverage reads output (b); CAL-1 transcription reads output (c)); the Judgment Boundary is made explicit — CAL-2 hollowness and the engine-narration teach-back limb are irreducible LLM judgment (runtime-anchored, NOT mechanical CI assertions), while CAL-1 transcription, CAL-3 coverage, and the lexical teach-back substrate are mechanically CI-asserted | whole-work revision / D5 task gate |
+| 2026-06-23 | greenfield de-scope — greenfield is no longer a generation path (recon-classify DETECTS greenfield; aid-discover signposts to `/aid-interview` and HALTS; there is no greenfield fan-out / closure to exercise). AC7 fixtures change from "greenfield/brownfield-small/brownfield-large each run + reach closure" to "**brownfield-small + brownfield-large run + reach closure; a greenfield fixture is DETECTED as greenfield (classification only)**". The old greenfield path-runs/closure fixture is removed; the `paths/greenfield/` fixture is retained as a **greenfield-DETECTION** fixture (a ~0-source `project-index.md` → recon-classify yields a greenfield verdict). The old V-D1 greenfield path assertion (formerly carved to delivery-009 / task-053) collapses into this detection-only assertion (V-D1 = recon-classify → greenfield verdict). delivery-009 is deleted | greenfield de-scope |
 
 ## Source
 
@@ -23,10 +24,12 @@ method **captures and defines it**, proving the essence-capture gap is closed.
 
 The fixture is also the substrate for the other validation ACs: the planted
 calibration fixtures (transcription / hollowness / coverage-vs-source) that the
-rubric must flag (f005), and the greenfield / brownfield-small / brownfield-large
-fixtures the triage must classify and run to teach-back closure (f006). Together
-with the deterministic closure self-containment check, this feature is the
-CI-anchored proof that the method works and stays working.
+rubric must flag (f005), and the path fixtures the triage must classify (f006) —
+the brownfield-small / brownfield-large fixtures run to teach-back closure, while
+a greenfield fixture is **DETECTED as greenfield** (classification only — greenfield
+is detect-and-signpost, not a generation path, so there is no greenfield closure to
+exercise). Together with the deterministic closure self-containment check, this
+feature is the CI-anchored proof that the method works and stays working.
 
 ## User Stories
 
@@ -50,10 +53,12 @@ Must
 - [ ] Given the KB produced for the fixture, when the self-containment check runs,
   then no project-specific term is left undefined (concept closure passes). *(AC3,
   with f004)*
-- [ ] Given calibration and three-path fixtures, when f005's rubric and f006's
-  triage run, then the fixtures exercise transcription/hollowness/coverage flagging
-  (AC6) and correct path classification to teach-back closure (AC7). *(supports AC6,
-  AC7)*
+- [ ] Given calibration and path fixtures, when f005's rubric and f006's triage run,
+  then the fixtures exercise transcription/hollowness/coverage flagging (AC6) and
+  correct path classification (AC7) — the brownfield-small/brownfield-large fixtures
+  classify and run to teach-back closure; a greenfield fixture is DETECTED as
+  greenfield (classification only, no greenfield generation path to exercise).
+  *(supports AC6, AC7)*
 
 > Cross-cutting note: this feature carries the FR-23 / NFR-1–3 budget — the fixtures
 > and regression tests are deterministic and CI-able (the AC2/AC3/AC11 proof
@@ -103,7 +108,9 @@ from two kinds of artifact, both under `tests/canonical/`:
    `tests/canonical/fixtures/kb-essence/` that contain *exactly* the inputs the overhaul
    must handle: a 'Relative bus'-style coined cross-source concept (AC2), planted
    transcription/hollowness/coverage-gap docs (AC6), teach-back pass/fail KBs (AC1), and
-   greenfield/brownfield-small/brownfield-large project shapes (AC7).
+   brownfield-small/brownfield-large project shapes plus a greenfield-detection shape (AC7 —
+   the brownfield shapes run to closure; the greenfield shape is asserted only to *classify*
+   as greenfield, since greenfield is detect-and-signpost, not a generation path).
 2. **Regression suites** — new `tests/canonical/test-*.sh` files (auto-discovered by
    `tests/run-all.sh`'s `tests/canonical/test-*.sh` glob, line 33) that invoke the f004/f005/f006
    scripts against those fixtures and assert each AC, plus assert the calibrated thresholds
@@ -163,7 +170,7 @@ tests/canonical/fixtures/kb-essence/
   paths/                        # AC7 — three project shapes for recon-classify (f006)
     # Each project-index.md carries BOTH the "Language Breakdown" section (RM1/RM2) AND the
     # "Full File Inventory" section (RM3 dir count) per f006 SPEC L179-181 — see F4 below.
-    greenfield/generated/project-index.md      # RM1<=5 src files, RM2<=500 LOC; Full File Inventory = few dirs
+    greenfield/generated/project-index.md      # DETECTION-ONLY: ~0-source tree, RM1<=greenfield_max_source_files, RM2<=greenfield_max_source_loc; Full File Inventory = few dirs. Asserted to CLASSIFY greenfield (no greenfield path/closure to run).
     greenfield/generated/candidate-concepts.md # near-empty (nothing to extract)
     brownfield-small/generated/project-index.md# source present, every dim (RM1/2/3/4) under large_min_*
     brownfield-small/generated/candidate-concepts.md
@@ -302,6 +309,16 @@ Three `generated/` directories holding the two markdown tables `recon-classify.s
 recon "does NOT re-scan the tree" (f006 SPEC: it aggregates the already-emitted index +
 candidates). This is the lightweight, deterministic way to drive the classifier.
 
+**Greenfield is DETECTION-ONLY.** Per the 2026-06-23 greenfield de-scope, greenfield is no
+longer a generation path: recon-classify still **DETECTS** greenfield (RM1/RM2 below the
+greenfield ceilings → greenfield verdict), and on a confirmed greenfield path `aid-discover`
+prints a signpost to `/aid-interview` and **HALTS** (no fan-out, no panel, no closure). f012
+therefore retains the `greenfield/` fixture **only to assert the classifier detects it as
+greenfield** (the V-D1 detection assertion); there is **no greenfield path-runs / greenfield
+teach-back-closure fixture** to author, because there is no greenfield engine to exercise. The
+brownfield-small / brownfield-large fixtures continue to drive the full path (classify + run to
+closure, the closure half being the judgment boundary).
+
 **Each `project-index.md` fixture MUST populate BOTH sections recon parses (f006 SPEC
 L179-181), not only Language Breakdown:** (a) the **Language Breakdown** table (RM1 source-file
 count + RM2 source LOC, summed over `is_source` rows) AND (b) the **Full File Inventory**
@@ -311,9 +328,11 @@ omits the Full File Inventory section gives RM3 nothing to parse, so the **dirs 
 brownfield-large (V-D4) would silently never trip `large_min_dirs`** — the section is therefore
 required, with the dir structure each fixture's RM3 must yield planted in it explicitly.
 
-- **`greenfield/`** — Language Breakdown sums to `<= greenfield_max_source_files` source files
-  AND `<= greenfield_max_source_loc` LOC; Full File Inventory holds only a few `is_source` dir
-  prefixes; near-empty candidate list. Must classify **greenfield**.
+- **`greenfield/` (DETECTION-ONLY)** — Language Breakdown sums to `<= greenfield_max_source_files`
+  source files AND `<= greenfield_max_source_loc` LOC; Full File Inventory holds only a few
+  `is_source` dir prefixes; near-empty candidate list. Must **classify greenfield**. This is the
+  only greenfield assertion — recon DETECTS the ~0-source shape; there is no greenfield generation
+  path / closure to run (greenfield is detect-and-signpost, per the greenfield de-scope).
 - **`brownfield-small/`** — source present, but every dimension under `large_min_*`: RM2 LOC
   (Language Breakdown), RM3 dir count (Full File Inventory `< large_min_dirs`), RM4 concepts
   (Summary). Must classify **brownfield-small**.
@@ -325,10 +344,13 @@ required, with the dir structure each fixture's RM3 must yield planted in it exp
   OR-branch of f006's classifier is independently exercised. Must classify **brownfield-large**.
 
 These are the AC7 path-classification oracle and the f006 `[SPIKE-T1]` threshold-calibration
-substrate (below). The **end-to-end "each path reaches teach-back closure"** half of AC7 is a
-judgment/orchestration outcome (it runs the whole GENERATE method with LLM dispatch); f012
-mechanically asserts only the **path-classification** half (recon proposes the right path) —
-the closure-reached half is the judgment boundary.
+substrate (below). The **end-to-end "each brownfield path reaches teach-back closure"** half of
+AC7 is a judgment/orchestration outcome (it runs the whole GENERATE method with LLM dispatch);
+f012 mechanically asserts only the **path-classification** half (recon proposes the right path) —
+the closure-reached half is the judgment boundary. There is **no greenfield closure half** at all:
+greenfield is detect-and-signpost, so the greenfield fixture is asserted only to classify
+(detection) — the judgment boundary for greenfield is that `aid-discover` signposts and halts, not
+that it reaches closure.
 
 ### The Regression Tests
 
@@ -406,7 +428,7 @@ mechanics — see Boundaries / [SPIKE-V3]):
 
 | # | Asserts | How |
 |---|---------|-----|
-| V-D1 | greenfield fixture → recon proposes **greenfield**. | Run `recon-classify.sh --index <fx>/project-index.md --candidates <fx>/candidate-concepts.md --settings paths/settings.yml`; grep proposed path. (`--settings` resolves to the checked-in fixture settings carrying the shipped `triage.*` defaults — see the TEST-D `--settings` seam below.) |
+| V-D1 | **greenfield DETECTION (classification only).** greenfield (~0-source) fixture → recon-classify proposes **greenfield**. This is the *only* greenfield assertion — greenfield is detect-and-signpost, so there is no greenfield path-runs/closure to assert (the old greenfield path assertion, formerly carved to delivery-009/task-053, collapses into this detection-only check). | Run `recon-classify.sh --index <fx>/project-index.md --candidates <fx>/candidate-concepts.md --settings paths/settings.yml`; grep proposed path == greenfield. (`--settings` resolves to the checked-in fixture settings carrying the shipped `triage.*` defaults — see the TEST-D `--settings` seam below.) |
 | V-D2 | brownfield-small fixture → **brownfield-small**. | same |
 | V-D3 | brownfield-large (LOC variant) → **brownfield-large**. | same |
 | V-D4 | brownfield-large (dirs variant) → **brownfield-large** (independent OR-branch). | same |
@@ -414,8 +436,10 @@ mechanics — see Boundaries / [SPIKE-V3]):
 | V-D6 | **Determinism.** Re-run byte-identical. | `diff` two runs. |
 | V-D7 | **Shipped-defaults parity.** The fixture `paths/settings.yml` `triage.*` values are byte-identical to the shipped `canonical/aid/templates/settings.yml` `triage.*` block — so V-D1..V-D5 pin the SHIPPED defaults, not a drifted fixture copy. | grep the `triage.*` keys/values out of both files; assert identical. |
 
-These are the AC7 path-classification oracle. The "each path reaches teach-back closure" half
-is the judgment boundary.
+These are the AC7 path-classification oracle. The "each **brownfield** path reaches teach-back
+closure" half is the judgment boundary. V-D1 is **detection-only** — greenfield is
+detect-and-signpost, so there is no greenfield closure half (the greenfield judgment boundary is
+that `aid-discover` signposts to `/aid-interview` and halts, exercised at runtime, not in CI).
 
 **The `--settings` seam (how the "shipped-defaults pin" stays isolation-clean and enforceable).**
 f006's `recon-classify.sh` REQUIRES `--settings <path>` (f006 SPEC L160-164), but the isolated
@@ -446,7 +470,7 @@ f012's test re-asserts the corrected behavior — f012 is the oracle, never the 
 |---|---|---|---|
 | **Denylist size + phrase salience floor** (the all-common-word-phrase survival rule) | f004 `[SPIKE-H2]` | `relative-bus/` (recall) + the `calibration/` control + a **noise floor** in the relative-bus fixture | **Recall:** V-A1/V-A2/V-A3 — the cross-source PHRASE `Relative Bus` MUST survive via f004's phrase-salience escape (spread `>= 2` phrase floor catches it; the joined identifier never survives as a unit). **Precision:** the phrase floor MUST be high enough that the fixture's incidental **capitalized** common-word phrases (e.g. `The System`, `This File` — the E4-extracted class, runs of `[A-Z][a-z]+` words, NOT lowercase pairs which E4 never extracts) that appear in only ONE channel do NOT flood the candidate list — asserted by a cap on the candidate count for the small fixture (the planted concept ranks above the single-channel incidental noise). The phrase salience floor default (spread `>= 2`) is **pinned by these two assertions**: lower it and the single-channel `The System` noise leaks (precision breaks); raise it and recall breaks on the 2-channel `Relative Bus`. |
 | **CAL-N severity floors** (transcription-ratio threshold; MEDIUM-vs-HIGH cut) | f005 `[SPIKE-C1]` | `calibration/` (the 3 planted docs + the control) | V-B2 — `transcription-fat.md` ratio `>=` CAL-1 floor (flag the fat doc); V-B4 — `well-calibrated.md` ratio `<` CAL-1 floor (do NOT flag the good doc). The **transcription-ratio floor default** (`closure-check.sh` output (c)) is pinned to the value that separates the planted fat doc from the control. V-B1 pins the coverage signal (output (b)) analogously. **CAL-2 hollowness has no mechanical floor to pin** — it is LLM judgment (no shipped signal); the hollow doc is runtime-anchored, not a pinned threshold. |
-| **Recon path thresholds** (`greenfield_max_source_files`/`_loc`, `large_min_source_loc`/`_dirs`/`_concepts`) | f006 `[SPIKE-T1]` | `paths/` (greenfield / brownfield-small / brownfield-large×3) | V-D1..V-D5 — each fixture MUST classify to its intended path under the **shipped `settings.yml` defaults**. The five `triage.*` defaults are pinned to the values that classify all three shapes correctly: the greenfield fixture sits below the greenfield ceilings, the small fixture between the ceilings and the large floors, each large variant trips exactly one large floor. |
+| **Recon path thresholds** (`greenfield_max_source_files`/`_loc`, `large_min_source_loc`/`_dirs`/`_concepts`) | f006 `[SPIKE-T1]` | `paths/` (greenfield-detection / brownfield-small / brownfield-large×3) | V-D1..V-D5 — each fixture MUST classify to its intended path under the **shipped `settings.yml` defaults**. The five `triage.*` defaults are pinned to the values that classify all shapes correctly: the greenfield fixture sits below the greenfield ceilings (V-D1 pins `greenfield_max_source_files`/`_loc` — the detection boundary), the small fixture between the ceilings and the large floors, each large variant trips exactly one large floor. (Greenfield is detection-only — V-D1 pins the detection thresholds, not a greenfield generation path.) |
 
 **How the calibration loop works in practice (and stays in-bounds).** During implementation,
 f012's tests run against the *current* f004/f005/f006 defaults; where a planted fixture
@@ -480,7 +504,7 @@ proven input:
 | AC2 | harvest surfaces `Relative Bus` (V-A1); closure reports it grounded/ungrounded (V-A4/V-A5) | a researcher writes the definition-as-used-here into the spine |
 | AC6 | **CAL-1 transcription** ratio `>=` floor for the fat doc, `<` for the control (V-B2/V-B4, output (c)); **CAL-3 coverage** `absent` row for the gap doc, none for the control (V-B1/V-B4, output (b)) | the Calibration reviewer (M5) emits the `[CAL-*]` severity verdict; **CAL-2 hollowness** (V-B3) is *wholly* judgment — no shipped script emits a hollowness signal, so M5 reads the planted `hollow-thin.md` and grades it; the thin doc is anchored, not CI-scored |
 | AC1 | **lexical limb:** question set generated deterministically (V-C1); closure pass/fail substrate (V-C2/V-C3); term-defined PASS / term-undefined FAIL | the clean-context teach-back reviewer (M4) self-scores PASS/FAIL; the **engine-narration limb** is *wholly* judgment (f005 L434-435: "irreducibly an LLM judgment" — no shipped script returns this verdict), so M4 attempts the engine narration over the planted fail-KB; the un-narratable shape is anchored, not CI-scored |
-| AC7 | recon proposes the right path per fixture (V-D1..V-D5) | the path runs the full method to teach-back closure |
+| AC7 | recon proposes the right path per fixture (V-D1..V-D5) — incl. greenfield DETECTION (V-D1, classification only) | a **brownfield** path runs the full method to teach-back closure; **greenfield** is detect-and-signpost (`aid-discover` signposts to `/aid-interview` and halts — there is no greenfield generation path / closure to run) |
 
 This boundary is the design honesty REQUIREMENTS §1.6 demands: f012 maximizes the deterministic
 substrate (the entire harvest/coverage/closure/recon layer is scripted + CI-asserted) and
@@ -519,11 +543,11 @@ verbatim so the fixtures can never touch the real repo or `$HOME`.
 
 | Component | Path | Change |
 |-----------|------|--------|
-| **NEW fixture corpus** | `tests/canonical/fixtures/kb-essence/{relative-bus,closed-kb,unclosed-kb,calibration,teachback,paths}/` | The planted fixtures (F1-F4): the 'Relative bus' cross-source concept + closed/unclosed spines; the 4 calibration docs + control; the teach-back pass/fail KBs; the 3 path-shape index+candidate tables (each `project-index.md` carrying BOTH Language Breakdown and Full File Inventory) + the `paths/settings.yml` shipped-`triage.*`-defaults fixture. All ASCII, checked-in, deterministic. |
+| **NEW fixture corpus** | `tests/canonical/fixtures/kb-essence/{relative-bus,closed-kb,unclosed-kb,calibration,teachback,paths}/` | The planted fixtures (F1-F4): the 'Relative bus' cross-source concept + closed/unclosed spines; the 4 calibration docs + control; the teach-back pass/fail KBs; the path-shape index+candidate tables (brownfield-small + brownfield-large + a **greenfield-detection** shape, each `project-index.md` carrying BOTH Language Breakdown and Full File Inventory) + the `paths/settings.yml` shipped-`triage.*`-defaults fixture. The greenfield shape is the detection-only fixture (classified greenfield; no greenfield path/closure to run). All ASCII, checked-in, deterministic. |
 | **NEW** AC2 suite | `tests/canonical/test-essence-capture.sh` | V-A1..V-A6 — runs f004's `harvest-coined-terms.sh` + `closure-check.sh` over the relative-bus / closed-kb / unclosed-kb fixtures; asserts capture (spread `>= 2`) + define (closure passes) + the regression guard (unclosed reports the concept) + determinism. HOME-pinned, canary, `mktemp` scratch. |
 | **NEW** AC6 suite | `tests/canonical/test-calibration-fixtures.sh` | V-B1/V-B2/V-B4/V-B5 — runs f004's merged `closure-check.sh` (outputs (b) coverage + (c) transcription; f005 ships no coverage script) over the calibration fixture; asserts the CAL-3 coverage `absent` row + CAL-1 transcription-ratio fire for the planted docs and NOT for the control; determinism. **CAL-2 hollowness (V-B3) is NOT a mechanical assertion** — it is LLM judgment (runtime-anchored); the hollow doc is planted as the reviewer's substrate, not CI-scored. |
 | **NEW** AC1 suite | `tests/canonical/test-teachback-fixtures.sh` | V-C1..V-C4 — runs f005's `kb-teachback-questions.sh` + f004's `closure-check.sh` over the teach-back pass/fail KBs; asserts deterministic question-set + closure PASS/FAIL substrate. |
-| **NEW** AC7 suite | `tests/canonical/test-path-fixtures.sh` | V-D1..V-D7 — runs f006's `recon-classify.sh` over the 3 path fixtures (with the checked-in `paths/settings.yml`); asserts correct path proposal per shape + determinism + shipped-defaults parity (V-D7). |
+| **NEW** AC7 suite | `tests/canonical/test-path-fixtures.sh` | V-D1..V-D7 — runs f006's `recon-classify.sh` over the path fixtures (with the checked-in `paths/settings.yml`); asserts correct path proposal per shape (V-D1 = greenfield **DETECTION** only; V-D2..V-D5 = brownfield small/large variants) + determinism + shipped-defaults parity (V-D7). No greenfield path-runs/closure assertion (greenfield is detect-and-signpost). |
 | run-all auto-discovery | `tests/run-all.sh` | **No edit** — the four new `test-*.sh` are picked up by the existing `tests/canonical/test-*.sh` glob (line 33). |
 | ascii-only guard | `tests/canonical/test-ascii-only.sh` | **No edit needed** for the test scripts (they are tests, not shipped `SHIPPED_SCRIPTS`); the *fixtures* are ASCII by construction. (f004/f005/f006 add their own scripts to the allow-list.) **[SPIKE-V4]** — confirm fixture markdown under `tests/canonical/fixtures/` is not swept by `test-ascii-only.sh`; if it is, the fixtures (intentionally ASCII) pass anyway. |
 | render-drift | `test.yml` job `render-drift` | **No edit** — fixtures + tests live under `tests/`, NOT `canonical/`, so they are not render-pipeline inputs (no `run_generator.py` involvement). f012 ships zero canonical-tree files. |

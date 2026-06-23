@@ -27,9 +27,12 @@
     thresholds, in this exact order: (1) `RM1 <= greenfield_max_source_files AND RM2 <=
     greenfield_max_source_loc` -> propose **GREENFIELD**; (2) else `RM2 >= large_min_source_loc OR
     RM3 >= large_min_dirs OR RM4 >= large_min_concepts` -> propose **BROWNFIELD-LARGE** (any one
-    large dimension trips); (3) else -> propose **BROWNFIELD-SMALL**. The greenfield-proposing first
-    branch is built here as CODE (D4 scope: classifier completeness, whole/indivisible); the
-    greenfield PATH BEHAVIOR + gate are delivery-009 and are NOT built here.
+    large dimension trips); (3) else -> propose **BROWNFIELD-SMALL**. The greenfield-DETECTING first
+    branch is built here as CODE (D4 scope: classifier completeness, whole/indivisible). Greenfield
+    is **detect + signpost** in this work: the classifier DETECTS greenfield (kept), and on a
+    greenfield verdict aid-discover signposts and halts (wired in task-025). There is **no greenfield
+    generation path** -- no greenfield generation engine, no greenfield closure, no greenfield
+    panel-collapse (forward-authoring a KB-seed from intent is a future interview-side work).
   - **Output:** emit `.aid/generated/recon.md` with the proposed path PLUS the four metric values
     AND which threshold(s) tripped (so the confirm gate can show the human *why*).
   - **Degrade-gracefully:** missing/empty `--candidates` => RM4=0 (never an error); missing
