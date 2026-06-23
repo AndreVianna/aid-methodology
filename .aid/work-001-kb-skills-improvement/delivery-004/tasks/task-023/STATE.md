@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~45m
+- **Notes:** recon-classify.sh authored + triage: block in settings.yml + ascii-only guard entry + generator regen (DBI PASS + render-drift PASS + ascii PASS) + sanity fixtures confirmed
 
 ---
 

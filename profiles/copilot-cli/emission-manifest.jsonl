@@ -78,6 +78,7 @@
 {"dst": ".github/aid/scripts/kb/harvest-coined-terms.sh", "profile": "copilot-cli", "sha256": "b442d8d6fa842a0f4ae3ef441f55b5723bef3b8bb31d7a6ed088bbe9d3fa308d", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".github/aid/scripts/kb/kb-teachback-questions.sh", "profile": "copilot-cli", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".github/aid/scripts/kb/lint-frontmatter.sh", "profile": "copilot-cli", "sha256": "be2ab5d575c35e303c1f9c5089ac236cbe1b3fb8fd2057df859c68fa6bab1ec4", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
+{"dst": ".github/aid/scripts/kb/recon-classify.sh", "profile": "copilot-cli", "sha256": "2cb7b85b22a4b40aeee121b5babda7e883603104c9e292e4663ce4ed00d58f81", "src": "canonical/scripts/kb/recon-classify.sh"}
 {"dst": ".github/aid/scripts/migrate/migrate-kb-frontmatter.sh", "profile": "copilot-cli", "sha256": "d374f0e4543cefc10b29959a6697550cf512f2430a90aa80e5c2b19da8c86719", "src": "canonical/scripts/migrate/migrate-kb-frontmatter.sh"}
 {"dst": ".github/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "copilot-cli", "sha256": "cb6daf1bd39b302c9620464b23a89e4c40ed6834f293d4080fdd053a16f6b078", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".github/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "copilot-cli", "sha256": "c7afb1fe730466a51057228f6ed17aa5e8394743ffbf2a84d3902db77d8ade4e", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
@@ -155,7 +156,7 @@
 {"dst": ".github/aid/templates/reviewer-ledger-schema.md", "profile": "copilot-cli", "sha256": "2560f7e5391bad06b6cbd8b58f031a3f1c33f8b46e8a7cf97841df11ac1c31b7", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".github/aid/templates/rough-time-hints.md", "profile": "copilot-cli", "sha256": "5bb11ab80c2facbfd390376816280db8e65abe895a29c4a28b14fb967a8fb629", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".github/aid/templates/self-review-protocol.md", "profile": "copilot-cli", "sha256": "84a4bed374301ba632de1621c5b19c9e0723a9f18194a4dc11c55b84aa398420", "src": "canonical/templates/self-review-protocol.md"}
-{"dst": ".github/aid/templates/settings.yml", "profile": "copilot-cli", "sha256": "6a9dbf5301905ab66c8d76cb57721b88af9def3c2343a860424f618de104b88b", "src": "canonical/templates/settings.yml"}
+{"dst": ".github/aid/templates/settings.yml", "profile": "copilot-cli", "sha256": "1fdf2fa41e11506ec0a5fcf176a34e3db4d5bc64400be4d169cf006e347be484", "src": "canonical/templates/settings.yml"}
 {"dst": ".github/aid/templates/specs/lite-spec-template.md", "profile": "copilot-cli", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}
 {"dst": ".github/aid/templates/specs/spec-template.md", "profile": "copilot-cli", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".github/aid/templates/state-machine-chaining.md", "profile": "copilot-cli", "sha256": "bf1dadb99031dd49548a5381294e7c7bb77e3c56e2237ca3c7a4b2a0930889db", "src": "canonical/templates/state-machine-chaining.md"}

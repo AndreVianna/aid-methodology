@@ -78,6 +78,7 @@
 {"dst": ".claude/aid/scripts/kb/harvest-coined-terms.sh", "profile": "claude-code", "sha256": "4ee5f4a4e4035a0c88be41452f5d6c5ed0adc54721cf6c474db34f4138b200ba", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-teachback-questions.sh", "profile": "claude-code", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".claude/aid/scripts/kb/lint-frontmatter.sh", "profile": "claude-code", "sha256": "be2ab5d575c35e303c1f9c5089ac236cbe1b3fb8fd2057df859c68fa6bab1ec4", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
+{"dst": ".claude/aid/scripts/kb/recon-classify.sh", "profile": "claude-code", "sha256": "2cb7b85b22a4b40aeee121b5babda7e883603104c9e292e4663ce4ed00d58f81", "src": "canonical/scripts/kb/recon-classify.sh"}
 {"dst": ".claude/aid/scripts/migrate/migrate-kb-frontmatter.sh", "profile": "claude-code", "sha256": "d374f0e4543cefc10b29959a6697550cf512f2430a90aa80e5c2b19da8c86719", "src": "canonical/scripts/migrate/migrate-kb-frontmatter.sh"}
 {"dst": ".claude/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "claude-code", "sha256": "cb6daf1bd39b302c9620464b23a89e4c40ed6834f293d4080fdd053a16f6b078", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".claude/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "claude-code", "sha256": "c7afb1fe730466a51057228f6ed17aa5e8394743ffbf2a84d3902db77d8ade4e", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
@@ -155,7 +156,7 @@
 {"dst": ".claude/aid/templates/reviewer-ledger-schema.md", "profile": "claude-code", "sha256": "f85462a0ca609abe878318969cd72d0d042475822e918f0af2f21cf1c24873ea", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".claude/aid/templates/rough-time-hints.md", "profile": "claude-code", "sha256": "d9ee322e4a269a5b904026cfa1a66ad734b0c97e44c77f5268e3bb87cc24fe0d", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".claude/aid/templates/self-review-protocol.md", "profile": "claude-code", "sha256": "3784a426cb0daa7edecfe0c493c84aac566a7e2376ddcbfa3e1c7f7f338a07b7", "src": "canonical/templates/self-review-protocol.md"}
-{"dst": ".claude/aid/templates/settings.yml", "profile": "claude-code", "sha256": "6a9dbf5301905ab66c8d76cb57721b88af9def3c2343a860424f618de104b88b", "src": "canonical/templates/settings.yml"}
+{"dst": ".claude/aid/templates/settings.yml", "profile": "claude-code", "sha256": "1fdf2fa41e11506ec0a5fcf176a34e3db4d5bc64400be4d169cf006e347be484", "src": "canonical/templates/settings.yml"}
 {"dst": ".claude/aid/templates/specs/lite-spec-template.md", "profile": "claude-code", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}
 {"dst": ".claude/aid/templates/specs/spec-template.md", "profile": "claude-code", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".claude/aid/templates/state-machine-chaining.md", "profile": "claude-code", "sha256": "b0270e42924a980968237f0ce74f644c7729b09543c19554854e6d6e33f8d706", "src": "canonical/templates/state-machine-chaining.md"}

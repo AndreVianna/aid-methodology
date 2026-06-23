@@ -86,6 +86,25 @@ discovery:
     token_budget: 0       # optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget
 
 # ---------------------------------------------------------------------------
+# triage: recon-pre-pass thresholds for the 3-path discovery classifier (f006)
+# ---------------------------------------------------------------------------
+# Read by recon-classify.sh to PROPOSE a path (greenfield / brownfield-small /
+# brownfield-large); the human CONFIRMS (the path is measured, not declared --
+# project.type is never read as authoritative). Defaults are sensible starting
+# points, calibratable per project. All four metrics are read from the
+# already-generated project-index.md + candidate-concepts.md (no second scan).
+#
+# RM1 = source-file count; RM2 = source LOC; RM3 = directory count;
+# RM4 = candidate-concept count (Cross-source spread >= 2 from harvest).
+# Absent block => these defaults; a project may override any single key.
+triage:
+  greenfield_max_source_files: 5     # RM1 <= this AND RM2 <= loc => greenfield (little/no source)
+  greenfield_max_source_loc:   500   # RM2 ceiling for greenfield
+  large_min_source_loc:        20000 # RM2 >= this => brownfield-large (size)
+  large_min_dirs:              25    # RM3 >= this => brownfield-large (breadth / fan-out)
+  large_min_concepts:          40    # RM4 >= this => brownfield-large (concept density)
+
+# ---------------------------------------------------------------------------
 # Optional per-skill overrides
 # ---------------------------------------------------------------------------
 # Each top-level skill-name key (when set) overrides the corresponding

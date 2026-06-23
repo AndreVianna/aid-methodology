@@ -78,6 +78,7 @@
 {"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "bbc72414cb2a4b773f98b7b8927d0f335ed8577715aca439576c03b87d9483ff", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-teachback-questions.sh", "profile": "cursor", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".cursor/aid/scripts/kb/lint-frontmatter.sh", "profile": "cursor", "sha256": "be2ab5d575c35e303c1f9c5089ac236cbe1b3fb8fd2057df859c68fa6bab1ec4", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
+{"dst": ".cursor/aid/scripts/kb/recon-classify.sh", "profile": "cursor", "sha256": "2cb7b85b22a4b40aeee121b5babda7e883603104c9e292e4663ce4ed00d58f81", "src": "canonical/scripts/kb/recon-classify.sh"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-kb-frontmatter.sh", "profile": "cursor", "sha256": "d374f0e4543cefc10b29959a6697550cf512f2430a90aa80e5c2b19da8c86719", "src": "canonical/scripts/migrate/migrate-kb-frontmatter.sh"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "cursor", "sha256": "cb6daf1bd39b302c9620464b23a89e4c40ed6834f293d4080fdd053a16f6b078", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".cursor/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "cursor", "sha256": "c7afb1fe730466a51057228f6ed17aa5e8394743ffbf2a84d3902db77d8ade4e", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
@@ -155,7 +156,7 @@
 {"dst": ".cursor/aid/templates/reviewer-ledger-schema.md", "profile": "cursor", "sha256": "8a4fec97367dfa5e0556f5dcbe57cace6be3d4d5dad944c6ff219b88e2fcff31", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".cursor/aid/templates/rough-time-hints.md", "profile": "cursor", "sha256": "ed9439c875b2ac558031333fe3372b7ba6edd8539ff065a73698efed0291ea9b", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".cursor/aid/templates/self-review-protocol.md", "profile": "cursor", "sha256": "c8f42a5da3d5771112bd1ef2bc12d1e26127b1a11f173b7c5b7791d9d8e3e7d0", "src": "canonical/templates/self-review-protocol.md"}
-{"dst": ".cursor/aid/templates/settings.yml", "profile": "cursor", "sha256": "6a9dbf5301905ab66c8d76cb57721b88af9def3c2343a860424f618de104b88b", "src": "canonical/templates/settings.yml"}
+{"dst": ".cursor/aid/templates/settings.yml", "profile": "cursor", "sha256": "1fdf2fa41e11506ec0a5fcf176a34e3db4d5bc64400be4d169cf006e347be484", "src": "canonical/templates/settings.yml"}
 {"dst": ".cursor/aid/templates/specs/lite-spec-template.md", "profile": "cursor", "sha256": "2af75b0c58885336290d5b4fabedcb3215bc330edcbeccf3eae43e3f365dd1a0", "src": "canonical/templates/specs/lite-spec-template.md"}
 {"dst": ".cursor/aid/templates/specs/spec-template.md", "profile": "cursor", "sha256": "fa8b41b5c8e2b43a8f7f999f9dcb9110fe8b1d17b97be3f793b1acc77910f6b3", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".cursor/aid/templates/state-machine-chaining.md", "profile": "cursor", "sha256": "9ed0d6edab434ba413354369e706c3679fc1ba93b279423bc700868a90fccc10", "src": "canonical/templates/state-machine-chaining.md"}
