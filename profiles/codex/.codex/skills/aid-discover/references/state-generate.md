@@ -169,6 +169,107 @@ block the fan-out on a harvest failure.
 > The `synthesis` partition (tagged `Source = synthesis`) is appended by `aid-architect` in
 > Step 5b. Both partitions feed the closure loop term universe and f005's teach-back gate.
 
+### Step 0f: Recon Classify + Triage (path decision)
+
+Run the deterministic recon pre-pass after Step 0e (RM4 is now available) and before Step 1
+(the fan-out is what the path scales -- decide before dispatching any agent).
+
+Print: `[0f] Recon: measuring project shape...`
+
+```bash
+bash .codex/aid/scripts/kb/recon-classify.sh \
+  --index .aid/generated/project-index.md \
+  --candidates .aid/generated/candidate-concepts.md \
+  --settings .aid/settings.yml \
+  --output .aid/generated/recon.md
+```
+
+On completion, read `.aid/generated/recon.md` and print:
+`[0f] Proposed path: <path> (source-files=N, LOC=M, dirs=D, concepts=C)`
+
+**Degrade-gracefully:** if the script fails, log a warning and default to `brownfield-small`
+(conservative). The human-confirm gate is the safety net.
+
+#### Idempotent re-entry
+
+Before presenting the proposal, check whether `.aid/knowledge/STATE.md` already has a
+`## Discovery Triage` section from a prior run:
+
+```bash
+prior_path="$(grep -m1 '^\*\*Path:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
+  | sed 's/^\*\*Path:\*\* *//' | tr -d '[:space:]')"
+```
+
+- **Prior path exists** (re-run): show the prior path alongside the freshly-measured proposal
+  as a diff (e.g. "was brownfield-small; now measures brownfield-large -- N new dirs since last
+  run") and ask the human to confirm the transition or keep the prior path. This is the
+  re-triage lifecycle made visible (FR-22 -- the path is re-measured every run).
+- **No prior path** (first run): proceed to the triage gate below.
+
+#### Present the proposal (PAUSE-FOR-USER-DECISION)
+
+Display the measured metrics + the proposed path + the threshold rationale, then present the
+three choices (example for a brownfield-large proposal):
+
+```
+Recon measured this project:
+  source files : 142        (greenfield <= 5)
+  source LOC   : 38,400     (large >= 20,000)   <-- tripped LARGE
+  directories  : 31         (large >= 25)       <-- tripped LARGE
+  coined concepts: 47       (large >= 40)       <-- tripped LARGE
+
+Proposed discovery path: brownfield-large
+  (full machinery: researcher fan-out + full 5-mandate review panel + batched closure loop)
+
+[1] Confirm  brownfield-large  (as proposed)
+[2] Override brownfield-small  (collapsed: single understand-pass; one reviewer runs the mandates as sequential passes + clean-context teach-back)
+[3] Override greenfield        (no source yet => signpost + HALT: run /aid-interview to define the project; the KB fills in as you build)
+```
+
+**This is a genuine PAUSE-FOR-USER-DECISION** (C4 human-gated; the path is measured but
+confirmed, never auto-decided -- FR-20). Stop here after presenting. The human's choice (not a
+static `project.type`) is authoritative; an override is recorded as such. Escalation/uncertainty
+defaults to the proposed path on a bare confirm, exactly like Step 0d's conservative default.
+
+**Advance:** Stop here after presenting the triage proposal. Re-run `/aid-discover` after
+confirming the path to continue to Step 1.
+
+#### On confirm (resume path) -- write the decision
+
+Write the confirmed path to `## Discovery Triage` in `.aid/knowledge/STATE.md`. This is the
+trackable record for this run and the anchor that idempotent re-entry reads on the next run.
+
+```markdown
+## Discovery Triage
+
+- **Path:** brownfield-large
+- **Measured:** source-files=142, source-LOC=38400, dirs=31, concepts=47
+- **Proposed:** brownfield-large (tripped: large_min_source_loc, large_min_dirs, large_min_concepts)
+- **Decision rationale:** measured -> proposed brownfield-large -> confirmed
+- **Re-triaged:** <date> (run N)
+```
+
+(`**Override:** yes` is added when the human picked a path other than the proposed one,
+mirroring `state-triage.md`'s override record. `**Re-triaged:**` records the date/run-number
+so consecutive re-runs are traceable.)
+
+Then **branch on the confirmed path**:
+
+- **Brownfield (small or large):** CHAIN -> Step 1 with the confirmed path parameterizing the
+  rest of GENERATE (Steps 2-5 fan-out + Step 5b closure caps; see `references/path-config.md`).
+
+- **Greenfield:** **do NOT chain to Step 1.** Print the **signpost and HALT** --
+
+  ```
+  [0f] Greenfield detected: ~no source to discover yet.
+       Nothing to discover yet -- run /aid-interview to define the project;
+       the KB fills in as you build, via re-triage once code lands.
+  ```
+
+  The `## Discovery Triage` record is still written (so the next run re-triages from a known
+  prior path), but GENERATE ends here. No fan-out, no closure, no review panel runs. Greenfield
+  is a detect+signpost outcome, not a generation path.
+
 ## Step 1: Pre-scan (aid-researcher, pre-scan doc-set) — ALWAYS runs first, ALONE
 
 Produces `project-structure.md` and `external-sources.md` — foundation for all other agents.
@@ -183,11 +284,27 @@ external docs placeholder with actual paths (or the "no docs" variant).
 Wait for completion. Verify both files exist. Re-dispatch if missing.
 ✓ aid-researcher (pre-scan) done (record actual time) — or ✗ aid-researcher (pre-scan) failed: {reason}
 
-### Steps 2-5: Dispatch 4 Subagents in Parallel (data-driven from declared set)
+### Steps 2-5: Deep-Dive Fan-Out (path-branched from confirmed path)
 
 **Only after Step 1 completes.** Dispatch with `background: true`.
 
-**Compute each agent's target list from the declared set** (§2.5 mapping-honors-declared-set):
+**Greenfield never reaches this step** -- GENERATE halted at the Step 0f signpost. Steps 2-5
+only ever run for the two brownfield paths.
+
+**Branch on the confirmed path (from `## Discovery Triage` in `.aid/knowledge/STATE.md`):**
+
+- **brownfield-large:** run the **full 4-way parallel fan-out** (below) -- 4 parallel
+  `aid-researcher` dispatches, one per concern lane.
+- **brownfield-small:** **skip the 4-way fan-out.** Dispatch **ONE `aid-researcher`** with the
+  full declared-set target list as a single understand-pass over the (small) source. The
+  single-pass researcher receives all targets from all concern lanes (architecture + analyst +
+  integrator + quality docs) in one prompt, covering the declared set in one pass. Skip the
+  per-lane target-list computation below; instead assemble all declared-set targets and dispatch
+  one agent. The prompt it receives is the combined foundation reference block (below) plus the
+  full target list. Print `[2-5/5] Single understand-pass (brownfield-small): covering all targets in one pass...`
+
+For **brownfield-large** (full fan-out) -- compute each agent's target list from the declared
+set (§2.5 mapping-honors-declared-set):
 
 ```bash
 # owns-<agent>: filenames assigned to this agent in the declared set
@@ -327,10 +444,12 @@ Semantic verification of the docs (frontmatter compliance, contract claims, cros
 
 **Run after ALL deep-dive agents (Steps 2-5) complete, before Step 6.**
 
+**Greenfield never reaches this step** -- GENERATE halted at the Step 0f signpost. Step 5b
+only ever runs for the two brownfield paths.
+
 Dispatch `aid-architect` to run the comprehension/closure loop. The loop body is defined in
 `references/state-closure.md` (thin-router pattern). The orchestrator invokes it with the
-cap-override argument interface (defaults from `discovery.closure` in `.aid/settings.yml`;
-f006 path-config may supply per-run overrides):
+cap-override argument interface (defaults from `discovery.closure` in `.aid/settings.yml`):
 
 ```
 --max-clean-passes <N>   default: discovery.closure.max_clean_passes (2)
@@ -338,11 +457,18 @@ f006 path-config may supply per-run overrides):
 --token-budget <N>       default: discovery.closure.token_budget (0 = use pass/round caps)
 ```
 
-Read defaults from `.aid/settings.yml` directly under the `discovery.closure:` block (NOT
-via `read-setting.sh`, which resolves only 2-level `section.key` paths — the 3-level
-`discovery.closure.max_clean_passes` is outside its reach). Extract them with:
+**Per-path closure-cap wiring (f006 path-config -- `references/path-config.md`):**
+
+Read the confirmed path from `## Discovery Triage` in `.aid/knowledge/STATE.md`, then read the
+`discovery.closure` defaults from `.aid/settings.yml` (NOT via `read-setting.sh`, which
+resolves only 2-level `section.key` paths -- the 3-level `discovery.closure.max_clean_passes`
+is outside its reach). Apply the per-path override per the matrix:
 
 ```bash
+# Read confirmed path
+confirmed_path="$(grep -m1 '^\*\*Path:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
+  | sed 's/^\*\*Path:\*\* *//' | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+
 # Read discovery.closure defaults (3-level keys; read-setting.sh is 2-level only)
 max_clean_passes="$(grep -A5 'closure:' .aid/settings.yml 2>/dev/null \
   | awk '/max_clean_passes:/{print $2; exit}')"
@@ -350,13 +476,30 @@ max_rounds="$(grep -A5 'closure:' .aid/settings.yml 2>/dev/null \
   | awk '/max_rounds:/{print $2; exit}')"
 token_budget="$(grep -A5 'closure:' .aid/settings.yml 2>/dev/null \
   | awk '/token_budget:/{print $2; exit}')"
-# Apply defaults if absent
+# Apply settings defaults if absent
 max_clean_passes="${max_clean_passes:-2}"
 max_rounds="${max_rounds:-4}"
 token_budget="${token_budget:-0}"
+
+# Apply per-path override (path-config.md -- no yq, no nested settings read)
+# brownfield-large: use defaults (no override args needed)
+# brownfield-small: override to single-pass (max_rounds=1, max_clean_passes=1)
+CLOSURE_OVERRIDE_ARGS=""
+if [[ "$confirmed_path" == "brownfield-small" ]]; then
+  max_rounds=1
+  max_clean_passes=1
+  CLOSURE_OVERRIDE_ARGS="--max-rounds 1 --max-clean-passes 1"
+fi
+# greenfield: never reaches here (GENERATE halted at Step 0f signpost)
 ```
 
-Print: `[5b] SYNTHESIS + CLOSURE starting (max_clean_passes=${max_clean_passes}, max_rounds=${max_rounds})...`
+The `CLOSURE_OVERRIDE_ARGS` are the runtime arguments passed to f004's Step 5b closure step.
+For brownfield-large they are empty (use settings defaults); for brownfield-small they are
+`--max-rounds 1 --max-clean-passes 1`. This is the cap-override interface specified and owned
+in f004's SPEC (Step 5b); f006 supplies the per-path values through it. No nested settings
+mutation; no `yq`.
+
+Print: `[5b] SYNTHESIS + CLOSURE starting (path=${confirmed_path}, max_clean_passes=${max_clean_passes}, max_rounds=${max_rounds})...`
 
 ▶ aid-architect (SYNTHESIS + CLOSURE) starting (~variable)
 Follow `references/state-closure.md` for the full loop body.
@@ -365,10 +508,10 @@ Follow `references/state-closure.md` for the full loop body.
 **Ungroundable terms** discovered during the closure loop that cannot be grounded from any
 artifact after investigation are appended to `.aid/knowledge/.scout-questions.tmp` using the
 existing Q&A format (Category: `Concept`, Impact: `High`, Status: Pending) so Step 6b
-consolidates them into `STATE.md ## Q&A (Pending)`. **Step 6b is unchanged** — the closure
+consolidates them into `STATE.md ## Q&A (Pending)`. **Step 6b is unchanged** -- the closure
 loop simply feeds the same pipe.
 
-Print on completion: `[5b] CLOSURE complete — {N} concepts grounded, {M} terms escalated to Q&A.`
+Print on completion: `[5b] CLOSURE complete -- {N} concepts grounded, {M} terms escalated to Q&A.`
 
 ### Step 6: Generate README.md and INDEX.md
 
