@@ -64,10 +64,10 @@ different places.
 > Active Skill enum: aid-{skill} | none
 
 - **Lifecycle:** Running
-- **Phase:** Interview
-- **Active Skill:** aid-interview
-- **Updated:** 2026-06-22T18:07:43Z
-- **Pause Reason:** —
+- **Phase:** Specify
+- **Active Skill:** none
+- **Updated:** 2026-06-23T03:47:36Z
+- **Pause Reason:** Specify phase complete (12/12 features Ready/A+) — awaiting /aid-plan
 - **Block Reason:** —
 - **Block Artifact:** —
 
@@ -141,6 +141,19 @@ different places.
 | 2026-06-22 | Feature decomposition | -- | 12 features created (f001–f012) |
 | 2026-06-22 | Cross-reference validation | C | Grade C (min A); 2 MEDIUM → Q1/Q2 raised (Pending); LOW/MINOR fixes to fold inline |
 | 2026-06-22 | Cross-reference re-grade | A+ | Q1/Q2 answered + folded; LOW fixed/accepted; migrate-name verified; clears the A bar |
+| 2026-06-22 | aid-specify feature-001 | A+ | Ready — frontmatter + sources primitive; C→A+ (4 inline fixes) |
+| 2026-06-22 | aid-specify feature-002 | A+ | Ready — INDEX routing table; C→A+ (2 MEDIUM fixed, 2 accepted) |
+| 2026-06-22 | aid-specify feature-003 | A+ | Ready — KB document model + concern-model.md + summarize; D+→A+ (HIGH seed-list error fixed) |
+| 2026-06-22 | aid-specify feature-004 | A+ | Ready — essence-capture engine (harvest + spine + closure + escalation); D+→A+ (HIGH salience arithmetic fixed) |
+| 2026-06-22 | aid-specify feature-005 | A+ | Ready — review panel + teach-back gate + Calibration; C→A+ (3 MEDIUM fixed) |
+| 2026-06-22 | aid-specify feature-006 | A+ | Ready — recon triage + 3 paths + panel-scaling; A→A+ (2 MINOR fixed) |
+| 2026-06-22 | aid-specify feature-007 | A+ | Ready — per-doc freshness loop; D+→A+ (cross-feature f001↔f007 absence-contract reconciled; f001 spec line aligned) |
+| 2026-06-22 | aid-specify feature-008 | A+ | Ready — skill topology (aid-query-kb rename + aid-update-kb + gap-capture); A→A+ (3 MINOR fixed; SPIKE-2 f005-param seam → PLAN) |
+| 2026-06-22 | aid-specify feature-009 | A+ | Ready — skill-change propagation; D+→A+ (HIGH: missed kb.html surface + count-label conflation fixed) |
+| 2026-06-22 | aid-specify feature-010 | A+ | Ready — housekeep↔update-kb boundary + standing closure; D+→A+ (HIGH: AC1-narrowing resolved — whole-KB review retained) |
+| 2026-06-22 | aid-specify feature-011 | A+ | Ready — KB migration; B→A+ (M5 resolved: shipped soft-skip retained per NFR-7 + AID-CI strict; sources:[] idempotency) |
+| 2026-06-22 | aid-specify feature-012 | A+ | Ready — validation fixture (AC2 'Relative Bus' regression + calibration/teach-back/path); D+→A+ (HIGH: phrase-survival path corrected to f004) |
+| 2026-06-22 | aid-specify ALL 12 features | A+ | All features Ready/A+ — Specify phase complete; ready for /aid-plan |
 
 ---
 
@@ -172,7 +185,18 @@ different places.
 
 | # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
 |---|---------|------------|------------|-----------|-------|
-| _none yet_ | | | | | |
+| 1 | feature-001-frontmatter-and-sources-primitive | Ready | A+ | 0 | C→A+: soft-skip lint until f011, reuse FM tags, external-sources seed, aid-config note |
+| 2 | feature-002-index-routing-table | Ready | A+ | 0 | C→A+: bounded Summary split, f002 owns ASCII-clean of build-kb-index.sh, coexistence intent fallback |
+| 3 | feature-003-kb-document-model | Ready | A+ | 0 | D+→A+: concern-model.md (10 concerns/15 seeds), byte-identical seed reframe, expectations→open-questions, summarize spine across 7 profiles |
+| 4 | feature-004-essence-capture-research | Ready | A+ | 0 | D+→A+: harvest-coined-terms.sh (phrase-survival closes 'Relative bus'), glossary→spine, bounded closure-check.sh, Step-6b escalation; salience arithmetic fixed |
+| 5 | feature-005-review-panel-and-rubric | Ready | A+ | 0 | C→A+: 5-mandate parallel panel→merged ledger, un-relaxable teach-back hard gate, Calibration dimension + round-trip; self-contained extraction |
+| 6 | feature-006-recon-triage-and-paths | Ready | A+ | 0 | A→A+: recon-classify.sh + triage thresholds, 3-path config matrix, f005 panel-scaling (5→2), closure-cap runtime-arg seam |
+| 7 | feature-007-per-doc-freshness-loop | Ready | A+ | 0 | D+→A+: kb-freshness-check.sh (merge-base ancestry), two-reader parity, degrade matrix; fixed f001↔f007 absence-contract contradiction |
+| 8 | feature-008-skill-topology | Ready | A+ | 0 | A→A+: aid-ask→aid-query-kb rename (canonical-only, grep-0), new aid-update-kb thin-router (reuses f005 gate), gap-capture into Q&A; SPIKE-2 (f005 param seam) carried to PLAN |
+| 9 | feature-009-skill-change-propagation | Ready | A+ | 0 | D+→A+: S1-S12 propagation table (orphan-prune verified), +.aid/dashboard/kb.html surface+Playwright, count labels (user-facing 12→13 vs total 13→14) |
+| 10 | feature-010-housekeep-update-boundary-and-standing-closure | Ready | A+ | 0 | D+→A+: source-driven-global vs prompt-driven-targeted boundary; AC1 preserved (whole-KB review retained, staleness = prioritization); closure re-verify before commit |
+| 11 | feature-011-kb-migration | Ready | A+ | 0 | B→A+: migrate-kb-frontmatter.sh (precedent-following, propose→confirm sources, --rollback), shipped soft-skip RETAINED (NFR-7) + AID-CI strict, sources:[] idempotency |
+| 12 | feature-012-validation-fixture | Ready | A+ | 0 | D+→A+: planted 'Relative Bus' phrase-survival regression (AC2) + calibration/teach-back/path fixtures, threshold-pinning oracle, HOME-pinned isolation; phrase-floor path corrected to match f004 |
 
 ## Plan / Deliveries
 
