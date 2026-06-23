@@ -9,6 +9,7 @@ intent: |
   and rubric tiers. Read this when any AID term is unfamiliar.
 contracts: []
 changelog:
+  - 2026-06-23: Migrated body to concept-spine structure (task-021): load-bearing AID concepts promoted to spine entries; all lexicon tables retained additively. Frontmatter migration deferred to task-022.
   - 2026-06-20: work-005 profile-generator-simplify interview — added "Format ⊥ behavior (behavioral metadata)" term (REQUIREMENTS FR4-distinction); durable, additive (no existing term rewritten; built-state terms unchanged pending ship).
   - 2026-06-09: aid-ask added (11->12 user-facing skills) via /aid-housekeep KB-DELTA.
   - 2026-06-03: work-001 feature-003 — recipe catalog expanded to 51 (5 seed recipes migrated + 46 new recipe names authored; 47 files newly created on disk since the write-release-note split adds a second new file); Seed Catalog term updated to 51-recipe definition across 4 groups.
@@ -34,6 +35,190 @@ changelog:
 > operating in this repo must know. Each entry cites durable-anchor evidence — a
 > file path plus a grep-recoverable symbol, heading, or distinctive string (no line
 > numbers, which drift).
+>
+> This doc has two parts: the **Concept Spine** (AID's load-bearing native concepts, each
+> grounded with definition-as-used-here / relates-to / per-concept sources) and the
+> **Lexicon** (vocabulary tables for all terms — every term from the pre-migration glossary
+> is retained here additively). The spine is the backbone; the lexicon is the reference.
+> No term is lost between the two.
+
+---
+
+## Concept Spine
+
+> The spine holds AID's **native load-bearing concepts** — the terms that carry the
+> methodology's essence and that other KB docs reference as primitive building blocks.
+> Each entry is grounded from source artifacts (NOT a generic definition — only what it
+> means in AID). The `sources:` field on each entry is the grep-recoverable anchor that
+> grounds it; the doc-level frontmatter `sources:` (set during task-022) equals the union
+> of all concept-level sources.
+
+### Iron Man Model
+
+**Definition-as-used-here:** The human-AI collaboration philosophy that governs every AID interaction: the AI is the suit (amplifies capability), the human is the pilot (sets direction and makes decisions). The human never leaves the cockpit — every AID phase is co-executed by human + AI, with the human retaining final authority at every gate.
+
+**Relates-to:** Phase Gate (the human's explicit decision point that makes the cockpit metaphor concrete), Director (the human role that is the pilot), Orchestrator (the AI agent that acts as the suit's co-pilot), Determinism Test (how AID calibrates how much of the cockpit the suit can operate autonomously).
+
+**sources:**
+- `docs/aid-methodology.md:### The Iron Man Model: Human-in-the-Middle` -- core definition and rationale
+- `docs/glossary.md:**Iron Man Model:**` -- canonical gloss
+
+---
+
+### Phase Gate
+
+**Definition-as-used-here:** A mandatory human decision point between AID phases. The human reviews the current phase's output and explicitly approves advancement to the next phase. "OK?" is the gate — AID never auto-advances; every transition is human-triggered. Phase gates are what enforce the Iron Man Model at phase boundaries: the human pilot decides when to proceed.
+
+**Relates-to:** Iron Man Model (the philosophy that mandates the gate), State Machine (each skill's internal state machine leads to a gate before phase advance), Dispatch Table (the SKILL.md table that lists the advance conditions for each state).
+
+**sources:**
+- `docs/glossary.md:**Phase Gate:**` -- canonical definition
+- `docs/aid-methodology.md:#### Phase 2: Interview` -- phase-gate behavior described at the interview boundary
+
+---
+
+### Knowledge Base (KB)
+
+**Definition-as-used-here:** `.aid/knowledge/` — AID's gravitational center. The set of active markdown documents whose count varies by project (driven by the declared doc-set), plus two meta-documents (README, STATE), one generated document (INDEX), and one generated pre-pass (project-index). Every AID phase reads from it; any phase can update it. The KB is what keeps AI agents grounded in project reality — without it, agents hallucinate. Each KB doc carries a durable-anchor source citation for every factual claim.
+
+**Relates-to:** Tier 1/Tier 2/Tier 3 context economy (how agents load KB content into context), Targeted re-discovery (how the KB is updated when gaps are found), declared doc-set (what determines which docs exist), canonical/render (how KB templates are generated), Phase Gate (the KB must be approved before phases advance).
+
+**sources:**
+- `docs/aid-methodology.md:## 3. The Knowledge Base` -- role as gravitational center + structure
+- `docs/glossary.md:**Knowledge Base (KB):**` -- canonical gloss
+- `canonical/skills/aid-discover/SKILL.md:aid-discover  ▸ one step per run` -- the skill that builds and maintains the KB
+
+---
+
+### Determinism Test
+
+**Definition-as-used-here:** AID's decision rule for whether a step should be automated or kept human-in-the-loop: "Can you write a complete set of rules to validate the outcome?" If yes, automate fully. If no, keep a human in the loop. This is not a metric — it is a yes/no architectural question applied per phase to calibrate automation depth. The same test governs whether a reviewer can be replaced by a script.
+
+**Relates-to:** Phase Gate (the gate is kept human because the outcome is not fully deterministic), Universal Grading Rubric (the rubric is the deterministic artifact — grade.sh can compute a grade from severity tags, so grading is automated; but identifying findings requires human judgment), Two-Tier Review (human reviewer at the gate because findings require non-deterministic judgment).
+
+**sources:**
+- `docs/glossary.md:**Determinism Test:**` -- canonical definition
+
+---
+
+### canonical->render
+
+**Definition-as-used-here:** AID's single-source-of-truth rendering discipline. All install-tree content (skills, agents, scripts, templates) has exactly one canonical source under `canonical/`, which is rendered by `run_generator.py` to produce the 5 per-profile install trees (claude-code, codex, cursor, copilot-cli, antigravity) plus the dogfood `.claude/` tree. Never edit profile trees directly — edit canonical and run the generator. Render-drift (profile tree diverging from canonical) is a CI-detected failure.
+
+**Relates-to:** Profile (the per-tool rendering target), Dogfood Tree (the `.claude/` tree rendered from canonical that AID uses on itself), Emission Manifest (the safety record of what the generator emitted), Quadruple Mirror (the file-multiplication effect of 7 copies per canonical file), VERIFY deterministic (the AC2 byte-identity guarantee that re-runs must reproduce).
+
+**sources:**
+- `coding-standards.md:§7a` -- canonical single source of truth rule
+- `.aid/knowledge/project-structure.md:← SINGLE SOURCE OF TRUTH for all install-tree content` -- verified on disk
+- `canonical/EMISSION-MANIFEST.md:# Emission Manifest — Design Specification` -- the safety boundary contract
+
+---
+
+### Two-Tier Review
+
+**Definition-as-used-here:** AID's execution review architecture: every delivery runs two distinct review passes. The Quick-Check is a fast per-task review (Small-tier `aid-reviewer`, no grade loop) that accumulates HIGH+ findings for the gate. The Delivery Gate is a full per-delivery review (tier selected by complexity score) with a complete review/fix/review loop driven by `grade.sh`. The two-tier design gives fast feedback per task without sacrificing the full adversarial review at delivery.
+
+**Relates-to:** Quick-Check (Tier 1), Delivery Gate (Tier 2), Complexity Score (selects the reviewer tier at the delivery gate), Universal Grading Rubric (the shared rubric both tiers apply), Adversarial Reviewer (the aid-reviewer's structural independence from the developer), Circuit Breaker (the safety stop when the grade loop stagnates).
+
+**sources:**
+- `canonical/skills/aid-execute/SKILL.md:| REVIEW | \`references/state-review.md\`` -- Quick-Check state definition
+- `canonical/skills/aid-execute/SKILL.md:| DELIVERY-GATE | \`references/state-delivery-gate.md\`` -- Delivery Gate state definition
+- `canonical/scripts/execute/complexity-score.sh:Default Low Threshold = 6; High Threshold = 14` -- tier selection thresholds
+
+---
+
+### Pool Dispatch
+
+**Definition-as-used-here:** AID's parallel task execution model inside `aid-execute`'s EXECUTE-WAVE state. The PD-0..PD-6 model replaces the serial task loop with a continuous parallel pool: tasks that have no unresolved dependencies are dispatched up to MaxConcurrent concurrently; the pool waits for any single task to finish before slotting the next. A failed task's transitive descendants are Blocked (Failure Block Radius, computed by BFS). When backgrounded dispatch is unavailable, pool degrades gracefully to MaxConcurrent=1.
+
+**Relates-to:** EXECUTE-WAVE (the state that runs pool dispatch), MaxConcurrent (the pool capacity knob from settings.yml), Failure Block Radius (what gets blocked when a task fails), Graceful Degradation (the fallback to sequential when the host can't background), Execution Graph (the dependency structure pool dispatch follows), Capability Probe PD-0 (the probe step that detects background support).
+
+**sources:**
+- `canonical/skills/aid-execute/SKILL.md:**Delivery-mode pool dispatch (FR6):**` -- PD-0..PD-6 model definition
+- `canonical/scripts/execute/compute-block-radius.sh:BFS transitive-descendant computation for FR6` -- failure block radius BFS
+- `canonical/templates/settings.yml:max_parallel_tasks: 5` -- MaxConcurrent default
+
+---
+
+### Thin-Router SKILL.md Convention
+
+**Definition-as-used-here:** AID's structural discipline for skill files: when a SKILL.md would exceed ~200 lines, its per-state bodies are extracted to `references/state-{name}.md` files; the SKILL.md is kept as a thin router containing only the Dispatch Table, Pre-flight checks, and State Detection. The router is capped at ~360 lines. This convention keeps skill files navigable at their top level while allowing state implementations to grow independently.
+
+**Relates-to:** State Machine (the state machine that the thin router implements), Dispatch Table (the canonical table inside the router), canonical->render (the thin-router files are canonical source, rendered to all 5 profile trees).
+
+**sources:**
+- `coding-standards.md:§7b` -- thin-router convention rule
+- `.aid/knowledge/project-structure.md:Thin-Router (≤~360 lines)` -- confirmed on disk
+
+---
+
+### State Machine (per-skill)
+
+**Definition-as-used-here:** AID's skill execution model. Every `aid-*` skill is implemented as a resumable state machine: each invocation executes exactly one state, persists state to disk (FILESYSTEM IS THE ONLY SOURCE OF TRUTH), and halts at a natural pause point — it never auto-advances to the next state. The next `/aid-*` invocation re-reads disk state and picks up from there. The state machine is encoded in the SKILL.md Dispatch Table.
+
+**Relates-to:** Dispatch Table (the state machine's canonical encoding), FILESYSTEM IS THE ONLY SOURCE OF TRUTH (the memory model that makes state machines resumable), Phase Gate (phase advance is always a human-triggered state transition), Thin-Router SKILL.md Convention (how skill files are structured to expose the state machine), Run (one invocation = one state advance).
+
+**sources:**
+- `canonical/skills/aid-discover/SKILL.md:aid-discover  ▸ one step per run` -- per-invocation model
+- `coding-standards.md:§8d` -- state machine convention
+- `canonical/skills/aid-execute/SKILL.md:| State | Detail | Worker | Advance |` -- Dispatch Table shape
+
+---
+
+### FILESYSTEM IS THE ONLY SOURCE OF TRUTH
+
+**Definition-as-used-here:** The memory discipline that all AID skills follow: a skill never trusts conversation memory or prior turn context — it always reads actual files from disk at the start of each invocation to detect current state. This is what makes state machines resumable across separate invocations: because state is on disk, not in context, a skill session can be interrupted and correctly resumed in a fresh context. Every state-detection block in every skill opens with this rule.
+
+**Relates-to:** State Machine (the execution model this memory discipline enables), State Entry Line (the "you are here" print that confirms the skill read disk state correctly), Run (one invocation reads disk and advances one state).
+
+**sources:**
+- `canonical/skills/aid-execute/SKILL.md:**FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**` -- canonical statement of the rule
+- `canonical/skills/aid-discover/SKILL.md:ALWAYS read actual files on disk.` -- rule as applied in discover
+
+---
+
+### Feedback Loops
+
+**Definition-as-used-here:** AID's 11 named correction paths that route a phase's findings back to the appropriate upstream phase for resolution. Each loop is typed: some route back to Discovery (KB gaps), some to Specify (ambiguous specs), some to Interview (new requirements), some to Execute (fixes). The loops form the system's self-correction backbone — AID never silently proceeds past a contradiction, it names the loop and routes the finding. Loop 11 (Any->Discovery) is the cross-cutting loop that makes the KB the gravitational center.
+
+**Relates-to:** Knowledge Base (the return target for Loop 11), Targeted re-discovery (the Discovery entry triggered by feedback loops), Q&A entry (the loopback artifact loops append to STATE files), IMPEDIMENT (the Execute loopback artifact), Phase Gate (the gate at which loops are typically triggered).
+
+**sources:**
+- `docs/aid-methodology.md:**Loop 1: Interview → Discovery` -- loop series definition (Loops 1-11)
+- `docs/aid-methodology.md:**Loop 11: Any Phase → Discovery (Targeted Re-Discovery)` -- the cross-cutting return loop
+
+---
+
+### Targeted Re-Discovery
+
+**Definition-as-used-here:** A scoped re-entry to the Discovery phase that fills a specific KB gap — never a full redo. Triggered when a downstream phase (Specify, Plan, Execute, etc.) hits a missing or stale KB fact. The trigger is a Pending Q&A entry in `.aid/knowledge/STATE.md` with `**Impact:** Required` naming the specific doc(s) to refresh. Also driven on-demand by `/aid-housekeep`'s KB-DELTA stage (off-pipeline). The scoped nature keeps re-discovery bounded and fast.
+
+**Relates-to:** Knowledge Base (what is being updated), Feedback Loops (the 11 loops that trigger targeted re-discovery), Q&A entry (the loopback artifact that carries the Impact: Required signal), aid-housekeep (the off-pipeline skill that can trigger KB-DELTA targeted re-discovery).
+
+**sources:**
+- `docs/aid-methodology.md:**Loop 11: Any Phase → Discovery (Targeted Re-Discovery)` -- targeted re-discovery defined
+- `canonical/skills/aid-discover/SKILL.md:## Targeted Discovery (Re-entry)` -- how the skill implements scoped re-entry
+- `canonical/skills/aid-housekeep/references/state-kb-delta.md:## Step 4` -- KB-DELTA targeted re-discovery path
+
+---
+
+### Emission Manifest
+
+**Definition-as-used-here:** `{profile}/emission-manifest.jsonl` — the authoritative safety boundary for the generator's pure-mirror deletion logic. A JSONL file of `(profile, src, dst, sha256)` records, sorted by `dst`, with a sentinel first line for schema evolution. The manifest is what makes the generator safe to re-run: the generator only deletes files in the previous manifest's `removed_dst` set; files outside any manifest are NEVER touched. This is the canonical->render model's safety guarantee.
+
+**Relates-to:** canonical->render (the rendering pipeline that writes the manifest), Pure-Mirror Deletion (the safety rule the manifest enforces), VERIFY deterministic (the AC2 guarantee that re-runs produce a byte-identical manifest), Sentinel (the manifest's first-line version marker).
+
+**sources:**
+- `canonical/EMISSION-MANIFEST.md:# Emission Manifest — Design Specification` -- full spec
+- `canonical/EMISSION-MANIFEST.md:## Safety-Boundary Semantics` -- pure-mirror deletion semantics
+
+---
+
+## Lexicon
+
+> All AID vocabulary terms, grouped by topic. Every term from the pre-migration glossary
+> is retained here additively — no term lost. Terms promoted to the Concept Spine above
+> are cross-referenced inline where useful.
 
 ---
 
@@ -42,12 +227,12 @@ changelog:
 | Term | Definition (inferred from usage) | Source |
 |------|----------------------------------|--------|
 | **AID** | "AI Integrated Development" — a structured methodology for building/maintaining software with AI agents; 6 numbered development phases in 5 groups (delivery and summary skills optional), every phase co-executed by human + AI. | `docs/aid-methodology.md` `# AID — AI Integrated Development`, `CLAUDE.md` `## Project`, `docs/glossary.md` `**AID (AI Integrated Development):**` |
-| **Iron Man Model** | The human-AI collaboration philosophy: AI is the suit (amplifies capability); human is the pilot (sets direction, decisions). Human never leaves the cockpit. | `docs/aid-methodology.md` `### The Iron Man Model: Human-in-the-Middle`, `docs/glossary.md` `**Iron Man Model:**` |
+| **Iron Man Model** | See Concept Spine. The human-AI collaboration philosophy: AI is the suit (amplifies capability); human is the pilot (sets direction, decisions). Human never leaves the cockpit. | `docs/aid-methodology.md` `### The Iron Man Model: Human-in-the-Middle`, `docs/glossary.md` `**Iron Man Model:**` |
 | **Director** | Role — the human. Sets direction, makes decisions, reviews artifacts, approves phase transitions. Orchestrates, doesn't code. | `docs/aid-methodology.md` `### The Iron Man Model: Human-in-the-Middle` |
 | **Orchestrator** | Role — an AI agent (or human). Manages the pipeline: spawns agents, routes feedback loops, enforces quality gates, maintains KB. | `docs/aid-methodology.md` `## 5. The Agent Model` |
 | **Specialist** | Role — an AI coding agent. Executes tasks within defined scope. Reports impediments rather than working around them. | `docs/aid-methodology.md` `## 5. The Agent Model` |
-| **Phase Gate** | Human decision point between phases. The human reviews phase output and approves advancement. "OK?" is the gate. | `docs/glossary.md` `**Phase Gate:**` |
-| **Determinism Test** | "Can you write a complete set of rules to validate the outcome?" If yes, automate fully; if no, keep a human in the loop. Used to decide automation depth per phase. | `docs/glossary.md` `**Determinism Test:**` |
+| **Phase Gate** | See Concept Spine. Human decision point between phases. The human reviews phase output and approves advancement. "OK?" is the gate. | `docs/glossary.md` `**Phase Gate:**` |
+| **Determinism Test** | See Concept Spine. "Can you write a complete set of rules to validate the outcome?" If yes, automate fully; if no, keep a human in the loop. Used to decide automation depth per phase. | `docs/glossary.md` `**Determinism Test:**` |
 | **Brownfield** | An existing codebase with history, technical debt, and undocumented knowledge. Discovery phase is designed for brownfield. | `docs/glossary.md` `**Brownfield:**`, `canonical/templates/settings.yml` `type: brownfield` |
 | **Greenfield** | A new project with no existing code. Runs `aid-config` first, then skips Discovery, starts at Interview. | `docs/glossary.md` `**Greenfield:**`, `docs/aid-methodology.md` `#### \`aid-config\` — Bootstrap (not a numbered phase)` |
 | **SDD** | "Spec-Driven Development" — a methodology where specs drive code generation. AID contains SDD as a subset and extends it with discovery, two-level planning, feedback loops, and post-deployment phases. | `docs/glossary.md` `**SDD (Spec-Driven Development):**` |
@@ -64,8 +249,8 @@ changelog:
 | **Plan** | Map | `aid-plan` | Phase 4 — Sequence features into deliverables, each a functional MVP. Plan answers ONE question: order + standalone-functionality. | `docs/aid-methodology.md` `#### Phase 4: Plan` |
 | **Detail** | Map | `aid-detail` | Phase 5 — Decompose each deliverable into PR-sized typed tasks. "Ultimate breakdown." | `docs/aid-methodology.md` `#### Phase 5: Detail` |
 | **Execute** | Execute | `aid-execute` | Phase 6 — Execute a task per its Type; built-in two-tier review (per-task quick-check + per-delivery gate). One branch per delivery. | `docs/aid-methodology.md` `#### Phase 6: Execute` |
-| **Deploy** | Deliver | `aid-deploy` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `docs/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
-| **Monitor** | Deliver | `aid-monitor` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Observe production; classify findings (BUG/CR/Infra/No Action); route to Interview. The short path (BUG → Interview LITE-BUG-FIX → Execute) skips spec/plan. | `docs/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
+| **Deploy** | Deliver | `aid-deploy` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Bundle deliveries into a release; final verification (build + tests + lint); ship per `infrastructure.md § Deployment`. Routes KB-affecting discoveries to Discovery (never edits KB directly). | `docs/aid-methodology.md` `#### Deploy (\`aid-deploy\`) — optional` |
+| **Monitor** | Deliver | `aid-monitor` | Optional (end-of-pipeline Deliver skill, not a numbered phase) — Observe production; classify findings (BUG/CR/Infra/No Action); route to Interview. The short path (BUG → Interview LITE-BUG-FIX → Execute) skips spec/plan. | `docs/aid-methodology.md` `#### Monitor (\`aid-monitor\`) — optional` |
 
 ---
 
@@ -93,7 +278,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Knowledge Base / KB** | `.aid/knowledge/` — a set of active markdown documents whose count varies by project (driven by the declared doc-set) + 2 meta-documents (README, STATE) + 1 generated (INDEX) + 1 generated pre-pass (metrics + project-index in .aid/generated/). The gravitational center of AID — every phase reads from it; any phase can update it. | `docs/aid-methodology.md` `## 3. The Knowledge Base`, `docs/glossary.md` `**Knowledge Base (KB):**` |
+| **Knowledge Base / KB** | See Concept Spine. `.aid/knowledge/` — a set of active markdown documents whose count varies by project (driven by the declared doc-set) + 2 meta-documents (README, STATE) + 1 generated (INDEX) + 1 generated pre-pass (metrics + project-index in .aid/generated/). The gravitational center of AID — every phase reads from it; any phase can update it. | `docs/aid-methodology.md` `## 3. The Knowledge Base`, `docs/glossary.md` `**Knowledge Base (KB):**` |
 | **declared doc-set** | The project-specific list of KB documents for a discovery run, declared in `.aid/settings.yml` `discovery.doc_set` as a YAML block-list of pipe-delimited `filename\|owner\|presence[:when]` entries. Drives which agents are dispatched and what filenames they produce. When absent, the default seed set is used. | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## Schema: discovery.doc_set in .aid/settings.yml` |
 | **default seed set** | The canonical default KB doc-set, synthesized by `synth_default_seed` from `canonical/templates/knowledge-base/*.md` using the §2.2 ownership map when `discovery.doc_set` is absent from settings.yml. Backward-compatible: an unmodified settings.yml yields the canonical standard set. | `canonical/skills/aid-discover/references/doc-set-resolve.md` `## synth_default_seed` |
 | **doc-set derivation (propose→confirm)** | Step 0d of the GENERATE state — a PAUSE-FOR-USER-DECISION checkpoint where the orchestrator infers a proposed doc-set from the project-index file inventory (as a diff against the default seed) and presents it to the user for confirmation or editing before dispatch begins. Accepting the default writes nothing to settings.yml (absent-section-means-default-seed invariant). | `canonical/skills/aid-discover/references/state-generate.md` `### Step 0d: Propose & Confirm Doc-Set` |
@@ -116,7 +301,7 @@ changelog:
 | **Feature** | A discrete capability inside a work. Lives at `.aid/{work}/features/feature-NNN-{name}/` with its own `SPEC.md`. Created by `aid-interview` Feature Decomposition state. | `docs/aid-methodology.md` `#### Phase 2: Interview` |
 | **Delivery / Deliverable** | A subset of features grouped by `aid-plan` such that the group is a standalone-functional MVP. One branch per delivery (`aid/{work}-delivery-NNN`). | `docs/aid-methodology.md` `#### Phase 4: Plan`, `canonical/skills/aid-execute/SKILL.md` `One branch per delivery. All tasks in a delivery share the same branch.` |
 | **Task** | The atomic unit produced by `aid-detail`. `task-NNN.md` — 6 sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria). One task = one agent session = one PR. | `docs/aid-methodology.md` `#### Phase 5: Detail`, `canonical/skills/aid-execute/SKILL.md` `Read \`task-NNN.md\`. It has 6 sections:` |
-| **Package** | A release artifact bundling one or more completed deliveries. `package-NNN-{name}.md` per shipped package. | `docs/aid-methodology.md` `#### Deploy (`aid-deploy`) — optional` |
+| **Package** | A release artifact bundling one or more completed deliveries. `package-NNN-{name}.md` per shipped package. | `docs/aid-methodology.md` `#### Deploy (\`aid-deploy\`) — optional` |
 | **REQUIREMENTS.md** | The product-of-Interview document; one per work (full path only). Frozen after approval (rev-tracked). Holds Objective / Problem / Scope / FRs / NFRs / Constraints / Acceptance / Priority. | `docs/aid-methodology.md` `### Templates Reference`, `docs/aid-methodology.md` `**REQUIREMENTS.md template:**` |
 | **SPEC.md (per-feature)** | Per-feature spec; requirements side (from Interview) + technical side (from Specify). | `docs/aid-methodology.md` `### Templates Reference`, `docs/aid-methodology.md` `**Feature SPEC.md template:**` |
 | **SPEC.md (work-root, lite path)** | A single consolidated work-root SPEC.md in lite path (no features/ folder, no REQUIREMENTS.md, no PLAN.md). | `canonical/skills/aid-interview/SKILL.md` `A lite work has **no \`features/\` folder` |
@@ -179,6 +364,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
+| **Two-Tier Review** | See Concept Spine. AID's execution review architecture: Quick-Check per-task fast review + Delivery Gate full per-delivery review loop. | `canonical/skills/aid-execute/SKILL.md` `| REVIEW | \`references/state-review.md\`` |
 | **Quick-Check** | Per-task fast review by Small-tier `aid-reviewer`; NO grade loop; HIGH+ findings deferred to delivery gate. | `canonical/skills/aid-execute/SKILL.md` `| REVIEW | \`references/state-review.md\``, `canonical/scripts/execute/writeback-state.sh` `mode_findings()` (Quick Check Findings section) |
 | **Delivery Gate** | Per-delivery full review by `aid-reviewer` (tier = complexity score); full review/fix/review loop with `grade.sh`. | `canonical/skills/aid-execute/SKILL.md` `| DELIVERY-GATE | \`references/state-delivery-gate.md\`` |
 | **Complexity Score (Small / Medium / Large)** | Computed by `complexity-score.sh` from task count, depth, risk, consults — selects reviewer tier for the delivery gate. Thresholds: Low=6, High=14 default. | `canonical/scripts/execute/complexity-score.sh` `Default Low Threshold = 6; High Threshold = 14` |
@@ -189,7 +375,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **Pool Dispatch** | The PD-0..PD-6 model used by `aid-execute` in delivery mode — continuous parallel pool replaces the serial task loop. | `canonical/skills/aid-execute/SKILL.md` `**Delivery-mode pool dispatch (FR6):**` |
+| **Pool Dispatch** | See Concept Spine. The PD-0..PD-6 model used by `aid-execute` in delivery mode — continuous parallel pool replaces the serial task loop. | `canonical/skills/aid-execute/SKILL.md` `**Delivery-mode pool dispatch (FR6):**` |
 | **MaxConcurrent** | The pool's parallel capacity — sourced from `.aid/settings.yml` `execution.max_parallel_tasks` (default 5). | `canonical/templates/settings.yml` `max_parallel_tasks: 5`, `canonical/skills/aid-execute/SKILL.md` `falls back to` |
 | **Wait-for-any-completion** | Pool scheduling primitive — pool waits for any single task to finish before slotting the next. | `canonical/skills/aid-execute/SKILL.md` `**Delivery-mode pool dispatch (FR6):**` |
 | **Failure Block Radius** | The transitive descendants of a failed task — all are marked Blocked. Computed by `compute-block-radius.sh` via BFS. | `canonical/scripts/execute/compute-block-radius.sh` `BFS transitive-descendant computation for FR6` |
@@ -217,13 +403,13 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
-| **State Machine (per-skill)** | Every `aid-*` skill exits after one state and re-enters on the next slash-command invocation (no auto-advance per IQ9). Each SKILL.md has a Dispatch table = state machine. | `canonical/skills/aid-discover/SKILL.md` `aid-discover  ▸ one step per run`, `coding-standards.md §8d` |
-| **FILESYSTEM IS THE ONLY SOURCE OF TRUTH** | Every state-detection block opens with this — skills never trust conversation memory; always read disk. | `canonical/skills/aid-execute/SKILL.md` `**FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**`, `canonical/skills/aid-discover/SKILL.md` `ALWAYS read actual files on disk.` |
+| **State Machine (per-skill)** | See Concept Spine. Every `aid-*` skill exits after one state and re-enters on the next slash-command invocation (no auto-advance per IQ9). Each SKILL.md has a Dispatch table = state machine. | `canonical/skills/aid-discover/SKILL.md` `aid-discover  ▸ one step per run`, `coding-standards.md §8d` |
+| **FILESYSTEM IS THE ONLY SOURCE OF TRUTH** | See Concept Spine. Every state-detection block opens with this — skills never trust conversation memory; always read disk. | `canonical/skills/aid-execute/SKILL.md` `**FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**`, `canonical/skills/aid-discover/SKILL.md` `ALWAYS read actual files on disk.` |
 | **State Entry Line** | The `[State: NAME] — <description>` print + "you are here" ASCII state-map emitted on every state entry. | `canonical/skills/aid-discover/SKILL.md` `aid-discover  ▸ you are here` |
 | **Dispatch Table** | The canonical state-machine table in every thin-router SKILL.md (State / Detail / Worker / Advance columns). The three Advance forms: Unconditional, Halt, Conditional. | `canonical/skills/aid-execute/SKILL.md` `| State | Detail | Worker | Advance |`, `coding-standards.md §8d` |
 | **FR2 Area-STATE Consolidation** | The per-work `STATE.md` is the per-area state hub; legacy per-feature `STATE.md` + per-task `STATE.md` files are RETIRED. | `coding-standards.md §7e`, `canonical/templates/work-state-template.md` `This is the single state file for **this work**` |
 | **Housekeep Status** | The `## Housekeep Status` run-state block in the **project-level, transient** run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md` (gitignored; created on a fresh run, removed at DONE) — NOT a work-area STATE.md (`/aid-housekeep` is project maintenance). Written/read exclusively by `housekeep-state.sh`. Key-value shape (one `**Field:** value` per line — NOT a table; grep-recoverable), nine fields: `State`, `Stage Status`, `Branch`, `Mode`, `Stall Reason`, `Last Run`, `KB Stage`, `Summary Stage`, `Cleanup Stage`. The three stage-gate fields (each `passed | skipped | stalled | running | —`) drive the six-row resume table (`--resume`); `Mode` ∈ `full | cleanup-only`. Do NOT confuse with the discovery-area `STATE.md` or with "Pre-flight Cleanup". | `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (path resolved by `canonical/skills/aid-housekeep/SKILL.md` `## State Detection`), `canonical/scripts/housekeep/housekeep-state.sh` (`VALID_FIELDS`, `mode_resume()`) |
-| **Thin-Router SKILL.md Convention** | When SKILL.md grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep router as Dispatch table + Pre-flight + State Detection. Caps at ~360 lines. | `coding-standards.md §7b`, `.aid/knowledge/project-structure.md` `Thin-Router (≤~360 lines)` |
+| **Thin-Router SKILL.md Convention** | See Concept Spine. When SKILL.md grows past ~200 lines, extract per-state bodies into `references/state-{name}.md`; keep router as Dispatch table + Pre-flight + State Detection. Caps at ~360 lines. | `coding-standards.md §7b`, `.aid/knowledge/project-structure.md` `Thin-Router (≤~360 lines)` |
 
 ---
 
@@ -250,6 +436,7 @@ changelog:
 
 | Term | Definition | Source |
 |------|------------|--------|
+| **Feedback Loops** | See Concept Spine. AID's 11 named correction paths that route phase findings upstream for resolution. | `docs/aid-methodology.md` `**Loop 1: Interview → Discovery` |
 | **Loop 1 — Interview→Discovery** | Q&A entry to DISCOVERY-STATE → targeted discovery → KB update → interview resumes. | `docs/aid-methodology.md` `**Loop 1: Interview → Discovery` |
 | **Loop 2 — Specify→Discovery** | Specify pauses → Q&A → discovery → resume. | `docs/aid-methodology.md` `**Loop 2: Specify → Discovery` |
 | **Loop 3 — Plan→Discovery** | Plan reveals codebase complexity → Q&A → discovery → resume. | `docs/aid-methodology.md` `**Loop 3: Plan → Discovery` |
@@ -261,8 +448,8 @@ changelog:
 | **Loop 9 — Monitor→Interview** | BUG classification → Interview LITE-BUG-FIX triage → new task → Execute. The "short path." | `docs/aid-methodology.md` `**Loop 9: Monitor → Interview (Bug Path)` |
 | **Loop 10 — Monitor→Interview** | Change Request → Interview (new/changed requirements) → full pipeline. | `docs/aid-methodology.md` `**Loop 10: Monitor → Interview (Change Request Path)` |
 | **Loop 11 — Any→Discovery** | Cross-cutting targeted re-discovery — KB is always the return target; "the loop that makes the Knowledge Base the gravitational center." | `docs/aid-methodology.md` `**Loop 11: Any Phase → Discovery (Targeted Re-Discovery)` |
-| **Targeted re-discovery** | Re-entry to Discovery that fills a specific gap; never a full redo. Triggered by a Pending Q&A entry with `**Impact:** Required` naming the docs to refresh; also driven on-demand by `/aid-housekeep`'s KB-DELTA stage (off-pipeline). | `docs/aid-methodology.md` `**Loop 11: Any Phase → Discovery (Targeted Re-Discovery)`, `canonical/skills/aid-discover/SKILL.md` `## Targeted Discovery (Re-entry)`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` |
-| **Bug Path (short)** | Monitor → Interview (LITE-BUG-FIX) → Execute. Skips spec/plan because spec is already correct. | `docs/aid-methodology.md` `#### Post-Production Loops (9–10)`, `docs/aid-methodology.md` `#### Monitor (`aid-monitor`) — optional` |
+| **Targeted re-discovery** | See Concept Spine. Re-entry to Discovery that fills a specific gap; never a full redo. Triggered by a Pending Q&A entry with `**Impact:** Required` naming the docs to refresh; also driven on-demand by `/aid-housekeep`'s KB-DELTA stage (off-pipeline). | `docs/aid-methodology.md` `**Loop 11: Any Phase → Discovery (Targeted Re-Discovery)`, `canonical/skills/aid-discover/SKILL.md` `## Targeted Discovery (Re-entry)`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` |
+| **Bug Path (short)** | Monitor → Interview (LITE-BUG-FIX) → Execute. Skips spec/plan because spec is already correct. | `docs/aid-methodology.md` `#### Post-Production Loops (9–10)`, `docs/aid-methodology.md` `#### Monitor (\`aid-monitor\`) — optional` |
 | **Change Request Path (full cycle)** | Monitor → Interview → ... full pipeline from Interview. | `docs/aid-methodology.md` `#### Post-Production Loops (9–10)`, `docs/aid-methodology.md` `**Loop 10: Monitor → Interview (Change Request Path)` |
 
 ---
@@ -283,10 +470,11 @@ changelog:
 | Term | Definition | Source |
 |------|------------|--------|
 | **canonical/** | Single source of truth for all install-tree content. Never edit profile trees directly — edit canonical and run `run_generator.py`. | `coding-standards.md §7a`, `.aid/knowledge/project-structure.md` `← SINGLE SOURCE OF TRUTH for all install-tree content` |
+| **canonical->render** | See Concept Spine. AID's single-source-of-truth rendering discipline — canonical is the one source, rendered by `run_generator.py` to 5 profile trees + dogfood `.claude/`. | `coding-standards.md §7a`, `canonical/EMISSION-MANIFEST.md:# Emission Manifest — Design Specification` |
 | **Profile** | A host-tool target spec — `profiles/{claude-code,codex,cursor,copilot-cli,antigravity}.toml` (5). Defines output_root, frontmatter schema, model tiers, filename_map, capabilities. | `profiles/claude-code.toml` `[layout]`, `profiles/copilot-cli.toml` `[layout]`, `profiles/antigravity.toml` `[layout]` |
 | **Install Tree** | One of the 5 per-profile output directories: `profiles/claude-code/.claude/`, `profiles/codex/.codex/`, `profiles/cursor/.cursor/`, `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`. | `canonical/EMISSION-MANIFEST.md` `## Filename and Location`, `profiles/copilot-cli.toml` `[layout]`, `profiles/antigravity.toml` `[layout]` |
 | **Dogfood Tree** | The top-level `.claude/` in this repo — AID applied to itself. Byte-identical body content to the claude-code profile output. NOT subject to KB claims (KB covers the 6-tree set: canonical + 5 profile trees). | `canonical/skills/aid-discover/SKILL.md` `this is the **dogfood install**`, `.aid/knowledge/project-structure.md` `**Dogfood \`.claude/\` tree.**` |
-| **Emission Manifest** | `{profile}/emission-manifest.jsonl` — the authoritative safety boundary for pure-mirror deletion. JSONL records of (`profile`, `src`, `dst`, `sha256`), sorted by `dst`, LF endings, sentinel first line. | `canonical/EMISSION-MANIFEST.md` `# Emission Manifest — Design Specification` |
+| **Emission Manifest** | See Concept Spine. `{profile}/emission-manifest.jsonl` — the authoritative safety boundary for pure-mirror deletion. JSONL records of (`profile`, `src`, `dst`, `sha256`), sorted by `dst`, LF endings, sentinel first line. | `canonical/EMISSION-MANIFEST.md` `# Emission Manifest — Design Specification` |
 | **Pure-Mirror Deletion** | The generator's safety rule: only files in the previous manifest's `removed_dst` set are deleted; files outside any manifest are NEVER touched. | `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics` |
 | **Sentinel (manifest)** | The reserved first line `{"_manifest_version": 1}` enabling future schema evolution. | `canonical/EMISSION-MANIFEST.md` `## Versioning Sentinel` |
 | **VERIFY (deterministic)** | The strict byte-identity verification — re-runs generator and asserts identical output (`verify_deterministic.py`). | `.aid/knowledge/project-structure.md` `verify_deterministic.py`, `.claude/skills/generate-profile/SKILL.md` `### VERIFY (deterministic) (hard gate)` |
@@ -396,6 +584,7 @@ changelog:
 
 ## Glossary Statistics
 
-- **Total terms defined:** ~210 (across 16 categorical groups above; +1 "Format ⊥ behavior (behavioral metadata)" term added in the work-005 profile-generator-simplify interview; +5 housekeep terms added in the aid-housekeep / PR #49 update — "Housekeep / KB-drift reconciliation", "Housekeep Status", "aid/housekeep-* branch", "`--cleanup-only` flag (housekeep)", and the targeted-re-discovery/Q&A cross-references; +9 distribution terms added in the work-001-add-providers update; counted by row audit of this document)
+- **Concept Spine entries:** 13 AID load-bearing concepts (Iron Man Model, Phase Gate, Knowledge Base, Determinism Test, canonical->render, Two-Tier Review, Pool Dispatch, Thin-Router SKILL.md Convention, State Machine, FILESYSTEM IS THE ONLY SOURCE OF TRUTH, Feedback Loops, Targeted Re-Discovery, Emission Manifest)
+- **Total terms defined:** ~210 (across 17 categorical groups above; includes all pre-migration terms — no term lost; +1 "Format ⊥ behavior (behavioral metadata)" term added in the work-005 profile-generator-simplify interview; +5 housekeep terms added in the aid-housekeep / PR #49 update — "Housekeep / KB-drift reconciliation", "Housekeep Status", "aid/housekeep-* branch", "`--cleanup-only` flag (housekeep)", and the targeted-re-discovery/Q&A cross-references; +9 distribution terms added in the work-001-add-providers update; counted by row audit of this document)
 - **Primary sources:** `docs/aid-methodology.md` (the methodology spec), `docs/glossary.md`, 12 user-facing canonical SKILL.md files (+ maintainer-only generate-profile), 9 canonical AGENT.md files, `canonical/EMISSION-MANIFEST.md` (152 lines), `canonical/templates/{settings.yml, work-state-template.md, subagent-heartbeat-protocol.md, long-wait-protocol.md, reviewer-dispatch.md, feedback-artifacts/IMPEDIMENT.md}`, helper scripts under `canonical/scripts/` (config/, execute/, housekeep/, interview/, kb/, summarize/)
-- **Every entry cites at least one durable-anchor source** (file path + grep-recoverable symbol/heading/string, no line numbers). ⚠️ Inferred-from-code annotations are explicit where used.
+- **Every entry cites at least one durable-anchor source** (file path + grep-recoverable symbol/heading/string, no line numbers). Inferred-from-code annotations are explicit where used.
