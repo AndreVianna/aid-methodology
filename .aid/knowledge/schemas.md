@@ -5,12 +5,12 @@ objective: AID data-model schemas: settings.yml, STATE.md shapes, SKILL.md/AGENT
 summary: Documents all AID structured-document and config schemas, covering settings.yml, discovery and work STATE.md shapes, frontmatter contracts for skill/agent/KB docs, the emission-manifest JSONL format, and the work-area filesystem layout.
 sources:
   - .aid/settings.yml
-  - canonical/templates/
+  - canonical/aid/templates/
   - canonical/EMISSION-MANIFEST.md
   - canonical/skills/aid-config/SKILL.md
   - canonical/agents/aid-architect/AGENT.md
-  - canonical/templates/kb-authoring/frontmatter-schema.md
-  - canonical/templates/work-state-template.md
+  - canonical/aid/templates/kb-authoring/frontmatter-schema.md
+  - canonical/aid/templates/work-state-template.md
   - lib/aid-install-core.sh
 approved_at_commit: ccb4e823
 contracts:

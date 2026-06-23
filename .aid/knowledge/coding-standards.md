@@ -6,9 +6,9 @@ summary: Documents the de-facto coding conventions used across the AID repo, cov
 sources:
   - canonical/skills/aid-config/SKILL.md
   - canonical/agents/aid-architect/AGENT.md
-  - canonical/templates/kb-authoring/frontmatter-schema.md
-  - canonical/templates/kb-authoring/principles.md
-  - canonical/templates/kb-authoring/review-rubric.md
+  - canonical/aid/templates/kb-authoring/frontmatter-schema.md
+  - canonical/aid/templates/kb-authoring/principles.md
+  - canonical/aid/templates/kb-authoring/review-rubric.md
   - CLAUDE.md
 approved_at_commit: ccb4e823
 contracts:
