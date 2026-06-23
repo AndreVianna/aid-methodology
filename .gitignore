@@ -72,3 +72,6 @@ desktop.ini
 # _migrate_retired_layout; never committed so users can inspect/restore but
 # don't accidentally track recovered files.
 .aid/.trash/
+
+# generator verify-report default output path (verify_deterministic.py / verify_advisory.py) -- tooling artifact, not a work
+.aid/work-002-canonical-generator/
