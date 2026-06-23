@@ -5,6 +5,8 @@
 | Date | Change | Source |
 |------|--------|--------|
 | 2026-06-22 | Feature identified from REQUIREMENTS.md §5 (FR-20, FR-21, FR-22) | /aid-interview |
+| 2026-06-23 | whole-work review 2026-06-23 — Dec.A: Description + AC aligned — greenfield reuses `aid-interview`/`aid-specify`; greenfield→brownfield transition handled by re-triage + the standard brownfield engine; intent-vs-as-built verifier mechanism dropped (Could framing preserved) | whole-work review |
+| 2026-06-23 | f004 cross-refs aligned — the Step-5b cap-override interface (`--max-clean-passes`/`--max-rounds`/`--token-budget`) is now specified+owned in f004's SPEC; removed the impossible "f006 reads the cap via read-setting.sh" 2-level read; [SPIKE-T2] marked RESOLVED (provide-before-consume seam closed); f006 supplies per-path caps through f004's runtime-arg interface | alignment pass |
 
 ## Source
 
@@ -27,11 +29,13 @@ the invariant exit** across all paths.
 The path is **re-triaged every run**, so the three paths are *stages a project
 passes through*: a greenfield's thin intent-KB becomes the spec the code is built
 against, and as code lands the **greenfield→brownfield transition** is handled —
-`aid-update-kb` verifies intent vs as-built and fills anatomy, and crossing the
-complexity threshold triggers a brownfield-large consolidation. Per §10, the
-brownfield-small and brownfield-large paths are **Must**; the **greenfield branch**
-(elicit mode + the greenfield→brownfield transition) is **Could** (highest-risk /
-most speculative).
+re-triage re-routes to the standard brownfield engine, which captures the
+now-extractable anatomy, and crossing the complexity threshold triggers a
+brownfield-large consolidation. Greenfield elicits its concept spine by reusing the
+existing `aid-interview` / `aid-specify` skills (no bespoke greenfield engine). Per
+§10, the brownfield-small and brownfield-large paths are **Must**; the **greenfield
+branch** (elicit mode + the greenfield→brownfield transition) is **Could**
+(highest-risk / most speculative).
 
 ## User Stories
 
@@ -57,8 +61,8 @@ Must (brownfield-small + brownfield-large paths) · Could (greenfield branch + t
   the agreed matrix and reaches teach-back closure (the invariant exit across all
   paths). *(FR-21, AC7)*
 - [ ] Given a re-run, when triage executes, then the path is re-triaged and the
-  greenfield→brownfield transition is handled (`aid-update-kb` verifies intent vs
-  as-built and fills anatomy). *(FR-22)*
+  greenfield→brownfield transition is handled (re-triage re-routes to the brownfield
+  engine, which captures the now-extractable anatomy). *(FR-22)*
 - [ ] Given greenfield / brownfield-small / brownfield-large fixtures, when triage
   runs, then it proposes the correct path on each and each path reaches teach-back
   closure. *(AC7 — fixtures from f012; greenfield branch is Could)*
@@ -80,8 +84,10 @@ Must (brownfield-small + brownfield-large paths) · Could (greenfield branch + t
 > step in GENERATE that mirrors `aid-interview`'s lite/full TRIAGE; (3) a **3-path config
 > matrix** that sets f004's closure knobs + f005's panel size per path; (4) the **panel-scaling
 > wiring** f005 explicitly deferred here; (5) the **greenfield (elicit) branch** (the Could
-> slice); and (6) **re-triage every run** with the greenfield->brownfield transition referenced
-> (built by f010/f011, not here). "Components" are a new KB recon script, a `.aid/settings.yml`
+> slice) — a thin route to the existing `aid-interview`/`aid-specify` skills, NOT a bespoke
+> greenfield engine; and (6) **re-triage every run** with the greenfield->brownfield transition
+> handled by re-triage + the standard brownfield engine (no transition verifier is built or
+> referenced — none is in scope). "Components" are a new KB recon script, a `.aid/settings.yml`
 > `triage:` block, `aid-discover` reference snippets (a new triage step + a path-config table),
 > and a canonical test suite — not application code. Every claim is grounded against the files
 > cited inline; genuine unknowns are flagged **[SPIKE]**, not guessed.
@@ -94,10 +100,12 @@ Must (brownfield-small + brownfield-large paths) · Could (greenfield branch + t
 > deferred), but does not redefine the mandates (they are invariant across paths). The
 > **frontmatter / `sources:` schema** is **f001**'s; the **concern model** is **f003**'s; the
 > **greenfield elicitation** reuses `aid-interview` / `aid-specify` (NOT re-spec'd — f006 only
-> detects greenfield and routes to the elicit shape). The **migration** of AID's own KB and the
-> **greenfield->brownfield as-built verification** (`aid-update-kb` intent-vs-as-built) are
-> **f010/f011** — f006 *references* the transition and re-triages each run, but the verifier is
-> built there.
+> detects greenfield and **routes** to those existing skills to elicit the concept spine from
+> intent; it builds NO bespoke greenfield generation engine). The **migration** of AID's own KB
+> is **f010/f011**. There is **NO intent-vs-as-built transition verifier in scope** — neither in
+> f006 nor as a referenced f010/f011 component. The greenfield->brownfield transition is handled
+> by **re-triage** (built here — each run re-measures and re-routes) plus the **normal brownfield
+> engine** once source exists; no separate verifier is built or assumed by any feature.
 
 ### Overview
 
@@ -123,19 +131,26 @@ confirmed), and sets the knobs**. Five pieces:
 3. **The 3-path config matrix** — a reference table (`references/path-config.md`) that maps each
    confirmed path to: f004's `discovery.closure` knobs (`max_rounds` / `max_clean_passes`),
    f004's fan-out on/off (deep-dive parallelism), f005's panel size (which mandates dispatch,
-   parallel vs one checklist reviewer), the source-of-truth, the generation shape, and the exit.
-   **Teach-back closure is the invariant exit on ALL three paths** (FR-21).
+   parallel dispatches vs sequential mandate passes in one reviewer), the source-of-truth, the
+   generation shape, and the exit. **Teach-back closure is the invariant exit on ALL three paths**
+   (FR-21).
 4. **Panel-scaling wiring** — the concrete realization of f005's deferred seam: for
    brownfield-large the full 5-parallel-dispatch panel runs; for brownfield-small / greenfield
-   the panel **collapses to ONE `aid-reviewer` running the multi-mandate checklist** (all five
-   mandates still apply — the *size* scales, the mandates do not). f006 sets the `review.panel`
-   parameter that `state-review.md` (f005) reads to decide its dispatch count.
+   the panel **collapses to ONE `aid-reviewer` that runs the four content mandates as separate
+   sequential passes** (each mandate evaluated on its own — preserving the anti-P2 no-blending
+   property at lower parallelism) plus the clean-context teach-back reviewer. All five mandates
+   still apply — the *size/parallelism* scales, the mandates and the no-blending rule do not. f006
+   sets the `review.panel` parameter that `state-review.md` (f005) reads to decide its dispatch
+   count.
 5. **The greenfield (elicit) branch + re-triage** — recon detects ~no-source -> greenfield; the
-   path's source-of-truth is the human + requirements/design (elicit, not extract), reusing
-   `aid-interview`/`aid-specify` (not re-spec'd). The path is **re-triaged every run**, so as
-   code lands a project crosses greenfield -> brownfield-small -> brownfield-large; the
-   greenfield->brownfield **transition verifier** (`aid-update-kb` intent-vs-as-built) is
-   referenced as f010/f011 territory.
+   greenfield branch is a **thin route**: because there is nothing to extract yet, f006 hands
+   spine elicitation to the **existing `aid-interview` / `aid-specify` skills** (which f006
+   already reuses) to draw the concept spine from intent, then the **standard f004/f005 engine
+   takes over** as code lands. There is **no bespoke greenfield generation engine** and **no
+   intent-vs-as-built transition verifier**. The path is **re-triaged every run**, so as code
+   lands a project crosses greenfield -> brownfield-small -> brownfield-large; the
+   greenfield->brownfield transition is handled entirely by **re-triage** (re-measure + re-route)
+   + the **normal brownfield engine** once source exists — no separate verifier.
 
 The deterministic substrate (the recon script's metrics + the threshold classifier) is
 mechanical/CI-able; the only human judgment is the **confirm gate** (a one-turn decision,
@@ -249,14 +264,15 @@ this feature). **[SPIKE-T1]** — these five numbers are first-pass sensible def
 greenfield / brownfield-small / brownfield-large fixtures (AC7) are the executable calibration:
 each fixture MUST classify to its intended path. The thresholds are the precision lever and are
 f012-tuned; f006 sets the *shape* (which metric, which comparison), f012 tunes the *floor*.
-**[SPIKE-T2]** — `read-setting.sh` natively resolves only flat dotted-path lookups; `triage.*`
-is one level deep (`triage.greenfield_max_source_files`), which is the same depth as the
-existing `execution.max_parallel_tasks` (confirmed working — `state-generate.md` Step 0c reads
+**[SPIKE-T2 — RESOLVED]** — `read-setting.sh` natively resolves only flat dotted-path lookups;
+`triage.*` is one level deep (`triage.greenfield_max_source_files`), which is the same depth as
+the existing `execution.max_parallel_tasks` (confirmed working — `state-generate.md` Step 0c reads
 `discovery.doc_set` the same way), so `triage.*` reads work without `yq`. The f004
-`discovery.closure.max_clean_passes` knob f006 *sets per path* is **two** levels deep; confirm
-whether that two-level read needs `yq` or whether f006 should set the closure cap by passing it
-as a **runtime flag to f004's closure step** rather than via a nested settings read (see Path
-Config Matrix wiring + [SPIKE-T2]).
+`discovery.closure.max_clean_passes` knob f006 *sets per path* is **two** levels deep; rather than
+a two-level nested read (which would pull in `yq`), f006 sets the closure cap by passing it as a
+**runtime flag to f004's Step 5b closure step** (`--max-clean-passes` / `--max-rounds` /
+`--token-budget`) — an interface **specified and owned in f004's SPEC (Step 5b)** (see Path Config
+Matrix wiring + [SPIKE-T2]).
 
 #### Where it runs in GENERATE
 
@@ -313,8 +329,8 @@ Proposed discovery path: brownfield-large
   (full machinery: researcher fan-out + full 5-mandate review panel + batched closure loop)
 
 [1] Confirm  brownfield-large  (as proposed)
-[2] Override brownfield-small  (collapsed: single understand-pass, one checklist reviewer)
-[3] Override greenfield        (forward-authored / elicit; for a project with no source yet)
+[2] Override brownfield-small  (collapsed: single understand-pass; one reviewer runs the mandates as sequential passes + clean-context teach-back)
+[3] Override greenfield        (elicit the spine via aid-interview/aid-specify; for a project with no source yet)
 ```
 
 **This is a genuine PAUSE-FOR-USER-DECISION** (C4 human-gated; the path is measured but
@@ -351,13 +367,13 @@ across all three paths; only the SIZE scales** (FR-21, FR-17).
 
 | Dimension | Greenfield (Could) | Brownfield-Small (Must) | Brownfield-Large (Must) |
 |---|---|---|---|
-| **Source of truth** | human intent + requirements/design (elicit) | code + docs (extract) | code + docs + history/reports/data (extract) |
-| **Concept acquisition** | **elicit** — spine co-authored from requirements (ties to interview/specify); harvest seeds candidate vocabulary but does not extract from absent source | **extract**, single pass — harvest -> spine, grounded once | **extract** — full mechanical harvest -> spine, concept-aware |
-| **f004 deep-dive fan-out** | none (forward-authored, thin) | **off** — ONE understand-pass (no 4-way parallel fan-out) | **on** — full 4-way parallel deep-dive fan-out by concern |
-| **f004 closure knobs** (`discovery.closure`) | `max_rounds: 1` — closure = "intent coherent + specified + vocab set" (teach-back **vs intent**) | `max_rounds: 1`, `max_clean_passes: 1` — short closure, single pass | default `max_rounds: 4`, `max_clean_passes: 2` — full batched-parallel loop, capped |
-| **f005 panel size** (`review.panel`) | `mini` — ONE reviewer, intent-graded multi-mandate checklist | `collapsed` — ONE reviewer running the full multi-mandate checklist | `full` — 5 parallel mandate dispatches |
+| **Source of truth** | human intent + requirements/design (elicit via `aid-interview`/`aid-specify`) | code + docs (extract) | code + docs + history/reports/data (extract) |
+| **Concept acquisition** | **elicit** — spine elicited from intent by the **existing `aid-interview`/`aid-specify` skills** (f006 routes; builds no bespoke engine); harvest seeds candidate vocabulary but does not extract from absent source | **extract**, single pass — harvest -> spine, grounded once | **extract** — full mechanical harvest -> spine, concept-aware |
+| **f004 deep-dive fan-out** | none (nothing to extract; elicitation runs via interview/specify) | **off** — ONE understand-pass (no 4-way parallel fan-out) | **on** — full 4-way parallel deep-dive fan-out by concern |
+| **f004 closure knobs** (`discovery.closure`) | `max_rounds: 1`, `max_clean_passes: 1` — the **same f004 closure loop** as brownfield-small, run over elicited-not-extracted concepts (NO redefined exit) | `max_rounds: 1`, `max_clean_passes: 1` — short closure, single pass | default `max_rounds: 4`, `max_clean_passes: 2` — full batched-parallel loop, capped |
+| **f005 panel size** (`review.panel`) | `collapsed` — same collapsed reviewer as brownfield-small (sequential mandate passes) | `collapsed` — ONE reviewer running the mandates as sequential passes | `full` — 5 parallel mandate dispatches |
 | **Review MANDATES** | all 5 (Correctness/Anatomy/Concept-closure/Teach-back/Calibration) — invariant | all 5 — invariant | all 5 — invariant |
-| **Exit** | **teach-back closure** (vs intent) | **teach-back closure** | **teach-back closure** |
+| **Exit** | **teach-back closure** (same f004 closure loop) | **teach-back closure** | **teach-back closure** |
 | **Starting KB** | thin (intent + vocab + design) | full anatomy (small) | full anatomy (large) |
 | **Cost / wall-clock** | low tokens, human-paced | low | high (justified by complexity) |
 
@@ -369,14 +385,12 @@ NOT the acceptance bar.
 
 f004 exposes `discovery.closure.max_rounds` / `max_clean_passes` (its SPEC §"The bounded cap +
 config") and the deep-dive fan-out as the parameters f006 scales. f004's SPEC *delegates the
-path->cap mapping* to f006 (f006 reads the cap via `read-setting.sh --path
-discovery.closure.max_clean_passes` and selects the per-path value). The **Step-5b cap-override
-runtime argument** — the seam by which f006 supplies the per-path cap to f004's closure step
-*without* a two-level nested settings read — is **not yet specified in f004's SPEC**; it is a
-**PLAN-confirmed provide-before-consume seam (already flagged as [SPIKE-T2])** that f004 must
-accept. **f006 chooses the runtime-arg mechanism** (so the deterministic settings read stays
-flat — C1/NFR-8), and f004's interface for it is **confirmed in PLAN, not assumed present** in
-f004's SPEC today. f006 sets the knobs per the matrix:
+path->cap mapping* to f006. The **Step-5b cap-override runtime argument** — the seam by which
+f006 supplies the per-path cap to f004's closure step *without* a two-level nested settings
+read — **is specified and owned in f004's SPEC (Step 5b)**: f004's closure step accepts
+`--max-clean-passes` / `--max-rounds` / `--token-budget` as runtime args. f006's `path-config.md`
+supplies the per-path `max_rounds` / `max_clean_passes` values through that interface (so the
+deterministic settings read stays flat — C1/NFR-8). f006 sets the knobs per the matrix:
 
 - **brownfield-large:** use f004's **default** closure caps (`max_rounds: 4`,
   `max_clean_passes: 2`) and run the full Steps 2-5 fan-out — f004's default behavior, no
@@ -386,20 +400,23 @@ f004's SPEC today. f006 sets the knobs per the matrix:
   source instead of the 4 concern-lane parallel dispatches. (The doc-set is still the confirmed
   small set; one researcher covers it in a single pass — the §1.5 "one understand-pass, no
   fan-out" row.)
-- **greenfield:** `max_rounds: 1` with the closure criterion redefined to "intent coherent +
-  specified + vocab set" (teach-back **vs intent**, not vs as-built source — there is no source).
+- **greenfield:** the **same** caps as brownfield-small (`max_rounds: 1`, `max_clean_passes: 1`)
+  and the **same f004 closure loop** — no redefined exit. The difference is only the *input*:
+  the spine is elicited from intent via `aid-interview`/`aid-specify` rather than extracted from
+  source. Teach-back closure (M4) grades whether a fresh reviewer can explain the system + define
+  each concept from the thin KB, exactly as on the brownfield paths; over an intent-sourced KB
+  the referent is naturally the intended system, but the closure loop and exit are unchanged.
 
-**Wiring mechanism (per [SPIKE-T2]).** Because f004's closure cap lives at the two-level path
+**Wiring mechanism.** Because f004's closure cap lives at the two-level path
 `discovery.closure.max_clean_passes` (which `read-setting.sh` resolves natively only one level
 deep without `yq`), f006 sets the per-path cap by **the orchestrator passing the path-derived
-cap as an explicit argument to f004's Step 5b closure step** (the `path-config.md` table is the
-source the orchestrator reads), NOT by mutating nested settings at runtime. The
-`discovery.closure` settings keys remain f004's **defaults** (the brownfield-large baseline); the
-per-path override is a runtime parameter the matrix supplies. This keeps the deterministic
-settings read flat and avoids a `yq` dependency (C1/NFR-8). The cap-override runtime argument is
-a provide-before-consume seam f004 must accept; it is **not present in f004's SPEC today** and is
-**confirmed in PLAN.md, not assumed** — **[SPIKE-T2]** tracks landing f004's Step 5b argument
-interface ahead of f006's consumption.
+cap as an explicit argument to f004's Step 5b closure step** (`--max-clean-passes` /
+`--max-rounds` / `--token-budget`; the `path-config.md` table is the source the orchestrator
+reads), NOT by mutating nested settings at runtime. The `discovery.closure` settings keys remain
+f004's **defaults** (the brownfield-large baseline); the per-path override is a runtime parameter
+the matrix supplies. This keeps the deterministic settings read flat and avoids a `yq` dependency
+(C1/NFR-8). The cap-override runtime argument is **specified and owned in f004's SPEC (Step 5b)** —
+f006 consumes it; the provide-before-consume seam is **resolved**.
 
 ### Panel-Scaling Wiring (the f005 seam)
 
@@ -413,33 +430,37 @@ builds that collapse here.
   {Correctness, Anatomy/Coverage, Concept-closure, Teach-back, Calibration}, firing one
   `aid-reviewer` per mandate in parallel, then merges the per-mandate scratch ledgers into the
   single `discovery.md` and grades. f006 scales **how many dispatches** that list produces, via a
-  `review.panel` parameter the path supplies (`full` | `collapsed` | `mini`).
+  `review.panel` parameter the path supplies (`full` | `collapsed`).
 - **brownfield-large (`panel: full`):** the unchanged f005 default — 5 parallel `aid-reviewer`
   dispatches, one per mandate, merged to `discovery.md`. No collapse.
-- **brownfield-small / greenfield (`panel: collapsed` / `mini`):** the panel collapses to **ONE
-  `aid-reviewer` running the multi-mandate checklist** — a single dispatch whose prompt
-  concatenates **all five** mandate FOCUS bodies (the `reviewer-prompt-{correctness,anatomy,
-  concept-closure,teachback,calibration}.md` f005 already split) into one checklist. The single
-  reviewer writes ONE scratch ledger applying all five mandates; the merge step (f005 Step 2)
-  short-circuits (one ledger -> `discovery.md`). **All five mandates still run** (the §1.5 "Review"
-  row: *"collapsed: 1 reviewer, multi-mandate checklist"*) — the *panel size* drops from 5
-  dispatches to 1, the *mandate coverage* is unchanged (FR-17: mandates invariant, size scales).
+- **brownfield-small / greenfield (`panel: collapsed`):** the panel collapses to **ONE
+  `aid-reviewer` that runs the four content mandates (M1 Correctness / M2 Anatomy / M3
+  Concept-closure / M5 Calibration) as SEPARATE SEQUENTIAL PASSES within the single agent** — NOT
+  one blended judgment. The reviewer's prompt drives it through each mandate's FOCUS body (the
+  `reviewer-prompt-{correctness,anatomy,concept-closure,calibration}.md` f005 already split) **one
+  at a time, in order**, evaluating each mandate on its own and writing that mandate's findings to
+  the scratch ledger before moving to the next; the per-mandate results are then concatenated into
+  the one ledger the merge step (f005 Step 2) consumes. This is the **anti-P2 property preserved
+  at lower parallelism**: each mandate is still adjudicated independently (no mandate is "satisfied
+  by generic content while another passes" — P2), the only thing that changes vs `full` is that
+  the four passes run sequentially in one agent rather than in four parallel agents — a cost/
+  parallelism reduction for small repos, not a relaxation of the no-blending rule. **All five
+  mandates still run** (FR-17: mandates invariant, size scales).
 - **Teach-back stays a clean-context dispatch even when collapsed.** f005's teach-back mandate
   (M4) requires a **stricter** clean context (ONLY the KB, not the source). When the panel
-  collapses, the **teach-back mandate is still dispatched as its own clean-context reviewer** (it
-  cannot share a context that has seen the source), so `panel: collapsed` is concretely **2
-  dispatches**: one combined-checklist reviewer (M1/M2/M3/M5) + one clean-context teach-back
-  reviewer (M4). `panel: mini` (greenfield) is the same 2-dispatch shape, with M4 graded **vs
-  intent** rather than vs as-built. This preserves the teach-back keystone exit on every path
-  (FR-18) while still collapsing the bulk of the panel. **[SPIKE-T3]** — confirm with f005's
-  `state-review.md` whether the combined-checklist single dispatch can host M1/M2/M3/M5 in one
-  reviewer context without the contamination f005's per-mandate split was designed to prevent
-  (the split exists so neither Correctness nor Anatomy is "satisfied by generic content while the
-  other passes" — P2). The collapse is justified for SMALL/greenfield projects where the cost of
-  5 dispatches is unjustified (NFR-1) and the contamination risk is lower (less source to
-  conflate); for brownfield-large the full split stays. The `review.panel` parameter is the unit
-  f006 sets; the dispatch-count realization lives in f005's `state-review.md`, which f006 amends
-  to branch on `review.panel`.
+  collapses, the **teach-back mandate is still dispatched as its own clean-context reviewer** on
+  every path (it cannot share a context that has seen the source), so `panel: collapsed` is
+  concretely **2 dispatches**: one sequential-passes reviewer (M1/M2/M3/M5) + one clean-context
+  teach-back reviewer (M4). Greenfield uses the **same** `collapsed` shape (the spine is elicited,
+  but M4 still grades whether a fresh reviewer can explain the system + define each concept from
+  the thin KB). This preserves the teach-back keystone exit on every path (FR-18) while collapsing
+  the bulk of the panel. The collapse is justified for SMALL/greenfield projects where the cost of
+  5 parallel dispatches is unjustified (NFR-1) — and because the mandates run as separate
+  sequential passes, the P2 anti-blending guarantee f005's split protects is retained, not traded
+  away; for brownfield-large the full parallel split stays. The `review.panel` parameter is the
+  unit f006 sets; the dispatch-count realization lives in f005's `state-review.md`, which f006
+  amends to branch on `review.panel` (and to drive the collapsed reviewer through the four content
+  mandates as ordered sequential passes — see **[SPIKE-T3 — RESOLVED]**).
 
 `review.panel` is supplied the same runtime-parameter way as the closure cap (from
 `path-config.md`, passed by the orchestrator to f005's REVIEW state) — not a persisted settings
@@ -456,24 +477,27 @@ risk / most speculative). It is the slice for a project that **has nothing to ex
   greenfield signal (nothing coined to extract).
 - **Source of truth = human + requirements/design** (A4): the concept spine is **elicited**, not
   extracted. The spine's native concepts come from the project's **intent** — the requirements,
-  the design notes, the human's vocabulary — co-authored with the human. This **reuses
-  `aid-interview` / `aid-specify`** (the existing elicitation skills) — f006 does **NOT** re-spec
-  elicitation; it only **routes** greenfield discovery to draw the spine from intent artifacts
-  (requirements/design docs) + a human elicitation turn, rather than from a source sweep. The
-  f004 harvest + spine machinery still runs (the spine is still the persisted first-class doc,
-  FR-31); its *input* is intent rather than source.
-- **Generation shape:** forward-authored, thin (intent + vocab + design) — no deep-dive fan-out
-  (there is no source to fan out over). One pass authors the thin intent-KB.
-- **Closure / exit:** teach-back **vs intent** — "intent coherent + specified + vocab set" — not
-  teach-back vs as-built (there is no as-built yet). The teach-back mandate (M4) grades whether a
-  fresh reviewer, given only the thin KB, can explain the *intended* system + define each
-  *intended* concept. Teach-back closure remains the invariant exit (FR-18) — its referent shifts
-  from as-built to intent.
-- **Why it is the speculative slice (§10 Could).** Greenfield's primary risk (§1.5 matrix) is
-  **intent <-> as-built drift**: the thin intent-KB becomes the spec the code is built against,
-  and the KB must later be **verified against what was actually built** — which is the
-  greenfield->brownfield transition (next section), built by f010/f011. f006 ships the greenfield
-  *authoring* shape; the *verification* of that intent against later as-built is downstream.
+  the design notes, the human's vocabulary. f006 builds **no bespoke greenfield generation
+  engine**: it **routes** greenfield discovery to the **existing `aid-interview` / `aid-specify`
+  skills** (which f006 already reuses) to elicit the spine from intent artifacts
+  (requirements/design docs) + the human elicitation turns those skills already drive, rather than
+  from a source sweep. Once that elicitation has produced the thin intent-KB, the **standard f004
+  spine + closure machinery takes over** unchanged (the spine is still the persisted first-class
+  doc, FR-31); only its *input* is intent rather than source.
+- **Generation shape:** thin (intent + vocab + design), elicited via interview/specify — no
+  deep-dive fan-out (there is no source to fan out over).
+- **Closure / exit:** the **same f004 closure loop** as brownfield-small (`max_rounds: 1`,
+  `max_clean_passes: 1`), run over elicited-not-extracted concepts — **NOT a redefined exit**. The
+  teach-back mandate (M4) grades whether a fresh reviewer, given only the thin KB, can explain the
+  system + define each concept — the identical M4 bar used on the brownfield paths; the KB just
+  happens to describe the intended system because that is what was elicited. Teach-back closure
+  remains the invariant exit (FR-18) with no greenfield-specific redefinition.
+- **The greenfield->brownfield transition is handled by re-triage, not a verifier.** As code
+  lands, the next `/aid-discover` run **re-triages** (Step 0f re-measures source and re-routes the
+  project to brownfield-small/large), and the **normal brownfield extract engine** then runs over
+  the now-present source. There is **no intent-vs-as-built transition verifier in scope** — not in
+  f006, and not as a referenced f010/f011 component. Re-measure + re-route + the standard
+  brownfield engine is the entire transition mechanism (next section).
 
 ### Re-Triage + Greenfield -> Brownfield Transition
 
@@ -487,19 +511,21 @@ through**, not a one-time label:
   brownfield-large. The transition is **measured + human-confirmed** each run — the lifecycle is
   visible, never silently re-labeled. The path is **never** read from a static `project.type`
   (FR-20) — re-measurement is the mechanism that makes the path a lifecycle stage.
-- **The greenfield -> brownfield transition VERIFIER (referenced, NOT built here).** When a
-  greenfield's code lands, the thin intent-KB must be **verified against the as-built** and the
-  anatomy filled in. REQUIREMENTS §1.5 / FR-22 assign this to **`aid-update-kb` (intent vs
-  as-built)** — which is **f010/f011** territory (the `aid-update-kb` skill + the migration /
-  as-built verification). f006's responsibility ends at: (a) re-triaging so the project is
-  re-classified to brownfield once code lands, and (b) routing that re-triaged run to the
-  brownfield extract shape (which now has source to extract). The **intent-vs-as-built diff +
-  anatomy-fill** is performed by `aid-update-kb` (f010/f011), not by f006. Crossing
-  `large_min_*` on a later run triggers a brownfield-large consolidation — again just a re-triage
-  + re-route, with the consolidation work done by the (already-built) brownfield-large path.
+- **The greenfield -> brownfield transition is re-triage + the brownfield engine (NO verifier).**
+  When a greenfield's code lands, the transition is handled entirely by the mechanisms f006
+  already builds: (a) **re-triage** re-classifies the project to brownfield once source is
+  present, and (b) that re-triaged run **routes to the brownfield extract shape**, whose normal
+  harvest -> spine -> closure machinery now has real source to extract and so fills the anatomy as
+  a matter of course. There is **NO separate intent-vs-as-built transition verifier** — not in
+  f006, and **not** as a referenced f010/f011 component. The thin intent-KB is simply
+  re-discovered as brownfield once code exists; the standard closure loop re-grades the (now
+  source-backed) KB against the same teach-back bar. Crossing `large_min_*` on a later run
+  triggers a brownfield-large consolidation — again just a re-triage + re-route, with the
+  consolidation work done by the (already-built) brownfield-large path.
 
-This keeps f006 a thin re-routing wrapper: it **measures and routes** each run; the heavy
-transition *work* (verify intent vs as-built, fill anatomy) is the downstream skill's job.
+This keeps f006 a thin re-routing wrapper: it **measures and routes** each run; the transition
+*work* is performed by the standard brownfield engine the re-route selects — there is no bespoke
+verification step to build downstream.
 
 ### Determinism & Cost (FR-23 / NFR-1-3)
 
@@ -525,7 +551,7 @@ transition *work* (verify intent vs as-built, fill anatomy) is the downstream sk
 | **NEW recon script** | `canonical/aid/scripts/kb/recon-classify.sh` | Deterministic recon: read RM1/RM2/RM3 from `project-index.md` + RM4 from `candidate-concepts.md`, apply the threshold classifier from `triage.*`, emit the proposed path + metrics + tripped-thresholds to `.aid/generated/recon.md`. ASCII bash; no LLM; reads two already-generated files (no second tree scan). |
 | GENERATE flow | `canonical/skills/aid-discover/references/state-generate.md` | Add **Step 0f** (run recon-classify after Step 0e; THEN the propose->human-confirm triage PAUSE; write `## Discovery Triage` to STATE.md; idempotent re-entry = re-triage). Add the path parameter to the Steps 2-5 fan-out (skip fan-out / one understand-pass for small/greenfield) and to the Step 5b closure-cap argument. |
 | **NEW path-config reference** | `canonical/skills/aid-discover/references/path-config.md` | The 3-path config matrix: path -> {closure caps, fan-out on/off, `review.panel` size, source-of-truth, generation shape, exit}. The single source the GENERATE / closure / review states read for the per-path knobs. Teach-back-closure invariant noted on all three rows. |
-| REVIEW flow | `canonical/skills/aid-discover/references/state-review.md` | Amend f005's Step 1 to **branch on `review.panel`**: `full` -> 5 parallel dispatches (f005 default, unchanged); `collapsed`/`mini` -> ONE combined-checklist reviewer (M1/M2/M3/M5) + ONE clean-context teach-back reviewer (M4). The merge/grade (Step 2) and teach-back hard gate are unchanged. (f006 edits the dispatch-count branch f005 left as a seam; it does not touch the mandates or the grade.) |
+| REVIEW flow | `canonical/skills/aid-discover/references/state-review.md` | Amend f005's Step 1 to **branch on `review.panel`**: `full` -> 5 parallel dispatches (f005 default, unchanged); `collapsed` (brownfield-small + greenfield) -> ONE reviewer running M1/M2/M3/M5 as **separate sequential passes** (each mandate evaluated on its own, results concatenated — preserving the anti-P2 no-blending property at lower parallelism) + ONE clean-context teach-back reviewer (M4). The merge/grade (Step 2) and teach-back hard gate are unchanged. (f006 edits the dispatch-count branch f005 left as a seam; it does not touch the mandates or the grade.) |
 | Settings template | `canonical/aid/templates/settings.yml` | Add the **new top-level `triage:` block** (5 threshold keys + sensible defaults + comments). Absent block => defaults; a project may override any single key. |
 | CI — canonical suite | `tests/canonical/test-recon-classify.sh` (NEW) + fixtures under `tests/canonical/fixtures/` | Mechanical assertions: a near-empty index classifies greenfield; a large-LOC index classifies brownfield-large; a small-source index classifies brownfield-small; each large-dimension (LOC / dirs / concepts) independently trips large; threshold overrides change the verdict; re-run byte-identical (NFR-3). **Plus an `is_source` lockstep fixture assertion** — a shared fixture asserting `recon-classify.sh`'s source-language set is identical to `build-project-index.sh`'s `is_source` (mirroring f004's shared-fixture lockstep), so the re-implemented classifier cannot drift. Auto-discovered by `tests/run-all.sh`. |
 | CI — ascii-only | `tests/canonical/test-ascii-only.sh` | Add `canonical/aid/scripts/kb/recon-classify.sh` to `SHIPPED_SCRIPTS` (C2). |
@@ -565,18 +591,25 @@ transition *work* (verify intent vs as-built, fill anatomy) is the downstream sk
   brownfield-small / brownfield-large fixtures (AC7) are the executable calibration — each
   fixture MUST classify to its intended path. f006 sets the classifier *shape* (which metric,
   which comparison); f012 tunes the *floor*.
-- **[SPIKE-T2]** Nested-settings read depth — `read-setting.sh` resolves flat dotted-paths
-  natively; `triage.*` (one level) is fine, but f004's `discovery.closure.max_clean_passes` (two
-  levels) may need `yq`. This spec therefore sets the per-path closure cap as a **runtime
-  argument** the orchestrator passes to f004's Step 5b (from `path-config.md`), keeping the
-  deterministic read flat (C1/NFR-8). Confirm the f004 Step 5b argument interface in PLAN.md
-  (provide-before-consume: f004's closure step must accept a cap override arg).
-- **[SPIKE-T3]** Panel-collapse contamination — confirm with f005's `state-review.md` whether a
-  single combined-checklist reviewer can host M1/M2/M3/M5 in one context without re-introducing
-  the P2 "blend selects for shallow-but-true" contamination the per-mandate split was designed to
-  prevent. The collapse is scoped to SMALL/greenfield (low source -> low conflation risk, NFR-1
-  cost-justified); brownfield-large keeps the full 5-way split. Teach-back (M4) stays a separate
-  clean-context dispatch in all cases (so `collapsed`/`mini` = 2 dispatches, not 1).
+- **[SPIKE-T2 — RESOLVED]** Nested-settings read depth — `read-setting.sh` resolves flat
+  dotted-paths natively; `triage.*` (one level) is fine, but f004's
+  `discovery.closure.max_clean_passes` (two levels) would need `yq`. **Resolved:** the per-path
+  closure cap is supplied as a **runtime argument** the orchestrator passes to f004's Step 5b
+  (`--max-clean-passes` / `--max-rounds` / `--token-budget`, from `path-config.md`), keeping the
+  deterministic read flat (C1/NFR-8). The Step-5b cap-override argument interface is **specified
+  and owned in f004's SPEC (Step 5b)** — f006 consumes it; no provide-before-consume gap remains.
+- **[SPIKE-T3 — RESOLVED]** Panel-collapse contamination — **resolved, not deferred.** The
+  collapsed reviewer (brownfield-small / greenfield) runs the four content mandates (M1/M2/M3/M5)
+  as **separate sequential passes within the single agent** — each mandate evaluated on its own,
+  in order, its findings written to the ledger before the next pass begins, the per-mandate
+  results then concatenated — **NOT one blended judgment**. This preserves the exact anti-P2
+  property f005's per-mandate split was built for (no mandate is "satisfied by generic content
+  while another passes"); the only thing the collapse trades away is *parallelism/cost* (four
+  sequential passes in one agent vs four parallel agents), justified for SMALL/greenfield repos
+  (NFR-1). Brownfield-large keeps the full 5-way parallel split. Teach-back (M4) stays a separate
+  clean-context dispatch on **every** path (so `collapsed` = 2 dispatches: the sequential-passes
+  reviewer + the clean-context M4 reviewer). f006 amends `state-review.md` to drive the collapsed
+  reviewer through the four content mandates as ordered sequential passes.
 - **[SPIKE-T4]** Net-new `scripts/kb/*.sh` render — same as f004 [SPIKE-H4] / f005 [SPIKE-C2]:
   verify `run_generator.py` emits `recon-classify.sh` to all 5 trees (it enumerates the tree;
   expected yes); if an emission manifest pins the `scripts/kb/` list, regen, never hand-place.
@@ -585,8 +618,9 @@ transition *work* (verify intent vs as-built, fill anatomy) is the downstream sk
   with PLAN.md that **f004 + f005 land before f006** (consume-after-define); if f006 is sequenced
   earlier, recon degrades gracefully (RM4=0 with no candidates file; the panel/closure knobs have
   nothing to scale yet) but the path-scaling value is not realized until f004/f005 land. The
-  greenfield->brownfield transition VERIFIER (`aid-update-kb` intent-vs-as-built) is **f010/f011**
-  — f006 references it; do not build it here.
+  greenfield->brownfield transition needs **no transition verifier** — it is handled by re-triage
+  (built here) + the standard brownfield engine once source exists; there is no `aid-update-kb`
+  intent-vs-as-built verifier in scope for f006 or for f010/f011.
 - **[SPIKE-T6 — boundary, where STATE lives]** The `## Discovery Triage` record — `aid-discover`
   runs against `.aid/knowledge/STATE.md` (the KB state file), whereas `aid-interview`'s TRIAGE
   writes the work's `STATE.md`. Confirm with PLAN.md which STATE file owns the discovery-path

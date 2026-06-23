@@ -5,6 +5,7 @@
 | Date | Change | Source |
 |------|--------|--------|
 | 2026-06-22 | Feature identified from REQUIREMENTS.md §5 (FR-12, FR-13, FR-14, FR-15, FR-16, FR-31, FR-32) | /aid-interview |
+| 2026-06-23 | whole-work review 2026-06-23 — Dec.B: Description + teach-back AC aligned to the two essence channels (lexical harvest + non-lexical conceptual-synthesis, evidence-anchored) and the non-lexical engine-narration teach-back limb | whole-work review |
 
 ## Source
 
@@ -20,9 +21,13 @@ cataloging generic structure. It adds a **mechanical coined-term / salient-conce
 harvest** that scans all source types and emits a candidate-concept list
 (project-coined × recurring × cross-source) — the deterministic anchor that turns
 "did we miss a concept?" into a checklist (the 'Relative bus' concept lights up
-here). From that list it builds a **concept spine** — the grounded native concepts,
-constructed *before* the per-concern docs and shared with every researcher so
-cross-cutting concepts are nobody-falls-between-lanes.
+here). The harvest is the **lexical** source; a second, **non-lexical
+conceptual-synthesis channel** (a researcher/architect judgment limb) proposes
+load-bearing concepts that have **no recurring token** — each anchored to cited
+source spans (uncited ⇒ rejected) — so an idea spread across prose with no coined
+term is still captured. From both sources it builds a **concept spine** — the
+grounded native concepts, constructed *before* the per-concern docs and shared with
+every researcher so cross-cutting concepts are nobody-falls-between-lanes.
 
 It introduces the **comprehension / closure loop**: stop cataloging and explain
 how the system works in the project's own language, iterating until the
@@ -62,9 +67,11 @@ Must
 - [ ] Given the candidate list, when discovery proceeds, then a grounded concept
   spine is built before the per-concern docs and shared with every researcher.
   *(FR-13)*
-- [ ] Given a fresh agent and only the KB, when asked, then it can explain how the
-  project works in its own language and answer "what is X?" for the native concepts
-  (teach-back closure / closure loop). *(FR-14, AC1 keystone, AC3)*
+- [ ] Given a fresh agent and only the KB, when asked, then it can answer "what is
+  X?" for the native concepts (per-term limb) **and** narrate how the project works
+  end-to-end in its own language (the non-lexical engine-narration limb — a FAIL even
+  if every term is defined) (teach-back closure / closure loop). *(FR-14, AC1
+  keystone, AC3)*
 - [ ] Given any ungrounded project-specific term, when discovery encounters it, then
   it is treated as a mandatory investigation, never ignorable noise. *(FR-15,
   tripwire)*
@@ -114,15 +121,29 @@ Must
 
 This feature converts discovery from structural cataloging into conceptual-model
 reconstruction (REQUIREMENTS §1.2 root cause), by inserting three new pieces into the
-existing GENERATE flow (`state-generate.md`) and one config key:
+existing GENERATE flow (`state-generate.md`) and one config key.
+
+**Two candidate-concept channels feed `candidate-concepts.md`** — a mechanical *harvest*
+channel (deterministic, lexical) and a judgment *synthesis* channel (LLM, evidence-anchored).
+The harvest is the deterministic mechanical floor; the synthesis channel captures load-bearing
+concepts that have **no stable recurring coined token** — an idea spread across prose that
+clears neither the phrase-survival floor nor the closure oracle (REQUIREMENTS §1.2's actual
+'Relative bus' description: "not a module, an idea spread across files"). Every row in
+`candidate-concepts.md` is **tagged by source** (`harvest` = mechanical/lexical vs `synthesis`
+= judgment) so provenance is visible and the mechanical floor stays auditable. Both channels
+feed the same downstream — the concept spine, the closure loop, and (via
+`candidate-concepts.md`) f005's teach-back.
 
 1. **A mechanical coined-term harvest** — a shipped, deterministic bash script
    (`canonical/aid/scripts/kb/harvest-coined-terms.sh`) + a shipped denylist
    (`canonical/aid/scripts/kb/coined-term-denylist.txt`). It runs as a **new Step 0e**
    in GENERATE — after the project index (Step 0c) and doc-set confirm (Step 0d), **before**
-   the researcher fan-out (Steps 2-5). It emits a ranked **candidate-concept list**
-   (`.aid/generated/candidate-concepts.md`) — the deterministic anchor that makes "did we
-   miss a concept?" a checklist (REQUIREMENTS §1.4; the 'Relative bus' lights up here).
+   the researcher fan-out (Steps 2-5). It emits ranked **`harvest`-tagged** candidate concepts
+   into `.aid/generated/candidate-concepts.md` — the deterministic anchor that makes "did we
+   miss a concept?" a checklist (REQUIREMENTS §1.4). It also is joined by a
+   **`synthesis`-tagged** channel (the conceptual-synthesis source, below) that adds
+   judgment-derived concepts needing no recurring token (the prose-spread 'Relative bus'
+   lights up here).
 
 2. **The concept spine** — an **upgrade of `domain-glossary.md`** (NOT a separate doc; the
    C4-Vocabulary concern doc f003 already designates as the spine). The harvest *seeds* it
@@ -144,8 +165,11 @@ existing GENERATE flow (`state-generate.md`) and one config key:
    **existing scout-questions mechanism** (Step 6b) — no new queue invented.
 
 The deterministic substrate (the harvest script + the closure self-containment check) is
-mechanical/CI-able; the LLM judgment (grounding a term, "did it close") is bounded and
-evidence-anchored against the harvest output (FR-23, NFR-1/2/3).
+mechanical/CI-able; the LLM judgment (the synthesis channel, grounding a term, "did it close")
+is bounded and **evidence-anchored** — the synthesis channel and grounding both cite the
+supporting source span(s) they were inferred from, against the harvest output (FR-23,
+NFR-1/2/3). See the **Judgment Boundary** (below) for which limbs are mechanical floor vs
+explicit LLM judgment.
 
 ### Coined-Term Harvest
 
@@ -268,31 +292,40 @@ to `.aid/generated/candidate-concepts.md`:
 ```markdown
 # Candidate Concepts
 
-> Generated by `canonical/aid/scripts/kb/harvest-coined-terms.sh`. Deterministic; no LLM.
-> The mechanical anchor for essence capture (FR-12). Each row is a project-coined term that
-> is recurring and/or cross-source — a concept the KB MUST explain or explicitly dismiss.
+> Generated by `canonical/aid/scripts/kb/harvest-coined-terms.sh` (harvest rows; deterministic,
+> no LLM) + the conceptual-synthesis channel (synthesis rows; LLM judgment, source-anchored).
+> The anchor for essence capture (FR-12). Each row is a load-bearing concept the KB MUST
+> explain or explicitly dismiss. The `Source` column marks provenance: `harvest`
+> (mechanical/lexical) vs `synthesis` (judgment, with a cited supporting span).
 
 ## Summary
 | Metric | Value |
 |--------|-------|
 | Candidates (post-denylist) | 213 |
 | Cross-source (spread >= 2) | 47 |
-| Top emitted | 60 |
+| Top harvest emitted | 60 |
+| Synthesis concepts | 5 |
 | Generated | 2026-06-22 |
 
 ## Ranked Candidates
-| # | Term | Class | Freq | Spread | Channels | Salience | Example source |
-|---|------|-------|------|--------|----------|----------|----------------|
-| 1 | `Relative Bus` | phrase | 38 | 4 | code,docs,comments,history | 266 | `src/bus/relative.ts`; `docs/adr/0007.md` |
-| 2 | `Relative ME`  | phrase | 21 | 3 | code,docs,comments | 105 | `src/bus/relative.ts` |
+| # | Source | Term | Class | Freq | Spread | Channels | Salience | Example source |
+|---|--------|------|-------|------|--------|----------|----------|----------------|
+| 1 | harvest | `Relative Bus` | phrase | 38 | 4 | code,docs,comments,history | 266 | `src/bus/relative.ts`; `docs/adr/0007.md` |
+| 2 | harvest | `Relative ME`  | phrase | 21 | 3 | code,docs,comments | 105 | `src/bus/relative.ts` |
+| ... |
+| 61 | synthesis | `eventual-consistency contract` | synthesis | — | — | — | — | `docs/adr/0007.md` "we never block on the peer"; `src/sync/reconcile.ts` |
 | ... |
 ```
 
-The **`Example source` column** gives each candidate a grep-recoverable anchor (path +
-distinct string, no line numbers per the glossary's existing durable-anchor convention),
-so the researchers (and f005's evidence-anchored grading) start grounded. This file is the
-**fixed evidence list** REQUIREMENTS §1.6/NFR-3 names — the spine, the closure loop, and
-f005's Concept-closure mandate all grade against it.
+The **`Source` column** marks each row `harvest` (the deterministic, byte-reproducible
+mechanical partition) or `synthesis` (the LLM-judgment partition), keeping provenance visible
+and the mechanical floor independently auditable. The **`Example source` column** gives each
+candidate a grep-recoverable anchor (path + distinct string, no line numbers per the
+glossary's existing durable-anchor convention) — and for a `synthesis` row it is the
+**mandatory cited supporting span** (an uncited synthesis row is invalid). So the researchers
+(and f005's evidence-anchored grading) start grounded. This file is the **fixed evidence
+list** REQUIREMENTS §1.6/NFR-3 names — the spine, the closure loop, and f005's Concept-closure
+mandate all grade against it.
 
 #### Where it runs in GENERATE
 
@@ -353,6 +386,68 @@ and feed the definition back to the spine."*
   denylist seed wordlist is fully ASCII after trimming (drop any accented loanwords); the
   guard will red CI otherwise.
 
+### Conceptual-Synthesis Channel (the tokenless-concept source)
+
+The mechanical harvest's reach is bounded by lexis: a candidate concept only exists if some
+*token or phrase* recurs and clears the phrase-survival floor. But the hardest form of the
+exact miss this work targets is a **load-bearing concept that is an idea spread across prose
+with no stable recurring coined token** — REQUIREMENTS §1.2's actual 'Relative bus'
+description ("not a module, an idea spread across files"). Such a concept clears neither the
+phrase-survival floor (no stable coined string to count) **nor** the closure oracle (the
+oracle only fires on `candidate-concepts.md` terms + spine relates-to terms — if the concept
+was never named, it is not in the term universe). The mechanical floor alone cannot capture
+it. **f004 adds a second candidate-concept source to close this gap.**
+
+- **What it is.** A researcher/architect **synthesis channel**: it proposes load-bearing
+  concepts derived from *understanding* the project — concepts that need **NO recurring
+  token**. Where the harvest asks "what coined tokens recur cross-source?", the synthesis
+  channel asks "what ideas does this project actually turn on, even when never given a stable
+  name?" It is run by `aid-architect` (the synthesis owner) over the project index +
+  deep-dive docs + the *why* sources (ADRs/reports/commit prose), and it emits its proposed
+  concepts into the **same** `.aid/generated/candidate-concepts.md`.
+- **Merged, tagged by source.** Synthesis concepts merge into `candidate-concepts.md`
+  alongside harvest concepts, **tagged by source** — a `Source` column with value `harvest`
+  (mechanical/lexical) vs `synthesis` (judgment) — so provenance is visible and the
+  mechanical floor stays independently auditable (a reviewer can read the harvest-only subset
+  byte-for-byte against the script output, with the synthesis rows clearly partitioned out).
+- **Anchored against hallucination (the determinism ethos stays honest).** Every synthesis
+  concept **MUST cite the supporting source span(s)** it was inferred from — path + a
+  grep-recoverable distinct string, the same durable-anchor convention the harvest's
+  `Example source` column and the glossary already use. A synthesis concept with no cited
+  span is **invalid** (rejected, not stored): the channel is evidence-anchored inference over
+  real artifacts, **never invented**. The harvest stays the deterministic mechanical floor;
+  the synthesis channel is the explicitly-LLM-judgment limb (named as such in the Judgment
+  Boundary, below).
+- **Same downstream.** A synthesis row is a first-class `candidate-concepts.md` entry, so it
+  flows into exactly the same pipes a harvest row does: it seeds the concept spine's "to
+  ground" checklist, it enters the closure loop's term universe (so the closure oracle now
+  *can* fire on a previously-tokenless idea once synthesis has named it), and it reaches
+  f005's teach-back via `candidate-concepts.md`. A tokenless idea can now be **captured**
+  (synthesis names it), **grounded** (closure loop grounds it into a spine entry from its
+  cited spans), and **closure-checked** (it is in the term universe).
+- **Output shape.** The merged file carries the `Source` column on every row; synthesis rows
+  set `Class = synthesis`, leave `Freq`/`Spread`/`Salience` empty (or `—`, they are
+  lexical-only metrics), and use the `Example source` column for their cited supporting
+  span(s). The harvest's deterministic ranking is unchanged for `harvest` rows; synthesis
+  rows are appended in a stable, named partition (so byte-reproducibility of the *harvest
+  partition* is preserved — see Determinism & Cost).
+
+### Judgment Boundary (mechanical floor vs explicit LLM judgment)
+
+| Limb | Kind | Anchoring |
+|------|------|-----------|
+| Coined-term harvest (E1-E5, denylist, salience) | **Mechanical floor** — deterministic script, no LLM, byte-reproducible | n/a (deterministic) |
+| `closure-check.sh` DETECT / coverage oracle (outputs (a) ungrounded-set / (b) `sources:`-anchored coverage / (c) transcription-ratio hint) | **Mechanical floor** — deterministic script, no LLM, coreutils+git only | n/a (deterministic; URL `sources:` → N/A, never fetched) |
+| **Conceptual-synthesis channel** | **Explicit LLM judgment** — proposes tokenless load-bearing concepts | **MUST cite supporting source span(s)**; uncited → invalid/rejected |
+| EXPLAIN (the closure narrative) | **Explicit LLM judgment** | drawn only from spine + deep-dive docs |
+| Ground-a-term (closure investigation) | **Explicit LLM judgment** | grounded from cited artifacts or escalated (FR-32) |
+
+The mechanical floor stays the auditable, CI-able anchor (the harvest output + the closure
+oracle are byte-reproducible scripts). The synthesis channel is the limb that exists
+*precisely because* the mechanical floor cannot reach a tokenless idea — and it is held
+honest by the mandatory source-span citation, so it adds reach without abandoning the
+evidence-anchored ethos (FR-23, NFR-3).
+
 ### Concept Spine (domain-glossary upgrade)
 
 **Decision (user-approved): the spine IS the upgraded `domain-glossary.md`, not a new doc.**
@@ -412,12 +507,20 @@ to `state-generate.md` as **Step 5b (SYNTHESIS + CLOSURE)** and detailed in a ne
 `references/state-closure.md` (thin-router pattern, C8). The cycle:
 
 ```
+0. SYNTHESIZE  aid-architect runs the conceptual-synthesis channel: it proposes load-bearing
+             concepts derived from understanding the project (tokenless ideas the harvest
+             could not reach), each with a MANDATORY cited supporting source span, and merges
+             them into candidate-concepts.md tagged `Source = synthesis`. Uncited proposals
+             are rejected. This runs once at loop entry (it needs the deep-dive docs + why
+             sources), seeding the term universe before the first DETECT.
 1. EXPLAIN   aid-architect writes a "how it works" narrative in the project's native terms,
              drawing only on the spine + the deep-dive docs.
 2. DETECT    a mechanical self-containment check (closure-check.sh, below) scans the
              narrative + all KB docs for any candidate-concept term (from
-             candidate-concepts.md) or any spine "relates-to" term that is USED but NOT
-             DEFINED in the spine -> the ungrounded-term set.
+             candidate-concepts.md — now including synthesis concepts) or any spine
+             "relates-to" term that is USED but NOT DEFINED in the spine -> the
+             ungrounded-term set (the script's output (a); the loop terminates on output (a)
+             alone — outputs (b)/(c) are coverage signals f005 consumes, not loop inputs).
 3. INVESTIGATE  every ungrounded term is a mandatory investigation (the tripwire, FR-15):
              dispatched as a BATCH of parallel grounding sub-agents (one per term, or
              chunked), each grounding its term into a spine entry or escalating it (FR-32).
@@ -437,15 +540,106 @@ graceful-sequential-degradation machinery (A3).
 - **File:** `canonical/aid/scripts/kb/closure-check.sh` (shipped KB script; ASCII; no LLM —
   the **closure self-containment check** REQUIREMENTS §1.6 names as scripted). Inputs:
   `.aid/generated/candidate-concepts.md` (the term universe) + the spine
-  (`domain-glossary.md`) + the KB docs. It deterministically reports the set of
-  **candidate-concept terms and spine relates-to terms that appear in a KB doc but have no
-  defining concept entry in the spine**. Output: a list of ungrounded terms with the doc +
-  anchor where each is used (so each becomes a targeted investigation). This is the
-  termination oracle — the loop's DETECT step is a script, not a judgment call (NFR-3:
-  "closure-termination MUST be deterministic and CI-able"). Tested by
-  `tests/canonical/test-closure-check.sh` (planted ungrounded term is reported; a fully
-  closed fixture reports empty). The LLM judgment is confined to step 1 (EXPLAIN) and step 3
-  (ground the term) — both anchored to the harvest evidence list (NFR-3 honest floor).
+  (`domain-glossary.md`) + the KB docs (and, for outputs (b)/(c), each KB doc's resolved
+  `sources:` frontmatter — f001's field). It is the **single coverage oracle**: f004's
+  `closure-check.sh` is the ONLY coverage script in the work, and **f005 consumes outputs
+  (a)/(b)/(c) and ships NO coverage script** (it drops its old `kb-salient-coverage.sh`, which
+  parsed the same `candidate-concepts.md` and scanned the same KB docs + `sources:` — the
+  f004↔f005 duplication this removes). The script emits **three** outputs, each a separate,
+  parsable markdown section (or `--output-*` file) so a consumer reads exactly the one it
+  needs:
+
+  **Output (a) — ungrounded / un-closed concept set** *(existing; the DETECT/termination
+  output — kept as-is).* The set of **candidate-concept terms and spine relates-to terms that
+  appear in a KB doc but have no defining concept entry in the spine**, each with the doc +
+  anchor where it is used (so each becomes a targeted investigation). This is the loop's
+  termination oracle. Schema (one row per ungrounded use):
+
+  | term | used-in-doc | anchor |
+  |------|-------------|--------|
+
+  Polarity: **a row IS a finding** — a present row means "used-but-not-defined" (closed ⇒ zero
+  rows). Term universe = BOTH `harvest` and `synthesis` rows of `candidate-concepts.md` plus
+  spine relates-to terms.
+
+  **Output (b) — per-doc `sources:`-anchored coverage** *(this is what f005's M3 closure +
+  CAL-3 coverage-vs-source + the reverse-coverage round-trip consume).* For **each candidate
+  term** (BOTH `harvest` and `synthesis` rows of `candidate-concepts.md`), resolve the relevant
+  KB doc's **`sources:`** entries and determine whether the term is **present in / absent from**
+  the doc body and/or its resolved source spans. Schema (one row per (term, doc) pair the
+  oracle evaluates):
+
+  | term | doc | anchoring-source | present\|absent |
+  |------|-----|------------------|-----------------|
+
+  - `term` — the candidate term (verbatim from `candidate-concepts.md`).
+  - `doc` — the KB doc evaluated (the spine concept entry / KB doc whose `sources:` anchor the
+    term).
+  - `anchoring-source` — the doc `sources:` entry that was resolved and scanned for the term
+    (the local file path); `N/A` for a doc whose only relevant `sources:` are URLs (see
+    scoping).
+  - `present|absent` — whether the term occurs in the doc body and/or the resolved source span.
+    **Polarity: `absent` IS the finding** (a term that the doc claims/should-cover via its
+    `sources:` but that does not actually appear in the doc body or its resolved local source
+    span is the coverage gap f005 grades). `present` rows are the satisfied-coverage baseline.
+
+  **`sources:`-resolution + anchoring + absence computation (scoping — agreed for CAL-1):**
+  - Parse each KB doc's `sources:` frontmatter list (f001's field).
+  - A `sources:` entry that resolves to a **local readable file** (path resolves under `--root`
+    and is readable) is **scanned**: the term is `present` iff it occurs (literal,
+    case-normalized) in the doc body OR in the resolved source file's relevant span; otherwise
+    `absent`.
+  - A `sources:` entry that is a **URL** (or otherwise does not resolve to a local readable
+    file) is **N/A — skipped, NOT a finding**: it contributes no row, or a row with
+    `anchoring-source = N/A` and `present|absent` left blank/`N/A`. A URL source never produces
+    an `absent` finding (we cannot fetch it deterministically; coreutils+git only).
+  - All scanning is literal/lexical (coreutils `grep -F`-class), case-normalized, deterministic
+    — no fetch, no network.
+
+  **Output (c) — transcription-ratio hint** *(f005's CAL-1 transcription signal).* Per-doc
+  lexical-overlap ratio between the doc body and its resolved **local-file** `sources:` (URL
+  source → `N/A`, contributes no ratio). It emits, per (doc, local-source) pair, a deterministic
+  overlap ratio (the fraction of the doc body's salient tokens — denylist-filtered, the same
+  denylist the harvest uses — that also appear in the resolved source file), as a hint that the
+  doc body may be a near-verbatim transcription of (vs a synthesized digest of) its source.
+  Schema:
+
+  | doc | source-file | overlap-ratio |
+  |-----|-------------|---------------|
+
+  - `source-file` — the resolved local `sources:` file; URL sources are omitted (or emit
+    `overlap-ratio = N/A`), never a numeric ratio.
+  - `overlap-ratio` — a deterministic `[0.0, 1.0]` value (integer-arithmetic in `awk`,
+    fixed precision, stable rounding) = `|salient-tokens(doc) ∩ salient-tokens(source)| /
+    |salient-tokens(doc)|`. It is an advisory hint for f005's CAL-1, NOT a closure-termination
+    input (output (a) alone terminates the loop).
+
+  All three outputs are the same parse (`candidate-concepts.md`) and the same source-resolved
+  scan (KB docs + their resolved local-file `sources:`) — emitting all three from one script
+  removes the duplicate. The oracle is **deterministic** — the loop's DETECT step (output (a))
+  is a script, not a judgment call (NFR-3: "closure-termination MUST be deterministic and
+  CI-able"); outputs (b)/(c) are likewise pure coreutils+git, byte-reproducible. Tested by
+  `tests/canonical/test-closure-check.sh` (see Canonical test, below). The LLM judgment is
+  confined to the SYNTHESIZE channel, step 1 (EXPLAIN) and step 3 (ground the term) — all
+  anchored to the evidence list (NFR-3 honest floor).
+
+##### Canonical test (`tests/canonical/test-closure-check.sh`)
+
+Mechanical assertions (numbered `C01..`, `set -u`, sourced `assert.sh`), against small in-suite
+fixture trees with planted `candidate-concepts.md`, spine, KB docs, and KB-doc `sources:`
+frontmatter (local files + a URL) under `tests/canonical/fixtures/`:
+
+- **C01-C02 output (a) — termination (existing):** a planted used-but-undefined term is reported
+  in (a); a fully closed fixture reports empty (a).
+- **C03-C05 output (b) — `sources:`-anchored coverage:** a candidate term present in a doc whose
+  local-file `sources:` contains it emits a `present` row; a candidate term ABSENT from a doc
+  that anchors it via a local-file `sources:` emits the `absent` finding (polarity); a doc whose
+  only relevant `sources:` is a **URL** yields `anchoring-source = N/A` and **no `absent`
+  finding** (URL scoping).
+- **C06-C07 output (c) — transcription ratio:** a doc body that is a near-verbatim copy of its
+  local-file source emits a high `overlap-ratio`; a doc whose only `sources:` is a URL emits
+  `N/A` (no numeric ratio).
+- **C08 determinism:** a re-run is byte-identical across all three outputs (NFR-3).
 
 #### The bounded cap + config
 
@@ -469,13 +663,26 @@ discovery:
     token_budget: 0            # optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget
 ```
 
-Read via the existing `read-setting.sh --path discovery.closure.max_clean_passes --default 2`
-accessor (no new config machinery — D5). Defaults live in the `settings.yml` template (added
-by this feature). **Path scaling (f006):** the three paths set these caps —
-brownfield-large uses the full batched loop (default caps); brownfield-small uses
+**Reading the cap — defaults from settings, per-run override as a runtime argument.** The
+template defaults (`max_clean_passes` / `max_rounds` / `token_budget`) live in the
+`settings.yml` template (added by this feature). They cannot be read by
+`read-setting.sh --path discovery.closure.max_clean_passes`: `read-setting.sh` resolves only a
+**2-level `section.key`** path, NOT the 3-level `discovery.closure.max_clean_passes`
+(verified) — so the earlier "via `read-setting.sh` (no new machinery)" claim was wrong and is
+removed. Instead, **f004's closure loop (Step 5b) accepts the per-run cap as a runtime
+argument** and **Step 5b defines/owns that cap-override argument interface** — a small,
+explicit set of run-scoped knobs (e.g. `--max-clean-passes N --max-rounds N --token-budget N`)
+that the closure orchestration consumes. The defaults are the settings-template values; the
+per-run override is supplied at dispatch by **f006's path-config** (the f004↔f006 seam). So
+f004 *owns* the cap-override interface and the default behavior; f006 *supplies* the per-run
+values through it.
+
+**Path scaling (f006):** the three paths set these caps via the cap-override argument f004
+owns — brownfield-large uses the full batched loop (default caps); brownfield-small uses
 `max_rounds: 1` (single understand-pass, §1.5 matrix); greenfield closure is "intent coherent
-+ vocab set" (f006 wires the path→cap mapping; f004 provides the knobs + the default
-brownfield-large behavior). **When the cap trips before CLOSED**, the remaining ungrounded
++ vocab set" (f006 supplies the path→cap values through Step 5b's override interface; f004
+provides the knobs, the interface, and the default brownfield-large behavior). **When the cap
+trips before CLOSED**, the remaining ungrounded
 terms are NOT dropped — each is escalated as a human Q&A (FR-32, below), so a budget exhaust
 degrades to "surface the gaps," never "ship shallow silently" (REQUIREMENTS §1.4 honest limit).
 
@@ -494,7 +701,11 @@ noise). It is enforced at two layers, both grounded:
    investigation — ground it from the artifacts or escalate it; never skip it as noise."*
    (REQUIREMENTS §1.4 verbatim intent.) This is the judgment-side tripwire for terms the
    mechanical harvest did not fingerprint (a concept named only in one obscure comment); the
-   mechanical layer catches the fingerprinted ones, the prompt catches the rest.
+   mechanical layer catches the fingerprinted ones, the prompt catches the rest. The
+   **conceptual-synthesis channel** (above) is the structured limb of this judgment side: it
+   proactively *proposes* the tokenless load-bearing concepts the harvest could never
+   fingerprint (each with a cited span), so a prose-spread idea is captured as a first-class
+   candidate rather than only caught reactively mid-explanation.
 
 ### Read All Source Types (FR-16)
 
@@ -533,22 +744,31 @@ the exact mechanism Step 6b already consumes:
 ### Determinism & Cost (FR-23 / NFR-1-3)
 
 - **Mechanical-first (NFR-1, the cost lever).** The harvest is a **script, not an LLM**
-  (zero dispatch tokens for the anchor); the DETECT/termination oracle is a **script**
-  (`closure-check.sh`); the salience ranking is **arithmetic** in `awk`. The only LLM surface
-  is EXPLAIN (synthesis) + ground-a-term (investigation) — both **anchored** to the harvest
-  evidence list (the §1.6 honest floor). Total discovery cost stays within the same order of
-  magnitude as today's discover (NFR-1): the new LLM work is bounded by the cap, and the
-  expensive part (the anchor + the closure oracle) is free deterministic script time.
+  (zero dispatch tokens for the anchor); the coverage oracle (all three outputs (a) ungrounded-set,
+  (b) `sources:`-anchored per-doc coverage, (c) transcription-ratio hint) is a **script**
+  (`closure-check.sh`, coreutils+git only — URL `sources:` → N/A, never fetched); the salience ranking
+  is **arithmetic** in `awk`. The LLM surface is the **conceptual-synthesis channel** (propose
+  tokenless concepts) + EXPLAIN (synthesis narrative) + ground-a-term (investigation) — all
+  **anchored** to cited source spans / the evidence list (the §1.6 honest floor). The synthesis
+  channel is a single bounded pass at loop entry (not per-round), so it adds a small fixed LLM
+  cost, not a multiplier. Total discovery cost stays within the same order of magnitude as
+  today's discover (NFR-1): the new LLM work is bounded by the cap, and the expensive part (the
+  anchor + the coverage oracle) is free deterministic script time.
 - **Bounded wall-clock (NFR-2).** The loop is capped (`max_clean_passes` / `max_rounds` /
   optional `token_budget`) and **batched-parallel** (detect-all → fill-all-parallel →
   re-check ≈ 2-3 rounds, not N sequential iterations). The harvest is a single ~30s script
   pass (like `build-project-index.sh`).
-- **Determinism / repeatability (NFR-3).** The harvest output is byte-reproducible (stable
-  sort, fixed tie-break, fixed denylist) — CI asserts re-run byte-identity. The closure
-  termination is a deterministic script. The teach-back/evidence anchor (the
-  `candidate-concepts.md` term set) is the **fixed question set** §1.6/NFR-3 names. The
-  irreducible judgment (EXPLAIN / "did it understand") is minimized + evidence-anchored, not
-  pretended away.
+- **Determinism / repeatability (NFR-3).** The **harvest partition** of `candidate-concepts.md`
+  is byte-reproducible (stable sort, fixed tie-break, fixed denylist) — CI asserts re-run
+  byte-identity of the `harvest`-tagged rows; the `synthesis`-tagged rows are an appended,
+  named partition (LLM-judgment, source-anchored, not byte-asserted), kept partitioned exactly
+  so the mechanical floor stays independently auditable. The coverage/closure oracle is a
+  deterministic script (all three outputs (a)/(b)/(c) byte-reproducible; URL `sources:`
+  resolve to N/A, never fetched, so determinism never depends on the network). The
+  teach-back/evidence anchor (the
+  `candidate-concepts.md` term set — harvest + synthesis) is the **fixed question set**
+  §1.6/NFR-3 names. The irreducible judgment (the synthesis channel, EXPLAIN / "did it
+  understand") is minimized + evidence-anchored (cited spans), not pretended away.
 
 ### Affected Components
 
@@ -556,13 +776,13 @@ the exact mechanism Step 6b already consumes:
 |-----------|------|--------|
 | **NEW harvest script** | `canonical/aid/scripts/kb/harvest-coined-terms.sh` | The deterministic coined-term harvest (extraction E1-E5, channels, denylist filter, salience ranking, markdown output). ASCII bash; reuses `build-project-index.sh`'s prune set + OUTPUT resolution. |
 | **NEW denylist** | `canonical/aid/scripts/kb/coined-term-denylist.txt` | Shipped, sorted, lowercased, ASCII wordlist (common English + common-tech). Project override via `.aid/knowledge/.coined-term-denylist.local.txt`. |
-| **NEW closure oracle** | `canonical/aid/scripts/kb/closure-check.sh` | Deterministic self-containment check (ungrounded candidate/relates-to terms used-but-undefined in the spine). ASCII bash; no LLM. The loop's DETECT/termination step. |
+| **NEW coverage oracle** | `canonical/aid/scripts/kb/closure-check.sh` | Deterministic single coverage oracle. ASCII bash; no LLM; coreutils+git only. Emits THREE outputs: (a) the ungrounded/un-closed concept set (loop DETECT/termination; `term\|used-in-doc\|anchor`, a row IS the finding); (b) per-doc `sources:`-anchored coverage (`term\|doc\|anchoring-source\|present\|absent`, **`absent` IS the finding**; local-file `sources:` scanned, **URL → N/A, skipped**); (c) per-doc transcription-ratio hint (`doc\|source-file\|overlap-ratio` over resolved local-file `sources:`; URL → N/A). **f004's `closure-check.sh` is the single coverage oracle; f005 consumes outputs (a)/(b)/(c) and ships NO coverage script** (drops its old `kb-salient-coverage.sh`). |
 | GENERATE flow | `canonical/skills/aid-discover/references/state-generate.md` | Add **Step 0e** (run harvest before fan-out); add `candidate-concepts.md` to the REFERENCE DOCUMENTS block; add **Step 5b (SYNTHESIS + CLOSURE)** chaining to the new closure reference; route ungroundable terms into `.scout-questions.tmp` (Step 6b unchanged). |
-| **NEW closure reference** | `canonical/skills/aid-discover/references/state-closure.md` | The EXPLAIN→DETECT→INVESTIGATE→REPEAT loop body, the cap read from `discovery.closure`, the batched-parallel dispatch, the FR-32 escalation. Thin-router pattern (C8). |
-| Agent prompts | `canonical/skills/aid-discover/references/agent-prompts.md` | Add the spine-grounding + tripwire mandate to the Integrator (glossary owner) + all four deep-dive prompts; add a **Grounding** prompt section for the closure-loop sub-agents. |
+| **NEW closure reference** | `canonical/skills/aid-discover/references/state-closure.md` | The SYNTHESIZE (conceptual-synthesis channel, source-anchored) → EXPLAIN→DETECT→INVESTIGATE→REPEAT loop body; the cap defaults from the `discovery.closure` settings block with the **per-run cap-override argument interface Step 5b owns** (f006 supplies path→cap values through it — NOT via `read-setting.sh`, which is 2-level only); the batched-parallel dispatch; the FR-32 escalation. Thin-router pattern (C8). |
+| Agent prompts | `canonical/skills/aid-discover/references/agent-prompts.md` | Add the spine-grounding + tripwire mandate to the Integrator (glossary owner) + all four deep-dive prompts; add a **Grounding** prompt section for the closure-loop sub-agents; add the **conceptual-synthesis** mandate to `aid-architect` (propose tokenless load-bearing concepts, each with a MANDATORY cited source span; uncited → reject), merging `synthesis`-tagged rows into `candidate-concepts.md`. |
 | Spine template | `canonical/aid/templates/knowledge-base/domain-glossary.md` | Upgrade to the concept-spine structure (concept entries: definition-as-used-here / relates-to / per-concept `sources:`; retain lexicon tables). Content upgrade; f001 owns the frontmatter schema, f011 migrates AID's own glossary. |
 | Settings template | `canonical/aid/templates/settings.yml` | Add the **new top-level `discovery:` block** (the template has no `discovery:` key today) with its `closure:` child (`max_clean_passes`/`max_rounds`/`token_budget`) + defaults + comments. `doc_set` is NOT added — it stays a conditional runtime-written sibling (Step 0d). |
-| CI — canonical suites | `tests/canonical/test-harvest-coined-terms.sh` (NEW), `tests/canonical/test-closure-check.sh` (NEW) + fixtures under `tests/canonical/fixtures/` | Mechanical assertions for the harvest (filter/rank/channels/'Relative bus' planted/output shape + byte-reproducibility) and the closure oracle (ungrounded reported / closed empty). Auto-discovered by `tests/run-all.sh`. |
+| CI — canonical suites | `tests/canonical/test-harvest-coined-terms.sh` (NEW), `tests/canonical/test-closure-check.sh` (NEW) + fixtures under `tests/canonical/fixtures/` | Mechanical assertions for the harvest (filter/rank/channels/'Relative bus' planted/output shape + byte-reproducibility) and the coverage oracle: output (a) ungrounded reported / closed empty; output (b) `sources:`-anchored coverage — present row, `absent` finding, and URL `sources:` → N/A (no `absent` finding); output (c) transcription-ratio — high overlap for near-verbatim local source, N/A for URL source; plus 3-output byte-reproducibility (the merged-oracle contract f005 consumes). Auto-discovered by `tests/run-all.sh`. |
 | CI — ascii-only | `tests/canonical/test-ascii-only.sh` | Add `canonical/aid/scripts/kb/harvest-coined-terms.sh`, `closure-check.sh`, and `coined-term-denylist.txt` to `SHIPPED_SCRIPTS`. **[SPIKE-H3]** — confirm the denylist seed is fully ASCII. |
 | render-drift | `test.yml` job `render-drift` | No edit; stays green by editing canonical only + re-running `run_generator.py` (C3). The three new files under `canonical/aid/scripts/kb/` + the template/reference edits render to all 5 trees. |
 
@@ -585,6 +805,11 @@ the exact mechanism Step 6b already consumes:
   update canonical + regen, never hand-place.
 - **C5 / NFR-3 — deterministic, CI-testable.** Both new scripts are mechanical, stable-sorted,
   fixed-tie-break, byte-reproducible, and asserted in the new canonical suites.
+  `closure-check.sh`'s `sources:`-resolution stays coreutils+git only and **never fetches**:
+  a `sources:` entry resolving to a local readable file is scanned; a URL (or otherwise
+  unresolvable) entry is **N/A — skipped, not a finding** — so all three outputs (a)/(b)/(c)
+  are deterministic and independent of the network (the byte-reproducibility assertion C08
+  holds regardless of any URL `sources:`).
 - **C4 — human-gated.** The harvest + closure are detection/synthesis; the resulting KB
   content still passes the existing REVIEW gate (f005) + human approval before it is final.
   Ungroundable concepts escalate to the human via Q&A (FR-32), never auto-resolved.

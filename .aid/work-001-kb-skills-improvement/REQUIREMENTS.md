@@ -18,6 +18,8 @@
 | 2026-06-22 | §7–§10 written — Constraints C1–C8, Assumptions/Deps, AC1–AC13, Priority (MoSCoW) | /aid-interview |
 | 2026-06-22 | COMPLETION — added AC14/AC15; identity set; interview complete — approved | /aid-interview |
 | 2026-06-22 | Cross-ref folds — Q1 `approved_at_commit:` (FR-4/5), Q2 C2 KB-scripts, FR-6 both readers, §1.5 scout slot | /aid-interview |
+| 2026-06-23 | whole-work review 2026-06-23 — Dec.A: greenfield→brownfield transition now via re-triage (§1.5, FR-22, Could-item); verifier mechanism dropped. Dec.B: essence-capture spans lexical + non-lexical synthesis (FR-12); teach-back AC1 gains the non-lexical engine-narration limb | whole-work review |
+| 2026-06-23 | §1.5 matrix Greenfield cells aligned to the (already-corrected) prose — Review→`collapsed` (mini-panel removed); Exit→`teach-back closure` (invariant per FR-21/AC1); Primary-risk→`over-eager elicitation / thin intent-KB` (dropped-verifier "intent↔as-built drift" framing removed) | alignment pass |
 
 ## 1. Objective
 
@@ -191,18 +193,19 @@ value = delta from generalist knowledge*.
 | Concept acquisition | **elicit** (co-author; ties to interview/specify) | **extract**, single pass | **extract**: mechanical harvest → spine |
 | Generation shape | forward-authored, thin | one understand-pass, no fan-out | parallel fan-out by concern, concept-aware |
 | Closure | "intent coherent + specified + vocab set" | short | batched-parallel loop, capped |
-| Review | intent-graded mini-panel | collapsed: 1 reviewer, multi-mandate checklist | full parallel mandate panel |
+| Review | collapsed: 1 reviewer running the mandates as sequential passes + clean-context teach-back | collapsed: 1 reviewer, multi-mandate checklist | full parallel mandate panel |
 | Starting KB | thin (intent+vocab+design) | full anatomy (small) | full anatomy (large) |
-| Exit | teach-back **vs intent** | teach-back closure | teach-back closure |
+| Exit | teach-back closure | teach-back closure | teach-back closure |
 | Cost / wall-clock | low tokens, human-paced | low | high (justified) |
-| Primary risk | drift intent ↔ as-built | missing a fingerprinted concept | closure over/under-run; cost |
+| Primary risk | over-eager elicitation / thin intent-KB | missing a fingerprinted concept | closure over/under-run; cost |
 
 **Triage = lifecycle.** The path is **measured, not declared** (recon quantifies
 source-availability/complexity → thresholds propose → human confirms; do not trust a
 static `project.type`). **Re-triaged every run**, so the paths are *stages a project
 passes through*: a greenfield's thin intent-KB becomes the spec the code is built
-against; as code lands, `aid-update-kb` **verifies intent vs as-built and fills
-anatomy**; crossing the threshold triggers a Brownfield-Large consolidation. The KB
+against; as code lands, **re-triage re-routes to the brownfield engine, which
+captures the now-extractable anatomy**; crossing the threshold triggers a
+Brownfield-Large consolidation. The KB
 **persists and is progressively verified/enriched** across Greenfield → Brownfield-Small
 → Brownfield-Large.
 
@@ -591,6 +594,9 @@ They are indirect consumers whose output quality is bounded by KB quality.
 
 - **FR-12.** A **mechanical coined-term / salient-concept harvest** MUST scan all source
   types and emit a candidate-concept list (project-coined × recurring × cross-source).
+  The harvest is the **lexical** channel; essence-capture additionally MUST cover
+  **non-lexical, load-bearing concepts** (those with no recurring token) via a
+  conceptual-synthesis channel, each **evidence-anchored to cited source spans**.
 - **FR-13.** A **concept spine** (the grounded native concepts) MUST be built *before* the
   per-concern docs and shared with every researcher.
 - **FR-14.** A **comprehension / closure loop** MUST iterate until the system is
@@ -619,8 +625,8 @@ They are indirect consumers whose output quality is bounded by KB quality.
   generation shape, closure depth, panel size, source-of-truth, exit) per the agreed
   matrix; **teach-back closure is the invariant exit** across all paths.
 - **FR-22.** The path MUST be **re-triaged every run**; the **greenfield→brownfield
-  transition** MUST be handled (as code lands, `aid-update-kb` verifies intent vs as-built
-  and fills anatomy).
+  transition** MUST be handled (as code lands, re-triage re-routes to the brownfield
+  engine, which captures the now-extractable anatomy).
 
 ### F. Engineering targets (S6 · cost/wall-clock/determinism)
 
@@ -777,9 +783,10 @@ They are indirect consumers whose output quality is bounded by KB quality.
 > The testable bar. Each AC names the FR/NFR it verifies. **Teach-back closure (AC1) is the
 > keystone**; AC2 is the regression guard for the original complaint.
 
-- **AC1 — Teach-back closure (keystone).** A fresh agent, given **only the KB**, can explain
-  how the project works in its own language and correctly answer "what is X?" for the
-  project's core native concepts. *(FR-18)*
+- **AC1 — Teach-back closure (keystone).** A fresh agent, given **only the KB**, can
+  correctly answer "what is X?" for the project's core native concepts (per-term limb)
+  **and** narrate how the project works end-to-end in its own language (the non-lexical
+  engine-narration limb — its own FAIL even when every term is defined). *(FR-18)*
 - **AC2 — Known-missed-concept fixture.** On a fixture project containing a planted
   'Relative bus'-style coined concept, the method **captures and defines it**; a regression
   test guards it. *(FR-35, FR-12)*
@@ -831,7 +838,8 @@ They are indirect consumers whose output quality is bounded by KB quality.
   housekeep↔update-kb boundary (FR-33), closure-as-standing-invariant (FR-34),
   `aid-summarize` alignment (FR-29).
 - **Could (completeness, highest-risk / most speculative):** the **greenfield path**
-  (FR-20/FR-21 greenfield branch, elicit mode + greenfield→brownfield transition, FR-22);
-  audience-column polish; dashboard per-doc surfacing niceties.
+  (FR-20/FR-21 greenfield branch — elicit mode reuses `aid-interview`/`aid-specify` —
+  plus the greenfield→brownfield transition handled by re-triage, FR-22); audience-column
+  polish; dashboard per-doc surfacing niceties.
 - **Won't (this work):** O1–O5 (vector router, auto-apply, auto-run from execute/deploy,
   non-KB pipeline changes, broader dashboard work).
