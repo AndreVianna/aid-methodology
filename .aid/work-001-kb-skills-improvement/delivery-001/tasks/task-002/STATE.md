@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** extract_list added; backward-compat emission; INDEX regenerated; profiles regenerated; 39-assertion test suite; INDEX-fresh+render-drift+ASCII green.
 
 ---
 

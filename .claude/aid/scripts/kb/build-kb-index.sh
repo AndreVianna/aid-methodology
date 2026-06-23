@@ -6,6 +6,11 @@
 # load for what knowledge. It's composed from each KB doc's `intent:` field
 # (see canonical/templates/kb-authoring/frontmatter-schema.md).
 #
+# New fields parsed (f001): objective, summary, tags, see_also, audience, sources, owner.
+# INDEX emission remains backward-compatible: falls back objective->intent when
+# objective: is absent; absent optional fields emit an empty cell.
+# The routing-table render (f002) is NOT present yet — INDEX shape is unchanged.
+#
 # Per canonical/templates/kb-authoring/principles.md P3, this script runs LAST in
 # any /aid-discover cycle (after all hand-edits land), so the index reflects final
 # state.
@@ -113,6 +118,63 @@ extract_literal() {
     ' "$f"
 }
 
+# Helper: extract a YAML list field from frontmatter — handles both inline and block forms.
+# Inline:  tags: [a, b, c]
+# Block:   tags:
+#            - a
+#            - b
+# Returns items one per line (empty output when field is absent or list is empty).
+# Args: <file> <field-name>
+extract_list() {
+    local f="$1" field="$2"
+    awk -v field="$field" '
+        BEGIN { in_fm=0; in_field=0 }
+        /^---$/ {
+            in_fm = !in_fm
+            if (NR > 1 && !in_fm) exit
+            next
+        }
+        in_fm && in_field {
+            # Continuation: block list item "  - value"
+            if (/^[[:space:]]+-[[:space:]]/) {
+                sub(/^[[:space:]]+-[[:space:]]+/, "")
+                # strip trailing whitespace
+                sub(/[[:space:]]+$/, "")
+                print
+                next
+            }
+            # Next top-level field or end of block list
+            exit
+        }
+        in_fm && $0 ~ "^"field":" {
+            rest = $0
+            sub("^"field":[[:space:]]*", "", rest)
+            if (rest ~ /^\[/) {
+                # Inline list: [a, b, c] or []
+                inner = rest
+                sub(/^\[/, "", inner)
+                sub(/\][[:space:]]*$/, "", inner)
+                if (inner == "") { exit }
+                n = split(inner, items, /[[:space:]]*,[[:space:]]*/)
+                for (i = 1; i <= n; i++) {
+                    item = items[i]
+                    # strip leading/trailing whitespace and optional quotes
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", item)
+                    gsub(/^['\''"]|['\''"]$/, "", item)
+                    if (item != "") print item
+                }
+                exit
+            } else if (rest == "" || rest ~ /^[[:space:]]*$/) {
+                # Block list — read following lines
+                in_field = 1
+                next
+            }
+            # Scalar (not a list) — produce no output
+            exit
+        }
+    ' "$f"
+}
+
 # --- Begin output -----------------------------------------------------------
 {
     cat <<EOF
@@ -172,7 +234,28 @@ EOF
                     emitted_header=1
                 fi
 
-                intent=$(extract_literal "$f" "intent")
+                # Parse new f001 fields (backward-compatible; absent fields = empty)
+                objective=$(extract_field "$f" "objective")
+                summary=$(extract_field "$f" "summary")
+                tags=$(extract_list "$f" "tags" | tr '\n' ',' | sed 's/,$//')
+                see_also=$(extract_list "$f" "see_also" | tr '\n' ',' | sed 's/,$//')
+                audience=$(extract_list "$f" "audience" | tr '\n' ',' | sed 's/,$//')
+                sources=$(extract_list "$f" "sources" | tr '\n' ',' | sed 's/,$//')
+                owner=$(extract_field "$f" "owner")
+
+                # Backward-compat: use objective->intent fallback for the description block.
+                # intent: is the legacy multi-line field; objective: is the new single-line one.
+                # When objective: is present, compose description from objective + summary;
+                # otherwise fall back to the literal intent: block.
+                if [[ -n "$objective" ]]; then
+                    if [[ -n "$summary" ]]; then
+                        intent="${objective} ${summary}"
+                    else
+                        intent="$objective"
+                    fi
+                else
+                    intent=$(extract_literal "$f" "intent")
+                fi
                 if [[ -z "$intent" ]]; then
                     intent="*(no intent: declared)*"
                 fi
