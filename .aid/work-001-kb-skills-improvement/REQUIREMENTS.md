@@ -727,6 +727,72 @@ They are indirect consumers whose output quality is bounded by KB quality.
   against a known-missed-concept fixture** (a 'Relative bus'-style concept it is required
   to capture), proving the essence-capture gap is closed and guarding against regression.
 
+### J. Domain-driven discovery + dual-audience authoring (feature-014)
+
+> AID targets **any kind of digital work**, not only software. Discovery's start must adapt
+> the KB doc-set to the **project's domain** instead of forcing a fixed software taxonomy,
+> and must derive everything it can from the **existing source** (brownfield-first), using
+> the human only to resolve what the source cannot settle. The docs it produces serve **two
+> audiences at once** — junior humans and AI agents.
+
+- **FR-37 (generic core dimension spine).** The doc-set MUST derive from a **domain-agnostic
+  dimension/concern spine** — the universal questions any digital deliverable must answer
+  about itself (what it is/does, what it is made of, how the parts connect, what it is built
+  with, conventions, vocabulary, deliverables/data/contracts, quality, risk, shipping/
+  operation, decisions; plus the cross-cutting **stakeholders/concerns** meta that informs the
+  spine but is captured **interview-side, not as a KB doc**) — grounded in established
+  documentation standards (arc42, C4, IEEE 1016, ISO/IEC/IEEE 42010, ADR). The current concern model (C0–C9) is the
+  **software rendering** of this spine; the spine itself is project-type-agnostic. Project-
+  management frameworks (PMBOK, PRINCE2, Scrum) document **governance**, which maps to AID's
+  **pipeline artifacts** (REQUIREMENTS/SPEC/PLAN/tracking), **not** the KB. *(generalizes
+  FR-13; extends the concern model in `concern-model.md`.)*
+- **FR-38 (domain classification from source).** Discovery MUST **establish the project's
+  domain by analyzing the existing source** (project-index + repository content). When the
+  source is **decisive**, classify; when it is **insufficient, uncertain, or dubious**,
+  **query the user**. Domain is **measured-then-confirmed**, never declared from a static
+  `project.type`. *(distinct from the full-vs-lite triage, which is interview-side.)*
+- **FR-39 (doc-set = matrix-or-research, anchored + composable).** The confirmed domain MUST
+  resolve to a doc-set two ways: **fast path** — a shipped, curated **domain→doc-set matrix**
+  supplies the set; **fallback** — on a matrix miss (novel/hybrid), discovery **researches the
+  domain's documentation practices** and **synthesizes** a doc-set. Either way the set is
+  **anchored to the FR-37 spine** (every spine dimension covered or explicitly marked
+  conditional), doc-sets are **composable** (a hybrid project = the union of relevant
+  domain profiles over one spine — never mutually-exclusive buckets), and the result is
+  **proposed→confirmed** with the user. The legacy 15-doc seed becomes simply the **software
+  row** of the matrix. *(generalizes FR-17's path-scaling to domain-scaling; replaces the
+  hardcoded default seed with a matrix lookup.)*
+- **FR-40 (matrix lifecycle — no automatic cross-install propagation).** The matrix is a
+  **shipped, version-controlled `canonical/` artifact**, updated only through AID's normal
+  **release / human-curation** process. A project's confirmed/researched doc-set **persists
+  locally** (`.aid/settings.yml → discovery.doc_set`). Discovery MAY **emit a contribution-
+  candidate artifact** (a proposed matrix row + provenance) the user can choose to PR
+  upstream; promotion to the global matrix is a maintainer action. There MUST be **no
+  automatic install→canonical feedback** (no telemetry/phone-home). *(the install boundary is
+  one-directional: canonical → user.)*
+- **FR-41 (self-bootstrap discovery start).** `/aid-discover` MUST **self-create
+  `.aid/knowledge/STATE.md`** from its template when absent, rather than hard-failing on a
+  missing `/aid-config` init scaffold. Discovery becomes self-starting; init coupling is
+  removed. *(removes the `discover-preflight.sh` STATE-precondition hard-stop.)*
+- **FR-42 (source-first fill, user-as-gap-filler).** Discovery MUST **fill each document from
+  the existing source** first; the human is consulted **only** to fill gaps, resolve
+  uncertainties, answer questions, clarify, and confirm. *(reaffirms the brownfield + Q&A
+  doctrine for the domain-driven flow.)*
+- **FR-43 (dual-audience doc granularity, clarity & format).** KB documents MUST be **one
+  concern per document with minimal overlap** — big generic documents are **split into small,
+  focused ones** (small-and-focused is the default bias). Language MUST be **simple and clear,
+  targeting a junior professional** (clarity and comprehension over jargon/complexity). Format
+  MUST prefer **tables and bullet points and AVOID diagrams** in the KB `.md` documents (the
+  visual summary `kb.html` remains a separate, deliberately-visual artifact). *(strengthens
+  the three-force boundary rule in `concern-model.md`; sets an explicit reading-level + format
+  standard.)*
+- **FR-44 (dual-audience classification & layout).** Every KB document MUST be **classified
+  and formatted so an AI agent can consume it in-context** as well as a human: machine-parseable
+  **frontmatter** (concern/dimension, tier, audience, owner, tags), **named greppable sections**
+  for operational guidance, and **summary+pointer** chunks loadable selectively via `INDEX.md`.
+  Document **layout MUST be: frontmatter → index → content → change log (always last)**.
+  *(extends the f001 frontmatter/audience axis + `tier-model.md` + the named-operational-section
+  model into an enforced standard checked by the review panel's Anatomy mandate.)*
+
 ## 6. Non-Functional Requirements
 
 > Quality attributes and **the budgets FR-23 references** (the cost/wall-clock/determinism
@@ -901,6 +967,13 @@ They are indirect consumers whose output quality is bounded by KB quality.
   first-class doc structure), and the recon triage with the **brownfield-small +
   brownfield-large** generation paths **plus greenfield detection + signpost** (FR-20/FR-21:
   greenfield detect/signpost and the two brownfield generation paths are all Must).
+- **Must (feature-014 — domain-driven discovery + dual-audience authoring):** the
+  domain-agnostic generic core spine (FR-37), source-driven domain classification with
+  user-on-uncertainty (FR-38), the matrix-or-research doc-set anchored + composable (FR-39),
+  the matrix lifecycle with no auto cross-install propagation (FR-40), self-bootstrap
+  discovery start (FR-41), source-first fill (FR-42), and the dual-audience authoring
+  standard — single-concern small docs, junior-clear language, tables/bullets-no-diagrams,
+  machine-consumable classification, frontmatter→index→content→changelog layout (FR-43, FR-44).
 - **Should (keep it fresh + clean):** per-doc staleness + change-triggered flagging (FR-5,
   FR-6, FR-7, FR-8), `aid-update-kb` + gap capture (FR-27, FR-28), `aid-ask` rename (FR-26),
   housekeep↔update-kb boundary (FR-33), closure-as-standing-invariant (FR-34),

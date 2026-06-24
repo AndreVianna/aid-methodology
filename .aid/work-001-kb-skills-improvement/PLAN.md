@@ -160,6 +160,36 @@ consume settled contracts.
 - **Depends on:** delivery-001, delivery-007, delivery-008
 - **Priority:** Should
 
+### delivery-010: Domain-Driven Discovery (+ dual-audience authoring)
+
+- **What it delivers:** generalizes `/aid-discover` beyond software to **any digital work**
+  (feature-014, FR-37–FR-44). Adds (1) a **domain-agnostic generic-core dimension spine**
+  (standards-grounded -- arc42/C4/IEEE1016/ISO42010/ADR; the C0-C9 concern model becomes its
+  *software rendering*); (2) **source-driven domain classification** (brownfield-first;
+  decisive source classifies, uncertainty asks the user); (3) **doc-set via a curated
+  domain->doc-set matrix with a research fallback** (anchored to the spine, composable for
+  hybrids, proposed->confirmed; today's 15-doc seed = the matrix's *software row*); (4) the
+  **matrix lifecycle** (ships in `canonical/`, local per-project persistence, optional
+  PR-candidate emit, NO automatic install->canonical feedback); (5) **self-bootstrap STATE**
+  (discovery self-creates `STATE.md`, no init precondition); (6) **source-first fill,
+  user-as-gap-filler**; and (7) the **dual-audience authoring standard** -- single-concern
+  small docs, junior-clear language, tables/bullets-no-diagrams, machine-consumable
+  classification, `frontmatter->index->content->changelog` layout -- wired into kb-authoring +
+  templates + generation prompts and **enforced by the review panel's Anatomy mandate**.
+- **Features:** feature-014 (domain-driven, source-first KB discovery + dual-audience authoring)
+- **Depends on:** delivery-001 (extends f003 doc model + f004 concept spine + f005 panel),
+  delivery-004 (recon/paths -- the domain classifier is the source-driven sibling; Step 0f
+  reconciliation), delivery-005 (act-back panel -- the Anatomy mandate enforces the standard)
+- **Priority:** Must
+
+> **Note (extend, don't re-spec):** f014 **generalizes** f004's concept model into the
+> domain-agnostic spine, **rewires** the front of GENERATE (domain-classify -> matrix-or-
+> research -> propose->confirm) in place of the fixed-seed Step 0d, and **extends** f003's doc
+> model with the dual-audience authoring standard the f005 panel enforces. `synth_default_seed`
+> is retained as the matrix's software-row generator (byte-stable for existing tests).
+> **Deferred to a follow-on:** full downstream decoupling of `aid-summarize` section-templates
+> + explicit `doc.md § Section` lookups from fixed filenames.
+
 ## Cross-Cutting Risks
 
 > **Retired R1 (greenfield scope-split).** The original R1 tracked the f006/f012
@@ -401,4 +431,31 @@ delivery: 009
 wave 1: task-053
 wave 2: task-054
 wave 3: task-055
+```
+
+### delivery-010 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-056 | delivery-001 (base: f003 doc model + f004 concept spine) |
+| task-057 | task-056 |
+| task-058 | task-056, delivery-004 (recon/paths -- Step 0f reconciliation) |
+| task-059 | task-057, task-058 |
+| task-060 | — |
+| task-061 | task-056, delivery-005 (act-back panel -- Anatomy mandate) |
+| task-062 | task-059, task-060, task-061 |
+| task-063 | task-062 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-056, task-060 |
+| task-057, task-058, task-061 |
+
+```wave-map
+delivery: 010
+wave 1: task-056, task-060
+wave 2: task-057, task-058, task-061
+wave 3: task-059
+wave 4: task-062
+wave 5: task-063
 ```
