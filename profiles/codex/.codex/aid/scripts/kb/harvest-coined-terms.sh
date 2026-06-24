@@ -556,13 +556,31 @@ HISTORY_TERMS=$(mktemp)
 trap 'rm -f "$DENYLIST_FILE" "$TERMS_FILE" "$COMMENTS_FILE" "$HISTORY_FILE_TMP" "$HISTORY_TERMS"' EXIT
 
 if git rev-parse --git-dir >/dev/null 2>&1; then
-  # Git tree: harvest from commit subjects and bodies
-  git log --format='%s%n%b' -n 500 2>/dev/null > "$HISTORY_FILE_TMP" || true
+  # Git tree: harvest from commit subjects and bodies.
+  # Strip commit-trailer lines and bot-signature lines before harvesting so that
+  # model names (Claude Sonnet, Claude Opus), author names, session hashes, and
+  # the "Generated with" bot signature do not dominate the ranked output.
+  # Excluded prefixes (case-insensitive):
+  #   Co-Authored-By: / Co-authored-by:  -- authorship trailers
+  #   Claude-Session:                     -- session-URL trailers
+  #   Signed-off-by:                      -- DCO/SOB trailers
+  # Excluded substrings:
+  #   "Generated with"                    -- bot signature line
+  #   "<noreply@"                         -- email addresses in trailers
+  git log --format='%s%n%b' -n 500 2>/dev/null \
+    | grep -viE '^(co-authored-by|co-authored_by|claude-session|signed-off-by|reviewed-by):' \
+    | grep -viF 'Generated with' \
+    | grep -viF '<noreply@' \
+    > "$HISTORY_FILE_TMP" || true
 fi
 
 # Also include --history-file if supplied
 if [[ -n "$HISTORY_FILE" && -f "$HISTORY_FILE" ]]; then
-  cat "$HISTORY_FILE" >> "$HISTORY_FILE_TMP"
+  # Apply the same trailer-strip filter to externally-supplied history files
+  grep -viE '^(co-authored-by|co-authored_by|claude-session|signed-off-by|reviewed-by):' "$HISTORY_FILE" \
+    | grep -viF 'Generated with' \
+    | grep -viF '<noreply@' \
+    >> "$HISTORY_FILE_TMP" || true
 fi
 
 if [[ -s "$HISTORY_FILE_TMP" ]]; then

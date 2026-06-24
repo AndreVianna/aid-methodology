@@ -17,6 +17,7 @@ already
 also
 always
 and
+anthropic
 any
 append
 application
@@ -56,6 +57,7 @@ change
 channel
 check
 class
+claude
 clear
 client
 clone
@@ -183,6 +185,7 @@ number
 object
 open
 option
+opus
 order
 output
 override
@@ -237,6 +240,7 @@ set
 settings
 simple
 size
+sonnet
 source
 stack
 start

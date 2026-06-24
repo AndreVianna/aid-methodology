@@ -11,7 +11,7 @@ Step 0f signpost on a confirmed greenfield verdict; Steps 2-5, Step 5b, and REVI
 
 **Teach-back closure is the invariant exit on BOTH brownfield paths** (REQUIREMENTS FR-21). What
 scales across paths is the *machinery that reaches the exit* -- fan-out, closure depth, panel
-parallelism -- NOT the acceptance bar. The mandates (M1-M5) are invariant; only size scales.
+parallelism -- NOT the acceptance bar. The mandates (M1-M6) are invariant; only size scales.
 
 ---
 
@@ -24,11 +24,11 @@ parallelism -- NOT the acceptance bar. The mandates (M1-M5) are invariant; only 
 | **Concept acquisition** | n/a -- halts; no elicit-via-interview/specify route is built here (future interview-side work) | **Extract, single pass** -- harvest -> spine, grounded once; no batched loop | **Extract, full** -- mechanical harvest -> spine, concept-aware; full batched-parallel loop |
 | **f004 deep-dive fan-out** | n/a -- halts before fan-out | **OFF** -- ONE understand-pass `aid-researcher` over the full (small) source; no 4-way parallel fan-out | **ON** -- full 4-way parallel deep-dive fan-out (one `aid-researcher` per concern lane: architecture / analyst / integrator / quality) |
 | **f004 closure knobs** (`discovery.closure`) | n/a -- halts before closure | `max_rounds: 1`, `max_clean_passes: 1` -- short closure, single understand-pass | Defaults: `max_rounds: 4`, `max_clean_passes: 2` -- full batched-parallel loop, capped |
-| **f005 panel size** (`review.panel`) | n/a -- halts before review; never reaches the panel | `collapsed` -- ONE reviewer running M1/M2/M3/M5 as **separate sequential passes** (each mandate evaluated on its own, results concatenated, anti-P2 no-blending preserved) + ONE clean-context teach-back reviewer (M4); total 2 dispatches | `full` -- 5 parallel `aid-reviewer` dispatches, one per mandate |
-| **Review mandates** | n/a -- halts before review | All 5 (Correctness / Anatomy / Concept-closure / Teach-back / Calibration) -- **invariant** | All 5 -- **invariant** |
+| **f005 panel size** (`review.panel`) | n/a -- halts before review; never reaches the panel | `collapsed` -- ONE reviewer running M1/M2/M3/M5 as **separate sequential passes** (each mandate evaluated on its own, results concatenated, anti-P2 no-blending preserved) + ONE clean-context teach-back reviewer (M4) + ONE clean-context act-back reviewer (M6); total 3 dispatches | `full` -- 6 parallel `aid-reviewer` dispatches, one per mandate |
+| **Review mandates** | n/a -- halts before review | All 6 (Correctness / Anatomy / Concept-closure / Teach-back / Calibration / **Act-back**) -- **invariant** | All 6 -- **invariant** |
 | **Exit** | **Signpost** (GENERATE halts at Step 0f) | **Teach-back closure** (the invariant brownfield exit) | **Teach-back closure** (the invariant brownfield exit) |
 | **Starting KB** | None -- the signpost points to `/aid-interview` | Full anatomy (small) | Full anatomy (large) |
-| **Cost / wall-clock** | ~zero (one script pass + one message, then halt) | Low (single researcher pass, 2-dispatch panel, 1-round closure) | High (justified by project complexity) |
+| **Cost / wall-clock** | ~zero (one script pass + one message, then halt) | Low (single researcher pass, 3-dispatch panel, 1-round closure) | High (justified by project complexity) |
 
 ---
 
@@ -65,6 +65,8 @@ user's `.aid/settings.yml` `discovery.closure.token_budget` setting.
   downstream parameterization, not the classifier. Do not re-classify here.
 - `review.panel: collapsed` is a **brownfield-small-only** value. Greenfield never reaches the
   panel; brownfield-large always runs the full panel. There is no `panel: greenfield` value.
-- The teach-back mandate (M4) is a **separate clean-context dispatch on every brownfield path**,
-  even when `panel: collapsed` -- it cannot share context with the source-aware passes.
+- The teach-back mandate (M4) and act-back mandate (M6) are **each a separate clean-context
+  dispatch on every brownfield path**, even when `panel: collapsed` -- they cannot share context
+  with the source-aware passes. M4 and M6 may share a dispatch only if both are clean-context;
+  in practice dispatch them separately to keep their scratch ledgers independent.
 - Re-triage (next run) re-measures and re-confirms the path; this table is read fresh each run.
