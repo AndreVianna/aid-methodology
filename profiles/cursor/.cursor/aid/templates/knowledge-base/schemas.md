@@ -7,7 +7,7 @@ sources:
   - src/                        # schema definitions and data model source
   - {path/to/migrations}        # database migrations
   - {path/to/schema/files}      # e.g., *.prisma, schema.graphql, *.json schema
-tags: [schemas, data-model, persistence, migrations]
+tags: [C5, schemas, data-model, persistence, migrations]
 see_also: [architecture.md, pipeline-contracts.md]
 owner: architect
 audience: [developer, architect]
@@ -24,6 +24,18 @@ changelog:
 > **Source:** aid-discover (Phase 1)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Database](#database)
+- [Schema](#schema)
+- [Relationships](#relationships)
+- [Migrations](#migrations)
+- [Soft Deletes](#soft-deletes)
+- [Notable Data Patterns](#notable-data-patterns)
+- [Data Volume](#data-volume)
+- [Contracts](#contracts)
+- [Change Log](#change-log)
 
 ---
 
@@ -61,21 +73,22 @@ changelog:
 
 ## Relationships
 
-> Express relationships in plain English before any diagrams.
+> Express relationships in plain text. Per kb-authoring P10, use the text form below
+> rather than diagrams (diagrams are not grepped and degrade outside a browser).
 
 ```
-{Entity A} 1 ──── * {Entity B}       (one A has many B)
-{Entity B} * ──── 1 {Entity C}       (many B belong to one C)
-{Entity A} * ──── * {Entity D}       (many-to-many via {junction table})
+{Entity A} 1 ---- * {Entity B}       (one A has many B)
+{Entity B} * ---- 1 {Entity C}       (many B belong to one C)
+{Entity A} * ---- * {Entity D}       (many-to-many via {junction table})
 ```
 
-**Entity-Relationship summary:**
-```mermaid
-erDiagram
-    ENTITY_A ||--o{ ENTITY_B : "has many"
-    ENTITY_B }o--|| ENTITY_C : "belongs to"
-    ENTITY_A }o--o{ ENTITY_D : "through junction_table"
-```
+**Entity-relationship summary table:**
+
+| Entity | Relates to | Cardinality | Via |
+|--------|-----------|-------------|-----|
+| {Entity A} | {Entity B} | one-to-many | direct FK |
+| {Entity B} | {Entity C} | many-to-one | direct FK |
+| {Entity A} | {Entity D} | many-to-many | {junction_table} |
 
 ---
 
@@ -139,7 +152,7 @@ erDiagram
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

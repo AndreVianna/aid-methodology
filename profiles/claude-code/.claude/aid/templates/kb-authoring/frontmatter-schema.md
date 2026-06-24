@@ -7,9 +7,34 @@
 
 Every KB document MUST begin with a YAML frontmatter block delimited by `---` markers.
 Per [principles.md](principles.md) P6, **the frontmatter block is partially exempt from
-review** — the required new fields (`objective:`, `summary:`, `sources:`) are graded for
+review** -- the required new fields (`objective:`, `summary:`, `sources:`) are graded for
 presence and shape by the lint (see P6 carve-out), while all other fields (legacy and
 optional) classify the doc and provide informational metadata without affecting the grade.
+
+## Dual-audience classification
+
+The frontmatter fields below support the **dual-audience authoring standard**
+([principles.md](principles.md) P10): machine-parseable classification lets an AI agent
+select the exact right doc from INDEX without reading every doc; human-readable fields
+let the INDEX render a useful filter table.
+
+| Field | Purpose | Who uses it |
+|-------|---------|-------------|
+| `audience:` | Who the doc is written for (e.g. `[developer, architect]`) | INDEX filter; boundary-split signal |
+| `owner:` | The accountable role for freshness (e.g. `architect`) | Freshness tracking (f007); boundary rule |
+| `tags:` | Concrete project keywords (e.g. `[auth, jwt]`) | INDEX tag column; agent retrieval |
+| `objective:` | One-line noun-phrase purpose | INDEX Objective column; agent routing |
+| `summary:` | One-sentence scope | INDEX Summary column; agent routing |
+
+Together these five fields constitute the **dual-audience classification** an agent uses
+to load exactly the relevant doc into context and a junior human uses to find the right
+doc from INDEX without reading everything.
+
+**Note on concern/dimension classification:** concern alignment (which spine dimension
+C0-C9 / D a doc covers) is declared as a `tags:` value by convention (e.g. `tags:
+[C2, modules, dependencies]`) rather than a dedicated field. The Anatomy mandate
+checks that every doc is anchored to at least one spine dimension via the concern table
+in [concern-model.md](concern-model.md); the `tags:` field carries the machine-readable label.
 
 ## Canonical schema
 
@@ -390,8 +415,23 @@ A project may define `.aid/knowledge/.review-checklist.md` (gitignored by defaul
 to add project-specific lint rules beyond the canonical defaults. See
 [review-rubric.md](review-rubric.md) for the format.
 
+## Doc layout convention
+
+The frontmatter block is always **Position 1** in the required doc layout:
+
+| Position | Section |
+|----------|---------|
+| 1 | Frontmatter (this block) |
+| 2 | Title heading |
+| 3 | Index / table of contents |
+| 4 | Content sections |
+| 5 | `## Change Log` (always last) |
+
+See [principles.md](principles.md) P10 for the full layout specification. The Anatomy
+mandate checks this order: frontmatter first, Change Log last, index present.
+
 ## See also
 
-- [principles.md](principles.md) — P6 (frontmatter carve-out + partial exemption) and P5 (mark generated files)
+- [principles.md](principles.md) — P6 (frontmatter carve-out + partial exemption), P5 (mark generated files), P10 (dual-audience authoring standard + layout)
 - [tier-model.md](tier-model.md) — T2 structural facts go in `contracts:`
 - [review-rubric.md](review-rubric.md) — how the reviewer uses kb-category + source to pick a rubric; `[FM-MISSING]` / `[FM-INVALID]` tag definitions

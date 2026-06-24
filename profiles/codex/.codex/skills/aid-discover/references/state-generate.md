@@ -50,10 +50,178 @@ This is a deterministic shell script — no LLM dispatch. It runs fast (typicall
 
 If the index fails (e.g., empty repo, permission errors): log a warning and continue. Sub-agents will fall back to direct enumeration.
 
-### Step 0d: Propose & Confirm Doc-Set
+### Step 0cx: Classify Domain
+
+Classify the project's **domain** from the project index and harvested source signals produced
+by Step 0c. This runs immediately after the index is ready and **before** the doc-set proposal
+(Step 0d) because the confirmed domain is the anchor that drives the doc-set lookup.
+
+Print: `[0cx] Classifying project domain from source signals...`
+
+#### Idempotent re-entry
+
+Before measuring, check whether `.aid/knowledge/STATE.md` already has a `## Discovery Domain`
+section from a prior run:
+
+```bash
+prior_domain="$(grep -m1 '^\*\*Domain:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
+  | sed 's/^\*\*Domain:\*\* *//' | tr -d '[:space:]')"
+prior_domain_status="$(grep -m1 '^\*\*Confirmed:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
+  | sed 's/^\*\*Confirmed:\*\* *//' | tr -d '[:space:]')"
+```
+
+- **Prior domain confirmed** (`prior_domain` non-empty and `prior_domain_status` is `yes`):
+  Re-read the source signals and check whether the measured domain is consistent with the prior
+  confirmed domain. If consistent, show "was `<prior_domain>`; still measures `<prior_domain>`"
+  and ask the user to re-confirm or change it. If the fresh measurement differs, present the
+  diff ("was `<prior_domain>`; now measures `<new_domain>`") and pause for user decision. This
+  is idempotent re-entry — the domain is re-measured every run; the user is always the final
+  authority.
+- **No confirmed domain** (first run, or prior run paused before user confirmed): proceed to
+  the signal-read step below.
+
+#### Signal-read step
+
+Read `.aid/generated/project-index.md` — the file inventory of languages, directory shapes,
+notable files, and candidate concepts produced in Step 0c. Scan for **domain signals**:
+
+| Signal category | Examples | Domain hint |
+|---|---|---|
+| Primary language + framework markers | `package.json` + `src/` + `*.ts` | software (web / CLI / lib) |
+| ML / data artefacts | `*.ipynb`, `requirements.txt` + model dirs, `data/`, `*.csv` | data-ml |
+| Docs-only tree | only `.md` / `.rst` / `.txt` — no source files | content / research |
+| Design assets | `*.fig`, `*.sketch`, `*.xd`, `assets/`, `design/` dirs | design |
+| Ops / infrastructure | `Dockerfile`, `*.tf`, `*.yml` (CI/infra), `k8s/` | ops |
+| Methodology / tooling | skill scripts, templates, prompt files, agent definitions | methodology-tooling |
+| Mixed signals (2+ strong categories) | source + heavy docs + model notebooks | hybrid — list components |
+
+Domain labels to use (pick the most precise that fits; use `hybrid:<A>+<B>` for composites):
+
+```
+software-cli | software-web | software-lib | software-api | software-mobile
+data-ml | content | research | design | ops | methodology-tooling | hybrid:<A>+<B>
+```
+
+#### Decision branch
+
+After reading the signals:
+
+- **Decisive** — one domain label is clearly supported by the signals (e.g. a Go CLI repo with
+  no ML artefacts, or a docs-only `.md` tree with no source):
+  - Classify the domain.
+  - Write the `## Discovery Domain` block to `.aid/knowledge/STATE.md` (see "Record format"
+    below) with `**Confirmed:** no` and your measured label.
+  - Present the classification to the user and ask for confirmation (see "Present the
+    classification" below).
+  - **PAUSE-FOR-USER-DECISION** — stop after presenting.
+
+- **Insufficient / uncertain / dubious** — signals are absent, contradictory, or too sparse to
+  classify with confidence (e.g. an empty repo, a repo with equal-weight signals in two
+  unrelated domains, or a repo whose purpose is genuinely unclear from the files alone):
+  - Write a **Required Q&A entry** to `.aid/knowledge/STATE.md ## Q&A (Pending)` in the
+    existing Q&A format:
+    ```markdown
+    ### Q{N}
+    - **Category:** Domain
+    - **Impact:** Required
+    - **Status:** Pending
+    - **Context:** {describe which signals were read and why they are insufficient or contradictory}
+    - **Suggested:** {best-guess domain if any, or "—"}
+    - **Question:** What is the primary domain of this project? Use one of the domain labels
+      listed in Step 0cx (or describe a composite using `hybrid:<A>+<B>`).
+    ```
+  - Print: `[0cx] Domain uncertain -- Required Q&A written to STATE.md. Resolve Q{N} then
+    re-run /aid-discover.`
+  - **PAUSE** at the existing Q&A gate. Do not proceed to Step 0d until the Q&A is answered
+    and a domain is confirmed.
+  - On the resume run (after the user answers the Q&A), read the user's answer as the domain,
+    write the `## Discovery Domain` block (confirmed), and chain to Step 0d.
+
+Never auto-finalize. Classification is always **measured-then-confirmed**.
+
+#### Present the classification (decisive path)
+
+Display the measured signals and proposed domain:
+
+```
+Domain classification
+---------------------
+  Source signals read:
+    languages   : TypeScript, Shell
+    notable files: package.json, tsconfig.json, .github/workflows/*.yml
+    dir shapes  : src/, tests/, docs/
+    concepts    : CLI, install, aid-*, skill, ...
+
+  Proposed domain: software-cli
+  Rationale: TypeScript + package.json + CLI command structure + no ML/data artefacts
+
+[1] Confirm  software-cli  (as proposed)
+[2] Override <type a different label>
+```
+
+> **Domain proposal ready.**
+> - Type **`confirm`** (or press Enter) to accept as proposed.
+> - Or type the domain label you want to use instead (e.g. `methodology/tooling` or
+>   `hybrid:software-cli+methodology/tooling`).
+
+**This is a genuine PAUSE-FOR-USER-DECISION.** Stop here after presenting. The user's choice
+(not the source signals alone) is the authoritative domain; an override is recorded as such.
+
+**Advance:** Stop here. Re-run `/aid-discover` after confirming the domain to continue to
+Step 0d.
+
+#### On confirm (resume path) -- write the record
+
+When the user re-runs `/aid-discover` and the session resumes after the pause:
+
+1. Read the user's response:
+   - **`confirm` or default:** use the proposed domain label.
+   - **Override:** use the user-supplied label verbatim.
+
+2. Write/update `## Discovery Domain` in `.aid/knowledge/STATE.md`. Overwrite the section if
+   it already exists (re-entry is always an overwrite):
+
+```markdown
+## Discovery Domain
+
+- **Domain:** software-cli
+- **Measured signals:** languages=TypeScript/Shell, notable-files=package.json/tsconfig.json, dirs=src/tests/docs
+- **Proposed:** software-cli (TypeScript + package.json + CLI structure + no ML/data artefacts)
+- **Decision rationale:** measured -> proposed software-cli -> confirmed
+- **Confirmed:** yes
+- **Re-classified:** <date> (run N)
+```
+
+   (`**Override:** yes` is added when the user picked a domain other than the proposed one,
+   mirroring the `## Discovery Triage` override record. `**Re-classified:**` records the
+   date/run-number so consecutive re-runs are traceable.)
+
+3. Print: `[0cx] Domain confirmed: <domain>. Proceeding to doc-set proposal.`
+
+4. **CHAIN -> Step 0d** — the confirmed domain is the anchor the doc-set step consumes.
+
+#### Relationship to Step 0f (path-triage)
+
+Domain (Step 0cx) and path (Step 0f) are the **two source-measured, human-confirmed
+classifications** at GENERATE's front. Both are measured from the same source signals, both
+are proposed-then-confirmed, and both write a trackable record to `STATE.md`. They serve
+different purposes:
+
+| Classification | Measured from | Confirmed record | Drives |
+|---|---|---|---|
+| Domain (Step 0cx) | languages, dir shape, notable files, concepts | `## Discovery Domain` | doc-set matrix lookup (Step 0d) |
+| Path (Step 0f) | source-file count, LOC, dirs, concept count | `## Discovery Triage` | fan-out depth (Steps 1-5) |
+
+Step 0f path-triage **stays in discovery** (resolved; delivery-010 STATE Q1 — see §7 of
+feature-014/SPEC.md). Do not re-decide this boundary.
+
+### Step 0d: Propose & Confirm Doc-Set (matrix-or-research)
 
 **PAUSE-FOR-USER-DECISION** (contracted checkpoint per SPEC feature-004 §3.1 and
 `.codex/aid/templates/state-machine-chaining.md`).
+
+Uses the **confirmed domain** from Step 0cx as the anchor. Do not enter Step 0d until the
+`## Discovery Domain` block in `.aid/knowledge/STATE.md` carries `**Confirmed:** yes`.
 
 #### Idempotent re-entry
 
@@ -64,44 +232,129 @@ raw="$(bash .codex/aid/scripts/config/read-setting.sh \
         --path discovery.doc_set 2>/dev/null || true)"
 ```
 
-- **Prior set exists (`raw` non-empty):** Skip the inference step below — show the existing set as a diff against the default seed and ask the user to confirm or edit it. This is idempotent re-entry.
-- **No prior set (`raw` empty):** Proceed to the inference step.
+- **Prior set exists (`raw` non-empty):** Skip the resolution steps below — show the existing set as a diff against the default seed and ask the user to confirm or edit it. This is idempotent re-entry.
+- **No prior set (`raw` empty):** Proceed to the resolution step.
 
-#### Inference step (first run only)
+#### Resolution step — matrix-or-research (first run only)
 
-Read `.aid/generated/project-index.md` — a **file inventory** (paths, sizes, languages, directory tree) built in Step 0c. This is NOT a project-type label. Use it to **infer** a proposed doc-set as: default seed + deltas (add / remove / rename / repurpose).
+Read the confirmed domain from `## Discovery Domain` in `.aid/knowledge/STATE.md`:
 
-Inference heuristics (agent judgment — not a classifier, no seed-files, no archetype fixtures):
+```bash
+confirmed_domain="$(grep -m1 '^\*\*Domain:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
+  | sed 's/^\*\*Domain:\*\* *//' | tr -d '[:space:]')"
+```
 
-- **No test directories and no test-framework config** (e.g., no `package.json`/`pytest.ini`/`*.test.*`) → propose marking `test-landscape.md` as `conditional` or dropping it from the required set.
-- **No external service integrations, no API surface** → propose `integration-map.md` as `conditional`.
-- **Docs-only or research tree** (no source files, only `.md`/text) → propose a research-oriented set: drop `technology-stack.md`, `schemas.md`, `coding-standards.md`; add any project-specific docs evident from the file tree.
-- **Non-trivial CI/CD configuration present** → ensure `infrastructure.md` is `required`.
-- **Custom doc evident in the tree** (e.g., a docs sub-directory with a non-standard name) → propose adding it with an appropriate existing agent as owner.
-- **When uncertain, prefer the default seed.** The user-confirm step is the safety net; a conservative proposal is always acceptable.
+Then resolve the doc-set by the following ordered decision branches.
 
-The inferred deltas are expressed relative to the default seed (as defined by `synth_default_seed`). No static pick-list, no archetype taxonomy.
+---
+
+**Branch A — Matrix hit (fast path)**
+
+Look up `.codex/aid/templates/kb-authoring/domain-doc-matrix.md` for a row matching
+`confirmed_domain`. The matrix contains curated rows for:
+`software-cli`, `software-web`, `data-ml`, `content`, `research`, `design`, `ops`,
+`methodology-tooling`.
+
+**Normalize `confirmed_domain` before matching** (so a classifier label always meets the
+matrix's row keys): lowercase it, replace any `/` with `-` (e.g. `data/ml` -> `data-ml`,
+`methodology/tooling` -> `methodology-tooling`), and map an unseeded `software-*` variant
+(`software-lib` / `software-api` / `software-mobile`) to `software-web` (the general software
+row -- its required core is the same byte-stable 15-doc seed). Record any such normalization
+in the provenance note.
+
+- **Hit** — a row exists for exactly the normalized `confirmed_domain`: read that row's doc list (all
+  required + conditional entries). Record provenance `curated`. Proceed to **Compose &
+  anchor-check** below.
+
+- **Miss** — no row for `confirmed_domain` (a novel domain, or a `hybrid:<A>+<B>` composite
+  where at least one component is not in the matrix): proceed to **Branch B**.
+
+---
+
+**Branch B — Research fallback (matrix miss / novel / hybrid)**
+
+When no curated row exists, research the domain's documentation practices and synthesize a
+doc-set. This is a judgment step (not a script):
+
+1. **For a `hybrid:<A>+<B>` domain where both components have curated rows:** compose directly
+   from those rows using the hybrid composition rule (see below). Skip the research narrative;
+   record provenance `curated` (both source rows are curated). Proceed to **Compose &
+   anchor-check**.
+
+2. **For a novel domain (no curated row, not decomposable into curated components):** research
+   the domain's **product/deliverable documentation practices** — what documents practitioners
+   in this domain conventionally produce to describe their work. For each synthesized doc:
+   - assign a `filename` (descriptive `.md` basename under `.aid/knowledge/`),
+   - map it to exactly one spine dimension (C0–C9, D, or meta) from
+     `.codex/aid/templates/kb-authoring/domain-doc-matrix.md` §"The dimension spine",
+   - assign the nearest-fit `owner` from the `aid-researcher` enum,
+   - assign `presence` (`required` or `conditional[:<when>]`).
+   Record provenance `auto-researched`.
+
+Print: `[0d] No curated matrix row for domain '<confirmed_domain>' — synthesizing doc-set from domain research.`
+
+---
+
+**Compose & anchor-check**
+
+For **hybrid domains** (matrix hit or research, when the domain label is `hybrid:<A>+<B>`):
+compose the relevant rows using the hybrid composition rule:
+
+| Step | Action |
+|------|--------|
+| 1. Union | Lay all docs from all component rows onto the single 11-dimension spine. |
+| 2. Dedupe by dimension | When two rows realize the same spine dimension, propose the better-fit doc. When the project genuinely needs both views (e.g. a C5 data-schema doc and a C5 API-contract doc), keep a deliberate split under the dimension (the three-force boundary rule). |
+| 3. Promote presence | If a dimension is `required` in one row and `conditional` in another, the composed result is `required`. |
+| 4. Walk the spine | After composition, confirm every dimension is covered by >=1 doc or explicitly conditional. |
+
+For **single-domain** outcomes: the anchor-check is simpler — walk the 11 spine dimensions
+and confirm each is covered by >=1 doc in the proposed set, or explicitly conditional.
+
+The coverage invariant (FR-37): every spine dimension must be covered or explicitly conditional
+in the final proposed set, regardless of provenance.
+
+---
 
 #### Present the proposal
 
-Display the proposed doc-set as a **diff against the default seed**:
+Display the proposed doc-set as a **diff against the default seed** (the 15-doc
+`synth_default_seed` output), with the domain and provenance header:
 
 ```
-Proposed doc-set (diff vs. default seed)
-─────────────────────────────────────────
-  (no change)  architecture.md           aid-researcher-architecture    required
-  (no change)  technology-stack.md       aid-researcher-architecture    required
-  (no change)  module-map.md             aid-researcher-analyst         required
+Proposed doc-set for domain: <confirmed_domain>   (provenance: <curated|auto-researched>)
+──────────────────────────────────────────────────────────────────────────────────────────
+  (no change)  architecture.md             aid-researcher-architecture    required
+  (no change)  technology-stack.md         aid-researcher-architecture    required
+  (no change)  module-map.md               aid-researcher-analyst         required
   ...
-- (drop)       test-landscape.md         aid-researcher-quality         required
-+ (add)        research-notes.md         aid-researcher-analyst         required
+- (drop)       schemas.md                  aid-researcher-analyst         required
++ (add)        data-schemas.md             aid-researcher-analyst         required
++ (add)        data-pipeline.md            aid-researcher-integrator      required
+  (conditional) decisions.md              aid-researcher-architecture    conditional:project has recorded rationale-bearing decisions
 ```
 
 (Omit unchanged lines if the list is long; a summary line "N unchanged" is acceptable.)
 
+Include the spine-coverage summary (one line per dimension):
+
+```
+Spine coverage:
+  C0 technology/medium     : technology-stack.md (required)
+  C1 build & shape         : architecture.md (required)
+  C2 parts & connections   : data-pipeline.md (required)
+  C3 conventions           : coding-standards.md (required)
+  C4 vocabulary            : domain-glossary.md (required)
+  C5 data & contracts      : data-schemas.md (required)
+  C6 quality & checking    : evaluation-landscape.md (required)
+  C7 risk & debt           : tech-debt.md (required)
+  C8 shipping & operation  : infrastructure.md (required)
+  C9 what it does          : feature-inventory.md (required)
+  D  decisions & rationale : decisions.md (conditional)
+```
+
 Then ask the user to confirm or edit:
 
-> **Doc-set proposal ready.** Review the diff above.
+> **Doc-set proposal ready** (domain: `<confirmed_domain>`, provenance: `<curated|auto-researched>`). Review the diff and spine coverage above.
 > - Type **`confirm`** (or press Enter) to accept as proposed.
 > - Or provide edits in the pipe-delimited format: `filename|owner|presence[:when]` — one entry per line — and the confirmed set will be written to `.aid/settings.yml`.
 
@@ -141,7 +394,36 @@ When the user re-runs `/aid-discover` and the session resumes after the pause:
    N="$(echo "$declared_filenames" | grep -c .)"
    ```
 
-4. **CHAIN → Step 1** with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
+4. **Matrix lifecycle — optional candidate artifact (FR-40):**
+
+   When the confirmed provenance is `auto-researched` (the research fallback ran), optionally
+   emit `.aid/generated/domain-doc-candidate.md` so the user can manually PR the row into the
+   canonical matrix. This is **opt-in and informational only**; it is not required for the
+   skill to proceed.
+
+   The artifact, if emitted, has this shape:
+
+   ```markdown
+   # Domain doc-set candidate: <confirmed_domain>
+
+   > Auto-generated by /aid-discover on <date>. Provenance: auto-researched.
+   > Review and submit as a PR to .codex/aid/templates/kb-authoring/domain-doc-matrix.md
+   > if proven useful. There is NO automatic install->canonical feedback; this file is a
+   > manual contribution aid only.
+
+   | filename | spine-dimension | owner | presence |
+   |----------|-----------------|-------|----------|
+   | ... | ... | ... | ... |
+   ```
+
+   **No automatic install->canonical path exists.** The matrix in `canonical/` is changed only
+   by release/human curation. This emit step is the only mechanism for surfacing a researched
+   row upstream; it closes by human PR, not by the skill.
+
+   When the provenance is `curated` (matrix hit), skip the candidate emit — the row is already
+   in the canonical matrix.
+
+5. **CHAIN → Step 1** with the confirmed set driving the data-driven dispatch (Steps 2-5 §2.5).
 
 ### Step 0e: Harvest Coined Terms
 
@@ -170,6 +452,12 @@ block the fan-out on a harvest failure.
 > Step 5b. Both partitions feed the closure loop term universe and f005's teach-back gate.
 
 ### Step 0f: Recon Classify + Triage (path decision)
+
+> **Note:** Step 0f is the **path** classification (greenfield / brownfield-small / large) —
+> the second of the two source-measured, human-confirmed classifications at GENERATE's front.
+> The **domain** classification (Step 0cx) ran earlier. Together they form the measurement
+> pair that anchors the entire fan-out: domain drives the doc-set; path drives the depth.
+> Step 0f is unchanged; this note documents its place in the pair.
 
 Run the deterministic recon pre-pass after Step 0e (RM4 is now available) and before Step 1
 (the fan-out is what the path scales -- decide before dispatching any agent).

@@ -5,6 +5,55 @@ and passes it as the prompt to each subagent.
 
 ---
 
+## Authoring Standard (applies to ALL generation agents)
+
+Every KB document you produce MUST comply with the **dual-audience authoring standard**
+(`.agent/aid/templates/kb-authoring/principles.md` P10). The rules are:
+
+**Granularity**
+- One concern per document. Do not mix concerns in a single document.
+- Small and focused is the default. If a concern is too large for one document, produce
+  per-subsystem or per-aspect documents under the same concern.
+
+**Language**
+- Write for a junior professional. Use plain, clear, concrete language. Avoid jargon
+  where plain words work.
+- Active voice, short sentences, one idea per sentence.
+- Define project-specific terms in `domain-glossary.md` on first use.
+
+**Format**
+- Use **tables and bullet lists** as the primary structure for reference material.
+- **Avoid diagrams** (Mermaid blocks, ASCII art, SVG). Diagrams cannot be grepped and
+  degrade outside a browser. Use plain-text representations instead:
+  - For module dependencies: `ModuleA -> ModuleB` arrow notation.
+  - For relationships: a table with columns (Entity, Relates to, Cardinality, Via).
+  - For data flow: a numbered or bulleted sequence list.
+- Code examples (` ``` ` blocks showing actual code or config) are NOT diagrams and are
+  permitted.
+- Named greppable sections for operational guidance (Conventions, Invariants, Gotchas,
+  Contracts) as defined in `concern-model.md`.
+
+**Dual-audience classification**
+- Every document MUST have complete frontmatter with at least: `kb-category:`,
+  `source:`, `objective:`, `summary:`, `sources:`, `audience:`, `owner:`, `tags:`.
+- `tags:` MUST include the concern ID (e.g. `C1`, `C2`, `C0`, etc.) for the spine
+  dimension the document covers.
+
+**Layout (every document, no exceptions)**
+
+| Position | Section |
+|----------|---------|
+| 1 | Frontmatter (YAML `---` block) |
+| 2 | Title (`# Doc Title`) |
+| 3 | Index / table of contents (list of sections, required when the doc has more than 3 sections) |
+| 4 | Content sections |
+| 5 | `## Change Log` (always last) |
+
+The `## Change Log` section MUST be the last section in every document. Do not place
+content after it.
+
+---
+
 ## Custom-Doc Runtime Extension (§2.6)
 
 When an agent's target list (computed from the declared doc-set via the `owns-<agent>`
@@ -35,6 +84,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ## Scout
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Analyze this project's repository structure and any external documentation to produce TWO
 > foundation documents:
 >
@@ -62,6 +115,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ## Architect
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/architecture.md and
 > .aid/knowledge/technology-stack.md.
@@ -111,6 +168,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ## Analyst
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/module-map.md,
 > .aid/knowledge/coding-standards.md, and .aid/knowledge/schemas.md.
@@ -149,6 +210,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ## Integrator
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/pipeline-contracts.md,
 > .aid/knowledge/integration-map.md, and .aid/knowledge/domain-glossary.md.
@@ -194,6 +259,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ## Quality
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/test-landscape.md,
 > .aid/knowledge/tech-debt.md, and .aid/knowledge/infrastructure.md.

@@ -5,7 +5,7 @@ objective: Repository layout, top-level directory purposes, and file-inventory s
 summary: Read this to understand the on-disk organization of the project before navigating any subtree.
 sources:
   - .                           # repository root layout (tree-level structure)
-tags: [structure, layout, directories, files]
+tags: [C1, structure, layout, directories, files]
 see_also: [module-map.md, architecture.md]
 owner: architect
 audience: [developer, architect]
@@ -19,9 +19,18 @@ changelog:
 
 # Project Structure
 
-> **Source:** aid-discover (Phase 1 — Pre-scan)
+> **Source:** aid-discover (Phase 1 -- Pre-scan)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Repository Overview](#repository-overview)
+- [Directory Tree](#directory-tree)
+- [Key Files](#key-files)
+- [Detected Technologies](#detected-technologies)
+- [Documentation Found in Repository](#documentation-found-in-repository)
+- [Change Log](#change-log)
 
 ---
 
@@ -86,7 +95,7 @@ project-root/
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

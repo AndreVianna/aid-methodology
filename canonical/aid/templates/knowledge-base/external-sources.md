@@ -21,9 +21,16 @@ changelog:
 
 # External Sources
 
-> **Source:** aid-discover (Phase 1 — Pre-scan)
+> **Source:** aid-discover (Phase 1 -- Pre-scan)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ No External Sources}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Sources](#sources)
+- [Content Inventory](#content-inventory)
+- [Discrepancies](#discrepancies)
+- [Change Log](#change-log)
 
 ---
 
@@ -69,7 +76,7 @@ or add paths during Q&A.
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

@@ -8,7 +8,7 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** Matrix-or-research doc-set flow (rewire Step 0d) + matrix lifecycle (wave 3).

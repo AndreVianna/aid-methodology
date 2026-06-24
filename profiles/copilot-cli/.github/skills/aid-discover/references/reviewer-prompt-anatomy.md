@@ -88,6 +88,70 @@ The orchestrator inlines this output below at dispatch time:
    Missing required field = `[HIGH]` `[FM-MISSING]`. Invalid field value =
    `[HIGH]` `[FM-INVALID]`.
 
+### Authoring Standard checklist (dual-audience standard, principles.md P10)
+
+Apply to every Full Primary `.md` document. Skip `kb.html` entirely -- it is a
+visual-rendering artifact and the no-diagram rule does NOT apply to it.
+
+**Mechanical checks:**
+
+9. **Layout order** `[AUTHORING-LAYOUT]` — Verify the top-to-bottom order:
+   frontmatter block first, then title, then index/table-of-contents, then content
+   sections, then `## Change Log` last. A doc where content appears before the
+   frontmatter block, or where content follows the Change Log section, or where the
+   Change Log is absent = `[HIGH]` `[AUTHORING-LAYOUT]`.
+
+10. **Index present** `[AUTHORING-LAYOUT]` — A doc with more than 3 sections MUST have
+    a `## Contents` block (or equivalent table of contents) near the top, before the
+    first content section. A doc with more than 3 sections and no index =
+    `[MEDIUM]` `[AUTHORING-LAYOUT]`.
+
+11. **Change Log last** `[AUTHORING-LAYOUT]` — The `## Change Log` section (or equivalent
+    heading) MUST be the final section. Any section heading appearing after the Change
+    Log heading = `[HIGH]` `[AUTHORING-LAYOUT]`.
+
+12. **Required frontmatter fields** `[AUTHORING-FM]` — Each Full Primary doc MUST carry
+    `audience:`, `owner:`, and `tags:` in addition to the required `objective:`,
+    `summary:`, `sources:` checked by item 8 above. Missing any of these three additional
+    fields = `[MEDIUM]` `[AUTHORING-FM]`.
+
+13. **Concern tag in `tags:`** `[AUTHORING-FM]` — The `tags:` field SHOULD include a
+    concern ID (C0-C9 or D) identifying the spine dimension the doc covers (per
+    `concern-model.md`). A Full Primary doc with no concern tag in `tags:` =
+    `[MEDIUM]` `[AUTHORING-FM]`. **Exempt:** orientation/meta docs (`external-sources.md`,
+    `README.md`) carry no concern per `concern-model.md` and are NOT flagged.
+
+14. **Diagram absence** `[AUTHORING-DIAGRAM]` — The document body MUST NOT contain
+    Mermaid diagram blocks (` ```mermaid `) or ER diagram blocks (` ```erDiagram `).
+    Code examples (` ``` ` blocks without a language tag or with non-diagram language
+    tags) are NOT diagrams and are permitted. A found diagram block =
+    `[MEDIUM]` `[AUTHORING-DIAGRAM]`.
+
+**Judgment checks:**
+
+15. **Reading level** `[AUTHORING-CLARITY]` — Does the prose use plain, clear, concrete
+    language a junior professional can follow without decoding jargon? Flag sections with
+    jargon-dense paragraphs where a plain-language alternative would carry the same
+    meaning. `[MEDIUM]` `[AUTHORING-CLARITY]`. *(Runtime judgment -- assess prose
+    density, not word-level vocabulary. A concise technical sentence is not jargon-dense.)*
+
+16. **Single-concern coherence** `[AUTHORING-SCOPE]` — Does the document answer exactly
+    ONE concern question (from the concern-model C0-C9 / D spine) without mixing
+    material from an orthogonal concern? Flag content that clearly belongs in a different
+    concern's doc (boundary smell). `[MEDIUM]` `[AUTHORING-SCOPE]`. *(Runtime judgment --
+    a doc may reference related concerns via `see_also:` without mixing; the boundary
+    smell is substantial content that belongs in another concern's primary section.)*
+
+**Severity anchors for authoring-standard checks:**
+- Layout order violation (content before frontmatter, content after Change Log, no Change
+  Log) = `[HIGH]` / `[AUTHORING-LAYOUT]`
+- Index absent in a doc with more than 3 sections = `[MEDIUM]` / `[AUTHORING-LAYOUT]`
+- Missing `audience:` / `owner:` / `tags:` = `[MEDIUM]` / `[AUTHORING-FM]`
+- No concern tag in `tags:` = `[MEDIUM]` / `[AUTHORING-FM]`
+- Diagram found in `.md` doc = `[MEDIUM]` / `[AUTHORING-DIAGRAM]`
+- Jargon-dense prose = `[MEDIUM]` / `[AUTHORING-CLARITY]`
+- Mixed concerns = `[MEDIUM]` / `[AUTHORING-SCOPE]`
+
 ### Altitude checklist (Full Primary docs only)
 
 **Applies to Full Primary docs only.** Meta and generated docs are NOT altitude-graded —

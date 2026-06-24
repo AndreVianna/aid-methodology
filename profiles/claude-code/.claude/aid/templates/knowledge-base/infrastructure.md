@@ -6,7 +6,7 @@ summary: Read this for deploy/release context before any infrastructure-touching
 sources:
   - .github/workflows/          # CI/CD pipeline definitions
   - {path/to/infra/config}      # e.g., Dockerfile, terraform/, helm/
-tags: [infrastructure, ci-cd, deployment, environments]
+tags: [C8, infrastructure, ci-cd, deployment, environments]
 see_also: [integration-map.md, technology-stack.md]
 owner: devops
 audience: [developer, devops, architect]
@@ -23,6 +23,19 @@ changelog:
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Hosting](#hosting)
+- [Environments](#environments)
+- [Compute](#compute)
+- [Data Infrastructure](#data-infrastructure)
+- [Networking](#networking)
+- [Deployment Pipeline](#deployment-pipeline)
+- [Monitoring and Observability](#monitoring--observability)
+- [Disaster Recovery](#disaster-recovery)
+- [Known Infrastructure Issues](#known-infrastructure-issues)
+- [Change Log](#change-log)
 
 ---
 
@@ -134,7 +147,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

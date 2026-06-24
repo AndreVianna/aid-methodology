@@ -6,7 +6,7 @@ summary: Read this when implementing or modifying any externally-visible interfa
 sources:
   - src/                        # API and contract implementation code
   - {path/to/api/specs}         # e.g., openapi.yaml, proto files, schema definitions
-tags: [api, contracts, schemas, protocols]
+tags: [C2, api, contracts, schemas, protocols]
 see_also: [architecture.md, integration-map.md, schemas.md]
 owner: architect
 audience: [developer, architect]
@@ -23,6 +23,17 @@ changelog:
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [APIs Exposed (This System)](#apis-exposed-this-system)
+- [APIs Consumed (External Dependencies)](#apis-consumed-external-dependencies)
+- [Internal APIs (Service-to-Service)](#internal-apis-service-to-service)
+- [API Versioning Strategy](#api-versioning-strategy)
+- [Known Issues](#known-issues)
+- [Conventions](#conventions)
+- [Contracts](#contracts)
+- [Change Log](#change-log)
 
 ---
 
@@ -151,7 +162,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

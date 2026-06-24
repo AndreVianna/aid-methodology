@@ -6,7 +6,7 @@ summary: Read this for integration-touching work to understand external dependen
 sources:
   - src/                        # integration code
   - {path/to/api/specs}         # e.g., openapi.yaml, graphql schema
-tags: [integrations, apis, external-deps, communication]
+tags: [C2, integrations, apis, external-deps, communication]
 see_also: [architecture.md, external-sources.md, pipeline-contracts.md]
 owner: architect
 audience: [developer, architect]
@@ -23,6 +23,18 @@ changelog:
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Overview](#overview)
+- [Message Queues and Event Buses](#message-queues--event-buses)
+- [Caches](#caches)
+- [File and Object Storage](#file--object-storage)
+- [Email and Notifications](#email--notifications)
+- [Third-Party Services](#third-party-services)
+- [Integration Health Risks](#integration-health-risks)
+- [Contracts](#contracts)
+- [Change Log](#change-log)
 
 ---
 
@@ -146,7 +158,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

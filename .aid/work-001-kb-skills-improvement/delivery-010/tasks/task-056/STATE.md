@@ -8,7 +8,7 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** Generic-core dimension spine + standards-grounded concern-model generalization (wave 1).

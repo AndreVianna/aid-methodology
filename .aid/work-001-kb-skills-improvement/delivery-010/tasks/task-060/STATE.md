@@ -8,7 +8,7 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** Self-bootstrap STATE (discover-preflight self-create; remove init hard-stop) (wave 1).

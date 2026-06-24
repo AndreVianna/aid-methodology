@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** Source-driven domain classifier in GENERATE (+ Step 0f reconciliation) (wave 2).
+- **Elapsed:** ~15m
+- **Notes:** Step 0cx added to state-generate.md (after Step 0c, before Step 0d). Decisive/uncertain branches, ## Discovery Domain record, idempotent re-entry, domain/path relationship table. Step 0f opening note added; Step 0f content unchanged.
 
 ---
 
@@ -26,3 +26,4 @@
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-06-24 | aid-developer | ~15m | ~15m | Done — Step 0cx implemented in state-generate.md |

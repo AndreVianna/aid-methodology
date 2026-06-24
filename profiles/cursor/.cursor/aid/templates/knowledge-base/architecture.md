@@ -6,7 +6,7 @@ summary: Read this to understand HOW the system hangs together -- not WHAT each 
 sources:
   - src/                        # primary source directories
   - {path/to/architecture/docs} # any architecture decision records or diagrams
-tags: [architecture, modules, data-flow]
+tags: [C1, architecture, modules, data-flow]
 see_also: [module-map.md, schemas.md]
 owner: architect
 audience: [architect, developer]
@@ -23,6 +23,18 @@ changelog:
 > **Source:** aid-discover (Phase 1)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Pattern](#pattern)
+- [Layers](#layers)
+- [Module Boundaries](#module-boundaries)
+- [Data Flow](#data-flow)
+- [Dependency Injection](#dependency-injection)
+- [Key Architectural Decisions](#key-architectural-decisions)
+- [Known Architectural Issues](#known-architectural-issues)
+- [Invariants](#invariants)
+- [Change Log](#change-log)
 
 ---
 
@@ -140,7 +152,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

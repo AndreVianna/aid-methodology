@@ -8,7 +8,7 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** Regen profiles + .claude dogfood sync (DBI) + KB/skill doc updates (wave 5).

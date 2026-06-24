@@ -97,6 +97,6 @@ extend the canonical rubric with project-specific lint rules. See
 - `canonical/agents/aid-reviewer/AGENT.md` — adversarial review (semantic + frontmatter + spot-check; the sole KB-quality enforcer)
 - `canonical/scripts/kb/build-metrics.sh` — T3 fact generator
 - `canonical/scripts/kb/build-kb-index.sh` — INDEX.md generator
-- `canonical/scripts/kb/build-project-index.sh` — project-index.md generator
-- `canonical/templates/generated-files.txt` — registry of all generated files + build commands
-- `canonical/templates/knowledge-base/*.md` — KB doc templates pre-filled with frontmatter
+- `canonical/aid/scripts/kb/build-project-index.sh` — project-index.md generator
+- `canonical/aid/templates/generated-files.txt` — registry of all generated files + build commands
+- `canonical/aid/templates/knowledge-base/*.md` — KB doc templates pre-filled with frontmatter

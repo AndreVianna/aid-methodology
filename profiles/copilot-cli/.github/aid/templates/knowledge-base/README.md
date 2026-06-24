@@ -12,6 +12,13 @@ changelog:
 
 The Knowledge Base (`.aid/knowledge/`) is the gravitational center of every AID project. Every phase reads from it. Any phase can trigger updates to it. It outlives the project.
 
+## Contents
+
+- [Documents](#documents)
+- [Not Every Document Is Required](#not-every-document-is-required)
+- [Change Log Convention](#change-log-convention)
+- [Change Log](#change-log)
+
 ## Documents
 
 > **Note:** `INDEX.md` is auto-generated at `.aid/knowledge/INDEX.md` by `build-kb-index.sh` from each KB doc's `intent:` frontmatter field. There is no template for it here — adopters should not hand-author it.
@@ -75,16 +82,25 @@ The KB root `README.md` tracks completeness across all documents:
 
 The Discovery phase assesses the project and generates what's relevant. Don't create documents for things that don't exist.
 
-## Revision History
+## Change Log Convention
 
-Every KB update should be logged in the README.md revision history section:
+Every KB update should be logged in the README.md change log section. The `## Change Log`
+section MUST be the last section in every KB doc (per kb-authoring P10 layout):
 
 ```markdown
-# Revision Log
+## Change Log
 
-| Date | Source Phase | Document | Change Description |
-|------|------------|----------|-------------------|
-| {date} | aid-discover | All | Initial Knowledge Base creation |
-| {date} | aid-plan (Q&A) | module-map.md | Added 8 missing service consumers |
-| {date} | aid-execute (IMP-003) | architecture.md | Corrected async model for RecordingService |
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | {date} | aid-discover | Initial Knowledge Base creation |
+| 1.1 | {date} | aid-plan | module-map.md: Added 8 missing service consumers |
+| 1.2 | {date} | aid-execute | architecture.md: Corrected async model for RecordingService |
 ```
+
+---
+
+## Change Log
+
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | {date} | aid-discover | Initial Knowledge Base seed |

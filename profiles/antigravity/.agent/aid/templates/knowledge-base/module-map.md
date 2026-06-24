@@ -6,7 +6,7 @@ summary: Read this to navigate the codebase before any module-touching task.
 sources:
   - src/                        # module source directories
   - {path/to/module/config}     # package manifests, module boundaries
-tags: [modules, dependencies, entry-points, ownership]
+tags: [C2, modules, dependencies, entry-points, ownership]
 see_also: [architecture.md, pipeline-contracts.md]
 owner: architect
 audience: [developer, architect]
@@ -23,6 +23,17 @@ changelog:
 > **Source:** aid-discover (Phase 1)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Module Inventory](#module-inventory)
+- [Dependency Graph](#dependency-graph)
+- [Entry Points](#entry-points)
+- [High-Churn Modules](#high-churn-modules)
+- [Oversized Modules](#oversized-modules)
+- [Conventions](#conventions)
+- [Invariants](#invariants)
+- [Change Log](#change-log)
 
 ---
 
@@ -49,18 +60,16 @@ changelog:
 ## Dependency Graph
 
 > Show which modules import which. Arrows point from importer to dependency.
+> **Per kb-authoring P10:** use the plain-text form below -- diagrams are avoided in KB
+> `.md` docs. Use `→` arrows; list one dependency per line.
 
-```mermaid
-graph TD
-    API[API Layer] --> App[Core.Application]
-    API --> Infra[Infrastructure.Data]
-    App --> Domain[Core.Domain]
-    Infra --> Domain
-    Infra --> Messaging[Infrastructure.Messaging]
-    Messaging --> App
+```
+{ModuleA} → {ModuleB}     ({ModuleA} depends on {ModuleB})
+{ModuleB} → {ModuleC}
+{ModuleA} ✗ {ModuleC}     (direct dependency NOT present -- goes through B)
 ```
 
-> If mermaid isn't available, use text:
+**Example (text form):**
 ```
 API → Core.Application
 API → Infrastructure.Data
@@ -130,7 +139,7 @@ reason — e.g., `Core.Application` mixes several unrelated concerns}
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

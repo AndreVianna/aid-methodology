@@ -8,7 +8,7 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** Dual-audience authoring standard -> kb-authoring + templates + prompts + Anatomy mandate (wave 2).

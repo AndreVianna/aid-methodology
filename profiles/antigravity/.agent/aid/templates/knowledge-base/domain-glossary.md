@@ -4,7 +4,7 @@ source: hand-authored
 objective: Project-specific vocabulary with definitions for all domain and AID-specific terms.
 summary: Canonical reference for naming -- disambiguates terms that mean different things in different contexts.
 sources: []
-tags: [glossary, vocabulary, terminology]
+tags: [C4, glossary, vocabulary, terminology]
 see_also: [coding-standards.md]
 owner: architect
 audience: [developer, architect, pm]
@@ -19,16 +19,24 @@ changelog:
 
 # Domain Glossary
 
-> **Source:** aid-interview (Phase 2) — captured from stakeholder language
+> **Source:** aid-interview (Phase 2) -- captured from stakeholder language
 > **Status:** {Complete | Partial | Missing}
 > **Last Updated:** {date}
 
-> This glossary documents the **team's actual language** — not industry standard terms, but what *this* team means when they use these words. When building with AI agents, this is critical: an agent that uses "transaction" when the team means "order" will write specs and code that technically work but conceptually misalign.
->
-> This doc has two parts: the **Concept Spine** (load-bearing native concepts, each grounded with
-> definition-as-used-here / relates-to / sources) and the **Lexicon** (vocabulary tables for terms
-> that are important but not load-bearing spine concepts). The spine is the backbone; the lexicon
-> is the reference. No term is lost between the two.
+This glossary documents the **team's actual language** -- not industry standard terms, but what *this* team means when they use these words. When building with AI agents, this is critical: an agent that uses "transaction" when the team means "order" will write specs and code that technically work but conceptually misalign.
+
+This doc has two parts: the **Concept Spine** (load-bearing native concepts, each grounded with definition-as-used-here / relates-to / sources) and the **Lexicon** (vocabulary tables for terms that are important but not load-bearing spine concepts). The spine is the backbone; the lexicon is the reference. No term is lost between the two.
+
+## Contents
+
+- [Concept Spine](#concept-spine)
+- [Core Domain Terms](#core-domain-terms)
+- [Abbreviations and Acronyms](#abbreviations--acronyms)
+- [Terms with Specific Domain Meanings](#terms-with-specific-domain-meanings)
+- [Terms to Avoid](#terms-to-avoid)
+- [Business Process Vocabulary](#business-process-vocabulary)
+- [Invariants](#invariants)
+- [Change Log](#change-log)
 
 ---
 
@@ -174,7 +182,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

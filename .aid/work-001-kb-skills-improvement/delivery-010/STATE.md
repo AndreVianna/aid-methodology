@@ -17,8 +17,8 @@ This is the DELIVERY-LEVEL STATE.md template. It is divided into two zones:
 
 <!-- AUTHORED -- single writer: this delivery's branch only. -->
 
-- **State:** Specified
-- **Updated:** 2026-06-24T00:00:00Z
+- **State:** Done
+- **Updated:** 2026-06-24T18:35:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -27,9 +27,9 @@ This is the DELIVERY-LEVEL STATE.md template. It is divided into two zones:
 ## Delivery Gate
 
 - **Reviewer Tier:** Large
-- **Grade:** Pending
-- **Issue List:** none yet
-- **Timestamp:** --
+- **Grade:** A+
+- **Issue List:** 6 findings (2 HIGH / 3 MEDIUM / 1 LOW) from the adversarial gate review, all **Fixed** in one FIX cycle (label-form drift normalized; 13 templates concern-tagged + orientation exempt; P10 cross-ref; FM-severity split; AS07 test added; software-* fallback). Ledger: `.aid/.temp/review-pending/delivery-010-gate.md`. grade.sh = A+ (0 open). Cornerstones: DBI 551/0, render deterministic VERIFY PASS, 75 canonical suites + ASCII green.
+- **Timestamp:** 2026-06-24T18:35:00Z
 
 ---
 

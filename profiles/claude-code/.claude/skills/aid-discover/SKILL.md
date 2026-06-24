@@ -20,10 +20,13 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 ## ⚠️ Pre-flight Checks
 
 Run `bash .claude/aid/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
-1. `.aid/knowledge/STATE.md` exists (init has run)
+1. `.aid/knowledge/STATE.md` is present and non-empty (self-created from template if absent)
 2. Not in Plan Mode (subagents need write access)
 
-If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-config first to set up the project.` — Exit.
+Check 1 is now self-healing: if STATE.md is absent the script creates it from
+`discovery-state-template.md` and continues — no "run /aid-config first" hard-stop.
+The check only fails (exit 1) if STATE.md cannot be written or is empty after the
+self-create attempt (e.g. a zero-byte file left by a prior interrupted run).
 If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 ---

@@ -8,7 +8,7 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** domain-doc-matrix.md artifact (schema + common-domain rows; software row = seed) (wave 2).

@@ -4,7 +4,7 @@ source: hand-authored
 objective: Severity-tagged open technical debt items with remediation paths for {project}.
 summary: Read this before starting work in any area; declared debt items may affect approach or scope.
 sources: []
-tags: [tech-debt, remediation, risk]
+tags: [C7, tech-debt, remediation, risk]
 see_also: [architecture.md, feature-inventory.md]
 owner: architect
 audience: [developer, architect, pm]
@@ -22,19 +22,24 @@ changelog:
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
 
-> This document is a diagnosis, not a sprint plan. It identifies what exists so that agents don't create more of it, and so the team can make informed decisions about what to address and when.
+This document is a diagnosis, not a sprint plan. It identifies what exists so that agents don't create more of it, and so the team can make informed decisions about what to address and when.
 
-> **Resolved items leave no trace (kb-authoring P9).** This doc lists **only currently open
-> debt**. When an item is resolved, remove it **entirely** — its inventory row, its detailed
-> entry, any roll-call/"closed items" mention, and any closure prose in the frontmatter
-> `changelog:`. Do **not** keep a closure record here. **git history is the only retained audit
-> trail.** A resolved item reappearing anywhere in this doc is a defect.
+**Resolved items leave no trace (kb-authoring P9).** This doc lists **only currently open debt**. When an item is resolved, remove it entirely -- its inventory row, its detailed entry, any roll-call or "closed items" mention, and any closure prose in the frontmatter `changelog:`. Do not keep a closure record here. Git history is the only retained audit trail. A resolved item reappearing anywhere in this doc is a defect.
 
-> **Severity tag convention** (used by `build-metrics.sh` for the severity tally):
-> Per-item severity headers should follow the form `### [HIGH] H1 — Title` /
-> `### [MEDIUM] M1 — Title` / `### [LOW] L1 — Title`, OR table rows with the
-> `| **H1**` / `| **M1**` / `| **L1**` ID format. The metrics builder counts
-> `^### \[HIGH\]` line headers and the table-row ID patterns.
+**Severity tag convention** (used by `build-metrics.sh` for the severity tally): per-item severity headers follow the form `### [HIGH] H1 -- Title` / `### [MEDIUM] M1 -- Title` / `### [LOW] L1 -- Title`, OR table rows with the `| **H1**` / `| **M1**` / `| **L1**` ID format. The metrics builder counts `^### \[HIGH\]` line headers and the table-row ID patterns.
+
+## Contents
+
+- [Debt Inventory](#debt-inventory)
+- [Detailed Debt Items](#detailed-debt-items)
+- [Complexity Hotspots](#complexity-hotspots)
+- [Missing Test Coverage](#missing-test-coverage)
+- [Outdated Dependencies](#outdated-dependencies)
+- [Architecture Violations](#architecture-violations)
+- [Duplication](#duplication)
+- [Dead Code](#dead-code)
+- [Gotchas](#gotchas)
+- [Change Log](#change-log)
 
 ---
 
@@ -156,7 +161,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

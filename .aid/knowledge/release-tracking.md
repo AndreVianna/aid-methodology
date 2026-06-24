@@ -21,6 +21,7 @@ changelog:
   - 2026-06-18: Added work-003 (content isolation) + work-004 (worktree-aware tracking) v1.1.0 items: [NEW] self-cleaning install/update prune; [CHANGE] aid/-nest + aid- prefix content isolation; [CHANGE] in-place lossless CLAUDE.md/AGENTS.md marker updates (no .aid-new); [CHANGE] dashboard worktree discovery + same-work merge; [FIX] disjoint delivery-branch state files. Internal mechanics (status->state naming, per-unit hierarchy, migration helper, canonical churn) deliberately omitted as non-adopter-facing.
   - 2026-06-19: v1.1.1 patch — [FIX] recurring "older format" WARN on aid add-only repos (manifest present, no settings.yml): migrate now treats a manifest as an era-b marker and synthesizes a stamped settings.yml so the warning clears after one `aid update`. Internal-only changes (test-suite HOME-pinning isolation; aid.ps1 self-update parity + root-agent injection already shipped in 1.1.0) omitted as non-adopter-facing.
   - 2026-06-21: Added Unreleased [CHANGE] entries for work-005 (Codex .codex/ unification, uniform layout, generator 13->7 simplification, atomic aid update replacement) — work-005-profile-generator-simplify delivery-003 task-018.
+  - 2026-06-24: Added Unreleased [CHANGE] entry for work-001 delivery-010 (feature-014 domain-driven, source-first KB discovery + dual-audience authoring) — task-063.
 ---
 
 # Release Tracking
@@ -40,6 +41,7 @@ changelog:
 - [CHANGE] All five host tools now use a uniform `{agents,skills,aid}` layout under their own root (`.claude/`, `.cursor/`, `.codex/`, `.github/`, `.agent/`) — agent format branches collapsed to uniform markdown; Codex TOML branch retained dormant pending E-CODEX-1 verification (work-005 FR1/FR4).
 - [CHANGE] Profile generator simplified from 13 Python files to 7 — tool-specific emitter scripts replaced by a single copy-based generator that renders profiles via file-level copy + minimal path substitution, with no per-tool branching logic outside the profiles themselves (work-005 FR1/FR5/FR6).
 - [CHANGE] `aid update` now replaces a profile's managed files atomically in a single pass and removes stale files left by previous versions — ensures a clean, complete layout after every update with no orphaned tool files from older generator shapes (work-005 FR7).
+- [CHANGE] `/aid-discover` is now **domain-driven** — it works for any kind of digital work, not just software. Discovery establishes the project's domain from the existing source (asking you only when the source is unclear), then derives the Knowledge-Base doc-set from a curated domain→document matrix (with a research fallback for novel domains) anchored to a standards-grounded set of universal concerns; the former fixed software doc-set is now just the "software" row of that matrix. It also self-bootstraps (no separate setup step before discovery) and authors every KB doc for two audiences — humans and AI agents — as small single-concern docs in plain language, tables over diagrams, with machine-readable structure (work-001 f014).
 
 ## v1.1.1 - 2026-06-19
 

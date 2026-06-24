@@ -6,7 +6,7 @@ summary: Read this before writing or reviewing code to follow established conven
 sources:
   - src/                        # actual source files conventions are inferred from
   - {path/to/linting/config}    # e.g., .eslintrc, .rubocop.yml, pyproject.toml
-tags: [conventions, naming, formatting, idioms]
+tags: [C3, conventions, naming, formatting, idioms]
 see_also: [architecture.md]
 owner: architect
 audience: [developer, reviewer]
@@ -20,11 +20,24 @@ changelog:
 
 # Coding Standards
 
-> **Source:** aid-discover (Phase 1) — inferred from code analysis
+> **Source:** aid-discover (Phase 1) -- inferred from code analysis
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
 
-> ⚠️ **Important:** These conventions are **inferred from code analysis**. They reflect what the code actually does, not what documentation claims. Confirm ambiguous or inconsistent patterns with the team before enforcing them in new code.
+> These conventions are **inferred from code analysis**. They reflect what the code actually does, not what documentation claims. Confirm ambiguous or inconsistent patterns with the team before enforcing them in new code.
+
+## Contents
+
+- [Naming Conventions](#naming-conventions)
+- [Error Handling](#error-handling)
+- [Logging](#logging)
+- [Configuration Management](#configuration-management)
+- [File and Project Organization](#file--project-organization)
+- [Code Organization Patterns](#code-organization-patterns)
+- [Comments and Documentation](#comments--documentation)
+- [Observed Inconsistencies](#observed-inconsistencies)
+- [Conventions](#conventions)
+- [Change Log](#change-log)
 
 ---
 
@@ -145,7 +158,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

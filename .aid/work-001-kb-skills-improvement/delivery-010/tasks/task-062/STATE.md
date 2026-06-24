@@ -8,7 +8,7 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** Tests (classifier / matrix / self-bootstrap / authoring-standard) + affected suites (wave 4).

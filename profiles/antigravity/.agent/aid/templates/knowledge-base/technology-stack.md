@@ -6,7 +6,7 @@ summary: Read this for language-version or tool-version questions before making 
 sources:
   - package.json                # or Gemfile, pyproject.toml, go.mod, pom.xml, etc.
   - {path/to/build/config}      # e.g., Makefile, build.gradle, CMakeLists.txt
-tags: [languages, runtimes, frameworks, build-tools, testing]
+tags: [C0, languages, runtimes, frameworks, build-tools, testing]
 see_also: [infrastructure.md, test-landscape.md]
 owner: architect
 audience: [developer, architect, devops]
@@ -23,6 +23,16 @@ changelog:
 > **Source:** aid-discover (Phase 1)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Runtime](#runtime)
+- [Frameworks](#frameworks)
+- [Build System](#build-system)
+- [Key Dependencies](#key-dependencies)
+- [Test Frameworks](#test-frameworks)
+- [Version Concerns](#version-concerns)
+- [Change Log](#change-log)
 
 ---
 
@@ -106,7 +116,7 @@ changelog:
 
 ---
 
-## Revision History
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

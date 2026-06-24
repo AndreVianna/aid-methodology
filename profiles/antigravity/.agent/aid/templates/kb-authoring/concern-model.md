@@ -22,10 +22,64 @@ varies per project, and every variation is human-confirmed.
 
 ---
 
-## The 10 universal concerns (C1-C9 + C0)
+## The domain-agnostic dimension spine
+
+The concern list is the **software rendering** of a deeper, domain-agnostic structure: a
+fixed **dimension spine** -- the set of **universal questions any digital deliverable must
+answer about itself**, regardless of whether it is software, data/ML, content, research,
+design, or ops. AID helps with *any kind of digital work*; the spine is what makes the
+doc-set derivation generalize beyond software (feature-014). Only the spine's *realization*
+(which docs, named how) varies per domain; the dimensions themselves do not.
+
+The numbered concerns below (C0-C9, + D) are how the spine **renders for a software
+project**. A non-software project answers the *same dimensions* with a domain-appropriate
+doc set, resolved via the domain->doc-set matrix (see
+`.agent/aid/templates/kb-authoring/domain-doc-matrix.md`); "did we cover everything?"
+is always answered by walking the fixed spine.
+
+**Standards grounding.** The spine is the cross-standard recurring-concern set distilled
+from the software/architecture documentation standards. Each dimension is attested by one
+or more published standards:
+
+| Spine dimension (domain-agnostic) | Software rendering (concern) | Grounded in |
+|---|---|---|
+| What it does for users (capabilities, context, scope) | C9 feature-inventory | arc42 §1/§3, C4-L1, ISO/IEC/IEEE 42010 (entity/stakeholders) |
+| What it is made of (structure / anatomy) | C1 project-structure, architecture | arc42 §5, C4-L1..3, IEEE 1016 composition |
+| How the parts connect | C2 module-map, integration-map, pipeline-contracts | arc42 §5, C4, IEEE 1016 dependency/interface |
+| What it is built with (technology / medium) | C0 technology-stack | arc42 §4, C4-L2 |
+| Conventions & cross-cutting approaches | C3 coding-standards | arc42 §2/§8, IEEE 1016 patterns |
+| Vocabulary / glossary | C4 domain-glossary | arc42 §12 |
+| Deliverables, data & contracts | C5 schemas | arc42 §3/§8, IEEE 1016 information/interface |
+| Quality & how it is checked | C6 test-landscape | arc42 §10, IEEE 1016 |
+| Risk & debt | C7 tech-debt | arc42 §11 (uniquely explicit) |
+| How it ships & operates | C8 infrastructure | arc42 §7, C4-deployment |
+| **Decisions & rationale** | **D** decisions (conditional -- see below) | arc42 §9, ADR, ISO/IEC/IEEE 42010 decision annex |
+| Stakeholders & concerns (meta) | (interview / requirements -- pipeline, not KB) | ISO/IEC/IEEE 42010 root |
+
+The last row -- *stakeholders & concerns* -- is a **meta** dimension answered by AID's
+interview/requirements pipeline, not by a KB doc; it anchors the spine in ISO/IEC/IEEE
+42010 but is out of KB scope (see the governance note below).
+
+### Why product-concerns, not governance-artifacts
+
+The spine and the KB capture what a deliverable **is** -- its durable product/architecture
+concerns. They deliberately exclude the **governance** layer: project-management artifacts
+such as a project charter, schedule/plan, risk and stakeholder registers, or a sprint
+backlog (PMBOK / PRINCE2 / Scrum). Those frameworks are real and necessary, but they
+describe *how the work is run*, not *what the deliverable is*, and they map to AID's own
+**pipeline artifacts** (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, the per-work `STATE.md`
+tracking), which already exist. The KB is the product layer; the pipeline is the governance
+layer. A doc proposed for the KB that is really a governance artifact (a plan, a backlog, a
+register) is a scope smell -- route it to the pipeline, not the doc-set.
+
+---
+
+## The 11 universal concerns (C1-C9 + C0 + D)
 
 Each concern has an id, the question it answers, its definition (what belongs / what does
-not), and its **default doc(s)** in the 15-doc default seed.
+not), and its **default doc(s)**. C0-C9 (ten concerns) are the **15-doc default seed**;
+**D (Decisions)** is the eleventh dimension, realized as a **conditional** doc -- it is part
+of the fixed spine but is **not** one of the 15 seed docs (see *Seed-coverage check* below).
 
 | Id | Concern | The question a newcomer must answer | Default doc(s) |
 |----|---------|--------------------------------------|----------------|
@@ -39,6 +93,24 @@ not), and its **default doc(s)** in the 15-doc default seed.
 | C8 | **Shipping & operation** | How does it ship and run? | `infrastructure.md` |
 | C9 | **What it does for users** | What does it do for its users / what are its capabilities? | `feature-inventory.md` |
 | C0 | **Technology** | What is it built *with* (languages, frameworks, runtime)? | `technology-stack.md` |
+| D | **Decisions & rationale** | Why is it the way it is -- what was decided, why, and what was rejected? | `decisions.md` (ADR-log) -- **conditional**, not a seed doc |
+
+### D -- Decisions & rationale (the eleventh dimension)
+
+**Decisions** answers *why the deliverable is the way it is*: the significant choices made,
+their context and rationale, and the alternatives rejected. It is the one
+evidence-attested dimension absent from the original software concern list, and it is
+attested across the standards (arc42 §9 "Architecture Decisions", the ADR / decision-record
+practice, and the ISO/IEC/IEEE 42010 decision/rationale annex).
+
+It is promoted to the spine as a **conditional** doc (`decisions.md`, an ADR-log) rather
+than a seed doc: many projects record no durable architecture decisions, and forcing an
+empty ADR-log onto every project would over-generate. A project that has made significant,
+rationale-bearing decisions adds `decisions.md` under D via the propose->confirm gate; a
+project that has not leaves D covered-by-conditional. Because `decisions.md` is **not**
+added to `synth_default_seed`, the byte-stable 15-doc software seed is unchanged (see
+*Seed-coverage check*). In `doc-set-resolve.md`-style declarations it appears as
+`decisions.md|aid-researcher-architecture|conditional`.
 
 **Orientation / meta (cross-cutting, not a newcomer concern):**
 `external-sources.md`, `README.md` (owned by `skill-self`) are cross-cutting registry /
@@ -63,15 +135,24 @@ depends on iterating a closed list of concerns ("have we covered every concern?"
 count MUST NOT grow by project-level adaptation. Adaptivity is in the *doc realization*
 (split, add, conditional), never in the concern list itself.
 
-**Contract:** exactly **10 numbered concerns** (C0, C1 through C9). A concern is never
-added per project; a doc may be added under an existing concern.
+**Contract:** exactly **11 dimensions** -- the ten numbered concerns (C0, C1 through C9)
+plus **D (Decisions)**. A dimension is never added per project; a doc may be added under an
+existing dimension. The spine grows only by deliberate, standards-grounded revision of this
+model (as when D was added from arc42 §9 / ADR / ISO 42010), never by project-level
+adaptation.
+
+**Seed vs. spine.** Of the 11 dimensions, C0-C9 (ten) are realized by the 15-doc default
+seed (`synth_default_seed`); **D is realized by a conditional doc** (`decisions.md`) and is
+**not** part of the seed. Adding D to the spine therefore changes the dimension count
+(10->11) **without** changing the byte-stable software seed -- the seed is still exactly the
+15 docs (see *Seed-coverage check*).
 
 ---
 
 ## Seed-coverage check
 
-The table's "Default doc(s)" column maps exactly the **15** `synth_default_seed` templates
--- none unmapped, none duplicated:
+The **C0-C9** "Default doc(s)" entries map exactly the **15** `synth_default_seed`
+templates -- none unmapped, none duplicated:
 
 - **C1:** `project-structure.md`, `architecture.md`
 - **C2:** `module-map.md`, `integration-map.md`, `pipeline-contracts.md`
@@ -87,6 +168,14 @@ The table's "Default doc(s)" column maps exactly the **15** `synth_default_seed`
 
 That is 15 distinct seed docs. `INDEX.md` is generated meta, not a `knowledge-base/*.md`
 template, so it is excluded from the seed count.
+
+**D (Decisions) is conditional, NOT a seed doc.** The eleventh dimension is realized by
+`decisions.md` (an ADR-log), which is **not** in `synth_default_seed` and is **not** one of
+the 15 docs above. It is proposed only when a project has rationale-bearing decisions to
+record (the propose->confirm gate), mirroring `repo-presentation.md` below. The spine count
+is 11 dimensions; the byte-stable software seed remains exactly 15 docs. FR-37's
+*covered-or-conditional* rule is satisfied: every spine dimension is covered by >=1 seed doc
+**or** explicitly conditional (D).
 
 `repo-presentation.md` is **NOT** a default seed doc. It is a conditional extension
 example that a project MAY add under C9 (capabilities / user-facing presentation) via the
@@ -166,10 +255,11 @@ confirms presence at the gate.
 
 ### Invariant
 
-The proposal logic MUST NOT invent a doc that is not anchored to a concern. Every concern
-must be covered by at least one confirmed doc. The C4 Vocabulary concern is always covered
-by the concept-spine doc (`domain-glossary.md`) -- see f004. "Did we cover everything?"
-is answerable by iterating the fixed concern list.
+The proposal logic MUST NOT invent a doc that is not anchored to a spine dimension. Every
+dimension must be **covered by at least one confirmed doc or explicitly marked conditional**
+(e.g. D / Decisions, which is conditional by default). The C4 Vocabulary concern is always
+covered by the concept-spine doc (`domain-glossary.md`) -- see f004. "Did we cover
+everything?" is answerable by iterating the fixed spine.
 
 ---
 
