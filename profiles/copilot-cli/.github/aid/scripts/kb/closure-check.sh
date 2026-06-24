@@ -269,11 +269,14 @@ OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
 
         # Check if term appears in doc (literal, case-insensitive; -F: no regex)
         if LC_ALL=C grep -qiF -- "$term" "$doc" 2>/dev/null; then
-          # Find a representative anchor line (first match, limited context)
+          # Find a representative anchor line (first match, limited context).
+          # `head -1` closes the pipe after one line; under `set -euo pipefail` the upstream
+          # `grep` then catches SIGPIPE (exit 141) on multi-match docs and would abort the
+          # script. The anchor line is already captured, so swallow the SIGPIPE with `|| true`.
           anchor=$(LC_ALL=C grep -iF -- "$term" "$doc" 2>/dev/null \
             | head -1 \
             | sed 's/^[[:space:]]*//' \
-            | cut -c1-80)
+            | cut -c1-80 || true)
           # Escape pipes in anchor
           anchor=$(echo "$anchor" | tr '|' '/')
           printf '| %s | %s | %s |\n' "$term" "$doc_base" "$anchor"

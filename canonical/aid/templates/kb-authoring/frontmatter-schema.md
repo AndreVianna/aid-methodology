@@ -107,7 +107,7 @@ Per-document classification. Determines which review rubric applies.
 |-------|---------|
 | `primary` | Load-bearing knowledge doc (architecture, schemas, coding-standards, etc., AND `INDEX.md` — see `source:` for its generation status). Full review against T1+T2 facts; T3/T4 markers banned inline. |
 | `meta` | Process / state ledger (`STATE.md`, `README.md`). Exempt from full review per P7-style reasoning. Spot-check current snapshot correctness only. |
-| `extension` | Project-type-specific addition outside the canonical 14 (e.g., `host-tools-matrix.md`). Reviewed but flagged as extension-scope. |
+| `extension` | Project-specific addition outside the project's declared doc-set (the domain doc-set, or the 15-doc default seed when none is declared) — e.g., `host-tools-matrix.md`. Reviewed but flagged as extension-scope. |
 
 See [review-rubric.md](review-rubric.md) for per-category rubric details.
 

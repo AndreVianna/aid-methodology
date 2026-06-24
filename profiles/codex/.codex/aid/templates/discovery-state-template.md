@@ -23,22 +23,15 @@ This is the single state file for the **Discovery area** — persistent project 
 
 ## KB Documents Status
 
+> One row per document in the project's **confirmed doc-set** (`discovery.doc_set` in
+> `.aid/settings.yml`, resolved at aid-discover Step 0d from the project's domain). The set is
+> **domain-driven and varies per project** — do NOT hardcode a fixed doc list here. This table
+> is seeded empty and populated by aid-discover during GENERATE (Step 6) from the resolved
+> doc-set; when no doc-set is declared yet, the default 15-doc seed applies.
+
 | # | Document | Status | Grade | Last Reviewed | Notes |
 |---|----------|--------|-------|---------------|-------|
-| 1 | project-structure.md | Pending | — | — | |
-| 2 | external-sources.md | Pending | — | — | |
-| 3 | architecture.md | Pending | — | — | |
-| 4 | technology-stack.md | Pending | — | — | |
-| 5 | module-map.md | Pending | — | — | |
-| 6 | coding-standards.md | Pending | — | — | |
-| 7 | schemas.md | Pending | — | — | |
-| 8 | pipeline-contracts.md | Pending | — | — | |
-| 9 | integration-map.md | Pending | — | — | |
-| 10 | domain-glossary.md | Pending | — | — | |
-| 11 | test-landscape.md | Pending | — | — | |
-| 12 | tech-debt.md | Pending | — | — | |
-| 13 | infrastructure.md | Pending | — | — | |
-| 14 | feature-inventory.md | Pending | — | — | |
+| _none yet_ | _populated from the confirmed doc-set at Step 6_ | — | — | — | |
 
 ## Knowledge Summary Status
 

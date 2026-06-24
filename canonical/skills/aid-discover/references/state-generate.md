@@ -9,6 +9,20 @@ GENERATE generates KB documents that are missing or still at "Pending" status; i
 
 ### Step 0: Check Existing KB
 
+**First, trace the GENERATE front for the user** so every step ahead is visible (traceability —
+the user must always know what is being done and what is decided where). Print this once on entry:
+
+```
+[GENERATE] Building the Knowledge Base. The doc-set is NOT fixed up front — it is decided
+           by the domain, at the gates below:
+  [0c]  Build project index            (mechanical)
+  [0cx] Classify project DOMAIN         -> you confirm        (PAUSE)
+  [0d]  Propose DOC-SET from the domain -> you confirm        (PAUSE)   <- this is what decides which docs
+  [0e]  Harvest coined terms            (mechanical)
+  [0f]  Classify discovery PATH         -> you confirm        (PAUSE)
+  [1-5] Fan-out research -> closure -> review panel -> approval
+```
+
 Resolve the declared doc-set (see `references/doc-set-resolve.md`):
 ```bash
 raw="$(bash canonical/scripts/config/read-setting.sh \
@@ -16,10 +30,25 @@ raw="$(bash canonical/scripts/config/read-setting.sh \
 # N = number of declared docs (default seed when section unset)
 declared_filenames="$(resolve_doc_set "$raw" | cut -f1)"
 N="$(echo "$declared_filenames" | grep -c .)"
+P="$(... count of declared docs already present with real content ...)"
 ```
 
 Scan `.aid/knowledge/` — files with only init template (`❌ Pending`) are treated as MISSING.
-Print: `[0/N] Checking existing KB...` (where N = declared-set size at runtime)
+
+**Report honestly whether a doc-set has been declared yet.** The doc-set is NOT decided until
+Step 0d, so Step 0 must never print the default seed as if it were the target set:
+
+- **Doc-set already declared** (`raw` non-empty — a prior run confirmed one at Step 0d):
+  print `[0] Checking existing KB against the declared doc-set: P/N docs present.`
+- **Doc-set NOT declared yet** (`raw` empty — fresh run, no domain confirmed): print
+  ```
+  [0] Checking existing KB: P docs present (KB is empty / partial).
+      The doc-set is NOT decided yet — it is proposed at Step 0d, after you confirm the
+      domain at Step 0cx. The default seed is used here ONLY as a fallback to detect an
+      empty KB; it is never the committed set.
+  ```
+  Do not print an `N`-document target in this branch — there is no target until Step 0d.
+
 If ALL declared docs have real content and no `--reset`, skip to Step 6.
 
 ### Step 0b: Read External Documentation Paths
@@ -813,7 +842,28 @@ The orchestrator generates these directly — they require reading across all KB
 Regenerate on every discovery run.
 
 **.aid/knowledge/feature-inventory.md** — copy template from `../../templates/feature-inventory.md`.
-Populated during Q&A → FIX cycle, but must exist for state machine.
+Populated during Q&A → FIX cycle, but must exist for state machine. (For a non-software domain
+the C9 doc may instead be `capability-inventory.md` / `content-inventory.md` etc. per the
+declared set — copy whichever C9 orchestrator-owned doc the doc-set declares; it must exist for
+the state machine regardless of filename.)
+
+### Step 6a: Populate STATE.md `## KB Documents Status` from the declared doc-set
+
+The `## KB Documents Status` table in `.aid/knowledge/STATE.md` is seeded **empty** (a single
+`_none yet_` placeholder) by the discovery-state-template — it must NOT carry a hardcoded doc
+list, because the doc-set is **domain-driven** (resolved at Step 0d), not a fixed 14/15-doc
+software list. Populate it now from the resolved set:
+
+```bash
+# one row per declared doc (filename only), in declared order
+resolve_doc_set "$raw" | cut -f1
+```
+
+Write one `| # | <filename> | Pending | — | — | |` row per declared document (declared order),
+replacing the seeded `_none yet_` placeholder. This keeps the tracking table in lockstep with
+`discovery.doc_set` (and with the README completeness table above) for every project — software
+or not. Downstream readers (e.g. aid-summarize's `## KB Documents Status` lookups) consume this
+table, so it MUST reflect the confirmed set, never the default seed.
 
 ### Step 6b: Update `.aid/knowledge/STATE.md` with Q&A
 

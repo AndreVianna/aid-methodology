@@ -303,3 +303,134 @@ strategy, release process overview.)*
 Missing audience or navigation guidance. Placeholder or template text still present.
 Focuses on code conventions instead of repository presentation (those belong in
 coding-standards.md).
+
+---
+
+<!-- Domain-matrix extension docs (domain-doc-matrix.md): non-software-seed filenames the
+     curated matrix can emit (e.g. the methodology-tooling / data-ml / content rows). Each is
+     keyed by `### <filename>` so the GENERATE custom-doc extension can point an agent at it. -->
+
+### process-architecture.md
+
+**Describe how this process or methodology is structured, and why it is shaped that way.**
+What are its major phases or stages, in what order do they run, and what governing model
+connects them (a linear pipeline, a state machine, an iterative loop)? What gates or
+transitions sit between stages? What must a practitioner understand about the overall
+process anatomy that they could not guess from any single step?
+*(Investigate: the phase/stage list and ordering, the entry/exit criteria and gates between
+stages, the governing control model, where the process branches or loops back, and the
+artifacts each phase consumes and produces. Ground every claim in the defining files —
+process/skill/template definitions — not a generic process checklist.)*
+**Operational open question:** Which phase transitions are mandatory vs optional, and what
+invariants must hold across the whole process (ordering rules, single-source-of-truth
+artifacts)? Surface these as an `## Invariants` section.
+**Red flags:** A flat list of steps with no ordering, gates, or control model. Generic
+process description not grounded in the project's own definitions. Overlaps workflow-map.md
+(the connections/routing between steps belong there, not the static anatomy).
+
+---
+
+### workflow-map.md
+
+**Describe how the parts of this process connect — which step, role, or tool hands off to
+which, and how work flows from start to finish.** What triggers each transition? Where does
+control or an artifact move between phases, agents, or tools? What are the routing rules,
+and where do parallel paths, loopbacks, or escalations occur?
+*(Investigate: the handoff graph between phases/steps/roles, what triggers each transition (a
+gate pass, an artifact, a human decision), sequential vs parallel paths, loopbacks and
+escalations, and the mapping from each process step to the tool/skill/role that executes it.
+Ground claims in the routing definitions.)*
+**Operational open question:** Where can the workflow stall or deadlock, and what are the
+re-entry / resume rules? Surface these as a `## Re-entry & Loopbacks` section.
+**Red flags:** Duplicates process-architecture.md (the static anatomy belongs there; this is
+the connections and routing). Missing transition triggers. No evidence of where handoffs are
+defined.
+
+---
+
+### authoring-conventions.md
+
+**Describe the conventions and standards this methodology mandates for producing its own
+artifacts and content.** What rules govern how its documents, definitions, or deliverables
+are written, named, structured, and formatted? What style, tone, and structural rules apply,
+and where are they enforced?
+*(Investigate: naming conventions, document/section structure rules, formatting and style
+standards, required frontmatter/metadata, any dual-audience (human + machine) rules, where
+the conventions are codified (a principles/standards doc) and where they are enforced (lint,
+CI, review). Ground in the convention-defining files.)*
+**Operational open question:** Which conventions are enforced automatically vs by review, and
+what breaks when one is violated? Surface these as an `## Enforcement` section.
+**Red flags:** Generic writing advice not specific to this project's rules. Duplicates
+coding-standards.md (source-code style belongs there; this is artifact/process authoring). No
+evidence of where the conventions live or how they are enforced.
+
+---
+
+### artifact-schemas.md
+
+**Describe the structural contracts of the artifacts this methodology produces — the required
+shape of each document, record, or file type it defines.** For each artifact type: what
+sections or fields are required, what is optional, what template or schema it must conform to,
+and which steps or tools produce and consume it?
+*(Investigate: the artifact types the methodology defines, the required vs optional
+sections/fields of each, the template or schema source for each, the producer/consumer of each
+artifact, and any validation rules. Ground in the template/schema files.)*
+**Operational open question:** What happens when an artifact is malformed or missing a required
+section — is it detected, and where? Surface this as a `## Validation` section.
+**Red flags:** Prose description with no field- or section-level schema. Duplicates schemas.md
+(code/data schemas belong there; this is process-artifact shapes). Missing the template source
+for an artifact.
+
+---
+
+### quality-gates.md
+
+**Describe how this methodology checks the quality of its work — the gates, reviews, grading,
+or acceptance criteria that work must pass before it advances.** What are the gates, what does
+each measure, who or what runs it, and what is the pass/fail (or grading) rule for each?
+*(Investigate: each quality gate and where it sits in the process, the criteria/rubric each
+applies, the grading or pass-fail mechanism, who or what executes the gate (a reviewer role, a
+script, CI), what happens on failure (loopback, block), and the minimum bar. Ground in the
+gate/rubric/review definitions.)*
+**Operational open question:** Which gates are blocking vs advisory, and can any be overridden
+— by whom? Surface these as a `## Blocking vs Advisory` section.
+**Red flags:** Duplicates test-landscape.md (executable test suites belong there; this is
+process/review gates). Lists gates without their criteria or pass rule. No evidence of where
+the gates are defined or enforced.
+
+---
+
+### capability-inventory.md
+
+**Describe what this methodology or tool does for its users — the capabilities, workflows, or
+commands it offers and the value each delivers.** For each capability: what does it let a user
+accomplish, when would they use it, and how is it invoked? This is the user-facing "what can
+it do" catalogue.
+*(Investigate: the full set of user-facing capabilities/workflows/commands, what each
+accomplishes and its trigger or use-case, how each is invoked, dependencies or ordering between
+capabilities, and which are core vs optional. Ground in the capability definitions —
+skills/commands/workflows.)*
+**Operational open question:** What is the typical end-to-end path a user follows through these
+capabilities, and which are the entry points? Surface this as a `## Typical Path` section.
+**Red flags:** Duplicates feature-inventory.md (software features/components belong there; this
+is methodology capabilities/workflows). A bare list with no value or use-case per capability.
+Missing invocation detail.
+
+---
+
+### decisions.md
+
+**Describe the significant decisions that shaped this project and why they were made — the
+rationale a newcomer cannot reconstruct from the artifacts alone.** For each decision: what was
+decided, what alternatives were considered and rejected, why, and what constraints or
+trade-offs drove it. Record decisions and their reasoning, not a restatement of the current
+state.
+*(Investigate: rationale-bearing decisions (architectural, process, tooling, scope), the
+alternatives weighed and why they were rejected, the constraints and trade-offs, the status
+(accepted/superseded) and date where recoverable, and where each decision is evidenced (commits,
+design notes, ADRs, discussions). Ground each decision in its evidence.)*
+**Operational open question:** Which decisions are still load-bearing (expensive to reverse) vs
+superseded? Surface these as a `## Still Load-Bearing` section.
+**Red flags:** Restates current state without the "why" or the rejected alternatives. Invents
+rationale not grounded in evidence. Duplicates architecture.md / process-architecture.md (those
+describe what *is*; this describes *why* it was chosen over alternatives).

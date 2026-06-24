@@ -302,7 +302,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 - [ ] external-sources.md documents all sources (or states none provided)
 - [ ] README.md reflects completeness and revision history
 - [ ] INDEX.md has 2-3 line summaries per document
-- [ ] feature-inventory.md exists (template or populated)
+- [ ] the declared C9 capability/feature doc exists (e.g., feature-inventory.md, or capability-inventory.md / content-inventory.md per the domain doc-set) (template or populated)
 - [ ] AGENTS.md placeholders filled with discovered data
 - [ ] All issues have severity: [CRITICAL], [HIGH], or [MEDIUM]
 - [ ] Minimum 10 spot-checks in `.aid/knowledge/STATE.md` `## Verification Spot-Checks`
