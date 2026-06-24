@@ -22,7 +22,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** In Review
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** ~30m
 - **Notes:** Calibration fixture corpus built. 6 files under tests/canonical/fixtures/kb-essence/calibration/. All ASCII. closure-check.sh verified: transcription-fat.md ratio 0.704 (HIGH), well-calibrated.md 0.266 (LOW); audit-record contract absent in coverage-gap.md, present in well-calibrated.md. hollow-thin.md has 10 see-src pointers. test-ascii-only.sh 27/27 pass.

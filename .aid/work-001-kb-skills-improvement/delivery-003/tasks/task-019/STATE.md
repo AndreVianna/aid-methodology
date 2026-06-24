@@ -22,7 +22,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** In Review
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
 - **Notes:** Test suite tests/canonical/test-migrate-kb-frontmatter.sh written; 60/60 pass; HOME-pinned; git-initialized fixture repos; all ACs covered.

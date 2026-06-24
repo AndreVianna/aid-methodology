@@ -22,7 +22,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** In Review
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
 - **Notes:** Implementation complete; Python 519/519 pass, Node reader suite 343 tests / 4 pre-existing failures (unchanged vs merge-base; route-startup + VERSION-file, freshness-untouched), structural parity verified.
