@@ -7,7 +7,8 @@ description: >
   work-area artifacts). Each stage commits its own changes on an aid/housekeep-*
   branch; the skill never pushes. Re-entrant: a stalled run resumes at the stalled
   stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA →
-  CLEANUP → DONE.
+  CLEANUP → DONE. Source-driven global reconcile; for a targeted prompt-named delta
+  use /aid-update-kb.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit, Agent
 argument-hint: "[--cleanup-only] [--grade X] jump to cleanup stage, or set minimum summary grade"
 ---
