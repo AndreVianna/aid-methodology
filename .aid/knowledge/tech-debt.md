@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: Known AID methodology repository technical debt: severity, evidence, impact, and resolution roadmap per item.
 summary: Documents known technical debt items in the AID methodology repo with severity, evidence, impact assessment, and resolution roadmap for each open item.
+tags: [tech-debt, gotchas, severity-tags, render-pipeline-traps, installer-hygiene, ci-pitfalls]
+audience: [maintainer, developer, architect]
+see_also: [test-landscape.md, infrastructure.md, module-map.md]
 sources: []
 approved_at_commit: ccb4e823
 contracts: []
@@ -77,6 +80,38 @@ changelog:
   2. Define + implement a `.aid/` VCS-persistence policy: write a scoped `.aid/.gitignore` (ignore `.temp/`, `.heartbeat/`, `knowledge/.cache/`; pick a KB/works default) while **keeping** `.aid/.aid-manifest.json` + `.aid/.aid-version` tracked.
   3. Fix `docs/install.md:445` to match actual behavior.
 - **Effort:** ~half a day (generator change + emission manifests + docs + a test).
+
+---
+
+## Gotchas
+
+> The non-obvious traps a newcomer to the AID repo cannot infer from the code -- a config
+> that must change in lockstep, a build step that must run first, a "looks safe but isn't"
+> edit. State the trap, then the safe way through it. One gotcha per bullet, grep-findable.
+
+- **Edit `canonical/`, never a rendered tree:** changing a file under
+  `profiles/{...}/` or the dogfood `.claude/` is overwritten on the next render and fails
+  `verify_deterministic.py`. The safe way: edit `canonical/`, then run
+  `python .claude/skills/generate-profile/scripts/run_generator.py` (the FULL generator,
+  not a per-script renderer) -- a partial render leaves stale emission manifests and CI
+  render-drift fails.
+- **A new/removed skill drifts ~10 KB docs:** the "N user-facing skills" counts are
+  scattered across the KB and CI does not catch the drift. Reconcile via `/aid-housekeep`,
+  never inline.
+- **Tests that fire the migration scan MUST pin `HOME`:** the scan defaults its root to
+  `$HOME`; a test that does not `export HOME=<throwaway>` migrates the developer's real
+  repos. Pin both `HOME` and `AID_HOME`, with an escape canary.
+- **Shipped CLI/installer scripts must be ASCII-only and Windows-PowerShell-5.1-compatible:**
+  a no-BOM UTF-8 script is mis-parsed under the Windows ANSI codepage; PS must avoid
+  TLS-1.2-absent, 3-arg `Join-Path`, and `utf8NoBOM`. CI-guarded -- but the Windows-only
+  installer test runs ONLY on the windows runner, not in `run-all.sh`, so a green local run
+  can still fail Windows CI.
+- **`INDEX.md` regen uses the canonical script:** regenerate via
+  `canonical/aid/scripts/kb/build-kb-index.sh`, not the `.claude/` copy, or the KB-hygiene
+  CI check fails on the embedded script path.
+- **npm/PyPI versions are irreversible:** a published version number can never be reused.
+  Verify every channel (GitHub/npm/PyPI, bash/PS) before publishing; a green first-run is a
+  starting suspicion, not a verdict.
 
 ---
 

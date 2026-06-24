@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID repository concrete technology-stack inventory: languages, runtimes, libraries, build tools, and dev tooling.
 summary: Concrete inventory of languages, runtimes, libraries, build tools, and dev tooling used by the AID-methodology repository, covering Bash, Python 3.11+, JavaScript/ES modules, PowerShell 5.1+, TOML, YAML, JSON, and Mermaid.
+tags: [languages, runtimes, python311, bash, powershell51, toml, yaml, build-tools]
+audience: [developer, maintainer, architect]
+see_also: [infrastructure.md, coding-standards.md, host-tool-capabilities.md]
 sources:
   - packages/npm/package.json
   - packages/pypi/pyproject.toml

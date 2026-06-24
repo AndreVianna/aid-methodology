@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID pipeline component interface contracts: skill slash-command signatures, script CLI contracts, file-format contracts, subagent dispatch conventions, and renderer contract.
 summary: Defines the interfaces between AID pipeline components, covering skill slash-command state-machine contracts, script CLI signatures and exit codes, file-format contracts for settings.yml and emission-manifest, and the canonical-to-5-profile renderer contract.
+tags: [slash-command-contracts, script-cli-contracts, file-format-contracts, renderer-contract, subagent-dispatch, settings-contract]
+audience: [architect, developer, maintainer]
+see_also: [schemas.md, integration-map.md, module-map.md, architecture.md]
 sources:
   - canonical/skills/aid-config/SKILL.md
   - canonical/skills/aid-discover/SKILL.md
@@ -48,6 +51,52 @@ changelog:
 >
 > All claims below cite `` `path` `` + a grep-recoverable anchor (symbol, heading, or
 > unique string) against the canonical source — never a bare line number.
+
+---
+
+## Contracts
+
+> The structural shapes a change to AID's pipeline plumbing MUST satisfy. This section is
+> the greppable first-class anchor; each contract is fully detailed in the named section
+> below. Break one of these and a downstream skill, the renderer, or an install tree breaks.
+
+- **Skill slash-command contracts** — every user-facing `aid-*` skill exposes a
+  slash-command whose state machine + dispatch table is its contract (see
+  *Exposed APIs — End-User Slash Commands* + *Internal API — Skill → Subagent Dispatch
+  Contract*). A skill change MUST keep the documented state advances and arg order.
+- **Script CLI contracts** — every helper script's subcommands, flags, exit codes
+  (0=success, 1=input error, 2=usage), and stdout shape are a contract its calling skill
+  depends on (see *Internal API — Script CLIs*). Byte-reproducible scripts MUST stay
+  byte-reproducible (`LC_ALL=C`, sorted, no timestamps).
+- **File-format contracts** — `settings.yml`, `emission-manifest.jsonl`, heartbeat files,
+  and the named `STATE.md` sections have fixed shapes consumed across the pipeline (see
+  *File-Format Contracts*). A producer and every consumer MUST move in lockstep.
+- **Renderer contract** — `canonical/` → 5 profile trees + the dogfood `.claude/`: the
+  emission is byte-identical output verified by `verify_deterministic.py`; the
+  emission-manifest is the deletion safety boundary (see *Renderer Contract*).
+- **Settings contract** — `discovery.doc_set` declared-set → dispatch mapping honors the
+  set (no-hang on omission; dispatch on addition) (see *Internal API — Skill ↔ Settings
+  Contract*).
+
+---
+
+## Conventions
+
+> The project's own way of wiring the pipeline's component-to-component edges -- the
+> dispatch/registration rules an agent adding a new skill, sub-agent dispatch, or script
+> CLI would otherwise invent wrong.
+
+- **Adding a skill → subagent dispatch:** declare the dispatch in the skill's `## Dispatch`
+  table (the canonical state machine); each row is Unconditional / Halt / or Conditional on
+  a computed criterion. The sub-agent is selected per the task-type → executor mapping.
+- **Adding a script CLI:** follow the verb-subcommand shape (`<script> <subcmd> --flag`),
+  emit the standard exit codes (0/1/2), print the header comment on `-h|--help` via `sed`,
+  and keep output byte-reproducible if any gate consumes it.
+- **Adding/altering a file-format field:** update the producer AND every consumer in the
+  same change; a config that must change in lockstep is a `## Gotchas` entry in the owning
+  concern doc, not a silent assumption.
+- **A new skill is rendered, never hand-placed:** author in `canonical/`, render to the 5
+  profile trees + `.claude/`; never edit a rendered copy.
 
 ---
 

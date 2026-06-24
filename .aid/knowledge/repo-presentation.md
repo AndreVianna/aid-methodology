@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID GitHub repository user-facing presentation: README structure, docs/ taxonomy, examples/, and methodology specification document.
 summary: Documents how the AID methodology is presented to users in the GitHub repository, covering the README structure, docs/ folder taxonomy, examples/ case studies, and the methodology specification at docs/aid-methodology.md.
+tags: [readme, docs-taxonomy, methodology-spec, examples, user-presentation]
+audience: [pm, maintainer]
+see_also: [feature-inventory.md, domain-glossary.md, project-structure.md]
 sources:
   - README.md
   - docs/aid-methodology.md

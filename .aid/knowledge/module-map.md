@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID major module map: aid-* skills, agents, generator Python files, and canonical helper scripts with purpose, path, dependencies, and tests.
 summary: Maps all major code and content modules in AID, including the 13 user-facing aid-* skills, 9 agents, 7 generator Python files, and canonical helper scripts, with each entry's directory path, dependencies, and associated tests.
+tags: [module-map, aid-skills, agents, generator, helper-scripts, installer-cli, module-wiring]
+audience: [architect, developer, maintainer]
+see_also: [architecture.md, project-structure.md, pipeline-contracts.md, coding-standards.md]
 sources:
   - canonical/skills/
   - canonical/agents/
@@ -378,3 +381,52 @@ Maintainer-only. Verifies `profiles/` matches `canonical/` (reusing the render-d
 - **Agents → scripts:** agents invoke scripts indirectly (a skill dispatches the agent with a prompt containing the script call). No agent invokes a script except via its own Bash tool when authorized in its `tools:` frontmatter.
 - **Renderer → everything:** the renderer reads `canonical/{agents,skills,templates,recipes,scripts}/`, applies the profile's transforms, writes into `profiles/{name}/<install_root>/`, and records every emission in `<install_root>/emission-manifest.jsonl`. The manifest is the SAFETY boundary for the next run's deletion pass (per `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`).
 - **Verify → renderer:** `run_generator.py` (`run_verify` / `run_advisory`) calls `verify_deterministic.py` (strict) then `verify_advisory.py` (advisory) after every render. VERIFY (deterministic) re-runs the renderer to a scratch directory and compares byte-by-byte; any drift exits non-zero.
+
+---
+
+## Conventions
+
+> How a new module of each class is added and wired into AID -- the registration steps an
+> agent would otherwise get wrong. Each rule names its module class; the per-class detail
+> lives in §1-§6 above.
+
+- **Wiring a new skill (class 1):** create `canonical/skills/aid-<name>/SKILL.md` as a
+  Thin-Router (`<=~360` lines) plus one `references/state-<state>.md` per state; the
+  Dispatch table IS the canonical state machine. Add the skill to the user-facing count
+  and reconcile the "N user-facing skills" tallies KB-wide via `/aid-housekeep` (never
+  inline) -- a new skill drifts ~10 docs. Never hand-edit the rendered profile copies.
+- **Wiring a new agent (class 2):** create `canonical/agents/aid-<name>/AGENT.md` with the
+  `tier`/`tools` frontmatter and the `{{include:agent-boilerplate}}` body; register it in
+  the relevant skill's `## Dispatch` / `## Agent Selection` table so a skill can dispatch it.
+- **Wiring a new helper script (class 4):** place it under the matching
+  `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` subdir, kebab-case
+  `verb-noun.sh`; invoke it from the skill via Bash (skills -> scripts is the only call
+  edge -- agents reach scripts only through a dispatching skill's prompt). A generated
+  script is registered in `canonical/templates/generated-files.txt`.
+- **Adding a template/recipe (class 5):** kebab-case `.md` under `canonical/templates/` or
+  `canonical/recipes/`; recipes are listed in the README Seed Catalog.
+- **Touching the installer/CLI (class 6):** shipped `bin/`, `lib/`, `install.*` scripts stay
+  ASCII-only and Windows-PowerShell-5.1-compatible (CI-guarded).
+
+---
+
+## Invariants
+
+> What MUST always hold about the module structure. Violating one of these silently breaks
+> the render pipeline or the isolation guarantee.
+
+- **Canonical is the single source of truth:** every module under
+  `profiles/{...}/` and the dogfood `.claude/` tree is byte-identical *output* of the
+  generator from `canonical/`. A profile copy MUST NEVER be hand-edited; the fix goes in
+  `canonical/` and is re-rendered. `verify_deterministic.py` enforces this byte-for-byte.
+- **The emission manifest is the deletion safety boundary:** the generator may only prune
+  files it previously emitted (recorded in `<install_root>/emission-manifest.jsonl`); it
+  MUST NOT delete user content. Orphan-pruning is by the `aid-` prefix only.
+- **Dependency direction is one-way:** skills dispatch agents and invoke scripts; agents
+  do not invoke scripts except via a dispatching skill's prompt; scripts never dispatch
+  agents. No cycle in the skill -> agent / skill -> script edges.
+- **`generate-profile` lives only in `.claude/`, never in `canonical/skills/`:** rendering
+  the renderer into the profiles it renders is the chicken-and-egg case it is exempt from.
+- **All AID-delivered modules are `aid-`-namespaced / isolated from user content:** skill and
+  agent directories carry the `aid-` prefix so orphan-prune and collision-avoidance work
+  (content-isolation cornerstone).

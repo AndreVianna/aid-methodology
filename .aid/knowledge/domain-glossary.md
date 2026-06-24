@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: Authoritative AID-specific term glossary: phase names, role names, pipeline concepts, work-type taxonomy, and traceability layers, including concept-spine entries for load-bearing native concepts.
 summary: Authoritative glossary of AID-specific terms mined from the methodology spec, skill frontmatter, agent definitions, templates, and scripts, with load-bearing concepts promoted to structured spine entries.
+tags: [ubiquitous-language, concept-spine, iron-man-model, phase-gate, task-types, lite-path, feedback-loops]
+audience: [architect, developer, pm, reviewer]
+see_also: [feature-inventory.md, architecture.md]
 sources:
   - docs/aid-methodology.md
   - docs/glossary.md
@@ -222,6 +225,30 @@ changelog:
 **sources:**
 - `canonical/EMISSION-MANIFEST.md:# Emission Manifest — Design Specification` -- full spec
 - `canonical/EMISSION-MANIFEST.md:## Safety-Boundary Semantics` -- pure-mirror deletion semantics
+
+---
+
+## Invariants
+
+> The **conceptual invariants** of AID's spine -- the relationships between core concepts
+> that MUST hold for the methodology to be itself. These are not code-enforced rules
+> (those live in architecture.md / module-map.md); they are the load-bearing truths an
+> agent must not contradict when reasoning about AID's vocabulary.
+
+- **The human never leaves the cockpit (Iron Man Model):** every phase is co-executed; the
+  human retains final authority at every Phase Gate. No concept in the spine may imply
+  fully autonomous advancement -- AID never auto-advances a phase.
+- **Every phase transition passes through a Phase Gate:** a phase MUST NOT advance without
+  an explicit human "OK?". A skill's internal state machine always terminates at a gate
+  before phase advance.
+- **The KB is the single source of truth and the grounding anchor:** every AID phase reads
+  from `.aid/knowledge/`; every factual KB claim carries a durable-anchor source citation.
+  Without the KB, agents hallucinate -- so a concept is only "true of AID" if it is grounded.
+- **Canonical is the source; every other tree is byte-identical output:** the
+  canonical->render relationship is one-way; a rendered profile is never a source of truth.
+- **Each task is traceable to a requirement or task, and tracked in STATE.md:** untracked
+  work is, by definition, incomplete work -- the tracking spine is part of the methodology's
+  meaning, not an add-on.
 
 ---
 

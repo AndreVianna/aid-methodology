@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID canonical feature list with status and work-item traceability.
 summary: Canonical inventory of all user-facing AID skills and engineering features with shipped/pending status and traceability to the canonical skill sources.
+tags: [feature-inventory, skill-catalog, capabilities, shipped-status, work-traceability]
+audience: [pm, architect, developer]
+see_also: [module-map.md, domain-glossary.md, repo-presentation.md]
 sources:
   - canonical/skills/aid-config/SKILL.md
   - canonical/skills/aid-discover/SKILL.md

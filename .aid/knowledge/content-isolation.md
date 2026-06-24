@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID content-isolation cornerstone: aid/-nest rule, aid- prefix rule, prune basis, and root-agent AID:BEGIN/AID:END marker boundary.
 summary: Documents the cornerstone convention that every AID-delivered file is either nested under an aid/ subtree or carries the aid- prefix, isolating it from user content across all profiles.
+tags: [content-isolation, aid-prefix, aid-nest-rule, orphan-prune, marker-boundary, agents-md]
+audience: [architect, maintainer, reviewer]
+see_also: [module-map.md, architecture.md, coding-standards.md]
 sources:
   - canonical/EMISSION-MANIFEST.md
   - canonical/aid/

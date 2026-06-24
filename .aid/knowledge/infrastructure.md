@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID-methodology repository hosting, build, distribution, CI/CD, and release infrastructure.
 summary: Describes the AID infrastructure: the persistent global aid CLI and its four install channels, the canonical-to-5-profiles render pipeline, the tag-triggered release pipeline, and local-filesystem runtime state conventions.
+tags: [aid-cli, install-channels, ci-cd, release-pipeline, render-pipeline, npm, pypi, github-releases]
+audience: [maintainer, operator, architect]
+see_also: [technology-stack.md, test-landscape.md, integration-map.md, release-tracking.md]
 sources:
   - .github/workflows/test.yml
   - .github/workflows/installer-tests.yml

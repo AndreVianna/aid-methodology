@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID repository coding conventions: SKILL.md/AGENT.md/KB-doc frontmatter shapes, Python and Bash style, Markdown conventions, and cross-cutting authoring rules.
 summary: Documents the de-facto coding conventions used across the AID repo, covering skill/agent/KB authoring patterns, script style, and rules from CLAUDE.md and the kb-authoring templates.
+tags: [naming-conventions, frontmatter-shapes, bash-style, python-style, thin-router, ascii-only, powershell-gotchas]
+audience: [architect, developer, maintainer]
+see_also: [module-map.md, schemas.md, content-isolation.md]
 sources:
   - canonical/skills/aid-config/SKILL.md
   - canonical/agents/aid-architect/AGENT.md
@@ -34,6 +37,40 @@ changelog:
 > document that explicitly normatively asserts them (frontmatter-schema.md,
 > principles.md, CLAUDE.md). Confirmed assertions are tagged **CONFIRMED**;
 > inferred ones are not tagged.
+
+---
+
+## Conventions
+
+> AID's **own way** of doing a recurring change -- the rules an agent would otherwise
+> invent wrong for this repo. Each rule below is imperative; the detailed evidence and
+> sub-cases live in the numbered sections that follow (this section is the greppable
+> first-class anchor; see also §2 Naming, §3 File-Level, §8 Code Style).
+
+- **Adding an `aid-*` skill:** author it under `canonical/skills/aid-<name>/` (kebab-case,
+  `aid-` prefix), with a `SKILL.md` that opens with the `name`/`description`/`allowed-tools`
+  frontmatter shape; split state machines into `state-<name>.md` reference files. Never
+  author a skill directly into a profile tree -- it is rendered there by the generator
+  (§7). See module-map.md for the registration surface.
+- **Adding an agent:** author it under `canonical/agents/aid-<name>/AGENT.md` (kebab-case,
+  `aid-` prefix) with the `name`/`description`/`tier`/`tools` frontmatter shape and the
+  shared `{{include:agent-boilerplate}}` body (§8e).
+- **Adding a helper script:** kebab-case `verb-noun.sh` under the matching
+  `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` subdir; declare
+  `set -euo pipefail`, support `-h|--help` via the header-comment `sed` idiom, keep shipped
+  CLI/installer scripts ASCII-only (§3, §8). A generated script must be registered in
+  `canonical/templates/generated-files.txt`.
+- **Adding a KB doc:** kebab-case `.md` under `.aid/knowledge/`, opening with the KB-doc
+  frontmatter shape (`kb-category`/`source`/`objective`/`summary`/`sources`, plus optional
+  `tags`/`see_also`/`audience`); regenerate `INDEX.md` via `build-kb-index.sh` after
+  (§3a). Carry operational guidance in the named `## Conventions`/`## Invariants`/
+  `## Gotchas`/`## Contracts` sections per the concern-model owning-table.
+- **Naming anything machine-parsed:** the parsed value is plain text; glyphs are
+  display-only (§14). Work/delivery/task IDs are zero-padded 3-digit, kebab-prefixed
+  (`work-001`, `delivery-001`, `task-001`).
+- **Editing root agent files (`CLAUDE.md`/`AGENTS.md`):** stay inside the `AID:BEGIN`/
+  `AID:END` boundary, updated in place -- never emit an `.aid-new` sibling (content-isolation
+  cornerstone; see content-isolation.md).
 
 ---
 

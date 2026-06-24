@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID data-model schemas: settings.yml, STATE.md shapes, SKILL.md/AGENT.md/KB-doc frontmatter contracts, emission-manifest JSONL, recipe and task templates, and work-area filesystem layout.
 summary: Documents all AID structured-document and config schemas, covering settings.yml, discovery and work STATE.md shapes, frontmatter contracts for skill/agent/KB docs, the emission-manifest JSONL format, and the work-area filesystem layout.
+tags: [schemas, settings-yml, state-md, frontmatter-contracts, emission-manifest, install-manifest, profile-toml]
+audience: [architect, developer, maintainer]
+see_also: [pipeline-contracts.md, coding-standards.md, module-map.md]
 sources:
   - .aid/settings.yml
   - canonical/aid/templates/
@@ -54,6 +57,33 @@ changelog:
 | **Ephemeral state** | `.aid/.heartbeat/` (subagent heartbeat files, gitignored per `.gitignore` `.aid/.heartbeat/`), `.aid/.temp/` (skill scratch / review-pending ledgers) |
 | **Cache** | `.aid/knowledge/.cache/` (Mermaid library cache for `aid-summarize`; gitignored per `.gitignore` `.aid/knowledge/.cache/`) |
 | **Configs (non-runtime)** | `profiles/*.toml` (generator profiles), `.claude/settings.json` (Claude Code permissions) |
+
+---
+
+## Contracts
+
+> The structural shapes a change MUST satisfy -- the data/config contracts the AID pipeline
+> reads and writes. This section is the greppable first-class anchor; each contract is fully
+> specified in the numbered section named below. A change that violates one of these breaks
+> a producer/consumer pair somewhere in the pipeline.
+
+- **`.aid/settings.yml`** (§2) -- the project settings contract, including the optional
+  `discovery.doc_set` pipe-delimited list that drives doc-set dispatch.
+- **Work / delivery / task STATE.md** (§3, §4, §11, §12, §13) -- the uniform unit-hierarchy
+  tracking contract: per-level STATE/SPEC shapes, the derived-view rule, the delivery
+  lifecycle enum, the Task SPEC path, the delivery issues log, and the IMPEDIMENT schema.
+- **Frontmatter contracts** (§5, §6, §7) -- KB-doc, skill, and agent YAML frontmatter shapes
+  (the KB-doc shape is the one this delivery's routing fields extend).
+- **Emission + install manifests** (§8, §8a) -- `emission-manifest.jsonl` (the render-tree
+  deletion safety boundary) and `.aid/.aid-manifest.json` (the per-project install receipt).
+- **Profile TOML** (§9) -- the shrunk generator-profile contract (`name`/`root_dir`/
+  `root_file`/`agent_format` + `[tool_names]`/`[model_tiers]`/`[capabilities]`).
+- **Recipe front-matter + body** (§10) and the **generated-files registry** (§14) -- the
+  recipe and generated-file declaration contracts.
+
+To add a field to any of these contracts: locate the owning section, define the field's
+name/type/validation, and update EVERY consumer named there in lockstep -- an unlisted
+consumer left stale is a `## Gotchas` hazard (see tech-debt.md).
 
 ---
 

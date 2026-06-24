@@ -3,6 +3,9 @@ kb-category: primary
 source: promoted from work-local research (work-005-profile-generator-simplify/research/capability-study.md)
 objective: Per-tool capability reference for all AID-supported host tools: dispatchability, behavioral metadata preservation, and always-on context verdicts.
 summary: Per-tool capability reference recording how each AID-supported host tool discovers and executes agents/skills, how behavioral metadata is preserved or gapped under uniform markdown encoding, and the always-on context verdict.
+tags: [host-tools, dispatchability, markdown-encoding, codex-toml, capability-matrix, profiles]
+audience: [architect, maintainer]
+see_also: [technology-stack.md, infrastructure.md, integration-map.md]
 sources:
   - profiles/claude-code/.claude/
   - profiles/codex/.codex/

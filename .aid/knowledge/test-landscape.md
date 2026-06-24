@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID test suite landscape: 56 canonical suites plus native-Windows suite, aggregated by run-all.sh, covering canonical scripts and the aid CLI installer/release surface.
 summary: Inventory of all test suites that protect the canonical helper scripts and aid CLI installer/release surface, covering the 56 suites under tests/canonical/ plus the native-Windows Test-AidInstaller.ps1 and explaining what is guarded vs requires manual verification.
+tags: [test-suites, run-all, canonical-tests, windows-installer-tests, ci-gates, assert-lib]
+audience: [developer, maintainer, reviewer]
+see_also: [infrastructure.md, tech-debt.md, coding-standards.md]
 sources:
   - tests/canonical/
   - tests/run-all.sh

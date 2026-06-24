@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID repository external service and integration map: Mermaid CDN, gh CLI, multi-tool distribution, and install/release registries.
 summary: Maps all external services and integrations the AID repo depends on, including the Mermaid CDN consumed by aid-summarize, the gh CLI for PR workflows, and the npm/PyPI/GitHub Releases install registries.
+tags: [integrations, mermaid-cdn, gh-cli, multi-tool-distribution, install-registries, inter-skill-choreography]
+audience: [architect, maintainer, operator]
+see_also: [pipeline-contracts.md, infrastructure.md, module-map.md, external-sources.md]
 sources:
   - canonical/skills/aid-summarize/SKILL.md
   - .github/workflows/release.yml
@@ -35,6 +38,32 @@ changelog:
 > via OIDC) plus the npm and PyPI registries (the published `aid-installer` shim packages).
 >
 > All claims cite `` `file` `anchor` `` (grep-recoverable symbol/heading) against the canonical source.
+
+---
+
+## Contracts
+
+> The structural shapes each integration MUST satisfy -- the boundary contracts a change
+> touching AID's external surface or its skill-to-skill hand-offs must not break. This
+> section is the greppable first-class anchor; the detail lives in the named sections below.
+
+- **Skill-to-skill hand-off is via filesystem state, not direct calls** (see *Inter-Skill
+  Choreography*). Each phase reads/writes the agreed artifacts (`STATE.md` sections,
+  `SPEC.md`/`PLAN.md`, the KB, `settings.yml`); a skill MUST consume exactly what the prior
+  phase produces and produce exactly what the next phase expects. The `STATE.md`
+  `Impact:Required` Q&A handshake between `/aid-housekeep` and `/aid-discover` is one such
+  contract.
+- **Multi-tool distribution contract** (see *Multi-Tool Distribution Integration*): canonical
+  source renders into 5 host-tool install trees (`.claude/`, `.codex/`, `.cursor/`,
+  `.github/`, `.agent/`); each tree's `emission-manifest.jsonl` records every emitted file
+  and bounds the deletion pass.
+- **Install / release registry contract** (see *Third-Party Services*): the `aid` CLI fetches
+  SHA256-verified release tarballs from GitHub Releases; `release.yml` publishes via OIDC;
+  the npm + PyPI `aid-installer` shim packages must stay lockstep on the dashboard file set
+  and version. A published version is irreversible.
+- **Mermaid CDN contract** (see *Third-Party Services*): `aid-summarize` consumes the
+  Mermaid library from the jsdelivr CDN (cached under `.aid/knowledge/.cache/`); the offline
+  HTML viewer degrades gracefully when the CDN is unreachable.
 
 ---
 

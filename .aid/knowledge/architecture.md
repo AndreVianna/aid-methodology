@@ -3,6 +3,9 @@ kb-category: primary
 source: hand-authored
 objective: AID-methodology repository architecture: canonical-to-render-to-install pipeline, phase-to-skill mapping, agent-tier model, Thin-Router pattern, and declared-doc-set mechanism.
 summary: Architectural map of the AID-methodology repository showing how the canonical source emits into five byte-identical host-tool install trees and how all methodology pieces fit together.
+tags: [canonical-render-pipeline, thin-router, phase-to-skill, agent-tiers, emission-manifest, declared-doc-set]
+audience: [architect, maintainer]
+see_also: [module-map.md, project-structure.md, pipeline-contracts.md, integration-map.md]
 sources:
   - canonical/skills/
   - canonical/agents/
@@ -445,6 +448,34 @@ mechanism was found in any source file.
 | **End-user runtime (on-demand)** | Slash command `/aid-housekeep`, `/aid-query-kb`, `/aid-update-kb` | Three off-pipeline user-facing skills — `aid-housekeep` is optional/on-demand KB + summary + cleanup maintenance; `aid-query-kb` is an optional, on-demand Q&A skill answering free-form project questions from the KB + live codebase + in-flight works with citations, and captures knowledge gaps as Query-Gap entries in STATE.md; `aid-update-kb` is an optional, on-demand targeted KB update skill that applies a prompt-driven delta through the review gate and commits only after explicit human approval. None is part of the linear pipeline. Evidence: `canonical/skills/aid-housekeep/SKILL.md`; `canonical/skills/aid-query-kb/SKILL.md`; `canonical/skills/aid-update-kb/SKILL.md`. |
 | **First-time AI agent context** | `CLAUDE.md` (Claude Code dogfood) / `AGENTS.md` (Codex, Cursor, Copilot CLI, Antigravity profiles) | Top-level project-context document — describes purpose, KB location, build/test commands, conventions. |
 | **Methodology reader** | `docs/aid-methodology.md` | The authoritative specification (Version 3.2). Read by humans, not by skills directly. |
+
+## Invariants
+
+> What MUST always hold about AID's architecture. Each is enforced by a named mechanism
+> (or noted as convention-only); violating one breaks the render pipeline, the isolation
+> guarantee, or the pipeline's phase ordering.
+
+- **`canonical/` is the single source of truth:** a maintainer edits ONLY `canonical/`
+  (plus the `.claude/` renderer that cannot render itself). Every profile install tree and
+  the dogfood `.claude/` mirror is byte-identical generator output. Enforced by
+  `verify_deterministic.py` (re-render to scratch + byte-compare; exit 1 on any drift).
+- **The emission manifest is the deletion safety boundary:** the generator's delete pass
+  removes ONLY files present in the previous `{profile}/emission-manifest.jsonl` but absent
+  from the current one; files outside any manifest are never touched. Enforced by
+  `render_lib.py` manifest diff (per `canonical/EMISSION-MANIFEST.md` Safety-Boundary Semantics).
+- **Dependency direction points inward to canonical:** the renderer reads `canonical/` and
+  writes profiles; profiles never feed back into `canonical/`. There is no edge from a
+  rendered tree to the source.
+- **Each skill executes exactly one state per invocation, no auto-advance:** a `/aid-<skill>`
+  call detects its state from disk, runs that one state, and exits; the human re-invokes for
+  the next state. Enforced by the Thin-Router pattern + on-disk STATE detection.
+- **All AID-delivered content is isolated from user content:** skills/agents carry the
+  `aid-` prefix; root agent files (`CLAUDE.md`/`AGENTS.md`) are edited in place inside the
+  `AID:BEGIN`/`AID:END` boundary with no `.aid-new` sibling. This is the content-isolation
+  cornerstone (see content-isolation.md).
+- **STATE.md is the tracking spine:** every change to a work/task/delivery state is written
+  to the owning `STATE.md` as part of the same action; the dashboard reader and `/aid-execute`
+  depend on it. Convention-enforced (tracking discipline), not auto-checked.
 
 ## Documentation vs. Implementation Discrepancies
 
