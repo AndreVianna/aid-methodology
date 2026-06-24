@@ -4,7 +4,7 @@ source: hand-authored
 objective: Act-back FAIL fixture schemas doc -- Contracts section ABSENT (buried).
 summary: Data contracts for the EventPipeline project. The contract details are
   described in narrative paragraphs rather than a named Contracts section, so the
-  presence check reports schemas.md Contracts as absent and the M6 reviewer must
+  presence check reports schemas.md Contracts as absent and the M4 reviewer must
   guess or reach for source for the exact contract shape.
 sources: []
 tags: [test-fixture]
@@ -15,7 +15,7 @@ tags: [test-fixture]
 <!-- NOTE: The ## Contracts section is INTENTIONALLY ABSENT from this doc.
      This is the act-back FAIL fixture: kb-actback-task.sh reports schemas.md
      Contracts as absent. The contract information is buried in prose so the
-     M6 reviewer cannot locate the exact contract shape for planning a field
+     M4 reviewer cannot locate the exact contract shape for planning a field
      addition without guessing or reaching for source.
      schemas.md is an expected Contracts owner per the owning-table (C5). -->
 

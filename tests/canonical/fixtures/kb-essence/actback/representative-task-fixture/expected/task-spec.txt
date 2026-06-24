@@ -1,6 +1,6 @@
 ## Representative Task Spec
 
-**Act-back mandate (M6) -- clean-context operational probe**
+**Act-back mandate (M4) -- clean-context operational probe**
 
 Using ONLY the KB docs provided, perform the following representative task
 for this project.  Produce a correct plan/outline for the change in the

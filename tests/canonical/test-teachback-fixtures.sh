@@ -227,14 +227,12 @@ echo "=== T05: V-C2 pass-kb closure PASS substrate ==="
 PASS_OUTPUT_A="${TMP}/pass-output-a.md"
 
 PASS_OUTPUT_B="${TMP}/pass-output-b.md"
-PASS_OUTPUT_C="${TMP}/pass-output-c.md"
 bash "$CLOSURE_CHECK" \
   --concepts "$PASS_CONCEPTS" \
   --spine    "$PASS_SPINE" \
   --kb-dir   "$PASS_KB_DIR" \
   --output-a "$PASS_OUTPUT_A" \
   --output-b "$PASS_OUTPUT_B" \
-  --output-c "$PASS_OUTPUT_C" \
   2>/dev/null
 
 # The output (a) table has a header row (| term | used-in-doc | anchor |) and a
@@ -283,14 +281,12 @@ echo "=== T06: V-C3 fail-kb closure FAIL substrate ==="
 FAIL_OUTPUT_A="${TMP}/fail-output-a.md"
 
 FAIL_OUTPUT_B="${TMP}/fail-output-b.md"
-FAIL_OUTPUT_C="${TMP}/fail-output-c.md"
 bash "$CLOSURE_CHECK" \
   --concepts "$FAIL_CONCEPTS" \
   --spine    "$FAIL_SPINE" \
   --kb-dir   "$FAIL_KB_DIR" \
   --output-a "$FAIL_OUTPUT_A" \
   --output-b "$FAIL_OUTPUT_B" \
-  --output-c "$FAIL_OUTPUT_C" \
   2>/dev/null
 
 # Closure-check lowercases terms in output (a); check for "tokenrouter".

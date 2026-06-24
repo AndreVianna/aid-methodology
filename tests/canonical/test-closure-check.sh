@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# test-closure-check.sh -- Canonical tests for closure-check.sh (3-output coverage oracle).
+# test-closure-check.sh -- Canonical tests for closure-check.sh (2-output coverage oracle).
 #
-# Tests (C01-C08) cover all acceptance criteria from feature-004 / task-009:
+# Tests cover the acceptance criteria from feature-004 / task-009 that survive the
+# delivery-009 panel simplification (output (c) transcription-ratio was retired --
+# transcription is now an M2 Anatomy reviewer judgment, not a mechanical ratio):
 #   C01-C02  Output (a) termination: a planted used-but-undefined term is reported; a fully
 #            closed fixture reports empty output (a).
 #   C03-C05  Output (b) sources:-anchored coverage: a candidate present in a doc whose
 #            local-file sources: contains it emits present; a candidate absent emits absent;
 #            a doc whose only sources: is a URL yields anchoring-source = N/A (no absent).
-#   C06-C07  Output (c) transcription ratio: a near-verbatim local-source doc emits a high
-#            overlap-ratio (1.000); a URL-only-sourced doc emits N/A.
-#   C08      Determinism: a re-run is byte-identical across all three outputs (NFR-3).
+#   C08      Determinism: a re-run is byte-identical across both outputs (NFR-3).
+#
+# (Former C06-C07 asserted output (c)'s transcription ratio; removed with output (c).)
 #
 # Fixtures live under tests/canonical/fixtures/closure-check/ (main fixture) and
 # tests/canonical/fixtures/closure-check/closed/ (the fully-closed sub-fixture for C02).
@@ -96,13 +98,12 @@ trap 'rm -rf "$TMPDIR_TEST"' EXIT
 # Helper: run closure-check on the MAIN fixture, writing individual output files.
 # Pins HOME to a throwaway dir to prevent .coined-term-denylist.local.txt leakage.
 # Usage: run_main <suffix>
-# Sets:  OUT_A, OUT_B, OUT_C (absolute paths to the three output files)
+# Sets:  OUT_A, OUT_B (absolute paths to the two output files)
 # ---------------------------------------------------------------------------
 run_main() {
   local suffix="${1:-}"
   OUT_A="${TMPDIR_TEST}/out_a${suffix}.md"
   OUT_B="${TMPDIR_TEST}/out_b${suffix}.md"
-  OUT_C="${TMPDIR_TEST}/out_c${suffix}.md"
   HOME=$(mktemp -d) bash "$SUT" \
     --root "$REPO" \
     --concepts "$CONCEPTS_MAIN" \
@@ -111,7 +112,6 @@ run_main() {
     --denylist "$DENYLIST" \
     --output-a "$OUT_A" \
     --output-b "$OUT_B" \
-    --output-c "$OUT_C" \
     2>/dev/null
 }
 
@@ -122,7 +122,6 @@ run_closed() {
   local suffix="${1:-}"
   OUT_A="${TMPDIR_TEST}/closed_a${suffix}.md"
   OUT_B="${TMPDIR_TEST}/closed_b${suffix}.md"
-  OUT_C="${TMPDIR_TEST}/closed_c${suffix}.md"
   HOME=$(mktemp -d) bash "$SUT" \
     --root "$REPO" \
     --concepts "$CONCEPTS_CLOSED" \
@@ -131,7 +130,6 @@ run_closed() {
     --denylist "$DENYLIST" \
     --output-a "$OUT_A" \
     --output-b "$OUT_B" \
-    --output-c "$OUT_C" \
     2>/dev/null
 }
 
@@ -142,7 +140,6 @@ run_closed() {
 run_main "_r1"
 MAIN_A="${TMPDIR_TEST}/out_a_r1.md"
 MAIN_B="${TMPDIR_TEST}/out_b_r1.md"
-MAIN_C="${TMPDIR_TEST}/out_c_r1.md"
 
 run_closed "_r1"
 CLOSED_A="${TMPDIR_TEST}/closed_a_r1.md"
@@ -240,63 +237,16 @@ else
 fi
 
 # ============================================================
-# C06: Output (c) -- near-verbatim local-source doc emits a high overlap-ratio
+# C08: Determinism -- a re-run is byte-identical across both outputs (NFR-3)
 #
-# high-overlap.md is a near-verbatim copy of its local source (verbatim-source.md).
-# The overlap-ratio must be a numeric value (not N/A) and must be high (>= 0.9).
+# Run the oracle a second time and compare the two output files byte-for-byte.
+# URL sources: resolve to N/A, never fetched, so both outputs are deterministic.
 # ============================================================
-log "C06: output (c) high-overlap.md emits a high numeric overlap-ratio"
-highoverlap_row=$(grep -F "high-overlap.md" "$MAIN_C" | grep -v "^#" | grep -v "^|[[:space:]]*doc" | grep -v "^|-" || true)
-if [[ -z "$highoverlap_row" ]]; then
-  fail "C06 output (c) -- no row found for high-overlap.md"
-else
-  # Extract the overlap-ratio field (4th pipe-delimited field)
-  ratio=$(echo "$highoverlap_row" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); print $4}')
-  if [[ "$ratio" == "N/A" ]]; then
-    fail "C06 output (c) high-overlap.md -- got N/A, expected numeric ratio"
-  else
-    # Compare as a floating-point check: ratio >= 0.9
-    # Use awk for portable float comparison
-    is_high=$(awk -v r="$ratio" 'BEGIN { print (r+0 >= 0.9) ? "yes" : "no" }')
-    if [[ "$is_high" == "yes" ]]; then
-      pass "C06 output (c) high-overlap.md overlap-ratio is high ($ratio >= 0.9)"
-    else
-      fail "C06 output (c) high-overlap.md -- ratio $ratio is not >= 0.9"
-    fi
-  fi
-fi
-
-# ============================================================
-# C07: Output (c) -- URL-only-sourced doc emits N/A (no numeric ratio)
-#
-# external-only.md has sources: [https://...] only.
-# => its output (c) row must have overlap-ratio = N/A.
-# ============================================================
-log "C07: output (c) external-only.md emits N/A (URL source)"
-external_c_row=$(grep -F "external-only.md" "$MAIN_C" | grep -v "^#" | grep -v "^|[[:space:]]*doc" | grep -v "^|-" || true)
-if [[ -z "$external_c_row" ]]; then
-  fail "C07 output (c) -- no row found for external-only.md"
-else
-  ext_ratio=$(echo "$external_c_row" | awk -F'|' '{gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); print $4}')
-  if [[ "$ext_ratio" == "N/A" ]]; then
-    pass "C07 output (c) external-only.md overlap-ratio is N/A (URL source)"
-  else
-    fail "C07 output (c) external-only.md -- expected N/A, got '$ext_ratio'"
-  fi
-fi
-
-# ============================================================
-# C08: Determinism -- a re-run is byte-identical across all three outputs (NFR-3)
-#
-# Run the oracle a second time and compare the three output files byte-for-byte.
-# URL sources: resolve to N/A, never fetched, so all three outputs are deterministic.
-# ============================================================
-log "C08: re-run produces byte-identical outputs (a), (b), (c)"
+log "C08: re-run produces byte-identical outputs (a), (b)"
 
 run_main "_r2"
 MAIN_A2="${TMPDIR_TEST}/out_a_r2.md"
 MAIN_B2="${TMPDIR_TEST}/out_b_r2.md"
-MAIN_C2="${TMPDIR_TEST}/out_c_r2.md"
 
 if diff -q "$MAIN_A" "$MAIN_A2" >/dev/null 2>&1; then
   pass "C08 output (a) is byte-identical on re-run"
@@ -310,13 +260,6 @@ if diff -q "$MAIN_B" "$MAIN_B2" >/dev/null 2>&1; then
 else
   fail "C08 output (b) differs between runs"
   [[ "$VERBOSE" -eq 1 ]] && diff "$MAIN_B" "$MAIN_B2"
-fi
-
-if diff -q "$MAIN_C" "$MAIN_C2" >/dev/null 2>&1; then
-  pass "C08 output (c) is byte-identical on re-run"
-else
-  fail "C08 output (c) differs between runs"
-  [[ "$VERBOSE" -eq 1 ]] && diff "$MAIN_C" "$MAIN_C2"
 fi
 
 # ---------------------------------------------------------------------------

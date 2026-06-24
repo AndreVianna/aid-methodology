@@ -4,7 +4,7 @@ source: hand-authored
 objective: Act-back FAIL fixture domain glossary -- Invariants section ABSENT (buried).
 summary: Vocabulary for the EventPipeline project. The invariants governing the pipeline
   and event uniqueness are mentioned in prose rather than a named Invariants section,
-  so the presence check reports Invariants absent and the M6 reviewer must infer or guess.
+  so the presence check reports Invariants absent and the M4 reviewer must infer or guess.
 sources: []
 tags: [test-fixture]
 ---
@@ -14,7 +14,7 @@ tags: [test-fixture]
 <!-- NOTE: The ## Invariants section is INTENTIONALLY ABSENT from this doc.
      This is the act-back FAIL fixture: kb-actback-task.sh reports domain-glossary.md
      Invariants as absent, since the invariants are buried in prose definitions.
-     The M6 reviewer cannot grep for invariants; it must infer them from narrative. -->
+     The M4 reviewer cannot grep for invariants; it must infer them from narrative. -->
 
 ## Concept Spine
 

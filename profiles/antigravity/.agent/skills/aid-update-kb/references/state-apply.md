@@ -7,8 +7,8 @@ It is selected when the run-state file records `**State:** APPLY`.
 summary+pointer at KB altitude -- the *why/how-it-relates* the doc needs to be
 useful, plus a durable pointer to the source via the `sources:` field. APPLY
 does NOT transcribe source content verbatim. The REVIEW state enforces this
-discipline through f005's CAL-1/CAL-2 calibration mandate; APPLY authors to
-pass it.
+discipline through f005's M2 Anatomy mandate altitude checks (CAL-1 transcription /
+CAL-2 hollowness); APPLY authors to pass it.
 
 **Native language / concept spine invariant (FR-34).** Every edit preserves the
 doc's native concept spine. Reuse the project's coined terms from

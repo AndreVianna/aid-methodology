@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 objective: Act-back PASS fixture tech-debt doc -- Gotchas section present.
 summary: Known risks and gotchas for the EventPipeline project. The Gotchas
-  section is a named, greppable first-class section so the M6 reviewer can
+  section is a named, greppable first-class section so the M4 reviewer can
   anticipate non-obvious traps when planning a contract-field addition.
 sources: []
 tags: [test-fixture]

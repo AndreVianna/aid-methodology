@@ -1,6 +1,6 @@
-# M4 — Teach-Back Mandate FOCUS Body
+# M3 — Teach-Back Mandate FOCUS Body
 
-**Mandate:** M4 — Teach-Back (keystone hard gate)
+**Mandate:** M3 — Teach-Back (keystone hard gate)
 **Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` (7-column schema).
 **Do NOT write to STATE.md.** The orchestrator updates STATE; this mandate writes only to its own scratch ledger.
 

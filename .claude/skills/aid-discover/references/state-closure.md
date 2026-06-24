@@ -138,12 +138,13 @@ bash .claude/aid/scripts/kb/closure-check.sh \
   --spine .aid/knowledge/domain-glossary.md \
   --kb-dir .aid/knowledge \
   --output-a .aid/generated/closure-ungrounded.md \
-  --output-b .aid/generated/closure-coverage.md \
-  --output-c .aid/generated/closure-transcription.md
+  --output-b .aid/generated/closure-coverage.md
 ```
 
-The loop consumes **output (a) only** as its termination oracle. Outputs (b) and (c) are
-coverage signals consumed by f005's review panel — not loop inputs.
+The loop consumes **output (a) only** as its termination oracle. Output (b) is the
+coverage signal consumed by f005's M2 Anatomy mandate — not a loop input. (A former
+output (c) lexical transcription-ratio was retired; transcription is now an M2 reviewer
+judgment.)
 
 **Output (a) polarity:** a row IS a finding (a candidate-concept term or spine `relates-to`
 term that is **used in a KB doc but has no defining concept entry in the spine**). Zero rows

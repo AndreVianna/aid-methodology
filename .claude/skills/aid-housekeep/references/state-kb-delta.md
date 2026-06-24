@@ -282,8 +282,7 @@ No new script -- this reuses f004's harvest + `closure-check.sh` (task-008/f004)
 CLOSURE_OUT=".aid/.temp/closure-verify-a.md"
 bash .claude/aid/scripts/kb/closure-check.sh \
     --output-a "$CLOSURE_OUT" \
-    --output-b .aid/.temp/closure-verify-b.md \
-    --output-c .aid/.temp/closure-verify-c.md
+    --output-b .aid/.temp/closure-verify-b.md
 ```
 
 Read `$CLOSURE_OUT` (output (a) -- ungrounded/un-closed concept set). An empty
@@ -294,8 +293,7 @@ Clean up transients after reading:
 
 ```bash
 rm -f .aid/.temp/closure-verify-a.md \
-      .aid/.temp/closure-verify-b.md \
-      .aid/.temp/closure-verify-c.md
+      .aid/.temp/closure-verify-b.md
 ```
 
 ### Step 6c -- Closure intact: mark, commit, chain

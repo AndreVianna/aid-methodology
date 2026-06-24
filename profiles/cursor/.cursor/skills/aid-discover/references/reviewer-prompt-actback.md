@@ -1,6 +1,6 @@
-# M6 — Act-Back Mandate FOCUS Body
+# M4 — Act-Back Mandate FOCUS Body
 
-**Mandate:** M6 — Operational Sufficiency (Act-back, keystone hard gate)
+**Mandate:** M4 — Operational Sufficiency (Act-back, keystone hard gate)
 **Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-actback.md` (7-column schema).
 **Do NOT write to STATE.md.** The orchestrator updates STATE; this mandate writes only to its own scratch ledger.
 
@@ -25,7 +25,7 @@ Both limbs are **independent FAIL sources** — a plan that cannot be produced a
 FAIL on limb (a); a plan that can be produced but required guessing is a FAIL on limb (b);
 and a complete, correct plan with no insufficiencies is PASS on both.
 
-**⚠️ STRICT CLEAN-CONTEXT (stronger than other mandates, same class as M4 teach-back):**
+**⚠️ STRICT CLEAN-CONTEXT (stronger than other mandates, same class as M3 teach-back):**
 You MUST use ONLY the KB documents (`.aid/knowledge/*.md`) and the representative task
 spec below. Do NOT consult:
 - The project source code

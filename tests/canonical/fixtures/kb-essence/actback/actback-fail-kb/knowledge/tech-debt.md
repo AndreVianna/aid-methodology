@@ -4,7 +4,7 @@ source: hand-authored
 objective: Act-back FAIL fixture tech-debt doc -- Gotchas section ABSENT (buried).
 summary: Known risks for the EventPipeline project. The gotchas are mentioned as
   prose paragraphs rather than a named Gotchas section, so the presence check
-  reports tech-debt.md Gotchas as absent and the M6 reviewer may step on traps.
+  reports tech-debt.md Gotchas as absent and the M4 reviewer may step on traps.
 sources: []
 tags: [test-fixture]
 ---
@@ -14,7 +14,7 @@ tags: [test-fixture]
 <!-- NOTE: The ## Gotchas section is INTENTIONALLY ABSENT from this doc.
      This is the act-back FAIL fixture: kb-actback-task.sh reports tech-debt.md
      Gotchas as absent. The non-obvious traps are buried in prose paragraphs
-     rather than a named, greppable section, so the M6 reviewer cannot reliably
+     rather than a named, greppable section, so the M4 reviewer cannot reliably
      identify them when planning a contract change.
      tech-debt.md is the default Gotchas owner per the owning-table (C7). -->
 

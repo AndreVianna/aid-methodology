@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 objective: Act-back PASS fixture domain glossary -- Invariants section present.
 summary: Vocabulary for the EventPipeline project. The Invariants section is a
-  named, greppable first-class section so the M6 reviewer can identify what
+  named, greppable first-class section so the M4 reviewer can identify what
   constraints a contract-field addition must satisfy.
 sources: []
 tags: [test-fixture]

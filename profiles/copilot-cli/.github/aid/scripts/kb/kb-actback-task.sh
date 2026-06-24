@@ -284,7 +284,7 @@ _run_task() {
   # Emit the representative-task spec (fixed, labelled block -- byte-reproducible)
   echo "## Representative Task Spec"
   echo ""
-  echo "**Act-back mandate (M6) -- clean-context operational probe**"
+  echo "**Act-back mandate (M4) -- clean-context operational probe**"
   echo ""
   echo "Using ONLY the KB docs provided, perform the following representative task"
   echo "for this project.  Produce a correct plan/outline for the change in the"

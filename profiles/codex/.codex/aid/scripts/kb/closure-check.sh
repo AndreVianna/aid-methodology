@@ -6,7 +6,7 @@
 #   domain-glossary.md                    -- concept spine (defined terms + relates-to)
 #   KB docs + their resolved sources: frontmatter (f001 field)
 #
-# Emits THREE separately-parsable outputs (sections or files):
+# Emits TWO separately-parsable outputs (sections or files):
 #
 #   (a) Ungrounded / un-closed concept set:
 #       term | used-in-doc | anchor
@@ -21,11 +21,10 @@
 #       local-readable-file sources: entries are scanned (literal, case-normalized).
 #       URL entries (or unresolvable) -> anchoring-source = N/A, no absent finding.
 #
-#   (c) Per-doc transcription-ratio hint:
-#       doc | source-file | overlap-ratio
-#       Deterministic [0.0,1.0] salient-token overlap (denylist-filtered, same
-#       denylist as harvest-coined-terms.sh). Integer arithmetic in awk.
-#       URL sources -> N/A (no numeric ratio).
+# (A former output (c) -- a per-doc lexical transcription-ratio hint -- was
+# retired: transcription ("too fat" / verbatim source copy) is now a reviewer
+# judgment the M2 Anatomy mandate makes from the doc text plus output (b)'s
+# coverage table, not a noisy mechanical ratio. The oracle ships outputs (a)+(b).)
 #
 # All scanning: literal/lexical, case-normalized. No fetch, no network.
 # Coreutils + git only. ASCII. CI-reproducible (byte-identical re-runs).
@@ -33,7 +32,7 @@
 # Usage:
 #   closure-check.sh [--root PATH] [--concepts PATH] [--spine PATH]
 #                    [--kb-dir PATH] [--denylist PATH]
-#                    [--output-a PATH] [--output-b PATH] [--output-c PATH]
+#                    [--output-a PATH] [--output-b PATH]
 #                    [--output-all PATH]
 #
 # Defaults (resolved relative to --root or cwd):
@@ -43,8 +42,7 @@
 #   --denylist  (canonical/aid/scripts/kb/coined-term-denylist.txt or shipped copy)
 #   --output-a  stdout (section A)
 #   --output-b  stdout (section B)
-#   --output-c  stdout (section C)
-#   --output-all  if given, all three sections written to this single file
+#   --output-all  if given, both sections written to this single file
 #
 # Exit codes:
 #   0  oracle ran successfully (even if findings exist -- findings are data)
@@ -63,7 +61,6 @@ KB_DIR_ARG=""
 DENYLIST_ARG=""
 OUTPUT_A=""
 OUTPUT_B=""
-OUTPUT_C=""
 OUTPUT_ALL=""
 
 while [[ $# -gt 0 ]]; do
@@ -75,7 +72,6 @@ while [[ $# -gt 0 ]]; do
     --denylist)   DENYLIST_ARG="$2"; shift 2 ;;
     --output-a)   OUTPUT_A="$2";     shift 2 ;;
     --output-b)   OUTPUT_B="$2";     shift 2 ;;
-    --output-c)   OUTPUT_C="$2";     shift 2 ;;
     --output-all) OUTPUT_ALL="$2";   shift 2 ;;
     -h|--help)
       sed -n '2,40p' "$0" | sed 's/^# \{0,1\}//'
@@ -107,7 +103,6 @@ ROOT=$(resolve_abs "$ROOT")
 [[ -n "$DENYLIST_ARG" ]]  && DENYLIST_ARG=$(resolve_abs "$DENYLIST_ARG")
 [[ -n "$OUTPUT_A" ]]      && OUTPUT_A=$(resolve_abs "$OUTPUT_A")
 [[ -n "$OUTPUT_B" ]]      && OUTPUT_B=$(resolve_abs "$OUTPUT_B")
-[[ -n "$OUTPUT_C" ]]      && OUTPUT_C=$(resolve_abs "$OUTPUT_C")
 [[ -n "$OUTPUT_ALL" ]]    && OUTPUT_ALL=$(resolve_abs "$OUTPUT_ALL")
 
 # Set defaults (relative to ROOT)
@@ -132,7 +127,6 @@ fi
 
 if [[ -n "$OUTPUT_A" ]]; then mkdir -p "$(dirname "$OUTPUT_A")"; fi
 if [[ -n "$OUTPUT_B" ]]; then mkdir -p "$(dirname "$OUTPUT_B")"; fi
-if [[ -n "$OUTPUT_C" ]]; then mkdir -p "$(dirname "$OUTPUT_C")"; fi
 if [[ -n "$OUTPUT_ALL" ]]; then mkdir -p "$(dirname "$OUTPUT_ALL")"; fi
 
 # ---------------------------------------------------------------------------
@@ -145,7 +139,7 @@ if [[ ! -f "$SPINE" ]]; then
   echo "[closure-check] WARNING: spine (domain-glossary.md) not found at $SPINE -- output (a) will be empty" >&2
 fi
 if [[ ! -d "$KB_DIR" ]]; then
-  echo "[closure-check] WARNING: kb-dir not found at $KB_DIR -- outputs (b)/(c) will be empty" >&2
+  echo "[closure-check] WARNING: kb-dir not found at $KB_DIR -- output (b) will be empty" >&2
 fi
 
 # ---------------------------------------------------------------------------
@@ -157,9 +151,8 @@ trap 'rm -rf "$TMPDIR_CC"' EXIT
 TERMS_FILE="${TMPDIR_CC}/terms.txt"       # term (lowercased, one per line, sorted)
 DEFINED_FILE="${TMPDIR_CC}/defined.txt"   # defined spine terms (lowercased, sorted)
 RELATES_FILE="${TMPDIR_CC}/relates.txt"   # spine relates-to terms (lowercased, sorted)
-DENYLIST_TMP="${TMPDIR_CC}/denylist.txt"  # combined denylist for output (c)
 
-touch "$TERMS_FILE" "$DEFINED_FILE" "$RELATES_FILE" "$DENYLIST_TMP"
+touch "$TERMS_FILE" "$DEFINED_FILE" "$RELATES_FILE"
 
 # ---------------------------------------------------------------------------
 # Helpers: lowercase, normalize
@@ -243,18 +236,6 @@ fi
 # ---------------------------------------------------------------------------
 UNIVERSE_FILE="${TMPDIR_CC}/universe.txt"
 cat "$TERMS_FILE" "$RELATES_FILE" | sort -u > "$UNIVERSE_FILE"
-
-# ---------------------------------------------------------------------------
-# Step 4: Load denylist for output (c) salient-token filter
-# ---------------------------------------------------------------------------
-if [[ -n "$DENYLIST" && -f "$DENYLIST" ]]; then
-  cp "$DENYLIST" "$DENYLIST_TMP"
-fi
-# Local project override
-if [[ -f "${ROOT}/.aid/knowledge/.coined-term-denylist.local.txt" ]]; then
-  sort -u "${ROOT}/.aid/knowledge/.coined-term-denylist.local.txt" >> "$DENYLIST_TMP"
-  sort -u -o "$DENYLIST_TMP" "$DENYLIST_TMP"
-fi
 
 # ---------------------------------------------------------------------------
 # Output (a) computation:
@@ -446,96 +427,6 @@ resolve_source() {
 } > "$OUTPUT_B_TMP"
 
 # ---------------------------------------------------------------------------
-# Output (c) computation:
-#   Per (doc, local-source) pair: compute salient-token overlap ratio.
-#   salient-tokens = words not in denylist (same filter as harvest).
-#   overlap-ratio = |salient(doc) intersect salient(src)| / |salient(doc)|
-#   Integer arithmetic in awk (multiply by 1000, divide, format as 0.NNN).
-#   URL sources -> N/A.
-# ---------------------------------------------------------------------------
-OUTPUT_C_TMP="${TMPDIR_CC}/output_c.md"
-
-# Extract salient tokens from a file (denylist-filtered, lowercased, sorted-unique)
-# Args: $1=file, $2=denylist_file
-salient_tokens() {
-  local f="$1"
-  local deny="$2"
-  # Extract words (alpha sequences, 3+ chars), lowercase, filter denylist
-  LC_ALL=C grep -oE '[A-Za-z]{3,}' "$f" 2>/dev/null \
-    | tr '[:upper:]' '[:lower:]' \
-    | sort -u \
-    | (if [[ -s "$deny" ]]; then grep -vFxf "$deny"; else cat; fi) \
-    2>/dev/null || true
-}
-
-{
-  echo "## Output (c): Per-doc Transcription-Ratio Hint"
-  echo ""
-  echo "| doc | source-file | overlap-ratio |"
-  echo "|-----|-------------|---------------|"
-
-  if [[ -d "$KB_DIR" ]]; then
-    while IFS= read -r doc; do
-      [[ -f "$doc" ]] || continue
-      doc_base="$(basename "$doc")"
-
-      SOURCES_LIST="${TMPDIR_CC}/sources_c_${doc_base}.txt"
-      extract_sources "$doc" > "$SOURCES_LIST" 2>/dev/null || true
-
-      [[ -s "$SOURCES_LIST" ]] || continue
-
-      while IFS= read -r src_entry; do
-        [[ -z "$src_entry" ]] && continue
-
-        if is_url "$src_entry"; then
-          printf '| %s | N/A | N/A |\n' "$doc_base"
-          continue
-        fi
-
-        resolved=$(resolve_source "$src_entry")
-        if [[ -z "$resolved" ]]; then
-          printf '| %s | N/A | N/A |\n' "$doc_base"
-          continue
-        fi
-
-        src_rel="${resolved#${ROOT}/}"
-
-        # Compute salient tokens for doc and source
-        DOC_TOKENS="${TMPDIR_CC}/doc_tokens_${doc_base}.txt"
-        SRC_TOKENS="${TMPDIR_CC}/src_tokens_${doc_base}_$(basename "$src_rel").txt"
-
-        salient_tokens "$doc" "$DENYLIST_TMP" | sort -u > "$DOC_TOKENS"
-        salient_tokens "$resolved" "$DENYLIST_TMP" | sort -u > "$SRC_TOKENS"
-
-        # Compute intersection size and doc token size using comm
-        # comm -12: lines in both files (intersection), files must be sorted
-        doc_count=$(wc -l < "$DOC_TOKENS" | tr -d ' ')
-        intersect_count=$(comm -12 "$DOC_TOKENS" "$SRC_TOKENS" 2>/dev/null | wc -l | tr -d ' ')
-
-        # Compute ratio using awk integer arithmetic (fixed 3 decimal places)
-        # ratio = intersect / doc_count, expressed as 0.NNN
-        if [[ "$doc_count" -eq 0 ]]; then
-          ratio="0.000"
-        else
-          ratio=$(awk -v n="$intersect_count" -v d="$doc_count" '
-            BEGIN {
-              # Multiply by 1000 for 3 decimal places, integer arithmetic
-              r = int(n * 1000 / d)
-              # Format as 0.NNN
-              printf "%d.%03d\n", int(r/1000), (r % 1000)
-            }
-          ')
-        fi
-
-        printf '| %s | %s | %s |\n' "$doc_base" "$src_rel" "$ratio"
-
-      done < "$SOURCES_LIST"
-
-    done < <(find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
-  fi
-} > "$OUTPUT_C_TMP"
-
-# ---------------------------------------------------------------------------
 # Write outputs
 # ---------------------------------------------------------------------------
 write_output() {
@@ -547,28 +438,24 @@ write_output() {
 }
 
 if [[ -n "$OUTPUT_ALL" ]]; then
-  # Write all three to a single file
+  # Write both sections to a single file
   {
     echo "# Closure Check Results"
     echo ""
     cat "$OUTPUT_A_TMP"
     echo ""
     cat "$OUTPUT_B_TMP"
-    echo ""
-    cat "$OUTPUT_C_TMP"
   } > "$OUTPUT_ALL"
   echo "[closure-check] Wrote all outputs to $OUTPUT_ALL" >&2
 else
   # Write to stdout (default) or individual files
-  if [[ -z "$OUTPUT_A" && -z "$OUTPUT_B" && -z "$OUTPUT_C" ]]; then
-    # All to stdout
+  if [[ -z "$OUTPUT_A" && -z "$OUTPUT_B" ]]; then
+    # Both to stdout
     echo "# Closure Check Results"
     echo ""
     cat "$OUTPUT_A_TMP"
     echo ""
     cat "$OUTPUT_B_TMP"
-    echo ""
-    cat "$OUTPUT_C_TMP"
   else
     # Individual files or stdout per-section
     if [[ -n "$OUTPUT_A" ]]; then
@@ -582,12 +469,6 @@ else
       echo "[closure-check] Wrote output (b) to $OUTPUT_B" >&2
     else
       cat "$OUTPUT_B_TMP"
-    fi
-    if [[ -n "$OUTPUT_C" ]]; then
-      write_output "$OUTPUT_C_TMP" "$OUTPUT_C"
-      echo "[closure-check] Wrote output (c) to $OUTPUT_C" >&2
-    else
-      cat "$OUTPUT_C_TMP"
     fi
   fi
 fi

@@ -66,44 +66,44 @@ The bulk of the review effort.
 
 Worst-issue dominates the grade (per `canonical/templates/grading-rubric.md`).
 
-## Rubric: Calibration (summary vs transcription) — Full Primary only
+## Altitude checks (folded into the M2 Anatomy mandate) — Full Primary only
 
-**Applies after Full Primary.** Meta and generated docs are not calibration-graded.
-The Calibration dimension grades whether each Full Primary doc sits at the useful
-altitude — summary plus pointer — rather than transcribing its sources (too fat) or
-deferring to them without synthesising (too thin). Four checks, each evidence-anchored
-against a mechanically-generated list so grading is repeatable, not pure recall.
+**Applies after the Full Primary checklist, as part of the M2 Anatomy / Coverage mandate.**
+Meta and generated docs are not altitude-graded. The altitude dimension grades whether each
+Full Primary doc sits at the useful altitude — summary plus pointer — rather than transcribing
+its sources (too fat) or deferring to them without synthesising (too thin). There is **no
+separate Calibration mandate** and **no mechanical transcription-ratio**: the M2 Anatomy
+reviewer makes these judgments from the doc text plus `closure-check.sh` output (b)'s coverage
+table.
 
 | Check | Definition | Evidence anchor | Severity |
 |-------|------------|-----------------|----------|
-| **CAL-1 Transcription (too fat)** | The doc faithfully duplicates volatile source detail (full signatures, exhaustive enumerations) instead of synthesising — a "rotting duplicate". | **`closure-check.sh` output (c)** — per-doc transcription-ratio hint (lexical overlap of doc body vs each **local-file** `sources:` entry). A doc whose body is a near-verbatim restatement of a local source file, with high overlap and no added *why* / *how-it-relates*, is transcription. **URL `sources:` → N/A in (c) (skipped, not a finding)** — the offline helper cannot fetch them. | `[MEDIUM]` `[CAL-TRANSCRIPTION]` |
+| **CAL-1 Transcription (too fat)** | The doc faithfully duplicates volatile source detail (full signatures, exhaustive enumerations) instead of synthesising — a "rotting duplicate". | **Runtime LLM judgment from the doc text** (corroborated by **`closure-check.sh` output (b)**'s salient-token coverage signal): a doc whose body re-narrates a local source near-verbatim, with no added *why* / *how-it-relates*, is transcription. There is no mechanical overlap ratio — the reviewer judges from the prose. **URL `sources:` cannot be read offline → not a transcription finding.** | `[MEDIUM]` `[CAL-TRANSCRIPTION]` |
 | **CAL-2 Hollowness (too thin)** | A "see file X" link-farm conveying no durable understanding. | The doc's `sources:` vs body ratio: a doc that is mostly pointers with no synthesised cross-cutting content (no *why*, no *how parts interact*) is hollow. **Runtime judgment — NOT a mechanical assertion.** | `[MEDIUM]` `[CAL-HOLLOW]` |
 | **CAL-3 Coverage-vs-source** | A load-bearing fact present in the doc's `sources:` is absent from the doc — "the source has Y and the doc forgot it". | **`closure-check.sh` output (b)** — per-doc `sources:`-anchored coverage table `term | doc | anchoring-source | present|absent`: every `absent` row is a salient term anchored to this doc's local-file `sources:` that has no representation in the doc body. **URL `sources:` → N/A in (b)** — offline helper cannot fetch them. | `[HIGH]` `[CAL-COVERAGE]` |
 | **CAL-4 Deferral-must-point** | Where the doc defers depth ("see source"), it MUST point to a concrete `sources:` entry (durable, grep-recoverable anchor — the existing P1(d) anchor convention), not a vague "see the code". | The doc's `sources:` list: every deferral phrase must resolve to a declared source. | `[LOW]` `[CAL-DEFERRAL]` |
 
 **Mechanical vs judgment boundary.**
-CAL-1 (transcription) and CAL-3 (coverage-vs-source) are **mechanical-anchored**: the
-reviewer grades against `closure-check.sh`'s emitted outputs (c) and (b), not free recall.
-CAL-2 (hollowness) is **runtime LLM judgment**: no mechanical oracle exists for "does this
-doc convey durable understanding?" — this is the named, minimised judgment surface.
+CAL-3 (coverage-vs-source) is **mechanical-anchored**: the M2 reviewer grades against
+`closure-check.sh` output (b)'s `absent` rows, not free recall. CAL-1 (transcription) and
+CAL-2 (hollowness) are **runtime LLM judgment**: no mechanical oracle scores "does this doc
+re-narrate its source?" or "does this doc convey durable understanding?" — these are the
+named, minimised judgment surfaces the M2 reviewer owns (output (b) corroborates CAL-1 but
+does not score it).
 
 **Severity rationale.** CAL-3 coverage-vs-source is `[HIGH]` (same weight as a broken
 contract — a load-bearing source fact absent from the doc is a genuine gap). CAL-1 and
 CAL-2 are `[MEDIUM]` (altitude nits that do not misstate facts). CAL-4 is `[LOW]` (a
-deferral without a concrete pointer is a usability issue, not an accuracy gap). The exact
-`[MEDIUM]` vs `[HIGH]` threshold for transcription/hollowness is **f012-calibrated** against
-planted fixtures — the tags and check shapes are authored here; the tuned floor is
-delivery-005.
+deferral without a concrete pointer is a usability issue, not an accuracy gap).
 
 ### Round-trip test (operationalisation)
 
-The four checks are run via the **round-trip test** — three passes the Calibration reviewer
-runs per Full Primary doc:
+The four checks are run by the M2 Anatomy reviewer as part of its altitude pass per Full
+Primary doc:
 
 1. **Forward orientation.** From the doc alone (summary side), can a reader orient — get the
    *why* / *how parts interact* / the gotchas? A doc that is all pointers with no synthesised
-   content fails forward (**CAL-2 hollow**). *(Judgment, anchored: the reviewer reads the doc,
-   no source.)*
+   content fails forward (**CAL-2 hollow**). *(Judgment: the reviewer reads the doc, no source.)*
 
 2. **Reverse coverage.** From the doc's `sources:` (the authoritative side), are the
    load-bearing facts and salient terms that those sources contain represented in the doc?
@@ -114,10 +114,10 @@ runs per Full Primary doc:
    resolve to N/A in (b) — they yield no reverse-coverage finding.)*
 
 3. **Transcription scan.** Is the doc a near-verbatim copy of its `sources:` (fat) rather than
-   a synthesis? *(Mechanical signal: `closure-check.sh` **output (c)** — the per-doc
-   transcription-ratio hint, the lexical-overlap signal between the doc body and each
-   **local-file** `sources:` entry; the reviewer confirms. `sources:` that are URLs are N/A in
-   (c) — skipped by the offline helper, never flagged.)*
+   a synthesis? *(Runtime judgment from the prose: does the doc body re-narrate a local source —
+   full signatures, exhaustive enumerations, copied detail — instead of explaining *why* and
+   *how things relate*? Output (b)'s salient-token coverage corroborates, but there is no
+   mechanical overlap ratio. URL `sources:` cannot be read offline — never flagged.)*
 
 Forward orientation catches *too thin*; reverse coverage and transcription scan catch *too fat*
 and *coverage gaps* — the sweet spot calibration the KB methodology commits to.
@@ -247,8 +247,8 @@ tool can extract severity programmatically without a translation table.
 | `[FM-INVALID]` | HIGH | Frontmatter field has invalid value (e.g., kb-category not in primary/meta/extension; or required new field has malformed shape: objective/summary not a single-line scalar; sources/tags/see_also/audience not a list; approved_at_commit not hex) |
 | `[KB-MISSING]` | HIGH | A standard primary KB document is not present on disk |
 | `[GEN-MISSING]` | HIGH | A registered generated file (per `generated-files.txt`) does not exist; the build command needs to be run |
-| `[CLOSURE-GAP]` | HIGH | A salient cross-source term (from `closure-check.sh` output (a)) is neither grounded in the KB nor explicitly dismissed — a coined or synthesis term with no KB definition |
-| `[CAL-TRANSCRIPTION]` | MEDIUM | Doc is a near-verbatim transcription of its `sources:` (too fat) rather than a synthesis — flagged by `closure-check.sh` output (c) transcription-ratio hint for local-file sources |
+| `[CLOSURE-GAP]` | HIGH | A salient cross-source term (from `closure-check.sh` output (a)) is neither grounded in the KB nor explicitly dismissed — a coined or synthesis term with no KB definition. Enforced mechanically by the GENERATE closure loop's termination oracle (`state-closure.md` DETECT); not a panel mandate. |
+| `[CAL-TRANSCRIPTION]` | MEDIUM | Doc is a near-verbatim transcription of its `sources:` (too fat) rather than a synthesis — a runtime M2 Anatomy judgment from the doc text, corroborated by `closure-check.sh` output (b)'s salient-token coverage (no mechanical overlap ratio) |
 | `[CAL-HOLLOW]` | MEDIUM | Doc is a link-farm that conveys no durable understanding (too thin) — a `sources:` vs body ratio finding; runtime LLM judgment, not a mechanical assertion |
 | `[CAL-COVERAGE]` | HIGH | A salient term anchored to this doc's local-file `sources:` is absent from the doc body — an `absent` row in `closure-check.sh` output (b); URL sources are N/A |
 | `[CAL-DEFERRAL]` | LOW | Doc defers depth ("see source") without pointing to a concrete `sources:` entry — a deferral phrase that does not resolve to a declared source |

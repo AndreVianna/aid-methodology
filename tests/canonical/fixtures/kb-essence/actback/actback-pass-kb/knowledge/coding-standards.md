@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 objective: Act-back PASS fixture coding standards -- Conventions section present.
 summary: Coding standards for the EventPipeline project. The Conventions section
-  is a named, greppable first-class section so the M6 act-back reviewer can plan
+  is a named, greppable first-class section so the M4 act-back reviewer can plan
   a contract change using the project's own naming and registration rules.
 sources: []
 tags: [test-fixture]

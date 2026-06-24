@@ -219,7 +219,7 @@ Recon measured this project:
   coined concepts: 47       (large >= 40)       <-- tripped LARGE
 
 Proposed discovery path: brownfield-large
-  (full machinery: researcher fan-out + full 5-mandate review panel + batched closure loop)
+  (full machinery: researcher fan-out + full 4-mandate review panel + batched closure loop)
 
 [1] Confirm  brownfield-large  (as proposed)
 [2] Override brownfield-small  (collapsed: single understand-pass; one reviewer runs the mandates as sequential passes + clean-context teach-back)
@@ -563,9 +563,9 @@ Keep the comment markers for future re-discoveries.
 
 ### Step 8: Final Wrap-up
 
-**Persist the resolved doc-set TSV** so REVIEW's M6 pre-dispatch step has its required input.
-This MUST run on every brownfield path (large and small). Greenfield never reaches Step 8 — it
-halted at the Step 0f signpost — so the TSV is never written for a greenfield outcome (M6 is
+**Persist the resolved doc-set TSV** so REVIEW's M4 act-back pre-dispatch step has its required
+input. This MUST run on every brownfield path (large and small). Greenfield never reaches Step 8
+— it halted at the Step 0f signpost — so the TSV is never written for a greenfield outcome (M4 is
 unreachable on greenfield).
 
 ```bash

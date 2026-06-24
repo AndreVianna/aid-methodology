@@ -380,7 +380,7 @@ fi
     echo "the KB fills in as you build, via re-triage once code lands."
   elif [[ "$PROPOSED_PATH" == "BROWNFIELD-LARGE" ]]; then
     echo "One or more large dimensions tripped: ${TRIPPED}."
-    echo "Full machinery: researcher fan-out + full 5-mandate review panel + batched closure loop."
+    echo "Full machinery: researcher fan-out + full 4-mandate review panel + batched closure loop."
   else
     echo "Source is present (RM1=${RM1} > ${GF_MAX_FILES} or RM2=${RM2} > ${GF_MAX_LOC}) but all"
     echo "large thresholds are under their floors. Collapsed path: single understand-pass;"

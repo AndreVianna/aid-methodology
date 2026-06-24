@@ -1,8 +1,8 @@
 # State: REVIEW
 
-REVIEW grades the changed KB docs through f005's five-mandate review/calibration
-panel. It is selected when the run-state file records `**State:** REVIEW` or
-`**State:** FIX`.
+REVIEW grades the changed KB docs through f005's four-mandate review panel
+(Correctness / Anatomy-incl-altitude / Teach-back / Act-back). It is selected when
+the run-state file records `**State:** REVIEW` or `**State:** FIX`.
 
 **Cross-delivery reuse (task-014 / f005 seam).** This state does NOT redefine
 the review gate. It invokes `aid-discover`'s REVIEW state machine
@@ -40,24 +40,23 @@ substituting:
 {{SCOPE}}     = update-kb
 {{ARTIFACTS}} = <list of .aid/knowledge/<doc>.md paths from the edited-doc set>
 {{CONTEXT}}   = "aid-update-kb targeted KB update: review the changed docs for
-                 accuracy, calibration, concept-closure, teach-back, act-back,
-                 and calibration. The docs were edited by aid-update-kb APPLY
-                 from this prompt: <prompt from **Prompt:** in run-state>"
+                 accuracy, anatomy/coverage (incl. altitude: hollow vs
+                 transcription), teach-back, and act-back. The docs were edited
+                 by aid-update-kb APPLY from this prompt: <prompt from
+                 **Prompt:** in run-state>"
 ```
 
-The five (or six, per `panel:` setting) mandate sub-agents run against the
+The four mandate sub-agents (or 3 dispatches, per `panel:` setting) run against the
 changed docs only, each writing to its own scratch ledger:
 
 ```
 .aid/.temp/review-pending/update-kb-correctness.md
 .aid/.temp/review-pending/update-kb-anatomy.md
-.aid/.temp/review-pending/update-kb-concept-closure.md
 .aid/.temp/review-pending/update-kb-teachback.md
-.aid/.temp/review-pending/update-kb-calibration.md
 .aid/.temp/review-pending/update-kb-actback.md
 ```
 
-**Teach-back scope (SPIKE-1 default -- FR-34 re-verification).** The M4
+**Teach-back scope (SPIKE-1 default -- FR-34 re-verification).** The M3
 teach-back dispatch uses the **full whole-KB clean-context exit** (not a scoped
 teach-back limited to the changed docs). A fresh agent given ONLY the KB
 explains the engine. This guarantees that the delta did not break whole-KB

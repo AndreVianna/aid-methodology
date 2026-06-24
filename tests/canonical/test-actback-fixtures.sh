@@ -22,21 +22,21 @@
 #                 domain-glossary.md  Invariants  => absent
 #                 schemas.md          Contracts   => absent
 #                 tech-debt.md        Gotchas     => absent
-#   T05  V-E boundary  The suite does NOT mechanically assert M6 plan success or
+#   T05  V-E boundary  The suite does NOT mechanically assert M4 plan success or
 #               flag well-foundedness (irreducible LLM judgment, the operational
 #               analog of V-C's engine-narration limb). The mechanical substrate
 #               asserted is V-E1/V-E2/V-E3 only. This assertion documents the boundary.
 #   ISO-CANARY  Real HOME gained no .aid dirs during the suite run.
 #
 # Mechanical-vs-judgment boundary (load-bearing):
-#   The judgment half is NOT a mechanical CI assertion. Whether the clean-context M6
+#   The judgment half is NOT a mechanical CI assertion. Whether the clean-context M4
 #   reviewer's plan succeeds over actback-pass-kb, and whether its insufficiency flags
 #   over actback-fail-kb are well-founded, are IRREDUCIBLY LLM judgment (the operational
 #   analog of teach-back's engine-narration limb; f005 SPEC L434-435). CI asserts only:
 #     - V-E1: task spec is deterministic and byte-matches the golden (T01, T02)
 #     - V-E2: pass-kb presence check reports all expected classes present (T03)
 #     - V-E3: fail-kb presence check reports the same classes absent (T04)
-#   The M6 plan-success/flag verdict is runtime-anchored in f012's Judgment-Boundary
+#   The M4 plan-success/flag verdict is runtime-anchored in f012's Judgment-Boundary
 #   table (AC16 row) and NOT scored here.
 #
 # Isolation discipline:
@@ -282,9 +282,9 @@ fi
 #   schemas.md          Contracts   => absent
 #   tech-debt.md        Gotchas     => absent
 #
-# This is the structural cause of an act-back sufficiency FAIL: the M6 reviewer
+# This is the structural cause of an act-back sufficiency FAIL: the M4 reviewer
 # cannot grep for these sections and must guess or reach for source.
-# The M6 reviewer's judgment ("are these flags well-founded?") is runtime-anchored
+# The M4 reviewer's judgment ("are these flags well-founded?") is runtime-anchored
 # -- not asserted here. This suite asserts only the MECHANICAL structural absence.
 # ---------------------------------------------------------------------------
 echo ""
@@ -351,14 +351,14 @@ fi
 # T05: V-E judgment boundary (documentation assertion).
 #
 # This assertion explicitly documents that the suite does NOT mechanically
-# score M6 plan success or flag well-foundedness. The mechanical substrate
+# score M4 plan success or flag well-foundedness. The mechanical substrate
 # asserted is V-E1/V-E2/V-E3 (T01-T04). The judgment half is runtime-anchored.
 #
 # Mechanically: confirm the task spec contains "Task shape: contract" (the
 # representative task is well-formed for this fixture's doc-set profile).
 # This is the ONLY judgment-substrate assertion here -- the task shape is
 # deterministic (schema-driven heuristic, same TSV -> same shape). Whether
-# the agent's plan using this spec actually succeeds is LLM judgment (M6
+# the agent's plan using this spec actually succeeds is LLM judgment (M4
 # clean-context reviewer at runtime), NOT asserted in CI.
 # ---------------------------------------------------------------------------
 echo ""
@@ -366,7 +366,7 @@ echo "=== T05: V-E boundary -- mechanical substrate only, judgment left runtime-
 
 # Mechanical substrate: task spec declares the expected shape for this fixture.
 if grep -qF "Task shape: contract" "$TASK_OUT_1" 2>/dev/null; then
-  pass "T05 V-E boundary: task spec is well-formed (Task shape: contract); M6 plan-success and flag well-foundedness are LLM judgment -- NOT asserted here"
+  pass "T05 V-E boundary: task spec is well-formed (Task shape: contract); M4 plan-success and flag well-foundedness are LLM judgment -- NOT asserted here"
 else
   fail "T05 V-E boundary: task spec does not declare 'Task shape: contract' -- representative task may not be well-formed for this fixture"
   if [[ "$VERBOSE" -eq 1 ]]; then

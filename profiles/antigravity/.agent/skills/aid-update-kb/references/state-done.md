@@ -23,11 +23,10 @@ is f010; DONE runs its own re-verification unconditionally.
 ```bash
 bash .agent/aid/scripts/kb/closure-check.sh \
   --output-a .aid/.temp/closure-verify-a.md \
-  --output-b .aid/.temp/closure-verify-b.md \
-  --output-c .aid/.temp/closure-verify-c.md
+  --output-b .aid/.temp/closure-verify-b.md
 ```
 
-Read `closure-verify-b.md` (the undefined-terms report). If it contains any
+Read `closure-verify-a.md` (the ungrounded/undefined-terms oracle). If it contains any
 undefined native terms that were introduced by the APPLY edits:
 
 1. Do NOT commit.
@@ -53,8 +52,7 @@ Clean up the closure verify transients:
 
 ```bash
 rm -f .aid/.temp/closure-verify-a.md \
-      .aid/.temp/closure-verify-b.md \
-      .aid/.temp/closure-verify-c.md
+      .aid/.temp/closure-verify-b.md
 ```
 
 ---

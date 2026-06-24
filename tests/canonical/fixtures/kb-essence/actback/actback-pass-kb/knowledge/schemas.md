@@ -3,7 +3,7 @@ kb-category: primary
 source: hand-authored
 objective: Act-back PASS fixture schemas doc -- Contracts section present.
 summary: Data contracts for the EventPipeline project. The Contracts section is
-  a named, greppable first-class section so the M6 reviewer can plan a field
+  a named, greppable first-class section so the M4 reviewer can plan a field
   addition against a stated contract rather than guessing the schema.
 sources: []
 tags: [test-fixture]
