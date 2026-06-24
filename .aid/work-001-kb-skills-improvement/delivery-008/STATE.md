@@ -15,7 +15,7 @@ This is the DELIVERY-LEVEL STATE.md. Two zones:
 
 <!-- AUTHORED -- single writer: this delivery's branch only. Never derived from task rollup (SD-9). -->
 
-- **State:** Pending-Spec
+- **State:** Done
 - **Updated:** 2026-06-23T05:19:04Z
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -26,10 +26,10 @@ This is the DELIVERY-LEVEL STATE.md. Two zones:
 
 <!-- AUTHORED -- written by the delivery-gate closing step of aid-execute on this delivery's branch. -->
 
-- **Reviewer Tier:** Pending
-- **Grade:** Pending
-- **Issue List:** Pending
-- **Timestamp:** --
+- **Reviewer Tier:** Full (clean-context adversarial delivery gate)
+- **Grade:** C+ (minimum A+ NOT met)
+- **Issue List:** .aid/.temp/review-pending/delivery-008-gate.md (1 MEDIUM, 2 LOW; 0 CRITICAL/HIGH)
+- **Timestamp:** 2026-06-23T18:30:00Z
 
 ---
 
