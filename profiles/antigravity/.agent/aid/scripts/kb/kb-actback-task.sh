@@ -1,34 +1,16 @@
 #!/usr/bin/env bash
 # kb-actback-task.sh -- representative-task selector + operational-structure presence check.
 #
-# Two functions on a deterministic substrate (f013, task-028):
+# Two functions (f013, task-028):
 #
 #   Function (1) -- Representative-task selection.
 #     Reads the machine-readable doc-set TSV (filename<TAB>owner<TAB>presence, three fields
-#     only -- no concern column; see doc-set-resolve.md) and the operational sections
-#     actually present in those docs (## Conventions / ## Invariants / ## Gotchas /
-#     ## Contracts headings the presence check in function (2) greps).
-#     Emits a fixed, reproducible "do this change" representative-task spec keyed to the
-#     project's own KB shape.
+#     only -- no concern column; see doc-set-resolve.md).  Emits a fixed, reproducible
+#     "do this change" representative-task spec keyed to the project's own KB shape.
 #
-#     DETERMINISTIC SUBSTRATE (mechanical, CI-able):
-#       - Input: resolved discovery.doc_set TSV (filename<TAB>owner<TAB>presence)
-#       - Input: first-class operational sections actually present in those docs
-#       - Same KB shape (same filenames + presence + present sections) -> byte-identical output
-#
-#     CALIBRATED HEURISTIC -- [SPIKE-A1] (not mechanical; f012-calibrated):
-#       The task-shape mapping (which file/section profile -> which representative change)
-#       is a documented TUNING HINT, NOT a parsed machine field.  The resolver TSV carries
-#       no concern column; this script pattern-matches filenames + present sections only.
-#       The heuristic is f012-calibrated against the act-back fixture corpus.
-#
-#     [SPIKE-A1] TUNING HINT -- concern->task-shape mapping (for calibrators, not parsers):
-#       KB carrying schemas.md or pipeline-contracts.md   => "add a field to a contract"
-#       KB carrying module-map.md and coding-standards.md => "wire a new module"
-#       KB carrying architecture.md and coding-standards.md => "add a new component"
-#       KB carrying feature-inventory.md                 => "add a new feature"
-#       Default (any KB)                                 => "add a new endpoint"
-#     These comments describe the calibration intent; they are NEVER parsed at runtime.
+#     Task shape is selected by a small heuristic over present doc-class filenames
+#     (priority-ordered, first match wins).  Same KB shape -> byte-identical output.
+#     The mapping is calibrated, not load-bearing; adjust via fixture work if needed.
 #
 #   Function (2) -- Operational-structure presence check.
 #     For each doc in the doc-set TSV, grep for the named operational sections and emit:
@@ -231,13 +213,9 @@ _parse_docset() {
 # ---------------------------------------------------------------------------
 # Function (1): Representative-task selection
 #
-# Algorithm (deterministic over machine-readable substrate):
-#   1. Parse the doc-set TSV to get the sorted filename list.
-#   2. Check which canonical filenames are present in the list.
-#   3. Apply the [SPIKE-A1] heuristic (priority-ordered, first match wins).
-#   4. Emit the task spec as a fixed, labelled block.
-#
-# The result is byte-identical for the same input (same filenames -> same task).
+# Parse the doc-set TSV; pattern-match key filenames to pick a task shape
+# (heuristic, priority-ordered, first match wins); emit the fixed task spec.
+# Same filenames -> byte-identical output.
 # ---------------------------------------------------------------------------
 _run_task() {
   local tsv="$1"
@@ -267,9 +245,7 @@ _run_task() {
     esac
   done < "$files_tmp"
 
-  # [SPIKE-A1] task-shape heuristic (filename profile -> representative change)
-  # Priority order: first match wins (deterministic).
-  # TUNING HINT: this mapping is f012-calibrated; modify via SPIKE-A1 fixture work.
+  # Task-shape heuristic (filename profile -> representative change; calibrated, not load-bearing).
   local task_type="endpoint"
   if [[ $has_schemas -eq 1 || $has_pipeline_contracts -eq 1 ]]; then
     task_type="contract"

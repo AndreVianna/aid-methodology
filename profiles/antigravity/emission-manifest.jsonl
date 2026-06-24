@@ -76,7 +76,7 @@
 {"dst": ".agent/aid/scripts/kb/coined-term-denylist.txt", "profile": "antigravity", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".agent/aid/scripts/kb/discover-preflight.sh", "profile": "antigravity", "sha256": "ab7289ebd91e3b64808df8d7a916202fd7148090a48f8aeec07ea444b39cbd52", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".agent/aid/scripts/kb/harvest-coined-terms.sh", "profile": "antigravity", "sha256": "c386fb935463450428a7a53d84e0fe33d6ea50e5cecf39f0b91e6d4ae1f28546", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
-{"dst": ".agent/aid/scripts/kb/kb-actback-task.sh", "profile": "antigravity", "sha256": "3cca0497b3dc640c48e3cd7919033a12524de240d800151a92d573f1f9e69779", "src": "canonical/scripts/kb/kb-actback-task.sh"}
+{"dst": ".agent/aid/scripts/kb/kb-actback-task.sh", "profile": "antigravity", "sha256": "c1ebfb329a8f408ed8c94be85c99e57721223f3a70ef5f5e1085803f0fadad72", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".agent/aid/scripts/kb/kb-freshness-check.sh", "profile": "antigravity", "sha256": "7b4def4249f20690aa5d18b8aacbb62269afb925755d5300e396b15716f5dd46", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".agent/aid/scripts/kb/kb-teachback-questions.sh", "profile": "antigravity", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".agent/aid/scripts/kb/lint-frontmatter.sh", "profile": "antigravity", "sha256": "be2ab5d575c35e303c1f9c5089ac236cbe1b3fb8fd2057df859c68fa6bab1ec4", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
