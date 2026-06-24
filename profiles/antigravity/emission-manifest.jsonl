@@ -267,3 +267,4 @@
 {"dst": ".agent/skills/aid-summarize/references/state-stale-check.md", "profile": "antigravity", "sha256": "b9814c854f0daee4649e97a368d4020216c460eba5a5c63c4b2320c4ffff4850", "src": "canonical/skills/aid-summarize/references/state-stale-check.md"}
 {"dst": ".agent/skills/aid-summarize/references/state-validate.md", "profile": "antigravity", "sha256": "dc1e0b2a09f0e4fa285ece915f5c25c181cac3da94dde658268d5508865dc06f", "src": "canonical/skills/aid-summarize/references/state-validate.md"}
 {"dst": ".agent/skills/aid-summarize/references/state-writeback.md", "profile": "antigravity", "sha256": "2cda1be2a98a85751d7917b6321dd90f514ddf7f1b72026ac4c9a5f9cfcac682", "src": "canonical/skills/aid-summarize/references/state-writeback.md"}
+{"dst": ".agent/skills/aid-update-kb/SKILL.md", "profile": "antigravity", "sha256": "01d172469ba68a01721d6f98b2be67944cef26aa27651f05d14f1be83d4a25f4", "src": "canonical/skills/aid-update-kb/SKILL.md"}

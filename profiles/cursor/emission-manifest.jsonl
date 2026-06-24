@@ -267,3 +267,4 @@
 {"dst": ".cursor/skills/aid-summarize/references/state-stale-check.md", "profile": "cursor", "sha256": "1ec59b2b17c05c94935a37526b4bace4906e7bba763436f21fab4ad4ad88ed0b", "src": "canonical/skills/aid-summarize/references/state-stale-check.md"}
 {"dst": ".cursor/skills/aid-summarize/references/state-validate.md", "profile": "cursor", "sha256": "578f3cead4eac32505a0f105ee8d212c91d8084035abd27540a46342c147bef1", "src": "canonical/skills/aid-summarize/references/state-validate.md"}
 {"dst": ".cursor/skills/aid-summarize/references/state-writeback.md", "profile": "cursor", "sha256": "da3f5efea94bca1acfbf18ee287b2683396ddaad7a3d05c0b2f7183625ee42f9", "src": "canonical/skills/aid-summarize/references/state-writeback.md"}
+{"dst": ".cursor/skills/aid-update-kb/SKILL.md", "profile": "cursor", "sha256": "1cb033c37c27addc349ab503fce0174d7b66730154bfd6c2791b8277489e9912", "src": "canonical/skills/aid-update-kb/SKILL.md"}

@@ -267,3 +267,4 @@
 {"dst": ".github/skills/aid-summarize/references/state-stale-check.md", "profile": "copilot-cli", "sha256": "3d19839cbf12b3e3664bf6c60d6113ef4c7ee3617b81cfbb8648dbf3cf36ba71", "src": "canonical/skills/aid-summarize/references/state-stale-check.md"}
 {"dst": ".github/skills/aid-summarize/references/state-validate.md", "profile": "copilot-cli", "sha256": "d58392474de43d17c749fe8c8a640ed85fe45ac1028b39d2cb65234f5c524030", "src": "canonical/skills/aid-summarize/references/state-validate.md"}
 {"dst": ".github/skills/aid-summarize/references/state-writeback.md", "profile": "copilot-cli", "sha256": "85c8995bd66a85389ad74f9d040ea2b670beb958fc052ab86108459172310a7a", "src": "canonical/skills/aid-summarize/references/state-writeback.md"}
+{"dst": ".github/skills/aid-update-kb/SKILL.md", "profile": "copilot-cli", "sha256": "4e2207ead9bf9911b995d29f0dbf3d6b1b959438e7765ea35f9b1b6e4c7431b3", "src": "canonical/skills/aid-update-kb/SKILL.md"}
