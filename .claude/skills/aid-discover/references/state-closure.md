@@ -133,13 +133,27 @@ only on the concept spine (`domain-glossary.md`) and the deep-dive KB docs.
 Run the mechanical self-containment check (the deterministic substrate):
 
 ```bash
+# Extract the loop's own DISMISSED decisions from spine-todo.md (feature-014 Q10 fix). The
+# oracle subtracts these from its term universe so generic/non-concept terms the loop has
+# already ruled out stop counting -- once every USED term is GROUNDED (word-matches a concept
+# heading) or DISMISSED, output (a) is empty and the loop closes deterministically rather than
+# false-cap-tripping on terms that are correctly resolved but not standalone H3 headings.
+awk -F'|' 'NR>2 && $5 ~ /DISMISSED/ {t=$3; gsub(/`/,"",t); gsub(/^[ ]+|[ ]+$/,"",t); if(t!="" && t!="Term") print t}' \
+  .aid/generated/spine-todo.md > .aid/generated/spine-dismissed.txt 2>/dev/null || true
+
 bash .claude/aid/scripts/kb/closure-check.sh \
   --concepts .aid/generated/candidate-concepts.md \
   --spine .aid/knowledge/domain-glossary.md \
   --kb-dir .aid/knowledge \
+  --dismissed .aid/generated/spine-dismissed.txt \
   --output-a .aid/generated/closure-ungrounded.md \
   --output-b .aid/generated/closure-coverage.md
 ```
+
+(The coined-term denylist is auto-resolved from the script's sibling
+`coined-term-denylist.txt`; `--dismissed` adds the loop's per-run dismissals on top. The
+concept-heading match is a case-insensitive whole-WORD match, so a candidate token like
+`triage` resolves to a descriptive heading such as `### Triage (full vs lite path)`.)
 
 The loop consumes **output (a) only** as its termination oracle. Output (b) is the
 coverage signal consumed by f005's M2 Anatomy mandate — not a loop input. (A former
@@ -182,8 +196,8 @@ Each grounding sub-agent receives the `## Grounding` prompt from
 
 Wait for ALL parallel grounding sub-agents to complete before proceeding to the next DETECT.
 
-Print: `[5b] Round {round}: {N} ungrounded terms dispatched to {K} grounding sub-agents...`
-Print: `[5b] Round {round}: grounding complete — {G} GROUNDED, {D} DISMISSED, {E} escalated.`
+Print: `[5b] Round {round}: {N} terms are still undefined; assigning {K} helpers to define them from the code and docs...`
+Print: `[5b] Round {round}: {G} terms defined, {D} set aside (not real project terms), {E} saved as questions for you.`
 
 ---
 
@@ -233,7 +247,7 @@ format** (Step 6b reads and consolidates this file — no new queue):
 - **Question:** What does `{term}` mean in this project? Where is it defined or described?
 ```
 
-Print: `[5b] Cap-trip at round {round}/{max_rounds}. {N} ungrounded terms escalated to Q&A.`
+Print: `[5b] Stopped after {round}/{max_rounds} passes. {N} terms still couldn't be defined from the project and are saved as questions for you.`
 
 This converts a silent miss into a caught human question (FR-32). A budget exhaust degrades
 to "surface the gaps", never "ship shallow silently".

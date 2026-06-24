@@ -59,6 +59,7 @@ CONCEPTS_ARG=""
 SPINE_ARG=""
 KB_DIR_ARG=""
 DENYLIST_ARG=""
+DISMISSED_ARG=""
 OUTPUT_A=""
 OUTPUT_B=""
 OUTPUT_ALL=""
@@ -70,6 +71,7 @@ while [[ $# -gt 0 ]]; do
     --spine)      SPINE_ARG="$2";    shift 2 ;;
     --kb-dir)     KB_DIR_ARG="$2";   shift 2 ;;
     --denylist)   DENYLIST_ARG="$2"; shift 2 ;;
+    --dismissed)  DISMISSED_ARG="$2"; shift 2 ;;
     --output-a)   OUTPUT_A="$2";     shift 2 ;;
     --output-b)   OUTPUT_B="$2";     shift 2 ;;
     --output-all) OUTPUT_ALL="$2";   shift 2 ;;
@@ -101,6 +103,7 @@ ROOT=$(resolve_abs "$ROOT")
 [[ -n "$SPINE_ARG" ]]     && SPINE_ARG=$(resolve_abs "$SPINE_ARG")
 [[ -n "$KB_DIR_ARG" ]]    && KB_DIR_ARG=$(resolve_abs "$KB_DIR_ARG")
 [[ -n "$DENYLIST_ARG" ]]  && DENYLIST_ARG=$(resolve_abs "$DENYLIST_ARG")
+[[ -n "$DISMISSED_ARG" ]] && DISMISSED_ARG=$(resolve_abs "$DISMISSED_ARG")
 [[ -n "$OUTPUT_A" ]]      && OUTPUT_A=$(resolve_abs "$OUTPUT_A")
 [[ -n "$OUTPUT_B" ]]      && OUTPUT_B=$(resolve_abs "$OUTPUT_B")
 [[ -n "$OUTPUT_ALL" ]]    && OUTPUT_ALL=$(resolve_abs "$OUTPUT_ALL")
@@ -203,6 +206,11 @@ if [[ -f "$SPINE" ]]; then
     in_spine && /^### / {
       term = $0
       sub(/^### /, "", term)
+      # The heading is the term IDENTIFIER. Convention: "### Unique Term (optional
+      # explanation)" -- the identifier is the text BEFORE any "(...)", which is a human
+      # explanation, not part of the identifier. Strip the parenthetical so a used term
+      # resolves to exactly one concept entry (idempotent + identifiable; feature-014).
+      sub(/[[:space:]]*\(.*$/, "", term)
       sub(/[[:space:]]+$/, "", term)
       # Strip template placeholders like {ConceptName}
       if (term !~ /^\{/) print "DEFINED:" term
@@ -237,6 +245,38 @@ fi
 UNIVERSE_FILE="${TMPDIR_CC}/universe.txt"
 cat "$TERMS_FILE" "$RELATES_FILE" | sort -u > "$UNIVERSE_FILE"
 
+# Subtract EXCLUDED terms from the universe (feature-014 Q10 fix), where EXCLUDED =
+#   the coined-term denylist  UNION  the closure loop's own DISMISSED decisions (--dismissed).
+# Two structural causes made the oracle un-closable before this:
+#   (1) generic code tokens (echo, grep, exit, branch, docs, ...) legitimately appear in KB
+#       prose but are NOT concepts -- the denylist covers the ones it lists;
+#   (2) project-specific non-concepts (skill names, tokenizer artifacts) that the loop has
+#       already DISMISSED in spine-todo.md -- the denylist can never enumerate these, so the
+#       loop passes them via --dismissed. Once every used term is GROUNDED (matches a concept
+#       heading) or DISMISSED, output (a) is empty and the loop closes deterministically.
+# Compare case-insensitively (denylist authored lowercase; dismissed terms lowercased here).
+EXCLUDE_LC="${TMPDIR_CC}/exclude_lc.txt"
+: > "$EXCLUDE_LC"
+if [[ -n "${DENYLIST:-}" && -f "$DENYLIST" ]]; then
+  # `|| true`: on an empty/all-comment file the trailing `grep -v` exits 1, which under
+  # `set -euo pipefail` would abort the script. The extraction is best-effort.
+  LC_ALL=C tr '[:upper:]' '[:lower:]' < "$DENYLIST" \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^[[:space:]]*$' \
+    | grep -v '^#' >> "$EXCLUDE_LC" || true
+fi
+if [[ -n "${DISMISSED_ARG:-}" && -f "$DISMISSED_ARG" ]]; then
+  LC_ALL=C tr '[:upper:]' '[:lower:]' < "$DISMISSED_ARG" \
+    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^[[:space:]]*$' \
+    | grep -v '^#' >> "$EXCLUDE_LC" || true
+fi
+if [[ -s "$EXCLUDE_LC" ]]; then
+  LC_ALL=C sort -u -o "$EXCLUDE_LC" "$EXCLUDE_LC"
+  univ_lc="${TMPDIR_CC}/universe_lc.txt"
+  LC_ALL=C tr '[:upper:]' '[:lower:]' < "$UNIVERSE_FILE" | LC_ALL=C sort -u > "$univ_lc"
+  LC_ALL=C comm -23 "$univ_lc" "$EXCLUDE_LC" > "${UNIVERSE_FILE}.filtered" \
+    && mv "${UNIVERSE_FILE}.filtered" "$UNIVERSE_FILE"
+fi
+
 # ---------------------------------------------------------------------------
 # Output (a) computation:
 #   For each term in UNIVERSE_FILE, scan KB docs for occurrences.
@@ -257,8 +297,12 @@ OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
     while IFS= read -r term; do
       [[ -z "$term" ]] && continue
 
-      # Skip if already defined in the spine
-      if grep -qFx "$term" "$DEFINED_FILE" 2>/dev/null; then
+      # Skip if already defined in the spine. The defined terms are clean IDENTIFIERS (the
+      # heading text with any "(explanation)" stripped above), so this is an exact, whole-line,
+      # case-insensitive match: a used term resolves to its concept iff it equals that concept's
+      # identifier. Headings must therefore be idempotent identifiers -- "### Unique Term
+      # (optional explanation)" -- not sentences (feature-014 Q10 fix).
+      if grep -qixF -- "$term" "$DEFINED_FILE" 2>/dev/null; then
         continue
       fi
 

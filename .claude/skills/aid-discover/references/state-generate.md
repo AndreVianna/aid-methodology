@@ -816,9 +816,9 @@ For brownfield-large they are empty (use settings defaults); for brownfield-smal
 in f004's SPEC (Step 5b); f006 supplies the per-path values through it. No nested settings
 mutation; no `yq`.
 
-Print: `[5b] SYNTHESIS + CLOSURE starting (path=${confirmed_path}, max_clean_passes=${max_clean_passes}, max_rounds=${max_rounds})...`
+Print: `[5b] Defining the project's key terms and making sure the knowledge base explains every important term it uses (project size: ${confirmed_path}; up to ${max_rounds} passes)...`
 
-▶ aid-architect (SYNTHESIS + CLOSURE) starting (~variable)
+▶ aid-architect (defining key terms + self-containment check) starting (~variable)
 Follow `references/state-closure.md` for the full loop body.
 ✓ aid-architect (SYNTHESIS + CLOSURE) done — or ✗ aid-architect (SYNTHESIS + CLOSURE) failed: {reason}
 
@@ -828,7 +828,7 @@ existing Q&A format (Category: `Concept`, Impact: `High`, Status: Pending) so St
 consolidates them into `STATE.md ## Q&A (Pending)`. **Step 6b is unchanged** -- the closure
 loop simply feeds the same pipe.
 
-Print on completion: `[5b] CLOSURE complete -- {N} concepts grounded, {M} terms escalated to Q&A.`
+Print on completion: `[5b] Done -- {N} terms defined in the glossary; {M} terms couldn't be pinned down from the project and are saved as questions for you.`
 
 ### Step 6: Generate README.md and INDEX.md
 

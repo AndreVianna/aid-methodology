@@ -118,6 +118,46 @@ for tmpl in "${TEMPLATES[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
+# AS08: feature-inventory.md lives at canonical/aid/templates/feature-inventory.md
+# (NOT under knowledge-base/), but aid-discover Step 6 copies it into .aid/knowledge/ as a
+# KB doc, so it MUST also conform to the authoring standard (frontmatter / Contents /
+# Change Log last / no mermaid / kb-category+intent / concern tag). Guards feature-014 Q10 fix.
+# ---------------------------------------------------------------------------
+FI="${REPO}/canonical/aid/templates/feature-inventory.md"
+if [[ -f "$FI" ]]; then
+  assert_eq "$(head -1 "$FI")" "---" \
+    "AS08 feature-inventory.md: starts with YAML frontmatter delimiter (---)"
+
+  if grep -q '^## Contents$' "$FI"; then
+    pass "AS08 feature-inventory.md: has '## Contents' section"
+  else
+    fail "AS08 feature-inventory.md: missing '## Contents' section"
+  fi
+
+  assert_eq "$(grep '^## ' "$FI" | tail -1)" "## Change Log" \
+    "AS08 feature-inventory.md: '## Change Log' is the last top-level section"
+
+  fi_merm="$(grep -c '^\`\`\`mermaid' "$FI" || true)"
+  assert_eq "$fi_merm" "0" \
+    "AS08 feature-inventory.md: no mermaid diagram fence"
+
+  fi_fm="$(awk '/^---$/{if(in_fm){exit}else{in_fm=1;next}} in_fm{print}' "$FI")"
+  assert_output_contains "$fi_fm" "kb-category" \
+    "AS08 feature-inventory.md: frontmatter has 'kb-category' field"
+  assert_output_contains "$fi_fm" "intent" \
+    "AS08 feature-inventory.md: frontmatter has 'intent' field"
+
+  fi_tags="$(printf '%s\n' "$fi_fm" | grep -m1 '^tags:')"
+  if printf '%s\n' "$fi_tags" | grep -Eq '\b(C[0-9]|D)\b'; then
+    pass "AS08 feature-inventory.md: tags carry a concern ID (C0-C9/D)"
+  else
+    fail "AS08 feature-inventory.md: tags missing a concern ID (C0-C9/D)"
+  fi
+else
+  fail "AS08 feature-inventory.md: template not found at $FI"
+fi
+
+# ---------------------------------------------------------------------------
 echo
 test_summary
 exit $?

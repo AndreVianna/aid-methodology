@@ -323,7 +323,13 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 >
 > 3. If you can ground the term from the artifacts, write a concept entry in
 >    .aid/knowledge/domain-glossary.md:
->    - Term: the native/coined name as used here
+>    - Heading = a clean, UNIQUE IDENTIFIER: `### Unique Term (optional explanation)`. The
+>      identifier is the text BEFORE any `(...)` and must be the plain canonical term — NO
+>      slashes, paths, joined compounds, or trailing qualifier phrases. Put any clarifier in
+>      `(parentheses)`; the closure checker strips the parenthetical when matching, so the
+>      heading stays idempotent and the term is resolvable to exactly one entry. (E.g.
+>      `### Triage (full vs lite path)`, not `### Triage / full vs lite`.)
+>    - Term: the native/coined name as used here (equals the heading identifier)
 >    - Definition-as-used-here: what it means in THIS project (NOT a generic definition —
 >      a generic definition is negative value; only the project-specific meaning is stored)
 >    - Relates-to: how it connects to other spine concepts (cross-cutting linkage)
