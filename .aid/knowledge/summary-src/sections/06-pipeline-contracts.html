@@ -5,7 +5,7 @@
 		<p class="lede">AID ships no HTTP services or RPC endpoints. Contracts here means: skill slash-command signatures and state-machine contracts, script CLI signatures and exit codes, file-format contracts, subagent dispatch conventions, and the canonical-to-5-profile renderer contract. (per pipeline-contracts.md)</p>
 	</header>
 
-	<h3>Slash-command contracts (12 skills)</h3>
+	<h3>Slash-command contracts (13 skills)</h3>
 	<div class="tbl-wrap">
 		<table class="tbl">
 			<thead><tr><th>Skill</th><th>Signature</th><th>States</th><th>Side effects</th></tr></thead>
@@ -21,7 +21,8 @@
 				<tr><td><code>/aid-monitor</code></td><td><code>[work-NNN] [--since] [--package]</code></td><td>OBSERVE→CLASSIFY→ROUTE→DONE</td><td>Routes findings to aid-interview (bugs + CRs)</td></tr>
 				<tr><td><code>/aid-summarize</code></td><td><code>(no args)</code></td><td>PREFLIGHT→…→APPROVAL→WRITEBACK→DONE</td><td>Writes <code>knowledge-summary.html</code></td></tr>
 				<tr><td><code>/aid-housekeep</code></td><td><code>[--cleanup-only] [--grade X]</code></td><td>PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE</td><td>Reconciles KB + summary; sweeps stale artifacts</td></tr>
-				<tr><td><code>/aid-ask</code></td><td><code>&lt;question&gt;</code></td><td>single-shot (read-only)</td><td>Answers from KB + code + works with citations; writes nothing</td></tr>
+				<tr><td><code>/aid-query-kb</code></td><td><code>&lt;question&gt;</code></td><td>single-shot (read-only; gap-append only)</td><td>Answers from KB + code + works with citations; appends Query-Gap to STATE.md Q&amp;A when context is insufficient</td></tr>
+				<tr><td><code>/aid-update-kb</code></td><td><code>&lt;what changed&gt;</code></td><td>ANALYZE→APPLY→REVIEW→APPROVAL→DONE</td><td>Applies targeted KB delta after human approval; run-state in <code>.aid/.temp/UPDATEKB_STATE_*.md</code></td></tr>
 			</tbody>
 		</table>
 	</div>
