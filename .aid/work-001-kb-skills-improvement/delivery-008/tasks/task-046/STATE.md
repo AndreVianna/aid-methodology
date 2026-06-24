@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~30m
+- **Notes:** Gap-capture added to aid-query-kb SKILL.md; allowed-tools expanded to Read,Glob,Grep,Agent,Write,Edit; Step 4 target-file resolution + Q{N} entry format + write-scope constraint documented; generator re-run + dogfood sync; DBI+ASCII tests pass.
 
 ---
 
