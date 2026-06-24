@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~1h
+- **Notes:** KB-DELTA rewritten: f007 suspect pre-pass (Step 1), two-tier whole-KB review (Step 2), annotated Step 3 banner, refined no-drift exit (AC4), CLOSURE re-verify in Step 6 (f004, BEFORE commit), fresh candidate-concepts.md gate (Step 6a), closure-break Q&A+stall (Step 6d). Render: generator PASS, DBI PASS (553), ascii PASS (28). All ACs confirmed.
 
 ---
 
