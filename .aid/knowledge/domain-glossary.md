@@ -18,6 +18,7 @@ sources:
 approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: work-001-kb-skills-improvement delivery-008 (task-050) — aid-ask renamed to aid-query-kb; aid-update-kb added (12->13 user-facing skills). Skill enumeration callout updated; aid-query-kb and aid-update-kb added to the Non-Phase Skills table.
   - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-23: Migrated body to concept-spine structure (task-021): load-bearing AID concepts promoted to spine entries; all lexicon tables retained additively. Frontmatter migration deferred to task-022.
   - 2026-06-20: work-005 profile-generator-simplify interview — added "Format ⊥ behavior (behavioral metadata)" term (REQUIREMENTS FR4-distinction); durable, additive (no existing term rewritten; built-state terms unchanged pending ship).
@@ -271,16 +272,20 @@ changelog:
 | **Config** | `aid-config` | Bootstrap skill; runs once before the pipeline. Creates `.aid/settings.yml` + KB doc scaffolds (from the default seed set templates) + `AGENTS.md`/`CLAUDE.md` + `INDEX.md` placeholders + `DISCOVERY-STATE.md`. The exact scaffold count matches the default seed (varies if templates are added/removed from `canonical/templates/knowledge-base/`). | `docs/glossary.md` `**aid-config:**`, `docs/aid-methodology.md` `#### \`aid-config\` — Bootstrap (not a numbered phase)` |
 | **Summarize** | `aid-summarize` | Optional read-only skill; generates `knowledge-summary.html` from approved KB. Idempotent. WCAG-AA accessibility-first. | `docs/aid-methodology.md` `#### \`aid-summarize\` — Optional KB Viewer (not a numbered phase)`, `canonical/skills/aid-summarize/SKILL.md` `# Knowledge Base Visual Summary` |
 | **Housekeep / KB-drift reconciliation** | `aid-housekeep` | Optional, **on-demand** skill that is **OFF the mandatory pipeline** (not in the phase→skill mapping; no phase gate references it — REQUIREMENTS.md FR6). Reconciles drift across three gated jobs in strict order on a dedicated `aid/housekeep-*` branch (one commit per stage, never pushes): **KB-DELTA** (re-discover KB docs that drifted from the repo since the last KB approval — synthesizes an `**Impact:** Required` Q&A entry to drive `/aid-discover`'s targeted re-discovery), **SUMMARY-DELTA** (regenerate the visual summary via `/aid-summarize` if the KB changed), **CLEANUP** (sweep stale `.aid/` work-area artifacts). State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE; re-entrant (a stalled run resumes at the stalled stage). Distinct from "Pre-flight Cleanup" (which is a `/aid-discover` orchestrator-only KB sweep). | `canonical/skills/aid-housekeep/SKILL.md` `# Knowledge Base Housekeeping` + `**Absent from the mandatory pipeline flow.**`, `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry + invoke /aid-discover` |
+| **Query-KB / Q&A** | `aid-query-kb` | Optional, on-demand Q&A skill that is **OFF the mandatory pipeline** (no phase gate references it). Answers free-form project questions from the KB, codebase, and in-flight works with source citations; single-shot (one question per invocation). Gap-capture: when context cannot answer, appends a `### Q{N}` Query-Gap entry to the `## Q&A (Pending)` section of the relevant `STATE.md` to feed the KB-improvement loop. Write scope limited to the gap-capture path (`allowed-tools: Read, Glob, Grep, Agent, Write, Edit` — only STATE.md Q&A append written; no KB doc, settings, or code file). | `canonical/skills/aid-query-kb/SKILL.md` `# Project Q&A` |
+| **Update-KB / Targeted KB update** | `aid-update-kb` | Optional, on-demand targeted KB update skill that is **OFF the mandatory pipeline** (no phase gate references it). Takes a free-form prompt describing what changed and applies the delta to KB docs through the same review/calibration gate as `aid-discover`. State machine: ANALYZE→APPLY→REVIEW→APPROVAL→DONE (FIX loop inside REVIEW). Human-gated — commits only after explicit `[1] Approved`; no auto-apply path. Boundary: prompt-driven-targeted (user supplies scoping seed) vs. source-driven-global (`aid-housekeep` KB-DELTA). | `canonical/skills/aid-update-kb/SKILL.md` `# Targeted KB Update` |
 | **Generate** | `generate-profile` | Maintainer-only skill; renders `canonical/` → 5 profile install trees (claude-code, codex, cursor, copilot-cli, antigravity). Wrapped by `run_generator.py`. | `.claude/skills/generate-profile/SKILL.md` `# AID Install-Tree Generator`, `profiles/*.toml` (5 profiles) |
 
-> **Skill enumeration (post aid-ask):** 12 user-facing skills (`aid-config`, `aid-discover`,
+> **Skill enumeration (post aid-query-kb + aid-update-kb):** 13 user-facing skills (`aid-config`, `aid-discover`,
 > `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`,
-> `aid-monitor`, `aid-summarize`, `aid-housekeep`, `aid-ask`) + maintainer-only `generate-profile`.
-> Of these `aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, and `aid-ask` are
+> `aid-monitor`, `aid-summarize`, `aid-housekeep`, `aid-query-kb`, `aid-update-kb`) + maintainer-only `generate-profile`.
+> Of these `aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` are
 > optional, non-required skills (not numbered phases): `aid-deploy`/`aid-monitor` are optional
 > end-of-pipeline Deliver skills; `aid-housekeep` is off the mandatory pipeline (no phase gate
-> references it); and `aid-ask` is an off-pipeline, read-only Q&A skill (`allowed-tools: Read,
-> Glob, Grep, Agent` — no write). Source: `find canonical/skills -maxdepth 1 -type d`.
+> references it); `aid-query-kb` is an off-pipeline Q&A skill with gap-capture write scope (`allowed-tools: Read,
+> Glob, Grep, Agent, Write, Edit` — STATE.md Q&A append only, no KB doc/code/settings written);
+> and `aid-update-kb` is an off-pipeline targeted KB update skill, human-gated (`allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent`).
+> Source: `find canonical/skills -maxdepth 1 -type d`.
 
 ---
 

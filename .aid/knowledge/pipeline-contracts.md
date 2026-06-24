@@ -15,14 +15,16 @@ sources:
   - canonical/skills/aid-deploy/SKILL.md
   - canonical/skills/aid-monitor/SKILL.md
   - canonical/skills/aid-housekeep/SKILL.md
-  - canonical/skills/aid-ask/SKILL.md
+  - canonical/skills/aid-query-kb/SKILL.md
+  - canonical/skills/aid-update-kb/SKILL.md
   - canonical/EMISSION-MANIFEST.md
   - canonical/aid/scripts/
 approved_at_commit: ccb4e823
 contracts:
-  - "12 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-ask) + maintainer-only generate-profile"
+  - "13 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-query-kb/aid-update-kb) + maintainer-only generate-profile"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
 changelog:
+  - 2026-06-23: work-001-kb-skills-improvement delivery-008 (task-050) — aid-ask renamed to aid-query-kb; aid-update-kb added (12->13 user-facing skill contracts). /aid-ask contract block renamed to /aid-query-kb with updated gap-capture write scope; new /aid-update-kb contract block added.
   - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skill contracts) + /aid-execute argument order corrected to work-first (PR #70) via /aid-housekeep KB-DELTA.
   - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Recipe File Front-matter Contract applies-to inline comment updated to {bug-fix | new-feature | refactor | *}.
@@ -54,14 +56,15 @@ These are the only "endpoints" the user invokes. Each is an AID skill installed 
 (Codex unified layout), `.cursor/skills/<skill>/` (Cursor), `.github/skills/<slug>/SKILL.md`
 (Copilot CLI native Agent Skills), or `.agent/skills/<slug>/SKILL.md` (Antigravity).
 
-There are **12 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
-optional off-pipeline `aid-housekeep` and `aid-ask`) plus maintainer-only `generate-profile`. Of
-these, `aid-summarize` is **non-phase / optional**, and `aid-housekeep` and `aid-ask` are
+There are **13 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
+optional off-pipeline `aid-housekeep`, `aid-query-kb`, and `aid-update-kb`) plus maintainer-only `generate-profile`. Of
+these, `aid-summarize` is **non-phase / optional**, and `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` are
 additionally **off the mandatory pipeline** (no phase gate references them; invoked
-on-demand). `aid-ask` is also **read-only** (writes no files). Source:
-`find canonical/skills -maxdepth 1 -type d` (12 dirs),
+on-demand). `aid-query-kb` has restricted write scope (gap-capture only — appends Query-Gap entries to STATE.md Q&A Pending; no KB doc or code file written). `aid-update-kb` is human-gated (commits only after explicit `[1] Approved`). Source:
+`find canonical/skills -maxdepth 1 -type d` (13 dirs),
 `canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`),
-`canonical/skills/aid-ask/SKILL.md` (`allowed-tools: Read, Glob, Grep, Agent`).
+`canonical/skills/aid-query-kb/SKILL.md` (`allowed-tools: Read, Glob, Grep, Agent, Write, Edit`),
+`canonical/skills/aid-update-kb/SKILL.md` (`allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent`).
 
 ### `/aid-config`
 
@@ -187,27 +190,51 @@ on-demand). `aid-ask` is also **read-only** (writes no files). Source:
 - **Source:** `canonical/skills/aid-housekeep/SKILL.md`,
   `canonical/skills/aid-housekeep/references/{state-preflight,state-kb-delta,state-summary-delta,state-cleanup,state-done}.md`
 
-### `/aid-ask <question>` (optional — OFF the mandatory pipeline; READ-ONLY)
+### `/aid-query-kb <question>` (optional — OFF the mandatory pipeline; restricted write scope)
 
-- **Type:** Optional, on-demand, **read-only** Q&A skill **outside** the numbered pipeline —
-  no phase gate references it, no state machine (single-shot; answers in one pass). Writes
-  **no files**. (`canonical/skills/aid-ask/SKILL.md` frontmatter `allowed-tools: Read, Glob,
-  Grep, Agent`, `argument-hint: "<question> — a free-form question about the project"`)
+- **Type:** Optional, on-demand Q&A skill **outside** the numbered pipeline —
+  no phase gate references it, no state machine (single-shot; answers in one pass). Restricted
+  write scope: writes **only** a Query-Gap entry to a STATE.md `## Q&A (Pending)` section when
+  the context cannot answer — no KB doc, settings file, or code file is ever written.
+  (`canonical/skills/aid-query-kb/SKILL.md` frontmatter `allowed-tools: Read, Glob, Grep, Agent, Write, Edit`,
+  `argument-hint: "<question>  — a free-form question about the project"`)
 - **Request:** a free-form `<question>` about the project
-  (`canonical/skills/aid-ask/SKILL.md` `# Project Q&A`)
+  (`canonical/skills/aid-query-kb/SKILL.md` `# Project Q&A`)
 - **Consumes (read-only):**
   - the Knowledge Base — `.aid/knowledge/` (KB docs)
   - the live codebase (project source files)
   - in-flight AID works — `.aid/work-*/STATE.md` + progress
-  (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:` — "three context sources")
-- **Produces:** an **in-conversation answer** grounded in those sources, with source
-  citations (KB doc names, file paths, or `work-NNN` STATE references); when the context
-  cannot answer, it states the gap explicitly rather than fabricating. **No file writes, no
-  commits, no branches.** (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:`)
+  (`canonical/skills/aid-query-kb/SKILL.md` frontmatter `description:` — "three context sources")
+- **Produces:**
+  - an **in-conversation answer** grounded in those sources, with source citations (KB doc names, file paths, or `work-NNN` STATE references)
+  - when context cannot answer: states the gap explicitly **and** appends a `### Q{N}` Query-Gap entry to the `## Q&A (Pending)` section of the relevant `STATE.md` backlog file (gap-capture — feeds the KB-improvement loop)
+  **No KB doc, settings, or code file writes; no commits, no branches.** (`canonical/skills/aid-query-kb/SKILL.md` frontmatter `description:`)
 - **Dispatch:** trivial questions answered inline with `Read`/`Glob`/`Grep`; broad or
   expensive investigations dispatch `aid-researcher` in strictly read-only mode (via `Agent`)
-  (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:`)
-- **Source:** `canonical/skills/aid-ask/SKILL.md`
+  (`canonical/skills/aid-query-kb/SKILL.md` frontmatter `description:`)
+- **Source:** `canonical/skills/aid-query-kb/SKILL.md`
+
+### `/aid-update-kb <what changed>` (optional — OFF the mandatory pipeline; human-gated)
+
+- **Type:** Optional, on-demand targeted KB update skill **outside** the numbered pipeline —
+  no phase gate references it. State machine: `ANALYZE → APPLY → REVIEW → APPROVAL → DONE`
+  (FIX loop inside REVIEW). Human-gated — no auto-apply path exists; KB content cannot proceed
+  to DONE without explicit `[1] Approved` at APPROVAL.
+  (`canonical/skills/aid-update-kb/SKILL.md` frontmatter `argument-hint: "<what changed / what to update in the KB>"`)
+- **Request:** a free-form prompt describing what changed and what KB docs should be updated
+  (`canonical/skills/aid-update-kb/SKILL.md` `# Targeted KB Update`)
+- **Consumes:**
+  - the user's prompt (scoping seed for ANALYZE)
+  - the Knowledge Base — `.aid/knowledge/` (docs to analyze and update)
+  - the live codebase (for verification)
+  (`canonical/skills/aid-update-kb/SKILL.md` frontmatter `description:`)
+- **Produces:**
+  - updated KB doc content (applied only after APPROVAL)
+  - a run-state file `.aid/.temp/UPDATEKB_STATE_<ts>.md` (transient, gitignored, removed at DONE)
+  - a commit on the current branch (after explicit human approval at APPROVAL)
+  **No settings file, code file, or non-KB doc is written.** (`canonical/skills/aid-update-kb/SKILL.md`)
+- **Boundary:** prompt-driven-targeted (user supplies the scoping seed) vs. source-driven-global (`aid-housekeep` KB-DELTA). The two do not overlap (FR-33/FR-34 per f010).
+- **Source:** `canonical/skills/aid-update-kb/SKILL.md`
 
 ---
 

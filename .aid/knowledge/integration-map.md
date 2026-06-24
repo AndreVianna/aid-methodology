@@ -13,6 +13,7 @@ sources:
 approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: work-001-kb-skills-improvement delivery-008 (task-050) — aid-ask renamed to aid-query-kb; aid-update-kb added (12->13 user-facing skills, 13->14 total, 5->6 optional). Reconciled all counts and enumerations.
   - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
   - 2026-06-05: work-002-auto-installer — added the distribution/registry integrations: npm registry (`aid-installer`), PyPI (`aid-installer`), and GitHub Releases (release-asset download for install/bootstrap + OIDC publishing from `release.yml`). Replaced the `setup.sh`/`setup.ps1` adopter-install-flow + Option-A collision sections with the `aid` CLI + four channels + per-channel `aid update self` behavior + FR12 invariant root AGENTS.md.
@@ -215,15 +216,17 @@ canonical/                          ← single source of truth (maintainer edits
 
 Source: `.aid/knowledge/project-structure.md` heading `### Generator (maintainer-only, ...)`
 
-> **Skill enumeration (post aid-ask):** `canonical/skills/` holds **12 user-facing skills**
+> **Skill enumeration (post aid-query-kb + aid-update-kb):** `canonical/skills/` holds **13 user-facing skills**
 > (`aid-config`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
 > `aid-execute`, plus the **optional** `aid-deploy`, `aid-monitor`, `aid-summarize`, the
-> **optional off-pipeline** `aid-housekeep`, and the **optional on-demand read-only Q&A**
-> `aid-ask` — answers free-form project questions from the KB + codebase + in-flight works
-> with citations, outside the numbered pipeline) **+ maintainer-only `generate-profile`**. The six
+> **optional off-pipeline** `aid-housekeep`, the **optional on-demand Q&A**
+> `aid-query-kb` — answers free-form project questions from the KB + codebase + in-flight works
+> with citations, and captures knowledge gaps as Query-Gap entries in STATE.md, outside the numbered pipeline,
+> and the **optional on-demand targeted KB update** `aid-update-kb` — applies a prompt-driven delta
+> to KB docs through the review gate, human-gated) **+ maintainer-only `generate-profile`**. The six
 > numbered phases are `aid-discover`…`aid-execute`; `aid-deploy`/`aid-monitor` are optional
-> end-of-pipeline Deliver skills, `aid-summarize` is optional, and `aid-housekeep` is
-> additionally off the mandatory pipeline (no phase gate references it) — all invoked
+> end-of-pipeline Deliver skills, `aid-summarize` is optional, and `aid-housekeep`, `aid-query-kb`,
+> and `aid-update-kb` are additionally off the mandatory pipeline (no phase gate references them) — all invoked
 > on-demand. Source: `find canonical/skills -maxdepth 1 -type d`,
 > `canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`).
 

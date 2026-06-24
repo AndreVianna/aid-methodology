@@ -199,6 +199,14 @@ Verified-true sample full list (30 checks) in `.aid/.temp/review-pending/discove
 > 5, 6, 7 added no new Q&A — all findings mechanically resolvable from disk; no
 > human input needed.
 
+### Q31
+- **Category:** Execute / KB Skill-Count Reconciliation
+- **Impact:** Required
+- **Status:** Answered
+- **Context:** work-001-kb-skills-improvement delivery-008 (task-049 f008-RED → task-050 f009-green handoff): `aid-ask` was **renamed** to `aid-query-kb` (with gap-capture write scope: appends Query-Gap entries to STATE.md Q&A Pending when context is insufficient; no KB doc/code/settings written) AND `aid-update-kb` was **added** as a new optional, on-demand targeted KB update skill (ANALYZE→APPLY→REVIEW→APPROVAL→DONE; human-gated, no auto-apply path). This changes the canonical/skills/ count from **12→13 user-facing**, the total (incl. maintainer-only generate-profile) from **13→14**, and the optional-skill count from **5→6**. The KB had a pre-existing 11/12 split (README showed both 11 and 12; integration-map showed 12). All nine primary KB docs (architecture, module-map, feature-inventory, pipeline-contracts, project-structure, domain-glossary, integration-map, repo-presentation, coding-standards) + three meta docs (README, STATE, release-tracking) + INDEX.md + narrative surfaces (root README, docs/, site/) required reconciliation. Scope confirmed via the task-050 SPEC.
+- **Suggested:** Exhaustive enumeration of every "N user-facing skills" / "N skills" token + every skill-name list + INDEX regen — the `adding-skill-kb-count-drift` hazard (Q26/Q30 precedent).
+- **Answer:** Resolved 2026-06-23 via /aid-execute work-001-kb-skills-improvement delivery-008 task-050. 9 primary KB docs refreshed (architecture, module-map, feature-inventory, pipeline-contracts, project-structure, domain-glossary, integration-map, repo-presentation, coding-standards) + 3 meta docs (KB README new cycle-25 row, this STATE.md Q31, release-tracking.md Unreleased): 12→13 user-facing skills (14 total, 6 optional). aid-query-kb + aid-update-kb added to every enumeration; aid-ask renamed in all live references (append-only history rows preserved). Pre-existing 11/12 split in README fixed to 13. INDEX.md regenerated via canonical/aid/scripts/kb/build-kb-index.sh. Root README.md, docs/aid-methodology.md, docs/glossary.md + site mirrors reconciled. f008-RED handoff → f009-green.
+
 ### Q30
 - **Category:** Housekeep / KB Delta Refresh
 - **Impact:** Required

@@ -15,10 +15,12 @@ sources:
   - canonical/skills/aid-deploy/SKILL.md
   - canonical/skills/aid-monitor/SKILL.md
   - canonical/skills/aid-housekeep/SKILL.md
-  - canonical/skills/aid-ask/SKILL.md
+  - canonical/skills/aid-query-kb/SKILL.md
+  - canonical/skills/aid-update-kb/SKILL.md
 approved_at_commit: ccb4e823
 contracts: []
 changelog:
+  - 2026-06-23: work-001-kb-skills-improvement delivery-008 (task-050) — aid-ask renamed to aid-query-kb; aid-update-kb added (12->13 user-facing skills). Reconciled row 12 and added row 13.
   - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-05-26: KB Authoring v2 template seed
   - 2026-05-27: Populated with 10 user-facing skills + 1 maintainer-only skill
@@ -37,7 +39,7 @@ changelog:
 **Status values (text-only — machine-parsed):** `Shipped` · `Partial` · `Pending` · `In Progress` · `Deprecated`
 (Decorative glyphs are NOT used here — see `coding-standards.md §14` for the text-for-machine rule.)
 
-## User-facing skills (12)
+## User-facing skills (13)
 
 | # | Skill | Status | Description | Source |
 |---|-------|--------|-------------|--------|
@@ -52,7 +54,8 @@ changelog:
 | 9 | `/aid-monitor` | Shipped | Optional, on-demand end-of-pipeline Deliver skill (not a numbered phase; independent of `aid-deploy`). Observes production, classifies findings, and routes actions. Combines telemetry interpretation with triage — detects anomalies, performs root cause analysis, and routes findings to `aid-interview` (bugs via its LITE-BUG-FIX triage; change requests as new/changed requirements). | `canonical/skills/aid-monitor/SKILL.md` |
 | 10 | `/aid-summarize` | Shipped | Generates a single self-contained `knowledge-summary.html` from `.aid/knowledge/`. Inlines Mermaid diagrams for offline use, supports light/dark themes, and enforces a two-grade quality gate (Machine + Human) before writing the final output. | `canonical/skills/aid-summarize/SKILL.md` |
 | 11 | `/aid-housekeep` | Shipped | Optional on-demand housekeeping. Runs three gated jobs in strict order — KB-DELTA (re-discover KB docs that drifted since the last approval) → SUMMARY-DELTA (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale `.aid/` work-area artifacts). Each stage commits on an `aid/housekeep-*` branch; never pushes. Re-entrant: a stalled run resumes at the stalled stage. Not part of the mandatory pipeline. | `canonical/skills/aid-housekeep/SKILL.md` |
-| 12 | `/aid-ask` | Shipped | Optional, on-demand, read-only Q&A skill outside the numbered pipeline. Answers free-form project questions from the KB + codebase + in-flight works with source citations; single-shot (one question per invocation). Dispatches `aid-researcher` for deep questions, answers trivial ones inline; never writes (`allowed-tools: Read, Glob, Grep, Agent`). | `canonical/skills/aid-ask/SKILL.md` |
+| 12 | `/aid-query-kb` | Shipped | Optional, on-demand Q&A skill outside the numbered pipeline. Answers free-form project questions from the KB + codebase + in-flight works with source citations; single-shot (one question per invocation). Dispatches `aid-researcher` for deep questions, answers trivial ones inline. Gap-capture: when context is insufficient, appends a Query-Gap entry to the STATE.md Q&A (Pending) backlog to feed the KB-improvement loop. (`allowed-tools: Read, Glob, Grep, Agent, Write, Edit`) | `canonical/skills/aid-query-kb/SKILL.md` |
+| 13 | `/aid-update-kb` | Shipped | Optional, on-demand targeted KB update skill outside the numbered pipeline. Takes a free-form prompt describing what changed and applies the delta through the same review/calibration gate as aid-discover. State machine: ANALYZE→APPLY→REVIEW→APPROVAL→DONE (FIX loop inside REVIEW). Human-gated — no auto-apply path; commits only after explicit human `[1] Approved`. | `canonical/skills/aid-update-kb/SKILL.md` |
 
 ## Maintainer-only skills (1)
 
@@ -102,7 +105,7 @@ rendered into `profiles/` by the generator (`run_generator.py`).
 
 ## Engineering features (referenced for historical context)
 
-The 12 user-facing skills above are the result of the following engineering work items:
+The 13 user-facing skills above are the result of the following engineering work items:
 
 - **Thin-Router Skills** (work-001 feature-002) — every `aid-*` SKILL.md is a state router (≤~360 lines) that delegates per-state logic to `references/state-*.md` files.
 - **Two-tier review** (work-001 feature-004) — per-task quick-check (Small-tier reviewer, no grade loop) + per-delivery quality gate (full review/fix/review loop with `grade.sh` determinism).

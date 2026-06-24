@@ -2,7 +2,7 @@
 kb-category: primary
 source: hand-authored
 objective: AID major module map: aid-* skills, agents, generator Python files, and canonical helper scripts with purpose, path, dependencies, and tests.
-summary: Maps all major code and content modules in AID, including the 12 user-facing aid-* skills, 9 agents, 7 generator Python files, and canonical helper scripts, with each entry's directory path, dependencies, and associated tests.
+summary: Maps all major code and content modules in AID, including the 13 user-facing aid-* skills, 9 agents, 7 generator Python files, and canonical helper scripts, with each entry's directory path, dependencies, and associated tests.
 sources:
   - canonical/skills/
   - canonical/agents/
@@ -11,12 +11,13 @@ sources:
   - tests/canonical/
 approved_at_commit: ccb4e823
 contracts:
-  - "12 user-facing aid-* skills + 1 maintainer-only generate-profile skill = 13 total"
+  - "13 user-facing aid-* skills + 1 maintainer-only generate-profile skill = 14 total"
   - "9 agents under canonical/agents/ (4 large / 4 medium / 1 small)"
   - "7 generator Python files under .claude/skills/generate-profile/scripts/: render.py (single copy core + dormant Codex-TOML branch) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + run_generator.py (the entrypoint, moved here from repo root by work-001)"
   - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
   - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
 changelog:
+  - 2026-06-23: work-001-kb-skills-improvement delivery-008 (task-050) — aid-ask renamed to aid-query-kb; aid-update-kb added (12->13 user-facing skills, 13->14 total, 5->6 optional). Reconciled all counts and enumerations.
   - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-22: work-005-profile-generator-simplify (merged) — §3 rewritten to the single copy-core model: render.py is now the sole copy generator (copy_tree over 3 trees: agents/skills translated, canonical/aid/ verbatim) + dormant Codex-TOML branch; the 5 per-type renderers (render_agents/render_skills/render_templates/render_recipes/render_canonical_scripts) + 2 emitter self-tests (test_copilot_emitter/test_antigravity_emitter) DELETED. Renderer .py count 13->7; §3 table, intent, contract, and Module-classes entry updated. Via /aid-housekeep KB-DELTA (Q30).
   - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
@@ -40,7 +41,7 @@ changelog:
 
 The repo contains six module classes, each with its own conventions:
 
-1. **Skills** — 12 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
+1. **Skills** — 13 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
 2. **Agents** — 9 specialist agents — under `canonical/agents/<name>/`
 3. **Generator (Python)** — 7 files under `.claude/skills/generate-profile/scripts/` (the `render.py` copy core + `run_generator.py` entrypoint)
 4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
@@ -57,8 +58,8 @@ byte-identical output verified by
 
 ## 1. Skills — `canonical/skills/aid-*/`
 
-Twelve user-facing `aid-*` skills (`ls -d canonical/skills/*/` = 12) plus the
-maintainer-only `generate-profile` (`.claude/`-only, NOT in `canonical/skills/`) = 13
+Thirteen user-facing `aid-*` skills (`ls -d canonical/skills/*/` = 13) plus the
+maintainer-only `generate-profile` (`.claude/`-only, NOT in `canonical/skills/`) = 14
 total. Each has a `SKILL.md` Thin-Router (per `coding-standards.md §7b`)
 plus a `references/state-*.md` per state plus topic-specific reference docs.
 
@@ -75,7 +76,8 @@ plus a `references/state-*.md` per state plus topic-specific reference docs.
 | `aid-monitor` | Production-finding classification + routing | `canonical/skills/aid-monitor/SKILL.md` | 3 | `state-{observe,classify,route}.md` |
 | `aid-housekeep` | Optional on-demand housekeeping skill — runs three gated jobs in strict order on an `aid/housekeep-*` branch, one commit per stage, never pushes; re-entrant (a stalled run resumes at the stalled stage). State machine PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE (per `canonical/skills/aid-housekeep/SKILL.md` `description:`). NOT inserted into the mandatory phase-to-skill pipeline. | `canonical/skills/aid-housekeep/SKILL.md` | 5 | `state-{preflight,kb-delta,summary-delta,cleanup,done}.md` |
 | `aid-summarize` | Optional offline HTML KB viewer (Mermaid + sectioned per profile) | `canonical/skills/aid-summarize/SKILL.md` | 10 | `state-{preflight,profile,generate,validate,manual-checklist,stale-check,writeback,fix,approval,done}.md` |
-| `aid-ask` | Optional on-demand, read-only Q&A skill OUTSIDE the numbered pipeline — answers free-form project questions from the KB + codebase + in-flight works with source citations; single-shot, no write (dispatches `aid-researcher` for deep work, inline for trivial) | `canonical/skills/aid-ask/SKILL.md` | 0 | (single-shot router; `allowed-tools: Read, Glob, Grep, Agent`) |
+| `aid-query-kb` | Optional on-demand Q&A skill OUTSIDE the numbered pipeline — answers free-form project questions from the KB + codebase + in-flight works with source citations; single-shot; captures knowledge gaps as Query-Gap entries in STATE.md Q&A (Pending) backlog (gap-capture write only — no KB doc or code file written) | `canonical/skills/aid-query-kb/SKILL.md` | 0 | (single-shot router; `allowed-tools: Read, Glob, Grep, Agent, Write, Edit`) |
+| `aid-update-kb` | Optional on-demand targeted KB update skill OUTSIDE the numbered pipeline — applies a prompt-driven delta to KB docs through the review gate (ANALYZE→APPLY→REVIEW→APPROVAL→DONE, FIX loop inside REVIEW); commits only after explicit human approval; human-gated (no auto-apply path) | `canonical/skills/aid-update-kb/SKILL.md` | TBD | (`allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent`) |
 | `generate-profile` (maintainer-only) | Render canonical/ → 5 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/generate-profile/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/generate-profile/SKILL.md` `chicken-and-egg deployment problem` for the justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
 
 **Test coverage:**

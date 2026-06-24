@@ -9,6 +9,7 @@ intent: |
   at release time the Unreleased section is renamed to the new version + date.
 contracts: []
 changelog:
+  - 2026-06-23: work-001-kb-skills-improvement delivery-008 (task-050) — aid-ask renamed to aid-query-kb; aid-update-kb added. Appended two new Unreleased entries ([CHANGE] rename + [NEW] aid-update-kb); historical snapshot at l.66 "11 user-facing skills" left untouched (append-only policy).
   - 2026-06-09: Created — Unreleased (aid-ask, product site, aid-execute work-first arg order) + v1.0.0 back-filled from the GitHub release.
   - 2026-06-09: Moved the AID product website from Unreleased to v1.0.0 (it shipped with v1.0.0; absent from the GitHub release page because that covers only the CLI package).
   - 2026-06-12: Added Unreleased items for the work-001 two-level dashboard (CLI home + repo registry + per-repo home.html relocation + install-wiring), delivery-008.
@@ -33,6 +34,8 @@ changelog:
 
 ## Unreleased
 
+- [CHANGE] `/aid-ask` renamed to **`/aid-query-kb`** — the Q&A skill now also captures knowledge gaps: when context is insufficient, it appends a `### Q{N}` Query-Gap entry to the relevant `STATE.md` Q&A (Pending) backlog so it feeds the KB-improvement loop (write scope restricted to the gap-capture path; no KB doc, settings, or code file is ever written) (work-001 f008).
+- [NEW] **`/aid-update-kb`** — optional, on-demand targeted KB update skill. Takes a free-form prompt describing what changed and applies the delta to the affected KB docs through the same review/calibration gate as `/aid-discover` (ANALYZE→APPLY→REVIEW→APPROVAL→DONE). Human-gated — no auto-apply path; commits only after explicit `[1] Approved` (work-001 f008).
 - [CHANGE] Codex profile now installs exclusively under `.codex/` — the former `.agents/` split root is retired; all Codex agents, skills, and AID-own files live under the unified `.codex/{agents,skills,aid}` tree (work-005 FR2).
 - [CHANGE] All five host tools now use a uniform `{agents,skills,aid}` layout under their own root (`.claude/`, `.cursor/`, `.codex/`, `.github/`, `.agent/`) — agent format branches collapsed to uniform markdown; Codex TOML branch retained dormant pending E-CODEX-1 verification (work-005 FR1/FR4).
 - [CHANGE] Profile generator simplified from 13 Python files to 7 — tool-specific emitter scripts replaced by a single copy-based generator that renders profiles via file-level copy + minimal path substitution, with no per-tool branching logic outside the profiles themselves (work-005 FR1/FR5/FR6).
