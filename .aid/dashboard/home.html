@@ -1581,11 +1581,13 @@ footer {
   }
 
   // Build the KB summary card — 5-state (UI-A, feature-007, task-065)
-  // Reads kb_state.status LITERALLY (never re-derives client-side).
+  // Reads kb_state.status / doc_freshness / suspect_count LITERALLY (never re-derives client-side).
   // States: pending | generating | preparing | approved | outdated
   // An unknown/missing status degrades to the pending (dim) treatment (DM-A2).
   // Only approved/outdated are clickable (FR32); others render a dead (non-link) card.
   // Clickable href is location-relative ./kb.html (LC-A3).
+  // Freshness signal (f007 task-043): per-doc suspect marker appended after state block when
+  //   kb_state.suspect_count > 0; reads doc_freshness[] literally (absence-tolerant).
   function _renderKbCard(kbState) {
     // Resolve status: read literally; null kbState or missing/unknown status -> 'pending'
     var KB_STATUSES = ['pending', 'generating', 'preparing', 'approved', 'outdated'];
@@ -1723,12 +1725,47 @@ footer {
       meta.style.marginTop = '0.5rem';
       meta.textContent = metaText;
       card.appendChild(meta);
-      // Outdated refresh prompt (FR18-style, FR32)
+      // Outdated refresh prompt (FR18-style, FR32) -- per-doc language (f007/task-043)
       var prompt = document.createElement('p');
       prompt.className = 'meta';
       prompt.style.marginTop = '0.5rem';
-      prompt.textContent = 'The branch has advanced past the KB baseline. 1. Run /aid-housekeep to reconcile the KB and refresh the summary. 2. Verify: this card returns to Ready on the next refresh.';
+      prompt.textContent = 'One or more docs are suspect or the KB baseline has been exceeded. Run /aid-housekeep to reconcile the affected docs. Verify: this card returns to Ready on the next refresh.';
       card.appendChild(prompt);
+    }
+
+    // Per-doc suspect marker (f007/task-043): appended after state block, absent-tolerant.
+    // Reads kb_state.doc_freshness / suspect_count LITERALLY (no client-side re-derivation).
+    // Shown on any coarse status when suspect_count > 0; omitted (no element added) when 0 or absent.
+    var suspectCount = (kbState && typeof kbState.suspect_count === 'number') ? kbState.suspect_count : 0;
+    if (suspectCount > 0) {
+      var suspectBadge = document.createElement('span');
+      suspectBadge.className = 'badge badge-warn kb-suspect-badge';
+      suspectBadge.style.display = 'inline-block';
+      suspectBadge.style.marginTop = '0.75rem';
+      suspectBadge.style.marginBottom = '0.25rem';
+      suspectBadge.textContent = suspectCount + ' doc' + (suspectCount === 1 ? '' : 's') + ' suspect';
+      card.appendChild(suspectBadge);
+
+      // List each suspect doc with its drifted source(s) where present
+      var freshness = (kbState && Array.isArray(kbState.doc_freshness)) ? kbState.doc_freshness : [];
+      var suspectDocs = freshness.filter(function(d) { return d && d.verdict === 'suspect'; });
+      if (suspectDocs.length > 0) {
+        var suspectList = document.createElement('ul');
+        suspectList.className = 'meta kb-suspect-list';
+        suspectList.style.marginTop = '0.25rem';
+        suspectList.style.paddingLeft = '1.25rem';
+        for (var si = 0; si < suspectDocs.length; si++) {
+          var sd = suspectDocs[si];
+          var li = document.createElement('li');
+          var docLabel = sd.doc || '(unknown)';
+          if (sd.suspect_sources && sd.suspect_sources.length > 0) {
+            docLabel += ' — source: ' + sd.suspect_sources.join(', ');
+          }
+          li.textContent = docLabel;
+          suspectList.appendChild(li);
+        }
+        card.appendChild(suspectList);
+      }
     }
 
     return card;

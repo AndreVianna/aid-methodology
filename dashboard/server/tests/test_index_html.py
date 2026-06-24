@@ -1319,5 +1319,130 @@ class TestFeature006CardRework(unittest.TestCase):
                       "_renderKbCard must call _fmtLocalDateTime(kbState.last_summary_date)")
 
 
+# ---------------------------------------------------------------------------
+# F7: feature-007 per-doc suspect marker on the KB card (task-043)
+# ---------------------------------------------------------------------------
+
+class TestFeature007SuspectMarker(unittest.TestCase):
+    """
+    Static-source assertions for the f007/task-043 per-doc suspect marker.
+
+    F7-SM-1:  _renderKbCard reads suspect_count and doc_freshness literally (no re-derivation).
+    F7-SM-2:  When suspect_count > 0, renders a badge badge-warn with the count.
+    F7-SM-3:  Suspect docs listed; drifted source emitted where present.
+    F7-SM-4:  Absence-tolerant: guard on typeof + Array.isArray (no JS error when absent).
+    F7-SM-5:  Outdated refresh-prompt uses per-doc language and keeps /aid-housekeep CTA.
+    F7-SM-6:  Suspect marker class 'kb-suspect-badge' is unique/identifiable (Playwright gate).
+    F7-SM-7:  index.html (CLI home) is NOT changed (O5).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        assert _INDEX_HTML.is_file(), f"home.html not found at {_INDEX_HTML}"
+        cls.src = _INDEX_HTML.read_text(encoding="utf-8")
+        # Locate the _renderKbCard function snippet (wide enough to cover the new marker block).
+        idx = cls.src.find('function _renderKbCard(')
+        assert idx != -1, "_renderKbCard function not found"
+        cls.kb_card_snippet = cls.src[idx:idx + 8000]
+
+    # F7-SM-1: reads suspect_count and doc_freshness literally
+    def test_f7sm1_reads_suspect_count_literally(self):
+        self.assertIn('kbState.suspect_count', self.kb_card_snippet,
+                      "_renderKbCard must read kbState.suspect_count literally (no re-derivation)")
+
+    def test_f7sm1_reads_doc_freshness_literally(self):
+        self.assertIn('kbState.doc_freshness', self.kb_card_snippet,
+                      "_renderKbCard must read kbState.doc_freshness literally (no re-derivation)")
+
+    # F7-SM-2: badge badge-warn with count when suspect_count > 0
+    def test_f7sm2_suspect_badge_class(self):
+        # The suspect marker must use badge badge-warn
+        self.assertIn("'badge badge-warn kb-suspect-badge'", self.kb_card_snippet,
+                      "suspect marker must use class 'badge badge-warn kb-suspect-badge'")
+
+    def test_f7sm2_suspect_count_in_badge_text(self):
+        # Badge text must include the count and the word 'suspect'
+        self.assertIn("' suspect'", self.kb_card_snippet,
+                      "suspect badge text must include ' suspect' (e.g. '2 docs suspect')")
+        self.assertIn('suspectCount +', self.kb_card_snippet,
+                      "suspect badge text must include the suspectCount variable")
+
+    def test_f7sm2_suspect_count_guard(self):
+        # Must check suspect_count > 0 before rendering the badge
+        self.assertIn('suspectCount > 0', self.kb_card_snippet,
+                      "_renderKbCard must guard the suspect badge with suspectCount > 0")
+
+    # F7-SM-3: suspect doc list with sources
+    def test_f7sm3_suspect_doc_list_element(self):
+        # Must create a <ul> or <li> list of suspect docs
+        self.assertIn("document.createElement('ul')", self.kb_card_snippet,
+                      "_renderKbCard must create a <ul> for the suspect doc list")
+        self.assertIn("document.createElement('li')", self.kb_card_snippet,
+                      "_renderKbCard must create <li> items for each suspect doc")
+
+    def test_f7sm3_filters_on_verdict_suspect(self):
+        # Must filter doc_freshness on verdict === 'suspect'
+        self.assertIn("verdict === 'suspect'", self.kb_card_snippet,
+                      "_renderKbCard must filter doc_freshness entries on verdict === 'suspect'")
+
+    def test_f7sm3_renders_doc_name(self):
+        # Must read sd.doc for the doc label
+        self.assertIn('sd.doc', self.kb_card_snippet,
+                      "_renderKbCard must read sd.doc for each suspect doc label")
+
+    def test_f7sm3_renders_suspect_sources(self):
+        # Must read sd.suspect_sources and emit source info
+        self.assertIn('sd.suspect_sources', self.kb_card_snippet,
+                      "_renderKbCard must read sd.suspect_sources for drifted source info")
+
+    # F7-SM-4: absence-tolerant (no JS error when fields absent)
+    def test_f7sm4_typeof_guard_on_suspect_count(self):
+        # Must guard with typeof kbState.suspect_count === 'number' (or equivalent)
+        self.assertIn("typeof kbState.suspect_count === 'number'", self.kb_card_snippet,
+                      "_renderKbCard must guard suspect_count with typeof === 'number'")
+
+    def test_f7sm4_array_isarray_guard_on_doc_freshness(self):
+        # Must guard doc_freshness with Array.isArray
+        self.assertIn('Array.isArray(kbState.doc_freshness)', self.kb_card_snippet,
+                      "_renderKbCard must guard doc_freshness with Array.isArray")
+
+    # F7-SM-5: outdated refresh-prompt uses per-doc language + keeps /aid-housekeep
+    def test_f7sm5_outdated_prompt_keeps_aid_housekeep(self):
+        self.assertIn('/aid-housekeep', self.kb_card_snippet,
+                      "outdated refresh-prompt must retain /aid-housekeep call-to-action (f010 consumer)")
+
+    def test_f7sm5_outdated_prompt_per_doc_language(self):
+        # Per-doc language: "docs are suspect" or equivalent
+        self.assertIn('docs are suspect', self.kb_card_snippet,
+                      "outdated refresh-prompt must use per-doc language referencing suspect docs")
+
+    def test_f7sm5_outdated_prompt_returns_to_ready(self):
+        self.assertIn('returns to Ready', self.kb_card_snippet,
+                      "outdated refresh-prompt must say 'returns to Ready' on next refresh")
+
+    # F7-SM-6: identifiable CSS class for Playwright gate
+    def test_f7sm6_suspect_badge_class_unique(self):
+        # kb-suspect-badge is the identifiable hook for Playwright gate
+        self.assertIn('kb-suspect-badge', self.kb_card_snippet,
+                      "suspect badge must carry class 'kb-suspect-badge' (Playwright gate selector)")
+
+    def test_f7sm6_suspect_list_class(self):
+        # kb-suspect-list is the identifiable hook for the suspect doc list
+        self.assertIn('kb-suspect-list', self.kb_card_snippet,
+                      "suspect doc list must carry class 'kb-suspect-list' (Playwright gate selector)")
+
+    # F7-SM-7: index.html (CLI home) is unchanged (O5)
+    def test_f7sm7_index_html_unchanged(self):
+        # index.html is the multi-repo CLI home at /
+        cli_home = _REPO_ROOT / "dashboard" / "index.html"
+        if not cli_home.is_file():
+            self.skipTest("dashboard/index.html not found -- skipping O5 guard")
+        cli_src = cli_home.read_text(encoding="utf-8")
+        self.assertNotIn('kb-suspect-badge', cli_src,
+                         "dashboard/index.html (CLI home) must NOT contain kb-suspect-badge (O5)")
+        self.assertNotIn('doc_freshness', cli_src,
+                         "dashboard/index.html (CLI home) must NOT contain doc_freshness (O5)")
+
+
 if __name__ == "__main__":
     unittest.main()
