@@ -25,7 +25,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
 - **State:** In Review
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** Implementation complete; Python 519/519 pass, Node 324/324 (8 pre-existing failures unchanged), structural parity verified.
+- **Notes:** Implementation complete; Python 519/519 pass, Node reader suite 343 tests / 4 pre-existing failures (unchanged vs merge-base; route-startup + VERSION-file, freshness-untouched), structural parity verified.
 
 ---
 
