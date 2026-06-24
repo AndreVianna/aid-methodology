@@ -166,7 +166,6 @@
 {"dst": ".agent/aid/templates/task-spec-template.md", "profile": "antigravity", "sha256": "2f9353b8bdd507998e2a298cf16b6043a3a21b553b789c43d0f82ab403015b8a", "src": "canonical/templates/task-spec-template.md"}
 {"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "9dd76a887a0e59bda902123750789e8ffb30ebeac43a7bb61b4a001eb89c4519", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "14219f9b699c0093bedecd49b92dd47fd332553ef5b9223f437babe8f187469f", "src": "canonical/templates/work-state-template.md"}
-{"dst": ".agent/skills/aid-ask/SKILL.md", "profile": "antigravity", "sha256": "cda9708b7454c36e10a94ea1d09063702e8d9c1eac88146c3fb1d4a51399930b", "src": "canonical/skills/aid-ask/SKILL.md"}
 {"dst": ".agent/skills/aid-config/SKILL.md", "profile": "antigravity", "sha256": "5a43922edf04d3ce4a2a36517bad99a37f885962128f09a7323bbe32f5081fef", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".agent/skills/aid-deploy/SKILL.md", "profile": "antigravity", "sha256": "bc466298c53a7d4a9432761010ab4bd74d59b8b1fa520d87828fa9910343f1c1", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".agent/skills/aid-deploy/references/state-done.md", "profile": "antigravity", "sha256": "9e6a0137ce09ce2535844f6318913a36e7ddc48c83c5217373d68708343010c3", "src": "canonical/skills/aid-deploy/references/state-done.md"}
@@ -246,6 +245,7 @@
 {"dst": ".agent/skills/aid-plan/references/first-run-loop.md", "profile": "antigravity", "sha256": "f304bafc3fa25ac8249d1e9fb293c321b862457ee70348b7c144fd44caa1b3a7", "src": "canonical/skills/aid-plan/references/first-run-loop.md"}
 {"dst": ".agent/skills/aid-plan/references/review-deliverables.md", "profile": "antigravity", "sha256": "8a653b3bc2fe793685ab9c20e7b3ac0786827812e7e9c1f2138bdfd89302f950", "src": "canonical/skills/aid-plan/references/review-deliverables.md"}
 {"dst": ".agent/skills/aid-plan/references/reviewer-brief.md", "profile": "antigravity", "sha256": "13ba9c41b00b8bb328039b003746d9624600f0675d0c7abd69f38bda0ef60b70", "src": "canonical/skills/aid-plan/references/reviewer-brief.md"}
+{"dst": ".agent/skills/aid-query-kb/SKILL.md", "profile": "antigravity", "sha256": "0dbd7ff0eb2282560949b142c412d6195c1d90b0a8d03c25820713235b25c6fe", "src": "canonical/skills/aid-query-kb/SKILL.md"}
 {"dst": ".agent/skills/aid-specify/SKILL.md", "profile": "antigravity", "sha256": "39a0447a71d5f8e484f0a5c1a8ffbdf1aacd0bdbbfd1b6c374fbb04d0bdd6631", "src": "canonical/skills/aid-specify/SKILL.md"}
 {"dst": ".agent/skills/aid-specify/references/handling-outcomes.md", "profile": "antigravity", "sha256": "cdbe9d9eb2fcdc8067c5238486573bc3de4bad9bbfaa766857ce726bc9923d1d", "src": "canonical/skills/aid-specify/references/handling-outcomes.md"}
 {"dst": ".agent/skills/aid-specify/references/known-issues-scope.md", "profile": "antigravity", "sha256": "402869b80a61f218d179953bec9c9776502cf7ad6ac005d42c80ae631c986012", "src": "canonical/skills/aid-specify/references/known-issues-scope.md"}

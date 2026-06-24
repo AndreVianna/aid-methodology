@@ -1,5 +1,5 @@
 ---
-name: aid-ask
+name: aid-query-kb
 description: >
   Optional on-demand read-only Q&A skill. Takes a free-form question and answers
   it in one pass, grounded in three context sources: the Knowledge Base
@@ -20,11 +20,11 @@ Answers a free-form question about the project in one pass. Reads context from
 the Knowledge Base, the live codebase, and in-flight AID work state, then
 replies with source citations. Modifies no files.
 
-**Read-only.** `/aid-ask` never creates, edits, or deletes any file.
+**Read-only.** `/aid-query-kb` never creates, edits, or deletes any file.
 The `allowed-tools` grant confirms this: `Read, Glob, Grep, Agent` — no
 `Write`, `Edit`, or `Bash`.
 
-**Not a numbered pipeline phase.** `/aid-ask` is an optional, on-demand skill
+**Not a numbered pipeline phase.** `/aid-query-kb` is an optional, on-demand skill
 outside the Discover→Execute flow. No work folder, no STATE.md, no artifacts
 written.
 
@@ -34,11 +34,11 @@ written.
 
 ## Pre-flight
 
-- Confirm a question was supplied. If `/aid-ask` is invoked with no argument,
+- Confirm a question was supplied. If `/aid-query-kb` is invoked with no argument,
   print:
   ```
-  Usage: /aid-ask <question>
-  Example: /aid-ask "Which agent tier handles code review?"
+  Usage: /aid-query-kb <question>
+  Example: /aid-query-kb "Which agent tier handles code review?"
   ```
   Then exit without answering.
 
@@ -69,8 +69,8 @@ Read only the files needed to answer:
    check a script header, read a work STATE.md).
 4. Compose the answer with inline citations:
    - KB doc: cite as "`architecture.md` §Section" or `coding-standards.md §7b`.
-   - File path: cite as `.claude/skills/aid-ask/SKILL.md`.
-   - Work state: cite as `work-001-aid-ask STATE.md` or `work-NNN STATE.md §Section`.
+   - File path: cite as `canonical/skills/aid-query-kb/SKILL.md`.
+   - Work state: cite as `work-001-kb-skills STATE.md` or `work-NNN STATE.md §Section`.
 
 ### Step 2b — Broad/expensive question: dispatch aid-researcher
 
@@ -109,8 +109,8 @@ Format the answer as:
 ## Sources
 
 - <citation 1>  (e.g., `architecture.md §Thin-Router state machine`)
-- <citation 2>  (e.g., `.claude/skills/aid-housekeep/SKILL.md`)
-- <citation 3>  (e.g., `work-001-aid-ask STATE.md §Goal`)
+- <citation 2>  (e.g., `canonical/skills/aid-housekeep/SKILL.md`)
+- <citation 3>  (e.g., `work-NNN STATE.md §Goal`)
 ```
 
 If context is insufficient to answer:
@@ -154,7 +154,7 @@ required prompt.
 
 - **No writes.** This skill never creates, modifies, or deletes any file —
   enforced by the `allowed-tools` frontmatter (`Read, Glob, Grep, Agent`).
-- **No work folder.** `/aid-ask` does not create `.aid/work-*/` directories or
+- **No work folder.** `/aid-query-kb` does not create `.aid/work-*/` directories or
   STATE.md files for its own use.
 - **Cite sources.** Every factual claim in the answer must be traceable to a KB
   doc, a file path, or a work STATE.md reference.
