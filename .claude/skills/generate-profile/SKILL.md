@@ -260,7 +260,7 @@ Before calling the run complete, confirm:
 
 - [ ] Python 3.11+ available (`python --version` shows 3.11 or higher)
 - [ ] All selected profiles parsed without errors (`validate()` returned `[]`)
-- [ ] `canonical/` completeness verified: 10 skills, 9 agents, non-empty templates
+- [ ] `canonical/` completeness verified: 13 skills, 9 agents, non-empty templates
 - [ ] All renderers completed without errors
 - [ ] `profiles/{tool}/emission-manifest.jsonl` written for each rendered profile
 - [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS
