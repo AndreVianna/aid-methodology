@@ -64,9 +64,9 @@ different places.
 > Active Skill enum: aid-{skill} | none
 
 - **Lifecycle:** Running
-- **Phase:** Specify
-- **Active Skill:** none
-- **Updated:** 2026-06-23T03:47:36Z
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-24T00:27:37Z
 - **Pause Reason:** Specify phase complete (12/12 features Ready/A+) — awaiting /aid-plan
 - **Block Reason:** —
 - **Block Artifact:** —
