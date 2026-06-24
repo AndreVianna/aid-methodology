@@ -122,6 +122,23 @@ erDiagram
 
 ---
 
+## Contracts
+
+> The structural shape a data change MUST satisfy -- the schema, the persistence contract, the
+> cardinality rule. Without this an agent's change (a new column, a retype, a dropped field)
+> breaks persistence or a downstream consumer. State the contract precisely and name the
+> compatibility rule and every consumer the schema binds.
+
+- **{Schema / table contract}:** {the canonical shape -- which fields are required, types,
+  keys, and which consumers (migrations, ORM models, API DTOs) bind to it}.
+- **Compatibility rule:** {e.g. "additive migrations only in a single release: a new column is
+  nullable or has a default; dropping/retyping a column is a breaking migration that needs a
+  backfill + a deploy-order plan"}.
+- **{Cardinality / integrity}:** {e.g. "every Order row MUST reference an existing Customer
+  (FK enforced); orphaned rows are an integrity violation"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |

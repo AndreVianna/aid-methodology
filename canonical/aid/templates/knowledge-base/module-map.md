@@ -102,6 +102,34 @@ reason — e.g., `Core.Application` mixes several unrelated concerns}
 
 ---
 
+## Conventions
+
+> The project's **own way** of adding/wiring a module -- where it goes, how it is named, how
+> it is registered/connected. Without this an agent invents a module convention wrong for
+> this project. State the rule, then point at the canonical example module.
+
+- **Where a new module goes:** {e.g. "one project per bounded context under `src/`;
+  infrastructure modules go under `src/Infrastructure/`"}.
+- **How a module is named:** {e.g. "`{Context}.{Layer}` -- `Orders.Application`"}.
+- **How a module is registered/wired:** {e.g. "each module exposes an
+  `Add{Module}()` extension method called from composition root"}.
+
+---
+
+## Invariants
+
+> What MUST always hold for the module graph -- an ordering, a dependency-direction rule, a
+> single-source-of-truth rule the source enforces silently. Without this an agent violates
+> an invariant and breaks the build or a layering rule. State each as a hard MUST/MUST-NOT.
+
+- **{Dependency direction}:** {e.g. "Domain modules MUST NOT depend on Infrastructure
+  modules -- enforced by project references"}.
+- **{No cycles}:** {e.g. "the module dependency graph MUST stay acyclic"}.
+- **{Single owner}:** {e.g. "each entity is owned by exactly one module; no shared mutable
+  state across modules"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |

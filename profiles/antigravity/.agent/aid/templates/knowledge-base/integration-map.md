@@ -130,6 +130,22 @@ changelog:
 
 ---
 
+## Contracts
+
+> The structural shape a change MUST satisfy at an integration boundary -- the message
+> schema, the event payload, the external API request/response, the cache-key shape. Without
+> this an agent's change breaks an integration. State each contract precisely (fields, types,
+> required-ness) and name the producer and consumer it binds.
+
+- **{Message / event contract}:** {the canonical payload -- `eventType`, required fields and
+  types; which producer emits it and which consumer(s) depend on it}.
+- **{External API contract}:** {the request/response shape this system relies on from a
+  third-party service, and what breaks here if the provider changes it}.
+- **Compatibility rule:** {e.g. "consumers MUST tolerate unknown fields; producers add fields
+  additively and never repurpose an existing field's meaning"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |

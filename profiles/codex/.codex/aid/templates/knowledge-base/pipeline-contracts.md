@@ -123,6 +123,34 @@ changelog:
 
 ---
 
+## Conventions
+
+> The project's **own way** of adding/versioning an API or pipeline boundary -- routing,
+> naming, versioning, error-shape. Without this an agent invents an endpoint convention
+> wrong for this project. State the rule, then point at the canonical example endpoint.
+
+- **How a new endpoint is added:** {e.g. "controllers under `Api/Controllers/`, one per
+  aggregate; route `/api/v{n}/{resource}`"}.
+- **Versioning rule:** {e.g. "breaking changes go to a new `/vN` prefix; never break an
+  existing version in place"}.
+- **Error shape:** {e.g. "all 4xx/5xx responses return RFC 7807 ProblemDetails"}.
+
+---
+
+## Contracts
+
+> The structural shape a change MUST satisfy at a pipeline/API boundary -- the
+> request/response schema, the interface, the protocol contract. Without this an agent's
+> change breaks integration. State the contract precisely (fields, types, required-ness) and
+> name every downstream consumer the contract binds.
+
+- **{Contract name / boundary}:** {the exact shape -- fields, types, which are required, what
+  validation applies; and the consumers bound to it (who breaks if it changes)}.
+- **Compatibility rule:** {e.g. "additive-only within a version: new fields optional;
+  removing or retyping a field is a breaking change requiring a new version"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |

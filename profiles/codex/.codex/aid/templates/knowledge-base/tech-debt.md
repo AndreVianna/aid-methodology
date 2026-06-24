@@ -140,6 +140,22 @@ changelog:
 
 ---
 
+## Gotchas
+
+> The non-obvious traps -- a config that must change in lockstep, a build step that must run
+> first, an ordering hazard, a "looks safe but isn't" edit. This is exactly the delta-value a
+> newcomer cannot infer from the code. State the trap, then the safe way through it. One
+> gotcha per bullet; keep them concrete and grep-findable.
+
+- **{Lockstep config}:** {e.g. "changing `X` in `config/a.yml` requires the same change in
+  `config/b.yml` or startup fails silently"}.
+- **{Build/ordering hazard}:** {e.g. "run `codegen` before `build`; the generated client is
+  not committed and a stale one will compile but fail at runtime"}.
+- **{Looks-safe-but-isn't}:** {e.g. "the migration runner auto-applies on startup in dev but
+  NOT in prod -- prod migrations are a manual CI step"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |

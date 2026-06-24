@@ -158,6 +158,22 @@ changelog:
 
 ---
 
+## Invariants
+
+> **Conceptual invariants** that MUST always hold about the spine concepts above -- the
+> relationships and rules the vocabulary depends on that an agent would otherwise violate
+> while "technically" using the right words. These are not code invariants (those live in
+> `architecture.md` / `module-map.md`); these are about meaning. State each as a hard rule.
+
+- **{Concept relationship}:** {e.g. "an Order MUST have captured payment -- a Cart is never an
+  Order; the two terms are never interchangeable"}.
+- **{State rule}:** {e.g. "an Order's state MUST progress forward through the lifecycle; it
+  never returns to Pending once Processing"}.
+- **{Identity rule}:** {e.g. "a Customer is an Organization account, never an individual user
+  -- code that conflates them violates the domain model"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |

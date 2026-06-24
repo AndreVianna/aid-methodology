@@ -124,6 +124,22 @@ changelog:
 
 ---
 
+## Invariants
+
+> What MUST always hold about the architecture -- a layering rule, a dependency direction, a
+> single-source-of-truth, an ordering the system enforces silently. Without this an agent
+> violates an invariant the structure depends on. State each as a hard MUST/MUST-NOT, and
+> name where it is enforced (or note "enforced only by convention").
+
+- **{Layering}:** {e.g. "the Domain layer MUST NOT reference Infrastructure -- enforced via
+  project references"}.
+- **{Dependency direction}:** {e.g. "dependencies point inward toward the Domain; outer
+  layers know inner, never the reverse"}.
+- **{Single source of truth}:** {e.g. "DI registration happens only in `Startup.cs`; no
+  service is constructed directly at a call site"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |

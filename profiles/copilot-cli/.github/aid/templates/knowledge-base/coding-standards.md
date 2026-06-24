@@ -131,6 +131,20 @@ changelog:
 
 ---
 
+## Conventions
+
+> The project's **own way** of doing a recurring change -- naming, registration, wiring of
+> a new endpoint/module/handler. Capture the convention an agent would otherwise invent
+> wrong for this project. State the rule, then show the canonical example. Keep these as
+> imperative rules ("always X", "never Y"), not aspirations.
+
+- **{Recurring change, e.g. adding a service}:** {the project's rule -- e.g. "register in
+  `Startup.cs` via `AddScoped<IFoo, Foo>()`; never `new` it at the call site"}.
+- **{Recurring change, e.g. naming a handler}:** {the rule -- e.g. "command handlers are
+  named `{Command}Handler` and live under `Application/Handlers/`"}.
+
+---
+
 ## Revision History
 
 | Rev | Date | Source | Description |
