@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~30m
+- **Notes:** Boundary contract appended to pipeline-contracts.md (7-dimension table + shared-signal + 4 no-overlap rules). aid-housekeep SKILL.md description cross-ref added. lint-frontmatter 0 findings; test-ascii-only PASS.
 
 ---
 

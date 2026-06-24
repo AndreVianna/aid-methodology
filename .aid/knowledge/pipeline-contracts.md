@@ -23,7 +23,9 @@ approved_at_commit: ccb4e823
 contracts:
   - "13 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-query-kb/aid-update-kb) + maintainer-only generate-profile"
   - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
+  - "aid-housekeep (KB-DELTA) vs aid-update-kb boundary contract: source-driven-global vs prompt-driven-targeted, f007 suspect verdicts as shared signal, four no-overlap rules (f010/FR-33)"
 changelog:
+  - 2026-06-23: work-001-kb-skills-improvement delivery-009 (task-053) -- f010 boundary contract appended: housekeep (KB-DELTA, source-driven global) vs update-kb (prompt-driven targeted) non-overlapping contract table + shared-signal (f007 suspect verdicts) + four no-overlap rules. aid-housekeep SKILL.md description cross-ref added.
   - 2026-06-23: work-001-kb-skills-improvement delivery-008 (task-050) — aid-ask renamed to aid-query-kb; aid-update-kb added (12->13 user-facing skill contracts). /aid-ask contract block renamed to /aid-query-kb with updated gap-capture write scope; new /aid-update-kb contract block added.
   - 2026-06-23: Migrated by migrate-kb-frontmatter.sh: intent retired, objective/summary/sources added
   - 2026-06-09: aid-ask added (11->12 user-facing skill contracts) + /aid-execute argument order corrected to work-first (PR #70) via /aid-housekeep KB-DELTA.
@@ -235,6 +237,54 @@ on-demand). `aid-query-kb` has restricted write scope (gap-capture only — appe
   **No settings file, code file, or non-KB doc is written.** (`canonical/skills/aid-update-kb/SKILL.md`)
 - **Boundary:** prompt-driven-targeted (user supplies the scoping seed) vs. source-driven-global (`aid-housekeep` KB-DELTA). The two do not overlap (FR-33/FR-34 per f010).
 - **Source:** `canonical/skills/aid-update-kb/SKILL.md`
+
+### `aid-housekeep` (KB-DELTA) vs `aid-update-kb` -- Boundary Contract
+
+> **Cross-delivery dependency:** this boundary contract draws the boundary AROUND the
+> already-shipped `aid-update-kb` skill (task-048, delivery-008, f008). It does NOT
+> re-spec `aid-update-kb`; f008 owns that skill body and its DONE closure re-verify.
+
+| Dimension | `aid-housekeep` (KB-DELTA) | `aid-update-kb` |
+|-----------|---------------------------|-----------------|
+| **Driver** | **Source-driven** -- the current state of the repo's source tree drives it | **Prompt-driven** -- a free-form prompt naming what to update drives it (f008 prompt contract) |
+| **Scope** | **Global** -- reconciles the whole KB against current source state | **Targeted** -- a specific (doc, change) set the prompt implies (f008 ANALYZE) |
+| **Trigger** | merge-to-master / major source change / periodic maintenance sweep | a maintainer explicitly invoking `/aid-update-kb "<delta>"` (e.g. a finished work's deltas) |
+| **Question it answers** | "Which docs has the repo drifted away from, and what needs reconciling?" | "How do I best fold this named change into the KB?" |
+| **Shared signal (the divider)** | reads f007's `kb-freshness-check.sh` per-doc **suspect** verdicts to **prioritize** the whole-KB sweep (and gate a fast no-drift exit) -- does not narrow which docs are content-reviewed | reads f007's `kb-freshness-check.sh` per-doc **suspect** verdicts to **confirm which prompt-named docs actually drifted** (f008 ANALYZE step 2: prompt-implied docs intersect suspect docs) |
+| **Gate** | f005 panel via `/aid-discover` targeted re-entry (existing) | f005 panel scoped to the changed docs (f008 REVIEW) |
+| **Closure** | re-verifies `closure-check.sh` **before committing** the refresh (f010 new in housekeep) | re-verifies `closure-check.sh` **before committing** in DONE (f008/task-048, existing -- referenced, not duplicated here) |
+
+#### Shared signal -- per-doc staleness (f007)
+
+Both skills read the same deterministic signal -- `kb-freshness-check.sh`'s per-doc
+`{current, suspect, unknown}` verdict (f007) -- but use it for opposite purposes, which is
+exactly what keeps them non-overlapping:
+
+- **housekeep** uses the suspect set as the **input that defines its scope** (source -> which
+  docs drifted -> reconcile those). It starts from the repo and asks which docs.
+- **update-kb** uses the suspect set as a **confirmation filter** on a scope the prompt already
+  named (prompt -> candidate docs -> confirm drift). It starts from a named change and asks
+  which of these docs actually moved (f008 ANALYZE step 2).
+
+The signal is read-only and side-effect-free for both (f007: stdout only, no writes), so two
+skills reading it concurrently is safe. Source: `canonical/scripts/kb/kb-freshness-check.sh` (f007).
+
+#### No-overlap guarantee (four rules)
+
+1. **No prompt -> not update-kb.** `aid-update-kb` requires a prompt and exits with a usage
+   line if none is supplied (f008 prompt pre-flight). A source-driven periodic reconcile has no
+   prompt, so it is never an update-kb job.
+2. **Whole-KB reconcile -> not update-kb.** A global "reconcile everything that drifted" sweep
+   is `aid-housekeep`'s definition (periodic broad reconciliation); the targeted end-of-work
+   diff is update-kb's lane.
+3. **Targeted named delta -> not housekeep.** A maintainer with a specific change to fold in
+   runs `/aid-update-kb "<delta>"`; they do not run a global housekeep sweep for one doc.
+4. **The divider is recorded, not just asserted.** This contract table is the durable, routable
+   artifact; a maintainer (or the dashboard) can look up "which skill, when".
+
+**Source:** `canonical/skills/aid-housekeep/SKILL.md`, `canonical/skills/aid-update-kb/SKILL.md`,
+f010 (work-001-kb-skills-improvement feature-010-housekeep-update-boundary-and-standing-closure,
+task-053 delivery-009).
 
 ---
 
