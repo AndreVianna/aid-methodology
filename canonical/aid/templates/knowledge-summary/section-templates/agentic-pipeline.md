@@ -1,103 +1,150 @@
 ---
-profile: agentic-pipeline
-target_diagrams: 5
-notes: "AI-agent orchestration pipelines — skills, agents, KB, dispatch contracts, review/grade/fix loops. The pipeline shape (sequential phases with feedback loops) is the distinctive structure."
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for the agentic-pipeline domain's KB docs, keyed by kb-category
+        tier and doc identity — not by project-type. Use these hints during GENERATE when
+        the resolved doc-set contains the listed docs and the domain facets include
+        'agentic-pipeline' or 'methodology'."
 ---
 
-# Section Template — `agentic-pipeline` Profile
+# Rendering Hints — Agentic-Pipeline Domain Docs
 
-For projects that orchestrate AI agents through a staged pipeline (sequential phases with phase gates and feedback loops). Examples: AID itself (10-skill development pipeline), AI customer-support escalation pipelines, AI legal-document-review pipelines, AI content-moderation pipelines, any methodology where AI agents do work in defined phases under a controlling harness.
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `agentic-pipeline` or
+> `methodology` and the resolved doc-set contains these specific docs.
 
-Distinct from `library` (no UI but exports an API; this profile exports *skills + agents*, not symbols) and from `cli` (CLI binaries take flags; this profile invokes *slash commands* that dispatch agents).
+---
 
-## Sections
+## Per-doc rendering hints (keyed by doc identity + `kb-category`)
 
-| # | Title | Featured? | KB Sources |
-|---|-------|-----------|------------|
-| 1 | At a Glance | | STATE.md, project-structure.md |
-| 2 | The Pipeline | ★ | architecture.md, repo-presentation.md |
-| 3 | Phases & Skills | ★ | feature-inventory.md, module-map.md |
-| 4 | Agent Model & Tiers | ★ | module-map.md, pipeline-contracts.md |
-| 5 | Knowledge Base Shape | | schemas.md, INDEX.md |
-| 6 | Pipeline Contracts | | pipeline-contracts.md |
-| 7 | Authoring & Quality Gates | | coding-standards.md, test-landscape.md |
-| 8 | Distribution / Install | | infrastructure.md, repo-presentation.md |
-| 9 | Test Landscape | | test-landscape.md |
-| 10 | Tech Debt | | tech-debt.md |
-| 11 | Documentation Surface | | repo-presentation.md |
-| 12 | Concept Spine | | domain-glossary.md |
-| 13 | Knowledge Base Index | | INDEX.md |
+### `architecture.md` (tier: `primary`)
 
-## Diagrams
+The defining diagram for an agentic pipeline: a top-to-bottom or left-to-right pipeline
+of named phases with explicit phase gates (where the user approves transitions) and
+feedback loops (where downstream phases can revise upstream artifacts). Cite the
+methodology spec line range for each phase if available. Explain *why* the pipeline is
+sequential by default, and *which* feedback loops exist as escape hatches.
 
-| Fig | Type | Subject |
-|-----|------|---------|
-| 1 | flowchart LR | Pipeline phases with phase gates and feedback loops — the canonical sequential flow (e.g., for AID: Discover → Interview → Specify → Plan → Detail → Execute → Deploy → Monitor) |
-| 2 | graph TD | Agent dispatch model — how a skill dispatches a sub-agent; agent tier hierarchy (Large / Medium / Small or per-project equivalent) |
-| 3 | flowchart TB | Distribution model — canonical source → renderer → install trees (one per supported tool host); shows the multi-tool distribution shape if applicable |
-| 4 | erDiagram | Knowledge Base document schema — the cardinality and relationships of the KB docs the agents read and write |
-| 5 | flowchart LR | Quality gate loop — the REVIEW → grade → FIX → REVIEW → APPROVAL cycle that runs inside each phase (the "review-fix" loop that converges to A+) |
+Infographic candidate: a pipeline-phase flowchart (phases → gates → feedback loops).
 
-## Section content guidance
+### `feature-inventory.md` (tier: `primary`)
 
-### §2 The Pipeline
+For an agentic pipeline, "features" are "skills" or "phases". For each skill/phase,
+render a card with: skill name (slash command if applicable), one-sentence purpose,
+state-machine shape (e.g., `GENERATE → REVIEW → FIX → DONE`), dispatched sub-agents,
+key inputs / outputs.
 
-The defining diagram: a top-to-bottom or left-to-right pipeline of named phases with explicit phase gates (where the user approves transitions) and feedback loops (where downstream phases can revise upstream artifacts). Cite the methodology spec line range (`docs/aid-methodology.md:N-M`) for each phase if available. Explain *why* the pipeline is sequential by default, and *which* feedback loops exist as escape hatches.
+### `module-map.md` (tier: `primary`)
 
-### §3 Phases & Skills
+For an agentic pipeline, "modules" split into two distinct concerns: **Skills** (the
+slash-command units that do work) and **Agents** (the AI entities dispatched by skills).
+Render each concern separately. For agents, include the tier hierarchy (e.g., Large /
+Medium / Small) and which skills dispatch which agents.
 
-For each phase / skill, render a card with: skill name (slash command if applicable), one-sentence purpose, state-machine shape (e.g., `GENERATE → REVIEW → FIX → DONE`), dispatched sub-agents, key inputs / outputs. Featured because adopters scanning the summary mostly want to know *what skills exist* and *what each does*.
+Infographic candidate: an agent-dispatch model diagram (skill → tier → agents).
 
-### §4 Agent Model & Tiers
+### `pipeline-contracts.md` (tier: `primary`)
 
-Render the agent tier diagram (e.g., AID's Large/Medium/Small tier model). For each tier, list the agents in that tier and their dispatch profiles (which skills dispatch them, in which states). Include the reviewer/executor separation pattern if applicable (the rule that the reviewer is never the same agent that built the artifact). Featured because the agent model is the *active* mechanism that does the work.
+The interfaces that hold the pipeline together: skill ↔ sub-agent dispatch contracts
+(what prompt fields are mandatory), script CLI signatures + exit codes, file-format
+contracts (settings.yml, STATE.md sections, manifest / heartbeat schemas), and the
+canonical → render → install contract (if multi-tool). One subsection per contract;
+cite source for each.
 
-### §5 Knowledge Base Shape
+For an agentic pipeline, note that "Endpoints" map to "Slash commands" (the skill
+invocations, not HTTP endpoints).
 
-Render an erDiagram of the KB documents: which docs are primary vs meta vs generated, which depend on others (e.g., INDEX.md derives from each doc's frontmatter intent), per-doc role. Reference the schema doc that defines the contracts (`schemas.md` or equivalent). If the project has a flexible doc-set (e.g., adopter customization), explain the standard default + how to extend.
+### `schemas.md` / `artifact-schemas.md` (tier: `primary`)
 
-### §6 Pipeline Contracts
+Render an entity/schema diagram of the KB documents: which docs are primary vs
+meta vs generated, which depend on others, per-doc role. Reference the schema doc
+that defines the contracts. If the project has a flexible doc-set, explain the
+standard default + how to extend.
 
-The interfaces that hold the pipeline together: skill ↔ sub-agent dispatch contracts (what prompt fields are mandatory), script CLI signatures + exit codes, file-format contracts (settings.yml, STATE.md sections, manifest / heartbeat schemas), and the canonical → render → install contract (if multi-tool). One subsection per contract; cite source for each.
+### `coding-standards.md` (tier: `primary`)
 
-### §7 Authoring & Quality Gates
+For an agentic pipeline, highlight the review-grade-fix discipline: reviewer dispatch
+contract, grading rubric, severity scale, the ledger format (if a structured findings
+ledger is used), and the rule about reviewer ≠ executor. Explain the *philosophy* —
+the reviewer is the safety net, the orchestrator owns catching all errors before review.
 
-The review-grade-fix discipline that makes the pipeline self-correcting: reviewer dispatch contract, grading rubric, severity scale, the ledger format (if a structured findings ledger is used), and the rule about reviewer ≠ executor. Explain the *philosophy* — the reviewer is the safety net, the orchestrator owns catching all errors before review.
+### `infrastructure.md` (tier: `primary`)
 
-### §8 Distribution / Install
+How the project ships to adopters: install script (per-tool, or auto-detect), supported
+tool hosts, what gets copied where, runtime requirements. If multi-tool, include the
+canonical → profile distribution model. For an agentic pipeline, "Services" map to
+"Agents"; "CLI binary" maps to "slash command invocation".
 
-How the project ships to adopters: install script (`install.sh` / `install.ps1` — per-tool, `--tool <name>` or auto-detect), supported tool hosts (Claude Code / Codex / Cursor / etc. for AID), what gets copied where, runtime requirements (Node, Python, Git Bash on Windows). If multi-tool, include the canonical → profile distribution model diagram (Fig 3).
+### `test-landscape.md` (tier: `primary`)
 
-### §11 Documentation Surface
+Test coverage for an agentic pipeline: unit tests, integration tests, canonical suites,
+DBI / byte-identity checks, and any CI gate that guards quality. Render as a table or
+cards per concern.
 
-How the project presents itself to adopters: README structure, docs/ taxonomy, examples/ catalog, methodology spec link, external references (blog posts, papers). This is the user-facing surface — what a first-time visitor sees before installing.
+### `tech-debt.md` (tier: `primary`)
 
-### §12 Concept Spine
+Render as severity cards (critical / high / medium / low). Focus on the *actionability*
+for a newcomer: what debt exists and what it means for contributing or adopting the
+project.
 
-The project's native vocabulary — the coined and domain-specific terms you must understand
-to understand the system. Drawn from `domain-glossary.md` (the C4 ubiquitous-language doc).
+### `authoring-conventions.md` (tier: `primary`)
 
-For an agentic pipeline, include: the skill/agent/phase terminology, any coined names for
-pipeline states or contracts (e.g. "phase gate", "dispatch contract", "review-fix loop"),
-and any project-specific abbreviations. Render as a scannable definition list:
+For an agentic pipeline, this covers the authoring discipline that governs KB docs,
+skills, and generated assets. Render as prose + key rules table. A newcomer needs to
+understand the conventions before contributing.
 
-- **{term}** — {one-line definition in this project's context, not the general meaning}
+### `domain-glossary.md` (tier: `primary` — bespoke component)
 
-If `domain-glossary.md` is absent or empty, render a minimal placeholder noting the spine
-is not yet authored; do not omit the section. Terms are scannable first — keep each
-definition to one line; link to the KB doc for deeper context.
+Render as the **Glossary / definition component** (see `state-generate.md` §3).
+For an agentic pipeline, include: the skill/agent/phase terminology, any coined names
+for pipeline states or contracts, and project-specific abbreviations.
 
-## Skipped sections (vs web-app)
+### `capability-inventory.md` (tier: `primary` — bespoke component)
 
-- ✗ Frontend Architecture (no UI runtime; the *agents* are the runtime)
-- ✗ HTTP Request Flow (no server; dispatch happens locally between skills and sub-agents)
-- ✗ Integration Hub diagram (no external services in the agentic-pipeline shape; replaced by the agent dispatch model in Fig 2)
+Render as the **Capability entry component** (see `state-generate.md` §3).
+For an agentic pipeline, capabilities map to slash commands / skills — what each does,
+when to use it, how to invoke it.
 
-## Differences in cards / palette
+### `decisions.md` (tier: `extension` — bespoke component)
 
-- "Features" → "Skills" or "Phases" (terminology specific to agentic pipelines)
-- "Endpoints" → "Slash commands" (if the project invokes skills via slash commands)
-- "Services" → "Agents" (the agents are what does the work)
-- "Modules" → "Skills" + "Agents" (split the module-map into the two distinct concerns)
-- "Data Model" → "Knowledge Base Shape" (the KB is the persistent state, not a database)
-- Palette: prefer cooler / more neutral colors (this is methodology, not a consumer-facing product). Use accent color for phase gates / quality boundaries to emphasize the controlled-handoff philosophy.
+Render as the **Decision / ADR card component** (see `state-generate.md` §3).
+Focus on the architectural decisions that shaped the pipeline: why phases are sequential,
+why a given agent tier model was chosen, why the canonical → render → install split exists.
+
+### `quality-gates.md` (tier: `extension`)
+
+Supporting section. Render as a table of gates (which state/phase, what checks, what
+the pass/fail criteria are). Secondary prominence — a newcomer reads this after the core
+pipeline docs.
+
+### `external-sources.md` (tier: `meta`)
+
+Compact reference list. Orientation: the external references, blog posts, papers, or
+upstream projects that informed the design. Render briefly; fold into the KB Index or
+render as a compact reference block.
+
+### `README.md` (tier: `meta`)
+
+Compact reference. The project's entry-point for first-time visitors. May be omitted
+from the main content area and surfaced only via the KB Index row.
+
+---
+
+## Vocabulary adjustments for agentic-pipeline domain
+
+When the domain facets include `agentic-pipeline` or `methodology`, adjust these labels
+in section headings and "At a Glance" framing:
+
+| Default label | Agentic-pipeline label |
+|---|---|
+| "Features" | "Skills" or "Phases" |
+| "Endpoints" | "Slash commands" |
+| "Services" | "Agents" |
+| "Modules" | "Skills" + "Agents" |
+| "Data Model" | "Knowledge Base Shape" |
+| "API Surface" | "Pipeline Contracts" |
+
+These are label adjustments, not structural changes. The section set is still the
+resolved doc-set; these hints adjust phrasing for domain clarity.

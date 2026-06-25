@@ -10,8 +10,9 @@ Read `.aid/.temp/review-pending/summarize.md`. Filter rows where Status ∈ {`Pe
 
 For each Pending/Recurred row, apply the corresponding repair autonomously:
 
-- **D1 (diagram parse)** — locate the failing `<pre.mermaid>` block, identify the syntax error from the validator output, apply the fix per `.cursor/aid/templates/knowledge-summary/mermaid-examples.md` "Common failure patterns" table.
-- **D2 (diagram render)** — the block parses but renders trivially / as an error SVG; inspect the jsdom render output, fix the structural issue (often an empty subgraph or an unreachable node).
+- **COV (resolved-doc-set coverage < 60%)** — the summary is missing sections for resolved KB docs. Add the missing sections (one per unrepresented resolved doc from `discovery.doc_set`) so that `grade-summary.sh` finds references to each doc in the HTML.
+- **D1 (diagram parse — only when Mermaid blocks present)** — locate the failing `<pre class="mermaid">` block, identify the syntax error from the validator output, and fix the Mermaid syntax. Consult `.cursor/aid/templates/knowledge-summary/mermaid-examples.md` for common failure patterns (kept for D-011; retired in D-012).
+- **D2 (diagram render — only when Mermaid blocks present)** — the block parses but renders trivially / as an error SVG; inspect the jsdom render output, fix the structural issue (often an empty subgraph or an unreachable node).
 - **L1 (anchor links)** — fix the `href` or add the missing `id`.
 - **L2 (md links)** — correct the relative path.
 - **H1 (HTML validity)** — fix the reported markup error (from tidy / html-validate / regex, whichever ran).

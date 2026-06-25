@@ -21,7 +21,10 @@
 <!-- Skip-to-content for keyboard / screen reader users -->
 <a class="skip-link" href="#top">Skip to content</a>
 
-<!-- Sticky top bar with brand + breadcrumb + theme toggle -->
+<!-- Sticky top bar: brand + breadcrumb + theme toggle.
+     Structure mirrors home.html and index.html (shared dashboard shell).
+     breadcrumb is a static <nav> landmark (kb.html is a generated static page,
+     not JS-driven); design tokens and class names are identical across all pages. -->
 <header class="top-bar" role="banner">
 	<span class="app-title">AID Dashboard <span class="beta-pill">beta</span></span>
 	<nav class="breadcrumb" aria-label="Breadcrumb">
@@ -35,7 +38,7 @@
 		<button type="button" class="btn-ghost" id="theme-toggle"
 		        aria-label="Switch theme"
 		        title="Toggle light/dark theme">
-			<span id="theme-icon" aria-hidden="true">◐</span>
+			<span id="theme-icon" aria-hidden="true">&#9680;</span>
 			<span id="theme-label">Dark</span>
 		</button>
 	</div>
@@ -65,29 +68,23 @@
 	<div class="lb-caption" id="lb-caption" aria-live="polite"></div>
 </div>
 
-<footer>
-	<p>Generated from <code>.aid/knowledge/</code> on {{GENERATION_DATE}} ·
-	   Re-run <code>/aid-summarize</code> when the Knowledge Base changes.<br>
-	   Diagrams: <a href="https://mermaid.js.org">Mermaid</a> v{{MERMAID_VERSION}} (inlined for offline use).
-	   Styled with system fonts and CSS variables — no external assets.</p>
+<footer id="page-footer">
+	<p>Generated from <code>.aid/knowledge/</code> on {{GENERATION_DATE}} &middot;
+	   Re-run <code>/aid-summarize</code> to update &middot;
+	   <span id="mermaid-attribution">Diagrams: Mermaid v{{MERMAID_VERSION}} (inlined) &middot; </span>Styled with system fonts and CSS variables — no external assets.</p>
 </footer>
 
 <!-- Fallback for users with JavaScript disabled -->
 <noscript>
 	<div class="noscript-fallback">
 		<h2>JavaScript required</h2>
-		<p>This summary uses Mermaid to render diagrams and JavaScript to power the
-		   theme toggle, lightbox, and scrollspy. With JavaScript disabled, the
-		   diagrams and interactive features will not work.</p>
+		<p>This summary uses JavaScript to power the theme toggle, lightbox, and
+		   scrollspy. With JavaScript disabled, the interactive features will not work.</p>
 		<p>Either enable JavaScript, or read the source markdown files directly in
 		   <code>.aid/knowledge/</code>:</p>
 		<ul>
 			<li><a href="./INDEX.md">INDEX.md</a> — Knowledge Base map</li>
-			<li><a href="./architecture.md">architecture.md</a></li>
-			<li><a href="./module-map.md">module-map.md</a></li>
-			<li><a href="./schemas.md">schemas.md</a></li>
-			<li><a href="./pipeline-contracts.md">pipeline-contracts.md</a></li>
-			<li><a href="./integration-map.md">integration-map.md</a></li>
+			{{NOSCRIPT_DOC_LIST}}
 		</ul>
 	</div>
 </noscript>

@@ -1,10 +1,26 @@
 ---
-profile: data-pipeline
-target_diagrams: 5
-notes: "ETL and streaming pipelines — stage transforms, lineage, and sources/sinks are central."
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for data-pipeline-domain KB docs, keyed by kb-category tier and
+        doc identity — not by project-type. The section set is derived from the resolved
+        doc-set + frontmatter, not from this template."
 ---
 
-# Section Template — `data-pipeline` Profile
+# Rendering Hints — Data Pipeline Domain Docs
+
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `data-pipeline` or `etl`
+> and the resolved doc-set contains the listed docs.
+
+---
+
+## Original section structure (preserved as rendering reference)
+
+The following layout was the data-pipeline profile's fixed section order. It is **not
+selected as a template**; it is kept as domain-specific rendering guidance. The resolved
+doc-set order (from `state-profile.md` §4) is authoritative.
 
 For ETL / streaming / data-pipeline projects. Stage transforms, lineage, and
 sources/sinks are central.

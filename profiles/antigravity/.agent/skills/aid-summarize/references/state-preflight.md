@@ -8,7 +8,7 @@ Run `.agent/aid/scripts/summarize/summarize-preflight.sh` before any state. It v
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
 3. At least one populated KB document exists (`.aid/knowledge/*.md` with real content).
 4. Not in Plan Mode (need write access).
-5. Network reachable to `registry.npmjs.org` (skipped if `--cdn-mermaid`).
+5. Network reachable to `registry.npmjs.org` (for Mermaid fetch; skipped when the resolved KB has no Mermaid blocks).
 6. **Migrate legacy summary path (FR31 migration):** if `.aid/knowledge/knowledge-summary.html`
    exists and `.aid/dashboard/kb.html` does not, `mkdir -p .aid/dashboard` and `mv -n` the old
    file to the new path so STALE-CHECK sees the existing approved summary and skips regeneration.

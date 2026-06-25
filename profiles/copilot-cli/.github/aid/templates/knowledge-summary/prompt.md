@@ -9,26 +9,26 @@ preflight, etc.); this file describes the actual content generation work.
 ## Inputs
 
 - **`.aid/knowledge/`** — the populated, approved KB.
-- **`.aid/knowledge/STATE.md`** (consolidated per FR2) — has both:
-  - `## Knowledge Summary Status` block: chosen profile, theme, minimum grade
-    (pre-FR2 this was `SUMMARY-STATE.md`).
-  - `## KB Documents Status` block (and `## Review History`): the project's
-    overall grade, project type, external doc paths, review history
-    (pre-FR2 this was `DISCOVERY-STATE.md`).
-- **`references/section-templates/{profile}.md`** — the section list to render.
-- **`references/component-css.css`** — the styles to inline.
+- **`.aid/settings.yml`** — `discovery.doc_set` (the resolved doc-set: which
+  docs exist, in the order feature-014 curated them).
+- **`.aid/knowledge/STATE.md`** — two things:
+  - `## Discovery Domain` → the domain string that frames labels and voice
+    (e.g. `hybrid:methodology-tooling+software-cli`). Advisory framing only —
+    it does NOT select a section template or gate any section.
+  - `## Knowledge Summary Status` → chosen theme, minimum grade, and the
+    approval signal (`**User Approved:** yes (YYYY-MM-DD)`).
+- **Section ordering and component selection** — derived from the PROFILE
+  manifest (`state-profile.md`) and documented in `state-generate.md`.
+- **`references/component-css.css`** — the styles to inline (includes all
+  design tokens, theme, a11y baseline, bespoke component styles).
 - **`references/lightbox.js`** — the script to inline.
-- **`references/mermaid-init.js`** — Mermaid theme variables (already inside
-  `lightbox.js`; mentioned for completeness).
-- **`references/html-skeleton.html`** — the document shell with placeholders.
-- **`references/mermaid-examples.md`** — diagram syntax patterns and pitfall
-  table.
+- **`references/html-skeleton.html`** — the page shell with placeholders.
 - **`references/design-tokens.md`** — palette / typography reference.
-- **`.aid/knowledge/.cache/mermaid.min.js`** — the inlined library.
 
 ## Output
 
-`.aid/knowledge/knowledge-summary.html` — single-file deliverable.
+`.aid/dashboard/kb.html` — single self-contained file. All CSS and JS inlined;
+no CDN, no split assets, no external framework fetch.
 
 ---
 
@@ -36,218 +36,309 @@ preflight, etc.); this file describes the actual content generation work.
 
 1. **The KB is authoritative.** Never invent facts. Every numeric or named fact
    in the HTML must trace back to a populated KB document.
-2. **Cite sources.** Every section header has a "Source:" reference link to the
+2. **Cite sources.** Every section has a footer "Source:" reference link to the
    KB document(s) that fed it (e.g., `<a href="./architecture.md">architecture.md</a>`).
 3. **Code-first if KB and design docs disagree.** Same rule discovery uses.
 4. **No emojis** in titles or section bodies. Status icons (✓ ✗ ⚠) are OK as
    meaningful markers; emojis as decoration are not.
-5. **Diagram labels:** never use `<word>` HTML-tag-like tokens. Use `{word}` or
-   `[word]`. Only `<b>`, `<i>`, and `<br/>` are safe HTML in Mermaid labels.
-6. **Captions:** every diagram has a `.caption` block with format
+5. **Newcomer tone throughout.** Write for a non-technical reader with no prior
+   project knowledge. Plain language, short sentences, "what & why" before "how".
+   Drop the KB's agent-framing vocabulary (frontmatter, kb-category, dual-audience,
+   audience badge) from the summary prose — those are KB-internal terms, not
+   newcomer vocabulary. The reader does not need to know how the KB was built;
+   they need to understand the project.
+6. **Concept-first rendering — no bare links to source `.md` files as primary content.**
+   The three well-known docs (`domain-glossary.md`, `decisions.md`,
+   `capability-inventory.md`) are rendered as first-class content components — the
+   reader sees the content in the page without having to open a `.md`. Specifically:
+   - `domain-glossary.md` → render each term as a `.gloss-card` in a `.gloss-grid`.
+     A newcomer reads the vocabulary definitions on the page. Do NOT replace the
+     glossary section with a link to `domain-glossary.md`.
+   - `decisions.md` → render each ADR (D1, D2, …) as an `.adr-card` in an `.adr-list`
+     showing: decision statement, alternatives rejected, and the constraint that drove it.
+     A newcomer reads the "why" in the page. Do NOT replace the decisions section with a
+     link to `decisions.md`.
+   - `capability-inventory.md` → render each capability as a `.cap-card` in a `.cap-grid`
+     showing: name, slash command, what it does, when to use it.
+     A newcomer reads what the project can do in the page. Do NOT replace the capabilities
+     section with a link to `capability-inventory.md`.
+   The ONLY link to each source `.md` is a footer "Source:" citation line at the bottom
+   of the section. All other resolved docs that lack a bespoke component still get a
+   "Source:" link, but that link is supplementary — the section body renders the actual
+   content from the doc.
+7. **Self-contained single file.** All CSS and JS inlined; no CDN, no split assets,
+   no external framework fetch.
+8. **Diagram captions:** every diagram has a `.caption` block with format
    `Figure N. <one-sentence summary>. Source: <link>`.
+9. **Best format per fact.** Choose the format that best communicates each fact to a
+   newcomer: table for catalogs, cards for grids, prose for narrative, diagram for
+   structure. There is no minimum or maximum diagram count; the newcomer's understanding
+   is the measure, not the number of visuals.
 
 ---
 
 ## Step-by-step
 
-### Step 1 — Read the active section template
+### Step 1 — Read the section manifest from PROFILE
 
-Open `references/section-templates/{profile}.md`. It tells you:
-- Which numbered sections to produce
-- Which KB documents feed each section
-- Which diagrams belong to which section
-- Whether each section is "featured" (gets ★ marker)
+The PROFILE state (`references/state-profile.md`) has already produced an ordered
+section manifest: one entry per resolved doc, in concept-first ordering (domain-glossary
+→ decisions → capability-inventory → then primary docs in doc-set order → extension
+docs → meta docs). "At a Glance" is always first; Knowledge Base Index is always last.
 
-If a KB document referenced by the template does NOT exist in
-`.aid/knowledge/`, drop the section that depends on it. Never invent content
-to fill gaps.
+Read each manifest entry:
+- **doc filename** (the resolved KB doc)
+- **section heading** (derived from `objective:` frontmatter or doc filename de-slugified)
+- **one-line description** (from `summary:` → `objective:` → `intent:` → first paragraph)
+- **purpose blurb** (from `objective:` → `intent:` → first paragraph)
+- **tier** (`kb-category:` — `primary` | `extension` | `meta`)
+- **keyword pills** (from `tags:`)
+- **see-also links** (from `see_also:`)
+- **component type** (bespoke for the three well-known docs; generic fallback otherwise)
 
-### Step 2 — Read the KB
+Do NOT use project-TYPE profiles (web-app/cli/library/microservices/data-pipeline/
+agentic-pipeline). The section set is the resolved doc-set, not a fixed template.
 
-Read every KB document. Extract the most "summary-worthy" content per doc:
-- For tables: pick the most informative rows; drop verbose ones.
-- For prose: pick the lede paragraph + any callout-style bullets.
-- For lists: pick the top 5–7 entries; drop the long tail.
-- For ASCII diagrams: convert to Mermaid (see Step 4).
+### Step 2 — Read all resolved KB documents
 
-Maintain a running list of "facts" — each fact is a `(claim, source-doc, source-line)`
-triple. You'll cite these in the HTML.
+For each doc in the manifest, read `.aid/knowledge/{doc}.md` and extract:
+- **Key facts** — numbers, names, version pins from the doc body. Extract the most
+  summary-worthy content: for tables, pick informative rows; for prose, pick the
+  lede paragraph + any callout-style bullets; for lists, pick the top 5–7 entries.
+- **Concept Spine content** — for `domain-glossary.md`: extract each term's
+  Definition-as-used-here, Relates-to, and Aliases fields.
+- **ADR content** — for `decisions.md`: extract each D{N} entry's Decision,
+  Alternatives rejected, and Constraint-that-drove-it.
+- **Capability content** — for `capability-inventory.md`: extract each capability's
+  name, invoke command, What-it-accomplishes, When-to-use.
+- **Generated-doc flag** — if frontmatter has `source: generated`, render with a small
+  "(auto-generated by `{generator}`)" attribution line.
+
+**Do NOT render `audience:` as a role-badge.** The KB's dual-audience / agent-frontmatter
+framing does not apply to the summary. The newcomer does not care which agent-role a doc
+targets; audience leaks the KB's machine-oriented framing into a newcomer-facing product.
+
+The KB is **authoritative**. Do not re-grade it, re-validate it, or contradict it.
+If the KB says X, the HTML says X.
 
 ### Step 3 — Read the project's identity
 
-Open `.aid/knowledge/STATE.md` `## KB Documents Status` (and `## Review History`)
-for project name, type, version, review history (per FR2; pre-FR2 this was
-`DISCOVERY-STATE.md`). If the project root has a `pom.xml`, `package.json`,
-`Cargo.toml`, etc., read the version + name from there. Cross-check against KB.
+Open `.aid/knowledge/STATE.md` `## Discovery Domain` for the domain string.
+If the project root has a `pom.xml`, `package.json`, `Cargo.toml`, or other build
+file, read the version + name from there. Cross-check against KB.
 
-### Step 4 — Plan the diagrams
+Read `## Discovery Domain` → `- **Domain:**` for the domain framing
+(e.g. `hybrid:methodology-tooling+software-cli`).
 
-For each diagram listed in the active section template:
-1. Decide the diagram TYPE (flowchart TB / LR, graph TD, erDiagram,
-   sequenceDiagram, etc.).
-2. Sketch the nodes and edges from the relevant KB document.
-3. Apply the standard `classDef` palette from `mermaid-examples.md`.
-4. Check against the "Common failure patterns" table — eliminate `<word>`
-   tokens, ensure `-. text .->` has spaces, use explicit edge sources, no
-   unclosed quotes.
+### Step 4 — Build the "At a Glance" section (always first)
 
-If a KB document already contains a Mermaid block, prefer to reuse it
-verbatim if it follows our conventions; otherwise re-author.
+"At a Glance" is synthesized — not a doc section. Write it as a
+**newcomer-friendly plain-language section** that answers: "What IS this project?
+What does it DO for me?"
 
-### Step 5 — Write `part1.html`
+**Structure:**
 
-Start from `references/html-skeleton.html`. Replace placeholders:
+```html
+<section id="at-a-glance" class="sec featured" aria-labelledby="aag-heading">
+  <header>
+    <span class="eyebrow">{Domain framing, e.g. "Methodology + CLI tool"}</span>
+    <h2 id="aag-heading">{{PROJECT_NAME}}</h2>
+    <p class="lede">{One plain-language paragraph: "This is a {domain framing}
+      that {what it does for users}." Friendly, no jargon.}</p>
+  </header>
+
+  <!-- What it does — friendly list from capability-inventory.md (if present) -->
+  <div class="callout ok" style="margin-bottom:1.5rem">
+    <h4>What it does for you</h4>
+    <ul style="margin:0; padding-left:1.4em">
+      <li>{Key capability 1 — one line, newcomer-friendly}</li>
+      <li>{Key capability 2}</li>
+      <!-- 3–5 top capabilities; no more -->
+    </ul>
+  </div>
+
+  <!-- Key vocabulary teaser (if domain-glossary.md is in resolved doc-set) -->
+  <p style="font-size:0.92rem; color:var(--text-muted);">
+    <strong>Key vocabulary:</strong>
+    <a href="#gloss-{slug}">{Term 1}</a>,
+    <a href="#gloss-{slug}">{Term 2}</a>,
+    <a href="#gloss-{slug}">{Term 3}</a>
+    — <a href="#glossary">see all terms &rarr;</a>
+  </p>
+
+  <!-- Key decisions teaser (if decisions.md is in resolved doc-set) -->
+  <p style="font-size:0.92rem; color:var(--text-muted);">
+    <strong>Big decisions:</strong>
+    <a href="#adr-d1">{ADR 1 short title}</a>,
+    <a href="#adr-d2">{ADR 2 short title}</a>
+    — <a href="#decisions">see all &rarr;</a>
+  </p>
+</section>
+```
+
+**Rules for "At a Glance":**
+- **Lead with what & why, not metrics.** Module count, test count, and lines of code
+  do NOT lead this section. A newcomer needs the mission, not the measurements.
+  Metrics MAY appear as a small secondary callout later in the page (not here).
+- The lede paragraph uses the domain framing from `## Discovery Domain` + the
+  `objective:` from `domain-glossary.md` or `capability-inventory.md` as source.
+- Omit the vocabulary teaser if `domain-glossary.md` is absent from the resolved doc-set.
+- Omit the decisions teaser if `decisions.md` is absent from the resolved doc-set.
+
+### Step 5 — Assemble the sections (concept-first trio → primary → extension → meta)
+
+For each doc in the PROFILE manifest (after "At a Glance"), author one `<section>` using
+the component assigned by the manifest:
+
+#### Bespoke components (the three well-known docs)
+
+Follow the templates in
+`.github/aid/templates/knowledge-summary/section-templates/bespoke-components.md`:
+- `domain-glossary.md` → `§1` Glossary / definition component (`.gloss-grid`)
+- `decisions.md` → `§2` Decision / ADR card component (`.adr-list`)
+- `capability-inventory.md` → `§3` Capability entry component (`.cap-grid`)
+
+Each bespoke component renders the doc's content directly — a newcomer reads the
+definitions / decisions / capabilities on the page without opening any `.md` file.
+
+#### Generic fallback (all other resolved docs)
+
+For each non-bespoke doc, produce a `<section class="sec [featured]">` using this
+structure:
+
+```html
+<section id="{doc-slug}" class="sec{featured}" aria-labelledby="{doc-slug}-heading">
+  <header>
+    <span class="eyebrow">{Tier label, e.g. "Project Structure" or "How we work"}</span>
+    <h2 id="{doc-slug}-heading">{Section heading — newcomer-phrased}</h2>
+    <p class="lede">{One-line description — "what you'll learn in this section."}</p>
+  </header>
+
+  {Section body — choose the best format per fact:}
+  <!-- For catalogs → .tbl-wrap + table.tbl -->
+  <!-- For grids → .grid.g2/.g3 + .card items -->
+  <!-- For narrative → <p> paragraphs with the newcomer "what & why" -->
+  <!-- For structure → diagram (Mermaid or inline SVG) in .mermaid-box -->
+  <!-- Keyword pills (if tags: present): -->
+  <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin: 0.75rem 0;">
+    <span class="badge">{tag 1}</span>
+    <span class="badge">{tag 2}</span>
+  </div>
+
+  <!-- See-also links (if see_also: present): -->
+  <p class="meta" style="font-size:0.85rem; color:var(--text-dim);">
+    Related: <a href="#{related-slug}">{Related section}</a>
+  </p>
+
+  <p class="meta" style="font-size:0.85rem; color:var(--text-dim);">
+    Source: <a href="./{doc}.md">{doc}.md</a>
+  </p>
+</section>
+```
+
+Rules:
+- `{featured}` → add class `featured` (→ ★ marker) for `kb-category: primary` docs that
+  are domain-salient core docs (the concept-first trio always gets `featured`; for other
+  primaries, apply featured to docs that are the clearest newcomer entry points).
+- **`kb-category: meta`** docs (`external-sources.md`, `README.md`) → compact prose /
+  reference list, rendered without `featured`; may be folded into the KB Index.
+- **No section is ever skipped.** Every resolved doc gets a section, even if the content
+  is thin. The generic fallback guarantees coverage (completeness = coverage of the
+  resolved doc-set).
+
+#### Tone for section content
+
+Across ALL sections, maintain newcomer tone:
+- Short sentences. Active voice. Explain the "why" not just the "what."
+- Never use KB-internal terms (frontmatter, kb-category, dual-audience, tier, agent-role)
+  as if the reader knows them.
+- Treat each section as introducing the topic from scratch to someone with no prior
+  project context.
+- Numbers and code names (e.g. module names, command names) are fine as facts;
+  explain their significance in plain English alongside them.
+
+### Step 6 — Knowledge Base Index (always last)
+
+The last section is a full table of every resolved doc with a one-line description:
+
+```html
+<section id="kb-index" class="sec" aria-labelledby="kb-index-heading">
+  <header>
+    <h2 id="kb-index-heading">Knowledge Base Index</h2>
+    <p class="lede">All source documents in this project's Knowledge Base —
+      click any to read the full technical detail.</p>
+  </header>
+  <div class="tbl-wrap">
+  <table class="tbl">
+    <thead>
+      <tr><th>Document</th><th>What it covers</th></tr>
+    </thead>
+    <tbody>
+      <!-- One row per resolved doc, in manifest order: -->
+      <tr>
+        <td><a href="./{doc}.md">{doc}.md</a></td>
+        <td>{summary: value, or doc name de-slugified}</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p class="meta" style="margin-top:1rem; font-size:0.85rem; color:var(--text-dim);">
+    Source: <a href="./INDEX.md">INDEX.md</a> — generated KB map.
+  </p>
+</section>
+```
+
+### Step 7 — Start from the skeleton
+
+Open `references/html-skeleton.html`. Replace placeholders:
 - `{{LANG}}` — `en` (or read from `AGENTS.md` if specified).
-- `{{PROJECT_NAME}}` — from `.aid/knowledge/STATE.md` `## KB Documents Status` or build files.
+- `{{PROJECT_NAME}}` — from `.aid/knowledge/STATE.md` or build files.
 - `{{INLINE_CSS}}` — full content of `references/component-css.css`.
-- `{{BODY_CONTENT}}` — the section content you've written (Step 6 below).
+- `{{BODY_CONTENT}}` — all sections from Steps 4–6, in order.
 - `{{GENERATION_DATE}}` — today's date in `YYYY-MM-DD`.
-- `{{MERMAID_VERSION}}` — fetched version from `.aid/knowledge/STATE.md` `## Knowledge Summary Status`.
+- `{{MERMAID_VERSION}}` — fetched version from `.aid/knowledge/STATE.md`
+  `## Knowledge Summary Status` (until D-012 removes the engine).
 - `{{INLINE_LIGHTBOX_JS}}` — full content of `references/lightbox.js`.
 - `{{MERMAID_VERSION_COMMENT}}` — `Mermaid v{ver} bundled inline below`.
+- `{{NOSCRIPT_DOC_LIST}}` — one `<li>` per resolved doc (in manifest order)
+  derived from the doc-set, not hardcoded. Format:
+  `<li><a href="./{doc}.md">{doc}.md</a> — {summary: value}</li>`.
 
-Cut the file at the empty `<script>` tag that will host the Mermaid library
-(the second `<script>` block in the skeleton). That cut point is `part1.html`.
+### Step 8 — Produce the multi-source layout
 
-### Step 6 — Write the body content
+Structure sources under `.aid/knowledge/summary-src/` as documented in
+`references/state-generate.md §5`. The skeleton becomes `skeleton-head.html`;
+each section becomes `sections/NN-{slug}.html`; closing shell becomes
+`skeleton-foot.html`.
 
-Section by section, drawing from KB:
+### Step 9 — Assemble via `assemble.sh`
 
-#### §1 — At a Glance
-
-Use `.grid.g4` for a card grid of key numerics. Each card:
-```html
-<div class="card">
-    <div class="kicker">{Label}</div>
-    <div class="stat">{Number}</div>
-    <div class="stat-sub">{One-line context}</div>
-</div>
+```bash
+mkdir -p .aid/dashboard
+bash .github/aid/scripts/summarize/assemble.sh --output .aid/dashboard/kb.html
 ```
 
-Pick 6–8 numerics that orient a stranger:
-- Module/package count
-- Persistent entity count
-- Public API surface count (endpoints / exported symbols / subcommands)
-- Backend test count
-- Component / container / DI element count
-- Major external integration count
-- Downstream consumer (if any) — use `.card-primary` for emphasis
+The assembled `kb.html` is the single self-contained deliverable (all CSS/JS inlined).
 
-End with a single `.callout` card explaining "what this is" in one paragraph.
+### Step 10 — Update `.aid/knowledge/STATE.md`
 
-#### §2 — Architecture
-
-3 diagrams + a `.grid.g2` of intent-vs-reality cards. Diagrams:
-1. Stack layers
-2. Module dependency DAG
-3. Request/data flow
-
-Cards: documented intent · implementation reality · technology choices ·
-DI/wiring style.
-
-#### §3 — Modules / Plugins / Components
-
-Card per module using `.card.plugin`. Each card:
-```html
-<div class="card plugin">
-    <div class="kicker">{Layer/Role}</div>
-    <div class="plugin-name">com.example.foo</div>
-    <h3>{Display name}</h3>
-    <div class="plugin-body">{One-paragraph purpose}</div>
-    <dl>
-        <dt>Public API</dt><dd>...</dd>
-        <dt>Entities</dt><dd>...</dd>
-        <dt>Tests</dt><dd>...</dd>
-    </dl>
-    <div class="plugin-stats">
-        <span class="badge">N Java</span>
-        <span class="badge badge-ok">N tests</span>
-    </div>
-</div>
-```
-
-#### §4 — Data Model
-
-ER diagram + the entity catalog table from schemas.md:
-```html
-<div class="tbl-wrap">
-<table class="tbl">
-    <thead>...</thead>
-    <tbody>...</tbody>
-</table>
-</div>
-```
-
-Plus 3–4 callouts for known schema gotchas (no version on aggregate, etc.).
-
-#### §5 — API Surface (or equivalent for profile)
-
-Namespace / endpoint / symbol table. For web-app, this is REST routes; for
-library, exported symbols; for CLI, subcommands.
-
-#### §6 — Integrations
-
-Integration hub diagram + workflow + event-flow + a summary table.
-
-#### §7+ — Per profile-specific sections
-
-Follow the active template.
-
-#### Last section — Knowledge Base Index
-
-Table of every KB doc with a 1-line description. Mirrors `INDEX.md`.
-
-### Step 7 — Add diagrams
-
-Insert each diagram inside a `.mermaid-box`:
-```html
-<div class="mermaid-box">
-    <pre class="mermaid">
-flowchart LR
-    classDef ...
-    A --> B
-    </pre>
-    <div class="caption">Figure N. Summary. Source: <a href="./xxx.md">xxx.md</a></div>
-</div>
-```
-
-The lightbox JS automatically wires up click-to-expand on every `.mermaid-box`.
-
-### Step 8 — Write `part2.html`
-
-The remainder of the skeleton after the Mermaid library script tag:
-- Closing `</script>` for the Mermaid script
-- The `<script>` containing `{{INLINE_LIGHTBOX_JS}}` (already replaced)
-- `</body></html>`
-
-### Step 9 — Concatenate
-
-Use the platform-appropriate concat script:
-- POSIX: `.github/aid/scripts/summarize/assemble-3part.sh part1.html mermaid.min.js part2.html OUTPUT`
-- Windows: `.github/aid/scripts/summarize/assemble-3part.ps1 -Part1 ... -Mermaid ... -Part2 ... -Output ...`
-
-Output: `.aid/knowledge/knowledge-summary.html`.
-
-Remove temp `part1.html` and `part2.html`.
-
-### Step 10 — Update `.aid/knowledge/STATE.md` `## Knowledge Summary Status`
-
-Set `**Output Size:**` to actual file size, `**Last Run:**` to now.
-(Per FR2 — pre-FR2 this lived in `SUMMARY-STATE.md`.)
-
+Set `**Output Size:**` to actual file size, `**Last Run:**` to now (per `state-generate.md §8`).
 Transition to VALIDATE.
 
 ---
 
 ## Pitfalls (must avoid)
 
-- **`<word>` tokens in diagrams.** Use `{word}` instead.
-- **Re-using innerHTML for diagram source.** Always `el.textContent = el.dataset.source`
-  on re-render. (This is in `lightbox.js` already — don't deviate.)
-- **Continuation arrows without explicit source.** Each edge gets `A --> B`.
-- **Lightbox SVG bg/padding on the SVG itself.** Put chrome on `.lb-inner`.
-- **Forgetting to escape special chars.** When inserting KB content as text,
-  HTML-encode `<`, `>`, `&`. When inserting as code (inside `<code>`), the
-  encoding is the same.
-- **Inventing facts.** Every number traces back to KB.
-- **Skipping the Mermaid validator.** D1 = automatic F. Validate before claiming done.
+- **Leading "At a Glance" with metrics.** Module counts, test counts, and LOC
+  DO NOT lead the section. Put what & why first; metrics are a secondary detail.
+- **Importing KB authoring rules.** The KB is dual-audience and diagram-free by design;
+  the summary is neither. Never tell the reader "this doc is for architects and developers"
+  or "this uses no diagrams" — those are KB-internal decisions, invisible to a newcomer.
+- **Rendering `audience:` as a role-badge.** The `audience:` frontmatter field is
+  machine-facing metadata; drop it entirely from the summary HTML.
+- **Skipping a resolved doc.** Every doc in the manifest gets a section. No phantom
+  sections for docs that do not exist; no dropped sections for docs that do.
+- **Skipping the lightbox JS.** The focus-trapped lightbox must be inlined.
+- **Inventing facts.** Every number and claim traces back to KB.
+- **Using `<word>` tokens in Mermaid labels.** Use `{word}` instead.
+- **CDN / split assets.** Everything inlined. No external fetches.

@@ -4,10 +4,12 @@
 # Atomic via a sentinel lock file. Pre-FR2 this wrote to DISCOVERY-STATE.md.
 #
 # Usage:
-#   writeback-state.sh GRADE PROFILE MERMAID_VERSION OUTPUT_FILENAME OUTPUT_SIZE NOTES
+#   writeback-state.sh GRADE DOMAIN DOCSET OUTPUT_FILENAME OUTPUT_SIZE NOTES
 #   writeback-state.sh -h | --help
 #
-#   GRADE  must match [A-F][+-]?  (e.g. A, A-, B+, C, F)
+#   GRADE   must match [A-F][+-]?  (e.g. A, A-, B+, C, F)
+#   DOMAIN  domain value from .aid/knowledge/STATE.md ## Discovery Domain
+#   DOCSET  resolved doc-set count, e.g. "12 of 15 docs"
 #
 # Exit codes:
 #   0 success
@@ -36,8 +38,8 @@ case "${1:-}" in
 esac
 
 GRADE="$1"
-PROFILE="${2:-?}"
-MERMAID="${3:-?}"
+DOMAIN="${2:-?}"
+DOCSET="${3:-?}"
 OUTPUT="${4:-.aid/dashboard/kb.html}"
 SIZE="${5:-?}"
 NOTES="${6:-Initial generation}"
@@ -95,7 +97,7 @@ if grep -q '^## Summarization History' "$STATE"; then
     NEXT_NUM=$((LAST_NUM + 1))
 fi
 
-NEW_ROW="| $NEXT_NUM | $DATE | $GRADE | $PROFILE | $MERMAID | $OUTPUT ($SIZE) | $NOTES |"
+NEW_ROW="| $NEXT_NUM | $DATE | $GRADE | $DOMAIN | $DOCSET | $OUTPUT ($SIZE) | $NOTES |"
 
 # Update file using a Python-free approach. Two cases:
 # 1. ## Summarization History exists -> append row to its table
@@ -129,8 +131,8 @@ else
             # Print the new section before this next section
             print "## Summarization History"
             print ""
-            print "| # | Date | Grade | Profile | Mermaid | Output | Notes |"
-            print "|---|------|-------|---------|---------|--------|-------|"
+            print "| # | Date | Grade | Domain | Doc-set | Output | Notes |"
+            print "|---|------|-------|--------|---------|--------|-------|"
             print new_row
             print ""
             inserted=1

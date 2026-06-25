@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
 - **Elapsed:** --
-- **Notes:** DESIGN: section/IA manifest contract from doc_set + domain + frontmatter kb-category.
+- **Notes:** Produced section-manifest.md contract: 2 input sources (doc_set@settings.yml + Domain@knowledge/STATE.md), one-section-per-resolved-doc from frontmatter, kb-category(tier)+well-known-doc -> component map (glossary/ADR/capability + generic table-card-prose fallback = coverage), derived noscript list, newcomer "At a Glance", and 8 enumerated retirements (R1-R8) with file/anchor each. All 7 ACs met; awaiting orchestrator quick-check.
 
 ---
 

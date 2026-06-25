@@ -675,3 +675,308 @@ details.accord > summary:focus-visible,
 	border-radius: var(--radius);
 	color: var(--text);
 }
+
+/* ========================================================================== */
+/* Concept-first content components (Change 2 / FR-46)                        */
+/* Inner-content only — shell/chrome untouched (§5b).                         */
+/* All CSS uses existing design tokens; no new tokens introduced.              */
+/* ========================================================================== */
+
+/* ---------- Glossary / definition component -------------------------------- */
+/* Used for: domain-glossary.md (the Concept Spine)                           */
+/* .gloss-grid  — responsive two-column grid of term cards                    */
+/* .gloss-card  — one term: anchor + definition + relates-to + see-also pills */
+
+.gloss-grid {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	margin-top: 1rem;
+}
+
+.gloss-card {
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-left: 3px solid var(--accent);
+	border-radius: var(--radius);
+	padding: 1.1rem 1.25rem;
+	box-shadow: var(--shadow-sm);
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.gloss-card .gloss-term {
+	font-weight: 700;
+	font-size: 1rem;
+	color: var(--text);
+	line-height: 1.2;
+}
+
+.gloss-card .gloss-anchor {
+	color: var(--text);
+	text-decoration: none;
+}
+.gloss-card .gloss-anchor:hover {
+	color: var(--accent);
+	text-decoration: underline;
+}
+
+.gloss-card .gloss-def {
+	font-size: 0.92rem;
+	color: var(--text-muted);
+	line-height: 1.5;
+	margin: 0;
+}
+
+.gloss-card .gloss-meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+	margin-top: 0.3rem;
+}
+
+.gloss-card .gloss-label {
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-dim);
+	margin-right: 0.2rem;
+}
+
+.gloss-card .gloss-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.18em 0.6em;
+	border-radius: 999px;
+	font-size: 0.76rem;
+	font-weight: 500;
+	background: var(--bg-sunken);
+	color: var(--text-muted);
+	border: 1px solid var(--border);
+	white-space: nowrap;
+}
+
+.gloss-card .gloss-pill.gloss-pill-accent {
+	background: color-mix(in srgb, var(--accent) 12%, transparent);
+	color: var(--accent);
+	border-color: color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+/* ---------- Decision / ADR card component ---------------------------------- */
+/* Used for: decisions.md (the "why" behind the project)                      */
+/* .adr-list   — stacked list of ADR cards (vertical, full-width)             */
+/* .adr-card   — one ADR: id + status + context/decision/rationale/consequence */
+
+.adr-list {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.adr-card {
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow-sm);
+	overflow: hidden;
+}
+
+.adr-card .adr-header {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.9rem 1.25rem;
+	background: var(--bg-sunken);
+	border-bottom: 1px solid var(--border);
+}
+
+.adr-card .adr-id {
+	font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace;
+	font-size: 0.8rem;
+	font-weight: 700;
+	color: var(--accent);
+	white-space: nowrap;
+}
+
+.adr-card .adr-title {
+	font-weight: 600;
+	font-size: 1rem;
+	color: var(--text);
+	flex: 1;
+}
+
+.adr-card .adr-status {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.2em 0.65em;
+	border-radius: 999px;
+	font-size: 0.72rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	white-space: nowrap;
+}
+.adr-card .adr-status.accepted { background: var(--ok-bg); color: var(--ok); }
+.adr-card .adr-status.deprecated { background: var(--warn-bg); color: var(--warn); }
+.adr-card .adr-status.superseded { background: var(--err-bg); color: var(--err); }
+.adr-card .adr-status.proposed { background: var(--info-bg); color: var(--info); }
+
+.adr-card .adr-body {
+	padding: 1rem 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+.adr-card .adr-row {
+	display: grid;
+	grid-template-columns: 7rem 1fr;
+	gap: 0.4rem 0.75rem;
+	align-items: baseline;
+}
+
+.adr-card .adr-row-label {
+	font-size: 0.76rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: var(--text-dim);
+	padding-top: 0.05em;
+}
+
+.adr-card .adr-row-content {
+	font-size: 0.91rem;
+	color: var(--text-muted);
+	line-height: 1.5;
+}
+
+.adr-card .adr-row-content strong {
+	color: var(--text);
+	font-weight: 600;
+}
+
+.adr-card .adr-alts {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.adr-card .adr-alt-item {
+	display: flex;
+	gap: 0.5rem;
+	align-items: flex-start;
+	font-size: 0.89rem;
+	color: var(--text-muted);
+}
+
+.adr-card .adr-alt-item::before {
+	content: "x";
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.2em;
+	height: 1.2em;
+	border-radius: 999px;
+	background: var(--err-bg);
+	color: var(--err);
+	font-size: 0.72rem;
+	font-weight: 700;
+	margin-top: 0.15em;
+}
+
+/* ---------- Capability entry component ------------------------------------ */
+/* Used for: capability-inventory.md (what the project can do)               */
+/* .cap-grid  — responsive two-column grid of capability cards               */
+/* .cap-card  — one capability: name + what + when + how                     */
+
+.cap-grid {
+	display: grid;
+	gap: 1rem;
+	grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+	margin-top: 1rem;
+}
+
+.cap-card {
+	background: var(--bg-elev);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	padding: 1.15rem 1.25rem;
+	box-shadow: var(--shadow-sm);
+	display: flex;
+	flex-direction: column;
+	gap: 0.55rem;
+	transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.cap-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.cap-card .cap-kicker {
+	font-size: 0.73rem;
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	color: var(--text-dim);
+	text-transform: uppercase;
+}
+
+.cap-card .cap-name {
+	font-weight: 700;
+	font-size: 1rem;
+	color: var(--text);
+	line-height: 1.25;
+}
+
+.cap-card .cap-invoke {
+	font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace;
+	font-size: 0.82rem;
+	color: var(--accent);
+	background: color-mix(in srgb, var(--accent) 10%, transparent);
+	border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+	border-radius: var(--radius-sm);
+	padding: 0.2em 0.55em;
+	display: inline-block;
+}
+
+.cap-card .cap-dl {
+	display: grid;
+	grid-template-columns: 4.5rem 1fr;
+	gap: 0.25rem 0.6rem;
+	margin: 0;
+	font-size: 0.88rem;
+}
+
+.cap-card .cap-dl dt {
+	font-weight: 600;
+	font-size: 0.74rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--text-dim);
+	padding-top: 0.1em;
+}
+
+.cap-card .cap-dl dd {
+	margin: 0;
+	color: var(--text-muted);
+	line-height: 1.45;
+}
+
+/* Responsive: stack grids on small screens */
+@media (max-width: 768px) {
+	.gloss-grid,
+	.cap-grid { grid-template-columns: 1fr; }
+
+	.adr-card .adr-row { grid-template-columns: 1fr; gap: 0.15rem; }
+	.adr-card .adr-row-label { padding-top: 0; }
+}
+
+/* Forced-colors mode: preserve borders on bespoke components */
+@media (forced-colors: active) {
+	.gloss-card,
+	.adr-card,
+	.cap-card { border: 1px solid CanvasText; }
+	.gloss-card .gloss-pill,
+	.adr-card .adr-status { border: 1px solid CanvasText; forced-color-adjust: none; }
+}

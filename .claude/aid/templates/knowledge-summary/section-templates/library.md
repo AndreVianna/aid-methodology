@@ -1,10 +1,26 @@
 ---
-profile: library
-target_diagrams: 5
-notes: "Libraries and SDKs — type hierarchy and consumer registry replace UI and request-flow diagrams."
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for library/SDK-domain KB docs, keyed by kb-category tier and
+        doc identity — not by project-type. The section set is derived from the resolved
+        doc-set + frontmatter, not from this template."
 ---
 
-# Section Template — `library` Profile
+# Rendering Hints — Library / SDK Domain Docs
+
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `library` or `sdk`
+> and the resolved doc-set contains the listed docs.
+
+---
+
+## Original section structure (preserved as rendering reference)
+
+The following layout was the library profile's fixed section order. It is **not selected
+as a template**; it is kept as domain-specific rendering guidance. The resolved doc-set
+order (from `state-profile.md` §4) is authoritative.
 
 For libraries / SDKs that export an API but don't have a UI runtime.
 Slimmer than web-app: no UI section, no service-mesh diagram.

@@ -1,10 +1,27 @@
 ---
-profile: cli
-target_diagrams: 4
-notes: "CLI tools — subcommand catalog replaces API surface."
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for CLI-domain KB docs, keyed by kb-category tier and doc
+        identity — not by project-type. The section set is derived from the resolved
+        doc-set + frontmatter, not from this template."
 ---
 
-# Section Template — `cli` Profile
+# Rendering Hints — CLI Domain Docs
+
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `software-cli` or `cli-tool`
+> and the resolved doc-set contains the listed docs.
+
+---
+
+## Original section structure (preserved as rendering reference)
+
+The following layout was the CLI profile's fixed section order. It is **not selected as a
+template**; it is kept as domain-specific rendering guidance for how to frame specific
+KB docs when the domain is CLI-oriented. The resolved doc-set order (from `state-profile.md`
+§4) is authoritative; these hints apply within each section once determined.
 
 For command-line tools (e.g., `gh`, `terraform`, `aws-cli`-style). Subcommand
 catalog replaces "API surface".
