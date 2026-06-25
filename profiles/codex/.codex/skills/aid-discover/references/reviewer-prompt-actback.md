@@ -80,14 +80,16 @@ Work through the task spec step by step. For each step:
 
 **Step 3: Score each insufficiency as a FAIL item.**
 
-The **four insufficiency classes** (matching f013's owning-table and the presence check headings):
+The **four insufficiency classes** (matching f013's owning-table and the presence check headings;
+keyed by spine dimension -- C1/C4->Invariants; C2->Conventions/Invariants/Contracts;
+C3->Conventions; C5->Conventions/Contracts; C7->Gotchas):
 
 | Class | FAIL when | Typical evidence |
 |-------|-----------|-----------------|
-| **Convention** | The KB does not state how this type of change is done in this project (naming, registration, wiring). You had to invent or guess a convention. | Structural evidence: `## Conventions` absent in the relevant doc; or section present but the specific convention not stated. |
-| **Invariant** | The KB does not state what must always hold (an ordering, non-null, single-source-of-truth rule) that the change must satisfy. | Structural evidence: `## Invariants` absent in the relevant doc; or section present but the specific invariant not stated. |
-| **Gotcha** | The KB does not warn about a non-obvious trap (a lockstep config, a build step, an ordering hazard) the change would step on. | Structural evidence: `## Gotchas` absent in tech-debt.md or the relevant concern doc; or section present but the specific trap not warned about. |
-| **Contract** | The KB does not state the structural shape (schema, interface, pipeline contract) the change must satisfy. You would have to reach for source to find it. | Structural evidence: `## Contracts` absent in the relevant doc; or section present but the specific contract not stated. |
+| **Convention** | The KB does not state how this type of change is done in this project (naming, registration, wiring). You had to invent or guess a convention. | Structural evidence: `## Conventions` absent in a C2/C3/C5 doc; or section present but the specific convention not stated. |
+| **Invariant** | The KB does not state what must always hold (an ordering, non-null, single-source-of-truth rule) that the change must satisfy. | Structural evidence: `## Invariants` absent in a C1/C2/C4 doc; or section present but the specific invariant not stated. |
+| **Gotcha** | The KB does not warn about a non-obvious trap (a lockstep config, a build step, an ordering hazard) the change would step on. | Structural evidence: `## Gotchas` absent in a C7 doc; or section present but the specific trap not warned about. |
+| **Contract** | The KB does not state the structural shape (schema, interface, pipeline contract) the change must satisfy. You would have to reach for source to find it. | Structural evidence: `## Contracts` absent in a C2/C5 doc; or section present but the specific contract not stated. |
 
 **Step 4: Score the plan-correctness limb.**
 

@@ -13,6 +13,13 @@ tags: [test-fixture]
 
 This document states the data contracts for the EventPipeline project.
 
+## Conventions
+
+- Schema fields are named in camelCase.
+- Every schema change (addition or modification) must be accompanied by a migration
+  note stating what downstream consumers must update.
+- Enumerations are string-typed with an explicit allowlist documented here.
+
 ## Contracts
 
 - All pipeline events must conform to the `Event` interface:

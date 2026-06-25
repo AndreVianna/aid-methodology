@@ -153,6 +153,33 @@ synth_default_seed() {
 
 ---
 
+## Dimension recovery
+
+`discovery.doc_set` and `synth_default_seed` remain **three-field** (`filename | owner |
+presence`).  The spine-dimension column present in `domain-doc-matrix.md` is **dropped**
+when a row is materialized into the TSV -- it is documentation, not machine state, and is
+"recoverable from this matrix or `concern-model.md`" (per the matrix schema note).
+
+A consumer that needs a doc's spine dimension (e.g. `kb-actback-task.sh`'s
+operational-structure presence check, FR-53) **resolves it via a shipped
+`filename -> spine-dimension` map** (`_dim_of_filename` in `kb-actback-task.sh`), whose
+entries are sourced from `domain-doc-matrix.md` (the matrix is the authority; the map is
+a rendered view kept lockstep with it, analogous to the seed-consistency guard).
+
+**The TSV wire format is UNCHANGED** -- all four accessors and every consumer continue to
+read three-field TSV rows.  The dimension is NOT a fourth field, NOT persisted in
+`discovery.doc_set`, and NOT added to `synth_default_seed`.
+
+**Unknown/custom filenames** (a project-renamed split like `module-map-frontend.md`, or an
+`auto-researched` doc) return `""` from `_dim_of_filename`.  A `""` dimension means the
+doc contributes no owning-table rows to the presence check (safe degradation: no false
+`absent` for a doc whose dimension the map cannot prove) while the opt-in auto-detect
+branch still reports any section physically present.  Carrying the dimension for arbitrary
+custom docs is a follow-up enhancement; the shipped map covers all curated-row filenames
+(the FR-53 target).
+
+---
+
 ## `resolve_doc_set` — Split the declared set into TSV rows
 
 Reads the comma-joined output of `read-setting.sh --path discovery.doc_set`, splits on `,`

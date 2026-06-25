@@ -303,13 +303,35 @@ prompt. Any project-renamed equivalent (e.g. `## Naming rules` for Conventions i
 project where that framing is more natural) must be enumerated in the project's
 `.aid/knowledge/.review-checklist.md` so the presence check can find it.
 
+### Owning-table restated in spine-dimension terms (single source for kb-actback-task.sh)
+
+The owning-table above maps Class -> {Owning concern(s)}.  Inverted to
+**dimension -> {classes owned}**, it is the exact table `kb-actback-task.sh`'s
+`_dim_owns_class` encodes and `document-expectations.md`'s `## Spine-Dimension Depth
+Standards` "Owns named section(s)" column (SD13) mirrors.  **Do not edit either
+independently** -- all three must agree.
+
+| Spine dimension | Owns operational class(es) |
+|-----------------|---------------------------|
+| **C1** Build & shape | Invariants |
+| **C2** Parts & connections | Conventions, Invariants, Contracts |
+| **C3** Conventions | Conventions |
+| **C4** Vocabulary | Invariants |
+| **C5** Data & contracts | Conventions, Contracts |
+| **C7** Risk & debt | Gotchas |
+| C0, C6, C8, C9, D, meta | (none of the four classes) |
+
 ### Scoping rule (prevents over-reporting)
 
 `kb-actback-task.sh`'s presence check consumes this owning-table to scope which classes
-each doc is **expected** to carry. It reports `present|absent` **only for expected classes**.
-A doc the table does not map as a Contracts owner (e.g. `domain-glossary.md`) is NOT
-reported `## Contracts absent` -- only a doc the table maps as a Contracts owner (e.g.
-`schemas.md`, `pipeline-contracts.md`) is checked for `## Contracts`. This prevents the
+each doc is **expected** to carry.  It resolves a doc's spine dimension via
+`_dim_of_filename` (sourced from `domain-doc-matrix.md`) and then calls
+`_dim_owns_class(dim, class)` (the inversion above) to decide.  It reports
+`present|absent` **only for expected classes**.
+A doc whose dimension the table does not map as a Contracts owner (e.g.
+`domain-glossary.md` / C4) is NOT reported `## Contracts absent` -- only a doc whose
+dimension the table maps as a Contracts owner (e.g. `schemas.md` / C5;
+`pipeline-contracts.md` / C2) is checked for `## Contracts`.  This prevents the
 presence check from over-reporting legitimate absences.
 
 ---

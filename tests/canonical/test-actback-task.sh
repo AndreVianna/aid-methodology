@@ -2,6 +2,8 @@
 # test-actback-task.sh -- Canonical tests for kb-actback-task.sh (f013, task-028).
 #
 # Tests (AT01-AT14) cover the DETERMINISTIC half of kb-actback-task.sh only:
+# Tests (AT15-AT20) cover off-software domain firing (task-082, FR-53):
+#   data-ml.tsv / design.tsv doc-sets prove the safeguard fires off-software.
 #
 #   Representative-task selection (function 1):
 #   AT01  task subcommand exits 0 and emits output over a valid doc-set TSV.
@@ -26,6 +28,19 @@
 #   AT14  ASCII-only guard: kb-actback-task.sh passes the ascii-only gate
 #         (the allow-list entry added in task-028 is present and the file has no
 #         non-ASCII bytes).
+#
+#   Off-software domain firing (task-082 / FR-53):
+#   AT15  data-ml.tsv => task shape is NOT 'endpoint' (domain-appropriate: 'contract').
+#   AT16  data-ml.tsv => presence check is non-empty (C5 data-schemas.md checked for
+#         Contracts; C2 data-pipeline.md checked for Conventions/Invariants/Contracts;
+#         C3 coding-standards.md checked for Conventions).
+#   AT17  data-ml.tsv => byte-reproducibility: two runs produce sha256-identical output.
+#   AT18  design.tsv => task shape is NOT 'endpoint' (domain-appropriate: 'contract').
+#   AT19  design.tsv => presence check is non-empty (C5 design-tokens.md checked for
+#         Contracts; C2 component-inventory.md checked for Conventions/Invariants/Contracts;
+#         C3 design-principles.md checked for Conventions).
+#   AT20  design.tsv => data-schemas.md / design-tokens.md are checked for Contracts
+#         (C5 owning-table fires off-software; the row appears in the presence table).
 #
 # Boundary: this suite asserts the DETERMINISTIC/MECHANICAL half only.
 #   - The SPIKE-A1 task-shape heuristic is calibrated judgment; tests AT02-AT07 assert
@@ -65,6 +80,9 @@ TSV_FEATURE="${FIXTURES_BASE}/docset-feature.tsv"
 TSV_ENDPOINT="${FIXTURES_BASE}/docset-endpoint.tsv"
 TSV_CHECK="${FIXTURES_BASE}/docset-check.tsv"
 TSV_OPTIN="${FIXTURES_BASE}/docset-optin.tsv"
+# Off-software domain fixtures (task-082 / FR-53)
+TSV_DATA_ML="${FIXTURES_BASE}/data-ml.tsv"
+TSV_DESIGN="${FIXTURES_BASE}/design.tsv"
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
 
@@ -80,6 +98,7 @@ fi
 
 for fix in "$TSV_CONTRACT" "$TSV_MODULE" "$TSV_COMPONENT" "$TSV_FEATURE" \
            "$TSV_ENDPOINT" "$TSV_CHECK" "$TSV_OPTIN" \
+           "$TSV_DATA_ML" "$TSV_DESIGN" \
            "${KB_DIR}/coding-standards.md" \
            "${KB_DIR}/schemas.md" \
            "${KB_DIR}/module-map.md" \
@@ -205,8 +224,8 @@ OUT_AT04=$(run_task "$TSV_COMPONENT" "$KB_AT04")
 
 assert_file_contains "$OUT_AT04" "Task shape: component" \
   "AT04 architecture+coding-standards doc-set => task shape is 'component'"
-assert_file_contains "$OUT_AT04" "Add a new component to the architecture." \
-  "AT04 component task body contains expected task description"
+assert_file_contains "$OUT_AT04" "Make a change that must follow the project's conventions." \
+  "AT04 component task body contains expected task description (C3-seeded convention probe)"
 
 # ---------------------------------------------------------------------------
 # AT05: feature-inventory.md only => 'feature' shape.
@@ -218,8 +237,8 @@ OUT_AT05=$(run_task "$TSV_FEATURE" "$KB_AT05")
 
 assert_file_contains "$OUT_AT05" "Task shape: feature" \
   "AT05 feature-inventory-only doc-set => task shape is 'feature'"
-assert_file_contains "$OUT_AT05" "Add a new user-facing feature to the project." \
-  "AT05 feature task body contains expected task description"
+assert_file_contains "$OUT_AT05" "Add a new capability of the kind catalogued in feature-inventory.md." \
+  "AT05 feature task body contains expected task description (C9-seeded capability probe)"
 
 # ---------------------------------------------------------------------------
 # AT06: Default (no key filenames match) => 'endpoint' shape.
@@ -232,8 +251,8 @@ OUT_AT06=$(run_task "$TSV_ENDPOINT" "$KB_AT06")
 
 assert_file_contains "$OUT_AT06" "Task shape: endpoint" \
   "AT06 default (no key filenames) => task shape is 'endpoint'"
-assert_file_contains "$OUT_AT06" "Add a new endpoint (or equivalent entry point)" \
-  "AT06 endpoint task body contains expected task description"
+assert_file_contains "$OUT_AT06" "Add a new entry point to the project." \
+  "AT06 endpoint task body contains expected task description (fallback: no C5/C2/C3/C9)"
 
 # ---------------------------------------------------------------------------
 # AT07: Priority ordering -- schemas.md wins over module-map.md + coding-standards.md.
@@ -459,6 +478,193 @@ if [[ -f "$ASCII_ONLY" ]]; then
   fi
 else
   fail "AT14b test-ascii-only.sh not found at $ASCII_ONLY"
+fi
+
+# ---------------------------------------------------------------------------
+# AT15: data-ml doc-set => task shape is NOT 'endpoint' (FR-53 off-software gate).
+#
+# data-ml.tsv contains data-schemas.md (C5), data-pipeline.md (C2),
+# coding-standards.md (C3), model-cards.md (C9).  C5 is highest priority, so
+# the shape must be 'contract' -- NOT 'endpoint' (the software-fallback guard).
+# ---------------------------------------------------------------------------
+log "AT15: data-ml.tsv => task shape is NOT 'endpoint' (off-software domain, FR-53)"
+
+KB_AT15=$(scratch_kb)
+OUT_AT15=$(run_task "$TSV_DATA_ML" "$KB_AT15")
+
+if grep -qF "Task shape: endpoint" "$OUT_AT15"; then
+  fail "AT15 data-ml.tsv -- task shape is 'endpoint' (off-software generalization broken)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT15"
+else
+  pass "AT15 data-ml.tsv => task shape is NOT 'endpoint' (FR-53 off-software gate passed)"
+fi
+
+assert_file_contains "$OUT_AT15" "Task shape: contract" \
+  "AT15 data-ml.tsv => C5 data-schemas.md wins priority; shape is 'contract'"
+
+# ---------------------------------------------------------------------------
+# AT16: data-ml doc-set => presence check is non-empty (C5/C2/C3 owning-table fires).
+#
+# data-schemas.md (C5) -> expected for Conventions + Contracts.
+# data-pipeline.md (C2) -> expected for Conventions + Invariants + Contracts.
+# coding-standards.md (C3) -> expected for Conventions.
+# model-cards.md (C9) -> no owning-table rows (C9 carries no operational classes).
+# The presence table MUST be non-empty (>=1 row beyond the header).
+# ---------------------------------------------------------------------------
+log "AT16: data-ml.tsv => presence check is non-empty (C5/C2/C3 owning-table fires)"
+
+KB_AT16=$(scratch_kb)
+OUT_AT16=$(run_check "$TSV_DATA_ML" "$KB_AT16")
+
+# Count data rows (exclude the header lines: "## Operational...", "", "| doc |...", "|---...")
+row_count_16=$(grep -c "^| " "$OUT_AT16" || true)
+# Subtract 1 for the "| doc | class | status |" header row
+data_rows_16=$(( row_count_16 - 1 ))
+if [[ "$data_rows_16" -gt 0 ]]; then
+  pass "AT16 data-ml presence check is non-empty ($data_rows_16 data rows; C5/C2/C3 owning-table fired)"
+else
+  fail "AT16 data-ml presence check is empty (expected >=1 row for C5/C2/C3 docs)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT16"
+fi
+
+# Assert data-schemas.md (C5) appears with a Contracts row (the C5 owning-table fires).
+schemas_contracts_row_16=$(grep -F "data-schemas.md" "$OUT_AT16" | grep -F "Contracts" || true)
+if [[ -n "$schemas_contracts_row_16" ]]; then
+  pass "AT16b data-schemas.md has a Contracts row in data-ml presence check (C5 owning-table)"
+else
+  fail "AT16b data-schemas.md -- no Contracts row in data-ml presence check (C5 owning-table missing)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT16"
+fi
+
+# Assert coding-standards.md (C3) appears with a Conventions row.
+coding_conv_row_16=$(grep -F "coding-standards.md" "$OUT_AT16" | grep -F "Conventions" || true)
+if [[ -n "$coding_conv_row_16" ]]; then
+  pass "AT16c coding-standards.md has a Conventions row in data-ml presence check (C3 owning-table)"
+else
+  fail "AT16c coding-standards.md -- no Conventions row in data-ml presence check (C3 owning-table missing)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT16"
+fi
+
+# ---------------------------------------------------------------------------
+# AT17: data-ml doc-set => byte-reproducibility (two runs sha256-identical).
+# ---------------------------------------------------------------------------
+log "AT17: data-ml.tsv => byte-reproducibility (sha256 identical across two runs)"
+
+KB_AT17A=$(scratch_kb)
+KB_AT17B=$(scratch_kb)
+OUT_AT17A=$(run_task "$TSV_DATA_ML" "$KB_AT17A")
+OUT_AT17B=$(run_task "$TSV_DATA_ML" "$KB_AT17B")
+
+HASH_AT17A=$(sha256sum "$OUT_AT17A" | cut -d' ' -f1)
+HASH_AT17B=$(sha256sum "$OUT_AT17B" | cut -d' ' -f1)
+
+if [[ "$HASH_AT17A" == "$HASH_AT17B" ]]; then
+  pass "AT17 data-ml task output is byte-identical on re-run (sha256 match, NFR-3)"
+else
+  fail "AT17 data-ml task output differs between runs (sha256 mismatch, NFR-3 violated)"
+  [[ "$VERBOSE" -eq 1 ]] && diff "$OUT_AT17A" "$OUT_AT17B" || true
+fi
+
+# ---------------------------------------------------------------------------
+# AT18: design doc-set => task shape is NOT 'endpoint' (FR-53 off-software gate).
+#
+# design.tsv contains design-tokens.md (C5), component-inventory.md (C2),
+# design-principles.md (C3), design-overview.md (C9).  C5 wins; shape must be
+# 'contract' -- NOT 'endpoint'.
+# ---------------------------------------------------------------------------
+log "AT18: design.tsv => task shape is NOT 'endpoint' (off-software domain, FR-53)"
+
+KB_AT18=$(scratch_kb)
+OUT_AT18=$(run_task "$TSV_DESIGN" "$KB_AT18")
+
+if grep -qF "Task shape: endpoint" "$OUT_AT18"; then
+  fail "AT18 design.tsv -- task shape is 'endpoint' (off-software generalization broken)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT18"
+else
+  pass "AT18 design.tsv => task shape is NOT 'endpoint' (FR-53 off-software gate passed)"
+fi
+
+assert_file_contains "$OUT_AT18" "Task shape: contract" \
+  "AT18 design.tsv => C5 design-tokens.md wins priority; shape is 'contract'"
+
+# ---------------------------------------------------------------------------
+# AT19: design doc-set => presence check is non-empty (C5/C2/C3 owning-table fires).
+#
+# design-tokens.md (C5) -> expected for Conventions + Contracts.
+# component-inventory.md (C2) -> expected for Conventions + Invariants + Contracts.
+# design-principles.md (C3) -> expected for Conventions.
+# design-overview.md (C9) -> no owning-table rows.
+# ---------------------------------------------------------------------------
+log "AT19: design.tsv => presence check is non-empty (C5/C2/C3 owning-table fires)"
+
+KB_AT19=$(scratch_kb)
+OUT_AT19=$(run_check "$TSV_DESIGN" "$KB_AT19")
+
+row_count_19=$(grep -c "^| " "$OUT_AT19" || true)
+data_rows_19=$(( row_count_19 - 1 ))
+if [[ "$data_rows_19" -gt 0 ]]; then
+  pass "AT19 design presence check is non-empty ($data_rows_19 data rows; C5/C2/C3 owning-table fired)"
+else
+  fail "AT19 design presence check is empty (expected >=1 row for C5/C2/C3 docs)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT19"
+fi
+
+# Assert design-tokens.md (C5) appears with a Contracts row.
+tokens_contracts_row_19=$(grep -F "design-tokens.md" "$OUT_AT19" | grep -F "Contracts" || true)
+if [[ -n "$tokens_contracts_row_19" ]]; then
+  pass "AT19b design-tokens.md has a Contracts row in design presence check (C5 owning-table)"
+else
+  fail "AT19b design-tokens.md -- no Contracts row in design presence check (C5 owning-table missing)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT19"
+fi
+
+# Assert component-inventory.md (C2) appears with a Conventions row.
+comp_conv_row_19=$(grep -F "component-inventory.md" "$OUT_AT19" | grep -F "Conventions" || true)
+if [[ -n "$comp_conv_row_19" ]]; then
+  pass "AT19c component-inventory.md has a Conventions row in design presence check (C2 owning-table)"
+else
+  fail "AT19c component-inventory.md -- no Conventions row in design presence check (C2 owning-table missing)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT19"
+fi
+
+# ---------------------------------------------------------------------------
+# AT20: C5 owning-table fires off-software: data-schemas.md and design-tokens.md
+#       both appear in their respective presence checks with Contracts rows.
+#
+# This is the definitive FR-53 guard: the dimension-keyed owning-table
+# (_dim_owns_class C5 Contracts -> true) fires identically for software schemas
+# and non-software data/design contracts.  Same rule; different domain.
+# ---------------------------------------------------------------------------
+log "AT20: C5 owning-table fires off-software (data-schemas.md + design-tokens.md both get Contracts rows)"
+
+# data-ml: data-schemas.md Contracts row (AT16b already checks this; this asserts the cross-domain
+# invariant explicitly as its own test).
+KB_AT20_ML=$(scratch_kb)
+OUT_AT20_ML=$(run_check "$TSV_DATA_ML" "$KB_AT20_ML")
+ds_contracts=$(grep -F "data-schemas.md" "$OUT_AT20_ML" | grep -F "Contracts" || true)
+if [[ -n "$ds_contracts" ]]; then
+  pass "AT20a data-schemas.md has a Contracts row (C5 _dim_owns_class fires for data-ml domain)"
+else
+  fail "AT20a data-schemas.md -- no Contracts row (C5 owning-table did not fire for data-ml)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT20_ML"
+fi
+
+# design: design-tokens.md Contracts row.
+KB_AT20_DS=$(scratch_kb)
+OUT_AT20_DS=$(run_check "$TSV_DESIGN" "$KB_AT20_DS")
+dt_contracts=$(grep -F "design-tokens.md" "$OUT_AT20_DS" | grep -F "Contracts" || true)
+if [[ -n "$dt_contracts" ]]; then
+  pass "AT20b design-tokens.md has a Contracts row (C5 _dim_owns_class fires for design domain)"
+else
+  fail "AT20b design-tokens.md -- no Contracts row (C5 owning-table did not fire for design)"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$OUT_AT20_DS"
+fi
+
+# Cross-domain symmetry: both domains select 'contract' task shape from C5.
+if grep -qF "Task shape: contract" "$OUT_AT15" && grep -qF "Task shape: contract" "$OUT_AT18"; then
+  pass "AT20c both data-ml and design domains select 'contract' shape via C5 (cross-domain symmetry)"
+else
+  fail "AT20c cross-domain symmetry broken: expected both data-ml and design to select 'contract'"
 fi
 
 # ---------------------------------------------------------------------------
