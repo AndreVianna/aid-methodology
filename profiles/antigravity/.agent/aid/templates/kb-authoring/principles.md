@@ -32,6 +32,28 @@ Four classes of content are commonly inlined into KB docs but rarely carry value
   to find its current location. **Bare line numbers banned from primary docs.** (Line
   *counts* are (a); this is the *pointer* form of the same drift class.)
 
+  **Signature exception (P1(d)-SIG):** a load-bearing operational contract — the
+  structural signature an agent must satisfy to ACT — is explicitly exempt from the
+  altitude rule that lets a doc defer volatile detail to `sources:`. Work-critical
+  contracts (data-schema field types, exit/error codes, host-tool capability flags,
+  interface argument shapes, mode/option invariants) must be stated **INLINE** or behind a
+  **precise grep-recoverable anchor** (the durable-anchor form above). A bare `sources:`
+  file pointer is never sufficient for a contract of this class. **Rationale:** a
+  `sources:`-deferred contract forces an agent to REACH for the source — which the
+  assertiveness gate classifies as a load-bearing REACH insufficiency. The KB must carry
+  the signature itself so an agent can plan and complete work from the KB alone.
+
+  | Form | Verdict | Example |
+  |------|---------|---------|
+  | Schema field types + constraints stated inline in `schemas.md` | **Correct** — agent reads the contract directly from the KB |
+  | Exit-code table with meaning per code stated in `pipeline-contracts.md` | **Correct** — agent acts on the exact codes without reaching |
+  | `sources: [schemas/foo.json]` with no inline field types | **Wrong** — altitude rule does NOT apply to field-type contracts; the agent must REACH |
+  | Linking to a large auto-generated schema file with a grep-recoverable anchor (`foo.json` → `## FooSchema`) | **Correct** — the anchor is precise and the agent can grep the exact contract |
+
+  The altitude rule still de-bloats *narrative* volatility (historical rationale, prose
+  elaboration, illustrative examples that add no contract obligation). Only
+  work-critical operational contracts fall under P1(d)-SIG.
+
 ## P2. Proper metric
 
 When a numerical fact IS load-bearing, it must follow three rules:
@@ -274,7 +296,10 @@ same short focused doc and understands it without decoding jargon. The summary+p
 model (synthesis in the doc; volatile detail left in `sources:`) further dissolves the
 agent-vs-human fork: a junior reader stops at the summary; an agent follows `sources:`
 into the code for detail. Audience decides which docs exist -- not layered depth within
-a doc or duplicate per-audience docs.
+a doc or duplicate per-audience docs. **Exception:** load-bearing operational contracts
+(field types, exit codes, interface signatures) are stated inline even when other volatile
+detail is deferred -- both audiences need them without reaching into source files (see
+P1(d)-SIG and "Signature exception" in the Document boundary rule section).
 
 ---
 
@@ -315,6 +340,16 @@ operational guidance of class X, it carries it as the named section for X (see
 [concern-model.md](concern-model.md) "Operational guidance is first-class structure").
 These two rules are complementary: summary+pointer governs altitude; named-sections
 govern findability of the guidance an agent acts on.
+
+**Signature exception:** the summary+pointer altitude rule has one hard carve-out — the
+**P1(d)-SIG signature exception** (see P1(d) above). Load-bearing operational contracts an
+agent must honor to ACT (data-schema field types, exit codes, host-tool capability
+matrices, interface argument shapes) are stated **inline or with a precise
+grep-recoverable anchor**, never deferred to a bare `sources:` file pointer. The altitude
+rule is about de-bloating *narrative* volatility; it does not apply to *work-critical
+contracts*. See [concern-model.md](concern-model.md) "Operational guidance is first-class
+structure" for the cross-reference on C5 Data & contracts and C0 Technology dimensions,
+which are the primary carriers of signature contracts in a software project KB.
 
 ## See also
 

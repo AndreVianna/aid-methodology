@@ -288,6 +288,17 @@ named section for X. This is NOT "every doc carries all four sections" -- a glos
 (C4) need not carry `## Contracts`. The rule is: **if a doc owns guidance of class X
 for its concern, that guidance lives in a named section for X**.
 
+**Signature exception (P1(d)-SIG):** for load-bearing operational contracts an agent
+must honor to ACT -- data-schema field types, exit/error codes, host-tool capability
+matrices, interface argument shapes -- the altitude rule (summary+pointer, volatile
+detail to `sources:`) does **not** apply. These contracts must be stated **inline or
+with a precise grep-recoverable anchor**, never deferred to a bare `sources:` file
+pointer. The C5 Data & contracts dimension and the C0 Technology dimension are the
+primary carriers of such contracts in a software-project KB; their docs must satisfy
+this inline-or-anchored requirement for any work-critical contract they own.
+See [principles.md](principles.md) P1(d) for the full rule, the right/wrong table, and
+the rationale.
+
 ### The four operational-guidance classes and their owning section headings
 
 | Class | Named section heading | What it states | Owning concern(s) | Default owning doc(s) |
