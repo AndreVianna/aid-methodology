@@ -77,7 +77,7 @@ stays `filename<TAB>owner<TAB>presence` (three fields only).
 | Template file | Owner | Concern |
 |---|---|---|
 | `project-structure.md` | `aid-researcher-scout` | C1 (Build & shape) |
-| `external-sources.md` | `aid-researcher-scout` | orientation / meta |
+| `external-sources.md` | `aid-researcher-scout` | orientation |
 | `architecture.md` | `aid-researcher-architecture` | C1 (Build & shape) |
 | `technology-stack.md` | `aid-researcher-architecture` | C0 (Technology) |
 | `module-map.md` | `aid-researcher-analyst` | C2 (Parts & connections) |
@@ -90,10 +90,20 @@ stays `filename<TAB>owner<TAB>presence` (three fields only).
 | `tech-debt.md` | `aid-researcher-quality` | C7 (Risk & debt) |
 | `infrastructure.md` | `aid-researcher-quality` | C8 (Shipping & operation) |
 | `feature-inventory.md` | `skill-self` | C9 (What it does for users) |
-| `README.md` | `skill-self` | orientation / meta |
+| `README.md` | `skill-self` | orientation |
 
 `INDEX.md` is generated meta-only (not a KB-template artifact); it is owned by `skill-self`
 and not synthesized from templates. (The `skill-self` owner value denotes the skill itself — not a dispatched agent.)
+
+> **Two independent axes — concern vs. role:** The concern column above uses `orientation`
+> to mean *cross-cutting* (not mapped to a single spine dimension C0-C9). This is the
+> **concern axis**. Do NOT conflate it with the **role axis** value `kb-category: meta`
+> (review/lint-exempt process/state ledgers: INDEX.md, README.md, STATE.md). A document
+> can be `kb-category: primary` (standard authored content, role axis) while carrying an
+> *orientation* concern (concern axis). `external-sources.md` is exactly this: it is a
+> standard, authored, review-eligible KB document (`kb-category: primary`) whose concern
+> is *orientation* (cross-cutting). Tagging it as `kb-category: meta` because of its
+> orientation concern is a mis-tag — the two axes are orthogonal.
 
 ```bash
 # synth_default_seed — enumerate canonical/templates/knowledge-base/*.md and emit
@@ -111,7 +121,7 @@ synth_default_seed() {
   local -a MAP=(
     # C1 Build & shape
     "project-structure.md    aid-researcher-scout"
-    # orientation / meta (cross-cutting, not a newcomer concern)
+    # orientation (cross-cutting, not a newcomer concern; kb-category: primary, not meta)
     "external-sources.md     aid-researcher-scout"
     # C1 Build & shape
     "architecture.md         aid-researcher-architecture"
@@ -137,7 +147,7 @@ synth_default_seed() {
     "infrastructure.md       aid-researcher-quality"
     # C9 What it does for users
     "feature-inventory.md    skill-self"
-    # orientation / meta
+    # orientation (cross-cutting; skill-self-generated)
     "README.md               skill-self"
   )
   local entry fn owner

@@ -8,7 +8,7 @@ Terms and concepts used throughout the AID methodology.
 
 **AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 13 skills across 5 groups; delivery (Deploy, Monitor), the summary skill, the on-demand Q&A skill, and the targeted KB update skill are optional. Human and AI co-execute every phase.
 
-**Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`.
+**Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`. Note: "3 meta-documents" is a *role* distinction (generated/process ledgers, review-exempt) — it is orthogonal to the *concern* axis. A standard document (among the 14) may carry an *orientation* concern (cross-cutting, not mapped to a single spine dimension); `external-sources.md` is exactly this: it is a standard, authored, review-eligible KB document whose concern is orientation — orientation on the concern axis does not make a document a meta-document on the role axis.
 
 **Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces a formal record (a Q&A entry in a STATE file, an IMPEDIMENT file, or a MONITOR-STATE finding) with a revision trail.
 

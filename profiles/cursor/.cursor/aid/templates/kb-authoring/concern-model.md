@@ -112,10 +112,19 @@ added to `synth_default_seed`, the byte-stable 15-doc software seed is unchanged
 *Seed-coverage check*). In `doc-set-resolve.md`-style declarations it appears as
 `decisions.md|aid-researcher-architecture|conditional`.
 
-**Orientation / meta (cross-cutting, not a newcomer concern):**
+**Orientation (cross-cutting, not a newcomer concern):**
 `external-sources.md`, `README.md` (owned by `skill-self`) are cross-cutting registry /
 completeness docs, not newcomer concerns. `INDEX.md` is generated meta. None are mapped
 to a concern; they are produced by the skill itself.
+
+> **Concern axis vs. role axis:** *Orientation* here is a **concern-axis** label meaning
+> "cross-cutting, not mapped to a single spine dimension." It is NOT the same as the
+> **role-axis** value `kb-category: meta` (the 3 review-exempt process/state ledgers:
+> INDEX.md, README.md, STATE.md). A document can be standard authored content
+> (`kb-category: primary`, role axis) while carrying an orientation concern (concern axis).
+> `external-sources.md` is exactly that: a standard, review-eligible KB doc whose concern
+> is orientation. The 14 standard + 3 meta count is correct; `external-sources.md` is
+> among the 14 standard — its orientation concern does NOT make it a meta document.
 
 > **Note on C5 and C0.** REQUIREMENTS §1.3 names eight concerns: "how built / what parts
 > and how connect / what conventions / what vocabulary / how tested / what's risky-owed /
