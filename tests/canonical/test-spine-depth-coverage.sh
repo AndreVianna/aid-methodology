@@ -250,6 +250,148 @@ assert_file_contains "$AGENT_PROMPTS" '### C<N>' \
   "SD12 agent-prompts.md custom-doc prompt references ### C<N> block form"
 
 # ---------------------------------------------------------------------------
+# SD13: Single-source guard -- every ### C<N> "Owns named section(s)" cell in
+#        document-expectations.md matches concern-model.md's owning-table.
+#
+# Algorithm:
+#   1. Parse concern-model.md's owning-table: for each row extract which C<N>
+#      dimensions appear in the "Owning concern(s)" column.
+#   2. Invert to a per-dimension expected set of owned classes.
+#   3. For each C<N> block in document-expectations.md, extract the
+#      "Owns named section(s)" value and assert it matches the expected set.
+#
+# Expected mapping (from concern-model.md owning-table, hard-coded as the
+# canonical truth this test is validating against):
+#   C0  -> (none)
+#   C1  -> Invariants
+#   C2  -> Conventions, Invariants, Contracts
+#   C3  -> Conventions
+#   C4  -> Invariants
+#   C5  -> Contracts, Conventions
+#   C6  -> (none)
+#   C7  -> Gotchas
+#   C8  -> (none)
+#   C9  -> (none)
+# ---------------------------------------------------------------------------
+CONCERN_MODEL="${REPO}/canonical/aid/templates/kb-authoring/concern-model.md"
+if [[ ! -f "$CONCERN_MODEL" ]]; then
+  echo "FATAL: concern-model.md not found: $CONCERN_MODEL" >&2
+  exit 2
+fi
+
+# Extract the owning-table rows from concern-model.md.
+# The table lives in the block "### The four operational-guidance classes".
+# Each data row is a markdown table row with pipe-delimited columns:
+#   | Class | Named section heading | What it states | Owning concern(s) | Default owning doc(s) |
+# We extract: class name (col1) and owning concerns (col4).
+extract_owning_table() {
+  awk '
+    /\| \*\*Conventions\*\*/ || /\| \*\*Invariants\*\*/ || /\| \*\*Gotchas\*\*/ || /\| \*\*Contracts\*\*/ {
+      n = split($0, fields, "|")
+      class_col = fields[2]
+      owners_col = fields[5]
+      # Strip markdown bold, leading/trailing space
+      gsub(/\*\*/, "", class_col)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", class_col)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", owners_col)
+      print class_col "|" owners_col
+    }
+  ' "$CONCERN_MODEL"
+}
+
+# Build inverted map: dimension -> sorted comma-separated list of class names
+# Each dimension that owns a class gets it added to its set.
+declare -A DIM_OWNS
+for dim in C0 C1 C2 C3 C4 C5 C6 C7 C8 C9; do
+  DIM_OWNS[$dim]=""
+done
+
+while IFS='|' read -r class owners; do
+  [[ -z "$class" ]] && continue
+  # Extract C<N> tokens from the owners column
+  while IFS= read -r cdim; do
+    [[ -z "$cdim" ]] && continue
+    if [[ -n "${DIM_OWNS[$cdim]+_}" ]]; then
+      if [[ -z "${DIM_OWNS[$cdim]}" ]]; then
+        DIM_OWNS[$cdim]="$class"
+      else
+        DIM_OWNS[$cdim]="${DIM_OWNS[$cdim]}, $class"
+      fi
+    fi
+  done < <(echo "$owners" | grep -oE 'C[0-9]')
+done < <(extract_owning_table)
+
+# Extract the "Owns named section(s)" value from a C<N> block in document-expectations.md.
+extract_owns_cell() {
+  local dim="$1"
+  awk -v pat="^### ${dim} " '
+    $0 ~ pat { found=1; next }
+    found && /^---/ { exit }
+    found && /\*\*Owns named section\(s\):\*\*/ {
+      line = $0
+      # Remove the label prefix
+      sub(/.*\*\*Owns named section\(s\):\*\*[[:space:]]*/, "", line)
+      # Strip trailing whitespace
+      sub(/[[:space:]]+$/, "", line)
+      print line
+      exit
+    }
+  ' "$DOC_EXPECTATIONS"
+}
+
+# Normalize a "Owns" value: strip backticks, "## " prefixes, em-dashes, sort
+# Returns a comma-space-separated sorted list of class names, or "(none)"
+normalize_owns() {
+  local raw="$1"
+  # Handle explicit "none" markers: the cell may start with an em-dash (U+2014)
+  # or a plain hyphen, followed by "(none" or just "none".
+  # Use grep with -P or a broad pattern that catches the em-dash.
+  if echo "$raw" | grep -qE '^\s*(—|-)\s*\(none' || echo "$raw" | grep -qE '^\s*-\s*(none)?\s*$'; then
+    echo "(none)"
+    return
+  fi
+  # Check for literal em-dash at start (multi-byte; grep -F to be safe)
+  if echo "$raw" | grep -qF '— (none'; then
+    echo "(none)"
+    return
+  fi
+  # Extract class names: strip ## prefixes and backticks, split on comma
+  echo "$raw" \
+    | tr ',' '\n' \
+    | sed 's/`//g; s/##[[:space:]]*//' \
+    | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' \
+    | grep -v '^$' \
+    | sort \
+    | tr '\n' ',' \
+    | sed 's/,$//' \
+    | sed 's/,/, /g'
+}
+
+# Build the expected set for each dimension using the same normalizer.
+SD13_PASS=1
+for dim in C0 C1 C2 C3 C4 C5 C6 C7 C8 C9; do
+  raw_expected="${DIM_OWNS[$dim]}"
+
+  # Normalize expected: if empty -> "(none)", else sort alphabetically
+  if [[ -z "$raw_expected" ]]; then
+    expected_norm="(none)"
+  else
+    expected_norm="$(echo "$raw_expected" | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' | sort | tr '\n' ',' | sed 's/,$//' | sed 's/,/, /g')"
+  fi
+
+  # Extract and normalize actual cell from document-expectations.md
+  actual_raw="$(extract_owns_cell "$dim")"
+  actual_norm="$(normalize_owns "$actual_raw")"
+
+  if [[ "$actual_norm" == "$expected_norm" ]]; then
+    pass "SD13 ${dim} Owns cell matches concern-model.md (${expected_norm})"
+  else
+    fail "SD13 ${dim} Owns cell DRIFTED from concern-model.md: expected '${expected_norm}', got '${actual_norm}'"
+    SD13_PASS=0
+  fi
+done
+
+# ---------------------------------------------------------------------------
 echo
 test_summary
 exit $?

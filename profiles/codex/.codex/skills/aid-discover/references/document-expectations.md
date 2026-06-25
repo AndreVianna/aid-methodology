@@ -60,13 +60,13 @@ project's specific layout.
 
 **MUST carry (work-actionable floor):** the parts (modules, stages, components, sources),
 **how they connect** (dependencies, hand-offs, data path), **how to add a part** (the
-naming, registration, and wiring sequence a contributor must follow), and the
-cross-boundary invariants and gotchas.
+naming, registration, and wiring sequence a contributor must follow, and the structural
+contract a new part or connection must satisfy), and the cross-boundary invariants.
 
-**Owns named section(s):** `## Conventions`, `## Invariants`, `## Gotchas`
+**Owns named section(s):** `## Conventions`, `## Invariants`, `## Contracts`
 
 **Red flags:** A part listed with no purpose or no connections. "How to add one" absent.
-Missing cross-boundary invariants or gotchas.
+Missing cross-boundary invariants or contracts a new part must satisfy.
 
 ---
 
