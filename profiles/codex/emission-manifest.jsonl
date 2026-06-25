@@ -168,7 +168,7 @@
 {"dst": ".codex/aid/templates/task-spec-template.md", "profile": "codex", "sha256": "0ecce89a7d8ba066e43583ef0264f0670b0a8a90f86dd9d8b346834e3d23b816", "src": "canonical/templates/task-spec-template.md"}
 {"dst": ".codex/aid/templates/task-state-template.md", "profile": "codex", "sha256": "98856a05f0e96f7e3bbc34d4c2ae4dd5ca290c58f5275de65ea9ff325c8029c6", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".codex/aid/templates/work-state-template.md", "profile": "codex", "sha256": "76a8b1c93b7d616c9cc78857a7187771b3583770b2ca5a950063f62b201af485", "src": "canonical/templates/work-state-template.md"}
-{"dst": ".codex/skills/aid-config/SKILL.md", "profile": "codex", "sha256": "72ed885a0f388c2acf1320c51b66c6d7ae5eb12df87402d3fcdfedff34cad62a", "src": "canonical/skills/aid-config/SKILL.md"}
+{"dst": ".codex/skills/aid-config/SKILL.md", "profile": "codex", "sha256": "d6e5ced06f8d24f748ca00a22835705f46bd709b79d9296405e208b0c7cec523", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".codex/skills/aid-deploy/SKILL.md", "profile": "codex", "sha256": "69b0ef9991d11400b78f4c130eda02b1ae9dcf48ff00ccc549b0a5c619f95356", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".codex/skills/aid-deploy/references/state-done.md", "profile": "codex", "sha256": "d464d535693b7c2595ab3f8112298e64ade349e800c7b37be6357466fd93f4bb", "src": "canonical/skills/aid-deploy/references/state-done.md"}
 {"dst": ".codex/skills/aid-deploy/references/state-idle.md", "profile": "codex", "sha256": "708d17d73aa06cfc610aee8a580703ba854420587c2ab2f2665c14d707b9167b", "src": "canonical/skills/aid-deploy/references/state-idle.md"}

@@ -168,7 +168,7 @@
 {"dst": ".agent/aid/templates/task-spec-template.md", "profile": "antigravity", "sha256": "2f9353b8bdd507998e2a298cf16b6043a3a21b553b789c43d0f82ab403015b8a", "src": "canonical/templates/task-spec-template.md"}
 {"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "9dd76a887a0e59bda902123750789e8ffb30ebeac43a7bb61b4a001eb89c4519", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "14219f9b699c0093bedecd49b92dd47fd332553ef5b9223f437babe8f187469f", "src": "canonical/templates/work-state-template.md"}
-{"dst": ".agent/skills/aid-config/SKILL.md", "profile": "antigravity", "sha256": "5a43922edf04d3ce4a2a36517bad99a37f885962128f09a7323bbe32f5081fef", "src": "canonical/skills/aid-config/SKILL.md"}
+{"dst": ".agent/skills/aid-config/SKILL.md", "profile": "antigravity", "sha256": "9e3204e96a789b6bee48a72d77df9f0d1c7e34c059f15d427dc2b5d71320eec6", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".agent/skills/aid-deploy/SKILL.md", "profile": "antigravity", "sha256": "bc466298c53a7d4a9432761010ab4bd74d59b8b1fa520d87828fa9910343f1c1", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".agent/skills/aid-deploy/references/state-done.md", "profile": "antigravity", "sha256": "9e6a0137ce09ce2535844f6318913a36e7ddc48c83c5217373d68708343010c3", "src": "canonical/skills/aid-deploy/references/state-done.md"}
 {"dst": ".agent/skills/aid-deploy/references/state-idle.md", "profile": "antigravity", "sha256": "b58e51d0db5aafd39e5f45f86033c839651616196735d1ccbd39caf47be5a506", "src": "canonical/skills/aid-deploy/references/state-idle.md"}
