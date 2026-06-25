@@ -830,6 +830,44 @@ loop simply feeds the same pipe.
 
 Print on completion: `[5b] Done -- {N} terms defined in the glossary; {M} terms couldn't be pinned down from the project and are saved as questions for you.`
 
+### Step 5c: Confirm term exclusions (PAUSE-FOR-USER-DECISION)
+
+The closure step's EXCLUSION-REVIEW (see `references/state-closure.md`) wrote
+`.aid/generated/exclusion-candidates.md` -- terms it could not define and proposes to EXCLUDE
+from the self-containment check, grouped by rule (#3 not-concept, #4 descriptive-phrase, #5
+token-junk), plus a NOT-excludable `real-concept` group (recommended glossary fixes). Per the
+Term rules, a rule 3/4/5 term is excluded ONLY after the user confirms it.
+
+**If `exclusion-candidates.md` is absent or has no candidates** (e.g. the check already
+reached zero): skip this step and CHAIN to Step 6.
+
+Otherwise, present the candidates to the user in plain language, e.g.:
+
+```
+A few terms couldn't be defined as project concepts. I'd like to set them aside so the
+knowledge-base self-check can finish. Please confirm which are safe to exclude:
+
+  Not real concepts (field values / skill names):   in progress, user approved, aid-execute
+  Descriptions, not coined terms:                    quick check findings, state detection
+  Harvest junk:                                      emissionmanifest, "no install-time marker)"
+
+  (These look like real concepts missing a clean glossary entry -- I'll fix the glossary
+   instead of excluding them: concept spine -> Spine, wave -> its own entry.)
+
+Reply: confirm all  |  exclude only <list>  |  none
+```
+
+**This is a genuine PAUSE-FOR-USER-DECISION.** Stop after presenting.
+
+**On confirm (resume):** append the user-confirmed terms (one `- <term>` per line) to the
+persisted, tracked file `.aid/knowledge/.term-exclusions.md` (create it with a `# Term
+exclusions (user-confirmed)` header if absent; never add an unconfirmed term). The DETECT step
+reads this file on every future run, so confirmed exclusions are never re-asked. For the
+`real-concept` group, apply the recommended glossary fix (add/rename the clean heading) rather
+than excluding. Then re-run DETECT once; the now-excluded terms drop out. Print:
+`[5c] Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`
+Then **CHAIN -> Step 6.**
+
 ### Step 6: Generate README.md and INDEX.md
 
 The orchestrator generates these directly — they require reading across all KB documents.

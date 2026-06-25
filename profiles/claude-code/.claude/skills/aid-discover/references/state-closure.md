@@ -19,6 +19,32 @@
 - Cap arguments: `--max-clean-passes N --max-rounds N --token-budget N` (supplied by Step 5b;
   defaults read from `discovery.closure` block in `.aid/settings.yml`).
 
+## Term rules (feature-014)
+
+These rules govern how concept terms are identified, matched, and excluded. Rules 1-2 are
+**deterministic** (applied automatically by `closure-check.sh` and when authoring glossary
+headings). Rules 3-5 are **identify-then-confirm**: the loop proposes candidates, but a term is
+excluded ONLY after the user confirms it at the exclusion-review gate (Step 5c).
+
+1. **No slash-joined compounds.** Never write a heading or relates-to entry as `A / B`. Treat
+   each word of a slash compound as its own term. The checker splits on `/` and matches each
+   part independently (so `canonical / profile` resolves only when both `Canonical` and
+   `Profile` are defined). When authoring, list them separately (`Canonical`, `Profile`).
+2. **Always singular.** Headings and terms are written in the singular. The checker compares in
+   singular form (`tasks` -> `task`), applied symmetrically to defined identifiers and used
+   terms.
+3. **Not-concepts (identify -> confirm -> exclude).** Terms that are not concepts: enum/field
+   values (`in progress`, `user approved`), instance names (skill names like `aid-execute`,
+   file names), and similar. The loop proposes them; the user confirms before exclusion.
+4. **Descriptive phrases (identify -> confirm -> exclude).** Multi-word descriptions that are
+   not a coined term (`quick check findings`, `state detection`). Proposed, then user-confirmed.
+5. **Token junk (identify -> confirm -> exclude).** Harvest/tokenizer artifacts -- mangled
+   tokens (`emissionmanifest`, a stray trailing `)`). Proposed, then user-confirmed.
+
+**Confirmation is mandatory for rules 3-5.** The loop NEVER auto-excludes a rule 3/4/5 term;
+it writes them to `.aid/generated/exclusion-candidates.md` (categorized) for the Step 5c gate.
+Confirmed exclusions persist to `.aid/knowledge/.term-exclusions.md` so re-runs do not re-ask.
+
 ## Transient work-list: spine-todo.md
 
 **Before entering the loop**, SEED the transient work-list `.aid/generated/spine-todo.md` from
@@ -133,27 +159,36 @@ only on the concept spine (`domain-glossary.md`) and the deep-dive KB docs.
 Run the mechanical self-containment check (the deterministic substrate):
 
 ```bash
-# Extract the loop's own DISMISSED decisions from spine-todo.md (feature-014 Q10 fix). The
-# oracle subtracts these from its term universe so generic/non-concept terms the loop has
-# already ruled out stop counting -- once every USED term is GROUNDED (word-matches a concept
-# heading) or DISMISSED, output (a) is empty and the loop closes deterministically rather than
-# false-cap-tripping on terms that are correctly resolved but not standalone H3 headings.
-awk -F'|' 'NR>2 && $5 ~ /DISMISSED/ {t=$3; gsub(/`/,"",t); gsub(/^[ ]+|[ ]+$/,"",t); if(t!="" && t!="Term") print t}' \
-  .aid/generated/spine-todo.md > .aid/generated/spine-dismissed.txt 2>/dev/null || true
+# Build the combined "excluded" term list the checker subtracts (feature-014 Q10 + rules #3-#5).
+# Two sources:
+#   (a) the closure loop's own DISMISSED decisions in spine-todo.md (this run), plus
+#   (b) the project's PERSISTED, USER-CONFIRMED exclusions in .aid/knowledge/.term-exclusions.md
+#       -- not-concepts / descriptive phrases / token junk the user confirmed at a prior run's
+#       exclusion-review gate (Step 5c). Persisting them means re-runs never re-ask.
+# Once every USED term is GROUNDED (its slash-split + singularized parts each match a clean
+# concept identifier -- rules #1/#2) or excluded, output (a) is empty and the loop closes.
+{
+  awk -F'|' 'NR>2 && $5 ~ /DISMISSED/ {t=$3; gsub(/`/,"",t); gsub(/^[ ]+|[ ]+$/,"",t); if(t!="" && t!="Term") print t}' \
+    .aid/generated/spine-todo.md 2>/dev/null || true
+  grep -E '^- ' .aid/knowledge/.term-exclusions.md 2>/dev/null | sed -E 's/^- //; s/[[:space:]]+#.*$//' || true
+} | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^$' | LC_ALL=C sort -u \
+  > .aid/generated/closure-dismissed.txt
 
 bash .claude/aid/scripts/kb/closure-check.sh \
   --concepts .aid/generated/candidate-concepts.md \
   --spine .aid/knowledge/domain-glossary.md \
   --kb-dir .aid/knowledge \
-  --dismissed .aid/generated/spine-dismissed.txt \
+  --dismissed .aid/generated/closure-dismissed.txt \
   --output-a .aid/generated/closure-ungrounded.md \
   --output-b .aid/generated/closure-coverage.md
 ```
 
 (The coined-term denylist is auto-resolved from the script's sibling
-`coined-term-denylist.txt`; `--dismissed` adds the loop's per-run dismissals on top. The
-concept-heading match is a case-insensitive whole-WORD match, so a candidate token like
-`triage` resolves to a descriptive heading such as `### Triage (full vs lite path)`.)
+`coined-term-denylist.txt`. The concept-heading match treats a heading as a clean IDENTIFIER:
+it strips any `(explanation)` parenthetical, then a used term resolves iff every slash-split,
+singularized part of it equals a defined identifier -- e.g. `### Triage (full vs lite path)`
+defines `triage`; `tasks` resolves to `Task`; `canonical / profile` resolves when both
+`Canonical` and `Profile` are defined.)
 
 The loop consumes **output (a) only** as its termination oracle. Output (b) is the
 coverage signal consumed by f005's M2 Anatomy mandate — not a loop input. (A former
@@ -251,6 +286,52 @@ Print: `[5b] Stopped after {round}/{max_rounds} passes. {N} terms still couldn't
 
 This converts a silent miss into a caught human question (FR-32). A budget exhaust degrades
 to "surface the gaps", never "ship shallow silently".
+
+### EXCLUSION-REVIEW (categorize the residual for the Step 5c gate)
+
+After the loop ends (CLOSED or ESCALATE), any terms still in output (a) are the residual the
+deterministic rules (#1 slash-split, #2 singular) could not resolve and the loop did not ground.
+**Do NOT auto-exclude them.** Categorize each into exactly one bucket and write
+`.aid/generated/exclusion-candidates.md` for the user-confirmation gate (Step 5c in
+`references/state-generate.md`):
+
+| Bucket | Rule | What goes here | Example |
+|--------|------|----------------|---------|
+| not-concept | #3 | enum/field values, instance names (skill/file names) | `in progress`, `aid-execute` |
+| descriptive-phrase | #4 | multi-word descriptions that are not a coined term | `quick check findings` |
+| token-junk | #5 | mangled tokenizer artifacts / stray punctuation | `emissionmanifest`, `no install-time marker)` |
+| real-concept | -- | a genuine concept that is just missing a clean heading or is a near-miss of one | `concept spine` (-> `Spine`), `wave` (-> own heading) |
+
+The first three buckets are **exclusion candidates** (the user confirms before they are
+excluded). The `real-concept` bucket is **NOT excludable** -- surface it as a recommended
+glossary fix (add a clean heading, or correct a relates-to) so the term resolves on the next run.
+
+Write the file as:
+
+```markdown
+# Exclusion candidates (Step 5c -- confirm before excluding)
+
+## not-concept (rule #3)
+- in progress
+- user approved
+- aid-execute
+
+## descriptive-phrase (rule #4)
+- quick check findings
+- state detection
+
+## token-junk (rule #5)
+- emissionmanifest
+
+## real-concept (NOT excludable -- glossary fix recommended)
+- concept spine -> add/rename heading `Spine` (or alias)
+- wave -> give it its own `### Wave` heading (do not bury concepts in a parenthetical)
+```
+
+Print: `[5b] Exclusion review: {N} candidate terms to confirm (not-concept / descriptive / junk) + {M} glossary fixes recommended. Continue to confirm them.`
+
+**Advance:** the orchestrator chains to Step 5c (`references/state-generate.md`), a
+PAUSE-FOR-USER-DECISION, which presents the candidates and persists the confirmed ones.
 
 ## Reference documents for aid-architect in Step 5b
 

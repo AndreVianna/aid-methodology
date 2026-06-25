@@ -278,12 +278,40 @@ if [[ -s "$EXCLUDE_LC" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
+# Term normalization (feature-014 rules #1 and #2):
+#   #1 slash-split  -- a compound joined by "/" is treated as its separate words; each part
+#                      is its own term (e.g. "canonical / profile" -> "canonical", "profile").
+#   #2 singular     -- terms are compared in singular form (e.g. "tasks" -> "task"). Applied
+#                      symmetrically to BOTH the defined identifiers and the used terms, so the
+#                      match is robust even if the singular rule is linguistically imperfect.
+# norm_terms reads terms on stdin and emits their normalized parts (one per line, lowercase).
+# ---------------------------------------------------------------------------
+norm_terms() {
+  awk '{
+    n = split($0, P, "/")
+    for (i=1;i<=n;i++) {
+      t = P[i]; gsub(/^[ \t]+|[ \t]+$/, "", t); t = tolower(t)
+      if (t=="") continue
+      if (t ~ /ies$/)                  sub(/ies$/, "y", t)
+      else if (t ~ /(s|x|z|ch|sh)es$/) sub(/es$/, "", t)
+      else if (t ~ /[a-z][^s]s$/)      sub(/s$/, "", t)
+      print t
+    }
+  }'
+}
+
+# Normalized defined-identifier set (each heading identifier slash-split + singularized).
+DEFINED_NORM="${TMPDIR_CC}/defined_norm.txt"
+norm_terms < "$DEFINED_FILE" 2>/dev/null | LC_ALL=C sort -u > "$DEFINED_NORM" || true
+
+# ---------------------------------------------------------------------------
 # Output (a) computation:
 #   For each term in UNIVERSE_FILE, scan KB docs for occurrences.
-#   A term that APPEARS in any KB doc body but is NOT in DEFINED_FILE is an
-#   ungrounded term. Output one row per (term, doc) pair where it is used.
+#   A term is "defined" iff EVERY slash-split, singularized part is a defined identifier
+#   (rules #1/#2). A term USED in a KB doc body that is not defined is an ungrounded term.
+#   Output one row per (term, doc) pair where it is used.
 #
-#   Scanning: literal, case-insensitive (grep -i -F).
+#   Doc scanning: literal, case-insensitive (grep -i -F) on the original term.
 # ---------------------------------------------------------------------------
 OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
 
@@ -297,14 +325,16 @@ OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
     while IFS= read -r term; do
       [[ -z "$term" ]] && continue
 
-      # Skip if already defined in the spine. The defined terms are clean IDENTIFIERS (the
-      # heading text with any "(explanation)" stripped above), so this is an exact, whole-line,
-      # case-insensitive match: a used term resolves to its concept iff it equals that concept's
-      # identifier. Headings must therefore be idempotent identifiers -- "### Unique Term
-      # (optional explanation)" -- not sentences (feature-014 Q10 fix).
-      if grep -qixF -- "$term" "$DEFINED_FILE" 2>/dev/null; then
-        continue
-      fi
+      # Skip if already defined. Defined terms are clean IDENTIFIERS (heading text with any
+      # "(explanation)" stripped). A used term resolves to the spine iff EVERY slash-split,
+      # singularized part of it (rules #1/#2) is a defined identifier. So "canonical / profile"
+      # resolves when both "canonical" and "profile" are defined, and "tasks" resolves to "task".
+      term_defined=1
+      while IFS= read -r _part; do
+        [[ -z "$_part" ]] && continue
+        grep -qixF -- "$_part" "$DEFINED_NORM" 2>/dev/null || { term_defined=0; break; }
+      done < <(printf '%s\n' "$term" | norm_terms)
+      [[ "$term_defined" == "1" ]] && continue
 
       # Scan KB docs for this term
       while IFS= read -r doc; do
