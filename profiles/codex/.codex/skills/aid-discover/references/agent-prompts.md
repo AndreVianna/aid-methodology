@@ -362,6 +362,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 >      heading stays idempotent and the term is resolvable to exactly one entry. (E.g.
 >      `### Triage (full vs lite path)`, not `### Triage / full vs lite`.)
 >    - Term: the native/coined name as used here (equals the heading identifier)
+>    - Aliases (optional): an `**Aliases:** synonym-1, synonym-2` line listing OTHER names the
+>      docs use for this SAME concept (e.g. `concept spine`, `dimension spine` for `Spine`).
+>      Aliases count as defined identifiers, so a synonym resolves without a duplicate heading
+>      or cramming synonyms into the heading parenthetical. Put synonyms HERE, not in the heading.
 >    - Definition-as-used-here: what it means in THIS project (NOT a generic definition —
 >      a generic definition is negative value; only the project-specific meaning is stored)
 >    - Relates-to: how it connects to other spine concepts (cross-cutting linkage)

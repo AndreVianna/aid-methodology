@@ -215,6 +215,23 @@ if [[ -f "$SPINE" ]]; then
       # Strip template placeholders like {ConceptName}
       if (term !~ /^\{/) print "DEFINED:" term
     }
+    in_spine && /\*\*Aliases:\*\*/ {
+      # Aliases are ALTERNATE IDENTIFIERS for this concept (synonyms used in the docs). They
+      # count as DEFINED, exactly like the heading -- so a synonym such as "concept spine"
+      # resolves to its concept without a duplicate heading or a parenthetical synonym list.
+      line = $0
+      sub(/.*\*\*Aliases:\*\*[[:space:]]*/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      n = split(line, parts, /,/)
+      for (i=1; i<=n; i++) {
+        a = parts[i]
+        sub(/[[:space:]]*\(.*$/, "", a)
+        sub(/^[[:space:]]+/, "", a)
+        sub(/[[:space:]]+$/, "", a)
+        gsub(/[.;]$/, "", a)
+        if (a != "" && a !~ /^\{/) print "DEFINED:" a
+      }
+    }
     in_spine && /\*\*Relates-to:\*\*/ {
       line = $0
       sub(/.*\*\*Relates-to:\*\*[[:space:]]*/, "", line)
