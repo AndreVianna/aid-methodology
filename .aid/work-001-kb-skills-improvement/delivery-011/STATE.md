@@ -17,8 +17,8 @@ This is the DELIVERY-LEVEL STATE.md template. It is divided into two zones:
 
 <!-- AUTHORED -- single writer: this delivery's branch only. -->
 
-- **State:** Specified
-- **Updated:** 2026-06-25T04:55:18Z
+- **State:** Done
+- **Updated:** 2026-06-25T06:35:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -26,9 +26,9 @@ This is the DELIVERY-LEVEL STATE.md template. It is divided into two zones:
 
 ## Delivery Gate
 
-- **Reviewer Tier:** Medium
-- **Grade:** Pending
-- **Issue List:** none yet (delivery not executed)
+- **Reviewer Tier:** High
+- **Grade:** A+
+- **Issue List:** 2 MINOR, Accepted (fast-follow — see feature-015-followups.md); no CRITICAL/HIGH/MEDIUM
 - **Timestamp:** --
 
 ---
