@@ -66,6 +66,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO="${SCRIPT_DIR}/../.."
 SUT="${REPO}/canonical/aid/scripts/kb/kb-actback-task.sh"
 FIXTURES_BASE="${SCRIPT_DIR}/fixtures/kb-essence/actback"
+DI_FIXTURES_BASE="${SCRIPT_DIR}/fixtures/dual-intent"
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
 
@@ -103,6 +104,23 @@ if [[ ! -d "${FIXTURES_BASE}/actback-fail-kb/knowledge" ]]; then
   echo "FATAL: actback-fail-kb/knowledge not found at ${FIXTURES_BASE}/actback-fail-kb/knowledge" >&2
   exit 2
 fi
+
+# Guards for per-domain dual-intent fixtures (task-087)
+for _di_fix in \
+  "${DI_FIXTURES_BASE}/data-ml/doc-set.tsv" \
+  "${DI_FIXTURES_BASE}/data-ml/good-kb" \
+  "${DI_FIXTURES_BASE}/data-ml/shallow-kb" \
+  "${DI_FIXTURES_BASE}/design/doc-set.tsv" \
+  "${DI_FIXTURES_BASE}/design/good-kb" \
+  "${DI_FIXTURES_BASE}/design/shallow-kb" \
+  "${DI_FIXTURES_BASE}/content/doc-set.tsv" \
+  "${DI_FIXTURES_BASE}/content/good-kb" \
+  "${DI_FIXTURES_BASE}/content/shallow-kb"; do
+  if [[ ! -e "$_di_fix" ]]; then
+    echo "FATAL: per-domain dual-intent fixture not found: $_di_fix" >&2
+    exit 2
+  fi
+done
 
 # ---------------------------------------------------------------------------
 # Global tmp dir + isolation: all scratch copies land here; cleaned on EXIT.
@@ -374,6 +392,121 @@ else
     cat "$TASK_OUT_1"
     echo "---"
   fi
+fi
+
+# ===========================================================================
+# T06-T10: Per-domain GOOD/SHALLOW presence checks (task-087, FR-54 + FR-55)
+#
+# Exercises kb-actback-task.sh check over the per-domain dual-intent fixtures
+# (data-ml, design, content). Asserts: (a) GOOD KBs report all expected C5
+# operational classes as PRESENT; (b) SHALLOW KBs report C5 Contracts as ABSENT
+# (the structural cause of an assertiveness FAIL).
+#
+# Mechanical-vs-judgment boundary: we assert the STRUCTURAL presence/absence of
+# ## Contracts in the C5 doc. Whether the clean-context M4 reviewer's plan
+# actually fails on the shallow KB is LLM judgment -- NOT asserted here.
+# ===========================================================================
+
+echo ""
+echo "=== T06: data-ml GOOD KB -- presence check reports C5 Contracts present ==="
+
+DML_GOOD_CHECK_OUT="${TMP}/dml-good-check.txt"
+bash "$SUT" check \
+  --doc-set "${DI_FIXTURES_BASE}/data-ml/doc-set.tsv" \
+  --kb-dir  "${DI_FIXTURES_BASE}/data-ml/good-kb" \
+  > "$DML_GOOD_CHECK_OUT" 2>/dev/null
+
+row=$(grep -F "data-schemas.md" "$DML_GOOD_CHECK_OUT" | grep -F "Contracts" || true)
+if echo "$row" | grep -qF "present"; then
+  pass "T06 data-ml good-kb: kb-actback check reports data-schemas.md Contracts => present"
+else
+  fail "T06 data-ml good-kb: kb-actback check expected Contracts => present, got: '$row'"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$DML_GOOD_CHECK_OUT"
+fi
+
+echo ""
+echo "=== T07: data-ml SHALLOW KB -- presence check reports C5 Contracts absent ==="
+
+DML_SHALLOW_CHECK_OUT="${TMP}/dml-shallow-check.txt"
+bash "$SUT" check \
+  --doc-set "${DI_FIXTURES_BASE}/data-ml/doc-set.tsv" \
+  --kb-dir  "${DI_FIXTURES_BASE}/data-ml/shallow-kb" \
+  > "$DML_SHALLOW_CHECK_OUT" 2>/dev/null
+
+row=$(grep -F "data-schemas.md" "$DML_SHALLOW_CHECK_OUT" | grep -F "Contracts" || true)
+if echo "$row" | grep -qF "absent"; then
+  pass "T07 data-ml shallow-kb: kb-actback check reports data-schemas.md Contracts => absent (assertiveness FAIL signal)"
+else
+  fail "T07 data-ml shallow-kb: kb-actback check expected Contracts => absent, got: '$row'"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$DML_SHALLOW_CHECK_OUT"
+fi
+
+echo ""
+echo "=== T08: design GOOD KB -- presence check reports C5 Contracts present ==="
+
+DSN_GOOD_CHECK_OUT="${TMP}/dsn-good-check.txt"
+bash "$SUT" check \
+  --doc-set "${DI_FIXTURES_BASE}/design/doc-set.tsv" \
+  --kb-dir  "${DI_FIXTURES_BASE}/design/good-kb" \
+  > "$DSN_GOOD_CHECK_OUT" 2>/dev/null
+
+row=$(grep -F "design-tokens.md" "$DSN_GOOD_CHECK_OUT" | grep -F "Contracts" || true)
+if echo "$row" | grep -qF "present"; then
+  pass "T08 design good-kb: kb-actback check reports design-tokens.md Contracts => present"
+else
+  fail "T08 design good-kb: kb-actback check expected Contracts => present, got: '$row'"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$DSN_GOOD_CHECK_OUT"
+fi
+
+echo ""
+echo "=== T09: design SHALLOW KB -- presence check reports C5 Contracts absent ==="
+
+DSN_SHALLOW_CHECK_OUT="${TMP}/dsn-shallow-check.txt"
+bash "$SUT" check \
+  --doc-set "${DI_FIXTURES_BASE}/design/doc-set.tsv" \
+  --kb-dir  "${DI_FIXTURES_BASE}/design/shallow-kb" \
+  > "$DSN_SHALLOW_CHECK_OUT" 2>/dev/null
+
+row=$(grep -F "design-tokens.md" "$DSN_SHALLOW_CHECK_OUT" | grep -F "Contracts" || true)
+if echo "$row" | grep -qF "absent"; then
+  pass "T09 design shallow-kb: kb-actback check reports design-tokens.md Contracts => absent (assertiveness FAIL signal)"
+else
+  fail "T09 design shallow-kb: kb-actback check expected Contracts => absent, got: '$row'"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$DSN_SHALLOW_CHECK_OUT"
+fi
+
+echo ""
+echo "=== T10: content GOOD KB -- presence check reports C5 Contracts present ==="
+
+CNT_GOOD_CHECK_OUT="${TMP}/cnt-good-check.txt"
+bash "$SUT" check \
+  --doc-set "${DI_FIXTURES_BASE}/content/doc-set.tsv" \
+  --kb-dir  "${DI_FIXTURES_BASE}/content/good-kb" \
+  > "$CNT_GOOD_CHECK_OUT" 2>/dev/null
+
+row=$(grep -F "content-model.md" "$CNT_GOOD_CHECK_OUT" | grep -F "Contracts" || true)
+if echo "$row" | grep -qF "present"; then
+  pass "T10a content good-kb: kb-actback check reports content-model.md Contracts => present"
+else
+  fail "T10a content good-kb: kb-actback check expected Contracts => present, got: '$row'"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$CNT_GOOD_CHECK_OUT"
+fi
+
+echo ""
+echo "=== T10b: content SHALLOW KB -- presence check reports C5 Contracts absent ==="
+
+CNT_SHALLOW_CHECK_OUT="${TMP}/cnt-shallow-check.txt"
+bash "$SUT" check \
+  --doc-set "${DI_FIXTURES_BASE}/content/doc-set.tsv" \
+  --kb-dir  "${DI_FIXTURES_BASE}/content/shallow-kb" \
+  > "$CNT_SHALLOW_CHECK_OUT" 2>/dev/null
+
+row=$(grep -F "content-model.md" "$CNT_SHALLOW_CHECK_OUT" | grep -F "Contracts" || true)
+if echo "$row" | grep -qF "absent"; then
+  pass "T10b content shallow-kb: kb-actback check reports content-model.md Contracts => absent (assertiveness FAIL signal)"
+else
+  fail "T10b content shallow-kb: kb-actback check expected Contracts => absent, got: '$row'"
+  [[ "$VERBOSE" -eq 1 ]] && cat "$CNT_SHALLOW_CHECK_OUT"
 fi
 
 # ---------------------------------------------------------------------------

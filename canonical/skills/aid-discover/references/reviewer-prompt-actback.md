@@ -1,117 +1,158 @@
-# M4 — Act-Back Mandate FOCUS Body
+# M4 -- Blind Work-Simulation FOCUS Body
 
-**Mandate:** M4 — Operational Sufficiency (Act-back, keystone hard gate)
+**Mandate:** M4 -- Operational Sufficiency (Blind Work-Simulation / assertiveness gate, keystone hard gate)
 **Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-actback.md` (7-column schema).
 **Do NOT write to STATE.md.** The orchestrator updates STATE; this mandate writes only to its own scratch ledger.
 
 ---
 
-## FOCUS: Using Only the KB, Perform a Representative Task + Flag Every Insufficiency
+## FOCUS: Using Only the KB, Plan Each Work Probe Step-by-Step + Flag Every Insufficiency
 
-You are the **Act-back reviewer** for this KB panel review cycle. This is the
-**operational-sufficiency keystone mandate** — act-back closure is the hard exit criterion
-for the operational axis. Your mandate is to simulate a fresh agent given ONLY the KB
-plus the representative task below, and verify:
+You are the **Blind Work-Simulation reviewer** for this KB panel review cycle. This is the
+**assertiveness-gate keystone mandate** -- Blind Work-Simulation closure is the hard exit
+criterion for the operational axis. Your mandate is to simulate a clean-context agent given
+ONLY the KB plus the derived work-probe set below, and verify:
 
-**(a) Plan-correctness limb:** Can you produce a *correct, executable plan/outline* for the
-representative change, in the project's **own** conventions (not generic best practices),
-using only the KB?
+**(a) Plan-correctness limb:** Can you produce a *correct, executable plan/outline* for each
+work probe, in the project's **own** conventions (not generic best practices), using only the
+KB?
 
-**(b) Sufficiency limb:** For every step of the plan, did the KB *state* what you needed,
-or did you have to **assume a convention, guess an invariant, encounter an un-anticipated
-gotcha, or reach for source to find a contract**? Each such insufficiency is a FAIL item.
+**(b) Sufficiency limb:** For every step of every plan, did the KB *state* what you needed
+(STATED), or did you have to **assume a convention, guess an invariant, or encounter a contract
+you would have to reach for source to find** (ASSUMED / REACH)? Each **load-bearing ASSUMED or
+REACH** step is a FAIL item.
 
-Both limbs are **independent FAIL sources** — a plan that cannot be produced at all is a
-FAIL on limb (a); a plan that can be produced but required guessing is a FAIL on limb (b);
-and a complete, correct plan with no insufficiencies is PASS on both.
+**(c) Quality limb:** Does the plan honor the project's **conventions (C3)**, **invariants/gotchas**,
+and **quality bars (C6)**? A plan that would "work" but violates the project's standards is a
+**quality FAIL** -- the KB failed to convey the quality contract. Functional correctness is
+necessary but not sufficient.
 
-**⚠️ STRICT CLEAN-CONTEXT (stronger than other mandates, same class as M3 teach-back):**
-You MUST use ONLY the KB documents (`.aid/knowledge/*.md`) and the representative task
-spec below. Do NOT consult:
+All three limbs are **independent FAIL sources**:
+- A plan that cannot be produced at all is a FAIL on limb (a).
+- A plan that can be produced but required load-bearing guessing is a FAIL on limb (b).
+- A plan that is functionally correct but violates conventions/quality bars is a FAIL on limb (c).
+- A complete, correct, convention-honoring plan with **zero** load-bearing insufficiencies is PASS on all three.
+
+**PASS = a complete, correct, convention-honoring plan with ZERO load-bearing insufficiencies across
+all work probes.**
+
+**STRICT CLEAN-CONTEXT (stronger than other mandates, same class as M3 teach-back):**
+You MUST use ONLY the KB documents (`.aid/knowledge/*.md`) and the work-probe set + operational-
+structure presence check inlined below. Do NOT consult:
 - The project source code
 - The project-index or discovery generation artifacts
 - The candidate-concepts list
 - Any prior review results or grades
 - Any system knowledge outside the KB
 
-You MAY **cite** a KB doc's `sources:` frontmatter to say "the KB defers this to `src/X` —
-I would have to reach for source here" — but citing a `sources:` entry IS itself an
+You MAY **cite** a KB doc's `sources:` frontmatter to say "the KB defers this to `src/X` --
+I would have to reach for source here" -- but citing a `sources:` entry IS itself an
 `[ACTBACK]` insufficiency flag (the KB deferred rather than stated). You do NOT read the
 source file itself.
 
-If you cannot find what you need in the KB alone, that IS an act-back FAIL — do not
-supplement from general knowledge.
+If you cannot find what you need in the KB alone, that IS a Blind Work-Simulation FAIL --
+do not supplement from general knowledge.
 
-**⚠️ CONTAMINATION PREVENTION:**
+**CONTAMINATION PREVENTION:**
 - Do NOT reference prior grades or review history
-- Do NOT say "re-review" — approach the KB fresh
+- Do NOT say "re-review" -- approach the KB fresh
 
 ---
 
-### The representative task spec
+### The derived work-probe set + operational-structure presence check
 
-The orchestrator inlines the representative-task spec (output of `canonical/aid/scripts/kb/kb-actback-task.sh both`)
-and the operational-structure presence check below. The task is keyed to this project's KB
-shape (machine-readable doc-set substrate: filenames + presence + present operational
-sections) and is fixed and reproducible.
+The orchestrator inlines the derived work-probe set (output of
+`canonical/aid/scripts/kb/kb-dual-intent-probes.sh work`) and the operational-structure
+presence check (output of `canonical/aid/scripts/kb/kb-actback-task.sh check`) below. The
+probes are keyed to this project's KB shape (derived from its C9 capability/what-it-does doc
++ load-bearing spine dimensions) and are fixed and reproducible for this review cycle.
 
---- BEGIN ACT-BACK TASK SPEC ---
+--- BEGIN WORK PROBE SET + PRESENCE CHECK ---
 {{ACTBACK_TASK_SPEC}}
---- END ACT-BACK TASK SPEC ---
+--- END WORK PROBE SET + PRESENCE CHECK ---
 
 ---
 
-### Performing the task + scoring
+### Performing the Blind Work-Simulation + scoring
 
-**Step 1: Read the operational-structure presence check (above).**
+**Step 1: Read the operational-structure presence check.**
 
 Note which concern docs carry the named first-class sections (`## Conventions`,
 `## Invariants`, `## Gotchas`, `## Contracts`) and which have them **absent**. A
-structurally-absent class is likely evidence of a sufficiency-limb FAIL — the guidance
+structurally-absent class is likely evidence of a sufficiency-limb FAIL -- the guidance
 is not stated where an agent can find and trust it.
 
-**Step 2: Attempt the task using ONLY the KB.**
+**Step 2: For each work probe, attempt the plan using ONLY the KB.**
 
-Work through the task spec step by step. For each step:
-- Identify what the KB says (cite the specific doc + section).
-- Note where the KB is **insufficient**: a convention you had to assume, an invariant you
-  had to guess, a gotcha you could not anticipate, or a contract you would have to reach for
-  source to find.
+Work through each probe step by step, in the project's own conventions. For every step, tag it:
 
-**Step 3: Score each insufficiency as a FAIL item.**
+| Tag | Meaning |
+|-----|---------|
+| **STATED** | The KB explicitly gave the contract, convention, invariant, or schema shape needed. Cite the specific doc + section. |
+| **ASSUMED** | You had to guess or invent a convention, invariant, or constraint not stated in the KB. |
+| **REACH** | You would have to read source to find the contract, schema, or invariant. The KB deferred to source (cite the `sources:` entry) or is silent. |
 
-The **four insufficiency classes** (matching f013's owning-table and the presence check headings;
-keyed by spine dimension -- C1/C4->Invariants; C2->Conventions/Invariants/Contracts;
-C3->Conventions; C5->Conventions/Contracts; C7->Gotchas):
+For each ASSUMED or REACH step:
+- Classify it as **load-bearing** (the plan would fail or be wrong without it) or **incidental**
+  (a minor detail that would not change correctness or quality).
+- **Only load-bearing ASSUMED/REACH steps generate FAIL items.**
+
+**Step 3: Check the quality limb for each probe.**
+
+After completing the plan for each probe:
+- Does the plan follow the project's **naming conventions** (C3 doc)?
+- Does the plan respect the project's **invariants** -- ordering rules, single-source-of-truth
+  constraints, non-null requirements?
+- Does the plan follow the project's **quality bars** (C6 doc) -- testing requirements, review
+  gates, validation steps?
+- Does the plan avoid the project's **gotchas** (C7 doc) -- non-obvious traps, lockstep config
+  requirements, build-step ordering hazards?
+
+A step that "works" but violates a named convention, invariant, or quality bar is a **quality
+FAIL** even if no ASSUMED/REACH flag was raised. The KB is responsible for conveying the
+quality contract, not just functional correctness.
+
+**Step 4: Score each insufficiency as a FAIL item.**
+
+**The four insufficiency classes** (dimension-keyed; matches the owning-table and presence check):
 
 | Class | FAIL when | Typical evidence |
 |-------|-----------|-----------------|
-| **Convention** | The KB does not state how this type of change is done in this project (naming, registration, wiring). You had to invent or guess a convention. | Structural evidence: `## Conventions` absent in a C2/C3/C5 doc; or section present but the specific convention not stated. |
-| **Invariant** | The KB does not state what must always hold (an ordering, non-null, single-source-of-truth rule) that the change must satisfy. | Structural evidence: `## Invariants` absent in a C1/C2/C4 doc; or section present but the specific invariant not stated. |
-| **Gotcha** | The KB does not warn about a non-obvious trap (a lockstep config, a build step, an ordering hazard) the change would step on. | Structural evidence: `## Gotchas` absent in a C7 doc; or section present but the specific trap not warned about. |
-| **Contract** | The KB does not state the structural shape (schema, interface, pipeline contract) the change must satisfy. You would have to reach for source to find it. | Structural evidence: `## Contracts` absent in a C2/C5 doc; or section present but the specific contract not stated. |
+| **Convention** | The KB does not state how this type of change is done in this project (naming, registration, wiring). Plan step tagged ASSUMED or quality FAIL on convention. | Structural evidence: `## Conventions` absent in a C2/C3/C5 doc; or section present but specific convention not stated. |
+| **Invariant** | The KB does not state what must always hold (ordering, non-null, single-source-of-truth rule) the change must satisfy. Plan step tagged ASSUMED or quality FAIL on invariant. | Structural evidence: `## Invariants` absent in a C1/C2/C4 doc; or section present but specific invariant not stated. |
+| **Gotcha** | The KB does not warn about a non-obvious trap (lockstep config, build step, ordering hazard) the change would step on. Plan step tagged ASSUMED or quality FAIL on gotcha. | Structural evidence: `## Gotchas` absent in a C7 doc; or section present but specific trap not warned about. |
+| **Contract** | The KB does not state the structural shape (schema, interface, pipeline contract) the change must satisfy. Plan step tagged REACH or quality FAIL on contract. | Structural evidence: `## Contracts` absent in a C2/C5 doc; or section present but specific contract not stated. |
 
-**Step 4: Score the plan-correctness limb.**
+**Additionally, the quality check generates a fifth FAIL class:**
 
-After working through the task:
-- PASS (limb a): The KB lets you assemble a correct, executable plan in the project's own
-  conventions, with no step requiring guessing or source access.
-- FAIL (limb a): The plan cannot be assembled correctly from the KB, or it is assembled
-  but wrong for this project's conventions. Plan-correctness FAIL = one `[HIGH]` `[ACTBACK]`
-  row naming the specific gap.
+| Class | FAIL when |
+|-------|-----------|
+| **Quality-bar** | The plan would "work" functionally but violates the project's stated conventions (C3), invariants, gotchas, or quality bars (C6). The KB conveyed a quality contract, and the plan violates it (or the KB failed to convey the quality contract, so no quality plan is possible). |
+
+**Step 5: Score the plan-correctness limb for each probe.**
+
+After working through each probe:
+- PASS (limb a, per probe): The KB lets you assemble a correct, executable plan in the
+  project's own conventions, with no load-bearing ASSUMED/REACH step and no quality violation.
+- FAIL (limb a, per probe): The plan cannot be assembled correctly from the KB, or it is
+  assembled but wrong for this project's conventions. One `[HIGH]` `[ACTBACK]` row naming
+  the specific gap.
 
 ### Severity and verdict (single mechanism, identical to teach-back)
 
-**Severity:** Every FAIL item from EITHER limb = `[HIGH]` `[ACTBACK]` row.
+**Severity:** Every FAIL item from ANY limb (plan-correctness, sufficiency, quality) =
+`[HIGH]` `[ACTBACK]` row.
 
-**Verdict (single mechanism):** Act-back is PASS iff zero open `[ACTBACK]` rows.
-There is NO separate verdict sentinel — the rows ARE the verdict.
+**Verdict (single mechanism):** Blind Work-Simulation is PASS iff zero open `[ACTBACK]` rows
+across ALL work probes. There is NO separate verdict sentinel -- the rows ARE the verdict.
 
 ### Binary bar
 
-This is a binary pass/fail per insufficiency and per plan-correctness. Do not grade on a
-curve. A convention the KB almost-states, or a plan that nearly works (but stalls on one
-required contract), is a FAIL — the KB must state what an agent needs to act on it.
+This is a binary pass/fail per insufficiency, per quality check, and per plan-correctness
+finding. Do not grade on a curve. A convention the KB almost-states, a plan that nearly
+works but stalls on one required contract, or a plan that would work but violates a named
+quality bar is a FAIL -- the KB must state what an agent needs to act on it correctly AND
+with quality.
 
 ### Output format
 
@@ -121,18 +162,20 @@ Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-actback.md` using the
 ```
 | # | Severity | Status | Doc | Line | Description | Evidence |
 |---|----------|--------|-----|------|-------------|----------|
-| AB-001 | [HIGH] | Pending | — | — | [ACTBACK] Convention FAIL: no convention stated for registering a new bus handler — had to guess naming | coding-standards.md has no ## Conventions section; module-map.md ## Conventions absent per presence check |
-| AB-002 | [HIGH] | Pending | schemas.md | — | [ACTBACK] Contract FAIL: field type constraints not stated — plan step 3 requires reaching for source | schemas.md ## Contracts section absent; `sources:` defers to src/models.py |
-| AB-003 | [HIGH] | Pending | — | — | [ACTBACK] Plan-correctness FAIL: cannot assemble a correct wiring plan — step 2 (registration) has no KB anchor | No doc states how a new module is registered in the dispatch cycle |
+| AB-001 | [HIGH] | Pending | -- | -- | [ACTBACK] Convention FAIL (WP-001 step 2): no convention stated for registering a new field -- had to ASSUME naming | coding-standards.md has no ## Conventions section; presence check: absent |
+| AB-002 | [HIGH] | Pending | schemas.md | -- | [ACTBACK] Contract FAIL (WP-002 step 3): field type constraints not stated -- plan step REACH for source | schemas.md ## Contracts absent per presence check; `sources:` defers to src/models.py |
+| AB-003 | [HIGH] | Pending | -- | -- | [ACTBACK] Plan-correctness FAIL (WP-001): cannot assemble a correct wiring plan -- step 2 (registration) has no KB anchor | No doc states how a new module is registered in the dispatch cycle |
+| AB-004 | [HIGH] | Pending | test-landscape.md | -- | [ACTBACK] Quality-bar FAIL (WP-003 step 4): plan omits the required gate -- KB states tests must pass before merge but plan does not include this step | test-landscape.md ## Quality-bars section; plan is functional but violates project's quality contract |
 ```
 
 - Use stable IDs: `AB-001`, `AB-002`, ...
 - Prefix every Description with `[ACTBACK]` and the insufficiency class (Convention /
-  Invariant / Gotcha / Contract / Plan-correctness)
+  Invariant / Gotcha / Contract / Plan-correctness / Quality-bar), and name the probe ID
+  and step (e.g., `WP-001 step 2`) for traceability.
 - Status: `Pending` for new findings
-- `Doc` column: use `—` for findings that span the whole KB; fill in a specific doc if the
+- `Doc` column: use `--` for findings that span the whole KB; fill in a specific doc if the
   FAIL is localized to one document's scope (the doc that should carry the guidance)
 - If re-reviewing: read existing `{{SCOPE}}-actback.md`, update Status for your prior rows
-  (Pending→Fixed if resolved; Fixed→Recurred if regressed), append new findings
+  (Pending->Fixed if resolved; Fixed->Recurred if regressed), append new findings
 
-**No narrative, no summary sections — the ledger table is the entire output.**
+**No narrative, no summary sections -- the ledger table is the entire output.**

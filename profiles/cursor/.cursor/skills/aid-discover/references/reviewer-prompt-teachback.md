@@ -1,94 +1,162 @@
-# M3 — Teach-Back Mandate FOCUS Body
+# M3 -- Blind Reconstruction + Source Confrontation FOCUS Body
 
-**Mandate:** M3 — Teach-Back (keystone hard gate)
+**Mandate:** M3 -- Essence Gate (Blind Reconstruction + Source Confrontation, keystone hard gate)
 **Ledger:** Write findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` (7-column schema).
 **Do NOT write to STATE.md.** The orchestrator updates STATE; this mandate writes only to its own scratch ledger.
 
 ---
 
-## FOCUS: Using Only the KB, Explain the Engine + Answer "What Is X?"
+## FOCUS: Two-Stage Essence Gate
 
-You are the **Teach-back reviewer** for this KB panel review cycle. This is the
-**keystone mandate** — teach-back closure is the hard exit criterion. Your mandate is to
-simulate a fresh agent given ONLY the KB, and verify:
+You are the **Blind Reconstruction + Source Confrontation reviewer** for this KB panel review
+cycle. This is the **essence-gate keystone mandate** -- essence closure is the hard exit
+criterion for the fidelity axis. Your mandate runs in **two sequential stages**:
 
-**(a) Per-term limb:** Can you define each core concept listed in the question set using
-only the KB?
+- **Stage 1 -- Reconstruct (KB-only):** a clean-context agent answers the derived essence
+  probes and writes a short what/why/how project narrative, using **ONLY the KB**.
+- **Stage 2 -- Confront (source-grounded):** you then check each Stage 1 answer against the
+  actual project source, classifying every gap as a **Divergence** or an **Omission**.
 
-**(b) Non-lexical engine-narration limb:** Can you produce a coherent end-to-end account
-of how this system works, in the system's own native terms, using only the KB?
+Both stages are performed by you in sequence. The Stage 1 restriction (KB-only) is strict:
+produce the reconstruction FIRST, then and only then consult source in Stage 2.
 
-Both limbs are **independent FAIL sources** — a clean per-term quiz does NOT excuse a
-broken engine-narration, and vice versa.
+---
 
-**⚠️ STRICT CLEAN-CONTEXT (stronger than other mandates):**
-You MUST use ONLY the KB documents (`.aid/knowledge/*.md`). Do NOT consult:
+## Stage 1: Reconstruct (KB-Only)
+
+**STRICT CLEAN-CONTEXT (stronger than other mandates):**
+In Stage 1 you MUST use ONLY the KB documents (`.aid/knowledge/*.md`). Do NOT consult:
 - The project source code
 - The project-index or discovery generation artifacts
 - The candidate-concepts list
 - Any prior review results or grades
 - Any system knowledge outside the KB
 
-If you cannot find a definition or narration support in the KB alone, that IS a
-teach-back FAIL — do not supplement from general knowledge.
+If the KB does not let you answer a probe, record exactly what the KB supplied and where
+you were left uncertain -- that gap is Stage 1's finding, and Stage 2 will classify it.
 
-**⚠️ CONTAMINATION PREVENTION:**
+**CONTAMINATION PREVENTION:**
 - Do NOT reference prior grades or review history
-- Do NOT say "re-review" — approach the KB fresh
+- Do NOT say "re-review" -- approach the KB fresh
 
-### The fixed question set
+### The essence probe set
 
-The orchestrator inlines the deterministic question set derived from
-`candidate-concepts.md` (via `kb-teachback-questions.sh`) below. Every listed term is a
-cross-source concept the KB must support defining. The final question is the
-engine-narration question.
+The orchestrator inlines the derived essence probe set (output of
+`.cursor/aid/scripts/kb/kb-dual-intent-probes.sh essence`) below. The probes are seeded
+from the project's own C4 vocabulary doc, C9 capability doc, and D decisions doc -- they
+are deterministic and fixed for this review cycle.
 
---- BEGIN TEACH-BACK QUESTION SET ---
+--- BEGIN ESSENCE PROBE SET ---
 {{TEACHBACK_QUESTIONS}}
---- END TEACH-BACK QUESTION SET ---
+--- END ESSENCE PROBE SET ---
 
-If the question set is empty (no `candidate-concepts.md` yet), answer only the
-engine-narration question: "Explain how this system works, in its own language."
+If the probe set is empty (no C4/C9/D docs present, or no `kb-dual-intent-probes.sh` output
+yet), answer only the fixed narrative probe: "What is this project, how does it work, and
+why is it shaped the way it is?"
 
-### Grading each question
+### Stage 1 output: the KB-only reconstruction
 
-**Per-term limb (all "What is X?" questions):**
+For each probe in the set, produce a KB-only answer:
+- State which KB doc(s) and section(s) support the answer (cite them explicitly).
+- If the KB does not support a complete answer, record what IS available and what is missing.
+- After answering all probes, write a concise **what/why/how project narrative** (3-10
+  sentences) using only the KB: what the project is, what it does for users, how its load-
+  bearing parts connect, and why it is shaped the way it is (key design decisions).
 
-For each term question, answer it using ONLY the KB, then self-score:
-- PASS: The KB lets you give the *definition-as-used-here* (not a generic dictionary
-  definition) with a specific KB anchor (doc + section). The answer must explain what
-  the term means IN THIS PROJECT.
-- FAIL: The KB does not let you define the term from the KB alone, OR you can only give
-  a generic dictionary definition with no KB anchor, OR you reach an undefined native
-  term while answering. Each FAIL = one `[HIGH]` `[TEACHBACK]` row.
+Label this block clearly:
 
-**Non-lexical engine-narration limb ("Explain how this system works"):**
+```
+## Stage 1: KB-Only Reconstruction
+[your probe answers and narrative here]
+```
 
-Answer this question using ONLY the KB. Produce an end-to-end narration of how the
-system works — how the load-bearing parts connect, what the system does, using the
-system's native terms throughout. Then self-score:
-- PASS: The narration is coherent end-to-end, uses only native terms from the KB, and
-  does not stall on any undefined concept or fail to connect the parts.
-- FAIL: The narration stalls on an undefined native term, cannot connect how the parts
-  fit together into a working account, or the KB does not support a coherent end-to-end
-  account — even if every individual coined term is defined. A narration FAIL is a
-  first-class FAIL source independent of the per-term quiz. Narration FAIL =
-  one `[HIGH]` `[TEACHBACK]` row naming the specific gap (which concept or flow
-  is unsupported).
+**Do NOT consult project source until Stage 2.**
 
-**Severity:** Every FAIL item from EITHER limb = `[HIGH]` `[TEACHBACK]` row.
+---
 
-**Verdict (single mechanism):** Teach-back is PASS iff zero open `[TEACHBACK]` rows.
-There is NO separate verdict sentinel — the rows ARE the verdict.
+## Stage 2: Confront (Source-Grounded)
 
-### Binary bar
+In Stage 2 you have **source access**. Compare each Stage 1 answer against the actual
+project -- code, configs, documentation outside the KB -- and classify every gap you find.
 
-This is a binary pass/fail per term and per narration. Do not grade on a curve. A
-concept the KB almost-defines, or a narration that mostly connects (but stalls on one
-load-bearing part), is a FAIL — the KB must close the loop completely for a concept the
-system uses as load-bearing.
+### The two failure classes
 
-### Output format
+| Class | When | Severity | Tag | FIX target |
+|-------|------|----------|-----|------------|
+| **Divergence** | The KB-only answer is FACTUALLY WRONG or MISLEADING vs the source. The KB states or implies something about the project that the source contradicts. | `[HIGH]` | `[FIDELITY]` | The KB misrepresents reality -- FIX by correcting the KB. |
+| **Omission** | A load-bearing source fact that a newcomer must grasp to understand the project was NOT present in the KB reconstruction. The reconstruction could not supply it. | `[MED]` | `[ESSENCE-GAP]` | The KB omits essence -- FIX by adding the missing fact to the KB. |
+
+**Only load-bearing omissions are FAIL items.** An omission is load-bearing when:
+- It is a core concept, design decision, or architectural fact without which the
+  project's what/why/how is incomplete or misleading to a newcomer;
+- OR a human reading the KB would form a materially wrong model of the project.
+
+Incidental details (version numbers, non-load-bearing specifics, minor implementation
+choices) that are not in the KB are NOT omission FAIL items.
+
+### Confrontation procedure
+
+For each probe answer in the Stage 1 reconstruction:
+
+1. **Locate the source-of-truth** for that probe (source code, config, authoritative docs).
+2. **Compare** the KB-only answer to the source-of-truth.
+3. **Classify** any gap:
+   - A factual contradiction between KB and source = Divergence = `[HIGH] [FIDELITY]`.
+   - A load-bearing fact in the source that the KB-only reconstruction could not supply
+     = Omission = `[MED] [ESSENCE-GAP]`.
+   - A match or an incidental-only gap = no FAIL item (note in evidence that the KB
+     is correct on this probe).
+
+4. **For the what/why/how narrative:** check that each claim in the narrative is
+   source-grounded. A narrative claim that contradicts source = Divergence.
+   A load-bearing narrative gap (a key "why" or "what" the KB omits) = Omission.
+
+### PASS contract
+
+The essence gate PASS = **no Divergence** + **load-bearing essence-coverage >= threshold**.
+
+- **Zero open `[HIGH] [FIDELITY]` rows** (no KB divergence from source).
+- **Load-bearing essence-coverage >= 90%** (at most 10% of load-bearing source facts are
+  missing from the KB reconstruction; minor/incidental gaps do not count toward this).
+
+Both conditions must hold. A KB with no Divergence but significant Omission still FAILs.
+A KB with even one Divergence FAILs regardless of coverage.
+
+The threshold (90%) is the starting-strict calibration value (feature-016 §8 / task-086).
+Task-086 wires this into `state-review.md`'s grade aggregation; this mandate emits the
+`[FIDELITY]`/`[ESSENCE-GAP]` rows whose count and severity the aggregation reads.
+
+---
+
+## Severity and verdict (single mechanism)
+
+**Severity:**
+- Every **Divergence** = `[HIGH]` `[FIDELITY]` row.
+- Every load-bearing **Omission** = `[MED]` `[ESSENCE-GAP]` row.
+
+**Verdict (single mechanism):** Essence is PASS iff zero open `[FIDELITY]` rows AND
+load-bearing essence-coverage >= threshold. There is NO separate verdict sentinel --
+the rows ARE the verdict. Task-086 wires the verdict-derivation grep:
+- Count rows with `[FIDELITY]` in Description AND Status in {Pending, Recurred}.
+- Count rows with `[ESSENCE-GAP]` in Description AND Status in {Pending, Recurred}.
+- `essence_verdict = PASS` iff both counts are within threshold.
+
+---
+
+## Binary bar
+
+This is a binary pass/fail per Divergence and per load-bearing Omission.
+
+- A KB claim that almost-matches source but is technically wrong is a Divergence FAIL.
+- An Omission of a core architectural fact (a newcomer would misunderstand the project
+  without it) is an Omission FAIL even if the KB "mostly" covers the project.
+- A KB that is silent on a fact the source confirms = Omission (not Divergence).
+- A KB that contradicts a source fact = Divergence.
+- Do not grade on a curve.
+
+---
+
+## Output format
 
 Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` using the
 7-column ledger schema:
@@ -96,17 +164,37 @@ Write all findings to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md` using t
 ```
 | # | Severity | Status | Doc | Line | Description | Evidence |
 |---|----------|--------|-----|------|-------------|----------|
-| TB-001 | [HIGH] | Pending | — | — | [TEACHBACK] Per-term FAIL: "relay-bridge" — KB has no definition of this term | Searched domain-glossary.md, architecture.md — no definition found |
-| TB-002 | [HIGH] | Pending | — | — | [TEACHBACK] Engine-narration FAIL: narration stalls at "dispatch cycle" — how the dispatch cycle initiates is not explained in KB | architecture.md describes components but not how dispatch cycle starts |
+| TB-001 | [HIGH] | Pending | architecture.md | -- | [FIDELITY] Divergence: KB states the pipeline uses two stages; source shows three stages (ingest, transform, load). KB misrepresents the pipeline shape. | src/pipeline.py lines 12-47: three distinct stage classes; KB architecture.md "two-stage pipeline" is factually wrong |
+| TB-002 | [MED]  | Pending | domain-glossary.md | -- | [ESSENCE-GAP] Omission: KB reconstruction could not supply the project's data retention policy (7-day rolling window); this is a load-bearing design constraint newcomers must know. | source/config/retention.yaml: retention_days=7; domain-glossary.md has no entry for retention or data lifecycle |
 ```
 
 - Use stable IDs: `TB-001`, `TB-002`, ...
-- Prefix every Description with `[TEACHBACK]`
+- Prefix every Description with `[FIDELITY]` (Divergence) or `[ESSENCE-GAP]` (Omission),
+  then the class name: "Divergence: ..." or "Omission: ..."
+- `Doc` column: the KB doc that should be corrected or extended to fix this finding.
+  Use `--` if the gap spans the whole KB (no single doc is the fix target).
+- `Line` column: `--` for essence findings (the gap is topical, not line-localized)
+  unless the Divergence is localized to a specific KB doc line.
 - Status: `Pending` for new findings
-- `Doc` column: use `—` for teach-back rows (the gap spans the whole KB, not one doc);
-  fill in a specific doc if the FAIL is localized to one document's scope
-- If re-reviewing: read existing `{{SCOPE}}-teachback.md`, update Status for your
-  prior rows (Pending→Fixed if resolved; Fixed→Recurred if regressed), append new
-  findings
+- If re-reviewing: read existing `{{SCOPE}}-teachback.md`, update Status for prior rows
+  (Pending->Fixed if resolved; Fixed->Recurred if regressed), append new findings.
 
-**No narrative, no summary sections — the ledger table is the entire output.**
+**No narrative, no summary sections -- the ledger table is the entire output.**
+
+---
+
+## Domain-generality note
+
+This mandate is domain-general. "Source" is whatever is the ground truth for the project
+under discovery:
+- For a **software project**: the source code, config files, README, and authoritative docs.
+- For a **data-ml project**: the schema definitions, pipeline configs, model cards, dataset
+  metadata, and notebooks.
+- For a **design project**: the design system tokens, component specs, Figma source of truth,
+  and style guides.
+- For a **content project**: the content model, editorial standards, published content, and
+  site configuration.
+- For a **methodology project**: the skill definitions, templates, and process artifacts.
+
+Use the project's own source as the ground truth, whatever form it takes. The `[FIDELITY]`
+and `[ESSENCE-GAP]` tags fire the same way across all domains.

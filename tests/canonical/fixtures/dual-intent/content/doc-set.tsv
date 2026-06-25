@@ -1,0 +1,7 @@
+filename	owner	presence
+content-model.md	aid-researcher-analyst	required
+authoring-conventions.md	aid-researcher-analyst	required
+content-map.md	aid-researcher-analyst	required
+content-inventory.md	aid-researcher-architecture	required
+domain-glossary.md	aid-researcher-analyst	required
+decisions.md	aid-researcher-analyst	optional

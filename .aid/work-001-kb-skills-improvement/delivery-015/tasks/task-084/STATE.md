@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~30m
+- **Notes:** Generalized reviewer-prompt-actback.md from single representative-task to Blind Work-Simulation limb (work-probe set, STATED/ASSUMED/REACH tagging, quality limb). All build gates pass: run_generator VERIFY PASS, DBI 0 failures, ASCII-only 29/0, dual-intent 38/0, actback-task 42/0.
 
 ---
 

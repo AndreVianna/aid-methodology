@@ -35,30 +35,63 @@ panel degrades gracefully (M2 finds no coverage evidence; M3 falls back to the
 engine-narration question only). This is not an error. (Output (a) is still emitted for
 diagnostic use, but the panel mandates consume only output (b).)
 
-Also run `kb-teachback-questions.sh` to produce the M3 question set:
+Also run `kb-dual-intent-probes.sh essence` to produce the M3 essence probe set
+(Intent 2 — Blind Reconstruction + Source Confrontation):
 
 ```bash
-bash .github/aid/scripts/kb/kb-teachback-questions.sh \
+bash .github/aid/scripts/kb/kb-dual-intent-probes.sh essence \
+  --doc-set .aid/generated/doc-set.tsv \
+  --kb-dir .aid/knowledge \
   --output .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt
 ```
 
-If `candidate-concepts.md` does not exist, the output contains only the fixed engine
-question. This is not an error.
+The essence probes are derived from the project's own C4 vocabulary doc, C9 capability
+doc, and D decisions doc — they are deterministic and self-sourced (no external corpus).
+If no C4/C9/D docs are present, the output contains only the fixed narrative probe. This
+is not an error.
 
-Also run `kb-actback-task.sh` to produce the M4 representative-task spec and
-operational-structure presence check:
+Also run `kb-dual-intent-probes.sh work` to produce the M4 derived work-probe set
+(Intent 1 — Blind Work-Simulation / assertiveness gate):
 
 ```bash
-bash .github/aid/scripts/kb/kb-actback-task.sh both \
+bash .github/aid/scripts/kb/kb-dual-intent-probes.sh work \
   --doc-set .aid/generated/doc-set.tsv \
   --kb-dir .aid/knowledge \
   --output .aid/.temp/review-pending/{{SCOPE}}-actback-task.md
 ```
 
-This emits both the representative-task spec (function 1) and the operational-structure
-presence table (function 2) in a single output file. The doc-set TSV is the
-`filename<TAB>owner<TAB>presence` file produced by `resolve_doc_set` during GENERATE.
-If the TSV does not exist yet, `kb-actback-task.sh` will exit 1 — run GENERATE first.
+The work probes are derived from the project's C9 capability doc + load-bearing spine
+dimensions (C5 data/contracts, C3 conventions, C2 parts, C6 quality), keyed to this
+project's doc-set. Deterministic: same doc-set + same C9 doc → byte-identical output.
+
+Also run `kb-actback-task.sh check` to produce the operational-structure presence check
+(the named first-class sections table that Step 1 in `reviewer-prompt-actback.md`
+reads):
+
+```bash
+bash .github/aid/scripts/kb/kb-actback-task.sh check \
+  --doc-set .aid/generated/doc-set.tsv \
+  --kb-dir .aid/knowledge \
+  --output .aid/.temp/review-pending/{{SCOPE}}-actback-presence.md
+```
+
+The operational-structure presence check is spine-keyed: it fires for whatever doc
+realizes each load-bearing dimension (C5 → Contracts, C3 → Conventions, C2 → Parts,
+C7 → Gotchas) in this project's doc-set. If the TSV does not exist yet, both
+`kb-dual-intent-probes.sh work` and `kb-actback-task.sh check` will exit 1 — run
+GENERATE first.
+
+The M4 `{{ACTBACK_TASK_SPEC}}` placeholder is populated by concatenating the work-probe
+set (from `kb-dual-intent-probes.sh work`) and the operational-structure presence check
+(from `kb-actback-task.sh check`):
+
+```bash
+cat .aid/.temp/review-pending/{{SCOPE}}-actback-task.md \
+    .aid/.temp/review-pending/{{SCOPE}}-actback-presence.md \
+  > .aid/.temp/review-pending/{{SCOPE}}-actback-task-full.md
+```
+
+Use `{{SCOPE}}-actback-task-full.md` as the content for `{{ACTBACK_TASK_SPEC}}`.
 
 **Brief preparation**
 
@@ -141,26 +174,30 @@ These checks use the same ledger row format as other M2 findings:
 | M2-NNN | [HIGH]   | Pending | schemas.md    | — | [M2] [AUTHORING-LAYOUT] Change Log section is not the last section -- content follows it | Line 147: "## Contracts" appears after "## Change Log" |
 ```
 
-**M3 — Teach-back (keystone):**
+**M3 — Essence Gate (keystone; Blind Reconstruction + Source Confrontation):**
 - Brief + `references/reviewer-prompt-teachback.md`
 - Substitute `{{SCOPE}}` in the FOCUS body.
-- Inline `{{SCOPE}}-teachback-questions.txt` contents for `{{TEACHBACK_QUESTIONS}}`.
+- Inline `{{SCOPE}}-teachback-questions.txt` contents for `{{TEACHBACK_QUESTIONS}}`
+  (the essence probe set produced by `kb-dual-intent-probes.sh essence` above).
 - **Stricter clean-context rule:** the M3 dispatch MUST NOT include project source
   files, the project-index, candidate-concepts.md, or any generation artifacts — the
-  reviewer sees ONLY the KB + the question set.
+  reviewer sees ONLY the KB + the essence probe set for Stage 1 (Reconstruct). Source
+  access is permitted only in Stage 2 (Confront).
 - Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md`
+  (rows prefixed `[FIDELITY]` or `[ESSENCE-GAP]`)
 
-**M4 — Operational Sufficiency (Act-back, keystone):**
+**M4 — Assertiveness Gate (keystone; Blind Work-Simulation):**
 - Brief + `references/reviewer-prompt-actback.md`
 - Substitute `{{SCOPE}}` in the FOCUS body.
-- Inline the full contents of `.aid/.temp/review-pending/{{SCOPE}}-actback-task.md`
-  (both the representative-task spec and the operational-structure presence table, as
-  produced by `kb-actback-task.sh both` in the pre-dispatch step above) for
-  `{{ACTBACK_TASK_SPEC}}`.
+- Inline the full contents of `.aid/.temp/review-pending/{{SCOPE}}-actback-task-full.md`
+  (the derived work-probe set from `kb-dual-intent-probes.sh work` + the
+  operational-structure presence check from `kb-actback-task.sh check`, as produced
+  and concatenated in the pre-dispatch step above) for `{{ACTBACK_TASK_SPEC}}`.
 - **Stricter clean-context rule:** the M4 dispatch MUST NOT include project source
   files, the project-index, candidate-concepts.md, or any generation artifacts — the
-  reviewer sees ONLY the KB + the representative-task spec and presence-check output.
+  reviewer sees ONLY the KB + the derived work-probe set and presence-check output.
 - Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-actback.md`
+  (rows prefixed `[ACTBACK]`)
 
 **Dispatch all 4 aid-reviewer sub-agents IN PARALLEL** (one message, 4 dispatches).
 
@@ -228,29 +265,34 @@ The reviewer writes both mandates' findings to the **single scratch ledger**
 deletes). Each pass writes its own rows before the next pass begins; the final
 ledger is the concatenation of both passes' findings.
 
-**Dispatch 2 — Clean-context teach-back reviewer (M3):**
+**Dispatch 2 — Clean-context essence reviewer (M3):**
 
 Dispatch ONE clean-context `aid-reviewer` (identical to the `panel: full` M3 dispatch):
 - Brief (rendered above) + `references/reviewer-prompt-teachback.md`
 - Substitute `{{SCOPE}}` in the FOCUS body.
-- Inline `{{SCOPE}}-teachback-questions.txt` contents for `{{TEACHBACK_QUESTIONS}}`.
+- Inline `{{SCOPE}}-teachback-questions.txt` contents for `{{TEACHBACK_QUESTIONS}}`
+  (the essence probe set produced by `kb-dual-intent-probes.sh essence` above).
 - **Stricter clean-context rule:** the M3 dispatch MUST NOT include project source
   files, the project-index, candidate-concepts.md, or any generation artifacts — the
-  reviewer sees ONLY the KB + the question set.
+  reviewer sees ONLY the KB + the essence probe set for Stage 1 (Reconstruct). Source
+  access is permitted only in Stage 2 (Confront).
 - Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-teachback.md`
+  (rows prefixed `[FIDELITY]` or `[ESSENCE-GAP]`)
 
-**Dispatch 3 — Clean-context act-back reviewer (M4):**
+**Dispatch 3 — Clean-context assertiveness reviewer (M4):**
 
 Dispatch ONE clean-context `aid-reviewer` (identical to the `panel: full` M4 dispatch):
 - Brief (rendered above) + `references/reviewer-prompt-actback.md`
 - Substitute `{{SCOPE}}` in the FOCUS body.
-- Inline the full contents of `.aid/.temp/review-pending/{{SCOPE}}-actback-task.md`
-  (both the representative-task spec and the operational-structure presence table) for
-  `{{ACTBACK_TASK_SPEC}}`.
+- Inline the full contents of `.aid/.temp/review-pending/{{SCOPE}}-actback-task-full.md`
+  (the derived work-probe set from `kb-dual-intent-probes.sh work` + the
+  operational-structure presence check from `kb-actback-task.sh check`, concatenated
+  in the pre-dispatch step above) for `{{ACTBACK_TASK_SPEC}}`.
 - **Stricter clean-context rule:** the M4 dispatch MUST NOT include project source
   files, the project-index, candidate-concepts.md, or any generation artifacts — the
-  reviewer sees ONLY the KB + the representative-task spec and presence-check output.
+  reviewer sees ONLY the KB + the derived work-probe set and presence-check output.
 - Ledger: write to `.aid/.temp/review-pending/{{SCOPE}}-actback.md`
+  (rows prefixed `[ACTBACK]`)
 
 **Dispatch all three IN PARALLEL** (one message, 3 dispatches). The sequential-passes
 reviewer handles M1/M2 internally; the clean-context teach-back reviewer handles
@@ -275,18 +317,21 @@ mode Step 6):**
 - Do NOT tell reviewers what was fixed or the previous grade
 - Do NOT say "re-review" — each mandate reviewer must approach fresh
 
-**⚠️ M3 ADDITIONAL CLEAN-CONTEXT RULE (both panel modes):** The Teach-back mandate
-reviewer MUST see ONLY the KB (`.aid/knowledge/*.md`) and the question set. Do NOT
-pass project source files, project-index, candidate-concepts.md, or any generation
-artifacts.
+**⚠️ M3 ADDITIONAL CLEAN-CONTEXT RULE (both panel modes):** The Essence Gate mandate
+reviewer MUST see ONLY the KB (`.aid/knowledge/*.md`) and the essence probe set for
+Stage 1 (Reconstruct). Do NOT pass project source files, project-index,
+candidate-concepts.md, or any generation artifacts during Stage 1. Source access is
+permitted ONLY in Stage 2 (Confront). Findings are tagged `[FIDELITY]` (Divergence)
+or `[ESSENCE-GAP]` (load-bearing Omission) — NOT `[TEACHBACK]`.
 
-**⚠️ M4 ADDITIONAL CLEAN-CONTEXT RULE (both panel modes):** The Act-back mandate
-reviewer MUST see ONLY the KB (`.aid/knowledge/*.md`) and the representative-task spec
-+ operational-structure presence check output (from `kb-actback-task.sh`). Do NOT pass
-project source files, project-index, candidate-concepts.md, or any generation artifacts.
+**⚠️ M4 ADDITIONAL CLEAN-CONTEXT RULE (both panel modes):** The Assertiveness Gate
+mandate reviewer MUST see ONLY the KB (`.aid/knowledge/*.md`) and the derived
+work-probe set + operational-structure presence check output (from
+`kb-dual-intent-probes.sh work` + `kb-actback-task.sh check`). Do NOT pass project
+source files, project-index, candidate-concepts.md, or any generation artifacts.
 The reviewer may cite a KB doc's `sources:` frontmatter to note "the KB defers this to
 source" (which is itself an `[ACTBACK]` insufficiency finding), but does NOT read the
-source file.
+source file. Findings are tagged `[ACTBACK]`.
 
 ---
 
@@ -327,10 +372,12 @@ their own rows' Status in their scratch ledgers. Merge rule:
    monotonic within each mandate's namespace and never reassigned to a different
    finding.
 4. Each Description must carry its mandate marker prefix (`[M1]`, `[M2]`,
-   `[TEACHBACK]`, or `[ACTBACK]`) — the mandate reviewers have written these;
-   verify they are present. (The M2 Anatomy rows additionally carry their finding-type
-   tag, e.g. `[KB-MISSING]`, `[CAL-COVERAGE]`, `[CAL-HOLLOW]`, `[CAL-TRANSCRIPTION]`,
-   `[CAL-DEFERRAL]`, after the `[M2]` prefix.)
+   `[FIDELITY]`, `[ESSENCE-GAP]`, or `[ACTBACK]`) — the mandate reviewers have
+   written these; verify they are present. M3 rows carry `[FIDELITY]` (Divergence)
+   or `[ESSENCE-GAP]` (load-bearing Omission); M4 rows carry `[ACTBACK]`. (The M2
+   Anatomy rows additionally carry their finding-type tag, e.g. `[KB-MISSING]`,
+   `[CAL-COVERAGE]`, `[CAL-HOLLOW]`, `[CAL-TRANSCRIPTION]`, `[CAL-DEFERRAL]`, after
+   the `[M2]` prefix.)
 
 Write the merged result to `.aid/.temp/review-pending/{{SCOPE}}.md` (the canonical
 ledger, 7-column schema).
@@ -348,32 +395,60 @@ to the grader. No `grade.sh` change.
 
 The grade is printed to stdout; `--explain` breakdown to stderr.
 
-**2c. Derive the teach-back verdict**
+**2c. Derive the essence verdict (Intent 2 — Blind Reconstruction + Source Confrontation)**
 
-The teach-back verdict is NOT a stored sentinel. Read it directly from
-`.aid/.temp/review-pending/{{SCOPE}}.md`:
+The essence verdict is NOT a stored sentinel. Read it directly from
+`.aid/.temp/review-pending/{{SCOPE}}.md`.
 
-- Count rows where Description contains `[TEACHBACK]` AND Status is in {Pending, Recurred}.
-- `teach_back_verdict = PASS` iff count == 0, else `FAIL`.
+**Essence gate PASS thresholds (both conditions must hold):**
+1. **Zero `[HIGH] [FIDELITY]` rows open** — no Divergence (KB contradicts source).
+   Count rows where Description contains `[FIDELITY]` AND Status is in {Pending, Recurred}.
+   If count > 0: essence_verdict = FAIL (Divergence threshold violated).
+2. **Load-bearing essence-coverage >= 90%** — at most 10% of load-bearing source facts
+   missing from the KB reconstruction.
+   Count rows where Description contains `[ESSENCE-GAP]` AND Status is in {Pending, Recurred}.
+   Let total_load_bearing = (open `[ESSENCE-GAP]` count) + (load-bearing facts covered by
+   the KB reconstruction, per the M3 reviewer's Stage 2 evidence). If the open gap count
+   exceeds 10% of total_load_bearing: essence_verdict = FAIL (coverage threshold violated).
+   If total_load_bearing cannot be derived from the ledger alone, apply the conservative
+   rule: any open `[ESSENCE-GAP]` row with `[HIGH]` or `[MED]` severity caps the verdict
+   at FAIL until the M3 reviewer confirms the coverage ratio.
 
-Both per-term FAIL items and engine-narration FAIL items are ordinary `[HIGH]`
-`[TEACHBACK]` rows. Any open `[TEACHBACK]` row forces grade <= D (because `[HIGH]`
-rows make grade <= D in `grade.sh`) — the teach-back hard gate is realized entirely
-through the merged rows. No separate boolean, no AND to reconcile.
+`essence_verdict = PASS` iff both conditions hold, else `FAIL`.
 
-**2d. Derive the act-back verdict**
+Divergence FAIL items are ordinary `[HIGH] [FIDELITY]` rows; load-bearing Omission FAIL
+items are ordinary `[MED] [ESSENCE-GAP]` rows. Any open `[FIDELITY]` row forces grade
+<= D (because `[HIGH]` rows make grade <= D in `grade.sh`) — the essence hard gate is
+realized entirely through the merged rows. No separate boolean, no AND to reconcile.
 
-The act-back verdict is NOT a stored sentinel. Read it directly from
-`.aid/.temp/review-pending/{{SCOPE}}.md`:
+**2d. Derive the assertiveness verdict (Intent 1 — Blind Work-Simulation)**
 
-- Count rows where Description contains `[ACTBACK]` AND Status is in {Pending, Recurred}.
-- `act_back_verdict = PASS` iff count == 0, else `FAIL`.
+The assertiveness verdict is NOT a stored sentinel. Read it directly from
+`.aid/.temp/review-pending/{{SCOPE}}.md`.
 
-Both plan-correctness FAIL items and sufficiency FAIL items (convention / invariant /
-gotcha / contract) are ordinary `[HIGH]` `[ACTBACK]` rows. Any open `[ACTBACK]` row
-forces grade <= D (because `[HIGH]` rows make grade <= D in `grade.sh`) — the act-back
-hard gate is realized entirely through the merged rows, the sibling-keystone mechanism.
-No separate boolean, no AND to reconcile.
+**Assertiveness gate PASS thresholds (all three conditions must hold):**
+1. **Zero `[HIGH] [ACTBACK]` rows open** — no load-bearing ASSUMED/REACH step and no
+   quality-contract FAIL.
+   Count rows where Description contains `[ACTBACK]` AND Status is in {Pending, Recurred}.
+   If count > 0: assertiveness_verdict = FAIL.
+2. **STATED-coverage >= 90%** — at least 90% of plan steps across all work probes must
+   be tagged STATED (KB explicitly gave the contract, convention, invariant, or schema
+   shape needed). The M4 reviewer's STATED/ASSUMED/REACH tagging in the ledger evidence
+   is the source; if the reviewer did not record step counts, apply the conservative rule:
+   any open `[ACTBACK]` row implies the threshold is violated.
+3. **All quality-contracts present** — the operational-structure presence check (inlined
+   as part of `{{ACTBACK_TASK_SPEC}}`) confirms the named first-class sections
+   (`## Conventions`, `## Invariants`, `## Gotchas`, `## Contracts`) are present in the
+   docs that own them (per the spine-keyed owning-table). An absent required section is
+   itself an `[ACTBACK]` row in the M4 ledger; if any such row is open, this condition
+   fails automatically.
+
+`assertiveness_verdict = PASS` iff all three conditions hold, else `FAIL`.
+
+All FAIL items (plan-correctness, sufficiency, quality) are ordinary `[HIGH] [ACTBACK]`
+rows. Any open `[ACTBACK]` row forces grade <= D (because `[HIGH]` rows make grade <= D
+in `grade.sh`) — the assertiveness hard gate is realized entirely through the merged rows,
+the sibling-keystone mechanism. No separate boolean, no AND to reconcile.
 
 **2e. Delete the transient scratch ledgers**
 
@@ -390,7 +465,9 @@ rm -f \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-a.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-b.md \
   .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt \
-  .aid/.temp/review-pending/{{SCOPE}}-actback-task.md
+  .aid/.temp/review-pending/{{SCOPE}}-actback-task.md \
+  .aid/.temp/review-pending/{{SCOPE}}-actback-presence.md \
+  .aid/.temp/review-pending/{{SCOPE}}-actback-task-full.md
 ```
 
 For **`panel: collapsed`**:
@@ -402,7 +479,9 @@ rm -f \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-a.md \
   .aid/.temp/review-pending/{{SCOPE}}-oracle-b.md \
   .aid/.temp/review-pending/{{SCOPE}}-teachback-questions.txt \
-  .aid/.temp/review-pending/{{SCOPE}}-actback-task.md
+  .aid/.temp/review-pending/{{SCOPE}}-actback-task.md \
+  .aid/.temp/review-pending/{{SCOPE}}-actback-presence.md \
+  .aid/.temp/review-pending/{{SCOPE}}-actback-task-full.md
 ```
 
 `{{SCOPE}}.md` is now the single source FIX reads, exactly as before.
@@ -421,9 +500,9 @@ bash .github/aid/scripts/config/read-setting.sh --skill discover --key minimum_g
 
 Compute:
 - `ready = (grade >= minimum_grade)`
-- `teach_back_display = PASS` or `FAIL` (from Step 2c)
-- `act_back_display = PASS` or `FAIL` (from Step 2d)
-- If `ready` and `teach_back_verdict == PASS` and `act_back_verdict == PASS`: `outcome = "Ready"`
+- `essence_display = PASS` or `FAIL` (from Step 2c — essence verdict)
+- `assertiveness_display = PASS` or `FAIL` (from Step 2d — assertiveness verdict)
+- If `ready` and `essence_verdict == PASS` and `assertiveness_verdict == PASS`: `outcome = "Ready"`
 - Otherwise: `outcome = "NOT Ready"`
 
 Update `.aid/knowledge/STATE.md` `## Review History` with the new entry. Record the
@@ -434,7 +513,7 @@ If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via
 
 Print:
 ```
-Grade: {grade} | Teach-back: {PASS|FAIL} | Act-back: {PASS|FAIL} -> {Ready|NOT Ready}
+Grade: {grade} | Essence: {PASS|FAIL} | Assertiveness: {PASS|FAIL} -> {Ready|NOT Ready}
 [Review 3/3] Grade: {grade}. Minimum: {min}. Run /aid-discover again to {fix issues|proceed}.
 ```
 
@@ -448,49 +527,61 @@ exist; **CHAIN** → [State: FIX] otherwise. Both continue inline.
 ### Grade Aggregation Summary
 
 The merge-and-grade logic is the same regardless of `review.panel` mode. All four
-mandates produce rows in the merged `{{SCOPE}}.md`; the grader, teach-back gate,
-and act-back gate are mode-agnostic.
+mandates produce rows in the merged `{{SCOPE}}.md`; the grader, essence gate,
+and assertiveness gate are mode-agnostic.
+
+**Dual-intent gate tag reference:**
+
+| Intent | Gate | Tags | Severity | Threshold |
+|--------|------|------|----------|-----------|
+| Intent 2 -- Essence (M3) | Essence Gate | `[FIDELITY]` (Divergence) | `[HIGH]` | Zero open `[FIDELITY]` rows |
+| Intent 2 -- Essence (M3) | Essence Gate | `[ESSENCE-GAP]` (Omission) | `[MED]` | Load-bearing coverage >= 90% |
+| Intent 1 -- Assertiveness (M4) | Assertiveness Gate | `[ACTBACK]` (all FAIL classes) | `[HIGH]` | Zero open `[ACTBACK]` rows + STATED >= 90% + all quality-contracts present |
 
 ```
 panel: full  (brownfield-large)
   1. Four mandate reviewers run in parallel (M1..M4), each writing to its own
-     scratch ledger. M3 writes one [HIGH] [TEACHBACK] row per FAIL item (per-term
-     AND engine-narration FAILs alike -- no separate verdict sentinel). M4 writes
-     one [HIGH] [ACTBACK] row per FAIL item (plan-correctness AND sufficiency FAILs
-     alike -- no separate verdict sentinel).
+     scratch ledger. M3 writes [HIGH] [FIDELITY] rows for Divergence FAILs and
+     [MED] [ESSENCE-GAP] rows for load-bearing Omission FAILs (no separate
+     verdict sentinel). M4 writes one [HIGH] [ACTBACK] row per FAIL item
+     (plan-correctness, sufficiency, AND quality FAILs alike -- no separate
+     verdict sentinel).
   2. Orchestrator MERGES all 4 scratch ledgers into {{SCOPE}}.md (stable per-mandate
-     IDs M1-NNN/M2-NNN/TB-NNN/AB-NNN; [M1]/[M2]/[TEACHBACK]/[ACTBACK] description
-     prefixes), then DELETES the 4 transient scratch ledgers.
+     IDs M1-NNN/M2-NNN/TB-NNN/AB-NNN; [M1]/[M2]/[FIDELITY] or [ESSENCE-GAP]/[ACTBACK]
+     description prefixes), then DELETES the 4 transient scratch ledgers.
 
 panel: collapsed  (brownfield-small only)
   1. ONE reviewer runs M1/M2 as separate sequential passes in one agent,
      writing both passes' findings to {{SCOPE}}-content.md (mandate rows
      M1-NNN/M2-NNN). ONE clean-context reviewer handles M3, writing
-     [HIGH] [TEACHBACK] rows to {{SCOPE}}-teachback.md. ONE clean-context reviewer
-     handles M4, writing [HIGH] [ACTBACK] rows to {{SCOPE}}-actback.md. All three
-     dispatches run in parallel with each other (M1-M2 sequential WITHIN dispatch 1
-     only).
+     [HIGH] [FIDELITY] and [MED] [ESSENCE-GAP] rows to {{SCOPE}}-teachback.md.
+     ONE clean-context reviewer handles M4, writing [HIGH] [ACTBACK] rows to
+     {{SCOPE}}-actback.md. All three dispatches run in parallel with each other
+     (M1-M2 sequential WITHIN dispatch 1 only).
   2. Orchestrator MERGES the 3 scratch ledgers ({{SCOPE}}-content.md +
      {{SCOPE}}-teachback.md + {{SCOPE}}-actback.md) into {{SCOPE}}.md (same stable
-     per-mandate IDs and [Mi]/[TEACHBACK]/[ACTBACK] description prefixes as full
-     mode), then DELETES all three transient scratch ledgers. The merged {{SCOPE}}.md
-     is structurally identical to the full-mode output -- same 7-column schema, same
-     mandate ID namespaces.
+     per-mandate IDs and [M1]/[M2]/[FIDELITY] or [ESSENCE-GAP]/[ACTBACK] description
+     prefixes as full mode), then DELETES all three transient scratch ledgers. The
+     merged {{SCOPE}}.md is structurally identical to the full-mode output -- same
+     7-column schema, same mandate ID namespaces.
 
 Both modes:
   3. grade = grade.sh {{SCOPE}}.md    # EXISTING grader, unchanged. Worst-severity
                                       # dominates, counts Status in {Pending,Recurred}.
-                                      # Any open [TEACHBACK] OR [ACTBACK] row forces
+                                      # Any open [FIDELITY] OR [ACTBACK] row forces
                                       # grade <= D.
 
-  4. READY iff grade >= minimum_grade # Single gate. An open teach-back OR act-back
+  4. READY iff grade >= minimum_grade # Single gate. An open essence OR assertiveness
                                       # gap is a [HIGH] row -> grade <= D -> not Ready.
                                       # No second boolean, no AND/OR to reconcile.
 
-  5. teach_back verdict = FAIL iff any open [TEACHBACK] row, else PASS.
-     act_back verdict   = FAIL iff any open [ACTBACK] row,   else PASS.
+  5. essence_verdict = FAIL iff any open [FIDELITY] row, OR
+                                load-bearing essence-coverage < 90%, else PASS.
+     assertiveness_verdict = FAIL iff any open [ACTBACK] row, OR
+                                STATED-coverage < 90%, OR
+                                any quality-contract absent, else PASS.
 
-  6. STATE + print report the TRIPLE: "Grade: <g> | Teach-back: <v> | Act-back: <v>"
+  6. STATE + print report the TRIPLE: "Grade: <g> | Essence: <v> | Assertiveness: <v>"
 ```
 
 **Why merge rather than keep four ledgers:** FIX (`state-fix.md`) and `grade.sh` are
@@ -498,5 +589,5 @@ built around ONE `<scope>.md` per skill invocation. Merging to the single ledger
 FIX, `grade.sh`, and the schema unchanged — the panel is an input-side fan-out that
 collapses back to the existing single-ledger contract before grading. The collapsed
 mode produces the same merged output — `{{SCOPE}}.md` with the same schema and the
-same per-mandate ID namespaces — so FIX, `grade.sh`, the teach-back gate, and the
-act-back gate are entirely unaware of which panel mode was used.
+same per-mandate ID namespaces — so FIX, `grade.sh`, the essence gate, and the
+assertiveness gate are entirely unaware of which panel mode was used.

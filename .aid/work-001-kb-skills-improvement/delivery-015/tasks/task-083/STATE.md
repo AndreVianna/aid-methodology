@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~90m
+- **Notes:** Implemented `canonical/aid/scripts/kb/kb-dual-intent-probes.sh` (work|essence|both|check-cache subcommands). Fixtures under `tests/canonical/fixtures/dual-intent/` (data-ml + design, good-kb + shallow-kb). Test suite `tests/canonical/test-dual-intent-self-eval.sh` (38 tests, all PASS). ASCII allow-list entry added. run_generator.py VERIFY PASS, DBI 559/0, ascii-only 29/0.
 
 ---
 
