@@ -72,7 +72,7 @@
 {"dst": ".agent/aid/scripts/kb/build-kb-index.sh", "profile": "antigravity", "sha256": "ef121545913f895750a73026592401e31b31eebea1deff270460418bb27da669", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".agent/aid/scripts/kb/build-metrics.sh", "profile": "antigravity", "sha256": "09d3aee07f333d96352f78161ec4a9420cbca7c906213883f0a4a97a0c21300c", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".agent/aid/scripts/kb/build-project-index.sh", "profile": "antigravity", "sha256": "fade1ea3c4fd3ae7f116d1381e88763c46c26c10c142b9bdb3c0a4baf732cee6", "src": "canonical/scripts/kb/build-project-index.sh"}
-{"dst": ".agent/aid/scripts/kb/closure-check.sh", "profile": "antigravity", "sha256": "0b3bee4bc9516338a236a0c1f98e2098704bbf51eb24de0a2302c3d7dec938d5", "src": "canonical/scripts/kb/closure-check.sh"}
+{"dst": ".agent/aid/scripts/kb/closure-check.sh", "profile": "antigravity", "sha256": "074568d1219c9e06d424a9e9f063f30627d75513038cf147b547bee96af79a55", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".agent/aid/scripts/kb/coined-term-denylist.txt", "profile": "antigravity", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".agent/aid/scripts/kb/discover-preflight.sh", "profile": "antigravity", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".agent/aid/scripts/kb/harvest-coined-terms.sh", "profile": "antigravity", "sha256": "c386fb935463450428a7a53d84e0fe33d6ea50e5cecf39f0b91e6d4ae1f28546", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}

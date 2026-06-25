@@ -317,17 +317,42 @@ norm_terms() {
   }'
 }
 
-# Normalized defined-identifier set (each heading identifier slash-split + singularized).
+# Normalized defined-identifier set (each heading/alias identifier slash-split + singularized).
 DEFINED_NORM="${TMPDIR_CC}/defined_norm.txt"
 norm_terms < "$DEFINED_FILE" 2>/dev/null | LC_ALL=C sort -u > "$DEFINED_NORM" || true
 
+# Pre-compute the UNDEFINED subset of the universe in ONE awk pass (performance: the previous
+# per-term approach spawned an awk + greps per universe term and re-globbed the doc list each
+# time, which timed out on a large universe). A term is "defined" iff EVERY slash-split (#1) +
+# singularized (#2) part is a defined identifier; only NOT-defined terms need a doc scan.
+UNDEFINED_FILE="${TMPDIR_CC}/undefined.txt"
+awk -v dnf="$DEFINED_NORM" '
+  function sing(t) {
+    if (t ~ /ies$/)                  sub(/ies$/, "y", t)
+    else if (t ~ /(s|x|z|ch|sh)es$/) sub(/es$/, "", t)
+    else if (t ~ /[a-z][^s]s$/)      sub(/s$/, "", t)
+    return t
+  }
+  BEGIN { while ((getline d < dnf) > 0) { gsub(/^[ \t]+|[ \t]+$/,"",d); if (d!="") DEF[d]=1 } }
+  {
+    line=$0; n=split(line, P, "/"); alldef=1
+    for (i=1; i<=n; i++) {
+      t=P[i]; gsub(/^[ \t]+|[ \t]+$/,"",t); t=sing(tolower(t))
+      if (t=="") continue
+      if (!(t in DEF)) { alldef=0; break }
+    }
+    if (!alldef) print line
+  }
+' "$UNIVERSE_FILE" > "$UNDEFINED_FILE" 2>/dev/null || true
+
+# Glob the KB doc list ONCE (was re-run per term).
+DOC_LIST="${TMPDIR_CC}/doc_list.txt"
+find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' 2>/dev/null | sort > "$DOC_LIST" || true
+
 # ---------------------------------------------------------------------------
 # Output (a) computation:
-#   For each term in UNIVERSE_FILE, scan KB docs for occurrences.
-#   A term is "defined" iff EVERY slash-split, singularized part is a defined identifier
-#   (rules #1/#2). A term USED in a KB doc body that is not defined is an ungrounded term.
-#   Output one row per (term, doc) pair where it is used.
-#
+#   Only NOT-defined terms (pre-computed above) reach the doc scan. A term USED in a KB doc
+#   body that is not defined is an ungrounded term. Output one row per (term, doc) pair.
 #   Doc scanning: literal, case-insensitive (grep -i -F) on the original term.
 # ---------------------------------------------------------------------------
 OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
@@ -338,43 +363,26 @@ OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
   echo "| term | used-in-doc | anchor |"
   echo "|------|-------------|--------|"
 
-  if [[ -d "$KB_DIR" ]] && [[ -s "$UNIVERSE_FILE" ]]; then
+  if [[ -d "$KB_DIR" ]] && [[ -s "$UNDEFINED_FILE" ]]; then
     while IFS= read -r term; do
       [[ -z "$term" ]] && continue
-
-      # Skip if already defined. Defined terms are clean IDENTIFIERS (heading text with any
-      # "(explanation)" stripped). A used term resolves to the spine iff EVERY slash-split,
-      # singularized part of it (rules #1/#2) is a defined identifier. So "canonical / profile"
-      # resolves when both "canonical" and "profile" are defined, and "tasks" resolves to "task".
-      term_defined=1
-      while IFS= read -r _part; do
-        [[ -z "$_part" ]] && continue
-        grep -qixF -- "$_part" "$DEFINED_NORM" 2>/dev/null || { term_defined=0; break; }
-      done < <(printf '%s\n' "$term" | norm_terms)
-      [[ "$term_defined" == "1" ]] && continue
-
-      # Scan KB docs for this term
       while IFS= read -r doc; do
         [[ -f "$doc" ]] || continue
         doc_base="$(basename "$doc")"
 
         # Check if term appears in doc (literal, case-insensitive; -F: no regex)
         if LC_ALL=C grep -qiF -- "$term" "$doc" 2>/dev/null; then
-          # Find a representative anchor line (first match, limited context).
-          # `head -1` closes the pipe after one line; under `set -euo pipefail` the upstream
-          # `grep` then catches SIGPIPE (exit 141) on multi-match docs and would abort the
-          # script. The anchor line is already captured, so swallow the SIGPIPE with `|| true`.
+          # Representative anchor (first match). `head -1` closes the pipe early; under
+          # `set -euo pipefail` the upstream grep then catches SIGPIPE (141), so `|| true`.
           anchor=$(LC_ALL=C grep -iF -- "$term" "$doc" 2>/dev/null \
             | head -1 \
             | sed 's/^[[:space:]]*//' \
             | cut -c1-80 || true)
-          # Escape pipes in anchor
           anchor=$(echo "$anchor" | tr '|' '/')
           printf '| %s | %s | %s |\n' "$term" "$doc_base" "$anchor"
         fi
-      done < <(find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
-
-    done < "$UNIVERSE_FILE"
+      done < "$DOC_LIST"
+    done < "$UNDEFINED_FILE"
   fi
 } > "$OUTPUT_A_TMP"
 
