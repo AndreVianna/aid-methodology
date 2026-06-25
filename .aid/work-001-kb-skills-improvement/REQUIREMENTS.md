@@ -23,6 +23,7 @@
 | 2026-06-23 | greenfield de-scope — greenfield is no longer a generation path: recon **detects** it (~0 source) and `aid-discover` **signposts to /aid-interview and halts**. The two generation paths are brownfield-small/large. §1.5 matrix/prose, FR-20/21/22, §4 (O7), §9 AC7, §10 updated; forward-authored greenfield KB-seed deferred to a future interview-side work | user decision |
 | 2026-06-23 | **operational-sufficiency / act-back gate added (post-detail)** — closes the **agent-actionability gap**: the existing gates (teach-back, calibration, closure, correctness) verify *comprehension* + *correctness* but none verifies *actionability* (could an agent, given only the KB, correctly DO a representative change, and where is it forced to guess / reach for source). Adds **FR-36** (the act-back mandate — a 6th panel mandate, the operational sibling of teach-back, reusing f005's panel + `grade.sh`) + **AC16** (the matching acceptance bar). KB's primary purpose is operating guidance for an AI agent, not just human onboarding; act-back certifies it. **feature-013-operational-sufficiency** (Must) extends f005/f003 | user decision |
 | 2026-06-25 | **`kb.html` summary redesign added (feature-015)** — feature-014 made the KB domain-driven + diagram-free, but `/aid-summarize` (which renders `kb.html`) was never updated and still selects a software project-TYPE profile, covers 0 of 7 custom docs, cites a phantom `repo-presentation.md`, hardcodes a stale `noscript` list, and caps the grade at C+ unless N Mermaid diagrams exist. **Foundational reframing:** `kb.html` is a **different product** for a **non-technical newcomer** — visually rich, the KB no-diagrams rule does NOT apply. Adds **§5.K / FR-45–FR-51** (doc-set/domain-driven input · concept-first content components · best-format-per-fact + completeness grading · newcomer tone · page-shell consistency with home.html/index.html · data-driven deterministic generation · pre-render inline-SVG visuals + drop the 3MB Mermaid engine + a NEW visual-fidelity gate) within the C1/C2/C3/C5/C6 + page-shell guardrails. **feature-015** (Must), **two deliveries** (D-011 correctness-core → D-012 visual & engineering). Server gzip/cache = fast-follow, OUT. Source: `.aid/design/aid-summarize-redesign.md` | user decision |
+| 2026-06-25 | **dual-intent KB self-evaluation + spine-keyed depth added (feature-016)** — feature-014 generalized discovery's *architecture* (the spine + the domain→doc-set matrix) but left two depth/sufficiency mechanisms **filename-keyed and software-only**: the per-doc **depth contract** (`document-expectations.md`, keyed by `### <filename>`) covers only **22** of the **58** unique filenames the matrix can emit, a **36-doc dangling-anchor gap** (58 emittable − 22 covered; incl. the shared `glossary.md`/`tooling-stack.md` + all non-software domain docs) → the GENERATE custom-doc prompt points at a **dangling anchor** (those docs get only the generic spine question); and `kb-actback-task.sh`'s task selector + `_doc_expects_class` owning-table are filename-keyed → off-software the task degrades to "add an endpoint" and the operational-class presence check is **empty** (both VERIFIED). A modest **altitude-rule signature tax** also evicted load-bearing operational contracts (field types, exit codes) behind a bare `sources:` pointer. **Unifying fix:** lift everything domain-specific **filename-keyed → spine-dimension-keyed** (the matrix already carries the spine-dimension per doc) and **derive the self-evaluation probes from the project's own source + capabilities** — yielding a **Dual-Intent KB Self-Evaluation** that measures both user intents (an agent can do quality work from the KB alone = Blind Work-Simulation; a human can reconstruct the true essence from the KB alone = Blind Reconstruction + Source Confrontation) as domain-general REVIEW keystone gates with **no external test corpus**. Adds **§5.L / FR-52–FR-56** (spine-keyed depth contracts · spine-keyed safeguard + C9-derived task generation · the dual-intent self-eval's two limbs + ledger + convergence gates · the altitude signature exception · fixture validation + AID dogfood). **feature-016** (Must), **four deliveries** (D-013 depth → D-014 safeguard → D-015 self-eval → D-016 signature exception + dogfood); D-014→D-013, D-015→(D-013,D-014), D-016→D-015; the feature depends on feature-014 (already built). Source: `.aid/design/aid-discover-dual-intent-self-eval.md` | user decision |
 
 ## 1. Objective
 
@@ -857,6 +858,91 @@ They are indirect consumers whose output quality is bounded by KB quality.
 > focus-trapped lightbox, a11y baseline, responsive layout, single-file self-containment) is
 > preserved — the redesign is information architecture + content + generation, not visual language.
 
+### L. Dual-intent KB self-evaluation + spine-keyed domain-general depth (feature-016)
+
+> feature-014 made discovery domain-general in **architecture** (the spine + the domain→doc-set
+> matrix), but two mechanisms that make a KB *useful* were left **filename-keyed and
+> software-only**: the per-doc **depth contract** (`document-expectations.md`, keyed by
+> `### <filename>`) and the **sufficiency safeguard** (`kb-actback-task.sh` + the M4 act-back
+> gate). For **36** of the **58** filenames the matrix can emit (58 emittable − 22 covered;
+> incl. the shared `glossary.md`/`tooling-stack.md` + all non-software domain docs), the depth
+> contract is a **dangling anchor** and the safeguard is **provably inert** (both VERIFIED). The fix is one
+> principle — **lift everything domain-specific from FILENAME-keyed → SPINE-DIMENSION-keyed** (the
+> matrix already records each doc's spine dimension) **and derive the self-evaluation probes from
+> the project's own source + capabilities** — and one mechanism: a **Dual-Intent KB
+> Self-Evaluation** that turns the two user intents into measurable, self-run REVIEW keystone
+> gates with **no external test corpus** (the project *is* the test). Source of record: the design
+> seed at `.aid/design/aid-discover-dual-intent-self-eval.md`.
+
+- **FR-52 (spine-keyed depth contracts).** The per-doc depth contract MUST be **keyed by spine
+  dimension, not by filename**: a **work-actionable depth standard authored once per spine
+  dimension** (C0–C9 + D) — e.g. the **C5** doc carries the data shapes/fields/types/constraints
+  **+ the extension procedure**; the **C3** doc carries the project's **actual conventions +
+  concrete examples + red-flags**; etc. — that **every** doc in any resolved doc-set (software,
+  data-ml, content, research, design, ops, methodology-tooling, or auto-researched) inherits via
+  its spine dimension. The GENERATE custom-doc prompt MUST be re-pointed at this dimension-keyed
+  standard so **no doc is left at a dangling `### <filename>` anchor**. Per-filename entries, where
+  present, become **optional additive refinements**, never the sole source of depth.
+  *(closes the dangling-anchor gap; generalizes today's software-only `document-expectations.md`.)*
+- **FR-53 (spine-keyed safeguard + C9-derived task generation).** `kb-actback-task.sh`'s
+  operational-class **owning-table** (`_doc_expects_class`) and its **representative-task selector**
+  MUST be re-keyed from filenames → **spine dimensions** (single-sourced from `concern-model.md`'s
+  "Operational guidance is first-class structure" owning-table, re-stated in dimension terms), so
+  the presence check fires on whatever doc realizes the owning dimension (`data-schemas.md` /
+  `design-tokens.md` exactly as `schemas.md`). The representative task MUST be **C9-derived and
+  domain-appropriate** — "add / modify / extend «a capability the project actually has»", seeded
+  from the **C9** capability/what-it-does doc — **not** a hardcoded "add an endpoint" fallback.
+  Determinism (NFR-3) is preserved (same doc-set + C9 doc → byte-identical task spec); the
+  byte-stable software seed and existing TSV-consumers stay green.
+  *(makes the f013 act-back safeguard fire off-software; the dangling-safeguard fix.)*
+- **FR-54 (Blind Work-Simulation — the assertiveness gate, Intent 1).** The REVIEW state MUST run a
+  domain-general **Blind Work-Simulation** limb (generalizing the M4 act-back keystone): a
+  clean-context, **KB-only** agent plans each derived **work probe** step-by-step in the project's
+  **own conventions**, tagging each step **STATED / ASSUMED / REACH**. Any **load-bearing
+  ASSUMED/REACH** is a `[HIGH] [ACTBACK]` insufficiency (FAIL → FIX target). The check is **quality,
+  not just functional**: a plan that would "work" but violates the project's conventions (C3),
+  invariants/gotchas, or quality bars (C6) is a **quality FAIL**. PASS = a complete, correct,
+  convention-honoring plan with **zero load-bearing insufficiencies**; this is a **hard keystone
+  gate** (a FAIL caps the grade). *(generalizes FR-36's act-back from one task to a derived probe
+  set with STATED/ASSUMED/REACH + a quality dimension.)*
+- **FR-55 (Blind Reconstruction + Source Confrontation — the essence gate, Intent 2).** The REVIEW
+  state MUST run a domain-general **essence** limb (generalizing the M3 teach-back keystone) in two
+  stages: (1) a clean-context **KB-only** agent reconstructs the project's what/why/how essence over
+  **essence probes** derived from the C4 vocabulary + C9 capabilities + D decisions + high-salience
+  source facts; (2) a second **source-grounded** agent **confronts** the reconstruction against the
+  actual project — a **Divergence** (KB-only answer WRONG vs source) is a `[HIGH] [FIDELITY]` FIX
+  target; a load-bearing **Omission** is a `[MED] [ESSENCE-GAP]` FIX target. PASS = **no divergence**
+  + load-bearing essence-coverage ≥ threshold; this is a **hard keystone gate**. The probes are
+  **derived from the project itself** (its source = ground truth; its capabilities = task seeds), so
+  the gates run for **any** domain with **no external test corpus**. *(generalizes FR-18's teach-back
+  with an explicit source-confrontation stage catching divergence, not just omission.)*
+- **FR-56 (altitude-rule signature exception).** The KB authoring altitude/summary+pointer rule
+  (`principles.md` P1(d)) MUST be amended so that **load-bearing operational contracts an agent must
+  honor to ACT** — field types, exit codes, the args/modes/invariants — are stated **INLINE or with
+  a precise grep-recoverable anchor**, **never** a bare `sources:` file pointer. The altitude rule
+  continues to de-bloat *narrative* volatility but MUST NOT evict *work-critical contracts*; the
+  Blind Work-Simulation limb (FR-54) enforces this automatically (if the agent must REACH for a
+  contract, it FAILs). AID's own KB re-injects the contracts the over-broad rule evicted (host-tool
+  matrix, exit-codes) as the first beneficiary. *(repairs the signature tax the two critique rounds
+  measured.)*
+
+> **Validation (must, applies to all of FR-52–FR-56) — fixtures + dogfood, no external corpus.**
+> Because there are **no in-the-wild non-software projects** to test on, the mechanism's generality
+> is proven with **fixtures**: per non-software domain (data-ml, design, content) a **GOOD** mini-KB
+> (must PASS both gates) and a **SHALLOW/WRONG** mini-KB (omits field types / diverges from a tiny
+> fixture "source" → must FAIL the right limb), extending the existing in-suite `actback-task`
+> fixture pattern. The tests assert the probe derivation is domain-appropriate (not "add an
+> endpoint"), the owning-table presence check fires on the domain's C5/C3 doc, the assertiveness
+> limb FAILs the SHALLOW KB, and the essence limb FAILs the WRONG KB. AID itself (software +
+> methodology) is the **live regression dogfood**. The concrete PASS thresholds the FR-54/FR-55
+> "≥ threshold" clauses reference (assertiveness % STATED, essence-coverage %) are a **deliberate
+> scoping deferral — calibrated in DETAIL / delivery-015** against the AID dogfood + the fixtures
+> (start strict: zero HIGH, ≥90% STATED), not an omission. The spine cardinality (the 11-dimension T2
+> contract), the matrix's domain set, the classifier, and `synth_default_seed`'s byte-stable
+> software seed are **untouched** — this feature *consumes* feature-014's spine, it does not grow it;
+> it reuses the existing `aid-reviewer` parallel panel + `grade.sh` + the 7-column ledger schema
+> (no new grading infra, no new agent enum value), consistent with feature-013.
+
 ## 6. Non-Functional Requirements
 
 > Quality attributes and **the budgets FR-23 references** (the cost/wall-clock/determinism
@@ -1048,6 +1134,19 @@ They are indirect consumers whose output quality is bounded by KB quality.
   and pre-rendered inline-SVG visuals + drop the 3MB Mermaid engine + the visual-fidelity gate
   (FR-51) — within the C1/C2/C3/C5/C6 + page-shell guardrails. **Two deliveries:** D-011
   correctness-core then D-012 visual & engineering. *(Server-side gzip/cache = fast-follow, OUT.)*
+- **Must (feature-016 — dual-intent KB self-evaluation + spine-keyed domain-general depth):** make
+  `/aid-discover` produce *useful* KBs off-software, not only on the two domains AID dogfooded, by
+  lifting everything domain-specific **filename-keyed → spine-dimension-keyed** and deriving the
+  self-eval probes from the project's own source + capabilities — spine-keyed depth contracts that
+  close the dangling-anchor gap (FR-52), the spine-keyed safeguard + C9-derived task generation that
+  makes the act-back gate fire off-software (FR-53), the **Dual-Intent KB Self-Evaluation** — Blind
+  Work-Simulation (assertiveness gate, Intent 1, FR-54) + Blind Reconstruction & Source Confrontation
+  (essence gate, Intent 2, FR-55), both domain-general REVIEW keystone gates with no external test
+  corpus — and the altitude-rule signature exception that keeps work-critical contracts inline
+  (FR-56). Proven by per-domain GOOD/SHALLOW fixtures + the AID dogfood. **Four deliveries:** D-013
+  depth → D-014 safeguard → D-015 self-eval → D-016 signature exception + dogfood; the feature
+  depends on feature-014 (already built). *(Consumes the spine; does not grow it. No new grading
+  infra / agent enum.)*
 - **Should (keep it fresh + clean):** per-doc staleness + change-triggered flagging (FR-5,
   FR-6, FR-7, FR-8), `aid-update-kb` + gap capture (FR-27, FR-28), `aid-ask` rename (FR-26),
   housekeep↔update-kb boundary (FR-33), closure-as-standing-invariant (FR-34),

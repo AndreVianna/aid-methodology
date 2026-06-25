@@ -13,8 +13,9 @@
 | 2026-06-23 | act-back insert — feature-013 (Operational-Sufficiency / act-back gate) inserted as the NEW delivery-005 (4 tasks, 027-030); the downstream paper deliveries shift down one (Validation 005->006, Freshness 006->007, Topology+Ship 007->008, Governance 008->009) and renumber contiguously. delivery-006 (Validation) gains ONE new task (task-039, the act-back V-E fixture family) and now depends on delivery-005. Work is now **9 deliveries / 55 tasks** (delivery-001..004 + tasks 001-026 are FROZEN/byte-untouched — delivery-001 is built). | user decision (feature-013) |
 | 2026-06-24 | domain-driven discovery insert — feature-014 added as **delivery-010** (8 tasks, 056-063) via the lite path; generalizes `/aid-discover` beyond software (FR-37–FR-44). EXECUTED + A+ delivery gate. Work is now **10 deliveries / 63 tasks**. | user decision (feature-014) |
 | 2026-06-25 | summary-redesign insert — feature-015 (`kb.html` domain-driven redesign) added as **two deliveries**: **delivery-011** (correctness core — Changes 1-5) and **delivery-012** (visual & engineering — Changes 6-7 + the §7 visual-fidelity gate), D-012 depending on D-011. Task breakdown is authored by `/aid-detail` (these stanzas + delivery SPEC/STATE are scoping-only placeholders). Work is now **12 deliveries**. | user decision (feature-015) |
+| 2026-06-25 | dual-intent self-eval insert — feature-016 (dual-intent KB self-evaluation + spine-keyed domain-general depth, FR-52–FR-56) added as **four deliveries**: **delivery-013** (spine-keyed depth contracts), **delivery-014** (generalize the safeguard + C9-derived task generation), **delivery-015** (the Dual-Intent KB Self-Evaluation — both limbs + ledger + convergence gates), **delivery-016** (altitude signature exception + AID dogfood + re-inject lost depth). Dependencies: D-014→D-013, D-015→(D-013,D-014), D-016→D-015; the feature depends on **feature-014** (already built/EXECUTED as delivery-010). Kept as four deliveries (not consolidated) — see the delivery-013 stanza for the grouping justification. Task breakdown is authored by `/aid-detail` (these stanzas + delivery SPEC/STATE are scoping-only placeholders). Work is now **16 deliveries**. | user decision (feature-016) |
 
-This plan decomposes work-001 into **12 deliveries**. The sequence is user-approved.
+This plan decomposes work-001 into **16 deliveries**. The sequence is user-approved.
 Each delivery is one branch/PR (`aid/work-001-delivery-NNN`). The strategy: build the
 **essence engine end-to-end first** (delivery-001 = the 'Relative bus' capability), then
 flip AID's own surfaces onto the new schema (INDEX, migration), scale it to project shape
@@ -242,6 +243,102 @@ consume settled contracts.
 > work):** server-side gzip/cache of the dashboard leaf (`dashboard/server/server.mjs` +
 > `server.py`) — highest-ROI perf fix but a different component (the server, not the skill).
 
+### delivery-013: Spine-Keyed Depth Contracts
+
+- **What it delivers:** closes the **dangling-anchor gap** feature-014 left (feature-016 Change 1,
+  FR-52). feature-014's `document-expectations.md` is keyed by `### <filename>` with entries for
+  the 17 software docs + the 7 `methodology-tooling` docs only; the ~20+ non-software filenames the
+  matrix can emit (`data-schemas.md`, `content-model.md`, `style-guide.md`, `design-tokens.md`,
+  `config-schemas.md`, the shared `glossary.md`, …) have **no entry**, so the GENERATE custom-doc
+  prompt (`state-generate.md` §2.6) points at a dangling anchor. This delivery authors a
+  **per-spine-dimension, work-actionable depth standard** (C0–C9 + D — the C5 doc carries
+  shapes/types/constraints + how-to-extend; the C3 doc carries the actual conventions + examples +
+  red-flags; etc.) and **re-points the custom-doc prompt at it** so every doc inherits its
+  dimension's standard, specialized to its content. The per-filename entries become optional
+  additive refinements. **Shippable midpoint:** every matrix doc (all domains) resolves to a
+  non-empty depth contract via its spine dimension.
+- **Features:** feature-016 (dual-intent self-eval + spine-keyed depth — Change 1 / FR-52)
+- **Depends on:** delivery-010 (feature-014 — the spine, the matrix's per-doc `spine-dimension`
+  column, `document-expectations.md`, and `state-generate.md` §2.6 this delivery re-keys)
+- **Priority:** Must
+
+> **Note (four deliveries, not consolidated — grouping justification).** feature-016's four changes
+> form a strict dependency chain with **independently shippable, independently gateable** midpoints:
+> the depth standard (D-013) is a content-authoring change to expectations + one prompt line; the
+> safeguard re-key (D-014) is a script/owning-table change; the dual-intent self-eval (D-015) is the
+> core REVIEW-state mechanism that **consumes both** (the depth standard is what the FIX loop drives
+> toward; the C9-derived task selector is the probe seed); the signature exception + dogfood (D-016)
+> is a principles edit + the live AID regression that **needs the gates built first** to enforce it.
+> D-013 and D-014 touch disjoint files (expectations/prompt vs the actback script) and could run in
+> parallel, but D-015 needs both, so the chain D-013→D-014→D-015→D-016 keeps each A+ gate scoped to
+> one coherent change-class (the [SPIKE]-style extend-after-base discipline f013/f014 followed).
+> Consolidating would force a single oversized A+ gate over four distinct change-classes and lose
+> the shippable D-013 midpoint (a depth standard useful even before the self-eval lands).
+
+### delivery-014: Generalize the Safeguard (spine-keyed owning-table + C9-derived tasks)
+
+- **What it delivers:** makes the f013 act-back safeguard **fire off-software** (feature-016
+  Change 2, FR-53). Today `kb-actback-task.sh`'s `_doc_expects_class` owning-table and `_run_task`
+  selector are filename-keyed software-only, so on a data/design doc-set the presence check emits
+  zero rows and the task degrades to "add an endpoint" (provably inert). This delivery **re-keys the
+  owning-table from filenames → spine dimensions** (single-sourced from `concern-model.md`'s
+  "Operational guidance is first-class structure" table, re-stated in dimension terms — the C5 doc
+  owns Contracts, the C3 doc owns Conventions, the C2 doc owns Conventions/Parts, the C7 doc owns
+  Gotchas), **carries the spine dimension into the doc-set substrate** the script reads, and replaces
+  the filename-profile heuristic with a **C9-derived, domain-appropriate** task selector ("add /
+  modify / extend «a capability the project actually has»"). Determinism is preserved (same doc-set +
+  C9 doc → byte-identical task spec); the byte-stable software seed + existing TSV-consumers stay
+  green. Tests: run on data/design fixtures → domain-appropriate task + non-empty presence check.
+- **Features:** feature-016 (Change 2 / FR-53)
+- **Depends on:** delivery-013 (the spine-keyed depth standard the safeguard's owning-table re-states
+  in dimension terms; the dimension keying is shared)
+- **Priority:** Must
+
+### delivery-015: The Dual-Intent KB Self-Evaluation (the core)
+
+- **What it delivers:** the **core mechanism** (feature-016 §4, FR-54 + FR-55) — turns the two user
+  intents into measurable, domain-general REVIEW keystone gates with **no external test corpus**.
+  Adds (a) **Blind Work-Simulation** (the assertiveness gate, Intent 1) — a clean-context KB-only
+  agent plans each derived **work probe** in the project's own conventions, tagging steps
+  **STATED/ASSUMED/REACH**; any load-bearing ASSUMED/REACH = `[HIGH] [ACTBACK]`, and a plan that
+  violates the project's conventions/invariants/quality bars = a **quality FAIL** (generalizes M4
+  act-back); (b) **Blind Reconstruction + Source Confrontation** (the essence gate, Intent 2) — a
+  KB-only agent reconstructs the project's what/why/how, then a **source-grounded** agent confronts
+  it: **Divergence** = `[HIGH] [FIDELITY]`, **Omission** = `[MED] [ESSENCE-GAP]` (generalizes M3
+  teach-back with a source-confrontation stage); (c) the **probe-derivation helper** (work probes
+  from the C9 doc + domain via D-014's C9-derived selector; essence probes from C4/C9/D + salient
+  source facts); (d) the **dual-intent ledger** (7-column schema, `[ACTBACK]`/`[FIDELITY]`/
+  `[ESSENCE-GAP]` tags) + the **convergence thresholds** wired into REVIEW as two **hard keystone
+  gates** (a FAIL caps the grade). Tests: per-domain fixtures (GOOD PASS / SHALLOW+WRONG FAIL).
+- **Features:** feature-016 (§4 core / FR-54 + FR-55)
+- **Depends on:** delivery-013 (the spine-keyed depth standard the FIX loop drives toward),
+  delivery-014 (the spine-keyed safeguard + the C9-derived task selector that seeds the work probes)
+- **Priority:** Must
+
+> **Note (extend, don't re-spec).** D-015 **generalizes** f005's M3 teach-back + f013's M4 act-back
+> reviewer-prompt bodies and reuses f005's parallel-panel dispatch + `grade.sh` + the 7-column
+> ledger schema **verbatim** — no new grading infra, no separate verdict sentinel, no new agent enum
+> value (consistent with f013's extend-after-base discipline). The new probe-derivation helper
+> extends `kb-actback-task.sh` / `kb-teachback-questions.sh`; the source-confrontation second stage
+> is the one genuinely new sub-agent role-shape (a source-grounded confronter), built on the existing
+> reviewer dispatch.
+
+### delivery-016: Altitude Signature Exception + Dogfood + Re-inject Lost Depth
+
+- **What it delivers:** repairs the **altitude-rule signature tax** (feature-016 Change 3, FR-56)
+  and runs the **live AID dogfood regression**. Amends `principles.md` P1(d) + the
+  altitude/summary+pointer rule with a **signature exception**: load-bearing operational contracts an
+  agent must honor to ACT (field types, exit codes, args/modes/invariants) are stated **INLINE or
+  with a precise grep-recoverable anchor**, never a bare `sources:` file pointer (the altitude rule
+  keeps de-bloating *narrative* volatility, not *work-critical contracts*; the assertiveness limb
+  enforces it automatically). Runs the dual-intent eval on AID's own KB (software + methodology) as
+  the live regression and **re-injects the AID instance's altitude-rule-evicted depth** (the host-tool
+  matrix, exit-codes) as the **first beneficiary** of the exception. Closes feature-016.
+- **Features:** feature-016 (Change 3 / FR-56 + dogfood)
+- **Depends on:** delivery-015 (the assertiveness gate that enforces the signature exception must
+  exist before the exception is enforced + dogfooded)
+- **Priority:** Must
+
 ## Cross-Cutting Risks
 
 > **Retired R1 (greenfield scope-split).** The original R1 tracked the f006/f012
@@ -256,6 +353,10 @@ consume settled contracts.
 |---|------|---------------------|------------|
 | R2 | **f008+f009 inseparability** -- a release tag cut between feature-008 (canonical rename) and feature-009 (cross-tree propagation) would ship a half-renamed repo: canonical renamed but the 5 host trees, install manifests, and skill counts stale, with render-drift CI red. | delivery-008 | The two features are **one delivery** -- one branch, one PR, **no intervening release tag**. render-drift CI is RED on f008 alone and green only once f009 propagates, so the gate itself enforces "ship together." |
 | R3 | **calibration-floor back-patch** -- delivery-006 (validation fixtures) re-tunes defaults that ALREADY shipped in merged delivery-001 (f004 SPIKE-H2 denylist/salience floor, f005 SPIKE-C1 calibration severity) and delivery-004 (f006 triage thresholds). Per the contract "the default lives in the owning feature's file; the fixture pins it," editing a constant in an already-shipped delivery can regress that delivery's gate. **Impact: M.** | delivery-001, delivery-004, delivery-006 | After any threshold/floor edit prompted by a later delivery's fixture, re-run the owning delivery's gate suite (the owning feature's canonical tests) to confirm no regression. |
+| R4 (f016) | **software-row byte-stability** -- re-keying the act-back safeguard substrate (delivery-014 adds a spine-dimension to the doc-set TSV / a filename→dimension map) and re-injecting altitude-evicted depth into AID's own KB (delivery-016) must **not perturb** `synth_default_seed`'s byte-stable software seed or its existing `kb-actback-task.sh` TSV-consumers, or DBI + the matrix seed-consistency check go red. **Impact: M (cross-delivery hazard).** | delivery-014, delivery-016 | The matrix seed-consistency check + the existing actback-task suite are the regression guards; the software rows stay byte-identical (additive dimension column / sidecar map only). Re-run both suites + DBI after any substrate edit. |
+| R5 (f016) | **threshold calibration spans the dogfood** -- the dual-intent gates' concrete PASS thresholds (assertiveness % STATED, essence-coverage %) are deferred to DETAIL/delivery-015 and tuned against the **AID dogfood + the per-domain fixtures**; a number set too loose passes a shallow KB, too strict thrashes the FIX loop, and it is only validated once D-015's fixtures + the live AID regression both run. **Impact: M.** | delivery-015, delivery-016 | Start strict (zero HIGH; ≥90% STATED); calibrate on the AID dogfood + the GOOD/SHALLOW/WRONG fixtures; the fixtures pin the chosen number so a later drift is caught. |
+| R6 (f016) | **probe-derivation quality** -- the dual-intent gates are only as good as the probes derived from the project's C9/C4/D docs + source; a thin probe set can pass a KB that a richer set would FAIL. **Impact: L.** | delivery-015 | Derive a spread across spine dimensions + a minimum count; the human may confirm/extend the probe set at the gate (the no-assumptions pattern). |
+| R7 (f016) | **cost / agent-work scaling** -- two clean-context limbs x K probes per REVIEW cycle is materially more agent work than the single act-back/teach-back task today. **Impact: L.** | delivery-015 | Scale K by triage size; cache probes across REVIEW⇄FIX cycles. |
 
 ## Execution Graphs
 
@@ -583,4 +684,114 @@ wave 2: task-072
 wave 3: task-074
 wave 4: task-075
 wave 5: task-076
+```
+
+### delivery-013 execution graph
+
+> Authored by `/aid-detail` (feature-016 Change 1 / FR-52). Every d013 task carries the
+> cross-delivery dependency on **delivery-010** (feature-014 — the spine + matrix +
+> `document-expectations.md` + `state-generate.md` §2.6) as a pre-satisfied edge marked `(d-010)`
+> that does not affect intra-delivery wave ordering. Linear DESIGN -> IMPLEMENT -> TEST chain:
+> task-077 designs the dimension standard + authority-file decision, task-078 authors it + re-points
+> the GENERATE prompt, task-079 asserts the 36-doc gap is closed + DBI.
+
+| Task | Depends On |
+|------|-----------|
+| task-077 | delivery-010 (feature-014 spine + matrix + expectations + §2.6 prompt) |
+| task-078 | task-077 |
+| task-079 | task-078 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| — (linear chain) |
+
+```wave-map
+delivery: 013
+wave 1: task-077
+wave 2: task-078
+wave 3: task-079
+```
+
+### delivery-014 execution graph
+
+> Authored by `/aid-detail` (feature-016 Change 2 / FR-53). All d014 tasks build on **delivery-013**
+> (the spine-keyed depth standard whose dimension keying the safeguard owning-table re-states) — the
+> cross-delivery edge is realized as `task-080 -> task-078` (the dimension keying is shared), which
+> does not affect intra-delivery wave ordering. Linear DESIGN -> IMPLEMENT -> TEST chain: task-080
+> restates the owning-table in dimension terms + decides the substrate lookup, task-081 re-keys the
+> script + concern-model.md, task-082 adds the doc-set TSV fixtures + off-software assertions + DBI.
+
+| Task | Depends On |
+|------|-----------|
+| task-080 | task-078 (d-013 — spine-keyed depth / dimension keying) |
+| task-081 | task-080 |
+| task-082 | task-081 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| — (linear chain) |
+
+```wave-map
+delivery: 014
+wave 1: task-080
+wave 2: task-081
+wave 3: task-082
+```
+
+### delivery-015 execution graph
+
+> Authored by `/aid-detail` (feature-016 §4 core / FR-54 + FR-55). d015 builds on **delivery-013**
+> (the depth standard the FIX loop drives toward) and **delivery-014** (the spine-keyed safeguard +
+> the C9-derived task selector that seeds the work probes) — realized as `task-083 -> task-081`
+> (C9 selector seed) and `task-083 -> task-078` (depth standard). task-083 (the probe-derivation
+> helper) is the intra-delivery root; the two limbs (task-084 assertiveness, task-085 essence) both
+> consume its probes and run **in parallel**; task-086 wires both limbs into the dual-intent ledger +
+> keystone gates (incl. re-keying the §2c/§2d verdict greps); task-087 proves the gates fire
+> off-software via the per-domain GOOD/SHALLOW/WRONG mini-KB fixtures + `test-dual-intent-self-eval.sh`.
+
+| Task | Depends On |
+|------|-----------|
+| task-083 | task-081 (d-014 — C9-derived selector seed), task-078 (d-013 — depth standard) |
+| task-084 | task-083 |
+| task-085 | task-083 |
+| task-086 | task-084, task-085 |
+| task-087 | task-083, task-084, task-085, task-086 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-084, task-085 |
+
+```wave-map
+delivery: 015
+wave 1: task-083
+wave 2: task-084, task-085
+wave 3: task-086
+wave 4: task-087
+```
+
+### delivery-016 execution graph
+
+> Authored by `/aid-detail` (feature-016 Change 3 / FR-56 + dogfood). d016 builds on **delivery-015**
+> (the assertiveness gate that enforces the signature exception must exist before it is enforced +
+> dogfooded) — realized as `task-088 -> task-086` (the dual-intent keystone gates). Linear IMPLEMENT
+> -> DOCUMENT -> TEST chain: task-088 states the altitude signature exception in `principles.md`,
+> task-089 re-injects AID's evicted depth (host-tool matrix, exit-codes) into its own KB docs + regens
+> INDEX, task-090 runs the live AID dogfood (both gates pass) + the regen/DBI/hygiene re-checks that
+> close feature-016.
+
+| Task | Depends On |
+|------|-----------|
+| task-088 | task-086 (d-015 — the dual-intent keystone gates) |
+| task-089 | task-088 |
+| task-090 | task-089 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| — (linear chain) |
+
+```wave-map
+delivery: 016
+wave 1: task-088
+wave 2: task-089
+wave 3: task-090
 ```
