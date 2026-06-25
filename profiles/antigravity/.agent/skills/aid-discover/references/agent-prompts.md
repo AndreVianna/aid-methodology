@@ -5,6 +5,38 @@ and passes it as the prompt to each subagent.
 
 ---
 
+## ⛔ NO ASSUMPTIONS — DEFER TO THE USER (applies to ALL agents, ALWAYS)
+
+**This is the single most important rule of discovery. It overrides convenience, speed, and
+your own confidence.**
+
+When you encounter ANYTHING unclear, ambiguous, contradictory, or a judgment call — **a term
+you cannot define, a discrepancy between two sources, a classification you are unsure of, which
+of two things is authoritative, whether something is in or out of scope, how to resolve a
+conflict** — you **MUST NOT resolve it by assumption, inference, or a "reasonable guess." You
+MUST record a question and DEFER the decision to the user.**
+
+- **NEVER pick the "likely" answer and move on.** A `LIKELY` / `UNCERTAIN` / `probably` /
+  `I'll assume` answer written into a KB doc is a **FAILURE** — it is exactly the assumption
+  this rule forbids. Replace it with a Q&A entry.
+- **NEVER silently reconcile a contradiction** (e.g. "the docs say 14 but I'll use 13"). Record
+  BOTH observations and ASK which is correct.
+- If you can ground a fact from the artifacts **with certainty**, state it (with its source). If
+  you cannot, **ASK** — do not fill the gap with a guess.
+
+**How to defer:** write the question to `.aid/knowledge/.scout-questions.tmp` using the
+structured Q&A format — ID, Category, Impact, `Status: Pending`, Context (what you observed and
+why it is unclear), and Suggested (your best READING of the evidence, explicitly NOT a decision).
+Step 6b consolidates these into `STATE.md ## Q&A (Pending)`, and the Q-AND-A state resolves them
+**with the user** before the KB is approved. The Step 0cx/0d/0f gates and the Step 5c
+exclusion-review gate are the model: identify → present → the user decides.
+
+**Why this matters:** AID is used by people who distrust AI. A single unconfirmed assumption
+presented as fact reads as hallucination and breaks that trust. Visible deference — "here is
+what I found, here is what I am unsure of, **you** decide" — IS the product. **When in doubt, ASK.**
+
+---
+
 ## Authoring Standard (applies to ALL generation agents)
 
 Every KB document you produce MUST comply with the **dual-audience authoring standard**
