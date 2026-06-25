@@ -66,9 +66,9 @@ if [ "${CLAUDE_PLAN_MODE:-}" = "1" ]; then
         "Press Shift+Tab to exit Plan Mode, then re-run."
 fi
 
-# Check 5: Node.js available (required for diagram validation)
+# Check 5: Node.js available (required for visual-fidelity validation)
 if ! command -v node >/dev/null 2>&1; then
-    err "Node.js is required for diagram validation." \
+    err "Node.js is required for visual-fidelity validation." \
         "Install Node.js (>= 18) and re-run."
 fi
 

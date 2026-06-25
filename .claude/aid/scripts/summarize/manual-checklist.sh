@@ -7,9 +7,10 @@
 #   V1  human visual gate ( 5 pts)  y=5  n=0   — MANDATORY: V1=0 blocks APPROVAL
 #
 # V1 is a GATE, not a graded scale: the reviewer must open the HTML in a real
-# browser and confirm ALL of: (a) every diagram renders with no error blocks;
-# (b) diagram + node text is legible in BOTH light and dark themes (the
-# automated C1/C2 checks only cover page CSS tokens, NOT Mermaid node colors);
+# browser and confirm ALL of: (a) every diagram/infographic/visual renders cleanly
+# (nothing clipped, collapsed, or broken); (b) text in every visual is legible and
+# elements do not overlap, in BOTH light and dark themes (the automated visual-fidelity
+# gate checks size/overlap/layout; the human judges clarity + quality);
 # (c) the light/dark theme toggle works; (d) the lightbox opens, Esc closes,
 # and Tab cycles focus inside it. Any failure => V1=n (0 pts) AND the summary
 # cannot be approved until fixed.
@@ -247,9 +248,9 @@ echo ""
 
 echo "Q4. V1 — HUMAN VISUAL GATE (mandatory, 5 pts)"
 echo "     With the file open in a browser, confirm ALL of the following:"
-echo "       (a) every Mermaid diagram renders — no red error blocks;"
-echo "       (b) diagram + node text is LEGIBLE in BOTH light AND dark themes"
-echo "           (automated C1/C2 do NOT check Mermaid node colors — you must);"
+echo "       (a) every diagram / infographic / visual renders cleanly — nothing clipped, collapsed, or broken;"
+echo "       (b) text in every visual is LEGIBLE and elements do NOT overlap, in BOTH light AND dark themes"
+echo "           (the automated visual-fidelity gate checks size/overlap/layout — YOU judge clarity + quality);"
 echo "       (c) the light/dark theme toggle works;"
 echo "       (d) the lightbox opens on click, Esc closes it, Tab cycles inside."
 echo "     Answer y ONLY if all four hold. Any failure = n (gate fails)."
