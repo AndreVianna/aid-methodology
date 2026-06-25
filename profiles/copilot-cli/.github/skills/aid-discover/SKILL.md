@@ -166,11 +166,12 @@ Read the filesystem to determine which mode to enter:
 ```
 State 1: Missing or empty KB docs                     → GENERATE mode
 State 2: All docs populated, no GRADE file             → REVIEW mode
-State 3: GRADE file, (grade < min AND has Pending Q&A)
-         OR has Pending Q&A with Impact: Required       → Q-AND-A mode
-State 4: GRADE file, grade < min, no Pending Q&A       → FIX mode
-State 5: GRADE file, grade >= min, not user-approved    → APPROVAL mode
-State 6: GRADE file, grade >= min, user-approved        → DONE
+State 3: GRADE file, ANY Pending Q&A (regardless of grade/Impact) → Q-AND-A mode
+State 4: GRADE file, grade < min, ZERO Pending Q&A     → FIX mode
+State 5: GRADE file, grade >= min, ZERO Pending Q&A,
+         not user-approved                              → APPROVAL mode
+State 6: GRADE file, grade >= min, ZERO Pending Q&A,
+         user-approved                                  → DONE
 ```
 
 **Detection logic:**
@@ -184,10 +185,12 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 5. If `.aid/knowledge/STATE.md` exists with a grade:
    - Read current/minimum grade; if `--grade` provided, update minimum
    - Read `## Q&A (Pending)` section of `.aid/knowledge/STATE.md` for `**Status:** Pending` entries
-   - If any Pending with `**Impact:** Required` → **Q-AND-A** (regardless of grade)
-   - If grade < minimum: Pending entries → **Q-AND-A**; no Pending → **FIX**
-   - If grade >= minimum and no Required Pending Q&A:
-     - `**User Approved:** yes` → **DONE**; otherwise → **APPROVAL**
+   - **If ANY `**Status:** Pending` entry exists → Q-AND-A** (regardless of grade OR Impact —
+     discovery is NOT complete while any question is unanswered; `Impact` only orders the work,
+     it never gates completion). Q-AND-A self-answers every question it can CONFIRM from source
+     (no assumptions) and asks the user the rest, until ZERO remain Pending.
+   - Else (ZERO Pending Q&A): if grade < minimum → **FIX**; if grade >= minimum →
+     `**User Approved:** yes` → **DONE**, otherwise → **APPROVAL**.
 
 **Grade ordering** (highest to lowest):
 `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`
