@@ -341,8 +341,10 @@ table.tbl {
 .tbl tr:hover td { background: var(--bg-sunken); }
 .tbl code { font-size: 0.85em; }
 
-/* ---------- Mermaid ---------- */
-.mermaid-box {
+/* ---------- Diagram box (inline SVG / HTML+CSS visuals) ---------- */
+/* CHANGE 7 (FR-51): renamed from .mermaid-box; now wraps inline SVG and
+   HTML+CSS visuals pre-rendered at build time (no Mermaid engine). */
+.diagram-box {
 	position: relative;
 	background: var(--bg-elev);
 	border: 1px solid var(--border);
@@ -355,9 +357,9 @@ table.tbl {
 	cursor: zoom-in;
 	transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.mermaid-box:hover { box-shadow: var(--shadow-md); border-color: var(--accent); }
-.mermaid-box::after {
-	content: "⛶ Click to expand";
+.diagram-box:hover { box-shadow: var(--shadow-md); border-color: var(--accent); }
+.diagram-box::after {
+	content: "Click to expand";
 	position: absolute;
 	top: 10px;
 	right: 12px;
@@ -371,31 +373,15 @@ table.tbl {
 	transition: opacity 0.15s ease;
 	pointer-events: none;
 }
-.mermaid-box:hover::after { opacity: 1; }
-.mermaid-box .caption {
+.diagram-box:hover::after { opacity: 1; }
+.diagram-box .caption {
 	margin-top: 0.8em;
 	color: var(--text-dim);
 	font-size: 0.85rem;
 	font-style: italic;
 	cursor: default;
 }
-.mermaid-box .mermaid { display: inline-block; max-width: 100%; }
-.mermaid-box .mermaid svg { max-width: 100%; height: auto; }
-/* Mermaid node label legibility.
-   IMPORTANT: these rules are intentionally NOT scoped to `.mermaid`. The
-   lightbox clones the diagram SVG into `#lb-inner`, which lives OUTSIDE any
-   `.mermaid` container — a `.mermaid`-scoped rule would fix the inline diagram
-   but not the expanded one. `.nodeLabel` / `.edgeLabel` are Mermaid-specific
-   classes, so targeting them unscoped is safe and covers both views. */
-.nodeLabel,
-.nodeLabel * { font-weight: 700 !important; }
-/* CRITICAL: Mermaid renders label text inside real HTML <p> elements (inside a
-   foreignObject). Those <p> tags would otherwise inherit the PAGE's muted <p>
-   color (--text-muted, a silver-grey) instead of the classDef color set on
-   .nodeLabel — destroying contrast on every colored node. Force all label
-   descendants to inherit their .nodeLabel / .edgeLabel parent's color. */
-.nodeLabel *,
-.edgeLabel * { color: inherit !important; }
+.diagram-box svg { max-width: 100%; height: auto; display: inline-block; }
 
 /* ---------- Lightbox ---------- */
 .lightbox {
@@ -589,7 +575,7 @@ footer {
 	section.sec { page-break-inside: avoid; }
 	body { background: white; color: black; }
 	a { color: black; text-decoration: underline; }
-	.mermaid-box { break-inside: avoid; }
+	.diagram-box { break-inside: avoid; }
 }
 
 /* ---------- Accessibility additions ---------- */

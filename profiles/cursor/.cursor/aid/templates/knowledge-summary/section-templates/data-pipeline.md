@@ -119,24 +119,18 @@ is not yet authored; do not omit the section.
 - Operational concerns get their own section (§9).
 - No frontend section.
 
-## Common diagrams content
+## Common visuals content
 
-For Figure 2 (Pipeline DAG), the structure typically looks like:
+For Figure 2 (Pipeline DAG), author an inline SVG using the flow-diagram pattern from
+`.cursor/aid/templates/knowledge-summary/authored-visual-catalog.md` (Pattern 1 --
+left-to-right flow). Use `var(--bg-elev)` fills and `var(--accent)` borders for source/
+transform nodes; `var(--bg-sunken)` for sink nodes. Typical node layout:
 
-```mermaid
-flowchart LR
-    classDef src fill:#DBEAFE,stroke:#1D4ED8,color:#1D4ED8;
-    classDef tx  fill:#00A3A1,stroke:#00A3A1,color:#fff;
-    classDef snk fill:#F4EBFF,stroke:#6941C6,color:#6941C6;
-
-    Source1[(Source: events.kafka)]:::src
-    Source2[(Source: db.snapshot)]:::src
-    T1[Stage 1: clean]:::tx
-    T2[Stage 2: enrich]:::tx
-    T3[Stage 3: aggregate]:::tx
-    Sink[(Sink: warehouse.facts)]:::snk
-
-    Source1 --> T1
-    Source2 --> T2
-    T1 --> T2 --> T3 --> Sink
 ```
+[Source 1] --> [Stage 1: clean] --> [Stage 2: enrich] --> [Stage 3: aggregate] --> [Sink]
+[Source 2] --/
+```
+
+Author this as a `<div class="diagram-box">` wrapping an `<svg viewBox="...">` with
+one `<rect>` per node and `<line>` arrows. See Pattern 1 in authored-visual-catalog.md
+for the exact HTML/SVG template.

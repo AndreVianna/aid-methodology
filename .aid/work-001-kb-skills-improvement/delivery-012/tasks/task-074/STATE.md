@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** IMPLEMENT s7 gate: validate-visuals.mjs (Playwright) + state-validate.md rework + no-engine assertion in validate-html-output.sh.
+- **Elapsed:** ~35m
+- **Notes:** validate-visuals.mjs created (Playwright T1/T2/T3 asserts); validate-diagrams.mjs retired (deleted); state-validate.md reworked to S7 gate; validate-html-output.sh gains NM check; SKILL.md VALIDATE prose updated. node --check passes. Smoke-test deferred (Playwright binary not installed in sandbox) -- see final message.
 
 ---
 

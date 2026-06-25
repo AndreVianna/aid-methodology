@@ -20,7 +20,7 @@ Every run produces two independent grades:
 
 | Grade | Checks | Max pts | How scored |
 |-------|--------|---------|------------|
-| **Machine Grade** | COV, L1, L2, H1, A1, A2, A3, A4, A5, C1, C2, D1, D2, S2 | 68 | `grade-summary.sh` runs automatically |
+| **Machine Grade** | COV, T1, T2, T3, NM, L1, L2, H1, A1, A2, A3, A4, A5, C1, C2, D1, D2, S2 | 68 | `grade-summary.sh` runs automatically |
 | **Human Grade** | K1, K2, **V1** | 30 | `manual-checklist.sh` run by a human reviewer |
 
 **Overall Grade = min(Machine letter, Human letter).**
@@ -51,8 +51,12 @@ grade exists.
 | **K2** | KB facts grounded | All numeric/named facts in the HTML appear verbatim in source KB | 15 | manual (`manual-checklist.sh`) |
 | **V1** | Human visual gate (mandatory) | The user opens `kb.html` in a browser and confirms ALL of: every visual element renders correctly (no error blocks, no collapsed/empty containers); any diagram or infographic text is legible in BOTH light AND dark themes; theme toggle works; lightbox opens / Esc closes / Tab cycles. If no visual elements are present, V1 is trivially passed (5/5) with a note. Pass=5, fail=0. **V1=0 forces Human Grade F.** | 5 | manual (`manual-checklist.sh`) |
 | **COV** | Resolved-doc-set coverage (automated) | Every filename in `discovery.doc_set` (`.aid/settings.yml`) that exists on disk in `.aid/knowledge/` is referenced in the HTML (by section heading, anchor, or inline content mentioning the doc stem or its objective). Full (15 pts): coverage >= 95%. Partial (8 pts): coverage 80-94%. Minimal (3 pts): coverage 60-79%. None (0 pts): coverage < 60% -- also forces Machine Grade F. | 15 | `grade-summary.sh` (reads settings.yml + checks HTML) |
-| **D1** | Mermaid parse (if present) | If `<pre class="mermaid">` blocks exist, `mermaid.parse()` succeeds for every block. If no Mermaid blocks are present, D1 is trivially passed (5/5) with a note. A parse failure on a present block reduces the score (0 pts) but does not force automatic F. | 5 | `validate-diagrams.mjs` |
-| **D2** | Mermaid render (if present) | If `<pre class="mermaid">` blocks exist, each renders to non-trivial SVG (>500 bytes, contains `<g>` or `<path>`, no `mermaid-error` class). If no Mermaid blocks are present, D2 is trivially passed (5/5) with a note. | 5 | `validate-diagrams.mjs` (jsdom + Mermaid render) |
+| **T1** | Visual text readable (§7 gate) | Every visible text node inside each authored visual (inline `<svg>`, `.diagram-box`, infographic container) has a computed font-size >= 10 px and is NOT overflow-clipped to zero height. If Playwright is unavailable, T1 skips and V1 carries the visual-review obligation. Failure **blocks DONE** (not a score deduction — a hard gate). | block | `validate-visuals.mjs` (Playwright) |
+| **T2** | Visual element overlap minimal (§7 gate) | The bounding boxes of sibling elements inside each authored visual do not materially overlap (tolerance: <= 20% of the smaller element's area). If Playwright is unavailable, T2 skips and V1 carries the visual-review obligation. Failure **blocks DONE**. | block | `validate-visuals.mjs` (Playwright) |
+| **T3** | Visual layout non-trivial (§7 gate) | Each authored visual's bounding rect has non-trivial dimensions (width > 0 AND height > 0) — the visual is rendered, not collapsed or empty. If Playwright is unavailable, T3 skips and V1 carries the visual-review obligation. Failure **blocks DONE**. | block | `validate-visuals.mjs` (Playwright) |
+| **NM** | No Mermaid runtime engine | The assembled `kb.html` contains no Mermaid runtime engine or init call (`mermaid.init`, `mermaid.js`, `cdn.jsdelivr.net/npm/mermaid`). D-012 guardrail: visuals are inline SVG / HTML+CSS only. Failure **blocks DONE**. | block | `validate-html-output.sh` |
+| **D1** | Mermaid parse (retired) | The Mermaid engine was removed in D-012 (Change 7 / FR-51). No `<pre class="mermaid">` blocks are present in D-012 output. D1 is **trivially passed (5/5)** with a note. The §7 visual-fidelity gate (`validate-visuals.mjs`, T1/T2/T3) provides the replacement quality check for inline SVG visuals. | 5 | `grade-summary.sh` (trivially passed — no Mermaid blocks) |
+| **D2** | Mermaid render (retired) | Same as D1 — the Mermaid engine is retired. D2 is **trivially passed (5/5)** with a note. | 5 | `grade-summary.sh` (trivially passed — no Mermaid blocks) |
 | **L1** | Anchor links | Every `href="#X"` resolves to in-page `id="X"` | 5 | `validate-html-output.sh` |
 | **L2** | Relative md links | Every `./*.md` link points to an existing file in `.aid/knowledge/` | 5 | `validate-html-output.sh` |
 | **H1** | HTML validity | If `tidy` or `html-validate` is available, zero errors reported; otherwise regex structural checks pass | 5 | `validate-html-output.sh` |
@@ -63,7 +67,7 @@ grade exists.
 | **A5** | Visible focus | `:focus-visible` rule present in CSS | 3 | `validate-html-output.sh` |
 | **C1** | Light theme contrast | All token pairs in checklist >= target ratios | 4 | `contrast-check.mjs` |
 | **C2** | Dark theme contrast | Same | 4 | `contrast-check.mjs` |
-| **S2** | Offline render | If Mermaid diagrams are present, the Mermaid library is inlined (or `--cdn-mermaid` chosen explicitly); if no Mermaid diagrams are present, trivially passed (2/2) | 2 | `validate-html-output.sh` |
+| **S2** | Offline render | The page is single-file self-contained with no external engine or CDN fetch. **Trivially passed (2/2)** — the Mermaid engine was removed in D-012 and inline SVG needs no runtime engine. | 2 | `validate-html-output.sh` |
 | | **Machine total** | | **68** | |
 | | **Human total** | | **30** | |
 
@@ -202,15 +206,31 @@ stem). Scoring: coverage >= 95% = 15 pts (full); 80-94% = 8 pts (partial);
 `settings.yml` has no `doc_set` field, COV defaults to pass (15 pts) with a
 note that coverage check was skipped (settings not yet doc-set-driven).
 
-**D1 (if Mermaid diagrams present):** If the HTML contains `<pre class="mermaid">`
-blocks, `mermaid.parse(text)` must not throw for any block. If no Mermaid blocks
-exist, D1 is trivially passed (5/5) with a note. A parse failure on a present
-block gives 0 pts (but does not force automatic F -- that role belongs to COV).
+**T1/T2/T3 (§7 visual-fidelity gate):** `validate-visuals.mjs` launches a
+headless Chromium browser (offline, `file://` URL) and for every authored visual
+(inline `<svg>`, `.diagram-box`, infographic container) asserts: T1 — every
+visible text node has computed font-size >= 10 px and is not overflow-clipped;
+T2 — sibling element bounding boxes do not materially overlap (tolerance <= 20%
+of the smaller element's area); T3 — the visual's own bounding rect has non-trivial
+dimensions (width > 0 AND height > 0). A failing T1/T2/T3 is a generation defect
+that blocks DONE. If Playwright is unavailable, all three checks skip with a SKIP
+message and the V1 human visual gate is mandatory (browser-rendered inspection
+required; HTML/CSS source inspection is not sufficient).
 
-**D2 (if Mermaid diagrams present):** If the HTML contains `<pre class="mermaid">`
-blocks, `validate-diagrams.mjs` calls `mermaid.render()` in jsdom. Each block's
-SVG must be >500 bytes, contain `<g>` or `<path>`, and have no `mermaid-error`
-class. If no Mermaid blocks exist, D2 is trivially passed (5/5) with a note.
+**NM (no-Mermaid-engine assertion):** `validate-html-output.sh` greps the
+assembled `kb.html` for known Mermaid runtime engine markers (`mermaid.init`,
+`mermaid.js`, `cdn.jsdelivr.net/npm/mermaid`). Any match is a D-012 guardrail
+violation — it means the CDN-fetched engine was reintroduced and the page is no
+longer self-contained. NM failure blocks DONE.
+
+**D1 (retired in D-012):** The Mermaid engine was removed (Change 7 / FR-51).
+D-012 output contains no `<pre class="mermaid">` blocks. D1 is trivially passed
+(5/5) with a note: "Mermaid engine retired -- inline SVG pre-rendered at build
+time." The §7 visual-fidelity gate (`validate-visuals.mjs`, T1/T2/T3) provides
+the quality check for authored inline SVG visuals.
+
+**D2 (retired in D-012):** Same as D1 -- trivially passed (5/5). The jsdom +
+Mermaid render check is moot once the engine is gone.
 
 **L1:** Every `href="#X"` must resolve to an element with `id="X"` in the page.
 
@@ -238,10 +258,11 @@ The fallback path is noted in the grade output. Warnings allowed in all modes.
 **C1/C2:** `contrast-check.mjs` checks WCAG AA ratios for all token pairs in
 `accessibility-checklist.md`; every pair must meet its target ratio.
 
-**S2:** If `<pre class="mermaid">` blocks exist, the Mermaid library must be
-inlined (`__esbuild_esm_mermaid` marker), OR `--cdn-mermaid` recorded in
-`.aid/knowledge/STATE.md` `## Knowledge Summary Status`. If no Mermaid blocks
-are present, S2 is trivially passed (2/2) with a note.
+**S2 (trivially passed in D-012):** The page is single-file self-contained (all
+CSS and JS inlined; inline SVG visuals need no runtime engine). S2 is trivially
+passed (2/2) with a note: "no Mermaid engine, no external fetch." `validate-html-
+output.sh` confirms no `<script src="https://...">` or `<link href="https://...">`.
+If either appears, S2 fails (CDN reference introduced by mistake -- remove it).
 
 ## How a grading run reports
 
@@ -253,8 +274,8 @@ Resolved doc-set: 22 docs in discovery.doc_set, 22 present on disk.
 Coverage check: 22/22 resolved docs referenced in HTML (100%)
 
   COV Resolved-doc-set coverage    [PASS] 22/22 (100%)  full      15/15
-  D1  Mermaid parse                [PASS] 5/5 parse OK              5/5
-  D2  Mermaid render               [PASS] 5/5 non-trivial SVG       5/5
+  D1  Mermaid parse (retired)      [PASS] no Mermaid blocks -- trivially passed  5/5
+  D2  Mermaid render (retired)     [PASS] no Mermaid blocks -- trivially passed  5/5
   L1  Anchor links                 [PASS] 13/13 resolve             5/5
   L2  Relative md links            [PASS] 19/19 resolve             5/5
   H1  HTML validity                [PASS] tidy: 0 errors            5/5
@@ -265,7 +286,7 @@ Coverage check: 22/22 resolved docs referenced in HTML (100%)
   A5  Visible focus                [PASS] :focus-visible            3/3
   C1  Light theme contrast         [PASS] 11/11 pairs >= target     4/4
   C2  Dark theme contrast          [PASS] 11/11 pairs >= target     4/4
-  S2  Offline render               [PASS] Mermaid library inlined   2/2
+  S2  Offline render               [PASS] no external fetch -- trivially passed  2/2
 
 Machine Score: 68 / 68  (100%)
 Machine Grade: A+
@@ -302,8 +323,8 @@ Machine Grade: A-
 
 ```
   COV Resolved-doc-set coverage    [PASS] 22/22 (100%)  full       15/15
-  D1  Mermaid parse                [PASS] no Mermaid blocks -- trivially passed  5/5
-  D2  Mermaid render               [PASS] no Mermaid blocks -- trivially passed  5/5
-  S2  Offline render               [PASS] no Mermaid blocks -- trivially passed  2/2
+  D1  Mermaid parse (retired)      [PASS] no Mermaid blocks -- trivially passed  5/5
+  D2  Mermaid render (retired)     [PASS] no Mermaid blocks -- trivially passed  5/5
+  S2  Offline render               [PASS] no external fetch -- trivially passed  2/2
   ...
 ```

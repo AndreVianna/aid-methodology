@@ -3,10 +3,9 @@
 # Usage: summarize-preflight.sh
 # Exits 0 on success, non-zero on any failure with a clear message.
 #
-# Note: --cdn-mermaid is retired (D-011). The Mermaid engine is retained in
-# D-011 and removed in D-012. The network check (check 5) runs when the
-# resolved KB contains Mermaid blocks; fetch-mermaid.sh handles the actual
-# fetch; this preflight only checks reachability.
+# CHANGE 7 (FR-51 / D-012): The Mermaid engine is fully removed. The network
+# reachability check (check 5) and Mermaid-block detection are no longer needed;
+# visuals are authored as inline SVG / HTML+CSS at build time.
 
 set -u
 
@@ -67,36 +66,7 @@ if [ "${CLAUDE_PLAN_MODE:-}" = "1" ]; then
         "Press Shift+Tab to exit Plan Mode, then re-run."
 fi
 
-# Check 5: Network reachable to npm registry (for Mermaid fetch)
-# Only checked if the KB is likely to contain Mermaid blocks (fetch-mermaid.sh
-# will run). If no .md file in the KB contains a mermaid block, skip this check.
-HAS_MERMAID=0
-for f in "$KB_DIR"/*.md; do
-    [ -f "$f" ] || continue
-    if grep -q '```mermaid' "$f" 2>/dev/null; then
-        HAS_MERMAID=1
-        break
-    fi
-done
-
-if [ "$HAS_MERMAID" -eq 1 ]; then
-    if command -v curl >/dev/null 2>&1; then
-        if ! curl -sSf --max-time 10 -o /dev/null "https://registry.npmjs.org/mermaid/latest" 2>/dev/null; then
-            err "Cannot fetch latest Mermaid version (registry.npmjs.org unreachable)." \
-                "Ensure network connectivity and re-run."
-        fi
-    elif command -v wget >/dev/null 2>&1; then
-        if ! wget -q --timeout=10 --tries=1 -O /dev/null "https://registry.npmjs.org/mermaid/latest" 2>/dev/null; then
-            err "Cannot fetch latest Mermaid version (registry.npmjs.org unreachable)." \
-                "Ensure network connectivity and re-run."
-        fi
-    else
-        err "Neither curl nor wget is available." \
-            "Install one to allow Mermaid library fetching."
-    fi
-fi
-
-# Check 6: Node.js available (required for diagram validation)
+# Check 5: Node.js available (required for diagram validation)
 if ! command -v node >/dev/null 2>&1; then
     err "Node.js is required for diagram validation." \
         "Install Node.js (>= 18) and re-run."

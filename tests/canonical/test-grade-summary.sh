@@ -22,9 +22,9 @@
 #
 # Tests assert STATIC SOURCE PROPERTIES (canonical/ files) and COV-based grading
 # logic (grade-summary.sh fixtures). They do NOT run the full /aid-summarize skill
-# or require a Node runtime. The validate-diagrams + contrast-check mjs paths are
-# irrelevant to D-011 coverage (they are exercised by test-validate-diagrams.sh and
-# test-contrast-check.sh respectively).
+# or require a Node runtime. The validate-visuals + contrast-check mjs paths are
+# irrelevant to this suite's coverage (they are exercised by test-visual-fidelity.sh
+# and test-contrast-check.sh respectively).
 #
 # Usage:
 #   tests/canonical/test-grade-summary.sh [-v | --verbose]

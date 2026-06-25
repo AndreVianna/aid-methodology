@@ -8,7 +8,7 @@
 #   grade-summary.sh <html-file> [--fast]
 #
 # Flags:
-#   --fast    Pass --fast to validate-diagrams.mjs (skip render; for development).
+#   --fast    Reserved for development; no-op since validate-diagrams.mjs was retired (D-012).
 #   -h, --help  Print this header and exit.
 #
 # Exit codes:
@@ -212,48 +212,18 @@ declare -A CHECK_NAMES=(
 H1_MODE_NOTE=""  # captures "regex fallback" if that path was taken
 
 # ---------------------------------------------------------------------------
-# Count Mermaid blocks (D1/D2/S2 are trivially passed when 0 present)
-# ---------------------------------------------------------------------------
-ACTUAL_MERMAID=$(grep -cE 'class="mermaid"' "$HTML" 2>/dev/null || echo 0)
-
-# ---------------------------------------------------------------------------
-# D1 + D2: Mermaid validation (trivially passed if no Mermaid blocks)
+# D1 + D2: Mermaid validation -- trivially passed (Mermaid engine retired D-012)
+# CHANGE 7 (FR-51): The Mermaid engine is removed. D-012 output contains no
+# <pre class="mermaid"> blocks. D1 and D2 are trivially passed (5/5 each).
+# The section-6 visual-fidelity gate (task-074) provides the replacement check
+# for inline SVG authored visuals.
 # ---------------------------------------------------------------------------
 echo "========================================================"
 echo "[Mermaid diagrams -- D1 parse, D2 render]"
-if [ "$ACTUAL_MERMAID" -eq 0 ]; then
-    echo "  No Mermaid blocks found -- D1 and D2 trivially passed."
-    RESULTS[D1]=pass
-    RESULTS[D2]=pass
-else
-    DIAG_LOG=$(mktemp)
-    node "$SCRIPT_DIR/validate-diagrams.mjs" "$HTML" $FAST > "$DIAG_LOG" 2>&1 || true
-    cat "$DIAG_LOG"
-
-    # D1 and D2 are scored INDEPENDENTLY by parsing the validator's output text --
-    # not by the process exit code (a D2-only failure must not drag D1 down).
-    # validate-diagrams.mjs emits lines like:
-    #   D1: All N diagrams parse cleanly  (pass)
-    #   D1: N of M diagram(s) failed ...  (fail)
-    #   D2: All N diagrams render non-trivial SVG  (pass)
-    #   D2: N of M diagram(s) failed render check  (fail)
-    #   D2: jsdom not installed ... (D2=pass-trivial)  (unverified -> fail)
-    if grep -qE "D1:.*failed|D1:.*error" "$DIAG_LOG" 2>/dev/null; then
-        RESULTS[D1]=fail
-    elif grep -qE "D1:.*cleanly|D1:.*parse clean" "$DIAG_LOG" 2>/dev/null; then
-        RESULTS[D1]=pass
-    fi
-
-    # D2: pass-trivial (jsdom AND mmdc both absent -- render unverified) counts as fail.
-    if grep -qE "D2=pass-trivial|D2:.*pass-trivial" "$DIAG_LOG" 2>/dev/null; then
-        RESULTS[D2]=fail
-    elif grep -qE "D2:.*failed|D2:.*error" "$DIAG_LOG" 2>/dev/null; then
-        RESULTS[D2]=fail
-    elif grep -qE "D2:.*non-trivial|D2:.*render.*SVG" "$DIAG_LOG" 2>/dev/null; then
-        RESULTS[D2]=pass
-    fi
-    rm -f "$DIAG_LOG"
-fi
+echo "  Mermaid engine retired (Change 7 / FR-51 / D-012)."
+echo "  No Mermaid blocks in output -- D1 and D2 trivially passed."
+RESULTS[D1]=pass
+RESULTS[D2]=pass
 
 # ---------------------------------------------------------------------------
 # H1 + A1-A5 + S2 + L1 + L2: HTML structure/validity/a11y + link validation
@@ -271,12 +241,8 @@ if bash "$SCRIPT_DIR/validate-html-output.sh" "$HTML" > "$HTML_LOG" 2>&1; then
     RESULTS[A3]=pass
     RESULTS[A4]=pass
     RESULTS[A5]=pass
-    # S2 is trivially passed when no Mermaid blocks; otherwise check the log
-    if [ "$ACTUAL_MERMAID" -eq 0 ]; then
-        RESULTS[S2]=pass
-    else
-        RESULTS[S2]=pass
-    fi
+    # S2: validate-html-output.sh exited 0 means S2 passed (CDN-free)
+    RESULTS[S2]=pass
     RESULTS[L1]=pass
     RESULTS[L2]=pass
 else
@@ -316,13 +282,10 @@ else
         RESULTS[A5]=pass
     fi
 
-    # S2: if no Mermaid blocks, trivially passed; else check the validator output.
-    # Pass: "S2. Mermaid library inlined" (validate-html-output.sh line 253 check)
-    if [ "$ACTUAL_MERMAID" -eq 0 ]; then
-        RESULTS[S2]=pass
-    else
-        grep -qE "S2\..*[Mm]ermaid" "$HTML_LOG" && RESULTS[S2]=pass
-    fi
+    # S2: the Mermaid engine is retired (Change 7 / FR-51 / D-012). S2 now checks
+    # that no CDN references were introduced. Pass: validate-html-output.sh emits
+    # "S2. Offline render [PASS]" when no external CDN script/link is present.
+    grep -qE "S2\..*\[PASS\]" "$HTML_LOG" && RESULTS[S2]=pass
 
     # L1/L2: pass lines contain unique "N/N ... resolve" text
     grep -qE "L1\..*resolve" "$HTML_LOG" && RESULTS[L1]=pass
@@ -539,12 +502,9 @@ for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2; do
             symbol="[FAIL]"
         fi
         printf "  %-4s  %-44s  %-8s  %d/%d\n" "$k" "$name ($COV_LABEL)" "$symbol" "$COV_EARNED" "$w"
-    elif [ "$k" = "D1" ] && [ "$ACTUAL_MERMAID" -eq 0 ]; then
-        printf "  %-4s  %-44s  %-8s  %d/%d\n" "$k" "$name" "[PASS]" "$w" "$w"
-    elif [ "$k" = "D2" ] && [ "$ACTUAL_MERMAID" -eq 0 ]; then
-        printf "  %-4s  %-44s  %-8s  %d/%d\n" "$k" "$name" "[PASS]" "$w" "$w"
-    elif [ "$k" = "S2" ] && [ "$ACTUAL_MERMAID" -eq 0 ]; then
-        printf "  %-4s  %-44s  %-8s  %d/%d\n" "$k" "$name" "[PASS]" "$w" "$w"
+    elif [ "$k" = "D1" ] || [ "$k" = "D2" ]; then
+        # D1/D2: Mermaid engine retired (Change 7 / FR-51 / D-012) -- trivially passed
+        printf "  %-4s  %-44s  %-8s  %d/%d\n" "$k" "$name (engine retired)" "[PASS]" "$w" "$w"
     else
         if [ "${RESULTS[$k]}" = "pass" ]; then
             status="pass"

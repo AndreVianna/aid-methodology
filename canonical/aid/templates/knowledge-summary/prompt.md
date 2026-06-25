@@ -24,6 +24,8 @@ preflight, etc.); this file describes the actual content generation work.
 - **`references/lightbox.js`** — the script to inline.
 - **`references/html-skeleton.html`** — the page shell with placeholders.
 - **`references/design-tokens.md`** — palette / typography reference.
+- **`references/authored-visual-catalog.md`** — inline SVG / HTML+CSS pattern templates
+  for each visual type (flow, hierarchy, relationship, timeline, stats).
 
 ## Output
 
@@ -68,8 +70,9 @@ no CDN, no split assets, no external framework fetch.
    content from the doc.
 7. **Self-contained single file.** All CSS and JS inlined; no CDN, no split assets,
    no external framework fetch.
-8. **Diagram captions:** every diagram has a `.caption` block with format
-   `Figure N. <one-sentence summary>. Source: <link>`.
+8. **Diagram captions:** every inline SVG visual or HTML+CSS infographic has a
+   `.caption` block with format `Figure N. <one-sentence summary>. Source: <link>`.
+   Wrap each visual in a `<div class="diagram-box">` (see `authored-visual-catalog.md`).
 9. **Best format per fact.** Choose the format that best communicates each fact to a
    newcomer: table for catalogs, cards for grids, prose for narrative, diagram for
    structure. There is no minimum or maximum diagram count; the newcomer's understanding
@@ -218,7 +221,7 @@ structure:
   <!-- For catalogs → .tbl-wrap + table.tbl -->
   <!-- For grids → .grid.g2/.g3 + .card items -->
   <!-- For narrative → <p> paragraphs with the newcomer "what & why" -->
-  <!-- For structure → diagram (Mermaid or inline SVG) in .mermaid-box -->
+  <!-- For structure → inline SVG or HTML+CSS visual in .diagram-box (see authored-visual-catalog.md) -->
   <!-- Keyword pills (if tags: present): -->
   <div style="display:flex; flex-wrap:wrap; gap:0.4rem; margin: 0.75rem 0;">
     <span class="badge">{tag 1}</span>
@@ -296,10 +299,7 @@ Open `references/html-skeleton.html`. Replace placeholders:
 - `{{INLINE_CSS}}` — full content of `references/component-css.css`.
 - `{{BODY_CONTENT}}` — all sections from Steps 4–6, in order.
 - `{{GENERATION_DATE}}` — today's date in `YYYY-MM-DD`.
-- `{{MERMAID_VERSION}}` — fetched version from `.aid/knowledge/STATE.md`
-  `## Knowledge Summary Status` (until D-012 removes the engine).
 - `{{INLINE_LIGHTBOX_JS}}` — full content of `references/lightbox.js`.
-- `{{MERMAID_VERSION_COMMENT}}` — `Mermaid v{ver} bundled inline below`.
 - `{{NOSCRIPT_DOC_LIST}}` — one `<li>` per resolved doc (in manifest order)
   derived from the doc-set, not hardcoded. Format:
   `<li><a href="./{doc}.md">{doc}.md</a> — {summary: value}</li>`.
@@ -340,5 +340,8 @@ Transition to VALIDATE.
   sections for docs that do not exist; no dropped sections for docs that do.
 - **Skipping the lightbox JS.** The focus-trapped lightbox must be inlined.
 - **Inventing facts.** Every number and claim traces back to KB.
-- **Using `<word>` tokens in Mermaid labels.** Use `{word}` instead.
-- **CDN / split assets.** Everything inlined. No external fetches.
+- **Hard-coding hex colours in SVG.** Use CSS custom properties (`var(--text)`,
+  `var(--accent)`, etc.) so visuals adapt to light and dark themes.
+- **CDN / split assets / runtime engine.** Everything inlined. No external fetches.
+  No Mermaid engine or any other diagram runtime. Visuals are pre-rendered inline SVG
+  or HTML+CSS (see `authored-visual-catalog.md` for patterns).

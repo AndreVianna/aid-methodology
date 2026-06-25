@@ -614,9 +614,16 @@ def copy_tree(
         if not src_dir.exists():
             return out_paths
 
+        # Exclude install-time-only directories that must never ship:
+        #   node_modules/ -- npm install artifact; only package.json/package-lock.json ship
+        #   .git/         -- VCS metadata; never part of the published tree
+        _EXCLUDE_DIRS = frozenset({"node_modules", ".git"})
+
         all_files = sorted(
             f for f in src_dir.rglob("*")
-            if f.is_file() and not f.name.startswith(".")
+            if f.is_file()
+            and not f.name.startswith(".")
+            and not any(part in _EXCLUDE_DIRS for part in f.parts)
         )
 
         for src_file in all_files:

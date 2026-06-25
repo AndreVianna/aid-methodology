@@ -47,7 +47,7 @@ Run `.cursor/aid/scripts/summarize/summarize-preflight.sh` before any state. It 
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
 3. At least one populated KB document exists (`.aid/knowledge/*.md` with real content).
 4. Not in Plan Mode (need write access).
-5. Network reachable to `registry.npmjs.org` (for Mermaid fetch; skipped when no Mermaid blocks in the KB).
+5. Node.js >= 18 is available (required for visual-fidelity validation via `validate-visuals.mjs`).
 
 If any check fails, the script exits non-zero with a clear actionable message. Do NOT
 proceed; do NOT create any state files.
@@ -108,7 +108,7 @@ The state-detection logic determines which mode this run executes:
    - User says changes-needed → record + transition to FIX.
 ```
 
-**Two-grade model:** the rubric is split into machine-verifiable checks (the AUTO_POOL — COV/D1/D2/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2 = 68 pts) and human-judgment checks (the MANUAL_POOL — K1/K2/V1 = 30 pts). COV is the resolved-doc-set coverage check (doc-set completeness gate: < 60% coverage forces Machine Grade F). D1/D2/S2 are Mermaid-specific checks that trivially pass when no Mermaid blocks are present in the generated HTML (Mermaid is retained in D-011; dropped in D-012). The script can NEVER auto-pass MANUAL_POOL; the user must run `manual-checklist.sh` and answer the prompts honestly. **V1 (human visual gate) is mandatory — a V1 fail forces Human Grade = F.** Overall Grade = `min(Machine_letter, Human_letter)`. A+ requires both Machine and Human grades to be A+ on their respective subsets. See `grading-rubric.md` for the per-subset boundaries.
+**Two-grade model:** the rubric is split into machine-verifiable checks (the AUTO_POOL — COV/T1/T2/T3/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2/NM = 68 pts) and human-judgment checks (the MANUAL_POOL — K1/K2/V1 = 30 pts). COV is the resolved-doc-set coverage check (doc-set completeness gate: < 60% coverage forces Machine Grade F). T1/T2/T3 are the S7 visual-fidelity checks (`validate-visuals.mjs`, Playwright-based) that replace the retired Mermaid D1/D2 checks; they assert readable text, minimal overlap, and correct layout for every authored visual. NM is the no-Mermaid-engine assertion (`validate-html-output.sh`). The script can NEVER auto-pass MANUAL_POOL; the user must run `manual-checklist.sh` and answer the prompts honestly. **V1 (human visual gate) is mandatory — a V1 fail forces Human Grade = F.** When Playwright is unavailable, T1/T2/T3 skip with a SKIP message and V1 carries the full visual-review responsibility (browser rendering required, not source inspection). Overall Grade = `min(Machine_letter, Human_letter)`. A+ requires both Machine and Human grades to be A+ on their respective subsets. See `grading-rubric.md` for the per-subset boundaries.
 
 Print the state-entry line and "you are here" map at the start of each mode:
 
@@ -142,7 +142,7 @@ aid-summarize  ▸ you are here
 
 **VALIDATE:**
 ```
-[State: VALIDATE] — Running machine-verifiable quality checks (diagrams, links, HTML, contrast).
+[State: VALIDATE] — Running machine-verifiable quality checks (visual fidelity, links, HTML, contrast).
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [● VALIDATE ] → [ APPROVAL ] → [ DONE ]
 ```
@@ -198,8 +198,18 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 ## Quality Gate
 
 The VALIDATE state runs script-verifiable checks (the Machine Grade AUTO_POOL) before
-human review. This includes HTML self-containment, accessibility baseline, and link
-correctness. If Node.js is available, diagram/visual validation also runs.
+human review. This includes:
+
+- **S7 visual-fidelity gate** (`validate-visuals.mjs`) — Playwright-renders every authored
+  visual (inline `<svg>`, `.diagram-box`, infographic containers) and asserts: text readable
+  (T1), minimal/zero element overlap (T2), correct basic layout (T3). Replaces the retired
+  Mermaid D1/D2 diagram check. A failing visual blocks DONE. When Playwright is unavailable,
+  the MANUAL-CHECKLIST V1 human visual gate is mandatory (browser-rendered inspection required;
+  HTML/CSS source inspection is not sufficient).
+- **HTML self-containment + no-Mermaid-engine assertion** (NM check in `validate-html-output.sh`)
+  — confirms the Mermaid runtime engine is absent from the output (D-012 guardrail).
+- **Accessibility baseline** (A1/A2/A3/A4/A5), **link correctness** (L1/L2), **HTML validity** (H1),
+  and **contrast** (C1/C2, via `contrast-check.mjs`).
 
 See `.cursor/aid/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
 
@@ -211,8 +221,7 @@ See `.cursor/aid/templates/knowledge-summary/grading-rubric.md` for the complete
 - `.cursor/aid/templates/knowledge-summary/design-tokens.md` — color palette, typography, spacing
 - `.cursor/aid/templates/knowledge-summary/component-css.css` — full reusable CSS (inlined)
 - `.cursor/aid/templates/knowledge-summary/lightbox.js` — full reusable JS (theme, lightbox, scrollspy, a11y)
-- `.cursor/aid/templates/knowledge-summary/mermaid-init.js` — Mermaid theme variables for both modes (kept for D-011; retired in D-012)
-- `.cursor/aid/templates/knowledge-summary/mermaid-examples.md` — diagram syntax patterns + pitfalls (kept for D-011; retired in D-012)
+- `.cursor/aid/scripts/summarize/validate-visuals.mjs` — §7 visual-fidelity gate (Playwright-based): T1 readable text, T2 minimal overlap, T3 correct layout for every authored visual (inline `<svg>`, `.diagram-box`, infographic container)
 - `.cursor/aid/templates/knowledge-summary/section-templates/` — `kb-category`-keyed rendering hints (retired as project-type profile selectors)
 - `.cursor/aid/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
 - `.cursor/aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), completeness-based grading

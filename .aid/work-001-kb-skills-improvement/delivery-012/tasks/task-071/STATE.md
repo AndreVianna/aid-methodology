@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** IMPLEMENT Change 6: data-driven deterministic assembly (assemble.sh/assemble-3part.sh + WinPS twin assemble-3part.ps1).
+- **Elapsed:** ~1h
+- **Notes:** IMPLEMENT Change 6 complete. Files changed: canonical/aid/scripts/summarize/assemble.sh (--manifest flag for deterministic section ordering), canonical/aid/scripts/summarize/assemble-3part.sh (--manifest + named-flag interface, backward-compat positional args), canonical/aid/scripts/summarize/assemble-3part.ps1 (-Manifest param parity, ASCII-only, WinPS-5.1-safe), canonical/skills/aid-summarize/references/state-generate.md (section-manifest.txt contract + LLM-role narrowing documented). All generated profiles updated via run_generator.py. Build result: VERIFY(deterministic)=PASS, DBI=555 pass/0 fail, ASCII-only=28 pass/0 fail, PS51=1 pass/0 fail, grade-summary=49 pass/0 fail, assemble-3part=13 pass/0 fail.
 
 ---
 
