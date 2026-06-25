@@ -107,8 +107,14 @@ no canonical template, i.e., not in the default seed synthesized from
 `canonical/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
 prompt at runtime** by appending the following line after the base prompt text:
 
-> Also produce `.aid/knowledge/<filename>` per its expectations entry in
-> `references/document-expectations.md` (keyed by `### <filename>`).
+> Also produce `.aid/knowledge/<filename>`. Resolve its depth contract as follows:
+> (1) identify the doc's spine dimension (from its `spine-dimension` column in
+> `domain-doc-matrix.md`, or the §2.6 Branch-B dimension mapping for auto-researched docs);
+> (2) satisfy the matching `### C<N> — <dimension>` Spine-Dimension Depth Standard in
+> `references/document-expectations.md` as the MUST-floor for this doc;
+> (3) if a `### <filename>` entry also exists in `references/document-expectations.md`,
+> satisfy it as an additive refinement on top of the dimension standard — it does not
+> replace the floor.
 
 This extension is appended once per custom doc in the agent's target list. The base prompt
 text (the sections below) is never modified — the extension is a runtime-only append.
@@ -122,7 +128,9 @@ agent's prompt. If the `owner` field does not match any of the 5 agents (unknown
 
 **REVIEW path:** because a custom doc appears in the `list-filenames` accessor output (it is
 in the declared set), the REVIEW state's artifact list includes it and the `aid-reviewer`
-grades it against its `document-expectations.md` entry (keyed by `### <filename>`). This
+grades it against its spine dimension's Spine-Dimension Depth Standard in
+`references/document-expectations.md` (the `### C<N> — <dimension>` block matching the
+doc's dimension), plus any `### <filename>` entry as an additive refinement on top. This
 closes the generated AND reviewed loop end-to-end (§3.3).
 
 ---

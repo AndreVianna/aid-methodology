@@ -4,6 +4,193 @@ These define what the aid-reviewer agent (and FIX mode) should look for in each 
 Each entry leads with the open question(s) the doc must answer, retains the investigation
 slots as a parenthetical, and keeps the red-flags as calibration aids.
 
+Each doc's MUST-floor is its spine dimension's depth standard below; a `### <filename>`
+entry, when present, is an optional additive refinement that layers on top and never
+replaces the dimension floor.
+
+---
+
+## Spine-Dimension Depth Standards
+
+> **Resolution chain for every doc (including custom docs):** doc -> its spine dimension
+> (from the `spine-dimension` column of `domain-doc-matrix.md`, or the §2.6 Branch-B
+> dimension mapping for auto-researched docs) -> the matching `### C<N>` block below.
+> If a `### <filename>` entry also exists for the doc, it layers additively on top of the
+> dimension floor — it never replaces it.
+>
+> **Single-source note:** the "Owns named section(s)" column below is copied from the
+> owning-table in `.cursor/aid/templates/kb-authoring/concern-model.md`
+> (§ "The four operational-guidance classes") and MUST NOT be edited here independently —
+> edit the source table and reflect it here.
+
+---
+
+### C0 — Technology / medium
+
+**MUST carry (work-actionable floor):** every language, framework, tool, runtime, and
+medium **with its actual version extracted from the config files** (not assumed); AND the
+exact **runnable build command** and the exact **runnable lint/validate command** — a tool
+name without the full command is not actionable.
+
+**Owns named section(s):** — (none; runnable commands appear in their own labelled
+sub-sections, e.g. `## Build Commands`, `## Lint Commands`)
+
+**Red flags:** A tool named without its full command (e.g. "Maven" without
+`mvn clean package`). "Version TBD" on a version extractable from a config file. Missing
+Build Commands or Lint Commands section.
+
+---
+
+### C1 — Build & shape
+
+**MUST carry (work-actionable floor):** the actual structure/anatomy of the work (the real
+layout, not a generic skeleton), with a purpose annotation per major part explaining why
+each part exists; AND **the invariants a change must never break** — an ordering
+constraint, a single-source-of-truth rule, a non-null guarantee.
+
+**Owns named section(s):** `## Invariants`
+
+**Red flags:** A tree or skeleton dump with no purpose annotations. Missing the structural
+invariants a change must respect. Structure described generically rather than as this
+project's specific layout.
+
+---
+
+### C2 — Parts & connections
+
+**MUST carry (work-actionable floor):** the parts (modules, stages, components, sources),
+**how they connect** (dependencies, hand-offs, data path), **how to add a part** (the
+naming, registration, and wiring sequence a contributor must follow), and the
+cross-boundary invariants and gotchas.
+
+**Owns named section(s):** `## Conventions`, `## Invariants`, `## Gotchas`
+
+**Red flags:** A part listed with no purpose or no connections. "How to add one" absent.
+Missing cross-boundary invariants or gotchas.
+
+---
+
+### C3 — Conventions
+
+**MUST carry (work-actionable floor):** the project's **own actual rules** — naming,
+layout, registration, handling patterns — **each with a concrete example from this
+project's code or files**, plus the red-flags a contributor must avoid. General best
+practice is not a finding; only project-specific rules with evidence count.
+
+**Owns named section(s):** `## Conventions`
+
+**Red flags:** Generic advice not specific to this project's own rules. A convention named
+but **no example** drawn from real code or files. Rules that would apply to any project
+rather than this one.
+
+---
+
+### C4 — Vocabulary
+
+**MUST carry (work-actionable floor):** every native, coined, or overloaded term defined
+**as it means in this project** (not in general), where it lives in the code or domain,
+why the project needs it, and **which term boundaries carry load-bearing conceptual
+invariants** — the distinctions a newcomer must never conflate or misuse.
+
+**Owns named section(s):** `## Invariants`
+
+**Red flags:** Generic programming terms with no project-specific meaning listed. A
+load-bearing coined term treated as noise or left undefined (the "Relative bus" failure).
+Missing term-boundary invariants.
+
+---
+
+### C5 — Data & contracts
+
+**MUST carry (work-actionable floor):** the data shapes, fields, **types, and constraints**
+(not just names); how the shapes relate and connect to each other; AND the **extension
+procedure — how to add or change a shape or field** (the contract a change must satisfy).
+
+**Owns named section(s):** `## Contracts`, `## Conventions`
+
+**Red flags:** A shape or entity list with no types or constraints. No "how to add or
+change one" procedure. Field types pushed behind a bare `sources:` pointer with no
+inline definition (the altitude tax; see D-016 exception for large auto-generated
+schemas).
+
+---
+
+### C6 — Quality & checking
+
+**MUST carry (work-actionable floor):** how the work is **checked, graded, or validated**;
+the **bars it must meet**; what kinds of checks exist and their real coverage or health
+assessment; AND the **exact runnable command(s)** to execute the checks — the check
+framework named without the command is not actionable.
+
+**Owns named section(s):** — (none; runnable commands appear in their own labelled
+sub-section, e.g. `## Test Commands`, `## Validation Commands`)
+
+**Red flags:** The check framework named without the runnable command. No pass/quality bar
+stated. No coverage or health assessment for each check type.
+
+---
+
+### C7 — Risk & debt
+
+**MUST carry (work-actionable floor):** what is risky, owed, or worked around,
+**classified by severity** (Critical / High / Medium / Low); each item with a **location**,
+**risk-if-unaddressed**, and a **resolution note**; AND the **non-obvious gotchas** a
+change will trip — lockstep config, required build steps, ordering hazards — that a reader
+cannot infer from the code alone.
+
+**Owns named section(s):** `## Gotchas`
+
+**Red flags:** Debt items with no severity or no location. Gotchas absent or buried in
+prose. Risk described without stating the consequence of leaving it unaddressed.
+
+---
+
+### C8 — Shipping & operation
+
+**MUST carry (work-actionable floor):** how the artifact moves from source to
+running/published (source control, CI/CD, packaging, **release/publish process**,
+versioning, runtime/operation), with **runnable commands** wherever an agent must act; an
+explicit "none" for any stage that does not exist in this project — never assume a stage
+is present without verifying.
+
+**Owns named section(s):** — (none; runnable commands appear in their own labelled
+sub-section, e.g. `## Release Commands`)
+
+**Red flags:** Tools listed with no explanation of how they are configured or run. A stage
+assumed present (e.g. Git assumed, CI assumed) without evidence. Missing explicit "none"
+where a stage is absent. Missing or vague versioning or release process.
+
+---
+
+### C9 — What it does for users
+
+**MUST carry (work-actionable floor):** the user-facing capabilities, features, or
+workflows; **what each accomplishes and its use-case or trigger**; **how each is invoked**;
+mapped to the parts or data they touch — the "what can it do" catalogue grounded in real
+capability definitions, not placeholders or summaries.
+
+**Owns named section(s):** — (none; invocation detail appears inline per capability)
+
+**Red flags:** A bare capability list with no value or use-case per item. Missing
+invocation detail. Placeholder descriptions. Capabilities not mapped to the parts or data
+they use.
+
+---
+
+### D — Decisions & rationale
+
+**MUST carry (work-actionable floor):** the significant decisions that shaped this work;
+for each: **what was decided**, **why** (the constraints or trade-offs that drove it),
+**the alternatives considered and rejected** (with the reason each was rejected), status
+(accepted / superseded) and evidence (commit, note, ADR) — the rationale a newcomer cannot
+reconstruct from the artifacts alone.
+
+**Owns named section(s):** — (none; status appears inline per decision entry)
+
+**Red flags:** Restates current state without the "why" or the rejected alternatives.
+Invents rationale not grounded in evidence. Missing status (accepted vs superseded) for
+load-bearing decisions.
+
 ---
 
 ### project-structure.md

@@ -321,4 +321,4 @@ presence check from over-reporting legitimate absences.
 - [frontmatter-schema.md](frontmatter-schema.md) -- `owner:`/`audience:` field schema (f001)
 - [README.md](README.md) -- index of all kb-authoring docs
 - `.codex/skills/aid-discover/references/doc-set-resolve.md` -- `synth_default_seed` + concern annotations
-- `.codex/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations (open-question form)
+- `.codex/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations (open-question form) + `## Spine-Dimension Depth Standards` section (one `### C<N>` block per dimension, single-sourced from this owning-table for the "Owns named section(s)" column)

@@ -443,4 +443,4 @@ byte-consistent with it. If the seed changes, both software rows here change in 
 - [README.md](README.md) -- index of all kb-authoring docs
 - [principles.md](principles.md) -- the three-force boundary rule (used by the dedupe-by-dimension step of composition)
 - `.cursor/skills/aid-discover/references/doc-set-resolve.md` -- `synth_default_seed` ownership map (the machine source of truth the software rows mirror) + the `discovery.doc_set` schema rows land in
-- `.cursor/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations keyed by `### <filename>`
+- `.cursor/skills/aid-discover/references/document-expectations.md` -- per-doc research expectations (open-question form, keyed by `### <filename>`) + `## Spine-Dimension Depth Standards` (one `### C<N>` block per dimension; the `spine-dimension` column of each matrix row keys into this section as the doc's MUST-floor depth contract)

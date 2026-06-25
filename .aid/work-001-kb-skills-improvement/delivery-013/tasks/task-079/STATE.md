@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~25m
+- **Notes:** Test added at tests/canonical/test-spine-depth-coverage.sh (SD01-SD12, 149 assertions). All 59 matrix-emittable docs resolve to a non-empty depth contract via their spine dimension (zero dangling anchors). DBI green (557 passing). ASCII-only green. Existing matrix + expectations suites remain green (37+9 passing).
 
 ---
 

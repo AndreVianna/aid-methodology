@@ -661,8 +661,13 @@ For each such custom doc, **append** the following line to that agent's base pro
 `references/agent-prompts.md`) before dispatching:
 
 ```
-Also produce .aid/knowledge/<filename> per its expectations entry in
-references/document-expectations.md (keyed by ### <filename>).
+Also produce .aid/knowledge/<filename>. Resolve its depth contract as follows: (1) identify
+the doc's spine dimension (from its spine-dimension column in domain-doc-matrix.md, or the
+§2.6 Branch-B dimension mapping for auto-researched docs); (2) satisfy the matching
+### C<N> — <dimension> Spine-Dimension Depth Standard in
+references/document-expectations.md as the MUST-floor for this doc; (3) if a
+### <filename> entry also exists in references/document-expectations.md, satisfy it as an
+additive refinement on top of the dimension standard — it does not replace the floor.
 ```
 
 Append one such line per custom doc in the agent's target list. The base prompt text is
