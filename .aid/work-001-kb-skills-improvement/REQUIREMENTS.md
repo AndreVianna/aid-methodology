@@ -22,6 +22,7 @@
 | 2026-06-23 | §1.5 matrix Greenfield cells aligned to the (already-corrected) prose — Review→`collapsed` (mini-panel removed); Exit→`teach-back closure` (invariant per FR-21/AC1); Primary-risk→`over-eager elicitation / thin intent-KB` (dropped-verifier "intent↔as-built drift" framing removed) | alignment pass |
 | 2026-06-23 | greenfield de-scope — greenfield is no longer a generation path: recon **detects** it (~0 source) and `aid-discover` **signposts to /aid-interview and halts**. The two generation paths are brownfield-small/large. §1.5 matrix/prose, FR-20/21/22, §4 (O7), §9 AC7, §10 updated; forward-authored greenfield KB-seed deferred to a future interview-side work | user decision |
 | 2026-06-23 | **operational-sufficiency / act-back gate added (post-detail)** — closes the **agent-actionability gap**: the existing gates (teach-back, calibration, closure, correctness) verify *comprehension* + *correctness* but none verifies *actionability* (could an agent, given only the KB, correctly DO a representative change, and where is it forced to guess / reach for source). Adds **FR-36** (the act-back mandate — a 6th panel mandate, the operational sibling of teach-back, reusing f005's panel + `grade.sh`) + **AC16** (the matching acceptance bar). KB's primary purpose is operating guidance for an AI agent, not just human onboarding; act-back certifies it. **feature-013-operational-sufficiency** (Must) extends f005/f003 | user decision |
+| 2026-06-25 | **`kb.html` summary redesign added (feature-015)** — feature-014 made the KB domain-driven + diagram-free, but `/aid-summarize` (which renders `kb.html`) was never updated and still selects a software project-TYPE profile, covers 0 of 7 custom docs, cites a phantom `repo-presentation.md`, hardcodes a stale `noscript` list, and caps the grade at C+ unless N Mermaid diagrams exist. **Foundational reframing:** `kb.html` is a **different product** for a **non-technical newcomer** — visually rich, the KB no-diagrams rule does NOT apply. Adds **§5.K / FR-45–FR-51** (doc-set/domain-driven input · concept-first content components · best-format-per-fact + completeness grading · newcomer tone · page-shell consistency with home.html/index.html · data-driven deterministic generation · pre-render inline-SVG visuals + drop the 3MB Mermaid engine + a NEW visual-fidelity gate) within the C1/C2/C3/C5/C6 + page-shell guardrails. **feature-015** (Must), **two deliveries** (D-011 correctness-core → D-012 visual & engineering). Server gzip/cache = fast-follow, OUT. Source: `.aid/design/aid-summarize-redesign.md` | user decision |
 
 ## 1. Objective
 
@@ -793,6 +794,69 @@ They are indirect consumers whose output quality is bounded by KB quality.
   *(extends the f001 frontmatter/audience axis + `tier-model.md` + the named-operational-section
   model into an enforced standard checked by the review panel's Anatomy mandate.)*
 
+### K. Domain-driven `kb.html` summary redesign (feature-015)
+
+> Feature-014 made the KB **domain-driven** and **diagram-free** (FR-37–FR-44), but
+> `/aid-summarize` — which renders the KB into `.aid/dashboard/kb.html` — was never updated and
+> is still bound to the old fixed-software model. The **foundational reframing** is that `kb.html`
+> is a **different product from the KB**: its audience is a **non-technical newcomer**, so it is
+> easy-to-read and **visually rich**, and the KB's no-diagrams authoring rule does **NOT** apply
+> to it. Completeness for the summary = ALL project-relevant information is represented, with the
+> **format of each piece chosen to fit that piece** (diagram, infographic, table, card, pill, or
+> prose). The redesign keeps the production-grade visual language + the dashboard self-containment
+> contract + page-shell consistency with `home.html`/`index.html`; it changes the information
+> architecture, content components, and generation. Source of record: the design seed at
+> `.aid/design/aid-summarize-redesign.md`.
+
+- **FR-45 (doc-set/domain-driven input).** `/aid-summarize` MUST derive its sections from the
+  **resolved doc-set** (`.aid/settings.yml → discovery.doc_set`) and the `## Discovery Domain`,
+  rendering **one section per resolved doc / `kb-category`** from each doc's frontmatter — NOT
+  by selecting a software project-TYPE profile. The **phantom `repo-presentation.md`** reference
+  MUST be removed and the `noscript` doc list MUST be **derived from the resolved doc-set**, not
+  hardcoded. *(consumes FR-39's `discovery.doc_set`; retires the fixed software-seed input.)*
+- **FR-46 (concept-first content components).** The summary MUST render the **Concept Spine**
+  (`domain-glossary.md`) and **`decisions.md`** (the ADRs) and the **capability inventory** as
+  **first-class content components** (glossary/definition, decision/ADR card, capability entry)
+  — **rendered as content, not linked**. *(consumes feature-014's custom docs + the f004 concept
+  spine.)*
+- **FR-47 (best-format-per-fact + completeness grading).** The summary's grade MUST reward
+  **clarity, completeness (coverage of all project-relevant information), and visual
+  communication for a newcomer**, with **no diagram-count floor and no diagram-count ceiling**.
+  The previous "cap at C+ unless N diagrams" gate MUST be removed and the KB no-diagrams rule
+  MUST NOT be applied to the summary. *(replaces the diagram-quantity proxy with a clarity +
+  coverage rubric.)*
+- **FR-48 (non-technical newcomer tone).** Summary prose MUST target a **non-technical
+  newcomer** — friendly, plain-language, explaining the *what* and *why* accessibly — and MUST
+  drop the KB's dual-audience / agent-frontmatter framing; "At a Glance" MUST NOT lead with
+  software metrics. *(the summary is a different product from the dual-audience KB.)*
+- **FR-49 (page-shell consistency, inner-content freedom).** The summary's OUTER shell (top bar,
+  side panel, search, nav chrome) MUST stay **consistent/aligned with `home.html` and the CLI
+  `index.html`** for seamless dashboard navigation; only the **inner content area**
+  (illustrations, graphics, tables, pills, cards, diagrams) is redesigned. *(the chrome is not
+  reinvented.)*
+- **FR-50 (data-driven deterministic generation).** The summary MUST be generated
+  **data-drivenly and deterministically** from the resolved doc-set (reproducible + auditable),
+  **not** freehand-LLM HTML. *(narrows the LLM's role to per-component content authoring;
+  assembly/ordering/shell/inlining are mechanical.)*
+- **FR-51 (pre-render visuals; drop Mermaid; visual-fidelity gate).** Visuals MUST be
+  **pre-rendered to inline SVG / HTML+CSS at build time** and the **~3MB runtime Mermaid engine
+  MUST be removed** (page 3.4MB → tens of KB; no runtime diagram engine). Because Mermaid's
+  automatic layout guarantee is lost, the VALIDATE state MUST add a **visual-fidelity gate**:
+  **every pre-rendered visual is validated** by **Playwright render** (preferred) or explicit
+  **visual inspection**, asserting **readable text**, **minimal/zero element overlap**, and a
+  **correct basic layout**; a failing visual is a generation defect fixed before DONE. This
+  **replaces** Mermaid's render-correctness check. The page MUST remain a **single
+  self-contained file** (no CDN / split assets / framework fetch). *(server-side gzip/cache of
+  the dashboard leaf is an explicit fast-follow — OUT of this work.)*
+
+> **Guardrails (must not break — apply to all of FR-45–FR-51):** **C1** output path exactly
+> `<repo>/.aid/dashboard/kb.html`; **C2/C3** single self-contained file, no CDN/split assets;
+> **C5** approval signal stays `## Knowledge Summary Status` → `**User Approved:** yes (YYYY-MM-DD)`
+> in `.aid/knowledge/STATE.md`; **C6** keep the `README.md ## Completeness` rows +
+> `.aid/settings.yml kb_baseline:` shape. The keep-list (design tokens, light/dark theming,
+> focus-trapped lightbox, a11y baseline, responsive layout, single-file self-containment) is
+> preserved — the redesign is information architecture + content + generation, not visual language.
+
 ## 6. Non-Functional Requirements
 
 > Quality attributes and **the budgets FR-23 references** (the cost/wall-clock/determinism
@@ -974,6 +1038,16 @@ They are indirect consumers whose output quality is bounded by KB quality.
   discovery start (FR-41), source-first fill (FR-42), and the dual-audience authoring
   standard — single-concern small docs, junior-clear language, tables/bullets-no-diagrams,
   machine-consumable classification, frontmatter→index→content→changelog layout (FR-43, FR-44).
+- **Must (feature-015 — domain-driven `kb.html` summary redesign):** realign `/aid-summarize`
+  to the domain-driven KB and reframe `kb.html` as a **non-technical-newcomer, visually-rich**
+  product (the KB no-diagrams rule does not apply) — doc-set/domain-driven sections (FR-45),
+  concept-first content components rendering the Concept Spine + `decisions.md` + capabilities
+  (FR-46), best-format-per-fact + completeness grading with the diagram-count cap removed
+  (FR-47), non-technical newcomer tone (FR-48), page-shell consistency with `home.html`/
+  `index.html` + inner-content freedom (FR-49), data-driven deterministic generation (FR-50),
+  and pre-rendered inline-SVG visuals + drop the 3MB Mermaid engine + the visual-fidelity gate
+  (FR-51) — within the C1/C2/C3/C5/C6 + page-shell guardrails. **Two deliveries:** D-011
+  correctness-core then D-012 visual & engineering. *(Server-side gzip/cache = fast-follow, OUT.)*
 - **Should (keep it fresh + clean):** per-doc staleness + change-triggered flagging (FR-5,
   FR-6, FR-7, FR-8), `aid-update-kb` + gap capture (FR-27, FR-28), `aid-ask` rename (FR-26),
   housekeep↔update-kb boundary (FR-33), closure-as-standing-invariant (FR-34),

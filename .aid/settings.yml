@@ -38,6 +38,11 @@ tools:
 review:
   minimum_grade: A
 
+# Per-skill override: the /aid-summarize redesign (work-001 feature-015) is held
+# to A+ — see .aid/work-001-kb-skills-improvement/features/feature-015-*/SPEC.md §12.
+summary:
+  minimum_grade: A+
+
 # ---------------------------------------------------------------------------
 # execution: settings specific to /aid-execute + /aid-deploy
 # ---------------------------------------------------------------------------
@@ -86,6 +91,31 @@ discovery:
     max_clean_passes: 2   # CLOSED after this many consecutive zero-ungrounded DETECT passes (default 2)
     max_rounds: 4         # hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds (wall-clock guard)
     token_budget: 0       # optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget
+  # doc_set: confirmed at aid-discover Step 0d for domain hybrid:methodology-tooling+software-cli
+  #          (provenance curated; 15-doc software seed + 7 methodology-tooling docs). filename|owner|presence.
+  doc_set:
+    - project-structure.md|aid-researcher-scout|required
+    - external-sources.md|aid-researcher-scout|required
+    - architecture.md|aid-researcher-architecture|required
+    - process-architecture.md|aid-researcher-architecture|required
+    - technology-stack.md|aid-researcher-architecture|required
+    - module-map.md|aid-researcher-analyst|required
+    - pipeline-contracts.md|aid-researcher-integrator|required
+    - integration-map.md|aid-researcher-integrator|required
+    - workflow-map.md|aid-researcher-integrator|required
+    - coding-standards.md|aid-researcher-analyst|required
+    - authoring-conventions.md|aid-researcher-analyst|required
+    - domain-glossary.md|aid-researcher-integrator|required
+    - schemas.md|aid-researcher-analyst|required
+    - artifact-schemas.md|aid-researcher-analyst|required
+    - test-landscape.md|aid-researcher-quality|required
+    - quality-gates.md|aid-researcher-quality|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|required
+    - feature-inventory.md|skill-self|required
+    - capability-inventory.md|skill-self|required
+    - decisions.md|aid-researcher-architecture|required
+    - README.md|skill-self|required
 
 # ---------------------------------------------------------------------------
 # triage: recon-pre-pass thresholds for the 3-path discovery classifier (f006)

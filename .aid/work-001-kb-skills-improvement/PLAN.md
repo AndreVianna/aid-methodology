@@ -11,8 +11,10 @@
 | 2026-06-23 | Initial plan — 9 deliveries (essence-core-first → greenfield Could) | /aid-plan |
 | 2026-06-23 | greenfield de-scope — the former greenfield-path delivery (then numbered delivery-009, a now-defunct identifier distinct from the current live delivery-009 Governance created in the later act-back insert) removed; work was 8 deliveries (delivery-001..008) at that point. Greenfield reduced to detect+signpost in delivery-004's recon (no generation engine / elicit path / closure / panel); f006/f012 brownfield-only scope notes updated; R1 (greenfield scope-split) retired. Forward-authored KB-seed deferred to a future interview-side work. | user decision |
 | 2026-06-23 | act-back insert — feature-013 (Operational-Sufficiency / act-back gate) inserted as the NEW delivery-005 (4 tasks, 027-030); the downstream paper deliveries shift down one (Validation 005->006, Freshness 006->007, Topology+Ship 007->008, Governance 008->009) and renumber contiguously. delivery-006 (Validation) gains ONE new task (task-039, the act-back V-E fixture family) and now depends on delivery-005. Work is now **9 deliveries / 55 tasks** (delivery-001..004 + tasks 001-026 are FROZEN/byte-untouched — delivery-001 is built). | user decision (feature-013) |
+| 2026-06-24 | domain-driven discovery insert — feature-014 added as **delivery-010** (8 tasks, 056-063) via the lite path; generalizes `/aid-discover` beyond software (FR-37–FR-44). EXECUTED + A+ delivery gate. Work is now **10 deliveries / 63 tasks**. | user decision (feature-014) |
+| 2026-06-25 | summary-redesign insert — feature-015 (`kb.html` domain-driven redesign) added as **two deliveries**: **delivery-011** (correctness core — Changes 1-5) and **delivery-012** (visual & engineering — Changes 6-7 + the §7 visual-fidelity gate), D-012 depending on D-011. Task breakdown is authored by `/aid-detail` (these stanzas + delivery SPEC/STATE are scoping-only placeholders). Work is now **12 deliveries**. | user decision (feature-015) |
 
-This plan decomposes work-001 into **9 deliveries**. The sequence is user-approved.
+This plan decomposes work-001 into **12 deliveries**. The sequence is user-approved.
 Each delivery is one branch/PR (`aid/work-001-delivery-NNN`). The strategy: build the
 **essence engine end-to-end first** (delivery-001 = the 'Relative bus' capability), then
 flip AID's own surfaces onto the new schema (INDEX, migration), scale it to project shape
@@ -190,6 +192,56 @@ consume settled contracts.
 > **Deferred to a follow-on:** full downstream decoupling of `aid-summarize` section-templates
 > + explicit `doc.md § Section` lookups from fixed filenames.
 
+### delivery-011: Summary Correctness Core (`kb.html` domain-driven)
+
+- **What it delivers:** realigns `/aid-summarize` so `kb.html` becomes **right and complete for
+  the new domain-driven KB** and reframes it as a **non-technical-newcomer, visually-rich**
+  product (feature-015, Changes 1-5, FR-45–FR-49). Adds (1) **doc-set/domain-driven section
+  derivation** — reads `discovery.doc_set` + `## Discovery Domain`, renders one section per
+  resolved doc / `kb-category` from frontmatter, retires profile-as-project-type, removes the
+  phantom `repo-presentation.md`, derives the `noscript` doc list; (2) **concept-first content
+  components** — glossary/definition, decision/ADR card, capability entry — rendering the Concept
+  Spine + `decisions.md` + capabilities as CONTENT, not links; (3) **best-format-per-fact +
+  completeness grading** — removes the C+-unless-N-diagrams cap, no diagram floor/ceiling, the KB
+  no-diagrams rule does NOT apply to the summary; (4) **non-technical newcomer tone** — drops the
+  KB's dual-audience/agent-frontmatter framing, "At a Glance" stops leading with software
+  metrics; (5) **page-shell consistency** with `home.html` + CLI `index.html` (keep/align the
+  chrome; redesign only the inner content). `state-profile.md`→doc-set-driven, `state-generate.md`,
+  the `knowledge-summary/*` templates, `grading-rubric.md`, `grade-summary.sh` updated.
+  **Shippable midpoint:** a correct, complete, shell-consistent summary of the new KB — still
+  Mermaid-backed for any diagrams. Guardrails C1/C2/C3/C5/C6 + page-shell hold.
+- **Features:** feature-015 (domain-driven `kb.html` summary redesign — Changes 1-5)
+- **Depends on:** delivery-010 (consumes feature-014's `discovery.doc_set`, `## Discovery Domain`,
+  the seven custom docs, the concept spine, and `decisions.md`)
+- **Priority:** Must
+
+### delivery-012: Summary Visual & Engineering (SVG pre-render + drop Mermaid + fidelity gate)
+
+- **What it delivers:** makes the summary **rich + cheap + reproducible** (feature-015, Changes
+  6-7 + the §7 visual-fidelity gate, FR-50–FR-51). Adds (6) **data-driven deterministic
+  generation** from the resolved doc-set (not freehand-LLM HTML) — reproducible + auditable, the
+  LLM narrowed to per-component content authoring; (7) **pre-render visuals to inline SVG /
+  HTML+CSS at build time and DROP the ~3MB runtime Mermaid engine** (page 3.4MB → tens of KB;
+  removes the silent-failure class) — `fetch-mermaid.sh` / `mermaid-init.js` removed,
+  `mermaid-examples.md` retired/recast, the page stays single-file self-contained; and the **NEW
+  §7 visual-fidelity gate** — every pre-rendered visual is validated by **Playwright render**
+  (preferred) or explicit visual inspection for **readable text + minimal/zero overlap + correct
+  basic layout**, replacing Mermaid's render-correctness check. `validate-diagrams.mjs` →
+  `validate-visuals.mjs`; `state-generate.md` / `state-validate.md` reworked; the assemble path
+  made deterministic. Guardrails C1/C2/C3/C5/C6 + page-shell hold.
+- **Features:** feature-015 (domain-driven `kb.html` summary redesign — Changes 6-7 + §7 gate)
+- **Depends on:** delivery-011 (builds on the correct, complete, shell-consistent summary; the
+  engine re-architecture + fidelity gate follow the correctness core)
+- **Priority:** Must
+
+> **Note (reader, not re-spec):** feature-015 makes `/aid-summarize` a **reader** of
+> feature-014's domain-driven output; it does NOT re-spec discovery or change `discovery.doc_set`.
+> The redesign keeps the production-grade visual language (design tokens, theming, lightbox, a11y)
+> and the dashboard self-containment + page-shell contracts (C1/C2/C3/C5/C6 + §5b); it changes
+> information architecture, content components, and generation only. **Fast-follow (OUT of this
+> work):** server-side gzip/cache of the dashboard leaf (`dashboard/server/server.mjs` +
+> `server.py`) — highest-ROI perf fix but a different component (the server, not the skill).
+
 ## Cross-Cutting Risks
 
 > **Retired R1 (greenfield scope-split).** The original R1 tracked the f006/f012
@@ -211,18 +263,31 @@ The graphs below are derived mechanically from the `Depends on:` line of every
 task SPEC (`delivery-NNN/tasks/task-NNN/SPEC.md`). Each delivery's `Depends On`
 table lists the task's FULL dependency set; dependencies that point into an
 **earlier** delivery are marked `(d-NNN)` and are pre-satisfied by the
-delivery-order sequence (d001 -> d009), so they do not affect intra-delivery
+delivery-order sequence (d001 -> d010), so they do not affect intra-delivery
 wave ordering. The `wave-map` block is total over the delivery's own tasks.
 
-**Global-DAG validation (all 55 tasks assembled):** acyclic (55/55
-topo-sorted); every dependency resolves to an existing task; no forward
-reference across deliveries (no dep points into a later delivery); no
-intra-delivery dependency on a higher-numbered sibling. Roots (no deps):
-task-001, task-031, task-032, task-033, task-037, task-045, task-047.
-(feature-013 / act-back was inserted as delivery-005 = tasks 027-030, all of
-which depend into delivery-001, so none is a root; the downstream paper
-deliveries shifted down one and renumbered contiguously. 55 tasks across
-delivery-001..009; tasks 001-026 / delivery-001..004 are FROZEN/byte-untouched.)
+**delivery-011 and delivery-012 are now detailed** (feature-015, authored by
+`/aid-detail`): delivery-011 = tasks 064-070 (Changes 1-5, the correctness core)
+and delivery-012 = tasks 071-076 (Changes 6-7 + the §7 visual-fidelity gate).
+Their graphs below carry full `Depends On` tables + `wave-map` blocks like the
+others; the invariant — "every dependency resolves to an existing task" — now
+applies to them too. Every d011/d012 task also carries the cross-delivery
+dependency (d011→d010, d012→d011) as a pre-satisfied edge that does not affect
+intra-delivery wave ordering.
+
+**Global-DAG validation (all 76 detailed tasks assembled across
+delivery-001..012):** acyclic (76/76 topo-sorted); every dependency resolves to
+an existing task; no forward reference across deliveries (no dep points into a
+later delivery); no intra-delivery dependency on a higher-numbered sibling.
+Roots (no deps at all): task-001, task-031, task-032, task-033, task-037,
+task-045, task-047, task-073. (feature-013 / act-back was inserted as delivery-005
+= tasks 027-030, all of which depend into delivery-001, so none is a root; the
+downstream paper deliveries shifted down one and renumbered contiguously.
+feature-015 added 13 tasks across delivery-011..012 — task-073 (d012's Playwright
+provisioning, depends-on nothing) is the one new true root; task-064 is the d011
+intra-delivery root but depends into delivery-010, so it is not a no-deps global
+root. 76 tasks across delivery-001..012; tasks 001-026 / delivery-001..004 are
+FROZEN/byte-untouched.)
 
 ### delivery-001 execution graph
 
@@ -458,4 +523,64 @@ wave 2: task-057, task-058, task-061
 wave 3: task-059
 wave 4: task-062
 wave 5: task-063
+```
+
+### delivery-011 execution graph
+
+> Authored by `/aid-detail` (feature-015 Changes 1-5). All d011 tasks build on **delivery-010**
+> (the domain-driven KB the summary reads) — a pre-satisfied cross-delivery dependency marked
+> `(d-010)`; it does not affect intra-delivery wave ordering.
+
+| Task | Depends On |
+|------|-----------|
+| task-064 | delivery-010 (feature-014 doc-set + domain + custom docs) |
+| task-065 | task-064 |
+| task-066 | task-065 |
+| task-067 | task-064 |
+| task-068 | task-065, task-066 |
+| task-069 | task-065, task-066, task-067, task-068 |
+| task-070 | task-065, task-066, task-067, task-068, task-069 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-065, task-067 |
+
+```wave-map
+delivery: 011
+wave 1: task-064
+wave 2: task-065, task-067
+wave 3: task-066
+wave 4: task-068
+wave 5: task-069
+wave 6: task-070
+```
+
+### delivery-012 execution graph
+
+> Authored by `/aid-detail` (feature-015 Changes 6-7 + the §7 visual-fidelity gate). All d012
+> tasks build on **delivery-011** (the correctness core the engine re-architecture builds on) — a
+> pre-satisfied cross-delivery dependency marked `(d-011)`; it does not affect intra-delivery wave
+> ordering. task-071 and task-073 are intra-delivery roots (task-073 provisions the Playwright
+> dependency in parallel with the assembly re-architecture).
+
+| Task | Depends On |
+|------|-----------|
+| task-071 | delivery-011 (summary correctness core) |
+| task-072 | task-071 |
+| task-073 | — |
+| task-074 | task-072, task-073 |
+| task-075 | task-071, task-072, task-074 |
+| task-076 | task-071, task-072, task-073, task-074, task-075 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-071, task-073 |
+
+```wave-map
+delivery: 012
+wave 1: task-071, task-073
+wave 2: task-072
+wave 3: task-074
+wave 4: task-075
+wave 5: task-076
 ```
