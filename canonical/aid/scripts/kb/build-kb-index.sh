@@ -311,8 +311,8 @@ changelog:
   - $(date -u +%Y-%m-%d): Generated
 ---
 
-<!-- AUTO-GENERATED $TS by canonical/scripts/kb/build-kb-index.sh -->
-<!-- DO NOT EDIT - regenerate with: bash canonical/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md -->
+<!-- AUTO-GENERATED $TS by canonical/aid/scripts/kb/build-kb-index.sh -->
+<!-- DO NOT EDIT - regenerate with: bash canonical/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md -->
 
 # Knowledge Base Index
 
@@ -428,7 +428,7 @@ EOF
 
     echo "---"
     echo ""
-    echo "*To regenerate this index, run \`bash canonical/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md\`.*"
+    echo "*To regenerate this index, run \`bash canonical/aid/scripts/kb/build-kb-index.sh --root .aid/knowledge --output .aid/knowledge/INDEX.md\`.*"
 
 } > "$OUTPUT"
 
