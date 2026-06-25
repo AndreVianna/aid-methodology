@@ -84,6 +84,19 @@ Every KB document you produce MUST comply with the **dual-audience authoring sta
 The `## Change Log` section MUST be the last section in every document. Do not place
 content after it.
 
+**Mechanical self-check before you report done (do NOT rely on your own reading).** Citations
+MUST be durable anchors — a file path plus a grep-recoverable symbol/heading/string — NEVER a
+bare `file.ext:LINE` (line numbers drift). Before reporting, RUN the lint on your output and fix
+every violation it lists:
+
+```bash
+bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+```
+
+Convert each flagged `file.ext:LINE` to `file.ext:<symbol or heading at that location>`. The
+orchestrator re-runs this lint as a gate (Step 5a) and will bounce non-compliant docs back to
+you — a self-reported "durable anchors only" is not accepted; the script is the authority.
+
 ---
 
 ## Custom-Doc Runtime Extension (§2.6)

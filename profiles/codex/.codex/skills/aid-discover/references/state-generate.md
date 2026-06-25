@@ -757,6 +757,30 @@ the **Targeted Discovery** section of `SKILL.md`. Wait, verify again. Repeat unt
 
 Semantic verification of the docs (frontmatter compliance, contract claims, cross-doc consistency, spot-checks against source) happens in the **REVIEW** state, dispatched as the `aid-reviewer` sub-agent — not as a separate shell script.
 
+### Step 5a: Citation Lint Gate (mechanical authoring gate)
+
+**Run AFTER the fan-out, BEFORE closure.** The no-bare-citation rule (kb-authoring P1d: use
+durable `file:symbol` anchors, never `file.ext:LINE`) is given to agents as prose and verified
+only by their self-report — which is unreliable (agents have shipped bare line citations while
+self-reporting "durable anchors only"). This gate enforces it mechanically: trust the script,
+not the agent's word.
+
+```bash
+bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+```
+
+- **Exit 0 (clean):** print `[5a] Citation lint: clean.` and CHAIN to Step 5b.
+- **Exit 1 (violations):** the script lists each `doc:line -> file.ext:LINE`. Do NOT proceed.
+  Partition the violations by KB doc, resolve each doc's owner from the declared doc-set
+  (`owns-<agent>` accessor), and **re-dispatch the owning agent(s)** with the violation list and
+  this directive: *"Convert each listed bare line citation to a durable anchor — the file path
+  plus a grep-recoverable symbol/heading/string at that location (NOT a line number)."* Agents
+  run in parallel (one per affected doc). After they return, **re-run the lint**; repeat until
+  exit 0 (cap at 2 rounds — any residual is escalated to a Q&A entry, never shipped silently).
+
+This gate is the model for moving any MECHANICAL authoring rule from "self-reported in GENERATE /
+caught in REVIEW" to "mechanically gated in GENERATE" (cf. `lint-frontmatter.sh` for frontmatter).
+
 ### Step 5b: SYNTHESIS + CLOSURE
 
 **Run after ALL deep-dive agents (Steps 2-5) complete, before Step 6.**
