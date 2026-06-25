@@ -17,8 +17,8 @@ This is the DELIVERY-LEVEL STATE.md template. It is divided into two zones:
 
 <!-- AUTHORED -- single writer: this delivery's branch only. -->
 
-- **State:** Specified
-- **Updated:** 2026-06-25T14:45:00Z
+- **State:** Done
+- **Updated:** 2026-06-25T16:45:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -26,10 +26,10 @@ This is the DELIVERY-LEVEL STATE.md template. It is divided into two zones:
 
 ## Delivery Gate
 
-- **Reviewer Tier:** Pending
-- **Grade:** Pending
-- **Issue List:** --
-- **Timestamp:** --
+- **Reviewer Tier:** aid-reviewer (D-015 dual-intent core gate)
+- **Grade:** A+
+- **Issue List:** .aid/.temp/review-pending/d015-gate.md — gate ran the mechanism end-to-end (both intents genuinely measured). 1 LOW (glossary-term extractor leaked structural headings as C4 terms) FIXED in kb-dual-intent-probes.sh; 1 MINOR (essence-coverage denominator is reviewer-judgment; the Divergence half is hard-gated) Accepted. Zero HIGH/CRITICAL.
+- **Timestamp:** 2026-06-25T16:40:08Z
 
 ---
 

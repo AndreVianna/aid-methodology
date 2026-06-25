@@ -78,7 +78,7 @@
 {"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "55685d384312d2b6deaea86f1f89607d90659737c0ce0de5cfdcb38fcf91b28c", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-actback-task.sh", "profile": "cursor", "sha256": "c48147c03c4e61e1362286dd1282e8c6de207feef1563b5b73732705cc005444", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-citation-lint.sh", "profile": "cursor", "sha256": "e3427135fbbd3103db4eb7e6b057c6dd4498b5354e3b09c6042756b0017465e8", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
-{"dst": ".cursor/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "cursor", "sha256": "1389cf1659c360fadeebbb66df45172c1f18ffab865462491cfbe6d679e82855", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
+{"dst": ".cursor/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "cursor", "sha256": "b94ab5390e89a28c93dbaaaef44dbbf09349f02cddd9bb043854fa7593ab9778", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-freshness-check.sh", "profile": "cursor", "sha256": "7b4def4249f20690aa5d18b8aacbb62269afb925755d5300e396b15716f5dd46", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-teachback-questions.sh", "profile": "cursor", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".cursor/aid/scripts/kb/lint-frontmatter.sh", "profile": "cursor", "sha256": "be2ab5d575c35e303c1f9c5089ac236cbe1b3fb8fd2057df859c68fa6bab1ec4", "src": "canonical/scripts/kb/lint-frontmatter.sh"}

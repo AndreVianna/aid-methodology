@@ -334,13 +334,20 @@ _extract_glossary_terms() {
     grep -oE '^\*\*`?[A-Za-z][A-Za-z0-9 _/-]*`?\*\*' "$doc_path" 2>/dev/null \
       | sed 's/^\*\*`\?//; s/`\?\*\*$//' || true
 
-    # Heading-style glossary entries: ## Term or ### Term (skip metadata headings)
+    # Heading-style glossary entries: ## Term or ### Term (skip structural/operational headings)
     awk '/^#{2,3} / {
       h = $0
       sub(/^#{2,3}[[:space:]]+/, "", h)
       sub(/[[:space:]]+$/, "", h)
-      # Skip common non-term headings
-      if (h !~ /^(Change Log|Overview|Summary|Table|Introduction|References|Notes|See Also|Index)/) {
+      # Lowercase + strip trailing punctuation for case-insensitive structural-heading check
+      hl = tolower(h)
+      sub(/[[:punct:]]+$/, "", hl)
+      # Skip structural/operational-class section headings that are KB architecture,
+      # not genuine domain terms.  Exclusion set (case-insensitive, punct-tolerant):
+      #   Invariants, Conventions, Contracts, Gotchas, Decisions, Overview,
+      #   Changelog, Change Log, See also, Sources, Notes, Summary, Table,
+      #   Introduction, References, Index, See Also
+      if (hl !~ /^(invariants|conventions|contracts|gotchas|decisions|overview|changelog|change log|see also|sources|notes|summary|table|introduction|references|index)$/) {
         print h
       }
     }' "$doc_path" 2>/dev/null || true
