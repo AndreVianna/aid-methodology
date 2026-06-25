@@ -26,3 +26,12 @@ constraint-deferred. To clean up before/with the final handoff.
   dashboard server component, not in feature-015 (which scopes to the aid-summarize skill
   and its canonical assets). Recommended action: open a new feature/task against
   `dashboard/server/` when server maintenance is next scheduled.
+
+- **[§7 gate viewport gap — found in Phase-3 visual review]** `validate-visuals.mjs` renders at a
+  single WIDE viewport (~1152px content), so it PASSED the lifecycle-timeline visual whose 8 stages
+  only clip at the dashboard's narrower ~732px column ("Monitor" pill cut by 24px). The generated
+  `kb.html` was hand-corrected (shrink pill padding/font → fits at 732px; re-verified). RECOMMENDED
+  gate improvement (design choice for the user): validate each visual at REPRESENTATIVE widths
+  (e.g. the dashboard column ~720-760px AND a mobile ~390px), not just one wide viewport — i.e. add
+  a "no horizontal overflow-clip at target widths" check (T4). Deferred as a design decision, not
+  guessed overnight.
