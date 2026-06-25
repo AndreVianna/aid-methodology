@@ -298,9 +298,12 @@ fi
 # Term normalization (feature-014 rules #1 and #2):
 #   #1 slash-split  -- a compound joined by "/" is treated as its separate words; each part
 #                      is its own term (e.g. "canonical / profile" -> "canonical", "profile").
-#   #2 singular     -- terms are compared in singular form (e.g. "tasks" -> "task"). Applied
-#                      symmetrically to BOTH the defined identifiers and the used terms, so the
-#                      match is robust even if the singular rule is linguistically imperfect.
+#   #2 singular     -- a best-effort FILTER for REGULAR plurals (-s/-es/-ies, e.g. "tasks" ->
+#                      "task"), applied symmetrically to defined identifiers and used terms. It
+#                      is NOT a full lemmatizer: irregular plurals (indices/index, matrices/
+#                      matrix, people/person) that escape it stay flagged and defer to the user
+#                      via the exclusion-review gate (Step 5c) / Q&A -- typically resolved as an
+#                      alias. Do NOT extend this to chase irregular plurals (NO-ASSUMPTIONS).
 # norm_terms reads terms on stdin and emits their normalized parts (one per line, lowercase).
 # ---------------------------------------------------------------------------
 norm_terms() {

@@ -30,9 +30,15 @@ excluded ONLY after the user confirms it at the exclusion-review gate (Step 5c).
    each word of a slash compound as its own term. The checker splits on `/` and matches each
    part independently (so `canonical / profile` resolves only when both `Canonical` and
    `Profile` are defined). When authoring, list them separately (`Canonical`, `Profile`).
-2. **Always singular.** Headings and terms are written in the singular. The checker compares in
-   singular form (`tasks` -> `task`), applied symmetrically to defined identifiers and used
-   terms.
+2. **Always singular (best-effort FILTER).** Headings and terms are written in the singular. The
+   checker normalizes **regular** plurals (`-s` / `-es` / `-ies`, e.g. `tasks` -> `task`)
+   symmetrically on both the defined identifiers and the used terms. This is a *filter, not a
+   full lemmatizer*: a word with an **irregular** plural (e.g. `indices`/`index`,
+   `matrices`/`matrix`, `people`/`person`) that escapes the rule and stays flagged is **NOT**
+   silently resolved or assumed. It falls under the **NO-ASSUMPTIONS rule** and is submitted to
+   the user at the exclusion-review gate (Step 5c) / Q&A — where it is typically resolved as an
+   **alias** of the existing concept (or grounded/excluded per the user's decision). Do NOT
+   extend the singularizer to chase irregular plurals; defer them to the user.
 3. **Not-concepts (identify -> confirm -> exclude).** Terms that are not concepts: enum/field
    values (`in progress`, `user approved`), instance names (skill names like `aid-execute`,
    file names), and similar. The loop proposes them; the user confirms before exclusion.
