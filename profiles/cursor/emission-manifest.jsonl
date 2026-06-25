@@ -76,7 +76,7 @@
 {"dst": ".cursor/aid/scripts/kb/coined-term-denylist.txt", "profile": "cursor", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".cursor/aid/scripts/kb/discover-preflight.sh", "profile": "cursor", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "55685d384312d2b6deaea86f1f89607d90659737c0ce0de5cfdcb38fcf91b28c", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
-{"dst": ".cursor/aid/scripts/kb/kb-actback-task.sh", "profile": "cursor", "sha256": "c1ebfb329a8f408ed8c94be85c99e57721223f3a70ef5f5e1085803f0fadad72", "src": "canonical/scripts/kb/kb-actback-task.sh"}
+{"dst": ".cursor/aid/scripts/kb/kb-actback-task.sh", "profile": "cursor", "sha256": "40226094e817362237bbc9b9c394a1096c75abe87381eafe442c27f0188a5a93", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-citation-lint.sh", "profile": "cursor", "sha256": "e3427135fbbd3103db4eb7e6b057c6dd4498b5354e3b09c6042756b0017465e8", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-freshness-check.sh", "profile": "cursor", "sha256": "7b4def4249f20690aa5d18b8aacbb62269afb925755d5300e396b15716f5dd46", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-teachback-questions.sh", "profile": "cursor", "sha256": "7e99b315b705bea79c51fe5d74f4d3851e1bce1c0ea196d2f917b3816e92e2dc", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}

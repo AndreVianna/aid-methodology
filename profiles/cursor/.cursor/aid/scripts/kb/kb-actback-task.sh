@@ -401,7 +401,11 @@ _run_check() {
       # Check if the section is actually present in the KB doc
       local section_present=0
       if [[ -f "$doc_path" ]]; then
-        if LC_ALL=C grep -qE "^## ${class}[[:space:]]*$" "$doc_path" 2>/dev/null; then
+        # Match the heading as a clean IDENTIFIER with an OPTIONAL suffix: "## Conventions",
+        # "## Conventions (Recurring-Change Checklist)", "## Conventions ..." all count; but
+        # "## Conventionsfoo" does not (the class name must be followed by whitespace or EOL).
+        # (feature-014 AB-004 -- same heading-idempotency rule as the closure checker.)
+        if LC_ALL=C grep -qE "^## ${class}([[:space:]].*)?$" "$doc_path" 2>/dev/null; then
           section_present=1
         fi
       fi
