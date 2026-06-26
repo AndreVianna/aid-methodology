@@ -269,7 +269,7 @@ The last section is a full table of every resolved doc with a one-line descripti
   <header>
     <h2 id="kb-index-heading">Knowledge Base Index</h2>
     <p class="lede">All source documents in this project's Knowledge Base —
-      click any to read the full technical detail.</p>
+      click any document name to jump to its section on this page.</p>
   </header>
   <div class="tbl-wrap">
   <table class="tbl">
@@ -279,7 +279,7 @@ The last section is a full table of every resolved doc with a one-line descripti
     <tbody>
       <!-- One row per resolved doc, in manifest order: -->
       <tr>
-        <td><a href="./{doc}.md">{doc}.md</a></td>
+        <td><a class="doc-link" href="#{section-id}"><code>{doc}.md</code></a></td>
         <td>{summary: value, or doc name de-slugified}</td>
       </tr>
     </tbody>
@@ -290,6 +290,16 @@ The last section is a full table of every resolved doc with a one-line descripti
   </p>
 </section>
 ```
+
+**Link rule (mandatory).** Each document name MUST link to that document's **section on this
+page** via the in-page anchor `#{section-id}`, where `{section-id}` is the exact `id` you
+assigned to that doc's `<section>` (the filename stem, lowercased — e.g. `architecture.md` →
+`#architecture`, `README.md` → `#readme`). Do **NOT** link to the raw `./{doc}.md` file:
+in-page anchors keep kb.html self-contained (they work offline and when the file is shared
+standalone) and open the *rendered* section, not unformatted markdown. Because these are
+in-page section anchors — not links to source `.md` files — they comply with rule #6. The
+`.doc-link` class (in `component-css.css`) re-asserts the `--accent` link color on the
+code-styled filename so it reads as a link in both themes.
 
 ### Step 7 — Start from the skeleton
 

@@ -83,6 +83,10 @@ h3 { font-size: 1.15rem; }
 h4 { font-size: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
 p { margin: 0 0 1em 0; color: var(--text-muted); }
 code { font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace; font-size: 0.88em; background: var(--bg-sunken); padding: 0.12em 0.4em; border-radius: 4px; color: var(--text); }
+/* KB Index document links: a code-styled filename that anchors to its in-page section. The code{} rule above sets its own color, so re-assert --accent so it reads as a link. */
+.doc-link { text-decoration: none; }
+.doc-link code { color: var(--accent); }
+.doc-link:hover code { text-decoration: underline; }
 ul, ol { margin: 0 0 1em 0; padding-left: 1.5em; color: var(--text-muted); }
 ul li, ol li { margin-bottom: 0.3em; }
 hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
