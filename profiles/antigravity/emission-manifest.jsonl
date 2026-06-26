@@ -100,7 +100,7 @@
 {"dst": ".agent/aid/scripts/summarize/stale-check.sh", "profile": "antigravity", "sha256": "354a6504ce4e41f96c02e0a9dba6165a9e82e6e4527c49ee841f86a96129a5e5", "src": "canonical/scripts/summarize/stale-check.sh"}
 {"dst": ".agent/aid/scripts/summarize/summarize-preflight.sh", "profile": "antigravity", "sha256": "989e2d7831793bd4d5cdb72bc09c64ed1eadafd2b5a32d3842523176eef829fb", "src": "canonical/scripts/summarize/summarize-preflight.sh"}
 {"dst": ".agent/aid/scripts/summarize/validate-html-output.sh", "profile": "antigravity", "sha256": "6c1c86fac93ac3314b90ce2d2367dc6f1bf65464ad3e7c3d917af41b8c80ede6", "src": "canonical/scripts/summarize/validate-html-output.sh"}
-{"dst": ".agent/aid/scripts/summarize/validate-visuals.mjs", "profile": "antigravity", "sha256": "70e5703686bf74c2f8e6a07f760d264a64ee6709acdecc4394700ba0b57253c8", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
+{"dst": ".agent/aid/scripts/summarize/validate-visuals.mjs", "profile": "antigravity", "sha256": "9b96c8edd4205dcb7328b54a2c648af99b964fd21e0072888d437afad2249110", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".agent/aid/scripts/summarize/writeback-state.sh", "profile": "antigravity", "sha256": "ac36f33a0a8bb791f625d528a9a31b683787be98b761d05f59a14ee71b5a281a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".agent/aid/templates/README.md", "profile": "antigravity", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".agent/aid/templates/agent-boilerplate.md", "profile": "antigravity", "sha256": "563f43a7616f75caa987b12fa0bf050c5f833d914f9c02e058eba9866c0e8744", "src": "canonical/templates/agent-boilerplate.md"}

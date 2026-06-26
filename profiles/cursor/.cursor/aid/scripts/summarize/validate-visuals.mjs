@@ -251,7 +251,7 @@ const visuals = await page.evaluate((opts) => {
   }
 
   function getTextNodes(root) {
-    // Returns computed font-size (px) of all visible text inside root.
+    // Returns the RENDERED font-size (px) of all visible, painted text inside root.
     const texts = [];
     const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
     let node;
@@ -260,10 +260,27 @@ const visuals = await page.evaluate((opts) => {
       if (!text) continue;
       const parent = node.parentElement;
       if (!parent) continue;
+      // Skip non-painted markup whose text content is never rendered: SVG <style>/<script>
+      // (CSS + JS), <defs>/<marker>/<symbol>/<clipPath>/<pattern>/gradients (definitions),
+      // and <title>/<desc>/<metadata> (accessibility/meta). In SVG, getComputedStyle on a
+      // <style> does NOT report display:none, so the visibility check below does not catch it.
+      if (parent.closest('style, script, defs, marker, symbol, clipPath, linearGradient, radialGradient, pattern, title, desc, metadata')) continue;
       const style = window.getComputedStyle(parent);
       if (style.display === 'none' || style.visibility === 'hidden') continue;
-      const fs = parseFloat(style.fontSize);
+      let fs = parseFloat(style.fontSize);
       const rect = parent.getBoundingClientRect();
+      // For SVG text, the computed font-size is in USER UNITS (the viewBox coordinate system).
+      // The on-screen size is that value scaled by the owning <svg>'s viewBox -> viewport ratio,
+      // so a small attribute (e.g. 8) can render comfortably large. Measure the RENDERED size
+      // for the legibility threshold. (HTML text has scale 1 -- its computed px is already rendered.)
+      const ownerSvg = parent.ownerSVGElement ||
+        (parent.tagName && parent.tagName.toLowerCase() === 'svg' ? parent : null);
+      const vb = ownerSvg && ownerSvg.viewBox && ownerSvg.viewBox.baseVal;
+      if (vb && vb.width > 0) {
+        const svgRect = ownerSvg.getBoundingClientRect();
+        const scale = svgRect.width / vb.width;
+        if (scale > 0 && isFinite(scale)) fs = fs * scale;
+      }
       texts.push({ text: text.slice(0, 40), fontSize: fs, height: rect.height });
     }
     return texts;
