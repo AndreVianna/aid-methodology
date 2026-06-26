@@ -11,11 +11,29 @@
 			<defs>
 				<style>
 					.arch-box { fill: #EEF2F7; stroke: #E3E8EF; stroke-width: 1.5; }
-					.arch-accent { fill: #007F7D20; stroke: #007F7D; stroke-width: 1.5; }
-					.arch-primary { fill: #0B1F3A20; stroke: #0B1F3A; stroke-width: 1.5; }
+					.arch-accent { fill: #E2F2F1; stroke: #007F7D; stroke-width: 1.5; }
+					.arch-primary { fill: #E6ECF5; stroke: #3A5680; stroke-width: 1.5; }
 					.arch-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; font-weight: 600; fill: #101828; text-anchor: middle; dominant-baseline: middle; }
 					.arch-sub { font-size: 9px; font-weight: 400; fill: #667085; }
 					.arch-div { stroke: #CDD5DF; stroke-width: 1.5; stroke-dasharray: 5,4; }
+					/* Dark mode -- keyed to BOTH the page toggle ([data-theme]) and the OS (prefers-color-scheme) */
+					@media (prefers-color-scheme: dark) {
+						.arch-box     { fill: #1E293B; stroke: #2B3A52; }
+						.arch-accent  { fill: #0E3A39; stroke: #2DD4BF; }
+						.arch-primary { fill: #1C2B47; stroke: #8FB3E6; }
+						.arch-text    { fill: #E5EAF2; }
+						.arch-sub     { fill: #9AA7BD; }
+					}
+					:root[data-theme="dark"] .arch-box     { fill: #1E293B; stroke: #2B3A52; }
+					:root[data-theme="dark"] .arch-accent  { fill: #0E3A39; stroke: #2DD4BF; }
+					:root[data-theme="dark"] .arch-primary { fill: #1C2B47; stroke: #8FB3E6; }
+					:root[data-theme="dark"] .arch-text    { fill: #E5EAF2; }
+					:root[data-theme="dark"] .arch-sub     { fill: #9AA7BD; }
+					:root[data-theme="light"] .arch-box     { fill: #EEF2F7; stroke: #E3E8EF; }
+					:root[data-theme="light"] .arch-accent  { fill: #E2F2F1; stroke: #007F7D; }
+					:root[data-theme="light"] .arch-primary { fill: #E6ECF5; stroke: #3A5680; }
+					:root[data-theme="light"] .arch-text    { fill: #101828; }
+					:root[data-theme="light"] .arch-sub     { fill: #667085; }
 				</style>
 			</defs>
 
@@ -50,7 +68,7 @@
 
 			<!-- Product: packages box -->
 			<rect class="arch-primary" x="240" y="35" width="90" height="40" rx="8"/>
-			<text class="arch-text" style="fill:#0B1F3A;" x="285" y="52">packages/</text>
+			<text class="arch-text" x="285" y="52">packages/</text>
 			<text class="arch-text arch-sub" x="285" y="65">npm + PyPI + tar</text>
 
 			<!-- Product: below boxes - bin/lib/dashboard -->
@@ -73,7 +91,7 @@
 
 			<!-- Dogfood: .aid box -->
 			<rect class="arch-primary" x="500" y="35" width="140" height="40" rx="8"/>
-			<text class="arch-text" style="fill:#0B1F3A;" x="570" y="52">.aid/</text>
+			<text class="arch-text" x="570" y="52">.aid/</text>
 			<text class="arch-text arch-sub" x="570" y="65">pipeline state + KB</text>
 
 			<!-- Dogfood annotation -->
