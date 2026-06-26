@@ -99,6 +99,11 @@ choices) that are not in the KB are NOT omission FAIL items.
 For each probe answer in the Stage 1 reconstruction:
 
 1. **Locate the source-of-truth** for that probe (source code, config, authoritative docs).
+   When sources disagree, the **authoritative spec / definition doc outranks host-instruction
+   files** (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, `.github/copilot-instructions.md`, ...).
+   A KB claim that matches a host-instruction file but contradicts the authoritative spec is a
+   **Divergence** `[HIGH] [FIDELITY]` -- not a pass -- because the KB grounded itself on the
+   wrong authority. Confront source-vs-source, not just KB-vs-one-source.
 2. **Compare** the KB-only answer to the source-of-truth.
 3. **Classify** any gap:
    - A factual contradiction between KB and source = Divergence = `[HIGH] [FIDELITY]`.

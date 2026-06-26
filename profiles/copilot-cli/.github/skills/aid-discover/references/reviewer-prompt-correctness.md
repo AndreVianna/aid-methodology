@@ -57,6 +57,49 @@ For EVERY substantive claim in every KB document:
 **Minimum 15 spot-checks** (verify claims against actual source files). At least 5 must
 be version verifications.
 
+### Source authority & cross-source consistency (the "true-but-wrong" trap)
+
+"True against the source" is necessary but **NOT sufficient**. A claim can match a real
+on-disk source and still be wrong, because sources differ in authority, two sources can
+disagree, and the KB can contradict itself. Apply these three checks to every **load-bearing
+structural claim** -- counts (of phases, stages, components, skills, agents, types, groups,
+endpoints, ...), named lifecycles / models / sequences, and contracts / invariants.
+
+**A. Source-authority hierarchy.** On-disk files are not equal authorities. Rank the source a
+claim rests on:
+
+1. **Authoritative definition / spec docs** -- the project's own statement of what it IS: the
+   methodology / architecture / design spec, formal requirements, API / schema / contract
+   definitions, the canonical reference. Source of truth for structural facts.
+2. **Host / agent instruction files** -- `CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
+   `.github/copilot-instructions.md`, and the like. These are operational *guidance*; they
+   drift and are **NOT authoritative for structural facts**.
+3. **Inferred from code / config** -- derived, not declared.
+
+A claim is correct only if true against the **highest-authority source that speaks to it**.
+"True against a lower-authority source" is a FAIL, not a pass.
+
+**B. The instruction-file trap.** When a load-bearing structural claim is grounded ONLY on a
+tier-2 instruction file, you MUST find the tier-1 spec doc and verify there:
+- tier-1 spec disagrees -> `[CRITICAL]` (the KB transcribed a fallible instruction file as fact).
+- no tier-1 spec exists -> flag the claim **authority-unconfirmed** `[HIGH]` and raise a Q&A.
+
+**C. Cross-document reconciliation.** For every load-bearing invariant the KB states in MORE
+THAN ONE document, extract its value from EVERY doc that states it and assert they AGREE.
+Two KB docs disagreeing on the same invariant = `[CRITICAL]` internal contradiction -- even
+when worded differently for the same fact (e.g. "six phases" in one doc vs a "12-step
+pipeline" in another, for the *same* pipeline). Method: grep the corpus for the invariant's
+noun, collect every stated value, compare; reconcile against the tier-1 authority to decide
+which doc is wrong.
+
+These three checks separate "internally faithful to whatever it cited" from "correct." A
+corpus where every doc faithfully cites *some* source can still be uniformly -- or
+self-contradictorily -- wrong; finding that is this mandate's hardest and most important job.
+
+**Add >=5 spot-checks for these checks specifically:** take the project's most load-bearing
+structural facts (its core counts and its canonical lifecycle / model), trace each to its
+highest-authority source, and confirm every KB mention agrees with it and with each other.
+
 ### Rubric routing (apply per document)
 
 Route each document by its `kb-category:` and `source:` frontmatter before grading:
