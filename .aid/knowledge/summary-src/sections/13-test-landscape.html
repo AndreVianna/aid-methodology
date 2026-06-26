@@ -1,0 +1,82 @@
+<section id="test-landscape" class="sec" data-title="Test Landscape">
+	<header>
+		<span class="eyebrow">Automated suites &mdash; test-landscape.md</span>
+		<h2>Test Landscape</h2>
+		<p class="lede">82 canonical test suites covering the CLI installer, the multi-profile render, the dashboard, and the docs site. A single entrypoint runs all non-Windows suites locally; heavy gates run on master CI only.</p>
+	</header>
+
+	<div class="grid g4" style="margin-bottom:1.5rem;">
+		<div class="card">
+			<div class="kicker">Total suites</div>
+			<div class="stat">82</div>
+			<div class="stat-sub">canonical test suites</div>
+		</div>
+		<div class="card">
+			<div class="kicker">CI workflows</div>
+			<div class="stat">4</div>
+			<div class="stat-sub">test, installer, release, docs</div>
+		</div>
+		<div class="card">
+			<div class="kicker">CI lanes</div>
+			<div class="stat">2</div>
+			<div class="stat-sub">Linux (primary) + Windows PS 5.1</div>
+		</div>
+		<div class="card">
+			<div class="kicker">Local run</div>
+			<div class="stat"><code style="font-size:0.8rem;">run-all.sh</code></div>
+			<div class="stat-sub">Pin HOME before running</div>
+		</div>
+	</div>
+
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Workflow</th><th>Triggers</th><th>What it runs</th></tr></thead>
+			<tbody>
+				<tr>
+					<td><code>test.yml</code></td>
+					<td>Push/PR to <strong>master only</strong></td>
+					<td>Canonical helper suites (<code>tests/run-all.sh</code>); includes render-drift check. <strong>Not run on feature branches.</strong></td>
+				</tr>
+				<tr>
+					<td><code>installer-tests.yml</code></td>
+					<td>Push to any feature branch</td>
+					<td>Installer integration tests; Linux + Windows PS 5.1 lane; runs <code>tests/windows/Test-AidInstaller.ps1</code> on <code>windows-latest</code></td>
+				</tr>
+				<tr>
+					<td><code>release.yml</code></td>
+					<td>Git tag push (<code>v*</code>)</td>
+					<td>Full release pipeline: build, sign, publish npm + PyPI, create GitHub release</td>
+				</tr>
+				<tr>
+					<td><code>docs.yml</code></td>
+					<td>Push to <strong>master only</strong></td>
+					<td>Astro docs site build and deploy to GitHub Pages</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout warn" style="margin-top:1.5rem;">
+		<h4>Critical: tests must pin HOME</h4>
+		<p>The migration scanner defaults its root to <code>$HOME</code>. Any test that fires it must <code>export HOME=&lt;throwaway&gt;</code> (not just <code>AID_HOME</code>) and include an escape canary, or it will migrate the developer's real repos. This has caused issues 3 times during development.</p>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">Known Test Gaps</h3>
+	<div class="grid g3">
+		<div class="card">
+			<div class="kicker">Gap</div>
+			<h3>No coverage % metric</h3>
+			<p>Test coverage is assessed by presence/absence of suites, not line percentage. A coverage metric tool is tech debt L4.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Gap</div>
+			<h3>Heavy gates master-only</h3>
+			<p>The canonical suite and docs build run only on master CI. Feature branches skip them; run locally before claiming green.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Gap</div>
+			<h3>Windows tests outside run-all</h3>
+			<p>The Windows PowerShell 5.1 installer tests (<code>Test-AidInstaller.ps1</code>) run only on <code>windows-latest</code> CI; they are not included in <code>run-all.sh</code>.</p>
+		</div>
+	</div>
+</section>

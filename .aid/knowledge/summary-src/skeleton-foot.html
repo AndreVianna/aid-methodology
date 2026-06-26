@@ -1,49 +1,56 @@
+
 </main>
 
 <!-- Lightbox overlay (always present in DOM, toggled via .open class) -->
 <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-hidden="true"
      aria-labelledby="lb-caption" aria-describedby="lb-hint">
 	<div class="lb-toolbar" role="toolbar" aria-label="Diagram zoom controls">
-		<button type="button" id="lb-zoom-out" aria-label="Zoom out" title="Zoom out">−</button>
-		<button type="button" id="lb-zoom-reset" aria-label="Reset zoom" title="Reset zoom">⟲</button>
-		<button type="button" id="lb-zoom-in" aria-label="Zoom in" title="Zoom in">+</button>
-		<button type="button" id="lb-close" aria-label="Close (Esc)" title="Close (Esc)">✕</button>
+		<button type="button" id="lb-zoom-out" aria-label="Zoom out" title="Zoom out (-)">-</button>
+		<button type="button" id="lb-zoom-reset" aria-label="Reset zoom" title="Reset zoom (0)">&#10226;</button>
+		<button type="button" id="lb-zoom-in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+		<button type="button" id="lb-close" aria-label="Close (Esc)" title="Close (Esc)">&#x2715;</button>
 	</div>
-	<div class="lb-hint" id="lb-hint">Scroll to zoom · Drag to pan · Esc to close</div>
+	<div class="lb-hint" id="lb-hint">Scroll to zoom &middot; Drag to pan &middot; Esc to close</div>
 	<div class="lb-stage" id="lb-stage">
 		<div class="lb-inner" id="lb-inner"></div>
 	</div>
 	<div class="lb-caption" id="lb-caption" aria-live="polite"></div>
 </div>
 
-<footer>
-	<p>Generated from <code>.aid/knowledge/</code> on 2026-05-31 ·
-	   Re-run <code>/aid-summarize</code> when the Knowledge Base changes.<br>
-	   Diagrams: <a href="https://mermaid.js.org">Mermaid</a> (inlined for offline use).
-	   Styled with system fonts and CSS variables — no external assets.</p>
+<footer id="page-footer">
+	<p>Generated from <code>.aid/knowledge/</code> on 2026-06-25 &middot;
+	   Re-run <code>/aid-summarize</code> to update &middot;
+	   Styled with system fonts and CSS variables &mdash; no external assets.</p>
 </footer>
 
 <!-- Fallback for users with JavaScript disabled -->
 <noscript>
 	<div class="noscript-fallback">
 		<h2>JavaScript required</h2>
-		<p>This summary uses Mermaid to render diagrams and JavaScript to power the
-		   theme toggle, lightbox, and scrollspy. With JavaScript disabled, the
-		   diagrams and interactive features will not work.</p>
+		<p>This summary uses JavaScript to power the theme toggle, lightbox, and
+		   scrollspy. With JavaScript disabled, the interactive features will not work.</p>
 		<p>Either enable JavaScript, or read the source markdown files directly in
 		   <code>.aid/knowledge/</code>:</p>
 		<ul>
-			<li><a href="./../knowledge/INDEX.md">INDEX.md</a> — Knowledge Base map</li>
-			<li><a href="./../knowledge/architecture.md">architecture.md</a></li>
-			<li><a href="./../knowledge/module-map.md">module-map.md</a></li>
-			<li><a href="./../knowledge/schemas.md">schemas.md</a></li>
-			<li><a href="./../knowledge/pipeline-contracts.md">pipeline-contracts.md</a></li>
-			<li><a href="./../knowledge/integration-map.md">integration-map.md</a></li>
+			<li><a href="../knowledge/INDEX.md">INDEX.md</a> &mdash; Knowledge Base map</li>
+			<li><a href="../knowledge/architecture.md">architecture.md</a> &mdash; How AID is built</li>
+			<li><a href="../knowledge/artifact-schemas.md">artifact-schemas.md</a> &mdash; Artifact schemas</li>
+			<li><a href="../knowledge/authoring-conventions.md">authoring-conventions.md</a> &mdash; Authoring conventions</li>
+			<li><a href="../knowledge/capability-inventory.md">capability-inventory.md</a> &mdash; Capability inventory</li>
+			<li><a href="../knowledge/coding-standards.md">coding-standards.md</a> &mdash; Coding standards</li>
+			<li><a href="../knowledge/decisions.md">decisions.md</a> &mdash; Design decisions</li>
+			<li><a href="../knowledge/domain-glossary.md">domain-glossary.md</a> &mdash; Domain glossary</li>
+			<li><a href="../knowledge/external-sources.md">external-sources.md</a> &mdash; External sources</li>
+			<li><a href="../knowledge/infrastructure.md">infrastructure.md</a> &mdash; Infrastructure</li>
+			<li><a href="../knowledge/integration-map.md">integration-map.md</a> &mdash; Integration map</li>
+			<li><a href="../knowledge/module-map.md">module-map.md</a> &mdash; Module map</li>
+			<li><a href="../knowledge/pipeline-contracts.md">pipeline-contracts.md</a> &mdash; Pipeline contracts</li>
+			<li><a href="../knowledge/project-structure.md">project-structure.md</a> &mdash; Project structure</li>
+			<li><a href="../knowledge/quality-gates.md">quality-gates.md</a> &mdash; Quality gates</li>
+			<li><a href="../knowledge/tech-debt.md">tech-debt.md</a> &mdash; Tech debt</li>
+			<li><a href="../knowledge/technology-stack.md">technology-stack.md</a> &mdash; Technology stack</li>
+			<li><a href="../knowledge/test-landscape.md">test-landscape.md</a> &mdash; Test landscape</li>
+			<li><a href="../knowledge/README.md">README.md</a> &mdash; KB README</li>
 		</ul>
 	</div>
 </noscript>
-
-<script>
-/* Mermaid library inlined below by /aid-summarize concat step. */
-</script>
-<script>

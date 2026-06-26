@@ -1,0 +1,127 @@
+<section id="pipeline-contracts" class="sec" data-title="Pipeline Contracts">
+	<header>
+		<span class="eyebrow">Phase hand-offs &mdash; pipeline-contracts.md</span>
+		<h2>Pipeline Contracts</h2>
+		<p class="lede">The typed artifact contracts and state-machine transitions between AID pipeline phases &mdash; what each phase consumes, produces, and gates on. Read this before changing any skill, artifact template, or phase hand-off.</p>
+	</header>
+
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Phase</th><th>Skill</th><th>Consumes</th><th>Produces</th><th>Gate to advance</th></tr></thead>
+			<tbody>
+				<tr>
+					<td>Init / Config</td>
+					<td><code>/aid-config</code></td>
+					<td>cwd (repo root)</td>
+					<td><code>.aid/settings.yml</code>, KB STATE.md scaffold</td>
+					<td>Human: settings confirmed</td>
+				</tr>
+				<tr>
+					<td>Discover</td>
+					<td><code>/aid-discover</code></td>
+					<td>repo content, <code>settings.yml</code></td>
+					<td>18 KB documents under <code>.aid/knowledge/</code></td>
+					<td>Review panel &rarr; grade &ge; minimum &rarr; human OK</td>
+				</tr>
+				<tr>
+					<td>Interview</td>
+					<td><code>/aid-interview</code></td>
+					<td>KB, work description</td>
+					<td><code>REQUIREMENTS.md</code>, feature files, Work STATE.md</td>
+					<td>Human: requirements approved</td>
+				</tr>
+				<tr>
+					<td>Specify</td>
+					<td><code>/aid-specify</code></td>
+					<td><code>REQUIREMENTS.md</code>, KB</td>
+					<td>Feature <code>SPEC.md</code> per feature</td>
+					<td>Human: spec accepted (full path only)</td>
+				</tr>
+				<tr>
+					<td>Plan</td>
+					<td><code>/aid-plan</code></td>
+					<td>Feature SPECs, KB</td>
+					<td><code>PLAN.md</code> (delivery sequence)</td>
+					<td>Human: plan accepted (full path only)</td>
+				</tr>
+				<tr>
+					<td>Detail</td>
+					<td><code>/aid-detail</code></td>
+					<td><code>PLAN.md</code>, feature SPECs, KB</td>
+					<td>Task <code>SPEC.md</code> files + Execution Graph (waves)</td>
+					<td>Human: task breakdown accepted (full path only)</td>
+				</tr>
+				<tr>
+					<td>Implement / Review / Test</td>
+					<td><code>/aid-execute</code></td>
+					<td>Task SPEC.md, Execution Graph, KB</td>
+					<td>Code, tests, one git branch per delivery; reviewer ledger; grade</td>
+					<td>grade &ge; minimum per delivery; human: delivery gate approved</td>
+				</tr>
+				<tr>
+					<td>Deploy</td>
+					<td><code>/aid-deploy</code></td>
+					<td>Completed deliveries, all gates passed</td>
+					<td>Release bundle, release notes, version tag</td>
+					<td>Human: release approved</td>
+				</tr>
+				<tr>
+					<td>Track / Triage</td>
+					<td><code>/aid-monitor</code></td>
+					<td>Telemetry / production findings</td>
+					<td>Classified findings, new Work or feedback-loop entries</td>
+					<td>Human: findings reviewed</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">The Eleven Feedback Loops</h3>
+	<p style="color:var(--text-muted); font-size:0.92rem; margin-bottom:1rem;">Any phase can revise upstream artifacts through a named feedback loop, producing a traceable record rather than a silent rewrite. AID defines 11 named loops (abbreviated names from <code>pipeline-contracts.md</code>):</p>
+	<div class="grid g3">
+		<div class="card">
+			<div class="kicker">L1</div><h3>Discover &rarr; KB Update</h3>
+			<p>Discovery findings require updating an existing KB document.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L2</div><h3>Interview &rarr; Discover</h3>
+			<p>Q&amp;A reveals a KB gap; targeted update triggered before spec.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L3</div><h3>Specify &rarr; Requirements</h3>
+			<p>Specification reveals an ambiguity or missing requirement.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L4</div><h3>Plan &rarr; Specify</h3>
+			<p>Planning reveals an under-specified feature; spec revised.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L5</div><h3>Detail &rarr; Plan</h3>
+			<p>Task breakdown reveals delivery sequencing needs adjustment.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L6</div><h3>Execute &rarr; Detail</h3>
+			<p>Implementation reveals a task that needs re-scoping or splitting.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L7</div><h3>Execute &rarr; Specify</h3>
+			<p>Spec assumption proven wrong during implementation.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L8</div><h3>Execute &rarr; KB</h3>
+			<p>Implementation discovers new architectural knowledge for the KB.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L9</div><h3>Review &rarr; Execute</h3>
+			<p>Reviewer finds issues; executor fixes before delivery gate passes.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L10</div><h3>Deploy &rarr; Execute</h3>
+			<p>Release verification fails; delivery sent back for fixes.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">L11</div><h3>Monitor &rarr; Interview</h3>
+			<p>Production finding triggers a new Work via a new interview.</p>
+		</div>
+	</div>
+</section>

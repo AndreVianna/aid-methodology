@@ -1,0 +1,36 @@
+<section id="project-structure" class="sec" data-title="Project Structure">
+	<header>
+		<span class="eyebrow">Repository layout &mdash; project-structure.md</span>
+		<h2>Project Structure</h2>
+		<p class="lede">AID is a methodology delivered as a multi-profile CLI installer. The repository has two faces: the product (building and shipping AID) and the dogfood install (using AID to build AID). Version 1.1.1.</p>
+	</header>
+
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead>
+				<tr><th>Directory / File</th><th>Purpose</th><th>Notes</th></tr>
+			</thead>
+			<tbody>
+				<tr><td><code>canonical/</code></td><td>Single source of truth for all installable content (skills, agents, templates, scripts, recipes)</td><td>Never edit <code>profiles/</code> directly &mdash; always edit here</td></tr>
+				<tr><td><code>profiles/</code></td><td>Five rendered, host-tool-specific install trees (build output)</td><td>claude-code, codex, cursor, copilot-cli, antigravity</td></tr>
+				<tr><td><code>packages/npm/</code></td><td>npm package wrapper</td><td>Vendored bin/lib/dashboard; zero runtime deps</td></tr>
+				<tr><td><code>packages/pypi/</code></td><td>PyPI package wrapper</td><td>Same content; zero runtime deps</td></tr>
+				<tr><td><code>bin/</code></td><td>CLI entry point (<code>bin/aid</code> Bash, <code>bin/aid.ps1</code> PowerShell)</td><td>Cross-platform CLI</td></tr>
+				<tr><td><code>lib/</code></td><td>Shared install/update/remove engines (<code>aid-install-core.sh</code>, <code>AidInstallCore.psm1</code>)</td><td>Polyglot parity: Bash mirrors PowerShell</td></tr>
+				<tr><td><code>dashboard/</code></td><td>Local web dashboard: server (<code>server.mjs</code>, <code>server.py</code>) + reader (<code>reader/</code>)</td><td>Read-only, loopback-only, no LLM</td></tr>
+				<tr><td><code>tests/</code></td><td>82 canonical test suites + bespoke harnesses per language</td><td>Run via <code>tests/run-all.sh</code></td></tr>
+				<tr><td><code>site/</code></td><td>Astro-based docs site (TypeScript)</td><td>Published to https://aid.casuloailabs.com</td></tr>
+				<tr><td><code>install.sh</code></td><td>Bash curl-bootstrap installer</td><td>ASCII-only, POSIX-compatible</td></tr>
+				<tr><td><code>install.ps1</code></td><td>PowerShell irm-bootstrap installer</td><td>5.1-compatible, ASCII-only</td></tr>
+				<tr><td><code>.claude/</code></td><td>Dogfood install of AID (claude-code profile)</td><td>Real working install, not example data</td></tr>
+				<tr><td><code>.aid/</code></td><td>AID pipeline state + Knowledge Base for this repository</td><td>The dogfood KB you are reading</td></tr>
+				<tr><td><code>VERSION</code></td><td>Canonical version string (1.1.1)</td><td>Must stay in sync with package.json, pyproject.toml, and git tag</td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout" style="margin-top:1.5rem;">
+		<h4>Primary languages</h4>
+		<p>Markdown (methodology content), Shell/Bash (installer + scripts), PowerShell 5.1+ (Windows installer), Python &ge;3.8 (build tools + dashboard server), JavaScript/Node &ge;18 (dashboard server + site), TypeScript (docs site only). Polyglot by design.</p>
+	</div>
+</section>
