@@ -9,7 +9,7 @@
 			<span class="badge badge-info">9 agents / 3 tiers</span>
 			<span class="badge badge-ok">5 install profiles</span>
 			<span class="badge badge-purple">18 KB documents</span>
-			<span class="badge">12-phase pipeline</span>
+			<span class="badge">6-phase pipeline</span>
 			<span class="badge">hybrid:methodology-tooling+software-cli</span>
 		</div>
 	</div>
@@ -66,9 +66,9 @@
 		</div>
 	</div>
 
-	<!-- 12-phase pipeline diagram -->
-	<div class="diagram-box" aria-label="AID 12-phase pipeline flow &mdash; click or press Enter to expand">
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 170" role="img" aria-label="AID 12-phase pipeline: Init, Discover, Interview, Specify, Plan, Detail, Implement, Review, Test, Deploy, Track, Triage">
+	<!-- 6-phase pipeline diagram -->
+	<div class="diagram-box" aria-label="AID 6-phase pipeline flow &mdash; click or press Enter to expand">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 72" role="img" aria-label="AID 6-phase pipeline: Discover, Interview, Specify, Plan, Detail, Execute">
 			<defs>
 				<style>
 					.ph-box { fill: #EEF2F7; stroke: #E3E8EF; stroke-width: 1.5; rx: 6; }
@@ -76,7 +76,6 @@
 					.ph-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; font-weight: 600; fill: #101828; text-anchor: middle; dominant-baseline: middle; }
 					.ph-text-hi { fill: #FFFFFF; }
 					.arrow { stroke: #CDD5DF; stroke-width: 2; fill: none; marker-end: url(#arr); }
-					.arrow-down { stroke: #CDD5DF; stroke-width: 2; fill: none; }
 					@media (prefers-color-scheme: dark) {
 						.ph-box { fill: #1E293B; stroke: #2B3A52; }
 						.ph-text { fill: #E5EAF2; }
@@ -86,75 +85,44 @@
 					<path d="M0,0 L0,6 L6,3 z" fill="#CDD5DF"/>
 				</marker>
 			</defs>
-			<!-- Row 1: phases 1-6 -->
+			<!-- Six numbered phases, left to right -->
 			<g>
-				<!-- Init -->
-				<rect class="ph-box" x="5" y="20" width="66" height="32" rx="6"/>
-				<text class="ph-text" x="38" y="36">Init</text>
-				<line class="arrow" x1="71" y1="36" x2="83" y2="36"/>
-				<!-- Discover -->
-				<rect class="ph-box ph-box-hi" x="85" y="20" width="76" height="32" rx="6"/>
-				<text class="ph-text ph-text-hi" x="123" y="36">Discover</text>
-				<line class="arrow" x1="161" y1="36" x2="173" y2="36"/>
+				<!-- Discover (knowledge-intensive) -->
+				<rect class="ph-box ph-box-hi" x="8" y="20" width="78" height="32" rx="6"/>
+				<text class="ph-text ph-text-hi" x="47" y="36">Discover</text>
+				<line class="arrow" x1="86" y1="36" x2="98" y2="36"/>
 				<!-- Interview -->
-				<rect class="ph-box" x="175" y="20" width="76" height="32" rx="6"/>
-				<text class="ph-text" x="213" y="36">Interview</text>
-				<line class="arrow" x1="251" y1="36" x2="263" y2="36"/>
+				<rect class="ph-box" x="100" y="20" width="82" height="32" rx="6"/>
+				<text class="ph-text" x="141" y="36">Interview</text>
+				<line class="arrow" x1="182" y1="36" x2="194" y2="36"/>
 				<!-- Specify -->
-				<rect class="ph-box" x="265" y="20" width="66" height="32" rx="6"/>
-				<text class="ph-text" x="298" y="36">Specify</text>
-				<line class="arrow" x1="331" y1="36" x2="343" y2="36"/>
+				<rect class="ph-box" x="196" y="20" width="72" height="32" rx="6"/>
+				<text class="ph-text" x="232" y="36">Specify</text>
+				<line class="arrow" x1="268" y1="36" x2="280" y2="36"/>
 				<!-- Plan -->
-				<rect class="ph-box" x="345" y="20" width="56" height="32" rx="6"/>
-				<text class="ph-text" x="373" y="36">Plan</text>
-				<line class="arrow" x1="401" y1="36" x2="413" y2="36"/>
+				<rect class="ph-box" x="282" y="20" width="56" height="32" rx="6"/>
+				<text class="ph-text" x="310" y="36">Plan</text>
+				<line class="arrow" x1="338" y1="36" x2="350" y2="36"/>
 				<!-- Detail -->
-				<rect class="ph-box" x="415" y="20" width="60" height="32" rx="6"/>
-				<text class="ph-text" x="445" y="36">Detail</text>
-			</g>
-			<!-- Connector row 1 -> row 2 -->
-			<path class="arrow-down" d="M475,36 L500,36 L500,130 L480,130" fill="none" stroke="#CDD5DF" stroke-width="2"/>
-			<polygon points="480,126 480,134 474,130" fill="#CDD5DF"/>
-			<!-- Row 2: phases 7-12 (right to left layout, reading order maintained by connector) -->
-			<g>
-				<!-- Implement (leftmost of row 2, entered from connector on right) -->
-				<rect class="ph-box ph-box-hi" x="5" y="114" width="86" height="32" rx="6"/>
-				<text class="ph-text ph-text-hi" x="48" y="130">Implement</text>
-				<!-- Review -->
-				<rect class="ph-box" x="103" y="114" width="70" height="32" rx="6"/>
-				<text class="ph-text" x="138" y="130">Review</text>
-				<!-- Test -->
-				<rect class="ph-box" x="185" y="114" width="56" height="32" rx="6"/>
-				<text class="ph-text" x="213" y="130">Test</text>
-				<!-- Deploy -->
-				<rect class="ph-box" x="253" y="114" width="66" height="32" rx="6"/>
-				<text class="ph-text" x="286" y="130">Deploy</text>
-				<!-- Track -->
-				<rect class="ph-box" x="331" y="114" width="60" height="32" rx="6"/>
-				<text class="ph-text" x="361" y="130">Track</text>
-				<!-- Triage -->
-				<rect class="ph-box" x="403" y="114" width="62" height="32" rx="6"/>
-				<text class="ph-text" x="434" y="130">Triage</text>
-				<!-- Arrows row 2 right-to-left: Triage->Track->Deploy->Test->Review->Implement -->
-				<line class="arrow" x1="403" y1="130" x2="395" y2="130"/>
-				<line class="arrow" x1="331" y1="130" x2="323" y2="130"/>
-				<line class="arrow" x1="253" y1="130" x2="245" y2="130"/>
-				<line class="arrow" x1="185" y1="130" x2="177" y2="130"/>
-				<line class="arrow" x1="103" y1="130" x2="95" y2="130"/>
+				<rect class="ph-box" x="352" y="20" width="62" height="32" rx="6"/>
+				<text class="ph-text" x="383" y="36">Detail</text>
+				<line class="arrow" x1="414" y1="36" x2="426" y2="36"/>
+				<!-- Execute (knowledge-intensive) -->
+				<rect class="ph-box ph-box-hi" x="428" y="20" width="76" height="32" rx="6"/>
+				<text class="ph-text ph-text-hi" x="466" y="36">Execute</text>
 			</g>
 			<!-- Label -->
-			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#667085" x="550" y="80">Phases run left to right,</text>
-			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#667085" x="550" y="94">then wrap to row 2.</text>
-			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#007F7D" font-weight="600" x="550" y="112">Teal = knowledge-intensive phases.</text>
+			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#667085" x="528" y="32">Six numbered phases, left to right.</text>
+			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#007F7D" font-weight="600" x="528" y="48">Teal = knowledge-intensive phases.</text>
 		</svg>
-		<p class="caption">AID 12-phase pipeline: Init &#8594; Discover &#8594; Interview &#8594; Specify &#8594; Plan &#8594; Detail &#8594; Implement &#8594; Review &#8594; Test &#8594; Deploy &#8594; Track &#8594; Triage. Every phase transition requires human approval.</p>
+		<p class="caption">AID 6-phase pipeline: Discover &#8594; Interview &#8594; Specify &#8594; Plan &#8594; Detail &#8594; Execute. Every phase transition requires human approval. (aid-config bootstraps before the pipeline; Deploy and Monitor are optional Deliver skills after it.)</p>
 	</div>
 
 	<!-- Key numbers grid -->
 	<div class="grid g4" style="margin-top:1.5rem;">
 		<div class="card">
 			<div class="kicker">Pipeline</div>
-			<div class="stat">12</div>
+			<div class="stat">6</div>
 			<div class="stat-sub">gated phases</div>
 		</div>
 		<div class="card">

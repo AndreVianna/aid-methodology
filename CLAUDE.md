@@ -30,7 +30,7 @@ cross-phase process state). Keeping it current is **not optional**:
 ## Workflow
 
 - Every change should be traceable to a task or requirement.
-- Follow the current phase: Init → Discover → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy → Track → Triage.
+- Follow the current numbered phase: Discover → Interview → Specify → Plan → Detail → Execute (the six numbered pipeline phases). `aid-config` bootstraps before the pipeline; Deploy and Monitor are optional Deliver skills after it. Init/Implement/Review/Test/Track/Triage are NOT numbered phases — they are the bootstrap, Execute task-types/states, or the optional Deliver skills.
 - Produce verifiable artifacts at each phase.
 - Quality gates must pass before proceeding.
 

@@ -1,7 +1,7 @@
 ---
 kb-category: primary
 source: hand-authored
-objective: How the AID system is built and why it is shaped this way — its dual product/dogfood anatomy, the canonical→profiles→packages render-and-distribute architecture, and the 12-phase gated process architecture (pipeline, skill state machines, agent dispatch).
+objective: How the AID system is built and why it is shaped this way — its dual product/dogfood anatomy, the canonical→profiles→packages render-and-distribute architecture, and the six-phase gated process architecture (pipeline, skill state machines, agent dispatch).
 summary: Read this to understand HOW AID hangs together as both a runnable CLI installer and a process methodology — the boundaries, the source-of-truth flow, the pipeline, and the invariants a change must never break.
 sources:
   - docs/aid-methodology.md
@@ -17,7 +17,7 @@ audience: [architect, developer]
 intent: |
   How this system is built and why it is shaped this way: the dual product/dogfood
   repository, the canonical→profiles→packages render-and-distribute architecture, and
-  the gated process architecture (12-phase pipeline, skill state machines, agent dispatch).
+  the gated process architecture (six-phase pipeline, skill state machines, agent dispatch).
   Read this to understand HOW the system hangs together — not WHAT each module does.
 contracts: []
 changelog:
@@ -36,7 +36,7 @@ changelog:
 - [The Two Faces (Product vs Dogfood)](#the-two-faces-product-vs-dogfood)
 - [Load-Bearing Boundaries](#load-bearing-boundaries)
 - [Build & Distribute Architecture (canonical -> profiles -> packages)](#build--distribute-architecture-canonical---profiles---packages)
-- [Process Architecture: The 12-Phase Pipeline](#process-architecture-the-12-phase-pipeline)
+- [Process Architecture: The Six-Phase Pipeline](#process-architecture-the-six-phase-pipeline)
 - [Skill State-Machine Model](#skill-state-machine-model)
 - [Agent / Sub-Agent Dispatch Model](#agent--sub-agent-dispatch-model)
 - [The Knowledge Base as the Center](#the-knowledge-base-as-the-center)
@@ -161,35 +161,39 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 
 ---
 
-## Process Architecture: The 12-Phase Pipeline
+## Process Architecture: The Six-Phase Pipeline
 
 AID's other architecture is a **process**: a linear, human-gated pipeline of phases with
 formal feedback loops. The pipeline is the methodology's backbone.
 
-**The phase order** (six numbered development phases + bracketing lifecycle states):
+**The six numbered phases** (CONFIRMED in `docs/aid-methodology.md` §1 "The Pipeline" and
+its "Skill Inventory" table):
 
 ```
-Init -> Discover -> Interview -> Specify -> Plan -> Detail -> Implement(Execute) -> Review -> Test -> Deploy -> Track(Monitor) -> Triage
+Discover -> Interview -> Specify -> Plan -> Detail -> Execute
 ```
 
-The dispatch brief names these 12 lifecycle phases (CLAUDE.md "Workflow" section, search:
-"Init -> Discover -> Interview"). They map onto AID's **13 user-facing skills** as follows
-(CONFIRMED in `docs/aid-methodology.md` "Skill Inventory" and `canonical/skills/` listing):
+These six map one-to-one onto skills (Phase 1-6) and sit inside **five skill groups**
+(Prepare, Define, Map, Execute, Deliver). Several lifecycle labels from everyday SDLC talk
+— Init, Implement, Review, Test, Track, Triage — are **not numbered phases**; the table
+below maps each label to what it really is (CONFIRMED in `docs/aid-methodology.md` "Skill
+Inventory" and the `canonical/skills/` listing — 13 user-facing skills):
 
-| Lifecycle phase | Skill(s) | Numbered? | Notes |
-|-----------------|----------|-----------|-------|
-| Init | `aid-config` | bootstrap | Run once; scaffolds `.aid/` + KB placeholders. |
-| Discover | `aid-discover` | Phase 1 | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
-| Interview | `aid-interview` | Phase 2 | TRIAGE routes full vs lite. |
-| Specify | `aid-specify` | Phase 3 | Full path only. |
-| Plan | `aid-plan` | Phase 4 | Full path only. |
-| Detail | `aid-detail` | Phase 5 | Full path only. |
-| Implement | `aid-execute` | Phase 6 | 8 task types; graded review loop. |
-| Review | (inside `aid-execute`) | — | Review is a state inside Execute, not a separate skill. |
-| Test | (TEST task type inside Execute; Deploy verification) | — | No standalone Test skill. |
-| Deploy | `aid-deploy` | optional | On-demand Deliver-group skill. |
-| Track | `aid-monitor` | optional | On-demand; observe -> classify -> act. |
-| Triage | `aid-interview` TRIAGE state; `aid-monitor` classify | — | Routing, not a separate skill. |
+| Workflow label | Skill(s) | Numbered phase? | What it really is |
+|----------------|----------|-----------------|-------------------|
+| Discover | `aid-discover` | **Phase 1** | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
+| Interview | `aid-interview` | **Phase 2** | TRIAGE routes full vs lite. |
+| Specify | `aid-specify` | **Phase 3** | Full path only. |
+| Plan | `aid-plan` | **Phase 4** | Full path only. |
+| Detail | `aid-detail` | **Phase 5** | Full path only. |
+| Execute | `aid-execute` | **Phase 6** | 8 task types; graded review loop. |
+| Init | `aid-config` | No (bootstrap) | Run once; scaffolds `.aid/` + KB placeholders. |
+| Implement | `aid-execute` | No | One of Execute's 8 task types (IMPLEMENT), not a phase. |
+| Review | (inside `aid-execute`) | No | A state of the Execute loop (EXECUTE -> REVIEW -> FIX -> DONE), not a phase. |
+| Test | `aid-execute` | No | A task type (TEST) inside Execute, not a phase. |
+| Deploy | `aid-deploy` | No (optional Deliver) | On-demand Deliver-group skill; not a numbered phase. |
+| Track / Monitor | `aid-monitor` | No (optional Deliver) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) |
+| Triage | `aid-interview` TRIAGE state; `aid-monitor` classify | No | A routing state, not a separate phase or skill. |
 
 Off-pipeline / on-demand skills: `aid-housekeep` (KB drift reconciliation),
 `aid-query-kb` (Q&A + gap capture), `aid-update-kb` (targeted KB delta), `aid-summarize`
@@ -415,4 +419,5 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
-| 1.0 | 2026-06-25 | aid-discover | Initial discovery — product/dogfood anatomy, render-and-distribute architecture, 12-phase process architecture, skill/agent dispatch, invariants, gotchas. |
+| 1.0 | 2026-06-25 | aid-discover | Initial discovery — product/dogfood anatomy, render-and-distribute architecture, six-phase process architecture, skill/agent dispatch, invariants, gotchas. |
+| 1.1 | 2026-06-26 | manual | Corrected the process-architecture model: six numbered phases (Discover→Execute), not "12 phases". Init/Implement/Review/Test/Track/Triage reframed as bootstrap / task-types / states / optional Deliver skills, not phases. |

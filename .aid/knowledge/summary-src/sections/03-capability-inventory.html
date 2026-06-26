@@ -7,10 +7,10 @@
 
 	<!-- Pipeline skills -->
 	<h3 style="margin-top:0; margin-bottom:0.75rem;">Pipeline Skills &mdash; the lifecycle</h3>
-	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">9 skills that map to the 12-phase pipeline. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate.</p>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">9 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate.</p>
 	<div class="cap-grid">
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Init / Config</span>
+			<span class="cap-kicker">Setup: Config (bootstrap)</span>
 			<span class="cap-name">Configure the pipeline</span>
 			<code class="cap-invoke">/aid-config</code>
 			<dl class="cap-dl">
@@ -19,7 +19,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Discover</span>
+			<span class="cap-kicker">Phase 1: Discover</span>
 			<span class="cap-name">Discover an existing project</span>
 			<code class="cap-invoke">/aid-discover</code>
 			<dl class="cap-dl">
@@ -28,7 +28,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Interview</span>
+			<span class="cap-kicker">Phase 2: Interview</span>
 			<span class="cap-name">Gather requirements</span>
 			<code class="cap-invoke">/aid-interview</code>
 			<dl class="cap-dl">
@@ -37,7 +37,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Specify</span>
+			<span class="cap-kicker">Phase 3: Specify</span>
 			<span class="cap-name">Specify a feature</span>
 			<code class="cap-invoke">/aid-specify</code>
 			<dl class="cap-dl">
@@ -46,7 +46,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Plan</span>
+			<span class="cap-kicker">Phase 4: Plan</span>
 			<span class="cap-name">Plan deliveries</span>
 			<code class="cap-invoke">/aid-plan</code>
 			<dl class="cap-dl">
@@ -55,7 +55,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Detail</span>
+			<span class="cap-kicker">Phase 5: Detail</span>
 			<span class="cap-name">Break down into tasks</span>
 			<code class="cap-invoke">/aid-detail</code>
 			<dl class="cap-dl">
@@ -64,7 +64,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Implement / Review / Test</span>
+			<span class="cap-kicker">Phase 6: Execute</span>
 			<span class="cap-name">Execute a task</span>
 			<code class="cap-invoke">/aid-execute</code>
 			<dl class="cap-dl">
@@ -73,7 +73,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Deploy</span>
+			<span class="cap-kicker">Deliver: Deploy (optional)</span>
 			<span class="cap-name">Ship a release</span>
 			<code class="cap-invoke">/aid-deploy</code>
 			<dl class="cap-dl">
@@ -82,7 +82,7 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase: Track / Triage</span>
+			<span class="cap-kicker">Deliver: Monitor (optional)</span>
 			<span class="cap-name">Observe production</span>
 			<code class="cap-invoke">/aid-monitor</code>
 			<dl class="cap-dl">

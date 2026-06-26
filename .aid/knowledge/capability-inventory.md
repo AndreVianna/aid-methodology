@@ -40,10 +40,12 @@ multi-profile CLI installer**. Its capabilities fall into four groups:
 
 ## Pipeline skills (the lifecycle)
 
-AID structures work as a gated pipeline of phases (`CLAUDE.md` → `## Workflow`):
-Init → Discover → Interview → Specify → Plan → Detail → Implement → Review → Test →
-Deploy → Track → Triage. Each phase produces verifiable artifacts and passes a quality
-gate before the next begins. The user drives each phase by invoking its skill.
+AID's pipeline is **six numbered phases** — Discover → Interview → Specify → Plan →
+Detail → Execute. Each phase produces verifiable artifacts and passes a quality gate
+before the next begins; the user drives each by invoking its skill. (Other lifecycle
+labels — Init, Implement, Review, Test, Track, Triage — are **not** numbered phases:
+Init is the `aid-config` bootstrap, Implement/Test are Execute task types, Review is an
+Execute state, and Track/Triage are the optional `/aid-monitor` skill's role.)
 
 | Capability | Skill | What it does for the user |
 |------------|-------|---------------------------|
@@ -57,10 +59,10 @@ gate before the next begins. The user drives each phase by invoking its skill.
 | Ship a release | `/aid-deploy` | Packages completed deliveries, verifies the combined build, generates release notes. |
 | Observe production | `/aid-monitor` | Interprets telemetry, classifies findings, and routes bugs / change requests back into the pipeline. |
 
-> The "Init / Review / Test / Track / Triage" phases named in `## Workflow` are realized by
-> the skills above (e.g. Review and Test run inside `/aid-execute`; Track/Triage by
-> `/aid-monitor`) rather than by a dedicated one-per-phase skill. The exact phase→skill
-> mapping is documented in `pipeline-contracts.md`.
+> The "Init / Review / Test / Track / Triage" labels are **not numbered phases**: Init is the
+> `aid-config` bootstrap; Review (a state) and Test (a task type) run inside `/aid-execute`;
+> Track/Triage are the optional `/aid-monitor` skill's classify/route role. The exact
+> label→skill mapping is documented in `pipeline-contracts.md`.
 
 ## On-demand skills
 
