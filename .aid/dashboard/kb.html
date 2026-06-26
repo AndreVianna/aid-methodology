@@ -2377,7 +2377,25 @@ details.accord > summary:focus-visible,
 					.plane-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 700; fill: #101828; }
 					.module-box { fill: #FFFFFF; stroke: #E3E8EF; stroke-width: 1; }
 					.module-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 10px; fill: #4B5565; text-anchor: middle; dominant-baseline: middle; }
-					.plane-accent { fill: rgba(0,127,125,0.08); stroke: #007F7D; stroke-width: 1.5; }
+					.plane-accent { fill: #E4F2F1; stroke: #007F7D; stroke-width: 1.5; }
+					/* Dark mode -- keyed to BOTH the page toggle ([data-theme]) and the OS (prefers-color-scheme) */
+					@media (prefers-color-scheme: dark) {
+						.plane-bg     { fill: #161F33; stroke: #2B3A52; }
+						.plane-accent { fill: #123533; stroke: #2DD4BF; }
+						.plane-label  { fill: #E5EAF2; }
+						.module-box   { fill: #283449; stroke: #3A4A66; }
+						.module-text  { fill: #C4CEDC; }
+					}
+					:root[data-theme="dark"] .plane-bg     { fill: #161F33; stroke: #2B3A52; }
+					:root[data-theme="dark"] .plane-accent { fill: #123533; stroke: #2DD4BF; }
+					:root[data-theme="dark"] .plane-label  { fill: #E5EAF2; }
+					:root[data-theme="dark"] .module-box   { fill: #283449; stroke: #3A4A66; }
+					:root[data-theme="dark"] .module-text  { fill: #C4CEDC; }
+					:root[data-theme="light"] .plane-bg     { fill: #EEF2F7; stroke: #CDD5DF; }
+					:root[data-theme="light"] .plane-accent { fill: #E4F2F1; stroke: #007F7D; }
+					:root[data-theme="light"] .plane-label  { fill: #101828; }
+					:root[data-theme="light"] .module-box   { fill: #FFFFFF; stroke: #E3E8EF; }
+					:root[data-theme="light"] .module-text  { fill: #4B5565; }
 				</style>
 			</defs>
 
@@ -2435,7 +2453,7 @@ details.accord > summary:focus-visible,
 			<rect class="module-box" x="547" y="136" width="131" height="26" rx="5"/>
 			<text class="module-text" x="612" y="149">scripts/summarize/</text>
 			<rect class="module-box" x="547" y="168" width="131" height="26" rx="5"/>
-			<text class="module-text" x="612" y="181">scripts/grade.sh</text>
+			<text class="module-text" x="612" y="181">site/ (docs + marketing)</text>
 		</svg>
 		<p class="caption">AID's four planes: Distribution (install, CLI, packages), Toolkit (skills, agents, scripts, templates), Render (profile generator + VERIFY gate), Observation (dashboard server, reader, kb.html). The Toolkit plane (teal border) is the most frequently changed.</p>
 	</div>
