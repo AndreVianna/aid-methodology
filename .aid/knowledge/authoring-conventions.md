@@ -264,7 +264,13 @@ content.**
   carry an AID-managed region between `<!-- AID:BEGIN -->` and `<!-- AID:END -->`
   (see `CLAUDE.md`). The installer updates only the content **in place** inside that
   region; content outside it (the user's own instructions) is never touched, and
-  there is no `.aid-new` side file.
+  there is no `.aid-new` side file. Two layers produce this: the **mechanism** is the
+  install-core region-replacement (`lib/aid-install-core.sh` `_copy_root_agent_file` + its
+  PowerShell twin `lib/AidInstallCore.psm1` `Copy-RootAgentFile`), which copies the AID region
+  from the source root-agent file into the host file in place; the **content** is the
+  `AID:BEGIN/END` body of the rendered root-agent source `profiles/<tool>/{CLAUDE.md,AGENTS.md}`
+  (the file the installer reads). So to change HOW the region is written, edit the install-core
+  libs; to change WHAT AID writes into it, edit that root-agent body -- never the user's host file.
 - **Red flag:** an AID file without the `aid-` prefix; writing outside the
   AID:BEGIN/END region in a host file; an uninstall that deletes by directory rather
   than by manifest.

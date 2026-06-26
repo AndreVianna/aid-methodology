@@ -38,6 +38,7 @@ changelog:
 - [Test Directories](#test-directories)
 - [Documentation Found in Repository](#documentation-found-in-repository)
 - [Unusual Structure Notes](#unusual-structure-notes)
+- [Invariants](#invariants)
 - [Change Log](#change-log)
 
 ---
@@ -295,6 +296,20 @@ These are intentional or notable layout traits a newcomer will trip over:
    `canonical/recipes/`. Reality: `canonical/skills/` holds 13 skill directories,
    `canonical/aid/recipes/` (note the `aid/` segment) holds 52 recipe files. This is a
    documentation drift, flagged as Q1/Q2 — not reconciled here.
+
+---
+
+## Invariants
+
+- **`canonical/` is the single source of truth** for everything AID installs; `profiles/` are
+  render output and are **never hand-edited** -- the render-drift VERIFY gate enforces
+  byte-identity. CONFIRMED in `docs/repository-structure.md`.
+- **AID-delivered content is namespaced** (the `aid-` prefix in tool-native dirs, the `aid/`
+  subtree for toolkit files) and never collides with user content; root-agent files
+  (`CLAUDE.md`/`AGENTS.md`) are updated only inside the in-place AID:BEGIN/END region.
+- **`.aid/` is per-project working state** (the Knowledge Base + pipeline run-state), not part
+  of the shipped product; the dogfood `.claude/` + `.aid/` in this repo are real working state,
+  not example data.
 
 ---
 

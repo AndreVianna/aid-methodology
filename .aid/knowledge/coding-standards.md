@@ -183,8 +183,9 @@ must run on a **bare Windows box**, where the default shell is Windows PowerShel
   shell/Python -- see [Observed Inconsistencies](#observed-inconsistencies)).
 - **Exit codes via `process.exit(n)`**; usage error -> `process.exit(2)`, failure
   -> `process.exit(1)`, success -> `0`.
-- **The Node reader is a behavior twin of the Python reader** -- `reader.mjs` must
-  match `dashboard/reader/parsers.py` output; parity is test-enforced.
+- **The Node reader is a behavior twin of the whole Python reader** -- `reader.mjs` must
+  match the output of `dashboard/reader/*.py` (the entire reader, not only `parsers.py`);
+  parity is test-enforced.
 
 ---
 
@@ -302,7 +303,7 @@ with matching semantics rather than inventing a new one.
   before any web call; define functions with no import-time side effects; run
   `ps51-compat-check.ps1` before pushing.
 - **Touching a language twin:** change BOTH twins in the same commit
-  (`*.sh` + `*.psm1`/`.ps1`; `parsers.py` + `reader.mjs`; migrate `.sh` + `.ps1`).
+  (`*.sh` + `*.psm1`/`.ps1`; `dashboard/reader/*.py` + `reader.mjs`; migrate `.sh` + `.ps1`).
 - **Adding a failure mode:** reuse the documented exit code with matching semantics;
   document any new code in the script header.
 - **Reading config:** always via `read-setting.sh` -- never re-parse `settings.yml`.

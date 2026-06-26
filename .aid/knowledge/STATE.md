@@ -1,3 +1,14 @@
+---
+kb-category: meta
+source: generated
+objective: Discovery-area run-state ledger — the Knowledge Base's review/grade history, approval state, pending Q&A, and visual-summary status for this project.
+summary: Read this for the KB's current grade, approval state, open questions, and summarization status — the process/run-state behind the knowledge docs, not knowledge content itself. One STATE.md per `.aid/knowledge/`.
+tags: [meta, state, run-state, review-history, qa, approval]
+see_also: [README.md, INDEX.md]
+owner: skill-self
+audience: [developer, architect]
+---
+
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)

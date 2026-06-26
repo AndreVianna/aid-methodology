@@ -49,6 +49,7 @@ server, is documented in [integration-map.md](integration-map.md).)
 - [Known Issues](#known-issues)
 - [Conventions](#conventions)
 - [Contracts](#contracts)
+- [Invariants](#invariants)
 - [Change Log](#change-log)
 
 ---
@@ -313,6 +314,23 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 - **Compatibility rule:** artifact templates evolve additively — new optional sections/fields
   are safe; removing or renaming a load-bearing field is breaking and requires updating every
   producing and consuming skill in lockstep.
+
+---
+
+## Invariants
+
+- **The pipeline never auto-advances.** Every phase transition requires explicit human
+  approval (the "OK?" gate); a deterministic grade >= minimum is necessary but not sufficient
+  -- both the grade gate and the human gate must pass. CONFIRMED in `docs/aid-methodology.md`
+  ("## 1. The Pipeline").
+- **Every inter-phase artifact is a typed markdown contract.** A phase consumes and produces
+  the declared artifacts (see the Phase Input/Output Contracts table); a phase cannot start
+  until its inputs exist and its predecessor's gate has passed.
+- **Phase order is fixed.** The six numbered phases run Discover -> Interview -> Specify ->
+  Plan -> Detail -> Execute on the full path; the lite path skips Specify/Plan/Detail but
+  never reorders or renumbers them.
+- **Contract fields evolve additively** -- removing or renaming a load-bearing field is a
+  lockstep break (see the `## Contracts` Compatibility rule).
 
 ---
 

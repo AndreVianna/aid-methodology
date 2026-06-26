@@ -50,6 +50,8 @@ loopback only.
 - [The Build and Distribution Chain](#the-build-and-distribution-chain)
 - [Integration Health Risks](#integration-health-risks)
 - [Contracts](#contracts)
+- [Conventions](#conventions)
+- [Invariants](#invariants)
 - [Change Log](#change-log)
 
 ---
@@ -161,12 +163,14 @@ CONFIRMED: `docs/aid-methodology.md` ("The Five Profiles"); `profiles/` (five su
 `<profile>.toml`); `docs/glossary.md` ("Install Profiles").
 
 Integration mechanics: `aid add <tool>` installs one profile per invocation
-(`--tool <name>`, or auto-detect). When a second `AGENTS.md`-writing tool installs into a
-project, the installer uses **protect-on-diff** — if `AGENTS.md` was not AID-written (or was
-modified), the incoming copy is written as `AGENTS.md.aid-new` and the run exits with a
-warning (`--force` overrides). Claude Code uses `CLAUDE.md` and is exempt from the collision.
-CONFIRMED: `docs/aid-methodology.md` ("Per-tool installs"); `docs/glossary.md`
-("Protect-on-diff"). The tier→model mapping per host is declared in `profiles/{tool}.toml`.
+(`--tool <name>`, or auto-detect). Root-agent files (`CLAUDE.md` for Claude Code; `AGENTS.md`
+for the other four) are updated **in place** inside the `AID:BEGIN/END` region — the installer
+replaces only the AID-managed region and preserves everything the user (or another tool)
+authored outside it, so multiple `AGENTS.md`-writing tools coexist in one file. There is no
+`.aid-new` sidecar and no protect-on-diff exit: the old `.aid-new` / exit-5 path was removed in
+v1.1.0 (superseded by in-place region replacement — see `decisions.md` D11). CONFIRMED:
+`lib/aid-install-core.sh` (`_copy_root_agent_file`); `decisions.md` D11. The tier→model mapping
+per host is declared in `profiles/{tool}.toml`.
 
 ---
 
@@ -269,6 +273,27 @@ CONFIRMED by the cited sources above and the project release/install memory note
   `AID_INSTALL_CHANNEL` must be set correctly per channel so `aid update self` prints the right
   upgrade command. Compatibility rule: additive — adding a channel must not change the others'
   recorded channel value.
+
+---
+
+## Conventions
+
+- **Integrations are developer-side tools, not networked services.** Every external system
+  (git, gh, npm, PyPI, GitHub Actions, the five host AI tools) is a CLI/library AID invokes;
+  there is no inbound network surface except the loopback dashboard.
+- **Host tools are integrated by render, not adapter.** AID targets each of the five host AI
+  harnesses by rendering byte-identical skill/agent bodies into that tool's install tree (its
+  install root + context-file name + agent format); there is no per-tool runtime branching.
+
+---
+
+## Invariants
+
+- **The dashboard HTTP server is loopback-bound (127.0.0.1) and read-only** -- it writes nothing
+  to the repo and runs no LLM.
+- **External tool versions are pinned where they gate shippable artifacts** (the PowerShell 5.1
+  floor; the CI Node/Python pins); changing a pinned harness version is a lockstep change that
+  the parity/compat suites guard.
 
 ---
 

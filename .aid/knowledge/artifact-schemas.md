@@ -269,7 +269,10 @@ Shape (per `lib/aid-install-core.sh` `Provides:` block):
 Producer: `install_tool` / `Install-AidTool` (atomic write/merge). Consumer:
 `uninstall_tool` / `Uninstall-AidTool` (manifest-driven removal), update path. The
 `root_agent_files` sha256 lets the installer detect whether a host file's AID region
-changed.
+changed. The in-place region replacement is performed by the install-core libs
+(`lib/aid-install-core.sh` + its PowerShell twin `lib/AidInstallCore.psm1`); the region's
+**content** is the `AID:BEGIN/END` body of the rendered root-agent file
+(`profiles/<tool>/{CLAUDE.md,AGENTS.md}`). See authoring-conventions.md § Content Isolation.
 
 ---
 
@@ -379,8 +382,8 @@ Cardinality summary:
 > How to add or change an artifact or field.
 
 - **Adding a STATE field:** add it to the AUTHORED zone of the right level's
-  template, teach `writeback-state.sh` to write it, and update **both** dashboard
-  reader twins (`parsers.py` + `reader.mjs`) to parse it.
+  template, teach `writeback-state.sh` to write it, and update the Node reader twin
+  `reader.mjs` (which ports the whole `dashboard/reader/*.py`) to parse it.
 - **Adding an enum value:** update the template's inline enum comment, both reader
   twins, the SD-2 ordering if it affects reconcile, and this doc's inline contract.
 - **Adding a settings key:** add it to `templates/settings.yml` with a comment;

@@ -72,7 +72,7 @@ it produces. The modules fall into four planes:
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (13) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | behavioral via fixtures | The user-facing surface; one dir per skill. |
+| `canonical/skills/*` (13) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill. Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
 | `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. |
 | `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, execute, housekeep, interview, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, recipe template. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
@@ -81,8 +81,8 @@ it produces. The modules fall into four planes:
 | `profiles/<tool>/` (5) | Render | Rendered, per-tool copies of the toolkit (claude-code, codex, cursor, copilot-cli, antigravity) + `<tool>.toml` config. | output of the renderer | large | render-drift CI | Build output -- never hand-edit; regenerate. |
 | `packages/npm` | Distribution | npm `aid-installer` wrapper; vendors `bin/`, `lib/`, `dashboard/`. | `bin/`, `lib/`, `dashboard/` | medium | release smoke | Vendored copies regenerate; edit the wrapper, not the vendor. |
 | `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
-| `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.md hierarchy, settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py`. |
-| `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of `parsers.py` -- must stay parity. |
+| `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.md hierarchy, settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py`. |
+| `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`) must be mirrored in `reader.mjs`; behavior-equal, no import. |
 | `site/` | Observation | Standalone Astro marketing + docs website. | own `package.json` (independent build) | large | tested (`site/**/__tests__`) | Unrelated to the CLI build; separate `node_modules`/`dist`. |
 | `tests/canonical/*` | Cross-cutting | Cross-platform shell test suites + `fixtures/`, run via `tests/run-all.sh`. | the modules under test | large | self | Heavy gates run on master CI only. |
 | `tests/windows/*` | Cross-cutting | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`). | installers + install-core | large | windows CI lane | NOT in `run-all.sh`; needs a Windows runner. |
@@ -122,7 +122,7 @@ dashboard/server/server.mjs -> dashboard/server/reader.mjs
 dashboard/server/server.py  -> dashboard/reader/reader.py
 dashboard/reader/reader.py  -> parsers.py , derivation.py , models.py , locator.py
 dashboard/reader/*          -> .aid/ artifact schemas (STATE.md, settings.yml, KB)
-dashboard/server/reader.mjs <parity> dashboard/reader/parsers.py   (twin -- no import; behavior-equal)
+dashboard/server/reader.mjs <parity> dashboard/reader/*.py   (whole-reader twin -- no import; behavior-equal)
 site/                       -> (independent; no dependency on the CLI/toolkit)
 ```
 
@@ -193,8 +193,9 @@ grader).
 
 - `dashboard/server/reader.mjs` and `dashboard/reader/parsers.py` -- the two
   largest source files; each is a full state-parsing engine. Large enough to hide
-  complexity, and they are **twins** (a change in one must be mirrored in the
-  other), doubling the risk.
+  complexity. `reader.mjs` is the Node **twin of the whole** `dashboard/reader/`
+  Python reader (not only `parsers.py`): a change to any reader `.py` must be
+  mirrored in `reader.mjs`, doubling the risk.
 - `lib/aid-install-core.sh` (and `AidInstallCore.psm1`) -- the largest shell file;
   install/update/remove/manifest logic concentrated in one library.
 - `canonical/skills/aid-discover/references/state-generate.md` and
@@ -242,8 +243,9 @@ grader).
   `emission-manifest.jsonl` (`removed_dst`). Files outside any manifest are never
   touched. (See `canonical/EMISSION-MANIFEST.md`.)
 - **Language twins stay behavior-equal:** `aid-install-core.sh` <-> `AidInstallCore.psm1`,
-  `bin/aid` <-> `bin/aid.ps1`, `dashboard/reader/parsers.py` <-> `dashboard/server/reader.mjs`,
-  and the migrate `.sh`/`.ps1` twins MUST change in lockstep. A change to one
+  `bin/aid` <-> `bin/aid.ps1`, `dashboard/reader/*.py` <-> `dashboard/server/reader.mjs`
+  (the whole Python reader, not only `parsers.py`), and the migrate `.sh`/`.ps1` twins MUST
+  change in lockstep. A change to one
   without the other is a defect.
 - **Install manifests stay in lockstep:** the dashboard file set vendored into the
   five install manifests (npm, pypi, the three release paths) MUST match; a missing

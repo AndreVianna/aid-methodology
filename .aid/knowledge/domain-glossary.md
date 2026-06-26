@@ -197,15 +197,16 @@ profile. It is the contract the VERIFY gate byte-checks the rendered `profiles/`
 
 ### AidInstallCore
 
-**Aliases:** Aid Install Core, Protect-on-diff, protect-on-diff, `aid-install-core.sh`, `AidInstallCore.psm1`
+**Aliases:** Aid Install Core, `aid-install-core.sh`, `AidInstallCore.psm1`
 
 **Definition-as-used-here:** The shared install/update/remove engine the bootstrap installers
 source — Bash (`lib/aid-install-core.sh`) and PowerShell (`lib/AidInstallCore.psm1`). It holds
-the diff-aware copy, protect-on-diff, and channel logic so `install.sh`/`install.ps1` and the
+the in-place root-agent region replacement, the diff-aware copy, and channel logic so `install.sh`/`install.ps1` and the
 package shims stay behaviorally identical across platforms.
 
-**Relates-to:** Profile (what it installs), Protect-on-diff (its collision policy), AID_HOME
-(where it installs state).
+**Relates-to:** Profile (what it installs), AID_HOME (where it installs state). (Root-agent
+collisions are resolved by in-place `AID:BEGIN/END` region replacement; the older protect-on-diff
+policy was retired in v1.1.0 — see `decisions.md` D11.)
 
 **sources:**
 - `lib/aid-install-core.sh` — the Bash install/update/remove engine
@@ -489,7 +490,7 @@ lives).
 |------|--------------|--------|
 | AID_INSTALL_CHANNEL | Records which bootstrap channel installed the CLI (curl/npm/pypi); read by `aid update self` | `bin/aid` (`channel="${AID_INSTALL_CHANNEL:-}"`) |
 | Aid Update Self If Stale | The CLI self-update-if-stale routine | `tests/windows/Test-AidInstaller.ps1` |
-| Protect-on-diff | Install policy: when a root agent file exists and is non-AID, write `<file>.aid-new` and exit 5 instead of overwriting | `docs/glossary.md` ("Protect-on-diff") |
+| Protect-on-diff | **Retired** install policy (removed v1.1.0): formerly wrote `<file>.aid-new` + exit 5 when a root-agent file was non-AID. Superseded by in-place `AID:BEGIN/END` region replacement, which preserves user content without a sidecar | `decisions.md` D11; `lib/aid-install-core.sh` (`_copy_root_agent_file`) |
 | TargetDirectory / NoPath / No Profile | Install-core parameters/sentinels for the destination and tool selection | `docs/install.md`; `bin/aid` |
 | AidVersion / AidStatusBody / AidSupportedFormat | CLI/PowerShell status structures and the supported-format enum | `dashboard/server/server.mjs` (`AidVersion`); `install.ps1` (`AidStatusBody`); `tests/canonical/test-aid-cli-parity.sh` |
 | sha256 / File Hash | Release-artifact integrity (the `SHA256SUMS` published with bundles) | `docs/install.md`; `release.sh` |
@@ -508,7 +509,7 @@ lives).
 | RAG by convention | AID's retrieval model: fixed-shape KB + `INDEX.md`, no vector DB — agents navigate three tiers: the always-loaded INDEX, then one KB document on demand, then a cited file-and-symbol anchor | `docs/aid-methodology.md` ("RAG by convention") |
 | format_version (per-repo stamp) | The schema-version stamp (in `settings.yml` + a per-repo migration marker) the CLI reads to migrate older installs | `bin/aid`; `.aid/settings.yml` (`format_version`) |
 | block-radius | The BFS-computed set of tasks transitively depending on a failed task; all are marked Blocked | `canonical/aid/scripts/execute/compute-block-radius.sh` |
-| protect-on-diff | Install collision policy — see Lexicon — Install and CLI | `docs/glossary.md` ("Protect-on-diff") |
+| protect-on-diff | **Retired** install collision policy (removed v1.1.0; superseded by in-place `AID:BEGIN/END` region replacement) — see the Install-and-CLI lexicon entry | `decisions.md` D11 |
 
 ---
 
