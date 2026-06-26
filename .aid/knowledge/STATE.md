@@ -63,9 +63,10 @@ This is the single state file for the **Discovery area** — persistent project 
 | 13 | quality-gates.md | Generated | A+ | 2026-06-25 | C6 · quality (custom) |
 | 14 | tech-debt.md | Generated | A+ | 2026-06-25 | C7 · quality (9 items) |
 | 15 | infrastructure.md | Generated | A+ | 2026-06-25 | C8 · quality |
-| 16 | capability-inventory.md | Generated | A+ | 2026-06-25 | C9 · skill-self |
-| 17 | decisions.md | Generated | A+ | 2026-06-25 | D · architecture (18 decisions) |
-| 18 | README.md | Generated | A+ | 2026-06-25 | meta · skill-self |
+| 16 | release-tracking.md | Restored | — | 2026-06-25 | C8 · skill-self (hand-authored release ledger; content preserved from prior KB) |
+| 17 | capability-inventory.md | Generated | A+ | 2026-06-25 | C9 · skill-self |
+| 18 | decisions.md | Generated | A+ | 2026-06-25 | D · architecture (18 decisions) |
+| 19 | README.md | Generated | A+ | 2026-06-25 | meta · skill-self |
 
 ## Knowledge Summary Status
 
