@@ -18,4 +18,5 @@
 16-quality-gates.html
 17-external-sources.html
 18-readme.html
+release-tracking.html
 19-kb-index.html

@@ -1020,7 +1020,7 @@ details.accord > summary:focus-visible,
 			<span class="badge badge-accent">13 skills</span>
 			<span class="badge badge-info">9 agents / 3 tiers</span>
 			<span class="badge badge-ok">5 install profiles</span>
-			<span class="badge badge-purple">18 KB documents</span>
+			<span class="badge badge-purple">19 KB documents</span>
 			<span class="badge">6-phase pipeline</span>
 			<span class="badge">hybrid:methodology-tooling+software-cli</span>
 		</div>
@@ -1049,7 +1049,8 @@ details.accord > summary:focus-visible,
 			<a class="toc-link" href="#quality-gates"><span class="n">16</span><span class="t">Quality Gates</span></a>
 			<a class="toc-link" href="#external-sources"><span class="n">17</span><span class="t">External Sources</span></a>
 			<a class="toc-link" href="#readme"><span class="n">18</span><span class="t">README</span></a>
-			<a class="toc-link" href="#kb-index"><span class="n">19</span><span class="t">KB Index</span></a>
+			<a class="toc-link" href="#release-tracking"><span class="n">19</span><span class="t">Release Tracking</span></a>
+			<a class="toc-link" href="#kb-index"><span class="n">20</span><span class="t">KB Index</span></a>
 		</div>
 	</nav>
 
@@ -1088,10 +1089,17 @@ details.accord > summary:focus-visible,
 					.ph-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; font-weight: 600; fill: #101828; text-anchor: middle; dominant-baseline: middle; }
 					.ph-text-hi { fill: #FFFFFF; }
 					.arrow { stroke: #CDD5DF; stroke-width: 2; fill: none; marker-end: url(#arr); }
+					/* Dark mode -- keyed to BOTH the page toggle ([data-theme]) and the OS (prefers-color-scheme) */
 					@media (prefers-color-scheme: dark) {
 						.ph-box { fill: #1E293B; stroke: #2B3A52; }
+						.ph-box-hi { fill: #0E3A39; stroke: #2DD4BF; }
 						.ph-text { fill: #E5EAF2; }
+						.arrow { stroke: #475569; }
 					}
+					:root[data-theme="dark"] .ph-box    { fill: #1E293B; stroke: #2B3A52; }
+					:root[data-theme="dark"] .ph-box-hi { fill: #0E3A39; stroke: #2DD4BF; }
+					:root[data-theme="dark"] .ph-text   { fill: #E5EAF2; }
+					:root[data-theme="dark"] .arrow     { stroke: #475569; }
 				</style>
 				<marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
 					<path d="M0,0 L0,6 L6,3 z" fill="#CDD5DF"/>
@@ -1258,7 +1266,7 @@ details.accord > summary:focus-visible,
 
 		<div class="gloss-card" id="term-aid-install-core">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-aid-install-core">AidInstallCore</a></div>
-			<p class="gloss-def">The shared install/update/remove engine the bootstrap installers source &mdash; Bash (<code>lib/aid-install-core.sh</code>) and PowerShell (<code>lib/AidInstallCore.psm1</code>). It holds the diff-aware copy, protect-on-diff, and channel logic so <code>install.sh</code>/<code>install.ps1</code> stay behaviorally identical across platforms.</p>
+			<p class="gloss-def">The shared install/update/remove engine the bootstrap installers source &mdash; Bash (<code>lib/aid-install-core.sh</code>) and PowerShell (<code>lib/AidInstallCore.psm1</code>). It holds the in-place root-agent region replacement, the diff-aware copy, and channel logic so <code>install.sh</code>/<code>install.ps1</code> stay behaviorally identical across platforms.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Aliases</span>
 				<span class="gloss-pill">Aid Install Core</span>
@@ -2040,6 +2048,17 @@ details.accord > summary:focus-visible,
 					.rd-text-inv { fill: #FFFFFF; }
 					.rd-arr  { stroke: #CDD5DF; stroke-width: 1.5; fill: none; marker-end: url(#rdarr); }
 					.rd-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; fill: #667085; text-anchor: middle; }
+					/* Dark mode -- keyed to BOTH the page toggle ([data-theme]) and the OS (prefers-color-scheme) */
+					@media (prefers-color-scheme: dark) {
+						.rd-box   { fill: #1E293B; stroke: #2B3A52; }
+						.rd-text  { fill: #E5EAF2; }
+						.rd-label { fill: #9AA7BD; }
+						.rd-arr   { stroke: #475569; }
+					}
+					:root[data-theme="dark"] .rd-box   { fill: #1E293B; stroke: #2B3A52; }
+					:root[data-theme="dark"] .rd-text  { fill: #E5EAF2; }
+					:root[data-theme="dark"] .rd-label { fill: #9AA7BD; }
+					:root[data-theme="dark"] .rd-arr   { stroke: #475569; }
 				</style>
 				<marker id="rdarr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
 					<path d="M0,0 L0,6 L6,3 z" fill="#CDD5DF"/>
@@ -2770,7 +2789,7 @@ details.accord > summary:focus-visible,
 					<td>Discover</td>
 					<td><code>/aid-discover</code></td>
 					<td>repo content, <code>settings.yml</code></td>
-					<td>18 KB documents under <code>.aid/knowledge/</code></td>
+					<td>19 KB documents under <code>.aid/knowledge/</code></td>
 					<td>Review panel &rarr; grade &ge; minimum &rarr; human OK</td>
 				</tr>
 				<tr>
@@ -3333,8 +3352,8 @@ details.accord > summary:focus-visible,
 		</div>
 		<div class="card">
 			<div class="kicker">Doc-set</div>
-			<h3>18 documents</h3>
-			<p>Curated hybrid composition, confirmed at discovery Step 0d. Standard seed of 14 primary docs + 3 extension docs + 1 meta. All generated on 2026-06-25.</p>
+			<h3>19 documents</h3>
+			<p>Curated hybrid composition, confirmed at discovery Step 0d. Standard seed of 14 primary docs + 4 extension docs + 1 meta. All generated on 2026-06-25.</p>
 		</div>
 		<div class="card">
 			<div class="kicker">Discovery path</div>
@@ -3365,13 +3384,70 @@ details.accord > summary:focus-visible,
 				<tr><td>15</td><td>infrastructure.md</td><td>C8 (infra)</td><td>quality</td><td><span class="badge badge-ok">A+</span></td></tr>
 				<tr><td>16</td><td>capability-inventory.md</td><td>C9 (capabilities)</td><td>skill-self</td><td><span class="badge badge-ok">A+</span></td></tr>
 				<tr><td>17</td><td>decisions.md</td><td>D (decisions)</td><td>architecture</td><td><span class="badge badge-ok">A+</span></td></tr>
-				<tr><td>18</td><td>README.md</td><td>meta</td><td>skill-self</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>18</td><td>release-tracking.md</td><td>C8 (release)</td><td>skill-self</td><td><span class="badge badge-ok">A+</span></td></tr>
+					<tr><td>19</td><td>README.md</td><td>meta</td><td>skill-self</td><td><span class="badge badge-ok">A+</span></td></tr>
 				<tr><td>&mdash;</td><td>INDEX.md</td><td>meta (generated)</td><td>skill-self (build-kb-index.sh)</td><td><span class="badge badge-ok">A+</span></td></tr>
 			</tbody>
 		</table>
 	</div>
 
 	<p style="color:var(--text-muted); font-size:0.88rem; margin-top:1rem;">All 11 concern dimensions (C0&ndash;C9 + D) are covered. Spine coverage: 29 concepts grounded, 80 candidates excluded, 0 ungrounded. Discovery ran 2026-06-25 via brownfield-large 4-lane fan-out.</p>
+</section>
+<section id="release-tracking" class="sec" data-title="Release Tracking">
+	<header>
+		<span class="eyebrow">Release ledger &mdash; release-tracking.md</span>
+		<h2>Release Tracking</h2>
+		<p class="lede">A cumulative, newest-first log of every AID release and what shipped in it. Each line is tagged <code>[NEW]</code>, <code>[CHANGE]</code>, or <code>[FIX]</code>; a top <strong>Unreleased</strong> section accumulates what is queued for the next version.</p>
+	</header>
+
+	<div class="grid g3" style="margin-bottom:1.5rem;">
+		<div class="card">
+			<div class="kicker">Format</div>
+			<h3>Newest-first ledger</h3>
+			<p>Versions are listed top-down, latest first. Read it to know what shipped in which version &mdash; and what is still pending release in the <code>Unreleased</code> block.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Item tags</div>
+			<h3>[NEW] / [CHANGE] / [FIX]</h3>
+			<p><code>[NEW]</code> items lead with a feature name; <code>[CHANGE]</code> and <code>[FIX]</code> are description-only. A trailing version on an Unreleased item marks a planned target.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">At tag time</div>
+			<h3>Unreleased &rarr; version</h3>
+			<p>When a release is cut, the <code>Unreleased</code> section is renamed to the version + date and a fresh <code>Unreleased</code> block starts. Hand-maintained; the root <code>RELEASE_NOTES.md</code> is retired.</p>
+		</div>
+	</div>
+
+	<h3>Release timeline</h3>
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Version</th><th>Date</th><th>Highlights</th></tr></thead>
+			<tbody>
+				<tr>
+					<td><span class="badge badge-info">Unreleased</span></td>
+					<td>&mdash;</td>
+					<td>Uniform <code>{agents,skills,aid}</code> layout across all five host tools; Codex unified under <code>.codex/</code>; profile generator simplified (13&rarr;7 files); <code>aid update</code> now replaces managed files atomically and prunes stale ones (work-005).</td>
+				</tr>
+				<tr>
+					<td><strong>v1.1.1</strong></td>
+					<td>2026-06-19</td>
+					<td><code>[FIX]</code> An <code>aid add</code>-only project (manifest, no <code>settings.yml</code>) no longer warns &ldquo;older format&rdquo; on every <code>aid update</code> &mdash; the first update synthesizes a stamped <code>settings.yml</code>. Supersedes v1.1.0.</td>
+				</tr>
+				<tr>
+					<td><strong>v1.1.0</strong></td>
+					<td>2026-06-17</td>
+					<td><code>[NEW]</code> <code>aid projects</code> command; per-user/shared project registry; upgrade migration (<code>aid update self</code>); and the local read-only <strong>AID dashboard</strong>.</td>
+				</tr>
+				<tr>
+					<td><strong>v1.0.0</strong></td>
+					<td>2026-06-07</td>
+					<td>First public release &mdash; the six-phase pipeline + Deliver skills, the Knowledge Base + RAG-by-convention, the 9-agent / 3-tier model, the lite path + recipes, the review/grade engine, the <code>aid</code> CLI across four channels + five host tools, and the docs site.</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p style="color:var(--text-muted); font-size:0.88rem; margin-top:1rem;">A first-class <code>extension</code> doc (concern <code>C8</code>). It is the single home of release history &mdash; <code>infrastructure.md</code> points here, and the root <code>RELEASE_NOTES.md</code> was retired. Per-edit history lives in git.</p>
 </section>
 <section id="kb-index" class="sec" data-title="KB Index">
 	<header>
@@ -3456,6 +3532,12 @@ details.accord > summary:focus-visible,
 					<td><span class="badge badge-info">C1</span> structure layout directories</td>
 					<td>Repository layout, top-level directory purposes, detected technologies, and file-inventory shape for the AID project.</td>
 					<td>developer, architect</td>
+				</tr>
+				<tr>
+					<td><a class="doc-link" href="#release-tracking"><code>release-tracking.md</code></a></td>
+					<td><span class="badge badge-info">C8</span> release versioning changelog</td>
+					<td>Cumulative release ledger &mdash; every AID release newest-first with items tagged [NEW] / [CHANGE] / [FIX], plus an Unreleased section for the next version.</td>
+					<td>developer, devops, product</td>
 				</tr>
 				<tr>
 					<td><a class="doc-link" href="#tech-debt"><code>tech-debt.md</code></a></td>

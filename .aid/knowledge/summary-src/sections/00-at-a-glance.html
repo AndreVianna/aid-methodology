@@ -8,7 +8,7 @@
 			<span class="badge badge-accent">13 skills</span>
 			<span class="badge badge-info">9 agents / 3 tiers</span>
 			<span class="badge badge-ok">5 install profiles</span>
-			<span class="badge badge-purple">18 KB documents</span>
+			<span class="badge badge-purple">19 KB documents</span>
 			<span class="badge">6-phase pipeline</span>
 			<span class="badge">hybrid:methodology-tooling+software-cli</span>
 		</div>
@@ -37,7 +37,8 @@
 			<a class="toc-link" href="#quality-gates"><span class="n">16</span><span class="t">Quality Gates</span></a>
 			<a class="toc-link" href="#external-sources"><span class="n">17</span><span class="t">External Sources</span></a>
 			<a class="toc-link" href="#readme"><span class="n">18</span><span class="t">README</span></a>
-			<a class="toc-link" href="#kb-index"><span class="n">19</span><span class="t">KB Index</span></a>
+			<a class="toc-link" href="#release-tracking"><span class="n">19</span><span class="t">Release Tracking</span></a>
+			<a class="toc-link" href="#kb-index"><span class="n">20</span><span class="t">KB Index</span></a>
 		</div>
 	</nav>
 
@@ -76,10 +77,17 @@
 					.ph-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; font-weight: 600; fill: #101828; text-anchor: middle; dominant-baseline: middle; }
 					.ph-text-hi { fill: #FFFFFF; }
 					.arrow { stroke: #CDD5DF; stroke-width: 2; fill: none; marker-end: url(#arr); }
+					/* Dark mode -- keyed to BOTH the page toggle ([data-theme]) and the OS (prefers-color-scheme) */
 					@media (prefers-color-scheme: dark) {
 						.ph-box { fill: #1E293B; stroke: #2B3A52; }
+						.ph-box-hi { fill: #0E3A39; stroke: #2DD4BF; }
 						.ph-text { fill: #E5EAF2; }
+						.arrow { stroke: #475569; }
 					}
+					:root[data-theme="dark"] .ph-box    { fill: #1E293B; stroke: #2B3A52; }
+					:root[data-theme="dark"] .ph-box-hi { fill: #0E3A39; stroke: #2DD4BF; }
+					:root[data-theme="dark"] .ph-text   { fill: #E5EAF2; }
+					:root[data-theme="dark"] .arrow     { stroke: #475569; }
 				</style>
 				<marker id="arr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
 					<path d="M0,0 L0,6 L6,3 z" fill="#CDD5DF"/>
