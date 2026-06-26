@@ -6,7 +6,7 @@
 {"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "b50135b6ecb17b0d28259afbe607ca42d2b8b981b2c1c8bbf2a5e2e9933d0e02", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "3e66a6e4e6747885b8f2ae8c46709fbed6594337780e164edcfc088347c56cac", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "d0ff247a348f8aefdd0009d02e11ba7d79b7bb2eacfc43bc367470a27b38e685", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "ee949a6673fff9fbe5f63a940f88c0c2d618a92de25674d6ecf1cff386395ac3", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "e82f9374f72abed69ec1de6f1c5e09c85e5c0696f7a43b8269ec3f3770f43ea3", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "fb47e7652cd641f27c256a20004616c9decd3cc1721ec62fbc6d73b17664b306", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".github/aid/recipes/README.md", "profile": "copilot-cli", "sha256": "5d7a9d410f0bf5304fe90e502b80adaa4d47019b1c2365487d6c86260a0ea800", "src": "canonical/recipes/README.md"}
 {"dst": ".github/aid/recipes/add-api-endpoint.md", "profile": "copilot-cli", "sha256": "f796874afb08a04b88372469088cf03e4ce8b452055e820fd8033b43a6a6ddf2", "src": "canonical/recipes/add-api-endpoint.md"}

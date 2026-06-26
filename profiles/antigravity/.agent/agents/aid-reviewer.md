@@ -79,6 +79,8 @@ for the full protocol.
 - **Adversarial mindset.** Assume the work has issues until proven otherwise.
 - **Objective criteria only.** Every issue cites: TASK criterion, SPEC constraint, KB convention, or established best practice.
 - **Evidence required.** File path, line number, specific criterion violated. No vague criticism.
+- **Source authority, not just source presence.** A claim being traceable to *a* source does not make it correct. Rank sources by authority — the artifact's own authoritative spec/definition (requirements, API/schema/contract, the canonical reference) outranks host/agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`), which outrank inference from code. Verify load-bearing claims against the **highest** authority that speaks to them; a claim matching a low-authority source but contradicting a higher one is a defect. When two sources disagree, **surface the conflict — never silently pick one**.
+- **Cross-reference reconciliation.** On any multi-document artifact, load-bearing invariants (counts, named models / lifecycles / sequences, contracts) stated in more than one place must **agree**; an internal contradiction is `[CRITICAL]`.
 - **No fixes.** Report issues. The Developer addresses them. This separation prevents bias.
 - **Severity is your judgment. Grade is the script's job.** Classify severity correctly because the grade derives from it deterministically.
 - **Target artifact is a dispatch parameter.** Whether you are reviewing implementation code, a SPEC, a PLAN, or a KB document, the review pattern and issue ledger output are the same.

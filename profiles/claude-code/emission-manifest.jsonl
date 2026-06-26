@@ -6,7 +6,7 @@
 {"dst": ".claude/agents/aid-operator.md", "profile": "claude-code", "sha256": "0f92fbe2592d8e8f053fd69fb579f2093bce24b5b30dc3522dcee6c51f0f7b27", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".claude/agents/aid-orchestrator.md", "profile": "claude-code", "sha256": "baf46ebda5fe331afe74c5d9910129ae746e7855cb9305d606e539670d9506ec", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "1c5f25abe533b96b9a25cbd20801c850a56e34cdde06cccde5f4808b8c61b7ae", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "1e3cf1d1f825822822c4a759dd1737b288f4b887ad07b482831577672e3d81f9", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "e6f6c708175c33d39c082ea6533a180cdc8525be6ca1f24acab1ed3bd6ddc936", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-tech-writer.md", "profile": "claude-code", "sha256": "3c581496888400811be434ca8eaec33aad90b2814012ce8c8f29a0f64f6ceee4", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".claude/aid/recipes/README.md", "profile": "claude-code", "sha256": "26f405758c7e95097cbf858d9400ba28184f61ec0ce5f825e4dfefc6436e0870", "src": "canonical/recipes/README.md"}
 {"dst": ".claude/aid/recipes/add-api-endpoint.md", "profile": "claude-code", "sha256": "f796874afb08a04b88372469088cf03e4ce8b452055e820fd8033b43a6a6ddf2", "src": "canonical/recipes/add-api-endpoint.md"}
