@@ -251,44 +251,7 @@ de-slugified. **No hardcoded doc list survives in the skeleton or any template.*
 
 ---
 
-### 7. Build the Markdown export payload
-
-Before assembling `kb.html`, generate the hidden Markdown export payload from the KB
-source documents. The payload is embedded in `kb.html` as a `<script type="text/markdown">`
-block that client-side export buttons read to download a portable `.md` file.
-
-```bash
-bash .cursor/aid/scripts/summarize/build-md-export.sh \
-    --kb-dir .aid/knowledge \
-    --manifest .aid/knowledge/summary-src/section-manifest.txt \
-    --output .aid/knowledge/summary-src/md-export-payload.html
-#   reads:  .aid/knowledge/*.md (in manifest section order, frontmatter stripped)
-#   writes: .aid/knowledge/summary-src/md-export-payload.html
-```
-
-**Payload element contract** (consumed by the client-side export chrome):
-
-| Property | Value |
-|----------|-------|
-| **Element** | `<script type="text/markdown" id="kb-md-export" data-encoding="base64">` |
-| **Content** | Combined KB source docs, frontmatter stripped, local images embedded as `data:` URIs (`image/svg+xml` for `.svg`; `image/png`, `image/jpeg`, `image/gif`, `image/webp` for raster). The entire payload is **base64-encoded** (UTF-8 bytes → base64 ASCII). The element body is pure base64 alphabet — no escaping needed, lossless round-trip. Remote `http(s)://` image refs are left untouched. |
-| **Access** | `const b64 = document.getElementById('kb-md-export').textContent;` (returns the base64 string exactly — no leading/trailing whitespace or newlines) |
-| **Decode (UTF-8)** | `new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)))` — or equivalently `decodeURIComponent(escape(atob(b64)))` — to recover the original Markdown text including any non-ASCII characters |
-| **Filename hint** | `'knowledge-base-export.md'` |
-| **Location in `kb.html`** | Injected between `skeleton-foot.html` and `post-script.html` by `assemble.sh` when `md-export-payload.html` is present in the source layout dir |
-
-> **PS-mirror note:** The payload injection lives in `assemble.sh` (the bash-only kb.html
-> assembler). `assemble-3part.ps1` is a separate byte-concatenation utility that joins
-> pre-assembled Part1 + Part2 files; it is not part of the documented GENERATE flow and
-> does not require a parallel update for this payload.
-
-Run `build-md-export.sh` **before** `assemble.sh`. The assembler picks up the payload
-automatically; if the file is absent it is silently skipped (no error), preserving
-backward compatibility for runs that do not need the Markdown export.
-
----
-
-### 8. Assemble the single-file distribution (deterministic)
+### 7. Assemble the single-file distribution (deterministic)
 
 Run `.cursor/aid/scripts/summarize/assemble.sh` with `--manifest` to concatenate the
 multi-source layout into the final single-file `kb.html`. The `--manifest` flag is
@@ -302,7 +265,7 @@ bash .cursor/aid/scripts/summarize/assemble.sh \
     --output .aid/dashboard/kb.html
 #   reads:  .aid/knowledge/summary-src/{skeleton-head.html,
 #             sections/* in manifest order, skeleton-foot.html,
-#             md-export-payload.html (if present), post-script.html}
+#             post-script.html}
 #   writes: .aid/dashboard/kb.html
 ```
 
@@ -324,7 +287,7 @@ would 404.
 
 ---
 
-### 9. Write Knowledge Summary Status
+### 8. Write Knowledge Summary Status
 
 Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 ```markdown

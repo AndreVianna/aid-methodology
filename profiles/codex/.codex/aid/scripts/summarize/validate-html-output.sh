@@ -284,36 +284,19 @@ echo "  [NM: No-Mermaid-engine assertion (FR-51 / D-012)]"
 NM_FAIL=0
 TOTAL=$((TOTAL + 1))
 
-# NM.1: detect inline Mermaid engine bundle (very large inline script containing 'mermaid')
+# NM.1: detect inline Mermaid bundle (very large inline script containing 'mermaid')
 # Heuristic: a <script> block longer than 100 KB that contains the mermaid signature.
-# Excludes <script type="text/markdown"> blocks: those are passive data payloads
-# (the Markdown export embed introduced by task-001) that legitimately exceed 100 KB
-# and mention "mermaid" in KB text without being an engine. A real Mermaid engine
-# always appears in an executable (non-typed or type="text/javascript") <script>.
-#
-# Awk scoping: the open-tag rule fires only when NOT already inside a script block
-# (!in_script guard). This prevents inner content lines that happen to match
-# <script[^>]*> from resetting is_md_payload, which would cause a false-trip on a
-# payload whose decoded body contains a literal <script> example line (defense in
-# depth -- with base64 encoding the body can never contain '<', but the guard makes
-# the check correct regardless of encoding).
+# Use awk to find multi-line script blocks and check length.
 INLINE_MERMAID=$(awk '
-    !in_script && /<script[^>]*>/ {
-        tag = $0
-        in_script = 1
-        buf = ""
-        is_md_payload = (tolower(tag) ~ /type="text\/markdown"/ ||
-                         tolower(tag) ~ /type='"'"'text\/markdown'"'"'/)
-    }
+    /<script[^>]*>/ { in_script=1; buf="" }
     in_script { buf = buf $0 "\n" }
-    in_script && /<\/script>/ {
-        in_script = 0
-        if (!is_md_payload && length(buf) > 100000 && tolower(buf) ~ /mermaid/) {
+    /<\/script>/ {
+        in_script=0
+        if (length(buf) > 100000 && tolower(buf) ~ /mermaid/) {
             print "found"
             exit
         }
-        buf = ""
-        is_md_payload = 0
+        buf=""
     }
 ' "$HTML" 2>/dev/null || true)
 

@@ -104,13 +104,6 @@ mkdir -p "$OUT_DIR"
         cat "$s"
     done
     cat "$SRC_DIR/skeleton-foot.html"
-    # Embed the Markdown export payload when pre-built by build-md-export.sh.
-    # Conditional: absent payload is silently skipped (no error); present payload
-    # is injected between skeleton-foot.html and post-script.html so it lives
-    # inside <body> before the lightbox JS closes the document.
-    if [[ -f "$SRC_DIR/md-export-payload.html" ]]; then
-        cat "$SRC_DIR/md-export-payload.html"
-    fi
     cat "$SRC_DIR/post-script.html"
 } > "$OUTPUT"
 
@@ -121,10 +114,4 @@ SECTION_COUNT=${#SECTIONS[@]}
 echo "Assembled $OUTPUT"
 echo "  Sections:  $SECTION_COUNT (order: $ORDER_MODE)"
 echo "  Engine:    none (inline SVG pre-rendered at build time; no Mermaid engine)"
-if [[ -f "$SRC_DIR/md-export-payload.html" ]]; then
-    PAYLOAD_BYTES=$(wc -c < "$SRC_DIR/md-export-payload.html" | tr -d ' ')
-    echo "  MD Export: embedded (${PAYLOAD_BYTES} bytes, id=kb-md-export)"
-else
-    echo "  MD Export: not present (run build-md-export.sh before assemble.sh)"
-fi
 echo "  Size:      $SIZE bytes, $LINES lines"
