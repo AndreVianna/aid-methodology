@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** A+ (delivery-001 gate, TOTAL 0)
+- **Elapsed:** ~05:20
+- **Notes:** technique-survey.md (27KB, 8 families, 19 sources, rubric+RQ-mapped, ADOPT x2 / ADAPT x6). Verdicts reconcile across findings.md. Done @ delivery-001 A+ gate.
 
 ---
 

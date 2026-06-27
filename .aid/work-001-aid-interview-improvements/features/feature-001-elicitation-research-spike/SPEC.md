@@ -212,7 +212,8 @@ Operationalizes **AC-1**. The spike is **done** when `findings.md` exists at the
 ### Dependencies & Risks
 
 - **D-1 (consumed).** Builds on work-001 foundations now on master: f001 (frontmatter/`source:`
-  schema, incl. the `forward-authored` marker the seed will use), f003 (concern-model / doc-set),
+  schema — currently `hand-authored | generated` on disk; the seed's `forward-authored` value is the
+  permitted **C-1 addition this work introduces**, NOT yet on master), f003 (concern-model / doc-set),
   **f004 (concept-spine / essence engine)** — the spike studies the *harvested* spine to recommend the
   *declared* one — and f007 (freshness).
 - **D-5 (surfaced for downstream).** NFR-3's "same KB review gate" reuses `aid-discover`'s review

@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** A+ (delivery-001 gate, TOTAL 0)
+- **Elapsed:** ~08:30
+- **Notes:** findings.md (551 lines, 7 sections, all 9 RQs justified+actionable, Rec A/B downstream-consumable, A-2 gap + D-5 note + 7 risks). Reviewer verified faithfulness vs disk. Done @ delivery-001 A+ gate.
 
 ---
 
