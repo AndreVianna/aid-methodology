@@ -29,7 +29,7 @@ items marked **[manual]** are inspected by the agent during VALIDATE.
 ## Keyboard reach
 
 - **[manual]** All interactive elements (theme toggle, TOC links, accordion
-  summaries, mermaid boxes) are reachable via Tab.
+  summaries, diagram boxes) are reachable via Tab.
 - **[manual]** Tab order matches visual order.
 - **[auto]** `:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px }`
   is present in the inlined CSS.
@@ -48,7 +48,7 @@ items marked **[manual]** are inspected by the agent during VALIDATE.
 
 ## Diagrams
 
-- **[auto]** Each diagram-bearing `<div class="mermaid-box">` has `role="button"`,
+- **[auto]** Each diagram-bearing `<div class="diagram-box">` has `role="button"`,
   `tabindex="0"`, and `aria-label` summarizing the diagram.
 - **[manual]** Each cloned SVG in the lightbox has `role="img"` and
   `aria-label` matching its caption.

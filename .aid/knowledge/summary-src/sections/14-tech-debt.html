@@ -1,0 +1,73 @@
+<section id="tech-debt" class="sec" data-title="Tech Debt">
+	<header>
+		<span class="eyebrow">Open debt &mdash; tech-debt.md</span>
+		<h2>Tech Debt</h2>
+		<p class="lede">Severity-classified open technical and methodology debt in AID. Read this before starting work in any area &mdash; declared debt items and non-obvious gotchas may change your approach or scope.</p>
+	</header>
+
+	<div class="debt-item high">
+		<div class="title">H1 &mdash; Five install manifests must stay lockstep</div>
+		<div class="meta">Severity: HIGH &middot; Area: Distribution</div>
+		<p>The five install manifests (npm package.json, PyPI pyproject.toml, install.sh, install.ps1, AidInstallCore) must all be updated together when any installed file set changes. A single missed update silently ships a broken install for one channel. Currently managed by manual discipline; a lockstep guard is needed.</p>
+	</div>
+
+	<div class="debt-item med">
+		<div class="title">M1 &mdash; npm and PyPI channels effectively blocked</div>
+		<div class="meta">Severity: MEDIUM &middot; Area: Distribution</div>
+		<p>Versions 1.1.0 and 1.1.1 are published on npm and PyPI but the channels have outstanding issues (1.1.0 should be deprecated; stale release notes). Affects discoverability and trust.</p>
+	</div>
+
+	<div class="debt-item med">
+		<div class="title">M2 &mdash; Heavy CI gates run on master only</div>
+		<div class="meta">Severity: MEDIUM &middot; Area: Testing</div>
+		<p>The canonical test suite (<code>tests/run-all.sh</code>) and docs site build run only on push/PR to master. Feature branches skip them, so a direct-to-master merge can break master in multiple ways. Run locally before merging.</p>
+	</div>
+
+	<div class="debt-item med">
+		<div class="title">M3 &mdash; Stale docs/repository-structure.md</div>
+		<div class="meta">Severity: MEDIUM &middot; Area: Documentation</div>
+		<p>The docs site's <code>repository-structure.md</code> drifted from the actual repo layout. Out of discovery scope to fix; tracked here to prevent it being used as a reference.</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L1 &mdash; Dead code in install.sh</div>
+		<div class="meta">Severity: LOW &middot; Area: Distribution</div>
+		<p>The <code>OVERALL_BLOCKED</code>/<code>exit 5</code>/<code>.aid-new</code> protect-on-diff branch in <code>install.sh</code> is unreachable (aid-install-core eliminated the <code>.aid-new</code> path). Safe to remove.</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L2 &mdash; <code>--sign</code> flag deferred</div>
+		<div class="meta">Severity: LOW &middot; Area: Security</div>
+		<p>Code-signing for release bundles is planned but not yet implemented. The release pipeline produces unsigned bundles.</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L3 &mdash; Legacy install path in tests</div>
+		<div class="meta">Severity: LOW &middot; Area: Testing</div>
+		<p>Some older test fixtures still reference the legacy pre-1.0.0 install layout. They pass but test the wrong path for new-format repos.</p>
+	</div>
+
+	<div class="debt-item low">
+		<div class="title">L4 &mdash; No coverage % metric</div>
+		<div class="meta">Severity: LOW &middot; Area: Testing</div>
+		<p>Test coverage is assessed by presence/absence of suites, not line percentage. A coverage metric tool would help identify untested paths.</p>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">Non-Obvious Gotchas</h3>
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Gotcha</th><th>What to know</th></tr></thead>
+			<tbody>
+				<tr><td>Master-only heavy gates</td><td>run-all.sh + docs build are CI-master-only; always run locally before claiming green on a feature branch</td></tr>
+				<tr><td>HOME pinning in tests</td><td>Migration scanner uses $HOME; tests MUST export HOME=&lt;throwaway&gt;</td></tr>
+				<tr><td>Render-drift needs full generator</td><td>After any canonical/ edit, run the FULL run_generator.py, not per-script renderers, or CI render-drift fails on stale emission manifests</td></tr>
+				<tr><td>Five manifests lockstep</td><td>Any file-set change must update all five install manifests simultaneously</td></tr>
+				<tr><td>Four version carriers</td><td>VERSION, package.json, pyproject.toml, and git tag must be bumped together on release</td></tr>
+				<tr><td>Edit canonical not profiles</td><td>Never edit profiles/ directly; always edit canonical/ and re-render</td></tr>
+				<tr><td>ASCII-only PowerShell</td><td>Non-ASCII characters in no-BOM .ps1 files mis-parse on Windows ANSI codepage</td></tr>
+				<tr><td>Web reviews need Playwright</td><td>Inspecting HTML source is an automatic FAIL for any web page review</td></tr>
+				<tr><td>master branch-protected</td><td>Non-admin bot cannot direct-push master; always open a PR</td></tr>
+			</tbody>
+		</table>
+	</div>
+</section>

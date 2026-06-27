@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All 12 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.'
+description: 'All 13 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.'
 generatedFrom: 'canonical/skills/*/SKILL.md'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **12 user-facing skills** across five pipeline groups, plus two off-pipeline on-demand skills. The six numbered phases — Discover through Execute — form the mandatory sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Each entry below is generated from the skill's own definition in `canonical/skills/`.
+AID ships **13 user-facing skills** across five pipeline groups, plus three off-pipeline on-demand skills. The six numbered phases — Discover through Execute — form the mandatory sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Each entry below is generated from the skill's own definition in `canonical/skills/`.
 
 ## Prepare
 
@@ -112,14 +112,6 @@ Observe production, classify findings, and route actions. Combines telemetry int
 
 On-demand skills, outside the numbered phases.
 
-### `aid-ask`
-
-**on demand · read-only Q&A**
-
-Optional on-demand read-only Q&A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/work-*/STATE.md + progress). Returns an answer with source citations (KB doc names, file paths, or work-NNN STATE references). Modifies no files. Trivial questions are answered inline (Read/Glob/Grep only); broad or expensive investigations dispatch aid-researcher in strictly read-only mode. When the available context cannot answer the question, states the gap explicitly rather than fabricating an answer.
-
-[Definition: `canonical/skills/aid-ask/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md)
-
 ### `aid-housekeep`
 
 **on demand**
@@ -127,3 +119,19 @@ Optional on-demand read-only Q&A skill. Takes a free-form question and answers i
 Optional on-demand housekeeping skill. Runs three gated jobs in strict order: KB-DELTA (re-discover changed docs since last KB approval) → SUMMARY-DELTA (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale work-area artifacts). Each stage commits its own changes on an aid/housekeep-* branch; the skill never pushes. Re-entrant: a stalled run resumes at the stalled stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE.
 
 [Definition: `canonical/skills/aid-housekeep/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md)
+
+### `aid-query-kb`
+
+**on demand · read-only Q&A**
+
+Optional on-demand Q&A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/work-*/STATE.md + progress). Returns an answer with source citations (KB doc names, file paths, or work-NNN STATE references). When the available context cannot answer the question, states the gap explicitly rather than fabricating an answer AND captures the gap as a Query-Gap entry in the STATE.md Q&A (Pending) backlog so it feeds the KB-improvement loop. Trivial questions are answered inline (Read/Glob/Grep only); broad or expensive investigations dispatch aid-researcher in strictly read-only mode. Writes are restricted to appending a Query-Gap entry to a STATE.md Q&A (Pending) section; no KB doc, settings, or code file is ever written.
+
+[Definition: `canonical/skills/aid-query-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md)
+
+### `aid-update-kb`
+
+**on demand · targeted KB update**
+
+Optional on-demand targeted KB update skill. Takes a free-form prompt describing what changed and applies the delta through the same review/calibration gate as aid-discover. Analyzes which KB docs the prompt implies, applies targeted summary+pointer edits, reviews them through f005's five-mandate panel (scoped to the changed docs), and commits only after explicit human approval. State-machine: ANALYZE -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
+
+[Definition: `canonical/skills/aid-update-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md)

@@ -1,10 +1,26 @@
 ---
-profile: library
-target_diagrams: 5
-notes: "Libraries and SDKs — type hierarchy and consumer registry replace UI and request-flow diagrams."
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for library/SDK-domain KB docs, keyed by kb-category tier and
+        doc identity — not by project-type. The section set is derived from the resolved
+        doc-set + frontmatter, not from this template."
 ---
 
-# Section Template — `library` Profile
+# Rendering Hints — Library / SDK Domain Docs
+
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `library` or `sdk`
+> and the resolved doc-set contains the listed docs.
+
+---
+
+## Original section structure (preserved as rendering reference)
+
+The following layout was the library profile's fixed section order. It is **not selected
+as a template**; it is kept as domain-specific rendering guidance. The resolved doc-set
+order (from `state-profile.md` §4) is authoritative.
 
 For libraries / SDKs that export an API but don't have a UI runtime.
 Slimmer than web-app: no UI section, no service-mesh diagram.
@@ -24,7 +40,8 @@ Slimmer than web-app: no UI section, no service-mesh diagram.
 | 9 | Test Landscape | | test-landscape.md |
 | 10 | Tech Debt | | tech-debt.md |
 | 11 | Build & Distribution | | infrastructure.md, technology-stack.md |
-| 12 | Knowledge Base Index | | INDEX.md |
+| 12 | Concept Spine | | domain-glossary.md |
+| 13 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -63,6 +80,21 @@ Capabilities the library provides, status badges, links to docs.
 ### §11 Build & Distribution
 Build commands + publication targets (npm, PyPI, Maven Central, etc.) +
 version policy.
+
+### §12 Concept Spine
+
+The project's native vocabulary — the coined and domain-specific terms a library consumer
+must understand to use the API correctly. Drawn from `domain-glossary.md` (the C4 doc).
+
+For a library, include: any coined type names or abstractions whose meaning is specific to
+this library (not derivable from the general language/framework), the design patterns the
+library enforces by name (e.g. "builder", "flyweight", "registry" if project-specific), and
+any non-standard error or lifecycle terms. Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this library's API context}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder; do not omit the
+section. Wrap type/symbol names in `<code>`.
 
 ## Skipped sections (vs web-app)
 

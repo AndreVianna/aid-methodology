@@ -65,6 +65,46 @@ traceability:
 #   tip_date: 2026-06-12T14:03:00Z     # ISO-8601 commit date of that branch's tip at generation time
 
 # ---------------------------------------------------------------------------
+# discovery: settings for the aid-discover GENERATE flow
+# ---------------------------------------------------------------------------
+# Populated once at discovery time. The closure: child holds the cap defaults
+# for the comprehension/closure loop (Step 5b, aid-discover f004).
+#
+# NOTE: read-setting.sh resolves only a 2-level section.key path; the 3-level
+# discovery.closure.* keys below are NOT readable via read-setting.sh. They
+# are consumed via Step 5b's cap-override argument interface (f004's design).
+# f006 (path config) supplies per-run overrides through that interface.
+#
+# doc_set: is NOT a template default -- it is a conditional runtime-written
+# sibling written by Step 0d only when the confirmed doc-set differs from the
+# seed. It shares the discovery: parent with closure: but is never pre-seeded
+# in the template.
+discovery:
+  closure:
+    max_clean_passes: 2   # CLOSED after this many consecutive zero-ungrounded DETECT passes (default 2)
+    max_rounds: 4         # hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds (wall-clock guard)
+    token_budget: 0       # optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget
+
+# ---------------------------------------------------------------------------
+# triage: recon-pre-pass thresholds for the 3-path discovery classifier (f006)
+# ---------------------------------------------------------------------------
+# Read by recon-classify.sh to PROPOSE a path (greenfield / brownfield-small /
+# brownfield-large); the human CONFIRMS (the path is measured, not declared --
+# project.type is never read as authoritative). Defaults are sensible starting
+# points, calibratable per project. All four metrics are read from the
+# already-generated project-index.md + candidate-concepts.md (no second scan).
+#
+# RM1 = source-file count; RM2 = source LOC; RM3 = directory count;
+# RM4 = candidate-concept count (Cross-source spread >= 2 from harvest).
+# Absent block => these defaults; a project may override any single key.
+triage:
+  greenfield_max_source_files: 5     # RM1 <= this AND RM2 <= loc => greenfield (little/no source)
+  greenfield_max_source_loc:   500   # RM2 ceiling for greenfield
+  large_min_source_loc:        20000 # RM2 >= this => brownfield-large (size)
+  large_min_dirs:              25    # RM3 >= this => brownfield-large (breadth / fan-out)
+  large_min_concepts:          40    # RM4 >= this => brownfield-large (concept density)
+
+# ---------------------------------------------------------------------------
 # Optional per-skill overrides
 # ---------------------------------------------------------------------------
 # Each top-level skill-name key (when set) overrides the corresponding

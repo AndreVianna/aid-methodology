@@ -1,0 +1,122 @@
+<section id="module-map" class="sec" data-title="Module Map">
+	<header>
+		<span class="eyebrow">Component map &mdash; module-map.md</span>
+		<h2>Module Map</h2>
+		<p class="lede">AID's major modules across four planes: Distribution (install and CLI), Toolkit (skills, agents, scripts), Render (profile generator), and Observation (dashboard). Understanding the planes is prerequisite to any module-touching change.</p>
+	</header>
+
+	<!-- Four planes diagram -->
+	<div class="diagram-box" aria-label="AID four-plane module map &mdash; click or press Enter to expand">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 220" role="img" aria-label="Four planes: Distribution, Toolkit, Render, Observation">
+			<defs>
+				<style>
+					.plane-bg { fill: #EEF2F7; stroke: #CDD5DF; stroke-width: 1.5; rx: 10; }
+					.plane-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 12px; font-weight: 700; fill: #101828; }
+					.module-box { fill: #FFFFFF; stroke: #E3E8EF; stroke-width: 1; }
+					.module-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 10px; fill: #4B5565; text-anchor: middle; dominant-baseline: middle; }
+					.plane-accent { fill: #E4F2F1; stroke: #007F7D; stroke-width: 1.5; }
+					/* Dark mode -- keyed to BOTH the page toggle ([data-theme]) and the OS (prefers-color-scheme) */
+					@media (prefers-color-scheme: dark) {
+						.plane-bg     { fill: #161F33; stroke: #2B3A52; }
+						.plane-accent { fill: #123533; stroke: #2DD4BF; }
+						.plane-label  { fill: #E5EAF2; }
+						.module-box   { fill: #283449; stroke: #3A4A66; }
+						.module-text  { fill: #C4CEDC; }
+					}
+					:root[data-theme="dark"] .plane-bg     { fill: #161F33; stroke: #2B3A52; }
+					:root[data-theme="dark"] .plane-accent { fill: #123533; stroke: #2DD4BF; }
+					:root[data-theme="dark"] .plane-label  { fill: #E5EAF2; }
+					:root[data-theme="dark"] .module-box   { fill: #283449; stroke: #3A4A66; }
+					:root[data-theme="dark"] .module-text  { fill: #C4CEDC; }
+					:root[data-theme="light"] .plane-bg     { fill: #EEF2F7; stroke: #CDD5DF; }
+					:root[data-theme="light"] .plane-accent { fill: #E4F2F1; stroke: #007F7D; }
+					:root[data-theme="light"] .plane-label  { fill: #101828; }
+					:root[data-theme="light"] .module-box   { fill: #FFFFFF; stroke: #E3E8EF; }
+					:root[data-theme="light"] .module-text  { fill: #4B5565; }
+				</style>
+			</defs>
+
+			<!-- Distribution plane -->
+			<rect class="plane-bg" x="10" y="10" width="155" height="200" rx="10"/>
+			<text class="plane-label" x="87" y="30" text-anchor="middle">Distribution</text>
+			<rect class="module-box" x="22" y="40" width="131" height="26" rx="5"/>
+			<text class="module-text" x="87" y="53">install.sh / install.ps1</text>
+			<rect class="module-box" x="22" y="72" width="131" height="26" rx="5"/>
+			<text class="module-text" x="87" y="85">lib/aid-install-core.sh</text>
+			<rect class="module-box" x="22" y="104" width="131" height="26" rx="5"/>
+			<text class="module-text" x="87" y="117">lib/AidInstallCore.psm1</text>
+			<rect class="module-box" x="22" y="136" width="131" height="26" rx="5"/>
+			<text class="module-text" x="87" y="149">bin/aid + bin/aid.ps1</text>
+			<rect class="module-box" x="22" y="168" width="131" height="26" rx="5"/>
+			<text class="module-text" x="87" y="181">packages/npm + pypi</text>
+
+			<!-- Toolkit plane -->
+			<rect class="plane-accent" x="175" y="10" width="175" height="200" rx="10"/>
+			<text class="plane-label" x="262" y="30" text-anchor="middle">Toolkit</text>
+			<rect class="module-box" x="187" y="40" width="151" height="26" rx="5"/>
+			<text class="module-text" x="262" y="53">canonical/skills/ (13 skills)</text>
+			<rect class="module-box" x="187" y="72" width="151" height="26" rx="5"/>
+			<text class="module-text" x="262" y="85">canonical/agents/ (9 agents)</text>
+			<rect class="module-box" x="187" y="104" width="151" height="26" rx="5"/>
+			<text class="module-text" x="262" y="117">canonical/aid/scripts/</text>
+			<rect class="module-box" x="187" y="136" width="151" height="26" rx="5"/>
+			<text class="module-text" x="262" y="149">canonical/aid/templates/</text>
+			<rect class="module-box" x="187" y="168" width="151" height="26" rx="5"/>
+			<text class="module-text" x="262" y="181">canonical/aid/recipes/</text>
+
+			<!-- Render plane -->
+			<rect class="plane-bg" x="360" y="10" width="165" height="200" rx="10"/>
+			<text class="plane-label" x="442" y="30" text-anchor="middle">Render</text>
+			<rect class="module-box" x="372" y="40" width="141" height="26" rx="5"/>
+			<text class="module-text" x="442" y="53">generate-profile skill</text>
+			<rect class="module-box" x="372" y="72" width="141" height="26" rx="5"/>
+			<text class="module-text" x="442" y="85">run_generator.py</text>
+			<rect class="module-box" x="372" y="104" width="141" height="26" rx="5"/>
+			<text class="module-text" x="442" y="117">render.py (EmissionManifest)</text>
+			<rect class="module-box" x="372" y="136" width="141" height="26" rx="5"/>
+			<text class="module-text" x="442" y="149">profiles/ (5 outputs)</text>
+			<rect class="module-box" x="372" y="168" width="141" height="26" rx="5"/>
+			<text class="module-text" x="442" y="181">VERIFY byte-compare gate</text>
+
+			<!-- Observation plane -->
+			<rect class="plane-bg" x="535" y="10" width="155" height="200" rx="10"/>
+			<text class="plane-label" x="612" y="30" text-anchor="middle">Observation</text>
+			<rect class="module-box" x="547" y="40" width="131" height="26" rx="5"/>
+			<text class="module-text" x="612" y="53">dashboard/server/</text>
+			<rect class="module-box" x="547" y="72" width="131" height="26" rx="5"/>
+			<text class="module-text" x="612" y="85">dashboard/reader/</text>
+			<rect class="module-box" x="547" y="104" width="131" height="26" rx="5"/>
+			<text class="module-text" x="612" y="117">.aid/dashboard/kb.html</text>
+			<rect class="module-box" x="547" y="136" width="131" height="26" rx="5"/>
+			<text class="module-text" x="612" y="149">scripts/summarize/</text>
+			<rect class="module-box" x="547" y="168" width="131" height="26" rx="5"/>
+			<text class="module-text" x="612" y="181">site/ (docs + marketing)</text>
+		</svg>
+		<p class="caption">AID's four planes: Distribution (install, CLI, packages), Toolkit (skills, agents, scripts, templates), Render (profile generator + VERIFY gate), Observation (dashboard server, reader, kb.html). The Toolkit plane (teal border) is the most frequently changed.</p>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">High-Churn Areas</h3>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.93rem;">Modules that change most often; extra care needed in these areas:</p>
+	<div class="grid g4">
+		<div class="card">
+			<div class="kicker">High churn</div>
+			<h3>/aid-discover</h3>
+			<p>The KB generator skill. Changes here affect the shape of every KB document generated for every project.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">High churn</div>
+			<h3>kb/ scripts</h3>
+			<p><code>build-kb-index.sh</code>, <code>grade.sh</code>, and related KB authoring helpers. Regenerate INDEX.md after any change.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">High churn</div>
+			<h3>aid-install-core</h3>
+			<p>Both the Bash and PowerShell engines. Any change must be mirrored; five install manifests must stay lockstep.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">High churn</div>
+			<h3>dashboard reader/server</h3>
+			<p><code>reader/models.py</code> and the Node/Python servers. Polyglot parity: server.mjs must mirror server.py.</p>
+		</div>
+	</div>
+</section>

@@ -263,13 +263,16 @@ LANG_BREAKDOWN=$(awk -F'\t' '
 TOTAL_LINES=$(awk -F'\t' '{ s+=$3 } END { print s+0 }' "$FILES_DATA")
 
 # Top N largest files (by lines, source code only)
+# `head -n N` closes the pipe after N lines; under `set -euo pipefail` the upstream
+# `sort` then catches SIGPIPE (exit 141) and would abort the whole script. The captured
+# top-N lines are already complete by then, so swallow the benign SIGPIPE with `|| true`.
 TOP_LARGEST=$(awk -F'\t' -v src="Java|Kotlin|Python|JavaScript|TypeScript|Go|Rust|C#|F#|C/C++|Ruby|PHP|Swift|Scala|Elm|Elixir|Erlang|Clojure|Lua|Shell|PowerShell|Vue|Svelte" '
   {
     split(src, arr, "|"); is_src=0
     for (i in arr) if ($2==arr[i]) { is_src=1; break }
     if (is_src) print
   }
-' "$FILES_DATA" | sort -t$'\t' -k3 -nr | head -n "$TOP_N")
+' "$FILES_DATA" | sort -t$'\t' -k3 -nr | head -n "$TOP_N" || true)
 
 # Notable files (manifests, build configs).
 # Three matching modes:

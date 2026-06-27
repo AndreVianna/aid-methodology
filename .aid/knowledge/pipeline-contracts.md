@@ -1,803 +1,341 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: The typed artifact contracts and state-machine transitions between AID pipeline phases — what each phase consumes, produces, and gates on.
+summary: Read this before changing any skill, artifact template, or phase hand-off. It is the workflow + contract layer of the AID methodology — the phase-to-phase data contracts, the on-disk work hierarchy, the per-skill state machines, the grading gate, and the eleven feedback loops.
+sources:
+  - docs/aid-methodology.md
+  - canonical/skills/
+  - canonical/aid/templates/work-state-template.md
+  - canonical/aid/templates/grading-rubric.md
+  - canonical/aid/templates/requirements.md
+  - canonical/aid/templates/delivery-spec-template.md
+  - .aid/settings.yml
+tags: [C2, pipeline, contracts, phases, artifacts, state-machines, feedback-loops]
+see_also: [integration-map.md, architecture.md, domain-glossary.md, artifact-schemas.md]
+owner: architect
+audience: [developer, architect]
 intent: |
-  Defines the interfaces between AID pipeline components. Because AID ships no HTTP services
-  or RPC endpoints, "contracts" here means: skill slash-command signatures and state-machine
-  contracts, script CLI signatures + exit codes, file-format contracts (settings.yml,
-  emission-manifest.jsonl, heartbeat files, STATE.md sections), subagent dispatch conventions,
-  and the canonical→5-profile renderer contract. Read this to understand what each pipeline
-  boundary expects and emits.
-contracts:
-  - "12 user-facing skill slash-command contracts documented (aid-config + 6 numbered phases aid-discover…aid-execute + optional aid-deploy/aid-monitor/aid-summarize + optional off-pipeline aid-housekeep/aid-ask) + maintainer-only generate-profile"
-  - "discovery.doc_set in settings.yml: declared-set → dispatch mapping honors the set (no-hang on omission; dispatch on addition)"
+  The typed data contracts between AID pipeline phases — artifact hand-offs, state-machine
+  transitions, the grading gate, and the feedback loops. Read this when modifying a skill,
+  an artifact template, or any phase boundary.
+contracts: []
 changelog:
-  - 2026-06-09: aid-ask added (11->12 user-facing skill contracts) + /aid-execute argument order corrected to work-first (PR #70) via /aid-housekeep KB-DELTA.
-  - 2026-06-03: work-001 feature-001 — lite work-type enum collapsed 4→3 (single-doc eliminated); Recipe File Front-matter Contract applies-to inline comment updated to {bug-fix | new-feature | refactor | *}.
-  - 2026-06-03: methodology v3.2 — aid-deploy/aid-monitor reclassified as optional, on-demand end-of-pipeline Deliver skills (not mandatory phases 7/8); contract list reframed as aid-config + 6 numbered phases + optional deploy/monitor/summarize + off-pipeline housekeep. Per-skill state-machine contracts unchanged.
-  - 2026-06-03: housekeep run-state relocation (PR #51) — /aid-housekeep run-state moved out of the work-area STATE.md to the transient project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; dropped the `## Housekeep Status` work-state-section row; cleanup now offers every work folder for user-confirmed deletion (signals informational).
-  - 2026-06-03: aid-housekeep merge (PR #49) — added /aid-housekeep as an optional off-pipeline skill with its consume/produce contracts (the STATE.md Impact:Required Q&A handshake with /aid-discover, the work-area ## Housekeep Status run-state block, the /aid-summarize delegation, the housekeep-state.sh / branch-commit.sh / cleanup-classify.sh CLI contracts); slash-command count 10→11 user-facing
-  - 2026-06-21: work-005-profile-generator-simplify delivery-003 task-017 — retired 4-agent-formats claim (copilot-agent + antigravity-rule formats deleted by FR3/FR4; now uniform markdown + TOML-for-Codex); updated Codex skill path to .codex/ (unified, no .agents/ split); updated renderer table Codex column; updated manifest location (Codex now covers single .codex/ root).
-  - 2026-06-01: work-001-add-providers merge (PRs #42/#43/#44) — renderer contract now spans 5 profiles (added copilot-cli + antigravity) and 4 agent formats (markdown/toml/copilot-agent/antigravity-rule); emission-manifest profile enum + manifest-locations updated
-  - 2026-05-31: delivery-002 — added discovery.doc_set to settings read contract; added declared-set → dispatch contract section
-  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+  - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator lane)
 ---
+
 # Pipeline Contracts
 
-> AID ships **no HTTP services, no RPC endpoints, no SDK clients** — it is a methodology
-> distribution. "API contracts" here means the **interfaces between pipeline components**:
-> skill ↔ subagent dispatch contracts, script CLI signatures + exit codes, file-format
-> contracts (settings.yml, emission-manifest.jsonl, heartbeat files, STATE.md sections),
-> and the canonical → 5-profile renderer contract.
->
-> All claims below cite `` `path` `` + a grep-recoverable anchor (symbol, heading, or
-> unique string) against the canonical source — never a bare line number.
+> **Source:** aid-discover (brownfield deep-dive — Integrator)
+> **Status:** Complete
+> **Last Updated:** 2026-06-25
+
+This project's "pipeline" is the AID methodology itself: a sequence of skills that hand
+typed markdown artifacts from one phase to the next, each phase gated by a human and a
+deterministic grade. This document is the contract layer of that pipeline — not an HTTP/API
+surface. (AID exposes almost no network API; the one runtime HTTP surface, the dashboard
+server, is documented in [integration-map.md](integration-map.md).)
+
+## Contents
+
+- [How the Pipeline Works](#how-the-pipeline-works)
+- [Phase Input/Output Contracts](#phase-inputoutput-contracts)
+- [The On-Disk Work Hierarchy](#the-on-disk-work-hierarchy)
+- [Typed Artifact Contracts](#typed-artifact-contracts)
+- [Per-Skill State Machines](#per-skill-state-machines)
+- [The Grading Gate Contract](#the-grading-gate-contract)
+- [Feedback Loop Contracts](#feedback-loop-contracts)
+- [Configuration Contract](#configuration-contract)
+- [Known Issues](#known-issues)
+- [Conventions](#conventions)
+- [Contracts](#contracts)
+- [Invariants](#invariants)
+- [Change Log](#change-log)
 
 ---
 
-## Exposed APIs — End-User Slash Commands
+## How the Pipeline Works
 
-These are the only "endpoints" the user invokes. Each is an AID skill installed at
-`.claude/skills/<skill>/SKILL.md` (Claude Code), `.codex/skills/<skill>/SKILL.md`
-(Codex unified layout), `.cursor/skills/<skill>/` (Cursor), `.github/skills/<slug>/SKILL.md`
-(Copilot CLI native Agent Skills), or `.agent/skills/<slug>/SKILL.md` (Antigravity).
+AID is a six-phase sequential pipeline with formal feedback loops. Each phase is a skill
+(a slash command resolving to a `SKILL.md` state machine). The human approves every phase
+transition — the pipeline never auto-advances. CONFIRMED: `docs/aid-methodology.md`
+("## 1. The Pipeline", "Between phases, the human gives the OK to advance").
 
-There are **12 user-facing skills** (`aid-config` … `aid-monitor`, `aid-summarize`, and the
-optional off-pipeline `aid-housekeep` and `aid-ask`) plus maintainer-only `generate-profile`. Of
-these, `aid-summarize` is **non-phase / optional**, and `aid-housekeep` and `aid-ask` are
-additionally **off the mandatory pipeline** (no phase gate references them; invoked
-on-demand). `aid-ask` is also **read-only** (writes no files). Source:
-`find canonical/skills -maxdepth 1 -type d` (12 dirs),
-`canonical/skills/aid-housekeep/SKILL.md` (`**Absent from the mandatory pipeline flow.**`),
-`canonical/skills/aid-ask/SKILL.md` (`allowed-tools: Read, Glob, Grep, Agent`).
+Two contract facts shape every hand-off:
 
-### `/aid-config`
-
-- **Type:** Setup / configuration skill
-- **Auth:** None (local filesystem only)
-- **Request:** `(none)` for view-all mode, or `<dotted.key>` (e.g., `project.name`,
-  `review.minimum_grade`, `discover.minimum_grade`) for view/update mode
-- **Response:** Table of settings to stdout, or interactive update prompt
-- **Side effects:** Creates `.aid/settings.yml` from template on first run; updates the
-  named key in place on Mode 2
-- **Source:** `canonical/skills/aid-config/SKILL.md` (`## Mode 1 — Show all settings` +
-  `## Mode 2 — View/update one key`)
-- **Allowed-tools:** `Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion`
-  (`canonical/skills/aid-config/SKILL.md` frontmatter `allowed-tools:`)
-
-### `/aid-discover [--grade A] [--reset]`
-
-- **Type:** State-machine skill; one state per invocation
-- **States:** `GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE`
-  (`canonical/skills/aid-discover/SKILL.md` frontmatter `State-machine: GENERATE → REVIEW`,
-  `## State Detection`)
-- **Request:** Optional `--grade [A-F][-+]?` overrides minimum grade; `--reset` clears
-  `.aid/knowledge/` and restarts (`canonical/skills/aid-discover/SKILL.md` `## Arguments`)
-- **Response:** Console output of state-entry line, "you are here" map, and per-state
-  artifacts
-- **Side effects:** Writes 15 KB docs + `STATE.md` + `INDEX.md` to `.aid/knowledge/`
-- **Source:** `canonical/skills/aid-discover/SKILL.md`
-
-### `/aid-interview [work-NNN] [--reset work-NNN] [--features work-NNN]`
-
-- **Type:** Multi-agent state-machine skill (10+ states across full + lite paths)
-- **States:** `FIRST-RUN → Q-AND-A → TRIAGE → {full: CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE | lite: CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE | escalated: any lite → CONTINUE → ...}` (`canonical/skills/aid-interview/SKILL.md` frontmatter `State machine: FIRST-RUN → Q-AND-A → TRIAGE`)
-- **Agents dispatched:** `aid-interviewer` (States 1–4, TRIAGE, L1), `aid-architect` (State 5, L2),
-  `aid-reviewer` (State 6, L3), inline (L4, State 7) (`canonical/skills/aid-interview/SKILL.md` `## Agents Involved`)
-- **Source:** `canonical/skills/aid-interview/SKILL.md`
-
-### `/aid-specify <work-NNN/feature-NNN> [--reset]`
-
-- **Type:** Per-feature conversational refinement state machine
-- **States:** `INITIALIZE → CONTINUE → REVIEW → DONE` (loopback: SPIKE / BLOCKED)
-  (`canonical/skills/aid-specify/SKILL.md` frontmatter `State machine: INITIALIZE → CONTINUE → REVIEW → DONE`)
-- **Source:** `canonical/skills/aid-specify/SKILL.md`
-
-### `/aid-plan [work-NNN] [--reset]`
-
-- **States:** `FIRST-RUN → REVIEW → DONE` (`canonical/skills/aid-plan/SKILL.md` frontmatter `State machine: FIRST-RUN → REVIEW → DONE`)
-- **Source:** `canonical/skills/aid-plan/SKILL.md`
-
-### `/aid-detail [work-NNN] [--reset]`
-
-- **States:** `FIRST-RUN → REVIEW → DONE` (`canonical/skills/aid-detail/SKILL.md` frontmatter `State machine: FIRST-RUN → REVIEW → DONE`)
-- **Source:** `canonical/skills/aid-detail/SKILL.md`
-
-### `/aid-execute <work-NNN> <task-NNN>`
-
-- **Argument order:** work-first — `<work-NNN>` leads, then `<task-NNN>` (PR #70; consistent
-  with `aid-detail`/`aid-plan`/`aid-specify`/`aid-interview`). The single-work shorthand
-  `/aid-execute <task-NNN>` is preserved: a lone `task-` first arg auto-selects the sole work;
-  with multiple works the skill lists them and asks the user to choose
-  (`canonical/skills/aid-execute/SKILL.md` `### Check 1: Locate Work and Task`,
-  frontmatter `argument-hint: "work-001 (required if multiple works)  task-001 (required)"`)
-- **States:** `EXECUTE → REVIEW → FIX → REVIEW → DONE` (`canonical/skills/aid-execute/SKILL.md` frontmatter `State machine: EXECUTE → REVIEW → FIX`)
-- **Branch contract:** One branch per delivery (`aid/{work}-delivery-NNN`); RESEARCH/DOCUMENT
-  tasks that produce only `.aid/` artifacts may skip branching
-  (`canonical/skills/aid-execute/SKILL.md` `### Check 5: Branch Isolation`)
-- **Source:** `canonical/skills/aid-execute/SKILL.md`
-
-### `/aid-deploy [work-NNN]`
-
-- **States:** `IDLE → SELECTING → VERIFYING → PACKAGING → DONE`
-  (`canonical/skills/aid-deploy/SKILL.md` frontmatter `State machine: IDLE → SELECTING → VERIFYING → PACKAGING → DONE`)
-- **Source:** `canonical/skills/aid-deploy/SKILL.md`
-
-### `/aid-monitor <work-NNN> [--since YYYY-MM-DD] [--package package-NNN]`
-
-- **States:** `OBSERVE → CLASSIFY → ROUTE → DONE` (`canonical/skills/aid-monitor/SKILL.md` frontmatter `State machine: OBSERVE → CLASSIFY → ROUTE → DONE`)
-- **Source:** `canonical/skills/aid-monitor/SKILL.md`
-
-### `/aid-summarize [--grade X] [--profile auto|web-app|library|cli|microservices|data-pipeline] [--theme palette=X] [--cdn-mermaid] [--reset]`
-
-- **States:** `PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE` (`canonical/skills/aid-summarize/SKILL.md` frontmatter `State-machine: PREFLIGHT →`)
-- **Two-grade gate:** APPROVAL requires BOTH `Machine Grade ≥ minimum` AND
-  `Human Grade ≥ minimum` (`canonical/skills/aid-summarize/SKILL.md` frontmatter `APPROVAL requires BOTH grades >= minimum`)
-- **Source:** `canonical/skills/aid-summarize/SKILL.md`
-
-### `/aid-housekeep [--cleanup-only] [--grade X]` (optional — OFF the mandatory pipeline)
-
-- **Type:** Optional, on-demand housekeeping state-machine skill; **not** part of the
-  phase→skill mapping and no phase gate references it (REQUIREMENTS.md FR6). Runs three
-  gated jobs in strict order on a dedicated `aid/housekeep-*` branch; **never pushes**.
-- **States:** `PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE`
-  (`canonical/skills/aid-housekeep/SKILL.md` frontmatter
-  `State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA →` + the "you are here" map
-  `[ PREFLIGHT ] → [ KB-DELTA ] → [ SUMMARY-DELTA ] → [ CLEANUP ] → [ DONE ]`)
-- **Request:** `--cleanup-only` jumps straight to CLEANUP (sets `**Mode:** cleanup-only`,
-  bypasses KB+summary); `--grade X` (`[A-F][-+]?`) passes through to the SUMMARY-DELTA
-  delegation to `/aid-summarize` (ignored under `--cleanup-only`). Any other flag → exit
-  non-zero. (`canonical/skills/aid-housekeep/SKILL.md` `## Arguments`,
-  `## State Detection` "Argument pre-check")
-- **Gate ordering (C1):** strict order — SUMMARY-DELTA refuses unless `**KB Stage:**` is
-  `passed`/`skipped`; one commit per stage (C3). Re-entrant: a stalled run resumes at the
-  stalled stage via the six-row resume table (`canonical/skills/aid-housekeep/SKILL.md`
-  `## State Detection`, `references/state-summary-delta.md` `## Step 0 — C1 guard`).
-- **Consumes:**
-  - the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`
-    (`## Housekeep Status` block; resume detection), read via `housekeep-state.sh --resume`
-  - `.aid/knowledge/STATE.md` — `**Last KB Review:**` (hint), `**User Approved:**` +
-    `## Summarization History` (read-back)
-  - `git fetch/log/diff` (hint only — no hard offline gate, C2)
-- **Produces:**
-  - the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`
-    (`## Housekeep Status` fields, via `housekeep-state.sh --write`; gitignored, removed at DONE)
-  - `.aid/knowledge/STATE.md ## Q&A (Pending)` — synthesizes an `**Impact:** Required`
-    Style-A Q&A entry (`### Q{N}`) that drives `/aid-discover`'s Targeted Discovery
-    re-entry (the handshake; never resolves owners itself)
-    (`references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry`)
-  - one commit per stage on an `aid/housekeep-*` branch (via `branch-commit.sh`); CLEANUP
-    deletes only user-confirmed stale `.aid/` artifacts (`git rm`/`rm`)
-- **Delegations:** KB-DELTA → `/aid-discover` (targeted re-entry → REVIEW → Q-AND-A → FIX →
-  APPROVAL); SUMMARY-DELTA → `/aid-summarize` (with optional `--grade X`, no other flags);
-  both run unmodified. (`references/state-kb-delta.md` `## Step 4`,
-  `references/state-summary-delta.md` `## Step 2 — Delegate to /aid-summarize`)
-- **Source:** `canonical/skills/aid-housekeep/SKILL.md`,
-  `canonical/skills/aid-housekeep/references/{state-preflight,state-kb-delta,state-summary-delta,state-cleanup,state-done}.md`
-
-### `/aid-ask <question>` (optional — OFF the mandatory pipeline; READ-ONLY)
-
-- **Type:** Optional, on-demand, **read-only** Q&A skill **outside** the numbered pipeline —
-  no phase gate references it, no state machine (single-shot; answers in one pass). Writes
-  **no files**. (`canonical/skills/aid-ask/SKILL.md` frontmatter `allowed-tools: Read, Glob,
-  Grep, Agent`, `argument-hint: "<question> — a free-form question about the project"`)
-- **Request:** a free-form `<question>` about the project
-  (`canonical/skills/aid-ask/SKILL.md` `# Project Q&A`)
-- **Consumes (read-only):**
-  - the Knowledge Base — `.aid/knowledge/` (KB docs)
-  - the live codebase (project source files)
-  - in-flight AID works — `.aid/work-*/STATE.md` + progress
-  (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:` — "three context sources")
-- **Produces:** an **in-conversation answer** grounded in those sources, with source
-  citations (KB doc names, file paths, or `work-NNN` STATE references); when the context
-  cannot answer, it states the gap explicitly rather than fabricating. **No file writes, no
-  commits, no branches.** (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:`)
-- **Dispatch:** trivial questions answered inline with `Read`/`Glob`/`Grep`; broad or
-  expensive investigations dispatch `aid-researcher` in strictly read-only mode (via `Agent`)
-  (`canonical/skills/aid-ask/SKILL.md` frontmatter `description:`)
-- **Source:** `canonical/skills/aid-ask/SKILL.md`
+- **Artifacts are typed markdown files under `.aid/`.** Each phase reads named files from a
+  prior phase and writes named files for the next. The file name and location are the
+  contract — downstream skills navigate by convention, never by search.
+- **Two paths exist.** The *full path* runs every numbered phase; the *lite path* (routed by
+  the Interview's TRIAGE state for small, single-target work) collapses Specify + Plan +
+  Detail into Interview and emits tasks directly. CONFIRMED: `docs/aid-methodology.md`
+  ("## 4. The Phases", "Lite Path").
 
 ---
 
-## Internal API — Skill → Subagent Dispatch Contract
+## Phase Input/Output Contracts
 
-### Universal Subagent-Dispatch Brief (the "Reviewer-Dispatch Protocol")
+The mandatory pipeline is six numbered phases; `aid-config` precedes it (bootstrap) and
+`aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-query-kb`, `aid-update-kb`
+are off-pipeline or optional. CONFIRMED: `docs/aid-methodology.md` ("Skill Inventory" table).
 
-Every skill that dispatches a reviewer subagent MUST pass a brief with EXACTLY 6 sections
-in this order:
+| # | Phase (skill) | Consumes | Produces | Gate |
+|---|---------------|----------|----------|------|
+| — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.md` · `settings.yml` | none (setup) |
+| 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A | deterministic grade ≥ minimum + human approval |
+| 2 | `aid-interview` | `.aid/knowledge/` · user answers | full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs · lite path: work-root `SPEC.md` + `tasks/` | grade ≥ minimum + human approval |
+| 3 | `aid-specify` (full path only) | a feature `SPEC.md` (requirements side) · `REQUIREMENTS.md` · KB · codebase | `## Technical Specification` appended to the feature `SPEC.md` | per-section grade ≥ minimum |
+| 4 | `aid-plan` (full path only) | feature `SPEC.md` files marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` (ordered deliveries) | grade ≥ minimum |
+| 5 | `aid-detail` (full path only) | `PLAN.md` · feature `SPEC.md` · KB | per-task `SPEC.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
+| 6 | `aid-execute` | task `SPEC.md` (with Type) · `PLAN.md` · feature `SPEC.md` · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.md` | per-task quick-check + delivery-gate grade ≥ minimum |
 
-1. `ARTIFACTS UNDER REVIEW:` — explicit file list (no wildcards beyond the artifact set)
-2. `CONTEXT:` — descriptive-only background (CONTEXT discipline rule)
-3. `RUBRIC: <named rubric>` — which rubric applies
-4. `OUT OF SCOPE (do not grade against):` — explicit exclusions
-5. `OUT-OF-SCOPE FINDINGS POLICY:` — log to ledger; excluded from severity counts
-6. `DELIVERABLES:` — findings format, severity scale, grade computation
-- **Source:** `canonical/templates/reviewer-dispatch.md` `## The brief structure`
+CONFIRMED by the per-phase deep-dives in `docs/aid-methodology.md` ("## 4. The Phases") and
+the artifact table ("## 7. Artifacts Reference").
 
-### Heartbeat / Long-Wait Protocol (L1+L2+L3 traceability)
-
-Every long-running subagent dispatch MUST:
-
-1. **L1** — Look up ETA in `canonical/templates/rough-time-hints.md`; emit
-   `▶ <agent> starting (~<LOW>-<HIGH>)` bracket on dispatch
-   (`canonical/templates/long-wait-protocol.md` `### Step 1 — Look up ETA`)
-2. **L2** — Arm THREE separate `run_in_background: true` bash timers at
-   `<LOW/2>`, `<LOW>`, `<1.5×LOW>` minutes — each emits a check-in echo
-   (`canonical/templates/long-wait-protocol.md` `### Step 2 — Emit opening bracket + arm 3 timers`,
-   `canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol`)
-3. **L3** — Pre-create heartbeat file at `.aid/.heartbeat/<agent>-<unix-ts>.txt`,
-   pass `HEARTBEAT_FILE=<path>` + `HEARTBEAT_INTERVAL=Nm` in dispatch prompt
-   (`canonical/templates/subagent-heartbeat-protocol.md` `## Orchestrator-side responsibilities (dispatcher)`)
-4. **Subagent contract:** every N minutes, write a single-line status via shell echo
-   using `>` (overwrite), pipe-delimited fields
-   (`canonical/templates/subagent-heartbeat-protocol.md` `## Subagent-side responsibilities (the dispatched agent)`)
-5. **On completion:** emit `✓ <agent> done in <actual>`, append a row to the work
-   `STATE.md ## Calibration Log`, update `## Dispatches` sub-column, delete heartbeat file
-   (`canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol`)
-
-`aid-housekeep` carries the same L1+L2+L3 contract for its KB-DELTA sub-agent dispatches
-(`canonical/skills/aid-housekeep/SKILL.md`
-`## Dispatch Protocol (L1+L2+L3 subagent visibility, subagent-visibility-patch)`).
-
-**Configuration knob:** `traceability.heartbeat_interval` (integer minutes; default `1`;
-`0` disables) in `.aid/settings.yml`, resolved by
-`bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
-(`canonical/templates/subagent-heartbeat-protocol.md` `## Configuration`).
-
-### Subagent-Side Heartbeat Block (boilerplate in every AGENT.md)
-
-Every `canonical/agents/aid-<name>/AGENT.md` contains a `## Heartbeat protocol` section
-(injected from `canonical/templates/agent-boilerplate.md` via `{{include:agent-boilerplate}}`)
-that specifies the contract: read `HEARTBEAT_FILE` + `HEARTBEAT_INTERVAL` from prompt, write
-shell-generated timestamp via `echo > "$HEARTBEAT_FILE"`, use `|` delimiters, change
-`<activity>` between updates. Source: `canonical/templates/agent-boilerplate.md` `## Heartbeat protocol`.
-
-### Discovery Sub-Agent Prompt Contract (`agent-prompts.md`)
-
-The discover orchestrator dispatches `aid-researcher` (Step 1: pre-scan alone; Steps 2–5: multiple
-parameterized dispatches in parallel). Each dispatch prompt declares:
-1. The KB files this dispatch owns and must write (`.aid/knowledge/<file>.md`) — the doc-set
-   is data-driven from `discovery.doc_set` in `.aid/settings.yml` (or the default seed)
-2. Required reference documents to read FIRST (`project-index.md`,
-   `project-structure.md`, `external-sources.md`)
-3. The contract phrase "Write only to the .aid/knowledge/ directory."
-
-(The former 5 named discovery sub-agents — Scout, Architect, Analyst, Integrator, Quality —
-were consolidated into `aid-researcher` by work-001-agents-review. The doc-set ownership
-assignment (which files each dispatch writes) is now a dispatch parameter, not a per-agent role.)
-
-**Source:** `canonical/skills/aid-discover/references/agent-prompts.md`
-
-### Reviewer Output Contract — Structured Issue List
-
-The Reviewer agent produces a structured issue list with two-tag classification per issue:
-
-- **Source tag:** `[CODE]`, `[TASK]`, `[SPEC]`, `[KB]`, `[ARCHITECTURE]`
-- **Severity tag:** `[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`
-- **Evidence required:** file path, line number, criterion violated
-- **Reviewer does NOT:** fix issues, compute the grade, or open files outside ARTIFACTS
-  UNDER REVIEW (except citation resolution)
-- **Source:** `canonical/agents/aid-reviewer/AGENT.md` `## Output contract`, `## What You Don't Do`
+Greenfield projects skip phase 1 (no existing system) and enter at Interview; a minimal KB is
+populated from interview answers. CONFIRMED: `docs/aid-methodology.md` ("The Full Path").
 
 ---
 
-## Internal API — Script CLIs
+## The On-Disk Work Hierarchy
 
-### `bash canonical/scripts/config/read-setting.sh`
-
-- **Purpose:** Single point of read access for `.aid/settings.yml`
-- **Two modes:**
-  - **Skill mode:** `--skill <name> --key <key> [--default V]` — applies override
-    resolution: per-skill key → `review.<key>` → `--default` → exit 1
-    (`canonical/scripts/config/read-setting.sh` comment `# Skill mode: try per-skill override; fall back to review.<key>`)
-  - **Path mode:** `--path <dotted.path> [--default V]` — direct lookup, no override
-    resolution; supports scalar + list-valued keys
-    (`canonical/scripts/config/read-setting.sh` comment `# Path mode: direct dotted-path lookup`)
-- **Output:** Stdout = resolved value (single line; list values comma-joined).
-  Stderr = errors (always include absolute file path for debuggability)
-  (`canonical/scripts/config/read-setting.sh` header comment `# Exit codes:`)
-- **Exit codes:** `0` value found / default used; `1` value missing AND no default;
-  `2` arg error / settings.yml unreadable (`canonical/scripts/config/read-setting.sh` header comment `# Exit codes:`)
-- **Caller invariants:** ALL grade lookups in every aid-* skill MUST resolve through
-  this script — never read settings.yml directly. Example callers:
-  `canonical/skills/aid-execute/SKILL.md` `### Check 3: Read Minimum Grade` (`--skill execute --key minimum_grade --default A`),
-  `canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol` (`--path traceability.heartbeat_interval`),
-  `canonical/skills/aid-summarize/SKILL.md` `## Arguments` (`--skill summary --key minimum_grade`),
-  `canonical/skills/aid-housekeep/SKILL.md` `## Arguments` (`--skill summary --key minimum_grade --default A` for the SUMMARY-DELTA grade resolution).
-
-### `bash canonical/scripts/grade.sh`
-
-- **Purpose:** Universal AID-rubric grade computation (severity tags → letter grade)
-- **Input:** Markdown text on stdin OR a file path argument containing `[CRITICAL] [HIGH]
-  [MEDIUM] [LOW] [MINOR]` tags
-- **Output:** Single line: one of `A+ A A- B+ B B- C+ C C- D+ D D- E+ E E- F`
-- **Rubric (deterministic):** Worst severity present dominates the letter; count within
-  that tier sets the modifier (1 = `+`, 2–5 = nothing, 6+ = `-`). `--non-functional`
-  flag forces `F`. (`canonical/scripts/grade.sh` `modifier_for_count()`)
-- **Filters:** Strips fenced code blocks AND inline backticks before counting,
-  to suppress false positives from prose-quoted tags
-  (`canonical/scripts/grade.sh` comments `# Strip fenced code blocks before counting.` +
-  `# Strip inline backtick content.`)
-- **Source:** `canonical/scripts/grade.sh`
-
-### `bash canonical/scripts/execute/writeback-state.sh`
-
-- **Purpose:** Race-safe writes to work `STATE.md ## Tasks Status` from parallel pool
-- **4 modes:**
-  - `--task-id NNN --field FIELD --value VALUE` — update single field
-    (Fields: `Status | Review | Elapsed | Notes | Wave | Type`)
-  - `--task-id NNN --findings BLOCK` — write/replace `### task-NNN` block under
-    `## Quick Check Findings`
-  - `--delivery-id NNN --block MARKDOWN_BLOCK` — write `### delivery-NNN` block under
-    `## Delivery Gates`
-  - `--delivery-id NNN --append-issue ROW` — append issue row to
-    `delivery-NNN-issues.md`
-- **Locking:** Sentinel-file lock (`set -o noclobber` + atomic create + sleep-poll
-  retry) prevents races when parallel tasks dispatch reviewers concurrently
-- **Exit codes:** `0` success; `1` STATE missing; `2` lock contention timeout;
-  `3` empty/unverifiable; `4` invalid arg; `5` missing required arg; `6` malformed
-  STATE.md (`canonical/scripts/execute/writeback-state.sh` header comment `# Exit codes:`)
-- **Test suite:** 69 tests at `tests/canonical/test-writeback-state.sh`
-- **Source:** `canonical/scripts/execute/writeback-state.sh`
-
-### `bash canonical/scripts/execute/compute-block-radius.sh`
-
-- **Purpose:** BFS over execution graph; given a failed task, returns all tasks that
-  transitively depend on it (the "block-radius")
-- **Input modes:** `--failed-task NNN --plan-file PATH` (parses Execution Graph from
-  PLAN.md/SPEC.md) OR `--failed-task NNN --graph-file PATH` (pre-computed TSV
-  reverse-graph snapshot)
-- **Output:** One `task-NNN` per line, sorted ascending. Empty if failed task has no
-  dependents. Failed task itself is NOT in output.
-- **Exit codes:** `0` success; `1` arg missing / file not found; `2` failed task not in
-  graph (warn, succeed with empty); `4` invalid arg value; `5` missing required arg
-- **Algorithm:** BFS with visited-set; AND-only dependency edges (no alternative paths)
-- **Test suite:** 17 tests at `tests/canonical/test-compute-block-radius.sh`
-- **Source:** `canonical/scripts/execute/compute-block-radius.sh`
-
-### `bash canonical/scripts/execute/complexity-score.sh`
-
-- **Purpose:** Compute delivery-complexity score (Small / Medium / Large) for DELIVERY-GATE
-  reviewer tier selection
-- **Input:** `--plan-file PATH --delivery-id NNN` OR `--graph-file PATH`, both with
-  optional `--tasks-dir`, `--quick-check-state`, `--consults N`
-- **Output:** Stdout — `tasks=N`, `depth=N`, `risk=N`, `consults=N`, `score=N`,
-  `tier=Small|Medium|Large` (one per line)
-- **Thresholds:** Low=6, High=14 by default; reads `.aid/knowledge/STATE.md` overrides
-  via `$AID_KB_STATE`
-- **Source:** `canonical/scripts/execute/complexity-score.sh`
-
-### `bash canonical/scripts/housekeep/housekeep-state.sh` (optional — /aid-housekeep)
-
-- **Purpose:** Deterministic read/write of the nine `**Field:** value` lines inside the
-  `## Housekeep Status` block of the project-level run-state file
-  `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md` (NOT a work-area STATE.md), and resolution
-  of the `/aid-housekeep` resume target (the six-row re-entry table). Location-agnostic —
-  operates on whatever path `--state` names. No yq/python dependency (bash + grep/sed/awk).
-- **3 modes:**
-  - `--state FILE --write --field FIELD --value VALUE` — write/replace a `**FIELD:**` line
-    (creates the file + `## Housekeep Status` section if absent; idempotent)
-  - `--state FILE --read --field FIELD` — print the current value (empty line if absent;
-    exit 0 even when section/field absent)
-  - `--state FILE --resume [--cleanup-only]` — print one of
-    `PREFLIGHT | KB-DELTA | SUMMARY-DELTA | CLEANUP | DONE` per the six-row resume table
-    (`--cleanup-only` consulted only when no section exists)
-- **Valid fields:** `State`, `Stage Status`, `Branch`, `Mode`, `Stall Reason`, `Last Run`,
-  `KB Stage`, `Summary Stage`, `Cleanup Stage` (`VALID_FIELDS` array)
-- **Exit codes:** `0` success; `1` STATE.md not found/unreadable; `2` argument error
-  (unknown flag, missing value, incompatible flags); `3` write verification failed
-  (`canonical/scripts/housekeep/housekeep-state.sh` header comment `# Exit codes:`)
-- **Source:** `canonical/scripts/housekeep/housekeep-state.sh`
-
-### `bash canonical/scripts/housekeep/branch-commit.sh` (optional — /aid-housekeep)
-
-- **Purpose:** Two operations for `/aid-housekeep`: (1) ensure the `aid/housekeep-<slug>`
-  branch (creates off `master` via `git switch -c`, or reuses an existing
-  `aid/housekeep-*` branch on resume; refuses to operate directly on `master`); (2) make
-  exactly ONE commit with the supplied message and `--add` paths. **Never runs `git push`**
-  (enforced by a self-check that exits 4 if the script ever contains a `git push` call).
-- **Modes:**
-  - `--ensure-branch --slug <slug>` — ensure/switch to `aid/housekeep-<slug>`
-  - `--commit --message <msg> [--add <path> ...]` — stage listed paths (or `--add-all`)
-    and make one commit
-  - combined `--ensure-branch ... --commit ...`
-- **Exit codes:** `0` success; `1` git error; `2` argument error; `3` refused (current
-  branch is master and `--ensure-branch` not requested); `4` refused (script contains
-  `git push` — safety self-check) (`canonical/scripts/housekeep/branch-commit.sh` header
-  comment `# Exit codes:`)
-- **Source:** `canonical/scripts/housekeep/branch-commit.sh`
-
-### `bash canonical/scripts/housekeep/cleanup-classify.sh` (optional — /aid-housekeep)
-
-- **Purpose:** Deterministic, **read-only** scan+classify phase of the CLEANUP stage —
-  inspects fixed conservative roots S1–S6 under `.aid/` and emits one candidate record per
-  artifact. Performs **no deletion, no commit, no push, no UI** (enforced by a safety
-  self-check that exits 1 if the script ever contains `rm`/`git rm`/`git commit`/`git push`).
-- **Args:** `--root REPO_ROOT [--active-work WORK_FOLDER_NAME ...]` (active-work folders are
-  excluded from S6 results; may be supplied multiple times)
-- **Output (one line per candidate, stdout):**
-  `PATH|TIER|TRACKED|DEFAULT_CHECKED|REASON[|GATE]` where `TIER`∈{0,1,2}, `TRACKED`∈
-  {tracked,untracked}, `DEFAULT_CHECKED`∈{true,false}, `GATE` (Tier-1 only) ∈
-  {offer, explicit-confirm:<reason>}
-- **Exit codes:** `0` success (list may be empty); `1` REPO_ROOT not found or `.aid/`
-  absent; `2` argument error (`canonical/scripts/housekeep/cleanup-classify.sh` header
-  comment `# Exit codes:`)
-- **Source:** `canonical/scripts/housekeep/cleanup-classify.sh`
-
-### KB Citation Validation (`/aid-discover REVIEW`)
-
-- **Purpose:** Validate KB citations against disk (the "anti-drift" pass)
-- **Mechanism:** `aid-reviewer` (dispatched in `/aid-discover REVIEW` state) performs
-  frontmatter compliance checks, cited `file:line` existence verification, KB-file
-  presence, and generated-files freshness. This semantic validation replaced the former
-  `verify-claims.sh` script (deleted in cycle-1; closure recorded in `tech-debt.md` changelog).
-- **Agent:** `canonical/agents/aid-reviewer/AGENT.md`
-- **Output:** ledger at `.aid/.temp/review-pending/discovery.md` with per-finding severity
-  tags; grade computed by `canonical/scripts/grade.sh`
-
-### `bash canonical/scripts/kb/build-project-index.sh`
-
-- **Purpose:** Build `.aid/generated/project-index.md` — pre-built file inventory used by
-  discovery sub-agents as a shared input (replaces re-scanning the repo)
-- **Flags:** `--root .`, `--output .aid/knowledge/project-index.md`
-- **Source:** `canonical/scripts/kb/build-project-index.sh` (368 lines per the
-  `build-project-index.sh` row in `.aid/knowledge/project-structure.md`)
-
-### `bash canonical/scripts/summarize/grade-summary.sh <html-file> [--fast]`
-
-- **Purpose:** VALIDATE-state orchestrator for `/aid-summarize` — runs all automated
-  checks; emits the two-grade report
-- **Two-grade model:**
-  - **Machine Grade** — automated checks only (`AUTO_POOL = D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2`; 73 pts max)
-  - **Human Grade** — manual checklist only (`MANUAL_POOL = K1 K2 V1`; 30 pts max)
-  - **Overall Grade** — the lower of the two letter grades
-  - V1 (visual gate) is **mandatory**: V1=0 forces Human Grade = F
-- **A+ requires:** Machine ≥ 98% × 73 AND Human ≥ 98% × 30
-- **Diagram-count hard rule:** Reads active profile from `STATE.md ## Knowledge Summary
-  Status`; reads `target_diagrams` from `templates/knowledge-summary/section-templates/
-  {profile}.md` front-matter (fallback 6); actual < target → grade capped at C+
-- **Exit codes:** `0` Machine Grade ≥ A-; `1` Machine Grade < A-; `2` invocation error
-  (`canonical/scripts/summarize/grade-summary.sh` header comment `# Exit codes:`)
-- **Source:** `canonical/scripts/summarize/grade-summary.sh`
-
-### `bash canonical/scripts/summarize/fetch-mermaid.sh`
-
-- **Purpose:** Fetches the pinned Mermaid library (v11.15.0) from jsdelivr CDN; caches to
-  `.aid/knowledge/.cache/mermaid.min.js`. SHA-verified on both cache-hit and post-download paths.
-- **Output (stdout last line):** `VERSION=x.y.z PATH=.aid/knowledge/.cache/mermaid.min.js SHA256=...`
-- **Cache hit:** Re-uses cache when version matches `PINNED_VERSION` AND SHA matches `EXPECTED_SHA256`
-- **External dependencies:** `curl`, `sha256sum` or `shasum -a 256`
-- **Source:** `canonical/scripts/summarize/fetch-mermaid.sh` (`PINNED_VERSION` + `EXPECTED_SHA256` constants)
-
-### `bash canonical/scripts/kb/discover-preflight.sh <knowledge-dir>`
-
-- **Purpose:** Discovery pre-flight gate — verifies (1) `STATE.md` exists (init has run),
-  (2) not in Plan Mode
-- **Source:** `canonical/scripts/kb/discover-preflight.sh` (header comment `# Checks:`)
-
-### `node canonical/scripts/summarize/validate-diagrams.mjs <html-file> [--fast]`
-
-- **Purpose:** Extracts `<pre class="mermaid">` blocks; runs D1 parse-check (regex + jsdom
-  `mermaid.parse()`) and D2 render-check (jsdom `mermaid.render()` → assert SVG > 500
-  bytes, contains `<g>`/`<path>`, no error markers)
-- **Exit codes:** `0` all pass; `1` one or more failed; `2` invocation error
-- **Fallback:** Falls back to regex-only if `jsdom` not installed
-- **Source:** `canonical/scripts/summarize/validate-diagrams.mjs` (header comment `// Validation strategy:`)
-
----
-
-## Internal API — Skill ↔ Settings Contract
-
-### `.aid/settings.yml` Read Contract
-
-| Key (dotted path) | Type | Default | Purpose | Consumer skills |
-|-------------------|------|---------|---------|-----------------|
-| `project.name` | string | `<project-name>` placeholder | Identity | All skills, AGENTS.md/CLAUDE.md |
-| `project.description` | string | `<project-description>` placeholder | Sole source of truth (not duplicated) | All skills |
-| `project.type` | enum | `brownfield` | `brownfield` or `greenfield` | `aid-discover` (skipped on greenfield) |
-| `tools.installed` | list | `[claude-code]` | Which install trees exist | Renderer + `aid-summarize` |
-| `review.minimum_grade` | grade | `A` | Global REVIEW exit criterion | All skills with REVIEW state |
-| `execution.max_parallel_tasks` | integer | `5` | Parallel pool capacity | `aid-execute` PD-0..PD-6 |
-| `traceability.heartbeat_interval` | integer min | `1` (0 disables) | L3 heartbeat cadence | Every dispatcher (always) |
-| `<skill>.minimum_grade` | grade | inherits `review.minimum_grade` | Per-skill override | The named skill |
-| `discovery.doc_set` | YAML block-list of pipe-delimited strings | absent (→ default seed) | Declared KB doc-set for this project; each item `filename\|owner\|presence[:when]` | `aid-discover` GENERATE + REVIEW states |
-
-> `aid-housekeep` reads `summary.minimum_grade` / `review.minimum_grade` (skill-mode
-> `--skill summary`) for SUMMARY-DELTA and `traceability.heartbeat_interval` (path-mode) for
-> its KB-DELTA dispatches — no new settings keys are introduced.
-> (`canonical/skills/aid-housekeep/SKILL.md` `## Arguments`, `## Dispatch Protocol`)
-
-**Resolution order** (skill mode): per-skill override → `review.<key>` → script `--default`
-→ exit 1. (`canonical/scripts/config/read-setting.sh` comment `# Skill mode: try per-skill override; fall back to review.<key>`)
-**Source of truth:** `canonical/templates/settings.yml`
-
-### Declared-Set → Dispatch Contract (`discovery.doc_set` → sub-agent dispatch)
-
-**Source:** `canonical/skills/aid-discover/references/state-generate.md` `### Steps 2-5: Dispatch 4 Subagents in Parallel (data-driven from declared set)` + `canonical/skills/aid-discover/references/doc-set-resolve.md`.
-
-The discover orchestrator resolves the active doc-set at GENERATE Step 0 and uses it
-data-driven for every dispatch decision in Steps 2–5:
-
-| Rule | Behavior |
-|------|----------|
-| **Mapping honors the set** | Each agent's target list = filenames where `owner = <agent>` in the declared set, intersected with missing-on-disk |
-| **No-hang on omission** | If a doc is absent from the declared set, the owning agent's target list may be empty → that agent is NOT dispatched (no hang, no error) |
-| **Dispatch on addition** | A custom doc added to the declared set with an owner → included in that agent's target list → agent dispatched for it |
-| **Unknown owner fallback** | Unknown owner value → routed to `aid-researcher` with a non-fatal warning (FR-P1-5) |
-| **Default seed (backward compat)** | If `discovery.doc_set` is absent/empty in settings.yml, `synth_default_seed` synthesizes the set from `canonical/templates/knowledge-base/*.md` using the §2.2 ownership map — no change to prior behavior |
-| **Verify** | After dispatch, cross-check `count == size(list-filenames)` against the accessor, not a literal integer |
-
-**Accessor functions** (pure bash+awk, inlined from `doc-set-resolve.md`):
-
-| Accessor | Returns |
-|----------|---------|
-| `resolve_doc_set "$raw" \| cut -f1` | All filenames in the declared set (list-filenames) |
-| `resolve_doc_set "$raw" \| awk -F'\t' -v f="$fn" '$1==f{print $2}'` | Owner of a specific filename |
-| `resolve_doc_set "$raw" \| awk -F'\t' -v a="$agent" '$2==a{print $1}'` | All filenames assigned to a given agent |
-
----
-
-## File-Format Contracts
-
-### Emission Manifest (`{profile}/emission-manifest.jsonl`)
-
-The authoritative safety boundary for the generator's pure-mirror deletion logic.
-
-- **Format:** JSON Lines (`.jsonl`); LF line endings; trailing `\n` on every record
-- **First line (sentinel):** `{"_manifest_version": 1}` — reserved object
-- **Record schema (exactly 4 keys):**
-  - `profile` (string) — `"claude-code" | "codex" | "cursor" | "copilot-cli" | "antigravity"`
-  - `src` (string) — repo-relative path inside `canonical/`
-  - `dst` (string) — install-tree path relative to manifest's directory
-  - `sha256` (string) — lowercase hex SHA-256 of rendered bytes
-- **Ordering:** Lexicographic by `dst` (byte-stable across re-runs — preserves AC2)
-- **Locations:**
-  - `profiles/claude-code/emission-manifest.jsonl` (Claude Code)
-  - `profiles/codex/emission-manifest.jsonl` (Codex — covers the unified `.codex/` root)
-  - `profiles/cursor/emission-manifest.jsonl` (Cursor)
-  - `profiles/copilot-cli/emission-manifest.jsonl` (Copilot CLI — covers the `.github/` root)
-  - `profiles/antigravity/emission-manifest.jsonl` (Antigravity — covers the `.agent/` root)
-- **Safety semantics:** Files outside any manifest are NEVER touched; `removed_dst` from
-  manifest diff is the ONLY set of paths the generator may delete
-- **Source:** `canonical/EMISSION-MANIFEST.md` (`## Record Schema`, `## Safety-Boundary Semantics`)
-
-### Heartbeat File (`.aid/.heartbeat/<agent>-<unix-ts>.txt`)
-
-- **Format:** Single line, pipe-delimited
-- **Schema:** `[<ISO-8601-UTC>] <STATE> | <progress> | <activity> (~<eta-remaining>)`
-- **Example:** `[2026-05-23T20:35:05Z] REVIEW | 4/21 docs | Checking line-count drift (~12m remaining)`
-- **Write rule:** `>` (overwrite) NEVER `>>` (append); timestamp MUST be shell-generated
-  via `$(date -u +%Y-%m-%dT%H:%M:%SZ)`
-- **Parser-friendly:** `head -1` + `awk -F'|'`
-- **Lifecycle:** Created by dispatcher; updated by subagent every N minutes; deleted by
-  dispatcher on completion
-- **Gitignore requirement:** `.aid/.heartbeat/` MUST be in `.gitignore`
-- **Source:** `canonical/templates/subagent-heartbeat-protocol.md` (`## Example heartbeat file`, `## File lifecycle`)
-
-### Work `STATE.md` — Per-Area State Hub (FR2 consolidation)
-
-A single STATE file per `.aid/work-NNN-{name}/` directory absorbs what used to be
-`INTERVIEW-STATE.md` + per-feature `STATE.md` × N + per-task `task-NNN-STATE.md` × N +
-(future) `DEPLOYMENT-STATE.md`. (`canonical/templates/work-state-template.md` `# Work State — work-NNN-{name}`)
-
-**Required sections (consumed by various skills):**
-
-| Section | Producer | Consumer | Source |
-|---------|----------|----------|--------|
-| `## Triage` | `aid-interview` TRIAGE | `aid-interview` lite/full router | `canonical/templates/work-state-template.md` `## Triage` |
-| `## Escalation Carry` | lite→full escalation | CONTINUE state | `canonical/templates/work-state-template.md` `## Escalation Carry` |
-| `## Interview Status` | `aid-interview` States 1–4 | `aid-interview` CONTINUE / COMPLETION | `canonical/templates/work-state-template.md` `## Interview Status` |
-| `## Features Status` | `aid-specify` | `aid-plan`, `aid-detail` | `canonical/templates/work-state-template.md` `## Features Status` |
-| `## Plan / Deliveries` | `aid-plan` | `aid-detail`, `aid-execute` | `canonical/templates/work-state-template.md` `## Plan / Deliveries` |
-| `## Tasks Status` | `aid-execute` (via writeback-state.sh) | All execute states + delivery gate | `canonical/templates/work-state-template.md` `## Tasks Status` |
-| `## Quick Check Findings` | reviewer (per-task) | Delivery gate aggregator | `canonical/scripts/execute/writeback-state.sh` comment `# Write/replace the ### task-NNN block under ## Quick Check Findings` |
-| `## Delivery Gates` | reviewer (per-delivery) | `aid-deploy` | `canonical/scripts/execute/writeback-state.sh` comment `# Write/replace the ### delivery-NNN block under ## Delivery Gates` |
-| `## Deploy Status` | `aid-deploy` | `aid-monitor` | `canonical/templates/work-state-template.md` `## Deploy Status` |
-| `## Cross-phase Q&A (Pending)` | All phases (loopback writers) | Owning phase's Q&A state | `canonical/templates/work-state-template.md` `## Cross-phase Q&A (Pending)` |
-| `## Calibration Log` | Every dispatcher (always-on, work-003) | Operator review | `canonical/skills/aid-discover/SKILL.md` `## Dispatch Protocol` |
-
-> `## Housekeep Status` is NOT a work-area STATE.md section. `/aid-housekeep` keeps its
-> run-state in a transient project-level file (`.aid/.temp/HOUSEKEEP_STATE_<ts>.md`) — see
-> the run-state-block contract below.
-
-#### `## Housekeep Status` Run-State Block (key-value contract)
-
-- **Location:** the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md`
-  — gitignored and transient (created on a fresh run, removed at DONE along with any stale
-  siblings). It is NOT a work-area STATE.md; `/aid-housekeep` is project maintenance.
-- **Shape:** key-value, one `**Field:** value` line per field (NOT a table — the
-  `**Field:** value` shape is grep-recoverable). Read/written ONLY by `housekeep-state.sh`
-  (skill bodies never hand-edit it).
-- **Nine fields:** `**State:**`, `**Stage Status:**`, `**Branch:**`, `**Mode:**`,
-  `**Stall Reason:**`, `**Last Run:**`, `**KB Stage:**`, `**Summary Stage:**`,
-  `**Cleanup Stage:**`
-- **Stage-gate values:** each of `KB Stage`/`Summary Stage`/`Cleanup Stage` ∈
-  `passed | skipped | stalled | running | —`; resume routes to the first incomplete stage
-  (six-row resume table). `**Mode:**` ∈ `full | cleanup-only`.
-- **Source:** the run-state file `.aid/.temp/HOUSEKEEP_STATE_<ts>.md` (created by
-  `housekeep-state.sh` on first `--write`; its path is resolved/created by
-  `canonical/skills/aid-housekeep/SKILL.md` `## State Detection`),
-  `canonical/scripts/housekeep/housekeep-state.sh` (`VALID_FIELDS`, `mode_resume()`)
-
-### Knowledge-Base `STATE.md` (`.aid/knowledge/STATE.md`)
-
-Equivalent area-STATE for the Discovery area:
-- `## Q&A (Pending)` — questions raised by downstream phases targeting the KB (also the
-  carrier `aid-housekeep` KB-DELTA writes its synthesized `**Impact:** Required` entry into)
-- `## Review History` — discover-cycle grades with timestamps
-- `## Knowledge Summary Status` (FR2 home for `aid-summarize` profile + last-run state)
-- `**User Approved:** yes | no` — the discovery approval gate (read back by
-  `aid-housekeep` KB-DELTA Step 5 and required by `aid-summarize` preflight)
-- **Source:** `canonical/skills/aid-discover/SKILL.md` `## State Detection`,
-  `canonical/scripts/summarize/grade-summary.sh` (`## Knowledge Summary Status` profile resolution),
-  `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4` / `## Step 5`
-
-### Recipe File Front-matter Contract
+Each Interview creates a *work* — a self-contained scope unit under `.aid/`. The live
+hierarchy (after the work-hierarchy migration) nests deliveries and tasks; this is the
+authoritative shape downstream skills and the dashboard read.
 
 ```
----
-name: add-api-endpoint     # kebab; must match basename
-applies-to: new-feature    # bug-fix | new-feature | refactor | *
-slot-count: 6              # integer; must equal unique {{slot}} count in body
-task-count: 3              # integer; must equal ### task-NNN heading count
-summary: <one-line description>  # free-form one-line; read by TRIAGE for description→recipe matching
----
+.aid/
+  knowledge/                                  # shared KB (from Discovery) — one per project
+  work-NNN-{slug}/
+    STATE.md                                  # work-area run-state (DERIVED rollups + Q&A)
+    REQUIREMENTS.md                           # full path only
+    features/feature-NNN-{name}/
+      SPEC.md                                 # requirements side (Interview) + tech spec (Specify)
+      STATE.md                                # feature-level state
+    PLAN.md                                   # full path only (Detail appends the execution graph)
+    delivery-NNN/
+      STATE.md                                # delivery lifecycle + gate + delivery-scoped Q&A
+      tasks/task-NNN/
+        SPEC.md                               # the task definition (Type, Source, Depends on, Scope, AC)
+        STATE.md                              # mutable task cells (State, Review, Elapsed, Notes)
+    IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
+    packages/package-NNN-{slug}.md             # written by Deploy
+    DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
-The first 4 fields are required; `summary:` is optional. `summary:` is a one-line
-free-form description read by TRIAGE for description→recipe matching (agent-read, **not**
-validated by `parse-recipe.sh`). Body must contain `## spec` and `## tasks` blocks. Slot
-lexical rule: `[a-z][a-z0-9-]*`. Escape `{!{` → `{{` at render time.
-- **Source:** `canonical/recipes/README.md` `### YAML Front-Matter`, `canonical/recipes/add-api-endpoint.md` (front-matter example)
+CONFIRMED: `canonical/aid/templates/work-state-template.md` (`delivery-NNN/STATE.md` and
+`delivery-NNN/tasks/task-NNN/STATE.md` blocks) and direct listing of
+`.aid/work-001-kb-skills-improvement/` (sixteen `delivery-NNN/` dirs each with `STATE.md`).
 
-### IMPEDIMENT-task-NNN.md Contract
+UNCERTAIN / drift flag: `docs/aid-methodology.md` ("## 7. Artifacts Reference") still
+describes the flatter shape `.aid/{work}/tasks/task-NNN.md`. The live skills + template use
+the nested `delivery-NNN/tasks/task-NNN/SPEC.md`. Recorded as a Q&A entry (doc drift, Low
+impact) — not silently reconciled here.
 
-When `aid-execute` discovers an assumption that doesn't hold, it writes
-`.aid/{work}/IMPEDIMENT-task-NNN.md` rather than silently working around the problem.
-
-Required sections: Summary, **Type** (one of `wrong-assumption | missing-dependency |
-architecture-conflict | kb-gap`), Source, What Was Found, KB Impact, Options,
-Recommendation. The type determines the resolution loop:
-- `kb-gap` → targeted `/aid-discover` (Loop 6 / Loop 11)
-- `architecture-conflict` → `/aid-specify`
-- `missing-dependency` → `/aid-detail`
-- `wrong-assumption` → update task or SPEC
-
-- **Source:** `canonical/templates/feedback-artifacts/IMPEDIMENT.md` `## Type`,
-  `canonical/skills/aid-execute/SKILL.md` `## Impediments`,
-  `docs/aid-methodology.md` `**Loop 6: Execute → Discovery / Specify / Detail`
-
-### Q&A Entry Contract (universal loopback artifact)
-
-Every design-phase loop records the gap as a Q&A entry appended to the relevant phase's
-STATE file. Required schema (Style A per `coding-standards.md §12`):
-
-```markdown
-### Q{N}
-- **Category:** {category}
-- **Impact:** {High|Medium|Low|Required}
-- **Status:** Pending | Answered | Skipped
-- **Context:** {why this question matters}
-- **Suggested:** {best-guess answer if inferrable, or "—"}
-```
-
-After user response, append:
-```markdown
-- **Answer:** {actual answer text or decision}
-- **Applied to:** {file path or task-id where the answer was incorporated}
-```
-
-The next run of the owning phase detects the pending entry and resolves it in Q&A mode.
-`aid-housekeep` KB-DELTA writes exactly such an entry with `**Impact:** Required` (and
-`**Category:** Housekeep / KB Delta Refresh`) into `.aid/knowledge/STATE.md ## Q&A
-(Pending)` to force `/aid-discover` into targeted re-entry regardless of current grade.
-- **Source:** `coding-standards.md §12`; `docs/aid-methodology.md` `### Feedback Loop Artifacts`;
-  `canonical/skills/aid-housekeep/references/state-kb-delta.md` `## Step 4 — Synthesize an Impact: Required Q&A entry + invoke /aid-discover`
+The lite path omits `features/`, `REQUIREMENTS.md`, and `PLAN.md`: it writes one work-root
+`SPEC.md` plus tasks directly. CONFIRMED: `docs/aid-methodology.md` ("Lite-path workspace").
 
 ---
 
-## Renderer Contract — Canonical → 5 Profile Trees
+## Typed Artifact Contracts
 
-The generator (`run_generator.py` → `.claude/skills/generate-profile/scripts/*.py`) implements
-a **pure-mirror** contract across **5 profiles** (claude-code, codex, cursor, copilot-cli,
-antigravity) with **uniform markdown** agent output for Claude Code, Cursor, Copilot CLI, and
-Antigravity, and **TOML** for Codex (`.claude/skills/generate-profile/scripts/aid_profile.py`
-`_KNOWN_AGENT_FORMATS`). The former `copilot-agent` and `antigravity-rule` format branches are
-**retired** (work-005 FR3/FR4).
+Each artifact is a markdown file with a required shape. The shape — not just the file name —
+is the contract a producing phase must satisfy and a consuming phase relies on.
 
-| Canonical source | Renderer | Claude Code | Codex | Cursor | Copilot CLI | Antigravity |
-|------------------|----------|-------------|-------|--------|-------------|-------------|
-| `canonical/agents/` | `render.py` (copy core) | `.claude/agents/` (Markdown) | `.codex/agents/` (TOML) | `.cursor/agents/` (Markdown) | `.github/agents/` (Markdown) | `.agent/agents/` (Markdown) |
-| `canonical/skills/` | `render.py` (copy core) | `.claude/skills/` | `.codex/skills/` | `.cursor/skills/` | `.github/skills/<slug>/SKILL.md` (native Agent Skills) | `.agent/skills/<slug>/SKILL.md` (native Skills) |
-| `canonical/templates/` | `render.py` (copy core) | `.claude/aid/templates/` | `.codex/aid/templates/` | `.cursor/aid/templates/` | `.github/aid/templates/` | `.agent/aid/templates/` |
-| `canonical/recipes/` | `render.py` (copy core) | `.claude/aid/recipes/` | `.codex/aid/recipes/` | `.cursor/aid/recipes/` | `.github/aid/recipes/` | `.agent/aid/recipes/` |
-| `canonical/scripts/` | `render.py` (copy core) | `.claude/aid/scripts/` | `.codex/aid/scripts/` | `.cursor/aid/scripts/` | `.github/aid/scripts/` | `.agent/aid/scripts/` |
+| Artifact | Produced by | Consumed by | Required shape (load-bearing fields) | Lifecycle |
+|----------|-------------|-------------|--------------------------------------|-----------|
+| KB doc-set | Discover | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content + `## Change Log` | living |
+| `INDEX.md` | config/Discover/Interview | all phases | one 2–3 line summary row per KB doc | regenerated, never hand-maintained |
+| `STATE.md` (discovery area) | config/Discover/Summarize | Discover (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log | living |
+| `REQUIREMENTS.md` | Interview (full) | Specify, Plan | `## Change Log` + 10 numbered sections (Objective … Priority) | frozen after approval, rev-tracked |
+| feature `SPEC.md` | Interview + Specify | Plan, Detail, Execute | `## Change Log` · Source · Description · User Stories · Priority · Acceptance Criteria · `## Technical Specification` (Specify) | living |
+| work-root `SPEC.md` (lite) | Interview (lite) | Execute | consolidated requirements + technical context, no `features/` | living |
+| `PLAN.md` | Plan | Detail, Deploy | `## Deliverables` (ordered, each with What/Features/Depends on/Priority) + execution graph (Detail) + `## Revision History` | living, rev-tracked |
+| task `SPEC.md` | Detail (full) or Interview (lite) | Execute | Type ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | rev-tracked if amended |
+| `IMPEDIMENT-task-NNN.md` | Execute | Specify, Detail, Discover | Summary · Type ∈ {wrong-assumption, missing-dependency, architecture-conflict, kb-gap} · Options · Recommendation | closed when resolved |
+| `package-NNN-{slug}.md` | Deploy | Monitor, stakeholders | deliveries included · verification results · environment · release notes | one per shipped release |
+| `MONITOR-STATE.md` | Monitor | Execute (bugs), Discover (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
 
-**Source:** `canonical/EMISSION-MANIFEST.md` `## Asset Kinds`, `profiles/copilot-cli.toml`
-`[layout]`, `profiles/antigravity.toml` `[layout]`
+CONFIRMED by the template files under `canonical/aid/templates/` and the artifact reference
+in `docs/aid-methodology.md` ("Core Artifacts" and "Templates Reference").
 
-> **Copilot CLI host-tool mapping** (`profiles/copilot-cli.toml`): AID sub-agents →
-> `.github/agents/` (uniform Markdown, `Bash`→`shell` rename via `[tool_names]`); AID skills →
-> **native Copilot Agent Skills** at `.github/skills/<slug>/SKILL.md` (folder copy via
-> `render.py` copy core — no `emit_as` knob); MCP → **omitted** (no `[mcp]` table;
-> repo ships zero MCP servers); context file → profile-local committed `AGENTS.md` (token only, NOT
-> emitted by the renderer). ⚠️ Model slug spelling (`claude-opus-4.8` etc.) docs-only-noted
-> as GitHub's lowercase-dotted model-id convention (`profiles/copilot-cli.toml` `[model_tiers]`).
->
-> **Antigravity host-tool mapping** (`profiles/antigravity.toml`): AID sub-agents →
-> `.agent/agents/` (uniform Markdown); AID skills → **native** `.agent/skills/<slug>/SKILL.md`
-> folders ([data]); context file → profile-local committed `AGENTS.md`. ⚠️ Gemini
-> model-id/effort tokenization docs-only-noted (`profiles/antigravity.toml`
-> `[model_tiers.large]`); `[tool_names]` empty → identity passthrough.
-
-**Invariants:**
-1. **AC2 byte-identity** — re-running the generator on unchanged inputs produces a
-   byte-identical install tree AND a byte-identical manifest
-   (`canonical/EMISSION-MANIFEST.md` `## Ordering`)
-2. **Skill bodies byte-identical across all trees** — `canonical/skills/<skill>/SKILL.md`
-   + `.claude/skills/<skill>/SKILL.md` (dogfood) + 5 profile trees are bit-for-bit
-   identical for the body portion (CLAUDE.md `## Architecture` bullet 1)
-3. **Pure-mirror deletion** — only files in the previous manifest's `removed_dst` are
-   deleted; files outside any manifest are NEVER touched
-   (`canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`)
-
-**Profile front-matter required fields:**
-
-| Field | Claude Code | Codex | Cursor | Copilot CLI | Antigravity |
-|-------|-------------|-------|--------|-------------|-------------|
-| Agent file format | Markdown + YAML (`markdown`) | TOML (`toml`) | Markdown + YAML (`markdown`) | Markdown + YAML (`markdown`) | Markdown + YAML (`markdown`) |
-| Required agent fields | `name, description, tools, model` | `name, description, model, model_reasoning_effort, developer_instructions` | (per `profiles/cursor.toml`) | `name, description, tools, model` | `name, description, tools, model` |
-| Required skill fields | `name, description, allowed-tools` | `name, description, allowed-tools` | (per `profiles/cursor.toml`) | `name, description, allowed-tools` | `name, description, allowed-tools` |
-| Source | `profiles/claude-code.toml` `[agent.frontmatter]` | `profiles/codex.toml` `[agent.frontmatter]` | `profiles/cursor.toml` | `profiles/copilot-cli.toml` `[agent.frontmatter]` | `profiles/antigravity.toml` `[agent.frontmatter]` |
-
-**Filename-map contract** (substitution in canonical templates):
-
-| Placeholder | claude-code | codex | cursor | copilot-cli | antigravity |
-|-------------|-------------|-------|--------|-------------|-------------|
-| `project_context_file` | `CLAUDE.md` | `AGENTS.md` | (per cursor.toml) | `AGENTS.md` | `AGENTS.md` |
-| `reviewer_output_file` | `STATE.md` | `STATE.md` | `STATE.md` | `STATE.md` | `STATE.md` |
-| `open_questions_file` | `additional-info.md` | `additional-info.md` | `additional-info.md` | `additional-info.md` | `additional-info.md` |
-
-Source: `profiles/claude-code.toml` `[filename_map]`, `profiles/codex.toml` `[filename_map]`,
-`profiles/copilot-cli.toml` `[filename_map]`, `profiles/antigravity.toml` `[filename_map]`
-
-**Model-tier mapping:**
-
-| Tier | Claude Code | Codex | Cursor | Copilot CLI | Antigravity |
-|------|-------------|-------|--------|-------------|-------------|
-| `large` | `opus` | `gpt-5.5` (reasoning_effort=high) | (per cursor.toml) | `claude-opus-4.8` | `gemini-3-pro` (reasoning_effort=high) |
-| `medium` | `sonnet` | `gpt-5.4` (medium) | (per cursor.toml) | `claude-sonnet-4.6` | `gemini-3-pro` (low) |
-| `small` | `haiku` | `gpt-5.4-mini` (low) | (per cursor.toml) | `claude-haiku-4.5` | `gemini-3-flash` (low) |
-
-Source: `profiles/claude-code.toml` `[model_tiers]`, `profiles/codex.toml` `[model_tiers]`,
-`profiles/copilot-cli.toml` `[model_tiers]`, `profiles/antigravity.toml` `[model_tiers.large]`
+The eight task **Types** are the central executor/reviewer contract: the Type drives both how
+the executor works and how the reviewer evaluates the task. CONFIRMED:
+`docs/aid-methodology.md` ("The eight task types are").
 
 ---
 
-## Consumed APIs — External Services
+## Per-Skill State Machines
 
-(See `.aid/knowledge/integration-map.md ## Third-Party Services` for the integration-side
-view. Listed here for the contract-side completeness.)
+Every graded skill is a state machine: one invocation advances one state, then stops. No
+auto-advance between states. CONFIRMED: `docs/aid-methodology.md` ("Discover runs as a state
+machine … One invocation per state. No auto-advance").
 
-| External service | Purpose | Client | Source |
-|------------------|---------|--------|--------|
-| `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` | Mermaid library bytes (pinned version, SHA-verified) | `curl -sSf --max-time 120` | `canonical/scripts/summarize/fetch-mermaid.sh` (`curl -sSf --max-time 120` download) |
-| `gh` CLI (GitHub API) | PR creation, issue mgmt | Subprocess (per `CLAUDE.md` PR convention) | `CLAUDE.md` git/PR sections |
+| Skill | States (in order) |
+|-------|-------------------|
+| `aid-discover` | GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE |
+| `aid-interview` (full) | 7 states: interview states 1–4 (open / Q&A mode / continue / completion gate) → 5 Feature Decomposition → 6 Cross-Reference → 7 Done |
+| `aid-interview` (lite) | TRIAGE → CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE |
+| `aid-specify` | per-section universal loop: Propose → Discuss → Write → Review (re-run enters at Review) |
+| `aid-plan` | universal loop applied per delivery: Propose → Discuss → Write → Review |
+| `aid-detail` | universal loop per delivery producing task files → build execution graph |
+| `aid-execute` | per-task universal loop (read type → execute → gates → reviewer dispatch → grade → fix/loopback) inside a parallel pool |
+| `aid-deploy` | package selection → final verification → package record → packaging → doc routing → status update |
+| `aid-monitor` | Observe → Classify → Analyze → Propose → Act |
+| `aid-housekeep` | PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE |
+| `aid-update-kb` | ANALYZE → APPLY → REVIEW → APPROVAL → DONE |
 
-No SDKs, no HTTP clients in code beyond `curl` calls in 2 helper scripts. No persistent
-connections, no auth tokens stored anywhere in the repo.
+CONFIRMED: per-skill `SKILL.md` files under `canonical/skills/`; the lite/housekeep/update
+sequences additionally in `docs/glossary.md` ("aid-housekeep", "aid-update-kb").
+
+The **universal loop** (Propose, then Discuss, then Write, then Review) is shared by every full-path
+design phase. Re-running a completed phase re-enters at Review and re-grades existing content
+against current reality — the same loop handles creation and maintenance. CONFIRMED:
+`docs/aid-methodology.md` ("The universal loop").
+
+**Execute parallel-pool contract:** in delivery mode Execute runs a continuous parallel pool
+of up to `execution.max_parallel_tasks` tasks (default 5). A failed task blocks its transitive
+dependents (BFS block-radius). If the host cannot dispatch in the background, the pool
+degrades to sequential execution. CONFIRMED: `docs/aid-methodology.md` ("Parallel pool
+dispatch"); `canonical/aid/scripts/execute/compute-block-radius.sh`; `.aid/settings.yml`
+(`execution.max_parallel_tasks`).
 
 ---
 
-## Discrepancies (doc vs code)
+## The Grading Gate Contract
 
-- **e2e test runners** — Per Q1 resolution (cycle-1): `.aid/work-001-aid-lite/test-reports/`
-  was never a correct home for canonical test scripts; those runners have been removed from
-  documentation. The canonical test suites in `tests/canonical/` (run via
-  `tests/run-all.sh`) are the complete test contract; recount with `ls tests/canonical/test-*.sh | wc -l` (see `tests/README.md`).
-- **`run_generator.py` verify-report sink** — Per Q2 resolution (cycle-1): `run_generator.py`
-  now passes `report_path=None` and no longer writes to `.aid/work-002-canonical-generator/`.
-  The directory is not required.
-- **`profiles/codex.toml` `hooks`, `stop_hook_autocontinue` capabilities** — both marked
-  `TODO: confirm` (`profiles/codex.toml` `[capabilities]` — `hooks` + `stop_hook_autocontinue`
-  keys); contract values present but unverified against the vendor docs.
+Every phase that grades uses one deterministic rubric. The reviewer classifies each finding
+by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source
+(`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`); it never assigns a letter grade. The grade is
+*computed* by `grade.sh` from the bracketed severity tags — the worst severity present
+dominates and the count within that tier sets the `+` / none / `-` modifier. The phase loops
+until the computed grade meets the project minimum. CONFIRMED: `docs/aid-methodology.md`
+("One grading rubric across the pipeline", "Review record format");
+`canonical/aid/templates/grading-rubric.md`.
+
+- **Grade scale:** A+ down to F, with an E band reserved for CRITICAL-severity findings.
+  CONFIRMED: `.aid/settings.yml` (the `review.minimum_grade` comment listing
+  `A+, A, … E+, E, E-, F`).
+- **Minimum:** `review.minimum_grade` (global default `A`), with per-skill overrides (this
+  project pins `summary.minimum_grade: A+`). CONFIRMED: `.aid/settings.yml`.
+- **Reviewer-tier invariant:** the reviewer's model tier is always ≥ the executor's; the agent
+  that writes never grades its own work. CONFIRMED: `docs/aid-methodology.md` ("## 5. The Agent
+  Model"). See the agent tiers in [architecture.md](architecture.md).
+- **Circuit breaker (Execute):** if the grade does not improve after 3 consecutive cycles,
+  Execute stops. CONFIRMED: `docs/aid-methodology.md` ("Circuit breaker").
+- **Two-tier review (Execute):** a Small-tier quick-check inside each task plus a delivery-gate
+  full review-fix-review loop at the end of each delivery; High quick-check findings accumulate
+  for the gate. CONFIRMED: `docs/aid-methodology.md` ("The two-tier review design").
+
+---
+
+## Feedback Loop Contracts
+
+The pipeline is sequential by default; eleven formal loops let a downstream phase revise an
+upstream artifact. Each loop produces a formal record — a Q&A entry in a `STATE.md`, an
+`IMPEDIMENT-task-NNN.md`, or a `MONITOR-STATE.md` finding — never a silent workaround.
+CONFIRMED: `docs/aid-methodology.md` ("## 6. Feedback Loops").
+
+| Loop | From | To | Trigger | Record |
+|------|------|----|---------|--------|
+| L1 | Interview | Discover | an answer reveals the KB is wrong/incomplete | Q&A in `.aid/knowledge/STATE.md` |
+| L2 | Specify | Discover | spec exposes insufficient subsystem understanding | Q&A in `.aid/knowledge/STATE.md` |
+| L3 | Plan | Discover | codebase more complex than the KB captured | Q&A in `.aid/knowledge/STATE.md` |
+| L4 | Plan | Specify | KB complete but a SPEC is ambiguous/contradictory | Q&A in the feature `STATE.md` |
+| L5 | Detail | Plan | plan too vague to decompose into tasks | flag on the under-specified deliverable |
+| L6 | Execute | Discover / Specify / Detail | an assumption does not hold | `IMPEDIMENT-task-NNN.md` (routed by Type) |
+| L7 | Execute Review | any upstream phase | reviewer finds TASK/SPEC/KB-sourced issues | source-tagged issue → loopback |
+| L8 | Deploy | Execute | final verification (build+tests+lint) fails | routed back to `/aid-execute` |
+| L9 | Monitor | Interview (bug) | finding classified BUG → LITE-BUG-FIX | `MONITOR-STATE.md` finding |
+| L10 | Monitor | Interview (CR) | finding classified Change Request | `MONITOR-STATE.md` finding |
+| L11 | any phase | Discover | KB found wrong/incomplete/stale | targeted re-discovery Q&A |
+
+The IMPEDIMENT routing (L6) is by Type: `kb-gap` routes to Discover, `architecture-conflict`
+to Specify, `missing-dependency` to Detail, and `wrong-assumption` to a task/SPEC update.
+CONFIRMED:
+`docs/aid-methodology.md` ("Loop 6").
+
+---
+
+## Configuration Contract
+
+`.aid/settings.yml` is the single authoritative source every skill reads at invocation time
+(via `read-setting.sh`). Skills MUST NOT hardcode values that exist here. CONFIRMED:
+`.aid/settings.yml` (header "the AUTHORITATIVE source for all AID pipeline settings");
+`canonical/aid/scripts/config/read-setting.sh`.
+
+Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
+`review.minimum_grade` (+ per-skill overrides), `execution.max_parallel_tasks`,
+`traceability.heartbeat_interval`, and `discovery.doc_set` (the project's KB document set).
+
+---
+
+## Known Issues
+
+- The methodology doc (`docs/aid-methodology.md`) describes the older flat task layout
+  (`.aid/{work}/tasks/task-NNN.md`) while the live skills and `work-state-template.md` use the
+  nested `delivery-NNN/tasks/task-NNN/SPEC.md` shape. Doc drift — see the Q&A entry. LIKELY a
+  prose-simplification lag, not a behavioral disagreement, but not reconciled here.
+- The skill/recipe counts disagree across sources ("12-skill pipeline" vs 13 skill dirs; "51"
+  vs 52 recipes). Tracked as discovery Q&A (Q1/Q2). Counts here defer to those Q&As.
+
+---
+
+## Conventions
+
+> How this project adds or changes a pipeline boundary.
+
+- **A new phase/skill** is authored once in `canonical/skills/<name>/SKILL.md` as a state
+  machine (states advance one invocation at a time), then rendered into the five profiles.
+  Never edit `profiles/` directly.
+- **A new artifact type** gets a template under `canonical/aid/templates/`, a fixed location
+  under `.aid/{work}/`, and an entry in the artifact reference. Downstream skills find it by
+  convention (fixed path), never by search.
+- **A new feedback path** must produce a formal record (Q&A entry, IMPEDIMENT file, or
+  MONITOR finding) with a revision trail — never an inline silent fix.
+
+---
+
+## Contracts
+
+> The structural shapes a change MUST satisfy at a phase boundary.
+
+- **Task contract:** every task `SPEC.md` declares a `Type` from the eight-type enum, a
+  `Source`, `Depends on` (`— (none)` for the first), `Scope`, and `Acceptance Criteria`. The
+  executor and the reviewer both bind to the Type; changing the enum breaks both.
+- **Grade contract:** reviewers emit bracketed `[SEVERITY]`/`[SOURCE]` tags only; `grade.sh`
+  computes the letter. Any consumer of the grade depends on the deterministic mapping in
+  `grading-rubric.md` — adding a severity tier or changing the dominance rule is a breaking
+  change to every grading skill.
+- **State-file contract:** run-state (grades, Q&A, history, rollups) lives in the area's
+  `STATE.md`; the dashboard and `/aid-execute` read these files to track a pipeline. Artifact
+  files alone are not trackable. Renaming or restructuring `STATE.md` sections breaks the
+  dashboard reader (see [integration-map.md](integration-map.md)).
+- **Compatibility rule:** artifact templates evolve additively — new optional sections/fields
+  are safe; removing or renaming a load-bearing field is breaking and requires updating every
+  producing and consuming skill in lockstep.
+
+---
+
+## Invariants
+
+- **The pipeline never auto-advances.** Every phase transition requires explicit human
+  approval (the "OK?" gate); a deterministic grade >= minimum is necessary but not sufficient
+  -- both the grade gate and the human gate must pass. CONFIRMED in `docs/aid-methodology.md`
+  ("## 1. The Pipeline").
+- **Every inter-phase artifact is a typed markdown contract.** A phase consumes and produces
+  the declared artifacts (see the Phase Input/Output Contracts table); a phase cannot start
+  until its inputs exist and its predecessor's gate has passed.
+- **Phase order is fixed.** The six numbered phases run Discover -> Interview -> Specify ->
+  Plan -> Detail -> Execute on the full path; the lite path skips Specify/Plan/Detail but
+  never reorders or renumbers them.
+- **Contract fields evolve additively** -- removing or renaming a load-bearing field is a
+  lockstep break (see the `## Contracts` Compatibility rule).
+
+---
+
+## Change Log
+
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | 2026-06-25 | aid-discover | Initial pipeline-contract mapping (Integrator deep-dive) |

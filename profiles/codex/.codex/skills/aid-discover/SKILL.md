@@ -17,13 +17,47 @@ Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
 **State machine — each `/aid-discover` invocation drives the state machine until it hits a natural pause point per [`.codex/aid/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md). Mechanical states and inline-question states auto-chain; only PAUSE-FOR-USER-ACTION, PAUSE-FOR-USER-DECISION, and HALT stop the run.**
 
+---
+
+## ⛔ PRIME DIRECTIVE: NO ASSUMPTIONS — DEFER TO THE USER
+
+**This rule governs every state, every sub-agent, and the orchestrator itself. It overrides
+convenience, speed, and confidence.**
+
+Discovery's job is to report **what the project actually is**, never what an agent *guesses* it
+is. So whenever ANYTHING is unclear, ambiguous, contradictory, or a judgment call — an
+undefinable term, a discrepancy between two sources, an uncertain classification, which of two
+things is authoritative, in-or-out-of-scope, how to resolve a conflict — **DO NOT resolve it by
+assumption. Record a question and DEFER the decision to the user.**
+
+- A `LIKELY` / `UNCERTAIN` / `probably` / "I'll assume" answer written into the KB is a
+  **FAILURE**, not a finding. Turn it into a Q&A entry.
+- Never silently reconcile a contradiction — record both sides and **ask** which is right.
+- State a fact only when you can ground it from the artifacts **with certainty** (cite the
+  source). Otherwise, **ASK.**
+
+**The deferral machinery is already built in — use it:** the Step 0cx (domain), 0d (doc-set),
+0f (path), and Step 5c (term-exclusion) gates are PAUSE-FOR-USER-DECISION points; sub-agents
+write open questions to `.aid/knowledge/.scout-questions.tmp`; Step 6b consolidates them into
+`STATE.md ## Q&A (Pending)`; and the **Q-AND-A** state resolves them *with the user* before
+approval. Every disambiguation flows through this path — none is decided silently.
+
+**Why:** AID is used by people who distrust AI. One unconfirmed assumption presented as fact
+reads as hallucination and breaks that trust. Visible deference — "here is what I found, here is
+what I am unsure of, **you** decide" — IS the product. **When in doubt, ASK.**
+
+---
+
 ## ⚠️ Pre-flight Checks
 
 Run `bash .codex/aid/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
-1. `.aid/knowledge/STATE.md` exists (init has run)
+1. `.aid/knowledge/STATE.md` is present and non-empty (self-created from template if absent)
 2. Not in Plan Mode (subagents need write access)
 
-If Check 1 fails: `⚠️ Knowledge Base not initialized. Run /aid-config first to set up the project.` — Exit.
+Check 1 is now self-healing: if STATE.md is absent the script creates it from
+`discovery-state-template.md` and continues — no "run /aid-config first" hard-stop.
+The check only fails (exit 1) if STATE.md cannot be written or is empty after the
+self-create attempt (e.g. a zero-byte file left by a prior interrupted run).
 If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 
 ---
@@ -132,11 +166,12 @@ Read the filesystem to determine which mode to enter:
 ```
 State 1: Missing or empty KB docs                     → GENERATE mode
 State 2: All docs populated, no GRADE file             → REVIEW mode
-State 3: GRADE file, (grade < min AND has Pending Q&A)
-         OR has Pending Q&A with Impact: Required       → Q-AND-A mode
-State 4: GRADE file, grade < min, no Pending Q&A       → FIX mode
-State 5: GRADE file, grade >= min, not user-approved    → APPROVAL mode
-State 6: GRADE file, grade >= min, user-approved        → DONE
+State 3: GRADE file, ANY Pending Q&A (regardless of grade/Impact) → Q-AND-A mode
+State 4: GRADE file, grade < min, ZERO Pending Q&A     → FIX mode
+State 5: GRADE file, grade >= min, ZERO Pending Q&A,
+         not user-approved                              → APPROVAL mode
+State 6: GRADE file, grade >= min, ZERO Pending Q&A,
+         user-approved                                  → DONE
 ```
 
 **Detection logic:**
@@ -150,10 +185,12 @@ State 6: GRADE file, grade >= min, user-approved        → DONE
 5. If `.aid/knowledge/STATE.md` exists with a grade:
    - Read current/minimum grade; if `--grade` provided, update minimum
    - Read `## Q&A (Pending)` section of `.aid/knowledge/STATE.md` for `**Status:** Pending` entries
-   - If any Pending with `**Impact:** Required` → **Q-AND-A** (regardless of grade)
-   - If grade < minimum: Pending entries → **Q-AND-A**; no Pending → **FIX**
-   - If grade >= minimum and no Required Pending Q&A:
-     - `**User Approved:** yes` → **DONE**; otherwise → **APPROVAL**
+   - **If ANY `**Status:** Pending` entry exists → Q-AND-A** (regardless of grade OR Impact —
+     discovery is NOT complete while any question is unanswered; `Impact` only orders the work,
+     it never gates completion). Q-AND-A self-answers every question it can CONFIRM from source
+     (no assumptions) and asks the user the rest, until ZERO remain Pending.
+   - Else (ZERO Pending Q&A): if grade < minimum → **FIX**; if grade >= minimum →
+     `**User Approved:** yes` → **DONE**, otherwise → **APPROVAL**.
 
 **Grade ordering** (highest to lowest):
 `A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F`
@@ -299,7 +336,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 - [ ] external-sources.md documents all sources (or states none provided)
 - [ ] README.md reflects completeness and revision history
 - [ ] INDEX.md has 2-3 line summaries per document
-- [ ] feature-inventory.md exists (template or populated)
+- [ ] the declared C9 capability/feature doc exists (e.g., feature-inventory.md, or capability-inventory.md / content-inventory.md per the domain doc-set) (template or populated)
 - [ ] AGENTS.md placeholders filled with discovered data
 - [ ] All issues have severity: [CRITICAL], [HIGH], or [MEDIUM]
 - [ ] Minimum 10 spot-checks in `.aid/knowledge/STATE.md` `## Verification Spot-Checks`

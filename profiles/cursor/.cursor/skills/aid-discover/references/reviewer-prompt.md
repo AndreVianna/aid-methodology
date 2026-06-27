@@ -1,84 +1,46 @@
-# Reviewer Prompt
+# Reviewer Prompt — Panel Index
 
-Full prompt for the aid-reviewer subagent. Used in REVIEW mode Step 1 and FIX mode Step 6 (post-fix re-review).
+Thin index for the four-mandate review panel. The full-panel orchestration is in
+`state-review.md` Step 1. Each mandate's FOCUS body is a separate file; this index
+lists them for back-compatibility with any direct reader.
 
-**⚠️ CLEAN CONTEXT:** Do NOT include any information about the generation process,
-which agents ran, what was easy or hard, or any prior state. The reviewer must
-evaluate the KB purely on what's on disk — as if a stranger wrote it.
+**⚠️ CLEAN CONTEXT:** Each mandate reviewer evaluates purely on what is on disk —
+as if a stranger wrote it. No generation process, no prior state, no prior grade.
+
+**⚠️ CONTAMINATION PREVENTION (applies to all mandate dispatches and FIX re-review):**
+- Do NOT include previous review results in any mandate prompt
+- Do NOT tell a reviewer what was fixed or what the previous grade was
+- Do NOT say "re-review" — each mandate reviewer must approach fresh
 
 ---
 
-## Prompt
+## The Four Mandate FOCUS Bodies
 
-> **Document Expectations (authoritative):** The per-doc "Must have / Red flags" criteria are the
-> single canonical set in aid-discover/references/document-expectations.md. The dispatcher inlines
-> that file's full contents below this line at review time; evaluate Completeness (step 2) and
-> Depth/Usefulness (steps 4–5) against exactly those criteria — do not improvise alternatives.
->
-> --- BEGIN DOCUMENT EXPECTATIONS ---
-> {{DOCUMENT_EXPECTATIONS}}
-> --- END DOCUMENT EXPECTATIONS ---
+| # | Mandate | FOCUS file | Scratch ledger |
+|---|---------|-----------|----------------|
+| M1 | Correctness | `reviewer-prompt-correctness.md` | `<scope>-correctness.md` |
+| M2 | Anatomy / Coverage (incl. altitude: hollow vs transcription) | `reviewer-prompt-anatomy.md` | `<scope>-anatomy.md` |
+| M3 | Teach-back (keystone) | `reviewer-prompt-teachback.md` | `<scope>-teachback.md` |
+| M4 | Operational sufficiency (act-back, keystone) | `reviewer-prompt-actback.md` | `<scope>-actback.md` |
 
-> Review every document in .aid/knowledge/ for quality. Be AGGRESSIVE — a lenient review is worse
-> than useless because it lets bad docs through the quality gate.
->
-> For each document, assess:
->
-> 1. **Accuracy** (MOST IMPORTANT) — Do NOT trust what the document says. Verify claims
->    against actual source files:
->    - Version numbers → check build configs, lockfiles, dependency manifests, library filenames
->    - File paths → verify they exist on disk
->    - Class/interface/abstract claims → read the actual declaration
->    - Configuration values → check actual config files
->    - Absolute statements ("always", "all modules", "never") → verify scope is correct
->    - Every claim should be traceable to a primary source. If it's not, flag it.
->    - Any factual error is [CRITICAL]. Any value marked "TBD" or "unknown" when
->      extractable from the repository is [HIGH].
->
-> 2. **Completeness** — Does the document cover everything its title promises?
->    - Compare against what a developer working on this project would need.
->    - Are edge cases and failure modes documented where relevant?
->    - If a problem is identified (e.g., tech debt), is a next step or mitigation noted?
->    - Are all terms and abbreviations defined or referenced in the glossary?
->
-> 3. **Cross-document consistency** — Does information contradict other documents?
->    - If a wrong claim propagates across multiple docs, flag each propagation separately.
->    - Do summaries in INDEX.md match what the primary documents actually say?
->    - Is the same concept called the same name everywhere? (not "bundle" in one doc
->      and "module" in another for the same thing)
->
-> 4. **Depth vs. signal** — Quality of information, not quantity.
->    - Does it explain patterns, relationships, and WHY — or just list names?
->    - Is information duplicated from other documents without adding new value?
->    - Is the signal-to-noise ratio high? Could sections be removed without losing
->      anything an agent would need?
->
-> 5. **Usefulness** — Imagine you're an agent asked to add a feature, fix a bug, or
->    understand a module in this project.
->    - Would this document let you act correctly without re-discovering?
->    - Can you find the specific information you need quickly from the structure?
->    - Are the claims grounded in specific locations (file paths, class names) or
->      generic statements that could apply to any project?
->
-> 6. **Meta-document integrity** — INDEX.md, README.md, and AGENTS.md are
->    derived from the project's declared primary doc-set.
->    - Do their summaries and values accurately reflect the current primary doc content?
->    - Is placeholder text or template markers still present?
->    - Are questions marked Pending in the Q&A section of STATE.md actually still unanswerable from the repository?
->
-> **Grading:** Use the universal rubric (read `../../../templates/grading-rubric.md`).
-> Classify every issue as [MINOR], [LOW], [MEDIUM], [HIGH], or [CRITICAL].
-> Grade is CALCULATED from worst issue severity + quantity. Worst issue dominates.
-> A+ = zero issues. F = missing/empty/non-functional.
->
-> **Minimum 15 spot-checks** (verify claims against actual code). At least 5 must be version verifications.
->
-> **After grading, add new questions to the `## Q&A` section of STATE.md** for any
-> information gaps found during review that cannot be resolved from the repository. These become
-> Q&A items for the user. Use the next sequential Q{N} ID (continuing from existing entries),
-> categorize by area, and assign impact levels (High/Medium/Low). Only add questions for things
-> genuinely needing human input — if you can grep the answer, fix it in the review instead.
->
-> Write the review results (grades, issues, spot-checks) to STATE.md,
-> preserving the existing `## Q&A` section and adding to it. Update `**Grade:**` from `Pending`
-> to the actual grade.
+Each FOCUS body instructs its reviewer to write to its **own transient scratch ledger**
+`.aid/.temp/review-pending/<scope>-<mandate>.md` (7-column schema). The orchestrator
+aggregates all four scratch ledgers into the single canonical `<scope>.md` ledger and
+deletes the transients (Step 2 of `state-review.md`).
+
+**The `{{DOCUMENT_EXPECTATIONS}}` placeholder** (document-expectations.md contents) is
+injected into the M2 (Anatomy) body only — it is the Anatomy mandate's authoritative
+per-doc criteria. **The `{{CLOSURE_CHECK_B}}` placeholder** (`closure-check.sh` output
+(b), the per-doc `sources:`-anchored coverage table) is also injected into the M2 body —
+it anchors M2's coverage-gap and altitude judgments.
+
+**Concept self-containment** (every native/synthesis term grounded in the spine) is NOT a
+panel mandate: it is enforced mechanically by `closure-check.sh` output (a) as the
+GENERATE closure loop's termination oracle (`state-closure.md` DETECT) and the FR-32
+cap-trip escalation — a reviewer mandate would only restate that gate. **Transcription
+and altitude** ("too fat" / "too thin") are reviewer judgments folded into M2 above —
+there is no separate Calibration mandate and no mechanical overlap-ratio.
+
+**`{{SCOPE}}` default:** `discovery` (aid-discover's call site). The `{{SCOPE}}`
+parameter is substituted at dispatch time by the orchestrator, making all scratch ledger
+paths and the canonical ledger path parametric.

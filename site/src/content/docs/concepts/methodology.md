@@ -72,7 +72,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*Twelve user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Interview. `/aid-interview`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-ask` answers project questions on demand without writing.*
+*Thirteen user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Interview. `/aid-interview`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -86,7 +86,7 @@ When the work is small and well-scoped, TRIAGE (the opening state of every Inter
 
 ### Skill Inventory
 
-*All 12 user-facing skills, their groups, phase numbers, and mandatory pipeline membership.*
+*All 13 user-facing skills, their groups, phase numbers, and mandatory pipeline membership.*
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
@@ -101,7 +101,8 @@ When the work is small and well-scoped, TRIAGE (the opening state of every Inter
 | `aid-deploy` | Deliver | — (optional) | On demand; not a numbered phase |
 | `aid-monitor` | Deliver | — (optional) | On demand; not a numbered phase |
 | `aid-housekeep` | Off-pipeline | — | On demand; off the pipeline entirely |
-| `aid-ask` | Off-pipeline | — | On demand; read-only Q&A — never writes |
+| `aid-query-kb` | Off-pipeline | — | On demand; Q&A + gap-capture (STATE.md backlog only) |
+| `aid-update-kb` | Off-pipeline | — | On demand; targeted KB update through review gate; human-gated |
 
 ---
 
@@ -843,7 +844,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (12 user-facing skills)
+  ├── skills/        (13 user-facing skills)
   ├── agents/        (9 agents)
   ├── templates/     (KB templates, document templates)
   ├── recipes/       (51 lite-path recipes — add-/change-/fix- families)

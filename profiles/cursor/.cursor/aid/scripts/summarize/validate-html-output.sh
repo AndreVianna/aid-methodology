@@ -21,7 +21,9 @@
 #   A3  Focus trap — trapFocusOnTab + lastFocused.focus() + key === 'Escape'.
 #   A4  Reduced motion — @media (prefers-reduced-motion: reduce).
 #   A5  Visible focus — :focus-visible rule.
-#   S2  Offline render — Mermaid library inlined.
+#   S2  Offline render — no external CDN script or link src (self-contained).
+#   NM  No-Mermaid-engine assertion — output contains no Mermaid runtime engine or
+#       mermaid.initialize() init call (FR-51 / Change 7 / D-012 guardrail).
 #   L1  Anchor links resolve — every href="#X" matches an id="X".
 #   L2  Relative md links resolve — every href="./X.md" exists in --kb-dir.
 #   (Additional structural checks for skip-link, noscript, color-scheme, etc.)
@@ -249,12 +251,80 @@ check "skip-link present"          'class="skip-link"'
 check "noscript fallback present"  '<noscript>'
 check "color-scheme: light dark"   'color-scheme: ?light dark|color-scheme:.*light.*dark'
 
-# S2 — Mermaid library inlined
-check "S2. Mermaid library inlined"   'mermaid|Mermaid'
+# S2 -- Offline render: page is self-contained (no external CDN script or link src)
+# CHANGE 7 (FR-51 / D-012): The Mermaid engine is retired. S2 now checks that NO
+# external CDN script/link references have been introduced (CDN-free guarantee).
+# The presence of the Mermaid engine is no longer required or checked.
+CDN_SCRIPT_HITS=$(grep -E '<script[^>]+src="https?://' "$HTML" 2>/dev/null || true)
+CDN_LINK_HITS=$(grep -E '<link[^>]+href="https?://' "$HTML" 2>/dev/null || true)
+TOTAL=$((TOTAL + 1))
+if [ -z "$CDN_SCRIPT_HITS" ] && [ -z "$CDN_LINK_HITS" ]; then
+    echo "  S2. Offline render [PASS] no external CDN script or link (self-contained)"
+    PASS=$((PASS + 1))
+else
+    echo "  S2. Offline render [FAIL] found CDN reference(s) in output HTML:"
+    [ -n "$CDN_SCRIPT_HITS" ] && echo "$CDN_SCRIPT_HITS"
+    [ -n "$CDN_LINK_HITS" ] && echo "$CDN_LINK_HITS"
+    FAIL=$((FAIL + 1))
+fi
 
-# Diagram counts
-check_count "at least one mermaid diagram"  'class="mermaid"'     1
-check_count "mermaid-box wrappers"          'class="mermaid-box"' 1
+# NM -- No-Mermaid-engine assertion (FR-51 / Change 7 / D-012 guardrail)
+# The ~3 MB Mermaid runtime engine is retired in D-012. Any output HTML that still
+# contains the Mermaid engine script or a mermaid.initialize() call is in violation
+# of guardrail C2/C3 (self-contained, no external engine) and FR-51.
+# Checks:
+#   NM.1  No inline Mermaid engine -- the JS bundle declares 'mermaid' as a module
+#          or library; its presence means the engine was not dropped.
+#   NM.2  No mermaid.initialize() call -- the explicit initialization call that D-012
+#          removes. Present = engine still wired in.
+#   NM.3  No <script src> pointing to a CDN Mermaid delivery (cdn.jsdelivr.net/mermaid,
+#          unpkg.com/mermaid, etc.) -- belt-and-suspenders for CDN-sourced engine.
+echo ""
+echo "  [NM: No-Mermaid-engine assertion (FR-51 / D-012)]"
+NM_FAIL=0
+TOTAL=$((TOTAL + 1))
+
+# NM.1: detect inline Mermaid bundle (very large inline script containing 'mermaid')
+# Heuristic: a <script> block longer than 100 KB that contains the mermaid signature.
+# Use awk to find multi-line script blocks and check length.
+INLINE_MERMAID=$(awk '
+    /<script[^>]*>/ { in_script=1; buf="" }
+    in_script { buf = buf $0 "\n" }
+    /<\/script>/ {
+        in_script=0
+        if (length(buf) > 100000 && tolower(buf) ~ /mermaid/) {
+            print "found"
+            exit
+        }
+        buf=""
+    }
+' "$HTML" 2>/dev/null || true)
+
+if [ -n "$INLINE_MERMAID" ]; then
+    echo "  ❌ NM.1 Mermaid engine inline script detected (bundle > 100 KB containing 'mermaid')"
+    NM_FAIL=1
+fi
+
+# NM.2: detect mermaid.initialize() call
+if grep -qE 'mermaid\.initialize\(' "$HTML" 2>/dev/null; then
+    echo "  ❌ NM.2 mermaid.initialize() call detected -- engine still wired in"
+    NM_FAIL=1
+fi
+
+# NM.3: detect CDN-sourced Mermaid engine
+if grep -qE '<script[^>]+src="https?://[^"]*mermaid[^"]*"' "$HTML" 2>/dev/null; then
+    echo "  ❌ NM.3 CDN Mermaid <script src> detected"
+    NM_FAIL=1
+fi
+
+if [ "$NM_FAIL" -eq 0 ]; then
+    echo "  NM. No-Mermaid-engine [PASS] no Mermaid runtime engine or init call in output"
+    PASS=$((PASS + 1))
+else
+    echo "      Fix: ensure GENERATE does not inline the Mermaid engine."
+    echo "      All visuals must be pre-rendered to inline SVG / HTML+CSS at build time."
+    FAIL=1
+fi
 
 # ---------------------------------------------------------------------------
 # L1 — Anchor links resolve to in-page IDs

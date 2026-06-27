@@ -1,0 +1,7 @@
+filename	owner	presence
+data-schemas.md	aid-researcher-analyst	required
+data-pipeline.md	aid-researcher-integrator	required
+coding-standards.md	aid-researcher-analyst	required
+model-cards.md	aid-researcher-architecture	required
+domain-glossary.md	aid-researcher-analyst	required
+decisions.md	aid-researcher-analyst	optional

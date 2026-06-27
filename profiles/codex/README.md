@@ -14,7 +14,7 @@ cp path/to/aid-methodology/codex/AGENTS.md  AGENTS.md
 ```
 
 This gives you:
-- `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills: 10 pipeline + 1 optional `aid-summarize`)
+- `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (13 skills: 10 across five pipeline groups + 3 off-pipeline on-demand)
 - `.codex/agents/{name}.toml` — Agent definitions in Codex TOML format (9 agents with `aid-` prefix)
 - `.codex/aid/scripts/`, `.codex/aid/templates/`, `.codex/aid/recipes/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
@@ -47,9 +47,9 @@ The Reviewer ≥ Executor invariant is enforced: the agent that grades is never 
 
 ## Skills
 
-10 pipeline skills (Phase 0 Init through Phase 9 Triage) plus an optional
-`aid-summarize` for generating a single-file visual HTML summary of the
-Knowledge Base after discovery. See [`.codex/skills/aid-README.md`](.codex/skills/aid-README.md)
+13 skills total: the pipeline phase skills, the optional `aid-summarize` for
+generating a single-file visual HTML summary of the Knowledge Base, plus the
+on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. See [`.codex/skills/aid-README.md`](.codex/skills/aid-README.md)
 for the full list. Skills live in `.codex/skills/` — Codex reads skills from this directory.
 
 Notable mechanisms:

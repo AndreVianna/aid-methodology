@@ -6,9 +6,9 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 12 skills across 5 groups; delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A skill are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 13 skills across 5 groups; delivery (Deploy, Monitor), the summary skill, the on-demand Q&A skill, and the targeted KB update skill are optional. Human and AI co-execute every phase.
 
-**Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`.
+**Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`. Note: "3 meta-documents" is a *role* distinction (generated/process ledgers, review-exempt) — it is orthogonal to the *concern* axis. A standard document (among the 14) may carry an *orientation* concern (cross-cutting, not mapped to a single spine dimension); `external-sources.md` is exactly this: it is a standard, authored, review-eligible KB document whose concern is orientation — orientation on the concern axis does not make a document a meta-document on the role axis.
 
 **Feedback Loop:** A formal pathway for a downstream phase to revise upstream artifacts. Produces a formal record (a Q&A entry in a STATE file, an IMPEDIMENT file, or a MONITOR-STATE finding) with a revision trail.
 
@@ -67,7 +67,9 @@ Terms and concepts used throughout the AID methodology.
 
 **aid-housekeep:** The 11th user-facing skill. On-demand, off the mandatory pipeline — run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
 
-**aid-ask:** The 12th user-facing skill. On-demand, read-only Q&A — answers free-form questions about the project from the Knowledge Base, codebase, and in-flight works, with source citations. Never writes any file. Run from any directory at any phase.
+**aid-query-kb:** The 12th user-facing skill. On-demand Q&A — answers free-form questions about the project from the Knowledge Base, codebase, and in-flight works, with source citations. When context is insufficient, captures the gap as a Query-Gap entry in the KB's Q&A backlog (STATE.md) to feed the KB-improvement loop. Write scope is restricted to the gap-capture path — no KB doc, settings file, or code file is ever written. Run from any directory at any phase.
+
+**aid-update-kb:** The 13th user-facing skill. On-demand targeted KB update — takes a free-form prompt describing what changed and applies the delta to the affected KB docs through the same review gate as `/aid-discover` (ANALYZE→APPLY→REVIEW→APPROVAL→DONE). Human-gated: no change is committed without your explicit `[1] Approved`. Run it to keep the KB current after a change that bypassed the normal discovery cycle.
 
 **aid-summarize:** Optional, idempotent skill that generates `knowledge-summary.html` — an offline HTML viewer of the Knowledge Base. Can be run after any discovery cycle.
 

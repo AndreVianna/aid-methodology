@@ -1,271 +1,288 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: How AID moves from source to running/published software — source control, CI/CD, the multi-profile render, the three distribution channels, versioning/version-sync, the bootstrap installers, and the dashboard runtime.
+summary: Read this for release/deploy/runtime context before any infrastructure-touching work — it maps the canonical→profiles render, release.sh and the GitHub/npm/PyPI channels, the four version carriers, the install bootstrap, and the local dashboard server.
+sources:
+  - release.sh
+  - .github/workflows/release.yml
+  - .github/workflows/docs.yml
+  - .github/workflows/test.yml
+  - .github/workflows/installer-tests.yml
+  - install.sh
+  - install.ps1
+  - .claude/aid/scripts/release/check-version-sync.sh
+  - .claude/skills/generate-profile/SKILL.md
+  - bin/aid
+tags: [C8, infrastructure, ci-cd, release, distribution, versioning, dashboard]
+see_also: [technology-stack.md, integration-map.md, tech-debt.md, test-landscape.md]
+owner: devops
+audience: [developer, devops, architect]
 intent: |
-  Describes the hosting, runtime, build pipeline, distribution, CI/CD, and dev tooling for
-  the AID-methodology repo. There is no conventional runtime infrastructure (no Docker, no
-  cloud, no Terraform). "Infrastructure" here means: the persistent global `aid` CLI (and
-  its four install channels) that puts AID into a target project, the canonical→5-profiles
-  render pipeline driven by run_generator.py, the tag-triggered release pipeline (release.sh
-  + release.yml that cut GitHub Releases and publish the npm/PyPI packages), and the
-  local-filesystem conventions for runtime state. Read this to understand how AID is built,
-  installed, released, and operated on a local workstation.
-contracts: []
+  How AID ships and runs: source control, CI/CD, the multi-profile render, the
+  release pipeline (release.sh + 3 channels), install bootstrap + manifests,
+  versioning/version-sync, and the dashboard server runtime.
+contracts:
+  - "The release tag v<VERSION> is the single trigger that gates + publishes all channels"
+  - "All four version carriers (VERSION, package.json, pyproject.toml, tag) must agree or the release gate fails"
+  - "github-release runs before npm/PyPI so the authoritative artifact channel exists first"
 changelog:
-  - 2026-06-22: housekeep KB-DELTA (Q30) — work-005-profile-generator-simplify (merged). Build-pipeline component table rewritten to the 7-file copy-core model: the 5 per-type renderer rows (render_agents/render_skills/render_templates/render_canonical_scripts/render_recipes) + the 2 emitter self-test rows (test_copilot_emitter/test_antigravity_emitter) DELETED; added the render.py copy-core row; refreshed line counts + the pipeline-flow diagram (now a single render_profile copy_tree pass). CI gate: generator-selftests now render.py --self-test + test_manifest_safety.py; suite count 35->56. Installer CI: documented the new real Windows PowerShell 5.1 lane (re-runs Test-AidInstaller.ps1 under `shell: powershell`) + the static test-ps51-compat.sh AST lint.
-  - 2026-06-05: work-002-auto-installer — installer evolved from setup.sh/setup.ps1 clone+run to a persistent global `aid` CLI (`bin/aid` + `bin/aid.ps1` + `bin/aid.cmd`, shared libs `lib/aid-install-core.sh` + `lib/AidInstallCore.psm1`, bootstrap `install.sh` / `install.ps1`); four install channels (curl/irm bootstrap, npm `aid-installer`, PyPI `aid-installer`, offline `--from-bundle`); added the release pipeline (`release.sh` + `.github/workflows/release.yml`, tag-triggered, OIDC publish) and the cross-platform installer CI (`.github/workflows/installer-tests.yml`); GitHub Releases v0.7.0-v0.7.5 now exist (`VERSION` = 0.7.5). `setup.sh`/`setup.ps1` removed.
-  - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — canonical render pipeline 3→5 profiles (added copilot-cli + antigravity); install menu now 5 tools with the Option-A AGENTS.md last-installed-wins non-interactive collision handler; build-pipeline component table gained the 2 new emitter self-tests (test_copilot_emitter.py, test_antigravity_emitter.py) now wired into the CI generator-selftests step. Verified profiles=5 (`ls profiles/*.toml`).
-  - 2026-05-27: Initial frontmatter added during cycle-1 FIX Phase B
+  - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
+
 # Infrastructure
 
-> **Source:** `aid-researcher` (quality doc-set) (Phase 1), cycle-1
-> **Status:** Complete
-> **Last Updated:** 2026-06-05
-> **Scope:** This repo ships a methodology + a multi-tool distribution. There is **no runtime infrastructure** in the conventional sense — no Docker, no Terraform, no Kubernetes, no cloud account, no managed services. "Infrastructure" here means: the persistent global `aid` CLI (and its four install channels) that puts AID into a target project, the canonical → 5-profiles render pipeline, the tag-triggered release pipeline (GitHub Releases + npm/PyPI), the supporting toolchain (git, gh, python, bash, node, pwsh), and the local-filesystem conventions for runtime state.
+AID is a **methodology delivered as a multi-profile CLI installer** — not a hosted
+application. So "infrastructure" here means *how the toolkit is built, versioned, packaged,
+published, installed, and (optionally) served locally* — not cloud compute. There is **no
+cloud hosting, no containers, no production database, and no always-on server** for AID
+itself; the only long-running process is the optional local dashboard a user starts on their
+own machine.
 
----
+## Contents
 
-## Hosting & Runtime Environment
-
-**Local-only.** AID runs on the maintainer's or end user's workstation, inside whichever AI host tool they have installed (Claude Code / Codex CLI / Cursor IDE / GitHub Copilot CLI / Antigravity). There is no server, no daemon, no port, no cloud presence owned by this project.
-
-| Environment | Where it runs | Operated by |
-|-------------|---------------|-------------|
-| Maintainer build | Local workstation (Windows, macOS, Linux) | The maintainer |
-| End-user runtime | Local workstation, inside Claude Code / Codex / Cursor / Copilot CLI / Antigravity host | The end user |
-| GitHub repo | `github.com/AndreVianna/aid-methodology` | GitHub (managed by AndreVianna account; see user memory `reference_repo-push-access.md`) |
-
-No NAT, no VPN, no firewall rule lives in this repo. No production environment exists.
-
----
-
-## Containerization
-
-**None.**
-
-- No `Dockerfile` anywhere in the repo (confirmed by file-system search).
-- No `docker-compose.yml`, no `Containerfile`, no `.dockerignore`.
-- No mention of Docker / container runtime in any installer (`bin/aid`, `install.sh`, `install.ps1`) or in `CLAUDE.md`.
-
-End users install AID directly into a host filesystem; the host AI tool (Claude Code, etc.) provides whatever isolation it provides.
-
----
-
-## Infrastructure-as-Code
-
-**None.**
-
-- No `*.tf` (Terraform) files.
-- No `*.bicep`, no Pulumi (`*.ts`/`*.py` declaring `pulumi.Stack`), no CloudFormation YAML/JSON.
-- No `serverless.yml`, no `sam.yaml`.
-- No Ansible playbooks, no Chef cookbooks, no Puppet manifests.
-
-The closest analog is the **profile-render pipeline** (see Build Pipeline below), which is declarative-ish (`profiles/*.toml` declare what each install tree should contain).
-
----
-
-## Orchestration / Service Mesh
-
-**None.** No Kubernetes, no Nomad, no service mesh — there are no services to orchestrate.
-
-The closest analog is the **AID parallel pool dispatch model** (work-001 feature-009 — see `canonical/skills/aid-execute/SKILL.md §Pool Dispatch`): `aid-execute` runs a PD-0..PD-6 pool with `MaxConcurrent` capacity to dispatch subagents in parallel. This is in-process scheduling within a single AI host invocation, NOT an orchestration platform.
-
----
-
-## CI / CD Pipeline
-
-The repo runs **three GitHub Actions workflows**: the PR-gate (`test.yml`), the cross-platform installer suite (`installer-tests.yml`), and the tag-triggered release pipeline (`release.yml`).
-
-**CI gate (enforced).** `.github/workflows/test.yml` (added 2026-05-29) runs render-drift + canonical suites + generator self-tests + hygiene on every PR/push and is a required status check for merging to `master` (branch protection enabled 2026-05-29). The suite job invokes `tests/run-all.sh`, which discovers suites by glob (`tests/canonical/test-*.sh`), so the count is not hard-coded (currently 56; see `test-landscape.md`). The `generator-selftests` job additionally runs the Python generator self-tests with `--self-test` (`.github/workflows/test.yml`): `render.py --self-test` (8 copy-core tests) and `test_manifest_safety.py` (pure-mirror deletion safety). (The former per-format emitter self-tests `test_copilot_emitter.py` / `test_antigravity_emitter.py` were deleted with the per-type renderers in work-005-profile-generator-simplify.)
-
-**Installer CI (cross-platform).** `.github/workflows/installer-tests.yml` (`name: Installer CI (cross-platform)`) runs a two-leg matrix: `ubuntu-latest` (`mode: bash-harness`) drives the bash installer/CLI/release suites, and `windows-latest` (`mode: native-ps1`) runs the native PowerShell installer test (under pwsh 7) plus the npm + PyPI Windows channel smokes (pack/build → global install → `aid status`/`aid add`), and additionally re-runs `Test-AidInstaller.ps1` under the built-in `powershell.exe` (**Windows PowerShell 5.1** — the version a fresh Windows box ships — via `shell: powershell`) to catch runtime 5.1 breaks (BOM divergence, TLS handshake) that static analysis cannot. That runtime lane complements the static `tests/canonical/test-ps51-compat.sh` AST lint (in the bash harness). Both legs assert `pwsh` is present so PowerShell coverage cannot silently skip (the `Assert pwsh present` step). This is the runner that exercises the real-Windows path the Linux bash harness cannot.
-
-**Release pipeline (tag-triggered).** `.github/workflows/release.yml` (`name: Release`) fires on `push` of a `v*` tag (with a `workflow_dispatch` escape hatch carrying `ref` + `dry_run` inputs). A `gate` job re-runs the same correctness invariants as `test.yml` (render-drift + canonical suites + generator self-tests) plus the **FR10 version-sync** check (`VERSION` == `packages/npm/package.json` == `packages/pypi/pyproject.toml` == tag) on the tagged commit; all publish jobs sit behind `needs: [gate]` so nothing publishes from an ungated state. Three publish jobs follow: `github-release` (runs `release.sh` to build tarballs + `SHA256SUMS` and `gh release create`), `npm-publish` (gated on repo variable `NPM_ENABLED == 'true'`; `npm publish --provenance --access public`), and `pypi-publish` (gated on `PYPI_ENABLED == 'true'`; `pypa/gh-action-pypi-publish` via Trusted Publishing). The workflow declares least-privilege `permissions: contents: write` (release upload) + `id-token: write` (OIDC for npm provenance + PyPI Trusted Publishing); no long-lived PyPI token is stored. Real GitHub Releases **v0.7.0 through v0.7.5** exist (`gh release list`); `VERSION` = `1.1.0`.
-
-**Published packages.** Two thin-shim packages are published from `packages/`: **npm** `aid-installer` (`packages/npm/package.json`) and **PyPI** `aid-installer` (`packages/pypi/pyproject.toml`). Both vendor the CLI payload (`bin/` + `lib/`) and spawn `bin/aid`; neither carries runtime dependencies. The npm/PyPI publish steps remain blocked behind the `NPM_ENABLED`/`PYPI_ENABLED` repo variables until the registry scope/org + credentials exist (see the external-setup blockers comment block atop `release.yml`); the GitHub Releases channel is live. No Homebrew or Chocolatey channel exists.
-
----
-
-## Build Pipeline (the "infrastructure" of this repo)
-
-The canonical → 5-profiles render is the **only build artifact pipeline** in the codebase (the 5 profiles: claude-code, codex, cursor, copilot-cli, antigravity — `ls profiles/*.toml`). It is fully local, fully deterministic, and has no external dependencies beyond Python 3.11+.
-
-| Component | Path | Lines | Purpose |
-|-----------|------|-------|---------|
-| Generator entrypoint | `.claude/skills/generate-profile/scripts/run_generator.py` | 90 | Loops `profiles/*.toml` (5 profiles: claude-code, codex, cursor, copilot-cli, antigravity), calls `render_profile` (single copy pass per profile), runs VERIFY (deterministic) + VERIFY (advisory) |
-| Profile parser | `.claude/skills/generate-profile/scripts/aid_profile.py` | 306 | Parses TOML, validates schema |
-| Manifest harness | `.claude/skills/generate-profile/scripts/render_lib.py` | 883 | Emission-manifest + shared utils (`rewrite_install_paths`, `sha256_hex`, `write_output_file`); pure-mirror deletion logic |
-| Copy core | `.claude/skills/generate-profile/scripts/render.py` | 1012 | The single copy generator — `copy_tree` over `canonical/{agents,skills,aid}` (agents/skills translated, aid verbatim) + dormant Codex-TOML branch. Replaced the 5 deleted per-type renderers (work-005-profile-generator-simplify). Carries `render.py --self-test` (8 copy-core tests). |
-| Strict verifier | `.claude/skills/generate-profile/scripts/verify_deterministic.py` | 488 | VERIFY (deterministic) — re-renders via `render_profile`, re-run byte-identical guarantee |
-| Advisory verifier | `.claude/skills/generate-profile/scripts/verify_advisory.py` | 358 | VERIFY (advisory) — advisory checks |
-| Generator self-tests | `.claude/skills/generate-profile/scripts/test_manifest_safety.py` | 254 | Internal correctness tests (pure-mirror deletion safety) |
-
-Pipeline flow (per `run_generator.py`, the `for profile_path in sorted(profiles_dir.glob('*.toml'))` loop):
-
-```
-profiles/*.toml ─┐
-                 ▼
-          load_profile + validate
-                 ▼
-   render_profile (single copy_tree pass: canonical/agents + canonical/skills + canonical/aid)
-                 ▼
-   diff prev manifest → delete removed files → prune empty parents
-                 ▼
-       write emission-manifest.jsonl
-                 ▼
-   VERIFY (deterministic) (strict — must pass, exits 1 on failure: `run_generator.py` `run_verify` call)
-                 ▼
-   VERIFY (advisory) (advisory — reports counts only: `run_generator.py` `run_advisory` call)
-```
-
-**Note (Q2 resolution, cycle-1):** `run_generator.py` previously wrote VERIFY (deterministic) / VERIFY (advisory) reports to `.aid/work-002-canonical-generator/`. That write was eliminated by passing `report_path=None`; the directory is no longer created or required.
-
----
-
-## Install Pipeline (the `aid` CLI + four channels)
-
-The end-user install entrypoint is a **persistent global `aid` CLI**, not a clone-and-run script. It is bootstrapped once per machine, then invoked per project with subcommands. (The former `setup.sh` / `setup.ps1` clone+run installers were removed by work-002-auto-installer.)
-
-**CLI layout.** The dispatcher and shared engine live at the repo root and are extracted into `$AID_HOME` (default `~/.aid` on Unix, `%LOCALAPPDATA%\aid` on Windows) at bootstrap:
-
-| Component | Path | Platform |
-|-----------|------|----------|
-| Bash dispatcher | `bin/aid` | macOS, Linux, WSL, git-bash |
-| PowerShell dispatcher | `bin/aid.ps1` | Windows |
-| cmd.exe shim | `bin/aid.cmd` | Windows (resolves `aid` in cmd.exe; tries `pwsh` then `powershell`) |
-| Bash install-core | `lib/aid-install-core.sh` | sourced by `bin/aid` and by `install.sh` in piped mode |
-| PowerShell install-core | `lib/AidInstallCore.psm1` | imported by `bin/aid.ps1` and by `install.ps1` |
-| Bash bootstrap | `install.sh` | curl-piped first install (`curl -fsSL …/install.sh \| bash`) |
-| PowerShell bootstrap | `install.ps1` | irm-piped first install (`irm …/install.ps1 \| iex`) |
-
-`bin/aid` parses the subcommand and dispatches into `lib/aid-install-core.sh`, operating on the current working directory (`--target` / `AID_TARGET` overrides). Subcommands: `aid` (bare → project dashboard), `aid status`, `aid add <tool>[,...]`, `aid update [<tool>... | self]`, `aid remove [<tool>... | self]`, `aid version`. Shared flags: `--from-bundle <path>` (offline install), `--version <v>` (pin a release), `--force`, `--target <dir>`, `--verbose`. The tools are the five profile names: `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity` (`bin/aid` `_aid_usage`).
-
-**Four install channels.** All four deliver the same `aid` CLI:
-
-| Channel | First-install command | Source |
-|---------|-----------------------|--------|
-| curl/irm bootstrap | `curl -fsSL …/install.sh \| bash` / `irm …/install.ps1 \| iex` | `install.sh`, `install.ps1` |
-| npm | `npm i -g aid-installer` (or `npx aid-installer add <tool>`) | `packages/npm/` → published `aid-installer` |
-| PyPI | `pipx install aid-installer` (or `pip install --user aid-installer`) | `packages/pypi/` → published `aid-installer` |
-| Offline / air-gapped | download a release tarball, verify against `SHA256SUMS`, then `aid add <tool> --from-bundle <path>` | GitHub Releases assets |
-
-The npm and PyPI packages are **thin shims**: `packages/npm/bin/aid.js` and `packages/pypi/aid_installer/__main__.py` vendor the `bin/` + `lib/` payload and spawn `bin/aid` (Unix) or `bin/aid.ps1` (Windows, `pwsh` then `powershell`), injecting `AID_INSTALL_CHANNEL=npm`/`pypi` so that `aid update self` prints the channel-correct upgrade hint (`npm i -g aid-installer@latest` / `pipx upgrade aid-installer`) instead of re-bootstrapping (`bin/aid` `AID_INSTALL_CHANNEL` guard).
-
-**Bootstrap trust model.** The piped bootstrap fetches the `aid-cli-v<VERSION>.tar.gz` bundle from the matching GitHub Release and verifies its SHA-256 against the release `SHA256SUMS` before extracting into `$AID_HOME` and wiring PATH (`install.sh` `_source_install_core` / bundle-verify block). `aid add` likewise verifies each downloaded profile tarball against `SHA256SUMS`.
-
-**FR11 protect-on-diff.** When `aid add`/`aid update` would overwrite a root agent file (`CLAUDE.md` / `AGENTS.md`) the user authored themselves, the incoming version is written as `*.aid-new` for review rather than overwriting silently (per `docs/install.md` `## Protect-on-diff for root agent files`).
-
-**FR12 invariant root `AGENTS.md`.** The four AGENTS.md-writing tools (Codex, Cursor, Copilot CLI, Antigravity) now ship a **byte-identical** root `AGENTS.md`; a CI guard (`tests/canonical/test-agents-md-invariant.sh`) asserts the four profile copies are identical, replacing the former last-installed-wins Option-A collision dance.
-
-The install/CLI/release surface is covered by the `tests/canonical/test-install*.sh`, `test-aid-cli*.sh`, and `test-release*.sh` suites plus `tests/windows/Test-AidInstaller.ps1` (native Windows), all run by `installer-tests.yml` (see CI / CD Pipeline above and `test-landscape.md`).
+- [Source Control](#source-control)
+- [The Build: Multi-Profile Render](#the-build-multi-profile-render)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Versioning and Version-Sync](#versioning-and-version-sync)
+- [The Release Pipeline](#the-release-pipeline)
+- [Distribution Channels](#distribution-channels)
+- [Install Bootstrap and Manifests](#install-bootstrap-and-manifests)
+- [The Documentation Site](#the-documentation-site)
+- [Runtime: The Dashboard Server](#runtime-the-dashboard-server)
+- [Project Management Tooling](#project-management-tooling)
+- [Hosting / Containers / Data — None](#hosting--containers--data--none)
+- [Release Commands](#release-commands)
+- [Change Log](#change-log)
 
 ---
 
 ## Source Control
 
-**Git + GitHub.**
+| Property | Value |
+|---|---|
+| VCS | Git |
+| Hosting | GitHub (`AndreVianna/aid-methodology`, repo slug per `release.yml` Trusted-Publisher config) |
+| Default branch | `master` (branch-protected: PR + passing checks required) |
+| Bot identity | The agent pushes as a **non-admin** bot and CANNOT push to `master` — always via PR |
+| Delivery branch naming | `aid/work-NNN-delivery-NNN` (work-scoped, to avoid cross-work collisions) |
+| Line endings | Enforced LF for `*.sh` (CI `kb-hygiene` rejects committed CRLF; see `.gitattributes`) |
+| `core.fileMode` | Maintained `false`; CI sets it false so exec-bit diffs are not spurious drift |
 
-| Aspect | Value | Evidence |
-|--------|-------|----------|
-| VCS | Git | `.git/` directory present |
-| Hosting | GitHub | per user memory `reference_repo-push-access.md` (account `AndreVianna`) |
-| Repo URL | `github.com/AndreVianna/aid-methodology` | per user memory |
-| Default branch | `master` | git remote info |
-| Current working branch | current working branch — `git branch --show-current` (volatile; not pinned here) | git status |
-| Branch convention | Per-`work-NNN` persistent branch off master; no per-task / per-feature branches | `coding-standards.md §7f`; user memory `feedback_single-branch-work.md` |
-
-Recent merge history is volatile temporal data (T4) and is not pinned here — read it live with `git log --oneline --merges -20`.
-
-Branch protection on `master` (per `gh api repos/AndreVianna/aid-methodology/branches/master/protection`, reconciled 2026-06-03):
-- **Required pull request reviews:** 1 approving review required; stale reviews dismissed on new push; code-owner reviews NOT required; last-push approval NOT required
-- **Required signatures:** disabled
-- **Enforce admins:** disabled (admins can bypass)
-- **Required linear history:** disabled (merge commits allowed)
-- **Force pushes:** blocked
-- **Branch deletion:** blocked
-- **Conversation resolution required before merge:** enabled
-- **Branch lock:** disabled
+CONFIRMED via the workflow files + `.gitattributes` + the `kb-hygiene` CRLF check in
+`.github/workflows/test.yml`.
 
 ---
 
-## Project Management
+## The Build: Multi-Profile Render
 
-**Lives on GitHub.** Issues + Pull Requests are the project-management substrate; the repo carries no `JIRA`-style identifier, no `roadmap.md`, no Linear / Asana / Trello integration.
+AID's "build" is a render, not a compile. The single source of truth is `canonical/`; a
+Python generator renders it into five per-tool install trees under `profiles/`.
 
-The `gh` CLI is the maintainer's primary tool for PR creation, issue triage, and release operations — confirmed by:
-- User memory `reference_repo-push-access.md` (gh CLI account requirement).
-- `canonical/templates/long-wait-protocol.md` and similar docs assume `gh` is available.
+- **Generator:** `python .claude/skills/generate-profile/scripts/run_generator.py` (the
+  `generate-profile` skill; maintainer-only, the lone skill outside `canonical/`).
+- **Profiles produced:** `claude-code`, `codex`, `cursor`, `copilot-cli`, `antigravity`
+  (derived from `ls profiles/*.toml`).
+- **Safety boundary:** the generator only writes/deletes files it previously emitted, recorded
+  per profile in `profiles/{tool}/emission-manifest.jsonl`; user-created files inside install
+  trees are never touched.
+- **Drift gate:** CI (`test.yml` `render-drift`) and the release `gate` re-run the generator
+  and `git diff --exit-code -- profiles/`; any uncommitted drift fails the build. So
+  `profiles/` is treated as committed build output that must always equal a fresh render.
 
----
-
-## Toolchain (the dev/runtime dependencies)
-
-| Tool | Version | Used for | Evidence |
-|------|---------|----------|----------|
-| Python | 3.11+ (stdlib `tomllib`) | Generator pipeline | `.claude/skills/generate-profile/scripts/render_lib.py` `Requirements: Python 3.11+` |
-| Python | 3.8+ (`requires-python`) | PyPI `aid-installer` package build (hatchling) + shim runtime | `packages/pypi/pyproject.toml` `requires-python = ">=3.8"`; `[build-system] requires = ["hatchling"]` |
-| Node | 18+ (`engines.node`) | npm `aid-installer` package + shim runtime | `packages/npm/package.json` `"engines": { "node": ">=18" }` |
-| Bash | POSIX-compatible | All `canonical/scripts/` + `tests/canonical/` + `bin/aid` + `install.sh` + `lib/aid-install-core.sh` | `#!/usr/bin/env bash` at top of every script |
-| PowerShell | 5.1+ | `bin/aid.ps1` + `install.ps1` + `lib/AidInstallCore.psm1` + `assemble-3part.ps1` | `assemble-3part.ps1` `#Requires -Version 5.1`; the npm/PyPI shims try `pwsh` then `powershell` on Windows |
-| Node | 18+ | `aid-summarize` validators (`*.mjs`) + Mermaid CLI | `README.md` `Node 18+` requirements bullet (per scout) |
-| Git | any modern | VCS | implicit |
-| GitHub CLI (`gh`) | any modern | PR/issue/release operations | user memory; called by AID docs |
-| curl | any modern | `fetch-mermaid.sh` outbound HTTPS (pinned jsdelivr download only) | `canonical/scripts/summarize/fetch-mermaid.sh` `curl -sSf --max-time 120` |
-| sha256sum or shasum | any | `fetch-mermaid.sh` SHA verify (cache-hit + post-download) | `canonical/scripts/summarize/fetch-mermaid.sh` `compute_sha256()` + the two `EXPECTED_SHA256` mismatch guards |
-| yq (optional) | any | `read-setting.sh` defers to it for complex YAML | `canonical/scripts/config/read-setting.sh` `install yq and the script will defer to it` |
+CONFIRMED in `.claude/skills/generate-profile/SKILL.md` + `.github/workflows/test.yml`.
 
 ---
 
-## Runtime State / Local Filesystem Conventions
+## CI/CD Pipeline
 
-These directories function as "infrastructure" at runtime — they hold ephemeral or per-project state:
+Four GitHub Actions workflows. See `test-landscape.md` for the test detail; the
+release/deploy view:
 
-| Path | Purpose | Gitignored? |
-|------|---------|-------------|
-| `.aid/knowledge/` | Knowledge Base output (this scout's target) | **No** — KB is committed |
-| `.aid/.heartbeat/` | Per-subagent heartbeat files (visibility patch L3) | Yes — `.gitignore` `.aid/.heartbeat/` entry (explicit) |
-| `.aid/.temp/` | Scratch | Yes — explicit `.gitignore` entry (`.aid/.temp/`) |
-| `.aid/generated/` | Build outputs the maintainer wants to track (`project-index.md`) | **No** — selectively committed |
-| `.aid/templates/` | Runtime template copies | **No** — committed |
-| `.aid/settings.yml` | AID pipeline configuration (single source of truth) | **No** — committed |
-| `.aid/knowledge/.cache/` | Mermaid JS cache (per `fetch-mermaid.sh`; cache file is SHA-verified before use) | Yes — `.gitignore` `.aid/knowledge/.cache/` entry |
-| `.claude/worktrees/` | Claude Code worktree state (legacy; worktrees are RETIRED per `coding-standards.md §7f`) | Yes — `.gitignore` `.claude/worktrees/` entry |
-| `.claude/settings.local.json` | Per-developer Claude Code overrides | Yes — `.gitignore` `.claude/settings.local.json` entry |
+| Workflow | Trigger | Role |
+|---|---|---|
+| `.github/workflows/test.yml` | push/PR to `master` | Correctness gate: render-drift, full canonical suite, visual-fidelity, generator self-tests, KB/repo hygiene |
+| `.github/workflows/installer-tests.yml` | push to any non-`master` branch | Cross-platform installer/CLI/release validation (ubuntu bash-harness + windows native-ps1) so feature branches are validated remotely |
+| `.github/workflows/release.yml` | push of a `v*` tag (or `workflow_dispatch`) | Gate → build → publish all channels |
+| `.github/workflows/docs.yml` | push to `master` (site/docs/VERSION paths) + `release: published` | Build the Astro site and deploy to GitHub Pages |
+
+CONFIRMED by each workflow's `on:` block.
 
 ---
 
-## Network Egress
+## Versioning and Version-Sync
 
-The **single outbound HTTP call** in the entire codebase is `canonical/scripts/summarize/fetch-mermaid.sh`:
+- **Scheme:** semantic versioning. Current `VERSION` = `1.1.1` (CONFIRMED via `cat VERSION`).
+- **Source of truth:** the single-line `VERSION` file at the repo root.
+- **Carriers (must all agree):** (1) `VERSION`, (2) `packages/npm/package.json` `version`,
+  (3) `packages/pypi/pyproject.toml` `[project].version`, (4) the git tag `v<VERSION>`.
+- **Gate:** `bash canonical/aid/scripts/release/check-version-sync.sh --expect <ver>` asserts
+  all present carriers equal the expected version; the release `gate` job runs it before any
+  packaging. A manifest that is present is always checked; an absent manifest is skipped only
+  when its channel is not enabled. CONFIRMED in `check-version-sync.sh`.
+- **Release history:** lives in `.aid/knowledge/release-tracking.md` (`[NEW]`/`[CHANGE]`/`[FIX]`,
+  newest-first); the root `RELEASE_NOTES.md` is retired.
 
-- `https://cdn.jsdelivr.net/npm/mermaid@11.15.0/dist/mermaid.min.js` (the `URL=` assignment) — JS download for the pinned version
-
-The npm registry (`registry.npmjs.org/mermaid/latest`) is no longer queried. The version is derived from the `PINNED_VERSION` constant; `LATEST` is set via `${PINNED_VERSION#v}` — no outbound lookup.
-
-The download is SHA-verified against the `EXPECTED_SHA256` constant on the post-download path (the second `EXPECTED_SHA256` mismatch guard, just before the `# Write meta` block). The cached file is also SHA-verified before use on the cache-hit path (the first `EXPECTED_SHA256` mismatch guard, inside the cache-hit branch). A `.meta` file records version metadata but is treated as untrusted — only the SHA comparison is the actual trust boundary.
-
-No other script makes outbound HTTPS. No telemetry, no analytics, no auto-update check.
-
-**Supply-chain posture:** C1 (unpinned fetch) is resolved — see `tech-debt.md` C1 (RESOLVED 2026-05-29).
-
----
-
-## Disaster Recovery / Backups
-
-**Not applicable.** The repo IS the artifact; GitHub holds the canonical copy. There is no production database to back up. Recovery from a destructive local edit = `git reset` / `git checkout` against `origin/master`.
-
-The relevant historical incident: PR #12 lost 63 commits via worktree sprawl, recovered via PR #13 (per user memory `feedback_single-branch-work.md`). The single-branch-work convention is the operational mitigation; no automated DR exists.
+**Gotcha:** bump all four carriers together, or the release gate fails. See `tech-debt.md`.
 
 ---
 
-## Monitoring / Observability
+## The Release Pipeline
 
-**None at runtime** — there's no service to monitor.
+Primary path: a maintainer pushes a `v<VERSION>` tag → one tag drives all channels.
+CONFIRMED in `.github/workflows/release.yml`.
 
-In-loop observability (during an AID skill invocation):
-- **L1 traceability** — `[State: NAME]` markers in every subagent dispatch (per `coding-standards.md §5a`).
-- **L2 traceability** — ETA bracket pairs (▶/✓) on long-running dispatches (per `coding-standards.md §5b`).
-- **L3 traceability** — heartbeat files in `.aid/.heartbeat/` updated by every long-running subagent at a configurable interval (default 1 minute per `.aid/settings.yml` `heartbeat_interval`).
+Job order and dependencies:
+1. **`gate`** — checks out the tagged commit; derives the bare semver from the tag; runs
+   version-sync, render-drift, the full canonical suite, and the generator self-tests on that
+   exact commit. (KB-hygiene checks are deliberately not re-run here — they are repo hygiene,
+   not release correctness.) Emits the version as a job output.
+2. **`github-release`** (`needs: gate`) — runs `release.sh` to build artifacts and create the
+   GitHub Release. Runs first so the authoritative artifact channel exists before the package
+   registries are hit.
+3. **`npm-publish`** + **`pypi-publish`** (`needs: gate, github-release`) — publish to npm and
+   PyPI in parallel; each is gated by `NPM_ENABLED` / `PYPI_ENABLED` repo variables and is
+   idempotent on re-run (npm `npm view` pre-check; PyPI `skip-existing`).
 
-Calibration is logged unconditionally — per `coding-standards.md §5c` and user memory `feedback_traceability-unconditional.md`. This is observability of the *agentic pipeline itself*, not of any deployed system.
+`release.sh` itself (the maintainer runbook script): asserts a clean worktree, re-verifies
+render state (render-drift), stages `.aid/.temp/release-<VERSION>/`, packages **five
+per-profile tarballs + one CLI bundle (`aid-cli-v<VERSION>.tar.gz`) + the two installer libs +
+`SHA256SUMS`**, then `gh release create` (or `gh release upload --clobber` for idempotent
+recovery re-runs). `--dry-run` stages artifacts and stops before any network I/O; `--sign` is
+deferred (exits non-zero). Exit codes: 0 ok, 1 general, 2 usage, 3 version mismatch, 4 tag
+conflict. CONFIRMED in `release.sh`.
+
+---
+
+## Distribution Channels
+
+Three channels, all from the same tag:
+
+| Channel | Artifact(s) | How built | Auth |
+|---|---|---|---|
+| GitHub Releases | 5 profile tarballs + `aid-cli-v*.tar.gz` + `aid-install-core.sh` + `AidInstallCore.psm1` + `SHA256SUMS` | `release.sh` via `gh release create` | built-in `GITHUB_TOKEN` (`contents: write`) |
+| npm (`aid-installer`) | npm package vendoring the aid-cli payload | `packages/npm/scripts/vendor.js` runs at `prepack`; `npm publish --provenance` | OIDC Trusted Publishing (token-less; optional classic `NPM_TOKEN` fallback) |
+| PyPI (`aid-installer`) | sdist + wheel vendoring the aid-cli payload | hatchling build hook `packages/pypi/scripts/vendor.py`; `python -m build` | OIDC Trusted Publishing via `pypa/gh-action-pypi-publish` (PEP 740 attestations) |
+
+The npm and PyPI channels are correct but currently **blocked on external account setup**
+(scope/org not yet provisioned; `NPM_ENABLED` / `PYPI_ENABLED` = false) — see `tech-debt.md`
+M1. Until enabled, releases publish to GitHub Releases only. CONFIRMED in `release.yml`
+header.
+
+---
+
+## Install Bootstrap and Manifests
+
+End users install via one of:
+
+- **Bash bootstrap:** `bash install.sh` (or `curl … | bash`) — installs the global `aid` CLI
+  into `$AID_HOME` (default `~/.aid`) and wires PATH; `bash install.sh add <tool>` bootstraps
+  then runs `aid add` in the current repo.
+- **PowerShell bootstrap:** `install.ps1` (`irm … | iex`) — installs into `%LOCALAPPDATA%\aid\`.
+- **Package managers:** `npm i -g aid-installer` / `pipx install aid-installer` put `aid` on
+  PATH once the channels are enabled.
+
+The bootstrap fetches the CLI bundle + libs from the **pinned release tag** and verifies them
+against `SHA256SUMS` before sourcing — the GitHub Release is the trust root (see `tech-debt.md`
+Security Observations).
+
+**The five install manifests (lockstep invariant):** the dashboard server+reader file set is
+vendored independently by `install.sh`, `install.ps1`, `packages/npm/scripts/vendor.js`,
+`packages/pypi/scripts/vendor.py`, and `release.sh` (the CLI bundle). All five must stay
+byte-lockstep on that file set or one channel silently provisions the wrong files. CONFIRMED
+in `release.sh` (the `home.html` lockstep comment names the other four). See `tech-debt.md` H1.
+
+---
+
+## The Documentation Site
+
+A standalone Astro Starlight site under `site/` (separate build, own `package.json` /
+`node_modules` / `dist/`), deployed to **GitHub Pages at https://aid.casuloailabs.com**.
+`docs.yml` runs `npm ci && npm run build` (with a build-time fetch of `VERSION` + the GitHub
+Releases API for version injection) and deploys via `actions/deploy-pages`. It is decoupled
+from `release.yml` — it merely *listens* for `release: published` to refresh release-bound
+content. CONFIRMED in `.github/workflows/docs.yml`.
+
+---
+
+## Runtime: The Dashboard Server
+
+The one component AID *runs* is a local, read-only web dashboard over `.aid/` pipeline state.
+
+| Property | Value |
+|---|---|
+| Command | `aid dashboard start <node\|python> [--remote] [--port <n>]` / `aid dashboard stop` |
+| Implementations | Node (`dashboard/server/server.mjs`) and Python (`dashboard/server/server.py`) |
+| Scope | Machine-level: serves all registered projects; CLI home page at `/` |
+| Bind | `127.0.0.1` only; `--remote` is a clear-fail stub (exit 10) — cannot accidentally expose state |
+| State home | `$AID_HOME` (env-overridable; default `~/.aid`); pid/log under `$AID_HOME/.temp/dashboard.pid` |
+| Lifecycle | `start` exits 8 if already running; `stop` is idempotent (exit 0) |
+
+CONFIRMED in `bin/aid` (dashboard help block) + `installer-tests.yml` dashboard smoke test
+(exit-code contract).
+
+The dashboard reader (`dashboard/reader/*.py`) parses `.aid/work-NNN/STATE.md`
+(Pipeline Status + Tasks Status) plus the KB — `STATE.md` is the tracking spine the reader and
+`/aid-execute` both consume.
+
+---
+
+## Project Management Tooling
+
+**No external project-management tool** (Jira/Azure Boards/etc.). All work, tasks, and
+deliverables are tracked **in-repo** in `.aid/work-NNN-*/STATE.md` files (the tracking spine),
+plus `.aid/knowledge/STATE.md` for cross-phase process state. GitHub Issue templates exist
+(`.github/ISSUE_TEMPLATE/feedback.yml`) for user feedback, and `.github/dependabot.yml` tracks
+dependency updates. CONFIRMED via `.aid/settings.yml` + the `.github/` listing.
+
+---
+
+## Hosting / Containers / Data — None
+
+Explicit "none" for stages that do not exist (per the C8 floor — do not assume a stage is
+present):
+
+| Stage | Present? |
+|---|---|
+| Cloud provider / compute hosting | **None** — AID is installed into the user's repo; nothing is hosted |
+| Containers (Docker/K8s) | **None** in the product (a Docker channel×path E2E grid was built then retired as over-built) |
+| Production database | **None** — state is plain files under `.aid/` |
+| Always-on server | **None** — only the optional, local, localhost-bound dashboard |
+| Infrastructure-as-Code | **None** |
+| Monitoring / APM / alerting | **None** (no runtime to monitor) |
+
+CONFIRMED — no Dockerfile/Terraform/Helm/cloud config exists in the tracked tree; the sole
+"deployment" is GitHub Pages for the docs site.
+
+---
+
+## Release Commands
+
+```bash
+# Verify version-sync across all carriers (release-gate parity)
+bash canonical/aid/scripts/release/check-version-sync.sh --expect "$(tr -d '[:space:]' < VERSION)"
+
+# Re-render from canonical and assert no profile drift (build parity)
+python .claude/skills/generate-profile/scripts/run_generator.py && git diff --exit-code -- profiles/
+
+# Stage release artifacts WITHOUT publishing (no network I/O)
+bash release.sh --version "$(tr -d '[:space:]' < VERSION)" --dry-run
+
+# Cut the GitHub Release (maintainer; needs gh + clean worktree)
+bash release.sh --version "$(tr -d '[:space:]' < VERSION)"
+
+# The end-to-end channel path is normally driven by pushing the tag:
+#   git tag v$(tr -d '[:space:]' < VERSION) && git push origin v$(...)   # triggers release.yml
+
+# Start / stop the local dashboard
+aid dashboard start node --port 8799
+aid dashboard stop
+```
+
+---
+
+## Change Log
+
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | 2026-06-25 | aid-discover | Initial infrastructure mapping (quality deep-dive) |

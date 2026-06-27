@@ -47,18 +47,11 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
-        # The .mjs summarize-validator suites (validate-diagrams, contrast-check)
+        # The .mjs summarize-validator suites (validate-visuals, contrast-check)
         # shell out to `node`; pin it so the suites gate reliably rather than
         # depending on whatever the runner image happens to ship.
         with:
           node-version: '20'
-      - name: Cache the pinned Mermaid library
-        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
-        with:
-          path: .aid/knowledge/.cache/mermaid.min.js
-          key: mermaid-v11.15.0
-      - name: Pre-seed pinned Mermaid (SHA-verified; hermetic after first run)
-        run: bash canonical/aid/scripts/summarize/fetch-mermaid.sh
       - name: Make helper + test scripts executable
         # Committed 100644 (the repo is authored on Windows); several suites invoke
         # their SUT directly (e.g. "$WRITEBACK"), which needs the exec bit on Linux.
@@ -78,6 +71,49 @@ jobs:
         # Single entrypoint shared with local dev (`bash tests/run-all.sh`); discovers
         # suites by glob, runs each under timeout 300, emits ::group::/::error:: under CI.
         run: bash tests/run-all.sh
+
+  visual-fidelity:
+    name: visual-fidelity gate (Playwright headless render)
+    runs-on: ubuntu-24.04
+    # This job is isolated to the summarize visual-fidelity gate so it does not
+    # slow unrelated lanes. It validates every authored inline SVG / HTML+CSS visual
+    # in kb.html against the §7 bar: readable text, minimal/zero overlap, correct layout.
+    # Graceful degradation: exits 0 with a clear SKIP message if kb.html is absent
+    # (the gate only fires once the summary has been generated; a missing kb.html means
+    # the file has not been built in this branch yet, not a validation failure).
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: '20'
+      - name: Install Playwright + deps (pinned; reproducible)
+        working-directory: canonical/aid/scripts/summarize
+        run: |
+          npm ci
+          npx playwright install chromium --with-deps
+      - name: Run visual-fidelity gate (validate-visuals.mjs)
+        shell: bash
+        # Graceful degradation contract (mirrors how environment-dependent tests are guarded
+        # elsewhere in this repo):
+        # - If kb.html is absent: SKIP with a clear warning (the gate requires a generated
+        #   summary; no kb.html = not yet built in this branch, not a gate failure).
+        # - If validate-visuals.mjs is absent: SKIP with a clear warning (task-074 has not
+        #   yet landed; the provisioning is ready but the validator is not yet written).
+        # - If Playwright reports a visual defect: FAIL (a generation defect blocks DONE).
+        run: |
+          VALIDATOR="canonical/aid/scripts/summarize/validate-visuals.mjs"
+          SUMMARY=".aid/dashboard/kb.html"
+          if [[ ! -f "$SUMMARY" ]]; then
+            echo "SKIP: $SUMMARY not present in this branch — visual-fidelity gate requires a generated summary."
+            echo "      Generate kb.html via /aid-summarize then re-run this check."
+            exit 0
+          fi
+          if [[ ! -f "$VALIDATOR" ]]; then
+            echo "SKIP: $VALIDATOR not yet present — task-074 (validator implementation) has not landed."
+            echo "      Playwright is provisioned and ready; the validator will be wired by task-074."
+            exit 0
+          fi
+          node "$VALIDATOR" "$SUMMARY"
 
   generator-selftests:
     name: generator unit self-tests
@@ -113,6 +149,50 @@ jobs:
         run: |
           git check-ignore -q .aid/.temp/probe || { echo "::error::.aid/.temp/ not gitignored"; exit 1; }
           [ -z "$(git ls-files .aid/.temp/)" ] || { echo "::error::tracked files under .aid/.temp/"; exit 1; }
+      - name: Frontmatter lint (f001 soft-skip -- stays green until f011 migrates docs)
+        shell: bash
+        run: |
+          bash canonical/aid/scripts/kb/lint-frontmatter.sh --root .aid/knowledge
+      - name: AID-CI strict assertion -- every AID primary/extension KB doc carries required fields (f011 task-020; green after task-022 corpus migration)
+        shell: bash
+        # AID-repo-local strict guard (NOT a change to the shipped lint-frontmatter.sh).
+        # Asserts that every primary/extension KB doc in AID's own repo carries the
+        # f001 required fields (objective, summary, sources), guarding against an
+        # un-migrated doc sneaking into AID's repo after f011 migrates the corpus.
+        #
+        # Ordering: this step is added in task-020 and becomes green once task-022
+        # migrates AID's full corpus (all 16 docs) in the same delivery-003 PR.
+        # meta docs and source:generated docs remain permanently out of scope (same
+        # as the shipped lint). The retained soft-skip in the shipped lint is NOT
+        # applicable here: this assertion is strict -- docs missing required fields fail.
+        run: |
+          fail=0
+          while IFS= read -r f; do
+            cat=$(awk 'BEGIN{in_fm=0}/^---$/{in_fm=!in_fm;if(NR>1&&!in_fm)exit;next}in_fm&&/^kb-category:/{sub(/^kb-category:[[:space:]]*/,"");print;exit}' "$f")
+            cat="${cat:-primary}"
+            src=$(awk 'BEGIN{in_fm=0}/^---$/{in_fm=!in_fm;if(NR>1&&!in_fm)exit;next}in_fm&&/^source:/{sub(/^source:[[:space:]]*/,"");print;exit}' "$f")
+            src="${src:-hand-authored}"
+            # Skip: meta docs
+            [[ "$cat" == "meta" ]] && continue
+            # Skip: source: generated docs
+            [[ "$src" == "generated" ]] && continue
+            # Only primary and extension categories
+            [[ "$cat" != "primary" && "$cat" != "extension" ]] && continue
+            doc=$(basename "$f")
+            # Check required fields
+            has_obj=$(awk 'BEGIN{in_fm=0}/^---$/{in_fm=!in_fm;if(NR>1&&!in_fm)exit;next}in_fm&&/^objective:/{print "1";exit}' "$f")
+            has_sum=$(awk 'BEGIN{in_fm=0}/^---$/{in_fm=!in_fm;if(NR>1&&!in_fm)exit;next}in_fm&&/^summary:/{print "1";exit}' "$f")
+            has_src=$(awk 'BEGIN{in_fm=0}/^---$/{in_fm=!in_fm;if(NR>1&&!in_fm)exit;next}in_fm&&/^sources:/{print "1";exit}' "$f")
+            if [[ -z "$has_obj" || -z "$has_sum" || -z "$has_src" ]]; then
+              echo "::error::AID-CI strict: $doc is missing required field(s): objective=${has_obj:-ABSENT} summary=${has_sum:-ABSENT} sources=${has_src:-ABSENT}"
+              fail=1
+            fi
+          done < <(find .aid/knowledge -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
+          if [[ "$fail" -eq 1 ]]; then
+            echo "::error::AID-CI strict assertion FAILED -- run task-022 corpus migration then re-check"
+            exit 1
+          fi
+          echo "AID-CI strict assertion PASSED"
       - name: INDEX.md is fresh (regenerate + diff, timestamps filtered)
         shell: bash
         run: |

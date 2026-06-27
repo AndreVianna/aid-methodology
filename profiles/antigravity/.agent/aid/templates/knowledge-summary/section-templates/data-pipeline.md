@@ -1,10 +1,26 @@
 ---
-profile: data-pipeline
-target_diagrams: 5
-notes: "ETL and streaming pipelines — stage transforms, lineage, and sources/sinks are central."
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for data-pipeline-domain KB docs, keyed by kb-category tier and
+        doc identity — not by project-type. The section set is derived from the resolved
+        doc-set + frontmatter, not from this template."
 ---
 
-# Section Template — `data-pipeline` Profile
+# Rendering Hints — Data Pipeline Domain Docs
+
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `data-pipeline` or `etl`
+> and the resolved doc-set contains the listed docs.
+
+---
+
+## Original section structure (preserved as rendering reference)
+
+The following layout was the data-pipeline profile's fixed section order. It is **not
+selected as a template**; it is kept as domain-specific rendering guidance. The resolved
+doc-set order (from `state-profile.md` §4) is authoritative.
 
 For ETL / streaming / data-pipeline projects. Stage transforms, lineage, and
 sources/sinks are central.
@@ -23,7 +39,8 @@ sources/sinks are central.
 | 8 | Data Quality & Validation | | test-landscape.md, tech-debt.md |
 | 9 | Operational Concerns | | tech-debt.md |
 | 10 | Build & Deployment | | infrastructure.md |
-| 11 | Knowledge Base Index | | INDEX.md |
+| 11 | Concept Spine | | domain-glossary.md |
+| 12 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -79,6 +96,21 @@ Checks performed at each stage. Failure modes. Reconciliation queries. SLAs.
 - PII handling
 - Compliance (GDPR, CCPA, SOX) if applicable
 
+### §11 Concept Spine
+
+The project's native vocabulary — coined and domain-specific terms a new data engineer must
+understand to work with this pipeline. Drawn from `domain-glossary.md` (the C4 term map).
+
+For a data pipeline, include: the names of stages/transforms if they are project-coined
+(not just "Stage 1"), the terms for entity types in the domain (e.g. "event", "fact", "dim"),
+pipeline-specific SLA abbreviations, and any non-standard orchestration or scheduling terms.
+Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this project's context, not the general data-engineering meaning}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder noting the spine
+is not yet authored; do not omit the section.
+
 ## Differences from web-app
 
 - Pipeline DAG (§3) replaces module/plugin DAG.
@@ -87,24 +119,18 @@ Checks performed at each stage. Failure modes. Reconciliation queries. SLAs.
 - Operational concerns get their own section (§9).
 - No frontend section.
 
-## Common diagrams content
+## Common visuals content
 
-For Figure 2 (Pipeline DAG), the structure typically looks like:
+For Figure 2 (Pipeline DAG), author an inline SVG using the flow-diagram pattern from
+`.agent/aid/templates/knowledge-summary/authored-visual-catalog.md` (Pattern 1 --
+left-to-right flow). Use `var(--bg-elev)` fills and `var(--accent)` borders for source/
+transform nodes; `var(--bg-sunken)` for sink nodes. Typical node layout:
 
-```mermaid
-flowchart LR
-    classDef src fill:#DBEAFE,stroke:#1D4ED8,color:#1D4ED8;
-    classDef tx  fill:#00A3A1,stroke:#00A3A1,color:#fff;
-    classDef snk fill:#F4EBFF,stroke:#6941C6,color:#6941C6;
-
-    Source1[(Source: events.kafka)]:::src
-    Source2[(Source: db.snapshot)]:::src
-    T1[Stage 1: clean]:::tx
-    T2[Stage 2: enrich]:::tx
-    T3[Stage 3: aggregate]:::tx
-    Sink[(Sink: warehouse.facts)]:::snk
-
-    Source1 --> T1
-    Source2 --> T2
-    T1 --> T2 --> T3 --> Sink
 ```
+[Source 1] --> [Stage 1: clean] --> [Stage 2: enrich] --> [Stage 3: aggregate] --> [Sink]
+[Source 2] --/
+```
+
+Author this as a `<div class="diagram-box">` wrapping an `<svg viewBox="...">` with
+one `<rect>` per node and `<line>` arrows. See Pattern 1 in authored-visual-catalog.md
+for the exact HTML/SVG template.

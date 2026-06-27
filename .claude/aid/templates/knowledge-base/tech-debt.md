@@ -1,10 +1,18 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Severity-tagged open technical debt items with remediation paths for {project}.
+summary: Read this before starting work in any area; declared debt items may affect approach or scope.
+sources: []
+tags: [C7, tech-debt, remediation, risk]
+see_also: [architecture.md, feature-inventory.md]
+owner: architect
+audience: [developer, architect, pm]
 intent: |
   Severity-tagged technical debt items with remediation paths. Read this before starting work in any area; declared debt items may affect approach or scope.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 
@@ -14,19 +22,24 @@ changelog:
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
 
-> This document is a diagnosis, not a sprint plan. It identifies what exists so that agents don't create more of it, and so the team can make informed decisions about what to address and when.
+This document is a diagnosis, not a sprint plan. It identifies what exists so that agents don't create more of it, and so the team can make informed decisions about what to address and when.
 
-> **Resolved items leave no trace (kb-authoring P9).** This doc lists **only currently open
-> debt**. When an item is resolved, remove it **entirely** — its inventory row, its detailed
-> entry, any roll-call/"closed items" mention, and any closure prose in the frontmatter
-> `changelog:`. Do **not** keep a closure record here. **git history is the only retained audit
-> trail.** A resolved item reappearing anywhere in this doc is a defect.
+**Resolved items leave no trace (kb-authoring P9).** This doc lists **only currently open debt**. When an item is resolved, remove it entirely -- its inventory row, its detailed entry, any roll-call or "closed items" mention, and any closure prose in the frontmatter `changelog:`. Do not keep a closure record here. Git history is the only retained audit trail. A resolved item reappearing anywhere in this doc is a defect.
 
-> **Severity tag convention** (used by `build-metrics.sh` for the severity tally):
-> Per-item severity headers should follow the form `### [HIGH] H1 — Title` /
-> `### [MEDIUM] M1 — Title` / `### [LOW] L1 — Title`, OR table rows with the
-> `| **H1**` / `| **M1**` / `| **L1**` ID format. The metrics builder counts
-> `^### \[HIGH\]` line headers and the table-row ID patterns.
+**Severity tag convention** (used by `build-metrics.sh` for the severity tally): per-item severity headers follow the form `### [HIGH] H1 -- Title` / `### [MEDIUM] M1 -- Title` / `### [LOW] L1 -- Title`, OR table rows with the `| **H1**` / `| **M1**` / `| **L1**` ID format. The metrics builder counts `^### \[HIGH\]` line headers and the table-row ID patterns.
+
+## Contents
+
+- [Debt Inventory](#debt-inventory)
+- [Detailed Debt Items](#detailed-debt-items)
+- [Complexity Hotspots](#complexity-hotspots)
+- [Missing Test Coverage](#missing-test-coverage)
+- [Outdated Dependencies](#outdated-dependencies)
+- [Architecture Violations](#architecture-violations)
+- [Duplication](#duplication)
+- [Dead Code](#dead-code)
+- [Gotchas](#gotchas)
+- [Change Log](#change-log)
 
 ---
 
@@ -132,7 +145,23 @@ changelog:
 
 ---
 
-## Revision History
+## Gotchas
+
+> The non-obvious traps -- a config that must change in lockstep, a build step that must run
+> first, an ordering hazard, a "looks safe but isn't" edit. This is exactly the delta-value a
+> newcomer cannot infer from the code. State the trap, then the safe way through it. One
+> gotcha per bullet; keep them concrete and grep-findable.
+
+- **{Lockstep config}:** {e.g. "changing `X` in `config/a.yml` requires the same change in
+  `config/b.yml` or startup fails silently"}.
+- **{Build/ordering hazard}:** {e.g. "run `codegen` before `build`; the generated client is
+  not committed and a stale one will compile but fail at runtime"}.
+- **{Looks-safe-but-isn't}:** {e.g. "the migration runner auto-applies on startup in dev but
+  NOT in prod -- prod migrations are a manual CI step"}.
+
+---
+
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

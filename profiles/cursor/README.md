@@ -14,7 +14,7 @@ cp path/to/aid-methodology/cursor/AGENTS.md   AGENTS.md
 ```
 
 This gives you:
-- `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (11 skills: 10 pipeline + 1 optional `aid-summarize`)
+- `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (13 skills: 10 across five pipeline groups + 3 off-pipeline on-demand)
 - `.cursor/agents/{name}.md` — Agent definitions (9 agents with `aid-` prefix), dispatched via Task tool when available
 - `.cursor/aid/scripts/`, `.cursor/aid/templates/`, `.cursor/aid/recipes/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
@@ -37,7 +37,7 @@ This gives you:
 
 ## Skills
 
-10 phase skills (one per AID phase) plus an optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base. See [`.cursor/skills/aid-README.md`](.cursor/skills/aid-README.md) for the full list.
+13 skills total: the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base; plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. See [`.cursor/skills/aid-README.md`](.cursor/skills/aid-README.md) for the full list.
 
 | Skill | Phase | Description |
 |-------|-------|-------------|

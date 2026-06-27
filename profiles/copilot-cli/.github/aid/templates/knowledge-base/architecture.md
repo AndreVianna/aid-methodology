@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Architectural patterns, levels, data flow, and module boundaries of {project}.
+summary: Read this to understand HOW the system hangs together -- not WHAT each module does.
+sources:
+  - src/                        # primary source directories
+  - {path/to/architecture/docs} # any architecture decision records or diagrams
+tags: [C1, architecture, modules, data-flow]
+see_also: [module-map.md, schemas.md]
+owner: architect
+audience: [architect, developer]
 intent: |
-  Architectural patterns, levels, data flow, and module boundaries. Read this to understand HOW the system hangs together — not WHAT each module does.
+  Architectural patterns, levels, data flow, and module boundaries. Read this to understand HOW the system hangs together -- not WHAT each module does.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 
@@ -13,6 +23,18 @@ changelog:
 > **Source:** aid-discover (Phase 1)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Pattern](#pattern)
+- [Layers](#layers)
+- [Module Boundaries](#module-boundaries)
+- [Data Flow](#data-flow)
+- [Dependency Injection](#dependency-injection)
+- [Key Architectural Decisions](#key-architectural-decisions)
+- [Known Architectural Issues](#known-architectural-issues)
+- [Invariants](#invariants)
+- [Change Log](#change-log)
 
 ---
 
@@ -114,7 +136,23 @@ changelog:
 
 ---
 
-## Revision History
+## Invariants
+
+> What MUST always hold about the architecture -- a layering rule, a dependency direction, a
+> single-source-of-truth, an ordering the system enforces silently. Without this an agent
+> violates an invariant the structure depends on. State each as a hard MUST/MUST-NOT, and
+> name where it is enforced (or note "enforced only by convention").
+
+- **{Layering}:** {e.g. "the Domain layer MUST NOT reference Infrastructure -- enforced via
+  project references"}.
+- **{Dependency direction}:** {e.g. "dependencies point inward toward the Domain; outer
+  layers know inner, never the reverse"}.
+- **{Single source of truth}:** {e.g. "DI registration happens only in `Startup.cs`; no
+  service is constructed directly at a call site"}.
+
+---
+
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

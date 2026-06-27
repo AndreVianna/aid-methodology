@@ -1,0 +1,56 @@
+<section id="readme" class="sec" data-title="README">
+	<header>
+		<span class="eyebrow">KB completeness tracker &mdash; README.md</span>
+		<h2>Knowledge Base README</h2>
+		<p class="lede">Completeness tracker and revision history for the AID Knowledge Base. Describes the domain, the doc-set composition, and the discovery path used to generate the documents.</p>
+	</header>
+
+	<div class="grid g3" style="margin-bottom:1.5rem;">
+		<div class="card">
+			<div class="kicker">Domain</div>
+			<h3>hybrid:methodology-tooling+software-cli</h3>
+			<p>AID spans two concerns: a process methodology and its CLI installer tooling. The doc-set reflects both faces.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Doc-set</div>
+			<h3>19 documents</h3>
+			<p>Curated hybrid composition, confirmed at discovery Step 0d. Standard seed of 14 primary docs + 4 extension docs + 1 meta. All generated on 2026-06-25.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Discovery path</div>
+			<h3>brownfield-large</h3>
+			<p>4 lanes (scout, architecture, analyst, integrator/quality), concept-spine closure: 29 grounded / 80 excluded / 0 ungrounded.</p>
+		</div>
+	</div>
+
+	<h3>KB Document Completeness</h3>
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>#</th><th>Document</th><th>Concern axis</th><th>Owner</th><th>Status</th></tr></thead>
+			<tbody>
+				<tr><td>1</td><td>project-structure.md</td><td>C1 (structure)</td><td>scout</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>2</td><td>external-sources.md</td><td>meta</td><td>scout</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>3</td><td>architecture.md</td><td>C1 (architecture)</td><td>architecture</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>4</td><td>technology-stack.md</td><td>C0 (stack)</td><td>architecture</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>5</td><td>module-map.md</td><td>C2 (modules)</td><td>analyst</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>6</td><td>coding-standards.md</td><td>C3 (conventions)</td><td>analyst</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>7</td><td>authoring-conventions.md</td><td>C3 (conventions)</td><td>analyst</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>8</td><td>artifact-schemas.md</td><td>C5 (schemas)</td><td>analyst</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>9</td><td>pipeline-contracts.md</td><td>C2 (contracts)</td><td>integrator</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>10</td><td>integration-map.md</td><td>C2 (integrations)</td><td>integrator</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>11</td><td>domain-glossary.md</td><td>C4 (vocabulary)</td><td>integrator</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>12</td><td>test-landscape.md</td><td>C6 (testing)</td><td>quality</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>13</td><td>quality-gates.md</td><td>C6 (quality)</td><td>quality</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>14</td><td>tech-debt.md</td><td>C7 (debt)</td><td>quality</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>15</td><td>infrastructure.md</td><td>C8 (infra)</td><td>quality</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>16</td><td>capability-inventory.md</td><td>C9 (capabilities)</td><td>skill-self</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>17</td><td>decisions.md</td><td>D (decisions)</td><td>architecture</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>18</td><td>release-tracking.md</td><td>C8 (release)</td><td>skill-self</td><td><span class="badge badge-ok">A+</span></td></tr>
+					<tr><td>19</td><td>README.md</td><td>meta</td><td>skill-self</td><td><span class="badge badge-ok">A+</span></td></tr>
+				<tr><td>&mdash;</td><td>INDEX.md</td><td>meta (generated)</td><td>skill-self (build-kb-index.sh)</td><td><span class="badge badge-ok">A+</span></td></tr>
+			</tbody>
+		</table>
+	</div>
+
+	<p style="color:var(--text-muted); font-size:0.88rem; margin-top:1rem;">All 11 concern dimensions (C0&ndash;C9 + D) are covered. Spine coverage: 29 concepts grounded, 80 candidates excluded, 0 ungrounded. Discovery ran 2026-06-25 via brownfield-large 4-lane fan-out.</p>
+</section>

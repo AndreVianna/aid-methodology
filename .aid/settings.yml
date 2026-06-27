@@ -38,6 +38,11 @@ tools:
 review:
   minimum_grade: A
 
+# Per-skill override: the /aid-summarize redesign (work-001 feature-015) is held
+# to A+ — see .aid/work-001-kb-skills-improvement/features/feature-015-*/SPEC.md §12.
+summary:
+  minimum_grade: A+
+
 # ---------------------------------------------------------------------------
 # execution: settings specific to /aid-execute + /aid-deploy
 # ---------------------------------------------------------------------------
@@ -80,6 +85,54 @@ traceability:
 #   minimum_grade: A+
 # monitor:
 #   minimum_grade: A
+
+discovery:
+  closure:
+    max_clean_passes: 2   # CLOSED after this many consecutive zero-ungrounded DETECT passes (default 2)
+    max_rounds: 4         # hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds (wall-clock guard)
+    token_budget: 0       # optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget
+  # doc_set: confirmed at aid-discover Step 0d (2026-06-25) for domain
+  #          hybrid:methodology-tooling+software-cli (provenance: curated). 19 required docs.
+  #          release-tracking.md (hand-authored release ledger) added 2026-06-25.
+  doc_set:
+    - project-structure.md|aid-researcher-scout|required
+    - external-sources.md|aid-researcher-scout|required
+    - architecture.md|aid-researcher-architecture|required
+    - technology-stack.md|aid-researcher-architecture|required
+    - module-map.md|aid-researcher-analyst|required
+    - coding-standards.md|aid-researcher-analyst|required
+    - authoring-conventions.md|aid-researcher-analyst|required
+    - artifact-schemas.md|aid-researcher-analyst|required
+    - pipeline-contracts.md|aid-researcher-integrator|required
+    - integration-map.md|aid-researcher-integrator|required
+    - domain-glossary.md|aid-researcher-integrator|required
+    - test-landscape.md|aid-researcher-quality|required
+    - quality-gates.md|aid-researcher-quality|required
+    - tech-debt.md|aid-researcher-quality|required
+    - infrastructure.md|aid-researcher-quality|required
+    - release-tracking.md|skill-self|required
+    - capability-inventory.md|skill-self|required
+    - decisions.md|aid-researcher-architecture|required
+    - README.md|skill-self|required
+
+# ---------------------------------------------------------------------------
+# triage: recon-pre-pass thresholds for the 3-path discovery classifier (f006)
+# ---------------------------------------------------------------------------
+# Read by recon-classify.sh to PROPOSE a path (greenfield / brownfield-small /
+# brownfield-large); the human CONFIRMS (the path is measured, not declared --
+# project.type is never read as authoritative). Defaults are sensible starting
+# points, calibratable per project. All four metrics are read from the
+# already-generated project-index.md + candidate-concepts.md (no second scan).
+#
+# RM1 = source-file count; RM2 = source LOC; RM3 = directory count;
+# RM4 = candidate-concept count (Cross-source spread >= 2 from harvest).
+# Absent block => these defaults; a project may override any single key.
+triage:
+  greenfield_max_source_files: 5     # RM1 <= this AND RM2 <= loc => greenfield (little/no source)
+  greenfield_max_source_loc:   500   # RM2 ceiling for greenfield
+  large_min_source_loc:        20000 # RM2 >= this => brownfield-large (size)
+  large_min_dirs:              25    # RM3 >= this => brownfield-large (breadth / fan-out)
+  large_min_concepts:          40    # RM4 >= this => brownfield-large (concept density)
 
 kb_baseline:
   branch: master

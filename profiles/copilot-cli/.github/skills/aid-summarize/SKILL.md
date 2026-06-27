@@ -1,25 +1,34 @@
 ---
 name: aid-summarize
 description: >
-  Generate a single-file kb.html from .aid/knowledge/. Inlines Mermaid
-  for offline diagrams, light/dark theme, click-to-expand lightbox, accessibility-first
-  (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score
-  the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness,
-  K2 fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum.
-  Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT →
-  STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL →
-  WRITEBACK → DONE.
+  Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-based:
+  one section per resolved doc derived from frontmatter (kb-category, objective, summary,
+  tags, see_also). Audience: non-technical newcomer (visually rich; no KB authoring-rules
+  leakage). Light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA).
+  Two-grade quality gate (Machine + Human): script-verifiable checks score the Machine
+  Grade; an interactive checklist scores the Human Grade (K1 KB-completeness, K2
+  fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum.
+  Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT ->
+  STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL ->
+  WRITEBACK -> DONE.
 allowed-tools: Read, Glob, Grep, shell, Write, Edit
-argument-hint: "[--grade X] override minimum  [--profile auto|web-app|library|cli|microservices|data-pipeline|agentic-pipeline]  [--theme default|brand-X]  [--cdn-mermaid]  [--reset]"
+argument-hint: "[--grade X] override minimum  [--theme default|brand-X]  [--reset]"
 ---
 
 # Knowledge Base Visual Summary
 
-Generates a single self-contained `kb.html` from a populated and
-approved `.aid/knowledge/` Knowledge Base. The output works fully offline, includes
-8 Mermaid diagrams (or fewer for non-web-app profiles), supports light/dark themes,
-provides keyboard-accessible click-to-expand lightboxes for every diagram, and meets
-WCAG AA contrast in both themes.
+Generates a single self-contained `kb.html` from a populated and approved
+`.aid/knowledge/` Knowledge Base. The output is a **newcomer-facing product** — visually
+rich, plain-language, and distinct from the KB itself (which is a dual-audience technical
+artifact for humans + AI agents). The KB's authoring rules (no diagrams, tables/bullets)
+apply to the KB; they do NOT constrain the summary's format.
+
+The section set is derived **data-drivenly** from the resolved doc-set
+(`discovery.doc_set` in `.aid/settings.yml` intersected with docs present on disk),
+one section per resolved doc. Each section's attributes (heading, description, component,
+tier, keyword pills, cross-links) come from that doc's frontmatter (`kb-category`,
+`objective`, `summary`, `tags`, `see_also`). Section order is deterministic and
+reproducible from the same inputs.
 
 **Prerequisite:** `/aid-discover` must have reached `DONE` and the user must have
 approved the KB. This skill does NOT validate KB content — that is discovery's job.
@@ -38,7 +47,7 @@ Run `.github/aid/scripts/summarize/summarize-preflight.sh` before any state. It 
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
 3. At least one populated KB document exists (`.aid/knowledge/*.md` with real content).
 4. Not in Plan Mode (need write access).
-5. Network reachable to `registry.npmjs.org` (skipped if `--cdn-mermaid`).
+5. Node.js >= 18 is available (required for visual-fidelity validation via `validate-visuals.mjs`).
 
 If any check fails, the script exits non-zero with a clear actionable message. Do NOT
 proceed; do NOT create any state files.
@@ -48,9 +57,7 @@ proceed; do NOT create any state files.
 | Argument | Effect |
 |----------|--------|
 | `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, runs `bash .github/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A` (resolves per-skill override → global `review.minimum_grade` → default `A`). When passed, persist to `.aid/settings.yml` `summary.minimum_grade` via `/aid-config`. |
-| `--profile X` | Force a specific profile. One of: `auto` (default), `web-app`, `library`, `cli`, `microservices`, `data-pipeline`, `agentic-pipeline`. |
 | `--theme palette=X` | Override color palette (e.g., `--theme palette=brand-acme`). Default uses the canonical palette in `.github/aid/templates/knowledge-summary/design-tokens.md`. |
-| `--cdn-mermaid` | Load Mermaid from jsdelivr CDN at runtime instead of inlining (drops ~3 MB; loses offline support). |
 | `--reset` | Force regeneration regardless of staleness check; clears `## Knowledge Summary Status` in `.aid/knowledge/STATE.md`. |
 
 ---
@@ -79,8 +86,11 @@ The state-detection logic determines which mode this run executes:
        OTHERWISE → mode = APPROVAL (HTML is current; just need user sign-off)
 
 4. If mode = GENERATE:
-   - ## Knowledge Summary Status absent/no Profile → run PROFILE first to detect/persist project type, then GENERATE.
-   - ## Knowledge Summary Status has Profile → reuse stored profile; go straight to GENERATE.
+   - ## Knowledge Summary Status absent/no Doc-Set Source → run PROFILE first to read
+     discovery.doc_set from .aid/settings.yml + domain from .aid/knowledge/STATE.md,
+     resolve the section manifest, then GENERATE.
+   - ## Knowledge Summary Status has Doc-Set Source → reuse stored manifest; go straight
+     to GENERATE.
 
 5. After GENERATE → VALIDATE.
 
@@ -98,7 +108,7 @@ The state-detection logic determines which mode this run executes:
    - User says changes-needed → record + transition to FIX.
 ```
 
-**Two-grade model:** the rubric is split into machine-verifiable checks (the AUTO_POOL — D1/D2/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2 = 73 pts) and human-judgment checks (the MANUAL_POOL — K1/K2/V1 = 30 pts). The script can NEVER auto-pass MANUAL_POOL; the user must run `manual-checklist.sh` and answer the prompts honestly. **V1 (human visual gate) is mandatory — a V1 fail forces Human Grade = F.** Overall Grade = `min(Machine_letter, Human_letter)`. A+ requires both Machine and Human grades to be A+ on their respective subsets. See `grading-rubric.md` for the per-subset boundaries.
+**Two-grade model:** the rubric is split into machine-verifiable checks (the AUTO_POOL — COV/T1/T2/T3/L1/L2/H1/A1/A2/A3/A4/A5/C1/C2/S2/NM = 68 pts) and human-judgment checks (the MANUAL_POOL — K1/K2/V1 = 30 pts). COV is the resolved-doc-set coverage check (doc-set completeness gate: < 60% coverage forces Machine Grade F). T1/T2/T3 are the S7 visual-fidelity checks (`validate-visuals.mjs`, Playwright-based) that replace the retired Mermaid D1/D2 checks; they assert readable text, minimal overlap, and correct layout for every authored visual. NM is the no-Mermaid-engine assertion (`validate-html-output.sh`). The script can NEVER auto-pass MANUAL_POOL; the user must run `manual-checklist.sh` and answer the prompts honestly. **V1 (human visual gate) is mandatory — a V1 fail forces Human Grade = F.** When Playwright is unavailable, T1/T2/T3 skip with a SKIP message and V1 carries the full visual-review responsibility (browser rendering required, not source inspection). Overall Grade = `min(Machine_letter, Human_letter)`. A+ requires both Machine and Human grades to be A+ on their respective subsets. See `grading-rubric.md` for the per-subset boundaries.
 
 Print the state-entry line and "you are here" map at the start of each mode:
 
@@ -118,21 +128,21 @@ aid-summarize  ▸ you are here
 
 **PROFILE:**
 ```
-[State: PROFILE] — Auto-detecting project type from KB signals to select the section template.
+[State: PROFILE] — Reading doc-set from .aid/settings.yml and domain from .aid/knowledge/STATE.md to derive the section manifest.
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [● PROFILE ] → [ GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
 ```
 
 **GENERATE:**
 ```
-[State: GENERATE] — Building kb.html from KB content and Mermaid diagrams.
+[State: GENERATE] — Building kb.html from resolved doc-set and KB frontmatter (one section per resolved doc).
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [● GENERATE ] → [ VALIDATE ] → [ APPROVAL ] → [ DONE ]
 ```
 
 **VALIDATE:**
 ```
-[State: VALIDATE] — Running machine-verifiable quality checks (diagrams, links, HTML, contrast).
+[State: VALIDATE] — Running machine-verifiable quality checks (visual fidelity, links, HTML, contrast).
 aid-summarize  ▸ you are here
   [✓ PREFLIGHT ] → [✓ STALE-CHECK ] → [✓ PROFILE ] → [✓ GENERATE ] → [● VALIDATE ] → [ APPROVAL ] → [ DONE ]
 ```
@@ -185,25 +195,21 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 ---
 
-## Quality Gate (the strict-syntax requirement)
+## Quality Gate
 
-Mermaid silently accepts invalid input and renders a red error block. The skill MUST
-catch every such failure before declaring DONE. The grading rubric makes diagram
-parse failure (`D1`) an automatic F.
+The VALIDATE state runs script-verifiable checks (the Machine Grade AUTO_POOL) before
+human review. This includes:
 
-The validator script (`validate-diagrams.mjs`) is required infrastructure. It runs D1
-(parse) always; D2 (render) uses `jsdom` to render each diagram and assert a
-non-trivial SVG — if `jsdom` is not installed, D2 falls back to parse-only and the
-grade output flags `D2: jsdom-fallback` (D2 still passes but with reduced rigor).
-Without Node.js entirely, this skill cannot grade. If Node.js is unavailable on the host:
-```
-❌ Cannot run /aid-summarize.
-   Node.js is required for Mermaid diagram validation.
-   Install Node.js (≥ 18) and re-run, or run the skill on a different machine.
-```
-
-There is no "skip validation" mode. The whole point of this skill is that broken
-diagrams are caught before publication.
+- **S7 visual-fidelity gate** (`validate-visuals.mjs`) — Playwright-renders every authored
+  visual (inline `<svg>`, `.diagram-box`, infographic containers) and asserts: text readable
+  (T1), minimal/zero element overlap (T2), correct basic layout (T3). Replaces the retired
+  Mermaid D1/D2 diagram check. A failing visual blocks DONE. When Playwright is unavailable,
+  the MANUAL-CHECKLIST V1 human visual gate is mandatory (browser-rendered inspection required;
+  HTML/CSS source inspection is not sufficient).
+- **HTML self-containment + no-Mermaid-engine assertion** (NM check in `validate-html-output.sh`)
+  — confirms the Mermaid runtime engine is absent from the output (D-012 guardrail).
+- **Accessibility baseline** (A1/A2/A3/A4/A5), **link correctness** (L1/L2), **HTML validity** (H1),
+  and **contrast** (C1/C2, via `contrast-check.mjs`).
 
 See `.github/aid/templates/knowledge-summary/grading-rubric.md` for the complete rubric and grade boundaries.
 
@@ -215,12 +221,11 @@ See `.github/aid/templates/knowledge-summary/grading-rubric.md` for the complete
 - `.github/aid/templates/knowledge-summary/design-tokens.md` — color palette, typography, spacing
 - `.github/aid/templates/knowledge-summary/component-css.css` — full reusable CSS (inlined)
 - `.github/aid/templates/knowledge-summary/lightbox.js` — full reusable JS (theme, lightbox, scrollspy, a11y)
-- `.github/aid/templates/knowledge-summary/mermaid-init.js` — Mermaid theme variables for both modes
-- `.github/aid/templates/knowledge-summary/mermaid-examples.md` — one valid example per diagram type + pitfalls table
-- `.github/aid/templates/knowledge-summary/section-templates/{profile}.md` — section structure per project type
+- `.github/aid/scripts/summarize/validate-visuals.mjs` — §7 visual-fidelity gate (Playwright-based): T1 readable text, T2 minimal overlap, T3 correct layout for every authored visual (inline `<svg>`, `.diagram-box`, infographic container)
+- `.github/aid/templates/knowledge-summary/section-templates/` — `kb-category`-keyed rendering hints (retired as project-type profile selectors)
 - `.github/aid/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
-- `.github/aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), per-profile diagram counts
-- `.github/aid/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript
+- `.github/aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), completeness-based grading
+- `.github/aid/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript (with `{{NOSCRIPT_DOC_LIST}}` placeholder for derived doc list)
 - `.github/aid/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
 - `.github/aid/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
 - `.github/aid/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.spot-check-facts.txt` (aids the user's K2 judgment)
@@ -232,8 +237,7 @@ See `.github/aid/templates/knowledge-summary/grading-rubric.md` for the complete
 | Symptom | Cause | Recovery |
 |---|---|---|
 | Preflight aborts: "discovery not approved" | `/aid-discover` not yet at DONE | Run `/aid-discover` until it reaches APPROVAL and approve. |
-| Preflight aborts: "no network" | Cannot reach npm registry | Check connection, or use `--cdn-mermaid`. |
-| Validate fails: D1 (parse error) | Bad Mermaid syntax in generated diagram | Skill enters FIX automatically; if it loops, manually inspect the failing block. |
+| PROFILE warns: "discovery.doc_set not found" | KB was produced before feature-014 | Run `/aid-discover` to produce a feature-014-compatible KB, or the skill falls back to reading all `.aid/knowledge/*.md` files alphabetically. |
+| GENERATE produces no sections | All doc-set entries missing on disk | Check that `/aid-discover` has run and the KB docs are present in `.aid/knowledge/`. |
 | Writeback fails: lock contention | `/aid-discover` running concurrently | Wait, retry; the lock auto-releases. |
 | Writeback fails: write error | Disk full / permissions | Manually add the entry to `.aid/knowledge/STATE.md` `## Summarization History`; mark `**Writeback Status:** ok` in `## Knowledge Summary Status`. |
-| Browser shows red diagram error block | A diagram somehow passed parse but failed render (rare) | Open browser console, find the offending Figure number, manually fix in HTML, re-run with `--reset`. |

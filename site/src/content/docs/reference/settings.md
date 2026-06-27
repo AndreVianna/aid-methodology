@@ -18,3 +18,5 @@ generatedFrom: '.aid/settings.yml'
 | `review.minimum_grade` | `A` |  |
 | `execution.max_parallel_tasks` | `5` | parallel pool dispatch capacity (work-001 feature-009) |
 | `traceability.heartbeat_interval` | `1` | minutes — interval at which long-running sub-agents update their heartbeat file |
+| `kb_baseline.branch` | `master` |  |
+| `kb_baseline.tip_date` | `2026-06-21T22:23:47-04:00` |  |

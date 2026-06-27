@@ -1,0 +1,23 @@
+feat: introduce Relative Bus as the cross-domain routing layer
+
+The Relative Bus replaces direct service-to-service calls. All domain
+events now route through the Relative Bus dispatch surface. This commit
+seeds the RelativeBus class and the BaseHandler subscription model.
+
+chore: rename Relative ME to Relative Bus across all files
+
+The team settled on "Relative Bus" as the canonical project term.
+Replaced all occurrences of the early working name "Relative ME" in
+docs, code, and comments.
+
+fix: Relative Bus priority ordering in PaymentHandler dispatch
+
+The Relative Bus was delivering low-priority payment events before
+high-priority domain events. Corrected the ordering to respect the
+bus partition priority queue.
+
+docs: ADR-0007 -- adopt the Relative Bus pattern
+
+Recorded the decision to adopt the Relative Bus as the mandatory
+cross-domain integration surface. Direct service calls are now
+explicitly prohibited.

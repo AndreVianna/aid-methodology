@@ -1,0 +1,262 @@
+<section id="domain-glossary" class="sec featured" data-title="Domain Glossary">
+	<header>
+		<span class="eyebrow">Concept Spine &mdash; domain-glossary.md</span>
+		<h2>Domain Glossary</h2>
+		<p class="lede">AID's load-bearing vocabulary. Every term here means something specific to this project &mdash; not the generic industry sense. The Concept Spine holds the 25 native concepts the methodology is built on.</p>
+	</header>
+
+	<div class="gloss-grid">
+
+		<div class="gloss-card" id="term-canonical">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-canonical">Canonical</a></div>
+			<p class="gloss-def">The <code>canonical/</code> directory &mdash; the single source of truth for every piece of content AID installs. Content is authored once here and rendered into five profile install trees. "Canonical" is the authority, not merely "standard".</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill gloss-pill-accent">Profile</span>
+				<span class="gloss-pill">Emission Manifest</span>
+				<span class="gloss-pill">Knowledge Base</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-profile">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-profile">Profile</a></div>
+			<p class="gloss-def">One of the five rendered, host-tool-specific install trees AID targets (Claude Code, Codex CLI, Cursor, GitHub Copilot CLI, Antigravity). All five carry byte-identical skill/agent bodies; only the install root, context-file name, and agent format differ. Not a user profile or a config profile.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill gloss-pill-accent">Canonical</span>
+				<span class="gloss-pill">Emission Manifest</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-work">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-work">Work</a></div>
+			<p class="gloss-def">A self-contained unit of scope created by one Interview, living at <code>.aid/work-NNN-{slug}/</code>. Each Work owns its own requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base. The top-level pipeline scope container.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Delivery</span>
+				<span class="gloss-pill">Knowledge Base</span>
+				<span class="gloss-pill">Task</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-delivery">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-delivery">Delivery</a></div>
+			<p class="gloss-def">An ordered, independently shippable MVP grouping of features within a Work, numbered <code>delivery-NNN</code>. Plan decides what goes in each delivery and in what order; Execute runs one git branch per delivery and gates each with a delivery-gate review. A strategy-level unit, not a deployment event.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Work</span>
+				<span class="gloss-pill">Task</span>
+				<span class="gloss-pill">Delivery Gate</span>
+				<span class="gloss-pill">Execution Graph</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-task">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-task">Task</a></div>
+			<p class="gloss-def">The leaf unit of execution: one agent session = one PR = one human review. Every task carries a Type from a fixed 8-value enum (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE). The Type drives both how the executor works and how the reviewer evaluates it.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Delivery</span>
+				<span class="gloss-pill">Execution Graph</span>
+				<span class="gloss-pill">Task Status</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-execution-graph">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-execution-graph">Execution Graph</a></div>
+			<p class="gloss-def">The dependency-and-parallel-wave plan Detail appends to <code>PLAN.md</code>: per-delivery tables of task precedence and the "waves" of tasks that can run in parallel. Execute consumes it to drive the parallel pool and to compute which dependents a failed task blocks. Expressed as tables, not a rendered diagram.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">Wave</span>
+				<span class="gloss-pill">Max Concurrent</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-knowledge-base">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-knowledge-base">Knowledge Base</a></div>
+			<p class="gloss-def">The <code>.aid/knowledge/</code> collection of structured markdown documents that holds the living understanding of a project &mdash; the gravitational center of AID. Default seed of 14 standard documents plus meta-documents (INDEX, README, STATE); configurable per project. Every phase reads it; any phase can trigger a targeted update to it.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">kb-category</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-concept-spine">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-concept-spine">Concept Spine</a></div>
+			<p class="gloss-def">The section of <code>domain-glossary.md</code> that holds a project's native load-bearing concepts, each grounded with a definition-as-used-here, a relates-to linkage, and grep-recoverable sources. It is seeded from candidate-concepts and closed by the discovery closure loop.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Knowledge Base</span>
+				<span class="gloss-pill">Candidate Concepts</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-emission-manifest">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-emission-manifest">Emission Manifest</a></div>
+			<p class="gloss-def">The declaration (<code>canonical/EMISSION-MANIFEST.md</code>) of exactly which files the profile renderer emits for each profile. It is the contract the VERIFY gate byte-checks the rendered <code>profiles/</code> against, so <code>canonical/</code> always remains the source of truth.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">EmissionManifest</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-aid-install-core">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-aid-install-core">AidInstallCore</a></div>
+			<p class="gloss-def">The shared install/update/remove engine the bootstrap installers source &mdash; Bash (<code>lib/aid-install-core.sh</code>) and PowerShell (<code>lib/AidInstallCore.psm1</code>). It holds the in-place root-agent region replacement, the diff-aware copy, and channel logic so <code>install.sh</code>/<code>install.ps1</code> stay behaviorally identical across platforms.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">Aid Install Core</span>
+				<span class="gloss-pill">Protect-on-diff</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-aid-home">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-aid-home">AID_HOME</a></div>
+			<p class="gloss-def">The mutable per-machine AID state home &mdash; <code>${HOME}/.aid</code> for a normal user install (or <code>/var/lib/aid</code> for a shared install), overridable via the <code>AID_HOME</code> environment variable. Holds machine state such as <code>registry.yml</code>. Distinct from the install code home.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">state home</span>
+				<span class="gloss-pill">AID_STATE_HOME</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-recipe">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-recipe">Recipe</a></div>
+			<p class="gloss-def">A pre-filled lite-path template for a recurring change pattern, under <code>canonical/aid/recipes/</code>, named by the change it makes (<code>add-X</code> / <code>change-X</code> / <code>fix-X</code>). TRIAGE matches a free-form work description to a recipe. A shortcut for known patterns, not a quality bypass &mdash; it produces the same typed, reviewed task set.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">Slot</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-render-pipeline">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-render-pipeline">Canonical-Source Render-and-Vendor Pipeline</a></div>
+			<p class="gloss-def">AID's defining build model: author once in <code>canonical/</code>, render to five byte-identical <code>profiles/</code> via <code>run_generator.py</code>, prove correctness with the VERIFY byte-compare gate, then vendor into npm/PyPI wrappers and tarball per-profile bundles for GitHub Releases.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">render pipeline</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-dogfood">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-dogfood">Dual-Face Dogfood Repository</a></div>
+			<p class="gloss-def">This repository has two faces: the product (<code>canonical/</code>&rarr;<code>profiles/</code>&rarr;<code>packages/</code>) and the dogfood install (<code>.claude/</code> rendered profile + <code>.aid/</code> pipeline state/KB) where AID is used to build AID. The <code>.aid/</code> content is real working state, not example data.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Canonical</span>
+				<span class="gloss-pill">Knowledge Base</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-polyglot-parity">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-polyglot-parity">Polyglot Parity Obligation</a></div>
+			<p class="gloss-def">Because AID must install through both Bash and PowerShell hosts and ship via both npm and PyPI, the same logic is implemented in multiple languages that MUST stay behaviorally identical &mdash; <code>aid-install-core.sh</code> mirrors <code>AidInstallCore.psm1</code>; <code>server.mjs</code> is a byte-parity sibling of <code>server.py</code>. Parity is enforced by tests, never assumed.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">AidInstallCore</span>
+				<span class="gloss-pill">Profile</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-human-gated">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-human-gated">Human-Gated Phase Advancement</a></div>
+			<p class="gloss-def">The rule that the pipeline never auto-advances &mdash; a human approves every phase transition (the "OK?" gate, the Iron Man model's pilot-in-the-cockpit). Distinct from the deterministic grade gate (which is computed): this is the human checkpoint between phases.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Grade</span>
+				<span class="gloss-pill">Feedback Loop</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-grade">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-grade">Grade</a></div>
+			<p class="gloss-def">A letter score computed deterministically by <code>grade.sh</code> from the <code>[SEVERITY]</code> tags a reviewer emits &mdash; never hand-picked. The reviewer only classifies issues; the grade follows automatically (worst severity dominates, the count within it sets the modifier). A phase passes only when the grade meets the resolved minimum.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Delivery Gate</span>
+				<span class="gloss-pill">Human-Gated Phase Advancement</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-triage">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-triage">Triage</a></div>
+			<p class="gloss-def">The <code>/aid-interview</code> step that matches a free-form work description to a Recipe and routes the work down either the full path (every numbered phase) or the lite path (a condensed phase set, same artifacts). A confident single-target match routes to lite automatically.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Lite Path</span>
+				<span class="gloss-pill">Recipe</span>
+				<span class="gloss-pill">Work</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-lite-path">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-lite-path">Lite Path</a></div>
+			<p class="gloss-def">The TRIAGE-routed condensed pipeline for small, single-target work: the same typed, reviewed artifacts as the full path but with phases collapsed (Specify+Plan+Detail fold into the interview's task breakdown). A shortcut for known patterns, not a quality bypass.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Triage</span>
+				<span class="gloss-pill">Recipe</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-feedback-loop">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-feedback-loop">Feedback Loop</a></div>
+			<p class="gloss-def">A formal pathway for a downstream phase to revise upstream artifacts, producing a traceable record (a Q&amp;A entry in a STATE file, an IMPEDIMENT file, or a Monitor finding) rather than a silent rewrite. AID defines eleven named feedback loops; they are the design answer to drift, not a failure mode.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Human-Gated Phase Advancement</span>
+				<span class="gloss-pill">Knowledge Base</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-dashboard">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-dashboard">Dashboard</a></div>
+			<p class="gloss-def">AID's one runtime component &mdash; a read-only, loopback-only local web view that parses <code>.aid/</code> pipeline state and the Knowledge Base across repos and serves them as HTML. It writes nothing and runs no LLM. The summary stage of <code>aid-housekeep</code> regenerates the visual KB summary it presents.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">dashboard server</span>
+				<span class="gloss-pill">Summary Stage</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-pipeline-state">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-pipeline-state">Pipeline State</a></div>
+			<p class="gloss-def">The authored run-state of a Work, tracked in its <code>STATE.md</code>: the current phase and lifecycle, recorded phase transitions, the calibration log (agent ETA-band vs actual runtime), and &mdash; in the discovery area &mdash; the documents status table of KB-doc completeness.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">Phase Transition</span>
+				<span class="gloss-pill">Calibration Log</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-task-status">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-task-status">Task Status</a></div>
+			<p class="gloss-def">A task's lifecycle status and its derived views: the <code>TaskStatus</code> enum the dashboard reader assigns, the Tasks State rollup section unioned across per-task STATE.md files, and the Task Detail per-task view. The rollup is read-time derived, never hand-written.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">Tasks State</span>
+				<span class="gloss-pill">TaskStatus</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-delivery-gate">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-delivery-gate">Delivery Gate</a></div>
+			<p class="gloss-def">The per-delivery review gate recorded in <code>delivery-NNN/STATE.md</code>: it aggregates the deferred Quick Check Findings accumulated by Small-tier in-task quick checks and requires the delivery's <code>grade.sh</code> grade to meet the minimum before the delivery ships.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">Delivery State</span>
+				<span class="gloss-pill">Quick Check Findings</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-candidate-concepts">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-candidate-concepts">Candidate Concepts</a></div>
+			<p class="gloss-def">The salience-ordered table of harvested + synthesis terms that the discovery closure loop must drive to a terminal state &mdash; each either grounded in the Concept Spine or dismissed. AID's discovery run closed 29 grounded / 80 excluded / 0 ungrounded from the initial harvest.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">Ranked Candidates</span>
+			</div>
+		</div>
+
+	</div>
+</section>

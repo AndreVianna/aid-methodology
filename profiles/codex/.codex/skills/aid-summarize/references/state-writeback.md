@@ -14,8 +14,8 @@ Run `.codex/aid/scripts/summarize/writeback-state.sh`. It atomically:
    - **#:** {next}
    - **Date:** {YYYY-MM-DD}
    - **Grade:** {final}
-   - **Profile:** {profile}
-   - **Mermaid:** {version}
+   - **Domain:** {domain value from .aid/knowledge/STATE.md ## Discovery Domain}
+   - **Doc-set:** {N resolved} of {M total} docs
    - **Output:** `.aid/dashboard/kb.html ({size})`
    - **Notes:** {one-liner — "Initial generation" or "Regenerated after KB review cycle N (date)"}
 6. Writes back, preserving everything else byte-for-byte.

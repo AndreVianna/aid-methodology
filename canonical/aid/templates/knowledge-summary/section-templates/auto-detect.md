@@ -1,128 +1,80 @@
 ---
-profile: auto-detect
-target_diagrams: 0
-# auto-detect is the scoring-rules document for profile selection; it does not
-# define a section structure and therefore drives no diagram requirement itself.
-# The target_diagrams value is set on each concrete profile template.
+kb-category: meta
+notes: "Retired as project-type profile selector. Kept as a kb-category rendering-hint
+        reference for GENERATE. Profile-as-project-type (web-app/cli/library/microservices/
+        data-pipeline/agentic-pipeline auto-detection) is retired by feature-015/Change 1.
+        The section set is now derived from the resolved doc-set + frontmatter, not from a
+        project-type profile."
 ---
 
-# Profile Auto-Detection Rules
+# `kb-category` Rendering Hints
 
-Used by the PROFILE state to pick a section template based on KB content.
-The skill reads each `.aid/knowledge/*.md`, applies the scoring signals
-below, and picks the highest-scoring profile.
+> **Status:** Project-type profile auto-detection is **retired** (feature-015, Change 1).
+> This file previously held scoring rules for detecting `web-app`, `cli`, `library`,
+> `microservices`, `data-pipeline`, and `agentic-pipeline` project types. Those rules
+> are replaced by the doc-set/domain-driven section derivation in `state-profile.md`.
+>
+> What remains is **`kb-category`-keyed rendering guidance** for the GENERATE step —
+> how to format each section by its tier, not by project type.
 
-## Scoring signals
+---
 
-Each signal that matches contributes points to its profile. The highest score
-wins.
+## Tier-keyed rendering guidance
 
-### web-app
+`kb-category` ∈ `{primary, extension, meta}` is a **prominence/tier** classifier,
+not a content-shape ("glossary" vs "ADR" vs "table"). The content-component decision
+uses two signals:
 
-| Signal | Points | How to detect |
-|---|---|---|
-| `architecture.md` documents UI/frontend patterns (>30 non-blank lines in frontend sections) | +3 | grep `Component`, `frontend`, `UI architecture`, `React`, `Vue`, `Angular` |
-| `pipeline-contracts.md` mentions REST, GraphQL, HTTP endpoints | +2 | grep `REST`, `GraphQL`, `HTTP`, `endpoint`, `route` |
-| `integration-map.md` has inbound HTTP clients | +1 | grep `inbound.*HTTP` or `browser`, `client` |
+1. **Tier (`kb-category`)** → ordering, featured-ness, and the generic fallback shape.
+2. **Well-known doc identity (filename)** → three bespoke components override the
+   generic fallback for those specific docs.
 
-### library
+### Tier `primary`
 
-| Signal | Points | How to detect |
-|---|---|---|
-| `module-map.md` describes "exports" or "public API" | +3 | grep `Export-Package`, `exported`, `public API`, `exports` |
-| `architecture.md` has no UI/frontend section (or stub-only) | +2 | grep absence of `Component`, `frontend`, `React`, `Vue` |
-| `pipeline-contracts.md` describes "exported symbols", "types" | +2 | grep `exported symbols`, `type`, `interface` |
-| `infrastructure.md` is sparse (no deployment manifest) | +1 | `wc -l` < 100, no Docker/K8s mentions |
+Full-prominence section. Featured (accent treatment) for domain-salient core docs.
+Format per fact: tables for catalogs, cards for grids, prose for narrative, infographic
+for structure. A primary section MAY carry a data-driven infographic if the content
+warrants it.
 
-### cli
+Well-known docs at this tier:
+- `domain-glossary.md` → **Glossary / definition component** (not a generic section).
+- `capability-inventory.md` → **Capability entry component** (not a generic section).
 
-| Signal | Points | How to detect |
-|---|---|---|
-| `infrastructure.md` mentions "command-line" or `bin/` | +3 | grep `command-line`, `\bcli\b`, `bin/`, `argparse`, `clap` |
-| `pipeline-contracts.md` describes subcommands | +3 | grep `subcommand`, `--flag`, `argv`, `parse` |
-| `module-map.md` describes a single executable | +2 | one main module, no service/server mentions |
+All other primary docs → generic table / card / prose / infographic, best-format-per-fact.
 
-### microservices
+### Tier `extension`
 
-| Signal | Points | How to detect |
-|---|---|---|
-| `module-map.md` lists ≥6 independently-deployed services | +4 | count headings under "Services" or "Modules" with deployable indicators |
-| `integration-map.md` has inter-service contracts | +2 | grep `service-to-service`, `gRPC`, `mTLS`, `service mesh` |
-| Multiple deployment manifests in `infrastructure.md` | +2 | grep `kubernetes`, `helm chart`, multiple `Dockerfile`, multiple `service.yaml` |
+Supporting / lower-prominence section. Same per-fact format selection as `primary` but
+rendered as a secondary section (visually subordinate). Extensions are supporting
+documentation, not core newcomer concerns.
 
-### data-pipeline
+Well-known docs at this tier:
+- `decisions.md` → **Decision / ADR card component** (not a generic section).
 
-| Signal | Points | How to detect |
-|---|---|---|
-| `integration-map.md` mentions "transforms", "ETL", "streaming" | +3 | grep `ETL`, `transform`, `extract`, `streaming`, `Kafka`, `event source` |
-| `schemas.md` describes pipeline stages | +2 | grep `stage`, `transform`, `lineage`, `DAG` |
-| `infrastructure.md` mentions Airflow, dbt, Spark, Flink | +2 | grep `Airflow`, `dbt`, `Spark`, `Flink`, `Beam`, `Dagster` |
+All other extension docs → generic table / card / prose, rendered as supporting section.
 
-### agentic-pipeline
+### Tier `meta`
 
-| Signal | Points | How to detect |
-|---|---|---|
-| `pipeline-contracts.md` mentions slash commands + sub-agent dispatch | +4 | grep `slash command`, `sub-agent`, `dispatch`, `/aid-` (or similar slash-command pattern); threshold ≥ 5 matches in the doc |
-| `architecture.md` describes pipeline state machines or phase gates | +3 | grep `state machine`, `phase gate`, `feedback loop`, `pipeline`; threshold ≥ 4 matches |
-| Multiple agent definitions exist (`canonical/agents/` or `.agents/` or equivalent with ≥3 `AGENT.md` files) | +3 | `find canonical/agents -name "AGENT.md" \| wc -l` (or equivalent path); threshold ≥ 3 |
-| `coding-standards.md` or `schemas.md` describes review/grade/rubric discipline | +2 | grep `review`, `grade`, `rubric`, `severity`; threshold ≥ 3 matches in either doc |
-| `feature-inventory.md` uses "skill" framing (not generic "feature") | +2 | grep `skill\|slash command` count in feature-inventory.md; ≥ 5 matches |
-| Absence of runtime/server/CLI-binary signals (negative reinforcement) | +1 | grep absent: `daemon`, `server`, `binary`, `port \d+` in infrastructure.md |
+Compact prose / reference list. Orientation content, not a primary newcomer concern.
+`external-sources.md` and `README.md` sort last and may be folded into the KB Index.
+Render briefly; the newcomer is not expected to engage with meta docs as primary content.
 
-Max possible: **15**. AID self-scores ~14 (all signals strongly matched).
+---
 
-## Confidence levels
+## Concept Spine (all resolved doc-sets)
 
-After computing scores:
+`domain-glossary.md`, when present in the resolved doc-set, is always rendered as the
+**Glossary / definition component** immediately after "At a Glance" (the concept-first
+trio position). This applies regardless of the domain or any other signal — the Glossary
+is always the first substantial section for a newcomer who needs vocabulary first.
 
-| Confidence | Condition | Behavior |
-|---|---|---|
-| **high** | Top score ≥ 5 AND second-highest ≤ top/2 | Print detection, proceed silently |
-| **medium** | Top score ≥ 3 AND second-highest within (top/2, top) | Print detection with a warning, proceed |
-| **low** | All scores < 3, OR top within 1 of second | Use `AskUserQuestion` to ask user to choose from candidates |
+---
 
-## Implementation
+## Section-templates/* as rendering hints
 
-```bash
-# Pseudo-code for the agent during PROFILE state
-declare -A SCORES
-SCORES[web-app]=0
-SCORES[library]=0
-SCORES[cli]=0
-SCORES[microservices]=0
-SCORES[data-pipeline]=0
-
-# Run each signal check, increment relevant SCORES key
-# (See per-profile signal lists above)
-
-# Find max
-MAX_PROFILE=...
-MAX_SCORE=...
-SECOND_SCORE=...
-
-# Determine confidence
-if (( MAX_SCORE >= 5 && SECOND_SCORE * 2 <= MAX_SCORE )); then
-    CONFIDENCE=high
-elif (( MAX_SCORE >= 3 )); then
-    CONFIDENCE=medium
-else
-    CONFIDENCE=low
-fi
-```
-
-## Output to user
-
-```
-[PROFILE] Auto-detected: web-app (score 6, confidence: high)
-          Signals matched:
-            +3 architecture.md documents frontend UI patterns
-            +2 pipeline-contracts.md mentions REST endpoints
-            +1 integration-map.md has inbound HTTP
-          Override: re-run with --profile X --reset
-```
-
-When confidence is `low`:
-```
-[PROFILE] Detection ambiguous (top scores: web-app=2, library=2).
-          Using AskUserQuestion to resolve...
-```
+The remaining files in this directory (`web-app.md`, `cli.md`, `library.md`,
+`microservices.md`, `data-pipeline.md`, `agentic-pipeline.md`) are **retired as project-type
+profile selectors** — they are never selected as a project-type template. Where they contain
+rendering guidance that maps to `kb-category` tiers (e.g. per-section content hints), that
+guidance is used as a **secondary reference** during GENERATE for its applicable KB docs, but
+the section set itself is always derived from the resolved doc-set, not from these templates.

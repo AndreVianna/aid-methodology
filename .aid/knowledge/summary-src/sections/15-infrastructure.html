@@ -1,0 +1,90 @@
+<section id="infrastructure" class="sec" data-title="Infrastructure">
+	<header>
+		<span class="eyebrow">From source to running software &mdash; infrastructure.md</span>
+		<h2>Infrastructure</h2>
+		<p class="lede">How AID moves from source to running/published software: source control, CI/CD, the multi-profile render, the three distribution channels, versioning, the bootstrap installers, and the dashboard runtime.</p>
+	</header>
+
+	<div class="grid g2">
+		<div>
+			<h3>Release Pipeline</h3>
+			<div class="feat-list">
+				<div class="feat-row">
+					<span class="id">1</span>
+					<div><span class="name">Quality gate</span><span class="desc">All CI checks pass; run-all.sh green locally; render-drift clean</span></div>
+				</div>
+				<div class="feat-row">
+					<span class="id">2</span>
+					<div><span class="name">Version bump</span><span class="desc">Bump all 4 version carriers: VERSION, package.json, pyproject.toml, git tag</span></div>
+				</div>
+				<div class="feat-row">
+					<span class="id">3</span>
+					<div><span class="name">GitHub release</span><span class="desc">release.yml workflow creates release with 9 assets (per-profile tarballs + install scripts + checksums)</span></div>
+				</div>
+				<div class="feat-row">
+					<span class="id">4</span>
+					<div><span class="name">npm publish</span><span class="desc">Parallel to PyPI; publishes aid-installer@1.1.1</span></div>
+				</div>
+				<div class="feat-row">
+					<span class="id">5</span>
+					<div><span class="name">PyPI publish</span><span class="desc">Parallel to npm; publishes aid-installer 1.1.1</span></div>
+				</div>
+			</div>
+		</div>
+		<div>
+			<h3>Distribution Channels</h3>
+			<div class="tbl-wrap">
+				<table class="tbl">
+					<thead><tr><th>Channel</th><th>Bootstrap command</th><th>Notes</th></tr></thead>
+					<tbody>
+						<tr>
+							<td>npm</td>
+							<td><code>npx aid-installer</code></td>
+							<td>Node &ge;18 required; zero runtime deps</td>
+						</tr>
+						<tr>
+							<td>PyPI</td>
+							<td><code>pip install aid-installer &amp;&amp; python -m aid_installer</code></td>
+							<td>Python &ge;3.8 required; zero runtime deps</td>
+						</tr>
+						<tr>
+							<td>Bash bootstrap</td>
+							<td><code>curl -fsSL .../install.sh | bash</code></td>
+							<td>No runtime deps; SHA-256 verified</td>
+						</tr>
+						<tr>
+							<td>PowerShell bootstrap</td>
+							<td><code>irm .../install.ps1 | iex</code></td>
+							<td>PS 5.1+; TLS 1.2 explicit; SHA-256 verified</td>
+						</tr>
+						<tr>
+							<td>Offline tarball</td>
+							<td>Per-profile tarballs from GitHub Releases</td>
+							<td>9 assets per release</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">Versioning</h3>
+	<div class="callout" style="margin-top:0.5rem;">
+		<h4>Four version carriers (must stay in sync)</h4>
+		<p><code>VERSION</code> (plain text) &middot; <code>packages/npm/package.json</code> &middot; <code>packages/pypi/pyproject.toml</code> &middot; git tag. Current: <strong>v1.1.1</strong>. The format_version in <code>.aid/settings.yml</code> is independent &mdash; it tracks the install schema, not the AID CLI version.</p>
+	</div>
+
+	<h3 style="margin-top:1.5rem;">Docs Site &amp; Dashboard</h3>
+	<div class="grid g2">
+		<div class="card">
+			<div class="kicker">Docs site</div>
+			<h3>aid.casuloailabs.com</h3>
+			<p>Astro-based documentation site under <code>site/</code>. Built by <code>docs.yml</code> workflow on push to master and deployed to GitHub Pages. TypeScript + Starlight theme.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Dashboard</div>
+			<h3>localhost only</h3>
+			<p>The dashboard server (<code>server.mjs</code> or <code>server.py</code>) binds to <code>127.0.0.1</code> only. Multi-repo view of pipeline state + KB summary. Exposed privately via Tailscale if needed; never on the public internet.</p>
+		</div>
+	</div>
+</section>

@@ -1,13 +1,35 @@
 ---
-profile: web-app
-target_diagrams: 8
-notes: "Full-stack web application — most comprehensive layout with 13 sections and 8 diagrams."
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for web-app-domain KB docs, keyed by kb-category tier and doc
+        identity — not by project-type. The section set is derived from the resolved
+        doc-set + frontmatter, not from this template."
 ---
 
-# Section Template — `web-app` Profile
+# Rendering Hints — Web Application Domain Docs
 
-For backend + frontend monoliths (like MAM Modules). Most comprehensive layout
-with 13 sections and 8 diagrams.
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `web-app` or `full-stack`
+> and the resolved doc-set contains the listed docs.
+>
+> **Note on "At a Glance":** the 4x2 software-metric card grid (module count / entity
+> count / endpoint count / test count) described in §1 below is **retired as the lead**
+> (feature-015/Change 4). "At a Glance" now leads with newcomer-framed "what is this /
+> what does it do" plain-language content (see `state-generate.md` §4). Counts may appear
+> as a secondary detail but do not lead.
+
+---
+
+## Original section structure (preserved as rendering reference)
+
+The following layout was the web-app profile's fixed section order. It is **not selected
+as a template**; it is kept as domain-specific rendering guidance. The resolved doc-set
+order (from `state-profile.md` §4) is authoritative.
+
+For backend + frontend monoliths. Most comprehensive layout — consulted as a rendering
+hint for docs that appear in the resolved doc-set of a web-app-domain project.
 
 ## Sections
 
@@ -25,7 +47,8 @@ with 13 sections and 8 diagrams.
 | 10 | Test Landscape | | test-landscape.md |
 | 11 | Tech Debt | | tech-debt.md |
 | 12 | Infrastructure & Build | | infrastructure.md, technology-stack.md |
-| 13 | Knowledge Base Index | | INDEX.md |
+| 13 | Concept Spine | | domain-glossary.md |
+| 14 | Knowledge Base Index | | INDEX.md |
 
 ## Diagrams
 
@@ -93,7 +116,22 @@ debt item: ID, title, evidence, effort.
 CLI command table with status badges (works / broken / no-op) + 4 cards (CI,
 artifact, backend build, frontend build).
 
-### §13 Knowledge Base Index
+### §13 Concept Spine
+
+The project's native vocabulary — domain-specific and coined terms that a new developer must
+understand to reason about the application. Drawn from `domain-glossary.md` (the C4 doc).
+
+For a web application, include: the domain entity names if they are project-coined (not
+industry-standard CRUD nouns), bounded-context terminology, any project-specific naming
+conventions for UI/API concerns (e.g. "module", "plugin", "namespace" if used in a specific
+way), and non-obvious workflow or state names. Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this application's domain context, not the general web meaning}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder; do not omit the
+section.
+
+### §14 Knowledge Base Index
 Full table of every `.aid/knowledge/*.md` with one-line summaries and links.
 
 ## Theme palette mapping (per-section accent)

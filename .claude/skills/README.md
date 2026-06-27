@@ -1,6 +1,6 @@
 # AID Skills for Claude Code
 
-11 skills in AgentSkills format (10 pipeline + 1 optional). Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
+13 skills in AgentSkills format (10 across five pipeline groups + 3 off-pipeline on-demand). Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
 
 ## Skills
 

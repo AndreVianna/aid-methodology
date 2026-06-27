@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Per-module metadata map -- purpose, dependencies, owners, and key entry points for all modules in {project}.
+summary: Read this to navigate the codebase before any module-touching task.
+sources:
+  - src/                        # module source directories
+  - {path/to/module/config}     # package manifests, module boundaries
+tags: [C2, modules, dependencies, entry-points, ownership]
+see_also: [architecture.md, pipeline-contracts.md]
+owner: architect
+audience: [developer, architect]
 intent: |
   Per-module metadata: purpose, dependencies, owners, and key entry points. Read this to navigate the codebase before any module-touching task.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 
@@ -13,6 +23,17 @@ changelog:
 > **Source:** aid-discover (Phase 1)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Module Inventory](#module-inventory)
+- [Dependency Graph](#dependency-graph)
+- [Entry Points](#entry-points)
+- [High-Churn Modules](#high-churn-modules)
+- [Oversized Modules](#oversized-modules)
+- [Conventions](#conventions)
+- [Invariants](#invariants)
+- [Change Log](#change-log)
 
 ---
 
@@ -39,18 +60,16 @@ changelog:
 ## Dependency Graph
 
 > Show which modules import which. Arrows point from importer to dependency.
+> **Per kb-authoring P10:** use the plain-text form below -- diagrams are avoided in KB
+> `.md` docs. Use `→` arrows; list one dependency per line.
 
-```mermaid
-graph TD
-    API[API Layer] --> App[Core.Application]
-    API --> Infra[Infrastructure.Data]
-    App --> Domain[Core.Domain]
-    Infra --> Domain
-    Infra --> Messaging[Infrastructure.Messaging]
-    Messaging --> App
+```
+{ModuleA} → {ModuleB}     ({ModuleA} depends on {ModuleB})
+{ModuleB} → {ModuleC}
+{ModuleA} ✗ {ModuleC}     (direct dependency NOT present -- goes through B)
 ```
 
-> If mermaid isn't available, use text:
+**Example (text form):**
 ```
 API → Core.Application
 API → Infrastructure.Data
@@ -92,7 +111,35 @@ reason — e.g., `Core.Application` mixes several unrelated concerns}
 
 ---
 
-## Revision History
+## Conventions
+
+> The project's **own way** of adding/wiring a module -- where it goes, how it is named, how
+> it is registered/connected. Without this an agent invents a module convention wrong for
+> this project. State the rule, then point at the canonical example module.
+
+- **Where a new module goes:** {e.g. "one project per bounded context under `src/`;
+  infrastructure modules go under `src/Infrastructure/`"}.
+- **How a module is named:** {e.g. "`{Context}.{Layer}` -- `Orders.Application`"}.
+- **How a module is registered/wired:** {e.g. "each module exposes an
+  `Add{Module}()` extension method called from composition root"}.
+
+---
+
+## Invariants
+
+> What MUST always hold for the module graph -- an ordering, a dependency-direction rule, a
+> single-source-of-truth rule the source enforces silently. Without this an agent violates
+> an invariant and breaks the build or a layering rule. State each as a hard MUST/MUST-NOT.
+
+- **{Dependency direction}:** {e.g. "Domain modules MUST NOT depend on Infrastructure
+  modules -- enforced by project references"}.
+- **{No cycles}:** {e.g. "the module dependency graph MUST stay acyclic"}.
+- **{Single owner}:** {e.g. "each entity is owned by exactly one module; no shared mutable
+  state across modules"}.
+
+---
+
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

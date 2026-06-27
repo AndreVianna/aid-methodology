@@ -72,3 +72,14 @@ desktop.ini
 # _migrate_retired_layout; never committed so users can inspect/restore but
 # don't accidentally track recovered files.
 .aid/.trash/
+
+# generator verify-report default output path (verify_deterministic.py / verify_advisory.py) -- tooling artifact, not a work
+.aid/work-002-canonical-generator/
+
+# Playwright MCP capture output (screenshots, snapshots, console logs) — ephemeral, never commit.
+# Captured images should be written to a temp folder (e.g. $CLAUDE_JOB_DIR/tmp); this is a backstop.
+.playwright-mcp/
+/*.png
+
+# Discovery scratch / intermediate generation outputs — NOT the KB (the KB is .aid/knowledge/).
+.aid/generated/

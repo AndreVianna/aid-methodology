@@ -1,9 +1,9 @@
 /* ============================================================================
- * lightbox.js — Theme toggle, Mermaid init, click-to-expand lightbox,
- *               breadcrumb scrollspy, and full a11y (focus trap, skip link).
+ * lightbox.js -- Theme toggle, click-to-expand lightbox,
+ *                breadcrumb scrollspy, and full a11y (focus trap, skip link).
  *
- * Used by /aid-summarize. Inline this file inside a <script> block AFTER the
- * inlined Mermaid library. Self-contained (no external deps).
+ * Used by /aid-summarize. Inline this file inside a <script> block.
+ * Self-contained (no external deps, no runtime diagram engine).
  * ========================================================================== */
 (function() {
 	'use strict';
@@ -28,79 +28,10 @@
 	}
 	updateThemeUI(initialTheme);
 
-	function mermaidThemeFor(theme) {
-		return theme === 'dark'
-			? { theme: 'dark', themeVariables: {
-					darkMode: true,
-					background: '#111A2E',
-					primaryColor: '#0D2A52',
-					primaryTextColor: '#E5EAF2',
-					primaryBorderColor: '#2DD4D2',
-					lineColor: '#9AA5B8',
-					secondaryColor: '#1E293B',
-					tertiaryColor: '#081021',
-					mainBkg: '#0D2A52',
-					clusterBkg: '#081021',
-					clusterBorder: '#2DD4D2',
-					textColor: '#E5EAF2',
-					nodeBorder: '#2DD4D2'
-				} }
-			: { theme: 'default', themeVariables: {
-					primaryColor: '#F7F9FC',
-					primaryTextColor: '#101828',
-					primaryBorderColor: '#00A3A1',
-					lineColor: '#4B5565',
-					secondaryColor: '#EEF2F7',
-					tertiaryColor: '#FFFFFF',
-					mainBkg: '#FFFFFF',
-					clusterBkg: '#F7F9FC',
-					clusterBorder: '#00A3A1',
-					textColor: '#101828'
-				} };
-	}
-
-	/* ---------- Mermaid init ---------- */
-	function initMermaid(theme) {
-		if (!window.mermaid) return;
-		const cfg = mermaidThemeFor(theme);
-		cfg.startOnLoad = false;
-		cfg.securityLevel = 'loose';
-		cfg.fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif';
-		cfg.flowchart = { useMaxWidth: true, htmlLabels: true, curve: 'basis' };
-		cfg.er = { useMaxWidth: true };
-		cfg.sequence = { useMaxWidth: true };
-		window.mermaid.initialize(cfg);
-	}
-
-	function renderAllDiagrams() {
-		if (!window.mermaid) return;
-		const blocks = document.querySelectorAll('.mermaid');
-		for (let i = 0; i < blocks.length; i++) {
-			const el = blocks[i];
-			/* First pass: stash the raw text BEFORE Mermaid has rendered. */
-			if (!el.dataset.source) {
-				el.dataset.source = el.textContent;
-				continue;
-			}
-			/* Re-render (theme toggle): restore via textContent, never innerHTML.
-			   innerHTML re-parses any "<token>" in diagram text as an HTML element,
-			   silently corrupting the diagram source. */
-			el.textContent = el.dataset.source;
-			el.removeAttribute('data-processed');
-		}
-		try {
-			window.mermaid.run({ querySelector: '.mermaid' });
-		} catch (e) {
-			console.error('Mermaid render error:', e);
-		}
-	}
-
 	function setTheme(theme) {
 		root.setAttribute('data-theme', theme);
 		try { localStorage.setItem('aid-dashboard-theme', theme); } catch (e) {}
 		updateThemeUI(theme);
-		initMermaid(theme);
-		renderAllDiagrams();
 	}
 
 	/* ---------- Lightbox state ---------- */
@@ -121,7 +52,7 @@
 		lb.lastFocused = document.activeElement;
 
 		const clone = svg.cloneNode(true);
-		/* Mermaid SVGs use inline max-width to stay small inline. Clear it so the
+		/* Inline SVGs may have a constrained max-width. Clear it so the
 		   clone can expand to fill the lightbox wrapper, which carries the chrome. */
 		clone.style.maxWidth = 'none';
 		clone.style.maxHeight = 'none';
@@ -214,7 +145,7 @@
 		if (!lb.root) return;
 
 		/* Make every diagram box keyboard-activatable. */
-		const boxes = document.querySelectorAll('.mermaid-box');
+		const boxes = document.querySelectorAll('.diagram-box');
 		boxes.forEach(function(box) {
 			if (!box.hasAttribute('role')) box.setAttribute('role', 'button');
 			if (!box.hasAttribute('tabindex')) box.setAttribute('tabindex', '0');
@@ -331,8 +262,6 @@
 
 	/* ---------- Bootstrap ---------- */
 	document.addEventListener('DOMContentLoaded', function() {
-		initMermaid(initialTheme);
-		renderAllDiagrams();
 		setTimeout(initLightbox, 50);
 		initScrollspy();
 

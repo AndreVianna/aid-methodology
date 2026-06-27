@@ -483,12 +483,22 @@ def _ser_kb_baseline(obj) -> dict | None:
     }
 
 
+def _ser_doc_freshness(obj) -> dict:
+    """Serialize one DocFreshness entry in declared field order (task-042/task-043)."""
+    return {
+        "doc":             obj.doc,
+        "verdict":         obj.verdict,
+        "suspect_sources": list(obj.suspect_sources),
+    }
+
+
 def _ser_kb_state(obj) -> dict | None:
     """Serialize KbStateRef in declared field order (DM-A3, task-064), or None if absent.
 
     Field order (DM-3 deterministic):
       retained: summary_approved, last_summary_date, doc_count
       new (task-064): status, summary_present, kb_baseline
+      new (task-042/task-043): doc_freshness, suspect_count
     No schema_version bump (DM-A3).
     """
     if obj is None:
@@ -500,6 +510,8 @@ def _ser_kb_state(obj) -> dict | None:
         "status":            obj.status.value if hasattr(obj.status, "value") else str(obj.status),
         "summary_present":   obj.summary_present,
         "kb_baseline":       _ser_kb_baseline(obj.kb_baseline),
+        "doc_freshness":     [_ser_doc_freshness(d) for d in (obj.doc_freshness or [])],
+        "suspect_count":     obj.suspect_count if isinstance(obj.suspect_count, int) else 0,
     }
 
 

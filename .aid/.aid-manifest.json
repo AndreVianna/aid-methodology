@@ -391,8 +391,14 @@
         ".claude/aid/templates/task-state-template.md",
         ".claude/aid/templates/work-state-template.md",
         ".claude/skills/aid-README.md",
-        ".claude/skills/aid-ask/SKILL.md",
-        ".claude/skills/aid-deploy/references/state-done.md"
+        ".claude/skills/aid-deploy/references/state-done.md",
+        ".claude/skills/aid-query-kb/SKILL.md",
+        ".claude/skills/aid-update-kb/SKILL.md",
+        ".claude/skills/aid-update-kb/references/state-analyze.md",
+        ".claude/skills/aid-update-kb/references/state-apply.md",
+        ".claude/skills/aid-update-kb/references/state-approval.md",
+        ".claude/skills/aid-update-kb/references/state-done.md",
+        ".claude/skills/aid-update-kb/references/state-review.md"
       ],
       "root_agent_files": [
         {

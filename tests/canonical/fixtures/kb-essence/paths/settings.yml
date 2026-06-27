@@ -1,0 +1,16 @@
+# paths/settings.yml -- fixture settings for TEST-D path-classification assertions.
+#
+# Carries ONLY the triage.* block with values byte-identical to the shipped defaults
+# in canonical/aid/templates/settings.yml. TEST-D passes --settings to recon-classify.sh
+# pointing at this file so the classifier runs fully isolated (no live repo settings.yml
+# read) while still exercising the shipped threshold values.
+#
+# V-D7 asserts parity: grep triage.* from this file and from
+# canonical/aid/templates/settings.yml and assert byte-identical.
+
+triage:
+  greenfield_max_source_files: 5     # RM1 <= this AND RM2 <= loc => greenfield (little/no source)
+  greenfield_max_source_loc:   500   # RM2 ceiling for greenfield
+  large_min_source_loc:        20000 # RM2 >= this => brownfield-large (size)
+  large_min_dirs:              25    # RM3 >= this => brownfield-large (breadth / fan-out)
+  large_min_concepts:          40    # RM4 >= this => brownfield-large (concept density)

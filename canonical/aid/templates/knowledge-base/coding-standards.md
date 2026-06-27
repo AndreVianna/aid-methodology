@@ -1,20 +1,43 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Project-specific coding conventions mined from actual code -- naming, formatting, idioms, and process rules.
+summary: Read this before writing or reviewing code to follow established conventions.
+sources:
+  - src/                        # actual source files conventions are inferred from
+  - {path/to/linting/config}    # e.g., .eslintrc, .rubocop.yml, pyproject.toml
+tags: [C3, conventions, naming, formatting, idioms]
+see_also: [architecture.md]
+owner: architect
+audience: [developer, reviewer]
 intent: |
   Project-specific authoring conventions mined from actual code: naming, formatting, idioms, and any process rules the project follows. Read this before writing or reviewing code.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 
 # Coding Standards
 
-> **Source:** aid-discover (Phase 1) — inferred from code analysis
+> **Source:** aid-discover (Phase 1) -- inferred from code analysis
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
 
-> ⚠️ **Important:** These conventions are **inferred from code analysis**. They reflect what the code actually does, not what documentation claims. Confirm ambiguous or inconsistent patterns with the team before enforcing them in new code.
+> These conventions are **inferred from code analysis**. They reflect what the code actually does, not what documentation claims. Confirm ambiguous or inconsistent patterns with the team before enforcing them in new code.
+
+## Contents
+
+- [Naming Conventions](#naming-conventions)
+- [Error Handling](#error-handling)
+- [Logging](#logging)
+- [Configuration Management](#configuration-management)
+- [File and Project Organization](#file--project-organization)
+- [Code Organization Patterns](#code-organization-patterns)
+- [Comments and Documentation](#comments--documentation)
+- [Observed Inconsistencies](#observed-inconsistencies)
+- [Conventions](#conventions)
+- [Change Log](#change-log)
 
 ---
 
@@ -121,7 +144,21 @@ changelog:
 
 ---
 
-## Revision History
+## Conventions
+
+> The project's **own way** of doing a recurring change -- naming, registration, wiring of
+> a new endpoint/module/handler. Capture the convention an agent would otherwise invent
+> wrong for this project. State the rule, then show the canonical example. Keep these as
+> imperative rules ("always X", "never Y"), not aspirations.
+
+- **{Recurring change, e.g. adding a service}:** {the project's rule -- e.g. "register in
+  `Startup.cs` via `AddScoped<IFoo, Foo>()`; never `new` it at the call site"}.
+- **{Recurring change, e.g. naming a handler}:** {the rule -- e.g. "command handlers are
+  named `{Command}Handler` and live under `Application/Handlers/`"}.
+
+---
+
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

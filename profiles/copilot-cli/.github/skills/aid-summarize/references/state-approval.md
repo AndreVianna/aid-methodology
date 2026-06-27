@@ -10,13 +10,12 @@ Print summary in the standard format:
 ✅ kb.html ready for approval
    Path:           .aid/dashboard/kb.html
    Size:           {MB}
-   Profile:        {profile} (target_diagrams: {N})
-   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL
+   Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}
+   Doc-set:        {N resolved} of {M total} docs covered
+   Machine Grade:  {grade} ({score}/68) — script-verified AUTO_POOL (COV + D1/D2/L1/L2/H1/A1-A5/C1/C2/S2)
    Human Grade:    {grade} ({score}/30) — manual-checklist MANUAL_POOL (K1+K2+V1)
    Overall Grade:  {min of above} (target: {min})
-   Diagrams:       {N}/{target} valid (D1 + D2 both passed)
    Theme:          light + dark, both pass WCAG AA
-   Mermaid:        {version}
    Trigger:        {reason}
 
 Preview:  python -m http.server 8000   # then open

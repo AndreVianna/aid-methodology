@@ -5,6 +5,100 @@ and passes it as the prompt to each subagent.
 
 ---
 
+## ⛔ NO ASSUMPTIONS — DEFER TO THE USER (applies to ALL agents, ALWAYS)
+
+**This is the single most important rule of discovery. It overrides convenience, speed, and
+your own confidence.**
+
+When you encounter ANYTHING unclear, ambiguous, contradictory, or a judgment call — **a term
+you cannot define, a discrepancy between two sources, a classification you are unsure of, which
+of two things is authoritative, whether something is in or out of scope, how to resolve a
+conflict** — you **MUST NOT resolve it by assumption, inference, or a "reasonable guess." You
+MUST record a question and DEFER the decision to the user.**
+
+- **NEVER pick the "likely" answer and move on.** A `LIKELY` / `UNCERTAIN` / `probably` /
+  `I'll assume` answer written into a KB doc is a **FAILURE** — it is exactly the assumption
+  this rule forbids. Replace it with a Q&A entry.
+- **NEVER silently reconcile a contradiction** (e.g. "the docs say 14 but I'll use 13"). Record
+  BOTH observations and ASK which is correct.
+- If you can ground a fact from the artifacts **with certainty**, state it (with its source). If
+  you cannot, **ASK** — do not fill the gap with a guess.
+
+**How to defer:** write the question to `.aid/knowledge/.scout-questions.tmp` using the
+structured Q&A format — ID, Category, Impact, `Status: Pending`, Context (what you observed and
+why it is unclear), and Suggested (your best READING of the evidence, explicitly NOT a decision).
+Step 6b consolidates these into `STATE.md ## Q&A (Pending)`, and the Q-AND-A state resolves them
+**with the user** before the KB is approved. The Step 0cx/0d/0f gates and the Step 5c
+exclusion-review gate are the model: identify → present → the user decides.
+
+**Why this matters:** AID is used by people who distrust AI. A single unconfirmed assumption
+presented as fact reads as hallucination and breaks that trust. Visible deference — "here is
+what I found, here is what I am unsure of, **you** decide" — IS the product. **When in doubt, ASK.**
+
+---
+
+## Authoring Standard (applies to ALL generation agents)
+
+Every KB document you produce MUST comply with the **dual-audience authoring standard**
+(`.agent/aid/templates/kb-authoring/principles.md` P10). The rules are:
+
+**Granularity**
+- One concern per document. Do not mix concerns in a single document.
+- Small and focused is the default. If a concern is too large for one document, produce
+  per-subsystem or per-aspect documents under the same concern.
+
+**Language**
+- Write for a junior professional. Use plain, clear, concrete language. Avoid jargon
+  where plain words work.
+- Active voice, short sentences, one idea per sentence.
+- Define project-specific terms in `domain-glossary.md` on first use.
+
+**Format**
+- Use **tables and bullet lists** as the primary structure for reference material.
+- **Avoid diagrams** (Mermaid blocks, ASCII art, SVG). Diagrams cannot be grepped and
+  degrade outside a browser. Use plain-text representations instead:
+  - For module dependencies: `ModuleA -> ModuleB` arrow notation.
+  - For relationships: a table with columns (Entity, Relates to, Cardinality, Via).
+  - For data flow: a numbered or bulleted sequence list.
+- Code examples (` ``` ` blocks showing actual code or config) are NOT diagrams and are
+  permitted.
+- Named greppable sections for operational guidance (Conventions, Invariants, Gotchas,
+  Contracts) as defined in `concern-model.md`.
+
+**Dual-audience classification**
+- Every document MUST have complete frontmatter with at least: `kb-category:`,
+  `source:`, `objective:`, `summary:`, `sources:`, `audience:`, `owner:`, `tags:`.
+- `tags:` MUST include the concern ID (e.g. `C1`, `C2`, `C0`, etc.) for the spine
+  dimension the document covers.
+
+**Layout (every document, no exceptions)**
+
+| Position | Section |
+|----------|---------|
+| 1 | Frontmatter (YAML `---` block) |
+| 2 | Title (`# Doc Title`) |
+| 3 | Index / table of contents (list of sections, required when the doc has more than 3 sections) |
+| 4 | Content sections |
+| 5 | `## Change Log` (always last) |
+
+The `## Change Log` section MUST be the last section in every document. Do not place
+content after it.
+
+**Mechanical self-check before you report done (do NOT rely on your own reading).** Citations
+MUST be durable anchors — a file path plus a grep-recoverable symbol/heading/string — NEVER a
+bare `file.ext:LINE` (line numbers drift). Before reporting, RUN the lint on your output and fix
+every violation it lists:
+
+```bash
+bash .claude/aid/scripts/kb/kb-citation-lint.sh --root .aid/knowledge
+```
+
+Convert each flagged `file.ext:LINE` to `file.ext:<symbol or heading at that location>`. The
+orchestrator re-runs this lint as a gate (Step 5a) and will bounce non-compliant docs back to
+you — a self-reported "durable anchors only" is not accepted; the script is the authority.
+
+---
+
 ## Custom-Doc Runtime Extension (§2.6)
 
 When an agent's target list (computed from the declared doc-set via the `owns-<agent>`
@@ -13,8 +107,14 @@ no canonical template, i.e., not in the default seed synthesized from
 `.agent/aid/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
 prompt at runtime** by appending the following line after the base prompt text:
 
-> Also produce `.aid/knowledge/<filename>` per its expectations entry in
-> `references/document-expectations.md` (keyed by `### <filename>`).
+> Also produce `.aid/knowledge/<filename>`. Resolve its depth contract as follows:
+> (1) identify the doc's spine dimension (from its `spine-dimension` column in
+> `domain-doc-matrix.md`, or the §2.6 Branch-B dimension mapping for auto-researched docs);
+> (2) satisfy the matching `### C<N> — <dimension>` Spine-Dimension Depth Standard in
+> `references/document-expectations.md` as the MUST-floor for this doc;
+> (3) if a `### <filename>` entry also exists in `references/document-expectations.md`,
+> satisfy it as an additive refinement on top of the dimension standard — it does not
+> replace the floor.
 
 This extension is appended once per custom doc in the agent's target list. The base prompt
 text (the sections below) is never modified — the extension is a runtime-only append.
@@ -28,13 +128,19 @@ agent's prompt. If the `owner` field does not match any of the 5 agents (unknown
 
 **REVIEW path:** because a custom doc appears in the `list-filenames` accessor output (it is
 in the declared set), the REVIEW state's artifact list includes it and the `aid-reviewer`
-grades it against its `document-expectations.md` entry (keyed by `### <filename>`). This
+grades it against its spine dimension's Spine-Dimension Depth Standard in
+`references/document-expectations.md` (the `### C<N> — <dimension>` block matching the
+doc's dimension), plus any `### <filename>` entry as an additive refinement on top. This
 closes the generated AND reviewed loop end-to-end (§3.3).
 
 ---
 
 ## Scout
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Analyze this project's repository structure and any external documentation to produce TWO
 > foundation documents:
 >
@@ -62,6 +168,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ## Architect
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/architecture.md and
 > .aid/knowledge/technology-stack.md.
@@ -73,20 +183,48 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > Both are valuable. Pay special attention to external-sources.md — external documentation
 > often contains architecture decisions and design rationale absent from the code.
 >
+> **Conceptual-synthesis mandate (Step 5b, aid-discover f004):** In addition to the standard
+> deep-dive, you own the conceptual-synthesis channel. Propose load-bearing concepts that have
+> NO stable recurring coined token — ideas spread across prose that the lexical harvest could
+> not fingerprint. For EVERY proposed synthesis concept you MUST cite the supporting source
+> span(s) (path + grep-recoverable distinct string) that the concept was inferred from. An
+> uncited synthesis proposal is INVALID and must be rejected, not stored. Merge accepted
+> concepts into .aid/generated/candidate-concepts.md as synthesis-tagged rows (Source =
+> synthesis; Example source = the mandatory cited span). This runs once at the start of Step
+> 5b's closure loop, after you have read the full deep-dive KB docs.
+>
+> **Spine-grounding mandate:** Every candidate-concept term in
+> .aid/generated/candidate-concepts.md (both harvest and synthesis rows) that you encounter
+> while writing your documents MUST be either (a) grounded into a concept entry in
+> .aid/knowledge/domain-glossary.md (definition-as-used-here, relates-to, sources:) or (b)
+> explicitly dismissed as not-a-load-bearing-concept with a one-line reason recorded in
+> .aid/generated/spine-todo.md. No candidate is silently dropped.
+>
+> **Can't-explain-it tripwire:** Any project-specific term you reach for while explaining the
+> architecture that you cannot confidently define from general knowledge is a MANDATORY
+> investigation — ground it from the artifacts or escalate it to Q&A; never skip it as noise.
+> This includes terms that appear in candidate-concepts.md AND any term you encounter in
+> ADRs/reports/commit prose that recurs but has no clear general-knowledge definition.
+>
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/candidate-concepts.md — ranked candidate concepts; ground or dismiss every row
 > - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the .aid/knowledge/ directory.
+> Write only to the .aid/knowledge/ and .aid/generated/ directories.
 
 ---
 
 ## Analyst
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/module-map.md,
 > .aid/knowledge/coding-standards.md, and .aid/knowledge/schemas.md.
@@ -98,8 +236,21 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > to external-sources.md — external documentation often contains coding standards and data
 > model definitions absent from the code.
 >
+> **Spine-grounding mandate:** Every candidate-concept term in
+> .aid/generated/candidate-concepts.md (both harvest and synthesis rows) that you encounter
+> while writing your documents MUST be either grounded into a concept entry in
+> .aid/knowledge/domain-glossary.md or explicitly dismissed in .aid/generated/spine-todo.md.
+> No candidate is silently dropped.
+>
+> **Can't-explain-it tripwire:** Any project-specific term you reach for while explaining the
+> modules, standards, or schemas that you cannot confidently define from general knowledge is a
+> MANDATORY investigation — ground it from the artifacts or escalate it to Q&A; never skip it
+> as noise. Follow the candidate's Example source anchor into the why-source (ADR/report/commit)
+> when grounding it.
+>
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/candidate-concepts.md — ranked candidate concepts; ground or dismiss every row you use
 > - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
@@ -112,6 +263,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ## Integrator
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/pipeline-contracts.md,
 > .aid/knowledge/integration-map.md, and .aid/knowledge/domain-glossary.md.
@@ -123,20 +278,44 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > external-sources.md — external documentation often contains API specs, integration diagrams,
 > and domain definitions absent from the code.
 >
+> **Spine-grounding mandate (glossary owner):** You own .aid/knowledge/domain-glossary.md —
+> the concept spine. Every candidate-concept term in .aid/generated/candidate-concepts.md
+> (BOTH harvest and synthesis rows) MUST be driven to a terminal state before closure:
+> (a) GROUNDED — produce a concept entry in domain-glossary.md with definition-as-used-here
+> (what the term means in THIS project, not a generic definition), relates-to (how it connects
+> to other spine concepts), and sources: (path + grep-recoverable anchor per f001 schema); OR
+> (b) DISMISSED — record a one-line reason in .aid/generated/spine-todo.md (generated-identifier
+> dump, vendored token, etc.). No candidate is silently dropped. New native terms discovered
+> during grounding are appended to candidate-concepts.md (Source = synthesis, with cited span)
+> and to spine-todo.md (Status: OPEN).
+>
+> **Can't-explain-it tripwire:** Any project-specific term you reach for while explaining
+> pipelines, integrations, or domain concepts that you cannot confidently define from general
+> knowledge is a MANDATORY investigation — ground it from the artifacts or escalate it to Q&A;
+> never skip it as noise. This applies to terms in candidate-concepts.md AND to terms you
+> encounter in API specs/ADRs/integration diagrams that recur but have no clear
+> general-knowledge definition.
+>
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/candidate-concepts.md — ranked candidate concepts; ground or dismiss EVERY row
+> - .aid/generated/spine-todo.md — work-list tracking terminal state of each candidate
 > - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the .aid/knowledge/ directory.
+> Write only to the .aid/knowledge/ and .aid/generated/ directories.
 
 ---
 
 ## Quality
 
+> **Authoring standard:** apply the dual-audience standard from the section above to every
+> document you produce (single-concern, junior-clear, tables/bullets not diagrams, classified
+> frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
+>
 > Read the reference documents first, then analyze this project's repository — all code,
 > configuration, and documentation — and produce .aid/knowledge/test-landscape.md,
 > .aid/knowledge/tech-debt.md, and .aid/knowledge/infrastructure.md.
@@ -152,8 +331,21 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > attention to external-sources.md — external documentation often contains security policies,
 > compliance requirements, deployment guides, and test strategies absent from the code.
 >
+> **Spine-grounding mandate:** Every candidate-concept term in
+> .aid/generated/candidate-concepts.md (both harvest and synthesis rows) that you encounter
+> while writing your documents MUST be either grounded into a concept entry in
+> .aid/knowledge/domain-glossary.md or explicitly dismissed in .aid/generated/spine-todo.md.
+> No candidate is silently dropped.
+>
+> **Can't-explain-it tripwire:** Any project-specific term you reach for while explaining
+> the test landscape, tech debt, or infrastructure that you cannot confidently define from
+> general knowledge is a MANDATORY investigation — ground it from the artifacts or escalate
+> it to Q&A; never skip it as noise. Follow the candidate's Example source anchor into the
+> why-source (ADR/report/commit) when grounding it.
+>
 > REFERENCE DOCUMENTS (read these FIRST before analyzing):
-> - .aid/knowledge/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/project-index.md — full file inventory with metadata (sizes, languages, mtimes, notable files)
+> - .aid/generated/candidate-concepts.md — ranked candidate concepts; ground or dismiss every row you use
 > - .aid/knowledge/project-structure.md — repository structure map (architectural narrative)
 > - .aid/knowledge/external-sources.md — external documentation inventory and findings
 > Use these to orient your analysis. External sources may contain information directly relevant
@@ -161,3 +353,69 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > and note any discrepancies.
 >
 > Write only to the .aid/knowledge/ directory.
+
+---
+
+## Grounding
+
+> You are a grounding sub-agent dispatched by the SYNTHESIS + CLOSURE loop (Step 5b of
+> aid-discover). Your task: ground ONE candidate-concept term (or a small chunk of terms,
+> as specified) into a concept entry in the project's concept spine.
+>
+> **Your assigned term(s):** {TERM_LIST}
+>
+> **Your task for each term:**
+>
+> 1. Read the KB docs (.aid/knowledge/*.md), the concept spine
+>    (.aid/knowledge/domain-glossary.md), external sources
+>    (.aid/knowledge/external-sources.md), and the term's Example source anchor in
+>    .aid/generated/candidate-concepts.md.
+>
+> 2. Follow the Example source anchor into the why-source (ADR/report/commit prose) to
+>    understand what the term means in this project specifically.
+>
+> 3. If you can ground the term from the artifacts, write a concept entry in
+>    .aid/knowledge/domain-glossary.md:
+>    - Heading = a clean, UNIQUE IDENTIFIER: `### Unique Term (optional explanation)`. The
+>      identifier is the text BEFORE any `(...)` and must be the plain canonical term — NO
+>      slashes, paths, joined compounds, or trailing qualifier phrases. Put any clarifier in
+>      `(parentheses)`; the closure checker strips the parenthetical when matching, so the
+>      heading stays idempotent and the term is resolvable to exactly one entry. (E.g.
+>      `### Triage (full vs lite path)`, not `### Triage / full vs lite`.)
+>    - Term: the native/coined name as used here (equals the heading identifier)
+>    - Aliases (optional): an `**Aliases:** synonym-1, synonym-2` line listing OTHER names the
+>      docs use for this SAME concept (e.g. `concept spine`, `dimension spine` for `Spine`).
+>      Aliases count as defined identifiers, so a synonym resolves without a duplicate heading
+>      or cramming synonyms into the heading parenthetical. Put synonyms HERE, not in the heading.
+>    - Definition-as-used-here: what it means in THIS project (NOT a generic definition —
+>      a generic definition is negative value; only the project-specific meaning is stored)
+>    - Relates-to: how it connects to other spine concepts (cross-cutting linkage)
+>    - sources: the files/anchors that ground it (path + grep-recoverable distinct string,
+>      per f001 schema — same durable-anchor convention the harvest uses)
+>    Then mark the term as GROUNDED in .aid/generated/spine-todo.md.
+>
+> 4. If you discover a NEW native term during grounding (understanding is recursive):
+>    append it to .aid/generated/candidate-concepts.md (Source = synthesis; Class =
+>    synthesis; Example source = a cited supporting span — MANDATORY) and to
+>    .aid/generated/spine-todo.md (Status: OPEN). Do NOT ground it yourself in this pass —
+>    it re-enters the loop for the next DETECT pass.
+>
+> 5. If the term CANNOT be grounded from any artifact after thorough investigation, write
+>    a Q&A entry to .aid/knowledge/.scout-questions.tmp (existing scout-questions format):
+>    - Category: Concept
+>    - Impact: High
+>    - Status: Pending
+>    - Context: where the term recurs (its candidate-concepts.md anchor) + why it could not
+>      be grounded
+>    - Suggested: the best partial inference from artifacts, or "—"
+>    - Question: "What does `{term}` mean in this project? Where is it defined or described?"
+>    Then mark the term as DISMISSED in .aid/generated/spine-todo.md with disposition
+>    "Ungroundable — escalated to Q&A".
+>
+> **Can't-explain-it tripwire:** If while investigating you reach for another project-specific
+> term that you cannot confidently define from general knowledge, treat IT as a mandatory
+> investigation too — append it to candidate-concepts.md and spine-todo.md (Status: OPEN).
+> Never skip an ungrounded project-specific term as noise.
+>
+> Write only to .aid/knowledge/domain-glossary.md, .aid/knowledge/.scout-questions.tmp,
+> .aid/generated/candidate-concepts.md, and .aid/generated/spine-todo.md.

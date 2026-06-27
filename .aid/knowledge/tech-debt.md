@@ -1,88 +1,439 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: Severity-classified open technical and methodology debt in AID — dead code, lockstep-config hazards, blocked release channels, stale docs, large files, and security observations — each with location, risk, and resolution note.
+summary: Read this before starting work in any area; declared debt items and the non-obvious gotchas (lockstep manifests, master-only gates, render-drift ordering, HOME-pinning) may change your approach or scope.
+sources:
+  - install.sh
+  - lib/aid-install-core.sh
+  - docs/repository-structure.md
+  - .github/workflows/release.yml
+  - release.sh
+  - .github/workflows/test.yml
+  - .aid/generated/project-index.md
+tags: [C7, tech-debt, risk, security, gotchas, remediation]
+see_also: [test-landscape.md, infrastructure.md, quality-gates.md, architecture.md]
+owner: architect
+audience: [developer, architect, pm]
 intent: |
-  Known technical debt items in the AID methodology repo: items that work but
-  carry future-cost or fragility risk. Each entry has severity (CRITICAL / HIGH /
-  MEDIUM / LOW), evidence (file:line), impact, and a resolution roadmap.
-  Read when planning the next refactor cycle or scoping a new work-NNN.
+  Severity-tagged open technical and methodology debt with locations, risk, and
+  remediation. Includes security observations (as debt items) and the non-obvious
+  gotchas a change will trip. Diagnosis, not a sprint plan.
 contracts: []
 changelog:
-  - 2026-06-06: work-004-product-site (dogfooding) — added `[LOW] Release/installer hygiene` item (maintainer-only `check-version-sync.sh` is emitted into all profiles though only CI uses the canonical copy; `.aid/` manifest/version persistence undefined; `docs/install.md:445` claims an auto-`.gitignore` the installer doesn't do; root `.claude/` was missing the release script — restored). Corrected the Summary table + Debt Inventory intro (dropped the already-resolved ps1 item per the 2026-06-05 entry; open count stays 4).
-  - 2026-06-05: work-002-auto-installer — RESOLVED + removed the `[LOW] ps1 setup parity (SPS05-08) pwsh-skips in CI` item (per P9: closed items leave the body, git history is the audit trail). It is moot: `setup.sh`/`setup.ps1` (and their `test-setup*.sh` suites) were deleted and replaced by the `aid` CLI; the PowerShell installer path is now covered by the native-Windows `tests/windows/Test-AidInstaller.ps1` on the dedicated `.github/workflows/installer-tests.yml` `windows-latest` runner, so PowerShell coverage no longer depends on a `pwsh` being present on a Linux host. Also refreshed the Metrics test-count to 35.
-  - 2026-06-03: cycle-10 /aid-housekeep refresh — corrected stale "18 canonical suites" → 24 (5 test-housekeep-* added by PR #49) and de-pinned the count per §9a; refreshed Last Updated.
-  - 2026-06-01: post-merge work-001-add-providers (PRs #42/#43/#44) — recorded 4 open LOW residuals introduced by the 5-profile expansion (Copilot model-slug not live-tool-verified; Antigravity model-id tokenization inferred from display names; empty Antigravity [tool_names] identity-passthrough; ps1 setup parity pwsh-skips in CI). Per STATE.md Q23-Q25 these are Answered docs-only-noted residuals — appropriate to record as OPEN debt.
-  - 2026-05-31: Inventory current — 0 open items. Per the documentation rule (kb-authoring P9), resolved tech-debt records are removed from this doc entirely once closed; git history is the audit trail.
+  - 2026-06-25: Initial debt audit (aid-discover quality deep-dive)
 ---
 
 # Tech Debt
 
-> **Source:** `aid-researcher` (quality doc-set) (Phase 1), cycle-1
-> **Status:** Complete
-> **Last Updated:** 2026-06-06
+This document is a diagnosis, not a sprint plan. It records what currently exists so agents
+do not create more of it. **Only currently-open debt is listed**; resolved items are removed
+entirely (git history is the audit trail).
 
-> This document is a diagnosis, not a sprint plan. Severity tags use the form `[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` so `build-metrics.sh` (see the "Severity tag convention" note in `canonical/templates/knowledge-base/tech-debt.md`) can tally them.
+A note on overall health: AID's source is unusually clean for its size. A scan for genuine
+`TODO`/`FIXME`/`XXX`/`HACK` markers across `canonical/`, `lib/`, `bin/`, `dashboard/`,
+`install.sh`, `install.ps1`, and `release.sh` returns **zero real markers** — the only hits
+are `mktemp ... XXXXXX` templates (CONFIRMED via grep). The debt below is therefore
+structural and methodological, not littered code.
 
----
+## Contents
 
-## Summary
-
-**Overall debt level: Low**. Rationale: the codebase itself is well-organized (Thin-Router skill convention, canonical/ as single source of truth, a comprehensive canonical test suite) and has **enforced pre-merge CI** (required status checks on `master`, 2026-05-29). The only open items are **4 LOW** non-blocking residuals — three docs-only-noted provider-mapping inferences from the work-001 5-profile expansion (PRs #42/#43/#44), plus one **release/installer-hygiene** cluster surfaced during work-004. Resolved items are removed from this doc entirely once closed — git history is the only retained record.
-
-| Severity | Open | Open items |
-|----------|------|------------|
-| Critical | 0 | — |
-| High | 0 | — |
-| Medium | 0 | — |
-| Low | 4 | Copilot model-slug not live-tool-verified; Antigravity model-id tokenization inferred; empty Antigravity `[tool_names]` passthrough; release/installer hygiene (version-sync script ships to adopters + `.aid/` metadata persistence undefined + stale install doc) |
-
-> **Counting methodology:** this table counts unique **open** debt items (one row per entry, regardless of how many `[HIGH]`/`[MEDIUM]` tags appear in the fix recipe). Resolved items are removed from this doc entirely once closed; git history is the only retained record. The generated `metrics.md` (built by `build-metrics.sh`) counts every body-tag occurrence including those inside fix-recipe sub-bullets, producing higher totals. Neither is wrong; they answer different questions. Canonical item count is this table.
+- [Debt Inventory](#debt-inventory)
+- [Detailed Debt Items](#detailed-debt-items)
+- [Complexity Hotspots](#complexity-hotspots)
+- [Missing Test Coverage](#missing-test-coverage)
+- [Outdated Dependencies](#outdated-dependencies)
+- [Duplication](#duplication)
+- [Dead Code](#dead-code)
+- [Security Observations](#security-observations)
+- [Gotchas](#gotchas)
+- [Change Log](#change-log)
 
 ---
 
 ## Debt Inventory
 
-> The **first three** items below were introduced by the work-001-add-providers merge (PRs #42/#43/#44) and recorded as **docs-only-noted** residuals at merge time (per `STATE.md` Q23-Q25, now Answered). They are LOW because each ships a defensible, working default; the cost is future-confirmation, not current breakage. The **fourth** (release/installer hygiene) was surfaced during work-004-product-site and is LOW because nothing is broken today (CI uses the canonical copy; the pipeline never calls the script).
+| ID | Type | Description | Location | Risk | Effort | Priority |
+|----|------|-------------|----------|------|--------|----------|
+| **H1** | Architecture / lockstep | Five install manifests must stay byte-lockstep on the dashboard file set; a silent omission breaks provisioning on one channel | install.sh, install.ps1, vendor.js, vendor.py, release.sh | High | M | P1 |
+| **M1** | Shipping gap | npm + PyPI publish channels are correct but BLOCKED on external account setup; effectively GitHub-only today | .github/workflows/release.yml | Medium | M (external) | P2 |
+| **M2** | Test gap / process | ~~Full canonical suite + Astro build run on master/tag only~~ RESOLVED — both now gate `pull_request` to master (test.yml already did; docs.yml build added); deploy stays master-only | .github/workflows/{test,docs}.yml | Medium | S | P2 |
+| **M3** | Stale documentation | Contributor doc cites wrong skill/recipe counts + wrong path | docs/repository-structure.md | Medium | S | P2 |
+| **M4** | Test gap / gate coverage | Visual-fidelity gate validates one wide viewport only; a visual can pass yet clip at the narrower dashboard column | canonical/aid/scripts/summarize/validate-visuals.mjs | Medium | S | P2 |
+| **L1** | Dead code | ~~Unreachable `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff branch~~ RESOLVED | install.sh, install.ps1 | Low | S | P3 |
+| **L2** | Deferred feature | `release.sh --sign` exits non-zero (signing not implemented) | release.sh | Low | M | P3 |
+| **L3** | Deprecation debt | Legacy flag-style install path "retained for one release" | install.sh | Low | S | P3 |
+| **L4** | Test gap | No line-coverage metric or `%` enforcement anywhere | (whole pipeline) | Low | M | P3 |
+| **L5** | Cosmetic / hygiene | feature-015 residues: web-app §1 retired metric-grid text; non-ASCII em-dash in a summarize script comment | canonical/aid/templates/knowledge-summary/section-templates/web-app.md, canonical/aid/scripts/summarize/writeback-state.sh | Low | S | P3 |
+| **L6** | Tooling inconsistency | DBI orphan-scan flags gitignored `node_modules/` that `render.py` already excludes from emission | tests/canonical/test-dogfood-byte-identity.sh | Low | S | P3 |
 
-### [LOW] Copilot `model:` slug spelling not live-tool-verified
-
-- **Evidence:** `profiles/copilot-cli.toml` `[model_tiers]` block (the `large = "claude-opus-4.8"` / `medium = "claude-sonnet-4.6"` / `small = "claude-haiku-4.5"` lines + the preceding `# Slug spelling is docs-only-noted` comment). ⚠️ Inferred from GitHub's documented model-id convention — needs confirmation against the live Copilot CLI.
-- **Impact:** The model *identities* (Opus 4.8 / Sonnet 4.6 / Haiku 4.5) are live-confirmed, but the exact `model:` field tokenization (lowercase-dotted slug) is asserted from GitHub's published convention, not exercised against the running tool. If Copilot expects a different slug form, the emitted Copilot agent frontmatter would name a model the tool does not resolve.
-- **Effort:** ~15 min — run one Copilot CLI agent invocation and compare the accepted `model:` slug to the emitted values.
-
-### [LOW] Antigravity model-id tokenization inferred from display names
-
-- **Evidence:** `profiles/antigravity.toml` `[model_tiers.large]` / `[model_tiers.medium]` / `[model_tiers.small]` (`model = "gemini-3-pro"` + `reasoning_effort = "high"/"low"`, `model = "gemini-3-flash"`) + the `# Exact id/effort tokenization is docs-only-noted` and `# gemini-3-flash has no documented effort variant` comments. ⚠️ Inferred from vendor display names ("Gemini 3 Pro (high)") — needs confirmation.
-- **Impact:** Antigravity docs expose display names rather than model-id token pairs, so the split into `model` + `reasoning_effort` (and the `gemini-3-flash` "low" placeholder) is a best-guess mapping. A mismatch with Antigravity's actual id/effort tokenization would emit rule frontmatter naming an unresolvable model.
-- **Effort:** ~15 min — confirm the id/effort token form against Antigravity once a model-id convention is published or observable.
-
-### [LOW] Empty Antigravity `[tool_names]` identity-passthrough
-
-- **Evidence:** `profiles/antigravity.toml` `[tool_names]` block (empty map + the `# Q-F: empty map — identity passthrough (no published Antigravity tool-token map; docs-only-noted)` comment).
-- **Impact:** With no published Antigravity tool-token map, canonical tool names pass through unchanged. If Antigravity later publishes a tool-token convention (renames like Copilot's `Bash → shell`), the emitted rules would use canonical names the tool does not recognize. Benign today (identity is a safe default); revisit if/when a vendor convention appears.
-- **Effort:** ~10 min to populate the map once a vendor tool-token convention is published.
-
-### [LOW] Release/installer hygiene: maintainer-only version-sync script ships to adopters; `.aid/` metadata persistence undefined; stale install doc
-
-> Surfaced 2026-06-06 during work-004-product-site (dogfooding — user ran `aid add` on the repo). A cluster of related, non-blocking hygiene gaps around the installer + release tooling. Earmarked for a dedicated "release/installer hygiene" lite work.
-
-- **Evidence:**
-  - **(a) Stale install doc.** `docs/install.md:445` states "`.aid/` is appended to your `.gitignore` by default," but **no shipped installer code writes to `.gitignore`** (`grep -rn gitignore install.sh bin/aid lib/aid-install-core.sh lib/AidInstallCore.psm1` → none). Doc/code mismatch.
-  - **(b) No `.aid/` VCS-persistence policy.** `aid add` writes `.aid/.aid-manifest.json` + `.aid/.aid-version` — the install receipt/lockfile that `aid update`/`aid uninstall` require (they exit `6` "no manifest" without it) — but they land **untracked** and the installer defines no commit/ignore policy. A teammate who clones a repo with a committed `.claude/` but no manifest cannot `aid update`/`uninstall`, and there is no VCS record of the installed version.
-  - **(c) Maintainer-only script shipped to adopters.** `canonical/scripts/release/check-version-sync.sh` is referenced **only** by `.github/workflows/release.yml:114` (which calls the *canonical* copy) and `tests/canonical/test-version-sync.sh` — **no `SKILL.md` references it** — yet the generator emits it into all five profiles (`profiles/*/emission-manifest.jsonl`) and hence into every adopter install, where nothing uses it (dead weight).
-  - **(d) Root tree drift (symptom of (c)).** The repo's own root `.claude/` committed tree had drifted — it was missing `scripts/release/check-version-sync.sh` (present in canonical + all profiles). Restored 2026-06-06 by committing the file on the work-004 branch so root matches the claude-code profile.
-- **Impact:** No current breakage — CI uses the canonical copy and the adopter pipeline never calls the script. Costs: adopters carry an unused maintainer script in every install; the install doc misleads about `.gitignore` behavior; and AID's own version-control state (manifest/version) is not persisted by default, so update/uninstall and version-drift detection do not survive a clone.
-- **Resolution roadmap (dedicated lite work):**
-  1. Relocate `check-version-sync.sh` to a maintainer-only, **non-emitted** path that CI calls; remove it from `canonical/scripts/release/` so it stops shipping to profiles. Re-run the FULL generator; update emission manifests + the root `.claude/` mirror.
-  2. Define + implement a `.aid/` VCS-persistence policy: write a scoped `.aid/.gitignore` (ignore `.temp/`, `.heartbeat/`, `knowledge/.cache/`; pick a KB/works default) while **keeping** `.aid/.aid-manifest.json` + `.aid/.aid-version` tracked.
-  3. Fix `docs/install.md:445` to match actual behavior.
-- **Effort:** ~half a day (generator change + emission manifests + docs + a test).
+**Risk definitions:** High = active risk to reliability/security/maintainability of core
+flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = known, not
+urgent.
 
 ---
 
-## Metrics
+## Detailed Debt Items
 
-- **TODO/FIXME count:** net **0 unresolved code TODOs** — all occurrences in `canonical/` are template-explanatory mentions ("fill in TODO sections"), not unresolved code TODOs.
-- **Large files:** the largest is the methodology spec (`docs/aid-methodology.md`); a handful of test suites, helper scripts, and detailed state-reference docs exceed 500 lines — all appropriately sized for their type. Exact file-size counts (T3) are not pinned here; see `.aid/generated/project-index.md` (`## Largest Files`).
-- **Test-to-code ratio (helper-script subset):** ⚠️ **Inferred from file counts.** There are now **35** canonical suites under `tests/canonical/` (work-002 added the `aid` CLI installer/release suites — `test-install*.sh`, `test-aid-cli*.sh`, `test-release*.sh`, `test-version-sync.sh`, `test-ascii-only.sh`, `test-agents-md-invariant.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh`), plus the native-Windows `tests/windows/Test-AidInstaller.ps1`, the shared `tests/lib/assert.sh` lib, and the `tests/run-all.sh` glob-discovering aggregator. The suite count comfortably exceeds the helper-script count, so test coverage remains healthy for shell helpers (per-script LOC ratios drift with refactors and are not pinned here; recount with `ls tests/canonical/test-*.sh | wc -l`).
-- **Open PRs:** none representing tracked debt.
+### [HIGH] H1 -- Five install manifests must stay lockstep on the dashboard file set
+
+**Type:** Architecture / lockstep config
+
+**Description:** The dashboard server+reader file set is vendored independently by five
+install paths. There is no single shared list — each manifest hard-codes the files. Omitting
+one file from one manifest silently breaks that channel (a real bug shipped this way: the
+release CLI bundle once omitted `dashboard/home.html`, so the `curl|bash` + release-bundle
+path provisioned no `home.html` while npm/PyPI were fine).
+
+**Location:**
+- `install.sh` — bootstrap fetch + provisioning
+- `install.ps1` — PowerShell bootstrap
+- `packages/npm/scripts/vendor.js` — npm prepack vendoring
+- `packages/pypi/scripts/vendor.py` — hatchling build-hook vendoring
+- `release.sh` — the `aid-cli-v*.tar.gz` CLI bundle (its `home.html` copy carries an explicit
+  lockstep comment naming the other four)
+
+**Risk if unaddressed:** A per-channel install regression that passes most tests (only the
+affected channel breaks) and is easy to miss because the other four channels look healthy.
+
+**Remediation:** Keep all five in lockstep on any dashboard file-set change; the
+`test-npm-installer.sh` / `test-pypi-installer.sh` / `test-release-install-e2e.sh` suites plus
+the Windows channel smokes are the guard. Consider extracting a single shared file-list.
+Effort: M.
+
+---
+
+### [MEDIUM] M1 -- npm and PyPI channels blocked on external setup
+
+**Type:** Shipping gap
+
+**Description:** `release.yml` has fully-written `npm-publish` and `pypi-publish` jobs, but
+both are gated `if: vars.NPM_ENABLED == 'true'` / `PYPI_ENABLED == 'true'` and require
+external accounts that are not yet provisioned (the `@aid` npm scope; the CasuloAI Labs PyPI
+org + reserved `aid-installer` name + a Trusted Publisher). Until those exist and the repo
+variables are flipped, releases publish to the **GitHub Releases channel only**.
+
+**Location:** `.github/workflows/release.yml` (header "External-setup blockers" + the two
+publish jobs).
+
+**Risk if unaddressed:** Users following npm/PyPI install instructions may hit a missing or
+stale package; the documented "4 channels" is effectively fewer until enabled.
+
+**Remediation:** Create the scope/org, store credentials/Trusted Publishers, flip
+`NPM_ENABLED` / `PYPI_ENABLED`. External, not code. Effort: M (external).
+
+---
+
+### [MEDIUM] M2 -- Heavy correctness gates run on master/tag only (RESOLVED)
+
+**Type:** Test gap / process
+
+**Resolution (2026-06-26):** Both heavy gates now run on `pull_request` to `master`, so a
+breaking change is caught BEFORE merge rather than after:
+- `test.yml` (`canonical-tests` + render-drift + generator self-tests + KB-hygiene +
+  visual-fidelity) already triggered on `pull_request: branches: [master]`.
+- `docs.yml` (Astro site build) now also triggers on `pull_request: branches: [master]` (same
+  path filter); its `deploy` job is gated `if: github.event_name != 'pull_request'`, so a PR
+  build-validates the site without deploying. Deploy still only happens on a push to `master`
+  or a release.
+
+**Remaining (owner action, not code):** to *block* a merge until these pass, add `Docs / build`
+to the branch-protection **required status checks** for `master` (the canonical-suite jobs are
+already required). The workflows cannot mark themselves required — it is a repo settings change.
+
+**Original gap:** the full canonical suite + the Astro build triggered only on `master`/tag, so a
+change could pass every feature-branch check and red-master only after merge (this happened — the
+master CI broke three ways from exactly this gap).
+
+---
+
+### [MEDIUM] M3 -- Stale counts in docs/repository-structure.md
+
+**Type:** Stale documentation (methodology debt)
+
+**Description:** The contributor map says "12 skill definitions" and "51 lite-path recipes"
+and references the path `canonical/recipes/`. Reality: `canonical/skills/` holds 13 skill
+directories, recipes live at `canonical/aid/recipes/` (note the `aid/` segment) with 52
+files. Adding/removing a canonical skill leaves "N user-facing skills" counts stale across
+roughly ten KB/doc surfaces; CI does not catch this. Two related source-doc drifts share this
+item: `docs/aid-methodology.md` ("## 7. Artifacts Reference") describes the flat task layout
+`.aid/{work}/tasks/task-NNN.md` while the live skills + `work-state-template.md` + on-disk
+state use the nested `delivery-NNN/tasks/task-NNN/` shape; and `canonical/EMISSION-MANIFEST.md`
+enumerates only 3 profiles (claude-code/codex/cursor) while the generator emits 5
+(+copilot-cli, +antigravity). All three are stale SOURCE docs; the KB documents the live reality.
+
+**Location:** `docs/repository-structure.md` (skills/recipes counts + `canonical/recipes/`
+path lines); `docs/aid-methodology.md` (flat task layout); `canonical/EMISSION-MANIFEST.md`
+(3-profile enumeration).
+
+**Risk if unaddressed:** A newcomer trusts the wrong path/count.
+
+**Remediation:** Reconcile via `/aid-housekeep` (the established precedent for count drift),
+not inline edits. Effort: S.
+
+---
+
+### [MEDIUM] M4 -- Visual-fidelity gate validates a single wide viewport
+
+**Type:** Test gap / gate coverage
+
+**Description:** `validate-visuals.mjs` (the §7 visual-fidelity gate) renders each authored
+visual at a single ~1152px-wide viewport. A visual can pass there yet clip at the dashboard's
+narrower ~732px column (found in feature-015 Phase-3: a lifecycle-timeline pill was cut by
+~24px at 732px and had to be hand-corrected). The gate does not check narrower representative
+widths.
+
+**Location:** `canonical/aid/scripts/summarize/validate-visuals.mjs`;
+`tests/canonical/test-visual-fidelity.sh`.
+
+**Risk if unaddressed:** A generated `kb.html` can ship a horizontally-clipped visual that the
+gate passes, surfacing only in the narrower dashboard / mobile layouts.
+
+**Remediation:** Add a "no horizontal overflow-clip at target widths" check (proposed T4) that
+validates each visual at representative widths (e.g. the dashboard column ~720-760px and a
+mobile ~390px), not just one wide viewport. Effort: S-M.
+
+---
+
+### [LOW] L1 -- Unreachable protect-on-diff branch in install.sh (RESOLVED)
+
+**Type:** Dead code
+
+**Status: RESOLVED** -- Dead code removed from `install.sh` and `install.ps1` (2026-06-26).
+
+**Description:** `install.sh` carried an `OVERALL_BLOCKED` / `exit 5` / `*.aid-new`
+merge-warning branch that fired when `install_tool` returned `5` (a root-agent file was not
+overwritten because it differed). That return value no longer occurred: `aid-install-core`
+eliminated the `.aid-new` path and now updates root agent files in place via an
+`AID:BEGIN/END` boundary, always setting `_CORE_ROOT_AGENT_STATUS="owned"`.
+
+**Location (was):** `install.sh` (`OVERALL_BLOCKED=0` ... `exit 5` block); `install.ps1`
+(`$overallBlocked` ... `Exit-Install 5` block).
+
+**Remediation applied:** Removed the dead `OVERALL_BLOCKED`/`$overallBlocked` branches from
+both `install.sh` and `install.ps1`; simplified to `install_tool ... || exit $?` (Bash) and
+`if ($rc -ne 0) { script:Exit-Install $rc }` (PS); dropped exit-code 5 from inline docs in
+both files.
+
+---
+
+### [LOW] L2 -- release.sh --sign is deferred
+
+**Type:** Deferred feature
+
+**Description:** `release.sh --sign` (detached signature over `SHA256SUMS`) exits non-zero
+with "not yet implemented (deferred to feature-005)". Releases are checksum-verified but not
+cryptographically signed.
+
+**Location:** `release.sh` (`--sign` guard) + Step 7 placeholder.
+
+**Risk if unaddressed:** No signature-based provenance for the GitHub Release tarballs
+(npm/PyPI do emit OIDC provenance/attestations — see Security Observations).
+
+**Remediation:** Implement the signing approach, then drop the guard. Effort: M.
+
+---
+
+### [LOW] L3 -- Legacy flag-style install path retained
+
+**Type:** Deprecation debt
+
+**Description:** `install.sh` still carries the pre-CLI-evolution flag-style direct-install
+path (`--tool`, `--update`, `--uninstall`), documented as "retained for one release".
+
+**Location:** `install.sh` usage header ("Usage (legacy - back-compat, hidden ...)").
+
+**Risk if unaddressed:** Two code paths to maintain; the legacy path widens the test surface.
+
+**Remediation:** Remove after the deprecation window closes. Effort: S.
+
+---
+
+### [LOW] L4 -- No coverage measurement or enforcement
+
+**Type:** Test gap
+
+**Description:** No coverage tool (`nyc`, `coverage.py`, `--cov`) runs in any workflow, and
+there is no `%` threshold. Coverage is assessed by suite-presence per subsystem (see
+`test-landscape.md`).
+
+**Location:** whole pipeline (absence in all four workflows).
+
+**Risk if unaddressed:** A subsystem could lose effective coverage without a metric flagging
+it. Acceptable for a shell/markdown toolkit, but undocumented as a deliberate choice until
+now.
+
+**Remediation:** Either adopt a lightweight coverage signal or formally record the
+no-coverage decision. Effort: M.
+
+---
+
+### [LOW] L5 -- feature-015 cosmetic / hygiene follow-ups
+
+**Type:** Cosmetic / hygiene
+
+**Description:** Two non-blocking residues from the feature-015 build: (a)
+`section-templates/web-app.md` §1 retains the old metric-grid body text as a "kept rendering
+reference" (the header flags it retired and the authoritative generation path enforces the
+newcomer lead); (b) a non-ASCII em-dash in the `writeback-state.sh` line-2 comment. The
+operative `test-ascii-only.sh` excludes agent-side summarize scripts (CI green), but
+shipped-script ASCII hygiene is the standing rule.
+
+**Location:** `canonical/aid/templates/knowledge-summary/section-templates/web-app.md` §1;
+`canonical/aid/scripts/summarize/writeback-state.sh:2`.
+
+**Risk if unaddressed:** None functional -- cosmetic doc-consistency + an ASCII-hygiene exception.
+
+**Remediation:** Trim the retired web-app §1 text; replace the em-dash with ASCII `--` (then
+re-render profiles). Effort: S.
+
+---
+
+### [LOW] L6 -- DBI orphan-scan flags gitignored node_modules
+
+**Type:** Tooling inconsistency
+
+**Description:** `test-dogfood-byte-identity.sh`'s orphan-scan flags any on-disk `node_modules/`
+under `.claude/`/`profiles/` as a DBI-ORPHAN, even though `render.py` correctly EXCLUDES
+`node_modules` from emission (D-012). The two disagree. The visual-fidelity gate's on-demand
+`npm ci` (in `canonical/aid/scripts/summarize`) creates such a directory; in a shared checkout
+this can trip the scan. CI is unaffected -- the gate and the DBI suite run in separate job
+checkouts. Build workaround: `rm -rf` the node_modules before DBI.
+
+**Location:** `tests/canonical/test-dogfood-byte-identity.sh` (orphan-scan); `render.py`
+(exclusion).
+
+**Risk if unaddressed:** Spurious DBI failures during local builds that interleave the visual gate.
+
+**Remediation:** Make the DBI orphan-scan skip gitignored paths (`node_modules/`, `.git/`),
+matching `render.py`'s exclusion. Effort: S.
+
+---
+
+## Complexity Hotspots
+
+Large files concentrate complexity (line counts drift — measure on demand). CONFIRMED via
+`.aid/generated/project-index.md` "Top 20 Largest Source Files".
+
+| File | Why complex | Notes |
+|------|-------------|-------|
+| `dashboard/server/reader.mjs` (~4012) | Full KB/state parser re-implemented in Node | Triplicated (see Duplication) |
+| `tests/canonical/test-aid-cli-parity.sh` (~3198) | Exhaustive bash↔PS behavior matrix | Large but flat assertions |
+| `tests/windows/Test-AidInstaller.ps1` (~2406) | Whole installer surface in one PS script | Windows-CI only |
+| `dashboard/reader/parsers.py` (~2232) | Python KB/state parser | Triplicated |
+| `lib/aid-install-core.sh` (~2160) | The install/update/remove engine | Triplicated; most load-bearing shell file |
+| `install.sh` (~1380) | Bootstrap + legacy paths + provisioning | Carries L1/L3 debt |
+| `.claude/skills/.../render.py` (~1019) | The profile renderer | Has self-tests |
+
+---
+
+## Missing Test Coverage
+
+| Module / Function | Coverage | Type missing | Risk |
+|------------------|----------|--------------|------|
+| Prompt-driven skill state machines | none (by design) | integration | Accepted — needs AI host + human; covered by dogfooding + review |
+| Astro site components | partial | unit | Build is the main gate; component logic lightly tested |
+| Windows installer path | strong but Windows-CI-only | — | A green local `run-all.sh` does not exercise it (M2/gotcha) |
+
+---
+
+## Outdated Dependencies
+
+No CVE-flagged or end-of-life dependency was identified. AID's runtime payload is shell +
+markdown with near-zero third-party runtime dependencies (the npm package advertises zero
+runtime deps). Heavier dependency trees are confined to the **separate** `site/` Astro build
+(`site/package-lock.json`) and the summarize Playwright tooling
+(`.claude/aid/scripts/summarize/package.json`); `.github/dependabot.yml` is configured to
+track updates. No action item beyond letting Dependabot run. CONFIRMED via project-index
+(manifests list) + `dependabot.yml` presence.
+
+---
+
+## Duplication
+
+> Intentional duplication — do not "deduplicate"; it is the source-of-truth + vendored-copy
+> design. Listed so a change knows every copy to update.
+
+| Area | Copies | Risk if not kept in sync |
+|------|--------|--------------------------|
+| `reader.mjs` | `dashboard/`, `packages/npm/dashboard/`, `packages/pypi/aid_installer/_vendor/dashboard/` | Dashboard behaves differently per install channel |
+| `parsers.py` | same three locations | Same |
+| `aid-install-core.sh` | `lib/`, `packages/npm/lib/`, `packages/pypi/aid_installer/_vendor/lib/` | Install logic diverges per channel |
+| `canonical/` toolkit | rendered into 5 `profiles/` + `.claude/` | Caught by the render-drift gate (CI) |
+
+The `canonical/ → profiles/` duplication is machine-guarded (render-drift). The
+`dashboard`/`lib` vendored copies are guarded by the channel install suites; the vendoring is
+done at build/pack time by `vendor.js` / `vendor.py`, so editing the source-of-truth copy and
+re-vendoring is the correct workflow.
+
+---
+
+## Dead Code
+
+| Item | Location | Evidence of disuse | Safe to remove? |
+|------|----------|--------------------|-----------------|
+| `OVERALL_BLOCKED` / `exit 5` / `.aid-new` branch | `install.sh` | `install_tool` never returns 5 since `aid-install-core` removed the `.aid-new` path (`lib/aid-install-core.sh` comment) | Yes (verify install/update tests still pass) |
+
+---
+
+## Security Observations
+
+Security findings are recorded here as debt items (there is no separate security doc).
+Overall posture is solid for a CLI installer; the main inherent risk is the bootstrap trust
+model.
+
+| Observation | Severity | Detail |
+|---|---|---|
+| `curl\|bash` / `irm\|iex` bootstrap | Medium (inherent) | Users pipe a remote script to a shell. Mitigated: the bootstrap fetches the CLI bundle + libs from a **pinned release tag** and verifies them against `SHA256SUMS` before sourcing (CONFIRMED in `release.sh` Step 6 comment + `install.sh` lib-fetch). The trust root is the GitHub Release. |
+| No release-asset signature | Low | `release.sh --sign` is deferred (L2); GitHub tarballs are checksum-verified but unsigned. |
+| Publish auth uses OIDC Trusted Publishing | Positive | npm publishes with `--provenance`; PyPI publishes with PEP 740 attestations via `pypa/gh-action-pypi-publish` — both token-less via OIDC. CONFIRMED in `release.yml`. |
+| Least-privilege CI permissions | Positive | `test.yml` / `installer-tests.yml` use `permissions: contents: read`; `release.yml` grants only `contents: write` + `id-token: write`; `docs.yml` only `pages: write` + `id-token: write`. CONFIRMED. |
+| Optional `NPM_TOKEN` classic automation token | Low | If OIDC is not used for npm, a classic `NPM_TOKEN` secret is the fallback (`release.yml` header). Prefer Trusted Publishing to avoid storing a long-lived token. |
+| No secrets committed | Positive | No credentials in tracked files; auth is via CI secrets/OIDC only. |
+| Dashboard binds localhost by default | Positive | The dashboard server binds `127.0.0.1`; `--remote` is a clear-fail stub (exit 10), so it cannot accidentally expose state on a network. CONFIRMED in `installer-tests.yml` dashboard smoke. |
+
+---
+
+## Gotchas
+
+> Non-obvious traps a contributor cannot infer from the code alone. State the trap, then the
+> safe way through it.
+
+- **Master-only heavy gates:** the full canonical suite (`test.yml`) and Astro build
+  (`docs.yml`) run on `master`/release-tag only; feature branches run only
+  `installer-tests.yml`. A direct merge can red-master in ways the branch never saw. Run
+  `bash tests/run-all.sh` (HOME-pinned) and the `site` build locally before merge.
+- **HOME-pinning before any migration-scan test:** the migration scan defaults its root to
+  `$HOME`; a test firing it must `export HOME=<throwaway>`, not just `AID_HOME`, or it
+  migrates the developer's real repos. CI also checks the repo out (with its own `.aid/`)
+  under `$HOME`, so isolation canaries must snapshot `REAL_HOME` before/after.
+- **Render-drift needs the FULL generator:** after editing `canonical/`, run
+  `python .claude/skills/generate-profile/scripts/run_generator.py` (the full generator), not
+  a per-script renderer — otherwise the render-drift gate fails on stale `profiles/`
+  emission manifests.
+- **Five install manifests in lockstep:** any change to the dashboard file set must touch
+  `install.sh`, `install.ps1`, `vendor.js`, `vendor.py`, and `release.sh`'s CLI bundle
+  together (H1) or one channel silently provisions the wrong files.
+- **Four version carriers must agree:** `VERSION`, `packages/npm/package.json`,
+  `packages/pypi/pyproject.toml`, and the git tag must all match, or
+  `check-version-sync.sh` fails the release `gate`. Bump them together.
+- **Edit `canonical/`, never `profiles/`:** `profiles/` is generated build output; hand-edits
+  are wiped on the next render and fail render-drift.
+- **ASCII-only shipped PowerShell:** Windows decodes no-BOM UTF-8 in the ANSI codepage and
+  mis-parses non-ASCII; `test-ascii-only.sh` + `test-ps51-compat.sh` gate this. Keep shipped
+  `.ps1`/`.psm1` ASCII and 5.1-compatible (no 3-arg `Join-Path`, no `-Encoding utf8NoBOM`,
+  no `$IsWindows`, force TLS 1.2).
+- **Web-output reviews require Playwright:** reviewing `kb.html` or the site by reading
+  HTML/CSS is not a valid review — render and visually validate (the `visual-fidelity` gate).
+- **`master` is branch-protected:** the bot identity cannot push to `master`; always open a
+  PR (never direct-push/force-push master).
+
+---
+
+## Change Log
+
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | 2026-06-25 | aid-discover | Initial debt audit (quality deep-dive) |
+| 1.1 | 2026-06-26 | wrap-up | L1 RESOLVED (dead `OVERALL_BLOCKED`/exit-5/`.aid-new` branch removed from install.sh + install.ps1). Triaged feature-015 follow-ups into debt: added M4 (single-viewport gate gap), L5 (cosmetic/hygiene), L6 (DBI node_modules orphan-scan). |
+| 1.2 | 2026-06-26 | wrap-up | M2 RESOLVED — `docs.yml` Astro build now gates `pull_request` to master (test.yml canonical suite already did); `deploy` stays master-only. Marking the checks branch-protection-required is an owner action. |

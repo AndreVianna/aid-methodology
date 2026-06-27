@@ -1,25 +1,15 @@
 ---
-kb-category: meta
+kb-category: extension
 source: hand-authored
-intent: |
-  Cumulative release-tracking ledger for the AID repo — every release newest-first
-  with its items tagged [NEW] / [CHANGE] / [FIX], plus an Unreleased section that
-  accumulates items for the next (unnumbered) version. Read or update this to know
-  what shipped in which version and what is pending release. Maintained by hand;
-  at release time the Unreleased section is renamed to the new version + date.
-contracts: []
-changelog:
-  - 2026-06-09: Created — Unreleased (aid-ask, product site, aid-execute work-first arg order) + v1.0.0 back-filled from the GitHub release.
-  - 2026-06-09: Moved the AID product website from Unreleased to v1.0.0 (it shipped with v1.0.0; absent from the GitHub release page because that covers only the CLI package).
-  - 2026-06-12: Added Unreleased items for the work-001 two-level dashboard (CLI home + repo registry + per-repo home.html relocation + install-wiring), delivery-008.
-  - 2026-06-13: Added Unreleased items for the work-001 KB tier (5-state KB freshness card + outdated detection, kb.html relocation, aid-discover->aid-summarize auto-trigger + kb_baseline), delivery-009.
-  - 2026-06-13: Added Unreleased items for the work-001 task drill-down view (Level-3 forensic panel: findings/ledger/raw-STATE/honest-logs over a lazy ?detail= poll) + the 4-level dashboard breadcrumb, delivery-010.
-  - 2026-06-13: Added Unreleased items for the work-001 upgrade migration (aid update self/[<tool>] migrate pre-existing repos: settings repair/synthesize, install home.html, relocate summary, register; version-sentinel + npm postinstall trigger) + the now-vendored per-repo home.html, delivery-011 (resolves KI-010).
-  - 2026-06-17: Added Unreleased entry for work-002 aid projects command (list/add/remove/help, deterministic tier, repos:→projects: key + terminology change), delivery-002.
-  - 2026-06-17: Renamed Unreleased -> v1.1.0 (release): consolidated dashboard + registry as [NEW] (adopter never saw v1.0.0 without them), dropped internal churn (repos:->projects: key rename, dashboard file relocations, kb_baseline-as-setting), added [CHANGE] release-source mirror-override + [FIX] global-install permission + [NOTE] repo->project wording.
-  - 2026-06-18: Added work-003 (content isolation) + work-004 (worktree-aware tracking) v1.1.0 items: [NEW] self-cleaning install/update prune; [CHANGE] aid/-nest + aid- prefix content isolation; [CHANGE] in-place lossless CLAUDE.md/AGENTS.md marker updates (no .aid-new); [CHANGE] dashboard worktree discovery + same-work merge; [FIX] disjoint delivery-branch state files. Internal mechanics (status->state naming, per-unit hierarchy, migration helper, canonical churn) deliberately omitted as non-adopter-facing.
-  - 2026-06-19: v1.1.1 patch — [FIX] recurring "older format" WARN on aid add-only repos (manifest present, no settings.yml): migrate now treats a manifest as an era-b marker and synthesizes a stamped settings.yml so the warning clears after one `aid update`. Internal-only changes (test-suite HOME-pinning isolation; aid.ps1 self-update parity + root-agent injection already shipped in 1.1.0) omitted as non-adopter-facing.
-  - 2026-06-21: Added Unreleased [CHANGE] entries for work-005 (Codex .codex/ unification, uniform layout, generator 13->7 simplification, atomic aid update replacement) — work-005-profile-generator-simplify delivery-003 task-018.
+objective: Cumulative release ledger for the AID repo — every release newest-first with its items tagged [NEW] / [CHANGE] / [FIX], plus an Unreleased section that accumulates items for the next version.
+summary: Read or update this to know what shipped in which version and what is pending release. Hand-maintained; at tag time the Unreleased section is renamed to the version + date and a fresh Unreleased block starts. Referenced by infrastructure.md as the home of release history (the root RELEASE_NOTES.md is retired).
+sources:
+  - release.sh
+  - .github/workflows/release.yml
+tags: [C8, release, versioning, changelog, tracking]
+see_also: [infrastructure.md, technology-stack.md]
+owner: skill-self
+audience: [developer, devops, product]
 ---
 
 # Release Tracking
@@ -72,3 +62,9 @@ changelog:
 - Installation & host-tool support - persistent global `aid` CLI (add/status/update/remove/version), four install channels (curl/irm, npm, PyPI, offline bundle), and five host tools with byte-identical bodies.
 - Documentation & examples - methodology guide, FAQ, glossary, repository map, and worked greenfield / brownfield (full + lite) examples.
 - Product website - documentation + marketing site (home, install, releases, knowledge surfaces, pipeline & maintainer guides, Contact Us, and on-site feedback forms that prefill a GitHub issue). Not in the GitHub release page, which covers only the CLI package.
+
+## Change Log
+
+| Version | Date | Change |
+|---------|------|--------|
+| 1.0 | 2026-06-25 | Restored into the domain-driven KB as a first-class `extension` doc (frontmatter conformed to the authoring standard: objective/summary/sources/tags/see_also/owner/audience). Release-ledger content preserved verbatim from the prior hand-authored KB; resolves the dangling `infrastructure.md` reference. Prior per-edit history is in git. |

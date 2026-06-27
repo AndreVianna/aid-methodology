@@ -1,0 +1,271 @@
+<section id="capability-inventory" class="sec featured" data-title="Capability Inventory">
+	<header>
+		<span class="eyebrow">What AID does &mdash; capability-inventory.md</span>
+		<h2>Capability Inventory</h2>
+		<p class="lede">AID is a methodology delivered as a multi-profile CLI installer. Its capabilities fall into four groups: the pipeline skills you drive, the on-demand skills you invoke when needed, the CLI that installs and maintains it, and the multi-tool distribution that ships it to five host agents.</p>
+	</header>
+
+	<!-- Pipeline skills -->
+	<h3 style="margin-top:0; margin-bottom:0.75rem;">Pipeline Skills &mdash; the lifecycle</h3>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">9 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate.</p>
+	<div class="cap-grid">
+		<div class="cap-card">
+			<span class="cap-kicker">Setup: Config (bootstrap)</span>
+			<span class="cap-name">Configure the pipeline</span>
+			<code class="cap-invoke">/aid-config</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>View or set project settings; scaffolds <code>.aid/settings.yml</code> and the KB state file.</dd>
+				<dt>When</dt><dd>Before starting work on a new repository, or to adjust pipeline settings.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Phase 1: Discover</span>
+			<span class="cap-name">Discover an existing project</span>
+			<code class="cap-invoke">/aid-discover</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Analyzes a repository and builds the Knowledge Base, with a built-in review &rarr; Q&amp;A &rarr; fix &rarr; approval gate.</dd>
+				<dt>When</dt><dd>Brownfield projects run this first. Generalized to any-domain work-guide generator (v1.1.1+).</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Phase 2: Interview</span>
+			<span class="cap-name">Gather requirements</span>
+			<code class="cap-invoke">/aid-interview</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Adaptive one-question-at-a-time interview producing <code>REQUIREMENTS.md</code>, then decomposes them into feature files.</dd>
+				<dt>When</dt><dd>After discovery, when starting a new Work. Includes TRIAGE for lite-path routing.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Phase 3: Specify</span>
+			<span class="cap-name">Specify a feature</span>
+			<code class="cap-invoke">/aid-specify</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Collaboratively writes a technical <code>SPEC.md</code>, one feature at a time.</dd>
+				<dt>When</dt><dd>Full path only; skipped on lite path. After interview.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Phase 4: Plan</span>
+			<span class="cap-name">Plan deliveries</span>
+			<code class="cap-invoke">/aid-plan</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Sequences feature specs into deliverables, each a functional MVP building on the last.</dd>
+				<dt>When</dt><dd>Full path only. After specification.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Phase 5: Detail</span>
+			<span class="cap-name">Break down into tasks</span>
+			<code class="cap-invoke">/aid-detail</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Decomposes deliverables into small, typed, dependency-ordered tasks with an execution graph.</dd>
+				<dt>When</dt><dd>Full path only. After planning.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Phase 6: Execute</span>
+			<span class="cap-name">Execute a task</span>
+			<code class="cap-invoke">/aid-execute</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Runs a task by type (Implement/Test/Refactor/etc.) with a built-in review &rarr; fix loop; one git branch per delivery.</dd>
+				<dt>When</dt><dd>For every task in a delivery, after detailing.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Deliver: Deploy (optional)</span>
+			<span class="cap-name">Ship a release</span>
+			<code class="cap-invoke">/aid-deploy</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Packages completed deliveries, verifies the combined build, generates release notes.</dd>
+				<dt>When</dt><dd>When deliveries are ready to ship.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Deliver: Monitor (optional)</span>
+			<span class="cap-name">Observe production</span>
+			<code class="cap-invoke">/aid-monitor</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Interprets telemetry, classifies findings, and routes bugs / change requests back into the pipeline.</dd>
+				<dt>When</dt><dd>After deployment, to close the feedback loop from production.</dd>
+			</dl>
+		</div>
+	</div>
+
+	<!-- On-demand skills -->
+	<h3 style="margin-top:2rem; margin-bottom:0.75rem;">On-Demand Skills</h3>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">4 skills run outside the linear pipeline, when the user needs them.</p>
+	<div class="cap-grid">
+		<div class="cap-card">
+			<span class="cap-kicker">On-demand</span>
+			<span class="cap-name">Ask the KB a question</span>
+			<code class="cap-invoke">/aid-query-kb</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Answers a free-form question grounded in the KB, the live code, and in-flight work; cites sources or names the gap.</dd>
+				<dt>When</dt><dd>Any time a grounded, KB-sourced answer is needed.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">On-demand</span>
+			<span class="cap-name">Targeted KB update</span>
+			<code class="cap-invoke">/aid-update-kb</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Applies a described change to the KB through the same review/approval gate as discovery.</dd>
+				<dt>When</dt><dd>When a specific KB document needs correcting or extending between full discovery runs.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">On-demand</span>
+			<span class="cap-name">Housekeeping</span>
+			<code class="cap-invoke">/aid-housekeep</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Re-discovers changed KB docs, regenerates the visual summary, and sweeps stale work artifacts.</dd>
+				<dt>When</dt><dd>Periodically, or after significant code changes to resync the KB.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">On-demand</span>
+			<span class="cap-name">Visual KB summary</span>
+			<code class="cap-invoke">/aid-summarize</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Generates a single-file <code>kb.html</code> &mdash; a visually rich, newcomer-friendly view of the Knowledge Base. This page was generated by this skill.</dd>
+				<dt>When</dt><dd>To share KB content with non-technical stakeholders or review KB completeness visually.</dd>
+			</dl>
+		</div>
+	</div>
+
+	<!-- CLI capabilities -->
+	<h3 style="margin-top:2rem; margin-bottom:0.75rem;">CLI Installer</h3>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">AID installs into a repository as content namespaced under an <code>aid-</code> prefix and isolated from user content. The CLI (entry point under <code>bin/</code>) provides these operations:</p>
+	<div class="grid g4">
+		<div class="card">
+			<div class="kicker">CLI</div>
+			<h3>Install</h3>
+			<p>Adds AID content to a repository (and a per-machine AID state home at <code>~/.aid</code>). Available via npm, PyPI, curl, or irm.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">CLI</div>
+			<h3>Update</h3>
+			<p>Brings an installed repository up to the current AID version, migrating the format when needed.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">CLI</div>
+			<h3>Remove</h3>
+			<p>Cleans AID content back out, bounded by the manifest &mdash; only removes files it installed.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">CLI</div>
+			<h3>Dashboard</h3>
+			<p>Serves a local web dashboard that reads work-tracking state across repositories. Loopback-bound. No LLM calls.</p>
+		</div>
+	</div>
+
+	<!-- Distribution diagram -->
+	<h3 style="margin-top:2rem; margin-bottom:0.75rem;">Multi-Tool Distribution</h3>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">The same capabilities are authored once in <code>canonical/</code> and rendered into five byte-identical host-agent install profiles. All five are bundled into one release payload that is published <em>identically</em> to every distribution channel &mdash; a user installs from <strong>any one</strong> channel and the installer drops the profile matching their tool. The channels are equivalent copies, not per-profile outputs.</p>
+	<div class="diagram-box" aria-label="AID render-and-distribute pipeline diagram &mdash; click or press Enter to expand">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 200" role="img" aria-label="canonical/ renders to 5 byte-identical profiles; the profiles are bundled into one release payload that is published identically to all three channels (npm, PyPI, GitHub Releases); a user installs from any one channel into their repo">
+			<defs>
+				<style>
+					.rd-box  { fill: #EEF2F7; stroke: #E3E8EF; stroke-width: 1.5; }
+					.rd-src  { fill: #007F7D; stroke: #007F7D; stroke-width: 1.5; }
+					.rd-pkg  { fill: #0B1F3A; stroke: #0B1F3A; stroke-width: 1.5; }
+					.rd-text { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; font-weight: 600; fill: #101828; text-anchor: middle; dominant-baseline: middle; }
+					.rd-text-inv { fill: #FFFFFF; }
+					.rd-arr  { stroke: #CDD5DF; stroke-width: 1.5; fill: none; marker-end: url(#rdarr); }
+					.rd-label { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 9px; fill: #667085; text-anchor: middle; }
+					/* Dark mode -- keyed to BOTH the page toggle ([data-theme]) and the OS (prefers-color-scheme) */
+					@media (prefers-color-scheme: dark) {
+						.rd-box   { fill: #1E293B; stroke: #2B3A52; }
+						.rd-text  { fill: #E5EAF2; }
+						.rd-label { fill: #9AA7BD; }
+						.rd-arr   { stroke: #475569; }
+					}
+					:root[data-theme="dark"] .rd-box   { fill: #1E293B; stroke: #2B3A52; }
+					:root[data-theme="dark"] .rd-text  { fill: #E5EAF2; }
+					:root[data-theme="dark"] .rd-label { fill: #9AA7BD; }
+					:root[data-theme="dark"] .rd-arr   { stroke: #475569; }
+				</style>
+				<marker id="rdarr" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+					<path d="M0,0 L0,6 L6,3 z" fill="#CDD5DF"/>
+				</marker>
+			</defs>
+
+			<!-- VERIFY byte-gate over the render step -->
+			<rect x="140" y="2" width="100" height="14" rx="3" fill="#FEF3C7" stroke="#B45309" stroke-width="1"/>
+			<text style="font-family:-apple-system,sans-serif; font-size:8px; font-weight:600; fill:#B45309;" text-anchor="middle" dominant-baseline="middle" x="190" y="9">VERIFY byte-gate</text>
+
+			<!-- canonical/ source box -->
+			<rect class="rd-src" x="8" y="78" width="86" height="44" rx="8"/>
+			<text class="rd-text rd-text-inv" x="51" y="96">canonical/</text>
+			<text class="rd-text rd-text-inv" style="font-size:9px;" x="51" y="110">single source</text>
+
+			<!-- render: canonical -> 5 profiles (fan-out) -->
+			<text class="rd-label" x="117" y="60">render</text>
+			<line class="rd-arr" x1="94" y1="92" x2="138" y2="32" stroke-width="1.2"/>
+			<line class="rd-arr" x1="94" y1="96" x2="138" y2="66" stroke-width="1.2"/>
+			<line class="rd-arr" x1="94" y1="100" x2="138" y2="100" stroke-width="1.2"/>
+			<line class="rd-arr" x1="94" y1="104" x2="138" y2="134" stroke-width="1.2"/>
+			<line class="rd-arr" x1="94" y1="110" x2="138" y2="168" stroke-width="1.2"/>
+
+			<!-- 5 profile boxes -->
+			<rect class="rd-box" x="140" y="18" width="100" height="28" rx="6"/>
+			<text class="rd-text" x="190" y="32">claude-code</text>
+			<rect class="rd-box" x="140" y="52" width="100" height="28" rx="6"/>
+			<text class="rd-text" x="190" y="66">codex</text>
+			<rect class="rd-box" x="140" y="86" width="100" height="28" rx="6"/>
+			<text class="rd-text" x="190" y="100">cursor</text>
+			<rect class="rd-box" x="140" y="120" width="100" height="28" rx="6"/>
+			<text class="rd-text" x="190" y="134">copilot-cli</text>
+			<rect class="rd-box" x="140" y="154" width="100" height="28" rx="6"/>
+			<text class="rd-text" x="190" y="168">antigravity</text>
+			<text class="rd-label" x="190" y="196">5 byte-identical profiles</text>
+
+			<!-- bundle: all 5 profiles converge into ONE release payload -->
+			<line class="rd-arr" x1="240" y1="32" x2="286" y2="96" stroke-width="1.1"/>
+			<line class="rd-arr" x1="240" y1="66" x2="286" y2="98" stroke-width="1.1"/>
+			<line class="rd-arr" x1="240" y1="100" x2="286" y2="100" stroke-width="1.1"/>
+			<line class="rd-arr" x1="240" y1="134" x2="286" y2="102" stroke-width="1.1"/>
+			<line class="rd-arr" x1="240" y1="168" x2="286" y2="104" stroke-width="1.1"/>
+			<text class="rd-label" x="263" y="54">bundle</text>
+
+			<!-- ONE release payload (all 5 profiles + CLI) -->
+			<rect class="rd-pkg" x="288" y="80" width="88" height="40" rx="8"/>
+			<text class="rd-text rd-text-inv" style="font-size:10px;" x="332" y="95">release payload</text>
+			<text class="rd-text rd-text-inv" style="font-size:8px;" x="332" y="108">all 5 profiles + CLI</text>
+
+			<!-- publish: ONE payload -> 3 equivalent channels (fan-out from the single payload) -->
+			<text class="rd-label" x="400" y="46">publish</text>
+			<line class="rd-arr" x1="376" y1="94" x2="420" y2="61" stroke-width="1.1"/>
+			<line class="rd-arr" x1="376" y1="100" x2="420" y2="101" stroke-width="1.1"/>
+			<line class="rd-arr" x1="376" y1="106" x2="420" y2="141" stroke-width="1.1"/>
+
+			<!-- 3 channels (same payload on each) -->
+			<rect class="rd-box" x="422" y="48" width="80" height="26" rx="6"/>
+			<text class="rd-text" x="462" y="61">npm</text>
+			<rect class="rd-box" x="422" y="88" width="80" height="26" rx="6"/>
+			<text class="rd-text" x="462" y="101">PyPI</text>
+			<rect class="rd-box" x="422" y="128" width="80" height="26" rx="6"/>
+			<text class="rd-text" style="font-size:9px;" x="462" y="141">GitHub Release</text>
+			<text class="rd-label" x="462" y="172">3 channels &middot; same payload</text>
+
+			<!-- install: user picks ANY ONE channel -> user repo -->
+			<text class="rd-label" x="526" y="54">install</text>
+			<text class="rd-label" style="font-size:8px;" x="526" y="116">(any one)</text>
+			<line class="rd-arr" x1="502" y1="61" x2="548" y2="96" stroke-width="1.1"/>
+			<line class="rd-arr" x1="502" y1="101" x2="548" y2="100" stroke-width="1.1"/>
+			<line class="rd-arr" x1="502" y1="141" x2="548" y2="104" stroke-width="1.1"/>
+
+			<!-- user repo box -->
+			<rect class="rd-box" x="550" y="78" width="94" height="44" rx="8"/>
+			<text class="rd-text" x="597" y="96">user repo</text>
+			<text class="rd-text" style="font-size:9px; fill:#667085;" x="597" y="110">.claude/ + .aid/</text>
+		</svg>
+		<p class="caption">The canonical-source render-and-distribute pipeline: author once in <code>canonical/</code>, render to 5 byte-identical profiles (guarded by the VERIFY byte-gate), bundle all five into one release payload, then publish that <em>same</em> payload to npm, PyPI, and GitHub Releases. A user installs from <strong>any one</strong> channel and the installer drops the profile matching their tool &mdash; the channels are equivalent copies, not per-profile outputs.</p>
+	</div>
+
+	<div class="callout ok" style="margin-top:1rem;">
+		<h4>What AID does NOT do</h4>
+		<p>AID is not a runtime framework or library you import into an application &mdash; it is a process methodology plus the tooling that installs and runs it. It does not host services or store project data remotely; the dashboard runs locally on loopback only.</p>
+	</div>
+</section>

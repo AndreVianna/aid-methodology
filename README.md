@@ -55,7 +55,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*12 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*13 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -154,7 +154,8 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-monitor          # optional — classify production findings and route fixes back
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
-/aid-ask              # on-demand — answer free-form questions from the KB + codebase (read-only)
+/aid-query-kb         # on-demand — answer free-form questions from the KB + codebase; captures gaps
+/aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 ```
 
 **Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-interview`. **Greenfield** projects skip Discovery and start at `/aid-interview`. Every phase is gated — nothing advances without your approval.
@@ -191,9 +192,11 @@ Root-agent files (`CLAUDE.md` / `AGENTS.md`) are now updated in-place and lossle
 
 Work that lives only on a git worktree branch is surfaced under its project (labeled by branch) instead of being invisible. Same-work pipelines across branches are merged into a single view — the most-advanced state wins. The dashboard degrades gracefully to the main checkout when git is unavailable.
 
-### `/aid-ask`
+### `/aid-query-kb` and `/aid-update-kb`
 
-A read-only, on-demand skill that answers free-form questions about your project from the Knowledge Base, the codebase, and in-flight works, with source citations. It never writes anything.
+`/aid-query-kb` is an on-demand skill that answers free-form questions about your project from the Knowledge Base, the codebase, and in-flight works, with source citations. When the context cannot answer, it captures the gap as a Query-Gap entry in the KB's Q&A backlog so it feeds the KB-improvement loop. Write scope is restricted to the gap-capture path — no KB doc or code file is ever written.
+
+`/aid-update-kb` is an on-demand targeted KB update skill. Give it a free-form prompt describing what changed and it applies the delta to the affected KB docs through the same review/calibration gate as `/aid-discover`. Human-gated — it commits only after your explicit approval.
 
 ---
 

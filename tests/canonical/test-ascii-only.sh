@@ -40,6 +40,26 @@ SHIPPED_SCRIPTS=(
     "dashboard/server/reader.mjs"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.sh"
     "canonical/aid/scripts/migrate/migrate-work-hierarchy.ps1"
+    # f011 task-018: KB frontmatter migration script
+    "canonical/aid/scripts/migrate/migrate-kb-frontmatter.sh"
+    # KB scripts shipped alongside the methodology (f001 task-003: add both to guard)
+    "canonical/aid/scripts/kb/build-kb-index.sh"
+    "canonical/aid/scripts/kb/lint-frontmatter.sh"
+    # f004 task-006: harvest-coined-terms.sh + denylist
+    "canonical/aid/scripts/kb/harvest-coined-terms.sh"
+    "canonical/aid/scripts/kb/coined-term-denylist.txt"
+    # f004 task-008: closure-check.sh coverage oracle
+    "canonical/aid/scripts/kb/closure-check.sh"
+    # f005 task-012: kb-teachback-questions.sh question-set generator
+    "canonical/aid/scripts/kb/kb-teachback-questions.sh"
+    # f006 task-023: recon-classify.sh recon pre-pass classifier
+    "canonical/aid/scripts/kb/recon-classify.sh"
+    # f013 task-028: kb-actback-task.sh representative-task selector + presence check
+    "canonical/aid/scripts/kb/kb-actback-task.sh"
+    # f016 task-083: kb-dual-intent-probes.sh dual-intent probe-derivation helper
+    "canonical/aid/scripts/kb/kb-dual-intent-probes.sh"
+    # f007 task-040: kb-freshness-check.sh per-doc staleness script
+    "canonical/aid/scripts/kb/kb-freshness-check.sh"
     # Maintainer test harness, but now run under Windows PowerShell 5.1 in CI
     # (installer-tests.yml 5.1 lane), which mis-parses non-ASCII in no-BOM files
     # via the ANSI codepage -- so it must stay ASCII like the shipped PS.

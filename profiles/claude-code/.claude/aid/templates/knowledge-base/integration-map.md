@@ -1,10 +1,20 @@
 ---
 kb-category: primary
 source: hand-authored
+objective: External integration topology for {project} -- what it consumes, exposes, and communication patterns between components.
+summary: Read this for integration-touching work to understand external dependencies and API surfaces.
+sources:
+  - src/                        # integration code
+  - {path/to/api/specs}         # e.g., openapi.yaml, graphql schema
+tags: [C2, integrations, apis, external-deps, communication]
+see_also: [architecture.md, external-sources.md, pipeline-contracts.md]
+owner: architect
+audience: [developer, architect]
 intent: |
   External integration topology — what the project consumes, what it exposes, and the communication patterns between components. Read this for integration-touching work.
 contracts: []
 changelog:
+  - 2026-06-23: Added f001 frontmatter fields (objective/summary/sources/tags/see_also/owner/audience)
   - 2026-05-26: KB Authoring v2 template seed
 ---
 
@@ -13,6 +23,18 @@ changelog:
 > **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
+
+## Contents
+
+- [Overview](#overview)
+- [Message Queues and Event Buses](#message-queues--event-buses)
+- [Caches](#caches)
+- [File and Object Storage](#file--object-storage)
+- [Email and Notifications](#email--notifications)
+- [Third-Party Services](#third-party-services)
+- [Integration Health Risks](#integration-health-risks)
+- [Contracts](#contracts)
+- [Change Log](#change-log)
 
 ---
 
@@ -120,7 +142,23 @@ changelog:
 
 ---
 
-## Revision History
+## Contracts
+
+> The structural shape a change MUST satisfy at an integration boundary -- the message
+> schema, the event payload, the external API request/response, the cache-key shape. Without
+> this an agent's change breaks an integration. State each contract precisely (fields, types,
+> required-ness) and name the producer and consumer it binds.
+
+- **{Message / event contract}:** {the canonical payload -- `eventType`, required fields and
+  types; which producer emits it and which consumer(s) depend on it}.
+- **{External API contract}:** {the request/response shape this system relies on from a
+  third-party service, and what breaks here if the provider changes it}.
+- **Compatibility rule:** {e.g. "consumers MUST tolerate unknown fields; producers add fields
+  additively and never repurpose an existing field's meaning"}.
+
+---
+
+## Change Log
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|

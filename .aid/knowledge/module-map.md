@@ -1,378 +1,303 @@
 ---
 kb-category: primary
 source: hand-authored
-intent: |
-  Maps the major code/content modules in AID — the 12 user-facing aid-* skills,
-  the 13th maintainer-only generate-profile skill, the 9 agents, the 7 generator
-  Python files under .claude/skills/generate-profile/scripts/ (the render.py copy core +
-  run_generator.py entrypoint),
-  and the canonical helper scripts under canonical/scripts/{config,kb,execute,summarize,interview,housekeep}.
-  Each entry lists purpose, directory path, dependencies, and associated tests.
-  Read this when you need to know what a directory holds and who consumes it.
-  NOT a tech-stack overview (see architecture.md) and NOT a per-script API
-  reference (see the script's own header comment block).
+objective: Component map of the AID repository -- every major module, its purpose, dependencies, test coverage, and the wiring sequence for adding a new one.
+summary: Read this to navigate AID's parts (installer, CLI, canonical toolkit, profile renderer, packages, dashboard, site, tests) and learn how they depend on each other before any module-touching change.
+sources:
+  - bin/
+  - lib/
+  - install.sh
+  - install.ps1
+  - canonical/
+  - .claude/skills/generate-profile/scripts/
+  - profiles/
+  - packages/
+  - dashboard/
+  - site/
+  - tests/
+  - canonical/EMISSION-MANIFEST.md
+tags: [C2, modules, dependencies, components, wiring, test-coverage]
+see_also: [project-structure.md, architecture.md, artifact-schemas.md, integration-map.md]
+owner: architect
+audience: [developer, architect]
 contracts:
-  - "12 user-facing aid-* skills + 1 maintainer-only generate-profile skill = 13 total"
-  - "9 agents under canonical/agents/ (4 large / 4 medium / 1 small)"
-  - "7 generator Python files under .claude/skills/generate-profile/scripts/: render.py (single copy core + dormant Codex-TOML branch) + render_lib + aid_profile + verify_deterministic + verify_advisory + test_manifest_safety + run_generator.py (the entrypoint, moved here from repo root by work-001)"
-  - "6 script categories under canonical/scripts/ (config, kb, execute, summarize, interview, housekeep) + grade.sh at the category root"
-  - "Every canonical helper script has 7 byte-identical copies on disk (canonical + .claude dogfood + 5 profile trees)"
+  - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
+  - "13 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
+  - "5 render profiles (profiles/*.toml)"
 changelog:
-  - 2026-06-22: work-005-profile-generator-simplify (merged) — §3 rewritten to the single copy-core model: render.py is now the sole copy generator (copy_tree over 3 trees: agents/skills translated, canonical/aid/ verbatim) + dormant Codex-TOML branch; the 5 per-type renderers (render_agents/render_skills/render_templates/render_recipes/render_canonical_scripts) + 2 emitter self-tests (test_copilot_emitter/test_antigravity_emitter) DELETED. Renderer .py count 13->7; §3 table, intent, contract, and Module-classes entry updated. Via /aid-housekeep KB-DELTA (Q30).
-  - 2026-06-09: aid-ask added (11->12 user-facing skills, 12->13 total) via /aid-housekeep KB-DELTA.
-  - 2026-06-05: work-002-auto-installer — added Module class 6 (Installer / CLI): the `aid` CLI dispatcher (bin/aid + bin/aid.ps1 + bin/aid.cmd), the shared install-core libs (lib/aid-install-core.sh + lib/AidInstallCore.psm1), the curl/irm bootstrap (install.sh + install.ps1), and the npm/PyPI shim packages (packages/npm + packages/pypi). Fixed the §4g test-coverage table: the removed test-setup.sh/test-setup-ps1.sh rows replaced with the installer/CLI suites.
-  - 2026-06-04: work-001-agents-review (task-013) — roster reduced 22→9 agents with aid-* prefix (feature-002); §2 per-tier rosters replaced with new 4/4/1 tier split; boilerplate-presence claim updated to shared-include via canonical/templates/agent-boilerplate.md; all old bare agent names removed.
-  - 2026-06-03: housekeep run-state relocation (PR #51) — corrected housekeep-state.sh (run-state now in the project-level `.aid/.temp/HOUSEKEEP_STATE_<ts>.md`, not a work-area STATE.md) and cleanup-classify.sh (every work folder offered, user-confirmed; signals informational; only the current-branch folder hard-skipped).
-  - 2026-06-03: aid/housekeep-2026-06-03 (PR #49) — added the optional aid-housekeep skill (11→12 total skills; 11 user-facing canonical + generate-profile maintainer-only) and the canonical/scripts/housekeep/ category (5→6 script categories): housekeep-state.sh, branch-commit.sh, cleanup-classify.sh.
-  - 2026-06-01: work-001-add-providers (PRs #42/#43/#44) — render profiles grew 3→5 (added copilot-cli + antigravity); scripts/ grew 10→12 .py (added test_copilot_emitter.py + test_antigravity_emitter.py); render_agents gained copilot-agent + antigravity-rule format branches; helper-script copy set is now canonical + .claude + 5 profile trees.
-  - 2026-05-31: delivery-001 — reconciled discovery-agent ownership in old roster (now absorbed into aid-researcher per migration-map). Added note that document-expectations.md is the single per-doc expectations source loaded by aid-reviewer at REVIEW and FIX dispatch.
-  - 2026-05-27: Initial generation (cycle-1)
+  - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
 ---
 
 # Module Map
 
-> Coverage of every "module" in the AID repo. Modules here are NOT application
-> components (there is no application — see project-structure.md §Primary Purpose);
-> they are the artifact families the renderer ships and the helper code that supports
-> them. All paths are repo-relative.
+This document maps the parts of the AID repository and how they depend on each
+other. AID is not one application -- it is a **toolkit factory** plus the toolkit
+it produces. The modules fall into four planes:
 
-## Module classes
+1. **Distribution plane** -- how the toolkit reaches a user's machine (installers,
+   CLI, install-core, packages, release tooling).
+2. **Toolkit plane** -- the AID content itself, authored once in `canonical/`
+   (skills, agents, scripts, templates, recipes).
+3. **Render plane** -- the profile renderer that mirrors `canonical/` into five
+   per-tool `profiles/` trees under an emission-manifest safety boundary.
+4. **Observation plane** -- read-only consumers of pipeline state (the dashboard)
+   and the standalone marketing/docs website (`site/`).
 
-The repo contains six module classes, each with its own conventions:
+## Contents
 
-1. **Skills** — 12 user-facing + 1 maintainer-only — under `canonical/skills/aid-*/`
-2. **Agents** — 9 specialist agents — under `canonical/agents/<name>/`
-3. **Generator (Python)** — 7 files under `.claude/skills/generate-profile/scripts/` (the `render.py` copy core + `run_generator.py` entrypoint)
-4. **Helper scripts (Bash + JS + PS1)** — under `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `canonical/scripts/grade.sh`
-5. **Templates + Recipes** — content fixtures consumed by skills — under `canonical/templates/` + `canonical/recipes/`
-6. **Installer / CLI** — the persistent global `aid` CLI + its install-core libs + bootstrap + the npm/PyPI shim packages — under `bin/`, `lib/`, repo-root `install.sh`/`install.ps1`, and `packages/`
-
-The generator (Module 3) emits Modules 1, 2, 4, 5 into 5 install trees
-(`profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/`) and the dogfood
-`.claude/` tree. Source-of-truth is `canonical/`; every other copy is
-byte-identical output verified by
-`.claude/skills/generate-profile/scripts/verify_deterministic.py`.
-
----
-
-## 1. Skills — `canonical/skills/aid-*/`
-
-Twelve user-facing `aid-*` skills (`ls -d canonical/skills/*/` = 12) plus the
-maintainer-only `generate-profile` (`.claude/`-only, NOT in `canonical/skills/`) = 13
-total. Each has a `SKILL.md` Thin-Router (per `coding-standards.md §7b`)
-plus a `references/state-*.md` per state plus topic-specific reference docs.
-
-| Skill | Purpose | SKILL.md (canonical) | Reference files | Notable references |
-|-------|---------|---------------------|-----------------|--------------------|
-| `aid-config` | View/update `.aid/settings.yml` — first-run scaffold + per-key edit | `canonical/skills/aid-config/SKILL.md` | 0 | (single-state; no references/ subdir) |
-| `aid-discover` | Brownfield KB scan — dispatches 5 discovery sub-agents in parallel; state machine GENERATE→REVIEW→Q-AND-A→FIX→APPROVAL→DONE | `canonical/skills/aid-discover/SKILL.md` | 8 | `agent-prompts.md`, `document-expectations.md`, `reviewer-{brief,prompt}.md`, `state-{approval,done,fix,generate,q-and-a,review}.md` |
-| `aid-interview` | Requirements gathering + description-first lite-path triage (work-type inferred from the request description, never shown as a menu; sub-paths LITE-BUG-FIX / LITE-REFACTOR / LITE-FEATURE) — largest reference set | `canonical/skills/aid-interview/SKILL.md` | 19 | `state-triage.md` (largest single state file), `state-condensed-intake.md`, `lite-to-full-escalation.md`, `recipe-to-lite-escalation.md`, `feature-decomposition.md` |
-| `aid-specify` | Per-feature technical spec — state machine INITIALIZE→CONTINUE→REVIEW→DONE plus BLOCKED + SPIKE side states | `canonical/skills/aid-specify/SKILL.md` | 9 | `state-{initialize,continue,review,done,spike,blocked}.md`, `handling-outcomes.md`, `known-issues-scope.md`, `reviewer-brief.md` |
-| `aid-plan` | Sequence features into shippable deliveries | `canonical/skills/aid-plan/SKILL.md` | 3 | `first-run-loop.md`, `review-deliverables.md`, `reviewer-brief.md` |
-| `aid-detail` | Decompose deliveries into PR-sized typed tasks (8-type catalog: RESEARCH/DESIGN/IMPLEMENT/TEST/DOCUMENT/MIGRATE/REFACTOR/CONFIGURE per `canonical/skills/aid-execute/references/state-execute.md` `## Task Types`) | `canonical/skills/aid-detail/SKILL.md` | 5 | `task-decomposition.md`, `execution-graph-generation.md`, `first-run.md`, `review.md`, `reviewer-brief.md` |
-| `aid-execute` | Implement + two-tier review (per-task quick-check + per-delivery gate); parallel pool dispatch with `MaxConcurrent` | `canonical/skills/aid-execute/SKILL.md` | 8 | `state-execute.md` (largest single state file — pool dispatch PD-0..PD-6), `state-delivery-gate.md`, `state-review.md`, `state-{fix,re-run}.md`, `reviewer-{brief,guide}.md`, `task-type-rules.md` |
-| `aid-deploy` | Ship a delivery + create PR | `canonical/skills/aid-deploy/SKILL.md` | 5 | `state-{idle,selecting,packaging,verifying,re-run}.md` |
-| `aid-monitor` | Production-finding classification + routing | `canonical/skills/aid-monitor/SKILL.md` | 3 | `state-{observe,classify,route}.md` |
-| `aid-housekeep` | Optional on-demand housekeeping skill — runs three gated jobs in strict order on an `aid/housekeep-*` branch, one commit per stage, never pushes; re-entrant (a stalled run resumes at the stalled stage). State machine PREFLIGHT→KB-DELTA→SUMMARY-DELTA→CLEANUP→DONE (per `canonical/skills/aid-housekeep/SKILL.md` `description:`). NOT inserted into the mandatory phase-to-skill pipeline. | `canonical/skills/aid-housekeep/SKILL.md` | 5 | `state-{preflight,kb-delta,summary-delta,cleanup,done}.md` |
-| `aid-summarize` | Optional offline HTML KB viewer (Mermaid + sectioned per profile) | `canonical/skills/aid-summarize/SKILL.md` | 10 | `state-{preflight,profile,generate,validate,manual-checklist,stale-check,writeback,fix,approval,done}.md` |
-| `aid-ask` | Optional on-demand, read-only Q&A skill OUTSIDE the numbered pipeline — answers free-form project questions from the KB + codebase + in-flight works with source citations; single-shot, no write (dispatches `aid-researcher` for deep work, inline for trivial) | `canonical/skills/aid-ask/SKILL.md` | 0 | (single-shot router; `allowed-tools: Read, Glob, Grep, Agent`) |
-| `generate-profile` (maintainer-only) | Render canonical/ → 5 install trees; LOAD → VALIDATE → RENDER → VERIFY → REPORT | `.claude/skills/generate-profile/SKILL.md` (NOT in `canonical/skills/` — see `.claude/skills/generate-profile/SKILL.md` `chicken-and-egg deployment problem` for the justification) | n/a — uses `scripts/*.py` instead | (renderer Python files — see §3) |
-
-**Test coverage:**
-
-- Helper scripts that skills invoke are covered by the per-script test suites in `tests/canonical/` (see §4).
-- No direct unit tests for SKILL.md bodies themselves — they are state-router markdown read by Claude Code / Codex / Cursor at slash-command invocation; behavior is exercised indirectly through skill-level e2e runs.
-
-**Key convention** (per `coding-standards.md §7b`): every `aid-*` SKILL.md is a state
-router (≤~360 lines) that delegates per-state logic to `references/state-*.md`
-files. The Dispatch table is the canonical state machine; advance follows one
-of three forms (Unconditional / Halt / Conditional on a computed criterion).
-
-**`document-expectations.md` — single per-doc expectations source:** The file
-`canonical/skills/aid-discover/references/document-expectations.md` is the sole
-authoritative specification of what `aid-reviewer` must look for in each KB doc
-when dispatched from `aid-discover`. The reviewer loads it at dispatch time in both
-REVIEW state (`state-review.md`) and FIX state (`state-fix.md`) via the
-`{{DOCUMENT_EXPECTATIONS}}` placeholder in `reviewer-prompt.md`. No per-doc expectation
-blocks live in `aid-reviewer/AGENT.md` or in any other file — all are consolidated in
-this single reference.
+- [Module Inventory](#module-inventory)
+- [Dependency Graph](#dependency-graph)
+- [Script Modules by Area](#script-modules-by-area)
+- [Entry Points](#entry-points)
+- [High-Churn Modules](#high-churn-modules)
+- [Oversized Modules](#oversized-modules)
+- [Conventions](#conventions)
+- [Invariants](#invariants)
+- [Contracts](#contracts)
+- [Gotchas](#gotchas)
+- [Change Log](#change-log)
 
 ---
 
-## 2. Agents — `canonical/agents/<name>/`
+## Module Inventory
 
-9 specialist agent definitions. Each lives in its own subdirectory containing
-`AGENT.md` (the agent contract) and `README.md` (the human-facing description).
-Three tiers, per the `tier:` frontmatter field:
+> Size is qualitative (small/medium/large). Precise line/file counts drift -- run
+> `find`/`wc -l` for live numbers (per kb-authoring P1). Test coverage is a health
+> assessment, not a percentage.
 
-### 2a. Large tier (4) — heavy-lifting analysts, designers, reviewers
-
-| Agent | Description (from AGENT.md frontmatter) | Path |
-|-------|-----------------------------------------|------|
-| `aid-interviewer` | One-question-at-a-time adaptive dialogue with stakeholders → REQUIREMENTS.md | `canonical/agents/aid-interviewer/AGENT.md` |
-| `aid-architect` | Design-thinking specialist — produces SPEC.md, PLAN.md, task-NNN.md decomposition + execution graph; absorbs DESIGN-typed UX advisory | `canonical/agents/aid-architect/AGENT.md` |
-| `aid-researcher` | Reads and analyzes code/docs/logs/APIs → structured KB / analysis documents (existing-state cataloguing, discovery, dependency mapping, telemetry interpretation) | `canonical/agents/aid-researcher/AGENT.md` |
-| `aid-reviewer` | Adversarial quality evaluator — reviews any artifact (code, tasks, specs, plans, KB docs) against acceptance criteria / rubric; emits the 7-column issue ledger | `canonical/agents/aid-reviewer/AGENT.md` |
-
-### 2b. Medium tier (4) — executors + release + routing
-
-| Agent | Description | Path |
-|-------|-------------|------|
-| `aid-developer` | Implements, modifies, refactors, and build-verifies code from task files; raises IMPEDIMENT.md when spec contradicts reality | `canonical/agents/aid-developer/AGENT.md` |
-| `aid-operator` | Runs final release verification, packages artifacts, creates PRs/release notes, manages releases, updates KB on ship | `canonical/agents/aid-operator/AGENT.md` |
-| `aid-orchestrator` | Routes pipeline findings to the next phase/skill, enforces human gates, dispatches with context, manages parallel execution | `canonical/agents/aid-orchestrator/AGENT.md` |
-| `aid-tech-writer` | Authors user-facing documentation — API docs, changelogs, READMEs, release notes, user guides — and reviews docs for quality/accuracy | `canonical/agents/aid-tech-writer/AGENT.md` |
-
-### 2c. Small tier (1) — mechanical utility sub-agent (sub-agent-only)
-
-| Agent | Purpose | Path |
-|-------|---------|------|
-| `aid-clerk` | Performs one mechanical, schema-bounded operation per dispatch — file extraction, template placeholder-fill, or glob enumeration — returning a markdown table/file with path+line evidence | `canonical/agents/aid-clerk/AGENT.md` |
-
-**Dependencies (cross-agent):**
-
-- Skills dispatch agents via the host's Agent/Task tool with `subagent_type` matching the `name:` field of `AGENT.md` (per `canonical/skills/aid-discover/SKILL.md` `## Dispatch` table).
-- Agents call other agents only indirectly — through a wrapping skill or `aid-orchestrator`. There are no direct agent-to-agent Task tool calls in the canonical bodies.
-- Every agent carries `## Heartbeat protocol` + `## Self-review discipline` blocks via `{{include:agent-boilerplate}}`, which is resolved at render time from `canonical/templates/agent-boilerplate.md`. The two protocol blocks are no longer macro-copied per-agent; they are factored into the shared include and injected by the renderer before the format-branch dispatch. `aid-clerk` (small-tier, mechanical) may omit the blocks per its narrow scope.
-
-**Test coverage:** none direct. Agent contracts are exercised through skill-level e2e tests and via the canonical helper test suites (§4).
+| Module | Plane | Purpose | Depends on | Size | Test coverage | Notes |
+|--------|-------|---------|-----------|------|---------------|-------|
+| `install.sh` / `install.ps1` | Distribution | Bootstrap installer; downloads + verifies a release tarball, stages it, installs the CLI to the state-home. | install-core libs | large (`install.sh`) | tested (`tests/canonical/test-aid-cli-parity.sh`, `tests/windows/Test-AidInstaller.ps1`) | Two language twins that must stay behavior-equal. |
+| `lib/aid-install-core.sh` | Distribution | Sourceable Bash library of pure install/update/remove functions (copy, manifest, root-agent region update). | none (pure functions) | large | tested (parity + migrate suites) | Largest shell file; no side effects on source. See header `Provides:` block. |
+| `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
+| `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
+| `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
+| `canonical/skills/*` (13) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill. Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. |
+| `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, execute, housekeep, interview, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
+| `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, recipe template. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
+| `canonical/aid/recipes/*` (52) | Toolkit | Pre-filled lite-path change templates with `{{slot}}` placeholders (add-/change-/fix- families). | `interview/parse-recipe.sh` consumes them | medium | parse coverage | Passthrough-rendered (no frontmatter injection). |
+| `generate-profile` renderer | Render | Python renderer that mirrors `canonical/` into each `profiles/<tool>/` tree under an emission manifest. | `canonical/`, `profiles/*.toml` | large | tested (`test_manifest_safety.py`, `verify_deterministic.py`, `verify_advisory.py`) | Lives at `.claude/skills/generate-profile/scripts/`. |
+| `profiles/<tool>/` (5) | Render | Rendered, per-tool copies of the toolkit (claude-code, codex, cursor, copilot-cli, antigravity) + `<tool>.toml` config. | output of the renderer | large | render-drift CI | Build output -- never hand-edit; regenerate. |
+| `packages/npm` | Distribution | npm `aid-installer` wrapper; vendors `bin/`, `lib/`, `dashboard/`. | `bin/`, `lib/`, `dashboard/` | medium | release smoke | Vendored copies regenerate; edit the wrapper, not the vendor. |
+| `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
+| `dashboard/reader/*` (Python) | Observation | Parses `.aid/` state (STATE.md hierarchy, settings, KB) into typed models. | `.aid/` artifact schemas | large | tested (`dashboard/reader/tests/`) | `parsers.py` + `derivation.py` + `models.py` + `locator.py` + `reader.py`. |
+| `dashboard/server/*` | Observation | Serves the dashboard: a Node `reader.mjs`/`server.mjs` twin of the Python reader, plus `server.py`, index/home HTML. | `dashboard/reader` semantics | large | tested (`dashboard/server/tests/`) | `reader.mjs` is the Node twin of the **whole** `dashboard/reader/` Python reader (its own header: "port of dashboard/reader/"), not just `parsers.py` -- a change to ANY reader `.py` (`parsers`/`derivation`/`models`/`locator`/`reader`) must be mirrored in `reader.mjs`; behavior-equal, no import. |
+| `site/` | Observation | Standalone Astro marketing + docs website. | own `package.json` (independent build) | large | tested (`site/**/__tests__`) | Unrelated to the CLI build; separate `node_modules`/`dist`. |
+| `tests/canonical/*` | Cross-cutting | Cross-platform shell test suites + `fixtures/`, run via `tests/run-all.sh`. | the modules under test | large | self | Heavy gates run on master CI only. |
+| `tests/windows/*` | Cross-cutting | Windows-only PowerShell installer tests (`Test-AidInstaller.ps1`). | installers + install-core | large | windows CI lane | NOT in `run-all.sh`; needs a Windows runner. |
 
 ---
 
-## 3. Generator (Python) — `.claude/skills/generate-profile/scripts/`
+## Dependency Graph
 
-The generator lives in `.claude/skills/generate-profile/scripts/`, NOT in
-`canonical/skills/`, because it CANNOT be regenerated from itself
-(chicken-and-egg per `.claude/skills/generate-profile/SKILL.md` `chicken-and-egg deployment problem`). It is the only
-Python in the repo.
+> Arrows point from importer/consumer to its dependency (`A -> B` = A depends on B).
+> Diagrams are avoided per kb-authoring P10; this is the plain-text form.
 
-**Path:** `.claude/skills/generate-profile/scripts/*.py` (7 files, incl. the `run_generator.py` entrypoint).
+```
+# Distribution plane
+install.sh            -> lib/aid-install-core.sh
+install.ps1           -> lib/AidInstallCore.psm1
+bin/aid               -> lib/aid-install-core.sh
+bin/aid.ps1           -> lib/AidInstallCore.psm1
+bin/aid.cmd           -> bin/aid.ps1
+release.sh            -> canonical/ , profiles/ , canonical/aid/scripts/release/check-version-sync.sh
+packages/npm          -> bin/ , lib/ , dashboard/          (vendored)
+packages/pypi         -> bin/ , lib/ , dashboard/          (vendored under _vendor/)
 
-**Architecture (post work-005-profile-generator-simplify):** the generator is a
-**single copy core** — `render.py` walks each canonical source tree and copies it
-verbatim, applying a per-file *translate* only where a tool needs one. The old
-per-type renderer scripts (`render_agents` / `render_skills` / `render_templates` /
-`render_recipes` / `render_canonical_scripts`) and the two emitter self-tests
-(`test_copilot_emitter` / `test_antigravity_emitter`) were **deleted** and folded
-into `render.py`'s `copy_tree` pass. `render_profile()` copies exactly three trees:
-`canonical/agents/` (translate=agents — frontmatter `tools:`/`model:` remap),
-`canonical/skills/` (translate=skills — `allowed-tools:` remap + CC-optional strip),
-and `canonical/aid/` (translate=none — verbatim; this subtree contains the former
-templates / recipes / helper-scripts content, now copied byte-for-byte rather than
-re-rendered). Codex's TOML agent format is a **dormant branch** in `render.py`
-(`agent_format="toml"` -> `_render_codex_toml`), retained until E-CODEX-1 reaches
-high confidence.
+# Render plane (source-of-truth -> rendered copies)
+generate-profile      -> canonical/ , profiles/<tool>.toml
+profiles/<tool>/      -> generate-profile                  (emitted by)
+profiles/<tool>/emission-manifest.jsonl -> generate-profile (safety boundary)
 
-| File | Purpose | Key entry points |
-|------|---------|------------------|
-| `render.py` | The single copy core. `copy_tree(src, dst, profile, manifest, translate)` walks one canonical tree and copies every file, applying the per-file translate. translate=agents rewrites agent frontmatter (`tools:` remap via `_remap_tools`, `model:`/`reasoning_effort` resolution, `{{include:...}}` resolution); translate=skills rewrites `allowed-tools:` and strips Claude-Code-only fields; translate=none copies verbatim. Includes the **dormant** Codex-TOML branch (`_render_codex_toml`, gated on `agent_format="toml"`) and the YAML-lite frontmatter parser/serializer. | `render_profile(canonical_root, profile, manifest, output_base)`, `copy_tree(...)`, `_translate_agent`, `_rewrite_skill_frontmatter`, `_parse_frontmatter`, `_build_frontmatter_md`, `_render_codex_toml`, `_resolve_model`, `_resolve_includes` |
-| `render_lib.py` | Shared utilities — `read_canonical_file`, `write_output_file`, `substitute_filenames`, `rewrite_install_paths` (FR5 Option (c) MINIMAL: single `{root}`-prefix substitution), `sha256_hex`, `EmissionManifest` (JSONL writer per `canonical/EMISSION-MANIFEST.md`) | `EmissionManifest.{add,diff,load,write}`, `sha256_hex`, `rewrite_install_paths`, `substitute_filenames` |
-| `aid_profile.py` | Loads + validates a per-tool profile TOML (shrunk schema, work-005); surviving dataclasses `Profile` (`name`/`root_dir`/`root_file`/`agent_format`/`tool_names`/`model_tiers`/`capabilities`), `ModelTierSimple`, `ModelTierDetailed`, `CapabilitiesConfig` (`LayoutConfig`/`FrontmatterConfig`/`AgentConfig`/`SkillConfig`/`RuleEntry`/`ExtrasConfig` were dropped); `_KNOWN_AGENT_FORMATS = {markdown, toml}` (the `toml` value dormant for Codex; `copilot-agent`/`antigravity-rule` retired) | `load_profile(path)`, `validate(profile)`, `_KNOWN_AGENT_FORMATS` |
-| `verify_deterministic.py` | VERIFY (deterministic) — strict; re-renders to a scratch dir via `render_profile` (single copy pass), compares byte-by-byte against committed install trees; non-zero exit if any drift | `run_verify(repo_root, report_path)`, `_render_all` |
-| `verify_advisory.py` | VERIFY (advisory) — additional checks (frontmatter shape, install-path rewrites, etc.) | `run_advisory(repo_root, report_path)` |
-| `test_manifest_safety.py` | Self-tests for the EmissionManifest deletion logic | (pytest-style; run standalone) |
-| `run_generator.py` | Generator entrypoint — loads every `profiles/*.toml`, calls `render_profile` (single copy pass per profile), performs deletion pass via `EmissionManifest.diff`, writes manifest, runs VERIFY (deterministic) + VERIFY (advisory) | `for profile_path in sorted(profiles_dir.glob('*.toml'))`, `render_profile`, `manifest.diff`, `run_verify`, `run_advisory` |
+# Toolkit plane (internal wiring)
+canonical/skills/*    -> canonical/aid/scripts/* , canonical/aid/templates/*
+canonical/agents/*    -> canonical/aid/templates/agent-boilerplate.md   (include directive)
+canonical/aid/scripts/* (most) -> canonical/aid/scripts/config/read-setting.sh
+*/state-review.md (skills) -> canonical/aid/scripts/grade.sh
+canonical/aid/recipes/* -> canonical/aid/scripts/interview/parse-recipe.sh (consumed by)
 
-**Dependencies:**
+# Observation plane
+dashboard/server/server.mjs -> dashboard/server/reader.mjs
+dashboard/server/server.py  -> dashboard/reader/reader.py
+dashboard/reader/reader.py  -> parsers.py , derivation.py , models.py , locator.py
+dashboard/reader/*          -> .aid/ artifact schemas (STATE.md, settings.yml, KB)
+dashboard/server/reader.mjs <parity> dashboard/reader/*.py   (whole-reader twin -- no import; behavior-equal)
+site/                       -> (independent; no dependency on the CLI/toolkit)
+```
 
-- Python 3.11+ (stdlib `tomllib` per `.claude/skills/generate-profile/scripts/aid_profile.py` `Requirements: Python 3.11+`).
-- No third-party packages (no `requirements.txt`, no `pyproject.toml`; confirmed by repo-wide search).
-- Every module inserts its own dir on `sys.path` (`_SCRIPT_DIR = Path(__file__).parent`) so `render.py`, `verify_deterministic.py`, and `run_generator.py` can `from render_lib import ...` / `from aid_profile import ...` / `from render import render_profile` regardless of CWD.
-- `render.py` is imported by `run_generator.py` and `verify_deterministic.py` (both call `render_profile`); `render.py` in turn imports `aid_profile` + `render_lib`.
+Key non-dependency (a thing that looks connected but is not):
 
-**Test coverage:**
-
-- `render.py --self-test` runs 8 in-process tests (verbatim-copy byte-identity, two-run determinism per translate mode, tool_names remap), wired in CI (`.github/workflows/test.yml`).
-- `test_manifest_safety.py` covers `EmissionManifest` round-trip + diff edge cases.
-- `verify_deterministic.py` is itself a test — invoked after every render and exits non-zero on drift (per `run_generator.py` `run_verify`). It re-renders via `render_profile` and compares end-to-end against the committed trees; it also has a `--self-test` mode wired in CI.
-- No standalone Python test runner configured (no `pytest.ini`, per project-structure.md §6). Tests are invoked manually per `tests/README.md`.
+```
+site/  X  canonical/        (the website does NOT consume the toolkit; it has its own build)
+```
 
 ---
 
-## 4. Helper scripts — `canonical/scripts/{config,kb,execute,summarize,interview,housekeep}/` + `grade.sh`
+## Script Modules by Area
 
-Bash (Shell) + Node (JavaScript) + PowerShell helpers consumed by skills at
-slash-command invocation. Every script has 7 byte-identical copies on disk
-(canonical + `.claude/aid/scripts/` dogfood + the 5 profile-tree scripts dirs:
-`profiles/claude-code/.claude/aid/scripts/`, `profiles/codex/.codex/aid/scripts/`,
-`profiles/cursor/.cursor/aid/scripts/`, `profiles/copilot-cli/.github/aid/scripts/`,
-`profiles/antigravity/.agent/aid/scripts/`)
-— verified by `verify_deterministic.py`. Repo totals are recorded in `.aid/generated/project-index.md`.
+The `canonical/aid/scripts/` tree is grouped by the pipeline phase that consumes
+each area. Two scripts are cross-cutting and live where every skill can reach them:
+`config/read-setting.sh` (settings resolver) and the top-level `grade.sh` (ledger
+grader).
 
-### 4a. `canonical/scripts/config/` — settings access
+| Area | Scripts | Consumed by | Purpose |
+|------|---------|-------------|---------|
+| (root) | `grade.sh` | every skill REVIEW state | Reads the reviewer ledger, counts findings by severity, emits a grade. |
+| `config/` | `read-setting.sh` | every skill | Resolves a setting from `.aid/settings.yml` (skill-override -> category -> default). |
+| `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.md writeback. |
+| `housekeep/` | `branch-commit.sh`, `cleanup-classify.sh`, `housekeep-state.sh` | `aid-housekeep` | Branch/commit helpers, orphan/cleanup classification, housekeep run-state. |
+| `interview/` | `parse-recipe.sh` | `aid-interview` | Parses a recipe file's `{{slot}}` placeholders for the lite path. |
+| `kb/` | `build-project-index.sh`, `build-metrics.sh`, `build-kb-index.sh`, `harvest-coined-terms.sh`, `closure-check.sh`, `discover-preflight.sh`, `kb-actback-task.sh`, `kb-citation-lint.sh`, `kb-dual-intent-probes.sh`, `kb-freshness-check.sh`, `kb-teachback-questions.sh`, `lint-frontmatter.sh`, `recon-classify.sh` | `aid-discover` (most), `aid-update-kb` (`kb-freshness-check.sh`) | The discovery/KB engine: index + metric generation, concept harvest, closure loop, frontmatter + citation lint, path classification, dual-intent self-eval. |
+| `migrate/` | `migrate-kb-frontmatter.sh`, `migrate-work-hierarchy.sh`, `migrate-work-hierarchy.ps1` | `aid` CLI update path | One-time migrations (KB frontmatter v2; work-hierarchy restructure). Shell + PowerShell twin. |
+| `release/` | `check-version-sync.sh` | `release.sh`, CI | Verifies the version string is in lockstep across all manifests. |
+| `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `grade-summary.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, fact/stale checks, HTML + visual + contrast validation via Playwright/Node). |
 
-| Script | Purpose | Key flags |
-|--------|---------|-----------|
-| `read-setting.sh` | Reads a key from `.aid/settings.yml` with per-skill override resolution (skill.key → review.key → default) | `--skill X --key Y` (override-aware), `--path A.B` (direct), `--default V` |
-
-### 4b. `canonical/scripts/kb/` — KB build + verification
-
-| Script | Purpose |
-|--------|---------|
-| `build-project-index.sh` | Builds `.aid/generated/project-index.md` — used as the pre-pass shared input by the 5 discovery sub-agents |
-| `build-kb-index.sh` | Builds `.aid/knowledge/INDEX.md` — agent-facing 2-3-line summary per KB doc, composed from each doc's `intent:` frontmatter (per Q12 resolution cycle-1: moved from `.aid/generated/` to `.aid/knowledge/`) |
-| `build-metrics.sh` | Builds `.aid/generated/metrics.md` — T3 numeric facts (line counts, file counts, term counts, severity tallies per `canonical/templates/kb-authoring/tier-model.md` `### T3 — Metric`) |
-| `discover-preflight.sh` | Pre-flight checks for `aid-discover` (verifies `.aid/knowledge/STATE.md` exists + not in Plan Mode) |
-
-### 4c. `canonical/scripts/execute/` — task execution + parallel pool
-
-| Script | Purpose |
-|--------|---------|
-| `writeback-state.sh` | Row-level write coordination for parallel pool dispatch (FR6) × per-area STATE writes; 4 modes (`--field`, `--findings`, `--block`, `--append-issue`); sentinel-file lock with retry — covered by `tests/canonical/test-writeback-state.sh` |
-| `compute-block-radius.sh` | BFS over task dependency graph — computes the failure block radius when a task fails — covered by `tests/canonical/test-compute-block-radius.sh` |
-| `complexity-score.sh` | Task complexity scoring (drives executor model tier selection) |
-
-### 4d. `canonical/scripts/summarize/` — offline HTML KB viewer
-
-| Script | Purpose |
-|--------|---------|
-| `validate-diagrams.mjs` | Mermaid diagram validation (largest JS file per `.aid/generated/project-index.md` `## Top 20 Largest Source Files`) |
-| `grade-summary.sh` | Aggregates summarize-phase validators |
-| `validate-html-output.sh` | HTML output validation |
-| `manual-checklist.sh` | Manual verification prompts |
-| `spot-check-facts.sh` | Spot-checks KB facts against source files |
-| `writeback-state.sh` | Writes summarize-phase state back to `.aid/knowledge/STATE.md` |
-| `contrast-check.mjs` | WCAG AA contrast ratio checker (Node) |
-| `stale-check.sh` | Detects stale KB sections |
-| `summarize-preflight.sh` | Summarize preflight |
-| `fetch-mermaid.sh` | Fetches Mermaid CLI assets |
-| `assemble-3part.ps1` / `assemble-3part.sh` | Per-host concatenation helpers (PowerShell for Windows, Bash elsewhere) |
-
-### 4e. `canonical/scripts/interview/` — lite-path recipes
-
-| Script | Purpose |
-|--------|---------|
-| `parse-recipe.sh` | Parses `canonical/recipes/*.md` recipe files (YAML front-matter + `## spec` / `## tasks` body blocks); 5 modes (`--list`, `--validate`, `--spec`, `--tasks`, `--render`) — covered by `tests/canonical/test-parse-recipe.sh` (largest test file) |
-
-### 4f. `canonical/scripts/housekeep/` — `/aid-housekeep` stage helpers
-
-Three deterministic, dependency-free (bash + grep/sed/awk only) helpers backing
-the optional `aid-housekeep` skill (see §1). All are read-only or git-safe:
-`branch-commit.sh` and `cleanup-classify.sh` each carry a self-check that aborts
-if their own source ever contained a `git push` (and, for `cleanup-classify.sh`,
-any `rm`/`git rm`/`git commit`) call.
-
-| Script | Purpose | Key flags |
-|--------|---------|-----------|
-| `housekeep-state.sh` | Deterministic field I/O for the `## Housekeep Status` block of the project-level run-state file `.aid/.temp/HOUSEKEEP_STATE_<YYYYMMDDHHMM>.md` (transient/gitignored, created on first write — NOT a work-area STATE.md; 9 valid fields: State, Stage Status, Branch, Mode, Stall Reason, Last Run, KB Stage, Summary Stage, Cleanup Stage), plus `--resume` resolution implementing the 6-row resume-detection table (per `canonical/scripts/housekeep/housekeep-state.sh` `six-row re-entry table`): no section→PREFLIGHT (or CLEANUP with `--cleanup-only`); KB not passed/skipped→KB-DELTA; KB done + Summary not done→SUMMARY-DELTA; KB+Summary done + Cleanup not passed→CLEANUP; all done + State=DONE→DONE | `--state FILE --write --field F --value V`, `--read --field F`, `--resume [--cleanup-only]` |
-| `branch-commit.sh` | Deterministic git branch/commit safety guard — `--ensure-branch` creates/switches `aid/housekeep-<slug>` off master (or reuses an existing `aid/housekeep-*` branch on resume; refuses any other non-master branch, exit 3); `--commit` stages + makes exactly ONE commit. Refuses to commit while on `master` (exit 3). NEVER runs `git push` (self-check exit 4 if its source ever contains one). | `--ensure-branch --slug S`, `--commit --message M [--add PATH ...] [--add-all]` |
-| `cleanup-classify.sh` | Read-only scan + classify of stale `.aid/` artifacts across roots S1–S6 (.temp, .heartbeat, KB cache/scratch, stray verify reports, unregistered generated outputs, work-* folders) + Tier-2 loose `.aid/` files. Emits pipe-delimited `PATH\|TIER\|TRACKED\|DEFAULT_CHECKED\|REASON[\|GATE]` candidates; performs NO deletion/commit/push. Work folders: **every** `work-*/` folder is offered (merged+concluded → main checklist; otherwise → explicit per-folder confirm) — the user has the last word, nothing is silently hidden. The signal(i) merged / signal(ii) concluded checks are **informational context only** (shown in the prompt), not a gate. The single hard skip is the work folder whose `aid/work-NNN-*` branch is currently checked out; `HOUSEKEEP_STATE_*.md` is excluded from the .temp sweep; `settings.yml` is never touched. | `--root REPO_ROOT [--active-work FOLDER ...]` |
-
-### 4g. `canonical/scripts/` (root)
-
-| Script | Purpose |
-|--------|---------|
-| `grade.sh` | Deterministic grading: reads issue list with severity tags ([CRITICAL]/[HIGH]/[MEDIUM]/[LOW]/[MINOR]), applies the universal AID rubric (worst severity dominates, count modifies), prints letter grade. Used by reviewers + delivery gates. `--non-functional` flag forces F. |
-
-**Test coverage:** currently 35 dedicated test suites under `tests/canonical/`, each invoked
-manually or as a batch via `tests/run-all.sh` (recount with `ls tests/canonical/test-*.sh | wc -l`). Suites share helpers from
-`tests/lib/assert.sh`. The installer/CLI/release suites are covered in Module 6e; a subset of helper-script suites:
-
-| Test file | Covers |
-|-----------|------|
-| `tests/canonical/test-parse-recipe.sh` | `parse-recipe.sh` (largest suite) |
-| `tests/canonical/test-writeback-state.sh` | `writeback-state.sh` 4 arg modes + lock-contention safety |
-| `tests/canonical/test-delivery-gate-aggregate.sh` | delivery-gate aggregation |
-| `tests/canonical/test-compute-block-radius.sh` | BFS block-radius |
-| `tests/canonical/test-read-setting.sh` | settings 3-tier resolution |
-| `tests/canonical/test-grade.sh` | `grade.sh` severity-tag → letter-grade scorer |
-| `tests/canonical/test-fetch-mermaid.sh` | `fetch-mermaid.sh` pin + SHA verify |
-| `tests/canonical/test-validate-diagrams.sh` | `validate-diagrams.mjs` (Node) |
-| `tests/canonical/test-contrast-check.sh` | `contrast-check.mjs` WCAG AA contrast (Node) |
-| `tests/canonical/test-assemble-3part.sh` | `assemble-3part.sh` byte-concat |
-| `tests/canonical/test-assemble-3part-ps1.sh` | `assemble-3part.ps1` mirror (PowerShell) |
-| `tests/canonical/test-install.sh` / `test-install-ps1.sh` / `test-install-parity.sh` | `install.sh` / `install.ps1` bootstrap + cross-platform parity |
-| `tests/canonical/test-aid-cli.sh` / `test-aid-cli-ps1.sh` / `test-aid-cli-parity.sh` | `bin/aid` / `bin/aid.ps1` subcommand behavior + parity |
-| `tests/canonical/test-release.sh` / `test-release-install-e2e.sh` | `release.sh` packaging + end-to-end release→install |
-| `tests/canonical/test-discovery-doc-ownership.sh` | discovery agent doc-ownership consistency (scout vs quality) |
-| `tests/canonical/test-expectations-single-source.sh` | `document-expectations.md` single-source + reviewer-has-access invariants |
-
-See `tests/README.md` for the full suite list and run instructions.
+> The installed copies under each profile (and the dogfood `.claude/aid/scripts/`)
+> are rendered from these canonical sources. Edit `canonical/`, never the rendered
+> copy.
 
 ---
 
-## 5. Templates + Recipes — `canonical/templates/` + `canonical/recipes/`
+## Entry Points
 
-Content fixtures consumed by skills + agents at runtime. The renderer copies them passthrough (no transform) into all 5 install trees.
-
-### 5a. Templates — `canonical/templates/`
-
-Organized into categories (per `project-structure.md` `## Templates (categories under \`canonical/templates/\`)`):
-
-| Subdirectory | Files | Notable contents |
-|--------------|-------|------------------|
-| `delivery-plans/` | 1 | `task-template.md` — the 6-section task contract (Type / Source / Depends on / Scope / Acceptance Criteria) |
-| `feedback-artifacts/` | 1 | `IMPEDIMENT.md` — formal escalation contract for developer↔orchestrator |
-| `kb-authoring/` | 5 | `README.md`, `frontmatter-schema.md`, `principles.md` (P1-P7), `review-rubric.md`, `tier-model.md` (T1-T4) |
-| `knowledge-base/` | 15 | Templates for the 14 standard-set KB docs (kept post-Q3 carve-out) + README. These templates form the default seed for `synth_default_seed` (delivery-002: doc-set-resolve.md §2.2 ownership map). This repo also uses the custom `repo-presentation.md` — no template exists for it in `canonical/templates/knowledge-base/` since it's a per-project customization declared via `discovery.doc_set` (per delivery-002, which resolved H5). |
-| `knowledge-summary/` | 19+ | HTML/CSS/JS for the offline `knowledge-summary.html` viewer; `component-css.css` is the largest CSS file in the repo |
-| `requirements/` | 1 | `requirements-template.md` |
-| `specs/` | 2 | `lite-spec-template.md`, `spec-template.md` |
-| `(top-level)` | 17 | `settings.yml`, `discovery-state-template.md`, `work-state-template.md`, `feature.md`, `recipe-template.md`, `subagent-heartbeat-protocol.md`, `long-wait-protocol.md`, `rough-time-hints.md`, `self-review-protocol.md`, `grading-rubric.md`, `reviewer-dispatch.md`, `delivery-issues.md`, `feature-inventory.md`, `generated-files.txt`, `known-issues.md`, `package.md`, `dispatch-protocol-checklist.md` |
-
-### 5b. Recipes — `canonical/recipes/`
-
-**51 recipes** under `canonical/recipes/` — pre-filled lite-path templates with
-YAML front-matter + `{{slot}}` placeholders (per
-`canonical/templates/recipe-template.md` `## Slot syntax`). Named `add-X` /
-`change-X` / `fix-X`: 40 `add`/`change` pairs across 11 target-kind families
-(`applies-to: new-feature` for `add-`, `refactor` for `change-`), 7 `fix-*`
-bug-fix recipes (`applies-to: bug-fix`), 3 refactor-only verbs
-(`improve-performance`, `bump-dependency`, `rename-symbol`), and 1 cross-type
-recipe `add-test-coverage` (`applies-to: *`). See `canonical/recipes/README.md
-## Seed Catalog` for the per-recipe table; `README.md` itself documents the
-catalog and is not a recipe.
-
-Consumed by `canonical/scripts/interview/parse-recipe.sh` during `/aid-interview` TRIAGE → recipe-offer (description→recipe matching uses each recipe's `summary:` field).
-
-**Test coverage:** indirect — recipe behavior is exercised by `tests/canonical/test-parse-recipe.sh`. (`tests/skills/lite-subpaths.sh` was deleted in cycle-1 per Q6.)
+| Entry point | Module | Type | What it starts |
+|-------------|--------|------|----------------|
+| `install.sh` / `install.ps1` | Distribution | bootstrap | Downloads + installs the `aid` CLI (curl\|bash / irm\|iex). |
+| `bin/aid` (+ `.ps1`/`.cmd`) | Distribution | CLI | Dispatches `aid <subcommand>` on PATH. |
+| `packages/pypi/aid_installer/__main__.py` | Distribution | CLI | `aid` on PATH after `pipx install`. |
+| `/aid-<skill>` slash commands | Toolkit | agent skill | Resolve to `canonical/skills/<name>/SKILL.md` (installed copy). |
+| `.claude/skills/generate-profile/scripts/run_generator.py` | Render | build | Full profile render of `canonical/` -> `profiles/`. |
+| `dashboard/server/server.mjs` / `server.py` | Observation | HTTP server | Serves the local read-only dashboard. |
+| `site/` (Astro) | Observation | static build | Builds the marketing/docs website. |
+| `tests/run-all.sh` | Cross-cutting | test runner | Aggregates the canonical shell suites. |
 
 ---
 
-## 6. Installer / CLI — `bin/` + `lib/` + `install.sh`/`install.ps1` + `packages/`
+## High-Churn Modules
 
-The end-user delivery surface (added by work-002-auto-installer). A persistent global `aid` CLI is bootstrapped once per machine into `$AID_HOME` (default `~/.aid` / `%LOCALAPPDATA%\aid`), then run per project. The CLI dispatches into a shared install-core engine; four install channels all deliver the same CLI.
+> Name + reason; the live churn number is point-in-time (run `git log`).
 
-### 6a. CLI dispatcher — `bin/`
-
-| Component | Purpose | Depends on |
-|-----------|---------|------------|
-| `bin/aid` | Bash dispatcher. Parses subcommands (`add`/`status`/`update`/`remove`/`version`, bare → dashboard) + shared flags (`--from-bundle`, `--version`, `--force`, `--target`, `--verbose`), then sources + dispatches into `lib/aid-install-core.sh` (`bin/aid` `_aid_usage`, `source "$_AID_CORE"`). | `lib/aid-install-core.sh` |
-| `bin/aid.ps1` | PowerShell dispatcher (Windows) — same subcommand surface. | `lib/AidInstallCore.psm1` |
-| `bin/aid.cmd` | cmd.exe shim so `aid` resolves in cmd.exe and pwsh; tries `pwsh` then `powershell`, calling `bin/aid.ps1`. | `bin/aid.ps1` |
-
-### 6b. Install-core libraries — `lib/`
-
-| Component | Purpose | Consumers |
-|-----------|---------|-----------|
-| `lib/aid-install-core.sh` | The Bash install engine: status/add/update/remove bodies, release-asset download + SHA-256 verification against `SHA256SUMS`, manifest-driven remove, FR11 protect-on-diff (`*.aid-new`), the `AID_INSTALL_CHANNEL` per-channel `update self` hint. | `bin/aid`, `install.sh` (sourced in piped mode) |
-| `lib/AidInstallCore.psm1` | The PowerShell parity module — same engine for Windows. | `bin/aid.ps1`, `install.ps1` |
-
-### 6c. Bootstrap — `install.sh` / `install.ps1`
-
-Repo-root curl/irm-piped bootstrap. In piped mode they fetch the `aid-cli-v<VERSION>.tar.gz` bundle from the matching GitHub Release, verify it against the release `SHA256SUMS`, extract into `$AID_HOME`, and wire PATH (`install.sh` `_source_install_core` + bundle-verify block; `AID_NO_PATH` skips PATH wiring). They also accept legacy project-install flags (`--from-bundle`, `--target`) as a fallback when `aid` is not yet on PATH.
-
-### 6d. Channel shims — `packages/npm` + `packages/pypi`
-
-Thin published wrappers that put the same `aid` CLI on PATH via a package manager. Each vendors the `bin/` + `lib/` payload and spawns `bin/aid` (Unix) or `bin/aid.ps1` (Windows), injecting `AID_INSTALL_CHANNEL`.
-
-| Module | Purpose | Manifest |
-|--------|---------|----------|
-| `packages/npm/bin/aid.js` | npm `aid-installer` shim — spawns the vendored CLI with `AID_INSTALL_CHANNEL=npm`; runs on Node built-ins only (zero deps). Payload vendored at pack time by `packages/npm/scripts/vendor.js` (`prepack`). | `packages/npm/package.json` (`engines.node >=18`) |
-| `packages/pypi/aid_installer/__main__.py` | PyPI `aid-installer` shim — spawns the vendored CLI with `AID_INSTALL_CHANNEL=pypi`. Payload vendored by `packages/pypi/scripts/vendor.py` (hatchling build hook). | `packages/pypi/pyproject.toml` (`requires-python >=3.8`, hatchling) |
-
-### 6e. Release packager — `release.sh`
-
-Maintainer-only. Verifies `profiles/` matches `canonical/` (reusing the render-drift gate), builds the five per-profile tarballs + the `aid-cli-v<VERSION>.tar.gz` CLI bundle + the two libs + `SHA256SUMS` under `.aid/.temp/release-<VERSION>/`, then `gh release create` (`release.sh` `build_tarball()`, `# Step 5: Build the CLI bundle tarball`). Driven in CI by `.github/workflows/release.yml` on a `v*` tag push.
-
-**Test coverage:** `tests/canonical/test-install.sh` + `test-install-ps1.sh` + `test-install-parity.sh` (bootstrap), `test-aid-cli.sh` + `test-aid-cli-ps1.sh` + `test-aid-cli-parity.sh` (CLI subcommands), `test-release.sh` + `test-release-install-e2e.sh` (release packaging + end-to-end), `test-npm-installer.sh` + `test-pypi-installer.sh` (channel shims), `test-version-sync.sh` (FR10), `test-ascii-only.sh` (ASCII guard for shipped scripts), `test-agents-md-invariant.sh` (FR12), and the native-Windows `tests/windows/Test-AidInstaller.ps1`. All run by `.github/workflows/installer-tests.yml`.
+| Module | Why it churns | Risk |
+|--------|---------------|------|
+| `canonical/skills/aid-discover/` | The actively-developed discovery engine (work-001) -- large reference set, frequent feature additions. | High |
+| `canonical/aid/scripts/kb/` | Backs aid-discover; new linters/checks land here often. | High |
+| `lib/aid-install-core.sh` + PS twin | Install/migration semantics evolve with each release; twin must stay in sync. | High |
+| `dashboard/reader` + `dashboard/server` | Reader/parser changes follow every STATE.md schema change; two twins to keep in parity. | Medium |
 
 ---
 
-## Cross-cutting dependencies
+## Oversized Modules
 
-- **Skills → agents:** every multi-state skill dispatches one or more agents via the host's Agent/Task tool (per `canonical/skills/aid-discover/SKILL.md` `## Dispatch` table; per `canonical/skills/aid-execute/references/state-execute.md` `## Agent Selection` table mapping the 8 task types to executors).
-- **Skills → scripts:** skills invoke helper scripts via Bash. Examples: `canonical/skills/aid-discover/SKILL.md` `discover-preflight.sh`, `aid-discover/SKILL.md` `read-setting.sh`, `aid-execute/references/state-delivery-gate.md` (`grade.sh`, `writeback-state.sh`); `aid-housekeep/SKILL.md` (`housekeep-state.sh`, `branch-commit.sh`, `cleanup-classify.sh`).
-- **Agents → scripts:** agents invoke scripts indirectly (a skill dispatches the agent with a prompt containing the script call). No agent invokes a script except via its own Bash tool when authorized in its `tools:` frontmatter.
-- **Renderer → everything:** the renderer reads `canonical/{agents,skills,templates,recipes,scripts}/`, applies the profile's transforms, writes into `profiles/{name}/<install_root>/`, and records every emission in `<install_root>/emission-manifest.jsonl`. The manifest is the SAFETY boundary for the next run's deletion pass (per `canonical/EMISSION-MANIFEST.md` `## Safety-Boundary Semantics`).
-- **Verify → renderer:** `run_generator.py` (`run_verify` / `run_advisory`) calls `verify_deterministic.py` (strict) then `verify_advisory.py` (advisory) after every render. VERIFY (deterministic) re-runs the renderer to a scratch directory and compares byte-by-byte; any drift exits non-zero.
+**Modules to watch:**
+
+- `dashboard/server/reader.mjs` and `dashboard/reader/parsers.py` -- the two
+  largest source files; each is a full state-parsing engine. Large enough to hide
+  complexity. `reader.mjs` is the Node **twin of the whole** `dashboard/reader/`
+  Python reader (not only `parsers.py`): a change to any reader `.py` must be
+  mirrored in `reader.mjs`, doubling the risk.
+- `lib/aid-install-core.sh` (and `AidInstallCore.psm1`) -- the largest shell file;
+  install/update/remove/manifest logic concentrated in one library.
+- `canonical/skills/aid-discover/references/state-generate.md` and
+  `state-review.md` -- very large single reference files driving the discovery
+  state machine.
+
+---
+
+## Conventions
+
+> The project's own way of adding/wiring a part. State the rule, then the example.
+
+- **Where a new skill goes:** create `canonical/skills/aid-<name>/SKILL.md` (+ a
+  `references/` subdir for state files). Name it `aid-<verb>` (see
+  `canonical/skills/aid-discover/`). The `SKILL.md` carries YAML frontmatter with
+  `name:`, `description:`, `allowed-tools:`, `argument-hint:` (see
+  `aid-config/SKILL.md`).
+- **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
+  `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
+  `tier:` (large/medium/small), `tools:`. Include shared boilerplate with
+  `{{include:agent-boilerplate}}` (see `canonical/agents/aid-architect/AGENT.md`).
+- **Where a new helper script goes:** place it under the phase area it serves
+  (`canonical/aid/scripts/<area>/`). Cross-cutting helpers go at the script root
+  (`grade.sh`) or in `config/`. Read settings via `read-setting.sh`; do not parse
+  `settings.yml` directly.
+- **How a new generated file is registered:** add a `<output-path>|<build-command>`
+  line to `canonical/aid/templates/generated-files.txt` (dependencies first); the
+  renderer rewrites the `canonical/` path to each profile's install root.
+- **How a new recipe goes:** add `canonical/aid/recipes/<verb>-<thing>.md` with
+  `{{slot}}` placeholders; it is passthrough-rendered (no frontmatter injection).
+- **Never edit a rendered copy.** Edit `canonical/` and regenerate; `profiles/*`,
+  `packages/*/_vendor/`, and the dogfood `.claude/` are build output.
+
+---
+
+## Invariants
+
+> Hard MUST/MUST-NOT rules the module graph enforces silently.
+
+- **Single source of truth:** every shipped file originates in `canonical/`.
+  `profiles/`, `packages/*/_vendor/`, and `.claude/` MUST be regenerated, never
+  hand-edited. Hand-editing a rendered copy is lost on the next render.
+- **Render is a pure mirror bounded by the emission manifest:** the renderer may
+  only delete install-tree paths present in the previous run's
+  `emission-manifest.jsonl` (`removed_dst`). Files outside any manifest are never
+  touched. (See `canonical/EMISSION-MANIFEST.md`.)
+- **Language twins stay behavior-equal:** `aid-install-core.sh` <-> `AidInstallCore.psm1`,
+  `bin/aid` <-> `bin/aid.ps1`, `dashboard/reader/*.py` <-> `dashboard/server/reader.mjs`
+  (the whole Python reader, not only `parsers.py`), and the migrate `.sh`/`.ps1` twins MUST
+  change in lockstep. A change to one
+  without the other is a defect.
+- **Install manifests stay in lockstep:** the dashboard file set vendored into the
+  five install manifests (npm, pypi, the three release paths) MUST match; a missing
+  file in one channel is a ship bug (precedent: home.html omission).
+- **Settings are read through `read-setting.sh`:** scripts MUST NOT hand-parse
+  `.aid/settings.yml`; the resolver owns the override -> category -> default chain.
+- **Derived STATE views are never written:** the work/delivery `## Tasks State`,
+  `## Delivery Gates`, etc. are read-time unions over per-unit STATE.md files; only
+  the per-unit files are write targets (see artifact-schemas.md).
+
+---
+
+## Contracts
+
+> Structural shape a new part or connection MUST satisfy.
+
+- **Skill contract:** `canonical/skills/aid-<name>/SKILL.md` MUST carry valid
+  frontmatter (`name`, `description`, `allowed-tools`, `argument-hint`) and resolve
+  its config via `read-setting.sh`; any REVIEW state MUST emit a reviewer ledger
+  and grade it via `grade.sh`.
+- **Agent contract:** `canonical/agents/aid-<role>/AGENT.md` MUST carry `name`,
+  `description`, `tier`, `tools` frontmatter and define What You Do / Don't Do /
+  Key Constraints / When to Escalate sections (see any `AGENT.md`).
+- **Emission-manifest record contract:** every rendered file is recorded as a JSONL
+  object with exactly `{profile, src, dst, sha256}`, sorted by `dst`, LF-only, with
+  a `{"_manifest_version": 1}` sentinel first line (see `canonical/EMISSION-MANIFEST.md`).
+- **Generated-file registry contract:** each line is `<output-path>|<build-command>`,
+  `canonical/`-rooted, ordered dependencies-first (see `generated-files.txt`).
+- **Reader-parity contract:** the Node reader and the Python reader MUST produce the
+  same model from the same `.aid/` state (the dashboard parity test suites enforce this).
+
+---
+
+## Gotchas
+
+- **Heavy file duplication is intentional.** `reader.mjs`/`parsers.py` and the whole
+  toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles +
+  `.claude/`). Do NOT "deduplicate" -- they are rendered/vendored copies of
+  `canonical/`.
+- **Master-only CI gates.** `tests/run-all.sh` (canonical suites) and the Astro
+  `site` build run only on push/PR to master; a green feature branch can still break
+  master. Run them locally (HOME-pinned) before claiming green.
+- **Windows installer tests are not in `run-all.sh`.** `tests/windows/Test-AidInstaller.ps1`
+  runs only on the Windows CI lane; a CLI behavior change must update it too.
+- **Scan tests must pin `$HOME`.** The migration scan defaults its root to `$HOME`;
+  a test firing it without `export HOME=<throwaway>` will migrate the developer's
+  real repos.
+
+---
+
+## Change Log
+
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | 2026-06-25 | aid-discover | Initial module map (brownfield deep-dive / Analyst) |

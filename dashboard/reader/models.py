@@ -135,6 +135,21 @@ class KbBaseline:
 
 
 @dataclass
+class DocFreshness:
+    """Per-doc freshness verdict (feature-007 f007, task-042).
+
+    Populated by derive_doc_freshness() in derivation.py; never persisted (NFR2).
+
+    doc:             doc relative path under .aid/knowledge/ (e.g. "architecture.md")
+    verdict:         "current" | "suspect" | "unknown"
+    suspect_sources: list of sources: entries that drifted (empty unless verdict=="suspect")
+    """
+    doc: str
+    verdict: str                        # "current" | "suspect" | "unknown"
+    suspect_sources: list[str] = field(default_factory=list)
+
+
+@dataclass
 class KbStateRef:
     """KB state reference (feature-007 DM-A1 extended KbStateRef).
 
@@ -150,6 +165,10 @@ class KbStateRef:
         status          -- FR32 5-state KbStatus (derived, never persisted; NFR2)
         summary_present -- True if <repo>/.aid/dashboard/kb.html exists (stat only)
         kb_baseline     -- {branch, tip_date} from .aid/settings.yml; None if unset/unparseable
+
+    New fields (feature-007 f007, task-042):
+        doc_freshness   -- per-doc freshness list [{doc, verdict, suspect_sources}, ...]
+        suspect_count   -- count of docs with verdict=="suspect" (badge rollup)
     """
     summary_approved: bool
     last_summary_date: Optional[str] = None  # from STATE.md "User Approved: yes (YYYY-MM-DD...)"
@@ -158,6 +177,9 @@ class KbStateRef:
     status: KbStatus = KbStatus.unknown      # FR32 5-state derived status
     summary_present: bool = False            # True if .aid/dashboard/kb.html exists
     kb_baseline: Optional[KbBaseline] = None # {branch, tip_date} or None
+    # feature-007 f007 new fields (task-042):
+    doc_freshness: list[DocFreshness] = field(default_factory=list)  # per-doc verdicts
+    suspect_count: int = 0                   # count of suspect docs (badge rollup)
 
 
 @dataclass

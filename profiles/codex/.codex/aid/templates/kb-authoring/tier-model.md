@@ -126,8 +126,27 @@ determines tier allowances and review rubric (see [review-rubric.md](review-rubr
   reviewer's business — governed by [principles.md](principles.md) P1(d) and flagged for
   replacement under review-rubric.md check #8.
 
+## Relationship to the dual-audience authoring standard
+
+The tier model (T1-T4) is the **fact-stability axis** -- orthogonal to the doc layout and
+audience axis defined in the dual-audience authoring standard ([principles.md](principles.md)
+P10). They interact as follows:
+
+- T1 Concept and T2 Structure facts are the load-bearing content the standard requires
+  to be expressed as tables and bullets (not diagrams) and placed in the **content
+  sections** of the layout (Position 4: after frontmatter, title, and index; before the
+  Change Log).
+- T3 Metric and T4 Temporal facts, which are banned inline in primary docs, are the
+  main driver for the **Change Log** convention: per-doc temporal history goes in the
+  `## Change Log` section (always last, Position 5) or the frontmatter `changelog:` field
+  -- both of which are exempt from review. This keeps T4 data out of the graded content
+  body without losing it.
+
+The Anatomy mandate checks the tier model (T3/T4 inline) and the layout order
+(frontmatter first, Change Log last) as complementary mechanical checks.
+
 ## See also
 
-- [principles.md](principles.md) — the 9 principles, including P1 (no drift-prone), P2 (proper metric), and P9 (resolved items leave no trace)
-- [frontmatter-schema.md](frontmatter-schema.md) — `contracts:` field where T2 claims are declared
+- [principles.md](principles.md) — the 10 principles, including P1 (no drift-prone), P2 (proper metric), P9 (resolved items leave no trace), and P10 (dual-audience authoring standard + layout)
+- [frontmatter-schema.md](frontmatter-schema.md) — `contracts:` field where T2 claims are declared; dual-audience classification fields
 - [review-rubric.md](review-rubric.md) — how the reviewer applies the tier model per kb-category

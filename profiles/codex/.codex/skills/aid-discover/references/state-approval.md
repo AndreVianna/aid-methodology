@@ -1,6 +1,6 @@
 # State: APPROVAL
 
-APPROVAL presents the KB summary and asks the user to confirm it is ready for the Interview phase; it is selected when the KB meets minimum grade and has not yet received user approval.
+APPROVAL presents the KB summary and asks the user to confirm it is ready for the Interview phase; it is selected when the KB meets minimum grade, **`## Q&A (Pending)` has ZERO Pending entries** (every question was self-answered from source or answered by the user in Q-AND-A — discovery is not complete while any question is unanswered), and it has not yet received user approval.
 
 ### Step 1: Present Summary
 

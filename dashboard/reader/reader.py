@@ -36,7 +36,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Union
 
-from .derivation import derive_kb_status
+from .derivation import derive_doc_freshness, derive_kb_status
 from .locator import enumerate_worktree_roots, locate_aid_root
 from .models import (
     DeferredIssue,
@@ -408,6 +408,11 @@ def _read_repo_full(
         )
         kb_state.status = kb_status
         kb_state.kb_baseline = kb_baseline
+
+        # task-042: per-doc freshness (f007) -- additive; FF-A2 git_freshness_check retained
+        doc_freshness = derive_doc_freshness(kb_dir=loc.kb_dir, repo_root=root)
+        kb_state.doc_freshness = doc_freshness
+        kb_state.suspect_count = sum(1 for d in doc_freshness if d.verdict == "suspect")
 
     repo_info = RepoInfo(
         project_name=project_name,

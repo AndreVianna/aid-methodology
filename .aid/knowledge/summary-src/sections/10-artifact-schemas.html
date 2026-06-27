@@ -1,0 +1,97 @@
+<section id="artifact-schemas" class="sec" data-title="Artifact Schemas">
+	<header>
+		<span class="eyebrow">Artifact shapes &mdash; artifact-schemas.md</span>
+		<h2>Artifact Schemas</h2>
+		<p class="lede">The structural schema of every artifact the AID methodology produces &mdash; STATE files, SPEC/REQUIREMENTS/feature/task files, settings, and the three manifest formats &mdash; with required fields, closed enums, producers, consumers, and validation points.</p>
+	</header>
+
+	<div class="tbl-wrap">
+		<table class="tbl">
+			<thead><tr><th>Artifact</th><th>Path pattern</th><th>Required fields (key subset)</th><th>Producer</th><th>Consumer</th></tr></thead>
+			<tbody>
+				<tr>
+					<td><strong>Work STATE.md</strong></td>
+					<td><code>.aid/work-NNN-{slug}/STATE.md</code></td>
+					<td>Pipeline Status (phase, lifecycle), Triage, Tasks Status rollup</td>
+					<td>/aid-interview, /aid-execute</td>
+					<td>Dashboard reader, /aid-execute</td>
+				</tr>
+				<tr>
+					<td><strong>Delivery STATE.md</strong></td>
+					<td><code>.../delivery-NNN/STATE.md</code></td>
+					<td>Delivery State (status, grade), Delivery Gates, Quick Check Findings</td>
+					<td>/aid-execute</td>
+					<td>Dashboard reader, /aid-deploy</td>
+				</tr>
+				<tr>
+					<td><strong>Task STATE.md</strong></td>
+					<td><code>.../task-NNN/STATE.md</code></td>
+					<td>status (enum), type (8-value enum), grade, reviewer ledger ref</td>
+					<td>/aid-execute</td>
+					<td>Dashboard reader, Delivery STATE rollup</td>
+				</tr>
+				<tr>
+					<td><strong>Discovery STATE.md</strong></td>
+					<td><code>.aid/work-NNN-{slug}/STATE.md</code> (discovery area)</td>
+					<td>Phase transitions, Documents Status table, Q&amp;A log</td>
+					<td>/aid-discover</td>
+					<td>/aid-discover reviewer</td>
+				</tr>
+				<tr>
+					<td><strong>REQUIREMENTS.md</strong></td>
+					<td><code>.aid/work-NNN-{slug}/REQUIREMENTS.md</code></td>
+					<td>Functional requirements (FRs), non-functional, constraints, OOS</td>
+					<td>/aid-interview</td>
+					<td>/aid-specify</td>
+				</tr>
+				<tr>
+					<td><strong>Feature SPEC.md</strong></td>
+					<td><code>.aid/work-NNN-{slug}/features/feature-NNN/SPEC.md</code></td>
+					<td>title, scope, acceptance criteria, out-of-scope</td>
+					<td>/aid-specify</td>
+					<td>/aid-plan, /aid-detail</td>
+				</tr>
+				<tr>
+					<td><strong>Task SPEC.md</strong></td>
+					<td><code>.../task-NNN/SPEC.md</code></td>
+					<td>type (enum), depends_on, acceptance criteria</td>
+					<td>/aid-detail</td>
+					<td>/aid-execute</td>
+				</tr>
+				<tr>
+					<td><strong>settings.yml</strong></td>
+					<td><code>.aid/settings.yml</code></td>
+					<td>format_version, project.name, project.type, pipeline.minimum_grade, discovery.doc_set</td>
+					<td>/aid-config, /aid-discover</td>
+					<td>Every skill (read on load)</td>
+				</tr>
+				<tr>
+					<td><strong>Install Manifest</strong></td>
+					<td><code>profiles/{p}/.aid-manifest.json</code></td>
+					<td>version, profile, files[] (path + sha256)</td>
+					<td>AidInstallCore</td>
+					<td>AidInstallCore update/remove</td>
+				</tr>
+				<tr>
+					<td><strong>Emission Manifest</strong></td>
+					<td><code>canonical/EMISSION-MANIFEST.md</code> + sibling <code>.jsonl</code></td>
+					<td>profile, src, dst, sha256 (one record per line)</td>
+					<td>run_generator.py</td>
+					<td>VERIFY gate, AidInstallCore</td>
+				</tr>
+				<tr>
+					<td><strong>Generated-Files Registry</strong></td>
+					<td><code>.aid/generated/</code></td>
+					<td>candidate-concepts.md, spine-todo.md</td>
+					<td>/aid-discover</td>
+					<td>/aid-discover closure loop</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+
+	<div class="callout" style="margin-top:1.5rem;">
+		<h4>Task type enum (8 values, closed)</h4>
+		<p>RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE. The type drives how the executor agent works and how the reviewer evaluates. No other values are valid.</p>
+	</div>
+</section>

@@ -21,6 +21,7 @@ from typing import Optional
 from .models import (
     DeliverableRef,
     DeferredIssue,
+    DocFreshness,
     FeatureRef,
     Finding,
     KbBaseline,
@@ -413,6 +414,132 @@ def _parse_kb_doc_count(text: str) -> Optional[int]:
                 count += 1
 
     return count if in_completeness else None
+
+
+# ---------------------------------------------------------------------------
+# f007 / task-042: per-doc frontmatter scan (sources: + approved_at_commit:)
+# ---------------------------------------------------------------------------
+
+_RE_FM_FENCE = re.compile(r"^---\s*$")
+_RE_URL = re.compile(r"^[a-z][a-z0-9+.\-]*://")
+
+
+def parse_doc_frontmatter(path: Path) -> tuple[Optional[str], list[str], bool]:
+    """Tolerant sources:/approved_at_commit: frontmatter scan for one KB doc.
+
+    Reads only the YAML frontmatter block (between the first pair of '---' lines).
+    Identical algorithm to the bash fm_scalar/fm_list/fm_sources_present helpers in
+    kb-freshness-check.sh; mirrors the Node twin in reader.mjs (byte-parity).
+
+    Returns:
+        (approved_at_commit, sources_list, sources_field_present)
+
+    approved_at_commit:
+        the trimmed scalar value, or None if absent/empty.
+    sources_list:
+        items from the sources: YAML list (inline or block); empty list if field
+        is absent, sources: [], or the value is not a list.
+    sources_field_present:
+        True if the sources: key was present (even as sources: []), False if absent.
+        Used to distinguish "sources: []" (-> current) from "no sources: field" (-> current too,
+        but noted separately for debugging; both map to current per the SPEC).
+
+    Never raises (NFR7). Handles:
+      - No frontmatter (no leading ---) -> (None, [], False)
+      - Inline list: sources: [a, b]
+      - Block list:  sources:\n  - a\n  - b
+      - Empty list:  sources: []  -> (approval, [], True)
+    """
+    if not path.is_file():
+        return None, [], False
+
+    try:
+        raw = path.read_bytes()
+        text = raw.decode("utf-8", errors="replace")
+    except OSError:
+        return None, [], False
+
+    approved_at_commit: Optional[str] = None
+    sources_list: list[str] = []
+    sources_field_present: bool = False
+
+    in_fm = False
+    fm_entered = False
+    in_sources_block = False
+
+    for line in text.splitlines():
+        if _RE_FM_FENCE.match(line):
+            if not fm_entered:
+                # Opening fence
+                in_fm = True
+                fm_entered = True
+                continue
+            else:
+                # Closing fence
+                break
+
+        if not in_fm:
+            # No opening fence yet -- not in frontmatter (or no frontmatter)
+            break
+
+        # Inside frontmatter block
+        stripped = line.rstrip()
+
+        if in_sources_block:
+            # Continuation of a block-style sources: list
+            m_item = re.match(r"^[ \t]+-[ \t]*(.*)", stripped)
+            if m_item:
+                item = m_item.group(1).strip().strip('"').strip("'")
+                if item:
+                    sources_list.append(item)
+                continue
+            else:
+                # Any non-item line ends the block
+                in_sources_block = False
+                # Fall through to check this line for other fields
+
+        # approved_at_commit: scalar
+        m_aac = re.match(r"^approved_at_commit:\s*(.*)", stripped)
+        if m_aac:
+            val = m_aac.group(1).strip().strip('"').strip("'")
+            approved_at_commit = val if val else None
+            continue
+
+        # sources: field
+        m_src = re.match(r"^sources:\s*(.*)", stripped)
+        if m_src:
+            sources_field_present = True
+            rest = m_src.group(1).strip()
+            if rest == "[]":
+                # Explicit empty inline list: sources: []
+                # sources_field_present already set; list stays []
+                continue
+            if not rest:
+                # Bare 'sources:' with nothing after -- block list follows
+                in_sources_block = True
+                continue
+            if rest.startswith("["):
+                # Inline list: [a, b, c]
+                inner = rest.lstrip("[").rstrip("]").strip()
+                if inner:
+                    for item in inner.split(","):
+                        item = item.strip().strip('"').strip("'")
+                        if item:
+                            sources_list.append(item)
+                continue
+            # Block list: next indented lines are items
+            in_sources_block = True
+            continue
+
+    return approved_at_commit, sources_list, sources_field_present
+
+
+def is_url_source(entry: str) -> bool:
+    """Return True if entry matches a URL scheme (^[a-z][a-z0-9+.-]*://).
+
+    Identical to kb-freshness-check.sh is_url() and the Node twin isUrlSource().
+    """
+    return bool(_RE_URL.match(entry))
 
 
 # ---------------------------------------------------------------------------

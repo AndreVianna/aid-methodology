@@ -5,7 +5,10 @@ tokens appear in:
 
 - `references/component-css.css` — as CSS custom properties on `:root` and
   `html[data-theme="dark"]`.
-- `references/mermaid-init.js` — as `themeVariables` for Mermaid in both modes.
+
+Visuals authored as inline SVG must use `fill="var(--token-name)"` (not hard-coded
+hex values) so they adapt automatically to both light and dark themes. See
+`authored-visual-catalog.md` for concrete pattern examples.
 
 ## Color palette
 
