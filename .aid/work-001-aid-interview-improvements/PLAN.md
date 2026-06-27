@@ -1,8 +1,9 @@
 # Plan -- AID-Interview Improvements
 
-> Scope of this plan pass: the **3 spike-independent features already specified** (001, 006, 007).
-> Features 002-005 are deferred behind the feature-001 spike (their technical design *is* the
-> spike's output) and will be specified + planned in a future pass once the spike executes.
+> Plan history: **pass 1** sequenced the 3 spike-independent features (delivery-001 spike +
+> delivery-002 infra debt, both now EXECUTED). **pass 2 (this re-plan)** adds delivery-003..006 for
+> the content features 002/003/004/005 + the feature-006 split, now all specified at A+ from the
+> spike's findings. Deliveries build on the executed delivery-001/002.
 
 ## Deliverables
 
@@ -27,17 +28,60 @@
 - **Depends on:** -- (independent; parallel-capable with delivery-001)
 - **Priority:** Could
 
+### delivery-003: Seasoned-Analyst Engine + Guided Triage
+- **What it delivers:** the seasoned-analyst elicitation engine (one fixed "what+why" opener +
+  adaptive next-move selection, read+ask calibration, expert-advisor stance, and the NFR-7
+  suggested-answer-+-rationale contract on every question) PLUS analyst-driven guided triage
+  (draws out the path/recipe-deciding signals, KB-context-aware) -- improving the interview for
+  EVERY user (brownfield and greenfield). In-place extension of the aid-interview skill; the
+  existing brownfield path is preserved (AC-10).
+- **Features:** feature-002-seasoned-analyst-engine, feature-004-guided-triage
+- **Depends on:** -- (extends the current skill; builds on the executed delivery-001 findings)
+- **Priority:** Must
+
+### delivery-004: Greenfield Seed Authoring
+- **What it delivers:** forward-author a minimal-but-sufficient KB seed from intent for code-less
+  (greenfield) projects -- the 5-element seed model + the `source: forward-authored` marker
+  (schema/lint/index/freshness edits), a greenfield-mode review gate, and the layered
+  seed<->requirements coherence check. The inverse of brownfield extraction (the authored design
+  IS the source of truth, design->code).
+- **Features:** feature-003-greenfield-seed-authoring
+- **Depends on:** delivery-003 (the engine elicits the seed)
+- **Priority:** Must
+
+### delivery-005: Build-Time Conformance
+- **What it delivers:** a NEW code->design conformance check (extract-and-diff) that flags when
+  as-built code diverges from a forward-authored design seed, for human-gated reconciliation --
+  authority stays design->code until a human reconciles. Runs as an additive aid-housekeep
+  KB-DELTA conformance lane (carving forward-authored docs out of the doc<-code update lane).
+- **Features:** feature-005-build-time-conformance
+- **Depends on:** delivery-004 (the seed model + marker it checks against)
+- **Priority:** Must
+
+### delivery-006: Split aid-interview -> aid-describe + aid-define
+- **What it delivers:** split the (now-enhanced) `aid-interview` skill into two outcome-named
+  skills at the approval gate -- `aid-describe` (TRIAGE + interview + COMPLETION + the entire lite
+  path -> approved REQUIREMENTS) and `aid-define` (FEATURE-DECOMPOSITION + CROSS-REFERENCE ->
+  feature folders). Byte-identical render across the 5 host trees + dogfood mirror, old dir
+  orphan-pruned, install manifests / docs-site / skill-count (+1, 13->14) updated, the
+  `aid-interviewer` agent untouched, CI green.
+- **Features:** feature-006-rename-aid-define
+- **Depends on:** delivery-003, delivery-004 (operates on the FINAL in-place content), AND
+  **delivery-005** (a sequencing edge -- not a content dependency: d006's name-sweep and d005's
+  `output_root` param both edit `canonical/skills/aid-discover/references/state-generate.md`, so
+  they must NOT run in parallel; d006 lands LAST regardless).
+- **Priority:** Should
+
 ## Cross-Cutting Risks
 
 | # | Risk | Impact | Mitigation |
 |---|------|--------|------------|
-| 1 | The spike (delivery-001) exists to shape features 002-005; its findings may expand or reshape their scope -- and feature-006's rename blast-radius inventory (~758 files) is computed against today's tree, so it can drift before the rename executes. | L | Expected by design, not a defect. The deferred re-plan pass (post-spike) re-specifies 002-005 from findings and re-runs feature-006's inventory against the then-current tree before the rename task is built. |
+| 1 | **Shared-file coupling across deliveries.** Two collision surfaces: (a) delivery-003 (002+004), delivery-004 (003), and delivery-006 all edit `canonical/skills/aid-interview/` IN PLACE; (b) delivery-005 AND delivery-006 BOTH edit `canonical/skills/aid-discover/references/state-generate.md` (d005 adds the `output_root` param; d006's name-sweep rewrites the `/aid-interview` tokens there). Parallel delivery branches would collide on these files. | M | Both surfaces are resolved by strict sequencing the dependency graph already enforces: d003 -> d004 -> d005 -> d006 (d006 now also depends on d005 -- a sequencing edge for the shared `state-generate.md`). No two deliveries that share a file run concurrently. |
+| 2 | **feature-006 split operates on a moving target.** Its blast-radius inventory + the 13->14 skill-count surfaces are computed against today's tree; delivery-003/004 add/restructure `references/` before it runs. | L | feature-006 is sequenced LAST (depends on delivery-003+004) and its spec already states it partitions the FINAL post-content file set; aid-detail/aid-execute re-derive the inventory against the then-current tree before the split task runs. |
 
 ## Deferred
 
-| Feature | Reason | Revisit When |
-|---------|--------|--------------|
-| feature-006-rename-aid-define | Hard-gated AFTER content features 002/003/004 (they edit the skill dir in place; a concurrent dir rename collides). Those predecessors are deferred behind the feature-001 spike, so 006 has no satisfiable predecessor to depend on yet. NOT gated by the spike itself. | A future `/aid-plan` pass, after 002/003/004 are specified (post-spike) and built. |
+_None -- all Ready features are now assigned to a delivery (feature-006 is delivery-006, no longer deferred)._
 
 ## Execution Graphs
 

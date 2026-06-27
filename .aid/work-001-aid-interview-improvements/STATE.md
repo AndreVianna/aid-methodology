@@ -64,9 +64,9 @@ different places.
 > Active Skill enum: aid-{skill} | none
 
 - **Lifecycle:** Running
-- **Phase:** Specify
+- **Phase:** Plan
 - **Active Skill:** none
-- **Updated:** 2026-06-27T19:00:00Z
+- **Updated:** 2026-06-27T20:00:00Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -151,6 +151,7 @@ different places.
 | 2026-06-27 | Execute delivery-002 (infra debt) done + A+ delivery gate (×2) | A+ | 6 tasks: H1 lockstep test (task-004), M3 repo-structure refresh (task-005), M4 T4 multi-viewport IMPLEMENT+TEST (task-006/007, Playwright-render-proven), M1 deferral (task-008), R1 aid-researcher web tools (task-009, added mid-execute per owner). Full canonical suite 83/83 green (HOME-pinned). Owner design decisions D1/D2/D3 captured (first-question + engine-not-form + aid-describe/aid-define split). |
 | 2026-06-27 | Specify spike-dependent features 002-005 | A+ (each) | From findings.md + D1/D2/D3: feature-003 seed model (forward-authored marker, greenfield-mode gate, layered coherence) → feature-002 engine (1 fixed opener + 5-step adaptive selector, calibration, NFR-7 envelope) → feature-004 guided-triage (consumes engine, resolves the 002/004 opener seam) → feature-005 conformance (extract-and-diff, KB-DELTA carve). Each A+ (TOTAL 0) after 1-2 gate cycles. feature-006 rename spec SUPERSEDED by D3 (re-spec to split, deferred after content). |
 | 2026-06-27 | Re-specify feature-006: rename → SPLIT (D3) | A+ | aid-interview → aid-describe + aid-define; 20-ref state partition, inter-skill pause-resume seam (HIGH catch: COMPLETION already PAUSEs, not a chain), skill count +1 (13→14), propagation machinery carried fwd, aid-interviewer guard, sequenced after content. 2 gate cycles → TOTAL 0. **ALL features 001-007 now spec-complete at A+; ready for /aid-plan re-plan.** |
+| 2026-06-27 | Re-plan (pass 2): added deliveries 003-006 | A+ | On top of executed delivery-001/002: d003 Engine+Triage (002+004), d004 Greenfield Seed (003), d005 Conformance (005), d006 Split (006). Linear chain d003→d004→d005→d006 (gate MEDIUM catch: d005×d006 share aid-discover/state-generate.md → added d006→d005 sequencing edge). All 4 delivery folders at Pending-Spec; Deferred cleared. **NEXT: /aid-detail (delivery-003 first).** |
 
 ---
 
