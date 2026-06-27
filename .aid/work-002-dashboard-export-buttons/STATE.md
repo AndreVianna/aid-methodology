@@ -133,6 +133,7 @@ _None._
 | 2026-06-27 | LITE-REVIEW complete — Grade: A+ | A+ | /aid-interview LITE-REVIEW |
 | 2026-06-27 | LITE-DONE — lite path complete; 3 tasks ready | -- | /aid-interview LITE-DONE |
 | 2026-06-27 | EXECUTE task-001 — Done, Grade A+ | A+ | aid-execute; base64 MD payload + NM.1 refine; review C→fix→A+; full render (profiles+dogfood .claude/); run-all 82/82 green |
+| 2026-06-27 | EXECUTE task-002 — Done, Grade A+ | A+ | aid-execute; export buttons + base64 MD download + PDF print-CSS; reverted §7-gate scope-creep (task-003 owns it); fixed print dark→light specificity; run-all 82/82 |
 
 ---
 
