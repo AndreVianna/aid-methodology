@@ -256,36 +256,6 @@ run_from_pw_dir() {
     fi
 }
 
-# --- Browser reachability check ---
-# Even with Playwright installed, the Chromium binary may be missing (e.g. if
-# `npx playwright install chromium` hasn't been run, or HOME override hides
-# the cache). Run a trivial visual against a no-visual page; if validate-visuals
-# emits "SKIP -- Playwright browser" it means the binary is unreachable --
-# degrade gracefully and skip VF30-VF50 (same semantics as PW_AVAILABLE=0).
-_PW_BROWSER_OK=1
-cat > "$TMP/vf-browser-check.html" <<'HTMLEOF'
-<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>T</title></head>
-<body><p>no visuals</p></body></html>
-HTMLEOF
-run_from_pw_dir "$TMP/vf-browser-check.html"
-if echo "$OUT" | grep -q "SKIP -- Playwright browser"; then
-    _PW_BROWSER_OK=0
-fi
-
-if [[ "$_PW_BROWSER_OK" -eq 0 ]]; then
-    echo ""
-    echo "=== VF30-VF50: Playwright fixture tests SKIPPED (Chromium binary unreachable) ==="
-    echo "  Playwright is installed but the Chromium binary could not be launched."
-    echo "  This typically means 'npx playwright install chromium' has not been run, or"
-    echo "  PLAYWRIGHT_BROWSERS_PATH does not resolve to an installed browser."
-    echo "  To fix: cd canonical/aid/scripts/summarize && npx playwright install chromium"
-    echo ""
-    echo "  SKIP: VF30-VF50 -- exit 0 per graceful-degradation contract."
-    echo ""
-    test_summary
-    exit $?
-fi
-
 # --- Fixture: Good visual (T1/T2/T3 all PASS) ---
 # A .diagram-box with non-trivial size, readable text, no overlapping children.
 cat > "$TMP/vf-good.html" <<'HTMLEOF'

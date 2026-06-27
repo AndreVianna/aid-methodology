@@ -170,28 +170,10 @@ console.log(`  Min font-size threshold : ${minFontSize}px`);
 console.log(`  Overlap tolerance       : 20% of smaller element area`);
 console.log('');
 
-let browser;
-try {
-  browser = await chromium.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
-} catch (launchErr) {
-  // Browser binary not found (e.g. Playwright installed but `npx playwright install chromium`
-  // not yet run, or PLAYWRIGHT_BROWSERS_PATH points elsewhere). Degrade gracefully so that
-  // `export HOME=<tmpdir>; bash tests/run-all.sh` does not fail due to missing browser cache.
-  console.log('SKIP -- Playwright browser (Chromium) could not be launched.');
-  console.log('');
-  console.log('Error: ' + launchErr.message.split('\n')[0]);
-  console.log('');
-  console.log('To fix: run the following from the repo root:');
-  console.log('  cd canonical/aid/scripts/summarize');
-  console.log('  npm ci');
-  console.log('  npx playwright install chromium');
-  console.log('');
-  console.log('CI: the visual-fidelity job in test.yml runs these steps automatically.');
-  process.exit(0);
-}
+const browser = await chromium.launch({
+  headless: true,
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+});
 
 const page = await browser.newPage();
 

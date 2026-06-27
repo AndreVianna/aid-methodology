@@ -101,7 +101,7 @@
 {"dst": ".github/aid/scripts/summarize/stale-check.sh", "profile": "copilot-cli", "sha256": "354a6504ce4e41f96c02e0a9dba6165a9e82e6e4527c49ee841f86a96129a5e5", "src": "canonical/scripts/summarize/stale-check.sh"}
 {"dst": ".github/aid/scripts/summarize/summarize-preflight.sh", "profile": "copilot-cli", "sha256": "989e2d7831793bd4d5cdb72bc09c64ed1eadafd2b5a32d3842523176eef829fb", "src": "canonical/scripts/summarize/summarize-preflight.sh"}
 {"dst": ".github/aid/scripts/summarize/validate-html-output.sh", "profile": "copilot-cli", "sha256": "8438b42b62658d561bb1167e413cfea4d0816cdc36e1c77eb67c8a60b7108bc8", "src": "canonical/scripts/summarize/validate-html-output.sh"}
-{"dst": ".github/aid/scripts/summarize/validate-visuals.mjs", "profile": "copilot-cli", "sha256": "749c40092b91c7aa4caf7901a2c2b42b7d85c6c87fb53a9f1cc95408fd93e11c", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
+{"dst": ".github/aid/scripts/summarize/validate-visuals.mjs", "profile": "copilot-cli", "sha256": "53a28f518aa5a5eca401751feaf91cd5732c318b9bce37e8c842232f13dff321", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".github/aid/scripts/summarize/writeback-state.sh", "profile": "copilot-cli", "sha256": "ac36f33a0a8bb791f625d528a9a31b683787be98b761d05f59a14ee71b5a281a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".github/aid/templates/README.md", "profile": "copilot-cli", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".github/aid/templates/agent-boilerplate.md", "profile": "copilot-cli", "sha256": "40c2e6cedf895af995235b5432550ebd936ba11106bdcdb7b43b4f4513db0479", "src": "canonical/templates/agent-boilerplate.md"}
