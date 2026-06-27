@@ -251,21 +251,52 @@ de-slugified. **No hardcoded doc list survives in the skeleton or any template.*
 
 ---
 
-### 7. Assemble the single-file distribution (deterministic)
+### 7. Build the Markdown export payload
 
-Run `canonical/scripts/summarize/assemble.sh` with `--manifest` to concatenate the
+Before assembling `kb.html`, generate the hidden Markdown export payload from the KB
+source documents. The payload is embedded in `kb.html` as a `<script type="text/markdown">`
+block that client-side export buttons read to download a portable `.md` file.
+
+```bash
+bash canonical/aid/scripts/summarize/build-md-export.sh \
+    --kb-dir .aid/knowledge \
+    --manifest .aid/knowledge/summary-src/section-manifest.txt \
+    --output .aid/knowledge/summary-src/md-export-payload.html
+#   reads:  .aid/knowledge/*.md (in manifest section order, frontmatter stripped)
+#   writes: .aid/knowledge/summary-src/md-export-payload.html
+```
+
+**Payload element contract** (consumed by the client-side export chrome):
+
+| Property | Value |
+|----------|-------|
+| **Element** | `<script type="text/markdown" id="kb-md-export">` |
+| **Content** | Combined KB source docs, frontmatter stripped, SVG images embedded as `data:image/svg+xml;base64,...` URIs (single portable `.md`; degrades to alt text in viewers that ignore data URIs) |
+| **Access** | `document.getElementById('kb-md-export').textContent` |
+| **Filename hint** | `'knowledge-base-export.md'` |
+| **Location in `kb.html`** | Injected between `skeleton-foot.html` and `post-script.html` by `assemble.sh` when `md-export-payload.html` is present in the source layout dir |
+
+Run `build-md-export.sh` **before** `assemble.sh`. The assembler picks up the payload
+automatically; if the file is absent it is silently skipped (no error), preserving
+backward compatibility for runs that do not need the Markdown export.
+
+---
+
+### 8. Assemble the single-file distribution (deterministic)
+
+Run `canonical/aid/scripts/summarize/assemble.sh` with `--manifest` to concatenate the
 multi-source layout into the final single-file `kb.html`. The `--manifest` flag is
 **required for deterministic assembly** (same manifest = same section order = same
 structural output, reproducible + auditable, FR-50):
 
 ```bash
 mkdir -p .aid/dashboard
-bash canonical/scripts/summarize/assemble.sh \
+bash canonical/aid/scripts/summarize/assemble.sh \
     --manifest .aid/knowledge/summary-src/section-manifest.txt \
     --output .aid/dashboard/kb.html
 #   reads:  .aid/knowledge/summary-src/{skeleton-head.html,
 #             sections/* in manifest order, skeleton-foot.html,
-#             post-script.html}
+#             md-export-payload.html (if present), post-script.html}
 #   writes: .aid/dashboard/kb.html
 ```
 
@@ -287,7 +318,7 @@ would 404.
 
 ---
 
-### 8. Write Knowledge Summary Status
+### 9. Write Knowledge Summary Status
 
 Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 ```markdown

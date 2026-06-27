@@ -63,16 +63,14 @@ different places.
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Paused-Awaiting-Input
-- **Phase:** Interview
-- **Active Skill:** none
-- **Updated:** 2026-06-27T04:21:43Z
-- **Pause Reason:** Interview complete (lite, A+); awaiting /aid-execute work-002-dashboard-export-buttons task-001
-- **Block Reason:** --
-- **Block Artifact:** --
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-27T04:29:56Z
 
 ---
 
+- **Pause Reason:** --
 ## Triage
 
 <!-- AUTHORED -- populated by `aid-interview` TRIAGE state for lite-path works.
