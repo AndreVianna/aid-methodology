@@ -102,12 +102,13 @@ keep them separate so they don't dilute the three `aid-interview` threads.
   happened once in feature-015 (hand-fixed). *Task:* add a "no horizontal overflow-clip at target widths"
   check. Effort: S-M. **Naturally pairs with the dashboard export-buttons item
   (`.aid/design/dashboard-export-buttons.md`)** — both touch the kb.html visual layer.
-- **M2 [MEDIUM] — heavy gates on PRs.** The full canonical suite + Astro build run on master/tag only;
-  feature branches skip them (partly mitigated — PRs to master DO run the canonical suite). *Task
-  (optional):* run the heavy gates on PRs to catch breakage before merge. Effort: S.
+- **M2 [DONE 2026-06-26] — heavy gates on PRs.** ~~Run the heavy gates on PRs to catch breakage before
+  merge.~~ Implemented in the work-001 wrap-up: `docs.yml` Astro build now triggers on `pull_request` to
+  master (the canonical suite already did); `deploy` stays master-only. *Remaining (owner):* mark the
+  checks as required in branch protection.
 - **M1 [MEDIUM] — npm/PyPI publish enablement.** *Not a code task* — the publish workflow is correct but
   blocked on external npm/PyPI account + token setup (owner action). Schedule only when publishing the
   next public version (ties to the deferred v1.1.0 deprecation). Effort: M (external).
 
 > Priority read: **H1 + M4** are the most valuable engineering paydowns; **M3** is a freebie; **M2** is
-> optional; **M1** is owner-gated (external). None were active bugs at the work-001 merge.
+> DONE (work-001 wrap-up); **M1** is owner-gated (external). None were active bugs at the work-001 merge.

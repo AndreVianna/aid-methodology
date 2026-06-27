@@ -57,7 +57,7 @@ structural and methodological, not littered code.
 |----|------|-------------|----------|------|--------|----------|
 | **H1** | Architecture / lockstep | Five install manifests must stay byte-lockstep on the dashboard file set; a silent omission breaks provisioning on one channel | install.sh, install.ps1, vendor.js, vendor.py, release.sh | High | M | P1 |
 | **M1** | Shipping gap | npm + PyPI publish channels are correct but BLOCKED on external account setup; effectively GitHub-only today | .github/workflows/release.yml | Medium | M (external) | P2 |
-| **M2** | Test gap / process | Full canonical suite + Astro build run on master/tag only; feature branches skip them | .github/workflows/{test,docs}.yml | Medium | S | P2 |
+| **M2** | Test gap / process | ~~Full canonical suite + Astro build run on master/tag only~~ RESOLVED — both now gate `pull_request` to master (test.yml already did; docs.yml build added); deploy stays master-only | .github/workflows/{test,docs}.yml | Medium | S | P2 |
 | **M3** | Stale documentation | Contributor doc cites wrong skill/recipe counts + wrong path | docs/repository-structure.md | Medium | S | P2 |
 | **M4** | Test gap / gate coverage | Visual-fidelity gate validates one wide viewport only; a visual can pass yet clip at the narrower dashboard column | canonical/aid/scripts/summarize/validate-visuals.mjs | Medium | S | P2 |
 | **L1** | Dead code | ~~Unreachable `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff branch~~ RESOLVED | install.sh, install.ps1 | Low | S | P3 |
@@ -124,23 +124,26 @@ stale package; the documented "4 channels" is effectively fewer until enabled.
 
 ---
 
-### [MEDIUM] M2 -- Heavy correctness gates run on master/tag only
+### [MEDIUM] M2 -- Heavy correctness gates run on master/tag only (RESOLVED)
 
 **Type:** Test gap / process
 
-**Description:** The full canonical suite (`test.yml` `canonical-tests`) and the Astro site
-build (`docs.yml`) trigger only on `master` (and the release tag via `release.yml gate`).
-Feature branches run only `installer-tests.yml`. A change that breaks the canonical suite or
-the site build can pass every feature-branch check and fail only after merge.
+**Resolution (2026-06-26):** Both heavy gates now run on `pull_request` to `master`, so a
+breaking change is caught BEFORE merge rather than after:
+- `test.yml` (`canonical-tests` + render-drift + generator self-tests + KB-hygiene +
+  visual-fidelity) already triggered on `pull_request: branches: [master]`.
+- `docs.yml` (Astro site build) now also triggers on `pull_request: branches: [master]` (same
+  path filter); its `deploy` job is gated `if: github.event_name != 'pull_request'`, so a PR
+  build-validates the site without deploying. Deploy still only happens on a push to `master`
+  or a release.
 
-**Location:** `.github/workflows/test.yml` (`on: push/pull_request branches: [master]`),
-`.github/workflows/docs.yml` (`on: push branches: [master]` + path filter).
+**Remaining (owner action, not code):** to *block* a merge until these pass, add `Docs / build`
+to the branch-protection **required status checks** for `master` (the canonical-suite jobs are
+already required). The workflows cannot mark themselves required — it is a repo settings change.
 
-**Risk if unaddressed:** A direct merge can red-master in ways the feature branch never saw
-(this has happened — the master CI broke three ways from exactly this gap).
-
-**Remediation:** Run `bash tests/run-all.sh` (HOME-pinned) and the `site` build locally
-before merge. See [Gotchas](#gotchas). Effort: S (discipline).
+**Original gap:** the full canonical suite + the Astro build triggered only on `master`/tag, so a
+change could pass every feature-branch check and red-master only after merge (this happened — the
+master CI broke three ways from exactly this gap).
 
 ---
 
@@ -433,3 +436,4 @@ model.
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial debt audit (quality deep-dive) |
 | 1.1 | 2026-06-26 | wrap-up | L1 RESOLVED (dead `OVERALL_BLOCKED`/exit-5/`.aid-new` branch removed from install.sh + install.ps1). Triaged feature-015 follow-ups into debt: added M4 (single-viewport gate gap), L5 (cosmetic/hygiene), L6 (DBI node_modules orphan-scan). |
+| 1.2 | 2026-06-26 | wrap-up | M2 RESOLVED — `docs.yml` Astro build now gates `pull_request` to master (test.yml canonical suite already did); `deploy` stays master-only. Marking the checks branch-protection-required is an owner action. |

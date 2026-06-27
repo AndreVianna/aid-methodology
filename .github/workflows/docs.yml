@@ -13,6 +13,13 @@ on:
       - 'docs/**'               # migrated content source (feature-005)
       - 'VERSION'               # version injection input (feature-008)
       - '.github/workflows/docs.yml'
+  pull_request:                 # M2: gate PRs to master — build-validate site inputs before merge
+    branches: [master]          # (the `deploy` job is skipped on PRs; build only)
+    paths:
+      - 'site/**'
+      - 'docs/**'
+      - 'VERSION'
+      - '.github/workflows/docs.yml'
   release:
     types: [published]          # AC15 enabler — refresh release-bound content hands-free
   workflow_dispatch:            # manual re-deploy
@@ -75,6 +82,8 @@ jobs:
   deploy:
     name: deploy (Pages)
     needs: build
+    # M2: build-validate on PRs, but only ever DEPLOY on a real push to master / a release.
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-24.04
     environment:
       name: github-pages
