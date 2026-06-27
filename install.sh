@@ -59,7 +59,6 @@
 #   2   usage error
 #   3   network / fetch failure
 #   4   checksum verification failed
-#   5   protect-on-diff blocked (--force not given)
 #   6   uninstall with no manifest
 #   7   aid status: no AID install in cwd
 
@@ -206,7 +205,7 @@ usage() {
         printf 'Subcommands: status add remove update version help\n'
         printf '\n'
         printf 'Exit codes: 0 ok, 1 failure, 2 usage, 3 network, 4 checksum,\n'
-        printf '            5 protect-on-diff, 6 no manifest, 7 not an AID project\n'
+        printf '            6 no manifest, 7 not an AID project\n'
     else
         sed -n '2,55p' "$0" | sed 's/^# \{0,1\}//'
     fi
@@ -1328,30 +1327,16 @@ if [[ "${#TOOLS[@]}" -eq 0 && "$MODE" == "uninstall" ]]; then
     die "uninstall: no manifest found at ${TARGET}/.aid/.aid-manifest.json (exit 6)" 6
 fi
 
-OVERALL_BLOCKED=0
-
 case "$MODE" in
     install|update)
         for tool in "${TOOLS[@]}"; do
             echo ""
             prepare_tool_staging "$tool" "$VERSION_ARG" "$FROM_BUNDLE"
             echo "Installing ${tool} v${RESOLVED_VERSION} -> ${TARGET}"
-            install_tool "$STAGING_DIR" "$tool" "$TARGET" "$RESOLVED_VERSION" "$FORCE" || {
-                _RC=$?
-                if [[ "$_RC" -eq 5 ]]; then
-                    OVERALL_BLOCKED=1
-                else
-                    exit "$_RC"
-                fi
-            }
+            install_tool "$STAGING_DIR" "$tool" "$TARGET" "$RESOLVED_VERSION" "$FORCE" || exit $?
         done
 
         echo ""
-        if [[ "$OVERALL_BLOCKED" -eq 1 ]]; then
-            echo "Install complete with warnings: one or more root agent files were not overwritten."
-            echo "Review the *.aid-new file(s) and merge, or re-run with --force to overwrite."
-            exit 5
-        fi
         echo "Done. AID ${RESOLVED_VERSION:-} installed into: ${TARGET}"
         exit 0
         ;;

@@ -59,10 +59,13 @@ structural and methodological, not littered code.
 | **M1** | Shipping gap | npm + PyPI publish channels are correct but BLOCKED on external account setup; effectively GitHub-only today | .github/workflows/release.yml | Medium | M (external) | P2 |
 | **M2** | Test gap / process | Full canonical suite + Astro build run on master/tag only; feature branches skip them | .github/workflows/{test,docs}.yml | Medium | S | P2 |
 | **M3** | Stale documentation | Contributor doc cites wrong skill/recipe counts + wrong path | docs/repository-structure.md | Medium | S | P2 |
-| **L1** | Dead code | Unreachable `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff branch | install.sh | Low | S | P3 |
+| **M4** | Test gap / gate coverage | Visual-fidelity gate validates one wide viewport only; a visual can pass yet clip at the narrower dashboard column | canonical/aid/scripts/summarize/validate-visuals.mjs | Medium | S | P2 |
+| **L1** | Dead code | ~~Unreachable `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff branch~~ RESOLVED | install.sh, install.ps1 | Low | S | P3 |
 | **L2** | Deferred feature | `release.sh --sign` exits non-zero (signing not implemented) | release.sh | Low | M | P3 |
 | **L3** | Deprecation debt | Legacy flag-style install path "retained for one release" | install.sh | Low | S | P3 |
 | **L4** | Test gap | No line-coverage metric or `%` enforcement anywhere | (whole pipeline) | Low | M | P3 |
+| **L5** | Cosmetic / hygiene | feature-015 residues: web-app §1 retired metric-grid text; non-ASCII em-dash in a summarize script comment | canonical/aid/templates/knowledge-summary/section-templates/web-app.md, canonical/aid/scripts/summarize/writeback-state.sh | Low | S | P3 |
+| **L6** | Tooling inconsistency | DBI orphan-scan flags gitignored `node_modules/` that `render.py` already excludes from emission | tests/canonical/test-dogfood-byte-identity.sh | Low | S | P3 |
 
 **Risk definitions:** High = active risk to reliability/security/maintainability of core
 flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = known, not
@@ -167,25 +170,47 @@ not inline edits. Effort: S.
 
 ---
 
-### [LOW] L1 -- Unreachable protect-on-diff branch in install.sh
+### [MEDIUM] M4 -- Visual-fidelity gate validates a single wide viewport
+
+**Type:** Test gap / gate coverage
+
+**Description:** `validate-visuals.mjs` (the §7 visual-fidelity gate) renders each authored
+visual at a single ~1152px-wide viewport. A visual can pass there yet clip at the dashboard's
+narrower ~732px column (found in feature-015 Phase-3: a lifecycle-timeline pill was cut by
+~24px at 732px and had to be hand-corrected). The gate does not check narrower representative
+widths.
+
+**Location:** `canonical/aid/scripts/summarize/validate-visuals.mjs`;
+`tests/canonical/test-visual-fidelity.sh`.
+
+**Risk if unaddressed:** A generated `kb.html` can ship a horizontally-clipped visual that the
+gate passes, surfacing only in the narrower dashboard / mobile layouts.
+
+**Remediation:** Add a "no horizontal overflow-clip at target widths" check (proposed T4) that
+validates each visual at representative widths (e.g. the dashboard column ~720-760px and a
+mobile ~390px), not just one wide viewport. Effort: S-M.
+
+---
+
+### [LOW] L1 -- Unreachable protect-on-diff branch in install.sh (RESOLVED)
 
 **Type:** Dead code
 
-**Description:** `install.sh` carries an `OVERALL_BLOCKED` / `exit 5` / `*.aid-new`
-merge-warning branch that fires when `install_tool` returns `5` (a root-agent file was not
-overwritten because it differed). That return value no longer occurs: `aid-install-core`
+**Status: RESOLVED** -- Dead code removed from `install.sh` and `install.ps1` (2026-06-26).
+
+**Description:** `install.sh` carried an `OVERALL_BLOCKED` / `exit 5` / `*.aid-new`
+merge-warning branch that fired when `install_tool` returned `5` (a root-agent file was not
+overwritten because it differed). That return value no longer occurred: `aid-install-core`
 eliminated the `.aid-new` path and now updates root agent files in place via an
-`AID:BEGIN/END` boundary, always setting `_CORE_ROOT_AGENT_STATUS="owned"` (CONFIRMED by the
-comment in `lib/aid-install-core.sh` stating the `.aid-new` / pending-merge path was
-removed). So the branch is unreachable.
+`AID:BEGIN/END` boundary, always setting `_CORE_ROOT_AGENT_STATUS="owned"`.
 
-**Location:** `install.sh` (`OVERALL_BLOCKED=0` … `exit 5` block); enabled-by-absence in
-`lib/aid-install-core.sh`.
+**Location (was):** `install.sh` (`OVERALL_BLOCKED=0` ... `exit 5` block); `install.ps1`
+(`$overallBlocked` ... `Exit-Install 5` block).
 
-**Risk if unaddressed:** Misleading maintenance surface — a reader assumes a `.aid-new`
-merge flow exists that does not. No runtime effect (never executes).
-
-**Remediation:** Remove the dead branch. Effort: S. Low risk to fix (it never runs).
+**Remediation applied:** Removed the dead `OVERALL_BLOCKED`/`$overallBlocked` branches from
+both `install.sh` and `install.ps1`; simplified to `install_tool ... || exit $?` (Bash) and
+`if ($rc -ne 0) { script:Exit-Install $rc }` (PS); dropped exit-code 5 from inline docs in
+both files.
 
 ---
 
@@ -237,6 +262,48 @@ now.
 
 **Remediation:** Either adopt a lightweight coverage signal or formally record the
 no-coverage decision. Effort: M.
+
+---
+
+### [LOW] L5 -- feature-015 cosmetic / hygiene follow-ups
+
+**Type:** Cosmetic / hygiene
+
+**Description:** Two non-blocking residues from the feature-015 build: (a)
+`section-templates/web-app.md` §1 retains the old metric-grid body text as a "kept rendering
+reference" (the header flags it retired and the authoritative generation path enforces the
+newcomer lead); (b) a non-ASCII em-dash in the `writeback-state.sh` line-2 comment. The
+operative `test-ascii-only.sh` excludes agent-side summarize scripts (CI green), but
+shipped-script ASCII hygiene is the standing rule.
+
+**Location:** `canonical/aid/templates/knowledge-summary/section-templates/web-app.md` §1;
+`canonical/aid/scripts/summarize/writeback-state.sh:2`.
+
+**Risk if unaddressed:** None functional -- cosmetic doc-consistency + an ASCII-hygiene exception.
+
+**Remediation:** Trim the retired web-app §1 text; replace the em-dash with ASCII `--` (then
+re-render profiles). Effort: S.
+
+---
+
+### [LOW] L6 -- DBI orphan-scan flags gitignored node_modules
+
+**Type:** Tooling inconsistency
+
+**Description:** `test-dogfood-byte-identity.sh`'s orphan-scan flags any on-disk `node_modules/`
+under `.claude/`/`profiles/` as a DBI-ORPHAN, even though `render.py` correctly EXCLUDES
+`node_modules` from emission (D-012). The two disagree. The visual-fidelity gate's on-demand
+`npm ci` (in `canonical/aid/scripts/summarize`) creates such a directory; in a shared checkout
+this can trip the scan. CI is unaffected -- the gate and the DBI suite run in separate job
+checkouts. Build workaround: `rm -rf` the node_modules before DBI.
+
+**Location:** `tests/canonical/test-dogfood-byte-identity.sh` (orphan-scan); `render.py`
+(exclusion).
+
+**Risk if unaddressed:** Spurious DBI failures during local builds that interleave the visual gate.
+
+**Remediation:** Make the DBI orphan-scan skip gitignored paths (`node_modules/`, `.git/`),
+matching `render.py`'s exclusion. Effort: S.
 
 ---
 
@@ -365,3 +432,4 @@ model.
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial debt audit (quality deep-dive) |
+| 1.1 | 2026-06-26 | wrap-up | L1 RESOLVED (dead `OVERALL_BLOCKED`/exit-5/`.aid-new` branch removed from install.sh + install.ps1). Triaged feature-015 follow-ups into debt: added M4 (single-viewport gate gap), L5 (cosmetic/hygiene), L6 (DBI node_modules orphan-scan). |

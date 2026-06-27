@@ -82,7 +82,6 @@
 #   2   usage error (unknown param, bad args, ambiguous tool, missing target, etc.)
 #   3   network / fetch failure
 #   4   checksum verification failed
-#   5   protect-on-diff blocked a root agent file (-Force was not given)
 #   6   uninstall with no manifest (nothing installed)
 #   7   aid status: no AID install in cwd
 
@@ -189,7 +188,7 @@ function Show-Usage {
         Write-Host "  (equivalent to the params; params take precedence)"
         Write-Host ""
         Write-Host "Exit codes: 0 success, 1 failure, 2 usage error, 3 network error,"
-        Write-Host "            4 checksum mismatch, 5 protect-on-diff blocked, 6 no manifest"
+        Write-Host "            4 checksum mismatch, 6 no manifest"
         Write-Host ""
         Write-Host "Full docs: https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md"
         return
@@ -1224,8 +1223,6 @@ function Prepare-ToolStaging {
 # ---------------------------------------------------------------------------
 
 try {
-    $overallBlocked = $false
-
     switch ($Mode) {
         { $_ -in 'install', 'update' } {
             foreach ($t in $toolList) {
@@ -1235,19 +1232,10 @@ try {
                 $rc = Install-AidTool -StagingDir $script:StagingDir -Tool $t -Target $Target `
                          -Version $script:ResolvedVersion -Force ([bool]$Force) `
                          -AidVerbose $script:_AidVerbose
-                if ($rc -eq 5) {
-                    $overallBlocked = $true
-                } elseif ($rc -ne 0) {
-                    script:Exit-Install $rc
-                }
+                if ($rc -ne 0) { script:Exit-Install $rc }
             }
 
             Write-Host ""
-            if ($overallBlocked) {
-                Write-Host "Install complete with warnings: one or more root agent files were not overwritten."
-                Write-Host "Review the *.aid-new file(s) and merge, or re-run with --force to overwrite."
-                script:Exit-Install 5
-            }
             Write-Host "Done. AID $($script:ResolvedVersion) installed into: $Target"
             script:Exit-Install 0
         }

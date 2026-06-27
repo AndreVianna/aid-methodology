@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "playwright-project": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@latest",
+        "--output-dir",
+        ".aid/.temp/playwright"
+      ]
+    }
+  }
+}
