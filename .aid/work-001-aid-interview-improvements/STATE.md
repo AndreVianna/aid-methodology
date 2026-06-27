@@ -66,7 +66,7 @@ different places.
 - **Lifecycle:** Running
 - **Phase:** Specify
 - **Active Skill:** none
-- **Updated:** 2026-06-27T18:00:00Z
+- **Updated:** 2026-06-27T19:00:00Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -150,6 +150,7 @@ different places.
 | 2026-06-27 | Execute delivery-001 (spike) done + A+ delivery gate | A+ | task-001/002 (web-capable executors, parallel) → task-003 synthesis. findings.md (551 lines, 8 families surveyed + grill-me MIT comparative, all 9 RQs justified+actionable, Rec A seed-set + Rec B conversation design downstream-consumable, A-2 `forward-authored` gap + D-5 note). Gate TOTAL 0; faithfulness verified vs disk. Fixed feature-001 D-1 wording (forward-authored not-yet-on-master). |
 | 2026-06-27 | Execute delivery-002 (infra debt) done + A+ delivery gate (×2) | A+ | 6 tasks: H1 lockstep test (task-004), M3 repo-structure refresh (task-005), M4 T4 multi-viewport IMPLEMENT+TEST (task-006/007, Playwright-render-proven), M1 deferral (task-008), R1 aid-researcher web tools (task-009, added mid-execute per owner). Full canonical suite 83/83 green (HOME-pinned). Owner design decisions D1/D2/D3 captured (first-question + engine-not-form + aid-describe/aid-define split). |
 | 2026-06-27 | Specify spike-dependent features 002-005 | A+ (each) | From findings.md + D1/D2/D3: feature-003 seed model (forward-authored marker, greenfield-mode gate, layered coherence) → feature-002 engine (1 fixed opener + 5-step adaptive selector, calibration, NFR-7 envelope) → feature-004 guided-triage (consumes engine, resolves the 002/004 opener seam) → feature-005 conformance (extract-and-diff, KB-DELTA carve). Each A+ (TOTAL 0) after 1-2 gate cycles. feature-006 rename spec SUPERSEDED by D3 (re-spec to split, deferred after content). |
+| 2026-06-27 | Re-specify feature-006: rename → SPLIT (D3) | A+ | aid-interview → aid-describe + aid-define; 20-ref state partition, inter-skill pause-resume seam (HIGH catch: COMPLETION already PAUSEs, not a chain), skill count +1 (13→14), propagation machinery carried fwd, aid-interviewer guard, sequenced after content. 2 gate cycles → TOTAL 0. **ALL features 001-007 now spec-complete at A+; ready for /aid-plan re-plan.** |
 
 ---
 
@@ -186,7 +187,7 @@ different places.
 | 3 | feature-003-greenfield-seed-authoring | Ready | A+ | 0 | Seed-content model (5 elements + forward-authored marker + schema/lint/index/freshness), greenfield-mode review gate, layered coherence check, sufficiency bar. 2 gate cycles (C→A+); forks resolved (flag-not-fork, TBD-versions, layered coherence, fold-to-current freshness). |
 | 4 | feature-004-guided-triage | Ready | A+ | 0 | Analyst-driven triage: thin consumer of the f002 engine (TRIAGE-specific gap inventory), engine-driven draw-out replaces free-form Step 1, routing rule + recipe tooling reused unchanged, KB-context-aware (full/seed/no-KB), brownfield intact. RESOLVED the 002/004 opener seam (## Triage **Opener:** de-dup). 2 gate cycles. |
 | 5 | feature-005-build-time-conformance | Ready | A+ | 0 | NEW code→design conformance check: extract-and-diff (output_root-parameterized shadow extraction + concern-keyed diff at seed altitude + classifier), aid-housekeep KB-DELTA conformance lane carving forward-authored docs OUT of the doc←code lane (NFR-5), human-gated. 2 cycles (HIGH shadow-extract redirect made concrete-by-construction). |
-| 6 | feature-006-rename-aid-define | Needs Re-spec (D3) | A+ (superseded) | 0 | The A+ RENAME spec is SUPERSEDED by decision D3 (split aid-interview → aid-describe + aid-define, not just rename; skill count +1). Re-spec to the D3 split when picked up; still sequenced AFTER content features 002/003/004. |
+| 6 | feature-006-rename-aid-define | Ready | A+ | 0 | RE-SPEC'd rename→SPLIT (D3): aid-interview → aid-describe + aid-define. 20-ref state partition; inter-skill seam = redirect COMPLETION's existing pause-resume signpost to /aid-define (it already PAUSEs, not a chain); skill count +1 (13→14, incl. spelled-out); DBI/render/orphan-prune/manifests×2/docs×2 carried fwd; aid-interviewer guard; sequenced after 002/003/004. 2 gate cycles (HIGH seam-mischaracterization). |
 | 7 | feature-007-infra-debt-paydown | Ready | A+ | 0 | H1/M3/M4/M1 sub-specs; 3 gate cycles (prose→ASCII-tree) → A+ |
 
 ## Plan / Deliveries
