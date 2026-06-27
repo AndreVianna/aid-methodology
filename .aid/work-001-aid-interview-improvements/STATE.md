@@ -176,7 +176,13 @@ different places.
 
 | # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
 |---|---------|------------|------------|-----------|-------|
-| _none yet_ | | | | | |
+| 1 | feature-001-elicitation-research-spike | Ready | A+ | 0 | Spike plan specified; gates 002–005 |
+| 2 | feature-002-seasoned-analyst-engine | Spike Needed | — | 0 | Deferred until feature-001 executes |
+| 3 | feature-003-greenfield-seed-authoring | Spike Needed | — | 0 | Deferred until feature-001 executes |
+| 4 | feature-004-guided-triage | Spike Needed | — | 0 | Deferred until feature-001 executes |
+| 5 | feature-005-build-time-conformance | Spike Needed | — | 0 | Deferred until feature-001 executes |
+| 6 | feature-006-rename-aid-define | In Discussion | C+→pending | 0 | Spec authored + 3 gate cycles (D+→C+→C+); dashboard-scope fix applied — PENDING 1 final A+ re-verify |
+| 7 | feature-007-infra-debt-paydown | Ready | A+ | 0 | H1/M3/M4/M1 sub-specs; 3 gate cycles (prose→ASCII-tree) → A+ |
 
 ## Plan / Deliveries
 
