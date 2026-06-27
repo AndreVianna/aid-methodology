@@ -595,8 +595,10 @@ footer {
 	/* Force light theme: override the dark-mode CSS custom properties so
 	   cards, callouts, and backgrounds render light even when the page is
 	   in dark mode. The export buttons live inside .controls and are already
-	   hidden by the rule above; no separate rule needed for them. */
-	[data-theme="dark"] {
+	   hidden by the rule above; no separate rule needed for them.
+	   Selector must be html[data-theme="dark"] (specificity 0,1,1) to match
+	   the base dark-theme rule and win the cascade when print media fires. */
+	html[data-theme="dark"] {
 		--bg: #F7F9FC;
 		--bg-elev: #FFFFFF;
 		--bg-sunken: #EEF2F7;
