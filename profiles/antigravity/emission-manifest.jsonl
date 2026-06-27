@@ -5,7 +5,7 @@
 {"dst": ".agent/agents/aid-interviewer.md", "profile": "antigravity", "sha256": "ffa252565b1524bbd5d6d94c961f87ed93063e68477e9603680403a36be682c0", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".agent/agents/aid-operator.md", "profile": "antigravity", "sha256": "c764d8f1f6ca19cc6c0dcae2a3520211b778cb1f7be4086cd11064359a5f4548", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".agent/agents/aid-orchestrator.md", "profile": "antigravity", "sha256": "53106fa8201ec0e23b254ee9037a19755a1a5338769636dc7ec1e626f2651d40", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".agent/agents/aid-researcher.md", "profile": "antigravity", "sha256": "07e6c7c067790d3c25b5e0067f7ca0f9573161ff175a1de9b5969fce66e424da", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".agent/agents/aid-researcher.md", "profile": "antigravity", "sha256": "5ffc34d2747f7af21c7a2479a50791ce236ee24244ec8638900ef48cba603aa8", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "a62b680f9abf14883641712861798d18ee7253ab24819bab9988434d053a8923", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".agent/agents/aid-tech-writer.md", "profile": "antigravity", "sha256": "81ae38b79edb284b2c2468ac4b30c83a748dd2f11475c6be59df4313461cfa0b", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".agent/aid/recipes/README.md", "profile": "antigravity", "sha256": "4cccac9265d25b6a786b4b57d486647d859b0852200f814a0f7f59708e1fb8e8", "src": "canonical/recipes/README.md"}
@@ -100,7 +100,7 @@
 {"dst": ".agent/aid/scripts/summarize/stale-check.sh", "profile": "antigravity", "sha256": "354a6504ce4e41f96c02e0a9dba6165a9e82e6e4527c49ee841f86a96129a5e5", "src": "canonical/scripts/summarize/stale-check.sh"}
 {"dst": ".agent/aid/scripts/summarize/summarize-preflight.sh", "profile": "antigravity", "sha256": "989e2d7831793bd4d5cdb72bc09c64ed1eadafd2b5a32d3842523176eef829fb", "src": "canonical/scripts/summarize/summarize-preflight.sh"}
 {"dst": ".agent/aid/scripts/summarize/validate-html-output.sh", "profile": "antigravity", "sha256": "6c1c86fac93ac3314b90ce2d2367dc6f1bf65464ad3e7c3d917af41b8c80ede6", "src": "canonical/scripts/summarize/validate-html-output.sh"}
-{"dst": ".agent/aid/scripts/summarize/validate-visuals.mjs", "profile": "antigravity", "sha256": "9b96c8edd4205dcb7328b54a2c648af99b964fd21e0072888d437afad2249110", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
+{"dst": ".agent/aid/scripts/summarize/validate-visuals.mjs", "profile": "antigravity", "sha256": "dcb2ba28d379a29f229025e84aa49c97a90938445b1df584e8761b5687a9a240", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".agent/aid/scripts/summarize/writeback-state.sh", "profile": "antigravity", "sha256": "ac36f33a0a8bb791f625d528a9a31b683787be98b761d05f59a14ee71b5a281a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".agent/aid/templates/README.md", "profile": "antigravity", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".agent/aid/templates/agent-boilerplate.md", "profile": "antigravity", "sha256": "563f43a7616f75caa987b12fa0bf050c5f833d914f9c02e058eba9866c0e8744", "src": "canonical/templates/agent-boilerplate.md"}

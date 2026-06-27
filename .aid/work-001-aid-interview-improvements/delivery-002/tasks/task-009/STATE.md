@@ -1,4 +1,4 @@
-# Task State -- task-004
+# Task State -- task-009
 
 [!NOTE]
 This is the TASK-LEVEL STATE.md template. All sections are AUTHORED by a single writer:
@@ -7,7 +7,7 @@ per-task mutable state (state cell, review, elapsed, notes, findings, dispatch l
 The parent delivery-NNN/STATE.md ## Tasks State and work-level ## Tasks State are
 DERIVED read-only views assembled from this file at read time -- never written directly.
 
-> **Task:** task-004
+> **Task:** task-009
 > **Delivery:** delivery-002
 > **Work:** work-001-aid-interview-improvements
 
@@ -23,9 +23,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
 - **State:** Done
-- **Review:** A+ (delivery-002 gate, TOTAL 0)
-- **Elapsed:** ~20:00
-- **Notes:** tests/canonical/test-install-manifests-lockstep.sh — 9 assertions over 5 manifests' 12-file dashboard set; passes clean, fails on drop+add mutation (demonstrated); auto-discovered by run-all.sh (83 suites, all pass, HOME-pinned); ASCII-clean. Awaiting delivery gate.
+- **Review:** A+ (delivery-002 re-gate, TOTAL 0)
+- **Elapsed:** ~19:00
+- **Notes:** aid-researcher tools → +WebSearch,WebFetch; description + What-You-Do extended (cited-source expectation). FULL regen: 5 profiles + .claude mirror (codex .toml = no tools by design); 5 emission-manifests updated. grep confirms ONLY aid-researcher changed. DBI 559 pass; generator idempotent (3 runs); ascii/frontmatter/multitool-isolation/payload suites pass. tech-debt.md L7 RESOLVED row + changelog 1.4. Awaiting re-gate.
 
 ---
 

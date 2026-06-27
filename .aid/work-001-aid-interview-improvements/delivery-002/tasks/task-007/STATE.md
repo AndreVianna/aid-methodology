@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** A+ (delivery-002 gate, TOTAL 0)
+- **Elapsed:** ~11:00
+- **Notes:** test-visual-fidelity.sh +VF16 (--check-only T4 in list), +VF40 (positive), +VF41 (negative); 2 committed fixtures. ORCHESTRATOR Playwright PROOF (installed chromium, ran real validator): vf-wide-overflow.html → T4 FAIL @732 (sw836>732) +@390 (sw836>390) while T1/T2/T3 PASS, exit 1; vf-narrow-fit.html → all PASS incl T4, exit 0; full suite 45/45 with VF40/VF41 LIVE. M4 closure met (Playwright-rendered, not source-inspected). Awaiting delivery gate.
 
 ---
 

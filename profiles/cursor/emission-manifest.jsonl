@@ -5,7 +5,7 @@
 {"dst": ".cursor/agents/aid-interviewer.md", "profile": "cursor", "sha256": "dd4eb1914f33e7e99267caf3fc3b61baa54fe5078d12e4fd5014807b37e8fbc5", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".cursor/agents/aid-operator.md", "profile": "cursor", "sha256": "b3fa7e23e8f12e238d6e9b7817e722a0ab16c52337cb6150d3eaad1b6f073878", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".cursor/agents/aid-orchestrator.md", "profile": "cursor", "sha256": "70348febd60352b0c4879caba3a809092811fa733b33bf036fcb2f99afd463ca", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".cursor/agents/aid-researcher.md", "profile": "cursor", "sha256": "940b953fc373820d3b8eae04cca471bd03e379c850580658f19d5186d3a36c61", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".cursor/agents/aid-researcher.md", "profile": "cursor", "sha256": "7f05cd390d8a5c41e2281540a61fac5522322f1322bc22cce92d32e2eb075d78", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".cursor/agents/aid-reviewer.md", "profile": "cursor", "sha256": "53b22598200b6f232e94d182305034f7c0643aac84ce041997718e794e301d38", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".cursor/agents/aid-tech-writer.md", "profile": "cursor", "sha256": "333234895108afa84f8fcfaddbc2574c82ceb7b1621a5e18c1984c82083988e4", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".cursor/aid/recipes/README.md", "profile": "cursor", "sha256": "177ff100e83b12113ba359bc664c1fdd10d6098c09e8400a7f1c6004bed4477e", "src": "canonical/recipes/README.md"}
@@ -100,7 +100,7 @@
 {"dst": ".cursor/aid/scripts/summarize/stale-check.sh", "profile": "cursor", "sha256": "354a6504ce4e41f96c02e0a9dba6165a9e82e6e4527c49ee841f86a96129a5e5", "src": "canonical/scripts/summarize/stale-check.sh"}
 {"dst": ".cursor/aid/scripts/summarize/summarize-preflight.sh", "profile": "cursor", "sha256": "989e2d7831793bd4d5cdb72bc09c64ed1eadafd2b5a32d3842523176eef829fb", "src": "canonical/scripts/summarize/summarize-preflight.sh"}
 {"dst": ".cursor/aid/scripts/summarize/validate-html-output.sh", "profile": "cursor", "sha256": "6c1c86fac93ac3314b90ce2d2367dc6f1bf65464ad3e7c3d917af41b8c80ede6", "src": "canonical/scripts/summarize/validate-html-output.sh"}
-{"dst": ".cursor/aid/scripts/summarize/validate-visuals.mjs", "profile": "cursor", "sha256": "ffe44538edabfd2bb17fd97cfa7200efbd2e2dcf878c8ea56c61b09fc3b81064", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
+{"dst": ".cursor/aid/scripts/summarize/validate-visuals.mjs", "profile": "cursor", "sha256": "c2f645be8c5dc43fc282776e9723039787835d178aee5fe9385b6d187f5487f6", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".cursor/aid/scripts/summarize/writeback-state.sh", "profile": "cursor", "sha256": "ac36f33a0a8bb791f625d528a9a31b683787be98b761d05f59a14ee71b5a281a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".cursor/aid/templates/README.md", "profile": "cursor", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".cursor/aid/templates/agent-boilerplate.md", "profile": "cursor", "sha256": "ce21236493480b23cddd2a319be7108b8c089ecd75b08e13a938fffe9fc3feb5", "src": "canonical/templates/agent-boilerplate.md"}

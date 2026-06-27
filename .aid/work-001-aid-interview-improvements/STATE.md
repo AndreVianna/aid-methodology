@@ -65,8 +65,8 @@ different places.
 
 - **Lifecycle:** Running
 - **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-06-27T14:00:00Z
+- **Active Skill:** none
+- **Updated:** 2026-06-27T16:40:00Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -148,6 +148,7 @@ different places.
 | 2026-06-27 | Plan complete (3 specified features) | A+ | delivery-001 (spike/feature-001) + delivery-002 (debt/feature-007); feature-006 deferred (hard-gated after 002/003/004). A+ gate: 2 MEDIUM (priority + M1 misframe) fixed → TOTAL 0. |
 | 2026-06-27 | Detail complete (8 tasks, 2 deliveries) | A+ | d001: task-001/002 (parallel surveys) → task-003 synthesis. d002: task-004 H1[TEST], task-005 M3[DOCUMENT], task-006 M4[IMPLEMENT] → task-007 M4[TEST], task-008 M1[DOCUMENT]. Exec graphs + wave-maps in PLAN.md. A+ gate: 7 findings (2 HIGH incl. wrong M3 path + dropped tech-debt row; 2 MEDIUM M4 widths/caveat; 3 lower) fixed → TOTAL 0. |
 | 2026-06-27 | Execute delivery-001 (spike) done + A+ delivery gate | A+ | task-001/002 (web-capable executors, parallel) → task-003 synthesis. findings.md (551 lines, 8 families surveyed + grill-me MIT comparative, all 9 RQs justified+actionable, Rec A seed-set + Rec B conversation design downstream-consumable, A-2 `forward-authored` gap + D-5 note). Gate TOTAL 0; faithfulness verified vs disk. Fixed feature-001 D-1 wording (forward-authored not-yet-on-master). |
+| 2026-06-27 | Execute delivery-002 (infra debt) done + A+ delivery gate (×2) | A+ | 6 tasks: H1 lockstep test (task-004), M3 repo-structure refresh (task-005), M4 T4 multi-viewport IMPLEMENT+TEST (task-006/007, Playwright-render-proven), M1 deferral (task-008), R1 aid-researcher web tools (task-009, added mid-execute per owner). Full canonical suite 83/83 green (HOME-pinned). Owner design decisions D1/D2/D3 captured (first-question + engine-not-form + aid-describe/aid-define split). |
 
 ---
 
@@ -227,7 +228,40 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
      The dashboard reader unions all delivery contributions plus (b) into this view.
      WORK-OWNER-AUTHORED entries may appear below this block (single writer, work active branch). -->
 
-_None yet._
+### D1 — First question of the redesigned interview (work-owner decision)
+
+- **Category:** Design / Elicitation
+- **Impact:** High
+- **State:** Answered (owner-ratified 2026-06-27)
+- **Applies to:** feature-002 (analyst conversation engine) + feature-004 (guided triage) — specify these to match when they leave Spike-Needed.
+- **Decision:** The interview opens with a single **open, example-anchored "what + why"** question — NOT a classification question. Proposed phrasing: *"In a sentence or two — what do you want to build or change, and what's the outcome you're after?"* with a baked-in concrete example and the cue "describe the pieces the way you'd naturally name them — I'll work from your words."
+- **Rationale (grounds in findings.md):** (1) §1 finding-1 — the shared vocabulary / ubiquitous language is the seed keystone, harvested by getting the user to describe the work in their own words, so the opener IS the first vocabulary capture; (2) §5 Rec B + JAD straw-man-first + NFR-7 — never a blank page; the example models the answer and lands suggested-answer-with-rationale on turn 1; (3) RQ-B2 calibration + triage are INFERRED from how the user answers and then **reflected back in plain language** ("sounds like a small single-purpose tool — that match?"), never asked as a cold self-classification.
+- **Explicitly rejected openers:** "full or lite?" (jargon; the current triage-unclarity complaint), "how experienced are you?" (backwards — calibrate by reading the answer), bare "what are your requirements?" (violates straw-man-first).
+
+### D2 — The opener is the ONLY fixed question; everything after is engine-guided (work-owner decision)
+
+- **Category:** Architecture / Elicitation
+- **Impact:** High
+- **State:** Answered (owner-ratified 2026-06-27)
+- **Applies to:** feature-002 (analyst conversation engine) — primary; also feature-004 (triage) + feature-003 (seed authoring).
+- **Decision:** The D1 "what + why" opener is the **single fixed question** in the interview. Every subsequent turn is **NOT scripted** — it is chosen adaptively by the engine. The rest of the skill's design is **guidance for next-move selection**, not a predetermined question list. feature-002 must be built as an **adaptive elicitation engine, NOT an intake form / fixed questionnaire**.
+- **Next-move selection inputs (what drives each turn after the opener):** (1) **seed-gap** — what is still missing from the minimal-but-sufficient seed (findings.md Rec A); (2) the **move playbook** — pick from term-capture / boundary-elicitation / event-first / bounded-why / concrete-example / capture-and-defer (findings.md §5 Rec B), not a fixed order; (3) **calibration state** read from prior answers (RQ-B2); (4) the **NFR-7 invariant** applied to whatever question it emits.
+- **Stopping rule:** the engine halts at **minimal-but-sufficient** (NFR-4 / RQ-A5 — "aid-specify runs with zero KB-gap loopbacks"), NOT at the end of a list. This is the discipline grill-me lacks (findings.md §3).
+- **Why it matters:** preserves the "seasoned analyst, not transcriber" intent and keeps the existing aid-interview "adaptive one-question-at-a-time" spine; a fixed multi-question form would regress to exactly the rigid intake the work is trying to replace.
+
+### D3 — feature-006 reshaped: SPLIT the interview into two skills (work-owner decision)
+
+- **Category:** Architecture / Skill topology
+- **Impact:** High
+- **State:** Answered (owner-ratified 2026-06-27)
+- **Applies to:** feature-006 (was "rename aid-interview -> aid-define"; now a SPLIT) + REQUIREMENTS §5 FR-6. Re-opens FR-6.
+- **Decision:** Split `aid-interview` into **two user-facing skills at the approval gate** (owner-chosen names `aid-describe` -> `aid-define`):
+  - **`aid-describe`** = TRIAGE + interview (CONTINUE) + COMPLETION -> approved `REQUIREMENTS.md`; **the entire LITE path stays here** (lite is full-path-independent).
+  - **`aid-define`** = FEATURE-DECOMPOSITION + CROSS-REFERENCE (approved REQUIREMENTS -> graded feature folders); feeds `aid-specify`.
+- **Naming rule (informal -> formal progression):** the user **describes** the need in their own words (`aid-describe` — ties directly to the [[D1]] opener "describe the pieces the way you'd naturally name them"; the conversational, intent-gathering half), then that loose description is given **definite shape** as the concrete feature set (`aid-define` — decomposition + cross-reference). Rejected `aid-start` (names a position in the flow, not an outcome — repeats the flaw the rename was meant to fix).
+- **Consequences feature-006 MUST absorb at specify time:** (1) skill count is **+1, NOT rename-neutral** — the count surfaces must INCREMENT (contrast the prior rename spec which held the count fixed); (2) two skill dirs, split `references/` between them, two install-manifest entries, two docs-site entries; (3) the pipeline "Interview" phase now maps to TWO skills (aid-describe -> aid-define -> aid-specify); (4) the `aid-interviewer` substring-collision guard still applies; (5) the split must reconcile with the FINAL file set after content features 002/003/004 (which edit the interview skill in place) — so feature-006 stays sequenced AFTER them.
+- **Status:** spec-only now (feature-006 is deferred behind content features). Logged here for adoption when feature-006 leaves Spike-Needed; REQUIREMENTS FR-6 + the feature-006 SPEC get rewritten to this shape at that point (the current A+-gated rename SPEC is superseded by this decision).
+- **Builds on:** [[D1]] + [[D2]] (the elicitation engine lives wholly in aid-define).
 
 ## Calibration Log
 

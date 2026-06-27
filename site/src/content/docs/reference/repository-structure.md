@@ -23,11 +23,12 @@ aid-methodology/
 |   |-- npm/                    <- npm: aid-installer (Node wrapper that puts aid on PATH)
 |   `-- pypi/                   <- PyPI: aid-installer (Python wrapper that puts aid on PATH)
 |-- canonical/                  <- single source of truth (never edit profiles/ directly)
-|   |-- skills/                 <- 12 skill definitions
+|   |-- skills/                 <- 13 skill definitions
 |   |-- agents/                 <- 9 agent definitions
-|   |-- templates/              <- KB templates and document templates
-|   |-- recipes/                <- 51 lite-path recipes (add-/change-/fix- families)
-|   `-- scripts/                <- helper scripts by phase
+|   `-- aid/                    <- AID toolkit root
+|       |-- templates/          <- KB templates and document templates
+|       |-- recipes/            <- 52 lite-path recipes (add-/change-/fix- families)
+|       `-- scripts/            <- helper scripts by phase
 |-- profiles/                   <- rendered install trees (generated -- do not edit)
 |   |-- claude-code/
 |   |-- codex/
@@ -74,11 +75,11 @@ aid-methodology/
 
 All skill, agent, template, and recipe content lives here. The generator (`run_generator.py`) renders `canonical/` into the five `profiles/` install trees. **Never edit `profiles/` directly** — your changes will be overwritten on the next generator run.
 
-- `canonical/skills/` — 12 skill definitions, one directory per skill
+- `canonical/skills/` — 13 skill definitions, one directory per skill
 - `canonical/agents/` — 9 agent definitions
-- `canonical/templates/` — KB document templates, grading rubric, and task templates
-- `canonical/recipes/` — 51 pre-filled lite-path recipe files
-- `canonical/scripts/` — helper scripts invoked by skills at runtime (interview, summarize, release, kb-hygiene)
+- `canonical/aid/templates/` — KB document templates, grading rubric, and task templates
+- `canonical/aid/recipes/` — 52 pre-filled lite-path recipe files
+- `canonical/aid/scripts/` — helper scripts invoked by skills at runtime (interview, summarize, release, kb-hygiene)
 
 ### `profiles/` — generated install trees
 
@@ -117,8 +118,8 @@ Three tutorial-style worked examples — greenfield full-path, brownfield full-p
 | Want to change... | Edit here |
 |---|---|
 | A skill or agent | `canonical/skills/` or `canonical/agents/` — then run the generator |
-| A KB template | `canonical/templates/knowledge-base/` |
-| A recipe | `canonical/recipes/` |
+| A KB template | `canonical/aid/templates/knowledge-base/` |
+| A recipe | `canonical/aid/recipes/` |
 | The `aid` CLI or install logic | `bin/`, `lib/`, `install.sh`, `install.ps1` |
 | User-facing documentation | `docs/` |
 | An example | `examples/` |

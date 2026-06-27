@@ -73,19 +73,21 @@ in parallel; the synthesis assembles findings.md from both.
 | task-006 | — |
 | task-007 | task-006 |
 | task-008 | — |
+| task-009 | — |
 
 | Can Be Done In Parallel |
 |------------------------|
-| task-004, task-005, task-006, task-008 |
+| task-004, task-005, task-006, task-008, task-009 |
 
 ```wave-map
 delivery: 002
-wave 1: task-004, task-005, task-006, task-008
+wave 1: task-004, task-005, task-006, task-008, task-009
 wave 2: task-007
 ```
 
 task-004 = install-manifests-lockstep suite (TEST, H1) · task-005 = refresh repository-structure.md
 (DOCUMENT, M3) · task-006 = multi-viewport check in validate-visuals.mjs (IMPLEMENT, M4) ·
 task-007 = verify T4 catches a clip + wire suite (TEST, M4; depends on task-006) ·
-task-008 = record M1 publish-enablement deferral (DOCUMENT, M1). Four items are mutually
-independent (wave 1); only the M4 TEST waits on the M4 IMPLEMENT.
+task-008 = record M1 publish-enablement deferral (DOCUMENT, M1) ·
+task-009 = grant aid-researcher web tools (CONFIGURE, R1; added 2026-06-27, owner direction).
+Five items are mutually independent (wave 1); only the M4 TEST waits on the M4 IMPLEMENT.

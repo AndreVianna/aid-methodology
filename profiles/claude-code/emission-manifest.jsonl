@@ -5,7 +5,7 @@
 {"dst": ".claude/agents/aid-interviewer.md", "profile": "claude-code", "sha256": "47283f6895202a7df5b97ffc9186c4d5b3e77c1f785cb63bac4caa0a591375c9", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-operator.md", "profile": "claude-code", "sha256": "0f92fbe2592d8e8f053fd69fb579f2093bce24b5b30dc3522dcee6c51f0f7b27", "src": "canonical/agents/aid-operator/AGENT.md"}
 {"dst": ".claude/agents/aid-orchestrator.md", "profile": "claude-code", "sha256": "baf46ebda5fe331afe74c5d9910129ae746e7855cb9305d606e539670d9506ec", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "1c5f25abe533b96b9a25cbd20801c850a56e34cdde06cccde5f4808b8c61b7ae", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".claude/agents/aid-researcher.md", "profile": "claude-code", "sha256": "36a43dbb695f2297bcf2ffca70ed5e84eed15db02e0764020c043cdecba96125", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".claude/agents/aid-reviewer.md", "profile": "claude-code", "sha256": "e6f6c708175c33d39c082ea6533a180cdc8525be6ca1f24acab1ed3bd6ddc936", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".claude/agents/aid-tech-writer.md", "profile": "claude-code", "sha256": "3c581496888400811be434ca8eaec33aad90b2814012ce8c8f29a0f64f6ceee4", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".claude/aid/recipes/README.md", "profile": "claude-code", "sha256": "26f405758c7e95097cbf858d9400ba28184f61ec0ce5f825e4dfefc6436e0870", "src": "canonical/recipes/README.md"}
@@ -100,7 +100,7 @@
 {"dst": ".claude/aid/scripts/summarize/stale-check.sh", "profile": "claude-code", "sha256": "354a6504ce4e41f96c02e0a9dba6165a9e82e6e4527c49ee841f86a96129a5e5", "src": "canonical/scripts/summarize/stale-check.sh"}
 {"dst": ".claude/aid/scripts/summarize/summarize-preflight.sh", "profile": "claude-code", "sha256": "989e2d7831793bd4d5cdb72bc09c64ed1eadafd2b5a32d3842523176eef829fb", "src": "canonical/scripts/summarize/summarize-preflight.sh"}
 {"dst": ".claude/aid/scripts/summarize/validate-html-output.sh", "profile": "claude-code", "sha256": "6c1c86fac93ac3314b90ce2d2367dc6f1bf65464ad3e7c3d917af41b8c80ede6", "src": "canonical/scripts/summarize/validate-html-output.sh"}
-{"dst": ".claude/aid/scripts/summarize/validate-visuals.mjs", "profile": "claude-code", "sha256": "ddb25ea17b2393e1d35f2366ac868941d2c98fab658ea079e3848900395c2786", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
+{"dst": ".claude/aid/scripts/summarize/validate-visuals.mjs", "profile": "claude-code", "sha256": "59c36de6942f1ef2afb4c0d60b3211284b11b308da14122df3bdc9658b348c54", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".claude/aid/scripts/summarize/writeback-state.sh", "profile": "claude-code", "sha256": "ac36f33a0a8bb791f625d528a9a31b683787be98b761d05f59a14ee71b5a281a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".claude/aid/templates/README.md", "profile": "claude-code", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".claude/aid/templates/agent-boilerplate.md", "profile": "claude-code", "sha256": "0075499d72c4710b375198b762ac2f0979f2ed935d289d62d91036db53d6c769", "src": "canonical/templates/agent-boilerplate.md"}

@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** A+ (delivery-002 gate, TOTAL 0)
+- **Elapsed:** ~11:45
+- **Notes:** T4 added to canonical validate-visuals.mjs (OVERFLOW_VIEWPORTS=[732,390], container-relative scrollWidth>clientWidth+EPS, all plug-in points). FULL run_generator.py regen → 5 profiles + .claude mirror; dogfood byte-identity 559/559; ASCII 29/29; T1/T2/T3 22-suite pass. Awaiting delivery gate.
 
 ---
 

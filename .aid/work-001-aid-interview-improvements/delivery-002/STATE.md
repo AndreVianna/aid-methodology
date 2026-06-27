@@ -40,8 +40,8 @@ so the delivery lifecycle MUST be independently authored.
 <!-- AUTHORED -- single writer: this delivery's branch only. Written by aid-plan, aid-specify,
      aid-execute across the delivery pipeline. Never derived from task rollup (SD-9). -->
 
-- **State:** Pending-Spec
-- **Updated:** 2026-06-27T12:00:00Z
+- **State:** Done
+- **Updated:** 2026-06-27T16:30:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -56,10 +56,10 @@ so the delivery lifecycle MUST be independently authored.
      Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`;
      see `.claude/aid/templates/delivery-issues.md` for the template. -->
 
-- **Reviewer Tier:** Small | Medium | Large
-- **Grade:** Pending
-- **Issue List:** --
-- **Timestamp:** --
+- **Reviewer Tier:** Large
+- **Grade:** A+
+- **Issue List:** none (TOTAL 0 across all 6 tasks). H1/M3/M4/M1 closure met (M4 T4 Playwright-render-proven); R1 (task-009) aid-researcher web tools scoped + propagated (DBI 559, idempotent regen); tasks 004-008 held on re-gate.
+- **Timestamp:** 2026-06-27T16:30:00Z
 
 ---
 
@@ -71,7 +71,24 @@ so the delivery lifecycle MUST be independently authored.
      The work-level ## Cross-phase Q&A is a DERIVED union of all delivery Q&A sections plus any
      work-owner-authored work-level entries. KB Q&A targets .aid/knowledge/STATE.md (separate file). -->
 
-_None yet._
+**Q1 -- M1 publish-enablement: defer or close now?**
+
+- **Category:** Release/Infra
+- **Impact:** Low
+- **State:** Answered
+- **Decision (2026-06-27):** Deferred with rationale.
+- **Rationale:** `.github/workflows/release.yml` is already OIDC-ready -- no code change is
+  needed. The `npm-publish` job is gated `if: vars.NPM_ENABLED == 'true'` (L217) and
+  `pypi-publish` is gated `if: vars.PYPI_ENABLED == 'true'` (L284). Closure requires external
+  account setup (npm `@aid` scope, PyPI org/Trusted-Publisher, and repo variable flip) that
+  only the owner can perform; an agent cannot execute those steps. Per AC-9, this explicit
+  deferral-with-rationale satisfies the criterion for this feature item.
+- **Owner steps to close:**
+  1. **npm:** Create and own the `@aid` npm scope; set repo variable `NPM_ENABLED=true`.
+  2. **PyPI:** Create the CasuloAI Labs PyPI org, reserve `aid-installer`, configure a Trusted
+     Publisher pointing at `AndreVianna/aid-methodology` + `release.yml`; set `PYPI_ENABLED=true`.
+  3. Verify by cutting a release tag and confirming both publish jobs run (not skipped) and
+     succeed; confirm via `npm view aid-installer@<v> version` and pip install.
 
 ---
 

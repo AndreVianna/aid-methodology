@@ -22,10 +22,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      SD-2 ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
-- **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **State:** Done
+- **Review:** A+ (delivery-002 gate, TOTAL 0)
+- **Elapsed:** ~03:45
+- **Notes:** M1 deferred-with-rationale: tech-debt.md M1 row + detailed section + changelog rev 1.3; delivery-002 Q&A Q1. release.yml gates verified (L217 NPM_ENABLED, L284 PYPI_ENABLED). No code/CI/publish change. Awaiting delivery gate.
 
 ---
 
