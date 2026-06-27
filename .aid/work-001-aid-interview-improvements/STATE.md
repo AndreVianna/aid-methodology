@@ -64,9 +64,9 @@ different places.
 > Active Skill enum: aid-{skill} | none
 
 - **Lifecycle:** Running
-- **Phase:** Plan
+- **Phase:** Detail
 - **Active Skill:** none
-- **Updated:** 2026-06-27T12:30:00Z
+- **Updated:** 2026-06-27T13:45:00Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -146,6 +146,7 @@ different places.
 |------|------------------------|-------|-------|
 | 2026-06-27 | Work created | -- | Initial scaffold by aid-interview (FIRST-RUN) |
 | 2026-06-27 | Plan complete (3 specified features) | A+ | delivery-001 (spike/feature-001) + delivery-002 (debt/feature-007); feature-006 deferred (hard-gated after 002/003/004). A+ gate: 2 MEDIUM (priority + M1 misframe) fixed → TOTAL 0. |
+| 2026-06-27 | Detail complete (8 tasks, 2 deliveries) | A+ | d001: task-001/002 (parallel surveys) → task-003 synthesis. d002: task-004 H1[TEST], task-005 M3[DOCUMENT], task-006 M4[IMPLEMENT] → task-007 M4[TEST], task-008 M1[DOCUMENT]. Exec graphs + wave-maps in PLAN.md. A+ gate: 7 findings (2 HIGH incl. wrong M3 path + dropped tech-debt row; 2 MEDIUM M4 widths/caveat; 3 lower) fixed → TOTAL 0. |
 
 ---
 
