@@ -67,10 +67,12 @@ different places.
 - **Phase:** Execute
 - **Active Skill:** aid-execute
 - **Updated:** 2026-06-27T04:29:56Z
+- **Pause Reason:** --
+- **Block Reason:** --
+- **Block Artifact:** --
 
 ---
 
-- **Pause Reason:** --
 ## Triage
 
 <!-- AUTHORED -- populated by `aid-interview` TRIAGE state for lite-path works.
