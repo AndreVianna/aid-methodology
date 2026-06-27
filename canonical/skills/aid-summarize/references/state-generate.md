@@ -270,11 +270,17 @@ bash canonical/aid/scripts/summarize/build-md-export.sh \
 
 | Property | Value |
 |----------|-------|
-| **Element** | `<script type="text/markdown" id="kb-md-export">` |
-| **Content** | Combined KB source docs, frontmatter stripped, SVG images embedded as `data:image/svg+xml;base64,...` URIs (single portable `.md`; degrades to alt text in viewers that ignore data URIs) |
-| **Access** | `document.getElementById('kb-md-export').textContent` |
+| **Element** | `<script type="text/markdown" id="kb-md-export" data-encoding="base64">` |
+| **Content** | Combined KB source docs, frontmatter stripped, local images embedded as `data:` URIs (`image/svg+xml` for `.svg`; `image/png`, `image/jpeg`, `image/gif`, `image/webp` for raster). The entire payload is **base64-encoded** (UTF-8 bytes → base64 ASCII). The element body is pure base64 alphabet — no escaping needed, lossless round-trip. Remote `http(s)://` image refs are left untouched. |
+| **Access** | `const b64 = document.getElementById('kb-md-export').textContent;` (returns the base64 string exactly — no leading/trailing whitespace or newlines) |
+| **Decode (UTF-8)** | `new TextDecoder().decode(Uint8Array.from(atob(b64), c => c.charCodeAt(0)))` — or equivalently `decodeURIComponent(escape(atob(b64)))` — to recover the original Markdown text including any non-ASCII characters |
 | **Filename hint** | `'knowledge-base-export.md'` |
 | **Location in `kb.html`** | Injected between `skeleton-foot.html` and `post-script.html` by `assemble.sh` when `md-export-payload.html` is present in the source layout dir |
+
+> **PS-mirror note:** The payload injection lives in `assemble.sh` (the bash-only kb.html
+> assembler). `assemble-3part.ps1` is a separate byte-concatenation utility that joins
+> pre-assembled Part1 + Part2 files; it is not part of the documented GENERATE flow and
+> does not require a parallel update for this payload.
 
 Run `build-md-export.sh` **before** `assemble.sh`. The assembler picks up the payload
 automatically; if the file is absent it is silently skipped (no error), preserving

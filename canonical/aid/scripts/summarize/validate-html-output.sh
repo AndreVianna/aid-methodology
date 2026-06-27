@@ -290,8 +290,15 @@ TOTAL=$((TOTAL + 1))
 # (the Markdown export embed introduced by task-001) that legitimately exceed 100 KB
 # and mention "mermaid" in KB text without being an engine. A real Mermaid engine
 # always appears in an executable (non-typed or type="text/javascript") <script>.
+#
+# Awk scoping: the open-tag rule fires only when NOT already inside a script block
+# (!in_script guard). This prevents inner content lines that happen to match
+# <script[^>]*> from resetting is_md_payload, which would cause a false-trip on a
+# payload whose decoded body contains a literal <script> example line (defense in
+# depth -- with base64 encoding the body can never contain '<', but the guard makes
+# the check correct regardless of encoding).
 INLINE_MERMAID=$(awk '
-    /<script[^>]*>/ {
+    !in_script && /<script[^>]*>/ {
         tag = $0
         in_script = 1
         buf = ""
@@ -299,7 +306,7 @@ INLINE_MERMAID=$(awk '
                          tolower(tag) ~ /type='"'"'text\/markdown'"'"'/)
     }
     in_script { buf = buf $0 "\n" }
-    /<\/script>/ {
+    in_script && /<\/script>/ {
         in_script = 0
         if (!is_md_payload && length(buf) > 100000 && tolower(buf) ~ /mermaid/) {
             print "found"
