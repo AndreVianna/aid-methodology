@@ -64,9 +64,9 @@ different places.
 > Active Skill enum: aid-{skill} | none
 
 - **Lifecycle:** Running
-- **Phase:** Execute
+- **Phase:** Specify
 - **Active Skill:** none
-- **Updated:** 2026-06-27T16:40:00Z
+- **Updated:** 2026-06-27T18:00:00Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -149,6 +149,7 @@ different places.
 | 2026-06-27 | Detail complete (8 tasks, 2 deliveries) | A+ | d001: task-001/002 (parallel surveys) → task-003 synthesis. d002: task-004 H1[TEST], task-005 M3[DOCUMENT], task-006 M4[IMPLEMENT] → task-007 M4[TEST], task-008 M1[DOCUMENT]. Exec graphs + wave-maps in PLAN.md. A+ gate: 7 findings (2 HIGH incl. wrong M3 path + dropped tech-debt row; 2 MEDIUM M4 widths/caveat; 3 lower) fixed → TOTAL 0. |
 | 2026-06-27 | Execute delivery-001 (spike) done + A+ delivery gate | A+ | task-001/002 (web-capable executors, parallel) → task-003 synthesis. findings.md (551 lines, 8 families surveyed + grill-me MIT comparative, all 9 RQs justified+actionable, Rec A seed-set + Rec B conversation design downstream-consumable, A-2 `forward-authored` gap + D-5 note). Gate TOTAL 0; faithfulness verified vs disk. Fixed feature-001 D-1 wording (forward-authored not-yet-on-master). |
 | 2026-06-27 | Execute delivery-002 (infra debt) done + A+ delivery gate (×2) | A+ | 6 tasks: H1 lockstep test (task-004), M3 repo-structure refresh (task-005), M4 T4 multi-viewport IMPLEMENT+TEST (task-006/007, Playwright-render-proven), M1 deferral (task-008), R1 aid-researcher web tools (task-009, added mid-execute per owner). Full canonical suite 83/83 green (HOME-pinned). Owner design decisions D1/D2/D3 captured (first-question + engine-not-form + aid-describe/aid-define split). |
+| 2026-06-27 | Specify spike-dependent features 002-005 | A+ (each) | From findings.md + D1/D2/D3: feature-003 seed model (forward-authored marker, greenfield-mode gate, layered coherence) → feature-002 engine (1 fixed opener + 5-step adaptive selector, calibration, NFR-7 envelope) → feature-004 guided-triage (consumes engine, resolves the 002/004 opener seam) → feature-005 conformance (extract-and-diff, KB-DELTA carve). Each A+ (TOTAL 0) after 1-2 gate cycles. feature-006 rename spec SUPERSEDED by D3 (re-spec to split, deferred after content). |
 
 ---
 
@@ -181,11 +182,11 @@ different places.
 | # | Feature | Spec State | Spec Grade | Q&A Count | Notes |
 |---|---------|------------|------------|-----------|-------|
 | 1 | feature-001-elicitation-research-spike | Ready | A+ | 0 | Spike plan specified; gates 002–005 |
-| 2 | feature-002-seasoned-analyst-engine | Spike Needed | — | 0 | Deferred until feature-001 executes |
-| 3 | feature-003-greenfield-seed-authoring | Spike Needed | — | 0 | Deferred until feature-001 executes |
-| 4 | feature-004-guided-triage | Spike Needed | — | 0 | Deferred until feature-001 executes |
-| 5 | feature-005-build-time-conformance | Spike Needed | — | 0 | Deferred until feature-001 executes |
-| 6 | feature-006-rename-aid-define | Ready | A+ | 0 | Spec authored + 4 gate cycles (D+→C+→C+→A+); dashboard scope made symmetric to .aid/ + prose count-bucket fix; all 9 ledger rows Fixed |
+| 2 | feature-002-seasoned-analyst-engine | Ready | A+ | 0 | Engine: 1 fixed opener + deterministic 5-step next-move selector (stop→gap→move→calibrate→envelope), calibration read+ask (AC-4/D1 reconciled), expert-advisor stance, NFR-7 envelope contract, 3-param consumption contract. 2 cycles (MINOR locator); 002/004 opener seam → feature-004. |
+| 3 | feature-003-greenfield-seed-authoring | Ready | A+ | 0 | Seed-content model (5 elements + forward-authored marker + schema/lint/index/freshness), greenfield-mode review gate, layered coherence check, sufficiency bar. 2 gate cycles (C→A+); forks resolved (flag-not-fork, TBD-versions, layered coherence, fold-to-current freshness). |
+| 4 | feature-004-guided-triage | In Discussion | — | 0 | Spike DONE; specifying from Rec B RQ-B3 + the f002 engine; owns the 002/004 opener seam |
+| 5 | feature-005-build-time-conformance | Ready | A+ | 0 | NEW code→design conformance check: extract-and-diff (output_root-parameterized shadow extraction + concern-keyed diff at seed altitude + classifier), aid-housekeep KB-DELTA conformance lane carving forward-authored docs OUT of the doc←code lane (NFR-5), human-gated. 2 cycles (HIGH shadow-extract redirect made concrete-by-construction). |
+| 6 | feature-006-rename-aid-define | Needs Re-spec (D3) | A+ (superseded) | 0 | The A+ RENAME spec is SUPERSEDED by decision D3 (split aid-interview → aid-describe + aid-define, not just rename; skill count +1). Re-spec to the D3 split when picked up; still sequenced AFTER content features 002/003/004. |
 | 7 | feature-007-infra-debt-paydown | Ready | A+ | 0 | H1/M3/M4/M1 sub-specs; 3 gate cycles (prose→ASCII-tree) → A+ |
 
 ## Plan / Deliveries
@@ -261,7 +262,7 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 - **Naming rule (informal -> formal progression):** the user **describes** the need in their own words (`aid-describe` — ties directly to the [[D1]] opener "describe the pieces the way you'd naturally name them"; the conversational, intent-gathering half), then that loose description is given **definite shape** as the concrete feature set (`aid-define` — decomposition + cross-reference). Rejected `aid-start` (names a position in the flow, not an outcome — repeats the flaw the rename was meant to fix).
 - **Consequences feature-006 MUST absorb at specify time:** (1) skill count is **+1, NOT rename-neutral** — the count surfaces must INCREMENT (contrast the prior rename spec which held the count fixed); (2) two skill dirs, split `references/` between them, two install-manifest entries, two docs-site entries; (3) the pipeline "Interview" phase now maps to TWO skills (aid-describe -> aid-define -> aid-specify); (4) the `aid-interviewer` substring-collision guard still applies; (5) the split must reconcile with the FINAL file set after content features 002/003/004 (which edit the interview skill in place) — so feature-006 stays sequenced AFTER them.
 - **Status:** spec-only now (feature-006 is deferred behind content features). Logged here for adoption when feature-006 leaves Spike-Needed; REQUIREMENTS FR-6 + the feature-006 SPEC get rewritten to this shape at that point (the current A+-gated rename SPEC is superseded by this decision).
-- **Builds on:** [[D1]] + [[D2]] (the elicitation engine lives wholly in aid-define).
+- **Builds on:** [[D1]] + [[D2]] (the elicitation engine lives wholly in **aid-describe** — the interview/CONTINUE half — consistent with the split definition above; aid-define is only decomposition + cross-reference).
 
 ## Calibration Log
 
