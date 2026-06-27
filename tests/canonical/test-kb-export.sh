@@ -165,11 +165,22 @@ else
     VH_RC=$?
     if [[ "$VH_RC" -eq 0 ]]; then
         pass "KB06 validate-html-output.sh passes on committed kb.html"
-        # Also assert the 21/21 count explicitly
-        if echo "$VH_OUT" | grep -qF "21/21"; then
-            pass "KB06b validate-html-output.sh reports 21/21 checks passed"
+        # Assert the success verdict reports N/N checks with N==N (robust to count changes).
+        # Searching for the ASCII portion of the verdict line; the unicode checkmark prefix
+        # is ignored by the substring match.
+        _VH_VERDICT=$(echo "$VH_OUT" | grep -oE "HTML output validation passed: [0-9]+/[0-9]+ checks" | head -1)
+        if [[ -n "$_VH_VERDICT" ]]; then
+            _VH_NUMS=$(echo "$_VH_VERDICT" | grep -oE "[0-9]+/[0-9]+" | head -1)
+            _VH_P=${_VH_NUMS%/*}
+            _VH_T=${_VH_NUMS#*/}
+            if [[ "$_VH_P" -eq "$_VH_T" && "$_VH_P" -gt 0 ]]; then
+                pass "KB06b validate-html-output.sh all-checks-passed verdict (${_VH_P}/${_VH_T})"
+            else
+                fail "KB06b validate-html-output.sh all-checks-passed verdict -- N/N mismatch: '${_VH_NUMS}'"
+                [[ "$VERBOSE" -eq 1 ]] && echo "$VH_OUT"
+            fi
         else
-            fail "KB06b validate-html-output.sh reports 21/21 checks passed -- count not found in output"
+            fail "KB06b validate-html-output.sh all-checks-passed verdict -- success summary line not found in output"
             [[ "$VERBOSE" -eq 1 ]] && echo "$VH_OUT"
         fi
     else
@@ -362,10 +373,113 @@ PYEOF
         fi
     else
         fail "KB20 base64 payload decodes to valid UTF-8 Markdown -- decode failed (exit $DECODE_RC)"
-        pass "KB21 decoded Markdown has headings (decode failed -- SKIP)"
-        pass "KB22 decoded Markdown has tables (decode failed -- SKIP)"
-        pass "KB23 decoded Markdown has lists (decode failed -- SKIP)"
-        pass "KB24 all image references use data: URIs (decode failed -- SKIP)"
+        echo "  SKIP: KB21 decoded Markdown has headings (decode failed -- cannot verify)"
+        echo "  SKIP: KB22 decoded Markdown has tables (decode failed -- cannot verify)"
+        echo "  SKIP: KB23 decoded Markdown has lists (decode failed -- cannot verify)"
+        echo "  SKIP: KB24 all image references use data: URIs (decode failed -- cannot verify)"
+    fi
+fi
+
+# ===========================================================================
+# === KB25: positive data-URI conversion + alt text (fixture-based) =========
+# ===========================================================================
+# The real KB has zero images, so KB24's absence-of-non-data-refs check passes
+# trivially. KB25 exercises the actual conversion path using a tiny fixture KB
+# that references both a local SVG and a local raster PNG. It asserts that
+# build-md-export.sh converts each ref to a data: URI and preserves alt text.
+# This is a POSITIVE assertion -- it would fail if the conversion were skipped
+# or alt text were dropped.
+
+echo ""
+echo "=== KB25: positive data-URI image conversion + alt text (fixture-based) ==="
+if ! command -v python3 >/dev/null 2>&1; then
+    echo "  SKIP: python3 not found -- KB25 fixture test requires python3"
+    pass "KB25 positive data-URI conversion (python3 absent -- SKIP)"
+else
+    # Build fixture: a minimal KB dir with one Markdown doc referencing both
+    # a local SVG and a local raster PNG, plus the actual image files.
+    FIXTURE_KB="${TMP}/fixture-kb"
+    mkdir -p "$FIXTURE_KB"
+
+    # Minimal 1x1 SVG (tiny but valid)
+    printf '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>\n' \
+        > "${FIXTURE_KB}/diagram.svg"
+
+    # Minimal 1x1 PNG via known-good base64 literal (decoded to binary)
+    python3 -c "
+import base64, sys
+data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg=='
+sys.stdout.buffer.write(base64.b64decode(data))
+" > "${FIXTURE_KB}/photo.png"
+
+    # Markdown doc with one SVG and one PNG image reference (with distinct alt texts)
+    printf '# Image Fixture\n\nSection with two images.\n\n![A sample diagram](diagram.svg)\n\nSome text.\n\n![A sample photo](photo.png)\n' \
+        > "${FIXTURE_KB}/image-fixture.md"
+
+    # Minimal manifest pointing to the fixture doc
+    FIXTURE_MANIFEST="${TMP}/fixture-manifest.txt"
+    printf '01-image-fixture.html\n' > "$FIXTURE_MANIFEST"
+
+    # Run build-md-export.sh against the fixture KB
+    FIXTURE_PAYLOAD="${TMP}/fixture-payload.html"
+    FX_BUILD_OUT=$(bash "$BUILD_MD_EXPORT_SH" \
+        --kb-dir "$FIXTURE_KB" \
+        --manifest "$FIXTURE_MANIFEST" \
+        --output "$FIXTURE_PAYLOAD" 2>&1)
+    FX_BUILD_RC=$?
+    if [[ "$FX_BUILD_RC" -eq 0 && -f "$FIXTURE_PAYLOAD" ]]; then
+        pass "KB25a build-md-export.sh succeeds on image-containing fixture"
+    else
+        fail "KB25a build-md-export.sh succeeds on image-containing fixture -- exit $FX_BUILD_RC"
+        echo "$FX_BUILD_OUT" | head -3
+    fi
+
+    # Decode the base64 payload from the fixture output
+    FIXTURE_DECODED="${TMP}/fixture-decoded.md"
+python3 - "$FIXTURE_PAYLOAD" "$FIXTURE_DECODED" <<'PYEOF25' 2>&1
+import sys, re, base64
+html_path, out_path = sys.argv[1], sys.argv[2]
+with open(html_path, 'r', encoding='utf-8') as f:
+    html = f.read()
+m = re.search(r'<script[^>]+id="kb-md-export"[^>]+>([A-Za-z0-9+/=]+)</script>', html)
+if not m:
+    print("ERROR: fixture #kb-md-export payload not found")
+    sys.exit(1)
+decoded = base64.b64decode(m.group(1).strip()).decode('utf-8')
+with open(out_path, 'w', encoding='utf-8') as f:
+    f.write(decoded)
+print("OK: fixture decoded " + str(len(decoded)) + " chars")
+PYEOF25
+    FX_DEC_RC=$?
+
+    if [[ "$FX_DEC_RC" -eq 0 && -f "$FIXTURE_DECODED" ]]; then
+        pass "KB25b fixture payload decodes to valid UTF-8"
+
+        # (a) SVG ref must become data:image/svg+xml;base64,... with alt text preserved.
+        # grep -F treats all characters as literal (brackets, parens, exclamation mark).
+        if grep -qF '![A sample diagram](data:image/svg+xml;base64,' "$FIXTURE_DECODED"; then
+            pass "KB25c SVG ref converted to data:image/svg+xml;base64,... URI with alt text preserved"
+        else
+            fail "KB25c SVG ref converted to data:image/svg+xml;base64,... URI with alt text preserved -- not found"
+        fi
+
+        # (b) PNG ref must become data:image/png;base64,... with alt text preserved.
+        if grep -qF '![A sample photo](data:image/png;base64,' "$FIXTURE_DECODED"; then
+            pass "KB25d PNG ref converted to data:image/png;base64,... URI with alt text preserved"
+        else
+            fail "KB25d PNG ref converted to data:image/png;base64,... URI with alt text preserved -- not found"
+        fi
+
+        # (d) No remaining non-data-URI image refs anywhere in the decoded fixture output.
+        NON_DATA_FX=$(grep -oE '!\[[^]]*\]\([^)]+\)' "$FIXTURE_DECODED" 2>/dev/null \
+            | grep -v '(data:' || true)
+        if [[ -z "$NON_DATA_FX" ]]; then
+            pass "KB25e no remaining non-data-URI image refs in fixture decoded output"
+        else
+            fail "KB25e no remaining non-data-URI image refs in fixture decoded output -- found: $(echo "$NON_DATA_FX" | head -3)"
+        fi
+    else
+        fail "KB25b fixture payload decode failed (exit $FX_DEC_RC)"
     fi
 fi
 
