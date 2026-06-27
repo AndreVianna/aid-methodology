@@ -22,7 +22,7 @@
 		const icon = document.getElementById('theme-icon');
 		const label = document.getElementById('theme-label');
 		const btn = document.getElementById('theme-toggle');
-		if (icon) icon.textContent = theme === 'dark' ? '&#9728;' : '&#9680;';
+		if (icon) icon.textContent = theme === 'dark' ? '☀' : '◐';
 		if (label) label.textContent = theme === 'dark' ? 'Light' : 'Dark';
 		if (btn) btn.setAttribute('aria-label',
 			theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
@@ -153,7 +153,7 @@
 			if (!box.hasAttribute('aria-label')) {
 				const cap = box.querySelector('.caption');
 				box.setAttribute('aria-label',
-					(cap ? cap.textContent.trim() : 'Diagram') + ' -- click or press Enter to expand');
+					(cap ? cap.textContent.trim() : 'Diagram') + ' — click or press Enter to expand');
 			}
 			const open = function(e) {
 				if (e.target.closest('a, button')) return;
