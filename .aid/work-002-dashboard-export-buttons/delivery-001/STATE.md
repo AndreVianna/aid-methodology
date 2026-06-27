@@ -36,4 +36,4 @@ _None yet._
 |---|------|------|------|-------|--------|---------|-------|
 | 1 | task-001 | IMPLEMENT | 1 | Done | A+ | -- | base64 MD payload + NM.1 refine + full render (profiles+dogfood); run-all 82/82 |
 | 2 | task-002 | IMPLEMENT | 2 | Done | A+ | -- | export buttons + base64 MD download + PDF print-CSS; §7-gate scope-creep reverted; print dark→light specificity fixed; run-all 82/82 |
-| 3 | task-003 | TEST | 3 | Pending | Pending | -- | -- |
+| 3 | task-003 | TEST | 3 | Done | A+ | -- | durable test-kb-export.sh (83rd suite) + Playwright; mutation-verified; positive AC4 fixture; run-all 83/83 |

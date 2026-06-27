@@ -8,8 +8,8 @@
 
 ## Task State
 
-- **State:** In Progress
-- **Review:** Pending
+- **State:** Done
+- **Review:** A+
 - **Elapsed:** --
 - **Notes:** 83 suites total; test-install.sh known flake (passes 194/0 standalone, hangs HOME-pinned)
 
