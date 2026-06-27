@@ -235,8 +235,25 @@ fi
 # We run validate-visuals.mjs from the PW package dir so it resolves playwright.
 # ---------------------------------------------------------------------------
 
+# PLAYWRIGHT_BROWSERS_PATH -- Playwright stores its browser binaries under
+# $HOME/.cache/ms-playwright. When this suite is run with HOME overridden to
+# a temp dir (e.g. `export HOME=$(mktemp -d); bash tests/run-all.sh` for
+# canonical isolation), the browser binary is not found and launch fails.
+# Fix: resolve the REAL home directory via /etc/passwd (immune to $HOME
+# override) and set PLAYWRIGHT_BROWSERS_PATH so Playwright finds its binary
+# regardless of what $HOME is set to.
+_PW_BROWSERS_PATH_OVERRIDE=""
+_REAL_HOME=$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6 || true)
+if [[ -n "$_REAL_HOME" && -d "$_REAL_HOME/.cache/ms-playwright" ]]; then
+    _PW_BROWSERS_PATH_OVERRIDE="$_REAL_HOME/.cache/ms-playwright"
+fi
+
 run_from_pw_dir() {
-    OUT=$(cd "$PW_PACKAGE_DIR" && node "$SUT" "$@" 2>&1); RC=$?
+    if [[ -n "$_PW_BROWSERS_PATH_OVERRIDE" ]]; then
+        OUT=$(cd "$PW_PACKAGE_DIR" && PLAYWRIGHT_BROWSERS_PATH="$_PW_BROWSERS_PATH_OVERRIDE" node "$SUT" "$@" 2>&1); RC=$?
+    else
+        OUT=$(cd "$PW_PACKAGE_DIR" && node "$SUT" "$@" 2>&1); RC=$?
+    fi
 }
 
 # --- Fixture: Good visual (T1/T2/T3 all PASS) ---
