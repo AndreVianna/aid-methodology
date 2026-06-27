@@ -376,10 +376,8 @@ fi
 # Mirror of test-visual-fidelity.sh to ensure consistent detection.
 PW_AVAILABLE=0
 if command -v node >/dev/null 2>&1; then
-    if node --input-type=module <<'JSEOF' 2>/dev/null; then
-import { chromium } from '/home/andre.vianna/projects/AID/.claude/worktrees/aid+work-002-dashboard-export-buttons/canonical/aid/scripts/summarize/node_modules/playwright/index.mjs';
-process.exit(0);
-JSEOF
+    # Primary: ESM import from the known package dir (portable -- uses $PW_PACKAGE_DIR)
+    if node --input-type=module <<<"import { chromium } from 'file://${PW_PACKAGE_DIR}/node_modules/playwright/index.mjs'; process.exit(0);" 2>/dev/null; then
         PW_AVAILABLE=1
     fi
     if [[ "$PW_AVAILABLE" -eq 0 ]]; then
