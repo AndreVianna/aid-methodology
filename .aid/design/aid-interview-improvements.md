@@ -81,3 +81,33 @@ fuzzy boundary — is a work-time discussion.)
   work-001 builds; specifying earlier risks drift.
 - Relates to work-001's `REQUIREMENTS.md` **O7** (the forward-authored greenfield KB-seed, logged there
   as out-of-scope/future) and the `.aid/design/kb-skills-improvements.md` note.
+
+---
+
+## Side tasks — tech-debt paydown (fold in as small side tasks)
+
+NOT part of the three core threads — opportunistic debt paydown to schedule alongside this work.
+Carried over from `tech-debt.md` (the HIGH + MEDIUM items, reviewed at the work-001 merge, 2026-06-26).
+Each is small; create them as side tasks when this work is detailed. They are **debt, not features** —
+keep them separate so they don't dilute the three `aid-interview` threads.
+
+- **H1 [HIGH] — install file-list lockstep check.** The dashboard file set is listed in five places
+  (`install.sh`, `install.ps1`, `vendor.js`, `vendor.py`, `release.sh`); a forgotten update ships a
+  broken/incomplete dashboard on one channel with nothing to catch it. *Task:* add a CI/test check that
+  the five manifests agree on the dashboard file set. Effort: M. **The only HIGH — highest-leverage paydown.**
+- **M3 [MEDIUM] — refresh `docs/repository-structure.md`.** Stale skill/recipe counts + a wrong path.
+  *Task:* reconcile via `/aid-housekeep` (the count-drift precedent). Effort: S — **the easiest win.**
+- **M4 [MEDIUM] — multi-viewport visual gate (T4).** `validate-visuals.mjs` checks one wide viewport
+  (~1152px); a visual can pass yet clip at the dashboard column (~732px) or mobile (~390px) — this
+  happened once in feature-015 (hand-fixed). *Task:* add a "no horizontal overflow-clip at target widths"
+  check. Effort: S-M. **Naturally pairs with the dashboard export-buttons item
+  (`.aid/design/dashboard-export-buttons.md`)** — both touch the kb.html visual layer.
+- **M2 [MEDIUM] — heavy gates on PRs.** The full canonical suite + Astro build run on master/tag only;
+  feature branches skip them (partly mitigated — PRs to master DO run the canonical suite). *Task
+  (optional):* run the heavy gates on PRs to catch breakage before merge. Effort: S.
+- **M1 [MEDIUM] — npm/PyPI publish enablement.** *Not a code task* — the publish workflow is correct but
+  blocked on external npm/PyPI account + token setup (owner action). Schedule only when publishing the
+  next public version (ties to the deferred v1.1.0 deprecation). Effort: M (external).
+
+> Priority read: **H1 + M4** are the most valuable engineering paydowns; **M3** is a freebie; **M2** is
+> optional; **M1** is owner-gated (external). None were active bugs at the work-001 merge.
