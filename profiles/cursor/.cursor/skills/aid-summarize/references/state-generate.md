@@ -199,6 +199,21 @@ scaffolding `skeleton-head.html` for the first time. The outer page shell (top b
 panel, search, nav chrome) is kept consistent with `home.html` and the CLI `index.html`.
 Only the inner content area (the sections) is domain-specific.
 
+The skeleton already includes the full export chrome in the `.controls` block:
+- **"Export as Markdown"** button (`#btn-export-md`) — downloads the embedded KB payload
+  as `knowledge-base-export.md`; disabled gracefully when the payload element is absent.
+- **"Export as PDF"** button (`#btn-export-pdf`) — opens all `<details>` (including
+  `details.accord`) before calling `window.print()` so closed accordions are captured;
+  restores prior open states via the `afterprint` event.
+
+Both handlers are in `.cursor/aid/templates/knowledge-summary/lightbox.js` (inlined by
+`post-script.html`) and are wired into the existing `DOMContentLoaded` bootstrap via
+`initExportMarkdown()` and `initExportPDF()`. No additional wiring is required when
+scaffolding from the seed. Print CSS (`@media print`) in
+`.cursor/aid/templates/knowledge-summary/component-css.css` hides nav/controls/lightbox,
+forces light-theme rendering when the page is in dark mode, and inserts page breaks between
+top-level sections.
+
 Inject into the seed when scaffolding `skeleton-head.html`:
 - Hero with project name (read from `.aid/knowledge/STATE.md` or `pom.xml` / `package.json`).
 - Inlined CSS from `.cursor/aid/templates/knowledge-summary/component-css.css`.

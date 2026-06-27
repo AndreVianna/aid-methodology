@@ -591,6 +591,42 @@ footer {
 	body { background: white; color: black; }
 	a { color: black; text-decoration: underline; }
 	.diagram-box { break-inside: avoid; }
+
+	/* Force light theme: override the dark-mode CSS custom properties so
+	   cards, callouts, and backgrounds render light even when the page is
+	   in dark mode. The export buttons live inside .controls and are already
+	   hidden by the rule above; no separate rule needed for them. */
+	[data-theme="dark"] {
+		--bg: #F7F9FC;
+		--bg-elev: #FFFFFF;
+		--bg-sunken: #EEF2F7;
+		--text: #101828;
+		--text-muted: #4B5565;
+		--text-dim: #667085;
+		--border: #E3E8EF;
+		--border-strong: #CDD5DF;
+		--primary: #0B1F3A;
+		--primary-fg: #FFFFFF;
+		--accent: #007F7D;
+		--accent-fg: #FFFFFF;
+		--ok: #2E7D32;
+		--ok-bg: #E8F5E9;
+		--warn: #B45309;
+		--warn-bg: #FEF3C7;
+		--err: #B42318;
+		--err-bg: #FEE4E2;
+		--info: #1D4ED8;
+		--info-bg: #DBEAFE;
+		--purple: #6941C6;
+		--purple-bg: #F4EBFF;
+		--shadow-sm: 0 1px 3px rgba(16,24,40,0.06), 0 1px 2px rgba(16,24,40,0.04);
+		--shadow-md: 0 4px 8px -2px rgba(16,24,40,0.08), 0 2px 4px -2px rgba(16,24,40,0.04);
+		--shadow-lg: 0 12px 24px -4px rgba(16,24,40,0.12), 0 4px 8px -4px rgba(16,24,40,0.06);
+	}
+
+	/* Page break before each top-level section (inserts breaks between sections
+	   while leaving the first section unaffected). */
+	section.sec + section.sec { page-break-before: always; }
 }
 
 /* ---------- Accessibility additions ---------- */
@@ -1004,6 +1040,18 @@ details.accord > summary:focus-visible,
 		        title="Toggle light/dark theme">
 			<span id="theme-icon" aria-hidden="true">&#9680;</span>
 			<span id="theme-label">Dark</span>
+		</button>
+		<button type="button" class="btn-ghost" id="btn-export-md"
+		        aria-label="Export knowledge base as Markdown"
+		        title="Download knowledge base as Markdown (.md)">
+			<span aria-hidden="true">&#8595;</span>
+			Export as Markdown
+		</button>
+		<button type="button" class="btn-ghost" id="btn-export-pdf"
+		        aria-label="Export knowledge base as PDF"
+		        title="Print / save as PDF">
+			<span aria-hidden="true">&#128424;</span>
+			Export as PDF
 		</button>
 	</div>
 </header>

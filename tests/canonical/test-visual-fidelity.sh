@@ -235,9 +235,56 @@ fi
 # We run validate-visuals.mjs from the PW package dir so it resolves playwright.
 # ---------------------------------------------------------------------------
 
+# PLAYWRIGHT_BROWSERS_PATH -- Playwright stores its browser binaries under
+# $HOME/.cache/ms-playwright. When this suite is run with HOME overridden to
+# a temp dir (e.g. `export HOME=$(mktemp -d); bash tests/run-all.sh` for
+# canonical isolation), the browser binary is not found and launch fails.
+# Fix: resolve the REAL home directory via /etc/passwd (immune to $HOME
+# override) and set PLAYWRIGHT_BROWSERS_PATH so Playwright finds its binary
+# regardless of what $HOME is set to.
+_PW_BROWSERS_PATH_OVERRIDE=""
+_REAL_HOME=$(getent passwd "$(id -u)" 2>/dev/null | cut -d: -f6 || true)
+if [[ -n "$_REAL_HOME" && -d "$_REAL_HOME/.cache/ms-playwright" ]]; then
+    _PW_BROWSERS_PATH_OVERRIDE="$_REAL_HOME/.cache/ms-playwright"
+fi
+
 run_from_pw_dir() {
-    OUT=$(cd "$PW_PACKAGE_DIR" && node "$SUT" "$@" 2>&1); RC=$?
+    if [[ -n "$_PW_BROWSERS_PATH_OVERRIDE" ]]; then
+        OUT=$(cd "$PW_PACKAGE_DIR" && PLAYWRIGHT_BROWSERS_PATH="$_PW_BROWSERS_PATH_OVERRIDE" node "$SUT" "$@" 2>&1); RC=$?
+    else
+        OUT=$(cd "$PW_PACKAGE_DIR" && node "$SUT" "$@" 2>&1); RC=$?
+    fi
 }
+
+# --- Browser reachability check ---
+# Even with Playwright installed, the Chromium binary may be missing (e.g. if
+# `npx playwright install chromium` hasn't been run, or HOME override hides
+# the cache). Run a trivial visual against a no-visual page; if validate-visuals
+# emits "SKIP -- Playwright browser" it means the binary is unreachable --
+# degrade gracefully and skip VF30-VF50 (same semantics as PW_AVAILABLE=0).
+_PW_BROWSER_OK=1
+cat > "$TMP/vf-browser-check.html" <<'HTMLEOF'
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>T</title></head>
+<body><p>no visuals</p></body></html>
+HTMLEOF
+run_from_pw_dir "$TMP/vf-browser-check.html"
+if echo "$OUT" | grep -q "SKIP -- Playwright browser"; then
+    _PW_BROWSER_OK=0
+fi
+
+if [[ "$_PW_BROWSER_OK" -eq 0 ]]; then
+    echo ""
+    echo "=== VF30-VF50: Playwright fixture tests SKIPPED (Chromium binary unreachable) ==="
+    echo "  Playwright is installed but the Chromium binary could not be launched."
+    echo "  This typically means 'npx playwright install chromium' has not been run, or"
+    echo "  PLAYWRIGHT_BROWSERS_PATH does not resolve to an installed browser."
+    echo "  To fix: cd canonical/aid/scripts/summarize && npx playwright install chromium"
+    echo ""
+    echo "  SKIP: VF30-VF50 -- exit 0 per graceful-degradation contract."
+    echo ""
+    test_summary
+    exit $?
+fi
 
 # --- Fixture: Good visual (T1/T2/T3 all PASS) ---
 # A .diagram-box with non-trivial size, readable text, no overlapping children.
