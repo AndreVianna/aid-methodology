@@ -34,6 +34,6 @@ _None yet._
 
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
-| 1 | task-001 | IMPLEMENT | 1 | Pending | Pending | -- | -- |
+| 1 | task-001 | IMPLEMENT | 1 | Done | A+ | -- | base64 MD payload + NM.1 refine + full render (profiles+dogfood); run-all 82/82 |
 | 2 | task-002 | IMPLEMENT | 2 | Pending | Pending | -- | -- |
 | 3 | task-003 | TEST | 3 | Pending | Pending | -- | -- |
