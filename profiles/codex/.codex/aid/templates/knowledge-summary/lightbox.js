@@ -260,10 +260,79 @@
 		sections.forEach(function(s) { obs.observe(s); });
 	}
 
+	/* ---------- Export Markdown ---------- */
+	/* Reads #kb-md-export (base64 payload embedded by build-md-export.sh),
+	   decodes it with a UTF-8-safe atob recipe, and downloads the result as a
+	   .md file. Fails gracefully when the payload element is absent: the button
+	   is disabled so it stays visible but non-interactive. */
+	function initExportMarkdown() {
+		const btn = document.getElementById('btn-export-md');
+		if (!btn) return;
+		const payloadEl = document.getElementById('kb-md-export');
+		if (!payloadEl) {
+			/* Payload not embedded (e.g. assemble.sh ran without build-md-export.sh). */
+			btn.disabled = true;
+			btn.title = 'Markdown export is not available (payload not embedded).';
+			console.info('kb export: #kb-md-export element not found; Export as Markdown button disabled.');
+			return;
+		}
+		btn.addEventListener('click', function() {
+			const b64 = payloadEl.textContent;
+			let md;
+			try {
+				md = new TextDecoder().decode(
+					Uint8Array.from(atob(b64), function(c) { return c.charCodeAt(0); })
+				);
+			} catch (e) {
+				console.warn('kb export: failed to decode Markdown payload.', e);
+				return;
+			}
+			const blob = new Blob([md], { type: 'text/markdown' });
+			const url = URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = 'knowledge-base-export.md';
+			document.body.appendChild(a);
+			a.click();
+			setTimeout(function() {
+				document.body.removeChild(a);
+				URL.revokeObjectURL(url);
+			}, 100);
+		});
+	}
+
+	/* ---------- Export PDF (print) ---------- */
+	/* Opens all <details> (including details.accord) so the print-CSS can
+	   capture their content, then calls window.print(). CSS alone cannot
+	   reveal closed <details>; opening them in JS is required. Prior open
+	   states are restored via the afterprint event. */
+	function initExportPDF() {
+		const btn = document.getElementById('btn-export-pdf');
+		if (!btn) return;
+		btn.addEventListener('click', function() {
+			const allDetails = document.querySelectorAll('details');
+			const priorOpen = [];
+			for (let i = 0; i < allDetails.length; i++) {
+				priorOpen.push(allDetails[i].open);
+				allDetails[i].open = true;
+			}
+			const restoreDetails = function() {
+				for (let i = 0; i < allDetails.length; i++) {
+					allDetails[i].open = priorOpen[i];
+				}
+				window.removeEventListener('afterprint', restoreDetails);
+			};
+			window.addEventListener('afterprint', restoreDetails);
+			window.print();
+		});
+	}
+
 	/* ---------- Bootstrap ---------- */
 	document.addEventListener('DOMContentLoaded', function() {
 		setTimeout(initLightbox, 50);
 		initScrollspy();
+		initExportMarkdown();
+		initExportPDF();
 
 		const btn = document.getElementById('theme-toggle');
 		if (btn) {
