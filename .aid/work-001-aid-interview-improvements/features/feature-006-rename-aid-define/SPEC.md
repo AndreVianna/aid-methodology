@@ -8,7 +8,8 @@
 | 2026-06-27 | Technical Specification authored — name-agnostic rename mechanics, blast-radius inventory, sequencing constraint, AC-8 DoD; grounded in aid-ask→aid-query-kb precedent | /aid-specify |
 | 2026-06-27 | Spec revised post-review: blast radius +README.md/examples/dashboard(+vendored copy); DoD step-2 made true whole-repo; accurate whole-repo vs authored-subset counts; recon-classify path fixed; Open Questions added (dangling ref removed) | /aid-specify |
 | 2026-06-27 | Spec re-review fixes: DoD step-2 closure carved to shipped/canonical surface set (matches inventory) — `.aid/knowledge/` deferred to /aid-housekeep, `.aid/work-*`+`.aid/design/` out-of-scope; count decomposition corrected (~493 generated profiles, ~99 dogfood mirror, ~26 .aid not-swept) | /aid-specify |
-| 2026-06-27 | Cross-ref round-3 fix: `dashboard/` scope made symmetric to `.aid/` — home.html's paired assertion test `test_index_html.py` + `derivation.py` producer comments added to inventory; frozen `dashboard/.../fixtures/**` + `test_feature009.py` marked out-of-scope. PENDING final A+ re-verify. | /aid-specify |
+| 2026-06-27 | Cross-ref round-3 fix: `dashboard/` scope made symmetric to `.aid/` — home.html's paired assertion test `test_index_html.py` + `derivation.py` producer comments added to inventory; frozen `dashboard/.../fixtures/**` + `test_feature009.py` marked out-of-scope. | /aid-specify |
+| 2026-06-27 | Cycle-4 re-verify (A+ gate): row 8 confirmed Fixed; one new [MINOR] (row 9) — prose count decomposition fixed: `+11`→`+13` bucket names the 2 in-scope dashboard hand-edits, added a `~6 files dashboard/ frozen test data NOT swept` bucket + reconcile disclaimer. All 9 ledger rows Fixed → **A+**. | /aid-specify |
 
 ## Source
 
@@ -119,21 +120,27 @@ sequence:
 
 Scoped on disk via boundary-aware `grep -rl "aid-interview"`. A whole-repo `grep -rl` (excluding
 `.git`/`node_modules`/nested worktrees) hits **≈758 files / ≈2224 occurrences**; the decomposition
-clarifies what an author rewrites vs. what is generated vs. what is NOT swept at all:
+below clarifies what an author rewrites vs. what is generated vs. what is NOT swept at all (the
+per-bucket counts are tilde-approximate and reconcile to the whole-repo total within rounding):
 
 - **~493 files — the 5 generated `profiles/` host trees** (every canonical mention × 5 trees):
   NOT hand-edited; the generator rewrites them in step 4.
 - **~123 files / ~351 occ — the hand-edited authored canonical + source subset** (`canonical/` +
   `docs/` + `site/` + `tests/`): the files an author actually rewrites.
-- **+11 files — the remaining hand-edited non-canonical surfaces:** root `README.md` (1),
-  `examples/` (8), and `dashboard/home.html` + its vendored `.aid/dashboard/home.html` (2) — also
-  authored by hand (see the inventory rows below).
+- **+13 files — the remaining hand-edited non-canonical surfaces:** root `README.md` (1),
+  `examples/` (8), `dashboard/home.html` + its vendored `.aid/dashboard/home.html` (2), and the two
+  dashboard files paired to the home.html edit — `dashboard/server/tests/test_index_html.py` (the
+  assertion test) + `dashboard/reader/derivation.py` (producer comments) (2) — also authored by hand
+  (see the inventory rows below).
 - **~99 files — the `.claude/` dogfood skill mirror:** not individually authored — swapped
   wholesale in step 5 (old dir removed, new dir copied byte-identical from the claude-code tree).
 - **~26 files — `.aid/`, NOT swept by this rename:** `.aid/knowledge/` (~11 files, ~9
   `/aid-interview` tokens) is **deferred to `/aid-housekeep`**, and `.aid/work-*/` + `.aid/design/`
   (~15 files, ~100 occ — historical changelog source-tags + the feature SPECs themselves,
   including this one) are **out of scope** (zeroing them would corrupt records). See DoD step 2.
+- **~6 files — `dashboard/` frozen test data, NOT swept:** `dashboard/reader/tests/test_feature009.py`
+  (1) + the 5 frozen `dashboard/server/tests/fixtures/**/.aid/work-*` sample artifacts — **out of
+  scope** (rewriting frozen fixtures would invalidate them; no pytest job runs in CI). See DoD step 2.
 
 The inventory below and the DoD step-2 sweep are defined over the **same scoped surface set**
 (shipped/canonical, excluding the deferred dogfood KB and the out-of-scope work/design artifacts)
