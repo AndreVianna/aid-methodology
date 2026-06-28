@@ -8,6 +8,9 @@ sources:
   - docs/glossary.md
   - canonical/
   - canonical/EMISSION-MANIFEST.md
+  - canonical/skills/aid-describe/references/state-triage.md
+  - canonical/skills/aid-describe/references/elicitation-engine.md
+  - canonical/skills/aid-describe/references/state-describe-seed.md
   - bin/aid
   - dashboard/reader/models.py
   - .claude/skills/generate-profile/scripts/render.py
@@ -20,6 +23,7 @@ intent: |
   particular in AID; the canonical reference for naming. Concept Spine + supporting lexicon.
 contracts: []
 changelog:
+  - 2026-06-27: aid-describe/aid-define split — rekeyed Triage to /aid-describe; added Seasoned-Analyst Engine, Describe / Define, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias / greenfield seed keystone)
   - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator owns the concept spine)
 ---
 
@@ -27,7 +31,7 @@ changelog:
 
 > **Source:** aid-discover (brownfield deep-dive — Integrator owns the Concept Spine)
 > **Status:** Complete
-> **Last Updated:** 2026-06-25
+> **Last Updated:** 2026-06-27
 
 AID's "domain" is software-development methodology and its installer tooling. This glossary
 documents what AID's own words mean *in this project* — not their generic industry sense. An
@@ -88,13 +92,14 @@ per-profile emission), AGENTS.md/CLAUDE.md (the per-profile context file).
 
 ### Work
 
-**Definition-as-used-here:** A self-contained unit of scope created by one Interview, living at
-`.aid/work-NNN-{slug}/`. Each work owns its own requirements, features, plan, deliveries, and
-tasks while sharing the project-wide Knowledge Base. Multiple works coexist (e.g. one per
-client request). "Work" is the top-level pipeline scope container, not a generic job.
+**Definition-as-used-here:** A self-contained unit of scope created by one Interview (Phase 2 —
+the `aid-describe`→`aid-define` pair), living at `.aid/work-NNN-{slug}/`. Each work owns its own
+requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base.
+Multiple works coexist (e.g. one per client request). "Work" is the top-level pipeline scope
+container, not a generic job.
 
 **Relates-to:** Delivery (a work is sequenced into deliveries), Knowledge Base (shared across
-works), Task (the leaf unit inside a work).
+works), Task (the leaf unit inside a work), Describe / Define (the skill pair that creates a work).
 
 **sources:**
 - `docs/aid-methodology.md` ("Each interview creates a *work*")
@@ -166,18 +171,26 @@ phase can trigger a targeted update to it.
 
 ### Concept Spine
 
+**Aliases:** Ubiquitous Language, Declared Concept-Spine
+
 **Definition-as-used-here:** The section of `domain-glossary.md` (this section) that holds a
 project's native load-bearing concepts, each grounded with a definition-as-used-here, a
-relates-to linkage, and grep-recoverable `sources:` anchors. It is seeded from
-`candidate-concepts.md` and closed by the discovery closure loop — every candidate concept
-must reach a terminal state (grounded here, or dismissed in `spine-todo.md`).
+relates-to linkage, and grep-recoverable `sources:` anchors. In **brownfield** it is *extracted*
+— seeded from `candidate-concepts.md` and closed by the discovery closure loop (every candidate
+concept must reach a terminal state: grounded here, or dismissed in `spine-todo.md`). In
+**greenfield** it is *declared up front*: the concept-spine / ubiquitous language is the
+MANDATORY keystone element of the forward-authored KB seed (DESCRIBE-SEED element 1) — the work
+is not done until it can be explained using only defined native terms plus general knowledge
+(the C4 stopping bar).
 
-**Relates-to:** Knowledge Base (the spine lives in a KB doc), Candidate Concepts (the harvest
-the spine grounds), Ranked Candidates (the candidate table).
+**Relates-to:** Knowledge Base (the spine lives in a KB doc), Candidate Concepts (the brownfield
+harvest the spine grounds), Forward-Authored Seed (the greenfield seed whose keystone this is),
+Seasoned-Analyst Engine (which elicits the declared spine).
 
 **sources:**
 - `canonical/aid/templates/knowledge-base/domain-glossary.md` ("## Concept Spine")
-- `.aid/generated/candidate-concepts.md` — the harvested candidates the spine must close
+- `.aid/generated/candidate-concepts.md` — the harvested candidates the brownfield spine must close
+- `canonical/skills/aid-describe/references/state-describe-seed.md` ("Declared concept-spine / ubiquitous language … MANDATORY")
 
 ### Emission Manifest
 
@@ -321,26 +334,98 @@ computed gate the human approval complements), Task (each reviewed task carries 
 - `canonical/aid/templates/grading-rubric.md` — "Grade is **deterministic** — calculated from issue count and severity"
 - `canonical/aid/scripts/grade.sh` — the grade computation
 
-### Triage
+### Describe / Define
 
-**Definition-as-used-here:** The `/aid-interview` step that matches a free-form work description
-to a Recipe and routes the work down either the *full* path (every numbered phase) or the
-*lite* path (a condensed phase set, same artifacts). A confident single-target match routes to
-lite automatically; otherwise the work runs full.
+**Aliases:** aid-describe, aid-define, the Interview split
 
-**Relates-to:** Lite Path (where triage routes small work), Recipe (what triage matches against),
-Work (the unit triage classifies).
+**Definition-as-used-here:** The two skills that together perform Phase 2 (Interview). **`aid-describe`**
+(Phase 2a) gathers requirements through the seasoned-analyst interview and runs TRIAGE — it
+produces the approved `REQUIREMENTS.md` on the full path (or a work-root `SPEC.md` + task
+hierarchy on the lite path), and on greenfield authors the forward-authored KB seed
+(DESCRIBE-SEED). **`aid-define`** (Phase 2b, full path only) begins from the approved
+`REQUIREMENTS.md` and decomposes it into per-feature `SPEC.md` stubs (FEATURE-DECOMPOSITION),
+then cross-references them against the KB and codebase (CROSS-REFERENCE). This pair replaced the
+single former `aid-interview` skill — `aid-describe` is renamed-and-scoped to "describe the work,"
+`aid-define` to "define the features."
+
+**Relates-to:** Triage (the opening state of `aid-describe`), Seasoned-Analyst Engine (drives
+`aid-describe`'s interview), Forward-Authored Seed (authored by `aid-describe` DESCRIBE-SEED),
+Work (the unit this pair creates).
 
 **sources:**
-- `docs/aid-methodology.md` — "`/aid-interview`'s TRIAGE routes small work to the lite path automatically"
+- `canonical/skills/aid-describe/SKILL.md` — "Conversational requirements gathering … handoff to /aid-define"
+- `canonical/skills/aid-define/SKILL.md` — "Feature decomposition … from an approved REQUIREMENTS.md (produced by /aid-describe)"
+- `docs/aid-methodology.md` ("Phase 2: Interview (`aid-describe` → `aid-define`)")
+
+### Seasoned-Analyst Engine
+
+**Aliases:** elicitation engine, D1 opener, NFR-7 envelope, five-step selector
+
+**Definition-as-used-here:** The deterministic interview driver inside `aid-describe`
+(`references/elicitation-engine.md`): **one** fixed D1 opener (the only fixed turn) followed by a
+five-step next-move selector that runs every subsequent turn — STOP-CHECK, GAP-SELECTION (from a
+gap inventory, by precedence), MOVE-SELECTION (from the move playbook), CALIBRATION-SHAPING (depth),
+and ENVELOPE + EMIT. It is consumed (never re-implemented) by both TRIAGE (over the route-deciding
+5-signal gap inventory) and DESCRIBE-SEED (over the 5-element seed gap inventory) via a
+three-parameter contract: gap inventory / stop predicate / record sink. One question per turn,
+never batched.
+
+**Relates-to:** Triage (consumes the engine to route), Forward-Authored Seed (consumes the engine
+to author the seed), NFR-7 envelope (the per-emission wrapper), Concept Spine (the keystone the
+engine elicits in greenfield).
+
+**sources:**
+- `canonical/skills/aid-describe/references/elicitation-engine.md` ("D1 Fixed Opener", "Adaptive Loop")
+- `canonical/skills/aid-describe/references/advisor-stance.md` ("The Envelope Template")
+
+### NFR-7 Suggested-Answer + Rationale
+
+**Aliases:** NFR-7, advisor stance, Suggested/Why envelope, straw-man reflect-back
+
+**Definition-as-used-here:** The non-negotiable shape of every question the seasoned-analyst
+engine emits: a context line, the question, a concrete **`Suggested:`** value (a real straw-man
+answer — never blank, never "-"), and a grounded **`Why:`** rationale (why that suggestion fits,
+tied to the user's prior words, the KB, or expert judgment). A bare, suggestion-less question is a
+malformed emission; a pre-emit self-check rejects any turn missing `Suggested:` or `Why:`. The
+engine recommends as a real expert rather than punting with "it depends," surfacing its answer as
+a `Suggested:` the user can knowingly accept or override.
+
+**Relates-to:** Seasoned-Analyst Engine (which wraps every emission in this envelope), Triage (its
+route-confirmation turn is an NFR-7 straw-man), Forward-Authored Seed (its conflict-surfacing and
+seed questions are NFR-7-wrapped).
+
+**sources:**
+- `canonical/skills/aid-describe/references/advisor-stance.md` ("The Envelope Template", "Suggested:", "Why:")
+- `canonical/skills/aid-describe/references/elicitation-engine.md` ("no bare, suggestion-less question is ever emitted")
+
+### Triage
+
+**Definition-as-used-here:** The opening state of `/aid-describe` (after FIRST-RUN scaffolding,
+before the conversational interview) that routes a work down either the *full* path (every
+numbered phase) or the *lite* path (a condensed phase set, same artifacts), and matches a
+free-form work description to a Recipe. It is **engine-driven**: the seasoned-analyst engine
+draws out the route-deciding signals over a **5-signal gap inventory** (scope size/shape →
+full-vs-lite; work-type → lite sub-path; target-artifact identity → recipe match; behavior/flow
+span → secondary sizing; KB anchoring → sharper sizing), halting as soon as full-vs-lite is
+decided AND recipe confidence resolves to single-clear-winner / several-plausible / none. A
+confident, user-confirmed single recipe match routes to lite automatically; any signal short of
+that routes full.
+
+**Relates-to:** Lite Path (where triage routes small work), Recipe (what triage matches against),
+Work (the unit triage classifies), Seasoned-Analyst Engine (which draws out the route-deciding
+signals), Describe / Define (Triage is `aid-describe`'s opening state).
+
+**sources:**
+- `canonical/skills/aid-describe/references/state-triage.md` ("Engine-driven analyst triage", "Triage gap inventory")
+- `docs/aid-methodology.md` — "`/aid-describe`'s TRIAGE routes small work to the lite path automatically"
 - `canonical/aid/scripts/interview/parse-recipe.sh` — the recipe matcher triage drives
 
 ### Lite Path
 
 **Definition-as-used-here:** The TRIAGE-routed condensed pipeline for small, single-target work:
 the same typed, reviewed artifacts as the full path but with phases collapsed (Specify+Plan+Detail
-fold into the interview's task breakdown). It is a shortcut for known patterns, not a quality
-bypass.
+fold into `aid-describe`'s lite-path task breakdown). It is a shortcut for known patterns, not a
+quality bypass.
 
 **Relates-to:** Triage (what routes work here), Recipe (what drives a lite run), Task (what a lite
 run still emits).
@@ -348,6 +433,51 @@ run still emits).
 **sources:**
 - `docs/aid-methodology.md` — "lite path<br/>small, single-target"
 - `docs/glossary.md` — the lite/full path distinction
+
+### Forward-Authored Seed
+
+**Aliases:** forward-authored, greenfield inversion, design-authoritative seed, KB seed
+
+**Definition-as-used-here:** The greenfield KB-seed that `aid-describe`'s DESCRIBE-SEED state
+authors from elicited intent **before any code exists** — the **inversion** of the brownfield
+default. In brownfield, code is the source of truth and the KB *describes* it (extracted). In
+greenfield, the design is authored first and **IS** the source of truth: code is built to CONFORM
+to it (authority direction is design→code until a human reconciles drift). Seed docs carry
+`source: forward-authored` (the third `source:` enum value), are design-authoritative, and the
+freshness check folds them to `current` (source-drift N/A) rather than flagging them stale. The
+seed is the **5-element doc-set** — concept-spine/ubiquitous-language (`domain-glossary.md`,
+mandatory) + intended architecture (`architecture.md`, mandatory) + conventions
+(`coding-standards.md`, deferrable) + tech-stack (`technology-stack.md`, deferrable) + decisions
+(`decisions.md`, conditional, ADR-immutable with supersession) — kept minimal (intent, not
+inventory).
+
+**Relates-to:** Concept Spine (the seed's mandatory keystone element), Seasoned-Analyst Engine
+(which elicits the seed), Conformance Check (the code→design check that later verifies the design),
+Knowledge Base (where the seed docs live), Describe / Define (`aid-describe` authors the seed).
+
+**sources:**
+- `canonical/skills/aid-describe/references/state-describe-seed.md` ("Gap Inventory -- 5-Element Seed Model", "source: forward-authored")
+- `canonical/aid/templates/kb-authoring/frontmatter-schema.md` ("`forward-authored` | Authored from intent before code exists")
+- `canonical/aid/scripts/kb/kb-freshness-check.sh` (`forward-authored` short-circuit to `current`)
+
+### Conformance Check
+
+**Aliases:** code→design conformance, design conformance, conformance verification
+
+**Definition-as-used-here:** The (feature-005) check that verifies as-built **code conforms to the
+design-authoritative forward-authored KB seed** — the inverse direction from brownfield freshness.
+Because a `source: forward-authored` doc is design→code authoritative, the f007 freshness check
+explicitly does NOT flag it as stale when a source changes (it folds to `current`); detecting where
+the code has *diverged* from the design — and flagging that divergence for **deliberate human
+reconciliation** rather than silently overwriting the design with as-built — is the conformance
+check's job, a distinct concern from freshness.
+
+**Relates-to:** Forward-Authored Seed (the design contract it checks against), Knowledge Base (the
+seed docs are the authority), Feedback Loop (divergence is reconciled deliberately, not silently).
+
+**sources:**
+- `canonical/aid/scripts/kb/kb-freshness-check.sh` ("the inverse code->design conformance check is feature-005 work, not f007")
+- `canonical/aid/templates/kb-authoring/frontmatter-schema.md` ("code->design divergence is detected by feature-005's separate conformance check, NOT by f007")
 
 ### Feedback Loop
 
@@ -463,6 +593,7 @@ lives).
 | Calibration Log | The `STATE.md` table recording agent ETA-band vs actual runtime | `canonical/aid/templates/work-state-template.md` |
 | Quick Check Findings | High findings from the Small-tier in-task quick-check, accumulated for the delivery gate | `docs/aid-methodology.md` ("The two-tier review design") |
 | State Detection | A skill re-entrancy mechanism: detect the stalled state and resume there | `canonical/skills/aid-deploy/SKILL.md` |
+| Seed Authoring | The `## Seed Authoring` STATE.md block tracking DESCRIBE-SEED progress (elements authored, coherence check, review grade) | `canonical/skills/aid-describe/references/state-describe-seed.md` ("## Seed Authoring") |
 | Summary Stage | The SUMMARY-DELTA stage of `aid-housekeep` (regenerate the visual summary) | `canonical/aid/scripts/housekeep/housekeep-state.sh` |
 | Change Log | The mandatory last section of every KB/artifact doc recording revisions | `canonical/aid/templates/feature-inventory.md` |
 
@@ -518,6 +649,7 @@ lives).
 | Term | Meaning here | Source |
 |------|--------------|--------|
 | kb-category | The frontmatter field tagging a KB doc's role (`primary`/`meta`/…) | `canonical/aid/scripts/kb/build-kb-index.sh` |
+| source (frontmatter field) | The doc's production mode — `hand-authored` \| `forward-authored` \| `generated`; `forward-authored` marks a design-authoritative greenfield seed doc | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` ("### `source:`") |
 | Ranked Candidates | The salience-ordered candidate-concepts table | `.aid/generated/candidate-concepts.md` ("## Ranked Candidates") |
 | Term / Term Name / Unique Term | Glossary-tooling labels for a candidate/grounded term | `canonical/aid/scripts/kb/build-metrics.sh`; `canonical/skills/aid-discover/references/agent-prompts.md` ("Unique Term") |
 | summary (recipe / frontmatter field) | A one-line description; TRIAGE reads a recipe's `summary:` to match work | `docs/glossary.md` ("summary (recipe field)") |
@@ -555,6 +687,7 @@ lives).
 | BFS | Breadth-First Search | computes a failed task's transitive block radius |
 | DM-1 / DM-2 / DM-3 | Data Model levels | dashboard server/reader envelopes |
 | SEC-1..4 | Security invariants | dashboard server (loopback-only, read-only, no LLM) |
+| NFR-7 | Suggested-answer + rationale invariant | every interview-engine question carries `Suggested:` + `Why:` |
 
 ---
 
@@ -571,6 +704,8 @@ lives).
 | Wave | an ocean wave / release wave | a parallel batch of dependency-ready tasks in the Execution Graph |
 | Grade | an academic mark assigned by a person | a value *computed* deterministically by `grade.sh` from severity tags, never hand-picked |
 | Lite | "lightweight version" | the TRIAGE-routed condensed path for small work — same artifacts, fewer phases |
+| Forward-authored | (no common meaning) | a KB doc authored from intent *before code exists*; design-authoritative (design→code), the greenfield seed |
+| Conformance | generic standards-compliance | verifying as-built code matches the design-authoritative forward-authored seed (code→design) |
 
 ---
 
@@ -590,6 +725,11 @@ lives).
   in a clean context.
 - **The KB is the gravitational center.** Not the spec, not the code — when they disagree, the
   KB is updated through a feedback loop, not silently bypassed.
+- **Greenfield inverts the authority direction.** A `forward-authored` seed doc is
+  design→code authoritative: code is built to conform to it, and divergence is reconciled
+  deliberately (the conformance check), never silently overwritten with as-built.
+- **No bare interview question.** Every seasoned-analyst-engine emission carries a concrete
+  `Suggested:` and a grounded `Why:` (NFR-7); a suggestion-less question is malformed.
 
 ---
 
@@ -599,3 +739,4 @@ lives).
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial glossary: 16 spine concepts grounded + supporting lexicon (Integrator owns the spine) |
 | 1.1 | 2026-06-25 | aid-discover (closure 5b) | Closure loop: promoted 9 load-bearing concepts to spine headings (Grade, Triage, Lite Path, Feedback Loop, Dashboard, Pipeline State, Task Status, Delivery Gate, Candidate Concepts) and added synonym Aliases on 7 existing concepts so the self-containment oracle resolves every used term |
+| 1.2 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed Triage to `/aid-describe` (engine-driven 5-signal gap inventory); added Describe / Define, Seasoned-Analyst Engine, NFR-7 Suggested-Answer + Rationale, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias + greenfield seed keystone); added `source`/`Seed Authoring` lexicon rows, NFR-7 acronym, forward-authored/conformance domain terms, and two greenfield invariants |

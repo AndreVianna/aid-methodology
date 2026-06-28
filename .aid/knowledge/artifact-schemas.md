@@ -15,6 +15,8 @@ sources:
   - canonical/EMISSION-MANIFEST.md
   - .claude/aid/templates/generated-files.txt
   - lib/aid-install-core.sh
+  - canonical/aid/templates/kb-authoring/frontmatter-schema.md
+  - canonical/skills/aid-describe/references/state-describe-seed.md
 tags: [C5, artifact-schemas, state-files, manifests, settings, enums, contracts]
 see_also: [authoring-conventions.md, module-map.md, pipeline-contracts.md]
 owner: architect
@@ -23,8 +25,10 @@ contracts:
   - "Task State enum (closed): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled"
   - "Task Type enum (closed, 8): RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE"
   - "Delivery Lifecycle enum (closed): Pending-Spec | Specified | Executing | Gated | Done | Blocked"
+  - "KB frontmatter source enum (closed, 3): hand-authored | forward-authored | generated"
   - "emission-manifest.jsonl record keys: profile, src, dst, sha256 (+ _manifest_version sentinel)"
 changelog:
+  - 2026-06-27: aid-describe/aid-define split -- rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to aid-describe and feature SPEC stubs to aid-define; added the forward-authored source value + greenfield 5-element seed doc-set
   - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst); replaces the schemas.md data-model seed
 ---
 
@@ -59,6 +63,7 @@ and act from this doc without reaching into the templates.
 - [Emission Manifest (JSONL)](#emission-manifest-jsonl)
 - [Generated-Files Registry](#generated-files-registry)
 - [Discovery Scratch Artifacts](#discovery-scratch-artifacts)
+- [Greenfield KB Seed (Forward-Authored)](#greenfield-kb-seed-forward-authored)
 - [How Artifacts Relate](#how-artifacts-relate)
 - [Contracts](#contracts)
 - [Conventions](#conventions)
@@ -103,12 +108,15 @@ Source: `work-state-template.md`. Two zones -- **AUTHORED** (single-writer) and
 | Triage | AUTHORED | `Path`: `lite \| full`; `Work Type`: `bug-fix \| new-feature \| refactor`; `Sub-path`: `LITE-BUG-FIX \| LITE-REFACTOR \| LITE-FEATURE \| --`; `Override`; `Recipe`. |
 | Escalation Carry | AUTHORED | present only on lite->full escalation; captured slot values; artifacts-at-escalation. |
 | Interview State | AUTHORED | 10-row section table (Objective..Priority), each `Pending \| ...`; State + Grade. |
+| Seed Authoring | AUTHORED (greenfield only, by `aid-describe` DESCRIBE-SEED) | `Status`: `In Progress \| Complete`; 5-element checklist (domain-glossary/architecture mandatory, coding-standards/technology-stack deferrable, decisions conditional); `Coherence check`; `Review grade`. |
 | Lifecycle History | AUTHORED | append-only audit table (Date, Phase Transition/Gate, Grade, Notes), newest last. |
 | Deploy State | AUTHORED (by `aid-deploy` only) | one row per delivery (Delivery, State, PR, KB Updated, Tag, Notes). |
 | Features State, Plan/Deliveries, Tasks State, Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches | **DERIVED** | read-only unions over per-delivery / per-task STATE.md; never written here. |
 
 Producer: `execute/writeback-state.sh --pipeline ...` + the orchestrator (single
-writer on the work's active branch). Consumer: the dashboard reader, `aid-execute`.
+writer on the work's active branch). The `## Interview State`, `## Triage`, and
+greenfield `## Seed Authoring` blocks are authored by `aid-describe`. Consumer: the
+dashboard reader, `aid-execute`.
 
 ---
 
@@ -125,7 +133,8 @@ Source: `delivery-state-template.md`. AUTHORED by this delivery's branch only.
 
 Producer: `aid-plan` (creates, `Pending-Spec`), `aid-specify` (`Specified`),
 `aid-execute` (`Executing`->`Gated`->`Done` / `Blocked`), via
-`writeback-state.sh --delivery-id NNN`.
+`writeback-state.sh --delivery-id NNN`. On the lite path, `aid-describe` creates
+`delivery-001/STATE.md` directly (State `Executing`) during TASK-BREAKDOWN / recipe emit.
 
 ---
 
@@ -164,7 +173,12 @@ project-level settings (grades, parallelism) live in `settings.yml`, **not** her
 ## REQUIREMENTS.md
 
 Source: `requirements/requirements-template.md`. A first-class pipeline artifact at
-`.aid/knowledge/REQUIREMENTS.md` (uppercase). Produced by `aid-interview`.
+`.aid/knowledge/REQUIREMENTS.md` (uppercase). Produced by `aid-describe` (Phase 2a,
+**full path**). On the **lite path**, `aid-describe` produces no REQUIREMENTS.md --
+it instead emits a work-root `SPEC.md` (`.aid/{work}/SPEC.md`) plus a
+`delivery-001/` task hierarchy (`tasks/task-NNN/SPEC.md` + `STATE.md`) via CONDENSED-INTAKE
++ TASK-BREAKDOWN (or recipe slot-fill + emit). The greenfield full path additionally
+produces a forward-authored KB seed -- see [Greenfield KB Seed](#greenfield-kb-seed-forward-authored).
 
 Required structure: `# Requirements` with `Name` + `Description`, a mandatory
 `## Change Log` table, then 10 numbered sections:
@@ -182,15 +196,18 @@ stakeholder's own words are preferred in Objective/Problem Statement.
 ## Feature SPEC.md
 
 Source: `feature.md` (and the leaner `task-spec-template.md`-adjacent `feature` seed).
-Per-feature artifact created by `aid-interview`, with the technical half added by
-`aid-specify`.
+Per-feature artifact: the requirements-half stub is created by `aid-define` (Phase 2b,
+full path only) when its FEATURE-DECOMPOSITION state decomposes the approved
+`REQUIREMENTS.md` into `features/feature-NNN-name/` folders; the technical half is added
+later by `aid-specify`. (`aid-define` also runs CROSS-REFERENCE to validate the feature
+boundaries against the KB and codebase.)
 
-Interview half (required): `# {Feature Title}`, `## Change Log`, `## Source`
-(REQUIREMENTS refs), `## Description`, `## User Stories` (As a/I want/so that),
-`## Priority` (`Must \| Should \| Could`), `## Acceptance Criteria`
+Interview/requirements half (required, authored by `aid-define`): `# {Feature Title}`,
+`## Change Log`, `## Source` (REQUIREMENTS refs), `## Description`, `## User Stories`
+(As a/I want/so that), `## Priority` (`Must \| Should \| Could`), `## Acceptance Criteria`
 (Given/When/Then checkboxes).
 
-Specify half (added by `/aid-specify`, do not fill during interview):
+Specify half (added by `/aid-specify`, do not fill during define):
 `## Technical Specification` with `### Data Model`, `### Feature Flow`,
 `### Layers & Components`, plus conditional sections (API Contracts, UI Specs,
 Events & Messaging, BDD Scenarios, Migration Plan, Security Specs, ...) activated
@@ -328,15 +345,69 @@ Generated discovery outputs under `.aid/generated/` (each carries an
 
 ---
 
+## Greenfield KB Seed (Forward-Authored)
+
+On the **greenfield full path**, `aid-describe`'s DESCRIBE-SEED state authors a KB seed
+*from elicited intent before any code exists* -- the inverse of brownfield extraction.
+These docs are **design-authoritative** (authority direction design->code) and are
+written directly into `.aid/knowledge/`.
+
+**The `source:` frontmatter enum is 3-valued (closed):**
+
+| Value | Meaning |
+|-------|---------|
+| `hand-authored` | Written by humans / agents acting as humans (brownfield GENERATE). Full content review. |
+| `forward-authored` | Authored from intent **before code exists** (the greenfield seed). Full content review (same rubric as hand-authored). **Design-authoritative:** freshness folds it to `current` (source-drift N/A); code->design divergence is detected by feature-005's separate conformance check, NOT by the f007 freshness check. |
+| `generated` | Produced by a registered build script (`generator:` field MUST be set). Reviewer verifies regeneration, does not grade content. |
+
+**The seed is a 5-element doc-set** (intent, not inventory -- kept minimal). Each doc
+carries `source: forward-authored`, `sources: []` (a pure-intent doc; cited external
+design notes go in `sources:`, never code files), and the element's concern-id `tags:`:
+
+| # | Element | KB doc | kb-category | tags | Weight | Fit criterion (Open when NOT met) |
+|---|---------|--------|-------------|------|--------|-----------------------------------|
+| 1 | Declared concept-spine / ubiquitous language | `domain-glossary.md` | primary | `[C4, ...]` | MANDATORY | Every load-bearing term defined as this project uses it (not generic) + relationships + `## Invariants` + a concrete example; work explainable using only defined native terms + general knowledge (C4 bar). |
+| 2 | Intended architecture (boundaries + relationships, sketch altitude) | `architecture.md` | primary | `[C1, ...]` | MANDATORY | Major parts / boundaries / relationships named + `## Invariants` present. Sketch altitude, not as-built. |
+| 3 | Conventions & standards | `coding-standards.md` | primary | `[C3, ...]` | DEFERRABLE | Project rules stated OR an explicit "standard for `<stack>`, no project-specific deviations yet" statement. |
+| 4 | Technology stack / medium | `technology-stack.md` | primary | `[C0, ...]` | DEFERRABLE | Chosen language / runtime / framework named (version MAY be "latest-at-init / TBD"). |
+| 5 | Decisions & rationale | `decisions.md` | extension | `[D, ...]` | CONDITIONAL | Only when rationale-bearing choices are confirmed (propose->confirm gate). Each entry: what was decided + why + rejected alternative + `Status`. |
+
+**decisions.md entry schema** (ADR-immutable -- a recorded decision is NEVER edited in
+place; a change APPENDS a new `Status: Accepted` + `Supersedes:` entry and marks the
+prior one `Status: Superseded` + `Superseded-by:`):
+
+```
+## <Decision title>
+- **Status:** Accepted          (or Superseded)
+- **Decided:** <what was decided>
+- **Rationale:** <why>
+- **Rejected alternative:** <what was not chosen and why not>
+- **Supersedes:** <prior-title>     (present only when this entry replaces a prior one)
+- **Superseded-by:** <new-title>    (present only when a later entry supersedes this one)
+```
+
+**Exclusions:** as-built docs with no greenfield source are NEVER authored in the seed --
+`module-map.md`, `test-landscape.md`, `infrastructure.md`, `feature-inventory.md`,
+`project-structure.md`, and (unless domain-promoted) `schemas.md` / `integration-map.md` /
+`pipeline-contracts.md`.
+
+Producer: `aid-describe` DESCRIBE-SEED (engine-driven elicitation -> author -> coherence
+check -> greenfield-mode review gate). Consumers: `aid-specify` / `aid-plan` /
+`aid-execute` read the seed unchanged; `kb-freshness-check.sh` short-circuits
+forward-authored docs to `current`.
+
+---
+
 ## How Artifacts Relate
 
 ```
-REQUIREMENTS.md  -> feature SPEC.md (interview half) -> SPEC.md (specify half)
+REQUIREMENTS.md  -> feature SPEC.md (define/decomposition half) -> SPEC.md (specify half)
 SPEC.md          -> PLAN.md -> delivery-NNN/ -> task-NNN SPEC.md (immutable)
 task-NNN SPEC.md  ~ task-NNN/STATE.md (mutable state for the same task)
 task STATE.md    -> delivery STATE.md (derived) -> work STATE.md (derived)
 settings.yml     -> read by every skill via read-setting.sh
 candidate-concepts.md -> domain-glossary.md (ground) OR spine-todo.md (dismiss)
+greenfield intent -> forward-authored KB seed (5 docs in .aid/knowledge/) -> read by aid-specify/plan/execute
 canonical/ files -> emission-manifest.jsonl (one record each) -> profiles/<tool>/
 install manifest <- install-core; consumed by uninstall/update
 ```
@@ -358,11 +429,18 @@ Cardinality summary:
 
 > The structural shape a change MUST satisfy.
 
-- **Closed enums are byte-stable.** Adding/renaming a value in the task State,
-  Delivery Lifecycle, task Type, Pipeline Lifecycle/Phase, or Q&A Impact/Status
-  enums is a breaking change -- the dashboard readers (Python + Node twins) and
-  `writeback-state.sh` all bind to the exact strings. Both reader twins must change
-  in lockstep.
+- **Closed STATE enums are byte-stable.** Adding/renaming a value in the task State,
+  Delivery Lifecycle, task Type, Pipeline Lifecycle/Phase, or Q&A Impact/Status enums
+  is a breaking change -- the dashboard readers (Python + Node twins) and
+  `writeback-state.sh` bind to the exact strings. Both reader twins must change in
+  lockstep.
+- **The KB frontmatter `source:` enum is closed (3 values).**
+  `hand-authored | forward-authored | generated`. It is consumed by
+  `kb-freshness-check.sh` (the `forward-authored` short-circuit to `current`) and the
+  review rubric (source selects which rubric applies); adding a value is a breaking
+  change across both. `forward-authored` is design-authoritative -- it gets the full
+  hand-authored review rubric, but freshness treats it as never-stale-from-source, and
+  code->design conformance is a SEPARATE check (feature-005), never the f007 freshness check.
 - **DERIVED sections are read-only.** A producer MUST write the per-unit STATE.md,
   never a parent's derived view (work/delivery `## Tasks State`, `## Delivery Gates`,
   `## Cross-phase Q&A`, `## Calibration Log`). The disjoint-write property (two
@@ -415,7 +493,8 @@ Cardinality summary:
 There is **no central schema validator**; validation is distributed -- a lint, a
 reader, or a skill gate owns each artifact class. The freshness baseline
 (`kb_baseline`, `approved_at_commit`) degrades gracefully when absent (treated as
-"baseline unknown", never a hard failure).
+"baseline unknown", never a hard failure); a `source: forward-authored` doc is folded
+to `current` by `kb-freshness-check.sh` regardless of baseline.
 
 ---
 
@@ -424,3 +503,4 @@ reader, or a skill gate owns each artifact class. The freshness baseline
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial artifact-schemas doc (Analyst); replaces the schemas.md data-model seed |
+| 1.1 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to `aid-describe` and feature SPEC stubs to `aid-define`; added the `source: forward-authored` enum value, the greenfield 5-element seed doc-set section, the `## Seed Authoring` work-STATE block, and forward-authored contracts/validation notes |

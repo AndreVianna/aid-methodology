@@ -10,7 +10,7 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-12-skill pipeline · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+14-skill pipeline · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
 
 ```mermaid
 flowchart TB
@@ -56,7 +56,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*13 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*14 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.

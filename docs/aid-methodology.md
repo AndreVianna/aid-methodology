@@ -75,7 +75,7 @@ flowchart TB
 
 Brownfield projects enter at Discover and proceed through every numbered phase: Discover → Interview → Specify → Plan → Detail → Execute. Each phase is gated — the human approves the output before the next phase begins. The pipeline never auto-advances.
 
-Greenfield projects skip Discover (no existing system to understand) and enter at Interview. A minimal Knowledge Base is populated from interview answers during the full-path flow.
+Greenfield projects skip Discover (no existing system to understand) and enter at Interview. On the full path, `aid-describe` forward-authors a Knowledge Base seed from intent before any code exists — the design documents are the source of truth, and code is built to conform to them.
 
 ### The Lite Path at a Glance
 
@@ -143,7 +143,7 @@ Every phase is co-executed by human and AI. Not "AI executes, human rubber-stamp
 
 Every methodology tells you to "write good specs." None tells you how to understand a system well enough to write them. AID does. The Discovery phase produces a Knowledge Base — a structured collection of documents covering architecture, conventions, data models, integrations, tech debt, and domain language. The spec is then written *against* this knowledge, not from imagination.
 
-The contrast with greenfield projects is instructive. On greenfield, you skip Discovery — there is no existing system to understand. But you still populate a minimal Knowledge Base from the interview. Even for new projects, understanding precedes specification: understanding the domain, the users, the constraints, the technology choices.
+The contrast with greenfield projects is instructive. On greenfield, you skip Discovery — there is no existing system to understand. But understanding still precedes specification. `aid-describe`'s DESCRIBE-SEED state forward-authors a five-element Knowledge Base seed from intent — domain language, intended architecture, conventions, technology stack, and key decisions — before a single line of code exists. This inverts the brownfield direction: the design documents are the source of truth (stamped `source: forward-authored`), and the code is built to conform to them. When code later exists, `aid-housekeep`'s conformance lane checks for divergence and surfaces any gap for human reconciliation, never overwriting the design automatically.
 
 **2. Specs Are Living Documents**
 
@@ -514,7 +514,11 @@ Multiple works can coexist — a client requests auth now, reporting later. Each
 
 **States 1–4: The conversational interview.** One question at a time — starting broad (Objective, Problem Statement) and getting specific (Constraints, Acceptance Criteria). State 1 opens the interview and State 3 continues it; **State 2** is a Q&A mode that resolves pending questions raised by a downstream-phase loopback, a cross-reference pass, or review findings; **State 4** is the completion-and-approval gate that finalizes REQUIREMENTS.md.
 
-When a KB exists (brownfield), questions come with suggested answers and source citations: `[From: .aid/knowledge/{source}.md]` with options to accept, skip, or provide a custom answer. Nothing is silently inferred. This is what makes brownfield interviews short — the KB pre-fills technical context.
+**The elicitation engine.** The interview is driven by a seasoned-analyst elicitation engine, not a fixed questionnaire. It opens with a single fixed D1 turn ("what do you want to build, and what outcome are you after?") and then runs a deterministic five-step next-move selector on every subsequent turn: stop-check, gap selection, move selection, calibration shaping, and envelope-and-emit. Every question is wrapped in the NFR-7 envelope: a concrete suggested answer plus a grounded rationale, so the user reacts to a concrete proposal rather than a blank prompt. The engine continuously reads the user's expertise level (Expert / Mixed / Novice / Unknown) and shapes question depth accordingly — an Expert session and a Novice session on the same topic read as genuinely different conversations. An expert-advisor stance governs every response: the engine recommends, explains trade-offs, teaches, and cordially disagrees with mistaken assumptions, but always returns the final decision to the user. An anti-anchoring guard prevents deferential users from converging on the analyst's framing: genuinely open, high-stakes questions are presented open-first for novice users. The engine applies to both brownfield and greenfield interviews.
+
+When a KB exists (brownfield), suggested answers are additionally grounded in KB citations: `[From: .aid/knowledge/{source}.md]`. Nothing is silently inferred. This is what makes brownfield interviews short — the KB pre-fills technical context that the engine then uses as the basis for its proposals.
+
+**On greenfield (DESCRIBE-SEED).** When no KB exists, `aid-describe` runs its DESCRIBE-SEED state immediately after the elicitation loop completes — before REQUIREMENTS.md is approved. The engine forward-authors a five-element KB seed from intent: concept-spine and ubiquitous language (`domain-glossary.md`), intended architecture (`architecture.md`), conventions (`coding-standards.md`), technology stack (`technology-stack.md`), and key decisions (`decisions.md`, when rationale-bearing choices emerge). Each document is stamped `source: forward-authored`. A layered coherence check validates internal consistency and ensures every load-bearing REQUIREMENTS term maps to a seed concept. A greenfield-mode review gate then grades the seed using the same universal rubric as Discovery, with intent-evidence substituted for code-evidence. On brownfield, the KB is extracted from existing code. On greenfield, the design documents are the source of truth, and code is built to conform — the inversion.
 
 **State 5: Feature Decomposition.** After REQUIREMENTS.md is approved, the agent proposes a feature breakdown from §5 Functional Requirements. Each approved feature gets its own folder with a SPEC.md containing the requirements side (description, user stories, priority, acceptance criteria). The technical specification section is left empty — that is Specify's job.
 
@@ -756,7 +760,7 @@ As a project evolves, the codebase drifts from the KB. New dependencies appear. 
 `aid-housekeep` runs on a dedicated `aid/housekeep-*` branch (one commit per stage, never pushes) through a five-state machine:
 
 - **PREFLIGHT** — checks preconditions (branch, workspace, settings).
-- **KB-DELTA** — re-discovers KB docs that have drifted from the repo since the last KB approval. Synthesizes a `**Impact:** Required` Q&A entry to drive `/aid-discover`'s targeted re-discovery.
+- **KB-DELTA** — re-discovers KB docs that have drifted from the repo since the last KB approval. For brownfield docs, synthesizes an `**Impact:** Required` Q&A entry to drive `/aid-discover`'s targeted re-discovery. For greenfield forward-authored design docs (stamped `source: forward-authored`), runs a **Conformance Lane** instead: it checks whether as-built code diverges from the forward-authored design, classifies any divergence (`placeholder-resolved`, `code-ahead`, or `contradiction`), and surfaces the findings for human reconciliation. It never silently overwrites the design with as-built — authority stays design-to-code until the human explicitly chooses otherwise.
 - **SUMMARY-DELTA** — regenerates the visual summary via `/aid-summarize` if the KB changed.
 - **CLEANUP** — sweeps stale `.aid/` work-area artifacts (old work directories, resolved impediments, completed task state files).
 - **DONE** — terminal state.
@@ -1387,10 +1391,10 @@ network required after the initial download. All channels deliver the same persi
 ### Starting a New Project (Greenfield)
 
 1. Run `/aid-config`, then `/aid-describe`. TRIAGE will assess scope; greenfield projects with multiple features will route to full path.
-2. A minimal KB is populated from interview answers during the full-path flow.
+2. On the full path, `aid-describe` runs its DESCRIBE-SEED state: it forward-authors a five-element KB seed (domain language, intended architecture, conventions, technology stack, and key decisions) from intent before any code exists. The seed is stamped `source: forward-authored` — the design is the source of truth, and code is built to conform to it.
 3. **Full path:** Run `/aid-define` → `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`.
 4. **Lite path (small greenfield change):** `/aid-describe` completes condensed flow; run `/aid-execute`.
-5. The KB grows organically as the codebase develops. Run `/aid-discover` once meaningful code exists to backfill discovery.
+5. As the codebase develops, run `/aid-housekeep` periodically. Its conformance lane will check whether as-built code diverges from the forward-authored design and surface any gaps for your decision — it never overwrites the design automatically.
 
 ### Using the Lite Path and Recipes
 

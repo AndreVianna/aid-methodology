@@ -22,9 +22,10 @@ owner: architect
 audience: [developer, architect]
 contracts:
   - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
-  - "13 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
+  - "14 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
 changelog:
+  - 2026-06-28: work-001-aid-interview-improvements -- aid-interview split into aid-describe (2a) + aid-define (2b); added the aid-describe elicitation-engine corpus, greenfield seed-authoring, and the aid-housekeep Conformance Lane sub-module; skill count 13 -> 14.
   - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
 ---
 
@@ -48,6 +49,7 @@ it produces. The modules fall into four planes:
 - [Module Inventory](#module-inventory)
 - [Dependency Graph](#dependency-graph)
 - [Script Modules by Area](#script-modules-by-area)
+- [Notable Skill Reference Modules](#notable-skill-reference-modules)
 - [Entry Points](#entry-points)
 - [High-Churn Modules](#high-churn-modules)
 - [Oversized Modules](#oversized-modules)
@@ -72,8 +74,8 @@ it produces. The modules fall into four planes:
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (13) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill. Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
-| `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. |
+| `canonical/skills/*` (14) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill. The Interview phase is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
 | `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, execute, housekeep, interview, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, recipe template. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
 | `canonical/aid/recipes/*` (52) | Toolkit | Pre-filled lite-path change templates with `{{slot}}` placeholders (add-/change-/fix- families). | `interview/parse-recipe.sh` consumes them | medium | parse coverage | Passthrough-rendered (no frontmatter injection). |
@@ -116,6 +118,8 @@ canonical/agents/*    -> canonical/aid/templates/agent-boilerplate.md   (include
 canonical/aid/scripts/* (most) -> canonical/aid/scripts/config/read-setting.sh
 */state-review.md (skills) -> canonical/aid/scripts/grade.sh
 canonical/aid/recipes/* -> canonical/aid/scripts/interview/parse-recipe.sh (consumed by)
+canonical/skills/aid-describe -> canonical/skills/aid-define   (REQUIREMENTS.md handoff: Phase 2a -> 2b)
+canonical/skills/aid-housekeep -> canonical/skills/aid-discover/references/agent-prompts.md  (shadow-extract via output_root; Conformance Lane)
 
 # Observation plane
 dashboard/server/server.mjs -> dashboard/server/reader.mjs
@@ -147,7 +151,7 @@ grader).
 | `config/` | `read-setting.sh` | every skill | Resolves a setting from `.aid/settings.yml` (skill-override -> category -> default). |
 | `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.md writeback. |
 | `housekeep/` | `branch-commit.sh`, `cleanup-classify.sh`, `housekeep-state.sh` | `aid-housekeep` | Branch/commit helpers, orphan/cleanup classification, housekeep run-state. |
-| `interview/` | `parse-recipe.sh` | `aid-interview` | Parses a recipe file's `{{slot}}` placeholders for the lite path. |
+| `interview/` | `parse-recipe.sh` | `aid-describe` | Parses a recipe file's `{{slot}}` placeholders for the lite path. (Area name predates the skill rename; the script moved consumers from `aid-interview` to `aid-describe`.) |
 | `kb/` | `build-project-index.sh`, `build-metrics.sh`, `build-kb-index.sh`, `harvest-coined-terms.sh`, `closure-check.sh`, `discover-preflight.sh`, `kb-actback-task.sh`, `kb-citation-lint.sh`, `kb-dual-intent-probes.sh`, `kb-freshness-check.sh`, `kb-teachback-questions.sh`, `lint-frontmatter.sh`, `recon-classify.sh` | `aid-discover` (most), `aid-update-kb` (`kb-freshness-check.sh`) | The discovery/KB engine: index + metric generation, concept harvest, closure loop, frontmatter + citation lint, path classification, dual-intent self-eval. |
 | `migrate/` | `migrate-kb-frontmatter.sh`, `migrate-work-hierarchy.sh`, `migrate-work-hierarchy.ps1` | `aid` CLI update path | One-time migrations (KB frontmatter v2; work-hierarchy restructure). Shell + PowerShell twin. |
 | `release/` | `check-version-sync.sh` | `release.sh`, CI | Verifies the version string is in lockstep across all manifests. |
@@ -156,6 +160,21 @@ grader).
 > The installed copies under each profile (and the dogfood `.claude/aid/scripts/`)
 > are rendered from these canonical sources. Edit `canonical/`, never the rendered
 > copy.
+
+---
+
+## Notable Skill Reference Modules
+
+Most skills carry their state-machine prose in `references/*.md`. Three reference
+clusters added by work-001-aid-interview-improvements (which split `aid-interview`
+into `aid-describe` + `aid-define`) are substantial enough to track as modules in
+their own right.
+
+| Module | Owning skill | Purpose | Key files (durable anchors) |
+|--------|--------------|---------|-----------------------------|
+| aid-describe elicitation engine | `aid-describe` | The seasoned-analyst interview driver: a fixed D1 opener plus a deterministic five-step next-move selector, ten elicitation moves with a gap-type firing table, expertise calibration, the NFR-7 advisory envelope, and a final coherence check. | `canonical/skills/aid-describe/references/`: `elicitation-engine.md` ("D1 Fixed Opener", "Engine Overview"), `move-playbook.md` ("Gap-Type to Move Firing Table"), `calibration.md`, `advisor-stance.md` ("NFR-7 Question-Envelope Contract"), `coherence-check.md`. |
+| Greenfield KB-seed authoring | `aid-describe` | Forward-authors a five-element KB seed (concept-spine + architecture + conventions + tech-stack + decisions) from intent, stamped `source: forward-authored` -- the docs-are-truth, code-conforms inversion. | `canonical/skills/aid-describe/references/state-describe-seed.md`; the `forward-authored` marker is defined in `canonical/aid/templates/kb-authoring/frontmatter-schema.md` (the `forward-authored` source row). |
+| aid-housekeep Conformance Lane | `aid-housekeep` | Sub-module of the KB-DELTA state: checks as-built code against `source: forward-authored` design docs in the code -> design direction and flags divergence for human reconciliation; never auto-overwrites the design (NFR-5 carve). Runs a shadow extraction via aid-discover's `output_root` parameter. | `canonical/skills/aid-housekeep/references/state-kb-delta.md` ("Conformance Lane -- forward-authored docs"); the shadow-extract parameter lives in `canonical/skills/aid-discover/references/agent-prompts.md` ("Dispatch Parameter: output_root"). |
 
 ---
 
@@ -252,6 +271,11 @@ grader).
   file in one channel is a ship bug (precedent: home.html omission).
 - **Settings are read through `read-setting.sh`:** scripts MUST NOT hand-parse
   `.aid/settings.yml`; the resolver owns the override -> category -> default chain.
+- **Forward-authored docs flow design -> code, never code -> design:** a
+  `source: forward-authored` KB doc is the design contract; `aid-housekeep`'s
+  Conformance Lane may only FLAG code divergence for human reconciliation and MUST
+  NOT overwrite the design with as-built reality (NFR-5 carve; see
+  `state-kb-delta.md` "Conformance Lane").
 - **Derived STATE views are never written:** the work/delivery `## Tasks State`,
   `## Delivery Gates`, etc. are read-time unions over per-unit STATE.md files; only
   the per-unit files are write targets (see artifact-schemas.md).
@@ -285,6 +309,10 @@ grader).
   toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles +
   `.claude/`). Do NOT "deduplicate" -- they are rendered/vendored copies of
   `canonical/`.
+- **The `interview/` script area is not a skill.** After the `aid-interview` ->
+  `aid-describe` + `aid-define` split, the `canonical/aid/scripts/interview/` area
+  name persists but its single script (`parse-recipe.sh`) is now consumed by
+  `aid-describe`; there is no `aid-interview` skill directory.
 - **Master-only CI gates.** `tests/run-all.sh` (canonical suites) and the Astro
   `site` build run only on push/PR to master; a green feature branch can still break
   master. Run them locally (HOME-pinned) before claiming green.
@@ -300,4 +328,5 @@ grader).
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
+| 1.1 | 2026-06-28 | work-001-aid-interview-improvements | Split `aid-interview` into `aid-describe` (2a) + `aid-define` (2b); skill count 13 -> 14; reassigned the `interview/` script area + interviewer agent to `aid-describe`; added the Notable Skill Reference Modules section (elicitation engine, greenfield seed-authoring, Conformance Lane) + the forward-authored design->code invariant. |
 | 1.0 | 2026-06-25 | aid-discover | Initial module map (brownfield deep-dive / Analyst) |

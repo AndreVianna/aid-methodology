@@ -117,10 +117,10 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Category:** Inventory / terminology
 - **Impact:** Medium
 - **Status:** Answered
-- **Context:** `canonical/skills/` contains 13 skill directories (aid-config, aid-deploy, aid-detail, aid-discover, aid-execute, aid-housekeep, aid-interview, aid-monitor, aid-plan, aid-query-kb, aid-specify, aid-summarize, aid-update-kb). `README.md` uses both "12-skill pipeline" (header) and "13 skills · 5 groups" (diagram caption); `docs/repository-structure.md` says "12 skill definitions". The counts disagree across sources.
-- **Suggested:** 13 skill directories exist; "12-skill pipeline" likely counts only pipeline-positioned skills and excludes one off-pipeline/setup skill. Confirm the canonical phrasing so KB docs use one consistent count.
-- **Answer:** USER DECISION: state "13 skills" consistently (the disk fact, matches canonical/skills/). README's "12-skill pipeline" is a source-doc inconsistency, out of discovery scope. FIX: ensure all KB docs use 13.
-- **Applied to:** capability-inventory.md, architecture.md, module-map.md, project-structure.md (verify "13 skills" consistency in FIX)
+- **Context:** `canonical/skills/` contains 14 skill directories (aid-config, aid-deploy, aid-describe, aid-define, aid-detail, aid-discover, aid-execute, aid-housekeep, aid-monitor, aid-plan, aid-query-kb, aid-specify, aid-summarize, aid-update-kb). `README.md` uses both "12-skill pipeline" (header) and "13 skills · 5 groups" (diagram caption); `docs/repository-structure.md` says "12 skill definitions". The counts disagree across sources.
+- **Suggested:** 14 skill directories exist; "12-skill pipeline" likely counts only pipeline-positioned skills and excludes one off-pipeline/setup skill. Confirm the canonical phrasing so KB docs use one consistent count.
+- **Answer:** USER DECISION: state "14 skills" consistently (the disk fact, matches canonical/skills/). README's "12-skill pipeline" is a source-doc inconsistency, out of discovery scope. FIX: ensure all KB docs use 14.
+- **Applied to:** capability-inventory.md, architecture.md, module-map.md, project-structure.md (verify "14 skills" consistency in FIX)
 
 ### Q2
 
@@ -169,7 +169,7 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Status:** Answered
 - **Context:** Discovery must confirm the project's capability/feature set is captured correctly. `capability-inventory.md` (C9) lists AID's capabilities by name (pipeline skills, on-demand skills, CLI, distribution) rather than asserting a single skill count (see Q1).
 - **Suggested:** Confirm that `capability-inventory.md` correctly and completely captures what AID does for its users, or list any capability that is missing, miscategorized, or wrongly described.
-- **Answer:** USER CONFIRMED: the capability set is complete and correct (13 skills = 9 pipeline + 4 on-demand, CLI installer, 5-profile distribution). FIX still addresses M2-003 (add per-capability module/script mapping or explicit cross-ref to module-map.md).
+- **Answer:** USER CONFIRMED: the capability set is complete and correct (14 skills = 10 pipeline + 4 on-demand, CLI installer, 5-profile distribution). FIX still addresses M2-003 (add per-capability module/script mapping or explicit cross-ref to module-map.md).
 - **Applied to:** capability-inventory.md (M2-003 mapping refinement in FIX)
 
 ## Review History

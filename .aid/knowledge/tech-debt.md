@@ -58,7 +58,7 @@ structural and methodological, not littered code.
 | **H1** | Architecture / lockstep | Five install manifests must stay byte-lockstep on the dashboard file set; a silent omission breaks provisioning on one channel | install.sh, install.ps1, vendor.js, vendor.py, release.sh | High | M | P1 |
 | **M1** | Shipping gap | ~~npm + PyPI publish channels BLOCKED on external account setup; effectively GitHub-only~~ DEFERRED — workflow is OIDC-ready; npm-publish gated vars.NPM_ENABLED (release.yml L217), pypi-publish gated vars.PYPI_ENABLED (L284); closure requires owner to create npm @aid scope + PyPI org/Trusted-Publisher and flip repo variables | .github/workflows/release.yml | Medium | M (external) | P2 |
 | **M2** | Test gap / process | ~~Full canonical suite + Astro build run on master/tag only~~ RESOLVED — both now gate `pull_request` to master (test.yml already did; docs.yml build added); deploy stays master-only | .github/workflows/{test,docs}.yml | Medium | S | P2 |
-| **M3** | Stale documentation | ~~Contributor doc cites wrong skill/recipe counts + wrong path~~ RESOLVED — docs/repository-structure.md updated: 13 skills, 52 recipes, canonical/aid/{templates,recipes,scripts} paths corrected (2026-06-27) | docs/repository-structure.md | Medium | S | P2 |
+| **M3** | Stale documentation | ~~Contributor doc cites wrong skill/recipe counts + wrong path~~ RESOLVED — docs/repository-structure.md updated: 14 skills, 52 recipes, canonical/aid/{templates,recipes,scripts} paths corrected (2026-06-27) | docs/repository-structure.md | Medium | S | P2 |
 | **M4** | Test gap / gate coverage | Visual-fidelity gate validates one wide viewport only; a visual can pass yet clip at the narrower dashboard column | canonical/aid/scripts/summarize/validate-visuals.mjs | Medium | S | P2 |
 | **L1** | Dead code | ~~Unreachable `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff branch~~ RESOLVED | install.sh, install.ps1 | Low | S | P3 |
 | **L2** | Deferred feature | `release.sh --sign` exits non-zero (signing not implemented) | release.sh | Low | M | P3 |
@@ -170,11 +170,12 @@ master CI broke three ways from exactly this gap).
 
 **Type:** Stale documentation (methodology debt)
 
-**Description:** The contributor map says "12 skill definitions" and "51 lite-path recipes"
-and references the path `canonical/recipes/`. Reality: `canonical/skills/` holds 13 skill
-directories, recipes live at `canonical/aid/recipes/` (note the `aid/` segment) with 52
-files. Adding/removing a canonical skill leaves "N user-facing skills" counts stale across
-roughly ten KB/doc surfaces; CI does not catch this. Two related source-doc drifts share this
+**Description:** `docs/repository-structure.md` previously said "12 skill definitions" and
+"51 lite-path recipes" and referenced the path `canonical/recipes/`; it has been corrected
+(2026-06-27) to **14** skill directories under `canonical/skills/` and **52** recipe files at
+`canonical/aid/recipes/` (note the `aid/` segment) -- this headline drift is RESOLVED. The
+general risk persists: adding/removing a canonical skill leaves "N user-facing skills" counts
+stale across roughly ten KB/doc surfaces; CI does not catch this. Two related source-doc drifts share this
 item: `docs/aid-methodology.md` ("## 7. Artifacts Reference") describes the flat task layout
 `.aid/{work}/tasks/task-NNN.md` while the live skills + `work-state-template.md` + on-disk
 state use the nested `delivery-NNN/tasks/task-NNN/` shape; and `canonical/EMISSION-MANIFEST.md`
@@ -299,7 +300,7 @@ operative `test-ascii-only.sh` excludes agent-side summarize scripts (CI green),
 shipped-script ASCII hygiene is the standing rule.
 
 **Location:** `canonical/aid/templates/knowledge-summary/section-templates/web-app.md` §1;
-`canonical/aid/scripts/summarize/writeback-state.sh:2`.
+`canonical/aid/scripts/summarize/writeback-state.sh` (header comment block).
 
 **Risk if unaddressed:** None functional -- cosmetic doc-consistency + an ASCII-hygiene exception.
 
@@ -458,3 +459,4 @@ model.
 | 1.2 | 2026-06-26 | wrap-up | M2 RESOLVED — `docs.yml` Astro build now gates `pull_request` to master (test.yml canonical suite already did); `deploy` stays master-only. Marking the checks branch-protection-required is an owner action. |
 | 1.3 | 2026-06-27 | feature-007/task-008 | M1 DEFERRED — workflow is OIDC-ready (`npm-publish` gated `if: vars.NPM_ENABLED == 'true'` L217; `pypi-publish` gated `if: vars.PYPI_ENABLED == 'true'` L284 in release.yml); closure is owner-gated/externally-blocked (npm @aid scope + PyPI org/Trusted-Publisher + variable flip); deferred to next public release cycle. |
 | 1.4 | 2026-06-27 | work-001/task-009 | L7 RESOLVED -- aid-researcher granted WebSearch + WebFetch; RESEARCH tasks requiring a web survey can now use the type-appropriate executor instead of falling back to general-purpose agents. |
+| 1.5 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in M3 inventory row and M3 detailed description (aid-interview split into aid-describe + aid-define). |

@@ -2,7 +2,10 @@
 name: aid-housekeep
 description: >
   Optional on-demand housekeeping skill. Runs three gated jobs in strict order:
-  KB-DELTA (re-discover changed docs since last KB approval) → SUMMARY-DELTA
+  KB-DELTA (re-discover changed docs since last KB approval; brownfield docs take the
+  doc<-code drift path, while source: forward-authored greenfield docs take the
+  Conformance Lane -- a code->design shadow-extract that FLAGS design vs as-built
+  divergence for human reconciliation and never auto-overwrites the design) → SUMMARY-DELTA
   (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale
   work-area artifacts). Each stage commits its own changes on an aid/housekeep-*
   branch; the skill never pushes. Re-entrant: a stalled run resumes at the stalled
