@@ -124,6 +124,15 @@ Why: keeping one label per concept prevents the "same thing, two names" confusio
      breaks requirements downstream.
 ```
 
+**Verbatim-wording rule (G3).** The canonical label proposed here MUST use or closely echo
+the user's own term -- not a paraphrase from the analyst's vocabulary. The D1 opener
+commits the analyst to "I will use your terms, not impose mine"; Move 2 is where that
+promise is honoured in practice. If the user's term is unclear or would benefit from a
+cleaner label, the analyst proposes the alternative EXPLICITLY with rationale (for example:
+"You said 'job runner' -- I'd suggest calling this 'task executor' because it aligns with
+the existing codebase naming; does that work for you?"). Silent substitution is not
+permitted; a rename requires the user's explicit confirmation.
+
 ---
 
 ### Move 3 -- Boundary-elicitation (Family 2: Context Modeling)
@@ -351,3 +360,4 @@ five-step next-move selector and the stop check.
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-27 | task-011 (IMPLEMENT) | Initial authoring: ten moves + gap-type firing table, grounded in findings.md RQ-B1 and feature-002 SPEC. |
+| 1.1 | 2026-06-27 | work-001-aid-interview-improvements delivery-003 task-041 | G3 verbatim-wording rule added to Move 2: canonical label must echo the user's term; explicit rename with rationale required; silent substitution not permitted |

@@ -56,6 +56,7 @@ RENAME or directory restructure here -- this is purely behavioral, in place.
 | task-016 | IMPLEMENT | Opener-seam de-dup in state-continue.md |
 | task-017 | CONFIGURE | Full generator render + 5-profile/.claude propagation |
 | task-018 | TEST | Delivery-003 verification -- brownfield tests + dogfood-transcript review |
+| task-041 | IMPLEMENT | Anti-anchoring guard + read-back + verbatim-wording hardening (web-validation) |
 
 ## Dependencies
 

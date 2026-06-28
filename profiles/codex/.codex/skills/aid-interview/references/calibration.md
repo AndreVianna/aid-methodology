@@ -151,6 +151,15 @@ one Novice persona -- must demonstrate (a) the calibration ASK fired as an early
 confirm-and-move while the Novice run drew out, taught, and used more example-probes. The
 two transcripts must read as different conversations.
 
+**Anti-anchoring implication of Novice state (G1):** for genuinely-open, high-stakes, or
+creative gaps when calibration state is Novice (or the user is reading as deferential on
+a given turn), apply the open-first question order defined in
+`references/advisor-stance.md` Rule G1a, rather than the standard straw-man-first order.
+The NFR-7 envelope (Suggested: and Why:) remains present in both orders; only the framing
+of the context sentences and the Why: copy changes. Expert and Mixed states keep the
+standard straw-man-first order. Low-stakes or convergent gaps keep the standard order
+regardless of calibration state.
+
 ---
 
 ## Feature-004 Inheritance
@@ -160,3 +169,12 @@ re-implementing it. An unsure user in triage needs more drawing-out to supply th
 type signals that route them correctly; the backbone-first and walking-skeleton moves that
 feature-004 leans on (Gap rank 2 for scope-size unknowns) are shaped by calibration state
 exactly as they are in the full-path interview.
+
+---
+
+## Change Log
+
+| Rev | Date | Source | Description |
+|-----|------|--------|-------------|
+| 1.0 | 2026-06-27 | work-001-aid-interview-improvements delivery-003 task-013 | Initial authoring: AC-4/D1 reconciliation, continuous READ + explicit ASK, four-state calibration, depth-shaping table, feature-004 inheritance |
+| 1.1 | 2026-06-27 | work-001-aid-interview-improvements delivery-003 task-041 | G1 anti-anchoring implication: open-first order for Novice/deferential on genuinely-open/high-stakes gaps (cross-reference to advisor-stance.md Rule G1a) |

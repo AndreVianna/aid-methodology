@@ -31,7 +31,7 @@ Delivery Lifecycle, Gate Block, Cross-phase Q&A. DERIVED zone (read-only): Tasks
 
 - **Reviewer Tier:** Large
 - **Grade:** A+
-- **Issue List:** none (TOTAL 0; engine+triage; 83 canonical suites GREEN + Astro build; brownfield byte-untouched; DBI byte-identical)
+- **Issue List:** none (TOTAL 0; engine+triage + task-041 web-validation hardening [G1 anti-anchoring calibration-gated + G2 read-back + G3 verbatim; NFR-7 intact]; brownfield byte-untouched; DBI byte-identical)
 - **Timestamp:** 2026-06-27T23:00:00Z
 
 ---

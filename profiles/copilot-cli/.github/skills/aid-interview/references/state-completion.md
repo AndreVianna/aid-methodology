@@ -90,6 +90,11 @@ is `*(pending)*` or absent, ask the user for a one-sentence description before p
 
 ### Step 4: Present Summary
 
+**G2 whole-picture read-back (elicitation-engine.md Invariant 8):** this step fulfils
+the requirement that the assembled intent be reflected back to the user before approval;
+surface any re-confirmable assumptions (advisor-stance.md Rule G1b) here so the user
+can revisit them.
+
 ```
 I believe I have enough information. Here's a summary:
 

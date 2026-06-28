@@ -63,11 +63,11 @@ different places.
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Paused-Awaiting-Input
+- **Lifecycle:** Running
 - **Phase:** Execute
-- **Active Skill:** none
-- **Updated:** 2026-06-27T23:00:00Z
-- **Pause Reason:** delivery-003 (engine+triage) executed + A+-gated; owner requested a pause after the first delivery of this execute run before continuing to delivery-004.
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-28T00:00:00Z
+- **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -153,7 +153,9 @@ different places.
 | 2026-06-27 | Re-specify feature-006: rename → SPLIT (D3) | A+ | aid-interview → aid-describe + aid-define; 20-ref state partition, inter-skill pause-resume seam (HIGH catch: COMPLETION already PAUSEs, not a chain), skill count +1 (13→14), propagation machinery carried fwd, aid-interviewer guard, sequenced after content. 2 gate cycles → TOTAL 0. **ALL features 001-007 now spec-complete at A+; ready for /aid-plan re-plan.** |
 | 2026-06-27 | Re-plan (pass 2): added deliveries 003-006 | A+ | On top of executed delivery-001/002: d003 Engine+Triage (002+004), d004 Greenfield Seed (003), d005 Conformance (005), d006 Split (006). Linear chain d003→d004→d005→d006 (gate MEDIUM catch: d005×d006 share aid-discover/state-generate.md → added d006→d005 sequencing edge). All 4 delivery folders at Pending-Spec; Deferred cleared. **NEXT: /aid-detail (delivery-003 first).** |
 | 2026-06-27 | Detail deliveries 003-006 (A+ each) | A+ | 31 new tasks (task-010..040) across 4 deliveries: d003 = 010-018 (engine refs → driver → wiring → triage → de-dup → render → verify); d004 = 019-027 (marker 4-file + greenfield gate + coherence + seed-state → render → verify); d005 = 028-035 (output_root + KB-DELTA carve + diff/classifier + reconcile + signpost[owner-added task-035] → render → 2 TEST); d006 = 036-040 (inventory → carve+seam → sweep+count → render+prune → verify). Exec graphs + wave-maps in PLAN.md; shared-file sequencing honored throughout. Gates caught real defects (d005 agent-misattribution traced to feature-005 source; d006 stray PLAN paragraph). **ALL 40 tasks across 6 deliveries detailed; work is execution-ready. NEXT: /aid-execute (delivery-003 first).** |
-| 2026-06-27 | Execute delivery-003 (engine+triage) + A+ gate | A+ | 9 tasks (010-018): 4 engine reference docs (advisor-stance/move-playbook/calibration/elicitation-engine) authored + wired into the aid-interview spine in place (SKILL.md + interview-loop/strategies + state-continue/triage); engine-driven guided triage (5-signal gap inventory + Opener: de-dup) → full render to 5 profiles + .claude mirror (DBI, idempotent, generator self-tests pass) → verification (ALL 83 canonical suites GREEN + Astro build; brownfield byte-untouched; dogfood AC-3/AC-4/engine-not-form/triage PASS). Gate TOTAL 0; 2 observations adjudicated Accepted. **PAUSED after delivery-003 per owner request; NEXT (on resume): /aid-execute delivery-004 (greenfield seed).** |
+| 2026-06-27 | Execute delivery-003 (engine+triage) + A+ gate | A+ | 9 tasks (010-018): 4 engine reference docs (advisor-stance/move-playbook/calibration/elicitation-engine) authored + wired into the aid-interview spine in place (SKILL.md + interview-loop/strategies + state-continue/triage); engine-driven guided triage (5-signal gap inventory + Opener: de-dup) → full render to 5 profiles + .claude mirror (DBI, idempotent, generator self-tests pass) → verification (ALL 83 canonical suites GREEN + Astro build; brownfield byte-untouched; dogfood AC-3/AC-4/engine-not-form/triage PASS). Gate TOTAL 0; 2 observations adjudicated Accepted. |
+| 2026-06-28 | Merged origin/master (23 commits) into branch | -- | work-002 dashboard-export + housekeep + dependabot + summarize changes + the new test-kb-export suite. Only the 5 emission-manifest.jsonl conflicted → resolved by regenerating from merged canonical; test-visual-fidelity.sh auto-merged (master PW-fix + my VF cases). Merge 2cc674b7; post-merge run-all ALL 84 GREEN. Branch caught up (ahead 14 / behind 0). |
+| 2026-06-28 | delivery-003 hardening (task-041, web-validation) + A+ re-gate | A+ | After an architect intent-review + a WEB best-practice validation (web-grounded; surfaced G1 anchoring / G2 read-back / G3 verbatim gaps), added task-041: calibration-GATED open-first anti-anchoring rule (NFR-7 NOT weakened — order/framing only, both Suggested+Why retained) + re-confirmable assumptions + restate-not-replace + whole-picture read-back (Invariant 8 + state-completion hook) + preserve-verbatim-wording (Move 2), across 5 engine docs → render (DBI, idempotent) → re-gate TOTAL 0. Brownfield green (test-install IN11d flaked once under run-all but passes 194/0 standalone — timing flake, unrelated to engine prose). **NEXT: /aid-execute delivery-004 (greenfield seed).** |
 
 ---
 

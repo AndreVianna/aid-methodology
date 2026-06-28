@@ -344,6 +344,7 @@ These invariants hold for every turn the engine runs, including the D1 opener.
 | 5 | The loop halts at minimal-but-sufficient (consumer's stop predicate fires), not at the end of a list | NFR-4 / RQ-A5; Step 1 stop check |
 | 6 | The opener is NEVER the calibration question; the calibration ASK fires as a follow-up at gap rank 2, never on turn 1 | D1 / AC-4; calibration.md Part B gating rule |
 | 7 | Every decision defers to the user; the engine recommends and guides but never decides silently | NFR-1; advisor-stance.md "Expert-Advisor Stance" |
+| 8 | Before the host's approval gate, the assembled intent gathered across all turns is reflected back to the user for confirmation and correction (whole-picture read-back). Per-turn confirmations (Move 10 scribe) do not substitute for this -- the whole must be confirmed, not just individual decisions. In the full-path interview, state-completion.md Step 4 fulfils this invariant. Feature-003 and feature-004 consumers must define an equivalent confirmation step. | web-bestpractice-validation.md G2 (Mircea et al.: "validation loop"); state-completion.md Step 4 |
 
 ---
 
@@ -352,3 +353,4 @@ These invariants hold for every turn the engine runs, including the D1 opener.
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-27 | work-001-aid-interview-improvements delivery-003 task-013 | Initial authoring: D1 fixed opener + five-step next-move selector + three-parameter consumption contract, grounded in feature-002/SPEC.md and owner decisions D1/D2/D3 in STATE.md ## Cross-phase Q&A. |
+| 1.1 | 2026-06-27 | work-001-aid-interview-improvements delivery-003 task-041 | G2 whole-picture read-back: Invariant 8 added (assembled-intent confirmation before approval gate; fulfilled by state-completion.md Step 4 for full-path interview) |

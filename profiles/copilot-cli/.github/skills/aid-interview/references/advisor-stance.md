@@ -17,6 +17,10 @@ by the engine driver at `references/elicitation-engine.md`.
 - [Expert-Advisor Stance](#expert-advisor-stance)
   - [The Five User-Move Handlers](#the-five-user-move-handlers)
   - [Discipline Lives in Process, Not Restriction](#discipline-lives-in-process-not-restriction)
+- [Anti-Anchoring, Assumption-Flagging, and Distortion Guards](#anti-anchoring-assumption-flagging-and-distortion-guards)
+  - [Rule G1a -- Calibration-Sensitive Open-First Order](#rule-g1a----calibration-sensitive-open-first-order)
+  - [Rule G1b -- Re-Confirmable Assumptions](#rule-g1b----re-confirmable-assumptions)
+  - [Rule G1c -- Restate-Not-Replace Distortion Check](#rule-g1c----restate-not-replace-distortion-check)
 - [Change Log](#change-log)
 
 ---
@@ -142,6 +146,114 @@ discipline is carried by the process:
 - **Silent assumptions are banned.** A blank or "I don't know" answer is
   never silently recorded as empty. The handler above converts it to an
   explicit assumption, marked as such, so the user can revisit it.
+- **Verbatim wording is preserved (G3).** The analyst captures the user's key
+  terms in the user's own words -- the D1 "I will use your terms, not impose
+  mine" promise. It does not silently paraphrase domain terms into the
+  analyst's vocabulary. A rename is proposed explicitly, with rationale, only
+  when needed. See Move 2 (term-capture, `references/move-playbook.md`) for
+  the per-term capture discipline.
+
+---
+
+## Anti-Anchoring, Assumption-Flagging, and Distortion Guards
+
+**Anchoring** is the named failure mode guarded by this section: a suggested answer --
+even a well-intentioned straw-man -- can cause a deferential or novice user to converge
+on the analyst's framing rather than articulating their own intent (NN/g: a leading
+question "implies the desired answer in the phrasing itself"; the effect is worst when
+the interviewer is the perceived authority). The NFR-7 envelope's explicit override
+options ([3] Your answer: ___) and the cordial-disagreement handler soften this risk
+but do not eliminate it for novice users, who receive MORE suggestions under calibration.
+Three hardening rules address the residual risk without weakening NFR-7.
+
+---
+
+### Rule G1a -- Calibration-Sensitive Open-First Order
+
+NFR-7 is unchanged: every emitted question carries a concrete `Suggested:` and a grounded
+`Why:`. The hardening is ORDER and FRAMING of the context sentences, not removal of the
+straw-man.
+
+**Standard order (straw-man-first) -- the default for most turns:**
+Context sentences prime with the analyst's proposed direction; the question follows; the
+`Suggested:` is presented as the default to accept or override. Use for: Expert or Mixed
+calibration state, OR any low-stakes / convergent / fill-in gap (regardless of calibration
+state).
+
+**Open-first order -- use when BOTH conditions hold:**
+- (a) Calibration state is Novice (or the user is reading as deferential this turn); AND
+- (b) The gap is genuinely-open, high-stakes, or creative (not a low-stakes convergent
+  fill-in).
+
+In the open-first order the context sentences invite open reflection -- they do NOT prime
+with the analyst's proposed direction. The question is asked first. The `Suggested:` is
+then offered as a direction to CONFIRM or OVERRIDE, not a lead:
+
+```
+[context: an invitation to reflect, with no directional prime]
+
+[the question]
+
+Suggested: [a concrete direction -- offered to confirm or override, not to anchor]
+Why: [rationale; this straw-man is here to confirm your direction, not impose one --
+     override freely if this does not match your thinking]
+
+[1] This matches -- confirming
+[2] Not applicable
+[3] Your answer: ___
+```
+
+Both `Suggested:` and `Why:` remain present and non-optional (NFR-7 invariant holds). The
+`Why:` field copy explicitly frames the straw-man as a confirmer, not a lead. For Expert
+or low-stakes turns, the standard straw-man-first order is used.
+
+**Routing summary:**
+
+| Gap profile | Calibration state | Order |
+|-------------|-------------------|-------|
+| Low-stakes, convergent, fill-in | Any | Straw-man-first (standard) |
+| Genuinely-open, high-stakes, creative | Expert or Mixed | Straw-man-first (standard) |
+| Genuinely-open, high-stakes, creative | Novice / deferential | Open-first |
+
+---
+
+### Rule G1b -- Re-Confirmable Assumptions
+
+When the user accepts a suggested default without elaboration -- a passive accept (for
+example, choosing [1] on a high-stakes creative straw-man with no additional comment) --
+the analyst flags it as a re-confirmable assumption rather than treating it as settled:
+
+- Record the answer to the record sink with an explicit assumption marker, for example:
+  `assumed: [answer]; accepted without elaboration; re-confirm at read-back.`
+- Surface re-confirmable assumptions explicitly at the whole-picture read-back
+  (elicitation-engine.md Invariant 8) so the user can revisit them before approval.
+
+This guard is distinct from the "I don't know" handler (which converts a blank answer to
+an assumption). A passive accept on a concrete suggestion is the anchoring risk the
+"I don't know" handler does not cover: the user answered, but the answer may reflect
+deference rather than genuine intent.
+
+---
+
+### Rule G1c -- Restate-Not-Replace Distortion Check
+
+Before recording a confirmed answer (Move 10 scribe), the analyst applies a pre-record
+self-check:
+
+> Does the phrasing I am about to record RESTATE the user's intent and terms, or have I
+> silently REPLACED the user's words with my own framing?
+
+- **Pass:** the record preserves the user's core meaning; where the user stated a specific
+  term, that term appears in the record (see also: verbatim-wording rule above, and G3).
+- **Fail:** the record substitutes the analyst's framing for the user's expressed intent.
+  Stop; restate in the user's terms; re-record.
+
+Source: Mircea et al. (REFSQ 2026) found that iterative reformulation "risks distorting
+stakeholders' original intent." This check is the in-loop guard against that drift.
+
+The check applies to both answer recording AND straw-man formulation: before emitting a
+`Suggested:`, confirm it reflects what the user actually said, not what the analyst would
+have proposed independently of the user's input.
 
 ---
 
@@ -150,3 +262,4 @@ discipline is carried by the process:
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-27 | work-001-aid-interview-improvements delivery-003 task-010 | Initial authoring: NFR-7 question-envelope contract + expert-advisor stance |
+| 1.1 | 2026-06-27 | work-001-aid-interview-improvements delivery-003 task-041 | G1 anti-anchoring guard (calibration-sensitive open-first order, re-confirmable assumptions, restate-not-replace distortion check); G3 verbatim-wording bullet in Discipline section |
