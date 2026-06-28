@@ -8,7 +8,7 @@ Analyze an existing codebase and produce a structured Knowledge Base (`.aid/know
 ## When to Use
 
 - **Full discovery:** New brownfield project. No KB exists yet.
-- **Targeted discovery:** A downstream phase (aid-interview, aid-specify, aid-plan, aid-detail, aid-execute, aid-execute (built-in review), aid-execute) wrote a Q&A entry to `.aid/knowledge/STATE.md` signalling a KB gap. Only analyze the specific area identified in that entry.
+- **Targeted discovery:** A downstream phase (aid-describe, aid-define, aid-specify, aid-plan, aid-detail, aid-execute, aid-execute (built-in review), aid-execute) wrote a Q&A entry to `.aid/knowledge/STATE.md` signalling a KB gap. Only analyze the specific area identified in that entry.
 
 ## Inputs
 
@@ -147,7 +147,7 @@ Record in `.aid/knowledge/tech-debt.md` with risk ratings (High/Medium/Low).
 
 ### Step 10: Open Questions
 
-Record in `.aid/knowledge/STATE.md`'s Q&A section everything that code analysis alone could not determine. Each entry includes an ID (Q{N}), question, category, impact (High / Medium / Low), status (Pending / Answered / Skipped), code evidence, and optional suggested answer. This covers business rules not explicit in code, deployment procedures not captured in scripts, and data flows requiring human explanation. These feed directly into aid-interview.
+Record in `.aid/knowledge/STATE.md`'s Q&A section everything that code analysis alone could not determine. Each entry includes an ID (Q{N}), question, category, impact (High / Medium / Low), status (Pending / Answered / Skipped), code evidence, and optional suggested answer. This covers business rules not explicit in code, deployment procedures not captured in scripts, and data flows requiring human explanation. These feed directly into aid-describe.
 
 ### Step 11: KB Index
 
@@ -225,7 +225,7 @@ Without Discovery, specs are generic and agents improvise. With Discovery, specs
 
 ## Related Phases
 
-- **Next:** [Interview](../aid-interview/) — uses open questions from `.aid/knowledge/STATE.md` to focus requirements gathering
+- **Next:** [Interview](../aid-describe/) — uses open questions from `.aid/knowledge/STATE.md` to focus requirements gathering
 - **Triggered by:** Any downstream phase via a Q&A entry in `.aid/knowledge/STATE.md`
 
 ## See Also

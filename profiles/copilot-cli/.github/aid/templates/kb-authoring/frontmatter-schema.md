@@ -120,6 +120,7 @@ Production mode.
 | Value | Meaning |
 |-------|---------|
 | `hand-authored` | Written by humans (or AI agents acting as humans during /aid-discover GENERATE state). Full content review applies. |
+| `forward-authored` | Authored from intent before code exists (the greenfield KB seed). **Full content review applies** (same rubric as `hand-authored`). The doc is **design-authoritative** (design->code, FR-4): freshness treats it as never-stale-from-source; code->design divergence is detected by feature-005's separate conformance check, NOT by f007. |
 | `generated` | Produced by a registered build script. The script controls content. Reviewer verifies the file was regenerated (existence + freshness) but does not grade content. **`generator:` field MUST be set.** |
 
 ### `generator:` (required iff `source: generated`)

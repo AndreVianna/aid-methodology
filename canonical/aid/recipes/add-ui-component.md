@@ -12,7 +12,7 @@ summary: Add a reusable UI component.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-ui-component` via /aid-interview lite path
+**Source:** recipe `add-ui-component` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -60,7 +60,7 @@ Usage context: {{usage-context}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-ui-component` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-ui-component` | /aid-describe lite path |
 
 ## tasks
 

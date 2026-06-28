@@ -12,7 +12,7 @@ summary: Fix an infrastructure/deployment/config defect and confirm in the targe
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `fix-infrastructure` via /aid-interview lite path
+**Source:** recipe `fix-infrastructure` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -51,7 +51,7 @@ the fix in the target environment.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `fix-infrastructure` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-infrastructure` | /aid-describe lite path |
 
 ## tasks
 

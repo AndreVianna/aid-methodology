@@ -1,9 +1,9 @@
 # REQUIREMENTS — tasktracker-api
-<!-- Sample output from /aid-interview. Illustrative only. -->
+<!-- Sample output from /aid-describe. Illustrative only. -->
 
 **Work:** work-001-tasktracker-api
 **Path:** full
-**Produced by:** aid-interview
+**Produced by:** aid-describe
 **Date:** 2026-06-10
 
 ---

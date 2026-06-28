@@ -12,7 +12,7 @@ summary: Change an existing queue's config or routing.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-queue` via /aid-interview lite path
+**Source:** recipe `change-queue` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -58,7 +58,7 @@ Affected consumers or producers: {{affected-consumers}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-queue` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-queue` | /aid-describe lite path |
 
 ## tasks
 

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Narrow-Fit Fixture (T4 positive case)</title>
+<!--
+  T4 POSITIVE fixture: this visual PASSES T1/T2/T3/T4 at all target viewports
+  (1280px, 732px, and 390px).
+
+  Design:
+    - .diagram-box is width:100%; overflow:hidden (responsive container)
+    - Three .phase-block divs, each width:100% (fully responsive)
+    - At any viewport: content fits exactly (scrollWidth == clientWidth) -> T4 PASS
+    - T1: text at 14px (above the 10px default threshold) -> PASS
+    - T2: three vertically stacked blocks, no y-overlap -> PASS
+    - T3: .diagram-box has non-trivial dimensions -> PASS
+-->
+<style>
+body { margin: 0; font-family: sans-serif; }
+.diagram-box {
+  width: 100%;
+  min-height: 160px;
+  overflow: hidden;
+  background: #f0f4f8;
+  box-sizing: border-box;
+  padding: 16px;
+}
+.phase-block {
+  display: block;
+  width: 100%;
+  height: 40px;
+  line-height: 40px;
+  text-align: center;
+  font-size: 14px;
+  background: #007F7D;
+  color: white;
+  border-radius: 4px;
+  box-sizing: border-box;
+  margin-bottom: 8px;
+}
+</style>
+</head>
+<body>
+<div class="diagram-box">
+  <div class="phase-block">Discover</div>
+  <div class="phase-block">Specify</div>
+  <div class="phase-block">Execute</div>
+</div>
+</body>
+</html>

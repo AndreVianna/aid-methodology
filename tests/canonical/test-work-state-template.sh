@@ -31,7 +31,7 @@
 #   WS16  task-state-template has ## Dispatch Log section
 #   WS17  work-state-template 7 derived sections are marked DERIVED / read-only (Deploy State is AUTHORED)
 #   WS18  SD-2 ordering (Done > ... > Pending) present as authoritative list
-#   WS19  aid-interview state-first-run seeds Pipeline State fields (Lifecycle/Phase/Active Skill)
+#   WS19  aid-describe state-first-run seeds Pipeline State fields (Lifecycle/Phase/Active Skill)
 #   WS20  The seed prose does not introduce any new user-facing output
 #
 # Usage:
@@ -54,7 +54,7 @@ DELIVERY_SPEC="${REPO_ROOT}/canonical/aid/templates/delivery-spec-template.md"
 TASK_SPEC="${REPO_ROOT}/canonical/aid/templates/task-spec-template.md"
 
 DOGFOOD_WORK_STATE="${REPO_ROOT}/.claude/aid/templates/work-state-template.md"
-FIRST_RUN="${REPO_ROOT}/canonical/skills/aid-interview/references/state-first-run.md"
+FIRST_RUN="${REPO_ROOT}/canonical/skills/aid-describe/references/state-first-run.md"
 PROFILES_DIR="${REPO_ROOT}/profiles"
 
 # ---------------------------------------------------------------------------
@@ -312,22 +312,22 @@ assert_file_contains \
     "WS18 SD-2 ordering has rationale"
 
 # ---------------------------------------------------------------------------
-# WS19: aid-interview state-first-run seeds Pipeline State fields
+# WS19: aid-describe state-first-run seeds Pipeline State fields
 # (renamed from Pipeline Status -- check new field names are seeded)
 # ---------------------------------------------------------------------------
 if [[ -f "$FIRST_RUN" ]]; then
     assert_file_contains \
         "$FIRST_RUN" \
         "Lifecycle:** Running" \
-        "WS19 aid-interview state-first-run seeds Lifecycle: Running"
+        "WS19 aid-describe state-first-run seeds Lifecycle: Running"
     assert_file_contains \
         "$FIRST_RUN" \
         "Phase:** Interview" \
-        "WS19 aid-interview state-first-run seeds Phase: Interview"
+        "WS19 aid-describe state-first-run seeds Phase: Interview"
     assert_file_contains \
         "$FIRST_RUN" \
-        "Active Skill:** aid-interview" \
-        "WS19 aid-interview state-first-run seeds Active Skill: aid-interview"
+        "Active Skill:** aid-describe" \
+        "WS19 aid-describe state-first-run seeds Active Skill: aid-describe"
 else
     fail "WS19 state-first-run.md not found: $FIRST_RUN"
 fi

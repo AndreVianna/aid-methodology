@@ -12,7 +12,7 @@ summary: Fix an API-layer defect (status, contract, payload) and add a regressio
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `fix-api` via /aid-interview lite path
+**Source:** recipe `fix-api` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -51,7 +51,7 @@ or malformed payload) and add a regression test to prevent recurrence.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `fix-api` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-api` | /aid-describe lite path |
 
 ## tasks
 

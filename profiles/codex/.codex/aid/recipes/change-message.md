@@ -12,7 +12,7 @@ summary: Change an existing message/event schema (versioned, back-compatible).
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-message` via /aid-interview lite path
+**Source:** recipe `change-message` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -59,7 +59,7 @@ Compatibility notes (consumers that must be preserved): {{compatibility-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-message` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-message` | /aid-describe lite path |
 
 ## tasks
 

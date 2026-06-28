@@ -19,7 +19,7 @@ The result is a structured REQUIREMENTS.md that the Architect can immediately us
 | **Interview** | Initial requirements gathering: FIRST-RUN, TRIAGE, CONDENSED-INTAKE, Q-AND-A, CONTINUE, COMPLETION states |
 | **Specify / Detail** | Clarification of specific ambiguities surfaced by Q&A entries in the work STATE file |
 
-Typically invoked by the **aid-interview** skill. May be re-invoked when downstream phases surface gaps that require stakeholder input.
+Typically invoked by the **aid-describe** skill. May be re-invoked when downstream phases surface gaps that require stakeholder input.
 
 ## What It Produces
 

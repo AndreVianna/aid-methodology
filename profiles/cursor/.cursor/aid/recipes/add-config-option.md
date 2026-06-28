@@ -12,7 +12,7 @@ summary: Add a new configuration option with a documented default.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-config-option` via /aid-interview lite path
+**Source:** recipe `add-config-option` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ Affected behavior: {{affected-behavior}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-config-option` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-config-option` | /aid-describe lite path |
 
 ## tasks
 

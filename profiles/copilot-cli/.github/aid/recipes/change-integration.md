@@ -12,7 +12,7 @@ summary: Change an existing external-service integration.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-integration` via /aid-interview lite path
+**Source:** recipe `change-integration` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -58,7 +58,7 @@ Rationale: {{rationale}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-integration` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-integration` | /aid-describe lite path |
 
 ## tasks
 

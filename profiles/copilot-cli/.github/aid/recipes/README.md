@@ -204,7 +204,7 @@ schema):
 - **Metadata block** — four bold key/value lines immediately after the title:
   - `**Work:** ...` — the work identifier (e.g., `work-NNN`)
   - `**Created:** ...` — creation date
-  - `**Source:** ...` — originating recipe and path (e.g., `/aid-interview lite path`)
+  - `**Source:** ...` — originating recipe and path (e.g., `/aid-describe lite path`)
   - `**Status:** ...` — current status (e.g., `Active`)
 - `## Goal`
 - `## Context`
@@ -242,7 +242,7 @@ task-count: 1
 
 **Work:** {{work-name}}
 **Created:** {{date}}
-**Source:** recipe `fix-application` via /aid-interview lite path
+**Source:** recipe `fix-application` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -279,7 +279,7 @@ Fix the defect described below.
 
 | Date | Change | Source |
 |------|--------|--------|
-| {{date}} | Created from recipe `fix-application` | /aid-interview lite path |
+| {{date}} | Created from recipe `fix-application` | /aid-describe lite path |
 
 ## tasks
 
@@ -315,7 +315,7 @@ task-count: 3
 
 **Work:** {{work-name}}
 **Created:** {{date}}
-**Source:** recipe `add-api-endpoint` via /aid-interview lite path
+**Source:** recipe `add-api-endpoint` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -356,7 +356,7 @@ Add a full CRUD REST endpoint for the `{{resource-name}}` resource.
 
 | Date | Change | Source |
 |------|--------|--------|
-| {{date}} | Created from recipe `add-api-endpoint` | /aid-interview lite path |
+| {{date}} | Created from recipe `add-api-endpoint` | /aid-describe lite path |
 
 ## tasks
 
@@ -393,11 +393,11 @@ Add a full CRUD REST endpoint for the `{{resource-name}}` resource.
 
 ---
 
-## How Recipes Are Discovered by `/aid-interview` Triage
+## How Recipes Are Discovered by `/aid-describe` Triage
 
 ### Triage flow overview
 
-`/aid-interview` uses a **description-first** triage flow:
+`/aid-describe` uses a **description-first** triage flow:
 
 1. The user gives a free-form work description in their own words.
 2. The agent infers the internal `workType` ∈ `{bug-fix, new-feature, refactor}`
@@ -470,7 +470,7 @@ description → inferred workType → candidate set → best match → user conf
 ```
 
 A recipe-instantiated work can escalate at any point:
-- During slot-fill: user types `/aid-interview escalate-from-recipe`. Slot values
+- During slot-fill: user types `/aid-describe escalate-from-recipe`. Slot values
   already supplied are preserved in the work-area `STATE.md ## Recipe Slots` block
   and seeded into the standard lite-path interview.
 - After emission: same escalation path as any other lite work (FR1 lite → full).
@@ -536,8 +536,7 @@ A recipe-instantiated work can escalate at any point:
 ## Relationship to the Lite Path and Standard Pipeline
 
 ```
-/aid-interview
-  ├─ FULL path  → Interview → Specify → Plan → Detail → /aid-execute
+/aid-describe/  ├─ FULL path  → Interview → Specify → Plan → Detail → /aid-execute
   └─ LITE path  (feature-005)
        └─ workType determined
             ├─ recipe-offer (feature-011)

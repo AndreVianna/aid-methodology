@@ -12,7 +12,7 @@ summary: Author a new report/analysis artifact.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-report` via /aid-interview lite path
+**Source:** recipe `add-report` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -53,7 +53,7 @@ Report scope: {{report-scope}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-report` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-report` | /aid-describe lite path |
 
 ## tasks
 

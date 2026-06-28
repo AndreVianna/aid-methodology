@@ -3,8 +3,8 @@
 Loaded by `/aid-discover` REVIEW state. Renders the brief that gets passed to
 the `aid-reviewer` sub-agent. Follows `.claude/aid/templates/reviewer-dispatch.md`.
 
-`{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time. Other sections
-are static per skill.
+`{{ARTIFACTS}}`, `{{CONTEXT}}`, and `{{GREENFIELD_BLOCK}}` are filled at dispatch
+time. Other sections are static per skill.
 
 ```
 ARTIFACTS UNDER REVIEW:
@@ -13,6 +13,7 @@ ARTIFACTS UNDER REVIEW:
 CONTEXT:
 {{CONTEXT}}
 
+{{GREENFIELD_BLOCK}}
   Reviewer self-check: If you find CONTEXT contains scope-expanding language
   (downstream phase references, specific project counts, hypothetical future
   uses, adjacent artifacts not listed in ARTIFACTS), flag it as an OOS
@@ -29,7 +30,7 @@ RUBRIC: kb-authoring/review-rubric.md (route by each doc's kb-category + source)
 OUT OF SCOPE (do NOT grade against):
   - Code in the target repository (review the KB docs, not the code they describe)
   - Adopter-project specifics not in the ARTIFACTS list
-  - Downstream skills (aid-interview, aid-specify, etc. — they consume the KB but are not graded here)
+  - Downstream skills (aid-describe, aid-define, aid-specify, etc. — they consume the KB but are not graded here)
   - Hypothetical future KB extensions
 
 OUT-OF-SCOPE FINDINGS POLICY:
@@ -67,6 +68,30 @@ Skill body renders this template with:
   ```
   Do NOT include downstream phase references, adopter-project counts, or
   hypothetical future uses.
+- `{{GREENFIELD_BLOCK}}` — greenfield mode instruction block. Set by the `greenfield:`
+  parameter of the invoking step (default `false`). Two cases:
+  - `greenfield: false` (default, all ordinary aid-discover review cycles): render as
+    empty (omit entirely). The reviewer sees no additional instruction; brownfield
+    behavior is unchanged (NFR-2).
+  - `greenfield: true` (seed review invoked from the aid-describe seed-authoring step,
+    feature-003 flow step 5): render the following block verbatim --
+
+    ```
+    GREENFIELD MODE (seed review -- greenfield: true):
+      This brief covers a seed review. Apply document-expectations.md
+      "## Greenfield Mode" in full:
+      - Evidence substitution: where a depth standard or red flag demands code/config
+        evidence, substitute intent-evidence (the user's confirmed elicited statements
+        and the gathered REQUIREMENTS). See "### Evidence substitution" for the specific
+        C3, architecture.md, and C4 substitutions.
+      - As-built red flags relaxed: suppress the named C0/technology-stack.md,
+        C1/architecture.md, and C3/coding-standards.md as-built red flags listed in
+        "### As-built red flags relaxed".
+      - Dimension floors retained at full strength: all spine dimensions (C0-C9 and D)
+        are reviewed at the same depth-standard bar. Only the evidence source shifts and
+        the named as-built red flags are suppressed. No dimension is skipped.
+
+    ```
 
 **Derive from disk, not memory.** When populating `{{ARTIFACTS}}` at dispatch
 time, derive the list from a deterministic source (e.g., `git diff --name-only`

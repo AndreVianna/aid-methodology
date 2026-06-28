@@ -12,7 +12,7 @@ summary: Fix a security vulnerability and add a test proving the exploit is clos
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `fix-security` via /aid-interview lite path
+**Source:** recipe `fix-security` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -53,7 +53,7 @@ Vulnerability type: {{vulnerability-type}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `fix-security` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-security` | /aid-describe lite path |
 
 ## tasks
 

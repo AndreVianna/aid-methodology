@@ -3,7 +3,7 @@ name: aid-monitor
 description: >
   Observe production, classify findings, and route actions. Combines telemetry
   interpretation with triage — detect anomalies, perform root cause analysis
-  for bugs, and route findings to aid-interview (bugs via its lite bug-fix
+  for bugs, and route findings to aid-describe (bugs via its lite bug-fix
   triage; change requests as new/changed requirements).
   Per-work scope. Use post-deployment, on schedule, or on-demand.
   State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
@@ -19,8 +19,8 @@ Monitor production. Detect what's wrong. Route it to where it gets fixed.
 - **Default executor:** `aid-orchestrator` (routes findings; never implements directly).
 - **Telemetry interpretation:** `aid-researcher` (reads logs/metrics, classifies anomalies).
 - **Routing targets:**
-  - BUG classification → re-enters at `aid-interview` (lite bug-fix triage), which creates the task that `aid-developer` implements via `aid-execute`.
-  - Change Request → re-enters at `aid-interview` as new/changed requirements (full lifecycle).
+  - BUG classification → re-enters at `aid-describe` (lite bug-fix triage), which creates the task that `aid-developer` implements via `aid-execute`.
+  - Change Request → re-enters at `aid-describe` as new/changed requirements (full lifecycle).
   - Infrastructure → escalated to ops (outside AID scope).
 
 ## Argument-Hint

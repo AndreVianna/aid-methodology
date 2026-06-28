@@ -48,6 +48,7 @@ deliverables*.
 - [The Per-Phase REVIEW to FIX Loop](#the-per-phase-review-to-fix-loop)
 - [The Discover Review Panel](#the-discover-review-panel)
 - [The Delivery Gate (aid-execute)](#the-delivery-gate-aid-execute)
+- [The Conformance Check (aid-housekeep)](#the-conformance-check-aid-housekeep)
 - [Mechanical Gates Run by the Orchestrator](#mechanical-gates-run-by-the-orchestrator)
 - [Blocking vs Advisory](#blocking-vs-advisory)
 - [Validation Commands](#validation-commands)
@@ -236,6 +237,48 @@ before the gate is entered.
 
 ---
 
+## The Conformance Check (aid-housekeep)
+
+`/aid-housekeep`'s KB-DELTA stage includes a **Conformance Lane** that detects divergence
+between forward-authored design docs (those with `source: forward-authored` in their
+frontmatter) and the as-built codebase. This is a distinct gate type from both the per-phase
+reviewer and the mechanical script oracles: it is agent-driven, human-gated, and operates in
+the **code->design** direction — the opposite of the normal KB-DELTA doc<-code lane.
+
+**What it checks.** KB docs with `source: forward-authored` are design contracts authored
+before the code (the greenfield design-first seed). When `aid-housekeep` runs KB-DELTA, these
+docs are routed to the Conformance Lane instead of the normal doc<-code review path (the
+source-routing carve prevents overwriting a forward-authored design with as-built state).
+
+**Mechanism.** A shadow extraction dispatches aid-discover subagents with a throwaway
+`output_root` (`.aid/.temp/conformance/as-built/`), which is structurally isolated from the
+real `.aid/knowledge/` tree — the real KB is unreachable by construction. The resulting
+shadow docs are compared element-by-element against the forward-authored design docs at seed
+altitude. Each element-level delta is classified into one of four canonical classes:
+
+| Class | Meaning | Action |
+|---|---|---|
+| `design-ahead` | Design declares X; code has not built it yet | Silently dropped — expected normal state for a design-first project |
+| `placeholder-resolved` | A declared TBD / latest-at-init value is now concretely pinned in code | Low-friction flag; human chooses to adopt, fix, or defer |
+| `code-ahead` | Load-bearing element at seed altitude in code; design never declared it | Flagged; human chooses to evolve design, fix the code, or defer |
+| `contradiction` | As-built code violates or reverses a declared invariant, rule, or decision | Flagged; human chooses to evolve design, fix the code, or defer |
+
+**Authority direction.** The forward-authored design is authoritative.
+The Conformance Lane **never auto-applies** as-built content to the design doc
+(flag-not-overwrite invariant). Divergences are presented to the user as a Q&A entry
+in `.aid/knowledge/STATE.md`. The only path by which a forward-authored doc can be
+edited from code is the user explicitly choosing "[1] Evolve the design" and the subsequent
+`/aid-discover` targeted re-entry reaching APPROVAL. Until then, every forward-authored
+doc remains byte-unchanged.
+
+**Test coverage.** Three canonical test suites validate Conformance Lane correctness:
+`tests/canonical/test-output-root-isolation.sh` (shadow root never reaches the real KB),
+`tests/canonical/test-conformance-lane-semantics.sh` (class assignment + altitude filter),
+and `tests/canonical/test-kb-forward-authored-marker.sh` (frontmatter routing).
+CONFIRMED in `canonical/skills/aid-housekeep/references/state-kb-delta.md`.
+
+---
+
 ## Mechanical Gates Run by the Orchestrator
 
 Some checks are scripts (not a reviewer agent) that the orchestrator gates on directly, so a
@@ -262,6 +305,7 @@ These also run in CI's `kb-hygiene` job for this repo (CONFIRMED in
 | Delivery gate grade | **Blocking** (with 3-cycle circuit breaker → STOP, not auto-pass) | Same `Accepted` path; human decides at the circuit breaker |
 | Citation / frontmatter / INDEX / version-sync scripts | **Blocking** in `kb-hygiene` / release `gate` CI | Fix the source; there is no skip flag |
 | `visual-fidelity` Playwright gate | Blocking *when `kb.html` exists*; SKIPs (advisory) when absent | Generate the summary, or leave unbuilt |
+| Conformance check (design↔as-built divergence, aid-housekeep) | **Human-gated** — divergences flagged as a Q&A entry; design doc is never auto-updated | User supplies a per-item choice: evolve the design, fix the code, or accept/defer; no auto-pass |
 | Loop-detection (same grade ×3) | **Advisory signal** → escalates to human judgment | Human decides: accept, re-scope, or abandon |
 
 The only sanctioned way to pass a finding without fixing it is `Status: Accepted`, and that
@@ -295,3 +339,4 @@ bash .claude/aid/scripts/grade.sh --non-functional
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial quality-gates analysis (custom C6 doc, quality deep-dive) |
+| 1.1 | 2026-06-28 | work-aid-interview-improvements | Added Conformance Check section (aid-housekeep Conformance Lane: code->design flag-not-overwrite, shadow extraction, 3 new test suites); added Conformance Check row to Blocking vs Advisory table. |

@@ -12,7 +12,7 @@ summary: Change an existing DB schema with a forward + rollback migration.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-schema` via /aid-interview lite path
+**Source:** recipe `change-schema` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -60,7 +60,7 @@ Persistence layer notes: {{persistence-layer-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-schema` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-schema` | /aid-describe lite path |
 
 ## tasks
 

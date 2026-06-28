@@ -19,7 +19,7 @@ changelog:
 
 # Domain Glossary
 
-> **Source:** aid-interview (Phase 2) -- captured from stakeholder language
+> **Source:** aid-describe (Phase 2) -- captured from stakeholder language
 > **Status:** {Complete | Partial | Missing}
 > **Last Updated:** {date}
 
@@ -186,4 +186,4 @@ This doc has two parts: the **Concept Spine** (load-bearing native concepts, eac
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
-| 1.0 | {date} | aid-interview | Initial glossary from stakeholder interview |
+| 1.0 | {date} | aid-describe | Initial glossary from stakeholder interview |

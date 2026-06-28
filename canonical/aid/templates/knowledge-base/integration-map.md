@@ -20,7 +20,7 @@ changelog:
 
 # Integration Map
 
-> **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)
+> **Source:** aid-discover (Phase 1) + aid-describe (Phase 2)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
 

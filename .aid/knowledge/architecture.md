@@ -21,6 +21,7 @@ intent: |
   Read this to understand HOW the system hangs together — not WHAT each module does.
 contracts: []
 changelog:
+  - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a / aid-define 2b); added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check; skill count 13 -> 14
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
 
@@ -28,7 +29,7 @@ changelog:
 
 > **Source:** aid-discover (Phase 1)
 > **Status:** Complete
-> **Last Updated:** 2026-06-25
+> **Last Updated:** 2026-06-28
 
 ## Contents
 
@@ -118,7 +119,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (13), `agents/` (9),
+1. `canonical/` holds the single source: `skills/` (14), `agents/` (9),
    `aid/{scripts,templates,recipes}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
@@ -155,8 +156,8 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 (search: "The Five Profiles") and `profiles/*.toml`.
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 13 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 13 dirs, none named
+`.claude/skills/generate-profile/` and is NOT one of the 14 shipped user-facing skills in
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 14 dirs, none named
 `generate-profile`.
 
 ---
@@ -173,16 +174,20 @@ its "Skill Inventory" table):
 Discover -> Interview -> Specify -> Plan -> Detail -> Execute
 ```
 
-These six map one-to-one onto skills (Phase 1-6) and sit inside **five skill groups**
-(Prepare, Define, Map, Execute, Deliver). Several lifecycle labels from everyday SDLC talk
-— Init, Implement, Review, Test, Track, Triage — are **not numbered phases**; the table
-below maps each label to what it really is (CONFIRMED in `docs/aid-methodology.md` "Skill
-Inventory" and the `canonical/skills/` listing — 13 user-facing skills):
+These six map onto skills (Phase 1-6) and sit inside **five skill groups** (Prepare,
+Define, Map, Execute, Deliver). Phase 2 (Interview) is realized by **two** skills —
+`aid-describe` (2a) and `aid-define` (2b) — after the `aid-interview` split (see "The
+Interview Phase" below); every other numbered phase is one skill. Several lifecycle labels
+from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
+phases**; the table below maps each label to what it really is (CONFIRMED in
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — 14
+user-facing skills):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
 | Discover | `aid-discover` | **Phase 1** | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
-| Interview | `aid-interview` | **Phase 2** | TRIAGE routes full vs lite. |
+| Describe | `aid-describe` | **Phase 2a** | Interview half: TRIAGE (routes full vs lite) + adaptive interview + COMPLETION + lite path + greenfield KB seed. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT (unchanged) does the dialogue. |
+| Define | `aid-define` | **Phase 2b** | Decomposition half: feature decomposition + cross-reference (full path only); hands off to Specify. |
 | Specify | `aid-specify` | **Phase 3** | Full path only. |
 | Plan | `aid-plan` | **Phase 4** | Full path only. |
 | Detail | `aid-detail` | **Phase 5** | Full path only. |
@@ -193,7 +198,7 @@ Inventory" and the `canonical/skills/` listing — 13 user-facing skills):
 | Test | `aid-execute` | No | A task type (TEST) inside Execute, not a phase. |
 | Deploy | `aid-deploy` | No (optional Deliver) | On-demand Deliver-group skill; not a numbered phase. |
 | Track / Monitor | `aid-monitor` | No (optional Deliver) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) |
-| Triage | `aid-interview` TRIAGE state; `aid-monitor` classify | No | A routing state, not a separate phase or skill. |
+| Triage | `aid-describe` TRIAGE state; `aid-monitor` classify | No | A routing state, not a separate phase or skill. |
 
 Off-pipeline / on-demand skills: `aid-housekeep` (KB drift reconciliation),
 `aid-query-kb` (Q&A + gap capture), `aid-update-kb` (targeted KB delta), `aid-summarize`
@@ -202,16 +207,61 @@ Off-pipeline / on-demand skills: `aid-housekeep` (KB drift reconciliation),
 **Two paths through the pipeline** (CONFIRMED in `docs/aid-methodology.md` §4 "TRIAGE
 Routing"):
 
-- **Full path** — Discover -> Interview -> Specify -> Plan -> Detail -> Execute. For broad,
-  multi-target, or ambiguous work.
-- **Lite path** — Interview (CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW) -> Execute.
-  Skips Specify/Plan/Detail. The default for small, single-target work. A lite work can
-  escalate to full mid-flight (`Path: escalated`).
+- **Full path** — Discover -> Describe (2a) -> Define (2b) -> Specify -> Plan -> Detail ->
+  Execute. For broad, multi-target, or ambiguous work.
+- **Lite path** — Describe lite (CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW) ->
+  Execute. Skips Define/Specify/Plan/Detail. The default for small, single-target work. A
+  lite work can escalate to full mid-flight (`Path: escalated`).
 
 **Eleven formal feedback loops** let any phase revise an upstream artifact (8 within
 development, 2 from production, 1 cross-cutting). CONFIRMED in `docs/aid-methodology.md` §6
 "The Eleven Loops". The cross-cutting Loop 11 (Any phase -> Discover, targeted
 re-discovery) is what makes the KB the gravitational center in practice.
+
+### The Interview Phase: Describe (2a) + Define (2b)
+
+Phase 2 (Interview) is realized by **two chained skills**, not one. The former
+`aid-interview` SKILL was split; the `aid-interviewer` AGENT keeps its name (only the skill
+split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and no
+`aid-interview/`; `canonical/agents/aid-interviewer/` is unchanged.
+
+- **`aid-describe` (Phase 2a)** — TRIAGE + adaptive interview + COMPLETION, the lite path, and
+  (greenfield) the KB seed. State machine: FIRST-RUN -> Q-AND-A -> TRIAGE ->
+  {full: CONTINUE -> [greenfield: DESCRIBE-SEED ->] COMPLETION (pauses -> `/aid-define`) |
+  lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE}. CONFIRMED in
+  `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:` + the Dispatch table).
+- **`aid-define` (Phase 2b)** — feature decomposition + cross-reference, from an approved
+  `REQUIREMENTS.md`. State machine: FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE (hands off
+  to `/aid-specify`). CONFIRMED in `canonical/skills/aid-define/SKILL.md`.
+
+**Seasoned-analyst elicitation engine.** The full-path interview is no longer free-form:
+`aid-describe` drives it through a deterministic engine
+(`canonical/skills/aid-describe/references/elicitation-engine.md`) — one fixed D1 "what + why"
+opener plus a five-step next-move selector run every turn (STOP-CHECK -> GAP-SELECTION ->
+MOVE-SELECTION -> CALIBRATION-SHAPING -> ENVELOPE+EMIT). Invariant NFR-7: every emitted
+question carries a concrete `Suggested:` answer and a grounded `Why:` rationale (no bare
+question). Calibration reads the user's level (`Unknown | Expert | Mixed | Novice`) every turn
+and shapes depth; the advisor stance recommends but never decides silently. CONFIRMED in
+`elicitation-engine.md`, `move-playbook.md`, `calibration.md`, `advisor-stance.md` under
+`canonical/skills/aid-describe/references/`.
+
+**Greenfield forward-authoring (the inversion).** On a greenfield project `aid-describe`'s
+DESCRIBE-SEED state forward-authors a 5-element KB seed from elicited intent — concept-spine
+(`domain-glossary.md`) + intended architecture (`architecture.md`) + conventions
+(`coding-standards.md`) + tech stack (`technology-stack.md`) + decisions (`decisions.md`) —
+written to `.aid/knowledge/` stamped `source: forward-authored`. THE INVERSION: in greenfield
+the **docs are the source of truth and code conforms**, the opposite of brownfield where code
+is truth and Discover extracts the KB. CONFIRMED in
+`canonical/skills/aid-describe/references/state-describe-seed.md` ("Record Sink").
+
+**Build conformance check (flag-not-overwrite).** Because greenfield design docs lead the
+code, `/aid-housekeep`'s KB-DELTA stage carries a **Conformance Lane**: it shadow-extracts an
+as-built KB from the current code and diffs it against the `source: forward-authored` design
+docs (code -> design direction). Divergences (`placeholder-resolved` / `code-ahead` /
+`contradiction`) are FLAGGED for human reconciliation via a Required Q&A entry; the design doc
+is NEVER auto-overwritten with as-built. CONFIRMED in
+`canonical/skills/aid-housekeep/references/state-kb-delta.md` ("Conformance Lane",
+"Invariant -- flag, never overwrite").
 
 ---
 
@@ -283,6 +333,10 @@ can revise it. CONFIRMED in `docs/aid-methodology.md` §3.
 - **Fixed shape, variable depth:** `artifact-schemas.md` always holds schemas, `tech-debt.md`
   always holds debt — downstream skills navigate by convention, not search. CONFIRMED
   (search: "Convention beats search").
+- **Forward-authored seeds (greenfield):** on a greenfield project the KB is not extracted
+  from code but **forward-authored** by `aid-describe` DESCRIBE-SEED and stamped
+  `source: forward-authored` — the docs are the source of truth and code conforms (see "The
+  Interview Phase" above).
 
 ---
 
@@ -313,8 +367,8 @@ CONFIRMED in `README.md` "Install" and `docs/aid-methodology.md` §10.
 **3. Pipeline flow (use AID on a project):**
 ```
 /aid-config -> /aid-discover -> KB in .aid/knowledge/
-  -> /aid-interview (TRIAGE) -> work in .aid/work-NNN-*/
-  -> [full] /aid-specify -> /aid-plan -> /aid-detail -> /aid-execute
+  -> /aid-describe (TRIAGE) -> work in .aid/work-NNN-*/
+  -> [full] /aid-define -> /aid-specify -> /aid-plan -> /aid-detail -> /aid-execute
   -> [lite] /aid-execute
   -> optional /aid-deploy -> /aid-monitor
   (any phase -> Q&A entry in a STATE.md -> targeted re-discovery)
@@ -341,9 +395,9 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count "12 vs 13".** `README.md` header says "12-skill pipeline"; its caption and
-   `docs/aid-methodology.md` say "13 skills"; `canonical/skills/` has 13 directories.
-   Logged as Q1.
+1. **Skill count (reconciled).** `canonical/skills/` has **14** directories (the `aid-interview`
+   skill was split into `aid-describe` + `aid-define`); `README.md`, `docs/aid-methodology.md`,
+   and the site docs now consistently say "14 skills" -- the prior 12-/13-skill drift is resolved.
 2. **Recipe count/path.** `docs/aid-methodology.md` and `docs/repository-structure.md` say
    "51 recipes" at `canonical/recipes/`; reality is **52** files at `canonical/aid/recipes/`
    (note the `aid/` segment). Logged as Q2 / Q5.
@@ -374,6 +428,11 @@ What a change must never break (each stated as a hard rule + where enforced):
 - **Deterministic grade:** the letter grade MUST be computed by `grade.sh` from bracketed
   severity tags, never hand-picked by the reviewer. Enforced in
   `.claude/aid/scripts/grade.sh` + `.claude/aid/templates/grading-rubric.md`.
+- **Forward-authored design is never auto-overwritten:** a greenfield `source: forward-authored`
+  KB doc is the design contract; the `/aid-housekeep` Conformance Lane FLAGS code↔design
+  divergence for human reconciliation but never rewrites the doc from as-built code (authority
+  stays design -> code). Enforced in
+  `canonical/skills/aid-housekeep/references/state-kb-delta.md` (search: "flag, never overwrite").
 - **Content isolation:** all AID-delivered content MUST be namespaced (skills/agents carry
   the `aid-` prefix; scripts/templates/recipes live under an `aid/` subtree); root context
   files are updated in-place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
@@ -408,7 +467,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 13 shipped skills).
+  for it in `canonical/skills/` (the 14 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)
@@ -421,3 +480,4 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial discovery — product/dogfood anatomy, render-and-distribute architecture, six-phase process architecture, skill/agent dispatch, invariants, gotchas. |
 | 1.1 | 2026-06-26 | manual | Corrected the process-architecture model: six numbered phases (Discover→Execute), not "12 phases". Init/Implement/Review/Test/Track/Triage reframed as bootstrap / task-types / states / optional Deliver skills, not phases. |
+| 1.2 | 2026-06-28 | manual | Reconciled the Interview phase to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) / Phase 2b `aid-define` (feature decomposition + cross-reference). Added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check. Skill count 13 -> 14. |

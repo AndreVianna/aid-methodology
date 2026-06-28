@@ -12,7 +12,7 @@ summary: Add a feature flag gating new behavior.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-feature-flag` via /aid-interview lite path
+**Source:** recipe `add-feature-flag` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ Flag evaluation scope: {{flag-scope}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-feature-flag` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-feature-flag` | /aid-describe lite path |
 
 ## tasks
 

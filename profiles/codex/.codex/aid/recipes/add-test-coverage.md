@@ -12,7 +12,7 @@ summary: Add test coverage for any work type (bug fix, refactor, or new feature)
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-test-coverage` via /aid-interview lite path
+**Source:** recipe `add-test-coverage` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ pre-fix code and passes after the fix is applied.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-test-coverage` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-test-coverage` | /aid-describe lite path |
 
 ## tasks
 

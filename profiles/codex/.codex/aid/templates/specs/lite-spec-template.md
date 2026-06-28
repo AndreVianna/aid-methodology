@@ -4,7 +4,7 @@
 - **Description:** *(pending)*
 - **Work:** {work-NNN-name}
 - **Created:** {YYYY-MM-DD}
-- **Source:** /aid-interview lite path — {LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE}
+- **Source:** /aid-describe lite path — {LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE}
 - **Status:** Draft | Ready
 
 ## Goal
@@ -53,4 +53,4 @@ KB references by INDEX.md doc name.}
 
 | Date | Change | Source |
 |------|--------|--------|
-| {date} | Initial lite-path SPEC created | /aid-interview {sub-path} |
+| {date} | Initial lite-path SPEC created | /aid-describe {sub-path} |

@@ -540,7 +540,7 @@ Proposed discovery path: brownfield-large
 
 [1] Confirm  brownfield-large  (as proposed)
 [2] Override brownfield-small  (collapsed: single understand-pass; one reviewer runs the mandates as sequential passes + clean-context teach-back)
-[3] Override greenfield        (no source yet => signpost + HALT: run /aid-interview to define the project; the KB fills in as you build)
+[3] Override greenfield        (no source yet => signpost + HALT: run /aid-describe to define the project; the KB fills in as you build)
 ```
 
 **This is a genuine PAUSE-FOR-USER-DECISION** (C4 human-gated; the path is measured but
@@ -579,7 +579,7 @@ Then **branch on the confirmed path**:
 
   ```
   [0f] Greenfield detected: ~no source to discover yet.
-       Nothing to discover yet -- run /aid-interview to define the project;
+       Nothing to discover yet -- run /aid-describe to define the project;
        the KB fills in as you build, via re-triage once code lands.
   ```
 
@@ -595,7 +595,10 @@ Produces `project-structure.md` and `external-sources.md` — foundation for all
 Print: `[1/5] Pre-scan: mapping project structure and external sources...`
 
 Read `references/agent-prompts.md` section `## Scout` for the full prompt. Substitute the
-external docs placeholder with actual paths (or the "no docs" variant).
+external docs placeholder with actual paths (or the "no docs" variant). Pass
+`output_root=.aid/knowledge/` (the default) as the KB-document destination parameter
+(see `references/agent-prompts.md ## Dispatch Parameter: output_root`). A caller that
+needs shadow extraction may pass an alternate root; /aid-discover always passes the default.
 
 ▶ aid-researcher (pre-scan) starting (~2–4 min)
 Wait for completion. Verify both files exist. Re-dispatch if missing.
@@ -695,6 +698,15 @@ the prompt section from `references/agent-prompts.md`:
 | [5/5] | `aid-researcher` (quality doc-set) | test-landscape.md, tech-debt.md, infrastructure.md | `references/agent-prompts.md` → `## Quality` |
 
 The actual target files for each agent are derived at runtime from the declared set, not hard-coded above.
+
+**`output_root` dispatch parameter:** When dispatching any of the four deep-dive agents,
+pass `output_root=.aid/knowledge/` (the default KB-document destination). This preserves
+current behavior byte-for-byte. The parameter is defined in
+`references/agent-prompts.md ## Dispatch Parameter: output_root`. A conformance caller
+(e.g. the conformance check wired in task-030) may pass an alternate root such as
+`.aid/.temp/conformance/as-built/` to redirect KB-document writes without touching the
+real `.aid/knowledge/` tree. For /aid-discover and /aid-housekeep, always pass the
+default.
 
 **Sub-agents may delegate mechanical work** to `aid-clerk` (with `operation: extract`, `operation: glob`, or `operation: format` as appropriate) for high-volume extraction or templating. The synthesis stays at the sub-agent's tier; only the grunt work delegates.
 

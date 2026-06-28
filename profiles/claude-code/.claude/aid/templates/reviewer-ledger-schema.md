@@ -50,8 +50,8 @@ Where `<scope>` identifies the skill (and optionally the work-item / task) so pe
 | `/aid-specify <feature>` | `.aid/.temp/review-pending/specify-<feature>.md` |
 | `/aid-plan` | `.aid/.temp/review-pending/plan.md` |
 | `/aid-detail` | `.aid/.temp/review-pending/detail.md` |
-| `/aid-interview <work>` cross-reference | `.aid/.temp/review-pending/interview-<work>-cross-ref.md` |
-| `/aid-interview <work>` lite-review | `.aid/.temp/review-pending/interview-<work>-lite.md` |
+| `/aid-define <work>` cross-reference | `.aid/.temp/review-pending/interview-<work>-cross-ref.md` |
+| `/aid-describe <work>` lite-review | `.aid/.temp/review-pending/interview-<work>-lite.md` |
 | `/aid-summarize` machine validators | `.aid/.temp/review-pending/summarize.md` |
 | `/aid-deploy` pre-deploy verify | `.aid/.temp/review-pending/deploy.md` |
 | Ad-hoc user-prompted review | `.aid/.temp/review-pending/adhoc-<short-slug>.md` |

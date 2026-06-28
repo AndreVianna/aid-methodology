@@ -12,7 +12,7 @@ summary: Add a new persisted entity/table with a migration.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-entity` via /aid-interview lite path
+**Source:** recipe `add-entity` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -60,7 +60,7 @@ Validation rules: {{validation-rules}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-entity` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-entity` | /aid-describe lite path |
 
 ## tasks
 

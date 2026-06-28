@@ -294,7 +294,7 @@ PATHS_COPY_R1="$(make_paths_copy)"
 # recon-classify.sh must propose GREENFIELD.
 #
 # DETECTION-ONLY: this is the only greenfield assertion. Greenfield is detect-and-
-# signpost (aid-discover signposts to /aid-interview and halts). There is NO greenfield
+# signpost (aid-discover signposts to /aid-describe and halts). There is NO greenfield
 # path-runs/closure assertion -- the old greenfield path assertion (formerly carved to
 # the defunct pre-act-back greenfield-path delivery-009) collapses into this
 # detection-only check. No reference to the defunct delivery is made.

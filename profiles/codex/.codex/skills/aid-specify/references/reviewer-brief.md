@@ -30,7 +30,7 @@ OUT OF SCOPE (do NOT grade against):
   - Task breakdown (that's /aid-detail's grade)
   - KB document accuracy (route KB-source findings to /aid-discover Q&A — they
     are observations for the upstream skill, not penalties here)
-  - REQUIREMENTS.md content (route findings to /aid-interview Q&A)
+  - REQUIREMENTS.md content (route findings to /aid-describe Q&A)
 
 OUT-OF-SCOPE FINDINGS POLICY:
   Log OOS findings as Status: OOS rows in the same ledger table at

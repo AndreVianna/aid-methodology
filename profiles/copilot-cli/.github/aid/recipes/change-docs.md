@@ -12,7 +12,7 @@ summary: Update an existing documentation artifact.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-docs` via /aid-interview lite path
+**Source:** recipe `change-docs` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -56,7 +56,7 @@ Review criteria (how the reviewer will confirm the update is correct): {{review-
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-docs` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-docs` | /aid-describe lite path |
 
 ## tasks
 

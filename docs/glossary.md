@@ -6,7 +6,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 13 skills across 5 groups; delivery (Deploy, Monitor), the summary skill, the on-demand Q&A skill, and the targeted KB update skill are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 14 skills across 5 groups; delivery (Deploy, Monitor), the summary skill, the on-demand Q&A skill, and the targeted KB update skill are optional. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`. Note: "3 meta-documents" is a *role* distinction (generated/process ledgers, review-exempt) — it is orthogonal to the *concern* axis. A standard document (among the 14) may carry an *orientation* concern (cross-cutting, not mapped to a single spine dimension); `external-sources.md` is exactly this: it is a standard, authored, review-eligible KB document whose concern is orientation — orientation on the concern axis does not make a document a meta-document on the role axis.
 
@@ -43,9 +43,9 @@ Terms and concepts used throughout the AID methodology.
 
 ## The Lite Path
 
-**Lite Path:** A condensed workflow for small, well-scoped work. Triggered by `aid-interview`'s TRIAGE state when your description yields a confident, single-target work-type and recipe match. Lite path skips `aid-specify`, `aid-plan`, and `aid-detail` — Interview emits a work-root `SPEC.md` + `tasks/` directly, then routes to `aid-execute`. A lite work can be escalated to full path mid-flight if scope grows.
+**Lite Path:** A condensed workflow for small, well-scoped work. Triggered by `aid-describe`'s TRIAGE state when your description yields a confident, single-target work-type and recipe match. Lite path skips `aid-specify`, `aid-plan`, and `aid-detail` — Interview emits a work-root `SPEC.md` + `tasks/` directly, then routes to `aid-execute`. A lite work can be escalated to full path mid-flight if scope grows.
 
-**TRIAGE:** The opening state of `aid-interview`. Description-first: you describe the work in your own words, and the agent infers the work-type and the best-matching recipe (by reading each recipe's `summary:`), confirms in one turn, then routes — a confident single-target match to a lite sub-path, anything ambiguous/multi-target/broad to the full path.
+**TRIAGE:** The opening state of `aid-describe`. Description-first: you describe the work in your own words, and the agent infers the work-type and the best-matching recipe (by reading each recipe's `summary:`), confirms in one turn, then routes — a confident single-target match to a lite sub-path, anything ambiguous/multi-target/broad to the full path.
 
 **workType:** The internal classification of work, inferred by TRIAGE (never picked from a menu). Three values: `bug-fix`, `new-feature`, `refactor`. There is no separate document type — adding a document is a `new-feature`, changing one is a `refactor`.
 

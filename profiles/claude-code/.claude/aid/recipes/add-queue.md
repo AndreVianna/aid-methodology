@@ -12,7 +12,7 @@ summary: Add a message queue/topic and its producer wiring.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-queue` via /aid-interview lite path
+**Source:** recipe `add-queue` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -59,7 +59,7 @@ Delivery semantics (at-least-once, exactly-once, FIFO): {{delivery-semantics}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-queue` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-queue` | /aid-describe lite path |
 
 ## tasks
 

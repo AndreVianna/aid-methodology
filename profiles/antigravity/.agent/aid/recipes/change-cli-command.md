@@ -12,7 +12,7 @@ summary: Change an existing CLI command's flags/behavior.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-cli-command` via /aid-interview lite path
+**Source:** recipe `change-cli-command` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Rationale: {{rationale}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-cli-command` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-cli-command` | /aid-describe lite path |
 
 ## tasks
 

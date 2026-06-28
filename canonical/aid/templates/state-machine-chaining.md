@@ -54,7 +54,7 @@ The orchestrator prints the pause reason and exits.
 
 ### 3. PAUSE-FOR-USER-DECISION
 
-The next state depends on a decision the user is expected to deliberate on rather than answer reactively — usually because they want to look at findings, sleep on it, run their own analysis, or it's a contracted checkpoint (e.g., feature-002 SPEC §IQ9 in `aid-interview`). Even though the underlying action might be a single `AskUserQuestion`, the methodology specifies a deliberate stop.
+The next state depends on a decision the user is expected to deliberate on rather than answer reactively — usually because they want to look at findings, sleep on it, run their own analysis, or it's a contracted checkpoint (e.g., feature-002 SPEC §IQ9 in `aid-describe`). Even though the underlying action might be a single `AskUserQuestion`, the methodology specifies a deliberate stop.
 
 ```
 **Advance:** Stop here (contracted checkpoint per {citation}). Re-run `/aid-<skill>` to continue to [State: X].

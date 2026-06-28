@@ -114,8 +114,23 @@ Read the `review.panel` parameter supplied by the orchestrator from
 
 - **`panel: full`** — brownfield-large default; 4 parallel mandate dispatches.
 - **`panel: collapsed`** — brownfield-small only; 3 dispatches (sequential-passes
-  reviewer + clean-context teach-back + clean-context act-back). Greenfield never
-  reaches the panel.
+  reviewer + clean-context teach-back + clean-context act-back).
+
+**Greenfield -- two distinct cases (not the same path):**
+
+- **Discovery-triage greenfield (Step 0f):** A project *classified* greenfield during
+  aid-discover's brownfield-discovery triage (Step 0f) has no extracted KB to deeply
+  review. Its `panel:` branch collapses and the review panel is skipped entirely.
+  This skip applies ONLY to the discovery-triage path and is NOT triggered by a seed
+  review.
+- **Seed-review greenfield (`greenfield: true`):** A `greenfield: true` review
+  invocation (from the aid-describe seed-authoring step, flow step 5) is a DISTINCT
+  entry point -- it is NOT entered via Step 0f triage. Per NFR-3, the seed review MUST
+  traverse the FULL panel (`panel: full`): same four mandates (M1-M4), same dimension
+  floors, intent-evidence substituted for code/config evidence, named as-built red flags
+  relaxed -- per `document-expectations.md` `## Greenfield Mode`. The reviewer brief
+  carries `{{GREENFIELD_BLOCK}}` (rendered to the greenfield instruction when invoked
+  this way) to communicate the mode to each mandate reviewer.
 
 ---
 

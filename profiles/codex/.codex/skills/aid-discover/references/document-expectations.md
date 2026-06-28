@@ -10,6 +10,65 @@ replaces the dimension floor.
 
 ---
 
+## Greenfield Mode
+
+**When `greenfield: true` is passed as a review parameter** (by the seed-authoring step,
+per feature-003 / D3), these expectations operate in greenfield mode. The default is
+`greenfield: false`; brownfield behavior is byte-unchanged outside this section (NFR-2).
+This is a FLAG on the existing expectations -- not a forked variant. This block is additive
+on top of each doc's spine-dimension floor; no floor is skipped and no floor is replaced.
+
+### Evidence substitution (greenfield: true)
+
+Wherever a depth standard or red flag demands code or config evidence, substitute
+intent-evidence -- the user's confirmed elicited statements and the gathered REQUIREMENTS:
+
+- **C3 depth standard** -- "concrete example from this project's code or files" ->
+  substitute "concrete example from intended use".
+- **architecture.md** -- "Ground every claim in a file or path" -> substitute "ground
+  every claim in a confirmed requirement or elicited statement".
+- **C4 depth standard** -- "where it lives in the code" -> substitute "where it lives in
+  the intended design / domain".
+
+All other depth-standard language, all owned named sections, and all floor-level
+requirements remain in force unchanged.
+
+### As-built red flags relaxed (suppressed in greenfield mode)
+
+The following named as-built red flags are suppressed when `greenfield: true` because the
+seed is authored from intent before any code or config exists:
+
+- **C0 / technology-stack.md:** "Version TBD" on versions and "missing runnable build
+  command" are ACCEPTED as "latest-at-init / TBD-until-scaffolded" and build command
+  "TBD" respectively (owner decision 2). The C0 floor (every language, framework, runtime,
+  and medium named) still applies.
+- **C1 / architecture.md:** "Generic descriptions without file paths" and the demand for
+  "the real layout, not a generic skeleton" are RELAXED to sketch-altitude intended
+  boundaries. `project-structure.md` is excluded entirely in greenfield mode -- nothing is
+  on disk yet. The C1 floor (major boundaries and relationships named, with the
+  `## Invariants` a change must never break) still applies.
+- **C3 / coding-standards.md:** "A convention named but no example from code" is ACCEPTED
+  when the doc declares "standard for `<stack>`, no project-specific deviations yet"
+  (owner decision 4). The C3 floor (the project's own declared rules stated) still applies.
+
+All other red flags across all dimensions remain active.
+
+### Dimension floors retained (same bar, sourced from intent)
+
+These floors MUST still pass in greenfield mode; only the evidence source shifts from
+as-built artifacts to intent-evidence:
+
+- **C4 / domain-glossary.md `## Invariants`:** every load-bearing term defined as this
+  project uses it, with the distinctions a newcomer must never conflate.
+- **C1 / architecture.md `## Invariants`:** the invariants a change must not break.
+- **Operational-structure floors and owned named sections** per `concern-model.md`: every
+  dimension's mandated section(s) remain required.
+- **No dimension is skipped.** Every spine dimension (C0-C9 and D) is reviewed. Only the
+  evidence source changes (intent substituted for as-built) and the named as-built red
+  flags listed above are suppressed.
+
+---
+
 ## Spine-Dimension Depth Standards
 
 > **Resolution chain for every doc (including custom docs):** doc -> its spine dimension

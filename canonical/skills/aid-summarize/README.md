@@ -18,7 +18,7 @@ Produces one self-contained `kb.html` at `.aid/dashboard/` from `.aid/knowledge/
 ## When to Use
 
 - After `/aid-discover` reaches DONE and the KB is user-approved.
-- Optional — not required to proceed to `/aid-interview`.
+- Optional — not required to proceed to `/aid-describe`.
 - Re-runs are no-ops unless the KB has changed since the last summary, or `--reset` is passed.
 
 ## Artifacts

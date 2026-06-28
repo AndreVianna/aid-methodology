@@ -12,7 +12,7 @@ summary: Change an existing API endpoint's contract/behavior without breaking cl
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-api-endpoint` via /aid-interview lite path
+**Source:** recipe `change-api-endpoint` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -62,7 +62,7 @@ Security notes: {{security-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-api-endpoint` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-api-endpoint` | /aid-describe lite path |
 
 ## tasks
 

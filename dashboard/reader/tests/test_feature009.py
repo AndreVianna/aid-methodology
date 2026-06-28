@@ -218,7 +218,7 @@ class TestT9FixtureFromReal(unittest.TestCase):
 # causes the expected field to become None/wrong (drift is caught).
 # ---------------------------------------------------------------------------
 
-# PF-1 canonical producer emission (from /aid-interview)
+# PF-1 canonical producer emission (from /aid-describe)
 _PF1_REQUIREMENTS = """\
 # Requirements
 
@@ -229,7 +229,7 @@ _PF1_REQUIREMENTS = """\
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-06-11 | Interview complete | /aid-interview |
+| 2026-06-11 | Interview complete | /aid-describe |
 
 ## 1. Objective
 

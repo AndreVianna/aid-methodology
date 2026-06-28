@@ -12,7 +12,7 @@ summary: Add a new style/theme rule or design token.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-ui-style` via /aid-interview lite path
+**Source:** recipe `add-ui-style` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -53,7 +53,7 @@ Affected components: {{affected-components}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-ui-style` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-ui-style` | /aid-describe lite path |
 
 ## tasks
 

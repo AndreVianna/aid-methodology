@@ -12,7 +12,7 @@ summary: Add a validation or business rule.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-rule` via /aid-interview lite path
+**Source:** recipe `add-rule` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -56,7 +56,7 @@ Error response on violation: {{error-response}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-rule` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-rule` | /aid-describe lite path |
 
 ## tasks
 

@@ -36,7 +36,7 @@ tools:
 #
 # Per-skill overrides are allowed — see the bottom of this file.
 review:
-  minimum_grade: A
+  minimum_grade: A+   # owner directive 2026-06-27: always use an A+ gate across all phases
 
 # Per-skill override: the /aid-summarize redesign (work-001 feature-015) is held
 # to A+ — see .aid/work-001-kb-skills-improvement/features/feature-015-*/SPEC.md §12.

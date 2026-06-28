@@ -7,7 +7,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-06-09 | Initial interview started | /aid-interview |
+| 2026-06-09 | Initial interview started | /aid-describe |
 
 ## 1. Objective
 

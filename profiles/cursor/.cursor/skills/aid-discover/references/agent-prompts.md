@@ -24,7 +24,7 @@ MUST record a question and DEFER the decision to the user.**
 - If you can ground a fact from the artifacts **with certainty**, state it (with its source). If
   you cannot, **ASK** — do not fill the gap with a guess.
 
-**How to defer:** write the question to `.aid/knowledge/.scout-questions.tmp` using the
+**How to defer:** write the question to `{output_root}/.scout-questions.tmp` using the
 structured Q&A format — ID, Category, Impact, `Status: Pending`, Context (what you observed and
 why it is unclear), and Suggested (your best READING of the evidence, explicitly NOT a decision).
 Step 6b consolidates these into `STATE.md ## Q&A (Pending)`, and the Q-AND-A state resolves them
@@ -107,7 +107,7 @@ no canonical template, i.e., not in the default seed synthesized from
 `.cursor/aid/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
 prompt at runtime** by appending the following line after the base prompt text:
 
-> Also produce `.aid/knowledge/<filename>`. Resolve its depth contract as follows:
+> Also produce `{output_root}/<filename>`. Resolve its depth contract as follows:
 > (1) identify the doc's spine dimension (from its `spine-dimension` column in
 > `domain-doc-matrix.md`, or the §2.6 Branch-B dimension mapping for auto-researched docs);
 > (2) satisfy the matching `### C<N> — <dimension>` Spine-Dimension Depth Standard in
@@ -135,6 +135,27 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 
 ---
 
+## Dispatch Parameter: output_root
+
+Every extraction subagent in this file accepts an **`output_root`** dispatch parameter
+that specifies the directory where KB documents are written.
+
+- **Default:** `.aid/knowledge/` — all existing callers (/aid-discover, /aid-housekeep)
+  pass this default, so behavior is byte-equivalent to before this parameter existed.
+- **Alternate root:** a conformance caller may pass a different path (e.g.
+  `.aid/.temp/conformance/as-built/`) to perform a shadow extraction that never touches
+  the real `.aid/knowledge/` tree.
+
+**Scope of `output_root`:** it governs the KB-document destination ONLY. The three agents
+that also write to `.aid/generated/` — Architect, Integrator, and Grounding — keep those
+side-output paths UNCHANGED regardless of `output_root`. A shadow extraction therefore
+still emits `.aid/generated/` side-output at the real location; only KB documents land in
+the alternate root. This invariant lets conformance callers isolate shadow output correctly.
+
+In the write rules below, `{output_root}` refers to this dispatch parameter.
+
+---
+
 ## Scout
 
 > **Authoring standard:** apply the dual-audience standard from the section above to every
@@ -144,13 +165,13 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > Analyze this project's repository structure and any external documentation to produce TWO
 > foundation documents:
 >
-> **.aid/knowledge/project-structure.md:**
+> **{output_root}/project-structure.md:**
 > Map the repository structure — directory tree (top 3-4 levels), key files and their purpose,
 > detected languages and frameworks, build system files, entry points, test directories,
 > configuration files, and documentation files. This is an inventory, not deep analysis.
 > Annotate each major directory with its purpose (file counts drift — let readers run `find`) and note any unusual structure.
 >
-> **.aid/knowledge/external-sources.md:**
+> **{output_root}/external-sources.md:**
 > {If external docs were provided: "The user provided additional documentation outside the repository: {paths}. Read ALL of these thoroughly. For each source, document: path, type (file/directory), content inventory (list every significant document with topic and key findings), and discrepancies between documentation and code. This is critical — other agents will use this document to find information that is NOT in the code."}
 > {If NO external docs: "No external documentation was provided. Write: 'No external documentation was provided during discovery. All knowledge was derived from repository content only. If external documentation becomes available, re-run discovery or add paths during Q&A.'"}
 >
@@ -160,9 +181,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > Security, Data), impact level (High/Medium/Low), Status: Pending, context explaining why it
 > matters, and a Suggested answer when inferrable from repository content. Order by impact
 > (High first). Be comprehensive. Write these questions to a TEMPORARY file:
-> `.aid/knowledge/.scout-questions.tmp`
+> `{output_root}/.scout-questions.tmp`
 >
-> Write only to the .aid/knowledge/ directory.
+> Write only to the `{output_root}` directory (`{output_root}` is the KB-doc destination
+> passed by the dispatcher; default: `.aid/knowledge/`).
 
 ---
 
@@ -173,8 +195,8 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce .aid/knowledge/architecture.md and
-> .aid/knowledge/technology-stack.md.
+> configuration, and documentation — and produce {output_root}/architecture.md and
+> {output_root}/technology-stack.md.
 > Cover: project type, folder structure, architectural patterns, module boundaries, data flow,
 > DI registration, entry points, tech stack (languages, frameworks, versions, package managers,
 > runtime, build tools, dev tooling).
@@ -196,7 +218,7 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > **Spine-grounding mandate:** Every candidate-concept term in
 > .aid/generated/candidate-concepts.md (both harvest and synthesis rows) that you encounter
 > while writing your documents MUST be either (a) grounded into a concept entry in
-> .aid/knowledge/domain-glossary.md (definition-as-used-here, relates-to, sources:) or (b)
+> {output_root}/domain-glossary.md (definition-as-used-here, relates-to, sources:) or (b)
 > explicitly dismissed as not-a-load-bearing-concept with a one-line reason recorded in
 > .aid/generated/spine-todo.md. No candidate is silently dropped.
 >
@@ -215,7 +237,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the .aid/knowledge/ and .aid/generated/ directories.
+> Write KB documents only to the `{output_root}` directory (`{output_root}` is the KB-doc
+> destination passed by the dispatcher; default: `.aid/knowledge/`). Write side-output
+> (candidate-concepts.md, spine-todo.md) only to `.aid/generated/` — that path is NOT
+> governed by `{output_root}` and is always `.aid/generated/`.
 
 ---
 
@@ -226,8 +251,8 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce .aid/knowledge/module-map.md,
-> .aid/knowledge/coding-standards.md, and .aid/knowledge/schemas.md.
+> configuration, and documentation — and produce {output_root}/module-map.md,
+> {output_root}/coding-standards.md, and {output_root}/schemas.md.
 > Map every module (purpose, size, dependencies, test coverage).
 > Mine coding conventions from actual code — naming, error handling, logging, config, file
 > organization. Extract data schemas: schemas, relationships, migrations, indexes, validation.
@@ -239,7 +264,7 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > **Spine-grounding mandate:** Every candidate-concept term in
 > .aid/generated/candidate-concepts.md (both harvest and synthesis rows) that you encounter
 > while writing your documents MUST be either grounded into a concept entry in
-> .aid/knowledge/domain-glossary.md or explicitly dismissed in .aid/generated/spine-todo.md.
+> {output_root}/domain-glossary.md or explicitly dismissed in .aid/generated/spine-todo.md.
 > No candidate is silently dropped.
 >
 > **Can't-explain-it tripwire:** Any project-specific term you reach for while explaining the
@@ -257,7 +282,8 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the .aid/knowledge/ directory.
+> Write only to the `{output_root}` directory (`{output_root}` is the KB-doc destination
+> passed by the dispatcher; default: `.aid/knowledge/`).
 
 ---
 
@@ -268,8 +294,8 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce .aid/knowledge/pipeline-contracts.md,
-> .aid/knowledge/integration-map.md, and .aid/knowledge/domain-glossary.md.
+> configuration, and documentation — and produce {output_root}/pipeline-contracts.md,
+> {output_root}/integration-map.md, and {output_root}/domain-glossary.md.
 > Map pipelines/APIs exposed and consumed, message queues, caches, webhooks, and third-party services.
 > Build a domain glossary from class names, method names, constants, comments, and documentation
 > that encode business concepts.
@@ -278,7 +304,7 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > external-sources.md — external documentation often contains API specs, integration diagrams,
 > and domain definitions absent from the code.
 >
-> **Spine-grounding mandate (glossary owner):** You own .aid/knowledge/domain-glossary.md —
+> **Spine-grounding mandate (glossary owner):** You own {output_root}/domain-glossary.md —
 > the concept spine. Every candidate-concept term in .aid/generated/candidate-concepts.md
 > (BOTH harvest and synthesis rows) MUST be driven to a terminal state before closure:
 > (a) GROUNDED — produce a concept entry in domain-glossary.md with definition-as-used-here
@@ -306,7 +332,10 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the .aid/knowledge/ and .aid/generated/ directories.
+> Write KB documents only to the `{output_root}` directory (`{output_root}` is the KB-doc
+> destination passed by the dispatcher; default: `.aid/knowledge/`). Write side-output
+> (candidate-concepts.md, spine-todo.md) only to `.aid/generated/` — that path is NOT
+> governed by `{output_root}` and is always `.aid/generated/`.
 
 ---
 
@@ -317,8 +346,8 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > frontmatter with concern `tags:`, layout = frontmatter->index->content->Change Log last).
 >
 > Read the reference documents first, then analyze this project's repository — all code,
-> configuration, and documentation — and produce .aid/knowledge/test-landscape.md,
-> .aid/knowledge/tech-debt.md, and .aid/knowledge/infrastructure.md.
+> configuration, and documentation — and produce {output_root}/test-landscape.md,
+> {output_root}/tech-debt.md, and {output_root}/infrastructure.md.
 > Assess test frameworks, test types, coverage, CI/CD integration.
 > Audit tech debt: large files, TODO/FIXME density, missing tests, outdated packages, dead code.
 > Classify all debt items with risk ratings (Critical/High/Medium/Low).
@@ -334,7 +363,7 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > **Spine-grounding mandate:** Every candidate-concept term in
 > .aid/generated/candidate-concepts.md (both harvest and synthesis rows) that you encounter
 > while writing your documents MUST be either grounded into a concept entry in
-> .aid/knowledge/domain-glossary.md or explicitly dismissed in .aid/generated/spine-todo.md.
+> {output_root}/domain-glossary.md or explicitly dismissed in .aid/generated/spine-todo.md.
 > No candidate is silently dropped.
 >
 > **Can't-explain-it tripwire:** Any project-specific term you reach for while explaining
@@ -352,7 +381,8 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > to YOUR documents that is NOT in the code. Cross-reference external findings with code reality
 > and note any discrepancies.
 >
-> Write only to the .aid/knowledge/ directory.
+> Write only to the `{output_root}` directory (`{output_root}` is the KB-doc destination
+> passed by the dispatcher; default: `.aid/knowledge/`).
 
 ---
 
@@ -375,7 +405,7 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 >    understand what the term means in this project specifically.
 >
 > 3. If you can ground the term from the artifacts, write a concept entry in
->    .aid/knowledge/domain-glossary.md:
+>    {output_root}/domain-glossary.md:
 >    - Heading = a clean, UNIQUE IDENTIFIER: `### Unique Term (optional explanation)`. The
 >      identifier is the text BEFORE any `(...)` and must be the plain canonical term — NO
 >      slashes, paths, joined compounds, or trailing qualifier phrases. Put any clarifier in
@@ -401,7 +431,7 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 >    it re-enters the loop for the next DETECT pass.
 >
 > 5. If the term CANNOT be grounded from any artifact after thorough investigation, write
->    a Q&A entry to .aid/knowledge/.scout-questions.tmp (existing scout-questions format):
+>    a Q&A entry to {output_root}/.scout-questions.tmp (existing scout-questions format):
 >    - Category: Concept
 >    - Impact: High
 >    - Status: Pending
@@ -417,5 +447,8 @@ closes the generated AND reviewed loop end-to-end (§3.3).
 > investigation too — append it to candidate-concepts.md and spine-todo.md (Status: OPEN).
 > Never skip an ungrounded project-specific term as noise.
 >
-> Write only to .aid/knowledge/domain-glossary.md, .aid/knowledge/.scout-questions.tmp,
-> .aid/generated/candidate-concepts.md, and .aid/generated/spine-todo.md.
+> Write KB documents only to `{output_root}/domain-glossary.md` and
+> `{output_root}/.scout-questions.tmp` (`{output_root}` is the KB-doc destination passed by
+> the dispatcher; default: `.aid/knowledge/`). Write side-output only to
+> `.aid/generated/candidate-concepts.md` and `.aid/generated/spine-todo.md` — those paths
+> are NOT governed by `{output_root}` and are always `.aid/generated/`.

@@ -161,6 +161,17 @@ echo "=== VF15: --min-font-size with invalid value -> exit 2 ==="
 run --check-only --min-font-size abc "$TMP/has-svg.html"
 assert_exit_eq "$RC" 2 "VF15 --min-font-size non-integer -> exit 2"
 
+echo ""
+echo "=== VF16: --check-only includes T4 in the documented check list ==="
+# T4 must appear in the 'Would assert per visual' block so a reader can see
+# all four checks without running Playwright.  This assertion runs always
+# (no Playwright needed) and is the M4 plug-in-point (a) from feature-007.
+run --check-only "$TMP/has-svg.html"
+assert_exit_eq "$RC" 0 "VF16 --check-only -> exit 0"
+assert_output_contains "$OUT" "T4 -- No horizontal overflow-clip" "VF16b --check-only lists T4 check"
+assert_output_contains "$OUT" "732" "VF16c --check-only T4 mentions 732px target width"
+assert_output_contains "$OUT" "390" "VF16d --check-only T4 mentions 390px target width"
+
 # ===========================================================================
 # === Playwright availability check
 # ===========================================================================
@@ -451,6 +462,49 @@ echo "=== VF35: inline SVG with readable groups -> PASS ==="
 run_from_pw_dir "$TMP/vf-inline-svg.html"
 assert_exit_eq "$RC" 0 "VF35 inline SVG readable -> exit 0 (PASS)"
 assert_output_contains "$OUT" "PASS" "VF35b inline SVG readable -> PASS in output"
+
+# ===========================================================================
+# === T4 multi-viewport: positive + negative cases (M4 feature-007 closure)
+# ===========================================================================
+# These tests use COMMITTED fixture files (deterministic inputs) from
+# tests/canonical/fixtures/visual-fidelity/ rather than inline tmp files,
+# satisfying the M4 closure requirement that the clip demonstration be
+# Playwright-rendered and the fixture be committed.
+
+VF_FIXTURES="${REPO_ROOT}/tests/canonical/fixtures/visual-fidelity"
+
+# --- VF40: within-bounds visual passes T4 at all target widths ---
+# vf-narrow-fit.html has a width:100% diagram-box with fully responsive
+# children (width:100%) that do not overflow at any viewport width.
+echo ""
+echo "=== VF40: within-bounds visual (vf-narrow-fit.html) -> PASS T4 at 732/390px ==="
+run_from_pw_dir "$VF_FIXTURES/vf-narrow-fit.html"
+assert_exit_eq "$RC" 0 "VF40 narrow-fit visual -> exit 0 (PASS)"
+assert_output_contains "$OUT" "PASS" "VF40b narrow-fit -> PASS in output"
+assert_output_contains "$OUT" "T4 overflow-clip (widths 732/390px): PASS" "VF40c T4 PASS at narrow viewports"
+
+# --- VF41: over-wide visual FAILS T4 but PASSES T1/T2/T3 ---
+# vf-wide-overflow.html has a width:100%; overflow:hidden diagram-box
+# containing a flex row of 6 x 130px pills = 820px total, which is wider
+# than both 732px and 390px viewports.
+#
+# At the initial wide viewport (1280px):
+#   T1 readable text   -> PASS  (font-size 13px >= 10px threshold)
+#   T2 child overlap   -> PASS  (single child .pill-row, no pairwise comparison)
+#   T3 non-trivial size -> PASS (diagram-box has 1280px x 160px dimensions)
+# At 732px and 390px (T4 check):
+#   T4 overflow-clip   -> FAIL  (820px content > 700px/358px content area)
+#
+# This proves T4 catches what T1/T2/T3 miss (M4 closure criterion).
+echo ""
+echo "=== VF41: over-wide visual (vf-wide-overflow.html) -> FAIL T4 while PASS T1/T2/T3 ==="
+run_from_pw_dir "$VF_FIXTURES/vf-wide-overflow.html"
+assert_exit_eq "$RC" 1 "VF41 over-wide visual -> exit 1 (FAIL)"
+assert_output_contains "$OUT" "FAIL" "VF41b over-wide visual -> FAIL in output"
+assert_output_contains "$OUT" "T4 overflow-clip (widths 732/390px): FAIL" "VF41c T4 FAIL at narrow viewports"
+assert_output_contains "$OUT" "T3 layout (non-trivial size): PASS" "VF41d T3 PASS (T4 catches what T1-T3 miss)"
+assert_output_contains "$OUT" "T2 overlap (child elements) : PASS" "VF41e T2 PASS (T4 catches what T1-T3 miss)"
+assert_output_contains "$OUT" "T1 readable text            : PASS" "VF41f T1 PASS (T4 catches what T1-T3 miss)"
 
 # ===========================================================================
 # === Summary

@@ -75,8 +75,8 @@ different places.
 
 ## Triage
 
-<!-- AUTHORED -- populated by `aid-interview` TRIAGE state for lite-path works.
-     Left empty for full-path works (aid-interview runs the full interview flow instead). -->
+<!-- AUTHORED -- populated by `aid-describe` TRIAGE state for lite-path works.
+     Left empty for full-path works (aid-describe runs the full interview flow instead). -->
 
 - **Path:** lite | full
 - **Work Type:** bug-fix | new-feature | refactor | {omitted for full path}
@@ -90,7 +90,7 @@ different places.
 
 ## Escalation Carry
 
-<!-- AUTHORED -- written by `aid-interview` lite to full escalation (Steps 3-9 of
+<!-- AUTHORED -- written by `aid-describe` lite to full escalation (Steps 3-9 of
      `lite-to-full-escalation.md`). Present only when a work started on the lite path
      and was escalated to full. The CONTINUE state reads this section to avoid re-asking
      questions already answered during the lite-path session. See
@@ -114,7 +114,7 @@ different places.
 
 ## Interview State
 
-<!-- AUTHORED -- updated by `aid-interview` as each section is completed. -->
+<!-- AUTHORED -- updated by `aid-describe` as each section is completed. -->
 
 **State:** In Progress | Complete | Approved  **Grade:** {grade or Pending}
 

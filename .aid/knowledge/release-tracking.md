@@ -23,6 +23,10 @@ audience: [developer, devops, product]
 
 ## Unreleased
 
+- [NEW] **`aid-describe` + `aid-define`** — `aid-interview` is split into two Phase 2 skills: `aid-describe` (Phase 2a, project description elicitation) and `aid-define` (Phase 2b, requirements definition); skill count rises from 13 to 14; `aid-interviewer` agent is unchanged.
+- [NEW] **Seasoned-analyst elicitation engine** — `aid-describe` uses a seasoned-analyst engine that generates a suggested answer with rationale for each interview question before asking it (NFR-7), enabling guided triage instead of open-ended elicitation.
+- [NEW] **Greenfield seed authoring** — `aid-describe` (its DESCRIBE-SEED state) writes forward-authored KB docs (frontmatter `source: forward-authored`) as the design contract for greenfield projects; these docs are authoritative and code must conform to them, not the reverse.
+- [NEW] **Build conformance check** — `aid-housekeep` gains a Conformance Lane in KB-DELTA: a code->design shadow extraction that flags design<->as-built divergence for human reconciliation (flag-not-overwrite; design is authoritative; never auto-applies as-built). Backed by three new canonical test suites: `test-output-root-isolation.sh`, `test-conformance-lane-semantics.sh`, `test-kb-forward-authored-marker.sh`.
 - [CHANGE] Codex profile now installs exclusively under `.codex/` — the former `.agents/` split root is retired; all Codex agents, skills, and AID-own files live under the unified `.codex/{agents,skills,aid}` tree (work-005 FR2).
 - [CHANGE] All five host tools now use a uniform `{agents,skills,aid}` layout under their own root (`.claude/`, `.cursor/`, `.codex/`, `.github/`, `.agent/`) — agent format branches collapsed to uniform markdown; Codex TOML branch retained dormant pending E-CODEX-1 verification (work-005 FR1/FR4).
 - [CHANGE] Profile generator simplified from 13 Python files to 7 — tool-specific emitter scripts replaced by a single copy-based generator that renders profiles via file-level copy + minimal path substitution, with no per-tool branching logic outside the profiles themselves (work-005 FR1/FR5/FR6).
@@ -68,3 +72,4 @@ audience: [developer, devops, product]
 | Version | Date | Change |
 |---------|------|--------|
 | 1.0 | 2026-06-25 | Restored into the domain-driven KB as a first-class `extension` doc (frontmatter conformed to the authoring standard: objective/summary/sources/tags/see_also/owner/audience). Release-ledger content preserved verbatim from the prior hand-authored KB; resolves the dangling `infrastructure.md` reference. Prior per-edit history is in git. |
+| 1.1 | 2026-06-28 | Added 4 Unreleased entries for work-aid-interview-improvements: aid-describe/aid-define split (13->14 skills), seasoned-analyst elicitation engine, greenfield seed authoring, and the aid-housekeep Conformance Lane. |

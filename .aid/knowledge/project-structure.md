@@ -293,7 +293,7 @@ These are intentional or notable layout traits a newcomer will trip over:
 
 5. **Stale counts in `docs/repository-structure.md`.** That contributor doc says
    "12 skill definitions" and "51 lite-path recipes" and references the path
-   `canonical/recipes/`. Reality: `canonical/skills/` holds 13 skill directories,
+   `canonical/recipes/`. Reality: `canonical/skills/` holds 14 skill directories,
    `canonical/aid/recipes/` (note the `aid/` segment) holds 52 recipe files. This is a
    documentation drift, flagged as Q1/Q2 — not reconciled here.
 
@@ -318,3 +318,4 @@ These are intentional or notable layout traits a newcomer will trip over:
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial pre-scan inventory (Scout) |
+| 1.1 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in Unusual Structure Notes (aid-interview split into aid-describe + aid-define). |

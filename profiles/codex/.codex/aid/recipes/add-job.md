@@ -12,7 +12,7 @@ summary: Add a scheduled/background job.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-job` via /aid-interview lite path
+**Source:** recipe `add-job` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -60,7 +60,7 @@ Error handling and retry policy: {{error-handling}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-job` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-job` | /aid-describe lite path |
 
 ## tasks
 

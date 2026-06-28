@@ -12,7 +12,7 @@ summary: Fix a domain/business-logic defect (the broad default) and add a regres
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `fix-application` via /aid-interview lite path
+**Source:** recipe `fix-application` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -49,7 +49,7 @@ Fix the defect described below and confirm the fix with a unit test.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `fix-application` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-application` | /aid-describe lite path |
 
 ## tasks
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // validate-visuals.mjs -- Playwright-render every authored visual in kb.html and
-// assert the three fidelity properties (text readable, minimal overlap, correct layout).
+// assert the four fidelity properties (text readable, minimal overlap, correct layout,
+// no overflow-clip at target widths).
 //
 // This is the S7 visual-fidelity gate (FR-51 / task-074) that REPLACES validate-diagrams.mjs.
 // Mermaid's automatic layout guarantee is gone; this gate holds every inline SVG /
@@ -21,7 +22,7 @@
 //   1 -- one or more visuals failed (generation defect -- blocks DONE)
 //   2 -- invocation error (file missing, etc.)
 //
-// Three asserts per visual (the S7 gate):
+// Four asserts per visual (the S7 gate):
 //   T1 -- Readable text: every visible text node inside the visual has a computed
 //         font-size >= MIN_FONT_SIZE_PX (default 10 px) and is NOT overflow-hidden
 //         such that its bounding rect is zero-height.
@@ -31,6 +32,11 @@
 //   T3 -- Correct basic layout: the visual's own bounding rect has non-trivial
 //         dimensions (width > 0 AND height > 0), confirming it is rendered and
 //         not collapsed/empty.
+//   T4 -- No horizontal overflow-clip: the visual does not overflow its own container
+//         horizontally at any of the OVERFLOW_VIEWPORTS target widths (dashboard column
+//         ~732px and mobile ~390px). Measured as scrollWidth > clientWidth + EPS
+//         (container-relative, so fixed-width SVGs in non-scrolling containers do not
+//         false-positive). Only content clipped WITHIN ITS OWN CONTAINER fails.
 //
 // Visual-inspection fallback (when Playwright is unavailable):
 //   If Playwright (playwright package) is not installed, the script exits 0 with a
@@ -84,6 +90,14 @@ if (!htmlPath) {
   console.error('Usage: validate-visuals.mjs <html-file> [--check-only] [--min-font-size N]');
   process.exit(2);
 }
+
+// ---------------------------------------------------------------------------
+// Tunable constants (placed here so check-only mode can reference them)
+// ---------------------------------------------------------------------------
+
+const OVERLAP_TOLERANCE  = 0.20;       // T2: 20% of smaller element area
+const OVERFLOW_VIEWPORTS = [732, 390]; // T4: dashboard column (~732px) + mobile (~390px)
+const OVERFLOW_EPS       = 1;          // T4: sub-pixel tolerance (px) to avoid false positives
 
 // ---------------------------------------------------------------------------
 // File existence check
@@ -156,6 +170,7 @@ if (checkOnly) {
   console.log(`  T1 -- Readable text (font-size >= ${minFontSize}px, not zero-height-clipped)`);
   console.log('  T2 -- Minimal/zero child-element overlap (tolerance: <= 20% of smaller area)');
   console.log('  T3 -- Correct basic layout (non-trivial dimensions, not collapsed/empty)');
+  console.log(`  T4 -- No horizontal overflow-clip at target widths: ${OVERFLOW_VIEWPORTS.join(', ')}px`);
   console.log('');
   console.log('Run without --check-only + with Playwright installed to execute the full gate.');
   process.exit(0);
@@ -168,6 +183,7 @@ if (checkOnly) {
 console.log(`Visual-fidelity gate: ${absHtmlPath}`);
 console.log(`  Min font-size threshold : ${minFontSize}px`);
 console.log(`  Overlap tolerance       : 20% of smaller element area`);
+console.log(`  Overflow-clip viewports : ${OVERFLOW_VIEWPORTS.join(', ')}px`);
 console.log('');
 
 const browser = await chromium.launch({
@@ -362,13 +378,91 @@ const visuals = await page.evaluate((opts) => {
   return { visuals: results, minFontSize: opts.minFontSize, overlapTolerance: 0.20 };
 }, { minFontSize });
 
+// ---------------------------------------------------------------------------
+// T4: Collect per-visual overflow data at each OVERFLOW_VIEWPORTS width
+// ---------------------------------------------------------------------------
+// Re-evaluates the same visual collection order (containers first, then top-level
+// SVGs, with the same zero-bbox skip) at each target viewport width. The returned
+// arrays are position-aligned with visualList so t4Data[vpWidth][i] maps to
+// visualList[i].
+//
+// Overflow predicate (container-relative):
+//   Primary:  el.scrollWidth > el.clientWidth + EPS
+//             Detects content wider than the element's own box. For HTML containers
+//             (.diagram-box, .infographic) this is the canonical overflow signal.
+//             Fixed-width SVGs whose scrollWidth == clientWidth do NOT false-positive.
+//   Fallback: bounding-rect vs parent, used when clientWidth === 0 (SVG elements on
+//             some engines return 0 for both scrollWidth/clientWidth).
+//             Only the element's overflow within its parent container is checked --
+//             not the raw viewport edge -- to preserve the container-relative contract.
+
+const t4Data = {};
+
+for (const vpWidth of OVERFLOW_VIEWPORTS) {
+  await page.setViewportSize({ width: vpWidth, height: 720 });
+
+  t4Data[vpWidth] = await page.evaluate((opts) => {
+    const EPS = opts.eps;
+    const results = [];
+
+    function checkOverflow(el) {
+      const sw = el.scrollWidth;
+      const cw = el.clientWidth;
+      // scrollWidth/clientWidth can both be 0 for SVG elements (unreliable DOM property
+      // on some engines). Fall back to bounding-rect vs nearest layout parent container.
+      if (cw === 0 && sw === 0) {
+        const rect = el.getBoundingClientRect();
+        const parent = el.parentElement;
+        if (!parent) return { overflows: false, detail: 'no-parent' };
+        const pRect = parent.getBoundingClientRect();
+        const over = rect.right > pRect.right + EPS;
+        return {
+          overflows: over,
+          detail: `bbox-fallback: el.right=${rect.right.toFixed(1)} parent.right=${pRect.right.toFixed(1)}`,
+        };
+      }
+      const over = sw > cw + EPS;
+      return { overflows: over, detail: `scrollWidth=${sw} clientWidth=${cw}` };
+    }
+
+    // Same collection order as the main evaluate: containers first, then top-level SVGs.
+    const containers = [
+      ...document.querySelectorAll('.diagram-box'),
+      ...document.querySelectorAll('.infographic'),
+    ];
+    const containerEls = new Set(containers);
+
+    for (const el of containers) {
+      results.push(checkOverflow(el));
+    }
+
+    const svgs = document.querySelectorAll('svg');
+    for (const svg of svgs) {
+      let inContainer = false;
+      let anc = svg.parentElement;
+      while (anc) {
+        if (containerEls.has(anc)) { inContainer = true; break; }
+        anc = anc.parentElement;
+      }
+      if (inContainer) continue;
+
+      // Same zero-bbox skip as the main collection (hidden/decorative SVGs excluded).
+      const bbox = svg.getBoundingClientRect();
+      if (bbox.width === 0 && bbox.height === 0) continue;
+
+      results.push(checkOverflow(svg));
+    }
+
+    return results;
+  }, { eps: OVERFLOW_EPS });
+}
+
 await browser.close();
 
 // ---------------------------------------------------------------------------
-// Evaluate assert results (T1 / T2 / T3) per visual
+// Evaluate assert results (T1 / T2 / T3 / T4) per visual
 // ---------------------------------------------------------------------------
 
-const OVERLAP_TOLERANCE = 0.20; // 20% of smaller element area
 const { visuals: visualList } = visuals;
 
 if (visualList.length === 0) {
@@ -385,7 +479,8 @@ console.log('');
 
 let failCount = 0;
 
-for (const v of visualList) {
+for (let i = 0; i < visualList.length; i++) {
+  const v = visualList[i];
   const { idx, selector, bbox, overlapFrac, texts } = v;
 
   const t3Pass = bbox.w > 0 && bbox.h > 0;
@@ -405,13 +500,25 @@ for (const v of visualList) {
     }
   }
 
-  const visualPass = t1Pass && t2Pass && t3Pass;
+  // T4: check overflow at each target viewport width.
+  let t4Pass = true;
+  const t4FailWidths = [];
+  for (const vpWidth of OVERFLOW_VIEWPORTS) {
+    const d = t4Data[vpWidth] && t4Data[vpWidth][i];
+    if (d && d.overflows) {
+      t4Pass = false;
+      t4FailWidths.push(vpWidth);
+    }
+  }
+
+  const visualPass = t1Pass && t2Pass && t3Pass && t4Pass;
 
   const statusLabel = visualPass ? 'PASS' : 'FAIL';
   console.log(`Visual ${idx}: [${statusLabel}] ${selector}`);
   console.log(`  T3 layout (non-trivial size): ${t3Pass ? 'PASS' : 'FAIL'}  (${bbox.w.toFixed(0)}x${bbox.h.toFixed(0)} px)`);
   console.log(`  T2 overlap (child elements) : ${t2Pass ? 'PASS' : 'FAIL'}  (max overlap fraction: ${(overlapFrac * 100).toFixed(1)}%, tolerance: ${(OVERLAP_TOLERANCE * 100).toFixed(0)}%)`);
   console.log(`  T1 readable text            : ${t1Pass ? 'PASS' : 'FAIL'}  (${texts.length} text node(s) checked)`);
+  console.log(`  T4 overflow-clip (widths ${OVERFLOW_VIEWPORTS.join('/')}px): ${t4Pass ? 'PASS' : 'FAIL'}`);
   if (!t1Pass) {
     for (const msg of t1Issues) {
       console.log(`      issue: ${msg}`);
@@ -422,6 +529,12 @@ for (const v of visualList) {
   }
   if (!t2Pass) {
     console.log(`      issue: child elements overlap by ${(overlapFrac * 100).toFixed(1)}% of smaller element (max allowed: ${(OVERLAP_TOLERANCE * 100).toFixed(0)}%)`);
+  }
+  if (!t4Pass) {
+    for (const w of t4FailWidths) {
+      const d = t4Data[w][i];
+      console.log(`      issue: horizontally overflows container at ${w}px viewport (${d.detail})`);
+    }
   }
   console.log('');
 
@@ -435,7 +548,7 @@ for (const v of visualList) {
 const passCount = visualList.length - failCount;
 
 if (failCount === 0) {
-  console.log(`PASS -- Visual-fidelity gate: ${passCount}/${visualList.length} visual(s) passed (T1/T2/T3 all clear).`);
+  console.log(`PASS -- Visual-fidelity gate: ${passCount}/${visualList.length} visual(s) passed (T1/T2/T3/T4 all clear).`);
   process.exit(0);
 } else {
   console.log(`FAIL -- Visual-fidelity gate: ${failCount}/${visualList.length} visual(s) FAILED.`);
@@ -447,5 +560,6 @@ if (failCount === 0) {
   console.log('  T1 fail -- text font-size too small or clipped (overflow:hidden on parent, text too small)');
   console.log('  T2 fail -- child elements materially overlap (z-index stacking, absolute positioning misalignment)');
   console.log('  T3 fail -- visual collapsed (display:none, zero-height parent, missing content)');
+  console.log(`  T4 fail -- visual overflows its container at ${OVERFLOW_VIEWPORTS.join('px or ')}px viewport width`);
   process.exit(1);
 }

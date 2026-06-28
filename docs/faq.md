@@ -14,13 +14,13 @@ Yes — and that's the point. Waterfall's phases were sound. Waterfall failed be
 ### Do I need all six phases?
 No. Use what applies:
 - **Greenfield project with clear requirements?** Skip Discover, start at Interview.
-- **Quick bug fix or small change?** Run `/aid-interview` — TRIAGE will classify it and route you to the lite path automatically.
+- **Quick bug fix or small change?** Run `/aid-describe` — TRIAGE will classify it and route you to the lite path automatically.
 - **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
 
 The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional and run on demand at the end of the pipeline; many projects ship by other means and never invoke them. But know what you're skipping and why.
 
 ### How do I start a new project?
-Run `/aid-config` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (14 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-interview` (new project).
+Run `/aid-config` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (14 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-describe` (new project).
 
 ---
 
@@ -89,7 +89,8 @@ The skills run as slash commands inside your AI coding tool:
 ```
 /aid-config      # always first
 /aid-discover    # brownfield: understand the existing code
-/aid-interview   # requirements + TRIAGE (routes full or lite path)
+/aid-describe    # requirements + TRIAGE (routes full or lite path; on approval, run /aid-define)
+/aid-define      # decompose approved requirements into features (full path only)
 /aid-execute     # implement tasks with built-in review
 ```
 Each skill is a state-machine instruction document that your host AI tool executes. No plugins required.
@@ -105,7 +106,7 @@ Start with one delivery. Use the templates. See if the structure helps. Most tea
 ## The Lite Path
 
 ### What is the lite path?
-The lite path is a condensed workflow for small, well-scoped work that skips `aid-specify`, `aid-plan`, and `aid-detail`. When you run `/aid-interview`, it opens with a description-first TRIAGE: you describe the work in your own words, and the agent infers the work-type (one of `bug-fix`, `new-feature`, `refactor`) and the best-matching recipe, then confirms. If the work is small and single-target, Interview emits a work-root `SPEC.md` + `tasks/` directly and routes to `/aid-execute`.
+The lite path is a condensed workflow for small, well-scoped work that skips `aid-specify`, `aid-plan`, and `aid-detail`. When you run `/aid-describe`, it opens with a description-first TRIAGE: you describe the work in your own words, and the agent infers the work-type (one of `bug-fix`, `new-feature`, `refactor`) and the best-matching recipe, then confirms. If the work is small and single-target, Interview emits a work-root `SPEC.md` + `tasks/` directly and routes to `/aid-execute`.
 
 ### When should I use the lite path vs. the full path?
 TRIAGE decides automatically from your description — you don't choose. A confident, single-target match (one focused change, no new requirements gathering needed) routes to the lite path. An ambiguous, multi-target, or broad description (multiple features, design decisions to make, formal requirements and a delivery plan needed) routes to the full path. If you're not sure, just describe the work honestly and let TRIAGE route you — a lite work can also be escalated to full mid-flight if scope grows.

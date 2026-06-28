@@ -176,7 +176,7 @@ The expected output. Always:
 Each skill that dispatches a reviewer ships a brief template at
 `.codex/skills/<skill>/references/reviewer-brief.md`. Six per-skill briefs
 are shipped: `aid-discover`, `aid-execute`, `aid-specify`, `aid-plan`,
-`aid-detail`, `aid-interview`. Each renders this protocol's 5-section structure
+`aid-detail`, `aid-describe`, `aid-define`. Each renders this protocol's 5-section structure
 with skill-specific RUBRIC + OUT OF SCOPE; the consumer state file fills the
 dynamic slots and dispatches.
 
@@ -295,7 +295,7 @@ For changes to this doc, append a dated line at the bottom of this section:
 - 2026-05-26: Initial authoring (Phase A KB Authoring overhaul)
 - 2026-05-27: Phase B landed 6 per-skill `reviewer-brief.md` templates
   (aid-discover, aid-execute, aid-specify, aid-plan, aid-detail,
-  aid-interview); removed the "not yet implemented" parenthetical;
+  aid-describe, aid-define); removed the "not yet implemented" parenthetical;
   documented the rendering convention; added "derive ARTIFACTS from
   disk, not memory" rule (closes F10, F22, F26 from PR #15 review)
 

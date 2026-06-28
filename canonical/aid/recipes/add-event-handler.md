@@ -12,7 +12,7 @@ summary: Add a handler/consumer for a domain or system event.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-event-handler` via /aid-interview lite path
+**Source:** recipe `add-event-handler` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -61,7 +61,7 @@ Idempotency and delivery guarantees: {{idempotency-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-event-handler` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-event-handler` | /aid-describe lite path |
 
 ## tasks
 

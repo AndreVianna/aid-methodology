@@ -10,7 +10,7 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-12-skill pipeline · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+14-skill pipeline · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
 
 ```mermaid
 flowchart TB
@@ -28,8 +28,9 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Desc["2a · aid-describe<br/>gather requirements"]:::def
         Triage{"TRIAGE<br/>full or lite?"}:::def
+        Def["2b · aid-define<br/>decompose features"]:::def
         Spec["3 · aid-specify<br/>full path"]:::def
     end
     subgraph G3[" 3 · Map "]
@@ -46,8 +47,8 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Intv --> Triage
-    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Init --> Disc --> Desc --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Def --> Spec --> Plan --> Det --> Exe
     Triage -- "lite path<br/>small, single-target" --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
@@ -55,7 +56,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*13 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*14 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -145,7 +146,8 @@ Open your AI coding tool in your project and run the skills as slash commands:
 ```
 /aid-config           # once per project — scaffolds .aid/ and KB structure
 /aid-discover         # brownfield only: analyze the codebase into the KB
-/aid-interview        # gather requirements; TRIAGE auto-routes full or lite path
+/aid-describe         # gather requirements; TRIAGE auto-routes full or lite path; on approval, run /aid-define
+/aid-define           # decompose approved requirements into features (full path only)
 /aid-specify          # write the technical spec for each feature (full path only)
 /aid-plan             # sequence features into shippable deliveries (full path only)
 /aid-detail           # decompose deliveries into typed, PR-sized tasks (full path only)
@@ -158,7 +160,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-interview`. **Greenfield** projects skip Discovery and start at `/aid-interview`. Every phase is gated — nothing advances without your approval.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. Every phase is gated — nothing advances without your approval.
 
 [See it applied step by step →](examples/)
 
@@ -227,7 +229,7 @@ AID's phases are gated: you approve every transition. Nothing auto-advances. [Fu
 
 ### The Lite Path
 
-For small, well-scoped work, `/aid-interview` opens with a TRIAGE: you describe the work in your own words and the agent infers the work-type and the best-matching recipe. A confident, single-target match skips the full pipeline and routes straight to `/aid-execute`.
+For small, well-scoped work, `/aid-describe` opens with a TRIAGE: you describe the work in your own words and the agent infers the work-type and the best-matching recipe. A confident, single-target match skips the full pipeline and routes straight to `/aid-execute`.
 
 [Lite path and recipes →](docs/aid-methodology.md#2-philosophy)
 

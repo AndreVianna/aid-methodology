@@ -21,6 +21,7 @@ intent: |
   an artifact template, or any phase boundary.
 contracts: []
 changelog:
+  - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a + aid-define 2b); rewrote the Phase-2 state-machine model; added the greenfield forward-authoring entry + the conformance feedback; skill count 13 -> 14
   - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator lane)
 ---
 
@@ -28,7 +29,7 @@ changelog:
 
 > **Source:** aid-discover (brownfield deep-dive — Integrator)
 > **Status:** Complete
-> **Last Updated:** 2026-06-25
+> **Last Updated:** 2026-06-28
 
 This project's "pipeline" is the AID methodology itself: a sequence of skills that hand
 typed markdown artifacts from one phase to the next, each phase gated by a human and a
@@ -57,8 +58,9 @@ server, is documented in [integration-map.md](integration-map.md).)
 ## How the Pipeline Works
 
 AID is a six-phase sequential pipeline with formal feedback loops. Each phase is a skill
-(a slash command resolving to a `SKILL.md` state machine). The human approves every phase
-transition — the pipeline never auto-advances. CONFIRMED: `docs/aid-methodology.md`
+(a slash command resolving to a `SKILL.md` state machine); Phase 2 (Interview) is realized
+by two chained skills, `aid-describe` (2a) and `aid-define` (2b). The human approves every
+phase transition — the pipeline never auto-advances. CONFIRMED: `docs/aid-methodology.md`
 ("## 1. The Pipeline", "Between phases, the human gives the OK to advance").
 
 Two contract facts shape every hand-off:
@@ -67,9 +69,10 @@ Two contract facts shape every hand-off:
   prior phase and writes named files for the next. The file name and location are the
   contract — downstream skills navigate by convention, never by search.
 - **Two paths exist.** The *full path* runs every numbered phase; the *lite path* (routed by
-  the Interview's TRIAGE state for small, single-target work) collapses Specify + Plan +
-  Detail into Interview and emits tasks directly. CONFIRMED: `docs/aid-methodology.md`
-  ("## 4. The Phases", "Lite Path").
+  `aid-describe`'s TRIAGE state for small, single-target work) collapses Define + Specify +
+  Plan + Detail into the `aid-describe` lite path and emits tasks directly. CONFIRMED:
+  `docs/aid-methodology.md` ("## 4. The Phases", "Lite Path");
+  `canonical/skills/aid-describe/SKILL.md` (lite states).
 
 ---
 
@@ -83,23 +86,30 @@ are off-pipeline or optional. CONFIRMED: `docs/aid-methodology.md` ("Skill Inven
 |---|---------------|----------|----------|------|
 | — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.md` · `settings.yml` | none (setup) |
 | 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A | deterministic grade ≥ minimum + human approval |
-| 2 | `aid-interview` | `.aid/knowledge/` · user answers | full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs · lite path: work-root `SPEC.md` + `tasks/` | grade ≥ minimum + human approval |
+| 2a | `aid-describe` | `.aid/knowledge/` · user answers | full path: approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) · lite path: work-root `SPEC.md` + `delivery-001/tasks/` | grade ≥ minimum + human approval |
+| 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | per-feature `SPEC.md` stubs in `features/` + cross-reference Q&A | grade ≥ minimum + human approval |
 | 3 | `aid-specify` (full path only) | a feature `SPEC.md` (requirements side) · `REQUIREMENTS.md` · KB · codebase | `## Technical Specification` appended to the feature `SPEC.md` | per-section grade ≥ minimum |
 | 4 | `aid-plan` (full path only) | feature `SPEC.md` files marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` (ordered deliveries) | grade ≥ minimum |
 | 5 | `aid-detail` (full path only) | `PLAN.md` · feature `SPEC.md` · KB | per-task `SPEC.md` files + execution graph appended to `PLAN.md` | grade ≥ minimum |
 | 6 | `aid-execute` | task `SPEC.md` (with Type) · `PLAN.md` · feature `SPEC.md` · `INDEX.md` · `known-issues.md` (if present) | reviewed/graded artifacts to grade ≥ minimum; results in delivery/task `STATE.md` | per-task quick-check + delivery-gate grade ≥ minimum |
 
-CONFIRMED by the per-phase deep-dives in `docs/aid-methodology.md` ("## 4. The Phases") and
-the artifact table ("## 7. Artifacts Reference").
+CONFIRMED by the per-phase deep-dives in `docs/aid-methodology.md` ("## 4. The Phases"),
+the artifact table ("## 7. Artifacts Reference"), and the `aid-describe` / `aid-define`
+`SKILL.md` files (frontmatter `State machine:` + State Detection blocks).
 
-Greenfield projects skip phase 1 (no existing system) and enter at Interview; a minimal KB is
-populated from interview answers. CONFIRMED: `docs/aid-methodology.md` ("The Full Path").
+Greenfield projects skip phase 1 (no existing system) and enter at Describe (2a). Instead of
+"a minimal KB", `aid-describe`'s DESCRIBE-SEED state **forward-authors** a 5-element KB seed
+(concept-spine + intended architecture + conventions + tech stack + decisions) into
+`.aid/knowledge/`, stamped `source: forward-authored` — the docs are authored as the source of
+truth before any code exists. CONFIRMED:
+`canonical/skills/aid-describe/references/state-describe-seed.md` ("Record Sink");
+`docs/aid-methodology.md` ("The Full Path").
 
 ---
 
 ## The On-Disk Work Hierarchy
 
-Each Interview creates a *work* — a self-contained scope unit under `.aid/`. The live
+Each `aid-describe` run creates a *work* — a self-contained scope unit under `.aid/`. The live
 hierarchy (after the work-hierarchy migration) nests deliveries and tasks; this is the
 authoritative shape downstream skills and the dashboard read.
 
@@ -110,7 +120,7 @@ authoritative shape downstream skills and the dashboard read.
     STATE.md                                  # work-area run-state (DERIVED rollups + Q&A)
     REQUIREMENTS.md                           # full path only
     features/feature-NNN-{name}/
-      SPEC.md                                 # requirements side (Interview) + tech spec (Specify)
+      SPEC.md                                 # feature stub (Define) + tech spec (Specify)
       STATE.md                                # feature-level state
     PLAN.md                                   # full path only (Detail appends the execution graph)
     delivery-NNN/
@@ -126,6 +136,9 @@ authoritative shape downstream skills and the dashboard read.
 CONFIRMED: `canonical/aid/templates/work-state-template.md` (`delivery-NNN/STATE.md` and
 `delivery-NNN/tasks/task-NNN/STATE.md` blocks) and direct listing of
 `.aid/work-001-kb-skills-improvement/` (sixteen `delivery-NNN/` dirs each with `STATE.md`).
+The `features/` folder is created by `aid-define` (2b) FEATURE-DECOMPOSITION, not by the
+interview half — CONFIRMED: `canonical/skills/aid-define/SKILL.md` ("Workspace structure",
+"created by FEATURE-DECOMPOSITION").
 
 UNCERTAIN / drift flag: `docs/aid-methodology.md` ("## 7. Artifacts Reference") still
 describes the flatter shape `.aid/{work}/tasks/task-NNN.md`. The live skills + template use
@@ -133,7 +146,8 @@ the nested `delivery-NNN/tasks/task-NNN/SPEC.md`. Recorded as a Q&A entry (doc d
 impact) — not silently reconciled here.
 
 The lite path omits `features/`, `REQUIREMENTS.md`, and `PLAN.md`: it writes one work-root
-`SPEC.md` plus tasks directly. CONFIRMED: `docs/aid-methodology.md` ("Lite-path workspace").
+`SPEC.md` plus tasks directly. CONFIRMED: `docs/aid-methodology.md` ("Lite-path workspace");
+`canonical/skills/aid-describe/SKILL.md` ("Workspace structure (lite path)").
 
 ---
 
@@ -144,14 +158,14 @@ is the contract a producing phase must satisfy and a consuming phase relies on.
 
 | Artifact | Produced by | Consumed by | Required shape (load-bearing fields) | Lifecycle |
 |----------|-------------|-------------|--------------------------------------|-----------|
-| KB doc-set | Discover | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content + `## Change Log` | living |
-| `INDEX.md` | config/Discover/Interview | all phases | one 2–3 line summary row per KB doc | regenerated, never hand-maintained |
+| KB doc-set | Discover (brownfield) / `aid-describe` DESCRIBE-SEED (greenfield seed) | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content + `## Change Log` | living |
+| `INDEX.md` | config/Discover/Describe | all phases | one 2–3 line summary row per KB doc | regenerated, never hand-maintained |
 | `STATE.md` (discovery area) | config/Discover/Summarize | Discover (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log | living |
-| `REQUIREMENTS.md` | Interview (full) | Specify, Plan | `## Change Log` + 10 numbered sections (Objective … Priority) | frozen after approval, rev-tracked |
-| feature `SPEC.md` | Interview + Specify | Plan, Detail, Execute | `## Change Log` · Source · Description · User Stories · Priority · Acceptance Criteria · `## Technical Specification` (Specify) | living |
-| work-root `SPEC.md` (lite) | Interview (lite) | Execute | consolidated requirements + technical context, no `features/` | living |
+| `REQUIREMENTS.md` | `aid-describe` (full) | Define, Specify, Plan | `## Change Log` + 10 numbered sections (Objective … Priority) | frozen after approval, rev-tracked |
+| feature `SPEC.md` | `aid-define` + Specify | Plan, Detail, Execute | `## Change Log` · Source · Description · User Stories · Priority · Acceptance Criteria · `## Technical Specification` (Specify) | living |
+| work-root `SPEC.md` (lite) | `aid-describe` (lite) | Execute | consolidated requirements + technical context, no `features/` | living |
 | `PLAN.md` | Plan | Detail, Deploy | `## Deliverables` (ordered, each with What/Features/Depends on/Priority) + execution graph (Detail) + `## Revision History` | living, rev-tracked |
-| task `SPEC.md` | Detail (full) or Interview (lite) | Execute | Type ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | rev-tracked if amended |
+| task `SPEC.md` | Detail (full) or `aid-describe` (lite) | Execute | Type ∈ {RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE} · Source · Depends on · Scope · Acceptance Criteria | rev-tracked if amended |
 | `IMPEDIMENT-task-NNN.md` | Execute | Specify, Detail, Discover | Summary · Type ∈ {wrong-assumption, missing-dependency, architecture-conflict, kb-gap} · Options · Recommendation | closed when resolved |
 | `package-NNN-{slug}.md` | Deploy | Monitor, stakeholders | deliveries included · verification results · environment · release notes | one per shipped release |
 | `MONITOR-STATE.md` | Monitor | Execute (bugs), Discover (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
@@ -174,8 +188,9 @@ machine … One invocation per state. No auto-advance").
 | Skill | States (in order) |
 |-------|-------------------|
 | `aid-discover` | GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE |
-| `aid-interview` (full) | 7 states: interview states 1–4 (open / Q&A mode / continue / completion gate) → 5 Feature Decomposition → 6 Cross-Reference → 7 Done |
-| `aid-interview` (lite) | TRIAGE → CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE |
+| `aid-describe` (full, Phase 2a) | FIRST-RUN → Q-AND-A → TRIAGE → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION (pauses → `/aid-define`) |
+| `aid-describe` (lite, Phase 2a) | FIRST-RUN → Q-AND-A → TRIAGE → CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE |
+| `aid-define` (Phase 2b) | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE (hands off → `/aid-specify`) |
 | `aid-specify` | per-section universal loop: Propose → Discuss → Write → Review (re-run enters at Review) |
 | `aid-plan` | universal loop applied per delivery: Propose → Discuss → Write → Review |
 | `aid-detail` | universal loop per delivery producing task files → build execution graph |
@@ -185,8 +200,13 @@ machine … One invocation per state. No auto-advance").
 | `aid-housekeep` | PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE |
 | `aid-update-kb` | ANALYZE → APPLY → REVIEW → APPROVAL → DONE |
 
-CONFIRMED: per-skill `SKILL.md` files under `canonical/skills/`; the lite/housekeep/update
-sequences additionally in `docs/glossary.md` ("aid-housekeep", "aid-update-kb").
+CONFIRMED: per-skill `SKILL.md` files under `canonical/skills/` (`aid-describe/SKILL.md`
+frontmatter `State machine:` + Dispatch table; `aid-define/SKILL.md`); the
+lite/housekeep/update sequences additionally in `docs/glossary.md` ("aid-housekeep",
+"aid-update-kb"). **Phase 2 was one skill (`aid-interview`); it is now two:** the interview /
+lite / greenfield-seed states belong to `aid-describe` (2a) and feature-decomposition +
+cross-reference belong to `aid-define` (2b). The `aid-interviewer` AGENT was NOT renamed —
+only the skill split.
 
 The **universal loop** (Propose, then Discuss, then Write, then Review) is shared by every full-path
 design phase. Re-running a completed phase re-enters at Review and re-grades existing content
@@ -238,7 +258,7 @@ CONFIRMED: `docs/aid-methodology.md` ("## 6. Feedback Loops").
 
 | Loop | From | To | Trigger | Record |
 |------|------|----|---------|--------|
-| L1 | Interview | Discover | an answer reveals the KB is wrong/incomplete | Q&A in `.aid/knowledge/STATE.md` |
+| L1 | Describe (2a) | Discover | an answer reveals the KB is wrong/incomplete | Q&A in `.aid/knowledge/STATE.md` |
 | L2 | Specify | Discover | spec exposes insufficient subsystem understanding | Q&A in `.aid/knowledge/STATE.md` |
 | L3 | Plan | Discover | codebase more complex than the KB captured | Q&A in `.aid/knowledge/STATE.md` |
 | L4 | Plan | Specify | KB complete but a SPEC is ambiguous/contradictory | Q&A in the feature `STATE.md` |
@@ -246,14 +266,35 @@ CONFIRMED: `docs/aid-methodology.md` ("## 6. Feedback Loops").
 | L6 | Execute | Discover / Specify / Detail | an assumption does not hold | `IMPEDIMENT-task-NNN.md` (routed by Type) |
 | L7 | Execute Review | any upstream phase | reviewer finds TASK/SPEC/KB-sourced issues | source-tagged issue → loopback |
 | L8 | Deploy | Execute | final verification (build+tests+lint) fails | routed back to `/aid-execute` |
-| L9 | Monitor | Interview (bug) | finding classified BUG → LITE-BUG-FIX | `MONITOR-STATE.md` finding |
-| L10 | Monitor | Interview (CR) | finding classified Change Request | `MONITOR-STATE.md` finding |
+| L9 | Monitor | Describe (bug) | finding classified BUG → LITE-BUG-FIX | `MONITOR-STATE.md` finding |
+| L10 | Monitor | Describe (CR) | finding classified Change Request | `MONITOR-STATE.md` finding |
 | L11 | any phase | Discover | KB found wrong/incomplete/stale | targeted re-discovery Q&A |
 
 The IMPEDIMENT routing (L6) is by Type: `kb-gap` routes to Discover, `architecture-conflict`
 to Specify, `missing-dependency` to Detail, and `wrong-assumption` to a task/SPEC update.
 CONFIRMED:
 `docs/aid-methodology.md` ("Loop 6").
+
+### Greenfield forward-authoring + the conformance feedback
+
+Two design-first mechanisms extend the feedback model beyond the eleven loops:
+
+- **Greenfield forward-authoring (entry, not a loop).** On a greenfield project the docs lead
+  the code: `aid-describe`'s DESCRIBE-SEED state forward-authors the 5-element KB seed
+  (`domain-glossary.md` + `architecture.md` + `coding-standards.md` + `technology-stack.md` +
+  `decisions.md`) into `.aid/knowledge/`, each stamped `source: forward-authored`. The design
+  IS the source of truth; downstream phases (`aid-specify`, `aid-plan`, `aid-execute`) read the
+  seed unchanged. CONFIRMED: `canonical/skills/aid-describe/references/state-describe-seed.md`
+  ("Record Sink", "Advance").
+- **Build conformance check (code -> design, flag-not-overwrite).** `/aid-housekeep`'s KB-DELTA
+  stage carries a **Conformance Lane**: it shadow-extracts an as-built KB from the current code
+  and diffs it against the `source: forward-authored` design docs. Divergences
+  (`placeholder-resolved` / `code-ahead` / `contradiction`) are FLAGGED for human reconciliation
+  via a Required Q&A entry in `.aid/knowledge/STATE.md`; the design doc is NEVER auto-overwritten
+  with as-built (authority stays design -> code until the human chooses to evolve the design via
+  `/aid-discover` targeted re-entry). This is the inverse of the normal doc <- code direction.
+  CONFIRMED: `canonical/skills/aid-housekeep/references/state-kb-delta.md` ("Conformance Lane",
+  "Invariant -- flag, never overwrite").
 
 ---
 
@@ -276,8 +317,10 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   (`.aid/{work}/tasks/task-NNN.md`) while the live skills and `work-state-template.md` use the
   nested `delivery-NNN/tasks/task-NNN/SPEC.md` shape. Doc drift — see the Q&A entry. LIKELY a
   prose-simplification lag, not a behavioral disagreement, but not reconciled here.
-- The skill/recipe counts disagree across sources ("12-skill pipeline" vs 13 skill dirs; "51"
-  vs 52 recipes). Tracked as discovery Q&A (Q1/Q2). Counts here defer to those Q&As.
+- The skill count is now consistent at **14** across `README.md`, `docs/aid-methodology.md`,
+  and the site docs (the `aid-interview` split into `aid-describe` + `aid-define`; prior 12-/13-
+  skill drift resolved). The recipe count ("51" vs 52 files at `canonical/aid/recipes/`) remains
+  tracked as discovery Q&A (Q2).
 
 ---
 
@@ -311,6 +354,10 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `STATE.md`; the dashboard and `/aid-execute` read these files to track a pipeline. Artifact
   files alone are not trackable. Renaming or restructuring `STATE.md` sections breaks the
   dashboard reader (see [integration-map.md](integration-map.md)).
+- **Forward-authored marker contract:** a greenfield seed doc carries `source: forward-authored`
+  in its frontmatter; this marker is what routes the doc into the `/aid-housekeep` Conformance
+  Lane (code -> design, flag-not-overwrite) instead of the normal doc <- code update lane.
+  Dropping or changing the marker re-routes the doc and breaks the conformance check.
 - **Compatibility rule:** artifact templates evolve additively — new optional sections/fields
   are safe; removing or renaming a load-bearing field is breaking and requires updating every
   producing and consuming skill in lockstep.
@@ -326,9 +373,13 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 - **Every inter-phase artifact is a typed markdown contract.** A phase consumes and produces
   the declared artifacts (see the Phase Input/Output Contracts table); a phase cannot start
   until its inputs exist and its predecessor's gate has passed.
-- **Phase order is fixed.** The six numbered phases run Discover -> Interview -> Specify ->
-  Plan -> Detail -> Execute on the full path; the lite path skips Specify/Plan/Detail but
-  never reorders or renumbers them.
+- **Phase order is fixed.** The six numbered phases run Discover -> Describe/Define (Phase
+  2a/2b) -> Specify -> Plan -> Detail -> Execute on the full path; the lite path runs
+  `aid-describe` lite and skips Define/Specify/Plan/Detail, but never reorders or renumbers
+  the phases.
+- **Forward-authored design is never auto-overwritten.** The conformance check flags
+  code↔design divergence for the human; authority stays design -> code until the human
+  explicitly evolves the design (see the Feedback Loop Contracts conformance subsection).
 - **Contract fields evolve additively** -- removing or renaming a load-bearing field is a
   lockstep break (see the `## Contracts` Compatibility rule).
 
@@ -339,3 +390,4 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial pipeline-contract mapping (Integrator deep-dive) |
+| 1.1 | 2026-06-28 | manual | Reconciled Phase 2 to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) + Phase 2b `aid-define` (feature decomposition + cross-reference). Rewrote the Phase-2 state-machine model, added the greenfield forward-authoring entry + the conformance feedback, and updated the skill count to 14. |

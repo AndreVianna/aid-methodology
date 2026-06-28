@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Wide Overflow Fixture (T4 negative case)</title>
+<!--
+  T4 NEGATIVE fixture: this visual FAILS T4 at 732px and 390px while PASSING T1/T2/T3
+  at the wide (1280px) viewport.
+
+  Design:
+    - .diagram-box is width:100%; overflow:hidden (responsive container)
+    - .pill-row contains 6 pills, each 130px wide, 8px gap = 820px total
+    - At 1280px: 820px fits in 1248px content area -> T1/T2/T3 all PASS
+    - At 732px : 820px overflows 700px content area -> scrollWidth(~836)>clientWidth(732) -> T4 FAIL
+    - At 390px : 820px overflows 358px content area -> scrollWidth(~836)>clientWidth(390) -> T4 FAIL
+    - T1: text at 13px (above the 10px default threshold) -> PASS at 1280px
+    - T2: single child .pill-row (one child = no pairwise comparison) -> PASS at 1280px
+    - T3: .diagram-box has non-trivial dimensions at 1280px -> PASS
+-->
+<style>
+body { margin: 0; font-family: sans-serif; }
+.diagram-box {
+  width: 100%;
+  min-height: 160px;
+  overflow: hidden;
+  background: #f0f4f8;
+  box-sizing: border-box;
+  padding: 16px;
+}
+.pill-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+}
+.pill {
+  flex: none;
+  width: 130px;
+  height: 48px;
+  line-height: 48px;
+  text-align: center;
+  font-size: 13px;
+  background: #007F7D;
+  color: white;
+  border-radius: 4px;
+  white-space: nowrap;
+  box-sizing: border-box;
+}
+</style>
+</head>
+<body>
+<div class="diagram-box">
+  <div class="pill-row">
+    <div class="pill">Discover</div>
+    <div class="pill">Interview</div>
+    <div class="pill">Specify</div>
+    <div class="pill">Plan</div>
+    <div class="pill">Detail</div>
+    <div class="pill">Execute</div>
+  </div>
+</div>
+</body>
+</html>

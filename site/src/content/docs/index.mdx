@@ -38,8 +38,9 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Desc["2a · aid-describe<br/>gather requirements"]:::def
         Triage{"TRIAGE<br/>full or lite?"}:::def
+        Def["2b · aid-define<br/>decompose features"]:::def
         Spec["3 · aid-specify<br/>full path"]:::def
     end
     subgraph G3[" 3 · Map "]
@@ -56,8 +57,8 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Intv --> Triage
-    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Init --> Disc --> Desc --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Def --> Spec --> Plan --> Det --> Exe
     Triage -- "lite path<br/>small, single-target" --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
@@ -65,7 +66,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*Eleven user-facing skills · five groups · two paths (TRIAGE-routed). The six numbered
+*Twelve user-facing skills · five groups · two paths (TRIAGE-routed). The six numbered
 phases — Discover through Execute — are the mandatory pipeline; TRIAGE routes small,
 single-target work down the **lite path** straight to Execute.*
 
@@ -78,7 +79,7 @@ The six core phases, in order:
 5. **Detail** — break deliveries into small, typed, dependency-ordered tasks.
 6. **Execute** — run each task with a built-in adversarial review loop until it clears the grade bar.
 
-Eleven user-facing skills across five groups deliver these phases. When the work is small and
+Twelve user-facing skills across five groups deliver these phases. When the work is small and
 well-scoped, the **lite path** skips Specify, Plan, and Detail — the same rigour, proportionate
 overhead.
 

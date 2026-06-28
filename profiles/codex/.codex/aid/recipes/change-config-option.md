@@ -12,7 +12,7 @@ summary: Change an existing config option's default/validation.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-config-option` via /aid-interview lite path
+**Source:** recipe `change-config-option` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -58,7 +58,7 @@ Affected application behavior: {{affected-behavior}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-config-option` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-config-option` | /aid-describe lite path |
 
 ## tasks
 

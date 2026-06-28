@@ -20,7 +20,7 @@ changelog:
 
 # Infrastructure
 
-> **Source:** aid-discover (Phase 1) + aid-interview (Phase 2)
+> **Source:** aid-discover (Phase 1) + aid-describe (Phase 2)
 > **Status:** {✅ Complete | ⚠️ Partial | ❌ Missing}
 > **Last Updated:** {date}
 
@@ -151,4 +151,4 @@ changelog:
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover + aid-interview | Initial infrastructure mapping |
+| 1.0 | {date} | aid-discover + aid-describe | Initial infrastructure mapping |
