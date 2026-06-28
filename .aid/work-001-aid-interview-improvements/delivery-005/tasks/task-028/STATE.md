@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** output_root threaded in agent-prompts.md (6 write rules → {output_root} default .aid/knowledge/; 3 .aid/generated writers untouched) + state-generate.md dispatch pass-through. Awaiting delivery gate.
 
 ---
 

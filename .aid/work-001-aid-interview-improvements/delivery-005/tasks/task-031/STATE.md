@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** CL-Step 2 in state-kb-delta.md: present divergences [1 evolve/2 fix-code/3 accept] + rationale → Required Q- **Notes:** Dispatched (aid-developer) — CL-Step 2 human-gated flag-not-overwrite reconciliationA entry → human-gated apply ([1] only via /aid-discover+APPROVAL) → shadow cleanup. Never writes .aid/knowledge; byte-unchanged until reconciled. Awaiting delivery gate.
 
 ---
 

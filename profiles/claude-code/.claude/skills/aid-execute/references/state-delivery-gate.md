@@ -424,6 +424,11 @@ Grade: {grade}  Cycles: {N}  Tier: {tier}
 
 ✅ Delivery complete. Branch aid/{work}-delivery-NNN is Done.
 Optional next steps (independent, not required, not sequential): /aid-deploy, /aid-monitor.
+
+If this work has forward-authored seed docs (a KB doc with `source: forward-authored` in its
+frontmatter), consider running `/aid-housekeep` to surface any divergence between the
+as-built code and the original design.  This is a discoverability pointer only -- it is NOT
+a required gate step and does NOT affect this delivery's grade.
 ```
 
 Print the final delivery snapshot:

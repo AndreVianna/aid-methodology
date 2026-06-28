@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** test-conformance-lane-semantics.sh 27/27 (carve + classifier + flag-not-overwrite + brownfield-intact + freshness-agreement + §6 calibration C4=60 validated); auto-discovered (86 suites). Awaiting delivery gate.
 
 ---
 

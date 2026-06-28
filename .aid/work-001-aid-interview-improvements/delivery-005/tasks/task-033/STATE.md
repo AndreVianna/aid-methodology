@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** test-output-root-isolation.sh 22/22 (Groups P/S/G/D + K canary: 6 rules use {output_root}, 0 hardcode .aid/knowledge); auto-discovered. Awaiting delivery gate.
 
 ---
 

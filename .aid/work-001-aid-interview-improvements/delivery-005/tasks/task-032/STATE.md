@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** full render: delivery-005 edits → 5 profiles + .claude mirror (24 content files); DBI byte-identical; idempotent (both VERIFY PASS); 4 hash updates/profile, no new files. Awaiting delivery gate.
 
 ---
 
