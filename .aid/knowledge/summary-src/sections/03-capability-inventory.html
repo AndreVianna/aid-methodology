@@ -7,7 +7,7 @@
 
 	<!-- Pipeline skills -->
 	<h3 style="margin-top:0; margin-bottom:0.75rem;">Pipeline Skills &mdash; the lifecycle</h3>
-	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">9 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate.</p>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">10 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate. Phase 2 (Interview) is realized by two chained skills: <code>/aid-describe</code> (Phase 2a) and <code>/aid-define</code> (Phase 2b).</p>
 	<div class="cap-grid">
 		<div class="cap-card">
 			<span class="cap-kicker">Setup: Config (bootstrap)</span>
@@ -28,12 +28,21 @@
 			</dl>
 		</div>
 		<div class="cap-card">
-			<span class="cap-kicker">Phase 2: Interview</span>
+			<span class="cap-kicker">Phase 2a: Describe</span>
 			<span class="cap-name">Gather requirements</span>
-			<code class="cap-invoke">/aid-interview</code>
+			<code class="cap-invoke">/aid-describe</code>
 			<dl class="cap-dl">
-				<dt>What</dt><dd>Adaptive one-question-at-a-time interview producing <code>REQUIREMENTS.md</code>, then decomposes them into feature files.</dd>
-				<dt>When</dt><dd>After discovery, when starting a new Work. Includes TRIAGE for lite-path routing.</dd>
+				<dt>What</dt><dd>Adaptive one-question-at-a-time interview driven by the seasoned-analyst elicitation engine (NFR-7 envelope + five-step selector), producing an approved <code>REQUIREMENTS.md</code>. Runs TRIAGE (full vs. lite routing) and, on greenfield projects, forward-authors a KB seed.</dd>
+				<dt>When</dt><dd>After discovery (or directly for greenfield), when starting a new Work. The <code>aid-interviewer</code> agent conducts the dialogue.</dd>
+			</dl>
+		</div>
+		<div class="cap-card">
+			<span class="cap-kicker">Phase 2b: Define</span>
+			<span class="cap-name">Decompose into features</span>
+			<code class="cap-invoke">/aid-define</code>
+			<dl class="cap-dl">
+				<dt>What</dt><dd>Decomposes the approved <code>REQUIREMENTS.md</code> into per-feature <code>SPEC.md</code> stubs, then cross-references the requirements and feature boundaries against the KB and codebase.</dd>
+				<dt>When</dt><dd>Full path only; immediately after <code>/aid-describe</code> completes. Hands off to <code>/aid-specify</code>.</dd>
 			</dl>
 		</div>
 		<div class="cap-card">
@@ -89,6 +98,27 @@
 				<dt>What</dt><dd>Interprets telemetry, classifies findings, and routes bugs / change requests back into the pipeline.</dd>
 				<dt>When</dt><dd>After deployment, to close the feedback loop from production.</dd>
 			</dl>
+		</div>
+	</div>
+
+	<!-- Requirements-gathering deep dive -->
+	<h3 style="margin-top:2rem; margin-bottom:0.75rem;">Requirements-Gathering Capabilities (deep dive)</h3>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">Three capabilities distinguish <code>/aid-describe</code> from a simple question list: the seasoned-analyst elicitation engine, greenfield KB seed authoring, and the downstream conformance check.</p>
+	<div class="grid g3">
+		<div class="card">
+			<div class="kicker">NFR-7 Elicitation Engine</div>
+			<h3>Seasoned-analyst questions</h3>
+			<p>Every question carries a concrete <code>Suggested:</code> answer and a grounded <code>Why:</code> rationale. The five-step next-move selector picks the most useful next question each turn instead of following a fixed script. Calibration adapts depth and vocabulary to the user's expertise level.</p>
+		</div>
+		<div class="card card-primary">
+			<div class="kicker">Greenfield Inversion</div>
+			<h3>Forward-authored KB seed</h3>
+			<p>For new projects with no existing code, <code>/aid-describe</code> authors a 5-element KB seed from elicited intent (concept-spine, architecture, conventions, tech-stack, decisions), each stamped <code>source: forward-authored</code>. The design docs become the source of truth; code is built to conform to them.</p>
+		</div>
+		<div class="card">
+			<div class="kicker">Build Conformance</div>
+			<h3>Flag divergence, never overwrite</h3>
+			<p><code>/aid-housekeep</code>'s Conformance Lane compares as-built code against each forward-authored design doc in the code&rarr;design direction. Any divergence is flagged for human reconciliation &mdash; the design doc is never auto-overwritten with as-built reality.</p>
 		</div>
 	</div>
 

@@ -16,7 +16,7 @@ audience: [developer, architect]
 > **Current Grade:** A+
 > **User Approved:** yes
 > **Last KB Review:** 2026-06-25
-> **Last Summary:** 2026-06-25
+> **Last Summary:** 2026-06-28
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
 
@@ -88,25 +88,27 @@ This is the single state file for the **Discovery area** — persistent project 
 | Profile Confidence | high |
 | Theme | default |
 | Machine Grade | A+ (grade-summary AUTO_POOL 68/68) |
-| Human Grade | A+ (manual-checklist 30/30: K1 10 / K2 15 / V1 5) |
-| User Approved | yes (2026-06-25) |
-| Last Run | 2026-06-25 |
-| Output | .aid/dashboard/kb.html (177780 bytes, 3856 lines, 20 sections) |
+| Human Grade | A+ (V1 visual gate PASS -- Playwright-rendered + screenshot-validated; validate-visuals 4/4 T1-T4 clear; contrast both themes PASS) |
+| User Approved | yes (2026-06-28; orchestrator-validated during the doc-reconcile PR) |
+| Last Run | 2026-06-28 |
+| Output | .aid/dashboard/kb.html (198882 bytes, 4172 lines, 21 sections) |
 | Mermaid Version | — (retired in D-012; pre-rendered inline SVG only) |
 | Mermaid Cached | — |
 
 **Doc-Set Source:** .aid/settings.yml discovery.doc_set
-**Doc-Set Count:** 18 of 18
+**Doc-Set Count:** 19 of 19
 **Domain:** hybrid:methodology-tooling+software-cli
 **Domain Source:** .aid/knowledge/STATE.md ## Discovery Domain
-**Overall Grade:** A+ (= min of Machine A+, Human A+)
-**Writeback Status:** ok
-**Minimum Grade:** A
-**Visual-Gate Note:** validate-visuals.mjs SKIPPED (Playwright not installed in the summarize package); V1 visual gate performed by the agent via the Playwright MCP in a real headless browser — both themes legible, 4 inline-SVG diagrams render correctly, theme toggle + lightbox (open/Esc-close) verified, expanded lightbox view legible. Only console message is a benign favicon.ico 404.
+**Overall Grade:** A+ (Machine) — Human pending
+**Writeback Status:** pending (orchestrator does WRITEBACK)
+**Minimum Grade:** A+
+**Visual-Gate Note:** validate-visuals.mjs SKIPPED (Playwright not installed in the summarize package); V1 visual gate must be run by the orchestrator. 4 inline-SVG diagrams pre-rendered.
 
-### Findings (last validation)
-- Machine (AUTO_POOL): 68/68 — COV 15/15, L1/L2, H1, A1-A5, C1/C2 (22/22 contrast both themes), S2 offline, NM no-Mermaid-engine. 0 findings.
-- Human (MANUAL_POOL): 30/30 — K1 completeness (all 18 doc-set docs as 20 sections), K2 facts grounded (spot-check MISS all false positives), V1 visual gate PASS (Playwright-validated).
+### Findings (last validation — 2026-06-28 forced KB-refresh run)
+- Machine (AUTO_POOL): 68/68 — COV 15/15 (19 docs), L1 52/52, L2 0/0, H1 0 errors, A1-A5 all pass, C1/C2 22/22 contrast both themes, S2 offline pass, NM no-Mermaid-engine pass. 0 findings.
+- Human (MANUAL_POOL): not yet run; pending orchestrator.
+- Spot-check-facts: 6 OK / 4 MISS — MISS items are noise patterns (fragment matching: "1 files", "10 skills", "2 modules", "256 checks"); not invented claims.
+- Stale refs eliminated: 0 aid-interview-as-skill references remain; 14 skills (10 pipeline + 4 on-demand); aid-describe/aid-define, seasoned-analyst engine, greenfield seed, conformance check all present.
 
 ## Q&A (Pending)
 
@@ -188,9 +190,10 @@ This is the single state file for the **Discovery area** — persistent project 
 
 | # | Date | Grade | Profile | Mermaid | Output | Notes |
 |---|------|-------|---------|---------|--------|-------|
-| 1 | {YYYY-MM-DD} | — | — | — | — | Initial run |
+| 1 | 2026-06-28 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | .aid/dashboard/kb.html (198882 bytes, 21 sections) | Forced KB-refresh regen after the work-001 doc reconcile. Machine A+ (68/68); Human A+ (V1 Playwright-rendered + screenshot-validated, validate-visuals 4/4 T1-T4, contrast both themes). Reflects the aid-describe/aid-define split (14 skills), the seasoned-analyst engine (NFR-7), greenfield forward-authored inversion, and the conformance check. |
 
 | 2 | 2026-06-25 | A+ | hybrid:methodology-tooling+software-cli | 18 of 18 docs | kb.html (177780 bytes) | Initial generation (domain-driven 18-doc KB; Machine A+/Human A+; V1 Playwright-validated) |
+| 3 | 2026-06-28 | A+ (Machine) | hybrid:methodology-tooling+software-cli | 19 of 19 docs | kb.html (198882 bytes, 4172 lines, 21 sections) | Forced KB-refresh: aid-interview split to aid-describe/aid-define; 14 skills (was 13); seasoned-analyst engine + greenfield seed + conformance check added. Machine A+ 68/68; Human pending orchestrator. |
 
 ## Calibration Log
 

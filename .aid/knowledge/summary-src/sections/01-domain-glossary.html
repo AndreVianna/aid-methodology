@@ -2,7 +2,7 @@
 	<header>
 		<span class="eyebrow">Concept Spine &mdash; domain-glossary.md</span>
 		<h2>Domain Glossary</h2>
-		<p class="lede">AID's load-bearing vocabulary. Every term here means something specific to this project &mdash; not the generic industry sense. The Concept Spine holds the 25 native concepts the methodology is built on.</p>
+		<p class="lede">AID's load-bearing vocabulary. Every term here means something specific to this project &mdash; not the generic industry sense. The Concept Spine holds the 30 native concepts the methodology is built on.</p>
 	</header>
 
 	<div class="gloss-grid">
@@ -180,12 +180,13 @@
 
 		<div class="gloss-card" id="term-triage">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-triage">Triage</a></div>
-			<p class="gloss-def">The <code>/aid-interview</code> step that matches a free-form work description to a Recipe and routes the work down either the full path (every numbered phase) or the lite path (a condensed phase set, same artifacts). A confident single-target match routes to lite automatically.</p>
+			<p class="gloss-def">The opening state of <code>/aid-describe</code> (after FIRST-RUN scaffolding, before the conversational interview) that routes a Work down either the full path (every numbered phase) or the lite path (condensed phases, same artifacts). Engine-driven: the seasoned-analyst engine draws out route-deciding signals over a 5-signal gap inventory; a confident single-target recipe match routes to lite automatically.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Relates to</span>
 				<span class="gloss-pill">Lite Path</span>
 				<span class="gloss-pill">Recipe</span>
 				<span class="gloss-pill">Work</span>
+				<span class="gloss-pill">Seasoned-Analyst Engine</span>
 			</div>
 		</div>
 
@@ -255,6 +256,62 @@
 			<div class="gloss-meta">
 				<span class="gloss-label">Aliases</span>
 				<span class="gloss-pill">Ranked Candidates</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-describe-define">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-describe-define">Describe / Define</a></div>
+			<p class="gloss-def">The two skills that together perform Phase 2 (Interview). <strong><code>aid-describe</code></strong> (Phase 2a) gathers requirements through the seasoned-analyst interview and runs TRIAGE; it produces the approved <code>REQUIREMENTS.md</code> on the full path (or a work-root <code>SPEC.md</code> + task hierarchy on the lite path), and on greenfield authors the forward-authored KB seed. <strong><code>aid-define</code></strong> (Phase 2b, full path only) decomposes the approved <code>REQUIREMENTS.md</code> into per-feature <code>SPEC.md</code> stubs, then cross-references them against the KB and codebase. This pair replaced the former single <code>aid-interview</code> skill.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">aid-describe</span>
+				<span class="gloss-pill">aid-define</span>
+				<span class="gloss-pill">Interview split</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-seasoned-analyst-engine">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-seasoned-analyst-engine">Seasoned-Analyst Engine</a></div>
+			<p class="gloss-def">The deterministic interview driver inside <code>aid-describe</code>: one fixed D1 "what + why" opener, then a five-step next-move selector every subsequent turn &mdash; STOP-CHECK, GAP-SELECTION (from a gap inventory, by precedence), MOVE-SELECTION (from a 10-move playbook), CALIBRATION-SHAPING (adapts depth to user expertise), and ENVELOPE+EMIT. Invariant NFR-7: every emitted question carries a concrete <code>Suggested:</code> answer and a grounded <code>Why:</code> rationale. No bare, suggestion-less question is ever emitted.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">elicitation engine</span>
+				<span class="gloss-pill">D1 opener</span>
+				<span class="gloss-pill">five-step selector</span>
+				<span class="gloss-pill">NFR-7 envelope</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-nfr-7">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-nfr-7">NFR-7 Suggested-Answer + Rationale</a></div>
+			<p class="gloss-def">The non-negotiable shape of every question the seasoned-analyst engine emits: a context line, the question itself, a concrete <strong><code>Suggested:</code></strong> value (a real straw-man answer, never blank), and a grounded <strong><code>Why:</code></strong> rationale (tied to the user's prior words, the KB, or expert judgment). A question missing <code>Suggested:</code> or <code>Why:</code> is malformed and rejected by a pre-emit self-check. The engine recommends as a real expert, surfacing a concrete suggestion the user can accept or override.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">NFR-7</span>
+				<span class="gloss-pill">advisor stance</span>
+				<span class="gloss-pill">Suggested/Why envelope</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-forward-authored-seed">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-forward-authored-seed">Forward-Authored Seed</a></div>
+			<p class="gloss-def">The greenfield KB seed that <code>aid-describe</code>'s DESCRIBE-SEED state authors from elicited intent <em>before any code exists</em> &mdash; the inversion of the brownfield default. In brownfield, code is the source of truth and the KB describes it. In greenfield, the design is authored first and IS the source of truth: code is built to conform to it. Seed docs carry <code>source: forward-authored</code> and cover a 5-element doc-set: concept-spine, intended architecture, conventions, tech-stack, and decisions.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">forward-authored</span>
+				<span class="gloss-pill">greenfield inversion</span>
+				<span class="gloss-pill">KB seed</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-conformance-check">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-conformance-check">Conformance Check</a></div>
+			<p class="gloss-def">The check that verifies as-built code conforms to the design-authoritative forward-authored KB seed &mdash; the inverse direction from brownfield freshness. Because a <code>source: forward-authored</code> doc is design&rarr;code authoritative, detecting where the code has diverged from the design &mdash; and flagging that divergence for deliberate human reconciliation rather than silently overwriting the design with as-built &mdash; is the conformance check's distinct job. Runs in <code>aid-housekeep</code>'s Conformance Lane.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Aliases</span>
+				<span class="gloss-pill">code&rarr;design conformance</span>
+				<span class="gloss-pill">design conformance</span>
+				<span class="gloss-pill">conformance verification</span>
 			</div>
 		</div>
 
