@@ -2,14 +2,46 @@
 
 Resume the conversational interview; STATE.md shows In Progress with at least one section still Pending or Partial.
 
-This state covers both the opening question (when all sections are Pending after FIRST-RUN + TRIAGE)
-and ongoing interview turns. If all sections are Pending, ask the opening question:
+## Entry: opener skip check
+
+Before asking any question, read STATE.md for two signals:
+
+- `**Opener:**` field in the `## Triage` block -- written by TRIAGE Step 6 when the D1
+  opener already fired there.
+- `## Escalation Carry` block -- written by the lite-to-full escalation procedure.
+
+**If `## Escalation Carry` is present** -> follow the Escalation Carry section below. The
+D1 opener is skipped; the carry block is surfaced for confirmation instead.
+
+**If the `**Opener:**` field is present in `## Triage` (and `## Escalation Carry` is absent)**
+-> the D1 opener already fired in TRIAGE. Seed the adaptive engine loop with the captured
+opener answer as the first captured intent (vocabulary and calibration already read). Enter
+the loop at STOP-CHECK / GAP-SELECTION (`references/elicitation-engine.md` "Adaptive Loop").
+Do NOT re-emit the D1 opener.
+
+**If NEITHER signal is present** (legacy direct-CONTINUE entry, pre-TRIAGE in-flight work,
+or loopback with no triage record):
+
+If all REQUIREMENTS.md sections are Pending, emit the D1 fixed opener
+(`references/elicitation-engine.md` "D1 Fixed Opener -- The Only Fixed Turn"):
 
 ```
-What are we building? Tell me the goal and what success looks like.
+In a sentence or two -- what do you want to build or change, and what outcome
+are you after?
+
+Suggested: For example: "I want a small CLI tool that parses a config file and
+           validates it against a schema, so that our team stops manually
+           checking config files before each deploy."
+Why: Describing the pieces in your own words gives me the working vocabulary
+     for this project. I will use your terms, not impose mine -- so the more
+     naturally you name the pieces, the more useful what follows will be.
+
+[1] Use the form above and share yours
+[2] Your answer: ___
 ```
 
-Otherwise: resume the conversational interview — assess sections, ask next question, update files.
+Otherwise: resume the engine-driven interview -- assess sections, run the five-step
+next-move selector, emit the next question, update files.
 The Interview Loop below applies.
 
 Read STATE.md `## Interview State` section status table to know where to continue.
@@ -51,6 +83,7 @@ questions.
 
 ---
 
-**See `references/interview-loop.md`** for the loop body (shared between FIRST-RUN and CONTINUE).
+**See `references/interview-loop.md`** for the loop body (shared between FIRST-RUN and CONTINUE),
+which delegates next-move selection to `references/elicitation-engine.md`.
 
 **Advance:** **CHAIN** → [State: COMPLETION] when all sections are Complete or N/A (continue inline).

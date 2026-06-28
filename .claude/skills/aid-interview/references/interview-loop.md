@@ -12,12 +12,27 @@ Read STATE.md `## Interview State` Section State table. For each section:
 
 ### Decide what to ask next
 
-Read `references/interview-strategies.md` for question priority logic, KB inference,
-quality gates, and UI-aware probing.
+Delegate to `references/elicitation-engine.md`. The engine runs its five-step
+next-move selector every turn after the D1 opener:
 
-In summary: (1) Infer from KB first — suggest answers with source references, don't fill
-silently. (2) Pick the most critical gap. (3) Deepen Partial sections. (4) When all
-sections addressed → State 4.
+1. **STOP CHECK** -- Is the work minimal-but-sufficient? If yes, exit to COMPLETION.
+2. **GAP SELECTION** -- Pick the highest-priority open gap (gap-precedence table in
+   elicitation-engine.md Step 2). Gap inventory for the full-path interview: the
+   REQUIREMENTS.md section status table read in "Assess current state" above.
+3. **MOVE SELECTION** -- Map the gap type to a playbook move
+   (`references/move-playbook.md` gap-type firing table).
+4. **CALIBRATION SHAPING** -- Shape the chosen move's depth by calibration state
+   (`references/calibration.md` depth-shaping table).
+5. **ENVELOPE + EMIT** -- Wrap in the NFR-7 question envelope and run the pre-emit
+   self-check (`references/advisor-stance.md`); emit one question; wait for the
+   answer; record to the record sink; re-read calibration; return to Step 1.
+
+For the full-path interview the stop predicate is: every REQUIREMENTS.md section is
+Complete or N/A and no unresolved coherence conflict is open.
+
+`references/interview-strategies.md` carries supplementary brownfield guidance on KB
+inference, quality gates, and UI-aware probing. Consult it when the gap inventory or
+context warrants.
 
 ### Rules
 

@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** elicitation-engine.md authored (D1 opener + 5-step selector + 3-param consumption contract + 7 invariants). Awaiting delivery gate.
 
 ---
 

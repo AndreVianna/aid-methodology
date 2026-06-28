@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** state-triage.md: Step 1b engine loop over 5-signal gap inventory + KB-context detection + Opener field in all 5 templates; routing Steps 2/2a/2b/4 byte-unchanged. Awaiting delivery gate.
 
 ---
 

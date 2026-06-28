@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** state-continue.md opener conditional (skip on Opener:/Escalation-Carry; emit only legacy/loopback). All paths verified. Awaiting delivery gate.
 
 ---
 

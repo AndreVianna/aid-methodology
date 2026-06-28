@@ -30,9 +30,9 @@ Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gat
 
 ### `aid-researcher`
 
-**Tools:** Read, Glob, Grep, Bash, Write
+**Tools:** Read, Glob, Grep, Bash, Write, WebSearch, WebFetch
 
-Reads and analyzes code, docs, logs, and APIs to produce structured Knowledge Base documents and analysis reports — covering existing-state cataloguing, dependency/integration/convention mapping, telemetry interpretation, security analysis, and performance profiling.
+Reads and analyzes code, docs, logs, APIs, and external web sources to produce structured Knowledge Base documents and analysis reports — covering existing-state cataloguing, dependency/integration/convention mapping, telemetry interpretation, security analysis, performance profiling, and web-sourced prior art. Web sources are cited with a URL and access date.
 
 [Definition: `canonical/agents/aid-researcher/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-researcher/AGENT.md)
 

@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** engine wired into 5 spine files (SKILL.md + interview-loop/strategies + state-continue/triage); State Detection table + lite path byte-unchanged. Awaiting delivery gate.
 
 ---
 

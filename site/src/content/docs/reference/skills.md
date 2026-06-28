@@ -32,7 +32,7 @@ Brownfield project discovery with built-in quality gate. Run `/aid-config` first
 
 **optional viewer**
 
-Generate a single-file kb.html from .aid/knowledge/. Inlines Mermaid for offline diagrams, light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness, K2 fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum. Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT → STALE-CHECK → PROFILE → GENERATE → VALIDATE → MANUAL-CHECKLIST → FIX → APPROVAL → WRITEBACK → DONE.
+Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-based: one section per resolved doc derived from frontmatter (kb-category, objective, summary, tags, see_also). Audience: non-technical newcomer (visually rich; no KB authoring-rules leakage). Light/dark theme, click-to-expand lightbox, accessibility-first (WCAG AA). Two-grade quality gate (Machine + Human): script-verifiable checks score the Machine Grade; an interactive checklist scores the Human Grade (K1 KB-completeness, K2 fact-grounding, V1 mandatory human visual gate). APPROVAL requires BOTH grades >= minimum. Idempotent: re-running on an unchanged KB does nothing. State-machine: PREFLIGHT -> STALE-CHECK -> PROFILE -> GENERATE -> VALIDATE -> MANUAL-CHECKLIST -> FIX -> APPROVAL -> WRITEBACK -> DONE.
 
 [Definition: `canonical/skills/aid-summarize/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md)
 
@@ -44,7 +44,7 @@ Define the problem and how to solve it.
 
 **Phase 2 · TRIAGE → full or lite**
 
-Adaptive requirements gathering through conversational interview. First run builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against KB, grade, and ask targeted questions to resolve gaps and contradictions. Final step decomposes functional requirements into discrete feature files. State machine: FIRST-RUN → Q-AND-A → TRIAGE → {full: CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE | lite: CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE | escalated: any lite state → CONTINUE → ...full path...}.
+Adaptive requirements gathering through conversational interview, driven by the seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed D1 opener plus a deterministic five-step next-move selector (stop check, gap selection, move selection, calibration shaping, NFR-7 envelope + emit). First run builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against KB, grade, and ask targeted questions to resolve gaps and contradictions. Final step decomposes functional requirements into discrete feature files. State machine: FIRST-RUN -> Q-AND-A -> TRIAGE -> {full: CONTINUE -> COMPLETION -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE | lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE | escalated: any lite state -> CONTINUE -> ...full path...}.
 
 [Definition: `canonical/skills/aid-interview/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-interview/SKILL.md)
 
@@ -116,7 +116,7 @@ On-demand skills, outside the numbered phases.
 
 **on demand**
 
-Optional on-demand housekeeping skill. Runs three gated jobs in strict order: KB-DELTA (re-discover changed docs since last KB approval) → SUMMARY-DELTA (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale work-area artifacts). Each stage commits its own changes on an aid/housekeep-* branch; the skill never pushes. Re-entrant: a stalled run resumes at the stalled stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE.
+Optional on-demand housekeeping skill. Runs three gated jobs in strict order: KB-DELTA (re-discover changed docs since last KB approval) → SUMMARY-DELTA (regenerate the visual summary if the KB changed) → CLEANUP (sweep stale work-area artifacts). Each stage commits its own changes on an aid/housekeep-* branch; the skill never pushes. Re-entrant: a stalled run resumes at the stalled stage on re-invocation. State-machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE. Source-driven global reconcile; for a targeted prompt-named delta use /aid-update-kb.
 
 [Definition: `canonical/skills/aid-housekeep/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-housekeep/SKILL.md)
 

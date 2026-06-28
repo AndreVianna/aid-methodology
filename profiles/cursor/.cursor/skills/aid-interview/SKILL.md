@@ -1,11 +1,14 @@
 ---
 name: aid-interview
 description: >
-  Adaptive requirements gathering through conversational interview. First run
-  builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against
-  KB, grade, and ask targeted questions to resolve gaps and contradictions.
-  Final step decomposes functional requirements into discrete feature files.
-  State machine: FIRST-RUN → Q-AND-A → TRIAGE → {full: CONTINUE → COMPLETION → FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE | lite: CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE | escalated: any lite state → CONTINUE → ...full path...}.
+  Adaptive requirements gathering through conversational interview, driven by the
+  seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed
+  D1 opener plus a deterministic five-step next-move selector (stop check, gap
+  selection, move selection, calibration shaping, NFR-7 envelope + emit). First run
+  builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against KB,
+  grade, and ask targeted questions to resolve gaps and contradictions. Final step
+  decomposes functional requirements into discrete feature files.
+  State machine: FIRST-RUN -> Q-AND-A -> TRIAGE -> {full: CONTINUE -> COMPLETION -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE | lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE | escalated: any lite state -> CONTINUE -> ...full path...}.
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
@@ -29,8 +32,12 @@ aid-interview is **multi-agent** — different states use different agents.
 
 The frontmatter default `agent: aid-interviewer` covers States 1–4, TRIAGE, and L1. L2 and 5 dispatch `aid-architect`; L3 and 6 dispatch `aid-reviewer`. L4 and 7 run inline.
 
-Gather requirements from a human stakeholder through adaptive, one-question-at-a-time
-conversation. Builds REQUIREMENTS.md incrementally — each answer updates the document
+Gather requirements from a human stakeholder through the **seasoned-analyst elicitation
+engine** (`references/elicitation-engine.md`): one fixed D1 opener followed by a
+deterministic five-step next-move selector that adapts each question to the current gap,
+calibration state, and move playbook (`references/move-playbook.md`,
+`references/calibration.md`, `references/advisor-stance.md`). One question per turn.
+Builds REQUIREMENTS.md incrementally -- each confirmed answer updates the document
 immediately.
 
 **Workspace structure (full path):**

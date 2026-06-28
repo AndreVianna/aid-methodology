@@ -5,54 +5,55 @@ and how to design effective questions.
 
 ---
 
-## Decide What to Ask Next — Priority Order
+## Decide What to Ask Next -- Priority Order
 
-1. **Infer from KB** — If a Pending/Partial section can be answered from KB documents,
-   **do NOT fill it silently.** When `feature-inventory.md` has content, use it to
-   understand what already exists and probe for interactions/dependencies with the new work.
-   Ask with a suggested answer and source reference:
-   ```
-   [From: .aid/knowledge/{source-document}.md]
+Next-move selection is delegated to `references/elicitation-engine.md`. The engine's
+five-step selector (STOP CHECK -> GAP SELECTION -> MOVE SELECTION -> CALIBRATION
+SHAPING -> ENVELOPE + EMIT) is the authoritative driver. Consult that document for
+the gap-precedence ranking (Step 2) and all firing rules.
 
-   {Your question about this section}
+**Supplementary guidance for the full-path interview (brownfield context):**
 
-   Based on the codebase analysis: {inferred content}
+**KB inference.** When a Pending or Partial section can be answered from KB documents,
+do NOT fill it silently. When `feature-inventory.md` has content, use it to understand
+what already exists and probe for interactions and dependencies with the new work.
+Surface KB inferences at gap rank 3 or 4 with a suggested answer and source reference:
 
-   [1] Accept this
-   [2] Not applicable
-   [3] Your answer: ___
-   ```
-   Only update REQUIREMENTS.md after the user responds.
+```
+[From: .aid/knowledge/{source-document}.md]
 
-   **Quality gates inference:** When working on §6 Non-Functional Requirements, proactively
-   ask about these project-level baselines (if not already covered):
-   - **Unit test minimum** — coverage target for new code? (e.g., "all public methods",
-     "80% line coverage", "critical paths only")
-   - **Linting standard** — which linter and ruleset? (e.g., "ESLint + Airbnb", "Checkstyle
-     with Sun conventions", "default analyzer warnings-as-errors")
-   - **Build policy** — zero warnings required? Specific compiler flags?
+{Your question about this section}
 
-   These become the project baseline. `/aid-specify` may add feature-specific requirements
-   on top, and `/aid-detail` concretizes them per task.
+Suggested: {inferred content from codebase analysis}
+Why: {rationale for the inference -- grounded in the KB doc cited above}
 
-   **UI-aware inference:** If `.aid/knowledge/architecture.md` documents UI/frontend patterns or if the project has frontend code, proactively ask about these topics when working on §6 Non-Functional
-   Requirements (if not already covered):
-   - Target devices and browsers (desktop, tablet, mobile — which combinations?)
-   - Accessibility requirements (WCAG level? Keyboard navigation? Screen reader support?)
-   - Internationalization/localization needs (languages? RTL? Date/number formats?)
-   - Responsive behavior expectations (mobile-first? Specific breakpoints?)
-   - Design specs or Figma references (existing design system? Brand guidelines?)
-   - Offline behavior expectations (PWA? Service workers? Graceful degradation?)
+[1] Accept this
+[2] Not applicable
+[3] Your answer: ___
+```
 
-2. **Most critical gap** — Among remaining Pending/Partial sections, pick the one that:
-   - Depends on the least other information (can be answered now)
-   - Unblocks the most other sections
-   - Is most relevant given what the user has already said
+Only update REQUIREMENTS.md after the user responds.
 
-3. **Deepen Partial sections** — If no sections are fully Pending but some are Partial,
-   ask a follow-up to complete them.
+**Quality gates inference.** When working on Section 6 (Non-Functional Requirements),
+surface these project-level baselines as gaps if not already covered:
+- **Unit test minimum** -- coverage target for new code? (e.g., "all public methods",
+  "80% line coverage", "critical paths only")
+- **Linting standard** -- which linter and ruleset? (e.g., "ESLint + Airbnb",
+  "Checkstyle with Sun conventions", "default analyzer warnings-as-errors")
+- **Build policy** -- zero warnings required? Specific compiler flags?
 
-4. **All sections addressed** → State 4 (Completion & Approval).
+These become the project baseline. `/aid-specify` may add feature-specific requirements
+on top; `/aid-detail` concretizes them per task.
+
+**UI-aware inference.** If `.aid/knowledge/architecture.md` documents UI/frontend
+patterns or the project has frontend code, surface these as gaps when working on
+Section 6 if not already covered:
+- Target devices and browsers (desktop, tablet, mobile -- which combinations?)
+- Accessibility requirements (WCAG level, keyboard navigation, screen reader support)
+- Internationalization/localization needs (languages, RTL, date/number formats)
+- Responsive behavior expectations (mobile-first, specific breakpoints)
+- Design specs or Figma references (existing design system, brand guidelines)
+- Offline behavior expectations (PWA, service workers, graceful degradation)
 
 ---
 
@@ -69,12 +70,25 @@ The skill handles both automatically:
 
 ## Question Design Principles
 
-1. **Start wide, narrow down.** Objective → Scope → Details → Constraints.
-2. **Follow the energy.** User excited about feature X? Explore it first.
-3. **Don't interrogate.** Acknowledge what they said before asking the next thing.
-4. **Respect "I don't know."** Mark as assumption, move on.
-5. **Respect "not applicable."** Mark N/A, move on.
-6. **Capture the WHY.** "Real-time updates" is a feature. "Traders lose money on
-   stale data" is a requirement. Push for the why.
-7. **Use concrete examples.** "Walk me through what a user would do when..." produces
-   better requirements than "What are the functional requirements?"
+Question design is governed by `references/move-playbook.md` (the ten moves and their
+gap-type firing table) and `references/advisor-stance.md` (the NFR-7 question-envelope
+template, the pre-emit self-check, and the five user-move handlers: "I don't know",
+"what do you recommend?", "explain the pros and cons", "explain it like I'm a junior",
+and mistaken assertion). Every question the engine emits is wrapped in the NFR-7
+envelope -- no bare, suggestion-less questions.
+
+Conversational principles that supplement the move and stance docs:
+
+1. **Start wide, narrow down.** Objective -> Scope -> Details -> Constraints.
+2. **Follow the energy.** If the user is excited about a particular area, explore it
+   first -- the gap-precedence ranking still applies, but the move order is not rigid.
+3. **Do not interrogate.** Acknowledge what the user said before asking the next
+   question. Short context before the question (1-2 sentences max).
+4. **Respect "not applicable."** When a section is genuinely N/A for this project,
+   mark it N/A in STATE.md and move on. Do not probe for content that cannot exist.
+5. **Capture the WHY.** "Real-time updates" is a feature; "Traders lose money on stale
+   data" is a requirement. Use move-playbook.md Move 7 (Bounded why-probe) to surface
+   the terminal value.
+6. **Use concrete examples.** "Walk me through what a user would do when..." surfaces
+   better requirements than "What are the functional requirements?" See move-playbook.md
+   Move 8 (Concrete-example probe) for the full specification.

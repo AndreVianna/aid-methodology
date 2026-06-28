@@ -1,8 +1,11 @@
 # State: TRIAGE
 
 Runs immediately after FIRST-RUN scaffolding and before the conversational interview.
-Asks a free-form description question to decide whether this work takes the **lite path**
-or the **full path**, and infers the best matching recipe from the description in prose.
+Engine-driven analyst triage: the engine draws out the path- and recipe-deciding signals
+via the D1 opener and an adaptive gap-targeted loop (elicitation-engine.md) to decide
+whether this work takes the **lite path** or the **full path** and which recipe to use.
+KB-context-aware (full brownfield / seed / none). The routing computation (Steps 2-4)
+is unchanged; only the INPUT changes (drawn-out signals, not a raw free-form description).
 
 ## Idempotency check
 
@@ -14,17 +17,95 @@ Print: `[State: TRIAGE] Already complete — Path: {value}. Resuming.`
 
 ---
 
-## Step 1: Ask for free-form work description
+## KB-context detection (at state entry)
 
-Ask the user (free-form, ONE turn):
+Read `.aid/knowledge/INDEX.md` (already loaded by FIRST-RUN Step 1a) and classify the
+context the triage is running in. Record internally as `{kb-context}`.
+
+| Context | Detection signal | Anchor available |
+|---------|-----------------|-----------------|
+| **Full brownfield KB** | INDEX.md present AND as-built docs exist (`source: generated`, e.g., `module-map.md`, `test-landscape.md`); corroborated by `.aid/generated/recon.md` proposing `BROWNFIELD-*` | Real module map + named bounded contexts |
+| **Seed KB** | INDEX.md present with only forward-authored docs (`source: forward-authored`; absence of `source: generated`; marker-based, not a fixed count); corroborated by `recon.md` proposing `GREENFIELD` | Declared concept-spine + intended architecture |
+| **No KB** | INDEX.md absent | Opener answer alone; engine draws everything out |
+
+`{kb-context}` is used in Step 1b to skip gap signals the KB already answers and
+convert them to confirm-not-elicit straw-mans.
+
+---
+
+## Step 1: Engine turn 1 -- D1 opener (first-vocabulary capture)
+
+Emit the D1 fixed opener (`references/elicitation-engine.md` "D1 Fixed Opener -- The
+Only Fixed Turn") as the engine's single fixed turn:
 
 ```
-Describe the work you want to do, in your own words.
-(e.g., "fix the login crash on special characters", "add a /orders API endpoint",
- "rename the OrderSvc class everywhere", "write an ADR for the DB choice")
+In a sentence or two -- what do you want to build or change, and what outcome
+are you after?
+
+Suggested: For example: "I want a small CLI tool that parses a config file and
+           validates it against a schema, so that our team stops manually
+           checking config files before each deploy."
+Why: Describing the pieces in your own words gives me the working vocabulary
+     for this project. I will use your terms, not impose mine -- so the more
+     naturally you name the pieces, the more useful what follows will be.
+
+[1] Use the form above and share yours
+[2] Your answer: ___
 ```
 
-Wait for the user's free-form answer. Record it internally as `{description}`.
+Wait for the user's answer. Record it internally as `{description}` (also carried as
+`{opener-intent}` for the Step 6 opener seam field). This is the engine's first-
+vocabulary and seed-calibration read; scope cues in the answer prime gap signal #1.
+
+---
+
+## Step 1b: TRIAGE-mode engine loop (draw-out over the gap inventory)
+
+Immediately after reading the opener answer, run the engine's adaptive loop
+(`references/elicitation-engine.md` "Adaptive Loop") over the **triage gap inventory**.
+
+### Triage gap inventory (the route-deciding signals)
+
+| # | Signal (gap) | Decides | Engine move |
+|---|--------------|---------|-------------|
+| 1 | **Scope size / shape** -- single end-to-end slice or sprawling multi-activity backbone? | **full vs lite** (primary) | Move 5: Backbone-first + walking-skeleton |
+| 2 | **Work-type** -- bug-fix / new-feature / refactor | lite Sub-path | (workType heuristic; Step 2a) |
+| 3 | **Target artifact identity** -- the concrete thing touched (endpoint, entity, class, rule, doc...) | recipe match | Move 8: Concrete-example probe |
+| 4 | **Behavior/flow span** (process-heavy work) -- event-timeline length | scope size (secondary) | Move 4: Event-first, propose-timeline-back |
+| 5 | **KB anchoring** -- does the work map to a named KB module/concept? | sharper sizing; skip-what-KB-answers | KB straw-man anchored in `{kb-context}` |
+
+### Stop predicate: route-with-confidence
+
+The loop halts when BOTH are true:
+
+- (a) full-vs-lite is decided (signal #1 resolved), AND
+- (b) recipe confidence resolves to one of: `single clear winner | several plausible | none`
+  (the Step 2b confidence judgment).
+
+This is the engine's minimal-but-sufficient stop check -- triage stops at "enough to
+route," not at the end of the inventory.
+
+**Common case (one-turn).** When the opener answer alone contains sufficient scope and
+artifact cues (e.g., "I want to fix the login crash on special characters"), the stop
+check fires immediately after reading it -- no further turns run (one-turn-common-case NFR).
+
+### KB-context gap-targeting (AC-7 / FR-5)
+
+Before selecting a gap in the adaptive loop, check `{kb-context}` from the detection step:
+
+- **Full brownfield KB:** if a signal is already answered in the KB (e.g., the module
+  map names the targeted component), convert the gap to a confirm-not-elicit straw-man
+  (e.g., "this touches `OrderSvc`, which the KB describes as a single module -- looks
+  like a lite refactor; agree?") rather than drawing it out.
+- **Seed KB:** anchor straw-mans on the declared concept-spine and intended architecture.
+- **No KB:** draw all signals out from scratch.
+
+NFR-7 holds in every case: every emitted question carries a `Suggested:` and `Why:`.
+
+### Record sink
+
+Each confirmed gap answer is written to `STATE.md ## Triage` (the existing Step 6
+schema). The opener answer is carried forward as `{opener-intent}` into Step 6.
 
 ---
 
@@ -84,10 +165,12 @@ If the candidate set is empty, confidence = none.
 
 ---
 
-## Step 3: Single confirmation turn
+## Step 3: Engine route-confirmation turn (NFR-7 straw-man reflect-back)
 
-Present the inference to the user and wait for their response **on this same turn** (this
-is the one-turn NFR — the common case resolves here with no further back-and-forth):
+The engine emits a single reflect-back turn proposing the inferred route and recipe
+for user confirmation (the NFR-7 straw-man: "looks like a {inferred-type} -- agree?").
+This is the one-turn NFR -- the common case resolves here with no further back-and-forth.
+Present the inference and wait for the user's response **on this same turn**:
 
 **When a recipe was matched:**
 
@@ -337,6 +420,7 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 ## Triage
 
 - **Path:** full
+- **Opener:** {opener-intent}
 - **Decision rationale:** description → no confident recipe match → full
 ```
 
@@ -349,6 +433,7 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 ## Triage
 
 - **Path:** escalated
+- **Opener:** {opener-intent}
 - **Decision rationale:** description → inferred {type}; recipe {name} proposed → escalated to full — {user escalation rationale}
 ```
 
@@ -369,6 +454,7 @@ Write the triage result to the work-area `STATE.md ## Triage` section.
 ## Triage
 
 - **Path:** lite
+- **Opener:** {opener-intent}
 - **Work Type:** {workType}
 - **Sub-path:** {Sub-path}
 - **Decision rationale:** description → inferred {type} → lite/{Sub-path}
@@ -383,6 +469,7 @@ recipe or no recipes matched.
 ## Triage
 
 - **Path:** lite
+- **Opener:** {opener-intent}
 - **Work Type:** {workType}
 - **Sub-path:** {Sub-path}
 - **Decision rationale:** description → inferred {type}; recipe {name} matched → lite/{Sub-path}
@@ -396,6 +483,7 @@ different sub-path than first-inferred):**
 ## Triage
 
 - **Path:** lite
+- **Opener:** {opener-intent}
 - **Work Type:** {workType}
 - **Sub-path:** {user-chosen Sub-path}
 - **Sub-path (auto):** {originally inferred Sub-path}
