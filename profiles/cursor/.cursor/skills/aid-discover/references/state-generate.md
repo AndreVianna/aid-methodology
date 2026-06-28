@@ -540,7 +540,7 @@ Proposed discovery path: brownfield-large
 
 [1] Confirm  brownfield-large  (as proposed)
 [2] Override brownfield-small  (collapsed: single understand-pass; one reviewer runs the mandates as sequential passes + clean-context teach-back)
-[3] Override greenfield        (no source yet => signpost + HALT: run /aid-interview to define the project; the KB fills in as you build)
+[3] Override greenfield        (no source yet => signpost + HALT: run /aid-describe to define the project; the KB fills in as you build)
 ```
 
 **This is a genuine PAUSE-FOR-USER-DECISION** (C4 human-gated; the path is measured but
@@ -579,7 +579,7 @@ Then **branch on the confirmed path**:
 
   ```
   [0f] Greenfield detected: ~no source to discover yet.
-       Nothing to discover yet -- run /aid-interview to define the project;
+       Nothing to discover yet -- run /aid-describe to define the project;
        the KB fills in as you build, via re-triage once code lands.
   ```
 

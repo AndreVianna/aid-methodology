@@ -12,7 +12,7 @@ summary: Fix a regression: bisect to the introducing change, fix, and lock with 
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `fix-regression` via /aid-interview lite path
+**Source:** recipe `fix-regression` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -53,7 +53,7 @@ Introducing change: {{introducing-change}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `fix-regression` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-regression` | /aid-describe lite path |
 
 ## tasks
 

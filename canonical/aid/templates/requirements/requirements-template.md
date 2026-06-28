@@ -1,18 +1,18 @@
 # REQUIREMENTS.md Template
 
-This template defines the structure for `.aid/knowledge/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-interview](../../skills/aid-interview/).
+This template defines the structure for `.aid/knowledge/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-describe](../../skills/aid-describe/).
 
 ## Usage
 
-- **First run:** aid-interview walks through each section with the stakeholder and fills them in.
-- **Subsequent runs:** aid-interview cross-references this file against the Knowledge Base, grades consistency, and asks targeted questions.
+- **First run:** aid-describe walks through each section with the stakeholder and fills them in.
+- **Subsequent runs:** aid-describe cross-references this file against the Knowledge Base, grades consistency, and asks targeted questions.
 
 ## Conventions
 
 - **Change Log is mandatory.** Every modification — initial creation, cross-reference updates, targeted re-interviews — gets an entry.
 - **Sections can be marked N/A** if not applicable to the project.
 - **`*(pending)*`** marks sections not yet addressed during the interview.
-- **Cross-reference runs** add Change Log entries with source `/aid-interview (cross-reference)`.
+- **Cross-reference runs** add Change Log entries with source `/aid-describe (cross-reference)`.
 - **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact in `.aid/knowledge/`.
 
 ---
@@ -29,7 +29,7 @@ This template defines the structure for `.aid/knowledge/REQUIREMENTS.md` — a f
 
 | Date | Change | Source |
 |------|--------|--------|
-| {date} | Initial interview started | /aid-interview |
+| {date} | Initial interview started | /aid-describe |
 
 ## 1. Objective
 
@@ -90,8 +90,8 @@ This template defines the structure for `.aid/knowledge/REQUIREMENTS.md` — a f
 - The Change Log tracks the full history of the document. Example entries after cross-reference:
 
   ```
-  | 2026-03-15 | Updated NFRs: added latency target from load-test results | /aid-interview (cross-reference) |
-  | 2026-03-20 | Revised scope: moved mobile app to Out of Scope per stakeholder | /aid-interview |
+  | 2026-03-15 | Updated NFRs: added latency target from load-test results | /aid-describe (cross-reference) |
+  | 2026-03-20 | Revised scope: moved mobile app to Out of Scope per stakeholder | /aid-describe |
   ```
 
 - The stakeholder's own language is preferred in Objective and Problem Statement. Don't rewrite their words into technical jargon.

@@ -12,7 +12,7 @@ summary: Author a new documentation artifact (guide, README, release note).
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-docs` via /aid-interview lite path
+**Source:** recipe `add-docs` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -54,7 +54,7 @@ understand what changed, what was added, and how to use or integrate it.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-docs` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-docs` | /aid-describe lite path |
 
 ## tasks
 

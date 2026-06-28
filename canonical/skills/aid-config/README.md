@@ -63,4 +63,4 @@ After setting `project.name` and `project.description`:
 | Project type | Next skill |
 |---|---|
 | Brownfield (existing code) | `/aid-discover` — analyze the codebase and fill in the KB |
-| Greenfield (new project) | `/aid-interview` — gather requirements from scratch |
+| Greenfield (new project) | `/aid-describe` — gather requirements from scratch |

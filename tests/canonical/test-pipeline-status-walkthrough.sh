@@ -90,7 +90,7 @@ make_state "$A1_STATE"
 
 # Declare an ordered array of (Phase, Active Skill) pairs
 A1_PHASES=("Interview" "Specify" "Plan" "Detail" "Execute" "Deploy")
-A1_SKILLS=("aid-interview" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy")
+A1_SKILLS=("aid-describe" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy")
 
 for i in "${!A1_PHASES[@]}"; do
     phase="${A1_PHASES[$i]}"
@@ -303,7 +303,7 @@ echo ""
 echo "=== Part B: Wiring-level C4 static assertions ==="
 
 # ---------------------------------------------------------------------------
-# B1: M4 phase emits -- each of the 5 phase skills (+ aid-interview) contains
+# B1: M4 phase emits -- each of the 6 phase skills (aid-describe, aid-define, etc.) contains
 # the correct Phase + Active Skill emit at its wired transition point.
 # ---------------------------------------------------------------------------
 echo ""
@@ -311,7 +311,7 @@ echo "--- B1: M4 phase emits present in canonical skill files ---"
 
 # Map: skill-name => canonical state file that owns the M4 emit
 declare -A M4_FILES
-M4_FILES["aid-interview"]="${REPO_ROOT}/canonical/skills/aid-interview/references/state-feature-decomposition.md"
+M4_FILES["aid-define"]="${REPO_ROOT}/canonical/skills/aid-define/references/state-feature-decomposition.md"
 M4_FILES["aid-specify"]="${REPO_ROOT}/canonical/skills/aid-specify/references/state-initialize.md"
 M4_FILES["aid-plan"]="${REPO_ROOT}/canonical/skills/aid-plan/references/first-run-loop.md"
 M4_FILES["aid-detail"]="${REPO_ROOT}/canonical/skills/aid-detail/references/first-run.md"
@@ -319,14 +319,14 @@ M4_FILES["aid-execute"]="${REPO_ROOT}/canonical/skills/aid-execute/references/st
 M4_FILES["aid-deploy"]="${REPO_ROOT}/canonical/skills/aid-deploy/references/state-idle.md"
 
 declare -A M4_PHASES
-M4_PHASES["aid-interview"]="Interview"
+M4_PHASES["aid-define"]="Interview"
 M4_PHASES["aid-specify"]="Specify"
 M4_PHASES["aid-plan"]="Plan"
 M4_PHASES["aid-detail"]="Detail"
 M4_PHASES["aid-execute"]="Execute"
 M4_PHASES["aid-deploy"]="Deploy"
 
-for skill in "aid-interview" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy"; do
+for skill in "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy"; do
     sfile="${M4_FILES[$skill]}"
     expected_phase="${M4_PHASES[$skill]}"
 
@@ -496,8 +496,8 @@ ALL_EMIT_FILES=(
     "${STATE_REVIEW}"
     "${DELIVERY_GATE}"
     "${REPO_ROOT}/canonical/skills/aid-deploy/references/state-idle.md"
-    "${REPO_ROOT}/canonical/skills/aid-interview/references/state-feature-decomposition.md"
-    "${REPO_ROOT}/canonical/skills/aid-interview/references/state-completion.md"
+    "${REPO_ROOT}/canonical/skills/aid-define/references/state-feature-decomposition.md"
+    "${REPO_ROOT}/canonical/skills/aid-describe/references/state-completion.md"
 )
 
 for ef in "${ALL_EMIT_FILES[@]}"; do

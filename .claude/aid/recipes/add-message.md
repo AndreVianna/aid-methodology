@@ -12,7 +12,7 @@ summary: Add a new message/event schema and emit it.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-message` via /aid-interview lite path
+**Source:** recipe `add-message` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Consumer notes (expected consumers or routing): {{consumer-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-message` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-message` | /aid-describe lite path |
 
 ## tasks
 

@@ -4,7 +4,7 @@
 complete, and list tasks with basic authentication. The codebase does not exist yet.
 This is a greenfield project.
 
-**AID path:** Full path (`aid-config` → `aid-interview` → TRIAGE routes to FULL →
+**AID path:** Full path (`aid-config` → `aid-describe` → TRIAGE routes to FULL → `aid-define` →
 `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`)
 
 **Why this example:** Greenfield projects skip Discovery entirely (there is no
@@ -93,7 +93,7 @@ incrementally as you build. Skip straight to Interview.
 
 ## 3. Step 2 — Run the Interview
 
-**Skill:** `aid-interview`
+**Skill:** `aid-describe`
 **Why:** Interview is where AID elicits the work definition. It asks structured
 questions about what you want to build, who uses it, quality requirements, and
 constraints — then produces the formal requirements and feature structure for the
@@ -102,7 +102,7 @@ full path (or a condensed SPEC for the lite path).
 **What you do:**
 
 ```
-/aid-interview
+/aid-describe
 ```
 
 The interviewer agent leads you through a conversational Q&A. For this project the
@@ -115,13 +115,13 @@ questions cover:
 - Performance, security, and compliance needs?
 - Deployment target?
 
-After the Q&A, `aid-interview` enters TRIAGE (see Step 3) to determine the path.
+After the Q&A, `aid-describe` enters TRIAGE (see Step 3) to determine the path.
 
 ---
 
 ## 4. Step 3 — TRIAGE Decision
 
-**Skill:** `aid-interview` (internal TRIAGE state)
+**Skill:** `aid-describe` (internal TRIAGE state)
 **Why:** TRIAGE evaluates three signals to decide whether the work is small enough
 for the lite path or large enough to warrant the full path:
 
@@ -140,7 +140,7 @@ endpoint. (See the brownfield lite-path example for that scenario.)
 
 **Full path output from Interview:**
 
-`aid-interview` produces:
+`aid-describe` produces:
 - `REQUIREMENTS.md` — the canonical requirements document
 - `.aid/work-001-tasktracker-api/features/` — one directory per feature with an
   empty `SPEC.md` stub
@@ -293,8 +293,8 @@ Once the codebase is live, two optional deliver skills are available:
 - `/aid-deploy` — packages a release, generates a `package-NNN.md`, and produces a
   `DEPLOYMENT-STATE.md` tracking what was shipped.
 - `/aid-monitor` — watches live signals (logs, alerts, metrics), classifies findings,
-  and routes bugs to `/aid-interview` via the LITE-BUG-FIX triage (skipping spec/plan),
-  and change requests to `/aid-interview` as new or changed requirements (full cycle).
+  and routes bugs to `/aid-describe` via the LITE-BUG-FIX triage (skipping spec/plan),
+  and change requests to `/aid-describe` as new or changed requirements (full cycle).
 
 These are optional end-of-pipeline skills. They are not required to complete a
 delivery.

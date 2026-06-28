@@ -81,7 +81,7 @@ Generate a summary of what this delivery contains:
 ## Spec Revisions During Delivery
 | Rev | Source | Description |
 |-----|--------|-------------|
-| 1.1 | Q&A (aid-interview) | Added latency requirements |
+| 1.1 | Q&A (aid-describe) | Added latency requirements |
 
 ## KB Updates During Delivery
 | Document | Change | Source |

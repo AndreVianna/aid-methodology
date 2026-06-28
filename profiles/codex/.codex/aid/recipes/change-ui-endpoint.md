@@ -12,7 +12,7 @@ summary: Change an existing UI page/route's behavior or layout.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-ui-endpoint` via /aid-interview lite path
+**Source:** recipe `change-ui-endpoint` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Affected components: {{affected-components}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-ui-endpoint` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-ui-endpoint` | /aid-describe lite path |
 
 ## tasks
 

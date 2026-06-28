@@ -12,7 +12,7 @@ summary: Add a CRUD/REST API endpoint backed by persistence and covered by integ
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-api-endpoint` via /aid-interview lite path
+**Source:** recipe `add-api-endpoint` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -65,7 +65,7 @@ Security notes: {{security-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-api-endpoint` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-api-endpoint` | /aid-describe lite path |
 
 ## tasks
 

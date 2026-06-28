@@ -32,13 +32,13 @@ The Knowledge Base (`.aid/knowledge/`) is the gravitational center of every AID 
 | [module-map.md](module-map.md) | Every module: purpose, dependencies, size, coverage | aid-discover |
 | [coding-standards.md](coding-standards.md) | Naming conventions, error handling, patterns | aid-discover |
 | [schemas.md](schemas.md) | Schema, entities, relationships, migrations | aid-discover |
-| [pipeline-contracts.md](pipeline-contracts.md) | Pipelines/APIs consumed/exposed, auth models, rate limits | aid-discover + aid-interview |
-| [integration-map.md](integration-map.md) | Message queues, caches, third-party services | aid-discover + aid-interview |
-| [domain-glossary.md](domain-glossary.md) | Business terms, domain language, entity definitions | aid-interview |
+| [pipeline-contracts.md](pipeline-contracts.md) | Pipelines/APIs consumed/exposed, auth models, rate limits | aid-discover + aid-describe |
+| [integration-map.md](integration-map.md) | Message queues, caches, third-party services | aid-discover + aid-describe |
+| [domain-glossary.md](domain-glossary.md) | Business terms, domain language, entity definitions | aid-describe |
 | [test-landscape.md](test-landscape.md) | Test frameworks, coverage, CI/CD pipeline | aid-discover |
 | [tech-debt.md](tech-debt.md) | Known debt items with file refs and risk ratings | aid-discover |
-| [infrastructure.md](infrastructure.md) | Hosting, networking, environments, deployment | aid-discover + aid-interview |
-| [feature-inventory.md](feature-inventory.md) | Feature list with module, endpoint, and data entity mapping | aid-discover + aid-interview |
+| [infrastructure.md](infrastructure.md) | Hosting, networking, environments, deployment | aid-discover + aid-describe |
+| [feature-inventory.md](feature-inventory.md) | Feature list with module, endpoint, and data entity mapping | aid-discover + aid-describe |
 
 ## Top-Level README Template
 

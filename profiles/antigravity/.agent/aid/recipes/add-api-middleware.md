@@ -12,7 +12,7 @@ summary: Add API middleware (auth, logging, rate-limit) to the request pipeline.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-api-middleware` via /aid-interview lite path
+**Source:** recipe `add-api-middleware` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -58,7 +58,7 @@ Affected routes: {{affected-routes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-api-middleware` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-api-middleware` | /aid-describe lite path |
 
 ## tasks
 

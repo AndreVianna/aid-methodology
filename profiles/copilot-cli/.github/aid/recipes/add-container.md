@@ -12,7 +12,7 @@ summary: Add a new storage container/bucket/collection.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-container` via /aid-interview lite path
+**Source:** recipe `add-container` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ Configuration and retention settings: {{container-config}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-container` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-container` | /aid-describe lite path |
 
 ## tasks
 

@@ -39,8 +39,9 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Intv["2 · aid-interview<br/>gather requirements"]:::def
+        Desc["2a · aid-describe<br/>gather requirements"]:::def
         Triage{"TRIAGE<br/>full or lite?"}:::def
+        Def["2b · aid-define<br/>decompose features"]:::def
         Spec["3 · aid-specify<br/>full path only"]:::def
     end
     subgraph G3[" 3 · Map "]
@@ -57,18 +58,18 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Intv --> Triage
-    Triage -- "full path<br/>broad / multi-target" --> Spec --> Plan --> Det --> Exe
+    Init --> Disc --> Desc --> Triage
+    Triage -- "full path<br/>broad / multi-target" --> Def --> Spec --> Plan --> Det --> Exe
     Triage -- "lite path<br/>small, single-target" --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
     Exe -. "when finished" .-> HK
-    Mon -. "bugs → LITE-BUG-FIX" .-> Intv
-    Mon -. "change requests" .-> Intv
+    Mon -. "bugs → LITE-BUG-FIX" .-> Desc
+    Mon -. "change requests" .-> Desc
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*Thirteen user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Interview. `/aid-interview`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+*Fourteen user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Interview. `/aid-describe`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -82,14 +83,15 @@ When the work is small and well-scoped, TRIAGE (the opening state of every Inter
 
 ### Skill Inventory
 
-*All 13 user-facing skills, their groups, phase numbers, and mandatory pipeline membership.*
+*All 14 user-facing skills, their groups, phase numbers, and mandatory pipeline membership.*
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
 | `aid-config` | Prepare | — (bootstrap) | Run once before pipeline; not a numbered phase |
 | `aid-discover` | Prepare | 1 | Mandatory for brownfield; skipped for greenfield |
 | `aid-summarize` | Prepare | — (optional viewer) | On demand; not a numbered phase |
-| `aid-interview` | Define | 2 | Yes — TRIAGE routes to full or lite |
+| `aid-describe` | Define | 2a | Yes — TRIAGE routes to full or lite |
+| `aid-define` | Define | 2b | Full path only — decompose approved requirements into features |
 | `aid-specify` | Define | 3 | Full path only |
 | `aid-plan` | Map | 4 | Full path only |
 | `aid-detail` | Map | 5 | Full path only |
@@ -180,7 +182,7 @@ AID is not a silver bullet. It is a deliberate trade-off.
 | Teams new to AI-assisted development who need process guardrails to avoid the failure modes listed above | — |
 | Situations where "move fast and break things" has already produced a pile of broken things | — |
 
-**The routing insight:** AID does not make you weigh the cost of its full pipeline against the value of a change. That weighing is automated. TRIAGE — the opening state of every `/aid-interview` — routes work to the correct path from the first question. Small work takes the lite path by default. The full pipeline runs only when scope warrants it. You don't configure this; you describe the work in your own words and the methodology routes you.
+**The routing insight:** AID does not make you weigh the cost of its full pipeline against the value of a change. That weighing is automated. TRIAGE — the opening state of every `/aid-describe` — routes work to the correct path from the first question. Small work takes the lite path by default. The full pipeline runs only when scope warrants it. You don't configure this; you describe the work in your own words and the methodology routes you.
 
 **The honest cost:** AID adds process on the full path. Discovery takes time. Interview takes time. Specify, Plan, and Detail add overhead before a single line of code is written. The payoff is that what gets written is the *right* code, grounded in real understanding, with a spec that won't surprise you mid-implementation. The cost is real; so is the payoff. For small work, TRIAGE ensures the cost is commensurate with scope.
 
@@ -280,7 +282,7 @@ A common failure mode: an agent receives a task spec and the project spec, imple
 
 **AID solves this with the KB Index — a lightweight map of the entire Knowledge Base.**
 
-`aid-config` creates `.aid/knowledge/INDEX.md` at setup with placeholder rows; Discovery regenerates it with real content as its final step (and on the greenfield path, which skips Discovery, `aid-interview` updates it where applicable). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
+`aid-config` creates `.aid/knowledge/INDEX.md` at setup with placeholder rows; Discovery regenerates it with real content as its final step (and on the greenfield path, which skips Discovery, `aid-describe` updates it where applicable). This file contains a 2-3 line summary of each KB document — what it covers, when to consult it. It costs almost nothing to include in an agent's context, but it gives the agent the ability to self-serve.
 
 ```markdown
 # Knowledge Base Index — {Project Name}
@@ -326,7 +328,7 @@ The agent pays a few hundred tokens to know where everything is, then spends its
 
 **Why not a vector database?** Because the KB is small enough (14 standard documents, each a short markdown file) that convention beats infrastructure. The bottleneck is not retrieval speed — it is knowing what exists. The INDEX solves that at a fraction of the operational complexity.
 
-**When does the INDEX update?** `aid-config` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-interview` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
+**When does the INDEX update?** `aid-config` seeds it at setup; thereafter it is regenerated every time Discovery runs (full or targeted), and `aid-describe` updates it where applicable as requirements evolve. It is always rebuilt from the current state of the KB — never manually maintained.
 
 ### The KB Outlives the Project
 
@@ -345,13 +347,14 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-config` | Prepare | — (bootstrap) | `.aid/` scaffold · KB placeholders (14 templates + meta) · context file · `STATE.md` seeds |
 | `aid-discover` | Prepare | 1 | 14-document Knowledge Base · `project-index.md` pre-pass · `STATE.md` discovery grade/Q&A |
 | `aid-summarize` | Prepare | — (optional viewer) | `knowledge-summary.html` — offline KB viewer |
-| `aid-interview` | Define | 2 | `REQUIREMENTS.md` + per-feature `SPEC.md` stubs (full path) OR work-root `SPEC.md` + `tasks/` (lite path) |
+| `aid-describe` | Define | 2a | `REQUIREMENTS.md` (full path) OR work-root `SPEC.md` + `tasks/` (lite path) |
+| `aid-define` | Define | 2b | Per-feature `SPEC.md` stubs + feature decomposition (full path only) |
 | `aid-specify` | Define | 3 | Technical spec added to each feature's `SPEC.md` |
 | `aid-plan` | Map | 4 | `PLAN.md` — features sequenced into deliveries |
 | `aid-detail` | Map | 5 | Typed, PR-sized `task-NNN.md` files + execution graph |
 | `aid-execute` | Execute | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
 | `aid-deploy` | Deliver | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
-| `aid-monitor` | Deliver | — (optional) | `MONITOR-STATE.md` · classified findings → Interview (bugs or CRs) |
+| `aid-monitor` | Deliver | — (optional) | `MONITOR-STATE.md` · classified findings → Describe (bugs or CRs) |
 | `aid-housekeep` | Off-pipeline | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
 
 AID organizes six numbered development phases into five groups. The six phases (Discover through Execute) form the mandatory sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required sequential phases. The pipeline is linear with feedback loops.
@@ -435,7 +438,7 @@ Across the run, discovery covers:
 
 ---
 
-#### Phase 2: Interview (`aid-interview`)
+#### Phase 2: Interview (`aid-describe` → `aid-define`)
 
 **Purpose:** Gather requirements and decompose them into features (full path) or directly into a task set (lite path). Produce the work-area artifacts that drive the rest of the pipeline.
 
@@ -449,11 +452,11 @@ flowchart LR
     classDef exe   fill:#166534,stroke:#166534,color:#ffffff
     classDef lite  fill:#92400E,stroke:#92400E,color:#ffffff
 
-    Triage["aid-interview · TRIAGE<br/>describe the work → infer type + recipe → confirm"]:::def
+    Triage["aid-describe · TRIAGE<br/>describe the work → infer type + recipe → confirm"]:::def
 
     subgraph FullPath[" Full path "]
         direction LR
-        F1["Interview<br/>REQUIREMENTS + feature SPEC stubs"]:::def
+        F1["aid-describe+aid-define<br/>REQUIREMENTS + feature SPEC stubs"]:::def
         F2["aid-specify"]:::def
         F3["aid-plan"]:::def
         F4["aid-detail"]:::def
@@ -738,7 +741,7 @@ This mirrors `aid-summarize` — an optional skill in the Prepare group — and 
 4. **Propose** — Present findings with routing recommendations to the user.
 5. **Act** — Route findings: bugs via Interview's LITE-BUG-FIX triage → Execute; change requests as new/changed requirements to Interview (full pipeline or new work); escalate infrastructure findings.
 
-**The short path:** BUG → aid-interview (LITE-BUG-FIX triage → task) → aid-execute. The short path skips specification and planning because the spec is already correct — only the code is wrong.
+**The short path:** BUG → aid-describe (LITE-BUG-FIX triage → task) → aid-execute. The short path skips specification and planning because the spec is already correct — only the code is wrong.
 
 **Output:** `MONITOR-STATE.md` — a last-run log, active findings (each with classification, severity, evidence, and routing), and resolved findings.
 
@@ -840,7 +843,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (13 user-facing skills)
+  ├── skills/        (14 user-facing skills)
   ├── agents/        (9 agents)
   ├── templates/     (KB templates, document templates)
   ├── recipes/       (51 lite-path recipes — add-/change-/fix- families)
@@ -948,9 +951,9 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 These loops apply only when Monitor is run.
 
-**Loop 9: Monitor → Interview (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `aid-interview`'s LITE-BUG-FIX triage, which creates the task(s) → aid-execute (→ optional aid-deploy). The short path.
+**Loop 9: Monitor → Interview (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `aid-describe`'s LITE-BUG-FIX triage, which creates the task(s) → aid-execute (→ optional aid-deploy). The short path.
 
-**Loop 10: Monitor → Interview (Change Request Path).** Monitor classifies a finding as Change Request. Monitor routes the change request to `aid-interview` as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work.
+**Loop 10: Monitor → Interview (Change Request Path).** Monitor classifies a finding as Change Request. Monitor routes the change request to `aid-describe` as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work.
 
 #### Cross-Cutting Loop (11)
 
@@ -1190,7 +1193,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 **Evidence:** {concrete data — error counts, latency, ticket clusters}
 **Correlation:** {related events — e.g., "error spike 23 min after the package-007-auth deploy"}
 **Root cause:** {for bugs — trace from symptom to the specific fault}
-**Routing:** BUG → aid-interview (LITE-BUG-FIX) · Change Request → aid-interview · Infrastructure → ops escalation · No Action → closed with justification
+**Routing:** BUG → aid-describe (LITE-BUG-FIX) · Change Request → aid-describe · Infrastructure → ops escalation · No Action → closed with justification
 
 ## Resolved Findings
 | Finding | Classification | Resolution | Date |
@@ -1291,7 +1294,7 @@ flowchart TB
         direction TB
         A0["aid-config<br/>(one-time setup)"]:::kb
         A1["1 · aid-discover<br/>(brownfield)"]:::aid_prep
-        A2["2 · aid-interview<br/>(requirements)"]:::aid_def
+        A2["2 · aid-describe + aid-define<br/>(requirements)"]:::aid_def
         A3["3 · aid-specify<br/>(formal spec)"]:::aid_def
         A4["4 · aid-plan<br/>(roadmap)"]:::aid_map
         A5["5 · aid-detail<br/>(task breakdown)"]:::aid_map
@@ -1375,25 +1378,25 @@ network required after the initial download. All channels deliver the same persi
 1. Run `/aid-config` to initialize the workspace (once per project).
 2. Run `/aid-discover` on the codebase. This produces your Knowledge Base.
 3. Review the KB. Fill gaps with human knowledge during the Q&A state.
-4. For the next feature request, run `/aid-interview`. TRIAGE will route to full or lite path.
-5. **Full path:** Run `/aid-specify` to add a technical spec to each feature. Run `/aid-plan` to sequence features into deliveries. Run `/aid-detail` to decompose deliveries into typed tasks. Run `/aid-execute` for each task.
-6. **Lite path:** `/aid-interview` completes the condensed flow and hands off task(s) directly to `/aid-execute`.
+4. For the next feature request, run `/aid-describe`. TRIAGE will route to full or lite path.
+5. **Full path:** Run `/aid-define` to decompose requirements into features. Run `/aid-specify` to add a technical spec to each feature. Run `/aid-plan` to sequence features into deliveries. Run `/aid-detail` to decompose deliveries into typed tasks. Run `/aid-execute` for each task.
+6. **Lite path:** `/aid-describe` completes the condensed flow and hands off task(s) directly to `/aid-execute`.
 7. Optionally run `/aid-deploy` to verify, package, and ship; then `/aid-monitor` once the delivery is in production.
 8. Run `/aid-housekeep` periodically to reconcile KB drift without a full discovery cycle.
 
 ### Starting a New Project (Greenfield)
 
-1. Run `/aid-config`, then `/aid-interview`. TRIAGE will assess scope; greenfield projects with multiple features will route to full path.
+1. Run `/aid-config`, then `/aid-describe`. TRIAGE will assess scope; greenfield projects with multiple features will route to full path.
 2. A minimal KB is populated from interview answers during the full-path flow.
-3. **Full path:** Run `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`.
-4. **Lite path (small greenfield change):** `/aid-interview` completes condensed flow; run `/aid-execute`.
+3. **Full path:** Run `/aid-define` → `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`.
+4. **Lite path (small greenfield change):** `/aid-describe` completes condensed flow; run `/aid-execute`.
 5. The KB grows organically as the codebase develops. Run `/aid-discover` once meaningful code exists to backfill discovery.
 
 ### Using the Lite Path and Recipes
 
 For small, well-scoped changes — bug fixes, doc updates, refactors, small new features:
 
-1. Run `/aid-interview`. Describe the work in your own words; TRIAGE infers the work-type and the best-matching recipe and confirms, then routes to the appropriate LITE sub-path.
+1. Run `/aid-describe`. Describe the work in your own words; TRIAGE infers the work-type and the best-matching recipe and confirms, then routes to the appropriate LITE sub-path.
 2. The condensed interview produces a work-root SPEC.md and task(s) directly.
 3. Run `/aid-execute`.
 

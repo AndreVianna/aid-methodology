@@ -99,9 +99,9 @@ Print: `[State: VALIDATE]`
 Confirm canonical completeness:
 
 1. Each AID skill phase has a corresponding `canonical/skills/aid-{name}/` directory with
-   a `SKILL.md`. The 10 expected skills are:
-   `aid-init`, `aid-discover`, `aid-interview`, `aid-specify`, `aid-plan`, `aid-detail`,
-   `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize`.
+   a `SKILL.md`. The 11 expected skills are:
+   `aid-init`, `aid-discover`, `aid-describe`, `aid-define`, `aid-specify`, `aid-plan`,
+   `aid-detail`, `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize`.
 
    ```bash
    ls canonical/skills/
@@ -260,7 +260,7 @@ Before calling the run complete, confirm:
 
 - [ ] Python 3.11+ available (`python --version` shows 3.11 or higher)
 - [ ] All selected profiles parsed without errors (`validate()` returned `[]`)
-- [ ] `canonical/` completeness verified: 13 skills, 9 agents, non-empty templates
+- [ ] `canonical/` completeness verified: 14 skills, 9 agents, non-empty templates
 - [ ] All renderers completed without errors
 - [ ] `profiles/{tool}/emission-manifest.jsonl` written for each rendered profile
 - [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS

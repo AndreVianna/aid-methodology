@@ -12,7 +12,7 @@ summary: Add a new CLI subcommand with args and help text.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-cli-command` via /aid-interview lite path
+**Source:** recipe `add-cli-command` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -61,7 +61,7 @@ Parent command / placement: {{parent-command}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-cli-command` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-cli-command` | /aid-describe lite path |
 
 ## tasks
 

@@ -12,7 +12,7 @@ summary: Add a new interface/contract/abstract type.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-interface` via /aid-interview lite path
+**Source:** recipe `add-interface` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ Placement notes: {{placement-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-interface` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-interface` | /aid-describe lite path |
 
 ## tasks
 

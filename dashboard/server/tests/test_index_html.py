@@ -867,18 +867,18 @@ class TestFeature006Router(unittest.TestCase):
         self.assertIn('function _renderEmptyState(', self.src,
                       "_renderEmptyState() function must be defined")
 
-    def test_f6e_empty_state_aid_interview_command(self):
-        # FR18: must show the exact /aid-interview command
-        self.assertIn('/aid-interview', self.src,
-                      "Empty-state must include /aid-interview command")
+    def test_f6e_empty_state_aid_describe_command(self):
+        # FR18: must show the exact /aid-describe command
+        self.assertIn('/aid-describe', self.src,
+                      "Empty-state must include /aid-describe command")
 
-    def test_f6e_empty_state_aid_interview_in_code_element(self):
+    def test_f6e_empty_state_aid_describe_in_code_element(self):
         # The command must be rendered inside a <code> element
-        idx = self.src.find('/aid-interview')
+        idx = self.src.find('/aid-describe')
         self.assertNotEqual(idx, -1)
         region = self.src[max(0, idx - 200):idx + 50]
-        self.assertIn("codeEl.textContent = '/aid-interview'", region,
-                      "/aid-interview must be set as textContent of a code element")
+        self.assertIn("codeEl.textContent = '/aid-describe'", region,
+                      "/aid-describe must be set as textContent of a code element")
 
     def test_f6e_empty_state_verify_step_present(self):
         # Step 3: verify step is present

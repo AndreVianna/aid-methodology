@@ -1,5 +1,5 @@
 > **Sample output** — This file illustrates the work-root SPEC.md that
-> `aid-interview` produces at the end of CONDENSED-INTAKE. It is not a real
+> `aid-describe` produces at the end of CONDENSED-INTAKE. It is not a real
 > project file. The sections and structure below match the actual AID template.
 
 ---
@@ -8,7 +8,7 @@
 
 - **Work:** work-001-fix-stale-cache
 - **Created:** 2026-06-03
-- **Source:** /aid-interview lite path — LITE-BUG-FIX
+- **Source:** /aid-describe lite path — LITE-BUG-FIX
 - **Status:** Draft
 
 ## Goal
@@ -75,4 +75,4 @@ omission in `order_repository.py`, not a missing feature.
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-06-03 | Initial lite-path SPEC created | /aid-interview LITE-BUG-FIX |
+| 2026-06-03 | Initial lite-path SPEC created | /aid-describe LITE-BUG-FIX |

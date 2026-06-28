@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All 13 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.'
+description: 'All 14 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.'
 generatedFrom: 'canonical/skills/*/SKILL.md'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **13 user-facing skills** across five pipeline groups, plus three off-pipeline on-demand skills. The six numbered phases — Discover through Execute — form the mandatory sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Each entry below is generated from the skill's own definition in `canonical/skills/`.
+AID ships **14 user-facing skills** across five pipeline groups, plus three off-pipeline on-demand skills. The six numbered phases — Discover through Execute — form the mandatory sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Each entry below is generated from the skill's own definition in `canonical/skills/`.
 
 ## Prepare
 
@@ -40,13 +40,21 @@ Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-base
 
 Define the problem and how to solve it.
 
-### `aid-interview`
+### `aid-describe`
 
-**Phase 2 · TRIAGE → full or lite**
+**Phase 2a · TRIAGE → full or lite**
 
-Adaptive requirements gathering through conversational interview, driven by the seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed D1 opener plus a deterministic five-step next-move selector (stop check, gap selection, move selection, calibration shaping, NFR-7 envelope + emit). First run builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against KB, grade, and ask targeted questions to resolve gaps and contradictions. Final step decomposes functional requirements into discrete feature files. State machine: FIRST-RUN -> Q-AND-A -> TRIAGE -> {full: CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE | lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE | escalated: any lite state -> CONTINUE -> ...full path...}.
+Conversational requirements gathering through adaptive interview, driven by the seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed D1 opener plus a deterministic five-step next-move selector (stop check, gap selection, move selection, calibration shaping, NFR-7 envelope + emit). First run builds REQUIREMENTS.md incrementally. Subsequent runs resume the interview for incomplete sections. Final step presents approved requirements for handoff to /aid-define. State machine: FIRST-RUN -> Q-AND-A -> TRIAGE -> {full: CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define] | lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE}.
 
-[Definition: `canonical/skills/aid-interview/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-interview/SKILL.md)
+[Definition: `canonical/skills/aid-describe/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md)
+
+### `aid-define`
+
+**Phase 2b · full path only · decompose features**
+
+Feature decomposition and cross-reference validation from approved requirements. Begins from an approved REQUIREMENTS.md (produced by /aid-describe) and decomposes functional requirements into discrete feature folders with SPEC.md stubs (FEATURE-DECOMPOSITION), then validates the requirements and feature boundaries against the KB and codebase (CROSS-REFERENCE), then halts at DONE ready for /aid-specify. State machine: (Approved REQUIREMENTS) -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE [HALT -> /aid-specify].
+
+[Definition: `canonical/skills/aid-define/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-define/SKILL.md)
 
 ### `aid-specify`
 
@@ -104,7 +112,7 @@ Package completed deliveries into a release. Selects eligible deliveries, verifi
 
 **optional · on demand**
 
-Observe production, classify findings, and route actions. Combines telemetry interpretation with triage — detect anomalies, perform root cause analysis for bugs, and route findings to aid-interview (bugs via its lite bug-fix triage; change requests as new/changed requirements). Per-work scope. Use post-deployment, on schedule, or on-demand. State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
+Observe production, classify findings, and route actions. Combines telemetry interpretation with triage — detect anomalies, perform root cause analysis for bugs, and route findings to aid-describe (bugs via its lite bug-fix triage; change requests as new/changed requirements). Per-work scope. Use post-deployment, on schedule, or on-demand. State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
 
 [Definition: `canonical/skills/aid-monitor/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md)
 

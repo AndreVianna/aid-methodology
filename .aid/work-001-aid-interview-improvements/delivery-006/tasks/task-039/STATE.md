@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Render: 285 emitted/27 deleted per profile (old aid-interview pruned); VERIFY PASS + idempotent; .aid-manifest.json re-derived (21 describe/7 define, 0 stranded, aid-interviewer kept); skills.md+methodology regen (14 skills); orphan-prune complete. Awaiting delivery gate.
 
 ---
 

@@ -12,7 +12,7 @@ summary: Change an existing interface/contract and update its implementors.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-interface` via /aid-interview lite path
+**Source:** recipe `change-interface` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Affected implementors: {{affected-implementors}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-interface` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-interface` | /aid-describe lite path |
 
 ## tasks
 

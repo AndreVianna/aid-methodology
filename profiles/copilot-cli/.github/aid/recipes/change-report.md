@@ -12,7 +12,7 @@ summary: Update an existing report/analysis artifact.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-report` via /aid-interview lite path
+**Source:** recipe `change-report` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ Review criteria (how the reviewer will confirm the update is correct): {{review-
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-report` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-report` | /aid-describe lite path |
 
 ## tasks
 

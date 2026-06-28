@@ -23,7 +23,7 @@ kb-refs:
   - coding-standards.md
   - tech-debt.md
 changelog:
-  - 2026-06-03: Stub created by aid-interview
+  - 2026-06-03: Stub created by aid-describe
   - 2026-06-03: Technical spec added by aid-specify
 ---
 

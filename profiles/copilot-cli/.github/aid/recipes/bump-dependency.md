@@ -12,7 +12,7 @@ summary: Upgrade a dependency to a target version and reconcile breaking changes
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `bump-dependency` via /aid-interview lite path
+**Source:** recipe `bump-dependency` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -53,7 +53,7 @@ Breaking changes / migration notes: {{migration-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `bump-dependency` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `bump-dependency` | /aid-describe lite path |
 
 ## tasks
 

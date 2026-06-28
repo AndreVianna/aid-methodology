@@ -12,7 +12,7 @@ summary: Change an existing validation/business rule.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-rule` via /aid-interview lite path
+**Source:** recipe `change-rule` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Rationale: {{rationale}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-rule` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-rule` | /aid-describe lite path |
 
 ## tasks
 

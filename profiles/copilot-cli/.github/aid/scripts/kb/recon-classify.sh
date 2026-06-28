@@ -15,7 +15,7 @@
 #
 # Classifier (single indivisible rule, ordered):
 #   1. RM1 <= greenfield_max_source_files AND RM2 <= greenfield_max_source_loc
-#      -> GREENFIELD (detect + signpost: run /aid-interview; no generation)
+#      -> GREENFIELD (detect + signpost: run /aid-describe; no generation)
 #   2. RM2 >= large_min_source_loc OR RM3 >= large_min_dirs OR RM4 >= large_min_concepts
 #      -> BROWNFIELD-LARGE (any one large dimension trips)
 #   3. else -> BROWNFIELD-SMALL
@@ -376,7 +376,7 @@ fi
   echo ""
   if [[ "$PROPOSED_PATH" == "GREENFIELD" ]]; then
     echo "Source metrics are near-zero (RM1=${RM1} <= ${GF_MAX_FILES} files AND RM2=${RM2} <= ${GF_MAX_LOC} LOC)."
-    echo "Nothing to discover yet -- run /aid-interview to define the project;"
+    echo "Nothing to discover yet -- run /aid-describe to define the project;"
     echo "the KB fills in as you build, via re-triage once code lands."
   elif [[ "$PROPOSED_PATH" == "BROWNFIELD-LARGE" ]]; then
     echo "One or more large dimensions tripped: ${TRIPPED}."

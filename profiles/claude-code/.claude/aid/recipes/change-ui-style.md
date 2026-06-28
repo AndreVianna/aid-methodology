@@ -12,7 +12,7 @@ summary: Change an existing style/theme rule without breaking layout.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-ui-style` via /aid-interview lite path
+**Source:** recipe `change-ui-style` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -54,7 +54,7 @@ Intended definition: {{intended-definition}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-ui-style` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-ui-style` | /aid-describe lite path |
 
 ## tasks
 

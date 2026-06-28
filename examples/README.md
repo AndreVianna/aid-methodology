@@ -6,7 +6,7 @@ Three tutorial-style worked examples showing AID applied step by step to realist
 
 ## Greenfield Project — full path
 
-**Scenario:** A new project with no existing codebase. Shows how to use AID from scratch: `aid-config` → `aid-interview` (TRIAGE routes to full path) → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`.
+**Scenario:** A new project with no existing codebase. Shows how to use AID from scratch: `aid-config` → `aid-describe` (TRIAGE routes to full path) → `aid-define` → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`.
 
 → [examples/greenfield/](greenfield/)
 
@@ -16,7 +16,7 @@ Three tutorial-style worked examples showing AID applied step by step to realist
 
 ## Brownfield Project — full path
 
-**Scenario:** An existing codebase with undocumented history. Shows the full AID pipeline: `aid-config` → `aid-discover` (builds the 14-document Knowledge Base) → `aid-interview` → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`. Demonstrates how the Knowledge Base drives the spec.
+**Scenario:** An existing codebase with undocumented history. Shows the full AID pipeline: `aid-config` → `aid-discover` (builds the 14-document Knowledge Base) → `aid-describe` → `aid-define` → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`. Demonstrates how the Knowledge Base drives the spec.
 
 → [examples/brownfield-full-path/](brownfield-full-path/)
 
@@ -26,7 +26,7 @@ Three tutorial-style worked examples showing AID applied step by step to realist
 
 ## Brownfield Project — lite path
 
-**Scenario:** An existing codebase with a small, well-scoped change. Shows the condensed flow: `aid-interview` → TRIAGE routes to a LITE sub-path → work-root `SPEC.md` + `tasks/` → `aid-execute`. Optionally shows a recipe shortcut for a recurring pattern.
+**Scenario:** An existing codebase with a small, well-scoped change. Shows the condensed flow: `aid-describe` → TRIAGE routes to a LITE sub-path → work-root `SPEC.md` + `tasks/` → `aid-execute`. Optionally shows a recipe shortcut for a recurring pattern.
 
 → [examples/brownfield-lite-path/](brownfield-lite-path/)
 

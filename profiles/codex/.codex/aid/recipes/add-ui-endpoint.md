@@ -12,7 +12,7 @@ summary: Add a new UI page/route.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-ui-endpoint` via /aid-interview lite path
+**Source:** recipe `add-ui-endpoint` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -59,7 +59,7 @@ Navigation placement: {{navigation-placement}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-ui-endpoint` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-ui-endpoint` | /aid-describe lite path |
 
 ## tasks
 

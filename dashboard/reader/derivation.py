@@ -16,11 +16,11 @@
 # MIGRATION STATUS (task-013 M6 cutover audit):
 #
 #   NORMALIZED (producer-emitted, feature-001 M1-M6 complete):
-#   - Running          -- M4: aid-interview, aid-specify, aid-plan, aid-detail,
+#   - Running          -- M4: aid-describe, aid-define, aid-specify, aid-plan, aid-detail,
 #                        aid-execute, aid-deploy (state-idle.md) emit at phase entry.
 #   - Paused-Awaiting-Input + Pause Reason -- M5: aid-specify (state-blocked.md,
 #                        state-spike.md), aid-execute (state-delivery-gate.md),
-#                        aid-interview (state-completion.md) emit on pause transitions.
+#                        aid-describe (state-completion.md) emit on pause transitions.
 #   - Blocked + Block Reason/Artifact -- M5: aid-execute (state-execute.md,
 #                        state-review.md), aid-execute (state-delivery-gate.md)
 #                        emit on impediment/failed-gate transitions.

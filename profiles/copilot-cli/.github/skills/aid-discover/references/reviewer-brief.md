@@ -30,7 +30,7 @@ RUBRIC: kb-authoring/review-rubric.md (route by each doc's kb-category + source)
 OUT OF SCOPE (do NOT grade against):
   - Code in the target repository (review the KB docs, not the code they describe)
   - Adopter-project specifics not in the ARTIFACTS list
-  - Downstream skills (aid-interview, aid-specify, etc. — they consume the KB but are not graded here)
+  - Downstream skills (aid-describe, aid-define, aid-specify, etc. — they consume the KB but are not graded here)
   - Hypothetical future KB extensions
 
 OUT-OF-SCOPE FINDINGS POLICY:

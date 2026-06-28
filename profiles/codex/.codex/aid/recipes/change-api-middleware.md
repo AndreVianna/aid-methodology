@@ -12,7 +12,7 @@ summary: Change existing API middleware behavior or ordering.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-api-middleware` via /aid-interview lite path
+**Source:** recipe `change-api-middleware` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Affected routes: {{affected-routes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-api-middleware` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-api-middleware` | /aid-describe lite path |
 
 ## tasks
 

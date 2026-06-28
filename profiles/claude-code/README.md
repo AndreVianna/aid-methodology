@@ -14,7 +14,7 @@ cp path/to/aid-methodology/claude-code/CLAUDE.md   CLAUDE.md
 ```
 
 This gives you:
-- `.claude/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (13 skills: 10 across five pipeline groups + 3 off-pipeline on-demand)
+- `.claude/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (14 skills: 11 across five pipeline groups + 3 off-pipeline on-demand)
 - `.claude/agents/{name}.md` — Agent definitions in Claude Code format (9 agents with `aid-` prefix)
 - `.claude/templates/` — Templates and bash scripts (grading rubric, `grade.sh`, `build-project-index.sh`)
 - `CLAUDE.md` — Claude Code project configuration (edit with your project details)
@@ -35,7 +35,7 @@ This gives you:
 
 ## Skills
 
-13 skills total: the pipeline phase skills, the optional `aid-summarize` for generating
+14 skills total: the pipeline phase skills, the optional `aid-summarize` for generating
 a single-file visual HTML summary of the Knowledge Base; plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. See
 [`.claude/skills/aid-README.md`](.claude/skills/aid-README.md) for the full list.
 

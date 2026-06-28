@@ -13,11 +13,11 @@ Finding 1: [CRITICAL] [BUG] Null currency causes 500 error
   Evidence: 342 errors in 48h, payment module, started after package-002
   Root cause: PaymentService.Process() missing null validation
   Patch scope: PaymentService.cs + PaymentServiceTests.cs
-  → Proposed: Route to aid-interview (LITE-BUG-FIX triage) → task → aid-execute
+  → Proposed: Route to aid-describe (LITE-BUG-FIX triage) → task → aid-execute
 
 Finding 2: [MEDIUM] [CHANGE REQUEST] Reports need local timezone
   Evidence: 12 support tickets requesting midnight-local instead of midnight-UTC
-  → Proposed: Route to aid-interview → new/changed requirements → pipeline
+  → Proposed: Route to aid-describe → new/changed requirements → pipeline
 
 Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
   Evidence: 3 occurrences in 7 days, all self-resolved < 30s
@@ -31,14 +31,14 @@ Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
 
 For each approved finding:
 
-**BUG → aid-interview (LITE-BUG-FIX short path):**
+**BUG → aid-describe (LITE-BUG-FIX short path):**
 - Record the bug finding in `MONITOR-STATE.md` with: root cause, patch scope, test requirements, severity.
-- Hand off to `/aid-interview`: it triages the finding down the **LITE-BUG-FIX** sub-path (T3 = bug fix), turning the diagnosis into the task(s); `aid-execute` then implements (→ optional `aid-deploy`). Interview — not Monitor — creates the task.
+- Hand off to `/aid-describe`: it triages the finding down the **LITE-BUG-FIX** sub-path (T3 = bug fix), turning the diagnosis into the task(s); `aid-execute` then implements (→ optional `aid-deploy`). Interview — not Monitor — creates the task.
 - The short path still skips Specify/Plan/Detail: the spec is already correct, only the code is wrong.
 
-**CHANGE REQUEST → aid-interview:**
+**CHANGE REQUEST → aid-describe:**
 - Record the change request in `MONITOR-STATE.md` (the desired new/changed behavior, with evidence).
-- Hand off to `/aid-interview` as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work. Targeted discovery is invoked from Interview only if the CR exposes a KB gap.
+- Hand off to `/aid-describe` as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work. Targeted discovery is invoked from Interview only if the CR exposes a KB gap.
 
 **INFRASTRUCTURE → escalate:**
 - Document in the monitor run summary with recommended ops action

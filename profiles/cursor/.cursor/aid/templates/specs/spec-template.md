@@ -4,7 +4,7 @@
 
 | Date | Change | Source |
 |------|--------|--------|
-| {date} | Feature created from REQUIREMENTS.md | /aid-interview |
+| {date} | Feature created from REQUIREMENTS.md | /aid-describe |
 
 ## Source
 

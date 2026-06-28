@@ -3,7 +3,7 @@
 This tutorial walks through a realistic small change on an existing codebase using
 the **AID lite path**. You will see:
 
-- How `/aid-interview` TRIAGE routes a small, well-scoped bug fix away from the full
+- How `/aid-describe` TRIAGE routes a small, well-scoped bug fix away from the full
   pipeline and onto the lite path.
 - What the condensed four-state lite flow looks like in practice
   (CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE).
@@ -54,17 +54,17 @@ for KB drift if there were any doubt, but here the existing KB is sufficient.
 With the existing KB in place, run:
 
 ```
-/aid-interview
+/aid-describe
 ```
 
-`aid-interview` reads the current `.aid/` state. Because no work is in progress,
+`aid-describe` reads the current `.aid/` state. Because no work is in progress,
 it enters its opening state and immediately moves to **TRIAGE**.
 
 ---
 
 ## Step 3 — TRIAGE: The 2-3 Routing Questions
 
-TRIAGE is deterministic. `aid-interview` asks 2-3 questions in order. Any
+TRIAGE is deterministic. `aid-describe` asks 2-3 questions in order. Any
 "large" answer routes the work to the full pipeline.
 
 **T1 — Breadth: how many distinct features does this work touch?**
@@ -91,7 +91,7 @@ Answer: **bug-fix.** workType: `bug-fix`. Routes to sub-path: **LITE-BUG-FIX**.
 
 All three signals pointed to "small." If any one of them had come back "large" —
 say, the bug turned out to touch five modules, or the fix required a new caching
-strategy — TRIAGE would have routed to the full path instead, and `aid-interview`
+strategy — TRIAGE would have routed to the full path instead, and `aid-describe`
 would have proceeded to produce `REQUIREMENTS.md` + per-feature `SPEC.md` stubs.
 
 > The lite path is conservative by design. Any ambiguous answer routes full.
@@ -102,7 +102,7 @@ would have proceeded to produce `REQUIREMENTS.md` + per-feature `SPEC.md` stubs.
 
 ## Step 4 — CONDENSED-INTAKE: Filling the Spec Slots
 
-Having confirmed the lite path, `aid-interview` invokes the `interviewer` agent
+Having confirmed the lite path, `aid-describe` invokes the `interviewer` agent
 in **CONDENSED-INTAKE** state. Instead of the full multi-session requirements
 gathering that the full path uses, CONDENSED-INTAKE is a focused slot-fill:
 a short conversation that gathers only what is needed to write the work-root
@@ -149,7 +149,7 @@ acceptance criteria are testable; there are no open questions. **Approved.**
 
 ## Step 6 — TASK-BREAKDOWN: The Architect Proposes Tasks
 
-With the SPEC approved, `aid-interview` invokes the `architect` agent in
+With the SPEC approved, `aid-describe` invokes the `architect` agent in
 **TASK-BREAKDOWN** state. The architect reads the work-root SPEC.md and proposes
 a typed task breakdown directly — no PLAN.md sequencing step, no per-feature
 decomposition. For a LITE-BUG-FIX, the architect typically produces one to two
@@ -177,7 +177,7 @@ like.
 
 ## Step 7 — LITE-REVIEW: The Reviewer Validates the Task Set
 
-Before handing off to execute, `aid-interview` runs the **LITE-REVIEW** gate.
+Before handing off to execute, `aid-describe` runs the **LITE-REVIEW** gate.
 The `reviewer` agent reads the work-root SPEC.md and the proposed tasks and
 checks:
 
@@ -200,7 +200,7 @@ No HIGH or CRITICAL findings. The computed grade is **B+** (worst severity is LO
 
 The default minimum grade for LITE-REVIEW is **A**. B+ does not clear A.
 
-The `reviewer` flags the findings. `aid-interview` presents them to the Director.
+The `reviewer` flags the findings. `aid-describe` presents them to the Director.
 
 **Decision:** Accept the LOW/MINOR fixes — they are quick and clarify intent.
 The architect updates task-001 and task-002 in place. The reviewer re-checks the
@@ -216,7 +216,7 @@ Gate passes.
 
 ## Step 8 — LITE-DONE: Hand-Off to Execute
 
-With the LITE-REVIEW gate passed, `aid-interview` enters **LITE-DONE** and emits
+With the LITE-REVIEW gate passed, `aid-describe` enters **LITE-DONE** and emits
 the hand-off prompt:
 
 ```
@@ -319,7 +319,7 @@ two-tier review.
 ## Summary: The Lite Path in Four States
 
 ```
-/aid-interview
+/aid-describe
       │
       ▼
 [TRIAGE]
@@ -357,7 +357,7 @@ two-tier review.
 
 The full path inserts `aid-specify` → `aid-plan` → `aid-detail` between TRIAGE
 and execute. The lite path skips all three, replacing them with CONDENSED-INTAKE
-+ TASK-BREAKDOWN + LITE-REVIEW — a single `aid-interview` session.
++ TASK-BREAKDOWN + LITE-REVIEW — a single `aid-describe` session.
 
 ---
 

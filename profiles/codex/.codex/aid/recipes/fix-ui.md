@@ -12,7 +12,7 @@ summary: Fix a UI-layer defect (rendering, interaction, state) and add a regress
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `fix-ui` via /aid-interview lite path
+**Source:** recipe `fix-ui` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -51,7 +51,7 @@ or wrong state) and add a regression test to prevent recurrence.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `fix-ui` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-ui` | /aid-describe lite path |
 
 ## tasks
 

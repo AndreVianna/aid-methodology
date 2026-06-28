@@ -12,7 +12,7 @@ summary: Change an existing job's schedule or logic.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-job` via /aid-interview lite path
+**Source:** recipe `change-job` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Schedule / trigger changes: {{schedule}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-job` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-job` | /aid-describe lite path |
 
 ## tasks
 

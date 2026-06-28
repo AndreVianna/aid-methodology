@@ -12,7 +12,7 @@ summary: Add a field/property/method to an existing object or model.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-member` via /aid-interview lite path
+**Source:** recipe `add-member` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -52,7 +52,7 @@ Placement notes: {{placement-notes}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-member` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-member` | /aid-describe lite path |
 
 ## tasks
 

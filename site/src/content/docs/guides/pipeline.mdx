@@ -25,7 +25,8 @@ duplicate that depth; it points you at the right command and artifact for each s
 flowchart LR
     C(["/aid-config<br/>Step 0"])
     D(["/aid-discover<br/>Phase 1"])
-    I(["/aid-interview<br/>Phase 2"])
+    I(["/aid-describe<br/>Phase 2a"])
+    Def(["/aid-define<br/>Phase 2b"])
     T{"TRIAGE<br/>full or lite?"}
     S(["/aid-specify<br/>Phase 3"])
     P(["/aid-plan<br/>Phase 4"])
@@ -38,7 +39,7 @@ flowchart LR
     C --> I
     D --> I
     I --> T
-    T -- "full path" --> S
+    T -- "full path" --> Def --> S
     S --> P
     P --> DT
     DT --> E
@@ -97,11 +98,17 @@ no existing code, go directly to Phase 2 (Interview).
   href="/reference/skills"
 />
 
-### Phase 2 — Interview (`/aid-interview`)
+### Phase 2a — Describe (`/aid-describe`)
 
-The Interview skill gathers requirements conversationally. It asks you structured
-questions about your goals, constraints, and scope, then writes `REQUIREMENTS.md` and
-decomposes the requirements into feature files under `.aid/<work>/features/`.
+The Describe skill gathers requirements conversationally. It asks you structured
+questions about your goals, constraints, and scope, TRIAGE routes full or lite, and on the
+full path writes `REQUIREMENTS.md`. On the lite path it emits a `SPEC.md` + tasks directly.
+
+### Phase 2b — Define (`/aid-define`)
+
+The Define skill (full path only) begins from an approved `REQUIREMENTS.md` and
+decomposes requirements into feature files under `.aid/<work>/features/`, then cross-references
+and grades the decomposition.
 
 **Artifact produced:** `REQUIREMENTS.md` + `features/feature-NNN-*.md` stubs.
 
@@ -193,7 +200,7 @@ invokes the release pipeline.
 ### Monitor (`/aid-monitor`)
 
 The Monitor skill observes the deployed system, classifies incoming findings (bug /
-enhancement / question), and routes actionable items back into `/aid-interview` as new
+enhancement / question), and routes actionable items back into `/aid-describe` as new
 requirements. This closes the feedback loop.
 
 <Aside type="note">
@@ -204,7 +211,7 @@ handle deployment through their existing CI/CD pipeline without `/aid-deploy` or
 
 ## Lite vs full path
 
-Not every project needs all six phases. For small, well-scoped work, `/aid-interview`'s
+Not every project needs all six phases. For small, well-scoped work, `/aid-describe`'s
 TRIAGE routes down the **lite path** — Interview → Execute, **skipping Specify, Plan, and
 Detail** — emitting a work-root `SPEC.md` with tasks directly. The
 [Methodology](/concepts/methodology) page explains when TRIAGE chooses the lite path and

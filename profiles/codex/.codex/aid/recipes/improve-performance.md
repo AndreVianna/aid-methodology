@@ -12,7 +12,7 @@ summary: Improve performance of a hot path against a measured baseline, with no 
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `improve-performance` via /aid-interview lite path
+**Source:** recipe `improve-performance` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -60,7 +60,7 @@ Constraints: {{constraints}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `improve-performance` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `improve-performance` | /aid-describe lite path |
 
 ## tasks
 

@@ -12,7 +12,7 @@ summary: Fix a defect in an external-service integration and add a regression te
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `fix-integration` via /aid-interview lite path
+**Source:** recipe `fix-integration` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -51,7 +51,7 @@ test to prevent recurrence.
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `fix-integration` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `fix-integration` | /aid-describe lite path |
 
 ## tasks
 

@@ -12,7 +12,7 @@ summary: Change an existing event handler's behavior.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-event-handler` via /aid-interview lite path
+**Source:** recipe `change-event-handler` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -58,7 +58,7 @@ Affected consumers or downstream systems: {{affected-consumers}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-event-handler` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-event-handler` | /aid-describe lite path |
 
 ## tasks
 

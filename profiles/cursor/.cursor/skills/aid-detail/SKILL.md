@@ -22,7 +22,7 @@ Each task = one agent session = one reviewable unit = one human review.
 1. If arg provided → use that work directory
 2. If single work exists → auto-select
 3. If multiple works → list them, ask user to choose
-4. If no works → **STOP.** "No works found. Run `/aid-interview` first."
+4. If no works → **STOP.** "No works found. Run `/aid-describe` first."
 
 ### Check 2: Verify PLAN.md Exists
 

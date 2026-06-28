@@ -12,7 +12,7 @@ summary: {{summary}}
 
 **Work:** {{work-name}}
 **Created:** {{date}}
-**Source:** recipe `{{recipe-name}}` via /aid-interview lite path
+**Source:** recipe `{{recipe-name}}` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -48,7 +48,7 @@ summary: {{summary}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| {{date}} | Created from recipe `{{recipe-name}}` | /aid-interview lite path |
+| {{date}} | Created from recipe `{{recipe-name}}` | /aid-describe lite path |
 
 ## tasks
 

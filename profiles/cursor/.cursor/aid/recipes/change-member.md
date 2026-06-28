@@ -12,7 +12,7 @@ summary: Refactor an existing member of an object or model without changing obse
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-member` via /aid-interview lite path
+**Source:** recipe `change-member` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ Target shape: {{after-shape}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-member` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-member` | /aid-describe lite path |
 
 ## tasks
 

@@ -44,4 +44,4 @@ changelog:
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
-| 1.0 | {date} | aid-discover + aid-interview | Initial feature inventory |
+| 1.0 | {date} | aid-discover + aid-describe | Initial feature inventory |

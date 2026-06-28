@@ -9,7 +9,7 @@
 # parse-recipe.sh — recipe parser for FR8 (feature-011) lite-path slot-fill
 #
 # Parses AID recipe files (YAML front-matter + ## spec / ## tasks body blocks).
-# Consumed by /aid-interview triage's recipe-offer step.
+# Consumed by /aid-describe triage's recipe-offer step.
 #
 # Usage:
 #   parse-recipe.sh --list RECIPE_FILE

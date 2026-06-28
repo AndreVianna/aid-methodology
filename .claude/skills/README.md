@@ -1,6 +1,6 @@
 # AID Skills for Claude Code
 
-13 skills in AgentSkills format (10 across five pipeline groups + 3 off-pipeline on-demand). Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
+14 skills in AgentSkills format (11 across five pipeline groups + 3 off-pipeline on-demand). Each `SKILL.md` contains YAML frontmatter with `name`, `description`, `allowed-tools`, `context`, and `agent` fields.
 
 ## Skills
 
@@ -8,7 +8,8 @@
 |-------|-------|-------|-------------|
 | `aid-init` | 0. Init | Orchestrator | Initialize project — greenfield/brownfield, scaffold KB, collect metadata |
 | `aid-discover` | 1. Discover | Researcher | Brownfield project discovery with quality gate (GENERATE → REVIEW → Q&A → FIX → APPROVAL → DONE) |
-| `aid-interview` | 2. Interview | Interviewer | Adaptive requirements gathering → REQUIREMENTS.md |
+| `aid-describe` | 2a. Describe | Interviewer | Adaptive requirements gathering (seasoned-analyst engine) → REQUIREMENTS.md |
+| `aid-define` | 2b. Define | Architect | Decompose approved requirements into features + cross-reference |
 | `aid-specify` | 3. Specify | Architect | Requirements → SPEC.md grounded in KB |
 | `aid-plan` | 4. Plan | Architect | SPEC.md → high-level roadmap (PLAN.md) |
 | `aid-detail` | 5. Detail | Architect | PLAN.md → user stories, tasks, execution waves |

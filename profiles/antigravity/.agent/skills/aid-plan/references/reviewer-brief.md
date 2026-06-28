@@ -35,7 +35,7 @@ RUBRIC: .agent/aid/templates/grading-rubric.md (universal severity → grade tab
 OUT OF SCOPE (do NOT grade against):
   - Per-task breakdown — that's /aid-detail's domain (a delivery has no "tasks" yet at /aid-plan time)
   - SPEC.md internal content — that's /aid-specify's grade
-  - REQUIREMENTS.md content — that's /aid-interview's grade
+  - REQUIREMENTS.md content — that's /aid-describe's grade
   - KB document accuracy — route KB-source findings to /aid-discover Q&A
   - Execution Graph for tasks (added later by /aid-detail)
 

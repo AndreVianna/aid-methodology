@@ -74,7 +74,7 @@ Resolve the feature path using **prefix matching** (glob):
 - `feature-001` → match `.aid/{work}/features/feature-001-*/SPEC.md`
 - `work-001/feature-002` → match `.aid/work-001-*/features/feature-002-*/SPEC.md`
 
-**If zero matches:** Exit with instruction to run `/aid-interview` first.
+**If zero matches:** Exit with instruction to run `/aid-describe` first.
 **If multiple matches:** List them, ask user to be more specific. Exit.
 **If exactly one match:** Use that path. Print: `[Resolved: {full-path}]`
 

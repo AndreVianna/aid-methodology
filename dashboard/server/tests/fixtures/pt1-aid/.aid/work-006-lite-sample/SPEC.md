@@ -4,7 +4,7 @@
 - **Description:** A minimal Lite-path work used to verify SPEC.md identity parsing.
 - **Work:** work-006-lite-sample
 - **Created:** 2026-06-10
-- **Source:** /aid-interview lite path -- LITE-FEATURE
+- **Source:** /aid-describe lite path -- LITE-FEATURE
 - **Status:** Ready
 
 ## Overview

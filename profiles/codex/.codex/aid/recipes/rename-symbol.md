@@ -12,7 +12,7 @@ summary: Rename a symbol (class/method/variable) across the codebase with no beh
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `rename-symbol` via /aid-interview lite path
+**Source:** recipe `rename-symbol` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -53,7 +53,7 @@ Rationale: {{rename-rationale}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `rename-symbol` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `rename-symbol` | /aid-describe lite path |
 
 ## tasks
 

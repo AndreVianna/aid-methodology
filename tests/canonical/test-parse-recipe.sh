@@ -74,7 +74,7 @@ task-count: 1
 
 **Work:** {{work-name}}
 **Created:** {{date}}
-**Source:** recipe `bug-fix` via /aid-interview lite path
+**Source:** recipe `bug-fix` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -111,7 +111,7 @@ Fix the defect described below.
 
 | Date | Change | Source |
 |------|--------|--------|
-| {{date}} | Created from recipe `bug-fix` | /aid-interview lite path |
+| {{date}} | Created from recipe `bug-fix` | /aid-describe lite path |
 
 ## tasks
 
@@ -179,7 +179,7 @@ task-count: 1
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-05-24 | Initial | /aid-interview |
+| 2026-05-24 | Initial | /aid-describe |
 
 ## tasks
 
@@ -248,7 +248,7 @@ Add a full CRUD REST endpoint for the `{{resource-name}}` resource.
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-05-24 | Initial | /aid-interview |
+| 2026-05-24 | Initial | /aid-describe |
 
 ## tasks
 

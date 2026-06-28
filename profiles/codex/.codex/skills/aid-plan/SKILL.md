@@ -72,13 +72,13 @@ Each deliverable follows the same cycle:
 1. If arg provided → use that work directory
 2. If single work exists → auto-select
 3. If multiple works → list them, ask user to choose
-4. If no works → **STOP.** "No works found. Run `/aid-interview` first."
+4. If no works → **STOP.** "No works found. Run `/aid-describe` first."
 
 ### Check 2: Verify Feature SPECs
 
 1. Scan `.aid/{work}/features/*/SPEC.md`
 2. Check work STATE.md `## Features State` — each feature should be `Ready`
-3. No features → **STOP.** "Run `/aid-interview` then `/aid-specify`."
+3. No features → **STOP.** "Run `/aid-describe` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
 
 ### Check 3: Verify Not in Plan Mode

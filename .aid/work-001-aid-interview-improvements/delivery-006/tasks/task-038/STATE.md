@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** External sweep done (site/docs/tests/dashboard/packages; count C8-C13 Fourteen/14-skills; 4 suites 378 pass). Orchestrator-caught completeness fix: skills.md aid-interview entry split → aid-describe(2a)+aid-define(2b) + aid-monitor cross-ref. Stray-ref grep=0; aid-interviewer preserved. Awaiting delivery gate.
 
 ---
 

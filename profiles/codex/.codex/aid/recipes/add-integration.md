@@ -12,7 +12,7 @@ summary: Add a client/adapter for an external service.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `add-integration` via /aid-interview lite path
+**Source:** recipe `add-integration` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -62,7 +62,7 @@ Error handling strategy: {{error-handling}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `add-integration` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `add-integration` | /aid-describe lite path |
 
 ## tasks
 

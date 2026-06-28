@@ -12,7 +12,7 @@ summary: Change an existing UI component's props or behavior.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-ui-component` via /aid-interview lite path
+**Source:** recipe `change-ui-component` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -57,7 +57,7 @@ Affected consumers: {{affected-consumers}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-ui-component` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-ui-component` | /aid-describe lite path |
 
 ## tasks
 

@@ -2,7 +2,7 @@
 
 This tutorial walks through applying AID to an **existing codebase** using the **full
 path**: `aid-discover` first (to build a Knowledge Base from the existing code), then
-`aid-interview` → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`.
+`aid-describe` → `aid-define` → `aid-specify` → `aid-plan` → `aid-detail` → `aid-execute`.
 
 If your project is small and the change is well-scoped, see the
 [brownfield lite-path example](../brownfield-lite-path/README.md) instead.
@@ -136,17 +136,17 @@ codebase from scratch, accumulating the same knowledge inconsistently across age
 
 ## Step 2 — Interview: capture requirements
 
-With the KB in place, `aid-interview` can ask targeted, informed questions. The skill
+With the KB in place, `aid-describe` can ask targeted, informed questions. The skill
 reads the KB before generating any question — so it already knows the order-state
 machine, the payment service interface, and the existing notification pattern.
 
 ```
-/aid-interview
+/aid-describe
 ```
 
-**What `aid-interview` does (TRIAGE first):**
+**What `aid-describe` does (TRIAGE first):**
 
-`aid-interview` opens with a TRIAGE sequence — three diagnostic questions to determine
+`aid-describe` opens with a TRIAGE sequence — three diagnostic questions to determine
 whether the full path or the lite path is appropriate:
 
 - **T1 — Breadth:** "How many distinct features does this work touch?" → For the
@@ -380,8 +380,8 @@ available:
 and tracks deployment state in `DEPLOYMENT-STATE.md`.
 
 **`/aid-monitor`** — after deployment, classifies incoming signals (errors, alerts,
-user-reported issues) and routes them back: bugs go to a new `aid-interview` work
-item; change requests also go to a new `aid-interview`. This closes the feedback loop.
+user-reported issues) and routes them back: bugs go to a new `aid-describe` work
+item; change requests also go to a new `aid-describe`. This closes the feedback loop.
 
 Neither skill is mandatory. Teams that deploy and monitor through other processes can
 omit them.
@@ -407,8 +407,8 @@ After completing all six steps for the Refund workflow, OrderFlow has:
 
 The Knowledge Base is the most durable artifact. Once written by `aid-discover`, it
 persists in `.aid/knowledge/` and is reused — without re-running Discovery — for every
-subsequent `aid-interview`. The Refund work item is `work-003`; when the next feature
-arrives, the team opens with `/aid-interview` (not `/aid-discover` again) and the KB
+subsequent `aid-describe`. The Refund work item is `work-003`; when the next feature
+arrives, the team opens with `/aid-describe` (not `/aid-discover` again) and the KB
 is already there.
 
 ---

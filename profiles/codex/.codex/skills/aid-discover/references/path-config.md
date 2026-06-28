@@ -27,7 +27,7 @@ parallelism -- NOT the acceptance bar. The mandates (M1-M4) are invariant; only 
 | **f005 panel size** (`review.panel`) | n/a -- halts before review; never reaches the panel | `collapsed` -- ONE reviewer running M1/M2 as **separate sequential passes** (each mandate evaluated on its own, results concatenated, anti-P2 no-blending preserved) + ONE clean-context teach-back reviewer (M3) + ONE clean-context act-back reviewer (M4); total 3 dispatches | `full` -- 4 parallel `aid-reviewer` dispatches, one per mandate |
 | **Review mandates** | n/a -- halts before review | All 4 (Correctness / Anatomy-incl-altitude / Teach-back / **Act-back**) -- **invariant** | All 4 -- **invariant** |
 | **Exit** | **Signpost** (GENERATE halts at Step 0f) | **Teach-back closure** (the invariant brownfield exit) | **Teach-back closure** (the invariant brownfield exit) |
-| **Starting KB** | None -- the signpost points to `/aid-interview` | Full anatomy (small) | Full anatomy (large) |
+| **Starting KB** | None -- the signpost points to `/aid-describe` | Full anatomy (small) | Full anatomy (large) |
 | **Cost / wall-clock** | ~zero (one script pass + one message, then halt) | Low (single researcher pass, 3-dispatch panel, 1-round closure) | High (justified by project complexity) |
 
 ---

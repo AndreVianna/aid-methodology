@@ -12,7 +12,7 @@ summary: Change or retire an existing feature flag.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-feature-flag` via /aid-interview lite path
+**Source:** recipe `change-feature-flag` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -55,7 +55,7 @@ Rationale: {{rationale}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-feature-flag` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-feature-flag` | /aid-describe lite path |
 
 ## tasks
 

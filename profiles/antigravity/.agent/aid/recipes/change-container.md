@@ -12,7 +12,7 @@ summary: Change an existing storage container's config/structure.
 
 **Work:** work-NNN
 **Created:** (auto-filled)
-**Source:** recipe `change-container` via /aid-interview lite path
+**Source:** recipe `change-container` via /aid-describe lite path
 **Status:** Active
 
 ## Goal
@@ -58,7 +58,7 @@ Access policy changes: {{access-policy}}
 
 | Date | Change | Source |
 |------|--------|--------|
-| (auto-filled) | Created from recipe `change-container` | /aid-interview lite path |
+| (auto-filled) | Created from recipe `change-container` | /aid-describe lite path |
 
 ## tasks
 
