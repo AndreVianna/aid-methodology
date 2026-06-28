@@ -202,7 +202,7 @@ full path only) when its FEATURE-DECOMPOSITION state decomposes the approved
 later by `aid-specify`. (`aid-define` also runs CROSS-REFERENCE to validate the feature
 boundaries against the KB and codebase.)
 
-Interview/requirements half (required, authored by `aid-define`): `# {Feature Title}`,
+Requirements half (required, authored by `aid-define`): `# {Feature Title}`,
 `## Change Log`, `## Source` (REQUIREMENTS refs), `## Description`, `## User Stories`
 (As a/I want/so that), `## Priority` (`Must \| Should \| Could`), `## Acceptance Criteria`
 (Given/When/Then checkboxes).

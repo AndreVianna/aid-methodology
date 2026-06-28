@@ -97,16 +97,16 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 // ── Roster counts match source ────────────────────────────────────────────────
 
 describe('gen-reference: roster counts', () => {
-  it('skills.md: exactly 11 skill sections matching canonical/skills/', () => {
+  it('skills.md: exactly 14 skill sections matching canonical/skills/', () => {
     const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
-    expect(skillDirs).toHaveLength(11);
+    expect(skillDirs).toHaveLength(14);
 
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
     // Per-skill sections render as `### \`aid-...\`` headings (one per skill).
     const sections = skillsContent.split('\n').filter((l) => /^### `aid-/.test(l));
-    expect(sections).toHaveLength(11);
+    expect(sections).toHaveLength(14);
   });
 
   it('agents.md: exactly 9 agent sections matching canonical/agents/', () => {

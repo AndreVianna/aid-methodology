@@ -92,7 +92,7 @@ per-profile emission), AGENTS.md/CLAUDE.md (the per-profile context file).
 
 ### Work
 
-**Definition-as-used-here:** A self-contained unit of scope created by one Interview (Phase 2 —
+**Definition-as-used-here:** A self-contained unit of scope created by one Describe → Define pair (Phase 2 —
 the `aid-describe`→`aid-define` pair), living at `.aid/work-NNN-{slug}/`. Each work owns its own
 requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base.
 Multiple works coexist (e.g. one per client request). "Work" is the top-level pipeline scope
@@ -338,7 +338,7 @@ computed gate the human approval complements), Task (each reviewed task carries 
 
 **Aliases:** aid-describe, aid-define, the Interview split
 
-**Definition-as-used-here:** The two skills that together perform Phase 2 (Interview). **`aid-describe`**
+**Definition-as-used-here:** The two skills that together perform Phase 2 (Describe → Define). **`aid-describe`**
 (Phase 2a) gathers requirements through the seasoned-analyst interview and runs TRIAGE — it
 produces the approved `REQUIREMENTS.md` on the full path (or a work-root `SPEC.md` + task
 hierarchy on the lite path), and on greenfield authors the forward-authored KB seed
@@ -355,7 +355,7 @@ Work (the unit this pair creates).
 **sources:**
 - `canonical/skills/aid-describe/SKILL.md` — "Conversational requirements gathering … handoff to /aid-define"
 - `canonical/skills/aid-define/SKILL.md` — "Feature decomposition … from an approved REQUIREMENTS.md (produced by /aid-describe)"
-- `docs/aid-methodology.md` ("Phase 2: Interview (`aid-describe` → `aid-define`)")
+- `docs/aid-methodology.md` ("Phase 2: Describe → Define (`aid-describe` → `aid-define`)")
 
 ### Seasoned-Analyst Engine
 
@@ -715,7 +715,7 @@ lives).
 
 - **Canonical is the only source of truth.** `profiles/` is rendered output; editing it
   directly (instead of `canonical/` + re-render) violates the model and the VERIFY gate.
-- **One Work per Interview.** A work owns its requirements/features/deliveries/tasks; multiple
+- **One Work per Describe → Define pair.** A work owns its requirements/features/deliveries/tasks; multiple
   works share one Knowledge Base. Never fold two scopes into one work.
 - **Delivery ≠ Task.** Delivery is the strategy unit (what ships, in what order); Task is the
   tactical unit (one session/PR). Plan sequences deliveries; Detail decomposes them into tasks.
@@ -740,3 +740,4 @@ lives).
 | 1.0 | 2026-06-25 | aid-discover | Initial glossary: 16 spine concepts grounded + supporting lexicon (Integrator owns the spine) |
 | 1.1 | 2026-06-25 | aid-discover (closure 5b) | Closure loop: promoted 9 load-bearing concepts to spine headings (Grade, Triage, Lite Path, Feedback Loop, Dashboard, Pipeline State, Task Status, Delivery Gate, Candidate Concepts) and added synonym Aliases on 7 existing concepts so the self-containment oracle resolves every used term |
 | 1.2 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed Triage to `/aid-describe` (engine-driven 5-signal gap inventory); added Describe / Define, Seasoned-Analyst Engine, NFR-7 Suggested-Answer + Rationale, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias + greenfield seed keystone); added `source`/`Seed Authoring` lexicon rows, NFR-7 acronym, forward-authored/conformance domain terms, and two greenfield invariants |
+| 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define": updated Work definition, Describe/Define entry, source citation, and the One-Work-per invariant. |

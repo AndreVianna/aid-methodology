@@ -20,7 +20,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Setup
 
-**aid-config:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 14 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `README.md`, `INDEX.md`, and `STATE.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Interview) can begin cleanly.
+**aid-config:** Bootstrapping step that runs before the pipeline begins. Asks greenfield or brownfield, collects project metadata, and scaffolds the `.aid/knowledge/` directory with 14 empty KB document templates. Also creates `AGENTS.md`, `CLAUDE.md`, `README.md`, `INDEX.md`, and `STATE.md` placeholders. Not a methodology phase — it prepares the project so Discovery (or Describe) can begin cleanly.
 
 ---
 
@@ -29,13 +29,13 @@ Terms and concepts used throughout the AID methodology.
 | Phase | Group | Produces |
 |-------|-------|----------|
 | **Discover** | Prepare | Knowledge Base (14 standard documents) |
-| **Interview** | Define | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path: work-root `SPEC.md` + `tasks/` directly. |
+| **Describe → Define** | Define | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path: work-root `SPEC.md` + `tasks/` directly. |
 | **Specify** | Define | Technical specification added to each feature's `SPEC.md` (full path only) |
 | **Plan** | Map | `PLAN.md` (sequenced deliveries — full path only) |
 | **Detail** | Map | Typed task files + execution graph (full path only) |
 | **Execute** | Execute | Reviewed, graded code (8 task types, built-in review loop) |
 | **Deploy** *(optional)* | Deliver | Shipped delivery, PR, KB update |
-| **Monitor** *(optional)* | Deliver | Classified findings routed to fixes (BUG → lite bug-fix → Execute / CR → Interview / Infrastructure / No Action) |
+| **Monitor** *(optional)* | Deliver | Classified findings routed to fixes (BUG → lite bug-fix → Execute / CR → Describe / Infrastructure / No Action) |
 
 > *Deploy and Monitor are **optional**, on-demand delivery skills positioned at the end of the pipeline — not required, numbered phases. Run them when the project's delivery model calls for them; neither presupposes the other.*
 
@@ -43,7 +43,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## The Lite Path
 
-**Lite Path:** A condensed workflow for small, well-scoped work. Triggered by `aid-describe`'s TRIAGE state when your description yields a confident, single-target work-type and recipe match. Lite path skips `aid-specify`, `aid-plan`, and `aid-detail` — Interview emits a work-root `SPEC.md` + `tasks/` directly, then routes to `aid-execute`. A lite work can be escalated to full path mid-flight if scope grows.
+**Lite Path:** A condensed workflow for small, well-scoped work. Triggered by `aid-describe`'s TRIAGE state when your description yields a confident, single-target work-type and recipe match. Lite path skips `aid-specify`, `aid-plan`, and `aid-detail` — Describe emits a work-root `SPEC.md` + `tasks/` directly, then routes to `aid-execute`. A lite work can be escalated to full path mid-flight if scope grows.
 
 **TRIAGE:** The opening state of `aid-describe`. Description-first: you describe the work in your own words, and the agent infers the work-type and the best-matching recipe (by reading each recipe's `summary:`), confirms in one turn, then routes — a confident single-target match to a lite sub-path, anything ambiguous/multi-target/broad to the full path.
 
@@ -94,7 +94,7 @@ Terms and concepts used throughout the AID methodology.
 | Group | Phases | Focus |
 |-------|--------|-------|
 | **Prepare** | Discover (+ aid-config, aid-summarize) | Set up the workspace and understand the system |
-| **Define** | Interview, Specify | Define the problem and how to solve it |
+| **Define** | Describe → Define, Specify | Define the problem and how to solve it |
 | **Map** | Plan, Detail | From requirements to an executable task list |
 | **Execute** | Execute | Build, review, and test |
 | **Deliver** | Deploy, Monitor *(optional)* | Optionally ship, monitor, and route what breaks |
@@ -145,7 +145,7 @@ All five profiles contain byte-identical skill and agent bodies — only the wra
 
 **Brownfield:** An existing codebase with history, technical debt, and undocumented knowledge. AID's Discovery phase is specifically designed for brownfield systems.
 
-**Greenfield:** A new project with no existing code. In AID, greenfield projects run Init first, then skip Discovery and start at Interview.
+**Greenfield:** A new project with no existing code. In AID, greenfield projects run Init first, then skip Discovery and start at Describe (Phase 2a).
 
 **Determinism Test:** Can you write a complete set of rules to validate the outcome? If yes, automate fully. If no, keep a human in the loop. Used to decide automation depth per phase.
 

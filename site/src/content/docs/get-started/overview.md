@@ -27,14 +27,14 @@ requires human approval. The pipeline never auto-advances.
 AID organises work into five groups and six numbered phases:
 
 1. **Discover** — scan the codebase; build the Knowledge Base.
-2. **Interview** — TRIAGE routes the work: full path or lite path.
+2. **Describe → Define** — TRIAGE routes the work: full path or lite path.
 3. **Specify** — write a grounded spec from the Knowledge Base (full path).
 4. **Plan** — decompose into a delivery plan with tasks (full path).
 5. **Detail** — flesh out task-level implementation detail (full path).
 6. **Execute** — implement, grade, and loop until done.
 
-Brownfield projects enter at Discover. Greenfield projects skip Discover and enter at Interview.
-Small, well-bounded changes go straight from Interview to Execute on the **lite path** — same
+Brownfield projects enter at Discover. Greenfield projects skip Discover and enter at Describe (Phase 2a).
+Small, well-bounded changes go straight from Describe to Execute on the **lite path** — same
 rigour, proportionate overhead.
 
 ## Who is AID for?

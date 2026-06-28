@@ -171,13 +171,13 @@ formal feedback loops. The pipeline is the methodology's backbone.
 its "Skill Inventory" table):
 
 ```
-Discover -> Interview -> Specify -> Plan -> Detail -> Execute
+Discover -> Describe/Define (2a/2b) -> Specify -> Plan -> Detail -> Execute
 ```
 
 These six map onto skills (Phase 1-6) and sit inside **five skill groups** (Prepare,
-Define, Map, Execute, Deliver). Phase 2 (Interview) is realized by **two** skills —
+Define, Map, Execute, Deliver). Phase 2 (Describe → Define) is realized by **two** skills —
 `aid-describe` (2a) and `aid-define` (2b) — after the `aid-interview` split (see "The
-Interview Phase" below); every other numbered phase is one skill. Several lifecycle labels
+Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
 `docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — 14
@@ -186,7 +186,7 @@ user-facing skills):
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
 | Discover | `aid-discover` | **Phase 1** | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
-| Describe | `aid-describe` | **Phase 2a** | Interview half: TRIAGE (routes full vs lite) + adaptive interview + COMPLETION + lite path + greenfield KB seed. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT (unchanged) does the dialogue. |
+| Describe | `aid-describe` | **Phase 2a** | Describe (2a) half: TRIAGE (routes full vs lite) + adaptive interview + COMPLETION + lite path + greenfield KB seed. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT (unchanged) does the dialogue. |
 | Define | `aid-define` | **Phase 2b** | Decomposition half: feature decomposition + cross-reference (full path only); hands off to Specify. |
 | Specify | `aid-specify` | **Phase 3** | Full path only. |
 | Plan | `aid-plan` | **Phase 4** | Full path only. |
@@ -218,9 +218,9 @@ development, 2 from production, 1 cross-cutting). CONFIRMED in `docs/aid-methodo
 "The Eleven Loops". The cross-cutting Loop 11 (Any phase -> Discover, targeted
 re-discovery) is what makes the KB the gravitational center in practice.
 
-### The Interview Phase: Describe (2a) + Define (2b)
+### Phase 2 (Describe → Define): Describe (2a) + Define (2b)
 
-Phase 2 (Interview) is realized by **two chained skills**, not one. The former
+Phase 2 (Describe → Define) is realized by **two chained skills**, not one. The former
 `aid-interview` SKILL was split; the `aid-interviewer` AGENT keeps its name (only the skill
 split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and no
 `aid-interview/`; `canonical/agents/aid-interviewer/` is unchanged.
@@ -336,7 +336,7 @@ can revise it. CONFIRMED in `docs/aid-methodology.md` §3.
 - **Forward-authored seeds (greenfield):** on a greenfield project the KB is not extracted
   from code but **forward-authored** by `aid-describe` DESCRIBE-SEED and stamped
   `source: forward-authored` — the docs are the source of truth and code conforms (see "The
-  Interview Phase" above).
+  Describe → Define Phase" above).
 
 ---
 
@@ -481,3 +481,4 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 | 1.0 | 2026-06-25 | aid-discover | Initial discovery — product/dogfood anatomy, render-and-distribute architecture, six-phase process architecture, skill/agent dispatch, invariants, gotchas. |
 | 1.1 | 2026-06-26 | manual | Corrected the process-architecture model: six numbered phases (Discover→Execute), not "12 phases". Init/Implement/Review/Test/Track/Triage reframed as bootstrap / task-types / states / optional Deliver skills, not phases. |
 | 1.2 | 2026-06-28 | manual | Reconciled the Interview phase to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) / Phase 2b `aid-define` (feature decomposition + cross-reference). Added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check. Skill count 13 -> 14. |
+| 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define" throughout; section heading renamed to "Phase 2 (Describe → Define)"; pipeline sequence updated to Describe/Define (2a/2b). |

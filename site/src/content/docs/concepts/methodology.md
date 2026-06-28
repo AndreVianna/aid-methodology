@@ -42,7 +42,7 @@ flowchart TB
         Disc["1 · aid-discover<br/>brownfield"]:::prep
         Sum["aid-summarize<br/>optional"]:::aux
     end
-    subgraph G2[" 2 · Define "]
+    subgraph G2[" 2 · Describe → Define "]
         Desc["2a · aid-describe<br/>gather requirements"]:::def
         Triage{"TRIAGE<br/>full or lite?"}:::def
         Def["2b · aid-define<br/>decompose features"]:::def
@@ -73,17 +73,17 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*Fourteen user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Interview. `/aid-describe`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+*Fourteen user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Describe (Phase 2a). `/aid-describe`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
-Brownfield projects enter at Discover and proceed through every numbered phase: Discover → Interview → Specify → Plan → Detail → Execute. Each phase is gated — the human approves the output before the next phase begins. The pipeline never auto-advances.
+Brownfield projects enter at Discover and proceed through every numbered phase: Discover → Describe/Define (2a/2b) → Specify → Plan → Detail → Execute. Each phase is gated — the human approves the output before the next phase begins. The pipeline never auto-advances.
 
-Greenfield projects skip Discover (no existing system to understand) and enter at Interview. On the full path, `aid-describe` forward-authors a Knowledge Base seed from intent before any code exists — the design documents are the source of truth, and code is built to conform to them.
+Greenfield projects skip Discover (no existing system to understand) and enter at Describe (Phase 2a). On the full path, `aid-describe` forward-authors a Knowledge Base seed from intent before any code exists — the design documents are the source of truth, and code is built to conform to them.
 
 ### The Lite Path at a Glance
 
-When the work is small and well-scoped, TRIAGE (the opening state of every Interview) routes it directly to a condensed flow that skips Specify, Plan, and Detail. The lite path is not a fallback — it is the default for the majority of individual tasks. See §4, *Interview → TRIAGE Routing*, for the decision logic and full walkthrough.
+When the work is small and well-scoped, TRIAGE (the opening state of every `/aid-describe` run) routes it directly to a condensed flow that skips Specify, Plan, and Detail. The lite path is not a fallback — it is the default for the majority of individual tasks. See §4, *Describe → Define → TRIAGE Routing*, for the decision logic and full walkthrough.
 
 ### Skill Inventory
 
@@ -139,7 +139,7 @@ Every phase is co-executed by human and AI. Not "AI executes, human rubber-stamp
 
 **Between phases, the human gives the OK to advance.** The pipeline never auto-advances. The human reviews the phase output, decides whether it is good enough, and greenlights the next phase. This is the checkpoint that keeps the human in control without slowing the work to human speed.
 
-**A note on universality.** The Propose → Discuss → Write → Review loop is universal across the full path — Specify, Plan, Detail, and Execute each follow it. The lite path is different: Interview runs a condensed CONDENSED-INTAKE slot-fill rather than the full 4-step loop, and TASK-BREAKDOWN proposes the task set directly from the slot-filled SPEC. The Iron Man loop shapes every full-path phase; the lite path is a faster, narrower variant designed for proportionate scope.
+**A note on universality.** The Propose → Discuss → Write → Review loop is universal across the full path — Specify, Plan, Detail, and Execute each follow it. The lite path is different: the Describe phase runs a condensed CONDENSED-INTAKE slot-fill rather than the full 4-step loop, and TASK-BREAKDOWN proposes the task set directly from the slot-filled SPEC. The Iron Man loop shapes every full-path phase; the lite path is a faster, narrower variant designed for proportionate scope.
 
 ### Three Core Principles
 
@@ -188,7 +188,7 @@ AID is not a silver bullet. It is a deliberate trade-off.
 
 **The routing insight:** AID does not make you weigh the cost of its full pipeline against the value of a change. That weighing is automated. TRIAGE — the opening state of every `/aid-describe` — routes work to the correct path from the first question. Small work takes the lite path by default. The full pipeline runs only when scope warrants it. You don't configure this; you describe the work in your own words and the methodology routes you.
 
-**The honest cost:** AID adds process on the full path. Discovery takes time. Interview takes time. Specify, Plan, and Detail add overhead before a single line of code is written. The payoff is that what gets written is the *right* code, grounded in real understanding, with a spec that won't surprise you mid-implementation. The cost is real; so is the payoff. For small work, TRIAGE ensures the cost is commensurate with scope.
+**The honest cost:** AID adds process on the full path. Discovery takes time. Describe → Define takes time. Specify, Plan, and Detail add overhead before a single line of code is written. The payoff is that what gets written is the *right* code, grounded in real understanding, with a spec that won't surprise you mid-implementation. The cost is real; so is the payoff. For small work, TRIAGE ensures the cost is commensurate with scope.
 
 ---
 
@@ -387,7 +387,7 @@ The scaffold is the blank canvas. After `aid-config`, the KB directory exists wi
 
 **Purpose:** Understand the existing system. Produce the Knowledge Base.
 
-**When to skip:** Pure greenfield projects with no existing code. Interview and Specify populate a minimal KB instead.
+**When to skip:** Pure greenfield projects with no existing code. Describe and Specify populate a minimal KB instead.
 
 **When to re-enter:** Any downstream phase finds the KB wrong or incomplete. Re-entry is always *targeted* — fill the specific gap, not redo full discovery.
 
@@ -421,7 +421,7 @@ Across the run, discovery covers:
 7. **Integration surface** — External APIs, message queues, caches, third-party services.
 8. **Test landscape** — Frameworks, coverage metrics, test types, CI/CD pipeline.
 9. **Tech debt audit** — Large files, circular dependencies, missing tests, outdated packages.
-10. **Gap identification** — What couldn't be determined from code alone → feeds into Interview.
+10. **Gap identification** — What couldn't be determined from code alone → feeds into Describe.
 11. **INDEX generation** — The orchestrator assembles `.aid/knowledge/INDEX.md` with a 2-3 line summary of every KB document produced.
 
 **Output:** `.aid/knowledge/` — all documents in the confirmed doc-set, the generated `project-index.md` pre-pass, the `INDEX.md` and `README.md` meta-documents, and the grade and Q&A recorded into the discovery-area `STATE.md` (at `.aid/knowledge/STATE.md`). `feature-inventory.md` is scaffolded during the run and completed later in the Q&A → FIX cycle.
@@ -442,7 +442,7 @@ Across the run, discovery covers:
 
 ---
 
-#### Phase 2: Interview (`aid-describe` → `aid-define`)
+#### Phase 2: Describe → Define (`aid-describe` → `aid-define`)
 
 **Purpose:** Gather requirements and decompose them into features (full path) or directly into a task set (lite path). Produce the work-area artifacts that drive the rest of the pipeline.
 
@@ -507,7 +507,7 @@ The lite path is not a cost mitigation you weigh — it is the default path for 
     REQUIREMENTS.md             ← product (stakeholder requirements)
     features/
       feature-001-login/
-        SPEC.md                 ← requirements side (from Interview) + tech spec (from Specify)
+        SPEC.md                 ← requirements side (from Describe, Phase 2a) + tech spec (from Specify)
       feature-002-password-reset/
         SPEC.md
 ```
@@ -530,7 +530,7 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 **State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify.
 
-**One grading rubric across the pipeline.** Every development phase that grades — Discover, Interview, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is computed **deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. A scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §7 and `canonical/templates/grading-rubric.md`.
+**One grading rubric across the pipeline.** Every development phase that grades — Discover, Describe → Define, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is computed **deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. A scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §7 and `canonical/templates/grading-rubric.md`.
 
 **Output (full path):** `.aid/{work}/REQUIREMENTS.md` + `.aid/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
 
@@ -587,7 +587,7 @@ Recipes are a shortcut, not a bypass. The task set a recipe produces is the same
 
 ##### Escalation
 
-A lite work can be promoted to full mid-flight. If the scope expands during the condensed interview — more features than TRIAGE anticipated, more complexity than the slot-fill can handle — the skill escalates. `Path: escalated` is treated identically to `Path: full`; the work enters the full Interview flow. The `## Escalation Carry` block in `STATE.md` preserves slot answers and decisions already gathered, so the user is not asked again for information already given.
+A lite work can be promoted to full mid-flight. If the scope expands during the condensed interview — more features than TRIAGE anticipated, more complexity than the slot-fill can handle — the skill escalates. `Path: escalated` is treated identically to `Path: full`; the work enters the full Describe → Define flow. The `## Escalation Carry` block in `STATE.md` preserves slot answers and decisions already gathered, so the user is not asked again for information already given.
 
 ---
 
@@ -595,9 +595,9 @@ A lite work can be promoted to full mid-flight. If the scope expands during the 
 
 **Purpose:** Technical refinement of a single feature through conversational collaboration with the developer. The agent acts as a tech lead — proposes concrete solutions grounded in the KB and codebase, discusses trade-offs, and writes the technical specification into the feature's SPEC.md.
 
-**Input:** A feature's SPEC.md (requirements side, from Interview) + REQUIREMENTS.md + `.aid/knowledge/` + the codebase.
+**Input:** A feature's SPEC.md (requirements side, from Describe, Phase 2a) + REQUIREMENTS.md + `.aid/knowledge/` + the codebase.
 
-**What this is:** Agile refinement for AI-augmented teams. Interview captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
+**What this is:** Agile refinement for AI-augmented teams. Describe captured *what* the stakeholder wants. Specify determines *how* to build it — one feature at a time, through discussion with the developer.
 
 The key distinction from generic spec generation: the agent does not ask "what technology do you want to use?" — it proposes based on what the KB and codebase already show. "I see you use Spring Boot with JPMS modules. Here is how this feature fits into the existing module structure." The developer validates, not dictates. This is grounded proposal, not open-ended brainstorming.
 
@@ -614,7 +614,7 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Output:** `## Technical Specification` section added to `.aid/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections.
 
-**Full path only:** Specify is skipped on the lite path, which collapses Specify + Plan + Detail into the Interview's TRIAGE-routed condensed flow.
+**Full path only:** Specify is skipped on the lite path, which collapses Specify + Plan + Detail into the Describe phase's TRIAGE-routed condensed flow.
 
 ---
 
@@ -747,7 +747,7 @@ This mirrors `aid-summarize` — an optional skill in the Prepare group — and 
 2. **Classify** — For each finding: BUG (spec right, code wrong), Change Request (spec needs change), Infrastructure (ops), or No Action (false positive).
 3. **Analyze** — Root cause analysis for bugs: trace → fault → scope → test requirements.
 4. **Propose** — Present findings with routing recommendations to the user.
-5. **Act** — Route findings: bugs via Interview's LITE-BUG-FIX triage → Execute; change requests as new/changed requirements to Interview (full pipeline or new work); escalate infrastructure findings.
+5. **Act** — Route findings: bugs via aid-describe's LITE-BUG-FIX triage → Execute; change requests as new/changed requirements to Describe (full pipeline or new work); escalate infrastructure findings.
 
 **The short path:** BUG → aid-describe (LITE-BUG-FIX triage → task) → aid-execute. The short path skips specification and planning because the spec is already correct — only the code is wrong.
 
@@ -892,7 +892,7 @@ flowchart TB
     classDef offpipe fill:#374151,stroke:#374151,color:#ffffff
 
     D["1 · Discover"]:::prep
-    I["2 · Interview"]:::def
+    I["2 · Describe → Define"]:::def
     S["3 · Specify"]:::def
     P["4 · Plan"]:::map
     Dt["5 · Detail"]:::map
@@ -925,7 +925,7 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 | **Loop** | From | To | Trigger condition |
 |---------|------|-----|------------------|
-| L1 | Interview | Discover | A human's answer reveals the KB is wrong or incomplete |
+| L1 | Describe/Define | Discover | A human's answer reveals the KB is wrong or incomplete |
 | L2 | Specify | Discover | Writing the spec exposes insufficient understanding of a subsystem |
 | L3 | Plan | Discover | Planning reveals the codebase is more complex than the KB captured |
 | L4 | Plan | Specify | The KB is complete, but a SPEC is ambiguous or contradictory |
@@ -933,13 +933,13 @@ The development pipeline (Discover through Execute) is sequential by default; th
 | L6 | Execute | Discover / Specify / Detail | Agent discovers an assumption doesn't hold (`IMPEDIMENT-task-NNN.md`) |
 | L7 | Execute Review | Any upstream phase | Reviewer finds issues traced to the task, spec, or KB — not just code quality |
 | L8 | Deploy | Execute | Final verification (build + tests + lint) fails before the delivery ships |
-| L9 | Monitor | Interview (bug path) | Monitor classifies a finding as BUG → LITE-BUG-FIX triage |
-| L10 | Monitor | Interview (CR path) | Monitor classifies a finding as Change Request → requirements update |
+| L9 | Monitor | Describe (bug path) | Monitor classifies a finding as BUG → LITE-BUG-FIX triage |
+| L10 | Monitor | Describe (CR path) | Monitor classifies a finding as Change Request → requirements update |
 | L11 | Any phase | Discover | Any phase finds the KB wrong, incomplete, or stale |
 
 #### Development Loops (1–8)
 
-**Loop 1: Interview → Discovery.** During the interview, a human's answer reveals the KB is wrong or incomplete. Interview writes a Q&A entry to the discovery-area `STATE.md` → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
+**Loop 1: Describe/Define → Discovery.** During the interview, a human's answer reveals the KB is wrong or incomplete. Describe/Define writes a Q&A entry to the discovery-area `STATE.md` → targeted discovery on the specific area → KB updated → interview resumes with corrected understanding.
 
 **Loop 2: Specify → Discovery.** Writing the spec exposes insufficient understanding of a subsystem. Specify pauses → writes a Q&A entry to the discovery-area `STATE.md` → targeted discovery → KB updated → Specify resumes.
 
@@ -959,9 +959,9 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 These loops apply only when Monitor is run.
 
-**Loop 9: Monitor → Interview (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `aid-describe`'s LITE-BUG-FIX triage, which creates the task(s) → aid-execute (→ optional aid-deploy). The short path.
+**Loop 9: Monitor → Describe (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `aid-describe`'s LITE-BUG-FIX triage, which creates the task(s) → aid-execute (→ optional aid-deploy). The short path.
 
-**Loop 10: Monitor → Interview (Change Request Path).** Monitor classifies a finding as Change Request. Monitor routes the change request to `aid-describe` as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work.
+**Loop 10: Monitor → Describe (Change Request Path).** Monitor classifies a finding as Change Request. Monitor routes the change request to `aid-describe` as new/changed requirements → the pipeline runs from Describe (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work.
 
 #### Cross-Cutting Loop (11)
 
@@ -1025,16 +1025,16 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | **Artifact** | Location | Produced By | Consumed By | Lifecycle |
 |-------------|----------|------------|-------------|-----------|
 | Knowledge Base (14 standard docs) | `.aid/knowledge/` | Discover | All phases | Living — updated throughout project |
-| INDEX.md | `.aid/knowledge/` | Init, Discover, Interview | All phases | Seeded at init; regenerated by Discovery; maintained by Interview |
+| INDEX.md | `.aid/knowledge/` | Init, Discover, Describe | All phases | Seeded at init; regenerated by Discovery; maintained by Describe |
 | STATE.md (discovery area) | `.aid/knowledge/` | Init, Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
 | project-index.md | `.aid/generated/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
-| REQUIREMENTS.md | `.aid/{work}/` | Interview (full path) | Specify, Plan | Frozen after approval (rev-tracked) |
-| SPEC.md (work-root) | `.aid/{work}/` | Interview (lite path) | Execute | Single consolidated spec for lite works |
-| STATE.md (work area) | `.aid/{work}/` | Interview | All phases for this work | Process tracking |
-| Feature SPEC.md | `.aid/{work}/features/{feature}/` | Interview + Specify (full path) | Plan, Detail, Execute | Living — Interview writes requirements side, Specify adds technical spec |
+| REQUIREMENTS.md | `.aid/{work}/` | Describe (full path) | Specify, Plan | Frozen after approval (rev-tracked) |
+| SPEC.md (work-root) | `.aid/{work}/` | Describe (lite path) | Execute | Single consolidated spec for lite works |
+| STATE.md (work area) | `.aid/{work}/` | Describe | All phases for this work | Process tracking |
+| Feature SPEC.md | `.aid/{work}/features/{feature}/` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes requirements side, Specify adds technical spec |
 | known-issues.md | `.aid/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
 | PLAN.md | `.aid/{work}/` | Plan (full path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
-| task-NNN.md | `.aid/{work}/tasks/` | Detail (full path) or Interview (lite path) | Execute | Rev-tracked if amended |
+| task-NNN.md | `.aid/{work}/tasks/` | Detail (full path) or Describe (lite path) | Execute | Rev-tracked if amended |
 | IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
 | DEPLOYMENT-STATE.md | `.aid/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
@@ -1070,7 +1070,7 @@ Within Execute, the reviewer produces a structured issue list that `canonical/sc
 
 **Feature SPEC.md template:**
 
-Each feature gets its own SPEC.md on the full path. Interview writes the top half (requirements side). Specify adds the bottom half (technical specification).
+Each feature gets its own SPEC.md on the full path. Describe writes the top half (requirements side). Specify adds the bottom half (technical specification).
 
 ```markdown
 # {Feature Title}
@@ -1216,8 +1216,8 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 
 | **Case study** | Path used | Key phases | Key insight |
 |---------------|-----------|------------|-------------|
-| VivaVoz Desktop App | Greenfield · full path | Interview → Specify → Plan → Detail → Execute | Two-level planning (Plan = strategy, Detail = tactics) prevented planning sessions from bogging down in micro-decisions before macro-structure was settled |
-| Brownfield Enterprise Java | Brownfield · full path | Discover → Interview → Specify | Without Discovery, an agent dropped into a 21 GB Java codebase hallucinates; the KB gave agents context to work within the existing OSGi architecture rather than against it |
+| VivaVoz Desktop App | Greenfield · full path | Describe → Define → Specify → Plan → Detail → Execute | Two-level planning (Plan = strategy, Detail = tactics) prevented planning sessions from bogging down in micro-decisions before macro-structure was settled |
+| Brownfield Enterprise Java | Brownfield · full path | Discover → Describe → Define → Specify | Without Discovery, an agent dropped into a 21 GB Java codebase hallucinates; the KB gave agents context to work within the existing OSGi architecture rather than against it |
 | Zac Pipeline | Brownfield · full path + lite path | All phases; Monitor → LITE-BUG-FIX → Execute for post-launch fixes | After the initial build, individual brand-specific issues were handled as LITE-BUG-FIX works — 20–30 minutes end to end vs. the multi-day cycle a full path would require |
 
 ### Greenfield — VivaVoz Desktop Application
@@ -1227,7 +1227,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 **How AID applied:**
 
 - **Discovery:** Skipped (greenfield). Minimal KB populated during interview.
-- **Interview:** Full requirements gathering. User personas, feature priority, platform constraints. TRIAGE routed to full path — multiple features, multi-week scope.
+- **Describe → Define:** Full requirements gathering. User personas, feature priority, platform constraints. TRIAGE routed to full path — multiple features, multi-week scope.
 - **Specify:** Detailed architecture decisions per feature: MVVM pattern, SQLite storage, Whisper integration. Agent proposed based on community conventions, not open-ended prompting.
 - **Plan:** Sequenced the roadmap — MVP (core recording), v2 (transcription), v3 (export) — into ordered, independently shippable deliveries.
 - **Detail:** Decomposed each delivery into task specs, each carrying explicit C# interface contracts.
@@ -1245,7 +1245,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 **How AID applied:**
 
 - **Discovery:** Full codebase analysis. Module listing across hundreds of packages. Architecture report covering 15 sections. The KB captured: OSGi bundle manifest structure, search indexing pattern, key extension points, naming conventions, and the deployment model (target platform).
-- **Interview:** Targeted — client explained business context, search requirements. Short interview because Discovery pre-filled all technical context. The agent's questions came with suggested answers: "Based on `architecture.md`: the search service extends `org.eclipse.search.ui.ISearchPage`. Does the new feature plug in at this extension point? [Y/N/custom]"
+- **Describe → Define:** Targeted — client explained business context, search requirements. Short interview because Discovery pre-filled all technical context. The agent's questions came with suggested answers: "Based on `architecture.md`: the search service extends `org.eclipse.search.ui.ISearchPage`. Does the new feature plug in at this extension point? [Y/N/custom]"
 - **Specify:** Spec grounded in the KB. Referenced actual package names, existing interfaces, OSGi service bindings.
 
 **Key insight:** Without Discovery, an agent dropped into this codebase would have hallucinated. The KB gave agents the context they needed to work within the existing architecture rather than against it. The Specify session took 40 minutes; the equivalent effort without a KB would have been a multi-day exploration that still wouldn't have caught the OSGi service lifecycle constraints that the KB surfaced in its first section.
@@ -1256,7 +1256,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 
 **How AID applied:**
 
-- **Interview:** One question at a time. "What are your brands?" → "What platforms?" → "What does a good report look like?" → "What data don't you agree with?" That last question discovered a timezone bug in the existing data aggregation — before a line of spec was written.
+- **Describe → Define:** One question at a time. "What are your brands?" → "What platforms?" → "What does a good report look like?" → "What data don't you agree with?" That last question discovered a timezone bug in the existing data aggregation — before a line of spec was written.
 - **Specify:** Pipeline spec with data flow, agent roles, grading criteria.
 - **Execute:** Multi-agent orchestration — 4 specialist agents + orchestrator + executive-summary generator — validated against a domain-specific quality gate (Grade A): source match (1% tolerance), traceability, cross-agent consistency.
 - **Monitor:** Watches quality-gate results across brands. When a report fails, Monitor classifies it — a data-processing bug (short path: LITE-BUG-FIX → Execute) or a source-format change (full cycle: new requirements → new spec). Nothing falls through.
@@ -1341,7 +1341,7 @@ flowchart TB
 | **Agent model** | One agent per spec | 9 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → optional deploy/monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
-| **Post-delivery** | Not addressed | Monitor → Interview (bugs via LITE-BUG-FIX + CRs) |
+| **Post-delivery** | Not addressed | Monitor → Describe/Define (bugs via LITE-BUG-FIX + CRs) |
 | **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
 | **Human role** | Spec writer, reviewer | Co-pilot across all phases |
 | **Scale options** | One path | Full path + lite path (TRIAGE-routed) for small work; recipes for recurring patterns |
@@ -1423,7 +1423,7 @@ You do not need to use all six phases from day one — though `/aid-config` alwa
 | Detail + Execute | — | Formalized task decomposition and reviewed execution — Execute codes, reviews, and grades in one loop |
 | + Plan | — | Separate delivery strategy from tactical decomposition with two-level planning |
 | + Discover | — | For brownfield projects, build the Knowledge Base before specifying anything |
-| + Interview + Specify | — | For client engagements, gather requirements through the adaptive interview, then refine each feature technically |
+| + Describe → Define + Specify | — | For client engagements, gather requirements through the adaptive interview, then refine each feature technically |
 | + Deploy + Monitor | — | Once shipping regularly, formalize delivery and production monitoring |
 | Full pipeline | All phases | Sequenced phases with feedback loops — the complete AID experience |
 

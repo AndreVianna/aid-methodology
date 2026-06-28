@@ -180,7 +180,7 @@ describe('AC5 — Home pipeline diagram', () => {
 
   it('index.mdx lists the six core phases in order', () => {
     const src = readDoc('index.mdx');
-    for (const phase of ['Discover', 'Interview', 'Specify', 'Plan', 'Detail', 'Execute']) {
+    for (const phase of ['Discover', 'Describe', 'Specify', 'Plan', 'Detail', 'Execute']) {
       expect(src).toContain(phase);
     }
   });
