@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** reviewer-brief.md {{GREENFIELD_BLOCK}} (default-empty, brownfield unchanged) + state-review.md panel exclusion → two-case (discovery-skip retained; seed-review greenfield:true → full panel per NFR-3). Awaiting delivery gate.
 
 ---
 

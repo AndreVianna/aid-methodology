@@ -8,7 +8,7 @@ description: >
   builds REQUIREMENTS.md incrementally. Subsequent runs cross-reference against KB,
   grade, and ask targeted questions to resolve gaps and contradictions. Final step
   decomposes functional requirements into discrete feature files.
-  State machine: FIRST-RUN -> Q-AND-A -> TRIAGE -> {full: CONTINUE -> COMPLETION -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE | lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE | escalated: any lite state -> CONTINUE -> ...full path...}.
+  State machine: FIRST-RUN -> Q-AND-A -> TRIAGE -> {full: CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION -> FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE | lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE | escalated: any lite state -> CONTINUE -> ...full path...}.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "[work-001] resume work  [--reset work-001] clear and restart  [--features work-001] re-run feature decomposition"
 ---
@@ -26,6 +26,7 @@ aid-interview is **multi-agent** — different states use different agents.
 | L2 TASK-BREAKDOWN | Lite-path task design | `aid-architect` | Design work — proposing typed task breakdown |
 | L3 LITE-REVIEW | Lite-path pre-execution gate | `aid-reviewer` | Adversarial validation of task set against SPEC |
 | L4 LITE-DONE | Lite-path terminal | (no dispatch) | Hand-off prompt to `/aid-execute` |
+| DESCRIBE-SEED | Greenfield KB seed authoring (aid-describe step per D3) | `aid-interviewer` + dispatches `aid-reviewer` for step 5 | Engine-driven 5-element seed elicitation + doc authoring + coherence check + greenfield-mode review gate |
 | 5 | Feature Decomposition | `aid-architect` | Design work — breaking requirements into structured features |
 | 6 | Cross-Reference & Refine | `aid-reviewer` | Adversarial validation against KB and codebase |
 | 7 | DONE | (no dispatch) | Terminal state, user choice prompt |
@@ -162,7 +163,10 @@ State L3: **Path:** lite, delivery-001/tasks/ present,
           LITE-REVIEW not complete                                  → LITE-REVIEW
 State L4: **Path:** lite, LITE-REVIEW complete                      → LITE-DONE
 State 3:  **Path:** full, Interview State: In Progress, incomplete  → CONTINUE
-State 4:  **Path:** full, Interview State: In Progress, all done    → COMPLETION
+State GS: **Path:** full, Interview State: In Progress, all done,
+          greenfield (no brownfield KB on disk) + seed not complete → DESCRIBE-SEED
+State 4:  **Path:** full, Interview State: In Progress, all done,
+          not greenfield OR seed already complete                   → COMPLETION
 State 5:  **Path:** full, Interview State: Approved,
           no feature folders                                        → FEATURE-DECOMPOSITION
 State 6:  **Path:** full, Interview State: Approved, features exist,
@@ -211,7 +215,15 @@ State 7:  **Path:** full, Interview State: Approved, features +
       - If State is `In Progress`:
         - Read Section Status table under `## Interview State`
         - If any section is `Pending` or `Partial` → **State 3: CONTINUE**
-        - If all sections are `Complete` or `N/A` → **State 4: COMPLETION**
+        - If all sections are `Complete` or `N/A`:
+          **Greenfield check:** read `.aid/knowledge/` -- if no `.md` files are present OR every
+          `.md` file present carries `source: forward-authored` (authored by DESCRIBE-SEED in a
+          prior session), the project is greenfield (no brownfield KB on disk). If any file
+          carries `source: hand-authored` or `source: generated`, the project is brownfield.
+          **Seed check:** read STATE.md `## Seed Authoring` `**Status:**`. If the section is
+          absent or its value is not `Complete`, the seed is not yet done.
+          - If greenfield AND seed not done → **State GS: DESCRIBE-SEED**
+          - Otherwise → **State 4: COMPLETION**
       - If State is `Approved`:
         - If `--features` flag provided → **State 5: FEATURE-DECOMPOSITION**
         - Check if `features/` directory exists and contains `feature-*` subdirectories
@@ -292,6 +304,14 @@ aid-interview  ▸ you are here
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONTINUE ] → [● COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
 ```
 
+**DESCRIBE-SEED (greenfield full path — between CONTINUE and COMPLETION):**
+```
+[State: DESCRIBE-SEED] — Authoring forward-authored KB seed from elicited intent (greenfield mode).
+aid-interview  ▸ you are here
+  [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONTINUE ] → [● DESCRIBE-SEED ] → [ COMPLETION ] → [ FEATURE-DECOMPOSITION ] → [ CROSS-REFERENCE ] → [ DONE ]
+  (greenfield seed authoring: 5-element seed + coherence check + greenfield-mode review gate)
+```
+
 **FEATURE-DECOMPOSITION:**
 ```
 [State: FEATURE-DECOMPOSITION] — Decompose approved requirements into discrete feature folders.
@@ -326,7 +346,8 @@ aid-interview  ▸ you are here
 | TASK-BREAKDOWN | `references/state-task-breakdown.md` | `aid-architect` | → LITE-REVIEW |
 | LITE-REVIEW | `references/state-lite-review.md` | `aid-reviewer` | → LITE-DONE (grade ≥ min) / → CONDENSED-INTAKE (grade < min, loopback). User-driven escalate → CONTINUE handled separately via `lite-to-full-escalation.md`. |
 | LITE-DONE | `references/state-lite-done.md` | `inline` | → halt |
-| CONTINUE | `references/state-continue.md` | `aid-interviewer` | → COMPLETION |
+| CONTINUE | `references/state-continue.md` | `aid-interviewer` | → DESCRIBE-SEED (greenfield: no brownfield KB on disk and seed not yet complete) / → COMPLETION (brownfield or seed already complete) |
+| DESCRIBE-SEED | `references/state-describe-seed.md` | `aid-interviewer` | → COMPLETION |
 | COMPLETION | `references/state-completion.md` | `aid-interviewer` | → FEATURE-DECOMPOSITION |
 | FEATURE-DECOMPOSITION | `references/state-feature-decomposition.md` | `aid-architect` | → CROSS-REFERENCE |
 | CROSS-REFERENCE | `references/state-cross-reference.md` | `aid-reviewer` | → DONE |

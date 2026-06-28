@@ -281,6 +281,27 @@ check_source() {
 check_doc() {
     local f="$1" rel="$2"
 
+    # Forward-authored short-circuit (feature-003 C-1):
+    # A seed doc with source: forward-authored is design-authoritative (design->code,
+    # FR-4).  Source-drift staleness does not apply -- a listed intent-source changing
+    # must NOT flip the doc to suspect.  Fold to verdict=current using the EXISTING
+    # enum {current, suspect, unknown}; no new enum value is added or changed so
+    # existing TSV consumers keep working.  The inverse code->design conformance check
+    # is feature-005 work, not f007.
+    local doc_source
+    doc_source="$(fm_scalar "$f" "source")"
+    if [[ "$doc_source" == "forward-authored" ]]; then
+        if [[ "$FORMAT" == "tsv" ]]; then
+            printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+                "$rel" "current" "" "0" "0" "0" ""
+        else
+            printf '%-50s  %-8s  %s\n' \
+                "$rel" "current" \
+                "design-authoritative (forward-authored): source-drift N/A -- see feature-005 conformance check"
+        fi
+        return
+    fi
+
     # --- Frontmatter extraction ---
     local approval
     approval="$(fm_scalar "$f" "approved_at_commit")"
@@ -378,7 +399,8 @@ check_doc() {
 # ---------------------------------------------------------------------------
 # Doc routing (mirrors build-kb-index.sh / lint-frontmatter.sh)
 # Skip: meta, generated, INDEX.md, README.md, STATE.md
-# Check: source: hand-authored, kb-category in {primary, extension}
+# Check: source: hand-authored OR forward-authored, kb-category in {primary, extension}
+#        (forward-authored docs are checked, then short-circuited to `current` in check_doc())
 # ---------------------------------------------------------------------------
 should_check() {
     local f="$1"
@@ -400,7 +422,7 @@ should_check() {
     [[ "$cat" == "meta" ]] && return 1
     [[ "$src" == "generated" ]] && return 1
 
-    # Only primary and extension with hand-authored (or absent) source
+    # Only primary and extension with hand-authored / forward-authored (or absent) source
     case "$cat" in
         primary|extension) return 0 ;;
         *) return 1 ;;

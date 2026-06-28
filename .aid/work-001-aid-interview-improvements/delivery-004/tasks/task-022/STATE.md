@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** Greenfield Mode block in document-expectations.md (flag-not-fork; evidence substitution + red-flag relaxation + floors retained; brownfield byte-unchanged). Awaiting delivery gate.
 
 ---
 

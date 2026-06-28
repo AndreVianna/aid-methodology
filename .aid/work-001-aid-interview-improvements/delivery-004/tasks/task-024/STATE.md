@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** coherence-check.md authored (Layer A example-probe + Layer B structural cross-check; NFR-7 human gate; zero-Requirement-orphan sufficiency output; re-run protocol). Awaiting delivery gate.
 
 ---
 

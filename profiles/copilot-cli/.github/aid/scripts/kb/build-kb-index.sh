@@ -18,6 +18,12 @@
 # any /aid-discover cycle (after all hand-edits land), so the index reflects final
 # state.
 #
+# source: value is a pass-through -- this generator groups docs strictly by
+# kb-category (primary/meta/extension) and is source-value-agnostic. A
+# forward-authored (f003 greenfield seed) doc with kb-category: primary renders
+# in the Primary table identically to a hand-authored one. The INDEX 6-column
+# schema (Document/Objective/Summary/Tags/See-instead/Audience) is unchanged.
+#
 # Usage:
 #   bash build-kb-index.sh --root <kb-root> --output <output-path>
 #

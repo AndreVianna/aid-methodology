@@ -3,9 +3,13 @@
 #
 # In-scope predicate (f011 scope-widening, [SPIKE-M1] resolved):
 #   kb-category in {primary, extension} AND source: != generated
-# This covers hand-authored docs (source: hand-authored) AND promoted docs
+# This covers hand-authored docs (source: hand-authored), forward-authored
+# greenfield seed docs (source: forward-authored, f003), AND promoted docs
 # (e.g. source: "promoted from work-local research ...") while keeping
 # generator-written docs (source: generated) permanently out of scope.
+# NOTE: if a future source: allow-list check is ever added to this script,
+# it MUST include forward-authored (seed docs must never be skipped; they
+# receive the same full presence+shape lint as hand-authored docs).
 #
 # Soft-skip rule (day-one compatibility, NFR-7 -- RETAINED verbatim):
 #   Any doc that carries NONE of the f001 new fields

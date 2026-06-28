@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** forward-authored enum row in frontmatter-schema.md + lint/index pass-through comments (no logic change). Awaiting delivery gate.
 
 ---
 

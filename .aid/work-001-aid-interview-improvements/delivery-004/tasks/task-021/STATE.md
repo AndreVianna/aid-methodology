@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** test-kb-forward-authored-marker.sh — 38 assertions (FA freshness incl. hand-authored control reads suspect / FL lint / FI index / BD brownfield); auto-discovered, all 85 suites pass. Awaiting delivery gate.
 
 ---
 

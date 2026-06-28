@@ -8,10 +8,10 @@
 
 ## Task State
 
-- **State:** Pending
+- **State:** Done
 - **Review:** --
 - **Elapsed:** --
-- **Notes:** --
+- **Notes:** kb-freshness-check.sh check_doc() forward-authored short-circuit → current (fixtures verified; should_check + 7-col TSV unchanged; brownfield intact). Awaiting delivery gate.
 
 ---
 
