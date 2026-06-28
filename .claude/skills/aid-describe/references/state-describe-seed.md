@@ -112,7 +112,7 @@ criterion (see Stop Predicate) is not yet satisfied.
 | 2 | Intended architecture (boundaries + relationships, sketch altitude) | `architecture.md` | primary | MANDATORY | Doc absent OR major parts / boundaries / relationships are not named; OR `## Invariants` section is missing. Sketch altitude only -- not an as-built layout. |
 | 3 | Conventions & standards | `coding-standards.md` | primary | DEFERRABLE | Doc absent OR no declared project rules AND no explicit "standard for `<stack>`, no project-specific deviations yet" statement. |
 | 4 | Technology stack / medium | `technology-stack.md` | primary | DEFERRABLE | Doc absent OR the chosen language / runtime / framework is not named. |
-| 5 | Decisions & rationale | `decisions.md` | extension | CONDITIONAL | Only added to the inventory when rationale-bearing choices are confirmed (propose->confirm gate, step 3). When in inventory: doc absent OR a decision does not state what was decided + why + the rejected alternative. |
+| 5 | Decisions & rationale | `decisions.md` | extension | CONDITIONAL | Only added to the inventory when rationale-bearing choices are confirmed (propose->confirm gate, step 3). When in inventory: doc absent OR a decision does not state what was decided + why + the rejected alternative + Status (Accepted or Superseded). |
 
 Gap selection priority uses the engine's precedence table (elicitation-engine.md Step 2 -- GAP
 SELECTION): rank 1 = open coherence conflict; rank 2 = calibration unknown; rank 3 = missing
@@ -147,7 +147,9 @@ MUST NOT fire while any condition is false.
 
 5. **Element 5 (decisions):** IF the propose->confirm gate (step 3) added `decisions.md` to the
    inventory: `decisions.md` is present AND each decision states what was decided + why + the
-   rejected alternative. If no rationale-bearing choices were confirmed, this condition is
+   rejected alternative AND carries a `Status` field (`Status: Accepted` for current decisions;
+   `Status: Superseded` + `Superseded-by:` link for replaced ones; superseding entries carry a
+   `Supersedes:` back-link). If no rationale-bearing choices were confirmed, this condition is
    vacuously satisfied (element not in inventory).
 
 6. **Zero Requirement orphans:** the coherence check (step 4) has been run AND its Layer B output
@@ -185,6 +187,28 @@ files as sources for a forward-authored doc.
 Concern-id tags by element: `domain-glossary.md` -> `[C4, ...]`; `architecture.md` -> `[C1, ...]`;
 `coding-standards.md` -> `[C3, ...]`; `technology-stack.md` -> `[C0, ...]`;
 `decisions.md` -> `[D, ...]`.
+
+**decisions.md entry schema (per decision; newest entries appended last):**
+
+```
+## <Decision title>
+- **Status:** Accepted
+- **Decided:** <what was decided>
+- **Rationale:** <why>
+- **Rejected alternative:** <what was not chosen and why not>
+- **Supersedes:** <prior-title>    (present only when this entry replaces a prior one)
+- **Superseded-by:** <new-title>   (present only when a later entry supersedes this one)
+```
+
+**ADR immutability rule (web-validation G1 -- Nygard / JPH ADR convention).**
+A recorded decision is IMMUTABLE. When a decision changes, APPEND a NEW entry
+(Status: Accepted + Supersedes: <old-title>) and mark the prior entry
+(Status: Superseded + Superseded-by: <new-title>). The original entry is NEVER edited
+in place or removed. The supersession chain is the historical record of "why we did it
+that way" for future readers. (Grounds: Nygard 2011,
+cognitect.com/blog/2011/11/15/documenting-architecture-decisions; JPH ADR README --
+"Immutable: Don't alter existing information in an ADR. Instead, supersede the ADR by
+creating a new ADR." -- web-validation G1.)
 
 KB doc layout (authoring-conventions.md KB Document Layout):
 frontmatter -> `# <Title>` -> `## Contents` (when more than 3 sections) -> content sections ->

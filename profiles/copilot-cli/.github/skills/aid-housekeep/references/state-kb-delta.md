@@ -577,6 +577,11 @@ For each item, apply the user's choice exactly -- no auto-resolution, no default
   not re-implement). Whether the doc then sheds the `source: forward-authored` marker
   (converting to `source: hand-authored`) is a separate human call, out of this check's
   scope.
+  Note for decisions.md (D concern): "Evolve the design" means APPEND a new superseding
+  decision entry (Status: Accepted + Supersedes: <old-title>), marking the prior entry
+  Status: Superseded + Superseded-by: <new-title> -- the original is NEVER overwritten
+  (ADR immutability; consistent with flag-not-overwrite invariant; state-describe-seed.md
+  decisions element).
 
 - **[2] Fix the code:** Raise one code task per item. Record the divergence description
   (concern, element, evidence) as the task's scope. The forward-authored doc is untouched;

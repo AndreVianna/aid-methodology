@@ -53,6 +53,7 @@ new gate/freshness behavior to forward-authored docs only).
 | task-025 | IMPLEMENT | Seed-authoring state (aid-describe step) -- 5-element model + domain-adaptive shape + gate wiring |
 | task-026 | CONFIGURE | Full generator render + 5-profile/.claude propagation + DBI |
 | task-027 | TEST | Delivery-004 verification -- greenfield gate + zero-loopback sufficiency + coherence + brownfield-intact |
+| task-042 | IMPLEMENT | ADR immutability/supersession for the greenfield decisions element (web-validation G1) |
 
 ## Dependencies
 
