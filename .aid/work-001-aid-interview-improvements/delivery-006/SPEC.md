@@ -41,11 +41,17 @@ render of both new dirs across the 5 host trees + dogfood mirror; orphan-prune t
 
 ## Tasks
 
-{Filled by aid-detail. aid-detail/aid-execute MUST re-derive the blast-radius inventory against the THEN-current tree (post delivery-003/004) before the split task runs.}
+Detailed by aid-detail. Per the delivery note, task-036 re-derives the blast-radius inventory + the
+final `references/` partition against the THEN-current tree (post delivery-003/004/005) before the
+canonical carve (task-037) runs. Global numbering continues from delivery-005's last (task-035).
 
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-036 | DOCUMENT | Re-derived blast-radius inventory + final references/ partition |
+| task-037 | IMPLEMENT | Canonical carve into aid-describe + aid-define with partitioned states and inter-skill seam |
+| task-038 | IMPLEMENT | Boundary-aware external skill-name sweep + 13->14 count-increment surfaces |
+| task-039 | CONFIGURE | Full generator render of both new dirs + orphan-prune + mirror/manifests/docs regen |
+| task-040 | TEST | Split verification -- DBI, orphan-prune, count +1, substring guard, CI green |
 
 ## Dependencies
 

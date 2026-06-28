@@ -144,15 +144,16 @@ ID) -- the same concern keying the doc-set uses.
 Dispatch the aid-discover extraction subagents (`canonical/skills/aid-discover/references/agent-prompts.md`:
 Scout + the concern-matched deep-dive among Architect / Analyst / Integrator / Quality). Those
 subagents today **hard-code** their KB-doc destination as `.aid/knowledge/` (agent-prompts.md
-lines 165/218/260/309/355, Scout 420) with NO configurable destination -- so reusing them verbatim
+write-rule sites 165 Scout / 218 Architect / 260 Analyst / 309 Integrator / 355 Quality / 420
+Grounding) with NO configurable destination -- so reusing them verbatim
 would write the as-built docs straight over the forward-authored design, the exact NFR-5/AC-6
 violation this feature prevents. feature-005 therefore makes a **small additive change**: add an
 **`output_root` dispatch parameter** that parameterizes ONLY the **KB-doc destination** (default
 `.aid/knowledge/`), so the write rule becomes "write the KB docs to the dispatch-provided
 `output_root`". Scoped this way every existing caller (/aid-discover, /aid-housekeep) is unaffected
-by the default -- including the two agents (Analyst line 218, Integrator line 309) that ALSO write
-`.aid/generated/`: that secondary `.aid/generated/` output is **left untouched** (the parameter
-governs the KB-doc root only, not the generated-artifacts path). The conformance lane dispatches with
+by the default -- including the three sites (Architect line 218, Integrator line 309, Grounding line
+420) that ALSO write `.aid/generated/`: that secondary `.aid/generated/` output is **left untouched**
+(the parameter governs the KB-doc root only, not the generated-artifacts path). The conformance lane dispatches with
 `output_root=.aid/.temp/conformance/as-built/`, so **`.aid/knowledge/` is never written by this
 step -- the safety invariant is enforced by construction, not by convention.** (The conformance lane
 ignores any `.aid/generated/` side-output; only the KB docs in the shadow root feed the diff.) Because each deep-dive
@@ -295,7 +296,7 @@ new schema, enum, or frontmatter field. Consequences:
 | Hook (primary) | `canonical/skills/aid-housekeep/references/state-kb-delta.md` | Add the forward-authored **carve** (Step 1/2: route `source: forward-authored` out of the Tier-2 update-the-doc set) + the new **conformance sub-step** (extract-and-diff + flag-not-overwrite reconciliation). Reuses the existing Step 3 confirm-gate and Step 4 Required-Q&A-into-`/aid-discover` mechanics. |
 | Hook (optional signpost) | `canonical/skills/aid-execute/references/state-delivery-gate.md` | One-line signpost when a delivery touched code under a forward-authored design; no mechanism here. |
 | Marker accessor (reuse) | `canonical/aid/scripts/kb/kb-freshness-check.sh` | None -- reuse its `fm_scalar`/`source` read pattern (lines 143-156, 393-396). The freshness short-circuit for `forward-authored -> current` is **feature-003's** edit, consumed here. |
-| Extraction (parameterize + reuse) | `canonical/skills/aid-discover/references/agent-prompts.md`, `references/state-generate.md` | **Small additive edit:** add an `output_root` dispatch parameter governing ONLY the KB-doc destination (default `.aid/knowledge/`; agent-prompts.md 165/218/260/309/355/420) -- the `.aid/generated/` side-output of Analyst (218)/Integrator (309) is left untouched, so every existing caller is unaffected by the default. feature-005 dispatches with `output_root=.aid/.temp/conformance/as-built/` + a keep-only-in-scope (C0/C1/C3/C4/D) filter on the shadow output. NOT a zero-edit reuse; but no NEW extractor agent. |
+| Extraction (parameterize + reuse) | `canonical/skills/aid-discover/references/agent-prompts.md`, `references/state-generate.md` | **Small additive edit:** add an `output_root` dispatch parameter governing ONLY the KB-doc destination (default `.aid/knowledge/`; agent-prompts.md 165/218/260/309/355/420) -- the `.aid/generated/` side-output of Architect (218)/Integrator (309)/Grounding (420) is left untouched, so every existing caller is unaffected by the default. feature-005 dispatches with `output_root=.aid/.temp/conformance/as-built/` + a keep-only-in-scope (C0/C1/C3/C4/D) filter on the shadow output. NOT a zero-edit reuse; but no NEW extractor agent. |
 | Term universe (reuse) | `canonical/aid/scripts/kb/harvest-coined-terms.sh`, `canonical/aid/scripts/kb/closure-check.sh` | None -- reuse for the C4 ranked as-built term universe + grounding diff (same scripts KB-DELTA Step 6 already calls). |
 | Marker (depend) | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` | None here -- the `forward-authored` enum row is feature-003's edit; feature-005 only reads it. |
 | Concern model (reference) | `canonical/aid/templates/kb-authoring/concern-model.md` | None -- supplies the C0/C1/C3/C4/D classification used to concern-match. |

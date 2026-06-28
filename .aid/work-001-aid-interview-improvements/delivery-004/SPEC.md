@@ -42,11 +42,17 @@ new gate/freshness behavior to forward-authored docs only).
 
 ## Tasks
 
-{Filled by aid-detail.}
-
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-019 | IMPLEMENT | Forward-authored freshness short-circuit in kb-freshness-check.sh |
+| task-020 | DOCUMENT | Forward-authored marker schema row + lint/index pass-through notes |
+| task-021 | TEST | Marker fixture-through-three-scripts test + brownfield-intact regression |
+| task-022 | IMPLEMENT | Greenfield-mode parameterization block in document-expectations.md |
+| task-023 | IMPLEMENT | Thread greenfield review param + reconcile state-review.md panel exclusion |
+| task-024 | IMPLEMENT | Layered seed<->requirements coherence-check reference doc |
+| task-025 | IMPLEMENT | Seed-authoring state (aid-describe step) -- 5-element model + domain-adaptive shape + gate wiring |
+| task-026 | CONFIGURE | Full generator render + 5-profile/.claude propagation + DBI |
+| task-027 | TEST | Delivery-004 verification -- greenfield gate + zero-loopback sufficiency + coherence + brownfield-intact |
 
 ## Dependencies
 

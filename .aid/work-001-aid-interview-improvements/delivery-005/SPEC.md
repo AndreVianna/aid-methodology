@@ -27,6 +27,10 @@ a keep-only-in-scope filter, a concern-keyed structured diff at the seed's decla
 divergence classifier); the aid-housekeep KB-DELTA conformance lane that carves `source:
 forward-authored` docs OUT of the normal doc<-code update lane (the NFR-5-forbidden direction) into
 the flag-not-overwrite lane; and the human-gated reconciliation flow (authority stays design->code).
+Also includes the OPTIONAL discoverability **signpost** in `aid-execute`'s `state-delivery-gate.md`
+(a one-line "forward-authored design present -- run /aid-housekeep to check conformance" pointer; no
+mechanism) -- owner-added 2026-06-27 so the conformance check is discoverable right after a greenfield
+delivery builds code.
 
 **Out of scope:** the engine (delivery-003), the seed model (delivery-004 -- consumed here), the
 skill split (delivery-006). No change to brownfield code-is-truth docs or to f007 itself.
@@ -45,7 +49,14 @@ skill split (delivery-006). No change to brownfield code-is-truth docs or to f00
 
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-028 | IMPLEMENT | output_root dispatch parameter on the aid-discover extraction subagents |
+| task-029 | IMPLEMENT | Forward-authored carve in the aid-housekeep KB-DELTA review routing |
+| task-030 | IMPLEMENT | Extract-and-diff conformance sub-step + divergence classifier |
+| task-031 | IMPLEMENT | Human-gated flag-not-overwrite reconciliation flow |
+| task-035 | IMPLEMENT | Optional conformance signpost in aid-execute delivery-gate |
+| task-032 | CONFIGURE | Full generator render + 5-profile/.claude propagation + DBI |
+| task-033 | TEST | output_root parameter conformance verification -- shadow-write isolation + caller invariance |
+| task-034 | TEST | Conformance-lane verification -- flag-not-overwrite + NFR-5 carve + altitude tuning + brownfield-intact |
 
 ## Dependencies
 

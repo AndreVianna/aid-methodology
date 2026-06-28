@@ -135,3 +135,189 @@ task-007 = verify T4 catches a clip + wire suite (TEST, M4; depends on task-006)
 task-008 = record M1 publish-enablement deferral (DOCUMENT, M1) ·
 task-009 = grant aid-researcher web tools (CONFIGURE, R1; added 2026-06-27, owner direction).
 Five items are mutually independent (wave 1); only the M4 TEST waits on the M4 IMPLEMENT.
+
+### delivery-003 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-010 | — |
+| task-011 | — |
+| task-012 | — |
+| task-013 | task-010, task-011, task-012 |
+| task-014 | task-013 |
+| task-015 | task-013, task-014 |
+| task-016 | task-014, task-015 |
+| task-017 | task-016 |
+| task-018 | task-017 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-010, task-011, task-012 |
+
+```wave-map
+delivery: 003
+wave 1: task-010, task-011, task-012
+wave 2: task-013
+wave 3: task-014
+wave 4: task-015
+wave 5: task-016
+wave 6: task-017
+wave 7: task-018
+```
+
+task-010 = advisor-stance + NFR-7 envelope doc (IMPLEMENT) / task-011 = move-playbook doc (IMPLEMENT) /
+task-012 = calibration doc (IMPLEMENT) / task-013 = elicitation-engine driver doc (IMPLEMENT) /
+task-014 = in-place spine engine-wiring (IMPLEMENT) / task-015 = engine-driven guided triage in
+state-triage.md (IMPLEMENT) / task-016 = opener-seam de-dup in state-continue.md (IMPLEMENT) /
+task-017 = full generator render + 5-profile/.claude propagation (CONFIGURE) / task-018 = delivery-003
+verification: brownfield tests + dogfood-transcript review (TEST). The three engine component docs
+(010/011/012) are separate single-concern files with no inter-dependence, so they author in parallel
+(wave 1); the driver (013) integrates them; the rest is a genuine chain -- the spine wiring (014)
+needs the engine docs, triage (015) consumes the wired engine and shares state-triage.md with 014, the
+opener de-dup (016) reads the `**Opener:**` field 015 writes and the opener content 014 lands, the
+render (017) propagates all canonical edits once, and verification (018) runs after the render. The
+strict chain also honours PLAN risk #1 (no two tasks edit the same `canonical/skills/aid-interview/`
+file in parallel).
+
+### delivery-004 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-019 | — |
+| task-020 | — |
+| task-021 | task-019, task-020 |
+| task-022 | — |
+| task-023 | task-022 |
+| task-024 | — |
+| task-025 | task-020, task-023, task-024 |
+| task-026 | task-019, task-020, task-022, task-023, task-024, task-025 |
+| task-027 | task-026 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-019, task-020, task-022, task-024 |
+| task-021, task-023 |
+
+```wave-map
+delivery: 004
+wave 1: task-019, task-020, task-022, task-024
+wave 2: task-021, task-023
+wave 3: task-025
+wave 4: task-026
+wave 5: task-027
+```
+
+task-019 = forward-authored freshness short-circuit in `kb-freshness-check.sh` (IMPLEMENT) /
+task-020 = marker schema enum row + lint/index pass-through notes (DOCUMENT) /
+task-021 = marker fixture-through-three-scripts + brownfield-intact regression (TEST) /
+task-022 = greenfield-mode block in `document-expectations.md` (IMPLEMENT) /
+task-023 = thread `greenfield:` param through `reviewer-brief.md` + reconcile `state-review.md` panel
+exclusion (IMPLEMENT) / task-024 = layered coherence-check reference doc (IMPLEMENT) /
+task-025 = seed-authoring state (aid-describe step): 5-element model + domain-adaptive shape + gate
+wiring (IMPLEMENT) / task-026 = full generator render + 5-profile/.claude propagation + DBI (CONFIGURE) /
+task-027 = delivery-004 verification: greenfield gate A+ + zero-loopback sufficiency + coherence-block +
+brownfield-intact + §6 (TEST).
+
+Three independent lanes open in wave 1 on distinct files (no shared-file contention): the MARKER lane
+(019 `kb-freshness-check.sh` / 020 the schema + `lint-frontmatter.sh` + `build-kb-index.sh` -- disjoint
+from 019), the GATE lane (022 `document-expectations.md`), and the COHERENCE lane (024 a new
+`aid-interview/references` file). Wave 2 runs the marker TEST (021, after both marker edits) in parallel
+with the gate WIRING (023 `reviewer-brief.md` + `state-review.md`, after the gate block 022 it references).
+The seed-authoring state (025) integrates the marker schema (020, for the stamp), the gate wiring (023,
+which it invokes with `greenfield: true`), and the coherence doc (024, which it invokes), so it lands in
+wave 3. The single consolidated render (026) follows ALL canonical edits; verification (027) runs last.
+Shared-file discipline (PLAN risk #1) holds: `kb-freshness-check.sh`, the schema/lint/index trio,
+`document-expectations.md`, `reviewer-brief.md`+`state-review.md`, and the two new `aid-interview`
+reference files are each touched in exactly one wave, and no two tasks in any wave edit the same file.
+
+### delivery-005 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-028 | — |
+| task-029 | — |
+| task-035 | — |
+| task-030 | task-028, task-029 |
+| task-031 | task-030 |
+| task-032 | task-028, task-029, task-030, task-031, task-035 |
+| task-033 | task-032 |
+| task-034 | task-032 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| task-028, task-029, task-035 |
+| task-033, task-034 |
+
+```wave-map
+delivery: 005
+wave 1: task-028, task-029, task-035
+wave 2: task-030
+wave 3: task-031
+wave 4: task-032
+wave 5: task-033, task-034
+```
+
+task-028 = `output_root` dispatch parameter on the aid-discover extraction subagents (`agent-prompts.md` +
+`state-generate.md`; default preserves callers + the `.aid/generated/` side-output) (IMPLEMENT) /
+task-029 = forward-authored carve in `state-kb-delta.md` (route `source: forward-authored` OUT of the
+Tier-2 update-the-doc lane -- the NFR-5 carve) (IMPLEMENT) / task-030 = extract-and-diff conformance
+sub-step + classifier in `state-kb-delta.md` (scope-by-marker, shadow extraction via `output_root`,
+keep-only-in-scope filter, concern-keyed diff, 4-class classifier + altitude filter) (IMPLEMENT) /
+task-031 = human-gated flag-not-overwrite reconciliation flow in `state-kb-delta.md` (present-the-choice +
+Required Q&A; never auto-edit the seed) (IMPLEMENT) / task-035 = optional conformance signpost in
+`aid-execute/.../state-delivery-gate.md` (one-line "run /aid-housekeep to check conformance" pointer;
+no mechanism; owner-added 2026-06-27) (IMPLEMENT) / task-032 = full generator render + 5-profile/.claude
+propagation + DBI (CONFIGURE; after ALL canonical edits incl. 035) / task-033 = output_root verification: shadow-write isolation +
+default-caller invariance + generated-side-output preserved (TEST) / task-034 = conformance-lane
+verification: flag-not-overwrite + NFR-5 carve + altitude tuning + brownfield-intact + §6 (TEST).
+task-035 edits `state-delivery-gate.md` -- a file no other delivery-005 task touches, so it opens a
+third disjoint wave-1 lane; render (032) waits on it.
+
+### delivery-006 execution graph
+
+| Task | Depends On |
+|------|-----------|
+| task-036 | — |
+| task-037 | task-036 |
+| task-038 | task-037 |
+| task-039 | task-038 |
+| task-040 | task-039 |
+
+| Can Be Done In Parallel |
+|------------------------|
+| — |
+
+```wave-map
+delivery: 006
+wave 1: task-036
+wave 2: task-037
+wave 3: task-038
+wave 4: task-039
+wave 5: task-040
+```
+
+task-036 = re-derived blast-radius inventory + final `references/` partition against the THEN-current
+(post 002/003/004/005) tree (DOCUMENT) / task-037 = canonical carve `git mv aid-interview ->
+aid-describe` + create `aid-define`, partition the 6 define refs, author the two SKILL.md identities +
+State Detection/Dispatch tables, the inter-skill seam (redirect COMPLETION's existing pause signpost +
+writeback to `/aid-define`), the `state-done.md` hand-back, self-ref rewrite (IMPLEMENT) / task-038 =
+boundary-aware external skill-name sweep (agents, recipes+tooling, templates, other canonical skills,
+README, examples, dashboard 4 files, docs-site source incl. `gen-reference.mjs` SKILL_GROUPS split,
+legacy docs, tests) + the 13->14 count-increment surfaces (numeric AND spelled-out
+`Thirteen->Fourteen`) under the `aid-interviewer` substring guard (IMPLEMENT) / task-039 = FULL
+`run_generator.py` render of both new dirs byte-identically across the 5 profiles + `.claude` mirror,
+orphan-prune the old `aid-interview/` dir, rewrite the 5 `emission-manifest.jsonl` + the dogfood
+`.aid/.aid-manifest.json`, regenerate `skills.md` + sync the methodology copy (CONFIGURE) / task-040 =
+delivery-006 verification: DBI byte-identity both dirs, old dir pruned from every tree, zero stale
+`/aid-interview` tokens (scoped sweep), count surfaces +1 (numeric + spelled-out), `aid-interviewer`
+count unchanged vs the task-036 baseline, inter-skill seam, CI green incl. master-only heavy gates (TEST).
+
+This delivery is a structural git-mv + propagation, NOT a behavior change, and is **highly serial**: the
+inventory (036) feeds the canonical carve (037), which feeds the external sweep (038), which feeds the
+single consolidated render (039), then verification (040). Every task touches a downstream-dependent
+surface of the prior one (the carve sets the on-disk `canonical/skills/` listing the `gen-reference.mjs`
+skills-drift guard and the render both key on; the sweep's source edits feed the docs regen; the render's
+trees + manifests are what the DBI + orphan-prune checks read), so there is no safe parallelism -- the
+single-lane wave-map is the mechanically-derived consequence. PLAN risk #1 (shared `state-generate.md`
+with delivery-005) is honoured by the cross-delivery d005 -> d006 sequencing edge; within delivery-006
+`state-generate.md` is touched only by the task-038 name-sweep.

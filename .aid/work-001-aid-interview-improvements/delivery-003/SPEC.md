@@ -45,11 +45,17 @@ RENAME or directory restructure here -- this is purely behavioral, in place.
 
 ## Tasks
 
-{Filled by aid-detail.}
-
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-010 | IMPLEMENT | Advisor-stance + NFR-7 question-envelope reference doc |
+| task-011 | IMPLEMENT | Move-playbook reference doc (ten moves + gap-type firing table) |
+| task-012 | IMPLEMENT | Calibration reference doc (read+ask, depth-shaping) |
+| task-013 | IMPLEMENT | Elicitation-engine driver reference doc (opener + 5-step selector) |
+| task-014 | IMPLEMENT | In-place engine wiring of the aid-interview spine |
+| task-015 | IMPLEMENT | Engine-driven guided triage in state-triage.md |
+| task-016 | IMPLEMENT | Opener-seam de-dup in state-continue.md |
+| task-017 | CONFIGURE | Full generator render + 5-profile/.claude propagation |
+| task-018 | TEST | Delivery-003 verification -- brownfield tests + dogfood-transcript review |
 
 ## Dependencies
 
