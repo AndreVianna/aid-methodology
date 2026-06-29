@@ -8,7 +8,7 @@ sidebar:
 import { Steps } from '@astrojs/starlight/components';
 
 The **lite path** is AID's fast lane for small, well-scoped changes. It skips Specify, Plan, and
-Detail and goes straight from Interview to Execute — the same human-gated output, proportionate
+Detail and goes straight from Describe to Execute — the same human-gated output, proportionate
 overhead.
 
 You don't choose the lite path manually. `/aid-describe`'s TRIAGE reads the scope and risk of
@@ -34,7 +34,7 @@ output and request a re-route if you disagree.
 
 <Steps>
 
-1. **Run the Interview.**
+1. **Run `/aid-describe`.**
 
    In your AI tool, invoke:
 
@@ -46,7 +46,7 @@ output and request a re-route if you disagree.
 
 2. **TRIAGE classifies the work as lite.**
 
-   At the end of intake, TRIAGE confirms the lite routing and Interview emits a work-root
+   At the end of intake, TRIAGE confirms the lite routing and Describe emits a work-root
    `SPEC.md` with the task breakdown already included — no separate Specify, Plan, or Detail
    phase. Review it and approve.
 
@@ -70,7 +70,7 @@ output and request a re-route if you disagree.
 | | Lite path | Full path |
 |--|-----------|-----------|
 | Best for | Small, low-risk, well-bounded work | Complex, high-risk, or poorly understood work |
-| Phases | Interview → Execute | Discover → Interview → Specify → Plan → Detail → Execute |
+| Phases | Describe → Execute | Discover → Describe/Define → Specify → Plan → Detail → Execute |
 | Artifacts | work-root `SPEC.md` + task files | `REQUIREMENTS.md` + per-feature `SPEC.md` + `PLAN.md` + task files |
 | Gates | 2 (intake, execute review) | one per phase |
 | TRIAGE routing | Automatic | Automatic |

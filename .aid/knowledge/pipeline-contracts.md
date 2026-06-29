@@ -21,6 +21,7 @@ intent: |
   an artifact template, or any phase boundary.
 contracts: []
 changelog:
+  - 2026-06-28: Relabeled Phase 2 from "Interview" to "Describe → Define" throughout (Phase 2 label now "Describe → Define" in all prose).
   - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a + aid-define 2b); rewrote the Phase-2 state-machine model; added the greenfield forward-authoring entry + the conformance feedback; skill count 13 -> 14
   - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator lane)
 ---
@@ -58,7 +59,7 @@ server, is documented in [integration-map.md](integration-map.md).)
 ## How the Pipeline Works
 
 AID is a six-phase sequential pipeline with formal feedback loops. Each phase is a skill
-(a slash command resolving to a `SKILL.md` state machine); Phase 2 (Interview) is realized
+(a slash command resolving to a `SKILL.md` state machine); Phase 2 (Describe → Define) is realized
 by two chained skills, `aid-describe` (2a) and `aid-define` (2b). The human approves every
 phase transition — the pipeline never auto-advances. CONFIRMED: `docs/aid-methodology.md`
 ("## 1. The Pipeline", "Between phases, the human gives the OK to advance").

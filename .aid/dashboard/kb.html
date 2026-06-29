@@ -1131,7 +1131,7 @@ details.accord > summary:focus-visible,
 
 	<!-- 6-phase pipeline diagram -->
 	<div class="diagram-box" aria-label="AID 6-phase pipeline flow &mdash; click or press Enter to expand">
-		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 72" role="img" aria-label="AID 6-phase pipeline: Discover, Interview, Specify, Plan, Detail, Execute">
+		<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 72" role="img" aria-label="AID 6-phase pipeline: Discover, Describe to Define, Specify, Plan, Detail, Execute">
 			<defs>
 				<style>
 					.ph-box { fill: #EEF2F7; stroke: #E3E8EF; stroke-width: 1.5; rx: 6; }
@@ -1161,31 +1161,31 @@ details.accord > summary:focus-visible,
 				<rect class="ph-box ph-box-hi" x="8" y="20" width="78" height="32" rx="6"/>
 				<text class="ph-text ph-text-hi" x="47" y="36">Discover</text>
 				<line class="arrow" x1="86" y1="36" x2="98" y2="36"/>
-				<!-- Interview -->
-				<rect class="ph-box" x="100" y="20" width="82" height="32" rx="6"/>
-				<text class="ph-text" x="141" y="36">Interview</text>
-				<line class="arrow" x1="182" y1="36" x2="194" y2="36"/>
+				<!-- Describe / Define -->
+				<rect class="ph-box" x="100" y="20" width="150" height="32" rx="6"/>
+				<text class="ph-text" x="175" y="36">Describe &#8594; Define</text>
+				<line class="arrow" x1="250" y1="36" x2="262" y2="36"/>
 				<!-- Specify -->
-				<rect class="ph-box" x="196" y="20" width="72" height="32" rx="6"/>
-				<text class="ph-text" x="232" y="36">Specify</text>
-				<line class="arrow" x1="268" y1="36" x2="280" y2="36"/>
+				<rect class="ph-box" x="264" y="20" width="72" height="32" rx="6"/>
+				<text class="ph-text" x="300" y="36">Specify</text>
+				<line class="arrow" x1="336" y1="36" x2="348" y2="36"/>
 				<!-- Plan -->
-				<rect class="ph-box" x="282" y="20" width="56" height="32" rx="6"/>
-				<text class="ph-text" x="310" y="36">Plan</text>
-				<line class="arrow" x1="338" y1="36" x2="350" y2="36"/>
+				<rect class="ph-box" x="350" y="20" width="56" height="32" rx="6"/>
+				<text class="ph-text" x="378" y="36">Plan</text>
+				<line class="arrow" x1="406" y1="36" x2="418" y2="36"/>
 				<!-- Detail -->
-				<rect class="ph-box" x="352" y="20" width="62" height="32" rx="6"/>
-				<text class="ph-text" x="383" y="36">Detail</text>
-				<line class="arrow" x1="414" y1="36" x2="426" y2="36"/>
+				<rect class="ph-box" x="420" y="20" width="62" height="32" rx="6"/>
+				<text class="ph-text" x="451" y="36">Detail</text>
+				<line class="arrow" x1="482" y1="36" x2="494" y2="36"/>
 				<!-- Execute (knowledge-intensive) -->
-				<rect class="ph-box ph-box-hi" x="428" y="20" width="76" height="32" rx="6"/>
-				<text class="ph-text ph-text-hi" x="466" y="36">Execute</text>
+				<rect class="ph-box ph-box-hi" x="496" y="20" width="76" height="32" rx="6"/>
+				<text class="ph-text ph-text-hi" x="534" y="36">Execute</text>
 			</g>
 			<!-- Label -->
-			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#667085" x="528" y="32">Six numbered phases, left to right.</text>
-			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#007F7D" font-weight="600" x="528" y="48">Teal = knowledge-intensive phases.</text>
+			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#667085" x="596" y="32">Six numbered phases, left to right.</text>
+			<text font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="10" fill="#007F7D" font-weight="600" x="596" y="48">Teal = knowledge-intensive phases.</text>
 		</svg>
-		<p class="caption">AID 6-phase pipeline: Discover &#8594; Interview &#8594; Specify &#8594; Plan &#8594; Detail &#8594; Execute. Every phase transition requires human approval. (aid-config bootstraps before the pipeline; Deploy and Monitor are optional Deliver skills after it.)</p>
+		<p class="caption">AID 6-phase pipeline: Discover &#8594; Describe / Define &#8594; Specify &#8594; Plan &#8594; Detail &#8594; Execute. Every phase transition requires human approval. (aid-config bootstraps before the pipeline; Deploy and Monitor are optional Deliver skills after it.)</p>
 	</div>
 
 	<!-- Key numbers grid -->
@@ -1244,7 +1244,7 @@ details.accord > summary:focus-visible,
 
 		<div class="gloss-card" id="term-work">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-work">Work</a></div>
-			<p class="gloss-def">A self-contained unit of scope created by one Interview, living at <code>.aid/work-NNN-{slug}/</code>. Each Work owns its own requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base. The top-level pipeline scope container.</p>
+			<p class="gloss-def">A self-contained unit of scope created by one aid-describe run, living at <code>.aid/work-NNN-{slug}/</code>. Each Work owns its own requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base. The top-level pipeline scope container.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Relates to</span>
 				<span class="gloss-pill">Delivery</span>
@@ -1475,12 +1475,12 @@ details.accord > summary:focus-visible,
 
 		<div class="gloss-card" id="term-describe-define">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-describe-define">Describe / Define</a></div>
-			<p class="gloss-def">The two skills that together perform Phase 2 (Interview). <strong><code>aid-describe</code></strong> (Phase 2a) gathers requirements through the seasoned-analyst interview and runs TRIAGE; it produces the approved <code>REQUIREMENTS.md</code> on the full path (or a work-root <code>SPEC.md</code> + task hierarchy on the lite path), and on greenfield authors the forward-authored KB seed. <strong><code>aid-define</code></strong> (Phase 2b, full path only) decomposes the approved <code>REQUIREMENTS.md</code> into per-feature <code>SPEC.md</code> stubs, then cross-references them against the KB and codebase. This pair replaced the former single <code>aid-interview</code> skill.</p>
+			<p class="gloss-def">The two skills that together perform Phase 2 (Describe &#8594; Define). <strong><code>aid-describe</code></strong> (Phase 2a) gathers requirements through the seasoned-analyst interview and runs TRIAGE; it produces the approved <code>REQUIREMENTS.md</code> on the full path (or a work-root <code>SPEC.md</code> + task hierarchy on the lite path), and on greenfield authors the forward-authored KB seed. <strong><code>aid-define</code></strong> (Phase 2b, full path only) decomposes the approved <code>REQUIREMENTS.md</code> into per-feature <code>SPEC.md</code> stubs, then cross-references them against the KB and codebase. This pair replaced the former single <code>aid-interview</code> skill.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Aliases</span>
 				<span class="gloss-pill">aid-describe</span>
 				<span class="gloss-pill">aid-define</span>
-				<span class="gloss-pill">Interview split</span>
+				<span class="gloss-pill">Describe/Define</span>
 			</div>
 		</div>
 
@@ -1988,7 +1988,7 @@ details.accord > summary:focus-visible,
 
 	<!-- Pipeline skills -->
 	<h3 style="margin-top:0; margin-bottom:0.75rem;">Pipeline Skills &mdash; the lifecycle</h3>
-	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">10 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate. Phase 2 (Interview) is realized by two chained skills: <code>/aid-describe</code> (Phase 2a) and <code>/aid-define</code> (Phase 2b).</p>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">10 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate. Phase 2 (Describe &#8594; Define) is realized by two chained skills: <code>/aid-describe</code> (Phase 2a) and <code>/aid-define</code> (Phase 2b).</p>
 	<div class="cap-grid">
 		<div class="cap-card">
 			<span class="cap-kicker">Setup: Config (bootstrap)</span>
@@ -2930,14 +2930,14 @@ details.accord > summary:focus-visible,
 					<td>Review panel &rarr; grade &ge; minimum &rarr; human OK</td>
 				</tr>
 				<tr>
-					<td>Interview 2a: Describe</td>
+					<td>Phase 2a: Describe</td>
 					<td><code>/aid-describe</code></td>
 					<td>KB, work description (+ forward-authored KB seed for greenfield)</td>
 					<td>Approved <code>REQUIREMENTS.md</code> (full path) or Work SPEC + tasks (lite path); greenfield: KB seed docs</td>
 					<td>Human: requirements approved; grade &ge; minimum</td>
 				</tr>
 				<tr>
-					<td>Interview 2b: Define</td>
+					<td>Phase 2b: Define</td>
 					<td><code>/aid-define</code> (full path only)</td>
 					<td>Approved <code>REQUIREMENTS.md</code>, KB, codebase</td>
 					<td>Per-feature <code>SPEC.md</code> stubs in <code>features/</code>; cross-reference Q&amp;A</td>
@@ -2997,7 +2997,7 @@ details.accord > summary:focus-visible,
 			<p>Discovery findings require updating an existing KB document.</p>
 		</div>
 		<div class="card">
-			<div class="kicker">L2</div><h3>Interview &rarr; Discover</h3>
+			<div class="kicker">L2</div><h3>Describe/Define &rarr; Discover</h3>
 			<p>Q&amp;A reveals a KB gap; targeted update triggered before spec.</p>
 		</div>
 		<div class="card">
@@ -3033,7 +3033,7 @@ details.accord > summary:focus-visible,
 			<p>Release verification fails; delivery sent back for fixes.</p>
 		</div>
 		<div class="card">
-			<div class="kicker">L11</div><h3>Monitor &rarr; Interview</h3>
+			<div class="kicker">L11</div><h3>Monitor &rarr; Describe</h3>
 			<p>Production finding triggers a new Work via a new interview.</p>
 		</div>
 	</div>

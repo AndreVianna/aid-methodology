@@ -50,8 +50,8 @@ flowchart LR
 ```
 
 The diagram shows the canonical order. Greenfield projects skip Phase 1 (Discover) and
-go directly from Configure to Interview. The Deliver skills (deploy + monitor) are
-optional and loop findings back into Interview.
+go directly from Configure to Describe (Phase 2a). The Deliver skills (deploy + monitor) are
+optional and loop findings back into Describe.
 
 ## Step 0 — Configure (`/aid-config`)
 
@@ -89,7 +89,7 @@ patterns). State machine: GENERATE → REVIEW → … → DONE.
 
 <Aside type="note">
 **Greenfield projects skip this phase.** If you are starting a brand-new repository with
-no existing code, go directly to Phase 2 (Interview).
+no existing code, go directly to Phase 2 (Describe → Define).
 </Aside>
 
 <LinkCard
@@ -212,7 +212,7 @@ handle deployment through their existing CI/CD pipeline without `/aid-deploy` or
 ## Lite vs full path
 
 Not every project needs all six phases. For small, well-scoped work, `/aid-describe`'s
-TRIAGE routes down the **lite path** — Interview → Execute, **skipping Specify, Plan, and
+TRIAGE routes down the **lite path** — Describe → Execute, **skipping Specify, Plan, and
 Detail** — emitting a work-root `SPEC.md` with tasks directly. The
 [Methodology](/concepts/methodology) page explains when TRIAGE chooses the lite path and
 when the full pipeline pays off.

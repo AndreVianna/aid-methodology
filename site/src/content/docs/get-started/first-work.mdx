@@ -47,7 +47,7 @@ if you haven't done that yet.
 
 </Steps>
 
-## 2. Scope your work: Discover and Interview
+## 2. Scope your work: Discover and Describe
 
 <Steps>
 
@@ -62,7 +62,7 @@ if you haven't done that yet.
 
    Approve the DISCOVERY-SUMMARY before moving on.
 
-2. **Run the Interview skill.**
+2. **Run the Describe skill.**
 
    In your AI tool, invoke:
 
@@ -70,7 +70,7 @@ if you haven't done that yet.
    /aid-describe
    ```
 
-   The Interview opens in **TRIAGE** state. Answer the intake questions about your work item —
+   Describe opens in **TRIAGE** state. Answer the intake questions about your work item —
    what you want to change, what's in scope, and roughly how big it is.
 
 3. **TRIAGE routes your work.**
@@ -85,7 +85,7 @@ if you haven't done that yet.
 
 4. **Review the REQUIREMENTS document.**
 
-   At the end of Interview, the agent produces a `REQUIREMENTS.md` in `.aid/`. Read it, confirm
+   At the end of Describe, the agent produces a `REQUIREMENTS.md` in `.aid/`. Read it, confirm
    it captures your intent, and approve to advance.
 
 </Steps>
@@ -143,7 +143,7 @@ Each phase produces an artifact. Read it, approve it, and the next phase begins.
 | Phase | Artifact | Gate action |
 |-------|----------|-------------|
 | Discover | DISCOVERY-SUMMARY + Knowledge Base | Approve discovery |
-| Interview | `REQUIREMENTS.md` | Confirm requirements |
+| Describe | `REQUIREMENTS.md` | Confirm requirements |
 | Specify | `SPEC.md` | Approve spec |
 | Plan | `PLAN.md` | Approve plan |
 | Detail | Task files under `.aid/work-*/tasks/` | Approve each task |

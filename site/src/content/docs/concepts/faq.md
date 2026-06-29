@@ -17,7 +17,7 @@ Yes — and that's the point. Waterfall's phases were sound. Waterfall failed be
 
 ### Do I need all six phases?
 No. Use what applies:
-- **Greenfield project with clear requirements?** Skip Discover, start at Interview.
+- **Greenfield project with clear requirements?** Skip Discover, start at Describe.
 - **Quick bug fix or small change?** Run `/aid-describe` — TRIAGE will classify it and route you to the lite path automatically.
 - **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
 
@@ -110,7 +110,7 @@ Start with one delivery. Use the templates. See if the structure helps. Most tea
 ## The Lite Path
 
 ### What is the lite path?
-The lite path is a condensed workflow for small, well-scoped work that skips `aid-specify`, `aid-plan`, and `aid-detail`. When you run `/aid-describe`, it opens with a description-first TRIAGE: you describe the work in your own words, and the agent infers the work-type (one of `bug-fix`, `new-feature`, `refactor`) and the best-matching recipe, then confirms. If the work is small and single-target, Interview emits a work-root `SPEC.md` + `tasks/` directly and routes to `/aid-execute`.
+The lite path is a condensed workflow for small, well-scoped work that skips `aid-specify`, `aid-plan`, and `aid-detail`. When you run `/aid-describe`, it opens with a description-first TRIAGE: you describe the work in your own words, and the agent infers the work-type (one of `bug-fix`, `new-feature`, `refactor`) and the best-matching recipe, then confirms. If the work is small and single-target, Describe emits a work-root `SPEC.md` + `tasks/` directly and routes to `/aid-execute`.
 
 ### When should I use the lite path vs. the full path?
 TRIAGE decides automatically from your description — you don't choose. A confident, single-target match (one focused change, no new requirements gathering needed) routes to the lite path. An ambiguous, multi-target, or broad description (multiple features, design decisions to make, formal requirements and a delivery plan needed) routes to the full path. If you're not sure, just describe the work honestly and let TRIAGE route you — a lite work can also be escalated to full mid-flight if scope grows.

@@ -41,9 +41,9 @@ multi-profile CLI installer**. Its capabilities fall into four groups:
 
 ## Pipeline skills (the lifecycle)
 
-AID's pipeline is **six numbered phases** — Discover → Interview → Specify → Plan →
+AID's pipeline is **six numbered phases** — Discover → Describe/Define (2a/2b) → Specify → Plan →
 Detail → Execute. Each phase produces verifiable artifacts and passes a quality gate
-before the next begins; the user drives each by invoking its skill. The Interview phase
+before the next begins; the user drives each by invoking its skill. The Describe → Define phase
 is realized by **two skills run in sequence**: `/aid-describe` (Phase 2a, gather
 requirements) then `/aid-define` (Phase 2b, decompose into features). (Other lifecycle
 labels — Init, Implement, Review, Test, Track, Triage — are **not** numbered phases:
@@ -185,3 +185,4 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 |---------|------|--------|
 | 1.0 | 2026-06-25 | Initial generation during /aid-discover (domain hybrid:methodology-tooling+software-cli). |
 | 1.1 | 2026-06-28 | work-001-aid-interview-improvements: split `/aid-interview` into `/aid-describe` (2a) + `/aid-define` (2b); added seasoned-analyst elicitation engine (NFR-7), greenfield forward-authored KB seed, and build-conformance-check capabilities; skill count 13 → 14 (10 pipeline + 4 on-demand). |
+| 1.2 | 2026-06-28 | Relabeled Phase 2 from "Interview" to "Describe → Define"; pipeline sequence updated to Describe/Define (2a/2b). |
