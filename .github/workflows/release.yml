@@ -131,14 +131,10 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Cache the pinned Mermaid library
-        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .aid/knowledge/.cache/mermaid.min.js
-          key: mermaid-v11.15.0
-
-      - name: Pre-seed pinned Mermaid (SHA-verified; hermetic after first run)
-        run: bash canonical/aid/scripts/summarize/fetch-mermaid.sh
+      # NOTE: the old "Pre-seed pinned Mermaid" step was removed — the Mermaid
+      # runtime engine was dropped in 2f0372d7 (kb.html now ships pre-rendered
+      # inline SVG; the visual-fidelity gate uses Playwright). fetch-mermaid.sh no
+      # longer exists; test.yml's canonical-tests job has no Mermaid step either.
 
       - name: Make helper + test scripts executable
         run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
