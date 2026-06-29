@@ -177,6 +177,20 @@ assert_exit_zero "$RC" "VS08 real repo is in-sync at its VERSION (${REPO_VER}) �
 assert_output_contains "$OUT" "all carriers in sync" "VS08 real repo output confirms in-sync"
 
 # ---------------------------------------------------------------------------
+# VS08b  Self-derived repo root (NO --repo-root) — the EXACT release.yml gate path.
+# Regression guard: the gate calls the script WITHOUT --repo-root, so it must resolve
+# the repo root from its own location. A fixed `../../..` depth silently broke this
+# when the scripts moved canonical/scripts/ → canonical/aid/scripts/ (it landed on
+# canonical/ and failed "VERSION not found"), yet every fixture case above passed
+# because they all pass --repo-root. This case invokes the bare CI path.
+# ---------------------------------------------------------------------------
+OUT=""; RC=0
+( cd "${REPO_ROOT}" && bash "canonical/aid/scripts/release/check-version-sync.sh" --expect "${REPO_VER}" ) > "${TMP}/vs08b_out.txt" 2>&1 || RC=$?
+OUT="$(cat "${TMP}/vs08b_out.txt")"
+assert_exit_zero "$RC" "VS08b self-derived repo root (no --repo-root, CI gate path) → exit 0"
+assert_output_contains "$OUT" "all carriers in sync" "VS08b CI-path invocation finds VERSION and passes"
+
+# ---------------------------------------------------------------------------
 # WF01: release.yml is valid YAML
 # ---------------------------------------------------------------------------
 # Requires python3 AND the PyYAML module. A clean setup-python (e.g. the release.yml

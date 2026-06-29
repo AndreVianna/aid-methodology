@@ -54,7 +54,7 @@ channels. CONFIRMED in `project-structure.md` (search: "AID is polyglot by desig
 install through Bash and PowerShell hosts and ship via both npm and PyPI") and the parity
 suite `tests/canonical/test-aid-cli-parity.sh`.
 
-Product version: **1.1.1** (`VERSION`; npm and PyPI wrappers both at `1.1.1`). CONFIRMED in
+Product version: **2.0.0** (`VERSION`; npm and PyPI wrappers both at `2.0.0`). CONFIRMED in
 `VERSION`, `packages/npm/package.json` (search: `"version": "1.1.1"`),
 `packages/pypi/pyproject.toml` (search: `version = "1.1.1"`).
 
