@@ -23,14 +23,50 @@ audience: [developer, devops, product]
 
 ## Unreleased
 
-- [NEW] **`aid-describe` + `aid-define`** — `aid-interview` is split into two Phase 2 skills: `aid-describe` (Phase 2a, project description elicitation) and `aid-define` (Phase 2b, requirements definition); skill count rises from 13 to 14; `aid-interviewer` agent is unchanged.
-- [NEW] **Seasoned-analyst elicitation engine** — `aid-describe` uses a seasoned-analyst engine that generates a suggested answer with rationale for each interview question before asking it (NFR-7), enabling guided triage instead of open-ended elicitation.
-- [NEW] **Greenfield seed authoring** — `aid-describe` (its DESCRIBE-SEED state) writes forward-authored KB docs (frontmatter `source: forward-authored`) as the design contract for greenfield projects; these docs are authoritative and code must conform to them, not the reverse.
-- [NEW] **Build conformance check** — `aid-housekeep` gains a Conformance Lane in KB-DELTA: a code->design shadow extraction that flags design<->as-built divergence for human reconciliation (flag-not-overwrite; design is authoritative; never auto-applies as-built). Backed by three new canonical test suites: `test-output-root-isolation.sh`, `test-conformance-lane-semantics.sh`, `test-kb-forward-authored-marker.sh`.
-- [CHANGE] Codex profile now installs exclusively under `.codex/` — the former `.agents/` split root is retired; all Codex agents, skills, and AID-own files live under the unified `.codex/{agents,skills,aid}` tree (work-005 FR2).
-- [CHANGE] All five host tools now use a uniform `{agents,skills,aid}` layout under their own root (`.claude/`, `.cursor/`, `.codex/`, `.github/`, `.agent/`) — agent format branches collapsed to uniform markdown; Codex TOML branch retained dormant pending E-CODEX-1 verification (work-005 FR1/FR4).
-- [CHANGE] Profile generator simplified from 13 Python files to 7 — tool-specific emitter scripts replaced by a single copy-based generator that renders profiles via file-level copy + minimal path substitution, with no per-tool branching logic outside the profiles themselves (work-005 FR1/FR5/FR6).
-- [CHANGE] `aid update` now replaces a profile's managed files atomically in a single pass and removes stale files left by previous versions — ensures a clean, complete layout after every update with no orphaned tool files from older generator shapes (work-005 FR7).
+_Nothing yet._
+
+## v2.0.0 - 2026-06-28
+
+> **Major release.** Breaking changes to the skill commands and the install layout (see [Migration to v2.0.0](#migration-to-v200)). The `.aid/` project-state format is unchanged — there is **no data migration**.
+
+- [NEW] **`aid-describe` + `aid-define`** — **Breaking:** `aid-interview` is split into two Phase 2 skills: `aid-describe` (Phase 2a — conversational requirements gathering driven by the seasoned-analyst engine, the lite path, and the greenfield DESCRIBE-SEED state) and `aid-define` (Phase 2b — feature decomposition + KB cross-reference from approved requirements); skill count rises from 13 to 14; the `aid-interviewer` agent is unchanged.
+- [NEW] **Seasoned-analyst elicitation engine** — `aid-describe` generates a suggested answer with rationale for each interview question before asking it (NFR-7), enabling guided triage over open-ended elicitation; anti-anchoring guards (calibration-gated open-first, whole-picture read-back, verbatim wording) prevent premature convergence.
+- [NEW] **Greenfield seed authoring** — `aid-describe` (its DESCRIBE-SEED state) forward-authors KB docs (frontmatter `source: forward-authored`) as the design contract for greenfield projects; these docs are authoritative and code conforms to them, not the reverse.
+- [NEW] **Build conformance check** — `aid-housekeep` gains a Conformance Lane in KB-DELTA: a code→design shadow extraction that flags design↔as-built divergence for human reconciliation (flag-not-overwrite; design authoritative; never auto-applies as-built). Backed by three new canonical suites: `test-output-root-isolation.sh`, `test-conformance-lane-semantics.sh`, `test-kb-forward-authored-marker.sh`.
+- [NEW] **`aid-update-kb`** — new on-demand, off-pipeline skill that applies a described, targeted KB delta through the same review/approval gate as `aid-discover`; human-gated (no auto-apply), transient run-state in `.aid/.temp/`.
+- [NEW] **Domain-driven Knowledge Base** — KB docs now carry structured frontmatter (`kb-category`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) across the standard doc types; `lint-frontmatter.sh` validates conformance and the non-destructive `migrate-kb-frontmatter.sh` (propose/apply, degrade-safe) migrates existing KBs.
+- [NEW] **KB INDEX routing table** — `INDEX.md` emits a routing table (doc → category → concern → audience → confidence → summary) instead of a flat list; doc names link to their in-page `kb.html` sections.
+- [NEW] **`aid-discover` completeness gates** — two pre-GENERATE checks: term-closure (every coined term is closed against the KB or a user-confirmed exclusion; discovery never finishes with an open Q&A) and operational act-back (the reviewer verifies the KB actually guides a representative task).
+- [NEW] **`aid-discover` dual-intent self-evaluation** — before the GENERATE gate, two blind self-evals run: Intent-1 (blind work-simulation from the KB alone) and Intent-2 (blind glossary reconstruction + source confrontation); both must pass.
+- [NEW] **Per-document dashboard freshness** — the dashboard KB card shows a per-document suspect marker for each stale KB file, replacing the single overall "Outdated" flag.
+- [NEW] **Redesigned `kb.html`** — the KB visual summary is rebuilt as a newcomer-facing product: diagrams pre-rendered as inline SVG at generation time (the Mermaid runtime engine is removed — faster load, no external dependency), light/dark themes at WCAG-AA contrast, click-to-expand lightbox, concept-spine narrative, and a visual-fidelity gate.
+- [NEW] **Export buttons on `kb.html`** — "Export as Markdown" (a self-contained file from a generation-time base64 payload; works offline) and "Export as PDF" (print-optimized CSS; dark theme preserved).
+- [NEW] **Diagram-content gate** — a manifest + `validate-diagram-content.mjs` assert each `kb.html` diagram contains its required labels and no stale tokens (phase names, skill/agent/profile counts); wired into `aid-summarize` VALIDATE and a canonical suite, with `docs/diagram-content-reference.md` as the human content contract.
+- [CHANGE] **Breaking:** Codex installs exclusively under `.codex/` — the former `.agents/` split root is retired; all Codex agents, skills, and AID-owned files live under the unified `.codex/{agents,skills,aid}` tree.
+- [CHANGE] **Breaking:** all five host tools use a uniform `{agents,skills,aid}` layout under their own root (`.claude/`, `.cursor/`, `.codex/`, `.github/`, `.agent/`); `aid update` migrates an upgraded project to the new structure and prunes old files.
+- [CHANGE] **Breaking:** `aid-ask` renamed to `aid-query-kb` — behavior preserved; unanswerable queries now also log a Query-Gap to the relevant work `STATE.md` so knowledge gaps feed back into the KB loop.
+- [CHANGE] Profile generator simplified from 13 Python files to 7 — a single copy-based generator replaces the per-tool emitter scripts (no per-tool branching outside the profiles).
+- [CHANGE] `aid update` replaces a profile's managed files atomically in a single pass and removes stale files left by previous versions; `--dry-run` previews the planned deletions.
+- [CHANGE] Phase 2 is labeled **"Describe → Define"** across the methodology, KB, site, and the `kb.html` pipeline diagram (resolving the prior `2·Interview` / `2·Define` inconsistency).
+- [CHANGE] `aid-discover` defers all ambiguities to the user — any unclear term, discrepancy, classification, or exclusion generates a Q&A entry and waits for explicit resolution; nothing is resolved silently.
+- [CHANGE] `aid-reviewer` gains source-authority + cross-reference reconciliation checks (e.g. flags an instruction file treated as an authoritative spec); enforced at the `aid-discover` REVIEW gate.
+- [CHANGE] `aid-summarize` generates a doc-set-driven KB summary — sections derive from the resolved doc-set and concern model; concept-spine narrative; newcomer tone.
+- [FIX] KB pipeline phase model corrected everywhere — a from-zero `aid-discover` run had grounded on a stale instruction file and propagated a bogus "12-phase pipeline"; the authoritative model (six numbered phases Discover → Execute; `aid-config` bootstrap; Deploy/Monitor optional Deliver) is now enforced across the KB, diagrams, and `kb.html`.
+- [FIX] Multi-tool distribution diagram corrected — all three channels (curl/irm, npm, PyPI) are shown as equivalent paths to the same content, not per-profile.
+- [FIX] `kb.html` dark-mode contrast fixed for the Architecture and Module-Map diagrams (WCAG AA in both themes).
+- [FIX] `kb.html` Markdown-export payload now survives the canonical assemble pipeline (it was dropped on regeneration through `assemble.sh`).
+- [FIX] Windows PowerShell 5.1 compatibility restored in all shipped scripts (TLS 1.2 enforcement, `-Encoding utf8NoBOM`, three-arg `Join-Path`); guarded by an AST lint and a 5.1 CI lane.
+- [FIX] `aid-config` rejects `kb_baseline` as an unknown key — it is producer-written (by `aid-discover` / `aid-housekeep`), not user-editable.
+- [FIX] Release version-sync gate fixed — `check-version-sync.sh` resolved the repo root at a fixed depth that broke when the scripts moved under `canonical/aid/scripts/` (it landed on `canonical/` and could not find `VERSION`); it now walks up to the `VERSION` file (location-independent), with a regression test exercising the bare CI invocation.
+
+### Migration to v2.0.0
+
+`aid update` **is** the migration — idempotent and self-cleaning; no manual file steps and no data migration.
+
+- **Skill renames** (`/aid-interview` → `/aid-describe` + `/aid-define`; `/aid-ask` → `/aid-query-kb`): `aid update` prunes the old skill directories (aid-prefixed, absent from the new manifest) and installs the new ones; the `CLAUDE.md` / `AGENTS.md` AID-managed region is rewritten in place.
+- **Install layout** (`.agents/` → `.codex/`, uniform `{agents,skills,aid}`): handled by `aid update` (atomic replace + prune) and `aid update self` for all registered projects; also runs lazily on the next `aid` command after a pip/pipx upgrade.
+- **In-flight Phase-2 work resumes** under the new skills — a mid-interview work continues with `/aid-describe`; an approved work hands off to `/aid-define`. The `.aid/` format is unchanged (the STATE.md `Phase` enum stays compatible), so existing works and KB are untouched.
+- **Existing KBs (optional, non-destructive):** to adopt the new domain-driven frontmatter (lighting up the doc-set-driven summary, INDEX routing, and per-doc freshness), run `migrate-kb-frontmatter.sh` (or `/aid-housekeep`), then `/aid-summarize` to refresh `kb.html`. Old KBs keep working without this (graceful fallback). **Never reset/rebuild the KB.**
 
 ## v1.1.1 - 2026-06-19
 

@@ -66,10 +66,16 @@ done
 # Resolve repo root
 # ---------------------------------------------------------------------------
 if [[ -z "$REPO_ROOT" ]]; then
-    # This script lives at canonical/scripts/release/check-version-sync.sh
-    # -> grandparent of the script dir is the repo root.
+    # Resolve the repo root by walking up from the script dir to the directory
+    # that holds the VERSION file. This is robust to where under the tree the
+    # script lives (a fixed `../../..` depth silently broke when the scripts moved
+    # from canonical/scripts/ to canonical/aid/scripts/ — no ancestor between the
+    # script and the repo root carries a VERSION file, so the walk-up is safe).
     SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-    REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
+    REPO_ROOT="$SCRIPT_DIR"
+    while [[ "$REPO_ROOT" != "/" && ! -f "${REPO_ROOT}/VERSION" ]]; do
+        REPO_ROOT="$(dirname "$REPO_ROOT")"
+    done
 fi
 
 if [[ ! -f "${REPO_ROOT}/VERSION" ]]; then
