@@ -1874,12 +1874,19 @@ function Uninstall-AidTool {
     # Remove this tool from manifest.
     Remove-ManifestTool -ManifestPath $ManifestPath -Tool $Tool
 
-    # If no manifest remains, remove version marker and .aid dir if empty.
+    # If no manifest remains (last tool removed), remove the AID-provisioned
+    # project files so a full uninstall leaves .aid/ clean (work-007).
     if (-not (Test-Path $ManifestPath -PathType Leaf)) {
         $aidMetaDir = [System.IO.Path]::GetDirectoryName($ManifestPath)
         $versionMarker = Join-Path $aidMetaDir '.aid-version'
         if (Test-Path $versionMarker -PathType Leaf) {
             Remove-Item -LiteralPath $versionMarker -Force
+        }
+        # Remove the install-time-seeded settings.yml (symmetric with the seed).
+        # Only fires when NO tools remain; a partial uninstall keeps it.
+        $seededSettings = Join-Path $aidMetaDir 'settings.yml'
+        if (Test-Path $seededSettings -PathType Leaf) {
+            Remove-Item -LiteralPath $seededSettings -Force
         }
         if (Test-Path $aidMetaDir -PathType Container) {
             $rem = Get-ChildItem -LiteralPath $aidMetaDir -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1

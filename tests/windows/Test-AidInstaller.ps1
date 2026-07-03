@@ -637,10 +637,10 @@ Assert-DirExists (Join-Path $ProjT16 '.claude') 'T16-pre .claude/ present before
 Run-Install @('-Uninstall', '-Tool', 'claude-code', '-TargetDirectory', $ProjT16)
 Assert-Eq "$($script:_LastRC)" '0' 'T16a uninstall -> exit 0'
 Assert-DirGone (Join-Path $ProjT16 '.claude') 'T16b .claude/ gone after uninstall'
-# .aid/ PERSISTS: settings.yml (user config seeded by install) is not manifest-
-# tracked and is intentionally preserved across uninstall (like npm/apt config).
-Assert-DirExists (Join-Path $ProjT16 '.aid') 'T16c .aid/ preserved after uninstall (holds user settings.yml)'
-Assert-FileExists (Join-Path (Join-Path $ProjT16 '.aid') 'settings.yml') 'T16c2 .aid/settings.yml preserved after uninstall'
+# .aid/ removed on full uninstall: the install-time-seeded settings.yml is
+# removed symmetrically (Uninstall-AidTool), so nothing keeps .aid/ alive.
+Assert-DirGone (Join-Path $ProjT16 '.aid') 'T16c .aid/ gone after full uninstall'
+Assert (-not (Test-Path (Join-Path (Join-Path $ProjT16 '.aid') 'settings.yml'))) 'T16c2 seeded settings.yml removed on full uninstall' 'settings.yml must be gone'
 Write-Host ""
 
 # ===========================================================================

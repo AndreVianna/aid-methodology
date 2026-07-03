@@ -2331,14 +2331,17 @@ uninstall_tool() {
     # Remove this tool from manifest.
     manifest_remove_tool "$manifest" "$tool"
 
-    # If no manifest remains, remove the .aid version marker too.
+    # If no manifest remains (last tool removed), remove the AID-provisioned
+    # project files so a full uninstall leaves .aid/ clean (work-007).
     if [[ ! -f "$manifest" ]]; then
-        local version_marker
-        version_marker="$(dirname "$manifest")/.aid-version"
-        rm -f "$version_marker"
-        # Remove .aid dir if empty.
         local aid_meta_dir
         aid_meta_dir="$(dirname "$manifest")"
+        rm -f "${aid_meta_dir}/.aid-version"
+        # Remove the install-time-seeded settings.yml (symmetric with seed_settings_yml).
+        # Only fires when NO tools remain -- a partial uninstall keeps settings.yml
+        # for the remaining tools.
+        rm -f "${aid_meta_dir}/settings.yml"
+        # Remove .aid dir if empty.
         if [[ -d "$aid_meta_dir" ]]; then
             local rem
             rem="$(find "$aid_meta_dir" -type f 2>/dev/null | head -1)"
