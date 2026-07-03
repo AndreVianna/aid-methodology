@@ -1,7 +1,7 @@
 # Work State -- work-007-installer-add-update-fixes
 
-> **State:** Executing
-> **Phase:** Execute
+> **State:** PR open — CI green, awaiting merge + v2.0.1 tag
+> **Phase:** Execute (ship-pending)
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-03
 > **User Approved:** yes
@@ -238,3 +238,5 @@ all pass, render-drift (run_generator + git diff) clean, bash -n + PS parse clea
 |------|------------------------|-------|-------|
 | 2026-07-03 | Work created | -- | Lite bug-fix; scoped from diagnosis of old-repo upgrade |
 | 2026-07-03 | Execute — 3 installer fixes + phase-line + aid-init + README cleanup | -- | copy overwrite-on-diff, settings seed (stamped), gitignore region; all validated (bash 36 / PS parity / byte-identical) |
+| 2026-07-03 | PR #117 opened (work-007 → master) | -- | AndreVianna account; both Copilot inline comments answered (.aid/.aid-version + .aid-manifest.json bumped to 2.0.1 in f860cb44) |
+| 2026-07-03 | CI fully green on PR #117 | -- | All gates pass: GitGuardian, KB+repo hygiene, build, generator self-tests, render-drift, visual-fidelity, installer/CLI (ubuntu 8m19s + windows 5m21s), canonical helper suites (12m11s). Only `deploy (Pages)` skips (merge-only). Ready to merge + tag v2.0.1. |
