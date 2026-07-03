@@ -359,7 +359,7 @@ stateDiagram-v2
 |-------|-------------|
 | **LOAD** | Parse each profile TOML; load the previous emission manifest (if any). |
 | **VALIDATE** | Confirm canonical completeness — the full skill and agent set (14 skills, 9 agents) and non-empty templates. |
-| **RENDER** | Run the three renderers (`render_agents.py`, `render_skills.py`, `render_templates.py`) per profile; write the emission manifest; run the deletion pass (live mode only). |
+| **RENDER** | Run `run_generator.py`, which renders every profile from canonical via the `render.py` core, writes each emission manifest, and runs the deletion pass. |
 | **VERIFY** | Hard-gate: byte-identical re-render check + presence audit + frontmatter parse. Advisory: conformance check (always exits 0; surfaces warnings in REPORT). |
 | **REPORT** | Print a summary: profiles rendered, files emitted/deleted per profile, verify results, `git diff --stat`. |
 
@@ -411,10 +411,10 @@ files inside install trees are never touched.
 </Steps>
 
 <Aside type="tip">
-**Always run the full `run_generator.py`, not individual renderer scripts.** Running a
-single renderer (e.g. `render_skills.py` directly) leaves the emission manifest stale,
-which causes the render-drift CI check to fail. The full generator updates manifests and
-runs the deletion pass atomically.
+**Always regenerate via `run_generator.py`.** It is the single entry point: it renders
+every profile through the `render.py` core, updates each emission manifest, and runs the
+deletion pass atomically. Calling the lower-level `render.py` directly (outside its
+`--self-test`) would leave the manifests stale and fail the render-drift CI check.
 </Aside>
 
 ### Regenerate one tree or dry-run

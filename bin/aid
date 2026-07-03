@@ -95,6 +95,10 @@ _aid_is_project_dir() {
 # C1: Per-repo format stamp constant.
 # The current .aid/ layout version.  Bumped ONLY on a breaking layout change,
 # never on every CLI release.  Defined exactly once; all comparisons read this.
+# NOTE (work-007 C6): the install-time settings seed also stamps this value.
+# On a bump, update ALL carriers together: this line, bin/aid.ps1
+# AidSupportedFormat, and lib/AidInstallCore.psm1 $script:_AidSupportedFormat.
+# (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-1}.)
 # ---------------------------------------------------------------------------
 readonly AID_SUPPORTED_FORMAT=1
 

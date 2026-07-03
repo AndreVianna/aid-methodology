@@ -30,7 +30,7 @@ This project uses the [AID methodology](https://github.com/AndreVianna/aid-metho
 ## Workflow
 
 - Every change should be traceable to a task or requirement.
-- Follow the current phase: Init → Discover → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy → Track → Triage.
+- Follow the current numbered phase: Discover → Describe → Define → Specify → Plan → Detail → Execute. `aid-config` bootstraps before the pipeline; Deploy and Monitor are optional Deliver skills after it.
 - Produce verifiable artifacts at each phase.
 - Quality gates must pass before proceeding.
 

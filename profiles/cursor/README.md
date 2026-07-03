@@ -1,17 +1,22 @@
 # AID for Cursor
 
-Use the `setup.sh` (or `setup.ps1` on Windows) script at the repo root to install AID into your project, or copy manually:
+Install the persistent `aid` CLI once per machine, then add this profile inside your project:
 
 ## Setup
 
 ```bash
-# Automated (recommended)
-path/to/aid-methodology/setup.sh /path/to/your/project
+# 1. Bootstrap the aid CLI (once per machine)
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 
-# Manual
-cp -r path/to/aid-methodology/profiles/cursor/.cursor  .cursor/
-cp path/to/aid-methodology/cursor/AGENTS.md   AGENTS.md
+# 2. Add the profile inside your project
+aid add cursor
+
+# Manual copy alternative (from a repo checkout)
+cp -r path/to/aid-methodology/profiles/cursor/.cursor    .cursor/
+cp    path/to/aid-methodology/profiles/cursor/AGENTS.md   AGENTS.md
 ```
+
+See the repo README for npm / pipx / offline install options.
 
 This gives you:
 - `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (14 skills: 11 across five pipeline groups + 3 off-pipeline on-demand)
@@ -33,41 +38,43 @@ This gives you:
 | aid-tech-writer | `.cursor/agents/aid-tech-writer.md` | sonnet | User-facing documentation, API docs, changelogs |
 | aid-clerk | `.cursor/agents/aid-clerk.md` | haiku | Mechanical utility: extract, format, or glob (operation parameter) |
 
-`aid-researcher` is dispatched by `aid-discover` with a parameterized doc-set (pre-scan, architecture, analyst, integrator, quality) and by `aid-execute` for RESEARCH-typed tasks. A bash pre-pass (`templates/scripts/build-project-index.sh`) runs before the parameterized dispatches to emit `project-index.md` — a shared file inventory that eliminates duplicated `find`/`wc` work.
+`aid-researcher` is dispatched by `aid-discover` with a parameterized doc-set (pre-scan, architecture, analyst, integrator, quality) and by `aid-execute` for RESEARCH-typed tasks. A bash pre-pass (`.cursor/aid/scripts/kb/build-project-index.sh`) runs before the parameterized dispatches to emit `project-index.md` — a shared file inventory that eliminates duplicated `find`/`wc` work.
 
 ## Skills
 
-14 skills total: the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base; plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. See [`.cursor/skills/aid-README.md`](.cursor/skills/aid-README.md) for the full list.
+14 skills total: the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base; plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. Each skill lives in `.cursor/skills/aid-<name>/SKILL.md`.
 
 | Skill | Phase | Description |
 |-------|-------|-------------|
-| `aid-init` | Init | Initialize AID project — scaffold .aid/knowledge/ (16 KB templates), set up AGENTS.md |
-| `aid-discover` | Discovery | Brownfield project discovery with quality gate (GENERATE → REVIEW → FIX → DONE) |
-| `aid-describe` | Describe | Adaptive requirements gathering (seasoned-analyst engine) → `REQUIREMENTS.md` |
-| `aid-define` | Define | Decompose approved requirements into features + cross-reference |
+| `aid-config` | Bootstrap | View/update AID pipeline settings; first run scaffolds `.aid/settings.yml` |
+| `aid-discover` | Discover | Brownfield project discovery with quality gate (GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE) |
+| `aid-describe` | Describe (2a) | Adaptive requirements gathering (seasoned-analyst engine) → `REQUIREMENTS.md` |
+| `aid-define` | Define (2b) | Decompose approved requirements into features + cross-reference |
 | `aid-specify` | Specify | Requirements → formal `SPEC.md` grounded in KB |
 | `aid-plan` | Plan | High-level roadmap → `PLAN.md` (MVP, modules, deliverables) |
 | `aid-detail` | Detail | Decompose plan → user stories, `task-NNN.md` files, execution waves |
-| `aid-execute` | Implement | Type-aware execution with built-in review loop; agent picked by task type |
-| `aid-deploy` | Deploy | Final verification, PR creation, delivery summary, KB updates |
-| `aid-monitor` | Track | Production telemetry interpretation → `MONITOR-STATE.md` |
-| `aid-summarize` | Optional (post-discovery) | Generate single-file `knowledge-summary.html` from KB |
+| `aid-execute` | Execute | Type-aware execution with built-in review loop; agent picked by task type |
+| `aid-deploy` | Deploy (optional) | Final verification, PR creation, delivery summary, KB updates |
+| `aid-monitor` | Monitor (optional) | Observe production, classify findings, and route actions |
+| `aid-summarize` | Optional (post-discovery) | Generate single-file `kb.html` from KB |
 
 Notable mechanisms:
 - **aid-execute** picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading.
-- **aid-discover** runs `build-project-index.sh` as a pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel.
+- **aid-discover** runs `.cursor/aid/scripts/kb/build-project-index.sh` as a pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel.
 
 ### Phase Flow
 
 ```
-Discovery → Interview → Specify → Plan → Detail → Implement → Review → Test → Deploy → Track → Triage
-    ↑                                                                                          │
-    └──────────────────────── feedback loops (Q&A entries, IMPEDIMENT.md) ──────────────────────────┘
+aid-config (bootstrap)
+   → Discover → Describe (2a) → Define (2b) → Specify → Plan → Detail → Execute
+   → optional Deliver: Deploy · Monitor
+   ↑
+   └── feedback loops: Q&A entries, IMPEDIMENT.md
 ```
 
 ## Usage
 
-1. Run `setup.sh` to install into your project
+1. Run `aid add cursor` to install into your project
 2. Edit `AGENTS.md` with your project description, build commands, and conventions
 3. Run Discovery: tell Cursor "run aid-discover" to generate the Knowledge Base
 4. Invoke phase skills as needed: "run aid-describe", "run aid-execute", etc.
@@ -90,6 +97,6 @@ Agent files define specialized roles with constrained tool access and focused sy
 
 - Cursor also reads skills from `.claude/skills/` and `.codex/skills/` — cross-tool compatible
 - Cursor does not use `CLAUDE.md` — all project context goes into `AGENTS.md`
-- Templates and scripts live in the repo's `templates/` directory — reference them from your project
-- The grading script (`templates/scripts/grade.sh`) is deterministic — same issue list always produces the same grade
-- Human-readable agent and phase documentation lives in the repo's `agents/` and `skills/` directories
+- Templates install to `.cursor/aid/templates/` and bash helpers to `.cursor/aid/scripts/`
+- The grading script (`.cursor/aid/scripts/grade.sh`) is deterministic — same issue list always produces the same grade
+- Authoring sources live in the methodology repo under `canonical/agents/` and `canonical/skills/`

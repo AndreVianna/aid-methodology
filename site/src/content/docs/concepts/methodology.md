@@ -358,7 +358,7 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-detail` | Map | 5 | Typed, PR-sized `task-NNN.md` files + execution graph |
 | `aid-execute` | Execute | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
 | `aid-deploy` | Deliver | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
-| `aid-monitor` | Deliver | — (optional) | `MONITOR-STATE.md` · classified findings → Describe (bugs or CRs) |
+| `aid-monitor` | Deliver | — (optional) | classified findings → Describe (bugs or CRs); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
 | `aid-housekeep` | Off-pipeline | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
 
 AID organizes six numbered development phases into five groups. The six phases (Discover through Execute) form the mandatory sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required sequential phases. The pipeline is linear with feedback loops.
@@ -751,7 +751,7 @@ This mirrors `aid-summarize` — an optional skill in the Prepare group — and 
 
 **The short path:** BUG → aid-describe (LITE-BUG-FIX triage → task) → aid-execute. The short path skips specification and planning because the spec is already correct — only the code is wrong.
 
-**Output:** `MONITOR-STATE.md` — a last-run log, active findings (each with classification, severity, evidence, and routing), and resolved findings.
+**Output:** an in-memory observation log — a last-run summary, active findings (each with classification, severity, evidence, and routing), and resolved findings. A persistent per-work `MONITOR-STATE.md` is deferred until the Monitor area matures.
 
 ---
 
@@ -917,7 +917,7 @@ flowchart TB
     Any -. "targeted re-discovery" .-> D
 ```
 
-*Eleven formal feedback loops — eight within development, two from production back to development, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or a MONITOR-STATE finding.*
+*Eleven formal feedback loops — eight within development, two from production back to development, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or an aid-monitor finding.*
 
 The development pipeline (Discover through Execute) is sequential by default; the optional Deliver-group skills (Deploy, Monitor) run on demand at the end. But real engineering is not linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
 
@@ -1038,7 +1038,7 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
 | DEPLOYMENT-STATE.md | `.aid/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
-| MONITOR-STATE.md | `.aid/{work}/` | Monitor | Execute (bugs), Discover (CRs) | Living — observation log across runs |
+| MONITOR-STATE.md _(deferred)_ | `.aid/{work}/` | Monitor | Execute (bugs), Discover (CRs) | Planned — currently an in-memory observation log across runs |
 | KB-DELTA Q&A entry | `.aid/knowledge/STATE.md` | aid-housekeep | aid-discover (targeted re-discovery) | Appended by housekeep; resolved by next targeted discovery run |
 
 Within Execute, the reviewer produces a structured issue list that `canonical/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the work-area `STATE.md`. There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.
@@ -1186,7 +1186,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 |-------|-------|--------|------|
 ```
 
-**MONITOR-STATE.md template:**
+**MONITOR-STATE.md template (deferred — the planned shape; the Monitor run currently keeps this in-memory):**
 
 ```markdown
 # Monitor State

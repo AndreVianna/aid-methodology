@@ -18,7 +18,8 @@ Combines telemetry interpretation with triage into a single observe → classify
 
 | Artifact | Location | Purpose |
 |----------|----------|---------|
-| `MONITOR-STATE.md` | `.aid/{work}/` | Observation log, finding statuses, run history |
+| in-memory monitor context | (run-scoped) | Observation log, finding statuses, run history |
+| `MONITOR-STATE.md` _(deferred)_ | `.aid/{work}/` | Planned persistent observation log — deferred until the Monitor area matures |
 
 ## Routing
 
