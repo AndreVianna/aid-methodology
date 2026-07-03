@@ -121,6 +121,7 @@
 {"dst": ".codex/aid/templates/kb-authoring/principles.md", "profile": "codex", "sha256": "c51e998d1cfae3777a054dc61ef601b8fe7e80b26432ef508fad53a7ec0bc93f", "src": "canonical/templates/kb-authoring/principles.md"}
 {"dst": ".codex/aid/templates/kb-authoring/review-rubric.md", "profile": "codex", "sha256": "0d933d62d65a0e5cc5d0b077973465e71031cbc9aa9476a3e8fad70bf044bccd", "src": "canonical/templates/kb-authoring/review-rubric.md"}
 {"dst": ".codex/aid/templates/kb-authoring/tier-model.md", "profile": "codex", "sha256": "e858a0963bb224d7283532550c8bfb6a514afa4a893ca072d11fe06f4feaca14", "src": "canonical/templates/kb-authoring/tier-model.md"}
+{"dst": ".codex/aid/templates/knowledge-base/README.md", "profile": "codex", "sha256": "79fd67c695510bbeb23c07b2abde44efbe93c6c2959f3289c52cb6f46b0e6479", "src": "canonical/templates/knowledge-base/README.md"}
 {"dst": ".codex/aid/templates/knowledge-base/architecture.md", "profile": "codex", "sha256": "e83c18e20ec7923337e031ee0e0d27d77e50e983614c861e83a6b8d9be3842cd", "src": "canonical/templates/knowledge-base/architecture.md"}
 {"dst": ".codex/aid/templates/knowledge-base/coding-standards.md", "profile": "codex", "sha256": "4c79fffeed63b4a35318df7a18143f2ff20e3a7b4d6b8a9f72ae2c40c67f3879", "src": "canonical/templates/knowledge-base/coding-standards.md"}
 {"dst": ".codex/aid/templates/knowledge-base/domain-glossary.md", "profile": "codex", "sha256": "9e1fc269c91cb06173256d8d2f5148cca85ee5545957f80009c9cef423b9a5cd", "src": "canonical/templates/knowledge-base/domain-glossary.md"}
