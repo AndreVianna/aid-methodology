@@ -1,7 +1,7 @@
 # Work State -- work-007-installer-add-update-fixes
 
-> **State:** PR open — CI green, awaiting merge + v2.0.1 tag
-> **Phase:** Execute (ship-pending)
+> **State:** #7 harvest perf fix complete + verified; ready to re-push to PR #117 (v2.0.1)
+> **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-03
 > **User Approved:** yes
@@ -131,6 +131,75 @@ copy + `format_version: ${AID_SUPPORTED_FORMAT:-1}` prepend (bash) / raw-byte pr
 byte-identical (settings.yml 69B, .gitignore 253B) so `test-install-parity.sh diff -r`
 holds.
 
+## Harvest performance fix (issue #7 — added to this PR, still v2.0.1)
+
+User-reported: `/aid-discover` is unusable on Windows Git Bash / MSYS (~15-40 min or
+hangs) on real brownfield repos (~1,400 files). Root cause diagnosed + measured in a
+cygwin/MSYS bash here (same expensive `fork` class as Windows Git Bash):
+
+1. **Subprocess-spawn explosion (CONFIRMED, dominant)** in
+   `canonical/aid/scripts/kb/harvest-coined-terms.sh`. The main scan loop (`:422-527`)
+   spawns ~10 grep/sed per file PLUS **per-token/per-match** shell subprocess loops:
+   E2 CamelCase runs `split_camel` (`echo|sed`, def `:243`) + `echo|awk` capitalize
+   (`:458`) per camel token; E4/E5 run `echo|wc -w` per match (`:473`,`:497`). AND the
+   ranking loop (`:654-690`) spawns ~6-10 procs **per unique term** (class-detect greps,
+   `word_in_denylist` grep, `split_camel`). Net: O(tokens + unique-terms) spawns.
+   Measured: a per-match `echo|sed`+`echo|wc` loop over 2,000 matches **timed out > 2 min**.
+2. **"Exponential regex backtracking" — NOT reproduced as stated.** E4 pattern via
+   `grep -oE` ran 0.6 s on a 284 KB single line (GNU grep -E is DFA/linear). The prose-.md
+   stall is root cause 1 (spawn storm on a match-dense long line). Kept as a DEFENSIVE
+   requirement (linear matcher + no-hang test).
+3. **`build-project-index.sh` — no change needed (ticket premise false).** Its only
+   per-file spawn (`get_mtime`, `:212-215`) is in the BSD/macOS fallback. Windows Git
+   Bash takes the GNU `find -printf` fast path (`:202`, already batched: single find +
+   `xargs wc`); the remaining loops are pure-bash builtins (no spawns). The BSD per-file
+   path runs ONLY on macOS, where `fork()` is cheap (~µs) — so the anti-pattern never
+   lands on a slow-fork platform. Batching it would mean an UNTESTABLE change (no BSD
+   `stat` here) to a working, non-bottleneck macOS path → regression risk for zero
+   confirmed benefit. Left unchanged; rationale recorded (validate-the-premise).
+
+**Fix (Design A, user-approved):** batched extraction — `find|sort` once; classify in one
+awk pass; per-(channel,class) extraction via `rg` when available (fed the explicit file
+list, so it scans exactly the `find` set), `xargs`-batched `grep` fallback; ALL
+split/count/filter + denylist/salience/ranking moved into awk (zero per-token/per-term
+spawns). rg's engine is linear (no backtracking). `split_camel` awk port verified
+byte-identical to the sed impl on 926 real+synthetic tokens.
+
+**Determinism guardrail:** rg and the fallback share identical awk post-processing +
+identical file set → byte-identical output regardless of engine (protects "same repo on
+Windows-with-rg vs Linux-without-rg"). `AID_HARVEST_NO_RG=1` forces the fallback; a CI
+equivalence test asserts rg-on == rg-off byte-identical.
+
+**Contract preserved:** `closure-check.sh:177-188` table parse (`| # | Source | Term | …`,
+Source∈{harvest,synthesis}); 9-column table; `test-essence-capture` Spread/phrase/T06
+byte-identical re-run. Scripts stay `set -euo pipefail` / ASCII / coreutils-first / rg optional.
+
+Files: `canonical/aid/scripts/kb/harvest-coined-terms.sh` (+ renderer propagation to 5
+profiles), `tests/canonical/test-harvest-batching.sh` (rg==grep equivalence + pathological
+long-line no-hang) + `tests/canonical/fixtures/harvest-coined-terms/pathological-longline/`.
+`build-project-index.sh` unchanged (see RC3). closure-check.sh unchanged (consumer).
+
+**Verification (all green, measured on this cygwin/MSYS box — same slow-fork class as
+Windows Git Bash):**
+- Correctness — NEW output byte-identical to the ORIGINAL script (excl. Generated date):
+  ultra-mini fixture + a git-repo fixture (exercises the history channel too). ✅
+- Determinism — rg path == grep fallback, byte-identical, on ultra-mini + relative-bus +
+  pathological long-line. The rg path was genuinely exercised with a REAL ripgrep 13.0.0
+  binary (note: on this box `rg` is only a Claude Code shell *function*, so a naive run
+  silently uses grep — validated by shimming the real @vscode/ripgrep binary onto PATH). ✅
+- No hang on the pathological single-long-line fixture (both engines exit 0). ✅
+- Contract — `test-essence-capture.sh` 8/8 (Relative Bus spread>=2, phrase class, closure
+  closed/unclosed, T06 byte-identical re-run, isolation canary). `test-harvest-batching.sh`
+  5/5. ✅  (Full `test-harvest-coined-terms.sh` is env-slow here — ~1s/spawn fork tax × 10
+  harvest runs > 300s — but passes on CI's fast-fork Linux; byte-identity to the original
+  proves its assertions hold.)
+- Perf — the ORIGINAL took 138s on a 2-FILE fixture (fork storm); NEW ~27s, and NEW is
+  O(fixed ~50 spawns) regardless of repo size (extraction is per-channel-class, not
+  per-file; ranking + emit batched into awk). On a 1,400-file repo: minutes/hang -> ~tens of seconds.
+- Propagation — `run_generator.py` re-rendered all 5 profiles; VERIFY (byte-identical
+  re-render + file-presence + frontmatter) PASS; render-drift = ONLY the harvest script
+  (+ its manifest sha) across the 5 trees; `bash -n` clean on canonical + all 5 copies.
+
 ## Testing & Verification
 
 - **New fast regression tests** (source the lib directly; avoid the env-slow 282-file
@@ -240,3 +309,5 @@ all pass, render-drift (run_generator + git diff) clean, bash -n + PS parse clea
 | 2026-07-03 | Execute — 3 installer fixes + phase-line + aid-init + README cleanup | -- | copy overwrite-on-diff, settings seed (stamped), gitignore region; all validated (bash 36 / PS parity / byte-identical) |
 | 2026-07-03 | PR #117 opened (work-007 → master) | -- | AndreVianna account; both Copilot inline comments answered (.aid/.aid-version + .aid-manifest.json bumped to 2.0.1 in f860cb44) |
 | 2026-07-03 | CI fully green on PR #117 | -- | All gates pass: GitGuardian, KB+repo hygiene, build, generator self-tests, render-drift, visual-fidelity, installer/CLI (ubuntu 8m19s + windows 5m21s), canonical helper suites (12m11s). Only `deploy (Pages)` skips (merge-only). Ready to merge + tag v2.0.1. |
+| 2026-07-03 | Issue #7 added to PR (harvest perf) | -- | Windows /aid-discover unusable (spawn-storm); root cause confirmed + RC2 corrected via measurement; Design A batched refactor approved. Same branch/PR #117, still v2.0.1 per user. |
+| 2026-07-03 | Issue #7 implemented + verified | -- | Batched awk extraction (rg-optional, byte-identical grep fallback); new==orig + rg==grep byte-identical (incl history + pathological long-line, real ripgrep shimmed); essence 8/8, batching 5/5; 5 profiles re-rendered (VERIFY pass, drift = harvest only). build-project-index left unchanged (RC3). |

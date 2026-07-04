@@ -11,7 +11,7 @@
 #                                  joined (RelativeBus) AND split (Relative Bus)
 #   E3  snake / kebab compounds:  [a-z0-9]+([_-][a-z0-9]+)+ (>=1 separator)
 #   E4  Capitalized multi-word:   runs of 2-4 [A-Z][a-z]+ words from prose
-#   E5  Quoted strings:           single/double/backtick-quoted strings (<=4 words)
+#   E5  Quoted strings:           double-quoted strings (<=4 words)
 #
 # Channels (each file classified into exactly one):
 #   code     source-code files (is_source languages)
@@ -35,6 +35,24 @@
 #   harvest-coined-terms.sh [--root PATH] [--output PATH] [--denylist PATH]
 #                           [--top N] [--history-file PATH]
 #
+# PERFORMANCE / PORTABILITY (see .aid/work-007 issue #7):
+#   Extraction is BATCHED -- a handful of matcher invocations over whole file lists,
+#   never one-grep-per-file and never a shell subprocess per token/match. All token
+#   splitting, word-counting, denylist filtering, and salience/ranking happen inside
+#   awk (zero per-token/per-term spawns). This keeps the run to O(1) process spawns
+#   instead of O(files x tokens) -- the difference between seconds and 15-40 min (or a
+#   hang) on Windows Git Bash / MSYS, where fork()/exec is ~10-50 ms each.
+#
+#   `rg` (ripgrep) is used for extraction when present (its regex engine is linear --
+#   no catastrophic backtracking on pathological single-long-line inputs); otherwise a
+#   coreutils `grep` fallback is used. The choice is CAPABILITY-based, not OS-based
+#   (WSL reports Linux and forks cheaply; no OS special-casing needed). rg and the
+#   grep fallback share IDENTICAL awk post-processing and scan the IDENTICAL file set
+#   (rg is fed the explicit `find` list, so .gitignore/hidden filtering never applies),
+#   so output is byte-identical regardless of which engine ran -- a repo discovered on
+#   Windows-with-rg produces the same KB as Linux-without-rg. Set AID_HARVEST_NO_RG=1
+#   to force the grep fallback (used by the CI equivalence test).
+#
 # Mirrors build-project-index.sh flag shape; copies its SKIP_DIRS prune set and
 # absolute-OUTPUT-before-cd resolution (lines kept in lockstep with that script).
 
@@ -54,7 +72,7 @@ while [[ $# -gt 0 ]]; do
     --top)          TOP_N="$2";        shift 2 ;;
     --history-file) HISTORY_FILE="$2"; shift 2 ;;
     -h|--help)
-      sed -n '2,30p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,45p' "$0" | sed 's/^# \{0,1\}//'
       exit 0
       ;;
     *)
@@ -121,284 +139,165 @@ fi
 mkdir -p "$(dirname "$OUTPUT")"
 
 # ---------------------------------------------------------------------------
-# Language detection (kept in lockstep with build-project-index.sh)
+# Capability detection: prefer rg (linear-time regex engine; no backtracking) when
+# present. Choice is capability-based, NOT OS-based -- both paths are byte-identical.
 # ---------------------------------------------------------------------------
-detect_lang() {
-  local ext="${1##*.}"
-  ext="${ext,,}"
-  case "$ext" in
-    java)                   echo "Java" ;;
-    kt|kts)                 echo "Kotlin" ;;
-    py)                     echo "Python" ;;
-    js|mjs|cjs|jsx)         echo "JavaScript" ;;
-    ts|tsx|mts|cts)         echo "TypeScript" ;;
-    go)                     echo "Go" ;;
-    rs)                     echo "Rust" ;;
-    cs)                     echo "C#" ;;
-    fs|fsx)                 echo "F#" ;;
-    cpp|cc|cxx|hpp|hxx|c|h) echo "C/C++" ;;
-    rb)                     echo "Ruby" ;;
-    php)                    echo "PHP" ;;
-    swift)                  echo "Swift" ;;
-    scala|sc)               echo "Scala" ;;
-    elm)                    echo "Elm" ;;
-    ex|exs)                 echo "Elixir" ;;
-    erl|hrl)                echo "Erlang" ;;
-    clj|cljs|cljc)          echo "Clojure" ;;
-    lua)                    echo "Lua" ;;
-    sh|bash|zsh)            echo "Shell" ;;
-    ps1)                    echo "PowerShell" ;;
-    sql)                    echo "SQL" ;;
-    yaml|yml)               echo "YAML" ;;
-    json)                   echo "JSON" ;;
-    toml)                   echo "TOML" ;;
-    xml)                    echo "XML" ;;
-    md|markdown)            echo "Markdown" ;;
-    css|scss|sass|less)     echo "CSS" ;;
-    html|htm)               echo "HTML" ;;
-    vue)                    echo "Vue" ;;
-    svelte)                 echo "Svelte" ;;
-    *)                      echo "Other" ;;
-  esac
-}
-
-# Whether a language is "source code" (vs config/data/docs)
-is_source() {
-  case "$1" in
-    Java|Kotlin|Python|JavaScript|TypeScript|Go|Rust|"C#"|"F#"|"C/C++"|Ruby|PHP|Swift|Scala|Elm|Elixir|Erlang|Clojure|Lua|Shell|PowerShell|Vue|Svelte)
-      return 0 ;;
-    *)
-      return 1 ;;
-  esac
-}
-
-# Classify a file path into one of the 5 channels.
-# Returns: code | docs | config | comments | (empty = skip)
-# Note: "comments" is synthesized from code-file lines, not a separate file class.
-classify_channel() {
-  local path="$1"
-  local lang="$2"
-
-  if is_source "$lang"; then
-    echo "code"
-    return
-  fi
-
-  local ext="${path##*.}"
-  ext="${ext,,}"
-  local base="${path##*/}"
-  local base_lower="${base,,}"
-
-  # docs: prose files
-  case "$ext" in
-    md|markdown|rst|txt|adoc|asciidoc) echo "docs"; return ;;
-  esac
-
-  # docs: path-based
-  case "$path" in
-    docs/*|doc/*|documentation/*|adr*/*|adrs/*|.github/*)
-      echo "docs"; return ;;
-  esac
-
-  # config: well-known extensions + manifests
-  case "$ext" in
-    yml|yaml|toml|json|ini|cfg|conf|properties|lock|xml)
-      echo "config"; return ;;
-  esac
-
-  # config: notable manifest basenames
-  case "$base_lower" in
-    makefile|rakefile|dockerfile|gemfile|pipfile|podfile|\
-    cmakelists.txt|build.gradle|pom.xml|cargo.toml|go.mod|\
-    requirements.txt|setup.py|pyproject.toml|composer.json|\
-    package.json|tsconfig.json|jsconfig.json)
-      echo "config"; return ;;
-  esac
-
-  # fallback: skip (binary, unknown, etc.)
-  echo ""
-}
+HAVE_RG=0
+if [[ -z "${AID_HARVEST_NO_RG:-}" ]] && command -v rg >/dev/null 2>&1; then
+  HAVE_RG=1
+fi
 
 # ---------------------------------------------------------------------------
-# Comment-line extraction patterns (used to synthesize the "comments" channel)
+# Single scratch dir for every temp artifact (one trap; auto-cleaned).
 # ---------------------------------------------------------------------------
-is_comment_line() {
-  local line="$1"
-  # Strip leading whitespace, then check for common comment prefixes
-  local stripped
-  stripped=$(echo "$line" | sed 's/^[[:space:]]*//')
-  case "$stripped" in
-    "#"*|"//"*|"--"*|";"*) return 0 ;;
-    "/*"*|"*"*) return 0 ;;
-  esac
-  return 1
-}
+TMPD=$(mktemp -d)
+trap 'rm -rf "$TMPD"' EXIT
 
-# ---------------------------------------------------------------------------
-# Word splitting helpers
-# ---------------------------------------------------------------------------
-
-# Split a CamelCase/PascalCase token into space-separated words (lowercase).
-# RelativeBus -> relative bus
-split_camel() {
-  echo "$1" | sed -E \
-    's/([a-z0-9])([A-Z])/\1 \2/g;
-     s/([A-Z]+)([A-Z][a-z])/\1 \2/g' | tr '[:upper:]' '[:lower:]'
-}
-
-# Split a snake/kebab compound into space-separated words (lowercase).
-# relative_bus -> relative bus
-split_compound() {
-  echo "$1" | tr '_-' ' ' | tr '[:upper:]' '[:lower:]'
-}
-
-# Lower-case a phrase for denylist lookup.
-lowercase_phrase() {
-  echo "$1" | tr '[:upper:]' '[:lower:]'
-}
+DENYLIST_FILE="$TMPD/denylist.txt"
+AWK_CLASSIFY="$TMPD/classify.awk"
+AWK_EXTRACT="$TMPD/extract.awk"
+AWK_RANK="$TMPD/rank.awk"
+FILELIST="$TMPD/filelist.txt"
+CLASSIFIED="$TMPD/classified.tsv"
+PATHIDX_FILE="$TMPD/pathidx.tsv"
+CODE_NUL="$TMPD/code.nul"
+DOCS_NUL="$TMPD/docs.nul"
+CONFIG_NUL="$TMPD/config.nul"
+RAW="$TMPD/raw-terms.tsv"
+TERMS_FILE="$TMPD/terms.tsv"
+COMMENTS_FILE="$TMPD/comments.txt"
+HISTORY_FILE_TMP="$TMPD/history.txt"
+AGGREGATED="$TMPD/aggregated.tsv"
+RANKED="$TMPD/ranked.tsv"
+EMIT="$TMPD/emit.tsv"
+: > "$DENYLIST_FILE"
+: > "$RAW"
 
 # ---------------------------------------------------------------------------
-# Load denylist into a temp file for fast lookup.
+# Load denylist (already sorted+lowercased by convention; we lowercase again on use).
 # ---------------------------------------------------------------------------
-DENYLIST_FILE=$(mktemp)
-trap 'rm -f "$DENYLIST_FILE"' EXIT
-
 if [[ -n "$DENYLIST" && -f "$DENYLIST" ]]; then
-  # Start with the supplied denylist, already sorted+lowercased
   cat "$DENYLIST" > "$DENYLIST_FILE"
 fi
 
-# Check for local override in root (resolved after cd since it's inside the project)
-# We store the path for post-cd check.
+# Local override lives inside the project; resolved after cd.
 LOCAL_DENYLIST_REL=".aid/knowledge/.coined-term-denylist.local.txt"
 
 # ---------------------------------------------------------------------------
-# Denylist lookup: is a single word in the denylist?
-# Returns 0 (true) if in denylist, 1 if not.
+# awk program: classify a file path into a channel (port of detect_lang +
+# is_source + classify_channel; SAME case order so results are identical).
+# Input: one relative path per line. Output: <idx>\t<channel>\t<path> (idx = NR).
 # ---------------------------------------------------------------------------
-word_in_denylist() {
-  local word
-  word=$(echo "$1" | tr '[:upper:]' '[:lower:]')
-  # grep -qFx for exact line match
-  grep -qFx "$word" "$DENYLIST_FILE" 2>/dev/null
+cat > "$AWK_CLASSIFY" <<'CLASSIFY_AWK'
+function is_source_ext(e) {
+  return (e=="java"||e=="kt"||e=="kts"||e=="py"||e=="js"||e=="mjs"||e=="cjs"||e=="jsx"||
+          e=="ts"||e=="tsx"||e=="mts"||e=="cts"||e=="go"||e=="rs"||e=="cs"||e=="fs"||e=="fsx"||
+          e=="cpp"||e=="cc"||e=="cxx"||e=="hpp"||e=="hxx"||e=="c"||e=="h"||e=="rb"||e=="php"||
+          e=="swift"||e=="scala"||e=="sc"||e=="elm"||e=="ex"||e=="exs"||e=="erl"||e=="hrl"||
+          e=="clj"||e=="cljs"||e=="cljc"||e=="lua"||e=="sh"||e=="bash"||e=="zsh"||e=="ps1"||
+          e=="vue"||e=="svelte")
 }
+{
+  path=$0
+  if (path=="") next
+  # ext = ${path##*.} lowercased; if no dot anywhere, ext=path (matches bash)
+  ext=path
+  if (sub(/.*\./,"",ext)==0) ext=path
+  ext=tolower(ext)
+  # base = ${path##*/}; base_lower
+  base=path; sub(/.*\//,"",base); base_lower=tolower(base)
+
+  channel=""
+  if (is_source_ext(ext)) channel="code"
+  else if (ext=="md"||ext=="markdown"||ext=="rst"||ext=="txt"||ext=="adoc"||ext=="asciidoc") channel="docs"
+  else if (path ~ /^docs\// || path ~ /^doc\// || path ~ /^documentation\// || path ~ /^adr.*\// || path ~ /^\.github\//) channel="docs"
+  else if (ext=="yml"||ext=="yaml"||ext=="toml"||ext=="json"||ext=="ini"||ext=="cfg"||ext=="conf"||ext=="properties"||ext=="lock"||ext=="xml") channel="config"
+  else if (base_lower=="makefile"||base_lower=="rakefile"||base_lower=="dockerfile"||base_lower=="gemfile"||base_lower=="pipfile"||base_lower=="podfile"||
+           base_lower=="cmakelists.txt"||base_lower=="build.gradle"||base_lower=="pom.xml"||base_lower=="cargo.toml"||base_lower=="go.mod"||
+           base_lower=="requirements.txt"||base_lower=="setup.py"||base_lower=="pyproject.toml"||base_lower=="composer.json"||
+           base_lower=="package.json"||base_lower=="tsconfig.json"||base_lower=="jsconfig.json") channel="config"
+
+  if (channel!="") print NR "\t" channel "\t" path
+}
+CLASSIFY_AWK
 
 # ---------------------------------------------------------------------------
-# Filter a candidate term.
-# Returns 0 (survive unconditionally) if at least one component word is NOT
-# in the denylist -- the term is genuinely project-coined.
-# Returns 1 (needs-phrase-escape or drop) for all-common-word terms.
-#   - If ALL words are common AND term is a multi-word phrase not in the
-#     denylist, the caller applies the salience floor (spread>=2) to decide.
-#   - If ALL words are common AND (single word OR phrase is in denylist), drop.
+# awk program: turn raw matches into TERM<TAB>CHANNEL<TAB>FILE rows, prefixed with a
+# file-order index so global first-occurrence (the 'Example source' column) is
+# deterministic regardless of matcher emission order.
 #
-# The caller handles the phrase-escape case:
-#   if ! candidate_survives term class; then
-#     # multi-word AND phrase not in denylist AND spread>=2 -> survive
-#     # otherwise -> drop
-#   fi
+# Input records are NUL-delimited "path\0match" (from rg --null / grep -oHZ), one per
+# match. It replicates every per-token transform the old shell loop did:
+#   ident      len>=4 identifiers
+#   snake      len>=5 snake/kebab compounds
+#   camel_join joined CamelCase only (config channel)
+#   camel_both joined CamelCase AND split-capitalized phrase (RelativeBus + Relative Bus)
+#   phrase     2-4 capitalized words (trailing space stripped)
+#   quoted     double-quoted string, <=4 words, quotes stripped
+# For real files idx/file come from the path->idx map; comments/history pass a fixed
+# idx (> all file indices) and a fixed file label.
 # ---------------------------------------------------------------------------
-# Args: $1=term, $2=class (camel|snake|phrase|quoted|identifier)
-candidate_survives() {
-  local term="$1"
-  local class="$2"
-
-  # Split into component words
-  local words
-  case "$class" in
-    camel)
-      words=$(split_camel "$term")
-      ;;
-    snake)
-      words=$(split_compound "$term")
-      ;;
-    phrase)
-      words=$(echo "$term" | tr '[:upper:]' '[:lower:]')
-      ;;
-    quoted)
-      # Remove quotes, lowercase
-      words=$(echo "$term" | tr -d '"'"'"'`' | tr '[:upper:]' '[:lower:]')
-      ;;
-    identifier)
-      words=$(echo "$term" | tr '[:upper:]' '[:lower:]')
-      ;;
-    *)
-      words=$(echo "$term" | tr '[:upper:]' '[:lower:]')
-      ;;
-  esac
-
-  # Check if ANY word is NOT in denylist
-  local all_common=1
-  for word in $words; do
-    [[ -z "$word" ]] && continue
-    if ! word_in_denylist "$word"; then
-      all_common=0
-      break
-    fi
-  done
-
-  if [[ $all_common -eq 0 ]]; then
-    # At least one word is project-coined -> survive unconditionally
-    return 0
-  fi
-
-  # All words are common.
-  # Return 1 so the caller can apply the phrase-escape + spread>=2 floor.
-  return 1
+cat > "$AWK_EXTRACT" <<'EXTRACT_AWK'
+function splitcamel(s,   i,cur,prev,nxt,out) {
+  # pass 1: insert space between [a-z0-9] and [A-Z]  (sed s/([a-z0-9])([A-Z])/\1 \2/g)
+  out=""
+  for (i=1;i<=length(s);i++) {
+    cur=substr(s,i,1)
+    if (i>1) { prev=substr(s,i-1,1); if (prev ~ /[a-z0-9]/ && cur ~ /[A-Z]/) out=out " " }
+    out=out cur
+  }
+  # pass 2: split acronym boundary  (sed s/([A-Z]+)([A-Z][a-z])/\1 \2/g)
+  s=out; out=""
+  for (i=1;i<=length(s);i++) {
+    cur=substr(s,i,1); nxt=substr(s,i+1,1); prev=(i>1?substr(s,i-1,1):"")
+    if (prev ~ /[A-Z]/ && cur ~ /[A-Z]/ && nxt ~ /[a-z]/) out=out " "
+    out=out cur
+  }
+  return tolower(out)
 }
-
-# ---------------------------------------------------------------------------
-# Check if a term qualifies for the whole-phrase escape.
-# A multi-word phrase whose every component word is common survives if:
-#   (a) the phrase itself is NOT in the denylist, AND
-#   (b) it has spread >= 2 (enforced at emission time by the caller).
-# Returns 0 if the phrase qualifies for the escape; 1 otherwise.
-# ---------------------------------------------------------------------------
-# Args: $1=term, $2=class
-phrase_escape_qualifies() {
-  local term="$1"
-  local class="$2"
-
-  # Only multi-word terms qualify
-  local word_count
-  word_count=$(echo "$term" | wc -w | tr -d ' ')
-  # For CamelCase, the split may be multi-word even if the token has no spaces
-  if [[ "$class" == "camel" ]]; then
-    local split_words
-    split_words=$(split_camel "$term")
-    word_count=$(echo "$split_words" | wc -w | tr -d ' ')
-  fi
-
-  [[ "$word_count" -le 1 ]] && return 1
-
-  # The phrase itself must NOT be in the denylist
-  local phrase_lower
-  phrase_lower=$(lowercase_phrase "$term")
-  if word_in_denylist "$phrase_lower"; then
-    return 1
-  fi
-
-  # Qualifies for the escape (caller still must check spread>=2)
-  return 0
+function capitalize(s,   n,a,i,out) {
+  n=split(s,a,/[[:space:]]+/); out=""
+  for (i=1;i<=n;i++) {
+    if (a[i]=="") continue
+    a[i]=toupper(substr(a[i],1,1)) substr(a[i],2)
+    out=(out==""?a[i]:out" "a[i])
+  }
+  return out
 }
-
-# ---------------------------------------------------------------------------
-# Temporary files for accumulating extracted terms
-# ---------------------------------------------------------------------------
-TERMS_FILE=$(mktemp)
-COMMENTS_FILE=$(mktemp)
-HISTORY_FILE_TMP=$(mktemp)
-trap 'rm -f "$DENYLIST_FILE" "$TERMS_FILE" "$COMMENTS_FILE" "$HISTORY_FILE_TMP"' EXIT
+function wcount(s,   a,n) {
+  gsub(/^[[:space:]]+|[[:space:]]+$/,"",s)
+  if (s=="") return 0
+  return split(s,a,/[[:space:]]+/)
+}
+function emit(term,   idx,file) {
+  if (fixedidx!="") { idx=fixedidx; file=fixedfile }
+  else { file=$1; idx=PI[file]; if (idx=="") return }
+  print idx "\t" term "\t" channel "\t" file
+}
+BEGIN {
+  FS="\0"
+  if (pimap!="") { while ((getline ln < pimap) > 0) { n=split(ln,a,"\t"); if (n>=2) PI[a[1]]=a[2] } }
+}
+{
+  m=$2
+  if (m=="") next
+  if (mode=="ident")      { if (length(m)>=4) emit(m) }
+  else if (mode=="snake") { if (length(m)>=5) emit(m) }
+  else if (mode=="camel_join") { emit(m) }
+  else if (mode=="camel_both") { emit(m); sp=capitalize(splitcamel(m)); if (sp!="") emit(sp) }
+  else if (mode=="phrase") { t=m; sub(/[[:space:]]+$/,"",t); c=wcount(t); if (c>=2 && c<=4) emit(t) }
+  else if (mode=="quoted") { t=m; gsub(/"/,"",t); c=wcount(t); if (c<=4) emit(t) }
+}
+EXTRACT_AWK
 
 # ---------------------------------------------------------------------------
 # cd into ROOT for scanning
 # ---------------------------------------------------------------------------
 cd "$ROOT"
 
-# Now check for local denylist override
+# Merge the project-local denylist override (comm-union with the supplied one).
 if [[ -f "$LOCAL_DENYLIST_REL" ]]; then
-  # comm-union: merge sorted lists (both must be sorted+lowercased)
-  local_sorted=$(mktemp)
+  local_sorted="$TMPD/local_denylist.txt"
   sort -f "$LOCAL_DENYLIST_REL" | tr '[:upper:]' '[:lower:]' | sort > "$local_sorted"
   if [[ -s "$DENYLIST_FILE" ]]; then
     comm -23 "$local_sorted" "$DENYLIST_FILE" >> "$DENYLIST_FILE" 2>/dev/null || true
@@ -406,155 +305,107 @@ if [[ -f "$LOCAL_DENYLIST_REL" ]]; then
   else
     cp "$local_sorted" "$DENYLIST_FILE"
   fi
-  rm -f "$local_sorted"
 fi
 
 echo "[harvest] Scanning files under $ROOT ..." >&2
 
 # ---------------------------------------------------------------------------
-# Channel scan: iterate all files under ROOT
+# 1. Enumerate the file set ONCE (same prune + sort as build-project-index.sh).
 # ---------------------------------------------------------------------------
-
-# We accumulate lines of: TERM<TAB>CHANNEL<TAB>FILE
-# for later aggregation.
-
 # shellcheck disable=SC2086
-while IFS= read -r filepath; do
-  [[ -z "$filepath" ]] && continue
-  # Skip non-readable files
-  [[ -r "$filepath" ]] || continue
-  # Skip binary files (heuristic: null bytes in first 512 bytes)
-  if LC_ALL=C grep -qP '\x00' "$filepath" 2>/dev/null; then
-    continue
+find . \( $PRUNE_EXPR \) -prune -o -type f -print 2>/dev/null | sed 's|^\./||' | sort > "$FILELIST"
+NFILES=$(wc -l < "$FILELIST" | tr -d ' ')
+COMMENTS_IDX=$(( NFILES + 1 ))
+HISTORY_IDX=$(( NFILES + 2 ))
+
+# 2. Classify every file into a channel in ONE awk pass (no per-file spawns).
+awk -f "$AWK_CLASSIFY" "$FILELIST" > "$CLASSIFIED"
+
+# 3. Exclude binary files (any file containing a NUL byte) -- matches the old
+#    per-file `grep -qP '\x00'` skip, batched. Both engines then see the same set.
+if [[ -s "$CLASSIFIED" ]]; then
+  binset="$TMPD/binary.txt"
+  { cut -f3 "$CLASSIFIED" | tr '\n' '\0' \
+      | LC_ALL=C xargs -0 grep -lZ -P '\x00' -- 2>/dev/null \
+      | tr '\0' '\n' > "$binset"; } || true
+  if [[ -s "$binset" ]]; then
+    awk -F'\t' 'NR==FNR{bin[$0]=1;next} !($3 in bin)' "$binset" "$CLASSIFIED" > "$CLASSIFIED.f" \
+      && mv "$CLASSIFIED.f" "$CLASSIFIED"
   fi
-
-  lang=$(detect_lang "$filepath")
-  channel=$(classify_channel "$filepath" "$lang")
-  [[ -z "$channel" ]] && continue
-
-  # E1: Identifiers from source code files (code channel)
-  # E2: CamelCase/PascalCase from code + docs
-  # E3: snake/kebab compounds from code + config
-  # E4: Capitalized multi-word phrases from docs + comments + history
-  # E5: Quoted strings from code + docs
-
-  if [[ "$channel" == "code" ]]; then
-    # E1: all [A-Za-z_][A-Za-z0-9_]* tokens (identifiers)
-    # We extract and emit them, then filter denylist later
-    LC_ALL=C grep -oE '[A-Za-z_][A-Za-z0-9_]+' "$filepath" 2>/dev/null \
-      | while IFS= read -r tok; do
-          # Only keep tokens with >=4 chars (drop short noise)
-          [[ ${#tok} -ge 4 ]] || continue
-          printf '%s\tcode\t%s\n' "$tok" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-    # E2: CamelCase (>=2 humps) from code - emit both joined and split
-    LC_ALL=C grep -oE '[A-Z][a-z]+([A-Z][a-z0-9]+)+' "$filepath" 2>/dev/null \
-      | while IFS= read -r tok; do
-          printf '%s\tcode\t%s\n' "$tok" "$filepath"
-          # Also emit split form as phrase
-          split=$(split_camel "$tok")
-          # Capitalize first letter of each word for the phrase form
-          phrase=$(echo "$split" | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print}')
-          printf '%s\tcode\t%s\n' "$phrase" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-    # E3: snake/kebab compounds from code
-    LC_ALL=C grep -oE '[a-z0-9]+([_-][a-z0-9]+)+' "$filepath" 2>/dev/null \
-      | while IFS= read -r tok; do
-          [[ ${#tok} -ge 5 ]] || continue
-          printf '%s\tcode\t%s\n' "$tok" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-    # E5: quoted strings (short, <=4 words) from code
-    LC_ALL=C grep -oE '"[A-Za-z][A-Za-z0-9 _-]{2,30}"' "$filepath" 2>/dev/null \
-      | sed 's/"//g' \
-      | while IFS= read -r tok; do
-          word_count=$(echo "$tok" | wc -w | tr -d ' ')
-          [[ "$word_count" -le 4 ]] || continue
-          printf '%s\tcode\t%s\n' "$tok" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-    # Comments channel: extract comment lines from code files
-    LC_ALL=C grep -nE '^\s*(#|//|--|;|/\*|\*)' "$filepath" 2>/dev/null \
-      | sed 's/^[0-9]*://' >> "$COMMENTS_FILE" || true
-
-  elif [[ "$channel" == "docs" ]]; then
-    # E2: CamelCase from docs
-    LC_ALL=C grep -oE '[A-Z][a-z]+([A-Z][a-z0-9]+)+' "$filepath" 2>/dev/null \
-      | while IFS= read -r tok; do
-          printf '%s\tdocs\t%s\n' "$tok" "$filepath"
-          split=$(split_camel "$tok")
-          phrase=$(echo "$split" | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print}')
-          printf '%s\tdocs\t%s\n' "$phrase" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-    # E4: Capitalized multi-word phrases (2-4 words) from docs
-    # Match 2-4 consecutive capitalized words
-    LC_ALL=C grep -oE '([A-Z][a-z]+[[:space:]]+){1,3}[A-Z][a-z]+' "$filepath" 2>/dev/null \
-      | while IFS= read -r tok; do
-          tok=$(echo "$tok" | sed 's/[[:space:]]*$//')
-          word_count=$(echo "$tok" | wc -w | tr -d ' ')
-          [[ "$word_count" -ge 2 && "$word_count" -le 4 ]] || continue
-          printf '%s\tdocs\t%s\n' "$tok" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-    # E5: quoted strings from docs
-    LC_ALL=C grep -oE '"[A-Za-z][A-Za-z0-9 _-]{2,30}"' "$filepath" 2>/dev/null \
-      | sed 's/"//g' \
-      | while IFS= read -r tok; do
-          word_count=$(echo "$tok" | wc -w | tr -d ' ')
-          [[ "$word_count" -le 4 ]] || continue
-          printf '%s\tdocs\t%s\n' "$tok" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-  elif [[ "$channel" == "config" ]]; then
-    # E3: snake/kebab from config
-    LC_ALL=C grep -oE '[a-z0-9]+([_-][a-z0-9]+)+' "$filepath" 2>/dev/null \
-      | while IFS= read -r tok; do
-          [[ ${#tok} -ge 5 ]] || continue
-          printf '%s\tconfig\t%s\n' "$tok" "$filepath"
-        done >> "$TERMS_FILE" || true
-
-    # E2: CamelCase from config (e.g. class names in YAML/JSON)
-    LC_ALL=C grep -oE '[A-Z][a-z]+([A-Z][a-z0-9]+)+' "$filepath" 2>/dev/null \
-      | while IFS= read -r tok; do
-          printf '%s\tconfig\t%s\n' "$tok" "$filepath"
-        done >> "$TERMS_FILE" || true
-  fi
-
-# shellcheck disable=SC2086
-done < <(find . \( $PRUNE_EXPR \) -prune -o -type f -print 2>/dev/null | sed 's|^\./||' | sort)
-
-# ---------------------------------------------------------------------------
-# Extract from comments channel (from collected comment lines above)
-# ---------------------------------------------------------------------------
-if [[ -s "$COMMENTS_FILE" ]]; then
-  # E4: Capitalized multi-word phrases from comments
-  LC_ALL=C grep -oE '([A-Z][a-z]+[[:space:]]+){1,3}[A-Z][a-z]+' "$COMMENTS_FILE" 2>/dev/null \
-    | while IFS= read -r tok; do
-        tok=$(echo "$tok" | sed 's/[[:space:]]*$//')
-        word_count=$(echo "$tok" | wc -w | tr -d ' ')
-        [[ "$word_count" -ge 2 && "$word_count" -le 4 ]] || continue
-        printf '%s\tcomments\tcomments\n' "$tok"
-      done >> "$TERMS_FILE" || true
-
-  # E2: CamelCase from comments
-  LC_ALL=C grep -oE '[A-Z][a-z]+([A-Z][a-z0-9]+)+' "$COMMENTS_FILE" 2>/dev/null \
-    | while IFS= read -r tok; do
-        printf '%s\tcomments\tcomments\n' "$tok"
-        split=$(split_camel "$tok")
-        phrase=$(echo "$split" | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print}')
-        printf '%s\tcomments\tcomments\n' "$phrase"
-      done >> "$TERMS_FILE" || true
 fi
+
+# 4. Build the path->idx map + per-channel NUL-delimited file lists.
+awk -F'\t' '{ print $3 "\t" $1 }'          "$CLASSIFIED" > "$PATHIDX_FILE"
+awk -F'\t' '$2=="code"   { printf "%s\0",$3 }' "$CLASSIFIED" > "$CODE_NUL"
+awk -F'\t' '$2=="docs"   { printf "%s\0",$3 }' "$CLASSIFIED" > "$DOCS_NUL"
+awk -F'\t' '$2=="config" { printf "%s\0",$3 }' "$CLASSIFIED" > "$CONFIG_NUL"
+
+# ---------------------------------------------------------------------------
+# Extraction patterns (E1-E5)
+# ---------------------------------------------------------------------------
+PAT_IDENT='[A-Za-z_][A-Za-z0-9_]+'
+PAT_CAMEL='[A-Z][a-z]+([A-Z][a-z0-9]+)+'
+PAT_SNAKE='[a-z0-9]+([_-][a-z0-9]+)+'
+PAT_PHRASE='([A-Z][a-z]+[[:space:]]+){1,3}[A-Z][a-z]+'
+PAT_QUOTED='"[A-Za-z][A-Za-z0-9 _-]{2,30}"'
+
+# run_matcher: reads a NUL-delimited file list on stdin, prints "path\0match" per
+# match. rg when available (linear engine); coreutils grep otherwise. Identical
+# output on non-pathological input; rg is fed explicit files so ignore rules never
+# apply and the scanned set matches the grep fallback exactly.
+run_matcher() {
+  local pat="$1"
+  if [[ $HAVE_RG -eq 1 ]]; then
+    LC_ALL=C xargs -0 rg --no-config --no-messages -o --no-heading --with-filename --null -N -e "$pat" -- 2>/dev/null || true
+  else
+    LC_ALL=C xargs -0 grep -oHZE -e "$pat" -- 2>/dev/null || true
+  fi
+}
+
+# extract: matcher over a channel file list -> TERM rows (real-file idx via map).
+# Usage: extract <list.nul> <channel> <mode> <pattern>  ; appends to $RAW by caller.
+extract() {
+  local list="$1" channel="$2" mode="$3" pat="$4"
+  [[ -s "$list" ]] || return 0
+  run_matcher "$pat" < "$list" \
+    | awk -F'\0' -v mode="$mode" -v channel="$channel" -v pimap="$PATHIDX_FILE" -f "$AWK_EXTRACT"
+}
+
+# extract_fixed: matcher over a single synthesized file (comments/history) with a
+# fixed idx (> all file indices) and fixed file label.
+# Usage: extract_fixed <srcfile> <channel> <mode> <pattern> <idx> <filelabel>
+extract_fixed() {
+  local src="$1" channel="$2" mode="$3" pat="$4" fidx="$5" flabel="$6"
+  [[ -s "$src" ]] || return 0
+  printf '%s\0' "$src" | run_matcher "$pat" \
+    | awk -F'\0' -v mode="$mode" -v channel="$channel" -v fixedidx="$fidx" -v fixedfile="$flabel" -f "$AWK_EXTRACT"
+}
+
+# --- code channel: E1 identifiers, E2 camel (joined+split), E3 snake, E5 quoted ---
+extract "$CODE_NUL"   code   ident      "$PAT_IDENT"  >> "$RAW"
+extract "$CODE_NUL"   code   camel_both "$PAT_CAMEL"  >> "$RAW"
+extract "$CODE_NUL"   code   snake      "$PAT_SNAKE"  >> "$RAW"
+extract "$CODE_NUL"   code   quoted     "$PAT_QUOTED" >> "$RAW"
+
+# --- docs channel: E2 camel (joined+split), E4 phrases, E5 quoted ---
+extract "$DOCS_NUL"   docs   camel_both "$PAT_CAMEL"  >> "$RAW"
+extract "$DOCS_NUL"   docs   phrase     "$PAT_PHRASE" >> "$RAW"
+extract "$DOCS_NUL"   docs   quoted     "$PAT_QUOTED" >> "$RAW"
+
+# --- config channel: E3 snake, E2 camel (JOINED ONLY) ---
+extract "$CONFIG_NUL" config snake      "$PAT_SNAKE"  >> "$RAW"
+extract "$CONFIG_NUL" config camel_join "$PAT_CAMEL"  >> "$RAW"
+
+# --- comments channel: comment lines from code files, then E4 + E2 ---
+if [[ -s "$CODE_NUL" ]]; then
+  LC_ALL=C xargs -0 grep -hE '^[[:space:]]*(#|//|--|;|/\*|\*)' -- < "$CODE_NUL" 2>/dev/null > "$COMMENTS_FILE" || true
+fi
+extract_fixed "$COMMENTS_FILE" comments phrase     "$PAT_PHRASE" "$COMMENTS_IDX" comments >> "$RAW"
+extract_fixed "$COMMENTS_FILE" comments camel_both "$PAT_CAMEL"  "$COMMENTS_IDX" comments >> "$RAW"
 
 # ---------------------------------------------------------------------------
 # History channel: git log (degrade-gracefully on non-git trees)
 # ---------------------------------------------------------------------------
-HISTORY_TERMS=$(mktemp)
-trap 'rm -f "$DENYLIST_FILE" "$TERMS_FILE" "$COMMENTS_FILE" "$HISTORY_FILE_TMP" "$HISTORY_TERMS"' EXIT
-
 if git rev-parse --git-dir >/dev/null 2>&1; then
   # Git tree: harvest from commit subjects and bodies.
   # Strip commit-trailer lines and bot-signature lines before harvesting so that
@@ -583,42 +434,21 @@ if [[ -n "$HISTORY_FILE" && -f "$HISTORY_FILE" ]]; then
     >> "$HISTORY_FILE_TMP" || true
 fi
 
-if [[ -s "$HISTORY_FILE_TMP" ]]; then
-  # E4: Capitalized multi-word phrases from history
-  LC_ALL=C grep -oE '([A-Z][a-z]+[[:space:]]+){1,3}[A-Z][a-z]+' "$HISTORY_FILE_TMP" 2>/dev/null \
-    | while IFS= read -r tok; do
-        tok=$(echo "$tok" | sed 's/[[:space:]]*$//')
-        word_count=$(echo "$tok" | wc -w | tr -d ' ')
-        [[ "$word_count" -ge 2 && "$word_count" -le 4 ]] || continue
-        printf '%s\thistory\tgit-log\n' "$tok"
-      done >> "$TERMS_FILE" || true
-
-  # E2: CamelCase from history
-  LC_ALL=C grep -oE '[A-Z][a-z]+([A-Z][a-z0-9]+)+' "$HISTORY_FILE_TMP" 2>/dev/null \
-    | while IFS= read -r tok; do
-        printf '%s\thistory\tgit-log\n' "$tok"
-        split=$(split_camel "$tok")
-        phrase=$(echo "$split" | awk '{for(i=1;i<=NF;i++) $i=toupper(substr($i,1,1)) substr($i,2); print}')
-        printf '%s\thistory\tgit-log\n' "$phrase"
-      done >> "$TERMS_FILE" || true
-fi
+extract_fixed "$HISTORY_FILE_TMP" history phrase     "$PAT_PHRASE" "$HISTORY_IDX" git-log >> "$RAW"
+extract_fixed "$HISTORY_FILE_TMP" history camel_both "$PAT_CAMEL"  "$HISTORY_IDX" git-log >> "$RAW"
 
 echo "[harvest] Aggregating and ranking candidates..." >&2
 
 # ---------------------------------------------------------------------------
-# Aggregation: compute freq, spread, channels, example_source per term
+# Restore deterministic file order (min-idx-first) so the 'Example source' column
+# is the earliest source in find|sort order, then drop the idx prefix.
 # ---------------------------------------------------------------------------
+LC_ALL=C sort -t$'\t' -k1,1n "$RAW" | cut -f2- > "$TERMS_FILE"
+
+# ---------------------------------------------------------------------------
+# Aggregation: compute freq, spread, channels, example_source per term.
 # TERMS_FILE format: TERM<TAB>CHANNEL<TAB>FILE
-# We need to:
-#   1. Count freq (total occurrences) per term
-#   2. Count distinct channels per term (spread)
-#   3. Collect distinct channels list per term
-#   4. Pick one example source file per term
-
-# Use awk to aggregate
-AGGREGATED=$(mktemp)
-trap 'rm -f "$DENYLIST_FILE" "$TERMS_FILE" "$COMMENTS_FILE" "$HISTORY_FILE_TMP" "$HISTORY_TERMS" "$AGGREGATED"' EXIT
-
+# ---------------------------------------------------------------------------
 if [[ -s "$TERMS_FILE" ]]; then
   awk -F'\t' '
   {
@@ -646,69 +476,96 @@ if [[ -s "$TERMS_FILE" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Apply denylist filter + compute salience + classify each term
+# awk program: denylist filter + phrase-escape + salience (port of the old
+# candidate_survives / phrase_escape_qualifies shell functions; runs once over the
+# aggregated term set instead of spawning ~10 processes per unique term).
+# Input:  TERM\tFREQ\tSPREAD\tCHANNELS\tEXAMPLE
+# Output: TERM\tFREQ\tSPREAD\tCHANNELS\tSALIENCE\tEXAMPLE  (survivors only)
 # ---------------------------------------------------------------------------
-RANKED=$(mktemp)
-trap 'rm -f "$DENYLIST_FILE" "$TERMS_FILE" "$COMMENTS_FILE" "$HISTORY_FILE_TMP" "$HISTORY_TERMS" "$AGGREGATED" "$RANKED"' EXIT
+cat > "$AWK_RANK" <<'RANK_AWK'
+function splitcamel(s,   i,cur,prev,nxt,out) {
+  out=""
+  for (i=1;i<=length(s);i++) {
+    cur=substr(s,i,1)
+    if (i>1) { prev=substr(s,i-1,1); if (prev ~ /[a-z0-9]/ && cur ~ /[A-Z]/) out=out " " }
+    out=out cur
+  }
+  s=out; out=""
+  for (i=1;i<=length(s);i++) {
+    cur=substr(s,i,1); nxt=substr(s,i+1,1); prev=(i>1?substr(s,i-1,1):"")
+    if (prev ~ /[A-Z]/ && cur ~ /[A-Z]/ && nxt ~ /[a-z]/) out=out " "
+    out=out cur
+  }
+  return tolower(out)
+}
+function splitcompound(s) { gsub(/[_-]/," ",s); return tolower(s) }
+function wcount(s,   a,n) {
+  gsub(/^[[:space:]]+|[[:space:]]+$/,"",s)
+  if (s=="") return 0
+  return split(s,a,/[[:space:]]+/)
+}
+function any_not_in_dl(wstr,   a,n,i) {
+  n=split(wstr,a,/[[:space:]]+/)
+  for (i=1;i<=n;i++) { if (a[i]=="") continue; if (!(a[i] in DL)) return 1 }
+  return 0
+}
+BEGIN {
+  FS="\t"
+  if (dlf!="") { while ((getline w < dlf) > 0) { gsub(/^[[:space:]]+|[[:space:]]+$/,"",w); if (w!="") DL[tolower(w)]=1 } }
+}
+{
+  term=$1; freq=$2+0; spread=$3+0; chan=$4; example=$5
+  if (term=="") next
 
+  # class detection (identical to the shipped ranking loop)
+  class="identifier"
+  if (term ~ /^[A-Z][a-z]+([A-Z][a-z0-9]+)+$/) class="camel"
+  else if (term ~ /^[a-z0-9]+([_-][a-z0-9]+)+$/) class="snake"
+  else if (term ~ /^[A-Z][a-z]+ ([A-Z][a-z]+)/) class="phrase"
+
+  # candidate_survives: any component word NOT in denylist -> survive unconditionally
+  if (class=="camel") ws=splitcamel(term)
+  else if (class=="snake") ws=splitcompound(term)
+  else ws=tolower(term)
+
+  if (!any_not_in_dl(ws)) {
+    # all words common -> whole-phrase escape (the 'Relative Bus' mechanism)
+    if (class=="camel") wc=wcount(splitcamel(term)); else wc=wcount(term)
+    qualifies=1
+    if (wc<=1) qualifies=0
+    else if (tolower(term) in DL) qualifies=0
+    if (!qualifies) next          # single-word OR phrase in denylist -> drop
+    if (spread<2) next            # all-common phrase but not cross-source -> drop
+    # else: qualifies AND spread>=2 -> survive
+  }
+
+  salience = freq * (1 + 2 * (spread - 1))
+  print term "\t" freq "\t" spread "\t" chan "\t" salience "\t" example
+}
+RANK_AWK
+
+# ---------------------------------------------------------------------------
+# Apply denylist filter + salience, then rank (salience desc, spread desc, term asc).
+# ---------------------------------------------------------------------------
 if [[ -s "$AGGREGATED" ]]; then
-  while IFS=$'\t' read -r term freq spread chan_list example_src; do
-    [[ -z "$term" ]] && continue
-
-    # Determine class for denylist check
-    # Priority: CamelCase (2+ humps), snake/kebab (separator), phrase (spaces), else identifier
-    class="identifier"
-    if echo "$term" | grep -qE '^[A-Z][a-z]+([A-Z][a-z0-9]+)+$'; then
-      class="camel"
-    elif echo "$term" | grep -qE '^[a-z0-9]+([_-][a-z0-9]+)+$'; then
-      class="snake"
-    elif echo "$term" | grep -qE '^[A-Z][a-z]+ ([A-Z][a-z]+)'; then
-      class="phrase"
-    fi
-
-    # Apply denylist filter
-    if ! candidate_survives "$term" "$class"; then
-      # All-common-word term. Check whole-phrase escape ('Relative Bus' mechanism):
-      #   - term must be multi-word (phrase or split CamelCase >= 2 words)
-      #   - the phrase itself must not be in the denylist
-      #   - spread must be >= 2 (cross-source salience floor for all-common phrases)
-      if ! phrase_escape_qualifies "$term" "$class"; then
-        # Single-word OR phrase is in denylist -> drop unconditionally
-        continue
-      fi
-      if [[ "$spread" -lt 2 ]]; then
-        # All-common phrase but not cross-source -> drop
-        continue
-      fi
-      # Phrase with spread>=2 qualifies for whole-phrase escape -> survive
-    fi
-
-    # Compute salience = freq * (1 + 2*(spread-1))
-    salience=$(( freq * (1 + 2 * (spread - 1)) ))
-
-    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$term" "$freq" "$spread" "$chan_list" "$salience" "$example_src"
-  done < "$AGGREGATED" | sort -t$'\t' -k5 -nr -k3 -nr -k1 > "$RANKED"
+  awk -v dlf="$DENYLIST_FILE" -f "$AWK_RANK" "$AGGREGATED" \
+    | sort -t$'\t' -k5 -nr -k3 -nr -k1 > "$RANKED"
 fi
 
 # ---------------------------------------------------------------------------
 # Emit candidates: top-N plus every spread>=3 (never truncated)
 # ---------------------------------------------------------------------------
-EMIT=$(mktemp)
-trap 'rm -f "$DENYLIST_FILE" "$TERMS_FILE" "$COMMENTS_FILE" "$HISTORY_FILE_TMP" "$HISTORY_TERMS" "$AGGREGATED" "$RANKED" "$EMIT"' EXIT
-
 if [[ -s "$RANKED" ]]; then
   # First pass: collect all spread>=3 terms (never truncated)
-  spread3_terms=$(mktemp)
+  spread3_terms="$TMPD/spread3.tsv"
   awk -F'\t' '$3 >= 3 { print }' "$RANKED" > "$spread3_terms"
 
   # Second pass: top-N (which may already include spread>=3 terms)
-  head_terms=$(mktemp)
+  head_terms="$TMPD/head.tsv"
   head -n "$TOP_N" "$RANKED" > "$head_terms"
 
   # Union: top-N + all spread>=3 (deduplicated, stable order by salience)
-  # Use awk to deduplicate while preserving order
   cat "$head_terms" "$spread3_terms" | awk -F'\t' '!seen[$1]++' > "$EMIT"
-  rm -f "$spread3_terms" "$head_terms"
 fi
 
 # ---------------------------------------------------------------------------
@@ -739,22 +596,6 @@ else
 fi
 
 echo "[harvest] Emitting ${top_harvest_count} candidates (${cross_source_count} cross-source) to $OUTPUT" >&2
-
-# ---------------------------------------------------------------------------
-# Determine class label for output
-# ---------------------------------------------------------------------------
-get_class_label() {
-  local term="$1"
-  if echo "$term" | grep -qE '^[A-Z][a-z]+([A-Z][a-z0-9]+)+$'; then
-    echo "camel"
-  elif echo "$term" | grep -qE '^[a-z0-9]+([_-][a-z0-9]+)+$'; then
-    echo "snake"
-  elif echo "$term" | grep -qE ' '; then
-    echo "phrase"
-  else
-    echo "identifier"
-  fi
-}
 
 # ---------------------------------------------------------------------------
 # Count synthesis rows already present in any pre-existing output file.
@@ -793,16 +634,28 @@ fi
   echo "|---|--------|------|-------|------|--------|----------|----------|----------------|"
 
   if [[ -s "$EMIT" ]]; then
-    row_num=0
-    while IFS=$'\t' read -r term freq spread chan_list salience example_src; do
-      [[ -z "$term" ]] && continue
-      row_num=$(( row_num + 1 ))
-      class=$(get_class_label "$term")
-      # Sort channels alphabetically for determinism
-      chan_sorted=$(echo "$chan_list" | tr ',' '\n' | sort | tr '\n' ',' | sed 's/,$//')
-      printf '| %s | harvest | `%s` | %s | %s | %s | %s | %s | `%s` |\n' \
-        "$row_num" "$term" "$class" "$freq" "$spread" "$chan_sorted" "$salience" "$example_src"
-    done < "$EMIT"
+    # Row-number + class-label + channel-sort in ONE awk pass. (The old per-row shell
+    # loop spawned ~7 processes per row -- get_class_label greps + a tr|sort|tr|sed
+    # channel sort -- which, at ~1s/spawn on Windows Git Bash, cost minutes on a full
+    # candidate list. This is byte-identical to that loop's output.)
+    awk -F'\t' '
+      function classlabel(t) {
+        if (t ~ /^[A-Z][a-z]+([A-Z][a-z0-9]+)+$/) return "camel"
+        else if (t ~ /^[a-z0-9]+([_-][a-z0-9]+)+$/) return "snake"
+        else if (t ~ / /) return "phrase"
+        else return "identifier"
+      }
+      {
+        term=$1; freq=$2; spread=$3; chan=$4; sal=$5; ex=$6
+        if (term=="") next
+        # sort the (tiny) channel list alphabetically for determinism
+        n=split(chan, c, ",")
+        for (i=2;i<=n;i++) { key=c[i]; j=i-1; while (j>=1 && c[j]>key) { c[j+1]=c[j]; j-- } c[j+1]=key }
+        cs=""; for (i=1;i<=n;i++) cs=(cs==""?c[i]:cs","c[i])
+        row++
+        printf "| %s | harvest | `%s` | %s | %s | %s | %s | %s | `%s` |\n", row, term, classlabel(term), freq, spread, cs, sal, ex
+      }
+    ' "$EMIT"
   fi
 } > "$OUTPUT"
 
