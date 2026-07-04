@@ -1,10 +1,10 @@
 {
   "manifest_version": 1,
-  "aid_version": "1.1.1",
+  "aid_version": "2.0.1",
   "installed_at": "06/06/2026 20:01:03",
   "tools": {
     "claude-code": {
-      "version": "1.1.1",
+      "version": "2.0.1",
       "installed_at": "06/06/2026 20:01:03",
       "paths": [
         ".claude/agents/aid-architect.md",
@@ -405,12 +405,39 @@
         ".claude/skills/aid-update-kb/references/state-apply.md",
         ".claude/skills/aid-update-kb/references/state-approval.md",
         ".claude/skills/aid-update-kb/references/state-done.md",
-        ".claude/skills/aid-update-kb/references/state-review.md"
+        ".claude/skills/aid-update-kb/references/state-review.md",
+        ".claude/aid/scripts/kb/closure-check.sh",
+        ".claude/aid/scripts/kb/coined-term-denylist.txt",
+        ".claude/aid/scripts/kb/harvest-coined-terms.sh",
+        ".claude/aid/scripts/kb/kb-actback-task.sh",
+        ".claude/aid/scripts/kb/kb-citation-lint.sh",
+        ".claude/aid/scripts/kb/kb-dual-intent-probes.sh",
+        ".claude/aid/scripts/kb/kb-freshness-check.sh",
+        ".claude/aid/scripts/kb/kb-teachback-questions.sh",
+        ".claude/aid/scripts/kb/lint-frontmatter.sh",
+        ".claude/aid/scripts/kb/recon-classify.sh",
+        ".claude/aid/scripts/migrate/migrate-kb-frontmatter.sh",
+        ".claude/aid/scripts/summarize/build-md-export.sh",
+        ".claude/aid/scripts/summarize/package-lock.json",
+        ".claude/aid/scripts/summarize/package.json",
+        ".claude/aid/scripts/summarize/playwright-provisioning.md",
+        ".claude/aid/scripts/summarize/validate-diagram-content.mjs",
+        ".claude/aid/scripts/summarize/validate-visuals.mjs",
+        ".claude/aid/templates/kb-authoring/concern-model.md",
+        ".claude/aid/templates/kb-authoring/domain-doc-matrix.md",
+        ".claude/aid/templates/knowledge-summary/authored-visual-catalog.md",
+        ".claude/aid/templates/knowledge-summary/section-templates/bespoke-components.md",
+        ".claude/skills/aid-discover/references/path-config.md",
+        ".claude/skills/aid-discover/references/reviewer-prompt-actback.md",
+        ".claude/skills/aid-discover/references/reviewer-prompt-anatomy.md",
+        ".claude/skills/aid-discover/references/reviewer-prompt-correctness.md",
+        ".claude/skills/aid-discover/references/reviewer-prompt-teachback.md",
+        ".claude/skills/aid-discover/references/state-closure.md"
       ],
       "root_agent_files": [
         {
           "path": "CLAUDE.md",
-          "sha256": "f6e185713cee17249c2126927f86ae9a8246696d0b6ddf166e462fa03d005cb6",
+          "sha256": "84d63277a85c8c760a05ca3a7ba9432091e756c6059446d0703c58a65a5ba488",
           "status": "owned"
         }
       ]

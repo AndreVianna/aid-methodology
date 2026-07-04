@@ -1,22 +1,27 @@
 # AID for Claude Code
 
-Use the `setup.sh` (or `setup.ps1` on Windows) script at the repo root to install AID into your project, or copy manually:
+Install the persistent `aid` CLI once per machine, then add this profile inside your project:
 
 ## Setup
 
 ```bash
-# Automated (recommended)
-path/to/aid-methodology/setup.sh /path/to/your/project
+# 1. Bootstrap the aid CLI (once per machine)
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 
-# Manual
-cp -r path/to/aid-methodology/profiles/claude-code/.claude  .claude/
-cp path/to/aid-methodology/claude-code/CLAUDE.md   CLAUDE.md
+# 2. Add the profile inside your project
+aid add claude-code
+
+# Manual copy alternative (from a repo checkout)
+cp -r path/to/aid-methodology/profiles/claude-code/.claude   .claude/
+cp    path/to/aid-methodology/profiles/claude-code/CLAUDE.md  CLAUDE.md
 ```
+
+See the repo README for npm / pipx / offline install options.
 
 This gives you:
 - `.claude/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (14 skills: 11 across five pipeline groups + 3 off-pipeline on-demand)
 - `.claude/agents/{name}.md` — Agent definitions in Claude Code format (9 agents with `aid-` prefix)
-- `.claude/templates/` — Templates and bash scripts (grading rubric, `grade.sh`, `build-project-index.sh`)
+- `.claude/aid/templates/` — Templates (grading rubric, settings schema); `.claude/aid/scripts/` — bash helpers (`grade.sh`, `kb/build-project-index.sh`)
 - `CLAUDE.md` — Claude Code project configuration (edit with your project details)
 
 ## Agents
@@ -36,12 +41,11 @@ This gives you:
 ## Skills
 
 14 skills total: the pipeline phase skills, the optional `aid-summarize` for generating
-a single-file visual HTML summary of the Knowledge Base; plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. See
-[`.claude/skills/aid-README.md`](.claude/skills/aid-README.md) for the full list.
+a single-file visual HTML summary of the Knowledge Base; plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. Each skill lives in `.claude/skills/aid-<name>/SKILL.md`.
 
 Notable mechanisms:
-- **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `templates/scripts/grade.sh` from the Reviewer's structured issue list.
-- **aid-discover** runs `templates/scripts/build-project-index.sh` as a Step 0c pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel — eliminates duplicated file-reading.
+- **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `.claude/aid/scripts/grade.sh` from the Reviewer's structured issue list.
+- **aid-discover** runs `.claude/aid/scripts/kb/build-project-index.sh` as a Step 0c pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel — eliminates duplicated file-reading.
 
 ## Usage
 
@@ -62,6 +66,6 @@ Agent files define specialized roles with constrained tool access and focused sy
 ## Notes
 
 - Skills are optimized for LLM context windows — concise, no verbose explanations
-- Human-readable documentation lives in the repo's `skills/` and `agents/` directories
-- Templates and scripts live in the repo's `templates/` directory — reference them from your project
-- The grading script (`templates/scripts/grade.sh`) is deterministic — same issue list always produces the same grade
+- Authoring sources live in the methodology repo under `canonical/skills/` and `canonical/agents/`
+- Templates install to `.claude/aid/templates/` and bash helpers to `.claude/aid/scripts/`
+- The grading script (`.claude/aid/scripts/grade.sh`) is deterministic — same issue list always produces the same grade

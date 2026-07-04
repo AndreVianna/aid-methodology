@@ -62,9 +62,17 @@ $script:_CopyCountCopied   = 0
 $script:_CopyCountUpToDate = 0
 $script:_CopyCountUpdated  = 0
 $script:_CopyCountSkipped  = 0
+$script:_CopyCountFailed   = 0
 
 # Module-level prune counter. Reset by Invoke-PruneToolDirs before each prune pass.
 $script:_PruneRemoved = 0
+
+# Module-level project-provisioning state (work-007). Reset by Install-AidTool.
+$script:_SeededSettings  = $false
+$script:_GitignoreAction = 'unchanged'
+# Settings format stamp. MUST equal bin/aid AID_SUPPORTED_FORMAT / bin/aid.ps1
+# AidSupportedFormat. Used to stamp a seeded settings.yml so the format gate is quiet.
+$script:_AidSupportedFormat = 1
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -82,6 +90,21 @@ function script:Get-RootAgentFile {
     switch ($Tool) {
         'claude-code' { return 'CLAUDE.md' }
         default       { return 'AGENTS.md' }
+    }
+}
+
+# Get-RootDir <tool> - return the tool's install-tree root dir name (relative to
+# the project root). The AID-own subtree lives at <root>/aid/ (e.g. .claude/aid/).
+# Mirrors the per-tool dispatch in Install-AidTool and the bash _root_dir helper.
+function script:Get-RootDir {
+    param([string]$Tool)
+    switch ($Tool) {
+        'claude-code' { return '.claude' }
+        'codex'       { return '.codex' }
+        'cursor'      { return '.cursor' }
+        'copilot-cli' { return '.github' }
+        'antigravity' { return '.agent' }
+        default       { return '' }
     }
 }
 
@@ -361,7 +384,13 @@ function Copy-AidFile {
     }
 
     if (-not (Test-Path $Dst -PathType Leaf)) {
-        Copy-Item -LiteralPath $Src -Destination $Dst -Force
+        try {
+            Copy-Item -LiteralPath $Src -Destination $Dst -Force -ErrorAction Stop
+        } catch {
+            [Console]::Error.WriteLine("ERROR: AidInstallCore: copy failed: $Dst -- $_")
+            $script:_CopyCountFailed++
+            return
+        }
         $script:_CopyCountCopied++
         if ($AidVerbose) { Write-Host "Copied: $Dst" }
         return
@@ -377,15 +406,22 @@ function Copy-AidFile {
         return
     }
 
-    # File exists and differs.
-    if ($Force) {
-        Copy-Item -LiteralPath $Src -Destination $Dst -Force
-        $script:_CopyCountUpdated++
-        if ($AidVerbose) { Write-Host "Updated: $Dst" }
-    } else {
-        $script:_CopyCountSkipped++
-        if ($AidVerbose) { Write-Host "Skipped (differs; use --force): $Dst" }
+    # File exists and differs -> always overwrite (work-007).
+    # AID-owned files track the bundle, which is the source of truth, so an
+    # add/update must bring them current. $Force is retained in the signature for
+    # back-compat and bash<->PS parity but no longer gates this overwrite:
+    # skip-on-diff silently left stale files behind on in-place upgrades. User-owned
+    # root agent files (CLAUDE.md/AGENTS.md) never reach Copy-AidFile -- they are
+    # handled by Copy-RootAgentFile, which keeps its own force gating.
+    try {
+        Copy-Item -LiteralPath $Src -Destination $Dst -Force -ErrorAction Stop
+    } catch {
+        [Console]::Error.WriteLine("ERROR: AidInstallCore: copy failed: $Dst -- $_")
+        $script:_CopyCountFailed++
+        return
     }
+    $script:_CopyCountUpdated++
+    if ($AidVerbose) { Write-Host "Updated: $Dst" }
 }
 
 # Copy-AidDir <srcDir> <dstDir> [force] [aidVerbose]
@@ -438,8 +474,13 @@ function script:Test-AidHeadingStem {
     $stem = $Line.Substring(3)  # strip "## "
     # Strip trailing parenthetical: " (anything)"
     $stem = $stem -replace ' \([^)]*\)$', ''
+    # Stems must cover EVERY "## " heading in the shipped AID:BEGIN/END region
+    # (Tracking discipline, Knowledge Base, Workflow, Review output format,
+    # Permissions). A missing stem duplicates that section on C2 migration
+    # (work-007: Workflow was omitted). Parity with bash is_aid_heading.
     switch ($stem) {
         'Knowledge Base'       { return $true }
+        'Workflow'             { return $true }
         'Review output format' { return $true }
         'Permissions'          { return $true }
         'Tracking discipline'  { return $true }
@@ -1453,6 +1494,118 @@ function Write-VersionMarker {
 }
 
 # ---------------------------------------------------------------------------
+# Project-level provisioning (work-007): required runtime file + VCS hygiene.
+# Parity with bash seed_settings_yml / update_gitignore. Both idempotent.
+# ---------------------------------------------------------------------------
+
+# AID-managed .gitignore region markers (must match the bash _AID_GI_* strings).
+$script:_AidGiBegin = "# >>> AID managed -- do not edit (aid add/update maintains this block) >>>"
+$script:_AidGiEnd   = "# <<< AID managed <<<"
+
+# Get-AidGitignoreBlock - return the AID-managed block as a single LF-joined
+# string (markers inclusive), NO trailing newline (matches bash contract).
+function script:Get-AidGitignoreBlock {
+    $lines = @(
+        $script:_AidGiBegin,
+        ".aid/.temp/",
+        ".aid/.trash/",
+        ".aid/.heartbeat/",
+        ".aid/generated/",
+        ".aid/knowledge/.cache/",
+        ".aid/knowledge/.manual-checklist.json",
+        ".aid/knowledge/.spot-check-facts.txt",
+        $script:_AidGiEnd
+    )
+    return ($lines -join "`n")
+}
+
+# Initialize-AidSettingsFile <target> <tool>
+# Seed <target>\.aid\settings.yml from the tool's just-installed template when it
+# does not already exist. NEVER overwrites existing settings.yml (user config).
+# Not manifest-tracked. Sets $script:_SeededSettings.
+function script:Initialize-AidSettingsFile {
+    param([string]$Target, [string]$Tool)
+    $script:_SeededSettings = $false
+    $root = script:Get-RootDir -Tool $Tool
+    if (-not $root) { return }
+    $aidDir = Join-Path $Target '.aid'
+    $dst  = Join-Path $aidDir 'settings.yml'
+    $tmpl = Join-Path (Join-Path (Join-Path (Join-Path $Target $root) 'aid') 'templates') 'settings.yml'
+    if (Test-Path $dst -PathType Leaf) { return }          # never clobber user config
+    # Template absent -> surface it (work-007 C5): a silent skip re-triggers the
+    # "no settings.yml" class and the format gate would then warn forever.
+    if (-not (Test-Path $tmpl -PathType Leaf)) {
+        [Console]::Error.WriteLine("WARN: AidInstallCore: settings template missing ($tmpl); .aid/settings.yml not seeded for '$Tool'.")
+        return
+    }
+    if (-not (Test-Path $aidDir -PathType Container)) {
+        New-Item -ItemType Directory -Path $aidDir -Force | Out-Null
+    }
+    # Seed from template, STAMPING format_version as the first line if absent, so
+    # the settings-format gate stays quiet. Byte-faithful (raw-byte prepend, no
+    # text round-trip) so the install tree is byte-identical to the bash seed
+    # (test-install-parity.sh diff -r covers .aid/settings.yml).
+    $tmplBytes = [System.IO.File]::ReadAllBytes($tmpl)
+    $tmplText  = [System.Text.Encoding]::UTF8.GetString($tmplBytes)
+    if ($tmplText -match '(?m)^format_version:') {
+        [System.IO.File]::WriteAllBytes($dst, $tmplBytes)
+    } else {
+        $fv = [System.Text.Encoding]::UTF8.GetBytes("format_version: $($script:_AidSupportedFormat)`n")
+        [System.IO.File]::WriteAllBytes($dst, [byte[]]($fv + $tmplBytes))
+    }
+    $script:_SeededSettings = $true
+}
+
+# Update-AidGitignore <target>
+# Ensure <target>\.gitignore carries the AID-managed region with the current
+# transient .aid/ exclusions. Creates if absent; else strips any existing AID
+# region, preserves user content, appends a fresh region with a single blank-line
+# separator. Idempotent. Sets $script:_GitignoreAction to created|updated|unchanged.
+function script:Update-AidGitignore {
+    param([string]$Target)
+    $script:_GitignoreAction = 'unchanged'
+    $gi = Join-Path $Target '.gitignore'
+    $block = script:Get-AidGitignoreBlock
+
+    if (-not (Test-Path $gi -PathType Leaf)) {
+        [System.IO.File]::WriteAllText($gi, $block + "`n", [System.Text.UTF8Encoding]::new($false))
+        $script:_GitignoreAction = 'created'
+        return
+    }
+
+    $existing = [System.IO.File]::ReadAllText($gi)
+    $normalized = ($existing -replace "`r`n", "`n") -replace "`r", "`n"
+    $srcLines = $normalized -split "`n"
+
+    # Strip any existing AID region.
+    $kept = [System.Collections.Generic.List[string]]::new()
+    $inBlk = $false
+    foreach ($ln in $srcLines) {
+        if ($ln -eq $script:_AidGiBegin) { $inBlk = $true; continue }
+        if ($inBlk -and $ln -eq $script:_AidGiEnd) { $inBlk = $false; continue }
+        if ($inBlk) { continue }
+        $kept.Add($ln)
+    }
+    # Trim trailing blank lines.
+    while ($kept.Count -gt 0 -and $kept[$kept.Count - 1] -match '^[ \t]*$') {
+        $kept.RemoveAt($kept.Count - 1)
+    }
+
+    $sb = [System.Text.StringBuilder]::new()
+    foreach ($ln in $kept) { [void]$sb.Append($ln); [void]$sb.Append("`n") }
+    if ($kept.Count -gt 0) { [void]$sb.Append("`n") }
+    [void]$sb.Append($block); [void]$sb.Append("`n")
+    $newContent = $sb.ToString()
+
+    if ($newContent -eq $normalized) {
+        $script:_GitignoreAction = 'unchanged'
+    } else {
+        [System.IO.File]::WriteAllText($gi, $newContent, [System.Text.UTF8Encoding]::new($false))
+        $script:_GitignoreAction = 'updated'
+    }
+}
+
+# ---------------------------------------------------------------------------
 # High-level Install-AidTool
 # ---------------------------------------------------------------------------
 
@@ -1480,6 +1633,10 @@ function Install-AidTool {
     $script:_CopyCountUpToDate = 0
     $script:_CopyCountUpdated  = 0
     $script:_CopyCountSkipped  = 0
+    $script:_CopyCountFailed   = 0
+    # Reset project-provisioning state (work-007).
+    $script:_SeededSettings  = $false
+    $script:_GitignoreAction = 'unchanged'
 
     $rootAgentFile = script:Get-RootAgentFile -Tool $Tool
 
@@ -1538,6 +1695,12 @@ function Install-AidTool {
         }
     }
 
+    # Abort loudly if any AID-owned file failed to copy -- do NOT proceed to
+    # write a manifest that records a partial install as success (work-007 C4).
+    if ($script:_CopyCountFailed -gt 0) {
+        throw "AidInstallCore: $($script:_CopyCountFailed) file(s) failed to copy for '$Tool'. Install aborted (incomplete)."
+    }
+
     # Handle root agent file via in-place region update (Pillar 3).
     $rootSrc = Join-Path $StagingDir $rootAgentFile
     $rootDst = Join-Path $Target $rootAgentFile
@@ -1590,6 +1753,11 @@ function Install-AidTool {
     # Write version marker.
     Write-VersionMarker -Target $Target -Version $Version
 
+    # Project-level provisioning (work-007): seed required settings.yml and
+    # maintain the .gitignore AID region. Both idempotent; safe per-tool.
+    script:Initialize-AidSettingsFile -Target $Target -Tool $Tool
+    script:Update-AidGitignore -Target $Target
+
     # Print concise install summary (always shown; per-file lines only when AidVerbose).
     $totalFiles = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
     if ($totalFiles -gt 0) {
@@ -1604,6 +1772,13 @@ function Install-AidTool {
             if ($script:_CopyCountUpToDate -gt 0) { $parts.Add("$($script:_CopyCountUpToDate) unchanged") }
             Write-Host "  $($parts -join ', ')"
         }
+    }
+
+    # Report project-level provisioning actions (work-007; always shown).
+    if ($script:_SeededSettings) { Write-Host "  Created .aid/settings.yml from template" }
+    switch ($script:_GitignoreAction) {
+        'created' { Write-Host "  Created .gitignore with AID exclusions" }
+        'updated' { Write-Host "  Updated .gitignore AID exclusions" }
     }
 
     return 0
@@ -1699,12 +1874,19 @@ function Uninstall-AidTool {
     # Remove this tool from manifest.
     Remove-ManifestTool -ManifestPath $ManifestPath -Tool $Tool
 
-    # If no manifest remains, remove version marker and .aid dir if empty.
+    # If no manifest remains (last tool removed), remove the AID-provisioned
+    # project files so a full uninstall leaves .aid/ clean (work-007).
     if (-not (Test-Path $ManifestPath -PathType Leaf)) {
         $aidMetaDir = [System.IO.Path]::GetDirectoryName($ManifestPath)
         $versionMarker = Join-Path $aidMetaDir '.aid-version'
         if (Test-Path $versionMarker -PathType Leaf) {
             Remove-Item -LiteralPath $versionMarker -Force
+        }
+        # Remove the install-time-seeded settings.yml (symmetric with the seed).
+        # Only fires when NO tools remain; a partial uninstall keeps it.
+        $seededSettings = Join-Path $aidMetaDir 'settings.yml'
+        if (Test-Path $seededSettings -PathType Leaf) {
+            Remove-Item -LiteralPath $seededSettings -Force
         }
         if (Test-Path $aidMetaDir -PathType Container) {
             $rem = Get-ChildItem -LiteralPath $aidMetaDir -Recurse -File -ErrorAction SilentlyContinue | Select-Object -First 1

@@ -8,7 +8,7 @@ The Orchestrator coordinates the AID pipeline: routes work to agents, manages ph
 
 ## What It Does
 
-The Orchestrator reads pipeline state (STATE files, IMPEDIMENT.md, MONITOR-STATE artifacts), determines the next action, prepares context for the target agent, and dispatches. It enforces the human-gate rule at every phase boundary: no phase advances without explicit human approval. In the monitor cycle it interprets pipeline findings and routes them to the appropriate remediation path.
+The Orchestrator reads pipeline state (STATE files, IMPEDIMENT.md, aid-monitor findings), determines the next action, prepares context for the target agent, and dispatches. It enforces the human-gate rule at every phase boundary: no phase advances without explicit human approval. In the monitor cycle it interprets pipeline findings and routes them to the appropriate remediation path.
 
 ## When It's Invoked
 

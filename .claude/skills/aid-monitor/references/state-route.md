@@ -32,12 +32,12 @@ Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
 For each approved finding:
 
 **BUG → aid-describe (LITE-BUG-FIX short path):**
-- Record the bug finding in `MONITOR-STATE.md` with: root cause, patch scope, test requirements, severity.
+- Record the bug finding in the in-memory monitor context with: root cause, patch scope, test requirements, severity. (A persistent `MONITOR-STATE.md` is deferred until the Monitor area matures — see aid-monitor/SKILL.md.)
 - Hand off to `/aid-describe`: it triages the finding down the **LITE-BUG-FIX** sub-path (T3 = bug fix), turning the diagnosis into the task(s); `aid-execute` then implements (→ optional `aid-deploy`). Interview — not Monitor — creates the task.
 - The short path still skips Specify/Plan/Detail: the spec is already correct, only the code is wrong.
 
 **CHANGE REQUEST → aid-describe:**
-- Record the change request in `MONITOR-STATE.md` (the desired new/changed behavior, with evidence).
+- Record the change request in the in-memory monitor context (the desired new/changed behavior, with evidence).
 - Hand off to `/aid-describe` as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work. Targeted discovery is invoked from Interview only if the CR exposes a KB gap.
 
 **INFRASTRUCTURE → escalate:**

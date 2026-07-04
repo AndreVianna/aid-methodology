@@ -61,8 +61,8 @@ overwrite them here — they are replaced with confirmed values at COMPLETION (s
 
 ### 1d. Monitor-routed finding seed (optional)
 
-If this work was opened from an `aid-monitor` finding — a `MONITOR-STATE.md` finding
-routed here per `aid-monitor/references/state-route.md` Step 5 — read that finding and
+If this work was opened from an `aid-monitor` finding — routed here per
+`aid-monitor/references/state-route.md` Step 5 — read that finding and
 use it to seed the intake:
 
 - **BUG finding** → it carries the lite path: TRIAGE settles on `LITE-BUG-FIX`, and the

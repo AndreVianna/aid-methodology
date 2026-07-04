@@ -637,7 +637,10 @@ Assert-DirExists (Join-Path $ProjT16 '.claude') 'T16-pre .claude/ present before
 Run-Install @('-Uninstall', '-Tool', 'claude-code', '-TargetDirectory', $ProjT16)
 Assert-Eq "$($script:_LastRC)" '0' 'T16a uninstall -> exit 0'
 Assert-DirGone (Join-Path $ProjT16 '.claude') 'T16b .claude/ gone after uninstall'
-Assert-DirGone (Join-Path $ProjT16 '.aid')    'T16c .aid/ gone after full uninstall'
+# .aid/ removed on full uninstall: the install-time-seeded settings.yml is
+# removed symmetrically (Uninstall-AidTool), so nothing keeps .aid/ alive.
+Assert-DirGone (Join-Path $ProjT16 '.aid') 'T16c .aid/ gone after full uninstall'
+Assert (-not (Test-Path (Join-Path (Join-Path $ProjT16 '.aid') 'settings.yml'))) 'T16c2 seeded settings.yml removed on full uninstall' 'settings.yml must be gone'
 Write-Host ""
 
 # ===========================================================================

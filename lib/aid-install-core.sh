@@ -81,6 +81,19 @@ _root_agent_file() {
     esac
 }
 
+# _root_dir <tool> - print the tool's install-tree root dir name (relative to the
+# project root). The AID-own subtree lives at <root>/aid/ (e.g. .claude/aid/).
+# Mirrors the per-tool dispatch in install_tool.
+_root_dir() {
+    case "$1" in
+        claude-code)  echo ".claude" ;;
+        codex)        echo ".codex" ;;
+        cursor)       echo ".cursor" ;;
+        copilot-cli)  echo ".github" ;;
+        antigravity)  echo ".agent" ;;
+    esac
+}
+
 # ---------------------------------------------------------------------------
 # Utility
 # ---------------------------------------------------------------------------
@@ -315,7 +328,11 @@ copy_file() {
     mkdir -p "$dst_dir"
 
     if [[ ! -e "$dst" ]]; then
-        cp "$src" "$dst"
+        if ! cp "$src" "$dst"; then
+            echo "ERROR: aid-install-core: copy failed: ${dst}" >&2
+            _COPY_COUNT_FAILED=$((_COPY_COUNT_FAILED + 1))
+            return 0
+        fi
         _COPY_COUNT_COPIED=$((_COPY_COUNT_COPIED + 1))
         [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Copied: ${dst}"
         return 0
@@ -327,15 +344,21 @@ copy_file() {
         return 0
     fi
 
-    # File exists and differs.
-    if [[ "$force" -eq 1 ]]; then
-        cp "$src" "$dst"
-        _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
-    else
-        _COPY_COUNT_SKIPPED=$((_COPY_COUNT_SKIPPED + 1))
-        [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Skipped (differs; use --force): ${dst}"
+    # File exists and differs -> always overwrite (work-007).
+    # AID-owned files track the bundle, which is the source of truth, so an
+    # add/update must bring them current. `force` is retained in the signature
+    # for back-compat and bash<->PS parity but no longer gates this overwrite:
+    # skip-on-diff silently left stale files behind on in-place upgrades (e.g. an
+    # old flat-path skill surviving next to relocated .aid/ scripts). User-owned
+    # root agent files (CLAUDE.md/AGENTS.md) never reach copy_file -- they are
+    # handled by _copy_root_agent_file, which keeps its own force gating.
+    if ! cp "$src" "$dst"; then
+        echo "ERROR: aid-install-core: copy failed: ${dst}" >&2
+        _COPY_COUNT_FAILED=$((_COPY_COUNT_FAILED + 1))
+        return 0
     fi
+    _COPY_COUNT_UPDATED=$((_COPY_COUNT_UPDATED + 1))
+    [[ "${AID_VERBOSE:-0}" -eq 1 ]] && echo "Updated: ${dst}"
 }
 
 # copy_dir <src_dir> <dst_dir> [force]
@@ -428,7 +451,11 @@ _copy_root_agent_file() {
         # then lines after the closing marker.
         local tmp
         tmp="$(mktemp "${dst_dir}/.aid-root-agent.XXXXXX")"
-        awk -v region="$src_region" '
+        # awk -v applies C-escape processing to the value; double every backslash
+        # so a region containing "\" (or "\n"-like text) passes through literally
+        # (work-007 C7). No-op for the current backslash-free region.
+        local src_region_esc="${src_region//\\/\\\\}"
+        awk -v region="$src_region_esc" '
         BEGIN { in_aid=0; printed_region=0 }
         /^<!-- AID:BEGIN -->/ {
             if (!printed_region) {
@@ -471,11 +498,13 @@ _copy_root_agent_file() {
     # stem match and re-insert as a marked region.
     #
     # AID section stems to excise (exact heading stem; tolerate trailing
-    # parenthetical like " (global)" or " (IMPERATIVE)"):
+    # parenthetical like " (global)" or " (IMPERATIVE)") -- MUST match every
+    # "## " heading in the region (see is_aid_heading):
+    #   ## Tracking discipline
     #   ## Knowledge Base
+    #   ## Workflow
     #   ## Review output format
     #   ## Permissions
-    #   ## Tracking discipline
     #
     # A section runs from its "## Stem..." heading line until the next "## "
     # heading (exclusive) or end-of-file.
@@ -487,27 +516,34 @@ _copy_root_agent_file() {
     # Extract the new marked region from source.
     local new_region
     new_region="$(awk '/^<!-- AID:BEGIN -->/{found=1} found{print} /^<!-- AID:END -->/{if(found){exit}}' "$src")"
+    # awk -v applies C-escape processing; double backslashes so the region passes
+    # through literally (work-007 C7). No-op for the current backslash-free region.
+    local new_region_esc="${new_region//\\/\\\\}"
 
     local tmp
     tmp="$(mktemp "${dst_dir}/.aid-root-agent.XXXXXX")"
 
-    # Use awk to perform the excise-and-reinsert in one pass.
+    # Use awk to perform the excise-and-reinsert in one pass (region passed
+    # backslash-doubled via new_region_esc -- see C7 note above).
     # The awk script:
     #   - Identifies AID-managed section headings by stem prefix match.
     #   - Suppresses those sections (and their body lines).
     #   - At the position of the first suppressed section, emits the new region.
     #   - All other lines are emitted verbatim.
-    awk -v new_region="$new_region" '
+    awk -v new_region="$new_region_esc" '
     function is_aid_heading(line,    stem) {
         # Match "## StemText" optionally followed by " (anything)".
-        # Stems: Knowledge Base, Review output format, Permissions,
-        #        Tracking discipline.
+        # Stems must cover EVERY "## " heading inside the shipped AID:BEGIN/END
+        # region (Tracking discipline, Knowledge Base, Workflow, Review output
+        # format, Permissions) -- a stem missing here causes a duplicate section
+        # on the C2 (no-marker) migration path (work-007: Workflow was omitted).
         if (line !~ /^## /) return 0
         stem = line
         gsub(/^## /, "", stem)
         # Strip trailing parenthetical suffix: " (..." -> ""
         gsub(/ \([^)]*\)$/, "", stem)
         if (stem == "Knowledge Base") return 1
+        if (stem == "Workflow") return 1
         if (stem == "Review output format") return 1
         if (stem == "Permissions") return 1
         if (stem == "Tracking discipline") return 1
@@ -1882,6 +1918,133 @@ write_version_marker() {
 }
 
 # ---------------------------------------------------------------------------
+# Project-level provisioning (work-007): required runtime file + VCS hygiene.
+# Both are idempotent and safe to run once per tool during a multi-tool add.
+# ---------------------------------------------------------------------------
+
+# seed_settings_yml <target> <tool>
+# Seed <target>/.aid/settings.yml from the tool's just-installed template when it
+# does not already exist. NEVER overwrites an existing settings.yml -- it holds
+# user config (project identity, grades). Not recorded in the manifest: it is
+# user data and must survive `aid remove`/prune and never flow through the copy
+# engine. Sets _CORE_SEEDED_SETTINGS=1 when a file was created, else 0.
+seed_settings_yml() {
+    local target="$1" tool="$2"
+    local root dst tmpl
+    _CORE_SEEDED_SETTINGS=0
+    root="$(_root_dir "$tool")"
+    [[ -z "$root" ]] && return 0
+    dst="${target}/.aid/settings.yml"
+    tmpl="${target}/${root}/aid/templates/settings.yml"
+    [[ -f "$dst" ]] && return 0        # never clobber user config
+    # Template absent -> a tool bundle shipped without aid/templates/settings.yml.
+    # Surface it (work-007 C5): a silent skip re-triggers the "no settings.yml"
+    # class this seed exists to fix, and the format gate would then warn forever.
+    if [[ ! -f "$tmpl" ]]; then
+        echo "WARN: aid-install-core: settings template missing (${tmpl}); .aid/settings.yml not seeded for '${tool}'." >&2
+        return 0
+    fi
+    mkdir -p "${target}/.aid"
+    # Seed from the template, but STAMP the format_version as the first line so
+    # the settings-format gate does not warn on every subsequent command (the raw
+    # template ships unstamped; era-b synthesis stamps -- we match it here). The
+    # value mirrors bin/aid's AID_SUPPORTED_FORMAT (fallback 1 for install.sh).
+    local _fmt _seed_tmp
+    _fmt="${AID_SUPPORTED_FORMAT:-1}"
+    _seed_tmp="$(mktemp "${dst}.aid-tmp.XXXXXX")" || {
+        echo "WARN: aid-install-core: could not create temp file to seed .aid/settings.yml for '${tool}'." >&2
+        return 0
+    }
+    if grep -q '^format_version:' "$tmpl" 2>/dev/null; then
+        cp "$tmpl" "$_seed_tmp"
+    else
+        { printf 'format_version: %s\n' "$_fmt"; cat "$tmpl"; } > "$_seed_tmp"
+    fi
+    if ! mv -f "$_seed_tmp" "$dst"; then
+        rm -f "$_seed_tmp" 2>/dev/null
+        echo "WARN: aid-install-core: could not write .aid/settings.yml for '${tool}'." >&2
+        return 0
+    fi
+    _CORE_SEEDED_SETTINGS=1
+    return 0
+}
+
+# AID-managed .gitignore region markers. The lines BETWEEN the markers are owned
+# by the installer and rewritten on every add/update; everything OUTSIDE the
+# markers is preserved verbatim (mirrors the root-agent region-update pattern).
+_AID_GI_BEGIN="# >>> AID managed -- do not edit (aid add/update maintains this block) >>>"
+_AID_GI_END="# <<< AID managed <<<"
+
+# _aid_gitignore_block - print the current AID-managed .gitignore block (markers
+# inclusive). The exclusion set is the single source of truth for transient
+# .aid/ artifacts that must never be committed.
+_aid_gitignore_block() {
+    printf '%s\n' "$_AID_GI_BEGIN"
+    printf '%s\n' \
+        ".aid/.temp/" \
+        ".aid/.trash/" \
+        ".aid/.heartbeat/" \
+        ".aid/generated/" \
+        ".aid/knowledge/.cache/" \
+        ".aid/knowledge/.manual-checklist.json" \
+        ".aid/knowledge/.spot-check-facts.txt"
+    printf '%s' "$_AID_GI_END"
+}
+
+# update_gitignore <target>
+# Ensure <target>/.gitignore carries the AID-managed region with the current
+# transient .aid/ exclusions. Creates the file if absent; otherwise strips any
+# existing AID region, preserves all user content, and appends a fresh region
+# (with a single blank-line separator). Idempotent: a second run produces a
+# byte-identical file. Sets _CORE_GITIGNORE_ACTION to created|updated|unchanged.
+update_gitignore() {
+    local target="$1"
+    local gi="${target}/.gitignore"
+    local block tmp
+    _CORE_GITIGNORE_ACTION="unchanged"
+    block="$(_aid_gitignore_block)"
+
+    if [[ ! -f "$gi" ]]; then
+        printf '%s\n' "$block" > "$gi"
+        _CORE_GITIGNORE_ACTION="created"
+        return 0
+    fi
+
+    # Normalize the existing file to LF for BOTH processing and comparison, so a
+    # line-ending-only difference (a CRLF .gitignore) does NOT force a rewrite
+    # every run. Parity with PS Update-AidGitignore, which compares CRLF->LF-
+    # normalized content (work-007 C3). If unchanged, the original file is left
+    # byte-untouched (CRLF preserved); only a real region change triggers a write.
+    local norm
+    norm="$(mktemp "${target}/.gitignore.norm.XXXXXX")"
+    tr -d '\r' < "$gi" > "$norm"
+
+    tmp="$(mktemp "${target}/.gitignore.aid.XXXXXX")"
+    awk -v b="$_AID_GI_BEGIN" -v e="$_AID_GI_END" -v blk="$block" '
+        $0==b {inblk=1; next}
+        inblk && $0==e {inblk=0; next}
+        inblk {next}
+        {lines[n++]=$0}
+        END {
+            while (n>0 && lines[n-1] ~ /^[ \t]*$/) n--
+            for (i=0;i<n;i++) print lines[i]
+            if (n>0) print ""
+            print blk
+        }
+    ' "$norm" > "$tmp"
+
+    if cmp -s "$tmp" "$norm"; then
+        rm -f "$tmp" "$norm"
+        _CORE_GITIGNORE_ACTION="unchanged"
+    else
+        rm -f "$norm"
+        mv -f "$tmp" "$gi"
+        _CORE_GITIGNORE_ACTION="updated"
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # High-level install_tool
 # ---------------------------------------------------------------------------
 
@@ -1903,6 +2066,7 @@ install_tool() {
     _COPY_COUNT_UPTODATE=0
     _COPY_COUNT_UPDATED=0
     _COPY_COUNT_SKIPPED=0
+    _COPY_COUNT_FAILED=0
 
     local root_agent
     root_agent="$(_root_agent_file "$tool")"
@@ -1963,6 +2127,13 @@ install_tool() {
             ;;
     esac
 
+    # Abort loudly if any AID-owned file failed to copy -- do NOT proceed to
+    # write a manifest that records a partial install as success (work-007 C4).
+    if [[ "${_COPY_COUNT_FAILED:-0}" -gt 0 ]]; then
+        echo "ERROR: aid-install-core: ${_COPY_COUNT_FAILED} file(s) failed to copy for '${tool}'. Install aborted (incomplete)." >&2
+        return 1
+    fi
+
     # Handle root agent file via in-place region update (Pillar 3).
     local root_src="${staging}/${root_agent}"
     local root_dst="${target}/${root_agent}"
@@ -2002,8 +2173,13 @@ install_tool() {
     done
     unset _rr _leaked
 
-    # Write manifest (merge).
-    manifest_write "$manifest" "$tool" "$version" "install_paths" "root_entries"
+    # Write manifest (merge). A failure here MUST abort loudly (parity with PS
+    # Write-AidManifest, which throws) -- otherwise a failed manifest write is a
+    # silent success and later `aid status`/`aid remove`/prune won't see the tool.
+    if ! manifest_write "$manifest" "$tool" "$version" "install_paths" "root_entries"; then
+        echo "ERROR: aid-install-core: manifest write failed for ${manifest}. Install aborted (files copied but not recorded)." >&2
+        return 1
+    fi
 
     # Retired-root migration sweep (FR7/FR7a).
     # Remove AID-owned content from retired layout dirs BEFORE the normal prune,
@@ -2024,6 +2200,11 @@ install_tool() {
 
     # Write version marker.
     write_version_marker "$target" "$version"
+
+    # Project-level provisioning (work-007): seed the required settings.yml and
+    # maintain the .gitignore AID region. Both idempotent; safe per-tool.
+    seed_settings_yml "$target" "$tool"
+    update_gitignore "$target"
 
     # Print concise summary (always shown; per-file lines only when AID_VERBOSE=1).
     local _total_files=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))
@@ -2046,6 +2227,13 @@ install_tool() {
             echo "  ${_parts}"
         fi
     fi
+
+    # Report project-level provisioning actions (work-007; always shown).
+    [[ "${_CORE_SEEDED_SETTINGS:-0}" -eq 1 ]] && echo "  Created .aid/settings.yml from template"
+    case "${_CORE_GITIGNORE_ACTION:-unchanged}" in
+        created) echo "  Created .gitignore with AID exclusions" ;;
+        updated) echo "  Updated .gitignore AID exclusions" ;;
+    esac
 
     return 0
 }
@@ -2143,14 +2331,17 @@ uninstall_tool() {
     # Remove this tool from manifest.
     manifest_remove_tool "$manifest" "$tool"
 
-    # If no manifest remains, remove the .aid version marker too.
+    # If no manifest remains (last tool removed), remove the AID-provisioned
+    # project files so a full uninstall leaves .aid/ clean (work-007).
     if [[ ! -f "$manifest" ]]; then
-        local version_marker
-        version_marker="$(dirname "$manifest")/.aid-version"
-        rm -f "$version_marker"
-        # Remove .aid dir if empty.
         local aid_meta_dir
         aid_meta_dir="$(dirname "$manifest")"
+        rm -f "${aid_meta_dir}/.aid-version"
+        # Remove the install-time-seeded settings.yml (symmetric with seed_settings_yml).
+        # Only fires when NO tools remain -- a partial uninstall keeps settings.yml
+        # for the remaining tools.
+        rm -f "${aid_meta_dir}/settings.yml"
+        # Remove .aid dir if empty.
         if [[ -d "$aid_meta_dir" ]]; then
             local rem
             rem="$(find "$aid_meta_dir" -type f 2>/dev/null | head -1)"

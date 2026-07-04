@@ -113,6 +113,11 @@ jobs:
         shell: pwsh
         run: pwsh -NoProfile -File tests/windows/Test-AidInstaller.ps1
 
+      - name: Run PowerShell install-provisioning parity test
+        if: matrix.mode == 'native-ps1'
+        shell: pwsh
+        run: pwsh -NoProfile -File tests/windows/Test-InstallProvisioning.ps1
+
       # Real Windows PowerShell 5.1 lane: the repo advertises "PowerShell 5.1+",
       # and 5.1 (not pwsh 7) is what a fresh Windows box ships. This re-runs the
       # installer test under the built-in `powershell.exe` (5.1) to catch runtime
@@ -123,6 +128,11 @@ jobs:
         if: matrix.mode == 'native-ps1'
         shell: powershell
         run: powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows/Test-AidInstaller.ps1
+
+      - name: Run PowerShell install-provisioning parity test (Windows PowerShell 5.1)
+        if: matrix.mode == 'native-ps1'
+        shell: powershell
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File tests/windows/Test-InstallProvisioning.ps1
 
       - name: Dashboard CLI Windows smoke (PS spawn path)
         if: matrix.mode == 'native-ps1'

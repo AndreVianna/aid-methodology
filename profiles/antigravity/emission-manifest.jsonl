@@ -1,14 +1,13 @@
 {"_manifest_version": 1}
 {"dst": ".agent/agents/aid-architect.md", "profile": "antigravity", "sha256": "6cc8696e2142d3b9caed1060dcd90c259d67a98116c20364510f4a43b9133db4", "src": "canonical/agents/aid-architect/AGENT.md"}
 {"dst": ".agent/agents/aid-clerk.md", "profile": "antigravity", "sha256": "f09722fb240541adc13cb57be9268e1cb7e72b771c689951d17647fa55267496", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".agent/agents/aid-developer.md", "profile": "antigravity", "sha256": "f6d14e2a1339dea30d58a73094e78bb845c514d9fadd8cabce7aeb81f63b693c", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".agent/agents/aid-developer.md", "profile": "antigravity", "sha256": "3416093be6b4d2427ce07ddbea68bc0efa158c3a3b4fb6c84c1f23ce3aa207fe", "src": "canonical/agents/aid-developer/AGENT.md"}
 {"dst": ".agent/agents/aid-interviewer.md", "profile": "antigravity", "sha256": "ffa252565b1524bbd5d6d94c961f87ed93063e68477e9603680403a36be682c0", "src": "canonical/agents/aid-interviewer/AGENT.md"}
 {"dst": ".agent/agents/aid-operator.md", "profile": "antigravity", "sha256": "c764d8f1f6ca19cc6c0dcae2a3520211b778cb1f7be4086cd11064359a5f4548", "src": "canonical/agents/aid-operator/AGENT.md"}
-{"dst": ".agent/agents/aid-orchestrator.md", "profile": "antigravity", "sha256": "53106fa8201ec0e23b254ee9037a19755a1a5338769636dc7ec1e626f2651d40", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
+{"dst": ".agent/agents/aid-orchestrator.md", "profile": "antigravity", "sha256": "031da5a5aff9ca74201ab728c421c5ca004056c05642a5ae4851b2da9bf4467f", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
 {"dst": ".agent/agents/aid-researcher.md", "profile": "antigravity", "sha256": "5ffc34d2747f7af21c7a2479a50791ce236ee24244ec8638900ef48cba603aa8", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".agent/agents/aid-reviewer.md", "profile": "antigravity", "sha256": "a62b680f9abf14883641712861798d18ee7253ab24819bab9988434d053a8923", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".agent/agents/aid-tech-writer.md", "profile": "antigravity", "sha256": "81ae38b79edb284b2c2468ac4b30c83a748dd2f11475c6be59df4313461cfa0b", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
-{"dst": ".agent/aid/recipes/README.md", "profile": "antigravity", "sha256": "c9c825d96746f87dac029c7d0a92a9d179c3302246c68f6c2b6b926a46799b11", "src": "canonical/recipes/README.md"}
 {"dst": ".agent/aid/recipes/add-api-endpoint.md", "profile": "antigravity", "sha256": "bdfbcbe9a777806ae0870d92318d42b3983a840d37ccb00b67af4a725bbf34ea", "src": "canonical/recipes/add-api-endpoint.md"}
 {"dst": ".agent/aid/recipes/add-api-middleware.md", "profile": "antigravity", "sha256": "423c9f4e9cc6ea5e336ef33056b48a5ffc092d2a5dcfd23aea850cf82fa63484", "src": "canonical/recipes/add-api-middleware.md"}
 {"dst": ".agent/aid/recipes/add-cli-command.md", "profile": "antigravity", "sha256": "3597f4bffb907e5eccc23d90a97d34df0a51d18a5eea6fafc221950bd414c929", "src": "canonical/recipes/add-cli-command.md"}
@@ -75,7 +74,7 @@
 {"dst": ".agent/aid/scripts/kb/closure-check.sh", "profile": "antigravity", "sha256": "5da022d34723d116701d1b28cf00afacba4ab227a4efa696355e16ea354cc315", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".agent/aid/scripts/kb/coined-term-denylist.txt", "profile": "antigravity", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".agent/aid/scripts/kb/discover-preflight.sh", "profile": "antigravity", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}
-{"dst": ".agent/aid/scripts/kb/harvest-coined-terms.sh", "profile": "antigravity", "sha256": "c386fb935463450428a7a53d84e0fe33d6ea50e5cecf39f0b91e6d4ae1f28546", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
+{"dst": ".agent/aid/scripts/kb/harvest-coined-terms.sh", "profile": "antigravity", "sha256": "9033b57c6a949dd9b270794c168c59a7f3e3c644bcb8a48cf7dd5703d99636cf", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".agent/aid/scripts/kb/kb-actback-task.sh", "profile": "antigravity", "sha256": "c48147c03c4e61e1362286dd1282e8c6de207feef1563b5b73732705cc005444", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".agent/aid/scripts/kb/kb-citation-lint.sh", "profile": "antigravity", "sha256": "e3427135fbbd3103db4eb7e6b057c6dd4498b5354e3b09c6042756b0017465e8", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".agent/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "antigravity", "sha256": "b94ab5390e89a28c93dbaaaef44dbbf09349f02cddd9bb043854fa7593ab9778", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
@@ -104,7 +103,6 @@
 {"dst": ".agent/aid/scripts/summarize/validate-html-output.sh", "profile": "antigravity", "sha256": "8438b42b62658d561bb1167e413cfea4d0816cdc36e1c77eb67c8a60b7108bc8", "src": "canonical/scripts/summarize/validate-html-output.sh"}
 {"dst": ".agent/aid/scripts/summarize/validate-visuals.mjs", "profile": "antigravity", "sha256": "dcb2ba28d379a29f229025e84aa49c97a90938445b1df584e8761b5687a9a240", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".agent/aid/scripts/summarize/writeback-state.sh", "profile": "antigravity", "sha256": "ac36f33a0a8bb791f625d528a9a31b683787be98b761d05f59a14ee71b5a281a", "src": "canonical/scripts/summarize/writeback-state.sh"}
-{"dst": ".agent/aid/templates/README.md", "profile": "antigravity", "sha256": "88f2449c453ffa1e3d0d45264210bf4b8ca07adc421aca8dfed79c3a46e617cc", "src": "canonical/templates/README.md"}
 {"dst": ".agent/aid/templates/agent-boilerplate.md", "profile": "antigravity", "sha256": "563f43a7616f75caa987b12fa0bf050c5f833d914f9c02e058eba9866c0e8744", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".agent/aid/templates/delivery-issues.md", "profile": "antigravity", "sha256": "00d03020625c61c3561b3d07d203d4dda3c1b4c8f1ba4a3606fe38df4d38d774", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".agent/aid/templates/delivery-plans/task-template.md", "profile": "antigravity", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
@@ -117,7 +115,6 @@
 {"dst": ".agent/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "antigravity", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}
 {"dst": ".agent/aid/templates/generated-files.txt", "profile": "antigravity", "sha256": "d130673096047f94b4b12051729b070c577dd629bfd7fc72a0822a5e1045f0d0", "src": "canonical/templates/generated-files.txt"}
 {"dst": ".agent/aid/templates/grading-rubric.md", "profile": "antigravity", "sha256": "ea85a7f2f4e2db80ee2e261e9fc8f11772b7e3e6dbfcf27c632b9a917f824eaf", "src": "canonical/templates/grading-rubric.md"}
-{"dst": ".agent/aid/templates/kb-authoring/README.md", "profile": "antigravity", "sha256": "0ed116161274a1ecfc20668d94e53e79ca3058cc35dc65732159e89f240b4828", "src": "canonical/templates/kb-authoring/README.md"}
 {"dst": ".agent/aid/templates/kb-authoring/concern-model.md", "profile": "antigravity", "sha256": "64cbb988df862e6142b12a63d2640f10044402369b043e65cd67ca758fe20044", "src": "canonical/templates/kb-authoring/concern-model.md"}
 {"dst": ".agent/aid/templates/kb-authoring/domain-doc-matrix.md", "profile": "antigravity", "sha256": "c998c79451bd9c3c50261c38ee03ed271cc5d69bdf9ad9d1a946550e582683dc", "src": "canonical/templates/kb-authoring/domain-doc-matrix.md"}
 {"dst": ".agent/aid/templates/kb-authoring/frontmatter-schema.md", "profile": "antigravity", "sha256": "28829799a2687b318a3414eea2e7be2d7b3a80fa9521a5245e86e4b05358f20c", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
@@ -203,7 +200,7 @@
 {"dst": ".agent/skills/aid-describe/references/state-condensed-intake.md", "profile": "antigravity", "sha256": "7f9a0f445d8fa4eae249d8b559edbb389d0aaa2af0271601fdd473d9e55fd46b", "src": "canonical/skills/aid-describe/references/state-condensed-intake.md"}
 {"dst": ".agent/skills/aid-describe/references/state-continue.md", "profile": "antigravity", "sha256": "eff7ad1c85b613ba2cc95ebd0d3f528b1b391380099465439f662e2442322fd4", "src": "canonical/skills/aid-describe/references/state-continue.md"}
 {"dst": ".agent/skills/aid-describe/references/state-describe-seed.md", "profile": "antigravity", "sha256": "d4ed32c13b6f334bed27cf00673f004522f280567f72ab94b50cdc5f68fd9ecf", "src": "canonical/skills/aid-describe/references/state-describe-seed.md"}
-{"dst": ".agent/skills/aid-describe/references/state-first-run.md", "profile": "antigravity", "sha256": "0f1684a59fecd455d079baaacdea4730d068cf5afedbfbea6e846dc6d9810eb3", "src": "canonical/skills/aid-describe/references/state-first-run.md"}
+{"dst": ".agent/skills/aid-describe/references/state-first-run.md", "profile": "antigravity", "sha256": "c06df915bfeedb7c7810fbb139320e65bd1bbb667af9ce8e69f47cd5f26cf079", "src": "canonical/skills/aid-describe/references/state-first-run.md"}
 {"dst": ".agent/skills/aid-describe/references/state-lite-done.md", "profile": "antigravity", "sha256": "3e1420be19831b38d9ddbee01f8402e68efe214517bb35e4f6b2857f55d200e4", "src": "canonical/skills/aid-describe/references/state-lite-done.md"}
 {"dst": ".agent/skills/aid-describe/references/state-lite-review.md", "profile": "antigravity", "sha256": "73642ae66c63a9bcb2c77d3c1f3e9e74b025d95dd3ccb6128b56f70f8309055f", "src": "canonical/skills/aid-describe/references/state-lite-review.md"}
 {"dst": ".agent/skills/aid-describe/references/state-q-and-a.md", "profile": "antigravity", "sha256": "9c7d28ab3e6c17928e84315fea18f4a480a3f432ca070eaa6a70d7ef48b31b1a", "src": "canonical/skills/aid-describe/references/state-q-and-a.md"}
@@ -252,7 +249,7 @@
 {"dst": ".agent/skills/aid-monitor/SKILL.md", "profile": "antigravity", "sha256": "b1261dcf5d5211db31f75ac1770a5ee18e38299ed954f080ee4c8068a66cf043", "src": "canonical/skills/aid-monitor/SKILL.md"}
 {"dst": ".agent/skills/aid-monitor/references/state-classify.md", "profile": "antigravity", "sha256": "41b333f869faf6bb033cc56506f47ee78ed57d91ca1ce84a6589f953a0eb22ea", "src": "canonical/skills/aid-monitor/references/state-classify.md"}
 {"dst": ".agent/skills/aid-monitor/references/state-observe.md", "profile": "antigravity", "sha256": "ecfe244290faa3c3c0397085654e1fe52a0d956f2040f2e9349e266176ca9d18", "src": "canonical/skills/aid-monitor/references/state-observe.md"}
-{"dst": ".agent/skills/aid-monitor/references/state-route.md", "profile": "antigravity", "sha256": "36bc523ef0e0e5aa15de5b1a4dc17a04ee6b12cb60c8312f6258b6842d6fb9f2", "src": "canonical/skills/aid-monitor/references/state-route.md"}
+{"dst": ".agent/skills/aid-monitor/references/state-route.md", "profile": "antigravity", "sha256": "45758b0a59fefab25f5a4c33845d5873f76b2d70773fae9544dafe85524bfd38", "src": "canonical/skills/aid-monitor/references/state-route.md"}
 {"dst": ".agent/skills/aid-plan/SKILL.md", "profile": "antigravity", "sha256": "9a9750d91653ea5c5c586656f57ea79023bb28a1261ebeca5133e0b90a29d392", "src": "canonical/skills/aid-plan/SKILL.md"}
 {"dst": ".agent/skills/aid-plan/references/first-run-loop.md", "profile": "antigravity", "sha256": "f304bafc3fa25ac8249d1e9fb293c321b862457ee70348b7c144fd44caa1b3a7", "src": "canonical/skills/aid-plan/references/first-run-loop.md"}
 {"dst": ".agent/skills/aid-plan/references/review-deliverables.md", "profile": "antigravity", "sha256": "8a653b3bc2fe793685ab9c20e7b3ac0786827812e7e9c1f2138bdfd89302f950", "src": "canonical/skills/aid-plan/references/review-deliverables.md"}

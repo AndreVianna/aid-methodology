@@ -135,6 +135,9 @@ function script:Test-AidIsProjectDir {
 # The current .aid/ layout version. Bumped ONLY on a breaking layout change,
 # never on every CLI release. Defined exactly once; all comparisons read this.
 # Integer must equal the bash AID_SUPPORTED_FORMAT in bin/aid.
+# NOTE (work-007 C6): the install-time settings seed also stamps this value. On a
+# bump, update ALL carriers together: this line, bin/aid AID_SUPPORTED_FORMAT, and
+# lib/AidInstallCore.psm1 $script:_AidSupportedFormat (the PS seed's source).
 # ---------------------------------------------------------------------------
 Set-Variable -Name AidSupportedFormat -Value 1 -Option Constant -Scope Script
 

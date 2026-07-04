@@ -98,10 +98,11 @@ Print: `[State: VALIDATE]`
 
 Confirm canonical completeness:
 
-1. Each AID skill phase has a corresponding `canonical/skills/aid-{name}/` directory with
-   a `SKILL.md`. The 11 expected skills are:
-   `aid-init`, `aid-discover`, `aid-describe`, `aid-define`, `aid-specify`, `aid-plan`,
-   `aid-detail`, `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize`.
+1. Each AID skill has a corresponding `canonical/skills/aid-{name}/` directory with
+   a `SKILL.md`. The 14 expected skills are:
+   `aid-config`, `aid-discover`, `aid-describe`, `aid-define`, `aid-specify`, `aid-plan`,
+   `aid-detail`, `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize`,
+   `aid-housekeep`, `aid-query-kb`, `aid-update-kb`.
 
    ```bash
    ls canonical/skills/
@@ -124,53 +125,26 @@ Print: `[State: RENDER]`
 
 ## Mode: RENDER
 
-For each profile in `SELECTED_PROFILES`:
+1. **Output roots:** each profile's `output_root` in its TOML resolves under the
+   repo root to `profiles/<tool>/...` (`profiles/claude-code/.claude/`,
+   `profiles/codex/.codex/`, `profiles/cursor/.cursor/`,
+   `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`). The generator
+   writes there directly; there is no separate dry-run scratch mode.
 
-Print: `[{i}/{N}] Rendering {tool}...`
-
-1. **Determine output root:**
-   - Live mode: repo root (`.`); each profile's `output_root` in its TOML resolves to `profiles/<tool>/...` (e.g. `profiles/claude-code/.claude/`, `profiles/codex/.codex/`, `profiles/cursor/.cursor/`, `profiles/copilot-cli/.github/`, `profiles/antigravity/.agent/`)
-   - Dry-run mode: a temporary scratch directory (created per profile)
-
-2. **Run the renderers in order:**
+2. **Run the live generator** (renders ALL profiles in one pass):
 
    ```bash
-   python .claude/skills/generate-profile/scripts/render_agents.py \
-     --canonical-root . \
-     --profile profiles/{tool}.toml \
-     --output-root {output_root}
-
-   python .claude/skills/generate-profile/scripts/render_skills.py \
-     --canonical-root . \
-     --profile profiles/{tool}.toml \
-     --output-root {output_root}
-
-   python .claude/skills/generate-profile/scripts/render_templates.py \
-     --canonical-root . \
-     --profile profiles/{tool}.toml \
-     --output-root {output_root}
+   python .claude/skills/generate-profile/scripts/run_generator.py
    ```
 
-   Each renderer internally calls `manifest.add()` for every emitted file.
+   `run_generator.py` iterates every `profiles/*.toml`, calls the copy-based
+   `render_profile` core (`render.py`) for each, writes each profile's
+   `emission-manifest.jsonl`, and runs the manifest diff/deletion pass
+   internally (paths removed since the previous manifest are deleted and empty
+   generator-owned dirs pruned), then runs the deterministic + advisory verify
+   spine. There is no per-tool or dry-run flag — it always regenerates all five
+   trees; use `render.py --self-test` (below) for a non-writing correctness check.
 
-3. **Write the manifest** (live mode only):
-   ```
-   profiles/{tool}/emission-manifest.jsonl
-   ```
-   In dry-run mode, write the manifest to the scratch directory instead.
-
-4. **Deletion pass** (live mode only):
-   Compare `diff(prev_manifest, curr_manifest)` to find `removed_dst`.
-   For each path in `removed_dst`:
-   ```bash
-   rm profiles/{tool}/{dst}
-   ```
-   Prune empty parent directories within the generator-owned subtree.
-   Print: `Deleted: {dst}` for each deletion.
-
-   In dry-run mode, print `[DRY-RUN] Would delete: {dst}` but do not delete.
-
-Print: `[{i}/{N}] Done: {tool} — {file_count} files emitted`
 Print: `[State: VERIFY]`
 
 ---

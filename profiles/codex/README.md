@@ -1,17 +1,22 @@
 # AID for OpenAI Codex CLI
 
-Use the `setup.sh` (or `setup.ps1` on Windows) script at the repo root to install AID into your project, or copy manually:
+Install the persistent `aid` CLI once per machine, then add this profile inside your project:
 
 ## Setup
 
 ```bash
-# Automated (recommended)
-path/to/aid-methodology/setup.sh /path/to/your/project
+# 1. Bootstrap the aid CLI (once per machine)
+curl -fsSL https://raw.githubusercontent.com/AndreVianna/aid-methodology/master/install.sh | bash
 
-# Manual
-cp -r path/to/aid-methodology/profiles/codex/.codex  .codex/
-cp path/to/aid-methodology/codex/AGENTS.md  AGENTS.md
+# 2. Add the profile inside your project
+aid add codex
+
+# Manual copy alternative (from a repo checkout)
+cp -r path/to/aid-methodology/profiles/codex/.codex    .codex/
+cp    path/to/aid-methodology/profiles/codex/AGENTS.md  AGENTS.md
 ```
+
+See the repo README for npm / pipx / offline install options.
 
 This gives you:
 - `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (14 skills: 11 across five pipeline groups + 3 off-pipeline on-demand)
@@ -49,12 +54,11 @@ The Reviewer ≥ Executor invariant is enforced: the agent that grades is never 
 
 14 skills total: the pipeline phase skills, the optional `aid-summarize` for
 generating a single-file visual HTML summary of the Knowledge Base, plus the
-on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. See [`.codex/skills/aid-README.md`](.codex/skills/aid-README.md)
-for the full list. Skills live in `.codex/skills/` — Codex reads skills from this directory.
+on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. Each skill lives in `.codex/skills/aid-<name>/SKILL.md` — Codex reads skills from this directory.
 
 Notable mechanisms:
 - **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `.codex/aid/scripts/grade.sh` from the Reviewer's structured issue list.
-- **aid-discover** runs `.codex/aid/scripts/build-project-index.sh` as a Step 0c pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel.
+- **aid-discover** runs `.codex/aid/scripts/kb/build-project-index.sh` as a Step 0c pre-pass before dispatching aid-researcher with parameterized doc-sets in parallel.
 
 ## Usage
 
@@ -64,7 +68,7 @@ Skills are loaded as context when matched by description. Each SKILL.md contains
 ### Agents
 Agent TOML files define specialized roles with focused system prompts. Skills with multiple agent options use an `agents:` block in frontmatter and a selector table in the body.
 
-The `aid-init` skill scaffolds the Knowledge Base (16 documents) and sets up AGENTS.md before discovery begins. The `aid-discover` skill runs the file-index pre-pass, then dispatches `aid-researcher` with parameterized doc-sets for KB generation, then uses `aid-reviewer` for quality gating.
+The `aid-config` skill bootstraps project settings (`.aid/settings.yml`) before the pipeline begins; `AGENTS.md` is installed by the AID installer. The `aid-discover` skill runs the file-index pre-pass, then dispatches `aid-researcher` with parameterized doc-sets for KB generation, then uses `aid-reviewer` for quality gating.
 
 ## File Format
 
@@ -74,6 +78,6 @@ The `aid-init` skill scaffolds the Knowledge Base (16 documents) and sets up AGE
 ## Notes
 
 - Skill bodies are shared with the claude-code versions; frontmatter uses Codex-specific fields
-- Human-readable documentation lives in the repo's `skills/` and `agents/` directories
+- Authoring sources live in the methodology repo under `canonical/skills/` and `canonical/agents/`
 - Templates and scripts live in `.codex/aid/` (and the source-of-truth at `canonical/` in the AID repo)
 - The grading script (`.codex/aid/scripts/grade.sh`) is deterministic — same issue list always produces the same grade

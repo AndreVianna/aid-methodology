@@ -304,7 +304,9 @@ assert_file_contains "$MANIFEST" '"sha256"' "IN12e root_agent sha256 recorded"
 assert_file_contains "$MANIFEST" '"status": "owned"' "IN12f root_agent status is owned"
 
 # ---------------------------------------------------------------------------
-# IN13 – Uninstall exactness: removes manifested paths, leaves repo clean
+# IN13 – Uninstall exactness: removes manifested paths + manifest; a full
+#         uninstall leaves the repo clean — the install-seeded .aid/settings.yml
+#         is removed symmetrically, so .aid/ is pruned too.
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 run_install --tool codex \
@@ -330,9 +332,12 @@ assert_eq "$([[ -f "$T/AGENTS.md" ]] && echo exists || echo gone)" "gone" \
 # Manifest itself is removed when no tools remain.
 assert_eq "$([[ -f "$MANIFEST" ]] && echo exists || echo gone)" "gone" \
     "IN13h manifest removed after full uninstall"
-# .aid/ dir should be gone (empty after removing manifest).
+# .aid/ removed on full uninstall: the install-time-seeded settings.yml is
+# removed symmetrically (uninstall_tool), so nothing keeps .aid/ alive.
 assert_eq "$([[ -d "$T/.aid" ]] && echo exists || echo gone)" "gone" \
-    "IN13i .aid/ dir removed after full uninstall"
+    "IN13i .aid/ removed after full uninstall"
+assert_eq "$([[ -f "$T/.aid/settings.yml" ]] && echo exists || echo gone)" "gone" \
+    "IN13i2 seeded .aid/settings.yml removed on full uninstall"
 
 # Second uninstall → exit 6 (no manifest).
 run_install --uninstall --tool codex --target "$T"
