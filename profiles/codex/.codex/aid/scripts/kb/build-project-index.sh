@@ -88,45 +88,10 @@ else
   get_mtime() { echo "?"; }
 fi
 
-# Detect language from a file extension
-detect_lang() {
-  local ext="${1##*.}"
-  ext="${ext,,}"
-  case "$ext" in
-    java)                   echo "Java" ;;
-    kt|kts)                 echo "Kotlin" ;;
-    py)                     echo "Python" ;;
-    js|mjs|cjs|jsx)         echo "JavaScript" ;;
-    ts|tsx|mts|cts)         echo "TypeScript" ;;
-    go)                     echo "Go" ;;
-    rs)                     echo "Rust" ;;
-    cs)                     echo "C#" ;;
-    fs|fsx)                 echo "F#" ;;
-    cpp|cc|cxx|hpp|hxx|c|h) echo "C/C++" ;;
-    rb)                     echo "Ruby" ;;
-    php)                    echo "PHP" ;;
-    swift)                  echo "Swift" ;;
-    scala|sc)               echo "Scala" ;;
-    elm)                    echo "Elm" ;;
-    ex|exs)                 echo "Elixir" ;;
-    erl|hrl)                echo "Erlang" ;;
-    clj|cljs|cljc)          echo "Clojure" ;;
-    lua)                    echo "Lua" ;;
-    sh|bash|zsh)            echo "Shell" ;;
-    ps1)                    echo "PowerShell" ;;
-    sql)                    echo "SQL" ;;
-    yaml|yml)               echo "YAML" ;;
-    json)                   echo "JSON" ;;
-    toml)                   echo "TOML" ;;
-    xml)                    echo "XML" ;;
-    md|markdown)            echo "Markdown" ;;
-    css|scss|sass|less)     echo "CSS" ;;
-    html|htm)               echo "HTML" ;;
-    vue)                    echo "Vue" ;;
-    svelte)                 echo "Svelte" ;;
-    *)                      echo "Other" ;;
-  esac
-}
+# NOTE: language detection now lives in the awk pass that builds FILES_DATA (Step 3
+# below), so the previous per-file shell `detect_lang` -- which forked a subshell per
+# file via `lang=$(detect_lang ...)` -- has been removed. The ext->name mapping is
+# kept in lockstep inside that awk function.
 
 # Whether a language is "source code" (vs config/data/docs)
 is_source() {
@@ -237,19 +202,63 @@ fi
 # Build an associative map of path → lines, then walk the path/mtime list.
 echo "[index] Detecting languages..." >&2
 
-declare -A LINES_MAP
-if [[ -s "$LINE_COUNTS" ]]; then
-  while IFS=$'\t' read -r p n; do
-    LINES_MAP["$p"]=$n
-  done < "$LINE_COUNTS"
-fi
-
-while IFS=$'\t' read -r path mtime; do
-  [[ -z "$path" ]] && continue
-  lang=$(detect_lang "$path")
-  lines="${LINES_MAP[$path]:-0}"
-  printf '%s\t%s\t%s\t%s\n' "$path" "$lang" "$lines" "$mtime"
-done < "$TMP" > "$FILES_DATA"
+# Join path+mtime with line-count + language detection in ONE awk pass.
+# The previous per-file loop ran `lang=$(detect_lang "$path")` -- a command
+# substitution that forks a subshell for EVERY file. On ~1400 files under Windows
+# Git Bash / MSYS (~0.5-1.8s/fork) that cost 1-2 min. awk derives the language from
+# the extension inline (same ext->name mapping as the shell detect_lang), so there
+# are zero per-file spawns. Output (FILES_DATA) is byte-identical to the old loop.
+awk -F'\t' -v lcf="$LINE_COUNTS" '
+  function detect_lang(path,   ext) {
+    ext = path; if (sub(/.*\./, "", ext) == 0) ext = path; ext = tolower(ext)
+    if      (ext=="java")                                                              return "Java"
+    else if (ext=="kt"||ext=="kts")                                                    return "Kotlin"
+    else if (ext=="py")                                                                return "Python"
+    else if (ext=="js"||ext=="mjs"||ext=="cjs"||ext=="jsx")                            return "JavaScript"
+    else if (ext=="ts"||ext=="tsx"||ext=="mts"||ext=="cts")                            return "TypeScript"
+    else if (ext=="go")                                                                return "Go"
+    else if (ext=="rs")                                                                return "Rust"
+    else if (ext=="cs")                                                                return "C#"
+    else if (ext=="fs"||ext=="fsx")                                                    return "F#"
+    else if (ext=="cpp"||ext=="cc"||ext=="cxx"||ext=="hpp"||ext=="hxx"||ext=="c"||ext=="h") return "C/C++"
+    else if (ext=="rb")                                                                return "Ruby"
+    else if (ext=="php")                                                               return "PHP"
+    else if (ext=="swift")                                                             return "Swift"
+    else if (ext=="scala"||ext=="sc")                                                  return "Scala"
+    else if (ext=="elm")                                                               return "Elm"
+    else if (ext=="ex"||ext=="exs")                                                    return "Elixir"
+    else if (ext=="erl"||ext=="hrl")                                                   return "Erlang"
+    else if (ext=="clj"||ext=="cljs"||ext=="cljc")                                     return "Clojure"
+    else if (ext=="lua")                                                               return "Lua"
+    else if (ext=="sh"||ext=="bash"||ext=="zsh")                                       return "Shell"
+    else if (ext=="ps1")                                                               return "PowerShell"
+    else if (ext=="sql")                                                               return "SQL"
+    else if (ext=="yaml"||ext=="yml")                                                  return "YAML"
+    else if (ext=="json")                                                              return "JSON"
+    else if (ext=="toml")                                                              return "TOML"
+    else if (ext=="xml")                                                               return "XML"
+    else if (ext=="md"||ext=="markdown")                                               return "Markdown"
+    else if (ext=="css"||ext=="scss"||ext=="sass"||ext=="less")                        return "CSS"
+    else if (ext=="html"||ext=="htm")                                                  return "HTML"
+    else if (ext=="vue")                                                               return "Vue"
+    else if (ext=="svelte")                                                            return "Svelte"
+    else                                                                               return "Other"
+  }
+  BEGIN {
+    # path -> line-count map, from LINE_COUNTS (each line: "<path>\t<count>").
+    # Split on the FIRST tab (matches the old `read -r p n` with IFS=tab).
+    while ((getline line < lcf) > 0) {
+      t = index(line, "\t")
+      if (t > 0) LINES[substr(line, 1, t-1)] = substr(line, t+1)
+    }
+  }
+  {
+    path = $1; mtime = $2
+    if (path == "") next
+    lines = (path in LINES) ? LINES[path] : 0
+    print path "\t" detect_lang(path) "\t" lines "\t" mtime
+  }
+' "$TMP" > "$FILES_DATA"
 
 # Aggregate by language: count, total lines
 LANG_BREAKDOWN=$(awk -F'\t' '

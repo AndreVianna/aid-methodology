@@ -70,7 +70,7 @@
 {"dst": ".github/aid/scripts/interview/parse-recipe.sh", "profile": "copilot-cli", "sha256": "b5e8fd7975e78a7b85b70d05d1abbd4f826c7ffbe7b4ccd381a76bacb04ec44d", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".github/aid/scripts/kb/build-kb-index.sh", "profile": "copilot-cli", "sha256": "c0b4aeec9110fd20ada4ecdeff6f0a74529955477654e72e1a2b974e6bc0d3a2", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".github/aid/scripts/kb/build-metrics.sh", "profile": "copilot-cli", "sha256": "38df7c52467785b22b09bd9991ede3e972d2b149009e96a6ff9fdfc877a3bff5", "src": "canonical/scripts/kb/build-metrics.sh"}
-{"dst": ".github/aid/scripts/kb/build-project-index.sh", "profile": "copilot-cli", "sha256": "3f2cca630d775753059fa6f1d30ce0a069176438cc2611fb98d1b1aa733af660", "src": "canonical/scripts/kb/build-project-index.sh"}
+{"dst": ".github/aid/scripts/kb/build-project-index.sh", "profile": "copilot-cli", "sha256": "f7c4804285448210e1bee5fb4b8a85c00247420925da618a14578755668b03f6", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".github/aid/scripts/kb/closure-check.sh", "profile": "copilot-cli", "sha256": "d7ea26e754e42a64fb50728055c838790ce3a8d466a258f441d134bad9ba8ff6", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".github/aid/scripts/kb/coined-term-denylist.txt", "profile": "copilot-cli", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".github/aid/scripts/kb/discover-preflight.sh", "profile": "copilot-cli", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}

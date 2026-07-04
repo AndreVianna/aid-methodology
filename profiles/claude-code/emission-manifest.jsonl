@@ -70,7 +70,7 @@
 {"dst": ".claude/aid/scripts/interview/parse-recipe.sh", "profile": "claude-code", "sha256": "b5e8fd7975e78a7b85b70d05d1abbd4f826c7ffbe7b4ccd381a76bacb04ec44d", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".claude/aid/scripts/kb/build-kb-index.sh", "profile": "claude-code", "sha256": "041824d6ac66294250f1270ee2f7ac5af63fa1382afa5656903a2e008c7f8dfa", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".claude/aid/scripts/kb/build-metrics.sh", "profile": "claude-code", "sha256": "61f1308af8e481ea457f9b87082e1d7bce5934cb35b1465f5cfede7ac73f0596", "src": "canonical/scripts/kb/build-metrics.sh"}
-{"dst": ".claude/aid/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "927c92e438dcf008b24b09848712edf8a1625f2425efcdbcb3dd140c7e73bfb5", "src": "canonical/scripts/kb/build-project-index.sh"}
+{"dst": ".claude/aid/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "96c220f6e7223d4ad259f68d44fbee9de5c7b14c9f8e72d48410013a40fc09ac", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".claude/aid/scripts/kb/closure-check.sh", "profile": "claude-code", "sha256": "b79425bb7a773e028409aa7451aa87ca22f741c2cb1d0e84031e218a78089b8a", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".claude/aid/scripts/kb/coined-term-denylist.txt", "profile": "claude-code", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".claude/aid/scripts/kb/discover-preflight.sh", "profile": "claude-code", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}
