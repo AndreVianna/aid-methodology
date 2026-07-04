@@ -1,6 +1,6 @@
 {
   "name": "aid-installer",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "description": "AID (AI Integrated Development) CLI installer - puts the persistent aid command on PATH via npm",
   "author": "Andre Vianna",
   "homepage": "https://aid.casuloailabs.com",

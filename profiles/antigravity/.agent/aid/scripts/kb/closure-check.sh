@@ -353,51 +353,9 @@ DOC_LIST="${TMPDIR_CC}/doc_list.txt"
 find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' 2>/dev/null | sort > "$DOC_LIST" || true
 
 # ---------------------------------------------------------------------------
-# Output (a) computation:
-#   Only NOT-defined terms (pre-computed above) reach the doc scan. A term USED in a KB doc
-#   body that is not defined is an ungrounded term. Output one row per (term, doc) pair.
-#   Doc scanning: literal, case-insensitive (grep -i -F) on the original term.
+# sources: helpers (used by the batched presence scan below AND by output (b))
 # ---------------------------------------------------------------------------
-OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
-
-{
-  echo "## Output (a): Ungrounded / Un-closed Concept Set"
-  echo ""
-  echo "| term | used-in-doc | anchor |"
-  echo "|------|-------------|--------|"
-
-  if [[ -d "$KB_DIR" ]] && [[ -s "$UNDEFINED_FILE" ]]; then
-    while IFS= read -r term; do
-      [[ -z "$term" ]] && continue
-      while IFS= read -r doc; do
-        [[ -f "$doc" ]] || continue
-        doc_base="$(basename "$doc")"
-
-        # Check if term appears in doc (literal, case-insensitive; -F: no regex)
-        if LC_ALL=C grep -qiF -- "$term" "$doc" 2>/dev/null; then
-          # Representative anchor (first match). `head -1` closes the pipe early; under
-          # `set -euo pipefail` the upstream grep then catches SIGPIPE (141), so `|| true`.
-          anchor=$(LC_ALL=C grep -iF -- "$term" "$doc" 2>/dev/null \
-            | head -1 \
-            | sed 's/^[[:space:]]*//' \
-            | cut -c1-80 || true)
-          anchor=$(echo "$anchor" | tr '|' '/')
-          printf '| %s | %s | %s |\n' "$term" "$doc_base" "$anchor"
-        fi
-      done < "$DOC_LIST"
-    done < "$UNDEFINED_FILE"
-  fi
-} > "$OUTPUT_A_TMP"
-
-# ---------------------------------------------------------------------------
-# Output (b) computation:
-#   For each KB doc, parse its sources: frontmatter.
-#   For each sources: entry that is a local readable file, scan for each term.
-#   URL entries -> anchoring-source = N/A, skip (no absent finding).
-# ---------------------------------------------------------------------------
-OUTPUT_B_TMP="${TMPDIR_CC}/output_b.md"
-
-# Helper: extract sources: list items from a doc's frontmatter
+# Extract sources: list items from a doc's frontmatter (one awk per doc).
 extract_sources() {
   local doc="$1"
   awk '
@@ -445,27 +403,184 @@ extract_sources() {
   ' "$doc"
 }
 
-# Helper: is an entry a URL?
+# Is an entry a URL?  (bash builtin -- no subshell fork)
 is_url() {
-  echo "$1" | grep -qE '^https?://'
+  [[ "$1" =~ ^https?:// ]]
 }
 
-# Helper: resolve a sources: entry to an absolute path under ROOT
+# Resolve a sources: entry to an absolute path under ROOT. Result is returned in the
+# global RESOLVE_OUT (set instead of echoed, so callers avoid a per-call command-
+# substitution fork -- the O(term x source) hot path in output (b)).
 resolve_source() {
   local entry="$1"
-  # Try as-is under ROOT
   local candidate="${ROOT}/${entry}"
-  if [[ -f "$candidate" && -r "$candidate" ]]; then
-    echo "$candidate"
-    return
-  fi
-  # Try entry as absolute path
-  if [[ -f "$entry" && -r "$entry" ]]; then
-    echo "$entry"
-    return
-  fi
-  echo ""
+  if [[ -f "$candidate" && -r "$candidate" ]]; then RESOLVE_OUT="$candidate"; return; fi
+  if [[ -f "$entry" && -r "$entry" ]]; then RESOLVE_OUT="$entry"; return; fi
+  RESOLVE_OUT=""
 }
+
+# ---------------------------------------------------------------------------
+# Batched term-presence scan (PERFORMANCE FIX).
+#
+# Replaces the per-(term x doc)[/x source] `grep -qiF` spawns in outputs (a) and (b)
+# -- which on a ~500-term universe x ~15 docs x sources reached tens of thousands of
+# fork()/exec calls and timed out (>3 min) on Windows Git Bash / MSYS -- with a SINGLE
+# awk pass that builds a term->file presence map (plus per-doc first-match anchors).
+#
+# Reproduces `grep -qiF` EXACTLY: case-insensitive (tolower both sides), fixed-string
+# literal substring (awk index()), per line, C locale, per-term-independent (each term
+# checked on its own, so a term that is a substring of another -- "bus" in "relative
+# bus" -- is never masked). One awk process = zero per-item spawns, and identical
+# output on every OS since it is the same interpreter everywhere.
+#
+# (ripgrep was evaluated and rejected HERE: rg.exe on Windows/MSYS rewrites the input
+# path `/c/x` -> `C:/x` in its output, which would key presence under a different
+# string than the find/resolve paths the output loops look up -- silently breaking the
+# cross-OS byte-identity this oracle guarantees. awk keys by FILENAME = the exact path,
+# so there is no path-form mismatch. rg's only role here would have been line pre-
+# filtering, not worth an OS-divergence bug; the file set is small (KB docs + sources).)
+# ---------------------------------------------------------------------------
+PRESENT_TSV="${TMPDIR_CC}/present.tsv"     # <term>\x01<file>
+ANCHOR_TSV="${TMPDIR_CC}/anchor.tsv"       # <term>\x01<doc>\x01<anchor>
+: > "$PRESENT_TSV"; : > "$ANCHOR_TSV"
+
+# Terms actually looked up: output (b) uses TERMS_FILE, output (a) uses the UNDEFINED
+# subset (both subsets of the universe). Union, lowercased, non-empty.
+SCAN_TERMS="${TMPDIR_CC}/scan_terms.txt"
+cat "$TERMS_FILE" "$UNDEFINED_FILE" 2>/dev/null | LC_ALL=C sort -u | grep -v '^[[:space:]]*$' > "$SCAN_TERMS" || true
+
+# In ONE pass over the docs: (1) build the scan file set = KB docs UNION every
+# resolved (local, readable) sources: file, and (2) record per-doc source info for
+# output (b) -- so extract_sources/resolve run once per (doc,source), not per term.
+# SRCINFO rows (DOC_LIST order, source order): <doc>\x01<type>\x01<resolved>\x01<src_rel>
+# where type is url | unresolved | file.
+SCANSET="${TMPDIR_CC}/scanset.txt"
+SRCINFO="${TMPDIR_CC}/srcinfo.tsv"
+cp "$DOC_LIST" "$SCANSET" 2>/dev/null || : > "$SCANSET"
+: > "$SRCINFO"
+if [[ -d "$KB_DIR" && -s "$DOC_LIST" ]]; then
+  while IFS= read -r _doc; do
+    [[ -f "$_doc" ]] || continue
+    while IFS= read -r _src; do
+      [[ -z "$_src" ]] && continue
+      if is_url "$_src"; then
+        printf '%s\001url\001\001\n' "$_doc" >> "$SRCINFO"
+        continue
+      fi
+      resolve_source "$_src"
+      if [[ -z "$RESOLVE_OUT" ]]; then
+        printf '%s\001unresolved\001\001\n' "$_doc" >> "$SRCINFO"
+        continue
+      fi
+      printf '%s\001file\001%s\001%s\n' "$_doc" "$RESOLVE_OUT" "${RESOLVE_OUT#${ROOT}/}" >> "$SRCINFO"
+      printf '%s\n' "$RESOLVE_OUT" >> "$SCANSET"
+    done < <(extract_sources "$_doc")
+  done < "$DOC_LIST"
+fi
+LC_ALL=C sort -u "$SCANSET" -o "$SCANSET"
+
+# Attribution awk: reads the scan files DIRECTLY. curfile = FILENAME (the exact path
+# string passed in, = the find/resolve strings the output loops key by -> no path-form
+# mismatch). For each line: lowercase it and, for each not-yet-seen-in-this-file term,
+# index() -> presence (+ first-line anchor for KB docs). SEP = \x01 (never in terms/
+# paths/anchors, so serialization survives terms-with-spaces and anchor-with-tabs).
+ATTR_AWK="${TMPDIR_CC}/attribute.awk"
+cat > "$ATTR_AWK" <<'ATTR'
+BEGIN {
+  SEP = sprintf("%c", 1)
+  while ((getline t < termsf) > 0) { if (t != "") TERMS[++NT] = t }
+  while ((getline d < docsf) > 0) { if (d != "") ISDOC[d] = 1 }
+}
+FNR == 1 { curfile = FILENAME; isdoc = (curfile in ISDOC) }
+{
+  lc = tolower($0)
+  for (i = 1; i <= NT; i++) {
+    t = TERMS[i]
+    key = t SEP curfile
+    if (key in SEEN) continue              # presence already recorded for this file
+    if (index(lc, t) > 0) {
+      SEEN[key] = 1
+      print t SEP curfile > presfile
+      if (isdoc) {
+        a = $0                             # first matching line = anchor (original case)
+        sub(/^[[:space:]]+/, "", a)        # strip leading whitespace
+        a = substr(a, 1, 80)               # first 80 bytes (LC_ALL=C)
+        gsub(/\|/, "/", a)                 # pipes -> slashes (table safety)
+        print t SEP curfile SEP a > ancfile
+      }
+    }
+  }
+}
+ATTR
+
+if [[ -s "$SCAN_TERMS" && -s "$SCANSET" ]]; then
+  mapfile -t _SCAN_ARR < "$SCANSET"
+  # Single awk pass over the scan file set -- was tens of thousands of per-(term x doc
+  # x source) `grep -qiF` spawns. LC_ALL=C makes tolower()/substr() byte-wise, matching
+  # `grep -qiF` / `cut -c` in the C locale.
+  LC_ALL=C awk -v termsf="$SCAN_TERMS" -v docsf="$DOC_LIST" -v presfile="$PRESENT_TSV" -v ancfile="$ANCHOR_TSV" -f "$ATTR_AWK" "${_SCAN_ARR[@]}" 2>/dev/null || true
+fi
+
+# Outputs (a) and (b) are generated by awk (below), reading the presence map / anchors
+# / per-doc source info directly from the temp files. Doing the derivation in awk (not
+# a bash triple-loop) is what keeps it O(seconds): output (b) is docs x all-terms x
+# sources rows, which a bash loop -- even fork-free -- is far too slow to emit on MSYS.
+
+# ---------------------------------------------------------------------------
+# Output (a) computation:
+#   Only NOT-defined terms (pre-computed above) reach the doc scan. A term USED in a KB doc
+#   body that is not defined is an ungrounded term. Output one row per (term, doc) pair.
+#   Doc scanning: literal, case-insensitive (grep -i -F) on the original term.
+# ---------------------------------------------------------------------------
+OUTPUT_A_TMP="${TMPDIR_CC}/output_a.md"
+
+{
+  echo "## Output (a): Ungrounded / Un-closed Concept Set"
+  echo ""
+  echo "| term | used-in-doc | anchor |"
+  echo "|------|-------------|--------|"
+
+  if [[ -d "$KB_DIR" ]] && [[ -s "$UNDEFINED_FILE" ]]; then
+    # One awk pass (was a bash term x doc loop with a per-(term,doc) `grep -qiF` +
+    # 4-process anchor pipeline). Emits one row per (undefined term, doc) where the
+    # term is present, in UNDEFINED_FILE order x DOC_LIST order -- identical to before.
+    LC_ALL=C awk -v presf="$PRESENT_TSV" -v ancf="$ANCHOR_TSV" -v doclistf="$DOC_LIST" '
+      BEGIN {
+        SEP = sprintf("%c", 1)
+        while ((getline p < presf) > 0) { if (p != "") PRES[p] = 1 }
+        while ((getline a < ancf) > 0) {
+          if (a == "") continue
+          n = split(a, F, SEP)                 # F[1]=term F[2]=doc F[3]=anchor
+          if (n >= 3) ANC[F[1] SEP F[2]] = F[3]
+        }
+        nd = 0
+        while ((getline d < doclistf) > 0) { if (d != "") DOCS[++nd] = d }
+      }
+      {
+        term = $0
+        if (term == "") next
+        for (k = 1; k <= nd; k++) {
+          doc = DOCS[k]; key = term SEP doc
+          if (key in PRES) {
+            b = doc; sub(/.*\//, "", b)
+            print "| " term " | " b " | " ANC[key] " |"
+          }
+        }
+      }
+    ' "$UNDEFINED_FILE"
+  fi
+} > "$OUTPUT_A_TMP"
+
+# ---------------------------------------------------------------------------
+# Output (b) computation:
+#   For each KB doc, parse its sources: frontmatter.
+#   For each sources: entry that is a local readable file, scan for each term.
+#   URL entries -> anchoring-source = N/A, skip (no absent finding).
+# ---------------------------------------------------------------------------
+OUTPUT_B_TMP="${TMPDIR_CC}/output_b.md"
+
+# (extract_sources / is_url / resolve_source are defined above, before the batched
+# presence scan that also uses them.)
 
 {
   echo "## Output (b): Per-doc sources:-anchored Coverage"
@@ -474,60 +589,45 @@ resolve_source() {
   echo "|------|-----|------------------|--------|"
 
   if [[ -d "$KB_DIR" ]] && [[ -s "$TERMS_FILE" ]]; then
-    while IFS= read -r doc; do
-      [[ -f "$doc" ]] || continue
-      doc_base="$(basename "$doc")"
-
-      # Extract sources: list for this doc
-      SOURCES_LIST="${TMPDIR_CC}/sources_${doc_base}.txt"
-      extract_sources "$doc" > "$SOURCES_LIST" 2>/dev/null || true
-
-      [[ -s "$SOURCES_LIST" ]] || continue
-
-      # For each term, check against each source entry
-      while IFS= read -r term; do
-        [[ -z "$term" ]] && continue
-
-        while IFS= read -r src_entry; do
-          [[ -z "$src_entry" ]] && continue
-
-          if is_url "$src_entry"; then
-            # URL -> N/A, no finding
-            printf '| %s | %s | N/A | N/A |\n' "$term" "$doc_base"
-            continue
-          fi
-
-          resolved=$(resolve_source "$src_entry")
-          if [[ -z "$resolved" ]]; then
-            # Unresolvable -> N/A, no finding
-            printf '| %s | %s | N/A | N/A |\n' "$term" "$doc_base"
-            continue
-          fi
-
-          src_rel="${resolved#${ROOT}/}"
-
-          # Check presence in doc body (literal, case-insensitive)
-          in_doc=0
-          if LC_ALL=C grep -qiF -- "$term" "$doc" 2>/dev/null; then
-            in_doc=1
-          fi
-
-          # Check presence in resolved source file (literal, case-insensitive)
-          in_src=0
-          if LC_ALL=C grep -qiF -- "$term" "$resolved" 2>/dev/null; then
-            in_src=1
-          fi
-
-          if [[ $in_doc -eq 1 || $in_src -eq 1 ]]; then
-            printf '| %s | %s | %s | present |\n' "$term" "$doc_base" "$src_rel"
-          else
-            printf '| %s | %s | %s | absent |\n' "$term" "$doc_base" "$src_rel"
-          fi
-
-        done < "$SOURCES_LIST"
-      done < "$TERMS_FILE"
-
-    done < <(find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
+    # One awk pass (was a bash doc x term x source triple loop with 2 `grep -qiF` +
+    # is_url + resolve_source per innermost iteration). Emits one row per (doc, term,
+    # source) in DOC_LIST order x TERMS_FILE order x source order -- identical to before.
+    # Per-doc source info (type/resolved/src_rel) comes from SRCINFO (computed once
+    # above); present/absent comes from the presence map (term in doc OR resolved src).
+    LC_ALL=C awk -v presf="$PRESENT_TSV" -v termsf="$TERMS_FILE" -v doclistf="$DOC_LIST" -v srcinfof="$SRCINFO" '
+      BEGIN {
+        SEP = sprintf("%c", 1)
+        while ((getline p < presf) > 0) { if (p != "") PRES[p] = 1 }
+        nt = 0
+        while ((getline t < termsf) > 0) { if (t != "") TERMS[++nt] = t }
+        nd = 0
+        while ((getline d < doclistf) > 0) { if (d != "") DOCS[++nd] = d }
+        # Per-doc ordered sources (grouped by doc, in file order).
+        while ((getline line < srcinfof) > 0) {
+          if (line == "") continue
+          split(line, G, SEP)                    # G[1]=doc G[2]=type G[3]=resolved G[4]=src_rel
+          d = G[1]; c = ++NSRC[d]
+          STYPE[d, c] = G[2]; SRES[d, c] = G[3]; SREL[d, c] = G[4]
+        }
+        for (k = 1; k <= nd; k++) {
+          doc = DOCS[k]
+          if (!(doc in NSRC)) continue           # doc had no sources -> skip (was: empty SOURCES_LIST)
+          b = doc; sub(/.*\//, "", b)
+          for (mi = 1; mi <= nt; mi++) {
+            term = TERMS[mi]
+            for (s = 1; s <= NSRC[doc]; s++) {
+              ty = STYPE[doc, s]
+              if (ty == "url" || ty == "unresolved") { print "| " term " | " b " | N/A | N/A |"; continue }
+              resolved = SRES[doc, s]
+              if ((term SEP doc) in PRES || (term SEP resolved) in PRES)
+                print "| " term " | " b " | " SREL[doc, s] " | present |"
+              else
+                print "| " term " | " b " | " SREL[doc, s] " | absent |"
+            }
+          }
+        }
+      }
+    ' </dev/null
   fi
 } > "$OUTPUT_B_TMP"
 
