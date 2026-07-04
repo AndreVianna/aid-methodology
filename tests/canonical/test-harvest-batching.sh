@@ -141,14 +141,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# T02 -- no hang on a pathological single-long-line docs file.
-# Run under an internal timeout: a regression to per-match spawns or catastrophic
-# backtracking would exceed it and fail here rather than hang the whole suite.
+# T02/T03 -- pathological single-long-line docs file.
+#
+# Harvest a SCRATCH COPY (under mktemp, OUTSIDE any git tree) so the result is
+# deterministic and independent of ambient git history. This matters: harvesting
+# in-tree makes the run depend on `git log`, which differs between a full dev
+# checkout and CI's shallow clone -- a ranking-dependent assertion would then pass
+# locally and fail on CI. The scratch copy has no .git, so the history channel is
+# empty and the output is a pure function of the fixture's own files (this mirrors
+# how test-essence-capture.sh isolates its runs).
+#
+# Run under an internal timeout so a regression to per-match spawns or catastrophic
+# backtracking fails here instead of hanging the whole suite.
 # ---------------------------------------------------------------------------
+LL_SCRATCH="${TMP}/longline-fixture"
+cp -r "$FX_LONGLINE/." "$LL_SCRATCH/"
 OUT_LL="${TMP}/longline.md"
 LL_EXIT=0
 timeout 60 env SOURCE_DATE_EPOCH=1750000000 HOME="$FAKE_HOME" \
-  bash "$SUT" --root "$FX_LONGLINE" --output "$OUT_LL" --denylist "$DENYLIST" >/dev/null 2>&1 || LL_EXIT=$?
+  bash "$SUT" --root "$LL_SCRATCH" --output "$OUT_LL" --denylist "$DENYLIST" >/dev/null 2>&1 || LL_EXIT=$?
 
 if [[ "$LL_EXIT" -eq 124 ]]; then
   fail "T02 harvest HUNG on pathological long-line input (>60s -- spawn storm / backtracking regression)"
@@ -159,11 +170,13 @@ fi
 assert_file_contains "$OUT_LL" "| # | Source | Term | Class | Freq | Spread | Channels | Salience | Example source |" \
   "T02b pathological run still emits the documented table header"
 
-# ---------------------------------------------------------------------------
-# T03 -- long-line extraction still surfaces the planted cross-source concept.
-# ---------------------------------------------------------------------------
-assert_file_contains "$OUT_LL" "Relative Bus" \
-  "T03 planted 'Relative Bus' concept surfaces from the long-line fixture"
+# T03 -- the long line's content is actually EXTRACTED (not skipped or mangled).
+# The fixture's 16-word sentence tiles evenly into stable 4-word phrases; "Quorum
+# Pulse" is a distinctive fragment whose words are NOT in the denylist, so it
+# survives on its own merit at high frequency -- no cross-source/spread or git-
+# history dependency, hence deterministic on any checkout (full or shallow).
+assert_file_contains "$OUT_LL" "Quorum Pulse" \
+  "T03 long-line content is extracted (distinctive phrase surfaces; deterministic, history-independent)"
 
 # ---------------------------------------------------------------------------
 test_summary
