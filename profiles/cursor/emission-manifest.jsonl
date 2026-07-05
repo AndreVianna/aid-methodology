@@ -70,11 +70,11 @@
 {"dst": ".cursor/aid/scripts/interview/parse-recipe.sh", "profile": "cursor", "sha256": "21733b145f6da801cf00237107599cdc02418b08ad00947b6c94c62d61a54967", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "9417486684f69e7f1957d28e5886aa30f73fdc2350a334f7a5c12d59eacfbb3d", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "f0510ab58763ff88b9f05d52cf536e9e64c0b28c839f06916d9bf5123f2b70da", "src": "canonical/scripts/kb/build-metrics.sh"}
-{"dst": ".cursor/aid/scripts/kb/build-project-index.sh", "profile": "cursor", "sha256": "7033ffc82cd3301ad6537601e038542194c43f87d2f7b1b275904b0788c0bc44", "src": "canonical/scripts/kb/build-project-index.sh"}
+{"dst": ".cursor/aid/scripts/kb/build-project-index.sh", "profile": "cursor", "sha256": "858bac7520611daab9a0525798c6131e6ec5b603ed4699ce278c83e931991ade", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/closure-check.sh", "profile": "cursor", "sha256": "9fc76d7d89fcdfc7d93f1f187cd39da606da4953634e0a1459ef5fca15d7487d", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".cursor/aid/scripts/kb/coined-term-denylist.txt", "profile": "cursor", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".cursor/aid/scripts/kb/discover-preflight.sh", "profile": "cursor", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}
-{"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "aa00012f4bed4adf928941beecd2313d219961712bb57e878bfad5840aa716cc", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
+{"dst": ".cursor/aid/scripts/kb/harvest-coined-terms.sh", "profile": "cursor", "sha256": "4ce162400d52012ea9338cf68e9ba3e0368c720b760a762e8a2f48de00731f9f", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-actback-task.sh", "profile": "cursor", "sha256": "d391d9bdbb3d2ade0bf95473c3fb2c2fa395e9a44b9f7b9615d45471814a60c3", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-citation-lint.sh", "profile": "cursor", "sha256": "b0be37ca3b394c0a0d1d386c1c192dda027576ada524aba15b4e356b2a20b9d0", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".cursor/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "cursor", "sha256": "9b99011b98286560ca09162006d77343aad368ea9070151ae16f9623f2d4bab5", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
