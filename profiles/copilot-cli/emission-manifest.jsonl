@@ -68,7 +68,7 @@
 {"dst": ".github/aid/scripts/housekeep/cleanup-classify.sh", "profile": "copilot-cli", "sha256": "18c5bb68e88257f8501271458dbc1ce983bab9d24125db29583e2a26a64abb54", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".github/aid/scripts/housekeep/housekeep-state.sh", "profile": "copilot-cli", "sha256": "5ca9d4dc8a776246df530ca37a00a8f04a73e5786b0d86fc9845235287a850fc", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".github/aid/scripts/interview/parse-recipe.sh", "profile": "copilot-cli", "sha256": "21733b145f6da801cf00237107599cdc02418b08ad00947b6c94c62d61a54967", "src": "canonical/scripts/interview/parse-recipe.sh"}
-{"dst": ".github/aid/scripts/kb/build-kb-index.sh", "profile": "copilot-cli", "sha256": "1571dbfb96f59f786aa5a74e2452e768e2ca8cba64927f6cdcf0b7047413d587", "src": "canonical/scripts/kb/build-kb-index.sh"}
+{"dst": ".github/aid/scripts/kb/build-kb-index.sh", "profile": "copilot-cli", "sha256": "6781b89de561e3f55abbb065587c261aec16a064786a6d9ddce556982a678670", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".github/aid/scripts/kb/build-metrics.sh", "profile": "copilot-cli", "sha256": "22635b83080e81d37274f969f0325c88242d303310b26760085761eddca680ee", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".github/aid/scripts/kb/build-project-index.sh", "profile": "copilot-cli", "sha256": "f7c4804285448210e1bee5fb4b8a85c00247420925da618a14578755668b03f6", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".github/aid/scripts/kb/closure-check.sh", "profile": "copilot-cli", "sha256": "56156801fd0b5e371035f3c0037367a8f47fed6298fe0c68ef60c726c00c133d", "src": "canonical/scripts/kb/closure-check.sh"}

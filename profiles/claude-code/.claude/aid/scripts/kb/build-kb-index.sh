@@ -321,6 +321,121 @@ END {
 }
 KBIDX_AWK_EOF
 
+# ---------------------------------------------------------------------------
+# Reference frontmatter extractors (shell). The render path above uses the awk
+# port (ef/el/literal_collapsed) for speed -- one awk pass per doc instead of
+# ~13 shell-helper forks. These single-purpose shell functions are the
+# unit-tested reference spec of the SAME parsing semantics (inline vs block
+# lists, whitespace trim, quote-stripping, first-frontmatter-block scoping);
+# tests/canonical/test-kb-index-extract-list.sh sources and exercises them
+# directly. They are intentionally NOT called on the render path, so they add
+# zero per-doc spawn -- the perf win is preserved.
+# ---------------------------------------------------------------------------
+
+# Helper: extract a single-line YAML field value from frontmatter
+# Args: <file> <field-name>
+extract_field() {
+    local f="$1" field="$2"
+    # Only look inside the FIRST --- ... --- block.
+    # Symmetric with extract_literal: exit when we leave that block, so a body-level
+    # thematic-break `---` cannot re-enter "frontmatter mode" and surface body values.
+    awk -v field="$field" '
+        BEGIN { in_fm=0 }
+        /^---$/ { in_fm = !in_fm; if (NR > 1 && !in_fm) exit; next }
+        in_fm && $0 ~ "^"field":" {
+            sub("^"field":[[:space:]]*", "")
+            print
+            exit
+        }
+    ' "$f"
+}
+
+# Helper: extract multi-line YAML literal (|) field
+# Args: <file> <field-name>
+extract_literal() {
+    local f="$1" field="$2"
+    awk -v field="$field" '
+        BEGIN { in_fm=0; in_field=0; indent=-1 }
+        /^---$/ { in_fm = !in_fm; if (!in_fm) exit; next }
+        in_fm && in_field {
+            # Determine indent on first content line
+            if (indent == -1 && /^[[:space:]]+/) {
+                match($0, /^[[:space:]]+/)
+                indent = RLENGTH
+            }
+            # Stop when we see a line at lower indent (new field) or top-level
+            if (/^[^[:space:]-]/ || /^[a-zA-Z][a-zA-Z0-9_-]*:/) {
+                exit
+            }
+            # Strip leading indent
+            sub("^[[:space:]]{" indent "}", "")
+            print
+            next
+        }
+        in_fm && $0 ~ "^"field":[[:space:]]*\\|" {
+            in_field = 1
+            next
+        }
+    ' "$f"
+}
+
+# Helper: extract a YAML list field from frontmatter - handles both inline and block forms.
+# Inline:  tags: [a, b, c]
+# Block:   tags:
+#            - a
+#            - b
+# Returns items one per line (empty output when field is absent or list is empty).
+# Args: <file> <field-name>
+extract_list() {
+    local f="$1" field="$2"
+    awk -v field="$field" '
+        BEGIN { in_fm=0; in_field=0 }
+        /^---$/ {
+            in_fm = !in_fm
+            if (NR > 1 && !in_fm) exit
+            next
+        }
+        in_fm && in_field {
+            # Continuation: block list item "  - value"
+            if (/^[[:space:]]+-[[:space:]]/) {
+                sub(/^[[:space:]]+-[[:space:]]+/, "")
+                # strip trailing whitespace
+                sub(/[[:space:]]+$/, "")
+                print
+                next
+            }
+            # Next top-level field or end of block list
+            exit
+        }
+        in_fm && $0 ~ "^"field":" {
+            rest = $0
+            sub("^"field":[[:space:]]*", "", rest)
+            if (rest ~ /^\[/) {
+                # Inline list: [a, b, c] or []
+                inner = rest
+                sub(/^\[/, "", inner)
+                sub(/\][[:space:]]*$/, "", inner)
+                if (inner == "") { exit }
+                n = split(inner, items, /[[:space:]]*,[[:space:]]*/)
+                for (i = 1; i <= n; i++) {
+                    item = items[i]
+                    # strip leading/trailing whitespace and optional quotes
+                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", item)
+                    gsub(/^['\''"]|['\''"]$/, "", item)
+                    if (item != "") print item
+                }
+                exit
+            } else if (rest == "" || rest ~ /^[[:space:]]*$/) {
+                # Block list - read following lines
+                in_field = 1
+                next
+            }
+            # Scalar (not a list) - produce no output
+            exit
+        }
+    ' "$f"
+}
+
 # --- Begin output -----------------------------------------------------------
 {
     cat <<EOF
