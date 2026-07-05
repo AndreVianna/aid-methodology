@@ -179,14 +179,14 @@ if find . -maxdepth 0 -printf '' >/dev/null 2>&1; then
   # shellcheck disable=SC2086
   find . \( $PRUNE_EXPR \) -prune -o -type f -printf '%P\t%TY-%Tm-%Td\n' 2>/dev/null \
     | grep -v '^$' \
-    | sort > "$TMP"
+    | LC_ALL=C sort > "$TMP"
 else
   # BSD find — slower fallback, one mtime call per file
   # shellcheck disable=SC2086
   find . \( $PRUNE_EXPR \) -prune -o -type f -print 2>/dev/null \
     | sed 's|^\./||' \
     | grep -v '^$' \
-    | sort > "$TMP.paths"
+    | LC_ALL=C sort > "$TMP.paths"
   while IFS= read -r f; do
     [[ -z "$f" ]] && continue
     printf '%s\t%s\n' "$f" "$(get_mtime "$f")"
@@ -216,7 +216,7 @@ if [[ -s "$TMP" ]]; then
   tr '\n' '\0' < "$BI_PATHS" \
     | LC_ALL=C xargs -0 awk 'FNR<=2 && /@generated|DO NOT EDIT|DO NOT MODIFY/ { print FILENAME }' 2>/dev/null >> "$BI_EXCL" || true
   if [[ -s "$BI_EXCL" ]]; then
-    sort -u "$BI_EXCL" -o "$BI_EXCL"
+    LC_ALL=C sort -u "$BI_EXCL" -o "$BI_EXCL"
     awk -F'\t' 'NR==FNR{drop[$0]=1;next} !($1 in drop)' "$BI_EXCL" "$TMP" > "$TMP.keep" && mv "$TMP.keep" "$TMP"
   fi
   rm -f "$BI_PATHS" "$BI_EXCL" 2>/dev/null || true
@@ -308,7 +308,7 @@ LANG_BREAKDOWN=$(awk -F'\t' '
   END {
     for (k in count) print k "\t" count[k] "\t" total[k]
   }
-' "$FILES_DATA" | sort -t$'\t' -k3 -nr)
+' "$FILES_DATA" | LC_ALL=C sort -t$'\t' -k3 -nr)
 
 TOTAL_LINES=$(awk -F'\t' '{ s+=$3 } END { print s+0 }' "$FILES_DATA")
 
@@ -322,7 +322,7 @@ TOP_LARGEST=$(awk -F'\t' -v src="Java|Kotlin|Python|JavaScript|TypeScript|Go|Rus
     for (i in arr) if ($2==arr[i]) { is_src=1; break }
     if (is_src) print
   }
-' "$FILES_DATA" | sort -t$'\t' -k3 -nr | head -n "$TOP_N" || true)
+' "$FILES_DATA" | LC_ALL=C sort -t$'\t' -k3 -nr | head -n "$TOP_N" || true)
 
 # Notable files (manifests, build configs).
 # Three matching modes:
@@ -366,7 +366,7 @@ while IFS=$'\t' read -r path lang lines mtime; do
   fi
 done < "$FILES_DATA"
 
-NOTABLE_OUT=$(sort -u "$NOTABLE_FILES" 2>/dev/null || true)
+NOTABLE_OUT=$(LC_ALL=C sort -u "$NOTABLE_FILES" 2>/dev/null || true)
 
 # Emit the markdown index
 {

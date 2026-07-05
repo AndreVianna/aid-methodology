@@ -326,7 +326,7 @@ echo "[harvest] Scanning files under $ROOT ..." >&2
 # 1. Enumerate the file set ONCE (same prune + sort as build-project-index.sh).
 # ---------------------------------------------------------------------------
 # shellcheck disable=SC2086
-find . \( $PRUNE_EXPR \) -prune -o -type f -print 2>/dev/null | sed 's|^\./||' | sort > "$FILELIST"
+find . \( $PRUNE_EXPR \) -prune -o -type f -print 2>/dev/null | sed 's|^\./||' | LC_ALL=C sort > "$FILELIST"
 
 # ---------------------------------------------------------------------------
 # Scope refinement (kept in lockstep with build-project-index.sh): drop
@@ -335,9 +335,12 @@ find . \( $PRUNE_EXPR \) -prune -o -type f -print 2>/dev/null | sed 's|^\./||' |
 # byte-reproducible across machines/OSes/AID-updates; each only REMOVES from the
 # set (order-independent); each is a single batched process (no per-file spawn).
 #   (1) minified bundles + sourcemaps  -- never hand-authored source
-#   (2) .gitignore    -- committed rules only (core.excludesFile neutralized so a
-#       machine-specific global gitignore can't perturb output; tracked files are
-#       never reported, so committed source that matches a pattern still scans)
+#   (2) .gitignore    -- git check-ignore with the global core.excludesFile
+#       neutralized, so exclusions come from the COMMITTED .gitignore (git also
+#       consults the per-clone $GIT_DIR/info/exclude, which has no override flag
+#       but is empty by default -> in practice output is reproducible across
+#       machines). Tracked files are never reported, so committed source that
+#       matches a pattern still scans.
 #   (3) .gitattributes linguist-generated / linguist-vendored (project-DECLARED;
 #       NOT linguist-documentation -- the docs channel harvests prose terms)
 #   (4) @generated / DO NOT EDIT header marker (first 2 lines only; portable
@@ -355,8 +358,8 @@ if [[ -s "$FILELIST" ]]; then
   tr '\n' '\0' < "$FILELIST" \
     | LC_ALL=C xargs -0 awk 'FNR<=2 && /@generated|DO NOT EDIT|DO NOT MODIFY/ { print FILENAME }' 2>/dev/null >> "$EXCLUDE" || true
   if [[ -s "$EXCLUDE" ]]; then
-    sort -u "$EXCLUDE" -o "$EXCLUDE"
-    comm -23 "$FILELIST" "$EXCLUDE" > "$FILELIST.keep" 2>/dev/null && mv "$FILELIST.keep" "$FILELIST"
+    LC_ALL=C sort -u "$EXCLUDE" -o "$EXCLUDE"
+    LC_ALL=C comm -23 "$FILELIST" "$EXCLUDE" > "$FILELIST.keep" 2>/dev/null && mv "$FILELIST.keep" "$FILELIST"
   fi
 fi
 
@@ -595,7 +598,7 @@ RANK_AWK
 # ---------------------------------------------------------------------------
 if [[ -s "$AGGREGATED" ]]; then
   awk -v dlf="$DENYLIST_FILE" -f "$AWK_RANK" "$AGGREGATED" \
-    | sort -t$'\t' -k5 -nr -k3 -nr -k1 > "$RANKED"
+    | LC_ALL=C sort -t$'\t' -k5 -nr -k3 -nr -k1 > "$RANKED"
 fi
 
 # ---------------------------------------------------------------------------
