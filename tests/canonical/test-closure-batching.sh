@@ -76,6 +76,12 @@ timeout 150 bash -c '
 ' _ "$FAKE_HOME" "$SUT" "$FX" "$DENYLIST" "$OUTA" "$OUTB" || RC=$?
 if [[ "$RC" -eq 124 ]]; then
   fail "T01 closure-check HUNG on the large-universe fixture (>150s -- spawn-storm regression)"
+  # A hang is the definitive failure this fixture guards against. Do NOT fall
+  # through: T02/T03 would assert on partial output, and T04 re-runs
+  # closure-check via run_closure WITHOUT a timeout -- on a genuine hang that
+  # would wedge the whole CI job instead of failing fast. Report and stop now.
+  test_summary
+  exit 1
 else
   assert_exit_zero "$RC" "T01 closure-check completes on the large-universe fixture (no hang)"
 fi
