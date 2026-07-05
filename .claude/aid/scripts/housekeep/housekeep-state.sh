@@ -193,6 +193,41 @@ read_field() {
 }
 
 # ---------------------------------------------------------------------------
+# Helper: read the four --resume gate-ledger fields in ONE awk pass.
+# Prints KB Stage, Summary Stage, Cleanup Stage, State values in that order,
+# one per line (empty line for an absent-or-empty field). Byte-identical to
+# four read_field calls: same first-frontmatter-section scoping, same
+# "**Field:** value" (trailing-ws-stripped) / "**Field:**" (empty) matching,
+# first occurrence wins per field. (work-009 hot-path polish: 4 forks -> 1.)
+# ---------------------------------------------------------------------------
+read_fields_resume() {
+    awk -v section="$SECTION_HEADING" '
+        BEGIN {
+            nf = 4
+            fname[1] = "KB Stage";      fname[2] = "Summary Stage"
+            fname[3] = "Cleanup Stage"; fname[4] = "State"
+        }
+        $0 == section         { in_section=1; next }
+        in_section && /^## /  { in_section=0; next }
+        in_section {
+            for (i = 1; i <= nf; i++) {
+                if (got[i]) continue
+                pat  = "^\\*\\*" fname[i] ":\\*\\* "
+                pat2 = "^\\*\\*" fname[i] ":\\*\\*$"
+                if (match($0, pat)) {
+                    v = substr($0, RLENGTH + 1)
+                    gsub(/[[:space:]]+$/, "", v)
+                    val[i] = v; got[i] = 1
+                } else if (match($0, pat2)) {
+                    val[i] = ""; got[i] = 1
+                }
+            }
+        }
+        END { for (i = 1; i <= nf; i++) print val[i] }
+    ' "$STATE_FILE"
+}
+
+# ---------------------------------------------------------------------------
 # Helper: write (create or replace) a **Field:** line in the section.
 # If the section does not exist, appends it to the file.
 # If the field line already exists, replaces it (idempotent).
@@ -314,12 +349,14 @@ mode_resume() {
         exit 0
     fi
 
-    # Section present — read the three gate-ledger fields
+    # Section present — read the four gate-ledger fields in one awk pass
+    # (byte-identical to four read_field calls; see read_fields_resume).
     local kb_stage summary_stage cleanup_stage state_val
-    kb_stage=$(read_field "KB Stage")
-    summary_stage=$(read_field "Summary Stage")
-    cleanup_stage=$(read_field "Cleanup Stage")
-    state_val=$(read_field "State")
+    { IFS= read -r kb_stage
+      IFS= read -r summary_stage
+      IFS= read -r cleanup_stage
+      IFS= read -r state_val
+    } < <(read_fields_resume) || true
 
     # Helper: returns true (0) if a stage value counts as "passed or skipped"
     is_complete() {
