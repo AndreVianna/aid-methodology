@@ -109,7 +109,10 @@ else
     if [ -z "$DOCSET_FILES" ]; then
         COV_SKIPPED=1
     else
-        # Resolve: only count docs that exist on disk
+        # Resolve: only count docs that exist on disk. Collect the stem of every
+        # resolved doc so the HTML can be scanned ONCE (a single awk pass) below,
+        # instead of spawning one `grep` per doc (was O(docs) full-file greps).
+        RESOLVED_STEMS=""
         while IFS= read -r docfile; do
             [ -z "$docfile" ] && continue
             if [ -f "$KB_DIR/$docfile" ]; then
@@ -119,13 +122,41 @@ else
                 stem="${docfile%.md}"
                 # Look for: the filename itself, the stem as an id/anchor, or
                 # a heading containing the stem (case-insensitive).
-                if grep -qiF "$stem" "$HTML" 2>/dev/null; then
-                    COV_FOUND=$((COV_FOUND + 1))
-                fi
+                RESOLVED_STEMS="$RESOLVED_STEMS$stem
+"
             fi
         done <<EOF
 $DOCSET_FILES
 EOF
+
+        # Single-pass scan: reproduce `grep -qiF "$stem" "$HTML"` for every
+        # resolved stem in ONE awk invocation (zero per-item spawns). Semantics
+        # match grep -qiF EXACTLY -- case-insensitive, fixed-string (literal, no
+        # regex) substring, matched within a single line via index(). Stems are
+        # passed through the environment (ENVIRON) so awk applies no escape
+        # processing to them; LC_ALL=C gives deterministic cross-OS folding
+        # (identical to grep -qiF for the ASCII doc-stems used here).
+        if [ -n "$RESOLVED_STEMS" ]; then
+            COV_FOUND=$(RESOLVED_STEMS="$RESOLVED_STEMS" LC_ALL=C awk '
+                BEGIN {
+                    n = split(ENVIRON["RESOLVED_STEMS"], arr, "\n")
+                    for (i = 1; i <= n; i++) stem[i] = tolower(arr[i])
+                }
+                {
+                    line = tolower($0)
+                    for (i = 1; i <= n; i++)
+                        if (stem[i] != "" && !seen[i] && index(line, stem[i]) > 0)
+                            seen[i] = 1
+                }
+                END {
+                    found = 0
+                    for (i = 1; i <= n; i++)
+                        if (stem[i] != "" && seen[i]) found++
+                    print found
+                }
+            ' "$HTML" 2>/dev/null)
+            COV_FOUND="${COV_FOUND:-0}"
+        fi
     fi
 fi
 

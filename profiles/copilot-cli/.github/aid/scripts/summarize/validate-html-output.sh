@@ -350,12 +350,27 @@ echo ""
 echo "  [L1: anchor link resolution]"
 
 ANCHOR_HREFS=$(grep -oE 'href="#[^"]+"' "$HTML" | sed 's/href="#//;s/"$//' | sort -u || true)
+
+# Perf (Windows Git Bash): extract every in-page id="..." substring ONCE into an
+# in-memory set, then test each anchor href against it with an O(1) associative-
+# array lookup -- instead of re-grepping the whole HTML per anchor (which was
+# O(anchors) full-file scans: a KB summary with 100+ anchors spawned 100+ greps).
+# The extraction pattern id="[^"]*" matches exactly the same id="<value>"
+# substrings that the per-anchor grep -qE "id=\"$anchor\"" would find (both are
+# anchored on the literal id=" ... "). Anchor hrefs come from href="#[^"]+" so
+# they never contain a quote and are slugs; a literal set-membership test
+# therefore reproduces the original grep's match byte-for-byte.
+declare -A ID_SET=()
+while IFS= read -r _id; do
+    ID_SET["$_id"]=1
+done < <(grep -oE 'id="[^"]*"' "$HTML" | sed 's/^id="//;s/"$//' || true)
+
 ANCHOR_FAIL=0
 ANCHOR_TOTAL=0
 for anchor in $ANCHOR_HREFS; do
     ANCHOR_TOTAL=$((ANCHOR_TOTAL + 1))
     [ -z "$anchor" ] && continue
-    if ! grep -qE "id=\"$anchor\"" "$HTML"; then
+    if [ -z "${ID_SET["$anchor"]+set}" ]; then
         echo "    ❌ #$anchor — no matching id=\"$anchor\""
         ANCHOR_FAIL=$((ANCHOR_FAIL + 1))
     fi

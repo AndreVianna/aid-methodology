@@ -229,8 +229,10 @@ fm_sources_present() {
 is_url() {
     # Matches: one or more lowercase alpha, then any of [a-z0-9+.-], then ://
     # e.g. http://, https://, ftp://, git+ssh://, etc.
-    # Called only from inside an 'if' guard, so set -e does not apply.
-    echo "$1" | grep -qE '^[a-z][a-z0-9+.-]*://'
+    # Bash builtin regex (same POSIX-ERE as the former echo|grep -qE) -- avoids a
+    # per-source echo+grep fork on the O(docs x sources) hot path (costly on
+    # Windows Git Bash).  Called only from inside an 'if' guard, so set -e is inert.
+    [[ "$1" =~ ^[a-z][a-z0-9+.-]*:// ]]
 }
 
 # ---------------------------------------------------------------------------
@@ -249,7 +251,7 @@ check_source() {
     # Path/glob source: get last-changed commit via git log
     local c_src
     c_src="$(LC_ALL=C git -C "$REPO" log -1 --format="%H" -- "$entry" 2>/dev/null || true)"
-    c_src="$(echo "$c_src" | tr -d '[:space:]')"
+    c_src="${c_src//[[:space:]]/}"   # strip whitespace via bash builtin (was echo|tr)
 
     if [[ -z "$c_src" ]]; then
         # Empty output: file untracked or pathspec matched nothing -> unknown
@@ -279,7 +281,10 @@ check_source() {
 # Check a single doc; emit one row to stdout.
 # ---------------------------------------------------------------------------
 check_doc() {
-    local f="$1" rel="$2"
+    # doc_source ($3) is extracted ONCE by the caller (main loop) and passed in --
+    # it was formerly re-read here via a second fm_scalar awk pass (redundant with
+    # should_check's own extraction).
+    local f="$1" rel="$2" doc_source="$3"
 
     # Forward-authored short-circuit (feature-003 C-1):
     # A seed doc with source: forward-authored is design-authoritative (design->code,
@@ -288,8 +293,6 @@ check_doc() {
     # enum {current, suspect, unknown}; no new enum value is added or changed so
     # existing TSV consumers keep working.  The inverse code->design conformance check
     # is feature-005 work, not f007.
-    local doc_source
-    doc_source="$(fm_scalar "$f" "source")"
     if [[ "$doc_source" == "forward-authored" ]]; then
         if [[ "$FORMAT" == "tsv" ]]; then
             printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
@@ -403,19 +406,18 @@ check_doc() {
 #        (forward-authored docs are checked, then short-circuited to `current` in check_doc())
 # ---------------------------------------------------------------------------
 should_check() {
-    local f="$1"
-    local name
-    name="$(basename "$f")"
+    # Args: <basename> <kb-category-raw> <source-raw>
+    # All three are extracted ONCE per doc by the caller (main loop) and passed
+    # in, so routing spawns no basename/awk subprocess of its own.  source: used
+    # to be read here AND again in check_doc (the redundant per-doc recompute).
+    local name="$1" cat="$2" src="$3"
 
     # Always-skipped by name
     case "$name" in
         INDEX.md|README.md|STATE.md) return 1 ;;
     esac
 
-    local cat src
-    cat="$(fm_scalar "$f" "kb-category")"
     cat="${cat:-primary}"
-    src="$(fm_scalar "$f" "source")"
     src="${src:-hand-authored}"
 
     # Skip meta and generated
@@ -456,12 +458,20 @@ else
 fi
 
 for f in "${docs[@]}"; do
-    should_check "$f" || continue
+    # Extract the per-doc frontmatter ONCE here (subprocess spawns are costly on
+    # Windows Git Bash): basename via a bash builtin, and kb-category:/source: via
+    # a single awk pass each.  source: is then handed to check_doc rather than
+    # re-extracted, and routing (should_check) spawns nothing.
+    name="${f##*/}"
+    doc_cat="$(fm_scalar "$f" "kb-category")"
+    doc_source="$(fm_scalar "$f" "source")"
+
+    should_check "$name" "$doc_cat" "$doc_source" || continue
 
     # Compute relative path (strip ROOT prefix + leading slash)
     rel="${f#"$ROOT/"}"
 
-    check_doc "$f" "$rel"
+    check_doc "$f" "$rel" "$doc_source"
 done
 
 exit 0

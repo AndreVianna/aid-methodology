@@ -127,15 +127,36 @@ fi
 }
 
 # ---------------------------------------------------------------------------
-# strip_frontmatter: remove YAML frontmatter (--- delimited block at the
-# start of the file) from stdin and print the remaining content.
+# emit_stripped_docs: for each KB doc passed as an argument, emit a section
+# separator ('\n---\n\n'), the doc's content with YAML frontmatter removed
+# (the leading '---'-delimited block), and a trailing newline. Frontmatter is
+# stripped only when '---' is the doc's first line.
+#
+# All docs are processed in a SINGLE awk pass (getline per file inside a BEGIN
+# block) rather than spawning one awk per doc. Emitting the separators from awk
+# keeps empty docs (which yield no records) behaving exactly like non-empty
+# ones -- separator before, trailing newline after -- so the byte stream is
+# identical to a per-doc printf + awk loop.
 # ---------------------------------------------------------------------------
-strip_frontmatter() {
+emit_stripped_docs() {
     awk '
-        NR==1 && /^---[[:space:]]*$/ { in_fm=1; next }
-        in_fm && /^---[[:space:]]*$/  { in_fm=0; next }
-        !in_fm                        { print }
-    '
+        BEGIN {
+            for (i = 1; i < ARGC; i++) {
+                f = ARGV[i]
+                printf "\n---\n\n"
+                in_fm = 0
+                first = 1
+                while ((getline line < f) > 0) {
+                    if (first && line ~ /^---[[:space:]]*$/) { in_fm = 1; first = 0; continue }
+                    first = 0
+                    if (in_fm && line ~ /^---[[:space:]]*$/) { in_fm = 0; continue }
+                    if (!in_fm) print line
+                }
+                close(f)
+                printf "\n"
+            }
+        }
+    ' "$@"
 }
 
 # ---------------------------------------------------------------------------
@@ -220,11 +241,7 @@ PYEOF
     printf '> Generated from `.aid/knowledge/` source documents.\n'
     printf '> Single portable Markdown file -- images embedded as data: URIs.\n\n'
 
-    for doc in "${DOCS[@]}"; do
-        printf '\n---\n\n'
-        strip_frontmatter < "$doc"
-        printf '\n'
-    done
+    emit_stripped_docs "${DOCS[@]}"
 } | python3 "$SVG_PY" "$KB_DIR" \
   > "$TMPFILE"
 

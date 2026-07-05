@@ -174,8 +174,8 @@ compute_depth() {
     local max=0
     IFS=',' read -ra deps_arr <<< "$deps_str"
     for d in "${deps_arr[@]}"; do
-        # Trim + strip backticks
-        d=$(echo "$d" | tr -d ' `')
+        # Trim + strip backticks (bash parameter expansion -- no echo|tr subshell fork per edge)
+        d="${d//[ \`]/}"
         [[ -z "$d" ]] && continue
         local d_depth
         d_depth=$(compute_depth "$d")
@@ -195,13 +195,34 @@ done
 # Risk-weighted types (read task-NNN.md if --tasks-dir provided)
 RISK=0
 if [[ -n "$TASKS_DIR" && -d "$TASKS_DIR" ]]; then
+    # Enumerate the task-dir *.md files ONCE (single find) instead of one
+    # `find ... | head` per task. find's readdir traversal order is preserved, so
+    # the per-task first-match below is byte-identical to the previous per-task
+    # `find -name "${t}.md" -o -name "${t}-*.md" | head -1`.
+    declare -a TASK_MD_FILES=()
+    while IFS= read -r mdf; do TASK_MD_FILES+=("$mdf"); done \
+        < <(find "$TASKS_DIR" -maxdepth 1 -name '*.md' 2>/dev/null)
     for t in "${TASKS[@]}"; do
-        # Find task file (allow task-NNN.md or task-NNN-*.md)
-        f=$(find "$TASKS_DIR" -maxdepth 1 -name "${t}.md" -o -name "${t}-*.md" 2>/dev/null | head -1)
+        # First task file (in find order) matching task-NNN.md or task-NNN-*.md.
+        f=""
+        for cand in "${TASK_MD_FILES[@]}"; do
+            case "${cand##*/}" in
+                "${t}.md"|"${t}-"*.md) f="$cand"; break ;;
+            esac
+        done
         [[ -z "$f" || ! -f "$f" ]] && continue
         # Match both the bold task-template form (**Type:**) and the flat recipe
         # form (- Type:); recipe-generated tasks use the latter (see recipes/*.md).
-        type_line=$(grep -m1 -iE '^[[:space:]]*(- )?\*{0,2}Type:' "$f" 2>/dev/null || true)
+        # Read the first matching line in-process (bash builtin) rather than a
+        # `grep -m1` subprocess per task. `[Tt][Yy][Pp][Ee]` is equivalent to grep -i
+        # for the only alphabetic literal in the pattern; `|| [[ -n "$line" ]]` catches
+        # a final line with no trailing newline; `2>/dev/null` matches grep's suppression.
+        type_line=""
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            if [[ "$line" =~ ^[[:space:]]*(-\ )?\*{0,2}[Tt][Yy][Pp][Ee]: ]]; then
+                type_line="$line"; break
+            fi
+        done 2>/dev/null < "$f"
         case "$type_line" in
             *MIGRATE*|*REFACTOR*) RISK=$((RISK + 2));;
             *IMPLEMENT*|*TEST*)   RISK=$((RISK + 1));;

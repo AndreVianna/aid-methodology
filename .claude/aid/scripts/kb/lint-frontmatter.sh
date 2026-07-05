@@ -80,20 +80,125 @@ done
 ROOT="$(cd "$ROOT" && pwd)"
 
 # ---------------------------------------------------------------------------
+# Frontmatter loader: parse a doc's YAML frontmatter ONCE with a single awk
+# and populate global associative arrays. Previously each fm_* helper spawned
+# its own awk to re-parse the frontmatter, so lint_doc paid ~25 awk spawns per
+# doc; now it pays one. The four fm_* helpers below read from these arrays and
+# preserve their exact original semantics for every field:
+#
+#   FM_PRESENT[field]  1 iff the field key is present         (fm_field_present)
+#   FM_SCALAR[field]   text after "field:[[:space:]]*"        (fm_field)
+#   FM_SHAPE[field]    inline|block|empty|scalar, or unset    (fm_list_shape)
+#                      (unset also covers the block-form field whose block is
+#                       terminated by the closing '---' delimiter, for which
+#                       fm_list_shape emitted nothing / returned "")
+#   FM_ITEMS[field]    newline-joined list items              (fm_list_items)
+#
+# The single awk reproduces the frontmatter delimiter logic and the branch
+# structure of all four helpers exactly. It emits records as
+# "TYPE<SOH>field<SOH>value" lines (SOH = 0x01, which cannot appear in a field
+# name or a frontmatter value); bash parses them with IFS=$'\001'. Only the
+# FIRST occurrence of any field is recorded (matching each helper's exit-on-
+# first-match behaviour).
+# ---------------------------------------------------------------------------
+declare -gA FM_PRESENT FM_SCALAR FM_SHAPE FM_ITEMS
+
+load_frontmatter() {
+    local f="$1"
+    FM_PRESENT=()
+    FM_SCALAR=()
+    FM_SHAPE=()
+    FM_ITEMS=()
+
+    local tag key val
+    while IFS=$'\001' read -r tag key val; do
+        case "$tag" in
+            P) FM_PRESENT["$key"]=1 ;;
+            S) FM_SCALAR["$key"]="$val" ;;
+            H) FM_SHAPE["$key"]="$val" ;;
+            I)
+                if [[ -n "${FM_ITEMS[$key]+set}" ]]; then
+                    FM_ITEMS["$key"]+=$'\n'"$val"
+                else
+                    FM_ITEMS["$key"]="$val"
+                fi
+                ;;
+        esac
+    done < <(awk '
+        BEGIN { in_fm=0; collecting=0; curfield=""; sawfirst=0; SEP=sprintf("%c", 1) }
+        /^---$/ {
+            in_fm = !in_fm
+            if (NR > 1 && !in_fm) exit
+            next
+        }
+        in_fm {
+            # --- Block-list continuation (mirrors fm_list_shape/fm_list_items
+            #     "in_field" branch, which is tested before the field match). ---
+            if (collecting) {
+                if (/^[[:space:]]+-[[:space:]]/ || /^[[:space:]]+-$/) {
+                    if (!sawfirst) { print "H" SEP curfield SEP "block"; sawfirst=1 }
+                    item = $0
+                    sub(/^[[:space:]]+-[[:space:]]*/, "", item)
+                    sub(/[[:space:]]+$/, "", item)
+                    if (item != "") print "I" SEP curfield SEP item
+                    next
+                } else {
+                    if (!sawfirst) { print "H" SEP curfield SEP "empty"; sawfirst=1 }
+                    collecting = 0
+                    curfield = ""
+                    # fall through: this line may itself be a new top-level key
+                }
+            }
+            # --- Top-level key line (mirrors the "$0 ~ ^field:" match). ---
+            if ($0 ~ /^[A-Za-z0-9_-]+:/) {
+                key = $0
+                sub(/:.*/, "", key)
+                if (!(key in seen)) {
+                    seen[key] = 1
+                    print "P" SEP key
+                    rest = $0
+                    sub("^" key ":[[:space:]]*", "", rest)
+                    print "S" SEP key SEP rest
+                    if (rest ~ /^\[\]/) {
+                        print "H" SEP key SEP "empty"
+                    } else if (rest ~ /^\[/) {
+                        print "H" SEP key SEP "inline"
+                        inner = rest
+                        sub(/^\[/, "", inner)
+                        sub(/\][[:space:]]*$/, "", inner)
+                        if (inner != "") {
+                            n = split(inner, items, /[[:space:]]*,[[:space:]]*/)
+                            for (i = 1; i <= n; i++) {
+                                it = items[i]
+                                gsub(/^[[:space:]]+|[[:space:]]+$/, "", it)
+                                gsub(/^['\''"]|['\''"]$/, "", it)
+                                if (it != "") print "I" SEP key SEP it
+                            }
+                        }
+                    } else if (rest ~ /^[[:space:]]*$/) {
+                        collecting = 1
+                        curfield = key
+                        sawfirst = 0
+                    } else {
+                        print "H" SEP key SEP "scalar"
+                    }
+                }
+            }
+        }
+    ' "$f")
+
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Frontmatter helper: extract a single-line scalar field value.
-# Returns empty string if field is absent.
+# Returns empty string if field is absent. Reads FM_SCALAR/FM_PRESENT.
 # ---------------------------------------------------------------------------
 fm_field() {
     local f="$1" field="$2"
-    awk -v field="$field" '
-        BEGIN { in_fm=0 }
-        /^---$/ { in_fm = !in_fm; if (NR > 1 && !in_fm) exit; next }
-        in_fm && $0 ~ "^"field":" {
-            sub("^"field":[[:space:]]*", "")
-            print
-            exit
-        }
-    ' "$f"
+    if [[ -n "${FM_PRESENT[$field]-}" ]]; then
+        printf '%s\n' "${FM_SCALAR[$field]-}"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -102,12 +207,9 @@ fm_field() {
 # ---------------------------------------------------------------------------
 fm_field_present() {
     local f="$1" field="$2"
-    awk -v field="$field" '
-        BEGIN { in_fm=0; found=0 }
-        /^---$/ { in_fm = !in_fm; if (NR > 1 && !in_fm) exit; next }
-        in_fm && $0 ~ "^"field":" { found=1; exit }
-        END { if (found) print "1" }
-    ' "$f"
+    if [[ -n "${FM_PRESENT[$field]-}" ]]; then
+        printf '1\n'
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -120,42 +222,9 @@ fm_field_present() {
 # ---------------------------------------------------------------------------
 fm_list_shape() {
     local f="$1" field="$2"
-    awk -v field="$field" '
-        BEGIN { in_fm=0; in_field=0 }
-        /^---$/ {
-            in_fm = !in_fm
-            if (NR > 1 && !in_fm) exit
-            next
-        }
-        in_fm && in_field {
-            if (/^[[:space:]]+-[[:space:]]/ || /^[[:space:]]+-$/) {
-                print "block"
-                exit
-            }
-            # Next top-level key or end -- block list was empty
-            print "empty"
-            exit
-        }
-        in_fm && $0 ~ "^"field":" {
-            rest = $0
-            sub("^"field":[[:space:]]*", "", rest)
-            if (rest ~ /^\[\]/) {
-                print "empty"
-                exit
-            } else if (rest ~ /^\[/) {
-                print "inline"
-                exit
-            } else if (rest ~ /^[[:space:]]*$/) {
-                # Block form -- check following lines
-                in_field = 1
-                next
-            } else {
-                # Scalar -- not a list
-                print "scalar"
-                exit
-            }
-        }
-    ' "$f"
+    if [[ -n "${FM_SHAPE[$field]-}" ]]; then
+        printf '%s\n' "${FM_SHAPE[$field]}"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -167,46 +236,9 @@ fm_list_shape() {
 # ---------------------------------------------------------------------------
 fm_list_items() {
     local f="$1" field="$2"
-    awk -v field="$field" '
-        BEGIN { in_fm=0; in_field=0 }
-        /^---$/ {
-            in_fm = !in_fm
-            if (NR > 1 && !in_fm) exit
-            next
-        }
-        in_fm && in_field {
-            if (/^[[:space:]]+-[[:space:]]/ || /^[[:space:]]+-$/) {
-                item = $0
-                sub(/^[[:space:]]+-[[:space:]]*/, "", item)
-                sub(/[[:space:]]+$/, "", item)
-                if (item != "") print item
-                next
-            }
-            exit
-        }
-        in_fm && $0 ~ "^"field":" {
-            rest = $0
-            sub("^"field":[[:space:]]*", "", rest)
-            if (rest ~ /^\[/) {
-                inner = rest
-                sub(/^\[/, "", inner)
-                sub(/\][[:space:]]*$/, "", inner)
-                if (inner == "") { exit }
-                n = split(inner, items, /[[:space:]]*,[[:space:]]*/)
-                for (i = 1; i <= n; i++) {
-                    item = items[i]
-                    gsub(/^[[:space:]]+|[[:space:]]+$/, "", item)
-                    gsub(/^['\''"]|['\''"]$/, "", item)
-                    if (item != "") print item
-                }
-                exit
-            } else if (rest ~ /^[[:space:]]*$/) {
-                in_field = 1
-                next
-            }
-            exit
-        }
-    ' "$f"
+    if [[ -n "${FM_ITEMS[$field]+set}" ]]; then
+        printf '%s\n' "${FM_ITEMS[$field]}"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -278,6 +310,9 @@ lint_doc() {
     local doc
     doc="$(basename "$f")"
     local findings=0
+
+    # Parse this doc's frontmatter once; all fm_* helpers read the arrays.
+    load_frontmatter "$f"
 
     # --- Determine category and source ---
     local cat
@@ -427,6 +462,10 @@ total_skipped=0
 total_findings=0
 
 while IFS= read -r f; do
+    # Parse frontmatter once for the skip pre-check below (lint_doc re-parses
+    # for the docs it actually lints).
+    load_frontmatter "$f"
+
     # Determine if this doc will be skipped by lint_doc
     cat="$(fm_field "$f" "kb-category")"
     cat="${cat:-primary}"

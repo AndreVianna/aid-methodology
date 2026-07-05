@@ -1,6 +1,6 @@
 # Work State -- work-009-closure-check-perf
 
-> **State:** Executing — implemented + verified; ready for PR → v2.0.3
+> **State:** Executing — closure-check + full 13-script perf sweep done + verified; on PR #119 (v2.0.3)
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-04
@@ -86,12 +86,39 @@ VERSION/npm/pypi 2.0.2→2.0.3, `.aid` markers.
 
 ---
 
-## Related: pathology sweep (other scripts)
+## Full pathology sweep — ALL fixed in v2.0.3 (user: "fix all, grade A+")
 
-A general-purpose audit of all `canonical/aid/scripts/*.sh` found 7 more instances
-(1 HIGH: `interview/parse-recipe.sh` per-line echo|grep; 4 MED in kb/: lint-frontmatter,
-build-kb-index, kb-freshness-check, kb-actback-task; + cleanup-classify, validate-html-
-output; ~7 LOW). Captured for follow-up (scope TBD with user) — NOT in v2.0.3.
+A general-purpose audit of every `canonical/aid/scripts/*.sh` found more instances of the
+same per-item subprocess-spawn pathology. Per user direction, ALL were fixed and folded
+into v2.0.3 (same PR #119). 13 scripts total, each verified BYTE-IDENTICAL to its
+pre-change version (old-vs-new diff on real inputs / fixtures + its existing canonical
+test suite green):
+
+| Script | Fix | Byte-identity + perf |
+|--------|-----|----------------------|
+| interview/parse-recipe.sh (HIGH) | per-line `echo\|grep` → bash `[[ =~ ]]`; task-num via BASH_REMATCH | render workdir identical |
+| kb/lint-frontmatter.sh | 4 fm_* awk helpers → one `load_frontmatter` awk → assoc arrays | 37 fixtures+KB identical; test 57/57 |
+| kb/build-kb-index.sh | 9 shell-pipe helpers → one awk (helpers as awk fns); kb-category once; basename builtin | KB identical (ts-filtered); test 40/40; 8m46s→36s |
+| kb/kb-freshness-check.sh | is_url `[[ =~ ]]`; tr/basename builtins; per-doc fields once | KB+git-fixture identical; test 37/37 (kept broad URL scheme, not `https?`, to stay identical) |
+| kb/kb-actback-task.sh | per-(doc×class) grep → 2 awk passes; `_dim` global | all subcmds identical; test 42/42; 59s→8.5s |
+| kb/kb-citation-lint.sh | per-doc awk → single awk over doc array | KB+fixtures identical; test 8/8 |
+| kb/build-metrics.sh | per-doc `wc\|tr\|basename` → one batched `wc`; builtins | pinned-date cmp identical |
+| kb/kb-dual-intent-probes.sh | `_dim_of_filename` `$()` → global (no fork) | doc-set+fixtures identical; test 63/63 |
+| housekeep/cleanup-classify.sh | per-line `echo\|grep`/`awk`/`sed`/`tr` → bash builtins | STATE.md identical; test 24/24; 213s→23s |
+| summarize/grade-summary.sh | per-doc `grep -qiF` → one awk (index+tolower, stems via ENVIRON) | kb.html+discriminator fixture identical; test 49/49 |
+| summarize/validate-html-output.sh | per-anchor full-HTML grep → one id-set scan + O(1) lookups | kb.html+fixture identical; tests pass |
+| summarize/build-md-export.sh | per-doc `strip_frontmatter` awk → single awk (BEGIN getline) | KB same sha256 + 5 edge cases; test build asserts pass |
+| execute/complexity-score.sh | `tr`→param-exp; N `find\|head`→1 find; `grep -m1`→in-proc read | fixtures identical; test 13/13 |
+
+Deviations (flagged, correct): kb-freshness kept its broad `^[a-z][a-z0-9+.-]*://` URL
+scheme (narrowing to `https?` would drop ftp/git+ssh/s3 → behavior change). complexity-
+score SKIPPED the recursive `compute_depth` `$()`→global conversion (its subshell
+isolation drives the cycle-WARN stderr; converting would NOT be byte-identical) — N is
+small; left as-is. One-shot migration scripts (migrate-*) intentionally not touched
+(run once; per-item spawns there aren't a recurring perf concern).
+
+All 13 propagated to the 5 profiles (VERIFY pass; render-drift = these scripts + manifests
+only) and resynced into the dogfood `.claude/`.
 
 ---
 
@@ -101,3 +128,4 @@ output; ~7 LOW). Captured for follow-up (scope TBD with user) — NOT in v2.0.3.
 |------|------------------------|-------|-------|
 | 2026-07-04 | Work created | -- | Third per-item-spawn instance (closure-check); from /aid-discover Step 5b timeout on Windows |
 | 2026-07-04 | Implemented + verified | -- | awk-only batched presence map + awk-derived outputs; rg rejected (Windows path-mangling breaks cross-OS byte-identity). old==new identical (closed/unclosed-kb); batching 7/7, closure-check 9/9, essence 8/8; 5 profiles + dogfood + markers synced; v2.0.3. Ready for PR. |
+| 2026-07-04 | Full sweep folded into v2.0.3 | -- | Per user "fix all, A+": 12 more scripts fixed (parse-recipe + lint-frontmatter/build-kb-index/kb-freshness/kb-actback/kb-citation/build-metrics/kb-dual-intent/cleanup-classify/grade-summary/validate-html/build-md-export/complexity-score). Each byte-identical (diff on real inputs/fixtures + existing test suites green; measured 5-14x speedups). 5 profiles regenerated (VERIFY pass; drift = these scripts only) + dogfood resynced. All 13 on PR #119 (v2.0.3). |

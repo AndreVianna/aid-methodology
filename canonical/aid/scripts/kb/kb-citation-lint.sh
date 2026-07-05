@@ -29,8 +29,16 @@ done
 
 [[ -d "$ROOT" ]] || { echo "kb-citation-lint.sh: not a directory: $ROOT" >&2; exit 2; }
 
-violations="$(
-  find "$ROOT" -maxdepth 1 -type f -name '*.md' ! -name '.*' 2>/dev/null | sort | while IFS= read -r f; do
+# Collect the doc set ONCE (find | sort) and scan ALL docs in a SINGLE awk pass.
+# awk tracks per-file position itself (FILENAME / FNR reset per file), so batching
+# over "${docs[@]}" in the same sorted order emits byte-identical findings to the old
+# one-awk-per-doc loop -- while removing the per-doc subprocess spawn that was slow on
+# Windows Git Bash / MSYS (one fork per KB doc). The awk program is unchanged.
+mapfile -t docs < <(find "$ROOT" -maxdepth 1 -type f -name '*.md' ! -name '.*' 2>/dev/null | sort)
+
+violations=""
+if [[ ${#docs[@]} -gt 0 ]]; then
+  violations="$(
     awk '
       {
         line = $0
@@ -46,9 +54,9 @@ violations="$(
           line = substr(line, RSTART + RLENGTH)            # advance past this match on the line
         }
       }
-    ' "$f"
-  done
-)"
+    ' "${docs[@]}"
+  )"
+fi
 
 if [[ -n "$violations" ]]; then
   echo "kb-citation-lint: VOLATILE bare line citations found -- use durable file:symbol anchors:" >&2

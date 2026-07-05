@@ -206,49 +206,51 @@ _require_doc_set() {
 # Do not edit independently of domain-doc-matrix.md.
 #
 # _dim_of_filename FILENAME
-#   Returns the spine dimension (C0..C9, D, meta) for a known filename.
-#   Returns "" for unknown/custom filenames.
+#   Sets the spine dimension (C0..C9, D, meta) for a known filename in the global
+#   _DIM_OUT (set instead of echoed, so per-doc callers avoid a command-substitution
+#   fork -- the O(docs) hot path in _run_work_probes / _run_essence_probes).
+#   Sets _DIM_OUT="" for unknown/custom filenames.
 # ---------------------------------------------------------------------------
 _dim_of_filename() {
   local fn="$1"
   case "$fn" in
     # C0 Technology / medium
-    technology-stack.md|tooling-stack.md) echo "C0" ;;
+    technology-stack.md|tooling-stack.md) _DIM_OUT="C0" ;;
     # C1 Build & shape
     project-structure.md|architecture.md|design-system.md|\
     information-architecture.md|methodology.md|platform-topology.md|\
-    process-architecture.md) echo "C1" ;;
+    process-architecture.md) _DIM_OUT="C1" ;;
     # C2 Parts & connections
     module-map.md|integration-map.md|pipeline-contracts.md|\
     component-inventory.md|content-map.md|data-pipeline.md|\
-    deployment-map.md|evidence-map.md|workflow-map.md) echo "C2" ;;
+    deployment-map.md|evidence-map.md|workflow-map.md) _DIM_OUT="C2" ;;
     # C3 Conventions
     coding-standards.md|analysis-conventions.md|authoring-conventions.md|\
-    design-principles.md|ops-conventions.md|style-guide.md) echo "C3" ;;
+    design-principles.md|ops-conventions.md|style-guide.md) _DIM_OUT="C3" ;;
     # C4 Vocabulary
-    domain-glossary.md|glossary.md) echo "C4" ;;
+    domain-glossary.md|glossary.md) _DIM_OUT="C4" ;;
     # C5 Data & contracts
     schemas.md|artifact-schemas.md|config-schemas.md|content-model.md|\
-    data-schemas.md|design-tokens.md|evidence-sources.md) echo "C5" ;;
+    data-schemas.md|design-tokens.md|evidence-sources.md) _DIM_OUT="C5" ;;
     # C6 Quality & checking
     test-landscape.md|accessibility-landscape.md|editorial-process.md|\
     evaluation-landscape.md|quality-gates.md|runbook-landscape.md|\
-    validation-landscape.md) echo "C6" ;;
+    validation-landscape.md) _DIM_OUT="C6" ;;
     # C7 Risk & debt
-    tech-debt.md|limitations.md) echo "C7" ;;
+    tech-debt.md|limitations.md) _DIM_OUT="C7" ;;
     # C8 Shipping & operation
     infrastructure.md|delivery-pipeline.md|dissemination.md|\
-    publishing-pipeline.md) echo "C8" ;;
+    publishing-pipeline.md) _DIM_OUT="C8" ;;
     # C9 What it does for users
     feature-inventory.md|capability-inventory.md|content-inventory.md|\
     design-overview.md|model-cards.md|repo-presentation.md|\
-    research-questions.md|service-inventory.md) echo "C9" ;;
+    research-questions.md|service-inventory.md) _DIM_OUT="C9" ;;
     # D Decisions & rationale
-    decisions.md|experiment-log.md|findings-log.md) echo "D" ;;
+    decisions.md|experiment-log.md|findings-log.md) _DIM_OUT="D" ;;
     # meta Orientation / cross-cutting
-    external-sources.md|README.md) echo "meta" ;;
+    external-sources.md|README.md) _DIM_OUT="meta" ;;
     # Unknown / custom filenames: safe degradation
-    *) echo "" ;;
+    *) _DIM_OUT="" ;;
   esac
 }
 
@@ -493,7 +495,7 @@ _run_work_probes() {
 
   while IFS= read -r fname; do
     local dim
-    dim="$(_dim_of_filename "$fname")"
+    _dim_of_filename "$fname"; dim="$_DIM_OUT"
     case "$dim" in
       C5) has_C5=1; [[ -z "$c5_doc" ]] && c5_doc="$fname" ;;
       C2) has_C2=1; [[ -z "$c2_doc" ]] && c2_doc="$fname" ;;
@@ -641,7 +643,7 @@ _run_essence_probes() {
 
   while IFS= read -r fname; do
     local dim
-    dim="$(_dim_of_filename "$fname")"
+    _dim_of_filename "$fname"; dim="$_DIM_OUT"
     case "$dim" in
       C4) [[ -z "$c4_doc" ]] && c4_doc="$fname" ;;
       C9) [[ -z "$c9_doc" ]] && c9_doc="$fname" ;;

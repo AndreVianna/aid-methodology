@@ -361,17 +361,31 @@ compute_signal_i() {
         # We look for lines inside ## Deploy Status that have a numeric PR field
         local in_deploy=0
         local pr_num
+        local _re_deploy='^## Deploy Status'
+        local _re_h2='^## '
+        local -a _cols
         while IFS= read -r line; do
-            if echo "$line" | grep -q "^## Deploy Status"; then
+            if [[ "$line" =~ $_re_deploy ]]; then
                 in_deploy=1
                 continue
             fi
-            if [[ $in_deploy -eq 1 ]] && echo "$line" | grep -q "^## "; then
+            if [[ $in_deploy -eq 1 ]] && [[ "$line" =~ $_re_h2 ]]; then
                 in_deploy=0
             fi
             if [[ $in_deploy -eq 1 ]]; then
-                # Extract 3rd pipe-delimited field (PR number)
-                pr_num=$(echo "$line" | awk -F'|' 'NF>=4 { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); print $4 }')
+                # Extract 4th pipe-delimited field (PR number), whitespace-trimmed.
+                # Bash-builtin equivalent of the former
+                # `awk -F'|' 'NF>=4 { gsub trim $4; print }'` (zero subprocess spawns).
+                # awk emits a trailing empty field for a trailing '|'; read does not,
+                # so append one when the line ends in '|' to keep NF identical.
+                IFS='|' read -ra _cols <<< "$line"
+                [[ -n "$line" && "$line" == *'|' ]] && _cols+=("")
+                pr_num=""
+                if (( ${#_cols[@]} >= 4 )); then
+                    pr_num="${_cols[3]}"
+                    pr_num="${pr_num#"${pr_num%%[![:space:]]*}"}"
+                    pr_num="${pr_num%"${pr_num##*[![:space:]]}"}"
+                fi
                 if [[ "$pr_num" =~ ^[0-9]+$ ]]; then
                     pr_numbers+=("$pr_num")
                 fi
@@ -407,18 +421,25 @@ compute_signal_i() {
     # Try Housekeep Status "Branch" field for a SHA (may be a branch name, not SHA)
     # More robustly: look for any 40-char hex SHA in the ## Deploy Status section
     local in_deploy=0
+    local _re_deploy='^## Deploy Status'
+    local _re_h2='^## '
+    local _re_sha='[0-9a-f]{40}'
     while IFS= read -r line; do
-        if echo "$line" | grep -q "^## Deploy Status"; then
+        if [[ "$line" =~ $_re_deploy ]]; then
             in_deploy=1
             continue
         fi
-        if [[ $in_deploy -eq 1 ]] && echo "$line" | grep -q "^## "; then
+        if [[ $in_deploy -eq 1 ]] && [[ "$line" =~ $_re_h2 ]]; then
             break
         fi
         if [[ $in_deploy -eq 1 ]]; then
-            # Look for a 40-char hex SHA anywhere on the row (Tag column or Notes)
-            local sha_candidate
-            sha_candidate=$(echo "$line" | grep -oE '[0-9a-f]{40}' | head -1) || sha_candidate=""
+            # Look for a 40-char hex SHA anywhere on the row (Tag column or Notes).
+            # Bash-builtin equivalent of `grep -oE '[0-9a-f]{40}' | head -1`
+            # (BASH_REMATCH[0] is the leftmost match); zero subprocess spawns.
+            local sha_candidate=""
+            if [[ "$line" =~ $_re_sha ]]; then
+                sha_candidate="${BASH_REMATCH[0]}"
+            fi
             if [[ -n "$sha_candidate" ]]; then
                 recorded_sha="$sha_candidate"
                 break
@@ -466,8 +487,11 @@ compute_signal_ii() {
         echo "fail:no top-level > **Status:** found"
         return 0
     fi
-    local status_val
-    status_val=$(echo "$status_line" | sed 's/^> \*\*Status:\*\* *//')
+    # Strip the literal '> **Status:**' prefix plus any leading spaces — bash-builtin
+    # equivalent of `sed 's/^> \*\*Status:\*\* *//'` (quoted prefix => literal '*').
+    local _status_prefix='> **Status:**'
+    local status_val="${status_line#"$_status_prefix"}"
+    status_val="${status_val#"${status_val%%[! ]*}"}"
     if [[ "$status_val" != "Deployed" ]]; then
         echo "fail:STATUS is '${status_val}' (not Deployed)"
         return 0
@@ -476,23 +500,37 @@ compute_signal_ii() {
     # Check >= 1 ## Deploy Status table row with terminal State + non-empty PR
     local in_deploy=0
     local found_terminal=0
+    local _re_deploy='^## Deploy Status'
+    local _re_h2='^## '
+    local -a _cols
     while IFS= read -r line; do
-        if echo "$line" | grep -q "^## Deploy Status"; then
+        if [[ "$line" =~ $_re_deploy ]]; then
             in_deploy=1
             continue
         fi
-        if [[ $in_deploy -eq 1 ]] && echo "$line" | grep -q "^## "; then
+        if [[ $in_deploy -eq 1 ]] && [[ "$line" =~ $_re_h2 ]]; then
             break
         fi
         if [[ $in_deploy -eq 1 ]]; then
             # Table row: | Delivery | State | PR | ...
-            # State is field 3, PR is field 4 (1-indexed after leading |)
-            local row_state row_pr
-            row_state=$(echo "$line" | awk -F'|' 'NF>=4 { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $3); print $3 }')
-            row_pr=$(echo "$line" | awk -F'|' 'NF>=4 { gsub(/^[[:space:]]+|[[:space:]]+$/, "", $4); print $4 }')
-            # Terminal states (case-insensitive check)
-            local lc_state
-            lc_state=$(echo "$row_state" | tr '[:upper:]' '[:lower:]')
+            # State is field 3, PR is field 4 (1-indexed after leading |).
+            # Bash-builtin split + trim: equivalent of the former per-field
+            # `awk -F'|' 'NF>=4 { gsub trim $N; print }'` (zero subprocess spawns).
+            # Append a trailing empty field when the line ends in '|' so the field
+            # count matches awk's NF (awk keeps a trailing empty field; read drops it).
+            local row_state="" row_pr=""
+            IFS='|' read -ra _cols <<< "$line"
+            [[ -n "$line" && "$line" == *'|' ]] && _cols+=("")
+            if (( ${#_cols[@]} >= 4 )); then
+                row_state="${_cols[2]}"
+                row_state="${row_state#"${row_state%%[![:space:]]*}"}"
+                row_state="${row_state%"${row_state##*[![:space:]]}"}"
+                row_pr="${_cols[3]}"
+                row_pr="${row_pr#"${row_pr%%[![:space:]]*}"}"
+                row_pr="${row_pr%"${row_pr##*[![:space:]]}"}"
+            fi
+            # Terminal states (case-insensitive check); ${x,,} == tr A-Z a-z for ASCII
+            local lc_state="${row_state,,}"
             if [[ -n "$row_pr" && "$row_pr" != "PR" && "$row_pr" != "—" && "$row_pr" != "-" ]]; then
                 case "$lc_state" in
                     merged|deployed|done|complete|completed)
@@ -520,7 +558,12 @@ compute_status_note() {
     local state_md="${AID_DIR}/$1/STATE.md"
     [[ -f "$state_md" ]] || { echo "no STATE.md"; return 0; }
     local s
-    s=$(grep -m1 '^> \*\*Status:\*\*' "$state_md" 2>/dev/null | sed 's/^> \*\*Status:\*\* *//')
+    s=$(grep -m1 '^> \*\*Status:\*\*' "$state_md" 2>/dev/null) || s=""
+    # Strip the literal '> **Status:**' prefix plus any leading spaces (bash-builtin
+    # equivalent of `sed 's/^> \*\*Status:\*\* *//'`).
+    local _status_prefix='> **Status:**'
+    s="${s#"$_status_prefix"}"
+    s="${s#"${s%%[! ]*}"}"
     [[ -n "$s" ]] && echo "$s" || echo "status unknown"
 }
 
