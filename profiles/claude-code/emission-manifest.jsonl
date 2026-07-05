@@ -70,11 +70,11 @@
 {"dst": ".claude/aid/scripts/interview/parse-recipe.sh", "profile": "claude-code", "sha256": "21733b145f6da801cf00237107599cdc02418b08ad00947b6c94c62d61a54967", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".claude/aid/scripts/kb/build-kb-index.sh", "profile": "claude-code", "sha256": "250e6459f5d5c9ba0946f69cf324c7d1a7681284d253e64c2e61e896738c198c", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".claude/aid/scripts/kb/build-metrics.sh", "profile": "claude-code", "sha256": "65e17af9e6faaf6938e1485d4606453640c5b54a92f9d43244e31abc7520d3f9", "src": "canonical/scripts/kb/build-metrics.sh"}
-{"dst": ".claude/aid/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "96c220f6e7223d4ad259f68d44fbee9de5c7b14c9f8e72d48410013a40fc09ac", "src": "canonical/scripts/kb/build-project-index.sh"}
+{"dst": ".claude/aid/scripts/kb/build-project-index.sh", "profile": "claude-code", "sha256": "24ada1d93a52c0da3f9f918f9731c61f44dc7f1d87cc3c140a44129b88769286", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".claude/aid/scripts/kb/closure-check.sh", "profile": "claude-code", "sha256": "cd6d57f692360d4c77343e3b99875adcbe999ce5e528b5de0adbd0d8aca1f3c6", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".claude/aid/scripts/kb/coined-term-denylist.txt", "profile": "claude-code", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".claude/aid/scripts/kb/discover-preflight.sh", "profile": "claude-code", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}
-{"dst": ".claude/aid/scripts/kb/harvest-coined-terms.sh", "profile": "claude-code", "sha256": "d19137fc17ac3022796278f93ec933c033fefaf9332cb3fda0ee2c6501bfcb5f", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
+{"dst": ".claude/aid/scripts/kb/harvest-coined-terms.sh", "profile": "claude-code", "sha256": "87644cb21d5b865c90cf6ef30c688858ba51cca2b22212d482f208afc9bafc24", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-actback-task.sh", "profile": "claude-code", "sha256": "d391d9bdbb3d2ade0bf95473c3fb2c2fa395e9a44b9f7b9615d45471814a60c3", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-citation-lint.sh", "profile": "claude-code", "sha256": "b0be37ca3b394c0a0d1d386c1c192dda027576ada524aba15b4e356b2a20b9d0", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".claude/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "claude-code", "sha256": "9b99011b98286560ca09162006d77343aad368ea9070151ae16f9623f2d4bab5", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
