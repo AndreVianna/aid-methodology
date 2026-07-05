@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-kb-scanner-scope.sh -- the KB scanners must NOT walk AID tool-install
-# ("dogfood") trees at the repo root (.claude/ .cursor/ .codex/). Guards work-010:
+# ("dogfood") trees at the repo root (.claude/ .cursor/ .codex/ .agent/). Guards work-010:
 # on a project that has AID installed, those trees are the AID install itself,
 # never target-project source, and the KB makes no claims about them (same rule
 # that already prunes .aid). Walking them polluted candidate-concepts.md /
@@ -44,7 +44,7 @@ done
 TMP="$(mktemp -d)"
 trap 'rm -rf "$TMP"' EXIT
 FX="$TMP/proj"
-mkdir -p "$FX/src" "$FX/.claude/aid/scripts/config" "$FX/.cursor/deep/nested" "$FX/.codex"
+mkdir -p "$FX/src" "$FX/.claude/aid/scripts/config" "$FX/.cursor/deep/nested" "$FX/.codex" "$FX/.agent"
 
 # -- target-project source (real content, cross-source coined terms) --
 cat > "$FX/src/app.ts" <<'EOF'
@@ -65,18 +65,19 @@ EOF
 echo 'function CursorInstallToken(){ return 1; }'    > "$FX/.cursor/thing.js"
 echo 'q=CursorNestedInstallToken'                    > "$FX/.cursor/deep/nested/y.sh"
 echo 'def CodexInstallToken(): pass'                 > "$FX/.codex/z.py"
+echo 'const AgentInstallToken = 1;'                  > "$FX/.agent/a.js"
 
 IDX="$TMP/project-index.md"
 CAND="$TMP/candidate-concepts.md"
 bash "$BPI"     --root "$FX" --output "$IDX"  >/dev/null 2>&1
 bash "$HARVEST" --root "$FX" --output "$CAND" >/dev/null 2>&1
 
-TOOL_PATH_RE='\.claude/|\.cursor/|\.codex/'
-TOOL_TOKEN_RE='ClaudeInstallToken|ClaudeHelperFn|CursorInstallToken|CursorNestedInstallToken|CodexInstallToken'
+TOOL_PATH_RE='\.claude/|\.cursor/|\.codex/|\.agent/'
+TOOL_TOKEN_RE='ClaudeInstallToken|ClaudeHelperFn|CursorInstallToken|CursorNestedInstallToken|CodexInstallToken|AgentInstallToken'
 
 # --- S01: no tool-tree paths in the project index -------------------------
 if [[ -f "$IDX" ]] && grep -qE "$TOOL_PATH_RE" "$IDX"; then
-  fail "S01 project-index.md must not list any .claude/.cursor/.codex path"
+  fail "S01 project-index.md must not list any .claude/.cursor/.codex/.agent path"
   [[ "$VERBOSE" -eq 1 ]] && grep -nE "$TOOL_PATH_RE" "$IDX"
 else
   pass "S01 project-index.md lists no AID tool-install-tree paths"

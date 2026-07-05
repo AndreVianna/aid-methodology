@@ -52,9 +52,11 @@ SKIP_DIRS=(
   # AID tool-install ("dogfood") trees at the repo root -- the AID install itself,
   # never target-project source; the KB makes no claims about them (same reason
   # .aid is pruned). Pruning them keeps the harvest/index scoped to the target
-  # project and byte-reproducible across AID updates. NOT .github (a standard
-  # project dir with legitimate content).
-  .claude .cursor .codex
+  # project and byte-reproducible across AID updates. Covers every AID profile's
+  # install dir: .claude (claude-code), .cursor, .codex, .agent (antigravity).
+  # NOT .github (copilot-cli installs under .github/aid/, but .github is a
+  # standard project dir with legitimate content, so it is not pruned wholesale).
+  .claude .cursor .codex .agent
 )
 
 # Build the find prune expression
