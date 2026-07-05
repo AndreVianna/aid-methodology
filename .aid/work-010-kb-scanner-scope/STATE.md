@@ -1,6 +1,6 @@
 # Work State -- work-010-kb-scanner-scope
 
-> **State:** In Review — fix applied + verified; on work-010 branch (PR pending)
+> **State:** Shipped — released in v2.0.4 (PR #120 merged; tag v2.0.4; GitHub Release + npm + PyPI live). Shipped alongside work-011 (.gitignore/smart-exclusion).
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-05
