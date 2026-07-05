@@ -49,6 +49,12 @@ SKIP_DIRS=(
   bin obj
   .next .nuxt
   .aid
+  # AID tool-install ("dogfood") trees at the repo root -- the AID install itself,
+  # never target-project source; the KB makes no claims about them (same reason
+  # .aid is pruned). Pruning them keeps the harvest/index scoped to the target
+  # project and byte-reproducible across AID updates. NOT .github (a standard
+  # project dir with legitimate content).
+  .claude .cursor .codex
 )
 
 # Build the find prune expression

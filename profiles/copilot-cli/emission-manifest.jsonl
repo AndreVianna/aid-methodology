@@ -70,11 +70,11 @@
 {"dst": ".github/aid/scripts/interview/parse-recipe.sh", "profile": "copilot-cli", "sha256": "21733b145f6da801cf00237107599cdc02418b08ad00947b6c94c62d61a54967", "src": "canonical/scripts/interview/parse-recipe.sh"}
 {"dst": ".github/aid/scripts/kb/build-kb-index.sh", "profile": "copilot-cli", "sha256": "6781b89de561e3f55abbb065587c261aec16a064786a6d9ddce556982a678670", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".github/aid/scripts/kb/build-metrics.sh", "profile": "copilot-cli", "sha256": "22635b83080e81d37274f969f0325c88242d303310b26760085761eddca680ee", "src": "canonical/scripts/kb/build-metrics.sh"}
-{"dst": ".github/aid/scripts/kb/build-project-index.sh", "profile": "copilot-cli", "sha256": "f7c4804285448210e1bee5fb4b8a85c00247420925da618a14578755668b03f6", "src": "canonical/scripts/kb/build-project-index.sh"}
+{"dst": ".github/aid/scripts/kb/build-project-index.sh", "profile": "copilot-cli", "sha256": "e56ff2a7f19e099584ce6e9b5eb348ad0055a24ebf2f914ca80d306cabbb92ce", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".github/aid/scripts/kb/closure-check.sh", "profile": "copilot-cli", "sha256": "56156801fd0b5e371035f3c0037367a8f47fed6298fe0c68ef60c726c00c133d", "src": "canonical/scripts/kb/closure-check.sh"}
 {"dst": ".github/aid/scripts/kb/coined-term-denylist.txt", "profile": "copilot-cli", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".github/aid/scripts/kb/discover-preflight.sh", "profile": "copilot-cli", "sha256": "62a53acf4c58f9ae608b6d2fdb19219f7e2418b1961eca580c70d0fab81d751f", "src": "canonical/scripts/kb/discover-preflight.sh"}
-{"dst": ".github/aid/scripts/kb/harvest-coined-terms.sh", "profile": "copilot-cli", "sha256": "690d0d7c0bc6da34b7e7f6aad13e58745de60583a57dd5041c94cb182d762a70", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
+{"dst": ".github/aid/scripts/kb/harvest-coined-terms.sh", "profile": "copilot-cli", "sha256": "a413683a8c1bcf00477772714722ba4ab1cd4d77c5671710ea7dbdabc456768d", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".github/aid/scripts/kb/kb-actback-task.sh", "profile": "copilot-cli", "sha256": "d391d9bdbb3d2ade0bf95473c3fb2c2fa395e9a44b9f7b9615d45471814a60c3", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".github/aid/scripts/kb/kb-citation-lint.sh", "profile": "copilot-cli", "sha256": "b0be37ca3b394c0a0d1d386c1c192dda027576ada524aba15b4e356b2a20b9d0", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".github/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "copilot-cli", "sha256": "9b99011b98286560ca09162006d77343aad368ea9070151ae16f9623f2d4bab5", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
