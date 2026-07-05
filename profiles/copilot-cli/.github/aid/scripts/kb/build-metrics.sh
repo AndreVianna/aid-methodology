@@ -75,12 +75,30 @@ fi
 SKILL_LINES_TABLE=""
 SKILL_TOTAL=0
 if [[ -d "$ROOT/canonical/skills" ]]; then
+    SKILL_FILES=()
     while IFS= read -r f; do
-        n=$(wc -l < "$f" | tr -d ' ')
-        name=$(basename "$(dirname "$f")")
-        SKILL_LINES_TABLE+="| \`$name/SKILL.md\` | $n |"$'\n'
-        SKILL_TOTAL=$((SKILL_TOTAL + n))
+        SKILL_FILES+=("$f")
     done < <(find "$ROOT/canonical/skills" -maxdepth 2 -name 'SKILL.md' | sort)
+    if [[ ${#SKILL_FILES[@]} -gt 0 ]]; then
+        # Batched line counts: a single `wc -l` over the whole file list instead of
+        # one `wc` per SKILL.md. `wc -l file...` prints "count path" per file plus
+        # (for >=2 files) a trailing "total" line; take the first field of every
+        # non-total line, in argument order, which equals the old per-file
+        # `wc -l < "$f" | tr -d ' '` value. `${dir##*/}` / `${f%/*}` replace the
+        # basename/dirname forks.
+        SKILL_COUNTS=()
+        while IFS= read -r n; do
+            SKILL_COUNTS+=("$n")
+        done < <(wc -l "${SKILL_FILES[@]}" 2>/dev/null | awk '$NF != "total" { print $1 }')
+        for i in "${!SKILL_FILES[@]}"; do
+            f="${SKILL_FILES[$i]}"
+            n="${SKILL_COUNTS[$i]}"
+            dir="${f%/*}"
+            name="${dir##*/}"
+            SKILL_LINES_TABLE+="| \`$name/SKILL.md\` | $n |"$'\n'
+            SKILL_TOTAL=$((SKILL_TOTAL + n))
+        done
+    fi
 fi
 
 # --- Begin output -----------------------------------------------------------
@@ -115,9 +133,19 @@ EOF
         echo "| Document | Lines |"
         echo "|----------|-------|"
         kb_total=0
-        for f in "${KB_DOCS[@]}"; do
-            n=$(wc -l < "$f" | tr -d ' ')
-            name=$(basename "$f")
+        # Batched line counts: a single `wc -l` over all KB docs instead of one
+        # `wc` per doc. `wc -l file...` prints "count path" per file plus (for
+        # >=2 files) a trailing "total" line; take the first field of every
+        # non-total line, in argument order, which equals the old per-file
+        # `wc -l < "$f" | tr -d ' '` value. `${f##*/}` replaces the basename fork.
+        KB_COUNTS=()
+        while IFS= read -r n; do
+            KB_COUNTS+=("$n")
+        done < <(wc -l "${KB_DOCS[@]}" 2>/dev/null | awk '$NF != "total" { print $1 }')
+        for i in "${!KB_DOCS[@]}"; do
+            f="${KB_DOCS[$i]}"
+            n="${KB_COUNTS[$i]}"
+            name="${f##*/}"
             echo "| $name | $n |"
             kb_total=$((kb_total + n))
         done

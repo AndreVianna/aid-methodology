@@ -43,8 +43,8 @@ POPULATED=0
 if [ -d "$KB_DIR" ]; then
     for f in "$KB_DIR"/*.md; do
         [ -f "$f" ] || continue
-        # Skip state files; look at content docs
-        case "$(basename "$f")" in
+        # Skip state files; look at content docs (${f##*/} = basename, no fork)
+        case "${f##*/}" in
             STATE.md|README.md|INDEX.md) continue ;;
         esac
         # A doc is "populated" if it has more than 30 non-blank lines and doesn't only say "Pending"

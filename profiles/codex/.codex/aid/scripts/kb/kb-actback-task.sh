@@ -183,49 +183,53 @@ _dim_owns_class() {
 # Do not edit independently of domain-doc-matrix.md.
 #
 # _dim_of_filename FILENAME
-#   Returns the spine dimension (C0..C9, D, meta) for a known filename.
-#   Returns "" for unknown/custom filenames.
+#   Sets the global _DIM to the spine dimension (C0..C9, D, meta) for a known
+#   filename, or "" for unknown/custom filenames.  Assigns a global variable
+#   (rather than echoing) so callers avoid a command-substitution fork per doc
+#   -- each fork costs ~1s on Windows Git Bash.  Every case arm (including the
+#   catch-all) sets _DIM, so it is always defined after a call.
 # ---------------------------------------------------------------------------
+_DIM=""
 _dim_of_filename() {
   local fn="$1"
   case "$fn" in
     # C0 Technology / medium
-    technology-stack.md|tooling-stack.md) echo "C0" ;;
+    technology-stack.md|tooling-stack.md) _DIM="C0" ;;
     # C1 Build & shape
     project-structure.md|architecture.md|design-system.md|\
     information-architecture.md|methodology.md|platform-topology.md|\
-    process-architecture.md) echo "C1" ;;
+    process-architecture.md) _DIM="C1" ;;
     # C2 Parts & connections
     module-map.md|integration-map.md|pipeline-contracts.md|\
     component-inventory.md|content-map.md|data-pipeline.md|\
-    deployment-map.md|evidence-map.md|workflow-map.md) echo "C2" ;;
+    deployment-map.md|evidence-map.md|workflow-map.md) _DIM="C2" ;;
     # C3 Conventions
     coding-standards.md|analysis-conventions.md|authoring-conventions.md|\
-    design-principles.md|ops-conventions.md|style-guide.md) echo "C3" ;;
+    design-principles.md|ops-conventions.md|style-guide.md) _DIM="C3" ;;
     # C4 Vocabulary
-    domain-glossary.md|glossary.md) echo "C4" ;;
+    domain-glossary.md|glossary.md) _DIM="C4" ;;
     # C5 Data & contracts
     schemas.md|artifact-schemas.md|config-schemas.md|content-model.md|\
-    data-schemas.md|design-tokens.md|evidence-sources.md) echo "C5" ;;
+    data-schemas.md|design-tokens.md|evidence-sources.md) _DIM="C5" ;;
     # C6 Quality & checking
     test-landscape.md|accessibility-landscape.md|editorial-process.md|\
     evaluation-landscape.md|quality-gates.md|runbook-landscape.md|\
-    validation-landscape.md) echo "C6" ;;
+    validation-landscape.md) _DIM="C6" ;;
     # C7 Risk & debt
-    tech-debt.md|limitations.md) echo "C7" ;;
+    tech-debt.md|limitations.md) _DIM="C7" ;;
     # C8 Shipping & operation
     infrastructure.md|delivery-pipeline.md|dissemination.md|\
-    publishing-pipeline.md) echo "C8" ;;
+    publishing-pipeline.md) _DIM="C8" ;;
     # C9 What it does for users
     feature-inventory.md|capability-inventory.md|content-inventory.md|\
     design-overview.md|model-cards.md|repo-presentation.md|\
-    research-questions.md|service-inventory.md) echo "C9" ;;
+    research-questions.md|service-inventory.md) _DIM="C9" ;;
     # D Decisions & rationale
-    decisions.md|experiment-log.md|findings-log.md) echo "D" ;;
+    decisions.md|experiment-log.md|findings-log.md) _DIM="D" ;;
     # meta Orientation / cross-cutting
-    external-sources.md|README.md) echo "meta" ;;
+    external-sources.md|README.md) _DIM="meta" ;;
     # Unknown / custom filenames: safe degradation
-    *) echo "" ;;
+    *) _DIM="" ;;
   esac
 }
 
@@ -277,7 +281,8 @@ _run_task() {
 
   while IFS= read -r fname; do
     local dim
-    dim="$(_dim_of_filename "$fname")"
+    _dim_of_filename "$fname"
+    dim="$_DIM"
     case "$dim" in
       C5) has_C5=1 ;;
       C2) has_C2=1 ;;
@@ -453,47 +458,101 @@ _run_check() {
   files_tmp="$(mktemp)"
   _parse_docset "$tsv" > "$files_tmp"
 
+  # Substrates for the O(1)-spawn presence scan.  The old body spawned one
+  # `grep -qE` per (doc x class) -- O(4N) forks at ~1s each on Windows Git Bash.
+  # We now (1) build the EXPECTED (owning-table) rows in pure bash (no spawns),
+  # and (2) detect PRESENT sections for the whole doc set in a SINGLE awk pass.
+  # The emitted row set is the UNION of expected and present (status "present"
+  # iff the section is physically there) -- identical per-cell semantics to the
+  # old loop -- and is stable-sorted below, so output is byte-identical.
+  local expected_tmp pathmap_tmp present_tmp
+  expected_tmp="$(mktemp)"
+  pathmap_tmp="$(mktemp)"
+  present_tmp="$(mktemp)"
+  : > "$expected_tmp"
+  : > "$pathmap_tmp"
+  : > "$present_tmp"
+
+  # Doc paths that physically exist (become the awk args for the presence pass).
+  local _docpaths=()
+
   while IFS= read -r fname; do
     local doc_path="${kb_dir}/${fname}"
 
     # Resolve the spine dimension for this filename (empty for unknown/custom docs).
+    # (_dim_of_filename sets the global _DIM -- no command-substitution fork.)
     local dim
-    dim="$(_dim_of_filename "$fname")"
+    _dim_of_filename "$fname"
+    dim="$_DIM"
 
+    # (1) EXPECTED rows: owning-table marks this doc's dimension as a class owner.
+    #     (May be absent on disk -> reported "absent" below; pure-bash, no spawns.)
+    local class
     for class in Conventions Invariants Gotchas Contracts; do
-      # Check owning-table: is this doc's dimension expected to carry this class?
-      local expected=0
       if [[ -n "$dim" ]] && _dim_owns_class "$dim" "$class"; then
-        expected=1
-      fi
-
-      # Check if the section is actually present in the KB doc
-      local section_present=0
-      if [[ -f "$doc_path" ]]; then
-        # Match the heading as a clean IDENTIFIER with an OPTIONAL suffix: "## Conventions",
-        # "## Conventions (Recurring-Change Checklist)", "## Conventions ..." all count; but
-        # "## Conventionsfoo" does not (the class name must be followed by whitespace or EOL).
-        # (feature-014 AB-004 -- same heading-idempotency rule as the closure checker.)
-        if LC_ALL=C grep -qE "^## ${class}([[:space:]].*)?$" "$doc_path" 2>/dev/null; then
-          section_present=1
-        fi
-      fi
-
-      # Emit a row only when:
-      #   (a) the owning-table marks this doc's dimension as an expected owner
-      #       (may be absent -> finding)
-      #   (b) OR the section is actually present (auto-detect opt-in ownership -> present)
-      # This prevents false-absent for non-owner dims (e.g. C4/domain-glossary.md for
-      # Contracts) while still surfacing opt-in sections carried outside the default set.
-      if [[ $expected -eq 1 || $section_present -eq 1 ]]; then
-        local status="absent"
-        [[ $section_present -eq 1 ]] && status="present"
-        printf '| %s | %s | %s |\n' "$fname" "$class" "$status" >> "$rows_tmp"
+        printf '%s\t%s\n' "$fname" "$class" >> "$expected_tmp"
       fi
     done
+
+    # (2) Register existing docs for the single-pass presence scan.
+    if [[ -f "$doc_path" ]]; then
+      printf '%s\t%s\n' "$doc_path" "$fname" >> "$pathmap_tmp"
+      _docpaths+=("$doc_path")
+    fi
   done < "$files_tmp"
 
   rm -f "$files_tmp"
+
+  # PRESENT sections: ONE awk pass over every existing doc (was O(4N) grep forks).
+  # Reproduces the old per-class `grep -qE "^## ${class}([[:space:]].*)?$"` EXACTLY:
+  # the heading must be a clean IDENTIFIER with an OPTIONAL whitespace-led suffix --
+  # "## Conventions", "## Conventions (Recurring-Change Checklist)", "## Conventions
+  # ..." all count, but "## Conventionsfoo" does not (class name must be followed by
+  # whitespace or EOL).  (feature-014 AB-004 -- same heading-idempotency rule as the
+  # closure checker.)  LC_ALL=C is exported, so [[:space:]] is byte-wise like grep.
+  # The path->filename map (first awk file) keys presence rows by the doc's filename.
+  if [[ ${#_docpaths[@]} -gt 0 ]]; then
+    awk -F'\t' '
+      FNR==NR { fnof[$1]=$2; next }
+      FNR==1  { curfn = fnof[FILENAME] }
+      /^## Conventions([[:space:]].*)?$/ { seen[curfn "\tConventions"]=1 }
+      /^## Invariants([[:space:]].*)?$/  { seen[curfn "\tInvariants"]=1 }
+      /^## Gotchas([[:space:]].*)?$/     { seen[curfn "\tGotchas"]=1 }
+      /^## Contracts([[:space:]].*)?$/   { seen[curfn "\tContracts"]=1 }
+      END { for (k in seen) print k }
+    ' "$pathmap_tmp" "${_docpaths[@]}" > "$present_tmp"
+  fi
+
+  # Emit rows = UNION(expected, present); status "present" iff in the present set.
+  #   (a) the owning-table marks this doc's dimension as an expected owner
+  #       (may be absent -> finding), OR
+  #   (b) the section is actually present (auto-detect opt-in ownership -> present).
+  # This prevents false-absent for non-owner dims (e.g. C4/domain-glossary.md for
+  # Contracts) while still surfacing opt-in sections carried outside the default set.
+  awk -F'\t' -v pf="$present_tmp" '
+    BEGIN {
+      while ((getline line < pf) > 0) {
+        n = split(line, a, "\t")
+        if (n >= 2) {
+          k = a[1] "\t" a[2]
+          present[k] = 1; key[k] = 1; ff[k] = a[1]; cc[k] = a[2]
+        }
+      }
+      close(pf)
+    }
+    {
+      k = $1 "\t" $2
+      key[k] = 1; ff[k] = $1; cc[k] = $2
+    }
+    END {
+      for (k in key) {
+        st = (k in present) ? "present" : "absent"
+        print "| " ff[k] " | " cc[k] " | " st " |"
+      }
+    }
+  ' "$expected_tmp" >> "$rows_tmp"
+
+  rm -f "$expected_tmp" "$pathmap_tmp" "$present_tmp"
 
   # Stable sort for byte-reproducibility (LC_ALL=C already exported)
   sort "$rows_tmp"

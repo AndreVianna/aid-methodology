@@ -494,9 +494,13 @@ mode_render() {
     # Split tasks_block into per-task sections
     local task_num="" task_body="" in_task=0 rendered_task task_file
     local task_title=""
+    # Precompiled EREs: heading detection + task-number extraction are bash builtins,
+    # not `echo | grep` per line -- that per-line fork was the O(lines) hot path that
+    # made a multi-task recipe slow on Windows Git Bash / MSYS (/aid-interview).
+    local _task_heading_re='^### task-[0-9]' _task_num_re='task-([0-9]+)'
 
     while IFS= read -r line; do
-        if echo "$line" | grep -qE '^### task-[0-9]'; then
+        if [[ "$line" =~ $_task_heading_re ]]; then
             # If we were accumulating a previous task, render and write it
             if [[ -n "$task_num" ]]; then
                 rendered_task=$(render_template "$SLOTS_JSON_FILE" "$task_body")
@@ -506,7 +510,7 @@ mode_render() {
             fi
             # Start new task
             # Extract task number from heading: ### task-001 — Title or ### task-001 - Title
-            task_num=$(echo "$line" | grep -oE 'task-[0-9]+' | head -1 | sed 's/task-//')
+            if [[ "$line" =~ $_task_num_re ]]; then task_num="${BASH_REMATCH[1]}"; else task_num=""; fi
             task_title=$(echo "$line" | sed 's/^### task-[0-9]* *[-—]* *//')
             # Build header for the task file (rendered title comes from substitution below)
             task_body="### task-${task_num} — ${task_title}"$'\n'

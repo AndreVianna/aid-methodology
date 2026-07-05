@@ -175,7 +175,7 @@ fi
 #   Swift Scala Elm Elixir Erlang Clojure Lua Shell PowerShell Vue Svelte
 # ---------------------------------------------------------------------------
 
-LC_ALL=C awk -v is_src="$IS_SOURCE_LANGUAGES" '
+RM12=$(LC_ALL=C awk -v is_src="$IS_SOURCE_LANGUAGES" '
 BEGIN {
   rm1 = 0; rm2 = 0
   n = split(is_src, langs, "|")
@@ -209,11 +209,13 @@ in_breakdown && /^\|/ {
 }
 
 END { print rm1 "\t" rm2 }
-' "$INDEX" > /tmp/recon_rm12_$$.txt
+' "$INDEX")
 
-RM1=$(cut -f1 /tmp/recon_rm12_$$.txt | tr -d '[:space:]')
-RM2=$(cut -f2 /tmp/recon_rm12_$$.txt | tr -d '[:space:]')
-rm -f /tmp/recon_rm12_$$.txt
+# Split "rm1<TAB>rm2" in-shell -- no temp file, no cut/tr/rm forks, no /tmp
+# write (work-009 hot-path polish). The awk output carries no surrounding
+# whitespace, so this is byte-identical to the former cut|tr pipeline.
+RM1="${RM12%%$'\t'*}"
+RM2="${RM12##*$'\t'}"
 
 # Ensure numeric
 RM1="${RM1:-0}"; RM2="${RM2:-0}"
@@ -232,7 +234,7 @@ RM1=$(( RM1 + 0 )); RM2=$(( RM2 + 0 ))
 # For a file directly in root (e.g. "main.go"), prefix is the filename itself.
 # ---------------------------------------------------------------------------
 
-LC_ALL=C awk -v is_src="$IS_SOURCE_LANGUAGES" '
+RM3RAW=$(LC_ALL=C awk -v is_src="$IS_SOURCE_LANGUAGES" '
 BEGIN {
   n = split(is_src, langs, "|")
   for (i = 1; i <= n; i++) src_set[langs[i]] = 1
@@ -271,10 +273,11 @@ in_inventory && /^\|/ {
 }
 
 END { print rm3 + 0 }
-' "$INDEX" > /tmp/recon_rm3_$$.txt
+' "$INDEX")
 
-RM3=$(cat /tmp/recon_rm3_$$.txt | tr -d '[:space:]')
-rm -f /tmp/recon_rm3_$$.txt
+# Trim any whitespace in-shell -- no temp file, no cat/tr/rm forks, no /tmp
+# write. RM3RAW is a bare integer, so this equals the former cat|tr pipeline.
+RM3="${RM3RAW//[[:space:]]/}"
 RM3="${RM3:-0}"; RM3=$(( RM3 + 0 ))
 
 # ---------------------------------------------------------------------------

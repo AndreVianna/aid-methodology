@@ -102,7 +102,12 @@ abs_path() {
         esac
     fi
 }
-SETTINGS_FILE_ABS=$(abs_path "$SETTINGS_FILE")
+# NOTE: the absolute path is only needed for the two error messages below
+# (settings-file-missing here, and path-mode no-value at the end). It is
+# computed lazily at those sites -- abs_path is a pure function of
+# SETTINGS_FILE + $PWD, so this is byte-identical to the happy path while
+# saving a realpath fork on every successful lookup (this is the single
+# most-invoked script in the repo). (work-009 hot-path polish)
 
 # settings.yml missing → use default if provided, else exit 1
 if [[ ! -f "$SETTINGS_FILE" ]]; then
@@ -110,7 +115,7 @@ if [[ ! -f "$SETTINGS_FILE" ]]; then
         echo "$DEFAULT"
         exit 0
     fi
-    echo "read-setting.sh: settings file not found at $SETTINGS_FILE_ABS and no --default provided" >&2
+    echo "read-setting.sh: settings file not found at $(abs_path "$SETTINGS_FILE") and no --default provided" >&2
     exit 1
 fi
 
@@ -258,6 +263,6 @@ if [[ "$MODE" == "path" ]]; then
         echo "$DEFAULT"
         exit 0
     fi
-    echo "read-setting.sh: no value for $DPATH in $SETTINGS_FILE_ABS and no --default" >&2
+    echo "read-setting.sh: no value for $DPATH in $(abs_path "$SETTINGS_FILE") and no --default" >&2
     exit 1
 fi
