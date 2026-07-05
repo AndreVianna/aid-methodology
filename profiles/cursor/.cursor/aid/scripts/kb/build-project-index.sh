@@ -42,12 +42,17 @@ done
 # Directories to prune from the scan
 SKIP_DIRS=(
   .git .svn .hg
-  node_modules vendor target build dist out
-  .idea .vscode .vs
-  __pycache__ .pytest_cache .tox
+  node_modules vendor target build dist out bower_components
+  .idea .vscode .vs .history
+  __pycache__ .pytest_cache .tox .venv venv .mypy_cache .ruff_cache .eggs .ipynb_checkpoints
   .gradle .m2
   bin obj
-  .next .nuxt
+  .next .nuxt .cache .turbo .parcel-cache .svelte-kit .angular .pnpm-store
+  coverage htmlcov .nyc_output
+  Pods .dart_tool .terraform
+  # log/temp scratch dirs (minor collision risk: a project could name a source
+  # dir "temp"/"logs"; .gitignore catches genuine output dirs per-project anyway)
+  logs tmp temp .tmp .temp
   .aid
   # AID tool-install ("dogfood") trees at the repo root -- the AID install itself,
   # never target-project source; the KB makes no claims about them (same reason
@@ -187,6 +192,34 @@ else
     printf '%s\t%s\n' "$f" "$(get_mtime "$f")"
   done < "$TMP.paths" > "$TMP"
   rm -f "$TMP.paths"
+fi
+
+# ---------------------------------------------------------------------------
+# Scope refinement (kept in lockstep with harvest-coined-terms.sh): drop
+# non-source FILES the SKIP_DIRS dir-prune can't catch -- minified bundles /
+# sourcemaps, .gitignore'd files, .gitattributes linguist-generated/vendored,
+# and @generated-header files. Every check is DETERMINISTIC + git-native +
+# machine-neutralized (byte-reproducible cross-OS/AID-update); removal-only
+# (order-independent); one batched process each (no per-file spawn). NOT
+# linguist-documentation. @generated uses a portable full-read awk (no
+# `nextfile`, unsupported by macOS awk). See harvest for the full rationale.
+# ---------------------------------------------------------------------------
+if [[ -s "$TMP" ]]; then
+  BI_PATHS="$TMP.scanpaths"; BI_EXCL="$TMP.scanexcl"
+  cut -f1 "$TMP" > "$BI_PATHS"; : > "$BI_EXCL"
+  grep -E '\.min\.(js|css)$|\.map$' "$BI_PATHS" >> "$BI_EXCL" 2>/dev/null || true
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    git -c core.excludesFile=/dev/null check-ignore --stdin < "$BI_PATHS" 2>/dev/null >> "$BI_EXCL" || true
+    git check-attr --stdin linguist-generated linguist-vendored < "$BI_PATHS" 2>/dev/null \
+      | sed -n -E 's/: linguist-(generated|vendored): (set|true)$//p' >> "$BI_EXCL" || true
+  fi
+  tr '\n' '\0' < "$BI_PATHS" \
+    | LC_ALL=C xargs -0 awk 'FNR<=2 && /@generated|DO NOT EDIT|DO NOT MODIFY/ { print FILENAME }' 2>/dev/null >> "$BI_EXCL" || true
+  if [[ -s "$BI_EXCL" ]]; then
+    sort -u "$BI_EXCL" -o "$BI_EXCL"
+    awk -F'\t' 'NR==FNR{drop[$0]=1;next} !($1 in drop)' "$BI_EXCL" "$TMP" > "$TMP.keep" && mv "$TMP.keep" "$TMP"
+  fi
+  rm -f "$BI_PATHS" "$BI_EXCL" 2>/dev/null || true
 fi
 
 TOTAL_FILES=$(wc -l < "$TMP" | tr -d ' ')

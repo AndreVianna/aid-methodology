@@ -87,12 +87,17 @@ done
 # ---------------------------------------------------------------------------
 SKIP_DIRS=(
   .git .svn .hg
-  node_modules vendor target build dist out
-  .idea .vscode .vs
-  __pycache__ .pytest_cache .tox
+  node_modules vendor target build dist out bower_components
+  .idea .vscode .vs .history
+  __pycache__ .pytest_cache .tox .venv venv .mypy_cache .ruff_cache .eggs .ipynb_checkpoints
   .gradle .m2
   bin obj
-  .next .nuxt
+  .next .nuxt .cache .turbo .parcel-cache .svelte-kit .angular .pnpm-store
+  coverage htmlcov .nyc_output
+  Pods .dart_tool .terraform
+  # log/temp scratch dirs (minor collision risk: a project could name a source
+  # dir "temp"/"logs"; .gitignore catches genuine output dirs per-project anyway)
+  logs tmp temp .tmp .temp
   .aid
   # AID tool-install ("dogfood") trees at the repo root -- the AID install itself,
   # never target-project source; the KB makes no claims about them (same reason
@@ -322,6 +327,39 @@ echo "[harvest] Scanning files under $ROOT ..." >&2
 # ---------------------------------------------------------------------------
 # shellcheck disable=SC2086
 find . \( $PRUNE_EXPR \) -prune -o -type f -print 2>/dev/null | sed 's|^\./||' | sort > "$FILELIST"
+
+# ---------------------------------------------------------------------------
+# Scope refinement (kept in lockstep with build-project-index.sh): drop
+# non-source FILES the SKIP_DIRS dir-prune can't catch. Every check is
+# DETERMINISTIC + git-native + machine-neutralized, so the harvest stays
+# byte-reproducible across machines/OSes/AID-updates; each only REMOVES from the
+# set (order-independent); each is a single batched process (no per-file spawn).
+#   (1) minified bundles + sourcemaps  -- never hand-authored source
+#   (2) .gitignore    -- committed rules only (core.excludesFile neutralized so a
+#       machine-specific global gitignore can't perturb output; tracked files are
+#       never reported, so committed source that matches a pattern still scans)
+#   (3) .gitattributes linguist-generated / linguist-vendored (project-DECLARED;
+#       NOT linguist-documentation -- the docs channel harvests prose terms)
+#   (4) @generated / DO NOT EDIT header marker (first 2 lines only; portable
+#       full-read awk -- NOT `nextfile`, which macOS awk lacks and would make the
+#       check silently no-op there, breaking cross-OS byte-identity)
+# ---------------------------------------------------------------------------
+if [[ -s "$FILELIST" ]]; then
+  EXCLUDE="$TMPD/scan-exclude.txt"; : > "$EXCLUDE"
+  grep -E '\.min\.(js|css)$|\.map$' "$FILELIST" >> "$EXCLUDE" 2>/dev/null || true
+  if git rev-parse --git-dir >/dev/null 2>&1; then
+    git -c core.excludesFile=/dev/null check-ignore --stdin < "$FILELIST" 2>/dev/null >> "$EXCLUDE" || true
+    git check-attr --stdin linguist-generated linguist-vendored < "$FILELIST" 2>/dev/null \
+      | sed -n -E 's/: linguist-(generated|vendored): (set|true)$//p' >> "$EXCLUDE" || true
+  fi
+  tr '\n' '\0' < "$FILELIST" \
+    | LC_ALL=C xargs -0 awk 'FNR<=2 && /@generated|DO NOT EDIT|DO NOT MODIFY/ { print FILENAME }' 2>/dev/null >> "$EXCLUDE" || true
+  if [[ -s "$EXCLUDE" ]]; then
+    sort -u "$EXCLUDE" -o "$EXCLUDE"
+    comm -23 "$FILELIST" "$EXCLUDE" > "$FILELIST.keep" 2>/dev/null && mv "$FILELIST.keep" "$FILELIST"
+  fi
+fi
+
 NFILES=$(wc -l < "$FILELIST" | tr -d ' ')
 COMMENTS_IDX=$(( NFILES + 1 ))
 HISTORY_IDX=$(( NFILES + 2 ))
