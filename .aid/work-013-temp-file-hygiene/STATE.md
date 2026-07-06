@@ -1,6 +1,6 @@
 # Work State -- work-013-temp-file-hygiene
 
-> **State:** Executing
+> **State:** In Review (PR #123 ready)
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-06
@@ -121,3 +121,5 @@ re-added as a fixture-based test (like KB25) if that regression is wanted back.
 |------|------------------------|-------|-------|
 | 2026-07-06 | Work created | -- | Direct-prompt refactor; branch `work-013-temp-file-hygiene`; scope from `aid-reviewer` ledger (10 findings) |
 | 2026-07-06 | Implemented + verified | -- | Buckets 1-3 done; profiles regen + dogfood resync + tests green; pushed to PR #123 (draft) |
+| 2026-07-06 | Test cleanup | -- | Removed dead fresh-build tests (test-diagram-content, test-kb-export KB10-12) per owner "remove don't skip"; skip audit done |
+| 2026-07-06 | Ready for review | -- | Owner confirmed key name `discovery.term_exclusions` (underscore); PR #123 marked ready |
