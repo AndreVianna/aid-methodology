@@ -10,7 +10,7 @@
 # Output is markdown by design: humans can read it, agents can parse it.
 #
 # Usage:
-#   build-project-index.sh                           # writes to .aid/knowledge/project-index.md
+#   build-project-index.sh                           # writes to .aid/generated/project-index.md
 #   build-project-index.sh --output PATH             # write to a different path
 #   build-project-index.sh --root PATH               # scan a different root (default: cwd)
 #   build-project-index.sh --top-largest 30          # how many largest files to call out (default: 20)
@@ -19,7 +19,10 @@
 
 set -euo pipefail
 
-OUTPUT=".aid/knowledge/project-index.md"
+# Default output lives under .aid/generated/ (NOT .aid/knowledge/) so the generated
+# index is never part of the reviewed KB surface. The /aid-discover pipeline always
+# passes --output .aid/generated/project-index.md explicitly; this default just matches it.
+OUTPUT=".aid/generated/project-index.md"
 ROOT="."
 TOP_N=20
 

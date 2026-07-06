@@ -285,6 +285,50 @@ resolve_doc_set "$raw"
 
 ---
 
+## `list_reviewable` — the reviewed knowledge surface (keystone gates)
+
+The four accessors above resolve the *declared* doc-set (from `discovery.settings`). The
+**reviewed knowledge surface** is a different thing: the set of KB docs on disk that a
+reviewer should treat as *hand-authored project knowledge*. It is used by the M3 (Essence /
+teach-back) and M4 (Assertiveness / act-back) keystone gates in `state-review.md`, which must
+NOT ingest process/ledger or generated files.
+
+`list_reviewable` globs `.aid/knowledge/*.md` and keeps only docs whose frontmatter is
+**hand-authored knowledge** — `kb-category != meta` AND `source != generated`. This
+deterministically excludes:
+- the process/ledger docs (`STATE.md`, `README.md` — `kb-category: meta`), and
+- generated docs (`INDEX.md` — `source: generated`).
+
+It is **tag-driven** (reads each doc's own frontmatter), so it needs no hardcoded filename
+list and adapts automatically if a doc's `kb-category`/`source` is corrected. A doc with no
+frontmatter (or no `kb-category`/`source`) defaults to *reviewable* — the surface never
+silently shrinks below the primary docs. One batched `awk` pass (no per-file spawn); portable
+(no `nextfile`/`ENDFILE`); `LC_ALL=C` for deterministic ordering.
+
+```bash
+# list_reviewable [kb_dir] — echoes the reviewed-knowledge doc paths, one per line, sorted.
+# Default kb_dir = .aid/knowledge. Keeps kb-category != meta AND source != generated.
+list_reviewable() {
+  local kb_dir="${1:-.aid/knowledge}"
+  LC_ALL=C awk '
+    FNR==1 { seen[FILENAME]=1; cat[FILENAME]=""; src[FILENAME]=""; fm[FILENAME]=0; done_[FILENAME]=0 }
+    !done_[FILENAME] && /^---[[:space:]]*$/ { fm[FILENAME]++; if (fm[FILENAME]>=2) done_[FILENAME]=1; next }
+    !done_[FILENAME] && fm[FILENAME]==1 && /^kb-category:/ { v=$0; sub(/^kb-category:[[:space:]]*/,"",v); sub(/[[:space:]]+$/,"",v); cat[FILENAME]=v }
+    !done_[FILENAME] && fm[FILENAME]==1 && /^source:/      { v=$0; sub(/^source:[[:space:]]*/,"",v);      sub(/[[:space:]]+$/,"",v); src[FILENAME]=v }
+    END { for (f in seen) if (cat[f] != "meta" && src[f] != "generated") print f }
+  ' "$kb_dir"/*.md 2>/dev/null | LC_ALL=C sort
+}
+```
+
+> **Two exclusion mechanisms, one intent.** M1 (Correctness) and M2 (Anatomy) already
+> *route by* `kb-category` (a `meta` doc gets only a Spot-Check Snapshot, not the full graded
+> checklist). `list_reviewable` extends the same intent to the M3/M4 keystone gates, which
+> otherwise read a raw `.aid/knowledge/*.md` glob and would ingest `STATE.md`/`README.md` as
+> if they were knowledge. Keystone gates force grade ≤ D, so leaking ledger text there is the
+> highest-impact contamination — `list_reviewable` closes it deterministically.
+
+---
+
 ## Usage pattern
 
 ```bash

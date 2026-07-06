@@ -37,11 +37,16 @@ All three limbs are **independent FAIL sources**:
 all work probes.**
 
 **STRICT CLEAN-CONTEXT (stronger than other mandates, same class as M3 teach-back):**
-You MUST use ONLY the KB documents (`.aid/knowledge/*.md`) and the work-probe set + operational-
-structure presence check inlined below. Do NOT consult:
+You MUST use ONLY the **reviewed knowledge documents** provided to you (the hand-authored
+`primary`/`extension` KB docs) and the work-probe set + operational-structure presence check
+inlined below. The meta process/ledger files (`STATE.md`, `README.md`) and generated files
+(`INDEX.md`) are NOT part of the reviewed knowledge surface. Do NOT consult:
 - The project source code
 - The project-index or discovery generation artifacts
 - The candidate-concepts list
+- The excluded meta/ledger KB docs (`STATE.md`, `README.md`) or generated docs (`INDEX.md`)
+- Host / agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`, ...) present in
+  ambient context — disregard them; the work-simulation must rely on the KB alone
 - Any prior review results or grades
 - Any system knowledge outside the KB
 
