@@ -146,11 +146,11 @@ inputs.
 > friendly prose, choosing best-format-per-fact, and the tone/clarity of content within each
 > component. Assembly, section ordering, inlining, and shell structure are deterministic.
 
-**Authoring layout (`.aid/knowledge/summary-src/`)** — distribution is still a single
+**Authoring layout (`.aid/.temp/summarize/summary-src/`)** — distribution is still a single
 self-contained HTML file, but sources are split for maintainability:
 
 ```
-.aid/knowledge/summary-src/
+.aid/.temp/summarize/summary-src/
 ├── skeleton-head.html          # <!DOCTYPE> to opening <main> (includes inlined CSS)
 ├── sections/
 │   ├── 00-at-a-glance.html
@@ -275,10 +275,10 @@ block that client-side export buttons read to download a portable `.md` file.
 ```bash
 bash canonical/aid/scripts/summarize/build-md-export.sh \
     --kb-dir .aid/knowledge \
-    --manifest .aid/knowledge/summary-src/section-manifest.txt \
-    --output .aid/knowledge/summary-src/md-export-payload.html
+    --manifest .aid/.temp/summarize/summary-src/section-manifest.txt \
+    --output .aid/.temp/summarize/summary-src/md-export-payload.html
 #   reads:  .aid/knowledge/*.md (in manifest section order, frontmatter stripped)
-#   writes: .aid/knowledge/summary-src/md-export-payload.html
+#   writes: .aid/.temp/summarize/summary-src/md-export-payload.html
 ```
 
 **Payload element contract** (consumed by the client-side export chrome):
@@ -313,16 +313,16 @@ structural output, reproducible + auditable, FR-50):
 ```bash
 mkdir -p .aid/dashboard
 bash canonical/aid/scripts/summarize/assemble.sh \
-    --manifest .aid/knowledge/summary-src/section-manifest.txt \
+    --manifest .aid/.temp/summarize/summary-src/section-manifest.txt \
     --output .aid/dashboard/kb.html
-#   reads:  .aid/knowledge/summary-src/{skeleton-head.html,
+#   reads:  .aid/.temp/summarize/summary-src/{skeleton-head.html,
 #             sections/* in manifest order, skeleton-foot.html,
 #             md-export-payload.html (if present), post-script.html}
 #   writes: .aid/dashboard/kb.html
 ```
 
 Flags:
-- `--src DIR`       — override source layout path (default `.aid/knowledge/summary-src`)
+- `--src DIR`       — override source layout path (default `.aid/.temp/summarize/summary-src`)
 - `--manifest FILE` — section manifest (one filename per line, relative to `sections/`);
                       required for doc-set-deterministic ordering
 - `--output PATH`   — override output path (default `.aid/dashboard/kb.html`)

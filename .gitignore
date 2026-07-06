@@ -52,10 +52,6 @@ desktop.ini
 # Generated knowledge-summary cache
 .aid/knowledge/.cache/
 
-# Transient /aid-summarize review artifacts (regenerated each run)
-.aid/knowledge/.manual-checklist.json
-.aid/knowledge/.spot-check-facts.txt
-
 # Claude Code files
 .claude/worktrees/
 .claude/projects/
@@ -83,3 +79,11 @@ desktop.ini
 
 # Discovery scratch / intermediate generation outputs — NOT the KB (the KB is .aid/knowledge/).
 .aid/generated/
+
+# >>> AID managed -- do not edit (aid add/update maintains this block) >>>
+.aid/.temp/
+.aid/.trash/
+.aid/.heartbeat/
+.aid/generated/
+.aid/knowledge/.cache/
+# <<< AID managed <<<

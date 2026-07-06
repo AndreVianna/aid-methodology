@@ -28,7 +28,7 @@
 #   --v1 <y|n>        V1 answer (visual gate).      Non-interactive trigger.
 #   --notes <text>    Free-text reviewer notes.
 #   --html <file>     HTML file under review (display + recorded in JSON).
-#   --out  <file>     Output JSON path (default: .aid/knowledge/.manual-checklist.json).
+#   --out  <file>     Output JSON path (default: .aid/.temp/summarize/manual-checklist.json).
 #   --input <file>    Validate an already-written checklist JSON, recompute
 #                     scores from its answers, and rewrite it canonically.
 #   --interactive     Force interactive prompts even if flags are given.
@@ -46,7 +46,7 @@
 set -euo pipefail
 
 # --- Defaults ---
-OUT_FILE=".aid/knowledge/.manual-checklist.json"
+OUT_FILE=".aid/.temp/summarize/manual-checklist.json"
 HTML_FILE=""
 INPUT_FILE=""
 FORCE_INTERACTIVE=0

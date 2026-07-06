@@ -6,7 +6,7 @@ The MANUAL_POOL (K1 KB-completeness, K2 fact-grounding) needs human judgment —
 
 ### Step 1 — generate the fact spot-check report (helps the user answer K2)
 
-Run `.github/aid/scripts/summarize/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/knowledge/.spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.
+Run `.github/aid/scripts/summarize/spot-check-facts.sh`. It extracts numeric/named claims from the HTML, greps the source KB, and writes `.aid/.temp/summarize/spot-check-facts.txt` (each line: `[OK|MISS] HTML-claim | KB-evidence`). Show the user the `MISS` lines, if any.
 
 ### Step 2 — elicit the human-judgment answers via `AskUserQuestion`
 
@@ -24,11 +24,11 @@ The agent passes the answers to `manual-checklist.sh` (non-interactive mode — 
 bash .github/aid/scripts/summarize/manual-checklist.sh \
   --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes "..." --html .aid/dashboard/kb.html
 ```
-This writes `.aid/knowledge/.manual-checklist.json` with `K1_score`, `K2_score`, `V1_score`, the answers, notes, and timestamp. (A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.)
+This writes `.aid/.temp/summarize/manual-checklist.json` with `K1_score`, `K2_score`, `V1_score`, the answers, notes, and timestamp. (A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.)
 
 ### Step 4 — score and route
 
-Re-run `grade.sh` — it reads `.manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. Persist Machine + Human + Overall Grade to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.
+Re-run `grade.sh` — it reads `manual-checklist.json`, computes the Human Grade from MANUAL_POOL (K1+K2+V1, 30 pts), and the Overall Grade = `min(Machine_letter, Human_letter)`. Persist Machine + Human + Overall Grade to `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Findings (last validation)`.
 
 - Overall Grade ≥ minimum → APPROVAL.
 - **V1 failed → mandatory: Human Grade is forced to F.** Go to FIX; the visual defect must be fixed and V1 re-confirmed before APPROVAL.

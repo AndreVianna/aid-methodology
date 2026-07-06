@@ -69,6 +69,7 @@ Reviewed by `aid-reviewer` (ledger: `.aid/.temp/review-pending/temp-file-hygiene
 - Skill references updated in lockstep: `state-generate.md` (SS5/SS7/SS8), `state-manual-checklist.md`, `SKILL.md`, `state-validate.md`.
 - Move `.aid/knowledge/summary-src/` -> `.aid/.temp/summarize/summary-src/`; `git rm --cached` the 25 tracked files (now gitignored scratch under `.gitignore:69`).
 - Delete now-dead maintenance surface: `.gitignore:55-57` and the `cleanup-classify.sh` S3 KB-scratch special-cases (S1 covers `.aid/.temp/`).
+- **Fix-everywhere (found during sweep):** the installer libs `lib/aid-install-core.sh` (`_aid_gitignore_block`) and `lib/AidInstallCore.psm1` (`Get-AidGitignoreBlock`) hardcoded the two KB-dir dotfiles in the AID-managed `.gitignore` block; drop them (already covered by the `.aid/.temp/` entry) so a reinstall/update never re-adds them. Regenerate the block in the dogfood `.gitignore`.
 
 ### Bucket 3 -- term exclusions -> `settings.yml discovery.term_exclusions` (finding 8)
 - Add `discovery.term_exclusions:` block-list to `.aid/settings.yml` (migrate the ~90 current terms); document as runtime-written in `canonical/aid/templates/settings.yml` (mirroring `doc_set`).
@@ -85,8 +86,20 @@ Reviewed by `aid-reviewer` (ledger: `.aid/.temp/review-pending/temp-file-hygiene
 
 ---
 
+## Verification
+
+- **Migration lossless:** `read-setting.sh --path discovery.term_exclusions` returns all 80 terms, byte-identical to the old `.md` read through the same downstream pipeline (`diff` empty).
+- **Profiles regenerated:** `run_generator.py` re-rendered all 5 install trees; VERIFY (deterministic) PASS (byte-identical re-render + file-presence + frontmatter). No old paths remain in `profiles/`.
+- **Dogfood resynced:** `test-dogfood-byte-identity.sh` — 571 passed, 0 failed.
+- **Affected tests (local):** test-housekeep-classify 24/0 (Units 4/5 retargeted S3→S1), test-diagram-content 3/0, test-assemble-determinism 22/0, test-payload-size 11/0, test-kb-export 30/0, test-read-setting 18/0, test-discovery-doc-ownership 13/0, test-install-provisioning 41/0, Windows Test-InstallProvisioning PASS.
+
+## Known trade-off (needs owner sign-off)
+
+Because `summary-src/` is now gitignored scratch, the **fresh-build re-validation** in `test-kb-export` (KB10-12) and `test-diagram-content` cannot run in a clean CI clone (their inputs aren't committed). Both now **skip gracefully** when the workspace is absent (matching the pre-existing test-diagram-content pattern) and run locally right after an `/aid-summarize` generation. The committed-`kb.html` static checks and the generation-time VALIDATE gate remain. Alternative if CI coverage matters more: keep a committed fixture summary-src, or refactor those tests to build from a fixture.
+
 ## Lifecycle History
 
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
 | 2026-07-06 | Work created | -- | Direct-prompt refactor; branch `work-013-temp-file-hygiene`; scope from `aid-reviewer` ledger (10 findings) |
+| 2026-07-06 | Implemented + verified | -- | Buckets 1-3 done; profiles regen + dogfood resync + tests green; pushed to PR #123 (draft) |

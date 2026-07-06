@@ -316,7 +316,7 @@ Open `references/html-skeleton.html`. Replace placeholders:
 
 ### Step 8 — Produce the multi-source layout
 
-Structure sources under `.aid/knowledge/summary-src/` as documented in
+Structure sources under `.aid/.temp/summarize/summary-src/` as documented in
 `references/state-generate.md §5`. The skeleton becomes `skeleton-head.html`;
 each section becomes `sections/NN-{slug}.html`; closing shell becomes
 `skeleton-foot.html`.

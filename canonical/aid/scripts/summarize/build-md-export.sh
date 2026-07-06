@@ -6,7 +6,7 @@
 #   frontmatter, converts any relative SVG image references to inline data: URIs,
 #   and produces a single portable Markdown document wrapped in a
 #   <script type="text/markdown" id="kb-md-export"> block. The output is written to
-#   --output (default: .aid/knowledge/summary-src/md-export-payload.html) for
+#   --output (default: .aid/.temp/summarize/summary-src/md-export-payload.html) for
 #   embedding in kb.html by assemble.sh.
 #
 # Usage:
@@ -14,8 +14,8 @@
 #
 # Options:
 #   --kb-dir DIR        KB source directory  (default: .aid/knowledge)
-#   --manifest FILE     Section manifest     (default: .aid/knowledge/summary-src/section-manifest.txt)
-#   --output PATH       Output HTML snippet  (default: .aid/knowledge/summary-src/md-export-payload.html)
+#   --manifest FILE     Section manifest     (default: .aid/.temp/summarize/summary-src/section-manifest.txt)
+#   --output PATH       Output HTML snippet  (default: .aid/.temp/summarize/summary-src/md-export-payload.html)
 #   -h / --help         Print this help
 #
 # Exit codes:
@@ -61,10 +61,10 @@ done
 
 # Apply defaults
 if [[ -z "$MANIFEST_FILE" ]]; then
-    MANIFEST_FILE=".aid/knowledge/summary-src/section-manifest.txt"
+    MANIFEST_FILE=".aid/.temp/summarize/summary-src/section-manifest.txt"
 fi
 if [[ -z "$OUTPUT" ]]; then
-    OUTPUT=".aid/knowledge/summary-src/md-export-payload.html"
+    OUTPUT=".aid/.temp/summarize/summary-src/md-export-payload.html"
 fi
 
 [[ -d "$KB_DIR" ]] || {

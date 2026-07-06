@@ -251,7 +251,10 @@ scan_s2() {
 }
 
 # ---------------------------------------------------------------------------
-# S3: .aid/knowledge/.cache/**, .manual-checklist.json, .spot-check-facts.txt
+# S3: .aid/knowledge/.cache/** (Mermaid runtime cache; vestigial post-D-012)
+#     NOTE: /aid-summarize scratch (manual-checklist.json, spot-check-facts.txt)
+#     and its summary-src build workspace now live under .aid/.temp/summarize/
+#     and are swept by S1 -- no KB-dir special-case is needed here (work-013).
 # ---------------------------------------------------------------------------
 scan_s3() {
     local knowledge_dir="${AID_DIR}/knowledge"
@@ -265,22 +268,6 @@ scan_s3() {
             tracked=$(classify_tracked "$path")
             emit_candidate "$path" "0" "$tracked" "true" "S3: gitignored KB cache (.aid/knowledge/.cache/)"
         done < <(find "${knowledge_dir}/.cache" -mindepth 1 \( -type f -o -type d \) -print0 2>/dev/null)
-    fi
-
-    # .manual-checklist.json
-    local mcj="${knowledge_dir}/.manual-checklist.json"
-    if [[ -f "$mcj" ]]; then
-        local tracked
-        tracked=$(classify_tracked "$mcj")
-        emit_candidate "$mcj" "0" "$tracked" "true" "S3: gitignored KB scratch (.manual-checklist.json)"
-    fi
-
-    # .spot-check-facts.txt
-    local sct="${knowledge_dir}/.spot-check-facts.txt"
-    if [[ -f "$sct" ]]; then
-        local tracked
-        tracked=$(classify_tracked "$sct")
-        emit_candidate "$sct" "0" "$tracked" "true" "S3: gitignored KB scratch (.spot-check-facts.txt)"
     fi
 }
 

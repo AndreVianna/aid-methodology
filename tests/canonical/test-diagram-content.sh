@@ -2,7 +2,7 @@
 # test-diagram-content.sh -- canonical suite for the kb.html diagram-content gate.
 #
 # Verifies that AID's own kb.html diagrams match their content manifest
-# (.aid/knowledge/summary-src/diagram-content-manifest.json) via
+# (.aid/.temp/summarize/summary-src/diagram-content-manifest.json) via
 # canonical/aid/scripts/summarize/validate-diagram-content.mjs, AND that the gate
 # actually FIRES on drift (stale phase label / deleted-skill token). This is the
 # enforcement behind docs/diagram-content-reference.md -- it catches diagram label
@@ -13,7 +13,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$REPO_ROOT" || exit 1
 
 CHECK="canonical/aid/scripts/summarize/validate-diagram-content.mjs"
-MANIFEST=".aid/knowledge/summary-src/diagram-content-manifest.json"
+MANIFEST=".aid/.temp/summarize/summary-src/diagram-content-manifest.json"
 KB=".aid/dashboard/kb.html"
 
 PASS=0; FAIL=0

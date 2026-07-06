@@ -114,6 +114,91 @@ discovery:
     - capability-inventory.md|skill-self|required
     - decisions.md|aid-researcher-architecture|required
     - README.md|skill-self|required
+  # term_exclusions: not-concept terms (field values, code tokens, generic words) the
+  #   /aid-discover closure loop subtracts so re-runs never re-ask (Step 5c exclusion gate).
+  #   Relocated out of the KB dir (.aid/knowledge/.term-exclusions.md) into settings.yml
+  #   (work-013). Read via: read-setting.sh --path discovery.term_exclusions
+  term_exclusions:
+    - In Progress
+    - User Approved
+    - aid-execute
+    - aid-specify
+    - AndreVianna
+    - GitHub
+    - codex
+    - TypeScript
+    - RepoModel
+    - Repo Info
+    - WorkById
+    - Work By Id
+    - TargetDirectory
+    - NoPath
+    - No Profile
+    - AidStatusBody
+    - AidVersion
+    - AidSupportedFormat
+    - Aid Update Self If Stale
+    - CardGrid
+    - Card Grid
+    - LifecycleBadge
+    - Lifecycle Badge
+    - VersionBadge
+    - PipelineDiagram
+    - RuleEntry
+    - ExtrasConfig
+    - Window Style
+    - IsWindows
+    - ProgramData
+    - Script Analyzer
+    - Claude Opus
+    - File Not Found Error
+    - task_id
+    - work_id
+    - PaymentEngine
+    - PaymentHandler
+    - Settlement Batch
+    - ReconciliationCycle
+    - FluxMatrix
+    - SpineAnchor
+    - SingleSource
+    - Crunch Factor
+    - State Detection
+    - Single Source
+    - File Hash
+    - File System
+    - echo
+    - exit
+    - grep
+    - line
+    - must
+    - same
+    - split
+    - strip
+    - none
+    - home
+    - docs
+    - project
+    - branch
+    - target
+    - title
+    - summary
+    - works
+    - knowledge
+    - node_modules
+    - sha256
+    - dry-run
+    - a-z0-9
+    - Change Log
+    - Term
+    - Term Name
+    - Unique Term
+    - Power Shell
+    - Windows Power
+    - Java Script
+    - Program Data
+    - File Sync
+    - Hub Release
+    - Hub Releases
 
 # ---------------------------------------------------------------------------
 # triage: recon-pre-pass thresholds for the 3-path discovery classifier (f006)

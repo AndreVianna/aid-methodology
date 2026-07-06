@@ -8,8 +8,8 @@
 #   Unit 1:  S1 .aid/.temp/** → Tier-0 checked
 #   Unit 2:  S2 .aid/.heartbeat/** → Tier-0 checked
 #   Unit 3:  S3 .aid/knowledge/.cache/** → Tier-0 checked
-#   Unit 4:  S3 .aid/knowledge/.manual-checklist.json → Tier-0 checked
-#   Unit 5:  S3 .aid/knowledge/.spot-check-facts.txt → Tier-0 checked
+#   Unit 4:  S1 .aid/.temp/summarize/manual-checklist.json → Tier-0 checked
+#   Unit 5:  S1 .aid/.temp/summarize/spot-check-facts.txt → Tier-0 checked
 #   Unit 6:  S4 stray verify-deterministic-report.json → Tier-0 checked
 #   Unit 7:  S4 stray verify-advisory-report.json → Tier-0 checked
 #   Unit 8:  S5 unregistered .aid/generated/ output → Tier-0 checked
@@ -172,29 +172,31 @@ assert_candidate "$OUT3" ".aid/knowledge/.cache/mermaid.json" "0" "true" "U3 cac
 
 # ===========================================================================
 echo ""
-echo "=== Unit 4: S3 .manual-checklist.json → Tier-0 checked ==="
+echo "=== Unit 4: S1 .aid/.temp/summarize/manual-checklist.json → Tier-0 checked ==="
 
 REPO4=$(mktemp -d)
 CLEANUP_DIRS+=("$REPO4")
 make_git_repo "$REPO4"
 make_aid_dir "$REPO4"
-echo '{"items":[]}' > "${REPO4}/.aid/knowledge/.manual-checklist.json"
+mkdir -p "${REPO4}/.aid/.temp/summarize"
+echo '{"items":[]}' > "${REPO4}/.aid/.temp/summarize/manual-checklist.json"
 
 OUT4=$(run_classify "$REPO4")
-assert_candidate "$OUT4" ".aid/knowledge/.manual-checklist.json" "0" "true" "U4 manual-checklist.json"
+assert_candidate "$OUT4" ".aid/.temp/summarize/manual-checklist.json" "0" "true" "U4 manual-checklist.json"
 
 # ===========================================================================
 echo ""
-echo "=== Unit 5: S3 .spot-check-facts.txt → Tier-0 checked ==="
+echo "=== Unit 5: S1 .aid/.temp/summarize/spot-check-facts.txt → Tier-0 checked ==="
 
 REPO5=$(mktemp -d)
 CLEANUP_DIRS+=("$REPO5")
 make_git_repo "$REPO5"
 make_aid_dir "$REPO5"
-echo "facts" > "${REPO5}/.aid/knowledge/.spot-check-facts.txt"
+mkdir -p "${REPO5}/.aid/.temp/summarize"
+echo "facts" > "${REPO5}/.aid/.temp/summarize/spot-check-facts.txt"
 
 OUT5=$(run_classify "$REPO5")
-assert_candidate "$OUT5" ".aid/knowledge/.spot-check-facts.txt" "0" "true" "U5 spot-check-facts.txt"
+assert_candidate "$OUT5" ".aid/.temp/summarize/spot-check-facts.txt" "0" "true" "U5 spot-check-facts.txt"
 
 # ===========================================================================
 echo ""

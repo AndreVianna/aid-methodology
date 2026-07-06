@@ -49,7 +49,7 @@ excluded ONLY after the user confirms it at the exclusion-review gate (Step 5c).
 
 **Confirmation is mandatory for rules 3-5.** The loop NEVER auto-excludes a rule 3/4/5 term;
 it writes them to `.aid/generated/exclusion-candidates.md` (categorized) for the Step 5c gate.
-Confirmed exclusions persist to `.aid/knowledge/.term-exclusions.md` so re-runs do not re-ask.
+Confirmed exclusions persist to `.aid/settings.yml` (`discovery.term_exclusions`) so re-runs do not re-ask.
 
 ## Transient work-list: spine-todo.md
 
@@ -168,7 +168,7 @@ Run the mechanical self-containment check (the deterministic substrate):
 # Build the combined "excluded" term list the checker subtracts (feature-014 Q10 + rules #3-#5).
 # Two sources:
 #   (a) the closure loop's own DISMISSED decisions in spine-todo.md (this run), plus
-#   (b) the project's PERSISTED, USER-CONFIRMED exclusions in .aid/knowledge/.term-exclusions.md
+#   (b) the project's PERSISTED, USER-CONFIRMED exclusions in .aid/settings.yml (discovery.term_exclusions)
 #       -- not-concepts / descriptive phrases / token junk the user confirmed at a prior run's
 #       exclusion-review gate (Step 5c). Persisting them means re-runs never re-ask.
 # Once every USED term is GROUNDED (its slash-split + singularized parts each match a clean
@@ -176,7 +176,7 @@ Run the mechanical self-containment check (the deterministic substrate):
 {
   awk -F'|' 'NR>2 && $5 ~ /DISMISSED/ {t=$3; gsub(/`/,"",t); gsub(/^[ ]+|[ ]+$/,"",t); if(t!="" && t!="Term") print t}' \
     .aid/generated/spine-todo.md 2>/dev/null || true
-  grep -E '^- ' .aid/knowledge/.term-exclusions.md 2>/dev/null | sed -E 's/^- //; s/[[:space:]]+#.*$//' || true
+  bash .cursor/aid/scripts/config/read-setting.sh --path discovery.term_exclusions --default '' 2>/dev/null | tr ',' '\n' || true
 } | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^$' | LC_ALL=C sort -u \
   > .aid/generated/closure-dismissed.txt
 

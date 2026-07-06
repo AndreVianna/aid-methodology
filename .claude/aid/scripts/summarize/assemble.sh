@@ -5,7 +5,7 @@
 #   pre-rendered as inline SVG / HTML+CSS at build time. The assembled kb.html is
 #   single-file self-contained with NO runtime diagram engine and NO external fetch.
 #
-# Reads .aid/knowledge/summary-src/ and concatenates:
+# Reads .aid/.temp/summarize/summary-src/ and concatenates:
 #   skeleton-head.html
 #   sections/ files in MANIFEST ORDER (deterministic, same input -> same output)
 #   skeleton-foot.html
@@ -32,7 +32,7 @@
 #   bash assemble.sh [options]
 #
 # Options:
-#   --src DIR         Source layout dir    (default: .aid/knowledge/summary-src)
+#   --src DIR         Source layout dir    (default: .aid/.temp/summarize/summary-src)
 #   --output PATH     Output path          (default: .aid/dashboard/kb.html)
 #   --manifest FILE   Section manifest     (one filename per line, relative to
 #                                           sections/; blank + # lines ignored)
@@ -40,7 +40,7 @@
 
 set -euo pipefail
 
-SRC_DIR=".aid/knowledge/summary-src"
+SRC_DIR=".aid/.temp/summarize/summary-src"
 OUTPUT=".aid/dashboard/kb.html"
 MANIFEST_FILE=""
 
