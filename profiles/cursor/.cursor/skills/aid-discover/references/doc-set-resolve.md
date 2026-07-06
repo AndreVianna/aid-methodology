@@ -310,13 +310,20 @@ silently shrinks below the primary docs. One batched `awk` pass (no per-file spa
 # Default kb_dir = .aid/knowledge. Keeps kb-category != meta AND source != generated.
 list_reviewable() {
   local kb_dir="${1:-.aid/knowledge}"
+  # Collect existing .md files first. An empty/absent KB dir leaves the "$kb_dir"/*.md
+  # glob UNEXPANDED, which would make awk fail (non-zero) and — under a `set -euo
+  # pipefail` review driver — abort the whole REVIEW step. If there are none, succeed
+  # with empty output. The `[ -f ]` guard also drops the literal unexpanded glob.
+  local -a _md=(); local _f
+  for _f in "$kb_dir"/*.md; do [ -f "$_f" ] && _md+=("$_f"); done
+  [ ${#_md[@]} -eq 0 ] && return 0
   LC_ALL=C awk '
     FNR==1 { seen[FILENAME]=1; cat[FILENAME]=""; src[FILENAME]=""; fm[FILENAME]=0; done_[FILENAME]=0 }
     !done_[FILENAME] && /^---[[:space:]]*$/ { fm[FILENAME]++; if (fm[FILENAME]>=2) done_[FILENAME]=1; next }
     !done_[FILENAME] && fm[FILENAME]==1 && /^kb-category:/ { v=$0; sub(/^kb-category:[[:space:]]*/,"",v); sub(/[[:space:]]+$/,"",v); cat[FILENAME]=v }
     !done_[FILENAME] && fm[FILENAME]==1 && /^source:/      { v=$0; sub(/^source:[[:space:]]*/,"",v);      sub(/[[:space:]]+$/,"",v); src[FILENAME]=v }
     END { for (f in seen) if (cat[f] != "meta" && src[f] != "generated") print f }
-  ' "$kb_dir"/*.md 2>/dev/null | LC_ALL=C sort
+  ' "${_md[@]}" 2>/dev/null | LC_ALL=C sort
 }
 ```
 

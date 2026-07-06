@@ -80,4 +80,13 @@ OUT2="$(list_reviewable "$KB")"
 [[ "$OUT" == "$OUT2" ]] && pass "RS06 deterministic across runs (sorted, LC_ALL=C)" \
                         || fail "RS06 non-deterministic output"
 
+# RS07: an empty/absent KB dir must NOT abort a `set -euo pipefail` caller (unexpanded
+# glob would otherwise make awk fail and take the whole REVIEW step down).
+EMPTY="$TMP/empty-kb"; mkdir -p "$EMPTY"
+if ( set -euo pipefail; RS="$(list_reviewable "$EMPTY")"; [ -z "$RS" ] ); then
+  pass "RS07 empty KB dir → success + empty output (no set -euo pipefail abort)"
+else
+  fail "RS07 empty KB dir aborted the pipefail caller or emitted output"
+fi
+
 test_summary
