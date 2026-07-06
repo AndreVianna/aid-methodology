@@ -1,6 +1,6 @@
 # Work State -- work-012-kb-review-surface
 
-> **State:** Executing — review-surface fix applied + verified; on work-012 branch (v2.0.5)
+> **State:** Shipped — released in v2.0.5 (PR #122 merged; tag v2.0.5; GitHub Release + npm + PyPI all live at 2.0.5)
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-05
@@ -88,5 +88,6 @@ call (is a citations doc part of essence review?) — left as tech-debt.
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
 | 2026-07-05 | Work created | -- | Other agent observed meta files (STATE.md) poisoning /aid-discover review grades. Verified true by code inspection: M3/M4 keystone gates read `.aid/knowledge/*.md` glob with no kb-category filter → ingest STATE/README/external-sources (meta) + INDEX (generated). M1/M2 already route by kb-category. Investigated the full contaminator set incl. CLAUDE.md/AGENTS.md (ambient, already handled) + kb.html/knowledge-summary.html (HTML, not caught by *.md glob). |
+| 2026-07-05 | v2.0.5 SHIPPED | -- | PR #122 merged to master (e4688132). Dry-run (release.yml, ref=master) green: gate + github-release + npm + pypi all success. Annotated tag v2.0.5 pushed → release.yml run 28764759025 SUCCESS: GitHub Release "AID v2.0.5" (not draft, 9 assets: 5 profile tarballs + aid-cli + AidInstallCore.psm1 + aid-install-core.sh + SHA256SUMS), notes applied (review-scope fix, companion to v2.0.4 scan-scope). Registries live: npm aid-installer=2.0.5, PyPI aid-installer=2.0.5 (PyPI had ~brief index lag, confirmed present). |
 | 2026-07-05 | Copilot PR #122 review resolved | -- | 1 comment, valid: `list_reviewable`'s `"$kb_dir"/*.md` glob unexpanded on an empty/absent KB dir → awk fails → under `set -euo pipefail` the `REVIEW_SURFACE=$(...)` aborts the whole REVIEW step (reproduced rc=2). Fix (commit 3ddb368e): collect existing .md into an array first (`[ -f ]` guard drops the literal glob), `return 0` empty when none. Added RS07 (empty dir → success+empty under pipefail) → test now 7/7. dogfood 571/0; regen+resync. Thread replied + resolved. |
 | 2026-07-05 | Implemented + verified | -- | Added `list_reviewable` (kb-category!=meta AND source!=generated), wired M3/M4 in state-review to the computed surface, reworded M3/M4 prompts, clarified M2 authoring scope, added M3 CLAUDE.md/AGENTS.md Stage-1 hardening, realigned build-project-index default output to .aid/generated/. New test-kb-review-surface.sh 6/6; build-project-index byte-identical (--output). Pending: regen + dogfood + full suite + v2.0.5. |
