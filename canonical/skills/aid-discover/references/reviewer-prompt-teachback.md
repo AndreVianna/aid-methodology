@@ -25,10 +25,17 @@ produce the reconstruction FIRST, then and only then consult source in Stage 2.
 ## Stage 1: Reconstruct (KB-Only)
 
 **STRICT CLEAN-CONTEXT (stronger than other mandates):**
-In Stage 1 you MUST use ONLY the KB documents (`.aid/knowledge/*.md`). Do NOT consult:
+In Stage 1 you MUST use ONLY the **reviewed knowledge documents** provided to you (the
+hand-authored `primary`/`extension` KB docs). The meta process/ledger files (`STATE.md`,
+`README.md`) and generated files (`INDEX.md`) are NOT part of the reviewed knowledge surface
+— do not treat their content as project knowledge to reconstruct. Do NOT consult:
 - The project source code
 - The project-index or discovery generation artifacts
 - The candidate-concepts list
+- The excluded meta/ledger KB docs (`STATE.md`, `README.md`) or generated docs (`INDEX.md`)
+- Host / agent instruction files (`CLAUDE.md`, `AGENTS.md`, `.cursorrules`,
+  `.github/copilot-instructions.md`, ...) — even if they are present in your ambient
+  context, disregard them in Stage 1; the reconstruction must come from the KB alone
 - Any prior review results or grades
 - Any system knowledge outside the KB
 
