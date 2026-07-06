@@ -79,7 +79,7 @@ Reviewed by `aid-reviewer` (ledger: `.aid/.temp/review-pending/temp-file-hygiene
 
 ### Propagation (CI-parity)
 - `generate-profile` regenerates the 5 install trees from `canonical/`; resync repo-root dogfood `.claude/` from `profiles/claude-code/.claude/` (byte-identity gate).
-- Update + run affected tests: `test-assemble-determinism`, `test-payload-size`, `test-kb-export`, `test-diagram-content`, `test-housekeep-classify`.
+- Update affected tests: `test-housekeep-classify` (retargeted), `test-kb-export` (trimmed); **remove** `test-diagram-content` and the `test-kb-export` fresh-build block (owner: remove, don't skip). Run the full affected set.
 
 ### Deferred (finding 9)
 - `.coined-term-denylist.local.txt` -- handled separately; its `.local` override semantics (per-user, not committed) differ from the durable committed term exclusions, so folding it into `settings.yml` needs its own decision.
@@ -91,11 +91,29 @@ Reviewed by `aid-reviewer` (ledger: `.aid/.temp/review-pending/temp-file-hygiene
 - **Migration lossless:** `read-setting.sh --path discovery.term_exclusions` returns all 80 terms, byte-identical to the old `.md` read through the same downstream pipeline (`diff` empty).
 - **Profiles regenerated:** `run_generator.py` re-rendered all 5 install trees; VERIFY (deterministic) PASS (byte-identical re-render + file-presence + frontmatter). No old paths remain in `profiles/`.
 - **Dogfood resynced:** `test-dogfood-byte-identity.sh` — 571 passed, 0 failed.
-- **Affected tests (local):** test-housekeep-classify 24/0 (Units 4/5 retargeted S3→S1), test-diagram-content 3/0, test-assemble-determinism 22/0, test-payload-size 11/0, test-kb-export 30/0, test-read-setting 18/0, test-discovery-doc-ownership 13/0, test-install-provisioning 41/0, Windows Test-InstallProvisioning PASS.
+- **Affected tests (local):** test-housekeep-classify 24/0 (Units 4/5 retargeted S3→S1), test-assemble-determinism 22/0, test-payload-size 11/0, test-kb-export (trimmed) green, test-read-setting 18/0, test-discovery-doc-ownership 13/0, test-install-provisioning 41/0, Windows Test-InstallProvisioning PASS. Removed: test-diagram-content, test-kb-export KB10-12.
 
-## Known trade-off (needs owner sign-off)
+## Test cleanup (owner decision: remove, don't skip)
 
-Because `summary-src/` is now gitignored scratch, the **fresh-build re-validation** in `test-kb-export` (KB10-12) and `test-diagram-content` cannot run in a clean CI clone (their inputs aren't committed). Both now **skip gracefully** when the workspace is absent (matching the pre-existing test-diagram-content pattern) and run locally right after an `/aid-summarize` generation. The committed-`kb.html` static checks and the generation-time VALIDATE gate remain. Alternative if CI coverage matters more: keep a committed fixture summary-src, or refactor those tests to build from a fixture.
+Because `summary-src/` is now gitignored scratch, the **fresh-build re-validation** tests could
+only skip in a clean CI clone (their inputs aren't committed). Per owner direction — "don't skip
+quietly; remove the tests completely" — these were REMOVED, not skip-guarded:
+
+- `test-kb-export.sh`: dropped the KB10-KB12 fresh-build block (rebuild kb.html from the real
+  workspace) + its now-orphaned vars (`MANIFEST`, `SUMMARY_SRC`, `ASSEMBLE_SH`, `KB_DIR`). Kept
+  KB01-08 (committed-kb.html static), KB20-24 (payload decode), KB25 (self-contained
+  image-conversion fixture), KB30-31 (Playwright).
+- `test-diagram-content.sh`: removed entirely — its whole purpose was validating the committed
+  kb.html against the now-scratch manifest.
+
+**Skip audit:** reviewed every skipping test in the suite. The remainder are legitimate
+tool-availability gates (`pwsh` / `node` / Playwright absent) that correctly degrade on minimal
+hosts — left intact (removing them would break those tests where the tool genuinely isn't present).
+
+**Coverage note:** the removed `test-diagram-content` DC02/DC03 checks verified the diagram-content
+gate FIRES on drift (stale phase label / deleted-skill token). That gate still runs at generation
+time (`state-validate.md` §7 companion); only the standalone CI regression for it is gone. It can be
+re-added as a fixture-based test (like KB25) if that regression is wanted back.
 
 ## Lifecycle History
 
