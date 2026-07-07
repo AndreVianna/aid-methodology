@@ -107,7 +107,7 @@
 {"dst": ".cursor/aid/templates/delivery-issues.md", "profile": "cursor", "sha256": "7a0a674a5ca4c05ebcc02a306a5ee747f71043e98d61096682d1e7b807d1680b", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".cursor/aid/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".cursor/aid/templates/delivery-spec-template.md", "profile": "cursor", "sha256": "683d336850990396c39134a9f5a138e9d318ad9da3190dd6ba7537bb259d2739", "src": "canonical/templates/delivery-spec-template.md"}
-{"dst": ".cursor/aid/templates/delivery-state-template.md", "profile": "cursor", "sha256": "4596f9a9a8db1edbcd749b4ef18f8542bbcf30b95c7eff923e639c24de9fde7f", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".cursor/aid/templates/delivery-state-template.md", "profile": "cursor", "sha256": "1a4fc6ba1b5fb77c033ac0b3f67bc4c29a753459fd437d48d25349bedf7b7229", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".cursor/aid/templates/discovery-state-template.md", "profile": "cursor", "sha256": "ffcf905383e65c5e65b5bed033add2b234dc5b8992fcb1f62796592117307ec0", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".cursor/aid/templates/dispatch-protocol-checklist.md", "profile": "cursor", "sha256": "901bee904b169329796a5ae3cf5fa5dc968f789a247c541b942287b2ccb41ceb", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".cursor/aid/templates/feature-inventory.md", "profile": "cursor", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
@@ -168,8 +168,8 @@
 {"dst": ".cursor/aid/templates/state-machine-chaining.md", "profile": "cursor", "sha256": "d43990343a80aaef6bac1da564a436978b857f7a8ea664b85e8d9592c04ea8df", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".cursor/aid/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "e2de186513909cfd6442c9e3c6e9663ddb5675d9dcbc7e6d29728e0f8d3e9c03", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".cursor/aid/templates/task-spec-template.md", "profile": "cursor", "sha256": "3bea215119f865cfaac390ba96eb8cd256c17c7e446f46199740d9730d9b97e5", "src": "canonical/templates/task-spec-template.md"}
-{"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "9c62665a7414a6aa054f27561856a4b34c93ba0cdadb58a00e25851ee08c9fde", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "de3241441c088c9a3e892db826c0712b8222f54563b3ac58f26a09de92b5a93a", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "151ba4e2f5db3b7dc4a8becb90f234d36510f611393cd6288f0c8894a56612f9", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "fd453d76b8faa8e9d3cdfef49ea99b52da81694162003a867390e96216ff8f06", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".cursor/skills/aid-config/SKILL.md", "profile": "cursor", "sha256": "fcd932e1f3aca4dcef7b717c1146e32f20e7b39bf49e997df31622934a88554b", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".cursor/skills/aid-define/SKILL.md", "profile": "cursor", "sha256": "3ea3102eb95db1bb9064369a61e72581b72a927b7f28bf242421432c0779c96a", "src": "canonical/skills/aid-define/SKILL.md"}
 {"dst": ".cursor/skills/aid-define/references/cross-reference.md", "profile": "cursor", "sha256": "39f063bcbc787ba55f7dfacc824ea1fb5ff43e521a1f915a114a58e52315d84d", "src": "canonical/skills/aid-define/references/cross-reference.md"}
