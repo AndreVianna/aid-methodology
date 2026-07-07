@@ -1906,6 +1906,47 @@ _migrate_retired_layout() {
     unset -f _is_aid_owned_file _retire_file _sweep_retired_root
 }
 
+# _migrate_term_exclusions <target>
+# One-time migration (work-014): carry user-confirmed term exclusions from the retired KB
+# dotfile .aid/knowledge/.term-exclusions.md into settings.yml discovery.term_exclusions,
+# then retire the file to .aid/.trash/. No-op when the file is absent.
+_migrate_term_exclusions() {
+    local target="$1"
+    local kb_file="${target}/.aid/knowledge/.term-exclusions.md"
+    [[ -f "$kb_file" ]] || return 0
+
+    local settings="${target}/.aid/settings.yml"
+    local terms
+    terms="$(grep -E '^[[:space:]]*-[[:space:]]' "$kb_file" 2>/dev/null \
+        | sed -E 's/^[[:space:]]*-[[:space:]]+//; s/[[:space:]]+#.*$//; s/[[:space:]]+$//' \
+        | grep -v '^$' || true)"
+
+    # Inject only when there are terms and settings.yml has no term_exclusions: key yet
+    # (guards against double-injection on a re-run or a hand-edited settings file).
+    if [[ -f "$settings" && -n "$terms" ]] && ! grep -qE '^[[:space:]]+term_exclusions:' "$settings"; then
+        local tmp="${settings}.aidtmp" inserted=0 line
+        : > "$tmp"
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            printf '%s\n' "$line" >> "$tmp"
+            if [[ "$inserted" -eq 0 && "$line" =~ ^discovery:[[:space:]]*$ ]]; then
+                printf '  term_exclusions:\n' >> "$tmp"
+                printf '%s\n' "$terms" | sed 's/^/    - /' >> "$tmp"
+                inserted=1
+            fi
+        done < "$settings"
+        [[ "$inserted" -eq 0 ]] && {
+            printf 'discovery:\n  term_exclusions:\n' >> "$tmp"
+            printf '%s\n' "$terms" | sed 's/^/    - /' >> "$tmp"
+        }
+        mv -f "$tmp" "$settings"
+    fi
+
+    local dest="${target}/.aid/.trash/knowledge/.term-exclusions.md"
+    mkdir -p "$(dirname "$dest")"
+    mv -f "$kb_file" "$dest"
+    echo "  Migrated term exclusions to settings.yml; retired .aid/knowledge/.term-exclusions.md to .aid/.trash/"
+}
+
 # ---------------------------------------------------------------------------
 # Version marker
 # ---------------------------------------------------------------------------
@@ -2203,6 +2244,7 @@ install_tool() {
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     seed_settings_yml "$target" "$tool"
     update_gitignore "$target"
+    _migrate_term_exclusions "$target"
 
     # Print concise summary (always shown; per-file lines only when AID_VERBOSE=1).
     local _total_files=$((_COPY_COUNT_COPIED + _COPY_COUNT_UPTODATE + _COPY_COUNT_UPDATED + _COPY_COUNT_SKIPPED))

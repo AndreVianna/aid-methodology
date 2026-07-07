@@ -1603,6 +1603,55 @@ function script:Update-AidGitignore {
     }
 }
 
+# Invoke-MigrateTermExclusions <target>
+# One-time migration (work-014): carry user-confirmed term exclusions from the retired KB
+# dotfile .aid\knowledge\.term-exclusions.md into settings.yml discovery.term_exclusions,
+# then retire the file to .aid\.trash\. No-op when the file is absent.
+function script:Invoke-MigrateTermExclusions {
+    param([string]$Target)
+    $kbFile = Join-Path $Target '.aid\knowledge\.term-exclusions.md'
+    if (-not (Test-Path $kbFile -PathType Leaf)) { return }
+
+    $settings = Join-Path $Target '.aid\settings.yml'
+
+    $terms = [System.Collections.Generic.List[string]]::new()
+    foreach ($ln in [System.IO.File]::ReadAllLines($kbFile)) {
+        if ($ln -match '^\s*-\s+(.*)$') {
+            $t = ($Matches[1] -replace '\s+#.*$', '').Trim()
+            if ($t -ne '') { $terms.Add($t) }
+        }
+    }
+
+    # Inject only when there are terms and settings.yml has no term_exclusions: key yet
+    # (guards against double-injection on a re-run or a hand-edited settings file).
+    if ((Test-Path $settings -PathType Leaf) -and $terms.Count -gt 0) {
+        $normalized = ((([System.IO.File]::ReadAllText($settings)) -replace "`r`n", "`n") -replace "`r", "`n")
+        if ($normalized -notmatch '(?m)^\s+term_exclusions:') {
+            $blockLines = @('  term_exclusions:') + ($terms | ForEach-Object { "    - $_" })
+            $out = [System.Collections.Generic.List[string]]::new()
+            $inserted = $false
+            foreach ($ln in ($normalized -split "`n")) {
+                $out.Add($ln)
+                if (-not $inserted -and $ln -match '^discovery:\s*$') {
+                    foreach ($b in $blockLines) { $out.Add($b) }
+                    $inserted = $true
+                }
+            }
+            if (-not $inserted) {
+                $out.Add('discovery:')
+                foreach ($b in $blockLines) { $out.Add($b) }
+            }
+            [System.IO.File]::WriteAllText($settings, ($out -join "`n"), [System.Text.UTF8Encoding]::new($false))
+        }
+    }
+
+    $dest = Join-Path $Target '.aid\.trash\knowledge\.term-exclusions.md'
+    $destDir = Split-Path $dest -Parent
+    if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
+    Move-Item -Path $kbFile -Destination $dest -Force
+    Write-Host "  Migrated term exclusions to settings.yml; retired .aid/knowledge/.term-exclusions.md to .aid/.trash/"
+}
+
 # ---------------------------------------------------------------------------
 # High-level Install-AidTool
 # ---------------------------------------------------------------------------
@@ -1755,6 +1804,7 @@ function Install-AidTool {
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     script:Initialize-AidSettingsFile -Target $Target -Tool $Tool
     script:Update-AidGitignore -Target $Target
+    script:Invoke-MigrateTermExclusions -Target $Target
 
     # Print concise install summary (always shown; per-file lines only when AidVerbose).
     $totalFiles = $script:_CopyCountCopied + $script:_CopyCountUpToDate + $script:_CopyCountUpdated + $script:_CopyCountSkipped
