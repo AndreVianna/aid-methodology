@@ -68,7 +68,7 @@ KB_DOCS=()
 if [[ -d "$KB_DIR" ]]; then
     while IFS= read -r f; do
         KB_DOCS+=("$f")
-    done < <(find "$KB_DIR" -maxdepth 1 -type f -name '*.md' | sort)
+    done < <(find "$KB_DIR" -maxdepth 1 -type f -name '*.md' ! -name '.*' | sort)
 fi
 
 # --- Canonical skill bodies (this dogfood repo only — guarded) --------------

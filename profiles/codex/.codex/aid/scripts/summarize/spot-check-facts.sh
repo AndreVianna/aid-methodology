@@ -7,7 +7,7 @@
 #
 # Flags:
 #   --kb-dir DIR   Directory containing KB .md files (default: .aid/knowledge).
-#   --out FILE     Output report path (default: .aid/knowledge/.spot-check-facts.txt).
+#   --out FILE     Output report path (default: .aid/.temp/summarize/spot-check-facts.txt).
 #   --limit N      Max number of claims to extract (default: 10).
 #   -h, --help     Print this header and exit.
 #
@@ -28,7 +28,7 @@ set -euo pipefail
 # --- Argument parsing ---
 HTML=""
 KB_DIR=".aid/knowledge"
-OUT_FILE=".aid/knowledge/.spot-check-facts.txt"
+OUT_FILE=".aid/.temp/summarize/spot-check-facts.txt"
 LIMIT=10
 
 while [ $# -gt 0 ]; do

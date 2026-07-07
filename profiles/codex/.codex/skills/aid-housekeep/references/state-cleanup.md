@@ -161,7 +161,7 @@ Render the full checklist grouped by tier, for example:
 Tier-0 — clearly safe (pre-checked):
   [x] .aid/.temp/h5-interview-brief.md  (untracked)  — S1: gitignored temp scratch (.aid/.temp/)
   [x] .aid/.temp/review-pending/scope.md  (untracked)  — S1: gitignored temp scratch (.aid/.temp/)
-  [x] .aid/knowledge/.spot-check-facts.txt  (untracked)  — S3: gitignored KB scratch
+  [x] .aid/.temp/summarize/spot-check-facts.txt  (untracked)  — S1: gitignored temp scratch (.aid/.temp/)
   [x] .aid/work-002-canonical-generator/verify-deterministic-report.json  (untracked)  — S4: stray tool report (verify JSON)
 
 Tier-1 — work folders offered for deletion (unchecked):

@@ -226,9 +226,9 @@ See `.claude/aid/templates/knowledge-summary/grading-rubric.md` for the complete
 - `.claude/aid/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
 - `.claude/aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), completeness-based grading
 - `.claude/aid/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript (with `{{NOSCRIPT_DOC_LIST}}` placeholder for derived doc list)
-- `.claude/aid/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
+- `.claude/aid/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.aid/.temp/summarize/manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
 - `.claude/aid/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
-- `.claude/aid/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.spot-check-facts.txt` (aids the user's K2 judgment)
+- `.claude/aid/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.aid/.temp/summarize/spot-check-facts.txt` (aids the user's K2 judgment)
 
 ---
 

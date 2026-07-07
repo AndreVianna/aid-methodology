@@ -1512,8 +1512,6 @@ function script:Get-AidGitignoreBlock {
         ".aid/.heartbeat/",
         ".aid/generated/",
         ".aid/knowledge/.cache/",
-        ".aid/knowledge/.manual-checklist.json",
-        ".aid/knowledge/.spot-check-facts.txt",
         $script:_AidGiEnd
     )
     return ($lines -join "`n")

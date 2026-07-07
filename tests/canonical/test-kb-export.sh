@@ -5,7 +5,7 @@
 # Scope:
 #   Verifies that the KB Export feature (export buttons, base64 Markdown payload,
 #   print-CSS PDF path, self-containment) works correctly across the full pipeline:
-#   static analysis, fresh build, payload decoding, and Playwright browser tests.
+#   static analysis, payload decoding, image-conversion fixtures, and Playwright browser tests.
 #
 # AC coverage:
 #   AC1: Export buttons present, visible, keyboard-focusable (KB01-KB04, PW30-PW32)
@@ -19,8 +19,8 @@
 #
 # Static section (no Playwright):
 #   KB01-KB08  Committed kb.html: element presence, button labels, print CSS, validators
-#   KB10-KB12  Fresh build pipeline: build-md-export.sh + assemble.sh output validation
 #   KB20-KB24  Payload decoding: base64 -> UTF-8 Markdown structure assertions
+#   KB25       Image data-URI conversion (self-contained fixture)
 #
 # Playwright section (graceful-skip when unavailable):
 #   KB30       validate-visuals.mjs passes on committed kb.html (S7 gate)
@@ -57,13 +57,9 @@ source "${SCRIPT_DIR}/../lib/assert.sh"
 
 COMMITTED_KB="${REPO_ROOT}/.aid/dashboard/kb.html"
 BUILD_MD_EXPORT_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/build-md-export.sh"
-ASSEMBLE_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/assemble.sh"
 VALIDATE_HTML_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-html-output.sh"
 VALIDATE_VISUALS_MJS="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-visuals.mjs"
 CONTRAST_CHECK_MJS="${REPO_ROOT}/canonical/aid/scripts/summarize/contrast-check.mjs"
-KB_DIR="${REPO_ROOT}/.aid/knowledge"
-MANIFEST="${REPO_ROOT}/.aid/knowledge/summary-src/section-manifest.txt"
-SUMMARY_SRC="${REPO_ROOT}/.aid/knowledge/summary-src"
 PW_PACKAGE_DIR="${REPO_ROOT}/canonical/aid/scripts/summarize"
 PW_TEST_MJS="${SCRIPT_DIR}/test-kb-export-pw.mjs"
 
@@ -213,79 +209,6 @@ if grep -q "'!\[' + alt + '\](data:'" "$BUILD_MD_EXPORT_SH"; then
     pass "KB08 alt text preserved in image replacement (![alt](data:...) pattern)"
 else
     fail "KB08 alt text preserved in image replacement -- pattern '![' + alt + '](data:' not found in build-md-export.sh"
-fi
-
-# ===========================================================================
-# === FRESH BUILD: build-md-export.sh + assemble.sh pipeline ================
-# ===========================================================================
-
-echo ""
-echo "=== KB10: build-md-export.sh succeeds from .aid/knowledge/ source ==="
-PAYLOAD_OUT="${TMP}/md-export-payload.html"
-BUILD_OUT=$(bash "$BUILD_MD_EXPORT_SH" \
-    --kb-dir "$KB_DIR" \
-    --manifest "$MANIFEST" \
-    --output "$PAYLOAD_OUT" 2>&1)
-BUILD_RC=$?
-if [[ "$BUILD_RC" -eq 0 ]]; then
-    pass "KB10 build-md-export.sh exits 0"
-else
-    fail "KB10 build-md-export.sh exits 0 -- got exit $BUILD_RC"
-    echo "$BUILD_OUT" | head -5
-fi
-
-if [[ -f "$PAYLOAD_OUT" ]]; then
-    pass "KB10b build-md-export.sh created payload output file"
-    PAYLOAD_BYTES=$(wc -c < "$PAYLOAD_OUT" | tr -d ' ')
-    if [[ "$PAYLOAD_BYTES" -gt 100000 ]]; then
-        pass "KB10c payload file size > 100 KB (${PAYLOAD_BYTES} bytes -- substantial KB content)"
-    else
-        fail "KB10c payload file size > 100 KB -- only ${PAYLOAD_BYTES} bytes (suspiciously small)"
-    fi
-else
-    fail "KB10b build-md-export.sh created payload output file -- file not found at $PAYLOAD_OUT"
-fi
-
-echo ""
-echo "=== KB11: assemble.sh produces kb.html with embedded MD payload ==="
-# Create a temp summary-src with the freshly built payload
-TMP_SRC="${TMP}/summary-src"
-mkdir -p "${TMP_SRC}/sections"
-for f in skeleton-head.html skeleton-foot.html post-script.html; do
-    cp "${SUMMARY_SRC}/${f}" "${TMP_SRC}/${f}"
-done
-cp -r "${SUMMARY_SRC}/sections/." "${TMP_SRC}/sections/"
-cp "$PAYLOAD_OUT" "${TMP_SRC}/md-export-payload.html"
-
-FRESH_KB="${TMP}/kb-fresh.html"
-ASM_OUT=$(bash "$ASSEMBLE_SH" \
-    --src "$TMP_SRC" \
-    --manifest "$MANIFEST" \
-    --output "$FRESH_KB" 2>&1)
-ASM_RC=$?
-if [[ "$ASM_RC" -eq 0 ]]; then
-    pass "KB11 assemble.sh exits 0"
-else
-    fail "KB11 assemble.sh exits 0 -- got exit $ASM_RC"
-    echo "$ASM_OUT" | head -5
-fi
-
-echo ""
-echo "=== KB12: fresh kb.html contains #kb-md-export with base64 payload ==="
-if [[ -f "$FRESH_KB" ]]; then
-    if grep -q 'id="kb-md-export" data-encoding="base64">' "$FRESH_KB"; then
-        pass "KB12a fresh kb.html contains #kb-md-export with data-encoding=base64"
-    else
-        fail "KB12a fresh kb.html contains #kb-md-export with data-encoding=base64 -- not found"
-    fi
-    # Verify the assemble output reports the payload was embedded
-    if echo "$ASM_OUT" | grep -q "MD Export: embedded"; then
-        pass "KB12b assemble.sh reports 'MD Export: embedded'"
-    else
-        fail "KB12b assemble.sh reports 'MD Export: embedded' -- not in output"
-    fi
-else
-    fail "KB12 fresh kb.html file not found at ${FRESH_KB}"
 fi
 
 # ===========================================================================

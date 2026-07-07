@@ -1,64 +1,101 @@
 #!/usr/bin/env bash
 # test-diagram-content.sh -- canonical suite for the kb.html diagram-content gate.
 #
-# Verifies that AID's own kb.html diagrams match their content manifest
-# (.aid/knowledge/summary-src/diagram-content-manifest.json) via
-# canonical/aid/scripts/summarize/validate-diagram-content.mjs, AND that the gate
-# actually FIRES on drift (stale phase label / deleted-skill token). This is the
-# enforcement behind docs/diagram-content-reference.md -- it catches diagram label
-# drift that text-grep and the rendering-only visual gate miss.
+# Exercises canonical/aid/scripts/summarize/validate-diagram-content.mjs against
+# SELF-CONTAINED fixtures (a temp kb.html + a temp manifest), so it always runs in
+# CI -- it does NOT depend on the committed kb.html or the summary-src workspace
+# (which is gitignored scratch under .aid/.temp/ since work-013).
+#
+# Asserts the gate:
+#   DC01  exits 0 when every required token is present and no forbidden token is,
+#   DC02  FIRES (non-zero) when a required token is missing,
+#   DC03  FIRES (non-zero) when a forbidden/stale token is injected.
+# This is the regression behind docs/diagram-content-reference.md.
 
-set -u
-REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-cd "$REPO_ROOT" || exit 1
+VERBOSE=0
+[[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
+source "${SCRIPT_DIR}/../lib/assert.sh"
 
-CHECK="canonical/aid/scripts/summarize/validate-diagram-content.mjs"
-MANIFEST=".aid/knowledge/summary-src/diagram-content-manifest.json"
-KB=".aid/dashboard/kb.html"
+CHECK="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-diagram-content.mjs"
 
-PASS=0; FAIL=0
-ok()   { echo "  PASS: $1"; PASS=$((PASS+1)); }
-bad()  { echo "  FAIL: $1"; FAIL=$((FAIL+1)); }
-
-# Graceful skips (node-less hosts, or a repo without a generated kb.html/manifest).
+# Node is required -- graceful tool-availability skip (not a dead skip).
 if ! command -v node >/dev/null 2>&1; then
-  echo "SKIP: node not available -- diagram-content gate needs Node.js"; echo "All tests passed."; exit 0
+    echo "SKIP: node not available -- diagram-content gate needs Node.js"
+    echo "All tests passed."
+    exit 0
 fi
-for f in "$CHECK" "$MANIFEST" "$KB"; do
-  if [ ! -f "$f" ]; then
-    echo "SKIP: $f not present -- nothing to validate"; echo "All tests passed."; exit 0
-  fi
-done
-
-echo "=== DC01: kb.html diagrams match the content manifest (exit 0) ==="
-if node "$CHECK" "$KB" "$MANIFEST" >/tmp/dc01.out 2>&1; then
-  ok "DC01 kb.html diagram content matches the manifest"
-else
-  bad "DC01 kb.html diagram content FAILED the manifest:"; sed 's/^/      /' /tmp/dc01.out
+if [[ ! -f "$CHECK" ]]; then
+    echo "  FAIL: validator not found at $CHECK"
+    exit 1
 fi
 
-echo "=== DC02: gate FIRES on a stale phase label (Describe -> Define reverted to Interview) ==="
-TMP="$(mktemp)"; cp "$KB" "$TMP"
-sed -i 's/>Describe &#8594; Define</>Interview</' "$TMP"
-if node "$CHECK" "$TMP" "$MANIFEST" >/dev/null 2>&1; then
-  bad "DC02 gate did NOT fire on a stale 'Interview' phase label (regression!)"
-else
-  ok "DC02 gate correctly fired on the stale 'Interview' phase label"
-fi
-rm -f "$TMP"
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
 
-echo "=== DC03: gate FIRES on a deleted-skill token (aid-interview in a diagram) ==="
-TMP="$(mktemp)"; cp "$KB" "$TMP"
-# inject the deleted skill name into the pipeline diagram's first label
-sed -i '0,/>Discover</s//>aid-interview</' "$TMP"
-if node "$CHECK" "$TMP" "$MANIFEST" >/dev/null 2>&1; then
-  bad "DC03 gate did NOT fire on a 'aid-interview' deleted-skill token (regression!)"
-else
-  ok "DC03 gate correctly fired on the 'aid-interview' deleted-skill token"
-fi
-rm -f "$TMP"
+# --- Manifest: one diagram requiring the 7 phase tokens, forbidding "Interview" ---
+MANIFEST="${TMP}/manifest.json"
+cat > "$MANIFEST" <<'JSONEOF'
+{
+  "diagrams": [
+    {
+      "id": "pipeline",
+      "match": "AID lifecycle pipeline",
+      "requires": ["Discover", "Describe", "Define", "Specify", "Plan", "Detail", "Execute"],
+      "forbids": ["Interview"]
+    }
+  ],
+  "globalForbids": ["aid-interview"]
+}
+JSONEOF
 
-echo ""
-echo "Tests passed: $PASS"
-echo "Tests failed: $FAIL"
-if [ "$FAIL" -eq 0 ]; then echo "All tests passed."; exit 0; else echo "FAILURES."; exit 1; fi
+# --- DC01 fixture: matching diagram (all required present, none forbidden) ---
+GOOD="${TMP}/good.html"
+cat > "$GOOD" <<'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en"><body>
+<svg aria-label="AID lifecycle pipeline" role="img">
+  <text>Discover</text><text>Describe</text><text>Define</text>
+  <text>Specify</text><text>Plan</text><text>Detail</text><text>Execute</text>
+</svg>
+</body></html>
+HTMLEOF
+
+# --- DC02 fixture: a required token ("Execute") is MISSING ---
+MISSING="${TMP}/missing.html"
+cat > "$MISSING" <<'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en"><body>
+<svg aria-label="AID lifecycle pipeline" role="img">
+  <text>Discover</text><text>Describe</text><text>Define</text>
+  <text>Specify</text><text>Plan</text><text>Detail</text>
+</svg>
+</body></html>
+HTMLEOF
+
+# --- DC03 fixture: a FORBIDDEN token ("Interview") is injected ---
+FORBIDDEN="${TMP}/forbidden.html"
+cat > "$FORBIDDEN" <<'HTMLEOF'
+<!DOCTYPE html>
+<html lang="en"><body>
+<svg aria-label="AID lifecycle pipeline" role="img">
+  <text>Interview</text><text>Discover</text><text>Describe</text><text>Define</text>
+  <text>Specify</text><text>Plan</text><text>Detail</text><text>Execute</text>
+</svg>
+</body></html>
+HTMLEOF
+
+echo "=== DC01: gate passes when all required tokens present, none forbidden ==="
+node "$CHECK" "$GOOD" "$MANIFEST" >/dev/null 2>&1
+assert_exit_zero "$?" "DC01 gate exits 0 on a matching diagram"
+
+echo "=== DC02: gate FIRES when a required token is missing ==="
+node "$CHECK" "$MISSING" "$MANIFEST" >/dev/null 2>&1
+assert_exit_nonzero "$?" "DC02 gate fires on a missing required token (Execute)"
+
+echo "=== DC03: gate FIRES when a forbidden token is injected ==="
+node "$CHECK" "$FORBIDDEN" "$MANIFEST" >/dev/null 2>&1
+assert_exit_nonzero "$?" "DC03 gate fires on a forbidden token (Interview)"
+
+test_summary

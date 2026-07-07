@@ -900,10 +900,11 @@ Reply: confirm all  |  exclude only <list>  |  none
 
 **This is a genuine PAUSE-FOR-USER-DECISION.** Stop after presenting.
 
-**On confirm (resume):** append the user-confirmed terms (one `- <term>` per line) to the
-persisted, tracked file `.aid/knowledge/.term-exclusions.md` (create it with a `# Term
-exclusions (user-confirmed)` header if absent; never add an unconfirmed term). The DETECT step
-reads this file on every future run, so confirmed exclusions are never re-asked. For the
+**On confirm (resume):** append the user-confirmed terms to `discovery.term_exclusions` in
+`.aid/settings.yml` (one `    - <term>` entry per line under the `term_exclusions:` key; create
+the key under the `discovery:` block if absent, mirroring how `discovery.doc_set` is written;
+never add an unconfirmed term). The DETECT step reads this list on every future run (via
+`read-setting.sh --path discovery.term_exclusions`), so confirmed exclusions are never re-asked. For the
 `real-concept` group, apply the recommended glossary fix (add/rename the clean heading) rather
 than excluding. Then re-run DETECT once; the now-excluded terms drop out. Print:
 `[5c] Excluded {K} user-confirmed terms; applied {J} glossary fixes. Self-check residual: {R}.`

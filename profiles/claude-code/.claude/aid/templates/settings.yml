@@ -79,6 +79,12 @@ traceability:
 # sibling written by Step 0d only when the confirmed doc-set differs from the
 # seed. It shares the discovery: parent with closure: but is never pre-seeded
 # in the template.
+#
+# term_exclusions: is likewise NOT a template default -- it is a conditional
+# runtime-written list under the discovery: parent, appended by Step 5c (closure
+# exclusion-review gate) with the not-concept terms the user confirms. Read via
+# read-setting.sh --path discovery.term_exclusions. Relocated out of the KB dir
+# (was .aid/knowledge/.term-exclusions.md) in work-013.
 discovery:
   closure:
     max_clean_passes: 2   # CLOSED after this many consecutive zero-ungrounded DETECT passes (default 2)

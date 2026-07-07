@@ -1985,9 +1985,7 @@ _aid_gitignore_block() {
         ".aid/.trash/" \
         ".aid/.heartbeat/" \
         ".aid/generated/" \
-        ".aid/knowledge/.cache/" \
-        ".aid/knowledge/.manual-checklist.json" \
-        ".aid/knowledge/.spot-check-facts.txt"
+        ".aid/knowledge/.cache/"
     printf '%s' "$_AID_GI_END"
 }
 

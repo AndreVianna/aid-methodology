@@ -68,7 +68,7 @@ fi
 SCRIPT_DIR="$(dirname "$(realpath "$0")")"
 KB_DIR=".aid/knowledge"
 SETTINGS=".aid/settings.yml"
-MANUAL_CHECKLIST_FILE="$KB_DIR/.manual-checklist.json"
+MANUAL_CHECKLIST_FILE=".aid/.temp/summarize/manual-checklist.json"
 
 echo "Validating $HTML ..."
 echo ""
