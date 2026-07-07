@@ -9,7 +9,7 @@ This is the WORK-LEVEL STATE.md template. It is divided into two zones:
 The DERIVED sections are NEVER written directly; they are union views over the per-delivery and
 per-task STATE.md files. Agents that write state must target the per-unit STATE.md files instead.
 
-<!-- SD-2 STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
+<!-- STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
 
 Ordered from most-advanced to least-advanced:
   1. Done           -- task completed and accepted; all subtasks resolved
@@ -189,7 +189,7 @@ different places.
 
 <!-- DERIVED -- read-only view assembled at read time from per-task STATE.md files
      (delivery-NNN/tasks/task-NNN/STATE.md). Never written directly into this file.
-     The state reader unions all delivery branches using the SD-2 ordering (most-advanced wins).
+     The state reader unions all delivery branches using the ordering (most-advanced wins).
      One row per task from PLAN.md execution graph.
      State enum (closed): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled -->
 
@@ -211,7 +211,7 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
        (a) each delivery-NNN/STATE.md ## Cross-phase Q&A section (delivery-gate Q&A), and
        (b) any work-owner-authored Q&A entries in this work's active branch (written below
            this comment by the work owner only; the work owner is the single writer here).
-     Delivery branches write Q&A into their OWN delivery-NNN/STATE.md, not here (SD-5).
+     Delivery branches write Q&A into their OWN delivery-NNN/STATE.md, not here.
      The dashboard reader unions all delivery contributions plus (b) into this view.
      WORK-OWNER-AUTHORED entries may appear below this block (single writer, work active branch). -->
 
