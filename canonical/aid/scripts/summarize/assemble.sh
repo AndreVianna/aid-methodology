@@ -100,9 +100,7 @@ mkdir -p "$OUT_DIR"
 
 {
     cat "$SRC_DIR/skeleton-head.html"
-    # SECTIONS is guaranteed non-empty above (manifest: checked at build; glob:
-    # checked for >=1 real file). One cat over the array is byte-identical to
-    # catting each in turn, minus N-1 forks. (work-009 hot-path polish)
+    # One cat over the array is byte-identical to catting each in turn, minus N-1 forks.
     cat "${SECTIONS[@]}"
     cat "$SRC_DIR/skeleton-foot.html"
     # Embed the Markdown export payload when pre-built by build-md-export.sh.

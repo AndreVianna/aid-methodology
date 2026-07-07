@@ -141,7 +141,7 @@ fi
 # ---------------------------------------------------------------------------
 SECTION_HEADING="## Housekeep Status"
 
-# Valid field names for the ## Housekeep Status block (C-2 table)
+# Valid field names for the ## Housekeep Status block
 VALID_FIELDS=(
     "State"
     "Stage Status"
@@ -198,7 +198,7 @@ read_field() {
 # one per line (empty line for an absent-or-empty field). Byte-identical to
 # four read_field calls: same first-frontmatter-section scoping, same
 # "**Field:** value" (trailing-ws-stripped) / "**Field:**" (empty) matching,
-# first occurrence wins per field. (work-009 hot-path polish: 4 forks -> 1.)
+# first occurrence wins per field (collapses 4 forks to 1).
 # ---------------------------------------------------------------------------
 read_fields_resume() {
     awk -v section="$SECTION_HEADING" '
@@ -329,7 +329,7 @@ mode_write() {
 
 # ---------------------------------------------------------------------------
 # Mode: --resume
-# Implements the six-row re-entry table from SPEC § "Resume detection":
+# Implements the six-row re-entry table:
 #
 # Row 1: No section, no --cleanup-only         -> PREFLIGHT (-> KB-DELTA)
 # Row 2: No section, --cleanup-only            -> CLEANUP   (Mode=cleanup-only)

@@ -2,7 +2,7 @@
 # migrate-work-hierarchy.sh -- idempotent monolithic -> hierarchy migration helper.
 #
 # Converts a monolithic work-NNN-{name}/ layout (single STATE.md + tasks/*.md)
-# into the work-004 uniform unit hierarchy:
+# into the uniform unit hierarchy:
 #
 #   work-NNN-{name}/
 #     STATE.md                          (rewritten: AUTHORED header + DERIVED placeholders)
@@ -23,7 +23,7 @@
 #   The pattern delivery-[0-9]+ is matched (same parse as writeback-state.sh).
 #   Tasks with no parseable token default to delivery-001 with a WARNING row emitted.
 #
-# Scope discipline (SD-6): runs ONLY on the path passed as $1.
+# Scope discipline: runs ONLY on the path passed as $1.
 # Does NOT scan $HOME or any real works automatically.
 #
 # Usage:
@@ -704,7 +704,7 @@ main() {
         gate_block="$(extract_delivery_gate "$WORK_DIR/STATE.md" "$delivery_num")"
         qa_block="$(extract_delivery_qa "$WORK_DIR/STATE.md" "$delivery_num")"
 
-        # Derive initial SD-8 lifecycle from gate outcome.
+        # Derive initial lifecycle from gate outcome.
         # No tasks at all -> Pending-Spec.
         # Gate Pending or absent -> Executing (tasks present, execution started/underway).
         # Gate grade != Pending and non-empty -> Done.

@@ -2,10 +2,10 @@
 # kb-freshness-check.sh -- deterministic per-doc staleness check for KB docs.
 #
 # For each hand-authored primary/extension KB doc, reads its sources: and
-# approved_at_commit: frontmatter fields (f001 schema) and determines whether
+# approved_at_commit: frontmatter fields and determines whether
 # any LOCAL-FILE source has changed in git since the doc was last approved.
 #
-# Algorithm (per doc, per f007 SPEC):
+# Algorithm (per doc):
 #   1. Absence gate:
 #      - approved_at_commit: absent/empty -> verdict=unknown (never suspect on
 #        missing baseline; pre-migration docs are acceptable).
@@ -224,7 +224,7 @@ fm_sources_present() {
 }
 
 # ---------------------------------------------------------------------------
-# URL detector: matches scheme://... (per f007 SPEC)
+# URL detector: matches scheme://...
 # ---------------------------------------------------------------------------
 is_url() {
     # Matches: one or more lowercase alpha, then any of [a-z0-9+.-], then ://
@@ -286,13 +286,13 @@ check_doc() {
     # should_check's own extraction).
     local f="$1" rel="$2" doc_source="$3"
 
-    # Forward-authored short-circuit (feature-003 C-1):
-    # A seed doc with source: forward-authored is design-authoritative (design->code,
-    # FR-4).  Source-drift staleness does not apply -- a listed intent-source changing
+    # Forward-authored short-circuit:
+    # A seed doc with source: forward-authored is design-authoritative (design->code).
+    # Source-drift staleness does not apply -- a listed intent-source changing
     # must NOT flip the doc to suspect.  Fold to verdict=current using the EXISTING
     # enum {current, suspect, unknown}; no new enum value is added or changed so
     # existing TSV consumers keep working.  The inverse code->design conformance check
-    # is feature-005 work, not f007.
+    # is handled separately.
     if [[ "$doc_source" == "forward-authored" ]]; then
         if [[ "$FORMAT" == "tsv" ]]; then
             printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \

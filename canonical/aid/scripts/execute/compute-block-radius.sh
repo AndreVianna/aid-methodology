@@ -138,8 +138,8 @@ FAILED_TASK_NORM="task-$(printf '%03d' "$((10#${FAILED_TASK_ID}))")"
 #          for lite/recipe SPECs that have a single top-level graph)
 #   mode — "edges" (emit "dep<TAB>task" reverse edges) or "nodes" (emit each
 #          declared left-column task-NNN, one per line)
-# B1: the Execution Graph header is matched at ANY heading level (#+).
-# B4: when did is set, parsing is gated to the matching "### delivery-NNN" block.
+# The Execution Graph header is matched at ANY heading level (#+).
+# When did is set, parsing is gated to the matching "### delivery-NNN" block.
 _parse_graph_awk() {
     local plan_file="$1" did="$2" mode="$3"
     awk -v did="$did" -v mode="$mode" '
@@ -306,7 +306,7 @@ if [[ -n "$PLAN_FILE" ]]; then
     # Parse graph from plan/spec file
     [[ -f "$PLAN_FILE" ]] || die "plan file not found: $PLAN_FILE" 1
 
-    # B4: a multi-delivery PLAN.md must be scoped — otherwise every delivery's
+    # A multi-delivery PLAN.md must be scoped — otherwise every delivery's
     # graph merges and colliding per-delivery task IDs contaminate the radius.
     # A single delivery section (or none, i.e. a lite/recipe SPEC) is unambiguous
     # and needs no --delivery-id.
@@ -322,12 +322,12 @@ if [[ -n "$PLAN_FILE" ]]; then
     build_reverse_graph_from_plan "$PLAN_FILE" "$DELIVERY_ID" > "$TMPGRAPH"
     list_graph_nodes_from_plan   "$PLAN_FILE" "$DELIVERY_ID" > "$TMPNODES"
 
-    # B3/B5: existence = the task is a DECLARED node (exact, whole-line match —
+    # Existence = the task is a DECLARED node (exact, whole-line match —
     # so task-001 never matches task-0010), OR it appears in an edge. A declared
     # leaf with no edges is therefore "found" and yields an empty radius.
     if ! grep -qxF "$FAILED_TASK_NORM" "$TMPNODES" \
        && ! awk -F'\t' -v t="$FAILED_TASK_NORM" '$1==t || $2==t {found=1} END{exit !found}' "$TMPGRAPH"; then
-        # B2: a genuinely absent task warns and SUCCEEDS with an empty set (exit 0),
+        # A genuinely absent task warns and SUCCEEDS with an empty set (exit 0),
         # consistent with the --graph-file branch and the documented contract.
         warn "task '${FAILED_TASK_NORM}' not found in Execution Graph of $PLAN_FILE — empty block-radius returned"
         exit 0
