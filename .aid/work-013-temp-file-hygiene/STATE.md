@@ -1,6 +1,6 @@
 # Work State -- work-013-temp-file-hygiene
 
-> **State:** In Review (PR #123 ready)
+> **State:** Merged (PR #123 -> master @ f34b2ad9; branch deleted)
 > **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-06
@@ -22,7 +22,7 @@ only the *placement* of build/scratch inputs and the *storage* of term exclusion
 
 ## Pipeline State
 
-- **Lifecycle:** Running
+- **Lifecycle:** Completed
 - **Phase:** Execute
 - **Active Skill:** none (direct-prompt refactor)
 - **Updated:** 2026-07-06
@@ -133,3 +133,5 @@ always run in CI (no dependence on the committed kb.html / gitignored workspace)
 | 2026-07-06 | Implemented + verified | -- | Buckets 1-3 done; profiles regen + dogfood resync + tests green; pushed to PR #123 (draft) |
 | 2026-07-06 | Test cleanup | -- | Removed dead fresh-build tests (test-diagram-content, test-kb-export KB10-12) per owner "remove don't skip"; skip audit done |
 | 2026-07-06 | Ready for review | -- | Owner confirmed key name `discovery.term_exclusions` (underscore); PR #123 marked ready |
+| 2026-07-06 | Copilot review resolved | -- | 3 advisory comments addressed (2 fixture tests + doc paths, commit 4cf60cb2); threads resolved |
+| 2026-07-06 | Merged | -- | PR #123 merged to master (merge commit f34b2ad9); remote + local branch deleted |
