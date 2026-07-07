@@ -200,8 +200,10 @@ A standalone Astro Starlight site under `site/` (separate build, own `package.js
 `node_modules` / `dist/`), deployed to **GitHub Pages at https://aid.casuloailabs.com**.
 `docs.yml` runs `npm ci && npm run build` (with a build-time fetch of `VERSION` + the GitHub
 Releases API for version injection) and deploys via `actions/deploy-pages`. It is decoupled
-from `release.yml` — it merely *listens* for `release: published` to refresh release-bound
-content. CONFIRMED in `.github/workflows/docs.yml`.
+from `release.yml`. Pages deploys only from `master` (push or manual `workflow_dispatch`) —
+the `github-pages` environment permits master-ref deploys only, so a tag/release ref is
+rejected; after a release, refresh release-bound content with a `workflow_dispatch` on master.
+CONFIRMED in `.github/workflows/docs.yml`.
 
 ---
 
