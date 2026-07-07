@@ -25,6 +25,35 @@ audience: [developer, devops, product]
 
 _Nothing yet._
 
+## v2.0.6 - 2026-07-07
+
+> **Patch release.** Housekeeping across the discovery/summarize toolchain: a config relocation with an automatic adopter migration, plus temp-file hygiene. No methodology or KB-schema changes; drop-in over v2.0.5 (`aid update <tool>`).
+
+- [CHANGE] Discovery term exclusions now live in `.aid/settings.yml` under `discovery.term_exclusions` (mirroring `discovery.doc_set`), replacing the tracked hidden `.aid/knowledge/.term-exclusions.md` dotfile; `/aid-discover` reads, creates, and updates them there. `aid update` carries an existing project's terms across automatically (bash + PowerShell twin) and retires the old dotfile to `.aid/.trash/`; the migration runs only when that file is present, so projects that never had one are untouched.
+- [FIX] Transient scratch no longer lands in the Knowledge Base — `/aid-summarize` and `/aid-discover` write all build/scratch artifacts under the gitignored `.aid/.temp/` instead of `.aid/knowledge/` (the `summary-src/` workspace, `.manual-checklist.json`, `.spot-check-facts.txt`, and the Markdown-export build), so a run leaves the KB directory clean.
+- [FIX] The KB metrics scanner (`build-metrics.sh`) gained the dotfile guard (`! -name '.*'`) its five sibling scanners already carried, so hidden files no longer skew KB document counts.
+- [NOTE] Internal clean-code pass removed redundant, non-informative comments across the shipped skills, agents, scripts, and templates — no behavior, API, or output changes (adopters see comment-only diffs on `aid update`).
+
+## v2.0.5 - 2026-07-06
+
+- [FIX] `/aid-discover` review scope corrected — the M3 (teach-back) and M4 (act-back) keystone gates now grade only hand-authored knowledge via a tag-driven `list_reviewable` (`kb-category != meta` AND `source != generated`), so the meta ledgers (`STATE.md`, `README.md`, `external-sources.md`) and the generated `INDEX.md` no longer leak into the reconstruction and poison the grade.
+
+## v2.0.4 - 2026-07-05
+
+- [FIX] KB-scanner scope & reproducibility — the two scanners feeding `/aid-discover` (`harvest-coined-terms.sh`, `build-project-index.sh`) now scope their walk to real, hand-authored target-project source, deterministically (non-source trees are no longer walked).
+
+## v2.0.3 - 2026-07-05
+
+- [FIX] Completes the cross-platform performance hardening begun in v2.0.1–v2.0.2 — every KB / discovery / summarize helper an adopter runs is now fast on Windows Git Bash / MSYS (the closure-check presence scan is batched instead of spawning per file).
+
+## v2.0.2 - 2026-07-04
+
+- [FIX] `/aid-discover` project-index performance patch on Windows — `build-project-index.sh` batches language detection instead of spawning a process per file.
+
+## v2.0.1 - 2026-07-04
+
+- [FIX] Installer-upgrade correctness — `aid update` now overwrites a managed file when it differs and provisions a missing `settings.yml` / `.gitignore`; plus a Windows `/aid-discover` harvest performance fix and install-audit fixes.
+
 ## v2.0.0 - 2026-06-28
 
 > **Major release.** Breaking changes to the skill commands and the install layout (see [Migration to v2.0.0](#migration-to-v200)). The `.aid/` project-state format is unchanged — there is **no data migration**.
@@ -109,3 +138,4 @@ _Nothing yet._
 |---------|------|--------|
 | 1.0 | 2026-06-25 | Restored into the domain-driven KB as a first-class `extension` doc (frontmatter conformed to the authoring standard: objective/summary/sources/tags/see_also/owner/audience). Release-ledger content preserved verbatim from the prior hand-authored KB; resolves the dangling `infrastructure.md` reference. Prior per-edit history is in git. |
 | 1.1 | 2026-06-28 | Added 4 Unreleased entries for work-aid-interview-improvements: aid-describe/aid-define split (13->14 skills), seasoned-analyst elicitation engine, greenfield seed authoring, and the aid-housekeep Conformance Lane. |
+| 1.2 | 2026-07-07 | Added the v2.0.6 section (work-013/014/015: term-exclusions -> settings.yml + adopter migration, temp-file hygiene, build-metrics dot-guard) and backfilled the v2.0.1-v2.0.5 patch entries that had shipped as GitHub release notes only, restoring the ledger's every-release contract. |
