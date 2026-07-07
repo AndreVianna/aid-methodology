@@ -23,7 +23,7 @@
 #   1  Runtime error (missing KB dir, no docs found, missing python3)
 #   2  Usage error (unknown flag)
 #
-# Payload element contract (consumed by task-002 / client-side export buttons):
+# Payload element contract (consumed by client-side export buttons):
 #   Element:       <script type="text/markdown" id="kb-md-export" data-encoding="base64">
 #   Content:       Combined KB source docs, frontmatter stripped, local images embedded as
 #                  data: URIs (SVG -> data:image/svg+xml;base64,...;

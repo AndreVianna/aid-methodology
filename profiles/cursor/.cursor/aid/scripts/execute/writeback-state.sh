@@ -342,7 +342,7 @@ init_lock_file() {
 }
 
 acquire_lock() {
-    # M2: Distinguish missing lock directory (ENOENT) from lock contention (EEXIST).
+    # Distinguish missing lock directory (ENOENT) from lock contention (EEXIST).
     local lock_parent
     lock_parent="$(dirname "$LOCK_FILE")"
     [[ -d "$lock_parent" ]] || die "lock directory does not exist: $lock_parent" 1
@@ -380,12 +380,12 @@ trap 'release_lock' EXIT
 # State is enum-validated (closed enum).
 # ---------------------------------------------------------------------------
 mode_field() {
-    # H2: Reject --value containing literal '|' to prevent row corruption.
+    # Reject --value containing literal '|' to prevent row corruption.
     if [[ "$FIELD_VALUE" == *"|"* ]]; then
         die "--value cannot contain '|' (pipe is the column separator); escape with HTML entity or rephrase" 4
     fi
 
-    # Cycle-3 fix: also reject newline characters (same row-corruption class as H2).
+    # Also reject newline characters (same row-corruption class as the pipe check).
     if [[ "$FIELD_VALUE" == *$'\n'* ]]; then
         die "--value cannot contain newline characters (row separator); rephrase to single line" 4
     fi
@@ -398,7 +398,7 @@ mode_field() {
         *) die "unknown field '$FIELD'; allowed: State Review Elapsed Notes" 4 ;;
     esac
 
-    # Enum validation for the State field (closed enum; SD-2).
+    # Enum validation for the State field (closed enum).
     if [[ "$field_lower" == "state" ]]; then
         case "$FIELD_VALUE" in
             Pending|"In Progress"|"In Review"|Blocked|Done|Failed|Canceled|"_none yet_") ;;
@@ -489,7 +489,7 @@ mode_field() {
 # ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --findings BLOCK
 # Write/replace the ## Quick Check Findings block in
-# delivery-NNN/tasks/task-NNN/STATE.md (per SD-5 / Pillar 2).
+# delivery-NNN/tasks/task-NNN/STATE.md.
 # Creates the ## Quick Check Findings section if absent.
 # ---------------------------------------------------------------------------
 mode_findings() {
@@ -567,15 +567,15 @@ mode_findings() {
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --lifecycle VALUE
 # Update the State: line in the ## Delivery Lifecycle section of
-# delivery-NNN/STATE.md (SD-8 authored delivery state).
+# delivery-NNN/STATE.md.
 # VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
-# Emits no user-facing output (C4 behavior-preserving).
+# Emits no user-facing output.
 # ---------------------------------------------------------------------------
 mode_delivery_lifecycle() {
     local padded_id
     padded_id=$(printf '%03d' "$DELIVERY_ID")
 
-    # SD-8 enum validation (closed enum)
+    # Enum validation (closed enum)
     case "$LIFECYCLE_VALUE" in
         Pending-Spec|Specified|Executing|Gated|Done|Blocked) ;;
         *) die "invalid --lifecycle value '$LIFECYCLE_VALUE'; must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked" 4 ;;
@@ -647,14 +647,14 @@ mode_delivery_lifecycle() {
     fi
 
     mv "$tmp" "$DELIVERY_STATE_FILE"
-    # No user-facing output (C4)
+    # No user-facing output
 }
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --block MARKDOWN_BLOCK
-# Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md (SD-5).
+# Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md.
 # This is the per-delivery delivery gate block, targeting the delivery-level
-# STATE.md (one writer per delivery branch -- Pillar 2 disjoint writes).
+# STATE.md (one writer per delivery branch -- disjoint writes).
 # Creates the ## Delivery Gate section if absent.
 # ---------------------------------------------------------------------------
 mode_delivery_block() {
@@ -732,7 +732,6 @@ mode_delivery_block() {
 # Append a single issue row to delivery-NNN-issues.md.
 # File is created with a header if it does not exist.
 # Idempotent: if an identical row already exists, no duplicate is written.
-# Unchanged from pre-retarget (already disjoint per Pillar 2).
 # ---------------------------------------------------------------------------
 mode_append_issue() {
     local padded_id
@@ -801,7 +800,7 @@ EOF
 #   Block Artifact -> present only when Lifecycle = Blocked
 #
 # Creates the ## Pipeline State section if absent. Emits no user-facing
-# output (C4 behavior-preserving). Acquires the existing sentinel lock.
+# output. Acquires the existing sentinel lock.
 # ---------------------------------------------------------------------------
 mode_pipeline() {
     if [[ ! -f "$STATE_FILE" ]]; then
@@ -852,7 +851,7 @@ mode_pipeline() {
     tmp=$(mktemp)
 
     # Accept both old "## Pipeline Status" and new "## Pipeline State" section headers.
-    # On create/update, always write "## Pipeline State" (the renamed header from task-001).
+    # On create/update, always write the "## Pipeline State" header.
     if grep -qE '^## Pipeline Stat(us|e)' "$STATE_FILE"; then
         # Section exists (either name) -- update/add the target field within it, and manage
         # conditional fields when Lifecycle changes.
@@ -978,7 +977,7 @@ mode_pipeline() {
     fi
 
     mv "$tmp" "$STATE_FILE"
-    # No user-facing output (C4)
+    # No user-facing output
 }
 
 # ---------------------------------------------------------------------------

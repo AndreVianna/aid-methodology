@@ -109,12 +109,6 @@ AID_DIR="${REPO_ROOT}/.aid"
 #
 # (caller) Any name passed via --active-work (highest priority).
 # (b)      The folder matching the current branch (aid/work-NNN-* pattern).
-#
-# Removed in the run-state-relocation change: the former (a) "STATE.md carries
-# ## Housekeep Status" and (c) "STATE.md Status != Deployed" exclusions. Housekeep
-# run-state now lives in .aid/.temp/HOUSEKEEP_STATE_*.md (not in a work folder), so
-# (a) is obsolete; (c) was over-conservative and is superseded by the (i)/(ii)
-# matrix, which routes merged-but-not-concluded folders to explicit-confirm.
 # ---------------------------------------------------------------------------
 
 # is_active_folder <folder_name>
@@ -130,15 +124,6 @@ is_active_folder() {
 
     # (b) Matches the current branch pattern aid/work-NNN-* — never offer the work
     # folder whose branch is currently checked out.
-    #
-    # NOTE: the former signal (a) (folder STATE.md carries ## Housekeep Status) and
-    # signal (c) (STATE.md Status != Deployed) were REMOVED. Housekeep run-state no
-    # longer lives in any work folder (it lives in .aid/.temp/HOUSEKEEP_STATE_*.md),
-    # so (a) is obsolete; and (c) was over-conservative — it pre-empted the (i)/(ii)
-    # matrix's own explicit-confirm path, which is exactly how a merged-but-not-
-    # concluded folder should be handled. With (c) gone, such folders reach the
-    # matrix and are surfaced for explicit per-folder confirmation (never deleted
-    # without it).
     local current_branch
     current_branch=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=""
     if [[ -n "$current_branch" && "$current_branch" =~ ^aid/work-([0-9]+)-(.+)$ ]]; then
@@ -251,10 +236,10 @@ scan_s2() {
 }
 
 # ---------------------------------------------------------------------------
-# S3: .aid/knowledge/.cache/** (Mermaid runtime cache; vestigial post-D-012)
+# S3: .aid/knowledge/.cache/** (Mermaid runtime cache; vestigial)
 #     NOTE: /aid-summarize scratch (manual-checklist.json, spot-check-facts.txt)
 #     and its summary-src build workspace now live under .aid/.temp/summarize/
-#     and are swept by S1 -- no KB-dir special-case is needed here (work-013).
+#     and are swept by S1 -- no KB-dir special-case is needed here.
 # ---------------------------------------------------------------------------
 scan_s3() {
     local knowledge_dir="${AID_DIR}/knowledge"

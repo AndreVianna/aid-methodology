@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # kb-dual-intent-probes.sh -- Dual-intent probe-derivation helper.
 #
-# Derives the two probe sets used by the Dual-Intent KB Self-Evaluation (feature-016 D-015):
+# Derives the two probe sets used by the Dual-Intent KB Self-Evaluation:
 #
 #   Work probes   (Intent 1 / assertiveness limb / Blind Work-Simulation):
 #     K representative tasks derived from the C9 capability/what-it-does doc + the domain.
 #     Each probe is "add / modify / extend <<a real capability>>" shaped to exercise the
 #     load-bearing spine dimensions (C5 data/contracts, C3 conventions, C2 parts, C6
-#     quality).  Reuses D-014's C9-derived selector (_dim_of_filename + dimension-aware
+#     quality).  Reuses the C9-derived selector (_dim_of_filename + dimension-aware
 #     priority) as the deterministic seed.  One work probe per load-bearing dimension
 #     present in the doc-set (minimum K=1, scaled by triage size).
 #
@@ -18,11 +18,11 @@
 #     derives from the project's own docs, no hardcoded per-domain probe list.
 #
 # Both probe sets are:
-#   - Deterministic: same doc-set + same C9/C4/D docs -> byte-identical output (NFR-3).
+#   - Deterministic: same doc-set + same C9/C4/D docs -> byte-identical output.
 #   - Spine-keyed: each probe is tagged with the dimensions it exercises.
 #   - Spread across spine dimensions with a minimum count.
 #   - Cacheable: a PROBE-CACHE sentinel is emitted; re-run checks the cache file and
-#     skips re-derivation when the cache is fresh (cost mitigation, feature-016 SS8).
+#     skips re-derivation when the cache is fresh (cost mitigation).
 #   - Human-confirm/extend hook: a "PROBE-EXTEND" section is emitted at the gate for
 #     the human reviewer to confirm or extend the probe set (no-assumptions pattern).
 #
@@ -79,7 +79,7 @@
 # Coreutils only (grep/awk/sort/tr/cut/wc/mktemp/sha256sum).
 # No LLM, no embedding, no python3, no pwsh.
 # ASCII-only (C2; test-ascii-only.sh allow-list entry required).
-# Byte-reproducible: LC_ALL=C, sorted, no timestamps (NFR-3).
+# Byte-reproducible: LC_ALL=C, sorted, no timestamps.
 #
 # Implementation note -- sharing with kb-actback-task.sh:
 #   _dim_of_filename and _parse_docset are replicated here (not sourced from
@@ -362,7 +362,7 @@ _extract_glossary_terms() {
 # Fingerprint: sha256 of the sorted TSV filenames (the stable logical identity).
 # Does NOT include the physical kb-dir path (which varies across machines/runs)
 # or doc content (which is read separately and is cost-free for probe derivation).
-# Same TSV row set -> same fingerprint (NFR-3).
+# Same TSV row set -> same fingerprint.
 # ---------------------------------------------------------------------------
 _docset_fingerprint() {
   local tsv="$1"
@@ -385,7 +385,7 @@ _docset_fingerprint() {
 #
 # When a C9 doc is present its heading list is used to seed the capability noun
 # (making the probe "add X to <real capability>" instead of a generic placeholder).
-# Same doc-set -> same probe set (NFR-3).
+# Same doc-set -> same probe set.
 # ---------------------------------------------------------------------------
 
 # _work_probe_for_dim DIM C9_DOC C9_HEADINGS_FILE PROBE_IDX
@@ -476,7 +476,7 @@ _work_probe_for_dim() {
 # Derives K representative work probes from the resolved doc-set, spanning the
 # load-bearing dimensions (C5 -> C3 -> C2 -> C6 -> C9, in coverage priority).
 # Each probe is tagged with the dimensions it exercises.
-# Deterministic: same doc-set -> same probe set (NFR-3).
+# Deterministic: same doc-set -> same probe set.
 # ---------------------------------------------------------------------------
 _run_work_probes() {
   local tsv="$1"
@@ -627,7 +627,7 @@ _essence_decs_from_D() {
 #   - D decisions doc:   "Why was X decided?" for each decision
 # Plus a fixed "what/how/why" narrative probe.
 #
-# Deterministic: same docs -> same probe set (sorted, bounded, NFR-3).
+# Deterministic: same docs -> same probe set (sorted, bounded).
 # ---------------------------------------------------------------------------
 _run_essence_probes() {
   local tsv="$1"

@@ -4,7 +4,7 @@
 # Consumes:
 #   .aid/generated/candidate-concepts.md  -- term universe (harvest + synthesis rows)
 #   domain-glossary.md                    -- concept spine (defined terms + relates-to)
-#   KB docs + their resolved sources: frontmatter (f001 field)
+#   KB docs + their resolved sources: frontmatter
 #
 # Emits TWO separately-parsable outputs (sections or files):
 #
@@ -262,7 +262,7 @@ fi
 UNIVERSE_FILE="${TMPDIR_CC}/universe.txt"
 cat "$TERMS_FILE" "$RELATES_FILE" | sort -u > "$UNIVERSE_FILE"
 
-# Subtract EXCLUDED terms from the universe (feature-014 Q10 fix), where EXCLUDED =
+# Subtract EXCLUDED terms from the universe, where EXCLUDED =
 #   the coined-term denylist  UNION  the closure loop's own DISMISSED decisions (--dismissed).
 # Two structural causes made the oracle un-closable before this:
 #   (1) generic code tokens (echo, grep, exit, branch, docs, ...) legitimately appear in KB
@@ -295,7 +295,7 @@ if [[ -s "$EXCLUDE_LC" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Term normalization (feature-014 rules #1 and #2):
+# Term normalization:
 #   #1 slash-split  -- a compound joined by "/" is treated as its separate words; each part
 #                      is its own term (e.g. "canonical / profile" -> "canonical", "profile").
 #   #2 singular     -- a best-effort FILTER for REGULAR plurals (-s/-es/-ies, e.g. "tasks" ->

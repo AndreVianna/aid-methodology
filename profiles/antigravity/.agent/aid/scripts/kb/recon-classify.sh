@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# recon-classify.sh -- deterministic recon pre-pass for AID discover (f006).
+# recon-classify.sh -- deterministic recon pre-pass for AID discover.
 #
 # Reads two already-generated markdown files (no second tree scan) and emits a
 # proposed discovery path (GREENFIELD / BROWNFIELD-SMALL / BROWNFIELD-LARGE) to
@@ -51,7 +51,7 @@ set -euo pipefail
 # is_source -- 23-language classifier, kept in lockstep with
 # build-project-index.sh's is_source function.  Changes here MUST be
 # mirrored there (and vice-versa).  The lockstep is asserted by
-# task-024's shared fixture.
+# a shared fixture.
 # ---------------------------------------------------------------------------
 IS_SOURCE_LANGUAGES="Java|Kotlin|Python|JavaScript|TypeScript|Go|Rust|C#|F#|C/C++|Ruby|PHP|Swift|Scala|Elm|Elixir|Erlang|Clojure|Lua|Shell|PowerShell|Vue|Svelte"
 
@@ -212,7 +212,7 @@ END { print rm1 "\t" rm2 }
 ' "$INDEX")
 
 # Split "rm1<TAB>rm2" in-shell -- no temp file, no cut/tr/rm forks, no /tmp
-# write (work-009 hot-path polish). The awk output carries no surrounding
+# write. The awk output carries no surrounding
 # whitespace, so this is byte-identical to the former cut|tr pipeline.
 RM1="${RM12%%$'\t'*}"
 RM2="${RM12##*$'\t'}"

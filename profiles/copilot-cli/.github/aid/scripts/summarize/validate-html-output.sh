@@ -23,12 +23,10 @@
 #   A5  Visible focus — :focus-visible rule.
 #   S2  Offline render — no external CDN script or link src (self-contained).
 #   NM  No-Mermaid-engine assertion — output contains no Mermaid runtime engine or
-#       mermaid.initialize() init call (FR-51 / Change 7 / D-012 guardrail).
+#       mermaid.initialize() init call.
 #   L1  Anchor links resolve — every href="#X" matches an id="X".
 #   L2  Relative md links resolve — every href="./X.md" exists in --kb-dir.
 #   (Additional structural checks for skip-link, noscript, color-scheme, etc.)
-#
-# History: merged validate-html.sh + validate-links.sh per 2026-05-26 script consolidation.
 
 set -euo pipefail
 
@@ -251,10 +249,7 @@ check "skip-link present"          'class="skip-link"'
 check "noscript fallback present"  '<noscript>'
 check "color-scheme: light dark"   'color-scheme: ?light dark|color-scheme:.*light.*dark'
 
-# S2 -- Offline render: page is self-contained (no external CDN script or link src)
-# CHANGE 7 (FR-51 / D-012): The Mermaid engine is retired. S2 now checks that NO
-# external CDN script/link references have been introduced (CDN-free guarantee).
-# The presence of the Mermaid engine is no longer required or checked.
+# S2 -- Offline render: page is self-contained (no external CDN script or link src).
 CDN_SCRIPT_HITS=$(grep -E '<script[^>]+src="https?://' "$HTML" 2>/dev/null || true)
 CDN_LINK_HITS=$(grep -E '<link[^>]+href="https?://' "$HTML" 2>/dev/null || true)
 TOTAL=$((TOTAL + 1))
@@ -268,15 +263,13 @@ else
     FAIL=$((FAIL + 1))
 fi
 
-# NM -- No-Mermaid-engine assertion (FR-51 / Change 7 / D-012 guardrail)
-# The ~3 MB Mermaid runtime engine is retired in D-012. Any output HTML that still
-# contains the Mermaid engine script or a mermaid.initialize() call is in violation
-# of guardrail C2/C3 (self-contained, no external engine) and FR-51.
+# NM -- No-Mermaid-engine assertion.
+# Fails if output HTML still contains the Mermaid engine script or a
+# mermaid.initialize() call (violates the self-contained / no-external-engine guardrail).
 # Checks:
 #   NM.1  No inline Mermaid engine -- the JS bundle declares 'mermaid' as a module
 #          or library; its presence means the engine was not dropped.
-#   NM.2  No mermaid.initialize() call -- the explicit initialization call that D-012
-#          removes. Present = engine still wired in.
+#   NM.2  No mermaid.initialize() call -- the explicit init call. Present = engine still wired in.
 #   NM.3  No <script src> pointing to a CDN Mermaid delivery (cdn.jsdelivr.net/mermaid,
 #          unpkg.com/mermaid, etc.) -- belt-and-suspenders for CDN-sourced engine.
 echo ""
@@ -287,7 +280,7 @@ TOTAL=$((TOTAL + 1))
 # NM.1: detect inline Mermaid engine bundle (very large inline script containing 'mermaid')
 # Heuristic: a <script> block longer than 100 KB that contains the mermaid signature.
 # Excludes <script type="text/markdown"> blocks: those are passive data payloads
-# (the Markdown export embed introduced by task-001) that legitimately exceed 100 KB
+# (the Markdown export embed) that legitimately exceed 100 KB
 # and mention "mermaid" in KB text without being an engine. A real Mermaid engine
 # always appears in an executable (non-typed or type="text/javascript") <script>.
 #

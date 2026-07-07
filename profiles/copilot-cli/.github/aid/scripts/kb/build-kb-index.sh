@@ -7,33 +7,28 @@
 # frontmatter fields (objective, summary, tags, see_also, audience -- with intent:
 # coexistence fallbacks), so it stays deterministic, git-diffable, and dependency-
 # free. See canonical/templates/kb-authoring/frontmatter-schema.md for the field
-# schema (f001).
+# schema.
 #
-# Coexistence fallbacks (f002): objective falls back to collapsed intent: when
+# Coexistence fallbacks: objective falls back to collapsed intent: when
 # objective: is absent; summary falls back to the first sentence of collapsed
 # intent:; tags/see_also/audience blank when absent. Un-migrated intent:-only
 # docs render a valid table row.
 #
-# Per canonical/templates/kb-authoring/principles.md P3, this script runs LAST in
+# Per canonical/templates/kb-authoring/principles.md, this script runs LAST in
 # any /aid-discover cycle (after all hand-edits land), so the index reflects final
 # state.
 #
 # source: value is a pass-through -- this generator groups docs strictly by
 # kb-category (primary/meta/extension) and is source-value-agnostic. A
-# forward-authored (f003 greenfield seed) doc with kb-category: primary renders
+# forward-authored (greenfield seed) doc with kb-category: primary renders
 # in the Primary table identically to a hand-authored one. The INDEX 6-column
 # schema (Document/Objective/Summary/Tags/See-instead/Audience) is unchanged.
 #
-# PERFORMANCE (work-007): the render is BATCHED -- one awk subprocess per doc
-# instead of the former ~19. The previous doubled loop (3 categories x N docs)
-# recomputed basename + kb-category 3x per doc, and its heavy branch spawned ~13
-# awk/sed/tr helpers per doc (extract_field x2, extract_list x3, extract_literal,
-# collapse_lines, first_sentence, escape_pipe, render_tags/see_also/audience). On
-# Windows Git Bash / MSYS (~10-50 ms per fork) that dominated the run. Now basename
-# is a shell builtin (${f##*/}, no spawn), kb-category is read once per doc, and a
-# single awk pass parses every needed field AND renders all five middle cells for a
-# doc. Each doc is rendered exactly once and cached, then the category grouping loop
-# consults the cache. Output is byte-identical to the old pipeline.
+# PERFORMANCE: the render is BATCHED -- one awk subprocess per doc instead of the
+# ~13 awk/sed/tr helper forks the former per-doc loop spawned. On Windows Git Bash /
+# MSYS (~10-50 ms per fork) that dominated the run. Now basename is a shell builtin
+# (${f##*/}), kb-category is read once per doc, and a single awk pass parses every
+# field AND renders all five middle cells. Output is byte-identical to the old pipeline.
 #
 # Usage:
 #   bash build-kb-index.sh --root <kb-root> --output <output-path>

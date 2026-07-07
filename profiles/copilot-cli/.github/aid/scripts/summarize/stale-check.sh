@@ -8,18 +8,16 @@
 #   FIRST_RUN                — never been run
 # Exit 0 always (the "decision" is informational, not a failure).
 #
-# FR2: reads from the consolidated .aid/knowledge/STATE.md.
+# Reads from the consolidated .aid/knowledge/STATE.md:
 #   - KB review date  → `## Review History` (Discovery area history)
 #   - Summary date    → `## Summarization History`
 #   - Approval flag   → `## Knowledge Summary Status` block, **User Approved:** line
-# Both old separate files (DISCOVERY-STATE.md, SUMMARY-STATE.md) are retired.
 
 set -u
 
 KB_DIR=".aid/knowledge"
 STATE="$KB_DIR/STATE.md"
-# The summary now lives at .aid/dashboard/kb.html (feature-007 relocation; served by
-# the multi-repo dashboard at /r/<id>/kb.html). KB_DIR still anchors the STATE.md read.
+# The summary lives at .aid/dashboard/kb.html; KB_DIR still anchors the STATE.md read.
 HTML_FILE=".aid/dashboard/kb.html"
 
 if [ ! -f "$HTML_FILE" ]; then

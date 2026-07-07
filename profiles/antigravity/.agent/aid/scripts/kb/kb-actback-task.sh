@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # kb-actback-task.sh -- representative-task selector + operational-structure presence check.
 #
-# Two functions (f013, task-028; re-keyed to spine dimensions in task-081/FR-53):
+# Two functions:
 #
 #   Function (1) -- Representative-task selection.
 #     Reads the machine-readable doc-set TSV (filename<TAB>owner<TAB>presence, three fields
@@ -10,7 +10,7 @@
 #
 #     Task shape is selected by a dimension-aware, C9-seeded selector
 #     (priority C5->C2->C3->C9, first present dimension wins).  Same doc-set ->
-#     byte-identical output (NFR-3).
+#     byte-identical output.
 #
 #   Function (2) -- Operational-structure presence check.
 #     For each doc in the doc-set TSV, grep for the named operational sections and emit:
@@ -20,7 +20,7 @@
 #       dimension-keyed: _dim_owns_class(dim, class) replaces _doc_expects_class(doc, class).
 #       domain-glossary.md (C4 -> owns Invariants, not Contracts) is NOT reported
 #       "## Contracts absent".
-#     Stable-sorted (LC_ALL=C), byte-reproducible (NFR-3).
+#     Stable-sorted (LC_ALL=C), byte-reproducible.
 #
 # Usage:
 #   kb-actback-task.sh task   --doc-set PATH [--kb-dir PATH] [--output PATH]
@@ -44,12 +44,12 @@
 #
 # Invocation path convention (canonical/aid/scripts/kb/kb-actback-task.sh):
 #   state-generate.md / state-closure.md render-token convention; full path form.
-#   Do NOT drop the aid/ segment (see f013 implementer path-guard note).
+#   Do NOT drop the aid/ segment.
 #
 # Coreutils only (grep/awk/sort/tr/cut/wc/mktemp).
 # No LLM, no embedding, no python3, no pwsh.
 # ASCII-only (C2; test-ascii-only.sh allow-list entry required).
-# Byte-reproducible: LC_ALL=C, sorted, no timestamps (NFR-3).
+# Byte-reproducible: LC_ALL=C, sorted, no timestamps.
 
 set -euo pipefail
 LC_ALL=C
@@ -144,7 +144,7 @@ fi
 # ---------------------------------------------------------------------------
 # OWNING-TABLE (dimension-keyed). Single source: concern-model.md
 # "The four operational-guidance classes" owning-table, INVERTED to dimension->classes.
-# MUST mirror that table + document-expectations.md "Owns named section(s)" (SD13).
+# MUST mirror that table + document-expectations.md "Owns named section(s)".
 # Do not edit independently.
 #   C1 -> Invariants
 #   C2 -> Conventions, Invariants, Contracts
@@ -253,12 +253,12 @@ _parse_docset() {
 }
 
 # ---------------------------------------------------------------------------
-# Function (1): Representative-task selection (dimension-aware + C9-seeded, FR-53)
+# Function (1): Representative-task selection (dimension-aware + C9-seeded)
 #
 # Parse the doc-set TSV; resolve each filename to its spine dimension via
 # _dim_of_filename; pick a task shape from the load-bearing dimensions present
 # (priority C5->C2->C3->C9, first match wins); seed the task noun from the
-# C9 doc (if present).  Same doc-set -> byte-identical output (NFR-3).
+# C9 doc (if present).  Same doc-set -> byte-identical output.
 #
 # Priority rationale (mirrors concern-model.md owning-table + today's contract>module
 # ordering): C5 (data/contracts) beats C2 (parts/connections) beats C3 (conventions)
@@ -425,7 +425,7 @@ _run_task() {
 }
 
 # ---------------------------------------------------------------------------
-# Function (2): Operational-structure presence check (dimension-keyed, FR-53)
+# Function (2): Operational-structure presence check (dimension-keyed)
 #
 # For each doc in the doc-set TSV:
 #   - Resolve the doc's spine dimension via _dim_of_filename.
@@ -508,7 +508,7 @@ _run_check() {
   # the heading must be a clean IDENTIFIER with an OPTIONAL whitespace-led suffix --
   # "## Conventions", "## Conventions (Recurring-Change Checklist)", "## Conventions
   # ..." all count, but "## Conventionsfoo" does not (class name must be followed by
-  # whitespace or EOL).  (feature-014 AB-004 -- same heading-idempotency rule as the
+  # whitespace or EOL).  (Same heading-idempotency rule as the
   # closure checker.)  LC_ALL=C is exported, so [[:space:]] is byte-wise like grep.
   # The path->filename map (first awk file) keys presence rows by the doc's filename.
   if [[ ${#_docpaths[@]} -gt 0 ]]; then

@@ -3,10 +3,6 @@
 // assert the four fidelity properties (text readable, minimal overlap, correct layout,
 // no overflow-clip at target widths).
 //
-// This is the S7 visual-fidelity gate (FR-51 / task-074) that REPLACES validate-diagrams.mjs.
-// Mermaid's automatic layout guarantee is gone; this gate holds every inline SVG /
-// .diagram-box / infographic container to the same bar.
-//
 // Usage:
 //   node validate-visuals.mjs <html-file> [--check-only] [--min-font-size N]
 //
@@ -22,7 +18,7 @@
 //   1 -- one or more visuals failed (generation defect -- blocks DONE)
 //   2 -- invocation error (file missing, etc.)
 //
-// Four asserts per visual (the S7 gate):
+// Four asserts per visual:
 //   T1 -- Readable text: every visible text node inside the visual has a computed
 //         font-size >= MIN_FONT_SIZE_PX (default 10 px) and is NOT overflow-hidden
 //         such that its bounding rect is zero-height.

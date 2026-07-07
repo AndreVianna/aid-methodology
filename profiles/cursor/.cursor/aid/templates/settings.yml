@@ -1,142 +1,52 @@
-# .aid/settings.yml — AID pipeline configuration (single source of truth)
-#
-# This file is the AUTHORITATIVE source for all AID pipeline settings.
-# Other AID skills (aid-discover, aid-execute, aid-summarize, ...) read
-# their configuration from here at invocation time.
-#
-# Managed by: /aid-config skill. Run /aid-config to view or update.
-# Format: YAML 1.2.
-# Convention: edit via /aid-config; manual edits are allowed but discouraged.
+# .aid/settings.yml — AID pipeline configuration (single source of truth).
+# Read by AID skills at invocation. Managed by /aid-config; manual edits allowed.
 
-# ---------------------------------------------------------------------------
-# project: identifying metadata for this AID-managed project
-# ---------------------------------------------------------------------------
 project:
-  name: <project-name>              # set during /aid-config INIT
-  description: <project-description>  # set during /aid-config INIT — sole source of truth (not duplicated in CLAUDE.md/AGENTS.md)
-  type: brownfield                  # brownfield | greenfield
+  name: <project-name>               # set during /aid-config INIT
+  description: <project-description>  # sole source of truth (not duplicated in CLAUDE.md/AGENTS.md)
+  type: brownfield                   # brownfield | greenfield
 
-# ---------------------------------------------------------------------------
-# tools: which AI host tools have AID installed in this project
-# ---------------------------------------------------------------------------
 tools:
   installed:
     - claude-code
     # - codex
     # - cursor
 
-# ---------------------------------------------------------------------------
-# review: quality bar for every skill's REVIEW state
-# ---------------------------------------------------------------------------
-# Global default. Applies to every skill that has a REVIEW state and grades
-# its artifacts (discover, summary, interview, specify, plan, detail,
-# execute, deploy, monitor). Skills compare their computed grade against
-# this value and only exit when grade >= minimum_grade.
-#
-# Per-skill overrides are allowed — see the bottom of this file.
+# Global quality bar: every skill with a REVIEW state exits only when its grade
+# is >= minimum_grade. Per-skill overrides at the bottom of this file.
 review:
   minimum_grade: A
 
-# ---------------------------------------------------------------------------
-# execution: settings specific to /aid-execute + /aid-deploy
-# ---------------------------------------------------------------------------
 execution:
-  max_parallel_tasks: 5   # parallel pool dispatch capacity (work-001 feature-009)
+  max_parallel_tasks: 5   # parallel dispatch pool capacity
 
-# ---------------------------------------------------------------------------
-# traceability: heartbeat + L2 timer subagent visibility (work-003)
-# ---------------------------------------------------------------------------
 traceability:
-  heartbeat_interval: 1   # minutes — interval at which long-running sub-agents update their heartbeat file
+  heartbeat_interval: 1   # minutes between long-running sub-agent heartbeat updates
 
-# ---------------------------------------------------------------------------
-# kb_baseline: the git baseline the Knowledge Base reflects
-# ---------------------------------------------------------------------------
-# Written by aid-discover (on KB approval, FR35) and aid-housekeep (KB-DELTA
-# resolution + re-stamp, FR36). Read by the dashboard reader for FR35
-# outdated-detection. Absent until the first KB generation.
-# Producer-written - NOT user-authored. /aid-config owns this schema key;
-# aid-discover / aid-housekeep are the writers (DD-A4, feature-007 DM-A4).
-# An absent kb_baseline == "no baseline recorded" -> reader skips the
-# freshness check and stays approved (see feature-007 FF-A2 degradation).
-#
+# kb_baseline: git baseline the KB reflects. Written by aid-discover / aid-housekeep;
+# absent until the first KB generation.
 # kb_baseline:
-#   branch: master                     # the default branch the KB was generated/refreshed against
-#   tip_date: 2026-06-12T14:03:00Z     # ISO-8601 commit date of that branch's tip at generation time
+#   branch: master
+#   tip_date: 2026-06-12T14:03:00Z   # ISO-8601 tip commit date at generation time
 
-# ---------------------------------------------------------------------------
-# discovery: settings for the aid-discover GENERATE flow
-# ---------------------------------------------------------------------------
-# Populated once at discovery time. The closure: child holds the cap defaults
-# for the comprehension/closure loop (Step 5b, aid-discover f004).
-#
-# NOTE: read-setting.sh resolves only a 2-level section.key path; the 3-level
-# discovery.closure.* keys below are NOT readable via read-setting.sh. They
-# are consumed via Step 5b's cap-override argument interface (f004's design).
-# f006 (path config) supplies per-run overrides through that interface.
-#
-# doc_set: is NOT a template default -- it is a conditional runtime-written
-# sibling written by Step 0d only when the confirmed doc-set differs from the
-# seed. It shares the discovery: parent with closure: but is never pre-seeded
-# in the template.
-#
-# term_exclusions: is likewise NOT a template default -- it is a conditional
-# runtime-written list under the discovery: parent, appended by Step 5c (closure
-# exclusion-review gate) with the not-concept terms the user confirms. Read via
-# read-setting.sh --path discovery.term_exclusions. Relocated out of the KB dir
-# (was .aid/knowledge/.term-exclusions.md) in work-013.
 discovery:
+  # doc_set and term_exclusions are runtime-written by aid-discover, not seeded here.
   closure:
-    max_clean_passes: 2   # CLOSED after this many consecutive zero-ungrounded DETECT passes (default 2)
-    max_rounds: 4         # hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds (wall-clock guard)
-    token_budget: 0       # optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget
+    max_clean_passes: 2   # consecutive zero-ungrounded DETECT passes required to close
+    max_rounds: 4         # hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds
+    token_budget: 0       # 0 = use pass/round caps; >0 = stop past this cumulative loop budget
 
-# ---------------------------------------------------------------------------
-# triage: recon-pre-pass thresholds for the 3-path discovery classifier (f006)
-# ---------------------------------------------------------------------------
-# Read by recon-classify.sh to PROPOSE a path (greenfield / brownfield-small /
-# brownfield-large); the human CONFIRMS (the path is measured, not declared --
-# project.type is never read as authoritative). Defaults are sensible starting
-# points, calibratable per project. All four metrics are read from the
-# already-generated project-index.md + candidate-concepts.md (no second scan).
-#
-# RM1 = source-file count; RM2 = source LOC; RM3 = directory count;
-# RM4 = candidate-concept count (Cross-source spread >= 2 from harvest).
-# Absent block => these defaults; a project may override any single key.
+# triage: thresholds the 3-path classifier PROPOSES from (human confirms).
+# RM1 = source files, RM2 = source LOC, RM3 = dir count, RM4 = candidate-concept count.
 triage:
-  greenfield_max_source_files: 5     # RM1 <= this AND RM2 <= loc => greenfield (little/no source)
+  greenfield_max_source_files: 5     # RM1 <= this (with RM2 <= loc) => greenfield
   greenfield_max_source_loc:   500   # RM2 ceiling for greenfield
-  large_min_source_loc:        20000 # RM2 >= this => brownfield-large (size)
-  large_min_dirs:              25    # RM3 >= this => brownfield-large (breadth / fan-out)
-  large_min_concepts:          40    # RM4 >= this => brownfield-large (concept density)
+  large_min_source_loc:        20000 # RM2 >= this => brownfield-large
+  large_min_dirs:              25    # RM3 >= this => brownfield-large
+  large_min_concepts:          40    # RM4 >= this => brownfield-large
 
-# ---------------------------------------------------------------------------
-# Optional per-skill overrides
-# ---------------------------------------------------------------------------
-# Each top-level skill-name key (when set) overrides the corresponding
-# global value in `review:`. Uncomment + set as needed.
-#
-# Valid grade values: A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F
-# E+/E/E- are accepted but rarely useful as a floor — E grades indicate CRITICAL
-# severity findings; setting one as the minimum means "do not block on any
-# non-critical issues." Most projects should pick from A..D.
-#
-# Examples:
-# discover:
-#   minimum_grade: A+
-# summary:
-#   minimum_grade: A+
-# interview:
-#   minimum_grade: A-
-# specify:
-#   minimum_grade: A
-# plan:
-#   minimum_grade: A
-# detail:
-#   minimum_grade: A
+# Optional per-skill overrides of review.minimum_grade (uncomment + set as needed).
+# Keys: discover, describe, define, specify, plan, detail, execute, deploy, monitor, summary, housekeep.
+# Valid grades: A+ .. F (E+/E/E- rarely useful as a floor; most projects pick A..D).
 # execute:
 #   minimum_grade: A+
-# deploy:
-#   minimum_grade: A+
-# monitor:
-#   minimum_grade: A

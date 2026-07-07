@@ -342,14 +342,9 @@ fi
 # PS08: assemble.sh header documents the no-engine guarantee
 # ===========================================================================
 
-echo ""
-echo "=== PS08: assemble.sh header documents the no-engine guarantee (Change 7 / FR-51) ==="
-
-if grep -qE "NO.*runtime.*diagram.*engine|no.*Mermaid.*engine|Mermaid.*engine.*REMOVED|no.*external.*fetch" "$ASSEMBLE_SH"; then
-    pass "PS08 assemble.sh header documents no-engine + no external fetch guarantee"
-else
-    fail "PS08 assemble.sh header missing no-engine guarantee documentation"
-fi
+# PS08 removed: tests must not assert comment/header text (brittle). The no-engine
+# guarantee is enforced behaviorally by the NM assertions (assembled output contains
+# no Mermaid runtime engine) in test-assemble-determinism.sh / test-guardrails-d012.sh.
 
 # ===========================================================================
 # Summary

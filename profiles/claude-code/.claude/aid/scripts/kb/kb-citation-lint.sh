@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # kb-citation-lint.sh -- flag VOLATILE bare line-number citations in KB docs.
 #
-# The KB authoring standard (kb-authoring principles.md P1d) requires DURABLE anchors: a file
+# The KB authoring standard (kb-authoring principles.md) requires DURABLE anchors: a file
 # path plus a grep-recoverable symbol/heading, NOT a bare `file.ext:LINE` (line numbers drift).
 # This lint catches the bare-line form MECHANICALLY so it is fixed at the source (GENERATE)
 # instead of one phase later (REVIEW) -- the agent's prose instruction + self-report are not

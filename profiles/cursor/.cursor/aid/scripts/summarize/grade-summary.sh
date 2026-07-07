@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
 # grade-summary.sh -- orchestrator for /aid-summarize VALIDATE state.
-# (Renamed from knowledge-summary/scripts/grade.sh in 2026-05-26 script
-#  consolidation; the universal grade computation lives at canonical/scripts/grade.sh.)
 # Runs all automated checks and emits a structured two-grade report.
 #
 # Usage:
 #   grade-summary.sh <html-file> [--fast]
 #
 # Flags:
-#   --fast    Reserved for development; no-op since validate-diagrams.mjs was retired (D-012).
+#   --fast    Reserved for development; currently a no-op.
 #   -h, --help  Print this header and exit.
 #
 # Exit codes:
@@ -29,8 +27,6 @@
 #   Reads discovery.doc_set from .aid/settings.yml, intersects with files
 #   present in .aid/knowledge/ (resolved doc-set), checks the HTML for a
 #   reference to each resolved doc. Coverage < 60% forces Machine Grade F.
-#   The old diagram-count cap (C+ ceiling unless N Mermaid diagrams present)
-#   has been REMOVED. Diagram count does not affect the grade ceiling.
 #
 # D1/D2/S2: Mermaid checks are trivially passed when no Mermaid blocks exist.
 #   A Mermaid parse failure reduces the score but does NOT force automatic F.
@@ -243,11 +239,7 @@ declare -A CHECK_NAMES=(
 H1_MODE_NOTE=""  # captures "regex fallback" if that path was taken
 
 # ---------------------------------------------------------------------------
-# D1 + D2: Mermaid validation -- trivially passed (Mermaid engine retired D-012)
-# CHANGE 7 (FR-51): The Mermaid engine is removed. D-012 output contains no
-# <pre class="mermaid"> blocks. D1 and D2 are trivially passed (5/5 each).
-# The section-6 visual-fidelity gate (task-074) provides the replacement check
-# for inline SVG authored visuals.
+# D1 + D2: Mermaid validation -- trivially passed (Mermaid engine retired).
 # ---------------------------------------------------------------------------
 echo "========================================================"
 echo "[Mermaid diagrams -- D1 parse, D2 render]"
@@ -258,8 +250,6 @@ RESULTS[D2]=pass
 
 # ---------------------------------------------------------------------------
 # H1 + A1-A5 + S2 + L1 + L2: HTML structure/validity/a11y + link validation
-# (validate-html-output.sh merges the former validate-html.sh + validate-links.sh
-#  per 2026-05-26 script consolidation)
 # ---------------------------------------------------------------------------
 echo "========================================================"
 echo "[HTML output validation -- H1 A1 A2 A3 A4 A5 S2 + L1 L2]"
@@ -313,9 +303,8 @@ else
         RESULTS[A5]=pass
     fi
 
-    # S2: the Mermaid engine is retired (Change 7 / FR-51 / D-012). S2 now checks
-    # that no CDN references were introduced. Pass: validate-html-output.sh emits
-    # "S2. Offline render [PASS]" when no external CDN script/link is present.
+    # S2: pass when validate-html-output.sh emits "S2. Offline render [PASS]"
+    # (no external CDN script/link present).
     grep -qE "S2\..*\[PASS\]" "$HTML_LOG" && RESULTS[S2]=pass
 
     # L1/L2: pass lines contain unique "N/N ... resolve" text
@@ -534,7 +523,7 @@ for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2; do
         fi
         printf "  %-4s  %-44s  %-8s  %d/%d\n" "$k" "$name ($COV_LABEL)" "$symbol" "$COV_EARNED" "$w"
     elif [ "$k" = "D1" ] || [ "$k" = "D2" ]; then
-        # D1/D2: Mermaid engine retired (Change 7 / FR-51 / D-012) -- trivially passed
+        # D1/D2: Mermaid engine retired -- trivially passed
         printf "  %-4s  %-44s  %-8s  %d/%d\n" "$k" "$name (engine retired)" "[PASS]" "$w" "$w"
     else
         if [ "${RESULTS[$k]}" = "pass" ]; then

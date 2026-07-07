@@ -45,7 +45,7 @@ Optional flags:
   known-issues.md              ← known problems
 ```
 
-<!-- NOTE (FR2 area-STATE rule, work-003-traceability/feature-002 OQ-3 resolution): The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .agent/aid/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
+<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at .agent/aid/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
 
 ## ⚠️ Pre-flight Checks
 
