@@ -38,11 +38,12 @@ Ships together with work-013 in v2.0.6.
 
 ## Design
 
-- **Trigger:** auto-run on `aid update`, right after `_migrate_retired_layout` (line ~2187), so adopters get it with no manual step. bash function `_migrate_term_exclusions` in `lib/aid-install-core.sh` + PowerShell twin `Invoke-MigrateTermExclusions` in `lib/AidInstallCore.psm1`.
+- **Trigger:** auto-run on `aid update` during project provisioning, right after the `settings.yml` seed + `.gitignore` update (so `settings.yml` is guaranteed present), so adopters get it with no manual step. bash function `_migrate_term_exclusions` in `lib/aid-install-core.sh` + PowerShell twin `Invoke-MigrateTermExclusions` in `lib/AidInstallCore.psm1`.
 - **File-existence gate (owner requirement):** returns immediately when `.aid/knowledge/.term-exclusions.md` is absent -- an update with nothing to migrate does zero work.
-- **Action when present:** parse `- <term>` lines; if `settings.yml` has no `term_exclusions:` key yet, inject `discovery.term_exclusions` (as the first child under `discovery:`, or append a `discovery:` block if absent); then retire the old file to `.aid/.trash/` (reversible, never committed).
-- **Idempotent:** the retire step means a second run finds no file -> no-op; the `term_exclusions:`-already-present guard prevents double-injection on a hand-edited settings.
-- **Tests:** bash cases in `tests/canonical/test-aid-migrate.sh`; PS cases in the Windows installer suite.
+- **Action when present:** parse `- <term>` lines; if `discovery.term_exclusions` does not already exist, inject it (as the first child under `discovery:` -- matching a `discovery:` header even with a trailing comment -- or append a `discovery:` block if absent); then retire the old file to `.aid/.trash/` (reversible, never committed).
+- **Data-safety hardening (Copilot #125 review):** the "already present" check is scoped to the `discovery:` section (a `term_exclusions:` under some other section cannot cause a false skip), and the file is retired ONLY after the terms are confirmed placed -- if terms exist but `settings.yml` is missing, the file is left in place rather than dropped.
+- **Idempotent:** the retire step means a second run finds no file -> no-op; the discovery-scoped `term_exclusions`-present guard prevents double-injection on a re-run or a hand-edited settings.
+- **Tests:** `tests/canonical/test-migrate-term-exclusions.sh` (bash) + `test-migrate-term-exclusions-ps1.sh` / `.ps1` (PowerShell twin, skips when pwsh absent).
 
 ---
 

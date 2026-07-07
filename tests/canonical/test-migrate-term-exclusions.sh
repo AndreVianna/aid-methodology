@@ -64,5 +64,31 @@ run_migrate "$T5"
 assert_eq "$(grep -c '^  term_exclusions:' "${T5}/.aid/settings.yml")" "1" "MT05a exactly one term_exclusions key"
 assert_file_exists "${T5}/.aid/.trash/knowledge/.term-exclusions.md" "MT05b orphan file still retired"
 
-rm -rf "$T1" "$T2" "$T4" "$T5" 2>/dev/null || true
+# --- MT06 (Copilot #125): discovery: header with a trailing comment ---
+echo "=== MT06: 'discovery: # comment' header gets term_exclusions injected under it (no duplicate) ==="
+T6=$(mktemp -d); mkdir -p "${T6}/.aid/knowledge"
+printf 'discovery: # runtime-written keys live here\n  closure:\n    max_rounds: 4\n' > "${T6}/.aid/settings.yml"; mk_termfile "${T6}/.aid/knowledge/.term-exclusions.md"
+run_migrate "$T6"
+assert_eq "$(grep -c '^discovery:' "${T6}/.aid/settings.yml")" "1" "MT06a exactly one discovery: header (no EOF duplicate)"
+assert_file_contains "${T6}/.aid/settings.yml" "  term_exclusions:" "MT06b term_exclusions injected under the commented discovery: header"
+
+# --- MT07 (Copilot #125): term_exclusions under ANOTHER section must not cause a false skip ---
+echo "=== MT07: a term_exclusions: under a non-discovery section still injects into discovery ==="
+T7=$(mktemp -d); mkdir -p "${T7}/.aid/knowledge"
+printf 'other:\n  term_exclusions:\n    - unrelated\ndiscovery:\n  closure:\n    max_rounds: 4\n' > "${T7}/.aid/settings.yml"; mk_termfile "${T7}/.aid/knowledge/.term-exclusions.md"
+run_migrate "$T7"
+assert_file_contains "${T7}/.aid/settings.yml" "In Progress" "MT07a discovery.term_exclusions injected despite other.term_exclusions"
+# discovery section must now carry a term_exclusions child (2 total: other + discovery)
+assert_eq "$(grep -c '^  term_exclusions:' "${T7}/.aid/settings.yml")" "2" "MT07b both sections have their own term_exclusions"
+assert_file_exists "${T7}/.aid/.trash/knowledge/.term-exclusions.md" "MT07c file retired (terms safely placed in discovery)"
+
+# --- MT08 (Copilot #125): terms present but NO settings.yml -> do NOT retire (preserve data) ---
+echo "=== MT08: no settings.yml + terms present -> file preserved, not dropped ==="
+T8=$(mktemp -d); mkdir -p "${T8}/.aid/knowledge"; mk_termfile "${T8}/.aid/knowledge/.term-exclusions.md"
+run_migrate "$T8"; rc=$?
+assert_exit_zero "$rc" "MT08a returns success"
+assert_file_exists "${T8}/.aid/knowledge/.term-exclusions.md" "MT08b file preserved (not retired) when settings.yml absent"
+[[ ! -e "${T8}/.aid/.trash/knowledge/.term-exclusions.md" ]] && pass "MT08c nothing moved to trash" || fail "MT08c file was retired despite no settings.yml"
+
+rm -rf "$T1" "$T2" "$T4" "$T5" "$T6" "$T7" "$T8" 2>/dev/null || true
 test_summary

@@ -1921,26 +1921,45 @@ _migrate_term_exclusions() {
         | sed -E 's/^[[:space:]]*-[[:space:]]+//; s/[[:space:]]+#.*$//; s/[[:space:]]+$//' \
         | grep -v '^$' || true)"
 
-    # Inject only when there are terms and settings.yml has no term_exclusions: key yet
-    # (guards against double-injection on a re-run or a hand-edited settings file).
-    if [[ -f "$settings" && -n "$terms" ]] && ! grep -qE '^[[:space:]]+term_exclusions:' "$settings"; then
-        local tmp="${settings}.aidtmp" inserted=0 line
-        : > "$tmp"
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            printf '%s\n' "$line" >> "$tmp"
-            if [[ "$inserted" -eq 0 && "$line" =~ ^discovery:[[:space:]]*$ ]]; then
-                printf '  term_exclusions:\n' >> "$tmp"
+    # If there are terms to preserve but no settings.yml to place them in, do NOT
+    # retire the file -- that would drop the only copy. Leave it for a later run
+    # (settings.yml is normally seeded before this migration).
+    [[ -n "$terms" && ! -f "$settings" ]] && return 0
+
+    if [[ -n "$terms" ]]; then
+        # Does discovery.term_exclusions ALREADY exist? Scoped to the discovery
+        # section so a term_exclusions: under some OTHER section can't cause a
+        # false skip (which would drop the terms on retire).
+        local has_te
+        has_te="$(awk '
+            /^discovery:[[:space:]]*(#.*)?$/ { in_disc=1; next }
+            in_disc && /^[^[:space:]#]/      { in_disc=0 }
+            in_disc && /^[[:space:]]+term_exclusions:/ { found=1 }
+            END { print (found ? "1" : "0") }
+        ' "$settings")"
+
+        if [[ "$has_te" != "1" ]]; then
+            local tmp="${settings}.aidtmp" inserted=0 line
+            : > "$tmp"
+            while IFS= read -r line || [[ -n "$line" ]]; do
+                printf '%s\n' "$line" >> "$tmp"
+                # Match discovery: even with a trailing comment (discovery: # ...).
+                if [[ "$inserted" -eq 0 && "$line" =~ ^discovery:[[:space:]]*(#.*)?$ ]]; then
+                    printf '  term_exclusions:\n' >> "$tmp"
+                    printf '%s\n' "$terms" | sed 's/^/    - /' >> "$tmp"
+                    inserted=1
+                fi
+            done < "$settings"
+            [[ "$inserted" -eq 0 ]] && {
+                printf 'discovery:\n  term_exclusions:\n' >> "$tmp"
                 printf '%s\n' "$terms" | sed 's/^/    - /' >> "$tmp"
-                inserted=1
-            fi
-        done < "$settings"
-        [[ "$inserted" -eq 0 ]] && {
-            printf 'discovery:\n  term_exclusions:\n' >> "$tmp"
-            printf '%s\n' "$terms" | sed 's/^/    - /' >> "$tmp"
-        }
-        mv -f "$tmp" "$settings"
+            }
+            mv -f "$tmp" "$settings"
+        fi
     fi
 
+    # Safe to retire now: terms (if any) are placed in discovery.term_exclusions,
+    # already present there, or the file carried nothing to preserve.
     local dest="${target}/.aid/.trash/knowledge/.term-exclusions.md"
     mkdir -p "$(dirname "$dest")"
     mv -f "$kb_file" "$dest"

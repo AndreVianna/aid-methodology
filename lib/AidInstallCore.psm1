@@ -1622,17 +1622,30 @@ function script:Invoke-MigrateTermExclusions {
         }
     }
 
-    # Inject only when there are terms and settings.yml has no term_exclusions: key yet
-    # (guards against double-injection on a re-run or a hand-edited settings file).
-    if ((Test-Path $settings -PathType Leaf) -and $terms.Count -gt 0) {
-        $normalized = ((([System.IO.File]::ReadAllText($settings)) -replace "`r`n", "`n") -replace "`r", "`n")
-        if ($normalized -notmatch '(?m)^\s+term_exclusions:') {
+    # Terms to preserve but no settings.yml to hold them: do NOT retire (would drop
+    # the only copy). Leave the file for a later run.
+    if ($terms.Count -gt 0 -and -not (Test-Path $settings -PathType Leaf)) { return }
+
+    if ($terms.Count -gt 0) {
+        $lines = ((([System.IO.File]::ReadAllText($settings)) -replace "`r`n", "`n") -replace "`r", "`n") -split "`n"
+
+        # Does discovery.term_exclusions ALREADY exist? Scoped to the discovery section,
+        # so a term_exclusions: under some OTHER section can't cause a false skip.
+        $hasTe = $false; $inDisc = $false
+        foreach ($ln in $lines) {
+            if ($ln -match '^discovery:\s*(#.*)?$') { $inDisc = $true; continue }
+            if ($inDisc -and $ln -match '^[^\s#]') { $inDisc = $false }
+            if ($inDisc -and $ln -match '^\s+term_exclusions:') { $hasTe = $true }
+        }
+
+        if (-not $hasTe) {
             $blockLines = @('  term_exclusions:') + ($terms | ForEach-Object { "    - $_" })
             $out = [System.Collections.Generic.List[string]]::new()
             $inserted = $false
-            foreach ($ln in ($normalized -split "`n")) {
+            foreach ($ln in $lines) {
                 $out.Add($ln)
-                if (-not $inserted -and $ln -match '^discovery:\s*$') {
+                # Match discovery: even with a trailing comment (discovery: # ...).
+                if (-not $inserted -and $ln -match '^discovery:\s*(#.*)?$') {
                     foreach ($b in $blockLines) { $out.Add($b) }
                     $inserted = $true
                 }
@@ -1645,6 +1658,8 @@ function script:Invoke-MigrateTermExclusions {
         }
     }
 
+    # Safe to retire now: terms (if any) are placed in discovery.term_exclusions,
+    # already present there, or the file carried nothing to preserve.
     $dest = Join-Path $Target '.aid\.trash\knowledge\.term-exclusions.md'
     $destDir = Split-Path $dest -Parent
     if (-not (Test-Path $destDir)) { New-Item -ItemType Directory -Path $destDir -Force | Out-Null }
