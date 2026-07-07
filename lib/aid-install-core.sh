@@ -1931,10 +1931,13 @@ _migrate_term_exclusions() {
         # section so a term_exclusions: under some OTHER section can't cause a
         # false skip (which would drop the terms on retire).
         local has_te
+        # Match only the immediate child (exactly 2-space indent) -- the level
+        # injection writes at -- so a deeper key (discovery.closure.term_exclusions)
+        # cannot be mistaken for discovery.term_exclusions.
         has_te="$(awk '
             /^discovery:[[:space:]]*(#.*)?$/ { in_disc=1; next }
-            in_disc && /^[^[:space:]#]/      { in_disc=0 }
-            in_disc && /^[[:space:]]+term_exclusions:/ { found=1 }
+            in_disc && /^[^[:space:]#]/  { in_disc=0 }
+            in_disc && /^  term_exclusions:/ { found=1 }
             END { print (found ? "1" : "0") }
         ' "$settings")"
 

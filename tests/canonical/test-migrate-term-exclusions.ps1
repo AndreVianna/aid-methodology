@@ -65,10 +65,20 @@ Set-Content -Path (Join-Path $t5 '.aid\knowledge\.term-exclusions.md') -Value "-
 Check 'MTP05a file preserved when settings.yml absent' (Test-Path (Join-Path $t5 '.aid\knowledge\.term-exclusions.md'))
 Check 'MTP05b nothing moved to trash' (-not (Test-Path (Join-Path $t5 '.aid\.trash\knowledge\.term-exclusions.md')))
 
-Remove-Item $t1, $t2, $t3, $t4, $t5 -Recurse -Force -ErrorAction SilentlyContinue
+# MTP06 (Copilot #126): a DEEPER-nested term_exclusions must not block injection
+$t6 = Join-Path ([System.IO.Path]::GetTempPath()) ('mtx-' + [System.Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path (Join-Path $t6 '.aid\knowledge') -Force | Out-Null
+Set-Content -Path (Join-Path $t6 '.aid\settings.yml') -Value "discovery:`n  closure:`n    term_exclusions:`n      - nested`n" -NoNewline
+Set-Content -Path (Join-Path $t6 '.aid\knowledge\.term-exclusions.md') -Value "- In Progress`n" -NoNewline
+& $mod { param($p) script:Invoke-MigrateTermExclusions -Target $p } $t6 6>$null | Out-Null
+$s6 = Get-Content (Join-Path $t6 '.aid\settings.yml') -Raw
+Check 'MTP06a immediate discovery.term_exclusions injected (2-space)' (([regex]::Matches($s6, '(?m)^  term_exclusions:')).Count -eq 1)
+Check 'MTP06b terms placed despite the deeper-nested key' ($s6 -match '(?m)^    - In Progress$')
+
+Remove-Item $t1, $t2, $t3, $t4, $t5, $t6 -Recurse -Force -ErrorAction SilentlyContinue
 
 Write-Output '=== Summary ==='
 if ($fail -gt 0) { Write-Output "  Tests failed: $fail"; exit 1 }
-Write-Output '  Tests passed: 13'
+Write-Output '  Tests passed: 15'
 Write-Output '  Tests failed: 0'
 Write-Output 'All tests passed.'

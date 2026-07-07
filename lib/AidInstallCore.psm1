@@ -1631,11 +1631,14 @@ function script:Invoke-MigrateTermExclusions {
 
         # Does discovery.term_exclusions ALREADY exist? Scoped to the discovery section,
         # so a term_exclusions: under some OTHER section can't cause a false skip.
+        # Match only the immediate child (exactly 2-space indent) -- the level
+        # injection writes at -- so a deeper key (discovery.closure.term_exclusions)
+        # cannot be mistaken for discovery.term_exclusions.
         $hasTe = $false; $inDisc = $false
         foreach ($ln in $lines) {
             if ($ln -match '^discovery:\s*(#.*)?$') { $inDisc = $true; continue }
             if ($inDisc -and $ln -match '^[^\s#]') { $inDisc = $false }
-            if ($inDisc -and $ln -match '^\s+term_exclusions:') { $hasTe = $true }
+            if ($inDisc -and $ln -match '^  term_exclusions:') { $hasTe = $true }
         }
 
         if (-not $hasTe) {

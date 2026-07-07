@@ -90,5 +90,14 @@ assert_exit_zero "$rc" "MT08a returns success"
 assert_file_exists "${T8}/.aid/knowledge/.term-exclusions.md" "MT08b file preserved (not retired) when settings.yml absent"
 [[ ! -e "${T8}/.aid/.trash/knowledge/.term-exclusions.md" ]] && pass "MT08c nothing moved to trash" || fail "MT08c file was retired despite no settings.yml"
 
-rm -rf "$T1" "$T2" "$T4" "$T5" "$T6" "$T7" "$T8" 2>/dev/null || true
+# --- MT09 (Copilot #126): a DEEPER-nested term_exclusions must not block injection ---
+echo "=== MT09: term_exclusions nested under discovery.closure is not mistaken for discovery.term_exclusions ==="
+T9=$(mktemp -d); mkdir -p "${T9}/.aid/knowledge"
+printf 'discovery:\n  closure:\n    term_exclusions:\n      - nested\n' > "${T9}/.aid/settings.yml"; mk_termfile "${T9}/.aid/knowledge/.term-exclusions.md"
+run_migrate "$T9"
+assert_eq "$(grep -c '^  term_exclusions:' "${T9}/.aid/settings.yml")" "1" "MT09a immediate discovery.term_exclusions injected (2-space)"
+assert_file_contains "${T9}/.aid/settings.yml" "In Progress" "MT09b terms placed despite the deeper-nested key"
+assert_file_exists "${T9}/.aid/.trash/knowledge/.term-exclusions.md" "MT09c file retired (terms safely placed)"
+
+rm -rf "$T1" "$T2" "$T4" "$T5" "$T6" "$T7" "$T8" "$T9" 2>/dev/null || true
 test_summary
