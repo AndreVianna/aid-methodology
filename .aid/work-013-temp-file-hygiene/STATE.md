@@ -110,10 +110,20 @@ quietly; remove the tests completely" — these were REMOVED, not skip-guarded:
 tool-availability gates (`pwsh` / `node` / Playwright absent) that correctly degrade on minimal
 hosts — left intact (removing them would break those tests where the tool genuinely isn't present).
 
-**Coverage note:** the removed `test-diagram-content` DC02/DC03 checks verified the diagram-content
-gate FIRES on drift (stale phase label / deleted-skill token). That gate still runs at generation
-time (`state-validate.md` §7 companion); only the standalone CI regression for it is gone. It can be
-re-added as a fixture-based test (like KB25) if that regression is wanted back.
+**Coverage note (resolved via Copilot review):** the diagram-content gate-fires-on-drift regression
+and the assemble.sh payload-embed regression were re-added as **self-contained fixture tests** that
+always run in CI (no dependence on the committed kb.html / gitignored workspace):
+- `tests/canonical/test-diagram-content.sh` (rewritten): DC01 pass / DC02 fires on missing required /
+  DC03 fires on forbidden token — via a temp kb.html + temp manifest. 3/0.
+- `tests/canonical/test-md-export-embed.sh` (new): ME01 assemble embeds payload + reports
+  "MD Export: embedded"; ME02 omits + reports "not present" — via a temp summary-src fixture. 7/0.
+
+## Copilot review (PR #123)
+
+3 advisory (COMMENTED) inline comments; all addressed:
+1. `state-validate.md:17` — no test coverage for `validate-diagram-content.mjs` → **fixed** (fixture test above).
+2. `test-kb-export.sh:216` — no coverage for assemble.sh payload embedding → **fixed** (fixture test above).
+3. `SKILL.md:231` — reference bullets didn't state the new paths → **fixed** (full `.aid/.temp/summarize/` paths added; profiles regen + dogfood resync).
 
 ## Lifecycle History
 

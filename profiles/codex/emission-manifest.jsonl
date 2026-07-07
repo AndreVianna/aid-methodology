@@ -265,7 +265,7 @@
 {"dst": ".codex/skills/aid-specify/references/state-initialize.md", "profile": "codex", "sha256": "ebc443ac61f295dd5ec94458ef469c51014fedb9b926039d3f5979d393a07986", "src": "canonical/skills/aid-specify/references/state-initialize.md"}
 {"dst": ".codex/skills/aid-specify/references/state-review.md", "profile": "codex", "sha256": "c0d9c7355606eed6228013f1bd8056a566d669de2f285d38dede5c8157e97a40", "src": "canonical/skills/aid-specify/references/state-review.md"}
 {"dst": ".codex/skills/aid-specify/references/state-spike.md", "profile": "codex", "sha256": "286dd39e97b16da307c3576f949c0ee5ef39c475cc0a7c86ee84ed5fe3c0779a", "src": "canonical/skills/aid-specify/references/state-spike.md"}
-{"dst": ".codex/skills/aid-summarize/SKILL.md", "profile": "codex", "sha256": "6abcc8c07530b096460b67d95dffbb8c0a2e7ff586fd58a4296c1d2c5456a7fe", "src": "canonical/skills/aid-summarize/SKILL.md"}
+{"dst": ".codex/skills/aid-summarize/SKILL.md", "profile": "codex", "sha256": "b179ea418d3f30c7d384d9c23e32bcb9b8f9d67ca45911be4405275c72a30178", "src": "canonical/skills/aid-summarize/SKILL.md"}
 {"dst": ".codex/skills/aid-summarize/references/state-approval.md", "profile": "codex", "sha256": "4dc675c4d0350b6f4129fb5b599121db082692272d9f4da6cf3219947430a739", "src": "canonical/skills/aid-summarize/references/state-approval.md"}
 {"dst": ".codex/skills/aid-summarize/references/state-done.md", "profile": "codex", "sha256": "efc8ba8bcf55b0816ec347e1f76ed47af3a8bf1c48d9e5cfc0bc67ee60acf933", "src": "canonical/skills/aid-summarize/references/state-done.md"}
 {"dst": ".codex/skills/aid-summarize/references/state-fix.md", "profile": "codex", "sha256": "6061cf64293bc63b4ca19d081ce8d3f0439892eaf7a42443143b0d2eb77a78a2", "src": "canonical/skills/aid-summarize/references/state-fix.md"}
