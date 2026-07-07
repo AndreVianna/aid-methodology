@@ -18,8 +18,7 @@ DERIVED read-only views assembled from this file at read time -- never written d
 <!-- AUTHORED -- written ONLY by `writeback-state.sh --task-id NNN --field State --value VALUE`.
      State enum (closed; single source of truth):
        Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-     Enum values are byte-identical to the legacy work-state-template.md set.
-     SD-2 ordering (most-advanced wins on reconcile):
+     Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
 - **State:** Pending | In Progress | In Review | Blocked | Done | Failed | Canceled

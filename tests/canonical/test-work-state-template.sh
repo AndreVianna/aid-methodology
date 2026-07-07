@@ -18,19 +18,19 @@
 #   WS03  work-state-template declares Lifecycle enum verbatim (closed, 5 members)
 #   WS04  work-state-template declares Phase enum verbatim (7 members)
 #   WS05  work-state-template declares Active Skill enum placeholder
-#   WS06  work-state-template has "Never hand-edited" note + closed enums note
+#   WS06  (removed) comment-text assertion -- see body note; coverage: WS07 (dogfood), WS03/WS04 (enums)
 #   WS07  Rendered dogfood work-state-template matches canonical (spot checks)
 #   WS08  Rendered profile trees all contain the work-state-template ## Pipeline State header
 #   WS09  No "Status" section/field names remain in any new template (naming contract)
 #   WS10  delivery-state-template carries SD-8 delivery lifecycle enum
-#   WS11  delivery-state-template has authored-not-derived note (SD-9)
-#   WS12  delivery-state-template has ## Cross-phase Q&A section (SD-5)
-#   WS13  delivery-state-template ## Tasks State is marked DERIVED
+#   WS11  (removed) comment-text assertion -- see body note; delivery enum coverage via WS10
+#   WS12  delivery-state-template has ## Cross-phase Q&A section (SD-5 comment assert removed)
+#   WS13  delivery-state-template has ## Tasks State section (DERIVED comment assert removed)
 #   WS14  task-state-template has the 4 mutable cells (State/Review/Elapsed/Notes)
 #   WS15  task-state-template has ## Quick Check Findings section
 #   WS16  task-state-template has ## Dispatch Log section
-#   WS17  work-state-template 7 derived sections are marked DERIVED / read-only (Deploy State is AUTHORED)
-#   WS18  SD-2 ordering (Done > ... > Pending) present as authoritative list
+#   WS17  (removed) comment-text assertion -- see body note (DERIVED markers are HTML comments)
+#   WS18  (removed) comment-text assertion -- see body note (ordering list + rationale live in a comment)
 #   WS19  aid-describe state-first-run seeds Pipeline State fields (Lifecycle/Phase/Active Skill)
 #   WS20  The seed prose does not introduce any new user-facing output
 #
@@ -109,16 +109,8 @@ assert_file_contains \
     "WS05 Active Skill field line has expected shape"
 
 # ---------------------------------------------------------------------------
-# WS06: work-state-template has "Never hand-edited" note + closed enums note
+# WS06 removed: tests must not assert comment text (owner directive); render fidelity is covered by the render-drift / byte-identity gates, enum members by WS03/WS04.
 # ---------------------------------------------------------------------------
-assert_file_contains \
-    "$WORK_STATE" \
-    "Never hand-edited" \
-    "WS06 work-state-template has 'Never hand-edited' note"
-assert_file_contains \
-    "$WORK_STATE" \
-    "closed enums" \
-    "WS06 work-state-template has 'closed enums' note"
 
 # ---------------------------------------------------------------------------
 # WS07: Rendered dogfood work-state-template has Pipeline State header and fields
@@ -136,10 +128,6 @@ if [[ -f "$DOGFOOD_WORK_STATE" ]]; then
         "$DOGFOOD_WORK_STATE" \
         "**Phase:**" \
         "WS07 dogfood rendered work-state-template has Phase field"
-    assert_file_contains \
-        "$DOGFOOD_WORK_STATE" \
-        "Never hand-edited" \
-        "WS07 dogfood rendered work-state-template has Never hand-edited note"
 else
     fail "WS07 dogfood rendered work-state-template not found: $DOGFOOD_WORK_STATE"
 fi
@@ -199,16 +187,8 @@ for member in "Pending-Spec" "Specified" "Executing" "Gated" "Done" "Blocked"; d
 done
 
 # ---------------------------------------------------------------------------
-# WS11: delivery-state-template has authored-not-derived note (SD-9)
+# WS11 removed: tests must not assert comment text (owner directive); the authored-not-derived note is comment-only. Delivery lifecycle enum members still covered by WS10.
 # ---------------------------------------------------------------------------
-assert_file_contains \
-    "$DELIVERY_STATE" \
-    "SD-9" \
-    "WS11 delivery-state-template references SD-9"
-assert_file_contains \
-    "$DELIVERY_STATE" \
-    "independently authored" \
-    "WS11 delivery-state-template has independently-authored note"
 
 # ---------------------------------------------------------------------------
 # WS12: delivery-state-template has ## Cross-phase Q&A section (SD-5)
@@ -217,10 +197,7 @@ assert_file_contains \
     "$DELIVERY_STATE" \
     "## Cross-phase Q&A" \
     "WS12 delivery-state-template has ## Cross-phase Q&A section"
-assert_file_contains \
-    "$DELIVERY_STATE" \
-    "SD-5" \
-    "WS12 delivery-state-template references SD-5 for Q&A partitioning"
+# WS12 removed: tests must not assert comment text (owner directive); the SD-5 Q&A-partitioning note is comment-only. The ## Cross-phase Q&A heading is still asserted above.
 
 # ---------------------------------------------------------------------------
 # WS13: delivery-state-template ## Tasks State is marked DERIVED
@@ -229,10 +206,7 @@ assert_file_contains \
     "$DELIVERY_STATE" \
     "## Tasks State" \
     "WS13 delivery-state-template has ## Tasks State section"
-assert_file_contains \
-    "$DELIVERY_STATE" \
-    "DERIVED" \
-    "WS13 delivery-state-template marks Tasks State as DERIVED"
+# WS13 removed: tests must not assert comment text (owner directive); the DERIVED marker is an HTML comment. The ## Tasks State heading is still asserted above.
 
 # ---------------------------------------------------------------------------
 # WS14: task-state-template has the 4 mutable cells
@@ -261,55 +235,12 @@ assert_file_contains \
     "WS16 task-state-template has ## Dispatch Log section"
 
 # ---------------------------------------------------------------------------
-# WS17: work-state-template derived sections are marked DERIVED / read-only
-# work-004 (task-016b): Deploy State was reclassified AUTHORED (single-writer
-# aid-deploy; not hierarchy-migrated). The 7 remaining sections are DERIVED.
+# WS17 removed: tests must not assert comment text (owner directive); the DERIVED / read-only zone markers are HTML comments and are no longer separately asserted.
 # ---------------------------------------------------------------------------
-# Check each of the 7 DERIVED sections contains the DERIVED marker
-for section in "Features State" "Plan / Deliveries" "Tasks State" \
-               "Delivery Gates" "Cross-phase Q&A" "Calibration Log" "Dispatches"; do
-    # Find the section header and check that DERIVED appears in that vicinity
-    if grep -q "## ${section}" "$WORK_STATE" 2>/dev/null; then
-        # Extract 5 lines after the section header and check for DERIVED
-        section_block="$(grep -A5 "## ${section}" "$WORK_STATE" 2>/dev/null || true)"
-        if echo "$section_block" | grep -q "DERIVED"; then
-            pass "WS17 work-state-template section '${section}' marked DERIVED"
-        else
-            fail "WS17 work-state-template section '${section}' not marked DERIVED"
-        fi
-    else
-        fail "WS17 work-state-template missing section: ## ${section}"
-    fi
-done
 
 # ---------------------------------------------------------------------------
-# WS18: SD-2 ordering present as authoritative ordered list
+# WS18 removed: tests must not assert comment text (owner directive); the state-advancement ordering list + rationale live in an HTML comment. Enum members still covered by WS03.
 # ---------------------------------------------------------------------------
-assert_file_contains \
-    "$WORK_STATE" \
-    "SD-2 STATE ADVANCEMENT ORDERING" \
-    "WS18 work-state-template has SD-2 ordering comment block"
-assert_file_contains \
-    "$WORK_STATE" \
-    "Done" \
-    "WS18 SD-2 ordering contains Done"
-assert_file_contains \
-    "$WORK_STATE" \
-    "Canceled" \
-    "WS18 SD-2 ordering contains Canceled"
-assert_file_contains \
-    "$WORK_STATE" \
-    "In Review" \
-    "WS18 SD-2 ordering contains In Review"
-assert_file_contains \
-    "$WORK_STATE" \
-    "Pending" \
-    "WS18 SD-2 ordering contains Pending"
-# Check that Rationale is present (the ordering must have a rationale, not just a list)
-assert_file_contains \
-    "$WORK_STATE" \
-    "Rationale" \
-    "WS18 SD-2 ordering has rationale"
 
 # ---------------------------------------------------------------------------
 # WS19: aid-describe state-first-run seeds Pipeline State fields

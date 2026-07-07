@@ -107,7 +107,7 @@
 {"dst": ".agent/aid/templates/delivery-issues.md", "profile": "antigravity", "sha256": "00d03020625c61c3561b3d07d203d4dda3c1b4c8f1ba4a3606fe38df4d38d774", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".agent/aid/templates/delivery-plans/task-template.md", "profile": "antigravity", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
 {"dst": ".agent/aid/templates/delivery-spec-template.md", "profile": "antigravity", "sha256": "683d336850990396c39134a9f5a138e9d318ad9da3190dd6ba7537bb259d2739", "src": "canonical/templates/delivery-spec-template.md"}
-{"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "0ddabb8d6a976e8ce247e6853173099fbcfff74e1b4aa923b3f0f8e9e1959c96", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "b1f59707966cce6c301f3a9646c8ed021e2af97f1afacb32d8e098570d980605", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".agent/aid/templates/discovery-state-template.md", "profile": "antigravity", "sha256": "ab362969654245a8f05d94a20aaa44de8a3443705561c2f236aa8e983c8e231d", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".agent/aid/templates/dispatch-protocol-checklist.md", "profile": "antigravity", "sha256": "4070e6cd1a9f970f798e51139503f45e1c8845efb2dcaab77eb44194e262abd0", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".agent/aid/templates/feature-inventory.md", "profile": "antigravity", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
@@ -168,8 +168,8 @@
 {"dst": ".agent/aid/templates/state-machine-chaining.md", "profile": "antigravity", "sha256": "628a41921f890ab90fa90ef01cc9eb770cc9e82d20b01819f310e2e6fec77094", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agent/aid/templates/subagent-heartbeat-protocol.md", "profile": "antigravity", "sha256": "9a4b7b433ad4bf0ec3c5f6e025439172e173992e29cd032f0c7986038edeeb2a", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".agent/aid/templates/task-spec-template.md", "profile": "antigravity", "sha256": "2f9353b8bdd507998e2a298cf16b6043a3a21b553b789c43d0f82ab403015b8a", "src": "canonical/templates/task-spec-template.md"}
-{"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "9dd76a887a0e59bda902123750789e8ffb30ebeac43a7bb61b4a001eb89c4519", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "00072c277f34361b8262f0c2634df3abad381559e667115fd4dad95a6464ff5d", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "0a30bf618ba7df4272717887ae793b7860b9df5b5c34f7bc818e7ddee1d99568", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "38321fc4ccfbc5a5d1a0f40711623031f833c07c3208eade104c6dc0cefb6434", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".agent/skills/aid-config/SKILL.md", "profile": "antigravity", "sha256": "9e3204e96a789b6bee48a72d77df9f0d1c7e34c059f15d427dc2b5d71320eec6", "src": "canonical/skills/aid-config/SKILL.md"}
 {"dst": ".agent/skills/aid-define/SKILL.md", "profile": "antigravity", "sha256": "19077ce53dadc103240173dfec39452a1f927147c4b8182d5a24b6a4029fe69d", "src": "canonical/skills/aid-define/SKILL.md"}
 {"dst": ".agent/skills/aid-define/references/cross-reference.md", "profile": "antigravity", "sha256": "4818ec62c9224d3d8b9167a4cf8f1e517009d90a410e5ef44e5a99764d8185c1", "src": "canonical/skills/aid-define/references/cross-reference.md"}
