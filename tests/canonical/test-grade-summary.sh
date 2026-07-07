@@ -479,13 +479,8 @@ else
 $CAP_CODE"
 fi
 
-echo ""
-echo "=== AC3b: grade-summary.sh header says diagram-count cap REMOVED ==="
-if grep -qiE "diagram.count.*cap.*removed|removed.*diagram.*count|cap.*removed" "$GRADE_SH"; then
-    pass "AC3b: grade-summary.sh header explicitly notes the cap was REMOVED"
-else
-    fail "AC3b: grade-summary.sh missing explicit 'cap removed' note in header"
-fi
+# AC3b removed: tests must not assert comment/header text (brittle). AC3a above
+# covers the actual behavior (no active C+/diagram-count cap in grade-summary.sh).
 
 echo ""
 echo "=== AC3c: grading-rubric.md says diagram-count hard rule REMOVED ==="

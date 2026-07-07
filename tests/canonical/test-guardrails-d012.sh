@@ -199,13 +199,9 @@ else
 fi
 
 echo ""
-echo "=== NM-f: validate-visuals.mjs replaces validate-diagrams.mjs (change documented) ==="
-# The mjs header says this replaces validate-diagrams.mjs for the fidelity gate.
-if grep -qiE "replace.*validate-diagrams|validate-diagrams.*replace|replaces.*JSDOM" "$VALIDATE_VISUALS_MJS"; then
-    pass "NM-f validate-visuals.mjs documents that it replaces validate-diagrams.mjs"
-else
-    fail "NM-f validate-visuals.mjs missing documentation that it replaces validate-diagrams.mjs"
-fi
+# NM-f removed: tests must not assert comment/header text (brittle). The behavior
+# -- validate-visuals.mjs being the active visual-fidelity gate -- is covered by
+# NM-a..NM-e (it runs + passes) and NM-g (state-validate.md references it).
 
 echo ""
 echo "=== NM-g: state-validate.md references validate-visuals.mjs (not validate-diagrams.mjs) ==="

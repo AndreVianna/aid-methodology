@@ -595,12 +595,16 @@ log "T07: V-D7 -- fixture paths/settings.yml triage.* is byte-identical to shipp
 # block lines verbatim and compare byte-for-byte.
 extract_triage_block() {
   local file="$1"
-  # Extract from "^triage:" through all immediately-indented lines.
-  # We stop at the first non-indented line (comment lines, blank lines, or
-  # the next top-level key all end the block when they are not indented).
+  # Compare the triage key:value pairs only -- NOT comments. Tests must not assert
+  # comment text, and the shipped file's inline/standalone comments are free to
+  # change; V-D7 pins the shipped DEFAULT VALUES, so strip comments before diffing.
   LC_ALL=C awk '
     /^triage:/ { in_triage=1; print; next }
-    in_triage && /^[[:space:]]/ { print; next }
+    in_triage && /^[[:space:]]/ {
+      line=$0; sub(/[[:space:]]*#.*$/, "", line); sub(/[[:space:]]+$/, "", line)
+      if (line !~ /^[[:space:]]*$/) print line
+      next
+    }
     in_triage { in_triage=0 }
   ' "$file"
 }
