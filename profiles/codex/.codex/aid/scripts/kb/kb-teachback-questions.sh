@@ -6,7 +6,7 @@
 #   (a) Spread >= 2  (cross-source lexical terms), OR
 #   (b) Source == synthesis  (synthesis-tagged concepts; Spread is empty/dash)
 #
-# The OR clause is load-bearing: f004 emits synthesis rows with an empty/'-'
+# The OR clause is load-bearing: synthesis rows are emitted with an empty/'-'
 # Spread, so a bare spread>=2 numeric filter would drop every synthesis concept.
 #
 # PLUS the one fixed engine question:

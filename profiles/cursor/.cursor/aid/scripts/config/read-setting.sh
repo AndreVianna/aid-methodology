@@ -88,7 +88,7 @@ else
     exit 2
 fi
 
-# Resolve to absolute path before existence check + error reporting (F20).
+# Resolve to absolute path before existence check + error reporting.
 # realpath/readlink coverage varies across BSD/GNU/macOS; use a portable fallback.
 abs_path() {
     local p="$1"
@@ -102,12 +102,8 @@ abs_path() {
         esac
     fi
 }
-# NOTE: the absolute path is only needed for the two error messages below
-# (settings-file-missing here, and path-mode no-value at the end). It is
-# computed lazily at those sites -- abs_path is a pure function of
-# SETTINGS_FILE + $PWD, so this is byte-identical to the happy path while
-# saving a realpath fork on every successful lookup (this is the single
-# most-invoked script in the repo). (work-009 hot-path polish)
+# abs_path is computed lazily at the two error sites below (not here) to avoid a
+# realpath fork on every successful lookup — this is the most-invoked script in the repo.
 
 # settings.yml missing → use default if provided, else exit 1
 if [[ ! -f "$SETTINGS_FILE" ]]; then

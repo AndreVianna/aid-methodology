@@ -35,7 +35,7 @@
 #   harvest-coined-terms.sh [--root PATH] [--output PATH] [--denylist PATH]
 #                           [--top N] [--history-file PATH]
 #
-# PERFORMANCE / PORTABILITY (see .aid/work-007 issue #7):
+# PERFORMANCE / PORTABILITY:
 #   Extraction is BATCHED -- a handful of matcher invocations over whole file lists,
 #   never one-grep-per-file and never a shell subprocess per token/match. All token
 #   splitting, word-counting, denylist filtering, and salience/ranking happen inside

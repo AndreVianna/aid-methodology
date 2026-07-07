@@ -2,9 +2,9 @@
 # migrate-kb-frontmatter.sh -- idempotent KB frontmatter migration: intent -> objective/summary/sources.
 #
 # Migrates hand-authored primary/extension KB docs from the legacy `intent:` frontmatter
-# field to the new f001 schema: objective, summary, sources, approved_at_commit.
+# field to the new schema: objective, summary, sources, approved_at_commit.
 #
-# Two-pass propose->confirm flow (NFR-6/C4 human-gated ethos):
+# Two-pass propose->confirm flow (human-gated):
 #   1. --propose  Write a worksheet (.aid/.temp/kb-migration-proposal.md) with seeded
 #                 objective/summary and proposed sources candidates. Changes NO doc on disk.
 #   2. --apply    Read the human-confirmed worksheet and write fields into each doc's
@@ -13,12 +13,12 @@
 # Idempotency: a doc carrying objective: AND summary: AND a sources: KEY (including
 #   sources: []) is skipped. Re-run over a fully-migrated KB is a clean no-op.
 #
-# Scope discipline (SD-6): operates ONLY on the KB root passed as $1.
+# Scope discipline: operates ONLY on the KB root passed as $1.
 #   Never scans $HOME or other paths.
 #   In-scope: kb-category in {primary, extension} AND source != generated.
 #   Skipped: meta docs, source:generated docs.
 #
-# Safety (NFR-7):
+# Safety:
 #   --dry-run   Print every action it would take; write nothing.
 #   --rollback  Restore all docs from the most recent backup tree; remove that tree.
 #   APPLY backs up each doc to .aid/.temp/kb-migration-backup-<UTC>/<doc> before editing.
@@ -556,7 +556,7 @@ parse_worksheet() {
 # ---------------------------------------------------------------------------
 # Frontmatter rewriter: write the new fields into a doc.
 # Uses a temp file + mv for atomicity.
-# Inserts objective/summary/sources/approved_at_commit in f001 canonical order
+# Inserts objective/summary/sources/approved_at_commit in canonical order
 # above contracts/changelog; retires intent: literal block.
 # ---------------------------------------------------------------------------
 
@@ -924,7 +924,7 @@ run_rollback() {
 main() {
     parse_args "$@"
 
-    # Scope discipline (SD-6): resolve KB root to absolute path.
+    # Scope discipline: resolve KB root to absolute path.
     KB_ROOT="$(cd "$KB_ROOT" 2>/dev/null && pwd)" || die "'$KB_ROOT' is not a directory." 1
     [[ -d "$KB_ROOT" ]] || die "'$KB_ROOT' is not a directory." 1
 

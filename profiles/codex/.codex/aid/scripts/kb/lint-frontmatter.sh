@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # lint-frontmatter.sh -- deterministic presence+shape check over KB frontmatter.
 #
-# In-scope predicate (f011 scope-widening, [SPIKE-M1] resolved):
+# In-scope predicate:
 #   kb-category in {primary, extension} AND source: != generated
 # This covers hand-authored docs (source: hand-authored), forward-authored
-# greenfield seed docs (source: forward-authored, f003), AND promoted docs
+# greenfield seed docs (source: forward-authored), AND promoted docs
 # (e.g. source: "promoted from work-local research ...") while keeping
 # generator-written docs (source: generated) permanently out of scope.
 # NOTE: if a future source: allow-list check is ever added to this script,
 # it MUST include forward-authored (seed docs must never be skipped; they
 # receive the same full presence+shape lint as hand-authored docs).
 #
-# Soft-skip rule (day-one compatibility, NFR-7 -- RETAINED verbatim):
-#   Any doc that carries NONE of the f001 new fields
+# Soft-skip rule (day-one compatibility):
+#   Any doc that carries NONE of the new fields
 #   (objective, summary, sources, tags, see_also, owner, audience)
 #   is treated as "pre-migration" and skipped entirely.
-#   This keeps CI green on un-migrated KB docs until f011 migrates them.
+#   This keeps CI green on un-migrated KB docs until they are migrated.
 #   Adopters who upgrade but have not yet migrated remain degrade-graceful.
 #
 # Always skipped:
@@ -341,7 +341,7 @@ lint_doc() {
         return 0
     fi
 
-    # --- Day-one soft-skip: skip if NONE of the new f001 fields are present ---
+    # --- Day-one soft-skip: skip if NONE of the new fields are present ---
     local has_new_fields=0
     for new_field in objective summary sources tags see_also owner audience; do
         if [[ -n "$(fm_field_present "$f" "$new_field")" ]]; then

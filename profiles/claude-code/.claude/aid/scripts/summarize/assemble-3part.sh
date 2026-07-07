@@ -1,17 +1,9 @@
 #!/usr/bin/env bash
 # assemble-3part.sh -- assemble final kb.html from PART1 + PART2 (no Mermaid engine).
 #
-# CHANGE 7 (FR-51): The Mermaid engine embed was REMOVED in D-012. This script
-#   previously concatenated PART1 + MERMAID + PART2. The Mermaid argument is now
-#   retired; the script concatenates PART1 + PART2 only. Inline SVG visuals are
-#   pre-rendered at build time -- no runtime diagram engine needed.
-#
-# DETERMINISM (Change 6 / FR-50):
-#   When --manifest FILE is supplied the script records the manifest path in its
+# Determinism: with --manifest FILE the script records the manifest path in its
 #   output so callers can verify PART1 was assembled with the same manifest.
-#   PART1 itself must be built with assemble.sh --manifest for full determinism;
-#   this script performs the final byte-level concatenation regardless.
-#   Same PART1 + PART2 -> same output (reproducible + auditable, FR-50).
+#   Same PART1 + PART2 -> same output.
 #
 # Usage (positional):
 #   assemble-3part.sh PART1 PART2 OUTPUT

@@ -346,8 +346,6 @@ table.tbl {
 .tbl code { font-size: 0.85em; }
 
 /* ---------- Diagram box (inline SVG / HTML+CSS visuals) ---------- */
-/* CHANGE 7 (FR-51): renamed from .mermaid-box; now wraps inline SVG and
-   HTML+CSS visuals pre-rendered at build time (no Mermaid engine). */
 .diagram-box {
 	position: relative;
 	background: var(--bg-elev);
@@ -704,16 +702,10 @@ details.accord > summary:focus-visible,
 	color: var(--text);
 }
 
-/* ========================================================================== */
-/* Concept-first content components (Change 2 / FR-46)                        */
-/* Inner-content only — shell/chrome untouched (§5b).                         */
-/* All CSS uses existing design tokens; no new tokens introduced.              */
-/* ========================================================================== */
+/* ---------- Concept-first content components ---------- */
 
 /* ---------- Glossary / definition component -------------------------------- */
-/* Used for: domain-glossary.md (the Concept Spine)                           */
-/* .gloss-grid  — responsive two-column grid of term cards                    */
-/* .gloss-card  — one term: anchor + definition + relates-to + see-also pills */
+/* Used for: domain-glossary.md (the Concept Spine) */
 
 .gloss-grid {
 	display: grid;
@@ -794,9 +786,7 @@ details.accord > summary:focus-visible,
 }
 
 /* ---------- Decision / ADR card component ---------------------------------- */
-/* Used for: decisions.md (the "why" behind the project)                      */
-/* .adr-list   — stacked list of ADR cards (vertical, full-width)             */
-/* .adr-card   — one ADR: id + status + context/decision/rationale/consequence */
+/* Used for: decisions.md (the "why" behind the project) */
 
 .adr-list {
 	display: flex;
@@ -918,9 +908,7 @@ details.accord > summary:focus-visible,
 }
 
 /* ---------- Capability entry component ------------------------------------ */
-/* Used for: capability-inventory.md (what the project can do)               */
-/* .cap-grid  — responsive two-column grid of capability cards               */
-/* .cap-card  — one capability: name + what + when + how                     */
+/* Used for: capability-inventory.md (what the project can do) */
 
 .cap-grid {
 	display: grid;

@@ -206,7 +206,7 @@ EOF
 
     # --- Feature inventory counts ------------------------------------------
     if [[ -f "$KB_DIR/feature-inventory.md" ]]; then
-        # Match Status TEXT values (not glyphs — per coding-standards.md §13:
+        # Match Status TEXT values (not glyphs — per coding-standards.md:
         # machine-parsed values are text, glyphs are display-only).
         # Constrain to data rows: line starts with '|', has at least 2 columns
         # before Status, Status text surrounded by spaces inside pipe-delimiters.

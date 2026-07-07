@@ -29,7 +29,7 @@ TEMPLATE_PATH="${SCRIPT_DIR}/../../templates/discovery-state-template.md"
 
 # Check 1: STATE.md must exist and be non-empty.
 # If it is absent, self-create it from the template so /aid-discover can
-# proceed without requiring /aid-config to have run first (FR-41).
+# proceed without requiring /aid-config to have run first.
 if [ ! -f "$KB_DIR/STATE.md" ]; then
   echo "STATE.md not found -- self-creating from template."
   mkdir -p "$KB_DIR"

@@ -87,7 +87,7 @@ containing two blocks: `## spec` (the work-root SPEC.md skeleton) and `## tasks`
 | task-count   | integer           | Number of ### task-NNN headings in ## tasks. Used for display.                                       |
 | summary      | string (one-line) | Optional. One-line description; read by TRIAGE for description→recipe matching; not validated by parse-recipe.sh. |
 
-Valid `applies-to` values (from feature-005 type-aware triage):
+Valid `applies-to` values:
   bug-fix      — a bug fix
   refactor     — a refactor (a method, a class)
   new-feature  — a new feature
@@ -137,8 +137,8 @@ Lowercase ## spec is intentional — it distinguishes the in-recipe block-marker
 any ## SPEC heading the body might contain. The parser matches this marker
 case-sensitively; ## Spec or ## SPEC are not recognized as the block-start marker.
 
-The spec block must include the sections that aid-execute and the FR2 delivery gate
-need (per feature-005 work-root SPEC.md schema):
+The spec block must include the sections that aid-execute and the delivery gate
+need:
   # {title}
   Metadata block — four bold key/value lines:
     **Work:** ...      — the work identifier

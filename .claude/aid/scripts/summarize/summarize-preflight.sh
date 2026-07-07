@@ -2,10 +2,6 @@
 # summarize-preflight.sh -- verifies /aid-summarize prerequisites.
 # Usage: summarize-preflight.sh
 # Exits 0 on success, non-zero on any failure with a clear message.
-#
-# CHANGE 7 (FR-51 / D-012): The Mermaid engine is fully removed. The network
-# reachability check (check 5) and Mermaid-block detection are no longer needed;
-# visuals are authored as inline SVG / HTML+CSS at build time.
 
 set -u
 
@@ -21,7 +17,7 @@ err() {
     exit 1
 }
 
-# Check 1: STATE.md exists (consolidated Discovery area state -- FR2)
+# Check 1: STATE.md exists
 if [ ! -f "$KB_DIR/STATE.md" ]; then
     err "$KB_DIR/STATE.md does not exist." \
         "Run /aid-config then /aid-discover to set up the Knowledge Base."
@@ -78,8 +74,8 @@ if [ -n "$NODE_VERSION_MAJOR" ] && [ "$NODE_VERSION_MAJOR" -lt 18 ] 2>/dev/null;
         "Upgrade Node.js and re-run."
 fi
 
-# --- FR31 legacy-summary migration (best-effort, idempotent) ---
-# Relocate a pre-d009 summary so the dashboard's summary_present flips true and
+# --- Legacy-summary migration (best-effort, idempotent) ---
+# Relocate a legacy summary so the dashboard's summary_present flips true and
 # STALE-CHECK sees the existing approved summary (skips regeneration).
 OLD_SUMMARY=".aid/knowledge/knowledge-summary.html"
 NEW_SUMMARY=".aid/dashboard/kb.html"
