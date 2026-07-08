@@ -188,7 +188,7 @@ machine … One invocation per state. No auto-advance").
 
 | Skill | States (in order) |
 |-------|-------------------|
-| `aid-discover` | GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE |
+| `aid-discover` | ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE |
 | `aid-describe` (full, Phase 2a) | FIRST-RUN → Q-AND-A → TRIAGE → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION (pauses → `/aid-define`) |
 | `aid-describe` (lite, Phase 2a) | FIRST-RUN → Q-AND-A → TRIAGE → CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE |
 | `aid-define` (Phase 2b) | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE (hands off → `/aid-specify`) |
