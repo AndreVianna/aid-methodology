@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~32m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none for task-009. Orchestrator reviewed both diffs: Step 0b urllib HEAD probe (5s timeout, no curl) writes yes/unverified/unknown back to Accessible, never a gate; Step 1 content-aware skip via `grep -q '❌ Pending'` (KI-008); Scout prompt catalogues every url regardless of fetch + refreshes frontmatter. Minimal, scoped. Observed (NOT task-009): `test-conformance-lane-semantics.sh` CL50 "isolation canary" fails locally -- targets aid-housekeep `state-kb-delta.md` (untouched by any d1 task) and is a HOME-pin/local-env artifact class; to be confirmed pre-existing at d1 consolidation. Also cleaned 5 stray root files (`ec/err1/err2/out1/out2`) that were the orchestrator's own task-006 safety-net redirect crud.
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~10-25m | ~32m | Done -- Step 0b URL probe + Step 1 content-aware skip + Scout URL inventory; 12 aid-discover suites green; render deferred to d1 consolidation |
