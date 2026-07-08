@@ -464,8 +464,8 @@ function Copy-AidDir {
 
 # script:Test-AidHeadingStem <line>
 # Returns $true when the line is an AID-managed section heading (by stem match).
-# Stems matched: Knowledge Base, Review output format, Permissions,
-#                Tracking discipline.
+# Stems matched: Tracking discipline, Knowledge Base, Connectors, Workflow,
+#                Review output format, Permissions.
 # Tolerates a trailing parenthetical suffix e.g. " (global)" or " (IMPERATIVE)".
 # Identical logic to the bash is_aid_heading awk function.
 function script:Test-AidHeadingStem {

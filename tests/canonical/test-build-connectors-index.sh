@@ -139,7 +139,7 @@ assert_output_contains "$data_row_02" "| none | "$'\xe2\x80\x94'" |" \
 # BCI03  Own generated frontmatter present.
 # ===========================================================================
 assert_file_contains "$OUT01" "source: generated" "BCI03 frontmatter -- source: generated"
-assert_file_contains "$OUT01" "generator: build-connectors-index.sh" "BCI03 frontmatter -- generator:"
+assert_file_contains "$OUT01" "generator: build-connectors-index" "BCI03 frontmatter -- generator:"
 assert_file_contains "$OUT01" "intent: |" "BCI03 frontmatter -- intent: literal block"
 assert_file_contains "$OUT01" 'contracts:' "BCI03 frontmatter -- contracts: key present"
 assert_file_contains "$OUT01" '"One row per connector descriptor under .aid/connectors/"' \

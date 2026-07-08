@@ -109,11 +109,18 @@ assert_exit_zero "$RC" "T2: write happy path"
 # layer before PowerShell ever sees it (a host/shell artifact, not an SUT
 # behavior -- the Bash twin's own test proves exact-path equality with no
 # such translation involved). So assert the shape instead: single line,
-# `file:` prefix, ends with the expected stem, on either separator style.
-if [[ "$OUT" == file:* && "$OUT" != *$'\n'* && ( "$OUT" == *"/.secrets/ghtest" || "$OUT" == *'\.secrets\ghtest' ) ]]; then
+# `file:` prefix, ends with the expected stem. The printed reference is
+# ALWAYS forward-slash (normalized in the SUT to match the Bash twin), so
+# unlike a raw Windows path this is a single, exact suffix check now.
+if [[ "$OUT" == file:* && "$OUT" != *$'\n'* && "$OUT" == *"/.secrets/ghtest" ]]; then
     pass "T3: stdout is ONLY the file: reference (single line, file: prefix, correct stem)"
 else
     fail "T3: stdout is ONLY the file: reference -- got '$OUT'"
+fi
+if [[ "$OUT" != *'\'* ]]; then
+    pass "T3b: file: reference uses forward slashes only (no backslash), matching the Bash twin"
+else
+    fail "T3b: file: reference contains a backslash -- got '$OUT'"
 fi
 assert_output_not_contains "$OUT" "$SECRET" "T4: secret value ABSENT from captured stdout (no-leak proof)"
 assert_output_not_contains "$ERR" "$SECRET" "T5: secret value ABSENT from captured stderr (no-leak proof)"

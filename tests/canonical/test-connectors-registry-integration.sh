@@ -52,14 +52,12 @@
 #          case agrees across both surfaces too
 #
 # AC-8 (cross-platform) note: this suite's canonical lane is Bash, matching
-# task-005/task-001's own Bash-first unit suites. Neither task-001 nor task-005
-# shipped an automated PowerShell *functional* test suite for
-# connector-registry.ps1 / build-connectors-index.ps1 (unlike the
-# security-sensitive connector-secret.ps1, which has one --
-# test-connector-secret-ps1.sh); "both twins are behavior-equal" is those
-# tasks' own AC. Authoring a net-new PS1 functional suite is out of task-012's
-# scope (it would duplicate/extend task-005/task-001's own AC surface, not
-# task-012's delivery-level integration mandate) -- flagged here, not built.
+# task-005/task-001's own Bash-first unit suites. PowerShell *functional*
+# coverage for connector-registry.ps1 / build-connectors-index.ps1, INCLUDING
+# the cross-twin byte-identity assertion between the .sh and .ps1 builders,
+# lives in tests/canonical/test-connector-twins-ps1-parity.sh (delivery-001
+# gate row #2) -- authoring it there rather than here keeps this suite's own
+# scope Bash-only/delivery-level, matching task-012's mandate.
 #
 # Usage:
 #   bash tests/canonical/test-connectors-registry-integration.sh [--verbose]
