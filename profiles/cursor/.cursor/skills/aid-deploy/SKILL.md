@@ -100,9 +100,9 @@ aid-deploy  ▸ you are here
 ## Inputs
 
 - `.aid/{work}/PLAN.md` — deliveries, sequencing, success criteria
-- `.aid/{work}/tasks/task-*.md` — task statuses and scope
+- Per-task `SPEC.md` — task scope; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `.aid/{work}/tasks/task-NNN/SPEC.md`
 - `.aid/{work}/features/*/SPEC.md` — what was specified
-- Work `STATE.md` `## Tasks State` table — review grades per task
+- Work `STATE.md` `## Tasks State` table — task statuses and review grades per task (both paths derive into this same rollup)
 - `known-issues.md` — if exists, check for Critical/High blockers
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, pull:
   - `infrastructure.md` § Deployment — how to package, where to publish

@@ -376,21 +376,23 @@ After the user confirms emission (Step 5a-3a choice [1]):
    This section is written even for escalation (with only the slots filled so far).
    It preserves slot values for task-017 escalation handling.
 
-4. **Scaffold the delivery-001 hierarchy** from the emitted task files.
+4. **Promote the emitted task files to the lite-flat task-folder shape** (no
+   `deliveries/`, no `delivery-001/` folder — the work IS the sole delivery).
 
    The recipe emit step writes the work-root `SPEC.md` and task files to a flat
-   `tasks/task-NNN.md` layout. After emission, promote the hierarchy to the
-   uniform pattern:
+   `tasks/task-NNN.md` layout directly under `.aid/{work}/` — this is already the
+   correct parent location for lite works. After emission, promote each file into
+   the uniform per-task folder shape:
 
-   a. Create `delivery-001/SPEC.md` and `delivery-001/STATE.md` following the same
-      shape as TASK-BREAKDOWN Step 4a + 4b (delivery State = `Executing`).
-   b. For each emitted `tasks/task-NNN.md`: create `delivery-001/tasks/task-NNN/`
-      folder; move the emitted file to `delivery-001/tasks/task-NNN/SPEC.md`;
-      create the accompanying `delivery-001/tasks/task-NNN/STATE.md` seeded with
-      State=Pending (same shape as TASK-BREAKDOWN Step 4c).
-   c. Update the work-root SPEC.md `## Tasks` note to reference `delivery-001/tasks/`
-      (same as TASK-BREAKDOWN Step 5).
-   d. Delete the now-empty `tasks/` folder if it is empty after promotion.
+   a. Write `## Delivery Lifecycle` (State = `Executing`) + `## Delivery Gate`
+      (Grade = `Pending`) directly into the work-root `STATE.md`, following the
+      same shape as TASK-BREAKDOWN Step 4a.
+   b. For each emitted `tasks/task-NNN.md`: create `tasks/task-NNN/` folder
+      (still directly under `.aid/{work}/`); move the emitted file to
+      `tasks/task-NNN/SPEC.md`; create the accompanying `tasks/task-NNN/STATE.md`
+      seeded with State=Pending (same shape as TASK-BREAKDOWN Step 4b).
+   c. Update the work-root SPEC.md `## Tasks` note to reference `tasks/task-NNN/SPEC.md`
+      directly under the work folder (same as TASK-BREAKDOWN Step 5).
 
    The `## Tasks State` section of the work-level STATE.md is DERIVED at read time;
    do NOT write task rows directly into the work STATE.md.

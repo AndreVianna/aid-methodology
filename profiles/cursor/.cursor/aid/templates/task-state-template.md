@@ -4,8 +4,11 @@
 This is the TASK-LEVEL STATE.md template. All sections are AUTHORED by a single writer:
 the delivery branch that owns this task. This file is the SOLE write target for all
 per-task mutable state (state cell, review, elapsed, notes, findings, dispatch log).
-The parent delivery-NNN/STATE.md ## Tasks State and work-level ## Tasks State are
+Full path: lives at `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; its parent
+`deliveries/delivery-NNN/STATE.md ## Tasks State` and the work-level `## Tasks State` are
 DERIVED read-only views assembled from this file at read time -- never written directly.
+Lite path: lives at `tasks/task-NNN/STATE.md` directly under the work folder (no delivery
+layer); the work-level `## Tasks State` derives directly from this file.
 
 > **Task:** task-NNN
 > **Delivery:** delivery-NNN

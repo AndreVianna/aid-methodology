@@ -29,7 +29,10 @@ KB references by INDEX.md doc name.}
 
 ## Tasks
 
-> Each `tasks/task-NNN.md` uses `**Source:** {work-NNN-name} → delivery-001` (lite path always uses `delivery-001`).
+> Tasks live under `tasks/task-NNN/SPEC.md` directly under the work folder -- no `deliveries/`
+> and no `delivery-001/` folder for lite works. Each task's `**Source:**` field reads
+> `{work-NNN-name} → delivery-001` (lite path always uses `delivery-001` as the conceptual
+> delivery id, even though no `delivery-001/` folder exists).
 
 | Task | Type | Title |
 |------|------|-------|

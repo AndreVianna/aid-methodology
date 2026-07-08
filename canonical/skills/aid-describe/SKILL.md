@@ -54,23 +54,25 @@ immediately.
 ```
 .aid/
   knowledge/           <- shared KB (populated by /aid-discover)
-  work-001-name/       <- one lite work
-    STATE.md           <- process (Pipeline State, Triage, Lifecycle History -- derived views)
+  work-001-name/       <- one lite work (the work IS the sole delivery -- no deliveries/ folder)
+    STATE.md           <- process (Pipeline State, Triage, Delivery Lifecycle, Delivery Gate,
+                            Cross-phase Q&A, Lifecycle History -- the lite work's single
+                            delivery gate + Q&A are AUTHORED directly here, not derived)
     SPEC.md            <- the ONE consolidated work-root spec (lite path only)
-    delivery-001/
-      SPEC.md          <- delivery definition (scope, tasks, gate criteria)
-      STATE.md         <- delivery lifecycle + gate block + Cross-phase Q&A + derived task rollup
-      tasks/
-        task-001/
-          SPEC.md      <- task definition (6-section schema)
-          STATE.md     <- task mutable state (State, Review, Elapsed, Notes, findings, dispatch log)
-        task-002/
-          SPEC.md
-          STATE.md
-        ...
+    tasks/
+      task-001/
+        SPEC.md        <- task definition (6-section schema)
+        STATE.md       <- task mutable state (State, Review, Elapsed, Notes, findings, dispatch log)
+      task-002/
+        SPEC.md
+        STATE.md
+      ...
 ```
 
-A lite work has **no `features/` folder, no per-feature `SPEC.md`, no `REQUIREMENTS.md`, no `PLAN.md`** — just the work-root `SPEC.md` and the `delivery-001/` folder hierarchy.
+A lite work has **no `features/` folder, no per-feature `SPEC.md`, no `REQUIREMENTS.md`, no
+`PLAN.md`, no `deliveries/` folder, no `delivery-001/` folder** — just the work-root `SPEC.md`,
+the work-root `STATE.md` (which also carries the sole delivery's Lifecycle/Gate/Q&A), and
+`tasks/task-NNN/` directly under the work folder.
 
 **First run:** Conversational interview from scratch.
 **Subsequent runs (before approval):** Resume interview for incomplete sections.
@@ -153,8 +155,9 @@ State 2:  STATE.md § Cross-phase Q&A has Pending entries            -> Q-AND-A
 State T:  STATE.md § Triage absent or § Triage **Path:** missing    -> TRIAGE
 State L1: **Path:** lite, SPEC.md § Acceptance Criteria absent      -> CONDENSED-INTAKE
 State L2: **Path:** lite, SPEC.md § Acceptance Criteria present,
-          delivery-001/tasks/ absent or empty (no task-NNN/ dirs)  -> TASK-BREAKDOWN
-State L3: **Path:** lite, delivery-001/tasks/ present,
+          tasks/ absent or empty (no task-NNN/ dirs, directly
+          under the work folder -- no deliveries/, no delivery-001/) -> TASK-BREAKDOWN
+State L3: **Path:** lite, tasks/ present,
           LITE-REVIEW not complete                                  -> LITE-REVIEW
 State L4: **Path:** lite, LITE-REVIEW complete                      -> LITE-DONE
 State 3:  **Path:** full, Interview State: In Progress, incomplete  -> CONTINUE
@@ -182,8 +185,8 @@ Approved: **Path:** full, Interview State: Approved                 -> hand-off 
    e. **If `**Path:** lite`** — route through lite-path detection:
       - Check work-root `SPEC.md` (`.aid/{work}/SPEC.md`):
         - If absent **or** `## Acceptance Criteria` section is absent/empty → **State L1: CONDENSED-INTAKE**
-      - Check `delivery-001/tasks/` folder:
-        - If `delivery-001/tasks/` absent or no `task-NNN/` subdirectories present → **State L2: TASK-BREAKDOWN**
+      - Check `tasks/` folder directly under the work folder (no `deliveries/`, no `delivery-001/` folder for lite works):
+        - If `tasks/` absent or no `task-NNN/` subdirectories present → **State L2: TASK-BREAKDOWN**
       - Check `STATE.md ## Lifecycle History` for a `LITE-REVIEW complete` entry:
         - If absent → **State L3: LITE-REVIEW**
         - If present → **State L4: LITE-DONE**
@@ -252,7 +255,7 @@ aid-describe  ▸ you are here (lite path)
 
 **TASK-BREAKDOWN (lite path L2):**
 ```
-[State: TASK-BREAKDOWN] — Architect proposes typed task breakdown; writes delivery-001/ hierarchy and task SPEC/STATE files.
+[State: TASK-BREAKDOWN] — Architect proposes typed task breakdown; writes task SPEC/STATE files directly under tasks/ (no deliveries/, no delivery-001/ folder) and the delivery's Lifecycle/Gate blocks into work-root STATE.md.
 aid-describe  ▸ you are here (lite path)
   [✓ FIRST-RUN ] → [✓ Q-AND-A ] → [✓ TRIAGE ] → [✓ CONDENSED-INTAKE ] → [● TASK-BREAKDOWN ] → [ LITE-REVIEW ] → [ LITE-DONE ]
   (escalate at any point) → [ CONTINUE ] → [ COMPLETION ] → [ /aid-define ]

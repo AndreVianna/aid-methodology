@@ -19,13 +19,16 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 
 1. Read first arg: if it starts with `work-` → use that work directory; if it starts with `task-` → treat as shorthand (single-work auto-select below)
 2. If work arg not provided (or shorthand): if single work exists → auto-select; if multiple works → list them, ask user to choose
-3. Read second arg (or first arg when shorthand): the `task-NNN` identifier; also resolve `delivery-NNN` from the task identifier or from the Source field
-4. Find `delivery-NNN/tasks/task-NNN/SPEC.md` under `.aid/{work}/`
+3. Read second arg (or first arg when shorthand): the `task-NNN` identifier; also resolve `delivery-NNN` from the task identifier or from the Source field (lite-path tasks still carry `Source: work-NNN-{name} → delivery-001` as the conceptual delivery id, even though no `delivery-001/` folder exists).
+4. **Resolve the task folder location** — read `STATE.md ## Triage` `**Path:**` (`lite | full | escalated`; treat `escalated` as `full`):
+   - **full path** → `{task-dir}` = `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/`
+   - **lite path** → `{task-dir}` = `.aid/{work}/tasks/task-NNN/` directly — no `deliveries/`, no `delivery-NNN/` folder
+   Find `{task-dir}/SPEC.md`.
 5. Task not found → **STOP.** List available tasks.
 
 ### Check 2: Read Task
 
-Read the task definition from `.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md`.
+Read the task definition from `{task-dir}/SPEC.md`.
 It has 6 sections:
 - **Title** — what this task does
 - **Type** — RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
@@ -38,7 +41,7 @@ It has 6 sections:
 
 Read the Execution Graph from PLAN.md (full path) or the work-root SPEC.md (lite path) for this task's delivery.
 Check that all tasks listed in `Depends on:` have `State: Done` in their respective
-`delivery-NNN/tasks/task-NNN/STATE.md` files (the `## Task State` section).
+`{task-dir}/STATE.md` files (the `## Task State` section) — full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md` directly.
 If any dependency is not Done → **STOP.** List which dependencies are pending.
 
 ### Check 3: Read Minimum Grade
@@ -74,7 +77,7 @@ If the task only produces `.aid/` artifacts, skip branch isolation.
 
 ### Check 6: Determine State
 
-Read the task's `State` from `delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section if it exists. Apply the routing table in `## State Detection` below.
+Read the task's `State` from `{task-dir}/STATE.md` `## Task State` section if it exists. Apply the routing table in `## State Detection` below.
 
 Print the state-entry line and "you are here" map:
 
@@ -113,7 +116,8 @@ aid-execute  ▸ you are here
 
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Never assume or infer state from
 conversation history. Read the task's `State` from
-`delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section:
+`{task-dir}/STATE.md` `## Task State` section (see Check 1 step 4 for how `{task-dir}`
+resolves per path):
 
 | Condition | State |
 |-----------|-------|
@@ -128,8 +132,8 @@ conversation history. Read the task's `State` from
 KB docs are relevant to this task, then load them. Let the INDEX guide you.
 
 **Always load (not KB):**
-- `.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md` — primary prompt (task definition)
-- `.aid/{work}/delivery-NNN/tasks/task-NNN/STATE.md` — task mutable state (State, Review, Elapsed, Notes)
+- `{task-dir}/SPEC.md` — primary prompt (task definition); full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `.aid/{work}/tasks/task-NNN/SPEC.md`
+- `{task-dir}/STATE.md` — task mutable state (State, Review, Elapsed, Notes); same per-path resolution as above
 - Feature SPEC: `.aid/{work}/features/{feature}/SPEC.md` — Technical Specification (full path); or work-root `.aid/{work}/SPEC.md` (lite path)
 - `.aid/{work}/PLAN.md` — delivery context and **Execution Graph** (dependencies and parallelism) (full path); or work-root `.aid/{work}/SPEC.md` (lite path)
 
@@ -162,24 +166,42 @@ dispatch in this skill.
 
 ## Workspace
 
+**Full path:**
 ```
 .aid/
   knowledge/                ← shared KB (via INDEX.md)
     STATE.md                ← Q&A, Review History (settings -> .aid/settings.yml)
   work-NNN-{name}/
     STATE.md                ← work-level pipeline header (AUTHORED); derived views (read-only)
-    PLAN.md                 ← delivery context (full path)
-    SPEC.md                 ← work definition + delivery/task graph (lite path)
+    PLAN.md                 ← delivery context
     known-issues.md         ← issues to watch for
-    delivery-NNN/
-      STATE.md              ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
-      tasks/
-        task-NNN/
-          SPEC.md           ← PRIMARY INPUT (task definition: Type, Scope, AC)
-          STATE.md          ← task mutable state: State, Review, Elapsed, Notes
+    deliveries/
+      delivery-NNN/
+        STATE.md            ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
+        tasks/
+          task-NNN/
+            SPEC.md         ← PRIMARY INPUT (task definition: Type, Scope, AC)
+            STATE.md        ← task mutable state: State, Review, Elapsed, Notes
     features/
       feature-NNN-{name}/
-        SPEC.md             ← architectural constraints (full path only)
+        SPEC.md             ← architectural constraints
+```
+
+**Lite path** (exactly one delivery; no `deliveries/` folder — the work IS the delivery):
+```
+.aid/
+  knowledge/                ← shared KB (via INDEX.md)
+    STATE.md                ← Q&A, Review History (settings -> .aid/settings.yml)
+  work-NNN-{name}/
+    STATE.md                ← work-level pipeline header (AUTHORED) + this work's sole
+                                Delivery Lifecycle / Delivery Gate / Cross-phase Q&A
+                                (AUTHORED here directly — no delivery-level STATE.md)
+    SPEC.md                 ← work definition + delivery/task graph
+    known-issues.md         ← issues to watch for
+    tasks/
+      task-NNN/
+        SPEC.md             ← PRIMARY INPUT (task definition: Type, Scope, AC)
+        STATE.md            ← task mutable state: State, Review, Elapsed, Notes
 ```
 
 **Ephemeral worktrees (pool dispatch PD-2):** `.aid/.worktrees/task-NNN/` are
@@ -269,8 +291,10 @@ After resolving: delete IMPEDIMENT file, retry from Step 1.
 - Artifacts appropriate to the task type (code, tests, docs, configs, research, designs)
 - Grade >= minimum grade (from `bash .claude/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
 - Commit messages reference task-NNN (for types that produce commits)
-- `delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` updated with full review history
-- `delivery-NNN/STATE.md` `## Delivery Lifecycle` advanced (Executing -> Gated -> Done, or Blocked)
+- `{task-dir}/STATE.md` `## Task State` updated with full review history (full path:
+  `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md`)
+- `## Delivery Lifecycle` advanced (Executing -> Gated -> Done, or Blocked) — full path:
+  in `deliveries/delivery-NNN/STATE.md`; lite path: directly in the work-root `STATE.md`
 - IMPEDIMENT-task-NNN.md if blocked
 
 ## Project Management Sync (conditional)
@@ -284,8 +308,8 @@ If no PM tool → skip.
 
 ## Quality Checklist
 
-- [ ] Task Type read correctly from `delivery-NNN/tasks/task-NNN/SPEC.md`
-- [ ] Task State read from `delivery-NNN/tasks/task-NNN/STATE.md` (not the work-level table)
+- [ ] Task Type read correctly from `{task-dir}/SPEC.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `tasks/task-NNN/SPEC.md`)
+- [ ] Task State read from `{task-dir}/STATE.md` (not the work-level table)
 - [ ] On correct delivery branch (or skipped for RESEARCH/DOCUMENT-only tasks)
 - [ ] KB docs loaded via INDEX.md (not hardcoded)
 - [ ] Type-specific rules followed
@@ -297,5 +321,6 @@ If no PM tool → skip.
 - [ ] Non-CODE issues marked as Loopback with target phase
 - [ ] No silent workarounds — impediments documented
 - [ ] Commit messages reference task-NNN (where applicable)
-- [ ] `delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` has full review history
-- [ ] `delivery-NNN/STATE.md` `## Delivery Lifecycle` advanced to correct enum value (SD-8)
+- [ ] `{task-dir}/STATE.md` `## Task State` has full review history
+- [ ] `## Delivery Lifecycle` advanced to correct enum value (SD-8) — full path in
+      `deliveries/delivery-NNN/STATE.md`; lite path directly in the work-root `STATE.md`

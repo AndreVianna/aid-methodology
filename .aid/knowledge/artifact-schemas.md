@@ -77,14 +77,27 @@ and act from this doc without reaching into the templates.
 AID tracks a work as a **tree of STATE.md files**, each with a single writer. Parent
 views are DERIVED (assembled at read time), never written directly.
 
+**Full path** (nests deliveries under a `deliveries/` parent, mirroring `features/`):
+
 ```
-.aid/work-NNN-{name}/STATE.md                         (work level)
-  -> delivery-NNN/STATE.md                            (delivery level)
-       -> tasks/task-NNN/STATE.md                     (task level -- sole write target for task cells)
-.aid/knowledge/STATE.md                               (discovery area -- KB + summary state)
+.aid/work-NNN-{name}/STATE.md                                    (work level)
+  -> deliveries/delivery-NNN/STATE.md                            (delivery level)
+       -> tasks/task-NNN/STATE.md                                (task level -- sole write target for task cells)
+.aid/knowledge/STATE.md                                          (discovery area -- KB + summary state)
 ```
 
-Cardinality: one work STATE.md per work; one delivery STATE.md per delivery; one
+**Lite path** (exactly one delivery, no `deliveries/` folder -- the work IS the delivery):
+
+```
+.aid/work-NNN-{name}/STATE.md                         (work level -- ALSO carries the sole
+                                                        delivery's Lifecycle/Gate/Q&A, AUTHORED
+                                                        directly; see Delivery STATE.md below)
+  -> tasks/task-NNN/STATE.md                          (task level -- sole write target for task cells,
+                                                        directly under the work folder)
+```
+
+Cardinality: one work STATE.md per work; one delivery STATE.md per delivery on the full path
+(zero on the lite path -- its single delivery's state lives in the work STATE.md instead); one
 task STATE.md per task; one discovery STATE.md per project.
 
 The **closed task State enum** and its reconcile ordering (SD-2) are shared by all
@@ -111,7 +124,9 @@ Source: `work-state-template.md`. Two zones -- **AUTHORED** (single-writer) and
 | Seed Authoring | AUTHORED (greenfield only, by `aid-describe` DESCRIBE-SEED) | `Status`: `In Progress \| Complete`; 5-element checklist (domain-glossary/architecture mandatory, coding-standards/technology-stack deferrable, decisions conditional); `Coherence check`; `Review grade`. |
 | Lifecycle History | AUTHORED | append-only audit table (Date, Phase Transition/Gate, Grade, Notes), newest last. |
 | Deploy State | AUTHORED (by `aid-deploy` only) | one row per delivery (Delivery, State, PR, KB Updated, Tag, Notes). |
-| Features State, Plan/Deliveries, Tasks State, Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches | **DERIVED** | read-only unions over per-delivery / per-task STATE.md; never written here. |
+| Delivery Lifecycle, Delivery Gate | AUTHORED -- **LITE PATH ONLY** (absent entirely for full-path works) | same shape as the full-path Delivery STATE.md sections below, authored directly here because a lite work has exactly one delivery and no `deliveries/` folder; written by `aid-describe` TASK-BREAKDOWN (initial `Executing`) and `aid-execute` (`Executing`->`Gated`->`Done`/`Blocked`). |
+| Features State, Plan/Deliveries, Tasks State, Delivery Gates, Calibration Log, Dispatches | **DERIVED** (full path); Plan/Deliveries and Delivery Gates stay `_none yet_` on the lite path (see the AUTHORED row above and Cross-phase Q&A row below) | read-only unions over per-delivery / per-task STATE.md; never written here. |
+| Cross-phase Q&A | **DERIVED** for full-path works (union of each delivery's Q&A + work-owner entries); **AUTHORED** for lite-path works (no delivery STATE.md to derive from -- the single delivery's Q&A is written directly into this section) | per-Q block: `Category`, `Impact`, `State`/`Status`, Context, Suggested, Answer, Applied-to. |
 
 Producer: `execute/writeback-state.sh --pipeline ...` + the orchestrator (single
 writer on the work's active branch). The `## Interview State`, `## Triage`, and
@@ -122,19 +137,27 @@ dashboard reader, `aid-execute`.
 
 ## Delivery STATE.md
 
-Source: `delivery-state-template.md`. AUTHORED by this delivery's branch only.
+Source: `delivery-state-template.md` -- **FULL PATH ONLY**. Lives at
+`deliveries/delivery-NNN/STATE.md`; AUTHORED by this delivery's branch only. A lite work
+has no delivery-level STATE.md at all -- its single delivery's `## Delivery Lifecycle` /
+`## Delivery Gate` / `## Cross-phase Q&A` are AUTHORED directly in the work-root `STATE.md`
+instead (see the Work STATE.md table above); its Tasks State is DERIVED directly from
+`tasks/task-NNN/STATE.md` (no delivery layer to nest under).
 
 | Section | Key fields / enums |
 |---------|--------------------|
 | Delivery Lifecycle | `State`: `Pending-Spec \| Specified \| Executing \| Gated \| Done \| Blocked` (independently authored -- NOT a task rollup, per SD-9); `Updated`; conditional Block Reason/Artifact. |
 | Delivery Gate | `Reviewer Tier`: `Small \| Medium \| Large`; `Grade`; `Issue List` (inline severity-tagged or `none`); `Timestamp`. |
 | Cross-phase Q&A | per-Q block: `Category`, `Impact` (`High \| Medium \| Low \| Required`), `State` (`Pending \| Answered \| Skipped`), Context, Suggested, Answer, Applied-to. |
-| Tasks State | **DERIVED** rollup from `tasks/task-NNN/STATE.md`; never written here. |
+| Tasks State | **DERIVED** rollup from `tasks/task-NNN/STATE.md` (relative to this delivery folder); never written here. |
 
-Producer: `aid-plan` (creates, `Pending-Spec`), `aid-specify` (`Specified`),
-`aid-execute` (`Executing`->`Gated`->`Done` / `Blocked`), via
-`writeback-state.sh --delivery-id NNN`. On the lite path, `aid-describe` creates
-`delivery-001/STATE.md` directly (State `Executing`) during TASK-BREAKDOWN / recipe emit.
+Producer: `aid-plan` (creates, `Pending-Spec`, at `deliveries/delivery-NNN/STATE.md`),
+`aid-specify` (`Specified`), `aid-execute` (`Executing`->`Gated`->`Done` / `Blocked`), via
+`writeback-state.sh --delivery-id NNN`. On the lite path, `aid-describe` writes the
+`## Delivery Lifecycle` (State `Executing`) + `## Delivery Gate` sections directly into the
+work-root `STATE.md` during TASK-BREAKDOWN / recipe emit -- no `delivery-001/STATE.md` file
+is created; `writeback-state.sh --delivery-id NNN` auto-detects the lite path (no
+`deliveries/` folder present) and targets the work-root STATE.md instead.
 
 ---
 
@@ -175,9 +198,9 @@ project-level settings (grades, parallelism) live in `settings.yml`, **not** her
 Source: `requirements/requirements-template.md`. A first-class pipeline artifact at
 `.aid/knowledge/REQUIREMENTS.md` (uppercase). Produced by `aid-describe` (Phase 2a,
 **full path**). On the **lite path**, `aid-describe` produces no REQUIREMENTS.md --
-it instead emits a work-root `SPEC.md` (`.aid/{work}/SPEC.md`) plus a
-`delivery-001/` task hierarchy (`tasks/task-NNN/SPEC.md` + `STATE.md`) via CONDENSED-INTAKE
-+ TASK-BREAKDOWN (or recipe slot-fill + emit). The greenfield full path additionally
+it instead emits a work-root `SPEC.md` (`.aid/{work}/SPEC.md`) plus tasks directly at
+`tasks/task-NNN/SPEC.md` + `STATE.md` (no `deliveries/`, no `delivery-001/` folder) via
+CONDENSED-INTAKE + TASK-BREAKDOWN (or recipe slot-fill + emit). The greenfield full path additionally
 produces a forward-authored KB seed -- see [Greenfield KB Seed](#greenfield-kb-seed-forward-authored).
 
 Required structure: `# Requirements` with `Name` + `Description`, a mandatory
@@ -401,10 +424,17 @@ forward-authored docs to `current`.
 ## How Artifacts Relate
 
 ```
+Full path:
 REQUIREMENTS.md  -> feature SPEC.md (define/decomposition half) -> SPEC.md (specify half)
-SPEC.md          -> PLAN.md -> delivery-NNN/ -> task-NNN SPEC.md (immutable)
+SPEC.md          -> PLAN.md -> deliveries/delivery-NNN/ -> task-NNN SPEC.md (immutable)
 task-NNN SPEC.md  ~ task-NNN/STATE.md (mutable state for the same task)
 task STATE.md    -> delivery STATE.md (derived) -> work STATE.md (derived)
+
+Lite path (no deliveries/, no delivery-NNN/ folder -- the work IS the sole delivery):
+work-root SPEC.md -> tasks/task-NNN/SPEC.md (immutable, directly under the work folder)
+task-NNN SPEC.md  ~ task-NNN/STATE.md (mutable state for the same task)
+task STATE.md    -> work STATE.md (## Delivery Lifecycle / ## Delivery Gate, AUTHORED directly)
+
 settings.yml     -> read by every skill via read-setting.sh
 candidate-concepts.md -> domain-glossary.md (ground) OR spine-todo.md (dismiss)
 greenfield intent -> forward-authored KB seed (5 docs in .aid/knowledge/) -> read by aid-specify/plan/execute
@@ -504,3 +534,4 @@ to `current` by `kb-freshness-check.sh` regardless of baseline.
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial artifact-schemas doc (Analyst); replaces the schemas.md data-model seed |
 | 1.1 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to `aid-describe` and feature SPEC stubs to `aid-define`; added the `source: forward-authored` enum value, the greenfield 5-element seed doc-set section, the `## Seed Authoring` work-STATE block, and forward-authored contracts/validation notes |
+| 1.2 | 2026-07-08 | work-001-add-deliveries-folder task-001 | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/` (`deliveries/delivery-NNN/`); lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`) and the sole delivery's `## Delivery Lifecycle` + `## Delivery Gate` + `## Cross-phase Q&A` are AUTHORED directly in the work-root STATE.md. Updated the State-File Hierarchy diagram, Work/Delivery STATE.md tables, REQUIREMENTS.md section, and How Artifacts Relate diagram for both layouts. |

@@ -6,36 +6,64 @@
 # Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
 # to prevent races when multiple parallel tasks dispatch reviewers concurrently.
 #
-# Unit layout (work-004 hierarchy):
+# Unit layout -- FULL PATH (nested under deliveries/):
 #   work-NNN-{name}/
 #     STATE.md                                  -- work-level (--pipeline target)
-#     delivery-NNN/
-#       STATE.md                                -- delivery-level (--block / --lifecycle target)
-#       tasks/
-#         task-NNN/
-#           STATE.md                            -- task-level (--field / --findings target)
+#     deliveries/
+#       delivery-NNN/
+#         STATE.md                              -- delivery-level (--block / --lifecycle target)
+#         tasks/
+#           task-NNN/
+#             STATE.md                          -- task-level (--field / --findings target)
+#
+# Unit layout -- LITE PATH (flat; exactly one delivery, no deliveries/ folder):
+#   work-NNN-{name}/
+#     STATE.md                                  -- work-level (--pipeline target) AND
+#                                                   delivery-level (--block / --lifecycle target --
+#                                                   the work IS the sole delivery; see
+#                                                   work-state-template.md ## Delivery Lifecycle /
+#                                                   ## Delivery Gate)
+#     tasks/
+#       task-NNN/
+#         STATE.md                              -- task-level (--field / --findings target)
+#
+# Path resolution auto-detects which layout applies by checking what already
+# exists on disk under <work-root>/, in order: the nested <work-root>/deliveries/
+# folder (full path); else lite path (<work-root>/tasks/ exists directly, no
+# delivery folder at all); else (nothing exists yet for this delivery id) defaults
+# to the nested full-path shape so a genuinely-missing delivery still reports
+# "does not exist" rather than being misread as lite path -- see
+# resolve_task_state_file / resolve_delivery_state_file below. Callers do not need
+# to pass a different flag per path; the same --delivery-id / --task-id
+# invocations work for both shapes. The old flat layout -- delivery-NNN/ sitting
+# directly under the work root, with no deliveries/ parent -- is NOT supported
+# (clean cutover; no in-flight works use it).
 #
 # Usage:
 #   writeback-state.sh [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
-#       Update a single named field in the task's ## Task State section of
-#       delivery-NNN/tasks/task-NNN/STATE.md (one-writer-per-branch file).
+#       Update a single named field in the task's ## Task State section of the
+#       per-task STATE.md (one-writer-per-branch file) -- full path:
+#       deliveries/delivery-NNN/tasks/task-NNN/STATE.md; lite path:
+#       tasks/task-NNN/STATE.md directly under the work folder.
 #       Fields: State | Review | Elapsed | Notes
 #       --delivery-id is optional; if omitted the delivery is resolved from the
 #       task's Source line (e.g. "**Source:** work-NNN -> delivery-NNN").
 #       Override env: AID_TASK_STATE_FILE (absolute path) skips all path resolution.
 #
 #   writeback-state.sh [--delivery-id NNN] --task-id NNN --findings BLOCK
-#       Write/replace the ## Quick Check Findings block in
-#       delivery-NNN/tasks/task-NNN/STATE.md.
-#       Same delivery resolution as --field mode.
+#       Write/replace the ## Quick Check Findings block in the per-task STATE.md
+#       (same full/lite path resolution as --field mode).
 #
 #   writeback-state.sh --delivery-id NNN --block MARKDOWN_BLOCK
-#       Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md (SD-5).
+#       Write/replace the ## Delivery Gate block (SD-5) -- full path:
+#       deliveries/delivery-NNN/STATE.md; lite path: directly in the work-root
+#       STATE.md (no separate delivery STATE.md exists for a lite work).
 #       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
 #
 #   writeback-state.sh --delivery-id NNN --lifecycle VALUE
-#       Update the State: line in the ## Delivery Lifecycle section of
-#       delivery-NNN/STATE.md (SD-8 authored delivery state).
+#       Update the State: line in the ## Delivery Lifecycle section (SD-8 authored
+#       delivery state) -- full path: deliveries/delivery-NNN/STATE.md; lite path:
+#       directly in the work-root STATE.md.
 #       VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 #       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
 #       Emits no user-facing output (C4 behavior-preserving).
@@ -78,7 +106,7 @@ STATE_FILE="${AID_STATE_FILE:-.aid/work/STATE.md}"
 # Derived from STATE_FILE parent when not overridden.
 WORK_DIR="${AID_WORK_DIR:-}"
 
-# Delivery directory base: <work-root>/delivery-NNN
+# Delivery directory base: <work-root>/deliveries/delivery-NNN (full path)
 # Set AID_DELIVERY_DIR to override the per-delivery STATE path base.
 DELIVERY_DIR_BASE="${AID_DELIVERY_DIR:-}"
 
@@ -116,7 +144,19 @@ resolve_work_dir() {
 }
 
 # resolve_task_state_file DELIVERY_ID TASK_ID
-# Sets TASK_STATE_FILE to delivery-NNN/tasks/task-NNN/STATE.md under the work root.
+# Sets TASK_STATE_FILE under the work root. On-disk-detected resolution (no data
+# migration -- pure runtime detection of whatever shape already exists):
+#   1. Full path (<work-root>/deliveries/ exists): deliveries/delivery-NNN/tasks/task-NNN/STATE.md.
+#   2. Lite path (the above does not exist, AND <work-root>/tasks/ exists directly
+#      -- the tell-tale lite-path signal: a lite work has exactly one delivery and no
+#      delivery layer at all): tasks/task-NNN/STATE.md directly under the work root.
+#   3. Fallback (neither exists on disk -- e.g. an unresolved/not-yet-created
+#      delivery id in an otherwise full-path or brand-new work): default to the
+#      full-path shape. The file will not exist, so the caller's normal "-f"
+#      existence check reports the correct "does not exist" error rather than
+#      this helper silently guessing lite path.
+# The old flat layout -- delivery-NNN/ sitting directly under the work root, with
+# no deliveries/ parent -- is NOT resolved (clean cutover).
 # If TASK_STATE_FILE is already set (env override), this is a no-op.
 resolve_task_state_file() {
     local delivery_id="$1" task_id="$2"
@@ -129,13 +169,29 @@ resolve_task_state_file() {
     padded_t=$(printf '%03d' "$task_id")
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
         TASK_STATE_FILE="${DELIVERY_DIR_BASE}/tasks/task-${padded_t}/STATE.md"
+    elif [[ -d "${WORK_DIR}/deliveries" ]]; then
+        TASK_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/task-${padded_t}/STATE.md"
+    elif [[ -d "${WORK_DIR}/tasks" ]]; then
+        TASK_STATE_FILE="${WORK_DIR}/tasks/task-${padded_t}/STATE.md"
     else
-        TASK_STATE_FILE="${WORK_DIR}/delivery-${padded_d}/tasks/task-${padded_t}/STATE.md"
+        TASK_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/task-${padded_t}/STATE.md"
     fi
 }
 
 # resolve_delivery_state_file DELIVERY_ID
-# Sets DELIVERY_STATE_FILE to delivery-NNN/STATE.md under the work root.
+# Sets DELIVERY_STATE_FILE under the work root. Same on-disk-detected resolution
+# as resolve_task_state_file:
+#   1. Full path (<work-root>/deliveries/ exists): deliveries/delivery-NNN/STATE.md.
+#   2. Lite path (the above does not exist, AND <work-root>/tasks/ exists directly):
+#      the work-root STATE.md itself -- a lite work has exactly one delivery and no
+#      per-delivery STATE.md of its own, so its ## Delivery Lifecycle / ## Delivery
+#      Gate sections are AUTHORED directly in the work-root STATE.md (see
+#      work-state-template.md).
+#   3. Fallback (neither exists on disk): default to the full-path shape so the
+#      normal "-f" existence check reports "does not exist" instead of this
+#      helper silently guessing lite path.
+# The old flat layout -- delivery-NNN/ sitting directly under the work root, with
+# no deliveries/ parent -- is NOT resolved (clean cutover).
 # If DELIVERY_STATE_FILE is already set (env override), this is a no-op.
 resolve_delivery_state_file() {
     local delivery_id="$1"
@@ -147,13 +203,18 @@ resolve_delivery_state_file() {
     padded_d=$(printf '%03d' "$delivery_id")
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
         DELIVERY_STATE_FILE="${DELIVERY_DIR_BASE}/STATE.md"
+    elif [[ -d "${WORK_DIR}/deliveries" ]]; then
+        DELIVERY_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/STATE.md"
+    elif [[ -d "${WORK_DIR}/tasks" ]]; then
+        DELIVERY_STATE_FILE="${WORK_DIR}/STATE.md"
     else
-        DELIVERY_STATE_FILE="${WORK_DIR}/delivery-${padded_d}/STATE.md"
+        DELIVERY_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/STATE.md"
     fi
 }
 
 # resolve_delivery_from_task_spec TASK_ID -> sets DELIVERY_ID_RESOLVED
-# Reads the task SPEC.md (delivery-NNN/tasks/task-NNN/SPEC.md or legacy tasks/task-NNN.md)
+# Reads the task SPEC.md (full path: deliveries/delivery-NNN/tasks/task-NNN/SPEC.md;
+# lite path: tasks/task-NNN/SPEC.md directly; or the legacy flat tasks/task-NNN.md)
 # and extracts the delivery number from "**Source:** ... -> delivery-NNN" or
 # "**Source:** ... delivery-NNN ...".
 # Returns "" when resolution fails (caller must require --delivery-id).
@@ -168,7 +229,8 @@ resolve_delivery_from_task_spec() {
     # Try legacy flat task spec first (tasks/task-NNN.md)
     local spec_file="${WORK_DIR}/tasks/task-${padded_t}.md"
     if [[ ! -f "$spec_file" ]]; then
-        # Try hierarchical path: scan all delivery-NNN/tasks/task-NNN/SPEC.md
+        # Try full-path (deliveries/delivery-NNN/tasks/task-NNN/SPEC.md) or lite-path
+        # (tasks/task-NNN/SPEC.md) -- the "*/" prefix matches either depth.
         local found
         found=$(find "${WORK_DIR}" -path "*/tasks/task-${padded_t}/SPEC.md" 2>/dev/null | head -1)
         if [[ -n "$found" ]]; then
@@ -374,8 +436,9 @@ trap 'release_lock' EXIT
 
 # ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
-# Update a single named field in the task's ## Task State section of
-# delivery-NNN/tasks/task-NNN/STATE.md.
+# Update a single named field in the task's ## Task State section of the
+# per-task STATE.md (full path: deliveries/delivery-NNN/tasks/task-NNN/STATE.md;
+# lite path: tasks/task-NNN/STATE.md).
 # Fields: State | Review | Elapsed | Notes
 # State is enum-validated (closed enum).
 # ---------------------------------------------------------------------------
@@ -488,8 +551,9 @@ mode_field() {
 
 # ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --findings BLOCK
-# Write/replace the ## Quick Check Findings block in
-# delivery-NNN/tasks/task-NNN/STATE.md.
+# Write/replace the ## Quick Check Findings block in the per-task STATE.md
+# (full path: deliveries/delivery-NNN/tasks/task-NNN/STATE.md; lite path:
+# tasks/task-NNN/STATE.md).
 # Creates the ## Quick Check Findings section if absent.
 # ---------------------------------------------------------------------------
 mode_findings() {
@@ -566,8 +630,8 @@ mode_findings() {
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --lifecycle VALUE
-# Update the State: line in the ## Delivery Lifecycle section of
-# delivery-NNN/STATE.md.
+# Update the State: line in the ## Delivery Lifecycle section (full path:
+# deliveries/delivery-NNN/STATE.md; lite path: directly in the work-root STATE.md).
 # VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 # Emits no user-facing output.
 # ---------------------------------------------------------------------------
@@ -652,9 +716,10 @@ mode_delivery_lifecycle() {
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --block MARKDOWN_BLOCK
-# Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md.
+# Write/replace the ## Delivery Gate block (full path: deliveries/delivery-NNN/STATE.md;
+# lite path: directly in the work-root STATE.md -- no separate delivery STATE.md exists).
 # This is the per-delivery delivery gate block, targeting the delivery-level
-# STATE.md (one writer per delivery branch -- disjoint writes).
+# STATE.md (one writer per delivery branch -- disjoint writes) on the full path.
 # Creates the ## Delivery Gate section if absent.
 # ---------------------------------------------------------------------------
 mode_delivery_block() {

@@ -57,13 +57,13 @@ Compare to minimum grade from `bash .agent/aid/scripts/config/read-setting.sh --
 
 | Condition | Action |
 |-----------|--------|
-| Grade >= minimum | Ensure all delivery folders exist (delivery-NNN/SPEC.md + STATE.md for each delivery in PLAN.md; create any missing ones with State: Pending-Spec). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
+| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/SPEC.md + STATE.md for each delivery in PLAN.md; create any missing ones with State: Pending-Spec). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 
 For grades below minimum: re-enter the loop for affected deliverables.
 
 > NOTE: Do NOT write delivery rows into the work STATE.md `## Plan / Deliveries`. That section
-> is a DERIVED read-only view assembled at read time from `delivery-NNN/STATE.md` files.
+> is a DERIVED read-only view assembled at read time from `deliveries/delivery-NNN/STATE.md` files.
 
 **Advance:** **CHAIN** -> [State: DONE] when the grade meets minimum and all delivery folders are created (continue inline).

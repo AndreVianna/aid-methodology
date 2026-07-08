@@ -432,18 +432,20 @@ EOF
 #          the per-delivery ## Delivery Gate block correctly (SD-5 / work-004).
 #
 # work-004 (task-003/007) retargeted --delivery-id --block to write the gate
-# into delivery-NNN/STATE.md ## Delivery Gate (per-delivery, single-writer).
-# The work-level ## Delivery Gates section is now a DERIVED read-only view
-# assembled by the reader -- the helper no longer writes to it.
+# into deliveries/delivery-NNN/STATE.md ## Delivery Gate (full path;
+# per-delivery, single-writer). The work-level ## Delivery Gates section is
+# now a DERIVED read-only view assembled by the reader -- the helper no
+# longer writes to it.
 # ---------------------------------------------------------------------------
 run_test_7() {
     local ws
     ws=$(make_workspace)
 
-    # Create the per-delivery STATE.md that the helper now targets (SD-5).
-    # The file must exist; the helper writes ## Delivery Gate into it.
-    mkdir -p "$ws/.aid/work/delivery-003"
-    cat > "$ws/.aid/work/delivery-003/STATE.md" <<'EOF'
+    # Create the per-delivery STATE.md that the helper now targets (SD-5) --
+    # full path: deliveries/delivery-003/STATE.md. The file must exist; the
+    # helper writes ## Delivery Gate into it.
+    mkdir -p "$ws/.aid/work/deliveries/delivery-003"
+    cat > "$ws/.aid/work/deliveries/delivery-003/STATE.md" <<'EOF'
 # Delivery State -- delivery-003
 
 > **Delivery:** delivery-003
@@ -485,7 +487,7 @@ EOF
 
     AID_STATE_FILE="$ws/.aid/work/STATE.md" \
     AID_DELIVERY_ISSUES_DIR="$ws/.aid/work" \
-    AID_LOCK_DIR="$ws/.aid/work/delivery-003" \
+    AID_LOCK_DIR="$ws/.aid/work/deliveries/delivery-003" \
     "$WRITEBACK" --delivery-id 003 --block "$gate_block" \
         > /dev/null 2>&1
     local rc=$?
@@ -499,18 +501,18 @@ EOF
     fi
 
     # Per-delivery STATE.md ## Delivery Gate section should contain the block (SD-5).
-    local delivery_state_file="$ws/.aid/work/delivery-003/STATE.md"
+    local delivery_state_file="$ws/.aid/work/deliveries/delivery-003/STATE.md"
     if grep -q "^## Delivery Gate" "$delivery_state_file" 2>/dev/null; then
-        pass "Test 7b: delivery-003/STATE.md has ## Delivery Gate section"
+        pass "Test 7b: deliveries/delivery-003/STATE.md has ## Delivery Gate section"
     else
-        fail "Test 7b: delivery-003/STATE.md has ## Delivery Gate section" \
+        fail "Test 7b: deliveries/delivery-003/STATE.md has ## Delivery Gate section" \
              "## Delivery Gate not found in $delivery_state_file"
     fi
 
     if grep -q "Reviewer Tier" "$delivery_state_file" 2>/dev/null; then
-        pass "Test 7c: Gate block content written to delivery-003/STATE.md (Reviewer Tier present)"
+        pass "Test 7c: Gate block content written to deliveries/delivery-003/STATE.md (Reviewer Tier present)"
     else
-        fail "Test 7c: Gate block content written to delivery-003/STATE.md" \
+        fail "Test 7c: Gate block content written to deliveries/delivery-003/STATE.md" \
              "Reviewer Tier not found in $delivery_state_file"
     fi
 
