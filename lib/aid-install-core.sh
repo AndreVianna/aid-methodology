@@ -396,7 +396,8 @@ copy_dir() {
 #   C. Dst has no markers      -> migrate:
 #      C1. Sha matches recorded manifest sha -> clean rewrite to full marked source.
 #      C2. Sha mismatch        -> excise known AID-managed sections by stem match
-#                                 (## Knowledge Base, ## Review output format,
+#                                 (## Tracking discipline, ## Knowledge Base,
+#                                 ## Connectors, ## Workflow, ## Review output format,
 #                                 ## Permissions -- tolerating trailing parenthetical
 #                                 suffix on the heading) and re-insert them wrapped
 #                                 in AID:BEGIN/END markers in place; preserve
