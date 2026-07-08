@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~3m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none -- P7 carve-out authored inline; verified against `discover-preflight.sh` (checks only STATE.md presence + Plan Mode, so no false script-guard claim -- KI-009 preserved) and feature-001/feature-002 write-target wording.
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | orchestrator (inline, DOCUMENT) | ~5m | ~3m | Done -- P7 connector-sub-phase carve-out added to principles.md; render deferred to d1 consolidation |
