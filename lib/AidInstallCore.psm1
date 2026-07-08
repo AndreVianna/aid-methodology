@@ -475,11 +475,12 @@ function script:Test-AidHeadingStem {
     # Strip trailing parenthetical: " (anything)"
     $stem = $stem -replace ' \([^)]*\)$', ''
     # Stems must cover EVERY "## " heading in the shipped AID:BEGIN/END region
-    # (Tracking discipline, Knowledge Base, Workflow, Review output format,
-    # Permissions). A missing stem duplicates that section on C2 migration
-    # (work-007: Workflow was omitted). Parity with bash is_aid_heading.
+    # (Tracking discipline, Knowledge Base, Connectors, Workflow, Review output
+    # format, Permissions). A missing stem duplicates that section on C2
+    # migration (work-007: Workflow was omitted). Parity with bash is_aid_heading.
     switch ($stem) {
         'Knowledge Base'       { return $true }
+        'Connectors'           { return $true }
         'Workflow'             { return $true }
         'Review output format' { return $true }
         'Permissions'          { return $true }

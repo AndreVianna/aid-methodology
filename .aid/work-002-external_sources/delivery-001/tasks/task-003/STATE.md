@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~9m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none for task-003. Executor + orchestrator both ran `test-install-provisioning.sh` -> 44/44 (was 41; +3 CONN cases); PS parity 32/32; PS 5.1 AST lint 0 findings. Observed (OUT OF SCOPE, pre-existing): the `## Stems matched` summary comment at `AidInstallCore.psm1:467-469` already omitted `Workflow` before this change -- a stale comment, not a task-003 defect; left untouched per YAGNI.
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~8-20m | ~9m | Done -- Connectors stem added to both installer twins; +3 CONN cases (bash 44/44, PS 32/32); no render (lib is hand-authored) |

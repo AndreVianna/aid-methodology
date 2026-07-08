@@ -502,6 +502,7 @@ _copy_root_agent_file() {
     # "## " heading in the region (see is_aid_heading):
     #   ## Tracking discipline
     #   ## Knowledge Base
+    #   ## Connectors
     #   ## Workflow
     #   ## Review output format
     #   ## Permissions
@@ -534,15 +535,17 @@ _copy_root_agent_file() {
     function is_aid_heading(line,    stem) {
         # Match "## StemText" optionally followed by " (anything)".
         # Stems must cover EVERY "## " heading inside the shipped AID:BEGIN/END
-        # region (Tracking discipline, Knowledge Base, Workflow, Review output
-        # format, Permissions) -- a stem missing here causes a duplicate section
-        # on the C2 (no-marker) migration path (work-007: Workflow was omitted).
+        # region (Tracking discipline, Knowledge Base, Connectors, Workflow,
+        # Review output format, Permissions) -- a stem missing here causes a
+        # duplicate section on the C2 (no-marker) migration path (work-007:
+        # Workflow was omitted).
         if (line !~ /^## /) return 0
         stem = line
         gsub(/^## /, "", stem)
         # Strip trailing parenthetical suffix: " (..." -> ""
         gsub(/ \([^)]*\)$/, "", stem)
         if (stem == "Knowledge Base") return 1
+        if (stem == "Connectors") return 1
         if (stem == "Workflow") return 1
         if (stem == "Review output format") return 1
         if (stem == "Permissions") return 1

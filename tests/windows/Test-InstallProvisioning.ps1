@@ -138,6 +138,20 @@ $results = & $mod {
     rec "C1b user ## Project preserved" ($res -match 'my project')
     rec "C1c region markers inserted" ($res -match '<!-- AID:BEGIN -->')
 
+    # CONN: is_aid_heading (Test-AidHeadingStem) recognizes ## Connectors
+    # (task-003); C2 migration must NOT duplicate it (mirrors C1 above;
+    # task-004 adds this heading to the shipped managed region).
+    $d = newd $tmp
+    $srcConn = "# CLAUDE.md`n<!-- AID:BEGIN -->`n## Tracking discipline`ntrack`n## Knowledge Base`nkb`n## Connectors`nnew connectors`n## Workflow`nnew workflow`n## Review output format`nrev`n## Permissions`nperms`n<!-- AID:END -->`n"
+    [System.IO.File]::WriteAllText("$d\src.md", $srcConn)
+    $dstConn = "# CLAUDE.md`n## Project`nmy project`n## Connectors`nold connectors`n## Permissions`nold perms`n"
+    [System.IO.File]::WriteAllText("$d\dst.md", $dstConn)
+    script:Copy-RootAgentFile -Src "$d\src.md" -Dst "$d\dst.md" -Tool 'claude-code' -Force $false | Out-Null
+    $resConn = Get-Content -LiteralPath "$d\dst.md" -Raw
+    rec "CONN1 exactly one ## Connectors (no duplicate)" ((([regex]::Matches($resConn, '(?m)^## Connectors')).Count) -eq 1)
+    rec "CONN1b user ## Project preserved" ($resConn -match 'my project')
+    rec "CONN1c region markers inserted" ($resConn -match '<!-- AID:BEGIN -->')
+
     return $out
 } $tmp
 
