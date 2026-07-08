@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~21m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none for task-005. New suite 42/42; regressions clean (registry 14/14, kb-index 40/40). Orchestrator re-proved determinism (two runs -> single sha256) and em-dash for `auth_method: none`. Observed (delivery-level, NOT a task-005 defect): `tests/canonical/ps51-compat-check.ps1` scans a hardcoded 3-file list and does NOT cover `canonical/aid/scripts/connectors/*.ps1` -> the new connector PS twins (task-001/005/006) are un-guarded by the compat lint. To be closed at the d1 consolidation step by extending the lint's scan set.
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~10-25m | ~21m | Done -- deterministic INDEX builder twin + 42-case test; byte-identity + empty-case proven; render deferred to d1 consolidation |
