@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~5m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none. `mcp-host-mechanisms.json` materialized from findings.md §5: 5 hosts, claude-code CONFIRMED + 4 verify-at-install, structured per-host fields (config_file[_windows], scope, format, servers_container, entry_template, confidence) + `_meta` legend/carried-notes. Parses in Python json.load AND WinPS-5.1 ConvertFrom-Json (zero new dep). No secret values (env = `${<VAR>}` placeholders; the grep secret-hit was a false positive on "task-015" prose). JSON chosen over markdown for programmatic parse by task-015's twin.
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~5-12m | ~5m | Done -- mcp-host-mechanisms.json (5 hosts, no secrets, dual-parseable); render deferred to d2 consolidation |

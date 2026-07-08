@@ -1,0 +1,106 @@
+{
+  "_meta": {
+    "purpose": "Per-host MCP-config mechanism table -- the single source of truth BOTH the `wire` and `unwire` ops (task-015) key off. This is DATA, not per-host code: adding or correcting a host is a single edit to the `hosts` object below, inherited by both ops without touching any script.",
+    "source": "task-013 findings.md §5 \"Committed data artifact rows\" (verified per-host mechanism table, web-verified 2026-07-08)",
+    "feature": "feature-004-connection-wiring (Layers & Components: \"the wiring twin exposes a symmetric pair of ops that both read the same per-host mechanism table ... DATA, not per-host code\")",
+    "consumers": "canonical/aid/scripts/connectors/connector-wire.sh|.ps1 (task-015)",
+    "hold_no_secret_value": "Every entry_template `env` value below is an interpolation reference (${VAR} -- name only), never a secret value. No exceptions.",
+    "confidence_enum": ["CONFIRMED", "verify-at-install"],
+    "confidence_meaning": {
+      "CONFIRMED": "Safe to wire now: the mechanism is verified against a repo artifact or official host docs, and the host is installed today.",
+      "verify-at-install": "The mechanism is documented (official docs / best-evidenced candidate) but the host is not installed today; re-verify this row against the actual installed host before the first real write to it. wire-only-installed (feature-004 SPEC) means these rows are carried for coverage and skipped cleanly until their host enters `.aid/settings.yml` `tools.installed`."
+    },
+    "notes": [
+      "KI-007 (out-of-repo writes): codex, copilot-cli, and antigravity default to user-home config paths, outside the repo tree. Any real write there needs its own idempotency and an installed-host check before touching home config.",
+      "KI-006 (codex TOML write): Python's stdlib `tomllib` is read-only (no writer), so the codex write path cannot be a pure read-merge-write the way the JSON hosts can -- it needs a line-oriented `[mcp_servers.<name>]` section edit or an added TOML-writer dependency. Carried as verify-at-install.",
+      "Filename traps: copilot-cli uses the hyphenated `mcp-config.json` (not `mcp.json`); antigravity uses `mcp_config.json` (underscore). Do not normalize either to the bare `mcp.json` the other hosts use.",
+      "Remote-key trap: antigravity uses `serverUrl` (not `url`) for remote (non-stdio) servers -- matters only if a connector ever emits a remote entry.",
+      "env interpolation: `${VAR}` passthrough is the intended form for every host below, but support must be confirmed per installed host; where unsupported, the committed-safe fallback is to omit `env` entirely so the server inherits the ambient environment. No host config ever stores a secret value -- only the variable name."
+    ]
+  },
+  "hosts": {
+    "claude-code": {
+      "config_file": ".mcp.json",
+      "config_file_note": "repo root",
+      "scope": "project",
+      "format": "json",
+      "servers_container": "mcpServers",
+      "servers_container_kind": "json-object",
+      "entry_template": {
+        "type": "stdio",
+        "command": "<bin>",
+        "args": ["<arg>", "..."],
+        "env": { "<VAR>": "${<VAR>}" }
+      },
+      "confidence": "CONFIRMED"
+    },
+    "cursor": {
+      "config_file": ".cursor/mcp.json",
+      "config_file_note": "project; a global `~/.cursor/mcp.json` is also supported but the project file wins on conflict and is AID's committed target",
+      "scope": "project",
+      "format": "json",
+      "servers_container": "mcpServers",
+      "servers_container_kind": "json-object",
+      "entry_template": {
+        "type": "stdio",
+        "command": "<bin>",
+        "args": ["<arg>", "..."],
+        "env": { "<VAR>": "${<VAR>}" }
+      },
+      "confidence": "verify-at-install"
+    },
+    "codex": {
+      "config_file": "~/.codex/config.toml",
+      "config_file_note": "CODEX_HOME default is ~/.codex; a project-scoped .codex/config.toml exists for trusted projects only and is not the default",
+      "scope": "user-home",
+      "scope_note": "NOT committed -- project scope is opt-in/trusted, not the default",
+      "format": "toml",
+      "servers_container": "mcp_servers",
+      "servers_container_kind": "toml-table-per-name",
+      "servers_container_note": "each server is its own `[mcp_servers.<name>]` table, not a single JSON-style object/array",
+      "entry_template": {
+        "command": "<bin>",
+        "args": ["<arg>", "..."],
+        "env": { "<VAR>": "${<VAR>}" }
+      },
+      "entry_template_note": "env may be written inline (env = { <VAR> = \"${<VAR>}\" }) or as its own [mcp_servers.<name>.env] sub-table; ${VAR} interpolation support in TOML is verify-at-install -- if codex does not resolve it, the committed-safe fallback is to omit env entirely",
+      "confidence": "verify-at-install"
+    },
+    "copilot-cli": {
+      "config_file": "~/.copilot/mcp-config.json",
+      "config_file_windows": "%USERPROFILE%\\.copilot\\mcp-config.json",
+      "config_file_note": "COPILOT_HOME overrides the base directory. Filename is hyphenated mcp-config.json, not mcp.json.",
+      "scope": "user-home",
+      "scope_note": "user-home is the documented default write target for `copilot mcp add`; a project-scoped .copilot/mcp-config.json and an auto-discovered .github/mcp.json are also supported but are not the default -- confirm which the installed CLI actually writes to before wiring",
+      "format": "json",
+      "servers_container": "mcpServers",
+      "servers_container_kind": "json-object",
+      "entry_template": {
+        "type": "local",
+        "command": "<bin>",
+        "args": ["<arg>", "..."],
+        "env": { "<VAR>": "${<VAR>}" }
+      },
+      "confidence": "verify-at-install"
+    },
+    "antigravity": {
+      "config_file": "~/.gemini/config/mcp_config.json",
+      "config_file_windows": "%USERPROFILE%\\.gemini\\config\\mcp_config.json",
+      "config_file_fallback": "~/.gemini/antigravity/mcp_config.json",
+      "config_file_fallback_windows": "%USERPROFILE%\\.gemini\\antigravity\\mcp_config.json",
+      "config_file_note": "two live candidates across sources; ~/.gemini/config/mcp_config.json is preferred (newer, shared across IDE+CLI) with ~/.gemini/antigravity/mcp_config.json as a documented fallback -- probe the installed host to confirm the actual path before the first write",
+      "scope": "user-home",
+      "scope_note": "no documented project scope -- user-home only",
+      "format": "json",
+      "servers_container": "mcpServers",
+      "servers_container_kind": "json-object",
+      "entry_template": {
+        "command": "<bin>",
+        "args": ["<arg>", "..."],
+        "env": { "<VAR>": "${<VAR>}" }
+      },
+      "entry_template_note": "remote (non-stdio) servers use serverUrl (not url) plus headers -- only relevant if a connector emits a remote entry",
+      "confidence": "verify-at-install"
+    }
+  }
+}
