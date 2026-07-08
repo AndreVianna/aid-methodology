@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~29m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none for task-006. 29 Bash + 26 PS assertions pass; registry regression 14/14. Orchestrator independently exercised all security behaviors: fail-closed (exit 4 without .gitignore), no-leak (stdout = only the `file:` ref), exact-bytes store (18==18, no trailing newline via xxd), path-confinement rejects `../x`/`a/b`/`a\b`/`..` (exit 3, pre-I/O), purge idempotent. Disclosed PS design: `[Console]::IsInputRedirected` fallback (interactive keeps `Read-Host -AsSecureString`; redirected stdin uses `[Console]::In.ReadLine()`) -- security-equivalent (no tty to echo). Same delivery-level PS 5.1 lint-coverage gap as task-005 (connector-secret.ps1 un-scanned) -> closed at d1 consolidation.
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~10-25m | ~29m | Done -- connector-secret twin (write/purge, path-confined, fail-closed, no-echo) + 55 assertions; security behaviors re-verified by orchestrator |
