@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~10m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none. New `test-connector-secret-ac3-leak-sweep.sh` (11 assertions) adds the novel AC-3 sweep (grep repo/KB/STATE for a sentinel -> found only in the fixture `.secrets/` store) with a negative-control proving the sweep isn't vacuous; PS twin lane exercised (T6). Does NOT duplicate task-006's write/purge/confinement/fail-closed assertions (referenced). Orchestrator re-ran 11/11 and confirmed no sentinel residue (the one grep hit is the test's own prefix literal, not a leaked value; no fixture dir survives).
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~5-15m | ~10m | Done -- AC-3 leak-sweep test (11 assertions + negative control); complements task-006 (no dup) |
