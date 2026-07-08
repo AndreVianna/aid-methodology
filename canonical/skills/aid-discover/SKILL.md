@@ -4,7 +4,7 @@ description: >
   Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold
   the KB. Analyzes all repository content (code, configuration, and documentation) to populate
   KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step
-  per run. State-machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
+  per run. State-machine: ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "[--grade A] minimum acceptable grade (default: A)  [--reset] clear KB and restart"
 ---
@@ -87,7 +87,7 @@ If Check 2 fails: Tell user to press `Shift+Tab` to exit Plan Mode, then re-run.
 > **State machine for this skill:**
 > ```
 > aid-discover  ▸ one step per run
->   [ GENERATE ] → [ REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+>   [ ELICIT ] → [ GENERATE ] → [ REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
 > ```
 > Each run detects which state to enter from disk and does exactly that step.
 
@@ -164,6 +164,7 @@ Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
 Read the filesystem to determine which mode to enter:
 
 ```
+State 0: `## Discovery Elicitation` absent, or `**Resolved:** no` → ELICIT mode
 State 1: Missing or empty KB docs                     → GENERATE mode
 State 2: All docs populated, no GRADE file             → REVIEW mode
 State 3: GRADE file, ANY Pending Q&A (regardless of grade/Impact) → Q-AND-A mode
@@ -176,6 +177,11 @@ State 6: GRADE file, grade >= min, ZERO Pending Q&A,
 
 **Detection logic:**
 
+0. Check `.aid/knowledge/STATE.md` for a `## Discovery Elicitation` block. If it is absent, or
+   present with `**Resolved:** no`, this cycle's elicitation is not yet resolved → **ELICIT**
+   (State 0); do not evaluate States 1–6 below until it resolves. Once the block carries
+   `**Resolved:** yes`, detection falls through to the ladder below unchanged — ELICIT runs
+   exactly once per cycle (`--reset` clears the block).
 1. Check `.aid/knowledge/` for the documents in the project's declared doc-set
    (read via `read-setting.sh --path discovery.doc_set` → list-filenames accessor,
    `references/doc-set-resolve.md` §2.1; default seed when the section is unset).
@@ -197,46 +203,53 @@ State 6: GRADE file, grade >= min, ZERO Pending Q&A,
 
 Print the state-entry line with description, then the "you are here" state-map. Use one of these depending on the detected state:
 
+**ELICIT:**
+```
+[State: ELICIT] — Capture the project's external sources and tool integrations before GENERATE runs.
+aid-discover  ▸ you are here
+  [● ELICIT ] → [ GENERATE ] → [ REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+```
+
 **GENERATE:**
 ```
 [State: GENERATE] — Populate missing KB documents by orchestrating parallel discovery sub-agents.
 aid-discover  ▸ you are here
-  [● GENERATE ] → [ REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+  [✓ ELICIT ] → [● GENERATE ] → [ REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
 ```
 
 **REVIEW:**
 ```
 [State: REVIEW] — Grade all KB documents for accuracy, completeness, and evidence quality.
 aid-discover  ▸ you are here
-  [✓ GENERATE ] → [● REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+  [✓ ELICIT ] → [✓ GENERATE ] → [● REVIEW ] → [ Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
 ```
 
 **Q-AND-A:**
 ```
 [State: Q-AND-A] — Resolve pending questions with the user before attempting automated fixes.
 aid-discover  ▸ you are here
-  [✓ GENERATE ] → [✓ REVIEW ] → [● Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
+  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [● Q-AND-A ] → [ FIX ] → [ APPROVAL ] → [ DONE ]
 ```
 
 **FIX:**
 ```
 [State: FIX] — Apply Q&A answers and reviewer feedback to bring KB documents up to minimum grade.
 aid-discover  ▸ you are here
-  [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [● FIX ] → [ APPROVAL ] → [ DONE ]
+  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [● FIX ] → [ APPROVAL ] → [ DONE ]
 ```
 
 **APPROVAL:**
 ```
 [State: APPROVAL] — KB meets minimum grade; ask the user to confirm it is ready for Interview.
 aid-discover  ▸ you are here
-  [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [✓ FIX ] → [● APPROVAL ] → [ DONE ]
+  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [✓ FIX ] → [● APPROVAL ] → [ DONE ]
 ```
 
 **DONE:**
 ```
 [State: DONE] — Discovery is complete and user-approved; KB is ready for Interview.
 aid-discover  ▸ you are here
-  [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [✓ FIX ] → [✓ APPROVAL ] → [● DONE ]
+  [✓ ELICIT ] → [✓ GENERATE ] → [✓ REVIEW ] → [✓ Q-AND-A ] → [✓ FIX ] → [✓ APPROVAL ] → [● DONE ]
 ```
 
 ---
@@ -245,6 +258,7 @@ aid-discover  ▸ you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
+| ELICIT | `references/state-elicit.md` | inline | → GENERATE |
 | GENERATE | `references/state-generate.md` | `aid-architect` | → REVIEW |
 | REVIEW | `references/state-review.md` | `aid-architect` | → Q-AND-A |
 | Q-AND-A | `references/state-q-and-a.md` | inline | → FIX |

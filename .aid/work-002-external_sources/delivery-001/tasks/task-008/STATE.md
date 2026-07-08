@@ -21,10 +21,10 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
-- **Notes:** --
+- **Elapsed:** ~35m
+- **Notes:** ELICIT state authored (references/state-elicit.md, E0-E3) + all SKILL.md sites wired (frontmatter/banner/detection/dispatch/6 maps/new block); Q9 SKIPPED/DECLARED-EMPTY/ENGAGED marker encoded. Render to profiles deferred to delivery consolidation per dispatch scope.
 
 ---
 
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none. Orchestrator verified all ~8 SKILL.md sites carry ELICIT (grep confirms every state-machine chain leads with ELICIT; the lone bare-GENERATE line is the State-1 detection selector, correct) and read state-elicit.md end-to-end: E0 idempotent re-entry; E1/E2 genuine PAUSE gates; Q9 marker `Tools step: SKIPPED|DECLARED-EMPTY|ENGAGED` distinct from Sources/Tools/Resolved with a reconcile-behavior table; E2 sequence writes `.gitignore` first, hands the secret to `connector-secret.sh write` (never inlined), triggers `build-connectors-index.sh`; Scout stays single writer of external-sources.md (Q7); mcp host-wiring left as documented delivery-002 hook (Q8); greenfield deferral handled. State machine = ELICIT -> GENERATE -> REVIEW -> Q-AND-A -> FIX -> APPROVAL -> DONE (feeds task-010).
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~15-35m | ~35m | Done -- state-elicit.md (E0-E3) + 11 SKILL.md edits across ~8 sites; Q9 marker; render deferred to d1 consolidation |
