@@ -175,7 +175,7 @@ fi
     cat <<'FRONTMATTER_EOF'
 ---
 source: generated
-generator: build-connectors-index.sh
+generator: build-connectors-index
 intent: |
   Routing table for the tool/integration registry under .aid/connectors/,
   regenerated from connector descriptor frontmatter after any

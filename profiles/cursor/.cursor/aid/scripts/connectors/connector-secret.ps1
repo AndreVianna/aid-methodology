@@ -218,5 +218,9 @@ $utf8NoBom = New-Object System.Text.UTF8Encoding($false)
 $Plain = $null
 Remove-Variable -Name Plain -ErrorAction SilentlyContinue
 
-Write-Output "file:$Target"
+# Printed reference uses forward slashes always (matches the Bash twin's
+# output and the header's documented `file:<Root>/.secrets/<Stem>` form) --
+# this only normalizes the PRINTED string; the file itself is written to
+# $Target using whatever separators .NET/Windows resolved above.
+Write-Output ("file:" + ($Target -replace '\\', '/'))
 exit 0

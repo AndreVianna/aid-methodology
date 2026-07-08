@@ -181,7 +181,7 @@ foreach ($f in $descriptors) {
 $outLines = New-Object System.Collections.Generic.List[string]
 $outLines.Add('---')
 $outLines.Add('source: generated')
-$outLines.Add('generator: build-connectors-index.ps1')
+$outLines.Add('generator: build-connectors-index')
 $outLines.Add('intent: |')
 $outLines.Add('  Routing table for the tool/integration registry under .aid/connectors/,')
 $outLines.Add('  regenerated from connector descriptor frontmatter after any')
