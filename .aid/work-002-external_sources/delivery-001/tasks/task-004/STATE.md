@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~7m
 - **Notes:** --
 
 ---
@@ -36,10 +36,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+  - [MEDIUM] Reference-style leak -- Fixed-on-spot -- executor applied the Claude-Code `@`-autoload line (`@.aid/connectors/INDEX.md.`) identically to ALL six files, but the AGENTS.md family references the KB as a plain `- Read \`.aid/knowledge/INDEX.md\`.` bullet (zero `@.aid` refs pre-existed in AGENTS.md). Orchestrator corrected the 4 AGENTS.md to the plain-bullet style (`- Read \`.aid/connectors/INDEX.md\`.`); CLAUDE.md (repo-root + claude-code) correctly keep `@`. Root cause: my dispatch prompt over-specified "identical across all six"; feature-001's "in the style of `@.aid/knowledge.`" means each file's own KB-ref style (host-family-divergent). Post-fix: invariant 25/25, 4 AGENTS.md 1 sha, 2 CLAUDE.md sections identical.
 
 ---
 
@@ -52,3 +51,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~5-15m | ~7m | Done -- `## Connectors` section added to all 6 context files; orchestrator fixed a Claude-Code `@`-ref leak in the 4 AGENTS.md; invariant 25/25; render N/A (hand-maintained) |

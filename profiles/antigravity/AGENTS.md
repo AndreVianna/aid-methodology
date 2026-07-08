@@ -27,12 +27,28 @@ This project uses the [AID methodology](https://github.com/AndreVianna/aid-metho
 - Always consult relevant KB documents before making changes.
 - The KB is the single source of truth for architecture, conventions, and patterns.
 
+## Connectors
+
+- Read `.aid/connectors/INDEX.md`.
+- Before connecting to an external tool, scan the connectors index to find
+  its descriptor, then open the descriptor for full fields and auth details.
+- For an `mcp` connector, it is already wired into the host's MCP config —
+  use it directly; the descriptor exists for discovery and audit, not
+  connect-time consumption.
+- For `api` / `ssh` / `url` / `cli`, resolve the descriptor's
+  `secret_reference` at use-time: `env:` reads an environment variable,
+  `file:` reads `.aid/connectors/.secrets/<connector>`, `keychain:` reads the
+  OS keychain.
+- Out of scope: no agent-side code that actively consumes non-MCP
+  descriptors is built here — this section documents the contract only.
+
 ## Workflow
 
 - Every change should be traceable to a task or requirement.
 - Follow the current numbered phase: Discover → Describe → Define → Specify → Plan → Detail → Execute. `aid-config` bootstraps before the pipeline; Deploy and Monitor are optional Deliver skills after it.
 - Produce verifiable artifacts at each phase.
 - Quality gates must pass before proceeding.
+- Pipeline settings (installed tools, quality-gate thresholds) live in `.aid/settings.yml`; consult it before assuming a default.
 
 ## Review output format (global)
 
