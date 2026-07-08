@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~12m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none. Thorough spike: claude-code CONFIRMED (repo .mcp.json); cursor/codex/copilot-cli CONFIRMED via official docs; antigravity LIKELY (path ambiguous -> 2 evidenced candidates, §4a). 6 URLs cited, no fabricated paths. Wire-now={claude-code}; defer {cursor,codex,copilot-cli,antigravity} (verify-at-install). Carried forward for task-015: KI-006 (codex TOML stdlib read-only), KI-007 (out-of-repo user-home writes), filename traps (copilot-cli `mcp-config.json`, antigravity `mcp_config.json`), antigravity remote uses `serverUrl`. Process note: aid-researcher's Write was report-file-guard-blocked; orchestrator persisted findings.md verbatim (findings ARE consumed by task-014, so legitimate).
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-researcher | ~8-20m | ~12m | Done -- 5-host MCP mechanism findings (6 URLs, no fabrication); wire-now=claude-code, defer 4; orchestrator persisted findings.md (subagent write guard) |
