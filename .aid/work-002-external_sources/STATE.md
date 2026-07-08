@@ -28,11 +28,10 @@ different places.
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Paused-Awaiting-Input
-- **Phase:** Detail
-- **Active Skill:** none
-- **Updated:** 2026-07-08T17:30:36Z
-- **Pause Reason:** aid-detail complete — 19 tasks across 3 deliveries; run /aid-execute work-002-external_sources to build delivery-001
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-07-08T18:33:39Z
 
 ---
 
