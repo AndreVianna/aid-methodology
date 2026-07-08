@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~10m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none. New `test-connectors-registry-integration.sh` (20 assertions) adds the delivery-level AC-5 proof: the accessor's `list`/`read` view and the builder's `INDEX.md` view of one shared fixture agree field-by-field (Type/Endpoint/Auth/Secret Ref incl. em-dash correspondence) + a thin byte-identity/empty cross-check. References (not duplicates) task-005 BCI06/07/08 + task-001 T1-T14. Orchestrator re-ran 20/20. AC-8 PS lane PARTIAL-by-design (no PS functional suite exists for accessor/builder; not duplicating task-005 coverage).
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-08 | aid-developer | ~5-15m | ~10m | Done -- accessor<->INDEX integration/agreement test (20 assertions); complements task-005/001 (no dup) |
