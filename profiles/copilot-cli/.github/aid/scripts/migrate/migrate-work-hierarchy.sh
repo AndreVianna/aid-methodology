@@ -7,13 +7,14 @@
 #   work-NNN-{name}/
 #     STATE.md                          (rewritten: AUTHORED header + DERIVED placeholders)
 #     tasks/                            (legacy flat files retained as-is for reference)
-#     delivery-NNN/
-#       SPEC.md                         (delivery definition)
-#       STATE.md                        (delivery authored lifecycle + gate + Q&A + derived tasks view)
-#       tasks/
-#         task-NNN/
-#           SPEC.md                     (task definition -- from legacy tasks/task-NNN.md)
-#           STATE.md                    (task mutable cells + findings + dispatch log)
+#     deliveries/
+#       delivery-NNN/
+#         BLUEPRINT.md                  (delivery definition)
+#         STATE.md                      (delivery authored lifecycle + gate + Q&A + derived tasks view)
+#         tasks/
+#           task-NNN/
+#             DETAIL.md                 (task definition -- from legacy tasks/task-NNN.md)
+#             STATE.md                  (task mutable cells + findings + dispatch log)
 #
 # IDEMPOTENT: if any per-task STATE.md already exists, the entire work is skipped (no-op).
 #
@@ -305,13 +306,13 @@ write_task_state() {
     } > "$out_file"
 }
 
-write_delivery_spec() {
+write_delivery_blueprint() {
     local out_file="$1" delivery_num="$2" work_name="$3" task_rows="$4"
     local padded_d
     padded_d=$(pad3 "$delivery_num")
 
     {
-        p "# Delivery SPEC -- delivery-${padded_d}"
+        p "# Delivery BLUEPRINT -- delivery-${padded_d}"
         p ""
         p "> **Delivery:** delivery-${padded_d}"
         p "> **Work:** ${work_name}"
@@ -457,7 +458,7 @@ rewrite_work_state() {
         function emit_derived_block(   f, line) {
             print "## Tasks State"
             print ""
-            print "<!-- DERIVED -- read-only; assembled from delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->"
+            print "<!-- DERIVED -- read-only; assembled from deliveries/delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->"
             print ""
             print "| # | Task | Type | Wave | State | Review | Elapsed | Notes |"
             print "|---|------|------|------|-------|--------|---------|-------|"
@@ -465,7 +466,7 @@ rewrite_work_state() {
             print ""
             print "## Plan / Deliveries"
             print ""
-            print "<!-- DERIVED -- read-only rollup from delivery-NNN/STATE.md at read time. Never written here. -->"
+            print "<!-- DERIVED -- read-only rollup from deliveries/delivery-NNN/STATE.md at read time. Never written here. -->"
             print ""
             print "| Delivery | State | Tasks | Notes |"
             print "|----------|-------|-------|-------|"
@@ -473,14 +474,14 @@ rewrite_work_state() {
             print ""
             print "## Delivery Gates"
             print ""
-            print "<!-- DERIVED -- union of delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->"
+            print "<!-- DERIVED -- union of deliveries/delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->"
             print ""
-            print "_See delivery-NNN/STATE.md for each delivery gate block._"
+            print "_See deliveries/delivery-NNN/STATE.md for each delivery gate block._"
             print ""
             print "## Cross-phase Q&A"
             print ""
             print "<!-- DERIVED (delivery-scoped entries) + AUTHORED (work-owner entries only)."
-            print "     Delivery-scoped Q&A lives in delivery-NNN/STATE.md (SD-5)."
+            print "     Delivery-scoped Q&A lives in deliveries/delivery-NNN/STATE.md (SD-5)."
             print "     Work-owner Q&A below was not delivery-scoped in the legacy file. -->"
             print ""
             # Emit work-owner Q&A inline if present.
@@ -575,7 +576,7 @@ main() {
     fi
 
     # IDEMPOTENCY CHECK: skip if any hierarchy file already exists.
-    if find "$WORK_DIR" -path "*/delivery-*/tasks/task-*/STATE.md" -maxdepth 5 2>/dev/null | grep -q .; then
+    if find "$WORK_DIR" -path "*/deliveries/delivery-*/tasks/task-*/STATE.md" -maxdepth 6 2>/dev/null | grep -q .; then
         log "IDEMPOTENT: hierarchy already present in '${WORK_NAME}'. No-op."
         exit 0
     fi
@@ -625,7 +626,7 @@ main() {
     log "Deliveries detected: ${ALL_DELIVERIES[*]}"
 
     # -----------------------------------------------------------------------
-    # Pass 2: create per-task directories with SPEC.md + STATE.md.
+    # Pass 2: create per-task directories with DETAIL.md + STATE.md.
     # -----------------------------------------------------------------------
     local padded_d padded_t task_dest_dir
     local row_fields state review elapsed notes findings dispatches
@@ -634,7 +635,7 @@ main() {
         task_id="$(basename "$task_file" .md)"
         delivery_num="${TASK_DELIVERY[$task_id]}"
         padded_d="$(pad3 "$delivery_num")"
-        task_dest_dir="${WORK_DIR}/delivery-${padded_d}/tasks/${task_id}"
+        task_dest_dir="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/${task_id}"
 
         log "Creating ${task_dest_dir}/"
 
@@ -642,11 +643,11 @@ main() {
             mkdir -p "$task_dest_dir"
         fi
 
-        # task SPEC.md -- verbatim copy of the legacy task file.
+        # task DETAIL.md -- verbatim copy of the legacy task file.
         if [[ "$DRY_RUN" -eq 0 ]]; then
-            cp "$task_file" "${task_dest_dir}/SPEC.md"
+            cp "$task_file" "${task_dest_dir}/DETAIL.md"
         else
-            log "DRY-RUN: would copy ${task_file} -> ${task_dest_dir}/SPEC.md"
+            log "DRY-RUN: would copy ${task_file} -> ${task_dest_dir}/DETAIL.md"
         fi
 
         # Extract mutable cells from the Tasks Status/State table.
@@ -668,13 +669,13 @@ main() {
     done
 
     # -----------------------------------------------------------------------
-    # Pass 3: create per-delivery directories with SPEC.md + STATE.md.
+    # Pass 3: create per-delivery directories with BLUEPRINT.md + STATE.md.
     # -----------------------------------------------------------------------
     local delivery_dir task_rows tid tdelivery ttype ttitle gate_block qa_block lifecycle has_tasks grade_line grade_val
 
     for delivery_num in "${ALL_DELIVERIES[@]}"; do
         padded_d="$(pad3 "$delivery_num")"
-        delivery_dir="${WORK_DIR}/delivery-${padded_d}"
+        delivery_dir="${WORK_DIR}/deliveries/delivery-${padded_d}"
         log "Creating ${delivery_dir}/"
 
         if [[ "$DRY_RUN" -eq 0 ]]; then
@@ -695,9 +696,9 @@ main() {
         task_rows="${task_rows%$'\n'}"
 
         if [[ "$DRY_RUN" -eq 0 ]]; then
-            write_delivery_spec "${delivery_dir}/SPEC.md" "$delivery_num" "$WORK_NAME" "$task_rows"
+            write_delivery_blueprint "${delivery_dir}/BLUEPRINT.md" "$delivery_num" "$WORK_NAME" "$task_rows"
         else
-            log "DRY-RUN: would write ${delivery_dir}/SPEC.md"
+            log "DRY-RUN: would write ${delivery_dir}/BLUEPRINT.md"
         fi
 
         # Extract gate block + delivery-scoped Q&A.
@@ -749,16 +750,16 @@ main() {
             task_id="$(basename "$task_file" .md)"
             delivery_num="${TASK_DELIVERY[$task_id]}"
             padded_d="$(pad3 "$delivery_num")"
-            task_dest_dir="${WORK_DIR}/delivery-${padded_d}/tasks/${task_id}"
+            task_dest_dir="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/${task_id}"
 
-            [[ -s "${task_dest_dir}/SPEC.md" ]] || die "Verification: '${task_dest_dir}/SPEC.md' is empty." 4
+            [[ -s "${task_dest_dir}/DETAIL.md" ]] || die "Verification: '${task_dest_dir}/DETAIL.md' is empty." 4
             [[ -s "${task_dest_dir}/STATE.md" ]] || die "Verification: '${task_dest_dir}/STATE.md' is empty." 4
         done
 
         for delivery_num in "${ALL_DELIVERIES[@]}"; do
             padded_d="$(pad3 "$delivery_num")"
-            delivery_dir="${WORK_DIR}/delivery-${padded_d}"
-            [[ -s "${delivery_dir}/SPEC.md" ]] || die "Verification: '${delivery_dir}/SPEC.md' is empty." 4
+            delivery_dir="${WORK_DIR}/deliveries/delivery-${padded_d}"
+            [[ -s "${delivery_dir}/BLUEPRINT.md" ]] || die "Verification: '${delivery_dir}/BLUEPRINT.md' is empty." 4
             [[ -s "${delivery_dir}/STATE.md" ]] || die "Verification: '${delivery_dir}/STATE.md' is empty." 4
         done
     fi

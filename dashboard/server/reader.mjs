@@ -2182,6 +2182,12 @@ function readWork(workDir, workId) {
     return _readWorkHierarchical(workDir, workId);
   }
 
+  // feature-001: flattened single-delivery layout (per-work, presence-based;
+  // mutually exclusive with the deliveries/ wrapper checked above)
+  if (_detectFlat(workDir)) {
+    return _readWorkFlat(workDir, workId);
+  }
+
   // --- Legacy monolithic path (preserved behavior) ---
   const statePath = join(workDir, "STATE.md");
   const statePathLabel = ".aid/" + workId + "/STATE.md";
@@ -2512,14 +2518,15 @@ const RE_TASK_DIR_H = /^(task-\d+)$/i;
 
 function _detectHierarchy(workDir) {
   // Return true if this work has the new per-unit STATE.md hierarchy.
-  // Detection: if ANY delivery-NNN/tasks/task-NNN/STATE.md exists under workDir.
+  // Detection: if ANY deliveries/delivery-NNN/tasks/task-NNN/STATE.md exists under workDir.
   // Presence-based, per-work. Never throws.
   try {
+    const deliveriesDir = join(workDir, "deliveries");
     let entries;
-    try { entries = readdirSync(workDir); } catch (_) { return false; }
+    try { entries = readdirSync(deliveriesDir); } catch (_) { return false; }
     for (const name of entries) {
       if (!RE_DELIVERY_DIR.test(name)) continue;
-      const deliveryPath = join(workDir, name);
+      const deliveryPath = join(deliveriesDir, name);
       let isDir = false;
       try { isDir = statSync(deliveryPath).isDirectory(); } catch (_) { isDir = false; }
       if (!isDir) continue;
@@ -2536,6 +2543,55 @@ function _detectHierarchy(workDir) {
         try { isFile = statSync(taskStatePath).isFile(); } catch (_) { isFile = false; }
         if (isFile) return true;
       }
+    }
+  } catch (_) {
+    // pass
+  }
+  return false;
+}
+
+function _detectFlat(workDir) {
+  // Return true if this work has the FLATTENED single-delivery layout (feature-001).
+  // Mirror reader.py _detect_flat.
+  //
+  // Detection rule (3-part; identical across all consumers): a work-root
+  // BLUEPRINT.md exists AND at least one tasks/task-NNN/DETAIL.md exists
+  // directly under the work root AND no `deliveries/` wrapper exists under
+  // the work root. This layout has no per-task STATE.md; this check does not
+  // look for one.
+  //
+  // Mirrors the SAME 3-part detection rule as `is_flat_layout()` in
+  // canonical/aid/scripts/execute/writeback-state.sh and reader.py's
+  // `_detect_flat` (lockstep Python twin).
+  //
+  // Presence-based, per-work. Mutually exclusive with _detectHierarchy by
+  // construction (this function explicitly asserts `deliveries/` absence,
+  // not just call-site ordering). Never throws.
+  try {
+    let blueprintIsFile = false;
+    try { blueprintIsFile = statSync(join(workDir, "BLUEPRINT.md")).isFile(); } catch (_) { blueprintIsFile = false; }
+    if (!blueprintIsFile) return false;
+
+    let deliveriesIsDir = false;
+    try { deliveriesIsDir = statSync(join(workDir, "deliveries")).isDirectory(); } catch (_) { deliveriesIsDir = false; }
+    if (deliveriesIsDir) return false;
+
+    const tasksDir = join(workDir, "tasks");
+    let tasksDirIsDir = false;
+    try { tasksDirIsDir = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirIsDir = false; }
+    if (!tasksDirIsDir) return false;
+
+    let entries;
+    try { entries = readdirSync(tasksDir); } catch (_) { return false; }
+    for (const name of entries) {
+      if (!RE_TASK_DIR_H.test(name)) continue;
+      const taskPath = join(tasksDir, name);
+      let isDir = false;
+      try { isDir = statSync(taskPath).isDirectory(); } catch (_) { isDir = false; }
+      if (!isDir) continue;
+      let detailIsFile = false;
+      try { detailIsFile = statSync(join(taskPath, "DETAIL.md")).isFile(); } catch (_) { detailIsFile = false; }
+      if (detailIsFile) return true;
     }
   } catch (_) {
     // pass
@@ -2808,8 +2864,88 @@ function _parseDeliveryStateMd(text, deliveryId) {
   return pds;
 }
 
+// ---------------------------------------------------------------------------
+// feature-001 (flattened single-delivery layout): ### Tasks lifecycle parser
+// Mirror parsers.py parse_tasks_lifecycle_md.
+//
+// The flat layout has no per-task STATE.md and no per-delivery STATE.md -- the
+// promoted ## Delivery Lifecycle / ## Delivery Gate blocks (parsed above via
+// _parseDeliveryStateMd, unchanged) plus a ### Tasks lifecycle SUBSECTION live
+// directly in the work-root STATE.md. This table REPLACES the per-task
+// STATE.md's ## Task State section, but uses a NARROWER column layout (no
+// leading # / Type / Wave columns -- type comes from DETAIL.md, wave is the
+// synthesized delivery-001 for every task in this layout):
+//
+//   | Task | State | Review | Elapsed | Notes |
+// ---------------------------------------------------------------------------
+
+const RE_TASKS_LIFECYCLE_SECTION = /^###\s+Tasks lifecycle\s*$/i;
+// Any ## or ### heading ends the ### Tasks lifecycle subsection (nested under
+// ## Delivery Lifecycle, so a plain ## heading -- e.g. ## Delivery Gate --
+// must also close it, not just another ###).
+const RE_SECTION_2_OR_3 = /^#{2,3}\s+\S/;
+
+function parseTasksLifecycleMd(text) {
+  // Returns [taskIdLowerToState, parseWarnings] where taskIdLowerToState maps
+  // task_id.toLowerCase() -> { state, review, elapsed, notes }.
+  // Header/separator rows and the _none yet_ placeholder row are skipped.
+  // Never throws (NFR7).
+  const result = {};
+  const warnings = [];
+
+  try {
+    let inSection = false;
+    let headerSeen = false;
+
+    for (const line of text.split("\n")) {
+      if (RE_TASKS_LIFECYCLE_SECTION.test(line)) {
+        inSection = true;
+        headerSeen = false;
+        continue;
+      }
+      if (inSection && RE_SECTION_2_OR_3.test(line)) {
+        inSection = false;
+        continue;
+      }
+      if (!inSection) continue;
+
+      const stripped = line.trim();
+      if (!stripped.startsWith("|")) continue;
+      if (RE_TABLE_SEP.test(stripped)) continue;
+
+      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      if (cols.length < 2) continue;
+
+      if (!headerSeen) {
+        headerSeen = true;
+        continue;
+      }
+      if (cols.some(c => c.includes(NONE_YET))) continue;
+
+      function fcol(idx) {
+        if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
+        return null;
+      }
+
+      const taskId = fcol(0) || "";
+      if (!taskId || taskId.toLowerCase() === "task") continue;
+
+      result[taskId.toLowerCase()] = {
+        state: parseTaskStatus(fcol(1) || ""),
+        review: fcol(2),
+        elapsed: fcol(3),
+        notes: fcol(4),
+      };
+    }
+  } catch (exc) {
+    warnings.push("error parsing ### Tasks lifecycle table (" + exc + "); returning best-effort");
+  }
+
+  return [result, warnings];
+}
+
 function _parseTaskSpecShortName(specText) {
-  // Extract the short name from a task-level SPEC.md.
+  // Extract the short name from a task-level DETAIL.md.
   // Mirror parsers.py _parse_task_spec_short_name.
   // Reads: '# task-NNN: {Title}' -- returns the title portion, or null.
   try {
@@ -2831,7 +2967,7 @@ function _parseTaskSpecShortName(specText) {
 }
 
 function _parseTaskSpecType(specText) {
-  // Extract the task type from a task-level SPEC.md.
+  // Extract the task type from a task-level DETAIL.md.
   // Mirror parsers.py _parse_task_spec_type.
   // Reads: '**Type:** VALUE' line -- returns the type string, or ''.
   try {
@@ -2850,7 +2986,7 @@ function _parseTaskSpecType(specText) {
 }
 
 function _parseDeliverySpecTitle(specText) {
-  // Extract the delivery title from a delivery-level SPEC.md.
+  // Extract the delivery title from a delivery-level BLUEPRINT.md.
   // Mirror parsers.py _parse_delivery_spec_title.
   // Returns the title portion after '# ... delivery-NNN: Title', or null.
   try {
@@ -2868,6 +3004,222 @@ function _parseDeliverySpecTitle(specText) {
     // pass
   }
   return null;
+}
+
+function _readWorkFlat(workDir, workId) {
+  // Mirror reader.py _read_work_flat.
+  //
+  // Assemble a WorkModel from the FLATTENED single-delivery layout (feature-001).
+  //
+  // Reads:
+  //   - workDir/STATE.md                  -- work-level lifecycle/triage/history, PLUS the
+  //                                           promoted ## Delivery Lifecycle (### Tasks
+  //                                           lifecycle) / ## Delivery Gate AUTHORED blocks
+  //                                           (single writer; no deliveries/ wrapper)
+  //   - workDir/tasks/task-NNN/DETAIL.md  -- task type / short-name (no per-task STATE.md --
+  //                                           mutable cells come from the work STATE.md
+  //                                           ### Tasks lifecycle table)
+  //   - workDir/BLUEPRINT.md              -- the single delivery's title (synthesized
+  //                                           DeliverableRef name)
+  //
+  // Synthesizes exactly ONE DeliverableRef for delivery-001 (every task gets
+  // wave="delivery-001", delivery=1) -- there is no deliveries/ wrapper to enumerate.
+  //
+  // pendingInputs is taken from pw.pendingInputs ONLY -- see reader.py docstring for
+  // why _parseDeliveryStateMd's own Cross-phase Q&A scan is intentionally NOT unioned
+  // here (would double-count the work's single shared ## Cross-phase Q&A section).
+  //
+  // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel]. Never raises.
+  const stateLabel = ".aid/" + workId + "/STATE.md";
+  const parseWarnings = [];
+  let bytesRead = 0;
+
+  const statePath = join(workDir, "STATE.md");
+  let workText = "";
+  let workIsFile = false;
+  try { workIsFile = statSync(statePath).isFile(); } catch (_) { workIsFile = false; }
+
+  if (!workIsFile) {
+    parseWarnings.push(
+      workId + ": STATE.md not found (flat mode); work-level lifecycle will be Unknown."
+    );
+  } else {
+    try {
+      const raw = readFileSync(statePath);
+      bytesRead += raw.length;
+      workText = raw.toString("utf-8");
+    } catch (exc) {
+      parseWarnings.push(
+        workId + ": STATE.md read error (" + exc + "); work-level lifecycle will be Unknown."
+      );
+    }
+  }
+
+  const pw = parseStateText(workText, workId, workDir);
+  parseWarnings.push(...pw.parseWarnings);
+
+  const name = slugFromWorkId(workId);
+  const workNumber = numberFromWorkId(workId);
+
+  // Identity fields: REQUIREMENTS.md -> SPEC.md fallback (PF-8, unchanged)
+  const reqPath = join(workDir, "REQUIREMENTS.md");
+  let [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
+  bytesRead += reqBytes;
+
+  if (reqTitle === null || reqDescription === null) {
+    const specPath = join(workDir, "SPEC.md");
+    const [specTitle, specDescription, specH1, specBytes] = parseSpecMd(specPath);
+    bytesRead += specBytes;
+    if (reqTitle === null) {
+      if (specTitle !== null) {
+        reqTitle = specTitle;
+      } else if (specH1 !== null) {
+        reqTitle = specH1;
+      }
+    }
+    if (reqDescription === null && specDescription !== null) {
+      reqDescription = specDescription;
+    }
+  }
+
+  // PF-5: parse PLAN.md execution graph for lane assignments. The flat PLAN.md's
+  // top-level ## Execution Graph carries no wave-map fence / "### delivery-NNN
+  // Execution Graph" prose header, so this yields an empty map -- lane stays null
+  // for every task (harmless; no lane derivation is defined for the flat shape).
+  const planPath = join(workDir, "PLAN.md");
+  const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
+  bytesRead += planBytes;
+
+  // Parse the promoted ## Delivery Lifecycle / ## Delivery Gate blocks from the SAME
+  // work-root STATE.md text via the existing _parseDeliveryStateMd -- it keys on the
+  // exact headings regardless of which file they live in. Only pds.deliveryState is
+  // used (see function comment for why pds.pendingInputs is not unioned).
+  const pds = _parseDeliveryStateMd(workText, "delivery-001");
+  parseWarnings.push(...pds.parseWarnings);
+
+  // Parse the promoted ### Tasks lifecycle table (replaces per-task STATE.md)
+  const [tasksLifecycle, tlWarnings] = parseTasksLifecycleMd(workText);
+  parseWarnings.push(...tlWarnings);
+
+  // -----------------------------------------------------------------------
+  // Enumerate tasks/task-NNN/ directly under the work root (no deliveries/
+  // wrapper -- the flat layout's single delivery is implicit/synthesized)
+  // -----------------------------------------------------------------------
+  const allTasks = [];
+  const tasksDir = join(workDir, "tasks");
+  let taskDirEntries = [];
+
+  try {
+    let tasksDirExists = false;
+    try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
+    if (tasksDirExists) {
+      const entries = readdirSync(tasksDir);
+      for (const tname of entries) {
+        if (!RE_TASK_DIR_H.test(tname)) continue;
+        const tpath = join(tasksDir, tname);
+        let isDir = false;
+        try { isDir = statSync(tpath).isDirectory(); } catch (_) { isDir = false; }
+        if (isDir) taskDirEntries.push([tname, tpath]);
+      }
+      taskDirEntries.sort((a, b) => a[0].localeCompare(b[0]));
+    }
+  } catch (exc) {
+    parseWarnings.push(workId + ": could not enumerate flat task dirs (" + exc + "); tasks will be empty.");
+    taskDirEntries = [];
+  }
+
+  for (const [taskIdStr, taskDir] of taskDirEntries) {
+    // Read task DETAIL.md for short_name and type (no per-task STATE.md here)
+    const taskDetailPath = join(taskDir, "DETAIL.md");
+    let shortName = null;
+    let taskType = "";
+    let taskDetailIsFile = false;
+    try { taskDetailIsFile = statSync(taskDetailPath).isFile(); } catch (_) { taskDetailIsFile = false; }
+
+    if (taskDetailIsFile) {
+      try {
+        const raw = readFileSync(taskDetailPath);
+        bytesRead += raw.length;
+        const detailText = raw.toString("utf-8");
+        shortName = _parseTaskSpecShortName(detailText);
+        taskType = _parseTaskSpecType(detailText);
+      } catch (_) {
+        // pass
+      }
+    }
+
+    // Mutable cells from the work-root STATE.md ### Tasks lifecycle table
+    const pts = tasksLifecycle[taskIdStr.toLowerCase()] || {
+      state: TaskStatus.Unknown, review: null, elapsed: null, notes: null,
+    };
+
+    const laneVal = taskLaneMap[taskIdStr.toLowerCase()];
+    const lane = laneVal !== undefined ? laneVal : null;
+
+    allTasks.push({
+      task_id: taskIdStr,
+      type: taskType,
+      wave: "delivery-001",
+      status: pts.state,
+      review_grade: pts.review,
+      elapsed: pts.elapsed,
+      notes: pts.notes,
+      short_name: shortName,
+      delivery: 1,
+      lane: lane,
+    });
+  }
+
+  // ---- Synthesize the single DeliverableRef for delivery-001 ----
+  const blueprintPath = join(workDir, "BLUEPRINT.md");
+  let deliveryName = "delivery-001";
+  let blueprintIsFile = false;
+  try { blueprintIsFile = statSync(blueprintPath).isFile(); } catch (_) { blueprintIsFile = false; }
+
+  if (blueprintIsFile) {
+    try {
+      const raw = readFileSync(blueprintPath);
+      bytesRead += raw.length;
+      const bpText = raw.toString("utf-8");
+      const bpName = _parseDeliverySpecTitle(bpText);
+      if (bpName) deliveryName = bpName;
+    } catch (_) {
+      // pass
+    }
+  }
+
+  const deliverables = [{
+    number: 1,
+    name: deliveryName,
+    task_count: allTasks.length,
+    delivery_state: pds.deliveryState,
+  }];
+
+  const workModel = _buildWorkModel({
+    work_id: workId,
+    name,
+    lifecycle: pw.lifecycle,
+    phase: pw.phase,
+    active_skill: pw.activeSkill,
+    updated: pw.updated,
+    created: pw.created,
+    pause_reason: pw.pauseReason,
+    block_reason: pw.blockReason,
+    block_artifact: pw.blockArtifact,
+    tasks: allTasks,
+    pending_inputs: pw.pendingInputs,
+    source_mode: pw.sourceMode,
+    number: workNumber,
+    title: reqTitle,
+    description: reqDescription,
+    objective: reqObjective,
+    work_path: pw.workPath,
+    recipe: pw.recipe,
+    features: pw.features,
+    deliverables: deliverables,
+  });
+
+  return [workModel, parseWarnings, bytesRead, workText, stateLabel];
 }
 
 function _readWorkHierarchical(workDir, workId) {
@@ -2942,10 +3294,11 @@ function _readWorkHierarchical(workDir, workId) {
 
   let deliveryEntries = [];
   try {
-    const entries = readdirSync(workDir);
+    const deliveriesDir = join(workDir, "deliveries");
+    const entries = readdirSync(deliveriesDir);
     for (const name of entries) {
       if (!RE_DELIVERY_DIR.test(name)) continue;
-      const fullPath = join(workDir, name);
+      const fullPath = join(deliveriesDir, name);
       let isDir = false;
       try { isDir = statSync(fullPath).isDirectory(); } catch (_) { isDir = false; }
       if (isDir) deliveryEntries.push([name, fullPath]);
@@ -3030,8 +3383,8 @@ function _readWorkHierarchical(workDir, workId) {
       const pts = _parseTaskStateMd(taskStateText, taskIdStr);
       parseWarnings.push(...pts.parseWarnings);
 
-      // Read task SPEC.md for short_name and type
-      const taskSpecPath = join(taskDir, "SPEC.md");
+      // Read task DETAIL.md for short_name and type
+      const taskSpecPath = join(taskDir, "DETAIL.md");
       let shortName = null;
       let taskType = "";
       let taskSpecIsFile = false;
@@ -3068,7 +3421,7 @@ function _readWorkHierarchical(workDir, workId) {
     }
 
     // Build DeliverableRef for this delivery
-    const deliverySpecPath = join(deliveryDir, "SPEC.md");
+    const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
     let deliveryName = deliveryId;
     let deliverySpecIsFile = false;
     try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }

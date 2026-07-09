@@ -8,8 +8,10 @@
 #   4. Grade computation via grade.sh (deterministic output verification)
 #   5. Loopback guard (grade < min does NOT re-run quick-checks, only loops review)
 #   6. FR6 interlock (gate must not fire while any task has status Failed or Blocked)
-#   7. RECORD — --delivery-id --block writes ## Delivery Gate into delivery-NNN/STATE.md (SD-5 / work-004)
+#   7. RECORD — --delivery-id --block writes ## Delivery Gate into deliveries/delivery-NNN/STATE.md (SD-5 / work-004)
 #              per-delivery model: work-level ## Delivery Gates is DERIVED (not written by helper)
+#   8. GATE-CRITERIA-FIX — state-delivery-gate.md resolves the delivery's acceptance criteria
+#      from the delivery's BLUEPRINT.md § Gate Criteria (feature-015 mis-wire fix), not PLAN.md
 #
 # Usage:
 #   test-delivery-gate-aggregate.sh [--verbose]
@@ -442,8 +444,8 @@ run_test_7() {
 
     # Create the per-delivery STATE.md that the helper now targets (SD-5).
     # The file must exist; the helper writes ## Delivery Gate into it.
-    mkdir -p "$ws/.aid/work/delivery-003"
-    cat > "$ws/.aid/work/delivery-003/STATE.md" <<'EOF'
+    mkdir -p "$ws/.aid/work/deliveries/delivery-003"
+    cat > "$ws/.aid/work/deliveries/delivery-003/STATE.md" <<'EOF'
 # Delivery State -- delivery-003
 
 > **Delivery:** delivery-003
@@ -485,7 +487,7 @@ EOF
 
     AID_STATE_FILE="$ws/.aid/work/STATE.md" \
     AID_DELIVERY_ISSUES_DIR="$ws/.aid/work" \
-    AID_LOCK_DIR="$ws/.aid/work/delivery-003" \
+    AID_LOCK_DIR="$ws/.aid/work/deliveries/delivery-003" \
     "$WRITEBACK" --delivery-id 003 --block "$gate_block" \
         > /dev/null 2>&1
     local rc=$?
@@ -499,18 +501,18 @@ EOF
     fi
 
     # Per-delivery STATE.md ## Delivery Gate section should contain the block (SD-5).
-    local delivery_state_file="$ws/.aid/work/delivery-003/STATE.md"
+    local delivery_state_file="$ws/.aid/work/deliveries/delivery-003/STATE.md"
     if grep -q "^## Delivery Gate" "$delivery_state_file" 2>/dev/null; then
-        pass "Test 7b: delivery-003/STATE.md has ## Delivery Gate section"
+        pass "Test 7b: deliveries/delivery-003/STATE.md has ## Delivery Gate section"
     else
-        fail "Test 7b: delivery-003/STATE.md has ## Delivery Gate section" \
+        fail "Test 7b: deliveries/delivery-003/STATE.md has ## Delivery Gate section" \
              "## Delivery Gate not found in $delivery_state_file"
     fi
 
     if grep -q "Reviewer Tier" "$delivery_state_file" 2>/dev/null; then
-        pass "Test 7c: Gate block content written to delivery-003/STATE.md (Reviewer Tier present)"
+        pass "Test 7c: Gate block content written to deliveries/delivery-003/STATE.md (Reviewer Tier present)"
     else
-        fail "Test 7c: Gate block content written to delivery-003/STATE.md" \
+        fail "Test 7c: Gate block content written to deliveries/delivery-003/STATE.md" \
              "Reviewer Tier not found in $delivery_state_file"
     fi
 
@@ -525,6 +527,34 @@ EOF
     fi
 
     cleanup "$ws"
+}
+
+# ---------------------------------------------------------------------------
+# Test 8: GATE-CRITERIA-FIX — state-delivery-gate.md resolves the delivery's
+# acceptance criteria from the delivery's BLUEPRINT.md § Gate Criteria
+# (feature-015 mis-wire fix), not a non-existent PLAN.md criteria block.
+# ---------------------------------------------------------------------------
+run_test_8() {
+    local gate_doc="${SCRIPT_DIR}/../../canonical/skills/aid-execute/references/state-delivery-gate.md"
+
+    if [[ ! -f "$gate_doc" ]]; then
+        fail "Test 8 setup: state-delivery-gate.md not found at $gate_doc"
+        return
+    fi
+
+    if grep -qF "from the delivery's \`BLUEPRINT.md § Gate Criteria\`" "$gate_doc"; then
+        pass "Test 8a: state-delivery-gate.md resolves Full-path delivery acceptance criteria from BLUEPRINT.md § Gate Criteria"
+    else
+        fail "Test 8a: state-delivery-gate.md resolves delivery acceptance criteria from BLUEPRINT.md" \
+             "Expected string not found in $gate_doc"
+    fi
+
+    if grep -qF "from \`PLAN.md\` (the delivery's acceptance criteria block)" "$gate_doc"; then
+        fail "Test 8b: mis-wire regression -- state-delivery-gate.md still reads criteria from PLAN.md" \
+             "Old PLAN.md criteria-block wording found in $gate_doc"
+    else
+        pass "Test 8b: state-delivery-gate.md no longer reads delivery criteria from PLAN.md (mis-wire fixed)"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -554,6 +584,7 @@ run_test_4
 run_test_5
 run_test_6
 run_test_7
+run_test_8
 
 echo ""
 test_summary

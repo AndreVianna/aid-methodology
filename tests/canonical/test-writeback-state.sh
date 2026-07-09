@@ -7,12 +7,13 @@
 # Unit layout under test:
 #   work-NNN-{name}/
 #     STATE.md                          -- work-level (--pipeline target only)
-#     delivery-NNN/
-#       STATE.md                        -- delivery-level (--block / --lifecycle target)
-#       tasks/
-#         task-NNN/
-#           SPEC.md                     -- contains **Source:** line for delivery resolution
-#           STATE.md                    -- task-level (--field / --findings target)
+#     deliveries/
+#       delivery-NNN/
+#         STATE.md                        -- delivery-level (--block / --lifecycle target)
+#         tasks/
+#           task-NNN/
+#             DETAIL.md                   -- contains **Source:** line for delivery resolution
+#             STATE.md                    -- task-level (--field / --findings target)
 #
 # Test scenarios:
 #   Unit 1: --task-id --delivery-id --field --value  (per-task STATE.md field update)
@@ -20,7 +21,7 @@
 #   Unit 3: --delivery-id --block                    (per-delivery ## Delivery Gate)
 #   Unit 4: --delivery-id --lifecycle                (per-delivery ## Delivery Lifecycle)
 #   Unit 5: --delivery-id --append-issue             (delivery-NNN-issues.md append)
-#   Unit 6: Source-line delivery resolution          (--delivery-id omitted, SPEC.md used)
+#   Unit 6: Source-line delivery resolution          (--delivery-id omitted, DETAIL.md used)
 #   Unit 7: Idempotency
 #   Unit 8: Concurrent lock contention (5 parallel per-task writes)
 #   Unit 9: --pipeline field writes (section creation + each base field)
@@ -69,7 +70,7 @@ trap 'rm -rf "$TMPDIR_BASE"' EXIT
 # ---------------------------------------------------------------------------
 
 # make_task_state DELIVERY_DIR TASK_ID [STATE_VALUE]
-# Creates delivery-NNN/tasks/task-NNN/STATE.md with ## Task State section.
+# Creates deliveries/delivery-NNN/tasks/task-NNN/STATE.md with ## Task State section.
 # STATE_VALUE defaults to "Pending".
 make_task_state() {
     local delivery_dir="$1" task_id="$2" state_val="${3:-Pending}"
@@ -108,7 +109,7 @@ TASKSTATEOF
 }
 
 # make_task_spec DELIVERY_DIR TASK_ID DELIVERY_ID WORK_NAME
-# Creates delivery-NNN/tasks/task-NNN/SPEC.md with a **Source:** line.
+# Creates deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md with a **Source:** line.
 make_task_spec() {
     local delivery_dir="$1" task_id="$2" delivery_id="$3" work_name="${4:-work-004-test}"
     local padded_t padded_d
@@ -116,7 +117,7 @@ make_task_spec() {
     padded_d=$(printf '%03d' "$delivery_id")
     local task_dir="${delivery_dir}/tasks/task-${padded_t}"
     mkdir -p "$task_dir"
-    cat > "${task_dir}/SPEC.md" <<TASKSPECEOF
+    cat > "${task_dir}/DETAIL.md" <<TASKSPECEOF
 # task-${padded_t}: Test Task
 
 **Type:** IMPLEMENT
@@ -134,13 +135,13 @@ TASKSPECEOF
 }
 
 # make_delivery_state WORK_DIR DELIVERY_ID [LIFECYCLE_VALUE]
-# Creates delivery-NNN/STATE.md with ## Delivery Lifecycle and ## Delivery Gate sections.
+# Creates deliveries/delivery-NNN/STATE.md with ## Delivery Lifecycle and ## Delivery Gate sections.
 # LIFECYCLE_VALUE defaults to "Executing".
 make_delivery_state() {
     local work_dir="$1" delivery_id="$2" lc_val="${3:-Executing}"
     local padded_d
     padded_d=$(printf '%03d' "$delivery_id")
-    local delivery_dir="${work_dir}/delivery-${padded_d}"
+    local delivery_dir="${work_dir}/deliveries/delivery-${padded_d}"
     mkdir -p "$delivery_dir"
     cat > "${delivery_dir}/STATE.md" <<DELIVSTATEOF
 # Delivery State -- delivery-${padded_d}
@@ -198,8 +199,8 @@ WORKSTATEOF
 # Global workspace: work root + delivery-001 (tasks 1..5) + delivery-002 (task 6)
 # ---------------------------------------------------------------------------
 WORK_DIR="${TMPDIR_BASE}/work"
-DELIVERY_001="${WORK_DIR}/delivery-001"
-DELIVERY_002="${WORK_DIR}/delivery-002"
+DELIVERY_001="${WORK_DIR}/deliveries/delivery-001"
+DELIVERY_002="${WORK_DIR}/deliveries/delivery-002"
 
 make_work_state "$WORK_DIR"
 export AID_STATE_FILE="${WORK_DIR}/STATE.md"
@@ -265,6 +266,19 @@ assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "[HIGH]" "finding
 assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "Deferred-to-gate" "deferred status in task-001 findings"
 # Work STATE.md must NOT receive findings
 assert_file_not_contains "${WORK_DIR}/STATE.md" "[HIGH]" "work STATE.md NOT modified by --findings (isolation)"
+
+# Regression guard: the `---` separator between ## Quick Check Findings and
+# ## Dispatch Log (task-state-template.md) must survive the --findings
+# rewrite untouched. mode_findings shares the same "swallow everything up to
+# the next `## ` heading" awk pattern as mode_delivery_block (## Delivery
+# Gate), which was found to delete an intervening `---` separator.
+assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "## Dispatch Log" "task-001 STATE.md ## Dispatch Log survives the --findings rewrite"
+FINDINGS_TO_LOG=$(awk '/^## Quick Check Findings/{f=1} f{print} /^## Dispatch Log/{exit}' "${DELIVERY_001}/tasks/task-001/STATE.md")
+if echo "$FINDINGS_TO_LOG" | grep -qE '^---$'; then
+    pass "--- separator between ## Quick Check Findings and ## Dispatch Log survives the --findings rewrite"
+else
+    fail "--- separator between ## Quick Check Findings and ## Dispatch Log was deleted by the --findings rewrite"
+fi
 
 FINDINGS_BLOCK2="**Reviewer Tier:** Small
 ### Findings
@@ -390,7 +404,7 @@ assert_file_contains "$ISSUES_FILE" "task-003" "row1 still present after row2 ap
 echo ""
 echo "=== Unit 6: Source-line delivery resolution (--delivery-id omitted) ==="
 
-# The task SPEC.md already contains "**Source:** work-004-test -> delivery-001".
+# The task DETAIL.md already contains "**Source:** work-004-test -> delivery-001".
 # Resolve the delivery from that line and write to the correct task STATE.md.
 # We must supply AID_STATE_FILE so the script knows the work root.
 code=0
@@ -398,19 +412,19 @@ bash "$SCRIPT" --task-id 3 --field State --value "In Review" 2>/dev/null || code
 assert_exit_zero "$code" "Source-line resolution: task-3 → delivery-001, exit 0"
 assert_file_contains "${DELIVERY_001}/tasks/task-003/STATE.md" "In Review" "task-003 State written via source-line resolution"
 
-# task-6 is in delivery-002 per its SPEC.md
+# task-6 is in delivery-002 per its DETAIL.md
 code=0
 bash "$SCRIPT" --task-id 6 --field Notes --value "auto-resolved" 2>/dev/null || code=$?
 assert_exit_zero "$code" "Source-line resolution: task-6 → delivery-002, exit 0"
 assert_file_contains "${DELIVERY_002}/tasks/task-006/STATE.md" "auto-resolved" "task-006 Notes written via source-line resolution"
 
-# Omit delivery-id AND have no SPEC.md → must fail with exit 5
+# Omit delivery-id AND have no DETAIL.md → must fail with exit 5
 ORPHAN_WORK="${TMPDIR_BASE}/orphan-work"
 mkdir -p "$ORPHAN_WORK"
-make_task_state "$ORPHAN_WORK/delivery-001" 99  # state only, no SPEC.md
+make_task_state "$ORPHAN_WORK/deliveries/delivery-001" 99  # state only, no DETAIL.md
 code=0
 AID_STATE_FILE="${ORPHAN_WORK}/STATE.md" bash "$SCRIPT" --task-id 99 --field State --value Done 2>/dev/null || code=$?
-assert_exit_eq "$code" 5 "no --delivery-id + no SPEC.md → exit 5 (cannot resolve delivery)"
+assert_exit_eq "$code" 5 "no --delivery-id + no DETAIL.md → exit 5 (cannot resolve delivery)"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -462,7 +476,7 @@ echo "=== Unit 8: Concurrent lock contention (5 parallel per-task writes) ==="
 
 # Reset task states to Pending for a clean concurrency baseline
 CONC_WORK="${TMPDIR_BASE}/conc-work"
-CONC_DELIV="${CONC_WORK}/delivery-001"
+CONC_DELIV="${CONC_WORK}/deliveries/delivery-001"
 make_work_state "$CONC_WORK"
 make_delivery_state "$CONC_WORK" 1
 for i in 1 2 3 4 5; do
@@ -731,7 +745,7 @@ echo ""
 echo "=== Unit 12: Isolation — task/findings/block do NOT touch work STATE.md ==="
 
 ISOL_WORK="${TMPDIR_BASE}/isol-work"
-ISOL_DELIV="${ISOL_WORK}/delivery-001"
+ISOL_DELIV="${ISOL_WORK}/deliveries/delivery-001"
 make_work_state "$ISOL_WORK"
 make_delivery_state "$ISOL_WORK" 1
 make_task_state "$ISOL_DELIV" 1
@@ -890,7 +904,7 @@ echo "=== Unit 16: State field enum validation (field=State; replaces old Status
 
 make_state_task() {
     local dir="$1" delivery_id="${2:-1}"
-    local delivery_dir="${dir}/delivery-$(printf '%03d' "$delivery_id")"
+    local delivery_dir="${dir}/deliveries/delivery-$(printf '%03d' "$delivery_id")"
     make_task_state "$delivery_dir" 1
     make_task_spec  "$delivery_dir" 1 "$delivery_id"
 }
@@ -904,13 +918,13 @@ for state_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed" "
     S16_WORK="${S16_DIR}/work"
     make_work_state "$S16_WORK"
     make_delivery_state "$S16_WORK" 1
-    make_task_state "${S16_WORK}/delivery-001" 1
-    make_task_spec  "${S16_WORK}/delivery-001" 1 1
+    make_task_state "${S16_WORK}/deliveries/delivery-001" 1
+    make_task_spec  "${S16_WORK}/deliveries/delivery-001" 1 1
     code=0
     AID_STATE_FILE="${S16_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$state_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "16.1: State='${state_val}' accepted (exit 0)"
-    assert_file_contains "${S16_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    assert_file_contains "${S16_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "**State:** ${state_val}" "16.1: State='${state_val}' written to task STATE.md"
 done
 
@@ -921,13 +935,13 @@ echo "--- 16.2: _none yet_ placeholder accepted ---"
 S16_NONE_WORK="${TMPDIR_BASE}/unit16-none/work"
 make_work_state "$S16_NONE_WORK"
 make_delivery_state "$S16_NONE_WORK" 1
-make_task_state "${S16_NONE_WORK}/delivery-001" 1
-make_task_spec  "${S16_NONE_WORK}/delivery-001" 1 1
+make_task_state "${S16_NONE_WORK}/deliveries/delivery-001" 1
+make_task_spec  "${S16_NONE_WORK}/deliveries/delivery-001" 1 1
 code=0
 AID_STATE_FILE="${S16_NONE_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "_none yet_" 2>/dev/null || code=$?
 assert_exit_zero "$code" "16.2: State='_none yet_' placeholder accepted (exit 0)"
-assert_file_contains "${S16_NONE_WORK}/delivery-001/tasks/task-001/STATE.md" \
+assert_file_contains "${S16_NONE_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "_none yet_" "16.2: _none yet_ placeholder written to task STATE.md"
 
 # 16.3 — Out-of-enum values rejected (exit 4)
@@ -938,14 +952,14 @@ for bad_val in "running" "DONE" "Finished" "in progress" "InProgress" "todo" "PE
     S16_BAD_WORK="${TMPDIR_BASE}/unit16-bad-$(echo "$bad_val" | tr ' /' '_')/work"
     make_work_state "$S16_BAD_WORK"
     make_delivery_state "$S16_BAD_WORK" 1
-    make_task_state "${S16_BAD_WORK}/delivery-001" 1
-    make_task_spec  "${S16_BAD_WORK}/delivery-001" 1 1
+    make_task_state "${S16_BAD_WORK}/deliveries/delivery-001" 1
+    make_task_spec  "${S16_BAD_WORK}/deliveries/delivery-001" 1 1
     code=0
     AID_STATE_FILE="${S16_BAD_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$bad_val" 2>/dev/null || code=$?
     assert_exit_eq "$code" 4 "16.3: State='${bad_val}' rejected (exit 4)"
     # STATE.md still shows Pending
-    assert_file_contains "${S16_BAD_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    assert_file_contains "${S16_BAD_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "**State:** Pending" "16.3: task STATE.md unchanged after rejection of '${bad_val}'"
 done
 
@@ -957,8 +971,8 @@ for legacy_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed";
     S16_LEG_WORK="${TMPDIR_BASE}/unit16-legacy-$(echo "$legacy_val" | tr ' ' '_')/work"
     make_work_state "$S16_LEG_WORK"
     make_delivery_state "$S16_LEG_WORK" 1
-    make_task_state "${S16_LEG_WORK}/delivery-001" 1
-    make_task_spec  "${S16_LEG_WORK}/delivery-001" 1 1
+    make_task_state "${S16_LEG_WORK}/deliveries/delivery-001" 1
+    make_task_spec  "${S16_LEG_WORK}/deliveries/delivery-001" 1 1
     code=0
     AID_STATE_FILE="${S16_LEG_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$legacy_val" 2>/dev/null || code=$?
@@ -972,14 +986,14 @@ echo "--- 16.5: State-only scope — enum does not leak to other fields ---"
 S16_SCOPE_WORK="${TMPDIR_BASE}/unit16-scope/work"
 make_work_state "$S16_SCOPE_WORK"
 make_delivery_state "$S16_SCOPE_WORK" 1
-make_task_state "${S16_SCOPE_WORK}/delivery-001" 1
-make_task_spec  "${S16_SCOPE_WORK}/delivery-001" 1 1
+make_task_state "${S16_SCOPE_WORK}/deliveries/delivery-001" 1
+make_task_spec  "${S16_SCOPE_WORK}/deliveries/delivery-001" 1 1
 
 SCOPE_CODE=0
 AID_STATE_FILE="${S16_SCOPE_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field Notes --value "anything weird !@#" 2>/dev/null || SCOPE_CODE=$?
 assert_exit_zero "$SCOPE_CODE" "16.5: Notes='anything weird !@#' accepted (enum does not leak to Notes)"
-assert_file_contains "${S16_SCOPE_WORK}/delivery-001/tasks/task-001/STATE.md" \
+assert_file_contains "${S16_SCOPE_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "anything weird !@#" "16.5: Notes value written successfully"
 
 SCOPE_CODE=0
@@ -999,10 +1013,10 @@ echo "--- 16.6: Deterministic consumability — State grep-recoverable in task S
 S16_CONS_WORK="${TMPDIR_BASE}/unit16-cons/work"
 make_work_state "$S16_CONS_WORK"
 make_delivery_state "$S16_CONS_WORK" 1
-make_task_state "${S16_CONS_WORK}/delivery-001" 1
-make_task_spec  "${S16_CONS_WORK}/delivery-001" 1 1
+make_task_state "${S16_CONS_WORK}/deliveries/delivery-001" 1
+make_task_spec  "${S16_CONS_WORK}/deliveries/delivery-001" 1 1
 
-TASK_STATE_FILE="${S16_CONS_WORK}/delivery-001/tasks/task-001/STATE.md"
+TASK_STATE_FILE="${S16_CONS_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md"
 
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "In Review" 2>/dev/null
@@ -1078,7 +1092,7 @@ fi
 # use different lock files and can proceed fully in parallel.
 PIPE_STATE17B="${TMPDIR_BASE}/pipe17b/STATE.md"
 CONC17B_WORK="${TMPDIR_BASE}/pipe17b"
-CONC17B_DELIV="${CONC17B_WORK}/delivery-001"
+CONC17B_DELIV="${CONC17B_WORK}/deliveries/delivery-001"
 make_pipeline_state "$PIPE_STATE17B"
 make_delivery_state "$CONC17B_WORK" 1
 make_task_state "$CONC17B_DELIV" 1
@@ -1195,7 +1209,7 @@ assert_file_not_contains "$PIPE_STATE19A" "**Pause Reason:**" "19b: Pause Reason
 # 19c: Block path (impediment / Failed task emit sequence)
 PIPE_STATE19C="${TMPDIR_BASE}/pipe19c/STATE.md"
 WORK_19C="${TMPDIR_BASE}/pipe19c"
-DELIV_19C="${WORK_19C}/delivery-001"
+DELIV_19C="${WORK_19C}/deliveries/delivery-001"
 make_pipeline_state "$PIPE_STATE19C"
 make_delivery_state "$WORK_19C" 1
 make_task_state "$DELIV_19C" 1
@@ -1242,6 +1256,239 @@ AID_STATE_FILE="$PIPE_STATE19F" bash "$SCRIPT" --pipeline --field "Pause Reason"
 assert_exit_zero "$code" "19f: Delivery gate non-CODE pause emit → exit 0"
 assert_file_contains "$PIPE_STATE19F" "**Lifecycle:** Paused-Awaiting-Input" "19f: Lifecycle Paused on non-CODE-only gate stop"
 assert_file_contains "$PIPE_STATE19F" "**Pause Reason:** Delivery gate blocked on non-CODE issues" "19f: Pause Reason explains upstream fix needed"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 20: feature-001 flattened single-delivery layout (auto-detected) ==="
+
+# Flat layout fixture: no deliveries/ wrapper; tasks/task-NNN/DETAIL.md directly
+# under the work root; the promoted ## Delivery Lifecycle (### Tasks lifecycle)
+# and ## Delivery Gate blocks live in the work-root STATE.md.
+
+# make_flat_task_spec WORK_DIR TASK_ID
+# Creates tasks/task-NNN/DETAIL.md directly under the work root (no per-task STATE.md).
+make_flat_task_spec() {
+    local work_dir="$1" task_id="$2"
+    local padded_t
+    padded_t=$(printf '%03d' "$task_id")
+    local task_dir="${work_dir}/tasks/task-${padded_t}"
+    mkdir -p "$task_dir"
+    cat > "${task_dir}/DETAIL.md" <<FLATTASKEOF
+# task-${padded_t}: Flat test task
+
+**Type:** IMPLEMENT
+
+**Source:** work-flat-test -> delivery-001
+
+**Depends on:** --
+
+**Scope:**
+- Test scope for flat task ${padded_t}
+
+**Acceptance Criteria:**
+- [ ] criterion
+FLATTASKEOF
+}
+
+# make_flat_work_state WORK_DIR
+# Creates the work-root STATE.md with the three promoted feature-001 blocks:
+# ## Delivery Lifecycle (+ ### Tasks lifecycle) and ## Delivery Gate.
+make_flat_work_state() {
+    local work_dir="$1"
+    mkdir -p "$work_dir"
+    cat > "${work_dir}/STATE.md" <<'FLATSTATEEOF'
+# Work State — work-flat-test
+
+## Pipeline State
+
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-07-08T00:00:00Z
+
+## Delivery Lifecycle
+
+- **State:** Specified
+- **Updated:** 2026-07-08T00:00:00Z
+- **Block Reason:** --
+- **Block Artifact:** --
+
+### Tasks lifecycle
+
+| Task | State | Review | Elapsed | Notes |
+|------|-------|--------|---------|-------|
+| _none yet_ | | | | |
+
+## Delivery Gate
+
+- **Reviewer Tier:** Small
+- **Grade:** Pending
+- **Issue List:** none
+- **Timestamp:** --
+
+---
+
+<!-- ============================================================
+     DERIVED / READ-ONLY VIEWS
+     ============================================================ -->
+
+## Tasks State
+
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
+| _none yet_ | | | | | | | |
+FLATSTATEEOF
+}
+
+# make_flat_blueprint WORK_DIR: the work-root BLUEPRINT.md (delivery definition).
+make_flat_blueprint() {
+    local work_dir="$1"
+    cat > "${work_dir}/BLUEPRINT.md" <<'FLATBPEOF'
+# Delivery BLUEPRINT -- delivery-001: Flat test delivery
+
+## Gate Criteria
+- [ ] criterion
+FLATBPEOF
+}
+
+FLAT_WORK="${TMPDIR_BASE}/work-flat-test"
+make_flat_work_state "$FLAT_WORK"
+make_flat_blueprint "$FLAT_WORK"
+make_flat_task_spec "$FLAT_WORK" 1
+make_flat_task_spec "$FLAT_WORK" 2
+
+FLAT_STATE="${FLAT_WORK}/STATE.md"
+
+# 20a: --task-id --field --value on the flat layout targets the work-root
+# STATE.md's ### Tasks lifecycle table -- NOT a per-task STATE.md (none exists).
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Progress" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20a: flat --field write → exit 0"
+assert_file_contains "$FLAT_STATE" "| task-001 | In Progress |" "20a: task-001 row written to ### Tasks lifecycle"
+if [[ ! -f "${FLAT_WORK}/tasks/task-001/STATE.md" ]]; then
+    pass "20a: no per-task STATE.md created for the flat layout"
+else
+    fail "20a: a per-task STATE.md was created — flat layout must not use one"
+fi
+
+# 20b: the ### Tasks lifecycle placeholder row is replaced, not left dangling.
+# NOTE: must match the exact 5-column "### Tasks lifecycle" placeholder LINE,
+# not a bare substring check -- the fixture's OWN plural DERIVED "## Tasks
+# State" section (8 columns) legitimately keeps its own "_none yet_" placeholder
+# forever on the flat layout (nothing ever populates that unused view), and the
+# 8-column placeholder line's first 6 pipe-delimited cells are byte-identical
+# to the ENTIRE 5-column placeholder line -- a plain `grep -F` substring test
+# (assert_file_not_contains) would ALWAYS find the 5-column string as a prefix
+# of the 8-column line and could never pass. Use `grep -x` (exact whole-line
+# match) instead, matching what the comment above always intended.
+if grep -qxF "| _none yet_ | | | | |" "$FLAT_STATE"; then
+    fail "20b: ### Tasks lifecycle placeholder row replaced by the first real task row — exact 5-column placeholder line still present"
+else
+    pass "20b: ### Tasks lifecycle placeholder row replaced by the first real task row"
+fi
+assert_file_contains "$FLAT_STATE" "| _none yet_ | | | | | | | |" "20b: unrelated plural DERIVED ## Tasks State placeholder is untouched"
+
+# 20c: a second task's first write APPENDS a contiguous row (no blank line
+# splitting the table into two blocks)
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 2 --field State --value "Pending" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20c: second flat task --field write → exit 0"
+assert_file_contains "$FLAT_STATE" "| task-002 | Pending |" "20c: task-002 row appended to ### Tasks lifecycle"
+# Contiguity: the line between the task-001 and task-002 rows must itself be
+# a table row (not blank), i.e. the two rows are adjacent in the file.
+BETWEEN_ROWS=$(awk '/^\| task-001 \|/{f=1; next} f{print; exit}' "$FLAT_STATE")
+if [[ "$BETWEEN_ROWS" == "| task-002 |"* ]]; then
+    pass "20c: appended row is contiguous with the existing table (no blank-line split)"
+else
+    fail "20c: appended row broke table contiguity — line after task-001 was: '$BETWEEN_ROWS'"
+fi
+
+# 20d: updating a different field on an existing row preserves the other columns
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Review --value "A" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20d: flat --field Review write on existing row → exit 0"
+assert_file_contains "$FLAT_STATE" "| task-001 | In Progress | A |" "20d: task-001 Review set to A, State preserved"
+assert_file_contains "$FLAT_STATE" "| task-002 | Pending |" "20d: task-002 row unaffected by task-001 update"
+
+# 20e: --delivery-id 001 --lifecycle updates the work-root ## Delivery Lifecycle
+# State line directly (no deliveries/delivery-001/STATE.md is created)
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --lifecycle "Executing" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20e: flat --lifecycle write → exit 0"
+assert_file_contains "$FLAT_STATE" "**State:** Executing" "20e: work-root ## Delivery Lifecycle State set to Executing"
+if [[ ! -d "${FLAT_WORK}/deliveries" ]]; then
+    pass "20e: no deliveries/ directory created for the flat layout"
+else
+    fail "20e: a deliveries/ directory was created — flat layout must not use one"
+fi
+
+# 20f: --delivery-id 001 --block writes the work-root ## Delivery Gate block
+FLAT_GATE_BLOCK="- **Reviewer Tier:** Small
+- **Grade:** A
+- **Issue List:** none
+- **Timestamp:** 2026-07-08T01:00:00Z"
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --block "$FLAT_GATE_BLOCK" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20f: flat --block write → exit 0"
+assert_file_contains "$FLAT_STATE" "**Grade:** A" "20f: work-root ## Delivery Gate grade written"
+# The plural DERIVED ## Tasks State view (distinct section) must be untouched
+assert_file_contains "$FLAT_STATE" "| _none yet_ | | | | | | | |" "20f: plural DERIVED ## Tasks State view still shows the placeholder (untouched)"
+# Regression guard: the `---` separator and the `DERIVED / READ-ONLY VIEWS`
+# banner comment that sit between ## Delivery Gate and ## Tasks State in the
+# real work-state-template.md must survive the --block rewrite untouched (the
+# old awk swallowed everything up to the next `## ` heading, deleting both).
+assert_file_contains "$FLAT_STATE" "DERIVED / READ-ONLY VIEWS" "20f: DERIVED/READ-ONLY VIEWS banner comment survives the --block rewrite"
+GATE_TO_TASKS=$(awk '/^## Delivery Gate$/{f=1} f{print} /^## Tasks State$/{exit}' "$FLAT_STATE")
+if echo "$GATE_TO_TASKS" | grep -qE '^---$'; then
+    pass "20f: --- separator between ## Delivery Gate and ## Tasks State survives the --block rewrite"
+else
+    fail "20f: --- separator between ## Delivery Gate and ## Tasks State was deleted by the --block rewrite"
+fi
+if echo "$GATE_TO_TASKS" | grep -q "DERIVED / READ-ONLY VIEWS"; then
+    pass "20f: DERIVED/READ-ONLY VIEWS banner is positioned between ## Delivery Gate and ## Tasks State (not pulled up/deleted)"
+else
+    fail "20f: DERIVED/READ-ONLY VIEWS banner is NOT between ## Delivery Gate and ## Tasks State — section boundary corrupted"
+fi
+
+# 20g: idempotency — rewriting the same field value leaves the file byte-identical
+BEFORE=$(wc -c < "$FLAT_STATE")
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Progress" 2>/dev/null
+AFTER=$(wc -c < "$FLAT_STATE")
+if [[ "$BEFORE" -eq "$AFTER" ]]; then
+    pass "20g: flat --field write is idempotent — no size change on same value"
+else
+    fail "20g: flat --field write not idempotent — size changed from $BEFORE to $AFTER"
+fi
+
+# 20h: malformed flat work (### Tasks lifecycle section absent) → exit 6
+FLAT_MALFORMED="${TMPDIR_BASE}/work-flat-malformed"
+mkdir -p "$FLAT_MALFORMED"
+cat > "${FLAT_MALFORMED}/STATE.md" <<'MALFORMEDEOF'
+# Work State — work-flat-malformed
+
+## Pipeline State
+
+- **Lifecycle:** Running
+MALFORMEDEOF
+# BLUEPRINT.md must be present so is_flat_layout()'s 3-part rule (BLUEPRINT.md
+# present AND DETAIL.md present AND no deliveries/) still routes this fixture
+# through the flat branch -- otherwise it would fall through to the
+# hierarchical --field path (a different, unresolvable delivery-STATE.md path)
+# and this unit would no longer exercise the "malformed flat work" scenario.
+make_flat_blueprint "$FLAT_MALFORMED"
+make_flat_task_spec "$FLAT_MALFORMED" 1
+code=0
+AID_STATE_FILE="${FLAT_MALFORMED}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "Done" 2>/dev/null || code=$?
+assert_exit_eq "$code" 6 "20h: flat work missing ### Tasks lifecycle → exit 6 (malformed)"
+
+# 20i: nested-path regression — the ORIGINAL hierarchical fixture (has
+# deliveries/) from the top of this file must still route through the
+# per-unit STATE.md files, completely unaffected by the flat-layout branch.
+code=0
+run_field 1 1 State "Done" || code=$?
+assert_exit_zero "$code" "20i: nested-path --field write still succeeds after flat-layout changes"
+assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "Done" "20i: nested-path task-001 STATE.md still the write target"
+assert_file_not_contains "$FLAT_STATE" "task-001 | Done" "20i: nested-path write did not leak into the flat fixture"
 
 # ---------------------------------------------------------------------------
 echo ""

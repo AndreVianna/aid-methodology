@@ -566,9 +566,9 @@ trackable record for this run and the anchor that idempotent re-entry reads on t
 - **Re-triaged:** <date> (run N)
 ```
 
-(`**Override:** yes` is added when the human picked a path other than the proposed one,
-mirroring `state-triage.md`'s override record. `**Re-triaged:**` records the date/run-number
-so consecutive re-runs are traceable.)
+(`**Override:** yes` is added when the human picked a path other than the proposed one --
+an override-record convention used elsewhere in AID's triage-style confirmations.
+`**Re-triaged:**` records the date/run-number so consecutive re-runs are traceable.)
 
 Then **branch on the confirmed path**:
 

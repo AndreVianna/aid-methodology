@@ -12,10 +12,10 @@
 #   compute-block-radius.sh --failed-task NNN --plan-file PATH [--delivery-id NNN]
 #       Read the Execution Graph from PATH (PLAN.md or SPEC.md). The Execution
 #       Graph heading may be at any level (#### in a full PLAN.md, ## in a
-#       lite/recipe SPEC). For a multi-delivery PLAN.md (### delivery-NNN
+#       flattened single-delivery SPEC). For a multi-delivery PLAN.md (### delivery-NNN
 #       sections) --delivery-id is REQUIRED and scopes parsing to that delivery
-#       (so colliding per-delivery task IDs don't merge). A lite/recipe SPEC with
-#       no delivery sections needs no --delivery-id.
+#       (so colliding per-delivery task IDs don't merge). A flattened single-delivery
+#       SPEC with no delivery sections needs no --delivery-id.
 #       Print one task-NNN per line to stdout. Exit 0 on success.
 #
 #   compute-block-radius.sh --failed-task NNN --graph-file PATH
@@ -135,7 +135,7 @@ FAILED_TASK_NORM="task-$(printf '%03d' "$((10#${FAILED_TASK_ID}))")"
 # ---------------------------------------------------------------------------
 # The shared awk parser for both edges and declared nodes. Arguments:
 #   did  — delivery id to scope to ("" = parse all Execution Graph blocks, used
-#          for lite/recipe SPECs that have a single top-level graph)
+#          for flattened single-delivery SPECs that have a single top-level graph)
 #   mode — "edges" (emit "dep<TAB>task" reverse edges) or "nodes" (emit each
 #          declared left-column task-NNN, one per line)
 # The Execution Graph header is matched at ANY heading level (#+).
@@ -190,7 +190,7 @@ _parse_graph_awk() {
                     next
                 }
                 # mode == "edges": emit reverse edges. Treat em-dash / hyphen /
-                # "none" / "(none)" / "— (none)" (lite-spec form) as no-deps.
+                # "none" / "(none)" / "— (none)" (flattened single-delivery SPEC form) as no-deps.
                 low = tolower(deps_str)
                 if (deps_str == "—" || deps_str == "-" || deps_str == "" \
                     || low == "none" || low == "(none)" \
@@ -308,8 +308,8 @@ if [[ -n "$PLAN_FILE" ]]; then
 
     # A multi-delivery PLAN.md must be scoped — otherwise every delivery's
     # graph merges and colliding per-delivery task IDs contaminate the radius.
-    # A single delivery section (or none, i.e. a lite/recipe SPEC) is unambiguous
-    # and needs no --delivery-id.
+    # A single delivery section (or none, i.e. a flattened single-delivery SPEC) is
+    # unambiguous and needs no --delivery-id.
     delivery_count=$(grep -cE '^### delivery-' "$PLAN_FILE")
     if [[ "$delivery_count" -ge 2 && -z "$DELIVERY_ID" ]]; then
         die "multi-delivery PLAN ($PLAN_FILE has $delivery_count '### delivery-' sections) requires --delivery-id NNN" 5

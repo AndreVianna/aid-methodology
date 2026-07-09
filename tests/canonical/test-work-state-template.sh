@@ -6,11 +6,11 @@
 # SD-9 authored-not-derived note, and the derived/read-only markers.
 #
 # Templates under test (5 files):
-#   work-state-template.md       -- work-level STATE
-#   delivery-state-template.md   -- delivery-level STATE
-#   task-state-template.md       -- task-level STATE
-#   delivery-spec-template.md    -- delivery-level SPEC
-#   task-spec-template.md        -- task-level SPEC
+#   work-state-template.md         -- work-level STATE
+#   delivery-state-template.md     -- delivery-level STATE
+#   task-state-template.md         -- task-level STATE
+#   delivery-blueprint-template.md -- delivery-level BLUEPRINT
+#   task-detail-template.md        -- task-level DETAIL
 #
 # Tests:
 #   WS01  work-state-template has ## Pipeline State header (naming contract)
@@ -50,8 +50,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 WORK_STATE="${REPO_ROOT}/canonical/aid/templates/work-state-template.md"
 DELIVERY_STATE="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.md"
 TASK_STATE="${REPO_ROOT}/canonical/aid/templates/task-state-template.md"
-DELIVERY_SPEC="${REPO_ROOT}/canonical/aid/templates/delivery-spec-template.md"
-TASK_SPEC="${REPO_ROOT}/canonical/aid/templates/task-spec-template.md"
+DELIVERY_SPEC="${REPO_ROOT}/canonical/aid/templates/delivery-blueprint-template.md"
+TASK_SPEC="${REPO_ROOT}/canonical/aid/templates/task-detail-template.md"
 
 DOGFOOD_WORK_STATE="${REPO_ROOT}/.claude/aid/templates/work-state-template.md"
 FIRST_RUN="${REPO_ROOT}/canonical/skills/aid-describe/references/state-first-run.md"

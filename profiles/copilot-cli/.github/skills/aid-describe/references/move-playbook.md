@@ -185,10 +185,12 @@ Why: events reveal hidden states and decision points that noun-first description
 **What it is.** Ask the user to outline all the high-level activities in the user journey
 from start to finish (the backbone), then ask which subset is essential for the first
 version (the walking skeleton -- the thinnest possible end-to-end slice). This is the
-primary scope-sizing move; feature-004 (guided triage) leans on it to decide full vs lite.
+primary full-path scope-sizing move (full-vs-lite routing has left `aid-describe`
+entirely -- work-001-lite-aid-skills feature-013; this move now sizes the backbone for
+the full-path interview itself, not a path decision).
 
-**When it fires.** Gap type: **unknown scope size** -- full-vs-lite routing signal or
-recipe-deciding signal.
+**When it fires.** Gap type: **unknown scope size** -- the backbone/skeleton sizing
+signal for the full-path interview.
 
 **Conversational pattern.**
 
@@ -321,7 +323,7 @@ selected gap's type determines the move drawn from the playbook. The delivery en
 | Undefined or ambiguous term the user used | Move 2: Term-capture + disambiguation | DDD/UL (1) |
 | Unnamed boundary or relationship in the architecture | Move 3: Boundary-elicitation | Context Modeling (2) |
 | Unknown behavior or flow in a process-heavy domain | Move 4: Event-first, propose-timeline-back | Event Storming (3) |
-| Unknown scope size (full-vs-lite or recipe signal) | Move 5: Backbone-first + walking-skeleton (the move feature-004 leans on) | User-Story Mapping (4) |
+| Unknown scope size (backbone size, sprawl) | Move 5: Backbone-first + walking-skeleton | User-Story Mapping (4) |
 | Missing fit criterion or testability of a requirement | Move 6: Rationale + testability probe | Volere (5) |
 | Missing "why" behind a stated intent | Move 7: Bounded why-probe -- climb 2-3 whys, propose the inferred motive back, stop at the terminal value; NEVER the rote "five whys" | Five-Whys / Laddering (7) |
 | A claim or term asserted with no concrete example | Move 8: Concrete-example probe | Example Mapping (8) |
@@ -346,7 +348,7 @@ Each turn, the engine:
 5. Wraps the move in the delivery envelope and emits.
 
 The sequence emerges from the gap inventory (supplied by the consumer: REQUIREMENTS
-sections, the Rec-A seed doc-set, or triage signals), not from a preset move order. NFR-1
+sections or the Rec-A seed doc-set), not from a preset move order. NFR-1
 ("latitude in dialogue, discipline in process") is the reason: the analyst follows the
 conversation, not a questionnaire.
 

@@ -1503,6 +1503,101 @@ def parse_delivery_state_md(
     return pds
 
 
+# ---------------------------------------------------------------------------
+# feature-001 (flattened single-delivery layout): ### Tasks lifecycle parser
+#
+# The flat layout has no per-task STATE.md and no per-delivery STATE.md -- the
+# promoted `## Delivery Lifecycle` / `## Delivery Gate` blocks (parsed above via
+# parse_delivery_state_md, unchanged) plus a `### Tasks lifecycle` SUBSECTION
+# live directly in the work-root STATE.md. This table REPLACES the per-task
+# STATE.md's `## Task State` section, but uses a NARROWER column layout (no
+# leading # / Type / Wave columns -- type comes from DETAIL.md, wave is the
+# synthesized delivery-001 for every task in this layout):
+#
+#   | Task | State | Review | Elapsed | Notes |
+#
+# Called ONLY by the flat reader path (_read_work_flat in reader.py).
+# ---------------------------------------------------------------------------
+
+_RE_TASKS_LIFECYCLE_SECTION = re.compile(r"^###\s+Tasks lifecycle\s*$", re.IGNORECASE)
+# Any ## or ### heading ends the ### Tasks lifecycle subsection (it is nested
+# under ## Delivery Lifecycle, so a plain ## heading -- e.g. ## Delivery Gate --
+# must also close it, not just another ###).
+_RE_SECTION_2_OR_3 = re.compile(r"^#{2,3}\s+\S")
+
+
+def parse_tasks_lifecycle_md(text: str) -> "tuple[dict[str, ParsedTaskState], list[str]]":
+    """Parse the work-root STATE.md `### Tasks lifecycle` table (feature-001 flat layout).
+
+    Returns (task_id_lower -> ParsedTaskState, parse_warnings). Header/separator
+    rows and the `_none yet_` placeholder row are skipped. Unrecognized state
+    literals map to TaskStatus.Unknown (never throws, NFR7).
+
+    Read-only. Called only by the flat reader path.
+    """
+    result: dict[str, ParsedTaskState] = {}
+    warnings: list[str] = []
+
+    try:
+        in_section = False
+        header_seen = False
+
+        for line in text.splitlines():
+            if _RE_TASKS_LIFECYCLE_SECTION.match(line):
+                in_section = True
+                header_seen = False
+                continue
+
+            if in_section and _RE_SECTION_2_OR_3.match(line):
+                in_section = False
+                continue
+
+            if not in_section:
+                continue
+
+            stripped = line.strip()
+            if not stripped.startswith("|"):
+                continue
+            if _RE_TABLE_SEP.match(stripped):
+                continue
+
+            cols = [c.strip() for c in stripped.strip("|").split("|")]
+            if len(cols) < 2:
+                continue
+
+            # First table row encountered is the header row (Task | State | ...)
+            if not header_seen:
+                header_seen = True
+                continue
+
+            if any(_NONE_YET in c for c in cols):
+                continue
+
+            def _col(idx: int) -> Optional[str]:
+                if idx < len(cols):
+                    v = cols[idx].strip()
+                    return None if _is_null(v) else v
+                return None
+
+            task_id = _col(0) or ""
+            if not task_id or task_id.lower() == "task":
+                continue
+
+            pts = ParsedTaskState()
+            pts.state = _parse_task_status(_col(1) or "")
+            pts.review = _col(2)
+            pts.elapsed = _col(3)
+            pts.notes = _col(4)
+            result[task_id.lower()] = pts
+
+    except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
+        warnings.append(
+            f"error parsing ### Tasks lifecycle table ({exc}); returning best-effort"
+        )
+
+    return result, warnings
+
+
 def lines_iter(text: str):
     """Yield lines from text (helper to avoid repeated splitlines() calls)."""
     return text.splitlines()

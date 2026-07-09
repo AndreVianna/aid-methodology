@@ -71,9 +71,10 @@ Respond to each concern, re-present affected tasks. Loop until approved.
 
 Once approved:
 1. For each task in this delivery, create the nested task folder and seed both files:
-   - `.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md` -- the 6-section task definition
-     (the former flat `tasks/task-NNN.md`; same schema, now lives in the task folder).
-   - `.aid/{work}/delivery-NNN/tasks/task-NNN/STATE.md` -- seeded from
+   - `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` -- the 6-section task
+     definition, seeded from `.claude/aid/templates/task-detail-template.md` (the former flat
+     `tasks/task-NNN.md`; same schema, now lives in the task folder).
+   - `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md` -- seeded from
      `.claude/aid/templates/task-state-template.md` with `State: Pending`, empty
      Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
    Do NOT write task rows into the work `STATE.md` `## Tasks State` -- that is a
@@ -88,7 +89,7 @@ Once approved:
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `per-deliverable`
-- `{{ARTIFACTS}}` = the task SPEC.md files just written for delivery-NNN (`.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md`) + the Execution Graph section just appended to PLAN.md (if present)
+- `{{ARTIFACTS}}` = the task DETAIL.md files just written for delivery-NNN (`.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`) + the Execution Graph section just appended to PLAN.md (if present)
 - `{{CONTEXT}}` = `Tasks for delivery-NNN of work-NNN; feature SPECs: feature-NNN-{name}, ...`
 
 Include in the prompt:

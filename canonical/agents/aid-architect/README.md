@@ -22,7 +22,7 @@ The Architect absorbed the UX Designer role: UX/flow design is the DESIGN-typed 
 | **Discover** | Orchestrates GENERATE phase; coordinates KB doc population |
 | **Execute** | Executes DESIGN-typed tasks (UX flows, component structure, accessibility review) |
 | **Housekeep** | Applies KB-DELTA updates when KB docs need structural amendments |
-| **Interview** | Produces TASK-BREAKDOWN and FEATURE-DECOMPOSITION outputs from interview-phase input |
+| **Define** | Produces FEATURE-DECOMPOSITION output from approved requirements |
 
 ## What It Produces
 

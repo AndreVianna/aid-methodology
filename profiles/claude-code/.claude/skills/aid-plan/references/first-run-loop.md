@@ -86,7 +86,7 @@ WARNING: **DO NOT accumulate multiple deliverables "in your head" -- write each 
 
 **Immediately after writing the PLAN.md stanza,** create the delivery folder:
 
-**4a. Create `delivery-NNN/SPEC.md`** (seed from `.claude/aid/templates/delivery-spec-template.md`):
+**4a. Create `deliveries/delivery-NNN/BLUEPRINT.md`** (seed from `.claude/aid/templates/delivery-blueprint-template.md`):
 
 Fill in from the approved PLAN.md stanza:
 - `Delivery:` = delivery-NNN
@@ -100,9 +100,9 @@ Fill in from the approved PLAN.md stanza:
 - `## Dependencies` = Depends on / Blocks from the PLAN.md stanza
 
 A delivery with ZERO tasks (e.g. a SPIKE delivery that defines a sibling delivery) is valid.
-Write the SPEC with the zero-task table (`_none yet_`) -- do not skip SPEC creation.
+Write the BLUEPRINT with the zero-task table (`_none yet_`) -- do not skip BLUEPRINT creation.
 
-**4b. Create `delivery-NNN/STATE.md`** (seed from `.claude/aid/templates/delivery-state-template.md`):
+**4b. Create `deliveries/delivery-NNN/STATE.md`** (seed from `.claude/aid/templates/delivery-state-template.md`):
 
 Fill in:
 - `Delivery:` = delivery-NNN
@@ -121,7 +121,7 @@ Fill in:
 > `_none yet_` in the Tasks State table. This is the canonical SPIKE-defines-sibling scenario.
 > The delivery lifecycle is authored independently -- it does NOT derive from the task rollup.
 > The `## Plan / Deliveries` view in the WORK STATE.md is DERIVED at read time from these
-> delivery-NNN/STATE.md files. `aid-plan` does NOT write any rows into the work STATE.md.
+> deliveries/delivery-NNN/STATE.md files. `aid-plan` does NOT write any rows into the work STATE.md.
 
 **Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
@@ -181,8 +181,8 @@ After all deliverables are written, check for risks that span features:
 2. Confirm every agreed deliverable is written
 3. If any deliverable is missing → write it NOW
 4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
-5. For each delivery-NNN in PLAN.md, confirm both `delivery-NNN/SPEC.md` and
-   `delivery-NNN/STATE.md` exist under `.aid/{work}/`. If either is missing -> create it NOW
+5. For each delivery-NNN in PLAN.md, confirm both `deliveries/delivery-NNN/BLUEPRINT.md` and
+   `deliveries/delivery-NNN/STATE.md` exist under `.aid/{work}/`. If either is missing -> create it NOW
    (seed from the templates; set `State: Pending-Spec`).
 
 Then print:
@@ -201,8 +201,8 @@ Cross-cutting risks: {count} identified (see PLAN.md)
 
 PLAN.md written to: .aid/{work}/PLAN.md
 Delivery folders created:
-  .aid/{work}/delivery-001/{SPEC.md, STATE.md} (State: Pending-Spec)
-  .aid/{work}/delivery-002/{SPEC.md, STATE.md} (State: Pending-Spec)
+  .aid/{work}/deliveries/delivery-001/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
+  .aid/{work}/deliveries/delivery-002/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
   ...
 ```
 

@@ -2,7 +2,7 @@
 # test-migrate-hierarchy.sh -- canonical suite for migrate-work-hierarchy.sh + .ps1
 #
 # Guards:
-#   1. Hierarchy creation: delivery-NNN/{SPEC,STATE}.md + delivery-NNN/tasks/task-NNN/{SPEC,STATE}.md
+#   1. Hierarchy creation: deliveries/delivery-NNN/{BLUEPRINT,STATE}.md + deliveries/delivery-NNN/tasks/task-NNN/{DETAIL,STATE}.md
 #   2. No data loss: every task's State/Review/Elapsed/Notes, Quick Check Findings, Dispatch rows;
 #      every delivery's gate block + Cross-phase Q&A; work STATE.md rewritten to derived placeholders.
 #   3. Correct delivery placement: Source -> delivery-NNN token; task-004 (no token) -> delivery-001
@@ -135,24 +135,24 @@ run_bash_migrate "${G1_WORK}"
 assert_exit_eq "${MIG_RC}" 0 "G1-01 migrate-work-hierarchy.sh exits 0"
 
 # Delivery-001 structure.
-assert_dir_exists  "${G1_WORK}/delivery-001"                          "G1-02 delivery-001/ dir created"
-assert_file_exists "${G1_WORK}/delivery-001/SPEC.md"                  "G1-03 delivery-001/SPEC.md created"
-assert_file_exists "${G1_WORK}/delivery-001/STATE.md"                 "G1-04 delivery-001/STATE.md created"
-assert_dir_exists  "${G1_WORK}/delivery-001/tasks"                    "G1-05 delivery-001/tasks/ dir created"
-assert_file_exists "${G1_WORK}/delivery-001/tasks/task-001/SPEC.md"   "G1-06 delivery-001/tasks/task-001/SPEC.md"
-assert_file_exists "${G1_WORK}/delivery-001/tasks/task-001/STATE.md"  "G1-07 delivery-001/tasks/task-001/STATE.md"
-assert_file_exists "${G1_WORK}/delivery-001/tasks/task-002/SPEC.md"   "G1-08 delivery-001/tasks/task-002/SPEC.md"
-assert_file_exists "${G1_WORK}/delivery-001/tasks/task-002/STATE.md"  "G1-09 delivery-001/tasks/task-002/STATE.md"
+assert_dir_exists  "${G1_WORK}/deliveries/delivery-001"                          "G1-02 delivery-001/ dir created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/BLUEPRINT.md"                  "G1-03 delivery-001/BLUEPRINT.md created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/STATE.md"                 "G1-04 delivery-001/STATE.md created"
+assert_dir_exists  "${G1_WORK}/deliveries/delivery-001/tasks"                    "G1-05 delivery-001/tasks/ dir created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-001/DETAIL.md"   "G1-06 delivery-001/tasks/task-001/DETAIL.md"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md"  "G1-07 delivery-001/tasks/task-001/STATE.md"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-002/DETAIL.md"   "G1-08 delivery-001/tasks/task-002/DETAIL.md"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md"  "G1-09 delivery-001/tasks/task-002/STATE.md"
 # task-004 has no Source token -> defaults to delivery-001.
-assert_file_exists "${G1_WORK}/delivery-001/tasks/task-004/SPEC.md"   "G1-10 delivery-001/tasks/task-004/SPEC.md (default)"
-assert_file_exists "${G1_WORK}/delivery-001/tasks/task-004/STATE.md"  "G1-11 delivery-001/tasks/task-004/STATE.md (default)"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-004/DETAIL.md"   "G1-10 delivery-001/tasks/task-004/DETAIL.md (default)"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-004/STATE.md"  "G1-11 delivery-001/tasks/task-004/STATE.md (default)"
 
 # Delivery-002 structure.
-assert_dir_exists  "${G1_WORK}/delivery-002"                          "G1-12 delivery-002/ dir created"
-assert_file_exists "${G1_WORK}/delivery-002/SPEC.md"                  "G1-13 delivery-002/SPEC.md created"
-assert_file_exists "${G1_WORK}/delivery-002/STATE.md"                 "G1-14 delivery-002/STATE.md created"
-assert_file_exists "${G1_WORK}/delivery-002/tasks/task-003/SPEC.md"   "G1-15 delivery-002/tasks/task-003/SPEC.md"
-assert_file_exists "${G1_WORK}/delivery-002/tasks/task-003/STATE.md"  "G1-16 delivery-002/tasks/task-003/STATE.md"
+assert_dir_exists  "${G1_WORK}/deliveries/delivery-002"                          "G1-12 delivery-002/ dir created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-002/BLUEPRINT.md"                  "G1-13 delivery-002/BLUEPRINT.md created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-002/STATE.md"                 "G1-14 delivery-002/STATE.md created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-002/tasks/task-003/DETAIL.md"   "G1-15 delivery-002/tasks/task-003/DETAIL.md"
+assert_file_exists "${G1_WORK}/deliveries/delivery-002/tasks/task-003/STATE.md"  "G1-16 delivery-002/tasks/task-003/STATE.md"
 
 # Legacy flat task files must be retained.
 assert_file_exists "${G1_WORK}/tasks/task-001.md" "G1-17 legacy tasks/task-001.md retained"
@@ -168,73 +168,73 @@ echo "=== Gate 2: bash migrate -- no data loss ==="
 # use grep -e via file_has() which passes -qFe to the grep binary.
 
 # task-001: State=Done, Review=A+, Elapsed=2h, Notes=alpha done.
-file_has "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "**State:** Done"         "G2-01 task-001 State preserved"
-file_has "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "**Review:** A+"          "G2-02 task-001 Review preserved"
-file_has "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "**Elapsed:** 2h"         "G2-03 task-001 Elapsed preserved"
-file_has "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "**Notes:** alpha done"   "G2-04 task-001 Notes preserved"
 
 # task-001 Quick Check Findings must carry the HIGH finding.
-file_has "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "[HIGH] Example deferred finding from task-001" \
     "G2-05 task-001 Quick Check Findings preserved"
 
 # task-001 Dispatch row.
-file_has "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "| 2026-01-02 | developer | 1h | 2h | Done |" \
     "G2-06 task-001 dispatch row preserved"
 
 # task-002: State=Done, Review=A+, Elapsed=1h, Notes=beta done.
-file_has "${G1_WORK}/delivery-001/tasks/task-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md" \
     "**State:** Done"         "G2-07 task-002 State preserved"
-file_has "${G1_WORK}/delivery-001/tasks/task-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md" \
     "**Review:** A+"          "G2-08 task-002 Review preserved"
-file_has "${G1_WORK}/delivery-001/tasks/task-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md" \
     "**Elapsed:** 1h"         "G2-09 task-002 Elapsed preserved"
-file_has "${G1_WORK}/delivery-001/tasks/task-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md" \
     "**Notes:** beta done"    "G2-10 task-002 Notes preserved"
 
 # task-002 dispatch row.
-file_has "${G1_WORK}/delivery-001/tasks/task-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md" \
     "| 2026-01-02 | developer | 1h | 1h | Done |" \
     "G2-11 task-002 dispatch row preserved"
 
 # task-003: State=In Progress, Notes=gamma wip.
-file_has "${G1_WORK}/delivery-002/tasks/task-003/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-002/tasks/task-003/STATE.md" \
     "**State:** In Progress"  "G2-12 task-003 State preserved"
-file_has "${G1_WORK}/delivery-002/tasks/task-003/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-002/tasks/task-003/STATE.md" \
     "**Notes:** gamma wip"    "G2-13 task-003 Notes preserved"
 
 # task-004: State=Pending, Notes=no source token.
-file_has "${G1_WORK}/delivery-001/tasks/task-004/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-004/STATE.md" \
     "**State:** Pending"             "G2-14 task-004 State preserved"
-file_has "${G1_WORK}/delivery-001/tasks/task-004/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-004/STATE.md" \
     "**Notes:** no source token"     "G2-15 task-004 Notes preserved"
 
 # delivery-001 gate block: Grade=A+.
-file_has "${G1_WORK}/delivery-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/STATE.md" \
     "**Grade:** A+"                  "G2-16 delivery-001 gate Grade preserved"
-file_has "${G1_WORK}/delivery-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/STATE.md" \
     "delivery-001 gate passed clean" "G2-17 delivery-001 gate Notes preserved"
 
 # delivery-001 Cross-phase Q&A: Q1 entry.
-file_has "${G1_WORK}/delivery-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/STATE.md" \
     "### Q1"                         "G2-18 delivery-001 Q&A Q1 heading preserved"
-file_has "${G1_WORK}/delivery-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/STATE.md" \
     "delivery-001-scoped question about alpha task approach" \
     "G2-19 delivery-001 Q1 context preserved"
 
 # delivery-002 gate block: Grade=Pending.
-file_has "${G1_WORK}/delivery-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-002/STATE.md" \
     "**Grade:** Pending"             "G2-20 delivery-002 gate Grade preserved"
 
 # delivery-002 Cross-phase Q&A: Q2 entry.
-file_has "${G1_WORK}/delivery-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-002/STATE.md" \
     "### Q2"                         "G2-21 delivery-002 Q&A Q2 heading preserved"
-file_has "${G1_WORK}/delivery-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-002/STATE.md" \
     "delivery-002-scoped question about gamma task rollout" \
     "G2-22 delivery-002 Q2 context preserved"
 
@@ -242,7 +242,7 @@ file_has "${G1_WORK}/delivery-002/STATE.md" \
 file_has "${G1_WORK}/STATE.md" \
     "| _derived_ |"                  "G2-23 work STATE.md has derived placeholder row"
 file_has "${G1_WORK}/STATE.md" \
-    "_See delivery-NNN/STATE.md for each delivery gate block._" \
+    "_See deliveries/delivery-NNN/STATE.md for each delivery gate block._" \
     "G2-24 work STATE.md Delivery Gates section replaced with derived ref"
 file_lacks "${G1_WORK}/STATE.md" \
     "| task-001 | Alpha task in delivery-001 |" \
@@ -274,20 +274,20 @@ echo ""
 echo "=== Gate 3: bash migrate -- delivery placement + default-delivery warning ==="
 
 # task-001 and task-002 are in delivery-001 (Source line says delivery-001).
-file_has "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "**Delivery:** delivery-001" "G3-01 task-001 placed in delivery-001"
-file_has "${G1_WORK}/delivery-001/tasks/task-002/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md" \
     "**Delivery:** delivery-001" "G3-02 task-002 placed in delivery-001"
 
 # task-003 is in delivery-002 (Source line says delivery-002).
-file_has "${G1_WORK}/delivery-002/tasks/task-003/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-002/tasks/task-003/STATE.md" \
     "**Delivery:** delivery-002" "G3-03 task-003 placed in delivery-002"
 
 # task-004 has no delivery token -- must land in delivery-001.
-file_has "${G1_WORK}/delivery-001/tasks/task-004/STATE.md" \
+file_has "${G1_WORK}/deliveries/delivery-001/tasks/task-004/STATE.md" \
     "**Delivery:** delivery-001" "G3-04 task-004 (no token) defaulted to delivery-001"
 # task-004 must NOT appear in delivery-002.
-if [[ -d "${G1_WORK}/delivery-002/tasks/task-004" ]]; then
+if [[ -d "${G1_WORK}/deliveries/delivery-002/tasks/task-004" ]]; then
     fail "G3-05 task-004 must NOT be in delivery-002 (no-token default is delivery-001)"
 else
     pass "G3-05 task-004 correctly absent from delivery-002"
@@ -299,17 +299,17 @@ assert_output_contains "${MIG_OUT}" \
 assert_output_contains "${MIG_OUT}" \
     "no parseable delivery token" "G3-07 warning: no parseable delivery token emitted"
 
-# SPEC.md content: delivery-001 SPEC lists task-004 (default) + task-001 + task-002.
-file_has "${G1_WORK}/delivery-001/SPEC.md" \
-    "| task-001 |"             "G3-08 delivery-001 SPEC.md lists task-001"
-file_has "${G1_WORK}/delivery-001/SPEC.md" \
-    "| task-004 |"             "G3-09 delivery-001 SPEC.md lists task-004 (default)"
+# BLUEPRINT.md content: delivery-001 BLUEPRINT lists task-004 (default) + task-001 + task-002.
+file_has "${G1_WORK}/deliveries/delivery-001/BLUEPRINT.md" \
+    "| task-001 |"             "G3-08 delivery-001 BLUEPRINT.md lists task-001"
+file_has "${G1_WORK}/deliveries/delivery-001/BLUEPRINT.md" \
+    "| task-004 |"             "G3-09 delivery-001 BLUEPRINT.md lists task-004 (default)"
 
-# delivery-002 SPEC lists only task-003.
-file_has "${G1_WORK}/delivery-002/SPEC.md" \
-    "| task-003 |"             "G3-10 delivery-002 SPEC.md lists task-003"
-file_lacks "${G1_WORK}/delivery-002/SPEC.md" \
-    "| task-001 |"             "G3-11 delivery-002 SPEC.md does NOT list task-001"
+# delivery-002 BLUEPRINT lists only task-003.
+file_has "${G1_WORK}/deliveries/delivery-002/BLUEPRINT.md" \
+    "| task-003 |"             "G3-10 delivery-002 BLUEPRINT.md lists task-003"
+file_lacks "${G1_WORK}/deliveries/delivery-002/BLUEPRINT.md" \
+    "| task-001 |"             "G3-11 delivery-002 BLUEPRINT.md does NOT list task-001"
 
 # ===========================================================================
 # Gate 4 -- Bash: idempotency (second run = no-op)
@@ -320,8 +320,8 @@ echo "=== Gate 4: bash migrate -- idempotency (second run) ==="
 # Snapshot file tree before the second run.
 _TREE_BEFORE="$(find "${G1_WORK}" -type f | sort)"
 _STATE_SHA_BEFORE="$(sha256sum "${G1_WORK}/STATE.md" | cut -d' ' -f1)"
-_T001_STATE_SHA_BEFORE="$(sha256sum "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" | cut -d' ' -f1)"
-_D001_STATE_SHA_BEFORE="$(sha256sum "${G1_WORK}/delivery-001/STATE.md" | cut -d' ' -f1)"
+_T001_STATE_SHA_BEFORE="$(sha256sum "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" | cut -d' ' -f1)"
+_D001_STATE_SHA_BEFORE="$(sha256sum "${G1_WORK}/deliveries/delivery-001/STATE.md" | cut -d' ' -f1)"
 
 run_bash_migrate "${G1_WORK}"
 assert_exit_eq "${MIG_RC}" 0 "G4-01 second migrate run exits 0"
@@ -337,11 +337,11 @@ _STATE_SHA_AFTER="$(sha256sum "${G1_WORK}/STATE.md" | cut -d' ' -f1)"
 assert_eq "${_STATE_SHA_BEFORE}" "${_STATE_SHA_AFTER}" \
     "G4-04 second run: work STATE.md byte-identical"
 
-_T001_STATE_SHA_AFTER="$(sha256sum "${G1_WORK}/delivery-001/tasks/task-001/STATE.md" | cut -d' ' -f1)"
+_T001_STATE_SHA_AFTER="$(sha256sum "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" | cut -d' ' -f1)"
 assert_eq "${_T001_STATE_SHA_BEFORE}" "${_T001_STATE_SHA_AFTER}" \
     "G4-05 second run: task-001 STATE.md byte-identical"
 
-_D001_STATE_SHA_AFTER="$(sha256sum "${G1_WORK}/delivery-001/STATE.md" | cut -d' ' -f1)"
+_D001_STATE_SHA_AFTER="$(sha256sum "${G1_WORK}/deliveries/delivery-001/STATE.md" | cut -d' ' -f1)"
 assert_eq "${_D001_STATE_SHA_BEFORE}" "${_D001_STATE_SHA_AFTER}" \
     "G4-06 second run: delivery-001 STATE.md byte-identical"
 
@@ -371,7 +371,7 @@ if [[ -d "${GOLDEN_DIR}" ]]; then
     done <<< "${GOLDEN_PATHS}"
 
     # Spot-check content parity (key fields; not date-stamped).
-    _SB_T001="${G1_WORK}/delivery-001/tasks/task-001/STATE.md"
+    _SB_T001="${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md"
     file_has "${_SB_T001}" "**State:** Done"    "G5-01 golden parity: task-001 State"
     file_has "${_SB_T001}" "**Review:** A+"     "G5-02 golden parity: task-001 Review"
     file_has "${_SB_T001}" "**Elapsed:** 2h"    "G5-03 golden parity: task-001 Elapsed"
@@ -380,7 +380,7 @@ if [[ -d "${GOLDEN_DIR}" ]]; then
     file_has "${_SB_T001}" "| 2026-01-02 | developer | 1h | 2h | Done |" \
         "G5-05 golden parity: task-001 dispatch row"
 
-    _SB_D001="${G1_WORK}/delivery-001/STATE.md"
+    _SB_D001="${G1_WORK}/deliveries/delivery-001/STATE.md"
     file_has "${_SB_D001}" "**Grade:** A+"      "G5-06 golden parity: delivery-001 Grade"
     file_has "${_SB_D001}" "delivery-001 gate passed clean" \
         "G5-07 golden parity: delivery-001 gate Notes"
@@ -411,38 +411,38 @@ else
     assert_exit_eq "${PS_RC}" 0 "G6-01 migrate-work-hierarchy.ps1 exits 0"
 
     # Same hierarchy checks as Gate 1.
-    assert_dir_exists  "${G6_WORK}/delivery-001"                          "G6-02 PS: delivery-001/ created"
-    assert_file_exists "${G6_WORK}/delivery-001/SPEC.md"                  "G6-03 PS: delivery-001/SPEC.md"
-    assert_file_exists "${G6_WORK}/delivery-001/STATE.md"                 "G6-04 PS: delivery-001/STATE.md"
-    assert_file_exists "${G6_WORK}/delivery-001/tasks/task-001/SPEC.md"   "G6-05 PS: task-001/SPEC.md"
-    assert_file_exists "${G6_WORK}/delivery-001/tasks/task-001/STATE.md"  "G6-06 PS: task-001/STATE.md"
-    assert_file_exists "${G6_WORK}/delivery-001/tasks/task-002/SPEC.md"   "G6-07 PS: task-002/SPEC.md"
-    assert_file_exists "${G6_WORK}/delivery-001/tasks/task-004/SPEC.md"   "G6-08 PS: task-004/SPEC.md (default delivery)"
-    assert_dir_exists  "${G6_WORK}/delivery-002"                          "G6-09 PS: delivery-002/ created"
-    assert_file_exists "${G6_WORK}/delivery-002/tasks/task-003/STATE.md"  "G6-10 PS: task-003/STATE.md"
+    assert_dir_exists  "${G6_WORK}/deliveries/delivery-001"                          "G6-02 PS: delivery-001/ created"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/BLUEPRINT.md"                  "G6-03 PS: delivery-001/BLUEPRINT.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/STATE.md"                 "G6-04 PS: delivery-001/STATE.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-001/DETAIL.md"   "G6-05 PS: task-001/DETAIL.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md"  "G6-06 PS: task-001/STATE.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-002/DETAIL.md"   "G6-07 PS: task-002/DETAIL.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-004/DETAIL.md"   "G6-08 PS: task-004/DETAIL.md (default delivery)"
+    assert_dir_exists  "${G6_WORK}/deliveries/delivery-002"                          "G6-09 PS: delivery-002/ created"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-002/tasks/task-003/STATE.md"  "G6-10 PS: task-003/STATE.md"
 
     # Data preservation: task-001 key fields.
-    file_has "${G6_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    file_has "${G6_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "**State:** Done"     "G6-11 PS: task-001 State preserved"
-    file_has "${G6_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    file_has "${G6_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "**Review:** A+"      "G6-12 PS: task-001 Review preserved"
-    file_has "${G6_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    file_has "${G6_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "[HIGH] Example deferred finding from task-001" \
         "G6-13 PS: task-001 Findings preserved"
-    file_has "${G6_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    file_has "${G6_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "| 2026-01-02 | developer | 1h | 2h | Done |" \
         "G6-14 PS: task-001 dispatch row preserved"
 
     # task-004 default delivery.
-    file_has "${G6_WORK}/delivery-001/tasks/task-004/STATE.md" \
+    file_has "${G6_WORK}/deliveries/delivery-001/tasks/task-004/STATE.md" \
         "**Delivery:** delivery-001" "G6-15 PS: task-004 defaulted to delivery-001"
     assert_output_contains "${PS_OUT}" \
         "no parseable delivery token" "G6-16 PS: task-004 no-token warning emitted"
 
     # Delivery-001 gate.
-    file_has "${G6_WORK}/delivery-001/STATE.md" \
+    file_has "${G6_WORK}/deliveries/delivery-001/STATE.md" \
         "**Grade:** A+"       "G6-17 PS: delivery-001 Grade preserved"
-    file_has "${G6_WORK}/delivery-001/STATE.md" \
+    file_has "${G6_WORK}/deliveries/delivery-001/STATE.md" \
         "### Q1"              "G6-18 PS: delivery-001 Q1 Q&A preserved"
 
     # Work STATE.md derived placeholders.

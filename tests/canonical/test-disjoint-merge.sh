@@ -8,26 +8,27 @@
 #   main (base)
 #     work-NNN-test/
 #       STATE.md           (work header -- authored by orchestrator on main)
-#       delivery-001/
-#         STATE.md         (stub: Pending-Spec, created on main)
-#         tasks/task-001/
-#           SPEC.md
-#           STATE.md
-#       delivery-002/
-#         STATE.md         (stub: Pending-Spec, created on main)
-#         tasks/task-002/
-#           SPEC.md
-#           STATE.md
+#       deliveries/
+#         delivery-001/
+#           STATE.md         (stub: Pending-Spec, created on main)
+#           tasks/task-001/
+#             DETAIL.md
+#             STATE.md
+#         delivery-002/
+#           STATE.md         (stub: Pending-Spec, created on main)
+#           tasks/task-002/
+#             DETAIL.md
+#             STATE.md
 #
 #   branch: aid/delivery-001
-#     Writes ONLY delivery-001/STATE.md + delivery-001/tasks/task-001/STATE.md
+#     Writes ONLY deliveries/delivery-001/STATE.md + deliveries/delivery-001/tasks/task-001/STATE.md
 #     via writeback-state.sh (--field, --block, --lifecycle, --append-issue).
-#     Also appends a Cross-phase Q&A entry to delivery-001/STATE.md.
+#     Also appends a Cross-phase Q&A entry to deliveries/delivery-001/STATE.md.
 #
 #   branch: aid/delivery-002
-#     Writes ONLY delivery-002/STATE.md + delivery-002/tasks/task-002/STATE.md
+#     Writes ONLY deliveries/delivery-002/STATE.md + deliveries/delivery-002/tasks/task-002/STATE.md
 #     via writeback-state.sh (same modes, different files).
-#     Also appends a Cross-phase Q&A entry to delivery-002/STATE.md.
+#     Also appends a Cross-phase Q&A entry to deliveries/delivery-002/STATE.md.
 #
 #   Merge aid/delivery-001 -> main  (fast-forward or no-conflict)
 #   Merge aid/delivery-002 -> main  (ASSERT: zero conflicts on any STATE.md)
@@ -118,7 +119,7 @@ TASKSTATEOF
 make_task_spec() {
     local task_dir="$1" task_id="$2" delivery_id="$3" work_name="$4"
     mkdir -p "$task_dir"
-    cat > "${task_dir}/SPEC.md" <<TASKSPECEOF
+    cat > "${task_dir}/DETAIL.md" <<TASKSPECEOF
 # ${task_id}: Test Task
 
 **Type:** IMPLEMENT
@@ -216,8 +217,8 @@ WORKSTATEOF
 SANDBOX="${TMP}/sandbox"
 WORK_NAME="work-test-disjoint"
 WORK_DIR="${SANDBOX}/.aid/${WORK_NAME}"
-DELIV1="${WORK_DIR}/delivery-001"
-DELIV2="${WORK_DIR}/delivery-002"
+DELIV1="${WORK_DIR}/deliveries/delivery-001"
+DELIV2="${WORK_DIR}/deliveries/delivery-002"
 
 mkdir -p "$SANDBOX"
 

@@ -22,7 +22,7 @@ This reconciles the B6 finding: discovery-reviewer lacked the `## Self-review di
 | **Specify** | Reviews SPEC.md for quality and completeness |
 | **Plan** | Reviews PLAN.md |
 | **Execute** | REVIEW and DELIVERY-GATE states: reviews implementation work |
-| **Interview** | LITE-REVIEW and CROSS-REFERENCE states: reviews interview outputs |
+| **Interview / Define** | CROSS-REFERENCE state (and the DESCRIBE-SEED greenfield gate): reviews interview / feature-decomposition outputs |
 | **Deploy** | Optional pre-release final verification |
 | **Discover** | Reviews KB documents produced by the Researcher |
 

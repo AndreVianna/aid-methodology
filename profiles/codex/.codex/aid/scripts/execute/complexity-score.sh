@@ -6,8 +6,9 @@
 #   complexity-score.sh --graph-file PATH --tasks-dir PATH
 #
 # --delivery-id is REQUIRED for a multi-delivery PLAN.md (### delivery-NNN
-# sections) and scopes extraction to that delivery. For a lite/recipe SPEC with a
-# top-level "## Execution Graph" (no delivery sections), --delivery-id is optional.
+# sections) and scopes extraction to that delivery. For a flattened single-delivery
+# SPEC with a top-level "## Execution Graph" (no delivery sections), --delivery-id
+# is optional.
 #
 # Outputs (stdout, one per line):
 #   tasks=N
@@ -91,8 +92,8 @@ if [[ -n "$PLAN_FILE" ]]; then
             in_section && in_graph { print }
         ' "$PLAN_FILE" > "$GRAPH_TMP"
     else
-        # Lite/recipe SPEC — top-level "## Execution Graph", no delivery wrapper.
-        # --delivery-id is not required for this shape. Capture the Execution Graph
+        # Flattened single-delivery SPEC — top-level "## Execution Graph", no
+        # delivery wrapper. --delivery-id is not required for this shape. Capture the Execution Graph
         # block at ANY heading level, stopping at the next level-1/2 heading so a
         # preceding/following "## Tasks" table is never swallowed (the level-3
         # "### Task Dependencies" / "### Can Be Done In Parallel" subheadings stay in).
@@ -125,8 +126,8 @@ while IFS= read -r line; do
         [[ "$deps" == "Depends On" ]] && continue
         TASKS+=("$task")
         # Normalize deps — treat em-dash / hyphen / "none" / "(none)" / "— (none)"
-        # as "no dependencies". (The lite-spec template uses the "— (none)" form;
-        # full PLAN.md tables use a bare "—".)
+        # as "no dependencies". (The flattened single-delivery PLAN/SPEC template uses
+        # the "— (none)" form; a multi-delivery PLAN.md table uses a bare "—".)
         dtrim="${deps#"${deps%%[![:space:]]*}"}"; dtrim="${dtrim%"${dtrim##*[![:space:]]}"}"
         case "${dtrim,,}" in
             ""|"—"|"-"|"none"|"(none)"|"—(none)"|"— (none)") DEPS["$task"]="" ;;
@@ -206,15 +207,16 @@ if [[ -n "$TASKS_DIR" && -d "$TASKS_DIR" ]]; then
             esac
         done
         [[ -z "$f" || ! -f "$f" ]] && continue
-        # Match both the bold task-template form (**Type:**) and the flat recipe
-        # form (- Type:); recipe-generated tasks use the latter (see recipes/*.md).
+        # Match the bold task-template form (**Type:**) -- the flat recipe form
+        # (- Type:) was retired with the recipe catalog (work-001-lite-aid-skills
+        # feature-002); every surviving task shape uses the bold form.
         # Read the first matching line in-process (bash builtin) rather than a
         # `grep -m1` subprocess per task. `[Tt][Yy][Pp][Ee]` is equivalent to grep -i
         # for the only alphabetic literal in the pattern; `|| [[ -n "$line" ]]` catches
         # a final line with no trailing newline; `2>/dev/null` matches grep's suppression.
         type_line=""
         while IFS= read -r line || [[ -n "$line" ]]; do
-            if [[ "$line" =~ ^[[:space:]]*(-\ )?\*{0,2}[Tt][Yy][Pp][Ee]: ]]; then
+            if [[ "$line" =~ ^[[:space:]]*\*{0,2}[Tt][Yy][Pp][Ee]: ]]; then
                 type_line="$line"; break
             fi
         done 2>/dev/null < "$f"

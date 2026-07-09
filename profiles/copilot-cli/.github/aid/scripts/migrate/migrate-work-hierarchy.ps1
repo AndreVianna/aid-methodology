@@ -10,13 +10,14 @@
       work-NNN-{name}/
         STATE.md                          (rewritten: AUTHORED header + DERIVED placeholders)
         tasks/                            (legacy flat files retained as-is for reference)
-        delivery-NNN/
-          SPEC.md                         (delivery definition)
-          STATE.md                        (delivery authored lifecycle + gate + Q&A + derived tasks view)
-          tasks/
-            task-NNN/
-              SPEC.md                     (task definition -- from legacy tasks/task-NNN.md)
-              STATE.md                    (task mutable cells + findings + dispatch log)
+        deliveries/
+          delivery-NNN/
+            BLUEPRINT.md                  (delivery definition)
+            STATE.md                      (delivery authored lifecycle + gate + Q&A + derived tasks view)
+            tasks/
+              task-NNN/
+                DETAIL.md                 (task definition -- from legacy tasks/task-NNN.md)
+                STATE.md                  (task mutable cells + findings + dispatch log)
 
     IDEMPOTENT: if any per-task STATE.md already exists, the entire work is skipped (no-op).
 
@@ -311,7 +312,7 @@ function Write-TaskState {
     [System.IO.File]::WriteAllLines($OutFile, $lines, [System.Text.Encoding]::ASCII)
 }
 
-function Write-DeliverySpec {
+function Write-DeliveryBlueprint {
     param(
         [string]$OutFile,
         [int]$DeliveryNum, [string]$WorkName,
@@ -320,7 +321,7 @@ function Write-DeliverySpec {
     $pd = Pad3 $DeliveryNum
     $today = (Get-Date).ToUniversalTime().ToString('yyyy-MM-dd')
     $lines = [System.Collections.Generic.List[string]]::new()
-    $lines.Add("# Delivery SPEC -- delivery-$pd")
+    $lines.Add("# Delivery BLUEPRINT -- delivery-$pd")
     $lines.Add('')
     $lines.Add("> **Delivery:** delivery-$pd")
     $lines.Add("> **Work:** $WorkName")
@@ -485,7 +486,7 @@ function Emit-DerivedBlock {
     param([System.Collections.Generic.List[string]]$Lines, [string[]]$WorkQA)
     $Lines.Add('## Tasks State')
     $Lines.Add('')
-    $Lines.Add('<!-- DERIVED -- read-only; assembled from delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->')
+    $Lines.Add('<!-- DERIVED -- read-only; assembled from deliveries/delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->')
     $Lines.Add('')
     $Lines.Add('| # | Task | Type | Wave | State | Review | Elapsed | Notes |')
     $Lines.Add('|---|------|------|------|-------|--------|---------|-------|')
@@ -493,7 +494,7 @@ function Emit-DerivedBlock {
     $Lines.Add('')
     $Lines.Add('## Plan / Deliveries')
     $Lines.Add('')
-    $Lines.Add('<!-- DERIVED -- read-only rollup from delivery-NNN/STATE.md at read time. Never written here. -->')
+    $Lines.Add('<!-- DERIVED -- read-only rollup from deliveries/delivery-NNN/STATE.md at read time. Never written here. -->')
     $Lines.Add('')
     $Lines.Add('| Delivery | State | Tasks | Notes |')
     $Lines.Add('|----------|-------|-------|-------|')
@@ -501,14 +502,14 @@ function Emit-DerivedBlock {
     $Lines.Add('')
     $Lines.Add('## Delivery Gates')
     $Lines.Add('')
-    $Lines.Add('<!-- DERIVED -- union of delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->')
+    $Lines.Add('<!-- DERIVED -- union of deliveries/delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->')
     $Lines.Add('')
-    $Lines.Add('_See delivery-NNN/STATE.md for each delivery gate block._')
+    $Lines.Add('_See deliveries/delivery-NNN/STATE.md for each delivery gate block._')
     $Lines.Add('')
     $Lines.Add('## Cross-phase Q&A')
     $Lines.Add('')
     $Lines.Add('<!-- DERIVED (delivery-scoped entries) + AUTHORED (work-owner entries only).')
-    $Lines.Add('     Delivery-scoped Q&A lives in delivery-NNN/STATE.md (SD-5).')
+    $Lines.Add('     Delivery-scoped Q&A lives in deliveries/delivery-NNN/STATE.md (SD-5).')
     $Lines.Add('     Work-owner Q&A below was not delivery-scoped in the legacy file. -->')
     $Lines.Add('')
     if ($null -ne $WorkQA -and $WorkQA.Count -gt 0) {
@@ -548,7 +549,7 @@ if ($taskFiles.Count -eq 0) {
 
 # IDEMPOTENCY CHECK.
 $existing = @(Get-ChildItem -LiteralPath $WorkDir -Recurse -Filter 'STATE.md' |
-    Where-Object { $_.FullName -match '[/\\]delivery-\d+[/\\]tasks[/\\]task-\d+[/\\]STATE\.md' })
+    Where-Object { $_.FullName -match '[/\\]deliveries[/\\]delivery-\d+[/\\]tasks[/\\]task-\d+[/\\]STATE\.md' })
 if ($existing.Count -gt 0) {
     Log "IDEMPOTENT: hierarchy already present in '$WorkName'. No-op."
     exit 0
@@ -601,13 +602,13 @@ foreach ($tf in $taskFiles) {
 Log "Deliveries detected: $($allDeliveries -join ' ')"
 
 # ---------------------------------------------------------------------------
-# Pass 2: create per-task directories with SPEC.md + STATE.md.
+# Pass 2: create per-task directories with DETAIL.md + STATE.md.
 # ---------------------------------------------------------------------------
 foreach ($tf in $taskFiles) {
     $taskId = $tf.BaseName
     $deliveryNum = $taskDelivery[$taskId]
     $pd = Pad3 $deliveryNum
-    $taskDestDir = Join-Path $WorkDir "delivery-$pd\tasks\$taskId"
+    $taskDestDir = Join-Path $WorkDir "deliveries\delivery-$pd\tasks\$taskId"
 
     Log "Creating $taskDestDir/"
 
@@ -615,11 +616,11 @@ foreach ($tf in $taskFiles) {
         [void](New-Item -ItemType Directory -Path $taskDestDir -Force)
     }
 
-    # task SPEC.md -- verbatim copy.
+    # task DETAIL.md -- verbatim copy.
     if (-not $DryRun) {
-        Copy-Item -LiteralPath $tf.FullName -Destination (Join-Path $taskDestDir 'SPEC.md')
+        Copy-Item -LiteralPath $tf.FullName -Destination (Join-Path $taskDestDir 'DETAIL.md')
     } else {
-        Log "DRY-RUN: would copy $($tf.FullName) -> $taskDestDir\SPEC.md"
+        Log "DRY-RUN: would copy $($tf.FullName) -> $taskDestDir\DETAIL.md"
     }
 
     # Extract mutable cells.
@@ -640,11 +641,11 @@ foreach ($tf in $taskFiles) {
 }
 
 # ---------------------------------------------------------------------------
-# Pass 3: create per-delivery directories with SPEC.md + STATE.md.
+# Pass 3: create per-delivery directories with BLUEPRINT.md + STATE.md.
 # ---------------------------------------------------------------------------
 foreach ($deliveryNum in $allDeliveries) {
     $pd = Pad3 $deliveryNum
-    $deliveryDir = Join-Path $WorkDir "delivery-$pd"
+    $deliveryDir = Join-Path $WorkDir "deliveries\delivery-$pd"
     Log "Creating $deliveryDir/"
 
     if (-not $DryRun) {
@@ -661,12 +662,12 @@ foreach ($deliveryNum in $allDeliveries) {
     }
 
     if (-not $DryRun) {
-        Write-DeliverySpec `
-            -OutFile (Join-Path $deliveryDir 'SPEC.md') `
+        Write-DeliveryBlueprint `
+            -OutFile (Join-Path $deliveryDir 'BLUEPRINT.md') `
             -DeliveryNum $deliveryNum -WorkName $WorkName `
             -TaskRows $taskRows
     } else {
-        Log "DRY-RUN: would write $deliveryDir\SPEC.md"
+        Log "DRY-RUN: would write $deliveryDir\BLUEPRINT.md"
     }
 
     $gateBlock = Get-DeliveryGate -StateLines $stateLines -DeliveryNum $deliveryNum
@@ -711,8 +712,8 @@ if (-not $DryRun) {
     foreach ($tf in $taskFiles) {
         $taskId = $tf.BaseName
         $pd = Pad3 $taskDelivery[$taskId]
-        $specFile  = Join-Path $WorkDir "delivery-$pd\tasks\$taskId\SPEC.md"
-        $stateF    = Join-Path $WorkDir "delivery-$pd\tasks\$taskId\STATE.md"
+        $specFile  = Join-Path $WorkDir "deliveries\delivery-$pd\tasks\$taskId\DETAIL.md"
+        $stateF    = Join-Path $WorkDir "deliveries\delivery-$pd\tasks\$taskId\STATE.md"
         if (-not (Test-Path -LiteralPath $specFile) -or (Get-Item $specFile).Length -eq 0) {
             Die "Verification: '$specFile' is missing or empty." 4
         }
@@ -722,8 +723,8 @@ if (-not $DryRun) {
     }
     foreach ($deliveryNum in $allDeliveries) {
         $pd = Pad3 $deliveryNum
-        $specFile = Join-Path $WorkDir "delivery-$pd\SPEC.md"
-        $stateF   = Join-Path $WorkDir "delivery-$pd\STATE.md"
+        $specFile = Join-Path $WorkDir "deliveries\delivery-$pd\BLUEPRINT.md"
+        $stateF   = Join-Path $WorkDir "deliveries\delivery-$pd\STATE.md"
         if (-not (Test-Path -LiteralPath $specFile) -or (Get-Item $specFile).Length -eq 0) {
             Die "Verification: '$specFile' is missing or empty." 4
         }

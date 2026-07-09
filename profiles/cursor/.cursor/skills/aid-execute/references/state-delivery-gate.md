@@ -97,8 +97,13 @@ the same tier reviewer).
 ### Complexity Score Computation
 
 Read the delivery's Execution Graph from:
-- **Full path** — `PLAN.md` in the work directory (`#### Execution Graph` block
-  for this delivery).
+- **Flat path (feature-001, single-delivery)** — detected by: a work-root
+  `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
+  under the work root AND no `deliveries/` wrapper under it → the top-level
+  `## Execution Graph` in the work-root `PLAN.md` (no
+  `### delivery-NNN` heading; the single delivery is implicit).
+- **Full path** — otherwise, `PLAN.md` in the work directory (`#### Execution
+  Graph` block for this delivery).
 - **Lite path** — the work-root `SPEC.md` (`.aid/{work}/SPEC.md`), which
   contains the merged delivery + dependency graph information.
 
@@ -110,7 +115,7 @@ Parse the `| Task | Depends On |` table to build the dependency map.
 |--------|--------|--------------|
 | Task count | tasks in this delivery (Execution Graph) | +1 per task |
 | Graph depth | longest dependency chain (longest path in DAG) | +1 per edge on the longest chain |
-| Risk-weighted types | each task's `Type` field (`delivery-NNN/tasks/task-NNN/SPEC.md`) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
+| Risk-weighted types | each task's `Type` field (`deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; flat path: `tasks/task-NNN/DETAIL.md` directly under the work root) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
 | Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from `## Quick Check Findings`) + tasks whose Agent-Selection row triggers an `aid-researcher` analysis consult | +1 each |
 
 ### Tier Selection
@@ -173,13 +178,17 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 
 - **All delivery artifacts** — every file produced or modified by tasks in the
   delivery (code, docs, configs, tests, etc.)
-- **All `delivery-NNN/tasks/task-NNN/SPEC.md` files** for this delivery — Definition zones (Type,
-  Source, Scope, Acceptance Criteria)
+- **All task DETAIL.md files** for this delivery — Definition zones (Type,
+  Source, Scope, Acceptance Criteria):
+  - Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
+  - Flat path: `tasks/task-NNN/DETAIL.md` directly under the work root
 - **Feature SPEC(s):**
   - Full path: per-feature `SPEC.md` files (`.aid/{work}/features/*/SPEC.md`)
+  - Flat path (feature-001, single-delivery): work-root `SPEC.md` (single feature)
   - Lite path: work-root `SPEC.md` (`.aid/{work}/SPEC.md`)
 - **Delivery-level acceptance criteria:**
-  - Full path: from `PLAN.md` (the delivery's acceptance criteria block)
+  - Full path: from the delivery's `BLUEPRINT.md § Gate Criteria`
+  - Flat path: from the work-root `BLUEPRINT.md § Gate Criteria`
   - Lite path: from work-root `SPEC.md`
 - **`delivery-NNN-issues.md`** — the deferred `[HIGH]` prior context (from
   AGGREGATE). Read as context only; the reviewer produces its own fresh list.
@@ -280,7 +289,7 @@ Gate grade below minimum. Next steps:
 
 **Non-CODE issues (TASK, SPEC, KB):**
 - **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Write Q&A to `delivery-NNN/STATE.md` `## Cross-phase Q&A` (SD-5:
+- **SPEC** → Write Q&A to `deliveries/delivery-NNN/STATE.md` `## Cross-phase Q&A` (SD-5:
   the delivery gate writes to its OWN delivery STATE.md, not the shared work STATE.md,
   to preserve the disjoint-write property -- two delivery branches cannot collide) →
   suggest `/aid-specify`
@@ -378,10 +387,18 @@ writeback-state.sh --delivery-id NNN --block "BLOCK"
 ```
 
 > **Helper target:** `writeback-state.sh --delivery-id NNN --block BLOCK`
-> writes the `## Delivery Gate` block in `delivery-NNN/STATE.md` (SD-5:
+> writes the `## Delivery Gate` block in `deliveries/delivery-NNN/STATE.md` (SD-5:
 > the delivery gate block is authored by this delivery's branch only; it is NOT
 > written into the shared work STATE.md). The work-level `## Delivery Gates`
 > view is DERIVED at read time as the union of all delivery gate blocks.
+>
+> **Flat path (feature-001, single-delivery):** with a work-root `BLUEPRINT.md`
+> present and no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
+> call instead writes the singular
+> AUTHORED `## Delivery Gate` block directly into the work-root `STATE.md`
+> (there is exactly one delivery, so the disjoint-write concern above does not
+> apply — see `writeback-state.sh`). This is distinct from the plural DERIVED
+> `## Delivery Gates` view (different heading, singular vs. plural).
 
 ### 6b-2: Advance delivery lifecycle to Done
 

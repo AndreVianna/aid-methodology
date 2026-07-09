@@ -36,11 +36,12 @@ Each deliverable follows the same cycle:
     features/
       feature-NNN-{name}/
         SPEC.md             # per-feature tech spec (read)
-    delivery-NNN/           # OUTPUT: per-delivery folder (one per deliverable in PLAN.md)
-      tasks/
-        task-NNN/           # OUTPUT: per-task folder
-          SPEC.md           # task definition (6-section schema; written by aid-detail)
-          STATE.md          # task state, seeded Pending (written by aid-detail; updated by aid-execute)
+    deliveries/
+      delivery-NNN/           # OUTPUT: per-delivery folder (one per deliverable in PLAN.md)
+        tasks/
+          task-NNN/           # OUTPUT: per-task folder
+            DETAIL.md         # task definition (6-section schema; written by aid-detail)
+            STATE.md          # task state, seeded Pending (written by aid-detail; updated by aid-execute)
 ```
 
 ## Arguments
@@ -49,7 +50,7 @@ Each deliverable follows the same cycle:
 |----------|--------|
 | `work-NNN` | Detail a specific work. Required if multiple works exist. |
 | *(no arg)* | Auto-selects if only one work exists. |
-| `--reset` | Delete all task folders under `delivery-NNN/tasks/` and start fresh. |
+| `--reset` | Delete all task folders under `deliveries/delivery-NNN/tasks/` and start fresh. |
 
 ## Inputs
 
@@ -116,7 +117,8 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 
 Each task is a **folder** containing two files:
 
-- **`delivery-NNN/tasks/task-NNN/SPEC.md`** — the immutable task definition (6-section schema):
+- **`deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`** — the immutable task definition (6-section
+  schema), seeded from `canonical/templates/task-detail-template.md`:
 
 ```markdown
 # task-NNN: {Title}
@@ -137,7 +139,7 @@ Each task is a **folder** containing two files:
 
 Six sections. Nothing else.
 
-- **`delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `canonical/templates/task-state-template.md`
+- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `canonical/templates/task-state-template.md`
   with `State: Pending`, empty Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
   Updated by `aid-execute`; never written by `aid-detail` after seeding.
 
@@ -185,7 +187,7 @@ all 5 auth edge cases per SPEC").
 - [ ] RESEARCH/DESIGN tasks come before their dependent IMPLEMENT tasks
 - [ ] TEST tasks come after their dependent IMPLEMENT tasks
 - [ ] Each deliverable's tasks were reviewed after writing (step 4)
-- [ ] All task files in `.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md` (nested hierarchy)
+- [ ] All task files in `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (nested hierarchy)
 
 ## Feedback Loops
 

@@ -9,36 +9,62 @@
 # Unit layout (work-004 hierarchy):
 #   work-NNN-{name}/
 #     STATE.md                                  -- work-level (--pipeline target)
-#     delivery-NNN/
-#       STATE.md                                -- delivery-level (--block / --lifecycle target)
-#       tasks/
-#         task-NNN/
-#           STATE.md                            -- task-level (--field / --findings target)
+#     deliveries/
+#       delivery-NNN/
+#         STATE.md                              -- delivery-level (--block / --lifecycle target)
+#         tasks/
+#           task-NNN/
+#             STATE.md                          -- task-level (--field / --findings target)
+#
+# Flattened single-delivery layout (feature-001, additive -- nested layout above
+# is unchanged): detected by a work-root BLUEPRINT.md present AND
+# `tasks/task-NNN/DETAIL.md` present directly under the work root AND no
+# `deliveries/` wrapper. The delivery lifecycle/gate AND the per-task mutable
+# cells are all promoted into the SAME work-root STATE.md:
+#   work-NNN-{name}/
+#     STATE.md          -- work-level (--pipeline target) AND, for this layout,
+#                           the --delivery-id 001 targets too:
+#                             ## Delivery Lifecycle  (--lifecycle target)
+#                             ## Delivery Gate        (--block target)
+#                             ### Tasks lifecycle     (--task-id/--field target;
+#                                                       a table row per task-NNN,
+#                                                       replacing the per-task
+#                                                       STATE.md ## Task State)
+#     tasks/
+#       task-NNN/
+#         DETAIL.md      -- task definition (no per-task STATE.md in this layout)
 #
 # Usage:
 #   writeback-state.sh [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
 #       Update a single named field in the task's ## Task State section of
-#       delivery-NNN/tasks/task-NNN/STATE.md (one-writer-per-branch file).
+#       deliveries/delivery-NNN/tasks/task-NNN/STATE.md (one-writer-per-branch file).
 #       Fields: State | Review | Elapsed | Notes
 #       --delivery-id is optional; if omitted the delivery is resolved from the
 #       task's Source line (e.g. "**Source:** work-NNN -> delivery-NNN").
 #       Override env: AID_TASK_STATE_FILE (absolute path) skips all path resolution.
+#       Flattened layout (feature-001, auto-detected): targets the matching
+#       task-NNN row of the work-root STATE.md's ### Tasks lifecycle table instead
+#       (creates the row on first write; replaces the placeholder "_none yet_" row).
 #
 #   writeback-state.sh [--delivery-id NNN] --task-id NNN --findings BLOCK
 #       Write/replace the ## Quick Check Findings block in
-#       delivery-NNN/tasks/task-NNN/STATE.md.
+#       deliveries/delivery-NNN/tasks/task-NNN/STATE.md.
 #       Same delivery resolution as --field mode.
 #
 #   writeback-state.sh --delivery-id NNN --block MARKDOWN_BLOCK
-#       Write/replace the ## Delivery Gate block in delivery-NNN/STATE.md (SD-5).
+#       Write/replace the ## Delivery Gate block in deliveries/delivery-NNN/STATE.md (SD-5).
 #       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
+#       Flattened layout (feature-001, auto-detected; --delivery-id 001): writes
+#       the singular ## Delivery Gate block into the work-root STATE.md instead.
 #
 #   writeback-state.sh --delivery-id NNN --lifecycle VALUE
 #       Update the State: line in the ## Delivery Lifecycle section of
-#       delivery-NNN/STATE.md (SD-8 authored delivery state).
+#       deliveries/delivery-NNN/STATE.md (SD-8 authored delivery state).
 #       VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 #       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
 #       Emits no user-facing output (C4 behavior-preserving).
+#       Flattened layout (feature-001, auto-detected; --delivery-id 001): updates
+#       the ## Delivery Lifecycle State: line in the work-root STATE.md instead.
 #
 #   writeback-state.sh --delivery-id NNN --append-issue ROW
 #       Append a single issue row to the delivery's delivery-NNN-issues.md.
@@ -56,6 +82,12 @@
 #       Emits no user-facing output (C4 behavior-preserving).
 #
 #   writeback-state.sh -h | --help
+#
+# Flattened single-delivery layout (feature-001) detection: a work-root
+# BLUEPRINT.md present AND at least one `tasks/task-NNN/DETAIL.md` present
+# directly under it AND no `deliveries/` wrapper under the work root.
+# Auto-detected per-call; no new flag needed. The nested layout above is
+# unchanged (additive only).
 #
 # Exit codes:
 #   0  success
@@ -99,7 +131,7 @@ LOCK_TIMEOUT="${AID_LOCK_TIMEOUT:-10}"   # max retries (0.5s each -> 5s default)
 
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '2,55p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,89p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -115,8 +147,29 @@ resolve_work_dir() {
     fi
 }
 
+# is_flat_layout: return 0 (true) when the work uses the FLATTENED
+# single-delivery layout (feature-001) -- a work-root BLUEPRINT.md is present
+# AND at least one `tasks/task-NNN/DETAIL.md` is present directly under the
+# work root AND no `deliveries/` wrapper exists. Mirrors the SAME 3-part
+# detection rule used by aid-execute's SKILL.md / state-execute.md /
+# state-delivery-gate.md and the dashboard reader twins (reader.py
+# `_detect_flat` / reader.mjs `_detectFlat`) -- all consumers assert all three
+# parts identically (BLUEPRINT.md presence, DETAIL.md presence, deliveries/
+# absence). Presence-based; never throws. Auto-detected per-call -- no new
+# CLI flag needed.
+is_flat_layout() {
+    resolve_work_dir
+    [[ -f "${WORK_DIR}/BLUEPRINT.md" ]] || return 1
+    [[ -d "${WORK_DIR}/deliveries" ]] && return 1
+    local f
+    for f in "${WORK_DIR}"/tasks/task-*/DETAIL.md; do
+        [[ -f "$f" ]] && return 0
+    done
+    return 1
+}
+
 # resolve_task_state_file DELIVERY_ID TASK_ID
-# Sets TASK_STATE_FILE to delivery-NNN/tasks/task-NNN/STATE.md under the work root.
+# Sets TASK_STATE_FILE to deliveries/delivery-NNN/tasks/task-NNN/STATE.md under the work root.
 # If TASK_STATE_FILE is already set (env override), this is a no-op.
 resolve_task_state_file() {
     local delivery_id="$1" task_id="$2"
@@ -130,30 +183,38 @@ resolve_task_state_file() {
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
         TASK_STATE_FILE="${DELIVERY_DIR_BASE}/tasks/task-${padded_t}/STATE.md"
     else
-        TASK_STATE_FILE="${WORK_DIR}/delivery-${padded_d}/tasks/task-${padded_t}/STATE.md"
+        TASK_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/task-${padded_t}/STATE.md"
     fi
 }
 
 # resolve_delivery_state_file DELIVERY_ID
-# Sets DELIVERY_STATE_FILE to delivery-NNN/STATE.md under the work root.
+# Sets DELIVERY_STATE_FILE to deliveries/delivery-NNN/STATE.md under the work root.
 # If DELIVERY_STATE_FILE is already set (env override), this is a no-op.
+# feature-001 flattened layout (auto-detected): with no `deliveries/` wrapper
+# there is exactly one delivery and its lifecycle/gate blocks are promoted
+# directly into the work-root STATE.md (the SAME file as --pipeline), so this
+# targets $STATE_FILE instead of a per-delivery STATE.md.
 resolve_delivery_state_file() {
     local delivery_id="$1"
     if [[ -n "$DELIVERY_STATE_FILE" ]]; then
         return 0
     fi
     resolve_work_dir
+    if is_flat_layout; then
+        DELIVERY_STATE_FILE="$STATE_FILE"
+        return 0
+    fi
     local padded_d
     padded_d=$(printf '%03d' "$delivery_id")
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
         DELIVERY_STATE_FILE="${DELIVERY_DIR_BASE}/STATE.md"
     else
-        DELIVERY_STATE_FILE="${WORK_DIR}/delivery-${padded_d}/STATE.md"
+        DELIVERY_STATE_FILE="${WORK_DIR}/deliveries/delivery-${padded_d}/STATE.md"
     fi
 }
 
 # resolve_delivery_from_task_spec TASK_ID -> sets DELIVERY_ID_RESOLVED
-# Reads the task SPEC.md (delivery-NNN/tasks/task-NNN/SPEC.md or legacy tasks/task-NNN.md)
+# Reads the task DETAIL.md (deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md or legacy tasks/task-NNN.md)
 # and extracts the delivery number from "**Source:** ... -> delivery-NNN" or
 # "**Source:** ... delivery-NNN ...".
 # Returns "" when resolution fails (caller must require --delivery-id).
@@ -168,9 +229,9 @@ resolve_delivery_from_task_spec() {
     # Try legacy flat task spec first (tasks/task-NNN.md)
     local spec_file="${WORK_DIR}/tasks/task-${padded_t}.md"
     if [[ ! -f "$spec_file" ]]; then
-        # Try hierarchical path: scan all delivery-NNN/tasks/task-NNN/SPEC.md
+        # Try hierarchical path: scan all deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md
         local found
-        found=$(find "${WORK_DIR}" -path "*/tasks/task-${padded_t}/SPEC.md" 2>/dev/null | head -1)
+        found=$(find "${WORK_DIR}" -path "*/tasks/task-${padded_t}/DETAIL.md" 2>/dev/null | head -1)
         if [[ -n "$found" ]]; then
             spec_file="$found"
         fi
@@ -406,6 +467,15 @@ mode_field() {
         esac
     fi
 
+    # feature-001 flattened layout (auto-detected): task cells live in the
+    # work-root STATE.md ### Tasks lifecycle table -- no per-task STATE.md.
+    # AID_TASK_STATE_FILE override (if set) bypasses ALL path resolution,
+    # including this flat-layout check, per its documented contract above.
+    if [[ -z "$TASK_STATE_FILE" ]] && is_flat_layout; then
+        write_task_field_flat "$FIELD" "$field_lower" "$FIELD_VALUE" "$TASK_ID"
+        return 0
+    fi
+
     resolve_delivery_for_task_mode
     resolve_task_state_file "$DELIVERY_ID" "$TASK_ID"
 
@@ -487,6 +557,157 @@ mode_field() {
 }
 
 # ---------------------------------------------------------------------------
+# write_task_field_flat FIELD_RAW FIELD_LOWER NEW_VAL TASK_ID
+# feature-001 flattened layout: rewrite (or create) the task's row in the
+# work-root STATE.md's ### Tasks lifecycle table -- the single-writer home
+# that REPLACES the now-absent per-task STATE.md ## Task State section.
+# Table shape (byte-identical closed State enum -- validated by the caller):
+#   | Task | State | Review | Elapsed | Notes |
+# The placeholder "_none yet_" row is replaced by the first task row ever
+# written; subsequent tasks are appended just before the section ends.
+# Rewriting an existing row's field preserves its other columns unchanged.
+# Uses the SAME sentinel lock as --pipeline / --lifecycle / --block (all
+# target $STATE_FILE for this layout), so concurrent writers serialize.
+# ---------------------------------------------------------------------------
+write_task_field_flat() {
+    local field_raw="$1" field_lower="$2" new_val="$3" task_id="$4"
+    local padded_t task_row_id col_idx
+    padded_t=$(printf '%03d' "$task_id")
+    task_row_id="task-${padded_t}"
+
+    case "$field_lower" in
+        state)   col_idx=3 ;;
+        review)  col_idx=4 ;;
+        elapsed) col_idx=5 ;;
+        notes)   col_idx=6 ;;
+        *) die "internal error: unknown field_lower '$field_lower' in write_task_field_flat" 1 ;;
+    esac
+
+    if [[ ! -f "$STATE_FILE" ]]; then
+        die "$STATE_FILE does not exist" 1
+    fi
+
+    # Verify ### Tasks lifecycle section exists
+    if ! grep -q '^### Tasks lifecycle' "$STATE_FILE"; then
+        die "malformed work STATE.md: ### Tasks lifecycle section not found in $STATE_FILE (flat layout)" 6
+    fi
+
+    init_lock_file "$STATE_FILE"
+    acquire_lock
+
+    local tmp
+    tmp=$(mktemp)
+
+    awk -v task_row_id="$task_row_id" -v col_idx="$col_idx" -v new_val="$new_val" '
+        function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
+        function new_row(    line, c, v) {
+            line = "| " task_row_id " |"
+            for (c = 3; c <= 6; c++) {
+                v = (c == col_idx) ? new_val : "--"
+                line = line " " v " |"
+            }
+            return line
+        }
+        # maybe_insert: append the new/updated row immediately after the LAST
+        # table row seen so far (tracked via last_was_row), instead of at the
+        # section boundary -- keeps the appended row contiguous with the
+        # existing table (no blank line splitting it into two tables).
+        function maybe_insert() {
+            if (!found && last_was_row) { print new_row(); found=1 }
+        }
+
+        BEGIN { in_tl=0; header_seen=0; found=0; last_was_row=0 }
+
+        /^### Tasks lifecycle/ { in_tl=1; header_seen=0; last_was_row=0; print; next }
+
+        in_tl && (/^## / || /^### /) {
+            maybe_insert()
+            if (!found) { print new_row(); found=1 }   # table had no rows at all
+            in_tl=0
+            print
+            next
+        }
+
+        in_tl {
+            stripped = trim($0)
+
+            if (stripped !~ /^\|/) {
+                maybe_insert()
+                last_was_row=0
+                print
+                next
+            }
+
+            # separator row: only |, -, :, spaces
+            if (stripped ~ /^[-|: ]+$/) { print; last_was_row=1; next }
+
+            n = split(stripped, cols, "|")
+            for (i = 1; i <= n; i++) cols[i] = trim(cols[i])
+
+            if (!header_seen) { header_seen=1; print; next }   # header row (not a data row)
+
+            first_cell = cols[2]
+
+            if (index(first_cell, "_none yet_") > 0) {
+                if (!found) { print new_row(); found=1 }
+                last_was_row=1
+                next
+            }
+
+            if (tolower(first_cell) == tolower(task_row_id)) {
+                line = "| " first_cell " |"
+                for (c = 3; c <= 6; c++) {
+                    v = (c == col_idx) ? new_val : cols[c]
+                    line = line " " v " |"
+                }
+                print line
+                found=1
+                last_was_row=1
+                next
+            }
+
+            print
+            last_was_row=1
+            next
+        }
+
+        { print }
+
+        END {
+            # Defensive: Tasks lifecycle was the last section in the file (no
+            # trailing heading closed it above) -- append here instead.
+            if (in_tl) {
+                maybe_insert()
+                if (!found) print new_row()
+            }
+        }
+    ' "$STATE_FILE" > "$tmp"
+    local awk_exit=$?
+    if [[ "$awk_exit" -ne 0 ]]; then
+        rm -f "$tmp"
+        die "writeback awk failed (exit $awk_exit); $STATE_FILE preserved" "$awk_exit"
+    fi
+
+    if [[ ! -s "$tmp" ]]; then
+        rm -f "$tmp"
+        die "writeback produced empty output; $STATE_FILE preserved" 3
+    fi
+
+    # Sanity: ### Tasks lifecycle section and the task's row must both survive
+    if ! grep -q '^### Tasks lifecycle' "$tmp"; then
+        rm -f "$tmp"
+        die "writeback sanity check failed: ### Tasks lifecycle disappeared from output" 3
+    fi
+    if ! grep -qi "| ${task_row_id} |" "$tmp"; then
+        rm -f "$tmp"
+        die "writeback sanity check failed: row for ${task_row_id} not found in output" 3
+    fi
+
+    mv "$tmp" "$STATE_FILE"
+    echo "OK: $STATE_FILE updated -- task $padded_t field '$field_raw' set to '$new_val' (### Tasks lifecycle)"
+}
+
+# ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --findings BLOCK
 # Write/replace the ## Quick Check Findings block in
 # delivery-NNN/tasks/task-NNN/STATE.md.
@@ -512,6 +733,11 @@ mode_findings() {
     if grep -q '^## Quick Check Findings' "$TASK_STATE_FILE"; then
         # Section exists -- replace entire block content (the task owns this file
         # exclusively, so there is no per-task sub-heading needed; replace the whole section).
+        # Stop the replacement at the first bare `---` separator OR the next `## `
+        # heading, whichever comes first -- task-state-template.md places a `---`
+        # immediately after this section's field lines (before `## Dispatch Log`),
+        # and that separator (plus any inter-section content after it) must survive
+        # the rewrite untouched, not be swallowed as if it were old field content.
         awk -v new_block="$FINDINGS_BLOCK" '
             BEGIN { in_qcf=0; inserted=0 }
             /^## Quick Check Findings/ {
@@ -522,7 +748,7 @@ mode_findings() {
                 inserted=1
                 next
             }
-            in_qcf && /^## / {
+            in_qcf && (/^## / || /^---[ \t]*$/) {
                 in_qcf=0
                 print
                 next
@@ -675,6 +901,14 @@ mode_delivery_block() {
 
     if grep -q '^## Delivery Gate$' "$DELIVERY_STATE_FILE"; then
         # Section exists -- replace entire block content.
+        # Stop the replacement at the first bare `---` separator OR the next `## `
+        # heading, whichever comes first. Both delivery-state-template.md (full
+        # path -- `---` before `## Cross-phase Q&A`) and work-state-template.md
+        # (flat path -- `---` + the `DERIVED / READ-ONLY VIEWS` comment banner
+        # before `## Features State`) place a `---` immediately after this
+        # section's field lines; that separator and everything after it must
+        # survive the rewrite untouched, not be swallowed as if it were old
+        # field content.
         awk -v new_block="$DELIVERY_BLOCK" '
             BEGIN { in_dg=0; inserted=0 }
             /^## Delivery Gate$/ {
@@ -685,7 +919,7 @@ mode_delivery_block() {
                 inserted=1
                 next
             }
-            in_dg && /^## / {
+            in_dg && (/^## / || /^---[ \t]*$/) {
                 in_dg=0
                 print
                 next

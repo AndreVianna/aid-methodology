@@ -267,8 +267,8 @@ CONFIRMED: `docs/aid-methodology.md` ("## 6. Feedback Loops").
 | L6 | Execute | Discover / Specify / Detail | an assumption does not hold | `IMPEDIMENT-task-NNN.md` (routed by Type) |
 | L7 | Execute Review | any upstream phase | reviewer finds TASK/SPEC/KB-sourced issues | source-tagged issue → loopback |
 | L8 | Deploy | Execute | final verification (build+tests+lint) fails | routed back to `/aid-execute` |
-| L9 | Monitor | Describe (bug) | finding classified BUG → LITE-BUG-FIX | `MONITOR-STATE.md` finding |
-| L10 | Monitor | Describe (CR) | finding classified Change Request | `MONITOR-STATE.md` finding |
+| L9 | Monitor | Fix (bug) | finding classified BUG | `MONITOR-STATE.md` finding |
+| L10 | Monitor | Triage (CR) | finding classified Change Request | `MONITOR-STATE.md` finding |
 | L11 | any phase | Discover | KB found wrong/incomplete/stale | targeted re-discovery Q&A |
 
 The IMPEDIMENT routing (L6) is by Type: `kb-gap` routes to Discover, `architecture-conflict`

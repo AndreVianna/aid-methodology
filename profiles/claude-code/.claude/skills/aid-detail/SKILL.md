@@ -7,7 +7,7 @@ description: >
   Builds execution graph per delivery with explicit dependencies and parallelism.
   State machine: FIRST-RUN → REVIEW → DONE.
 allowed-tools: Read, Glob, Grep, Write, Edit, Bash
-argument-hint: "work-001 (required if multiple works)  [--reset] clear delivery-NNN/tasks/"
+argument-hint: "work-001 (required if multiple works)  [--reset] clear deliveries/delivery-NNN/tasks/"
 ---
 
 # Detail — The Ultimate Breakdown
@@ -38,8 +38,8 @@ Each task = one agent session = one reviewable unit = one human review.
 
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Always read actual files on disk.
 
-- No `delivery-NNN/tasks/task-NNN/SPEC.md` exists under `.aid/{work}/` → **FIRST-RUN**
-- At least one `delivery-NNN/tasks/task-NNN/SPEC.md` exists → **REVIEW**
+- No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/{work}/` → **FIRST-RUN**
+- At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **REVIEW**
 - Tasks complete and grade ≥ minimum → **DONE**
 
 Print the state-entry line and "you are here" map:
