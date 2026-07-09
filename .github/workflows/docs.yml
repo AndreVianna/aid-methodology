@@ -1,9 +1,11 @@
 name: Docs
 
 # Builds the Astro Starlight site under site/ and deploys it to GitHub Pages
-# at https://aid.casuloailabs.com.  Decoupled from release.yml: it merely
-# *listens* for release:published to refresh release-bound content; it does
-# not modify or depend on the release pipeline.
+# at https://aid.casuloailabs.com.  Decoupled from release.yml: it does not
+# modify or depend on the release pipeline.  Pages deploys only from master
+# (push or manual re-deploy) — the github-pages environment permits master-ref
+# deploys only, so a tag/release ref is rejected.  After a release, refresh the
+# release-bound content with a workflow_dispatch on master.
 
 on:
   push:
@@ -20,9 +22,7 @@ on:
       - 'docs/**'
       - 'VERSION'
       - '.github/workflows/docs.yml'
-  release:
-    types: [published]          # AC15 enabler — refresh release-bound content hands-free
-  workflow_dispatch:            # manual re-deploy
+  workflow_dispatch:            # manual re-deploy (also refreshes release-bound content after a release)
 
 # Least-privilege: read the repo, write the Pages deployment, mint the OIDC
 # token deploy-pages exchanges.  No contents:write, no issues/pull-requests.

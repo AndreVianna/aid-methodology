@@ -53,11 +53,52 @@ If ALL declared docs have real content and no `--reset`, skip to Step 6.
 
 ### Step 0b: Read External Documentation Paths
 
-Read `.aid/knowledge/STATE.md` `## External Documentation` for paths from `aid-config`. Verify accessible:
+Read `.aid/knowledge/STATE.md` `## External Documentation` for paths from `aid-config`. Verify
+each row per its `Type`, then write the result back into that row's `Accessible` column — Step
+0b owns only the `Accessible` column (today this step tested accessibility but never wrote the
+result back; the reconcile anchor, feature-006, needs this column populated).
+
+**`file` / `directory` rows — unchanged.** Verify with `test -r`:
 ```bash
 test -r <path> && echo "✅ $path" || echo "❌ $path — no longer accessible"
 ```
-Store accessible paths for the scout prompt. Warn on inaccessible (but continue).
+Write `Accessible: yes` (accessible) or `Accessible: no` (inaccessible) back into that row. Store
+accessible paths for the scout prompt; warn on inaccessible (but continue) — this inclusion
+behavior is unchanged.
+
+**`url` rows — best-effort annotation, NEVER a gate.** `test -r` fails on every `http(s)` URL, so
+reachability is probed separately, using AID's **existing Python toolchain** — `urllib.request`
+with a short timeout — zero new dependency. There is **no hard `curl` dependency** (`curl` is not
+part of AID's runtime toolchain):
+```bash
+py="$(command -v python3 2>/dev/null || command -v python 2>/dev/null || true)"
+if [ -z "$py" ]; then
+  accessible=unknown          # no probe mechanism available at all
+else
+  accessible="$("$py" - "$url" <<'PY' 2>/dev/null
+import sys, urllib.request
+url = sys.argv[1]
+try:
+    req = urllib.request.Request(url, method="HEAD")
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        print("yes" if 200 <= resp.status < 300 else "unverified")
+except Exception:
+    print("unverified")
+PY
+  )"
+  accessible="${accessible:-unverified}"
+fi
+```
+Write the probe result back as `Accessible: yes` on a clear success, `Accessible: unverified`
+when the probe ran but was inconclusive (timeout, non-2xx, auth-gated `401`/`403`, `405` on
+HEAD, bot-protection), and `Accessible: unknown` only when no probe mechanism is available at
+all (Python absent). **A URL is never dropped on `unverified`/`unknown`** — the annotation is
+advisory only, never an inclusion gate. **Pass every declared `url` row to the Scout prompt
+regardless of `Accessible`** — Scout performs the real fetch (see Step 1 / the `## Scout` prompt
+in `references/agent-prompts.md`).
+
+Store the accessible `file`/`directory` paths plus **all** declared `url` entries (irrespective
+of `Accessible`) as the external-docs input for the Scout prompt (Step 1).
 
 ### Step 0c: Build Project Index (Pre-pass)
 
@@ -590,7 +631,25 @@ Then **branch on the confirmed path**:
 ## Step 1: Pre-scan (aid-researcher, pre-scan doc-set) — ALWAYS runs first, ALONE
 
 Produces `project-structure.md` and `external-sources.md` — foundation for all other agents.
-**Skip** if both already exist. Otherwise:
+**Skip only when both files exist WITH REAL CONTENT** — content-aware, not a bare existence
+test. Reuses Step 0's own "populated" convention (a file containing only the `❌ Pending`
+init-template marker is treated as missing):
+
+```bash
+need_prescan=no
+for f in .aid/knowledge/project-structure.md .aid/knowledge/external-sources.md; do
+  if [ ! -f "$f" ] || grep -q '❌ Pending' "$f" 2>/dev/null; then
+    need_prescan=yes
+  fi
+done
+```
+
+If `need_prescan=no` (both files present with real content), **skip** this step entirely and
+proceed straight to Steps 2-5. Otherwise (either file absent, or present but still only the init
+placeholder), run the pre-scan below. This makes a `Pending`-only `external-sources.md` behave
+as missing — e.g. one the `ELICIT` state's E1 branch reset to `Pending` because the declared
+source set changed — so the pre-scan re-runs and re-inventories it (KI-008; previously the bare
+existence check would have skipped it even after such a reset).
 
 Print: `[1/5] Pre-scan: mapping project structure and external sources...`
 

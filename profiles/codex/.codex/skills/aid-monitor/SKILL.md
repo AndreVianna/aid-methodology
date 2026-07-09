@@ -55,7 +55,8 @@ Step 0):
 .aid/{work}/
   packages/                    ← deployment history
   features/                    ← SPECs (expected behavior)
-  tasks/                       ← task files (acceptance criteria)
+  deliveries/delivery-NNN/tasks/task-NNN/  ← full path: task files (acceptance criteria)
+  tasks/task-NNN/                          ← lite path: task files (acceptance criteria; no delivery-NNN/ nesting)
   known-issues.md              ← known problems
 ```
 
@@ -147,7 +148,7 @@ APM/performance metrics, test trends, user feedback, support tickets, log files.
 
 **From AID artifacts (what's expected):**
 - Feature SPECs (`.aid/{work}/features/*/SPEC.md`) — expected behavior
-- Task files (`.aid/{work}/tasks/task-*.md`) — acceptance criteria
+- Per-task `SPEC.md` — acceptance criteria; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `.aid/{work}/tasks/task-NNN/SPEC.md`
 - Package files — what was deployed and when
 - `known-issues.md` — exclude known problems
 

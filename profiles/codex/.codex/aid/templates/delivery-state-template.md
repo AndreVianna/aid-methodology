@@ -1,7 +1,11 @@
 # Delivery State -- delivery-NNN
 
 [!NOTE]
-This is the DELIVERY-LEVEL STATE.md template. It is divided into two zones:
+This is the DELIVERY-LEVEL STATE.md template -- FULL PATH ONLY. It lives at
+`.aid/work-NNN-{name}/deliveries/delivery-NNN/STATE.md`. (A lite work has exactly one
+delivery and no `deliveries/` folder at all -- its Delivery Lifecycle / Delivery Gate /
+Cross-phase Q&A are AUTHORED directly in the work-root `STATE.md` instead; see
+`work-state-template.md`.) It is divided into two zones:
   AUTHORED (single writer = this delivery's branch) --
       Delivery Lifecycle, Gate Block, Cross-phase Q&A.
   DERIVED (read-only, assembled at read time) --

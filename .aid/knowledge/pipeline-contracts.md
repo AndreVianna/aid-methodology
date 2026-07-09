@@ -87,7 +87,7 @@ are off-pipeline or optional. CONFIRMED: `docs/aid-methodology.md` ("Skill Inven
 |---|---------------|----------|----------|------|
 | — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.md` · `settings.yml` | none (setup) |
 | 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A | deterministic grade ≥ minimum + human approval |
-| 2a | `aid-describe` | `.aid/knowledge/` · user answers | full path: approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) · lite path: work-root `SPEC.md` + `delivery-001/tasks/` | grade ≥ minimum + human approval |
+| 2a | `aid-describe` | `.aid/knowledge/` · user answers | full path: approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) · lite path: work-root `SPEC.md` + `tasks/` (directly under the work folder — no `deliveries/`, no `delivery-001/` folder) | grade ≥ minimum + human approval |
 | 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | per-feature `SPEC.md` stubs in `features/` + cross-reference Q&A | grade ≥ minimum + human approval |
 | 3 | `aid-specify` (full path only) | a feature `SPEC.md` (requirements side) · `REQUIREMENTS.md` · KB · codebase | `## Technical Specification` appended to the feature `SPEC.md` | per-section grade ≥ minimum |
 | 4 | `aid-plan` (full path only) | feature `SPEC.md` files marked `Ready` · `REQUIREMENTS.md` · KB | `PLAN.md` (ordered deliveries) | grade ≥ minimum |
@@ -110,9 +110,12 @@ truth before any code exists. CONFIRMED:
 
 ## The On-Disk Work Hierarchy
 
-Each `aid-describe` run creates a *work* — a self-contained scope unit under `.aid/`. The live
-hierarchy (after the work-hierarchy migration) nests deliveries and tasks; this is the
-authoritative shape downstream skills and the dashboard read.
+Each `aid-describe` run creates a *work* — a self-contained scope unit under `.aid/`. The
+shape diverges by path: the **full path** nests deliveries under a `deliveries/` parent
+(mirroring `features/`); the **lite path** has exactly one delivery and no `deliveries/`
+folder at all — the work IS the delivery.
+
+**Full path:**
 
 ```
 .aid/
@@ -124,7 +127,7 @@ authoritative shape downstream skills and the dashboard read.
       SPEC.md                                 # feature stub (Define) + tech spec (Specify)
       STATE.md                                # feature-level state
     PLAN.md                                   # full path only (Detail appends the execution graph)
-    delivery-NNN/
+    deliveries/delivery-NNN/
       STATE.md                                # delivery lifecycle + gate + delivery-scoped Q&A
       tasks/task-NNN/
         SPEC.md                               # the task definition (Type, Source, Depends on, Scope, AC)
@@ -134,20 +137,40 @@ authoritative shape downstream skills and the dashboard read.
     DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
-CONFIRMED: `canonical/aid/templates/work-state-template.md` (`delivery-NNN/STATE.md` and
-`delivery-NNN/tasks/task-NNN/STATE.md` blocks) and direct listing of
-`.aid/work-001-kb-skills-improvement/` (sixteen `delivery-NNN/` dirs each with `STATE.md`).
+**Lite path** (no `deliveries/`, no `delivery-NNN/` folder):
+
+```
+.aid/
+  knowledge/                                  # shared KB (from Discovery) — one per project
+  work-NNN-{slug}/
+    STATE.md                                  # work-area run-state; ALSO carries the sole
+                                               # delivery's ## Delivery Lifecycle / ## Delivery
+                                               # Gate / ## Cross-phase Q&A (AUTHORED directly)
+    SPEC.md                                   # lite path only — consolidated work-root spec
+    tasks/task-NNN/
+      SPEC.md                                 # the task definition (Type, Source, Depends on, Scope, AC)
+      STATE.md                                # mutable task cells (State, Review, Elapsed, Notes)
+    IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
+    packages/package-NNN-{slug}.md             # written by Deploy
+    DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
+```
+
+CONFIRMED: `canonical/aid/templates/work-state-template.md` (`deliveries/delivery-NNN/STATE.md`
+blocks for the full path; the `## Delivery Lifecycle` / `## Delivery Gate` AUTHORED-lite-path
+sections for the lite path) and `canonical/aid/templates/delivery-state-template.md` /
+`delivery-spec-template.md` (full-path-only, header note declares the `deliveries/` location).
 The `features/` folder is created by `aid-define` (2b) FEATURE-DECOMPOSITION, not by the
 interview half — CONFIRMED: `canonical/skills/aid-define/SKILL.md` ("Workspace structure",
 "created by FEATURE-DECOMPOSITION").
 
 UNCERTAIN / drift flag: `docs/aid-methodology.md` ("## 7. Artifacts Reference") still
 describes the flatter shape `.aid/{work}/tasks/task-NNN.md`. The live skills + template use
-the nested `delivery-NNN/tasks/task-NNN/SPEC.md`. Recorded as a Q&A entry (doc drift, Low
-impact) — not silently reconciled here.
+the nested `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` (full path). Recorded as a Q&A
+entry (doc drift, Low impact) — not silently reconciled here.
 
-The lite path omits `features/`, `REQUIREMENTS.md`, and `PLAN.md`: it writes one work-root
-`SPEC.md` plus tasks directly. CONFIRMED: `docs/aid-methodology.md` ("Lite-path workspace");
+The lite path omits `features/`, `REQUIREMENTS.md`, `PLAN.md`, `deliveries/`, and
+`delivery-NNN/`: it writes one work-root `SPEC.md` plus tasks directly at `tasks/task-NNN/`.
+CONFIRMED: `docs/aid-methodology.md` ("Lite-path workspace");
 `canonical/skills/aid-describe/SKILL.md` ("Workspace structure (lite path)").
 
 ---
@@ -188,7 +211,7 @@ machine … One invocation per state. No auto-advance").
 
 | Skill | States (in order) |
 |-------|-------------------|
-| `aid-discover` | GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE |
+| `aid-discover` | ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE |
 | `aid-describe` (full, Phase 2a) | FIRST-RUN → Q-AND-A → TRIAGE → CONTINUE → [greenfield: DESCRIBE-SEED →] COMPLETION (pauses → `/aid-define`) |
 | `aid-describe` (lite, Phase 2a) | FIRST-RUN → Q-AND-A → TRIAGE → CONDENSED-INTAKE → TASK-BREAKDOWN → LITE-REVIEW → LITE-DONE |
 | `aid-define` (Phase 2b) | FEATURE-DECOMPOSITION → CROSS-REFERENCE → DONE (hands off → `/aid-specify`) |
@@ -316,8 +339,9 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 
 - The methodology doc (`docs/aid-methodology.md`) describes the older flat task layout
   (`.aid/{work}/tasks/task-NNN.md`) while the live skills and `work-state-template.md` use the
-  nested `delivery-NNN/tasks/task-NNN/SPEC.md` shape. Doc drift — see the Q&A entry. LIKELY a
-  prose-simplification lag, not a behavioral disagreement, but not reconciled here.
+  nested `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` shape (full path). Doc drift — see
+  the Q&A entry. LIKELY a prose-simplification lag, not a behavioral disagreement, but not
+  reconciled here.
 - The skill count is now consistent at **14** across `README.md`, `docs/aid-methodology.md`,
   and the site docs (the `aid-interview` split into `aid-describe` + `aid-define`; prior 12-/13-
   skill drift resolved). The recipe count ("51" vs 52 files at `canonical/aid/recipes/`) remains
@@ -392,3 +416,4 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial pipeline-contract mapping (Integrator deep-dive) |
 | 1.1 | 2026-06-28 | manual | Reconciled Phase 2 to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) + Phase 2b `aid-define` (feature decomposition + cross-reference). Rewrote the Phase-2 state-machine model, added the greenfield forward-authoring entry + the conformance feedback, and updated the skill count to 14. |
+| 1.2 | 2026-07-08 | work-001-add-deliveries-folder task-001 | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/`; lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`; the sole delivery's gate + Q&A are AUTHORED in the work-root STATE.md). Rewrote the On-Disk Work Hierarchy section with separate full/lite diagrams and updated stale citations. |

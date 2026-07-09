@@ -1149,9 +1149,13 @@ def parse_state_md(
 # Hierarchical per-unit STATE.md parsers (work-004 Pillar 1/2/6)
 #
 # These parsers read the TASK-LEVEL and DELIVERY-LEVEL STATE.md files
-# produced by the new uniform unit hierarchy:
-#   delivery-NNN/tasks/task-NNN/STATE.md  -- task mutable cells
-#   delivery-NNN/STATE.md                 -- delivery lifecycle + gate + Q&A
+# produced by the new uniform unit hierarchy (task-002 delivery-folder relocation --
+# full-nested and lite-flat layouts; see reader.py _detect_hierarchy):
+#   Full-nested: deliveries/delivery-NNN/tasks/task-NNN/STATE.md -- task mutable cells
+#                deliveries/delivery-NNN/STATE.md                -- delivery lifecycle + gate + Q&A
+#   Lite-flat:   tasks/task-NNN/STATE.md (directly under work_dir) -- task mutable cells
+#                the work-root STATE.md's own ## Delivery Lifecycle / ## Delivery Gate /
+#                ## Cross-phase Q&A sections -- the single implicit delivery's lifecycle/gate/Q&A
 #
 # They are ONLY called when hierarchy detection fires (_detect_hierarchy in reader.py).
 # Legacy (monolithic) works continue to use parse_state_md().
@@ -1249,7 +1253,8 @@ def parse_task_state_md(
     (Pending | In Progress | In Review | Blocked | Done | Failed | Canceled).
 
     Read-only; never throws (parse_warnings on error). Called only by the
-    hierarchical reader path when delivery-NNN/tasks/task-NNN/STATE.md exists.
+    hierarchical reader path for a task-NNN/STATE.md file (full-nested:
+    deliveries/delivery-NNN/tasks/task-NNN/STATE.md; lite-flat: tasks/task-NNN/STATE.md).
     """
     pts = ParsedTaskState()
 
@@ -1320,7 +1325,11 @@ def parse_delivery_state_md(
     It is NOT derived from the task rollup (SD-9).
 
     Read-only; never throws (parse_warnings on error). Called only by the
-    hierarchical reader path.
+    hierarchical reader path -- for full-nested works with the delivery-level
+    deliveries/delivery-NNN/STATE.md text; for lite-flat works with the work-root
+    STATE.md text itself (the single implicit delivery's lifecycle/gate/Q&A are
+    AUTHORED directly in the work-root file for lite works, so the same generic
+    section parser applies to either text -- see reader.py _read_work_hierarchical).
     """
     pds = ParsedDeliveryState()
 

@@ -119,7 +119,7 @@ deliveries).
 
 **sources:**
 - `docs/aid-methodology.md` ("## 4 … Phase 4: Plan", "Branch isolation … `aid/{work}-delivery-NNN`")
-- `canonical/aid/templates/work-state-template.md` (`delivery-NNN/STATE.md` block)
+- `canonical/aid/templates/delivery-state-template.md` (full path -- `deliveries/delivery-NNN/STATE.md`); `canonical/aid/templates/work-state-template.md` (lite path -- `## Delivery Lifecycle` / `## Delivery Gate` authored directly in the work-root STATE.md, since a lite work has no `delivery-NNN/` folder)
 
 ### Task
 
@@ -134,7 +134,7 @@ waves), TaskStatus (the dashboard enum tracking a task's lifecycle).
 
 **sources:**
 - `docs/aid-methodology.md` ("The eight task types are")
-- `canonical/aid/templates/work-state-template.md` (`delivery-NNN/tasks/task-NNN/STATE.md`)
+- `canonical/aid/templates/task-state-template.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md` directly under the work folder)
 
 ### Execution Graph
 
@@ -545,10 +545,12 @@ hand-written.
 
 **Aliases:** Delivery Gates, Delivery State, Quick Check Findings
 
-**Definition-as-used-here:** The per-delivery review gate recorded in `delivery-NNN/STATE.md`: it
-aggregates the deferred `Quick Check Findings` accumulated by Small-tier in-task quick checks and
-requires the delivery's `grade.sh` grade to meet the minimum before the delivery ships. The
-`Delivery State` is the surrounding delivery lifecycle block.
+**Definition-as-used-here:** The per-delivery review gate recorded in the delivery's `## Delivery
+Gate` block -- full path: `deliveries/delivery-NNN/STATE.md`; lite path: authored directly in the
+work-root `STATE.md` (a lite work has no `delivery-NNN/` folder). It aggregates the deferred
+`Quick Check Findings` accumulated by Small-tier in-task quick checks and requires the delivery's
+`grade.sh` grade to meet the minimum before the delivery ships. The `Delivery State` is the
+surrounding delivery lifecycle block.
 
 **Relates-to:** Delivery (what the gate guards), Grade (what the gate requires), Task (whose quick
 checks feed it).
@@ -583,8 +585,8 @@ lives).
 |------|--------------|--------|
 | Pipeline State | The `## Pipeline State` section of a work `STATE.md` tracking phase/lifecycle | `canonical/aid/templates/work-state-template.md` |
 | Phase Transition | A recorded move from one phase to the next; logged in `STATE.md` | `canonical/aid/templates/work-state-template.md` |
-| Delivery State | The `delivery-NNN/STATE.md` lifecycle + gate block | `canonical/aid/templates/work-state-template.md` |
-| Delivery Gate(s) | The per-delivery delivery-gate review block in `delivery-NNN/STATE.md` | `canonical/aid/templates/work-state-template.md` ("## Delivery Gate") |
+| Delivery State | The delivery's lifecycle + gate block -- full path: `deliveries/delivery-NNN/STATE.md`; lite path: authored directly in the work-root `STATE.md` | `canonical/aid/templates/delivery-state-template.md`; `canonical/aid/templates/work-state-template.md` (lite path) |
+| Delivery Gate(s) | The per-delivery delivery-gate review block -- same full/lite path split as Delivery State | `canonical/aid/templates/work-state-template.md` ("## Delivery Gate" / "## Delivery Gates") |
 | Tasks State / Task Status | The derived per-task status rollup in a `STATE.md` | `dashboard/reader/models.py` (`class TaskStatus`) |
 | Task Detail | A single task's detailed state view (dashboard/reader) | `dashboard/reader/models.py` (`class TaskModel`) |
 | In Progress | A lifecycle status value used in state ledgers and the dashboard | `dashboard/reader/models.py` (`class Lifecycle`) |
@@ -741,3 +743,4 @@ lives).
 | 1.1 | 2026-06-25 | aid-discover (closure 5b) | Closure loop: promoted 9 load-bearing concepts to spine headings (Grade, Triage, Lite Path, Feedback Loop, Dashboard, Pipeline State, Task Status, Delivery Gate, Candidate Concepts) and added synonym Aliases on 7 existing concepts so the self-containment oracle resolves every used term |
 | 1.2 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed Triage to `/aid-describe` (engine-driven 5-signal gap inventory); added Describe / Define, Seasoned-Analyst Engine, NFR-7 Suggested-Answer + Rationale, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias + greenfield seed keystone); added `source`/`Seed Authoring` lexicon rows, NFR-7 acronym, forward-authored/conformance domain terms, and two greenfield invariants |
 | 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define": updated Work definition, Describe/Define entry, source citation, and the One-Work-per invariant. |
+| 1.4 | 2026-07-08 | work-001-add-deliveries-folder task-001 | Fixed stale Delivery/Task/Delivery Gate source citations and lexicon rows to reflect the nested `deliveries/delivery-NNN/` full-path folder and the lite-path's `delivery-NNN/`-folder-free layout (gate/Q&A authored directly in the work-root STATE.md). |

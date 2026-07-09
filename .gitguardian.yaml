@@ -1,0 +1,14 @@
+# GitGuardian configuration (https://docs.gitguardian.com/ggshield-docs/configuration).
+#
+# The connector-secret test suites exist to exercise the secret-handling twin
+# (`canonical/aid/scripts/connectors/connector-secret.{sh,ps1}` — no-echo write,
+# exact-bytes store, path-confinement, AC-3 leak-proofing). They therefore contain
+# intentional FAKE secret values as test fixtures — never real credentials. Exclude
+# them from secret scanning so those deliberate fixtures do not raise false-positive
+# incidents (work-002 external-sources; GitGuardian PR #133 findings were both here).
+version: 2
+secret:
+  ignored-paths:
+    - tests/canonical/test-connector-secret.sh
+    - tests/canonical/test-connector-secret-ps1.sh
+    - tests/canonical/test-connector-secret-ac3-leak-sweep.sh
