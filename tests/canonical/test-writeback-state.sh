@@ -5,9 +5,7 @@
 # All writes go to per-unit STATE.md files, NOT to the monolithic work STATE.md.
 #
 # Unit layout under test (FULL path -- multi-delivery work; deliveries/ nests under
-# the work root, mirroring features/; the lite single-delivery flat layout, where
-# tasks/ sits directly under the work root with no deliveries/ or delivery-NNN/ folder,
-# is covered by test-migrate-hierarchy.sh and the resolver's own lite-path branch):
+# the work root, mirroring features/):
 #   work-NNN-{name}/
 #     STATE.md                          -- work-level (--pipeline target only)
 #     deliveries/
@@ -17,6 +15,12 @@
 #           task-NNN/
 #             SPEC.md                   -- contains **Source:** line for delivery resolution
 #             STATE.md                  -- task-level (--field / --findings target)
+#
+# The lite single-delivery flat layout -- tasks/ sits directly under the work root,
+# with no deliveries/ or delivery-NNN/ folder, and the single delivery's
+# ## Delivery Lifecycle / ## Delivery Gate sections are AUTHORED directly in the
+# work-root STATE.md -- is covered by Unit 20 below (work-001-add-deliveries-folder
+# task-003; the resolver's own lite-path branch was added by task-001).
 #
 # Test scenarios:
 #   Unit 1: --task-id --delivery-id --field --value  (per-task STATE.md field update)
@@ -38,6 +42,8 @@
 #   Unit 17: --pipeline ∥ --pipeline and --pipeline ∥ --field concurrency
 #   Unit 18: FR16 derivation primitives — on-disk block determinism
 #   Unit 19: M5 — pause/block signal sequences
+#   Unit 20: Lite-path resolution (no deliveries/ folder; work-root STATE.md is the
+#            single delivery's home for ## Delivery Lifecycle / ## Delivery Gate)
 #
 # Exit codes:
 #   0 — all tests passed
@@ -1247,6 +1253,88 @@ AID_STATE_FILE="$PIPE_STATE19F" bash "$SCRIPT" --pipeline --field "Pause Reason"
 assert_exit_zero "$code" "19f: Delivery gate non-CODE pause emit → exit 0"
 assert_file_contains "$PIPE_STATE19F" "**Lifecycle:** Paused-Awaiting-Input" "19f: Lifecycle Paused on non-CODE-only gate stop"
 assert_file_contains "$PIPE_STATE19F" "**Pause Reason:** Delivery gate blocked on non-CODE issues" "19f: Pause Reason explains upstream fix needed"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 20: Lite-path resolution (single delivery; no deliveries/ folder) ==="
+
+# A lite work has exactly one delivery and no deliveries/ or delivery-NNN/ folder:
+# tasks live directly at <work-root>/tasks/task-NNN/, and the single delivery's
+# ## Delivery Lifecycle / ## Delivery Gate sections are AUTHORED directly in the
+# work-root STATE.md (work-001-add-deliveries-folder task-001/task-003).
+LITE_WORK="${TMPDIR_BASE}/lite-work"
+mkdir -p "$LITE_WORK"
+cat > "${LITE_WORK}/STATE.md" <<'LITEWORKEOF'
+# Work State — work-lite-test
+
+## Pipeline State
+
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-18T00:00:00Z
+
+## Delivery Lifecycle
+
+- **State:** Executing
+- **Updated:** 2026-06-18T00:00:00Z
+- **Block Reason:** --
+- **Block Artifact:** --
+
+## Delivery Gate
+
+- **Reviewer Tier:** --
+- **Grade:** Pending
+- **Issue List:** none
+- **Timestamp:** --
+LITEWORKEOF
+
+make_task_state "$LITE_WORK" 1
+make_task_spec  "$LITE_WORK" 1 1 "work-lite-test"
+
+# 20a: --task-id --delivery-id --field --value resolves directly to tasks/task-NNN/STATE.md
+# (no deliveries/ parent -- the lite-path branch in resolve_task_state_file).
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Progress" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20a: lite-path --task-id --field → exit 0"
+assert_file_contains "${LITE_WORK}/tasks/task-001/STATE.md" "**State:** In Progress" "20a: lite-path task STATE.md written directly under tasks/ (no deliveries/)"
+if [[ ! -e "${LITE_WORK}/deliveries" ]]; then
+    pass "20a: no deliveries/ folder created for lite-path task write"
+else
+    fail "20a: no deliveries/ folder created for lite-path task write — found ${LITE_WORK}/deliveries"
+fi
+
+# 20b: Source-line delivery resolution also works for the lite-flat SPEC.md location
+# (tasks/task-NNN/SPEC.md directly under the work root, no --delivery-id supplied).
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --task-id 1 --field Notes --value "auto-resolved-lite" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20b: lite-path source-line resolution (--delivery-id omitted) → exit 0"
+assert_file_contains "${LITE_WORK}/tasks/task-001/STATE.md" "auto-resolved-lite" "20b: Notes written via lite-path source-line resolution"
+
+# 20c: --delivery-id --lifecycle targets the work-root STATE.md's own
+# ## Delivery Lifecycle section directly (no per-delivery STATE.md file exists
+# for a lite work -- the lite-path branch in resolve_delivery_state_file).
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --lifecycle "Gated" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20c: lite-path --delivery-id --lifecycle → exit 0"
+assert_file_contains "${LITE_WORK}/STATE.md" "**State:** Gated" "20c: work-root STATE.md ## Delivery Lifecycle updated in place"
+assert_file_contains "${LITE_WORK}/STATE.md" "## Pipeline State" "20c: work-root ## Pipeline State section untouched"
+
+# 20d: --delivery-id --block targets the same work-root STATE.md's ## Delivery Gate
+# section (still no separate delivery-level STATE.md / deliveries/ folder created).
+LITE_GATE_BLOCK="- **Reviewer Tier:** Small
+- **Grade:** A+
+- **Issue List:** none
+- **Timestamp:** 2026-06-18T01:00:00Z"
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --block "$LITE_GATE_BLOCK" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20d: lite-path --delivery-id --block → exit 0"
+assert_file_contains "${LITE_WORK}/STATE.md" "**Grade:** A+" "20d: work-root STATE.md ## Delivery Gate updated in place"
+if [[ ! -e "${LITE_WORK}/deliveries" ]]; then
+    pass "20d: no deliveries/ folder created for lite-path delivery gate write"
+else
+    fail "20d: no deliveries/ folder created for lite-path delivery gate write — found ${LITE_WORK}/deliveries"
+fi
 
 # ---------------------------------------------------------------------------
 echo ""

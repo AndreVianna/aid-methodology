@@ -97,6 +97,7 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 | 2026-07-08 | Migrated this work's own scaffold to the new lite-flat layout (delivery-001/ → tasks/; gate+lifecycle → work-root STATE.md) — dogfoods the change | -- | /aid-execute FIX (Part B) |
 | 2026-07-08 | task-001 [REFACTOR] DONE — Grade A+ (cycle 2) | A+ | /aid-execute REVIEW |
 | 2026-07-08 | task-002 [REFACTOR] DONE — Grade A+ (dashboard reader twins, both layouts) | A+ | /aid-execute REVIEW |
+| 2026-07-09 | task-003 [TEST] DONE — Grade A+ (both-layout fixtures + final grep-clean; caught a fixture task-001 missed) | A+ | /aid-execute REVIEW |
 
 ---
 

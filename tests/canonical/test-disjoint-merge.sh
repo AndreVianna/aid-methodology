@@ -3,31 +3,34 @@
 # produces zero git merge conflicts on merge-back (AC-Disjoint / Pillar 2).
 #
 # Design:
-#   A throwaway git sandbox simulates the two-delivery parallel-branch scenario:
+#   A throwaway git sandbox simulates the two-delivery parallel-branch scenario
+#   (FULL path -- multi-delivery work; deliveries/ nests under the work root,
+#   mirroring features/ -- work-001-add-deliveries-folder task-001/task-003):
 #
 #   main (base)
 #     work-NNN-test/
-#       STATE.md           (work header -- authored by orchestrator on main)
-#       delivery-001/
-#         STATE.md         (stub: Pending-Spec, created on main)
-#         tasks/task-001/
-#           SPEC.md
-#           STATE.md
-#       delivery-002/
-#         STATE.md         (stub: Pending-Spec, created on main)
-#         tasks/task-002/
-#           SPEC.md
-#           STATE.md
+#       STATE.md                    (work header -- authored by orchestrator on main)
+#       deliveries/
+#         delivery-001/
+#           STATE.md                (stub: Pending-Spec, created on main)
+#           tasks/task-001/
+#             SPEC.md
+#             STATE.md
+#         delivery-002/
+#           STATE.md                (stub: Pending-Spec, created on main)
+#           tasks/task-002/
+#             SPEC.md
+#             STATE.md
 #
 #   branch: aid/delivery-001
-#     Writes ONLY delivery-001/STATE.md + delivery-001/tasks/task-001/STATE.md
+#     Writes ONLY deliveries/delivery-001/STATE.md + deliveries/delivery-001/tasks/task-001/STATE.md
 #     via writeback-state.sh (--field, --block, --lifecycle, --append-issue).
-#     Also appends a Cross-phase Q&A entry to delivery-001/STATE.md.
+#     Also appends a Cross-phase Q&A entry to deliveries/delivery-001/STATE.md.
 #
 #   branch: aid/delivery-002
-#     Writes ONLY delivery-002/STATE.md + delivery-002/tasks/task-002/STATE.md
+#     Writes ONLY deliveries/delivery-002/STATE.md + deliveries/delivery-002/tasks/task-002/STATE.md
 #     via writeback-state.sh (same modes, different files).
-#     Also appends a Cross-phase Q&A entry to delivery-002/STATE.md.
+#     Also appends a Cross-phase Q&A entry to deliveries/delivery-002/STATE.md.
 #
 #   Merge aid/delivery-001 -> main  (fast-forward or no-conflict)
 #   Merge aid/delivery-002 -> main  (ASSERT: zero conflicts on any STATE.md)
@@ -216,8 +219,8 @@ WORKSTATEOF
 SANDBOX="${TMP}/sandbox"
 WORK_NAME="work-test-disjoint"
 WORK_DIR="${SANDBOX}/.aid/${WORK_NAME}"
-DELIV1="${WORK_DIR}/delivery-001"
-DELIV2="${WORK_DIR}/delivery-002"
+DELIV1="${WORK_DIR}/deliveries/delivery-001"
+DELIV2="${WORK_DIR}/deliveries/delivery-002"
 
 mkdir -p "$SANDBOX"
 
