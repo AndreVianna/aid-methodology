@@ -1066,7 +1066,7 @@ details.accord > summary:focus-visible,
 		<h1>AID</h1>
 		<p class="subtitle">AI Integrated Development &mdash; a full-lifecycle methodology for building software with AI agents, delivered as a multi-profile CLI installer.</p>
 		<div class="badges">
-			<span class="badge badge-primary">v2.0.0</span>
+			<span class="badge badge-primary">v2.0.6</span>
 			<span class="badge badge-accent">14 skills</span>
 			<span class="badge badge-info">9 agents / 3 tiers</span>
 			<span class="badge badge-ok">5 install profiles</span>
@@ -1216,7 +1216,7 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Concept Spine &mdash; domain-glossary.md</span>
 		<h2>Domain Glossary</h2>
-		<p class="lede">AID's load-bearing vocabulary. Every term here means something specific to this project &mdash; not the generic industry sense. The Concept Spine holds the 30 native concepts the methodology is built on.</p>
+		<p class="lede">AID's load-bearing vocabulary. Every term here means something specific to this project &mdash; not the generic industry sense. The Concept Spine holds the 31 native concepts the methodology is built on.</p>
 	</header>
 
 	<div class="gloss-grid">
@@ -1302,6 +1302,16 @@ details.accord > summary:focus-visible,
 				<span class="gloss-label">Relates to</span>
 				<span class="gloss-pill">Knowledge Base</span>
 				<span class="gloss-pill">Candidate Concepts</span>
+			</div>
+		</div>
+
+		<div class="gloss-card" id="term-connector-registry">
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-connector-registry">Connector Registry</a></div>
+			<p class="gloss-def">A catalog of the external tools and services a project's agents are allowed to use and how to reach them, held at <code>.aid/connectors/</code> as one descriptor file per connector plus a generated index. It only records what an agent can use and how &mdash; it never wires anything itself. Tool-managed (<code>mcp</code>) connectors are provided and authenticated by the host AI tool; other types point to a credential kept locally and git-ignored, never committed to the repo.</p>
+			<div class="gloss-meta">
+				<span class="gloss-label">Relates to</span>
+				<span class="gloss-pill">Knowledge Base</span>
+				<span class="gloss-pill">MCP</span>
 			</div>
 		</div>
 
@@ -2284,7 +2294,7 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Repository layout &mdash; project-structure.md</span>
 		<h2>Project Structure</h2>
-		<p class="lede">AID is a methodology delivered as a multi-profile CLI installer. The repository has two faces: the product (building and shipping AID) and the dogfood install (using AID to build AID). Version 2.0.0.</p>
+		<p class="lede">AID is a methodology delivered as a multi-profile CLI installer. The repository has two faces: the product (building and shipping AID) and the dogfood install (using AID to build AID). Version 2.0.6.</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -2300,13 +2310,13 @@ details.accord > summary:focus-visible,
 				<tr><td><code>bin/</code></td><td>CLI entry point (<code>bin/aid</code> Bash, <code>bin/aid.ps1</code> PowerShell)</td><td>Cross-platform CLI</td></tr>
 				<tr><td><code>lib/</code></td><td>Shared install/update/remove engines (<code>aid-install-core.sh</code>, <code>AidInstallCore.psm1</code>)</td><td>Polyglot parity: Bash mirrors PowerShell</td></tr>
 				<tr><td><code>dashboard/</code></td><td>Local web dashboard: server (<code>server.mjs</code>, <code>server.py</code>) + reader (<code>reader/</code>)</td><td>Read-only, loopback-only, no LLM</td></tr>
-				<tr><td><code>tests/</code></td><td>82 canonical test suites + bespoke harnesses per language</td><td>Run via <code>tests/run-all.sh</code></td></tr>
+				<tr><td><code>tests/</code></td><td>105 canonical test suites + bespoke harnesses per language</td><td>Run via <code>tests/run-all.sh</code></td></tr>
 				<tr><td><code>site/</code></td><td>Astro-based docs site (TypeScript)</td><td>Published to https://aid.casuloailabs.com</td></tr>
 				<tr><td><code>install.sh</code></td><td>Bash curl-bootstrap installer</td><td>ASCII-only, POSIX-compatible</td></tr>
 				<tr><td><code>install.ps1</code></td><td>PowerShell irm-bootstrap installer</td><td>5.1-compatible, ASCII-only</td></tr>
 				<tr><td><code>.claude/</code></td><td>Dogfood install of AID (claude-code profile)</td><td>Real working install, not example data</td></tr>
 				<tr><td><code>.aid/</code></td><td>AID pipeline state + Knowledge Base for this repository</td><td>The dogfood KB you are reading</td></tr>
-				<tr><td><code>VERSION</code></td><td>Canonical version string (2.0.0)</td><td>Must stay in sync with package.json, pyproject.toml, and git tag</td></tr>
+				<tr><td><code>VERSION</code></td><td>Canonical version string (2.0.6)</td><td>Must stay in sync with package.json, pyproject.toml, and git tag</td></tr>
 			</tbody>
 		</table>
 	</div>
@@ -3042,7 +3052,7 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">External dependencies &mdash; integration-map.md</span>
 		<h2>Integration Map</h2>
-		<p class="lede">AID is a distributed toolkit, not a networked service &mdash; most "integrations" are developer-side tools (git, gh, npm, PyPI, GitHub Actions) and the five host AI harnesses it installs into. The only runtime HTTP surface is the loopback-bound dashboard server.</p>
+		<p class="lede">AID is a distributed toolkit, not a networked service &mdash; most "integrations" are developer-side tools (git, gh, npm, PyPI, GitHub Actions) and the five host AI harnesses it installs into. The only runtime HTTP surface is the loopback-bound dashboard server. AID also keeps a catalog of external tool connections its agents can use.</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -3071,13 +3081,13 @@ details.accord > summary:focus-visible,
 					<td>npm</td>
 					<td>Package registry</td>
 					<td>Distribution channel for <code>aid-installer</code> package; zero runtime deps</td>
-					<td>Channel currently blocked (M1 tech debt); version 2.0.0 published</td>
+					<td>v2.0.6 is published on npm; automated CI publish is gated pending owner setup (M1 tech debt)</td>
 				</tr>
 				<tr>
 					<td>PyPI</td>
 					<td>Package registry</td>
 					<td>Distribution channel for <code>aid-installer</code> Python package; zero runtime deps</td>
-					<td>Same blocking issue as npm (M1); version 2.0.0 published</td>
+					<td>v2.0.6 is published on PyPI; automated CI publish gated (same M1 gating as npm)</td>
 				</tr>
 				<tr>
 					<td>Claude Code</td>
@@ -3098,6 +3108,12 @@ details.accord > summary:focus-visible,
 					<td>Not required for the methodology; Playwright MCP is a HARD GATE for any web page review</td>
 				</tr>
 				<tr>
+					<td>Connectors registry</td>
+					<td>Catalog</td>
+					<td>Lists the external tools/services agents can use and how (<code>.aid/connectors/</code>)</td>
+					<td>A catalog, not a connection manager; MCP tools are provided by the host, others use a local git-ignored credential</td>
+				</tr>
+				<tr>
 					<td>Dashboard server</td>
 					<td>Local HTTP</td>
 					<td>Serves <code>kb.html</code> and pipeline state UI at <code>localhost:PORT</code>; bind address is loopback-only</td>
@@ -3116,13 +3132,13 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Automated suites &mdash; test-landscape.md</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">82 canonical test suites covering the CLI installer, the multi-profile render, the dashboard, and the docs site. A single entrypoint runs all non-Windows suites locally; heavy gates run on master CI only.</p>
+		<p class="lede">105 canonical test suites covering the CLI installer, the multi-profile render, the dashboard, and the docs site. A single entrypoint runs all non-Windows suites locally; heavy gates run on master CI only.</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
 		<div class="card">
 			<div class="kicker">Total suites</div>
-			<div class="stat">82</div>
+			<div class="stat">105</div>
 			<div class="stat-sub">canonical test suites</div>
 		</div>
 		<div class="card">
@@ -3292,11 +3308,11 @@ details.accord > summary:focus-visible,
 				</div>
 				<div class="feat-row">
 					<span class="id">4</span>
-					<div><span class="name">npm publish</span><span class="desc">Parallel to PyPI; publishes aid-installer@2.0.0</span></div>
+					<div><span class="name">npm publish</span><span class="desc">Parallel to PyPI; publishes aid-installer@2.0.6</span></div>
 				</div>
 				<div class="feat-row">
 					<span class="id">5</span>
-					<div><span class="name">PyPI publish</span><span class="desc">Parallel to npm; publishes aid-installer 2.0.0</span></div>
+					<div><span class="name">PyPI publish</span><span class="desc">Parallel to npm; publishes aid-installer 2.0.6</span></div>
 				</div>
 			</div>
 		</div>
@@ -3340,7 +3356,7 @@ details.accord > summary:focus-visible,
 	<h3 style="margin-top:1.5rem;">Versioning</h3>
 	<div class="callout" style="margin-top:0.5rem;">
 		<h4>Four version carriers (must stay in sync)</h4>
-		<p><code>VERSION</code> (plain text) &middot; <code>packages/npm/package.json</code> &middot; <code>packages/pypi/pyproject.toml</code> &middot; git tag. Current: <strong>v2.0.0</strong>. The format_version in <code>.aid/settings.yml</code> is independent &mdash; it tracks the install schema, not the AID CLI version.</p>
+		<p><code>VERSION</code> (plain text) &middot; <code>packages/npm/package.json</code> &middot; <code>packages/pypi/pyproject.toml</code> &middot; git tag. Current: <strong>v2.0.6</strong>. The format_version in <code>.aid/settings.yml</code> is independent &mdash; it tracks the install schema, not the AID CLI version.</p>
 	</div>
 
 	<h3 style="margin-top:1.5rem;">Docs Site &amp; Dashboard</h3>
@@ -3408,7 +3424,7 @@ details.accord > summary:focus-visible,
 		<div class="card">
 			<div class="kicker">Layer 1</div>
 			<h3>Automated Tests</h3>
-			<p>82 canonical suites via <code>tests/run-all.sh</code>; CI-gated; catches functional regressions and format violations. Runs before quality gates.</p>
+			<p>105 canonical suites via <code>tests/run-all.sh</code>; CI-gated; catches functional regressions and format violations. Runs before quality gates.</p>
 		</div>
 		<div class="card">
 			<div class="kicker">Layer 2</div>

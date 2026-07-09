@@ -1,8 +1,8 @@
 ---
 kb-category: primary
 source: hand-authored
-objective: The external systems AID consumes and exposes — version control, GitHub, package registries, host AI-tool harnesses, MCP/Playwright, the dashboard server, and the canonical→profiles→packages build chain.
-summary: Read this for any integration-touching work. AID is a distributed toolkit, not a networked service — most "integrations" are developer-side tools (git, gh, npm, pypi, GitHub Actions) and the five host AI harnesses it installs into. The only runtime HTTP surface is the loopback-bound dashboard server.
+objective: The external systems AID consumes and exposes — version control, GitHub, package registries, host AI-tool harnesses, MCP/Playwright, the connectors registry, the dashboard server, and the canonical→profiles→packages build chain.
+summary: Read this for any integration-touching work. AID is a distributed toolkit, not a networked service — most "integrations" are developer-side tools (git, gh, npm, pypi, GitHub Actions) and the five host AI harnesses it installs into. The only runtime HTTP surface is the loopback-bound dashboard server; the connectors registry is a catalog, not a connection manager.
 sources:
   - install.sh
   - install.ps1
@@ -13,15 +13,22 @@ sources:
   - .github/workflows/
   - dashboard/server/server.mjs
   - canonical/aid/scripts/summarize/validate-visuals.mjs
-tags: [C2, integrations, external-deps, git, github, npm, pypi, host-tools, dashboard]
+  - .aid/connectors/INDEX.md
+  - .mcp.json
+  - .gitguardian.yaml
+  - canonical/aid/scripts/connectors/
+  - canonical/aid/templates/connectors/preset-catalog.md
+tags: [C2, integrations, external-deps, git, github, npm, pypi, host-tools, dashboard, connectors]
 see_also: [pipeline-contracts.md, external-sources.md, infrastructure.md, architecture.md]
 owner: architect
 audience: [developer, architect]
 intent: |
   External integration topology — what AID consumes, what it exposes, and how. Read this for
-  integration-touching work (install channels, CI, distribution, host-tool profiles, dashboard).
+  integration-touching work (install channels, CI, distribution, host-tool profiles, dashboard,
+  connectors).
 contracts: []
 changelog:
+  - 2026-07-09: connectors subsystem refresh (housekeep KB-DELTA) — added the Connectors section (catalog model, .aid/connectors/ home, tool-managed vs aid-managed, .mcp.json, .gitguardian.yaml).
   - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator lane)
 ---
 
@@ -29,7 +36,7 @@ changelog:
 
 > **Source:** aid-discover (brownfield deep-dive — Integrator)
 > **Status:** Complete
-> **Last Updated:** 2026-06-25
+> **Last Updated:** 2026-07-09
 
 AID is a methodology delivered as a multi-profile CLI installer. It has no application
 backend and almost no network surface. Its integrations are of three kinds: **developer-side
@@ -46,6 +53,7 @@ loopback only.
 - [Package Registries (npm and PyPI)](#package-registries-npm-and-pypi)
 - [Host AI-Tool Harnesses (the five profiles)](#host-ai-tool-harnesses-the-five-profiles)
 - [MCP and Playwright](#mcp-and-playwright)
+- [Connectors](#connectors)
 - [The Dashboard Server](#the-dashboard-server)
 - [The Build and Distribution Chain](#the-build-and-distribution-chain)
 - [Integration Health Risks](#integration-health-risks)
@@ -70,6 +78,7 @@ loopback only.
 | PyPI | distribution | outbound (publish) | High | `aid-installer` package; `pipx install` channel |
 | Claude Code / Codex / Cursor / Copilot CLI / Antigravity | host AI harness | outbound (installs into) | Critical | the five render profiles AID targets |
 | Playwright (MCP + npm) | browser testing | outbound (invokes) | Medium | dashboard/summary visual-fidelity validation |
+| Connectors registry (`.aid/connectors/`) | catalog (descriptors, not a connection manager) | n/a — records only, wires nothing | Medium | tool-managed (`mcp`) connectors are wired by the host tool itself; aid-managed (`api\|ssh\|url\|cli`) connectors resolve a local `secret_reference` at use-time |
 | Dashboard HTTP server | local web UI | inbound (serves) | Low | read-only, loopback-bound (127.0.0.1) |
 
 CONFIRMED by the per-integration sections below.
@@ -191,6 +200,58 @@ output (it is not a runtime dependency of the installed toolkit). Two surfaces:
 
 ---
 
+## Connectors
+
+The connectors registry (`.aid/connectors/`) is a **catalog**, not a connection manager: it
+records which external tools a project's agents may use and how to reach them, but it never
+wires a host tool's own configuration. CONFIRMED: `.aid/knowledge/STATE.md` (Q7, "the registry
+is a **catalog** (lists what agents can use + how), NOT a connection manager (Q10)");
+`canonical/skills/aid-discover/references/state-elicit.md` ("There is no wiring step — AID
+neither writes nor triggers any host MCP configuration").
+
+**Home and shape.** `.aid/connectors/` holds one `<stem>.md` descriptor per connector plus a
+generated `INDEX.md` (routing table: Connector/Type/Endpoint/Auth/Secret Ref/Summary) and a
+git-ignored `.secrets/` directory (`.aid/connectors/.gitignore` → `.secrets/`). The registry is
+populated and reconciled by `aid-discover`'s ELICIT state (Step E2) — see
+[pipeline-contracts.md](pipeline-contracts.md). The dedicated scripts under
+`canonical/aid/scripts/connectors/` are bash+PowerShell twins: `connector-registry.{sh,ps1}`
+(`list` / `read <stem> <field>` — the frontmatter accessor), `connector-secret.{sh,ps1}`
+(`write <stem>` / `purge <stem>` — no-echo capture and exact-bytes store/delete under
+`.secrets/<stem>`), and `build-connectors-index.{sh,ps1}` (deterministic `INDEX.md` builder).
+CONFIRMED: `.aid/connectors/INDEX.md` (frontmatter "Routing table for the tool/integration
+registry"); `canonical/aid/scripts/connectors/connector-registry.sh`;
+`canonical/aid/scripts/connectors/connector-secret.sh`.
+
+**Two management modes, keyed off the descriptor's `connection_type`:**
+
+| Mode | `connection_type` | Auth | Wiring |
+|------|--------------------|------|--------|
+| Tool-managed | `mcp` | host tool provides its own MCP server/plugin and handles auth; AID stores no credential (`auth_method: none`, no `secret_reference` field) | none — the agent requests the connection from the host tool itself at use-time |
+| Aid-managed | `api` \| `ssh` \| `url` \| `cli` | AID records a `secret_reference` (`env:<VAR>` / `file:.aid/connectors/.secrets/<stem>` / `keychain:`) resolved at use-time | none — AID never launches or wires the target; it only records how to reach it |
+
+CONFIRMED: `canonical/aid/templates/connectors/preset-catalog.md` ("Management mode (STATE.md
+Q10 — derived from `connection_type`)"); `canonical/skills/aid-discover/references/state-elicit.md`
+("Management-mode branch"). The preset catalog (`github`, `gitlab`, `jira`, `slack`,
+`confluence`, `notion`, `jenkins`, `docker`) pre-fills sensible defaults per tool; a tool not
+listed is declared as `custom`. CONFIRMED: `canonical/aid/templates/connectors/preset-catalog.md`
+("## Presets").
+
+**`.mcp.json`** (repo root) is this project's *own* MCP client configuration — distinct from the
+connectors registry above (that registry is a catalog for the pipeline's agents to discover and
+request tool integrations; `.mcp.json` is the actual host-tool wiring for one specific
+tool-managed integration). It configures a single stdio MCP server, `playwright-project`
+(`npx @playwright/mcp@latest`, output dir `.aid/.temp/playwright`) — the same Playwright MCP
+integration described above. CONFIRMED: `.mcp.json`.
+
+**Secret scanning.** `.gitguardian.yaml` (repo root) configures GitGuardian's secret scan and
+excludes the `connector-secret` test fixtures (`tests/canonical/test-connector-secret.sh`,
+`test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh`), which intentionally
+carry fake secret values to exercise the no-echo write/purge/leak-sweep behavior. CONFIRMED:
+`.gitguardian.yaml` ("The connector-secret test suites exist to exercise the secret-handling
+twin … intentional FAKE secret values as test fixtures").
+
+---
+
 ## The Dashboard Server
 
 A local, read-only web dashboard reads `.aid/` state across registered repos. It has parity
@@ -302,3 +363,4 @@ CONFIRMED by the cited sources above and the project release/install memory note
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial integration surface mapping (Integrator deep-dive) |
+| 1.1 | 2026-07-09 | housekeep KB-DELTA | connectors subsystem refresh (housekeep KB-DELTA): added the Connectors section (catalog model, `.aid/connectors/` registry home, tool-managed vs aid-managed modes, `.mcp.json`, `.gitguardian.yaml` secret-scan exclusions), an Overview row, and refreshed Last Updated. |

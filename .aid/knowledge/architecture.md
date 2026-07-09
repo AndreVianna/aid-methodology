@@ -21,6 +21,7 @@ intent: |
   Read this to understand HOW the system hangs together — not WHAT each module does.
 contracts: []
 changelog:
+  - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, added a connectors-registry boundary note)
   - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a / aid-define 2b); added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check; skill count 13 -> 14
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
@@ -29,7 +30,7 @@ changelog:
 
 > **Source:** aid-discover (Phase 1)
 > **Status:** Complete
-> **Last Updated:** 2026-06-28
+> **Last Updated:** 2026-07-09
 
 ## Contents
 
@@ -105,10 +106,14 @@ The boundaries are not class/layer boundaries (this is not an OO app). They are
 | Product (`canonical/`,`bin/`,`lib/`) vs Dogfood (`.aid/`,`.claude/`) | Dogfood state is real working state, never product source. | The repo eats its own cooking without contaminating the shipped artifact. |
 | Executor agent vs Reviewer agent | The agent that writes never grades its own work; reviewer tier >= executor tier. | Adversarial separation is the quality mechanism (see Agent Dispatch). |
 | `.aid/knowledge/` (KB) vs `.aid/work-NNN-*/` (works) | The KB is shared, cross-work, living; a work is one scoped unit. | One KB, many works — institutional memory outlives any single work. |
+| `.aid/connectors/` (registry) vs host-tool config | The connectors registry is a CATALOG — it lists the connections available to a repo's agents and how to use them; it is not a connection manager and does not wire any host tool's config. | Host tools (Claude Code, Codex, Cursor, …) already own their own MCP servers and auth for what they provide; AID records only what it itself manages. |
 
 CONFIRMED. The canonical/profiles rule is stated in `docs/aid-methodology.md` (search:
 "single source of truth — never edit profiles/ directly"); the reviewer/executor rule in
-`docs/aid-methodology.md` (search: "the agent that writes never grades its own work").
+`docs/aid-methodology.md` (search: "the agent that writes never grades its own work"); the
+connectors catalog model in `canonical/skills/aid-discover/references/state-elicit.md` (search:
+"Q10: AID writes, wires, and manages no host tool's MCP configuration") and
+`canonical/aid/templates/connectors/preset-catalog.md` (search: "Management mode").
 
 ---
 
@@ -274,14 +279,15 @@ concept, "human-gated phase advancement"; see Invariants).
 - A skill's entry file is `canonical/skills/<name>/SKILL.md`; per-state behavior lives in
   `canonical/skills/<name>/references/state-*.md`. CONFIRMED via the directory inventory
   (e.g. `aid-discover/references/state-generate.md`, `state-review.md`, `state-fix.md`).
-- Example — Discover runs GENERATE -> REVIEW -> Q-AND-A -> FIX -> APPROVAL -> DONE.
-  CONFIRMED in `docs/aid-methodology.md` (search: "GENERATE -> REVIEW -> Q-AND-A -> FIX ->
-  APPROVAL -> DONE").
+- Example — Discover runs ELICIT -> GENERATE -> REVIEW -> Q-AND-A -> FIX -> APPROVAL -> DONE
+  (ELICIT captures external sources and tool integrations before GENERATE runs). CONFIRMED in
+  `canonical/skills/aid-discover/SKILL.md` (search: "State-machine: ELICIT → GENERATE → REVIEW
+  → Q-AND-A → FIX → APPROVAL → DONE").
 - State machines are *chained* across skills (a DONE state hands off to the next skill).
   CONFIRMED via `.claude/aid/templates/state-machine-chaining.md`.
 - Trivial state/arg work is done in SKILL.md prose, not bash. Only non-trivial,
   reused, deterministic operations are extracted to `canonical/aid/scripts/` (grouped by
-  phase: `kb/`, `execute/`, `interview/`, `housekeep/`, `summarize/`, `release/`,
+  phase: `kb/`, `execute/`, `interview/`, `housekeep/`, `connectors/`, `summarize/`, `release/`,
   `migrate/`, `config/`). CONFIRMED via the `canonical/aid/scripts/` subtree.
 
 ---
@@ -437,9 +443,10 @@ What a change must never break (each stated as a hard rule + where enforced):
   the `aid-` prefix; scripts/templates/recipes live under an `aid/` subtree); root context
   files are updated in-place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
   Enforced by the installer + manifests. `README.md` (search: "Content isolation").
-- **Version lockstep:** the single `VERSION` string (`1.1.1`) MUST stay in sync across
-  `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and `.aid/.aid-version`.
-  Enforced by `.claude/aid/scripts/release/check-version-sync.sh`.
+- **Version lockstep:** the single `VERSION` string MUST stay in sync across
+  `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and `.aid/.aid-version` (see
+  `VERSION` for the current value). Enforced by
+  `.claude/aid/scripts/release/check-version-sync.sh`.
 - **Polyglot parity:** behavior implemented in Bash (`lib/aid-install-core.sh`) MUST match
   the PowerShell equivalent (`lib/AidInstallCore.psm1`). Enforced by
   `tests/canonical/test-aid-cli-parity.sh`.
@@ -482,3 +489,4 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 | 1.1 | 2026-06-26 | manual | Corrected the process-architecture model: six numbered phases (Discover→Execute), not "12 phases". Init/Implement/Review/Test/Track/Triage reframed as bootstrap / task-types / states / optional Deliver skills, not phases. |
 | 1.2 | 2026-06-28 | manual | Reconciled the Interview phase to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) / Phase 2b `aid-define` (feature decomposition + cross-reference). Added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check. Skill count 13 -> 14. |
 | 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define" throughout; section heading renamed to "Phase 2 (Describe → Define)"; pipeline sequence updated to Describe/Define (2a/2b). |
+| 1.4 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, and added a connectors-registry boundary row (catalog model, not a connection manager). |
