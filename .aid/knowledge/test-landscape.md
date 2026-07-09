@@ -79,7 +79,7 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 
 | Framework / harness | Type | Location | Notes |
 |---|---|---|---|
-| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (105 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 105. |
+| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (118 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 118. |
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` (~2406 lines) | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
@@ -109,7 +109,7 @@ Key behaviors (CONFIRMED in `tests/run-all.sh`):
 - **Exit contract.** Exit 0 only if every suite passes; exit 1 if any suite fails (or if no
   suites are found). Under CI it emits `::group::` / `::error::` annotations.
 
-Representative suite families (the 105 cover far more than these):
+Representative suite families (the 118 cover far more than these):
 
 | Family | Example suites | What they protect |
 |---|---|---|
@@ -117,6 +117,7 @@ Representative suite families (the 105 cover far more than these):
 | Release / packaging | `test-release.sh`, `test-release-install-e2e.sh`, `test-release-migrate-smoke.sh`, `test-version-sync.sh`, `test-npm-installer.sh`, `test-pypi-installer.sh` | the 3 publish channels + version-sync |
 | KB / discovery engine | `test-kb-citation-lint.sh`, `test-frontmatter-lint.sh`, `test-build-kb-index.sh`, `test-closure-check.sh`, `test-harvest-coined-terms.sh`, `test-spine-depth-coverage.sh`, `test-dual-intent-self-eval.sh` | the discovery/KB tooling |
 | Pipeline / execute | `test-writeback-state.sh`, `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-delivery-gate-aggregate.sh`, `test-grade.sh` | state writeback + delivery gating |
+| Shortcut / Lite path (work-001) | `test-catalog-dirs-parity.sh`, `test-triage-routing.sh`, `test-describe-full-only.sh`, `test-cutover-no-dangling.sh`, `test-deploy-monitor-repurpose.sh`, `test-executor-graph-flat-plan.sh`, `test-shortcut-gate-halt-batching.sh`, and the seven `test-*-family-scaffold.sh` suites (`create`, `change-refactor`, `fix`, `document`, `prototype`, `test-experiment`, `analyze-report`) | the 67 verb-first shortcut skills, the shortcut engine's GATE/APPROVAL-HALT batching, `/aid-triage` routing, the recipe-removal cutover (no dangling `recipes/`/`parse-recipe.sh`), `/aid-describe` full-only, and the flattened Lite work layout |
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
 | Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
 | Compat / hygiene | `test-ps51-compat.sh`, `test-ascii-only.sh`, `test-payload-size.sh`, `test-multitool-isolation.sh`, `test-dogfood-byte-identity.sh` | portability + content isolation |
@@ -229,6 +230,7 @@ enforcement.
 | Profile renderer / generator | Strong | render-drift + 5 self-tests + `test-assemble-determinism.sh` |
 | Discovery / KB engine | Strong | ~20 `test-*` suites (closure, harvest, citation/frontmatter lint, dual-intent, spine-depth) |
 | Pipeline execute / state writeback | Strong | `test-writeback-state.sh`, `test-delivery-gate-aggregate.sh`, `test-complexity-score.sh` |
+| Shortcut engine / Lite path | Strong | catalog↔dirs parity, `/aid-triage` routing, the seven family-scaffold suites, GATE/APPROVAL-HALT batching, flat-plan execution graph, recipe-removal cutover, describe-full-only |
 | Dashboard reader/server | Strong | pytest suites + parity suites |
 | Astro site | Moderate | `site/src/data/__tests__`, `site/scripts/__tests__`; build is the main gate |
 | Prompt-driven skill state machines | Not machine-tested (by design) | dogfooding + human/AI review only |
@@ -319,3 +321,4 @@ cd site && npm ci && npm run build
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial test-landscape analysis (quality deep-dive) |
 | 1.1 | 2026-07-09 | aid-housekeep | connectors subsystem + release-drift refresh (housekeep KB-DELTA) |
+| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Corrected canonical suite count 105 → 118 (verified `ls tests/canonical/test-*.sh \| wc -l`); added the Shortcut / Lite path suite family and Coverage row (catalog↔dirs parity, triage routing, the seven family-scaffold suites, GATE/APPROVAL-HALT batching, flat-plan graph, recipe-removal cutover, describe-full-only). |

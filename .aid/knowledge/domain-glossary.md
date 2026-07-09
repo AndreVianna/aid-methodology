@@ -2,13 +2,15 @@
 kb-category: primary
 source: hand-authored
 objective: AID's project-specific vocabulary — the load-bearing native concepts (Concept Spine) and the supporting lexicon, defined as THIS project uses them.
-summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Connector Registry, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, dashboard, install, connectors, and authoring terms. Definitions are project-specific, not generic.
+summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Connector Registry, Shortcut, Shortcut Engine, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, work-artifact, dashboard, install, connectors, and authoring terms. Definitions are project-specific, not generic.
 sources:
   - docs/aid-methodology.md
   - docs/glossary.md
   - canonical/
   - canonical/EMISSION-MANIFEST.md
-  - canonical/skills/aid-describe/references/state-triage.md
+  - canonical/aid/templates/shortcut-engine.md
+  - canonical/aid/templates/shortcut-catalog.yml
+  - canonical/skills/aid-triage/SKILL.md
   - canonical/skills/aid-describe/references/elicitation-engine.md
   - canonical/skills/aid-describe/references/state-describe-seed.md
   - canonical/skills/aid-discover/references/state-elicit.md
@@ -25,6 +27,7 @@ intent: |
   particular in AID; the canonical reference for naming. Concept Spine + supporting lexicon.
 contracts: []
 changelog:
+  - 2026-07-09: work-001 lite-skills refresh — removed the deleted Recipe/Slot spine concept; redefined Triage as the standalone /aid-triage router and Lite Path around the shortcut engine; added Shortcut and Shortcut Engine spine concepts and a Lexicon — Work Artifacts table; fixed the Task definition artifact (SPEC.md -> DETAIL.md) and the flat-Lite no-per-task-STATE.md accounting, the Describe/Define + Seasoned-Analyst + NFR-7 triage-extraction wording, the stale work-state-template section quote, and the summary(recipe) lexicon row.
   - 2026-07-09: Connectors subsystem refresh (housekeep KB-DELTA) — added the Connector Registry spine concept, the Lexicon — Connectors section, broadened MCP, corrected the KB seed count 14 -> 15, corrected PR #132 provenance.
   - 2026-06-27: aid-describe/aid-define split — rekeyed Triage to /aid-describe; added Seasoned-Analyst Engine, Describe / Define, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias / greenfield seed keystone)
   - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator owns the concept spine)
@@ -48,6 +51,7 @@ accounting for every harvested candidate concept lives in
 
 - [Concept Spine](#concept-spine)
 - [Lexicon — Pipeline Run-State](#lexicon--pipeline-run-state)
+- [Lexicon — Work Artifacts](#lexicon--work-artifacts)
 - [Lexicon — Dashboard Reader](#lexicon--dashboard-reader)
 - [Lexicon — Install and CLI](#lexicon--install-and-cli)
 - [Lexicon — Build, Render and Install Mechanics](#lexicon--build-render-and-install-mechanics)
@@ -69,7 +73,7 @@ accounting for every harvested candidate concept lives in
 ### Canonical
 
 **Definition-as-used-here:** The `canonical/` directory — the single source of truth for every
-piece of content AID installs (skills, agents, templates, recipes, scripts). Content is
+piece of content AID installs (skills, agents, templates, scripts). Content is
 authored once here and rendered into the five `profiles/` install trees; `profiles/` is build
 output and is never hand-edited. "Canonical" is the authority, not merely "standard."
 
@@ -97,13 +101,15 @@ per-profile emission), AGENTS.md/CLAUDE.md (the per-profile context file).
 ### Work
 
 **Definition-as-used-here:** A self-contained unit of scope created by one Describe → Define pair (Phase 2 —
-the `aid-describe`→`aid-define` pair), living at `.aid/work-NNN-{slug}/`. Each work owns its own
+the `aid-describe`→`aid-define` pair) on the full path, or by a single direct-entry shortcut on the Lite
+path, living at `.aid/work-NNN-{slug}/`. Each work owns its own
 requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base.
 Multiple works coexist (e.g. one per client request). "Work" is the top-level pipeline scope
 container, not a generic job.
 
 **Relates-to:** Delivery (a work is sequenced into deliveries), Knowledge Base (shared across
-works), Task (the leaf unit inside a work), Describe / Define (the skill pair that creates a work).
+works), Task (the leaf unit inside a work), Describe / Define (the skill pair that creates a work),
+Shortcut Engine (which creates a flattened Lite work).
 
 **sources:**
 - `docs/aid-methodology.md` ("Each interview creates a *work*")
@@ -112,14 +118,14 @@ works), Task (the leaf unit inside a work), Describe / Define (the skill pair th
 ### Delivery
 
 **Definition-as-used-here:** An ordered, independently shippable MVP grouping of features
-within a work, numbered `delivery-NNN`. Plan decides what goes in each delivery and in what
-order; Execute runs one git branch per delivery and gates each with a delivery-gate review. A
-delivery is a strategy-level unit (the "what ships when"), distinct from a Task (the
-tactical unit). Not a deployment/shipment event.
+within a work, numbered `delivery-NNN`, whose definition document is `BLUEPRINT.md`. Plan decides
+what goes in each delivery and in what order; Execute runs one git branch per delivery and gates
+each with a delivery-gate review. A delivery is a strategy-level unit (the "what ships when"),
+distinct from a Task (the tactical unit). Not a deployment/shipment event.
 
 **Relates-to:** Work (deliveries belong to a work), Task (a delivery contains tasks),
-Delivery Gate (the per-delivery review gate), Execution Graph (sequences tasks within/across
-deliveries).
+Delivery Gate (the per-delivery review gate), BLUEPRINT.md (the delivery definition), Execution
+Graph (sequences tasks within/across deliveries).
 
 **sources:**
 - `docs/aid-methodology.md` ("## 4 … Phase 4: Plan", "Branch isolation … `aid/{work}-delivery-NNN`")
@@ -130,15 +136,16 @@ deliveries).
 **Definition-as-used-here:** The leaf unit of execution: one agent session = one PR = one human
 review. Every task carries a `Type` from a fixed eight-value enum (RESEARCH, DESIGN, IMPLEMENT,
 TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE); the Type drives both how the executor works and
-how the reviewer evaluates it. A task is defined by a `task-NNN/SPEC.md` and tracked by a
-sibling `STATE.md`.
+how the reviewer evaluates it. A task is defined by a `task-NNN/DETAIL.md`; on the full path it
+is tracked by a sibling `STATE.md`, while a flattened Lite work has no per-task `STATE.md` (each
+task's cells live in the work-root `STATE.md § ### Tasks lifecycle`).
 
-**Relates-to:** Delivery (tasks live under a delivery), Execution Graph (orders tasks into
-waves), TaskStatus (the dashboard enum tracking a task's lifecycle).
+**Relates-to:** Delivery (tasks live under a delivery), DETAIL.md (the task definition), Execution
+Graph (orders tasks into waves), TaskStatus (the dashboard enum tracking a task's lifecycle).
 
 **sources:**
 - `docs/aid-methodology.md` ("The eight task types are")
-- `canonical/aid/templates/task-state-template.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md` directly under the work folder)
+- `canonical/aid/templates/task-state-template.md` (full path only: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`); `canonical/aid/templates/shortcut-engine.md` (a flattened Lite work has no per-task `STATE.md` — task cells live in the work-root `STATE.md § ### Tasks lifecycle`; see [pipeline-contracts.md](pipeline-contracts.md))
 
 ### Execution Graph
 
@@ -275,25 +282,6 @@ it), Install channel (recorded alongside it).
 - `bin/aid` (`AID_STATE_HOME="${AID_HOME:-${HOME}/.aid}"`)
 - `dashboard/server/server.mjs` (header "AID_HOME (state home) resolution for registry.yml")
 
-### Recipe
-
-**Aliases:** Slot
-
-**Definition-as-used-here:** A pre-filled lite-path template for a recurring change pattern,
-under `canonical/aid/recipes/`, named by the change it makes (`add-X` / `change-X` / `fix-X`
-plus a few verbs). TRIAGE matches a free-form work description to a recipe by reading each
-recipe's one-line `summary:`. Body = frontmatter (`name`, `applies-to`, `slot-count`,
-`task-count`, `summary`) + `## spec` + `## tasks` + `{{slot}}` placeholders substituted by
-`parse-recipe.sh`. A shortcut for known patterns, not a quality bypass — it produces the same
-typed, reviewed task set.
-
-**Relates-to:** Lite Path (recipes drive it), Slot (recipe placeholder), TRIAGE (matches the
-recipe), Task (what a recipe emits).
-
-**sources:**
-- `docs/glossary.md` ("Recipe")
-- `canonical/aid/scripts/interview/parse-recipe.sh` — the slot substitutor
-
 ### Canonical-Source Render-and-Vendor Pipeline
 
 **Aliases:** render pipeline, the render pipeline
@@ -373,18 +361,20 @@ computed gate the human approval complements), Task (each reviewed task carries 
 **Aliases:** aid-describe, aid-define, the Interview split
 
 **Definition-as-used-here:** The two skills that together perform Phase 2 (Describe → Define). **`aid-describe`**
-(Phase 2a) gathers requirements through the seasoned-analyst interview and runs TRIAGE — it
-produces the approved `REQUIREMENTS.md` on the full path (or a work-root `SPEC.md` + task
-hierarchy on the lite path), and on greenfield authors the forward-authored KB seed
-(DESCRIBE-SEED). **`aid-define`** (Phase 2b, full path only) begins from the approved
+(Phase 2a) gathers requirements through the seasoned-analyst interview — it
+produces the approved `REQUIREMENTS.md` (**full path only**; it no longer triages or emits lite
+work — routing moved to the standalone `/aid-triage` router, and lite work is entered through the
+shortcut engine), and on greenfield authors the forward-authored KB seed (DESCRIBE-SEED). Its
+state machine is `FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION
+[PAUSE → /aid-define]`. **`aid-define`** (Phase 2b, full path only) begins from the approved
 `REQUIREMENTS.md` and decomposes it into per-feature `SPEC.md` stubs (FEATURE-DECOMPOSITION),
 then cross-references them against the KB and codebase (CROSS-REFERENCE). This pair replaced the
 single former `aid-interview` skill — `aid-describe` is renamed-and-scoped to "describe the work,"
 `aid-define` to "define the features."
 
-**Relates-to:** Triage (the opening state of `aid-describe`), Seasoned-Analyst Engine (drives
-`aid-describe`'s interview), Forward-Authored Seed (authored by `aid-describe` DESCRIBE-SEED),
-Work (the unit this pair creates).
+**Relates-to:** Triage (the routing formerly opening `aid-describe`, now the standalone
+`/aid-triage` router), Seasoned-Analyst Engine (drives `aid-describe`'s interview),
+Forward-Authored Seed (authored by `aid-describe` DESCRIBE-SEED), Work (the unit this pair creates).
 
 **sources:**
 - `canonical/skills/aid-describe/SKILL.md` — "Conversational requirements gathering … handoff to /aid-define"
@@ -399,17 +389,20 @@ Work (the unit this pair creates).
 (`references/elicitation-engine.md`): **one** fixed D1 opener (the only fixed turn) followed by a
 five-step next-move selector that runs every subsequent turn — STOP-CHECK, GAP-SELECTION (from a
 gap inventory, by precedence), MOVE-SELECTION (from the move playbook), CALIBRATION-SHAPING (depth),
-and ENVELOPE + EMIT. It is consumed (never re-implemented) by both TRIAGE (over the route-deciding
-5-signal gap inventory) and DESCRIBE-SEED (over the 5-element seed gap inventory) via a
-three-parameter contract: gap inventory / stop predicate / record sink. One question per turn,
-never batched.
+and ENVELOPE + EMIT. Within `aid-describe` it drives the Q-AND-A / CONTINUE interview directly and
+is additionally consumed (never re-implemented) by DESCRIBE-SEED over the 5-element seed gap
+inventory via a three-parameter contract: gap inventory / stop predicate / record sink. The
+standalone `/aid-triage` router reuses the D1 opener's UX shape (a one-shot `Suggested:` / `Why:`
+capture) for its own single-turn reflect-back, but is a **UX-shape consumer only** — it runs no
+adaptive loop and has no gap inventory, stop predicate, or record sink of its own. One question
+per turn, never batched.
 
-**Relates-to:** Triage (consumes the engine to route), Forward-Authored Seed (consumes the engine
-to author the seed), NFR-7 envelope (the per-emission wrapper), Concept Spine (the keystone the
-engine elicits in greenfield).
+**Relates-to:** Triage (reuses the engine's D1 opener UX shape for its reflect-back), Forward-Authored
+Seed (consumes the engine to author the seed), NFR-7 envelope (the per-emission wrapper), Concept
+Spine (the keystone the engine elicits in greenfield).
 
 **sources:**
-- `canonical/skills/aid-describe/references/elicitation-engine.md` ("D1 Fixed Opener", "Adaptive Loop")
+- `canonical/skills/aid-describe/references/elicitation-engine.md` ("D1 Fixed Opener", "Adaptive Loop", "The in-skill guided-triage consumer has been removed")
 - `canonical/skills/aid-describe/references/advisor-stance.md` ("The Envelope Template")
 
 ### NFR-7 Suggested-Answer + Rationale
@@ -425,7 +418,7 @@ engine recommends as a real expert rather than punting with "it depends," surfac
 a `Suggested:` the user can knowingly accept or override.
 
 **Relates-to:** Seasoned-Analyst Engine (which wraps every emission in this envelope), Triage (its
-route-confirmation turn is an NFR-7 straw-man), Forward-Authored Seed (its conflict-surfacing and
+SUGGEST reflect-back turn is an NFR-7 straw-man), Forward-Authored Seed (its conflict-surfacing and
 seed questions are NFR-7-wrapped).
 
 **sources:**
@@ -434,39 +427,101 @@ seed questions are NFR-7-wrapped).
 
 ### Triage
 
-**Definition-as-used-here:** The opening state of `/aid-describe` (after FIRST-RUN scaffolding,
-before the conversational interview) that routes a work down either the *full* path (every
-numbered phase) or the *lite* path (a condensed phase set, same artifacts), and matches a
-free-form work description to a Recipe. It is **engine-driven**: the seasoned-analyst engine
-draws out the route-deciding signals over a **5-signal gap inventory** (scope size/shape →
-full-vs-lite; work-type → lite sub-path; target-artifact identity → recipe match; behavior/flow
-span → secondary sizing; KB anchoring → sharper sizing), halting as soon as full-vs-lite is
-decided AND recipe confidence resolves to single-clear-winner / several-plausible / none. A
-confident, user-confirmed single recipe match routes to lite automatically; any signal short of
-that routes full.
+**Aliases:** `/aid-triage`, router, suggest-only router
 
-**Relates-to:** Lite Path (where triage routes small work), Recipe (what triage matches against),
-Work (the unit triage classifies), Seasoned-Analyst Engine (which draws out the route-deciding
-signals), Describe / Define (Triage is `aid-describe`'s opening state).
+**Definition-as-used-here:** The standalone `/aid-triage` router skill
+(`canonical/skills/aid-triage/SKILL.md`) — a **stateless, write-free, suggest-only** entry helper
+for the "I don't know which door fits" case. Its state machine is `INTAKE → CLASSIFY → SUGGEST →
+HALT`: it captures one free-form description, infers work-type and judges scope, then **suggests**
+exactly one next step and stops. A known, single, well-scoped change routes to the matching
+canonical shortcut (`/aid-fix`, `/aid-create-api`, …); anything broad, multi-activity, or
+ambiguous routes to the full path (`/aid-describe`). It reads `shortcut-catalog.yml` to resolve to
+a canonical (non-alias) name and only ever suggests canonical names. It writes nothing — no work
+folder, no `STATE.md` — runs no interview, and dispatches no subagent; the conservative default
+routes anything short of one confident single match to `/aid-describe`. This is the **extraction**
+of `/aid-describe`'s former TRIAGE state into its own skill.
+
+**Relates-to:** Shortcut (what triage suggests for a known change), Shortcut Engine (where a
+suggested shortcut leads), Describe / Define (the full path triage suggests for broad work),
+NFR-7 Suggested-Answer + Rationale (its SUGGEST reflect-back is an NFR-7 straw-man).
 
 **sources:**
-- `canonical/skills/aid-describe/references/state-triage.md` ("Engine-driven analyst triage", "Triage gap inventory")
-- `docs/aid-methodology.md` — "`/aid-describe`'s TRIAGE routes small work to the lite path automatically"
-- `canonical/aid/scripts/interview/parse-recipe.sh` — the recipe matcher triage drives
+- `canonical/skills/aid-triage/SKILL.md` ("Suggest-only router", "State machine: INTAKE -> CLASSIFY -> SUGGEST -> HALT")
+- `docs/glossary.md` ("`/aid-triage`")
+- `docs/aid-methodology.md` ("`/aid-triage` — you don't know which door fits … It never runs anything on your behalf")
 
 ### Lite Path
 
-**Definition-as-used-here:** The TRIAGE-routed condensed pipeline for small, single-target work:
-the same typed, reviewed artifacts as the full path but with phases collapsed (Specify+Plan+Detail
-fold into `aid-describe`'s lite-path task breakdown). It is a shortcut for known patterns, not a
-quality bypass.
+**Aliases:** lite path, shortcut path, flattened Lite work
 
-**Relates-to:** Triage (what routes work here), Recipe (what drives a lite run), Task (what a lite
-run still emits).
+**Definition-as-used-here:** The condensed, flattened pipeline for small, single-target work,
+**entered directly by naming the change** — running a verb-first shortcut (`/aid-fix`,
+`/aid-create-api`, …) — rather than by any routing state inside `aid-describe` (which no longer
+exists). Every shortcut delegates to the shared **shortcut engine**, which collapses the five
+definition phases (Describe → Define → Specify → Plan → Detail) into one fast, mostly-autonomous
+run and produces the **full flattened artifact set** (work-root `REQUIREMENTS.md`, `SPEC.md`,
+`PLAN.md`, `BLUEPRINT.md`, and `tasks/task-NNN/DETAIL.md` — no `features/`, no `deliveries/`
+folder). It emits the same typed, reviewed artifacts as the full path with the phases collapsed,
+not skipped: a shortcut for known scope, not a quality bypass.
+
+**Relates-to:** Shortcut (the entry point), Shortcut Engine (the engine every shortcut delegates
+to), Triage (the router that may suggest a shortcut), Task (what a lite run still emits), Delivery
+Gate (the single synthesized delivery-001 it gates).
 
 **sources:**
-- `docs/aid-methodology.md` — "lite path<br/>small, single-target"
-- `docs/glossary.md` — the lite/full path distinction
+- `canonical/aid/templates/shortcut-engine.md` ("collapsed into one fast, mostly-autonomous run"; the INTAKE→…→APPROVAL-HALT state machine)
+- `docs/glossary.md` ("The Lite Path")
+- `docs/aid-methodology.md` ("The Lite Path: Direct-Entry Shortcuts")
+
+### Shortcut
+
+**Aliases:** direct-entry shortcut, verb-first shortcut, shortcut skill, doorway
+
+**Definition-as-used-here:** One of **67** verb-first, direct-entry skills (`aid-fix`,
+`aid-create-api`, `aid-change-ui`, `aid-document-runbook`, …) — the way you enter the Lite path by
+*naming* your change. Each is a thin doorway that binds a `{verb, artifact}` pair and delegates to
+the shared **Shortcut Engine**; the doorways are generated by `build-shortcut-skills.py` from a
+single **69-row** catalog (`canonical/aid/templates/shortcut-catalog.yml`) = **45 canonical names +
+24 aliases** (`aid-add-*` mirrors `aid-create-*`; `aid-update-*` mirrors `aid-change-*`), where two
+`repurpose` rows point at existing skills and emit no directory, so 69 rows produce 67 shortcut
+directories. Naming a change with a shortcut is one of AID's three entry points (alongside
+`/aid-triage` and `/aid-describe`). The nine shortcut families are create, change, fix, refactor,
+test + experiment, prototype, document, report, and show-dashboard.
+
+**Relates-to:** Shortcut Engine (what every shortcut delegates to), Lite Path (what a shortcut
+enters), Triage (the router that suggests a shortcut), Task (what a shortcut run emits).
+
+**sources:**
+- `canonical/aid/templates/shortcut-catalog.yml` (the 69-row single-source catalog + field contract)
+- `docs/glossary.md` ("Shortcut")
+- `docs/aid-methodology.md` ("The 67 direct-entry shortcuts, by family")
+
+### Shortcut Engine
+
+**Aliases:** shortcut engine, the engine, direct-entry shortcut engine
+
+**Definition-as-used-here:** The single shared engine (`canonical/aid/templates/shortcut-engine.md`)
+every shortcut doorway delegates to, running the state machine `INTAKE → CAPTURE → SPEC → PLAN →
+DETAIL → GATE → APPROVAL-HALT`. It **collapses** the five definition phases (Describe → Detail)
+into one fast, mostly-autonomous run — it never *skips* a phase, it collapses the information
+capture within each — producing the full flattened Lite artifact set. Its authoring states
+(CAPTURE/SPEC/PLAN/DETAIL) dispatch `aid-architect` without a per-phase human checkpoint (unlike
+the full path's Propose → Discuss → Write → Review loops); the only interactive moments are a rare
+CAPTURE gap-question and the terminal **APPROVAL-HALT**. **GATE** grades every generated document
+mechanically against the shortcut path's own default `minimum_grade` floor (`A+`) before halting.
+It **never executes** — `/aid-execute` is a separate, user-initiated run — and every invocation
+allocates a brand-new `work-NNN` with no cross-session resume. It replaced the retired recipe
+catalog; the family-specific `shortcut-scaffolding/<family>.md` references supply the SPEC/PLAN/
+DETAIL scaffolding recipes used to provide.
+
+**Relates-to:** Shortcut (the doorways that delegate to it), Lite Path (the path it produces),
+Grade (what its GATE state computes), Human-Gated Phase Advancement (the APPROVAL-HALT it ends on),
+Task (what its DETAIL state emits).
+
+**sources:**
+- `canonical/aid/templates/shortcut-engine.md` ("INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT"; "Autonomous, non-interactive authoring")
+- `canonical/aid/templates/shortcut-scaffolding/` (the per-family SPEC/PLAN/DETAIL scaffolding references)
+- `docs/aid-methodology.md` ("The shortcut engine")
 
 ### Forward-Authored Seed
 
@@ -556,7 +611,7 @@ KB-doc completeness. It is the single-writer truth the dashboard reads.
 Human-Gated Phase Advancement (what advances it).
 
 **sources:**
-- `canonical/aid/templates/work-state-template.md` — "Pipeline State, Triage, Escalation Carry, Interview State, Lifecycle History"
+- `canonical/aid/templates/work-state-template.md` — the AUTHORED single-writer sections (Pipeline State, Interview State, Lifecycle History)
 - `canonical/aid/templates/discovery-state-template.md` — the discovery-area state ledger
 
 ### Task Status
@@ -635,6 +690,21 @@ lives).
 
 ---
 
+## Lexicon — Work Artifacts
+
+> The definition documents a work produces, and how they are named at each level. See the
+> Delivery, Task, Shortcut, Shortcut Engine, and Lite Path spine entries above.
+
+| Term | Meaning here | Source |
+|------|--------------|--------|
+| REQUIREMENTS.md | The work's approved requirements — authored by `/aid-describe` (full path) or the shortcut engine's CAPTURE state (Lite) | `canonical/aid/templates/requirements/requirements-template.md` |
+| SPEC.md (feature) | The **feature** definition + Technical Specification; one per feature under `features/feature-NNN/` (full path), or a single work-root `SPEC.md` (Lite). The feature definition kept the name `SPEC.md` — only the delivery and task definitions were renamed | `canonical/aid/templates/feature.md` (full path, via `aid-define`); `canonical/aid/templates/specs/spec-template.md` (Lite path, via the shortcut engine's SPEC state) |
+| PLAN.md | The delivery plan (`## Deliverables` + `## Execution Graph`); one per work | `canonical/aid/templates/delivery-plans/flattened-plan-template.md` |
+| BLUEPRINT.md | The **delivery** definition — objective, scope, Gate Criteria, task listing, dependencies. Full path: `deliveries/delivery-NNN/BLUEPRINT.md`; Lite: a single work-root `BLUEPRINT.md`. Formerly the delivery-level `SPEC.md` | `canonical/aid/templates/delivery-blueprint-template.md` |
+| DETAIL.md | The **task** definition — bold `**Type:**`, scope, acceptance criteria, dependencies; one per task under `tasks/task-NNN/`. Formerly the task-level `SPEC.md` / flat `task-NNN.md` | `canonical/aid/templates/task-detail-template.md` |
+
+---
+
 ## Lexicon — Dashboard Reader
 
 > Models the read-only dashboard parses `.aid/` state into. See [integration-map.md](integration-map.md).
@@ -688,7 +758,7 @@ lives).
 | source (frontmatter field) | The doc's production mode — `hand-authored` \| `forward-authored` \| `generated`; `forward-authored` marks a design-authoritative greenfield seed doc | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` ("### `source:`") |
 | Ranked Candidates | The salience-ordered candidate-concepts table | `.aid/generated/candidate-concepts.md` ("## Ranked Candidates") |
 | Term / Term Name / Unique Term | Glossary-tooling labels for a candidate/grounded term | `canonical/aid/scripts/kb/build-metrics.sh`; `canonical/skills/aid-discover/references/agent-prompts.md` ("Unique Term") |
-| summary (recipe / frontmatter field) | A one-line description; TRIAGE reads a recipe's `summary:` to match work | `docs/glossary.md` ("summary (recipe field)") |
+| summary (frontmatter field) | A one-sentence scope line — the INDEX "Summary" column and an agent-routing signal | `canonical/aid/templates/kb-authoring/frontmatter-schema.md` ("`summary:`") |
 | dashboard | The read-only local web view of `.aid/` state across repos | `dashboard/README.md` |
 
 ---
@@ -752,7 +822,8 @@ lives).
 | Work | a generic job/effort | a self-contained pipeline scope unit at `.aid/work-NNN-*/` |
 | Wave | an ocean wave / release wave | a parallel batch of dependency-ready tasks in the Execution Graph |
 | Grade | an academic mark assigned by a person | a value *computed* deterministically by `grade.sh` from severity tags, never hand-picked |
-| Lite | "lightweight version" | the TRIAGE-routed condensed path for small work — same artifacts, fewer phases |
+| Lite | "lightweight version" | the shortcut-entered condensed path for small work — same artifacts, fewer phases |
+| Shortcut | a keyboard/UI shortcut | a verb-first direct-entry skill (`/aid-fix`, `/aid-create-api`, …) that enters the Lite path |
 | Forward-authored | (no common meaning) | a KB doc authored from intent *before code exists*; design-authoritative (design→code), the greenfield seed |
 | Conformance | generic standards-compliance | verifying as-built code matches the design-authoritative forward-authored seed (code→design) |
 
@@ -764,7 +835,7 @@ lives).
 
 - **Canonical is the only source of truth.** `profiles/` is rendered output; editing it
   directly (instead of `canonical/` + re-render) violates the model and the VERIFY gate.
-- **One Work per Describe → Define pair.** A work owns its requirements/features/deliveries/tasks; multiple
+- **One Work per Describe → Define pair (full path) or per shortcut (Lite).** A work owns its requirements/features/deliveries/tasks; multiple
   works share one Knowledge Base. Never fold two scopes into one work.
 - **Delivery ≠ Task.** Delivery is the strategy unit (what ships, in what order); Task is the
   tactical unit (one session/PR). Plan sequences deliveries; Detail decomposes them into tasks.
@@ -792,3 +863,4 @@ lives).
 | 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define": updated Work definition, Describe/Define entry, source citation, and the One-Work-per invariant. |
 | 1.4 | 2026-07-08 | PR #132 (branch `change-delivery`) | Fixed stale Delivery/Task/Delivery Gate source citations and lexicon rows to reflect the nested `deliveries/delivery-NNN/` full-path folder and the lite-path's `delivery-NNN/`-folder-free layout (gate/Q&A authored directly in the work-root STATE.md). |
 | 1.5 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the Connector Registry spine concept and the Lexicon — Connectors section (Preset/Preset-Catalog, tool-managed/aid-managed, `secret_reference`); broadened the MCP acronym entry beyond Playwright; clarified the KB seed accounting (14 standard docs; the seed ships 15 template files incl. the README meta doc); corrected the 1.4 provenance to PR #132. |
+| 1.6 | 2026-07-09 | work-001 lite-skills refresh | Removed the deleted Recipe/Slot spine concept (C5); redefined Triage as the standalone `/aid-triage` router (C2) and Lite Path around the shortcut engine (C3/C6); added the Shortcut and Shortcut Engine spine concepts (C1) and a new Lexicon — Work Artifacts table (REQUIREMENTS/SPEC/PLAN/BLUEPRINT/DETAIL, C4); fixed the Task definition artifact (`task-NNN/SPEC.md` -> `DETAIL.md`) and the flat-Lite no-per-task-`STATE.md` accounting (aligning with `pipeline-contracts.md` + `shortcut-engine.md`), the Canonical/Describe-Define/Seasoned-Analyst/NFR-7 triage-extraction wording, the Work definition (shortcut-created Lite work), the stale work-state-template section quote (removed "Triage"/"Escalation Carry"), and the summary(recipe) KB-authoring lexicon row; refreshed the frontmatter `sources` (dropped the deleted `state-triage.md`, added the shortcut sources). |

@@ -21,6 +21,7 @@ intent: |
   Read this to understand HOW the system hangs together — not WHAT each module does.
 contracts: []
 changelog:
+  - 2026-07-09: work-001 lite-skills refresh — skill count 14 -> 82 (14 classic + `/aid-triage` router + 67 verb-first shortcuts); removed recipes / `parse-recipe.sh` / the `interview/` script area and the recipe render row; reframed `/aid-describe` as full-path-only (no TRIAGE/lite states); documented the shortcut engine + three entry points; re-pointed the Monitor loopbacks (bug -> `/aid-fix`, change request -> `/aid-triage`)
   - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, added a connectors-registry boundary note)
   - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a / aid-define 2b); added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check; skill count 13 -> 14
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
@@ -67,7 +68,7 @@ Integrated Software Development"). The installable nature is confirmed by `bin/a
 
 There is no single "main()". AID has several distinct entry points (see
 [Entry Points](#entry-points)). The center of gravity is **content** (markdown skills,
-agents, templates, recipes) plus the **render/install machinery** that distributes it.
+agents, templates) plus the **render/install machinery** that distributes it.
 
 ---
 
@@ -124,8 +125,8 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (14), `agents/` (9),
-   `aid/{scripts,templates,recipes}`. CONFIRMED via directory listing.
+1. `canonical/` holds the single source: `skills/` (82), `agents/` (9),
+   `aid/{scripts,templates}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
    `run_generator.py` (search: "render all profiles from canonical, then verify").
@@ -154,15 +155,14 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 | `canonical/skills/` | `<root>/skills/` |
 | `canonical/aid/scripts/` | `<root>/aid/scripts/` |
 | `canonical/aid/templates/` | `<root>/aid/templates/` |
-| `canonical/aid/recipes/` | `<root>/aid/recipes/` (passthrough markdown) |
 
 The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` (Cursor),
 `.github/` (Copilot CLI), `.agent/` (Antigravity). CONFIRMED in `docs/aid-methodology.md`
 (search: "The Five Profiles") and `profiles/*.toml`.
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 14 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 14 dirs, none named
+`.claude/skills/generate-profile/` and is NOT one of the 82 shipped user-facing skills in
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 82 dirs, none named
 `generate-profile`.
 
 ---
@@ -185,13 +185,14 @@ Define, Map, Execute, Deliver). Phase 2 (Describe → Define) is realized by **t
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — 14
-user-facing skills):
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **82 skill
+directories**: 14 classic pipeline / on-demand skills, the standalone `/aid-triage` router, and
+67 verb-first direct-entry shortcut skills):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
 | Discover | `aid-discover` | **Phase 1** | Brownfield only; builds the KB. (`aid-summarize` is an optional viewer here.) |
-| Describe | `aid-describe` | **Phase 2a** | Describe (2a) half: TRIAGE (routes full vs lite) + adaptive interview + COMPLETION + lite path + greenfield KB seed. Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT (unchanged) does the dialogue. |
+| Describe | `aid-describe` | **Phase 2a** | Describe (2a) half, **full path only**: adaptive interview + COMPLETION + (greenfield) KB seed. It no longer triages or emits lite work (both removed in work-001). Driven by the seasoned-analyst engine; the `aid-interviewer` AGENT does the dialogue. |
 | Define | `aid-define` | **Phase 2b** | Decomposition half: feature decomposition + cross-reference (full path only); hands off to Specify. |
 | Specify | `aid-specify` | **Phase 3** | Full path only. |
 | Plan | `aid-plan` | **Phase 4** | Full path only. |
@@ -202,26 +203,38 @@ user-facing skills):
 | Review | (inside `aid-execute`) | No | A state of the Execute loop (EXECUTE -> REVIEW -> FIX -> DONE), not a phase. |
 | Test | `aid-execute` | No | A task type (TEST) inside Execute, not a phase. |
 | Deploy | `aid-deploy` | No (optional Deliver) | On-demand Deliver-group skill; not a numbered phase. |
-| Track / Monitor | `aid-monitor` | No (optional Deliver) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) |
-| Triage | `aid-describe` TRIAGE state; `aid-monitor` classify | No | A routing state, not a separate phase or skill. |
+| Track / Monitor | `aid-monitor` | No (optional Deliver) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
+| Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
+| Shortcut (Lite path) | 67 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
 Off-pipeline / on-demand skills: `aid-housekeep` (KB drift reconciliation),
 `aid-query-kb` (Q&A + gap capture), `aid-update-kb` (targeted KB delta), `aid-summarize`
 (HTML KB viewer). CONFIRMED in `docs/aid-methodology.md` "Skill Inventory".
 
-**Two paths through the pipeline** (CONFIRMED in `docs/aid-methodology.md` §4 "TRIAGE
-Routing"):
+**Three entry points, two paths** (CONFIRMED in `docs/aid-methodology.md` §1 "Three Doors In"
+and §4 "The Phases"):
 
-- **Full path** — Discover -> Describe (2a) -> Define (2b) -> Specify -> Plan -> Detail ->
-  Execute. For broad, multi-target, or ambiguous work.
-- **Lite path** — Describe lite (CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW) ->
-  Execute. Skips Define/Specify/Plan/Detail. The default for small, single-target work. A
-  lite work can escalate to full mid-flight (`Path: escalated`).
+- **Full path** — `/aid-describe` (2a) -> `/aid-define` (2b) -> `/aid-specify` -> `/aid-plan` ->
+  `/aid-detail` -> `/aid-execute` (brownfield enters at `/aid-discover` first). For broad,
+  multi-target, or ambiguous work.
+- **Lite path** — a verb-first **shortcut** (`/aid-fix`, `/aid-create-api`, …) drives the shared
+  **shortcut engine** (`canonical/aid/templates/shortcut-engine.md`): INTAKE -> CAPTURE -> SPEC ->
+  PLAN -> DETAIL -> GATE -> APPROVAL-HALT. The engine collapses Describe->Detail into one fast,
+  mostly-autonomous run (it never skips a phase — it collapses the information capture within each),
+  grades every generated document at GATE, then halts for approval before `/aid-execute`. The
+  default for a known, single-target change.
+- **Not sure which?** `/aid-triage` inspects a free-form description and *suggests* one entry — a
+  matching shortcut or the full path — but runs nothing itself.
+
+CONFIRMED in `canonical/aid/templates/shortcut-engine.md`, `canonical/skills/aid-triage/SKILL.md`,
+and `docs/aid-methodology.md` §4.
 
 **Eleven formal feedback loops** let any phase revise an upstream artifact (8 within
 development, 2 from production, 1 cross-cutting). CONFIRMED in `docs/aid-methodology.md` §6
-"The Eleven Loops". The cross-cutting Loop 11 (Any phase -> Discover, targeted
-re-discovery) is what makes the KB the gravitational center in practice.
+"The Eleven Loops". The two production loops now run out to the entry layer (L9 Monitor ->
+`/aid-fix`, L10 Monitor -> `/aid-triage`; see `.aid/knowledge/pipeline-contracts.md`). The
+cross-cutting Loop 11 (Any phase -> Discover, targeted re-discovery) is what makes the KB the
+gravitational center in practice.
 
 ### Phase 2 (Describe → Define): Describe (2a) + Define (2b)
 
@@ -230,11 +243,11 @@ Phase 2 (Describe → Define) is realized by **two chained skills**, not one. Th
 split). CONFIRMED: `canonical/skills/` has `aid-describe/` and `aid-define/` and no
 `aid-interview/`; `canonical/agents/aid-interviewer/` is unchanged.
 
-- **`aid-describe` (Phase 2a)** — TRIAGE + adaptive interview + COMPLETION, the lite path, and
-  (greenfield) the KB seed. State machine: FIRST-RUN -> Q-AND-A -> TRIAGE ->
-  {full: CONTINUE -> [greenfield: DESCRIBE-SEED ->] COMPLETION (pauses -> `/aid-define`) |
-  lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE}. CONFIRMED in
-  `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:` + the Dispatch table).
+- **`aid-describe` (Phase 2a)** — adaptive interview + COMPLETION and (greenfield) the KB seed,
+  **full path only** (no TRIAGE, no lite states — the router was extracted to `/aid-triage` and
+  the lite states were removed in work-001). State machine: FIRST-RUN -> Q-AND-A -> CONTINUE ->
+  {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> `/aid-define`]. CONFIRMED in
+  `canonical/skills/aid-describe/SKILL.md` (frontmatter `State machine:`).
 - **`aid-define` (Phase 2b)** — feature decomposition + cross-reference, from an approved
   `REQUIREMENTS.md`. State machine: FEATURE-DECOMPOSITION -> CROSS-REFERENCE -> DONE (hands off
   to `/aid-specify`). CONFIRMED in `canonical/skills/aid-define/SKILL.md`.
@@ -287,7 +300,7 @@ concept, "human-gated phase advancement"; see Invariants).
   CONFIRMED via `.claude/aid/templates/state-machine-chaining.md`.
 - Trivial state/arg work is done in SKILL.md prose, not bash. Only non-trivial,
   reused, deterministic operations are extracted to `canonical/aid/scripts/` (grouped by
-  phase: `kb/`, `execute/`, `interview/`, `housekeep/`, `connectors/`, `summarize/`, `release/`,
+  phase: `kb/`, `execute/`, `housekeep/`, `connectors/`, `summarize/`, `release/`,
   `migrate/`, `config/`). CONFIRMED via the `canonical/aid/scripts/` subtree.
 
 ---
@@ -373,13 +386,18 @@ CONFIRMED in `README.md` "Install" and `docs/aid-methodology.md` §10.
 **3. Pipeline flow (use AID on a project):**
 ```
 /aid-config -> /aid-discover -> KB in .aid/knowledge/
-  -> /aid-describe (TRIAGE) -> work in .aid/work-NNN-*/
-  -> [full] /aid-define -> /aid-specify -> /aid-plan -> /aid-detail -> /aid-execute
-  -> [lite] /aid-execute
+  -> choose an entry:
+       full  : /aid-describe -> /aid-define -> /aid-specify -> /aid-plan -> /aid-detail
+       lite  : /aid-<verb>[-<artifact>] shortcut -> shortcut engine
+                 (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT)
+       unsure: /aid-triage -> suggests one of the two above (runs nothing itself)
+  -> work in .aid/work-NNN-*/  -> approval halt -> /aid-execute
   -> optional /aid-deploy -> /aid-monitor
+       (Monitor: bug -> /aid-fix; change request -> /aid-triage)
   (any phase -> Q&A entry in a STATE.md -> targeted re-discovery)
 ```
-CONFIRMED in `README.md` "Quick Start" and `docs/aid-methodology.md` §4.
+CONFIRMED in `README.md` "Quick Start", `docs/aid-methodology.md` §4, and
+`canonical/skills/aid-monitor/references/state-route.md`.
 
 ---
 
@@ -401,13 +419,12 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **14** directories (the `aid-interview`
-   skill was split into `aid-describe` + `aid-define`); `README.md`, `docs/aid-methodology.md`,
-   and the site docs now consistently say "14 skills" -- the prior 12-/13-skill drift is resolved.
-2. **Recipe count/path.** `docs/aid-methodology.md` and `docs/repository-structure.md` say
-   "51 recipes" at `canonical/recipes/`; reality is **52** files at `canonical/aid/recipes/`
-   (note the `aid/` segment). Logged as Q2 / Q5.
-3. **EMISSION-MANIFEST.md lists 3 profiles, reality is 5.** `canonical/EMISSION-MANIFEST.md`
+1. **Skill count (reconciled).** `canonical/skills/` has **82** directories — 14 classic
+   pipeline / on-demand skills, the standalone `/aid-triage` router, and 67 verb-first
+   direct-entry shortcut skills (added by work-001-lite-aid-skills). `README.md`,
+   `docs/aid-methodology.md`, and `docs/repository-structure.md` now consistently say
+   "82 skills"; the prior 12-/13-/14-skill drift is resolved.
+2. **EMISSION-MANIFEST.md lists 3 profiles, reality is 5.** `canonical/EMISSION-MANIFEST.md`
    tables enumerate only claude-code/codex/cursor; the live generator globs all five
    `profiles/*.toml` (copilot-cli and antigravity were added later). The doc predates two
    profiles. Logged as Q6. UNCERTAIN whether the design spec should be refreshed (a
@@ -440,7 +457,7 @@ What a change must never break (each stated as a hard rule + where enforced):
   stays design -> code). Enforced in
   `canonical/skills/aid-housekeep/references/state-kb-delta.md` (search: "flag, never overwrite").
 - **Content isolation:** all AID-delivered content MUST be namespaced (skills/agents carry
-  the `aid-` prefix; scripts/templates/recipes live under an `aid/` subtree); root context
+  the `aid-` prefix; scripts/templates live under an `aid/` subtree); root context
   files are updated in-place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
   Enforced by the installer + manifests. `README.md` (search: "Content isolation").
 - **Version lockstep:** the single `VERSION` string MUST stay in sync across
@@ -474,7 +491,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 14 shipped skills).
+  for it in `canonical/skills/` (the 82 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)
@@ -490,3 +507,4 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 | 1.2 | 2026-06-28 | manual | Reconciled the Interview phase to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) / Phase 2b `aid-define` (feature decomposition + cross-reference). Added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check. Skill count 13 -> 14. |
 | 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define" throughout; section heading renamed to "Phase 2 (Describe → Define)"; pipeline sequence updated to Describe/Define (2a/2b). |
 | 1.4 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, and added a connectors-registry boundary row (catalog model, not a connection manager). |
+| 1.5 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh — skill count 14 -> 82 (14 classic + `/aid-triage` + 67 verb-first shortcuts); removed the recipe render row / `interview/` script area / recipe mentions; reframed `/aid-describe` full-path-only (state machine FIRST-RUN -> Q-AND-A -> CONTINUE -> {DESCRIBE-SEED ->} COMPLETION, no TRIAGE/lite); documented the shortcut engine + three entry points in the workflow table, "Two paths", and the pipeline data-flow; re-pointed Monitor loopbacks (bug -> `/aid-fix`, change request -> `/aid-triage`). |

@@ -31,15 +31,19 @@ flowchart TB
     classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
     classDef aux     fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
     classDef offpipe fill:#374151,stroke:#374151,color:#ffffff,stroke-dasharray:6 4
+    classDef entry   fill:#B45309,stroke:#B45309,color:#ffffff
 
+    subgraph G0[" 0 · Choose your entry "]
+        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut · I know my change"]:::entry
+        TR["/aid-triage<br/>not sure? suggest-only"]:::entry
+        Desc["2a · /aid-describe<br/>broad / new project"]:::def
+    end
     subgraph G1[" 1 · Prepare "]
         Init["aid-config<br/>setup · once"]:::aux
         Disc["1 · aid-discover<br/>brownfield"]:::prep
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Define "]
-        Desc["2a · aid-describe<br/>gather requirements"]:::def
-        Triage{"TRIAGE<br/>full or lite?"}:::def
         Def["2b · aid-define<br/>decompose features"]:::def
         Spec["3 · aid-specify<br/>full path"]:::def
     end
@@ -48,6 +52,7 @@ flowchart TB
         Det["5 · aid-detail<br/>full path"]:::map
     end
     subgraph G4[" 4 · Execute "]
+        Eng["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE<br/>collapsed Describe→Detail · autonomous"]:::exe
         Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
     end
     subgraph G5[" 5 · Deliver (optional) "]
@@ -57,31 +62,38 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Desc --> Triage
-    Triage -- "full path<br/>broad / multi-target" --> Def --> Spec --> Plan --> Det --> Exe
-    Triage -- "lite path<br/>small, single-target" --> Exe
+    TR -. suggests .-> SC
+    TR -. suggests .-> Desc
+    Init --> Disc --> Desc
+    SC --> Eng --> Exe
+    Desc --> Def --> Spec --> Plan --> Det --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
     Exe -. "when finished" .-> HK
     HK  -. "targeted KB refresh" .-> Disc
+    Mon -. "bug → /aid-fix" .-> SC
+    Mon -. "change request" .-> TR
 ```
 
-*Twelve user-facing skills · five groups · two paths (TRIAGE-routed). The six numbered
-phases — Discover through Execute — are the mandatory pipeline; TRIAGE routes small,
-single-target work down the **lite path** straight to Execute.*
+*Three entry points · 82 skills — 14 classic pipeline/on-demand skills, the `/aid-triage`
+router, and 67 verb-first shortcut skills. Name your change with a **shortcut** and the
+shortcut engine collapses Describe through Detail into one autonomous run straight to
+Execute; ask **`/aid-triage`** when you're not sure which fits; or run **`/aid-describe`**
+for broad or new-project work through the full six-phase pipeline.*
 
-The six core phases, in order:
+The six core phases, in order (full path):
 
 1. **Discover** — map an existing codebase into a Knowledge Base the agents can reason over. (Brownfield only; greenfield starts at Describe (Phase 2a).)
-2. **Describe → Define** — gather requirements conversationally; TRIAGE routes small work to the lite path automatically.
+2. **Describe → Define** — gather requirements conversationally, then decompose them into features.
 3. **Specify** — turn each feature into a technical SPEC, with an agent acting as tech lead.
 4. **Plan** — sequence SPECs into deliveries, each a functional, buildable MVP.
 5. **Detail** — break deliveries into small, typed, dependency-ordered tasks.
 6. **Execute** — run each task with a built-in adversarial review loop until it clears the grade bar.
 
-Twelve user-facing skills across five groups deliver these phases. When the work is small and
-well-scoped, the **lite path** skips Specify, Plan, and Detail — the same rigour, proportionate
-overhead.
+82 skills deliver AID: the 14 classic pipeline/on-demand skills above, the `/aid-triage`
+suggest-only router, and 67 verb-first shortcut skills (`/aid-fix`, `/aid-create-api`, …).
+When you already know your change, a shortcut skips straight to Execute — the same rigour,
+proportionate overhead.
 
 ## Install
 

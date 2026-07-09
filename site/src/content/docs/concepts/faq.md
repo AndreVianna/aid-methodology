@@ -18,7 +18,7 @@ Yes — and that's the point. Waterfall's phases were sound. Waterfall failed be
 ### Do I need all six phases?
 No. Use what applies:
 - **Greenfield project with clear requirements?** Skip Discover, start at Describe.
-- **Quick bug fix or small change?** Run `/aid-describe` — TRIAGE will classify it and route you to the lite path automatically.
+- **Quick bug fix or small change?** Skip Describe entirely — run the matching shortcut (e.g. `/aid-fix`) directly, or `/aid-triage` if you're not sure which one fits.
 - **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
 
 The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional and run on demand at the end of the pipeline; many projects ship by other means and never invoke them. But know what you're skipping and why.
@@ -89,11 +89,17 @@ aid remove self        # remove the aid CLI itself (asks to confirm)
 Uninstall is manifest-driven — only files that `aid add` wrote are removed. Files you edited yourself are left in place.
 
 ### How do I use the skills?
-The skills run as slash commands inside your AI coding tool:
+The skills run as slash commands inside your AI coding tool. There are three ways in:
+```
+/aid-fix, /aid-create-api, ...  # shortcut: name your change, go straight to the lite path
+/aid-triage                     # not sure which shortcut fits? describe it, get routed
+/aid-describe                   # broad or new-project work: full requirements interview
+```
+Once you're on the full path:
 ```
 /aid-config      # always first
 /aid-discover    # brownfield: understand the existing code
-/aid-describe    # requirements + TRIAGE (routes full or lite path; on approval, run /aid-define)
+/aid-describe    # full requirements interview (on approval, run /aid-define)
 /aid-define      # decompose approved requirements into features (full path only)
 /aid-execute     # implement tasks with built-in review
 ```
@@ -110,23 +116,20 @@ Start with one delivery. Use the templates. See if the structure helps. Most tea
 ## The Lite Path
 
 ### What is the lite path?
-The lite path is a condensed workflow for small, well-scoped work that skips `aid-specify`, `aid-plan`, and `aid-detail`. When you run `/aid-describe`, it opens with a description-first TRIAGE: you describe the work in your own words, and the agent infers the work-type (one of `bug-fix`, `new-feature`, `refactor`) and the best-matching recipe, then confirms. If the work is small and single-target, Describe emits a work-root `SPEC.md` + `tasks/` directly and routes to `/aid-execute`.
+The lite path is a condensed, flattened workflow for small, well-scoped work. You enter it by naming your change with a verb-first **shortcut** skill — `/aid-fix`, `/aid-create-api`, `/aid-change-ui`, and 64 others — rather than by running `/aid-describe`. Every shortcut is a thin doorway into the shared **shortcut engine** (`INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT`), which collapses Describe→Define→Specify→Plan→Detail into one fast, mostly-autonomous run. It produces a flattened artifact set at the work root (`SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) — no `features/`, no `deliveries/` — then halts for your approval before `/aid-execute`.
 
 ### When should I use the lite path vs. the full path?
-TRIAGE decides automatically from your description — you don't choose. A confident, single-target match (one focused change, no new requirements gathering needed) routes to the lite path. An ambiguous, multi-target, or broad description (multiple features, design decisions to make, formal requirements and a delivery plan needed) routes to the full path. If you're not sure, just describe the work honestly and let TRIAGE route you — a lite work can also be escalated to full mid-flight if scope grows.
+Pick the entry yourself: if you know exactly what you want (one focused change, no new requirements gathering needed), run the matching shortcut directly. If you're not sure which shortcut fits, run `/aid-triage` — it's a stateless, suggest-only router: describe the work in a sentence, it infers scope, and suggests either a specific shortcut or the full path via `/aid-describe`. Broad, multi-target, or ambiguous work (multiple features, design decisions to make, formal requirements and a delivery plan needed) belongs on the full path either way.
 
-### What are recipes?
-Recipes are pre-filled lite-path templates for recurring work patterns. The catalog ships **51 recipes** in `canonical/recipes/`, named by the change they make — `add-X` (add a thing), `change-X` (change a thing), `fix-X` (fix a thing) — across target-kind families like API endpoints, UI components, DB entities, jobs, and docs/reports (e.g. `add-api-endpoint`, `change-ui-component`, `fix-regression`), plus a few refactor-only verbs (`improve-performance`, `bump-dependency`, `rename-symbol`) and one cross-type recipe (`add-test-coverage`). Each recipe carries a one-line `summary:` that TRIAGE reads to match your description; the recipe's `## spec` and `## tasks` blocks (with `{{slot}}` placeholders that `parse-recipe.sh` substitutes) then produce the SPEC and tasks directly — eliminating the redundant interview for a pattern you've used before.
-
-### Can I escalate a lite-path work to full mid-flight?
-Yes. Set `Path: escalated` in the work's SPEC.md — it is then treated as `Path: full`. A `## Escalation Carry` block preserves any slot answers already collected, so nothing is lost.
+### How do shortcuts work under the hood?
+The 67 shortcut skills are generated from a catalog (`shortcut-catalog.yml`) of canonical names and aliases — for example `aid-create-api` is canonical, `aid-add-api` is its alias. Each shortcut delegates to the shared shortcut engine, which consults a family-specific `shortcut-scaffolding/<family>.md` for SPEC/PLAN/DETAIL scaffolding appropriate to the kind of change (API, UI, CLI, data model, infra, and so on). The engine runs autonomously through CAPTURE/SPEC/PLAN/DETAIL — no per-phase human checkpoint — with a mechanical GATE grading every generated document before the terminal approval halt. It never executes; `/aid-execute` is a separate, user-initiated run after you approve.
 
 ---
 
 ## Technical
 
 ### What's the Knowledge Base?
-The 14 standard markdown documents that capture the living understanding of a project: `architecture.md`, `coding-standards.md`, `domain-glossary.md`, `external-sources.md`, `feature-inventory.md`, `infrastructure.md`, `integration-map.md`, `module-map.md`, `pipeline-contracts.md`, `project-structure.md`, `schemas.md`, `tech-debt.md`, `technology-stack.md`, and `test-landscape.md`. Templates live at [`canonical/templates/knowledge-base/`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/templates/knowledge-base/).
+The 14 standard markdown documents that capture the living understanding of a project: `architecture.md`, `coding-standards.md`, `domain-glossary.md`, `external-sources.md`, `feature-inventory.md`, `infrastructure.md`, `integration-map.md`, `module-map.md`, `pipeline-contracts.md`, `project-structure.md`, `schemas.md`, `tech-debt.md`, `technology-stack.md`, and `test-landscape.md`. Templates live at [`canonical/aid/templates/knowledge-base/`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/knowledge-base/).
 
 The count is configurable per project via `discovery.doc_set` in `.aid/settings.yml`; 14 is the default seed.
 
@@ -153,6 +156,7 @@ All AID runtime state lives under `.aid/` in your project. Key locations:
 - `.aid/knowledge/` — the Knowledge Base (14 standard docs + meta)
 - `.aid/knowledge/STATE.md` — discovery-area state (Q&A, review history)
 - `.aid/{work}/STATE.md` — work-area state for each work item
-- `.aid/{work}/SPEC.md` — work-root spec (lite path) or per-feature specs (full path)
-- `.aid/{work}/tasks/` — task files ready for execution
+- `.aid/{work}/SPEC.md` — work-root spec (lite path, via a shortcut) or per-feature `features/{feature}/SPEC.md` (full path, via `/aid-describe`)
+- `.aid/{work}/BLUEPRINT.md` (lite path) or `.aid/{work}/deliveries/{delivery}/BLUEPRINT.md` (full path) — delivery definition
+- `.aid/{work}/tasks/{task}/DETAIL.md` (lite path) or `.aid/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) — task definition, ready for execution
 - `.aid/settings.yml` — project configuration (including `discovery.doc_set`)

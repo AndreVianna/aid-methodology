@@ -21,6 +21,7 @@ intent: |
   this for language-version or tool-version questions.
 contracts: []
 changelog:
+  - 2026-07-09: work-001 lite-skills refresh — removed the deleted "recipes" artifact class from the Markdown languages row (recipes were deleted in work-001; the shortcut engine + shortcut-scaffolding replaced them); re-verified every language/tool version against its config file (no version drift).
   - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (corrected product version to match `VERSION`; recomputed the Shell file count)
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
@@ -65,7 +66,7 @@ Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). C
 
 | Language | Version (source) | Role |
 |----------|------------------|------|
-| **Markdown** | n/a | The dominant artifact by file count (skills, agents, templates, recipes, KB, docs) — run `find . -name '*.md' \| wc -l` for the live total. The methodology IS markdown. |
+| **Markdown** | n/a | The dominant artifact by file count (skills, agents, templates, KB, docs) — run `find . -name '*.md' \| wc -l` for the live total. The methodology IS markdown. |
 | **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites — run `find . -name '*.sh' \| wc -l` for the live count. |
 | **PowerShell** | **Windows PowerShell 5.1+** (compat floor) | Windows installer/CLI parity (`install.ps1`, `lib/AidInstallCore.psm1`, `bin/aid.ps1`). CONFIRMED `README.md` (search: "PowerShell 5.1+"). |
 | **Python** | **>=3.8** (PyPI); CI pins **3.11** | The profile renderer, dashboard reader, PyPI wrapper. CONFIRMED `packages/pypi/pyproject.toml` (search: "requires-python = \">=3.8\"") and `.github/workflows/test.yml` (search: "python-version: '3.11'"). |
@@ -248,3 +249,4 @@ No EOL or known-CVE runtime dependency was observed (the CLI ships none). See
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial stack inventory — polyglot languages with versions, build/lint/test commands, zero-dependency CLI, distribution channels. |
 | 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — corrected the product version from a stale "2.0.0"/`1.1.1` mismatch to the actual `VERSION` value (2.0.6); de-hardcoded the Shell-file count to a live `find` command (the prior "327" was stale). |
+| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Removed the stale "recipes" artifact class from the Markdown languages row (recipes were deleted in work-001 — the shortcut engine + `shortcut-scaffolding/<family>.md` replaced them). Re-verified all language/tool versions against their config files (product 2.0.6; Python >=3.8 / CI 3.11; Node >=18 / site >=22.12 / CI 20; Astro 6.4.4; Starlight 0.39.3; astro-mermaid 2.0.2; marked 16.4.2; sanitize-html 2.17.0; TypeScript 6.0.3; vitest ^4.1.8; yaml ^2.8.3) — no version drift. |

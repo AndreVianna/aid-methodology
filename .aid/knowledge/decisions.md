@@ -2,7 +2,7 @@
 kb-category: extension
 source: hand-authored
 objective: The load-bearing design, process, and tooling decisions that shaped AID — what was decided, why, what was rejected, and the evidence — so a newcomer can reconstruct the rationale the artifacts alone cannot show.
-summary: Read this to understand WHY AID is shaped the way it is — the deliberate trade-offs behind Discovery-first, deterministic grading, RAG-by-convention, the single-canonical-source render, the install-scope model, and more.
+summary: Read this to understand WHY AID is shaped the way it is — the deliberate trade-offs behind Discovery-first, deterministic grading, RAG-by-convention, the single-canonical-source render, the install-scope model, the direct-entry shortcut system, and more.
 sources:
   - docs/aid-methodology.md
   - canonical/EMISSION-MANIFEST.md
@@ -19,6 +19,7 @@ intent: |
   (what / why / rejected alternatives / status / evidence), not a restatement of state.
 contracts: []
 changelog:
+  - 2026-07-09: work-001 lite-skills refresh — added D20 (direct-entry shortcut system + engine), D21 (/aid-triage extraction), D22 (recipe-catalog removal), D23 (BLUEPRINT/DETAIL + deliveries/ rename), D24 (aid-describe full-only), D25 (aid-monitor re-point); superseded D14's description-first-TRIAGE mechanism (its proportionality principle survives); dropped the deleted "recipes" subtree from D11.
   - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added D19: connectors registry is a catalog, not a connection manager)
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
@@ -55,6 +56,12 @@ changelog:
 - [D17 — Prose over scripts in skill definitions](#d17--prose-over-scripts-in-skill-definitions)
 - [D18 — KB forbids diagrams; the HTML summary embraces them](#d18--kb-forbids-diagrams-the-html-summary-embraces-them)
 - [D19 — Connectors registry: catalog, not connection manager (Q10)](#d19--connectors-registry-catalog-not-connection-manager-q10)
+- [D20 — Direct-entry shortcut system + shared engine](#d20--direct-entry-shortcut-system--shared-engine)
+- [D21 — /aid-triage extracted as a suggest-only router](#d21--aid-triage-extracted-as-a-suggest-only-router)
+- [D22 — Recipe-catalog removal](#d22--recipe-catalog-removal)
+- [D23 — Delivery and task definition rename (BLUEPRINT + DETAIL)](#d23--delivery-and-task-definition-rename-blueprint--detail)
+- [D24 — /aid-describe reduced to full-path-only](#d24--aid-describe-reduced-to-full-path-only)
+- [D25 — /aid-monitor re-point (BUG and Change-Request routing)](#d25--aid-monitor-re-point-bug-and-change-request-routing)
 - [Still Load-Bearing](#still-load-bearing)
 - [Change Log](#change-log)
 
@@ -77,12 +84,18 @@ changelog:
 | D11 | Content isolation + AID:BEGIN/END markers | Accepted (supersedes .aid-new) | `README.md` |
 | D12 | cwd-driven CLI, no scan, CODE/STATE split | Settled, partial impl | `.aid/design/cli-install-scope-and-migration.md` |
 | D13 | Per-repo `format_version` stamp | Settled | same design note §3.4 |
-| D14 | Lite path + description-first TRIAGE | Accepted | `docs/aid-methodology.md` §4 |
+| D14 | Lite path + description-first TRIAGE | Superseded by D20/D21/D24 | `docs/aid-methodology.md` §4 (pre-work-001) |
 | D15 | 9 agents / 3 tiers (consolidation) | Accepted (supersedes prior roster) | `docs/aid-methodology.md` §5 |
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
 | D17 | Prose over scripts in skills | Accepted | project practice; `tests/run-all.sh` header |
 | D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `.aid/design/aid-summarize-redesign.md` |
 | D19 | Connectors registry is a catalog, not a connection manager | Accepted (delivery-002 withdrawn) | `canonical/aid/templates/connectors/preset-catalog.md`; `canonical/skills/aid-discover/references/state-elicit.md` |
+| D20 | Direct-entry shortcut system + shared engine | Accepted | `canonical/aid/templates/shortcut-engine.md`; feature-003 |
+| D21 | `/aid-triage` extracted as a suggest-only router | Accepted | `canonical/skills/aid-triage/SKILL.md`; feature-014 |
+| D22 | Recipe-catalog removal | Accepted (supersedes recipes) | feature-002; `canonical/aid/templates/shortcut-scaffolding/` |
+| D23 | Delivery/task rename (BLUEPRINT.md / DETAIL.md) + nested `deliveries/` | Accepted (supersedes delivery/task SPEC.md) | feature-001; feature-015 |
+| D24 | `/aid-describe` reduced to full-path-only | Accepted | `canonical/skills/aid-describe/SKILL.md`; feature-013 |
+| D25 | `/aid-monitor` re-point (BUG -> `/aid-fix`, CR -> `/aid-triage`) | Accepted | `canonical/skills/aid-monitor/SKILL.md`; feature-012 |
 
 ---
 
@@ -202,8 +215,8 @@ changelog:
 
 ## D11 — Content isolation + in-place root-file markers
 
-- **What:** Namespace all AID content (skills/agents carry `aid-` prefix; scripts/templates/
-  recipes live under an `aid/` subtree); update root context files (`CLAUDE.md`/`AGENTS.md`)
+- **What:** Namespace all AID content (skills/agents carry `aid-` prefix; scripts/templates
+  live under an `aid/` subtree); update root context files (`CLAUDE.md`/`AGENTS.md`)
   in place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
 - **Why:** AID content and user content must never collide, and `aid update` must be able to
   prune AID's own stale files in place with no risk to user files.
@@ -247,18 +260,26 @@ changelog:
 
 ## D14 — Lite path + description-first TRIAGE
 
-- **What:** Every interview opens with TRIAGE: the user describes the work in plain language,
-  the agent infers the work-type (`bug-fix`/`new-feature`/`refactor`) and best-matching
-  recipe, and a confident single-target match routes to a condensed lite path that skips
-  Specify/Plan/Detail.
+- **What:** *(original decision)* Every interview opens with TRIAGE: the user describes the
+  work in plain language, the agent infers the work-type (`bug-fix`/`new-feature`/`refactor`)
+  and best-matching recipe, and a confident single-target match routes to a condensed lite path
+  that skips Specify/Plan/Detail.
 - **Why:** Proportionality should be automated, not weighed per change; most individual tasks
   are small and should not pay full-pipeline overhead.
 - **Rejected:** One-size-fits-all full pipeline (rejected — over-heavy for small work, an
   explicit anti-pattern); a user-picked work-type menu (rejected in favor of inference — "You
   never pick this from a menu"). The old `single-doc` work-type was also removed (folded into
-  new-feature/refactor). CONFIRMED `docs/aid-methodology.md` §4 (search: "description-first")
-  and §10 (search: "Using the full path for every change").
-- **Status:** Accepted.
+  new-feature/refactor).
+- **Status:** **Superseded (2026-07-09, work-001) by D20/D21/D24.** The *proportionality
+  principle* this decision established survives — small work should not pay full-pipeline
+  overhead — but its *mechanism* (description-first TRIAGE inside every `aid-describe` interview
+  + recipe matching) was replaced by the three-door direct-entry model: routing extracted to the
+  standalone `/aid-triage` router (D21), lite work entered by naming the change through a shortcut
+  into the shared shortcut engine (D20), and `aid-describe` reduced to full-path only with no
+  TRIAGE state (D24). The recipe catalog the match depended on was removed (D22). CONFIRMED
+  (historical) `docs/aid-methodology.md` §4/§10 as they stood before work-001; the current
+  three-door model is documented in D20/D21/D24 and `docs/aid-methodology.md` §4 "The Lite Path:
+  Direct-Entry Shortcuts".
 
 ## D15 — Nine agents in three tiers (role consolidation)
 
@@ -337,6 +358,131 @@ changelog:
   `canonical/aid/scripts/connectors/` (`connector-registry.sh`, `connector-secret.sh`,
   `build-connectors-index.sh`).
 
+## D20 — Direct-entry shortcut system + shared engine
+
+- **What:** Add a layer of **67** verb-first, direct-entry "shortcut" skills (`/aid-fix`,
+  `/aid-create-api`, `/aid-document-runbook`, …), generated by `build-shortcut-skills.py` from a
+  single **69-row** catalog (`canonical/aid/templates/shortcut-catalog.yml` = 45 canonical names
+  + 24 aliases; two `repurpose` rows emit no directory, so 69 rows -> 67 dirs). Every shortcut is
+  a thin doorway that binds a `{verb, artifact}` pair and delegates to one shared engine
+  (`canonical/aid/templates/shortcut-engine.md`) running
+  `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, which collapses the five
+  definition phases (Describe -> Detail) into one fast, mostly-autonomous run and produces the
+  full flattened Lite artifact set. The authoring states run without a per-phase human checkpoint;
+  a single mechanical GATE grades every generated document (shortcut-path default floor `A+`)
+  before the terminal APPROVAL-HALT. It never executes — `/aid-execute` is a separate,
+  user-initiated run.
+- **Why:** Proportionality should be entered by *naming the change*, not weighed inside an
+  interview. A shared engine keeps all 67 doorways behaviorally identical with no per-skill logic,
+  and collapsing (not skipping) the definition phases preserves the same typed, reviewed artifact
+  set at lower ceremony.
+- **Rejected:** A runtime alias/redirect mechanism (rejected — each name is its own rendered
+  `SKILL.md` directory, no redirect); per-shortcut bespoke logic (rejected — the engine is the
+  single source of behavior); cross-session resume (accepted limitation — each invocation
+  allocates a fresh `work-NNN`).
+- **Status:** Accepted. CONFIRMED
+  `.aid/work-001-lite-aid-skills/features/feature-003-direct-entry-shortcut-engine/SPEC.md` and
+  `.aid/work-001-lite-aid-skills/features/feature-004-approval-and-grading-gates/SPEC.md`;
+  `canonical/aid/templates/shortcut-engine.md`; `canonical/aid/templates/shortcut-catalog.yml`.
+
+## D21 — /aid-triage extracted as a suggest-only router
+
+- **What:** Extract the routing judgment formerly embedded in `aid-describe`'s TRIAGE state into a
+  standalone `canonical/skills/aid-triage/SKILL.md` — a **stateless, write-free, suggest-only**
+  router (`INTAKE -> CLASSIFY -> SUGGEST -> HALT`). It captures one free-form description, infers
+  work-type + scope, then suggests exactly one next step (a matching canonical shortcut, or the
+  full path `/aid-describe`) and stops. It creates no work folder, no `STATE.md`, runs no
+  interview, dispatches no subagent, and only ever suggests canonical (non-alias) catalog names.
+- **Why:** Routing is a one-shot decision, not an interview; giving it its own write-free skill
+  decouples "which door" from "walk through a door," so `aid-describe` can be full-path-only (D24)
+  and shortcuts can be entered directly (D20). Conservative default: anything short of one
+  confident single match routes to `/aid-describe`.
+- **Rejected:** Keeping TRIAGE inside `aid-describe` (rejected — coupled routing to the full
+  interview and forced a work folder for a decision that writes nothing); a multi-turn triage
+  interview / dedicated agent (rejected as over-engineering, NFR-8 — one reflect-back turn
+  suffices; it reuses the D1 opener's `Suggested:`/`Why:` UX shape as a UX-shape consumer only).
+- **Status:** Accepted. CONFIRMED
+  `.aid/work-001-lite-aid-skills/features/feature-014-aid-triage-router/SPEC.md`;
+  `canonical/skills/aid-triage/SKILL.md`;
+  `canonical/skills/aid-describe/references/elicitation-engine.md` ("The in-skill guided-triage
+  consumer has been removed").
+
+## D22 — Recipe-catalog removal
+
+- **What:** Delete the recipe catalog entirely — `canonical/aid/recipes/`, the `parse-recipe.sh`
+  slot substitutor, the `{{slot}}` placeholder model, and all "recipe"/"slot" vocabulary. The
+  per-change-pattern scaffolding recipes carried migrates into the shortcut engine + family
+  reference files (`canonical/aid/templates/shortcut-scaffolding/<family>.md`), which the engine
+  consults at CAPTURE/SPEC/DETAIL.
+- **Why:** With the direct-entry shortcut system (D20), a recipe and a shortcut were two
+  mechanisms for the same job (known-pattern change -> typed task set). One mechanism — the
+  shortcut engine consulting free-form family scaffolding an agent reads for judgment — replaces
+  both without the brittleness of slot-string substitution.
+- **Rejected:** Keeping recipes alongside shortcuts (rejected — duplicate, competing mechanisms);
+  a machine-parsed slot template (rejected — the family scaffolding is free-form prose the
+  dispatched architect reads, not a substituted template).
+- **Status:** Accepted (supersedes the recipe catalog). CONFIRMED
+  `.aid/work-001-lite-aid-skills/features/feature-002-recipe-removal/SPEC.md`;
+  `canonical/aid/templates/shortcut-scaffolding/`; and the absence of `canonical/aid/recipes/` and
+  `parse-recipe.sh` on disk.
+
+## D23 — Delivery and task definition rename (BLUEPRINT + DETAIL)
+
+- **What:** Rename the delivery definition from `SPEC.md` to **`BLUEPRINT.md`** (which now also
+  carries the delivery Gate Criteria) and the task definition from `task-NNN.md` / task `SPEC.md`
+  to **`DETAIL.md`**; group deliveries under a `deliveries/delivery-NNN/` folder on the full path.
+  The feature definition keeps the name `SPEC.md`. Flattened Lite work carries a single work-root
+  `BLUEPRINT.md` and `tasks/task-NNN/DETAIL.md` with no `deliveries/` wrapper. Clean switch — no
+  migration, no mixed-vintage support (A-10).
+- **Why:** Three levels sharing the name `SPEC.md` (feature/delivery/task) was ambiguous; distinct
+  names (`SPEC.md` = feature, `BLUEPRINT.md` = delivery, `DETAIL.md` = task) make each artifact
+  self-identifying, and moving the Gate Criteria into `BLUEPRINT.md` fixes the shipped
+  delivery-gate criteria mis-wire.
+- **Rejected:** Keeping the three-way `SPEC.md` overload (rejected — ambiguous, mis-wired gate
+  source); a migration path for old-nested layouts (rejected — clean switch, no adopters to
+  migrate).
+- **Status:** Accepted (supersedes the delivery/task `SPEC.md` naming and the flat `task-NNN.md`).
+  CONFIRMED
+  `.aid/work-001-lite-aid-skills/features/feature-001-flattened-lite-work-structure/SPEC.md` and
+  `.aid/work-001-lite-aid-skills/features/feature-015-full-path-pipeline-rename/SPEC.md`;
+  `canonical/aid/templates/delivery-blueprint-template.md`,
+  `canonical/aid/templates/task-detail-template.md`.
+
+## D24 — /aid-describe reduced to full-path-only
+
+- **What:** Strip `aid-describe` down to the full-path requirements interview — state machine
+  `FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE ->
+  /aid-define]`. It no longer hosts a TRIAGE state and no longer emits lite work (the former
+  CONDENSED-INTAKE / TASK-BREAKDOWN / LITE-* states are gone). Its seasoned-analyst elicitation
+  engine is preserved unchanged.
+- **Why:** With routing extracted to `/aid-triage` (D21) and lite work entered through shortcuts
+  (D20), `aid-describe`'s only remaining job is the broad / new-project interview. Removing the
+  triage + lite branches reduces the skill to one responsibility.
+- **Rejected:** Keeping the lite path inside `aid-describe` (rejected — superseded by the shortcut
+  engine); deleting the elicitation engine (rejected — it remains the full-path interview driver
+  and the `/aid-triage` reflect-back's UX-shape precedent).
+- **Status:** Accepted. CONFIRMED
+  `.aid/work-001-lite-aid-skills/features/feature-013-aid-describe-full-only/SPEC.md`;
+  `canonical/skills/aid-describe/SKILL.md` (frontmatter state machine);
+  `canonical/skills/aid-describe/references/elicitation-engine.md` ("`aid-describe` no longer hosts
+  a TRIAGE state").
+
+## D25 — /aid-monitor re-point (BUG and Change-Request routing)
+
+- **What:** Re-point Monitor's finding routing: a finding classified **BUG** now routes to the
+  `/aid-fix` shortcut (creates + implements the fix work), and a **Change Request** routes to
+  `/aid-triage` (which suggests the right entry). Formerly both went into `aid-describe` (BUG -> its
+  LITE-BUG-FIX state; change-request -> the interview).
+- **Why:** The lite-bug-fix path inside `aid-describe` no longer exists (D24); `/aid-fix` is its
+  direct-entry replacement, and `/aid-triage` is the correct home for the "which entry?" judgment a
+  change request needs. This keeps the L9/L10 feedback loops pointed at live entries.
+- **Rejected:** Continuing to route findings into `aid-describe` (rejected — those describe states
+  were removed by D24).
+- **Status:** Accepted. CONFIRMED
+  `.aid/work-001-lite-aid-skills/features/feature-012-deploy-and-monitor-repurpose/SPEC.md`;
+  `canonical/skills/aid-monitor/SKILL.md` ("BUG -> /aid-fix", "Change Request -> /aid-triage");
+  matches `pipeline-contracts.md` L9/L10.
+
 ---
 
 ## Still Load-Bearing
@@ -356,7 +502,9 @@ Decisions that are expensive to reverse and currently constrain most changes:
 
 **Superseded (not load-bearing):** the `.aid-new` sidecar (by D11), the machine `.migrated`
 marker + `$HOME`-scan (by D12/D13), the five discovery-* agents (by D15), the Mermaid engine
-in the summary (by D18).
+in the summary (by D18), the recipe catalog + `parse-recipe.sh` (by D22), and the
+description-first TRIAGE-inside-`aid-describe` routing with its delivery/task `SPEC.md` naming
+(by D20/D21/D23/D24).
 
 ---
 
@@ -366,3 +514,4 @@ in the summary (by D18).
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial decision record — 18 load-bearing decisions with rationale, rejected alternatives, status, and evidence. |
 | 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added D19 (connectors registry is a catalog, not a connection manager; delivery-002 MCP host wiring withdrawn as a consequence). |
+| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Added D20–D25 (direct-entry shortcut system + shared engine; `/aid-triage` extraction; recipe-catalog removal; delivery/task `BLUEPRINT.md`/`DETAIL.md` rename + nested `deliveries/`; `aid-describe` full-only; `aid-monitor` re-point to `/aid-fix` / `/aid-triage`); marked D14 Superseded by D20/D21/D24 (proportionality principle survives, the description-first-TRIAGE mechanism replaced); dropped the deleted "recipes" subtree from D11's What; extended the Superseded list. |

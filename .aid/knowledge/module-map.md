@@ -22,9 +22,10 @@ owner: architect
 audience: [developer, architect]
 contracts:
   - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
-  - "14 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
+  - "82 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
 changelog:
+  - 2026-07-09: work-001 lite-skills refresh -- skill count 14 -> 82 (14 classic + `/aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/` module row, the `interview/`/`parse-recipe.sh` script-area row + dependency-graph edge + gotcha, and the "how a new recipe goes" convention; added the shortcut catalog/engine/scaffolding wiring (`build-shortcut-skills.py`), the "how a new shortcut goes" convention, and the shortcut-engine dependency edges.
   - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the `connectors/` script area (registry accessor, INDEX builder, secret handler) + its test suites, the ELICIT-to-`.aid/connectors/`/`external-sources.md` wiring line, and `connectors` to the scripts-by-area enumeration.
   - 2026-06-28: Relabeled Phase 2 from "Interview" to "Describe → Define" in module inventory note.
   - 2026-06-28: work-001-aid-interview-improvements -- aid-interview split into aid-describe (2a) + aid-define (2b); added the aid-describe elicitation-engine corpus, greenfield seed-authoring, and the aid-housekeep Conformance Lane sub-module; skill count 13 -> 14.
@@ -40,7 +41,7 @@ it produces. The modules fall into four planes:
 1. **Distribution plane** -- how the toolkit reaches a user's machine (installers,
    CLI, install-core, packages, release tooling).
 2. **Toolkit plane** -- the AID content itself, authored once in `canonical/`
-   (skills, agents, scripts, templates, recipes).
+   (skills, agents, scripts, templates).
 3. **Render plane** -- the profile renderer that mirrors `canonical/` into five
    per-tool `profiles/` trees under an emission-manifest safety boundary.
 4. **Observation plane** -- read-only consumers of pipeline state (the dashboard)
@@ -76,12 +77,11 @@ it produces. The modules fall into four planes:
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (14) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill. Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `canonical/skills/*` (82) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (82 total: 14 classic pipeline / on-demand skills + the `aid-triage` router + 67 verb-first direct-entry shortcut doorways). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
 | `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
-| `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, interview, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
-| `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, recipe template. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
-| `canonical/aid/recipes/*` (52) | Toolkit | Pre-filled lite-path change templates with `{{slot}}` placeholders (add-/change-/fix- families). | `interview/parse-recipe.sh` consumes them | medium | parse coverage | Passthrough-rendered (no frontmatter injection). |
-| `generate-profile` renderer | Render | Python renderer that mirrors `canonical/` into each `profiles/<tool>/` tree under an emission manifest. | `canonical/`, `profiles/*.toml` | large | tested (`test_manifest_safety.py`, `verify_deterministic.py`, `verify_advisory.py`) | Lives at `.claude/skills/generate-profile/scripts/`. |
+| `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
+| `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, the shortcut catalog + engine + scaffolding. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
+| `generate-profile` renderer | Render | Python renderer that mirrors `canonical/` into each `profiles/<tool>/` tree under an emission manifest. | `canonical/`, `profiles/*.toml` | large | tested (`test_manifest_safety.py`, `verify_deterministic.py`, `verify_advisory.py`) | Lives at `.claude/skills/generate-profile/scripts/`. Also carries `build-shortcut-skills.py`, the maintainer helper that emits the shortcut doorways from `shortcut-catalog.yml`. |
 | `profiles/<tool>/` (5) | Render | Rendered, per-tool copies of the toolkit (claude-code, codex, cursor, copilot-cli, antigravity) + `<tool>.toml` config. | output of the renderer | large | render-drift CI | Build output -- never hand-edit; regenerate. |
 | `packages/npm` | Distribution | npm `aid-installer` wrapper; vendors `bin/`, `lib/`, `dashboard/`. | `bin/`, `lib/`, `dashboard/` | medium | release smoke | Vendored copies regenerate; edit the wrapper, not the vendor. |
 | `packages/pypi` | Distribution | PyPI `aid-installer` wrapper (`aid_installer/` + `_vendor/`). | `bin/`, `lib/`, `dashboard/` | medium | release smoke | `__main__.py` puts `aid` on PATH. |
@@ -119,7 +119,8 @@ canonical/skills/*    -> canonical/aid/scripts/* , canonical/aid/templates/*
 canonical/agents/*    -> canonical/aid/templates/agent-boilerplate.md   (include directive)
 canonical/aid/scripts/* (most) -> canonical/aid/scripts/config/read-setting.sh
 */state-review.md (skills) -> canonical/aid/scripts/grade.sh
-canonical/aid/recipes/* -> canonical/aid/scripts/interview/parse-recipe.sh (consumed by)
+canonical/skills/aid-<verb>[-<artifact>]* -> canonical/aid/templates/shortcut-engine.md , shortcut-scaffolding/<family>.md   (thin shortcut doorways delegate to the shared engine)
+.claude/skills/generate-profile/scripts/build-shortcut-skills.py -> canonical/aid/templates/shortcut-catalog.yml   (emits/refreshes the shortcut doorways)
 canonical/skills/aid-describe -> canonical/skills/aid-define   (REQUIREMENTS.md handoff: Phase 2a -> 2b)
 canonical/skills/aid-housekeep -> canonical/skills/aid-discover/references/agent-prompts.md  (shadow-extract via output_root; Conformance Lane)
 canonical/skills/aid-discover/references/state-elicit.md -> .aid/knowledge/external-sources.md , .aid/connectors/   (ELICIT E1/E2 write targets; reconciled via canonical/aid/scripts/connectors/*)
@@ -155,11 +156,10 @@ grader).
 | `connectors/` | `connector-registry.sh`/`.ps1`, `build-connectors-index.sh`/`.ps1`, `connector-secret.sh`/`.ps1` | `aid-discover` ELICIT (Step E2 author) + reconcile (Steps R0-R5) | Frontmatter accessor (list/read) for `.aid/connectors/*.md` descriptors, the deterministic `INDEX.md` builder, and the no-echo/path-confined secret write/purge handler for the git-ignored `.secrets/` store. Bash+PowerShell twins throughout. Test coverage: `tests/canonical/test-connector-registry.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh`, `test-connector-twins-ps1-parity.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-reconcile-scenarios.sh`. |
 | `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.md writeback. |
 | `housekeep/` | `branch-commit.sh`, `cleanup-classify.sh`, `housekeep-state.sh` | `aid-housekeep` | Branch/commit helpers, orphan/cleanup classification, housekeep run-state. |
-| `interview/` | `parse-recipe.sh` | `aid-describe` | Parses a recipe file's `{{slot}}` placeholders for the lite path. (Area name predates the skill rename; the script moved consumers from `aid-interview` to `aid-describe`.) |
 | `kb/` | `build-project-index.sh`, `build-metrics.sh`, `build-kb-index.sh`, `harvest-coined-terms.sh`, `closure-check.sh`, `discover-preflight.sh`, `kb-actback-task.sh`, `kb-citation-lint.sh`, `kb-dual-intent-probes.sh`, `kb-freshness-check.sh`, `kb-teachback-questions.sh`, `lint-frontmatter.sh`, `recon-classify.sh` | `aid-discover` (most), `aid-update-kb` (`kb-freshness-check.sh`) | The discovery/KB engine: index + metric generation, concept harvest, closure loop, frontmatter + citation lint, path classification, dual-intent self-eval. |
 | `migrate/` | `migrate-kb-frontmatter.sh`, `migrate-work-hierarchy.sh`, `migrate-work-hierarchy.ps1` | `aid` CLI update path | One-time migrations (KB frontmatter v2; work-hierarchy restructure). Shell + PowerShell twin. |
 | `release/` | `check-version-sync.sh` | `release.sh`, CI | Verifies the version string is in lockstep across all manifests. |
-| `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `grade-summary.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, fact/stale checks, HTML + visual + contrast validation via Playwright/Node). |
+| `summarize/` | `assemble.sh`, `assemble-3part.sh`/`.ps1`, `build-md-export.sh`, `grade-summary.sh`, `manual-checklist.sh`, `spot-check-facts.sh`, `stale-check.sh`, `summarize-preflight.sh`, `validate-html-output.sh`, `validate-diagram-content.mjs`, `validate-visuals.mjs`, `contrast-check.mjs`, `writeback-state.sh` | `aid-summarize` | Builds + validates the `kb.html` visual summary (assembly, markdown export, fact/stale checks, HTML + diagram-content + visual + contrast validation via Playwright/Node). |
 
 > The installed copies under each profile (and the dogfood `.claude/aid/scripts/`)
 > are rendered from these canonical sources. Edit `canonical/`, never the rendered
@@ -203,7 +203,7 @@ their own right.
 
 | Module | Why it churns | Risk |
 |--------|---------------|------|
-| `canonical/skills/aid-discover/` | The actively-developed discovery engine (work-001) -- large reference set, frequent feature additions. | High |
+| `canonical/skills/aid-discover/` | The actively-developed discovery engine -- large reference set, frequent feature additions. | High |
 | `canonical/aid/scripts/kb/` | Backs aid-discover; new linters/checks land here often. | High |
 | `lib/aid-install-core.sh` + PS twin | Install/migration semantics evolve with each release; twin must stay in sync. | High |
 | `dashboard/reader` + `dashboard/server` | Reader/parser changes follow every STATE.md schema change; two twins to keep in parity. | Medium |
@@ -235,7 +235,9 @@ their own right.
   `references/` subdir for state files). Name it `aid-<verb>` (see
   `canonical/skills/aid-discover/`). The `SKILL.md` carries YAML frontmatter with
   `name:`, `description:`, `allowed-tools:`, `argument-hint:` (see
-  `aid-config/SKILL.md`).
+  `aid-config/SKILL.md`). This is for hand-authored pipeline / on-demand skills; the
+  67 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
+  new shortcut goes" below.
 - **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
   `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
   `tier:` (large/medium/small), `tools:`. Include shared boilerplate with
@@ -247,8 +249,15 @@ their own right.
 - **How a new generated file is registered:** add a `<output-path>|<build-command>`
   line to `canonical/aid/templates/generated-files.txt` (dependencies first); the
   renderer rewrites the `canonical/` path to each profile's install root.
-- **How a new recipe goes:** add `canonical/aid/recipes/<verb>-<thing>.md` with
-  `{{slot}}` placeholders; it is passthrough-rendered (no frontmatter injection).
+- **How a new shortcut goes:** add a row to
+  `canonical/aid/templates/shortcut-catalog.yml`
+  (`{name, verb, artifact, alias_of, default_type, group}`), then run the maintainer
+  helper `.claude/skills/generate-profile/scripts/build-shortcut-skills.py` to
+  emit/refresh the thin `canonical/skills/aid-<name>/SKILL.md` doorway (one per
+  non-`repurpose` row), then run the FULL `run_generator.py`. Every shortcut doorway
+  delegates to `canonical/aid/templates/shortcut-engine.md`; the family-specific
+  SPEC/PLAN/DETAIL scaffolding it consults lives in
+  `canonical/aid/templates/shortcut-scaffolding/<family>.md`.
 - **Never edit a rendered copy.** Edit `canonical/` and regenerate; `profiles/*`,
   `packages/*/_vendor/`, and the dogfood `.claude/` are build output.
 
@@ -313,10 +322,11 @@ their own right.
   toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles +
   `.claude/`). Do NOT "deduplicate" -- they are rendered/vendored copies of
   `canonical/`.
-- **The `interview/` script area is not a skill.** After the `aid-interview` ->
-  `aid-describe` + `aid-define` split, the `canonical/aid/scripts/interview/` area
-  name persists but its single script (`parse-recipe.sh`) is now consumed by
-  `aid-describe`; there is no `aid-interview` skill directory.
+- **Shortcut doorways are generated, not hand-authored.** The 67 `aid-<verb>[-<artifact>]`
+  skill directories under `canonical/skills/` are emitted by
+  `.claude/skills/generate-profile/scripts/build-shortcut-skills.py` from
+  `shortcut-catalog.yml`. Edit the catalog + re-run the helper (then the FULL
+  `run_generator.py`); do not hand-edit a generated doorway's `SKILL.md`.
 - **Master-only CI gates.** `tests/run-all.sh` (canonical suites) and the Astro
   `site` build run only on push/PR to master; a green feature branch can still break
   master. Run them locally (HOME-pinned) before claiming green.
@@ -332,6 +342,7 @@ their own right.
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
+| 1.3 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh: skill count 14 -> 82 (14 classic + `aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/*` module row, the `interview/`/`parse-recipe.sh` script-area row + its dependency-graph edge + its gotcha, and the "how a new recipe goes" convention; updated the templates row (recipe template -> shortcut catalog + engine + scaffolding); added the shortcut-engine/scaffolding dependency edges + the `build-shortcut-skills.py` wiring, the "how a new shortcut goes" convention, and a "shortcut doorways are generated" gotcha; frontmatter contract 14 -> 82. General-staleness sweep also added two `summarize/` scripts (`build-md-export.sh`, `validate-diagram-content.mjs`) that were missing from the Script Modules table. |
 | 1.2 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the `connectors/` row to Script Modules by Area (registry accessor, INDEX builder, secret handler, Bash+PowerShell twins) + its test-suite list; added `connectors` to the scripts-by-area enumeration in Module Inventory; added the ELICIT `.aid/connectors/`/`external-sources.md` write-target line to the Dependency Graph. |
 | 1.1 | 2026-06-28 | work-001-aid-interview-improvements | Split `aid-interview` into `aid-describe` (2a) + `aid-define` (2b); skill count 13 -> 14; reassigned the `interview/` script area + interviewer agent to `aid-describe`; added the Notable Skill Reference Modules section (elicitation engine, greenfield seed-authoring, Conformance Lane) + the forward-authored design->code invariant. |
 | 1.0 | 2026-06-25 | aid-discover | Initial module map (brownfield deep-dive / Analyst) |

@@ -32,6 +32,14 @@ flowchart TB
     classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
     classDef aux     fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
     classDef offpipe fill:#374151,stroke:#374151,color:#ffffff,stroke-dasharray:6 4
+    classDef entry   fill:#92400E,stroke:#92400E,color:#ffffff
+
+    subgraph GE[" Entry · choose your door "]
+        direction LR
+        SC["aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut · I know my change"]:::entry
+        TR["aid-triage<br/>not sure? suggest-only"]:::entry
+    end
+    TR -. suggests .-> SC
 
     subgraph G1[" 1 · Prepare "]
         Init["aid-config<br/>setup · once"]:::aux
@@ -39,8 +47,7 @@ flowchart TB
         Sum["aid-summarize<br/>optional"]:::aux
     end
     subgraph G2[" 2 · Describe → Define "]
-        Desc["2a · aid-describe<br/>gather requirements"]:::def
-        Triage{"TRIAGE<br/>full or lite?"}:::def
+        Desc["2a · aid-describe<br/>full path only"]:::def
         Def["2b · aid-define<br/>decompose features"]:::def
         Spec["3 · aid-specify<br/>full path only"]:::def
     end
@@ -58,18 +65,19 @@ flowchart TB
 
     HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY · CLEANUP"]:::offpipe
 
-    Init --> Disc --> Desc --> Triage
-    Triage -- "full path<br/>broad / multi-target" --> Def --> Spec --> Plan --> Det --> Exe
-    Triage -- "lite path<br/>small, single-target" --> Exe
+    TR -. suggests .-> Desc
+    Init --> Disc --> Desc --> Def --> Spec --> Plan --> Det --> Exe
+    SC --> ENG["shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT<br/>(Describe→Detail, collapsed &amp; autonomous)"]:::def
+    ENG --> Exe
     Exe -. "on demand" .-> Dep
     Exe -. "on demand" .-> Mon
     Exe -. "when finished" .-> HK
-    Mon -. "bugs → LITE-BUG-FIX" .-> Desc
-    Mon -. "change requests" .-> Desc
+    Mon -. "bug" .-> SC
+    Mon -. "change request" .-> TR
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*Fourteen user-facing skills, five groups. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline — brownfield enters at Discover, greenfield at Describe (Phase 2a). `/aid-describe`'s TRIAGE routes small work to the lite path automatically. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+*82 skill directories, five pipeline groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut or the full path; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -77,20 +85,28 @@ Brownfield projects enter at Discover and proceed through every numbered phase: 
 
 Greenfield projects skip Discover (no existing system to understand) and enter at Describe (Phase 2a). On the full path, `aid-describe` forward-authors a Knowledge Base seed from intent before any code exists — the design documents are the source of truth, and code is built to conform to them.
 
-### The Lite Path at a Glance
+### Three Doors In
 
-When the work is small and well-scoped, TRIAGE (the opening state of every `/aid-describe` run) routes it directly to a condensed flow that skips Specify, Plan, and Detail. The lite path is not a fallback — it is the default for the majority of individual tasks. See §4, *Describe → Define → TRIAGE Routing*, for the decision logic and full walkthrough.
+AID does not make you weigh the cost of the full pipeline against the size of a change — that weighing is automated across three entry points:
+
+- **A direct-entry shortcut** (`/aid-fix`, `/aid-create-api`, `/aid-document-runbook`, …) — you already know what kind of change this is. 67 verb-first shortcuts, generated from a 69-row catalog, each a thin doorway into a shared **shortcut engine** that collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run and produces the full flattened Lite artifact set.
+- **`/aid-triage`** — you don't know which door fits. A stateless, write-free, suggest-only router: describe the work in one sentence and it suggests either the matching shortcut or the full path (`/aid-describe`), then stops. It never runs anything on your behalf.
+- **`/aid-describe`** — broad, multi-activity, or new-project work. Enters the full path directly; it no longer triages or produces lite work itself.
+
+The shortcut path is not a fallback — it is the default entry for the majority of individual tasks. See §4, *The Lite Path: Direct-Entry Shortcuts*, for the shortcut engine's state machine, the family catalog, and the flattened workspace it produces.
 
 ### Skill Inventory
 
-*All 14 user-facing skills, their groups, phase numbers, and mandatory pipeline membership.*
+*82 skill directories in total — 14 classic pipeline/on-demand skills, the `/aid-triage` router, and 67 verb-first direct-entry shortcuts across 9 shortcut families. Unchanged: 9 agents, 14 KB doc types — only the skill count changed.*
+
+**A. The 14 classic skills** — their groups, phase numbers, and mandatory pipeline membership.
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
 | `aid-config` | Prepare | — (bootstrap) | Run once before pipeline; not a numbered phase |
 | `aid-discover` | Prepare | 1 | Mandatory for brownfield; skipped for greenfield |
 | `aid-summarize` | Prepare | — (optional viewer) | On demand; not a numbered phase |
-| `aid-describe` | Define | 2a | Yes — TRIAGE routes to full or lite |
+| `aid-describe` | Define | 2a | Yes — full path only; no longer triages or produces lite work |
 | `aid-define` | Define | 2b | Full path only — decompose approved requirements into features |
 | `aid-specify` | Define | 3 | Full path only |
 | `aid-plan` | Map | 4 | Full path only |
@@ -101,6 +117,23 @@ When the work is small and well-scoped, TRIAGE (the opening state of every `/aid
 | `aid-housekeep` | Off-pipeline | — | On demand; off the pipeline entirely |
 | `aid-query-kb` | Off-pipeline | — | On demand; Q&A + gap-capture (STATE.md backlog only) |
 | `aid-update-kb` | Off-pipeline | — | On demand; targeted KB update through review gate; human-gated |
+
+**B. `/aid-triage`** — the suggest-only router. Not a pipeline phase and not a shortcut itself: one stateless skill (`INTAKE → CLASSIFY → SUGGEST → HALT`) that reads the shortcut catalog and points at one of the two doors above. It writes nothing — no interview, no scaffold, no work folder, no `STATE.md`.
+
+**C. The 67 direct-entry shortcuts**, by family. Generated from a 69-row catalog (`canonical/aid/templates/shortcut-catalog.yml`) = 45 canonical names + 24 aliases; two rows (`aid-deploy`, `aid-monitor`) repurpose the existing Deliver-group skills as an additional shortcut-style entry and emit no new directory — hence 69 rows produce 67 shortcut directories.
+
+| **Family** | **Shortcuts** | **Count** |
+|-----------|---------------|-----------|
+| create (+ `add` alias) | `aid-create`, `aid-create-api`, `-cli`, `-config`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-theme`, `-ui`; `aid-add-*` mirrors each | 24 |
+| change (+ `update` alias) | `aid-change`, `aid-change-api`, `-cli`, `-config`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-theme`, `-ui`; `aid-update-*` mirrors each | 24 |
+| fix | `aid-fix` | 1 |
+| refactor | `aid-refactor` | 1 |
+| test + experiment | `aid-test`, `aid-test-security`, `-performance`, `-data-quality`; `aid-experiment` | 5 |
+| prototype | `aid-prototype`, `aid-prototype-ui` | 2 |
+| document | `aid-document`, `-architecture`, `-changelog`, `-decision`, `-guideline`, `-runbook`, `-standard`, `-tutorial` | 8 |
+| report | `aid-report` | 1 |
+| show-dashboard | `aid-show-dashboard` | 1 |
+| **Total** | | **67** |
 
 ---
 
@@ -135,7 +168,7 @@ Every phase is co-executed by human and AI. Not "AI executes, human rubber-stamp
 
 **Between phases, the human gives the OK to advance.** The pipeline never auto-advances. The human reviews the phase output, decides whether it is good enough, and greenlights the next phase. This is the checkpoint that keeps the human in control without slowing the work to human speed.
 
-**A note on universality.** The Propose → Discuss → Write → Review loop is universal across the full path — Specify, Plan, Detail, and Execute each follow it. The lite path is different: the Describe phase runs a condensed CONDENSED-INTAKE slot-fill rather than the full 4-step loop, and TASK-BREAKDOWN proposes the task set directly from the slot-filled SPEC. The Iron Man loop shapes every full-path phase; the lite path is a faster, narrower variant designed for proportionate scope.
+**A note on universality.** The Propose → Discuss → Write → Review loop is universal across the full path — Specify, Plan, Detail, and Execute each follow it. The lite path is different: a direct-entry shortcut runs the shared shortcut engine's CAPTURE/SPEC/PLAN/DETAIL states without a per-state human checkpoint — the only interactive moments are a rare CAPTURE gap-question and the terminal approval halt — then GATE grades every document mechanically before that halt. The Iron Man loop shapes every full-path phase; the lite path is a faster, narrower, mostly-autonomous variant designed for proportionate scope, with quality enforced once, mechanically, rather than at every step.
 
 ### Three Core Principles
 
@@ -182,9 +215,9 @@ AID is not a silver bullet. It is a deliberate trade-off.
 | Teams new to AI-assisted development who need process guardrails to avoid the failure modes listed above | — |
 | Situations where "move fast and break things" has already produced a pile of broken things | — |
 
-**The routing insight:** AID does not make you weigh the cost of its full pipeline against the value of a change. That weighing is automated. TRIAGE — the opening state of every `/aid-describe` — routes work to the correct path from the first question. Small work takes the lite path by default. The full pipeline runs only when scope warrants it. You don't configure this; you describe the work in your own words and the methodology routes you.
+**The routing insight:** AID does not make you weigh the cost of its full pipeline against the value of a change. That weighing is automated across three doors. Small, well-scoped work goes straight through a direct-entry shortcut into the shortcut engine. Broad or ambiguous work goes to `/aid-describe` and the full pipeline. Not sure which? `/aid-triage` looks at a one-sentence description and tells you — it suggests, it never runs anything itself. You don't configure this; you name the change, or describe it, and the methodology routes you.
 
-**The honest cost:** AID adds process on the full path. Discovery takes time. Describe → Define takes time. Specify, Plan, and Detail add overhead before a single line of code is written. The payoff is that what gets written is the *right* code, grounded in real understanding, with a spec that won't surprise you mid-implementation. The cost is real; so is the payoff. For small work, TRIAGE ensures the cost is commensurate with scope.
+**The honest cost:** AID adds process on the full path. Discovery takes time. Describe → Define takes time. Specify, Plan, and Detail add overhead before a single line of code is written. The payoff is that what gets written is the *right* code, grounded in real understanding, with a spec that won't surprise you mid-implementation. The cost is real; so is the payoff. For small work, a direct-entry shortcut keeps the cost commensurate with scope.
 
 ---
 
@@ -221,7 +254,7 @@ The Knowledge Base is divided into four categories: **standard** documents (the 
 
 ### The Declared Doc-Set
 
-The 14-document standard set is the **configurable default seed** — the set synthesized from `canonical/templates/knowledge-base/` when no project-specific override is configured. The doc-set is **project-configurable** via `discovery.doc_set` in `.aid/settings.yml`.
+The 14-document standard set is the **configurable default seed** — the set synthesized from `canonical/aid/templates/knowledge-base/` when no project-specific override is configured. The doc-set is **project-configurable** via `discovery.doc_set` in `.aid/settings.yml`.
 
 Before dispatching discovery sub-agents, the GENERATE state runs a **propose→confirm checkpoint** (Step 0d): the orchestrator infers a proposed doc-set from the project's file inventory (as a diff against the default seed) and presents it to the user for confirmation or editing. Custom documents can be added; irrelevant standard ones can be dropped. The confirmed set is written to `.aid/settings.yml` and drives all subsequent discovery dispatches.
 
@@ -347,19 +380,21 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-config` | Prepare | — (bootstrap) | `.aid/` scaffold · KB placeholders (14 templates + meta) · context file · `STATE.md` seeds |
 | `aid-discover` | Prepare | 1 | 14-document Knowledge Base · `project-index.md` pre-pass · `STATE.md` discovery grade/Q&A |
 | `aid-summarize` | Prepare | — (optional viewer) | `knowledge-summary.html` — offline KB viewer |
-| `aid-describe` | Define | 2a | `REQUIREMENTS.md` (full path) OR work-root `SPEC.md` + `tasks/` (lite path) |
+| `aid-describe` | Define | 2a | `REQUIREMENTS.md` — full path only |
 | `aid-define` | Define | 2b | Per-feature `SPEC.md` stubs + feature decomposition (full path only) |
 | `aid-specify` | Define | 3 | Technical spec added to each feature's `SPEC.md` |
-| `aid-plan` | Map | 4 | `PLAN.md` — features sequenced into deliveries |
-| `aid-detail` | Map | 5 | Typed, PR-sized `task-NNN.md` files + execution graph |
+| `aid-plan` | Map | 4 | `PLAN.md` + per-delivery `deliveries/delivery-NNN/BLUEPRINT.md` + `STATE.md` |
+| `aid-detail` | Map | 5 | Typed, PR-sized `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + execution graph |
 | `aid-execute` | Execute | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
 | `aid-deploy` | Deliver | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
-| `aid-monitor` | Deliver | — (optional) | classified findings → Describe (bugs or CRs); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
+| `aid-monitor` | Deliver | — (optional) | classified findings → `/aid-fix` (bugs) or `/aid-triage` (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
 | `aid-housekeep` | Off-pipeline | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
+| `aid-triage` | Off-pipeline | — | A suggested next command (shortcut or `/aid-describe`); writes nothing |
+| `aid-<verb>[-<artifact>]` (67 shortcuts) | Lite entry | — | Full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
 
 AID organizes six numbered development phases into five groups. The six phases (Discover through Execute) form the mandatory sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required sequential phases. The pipeline is linear with feedback loops.
 
-The Prepare group holds two non-phase skills: `aid-config` (bootstrap, run once) and `aid-summarize` (optional KB viewer). A third off-pipeline skill, `aid-housekeep`, runs outside all groups entirely — on-demand KB maintenance when drift accumulates between discovery cycles. These skills are not numbered phases; they do not participate in phase gates.
+The Prepare group holds two non-phase skills: `aid-config` (bootstrap, run once) and `aid-summarize` (optional KB viewer). A third off-pipeline skill, `aid-housekeep`, runs outside all groups entirely — on-demand KB maintenance when drift accumulates between discovery cycles. These skills are not numbered phases; they do not participate in phase gates. Two more mechanisms sit outside the phase table entirely: `/aid-triage`, a stateless suggest-only router, and the 67 direct-entry shortcuts, each a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
 
 ---
 
@@ -394,9 +429,9 @@ The scaffold is the blank canvas. After `aid-config`, the KB directory exists wi
 
 **Process:**
 
-Discover runs as a state machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. One invocation per state. No auto-advance.
+Discover runs as a state machine: ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE. One invocation per state. No auto-advance.
 
-The GENERATE state opens with a fast deterministic **pre-pass** that writes `.aid/generated/project-index.md` — a shared file inventory that all discovery sub-agents read instead of re-scanning the repository independently. This eliminates redundant I/O and ensures sub-agents work from a consistent snapshot.
+The **ELICIT** state runs first and captures the project's external sources and tool integrations before GENERATE runs. The GENERATE state then opens with a fast deterministic **pre-pass** that writes `.aid/generated/project-index.md` — a shared file inventory that all discovery sub-agents read instead of re-scanning the repository independently. This eliminates redundant I/O and ensures sub-agents work from a consistent snapshot.
 
 Before dispatching sub-agents, Discover runs the **declared doc-set propose→confirm** (Step 0d, described in §3). The confirmed doc-set drives which agents are dispatched and what filenames they produce.
 
@@ -440,56 +475,7 @@ Across the run, discovery covers:
 
 #### Phase 2: Describe → Define (`aid-describe` → `aid-define`)
 
-**Purpose:** Gather requirements and decompose them into features (full path) or directly into a task set (lite path). Produce the work-area artifacts that drive the rest of the pipeline.
-
-##### TRIAGE Routing
-
-Every interview begins with TRIAGE — a routing step that runs before any requirements gathering. TRIAGE is **description-first**: you describe the work in your own words, and the agent infers two things — the internal *work-type* and the single best-matching *recipe* — then confirms both in one turn before routing.
-
-```mermaid
-flowchart LR
-    classDef def   fill:#6D28D9,stroke:#6D28D9,color:#ffffff
-    classDef exe   fill:#166534,stroke:#166534,color:#ffffff
-    classDef lite  fill:#92400E,stroke:#92400E,color:#ffffff
-
-    Triage["aid-describe · TRIAGE<br/>describe the work → infer type + recipe → confirm"]:::def
-
-    subgraph FullPath[" Full path "]
-        direction LR
-        F1["aid-describe+aid-define<br/>REQUIREMENTS + feature SPEC stubs"]:::def
-        F2["aid-specify"]:::def
-        F3["aid-plan"]:::def
-        F4["aid-detail"]:::def
-    end
-    subgraph LitePath[" Lite path "]
-        direction LR
-        L1["CONDENSED-INTAKE"]:::lite
-        L2["TASK-BREAKDOWN"]:::lite
-        L3["LITE-REVIEW"]:::lite
-    end
-    Exec["aid-execute"]:::exe
-
-    Triage -- "no confident match:<br/>multi-target / broad scope / ambiguous" --> F1
-    F1 --> F2 --> F3 --> F4 --> Exec
-    Triage -- "confident single-recipe match:<br/>small, single-target work" --> L1
-    L1 --> L2 --> L3 --> Exec
-    L3 -. "escalate if scope grows" .-> F1
-```
-
-*TRIAGE routes at the start of every interview. You describe the work; the agent infers the work-type and best recipe and confirms. A confident, single-target match routes to the lite path; an ambiguous, multi-target, or broad-scope description routes to the full path. A lite work can escalate to full mid-flight if scope grows (`Path: escalated` in STATE.md).*
-
-**How the inference works:**
-
-| **Step** | What happens |
-|----------|--------------|
-| **1. Describe** | You write what you want to do, in plain language ("fix the login crash on special characters", "add a `/orders` API endpoint", "rename `OrderSvc` everywhere"). |
-| **2. Infer type** | The agent classifies the work into one of three internal work-types — `bug-fix`, `new-feature`, or `refactor`. You never pick this from a menu. |
-| **3. Match recipe** | The agent scans the recipe catalog, reading each recipe's one-line `summary:`, and picks the best match within the inferred type (or a cross-type `*` recipe). |
-| **4. Confirm** | You accept the inferred type + recipe, pick a different recipe, or reject — all on one turn. |
-
-The router is conservative: only a confident, single-recipe match routes to lite. Anything ambiguous, multi-target, or broad routes to the full path. (The old `single-doc` work-type is gone — documentation and report work is now `new-feature` when you're adding a document and `refactor` when you're changing one.)
-
-The lite path is not a cost mitigation you weigh — it is the default path for small work. TRIAGE automates the proportionality decision. Most individual tasks (bug fixes, refactors, doc updates, small features) route to the lite path without any deliberate choice on the user's part.
+**Purpose:** Gather requirements and decompose them into features. Full path only. For a small, well-scoped change, use a direct-entry shortcut instead — see *The Lite Path: Direct-Entry Shortcuts*, right after Specify below — or run `/aid-triage` if you're not sure which door fits.
 
 ##### Full Path
 
@@ -503,9 +489,17 @@ The lite path is not a cost mitigation you weigh — it is the default path for 
     REQUIREMENTS.md             ← product (stakeholder requirements)
     features/
       feature-001-login/
-        SPEC.md                 ← requirements side (from Describe, Phase 2a) + tech spec (from Specify)
+        SPEC.md                 ← feature definition — requirements side (Describe) + tech spec (Specify)
       feature-002-password-reset/
         SPEC.md
+    deliveries/
+      delivery-001/
+        BLUEPRINT.md             ← delivery definition (from Plan)
+        STATE.md                 ← delivery lifecycle
+        tasks/
+          task-001/
+            DETAIL.md             ← task definition (from Detail)
+            STATE.md              ← task lifecycle
 ```
 
 Multiple works can coexist — a client requests auth now, reporting later. Each work has its own requirements and features, sharing the same KB.
@@ -526,64 +520,74 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 **State 7: Done.** REQUIREMENTS.md is approved and each per-feature SPEC.md exists with its requirements side filled in — the work is ready for Specify.
 
-**One grading rubric across the pipeline.** Every development phase that grades — Discover, Describe → Define, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is computed **deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. A scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §7 and `canonical/templates/grading-rubric.md`.
+**One grading rubric across the pipeline.** Every development phase that grades — Discover, Describe → Define, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is computed **deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. A scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §7 and `canonical/aid/templates/grading-rubric.md`.
 
 **Output (full path):** `.aid/{work}/REQUIREMENTS.md` + `.aid/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
 
-##### Lite Path
+##### The Lite Path: Direct-Entry Shortcuts
 
-After TRIAGE routes to lite, the interview shifts to a condensed, efficient flow that produces the same structured artifacts the full path would — just without the multi-phase overhead.
+The lite path is no longer produced by `aid-describe` — it has its own entry. A direct-entry shortcut (`/aid-fix`, `/aid-create-api`, `/aid-document-runbook`, …) is one of 67 verb-first skills generated from a 69-row catalog (`canonical/aid/templates/shortcut-catalog.yml`), grouped into 9 families: create, change, fix, refactor, test + experiment, prototype, document, report, show-dashboard. See §1, *Skill Inventory*, for the full family breakdown.
 
-**Lite-path workspace:**
+**Not sure which shortcut fits — or whether this needs the full path at all?** Run `/aid-triage` first. It is a stateless, write-free, suggest-only router (`INTAKE → CLASSIFY → SUGGEST → HALT`): describe the work in one sentence, and it infers the work-type and scope, then suggests exactly one next step — a matching canonical shortcut for a known, single-target change, or the full path (`/aid-describe`) for anything broad, multi-activity, or ambiguous — and stops. It writes nothing: no interview, no scaffold, no work folder, no `STATE.md`. The conservative default routes anything short of a confident single match to the full path.
+
+```mermaid
+flowchart LR
+    classDef def   fill:#6D28D9,stroke:#6D28D9,color:#ffffff
+    classDef exe   fill:#166534,stroke:#166534,color:#ffffff
+    classDef lite  fill:#92400E,stroke:#92400E,color:#ffffff
+
+    Tr["/aid-triage<br/>describe the work → suggest one door"]:::lite
+
+    subgraph FullPath[" Full path "]
+        direction LR
+        F1["/aid-describe + /aid-define<br/>REQUIREMENTS + feature SPEC stubs"]:::def
+        F2["/aid-specify"]:::def
+        F3["/aid-plan"]:::def
+        F4["/aid-detail"]:::def
+    end
+    subgraph ShortcutPath[" Shortcut engine (lite path) "]
+        direction LR
+        L1["CAPTURE<br/>(Describe)"]:::lite
+        L2["SPEC<br/>(Define + Specify)"]:::lite
+        L3["PLAN<br/>(Plan)"]:::lite
+        L4["DETAIL<br/>(Detail)"]:::lite
+        L5["GATE<br/>mechanical grading"]:::lite
+    end
+    Exec["/aid-execute"]:::exe
+
+    Tr -- "broad / multi-target / ambiguous" --> F1
+    F1 --> F2 --> F3 --> F4 --> Exec
+    Tr -- "known, single-target change" --> L1
+    L1 --> L2 --> L3 --> L4 --> L5 -- "APPROVAL-HALT" --> Exec
+```
+
+*The three doors from §1, focused on what happens after you choose one. `/aid-triage` only ever suggests one of the two branches below — it never runs anything itself; you type the suggested command. A direct-entry shortcut skips both `/aid-triage` and `/aid-describe`, going straight into the shortcut engine's own INTAKE. Every engine state maps to one or more collapsed full-path phases; GATE is the sole quality checkpoint before the human approval halt — there is no per-phase Propose/Discuss/Write/Review loop on this side, and no recipe matching anywhere.*
+
+**The shortcut engine.** Every shortcut is a thin doorway into one shared engine (`canonical/aid/templates/shortcut-engine.md`), which runs the state machine:
+
+```
+INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT
+```
+
+The engine **collapses** the five definition phases (Describe → Define → Specify → Plan → Detail) into one fast, mostly-autonomous run — it never *skips* a phase, it collapses the information capture within each. CAPTURE, SPEC, PLAN, and DETAIL run without a per-state human checkpoint, unlike the full path's Propose → Discuss → Write → Review loops — the only interactive moments are a rare CAPTURE gap-question and the terminal APPROVAL-HALT. **GATE** grades every generated document mechanically (A+ by default, or the project minimum) before halting. The engine **never executes** — `/aid-execute` is a separate, user-initiated run after approval. Each invocation allocates a brand-new `work-NNN`; there is no cross-session resume for an interrupted run.
+
+**Flattened Lite workspace** — one delivery; no `deliveries/` folder, no `delivery-001/` folder:
 
 ```
 .aid/
-  knowledge/                    ← shared KB (from Discovery, if brownfield)
-  work-002-fix-login-bug/       ← one work per interview
-    STATE.md                    ← work-area state
-    SPEC.md                     ← work-root spec (no features/ folder, no REQUIREMENTS.md)
+  work-NNN-name/
+    STATE.md                          ← work lifecycle; the sole delivery's gate + Q&A are
+                                         promoted into it (## Delivery Lifecycle / ## Delivery Gate)
+    REQUIREMENTS.md
+    SPEC.md
+    PLAN.md
+    BLUEPRINT.md                      ← the single delivery's definition, at the work root
     tasks/
-      task-001.md               ← typed task(s) produced directly
+      task-NNN/
+        DETAIL.md                     ← task definition (no per-task STATE.md on this path)
 ```
 
-No `features/` folder. No `REQUIREMENTS.md`. No `PLAN.md`. One work-root `SPEC.md` holds the consolidated requirements and technical context.
-
-**The three lite sub-paths:** the inferred work-type maps to a sub-path. Documentation and report work is not a separate type — adding a document is a `new-feature`, changing one is a `refactor`.
-
-| **work-type (inferred)** | Sub-path | Typical task set |
-|-------------|----------|-----------------|
-| `bug-fix` | LITE-BUG-FIX | 1 IMPLEMENT task (fix + regression test) |
-| `refactor` | LITE-REFACTOR | 1–3 REFACTOR + TEST tasks (incl. changing existing docs/reports) |
-| `new-feature` | LITE-FEATURE | 1–5 IMPLEMENT + TEST + DOCUMENT tasks (incl. adding new docs/reports) |
-
-**The lite-path states:**
-
-- **CONDENSED-INTAKE** — a conversational slot-fill that produces the work-root SPEC.md. No deep multi-question interview; just the fields the task type needs.
-- **TASK-BREAKDOWN** — an `aid-architect` agent proposes the typed task set directly from the SPEC. No separate Plan or Detail phases required.
-- **LITE-REVIEW** — an `aid-reviewer` adversarially validates the task set. Same rubric as the full path; same adversarial separation (reviewer ≠ proposer).
-- **LITE-DONE** — terminal state; provides the hand-off prompt to `/aid-execute`.
-
-##### Recipes
-
-For recurring patterns — the same kind of change you make repeatedly to the same kind of project — AID ships a **catalog of 51 recipes** at `canonical/recipes/`. Recipes are named by the change they make, so the name tells you what they do:
-
-| **Group** | **Naming** | **Examples** | **Count** |
-|-----------|-----------|--------------|-----------|
-| Add a thing (`new-feature`) | `add-X` | `add-api-endpoint`, `add-ui-component`, `add-entity`, `add-job`, `add-docs`, `add-report` | 20 |
-| Change a thing (`refactor`) | `change-X` | `change-api-endpoint`, `change-ui-component`, `change-schema`, `change-job`, `change-docs` | 20 |
-| Fix a thing (`bug-fix`) | `fix-X` | `fix-application`, `fix-api`, `fix-ui`, `fix-regression`, `fix-security` | 7 |
-| Refactor-only | (verb) | `improve-performance`, `bump-dependency`, `rename-symbol` | 3 |
-| Cross-type (`*`) | — | `add-test-coverage` | 1 |
-
-The 40 `add-`/`change-` recipes span eleven target-kind families (objects/models, API, UI, CLI, DB/storage, config/flags, jobs, messaging, rules, docs/reports, integrations), mostly as matched `add-`/`change-` pairs — with a few naming exceptions where the two sides read more naturally apart (e.g. `add-entity` / `change-schema`).
-
-Each recipe carries a one-line **`summary:`** in its YAML frontmatter — that is what TRIAGE reads to match your free-form description to the right recipe. The body is a pre-filled template: frontmatter (`name`, `applies-to` ∈ `{bug-fix, new-feature, refactor, *}`, `slot-count`, `task-count`, `summary`) + a `## spec` block + a `## tasks` block + `{{slot}}` placeholders. The placeholders are substituted at render time by `canonical/scripts/interview/parse-recipe.sh`. Using a recipe eliminates the conversational interview for a known pattern — you confirm the match, fill the slots, and the recipe produces the `SPEC.md` and task set directly.
-
-Recipes are a shortcut, not a bypass. The task set a recipe produces is the same structured, typed, reviewed artifact that the full interview would produce. The difference is speed for patterns you know well enough to template. (The catalog is authored breadth-first; over time, similar `add-`/`change-` pairs may be consolidated.)
-
-##### Escalation
-
-A lite work can be promoted to full mid-flight. If the scope expands during the condensed interview — more features than TRIAGE anticipated, more complexity than the slot-fill can handle — the skill escalates. `Path: escalated` is treated identically to `Path: full`; the work enters the full Describe → Define flow. The `## Escalation Carry` block in `STATE.md` preserves slot answers and decisions already gathered, so the user is not asked again for information already given.
+The engine produces the **full** flattened artifact set — the same document shapes the full path produces, just nested one level shallower and authored without a per-phase checkpoint. One structural difference from the full path: the flattened Lite work has **no per-task `STATE.md`** — each task's mutable cells live in the work-root `STATE.md` under `### Tasks lifecycle`.
 
 ---
 
@@ -610,7 +614,7 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Output:** `## Technical Specification` section added to `.aid/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections.
 
-**Full path only:** Specify is skipped on the lite path, which collapses Specify + Plan + Detail into the Describe phase's TRIAGE-routed condensed flow.
+**Full path only:** Specify is skipped on the lite path — the shortcut engine's SPEC state collapses Define + Specify into one authoring step.
 
 ---
 
@@ -632,9 +636,9 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Why two-level planning matters:** In most methodologies there is one level of planning — a backlog, a sprint, a roadmap. AID separates strategy (Plan) from tactics (Detail). Plan answers "what goes in MVP vs. v2 vs. v3." Detail answers "how do we build MVP — what are the tasks, what are their dependencies." Mixing these levels is where planning sessions get bogged down in micro-decisions before the macro-structure is settled.
 
-**Output:** `.aid/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list.
+**Output:** `.aid/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list — plus, per approved deliverable, `deliveries/delivery-NNN/BLUEPRINT.md` (the delivery definition: objective, scope, gate criteria, task listing, dependencies) and `deliveries/delivery-NNN/STATE.md` (the delivery's own lifecycle, seeded `Pending-Spec`).
 
-**Full path only:** Plan is skipped on the lite path.
+**Full path only:** Plan is skipped on the lite path — the shortcut engine's PLAN state collapses it into a single-delivery `PLAN.md` + work-root `BLUEPRINT.md`.
 
 ---
 
@@ -659,9 +663,9 @@ The eight task types are:
 - **REFACTOR** — restructure code without changing behavior
 - **CONFIGURE** — config files, CI/CD, environment setup
 
-**Output:** `.aid/{work}/tasks/task-NNN.md` files — sequential tasks numbered globally across all deliverables — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md`.
+**Output:** `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files — each with its own sibling `STATE.md` for task lifecycle — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md` under the corresponding delivery.
 
-**Full path only:** Detail is skipped on the lite path, which produces tasks directly.
+**Full path only:** Detail is skipped on the lite path — the shortcut engine's DETAIL state decides the task breakdown directly and emits `tasks/task-NNN/DETAIL.md` at the work root, with no per-task `STATE.md` (task mutable state lives in the work-root `STATE.md § ### Tasks lifecycle` table instead).
 
 ---
 
@@ -675,7 +679,7 @@ The eight task types are:
 
 **Purpose:** Execute tasks based on their type. Not just coding — every task has a type that determines what the agent does and how the reviewer evaluates it.
 
-**Input:** `task-NNN.md` (with Type field) + `PLAN.md` (delivery context + execution graph) + the per-feature `SPEC.md` + `known-issues.md` (if present) + `.aid/knowledge/INDEX.md`.
+**Input:** `task-NNN/DETAIL.md` (with Type field) + `PLAN.md` (delivery context + execution graph) + the per-feature `SPEC.md` + `known-issues.md` (if present) + `.aid/knowledge/INDEX.md`.
 
 **Process (universal loop, all types):**
 
@@ -698,7 +702,7 @@ The eight task types are:
 
 **Impediment protocol:** When the agent discovers assumptions don't hold, it generates an `IMPEDIMENT-task-NNN.md` rather than silently working around the problem. The impediment is typed (`kb-gap | architecture-conflict | missing-dependency | wrong-assumption`) and presented to the human with options and a recommendation. The human decides.
 
-**Output:** Artifacts appropriate to the task type. Grade ≥ minimum. The grade and full review history are recorded in the work-area `STATE.md` `## Tasks Status` section.
+**Output:** Artifacts appropriate to the task type. Grade ≥ minimum. Full path: the grade and full review history are recorded in the task's own `deliveries/delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section, and the delivery's `deliveries/delivery-NNN/STATE.md` `## Delivery Lifecycle` advances (Executing → Gated → Done, or Blocked). Lite path: both live in the work-root `STATE.md` — the `### Tasks lifecycle` row for the task, and the promoted `## Delivery Lifecycle` section for the sole delivery.
 
 ---
 
@@ -743,9 +747,9 @@ This mirrors `aid-summarize` — an optional skill in the Prepare group — and 
 2. **Classify** — For each finding: BUG (spec right, code wrong), Change Request (spec needs change), Infrastructure (ops), or No Action (false positive).
 3. **Analyze** — Root cause analysis for bugs: trace → fault → scope → test requirements.
 4. **Propose** — Present findings with routing recommendations to the user.
-5. **Act** — Route findings: bugs via aid-describe's LITE-BUG-FIX triage → Execute; change requests as new/changed requirements to Describe (full pipeline or new work); escalate infrastructure findings.
+5. **Act** — Route findings: bugs to `/aid-fix` (a direct-entry shortcut that scaffolds and implements the fix work); change requests to `/aid-triage` (routes to the right entry — a shortcut or the full path); escalate infrastructure findings.
 
-**The short path:** BUG → aid-describe (LITE-BUG-FIX triage → task) → aid-execute. The short path skips specification and planning because the spec is already correct — only the code is wrong.
+**The short path:** BUG → `/aid-fix` (shortcut engine, scaffold + task) → `/aid-execute`. The short path skips specification and planning because the spec is already correct — only the code is wrong.
 
 **Output:** an in-memory observation log — a last-run summary, active findings (each with classification, severity, evidence, and routing), and resolved findings. A persistent per-work `MONITOR-STATE.md` is deferred until the Monitor area matures.
 
@@ -847,11 +851,11 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (14 user-facing skills)
+  ├── skills/        (82 skill directories — 14 classic + aid-triage + 67 shortcuts)
   ├── agents/        (9 agents)
-  ├── templates/     (KB templates, document templates)
-  ├── recipes/       (51 lite-path recipes — add-/change-/fix- families)
-  └── scripts/       (helper scripts by phase)
+  └── aid/
+        ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)
+        └── scripts/       (helper scripts by phase)
         │
         ▼  python run_generator.py
         │  (renders per profiles/*.toml — 5 profiles)
@@ -886,6 +890,7 @@ flowchart TB
     classDef exe     fill:#166534,stroke:#166534,color:#ffffff
     classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
     classDef offpipe fill:#374151,stroke:#374151,color:#ffffff
+    classDef entry   fill:#92400E,stroke:#92400E,color:#ffffff
 
     D["1 · Discover"]:::prep
     I["2 · Describe → Define"]:::def
@@ -895,6 +900,8 @@ flowchart TB
     E["6 · Execute"]:::exe
     Dp["Deploy · optional"]:::delopt
     M["Monitor · optional"]:::delopt
+    Fx["/aid-fix · shortcut"]:::entry
+    Tr["/aid-triage"]:::entry
     Any["Any phase<br/>L11 · cross-cutting"]:::offpipe
 
     D --> I --> S --> P --> Dt --> E
@@ -908,12 +915,12 @@ flowchart TB
     E  -. "L6 · impediment" .-> D
     E  -. "L7 · review" .-> S
     Dp -. "L8 · verification" .-> E
-    M  -. "L9 · bug" .-> I
-    M  -. "L10 · change request" .-> I
+    M  -. "L9 · bug" .-> Fx
+    M  -. "L10 · change request" .-> Tr
     Any -. "targeted re-discovery" .-> D
 ```
 
-*Eleven formal feedback loops — eight within development, two from production back to development, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or an aid-monitor finding.*
+*Eleven formal feedback loops — eight within development, two from production out to the shortcut/triage entry layer, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or an aid-monitor finding.*
 
 The development pipeline (Discover through Execute) is sequential by default; the optional Deliver-group skills (Deploy, Monitor) run on demand at the end. But real engineering is not linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
 
@@ -929,8 +936,8 @@ The development pipeline (Discover through Execute) is sequential by default; th
 | L6 | Execute | Discover / Specify / Detail | Agent discovers an assumption doesn't hold (`IMPEDIMENT-task-NNN.md`) |
 | L7 | Execute Review | Any upstream phase | Reviewer finds issues traced to the task, spec, or KB — not just code quality |
 | L8 | Deploy | Execute | Final verification (build + tests + lint) fails before the delivery ships |
-| L9 | Monitor | Describe (bug path) | Monitor classifies a finding as BUG → LITE-BUG-FIX triage |
-| L10 | Monitor | Describe (CR path) | Monitor classifies a finding as Change Request → requirements update |
+| L9 | Monitor | `/aid-fix` (shortcut) | Monitor classifies a finding as BUG |
+| L10 | Monitor | `/aid-triage` | Monitor classifies a finding as Change Request |
 | L11 | Any phase | Discover | Any phase finds the KB wrong, incomplete, or stale |
 
 #### Development Loops (1–8)
@@ -955,9 +962,9 @@ The development pipeline (Discover through Execute) is sequential by default; th
 
 These loops apply only when Monitor is run.
 
-**Loop 9: Monitor → Describe (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `aid-describe`'s LITE-BUG-FIX triage, which creates the task(s) → aid-execute (→ optional aid-deploy). The short path.
+**Loop 9: Monitor → `/aid-fix` (Bug Path).** Monitor classifies a finding as BUG. Monitor performs root cause analysis and routes the bug to `/aid-fix`, the direct-entry shortcut that scaffolds and implements the fix through the shortcut engine → `/aid-execute` (→ optional `/aid-deploy`). The short path.
 
-**Loop 10: Monitor → Describe (Change Request Path).** Monitor classifies a finding as Change Request. Monitor routes the change request to `aid-describe` as new/changed requirements → the pipeline runs from Describe (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work.
+**Loop 10: Monitor → `/aid-triage` (Change Request Path).** Monitor classifies a finding as Change Request. Monitor routes the change request to `/aid-triage`, which suggests the right entry — a matching shortcut for a well-scoped change, or the full path (`/aid-describe`) as new/changed requirements for anything broad; a large-enough CR spins up a new work.
 
 #### Cross-Cutting Loop (11)
 
@@ -1024,20 +1031,23 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | INDEX.md | `.aid/knowledge/` | Init, Discover, Describe | All phases | Seeded at init; regenerated by Discovery; maintained by Describe |
 | STATE.md (discovery area) | `.aid/knowledge/` | Init, Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
 | project-index.md | `.aid/generated/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
-| REQUIREMENTS.md | `.aid/{work}/` | Describe (full path) | Specify, Plan | Frozen after approval (rev-tracked) |
-| SPEC.md (work-root) | `.aid/{work}/` | Describe (lite path) | Execute | Single consolidated spec for lite works |
-| STATE.md (work area) | `.aid/{work}/` | Describe | All phases for this work | Process tracking |
+| REQUIREMENTS.md | `.aid/{work}/` | Describe (full path) or the shortcut engine's CAPTURE state (lite path) | Specify, Plan / the engine's own SPEC state | Frozen after approval (rev-tracked) |
+| SPEC.md (work-root) | `.aid/{work}/` | The shortcut engine's SPEC state (lite path only) | Execute | Single consolidated spec for lite works |
+| STATE.md (work area) | `.aid/{work}/` | Describe (full path) or the shortcut engine's INTAKE state (lite path) | All phases for this work | Process tracking |
 | Feature SPEC.md | `.aid/{work}/features/{feature}/` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes requirements side, Specify adds technical spec |
 | known-issues.md | `.aid/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
-| PLAN.md | `.aid/{work}/` | Plan (full path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
-| task-NNN.md | `.aid/{work}/tasks/` | Detail (full path) or Describe (lite path) | Execute | Rev-tracked if amended |
+| PLAN.md | `.aid/{work}/` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
+| BLUEPRINT.md (delivery definition) | Full path: `deliveries/delivery-NNN/`; lite path: work root | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Execute | Immutable — objective, scope, gate criteria, task listing, dependencies |
+| STATE.md (delivery area) | Full path: `deliveries/delivery-NNN/`; lite path: promoted into the work-root `STATE.md § Delivery Lifecycle` | Plan | Execute | Living — delivery lifecycle, `Pending-Spec` → … → `Done`/`Blocked` |
+| DETAIL.md (task definition) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: `.aid/{work}/tasks/task-NNN/` | Detail (full path) or the shortcut engine's DETAIL state (lite path) | Execute | Immutable definition; rev-tracked if amended |
+| STATE.md (task area) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: rolled into the work-root `STATE.md § Tasks lifecycle` | Detail (seeded); Execute (updated) | Execute (resume), Monitor | Living — full review history for the task |
 | IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
 | package-NNN-{slug}.md | `.aid/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
 | DEPLOYMENT-STATE.md | `.aid/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
-| MONITOR-STATE.md _(deferred)_ | `.aid/{work}/` | Monitor | Execute (bugs), Discover (CRs) | Planned — currently an in-memory observation log across runs |
+| MONITOR-STATE.md _(deferred)_ | `.aid/{work}/` | Monitor | `/aid-fix` (bugs), `/aid-triage` (change requests) | Planned — currently an in-memory observation log across runs |
 | KB-DELTA Q&A entry | `.aid/knowledge/STATE.md` | aid-housekeep | aid-discover (targeted re-discovery) | Appended by housekeep; resolved by next targeted discovery run |
 
-Within Execute, the reviewer produces a structured issue list that `canonical/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the work-area `STATE.md`. There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.
+Within Execute, the reviewer produces a structured issue list that `canonical/aid/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the task's own `STATE.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: the work-root `STATE.md § Tasks lifecycle` row). There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.
 
 ### Templates Reference
 
@@ -1138,16 +1148,49 @@ Each feature gets its own SPEC.md on the full path. Describe writes the top half
 |-----|------|--------|-------------|
 ```
 
-**task-NNN.md template:**
+**Delivery BLUEPRINT.md template:**
 
-Detail produces one `task-NNN.md` per task and appends the execution graph (waves, precedence) to `PLAN.md` — there is no separate `DETAIL.md` artifact.
+Plan writes one `BLUEPRINT.md` per delivery immediately after approving that delivery's PLAN.md stanza — the delivery's immutable definition, distinct from its own `STATE.md` (lifecycle). Full path: `deliveries/delivery-NNN/BLUEPRINT.md`. Lite path: the sole delivery's `BLUEPRINT.md` sits at the work root.
+
+```markdown
+# Delivery BLUEPRINT — delivery-NNN: {Title}
+
+## Objective
+{One paragraph: what this delivery achieves and why it is scoped as a distinct unit.}
+
+## Scope
+{What is IN scope — bounded list of deliverables, referencing features/requirements.}
+
+**Out of scope:** {anything explicitly excluded, to avoid scope creep.}
+
+## Gate Criteria
+- [ ] {Criterion 1 — concrete and testable}
+- [ ] {Criterion 2 — concrete and testable}
+- [ ] All section-6 quality gates pass
+
+## Tasks
+| Task | Type | Title |
+|------|------|-------|
+| task-NNN | {TYPE} | {Title} |
+
+## Dependencies
+- **Depends on:** delivery-NNN | — (none)
+- **Blocks:** delivery-NNN | — (none)
+
+## Notes
+{Design notes, constraints, or references not captured in the gate criteria.}
+```
+
+**Task DETAIL.md template:**
+
+Detail produces one `DETAIL.md` per task — the task's immutable definition — and appends the execution graph (waves, precedence) to `PLAN.md` under the corresponding delivery. Each task also gets its own sibling `STATE.md` for lifecycle (full path only; the lite path rolls task state into the work-root `STATE.md § Tasks lifecycle` table instead). Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`. Lite path: `tasks/task-NNN/DETAIL.md` at the work root.
 
 ```markdown
 # task-NNN: {Title}
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
-**Source:** feature-NNN-{name} → delivery-NNN
+**Source:** work-NNN-{name} → delivery-NNN
 
 **Depends on:** task-NNN [, task-NNN] | — (none)
 
@@ -1157,11 +1200,12 @@ Detail produces one `task-NNN.md` per task and appends the execution graph (wave
 **Acceptance Criteria:**
 - [ ] Criterion 1 — concrete, testable
 - [ ] Criterion 2 — concrete, testable
+- [ ] All section-6 quality gates pass
 ```
 
 **Review record format:**
 
-Inside Execute, the reviewer produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `canonical/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `canonical/templates/grading-rubric.md` for the full table.
+Inside Execute, the reviewer produces a structured issue list. Each issue is tagged by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`) and source (`[CODE]` / `[TASK]` / `[SPEC]` / `[KB]`). The reviewer **does not assign a letter grade** — the grade is computed deterministically by `canonical/aid/scripts/grade.sh` from the bracketed severity tags (worst severity dominates; count within that tier sets the `+` / none / `-` modifier). See `canonical/aid/templates/grading-rubric.md` for the full table.
 
 ```markdown
 ## Current Review
@@ -1197,7 +1241,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 **Evidence:** {concrete data — error counts, latency, ticket clusters}
 **Correlation:** {related events — e.g., "error spike 23 min after the package-007-auth deploy"}
 **Root cause:** {for bugs — trace from symptom to the specific fault}
-**Routing:** BUG → aid-describe (LITE-BUG-FIX) · Change Request → aid-describe · Infrastructure → ops escalation · No Action → closed with justification
+**Routing:** BUG → `/aid-fix` (shortcut) · Change Request → `/aid-triage` · Infrastructure → ops escalation · No Action → closed with justification
 
 ## Resolved Findings
 | Finding | Classification | Resolution | Date |
@@ -1214,7 +1258,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 |---------------|-----------|------------|-------------|
 | VivaVoz Desktop App | Greenfield · full path | Describe → Define → Specify → Plan → Detail → Execute | Two-level planning (Plan = strategy, Detail = tactics) prevented planning sessions from bogging down in micro-decisions before macro-structure was settled |
 | Brownfield Enterprise Java | Brownfield · full path | Discover → Describe → Define → Specify | Without Discovery, an agent dropped into a 21 GB Java codebase hallucinates; the KB gave agents context to work within the existing OSGi architecture rather than against it |
-| Zac Pipeline | Brownfield · full path + lite path | All phases; Monitor → LITE-BUG-FIX → Execute for post-launch fixes | After the initial build, individual brand-specific issues were handled as LITE-BUG-FIX works — 20–30 minutes end to end vs. the multi-day cycle a full path would require |
+| Zac Pipeline | Brownfield · full path + lite path | All phases; Monitor → `/aid-fix` → Execute for post-launch fixes | After the initial build, individual brand-specific issues were handled as `/aid-fix` shortcut works — 20–30 minutes end to end vs. the multi-day cycle a full path would require |
 
 ### Greenfield — VivaVoz Desktop Application
 
@@ -1223,7 +1267,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 **How AID applied:**
 
 - **Discovery:** Skipped (greenfield). Minimal KB populated during interview.
-- **Describe → Define:** Full requirements gathering. User personas, feature priority, platform constraints. TRIAGE routed to full path — multiple features, multi-week scope.
+- **Describe → Define:** Full requirements gathering. User personas, feature priority, platform constraints. Multiple features and multi-week scope — the full path, entered directly via `/aid-describe`.
 - **Specify:** Detailed architecture decisions per feature: MVVM pattern, SQLite storage, Whisper integration. Agent proposed based on community conventions, not open-ended prompting.
 - **Plan:** Sequenced the roadmap — MVP (core recording), v2 (transcription), v3 (export) — into ordered, independently shippable deliveries.
 - **Detail:** Decomposed each delivery into task specs, each carrying explicit C# interface contracts.
@@ -1232,7 +1276,7 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 
 **What worked:** The two-level planning (Plan → Detail) meant strategic decisions were separated from tactical decomposition. The plan defined "what goes in MVP" while detail defined "how to build each piece." Without this separation, planning sessions routinely get bogged down debating implementation micro-decisions before the macro-structure is settled.
 
-**What would have been faster with lite path:** Individual bug fixes discovered during Execute were routed through LITE-BUG-FIX — a diagnosis from Monitor plus a single IMPLEMENT task, no re-spec, no re-plan.
+**What would have been faster with lite path:** Individual bug fixes discovered during Execute were routed through `/aid-fix` — a diagnosis from Monitor plus a single IMPLEMENT task, no re-spec, no re-plan.
 
 ### Brownfield Enterprise Java
 
@@ -1255,9 +1299,9 @@ Inside Execute, the reviewer produces a structured issue list. Each issue is tag
 - **Describe → Define:** One question at a time. "What are your brands?" → "What platforms?" → "What does a good report look like?" → "What data don't you agree with?" That last question discovered a timezone bug in the existing data aggregation — before a line of spec was written.
 - **Specify:** Pipeline spec with data flow, agent roles, grading criteria.
 - **Execute:** Multi-agent orchestration — 4 specialist agents + orchestrator + executive-summary generator — validated against a domain-specific quality gate (Grade A): source match (1% tolerance), traceability, cross-agent consistency.
-- **Monitor:** Watches quality-gate results across brands. When a report fails, Monitor classifies it — a data-processing bug (short path: LITE-BUG-FIX → Execute) or a source-format change (full cycle: new requirements → new spec). Nothing falls through.
+- **Monitor:** Watches quality-gate results across brands. When a report fails, Monitor classifies it — a data-processing bug (short path: `/aid-fix` → Execute) or a source-format change (full cycle: new requirements → new spec). Nothing falls through.
 
-**The lite path in practice:** After the initial build, individual brand-specific issues were handled as LITE-BUG-FIX works — each a single IMPLEMENT task taking 20-30 minutes end to end, vs. the multi-day cycle the full path would require.
+**The lite path in practice:** After the initial build, individual brand-specific issues were handled as `/aid-fix` shortcut works — each a single IMPLEMENT task taking 20-30 minutes end to end, vs. the multi-day cycle the full path would require.
 
 ---
 
@@ -1283,6 +1327,7 @@ flowchart TB
     classDef aid_exe   fill:#166534,stroke:#166534,color:#ffffff
     classDef aid_del   fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
     classDef kb        fill:#0B1F3A,stroke:#0B1F3A,color:#ffffff
+    classDef aid_entry fill:#92400E,stroke:#92400E,color:#ffffff
 
     subgraph SDD["Spec-Driven Development"]
         direction TB
@@ -1306,12 +1351,14 @@ flowchart TB
         KB[("Knowledge Base<br/>(persists across sessions)")]:::kb
         Dep["aid-deploy<br/>(optional)"]:::aid_del
         Mon["aid-monitor<br/>(optional)"]:::aid_del
+        Fx["aid-fix<br/>(shortcut)"]:::aid_entry
+        Tr["aid-triage"]:::aid_entry
 
         A0 --> A1 --> A2 --> A3 --> A4 --> A5 --> A6
         A6 -. "on demand" .-> Dep
         A6 -. "on demand" .-> Mon
-        Mon -. "bug fix" .-> A2
-        Mon -. "change request" .-> A2
+        Mon -. "bug fix" .-> Fx
+        Mon -. "change request" .-> Tr
 
         A1 <--> KB
         A2 <--> KB
@@ -1322,7 +1369,7 @@ flowchart TB
     end
 ```
 
-*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and optional Deliver skills (Deploy, Monitor) that feed post-production changes back into the pipeline.*
+*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and optional Deliver skills (Deploy, Monitor) that route post-production changes out to the shortcut/triage entry layer rather than back into the numbered pipeline.*
 
 | **Dimension** | SDD | AID |
 |--------------|-----|-----|
@@ -1337,10 +1384,10 @@ flowchart TB
 | **Agent model** | One agent per spec | 9 specialist agents across 3 tiers; reviewer tier ≥ executor tier invariant |
 | **Delivery model** | Spec → code → done | Discover → specify → plan → detail → execute → optional deploy/monitor |
 | **Memory** | Stateless | Knowledge Base persists across sessions |
-| **Post-delivery** | Not addressed | Monitor → Describe/Define (bugs via LITE-BUG-FIX + CRs) |
+| **Post-delivery** | Not addressed | Monitor routes bugs to `/aid-fix`, change requests to `/aid-triage` |
 | **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
 | **Human role** | Spec writer, reviewer | Co-pilot across all phases |
-| **Scale options** | One path | Full path + lite path (TRIAGE-routed) for small work; recipes for recurring patterns |
+| **Scale options** | One path | Full path (`/aid-describe`) + a lite path via 67 direct-entry shortcuts, with `/aid-triage` to route when unsure |
 
 ### The Core Argument
 
@@ -1382,33 +1429,28 @@ network required after the initial download. All channels deliver the same persi
 1. Run `/aid-config` to initialize the workspace (once per project).
 2. Run `/aid-discover` on the codebase. This produces your Knowledge Base.
 3. Review the KB. Fill gaps with human knowledge during the Q&A state.
-4. For the next feature request, run `/aid-describe`. TRIAGE will route to full or lite path.
+4. For the next piece of work: if you know what kind of change it is, run the matching direct-entry shortcut (`/aid-fix`, `/aid-create-api`, …). Not sure? Run `/aid-triage` and describe it in a sentence — it suggests the right door. Broad or multi-feature work: run `/aid-describe` directly.
 5. **Full path:** Run `/aid-define` to decompose requirements into features. Run `/aid-specify` to add a technical spec to each feature. Run `/aid-plan` to sequence features into deliveries. Run `/aid-detail` to decompose deliveries into typed tasks. Run `/aid-execute` for each task.
-6. **Lite path:** `/aid-describe` completes the condensed flow and hands off task(s) directly to `/aid-execute`.
+6. **Lite path:** the shortcut you ran drives the shared shortcut engine straight through to an approval halt, then hands off task(s) directly to `/aid-execute`.
 7. Optionally run `/aid-deploy` to verify, package, and ship; then `/aid-monitor` once the delivery is in production.
 8. Run `/aid-housekeep` periodically to reconcile KB drift without a full discovery cycle.
 
 ### Starting a New Project (Greenfield)
 
-1. Run `/aid-config`, then `/aid-describe`. TRIAGE will assess scope; greenfield projects with multiple features will route to full path.
+1. Run `/aid-config`, then `/aid-describe` for the initial, broad requirements gathering — greenfield projects with multiple features start on the full path.
 2. On the full path, `aid-describe` runs its DESCRIBE-SEED state: it forward-authors a five-element KB seed (domain language, intended architecture, conventions, technology stack, and key decisions) from intent before any code exists. The seed is stamped `source: forward-authored` — the design is the source of truth, and code is built to conform to it.
 3. **Full path:** Run `/aid-define` → `/aid-specify` → `/aid-plan` → `/aid-detail` → `/aid-execute`.
-4. **Lite path (small greenfield change):** `/aid-describe` completes condensed flow; run `/aid-execute`.
+4. **Lite path (small greenfield change):** run the matching direct-entry shortcut (or `/aid-triage` first if unsure); the shortcut engine halts for approval, then run `/aid-execute`.
 5. As the codebase develops, run `/aid-housekeep` periodically. Its conformance lane will check whether as-built code diverges from the forward-authored design and surface any gaps for your decision — it never overwrites the design automatically.
 
-### Using the Lite Path and Recipes
+### Using the Direct-Entry Shortcuts
 
 For small, well-scoped changes — bug fixes, doc updates, refactors, small new features:
 
-1. Run `/aid-describe`. Describe the work in your own words; TRIAGE infers the work-type and the best-matching recipe and confirms, then routes to the appropriate LITE sub-path.
-2. The condensed interview produces a work-root SPEC.md and task(s) directly.
-3. Run `/aid-execute`.
-
-For recurring patterns:
-
-1. Describe the work; TRIAGE matches it to a recipe by reading each recipe's `summary:` (e.g. `add-api-endpoint`, `change-ui-component`, `fix-regression`). Confirm the match or pick a different recipe.
-2. Fill the recipe's `{{slot}}` placeholders.
-3. `parse-recipe.sh` produces the SPEC.md and task(s). Run `/aid-execute`.
+1. Run the matching shortcut directly (`/aid-fix "login crash on special characters"`, `/aid-create-api "an /orders endpoint"`, …) — or run `/aid-triage` first if you're not sure which one fits; it suggests the canonical shortcut (or the full path) from a one-sentence description and stops.
+2. The shortcut engine runs INTAKE → CAPTURE → SPEC → PLAN → DETAIL autonomously (a rare CAPTURE question aside), producing the full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`).
+3. GATE grades every document mechanically, then APPROVAL-HALT presents the flattened work for your approval. Nothing has executed yet.
+4. Run `/aid-execute`.
 
 ### Adopting Incrementally
 
@@ -1432,7 +1474,7 @@ You do not need to use all six phases from day one — though `/aid-config` alwa
 - **Not maintaining the KB.** A stale KB is worse than no KB. Every phase should update it when new knowledge is acquired. Run `/aid-housekeep` periodically to catch drift.
 - **Sending agents blind.** Including TASK + SPEC without the KB INDEX means the agent does not know what context exists. It will guess instead of look. Always include INDEX.md.
 - **Auto-advancing between phases.** The human approves every transition. That is the checkpoint that keeps the methodology safe.
-- **Using the full path for every change.** A two-line bug fix does not need Specify, Plan, and Detail. TRIAGE exists to route proportionately. Trust it.
+- **Using the full path for every change.** A two-line bug fix does not need Specify, Plan, and Detail. A direct-entry shortcut — or `/aid-triage` if you're unsure which one — routes proportionately. Trust it.
 
 ---
 

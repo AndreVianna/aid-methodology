@@ -7,6 +7,9 @@ sources:
   - install.sh
   - lib/aid-install-core.sh
   - docs/repository-structure.md
+  - canonical/EMISSION-MANIFEST.md
+  - canonical/aid/scripts/execute/writeback-state.sh
+  - .claude/skills/generate-profile/SKILL.md
   - .github/workflows/release.yml
   - release.sh
   - .github/workflows/test.yml
@@ -57,16 +60,15 @@ structural and methodological, not littered code.
 |----|------|-------------|----------|------|--------|----------|
 | **H1** | Architecture / lockstep | Five install manifests must stay byte-lockstep on the dashboard file set; a silent omission breaks provisioning on one channel | install.sh, install.ps1, vendor.js, vendor.py, release.sh | High | M | P1 |
 | **M1** | Shipping gap | ~~npm + PyPI publish channels BLOCKED on external account setup; effectively GitHub-only~~ DEFERRED — workflow is OIDC-ready; npm-publish gated vars.NPM_ENABLED (release.yml L217), pypi-publish gated vars.PYPI_ENABLED (L284); closure requires owner to create npm @aid scope + PyPI org/Trusted-Publisher and flip repo variables | .github/workflows/release.yml | Medium | M (external) | P2 |
-| **M2** | Test gap / process | ~~Full canonical suite + Astro build run on master/tag only~~ RESOLVED — both now gate `pull_request` to master (test.yml already did; docs.yml build added); deploy stays master-only | .github/workflows/{test,docs}.yml | Medium | S | P2 |
-| **M3** | Stale documentation | ~~Contributor doc cites wrong skill/recipe counts + wrong path~~ RESOLVED — docs/repository-structure.md updated: 14 skills, 52 recipes, canonical/aid/{templates,recipes,scripts} paths corrected (2026-06-27) | docs/repository-structure.md | Medium | S | P2 |
+| **M3** | Stale documentation | `canonical/EMISSION-MANIFEST.md` enumerates only 3 profiles (claude-code/codex/cursor) while the generator emits 5 (+copilot-cli, +antigravity); more broadly, hand-written skill/count figures drift across ~10 doc surfaces and no CI check catches it | canonical/EMISSION-MANIFEST.md; (general: docs/*, KB count surfaces) | Medium | S | P2 |
 | **M4** | Test gap / gate coverage | Visual-fidelity gate validates one wide viewport only; a visual can pass yet clip at the narrower dashboard column | canonical/aid/scripts/summarize/validate-visuals.mjs | Medium | S | P2 |
-| **L1** | Dead code | ~~Unreachable `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff branch~~ RESOLVED | install.sh, install.ps1 | Low | S | P3 |
 | **L2** | Deferred feature | `release.sh --sign` exits non-zero (signing not implemented) | release.sh | Low | M | P3 |
 | **L3** | Deprecation debt | Legacy flag-style install path "retained for one release" | install.sh | Low | S | P3 |
 | **L4** | Test gap | No line-coverage metric or `%` enforcement anywhere | (whole pipeline) | Low | M | P3 |
 | **L5** | Cosmetic / hygiene | feature-015 residues: web-app §1 retired metric-grid text; non-ASCII em-dash in a summarize script comment | canonical/aid/templates/knowledge-summary/section-templates/web-app.md, canonical/aid/scripts/summarize/writeback-state.sh | Low | S | P3 |
 | **L6** | Tooling inconsistency | DBI orphan-scan flags gitignored `node_modules/` that `render.py` already excludes from emission | tests/canonical/test-dogfood-byte-identity.sh | Low | S | P3 |
-| **L7** | Capability gap | ~~aid-researcher lacked WebSearch + WebFetch; RESEARCH tasks requiring a web survey had to fall back to general-purpose agents instead of the type-appropriate executor~~ RESOLVED -- web tools granted in work-001 delivery-002 task-009 (2026-06-27) | canonical/agents/aid-researcher/AGENT.md | Low | S | P3 |
+| **L8** | Correctness footgun | `writeback-state.sh` validates `--task-id`/`--delivery-id` as zero-paddable but feeds the raw value to `printf '%03d'` without base-10 normalization, so a leading-zero id (`08`, `09`, `010`) is misparsed as octal — hard error or silent wrong-file resolution | canonical/aid/scripts/execute/writeback-state.sh | Low | S | P3 |
+| **L9** | Stale gate guidance | The `generate-profile` maintainer skill's VALIDATE state hard-codes "The 14 expected skills" (a literal enumeration) + a "14 skills" completeness assertion, stale since the skill count grew to 82 | .claude/skills/generate-profile/SKILL.md | Low | S | P3 |
 
 **Risk definitions:** High = active risk to reliability/security/maintainability of core
 flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = known, not
@@ -143,55 +145,29 @@ deferral-with-rationale satisfies the criterion.
 
 ---
 
-### [MEDIUM] M2 -- Heavy correctness gates run on master/tag only (RESOLVED)
-
-**Type:** Test gap / process
-
-**Resolution (2026-06-26):** Both heavy gates now run on `pull_request` to `master`, so a
-breaking change is caught BEFORE merge rather than after:
-- `test.yml` (`canonical-tests` + render-drift + generator self-tests + KB-hygiene +
-  visual-fidelity) already triggered on `pull_request: branches: [master]`.
-- `docs.yml` (Astro site build) now also triggers on `pull_request: branches: [master]` (same
-  path filter); its `deploy` job is gated `if: github.event_name != 'pull_request'`, so a PR
-  build-validates the site without deploying. Deploy still only happens on a push to `master`
-  or a release.
-
-**Remaining (owner action, not code):** to *block* a merge until these pass, add `Docs / build`
-to the branch-protection **required status checks** for `master` (the canonical-suite jobs are
-already required). The workflows cannot mark themselves required — it is a repo settings change.
-
-**Original gap:** the full canonical suite + the Astro build triggered only on `master`/tag, so a
-change could pass every feature-branch check and red-master only after merge (this happened — the
-master CI broke three ways from exactly this gap).
-
----
-
-### [MEDIUM] M3 -- Stale counts in docs/repository-structure.md
+### [MEDIUM] M3 -- Stale profile enumeration + uncaught prose-count drift
 
 **Type:** Stale documentation (methodology debt)
 
-**Description:** `docs/repository-structure.md` previously said "12 skill definitions" and
-"51 lite-path recipes" and referenced the path `canonical/recipes/`; it has been corrected
-(2026-06-27) to **14** skill directories under `canonical/skills/` and **52** recipe files at
-`canonical/aid/recipes/` (note the `aid/` segment) -- this headline drift is RESOLVED. The
-general risk persists: adding/removing a canonical skill leaves "N user-facing skills" counts
-stale across roughly ten KB/doc surfaces; CI does not catch this. Two related source-doc drifts share this
-item: `docs/aid-methodology.md` ("## 7. Artifacts Reference") describes the flat task layout
-`.aid/{work}/tasks/task-NNN.md` while the live skills + `work-state-template.md` + on-disk
-state use the nested `deliveries/delivery-NNN/tasks/task-NNN/` shape (full path; the lite path
-uses the flatter `tasks/task-NNN/` directly, with no `delivery-NNN/` folder at all); and
-`canonical/EMISSION-MANIFEST.md`
-enumerates only 3 profiles (claude-code/codex/cursor) while the generator emits 5
-(+copilot-cli, +antigravity). All three are stale SOURCE docs; the KB documents the live reality.
+**Description:** `canonical/EMISSION-MANIFEST.md § "One manifest per profile"` enumerates only
+3 profiles (`claude-code`, `codex`, `cursor`) while the generator emits **5** — also
+`copilot-cli` and `antigravity`, both present under `profiles/`. More broadly, hand-written
+skill/agent/profile **counts** drift across roughly ten doc surfaces whenever the canonical
+inventory changes (work-001 alone grew skills from 14 to 82), and no CI check asserts prose
+counts against the canonical tree, so drift is caught only by manual review or `/aid-housekeep`.
+The earlier `docs/repository-structure.md` (skill/recipe counts + path) and
+`docs/aid-methodology.md` (flat task layout) instances of this drift were reconciled in the
+work-001 documentation refresh; recipes themselves were deleted, so no recipe count remains to
+track.
 
-**Location:** `docs/repository-structure.md` (skills/recipes counts + `canonical/recipes/`
-path lines); `docs/aid-methodology.md` (flat task layout); `canonical/EMISSION-MANIFEST.md`
-(3-profile enumeration).
+**Location:** `canonical/EMISSION-MANIFEST.md` (3-profile enumeration table); general risk
+across `docs/*` and KB count surfaces.
 
-**Risk if unaddressed:** A newcomer trusts the wrong path/count.
+**Risk if unaddressed:** A newcomer trusts a stale count or an incomplete profile list.
 
-**Remediation:** Reconcile via `/aid-housekeep` (the established precedent for count drift),
-not inline edits. Effort: S.
+**Remediation:** Update the EMISSION-MANIFEST profile table to the 5 emitted profiles;
+reconcile prose counts via `/aid-housekeep` (the established precedent for count drift), not
+inline edits. Effort: S.
 
 ---
 
@@ -214,28 +190,6 @@ gate passes, surfacing only in the narrower dashboard / mobile layouts.
 **Remediation:** Add a "no horizontal overflow-clip at target widths" check (proposed T4) that
 validates each visual at representative widths (e.g. the dashboard column ~720-760px and a
 mobile ~390px), not just one wide viewport. Effort: S-M.
-
----
-
-### [LOW] L1 -- Unreachable protect-on-diff branch in install.sh (RESOLVED)
-
-**Type:** Dead code
-
-**Status: RESOLVED** -- Dead code removed from `install.sh` and `install.ps1` (2026-06-26).
-
-**Description:** `install.sh` carried an `OVERALL_BLOCKED` / `exit 5` / `*.aid-new`
-merge-warning branch that fired when `install_tool` returned `5` (a root-agent file was not
-overwritten because it differed). That return value no longer occurred: `aid-install-core`
-eliminated the `.aid-new` path and now updates root agent files in place via an
-`AID:BEGIN/END` boundary, always setting `_CORE_ROOT_AGENT_STATUS="owned"`.
-
-**Location (was):** `install.sh` (`OVERALL_BLOCKED=0` ... `exit 5` block); `install.ps1`
-(`$overallBlocked` ... `Exit-Install 5` block).
-
-**Remediation applied:** Removed the dead `OVERALL_BLOCKED`/`$overallBlocked` branches from
-both `install.sh` and `install.ps1`; simplified to `install_tool ... || exit $?` (Bash) and
-`if ($rc -ne 0) { script:Exit-Install $rc }` (PS); dropped exit-code 5 from inline docs in
-both files.
 
 ---
 
@@ -332,6 +286,62 @@ matching `render.py`'s exclusion. Effort: S.
 
 ---
 
+### [LOW] L8 -- writeback-state.sh octal-leading-zero task/delivery id footgun
+
+**Type:** Correctness footgun
+
+**Description:** `writeback-state.sh` accepts `--task-id`/`--delivery-id` values matching
+`^[0-9]+$` and its own validation comment says it allows the zero-padded form ("allow
+zero-padded like 019"). But the value is passed **directly** to `printf '%03d'` in
+`resolve_task_state_file` / `resolve_delivery_state_file` with no base-10 normalization. Bash
+`printf` treats a leading-zero integer as octal, so `--task-id 08`/`09` errors ("invalid
+number") and `--task-id 010` silently resolves to `task-008`. The delivery resolver that
+parses a task `DETAIL.md` `Source` line DOES normalize (`DELIVERY_ID_RESOLVED=$(( 10#$raw_num ))`),
+showing the octal trap was handled in one path but not the CLI-arg path. The on-disk
+directories are named `task-NNN`/`delivery-NNN` (zero-padded), so the padded form is the
+natural value a caller substitutes for the documented `--task-id NNN` placeholder — which is
+exactly what triggers the bug.
+
+**Location:** `canonical/aid/scripts/execute/writeback-state.sh` (`resolve_task_state_file` /
+`resolve_delivery_state_file` `printf '%03d'` sinks; the CLI-arg parse path, which lacks the
+`10#` normalization the `Source`-line resolver has).
+
+**Risk if unaddressed:** A caller passing a zero-padded id either hard-fails or, worse,
+silently writes state to the wrong task's `STATE.md`. Latent today (pipeline callers derive
+the id and the delivery `Source`-line path self-normalizes), hence Low — re-rate up if any
+caller begins passing padded ids.
+
+**Remediation:** Normalize both CLI args with `$(( 10#$id ))` before `printf '%03d'`, matching
+the `Source`-line resolver. Effort: S.
+
+---
+
+### [LOW] L9 -- generate-profile VALIDATE hard-codes a stale 14-skill list
+
+**Type:** Stale gate guidance (methodology debt)
+
+**Description:** `.claude/skills/generate-profile/SKILL.md § Mode: VALIDATE` step 1 hard-codes
+"The 14 expected skills are:" followed by a literal list of the 14 classic skills, and the
+success-criteria checklist asserts "`canonical/` completeness verified: 14 skills, 9 agents".
+Work-001 grew `canonical/skills/` from 14 to **82** (14 classic + `aid-triage` + 67 shortcuts),
+so both the enumeration and the "14 skills" figure are stale. Because VALIDATE only checks that
+each of the listed 14 exists (all still do, as a subset), the generator still renders
+correctly — the check does not hard-fail — but its "completeness" claim is misleading and it
+does not validate the 68 newer skill directories. The `9 agents` figure is still correct.
+
+**Location:** `.claude/skills/generate-profile/SKILL.md` (`Mode: VALIDATE` step 1 enumeration;
+success-criteria "14 skills" line). This maintainer skill lives only under `.claude/skills/`
+(it is not rendered from `canonical/`).
+
+**Risk if unaddressed:** A maintainer following VALIDATE literally may treat the 68 unlisted
+skills as unexpected, or trust a false "completeness" signal.
+
+**Remediation:** Replace the hard-coded enumeration with a count/inventory derived from
+`canonical/skills/` (or from `shortcut-catalog.yml` + the classic list) so it self-updates.
+Effort: S.
+
+---
+
 ## Complexity Hotspots
 
 Large files concentrate complexity (line counts drift — measure on demand). CONFIRMED via
@@ -344,7 +354,7 @@ Large files concentrate complexity (line counts drift — measure on demand). CO
 | `tests/windows/Test-AidInstaller.ps1` (~2406) | Whole installer surface in one PS script | Windows-CI only |
 | `dashboard/reader/parsers.py` (~2232) | Python KB/state parser | Triplicated |
 | `lib/aid-install-core.sh` (~2160) | The install/update/remove engine | Triplicated; most load-bearing shell file |
-| `install.sh` (~1380) | Bootstrap + legacy paths + provisioning | Carries L1/L3 debt |
+| `install.sh` (~1380) | Bootstrap + legacy paths + provisioning | Carries L3 debt (legacy flag path) |
 | `.claude/skills/.../render.py` (~1019) | The profile renderer | Has self-tests |
 
 ---
@@ -355,7 +365,7 @@ Large files concentrate complexity (line counts drift — measure on demand). CO
 |------------------|----------|--------------|------|
 | Prompt-driven skill state machines | none (by design) | integration | Accepted — needs AI host + human; covered by dogfooding + review |
 | Astro site components | partial | unit | Build is the main gate; component logic lightly tested |
-| Windows installer path | strong but Windows-CI-only | — | A green local `run-all.sh` does not exercise it (M2/gotcha) |
+| Windows installer path | strong but Windows-CI-only | — | A green local `run-all.sh` does not exercise it (see Gotchas: master-only heavy gates) |
 
 ---
 
@@ -392,9 +402,9 @@ re-vendoring is the correct workflow.
 
 ## Dead Code
 
-| Item | Location | Evidence of disuse | Safe to remove? |
-|------|----------|--------------------|-----------------|
-| `OVERALL_BLOCKED` / `exit 5` / `.aid-new` branch | `install.sh` | `install_tool` never returns 5 since `aid-install-core` removed the `.aid-new` path (`lib/aid-install-core.sh` comment) | Yes (verify install/update tests still pass) |
+No dead code is currently identified. A scan of the shipped scripts finds no unreachable
+branches. (The previously-listed `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff
+branch was removed from `install.sh` + `install.ps1`; git history is the audit trail.)
 
 ---
 
@@ -445,6 +455,9 @@ model.
   mis-parses non-ASCII; `test-ascii-only.sh` + `test-ps51-compat.sh` gate this. Keep shipped
   `.ps1`/`.psm1` ASCII and 5.1-compatible (no 3-arg `Join-Path`, no `-Encoding utf8NoBOM`,
   no `$IsWindows`, force TLS 1.2).
+- **Zero-padded ids to `writeback-state.sh`:** pass `--task-id`/`--delivery-id` as a plain
+  integer (`8`, not `08`); a leading-zero value is misparsed as octal by `printf '%03d'`
+  (L8) — `08`/`09` error and `010` silently resolves to `008`.
 - **Web-output reviews require Playwright:** reviewing `kb.html` or the site by reading
   HTML/CSS is not a valid review — render and visually validate (the `visual-fidelity` gate).
 - **`master` is branch-protected:** the bot identity cannot push to `master`; always open a
@@ -463,3 +476,4 @@ model.
 | 1.4 | 2026-06-27 | work-001/task-009 | L7 RESOLVED -- aid-researcher granted WebSearch + WebFetch; RESEARCH tasks requiring a web survey can now use the type-appropriate executor instead of falling back to general-purpose agents. |
 | 1.5 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in M3 inventory row and M3 detailed description (aid-interview split into aid-describe + aid-define). |
 | 1.6 | 2026-07-08 | PR #132 (change-delivery) | Updated the M3 stale-doc description: live reality is now `deliveries/delivery-NNN/tasks/task-NNN/` (full path, nested under `deliveries/`) / `tasks/task-NNN/` (lite path, no `delivery-NNN/` folder), superseding the flat `delivery-NNN/tasks/task-NNN/` shape. |
+| 1.7 | 2026-07-09 | work-001 lite-skills refresh | Deleted resolved-in-place items per the removal convention: M2 (heavy gates now gate PRs), L1 (dead install branch removed), L7 (aid-researcher web tools granted in work-001) — closure stays in this log + git. Rewrote M3 to the live remaining drift (EMISSION-MANIFEST 3-of-5 profiles + uncaught prose-count drift), dropping deleted-recipe references and the now-reconciled repository-structure.md / aid-methodology.md instances. Added L8 (writeback-state.sh octal-leading-zero id footgun) + L9 (generate-profile VALIDATE hard-codes a stale 14-skill list). Cleared the Dead Code table; dropped L1 from the install.sh complexity-hotspot note; fixed the dangling M2 reference in Missing Test Coverage. |
