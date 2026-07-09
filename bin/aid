@@ -1060,6 +1060,56 @@ _cmd_dashboard_ctl() {
     fi
 }
 
+# ---------------------------------------------------------------------------
+# Cross-platform process reaping for the dashboard server (start/stop).
+#
+# On POSIX the server is spawned under `setsid` and reaped via a process-group
+# SIGTERM/SIGKILL (see _dc_stop).  On Windows the interpreter is reached only
+# through the `python3.bat` / `node` shim under cmd.exe, so the recorded pid is
+# the cmd/.bat WRAPPER, not the detached native python.exe/node.exe server --
+# and an MSYS/Cygwin process-group kill cannot reach that native child.  Left
+# unhandled, every start/stop cycle leaks a live server still bound to the port;
+# an old leaked server then keeps serving stale in-memory code (the reader that
+# renders each pipeline's tasks/deliveries), so pipelines appear empty.  The
+# helpers below reap the real native process tree on Windows (taskkill /F /T)
+# and, as a safety net, whatever still listens on the recorded port.
+# ---------------------------------------------------------------------------
+
+_dc_is_windows() {
+    # True under Git-Bash / MSYS2 / Cygwin -- the shells that run this script on Windows.
+    case "$(uname -s 2>/dev/null)" in
+        MINGW*|MSYS*|CYGWIN*) return 0 ;;
+    esac
+    case "${OSTYPE:-}" in
+        msys*|cygwin*|win*) return 0 ;;
+    esac
+    return 1
+}
+
+# _dc_reap_port <port> [verbose]
+# Windows-only safety net: kill any process still LISTENING on 127.0.0.1:<port>.
+# Catches an older orphan whose wrapper pid had already exited (so a tree-kill of
+# the recorded pid can no longer reach it).  Scoped to OUR recorded port to bound
+# collateral.  No-op on POSIX (the process-group kill in _dc_stop already suffices).
+_dc_reap_port() {
+    local port="$1"
+    local verbose="${2:-0}"
+    [[ -n "$port" ]] || return 0
+    _dc_is_windows || return 0
+
+    local _pids _p
+    _pids="$(MSYS_NO_PATHCONV=1 netstat -ano -p tcp 2>/dev/null \
+        | grep -E "127\.0\.0\.1:${port}[^0-9]" \
+        | grep -i "listening" \
+        | awk '{print $NF}' | sort -u)"
+    for _p in $_pids; do
+        [[ "$_p" =~ ^[0-9]+$ ]] || continue
+        [[ "$_p" == "0" ]] && continue
+        [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: reaping orphaned server on :${port} (pid ${_p})" >&2
+        MSYS_NO_PATHCONV=1 taskkill /F /T /PID "$_p" >/dev/null 2>&1 || true
+    done
+}
+
 _dc_start() {
     local runtime="$1"
     local port="$2"
@@ -1253,9 +1303,15 @@ _dc_stop() {
     existing_pid="$(grep '"pid"' "$pid_file" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
     local log_file
     log_file="$(grep '"logfile"' "$pid_file" | sed 's/.*"logfile": *"\([^"]*\)".*/\1/')"
+    local existing_port
+    existing_port="$(grep '"port"' "$pid_file" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
 
     if [[ -z "$existing_pid" ]] || ! kill -0 "$existing_pid" 2>/dev/null; then
         [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: record exists but pid ${existing_pid} is dead; cleaning up." >&2
+        # Windows: the recorded pid is the cmd/.bat wrapper; even after it exits the
+        # detached native server may still be alive and bound to the port (a POSIX
+        # group-kill never reached it). Reap it by port before dropping the record.
+        _dc_reap_port "$existing_port" "$verbose"
         rm -f "$pid_file" "$log_file"
         echo "aid: dashboard: not running (nothing to stop)."
         exit 0
@@ -1275,22 +1331,37 @@ _dc_stop() {
         fi
     fi
 
-    # Step 5: terminate the process group cleanly.
-    [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: sending SIGTERM to process group ${existing_pid}" >&2
-    kill -TERM -"$existing_pid" 2>/dev/null || true
+    # Step 5: terminate the server.
+    if _dc_is_windows; then
+        # Windows: the recorded pid is the cmd/python3.bat (or node) WRAPPER; the
+        # real server is a detached native python.exe/node.exe child that a POSIX
+        # process-group kill cannot reach. Kill the whole native process tree so
+        # the server does not survive as an orphan still bound to the port.
+        [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: killing native process tree of ${existing_pid}" >&2
+        MSYS_NO_PATHCONV=1 taskkill /F /T /PID "$existing_pid" >/dev/null 2>&1 || true
+    else
+        # POSIX: terminate the process group cleanly (setsid session leader).
+        [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: sending SIGTERM to process group ${existing_pid}" >&2
+        kill -TERM -"$existing_pid" 2>/dev/null || true
 
-    # Wait up to ~5s for exit.
-    local waited=0
-    while kill -0 "$existing_pid" 2>/dev/null && [[ "$waited" -lt 50 ]]; do
-        sleep 0.1
-        waited=$((waited + 1))
-    done
+        # Wait up to ~5s for exit.
+        local waited=0
+        while kill -0 "$existing_pid" 2>/dev/null && [[ "$waited" -lt 50 ]]; do
+            sleep 0.1
+            waited=$((waited + 1))
+        done
 
-    # Escalate to SIGKILL if still alive.
-    if kill -0 "$existing_pid" 2>/dev/null; then
-        [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: escalating to SIGKILL on process group ${existing_pid}" >&2
-        kill -KILL -"$existing_pid" 2>/dev/null || true
+        # Escalate to SIGKILL if still alive.
+        if kill -0 "$existing_pid" 2>/dev/null; then
+            [[ "$verbose" -eq 1 ]] && echo "aid: dashboard: escalating to SIGKILL on process group ${existing_pid}" >&2
+            kill -KILL -"$existing_pid" 2>/dev/null || true
+        fi
     fi
+
+    # Safety net (Windows): if a server is still bound to the recorded port (an
+    # older orphan whose wrapper had already exited, unreachable by the tree-kill
+    # above), reap whatever still listens on that port. No-op on POSIX.
+    _dc_reap_port "$existing_port" "$verbose"
 
     # Step 6: remove record and logfile, print success.
     rm -f "$pid_file" "$log_file"
