@@ -11,7 +11,7 @@
 - Q9 branches: `SKIPPED` -> registry untouched; `DECLARED-EMPTY` -> all connectors removed-and-purged.
 
 **Acceptance Criteria:**
-- [ ] Tests are deterministic with clean setup/teardown over a fixture `.aid/connectors/` tree (+ a fixture host config)
+- [ ] Tests are deterministic with clean setup/teardown over a fixture `.aid/connectors/` tree (no host-config fixture — Q10: reconcile touches no host config)
 - [ ] AC-6 three cases covered (add / change / remove) with preservation of surviving entries and their secrets
 - [ ] Idempotent no-op proven (byte-identical `INDEX.md` on a second run); interrupt re-convergence proven via idempotent purge (no unwire — Q10)
 - [ ] Q9 skip-vs-empty branches covered: `SKIPPED` NO-OP vs `DECLARED-EMPTY` remove-all

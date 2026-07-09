@@ -21,9 +21,9 @@ DERIVED read-only views assembled from this file at read time -- never written d
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
 
-- **State:** Pending
+- **State:** Done
 - **Review:** Pending
-- **Elapsed:** --
+- **Elapsed:** ~15m
 - **Notes:** --
 
 ---
@@ -36,10 +36,8 @@ DERIVED read-only views assembled from this file at read time -- never written d
      [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
      No grade is recorded here -- grading is per-delivery, not per-task. -->
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+- **Reviewer Tier:** Small (orchestrator inline safety-net; graded review deferred to delivery gate)
+- **Findings:** none. New test-reconcile-scenarios.sh (40 assertions, 7 scenarios) scripts the R0-R5 sequence over mktemp fixtures using the real committed ops: ADD/UPDATE/REMOVE (aid-managed purge-before-delete, tool-managed mcp purge = clean no-op), idempotent byte-identical INDEX (sha256), interrupt re-convergence, Q9 SKIPPED (registry untouched, whole-tree sha snapshot) / DECLARED-EMPTY (remove-all -> header-only INDEX). No unwire scenario (Q10). Orchestrator re-ran 40/40; no secret residue after teardown. Also fixed a pre-Q10 leftover in this task's own AC line 14 ("+ a fixture host config").
 
 ---
 
@@ -52,3 +50,4 @@ DERIVED read-only views assembled from this file at read time -- never written d
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-09 | aid-developer | ~10-25m | ~15m | Done -- reconcile scenario tests (40 assertions); no unwire (Q10); byte-identity + purge proofs |
