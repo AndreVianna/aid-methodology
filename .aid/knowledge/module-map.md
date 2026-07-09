@@ -25,6 +25,7 @@ contracts:
   - "14 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
 changelog:
+  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the `connectors/` script area (registry accessor, INDEX builder, secret handler) + its test suites, the ELICIT-to-`.aid/connectors/`/`external-sources.md` wiring line, and `connectors` to the scripts-by-area enumeration.
   - 2026-06-28: Relabeled Phase 2 from "Interview" to "Describe → Define" in module inventory note.
   - 2026-06-28: work-001-aid-interview-improvements -- aid-interview split into aid-describe (2a) + aid-define (2b); added the aid-describe elicitation-engine corpus, greenfield seed-authoring, and the aid-housekeep Conformance Lane sub-module; skill count 13 -> 14.
   - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
@@ -77,7 +78,7 @@ it produces. The modules fall into four planes:
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
 | `canonical/skills/*` (14) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill. Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
 | `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
-| `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, execute, housekeep, interview, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
+| `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, interview, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, recipe template. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
 | `canonical/aid/recipes/*` (52) | Toolkit | Pre-filled lite-path change templates with `{{slot}}` placeholders (add-/change-/fix- families). | `interview/parse-recipe.sh` consumes them | medium | parse coverage | Passthrough-rendered (no frontmatter injection). |
 | `generate-profile` renderer | Render | Python renderer that mirrors `canonical/` into each `profiles/<tool>/` tree under an emission manifest. | `canonical/`, `profiles/*.toml` | large | tested (`test_manifest_safety.py`, `verify_deterministic.py`, `verify_advisory.py`) | Lives at `.claude/skills/generate-profile/scripts/`. |
@@ -121,6 +122,7 @@ canonical/aid/scripts/* (most) -> canonical/aid/scripts/config/read-setting.sh
 canonical/aid/recipes/* -> canonical/aid/scripts/interview/parse-recipe.sh (consumed by)
 canonical/skills/aid-describe -> canonical/skills/aid-define   (REQUIREMENTS.md handoff: Phase 2a -> 2b)
 canonical/skills/aid-housekeep -> canonical/skills/aid-discover/references/agent-prompts.md  (shadow-extract via output_root; Conformance Lane)
+canonical/skills/aid-discover/references/state-elicit.md -> .aid/knowledge/external-sources.md , .aid/connectors/   (ELICIT E1/E2 write targets; reconciled via canonical/aid/scripts/connectors/*)
 
 # Observation plane
 dashboard/server/server.mjs -> dashboard/server/reader.mjs
@@ -150,6 +152,7 @@ grader).
 |------|---------|-------------|---------|
 | (root) | `grade.sh` | every skill REVIEW state | Reads the reviewer ledger, counts findings by severity, emits a grade. |
 | `config/` | `read-setting.sh` | every skill | Resolves a setting from `.aid/settings.yml` (skill-override -> category -> default). |
+| `connectors/` | `connector-registry.sh`/`.ps1`, `build-connectors-index.sh`/`.ps1`, `connector-secret.sh`/`.ps1` | `aid-discover` ELICIT (Step E2 author) + reconcile (Steps R0-R5) | Frontmatter accessor (list/read) for `.aid/connectors/*.md` descriptors, the deterministic `INDEX.md` builder, and the no-echo/path-confined secret write/purge handler for the git-ignored `.secrets/` store. Bash+PowerShell twins throughout. Test coverage: `tests/canonical/test-connector-registry.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh`, `test-connector-twins-ps1-parity.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-reconcile-scenarios.sh`. |
 | `execute/` | `complexity-score.sh`, `compute-block-radius.sh`, `writeback-state.sh` | `aid-execute` | Delivery-complexity scoring, failure block-radius (tasks transitively depending on a failed task), and locked per-unit STATE.md writeback. |
 | `housekeep/` | `branch-commit.sh`, `cleanup-classify.sh`, `housekeep-state.sh` | `aid-housekeep` | Branch/commit helpers, orphan/cleanup classification, housekeep run-state. |
 | `interview/` | `parse-recipe.sh` | `aid-describe` | Parses a recipe file's `{{slot}}` placeholders for the lite path. (Area name predates the skill rename; the script moved consumers from `aid-interview` to `aid-describe`.) |
@@ -329,5 +332,6 @@ their own right.
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
+| 1.2 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the `connectors/` row to Script Modules by Area (registry accessor, INDEX builder, secret handler, Bash+PowerShell twins) + its test-suite list; added `connectors` to the scripts-by-area enumeration in Module Inventory; added the ELICIT `.aid/connectors/`/`external-sources.md` write-target line to the Dependency Graph. |
 | 1.1 | 2026-06-28 | work-001-aid-interview-improvements | Split `aid-interview` into `aid-describe` (2a) + `aid-define` (2b); skill count 13 -> 14; reassigned the `interview/` script area + interviewer agent to `aid-describe`; added the Notable Skill Reference Modules section (elicitation engine, greenfield seed-authoring, Conformance Lane) + the forward-authored design->code invariant. |
 | 1.0 | 2026-06-25 | aid-discover | Initial module map (brownfield deep-dive / Analyst) |

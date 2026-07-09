@@ -19,6 +19,7 @@ intent: |
   (what / why / rejected alternatives / status / evidence), not a restatement of state.
 contracts: []
 changelog:
+  - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added D19: connectors registry is a catalog, not a connection manager)
   - 2026-06-25: Initial discovery (aid-discover — architect deep-dive)
 ---
 
@@ -26,7 +27,7 @@ changelog:
 
 > **Source:** aid-discover (Phase 1)
 > **Status:** Complete
-> **Last Updated:** 2026-06-25
+> **Last Updated:** 2026-07-09
 >
 > Each entry records: **what** was decided, **why**, the **rejected** alternatives (with
 > the reason), **status**, and **evidence**. Decisions grounded in design notes / the
@@ -53,6 +54,7 @@ changelog:
 - [D16 — PowerShell 5.1 compatibility floor](#d16--powershell-51-compatibility-floor)
 - [D17 — Prose over scripts in skill definitions](#d17--prose-over-scripts-in-skill-definitions)
 - [D18 — KB forbids diagrams; the HTML summary embraces them](#d18--kb-forbids-diagrams-the-html-summary-embraces-them)
+- [D19 — Connectors registry: catalog, not connection manager (Q10)](#d19--connectors-registry-catalog-not-connection-manager-q10)
 - [Still Load-Bearing](#still-load-bearing)
 - [Change Log](#change-log)
 
@@ -80,6 +82,7 @@ changelog:
 | D16 | PowerShell 5.1 floor | Accepted | `README.md`; project memory |
 | D17 | Prose over scripts in skills | Accepted | project practice; `tests/run-all.sh` header |
 | D18 | KB no-diagrams; HTML summary yes-diagrams | Accepted | authoring standard; `.aid/design/aid-summarize-redesign.md` |
+| D19 | Connectors registry is a catalog, not a connection manager | Accepted (delivery-002 withdrawn) | `canonical/aid/templates/connectors/preset-catalog.md`; `canonical/skills/aid-discover/references/state-elicit.md` |
 
 ---
 
@@ -308,6 +311,32 @@ changelog:
   standard (this discovery's brief) and `.aid/design/aid-summarize-redesign.md`.
 - **Status:** Accepted (summary redesign superseded the Mermaid approach).
 
+## D19 — Connectors registry: catalog, not connection manager (Q10)
+
+- **What:** The `.aid/connectors/` registry is a **CATALOG** — it lists the connections
+  available to a repo's agents and how to use them. It is not a connection manager and does not
+  wire any host tool's configuration. Two modes are derived from each descriptor's
+  `connection_type`: **tool-managed** (`mcp`) — the host tool (Claude Code, Codex, Cursor, …)
+  already provides its own MCP/plugin for the target, so AID forces `auth_method: none`, writes
+  no `secret_reference`, and instructs the agent to request the connection from the host tool
+  itself; **aid-managed** (`api | ssh | url | cli`) — a direct connection the host tool does not
+  provide, where AID records a connect-sufficient descriptor plus a local, git-ignored credential
+  the agent resolves at use-time via `secret_reference` (`env:` / `file:` / `keychain:`).
+- **Why:** Host tools already own their own MCP servers and auth for what they provide; AID
+  recording and wiring a second, competing credential/config for the same target would duplicate
+  and conflict with the host's own connection. AID should record only what it itself manages and
+  instruct the agent to request the rest from the host.
+- **Rejected:** The original design where AID actively manages and wires *all* connections,
+  including writing host MCP configs into each host tool — rejected because it duplicates
+  host-tool-owned auth/config and requires AID to track host-specific MCP wiring formats it does
+  not control. As a direct consequence, delivery-002 (MCP host wiring) was **withdrawn**.
+- **Status:** Accepted (delivery-002 withdrawn as a consequence). CONFIRMED
+  `canonical/aid/templates/connectors/preset-catalog.md` (search: "Management mode (STATE.md
+  Q10"), `canonical/skills/aid-discover/references/state-elicit.md` (search: "Q10: AID writes,
+  wires, and manages no host tool's MCP configuration"), and the connector scripts under
+  `canonical/aid/scripts/connectors/` (`connector-registry.sh`, `connector-secret.sh`,
+  `build-connectors-index.sh`).
+
 ---
 
 ## Still Load-Bearing
@@ -336,3 +365,4 @@ in the summary (by D18).
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial decision record — 18 load-bearing decisions with rationale, rejected alternatives, status, and evidence. |
+| 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added D19 (connectors registry is a catalog, not a connection manager; delivery-002 MCP host wiring withdrawn as a consequence). |

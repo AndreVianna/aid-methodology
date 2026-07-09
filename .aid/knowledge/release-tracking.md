@@ -23,7 +23,8 @@ audience: [developer, devops, product]
 
 ## Unreleased
 
-_Nothing yet._
+- [NEW] **External connections & tool integrations (connector catalog)** — `/aid-discover` gains an **ELICIT** state that captures a repo's external documentation sources and tool integrations into a `.aid/connectors/` catalog (descriptor files + a generated `INDEX.md`). The registry is a *catalog*, not a connection manager: `mcp` connections are **tool-managed** (the host tool provides the MCP/plugin and handles auth — AID stores no credential and wires nothing), while `api`/`ssh`/`url`/`cli` connections are **aid-managed** (AID records a descriptor + a local, git-ignored credential the agent resolves at use-time via `secret_reference` — `env:`/`file:`/`keychain:`). Ships bash+PowerShell script twins (`connector-registry`, `build-connectors-index`, `connector-secret`), a preset catalog, a `## Connectors` context-file section, an installer managed-region allowlist, and a `.gitguardian.yaml` secret-scan config. AID does not wire host MCP configs (that delivery was withdrawn). (work-002, PR #133)
+- [CHANGE] Delivery-folder layout rationalized — the full path nests delivery folders under `deliveries/` (`deliveries/delivery-NNN/`); the lite path drops the `delivery-001/` folder entirely (tasks live at `tasks/task-NNN/`, and the sole delivery's `## Delivery Lifecycle` + `## Delivery Gate` + `## Cross-phase Q&A` are authored in the work-root `STATE.md`). The dashboard reader twins detect both the old flat and the new layouts. (PR #132, branch `change-delivery`)
 
 ## v2.0.6 - 2026-07-07
 
@@ -139,3 +140,4 @@ _Nothing yet._
 | 1.0 | 2026-06-25 | Restored into the domain-driven KB as a first-class `extension` doc (frontmatter conformed to the authoring standard: objective/summary/sources/tags/see_also/owner/audience). Release-ledger content preserved verbatim from the prior hand-authored KB; resolves the dangling `infrastructure.md` reference. Prior per-edit history is in git. |
 | 1.1 | 2026-06-28 | Added 4 Unreleased entries for work-aid-interview-improvements: aid-describe/aid-define split (13->14 skills), seasoned-analyst elicitation engine, greenfield seed authoring, and the aid-housekeep Conformance Lane. |
 | 1.2 | 2026-07-07 | Added the v2.0.6 section (work-013/014/015: term-exclusions -> settings.yml + adopter migration, temp-file hygiene, build-metrics dot-guard) and backfilled the v2.0.1-v2.0.5 patch entries that had shipped as GitHub release notes only, restoring the ledger's every-release contract. |
+| 1.3 | 2026-07-09 | Added two Unreleased entries (post-v2.0.6, merged to master): the work-002 connectors subsystem / connector catalog (PR #133) and the delivery-folder layout relocation (PR #132). Recorded by /aid-housekeep KB-DELTA. |

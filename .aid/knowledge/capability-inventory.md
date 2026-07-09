@@ -53,7 +53,7 @@ Execute state, and Track/Triage are the optional `/aid-monitor` skill's role.)
 | Capability | Skill | What it does for the user |
 |------------|-------|---------------------------|
 | Configure the pipeline | `/aid-config` | View or set project settings; scaffolds `.aid/settings.yml` and the KB state file. |
-| Discover an existing project | `/aid-discover` | Analyzes a repository and builds the Knowledge Base, with a built-in review→Q&A→fix→approval gate. |
+| Discover an existing project | `/aid-discover` | Analyzes a repository and builds the Knowledge Base, with a built-in review→Q&A→fix→approval gate. Its **ELICIT** state also captures external documentation sources and tool integrations (the connector catalog — see [External connections & tool integrations](#external-connections--tool-integrations-connector-catalog)). |
 | Gather requirements | `/aid-describe` (Phase 2a) | Adaptive one-question-at-a-time interview driven by the seasoned-analyst elicitation engine, producing `REQUIREMENTS.md`; triages full vs. lite path, and (greenfield) forward-authors a KB seed. See [Requirements-gathering capabilities](#requirements-gathering-capabilities-deep-dive) below. |
 | Decompose into features | `/aid-define` (Phase 2b) | Decomposes the approved `REQUIREMENTS.md` into discrete feature folders with `SPEC.md` stubs, then cross-references the requirements and feature boundaries against the KB and codebase. |
 | Specify a feature | `/aid-specify` | Collaboratively writes a technical `SPEC.md`, one feature at a time. |
@@ -154,14 +154,36 @@ install profiles, so a user on any of these tools gets the identical methodology
 The render-and-distribute architecture (canonical → profiles → packages) is described in
 `architecture.md`; the build mechanics in `module-map.md`.
 
+## External connections & tool integrations (connector catalog)
+
+AID keeps a **catalog** of the external connections available to a repo's agents — it is a
+listing, not a connection manager. It records *what* is reachable and *how to use it*, so an
+agent knows which sources and tool integrations exist and how to invoke each. The catalog lives
+in `.aid/connectors/` (descriptor files + a generated `INDEX.md` + a git-ignored `.secrets/`),
+is populated during `/aid-discover`'s **ELICIT** state, and is reconciled (add / update /
+remove) on re-discovery.
+
+Each connection is one of two modes, derived from its `connection_type`:
+
+| Mode | connection_type | Auth & consumption |
+|------|-----------------|--------------------|
+| tool-managed | `mcp` | The host tool (Claude Code, Codex, Cursor, …) already provides an MCP/plugin for the target; the agent **requests it from the host tool**, which handles auth. AID stores no credential and wires nothing. |
+| aid-managed | `api` / `ssh` / `url` / `cli` | A connection the host tool does not provide (e.g. a REST API when no MCP exists). AID records a connect-sufficient descriptor + a **local, git-ignored** credential the agent resolves at use-time via `secret_reference` (`env:` / `file:` / `keychain:`). |
+
+Agents read the catalog via `.aid/connectors/INDEX.md`; the `connector-registry` /
+`build-connectors-index` / `connector-secret` script twins under
+`canonical/aid/scripts/connectors/` back it. AID does **not** wire host MCP configs (the
+MCP-host-wiring delivery was withdrawn).
+
 ## Where each capability lives (parts it touches)
 
 Each capability maps to the parts that implement it (full anatomy in `module-map.md`):
 
 | Capability group | Parts / modules it touches |
 |------------------|----------------------------|
-| Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `kb/`, `execute/`, `release/`, `summarize/`, `interview/`, `housekeep/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
+| Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `kb/`, `execute/`, `release/`, `summarize/`, `interview/`, `housekeep/`, `connectors/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
 | Requirements-gathering deep dive | `/aid-describe`'s `references/` engine corpus (`elicitation-engine.md`, `move-playbook.md`, `calibration.md`, `advisor-stance.md`, `coherence-check.md`, `state-describe-seed.md`) + the `aid-housekeep` Conformance Lane. See module-map.md "aid-describe elicitation engine" + "Conformance Lane". |
+| External connections & tool integrations | `.aid/connectors/` (descriptors + generated `INDEX.md` + git-ignored `.secrets/`), populated by `/aid-discover` ELICIT; backed by `canonical/aid/scripts/connectors/` (`connector-registry`, `build-connectors-index`, `connector-secret` bash+PowerShell twins) and the `canonical/aid/templates/connectors/preset-catalog.md` presets. See module-map.md "connectors". |
 | CLI installer (install/update/remove) | `bin/` entry point + `lib/aid-install-core.sh`; `install.sh` / `install.ps1`; the 5 install manifests. See module-map.md "distribution plane". |
 | Dashboard | `dashboard/server/` (multi-repo server) + `dashboard/reader/` (STATE.md parser). See module-map.md "observation plane". |
 | Multi-tool distribution | `canonical/` → `profiles/*` rendered by the `generate-profile` skill (`run_generator.py`) → `packages/npm` + `packages/pypi`. See module-map.md "render plane". |
@@ -186,3 +208,4 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 | 1.0 | 2026-06-25 | Initial generation during /aid-discover (domain hybrid:methodology-tooling+software-cli). |
 | 1.1 | 2026-06-28 | work-001-aid-interview-improvements: split `/aid-interview` into `/aid-describe` (2a) + `/aid-define` (2b); added seasoned-analyst elicitation engine (NFR-7), greenfield forward-authored KB seed, and build-conformance-check capabilities; skill count 13 → 14 (10 pipeline + 4 on-demand). |
 | 1.2 | 2026-06-28 | Relabeled Phase 2 from "Interview" to "Describe → Define"; pipeline sequence updated to Describe/Define (2a/2b). |
+| 1.3 | 2026-07-09 | work-002 connectors subsystem (PR #133): added the "External connections & tool integrations (connector catalog)" capability, the `connectors/` script area, the connector-catalog capability-lives row, and the `/aid-discover` ELICIT external-source/tool-integration capture. Refreshed by /aid-housekeep KB-DELTA. |

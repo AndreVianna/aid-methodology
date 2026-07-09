@@ -2,7 +2,7 @@
 kb-category: primary
 source: hand-authored
 objective: AID's project-specific vocabulary — the load-bearing native concepts (Concept Spine) and the supporting lexicon, defined as THIS project uses them.
-summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, dashboard, install, and authoring terms. Definitions are project-specific, not generic.
+summary: Read this to use AID's own words correctly. The spine holds the concepts the methodology is built on (Canonical, Profile, Work, Delivery, Task, Execution Graph, Knowledge Base, Connector Registry, Emission Manifest, AID_HOME, …); the lexicon disambiguates run-state, dashboard, install, connectors, and authoring terms. Definitions are project-specific, not generic.
 sources:
   - docs/aid-methodology.md
   - docs/glossary.md
@@ -11,6 +11,8 @@ sources:
   - canonical/skills/aid-describe/references/state-triage.md
   - canonical/skills/aid-describe/references/elicitation-engine.md
   - canonical/skills/aid-describe/references/state-describe-seed.md
+  - canonical/skills/aid-discover/references/state-elicit.md
+  - canonical/aid/templates/connectors/preset-catalog.md
   - bin/aid
   - dashboard/reader/models.py
   - .claude/skills/generate-profile/scripts/render.py
@@ -23,6 +25,7 @@ intent: |
   particular in AID; the canonical reference for naming. Concept Spine + supporting lexicon.
 contracts: []
 changelog:
+  - 2026-07-09: Connectors subsystem refresh (housekeep KB-DELTA) — added the Connector Registry spine concept, the Lexicon — Connectors section, broadened MCP, corrected the KB seed count 14 -> 15, corrected PR #132 provenance.
   - 2026-06-27: aid-describe/aid-define split — rekeyed Triage to /aid-describe; added Seasoned-Analyst Engine, Describe / Define, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias / greenfield seed keystone)
   - 2026-06-25: Initial generation (aid-discover brownfield deep-dive / Integrator owns the concept spine)
 ---
@@ -31,7 +34,7 @@ changelog:
 
 > **Source:** aid-discover (brownfield deep-dive — Integrator owns the Concept Spine)
 > **Status:** Complete
-> **Last Updated:** 2026-06-27
+> **Last Updated:** 2026-07-09
 
 AID's "domain" is software-development methodology and its installer tooling. This glossary
 documents what AID's own words mean *in this project* — not their generic industry sense. An
@@ -49,6 +52,7 @@ accounting for every harvested candidate concept lives in
 - [Lexicon — Install and CLI](#lexicon--install-and-cli)
 - [Lexicon — Build, Render and Install Mechanics](#lexicon--build-render-and-install-mechanics)
 - [Lexicon — KB Authoring](#lexicon--kb-authoring)
+- [Lexicon — Connectors](#lexicon--connectors)
 - [Lexicon — UI Components and Identity](#lexicon--ui-components-and-identity)
 - [Abbreviations and Acronyms](#abbreviations--acronyms)
 - [Terms with Specific Domain Meanings](#terms-with-specific-domain-meanings)
@@ -159,15 +163,45 @@ tasks with no unmet dependencies), Max Concurrent (pool capacity bounding a wave
 **Definition-as-used-here:** The `.aid/knowledge/` collection of structured markdown documents
 that holds the living understanding of a project — the gravitational center of AID (not the
 spec, not the code). Default seed of 14 standard documents plus meta-documents (INDEX, README,
-STATE); the set is configurable per project via `discovery.doc_set`. Every phase reads it; any
+STATE); the seed's template set is 15 files (the 14 standard docs + the `README` meta doc),
+configurable per project via `discovery.doc_set`. Every phase reads it; any
 phase can trigger a targeted update to it.
 
 **Relates-to:** Canonical (KB templates ship from canonical), Concept Spine (a section of
-`domain-glossary.md`), Declared Doc-Set (the configurable document set).
+`domain-glossary.md`), Declared Doc-Set (the configurable document set), Connector Registry (a
+sibling `.aid/` registry that is deliberately outside the KB proper).
 
 **sources:**
 - `docs/aid-methodology.md` ("## 3. The Knowledge Base")
 - `docs/glossary.md` ("Knowledge Base (KB)")
+- `canonical/aid/templates/knowledge-base/*.md` — 15 files (the confirmed default seed count)
+
+### Connector Registry
+
+**Aliases:** Connector, Connectors, `.aid/connectors/`
+
+**Definition-as-used-here:** The catalog of external tools/integrations a project's agents may
+reach, held at `.aid/connectors/` as one `<stem>.md` descriptor per connector plus a generated
+`INDEX.md`. It is deliberately a **catalog, not a connection manager**: it records what an agent
+can use and how, but AID never wires a host tool's own configuration. Populated and reconciled by
+`aid-discover`'s ELICIT state (Step E2) each discovery cycle. Each descriptor's `connection_type`
+field routes it into exactly one of two management modes: **tool-managed** (`mcp` — the host tool
+provides its own MCP server/plugin and handles auth; AID stores no credential and wires nothing)
+or **aid-managed** (`api | ssh | url | cli` — AID records a `secret_reference` resolved at
+use-time). It lives outside `.aid/knowledge/` and is not graded by REVIEW nor scanned by
+`kb-citation-lint`.
+
+**Relates-to:** Knowledge Base (the sibling `.aid/` registry it is deliberately distinct from),
+Preset (pre-fills a descriptor's fields), `secret_reference` (the aid-managed credential
+pointer), MCP (the tool-managed `connection_type` value).
+
+**sources:**
+- `.aid/knowledge/STATE.md` (Q7 — "the registry is a **catalog** (lists what agents can use +
+  how), NOT a connection manager (Q10)")
+- `canonical/skills/aid-discover/references/state-elicit.md` ("Step E2: Tool INTEGRATIONS
+  branch", "There is no wiring step — AID neither writes nor triggers any host MCP configuration")
+- `.aid/connectors/INDEX.md` — the generated registry index (frontmatter "Routing table for the
+  tool/integration registry under .aid/connectors/")
 
 ### Concept Spine
 
@@ -659,6 +693,19 @@ lives).
 
 ---
 
+## Lexicon — Connectors
+
+> Vocabulary for the `.aid/connectors/` catalog. See the Connector Registry spine entry above
+> and [integration-map.md](integration-map.md) for the full integration picture.
+
+| Term | Meaning here | Source |
+|------|--------------|--------|
+| Preset / Preset-Catalog | A curated default row in `canonical/aid/templates/connectors/preset-catalog.md` that pre-fills a connector descriptor's fields (`name`, `connection_type`, `endpoint`, `auth_method`, `secret_reference-form`) for a known tool (`github`, `gitlab`, `jira`, `slack`, `confluence`, `notion`, `jenkins`, `docker`); the user confirms/adjusts and supplies instance specifics. A tool not in the catalog is declared `custom` | `canonical/aid/templates/connectors/preset-catalog.md` ("## Presets") |
+| Tool-managed / Aid-managed | The two connector management modes, derived from `connection_type` (STATE.md Q10): **tool-managed** (`mcp`) — the host tool provides its own MCP server/plugin and handles auth, AID stores no credential and wires nothing; **aid-managed** (`api \| ssh \| url \| cli`) — AID records a `secret_reference` resolved at use-time | `canonical/aid/templates/connectors/preset-catalog.md` ("Management mode (STATE.md Q10 — derived from `connection_type`)") |
+| secret_reference | The aid-managed connector's credential pointer — never a value: `env:<VAR>` \| `file:.aid/connectors/.secrets/<stem>` \| `keychain:<name>`, resolved at use-time. A tool-managed (`mcp`) descriptor carries no `secret_reference` field | `canonical/skills/aid-discover/references/state-elicit.md` ("Secret capture is aid-managed-only (Q10)") |
+
+---
+
 ## Lexicon — UI Components and Identity
 
 | Term | Meaning here | Source |
@@ -681,7 +728,7 @@ lives).
 | KB | Knowledge Base | `.aid/knowledge/` |
 | CR | Change Request | Monitor classification (vs BUG) |
 | SDD | Spec-Driven Development | the methodology AID extends |
-| MCP | Model Context Protocol | Playwright MCP for visual validation |
+| MCP | Model Context Protocol | Playwright MCP for visual validation; also the `mcp` connector `connection_type` — a tool-managed connection the host tool provides and authenticates (Lexicon — Connectors) |
 | CLI | Command-Line Interface | the persistent `aid` command |
 | CI/CD | Continuous Integration / Delivery | the four GitHub Actions workflows |
 | MVP | Minimum Viable Product | each Delivery is an MVP |
@@ -743,4 +790,5 @@ lives).
 | 1.1 | 2026-06-25 | aid-discover (closure 5b) | Closure loop: promoted 9 load-bearing concepts to spine headings (Grade, Triage, Lite Path, Feedback Loop, Dashboard, Pipeline State, Task Status, Delivery Gate, Candidate Concepts) and added synonym Aliases on 7 existing concepts so the self-containment oracle resolves every used term |
 | 1.2 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed Triage to `/aid-describe` (engine-driven 5-signal gap inventory); added Describe / Define, Seasoned-Analyst Engine, NFR-7 Suggested-Answer + Rationale, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias + greenfield seed keystone); added `source`/`Seed Authoring` lexicon rows, NFR-7 acronym, forward-authored/conformance domain terms, and two greenfield invariants |
 | 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define": updated Work definition, Describe/Define entry, source citation, and the One-Work-per invariant. |
-| 1.4 | 2026-07-08 | work-001-add-deliveries-folder task-001 | Fixed stale Delivery/Task/Delivery Gate source citations and lexicon rows to reflect the nested `deliveries/delivery-NNN/` full-path folder and the lite-path's `delivery-NNN/`-folder-free layout (gate/Q&A authored directly in the work-root STATE.md). |
+| 1.4 | 2026-07-08 | PR #132 (branch `change-delivery`) | Fixed stale Delivery/Task/Delivery Gate source citations and lexicon rows to reflect the nested `deliveries/delivery-NNN/` full-path folder and the lite-path's `delivery-NNN/`-folder-free layout (gate/Q&A authored directly in the work-root STATE.md). |
+| 1.5 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the Connector Registry spine concept and the Lexicon — Connectors section (Preset/Preset-Catalog, tool-managed/aid-managed, `secret_reference`); broadened the MCP acronym entry beyond Playwright; clarified the KB seed accounting (14 standard docs; the seed ships 15 template files incl. the README meta doc); corrected the 1.4 provenance to PR #132. |

@@ -22,6 +22,7 @@ contracts:
   - "Reviewer ledger is a 7-column table; Severity + Status are closed enums"
   - "Required frontmatter fields: objective, summary, sources (lint-graded)"
 changelog:
+  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the `forward-authored` value to the frontmatter `source:` rule (closed 3-value enum).
   - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
 ---
 
@@ -90,7 +91,7 @@ generator-written.
 | Field | Class | Rule |
 |-------|-------|------|
 | `kb-category:` | required | `primary` \| `meta` \| `extension` -- picks the review rubric. |
-| `source:` | required | `hand-authored` \| `generated` (then `generator:` is required). |
+| `source:` | required | `hand-authored` \| `forward-authored` (greenfield KB seed, design-authoritative) \| `generated` (then `generator:` is required). |
 | `objective:` | required (hand-authored) | one-line noun-phrase purpose; single physical line. |
 | `summary:` | required (hand-authored) | one-sentence scope; single physical line. |
 | `sources:` | required (hand-authored) | YAML list of paths/globs/URLs; `sources: []` for a pure-synthesis doc (absence is a lint error). |
@@ -333,4 +334,5 @@ rubric in `kb-authoring/review-rubric.md`.
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
+| 1.1 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: the frontmatter `source:` rule (Frontmatter Rules) now lists the closed 3-value enum `hand-authored \| forward-authored \| generated`, matching artifact-schemas.md's inline contract. Verified the 15-doc default seed figure already stated under Concern Model is correct (no change needed there). |
 | 1.0 | 2026-06-25 | aid-discover | Initial authoring-conventions doc (Analyst) |

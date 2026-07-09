@@ -47,8 +47,8 @@ changelog:
 
 | Property | Value |
 |----------|-------|
-| **Root directory** | `/home/andre.vianna/projects/AID` |
-| **Project version** | `1.1.1` (see `VERSION`) |
+| **Root directory** | the local checkout root (machine-specific path; not a stable fact) |
+| **Project version** | see `VERSION` (single canonical string; kept in sync across `packages/` and `.aid/.aid-version`) |
 | **Primary language(s)** | Markdown, Shell, Python, JavaScript, PowerShell (most-used first) |
 | **Build / package systems** | npm (`packages/npm/package.json`), PyPI (`packages/pypi/pyproject.toml`), Astro (`site/package.json`) |
 | **License** | MIT (`LICENSE`) |
@@ -74,9 +74,9 @@ The repository has two faces, and understanding the split is the key to navigati
    use AID to build AID. This lives in `.claude/` (the rendered claude-code profile) and
    `.aid/` (pipeline state, work tracking, and the Knowledge Base you are reading).
 
-CONFIRMED. The dual nature is stated in `README.md` ("12-skill pipeline · 9 specialized
-agents · 5 AI tools") and confirmed by the `canonical/` -> `profiles/` -> `packages/`
-layout plus the dogfood `.claude/` install. See [Unusual Structure Notes](#unusual-structure-notes).
+CONFIRMED. The dual nature is stated in `README.md` (a multi-skill pipeline across 9
+specialized agents and 5 AI tools) and confirmed by the `canonical/` -> `profiles/` ->
+`packages/` layout plus the dogfood `.claude/` install. See [Unusual Structure Notes](#unusual-structure-notes).
 
 ---
 
@@ -91,7 +91,7 @@ AID/
 ├── install.sh                # Bash bootstrap installer (curl | bash)
 ├── install.ps1               # PowerShell bootstrap installer (irm | iex)
 ├── release.sh                # maintainer release-packaging runbook script
-├── VERSION                   # single-line version string (1.1.1)
+├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
 │   ├── skills/               # skill definitions (aid-config, aid-discover, ...)
 │   ├── agents/               # agent role definitions (AGENT.md + README.md each)
@@ -132,6 +132,7 @@ AID/
     ├── knowledge/            # the Knowledge Base (KB docs + INDEX + STATE)
     ├── work-001-*/  work-002-*/  # tracked works (pipeline state per work)
     ├── generated/            # discovery scratch (project-index, candidate-concepts)
+    ├── connectors/           # connector catalog: descriptors + INDEX.md + git-ignored .secrets/
     ├── design/               # design notes for in-flight features
     ├── dashboard/            # generated dashboard artifacts (kb.html)
     └── settings.yml          # AID pipeline configuration (single source of truth)
@@ -319,3 +320,4 @@ These are intentional or notable layout traits a newcomer will trip over:
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial pre-scan inventory (Scout) |
 | 1.1 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in Unusual Structure Notes (aid-interview split into aid-describe + aid-define). |
+| 1.2 | 2026-07-09 | aid-housekeep | De-hardcoded the version in prose/tree (point at `VERSION`, kb-authoring P1); de-pinned the machine-specific root path; paraphrased the stale "12-skill" README quote; added `.aid/connectors/` to the `.aid/` tree. Connectors + release-drift refresh (housekeep KB-DELTA). |
