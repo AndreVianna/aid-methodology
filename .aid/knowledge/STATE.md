@@ -16,7 +16,7 @@ audience: [developer, architect]
 > **Current Grade:** A+
 > **User Approved:** yes
 > **Last KB Review:** 2026-07-09
-> **Last Summary:** 2026-06-28
+> **Last Summary:** 2026-07-09
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
 
@@ -88,10 +88,10 @@ This is the single state file for the **Discovery area** — persistent project 
 | Profile Confidence | high |
 | Theme | default |
 | Machine Grade | A+ (grade-summary AUTO_POOL 68/68) |
-| Human Grade | A+ (V1 visual gate PASS -- Playwright-rendered + screenshot-validated; validate-visuals 4/4 T1-T4 clear; contrast both themes PASS) |
-| User Approved | yes (2026-06-28; orchestrator-validated during the doc-reconcile PR) |
-| Last Run | 2026-06-28 |
-| Output | .aid/dashboard/kb.html (198882 bytes, 4172 lines, 21 sections) |
+| Human Grade | A+ (K1 10/10, K2 15/15, V1 5/5; V1 orchestrator visual gate via Playwright — hero/glossary/pipeline-SVG render clean in light+dark, theme toggle + lightbox open/Esc verified) |
+| User Approved | yes (2026-07-09; /aid-housekeep SUMMARY-DELTA, orchestrator V1 visual gate) |
+| Last Run | 2026-07-09 |
+| Output | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) |
 | Mermaid Version | — (retired in D-012; pre-rendered inline SVG only) |
 | Mermaid Cached | — |
 
@@ -99,8 +99,8 @@ This is the single state file for the **Discovery area** — persistent project 
 **Doc-Set Count:** 19 of 19
 **Domain:** hybrid:methodology-tooling+software-cli
 **Domain Source:** .aid/knowledge/STATE.md ## Discovery Domain
-**Overall Grade:** A+ (Machine) — Human pending
-**Writeback Status:** pending (orchestrator does WRITEBACK)
+**Overall Grade:** A+ (Machine A+ / Human A+)
+**Writeback Status:** ok (2026-07-09; /aid-housekeep SUMMARY-DELTA)
 **Minimum Grade:** A+
 **Visual-Gate Note:** validate-visuals.mjs SKIPPED (Playwright not installed in the summarize package); V1 visual gate must be run by the orchestrator. 4 inline-SVG diagrams pre-rendered.
 
@@ -222,6 +222,7 @@ This is the single state file for the **Discovery area** — persistent project 
 
 | 2 | 2026-06-25 | A+ | hybrid:methodology-tooling+software-cli | 18 of 18 docs | kb.html (177780 bytes) | Initial generation (domain-driven 18-doc KB; Machine A+/Human A+; V1 Playwright-validated) |
 | 3 | 2026-06-28 | A+ (Machine) | hybrid:methodology-tooling+software-cli | 19 of 19 docs | kb.html (198882 bytes, 4172 lines, 21 sections) | Forced KB-refresh: aid-interview split to aid-describe/aid-define; 14 skills (was 13); seasoned-analyst engine + greenfield seed + conformance check added. Machine A+ 68/68; Human pending orchestrator. |
+| 4 | 2026-07-09 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) | /aid-housekeep SUMMARY-DELTA: surgical refresh of the existing summary for the work-002 connectors subsystem + release drift — version 2.0.0->2.0.6, test count 82->105, new Connector Registry glossary card + integration-map connectors row + lede clause. Machine A+ 68/68; Human A+ 30/30 (V1 orchestrator visual gate via Playwright — light+dark + lightbox verified). |
 
 ## Calibration Log
 
