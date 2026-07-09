@@ -1,7 +1,7 @@
 # Work State -- work-002-external_sources
 
-> **State:** Detailing
-> **Phase:** Detail
+> **State:** Executed (all deliveries A+ / withdrawn; Execute phase complete)
+> **Phase:** Execute
 > **Minimum Grade:** A
 > **Started:** 2026-07-07
 > **User Approved:** yes
@@ -28,10 +28,11 @@ different places.
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Running
-- **Phase:** Specify
+- **Lifecycle:** Paused-Awaiting-Input
+- **Phase:** Execute
 - **Active Skill:** none
-- **Updated:** 2026-07-09T00:27:35Z
+- **Updated:** 2026-07-09T03:41:25Z
+- **Pause Reason:** work-002 fully executed & gated A+ (delivery-001 A+, delivery-002 withdrawn [Q10], delivery-003 A+; Q10 correction A+). Execute phase complete. Optional next: /aid-deploy (PR work-002 -> master).
 
 ---
 
@@ -87,6 +88,8 @@ different places.
 | 2026-07-08 | Detail → DONE (aid-detail) | A+ | All 19 tasks seeded (State: Pending); delivery Tasks tables backfilled; paused for /aid-execute |
 | 2026-07-08 | Execute delivery-001 (aid-execute) | A+ | 12 tasks Done (Wave1 ‖ 7, Wave2 4, Wave3 1); single-branch serial+parallel dispatch; consolidation render→5 profiles + dogfood sync (byte-identity 587/587); Large-tier gate A+ in 3 cycles (5 findings all Fixed: 2 MED + 1 LOW + 2 MINOR) |
 | 2026-07-09 | Q10 reframe correction (aid-execute loopback) | A+ | User-directed "catalog, not manager" reframe caught mid-delivery-002 (task-015): AID does NOT wire/manage host MCP configs; mcp=tool-managed (ask the host tool), api/ssh/url/cli=aid-managed (descriptor + local cred). De-wired REQUIREMENTS + 5 feature specs (004 rewritten) + PLAN + delivery-001/003 SPECs; WITHDREW delivery-002 (5 tasks + orphaned artifacts removed); corrected shipped delivery-001 code (ELICIT E2 mode-branch, preset-catalog github, principles P7, INDEX builder, 6 context files) + re-render + dogfood sync (byte-identity 587/587). Spec-coherence review (6 residuals fixed) + Q10 gate A+ in 4 cycles (6 findings all Fixed: 1 CRIT + 3 HIGH + 2 LOW). Supersedes Q1/Q8, amends Q9. |
+| 2026-07-09 | Execute delivery-003 (aid-execute) | A+ | 2 tasks Done (task-018 reconcile R0-R5 inline in state-elicit.md; task-019 49-assertion scenario suite); Q10-clean (REMOVE = purge aid-managed + delete, no unwire); consolidation render→5 profiles + dogfood sync (byte-identity 587/587); Small-tier gate A+ in 2 cycles (1 LOW: vacuous RS06 SKIPPED test rebuilt to a falsifiable R0-branch test). |
+| 2026-07-09 | **Execute → DONE — WORK-002 COMPLETE** | A+ | All deliveries resolved: delivery-001 A+, delivery-002 WITHDRAWN (Q10), delivery-003 A+. Execute phase complete; optional /aid-deploy next. |
 
 ---
 
