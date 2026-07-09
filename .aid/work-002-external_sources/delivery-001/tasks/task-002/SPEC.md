@@ -7,7 +7,7 @@
 **Depends on:** -- (none)
 
 **Scope:**
-- Edit `canonical/aid/templates/kb-authoring/principles.md` P7 to add a second, narrowly-scoped exemption: the P7-exempt connector sub-phase (feature-002's `ELICIT` state) may write ONLY within (1) `.aid/connectors/` (the registry `INDEX.md` + descriptors + `.secrets/` + the connectors-local `.gitignore`) and (2) the per-host MCP-config paths (feature-004, installed hosts only).
+- Edit `canonical/aid/templates/kb-authoring/principles.md` P7 to add a second, narrowly-scoped exemption: the P7-exempt connector sub-phase (feature-002's `ELICIT` state) may write ONLY within `.aid/connectors/` (the registry `INDEX.md` + descriptors + `.secrets/` + the connectors-local `.gitignore`). (Q10: no host-MCP-config write target — AID catalogs connections but wires nothing.)
 - Prose edit only — there is no script write-scope guard to relax (`canonical/aid/scripts/kb/discover-preflight.sh` checks only STATE.md presence + Plan Mode — KI-009).
 - Regenerate the 5 profiles so the rendered `principles.md` copies carry the exemption.
 

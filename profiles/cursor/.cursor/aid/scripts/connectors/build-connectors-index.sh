@@ -26,8 +26,8 @@
 #     so two runs over an identical descriptor set are byte-identical. That
 #     property is what feature-006's reconcile idempotence relies on.
 #
-# Triggered by feature-002 (author), feature-004 (wire), and feature-006
-# (reconcile) after any descriptor add/update/remove; this script only builds
+# Triggered by feature-002 (author) and feature-006 (reconcile) after any
+# descriptor add/update/remove; this script only builds
 # the index, it does not decide when to run.
 #
 # Usage:
@@ -179,7 +179,7 @@ generator: build-connectors-index
 intent: |
   Routing table for the tool/integration registry under .aid/connectors/,
   regenerated from connector descriptor frontmatter after any
-  add/update/remove/wire (feature-002 author, feature-004 wire, feature-006
+  add/update/remove (feature-002 author, feature-006
   reconcile trigger this builder; feature-005 owns it). An agent reaches this
   file via the "## Connectors" context-file pointer, then opens the specific
   descriptor.

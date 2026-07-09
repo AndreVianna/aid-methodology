@@ -17,9 +17,8 @@
     byte-identical INDEX.md -- the property feature-006's reconcile
     idempotence relies on. Behavior-equal to build-connectors-index.sh.
 
-    Triggered by feature-002 (author), feature-004 (wire), and feature-006
-    (reconcile) after any descriptor add/update/remove; this script only
-    builds the index.
+    Triggered by feature-002 (author) and feature-006 (reconcile) after any
+    descriptor add/update/remove; this script only builds the index.
 
     Zero descriptors (including a -Root that does not exist yet) is NOT an
     error: writes a header-only INDEX.md (frontmatter + table header, zero
@@ -185,7 +184,7 @@ $outLines.Add('generator: build-connectors-index')
 $outLines.Add('intent: |')
 $outLines.Add('  Routing table for the tool/integration registry under .aid/connectors/,')
 $outLines.Add('  regenerated from connector descriptor frontmatter after any')
-$outLines.Add('  add/update/remove/wire (feature-002 author, feature-004 wire, feature-006')
+$outLines.Add('  add/update/remove (feature-002 author, feature-006')
 $outLines.Add('  reconcile trigger this builder; feature-005 owns it). An agent reaches this')
 $outLines.Add('  file via the "## Connectors" context-file pointer, then opens the specific')
 $outLines.Add('  descriptor.')

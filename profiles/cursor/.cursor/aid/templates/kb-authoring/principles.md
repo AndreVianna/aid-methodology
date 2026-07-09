@@ -216,12 +216,10 @@ touch KB doc content liberally because the act of migration is structural, not c
 
 Exception (connector sub-phase): the P7-exempt connector sub-phase of `/aid-discover` —
 feature-002's `ELICIT` state, which restores external-source and external-tool elicitation —
-is a declared, narrowly-scoped write exemption. It may write ONLY to:
-
-- `.aid/connectors/` — the connectors registry: `INDEX.md`, the `<connector>.md` descriptors,
-  the git-ignored `.secrets/` value store, and the connectors-local `.gitignore`; and
-- the per-host MCP-config paths of **installed** hosts (feature-004 wiring; today only
-  `claude-code` → the repo-root `.mcp.json`).
+is a declared, narrowly-scoped write exemption. It may write ONLY within `.aid/connectors/` —
+the connectors registry: `INDEX.md`, the `<connector>.md` descriptors, the git-ignored
+`.secrets/` value store, and the connectors-local `.gitignore`. It writes **no** host tool
+configuration (Q10: `mcp` connectors are tool-managed — AID catalogs them but never wires them).
 
 It writes nowhere else outside `.aid/knowledge/`, `.aid/generated/`, or `.aid/.temp/`. This
 carve-out is a **declared authoring boundary, not a new pre-flight script guard**:
