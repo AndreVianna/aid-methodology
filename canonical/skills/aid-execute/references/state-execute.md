@@ -46,7 +46,7 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 ### PD-0: Read Configuration
 
 1. **Read `MaxConcurrent`** from `.aid/knowledge/STATE.md` top-of-file metadata:
-   `bash canonical/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
+   `bash canonical/aid/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
 
 2. **Detect host capability — `run_in_background` probe.**
 
@@ -129,7 +129,7 @@ Pending). The **in-flight set** starts empty. The **blocked set** starts empty.
 **Advance delivery lifecycle to Executing** (silent state-write -- fires once when
 the first task is dispatched, idempotent if already Executing):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --lifecycle Executing
 ```
 
@@ -301,22 +301,22 @@ Remove `task-{NNN}` from the in-flight set.
 
    Advance delivery lifecycle to Blocked (silent state-write -- no output, no gate):
    ```bash
-   bash canonical/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
+   bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
    ```
 
    Emit pipeline block signal (silent state-write -- no output, no gate):
    ```bash
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 
 3. Emit `[pool] ✗ task-{NNN} FAILED — computing failure-block-radius`.
 
 4. **Compute the failure-block-radius (transitive-descendant BFS):**
 
-   Run `canonical/scripts/execute/compute-block-radius.sh` with the
+   Run `canonical/aid/scripts/execute/compute-block-radius.sh` with the
    failed task and the reverse dependency graph:
 
    ```bash
@@ -527,22 +527,22 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 Update the task State to `In Progress` (silent state-write -- no output):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Progress"
 ```
 
 Advance delivery lifecycle to Executing (silent state-write -- no output, idempotent):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --lifecycle Executing
 ```
 
 Emit pipeline phase (silent state-write only -- no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Pick the executor by task Type from the Agent Selection table above** (RESEARCH -> `aid-researcher`, DESIGN -> `aid-architect`, IMPLEMENT/TEST/REFACTOR -> `aid-developer`, DOCUMENT -> `aid-tech-writer`, MIGRATE -> `aid-developer`, CONFIGURE -> `aid-developer`).
@@ -560,7 +560,7 @@ Load the section matching the task's Type from `references/task-type-rules.md` a
 ✓ {executor} done (record actual time) -- or ✗ {executor} failed: {reason}
 When execution passes → update task State to `In Review`:
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Review"
 ```
 Then proceed to Step 2 (REVIEW).

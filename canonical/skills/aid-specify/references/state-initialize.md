@@ -85,10 +85,10 @@ In the work's `.aid/{work}/STATE.md`, update the `## Features State` table:
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-specify
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 4: Present and Start

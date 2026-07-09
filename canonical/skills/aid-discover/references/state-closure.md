@@ -176,11 +176,11 @@ Run the mechanical self-containment check (the deterministic substrate):
 {
   awk -F'|' 'NR>2 && $5 ~ /DISMISSED/ {t=$3; gsub(/`/,"",t); gsub(/^[ ]+|[ ]+$/,"",t); if(t!="" && t!="Term") print t}' \
     .aid/generated/spine-todo.md 2>/dev/null || true
-  bash canonical/scripts/config/read-setting.sh --path discovery.term_exclusions --default '' 2>/dev/null | tr ',' '\n' || true
+  bash canonical/aid/scripts/config/read-setting.sh --path discovery.term_exclusions --default '' 2>/dev/null | tr ',' '\n' || true
 } | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^$' | LC_ALL=C sort -u \
   > .aid/generated/closure-dismissed.txt
 
-bash canonical/scripts/kb/closure-check.sh \
+bash canonical/aid/scripts/kb/closure-check.sh \
   --concepts .aid/generated/candidate-concepts.md \
   --spine .aid/knowledge/domain-glossary.md \
   --kb-dir .aid/knowledge \

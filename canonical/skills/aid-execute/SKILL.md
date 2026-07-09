@@ -56,7 +56,7 @@ If any dependency is not Done → **STOP.** List which dependencies are pending.
 
 ### Check 3: Read Minimum Grade
 
-Run `bash canonical/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A` to resolve the minimum grade for this skill (`.aid/settings.yml` is the source).
+Run `bash canonical/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A` to resolve the minimum grade for this skill (`.aid/settings.yml` is the source).
 This is the exit criterion for the review loop.
 
 ### Check 4: Verify Not in Plan Mode
@@ -184,7 +184,7 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 
 This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
 heartbeats, ETA timers, calibration). The full checklist lives in
-`canonical/templates/dispatch-protocol-checklist.md`; read it before any subagent
+`canonical/aid/templates/dispatch-protocol-checklist.md`; read it before any subagent
 dispatch in this skill.
 
 ## Workspace
@@ -324,7 +324,7 @@ After resolving: delete IMPEDIMENT file, retry from Step 1.
 ## Output
 
 - Artifacts appropriate to the task type (code, tests, docs, configs, research, designs)
-- Grade >= minimum grade (from `bash canonical/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
+- Grade >= minimum grade (from `bash canonical/aid/scripts/config/read-setting.sh --skill execute --key minimum_grade --default A`)
 - Commit messages reference task-NNN (for types that produce commits)
 - `deliveries/delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` updated with full review history
   (flat path: the work-root `STATE.md § ### Tasks lifecycle` row for `task-NNN`)

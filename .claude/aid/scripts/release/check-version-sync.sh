@@ -18,7 +18,7 @@
 #                        If omitted, the carriers are asserted to be mutually consistent
 #                        (all present carriers must equal the VERSION file value).
 #   --repo-root <path>   Path to the repo root (default: directory of this script's
-#                        grandparent, i.e. two levels above canonical/scripts/release/).
+#                        grandparent, i.e. two levels above canonical/aid/scripts/release/).
 #                        Useful in tests with temp fixtures.
 #
 # Exit codes:

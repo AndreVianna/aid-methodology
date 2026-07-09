@@ -4,7 +4,7 @@ When an AID skill (an "orchestrator") dispatches a subagent, the orchestrator
 MUST pass `HEARTBEAT_FILE=...` + `HEARTBEAT_INTERVAL=Nm` parameters to every
 subagent dispatch (unless heartbeat is explicitly disabled via
 `traceability.heartbeat_interval: 0` in `.aid/settings.yml`, resolved by
-`bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval`).
+`bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval`).
 The subagent MUST
 write periodic progress notes to that file. The orchestrator reads the file
 when its L2 check-in timer fires (see `long-wait-protocol.md`) to surface real
@@ -48,7 +48,7 @@ work):
 Before dispatching any subagent (always, regardless of ETA):
 
 1. **Read the heartbeat interval** via
-   `bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`.
+   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`.
    If `0`, skip heartbeat entirely (no parameters passed; subagent runs without
    self-reporting).
 

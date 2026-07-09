@@ -63,7 +63,7 @@ This reconciles the B6 finding: discovery-reviewer lacked the `## Self-review di
 - **Objective criteria only.** Every issue cites a specific criterion: TASK acceptance, SPEC constraint, KB convention, or established best practice.
 - **No confirmation bias.** The Reviewer does not know (or care) how hard the task was or how many iterations it took.
 - **Evidence for every issue.** File path, line number, the specific criterion violated. No vague criticism.
-- **Severity is the Reviewer's job. Grade is the script's job.** The Reviewer must classify severity correctly because the grade derives from it. But the Reviewer never writes a letter grade — that calculation is deterministic and lives in `canonical/scripts/grade.sh`.
+- **Severity is the Reviewer's job. Grade is the script's job.** The Reviewer must classify severity correctly because the grade derives from it. But the Reviewer never writes a letter grade — that calculation is deterministic and lives in `canonical/aid/scripts/grade.sh`.
 
 ## Severity Classification
 

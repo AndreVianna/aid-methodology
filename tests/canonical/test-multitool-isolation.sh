@@ -232,7 +232,7 @@ echo "=== T13-T20: byte-identity of canonical bodies across trees (AC1) ==="
 # Sourced from aid/templates/ (pure canonical Markdown that names no
 # install-path -- unlike e.g. grading-rubric.md/reviewer-ledger-schema.md/
 # state-machine-chaining.md/task-detail-template.md, which legitimately cite
-# `canonical/scripts/...` and `canonical/templates/...` paths in their own
+# `canonical/aid/scripts/...` and `canonical/aid/templates/...` paths in their own
 # prose and are therefore REWRITTEN per tool by the renderer, NOT
 # byte-identical -- confirmed by direct sha256 diff across profiles/*/) and
 # aid/scripts/ whose bodies are purely computational with no tool-root

@@ -3,7 +3,7 @@
 [!NOTE]
 This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.
 Written once by aid-detail; not a state file. State lives in task-NNN/STATE.md.
-Shape: 6 sections matching canonical/templates/delivery-plans/task-template.md.
+Shape: 6 sections matching canonical/aid/templates/delivery-plans/task-template.md.
 
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 

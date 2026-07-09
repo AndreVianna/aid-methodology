@@ -141,7 +141,7 @@ aid-deploy  ▸ you are here
 
 This skill follows the L1+L2+L3 subagent-visibility protocol (work-003 traceability —
 heartbeats, ETA timers, calibration). The full checklist lives in
-`canonical/templates/dispatch-protocol-checklist.md`; read it before any subagent
+`canonical/aid/templates/dispatch-protocol-checklist.md`; read it before any subagent
 dispatch in this skill.
 
 ## Dispatch
@@ -164,7 +164,7 @@ When a state completes, route by its `**Advance:**` type (per [`state-machine-ch
 ## Quality Checklist
 
 - [ ] All selected deliveries have all tasks complete
-- [ ] All task grades meet minimum (from `bash canonical/scripts/config/read-setting.sh --skill deploy --key minimum_grade --default A`)
+- [ ] All task grades meet minimum (from `bash canonical/aid/scripts/config/read-setting.sh --skill deploy --key minimum_grade --default A`)
 - [ ] No Critical/High known-issues unresolved
 - [ ] Full build passes (not incremental)
 - [ ] Full test suite passes

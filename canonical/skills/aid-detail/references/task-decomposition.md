@@ -118,7 +118,7 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 Each task is a **folder** containing two files:
 
 - **`deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`** — the immutable task definition (6-section
-  schema), seeded from `canonical/templates/task-detail-template.md`:
+  schema), seeded from `canonical/aid/templates/task-detail-template.md`:
 
 ```markdown
 # task-NNN: {Title}
@@ -139,7 +139,7 @@ Each task is a **folder** containing two files:
 
 Six sections. Nothing else.
 
-- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `canonical/templates/task-state-template.md`
+- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `canonical/aid/templates/task-state-template.md`
   with `State: Pending`, empty Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
   Updated by `aid-execute`; never written by `aid-detail` after seeding.
 

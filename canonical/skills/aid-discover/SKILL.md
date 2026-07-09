@@ -15,7 +15,7 @@ Analyze an existing project repository — all code, configuration, and document
 produce a structured `.aid/knowledge/` directory by orchestrating 5 specialized discovery subagents.
 Includes a built-in quality gate that reviews, grades, and fixes KB documents.
 
-**State machine — each `/aid-discover` invocation drives the state machine until it hits a natural pause point per [`canonical/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md). Mechanical states and inline-question states auto-chain; only PAUSE-FOR-USER-ACTION, PAUSE-FOR-USER-DECISION, and HALT stop the run.**
+**State machine — each `/aid-discover` invocation drives the state machine until it hits a natural pause point per [`canonical/aid/templates/state-machine-chaining.md`](../../templates/state-machine-chaining.md). Mechanical states and inline-question states auto-chain; only PAUSE-FOR-USER-ACTION, PAUSE-FOR-USER-DECISION, and HALT stop the run.**
 
 ---
 
@@ -50,7 +50,7 @@ what I am unsure of, **you** decide" — IS the product. **When in doubt, ASK.**
 
 ## ⚠️ Pre-flight Checks
 
-Run `bash canonical/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
+Run `bash canonical/aid/scripts/kb/discover-preflight.sh .aid/knowledge/` to verify:
 1. `.aid/knowledge/STATE.md` is present and non-empty (self-created from template if absent)
 2. Not in Plan Mode (subagents need write access)
 
@@ -110,10 +110,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -145,9 +145,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
+- `canonical/aid/templates/long-wait-protocol.md` — full L2 spec
+- `canonical/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `canonical/aid/templates/rough-time-hints.md` — current measured ETAs
 - `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair
@@ -314,7 +314,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
    from the project's declared doc-set (`references/doc-set-resolve.md` §2.1):
 
    ```bash
-   raw="$(bash canonical/scripts/config/read-setting.sh \
+   raw="$(bash canonical/aid/scripts/config/read-setting.sh \
            --path discovery.doc_set 2>/dev/null || true)"
    # owns-<agent>: which files does a given agent own in THIS project?
    resolve_doc_set "$raw" | awk -F'\t' -v a="<agent-name>" '$2==a{print $1}'

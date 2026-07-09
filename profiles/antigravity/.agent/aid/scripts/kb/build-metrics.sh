@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # build-metrics.sh — generate .aid/generated/metrics.md from disk truth.
 #
-# Per canonical/templates/kb-authoring/tier-model.md, T3 (Metric) facts are BANNED
+# Per canonical/aid/templates/kb-authoring/tier-model.md, T3 (Metric) facts are BANNED
 # inline in primary KB docs. This script aggregates all numeric measurements
 # (line counts, file counts, term counts, severity tallies) into one auto-generated
 # file that other docs may reference (but should not duplicate inline).

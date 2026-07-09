@@ -37,7 +37,7 @@ Before executing any state, verify:
 
 2. `canonical/` directory exists at the repo root:
    ```bash
-   ls canonical/agents/ canonical/skills/ canonical/templates/ canonical/rules/
+   ls canonical/agents/ canonical/skills/ canonical/aid/templates/ canonical/rules/
    ```
 
 3. At least one profile TOML exists:
@@ -121,7 +121,7 @@ Confirm canonical completeness:
    ```
    Expected: 9 directories.
 
-3. `canonical/templates/` subtree is non-empty.
+3. `canonical/aid/templates/` subtree is non-empty.
 
 If validation finds missing content, print a clear inventory of what is missing and abort.
 

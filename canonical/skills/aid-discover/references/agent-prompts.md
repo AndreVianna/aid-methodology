@@ -104,7 +104,7 @@ you — a self-reported "durable anchors only" is not accepted; the script is th
 When an agent's target list (computed from the declared doc-set via the `owns-<agent>`
 accessor — see `references/doc-set-resolve.md`) contains a **custom doc** (a filename with
 no canonical template, i.e., not in the default seed synthesized from
-`canonical/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
+`canonical/aid/templates/knowledge-base/*.md`), the orchestrator **extends that agent's base
 prompt at runtime** by appending the following line after the base prompt text:
 
 > Also produce `{output_root}/<filename>`. Resolve its depth contract as follows:

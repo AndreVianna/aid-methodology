@@ -68,7 +68,7 @@ Use severity `[HIGH]` for isolation violations (they break orphan-prune correctn
 
 ## Output contract
 
-Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` containing **exactly one markdown table** per the schema at `canonical/templates/reviewer-ledger-schema.md`.
+Your output is a single markdown file at `.aid/.temp/review-pending/<scope>.md` containing **exactly one markdown table** per the schema at `canonical/aid/templates/reviewer-ledger-schema.md`.
 
 The table is the entire file content. **No frontmatter, no headers, no narrative sections, no summary lines.** Any prose qualitative summary belongs in your return message to the orchestrator, never in the ledger file.
 

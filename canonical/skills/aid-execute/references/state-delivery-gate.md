@@ -22,7 +22,7 @@ Print this state-entry banner before proceeding to Step 0.
 
 Advance delivery lifecycle to Gated (silent state-write -- no output, no gate):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
 ```
 
 ## DELIVERY-GATE State Machine
@@ -171,7 +171,7 @@ Include in the prompt:
   if it exists. For each existing row: verify on disk, update Status if needed
   (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings
   as rows with Status: Pending."
-- **Schema reference:** "Output per `canonical/templates/reviewer-ledger-schema.md`.
+- **Schema reference:** "Output per `canonical/aid/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
 Then append the gate-specific prompt below. The reviewer reads directly from source:
@@ -233,7 +233,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 Run `grade.sh` on the ledger file:
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
 ```
 
 The script parses the Severity and Status columns from the markdown table, counts
@@ -300,10 +300,10 @@ Gate grade below minimum. Next steps:
 can be -- the problem is upstream. Present what needs to change and where.
 Emit delivery and pipeline pause signals (silent state-writes -- no output, no gate):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues -- upstream fix required (SPEC/TASK/KB)"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues -- upstream fix required (SPEC/TASK/KB)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
@@ -348,11 +348,11 @@ Options:
 Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
 is written, emit the delivery and pipeline block signals (silent state-writes -- no output, no gate):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
@@ -403,7 +403,7 @@ writeback-state.sh --delivery-id NNN --block "BLOCK"
 ### 6b-2: Advance delivery lifecycle to Done
 
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Done
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Done
 ```
 
 ### 6c: Mark Deferred Issues Resolved/Accepted

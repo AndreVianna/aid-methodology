@@ -6,7 +6,7 @@
 # doc to load for what knowledge. It is composed mechanically from each KB doc's
 # frontmatter fields (objective, summary, tags, see_also, audience -- with intent:
 # coexistence fallbacks), so it stays deterministic, git-diffable, and dependency-
-# free. See canonical/templates/kb-authoring/frontmatter-schema.md for the field
+# free. See canonical/aid/templates/kb-authoring/frontmatter-schema.md for the field
 # schema.
 #
 # Coexistence fallbacks: objective falls back to collapsed intent: when
@@ -14,7 +14,7 @@
 # intent:; tags/see_also/audience blank when absent. Un-migrated intent:-only
 # docs render a valid table row.
 #
-# Per canonical/templates/kb-authoring/principles.md, this script runs LAST in
+# Per canonical/aid/templates/kb-authoring/principles.md, this script runs LAST in
 # any /aid-discover cycle (after all hand-edits land), so the index reflects final
 # state.
 #
@@ -55,7 +55,7 @@ build-kb-index.sh - generate .aid/knowledge/INDEX.md from KB doc frontmatter.
 Composes the RAG routing table from each KB doc's frontmatter fields.
 INDEX.md is the agent-facing self-service map; every task prompt loads it.
 
-Per canonical/templates/kb-authoring/principles.md P3, this script runs LAST
+Per canonical/aid/templates/kb-authoring/principles.md P3, this script runs LAST
 in any /aid-discover cycle so the index reflects final state.
 
 Usage:

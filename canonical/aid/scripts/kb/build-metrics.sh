@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # build-metrics.sh — generate .aid/generated/metrics.md from disk truth.
 #
-# Per canonical/templates/kb-authoring/tier-model.md, T3 (Metric) facts are BANNED
+# Per canonical/aid/templates/kb-authoring/tier-model.md, T3 (Metric) facts are BANNED
 # inline in primary KB docs. This script aggregates all numeric measurements
 # (line counts, file counts, term counts, severity tallies) into one auto-generated
 # file that other docs may reference (but should not duplicate inline).
@@ -31,7 +31,7 @@ while [[ $# -gt 0 ]]; do
 build-metrics.sh — generate .aid/generated/metrics.md from disk truth.
 
 Aggregates T3 numeric facts (line counts, file counts, term counts, severity tallies)
-into one auto-generated file. See canonical/templates/kb-authoring/tier-model.md for
+into one auto-generated file. See canonical/aid/templates/kb-authoring/tier-model.md for
 why T3 facts are banned inline in primary KB docs.
 
 Usage:
@@ -109,7 +109,7 @@ kb-category: meta
 source: generated
 generator: build-metrics.sh
 intent: |
-  Aggregated numeric facts (T3 Metric tier per canonical/templates/kb-authoring/tier-model.md):
+  Aggregated numeric facts (T3 Metric tier per canonical/aid/templates/kb-authoring/tier-model.md):
   line counts, file counts, term counts, severity tallies. Other KB docs reference this
   file instead of inlining the numbers. Regenerated on every /aid-discover cycle.
 contracts: []
@@ -117,8 +117,8 @@ changelog:
   - $(date -u +%Y-%m-%d): Generated
 ---
 
-<!-- AUTO-GENERATED $TS by canonical/scripts/kb/build-metrics.sh -->
-<!-- DO NOT EDIT — regenerate with: bash canonical/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md -->
+<!-- AUTO-GENERATED $TS by canonical/aid/scripts/kb/build-metrics.sh -->
+<!-- DO NOT EDIT — regenerate with: bash canonical/aid/scripts/kb/build-metrics.sh --root . --output .aid/generated/metrics.md -->
 
 # KB Metrics
 
@@ -236,7 +236,7 @@ EOF
     echo "---"
     echo ""
     echo "*End of auto-generated metrics. To add a new metric to this report, edit"
-    echo "\`canonical/scripts/kb/build-metrics.sh\`.*"
+    echo "\`canonical/aid/scripts/kb/build-metrics.sh\`.*"
 
 } > "$OUTPUT"
 

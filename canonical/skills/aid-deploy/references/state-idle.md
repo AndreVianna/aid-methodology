@@ -23,10 +23,10 @@ Update work `STATE.md` `## Deploy State`: Status → Selecting.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Deploy
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Deploy
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → [State: SELECTING] (continue inline).

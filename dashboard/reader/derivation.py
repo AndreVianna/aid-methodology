@@ -788,7 +788,7 @@ _CANCEL_RE = re.compile(r"cancel(?:ed)?", re.IGNORECASE)
 def _has_cancellation_in_history(text: str, warnings: list[str], work_id: str = "") -> bool:
     """Scan ## Lifecycle History rows for a Phase Transition / Gate column matching /cancel|canceled/i.
 
-    Table shape (canonical/templates/work-state-template.md):
+    Table shape (canonical/aid/templates/work-state-template.md):
         | Date | Phase Transition / Gate | Grade | Notes |
 
     LEGITIMATE PATH (permanent): Canceled is a user action; no automatic pipeline producer

@@ -1,7 +1,7 @@
 # Accessibility Checklist (WCAG AA)
 
 Every `/aid-summarize` output must meet these criteria. The grading script
-(`canonical/scripts/grade.sh`) automates verification of items marked **[auto]**;
+(`canonical/aid/scripts/grade.sh`) automates verification of items marked **[auto]**;
 items marked **[manual]** are inspected by the agent during VALIDATE.
 
 ## Document level
@@ -69,7 +69,7 @@ items marked **[manual]** are inspected by the agent during VALIDATE.
 
 ## Color contrast (WCAG AA)
 
-Verified by `canonical/scripts/summarize/contrast-check.mjs`. Targets:
+Verified by `canonical/aid/scripts/summarize/contrast-check.mjs`. Targets:
 
 - **[auto]** Body text vs background ≥ **4.5:1** (normal text).
 - **[auto]** Large text (≥ 18.66 px bold or ≥ 24 px) ≥ **3:1**.

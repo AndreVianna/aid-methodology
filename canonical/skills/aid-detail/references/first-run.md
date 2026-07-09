@@ -12,10 +12,10 @@ Load `references/task-decomposition.md` for task type rules, file format, and qu
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Detail
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-detail
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 1: Propose Tasks for First Deliverable
@@ -72,10 +72,10 @@ Respond to each concern, re-present affected tasks. Loop until approved.
 Once approved:
 1. For each task in this delivery, create the nested task folder and seed both files:
    - `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` -- the 6-section task
-     definition, seeded from `canonical/templates/task-detail-template.md` (the former flat
+     definition, seeded from `canonical/aid/templates/task-detail-template.md` (the former flat
      `tasks/task-NNN.md`; same schema, now lives in the task folder).
    - `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md` -- seeded from
-     `canonical/templates/task-state-template.md` with `State: Pending`, empty
+     `canonical/aid/templates/task-state-template.md` with `State: Pending`, empty
      Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
    Do NOT write task rows into the work `STATE.md` `## Tasks State` -- that is a
    DERIVED read-only view assembled at read time from the per-task STATE.md files.
@@ -95,7 +95,7 @@ Once approved:
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/detail.md`. Read the existing file first if it exists.
-  Output per `canonical/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for task list validation (per-deliverable scope).`
 
@@ -106,12 +106,12 @@ After writing, **review immediately:** Do the tasks hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
 ```
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash canonical/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash canonical/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

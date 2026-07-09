@@ -7,7 +7,7 @@ Covers:
        reads via read_repo(), asserts field-by-field agreement; a mutated producer
        string (e.g. **Name** without colon, broken wave-map fence) FAILS the test.
   T-11 Canonical-producer pinning: reads the ACTUAL canonical producer specification
-       files (canonical/templates/requirements.md, canonical/skills/aid-detail/
+       files (canonical/aid/templates/requirements.md, canonical/skills/aid-detail/
        references/task-decomposition.md and execution-graph-generation.md) and asserts
        the reader parses each format AS DOCUMENTED THERE.  These tests fail if the
        canonical doc's format and the reader's parser diverge -- pinning
@@ -506,7 +506,7 @@ class TestT10ProducerConsumerContract(unittest.TestCase):
 # parser diverge -- pinning reader<->canonical, not reader<->hand-copied copy.
 #
 # Canonical producer files:
-#   PF-1: canonical/templates/requirements.md
+#   PF-1: canonical/aid/templates/requirements.md
 #         (contains - **Name:** / - **Description:** header lines)
 #   PF-3: canonical/skills/aid-detail/references/task-decomposition.md
 #         (documents # task-NNN: {Title} format + regex ^#\s+task-0*\d+\s*:\s*(.+)$)
@@ -574,7 +574,7 @@ class TestT11CanonicalProducerPinning(unittest.TestCase):
     # -----------------------------------------------------------------------
 
     def test_pf1_canonical_template_contains_name_header(self):
-        """PF-1 pin: canonical/templates/requirements.md has '- **Name:**' line."""
+        """PF-1 pin: canonical/aid/templates/requirements.md has '- **Name:**' line."""
         self.assertTrue(
             _CANONICAL_REQUIREMENTS_TEMPLATE.is_file(),
             f"Canonical requirements template not found: {_CANONICAL_REQUIREMENTS_TEMPLATE}",
@@ -583,12 +583,12 @@ class TestT11CanonicalProducerPinning(unittest.TestCase):
         self.assertIn(
             "- **Name:**",
             text,
-            "canonical/templates/requirements.md must contain '- **Name:**' header line "
+            "canonical/aid/templates/requirements.md must contain '- **Name:**' header line "
             "(PF-1 pin: reader's parse_requirements_md regex expects this exact format)",
         )
 
     def test_pf1_canonical_template_contains_description_header(self):
-        """PF-1 pin: canonical/templates/requirements.md has '- **Description:**' line."""
+        """PF-1 pin: canonical/aid/templates/requirements.md has '- **Description:**' line."""
         self.assertTrue(
             _CANONICAL_REQUIREMENTS_TEMPLATE.is_file(),
             f"Canonical requirements template not found: {_CANONICAL_REQUIREMENTS_TEMPLATE}",
@@ -597,7 +597,7 @@ class TestT11CanonicalProducerPinning(unittest.TestCase):
         self.assertIn(
             "- **Description:**",
             text,
-            "canonical/templates/requirements.md must contain '- **Description:**' header line "
+            "canonical/aid/templates/requirements.md must contain '- **Description:**' header line "
             "(PF-1 pin: reader's parse_requirements_md regex expects this exact format)",
         )
 

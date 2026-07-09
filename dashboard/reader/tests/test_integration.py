@@ -4,7 +4,7 @@ test_integration.py -- Producer<->consumer round-trip integration test (feature-
 PART 3 of the task-012 implementation.
 
 Drives a realistic sequence of state transitions using the REAL
-`canonical/scripts/execute/writeback-state.sh --pipeline` producer (invoked as a
+`canonical/aid/scripts/execute/writeback-state.sh --pipeline` producer (invoked as a
 subprocess FROM THE TEST -- the reader itself must not shell out).
 
 This test proves that feature-001's producer and feature-002's consumer AGREE
@@ -13,7 +13,7 @@ read_repo() with the expected lifecycle, source_mode, phase, active_skill, and
 conditional fields (pause_reason / block_reason / block_artifact).
 
 Round-trip sequence:
-  1. Seed a fresh scratch STATE.md from canonical/templates/work-state-template.md
+  1. Seed a fresh scratch STATE.md from canonical/aid/templates/work-state-template.md
   2. Producer: write Running + Execute + aid-execute -> Consumer: assert Running / normalized
   3. Producer: write Paused-Awaiting-Input + Pause Reason -> Consumer: assert Paused + pause_reason
   4. Producer: write Blocked + Block Reason + Block Artifact -> Consumer: assert Blocked + artifact

@@ -52,7 +52,7 @@ For each approved finding:
 
 Print monitor run summary: date, window, finding count, routing summary.
 
-▶ PM tool ticket creation starting (~10–30 s per ticket per `canonical/templates/rough-time-hints.md`; skip block entirely if no PM tool)
+▶ PM tool ticket creation starting (~10–30 s per ticket per `canonical/aid/templates/rough-time-hints.md`; skip block entirely if no PM tool)
 If PM tool configured (infrastructure.md § Project Management):
 - Create tickets for BUG tasks
 - Link to existing Sprint/Epic

@@ -82,7 +82,7 @@ Then delete the scratch ledgers per f005's Step 2e (the `rm -f` block with
 Run the unchanged `grade.sh`:
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/update-kb.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/update-kb.md
 ```
 
 Derive `teach_back_verdict` and `act_back_verdict` per f005's Step 2c and 2d
@@ -95,7 +95,7 @@ Derive `teach_back_verdict` and `act_back_verdict` per f005's Step 2c and 2d
 Resolve the minimum grade for `aid-update-kb`:
 
 ```bash
-bash canonical/scripts/config/read-setting.sh \
+bash canonical/aid/scripts/config/read-setting.sh \
   --skill update-kb --key minimum_grade --default A
 ```
 

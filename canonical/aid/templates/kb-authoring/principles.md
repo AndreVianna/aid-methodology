@@ -91,7 +91,7 @@ out of cycle scope).
 
 **Auto-generated files refresh LAST.** Hand-edits land first; generated files
 (metrics.md, INDEX.md, project-index.md) regenerate at the end of FIX, so they reflect
-the final state. Refresh is driven by `canonical/templates/generated-files.txt`
+the final state. Refresh is driven by `canonical/aid/templates/generated-files.txt`
 registry.
 
 ## P4. Enforce via review, not by mechanical lint
@@ -124,7 +124,7 @@ Two kinds of non-curated files exist:
   registered scripts. Each file MUST carry an HTML-style comment at the top:
 
   ```html
-  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-kb-index.sh — DO NOT EDIT — regenerate with `bash canonical/scripts/kb/build-kb-index.sh` -->
+  <!-- AUTO-GENERATED 2026-05-27T12:34:56Z by build-kb-index.sh — DO NOT EDIT — regenerate with `bash canonical/aid/scripts/kb/build-kb-index.sh` -->
   ```
 
   The `source: generated` + `generator: <script>` frontmatter fields also declare this.

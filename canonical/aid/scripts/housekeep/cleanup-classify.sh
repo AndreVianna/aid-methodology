@@ -190,7 +190,7 @@ emit_candidate() {
 # Returns space-separated list of registered .aid/generated/* paths (relative).
 # ---------------------------------------------------------------------------
 load_registered_generated() {
-    local registry="${REPO_ROOT}/canonical/templates/generated-files.txt"
+    local registry="${REPO_ROOT}/canonical/aid/templates/generated-files.txt"
     if [[ ! -f "$registry" ]]; then
         echo ""
         return 0

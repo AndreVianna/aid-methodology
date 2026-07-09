@@ -325,7 +325,7 @@ each section becomes `sections/NN-{slug}.html`; closing shell becomes
 
 ```bash
 mkdir -p .aid/dashboard
-bash canonical/scripts/summarize/assemble.sh --output .aid/dashboard/kb.html
+bash canonical/aid/scripts/summarize/assemble.sh --output .aid/dashboard/kb.html
 ```
 
 The assembled `kb.html` is the single self-contained deliverable (all CSS/JS inlined).

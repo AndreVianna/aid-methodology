@@ -60,12 +60,12 @@ make_aid_dir() {
     mkdir -p "${repo}/.aid/knowledge"
     # Create a minimal settings.yml (protected — must never be emitted as candidate)
     printf 'project:\n  name: test\n' > "${repo}/.aid/settings.yml"
-    # Create a canonical/templates/generated-files.txt with one registered file
-    mkdir -p "${repo}/canonical/templates"
-    cat > "${repo}/canonical/templates/generated-files.txt" <<'REGEOF'
+    # Create a canonical/aid/templates/generated-files.txt with one registered file
+    mkdir -p "${repo}/canonical/aid/templates"
+    cat > "${repo}/canonical/aid/templates/generated-files.txt" <<'REGEOF'
 # Generated Files Registry
-.aid/generated/project-index.md|bash canonical/scripts/kb/build-project-index.sh
-.aid/generated/metrics.md|bash canonical/scripts/kb/build-metrics.sh
+.aid/generated/project-index.md|bash canonical/aid/scripts/kb/build-project-index.sh
+.aid/generated/metrics.md|bash canonical/aid/scripts/kb/build-metrics.sh
 REGEOF
 }
 

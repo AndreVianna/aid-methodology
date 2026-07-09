@@ -47,7 +47,7 @@ the ordered list at runtime; schemas.md carries an inline copy derived from this
 
 > **State:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
 > **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy
-> **Minimum Grade:** {resolved at runtime by `bash canonical/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
+> **Minimum Grade:** {resolved at runtime by `bash canonical/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** {YYYY-MM-DD}
 > **User Approved:** yes | no
 
@@ -178,7 +178,7 @@ different places.
      the delivery-gate closing step of `aid-execute` on this work's active branch, written via
      `writeback-state.sh --delivery-id 001 --block ...`. Distinct from per-task quick-check
      findings -- the gate aggregates those deferred [HIGH] rows (via
-     `.aid/{work}/delivery-001-issues.md`; see `canonical/templates/delivery-issues.md`) and runs
+     `.aid/{work}/delivery-001-issues.md`; see `canonical/aid/templates/delivery-issues.md`) and runs
      a full grade.sh pass. The gate's criteria are read from this work's `BLUEPRINT.md § GATE
      CRITERIA`, NOT from this STATE.md. Left absent (section omitted) for full multi-delivery
      works, where each delivery-NNN/STATE.md carries its own gate block (unioned by the DERIVED

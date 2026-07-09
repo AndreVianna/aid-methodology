@@ -477,7 +477,7 @@ are empty and the panel degrades gracefully -- not an error.
 **Grade requirement:**
 
 ```bash
-bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
+bash canonical/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 Compute `ready = (grade >= minimum_grade AND essence_verdict == PASS AND

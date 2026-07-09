@@ -25,7 +25,7 @@ oracle, is run by the GENERATE closure loop; the panel does not re-run it as a m
 concept self-containment is mechanically gated there.)
 
 ```bash
-bash canonical/scripts/kb/closure-check.sh \
+bash canonical/aid/scripts/kb/closure-check.sh \
   --output-a .aid/.temp/review-pending/{{SCOPE}}-oracle-a.md \
   --output-b .aid/.temp/review-pending/{{SCOPE}}-oracle-b.md
 ```
@@ -429,7 +429,7 @@ ledger, 7-column schema).
 **2b. Run the existing grade.sh unchanged**
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/{{SCOPE}}.md
 ```
 
 `grade.sh` counts worst-severity over Status in {Pending, Recurred} across ALL rows,
@@ -539,7 +539,7 @@ Print: `[Review 3/3] Review complete.`
 Resolve the minimum grade:
 
 ```bash
-bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
+bash canonical/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 Compute:

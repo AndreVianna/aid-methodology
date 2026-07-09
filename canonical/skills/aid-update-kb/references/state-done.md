@@ -21,7 +21,7 @@ The who-runs-closure-when boundary between `aid-update-kb` and `aid-housekeep`
 is f010; DONE runs its own re-verification unconditionally.
 
 ```bash
-bash canonical/scripts/kb/closure-check.sh \
+bash canonical/aid/scripts/kb/closure-check.sh \
   --output-a .aid/.temp/closure-verify-a.md \
   --output-b .aid/.temp/closure-verify-b.md
 ```

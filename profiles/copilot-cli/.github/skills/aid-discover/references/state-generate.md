@@ -104,7 +104,7 @@ of `Accessible`) as the external-docs input for the Scout prompt (Step 1).
 
 Run the lightweight file-index pre-pass before dispatching sub-agents. This produces a structured inventory consumed by all 5 sub-agents, eliminating duplicated `find`/`wc` work across parallel agents.
 
-> **Working directory assumption:** All bash commands in this skill assume the current working directory is the project root (the directory containing `.aid/`). Scripts are written in `canonical/scripts` form in the source; the renderer rewrites them to the profile's install-tree nested path at render time (`.claude/aid/scripts/...` for Claude Code, `.codex/aid/scripts/...` for Codex, `.cursor/aid/scripts/...` for Cursor). No runtime resolution needed.
+> **Working directory assumption:** All bash commands in this skill assume the current working directory is the project root (the directory containing `.aid/`). Scripts are written in `canonical/aid/scripts` form in the source; the renderer rewrites them to the profile's install-tree nested path at render time (`.claude/aid/scripts/...` for Claude Code, `.codex/aid/scripts/...` for Codex, `.cursor/aid/scripts/...` for Cursor). No runtime resolution needed.
 
 ▶ build-project-index starting (~30 s)
 ```bash

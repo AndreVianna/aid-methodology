@@ -8,10 +8,10 @@ No PLAN.md found; begin dependency mapping and deliverable sequencing.
 
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Plan
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-plan
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 ### Step 1: Map Dependencies
@@ -86,7 +86,7 @@ WARNING: **DO NOT accumulate multiple deliverables "in your head" -- write each 
 
 **Immediately after writing the PLAN.md stanza,** create the delivery folder:
 
-**4a. Create `deliveries/delivery-NNN/BLUEPRINT.md`** (seed from `canonical/templates/delivery-blueprint-template.md`):
+**4a. Create `deliveries/delivery-NNN/BLUEPRINT.md`** (seed from `canonical/aid/templates/delivery-blueprint-template.md`):
 
 Fill in from the approved PLAN.md stanza:
 - `Delivery:` = delivery-NNN
@@ -102,7 +102,7 @@ Fill in from the approved PLAN.md stanza:
 A delivery with ZERO tasks (e.g. a SPIKE delivery that defines a sibling delivery) is valid.
 Write the BLUEPRINT with the zero-task table (`_none yet_`) -- do not skip BLUEPRINT creation.
 
-**4b. Create `deliveries/delivery-NNN/STATE.md`** (seed from `canonical/templates/delivery-state-template.md`):
+**4b. Create `deliveries/delivery-NNN/STATE.md`** (seed from `canonical/aid/templates/delivery-state-template.md`):
 
 Fill in:
 - `Delivery:` = delivery-NNN
@@ -133,7 +133,7 @@ Fill in:
 Include in the prompt:
 - **Ledger lifecycle:** "Append new findings as rows with Status: Pending to
   `.aid/.temp/review-pending/plan.md`. Read the existing file first if it exists.
-  Output per `canonical/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Print before dispatch: `[Review] Dispatching aid-reviewer for PLAN validation (per-deliverable scope).`
 
@@ -147,12 +147,12 @@ After writing, **review immediately:** Does it hold up?
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
 ```
 
 | Condition | Action |
 |-----------|--------|
-| Grade ≥ minimum (from `bash canonical/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
+| Grade ≥ minimum (from `bash canonical/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`) | Move to next deliverable. |
 | Grade < minimum, fixable | Back to Propose with findings. |
 
 ```

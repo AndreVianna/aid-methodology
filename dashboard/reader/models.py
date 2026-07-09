@@ -15,7 +15,7 @@ from typing import Optional
 
 # ---------------------------------------------------------------------------
 # DM-6: Enum definitions
-# Single source of truth = feature-001 (canonical/templates/work-state-template.md).
+# Single source of truth = feature-001 (canonical/aid/templates/work-state-template.md).
 # Members reproduced here verbatim so the reader's switch is total.
 # The reader adds one reader-only sentinel per enum (Unknown) per DM-6 contract.
 # ---------------------------------------------------------------------------

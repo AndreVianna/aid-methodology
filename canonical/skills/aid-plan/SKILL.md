@@ -205,7 +205,7 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 
 ### 2. `.aid/{work}/deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition)
 
-Seeded from `canonical/templates/delivery-blueprint-template.md` with the delivery's
+Seeded from `canonical/aid/templates/delivery-blueprint-template.md` with the delivery's
 objective, scope, gate criteria, tasks placeholder, and dependencies filled in from
 the approved PLAN.md stanza. Written immediately after writing the delivery stanza
 to PLAN.md (Step 4 of The Loop). A delivery with zero tasks (e.g. a SPIKE) gets an
@@ -213,7 +213,7 @@ empty Tasks table -- the BLUEPRINT still records the delivery's objective and ga
 
 ### 3. `.aid/{work}/deliveries/delivery-NNN/STATE.md` (delivery lifecycle)
 
-Seeded from `canonical/templates/delivery-state-template.md` with:
+Seeded from `canonical/aid/templates/delivery-state-template.md` with:
 - `State: Pending-Spec`  (SD-8: delivery's own independent lifecycle; NOT derived from tasks)
 - `Updated:` set to the current UTC timestamp
 - `Branch:` set to `aid/work-NNN-delivery-NNN`

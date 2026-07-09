@@ -41,7 +41,7 @@ summarization.
 
 ## ⚠️ Pre-flight Checks
 
-Run `canonical/scripts/summarize/summarize-preflight.sh` before any state. It verifies:
+Run `canonical/aid/scripts/summarize/summarize-preflight.sh` before any state. It verifies:
 
 1. `.aid/knowledge/STATE.md` exists.
 2. `**User Approved:** yes` is present in `.aid/knowledge/STATE.md`.
@@ -56,7 +56,7 @@ proceed; do NOT create any state files.
 
 | Argument | Effect |
 |----------|--------|
-| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, runs `bash canonical/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A` (resolves per-skill override → global `review.minimum_grade` → default `A`). When passed, persist to `.aid/settings.yml` `summary.minimum_grade` via `/aid-config`. |
+| `--grade X` | Override the minimum acceptable grade. Format: `[A-F][-+]?`. Without this, runs `bash canonical/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A` (resolves per-skill override → global `review.minimum_grade` → default `A`). When passed, persist to `.aid/settings.yml` `summary.minimum_grade` via `/aid-config`. |
 | `--theme palette=X` | Override color palette (e.g., `--theme palette=brand-acme`). Default uses the canonical palette in `canonical/aid/templates/knowledge-summary/design-tokens.md`. |
 | `--reset` | Force regeneration regardless of staleness check; clears `## Knowledge Summary Status` in `.aid/knowledge/STATE.md`. |
 
@@ -226,9 +226,9 @@ See `canonical/aid/templates/knowledge-summary/grading-rubric.md` for the comple
 - `canonical/aid/templates/knowledge-summary/accessibility-checklist.md` — WCAG AA targets, focus trap pattern
 - `canonical/aid/templates/knowledge-summary/grading-rubric.md` — two-grade rubric (Machine + Human), completeness-based grading
 - `canonical/aid/templates/knowledge-summary/html-skeleton.html` — doctype, head, semantic landmarks, noscript (with `{{NOSCRIPT_DOC_LIST}}` placeholder for derived doc list)
-- `canonical/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.aid/.temp/summarize/manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
-- `canonical/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
-- `canonical/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.aid/.temp/summarize/spot-check-facts.txt` (aids the user's K2 judgment)
+- `canonical/aid/scripts/summarize/grade-summary.sh` — orchestrates AUTO_POOL checks, reads `.aid/.temp/summarize/manual-checklist.json` for MANUAL_POOL, prints Machine + Human + Overall grades
+- `canonical/aid/scripts/summarize/manual-checklist.sh` — validates / scores the MANUAL_POOL result file (`--input PATH` headless mode; `--interactive` for raw-terminal use)
+- `canonical/aid/scripts/summarize/spot-check-facts.sh` — extracts HTML claims, grep-matches against source KB, writes `.aid/.temp/summarize/spot-check-facts.txt` (aids the user's K2 judgment)
 
 ---
 

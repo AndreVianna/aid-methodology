@@ -58,7 +58,7 @@ Do NOT proceed to Step 4 until every dispatched agent has reported completion. F
 After ALL parallel agents return:
 1. **Do NOT modify the ledger** — that is the next aid-reviewer agent's job. Issues stay Pending until the aid-reviewer agent verifies and updates Status.
 2. Update `**Applied to:**` for each incorporated Q&A answer in `STATE.md ## Q&A`.
-3. **Regenerate all registered generated files (per principles.md P3 — auto-gen-last).** Read `canonical/templates/generated-files.txt`. For each non-comment line, parse `output-path|build-command` and execute the build command. This ensures `metrics.md`, `INDEX.md`, `project-index.md` (and any future registered builders) reflect the FINAL post-fix state of the KB:
+3. **Regenerate all registered generated files (per principles.md P3 — auto-gen-last).** Read `canonical/aid/templates/generated-files.txt`. For each non-comment line, parse `output-path|build-command` and execute the build command. This ensures `metrics.md`, `INDEX.md`, `project-index.md` (and any future registered builders) reflect the FINAL post-fix state of the KB:
    ```bash
    while IFS='|' read -r out_path build_cmd; do
      case "$out_path" in ''|\#*) continue ;; esac
@@ -66,7 +66,7 @@ After ALL parallel agents return:
      out_path="${out_path%"${out_path##*[![:space:]]}"}"
      echo "[Fix] Regenerating $out_path ..."
      eval "$build_cmd" || echo "[Fix] WARNING: build failed for $out_path"
-   done < canonical/templates/generated-files.txt
+   done < canonical/aid/templates/generated-files.txt
    ```
 4. Confirm each registered generated file now exists on disk:
    ```bash
@@ -79,7 +79,7 @@ After ALL parallel agents return:
        echo "[Fix] WARNING: $out_path missing after regenerate (Step 3 build command failed)"
        missing=$((missing + 1))
      fi
-   done < canonical/templates/generated-files.txt
+   done < canonical/aid/templates/generated-files.txt
    [[ $missing -eq 0 ]] || echo "[Fix] $missing generated file(s) missing — investigate before commit"
    ```
    (Semantic re-verification of KB docs against source happens in REVIEW state, not here.)
