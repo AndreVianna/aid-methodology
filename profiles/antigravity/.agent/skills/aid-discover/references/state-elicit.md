@@ -50,9 +50,11 @@ resolved="$(grep -m1 '^\*\*Resolved:\*\*' .aid/knowledge/STATE.md 2>/dev/null \
   **Step E2**, re-presenting its prompt. Re-entry always **overwrites** the block, never appends.
 - **Block present, `Resolved: yes`:** unreachable in practice — `SKILL.md` State Detection
   (State 0) already routes past ELICIT once `Resolved: yes`, so the orchestrator would not enter
-  this reference doc. Reopening a resolved cycle's elicitation to add/update/remove sources or
-  tools is feature-006's reconcile contract (a later delivery), not this state's job; `--reset`
-  is the only way this state re-runs after resolving.
+  this reference doc. Adding/updating/removing tools against an already-resolved cycle happens
+  only through a **fresh** ELICIT cycle — `--reset` clears the block back to absent, which routes
+  through Step E1/E2 again and, on E2's resolve, through "Reconcile the registry" (Steps R0-R5,
+  below) against whatever is still persisted under `.aid/connectors/`; there is no path that
+  reopens or reconciles a still-`Resolved: yes` block in place.
 
 ## Step E1: External SOURCES branch (PAUSE-FOR-USER-DECISION)
 
@@ -163,29 +165,35 @@ Reply per tool with:  <preset-id>            (use a preset, then confirm/adjust 
 
 E2 offers **three** distinct outcomes, not two — this closes the feature-002 ↔ feature-006 seam
 `aid-detail` found (work STATE.md Q9): a bare "skip or empty ⇒ `tools: none`" cannot tell
-reconcile (a later delivery, feature-006/task-018) whether it is safe to touch the registry.
+reconcile (below) whether it is safe to touch the registry.
 
-| User reply | `Tools step` marker | Meaning | Reconcile (feature-006, later delivery) |
+| User reply | `Tools step` marker | Meaning | Reconcile (below, Step R0) |
 |---|---|---|---|
 | `skip` | `SKIPPED` | The step was **not engaged** this cycle — the user said nothing about tools. | Declared-set is **undefined** → **no-op**, registry untouched (the safe default). |
-| `none` | `DECLARED-EMPTY` | The step **was engaged** and the user affirmatively declared **zero** tools. | Declared-set = `{}` → **REMOVE** all persisted connectors (purge the local secret for aid-managed connectors + delete the descriptor; no unwire step — Q10 amends Q9/supersedes Q8). |
-| `<preset-id>` / `custom` (one or more) | `ENGAGED` | The step was engaged; N ≥ 1 tools declared. | Declared-set = the N tools. |
+| `none` | `DECLARED-EMPTY` | The step **was engaged** and the user affirmatively declared **zero** tools. | Declared-set `D = {}` → **REMOVE** all persisted connectors (purge the local secret for aid-managed connectors + delete the descriptor; no unwire step — Q10 amends Q9/supersedes Q8). |
+| `<preset-id>` / `custom` (one or more) | `ENGAGED` | The step was engaged; N ≥ 1 tools declared. | Declared-set `D` = the N tools. |
 
-This state only ever produces the marker — reconcile's branching on it is out of this state's
-scope (feature-006, a later delivery).
+This marker is exactly what Step R0 (below) branches on to decide whether reconcile touches the
+registry at all this cycle.
 
 ### On resume — branch per reply
 
-- **`skip`:** `**Tools:** none`, `**Tools step:** SKIPPED`. Create **nothing** under
-  `.aid/connectors/` (no `.gitignore`, no `.secrets/`, no descriptor, no `INDEX.md`). Proceed to
-  **Step E3**.
-- **`none`:** `**Tools:** none`, `**Tools step:** DECLARED-EMPTY`. Also create **nothing** under
-  `.aid/connectors/` this cycle — there is nothing to write for zero tools; the `DECLARED-EMPTY`
-  marker exists for a *later* reconcile cycle to act on, not for this state to act on now.
-  Proceed to **Step E3**.
-- **One or more `<preset-id>` / `custom` declarations:** `**Tools step:** ENGAGED`; process each
-  declared tool per "Descriptor write sequence" below, then set `**Tools:** <N> declared`.
-  Proceed to **Step E3**.
+- **`skip`:** `**Tools:** none`, `**Tools step:** SKIPPED`. The declared set is **undefined** —
+  Step R0 below makes this an unconditional no-op: no `list`, no `read`, no `purge`, no
+  descriptor write, no INDEX rebuild — the persisted registry is left exactly as it was. Proceed
+  directly to **Step E3**; "Reconcile the registry" below never runs this cycle.
+- **`none`:** `**Tools:** none`, `**Tools step:** DECLARED-EMPTY`. The declared set is `D = {}` —
+  proceed to **Reconcile the registry** below with an empty `D` (every persisted connector, if
+  any, falls into `P \ D` and is removed-and-purged per Step R3).
+- **One or more `<preset-id>` / `custom` declarations:** `**Tools step:** ENGAGED`. For each
+  declared tool, resolve its fields per "Preset vs. custom declaration" and the "Management-mode
+  branch" below, then **derive its stem** — `<connector>` = slugified `name`, the connector's
+  unique key (feature-001); illustrative: lowercase, non-alphanumeric runs collapsed to `-`, no
+  leading/trailing `-`
+  (`echo "$name" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g'`). This
+  cycle's declared set `D` is the N tools, each keyed by its stem (`<connector>`) and carrying the
+  descriptor fields resolved below. Set `**Tools:** <N> declared`. Proceed to **Reconcile the
+  registry** below with this `D`.
 
 ### Preset vs. custom declaration
 
@@ -233,25 +241,105 @@ After `connection_type` is set (preset or custom), branch on the **derived manag
 - **Aid-managed (`connection_type: api | ssh | url | cli`):** proceed with the `auth_method` /
   `secret_reference` form already captured above (preset or custom); unchanged from today.
 
-### Descriptor write sequence (binds feature-001's ordering guarantee)
+### Reconcile the registry (Steps R0-R5; feature-006 orchestration)
 
-The **first time** this ELICIT cycle touches `.aid/connectors/`, its **first action** — before
-creating `.secrets/`, before writing any descriptor, before any secret byte is written — is:
+Runs once per ELICIT cycle, after "On resume — branch per reply" above has resolved this cycle's
+declared set `D` (`SKIPPED` never reaches here; `DECLARED-EMPTY` gives `D = {}`; `ENGAGED` gives
+`D` = the N declared tools, each keyed by its stem). This is **pure orchestration** composing
+three existing ops — task-001's registry accessor, task-006's secret-purge op, task-005's
+deterministic INDEX builder — plus feature-002's own descriptor-authoring contract (above); it
+adds no new twin, builder, or wiring code. The reconcile diff itself (R0-R5 below) is the only
+net-new logic (feature-006 SPEC "Layers & Components").
+
+**Step R0 — guard (already resolved above).** `SKIPPED` never reaches this section — the branch
+above sends it straight to Step E3 first, so nothing below ever runs for a skipped cycle: no
+`list`, no `read`, no `purge`, no descriptor write, no INDEX rebuild. The persisted registry is
+left byte-for-byte intact. Both `DECLARED-EMPTY` (`D = {}`) and `ENGAGED` (`D` = the N declared
+tools) fall through to Step R1.
+
+**Step R1 — enumerate the persisted set `P`.**
 
 ```bash
-mkdir -p .aid/connectors
-if [ ! -f .aid/connectors/.gitignore ]; then
-  printf '%s\n' '.secrets/' > .aid/connectors/.gitignore
-fi
+P_STEMS=""
+while IFS= read -r stem; do
+  [ -z "$stem" ] && continue
+  P_STEMS="${P_STEMS:+$P_STEMS }$stem"
+done < <(bash .agent/aid/scripts/connectors/connector-registry.sh list --root .aid/connectors)
 ```
 
-Then, **per confirmed tool** (in declaration order):
+(PowerShell twin: `connector-registry.ps1`.) `P` is the sorted set of `.aid/connectors/*.md`
+stems, excluding `INDEX.md`; a not-yet-existing `.aid/connectors/` (the first-ever cycle) yields
+an empty `P` with no error. This is task-001's dedicated accessor twin — **never**
+`read-setting.sh` (KI-001), which only resolves `.aid/settings.yml` `section.key` pairs and
+cannot address one-field-per-descriptor frontmatter.
 
-1. **Derive `<connector>`** = slugified `name` — the connector's unique key (feature-001);
-   illustrative: lowercase, non-alphanumeric runs collapsed to `-`, no leading/trailing `-`
-   (`echo "$name" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g'`).
-2. **Write `.aid/connectors/<connector>.md`** with the frontmatter fields from feature-001's
-   Data Model plus a short human body, branching by the management mode (above):
+**Step R2 — compute the diff.** Partition `D ∪ P` on the stem into exactly one class each:
+
+| Class | Membership |
+|---|---|
+| ADD | `stem ∈ D \ P` — declared this cycle, no existing descriptor |
+| UPDATE | `stem ∈ D ∩ P`, and any field differs from what is on disk |
+| NO-OP | `stem ∈ D ∩ P`, and every field matches what is on disk |
+| REMOVE | `stem ∈ P \ D` — persisted, not declared this cycle |
+
+For each stem in `D ∩ P`, decide UPDATE vs NO-OP by comparing this cycle's freshly-resolved field
+values against the on-disk descriptor, field by field — `name`, `connection_type`, `endpoint`,
+`auth_method`, `secret_reference`, `preset`, and the routing text (`objective`, `summary`, `tags`,
+`audience`; feature-001's descriptor fields only — `INDEX.md` is never consulted, it is derived,
+not source of truth):
+
+```bash
+bash .agent/aid/scripts/connectors/connector-registry.sh read <stem> <field> --root .aid/connectors
+```
+
+Any field difference (including a field's presence/absence — e.g. an `auth_method` downgrade to
+`none` that drops `secret_reference`) classifies the stem UPDATE; identical values on every field
+classify it NO-OP.
+
+**Step R3 — apply, per class:**
+
+- **ADD** (`stem ∈ D \ P`) and **UPDATE** (`stem ∈ D ∩ P`, fields differ) both write via "Write
+  one descriptor" below. Before the *first* ADD/UPDATE write this cycle (skip this entirely on a
+  REMOVE-only or all-NO-OP cycle — nothing under `.aid/connectors/` needs touching then):
+  ```bash
+  mkdir -p .aid/connectors
+  if [ ! -f .aid/connectors/.gitignore ]; then
+    printf '%s\n' '.secrets/' > .aid/connectors/.gitignore
+  fi
+  ```
+  **ADD** creates `.aid/connectors/<stem>.md` fresh; no existing entry is touched. **UPDATE**
+  overwrites `.aid/connectors/<stem>.md` **in place** (same stem — same file path, same INDEX
+  identity, same secret path) and **preserves `.aid/connectors/.secrets/<stem>` unconditionally**
+  — it is never touched as a side effect of a descriptor edit; the secret-capture invocation in
+  "Write one descriptor" step 2 below is skipped on UPDATE unless `auth_method` or
+  `secret_reference` themselves changed this cycle. (An UPDATE that downgrades a surviving
+  connector's `auth_method` to `none` — dropping `secret_reference` — leaves
+  `.aid/connectors/.secrets/<stem>` unreferenced; disposing of that orphan is feature-003's
+  secret-lifecycle concern, not reconcile's — Step R3's purge below is REMOVE-scoped only.)
+- **NO-OP** (`stem ∈ D ∩ P`, identical) — write nothing: no descriptor write, no secret touch.
+  This is what makes a repeat run byte-stable.
+- **REMOVE** (`stem ∈ P \ D`) — for each stem classified REMOVE in Step R2, **purge the secret,
+  then delete the descriptor.** This order is load-bearing for interrupt-safety: the descriptor
+  is what keeps a stem in `P` (Step R1), so an interrupt between the two leaves the stem still in
+  `P` and still absent from `D` — re-derived as REMOVE next run (a re-purge is a clean no-op, then
+  the descriptor deletes). The reverse order could drop the stem from `P` on an interrupt while
+  its secret survives, stranding it.
+  ```bash
+  bash .agent/aid/scripts/connectors/connector-secret.sh purge <stem> --root .aid/connectors
+  rm -f -- ".aid/connectors/<stem>.md"
+  ```
+  (PowerShell twin: `connector-secret.ps1`.) The purge op deletes `.aid/connectors/.secrets/<stem>`
+  if present and succeeds silently if already absent (task-006's guarantee — never reads, echoes,
+  or logs the value); it is aid-managed-only **in effect**: a tool-managed (`mcp`) stem has no
+  stored secret, so its purge is a harmless no-op, and an `env:`/`keychain:` reference has no
+  local-store file either. **There is no unwire step, for any connection type, `mcp` included**
+  (Q10 supersedes Q8, amends Q9) — AID never wrote a host MCP config, so a REMOVE has nothing to
+  unwire; deleting the descriptor removes the catalog entry and nothing else.
+
+**Write one descriptor** (used by ADD and UPDATE above):
+
+1. **Write `.aid/connectors/<stem>.md`** with the frontmatter fields from feature-001's Data
+   Model plus a short human body, branching by the management mode (above):
    - **Tool-managed (`mcp`):** `name`, `connection_type: mcp`, `endpoint` (informational),
      `auth_method: none`, **no `secret_reference` field**, `preset`, `objective`, `summary`,
      `tags`, `audience`. Body mirrors feature-001's worked `github.md` example: a `# <Name>`
@@ -265,32 +353,49 @@ Then, **per confirmed tool** (in declaration order):
      `# <Name>` heading, a `> Connection: <type> · Mode: aid-managed · Auth: <auth_method>
      (reference: <secret_reference>)` summary line, and one or two lines of human-readable
      purpose. The descriptor carries **only** the `secret_reference` — never a value.
-3. **Secret capture is aid-managed-only (Q10).** For a **tool-managed (`mcp`)** connector, **no
+2. **Secret capture is aid-managed-only (Q10).** For a **tool-managed (`mcp`)** connector, **no
    secret is captured** — no prompt is presented and feature-003's `connector-secret` twin is
    **never invoked** (there is no `secret_reference` to fill). For an **aid-managed
-   (`api|ssh|url|cli`)** connector, **hand the secret VALUE to feature-003's twin — never capture
-   it here.** When `secret_reference` uses the `file:` form (the default), invoke:
+   (`api|ssh|url|cli`)** connector on ADD, or on UPDATE when `auth_method`/`secret_reference`
+   changed this cycle, **hand the secret VALUE to feature-003's twin — never capture it here.**
+   When `secret_reference` uses the `file:` form (the default), invoke:
    ```bash
-   bash .agent/aid/scripts/connectors/connector-secret.sh write <connector> --root .aid/connectors
+   bash .agent/aid/scripts/connectors/connector-secret.sh write <stem> --root .aid/connectors
    ```
    (PowerShell twin: `connector-secret.ps1`.) The script owns the no-echo capture and the
-   exact-bytes, owner-only write to `.aid/connectors/.secrets/<connector>`; ELICIT never reads,
-   holds, or echoes the value — it only supplies `<connector>` and lets the script prompt.
+   exact-bytes, owner-only write to `.aid/connectors/.secrets/<stem>`; ELICIT never reads,
+   holds, or echoes the value — it only supplies `<stem>` and lets the script prompt.
    **Never construct the invocation with the literal secret text inlined** in a bash command,
    `STATE.md`, the KB, or the conversation transcript — the script's own stdin capture (or a
    piped shell *variable*, per its header's automation example) is the only sanctioned path.
    For `env:` / `keychain:` reference forms, **do not** invoke `connector-secret.sh write` — no
    local value is stored by AID for those forms (resolved externally at use-time).
-4. **No wiring step (Q10).** Tool-managed (`mcp`) connectors require no wiring: AID writes no
+3. **No wiring step (Q10).** Tool-managed (`mcp`) connectors require no wiring: AID writes no
    host MCP config and triggers no host-tool action here — the agent requests the connection from
    the host tool itself at use-time (feature-005's consumption contract).
-5. **After all of this cycle's descriptor writes, trigger the connectors INDEX rebuild:**
-   ```bash
-   bash .agent/aid/scripts/connectors/build-connectors-index.sh \
-     --root .aid/connectors --output .aid/connectors/INDEX.md
-   ```
-   (PowerShell twin: `build-connectors-index.ps1`.) The builder is deterministic (no run
-   timestamp — KI-010), so triggering it even when nothing changed produces no diff.
+
+**Step R4 — regenerate `INDEX.md`.** Once per cycle, after every class in Step R3 has been
+applied (never per-tool):
+
+```bash
+bash .agent/aid/scripts/connectors/build-connectors-index.sh \
+  --root .aid/connectors --output .aid/connectors/INDEX.md
+```
+
+(PowerShell twin: `build-connectors-index.ps1`.) The builder is deterministic (no run timestamp —
+KI-010): an all-NO-OP cycle (unchanged registry, e.g. a second run over the same declared set)
+produces a byte-identical `INDEX.md`; a REMOVE that empties the registry produces a header-only
+`INDEX.md` (zero rows) rather than deleting the file, so the `@.aid/connectors/INDEX.md` context
+pointer never dangles.
+
+**Step R5 — trace the outcome.** Print a one-line diff summary; never print, log, or write a
+secret value:
+
+```
+[reconcile] Registry: +<added> added, ~<updated> updated, -<removed> removed (<purged> secret(s) purged); INDEX regenerated.
+```
+
+Proceed to **Step E3**.
 
 ## Step E3: Record and chain
 
