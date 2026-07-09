@@ -60,7 +60,13 @@
 #         regen complete convergence
 #   RS06  Q9 SKIPPED -- the tool step was not engaged; the registry (every
 #         descriptor, every secret, and INDEX.md) is left byte-for-byte
-#         intact -- no list/purge/write/rebuild of any kind
+#         intact -- no list/purge/write/rebuild of any kind. Driven through
+#         a shared `apply_reconcile` helper that encodes Step R0's branch
+#         explicitly (SKIPPED -> return before R1; DECLARED-EMPTY -> run
+#         R1-R4), then falsified by a CONTRAST call: the SAME helper, given
+#         DECLARED-EMPTY over an identical copy of the SAME starting
+#         registry, empties it -- proving the "preserved" result depends on
+#         the marker, not on the test simply never calling anything.
 #   RS07  Q9 DECLARED-EMPTY -- the tool step was engaged with D={}; every
 #         persisted connector is removed-and-purged; INDEX.md becomes
 #         header-only (zero data rows)
@@ -176,6 +182,52 @@ list_stems() {
 
 build_index() {
     bash "$BUILDER" --root "$1" --output "$2" >/dev/null 2>&1
+}
+
+# apply_reconcile ROOT TOOLS_STEP INDEX_OUT [DECLARED_STEM...]
+# -- Models Step R0's guard EXPLICITLY, the same way state-elicit.md
+# specifies it: branch on the Q9 "Tools step" marker BEFORE anything else
+# runs.
+#   SKIPPED        -- R0 sends the cycle straight to E3; the body below
+#                     (R1 list, R2/R3 purge+delete, R4 rebuild) NEVER runs.
+#                     Returns immediately -- the persisted registry is left
+#                     byte-for-byte intact.
+#   DECLARED-EMPTY -- D = {} (the step was engaged; zero tools declared).
+#                     Falls through to R1-R4: every persisted stem lands in
+#                     P \ D (since no DECLARED_STEM args are passed) and is
+#                     removed-and-purged (purge THEN delete, interrupt-safe
+#                     order); INDEX.md regenerates from whatever survives.
+# This is a REAL conditional a caller cannot bypass -- not a hand-authored
+# "do nothing" block in the test body. RS06 calls this with SKIPPED over one
+# fixture and with DECLARED-EMPTY over an identical copy of the SAME
+# fixture, so the two calls are a direct, falsifiable contrast: if SKIPPED
+# were ever wired to fall through to the removal body, RS06's "preserved"
+# assertions would fail the moment this same code ran.
+apply_reconcile() {
+    local root="$1" tools_step="$2" index_out="$3"
+    shift 3
+    local -a declared=("$@")
+
+    if [[ "$tools_step" == "SKIPPED" ]]; then
+        return 0
+    fi
+
+    local p_stems stem is_declared d
+    p_stems="$(list_stems "$root")"
+
+    while IFS= read -r stem; do
+        [[ -z "$stem" ]] && continue
+        is_declared=0
+        for d in "${declared[@]:-}"; do
+            [[ -n "$d" && "$d" == "$stem" ]] && is_declared=1 && break
+        done
+        if [[ "$is_declared" -eq 0 ]]; then
+            bash "$SECRET" purge "$stem" --root "$root" >/dev/null 2>&1
+            rm -f -- "${root}/${stem}.md"
+        fi
+    done <<< "$p_stems"
+
+    build_index "$root" "$index_out"
 }
 
 # snapshot_tree ROOT -- one sha256 line per file under ROOT, path-sorted.
@@ -443,6 +495,14 @@ assert_file_contains "$OUT5" "| Connector | Type | Endpoint | Auth | Secret Ref 
 # makes this an unconditional no-op: no list, no read, no purge, no
 # descriptor write, no INDEX rebuild. The registry is left byte-for-byte
 # intact (every descriptor, every secret, and INDEX.md itself, unchanged).
+#
+# Driven through the shared `apply_reconcile` helper (a REAL branch on the
+# Tools-step marker, not a hand-authored "do nothing" block), then falsified
+# by a CONTRAST: the SAME helper, given DECLARED-EMPTY over an identical
+# COPY of this same starting registry, empties it -- proving RS06's
+# "preserved" result is conditional on the SKIPPED marker specifically. If
+# the SKIPPED branch were ever wired to fall through to the removal body (or
+# any other body op), RS06a-e below would fail the moment that ran.
 # ===========================================================================
 S6="${TMPDIR_BASE}/s6"
 init_fixture "$S6"
@@ -456,17 +516,54 @@ write_mcp_descriptor "$S6" mcp-tool "Sample MCP Tool" \
     "sample-mcp (host-tool managed)" "A sample tool-managed connector." \
     "tool-managed sample for reconcile tests."
 OUT6="${S6}/INDEX.md"
-build_index "$S6" "$OUT6"   # a prior cycle's INDEX, already on disk before the SKIPPED cycle
+build_index "$S6" "$OUT6"   # a prior cycle's INDEX, already on disk before this cycle
 
+api_before6="$(cat "${S6}/api.md")"
+api_secret_before6="$(cat "${S6}/.secrets/api")"
+mcp_before6="$(cat "${S6}/mcp-tool.md")"
+p6_before="$(list_stems "$S6")"
+sha_index6_before=$(sha256sum "$OUT6" | awk '{print $1}')
 before6="$(snapshot_tree "$S6")"
 
-# --- Q9 SKIPPED cycle: the tool step was NOT engaged. Per Step R0, reconcile
-# never reaches R1-R5 at all -- this block deliberately issues ZERO commands
-# against $S6. That absence of any op invocation IS the behavior under test.
+# --- Q9 SKIPPED: the tool step was NOT engaged this cycle. Per Step R0,
+# reconcile never reaches R1-R5 -- drive that through apply_reconcile
+# itself, marker=SKIPPED, rather than by simply not calling anything.
+apply_reconcile "$S6" "SKIPPED" "$OUT6"
 
 after6="$(snapshot_tree "$S6")"
 assert_eq "$after6" "$before6" \
-    "RS06 Q9 SKIPPED -- registry left exactly intact (identical descriptors, secrets, and INDEX.md; no purge/delete/rebuild)"
+    "RS06-pre Q9 SKIPPED -- entire registry tree byte-for-byte unchanged (hash-of-hashes over every file)"
+assert_eq "$(cat "${S6}/api.md")" "$api_before6" "RS06a Q9 SKIPPED -- aid-managed descriptor (api) present and unchanged"
+assert_eq "$(cat "${S6}/.secrets/api")" "$api_secret_before6" "RS06b Q9 SKIPPED -- aid-managed secret (.secrets/api) present and unchanged"
+assert_eq "$(cat "${S6}/mcp-tool.md")" "$mcp_before6" "RS06c Q9 SKIPPED -- tool-managed descriptor (mcp-tool) present and unchanged"
+assert_eq "$(list_stems "$S6")" "$p6_before" "RS06d Q9 SKIPPED -- persisted set P unchanged (no purge, no delete)"
+sha_index6_after=$(sha256sum "$OUT6" | awk '{print $1}')
+assert_eq "$sha_index6_after" "$sha_index6_before" "RS06e Q9 SKIPPED -- INDEX.md sha256 unchanged (not rebuilt)"
+
+# --- Falsifiability contrast: the SAME apply_reconcile helper, given
+# DECLARED-EMPTY (D={}) over an IDENTICAL COPY of this cycle's starting
+# registry, empties it. Same starting shape as RS06 above (one aid-managed
+# + one tool-managed connector, a pre-existing INDEX.md) -- SKIPPED
+# preserves it, DECLARED-EMPTY empties it.
+S6B="${TMPDIR_BASE}/s6b"
+cp -r "$S6" "$S6B"
+OUT6B="${S6B}/INDEX.md"
+apply_reconcile "$S6B" "DECLARED-EMPTY" "$OUT6B"
+
+if [[ ! -f "${S6B}/api.md" && ! -f "${S6B}/mcp-tool.md" ]]; then
+    pass "RS06f contrast -- DECLARED-EMPTY over the SAME starting registry removes every descriptor (SKIPPED preserves, DECLARED-EMPTY empties)"
+else
+    fail "RS06f contrast -- DECLARED-EMPTY did not remove all descriptors"
+fi
+if [[ ! -f "${S6B}/.secrets/api" ]]; then
+    pass "RS06g contrast -- DECLARED-EMPTY purges the aid-managed secret on the same starting registry"
+else
+    fail "RS06g contrast -- DECLARED-EMPTY left the aid-managed secret in place"
+fi
+assert_file_contains "$OUT6B" "| Connector | Type | Endpoint | Auth | Secret Ref | Summary |" \
+    "RS06h contrast -- INDEX.md regenerated header-only after DECLARED-EMPTY"
+data_rows6b=$(grep -c '^| \[' "$OUT6B" || true)
+assert_eq "$data_rows6b" "0" "RS06i contrast -- INDEX.md has zero data rows after DECLARED-EMPTY"
 
 # ===========================================================================
 # RS07  Q9 DECLARED-EMPTY -- the tool step was engaged with D={}. Distinct
