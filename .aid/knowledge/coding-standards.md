@@ -12,6 +12,7 @@ sources:
   - .claude/skills/generate-profile/scripts/aid_profile.py
   - .claude/aid/scripts/summarize/contrast-check.mjs
   - tests/canonical/ps51-compat-check.ps1
+  - .claude/aid/scripts/connectors/connector-secret.sh
 tags: [C3, conventions, shell, powershell, python, javascript, security, exit-codes]
 see_also: [authoring-conventions.md, module-map.md, test-landscape.md]
 owner: architect
@@ -21,6 +22,7 @@ contracts:
   - "Install-core exit codes: 0 ok, 1 runtime, 2 usage, 3 fetch, 4 checksum, 6 uninstall-no-manifest"
   - "Every script carries a header comment block (Purpose/Usage/Exit codes)"
 changelog:
+  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added `.aid/connectors/` to the discovery write-zone allowlist and a connector secret-handling convention (Security Conventions).
   - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst)
 ---
 
@@ -271,11 +273,26 @@ with matching semantics rather than inventing a new one.
   overwritten -- user content outside the managed region is preserved (see
   `CLAUDE.md` lines `AID:BEGIN`/`AID:END`; full rule in
   [authoring-conventions.md](authoring-conventions.md)).
-- **Discovery is read-only on the repo.** `/aid-discover` and its agents MUST NOT
-  modify any file outside `.aid/knowledge/`, `.aid/generated/`, `.aid/.temp/`
-  (kb-authoring P7) -- a category guard in the skill pre-flight.
-- **No secrets in committed config.** `settings.yml` holds no credentials; there is
-  no secret store in the repo.
+- **Discovery is read-only on the repo, with one declared exemption.** `/aid-discover`
+  and its agents MUST NOT modify any file outside `.aid/knowledge/`, `.aid/generated/`,
+  `.aid/.temp/` (kb-authoring P7) -- a category guard in the skill pre-flight. The
+  ELICIT state's connector sub-phase (Steps E1/E2 + reconcile Steps R0-R5) carries a
+  narrowly-scoped write exemption to also write within `.aid/connectors/` (`INDEX.md`,
+  the `<connector>.md` descriptors, the git-ignored `.secrets/` store, and its local
+  `.gitignore`) -- a declared authoring boundary, not a pre-flight script guard
+  (kb-authoring `principles.md` P7 "Exception (connector sub-phase)").
+- **Connector secrets are referenced, never inlined.** A connector descriptor's
+  `secret_reference` field names a reference FORM only -- `env:<VAR>`, `file:` (a
+  path under the git-ignored `.aid/connectors/.secrets/<stem>`), or `keychain:<name>`
+  -- never a credential value. `connector-secret.sh`/`.ps1` is the single home for all
+  `.aid/connectors/.secrets/` I/O: `write` captures the value with terminal echo off
+  (`read -rs`) and writes it exact-bytes, owner-only (`umask 077`); `purge` deletes it
+  idempotently; both reject a `<stem>` containing `/`, `\`, or `..` before any I/O
+  (path confinement). A secret value MUST NEVER be echoed to stdout/stderr, passed as
+  a process argument, or written into the KB/STATE/transcript.
+- **No secrets in committed config.** `settings.yml` holds no credentials. The only
+  local secret store is the git-ignored `.aid/connectors/.secrets/` (see the connector
+  secret-handling convention above) -- nothing under it is ever committed.
 
 ---
 
@@ -314,4 +331,5 @@ with matching semantics rather than inventing a new one.
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
+| 1.1 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added `.aid/connectors/` to the Security Conventions discovery write-zone bullet (ELICIT connector sub-phase exemption) and a new connector secret-handling convention (`connector-secret.sh`/`.ps1`: `secret_reference` forms, no-echo capture, path confinement); clarified the "no secret store" bullet to scope it to committed config. |
 | 1.0 | 2026-06-25 | aid-discover | Initial conventions mined from code (Analyst) |

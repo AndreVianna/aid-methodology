@@ -17,6 +17,10 @@ sources:
   - lib/aid-install-core.sh
   - canonical/aid/templates/kb-authoring/frontmatter-schema.md
   - canonical/skills/aid-describe/references/state-describe-seed.md
+  - canonical/aid/templates/connectors/preset-catalog.md
+  - canonical/aid/scripts/connectors/build-connectors-index.sh
+  - canonical/skills/aid-discover/references/state-elicit.md
+  - .aid/connectors/INDEX.md
 tags: [C5, artifact-schemas, state-files, manifests, settings, enums, contracts]
 see_also: [authoring-conventions.md, module-map.md, pipeline-contracts.md]
 owner: architect
@@ -27,7 +31,10 @@ contracts:
   - "Delivery Lifecycle enum (closed): Pending-Spec | Specified | Executing | Gated | Done | Blocked"
   - "KB frontmatter source enum (closed, 3): hand-authored | forward-authored | generated"
   - "emission-manifest.jsonl record keys: profile, src, dst, sha256 (+ _manifest_version sentinel)"
+  - "Connector descriptor connection_type enum (closed, 5): mcp | api | ssh | url | cli"
+  - "Connector descriptor auth_method enum (closed, 5): none | token | pat | oauth | ssh-key"
 changelog:
+  - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the Connector Registry Artifacts section (descriptor schema, derived management mode, secret_reference forms, preset catalog, generated INDEX.md, .mcp.json boundary note); corrected the Rev 1.2 changelog attribution to PR #132.
   - 2026-06-27: aid-describe/aid-define split -- rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to aid-describe and feature SPEC stubs to aid-define; added the forward-authored source value + greenfield 5-element seed doc-set
   - 2026-06-25: Initial authoring (aid-discover brownfield deep-dive / Analyst); replaces the schemas.md data-model seed
 ---
@@ -63,6 +70,7 @@ and act from this doc without reaching into the templates.
 - [Emission Manifest (JSONL)](#emission-manifest-jsonl)
 - [Generated-Files Registry](#generated-files-registry)
 - [Discovery Scratch Artifacts](#discovery-scratch-artifacts)
+- [Connector Registry Artifacts](#connector-registry-artifacts)
 - [Greenfield KB Seed (Forward-Authored)](#greenfield-kb-seed-forward-authored)
 - [How Artifacts Relate](#how-artifacts-relate)
 - [Contracts](#contracts)
@@ -368,6 +376,75 @@ Generated discovery outputs under `.aid/generated/` (each carries an
 
 ---
 
+## Connector Registry Artifacts
+
+The connector registry (`.aid/connectors/`) is a **catalog**, not a connection
+manager: it records what agents can use and how, and does not wire any host tool
+(`aid-discover` ELICIT Steps E1/E2 + reconcile Steps R0-R5; STATE.md Q10). Two
+management modes derive from a single field, `connection_type` -- no separate mode
+field is stored.
+
+**Connector descriptor** (`.aid/connectors/<connector>.md` frontmatter):
+
+| Field | Type | Required | Meaning |
+|-------|------|----------|---------|
+| `name` | string | yes | Human name; slugified to the file's `<connector>` stem. |
+| `connection_type` | closed enum: `mcp \| api \| ssh \| url \| cli` | yes | The transport; also the **sole source of the derived management mode** (below). `db` is not a value (folds into `cli`/`api`). |
+| `endpoint` | string | yes | Aid-managed (`api\|ssh\|url\|cli`): the concrete connect target. Tool-managed (`mcp`): informational only -- AID never launches or wires it. |
+| `auth_method` | closed enum: `none \| token \| pat \| oauth \| ssh-key` | yes | Orthogonal to `connection_type`. Always `none` for a tool-managed (`mcp`) connector. |
+| `secret_reference` | string, one of three reference forms (below) | yes iff aid-managed AND `auth_method != none`; omitted otherwise | A *reference*, never a value; always omitted for a tool-managed (`mcp`) connector. |
+| `preset` | string | yes | The catalog `preset-id` (e.g. `github`), or `custom`. |
+| `objective`, `summary`, `tags`, `audience` | KB-style routing fields | yes | Reuses the KB frontmatter *format* (not its required-field set) -- see `preset-catalog.md`. |
+
+**Derived management mode (STATE.md Q10).** A `connection_type: mcp` descriptor is
+**tool-managed**: the host tool provides its own MCP server/plugin for the target and
+handles auth; AID stores no credential and wires nothing. A
+`connection_type: api | ssh | url | cli` descriptor is **aid-managed**: AID records the
+descriptor and, when `auth_method != none`, a local credential resolved via
+`secret_reference` at use-time. No `management_mode` field is stored -- it is always
+re-derived from `connection_type` to avoid drift.
+
+**`secret_reference` value format** -- three reference forms, never a credential value:
+
+| Form | Meaning |
+|------|---------|
+| `env:<VAR>` | Resolve an environment variable at use-time. |
+| `file:.aid/connectors/.secrets/<connector>` | Resolve the git-ignored local secret file (written by `connector-secret.sh`/`.ps1` `write`). |
+| `keychain:<name>` | Resolve an entry in the OS keychain. |
+
+**Preset catalog** (`canonical/aid/templates/connectors/preset-catalog.md`) -- a
+`canonical/` asset that ships byte-identically into every profile's install tree and
+pre-fills a descriptor for a curated set of known tools. Columns: `preset-id`, `name`,
+`connection_type`, `endpoint-template`, `auth_method`, `secret_reference-form` (form
+only, never a value; `--` for tool-managed presets), `notes`, `tags`. Consumed by
+`aid-discover` ELICIT Step E2 (preset branch); an id not found in the catalog is
+captured as `custom`, never guessed as a near match.
+
+**Generated `INDEX.md`** (`.aid/connectors/INDEX.md`) -- the routing table between
+agents and the registry: an agent reaches it via the `## Connectors` context-file
+pointer, then opens the specific descriptor. Frontmatter: `source: generated`,
+`generator: build-connectors-index`. Columns: `Connector | Type | Endpoint | Auth |
+Secret Ref | Summary` (`Secret Ref` renders as an em dash when `auth_method: none`).
+Deterministic -- no run timestamp or dated changelog entry, so an unchanged descriptor
+set re-builds byte-identical (reconcile idempotence depends on this). A
+zero-descriptor registry still gets a header-only `INDEX.md` (frontmatter + table
+header, zero rows), never a missing file. Producer: `build-connectors-index.sh`/`.ps1`,
+triggered by ELICIT authoring (add/update) and reconcile (Steps R0-R5).
+
+**`.mcp.json`** (repo root) -- **not an AID artifact.** It is the host tool's (e.g.
+Claude Code) native MCP-server registration file, read by the host tool itself; no AID
+script or skill reads or writes it (`state-elicit.md`'s `mcp` management-mode branch:
+"AID neither writes nor triggers any host MCP configuration"). A tool-managed (`mcp`)
+connector descriptor never references or edits this file -- the host tool's own
+MCP/plugin mechanism is out of the connector registry's scope entirely.
+
+Producer: `aid-discover` ELICIT (Step E2 author, Steps R0-R5 reconcile) via
+`canonical/aid/scripts/connectors/*`. Consumer: any agent needing a tool integration,
+via the `INDEX.md` pointer; `connector-secret.sh`/`.ps1` (`write`/`purge`) is the sole
+reader/writer of `.aid/connectors/.secrets/`.
+
+---
+
 ## Greenfield KB Seed (Forward-Authored)
 
 On the **greenfield full path**, `aid-describe`'s DESCRIBE-SEED state authors a KB seed
@@ -534,4 +611,5 @@ to `current` by `kb-freshness-check.sh` regardless of baseline.
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial artifact-schemas doc (Analyst); replaces the schemas.md data-model seed |
 | 1.1 | 2026-06-27 | work-001-aid-interview-improvements | aid-describe/aid-define split: rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to `aid-describe` and feature SPEC stubs to `aid-define`; added the `source: forward-authored` enum value, the greenfield 5-element seed doc-set section, the `## Seed Authoring` work-STATE block, and forward-authored contracts/validation notes |
-| 1.2 | 2026-07-08 | work-001-add-deliveries-folder task-001 | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/` (`deliveries/delivery-NNN/`); lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`) and the sole delivery's `## Delivery Lifecycle` + `## Delivery Gate` + `## Cross-phase Q&A` are AUTHORED directly in the work-root STATE.md. Updated the State-File Hierarchy diagram, Work/Delivery STATE.md tables, REQUIREMENTS.md section, and How Artifacts Relate diagram for both layouts. |
+| 1.2 | 2026-07-08 | PR #132 (branch `change-delivery`) | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/` (`deliveries/delivery-NNN/`); lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`) and the sole delivery's `## Delivery Lifecycle` + `## Delivery Gate` + `## Cross-phase Q&A` are AUTHORED directly in the work-root STATE.md. Updated the State-File Hierarchy diagram, Work/Delivery STATE.md tables, REQUIREMENTS.md section, and How Artifacts Relate diagram for both layouts. |
+| 1.3 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the Connector Registry Artifacts section (descriptor frontmatter schema, derived management-mode rule, the three `secret_reference` forms, the preset-catalog format, the generated `INDEX.md` contract, and a boundary note that `.mcp.json` is not an AID artifact); added the closed `connection_type`/`auth_method` enums to the frontmatter `contracts:` list; corrected the Rev 1.2 row's Source attribution from "work-001-add-deliveries-folder task-001" to the source-verified PR #132 (branch `change-delivery`), content unchanged. |

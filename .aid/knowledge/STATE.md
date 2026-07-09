@@ -15,8 +15,8 @@ audience: [developer, architect]
 > **Status:** Approved
 > **Current Grade:** A+
 > **User Approved:** yes
-> **Last KB Review:** 2026-06-25
-> **Last Summary:** 2026-06-28
+> **Last KB Review:** 2026-07-09
+> **Last Summary:** 2026-07-09
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
 
@@ -88,10 +88,10 @@ This is the single state file for the **Discovery area** — persistent project 
 | Profile Confidence | high |
 | Theme | default |
 | Machine Grade | A+ (grade-summary AUTO_POOL 68/68) |
-| Human Grade | A+ (V1 visual gate PASS -- Playwright-rendered + screenshot-validated; validate-visuals 4/4 T1-T4 clear; contrast both themes PASS) |
-| User Approved | yes (2026-06-28; orchestrator-validated during the doc-reconcile PR) |
-| Last Run | 2026-06-28 |
-| Output | .aid/dashboard/kb.html (198882 bytes, 4172 lines, 21 sections) |
+| Human Grade | A+ (K1 10/10, K2 15/15, V1 5/5; V1 orchestrator visual gate via Playwright — hero/glossary/pipeline-SVG render clean in light+dark, theme toggle + lightbox open/Esc verified) |
+| User Approved | yes (2026-07-09; /aid-housekeep SUMMARY-DELTA, orchestrator V1 visual gate) |
+| Last Run | 2026-07-09 |
+| Output | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) |
 | Mermaid Version | — (retired in D-012; pre-rendered inline SVG only) |
 | Mermaid Cached | — |
 
@@ -99,8 +99,8 @@ This is the single state file for the **Discovery area** — persistent project 
 **Doc-Set Count:** 19 of 19
 **Domain:** hybrid:methodology-tooling+software-cli
 **Domain Source:** .aid/knowledge/STATE.md ## Discovery Domain
-**Overall Grade:** A+ (Machine) — Human pending
-**Writeback Status:** pending (orchestrator does WRITEBACK)
+**Overall Grade:** A+ (Machine A+ / Human A+)
+**Writeback Status:** ok (2026-07-09; /aid-housekeep SUMMARY-DELTA)
 **Minimum Grade:** A+
 **Visual-Gate Note:** validate-visuals.mjs SKIPPED (Playwright not installed in the summarize package); V1 visual gate must be run by the orchestrator. 4 inline-SVG diagrams pre-rendered.
 
@@ -174,6 +174,32 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Answer:** USER CONFIRMED: the capability set is complete and correct (14 skills = 10 pipeline + 4 on-demand, CLI installer, 5-profile distribution). FIX still addresses M2-003 (add per-capability module/script mapping or explicit cross-ref to module-map.md).
 - **Applied to:** capability-inventory.md (M2-003 mapping refinement in FIX)
 
+### Q7
+
+- **Category:** Housekeep / KB Delta Refresh
+- **Impact:** Required
+- **Status:** Answered
+- **Context:** /aid-housekeep (KB-DELTA) reconciled the repo against the KB and found drift in 15 docs, driven by the work-002 **connectors** subsystem merged since the 2026-06-28 baseline (PR #133), plus accumulated release drift (v1.1.1→v2.0.6) and the delivery-folder relocation (PR #132). The connectors model to encode: the registry is a **catalog** (lists what agents can use + how), NOT a connection manager (Q10) — `mcp`=tool-managed (host tool provides MCP/plugin + handles auth; AID stores no credential, wires nothing) vs `api|ssh|url|cli`=aid-managed (AID records a descriptor + a local git-ignored secret resolved at use-time via `secret_reference` env:/file:/keychain:); home `.aid/connectors/`; delivery-002 (MCP host wiring) WITHDRAWN. Per-doc corrections:
+    - **capability-inventory.md** — add connectors-catalog capability + `connectors/` script area; reflect aid-discover ELICIT external-source/tool-integration capture (source: generated → refresh).
+    - **module-map.md** — add `connectors/` area row (connector-registry / build-connectors-index / connector-secret twins) + connector test coverage; wire ELICIT→`.aid/connectors/`+external-sources in the dependency graph; update frontmatter `contracts` area list.
+    - **integration-map.md** — add a Connectors section (catalog model, `.aid/connectors/` home, tool-managed-MCP vs aid-managed-descriptor, `.mcp.json`, `secret_reference` resolution, `.gitguardian.yaml` scanning); refresh Last-Updated.
+    - **decisions.md** — add D19: connectors "catalog, not connection-manager" (Q10) + tool-managed/aid-managed authority split + delivery-002-WITHDRAWN rationale.
+    - **artifact-schemas.md** — add schema sections: connector descriptor, `preset-catalog.md`, `.aid/connectors/INDEX.md`, `.mcp.json`, `secret_reference` format.
+    - **test-landscape.md** — update suite count 82→105; add a Connectors suite family (registry, build-index, connector-secret + ps1 + ac3-leak-sweep, twins-ps1-parity, reconcile-scenarios).
+    - **architecture.md** — rephrase the version invariant to assert VERSION *lockstep* rather than hard-coding a number (P1; actual VERSION=2.0.6); add ELICIT as the Discover phase's first state; add `connectors/` script area + a connectors-subsystem note.
+    - **infrastructure.md** — version 1.1.1→2.0.6 (assert-not-hardcode); add `.gitguardian.yaml` (secret scanning), `.mcp.json`, connector `.secrets/` home.
+    - **pipeline-contracts.md** — add ELICIT outputs to the Discover phase-I/O + typed-artifact tables (`external-sources.md` population + `.aid/connectors/` registry).
+    - **domain-glossary.md** — add connector vocabulary (Connector, Connector Registry, Preset / Preset-Catalog, tool-managed vs aid-managed, `secret_reference`); broaden the MCP entry beyond "Playwright MCP"; correct "14 standard docs"→15-doc default seed.
+    - **coding-standards.md** — add `.aid/connectors/` to the kb-authoring-P7 discovery write-zone list; add a connector secret-handling security convention (`secret_reference` + git-ignored `.secrets/`).
+    - **authoring-conventions.md** — add `forward-authored` to the frontmatter `source:` enum; set the seed count to 15 (CONFIRMED: `canonical/aid/templates/knowledge-base/*.md`=15).
+    - **project-structure.md** — version 1.1.1→2.0.6 (assert-not-hardcode); add `.aid/connectors/` to the `.aid/` tree; de-pin the env-specific root path; refresh the stale "12-skill" README quote (→14).
+    - **technology-stack.md** — set version to 2.0.6 consistently (prose "2.0.0" and hints "1.1.1" both wrong); re-measure the Shell/file count (connector scripts added).
+    - **release-tracking.md** — add to `## Unreleased`: connectors subsystem (PR #133) + delivery-folder relocation (PR #132).
+  Also (source-confirmed, no user question): correct the changelog provenance "work-001-add-deliveries-folder task-001" → the actual **PR #132** (branch `change-delivery`, 2026-07-08) in artifact-schemas.md, domain-glossary.md, pipeline-contracts.md, tech-debt.md. Confirmed-current (no change): external-sources.md, quality-gates.md, tech-debt.md (except the provenance line).
+- **Suggested:** SURGICAL edits by the doc-owning agents (add/update only the listed items; preserve existing structure; ground every connectors claim in the cited source). Then regenerate INDEX.md/README.md, reset `**Grade:**` to Pending, REVIEW → APPROVAL (min grade A+).
+- **Answer:** User approved the full-refresh scope. Applied 2026-07-09 via /aid-housekeep KB-DELTA: four aid-tech-writer cluster agents (architecture / analyst / integrator / quality) surgically refreshed the sub-agent-owned docs; the orchestrator authored capability-inventory.md, release-tracking.md, project-structure.md and regenerated INDEX.md + README.md. Source-confirmed corrections to the original plan: (1) the default seed is **14 standard docs + README (meta) = 15 seed files**, so "14 standard docs" is CORRECT — reverted an over-correction to "15 standard"; (2) `.mcp.json` is the host tool's own MCP config, **NOT** a connector artifact (grep: zero `canonical/` refs) — documented as a boundary, not wired into the catalog; (3) connector test suites = **8** (not 7); (4) provenance = **PR #132 (branch change-delivery)**. Grade reset to Pending for the REVIEW gate.
+- **Applied to:** all 15 drifted docs (architecture, technology-stack, decisions, module-map, coding-standards, authoring-conventions, artifact-schemas, pipeline-contracts, integration-map, domain-glossary, test-landscape, infrastructure, capability-inventory, release-tracking, project-structure) + tech-debt.md (provenance line) + INDEX.md & README.md regenerated. external-sources.md / quality-gates.md unchanged (confirmed current).
+
 ## Review History
 
 > One row per /aid-discover review cycle. Append-only.
@@ -183,6 +209,8 @@ This is the single state file for the **Discovery area** — persistent project 
 | 1 | 2026-06-25 | C | /aid-discover | Initial generation. Panel(full): 0 CRIT/0 HIGH/4 MED/2 LOW. Essence PASS · Assertiveness PASS. Grade C < A -> FIX needed. |
 | 2 | 2026-06-25 | A+ | /aid-discover (FIX) | 6/6 findings Fixed, 0 new. Grade A+ >= A. Essence PASS · Assertiveness PASS -> Ready. |
 | 3 | 2026-06-25 | A+ | /aid-discover (APPROVAL) | User approved. KB ready for the Interview phase. |
+| 4 | 2026-07-09 | A+ | /aid-housekeep KB-DELTA (aid-reviewer) | Connectors + release-drift refresh (15 docs, PR #133/#132). 0 findings (C0/H0/M0/L0); all 7 re-verify calls confirmed (seed 14-standard/15-files, .mcp.json non-artifact, 8 suites, D19, version de-hardcoded, ELICIT, connector model); grounded in preset-catalog.md + state-elicit.md. Awaiting user approval. |
+| 5 | 2026-07-09 | A+ | /aid-housekeep KB-DELTA (APPROVAL) | User directed proceed → approved the connectors + release-drift refresh. Closure re-verified before commit; committed on branch aid/housekeep-2026-07-09. |
 
 ## Summarization History
 
@@ -194,6 +222,7 @@ This is the single state file for the **Discovery area** — persistent project 
 
 | 2 | 2026-06-25 | A+ | hybrid:methodology-tooling+software-cli | 18 of 18 docs | kb.html (177780 bytes) | Initial generation (domain-driven 18-doc KB; Machine A+/Human A+; V1 Playwright-validated) |
 | 3 | 2026-06-28 | A+ (Machine) | hybrid:methodology-tooling+software-cli | 19 of 19 docs | kb.html (198882 bytes, 4172 lines, 21 sections) | Forced KB-refresh: aid-interview split to aid-describe/aid-define; 14 skills (was 13); seasoned-analyst engine + greenfield seed + conformance check added. Machine A+ 68/68; Human pending orchestrator. |
+| 4 | 2026-07-09 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) | /aid-housekeep SUMMARY-DELTA: surgical refresh of the existing summary for the work-002 connectors subsystem + release drift — version 2.0.0->2.0.6, test count 82->105, new Connector Registry glossary card + integration-map connectors row + lede clause. Machine A+ 68/68; Human A+ 30/30 (V1 orchestrator visual gate via Playwright — light+dark + lightbox verified). |
 
 ## Calibration Log
 

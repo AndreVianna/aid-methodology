@@ -68,9 +68,12 @@ own machine.
 | Delivery branch naming | `aid/work-NNN-delivery-NNN` (work-scoped, to avoid cross-work collisions) |
 | Line endings | Enforced LF for `*.sh` (CI `kb-hygiene` rejects committed CRLF; see `.gitattributes`) |
 | `core.fileMode` | Maintained `false`; CI sets it false so exec-bit diffs are not spurious drift |
+| Secret scanning | `.gitguardian.yaml` at repo root (GitGuardian config); excludes the 3 connector-secret test suites (`test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh`), which carry intentional low-entropy fake-secret fixtures, not real credentials |
+| MCP server config | `.mcp.json` at repo root (Claude Code MCP server wiring; currently the Playwright MCP server) |
+| Connector secrets | `.aid/connectors/.secrets/` — git-ignored home for connector credentials (`.aid/connectors/.gitignore`), populated only via `connector-secret.{sh,ps1}` (no-echo write, path-confined) |
 
 CONFIRMED via the workflow files + `.gitattributes` + the `kb-hygiene` CRLF check in
-`.github/workflows/test.yml`.
+`.github/workflows/test.yml` + `.gitguardian.yaml` + `.mcp.json` + `.aid/connectors/.gitignore`.
 
 ---
 
@@ -112,7 +115,9 @@ CONFIRMED by each workflow's `on:` block.
 
 ## Versioning and Version-Sync
 
-- **Scheme:** semantic versioning. Current `VERSION` = `1.1.1` (CONFIRMED via `cat VERSION`).
+- **Scheme:** semantic versioning. The live value is whatever the single-line `VERSION` file
+  currently holds — run `cat VERSION` for the current version rather than trusting a
+  hard-coded number in prose.
 - **Source of truth:** the single-line `VERSION` file at the repo root.
 - **Carriers (must all agree):** (1) `VERSION`, (2) `packages/npm/package.json` `version`,
   (3) `packages/pypi/pyproject.toml` `[project].version`, (4) the git tag `v<VERSION>`.
@@ -288,3 +293,4 @@ aid dashboard stop
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial infrastructure mapping (quality deep-dive) |
+| 1.1 | 2026-07-09 | aid-housekeep | connectors subsystem + release-drift refresh (housekeep KB-DELTA) |

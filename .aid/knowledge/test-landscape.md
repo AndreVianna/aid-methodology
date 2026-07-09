@@ -79,7 +79,7 @@ because it must validate Bash, PowerShell, Python, and Node code paths.
 
 | Framework / harness | Type | Location | Notes |
 |---|---|---|---|
-| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (82 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 82. |
+| Bespoke Bash test harness | Unit + integration | `tests/canonical/test-*.sh` (105 suites) | The dominant suite; run via `tests/run-all.sh`. CONFIRMED via `ls tests/canonical/test-*.sh \| wc -l` = 105. |
 | Bespoke PowerShell test (`T<NN>` IDs) | Installer integration | `tests/windows/Test-AidInstaller.ps1` (~2406 lines) | Windows-only; not in `run-all.sh`. |
 | `pytest` | Unit | `dashboard/reader/tests/`, `dashboard/server/tests/` | Python reader/server parsers + fixtures. |
 | Node built-in test | Unit | `dashboard/server/tests/test_server_node.mjs` | Node `.mjs` server tests. |
@@ -109,7 +109,7 @@ Key behaviors (CONFIRMED in `tests/run-all.sh`):
 - **Exit contract.** Exit 0 only if every suite passes; exit 1 if any suite fails (or if no
   suites are found). Under CI it emits `::group::` / `::error::` annotations.
 
-Representative suite families (the 82 cover far more than these):
+Representative suite families (the 105 cover far more than these):
 
 | Family | Example suites | What they protect |
 |---|---|---|
@@ -118,6 +118,7 @@ Representative suite families (the 82 cover far more than these):
 | KB / discovery engine | `test-kb-citation-lint.sh`, `test-frontmatter-lint.sh`, `test-build-kb-index.sh`, `test-closure-check.sh`, `test-harvest-coined-terms.sh`, `test-spine-depth-coverage.sh`, `test-dual-intent-self-eval.sh` | the discovery/KB tooling |
 | Pipeline / execute | `test-writeback-state.sh`, `test-complexity-score.sh`, `test-compute-block-radius.sh`, `test-delivery-gate-aggregate.sh`, `test-grade.sh` | state writeback + delivery gating |
 | Dashboard | `test-dashboard-reader.sh`, `test-dashboard-parity.sh`, `test-dashboard-parity-h.sh`, `test-aid-dashboard-cli.sh` | reader/server parity |
+| Connectors / reconcile | `test-connector-registry.sh`, `test-connectors-registry-integration.sh`, `test-build-connectors-index.sh`, `test-connector-secret.sh`, `test-connector-secret-ps1.sh`, `test-connector-secret-ac3-leak-sweep.sh` (security: no-leak sweep of AC-3), `test-connector-twins-ps1-parity.sh` (bash↔PowerShell twin parity), `test-reconcile-scenarios.sh` | the `.aid/connectors/` catalog + INDEX generation, registry accessor integration, no-echo/path-confined secret handling, and settings reconcile behavior |
 | Compat / hygiene | `test-ps51-compat.sh`, `test-ascii-only.sh`, `test-payload-size.sh`, `test-multitool-isolation.sh`, `test-dogfood-byte-identity.sh` | portability + content isolation |
 
 CONFIRMED by direct listing of `tests/canonical/`.
@@ -317,3 +318,4 @@ cd site && npm ci && npm run build
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial test-landscape analysis (quality deep-dive) |
+| 1.1 | 2026-07-09 | aid-housekeep | connectors subsystem + release-drift refresh (housekeep KB-DELTA) |

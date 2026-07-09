@@ -86,7 +86,7 @@ are off-pipeline or optional. CONFIRMED: `docs/aid-methodology.md` ("Skill Inven
 | # | Phase (skill) | Consumes | Produces | Gate |
 |---|---------------|----------|----------|------|
 | — | `aid-config` (bootstrap) | user metadata (greenfield/brownfield, name, min grade) | `.aid/` scaffold · KB placeholders · context file (`CLAUDE.md`/`AGENTS.md`) · seeded `STATE.md` · `settings.yml` | none (setup) |
-| 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A | deterministic grade ≥ minimum + human approval |
+| 1 | `aid-discover` (full path; brownfield) | repository source · `project-index.md` pre-pass · confirmed `discovery.doc_set` | the confirmed KB doc-set · `INDEX.md` · `README.md` · discovery-area `STATE.md` grade/Q&A · ELICIT E1: `## External Documentation` in `.aid/knowledge/STATE.md` (population signal into `external-sources.md`, written by Scout) · ELICIT E2: `.aid/connectors/` registry (descriptors + `INDEX.md`) | deterministic grade ≥ minimum + human approval |
 | 2a | `aid-describe` | `.aid/knowledge/` · user answers | full path: approved `REQUIREMENTS.md` (+ greenfield: a forward-authored KB seed in `.aid/knowledge/`) · lite path: work-root `SPEC.md` + `tasks/` (directly under the work folder — no `deliveries/`, no `delivery-001/` folder) | grade ≥ minimum + human approval |
 | 2b | `aid-define` (full path only) | approved `REQUIREMENTS.md` · KB · codebase | per-feature `SPEC.md` stubs in `features/` + cross-reference Q&A | grade ≥ minimum + human approval |
 | 3 | `aid-specify` (full path only) | a feature `SPEC.md` (requirements side) · `REQUIREMENTS.md` · KB · codebase | `## Technical Specification` appended to the feature `SPEC.md` | per-section grade ≥ minimum |
@@ -184,7 +184,8 @@ is the contract a producing phase must satisfy and a consuming phase relies on.
 |----------|-------------|-------------|--------------------------------------|-----------|
 | KB doc-set | Discover (brownfield) / `aid-describe` DESCRIBE-SEED (greenfield seed) | all phases | per-doc frontmatter (`kb-category`, `source`, `objective`, `summary`, `sources`, `tags`, `audience`, `owner`) + `# Title` + content + `## Change Log` | living |
 | `INDEX.md` | config/Discover/Describe | all phases | one 2–3 line summary row per KB doc | regenerated, never hand-maintained |
-| `STATE.md` (discovery area) | config/Discover/Summarize | Discover (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log | living |
+| `STATE.md` (discovery area) | config/Discover/Summarize | Discover (resume), all phases | grade, Q&A (Pending), review & summarization history, calibration log; ELICIT (State 0) additionally writes `## Discovery Elicitation` (Sources/Tools/Tools step/Skipped/Resolved) and `## External Documentation` (Path/Type/Accessible/Notes, one row per declared source — E1) | living |
+| `.aid/connectors/` registry | `aid-discover` ELICIT (State 0, Step E2) | all phases (agents requesting a declared integration) | one `<stem>.md` descriptor per connector (`name`, `connection_type`, `endpoint`, `auth_method`, `secret_reference` [aid-managed only], `preset`, `objective`, `summary`, `tags`, `audience`) + generated `INDEX.md` | living, reconciled (add/update/remove) each ELICIT cycle |
 | `REQUIREMENTS.md` | `aid-describe` (full) | Define, Specify, Plan | `## Change Log` + 10 numbered sections (Objective … Priority) | frozen after approval, rev-tracked |
 | feature `SPEC.md` | `aid-define` + Specify | Plan, Detail, Execute | `## Change Log` · Source · Description · User Stories · Priority · Acceptance Criteria · `## Technical Specification` (Specify) | living |
 | work-root `SPEC.md` (lite) | `aid-describe` (lite) | Execute | consolidated requirements + technical context, no `features/` | living |
@@ -195,7 +196,10 @@ is the contract a producing phase must satisfy and a consuming phase relies on.
 | `MONITOR-STATE.md` | Monitor | Execute (bugs), Discover (CRs) | Last Run · Active Findings (Classification/Severity/Evidence/Routing) · Resolved Findings | living |
 
 CONFIRMED by the template files under `canonical/aid/templates/` and the artifact reference
-in `docs/aid-methodology.md` ("Core Artifacts" and "Templates Reference").
+in `docs/aid-methodology.md` ("Core Artifacts" and "Templates Reference"). The ELICIT-produced
+rows (`## Discovery Elicitation` / `## External Documentation` / `.aid/connectors/` registry)
+are CONFIRMED: `canonical/skills/aid-discover/references/state-elicit.md` ("Step E1: External
+SOURCES branch", "Step E2: Tool INTEGRATIONS branch", "Step E3: Record and chain").
 
 The eight task **Types** are the central executor/reviewer contract: the Type drives both how
 the executor works and how the reviewer evaluates the task. CONFIRMED:
@@ -416,4 +420,5 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial pipeline-contract mapping (Integrator deep-dive) |
 | 1.1 | 2026-06-28 | manual | Reconciled Phase 2 to the `aid-interview` split: Phase 2a `aid-describe` (triage + interview + lite + greenfield seed) + Phase 2b `aid-define` (feature decomposition + cross-reference). Rewrote the Phase-2 state-machine model, added the greenfield forward-authoring entry + the conformance feedback, and updated the skill count to 14. |
-| 1.2 | 2026-07-08 | work-001-add-deliveries-folder task-001 | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/`; lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`; the sole delivery's gate + Q&A are AUTHORED in the work-root STATE.md). Rewrote the On-Disk Work Hierarchy section with separate full/lite diagrams and updated stale citations. |
+| 1.2 | 2026-07-08 | PR #132 (branch `change-delivery`) | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/`; lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`; the sole delivery's gate + Q&A are AUTHORED in the work-root STATE.md). Rewrote the On-Disk Work Hierarchy section with separate full/lite diagrams and updated stale citations. |
+| 1.3 | 2026-07-09 | housekeep KB-DELTA | Added ELICIT's outputs (E1 `## External Documentation` / E2 `.aid/connectors/` registry) to the Discover Phase-I/O row and the Typed Artifact Contracts table; corrected the 1.2 provenance to PR #132. |
