@@ -77,7 +77,7 @@ ROOT="${TMPDIR}/connectors"
 mkdir -p "$ROOT"
 printf '.secrets/\n' > "${ROOT}/.gitignore"
 
-SECRET="s3cr3t-T0k3n-value-99"
+SECRET="example-connector-test-plaintext"  # non-secret test fixture (plaintext bytes); NOT a real credential
 
 # ---------------------------------------------------------------------------
 # T1-T5: write happy path + leak-proofing
