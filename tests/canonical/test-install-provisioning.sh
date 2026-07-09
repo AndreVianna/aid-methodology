@@ -201,4 +201,44 @@ assert_eq "$(grep -c '^## Workflow' "${d}/dst.md")" "1" "C1 exactly one ## Workf
 assert_file_contains "${d}/dst.md" "my project" "C1b user ## Project content preserved"
 assert_file_contains "${d}/dst.md" "<!-- AID:BEGIN -->" "C1c region markers inserted"
 
+# ---------------------------------------------------------------------------
+# 6. CONN — is_aid_heading recognizes ## Connectors (task-003); C2 migration
+#           must NOT duplicate the ## Connectors section (mirrors the C1
+#           Workflow-omission regression above; task-004 adds this heading
+#           to the shipped managed region).
+# ---------------------------------------------------------------------------
+d=$(newdir)
+cat > "${d}/src.md" <<'EOF'
+# CLAUDE.md
+<!-- AID:BEGIN -->
+## Tracking discipline
+track
+## Knowledge Base
+kb
+## Connectors
+new connectors
+## Workflow
+new workflow
+## Review output format
+rev
+## Permissions
+perms
+<!-- AID:END -->
+EOF
+# legacy dst: NO markers, carries its own AID-style ## Connectors + user content
+cat > "${d}/dst.md" <<'EOF'
+# CLAUDE.md
+## Project
+my project
+## Connectors
+old connectors
+## Permissions
+old perms
+EOF
+_COPY_COUNT_COPIED=0 _COPY_COUNT_UPTODATE=0 _COPY_COUNT_UPDATED=0 _COPY_COUNT_SKIPPED=0 _COPY_COUNT_FAILED=0
+_copy_root_agent_file "${d}/src.md" "${d}/dst.md" "claude-code" 0 ""
+assert_eq "$(grep -c '^## Connectors' "${d}/dst.md")" "1" "CONN1 exactly one ## Connectors after C2 migration (no duplicate)"
+assert_file_contains "${d}/dst.md" "my project" "CONN1b user ## Project content preserved"
+assert_file_contains "${d}/dst.md" "<!-- AID:BEGIN -->" "CONN1c region markers inserted"
+
 test_summary

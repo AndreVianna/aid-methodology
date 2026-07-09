@@ -210,9 +210,21 @@ The KB follows the repo, never the reverse. **Modifying repo code, configs, skil
 templates, or installers from within a `/aid-discover` cycle is a category violation
 and a hard guard in the skill's pre-flight.**
 
-Exception: the one-time KB-format migration (when these principles are first applied
-to an existing project) is a separate operation — not a review. It may touch KB doc
-content liberally because the act of migration is structural, not corrective.
+Exception (one-time migration): the one-time KB-format migration (when these principles
+are first applied to an existing project) is a separate operation — not a review. It may
+touch KB doc content liberally because the act of migration is structural, not corrective.
+
+Exception (connector sub-phase): the P7-exempt connector sub-phase of `/aid-discover` —
+feature-002's `ELICIT` state, which restores external-source and external-tool elicitation —
+is a declared, narrowly-scoped write exemption. It may write ONLY within `.aid/connectors/` —
+the connectors registry: `INDEX.md`, the `<connector>.md` descriptors, the git-ignored
+`.secrets/` value store, and the connectors-local `.gitignore`. It writes **no** host tool
+configuration (Q10: `mcp` connectors are tool-managed — AID catalogs them but never wires them).
+
+It writes nowhere else outside `.aid/knowledge/`, `.aid/generated/`, or `.aid/.temp/`. This
+carve-out is a **declared authoring boundary, not a new pre-flight script guard**:
+`discover-preflight.sh` still checks only STATE.md presence and Plan Mode, so adherence to
+this allowlist is the sub-phase's own contract, not a mechanically enforced one.
 
 ## P8. Rigor follows value — verify the core, not the scaffolding
 

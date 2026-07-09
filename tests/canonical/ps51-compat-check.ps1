@@ -24,6 +24,15 @@ param([string]$RepoRoot = '.')
 
 $ErrorActionPreference = 'Stop'
 $files = @('install.ps1', 'bin/aid.ps1', 'lib/AidInstallCore.psm1')
+# Connector PowerShell twins (work-002) ship under canonical/aid/scripts/connectors/ and must
+# stay Windows PowerShell 5.1-compatible; glob the directory so every connector twin -- and any
+# future one added there -- is guarded automatically, not just a hardcoded list.
+$connectorsDir = Join-Path $RepoRoot 'canonical/aid/scripts/connectors'
+if (Test-Path $connectorsDir) {
+    Get-ChildItem -Path $connectorsDir -Filter '*.ps1' -ErrorAction SilentlyContinue |
+        Sort-Object Name |
+        ForEach-Object { $files += ('canonical/aid/scripts/connectors/' + $_.Name) }
+}
 $bad7enc   = @('utf8NoBOM', 'utf8BOM', 'ansi', 'oem')
 $absent51  = @('Start-ThreadJob', 'Get-Error', 'Test-Json', 'Join-String', 'ConvertFrom-Markdown')
 $web7param = @('SkipCertificateCheck', 'Authentication', 'SslProtocol', 'SkipHeaderValidation', 'MaximumRetryCount', 'RetryIntervalSec')

@@ -464,8 +464,8 @@ function Copy-AidDir {
 
 # script:Test-AidHeadingStem <line>
 # Returns $true when the line is an AID-managed section heading (by stem match).
-# Stems matched: Knowledge Base, Review output format, Permissions,
-#                Tracking discipline.
+# Stems matched: Tracking discipline, Knowledge Base, Connectors, Workflow,
+#                Review output format, Permissions.
 # Tolerates a trailing parenthetical suffix e.g. " (global)" or " (IMPERATIVE)".
 # Identical logic to the bash is_aid_heading awk function.
 function script:Test-AidHeadingStem {
@@ -475,11 +475,12 @@ function script:Test-AidHeadingStem {
     # Strip trailing parenthetical: " (anything)"
     $stem = $stem -replace ' \([^)]*\)$', ''
     # Stems must cover EVERY "## " heading in the shipped AID:BEGIN/END region
-    # (Tracking discipline, Knowledge Base, Workflow, Review output format,
-    # Permissions). A missing stem duplicates that section on C2 migration
-    # (work-007: Workflow was omitted). Parity with bash is_aid_heading.
+    # (Tracking discipline, Knowledge Base, Connectors, Workflow, Review output
+    # format, Permissions). A missing stem duplicates that section on C2
+    # migration (work-007: Workflow was omitted). Parity with bash is_aid_heading.
     switch ($stem) {
         'Knowledge Base'       { return $true }
+        'Connectors'           { return $true }
         'Workflow'             { return $true }
         'Review output format' { return $true }
         'Permissions'          { return $true }
@@ -521,8 +522,8 @@ function script:Get-AidMarkedRegion {
 #   C. Dst has no markers      -> migrate:
 #      C1. Sha matches recorded manifest sha -> clean rewrite to full marked source.
 #      C2. Sha mismatch        -> excise known AID-managed sections by stem match
-#                                 (Knowledge Base, Review output format,
-#                                 Permissions, Tracking discipline -- tolerating
+#                                 (Tracking discipline, Knowledge Base, Connectors,
+#                                 Workflow, Review output format, Permissions -- tolerating
 #                                 trailing parenthetical suffix on the heading)
 #                                 and re-insert them wrapped in AID:BEGIN/END
 #                                 markers in place; preserve ## Project /
@@ -644,10 +645,12 @@ function script:Copy-RootAgentFile {
     #
     # AID section stems to excise (exact heading stem; tolerate trailing
     # parenthetical like " (global)" or " (IMPERATIVE)"):
+    #   ## Tracking discipline
     #   ## Knowledge Base
+    #   ## Connectors
+    #   ## Workflow
     #   ## Review output format
     #   ## Permissions
-    #   ## Tracking discipline
     #
     # A section runs from its "## Stem..." heading line until the next "## "
     # heading (exclusive) or end-of-file.
