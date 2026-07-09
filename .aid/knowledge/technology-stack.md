@@ -66,7 +66,7 @@ Product version: **2.0.6** (`VERSION`; npm and PyPI wrappers both at `2.0.6`). C
 | Language | Version (source) | Role |
 |----------|------------------|------|
 | **Markdown** | n/a | The dominant artifact by file count (skills, agents, templates, recipes, KB, docs) — run `find . -name '*.md' \| wc -l` for the live total. The methodology IS markdown. |
-| **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites. 376 files (`find . -name '*.sh' | wc -l`, excluding `.git/`). |
+| **Bash / Shell** | POSIX bash | Installers, CLI (`bin/aid`), install-core (`lib/aid-install-core.sh`), phase scripts, test suites — run `find . -name '*.sh' \| wc -l` for the live count. |
 | **PowerShell** | **Windows PowerShell 5.1+** (compat floor) | Windows installer/CLI parity (`install.ps1`, `lib/AidInstallCore.psm1`, `bin/aid.ps1`). CONFIRMED `README.md` (search: "PowerShell 5.1+"). |
 | **Python** | **>=3.8** (PyPI); CI pins **3.11** | The profile renderer, dashboard reader, PyPI wrapper. CONFIRMED `packages/pypi/pyproject.toml` (search: "requires-python = \">=3.8\"") and `.github/workflows/test.yml` (search: "python-version: '3.11'"). |
 | **JavaScript (Node)** | **>=18** (npm wrapper); CI pins **20** | npm wrapper, dashboard Node server/reader (`reader.mjs`), summarize validators (`.mjs`). CONFIRMED `packages/npm/package.json` (search: "node\": \">=18") and `.github/workflows/test.yml` (search: "node-version: '20'"). |
@@ -247,4 +247,4 @@ No EOL or known-CVE runtime dependency was observed (the CLI ships none). See
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial stack inventory — polyglot languages with versions, build/lint/test commands, zero-dependency CLI, distribution channels. |
-| 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — corrected the product version from a stale "2.0.0"/`1.1.1` mismatch to the actual `VERSION` value (2.0.6); recomputed the Shell file count (327 -> 376). |
+| 1.1 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — corrected the product version from a stale "2.0.0"/`1.1.1` mismatch to the actual `VERSION` value (2.0.6); de-hardcoded the Shell-file count to a live `find` command (the prior "327" was stale). |
