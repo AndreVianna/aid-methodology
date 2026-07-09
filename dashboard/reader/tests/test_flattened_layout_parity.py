@@ -318,6 +318,23 @@ class TestFlattenedLayout(unittest.TestCase):
         self.assertEqual(d.delivery_state, "Executing")
         self.assertEqual(d.name, "Flat Delivery Title")
 
+    def test_work_path_defaults_to_lite(self):
+        """FIX 1: a shortcut-produced flat work never authors a `## Triage ->
+        **Path:**` field (there is no Triage section in this fixture at all),
+        so `_read_work_flat` defaults `work_path` to 'lite' -- a flat work IS
+        a Lite work by construction. Without the default, home.html mislabels
+        the work "[Identifying path]", wraps its tasks in a redundant
+        "Delivery #1" panel, and omits the Lite badge."""
+        self._build_fixture()
+        with mock.patch(
+            "dashboard.reader.reader.enumerate_worktree_roots",
+            return_value=[("main", self.aid)],
+        ):
+            model = read_repo(self.root)
+
+        w = model.works[0]
+        self.assertEqual(w.work_path, "lite")
+
     def test_delivery_lifecycle_and_gate_from_work_root_state(self):
         """## Delivery Lifecycle / ## Delivery Gate are parsed from the work-root STATE.md."""
         self._build_fixture()
@@ -418,6 +435,7 @@ class TestFlattenedLayout(unittest.TestCase):
             "  title: w ? w.title : null,\n"
             "  description: w ? w.description : null,\n"
             "  source_mode: w ? (w.sourceMode || w.source_mode) : null,\n"
+            "  work_path: w ? w.work_path : null,\n"
             "};\n"
             "process.stdout.write(JSON.stringify(result) + '\\n');\n"
         )
@@ -473,6 +491,13 @@ class TestFlattenedLayout(unittest.TestCase):
                           "Node/Python description parity")
         self.assertEqual(node_data["source_mode"], py_w.source_mode.value,
                           "Node/Python source_mode parity")
+
+        # FIX 1: both twins default a flat work's work_path to 'lite' when no
+        # `## Triage -> **Path:**` field was authored (shortcut-produced works
+        # never author one -- a flat work IS a Lite work by construction).
+        self.assertEqual(node_data["work_path"], py_w.work_path,
+                          "Node/Python work_path parity")
+        self.assertEqual(py_w.work_path, "lite", "flat work defaults work_path to 'lite'")
 
 
 if __name__ == "__main__":

@@ -363,6 +363,15 @@ class TestLiteFlatLayout(unittest.TestCase):
         w = model.works[0]
         self.assertEqual(w.deliverables[0].delivery_state, "Executing")
 
+    def test_work_path_defaults_to_lite(self):
+        """FIX 1: this fixture authors no `## Triage -> **Path:**` field at
+        all (see _build_lite_flat_work -- no Triage section), matching a
+        shortcut-produced work. `_read_work_flat` defaults `work_path` to
+        'lite' -- a flat work IS a Lite work by construction."""
+        model = _read_repo_single_work(self.root, self.aid)
+        w = model.works[0]
+        self.assertEqual(w.work_path, "lite")
+
     def test_work_lifecycle_distinct_from_delivery_state(self):
         """Work-level Pipeline State (Running) and the delivery's own
         ## Delivery Lifecycle (Executing) are two DIFFERENT sections in the

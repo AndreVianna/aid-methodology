@@ -3213,7 +3213,7 @@ function _readWorkFlat(workDir, workId) {
     title: reqTitle,
     description: reqDescription,
     objective: reqObjective,
-    work_path: pw.workPath,
+    work_path: pw.workPath || "lite",
     recipe: pw.recipe,
     features: pw.features,
     deliverables: deliverables,
@@ -3997,6 +3997,13 @@ function parseQuickCheckFindings(stateText, taskId, parseWarnings) {
 
 // DR-3: parse ## Delivery Gates -> ### delivery-NNN for grade/tier/timestamp
 // Twin of parse_delivery_gate in parsers.py (byte-parity minded)
+//
+// Fallback (flat/lite works): a shortcut-produced work promotes a SINGULAR
+// "## Delivery Gate" block into the work-root STATE.md instead of the derived
+// plural "## Delivery Gates" -> "### delivery-NNN" rollup. When no plural
+// section is present at all, the singular block -- if any -- is read as
+// delivery-001's gate. Additive: never fires when a plural section exists, so
+// full/hierarchical works are unaffected.
 function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
   let grade = null;
   let reviewerTier = null;
@@ -4004,6 +4011,7 @@ function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
 
   let inGates = false;
   let inDeliveryBlock = false;
+  let foundGatesSection = false;
   const deliveryIdLower = deliveryId.toLowerCase();
 
   try {
@@ -4011,6 +4019,7 @@ function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
       if (RE_DELIVERY_GATES_SECTION.test(line)) {
         inGates = true;
         inDeliveryBlock = false;
+        foundGatesSection = true;
         continue;
       }
       if (inGates) {
@@ -4046,6 +4055,44 @@ function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
             continue;
           }
           // Once all three are found, stop scanning
+          if (grade && reviewerTier && gateTimestamp) break;
+        }
+      }
+    }
+
+    // Fallback: no plural ## Delivery Gates section anywhere in the text --
+    // try the singular ## Delivery Gate block (flat/lite promoted layout),
+    // treated as delivery-001's gate.
+    if (!foundGatesSection && deliveryIdLower === "delivery-001") {
+      let inGate = false;
+      for (const line of stateText.split("\n")) {
+        if (RE_DELIVERY_GATE_SECTION.test(line)) {
+          inGate = true;
+          continue;
+        }
+        if (inGate) {
+          // Any ## section (not ###) ends the singular gate block
+          if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
+            inGate = false;
+            continue;
+          }
+          const gm = line.match(RE_GATE_GRADE);
+          if (gm && grade === null) {
+            const raw = gm[1].trim();
+            grade = raw ? raw.split(/\s+/)[0] : null;
+            continue;
+          }
+          const rtm = line.match(RE_GATE_REVIEWER_TIER);
+          if (rtm && reviewerTier === null) {
+            const raw = rtm[1].trim();
+            reviewerTier = raw ? raw.split(/\s+/)[0] : null;
+            continue;
+          }
+          const tsm = line.match(RE_GATE_TIMESTAMP);
+          if (tsm && gateTimestamp === null) {
+            gateTimestamp = tsm[1].trim() || null;
+            continue;
+          }
           if (grade && reviewerTier && gateTimestamp) break;
         }
       }

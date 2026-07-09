@@ -1073,7 +1073,7 @@ def _read_work_flat(
         title=req_title,
         description=req_description,
         objective=req_objective,
-        work_path=pw.work_path,
+        work_path=pw.work_path or "lite",
         recipe=pw.recipe,
         features=pw.features,
         deliverables=deliverables,

@@ -150,6 +150,28 @@ function makeWorkDir(aid, workId, stateContent) {
   return wdir;
 }
 
+// Builds a FLATTENED (feature-001) single-delivery work: BLUEPRINT.md +
+// tasks/task-NNN/DETAIL.md + a work-root STATE.md carrying the promoted
+// singular '## Delivery Gate' block (no '## Delivery Gates' rollup). Mirrors
+// dashboard/reader/tests/test_flattened_layout_parity.py's fixture shape --
+// used to exercise FIX 2 (parseDeliveryGate's singular-block fallback).
+function makeFlatWorkDir(aid, workId, stateContent) {
+  const wdir = join(aid, workId);
+  mkdirSync(wdir, { recursive: true });
+  writeFileSync(join(wdir, "BLUEPRINT.md"), (
+    "# Delivery BLUEPRINT -- delivery-001: Flat Delivery Title\n\n" +
+    "## Objective\n\nDeliver the flat layout.\n\n" +
+    "## Gate Criteria\n\n- [ ] All tests pass\n"
+  ), "utf8");
+  const taskDir = join(wdir, "tasks", "task-001");
+  mkdirSync(taskDir, { recursive: true });
+  writeFileSync(join(taskDir, "DETAIL.md"), (
+    "# task-001: Flat gate task\n\n**Type:** IMPLEMENT\n\nBody.\n"
+  ), "utf8");
+  writeFileSync(join(wdir, "STATE.md"), stateContent, "utf8");
+  return wdir;
+}
+
 // ---------------------------------------------------------------------------
 // [1] DR-2: Quick Check Findings integration tests
 // ---------------------------------------------------------------------------
@@ -671,6 +693,63 @@ process.stdout.write("\n[15] Torn-read tolerance: malformed STATE.md never throw
       error = exc;
     }
     assertEquals(error, null, "torn-read: no exception thrown on malformed STATE.md");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+}
+
+// ---------------------------------------------------------------------------
+// [16] FIX 2: parseDeliveryGate singular '## Delivery Gate' fallback
+//      (flat/lite promoted layout, no plural '## Delivery Gates' rollup)
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[16] FIX 2: singular '## Delivery Gate' fallback (flat/lite)\n");
+
+{
+  const base = makeTempDir();
+  try {
+    const aid = makeAidFixture(base);
+    const flatStateText = [
+      "## Pipeline State",
+      "",
+      "- **Lifecycle:** Running",
+      "- **Phase:** Execute",
+      "- **Active Skill:** aid-execute",
+      "- **Updated:** 2026-07-08T12:00:00Z",
+      "- **Pause Reason:** --",
+      "- **Block Reason:** --",
+      "- **Block Artifact:** --",
+      "",
+      "## Delivery Lifecycle",
+      "",
+      "- **State:** Executing",
+      "- **Updated:** 2026-07-08T12:00:00Z",
+      "- **Block Reason:** --",
+      "- **Block Artifact:** --",
+      "",
+      "### Tasks lifecycle",
+      "",
+      "| Task | State | Review | Elapsed | Notes |",
+      "|------|-------|--------|---------|-------|",
+      "| task-001 | Done | A+ | 1h | -- |",
+      "",
+      "## Delivery Gate",
+      "",
+      "- **Reviewer Tier:** Small",
+      "- **Grade:** A+",
+      "- **Issue List:** none",
+      "- **Timestamp:** 2026-07-08T12:00:00Z",
+      "",
+    ].join("\n");
+    makeFlatWorkDir(aid, "work-901-flat-gate", flatStateText);
+
+    const { details } = readRepoDetail(base, ["work-901-flat-gate/task-001"]);
+    const td = details["work-901-flat-gate/task-001"];
+
+    assertEquals(td.ledger.delivery_id, "delivery-001", "FIX 2: flat task resolves to delivery-001");
+    assertEquals(td.ledger.grade, "A+", "FIX 2: grade read from singular '## Delivery Gate' block");
+    assertEquals(td.ledger.reviewer_tier, "Small", "FIX 2: reviewer_tier read from singular block");
+    assertEquals(td.ledger.gate_timestamp, "2026-07-08T12:00:00Z", "FIX 2: gate_timestamp read from singular block");
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

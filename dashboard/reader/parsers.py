@@ -2171,6 +2171,14 @@ def parse_delivery_gate(
 
     Returns (grade, reviewer_tier, gate_timestamp). All None if the block is absent.
     Verbatim -- never re-grades (NFR7). Never throws (torn -> parse_warning + None).
+
+    Fallback (flat/lite works): a shortcut-produced work promotes a SINGULAR
+    `## Delivery Gate` block into the work-root STATE.md instead of the derived
+    plural `## Delivery Gates` -> `### delivery-NNN` rollup (see
+    parse_delivery_state_md's docstring). When no plural `## Delivery Gates`
+    section is present at all, the singular `## Delivery Gate` block -- if any --
+    is read as delivery-001's gate. This is additive: it never fires when a
+    plural section exists, so full/hierarchical works are unaffected.
     """
     grade: Optional[str] = None
     reviewer_tier: Optional[str] = None
@@ -2178,6 +2186,7 @@ def parse_delivery_gate(
 
     in_gates = False
     in_delivery_block = False
+    found_gates_section = False
 
     # Normalize for comparison
     delivery_id_lower = delivery_id.lower()
@@ -2187,6 +2196,7 @@ def parse_delivery_gate(
             if _RE_DELIVERY_GATES_SECTION.match(line):
                 in_gates = True
                 in_delivery_block = False
+                found_gates_section = True
                 continue
 
             if in_gates:
@@ -2224,6 +2234,42 @@ def parse_delivery_gate(
                         continue
 
                     # Once all three are found, we can stop scanning the delivery block
+                    if grade and reviewer_tier and gate_timestamp:
+                        break
+
+        # Fallback: no plural ## Delivery Gates section anywhere in the text --
+        # try the singular ## Delivery Gate block (flat/lite promoted layout),
+        # treated as delivery-001's gate.
+        if not found_gates_section and delivery_id_lower == "delivery-001":
+            in_gate = False
+            for line in state_text.splitlines():
+                if _RE_DELIVERY_GATE_SECTION.match(line):
+                    in_gate = True
+                    continue
+
+                if in_gate:
+                    # Any ## section (not ###) ends the singular gate block
+                    if re.match(r"^##\s+\S", line) and not re.match(r"^###", line):
+                        in_gate = False
+                        continue
+
+                    gm = _RE_GATE_GRADE.match(line)
+                    if gm and grade is None:
+                        raw = gm.group(1).strip()
+                        grade = raw.split()[0] if raw else None
+                        continue
+
+                    rtm = _RE_GATE_REVIEWER_TIER.match(line)
+                    if rtm and reviewer_tier is None:
+                        raw = rtm.group(1).strip()
+                        reviewer_tier = raw.split()[0] if raw else None
+                        continue
+
+                    tsm = _RE_GATE_TIMESTAMP.match(line)
+                    if tsm and gate_timestamp is None:
+                        gate_timestamp = tsm.group(1).strip() or None
+                        continue
+
                     if grade and reviewer_tier and gate_timestamp:
                         break
 
