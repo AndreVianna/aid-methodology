@@ -899,6 +899,42 @@ function script:Invoke-AidDashboardCtl {
     }
 }
 
+# ---------------------------------------------------------------------------
+# Cross-platform process reaping for the dashboard server (start/stop).
+# Mirror of the Bash launcher's _dc_is_windows / _dc_reap_port. On Windows the
+# server is reached only through the python3.bat / node shim, so the recorded
+# pid is the WRAPPER, not the detached native python.exe/node.exe server, and a
+# plain Stop-Process (no tree) leaves it orphaned and still bound to the port --
+# an old orphan then keeps serving stale in-memory code (pipelines look empty).
+# Kill the whole native tree (taskkill /F /T) and, as a safety net, whatever
+# still listens on the recorded port.
+# 5.1-safe: the PS Core platform auto-vars are absent in Windows PowerShell 5.1; use $env:OS.
+# ---------------------------------------------------------------------------
+function script:Test-AidWindows {
+    return ($env:OS -eq 'Windows_NT')
+}
+
+# Windows-only safety net: kill any process still LISTENING on 127.0.0.1:<Port>.
+# Catches an older orphan whose wrapper pid had already exited. No-op on POSIX
+# (the Stop-Process path in Invoke-DcStop already suffices there).
+function script:Invoke-DcReapPort {
+    param([int]$Port, [bool]$Verbose)
+    if ($Port -le 0) { return }
+    if (-not (script:Test-AidWindows)) { return }
+    $lines = & netstat.exe -ano -p tcp 2>$null
+    $seen = @{}
+    foreach ($line in $lines) {
+        if ($line -match "127\.0\.0\.1:$Port\s+\S+\s+LISTENING\s+(\d+)") {
+            $rp = $matches[1]
+            if ($rp -and $rp -ne '0' -and -not $seen.ContainsKey($rp)) {
+                $seen[$rp] = $true
+                if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: reaping orphaned server on :$Port (pid $rp)") }
+                & taskkill.exe /F /T /PID $rp 2>$null | Out-Null
+            }
+        }
+    }
+}
+
 function script:Invoke-DcStart {
     param([string]$Runtime, [int]$Port, [bool]$Remote, [bool]$Verbose)
 
@@ -1128,8 +1164,10 @@ function script:Invoke-DcStop {
 
     $pidContent = Get-Content -LiteralPath $pidFile -Raw -ErrorAction SilentlyContinue
     $existingPid = 0
+    $existingPort = 0
     $logFile     = ''
     if ($pidContent -match '"pid"\s*:\s*(\d+)') { $existingPid = [int]$matches[1] }
+    if ($pidContent -match '"port"\s*:\s*(\d+)') { $existingPort = [int]$matches[1] }
     if ($pidContent -match '"logfile"\s*:\s*"([^"]+)"') { $logFile = $matches[1] }
 
     $procAlive = $false
@@ -1139,6 +1177,10 @@ function script:Invoke-DcStop {
 
     if (-not $procAlive) {
         if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: record exists but pid $existingPid is dead; cleaning up.") }
+        # Windows: the recorded pid is the cmd/.bat wrapper; even after it exits the
+        # detached native server may still be alive and bound to the port. Reap it
+        # by port before dropping the record.
+        script:Invoke-DcReapPort -Port $existingPort -Verbose $Verbose
         Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
         if ($logFile -and (Test-Path $logFile -PathType Leaf)) { Remove-Item -LiteralPath $logFile -Force -ErrorAction SilentlyContinue }
         Write-Host 'aid: dashboard: not running (nothing to stop).'
@@ -1158,27 +1200,42 @@ function script:Invoke-DcStop {
         }
     }
 
-    # Step 5: terminate the process cleanly.
-    if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: sending Stop-Process to pid $existingPid") }
-    try { Stop-Process -Id $existingPid -ErrorAction SilentlyContinue } catch {}
+    # Step 5: terminate the server.
+    if (script:Test-AidWindows) {
+        # Windows: the recorded pid is the cmd/python3.bat (or node) WRAPPER; the
+        # real server is a detached native python.exe/node.exe child that a plain
+        # Stop-Process (no tree) cannot reach. Kill the whole native process tree
+        # so the server does not survive as an orphan still bound to the port.
+        if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: killing native process tree of $existingPid") }
+        & taskkill.exe /F /T /PID $existingPid 2>$null | Out-Null
+    } else {
+        # POSIX: terminate the process cleanly.
+        if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: sending Stop-Process to pid $existingPid") }
+        try { Stop-Process -Id $existingPid -ErrorAction SilentlyContinue } catch {}
 
-    # Wait up to ~5s for exit.
-    $waited = 0
-    while ($waited -lt 50) {
+        # Wait up to ~5s for exit.
+        $waited = 0
+        while ($waited -lt 50) {
+            $stillAlive = $false
+            try { $null = Get-Process -Id $existingPid -ErrorAction Stop; $stillAlive = $true } catch {}
+            if (-not $stillAlive) { break }
+            Start-Sleep -Milliseconds 100
+            $waited++
+        }
+
+        # Escalate to -Force if still alive.
         $stillAlive = $false
         try { $null = Get-Process -Id $existingPid -ErrorAction Stop; $stillAlive = $true } catch {}
-        if (-not $stillAlive) { break }
-        Start-Sleep -Milliseconds 100
-        $waited++
+        if ($stillAlive) {
+            if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: escalating to Stop-Process -Force on pid $existingPid") }
+            try { Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue } catch {}
+        }
     }
 
-    # Escalate to -Force if still alive.
-    $stillAlive = $false
-    try { $null = Get-Process -Id $existingPid -ErrorAction Stop; $stillAlive = $true } catch {}
-    if ($stillAlive) {
-        if ($Verbose) { [Console]::Error.WriteLine("aid: dashboard: escalating to Stop-Process -Force on pid $existingPid") }
-        try { Stop-Process -Id $existingPid -Force -ErrorAction SilentlyContinue } catch {}
-    }
+    # Safety net (Windows): if a server is still bound to the recorded port (an
+    # older orphan whose wrapper had already exited), reap whatever still listens
+    # on that port. No-op on POSIX.
+    script:Invoke-DcReapPort -Port $existingPort -Verbose $Verbose
 
     # Step 6: remove record and logfile, print success.
     Remove-Item -LiteralPath $pidFile -Force -ErrorAction SilentlyContinue
