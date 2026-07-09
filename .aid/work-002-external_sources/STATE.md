@@ -29,9 +29,9 @@ different places.
 > Active Skill enum: aid-{skill} | none
 
 - **Lifecycle:** Running
-- **Phase:** Execute
-- **Active Skill:** aid-execute
-- **Updated:** 2026-07-08T18:33:39Z
+- **Phase:** Specify
+- **Active Skill:** none
+- **Updated:** 2026-07-09T00:27:35Z
 
 ---
 
@@ -115,9 +115,9 @@ different places.
 | 1 | feature-001-integration-store-placement | Ready | A+ | — | Keystone: `.aid/connectors/` layout + registry/descriptor schema + secret store + connectors index + context-file wiring. A+ (6 findings fixed + coherence touch-ups) |
 | 2 | feature-002-source-and-tool-elicitation | Ready | A+ | — | New P7-exempt ELICIT state; sources→external-sources.md (Scout), tools→registry; skippable; presets+generic; URL cataloguing. A+ (D→C+→A+) |
 | 3 | feature-003-local-auth-registration | Ready | A+ | — | feature-003-owned connector-secret twin (write+purge, path-confined); reference-not-value; no echo/persist. A+ (2 fix cycles) |
-| 4 | feature-004-connection-wiring | Ready | A+ | — | Multi-host MCP wiring (per-host mechanism spike); wire+unwire ops (Q8); descriptors for api/ssh/url/cli; use-time resolution = 005/agent. A+ |
+| 4 | feature-004-connection-wiring | Ready | A+→(Q10 rewrite) | — | **Q10-reframed → "Connection Modes & Consumption"** (no code): management mode derived from connection_type (mcp=tool-managed → request from host tool, tool handles auth, no AID cred/wiring; api/ssh/url/cli=aid-managed → descriptor + local auth). AID wires nothing. Realized within delivery-001. (Pre-Q10: multi-host MCP wiring — retracted.) |
 | 5 | feature-005-registry-persistence-and-consumption | Ready | A+ | — | Owns INDEX builder (deterministic) + regen + consumption contract; producers write; Scout writes sources. A+ |
-| 6 | feature-006-idempotent-reconcile | Ready | A+ | — | Re-run add/update/remove; purge-before-delete (interrupt-safe); REMOVE composes 003's purge + 004's unwire (mcp, Q8) + 005's builder. A+ |
+| 6 | feature-006-idempotent-reconcile | Ready | A+→(Q10 touch) | — | Re-run add/update/remove; purge-before-delete (interrupt-safe); REMOVE = delete descriptor + 003's purge (aid-managed only) + 005's INDEX rebuild. **No unwire (Q10 supersedes Q8).** |
 
 ## Plan / Deliveries
 
@@ -157,6 +157,7 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 - **Suggested:** Reword FR-4/AC-4 to "the host's MCP configuration (location resolved per host profile)"; scope the initial MCP wiring to Claude Code (`.mcp.json`) with per-host resolution as a /aid-specify concern — unless broad multi-host support is explicitly in scope.
 - **Status:** Answered
 - **Answer:** Broad multi-host MCP wiring is IN SCOPE — all 5 host profiles (claude-code, codex, cursor, copilot-cli, antigravity), each via its own MCP-config mechanism. FR-4/AC-4 to be reworded to "the host's MCP configuration, per host profile"; feature-004 scope enlarged accordingly; a /aid-specify research item will map each host's MCP mechanism (none exist in the codebase yet).
+- **SUPERSEDED by Q10** (2026-07-09): retracted. AID does NOT wire MCP configs at all — the premise that AID writes MCP server entries into host profiles is wrong. See Q10 (catalog, not manager).
 
 ### Q2
 
@@ -227,6 +228,7 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 - **Status:** Answered
 - **Context:** aid-plan REVIEW found a cross-feature gap: delivery-003's "unwire-on-remove" gate criterion + the delivery-003 → delivery-002 dependency assumed feature-006 unwires an `mcp` tool's host config on removal — but feature-006's spec only purged the secret + deleted the descriptor (no unwire), while feature-004's spec asserted feature-006 does it. FR-7/AC-6 never explicitly required unwire; leaving it out strands a dead MCP entry (a launch spec for a removed tool) in host configs on removal.
 - **Answer (user-approved):** YES — reconcile unwires on removal. Extends Q7: **feature-004 owns BOTH a `wire` and an `unwire` op** on its host-MCP-config twin (unwire removes the connector's `mcpServers`/equivalent entry from each installed host's config, idempotent, preserving other servers). **feature-006's REMOVE composes feature-004's `unwire` op** for an `mcp`-typed connector — mirroring how it composes feature-003's `purge`. So REMOVE = purge secret (feature-003) + unwire host config (feature-004, mcp only) + delete descriptor + regenerate INDEX (feature-005), with purge/unwire BEFORE descriptor-delete for interrupt-safety. This backs delivery-003's unwire gate criterion + the d3→d2 dependency. feature-004 + feature-006 specs re-touched + re-gated A+.
+- **SUPERSEDED by Q10** (2026-07-09): retracted. AID neither wires nor unwires host MCP configs, so there is nothing to unwire on removal. Reconcile REMOVE = delete descriptor + purge the local secret (aid-managed connectors only) + regenerate INDEX. See Q10.
 
 ### Q9
 
@@ -235,6 +237,24 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
 - **Status:** Answered
 - **Context:** aid-detail found a spec ambiguity at the feature-002 ↔ feature-006 seam: reconcile (feature-006 R0) must distinguish a tool-step SKIP (registry untouched) from an authoritative EMPTY declaration (remove all), but feature-002's `## Discovery Elicitation` record did not unambiguously encode the difference (E2 read "skip or empty: record `tools: none`").
 - **Answer (user-approved):** DISTINGUISH them. feature-002's ELICIT `## Discovery Elicitation` record MUST carry an explicit marker: **SKIPPED** (tool step not engaged) → declared-set undefined → reconcile is a NO-OP (registry untouched — the safe default); **DECLARED-EMPTY** (step engaged, zero tools) → declared-set = `{}` → reconcile REMOVEs all persisted connectors (purge + unwire(mcp) + delete). Applied to task-008 (ELICIT writes the skip-vs-empty marker into the record) and task-018 (reconcile R0 branches on it).
+- **Amended by Q10** (2026-07-09): the marker still stands, but REMOVE no longer includes `unwire(mcp)` (AID does not wire) — REMOVE = delete descriptor + purge secret (aid-managed only) + regenerate INDEX.
+
+### Q10
+
+- **Category:** Architecture / Scope (mid-Execute reframe — user-directed)
+- **Impact:** High
+- **Status:** Answered
+- **Context:** During delivery-002 (MCP host wiring) execution — at the task-015 dispatch — the user identified that the whole work had baked in a wrong premise: AID was designed to *provision / wire / manage* connections (write MCP server entries into each host's MCP config, store creds for them). That is not the intent. Supersedes Q1 (broad multi-host MCP wiring in scope) and Q8 (unwire-on-remove); amends Q9 (REMOVE no longer unwires).
+- **Answer (user-directed):** The connectors registry is a **CATALOG** that informs the repo's agents what external connections are available and how to use each — AID does **NOT** provision, wire, or manage the connections themselves. Every connector entry carries one of two **management modes**:
+  1. **tool-managed** (the common case): the host tool (claude-code / codex / cursor / copilot-cli / antigravity) already provides its own MCP server or plugin for the target (e.g. Jira, GitHub). The catalog records that the connection is available via the host tool's own MCP/plugin and instructs the agent to **request it from the tool**; the **tool handles auth**. AID writes **no** host MCP config and stores **no** credential for it.
+  2. **aid-managed** (the rarer case): the target is reached by a direct `api | ssh | url | cli` the host tool does **NOT** provide (e.g. Microsoft 365 via its REST API when no MCP exists). The catalog records a connect-sufficient descriptor (endpoint/target, connection_type, auth reference) **and** AID stores the required credential in the local git-ignored store, so the agent uses it directly.
+  Local credential storage exists **ONLY** for aid-managed connectors; tool-managed connectors never have an AID-stored credential.
+- **Consequences (applied by this loopback, 2026-07-09):**
+  - **Supersedes Q1** (no AID-side MCP-config wiring at all) and **Q8** (nothing to unwire); **amends Q9** (REMOVE drops the unwire step).
+  - REQUIREMENTS: Description + §1 + §4 de-wired; **FR-4** rewritten (record management mode + how the agent connects, not wiring); **FR-6** consumption split by mode; **§8** dependencies de-wired; **AC-4/AC-5** rewritten.
+  - **feature-004** rewritten "connection wiring" → "connection-mode catalog & consumption"; **feature-001/002/005** touched where they encode `mcp` = AID-wired (feature-002 ELICIT captures the management mode and prompts for a secret only when aid-managed; feature-005 consumption contract splits the two modes).
+  - **delivery-002** collapses (the wire/unwire twin, wire-on-declare hook, and wiring tests are dropped; the mechanism spike/table become at most informational, likely reverted); **delivery-003** loses the unwire path.
+  - **delivery-001** (already shipped) `## Connectors` consumption text corrected (`mcp` = "request from the tool", not "already wired"); the descriptor model gains the management-mode axis; task-013/014 (wiring mechanism spike + table) reverted or repurposed.
 
 ## Calibration Log
 

@@ -8,6 +8,7 @@
 | 2026-07-08 | Technical Specification authored (Feature Flow, Layers & Components, State Machines, Data Model). Introduces the P7-exempt `ELICIT` discover state (STATE.md Q6 soft default), the `canonical/aid/templates/connectors/preset-catalog.md` asset, and the source `## External Documentation` → Scout populate process (fills the KI-005 gap). Binds to feature-001's frozen `.aid/connectors/` contract; defines no new schema. Filed KI-008 (Scout skip-if-exists) and KI-009 (P7 guard is prose-only). | /aid-specify |
 | 2026-07-08 | FIX pass (A+ gate, grade D → 7 findings). Made the KI-008 maintain-path real: specified a content-aware Step-1 skip (was falsely claiming GENERATE "already honours" `Pending`). Specified URL support end-to-end: Step 0b URL-reachability probe + `Accessible` write-back, and a Scout prompt extension to fetch/inventory `url` sources (dropped the blanket "reuse, do not extend"). Specified `tags`/`audience` derivation + optional preset columns. Added the greenfield Step-0f-HALT branch (source populate deferred; tools unaffected). Enumerated all ~8 SKILL.md sequence sites + the new `ELICIT` banner + the state-generate.md / agent-prompts.md edits. Added the `Resolved: no` mid-pause record shape. Reconciled INDEX-builder ownership to Q7 (feature-002 authors descriptors + triggers feature-005's deterministic builder). Updated KI-008. | /aid-specify |
 | 2026-07-08 | Re-gate FIX (1 MED, row 9): decoupled URL cataloguing from reachability. `Accessible` is now an annotation only (`yes`/`unverified`/`unknown`), never a Scout inclusion gate — a declared URL is catalogued in `external-sources.md` regardless of probe outcome. Removed the hard `curl` dependency (not in AID's runtime toolchain); reachability is best-effort via existing-Python `urllib` (stdlib, zero new dep, AC-8), and probe-absent → `Accessible: unknown` yet still catalogued. Scout receives every declared URL and records URL + purpose when a fetch is not possible. Local file/dir `test -r` behavior unchanged. | /aid-specify |
+| 2026-07-09 | **Q10 reframe (user-directed, mid-Execute) — TOUCH.** E2 now branches by **management mode** (derived from `connection_type`, feature-001): a **tool-managed** (`mcp`) connector records availability + a "request from the host tool's MCP/plugin" note, sets `auth_method: none`, writes **no** `secret_reference`, and does **NOT** prompt for or store a secret; an **aid-managed** (`api\|ssh\|url\|cli`) connector captures the connect descriptor and, when `auth_method != none`, prompts for the local secret (feature-003 write). **Removed** the `mcp` → feature-004 host-MCP-config wiring trigger/hook entirely (Q10: AID does not wire). Data Model `auth_method` / `secret_reference` / preset-catalog notes de-wired. Q9 SKIPPED / DECLARED-EMPTY marker retained (reconcile REMOVE no longer unwires — Q10 amends Q9). | user / aid-execute loopback |
 
 ## Source
 
@@ -78,9 +79,10 @@ Must
 > state, **`ELICIT`**, where the elicitation runs (STATE.md `## Cross-phase Q&A` **Q6** soft
 > default: "elicitation as a new P7-exempt aid-discover state" — a dedicated state, **not**
 > folded into the read-only `GENERATE`); and (2) a curated preset catalog asset. Secret **value**
-> capture is feature-003; MCP wiring is feature-004; `INDEX.md` (re)generation and the
-> consumption contract are feature-005; the reconcile diff is feature-006. This SPEC establishes
-> only the elicitation flow, its state, and where they live.
+> capture (aid-managed only) is feature-003; the connection-mode model + per-mode consumption
+> semantics are feature-004 (no wiring — Q10); `INDEX.md` (re)generation and the consumption contract
+> are feature-005; the reconcile diff is feature-006. This SPEC establishes only the elicitation
+> flow, its state, and where they live.
 >
 > **Source-side reality (KI-005).** The `external-sources.md` doc exists but the "fed by
 > `aid-config`" pipe that would populate it does **not** — `aid-config` never elicited external
@@ -100,10 +102,10 @@ schema in feature-001 SPEC `### Data Model`. `ELICIT` populates these fields; it
 | Field | Source of truth | What `ELICIT` sets |
 |-------|-----------------|--------------------|
 | `name` | feature-001 (required) | Human name from the preset row or the user |
-| `connection_type` | feature-001 closed enum `mcp \| api \| ssh \| url \| cli` | Pre-filled by preset; user-chosen from the enum for custom (values outside the enum are rejected) |
-| `endpoint` | feature-001 (required) | Preset endpoint-template (user completes instance specifics) or user-supplied target |
-| `auth_method` | feature-001 closed enum `none \| token \| pat \| oauth \| ssh-key` | Pre-filled by preset or user-chosen; orthogonal to `connection_type` |
-| `secret_reference` | feature-001 three forms (`env:` / `keychain:` / `file:`) | Set here to the *reference* (default `file:.aid/connectors/.secrets/<connector>`); the **value** is written by feature-003, never here |
+| `connection_type` | feature-001 closed enum `mcp \| api \| ssh \| url \| cli` | Pre-filled by preset; user-chosen from the enum for custom (values outside the enum are rejected). **Derives the management mode** (`mcp` → tool-managed; else → aid-managed — feature-001 / feature-004) |
+| `endpoint` | feature-001 (required) | Preset endpoint-template (user completes instance specifics) or user-supplied target. For a tool-managed (`mcp`) connector this is **informational** (the target the host tool's MCP/plugin reaches) |
+| `auth_method` | feature-001 closed enum `none \| token \| pat \| oauth \| ssh-key` | For a **tool-managed** (`mcp`) connector: forced to **`none`** (AID registers no auth — the host tool authenticates). For an **aid-managed** connector: pre-filled by preset or user-chosen; orthogonal to `connection_type` |
+| `secret_reference` | feature-001 three forms (`env:` / `keychain:` / `file:`) | **aid-managed connectors only** (when `auth_method != none`): set to the *reference* (default `file:.aid/connectors/.secrets/<connector>`); the **value** is written by feature-003, never here. **Omitted entirely for tool-managed (`mcp`) connectors** — the host tool handles their auth and AID stores no credential (Q10) |
 | `preset` | feature-001 (`<preset-id>` or `custom`) | The chosen preset id, or `custom` for the generic descriptor |
 | `objective` / `summary` | feature-001 KB-style routing text (required) | Composed from the preset row (`notes`) and the user's one-line purpose |
 | `tags` / `audience` | feature-001 KB-style routing text (required) | **Auto-derived, never prompted:** `tags` defaults to `[connector, <connection_type>]` plus any preset-declared tags; `audience` defaults to `[developer, architect]` (feature-001's worked `github.md` example). A preset row MAY override either via its optional `tags` / `audience` columns (see the preset-catalog table) |
@@ -148,8 +150,8 @@ Feature Flow):
 | `name` | Default human name |
 | `connection_type` | Default transport from feature-001's enum |
 | `endpoint-template` | Endpoint/launch-spec skeleton (e.g. `npx -y @modelcontextprotocol/server-github`); instance specifics completed at elicitation |
-| `auth_method` | Default auth axis value |
-| `secret_reference-form` | Default reference form (`env:` / `keychain:` / `file:`); usually `env:<VAR>` for MCP presets, `file:` otherwise |
+| `auth_method` | Default auth axis value. For a tool-managed (`mcp`) preset this is `none` — AID registers no auth (the host tool authenticates) |
+| `secret_reference-form` | Default reference form (`env:` / `keychain:` / `file:`), for **aid-managed** presets only (usually `file:`). **Tool-managed (`mcp`) presets carry no `secret_reference`** — AID stores no credential (Q10) |
 | `notes` | One-line human guidance (also seeds the descriptor's `summary`) |
 | `tags` (optional) | Tag override; when absent, `ELICIT` derives `[connector, <connection_type>]` |
 | `audience` (optional) | Audience override; when absent, `ELICIT` defaults `[developer, architect]` |
@@ -296,15 +298,28 @@ per declared tool:
 - **Preset declaration** (`<preset-id>`): read the matching row of
   `canonical/aid/templates/connectors/preset-catalog.md` (LLM-read, as Step 0d reads the
   domain-doc matrix) and **pre-fill** `name`, `connection_type`, `endpoint` (from the template),
-  `auth_method`, `secret_reference`-form, and `preset: <preset-id>`. Present the pre-filled
-  descriptor; the user confirms or adjusts and supplies instance specifics (e.g. their org URL,
-  the env-var name for `secret_reference`). Write the descriptor (below).
+  `auth_method`, `secret_reference`-form (aid-managed presets only), and `preset: <preset-id>`.
+  Present the pre-filled descriptor; the user confirms or adjusts and supplies instance specifics.
+  Apply the management-mode branch (below). Write the descriptor (below).
 - **Custom / generic declaration** (`custom`): capture `name`, `connection_type` (validated
   against feature-001's closed enum `mcp | api | ssh | url | cli` — a value outside the set is
-  refused, not coerced; `db` is not a value), `endpoint`/target, `auth_method` (from
-  `none | token | pat | oauth | ssh-key`), and, when `auth_method != none`, the `secret_reference`
-  form (default `file:.aid/connectors/.secrets/<connector>`). Set `preset: custom`. Write the
-  descriptor (below).
+  refused, not coerced; `db` is not a value) and `endpoint`/target. Set `preset: custom`. Apply the
+  management-mode branch (below). Write the descriptor (below).
+
+**Management-mode branch (STATE.md Q10 — derived from `connection_type`, feature-001/feature-004).**
+After `connection_type` is set (preset or custom), branch on the derived mode — this decides whether
+a secret is captured at all:
+
+- **tool-managed (`connection_type: mcp`):** the host tool provides its own MCP server/plugin for the
+  target. Set `auth_method: none` and write **no** `secret_reference` (AID stores no credential). Do
+  **NOT** prompt for a secret and do **NOT** invoke feature-003. Record in the descriptor body that
+  the connection is **available via the host tool** and the agent must **request it from the tool**
+  (the tool handles auth). There is **no** feature-004 wiring step (removed — Q10).
+- **aid-managed (`connection_type: api | ssh | url | cli`):** capture `auth_method` (from
+  `none | token | pat | oauth | ssh-key`), and when `auth_method != none` capture the
+  `secret_reference` form (default `file:.aid/connectors/.secrets/<connector>`). The secret **value**
+  is then prompted and stored by **feature-003** (below); the committed descriptor carries only the
+  reference.
 
 **Descriptor write sequence (binds feature-001's ordering guarantee).** The first time `ELICIT`
 touches `.aid/connectors/` in a cycle it MUST, as its **first action**, write
@@ -314,13 +329,19 @@ P7-exempt discover state is the single writer of this file). Then, per confirmed
 
 1. Derive `<connector>` = slugified `name` (the unique key; feature-001).
 2. Write `.aid/connectors/<connector>.md` with the frontmatter fields above (Data Model) + a
-   short human body. The committed descriptor carries only the `secret_reference` — never a value
-   (feature-001 Security Specs; the absolute committed-no-secrets rule, STATE.md Q5).
-3. The **actual secret value** (for the `file:` form) is prompted and stored by **feature-003**
-   into `.aid/connectors/.secrets/<connector>`; `ELICIT` sets the reference and hands off. For
-   `env:` / `keychain:` forms no value is stored by AID (resolved externally at use-time).
-4. `mcp`-type descriptors additionally trigger **feature-004** host MCP-config wiring (installed
-   hosts only, per `settings.yml tools.installed`); `api|ssh|url|cli` need no wiring step.
+   short human body. The committed descriptor carries only a `secret_reference` (aid-managed only) —
+   never a value (feature-001 Security Specs; the absolute committed-no-secrets rule, STATE.md Q5).
+3. **Secret capture is aid-managed-only (Q10).** For a **tool-managed (`mcp`)** connector, **no
+   secret is captured** — the descriptor has `auth_method: none` and no `secret_reference`, and
+   feature-003 is not invoked. For an **aid-managed (`api|ssh|url|cli`)** connector with
+   `auth_method != none`, the **actual secret value** is prompted and stored by **feature-003** into
+   `.aid/connectors/.secrets/<connector>` (for the `file:` form); `ELICIT` sets the reference and
+   hands off. For `env:` / `keychain:` aid-managed forms no value is stored by AID (resolved
+   externally at use-time).
+4. **No wiring step (Q10).** `mcp` descriptors do **not** trigger any host MCP-config write — AID
+   wires nothing. The management mode is simply derived from `connection_type` (tool-managed) and
+   consumed at use-time (feature-004 / feature-005); there is no producer action here for `mcp`
+   beyond writing the descriptor.
 5. After the cycle's descriptor writes, **trigger `.aid/connectors/INDEX.md` regeneration via
    feature-005's connectors-index builder** (contract defined by feature-001; regeneration owned by
    feature-005 — STATE.md Q7 item 5). feature-002 **authors its own descriptors** (Q7 item 1) and
@@ -365,9 +386,10 @@ safely:
 `aid-discover` state, `ELICIT`**, not steps folded into `GENERATE` (STATE.md Q6 soft default). It
 is kept separate deliberately: `GENERATE` / `REVIEW` / `FIX` remain **fully P7-bound** (read-only
 on the repo, writing only within `.aid/knowledge/`, `.aid/generated/`, `.aid/.temp/`), and
-`ELICIT` is the one state that carries feature-001's **P7 exemption** (writes within
-`.aid/connectors/` and, via feature-004, the per-host MCP-config paths). Folding elicitation into
-`GENERATE` would erase that clean read-only boundary — hence a dedicated state.
+`ELICIT` is the one state that carries feature-001's **P7 exemption** (writes **only** within
+`.aid/connectors/` — under Q10 AID writes no host MCP config, so there is no other write target).
+Folding elicitation into `GENERATE` would erase that clean read-only boundary — hence a dedicated
+state.
 
 - **Worker:** **inline (orchestrator-driven)**, matching the other interactive states in the
   `aid-discover` Dispatch table (`Q-AND-A`, `APPROVAL`). `ELICIT` is a user dialogue, not a

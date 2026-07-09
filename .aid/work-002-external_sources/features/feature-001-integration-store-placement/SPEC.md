@@ -8,6 +8,7 @@
 | 2026-07-08 | Technical Specification authored (Data Model, Layers & Components, Security Specs, Feature Flow); encodes placement decision `.aid/connectors/` per STATE.md Q6 + Q1–Q5 (AC-7 satisfied) | /aid-specify |
 | 2026-07-08 | FIX pass (A+ gate, 6 findings): corrected dogfood byte-identity claim; reconciled descriptor frontmatter with the connectors-index builder; specified the concrete `INDEX.md` contract; moved `.secrets/` git-ignore to a single-writer connectors-local `.gitignore` (ordering-safe); pinned the secret file key to the descriptor stem; scoped the KB-format reuse claim | /aid-specify |
 | 2026-07-08 | Coherence pass (STATE.md Q7 ownership matrix): CF4 repo-relative secret store (no user-profile path); CF-INDEX deterministic builder (no timestamp) + regen owned by feature-005 / triggered by 002/004/006; CF5 non-Claude-Code MCP-config repo-tree edge flagged as deferred scope; Feature Flow producer/consumer attribution reconciled to Q7 (002 authors descriptors, 003 owns value write+purge twin, 004 updates wiring + records reference, 006 calls purge) | /aid-specify |
+| 2026-07-09 | **Q10 reframe (user-directed, mid-Execute) — TOUCH.** Catalog, not manager: AID writes/wires/manages **no** host tool MCP config, and stores **no** credential for tool-managed connectors. (a) Descriptor schema gains a DERIVED **management mode** (`mcp` ⟺ tool-managed; `api\|ssh\|url\|cli` ⟺ aid-managed) — not a stored field; `auth_method` is `none` and `secret_reference` omitted for tool-managed connectors; the `endpoint` for `mcp` is informational (no launch/wiring). (b) P7-exempt write allowlist reduced to a **single** target `.aid/connectors/` — the "per-host MCP-config paths" item and the CF5/KI-007 out-of-repo-write edge are DELETED (AID writes no host config). (c) `## Connectors` consumption wording corrected: `mcp` = "request from the host tool's own MCP/plugin", not "already wired". (d) Feature Flow feature-004/reconciler text de-wired (feature-004 writes nothing; REMOVE drops unwire — Q10 amends Q9). Supersedes Q1 + Q8. | user / aid-execute loopback |
 
 ## Source
 
@@ -56,8 +57,8 @@ machine and KB authoring conventions rather than introduce a parallel mechanism.
   and local auth live (KB versus a separate folder) so that every downstream feature writes to
   one agreed home instead of inventing its own.
 - As an AID maintainer, I want a machine-readable descriptor schema plus secret-reference
-  conventions defined up front so that elicitation, auth registration, wiring, and persistence
-  all produce a consistent, committable registry.
+  conventions defined up front so that elicitation, auth registration, connection cataloguing, and
+  persistence all produce a consistent, committable registry.
 - As a developer/adopter, I want the local secret store to be defined for Windows, macOS, and
   Linux so that credential handling behaves the same wherever I run discovery.
 
@@ -114,12 +115,28 @@ add/update/remove on it.
 | Field | Type / enum | Required | Notes |
 |-------|-------------|----------|-------|
 | `name` | string | yes | Human name; filename stem is the machine key |
-| `connection_type` | closed enum: `mcp` \| `api` \| `ssh` \| `url` \| `cli` | yes | The transport an agent uses (REQUIREMENTS §4). `db` folds into `cli`/`api` and is NOT a value |
-| `endpoint` | string | yes | Endpoint/target: a URL, host, socket path, local binary name, or MCP server launch spec — shape depends on `connection_type` |
-| `auth_method` | closed enum: `none` \| `token` \| `pat` \| `oauth` \| `ssh-key` | yes | Auth axis — **orthogonal** to `connection_type` (REQUIREMENTS §4) |
-| `secret_reference` | string (one of the three reference forms below) | yes when `auth_method != none`; else omitted | A *reference*, never a value (§6) |
+| `connection_type` | closed enum: `mcp` \| `api` \| `ssh` \| `url` \| `cli` | yes | The transport an agent uses (REQUIREMENTS §4). `db` folds into `cli`/`api` and is NOT a value. **Also the sole source of the derived management mode** (see note below) |
+| `endpoint` | string | yes | Endpoint/target — shape depends on `connection_type`. For **aid-managed** (`api\|ssh\|url\|cli`): the concrete connect target (URL, host, socket path, local binary name) the agent uses directly. For **tool-managed** (`mcp`): **informational** — an identifier for the target the host tool's own MCP/plugin reaches; AID does not launch or wire it (Q10) |
+| `auth_method` | closed enum: `none` \| `token` \| `pat` \| `oauth` \| `ssh-key` | yes | Auth axis — **orthogonal** to `connection_type` (REQUIREMENTS §4). For a **tool-managed** (`mcp`) connector AID registers no credential, so `auth_method` is **`none`** (the host tool authenticates the target); for an **aid-managed** connector it is the auth AID registers locally |
+| `secret_reference` | string (one of the three reference forms below) | yes when the connector is **aid-managed** and `auth_method != none`; otherwise **omitted** | A *reference*, never a value (§6). **Always omitted for tool-managed (`mcp`) connectors** — the host tool handles their auth and AID stores no credential (Q10) |
 | `preset` | string preset-id, or `custom` | yes | FR-2 preset-vs-generic marker; a preset pre-fills defaults, `custom` is the generic descriptor |
 | `objective` / `summary` / `tags` / `audience` | KB-style routing text | yes | Human-routing fields; composed into `INDEX.md` by the connectors-index builder (a SEPARATE script — NOT `build-kb-index.sh`) |
+
+**Management mode (DERIVED, not a stored field; STATE.md Q10).** Every connector has one of two
+management modes, and the mode is a **derivation over `connection_type`** — a single source of truth,
+so a stored `management_mode` field is deliberately NOT introduced (it would be redundant and could
+drift out of sync with `connection_type`):
+
+- `connection_type: mcp` ⟺ **tool-managed** — the host tool (claude-code / codex / cursor /
+  copilot-cli / antigravity) provides its **own** MCP server/plugin for the target; the agent requests
+  the connection from the tool, which handles auth. AID writes **no** host MCP config and stores **no**
+  credential (so `auth_method: none`, no `secret_reference`).
+- `connection_type: api | ssh | url | cli` ⟺ **aid-managed** — a direct transport the host tool does
+  not provide; AID records the connect descriptor and (when `auth_method != none`) stores a local
+  secret the agent resolves at use-time.
+
+The mode model and the per-mode consumption semantics are owned by **feature-004** (Connection Modes
+and Consumption); this schema only carries the `connection_type` the mode derives from.
 
 **The three `secret_reference` forms** (REQUIREMENTS §6; STATE.md Q6b). The reference conveys
 *where* the credential lives, never the credential:
@@ -133,28 +150,57 @@ add/update/remove on it.
   only form implementable in pure Bash+PowerShell with zero heavy dependency on
   Windows/macOS/Linux — see Security Specs).
 
-**Worked descriptor example** (`.aid/connectors/github.md`) — illustrative shape, not shipped
-content:
+**Worked descriptor example — tool-managed** (`.aid/connectors/github.md`) — illustrative shape, not
+shipped content. `mcp` ⟹ tool-managed ⟹ `auth_method: none`, **no** `secret_reference` (the host tool
+authenticates; AID stores nothing — Q10):
 
 ```markdown
 ---
 name: GitHub
 connection_type: mcp
-endpoint: "npx -y @modelcontextprotocol/server-github"
-auth_method: pat
-secret_reference: "env:GITHUB_PERSONAL_ACCESS_TOKEN"
+endpoint: "github (reached via the host tool's own GitHub MCP server)"
+auth_method: none
 preset: github
-objective: GitHub issues/PRs/repos via the GitHub MCP server.
-summary: Read before connecting to GitHub; wired into installed hosts' MCP config.
+objective: GitHub issues/PRs/repos via the host tool's own GitHub MCP server.
+summary: Read before reaching GitHub; tool-managed — request the connection from your host tool's GitHub MCP server (the tool handles auth). AID stores no credential.
 tags: [connector, mcp, source-host]
 audience: [developer, architect]
 ---
 
 # GitHub
 
-> Connection: mcp · Auth: pat (reference: env:GITHUB_PERSONAL_ACCESS_TOKEN)
+> Connection: mcp · Mode: tool-managed · Auth: handled by the host tool (no AID credential)
 
-Human-readable notes: what this connector is for, how an agent reaches it.
+Human-readable notes: this is a **tool-managed** connector. Request the GitHub connection from your
+host tool's own GitHub MCP server / plugin; the tool prompts for and manages authentication (e.g. a
+PAT). AID neither wires any host config nor stores a credential for it.
+```
+
+**Worked descriptor example — aid-managed** (`.aid/connectors/m365.md`) — a direct API the host tool
+does not provide, so `api` ⟹ aid-managed ⟹ AID records the descriptor + a local `secret_reference`
+the agent resolves at use-time:
+
+```markdown
+---
+name: Microsoft 365
+connection_type: api
+endpoint: "https://graph.microsoft.com/v1.0"
+auth_method: oauth
+secret_reference: "file:.aid/connectors/.secrets/m365"
+preset: custom
+objective: Microsoft 365 data via the Graph REST API (no host-tool MCP available).
+summary: aid-managed — resolve the local secret_reference at use-time and call the Graph API directly.
+tags: [connector, api]
+audience: [developer, architect]
+---
+
+# Microsoft 365
+
+> Connection: api · Mode: aid-managed · Auth: oauth (reference: file:.aid/connectors/.secrets/m365)
+
+Human-readable notes: this is an **aid-managed** connector — the host tool provides no MCP for it. An
+agent resolves the credential at use-time from the reference and calls the endpoint directly. The
+committed descriptor carries only the reference, never the value.
 ```
 
 The **registry** = `INDEX.md` (the machine-readable table agents scan first) + the descriptor
@@ -170,7 +216,10 @@ builder — it is a connectors table, not a KB doc.
   (`endpoint`), `Auth` (`auth_method`), `Secret Ref` (`secret_reference`, or `—` when
   `auth_method: none`), `Summary` (`summary`). Unlike the KB index, the per-connector structural
   fields **`connection_type`, `endpoint`, and `auth_method` DO appear as columns** (an agent must
-  see the transport and auth at a glance).
+  see the transport and auth at a glance). The **management mode** is read straight off the `Type`
+  column (`mcp` = tool-managed; `api`/`ssh`/`url`/`cli` = aid-managed) — **no separate column is
+  added** since the mode is derived, not stored (Q10). A tool-managed row therefore always shows
+  `Auth: none` and `Secret Ref: —`.
 - **Own frontmatter** — `source: generated`, `generator: <connectors-index-builder>`, `intent:`,
   and `contracts: ["One row per connector descriptor under .aid/connectors/"]`. It is
   references-only (never a secret value), like every committed artifact here.
@@ -181,7 +230,8 @@ builder — it is a connectors table, not a KB doc.
   `build-kb-index.sh`, which stamps `date -u` into `.aid/knowledge/INDEX.md`), so regeneration on
   unchanged input is **byte-identical** and reconcile (feature-006) does not churn the file.
 - **Regeneration ownership** — the builder is OWNED by feature-005; it is TRIGGERED by feature-002
-  (on author), feature-004 (on wire), and feature-006 (on reconcile) — per STATE.md Q7 item 5.
+  (on author) and feature-006 (on reconcile) — per STATE.md Q7 item 5. (feature-004's former "on
+  wire" trigger is **removed**: under Q10 feature-004 writes nothing, so it triggers nothing.)
   Rebuilt from descriptor frontmatter after any add/update/remove; idempotent, mirroring how
   `.aid/knowledge/INDEX.md` regenerates each discovery cycle.
 
@@ -217,24 +267,20 @@ only within `.aid/knowledge/`, `.aid/generated/`, `.aid/.temp/`
 cycle is a category violation and a hard guard in the skill's pre-flight"). P7 already carries
 one scoped exception (the one-time KB-format migration, directly under the P7 body). This work
 adds a **second, narrowly-scoped exception**: the connector sub-phase (the new P7-exempt
-`aid-discover` state introduced by feature-002, per Q6) may write ONLY within a declared
-allowlist:
+`aid-discover` state introduced by feature-002, per Q6) may write ONLY within a **single** declared
+target:
 
-1. `.aid/connectors/` (registry `INDEX.md` + descriptors + `.secrets/` + the connectors-local `.aid/connectors/.gitignore`),
-2. the per-host MCP-config paths (feature-004, installed hosts only).
+1. `.aid/connectors/` (registry `INDEX.md` + descriptors + `.secrets/` + the connectors-local `.aid/connectors/.gitignore`).
 
-The root `.gitignore` is **not** in the allowlist — the secret store is ignored by the
-connectors-local `.aid/connectors/.gitignore` instead (see the git-ignore note above), so no
-out-of-tree config write is needed for it.
-
-**MCP-config repo-tree edge (CF5, known scope edge — not a silent extension).** Allowlist item 2's
-per-host MCP paths are only partly inside the repo tree. `claude-code` — the only host in
-`settings.yml tools.installed` today — uses a repo-root `.mcp.json`, which is in-repo and within
-reach of an in-tree write. The other four hosts' MCP configs live in **user-home, OUTSIDE the repo
-tree** (e.g. Codex `~/.codex/config.toml`), beyond the `.aid/connectors/` repo-tree carve-out — a
-separate write-scope question this feature does not resolve. Wiring those hosts is **DEFERRED**
-(feature-004 wires only `tools.installed` hosts, per Q6). Flagged here as a bounded scope edge so
-the P7 exemption is not read as covering arbitrary user-home writes.
+**No host-config write target (Q10).** The former second allowlist item — "the per-host MCP-config
+paths (feature-004, installed hosts only)" — is **removed**. Under the Q10 catalog model AID writes,
+wires, and manages **no** host tool's MCP configuration (neither the in-repo `claude-code` `.mcp.json`
+nor any user-home config), so the exemption is confined to `.aid/connectors/` and there is **no**
+out-of-tree write at all. The former CF5 / KI-007 "MCP-config repo-tree edge" (user-home configs for
+codex/cursor/copilot-cli/antigravity lying outside the repo tree) is therefore **moot and deleted**:
+nothing outside `.aid/connectors/` is ever written. The root `.gitignore` is likewise **not** in the
+allowlist — the secret store is ignored by the connectors-local `.aid/connectors/.gitignore` (see the
+git-ignore note above).
 
 The KB-generation states (`GENERATE` / `REVIEW` / `FIX`) stay fully P7-bound. This SPEC *defines*
 the carve-out; the edit to `principles.md` (a canonical template that renders to all 5 profiles)
@@ -323,9 +369,11 @@ does not couple to the connectors index.
   `.aid/connectors/` safe to commit.
 - **Leak proof (AC-3).** After a secret is registered, grepping repo + KB + STATE + transcript
   for the value finds nothing; the value exists only under `.aid/connectors/.secrets/`.
-- **Cross-reference:** feature-004 may write committed project-scoped MCP config (e.g., a host's
-  `.mcp.json`); those files MUST also carry env-var references, never values — the same rule
-  extends beyond `.aid/connectors/`.
+- **No host-config write surface (Q10).** AID writes **no** host tool MCP configuration, so the only
+  committed artifacts that could carry a reference are those under `.aid/connectors/`; the
+  reference-not-value rule is fully contained there. **Tool-managed (`mcp`) connectors carry no
+  credential at all** — no `secret_reference`, nothing in `.secrets/` — because the host tool owns
+  their auth. Only **aid-managed** connectors register a local secret.
 
 ### Feature Flow
 
@@ -342,38 +390,40 @@ the P7 carve-out covers it.
   `.aid/knowledge/external-sources.md` (Q2) — not into `.aid/connectors/`.
 - **feature-003 (auth)** writes only the actual secret **value** to
   `.aid/connectors/.secrets/<connector>` via its `connector-secret` twin (`write` op; the same twin
-  owns `purge`, per Q7 item 2). The descriptor's `secret_reference` field is authored by
-  feature-002 (Q7 item 1) and points at the value; the value is never written to any committed
-  artifact.
-- **feature-004 (wiring)** UPDATES the wiring-related fields of the descriptor feature-002
-  authored (it does not author descriptors — Q7 item 1); for `mcp` it writes the host MCP config
-  (per-host mechanism, installed hosts only) and records the secret *reference* (e.g. `env:VAR`)
-  into that config, never the value (Q7 item 3); for `api|ssh|url|cli` it records the connection
-  descriptor's wiring fields. No bespoke per-tool client code.
+  owns `purge`, per Q7 item 2), **for aid-managed connectors only** (tool-managed connectors register
+  no credential — Q10). The descriptor's `secret_reference` field is authored by feature-002 (Q7
+  item 1) and points at the value; the value is never written to any committed artifact.
+- **feature-004 (connection modes & consumption)** writes **no** artifact (Q10). It defines the
+  **management-mode model** (`mcp` ⟺ tool-managed; `api|ssh|url|cli` ⟺ aid-managed, derived from
+  `connection_type`) and the **per-mode consumption semantics** that feature-005 publishes; it does
+  **not** author descriptors (feature-002 does — Q7 item 1) and it writes **no** host MCP config (the
+  old wiring path is removed). No bespoke per-tool client code.
 - After any descriptor change, `.aid/connectors/INDEX.md` is regenerated by feature-005's
   deterministic connectors-index builder — OWNED by feature-005, TRIGGERED by feature-002 (author) /
-  feature-004 (wire) / feature-006 (reconcile) per Q7 item 5 — mirroring how `.aid/knowledge/INDEX.md`
-  is regenerated every discovery cycle.
+  feature-006 (reconcile) per Q7 item 5 (feature-004 triggers nothing — it writes nothing under
+  Q10) — mirroring how `.aid/knowledge/INDEX.md` is regenerated every discovery cycle.
 
 **Consumers (READ):**
 
 - **feature-005 (consumption)** documents the contract. An agent discovers connectors via the
   context-file `## Connectors` pointer → reads `.aid/connectors/INDEX.md` → reads the specific
-  descriptor → resolves the secret at use-time from its reference. MCP-wired tools are consumed
-  directly via each host's MCP config; **rewiring agents to actively consume non-MCP descriptors
-  is OUT OF SCOPE** (Q4).
+  descriptor → connects **by management mode** (feature-004): a **tool-managed** (`mcp`) connector is
+  reached by **requesting the connection from the host tool's own MCP/plugin** (the tool handles
+  auth — AID stored nothing); an **aid-managed** (`api|ssh|url|cli`) connector is reached by resolving
+  the local `secret_reference` at use-time and connecting via the descriptor. **Building agent-side
+  code that actively consumes descriptors is OUT OF SCOPE** (Q4).
 
 **Reconciler (feature-006):**
 
 - Re-running discovery diffs the elicited set against `.aid/connectors/`, keyed by the descriptor
   filename stem: **add** = new descriptor + `INDEX.md` row; **update** = edit descriptor in place
   (preserve the stored secret); **remove** = purge the secret (call **feature-003's
-  `connector-secret purge` op** on `.aid/connectors/.secrets/<connector>`; Q3) + for an `mcp`
-  connector, unwire the host config (call **feature-004's `unwire` op**; Q8) + delete the
-  descriptor + its `INDEX.md` row — with purge/unwire BEFORE the descriptor-delete for
-  interrupt-safety. feature-006 defines neither purge nor wiring; it composes feature-003's and
-  feature-004's ops (Q7 item 2, Q8). Surviving descriptors and their secrets
-  are preserved; a surviving connector whose `auth_method` drops to `none` has its now-unreferenced
-  secret disposed by feature-003's secret lifecycle, not by reconcile (Q7 item 7). The
-  one-file-per-connector layout keeps each reconcile op a clean, isolated file change (no rewrite
-  of a monolithic registry).
+  `connector-secret purge` op** on `.aid/connectors/.secrets/<connector>`; Q3 — **aid-managed
+  connectors only**, since tool-managed connectors have no stored secret) + delete the descriptor +
+  its `INDEX.md` row — with purge BEFORE the descriptor-delete for interrupt-safety. **There is no
+  unwire step (Q10 supersedes Q8, amends Q9):** AID wrote no host config, so REMOVE has nothing to
+  unwire. feature-006 defines no purge of its own; it composes feature-003's `purge` op (Q7 item 2).
+  Surviving descriptors and their secrets are preserved; a surviving connector whose `auth_method`
+  drops to `none` has its now-unreferenced secret disposed by feature-003's secret lifecycle, not by
+  reconcile (Q7 item 7). The one-file-per-connector layout keeps each reconcile op a clean, isolated
+  file change (no rewrite of a monolithic registry).

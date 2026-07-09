@@ -7,7 +7,8 @@
 | 2026-07-07 | Feature identified from REQUIREMENTS.md §5 (FR-7) + §9 (AC-6) | /aid-define |
 | 2026-07-08 | Technical Specification authored (Data Model, Feature Flow, State Machines, Layers & Components); binds to feature-001's frozen contract (descriptor filename stem = connector key; secret at `.aid/connectors/.secrets/<connector>`); encodes PURGE-on-remove per STATE.md Q3; mirrors the aid-discover idempotent re-entry pattern (`state-generate.md` Steps 0cx/0d/0f) | /aid-specify |
 | 2026-07-08 | FIX pass (A+ gate, was D+; 1 HIGH + 1 MED): [HIGH] corrected the idempotence proof to rest on feature-005's DETERMINISTIC connectors builder (no run timestamp) — `build-kb-index.sh` embeds a `date -u` stamp, which is exactly why the connectors builder omits it (KI-010); [MED] reordered REMOVE to purge-before-delete for interrupt-safety; aligned ownership to STATE.md Q7 (feature-006 CALLS feature-003's `connector-secret purge` op + feature-005's INDEX builder — owns no twin/builder; only net-new code is the reconcile diff) | /aid-specify |
-| 2026-07-08 | Cross-feature FIX (aid-plan gate, STATE.md Q8): REMOVE now also UNWIRES an `mcp`-typed connector's host config — feature-006 CALLS feature-004's `unwire <stem>` op (mirrors the feature-003 `purge` call), ordered purge + unwire BEFORE descriptor-delete for interrupt-safety; feature-006 still owns no wiring code (orchestration only) | /aid-specify |
+| 2026-07-08 | Cross-feature FIX (aid-plan gate, STATE.md Q8): REMOVE now also UNWIRES an `mcp`-typed connector's host config — feature-006 CALLS feature-004's `unwire <stem>` op (mirrors the feature-003 `purge` call), ordered purge + unwire BEFORE descriptor-delete for interrupt-safety; feature-006 still owns no wiring code (orchestration only). **[SUPERSEDED by the 2026-07-09 Q10 reframe — REMOVE no longer unwires.]** | /aid-specify |
+| 2026-07-09 | **Q10 reframe (user-directed, mid-Execute) — TOUCH.** Catalog, not manager: AID never wires or unwires host MCP configs. REMOVE **drops the unwire step entirely** — corrected REMOVE = purge the local secret (aid-managed connectors only, via feature-003's `connector-secret purge`; a clean no-op for tool-managed `mcp` connectors, which store none) + delete the descriptor + regenerate the INDEX (feature-005 builder), purge-before-delete for interrupt-safety. Dropped every feature-004 `unwire`/`tools.installed`/host-config reference (intro, Data Model REMOVE row + side-effect note, Feature Flow R3, interrupt-safety rationale, ownership matrix row, algorithm, "host unwire" subsection, Boundary, Scope). Q9 SKIPPED (no-op) / DECLARED-EMPTY (remove-all) branch retained; "remove" no longer includes unwire. Supersedes Q8, amends Q9. | user / aid-execute loopback |
 
 ## Source
 
@@ -65,17 +66,18 @@ Must
 > P7-exempt allowlist feature-001 declares (Q6); this feature introduces no new write target and no
 > new P7 carve-out.
 >
-> **Ownership (STATE.md `## Cross-phase Q&A` Q7 + Q8).** feature-006 is pure **orchestration** — it
-> owns no store, no descriptor writer, no secret twin, no index builder, and no wiring code. It
-> composes feature-002 (descriptor authoring), feature-003 (the `connector-secret` twin — both
-> `write` and `purge` ops; feature-006 **calls** the `purge` op, it does not define its own),
-> feature-004 (the host-MCP-config twin — both `wire` and `unwire` ops; feature-006 **calls**
-> `unwire` on an `mcp` removal, per Q8), and feature-005 (the deterministic INDEX builder). Its only
-> net-new contribution is the reconcile diff itself.
+> **Ownership (STATE.md `## Cross-phase Q&A` Q7; Q8 superseded by Q10).** feature-006 is pure
+> **orchestration** — it owns no store, no descriptor writer, no secret twin, and no index builder.
+> It composes feature-002 (descriptor authoring), feature-003 (the `connector-secret` twin — both
+> `write` and `purge` ops; feature-006 **calls** the `purge` op, it does not define its own), and
+> feature-005 (the deterministic INDEX builder). It does **not** compose any host-config wiring:
+> under **Q10** AID never wires or unwires host MCP configs, so there is no `unwire` op to call (this
+> supersedes Q8). Its only net-new contribution is the reconcile diff itself.
 >
-> **Q3 + Q8 are the load-bearing behaviors on REMOVE:** the associated local secret is **purged**
-> (via feature-003's `purge` op) and, for an `mcp`-typed connector, its host config is **unwired**
-> (via feature-004's `unwire` op); every surviving entry — its secret and its wiring — is preserved.
+> **Q3 is the load-bearing behavior on REMOVE (Q10 amends Q9).** The associated local secret is
+> **purged** (via feature-003's `purge` op — **aid-managed** connectors only; a tool-managed `mcp`
+> connector has no stored secret, so purge is a clean no-op) and the descriptor is deleted; there is
+> **no** unwire step. Every surviving entry and its secret is preserved.
 
 ### Data Model
 
@@ -99,7 +101,7 @@ files on disk are the only state.
 | ADD | `stem ∈ D \ P` | created (feature-002 authors it) | registered by feature-003 iff `auth_method != none` | appears after regen |
 | UPDATE | `stem ∈ D ∩ P` **and** any field differs | overwritten in place (same stem) | preserved; re-registered by feature-003 only if `auth_method`/`secret_reference` changed | refreshed after regen |
 | NO-OP | `stem ∈ D ∩ P` **and** all fields identical | untouched (no write) | untouched | unchanged after regen |
-| REMOVE | `stem ∈ P \ D` | deleted (after purge; + unwire if `mcp`) | **purged** (Q3) via feature-003 `purge` op — see Feature Flow | dropped after regen |
+| REMOVE | `stem ∈ P \ D` | deleted (after purge) | **purged** (Q3) via feature-003 `purge` op — aid-managed only; see Feature Flow | dropped after regen |
 
 The one-file-per-connector layout (feature-001) is what makes each class a **clean, isolated file
 operation** — there is no monolithic registry to rewrite, so an op on one connector never risks a
@@ -107,12 +109,13 @@ sibling's descriptor or secret. Field-equality for the ADD/UPDATE/NO-OP split is
 feature-001 descriptor fields only (frontmatter fields + routing text); the generated `INDEX.md` is
 **never** an input to the diff (it is derived, not source of truth).
 
-**REMOVE carries two composed side-effects (Q3 + Q8).** Beyond deleting the descriptor, a REMOVE
-**purges** the connector's secret (feature-003) and — when the removed connector is
-`connection_type: mcp` — **unwires** its host MCP config (feature-004). Non-`mcp` removals
-(`api`/`ssh`/`url`/`cli`) have no host wiring, so only the purge + descriptor-delete apply. Both
-side-effects are calls into ops other features own (see Step R3); reconcile keys them on the same
-stem as everything else.
+**REMOVE carries one composed side-effect (Q3; Q10 removes the former unwire).** Beyond deleting the
+descriptor, a REMOVE **purges** the connector's secret (feature-003). Under **Q10** AID never wires
+host MCP configs, so there is **no** unwire step for any connection type — REMOVE = purge +
+descriptor-delete for every connector, `mcp` included. The purge affects only **aid-managed**
+connectors that stored a `file:` secret; for a tool-managed (`mcp`) connector — which has no stored
+secret — and for `env:`/`keychain:` references, the purge is a clean no-op. The purge is a call into
+an op feature-003 owns (see Step R3); reconcile keys it on the same stem as everything else.
 
 ### Feature Flow
 
@@ -157,35 +160,31 @@ Model table (set membership on the stem; field-equality for the `D ∩ P` split)
   jointly: purge-on-REMOVE here + downgrade-disposal in feature-003).
 - **NO-OP** (`stem ∈ D ∩ P`, identical) — write nothing. This is what makes a repeat run
   byte-stable: an unchanged connector produces zero descriptor churn.
-- **REMOVE** (`stem ∈ P \ D`) — **purge and unwire FIRST, then delete the descriptor** (the ordering
-  is load-bearing for interrupt-safety — see below):
+- **REMOVE** (`stem ∈ P \ D`) — **purge FIRST, then delete the descriptor** (the ordering is
+  load-bearing for interrupt-safety — see below):
   1. **PURGE the secret** (Q3) by invoking feature-003's `connector-secret purge <stem>` op —
      feature-003 owns the `.secrets/` twin (Q7 item 2), so feature-006 **calls** the op rather than
      deleting the file itself. The op deletes `.aid/connectors/.secrets/<stem>` if it exists, is
      path-confined to `.aid/connectors/.secrets/`, and is silent on the value; feature-006 relies on
-     those guarantees. For a connector whose reference was `env:<VAR>` or `keychain:<key>` (not the
-     default `file:` form) there is no local-store file, so the purge is a harmless no-op — reconcile
-     never mutates the environment or the OS keychain (feature-001 Security Specs; §6).
-  2. **UNWIRE the host config — `mcp` only** (Q8) — if the removed connector is
-     `connection_type: mcp`, invoke feature-004's `unwire <stem>` op. It removes that connector's
-     `mcpServers` (or the host's equivalent) entry from each installed host's MCP config —
-     **wire-only-installed** (only hosts listed in `.aid/settings.yml tools.installed`) — while
-     preserving every other server entry. feature-004 owns the host-MCP-config twin (Q7 item 3 +
-     Q8); feature-006 **calls** `unwire`, owns no wiring code. The op is **idempotent** — unwiring an
-     already-absent entry is a clean no-op. For a non-`mcp` connector (`api`/`ssh`/`url`/`cli`) there
-     is no host wiring, so this step is skipped. Omitting it would strand a dead MCP launch spec for
-     a removed tool in the host configs — the exact gap Q8 closes.
-  3. **Delete the descriptor** `.aid/connectors/<stem>.md`.
-  Removal is clean — no orphaned credential and no dead host-config entry is left behind.
-  - **Interrupt-safety (why purge/unwire before delete).** The descriptor is the sole basis of `P`
-    (Step R1). If a REMOVE is interrupted at any point **before** the descriptor delete, the
-    descriptor is still on disk, so the stem stays in `P`, stays absent from `D`, and is re-derived
-    as REMOVE next run — which re-purges and re-unwires (both clean no-ops: the secret is already
-    gone and the host entry already removed) and then re-deletes. The other order (delete first)
-    would drop the stem from `P` on an interrupt while leaving `.secrets/<stem>` and/or the host MCP
-    entry behind; because the tool is also absent from `D`, that orphan would never again be
-    classified REMOVE and would be stranded. Purge/unwire-before-delete closes that hole — no
-    interrupt can strand a secret or a host-config entry.
+     those guarantees. This affects only **aid-managed** connectors that stored a `file:` secret. A
+     tool-managed (`mcp`) connector has **no** stored secret (Q10), and a connector whose reference
+     was `env:<VAR>` or `keychain:<key>` (not the default `file:` form) has no local-store file — in
+     both cases the purge is a harmless no-op, and reconcile never mutates the environment or the OS
+     keychain (feature-001 Security Specs; §6).
+  2. **Delete the descriptor** `.aid/connectors/<stem>.md`.
+  **No unwire step (Q10 supersedes Q8, amends Q9).** AID never wrote a host MCP config, so a REMOVE
+  has nothing to unwire — for any connection type, `mcp` included. A removed `mcp` connector was only
+  ever a catalog entry telling the agent to request the connection from its host tool; deleting the
+  descriptor removes that catalog entry and nothing else. Removal is clean — no orphaned credential is
+  left behind.
+  - **Interrupt-safety (why purge before delete).** The descriptor is the sole basis of `P`
+    (Step R1). If a REMOVE is interrupted **before** the descriptor delete, the descriptor is still
+    on disk, so the stem stays in `P`, stays absent from `D`, and is re-derived as REMOVE next run —
+    which re-purges (a clean no-op: the secret is already gone) and then re-deletes. The other order
+    (delete first) would drop the stem from `P` on an interrupt while leaving `.secrets/<stem>`
+    behind; because the tool is also absent from `D`, that orphaned secret would never again be
+    classified REMOVE and would be stranded. Purge-before-delete closes that hole — no interrupt can
+    strand a secret.
 
 **Step R4 — Regenerate `INDEX.md`.** After all class ops, rebuild `.aid/connectors/INDEX.md` from the
 **remaining** descriptors' frontmatter by invoking **feature-005's INDEX builder** (regeneration is
@@ -250,12 +249,12 @@ state, not an empty-on-skip artifact).
 **Re-entry after interruption.** Because the descriptor files on disk are the only state and each op
 is an isolated file change, a reconcile interrupted mid-apply re-converges on the next run:
 already-applied ADDs/UPDATEs land as NO-OPs, and a partially-applied REMOVE is re-derived from
-`P \ D` and re-applied. That re-derivation is sound only because REMOVE **purges and unwires before
-it deletes the descriptor** (Step R3): the descriptor is what keeps the stem in `P`, so an interrupt
-at any point of a REMOVE leaves the stem still in `P` and still absent from `D` — hence still
-classified REMOVE next run (its re-purge and re-unwire are clean no-ops, then the descriptor is
-deleted). There is no partial-write bookkeeping to recover and no interrupt window in which a secret
-or a host-config entry is stranded — the next run's diff is genuinely self-correcting.
+`P \ D` and re-applied. That re-derivation is sound only because REMOVE **purges before it deletes
+the descriptor** (Step R3): the descriptor is what keeps the stem in `P`, so an interrupt at any
+point of a REMOVE leaves the stem still in `P` and still absent from `D` — hence still classified
+REMOVE next run (its re-purge is a clean no-op, then the descriptor is deleted). There is no
+partial-write bookkeeping to recover and no interrupt window in which a secret is stranded — the next
+run's diff is genuinely self-correcting.
 
 ### Layers & Components
 
@@ -273,15 +272,14 @@ Reconcile is **pure orchestration**: it reuses components owned by feature-001/0
 | Descriptor authoring (create/overwrite `<connector>.md`) | feature-002 (Q7 item 1) | Step R3 ADD/UPDATE |
 | `connector-secret` twin — `write` op | feature-003 (Q7 item 2) | Step R3 ADD, and UPDATE when auth changed |
 | `connector-secret` twin — `purge <stem>` op | feature-003 (Q7 item 2) | Step R3 REMOVE — feature-006 **calls** it; does not own it |
-| host-MCP-config twin — `unwire <stem>` op | feature-004 (Q7 item 3 + Q8) | Step R3 REMOVE of an `mcp` connector — feature-006 **calls** it; does not own it |
 
 **The reconcile algorithm** (orchestrated inline in the connector state, in the `state-generate.md`
 inline-bash style — the set diff needs the in-session declared set `D`, so it is not a standalone
 script): guard-skip (R0) → `list connectors` for `P` (R1) → partition `D ∪ P` on the stem, splitting
 `D ∩ P` by field-equality (R2) → dispatch each class to its owning component, REMOVE purging
-(feature-003 `purge`) and — for an `mcp` connector — unwiring (feature-004 `unwire`) before deleting
-the descriptor (R3) → invoke feature-005's deterministic INDEX builder (R4) → print the diff summary
-(R5). **This diff logic is feature-006's sole net-new code.**
+(feature-003 `purge`) before deleting the descriptor — **no unwire step** (Q10) — (R3) → invoke
+feature-005's deterministic INDEX builder (R4) → print the diff summary (R5). **This diff logic is
+feature-006's sole net-new code.**
 
 **The secret purge (feature-006 calls feature-003's op).** Deleting a secret file is **not**
 feature-006's twin — the `.secrets/` store is owned end-to-end by feature-003's `connector-secret`
@@ -301,29 +299,25 @@ feature-006 **relies on** these guarantees and does not re-implement them:
   PowerShell WinPS-5.1-compatible + ASCII-only). This is feature-003's obligation, noted here so
   reconcile inherits a cross-platform purge.
 
-**The host unwire (feature-006 calls feature-004's op).** Host MCP-config wiring is **not**
-feature-006's either — the host-MCP-config twin is owned end-to-end by feature-004, which exposes
-both `wire` and `unwire` ops (Q7 item 3 + Q8). On an `mcp` REMOVE, feature-006 **invokes**
-`unwire <stem>`. feature-006 **relies on** feature-004's guarantees and does not re-implement them:
-the op is **idempotent** (re-unwiring an already-absent entry is a clean no-op — what makes the
-unwire-before-delete interrupt re-entry safe), **wire-only-installed** (touches only hosts in
-`.aid/settings.yml tools.installed`; only `claude-code` is installed today per feature-004 / KI-007),
-and **entry-scoped** (removes just this connector's server entry, preserving every other). A
-non-`mcp` connector has no host wiring, so reconcile never calls `unwire` for it.
+**No host unwire (Q10 supersedes Q8).** feature-006 does **not** touch any host MCP configuration on
+REMOVE. Under Q10 AID never wires or unwires host configs — a tool-managed (`mcp`) connector is only
+a catalog entry directing the agent to request the connection from its host tool, so removing it is
+just a descriptor-delete (plus a no-op purge, since it has no stored secret). There is **no** `unwire`
+op, **no** `.aid/settings.yml tools.installed` read, and **no** host-config write anywhere in
+reconcile.
 
 **Boundary.** This SPEC defines only the **reconcile diff behavior**. The descriptor authoring
-(feature-002), the `connector-secret` twin's `write` + `purge` ops (feature-003), the host-MCP-config
-twin's `wire` + `unwire` ops (feature-004), the INDEX builder (feature-005), and the registry
-accessor + connectors contract (feature-001) are specified in their own features; feature-006
-composes them and adds only the diff orchestration (owning no store, no twin, no builder, and no
-wiring code). The P7-exempt state that hosts this step is introduced by feature-002; feature-006 does
-not add a new carve-out (all its writes are within the `.aid/connectors/` allowlist feature-001
-already declares).
+(feature-002), the `connector-secret` twin's `write` + `purge` ops (feature-003), the connection-mode
+model + consumption semantics (feature-004 — no wiring, Q10), the INDEX builder (feature-005), and the
+registry accessor + connectors contract (feature-001) are specified in their own features; feature-006
+composes them and adds only the diff orchestration (owning no store, no twin, and no builder). The
+P7-exempt state that hosts this step is introduced by feature-002; feature-006 does not add a new
+carve-out (all its writes are within the `.aid/connectors/` allowlist feature-001 already declares).
 
-**Scope — orchestration; owns no store/twin/builder/wiring.** Reconcile here covers the
-**tool/integration registry** (`.aid/connectors/`) — the FR-7/AC-6 subject (tools, descriptors,
-stored secrets, and, per Q8, `mcp` host wiring). It composes ops other features own (feature-003
-`purge`, feature-004 `unwire`, feature-005 INDEX build); its own code is only the set-diff
-orchestration. The **external-sources** side (keeping `.aid/knowledge/external-sources.md` fresh
-across re-runs) is NOT this feature's: its single writer is the Scout pre-scan, made content-aware by
-feature-002 (Q7 item 4; KI-008). feature-006 owns no source-side reconcile and no wiring code.
+**Scope — orchestration; owns no store/twin/builder.** Reconcile here covers the
+**tool/integration registry** (`.aid/connectors/`) — the FR-7/AC-6 subject (tools, descriptors, and
+stored secrets). It composes ops other features own (feature-003 `purge`, feature-005 INDEX build);
+its own code is only the set-diff orchestration. It performs **no** host-config wiring/unwiring
+(Q10). The **external-sources** side (keeping `.aid/knowledge/external-sources.md` fresh across
+re-runs) is NOT this feature's: its single writer is the Scout pre-scan, made content-aware by
+feature-002 (Q7 item 4; KI-008). feature-006 owns no source-side reconcile.

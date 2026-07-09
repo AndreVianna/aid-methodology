@@ -7,6 +7,7 @@
 | 2026-07-07 | Feature identified from REQUIREMENTS.md §5 (FR-5, FR-6) + §9 (AC-5); see Source for other §refs | /aid-define |
 | 2026-07-08 | Technical Specification authored (Feature Flow, Layers & Components, Data Model, External Integrations); binds to feature-001's FROZEN `.aid/connectors/` contract (schema, separate connectors-index builder, context-file wiring) — references, does not redefine; FR-6 "consumable" realized (machine-readable registry + documented consumption contract); non-MCP agent rewiring stated OUT OF SCOPE (Q4) | /aid-specify |
 | 2026-07-08 | FIX pass (A+ gate, grade C+): reconciled ownership to the Q7 matrix — feature-005 owns the connectors `INDEX.md` builder (DETERMINISTIC, no timestamp) + regeneration, the documented consumption contract (home = `## Connectors` context section, NOT an INDEX.md preamble; Row 1 MEDIUM), and the serialization/consumption VIEW; removed the source-writer and descriptor-writer components (Scout writes sources / feature-002 authors descriptors / feature-003 writes-purges secrets — Q7 items 1–5, resolving the 3 OOS drifts); quoted `external-sources.md` `summary:` in full (Row 1 MINOR) | /aid-specify |
+| 2026-07-09 | **Q10 reframe (user-directed, mid-Execute) — TOUCH.** The documented consumption contract now splits by **management mode** (feature-004's model): **tool-managed** (`mcp`) → the agent **requests the connection from the host tool's own MCP/plugin** (the tool handles auth; AID wrote no host config and stored no credential) — replacing the old "already wired into the host's MCP config" wording everywhere (Description, User Stories, AC, intro, Consumption flow, Component 2, External Integrations); **aid-managed** (`api\|ssh\|url\|cli`) → resolve the local `secret_reference` at use-time and connect via the descriptor. Removed feature-004's "on-wire" INDEX-regeneration trigger (feature-004 writes nothing under Q10) and the host-MCP-config write/spike references. INDEX builder + registry unchanged. Supersedes Q1 + Q8. | user / aid-execute loopback |
 
 ## Source
 
@@ -23,23 +24,26 @@ humans as well.
 
 Consumable, here, has a precise meaning: a machine-readable registry plus a documented
 consumption contract. The contract describes how an agent discovers a registered source or tool
-and how it connects — MCP-wired tools are directly usable via each host's MCP config, and the
-rest are described by the recorded descriptor plus the local auth resolved at use-time from its
-reference. Registered sources and tools are discoverable through the KB.
+and how it connects **by management mode** (feature-004): a **tool-managed** (`mcp`) connector is
+reached by **requesting the connection from the host tool's own MCP/plugin** (the tool handles
+auth — AID wrote no host config and stored no credential); an **aid-managed** (`api|ssh|url|cli`)
+connector is reached by resolving the local auth at use-time from its reference and connecting via
+the recorded descriptor. Registered sources and tools are discoverable through the KB.
 
 Scope boundary (approved): this feature delivers the machine-readable registry, the documented
-consumption contract, and KB discoverability. MCP-wired tools are directly usable via each
-host's MCP config. Rewiring individual agents (for example aid-researcher, aid-developer) to
-actively consume the non-MCP connection descriptors is deferred and is out of scope for this
-work — the registry is made consumable and the contract is documented, but agent-side
-descriptor consumption is not built here.
+consumption contract, and KB discoverability. Tool-managed (`mcp`) connectors are reached by
+requesting them from the host tool's own MCP/plugin (AID neither wires nor authenticates them —
+STATE.md Q10). Building agent-side code that actively consumes the aid-managed connection
+descriptors is out of scope for this work — the registry is made consumable and the contract is
+documented, but agent-side descriptor consumption is not built here.
 
 ## User Stories
 
 - As an AID agent, I want the sources and integration registry persisted in a machine-readable
   form at a known home so that I can discover the project's toolchain without re-eliciting it.
-- As an AID agent, I want MCP-wired tools usable directly via each host's MCP config and a
-  documented contract for the rest so that I know how connections are meant to work.
+- As an AID agent, I want tool-managed (`mcp`) connectors reachable by requesting them from my host
+  tool's own MCP/plugin, and a documented contract for aid-managed connectors, so that I know how
+  each connection is meant to work.
 - As a developer/adopter, I want the persisted registry documented for humans so that I can read
   and verify what was captured.
 
@@ -50,8 +54,8 @@ Must
 ## Acceptance Criteria
 
 - [ ] Given elicited sources and declared tools, when persistence runs, then sources are written to the existing external-sources.md doc and the tool integration registry is written to its determined home (per feature-001), both in a machine-readable form and documented for humans. (AC-5, FR-5)
-- [ ] Given the persisted registry, when an agent needs the project's toolchain, then it is consumable as a machine-readable registry plus a documented consumption contract describing how to connect (MCP-wired tools directly usable via each host's MCP config; the rest via descriptor plus use-time-resolved auth), discoverable through the KB. (AC-5, FR-6)
-- [ ] Given an mcp-wired tool, when an agent operates, then the tool is directly usable via each host's MCP config. (FR-6, approved lean scope)
+- [ ] Given the persisted registry, when an agent needs the project's toolchain, then it is consumable as a machine-readable registry plus a documented consumption contract describing how to connect **by management mode** (tool-managed `mcp` → request the connection from the host tool's own MCP/plugin; aid-managed `api|ssh|url|cli` → connect via the descriptor plus use-time-resolved local auth), discoverable through the KB. (AC-5, FR-6)
+- [ ] Given a tool-managed (`mcp`) connector, when an agent operates, then the contract instructs it to request the connection from the host tool's own MCP/plugin (the tool handles auth); AID neither wires the host config nor stores a credential for it. (FR-6, AC-4, Q10)
 
 ---
 
@@ -63,8 +67,9 @@ Must
 > **documented consumption contract** (FR-6), incl. use-time secret resolution; and (3) the
 > **machine-readable serialization / consumption VIEW** over what the producers write. It is
 > **NOT** a descriptor / secret / source writer that producers "call": producers write their own
-> artifacts (feature-002 authors descriptors, feature-003 writes/purges secret values,
-> feature-004 writes host MCP config + wiring fields), and external **sources** persist via the
+> artifacts (feature-002 authors descriptors, feature-003 writes/purges secret values for
+> aid-managed connectors; **feature-004 writes nothing — it defines the management-mode model +
+> consumption semantics feature-005 publishes**, per Q10), and external **sources** persist via the
 > existing **Scout** back-end fed by feature-002 elicitation — feature-005 defers to Scout there
 > (Q7 items 1–6; REQUIREMENTS §7 "no parallel mechanism"). It does NOT redefine the store, the
 > descriptor schema, the `INDEX.md` contract, or the context-file wiring — those are **FROZEN by
@@ -75,12 +80,13 @@ Must
 > → `.aid/connectors/` (producer-written descriptors + a feature-005-regenerated `INDEX.md`, per
 > feature-001). Both are machine-readable AND human-documented (FR-5, AC-5).
 >
-> **FR-6 "consumable" scope (Q4).** Consumable = a **machine-readable registry** PLUS a
-> **documented consumption contract**; MCP-wired tools are directly usable via each host's MCP
-> config (feature-004). **Rewiring individual agents (`aid-researcher`, `aid-developer`, …) to
-> actively consume the non-MCP connection descriptors is OUT OF SCOPE** (STATE.md Q4,
-> REQUIREMENTS §4 Out-of-Scope, FR-6). The registry is made consumable and the contract is
-> documented; the agent-side descriptor-consumption code is not built here.
+> **FR-6 "consumable" scope (Q4 + Q10).** Consumable = a **machine-readable registry** PLUS a
+> **documented consumption contract** that splits by management mode (feature-004's model):
+> tool-managed (`mcp`) → the agent **requests the connection from the host tool's own MCP/plugin**;
+> aid-managed (`api|ssh|url|cli`) → connect via the descriptor + use-time-resolved local auth.
+> **Building agent-side code that actively consumes the aid-managed connection descriptors is OUT OF
+> SCOPE** (STATE.md Q4, REQUIREMENTS §4 Out-of-Scope, FR-6). The registry is made consumable and the
+> contract is documented; the agent-side descriptor-consumption code is not built here.
 
 ### Feature Flow
 
@@ -116,17 +122,19 @@ the serialization/consumption view.
 `INDEX.md`).**
 
 1. Producers write their own artifacts (Q7 items 1–2): feature-002 **authors** the
-   `.aid/connectors/<connector>.md` descriptor (feature-001 frontmatter schema) with its
-   `secret_reference` (never a value); feature-003's secret twin writes the secret **value** to
-   `.aid/connectors/.secrets/<stem>`; feature-004 **updates** wiring fields and writes the host MCP
-   config for `mcp` connectors.
-2. After **any** descriptor add / update / remove / wire, the producer **triggers feature-005's
+   `.aid/connectors/<connector>.md` descriptor (feature-001 frontmatter schema), with a
+   `secret_reference` for **aid-managed** connectors only (never a value; tool-managed connectors
+   carry none); feature-003's secret twin writes the secret **value** to
+   `.aid/connectors/.secrets/<stem>` for aid-managed connectors. **feature-004 writes nothing** — it
+   defines the management-mode model + consumption semantics (Q10); there is no host-MCP-config write.
+2. After **any** descriptor add / update / remove, the producer **triggers feature-005's
    connectors `INDEX.md` builder** to regenerate `.aid/connectors/INDEX.md` from descriptor
-   frontmatter — one row per descriptor (feature-001 §"Connectors INDEX.md contract"). The builder
-   is **DETERMINISTIC — it stamps no run timestamp** (unlike `build-kb-index.sh`), so a no-change
-   reconcile produces a byte-identical index and does not churn (Q7 item 5). It is a **SEPARATE
-   script** from `build-kb-index.sh` so the future KB-index→YAML migration (Q6e) does not couple to
-   it.
+   frontmatter — one row per descriptor (feature-001 §"Connectors INDEX.md contract"). Triggers are
+   feature-002 (author) and feature-006 (reconcile); feature-004 triggers nothing (it writes nothing
+   — Q10). The builder is **DETERMINISTIC — it stamps no run timestamp** (unlike `build-kb-index.sh`),
+   so a no-change reconcile produces a byte-identical index and does not churn (Q7 item 5). It is a
+   **SEPARATE script** from `build-kb-index.sh` so the future KB-index→YAML migration (Q6e) does not
+   couple to it.
 3. Because `.aid/connectors/` lives **outside** `.aid/knowledge/`, these writes and the index
    regeneration run under feature-001's P7 carve-out (the connector sub-phase allowlist) and are
    NOT touched by `build-kb-index.sh` nor scanned by the KB citation-lint gate `kb-citation-lint.sh`
@@ -153,11 +161,13 @@ toolchain:
 3. opens the specific `.aid/connectors/<connector>.md` descriptor — via feature-001's dedicated
    frontmatter accessor twin, **NOT** `read-setting.sh` (which resolves only 2-level dotted paths
    — **KI-001**) — for full fields + human notes;
-4. connects, by `connection_type`:
-   - `mcp` → the server is **already** wired into the host's MCP config (feature-004); the agent
-     invokes it directly through the host harness's native MCP tool-calling. No descriptor
-     consumption at connect-time — the descriptor exists for discovery/audit.
-   - `api | ssh | url | cli` → the descriptor conveys `endpoint` + `auth_method` +
+4. connects, by management mode (derived from `connection_type` — feature-004):
+   - `mcp` (**tool-managed**) → the agent **requests the connection from its host tool's own
+     MCP/plugin** (the host harness's native MCP mechanism); the **tool** establishes and
+     authenticates it. AID wrote no host config and stored no credential. No descriptor consumption
+     at connect-time — the descriptor exists for discovery/audit and to name which tool-provided
+     connection to request.
+   - `api | ssh | url | cli` (**aid-managed**) → the descriptor conveys `endpoint` + `auth_method` +
      `secret_reference`; the credential is **resolved at use-time** from the reference
      (`env:` → read the env var; `file:` → read `.aid/connectors/.secrets/<connector>`;
      `keychain:` → OS keychain — feature-001 §Security). **Use-time secret resolution is owned by
@@ -167,13 +177,15 @@ toolchain:
 
 **Producer / consumer / reconciler cross-reference (bind to feature-001 §"Feature Flow" + Q7 — do
 NOT restate):** the **producers write their own artifacts** — feature-002 authors descriptors,
-feature-003 writes/purges secret values, feature-004 writes host MCP config + wiring fields — and
-each **triggers feature-005's `INDEX.md` regeneration**. feature-005 owns that regeneration, the
-documented consumption contract (incl. use-time secret resolution), and the serialization /
-consumption view. feature-006 reconciles (add / update / remove) and, on full REMOVE, **calls
-feature-003's purge op** (it defines no purge twin of its own — Q7 item 2); an auth-downgrade
-orphan (`auth_method` → `none` on a surviving connector) is disposed by feature-003's secret
-lifecycle, not feature-006 (Q7 item 7).
+feature-003 writes/purges secret values (aid-managed connectors only), and **feature-004 writes
+nothing** (it defines the management-mode model + consumption semantics — Q10) — and the writing
+producers (feature-002, feature-006) **trigger feature-005's `INDEX.md` regeneration**. feature-005
+owns that regeneration, the documented consumption contract (incl. use-time secret resolution for
+aid-managed connectors), and the serialization / consumption view. feature-006 reconciles (add /
+update / remove) and, on full REMOVE, **calls feature-003's purge op** for an aid-managed connector
+(it defines no purge twin of its own — Q7 item 2; there is no unwire step — Q10 supersedes Q8); an
+auth-downgrade orphan (`auth_method` → `none` on a surviving connector) is disposed by feature-003's
+secret lifecycle, not feature-006 (Q7 item 7).
 
 ### Layers & Components
 
@@ -182,8 +194,9 @@ descriptor / secret / source writer that producers call. It owns three things: (
 `INDEX.md` builder + its regeneration, (2) the documented consumption contract (FR-6), and (3) the
 machine-readable serialization / consumption VIEW. The producers write their own artifacts and
 trigger feature-005's index regeneration: feature-002 authors `.aid/connectors/<connector>.md`
-descriptors (incl. `secret_reference`); feature-003's secret twin writes/purges the secret VALUE
-under `.aid/connectors/.secrets/`; feature-004 writes host MCP config + updates wiring fields; and
+descriptors (incl. `secret_reference` for aid-managed connectors); feature-003's secret twin
+writes/purges the secret VALUE under `.aid/connectors/.secrets/` (aid-managed only); **feature-004
+writes nothing** — it defines the management-mode model + per-mode consumption semantics (Q10); and
 external **sources** are written by the existing **Scout** back-end (fed by feature-002 ELICIT),
 never by feature-005.
 
@@ -198,19 +211,22 @@ NOT restate or alter that contract). It follows the `build-kb-index.sh` pattern 
 not couple to it. It is **DETERMINISTIC — it emits no run timestamp** (contrast the
 `<!-- AUTO-GENERATED <TS> -->` line `build-kb-index.sh` writes), so a no-change reconcile yields a
 byte-identical index and does not churn (Q7 item 5, CF-INDEX). Triggered on every descriptor
-add / update / remove / wire by feature-002 (author), feature-004 (wire), and feature-006
-(reconcile). Runs within feature-001's P7 carve-out allowlist (`.aid/connectors/`).
+add / update / remove by feature-002 (author) and feature-006 (reconcile); **feature-004 triggers
+nothing — it writes nothing under Q10**. Runs within feature-001's P7 carve-out allowlist
+(`.aid/connectors/`).
 
 **Component 2 — Documented consumption contract (FR-6).**
 The consumption contract is human-readable documentation of the READ flow above, and its **single
 home is the `## Connectors` section of the context files** (feature-001's wiring — **referenced**,
 not re-derived; **NOT** an `INDEX.md` preamble — feature-001's frozen `INDEX.md` contract defines
 no body preamble, and adding one would amend the frozen builder, Q7 item 6 / gate Row 1). That
-section carries the protocol: "scan `@.aid/connectors/INDEX.md` → open the descriptor → for `mcp`
-use the host's MCP config (feature-004), else resolve the `secret_reference` at use-time (`env:` env
-var, `file:` `.aid/connectors/.secrets/<connector>`, `keychain:` OS keychain)", plus the explicit
-**OUT-OF-SCOPE** boundary (rewiring `aid-researcher` / `aid-developer` / … to actively consume
-non-MCP descriptors is not built — Q4). The machine-readable substrate the contract relies on is
+section carries the protocol: "scan `@.aid/connectors/INDEX.md` → open the descriptor → connect
+**by management mode** (feature-004): for a tool-managed (`mcp`) connector **request the connection
+from your host tool's own MCP/plugin** (the tool handles auth — AID stored nothing); for an
+aid-managed (`api|ssh|url|cli`) connector resolve the `secret_reference` at use-time (`env:` env var,
+`file:` `.aid/connectors/.secrets/<connector>`, `keychain:` OS keychain) and connect via the
+descriptor", plus the explicit **OUT-OF-SCOPE** boundary (building agent-side code to actively
+consume the aid-managed descriptors is not done — Q4). The machine-readable substrate the contract relies on is
 feature-001's registry (`INDEX.md` + descriptors) plus feature-001's dedicated frontmatter accessor
 twin (**KI-001** — NOT `read-setting.sh`, which resolves only 2-level dotted paths). Use-time secret
 resolution is part of this contract (Q7 item 3); there is no feature-003 resolver.
@@ -245,9 +261,10 @@ section). Any consumption-doc text goes **inside** the existing `## Connectors` 
 **Component 5 — scope guards.**
 feature-005 is **not** a writer of descriptors, secrets, or `external-sources.md` (Q7 items 1–4),
 and it ships **no** bespoke per-tool client code (REQUIREMENTS §4 Out-of-Scope; feature-001) — no
-Jira / Slack / GitHub / etc. client. Agents connect via MCP (feature-004) or the recorded
-descriptor. feature-005 ships the `INDEX.md` builder, the consumption documentation, and the
-serialization / consumption view only.
+Jira / Slack / GitHub / etc. client. Agents connect by **requesting the host tool's own MCP
+connection** (tool-managed) or via the **recorded descriptor + use-time-resolved local auth**
+(aid-managed) — feature-004's mode model. feature-005 ships the `INDEX.md` builder, the consumption
+documentation, and the serialization / consumption view only.
 
 ### Data Model
 
@@ -293,22 +310,24 @@ feature-001's schema — it defines no new persisted shape.
 
 ### External Integrations
 
-Activated **light**: the consumption contract points at feature-004's per-host MCP configs; this
-feature adds no integration surface of its own.
+Activated **light**: for a tool-managed connector the consumption contract points at the **host
+tool's own** MCP surface; this feature adds no integration surface of its own and (per Q10) AID
+writes no host configuration.
 
-- For `connection_type: mcp`, "consumable" is realized entirely through the **host's MCP
-  configuration**, which feature-004 writes per-host across the five profiles (claude-code,
-  codex, cursor, copilot-cli, antigravity), each via its own MCP mechanism (`.mcp.json` is the
-  Claude Code case; the per-host mechanism map is feature-004's Q1-authorized spike). The agent
-  uses the MCP server directly through the host harness — the descriptor is for discovery/audit,
-  not connect-time consumption.
+- For `connection_type: mcp` (**tool-managed**), "consumable" is realized through the **host tool's
+  own MCP server/plugin** — the agent **requests the connection from its host tool** (claude-code,
+  codex, cursor, copilot-cli, antigravity), which establishes and authenticates it. AID does **not**
+  write, wire, or manage any host MCP configuration (Q10 supersedes Q1; the former per-host mechanism
+  spike/table is obsolete). The descriptor is for discovery/audit and to name which tool-provided
+  connection to request — not connect-time consumption.
 - KB grounding: `integration-map.md` §"MCP and Playwright" and §"Host AI-Tool Harnesses (the five
-  profiles)" describe the MCP surface and the five install targets. feature-005 introduces **no**
-  new runtime integration, no network service, and no new heavy runtime dependency (AC-8) — it
-  points at feature-004's outputs.
-- **Reference-not-value extends to host MCP config.** Any committed MCP config feature-004 writes
-  (e.g. a project-scoped `.mcp.json`) MUST carry env-var references, never secret values — the
-  same rule as `.aid/connectors/` (feature-001 §Security cross-reference).
-- Non-MCP transports (`api|ssh|url|cli`) have **no** wired integration here: their consumption is
-  the documented descriptor + use-time secret resolution, with the agent-side consumption code
-  **OUT OF SCOPE** (Q4) — restated for the boundary.
+  profiles)" describe that each host owns its own MCP surface. feature-005 introduces **no** new
+  runtime integration, no network service, and no new heavy runtime dependency (AC-8) — it documents
+  how an agent reaches the tool-provided connection.
+- **No host-config reference to guard (Q10).** Because AID writes no host MCP config, there is no
+  committed host config that could hold a reference; the reference-not-value rule is fully contained
+  in `.aid/connectors/` (feature-001 §Security), and tool-managed connectors carry no credential at
+  all.
+- Aid-managed transports (`api|ssh|url|cli`) have **no** host-tool integration here: their
+  consumption is the documented descriptor + use-time secret resolution, with the agent-side
+  consumption code **OUT OF SCOPE** (Q4) — restated for the boundary.

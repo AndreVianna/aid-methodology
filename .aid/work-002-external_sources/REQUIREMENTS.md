@@ -1,7 +1,7 @@
 # Requirements
 
 - **Name:** External Sources & Tool Integrations
-- **Description:** Restore external-source elicitation in `aid-discover` and extend it to external tool integrations — declaring tools, wiring connections (MCP/API/SSH/URL/CLI), and registering auth locally — so the repo's agents can use them.
+- **Description:** Restore external-source elicitation in `aid-discover` and extend it to external tool integrations — **cataloguing** the connections available to the repo's agents (which the host tool already provides via its own MCP/plugin, versus which AID must describe directly as a raw `api|ssh|url|cli`), and registering local auth **only** for the connections AID itself manages — so the agents know what they can reach and how. AID catalogs and informs; it does not provision or wire host tool configurations.
 
 ## Change Log
 
@@ -16,6 +16,7 @@
 | 2026-07-07 | Interview complete — approved | /aid-describe |
 | 2026-07-07 | Cross-reference FIX (aid-define): differentiate sources vs tool integrations + build source populate/maintain process (Q2); multi-host MCP wiring across all 5 profiles (Q1); FR-6 reworded "consumable" + non-MCP agent rewiring out-of-scope (Q4); purge secret on tool removal (Q3); absolute KB-no-secrets rule + pre-existing-secret cleanup out-of-scope + AC-3 scope clarified (Q5); §1 CLI added (#4) | /aid-define |
 | 2026-07-07 | Cross-reference complete — all 6 findings fixed, regraded A+ | /aid-define |
+| 2026-07-09 | **Q10 reframe (user-directed, mid-Execute):** catalog, not manager. AID does NOT wire/manage host MCP configs; it catalogs connection availability + how to connect. Tool-managed connectors (host provides MCP/plugin) → agent requests from the tool, tool handles auth, no AID cred; aid-managed connectors (direct api/ssh/url/cli) → AID records descriptor + local auth. De-wired Description/§1/§4/FR-4/FR-6/§8/AC-4; supersedes Q1+Q8, amends Q9. | user / aid-execute loopback |
 
 ## 1. Objective
 
@@ -23,11 +24,15 @@ Restore the external-source elicitation that `aid-init` performed before project
 migrated into `aid-config`/`settings.yml`, relocating that responsibility to `aid-discover`,
 and extend it into full external **tool/integration** support. During discovery the user can
 declare the external sources and tools the project depends on (e.g., Jira, Slack,
-GitLab/GitHub, Confluence, Notion, Jenkins, Docker); for each declared tool AID wires a
-connection (MCP, API, SSH, URL, CLI) and registers any required auth **locally only**, then makes
-the resulting registry available for the repo's agents to use. Determining where these
-integration descriptors and local auth live (within the KB vs a separate folder) is itself
-part of the work.
+GitLab/GitHub, Confluence, Notion, Jenkins, Docker). For each declared tool AID **catalogs the
+connection and how an agent reaches it**: when the host tool (Claude Code, Codex, Cursor, …)
+already provides its own MCP server or plugin for the target, the catalog points the agent to
+the tool's own MCP/plugin (the **tool** handles auth); when the target is reached by a direct
+API/SSH/URL/CLI the tool does **not** provide, AID records a connect-sufficient descriptor and
+registers its auth **locally only**. AID stores credentials **only** for the connections it
+manages, never for tool-managed ones. The resulting registry is a catalog the repo's agents
+consult to know what they can reach and how. Determining where these integration descriptors
+and local auth live (within the KB vs a separate folder) is itself part of the work.
 
 **External sources** and **tool integrations** are distinct and handled separately (see §4):
 sources are reference material (docs/specs/URLs); tool integrations are connectable tools.
@@ -59,13 +64,14 @@ project's real toolchain (issue trackers, chat, CI, source hosts, docs, containe
 - Extend elicitation to external **tools/integrations**. The mechanism is **generic and extensible**: a curated list of commonly-used tools ships as presets (sensible defaults), and the user can declare any other tool that isn't listed.
 - Support a fixed set of **connection types** (the transport an agent uses to reach a tool): `mcp`, `api`, `ssh`, `url`, `cli` (local binary / local socket — covers Docker + dev CLIs). `db` is deliberately not a first-class type (folds under `cli`/`api`). Connection **type** is orthogonal to **auth** method (token/PAT/OAuth/SSH-key), which is registered separately and locally.
 - Register any required auth **locally only** (never committed to the repo).
-- Make the tool registry consumable by the repo's agents: a machine-readable registry + a documented consumption contract; **MCP wiring into each host profile's MCP configuration** (all five profiles AID renders into); recorded connection descriptors for the rest.
+- Make the tool registry consumable by the repo's agents: a machine-readable **catalog** + a documented consumption contract. Each connector records its **management mode** — **tool-managed** (the host tool provides its own MCP/plugin; the catalog instructs the agent to request the connection from the tool, which handles auth) or **aid-managed** (a direct `api|ssh|url|cli` the tool does not provide; AID records a connect-sufficient descriptor + a local auth reference). AID does **not** write, wire, or manage any host tool's MCP configuration.
 - **Analyze and decide where integration descriptors + local auth should live** (within the KB vs a separate folder) — a deliverable of this work, not a pre-settled assumption.
 
 ### Out of Scope
 
 - Building bespoke per-tool client code/adapters (a Jira client, a Slack client, etc.). Agents connect via MCP or the recorded descriptor, not custom clients.
-- **Rewiring individual agents to actively consume non-MCP connection descriptors.** The registry is made consumable (machine-readable + documented contract) and MCP-wired tools are directly usable, but agent-side descriptor consumption is not built here.
+- **Building agent-side code that actively consumes connection descriptors.** The registry is made consumable (machine-readable catalog + documented consumption contract), but code that rewires individual agents to act on descriptors is not built here.
+- **Writing, wiring, or managing any host tool's MCP configuration.** For tool-managed connectors the agent requests the connection from the host tool's own MCP/plugin (the tool owns that config and its auth); AID only catalogs availability (Q10).
 - **Remediating or cleaning pre-existing secrets already committed in the project's source or codebase.** Those are surfaced as tech-debt / risk by the discovery phase (`aid-discover`), not remediated by this feature.
 
 ## 5. Functional Requirements
@@ -76,11 +82,15 @@ project's real toolchain (issue trackers, chat, CI, source hosts, docs, containe
 
 **FR-3 — Local auth registration.** When a tool requires auth, the system MUST prompt for the secret and store it in a local, git-ignored / OS-appropriate location, recording only a reference in the registry (per §6 security rules).
 
-**FR-4 — Connection wiring.** For `mcp`-capable tools the system MUST wire the MCP server into **each host profile's MCP configuration** — all five profiles AID renders into (claude-code, codex, cursor, copilot-cli, antigravity), each via that host's own mechanism (`.mcp.json` is the Claude Code case, not universal; no MCP-config wiring exists in the codebase yet, so per-host mechanism mapping is a `/aid-specify` research item). For `api|ssh|url|cli` tools the system MUST record a connection descriptor sufficient for an agent to connect.
+**FR-4 — Connection cataloguing (management mode).** For each declared tool the system MUST record its **management mode** and how an agent connects:
+- **tool-managed** — when the host tool already provides an MCP server or plugin for the target, the catalog MUST record that the connection is available through the host tool and instruct the agent to **request it from the tool** (which handles auth). AID MUST NOT write any host MCP configuration and MUST NOT store a credential for it.
+- **aid-managed** — when the target is reached by a direct `api|ssh|url|cli` the host tool does not provide, the system MUST record a connection descriptor sufficient for an agent to connect (endpoint/target + connection type) and register its auth locally (FR-3).
+
+AID does not provision, wire, or manage host tool configurations; it catalogs availability and how to connect.
 
 **FR-5 — Persistence.** The system MUST persist **external sources** to `external-sources.md` and the **tool/integration registry** to its determined home (the placement decided by the work's analysis — KB vs separate folder).
 
-**FR-6 — Agent consumption.** The registered sources/tools MUST be **consumable** by the repo's agents: a machine-readable registry plus a documented consumption contract, with MCP-wired tools directly usable via each host's MCP config. (Rewiring agents to actively consume non-MCP descriptors is out of scope — see §4.)
+**FR-6 — Agent consumption.** The registered sources/tools MUST be **consumable** by the repo's agents: a machine-readable catalog plus a documented consumption contract. For a **tool-managed** connector the contract MUST tell the agent to request the connection from the host tool's own MCP/plugin; for an **aid-managed** connector it MUST tell the agent to resolve the local auth reference at use-time and connect via the recorded descriptor. (Building agent-side code that actively consumes descriptors is out of scope — the contract is documented + machine-readable; see §4.)
 
 **FR-7 — Idempotent reconcile.** Re-running `aid-discover` MUST reconcile the registry (add new, update changed, remove absent) without clobbering surviving entries or their stored secrets. When a tool is **removed**, its associated local secret MUST be **purged** from the local store.
 
@@ -109,7 +119,7 @@ project's real toolchain (issue trackers, chat, CI, source hosts, docs, containe
 ### Dependencies
 
 - The existing `aid-discover` machinery (`GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE`) and the KB authoring/schema conventions — elicitation slots into discovery; the registry follows KB conventions.
-- Host-tool **MCP support** for `mcp` wiring across all five profiles (each via its own MCP-config mechanism; `.mcp.json` is the Claude Code case). MCP presets assume a server exists for that tool.
+- Host-tool **MCP/plugin support** — a tool-managed connector assumes the host tool provides an MCP server or plugin for that target, which the agent requests from the tool. AID does not create that support; it catalogs its availability. (No AID-side MCP-config wiring — Q10.)
 - Cross-platform behavior across Windows, macOS, and Linux (see §6).
 
 ### Assumptions
@@ -123,7 +133,7 @@ project's real toolchain (issue trackers, chat, CI, source hosts, docs, containe
 - **AC-1** — Running `aid-discover` prompts for external **sources** and **tools** (as distinct kinds), and skips cleanly when there are none (no empty artifacts written).
 - **AC-2** — A user can declare both a **preset** tool (e.g., GitHub) and a **custom/non-preset** tool via the generic descriptor; each is captured with connection type, endpoint/target, and an auth *reference*.
 - **AC-3** — After entering a secret, grepping the **repo + KB + STATE + transcript** for that secret value finds **nothing**; the value exists only in the local git-ignored store (reference-not-value proven). Scope: this verifies *our registered* secret never leaks — it is NOT a repo-wide scan for pre-existing committed secrets (those are discovery's tech-debt/risk concern).
-- **AC-4** — An `mcp` tool is wired into **each host profile's MCP configuration** (all 5 profiles); an `api|ssh|url|cli` tool yields a connection descriptor an agent can act on.
+- **AC-4** — A **tool-managed** connector is catalogued as available via the host tool's own MCP/plugin, and the consumption contract instructs the agent to request it from the tool — **no host MCP config is written and no credential is stored** for it; an **aid-managed** `api|ssh|url|cli` connector yields a connect-sufficient descriptor plus a local auth reference an agent can act on.
 - **AC-5** — External sources are persisted to `external-sources.md` and the tool/integration registry to its determined home, both in a **machine-readable** form agents can read (FR-6), and documented for humans.
 - **AC-6** — Re-running `aid-discover` after add/change/remove **reconciles** the registry without losing surviving entries or their stored secrets; a **removed** tool's associated local secret is **purged** from the local store.
 - **AC-7** — The **placement decision** (where registry + auth live) is produced as an explicit analysis artifact/decision in the work.

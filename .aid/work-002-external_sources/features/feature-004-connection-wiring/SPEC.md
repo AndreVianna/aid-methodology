@@ -1,48 +1,62 @@
-# Connection Wiring
+# Connection Modes and Consumption
 
 ## Change Log
 
 | Date | Change | Source |
 |------|--------|--------|
 | 2026-07-07 | Feature identified from REQUIREMENTS.md §5 (FR-4) + §9 (AC-4, AC-8); see Source for other §refs | /aid-define |
-| 2026-07-08 | Technical Specification authored (External Integrations, Data Model, Layers & Components, Feature Flow, Security Specs). Executed the Q1-authorized per-host MCP-config spike: mechanism table for all 5 hosts with CONFIDENCE flags (claude-code CONFIRMED from repo `.mcp.json`; cursor high; codex/copilot-cli/antigravity SPIKE-verify-at-implementation — flagged, not fabricated). Binds feature-001 FROZEN keystone; wire-only-installed; added KI-007 | /aid-specify |
-| 2026-07-08 | FIX pass (A+ gate, C+ → 1 MEDIUM): removed the invented "feature-003 resolver". Per STATE.md Q7 item 3, use-time secret RESOLUTION is owned by feature-005's consumption contract / the consuming agent; feature-004 RECORDS the reference only into the host MCP config (External Integrations `${VAR}`-fallback + Security Specs `env:` bullet reworded). Home-scoped-write OOS (ledger row 2) routed to feature-001 CF5; KI-007 flag retained (deferred — only claude-code installed today) | /aid-specify |
-| 2026-07-08 | Cross-feature FIX (aid-plan gate, STATE.md Q8): defined the `unwire` op as a first-class, feature-004-OWNED op on the host-MCP-config twin, symmetric to `wire` (remove the connector's `mcpServers`/`[mcp_servers.<name>]` entry from each installed host; idempotent no-op if absent; preserves other servers; wire-only-installed). feature-006 reconcile REMOVE COMPOSES `unwire <stem>` (mirrors feature-003 `purge`). Updated intro blockquote, External Integrations, Data Model, Layers & Components, Feature Flow (added `unwire` sub-flow); the former "feature-006 deletes the entry" pointer now targets this owned op | /aid-specify |
+| 2026-07-08 | Technical Specification authored (External Integrations, Data Model, Layers & Components, Feature Flow, Security Specs). Executed the Q1-authorized per-host MCP-config spike: mechanism table for all 5 hosts with CONFIDENCE flags. Binds feature-001 FROZEN keystone; wire-only-installed; added KI-007. **[SUPERSEDED by the 2026-07-09 Q10 reframe — the wiring premise is removed.]** | /aid-specify |
+| 2026-07-08 | FIX pass (A+ gate, C+ → 1 MEDIUM): removed the invented "feature-003 resolver"; use-time resolution owned by feature-005 / the consuming agent. **[SUPERSEDED by Q10.]** | /aid-specify |
+| 2026-07-08 | Cross-feature FIX (aid-plan gate, STATE.md Q8): defined a feature-004-OWNED `unwire` op symmetric to `wire`; feature-006 reconcile REMOVE composes it. **[SUPERSEDED by Q10 — AID neither wires nor unwires; there is no `wire`/`unwire` op.]** | /aid-specify |
+| 2026-07-09 | **Q10 reframe (user-directed, mid-Execute) — feature REWRITTEN "Connection Wiring" → "Connection Modes and Consumption".** The connectors registry is a CATALOG, not a connection manager: AID does NOT write, wire, or manage any host tool's MCP configuration, and stores no credential for connections a host tool manages. Removed the entire wiring premise — the per-host MCP-config mechanism table, the `wire`/`unwire` twin, the read-merge-write host-config path, and the KI-007 out-of-repo-write edge are all DELETED. The feature now (a) defines the two **management modes** — **tool-managed** ⟺ `connection_type: mcp`, **aid-managed** ⟺ `api\|ssh\|url\|cli` (derived from `connection_type`, per feature-001) — and (b) defines the **per-mode consumption semantics**: tool-managed → the agent requests the connection from the host tool's own MCP/plugin (the tool handles auth; AID writes nothing and stores no credential); aid-managed → the agent resolves the local `secret_reference` at use-time and connects via the recorded descriptor. Supersedes Q1 + Q8; aligns with corrected REQUIREMENTS FR-4 / FR-6 / AC-4 / §4 / §8. | user / aid-execute loopback |
 
 ## Source
 
-- REQUIREMENTS.md §4 (Scope — connection types; no bespoke per-tool clients), §5 FR-4 (Connection wiring), §8 (Dependencies — host-tool MCP support)
+- REQUIREMENTS.md §4 (Scope — connection types + management mode; no bespoke per-tool clients; AID does not wire host configs), §5 FR-4 (Connection cataloguing / management mode), §8 (Dependencies — host-tool MCP/plugin support the agent requests)
 - REQUIREMENTS.md §9 Acceptance Criteria: AC-4, AC-8 (cross-cutting, cli/socket handling)
+- STATE.md `## Cross-phase Q&A` **Q10** (authoritative model — catalog, not manager); supersedes **Q1** and **Q8**
 
 ## Description
 
-This feature turns a declared tool into something an agent can actually connect to, without
-building any bespoke per-tool client code. It handles the two wiring outcomes the connection
-types call for.
+This feature turns a declared connector into something an agent knows **how to reach**, without
+building any bespoke per-tool client code and **without AID provisioning, wiring, or managing any
+host tool's configuration**. Every connector carries one of two **management modes**, and the
+feature defines what each mode means and how an agent consumes it.
 
-For an mcp-capable tool, the feature wires the MCP server into the host profile's MCP
-configuration, using each host's own MCP-config mechanism. This is in scope for all five host
-profiles AID renders into (claude-code, codex, cursor, copilot-cli, antigravity); Claude Code's
-.mcp.json is one host's case, not a universal format. There is no MCP-config wiring in the
-codebase yet, so mapping each host's per-host mechanism is a research item for /aid-specify.
+- **tool-managed** (the common case, `connection_type: mcp`) — the host tool (Claude Code, Codex,
+  Cursor, Copilot CLI, Antigravity) already provides its **own** MCP server or plugin for the target
+  (e.g. Jira, GitHub). The catalog records that the connection is **available via the host tool** and
+  instructs the agent to **request it from the tool**. The **tool handles authentication**; AID
+  writes **no** host MCP configuration and stores **no** credential for it.
+- **aid-managed** (the rarer case, `connection_type: api | ssh | url | cli`) — the target is reached
+  by a direct transport the host tool does **not** provide (e.g. a Microsoft 365 REST API when no MCP
+  exists). The catalog records a connect-sufficient **descriptor** (transport + endpoint/target +
+  auth reference) and AID stores the required credential in the local git-ignored store (feature-003),
+  which the agent resolves at use-time.
 
-For an api, ssh, url, or cli tool, the feature records a connection descriptor that carries
-enough information for an agent to connect — the transport, the endpoint or target, and the auth
-reference — again without any custom client. cli covers local binaries and local sockets, which
-must be handled consistently across Windows, macOS, and Linux and within AID's existing
+The management mode is **derived from `connection_type`** (feature-001's schema): `mcp` ⟺
+tool-managed; `api | ssh | url | cli` ⟺ aid-managed. `cli` covers local binaries and local sockets,
+which must be handled consistently across Windows, macOS, and Linux and within AID's existing
 toolchain, introducing no new heavy runtime dependency.
 
-The descriptor shape written here is the schema defined by the integration-store-placement
-feature, and the tools wired here are the ones captured by source-and-tool elicitation.
+The descriptor shape this feature reasons over is the schema FROZEN by the
+integration-store-placement feature; the connectors classified here are the ones captured by
+source-and-tool elicitation. This feature writes no artifact of its own — it is a **contract**:
+the management-mode model plus the per-mode consumption semantics that feature-005 publishes into
+the documented consumption contract.
 
 ## User Stories
 
-- As a developer/adopter, I want each mcp-capable tool wired into the host's MCP configuration
-  so that agents can use it immediately through MCP.
-- As a developer/adopter, I want each api/ssh/url/cli tool recorded as a connection descriptor
-  so that an agent has a concrete, client-free way to connect.
-- As a developer/adopter on any of Windows, macOS, or Linux, I want cli and socket handling to
-  behave consistently so that wiring is not platform-specific.
+- As a developer/adopter, I want each mcp connector catalogued as **available via my host tool's own
+  MCP/plugin** so that an agent knows to request it from the tool (which handles auth) rather than
+  expecting AID to wire or authenticate it.
+- As a developer/adopter, I want each api/ssh/url/cli connector recorded as a connection descriptor
+  with a local auth reference so that an agent has a concrete, client-free way to connect directly.
+- As an AID agent, I want an unambiguous rule for how to connect **per management mode** so that I
+  never try to consume a tool-managed connector as if AID had wired it, nor a raw descriptor as if a
+  host tool provided it.
+- As a developer/adopter on any of Windows, macOS, or Linux, I want cli and socket handling to behave
+  consistently so that aid-managed consumption is not platform-specific.
 
 ## Priority
 
@@ -50,245 +64,163 @@ Must
 
 ## Acceptance Criteria
 
-- [ ] Given a declared mcp-capable tool, when connection wiring runs, then the MCP server is wired into each host profile's MCP configuration via that host's per-host mechanism (for all five profiles: claude-code, codex, cursor, copilot-cli, antigravity; Claude Code's .mcp.json is one case, not universal). (FR-4, AC-4)
-- [ ] Given a declared api, ssh, url, or cli tool, when connection wiring runs, then a connection descriptor sufficient for an agent to connect is recorded, with no bespoke per-tool client code. (FR-4, AC-4)
-- [ ] Given cli and socket handling, when wiring runs on Windows, macOS, and Linux, then it works on all three and introduces no new heavy runtime dependency. (AC-8)
+- [ ] Given a declared **tool-managed** (`mcp`) connector, when it is catalogued, then it is recorded as available via the host tool's own MCP/plugin and the consumption contract instructs the agent to **request it from the tool** — **no host MCP config is written and no credential is stored** for it. (FR-4, AC-4)
+- [ ] Given a declared **aid-managed** (`api | ssh | url | cli`) connector, when it is catalogued, then a connection descriptor sufficient for an agent to connect is recorded (transport + endpoint/target + local auth reference), with no bespoke per-tool client code, and the consumption contract instructs the agent to resolve the local reference at use-time and connect via the descriptor. (FR-4, AC-4)
+- [ ] Given the management mode, when a connector is classified, then its mode is derived deterministically from `connection_type` (`mcp` → tool-managed; `api | ssh | url | cli` → aid-managed) with no separate, drift-prone stored field. (FR-4, feature-001 schema)
+- [ ] Given aid-managed `cli` and socket handling, when consumption is exercised on Windows, macOS, and Linux, then it works on all three and introduces no new heavy runtime dependency. (AC-8)
 
 ---
 
 ## Technical Specification
 
-> Authored by `/aid-specify`. This feature **wires** declared connectors; it does not define the
-> schema, the home, or the secret rules — those are FROZEN by
-> `feature-001-integration-store-placement/SPEC.md` (the keystone), and this SPEC BINDS to it and
-> does not redefine it. Two wiring outcomes, driven by the connector's `connection_type`:
+> Authored by `/aid-specify`; **rewritten by the 2026-07-09 Q10 loopback**. This feature defines the
+> **management-mode model** and the **per-mode consumption semantics**; it does NOT define the schema,
+> the home, or the secret rules (FROZEN by
+> `feature-001-integration-store-placement/SPEC.md`, the keystone — this SPEC BINDS to it and does not
+> redefine it), and it **writes no artifact**. The old "wire the MCP server into each host's MCP
+> config" premise is **gone** (STATE.md **Q10**, superseding **Q1** + **Q8**): AID does not write,
+> wire, or manage any host tool's MCP configuration. Two management modes, derived from
+> `connection_type`:
 >
-> - **`mcp`** → write/merge the MCP server into **each INSTALLED host's** MCP configuration, each
->   via that host's own MCP-config mechanism (FR-4, AC-4). Claude Code's repo-root `.mcp.json` is
->   **one** host's case, not a universal format. feature-004 owns a **symmetric `wire`/`unwire`
->   pair** on this twin; feature-006's reconcile REMOVE composes `unwire` (STATE.md Q8).
-> - **`api` | `ssh` | `url` | `cli`** → the connection **descriptor** recorded per feature-001 IS
->   the wiring artifact (transport + endpoint/target + auth reference). No host-config write, and
->   **no bespoke per-tool client code** (REQUIREMENTS §4).
+> - **tool-managed** (`connection_type: mcp`) → the host tool provides its **own** MCP server/plugin
+>   for the target. The catalog records availability and tells the agent to **request the connection
+>   from the tool**; the **tool handles auth**. AID writes **no** host config and stores **no**
+>   credential (FR-4, AC-4).
+> - **aid-managed** (`connection_type: api | ssh | url | cli`) → a direct transport the host tool does
+>   not provide. The **descriptor** recorded per feature-001 (transport + endpoint/target + auth
+>   reference) IS the connect artifact, plus a local secret in feature-003's store; the agent resolves
+>   the reference at use-time and connects directly. **No bespoke per-tool client code** (REQUIREMENTS
+>   §4).
 >
-> All writes here occur inside the new P7-exempt `aid-discover` state (feature-002 / STATE.md Q6);
-> this feature is a **producer** in feature-001's Feature Flow. Writes are confined to feature-001's
-> P7 write allowlist item 2 — "the per-host MCP-config paths (feature-004, installed hosts only)".
+> **Ownership boundary with feature-005 (no drift).** feature-004 is the authoritative source of the
+> **mode model + connect semantics**. feature-005 **publishes** those semantics into the documented
+> consumption contract (its home is the `## Connectors` context section, per STATE.md Q7 item 6) and
+> owns `INDEX.md` regeneration + the serialization/consumption VIEW; it **references** this model and
+> does not redefine it. feature-004 introduces no writer, no twin, and no host-config write.
 
 ### External Integrations
 
-This is the primary surface of the feature. FR-4 / AC-4 require an `mcp` connector to be wired into
-**each of the five host profiles' MCP configuration** (claude-code, codex, cursor, copilot-cli,
-antigravity), each via its **own** mechanism. There is **no MCP-config wiring anywhere in
-`canonical/` or `profiles/` today** — confirmed by grep: the only `mcpServers` in the repository is
-the developer-time repo-root `.mcp.json` (a Playwright dev config), and neither `canonical/` nor
-`profiles/` contains any `mcpServers` / `mcp.json` / `mcp_servers` token. Per STATE.md **Q1**
-(Answered) broad multi-host wiring is IN SCOPE, and mapping each host's mechanism is a
-`/aid-specify` spike. This section executes that spike to the extent the codebase and the author's
-knowledge allow.
+The only external integration surface in play is the one the **host tool** owns, and AID never
+touches it.
 
-**Honesty flag (spike limits).** `/aid-specify` (aid-architect) **cannot web-research**. Only the
-Claude Code row is CONFIRMED from a repo artifact. Every other row is the best-known mechanism from
-the author's knowledge, carried with a `CONFIDENCE` flag; rows flagged `SPIKE-verify-at-implementation`
-MUST be verified at implementation time (host docs / probing an installed host) and are deliberately
-**NOT** invented — where a path is unknown it is stated as unknown, never fabricated.
+**tool-managed (`mcp`).** The integration is the host tool's **own** MCP server or plugin for the
+target (Claude Code, Codex, Cursor, Copilot CLI, Antigravity each provide their own). AID does **not**
+create, write, or manage that MCP configuration — there is **no** per-host MCP-config mechanism table,
+**no** read-merge-write, and **no** `wire`/`unwire` op (all removed at the Q10 reframe). The catalog
+records only that the connection is **available via the host tool** and instructs the agent to
+**request it from the tool at use-time**; the tool prompts for / supplies whatever auth it needs. This
+is grounded in `integration-map.md` §"Host AI-Tool Harnesses (the five profiles)" — the five hosts are
+integrated by render, and each host owns its own MCP surface; AID catalogs availability, it does not
+provision the surface.
 
-**Per-host MCP-config mechanism table** (the single source of truth BOTH the `wire` and the `unwire`
-op key off — DATA, not per-host code; see Layers & Components):
+**aid-managed (`api | ssh | url | cli`).** There is **no** host-tool integration; the target is
+reached **directly** using the recorded descriptor. `endpoint` holds the URL/host/socket/binary the
+agent connects to, `secret_reference` names where the local credential lives (feature-001 /
+feature-003), and the agent resolves it at use-time. `cli` covers local binaries and local sockets,
+handled consistently across Windows / macOS / Linux with no new heavy runtime dependency (AC-8). No
+bespoke per-tool client is built (REQUIREMENTS §4).
 
-| Host | Config file | Scope | Format | Servers container | Per-server entry shape | CONFIDENCE |
-|------|-------------|-------|--------|-------------------|------------------------|------------|
-| `claude-code` | `.mcp.json` (repo root) | project (committed, shared) | JSON | top-level `mcpServers` object, keyed by server name | `{ "type": "stdio", "command": <bin>, "args": [...], "env": { <VAR>: "${<VAR>}" } }` | CONFIRMED (repo-root `.mcp.json`, this repo — `type`/`command`/`args` shape) |
-| `cursor` | `.cursor/mcp.json` (project) | project (committed) | JSON | `mcpServers` object, keyed by server name | `{ "command", "args": [...], "env": {...} }` (Cursor also supports remote `url`/SSE servers) | high (schema mirrors Claude's; exact keys verify-at-implementation) |
-| `codex` | `~/.codex/config.toml` (user home) | **user-home — NOT committed** | TOML | `[mcp_servers.<name>]` tables | `command`, `args`, `env` TOML keys | SPIKE-verify-at-implementation (KI-006: profile `agent_format` DORMANT; home-scoped; TOML *write* is nontrivial in-toolchain) |
-| `copilot-cli` | MCP-config path **unconfirmed** for the CLI variant | unconfirmed | likely JSON | unconfirmed | unconfirmed | SPIKE-verify-at-implementation (path NOT fabricated; profile installs under `.github/`, which is a hint, not the MCP path) |
-| `antigravity` | `mcp_config.json` (path **unconfirmed**; Windsurf-lineage host, likely under a user-config dir) | likely user-home | JSON | likely `mcpServers` | likely `{ "command", "args": [...], "env": {...} }` | SPIKE-verify-at-implementation (Windsurf-lineage inference only) |
-
-Two properties in the table are load-bearing for the design below:
-
-- **Scope axis (project vs user-home).** `claude-code` and `cursor` write **project-scoped,
-  committed** files inside the repo tree — these are the files feature-001's P7 allowlist and
-  reference-not-value rule target. `codex` (and, pending the spike, likely `antigravity` /
-  `copilot-cli`) write **user-home** files **outside** the repo tree: those are per-machine state
-  mutations, cannot be committed or shared, and are a nuance beyond feature-001's repo-tree framing
-  (see Layers & Components + **KI-007**).
-- **Endpoint → entry translation.** feature-001 defines an `mcp` connector's `endpoint` as "an MCP
-  server launch spec" (worked example: `endpoint: "npx -y @modelcontextprotocol/server-github"`).
-  The wiring adapter tokenizes that string into the host's `command` (first token) + `args` (the
-  rest) and attaches the secret as an `env` **reference** (name only — never the value; see Security
-  Specs). One descriptor field, five host encodings, one generic routine.
-
-**Worked wiring example** (feature-001's `github` descriptor → the `claude-code` case), merged under
-the existing top-level `mcpServers` object, preserving the repo's `playwright-project` entry:
-
-```json
-"github": {
-  "type": "stdio",
-  "command": "npx",
-  "args": ["-y", "@modelcontextprotocol/server-github"],
-  "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_PERSONAL_ACCESS_TOKEN}" }
-}
-```
-
-The `env` value is an interpolation **reference** (`${VAR}` passthrough), never the token. Where a
-host does not support `${VAR}` interpolation (verify-at-implementation per host), the committed-safe
-fallback is to omit `env` and let the MCP server inherit the ambient environment. feature-004
-**records the reference only**; reading the value and populating that environment at use-time is
-**use-time resolution**, owned by **feature-005's consumption contract / the consuming agent**
-(feature-001 Feature Flow; STATE.md Q7 item 3) — not by feature-004.
-
-**Wire-only-installed.** feature-004 wires **only** the hosts present in `.aid/settings.yml`
-`tools.installed` (STATE.md Q6 soft default). `tools.installed` is a 2-level list path reachable via
-`read-setting.sh --path tools.installed` (within KI-001's 2-level limit — unlike the nested
-connectors registry). In this repo `tools.installed` currently lists **`claude-code` only**
-(`codex` / `cursor` are commented out), so today only `.mcp.json` is wired; the other four rows are
-carried in the mechanism table for coverage and future installs but are **skipped cleanly** (no
-error, no empty config file created — AC-1 clean-skip spirit) until their host is installed.
+**What AID never does (Q10, hard rule).** AID does not write any host tool's MCP configuration
+(`.mcp.json`, `.cursor/mcp.json`, `~/.codex/config.toml`, or any other), does not merge server
+entries, and does not store a credential for a tool-managed connector. The former per-host mechanism
+spike (task-013) and mechanism-table artifact (task-014) are obsolete under this model (see the
+delivery re-plan the orchestrator applies).
 
 ### Data Model
 
-**No new fields.** feature-004 consumes the FROZEN connector-descriptor schema from feature-001
-(`.aid/connectors/<connector>.md` frontmatter) exactly as-is; it introduces no schema of its own.
-The fields this feature reads:
+**No new fields; management mode is DERIVED, not stored.** feature-004 consumes the FROZEN
+connector-descriptor schema from feature-001 (`.aid/connectors/<connector>.md` frontmatter) exactly
+as-is and introduces no schema of its own. The management-mode axis is a **derivation** over the
+existing `connection_type` field (feature-001 §"Connector descriptor schema"), not a separate
+persisted field — a single source of truth, so the two can never drift:
+
+| `connection_type` | Management mode (derived) | Consumption |
+|-------------------|---------------------------|-------------|
+| `mcp` | **tool-managed** | Agent requests the connection from the host tool's own MCP/plugin; tool handles auth; AID stored nothing |
+| `api` \| `ssh` \| `url` \| `cli` | **aid-managed** | Agent resolves the local `secret_reference` at use-time and connects via the recorded descriptor |
+
+The fields this feature reads (all owned/frozen by feature-001):
 
 | Field (feature-001) | How feature-004 uses it |
 |---------------------|-------------------------|
-| `connection_type` (`mcp` \| `api` \| `ssh` \| `url` \| `cli`) | The router key: `mcp` → host-config wiring; the other four → descriptor is the artifact (no wiring) |
-| `endpoint` | For `mcp`: the MCP server launch spec, tokenized into per-host `command` + `args`. For `cli`: a local binary name or local socket path (cross-platform, no new heavy dependency — AC-8). For `api`/`ssh`/`url`: the target the descriptor records |
-| `secret_reference` (`env:` \| `keychain:` \| `file:`) | For `mcp`: mapped to an `env` **reference** in the host config (name only). `mcp` connectors SHOULD prefer the `env:` form (see Security Specs) |
-| `name` / `<connector>` stem | The server-entry key in the host config; also the merge key for idempotent `wire`/`unwire` |
+| `connection_type` (`mcp` \| `api` \| `ssh` \| `url` \| `cli`) | The mode key: `mcp` → tool-managed; the other four → aid-managed |
+| `endpoint` | For tool-managed: informational (the target the host tool's MCP/plugin reaches). For aid-managed: the concrete connect target — URL/host/socket path/local binary the agent uses directly (`cli` cross-platform, no new heavy dependency — AC-8) |
+| `auth_method` / `secret_reference` | For tool-managed: `auth_method` is `none` and there is **no** `secret_reference` (AID stores no credential; the tool authenticates). For aid-managed: `secret_reference` names the local credential the agent resolves at use-time |
+| `name` / `<connector>` stem | Identity/routing only |
 
-The `INDEX.md` row, the descriptor body, and the connectors-index builder are feature-001 / feature-005
-concerns; feature-004 does not touch them.
+The `INDEX.md` row, the descriptor body, the connectors-index builder, and the descriptor authoring
+are feature-001 / feature-002 / feature-005 concerns; feature-004 does not write any of them.
 
 ### Layers & Components
 
-**One twin, two symmetric ops (`wire` / `unwire`), keyed off the mechanism table (data, not code).**
-Per the KB convention "host tools are integrated by render, not adapter … there is no per-tool
-runtime branching" (`integration-map.md` Conventions), the wiring twin exposes a **symmetric pair**
-of ops that both read the same per-host **mechanism table** (the External Integrations table,
-materialized as a committed DATA artifact under the connectors tooling) and both use the same
-per-host `config path + format + servers container` resolution and the same idempotent
-read-merge-write:
+**No code, no twin — this is a contract feature.** The Q10 reframe **deletes** feature-004's former
+implementation surface: the per-host MCP-config mechanism table, the Bash+PowerShell `wire`/`unwire`
+twin, the Python-stdlib nested-JSON/TOML writer, the idempotent read-merge-write, wire-only-installed,
+and the KI-007 out-of-repo-write edge are all gone. AID writes **nothing** here.
 
-- **`wire <stem>`** — add/update the connector's server entry in each installed host's config (uses `entry template`).
-- **`unwire <stem>`** — remove the connector's server entry from each installed host's config (the inverse; no `entry template` needed).
+What remains is a **definition** realized by other features:
 
-Adding or correcting a host after the spike is a **data-row** edit that both ops inherit at once, not
-new code — mirroring how the five profiles are a render, not five adapters.
+- **Classification (author time).** feature-002 ELICIT records `connection_type` on each descriptor.
+  The management mode follows by the derivation rule above — no extra capture step, no wiring trigger.
+  (feature-002's former "mcp → trigger feature-004 wiring" hook is removed.)
+- **Consumption semantics (use time).** The per-mode connect steps below (Feature Flow) are the
+  normative contract. They are **published** by feature-005 into the `## Connectors` context section
+  (feature-001's wiring; STATE.md Q7 item 6) and are what an agent follows. feature-005 owns the
+  published contract text + INDEX regeneration; feature-004 owns the model those reference.
+- **aid-managed cross-platform note.** For `cli`/socket connectors the agent connects directly via the
+  descriptor `endpoint`; this must behave the same on Windows/macOS/Linux and stay within AID's
+  existing shell/Python/Node toolchain (AC-8). No new heavy runtime dependency is introduced (nothing
+  is implemented here at all).
 
-**Bash + PowerShell twin (mandatory).** Per `coding-standards.md` ("Touching a language twin: change
-BOTH twins in the same commit") the wiring ships as a `.sh` + `.ps1`/`.psm1` twin, the same twin rule
-feature-001's registry accessor follows. Cross-platform processing of the host configs:
-
-- **PowerShell twin** — native `ConvertFrom-Json` / `ConvertTo-Json` for JSON hosts; ASCII-only and
-  Windows-PowerShell-5.1-compatible per `coding-standards.md` (no `utf8NoBOM`, no ternary/null-coalesce,
-  no `$IsWindows`). CI-guarded by `ps51-compat-check.ps1`.
-- **Bash twin** — the host configs are **genuinely nested JSON/TOML**, not the flat YAML AID parses
-  with `awk`. `coding-standards.md` sanctions deferring to a richer processor for genuinely nested
-  input ("parse the simple, flat YAML … with `awk` … defer to `yq` only for genuinely nested YAML").
-  The in-toolchain processor for nested JSON here is **Python** (`json` stdlib) — Python is explicitly
-  within AID's allowed shell/Python/Node toolchain (REQUIREMENTS §6; `aid_profile.py` already relies
-  on Python 3.11+), so this is **not a new heavy runtime dependency** (AC-8). Do NOT introduce a hard
-  `jq` requirement. **TOML write nuance (codex):** Python's stdlib `tomllib` is **read-only** (no
-  writer), so the codex TOML write path needs a line-oriented edit or an added writer — a concrete
-  reason codex is `SPIKE-verify-at-implementation` (see KI-006).
-
-**Idempotent MERGE, never overwrite (both ops).** Each host config is **read → merge → write**,
-keyed by the server name (the `<connector>` stem), and **preserves every other server** (e.g., the
-repo's existing `playwright-project` in `.mcp.json`) plus any user-authored content — the same
-in-place philosophy the installer uses for the `AID:BEGIN/END` managed region (`integration-map.md`
-"Host AI-Tool Harnesses"):
-
-- **`wire`** — create the file if absent; add/update only this connector's entry. Re-running
-  discovery re-wires in place with no duplication.
-- **`unwire`** — remove only this connector's entry (its `mcpServers` key, or the per-host
-  equivalent — e.g. the codex TOML `[mcp_servers.<name>]` section). Idempotent: a **clean-success
-  no-op** if the entry (or the whole file) is already absent; other servers survive untouched. It
-  does NOT delete the config file even when it empties the last AID-written entry (a user's other
-  servers, or the repo's `playwright-project`, may remain).
-
-**`unwire` ownership + caller (STATE.md Q8).** feature-004 **owns** `unwire` as a first-class op on
-this twin; **feature-006's reconcile REMOVE composes it** — invoking `unwire <stem>` for an
-`mcp`-typed connector exactly as it invokes feature-003's `purge <stem>` for the secret. So REMOVE =
-purge secret (feature-003) + `unwire` host config (feature-004, `mcp` only) + delete descriptor +
-regenerate `INDEX.md` (feature-005), with purge/unwire **before** descriptor-delete for
-interrupt-safety. feature-006 composes the op; it does not define its own host-config removal.
-
-**Where each config lives / P7 write allowlist.** The write targets are exactly the mechanism-table
-`Config file` paths for installed hosts — feature-001's P7 allowlist item 2 ("the per-host MCP-config
-paths (feature-004, installed hosts only)"). **Refinement / open item:** feature-001's allowlist is
-framed as a **repo-tree** carve-out and cleanly covers the project-scoped configs (`.mcp.json`,
-`.cursor/mcp.json`). Hosts whose config is **user-home-scoped** (codex confirmed; antigravity /
-copilot-cli pending the spike) require writing **outside the repo tree** — a per-machine mutation the
-P7 repo-tree framing does not squarely cover. This SPEC flags it (KI-007) rather than silently
-extending the frozen keystone: the out-of-repo write path needs its own idempotency and (given it
-mutates user machine state) should confirm the host is installed before touching its home config; the
-exact contract is a spike/implementation decision, deferred cleanly by wire-only-installed until such
-a host is actually in `tools.installed`.
-
-**No context-file / byte-identity coupling.** The per-host MCP configs are **per-project generated
-files**, not profile-rendered assets, so no canonical→profiles render and **no byte-identity guard**
-applies to them (contrast feature-001's `## Connectors` context-file edit, which the FR12 AGENTS.md
-invariant and the managed-region updater DO constrain). feature-004 writes the config files directly;
-it does not edit `canonical/`, `profiles/`, `CLAUDE.md`, or `AGENTS.md`.
+**No context-file / byte-identity coupling.** feature-004 edits no `canonical/`, `profiles/`,
+`CLAUDE.md`, `AGENTS.md`, or host config — it authors a contract consumed by feature-005's published
+`## Connectors` section, whose byte-identity guards (FR12) are feature-001's / feature-005's concern.
 
 ### Feature Flow
 
-feature-004 runs as a **producer** inside the P7-exempt `aid-discover` state, after feature-002 has
-written the descriptor and feature-003 has stored any secret.
+feature-004 produces **no** write. It contributes a classification rule (applied at author time) and
+the per-mode consumption semantics (applied at agent use-time).
 
-**`mcp` connector — `wire` path (produce / update):**
+**Classification (at descriptor author time — feature-002):**
 
-1. Read `.aid/settings.yml` `tools.installed` → the set of installed hosts (via `read-setting.sh --path tools.installed`).
-2. Read the descriptor: `connection_type: mcp`, `endpoint` (launch spec), `secret_reference`.
-3. For **each installed host** (skip absent hosts cleanly — no error, no empty file):
-   a. Look up the host's row in the mechanism table → `config path`, `format`, `servers container`, `entry template`.
-   b. Tokenize `endpoint` → `command` + `args`; attach `env` as a **reference** (var name only) derived from `secret_reference` (prefer `env:`; see Security Specs).
-   c. **Read → merge → write** the host config, keyed by the `<connector>` server name; preserve all other servers + user content; idempotent on re-run.
-4. `SPIKE-verify-at-implementation` hosts: verify the mechanism-table row before the first real write to that host; do not write to an unconfirmed path.
+1. feature-002 records `connection_type` on the `.aid/connectors/<connector>.md` descriptor.
+2. Management mode is derived: `mcp` → tool-managed; `api | ssh | url | cli` → aid-managed.
+3. **tool-managed:** the descriptor records availability via the host tool; `auth_method: none` and
+   **no** `secret_reference` (AID stores no credential). No feature-003 secret capture, no host-config
+   write, no wiring trigger.
+4. **aid-managed:** feature-002 records the connect descriptor; when `auth_method != none`, feature-003
+   stores the local secret and the descriptor carries its `secret_reference`.
 
-**`mcp` connector — `unwire` path (reconcile REMOVE; called by feature-006):**
+**Consumption (at agent use-time — the normative per-mode contract feature-005 publishes):**
 
-1. Resolve the installed hosts the same way (`read-setting.sh --path tools.installed`); wire-only-installed applies identically — skip hosts not installed.
-2. For **each installed host**: look up its mechanism-table row → `config path`, `format`, `servers container`, then **read → merge → write** to delete only this `<connector>`'s server entry (its `mcpServers` key, or the codex TOML `[mcp_servers.<name>]` section, etc.), preserving all other servers + user content.
-3. Idempotent: if the entry (or the config file) is already absent, it is a **clean-success no-op**. The config file is not deleted even if the last AID entry is removed.
-4. feature-006 REMOVE composes this: `unwire <stem>` (feature-004) + `purge <stem>` (feature-003) run **before** descriptor-delete + `INDEX.md` regenerate (feature-005), for interrupt-safety (STATE.md Q8).
+- **tool-managed (`mcp`):** the agent **requests the connection from its host tool's own MCP/plugin**
+  (the host harness's native MCP mechanism). The **tool** establishes and authenticates the
+  connection. AID contributed no host config and no credential; the descriptor exists for
+  discovery/audit and to tell the agent which tool-provided connection to request.
+- **aid-managed (`api | ssh | url | cli`):** the agent reads the descriptor (`endpoint` +
+  `auth_method` + `secret_reference`), **resolves the credential at use-time** from the reference
+  (`env:` → env var; `file:` → `.aid/connectors/.secrets/<connector>`; `keychain:` → OS keychain —
+  feature-001 §Security), and connects **directly** via `endpoint`. No bespoke client. `cli` reaches a
+  local binary/socket cross-platform (AC-8).
 
-**`api` | `ssh` | `url` | `cli` connector (descriptor path):**
-
-- **No host-config write, no bespoke client.** The feature-001 connection descriptor (transport +
-  `endpoint`/target + `secret_reference`) recorded by feature-002 **is** the deliverable; feature-004
-  validates it is sufficient for an agent to connect (AC-4 second clause). `cli` covers local binaries
-  and local sockets — `endpoint` holds the binary name or socket path, handled consistently across
-  Windows / macOS / Linux with no new heavy runtime dependency (AC-8).
-
-**Consumption (out of feature-004, noted for boundary).** MCP-wired tools are consumed directly via
-each host's MCP config (feature-005). **Rewiring agents to actively consume non-MCP descriptors is
-OUT OF SCOPE** (STATE.md Q4; REQUIREMENTS §4).
+**Consumption boundary (noted).** Building agent-side code that actively consumes descriptors is **OUT
+OF SCOPE** (STATE.md Q4; REQUIREMENTS §4). The contract is documented + machine-readable (feature-005);
+the code that acts on it is not built here.
 
 ### Security Specs
 
-- **Reference-not-value extends to host MCP configs (mandatory).** feature-001's cross-reference bullet
-  already states it: "feature-004 may write committed project-scoped MCP config (e.g., a host's
-  `.mcp.json`); those files MUST also carry env-var references, never values." A committed MCP config
-  (`.mcp.json`, `.cursor/mcp.json`) carries an `env` entry naming the variable (`${VAR}` passthrough),
-  never the secret. This is the same rule that makes `.aid/connectors/` safe to commit (feature-001
-  Security Specs), now applied to the host configs feature-004 writes.
-- **Prefer `env:` for `mcp` connectors.** MCP hosts inject secrets via an `env` block, so the `env:`
-  reference form (feature-001) maps cleanly and keeps the committed config value-free. feature-004
-  **records only the reference** (the env-var name) into the host config. Where a connector's secret
-  is stored under `file:`/`keychain:`, **use-time resolution** — reading the value from the local
-  store and exporting it to the named env var — is owned by **feature-005's consumption contract /
-  the consuming agent** (feature-001 Feature Flow; STATE.md Q7 item 3), NOT feature-004. Either way
-  the committed config names only the variable — the value never enters the file.
-- **Leak proof (AC-3) holds after wiring.** After wiring, grepping repo + KB + STATE + transcript for
-  the secret value finds nothing: committed host configs carry only the variable name, and the value
-  lives only under `.aid/connectors/.secrets/` (feature-001 / feature-003).
-- **User-home configs (codex, likely antigravity/copilot-cli).** Not committed (outside the repo), so
-  no repo-leak vector — but the **same** no-value rule applies: write only an `env` reference; the
-  value stays in the local store. The write is a per-machine mutation (see Layers & Components /
-  KI-007).
-- **Shipped-code hygiene.** The PowerShell wiring twin is ASCII-only and Windows-PowerShell-5.1
-  compatible (`coding-standards.md`); secrets are never echoed or persisted to transcripts / STATE /
-  KB (REQUIREMENTS §6).
+- **No credential for tool-managed connectors (Q10).** A tool-managed (`mcp`) connector has **no**
+  AID-stored credential and **no** `secret_reference` — the host tool owns and resolves its auth. AID
+  writes no host MCP config, so there is no host-config leak vector at all.
+- **Reference-not-value for aid-managed connectors (mandatory).** An aid-managed connector's descriptor
+  carries only a `secret_reference` (`env:` / `file:` / `keychain:`), never a value (feature-001
+  Security Specs; realized by feature-003). Use-time resolution — reading the value from the local
+  store and using it to connect — is owned by **feature-005's consumption contract / the consuming
+  agent** (STATE.md Q7 item 3), not by feature-004.
+- **Leak proof (AC-3) holds.** Nothing feature-004 does can leak a secret: it writes nothing. For
+  aid-managed connectors the value lives only under `.aid/connectors/.secrets/` (feature-001 /
+  feature-003) and the committed descriptor names only the reference; grepping repo + KB + STATE +
+  transcript for the value finds nothing.
+- **No host-config writes anywhere (Q10).** Because AID writes no host MCP configuration — neither the
+  in-repo `claude-code` `.mcp.json` nor any user-home config (codex/cursor/copilot-cli/antigravity) —
+  the former CF5 / KI-007 out-of-repo-write concern no longer exists.
