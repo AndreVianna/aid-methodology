@@ -178,7 +178,11 @@ def _build_hierarchical_work(
     work_lifecycle: str = "Running",
     work_updated: str = "2026-06-10T12:00:00Z",
 ) -> Path:
-    """Build a complete hierarchical work fixture under aid/.
+    """Build a complete hierarchical (full-nested) work fixture under aid/.
+
+    Layout: aid/{work_id}/deliveries/{delivery_id}/tasks/{task_id}/ (task-002
+    delivery-folder relocation -- delivery folders nest under deliveries/,
+    mirroring features/).
 
     Returns the work_dir path.
     deliveries: list of delivery specs:
@@ -197,7 +201,7 @@ def _build_hierarchical_work(
 
     for deliv in deliveries:
         del_id = deliv["id"]
-        del_dir = work_dir / del_id
+        del_dir = work_dir / "deliveries" / del_id
         (del_dir / "tasks").mkdir(parents=True, exist_ok=True)
 
         _write_delivery_spec(del_dir, del_id, title=deliv.get("title", f"{del_id} scope"))
@@ -271,7 +275,7 @@ class TestHierarchicalWork(unittest.TestCase):
         self.assertTrue(_detect_hierarchy(work_dir))
 
     def test_tasks_read_from_per_unit_state(self):
-        """Tasks are read from delivery-NNN/tasks/task-NNN/STATE.md."""
+        """Tasks are read from deliveries/delivery-NNN/tasks/task-NNN/STATE.md."""
         self._build_fixture()
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -538,10 +542,10 @@ class TestSD9SpikeScenario(unittest.TestCase):
         """Disjoint STATE.md files: delivery-001 and delivery-002 each have their own STATE.md."""
         work_dir = self._build_spike_fixture()
         # Verify the fixture itself has separate STATE.md files per delivery
-        del1_state = work_dir / "delivery-001" / "STATE.md"
-        del2_state = work_dir / "delivery-002" / "STATE.md"
-        self.assertTrue(del1_state.is_file(), "delivery-001/STATE.md must exist")
-        self.assertTrue(del2_state.is_file(), "delivery-002/STATE.md must exist")
+        del1_state = work_dir / "deliveries" / "delivery-001" / "STATE.md"
+        del2_state = work_dir / "deliveries" / "delivery-002" / "STATE.md"
+        self.assertTrue(del1_state.is_file(), "deliveries/delivery-001/STATE.md must exist")
+        self.assertTrue(del2_state.is_file(), "deliveries/delivery-002/STATE.md must exist")
         # Files are disjoint by path (no shared state file)
         self.assertNotEqual(str(del1_state), str(del2_state))
 

@@ -245,9 +245,11 @@ class FeatureRef:
 class DeliverableRef:
     """A single row from ## Plan / Deliveries in STATE.md (prototype field).
 
-    delivery_state: the SD-8 lifecycle enum from delivery-NNN/STATE.md ## Delivery Lifecycle
+    delivery_state: the SD-8 lifecycle enum from ## Delivery Lifecycle -- the
+    delivery-level deliveries/delivery-NNN/STATE.md for full-nested works, or the
+    work-root STATE.md's own ## Delivery Lifecycle section for lite-flat works
     (Pending-Spec | Specified | Executing | Gated | Done | Blocked).
-    None when the delivery STATE.md is absent or the field is unparseable (legacy works).
+    None when the source STATE.md is absent or the field is unparseable (legacy works).
     """
     number: int
     name: str

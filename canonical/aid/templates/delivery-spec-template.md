@@ -1,8 +1,12 @@
 # Delivery SPEC -- delivery-NNN: {Title}
 
 [!NOTE]
-This is the DELIVERY-LEVEL SPEC.md template. It is the IMMUTABLE DEFINITION for this delivery.
-Written once by aid-plan / aid-specify; not a state file. State lives in delivery-NNN/STATE.md.
+This is the DELIVERY-LEVEL SPEC.md template -- FULL PATH ONLY. It lives at
+`.aid/work-NNN-{name}/deliveries/delivery-NNN/SPEC.md`. It is the IMMUTABLE DEFINITION for
+this delivery. Written once by aid-plan / aid-specify; not a state file. State lives in
+`deliveries/delivery-NNN/STATE.md`. (A lite work has no delivery-level SPEC.md or STATE.md
+at all -- the work-root `SPEC.md` already carries the equivalent Objective/Scope/Gate-Criteria/
+Tasks content for the sole delivery; see `aid-describe`'s lite path.)
 
 > **Delivery:** delivery-NNN
 > **Work:** work-NNN-{name}
