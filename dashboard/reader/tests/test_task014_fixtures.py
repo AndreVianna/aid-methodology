@@ -544,8 +544,8 @@ class TestSD9SpikeScenario(unittest.TestCase):
         # Verify the fixture itself has separate STATE.md files per delivery
         del1_state = work_dir / "deliveries" / "delivery-001" / "STATE.md"
         del2_state = work_dir / "deliveries" / "delivery-002" / "STATE.md"
-        self.assertTrue(del1_state.is_file(), "delivery-001/STATE.md must exist")
-        self.assertTrue(del2_state.is_file(), "delivery-002/STATE.md must exist")
+        self.assertTrue(del1_state.is_file(), "deliveries/delivery-001/STATE.md must exist")
+        self.assertTrue(del2_state.is_file(), "deliveries/delivery-002/STATE.md must exist")
         # Files are disjoint by path (no shared state file)
         self.assertNotEqual(str(del1_state), str(del2_state))
 
