@@ -12,10 +12,10 @@ table (`Q-AND-A`, `APPROVAL`) — ELICIT is a user dialogue, not a sub-agent ana
 > **P7 exemption.** ELICIT is the one `aid-discover` state exempted from the read-only P7
 > principle (`.cursor/aid/templates/kb-authoring/principles.md` P7 — "Exception (connector
 > sub-phase)"). In addition to the usual `.aid/knowledge/` / `.aid/generated/` / `.aid/.temp/`
-> write zone, it may write ONLY within `.aid/connectors/` (this state, below) and the per-host
-> MCP-config paths (feature-004, delivery-002 — a documented hook this task does **not**
-> implement; see Step E2 item 4). GENERATE / REVIEW / Q-AND-A / FIX / APPROVAL / DONE remain
-> fully P7-bound; this exemption does not extend to them.
+> write zone, it may write ONLY within `.aid/connectors/` (this state, below) — the **single**
+> P7-exempt write target (STATE.md Q10: AID writes, wires, and manages no host tool's MCP
+> configuration, so there is no other write target). GENERATE / REVIEW / Q-AND-A / FIX / APPROVAL
+> / DONE remain fully P7-bound; this exemption does not extend to them.
 
 Sources and tools are two differentiated kinds of thing, each with its own shape and its own
 home: **sources** are reference knowledge (docs, vendor specs, reference URLs) that land in the
@@ -168,7 +168,7 @@ reconcile (a later delivery, feature-006/task-018) whether it is safe to touch t
 | User reply | `Tools step` marker | Meaning | Reconcile (feature-006, later delivery) |
 |---|---|---|---|
 | `skip` | `SKIPPED` | The step was **not engaged** this cycle — the user said nothing about tools. | Declared-set is **undefined** → **no-op**, registry untouched (the safe default). |
-| `none` | `DECLARED-EMPTY` | The step **was engaged** and the user affirmatively declared **zero** tools. | Declared-set = `{}` → **REMOVE** all persisted connectors (purge + unwire(mcp) + delete, per work STATE.md Q8). |
+| `none` | `DECLARED-EMPTY` | The step **was engaged** and the user affirmatively declared **zero** tools. | Declared-set = `{}` → **REMOVE** all persisted connectors (purge the local secret for aid-managed connectors + delete the descriptor; no unwire step — Q10 amends Q9/supersedes Q8). |
 | `<preset-id>` / `custom` (one or more) | `ENGAGED` | The step was engaged; N ≥ 1 tools declared. | Declared-set = the N tools. |
 
 This state only ever produces the marker — reconcile's branching on it is out of this state's
@@ -192,16 +192,19 @@ scope (feature-006, a later delivery).
 - **Preset (`<preset-id>`):** read the matching row of
   `.cursor/aid/templates/connectors/preset-catalog.md` (LLM-read, as Step 0d reads the domain
   doc matrix) and pre-fill `name`, `connection_type`, `endpoint` (from `endpoint-template`),
-  `auth_method`, the `secret_reference` FORM (from `secret_reference-form`), and
-  `preset: <preset-id>`. Present the pre-filled descriptor; the user confirms or adjusts and
-  supplies instance specifics (their org/host/domain, the env-var name for `secret_reference`
-  when the form is `env:`). An id not found in the catalog is **not** guessed as a near match —
-  treat it as `custom`, or raise a Q&A entry if the resulting attribute set is unclear.
+  `auth_method`, the `secret_reference` FORM (from `secret_reference-form`, **aid-managed presets
+  only** — a tool-managed preset row carries no form), and `preset: <preset-id>`. Present the
+  pre-filled descriptor; the user confirms or adjusts and supplies instance specifics (their
+  org/host/domain, the env-var name for `secret_reference` when the form is `env:`). An id not
+  found in the catalog is **not** guessed as a near match — treat it as `custom`, or raise a Q&A
+  entry if the resulting attribute set is unclear.
 - **Custom (`custom`):** capture `name`, `connection_type` (validated against the closed enum
   `mcp | api | ssh | url | cli` — a value outside the set is **refused, not coerced**; `db` is
-  not a value), `endpoint`/target, `auth_method` (from `none | token | pat | oauth | ssh-key`),
-  and, when `auth_method != none`, the `secret_reference` form (default
-  `file:.aid/connectors/.secrets/<connector>`). Set `preset: custom`.
+  not a value), `endpoint`/target, and, for an **aid-managed** `connection_type`
+  (`api | ssh | url | cli`), `auth_method` (from `none | token | pat | oauth | ssh-key`) and, when
+  `auth_method != none`, the `secret_reference` form (default
+  `file:.aid/connectors/.secrets/<connector>`). Set `preset: custom`. (A `mcp` custom declaration
+  captures no `auth_method` / `secret_reference` here — see the management-mode branch below.)
 
 **`tags` / `audience` — auto-derived, never prompted.** When the preset row declares a `tags`
 column value, use it verbatim (it already encodes `connector` + the connection type + any
@@ -214,6 +217,21 @@ Any tool attribute an agent could not act on (an endpoint with no resolvable sch
 method the preset does not cover) is **never guessed** — write it as a `## Q&A (Pending)` entry
 (Category `Integration`, Impact `Medium`) and exclude that tool from this cycle's descriptor
 writes until it is resolved.
+
+### Management-mode branch (STATE.md Q10 — derived from `connection_type`)
+
+After `connection_type` is set (preset or custom), branch on the **derived management mode**
+(feature-001 / feature-004) — this decides whether a secret is captured at all:
+
+- **Tool-managed (`connection_type: mcp`):** the host tool provides its own MCP server/plugin for
+  the target. Force `auth_method: none` and write **no** `secret_reference` — AID stores no
+  credential. Do **NOT** prompt for a secret and do **NOT** invoke feature-003's
+  `connector-secret` twin. Record in the descriptor body that the connection is **available via
+  the host tool's own MCP/plugin** and that the agent must **request it from the tool** (the tool
+  handles auth). There is **no** wiring step — AID neither writes nor triggers any host MCP
+  configuration.
+- **Aid-managed (`connection_type: api | ssh | url | cli`):** proceed with the `auth_method` /
+  `secret_reference` form already captured above (preset or custom); unchanged from today.
 
 ### Descriptor write sequence (binds feature-001's ordering guarantee)
 
@@ -233,14 +251,25 @@ Then, **per confirmed tool** (in declaration order):
    illustrative: lowercase, non-alphanumeric runs collapsed to `-`, no leading/trailing `-`
    (`echo "$name" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g'`).
 2. **Write `.aid/connectors/<connector>.md`** with the frontmatter fields from feature-001's
-   Data Model (`name`, `connection_type`, `endpoint`, `auth_method`, `secret_reference`,
-   `preset`, `objective`, `summary`, `tags`, `audience`) plus a short human body — mirror
-   feature-001's worked `github.md` example: a `# <Name>` heading, a
-   `> Connection: <type> · Auth: <auth_method> (reference: <secret_reference>)` summary line,
-   and one or two lines of human-readable purpose. The descriptor carries **only** the
-   `secret_reference` — never a value.
-3. **Hand the secret VALUE to feature-003's twin — never capture it here.** When
-   `secret_reference` uses the `file:` form (the default), invoke:
+   Data Model plus a short human body, branching by the management mode (above):
+   - **Tool-managed (`mcp`):** `name`, `connection_type: mcp`, `endpoint` (informational),
+     `auth_method: none`, **no `secret_reference` field**, `preset`, `objective`, `summary`,
+     `tags`, `audience`. Body mirrors feature-001's worked `github.md` example: a `# <Name>`
+     heading, a `> Connection: mcp · Mode: tool-managed · Auth: handled by the host tool (no AID
+     credential)` summary line, and one or two lines of human-readable purpose that instruct the
+     agent to **request the connection from the host tool's own MCP/plugin** — AID stores no
+     credential for it.
+   - **Aid-managed (`api | ssh | url | cli`):** `name`, `connection_type`, `endpoint`,
+     `auth_method`, `secret_reference` (when `auth_method != none`), `preset`, `objective`,
+     `summary`, `tags`, `audience`. Body mirrors feature-001's worked `m365.md` example: a
+     `# <Name>` heading, a `> Connection: <type> · Mode: aid-managed · Auth: <auth_method>
+     (reference: <secret_reference>)` summary line, and one or two lines of human-readable
+     purpose. The descriptor carries **only** the `secret_reference` — never a value.
+3. **Secret capture is aid-managed-only (Q10).** For a **tool-managed (`mcp`)** connector, **no
+   secret is captured** — no prompt is presented and feature-003's `connector-secret` twin is
+   **never invoked** (there is no `secret_reference` to fill). For an **aid-managed
+   (`api|ssh|url|cli`)** connector, **hand the secret VALUE to feature-003's twin — never capture
+   it here.** When `secret_reference` uses the `file:` form (the default), invoke:
    ```bash
    bash .cursor/aid/scripts/connectors/connector-secret.sh write <connector> --root .aid/connectors
    ```
@@ -252,11 +281,9 @@ Then, **per confirmed tool** (in declaration order):
    piped shell *variable*, per its header's automation example) is the only sanctioned path.
    For `env:` / `keychain:` reference forms, **do not** invoke `connector-secret.sh write` — no
    local value is stored by AID for those forms (resolved externally at use-time).
-4. **`mcp`-type descriptors — host-wiring hook (not implemented by this task).** A `mcp`
-   connector is additionally wired into installed hosts' MCP config by **feature-004
-   (delivery-002, a later task)**. This is a documented hook only: ELICIT writes the `mcp`
-   descriptor the same as any other `connection_type` and moves on to step 5 — no host config is
-   touched by this state.
+4. **No wiring step (Q10).** Tool-managed (`mcp`) connectors require no wiring: AID writes no
+   host MCP config and triggers no host-tool action here — the agent requests the connection from
+   the host tool itself at use-time (feature-005's consumption contract).
 5. **After all of this cycle's descriptor writes, trigger the connectors INDEX rebuild:**
    ```bash
    bash .cursor/aid/scripts/connectors/build-connectors-index.sh \

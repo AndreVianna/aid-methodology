@@ -12,6 +12,14 @@
 > per-project instance value. `secret_reference-form` below names the reference *form*
 > (`env:<VAR>` or `file:`), never a credential.
 >
+> **Management mode (STATE.md Q10 — derived from `connection_type`).** A preset row whose
+> `connection_type` is `mcp` is **tool-managed**: the host tool provides its own MCP server/plugin
+> for the target, so `auth_method` is always `none` and `secret_reference-form` is always `—` —
+> AID registers no credential for it, and `endpoint-template` is **informational only** (never a
+> launch/wire command). A preset row whose `connection_type` is `api \| ssh \| url \| cli` is
+> **aid-managed**: `auth_method` and `secret_reference-form` are the credential AID records
+> locally, and `endpoint-template` is the concrete connect target.
+>
 > This is a `canonical/` artifact: it ships and installs byte-identically into every profile's
 > `.claude/aid/templates/connectors/` (or equivalent per-tool) install tree, alongside
 > [`kb-authoring/domain-doc-matrix.md`](../kb-authoring/domain-doc-matrix.md), which it mirrors
@@ -25,9 +33,9 @@
 | `preset-id` | Stable id written into the descriptor's `preset` field (e.g. `github`) |
 | `name` | Default human name |
 | `connection_type` | Default transport — closed enum `mcp \| api \| ssh \| url \| cli` (feature-001 Data Model) |
-| `endpoint-template` | Endpoint/launch-spec skeleton; instance specifics (host, org, domain) are completed at elicitation |
-| `auth_method` | Default auth axis — closed enum `none \| token \| pat \| oauth \| ssh-key` (feature-001 Data Model); orthogonal to `connection_type` |
-| `secret_reference-form` | Default reference FORM only — `env:<VAR>` or `file:` — never a value; `—` when `auth_method` is `none` |
+| `endpoint-template` | Endpoint skeleton; instance specifics (host, org, domain) are completed at elicitation. For a **tool-managed** (`mcp`) preset this is **informational only** (e.g. "via the host tool's own GitHub MCP server") — never a launch/wire command (AID does not launch or wire it — Q10); for an **aid-managed** preset it is the concrete connect target |
+| `auth_method` | Default auth axis — closed enum `none \| token \| pat \| oauth \| ssh-key` (feature-001 Data Model); orthogonal to `connection_type`. **Always `none` for a tool-managed (`mcp`) preset** — the host tool authenticates the target, so AID registers no credential (Q10) |
+| `secret_reference-form` | Default reference FORM only — `env:<VAR>` or `file:` — never a value, for **aid-managed** presets only. **Always `—` for a tool-managed (`mcp`) preset** — AID stores no credential for it (Q10) |
 | `notes` | One-line human guidance; seeds the descriptor's `objective`/`summary` |
 | `tags` | Preset-declared tag override, appended to `ELICIT`'s auto-derived `[connector, <connection_type>]` default |
 
@@ -39,7 +47,7 @@ omitted here (YAGNI — an all-default column carries no information).
 
 | preset-id | name | connection_type | endpoint-template | auth_method | secret_reference-form | notes | tags |
 |-----------|------|------------------|--------------------|-------------|------------------------|-------|------|
-| `github` | GitHub | `mcp` | `docker run -i --rm -e GITHUB_PERSONAL_ACCESS_TOKEN ghcr.io/github/github-mcp-server` | `pat` | `env:GITHUB_PERSONAL_ACCESS_TOKEN` | GitHub issues/PRs/repos via the official GitHub MCP server (Docker-hosted); scope the PAT to only the repos it needs. | `[connector, mcp, source-host]` |
+| `github` | GitHub | `mcp` | via the host tool's own GitHub MCP server | `none` | `—` | Tool-managed: request the connection from your host tool's GitHub MCP; the host tool handles auth (AID stores no credential). | `[connector, mcp, source-host]` |
 | `gitlab` | GitLab | `api` | `https://{your-gitlab-host}/api/v4` | `pat` | `file:` | GitLab issues/MRs/repos via the REST API v4; replace `{your-gitlab-host}` with `gitlab.com` or your self-hosted instance. | `[connector, api, source-host]` |
 | `jira` | Jira | `api` | `https://{your-domain}.atlassian.net/rest/api/3` | `token` | `file:` | Jira Cloud issues via the REST API v3; replace `{your-domain}` with your Atlassian site name. | `[connector, api, issue-tracker]` |
 | `slack` | Slack | `api` | `https://slack.com/api/` | `token` | `file:` | Slack channels/messages via the Slack Web API; requires a bot token installed to the workspace with the needed scopes. | `[connector, api, chat]` |

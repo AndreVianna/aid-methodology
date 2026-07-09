@@ -32,9 +32,10 @@ This project uses the [AID methodology](https://github.com/AndreVianna/aid-metho
 - Read `.aid/connectors/INDEX.md`.
 - Before connecting to an external tool, scan the connectors index to find
   its descriptor, then open the descriptor for full fields and auth details.
-- For an `mcp` connector, it is already wired into the host's MCP config —
-  use it directly; the descriptor exists for discovery and audit, not
-  connect-time consumption.
+- For an `mcp` connector (tool-managed), request the connection from your
+  host tool's own MCP/plugin — the tool provides it and handles auth; AID
+  stores no credential for it. The descriptor exists for discovery and
+  audit, not connect-time consumption.
 - For `api` / `ssh` / `url` / `cli`, resolve the descriptor's
   `secret_reference` at use-time: `env:` reads an environment variable,
   `file:` reads `.aid/connectors/.secrets/<connector>`, `keychain:` reads the

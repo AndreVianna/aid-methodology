@@ -16,5 +16,5 @@
 - [ ] Every `connection_type` is within feature-001's enum (`mcp | api | ssh | url | cli`) and every `auth_method` within (`none | token | pat | oauth | ssh-key`)
 - [ ] The asset contains NO plaintext secret and no per-project instance value (references/templates only)
 - [ ] Re-rendering the profiles from this asset is idempotent (byte-stable install-tree copies)
-- [ ] `endpoint-template` values are verified accurate against current tooling (e.g. the GitHub MCP server launch spec)
+- [ ] `endpoint-template` values are accurate for their management mode: an **aid-managed** preset (`api|ssh|url|cli`) carries a real API/CLI target; a **tool-managed** (`mcp`) preset (e.g. `github`) carries an **informational** note only — it is not a launch/wire spec AID executes (Q10)
 - [ ] All §6 quality gates pass
