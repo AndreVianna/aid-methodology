@@ -114,5 +114,5 @@ not create.
   this file's artifact matrix, modify-framed
 - `features/feature-006-create-family/SPEC.md` (work-001-lite-aid-skills) --
   the settled design this reference implements
-- `.aid/knowledge/artifact-schemas.md § Task SPEC.md` -- the one-type-per-task
+- `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

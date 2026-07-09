@@ -101,5 +101,5 @@ design the trial.
   (work-001-lite-aid-skills) -- the settled design this reference implements
 - `.claude/skills/aid-execute/references/task-type-rules.md ## RESEARCH /
   ## IMPLEMENT` -- the per-type execution rules this breakdown maps onto
-- `.aid/knowledge/artifact-schemas.md § Task SPEC.md` -- the one-type-per-task
+- `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

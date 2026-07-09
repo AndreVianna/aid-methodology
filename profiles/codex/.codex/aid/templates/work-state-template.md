@@ -56,7 +56,7 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory. See also:
 `delivery-NNN/STATE.md` (delivery lifecycle + gate + delivery-scoped Q&A + derived task rollup)
 and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 
-Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task SPEC.md) keep their
+Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task DETAIL.md) keep their
 inline `## Change Log` sections -- that is content history (what changed in the document),
 distinct from process state (where are we in the workflow). Both are useful; they live in
 different places.

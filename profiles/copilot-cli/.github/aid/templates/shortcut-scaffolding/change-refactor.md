@@ -100,7 +100,7 @@ the "unchanged" default on those two sections.
 | `performance` | `task-001` REFACTOR (eliminate the bottleneck; behavior unchanged) + `task-002` TEST -- a reproducible benchmark meets the captured target vs. the captured baseline (the `improve-performance` recipe shape) |
 
 `task-002` never folds back into `task-001` -- one type per task always holds
-(`artifact-schemas.md § Task SPEC.md`), matching `task-type-rules.md ## REFACTOR`
+(`artifact-schemas.md § Task DETAIL.md`), matching `task-type-rules.md ## REFACTOR`
 ("NO behavior changes ... test suite AFTER must match baseline").
 
 ## Ownership boundary
@@ -125,7 +125,7 @@ artifact.
   how this file is looked up and what happens when it is absent
 - `features/feature-007-change-and-refactor-family/SPEC.md`
   (work-001-lite-aid-skills) -- the settled design this reference implements
-- `.aid/knowledge/artifact-schemas.md § Task SPEC.md` -- the one-type-per-task
+- `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract
 - `.github/skills/aid-execute/references/task-type-rules.md ## REFACTOR` --
   the behavior-preservation execution rule

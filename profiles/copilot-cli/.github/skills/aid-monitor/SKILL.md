@@ -148,7 +148,7 @@ APM/performance metrics, test trends, user feedback, support tickets, log files.
 
 **From AID artifacts (what's expected):**
 - Feature SPECs (`.aid/{work}/features/*/SPEC.md`) — expected behavior
-- Per-task `SPEC.md` — acceptance criteria; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `.aid/{work}/tasks/task-NNN/SPEC.md`
+- Per-task `DETAIL.md` — acceptance criteria; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/{work}/tasks/task-NNN/DETAIL.md`
 - Package files — what was deployed and when
 - `known-issues.md` — exclude known problems
 

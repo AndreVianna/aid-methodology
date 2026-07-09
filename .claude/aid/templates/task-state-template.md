@@ -1,14 +1,16 @@
 # Task State -- task-NNN
 
 [!NOTE]
-This is the TASK-LEVEL STATE.md template. All sections are AUTHORED by a single writer:
-the delivery branch that owns this task. This file is the SOLE write target for all
-per-task mutable state (state cell, review, elapsed, notes, findings, dispatch log).
-Full path: lives at `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; its parent
-`deliveries/delivery-NNN/STATE.md ## Tasks State` and the work-level `## Tasks State` are
-DERIVED read-only views assembled from this file at read time -- never written directly.
-Lite path: lives at `tasks/task-NNN/STATE.md` directly under the work folder (no delivery
-layer); the work-level `## Tasks State` derives directly from this file.
+This is the TASK-LEVEL STATE.md template. It is **full-path only** -- it lives at
+`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`. All sections are AUTHORED by a
+single writer: the delivery branch that owns this task. This file is the SOLE write
+target for all per-task mutable state (state cell, review, elapsed, notes, findings,
+dispatch log). Its parent `deliveries/delivery-NNN/STATE.md ## Tasks State` and the
+work-level `## Tasks State` are DERIVED read-only views assembled from this file at
+read time -- never written directly.
+Lite (flattened) path has **no per-task STATE.md at all**: each task's mutable cells
+live directly in the work-root `STATE.md § ### Tasks lifecycle`, written via
+`writeback-state.sh --task-id` targeting that table row instead of a sibling file.
 
 > **Task:** task-NNN
 > **Delivery:** delivery-NNN

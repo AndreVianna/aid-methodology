@@ -97,5 +97,5 @@ Detail-only prototype work.
   settled design this reference implements
 - `canonical/skills/aid-execute/references/task-type-rules.md ## DESIGN` -- the
   per-type execution rule this breakdown maps onto
-- `.aid/knowledge/artifact-schemas.md § Task SPEC.md` -- the one-type-per-task
+- `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

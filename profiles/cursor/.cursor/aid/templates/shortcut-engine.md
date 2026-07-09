@@ -145,7 +145,7 @@ re-derivation from this table:
 
 Multi-task shortcuts (e.g. create-data-model -> MIGRATE + IMPLEMENT + TEST) emit
 several tasks at DETAIL, each with one Type (never mixed --
-`artifact-schemas.md § Task SPEC.md`).
+`artifact-schemas.md § Task DETAIL.md`).
 
 ## Family Scaffolding Consult
 
@@ -479,7 +479,7 @@ guidance (e.g. `shortcut-scaffolding/fix.md`'s "task-001 IMPLEMENT -> task-002 T
 depends task-001"). The agent:
 
 **a. Proposes the task list** -- one type per task, never mixed
-(`artifact-schemas.md § Task SPEC.md`); every task traceable to at least one SPEC.md
+(`artifact-schemas.md § Task DETAIL.md`); every task traceable to at least one SPEC.md
 Acceptance Criterion; natural ordering RESEARCH -> DESIGN -> IMPLEMENT -> TEST ->
 DOCUMENT. Use the family file's default breakdown when one exists; otherwise the
 fallback is exactly one task, typed the catalog row's `default_type`, titled from the
@@ -615,7 +615,7 @@ content:
   `SPEC.md` Acceptance Criterion and a `BLUEPRINT.md § Gate Criteria` line.
 - **RUBRIC:** (one-off, as Pass 1) each `DETAIL.md` carries exactly one bold
   `**Type:**` (never mixed across tasks of the same shortcut unless the
-  family scaffolding calls for it -- `artifact-schemas.md § Task SPEC.md`),
+  family scaffolding calls for it -- `artifact-schemas.md § Task DETAIL.md`),
   a correct `**Source:** work-NNN-{slug} -> delivery-001` and
   `**Depends on:**` shape matching the natural ordering, and concrete,
   testable `**Acceptance Criteria:**` ending in `All section-6 quality gates

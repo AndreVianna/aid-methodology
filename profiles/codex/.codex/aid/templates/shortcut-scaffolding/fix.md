@@ -70,7 +70,7 @@ actually exercises the reported symptom) and **passes against the post-fix
 code** (proving the patch closes it). This is the default two-task shape for
 every `fix-kind` except where the adaptations below add or redirect work; no
 `fix-kind` ever removes `task-002` or folds it back into `task-001` -- one
-type per task always holds (`artifact-schemas.md § Task SPEC.md`).
+type per task always holds (`artifact-schemas.md § Task DETAIL.md`).
 
 ## `fix-kind` adaptations
 
@@ -106,5 +106,5 @@ deeper verification and the narrative documentation route away.
   how this file is looked up and what happens when it is absent
 - `features/feature-008-fix-family/SPEC.md` (work-001-lite-aid-skills) --
   the settled design this reference implements
-- `.aid/knowledge/artifact-schemas.md § Task SPEC.md` -- the one-type-per-task
+- `.aid/knowledge/artifact-schemas.md § Task DETAIL.md` -- the one-type-per-task
   contract

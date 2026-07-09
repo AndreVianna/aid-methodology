@@ -360,7 +360,7 @@ fi
 # ---------------------------------------------------------------------------
 # Delivery resolution for task modes (--field / --findings)
 # If --delivery-id was supplied, use it directly.
-# Otherwise attempt resolution from the task SPEC.md Source line.
+# Otherwise attempt resolution from the task DETAIL.md Source line.
 # ---------------------------------------------------------------------------
 resolve_delivery_for_task_mode() {
     if [[ -n "$DELIVERY_ID" ]]; then
