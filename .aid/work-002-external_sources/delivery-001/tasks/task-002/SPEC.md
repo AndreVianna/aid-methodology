@@ -12,7 +12,7 @@
 - Regenerate the 5 profiles so the rendered `principles.md` copies carry the exemption.
 
 **Acceptance Criteria:**
-- [ ] P7 body carries the new declared allowlist (the two scoped write targets), alongside the existing one-time-migration exception
+- [ ] P7 body carries the new declared allowlist (the single scoped write target `.aid/connectors/` — no host-MCP-config target, Q10), alongside the existing one-time-migration exception
 - [ ] The edit makes no claim of a new pre-flight script guard (KI-009 premise preserved — carve-out is prose)
 - [ ] The `principles.md` change renders identically into all 5 profiles (canonical->profiles render run)
 - [ ] Accuracy verified against the current `discover-preflight.sh` and the feature-001/feature-002 SPEC wording
