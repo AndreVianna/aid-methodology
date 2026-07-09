@@ -38,7 +38,8 @@ Required: work ID. If only one work exists, auto-select it.
     package-001-{name}.md
     package-002-{name}.md
   PLAN.md                      ← deliveries and sequencing
-  tasks/                       ← task files with statuses
+  deliveries/delivery-NNN/tasks/task-NNN/  ← full path: task files with statuses
+  tasks/task-NNN/                          ← lite path: task files with statuses (no delivery-NNN/ nesting)
   features/                    ← feature SPECs
 ```
 

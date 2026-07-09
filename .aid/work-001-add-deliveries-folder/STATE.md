@@ -1,7 +1,7 @@
 # Work State -- work-001-add-deliveries-folder
 
-> **State:** Interview Complete
-> **Phase:** Interview
+> **State:** Executing
+> **Phase:** Execute
 > **Minimum Grade:** {resolved at runtime by `bash .claude/aid/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A`; source is `.aid/settings.yml`}
 > **Started:** 2026-07-08
 > **User Approved:** no
@@ -14,10 +14,10 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 ## Pipeline State
 
 - **Lifecycle:** Paused-Awaiting-Input
-- **Phase:** Interview
+- **Phase:** Execute
 - **Active Skill:** none
-- **Updated:** 2026-07-08T17:21:11Z
-- **Pause Reason:** Lite path ready — run /aid-execute work-001-add-deliveries-folder task-001
+- **Updated:** 2026-07-09T01:30:52Z
+- **Pause Reason:** delivery-001 complete — 3 tasks A+ + delivery gate A+; ready to merge/deploy (no push done)
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -42,8 +42,8 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
      (Relocated from the removed delivery-001/STATE.md when this work migrated to the new
      lite-flat layout it introduces.) -->
 
-- **State:** Executing
-- **Updated:** 2026-07-08T16:56:56Z
+- **State:** Done
+- **Updated:** 2026-07-09T01:30:52Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -54,10 +54,10 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 <!-- AUTHORED -- LITE PATH ONLY. Written by aid-describe LITE-REVIEW (pre-execution) and
      updated by aid-execute DELIVERY-GATE (post-execution). -->
 
-- **Reviewer Tier:** Small
-- **Grade:** A+ (aid-describe LITE-REVIEW pre-execution gate, cycle 2)
+- **Reviewer Tier:** Medium (holistic 12-AC delivery gate)
+- **Grade:** A+ (post-execution delivery gate; 1 MINOR diagram finding fixed → 0 findings. Pre-execution LITE-REVIEW was also A+.)
 - **Issue List:** none
-- **Timestamp:** 2026-07-08T17:21:11Z
+- **Timestamp:** 2026-07-09T01:30:52Z
 
 ---
 
@@ -98,6 +98,8 @@ to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
 | 2026-07-08 | task-001 [REFACTOR] DONE — Grade A+ (cycle 2) | A+ | /aid-execute REVIEW |
 | 2026-07-08 | task-002 [REFACTOR] DONE — Grade A+ (dashboard reader twins, both layouts) | A+ | /aid-execute REVIEW |
 | 2026-07-09 | task-003 [TEST] DONE — Grade A+ (both-layout fixtures + final grep-clean; caught a fixture task-001 missed) | A+ | /aid-execute REVIEW |
+| 2026-07-09 | DELIVERY-GATE (holistic 12-AC) — Grade A+ (1 MINOR diagram finding fixed everywhere) | A+ | /aid-execute DELIVERY-GATE |
+| 2026-07-09 | delivery-001 DONE — all 3 tasks + delivery gate A+; ready to merge/deploy | A+ | /aid-execute |
 
 ---
 
