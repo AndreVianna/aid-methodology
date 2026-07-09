@@ -58,6 +58,14 @@ fi
 
 CREATE_TXT=$(cat "$CREATE_SCAFFOLD")
 ENGINE_TXT=$(cat "$ENGINE")
+# Whitespace-normalized (all newlines/runs of blanks collapsed to a single space)
+# copy of the engine text, used for assertions whose target prose spans a
+# hand-wrapped source line break. `assert_output_contains` greps line-by-line, so a
+# pattern that straddles two physical lines only matches if that exact hard-wrap
+# column is preserved — brittle across re-wraps/renders. Matching against the
+# flattened text instead makes the assertion wrap-column-invariant while still
+# proving the full sentence verbatim.
+ENGINE_FLAT=$(tr '\n' ' ' <<< "$ENGINE_TXT" | tr -s '[:space:]' ' ')
 
 # ===========================================================================
 # Part 1 -- Contract assertions against shortcut-scaffolding/create.md
@@ -110,13 +118,17 @@ assert_output_contains "$CREATE_TXT" \
 echo ""
 echo "--- Part 2: alias-equivalence contract (checked against the real catalog + skill dirs) ---"
 
-# CFS-10: the engine's own alias-resolution sentence names this exact pair (two-phrase).
-assert_output_contains "$ENGINE_TXT" \
-    "canonical mirror's, so both resolve the same file -- \`aid-add-api\` and \`aid-create-api\`" \
-    "CFS10a engine states an alias row's verb == its mirror's (wrap point 1, aid-add-api/aid-create-api named)"
-assert_output_contains "$ENGINE_TXT" \
+# CFS-10: the engine's own alias-resolution sentence names this exact pair. Matched
+# against the whitespace-flattened text (ENGINE_FLAT) so the assertion holds
+# regardless of the source's hard-wrap column (the sentence spans a hand-wrapped
+# line break in the canonical file, and a per-line grep against the raw text would
+# be brittle to any re-wrap of that prose).
+assert_output_contains "$ENGINE_FLAT" \
+    "canonical mirror's, so both resolve the same file -- \`aid-add-api\` and \`aid-create-api\` both resolve \`shortcut-scaffolding/create.md\`;" \
+    "CFS10a engine states an alias row's verb == its mirror's (aid-add-api/aid-create-api named, wrap-invariant)"
+assert_output_contains "$ENGINE_FLAT" \
     'both resolve `shortcut-scaffolding/create.md`;' \
-    "CFS10b engine states both resolve shortcut-scaffolding/create.md (wrap point 2)"
+    "CFS10b engine states both resolve shortcut-scaffolding/create.md (wrap-invariant)"
 
 # CFS-11: catalog rows -- aid-create-api and aid-add-api carry the identical {verb, artifact}
 # binding; aid-add-api's alias_of points at aid-create-api exactly.

@@ -229,14 +229,19 @@ echo ""
 echo "=== T13-T20: byte-identity of canonical bodies across trees (AC1) ==="
 
 # Representative files known to be canonical-body-identical (no root refs).
-# Sourced from aid/templates/ (pure canonical Markdown with no install-path
-# rewriting) and aid/scripts/ whose bodies are purely computational with
-# no tool-root references.
+# Sourced from aid/templates/ (pure canonical Markdown that names no
+# install-path -- unlike e.g. grading-rubric.md/reviewer-ledger-schema.md/
+# state-machine-chaining.md/task-detail-template.md, which legitimately cite
+# `canonical/scripts/...` and `canonical/templates/...` paths in their own
+# prose and are therefore REWRITTEN per tool by the renderer, NOT
+# byte-identical -- confirmed by direct sha256 diff across profiles/*/) and
+# aid/scripts/ whose bodies are purely computational with no tool-root
+# references.
 CANONICAL_BODIES=(
-    "aid/templates/grading-rubric.md"
-    "aid/templates/reviewer-ledger-schema.md"
-    "aid/templates/state-machine-chaining.md"
-    "aid/templates/task-detail-template.md"
+    "aid/templates/delivery-blueprint-template.md"
+    "aid/templates/delivery-plans/task-template.md"
+    "aid/templates/requirements.md"
+    "aid/templates/known-issues.md"
     "aid/scripts/execute/complexity-score.sh"
     "aid/scripts/execute/compute-block-radius.sh"
     "aid/scripts/config/read-setting.sh"
