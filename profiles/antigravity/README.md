@@ -19,9 +19,9 @@ cp    path/to/aid-methodology/profiles/antigravity/AGENTS.md   AGENTS.md
 See the repo README for npm / pipx / offline install options.
 
 This gives you:
-- `.agent/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (14 skills: 11 across five pipeline groups + 3 off-pipeline on-demand)
+- `.agent/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (82 skills: 14 classic — 11 across five pipeline groups + 3 off-pipeline on-demand — plus /aid-triage and 67 verb-first shortcut skills)
 - `.agent/agents/{name}.md` — Agent definitions in Markdown format (9 agents with `aid-` prefix)
-- `.agent/aid/templates/` — Templates (grading rubric, settings schema); `.agent/aid/scripts/` — bash helpers (`grade.sh`, `kb/build-project-index.sh`); `.agent/aid/recipes/` — lite-path recipes
+- `.agent/aid/templates/` — Templates (grading rubric, settings schema); `.agent/aid/scripts/` — bash helpers (`grade.sh`, `kb/build-project-index.sh`)
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
 
 ## Model Tiers
@@ -38,7 +38,7 @@ The Reviewer ≥ Executor invariant is enforced: the agent that grades is never 
 
 ## Skills
 
-14 skills total: the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base; plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills. Each skill lives in `.agent/skills/aid-<name>/SKILL.md`.
+82 skills total: 14 classic — the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base, plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills — plus `/aid-triage` and 67 verb-first shortcut skills. `/aid-triage` is a stateless, suggest-only router: it reads one free-form description and suggests either the matching shortcut or the full `aid-describe` path, writing nothing itself. The shortcuts (`aid-fix`, `aid-create-api`, `aid-change-ui`, `aid-refactor`, …) are direct-entry doorways that skip straight to a flattened Lite work for a single named change. Each skill lives in `.agent/skills/aid-<name>/SKILL.md`.
 
 ### Phase Flow
 
