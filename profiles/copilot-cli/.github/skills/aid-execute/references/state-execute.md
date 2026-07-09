@@ -114,7 +114,8 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 
 Compute the **ready set** — every task whose `Depends On` list is `—` (no deps)
 or whose every dependency already has `State: Done` in its respective
-`delivery-NNN/tasks/task-NNN/STATE.md` `## Task State` section.
+per-task `STATE.md` `## Task State` section (full path:
+`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md`).
 
 Mark all other tasks **Pending** (no state write needed — absence of `Done` implies
 Pending). The **in-flight set** starts empty. The **blocked set** starts empty.
@@ -194,8 +195,9 @@ HEARTBEAT_INTERVAL: 1m
 
 Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
 EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
-Read task definition from .aid/{work}/delivery-{DDD}/tasks/task-{NNN}/SPEC.md.
-Read task state from .aid/{work}/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
+Read task definition from {task-dir}/SPEC.md (full path: .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/SPEC.md;
+lite path: .aid/{work}/tasks/task-{NNN}/SPEC.md directly -- no deliveries/, no delivery-{DDD}/ folder).
+Read task state from {task-dir}/STATE.md (same per-path resolution as above).
 Follow the type-specific executor rules from references/task-type-rules.md.
 On completion, commit to the delivery branch in the worktree.
 Report: DONE or FAILED with reason.
@@ -407,10 +409,12 @@ Next steps:
 
 **State invariants at fixed point (Case B):**
 
-- Every task in the failed set has `State: Failed` in its `delivery-NNN/tasks/task-NNN/STATE.md`.
-- Every task in the blocked set has `State: Blocked` in its `delivery-NNN/tasks/task-NNN/STATE.md`
-  with a Notes entry naming its failed ancestor.
-- The delivery `STATE.md` `## Delivery Lifecycle` has `State: Blocked`.
+- Every task in the failed set has `State: Failed` in its per-task `STATE.md` (full path:
+  `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md`).
+- Every task in the blocked set has `State: Blocked` in its per-task `STATE.md` (same
+  per-path resolution) with a Notes entry naming its failed ancestor.
+- The `## Delivery Lifecycle` section has `State: Blocked` (full path: in
+  `deliveries/delivery-NNN/STATE.md`; lite path: directly in the work-root `STATE.md`).
 - No Blocked task was dispatched (Blocked tasks never enter the ready set).
 - Every task NOT in the failed or blocked sets and not already `Done` has
   `State: Pending` -- it was not reached this run because it was not yet ready

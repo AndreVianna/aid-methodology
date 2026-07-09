@@ -38,7 +38,8 @@ Required: work ID. If only one work exists, auto-select it.
     package-001-{name}.md
     package-002-{name}.md
   PLAN.md                      ← deliveries and sequencing
-  tasks/                       ← task files with statuses
+  deliveries/delivery-NNN/tasks/task-NNN/  ← full path: task files with statuses
+  tasks/task-NNN/                          ← lite path: task files with statuses (no delivery-NNN/ nesting)
   features/                    ← feature SPECs
 ```
 
@@ -100,9 +101,9 @@ aid-deploy  ▸ you are here
 ## Inputs
 
 - `.aid/{work}/PLAN.md` — deliveries, sequencing, success criteria
-- `.aid/{work}/tasks/task-*.md` — task statuses and scope
+- Per-task `SPEC.md` — task scope; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `.aid/{work}/tasks/task-NNN/SPEC.md`
 - `.aid/{work}/features/*/SPEC.md` — what was specified
-- Work `STATE.md` `## Tasks State` table — review grades per task
+- Work `STATE.md` `## Tasks State` table — task statuses and review grades per task (both paths derive into this same rollup)
 - `known-issues.md` — if exists, check for Critical/High blockers
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, pull:
   - `infrastructure.md` § Deployment — how to package, where to publish

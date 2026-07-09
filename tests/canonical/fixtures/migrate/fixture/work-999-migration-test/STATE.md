@@ -30,7 +30,7 @@ Fixture work for migration-helper testing. Monolithic layout.
 
 ## Tasks State
 
-<!-- DERIVED -- read-only; assembled from delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->
+<!-- DERIVED -- read-only; assembled from deliveries/delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->
 
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
@@ -38,7 +38,7 @@ Fixture work for migration-helper testing. Monolithic layout.
 
 ## Plan / Deliveries
 
-<!-- DERIVED -- read-only rollup from delivery-NNN/STATE.md at read time. Never written here. -->
+<!-- DERIVED -- read-only rollup from deliveries/delivery-NNN/STATE.md at read time. Never written here. -->
 
 | Delivery | State | Tasks | Notes |
 |----------|-------|-------|-------|
@@ -46,14 +46,14 @@ Fixture work for migration-helper testing. Monolithic layout.
 
 ## Delivery Gates
 
-<!-- DERIVED -- union of delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->
+<!-- DERIVED -- union of deliveries/delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->
 
-_See delivery-NNN/STATE.md for each delivery gate block._
+_See deliveries/delivery-NNN/STATE.md for each delivery gate block._
 
 ## Cross-phase Q&A
 
 <!-- DERIVED (delivery-scoped entries) + AUTHORED (work-owner entries only).
-     Delivery-scoped Q&A lives in delivery-NNN/STATE.md (SD-5).
+     Delivery-scoped Q&A lives in deliveries/delivery-NNN/STATE.md (SD-5).
      Work-owner Q&A below was not delivery-scoped in the legacy file. -->
 
 ### Q3

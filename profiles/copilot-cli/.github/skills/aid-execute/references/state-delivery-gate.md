@@ -25,6 +25,13 @@ Advance delivery lifecycle to Gated (silent state-write -- no output, no gate):
 bash .github/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
 ```
 
+> **Path-aware target (all `--delivery-id` writeback calls in this file):** `writeback-state.sh`
+> resolves the delivery-level write target automatically -- full path: `deliveries/delivery-NNN/STATE.md`;
+> lite path (no `deliveries/` folder present): the work-root `STATE.md` directly, since a lite
+> work has exactly one delivery and no per-delivery STATE.md of its own. Every `## Delivery
+> Lifecycle` / `## Delivery Gate` / `## Cross-phase Q&A` reference below follows this same
+> per-path resolution -- this is what "gates a lite work at the work level" means.
+
 ## DELIVERY-GATE State Machine
 
 ```
@@ -110,7 +117,7 @@ Parse the `| Task | Depends On |` table to build the dependency map.
 |--------|--------|--------------|
 | Task count | tasks in this delivery (Execution Graph) | +1 per task |
 | Graph depth | longest dependency chain (longest path in DAG) | +1 per edge on the longest chain |
-| Risk-weighted types | each task's `Type` field (`delivery-NNN/tasks/task-NNN/SPEC.md`) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
+| Risk-weighted types | each task's `Type` field (per-task `SPEC.md` -- full path: `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `tasks/task-NNN/SPEC.md`) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
 | Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from `## Quick Check Findings`) + tasks whose Agent-Selection row triggers an `aid-researcher` analysis consult | +1 each |
 
 ### Tier Selection
@@ -173,8 +180,9 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 
 - **All delivery artifacts** — every file produced or modified by tasks in the
   delivery (code, docs, configs, tests, etc.)
-- **All `delivery-NNN/tasks/task-NNN/SPEC.md` files** for this delivery — Definition zones (Type,
-  Source, Scope, Acceptance Criteria)
+- **All per-task `SPEC.md` files** for this delivery (full path:
+  `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `tasks/task-NNN/SPEC.md`) —
+  Definition zones (Type, Source, Scope, Acceptance Criteria)
 - **Feature SPEC(s):**
   - Full path: per-feature `SPEC.md` files (`.aid/{work}/features/*/SPEC.md`)
   - Lite path: work-root `SPEC.md` (`.aid/{work}/SPEC.md`)
@@ -280,9 +288,11 @@ Gate grade below minimum. Next steps:
 
 **Non-CODE issues (TASK, SPEC, KB):**
 - **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Write Q&A to `delivery-NNN/STATE.md` `## Cross-phase Q&A` (SD-5:
-  the delivery gate writes to its OWN delivery STATE.md, not the shared work STATE.md,
-  to preserve the disjoint-write property -- two delivery branches cannot collide) →
+- **SPEC** → Write Q&A to `## Cross-phase Q&A` (SD-5: full path -- the delivery gate
+  writes to its OWN `deliveries/delivery-NNN/STATE.md`, not the shared work STATE.md, to
+  preserve the disjoint-write property, since two delivery branches cannot collide; lite
+  path -- there is no separate delivery STATE.md, so the gate writes directly into the
+  work-root `STATE.md ## Cross-phase Q&A` -- the work IS the delivery) →
   suggest `/aid-specify`
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
@@ -378,10 +388,12 @@ writeback-state.sh --delivery-id NNN --block "BLOCK"
 ```
 
 > **Helper target:** `writeback-state.sh --delivery-id NNN --block BLOCK`
-> writes the `## Delivery Gate` block in `delivery-NNN/STATE.md` (SD-5:
-> the delivery gate block is authored by this delivery's branch only; it is NOT
-> written into the shared work STATE.md). The work-level `## Delivery Gates`
-> view is DERIVED at read time as the union of all delivery gate blocks.
+> writes the `## Delivery Gate` block -- full path: in `deliveries/delivery-NNN/STATE.md`
+> (SD-5: the delivery gate block is authored by this delivery's branch only; it is NOT
+> written into the shared work STATE.md); lite path: directly in the work-root `STATE.md`
+> (there is no separate delivery STATE.md -- the work IS the delivery). The work-level
+> `## Delivery Gates` (plural, full-path only) view is DERIVED at read time as the union
+> of all delivery gate blocks; a lite work's single gate is authored, not derived.
 
 ### 6b-2: Advance delivery lifecycle to Done
 
@@ -401,10 +413,15 @@ Update the file directly (no helper needed — single writer by construction).
 
 ### 6d: Update Delivery Row in Work STATE.md
 
-The work-level `## Plan / Deliveries` derived view is computed at read time from
-the per-delivery `## Delivery Lifecycle` State values. Since we already advanced the
+**Full path:** the work-level `## Plan / Deliveries` derived view is computed at read time
+from the per-delivery `## Delivery Lifecycle` State values. Since we already advanced the
 delivery lifecycle to Done in step 6b-2, the dashboard reader will reflect `Done`
 in the work-level view automatically. No additional writeback is needed here.
+
+**Lite path:** there is no `## Plan / Deliveries` view to update (no PLAN.md, no
+multi-delivery structure) — step 6b-2 already advanced `## Delivery Lifecycle` directly
+in the work-root STATE.md, which IS the authoritative record for a lite work's sole
+delivery. No additional writeback is needed here either.
 
 _(Previously this step wrote a "Status: Done" row to the work STATE.md; under the
 hierarchical layout, the delivery's lifecycle State is the authoritative source.)_

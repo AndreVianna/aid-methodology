@@ -1,8 +1,10 @@
 # State: TASK-BREAKDOWN (L2)
 
 Runs after CONDENSED-INTAKE (L1). Reads the work-root `SPEC.md` and proposes a
-typed task breakdown, then scaffolds the `delivery-001/` hierarchy
-(delivery-001/{SPEC,STATE}.md + delivery-001/tasks/task-NNN/{SPEC,STATE}.md) and fills the
+typed task breakdown, then writes task folders **directly** under `tasks/task-NNN/`
+(`tasks/task-NNN/{SPEC,STATE}.md` -- no `deliveries/`, no `delivery-001/` folder), writes the
+single delivery's `## Delivery Lifecycle` + `## Delivery Gate` blocks directly into the
+work-root `STATE.md` (the work IS the delivery on the lite path), and fills the
 `## Tasks` + `## Execution Graph` sections of the work-root `SPEC.md`.
 
 **Agent:** Dispatch `aid-architect` (override `subagent_type`). This is design work,
@@ -14,7 +16,7 @@ not interview work.
 
 Read the work-root `SPEC.md`. If `## Tasks` already has task rows (i.e., at
 least one `task-NNN` entry beyond the placeholder) AND
-`delivery-001/tasks/` contains at least one `task-NNN/` subdirectory,
+`tasks/` (directly under the work folder) contains at least one `task-NNN/` subdirectory,
 TASK-BREAKDOWN is already complete — skip to LITE-REVIEW.
 
 Print: `[State: TASK-BREAKDOWN] Sub-path: {Sub-path}`
@@ -94,75 +96,21 @@ Wait for user response:
   read the `SPEC.md` sections to reconstruct slot values). Exit TASK-BREAKDOWN after
   escalation completes.
 
-### Step 4: Scaffold delivery-001 hierarchy and write task files
+### Step 4: Write Delivery Lifecycle/Gate to work-root STATE.md and write task files
 
-#### 4a: Create delivery-001 folder and SPEC.md
+There is no `deliveries/` folder and no `delivery-001/` folder for lite works -- the
+work IS the sole delivery. The delivery's SPEC content (Objective/Scope/Gate-Criteria/
+Tasks/Dependencies) is already fully covered by the work-root `SPEC.md` (`## Goal`,
+`## Context`, `## Acceptance Criteria`, `## Tasks`, `## Execution Graph`); no separate
+delivery SPEC.md is written. Only the delivery's STATE (lifecycle + gate) needs a home,
+and it is authored directly in the work-root `STATE.md`.
 
-Create `.aid/{work}/delivery-001/` if it does not exist.
+#### 4a: Write `## Delivery Lifecycle` + `## Delivery Gate` to the work-root STATE.md
 
-Write `.aid/{work}/delivery-001/SPEC.md` using the delivery spec shape
-from `../../templates/delivery-spec-template.md`:
-
-```markdown
-# Delivery SPEC -- delivery-001: {work-NNN-name} lite execution
-
-> **Delivery:** delivery-001
-> **Work:** {work-NNN-name}
-> **Created:** {today}
-
----
-
-## Objective
-
-Single delivery for lite-path work {work-NNN-name}. All tasks execute on the
-`aid/work-NNN-delivery-001` branch and are gated together at delivery-001 close.
-
-## Scope
-
-All tasks defined in the work-root SPEC.md `## Tasks` section.
-
-**Out of scope:** Future deliveries (this is the sole lite-path delivery).
-
-## Gate Criteria
-
-- [ ] All tasks in delivery-001 are Done or Canceled.
-- [ ] Delivery grade meets or exceeds the minimum grade for this work.
-- [ ] All section-6 quality gates pass.
-
-## Tasks
-
-| Task | Type | Title |
-|------|------|-------|
-| task-001 | {Type} | {title} |
-| task-002 | {Type} | {title} |   ← only if present
-
-## Dependencies
-
-- **Depends on:** -- (none)
-- **Blocks:** -- (none)
-
-## Notes
-
-Lite-path work: single delivery, no features/ folder, no REQUIREMENTS.md, no PLAN.md.
-Source: /aid-describe lite path, sub-path {Sub-path}.
-```
-
-**Write immediately after task list is approved. Do not batch.**
-
-#### 4b: Create delivery-001/STATE.md
-
-Write `.aid/{work}/delivery-001/STATE.md` seeded from
-`../../templates/delivery-state-template.md` with the initial delivery lifecycle:
+Write (or update, if the sections already exist as scaffold placeholders from
+`../../templates/work-state-template.md`) these two sections in `.aid/{work}/STATE.md`:
 
 ```markdown
-# Delivery State -- delivery-001
-
-> **Delivery:** delivery-001
-> **Work:** {work-NNN-name}
-> **Branch:** aid/{work-NNN-name}-delivery-001
-
----
-
 ## Delivery Lifecycle
 
 - **State:** Executing
@@ -178,38 +126,30 @@ Write `.aid/{work}/delivery-001/STATE.md` seeded from
 - **Grade:** Pending
 - **Issue List:** none
 - **Timestamp:** --
-
----
-
-## Cross-phase Q&A
-
-_None yet._
-
----
-
-## Tasks State
-
-| # | Task | Type | Wave | State | Review | Elapsed | Notes |
-|---|------|------|------|-------|--------|---------|-------|
-| _none yet_ | | | | | | | |
 ```
 
 Note: the delivery State is seeded as `Executing` (not `Pending-Spec` or `Specified`)
-because the lite path runs CONDENSED-INTAKE + TASK-BREAKDOWN before scaffolding the
-delivery folder -- by the time delivery-001 is created, the tasks are already approved
-and execution is the next step. The delivery-001 lifecycle goes directly to `Executing`
-at creation; the `Gated` and `Done` transitions happen in aid-execute.
+because the lite path runs CONDENSED-INTAKE + TASK-BREAKDOWN before this step runs -- by
+the time this section is written, the tasks are already approved and execution is the
+next step. The lifecycle goes directly to `Executing` at creation; the `Gated` and `Done`
+transitions happen in `aid-execute` (writing to the SAME work-root STATE.md sections via
+`writeback-state.sh --delivery-id 001 --lifecycle ...` / `--block ...`, which resolve to
+the work-root STATE.md for a lite work — there is no `deliveries/` folder to resolve to).
 
-**Write immediately. Do not batch.**
+The single delivery's Cross-phase Q&A is authored directly into the work-root STATE.md's
+existing `## Cross-phase Q&A` section (no separate delivery-level section) -- see
+`work-state-template.md` for the lite-path contract.
 
-#### 4c: Create task folders and write task SPEC.md + STATE.md files
+**Write immediately after task list is approved. Do not batch.**
 
-Create `.aid/{work}/delivery-001/tasks/` if it does not exist.
+#### 4b: Create task folders and write task SPEC.md + STATE.md files
 
-For each approved task, create `.aid/{work}/delivery-001/tasks/task-NNN/` and write
+Create `.aid/{work}/tasks/` (directly under the work folder) if it does not exist.
+
+For each approved task, create `.aid/{work}/tasks/task-NNN/` and write
 two files:
 
-**`delivery-001/tasks/task-NNN/SPEC.md`** -- the task definition (immutable):
+**`tasks/task-NNN/SPEC.md`** -- the task definition (immutable):
 
 ```markdown
 # task-NNN: {title}
@@ -229,7 +169,7 @@ two files:
 - [ ] All §6 quality gates pass.
 ```
 
-**`delivery-001/tasks/task-NNN/STATE.md`** -- the task mutable state, seeded from
+**`tasks/task-NNN/STATE.md`** -- the task mutable state, seeded from
 `../../templates/task-state-template.md`:
 
 ```markdown
@@ -264,7 +204,9 @@ two files:
 ```
 
 **Source field convention (lite path):** always `{work-NNN-name} → delivery-001`.
-There is no `features/` folder; `delivery-001` is the constant lite-work delivery id.
+There is no `features/` folder and no `delivery-001/` folder; `delivery-001` is the
+constant lite-work conceptual delivery id used only as an identifier in the `Source`
+field and the STATE.md `> **Delivery:**` header line.
 
 **Write each task folder and its two files immediately after approval. Do not batch.**
 
@@ -277,7 +219,8 @@ Update the work-root `SPEC.md` to replace the placeholder rows with the actual t
 ```markdown
 ## Tasks
 
-> Tasks live under `delivery-001/tasks/task-NNN/SPEC.md`; each task folder also contains
+> Tasks live under `tasks/task-NNN/SPEC.md` directly under the work folder -- no
+> `deliveries/`, no `delivery-001/` folder. Each task folder also contains
 > `STATE.md` for mutable task state. The table below is the navigational index.
 
 | Task | Type | Title |
@@ -308,8 +251,8 @@ Update the work-root `SPEC.md` to replace the placeholder rows with the actual t
 
 Parallel tasks (tasks with no dependency between them) go in the same wave.
 
-Also update the delivery-001/SPEC.md `## Tasks` table to match the approved task list
-(same rows as the work-root SPEC.md table above).
+There is no separate `delivery-001/SPEC.md` to keep in sync -- the work-root `SPEC.md`
+`## Tasks` table above is the single source of the task list for lite works.
 
 ### Step 6: Update STATE.md lifecycle
 
@@ -334,8 +277,8 @@ Add entry to `STATE.md ## Lifecycle History`:
 
 | Input | Expected output |
 |-------|----------------|
-| LITE-BUG-FIX SPEC.md, no delivery-001/ | delivery-001/{SPEC,STATE}.md created; delivery-001/tasks/task-001/{SPEC,STATE}.md written (IMPLEMENT); `## Tasks` + `## Execution Graph` filled; wave-1 = task-001 |
-| LITE-REFACTOR SPEC.md, 2-task breakdown approved | delivery-001/ + tasks/task-001/ (REFACTOR) + tasks/task-002/ (TEST) written; delivery-001/SPEC.md tasks table has both rows; dependency graph: task-002 depends on task-001 |
-| LITE-FEATURE SPEC.md, 3-task breakdown approved | 3 task folders written under delivery-001/tasks/; parallel waves calculated correctly |
-| delivery-001/tasks/ already has task-NNN/ dirs AND SPEC.md ## Tasks has rows | Skip; advance to LITE-REVIEW (idempotent) |
+| LITE-BUG-FIX SPEC.md, no tasks/ | work-root STATE.md `## Delivery Lifecycle` (Executing) + `## Delivery Gate` (Pending) written; tasks/task-001/{SPEC,STATE}.md written directly (IMPLEMENT); no `deliveries/`, no `delivery-001/` folder; `## Tasks` + `## Execution Graph` filled; wave-1 = task-001 |
+| LITE-REFACTOR SPEC.md, 2-task breakdown approved | tasks/task-001/ (REFACTOR) + tasks/task-002/ (TEST) written directly under the work folder; work-root SPEC.md tasks table has both rows; dependency graph: task-002 depends on task-001 |
+| LITE-FEATURE SPEC.md, 3-task breakdown approved | 3 task folders written directly under tasks/; parallel waves calculated correctly |
+| tasks/ already has task-NNN/ dirs AND SPEC.md ## Tasks has rows | Skip; advance to LITE-REVIEW (idempotent) |
 | User selects [3] Escalate | `lite-to-full-escalation.md` invoked; SPEC.md + captured slots carried; `Path: escalated` written; REQUIREMENTS.md seeded; exit TASK-BREAKDOWN; next state = CONTINUE |

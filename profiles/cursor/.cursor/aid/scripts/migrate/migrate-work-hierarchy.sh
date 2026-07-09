@@ -2,18 +2,20 @@
 # migrate-work-hierarchy.sh -- idempotent monolithic -> hierarchy migration helper.
 #
 # Converts a monolithic work-NNN-{name}/ layout (single STATE.md + tasks/*.md)
-# into the uniform unit hierarchy:
+# into the uniform unit hierarchy (full path -- this migration always targets the
+# nested deliveries/ shape; it predates and is independent of the lite-flat path):
 #
 #   work-NNN-{name}/
 #     STATE.md                          (rewritten: AUTHORED header + DERIVED placeholders)
 #     tasks/                            (legacy flat files retained as-is for reference)
-#     delivery-NNN/
-#       SPEC.md                         (delivery definition)
-#       STATE.md                        (delivery authored lifecycle + gate + Q&A + derived tasks view)
-#       tasks/
-#         task-NNN/
-#           SPEC.md                     (task definition -- from legacy tasks/task-NNN.md)
-#           STATE.md                    (task mutable cells + findings + dispatch log)
+#     deliveries/
+#       delivery-NNN/
+#         SPEC.md                       (delivery definition)
+#         STATE.md                      (delivery authored lifecycle + gate + Q&A + derived tasks view)
+#         tasks/
+#           task-NNN/
+#             SPEC.md                   (task definition -- from legacy tasks/task-NNN.md)
+#             STATE.md                  (task mutable cells + findings + dispatch log)
 #
 # IDEMPOTENT: if any per-task STATE.md already exists, the entire work is skipped (no-op).
 #
@@ -457,7 +459,7 @@ rewrite_work_state() {
         function emit_derived_block(   f, line) {
             print "## Tasks State"
             print ""
-            print "<!-- DERIVED -- read-only; assembled from delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->"
+            print "<!-- DERIVED -- read-only; assembled from deliveries/delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->"
             print ""
             print "| # | Task | Type | Wave | State | Review | Elapsed | Notes |"
             print "|---|------|------|------|-------|--------|---------|-------|"
@@ -465,7 +467,7 @@ rewrite_work_state() {
             print ""
             print "## Plan / Deliveries"
             print ""
-            print "<!-- DERIVED -- read-only rollup from delivery-NNN/STATE.md at read time. Never written here. -->"
+            print "<!-- DERIVED -- read-only rollup from deliveries/delivery-NNN/STATE.md at read time. Never written here. -->"
             print ""
             print "| Delivery | State | Tasks | Notes |"
             print "|----------|-------|-------|-------|"
@@ -473,14 +475,14 @@ rewrite_work_state() {
             print ""
             print "## Delivery Gates"
             print ""
-            print "<!-- DERIVED -- union of delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->"
+            print "<!-- DERIVED -- union of deliveries/delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->"
             print ""
-            print "_See delivery-NNN/STATE.md for each delivery gate block._"
+            print "_See deliveries/delivery-NNN/STATE.md for each delivery gate block._"
             print ""
             print "## Cross-phase Q&A"
             print ""
             print "<!-- DERIVED (delivery-scoped entries) + AUTHORED (work-owner entries only)."
-            print "     Delivery-scoped Q&A lives in delivery-NNN/STATE.md (SD-5)."
+            print "     Delivery-scoped Q&A lives in deliveries/delivery-NNN/STATE.md (SD-5)."
             print "     Work-owner Q&A below was not delivery-scoped in the legacy file. -->"
             print ""
             # Emit work-owner Q&A inline if present.
@@ -575,7 +577,7 @@ main() {
     fi
 
     # IDEMPOTENCY CHECK: skip if any hierarchy file already exists.
-    if find "$WORK_DIR" -path "*/delivery-*/tasks/task-*/STATE.md" -maxdepth 5 2>/dev/null | grep -q .; then
+    if find "$WORK_DIR" -path "*/deliveries/delivery-*/tasks/task-*/STATE.md" -maxdepth 6 2>/dev/null | grep -q .; then
         log "IDEMPOTENT: hierarchy already present in '${WORK_NAME}'. No-op."
         exit 0
     fi
@@ -634,7 +636,7 @@ main() {
         task_id="$(basename "$task_file" .md)"
         delivery_num="${TASK_DELIVERY[$task_id]}"
         padded_d="$(pad3 "$delivery_num")"
-        task_dest_dir="${WORK_DIR}/delivery-${padded_d}/tasks/${task_id}"
+        task_dest_dir="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/${task_id}"
 
         log "Creating ${task_dest_dir}/"
 
@@ -674,7 +676,7 @@ main() {
 
     for delivery_num in "${ALL_DELIVERIES[@]}"; do
         padded_d="$(pad3 "$delivery_num")"
-        delivery_dir="${WORK_DIR}/delivery-${padded_d}"
+        delivery_dir="${WORK_DIR}/deliveries/delivery-${padded_d}"
         log "Creating ${delivery_dir}/"
 
         if [[ "$DRY_RUN" -eq 0 ]]; then
@@ -749,7 +751,7 @@ main() {
             task_id="$(basename "$task_file" .md)"
             delivery_num="${TASK_DELIVERY[$task_id]}"
             padded_d="$(pad3 "$delivery_num")"
-            task_dest_dir="${WORK_DIR}/delivery-${padded_d}/tasks/${task_id}"
+            task_dest_dir="${WORK_DIR}/deliveries/delivery-${padded_d}/tasks/${task_id}"
 
             [[ -s "${task_dest_dir}/SPEC.md" ]] || die "Verification: '${task_dest_dir}/SPEC.md' is empty." 4
             [[ -s "${task_dest_dir}/STATE.md" ]] || die "Verification: '${task_dest_dir}/STATE.md' is empty." 4
@@ -757,7 +759,7 @@ main() {
 
         for delivery_num in "${ALL_DELIVERIES[@]}"; do
             padded_d="$(pad3 "$delivery_num")"
-            delivery_dir="${WORK_DIR}/delivery-${padded_d}"
+            delivery_dir="${WORK_DIR}/deliveries/delivery-${padded_d}"
             [[ -s "${delivery_dir}/SPEC.md" ]] || die "Verification: '${delivery_dir}/SPEC.md' is empty." 4
             [[ -s "${delivery_dir}/STATE.md" ]] || die "Verification: '${delivery_dir}/STATE.md' is empty." 4
         done

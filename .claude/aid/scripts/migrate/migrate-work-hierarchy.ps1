@@ -5,18 +5,21 @@
 
 .DESCRIPTION
     Converts a monolithic work-NNN-{name}/ layout (single STATE.md + tasks/*.md)
-    into the work-004 uniform unit hierarchy:
+    into the work-004 uniform unit hierarchy (full path -- this migration always
+    targets the nested deliveries/ shape; it predates and is independent of the
+    lite-flat path):
 
       work-NNN-{name}/
         STATE.md                          (rewritten: AUTHORED header + DERIVED placeholders)
         tasks/                            (legacy flat files retained as-is for reference)
-        delivery-NNN/
-          SPEC.md                         (delivery definition)
-          STATE.md                        (delivery authored lifecycle + gate + Q&A + derived tasks view)
-          tasks/
-            task-NNN/
-              SPEC.md                     (task definition -- from legacy tasks/task-NNN.md)
-              STATE.md                    (task mutable cells + findings + dispatch log)
+        deliveries/
+          delivery-NNN/
+            SPEC.md                       (delivery definition)
+            STATE.md                      (delivery authored lifecycle + gate + Q&A + derived tasks view)
+            tasks/
+              task-NNN/
+                SPEC.md                   (task definition -- from legacy tasks/task-NNN.md)
+                STATE.md                  (task mutable cells + findings + dispatch log)
 
     IDEMPOTENT: if any per-task STATE.md already exists, the entire work is skipped (no-op).
 
@@ -485,7 +488,7 @@ function Emit-DerivedBlock {
     param([System.Collections.Generic.List[string]]$Lines, [string[]]$WorkQA)
     $Lines.Add('## Tasks State')
     $Lines.Add('')
-    $Lines.Add('<!-- DERIVED -- read-only; assembled from delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->')
+    $Lines.Add('<!-- DERIVED -- read-only; assembled from deliveries/delivery-NNN/tasks/task-NNN/STATE.md at read time. Never written here. -->')
     $Lines.Add('')
     $Lines.Add('| # | Task | Type | Wave | State | Review | Elapsed | Notes |')
     $Lines.Add('|---|------|------|------|-------|--------|---------|-------|')
@@ -493,7 +496,7 @@ function Emit-DerivedBlock {
     $Lines.Add('')
     $Lines.Add('## Plan / Deliveries')
     $Lines.Add('')
-    $Lines.Add('<!-- DERIVED -- read-only rollup from delivery-NNN/STATE.md at read time. Never written here. -->')
+    $Lines.Add('<!-- DERIVED -- read-only rollup from deliveries/delivery-NNN/STATE.md at read time. Never written here. -->')
     $Lines.Add('')
     $Lines.Add('| Delivery | State | Tasks | Notes |')
     $Lines.Add('|----------|-------|-------|-------|')
@@ -501,14 +504,14 @@ function Emit-DerivedBlock {
     $Lines.Add('')
     $Lines.Add('## Delivery Gates')
     $Lines.Add('')
-    $Lines.Add('<!-- DERIVED -- union of delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->')
+    $Lines.Add('<!-- DERIVED -- union of deliveries/delivery-NNN/STATE.md ## Delivery Gate blocks at read time. Never written here. -->')
     $Lines.Add('')
-    $Lines.Add('_See delivery-NNN/STATE.md for each delivery gate block._')
+    $Lines.Add('_See deliveries/delivery-NNN/STATE.md for each delivery gate block._')
     $Lines.Add('')
     $Lines.Add('## Cross-phase Q&A')
     $Lines.Add('')
     $Lines.Add('<!-- DERIVED (delivery-scoped entries) + AUTHORED (work-owner entries only).')
-    $Lines.Add('     Delivery-scoped Q&A lives in delivery-NNN/STATE.md (SD-5).')
+    $Lines.Add('     Delivery-scoped Q&A lives in deliveries/delivery-NNN/STATE.md (SD-5).')
     $Lines.Add('     Work-owner Q&A below was not delivery-scoped in the legacy file. -->')
     $Lines.Add('')
     if ($null -ne $WorkQA -and $WorkQA.Count -gt 0) {
@@ -548,7 +551,7 @@ if ($taskFiles.Count -eq 0) {
 
 # IDEMPOTENCY CHECK.
 $existing = @(Get-ChildItem -LiteralPath $WorkDir -Recurse -Filter 'STATE.md' |
-    Where-Object { $_.FullName -match '[/\\]delivery-\d+[/\\]tasks[/\\]task-\d+[/\\]STATE\.md' })
+    Where-Object { $_.FullName -match '[/\\]deliveries[/\\]delivery-\d+[/\\]tasks[/\\]task-\d+[/\\]STATE\.md' })
 if ($existing.Count -gt 0) {
     Log "IDEMPOTENT: hierarchy already present in '$WorkName'. No-op."
     exit 0
@@ -607,7 +610,7 @@ foreach ($tf in $taskFiles) {
     $taskId = $tf.BaseName
     $deliveryNum = $taskDelivery[$taskId]
     $pd = Pad3 $deliveryNum
-    $taskDestDir = Join-Path $WorkDir "delivery-$pd\tasks\$taskId"
+    $taskDestDir = Join-Path $WorkDir "deliveries\delivery-$pd\tasks\$taskId"
 
     Log "Creating $taskDestDir/"
 
@@ -644,7 +647,7 @@ foreach ($tf in $taskFiles) {
 # ---------------------------------------------------------------------------
 foreach ($deliveryNum in $allDeliveries) {
     $pd = Pad3 $deliveryNum
-    $deliveryDir = Join-Path $WorkDir "delivery-$pd"
+    $deliveryDir = Join-Path $WorkDir "deliveries\delivery-$pd"
     Log "Creating $deliveryDir/"
 
     if (-not $DryRun) {
@@ -711,8 +714,8 @@ if (-not $DryRun) {
     foreach ($tf in $taskFiles) {
         $taskId = $tf.BaseName
         $pd = Pad3 $taskDelivery[$taskId]
-        $specFile  = Join-Path $WorkDir "delivery-$pd\tasks\$taskId\SPEC.md"
-        $stateF    = Join-Path $WorkDir "delivery-$pd\tasks\$taskId\STATE.md"
+        $specFile  = Join-Path $WorkDir "deliveries\delivery-$pd\tasks\$taskId\SPEC.md"
+        $stateF    = Join-Path $WorkDir "deliveries\delivery-$pd\tasks\$taskId\STATE.md"
         if (-not (Test-Path -LiteralPath $specFile) -or (Get-Item $specFile).Length -eq 0) {
             Die "Verification: '$specFile' is missing or empty." 4
         }
@@ -722,8 +725,8 @@ if (-not $DryRun) {
     }
     foreach ($deliveryNum in $allDeliveries) {
         $pd = Pad3 $deliveryNum
-        $specFile = Join-Path $WorkDir "delivery-$pd\SPEC.md"
-        $stateF   = Join-Path $WorkDir "delivery-$pd\STATE.md"
+        $specFile = Join-Path $WorkDir "deliveries\delivery-$pd\SPEC.md"
+        $stateF   = Join-Path $WorkDir "deliveries\delivery-$pd\STATE.md"
         if (-not (Test-Path -LiteralPath $specFile) -or (Get-Item $specFile).Length -eq 0) {
             Die "Verification: '$specFile' is missing or empty." 4
         }

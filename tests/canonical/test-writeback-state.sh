@@ -4,15 +4,23 @@
 # Covers the NEW per-unit writeback contract (work-004 Pillar 2 retarget).
 # All writes go to per-unit STATE.md files, NOT to the monolithic work STATE.md.
 #
-# Unit layout under test:
+# Unit layout under test (FULL path -- multi-delivery work; deliveries/ nests under
+# the work root, mirroring features/):
 #   work-NNN-{name}/
 #     STATE.md                          -- work-level (--pipeline target only)
-#     delivery-NNN/
-#       STATE.md                        -- delivery-level (--block / --lifecycle target)
-#       tasks/
-#         task-NNN/
-#           SPEC.md                     -- contains **Source:** line for delivery resolution
-#           STATE.md                    -- task-level (--field / --findings target)
+#     deliveries/
+#       delivery-NNN/
+#         STATE.md                      -- delivery-level (--block / --lifecycle target)
+#         tasks/
+#           task-NNN/
+#             SPEC.md                   -- contains **Source:** line for delivery resolution
+#             STATE.md                  -- task-level (--field / --findings target)
+#
+# The lite single-delivery flat layout -- tasks/ sits directly under the work root,
+# with no deliveries/ or delivery-NNN/ folder, and the single delivery's
+# ## Delivery Lifecycle / ## Delivery Gate sections are AUTHORED directly in the
+# work-root STATE.md -- is covered by Unit 20 below (work-001-add-deliveries-folder
+# task-003; the resolver's own lite-path branch was added by task-001).
 #
 # Test scenarios:
 #   Unit 1: --task-id --delivery-id --field --value  (per-task STATE.md field update)
@@ -34,6 +42,8 @@
 #   Unit 17: --pipeline ∥ --pipeline and --pipeline ∥ --field concurrency
 #   Unit 18: FR16 derivation primitives — on-disk block determinism
 #   Unit 19: M5 — pause/block signal sequences
+#   Unit 20: Lite-path resolution (no deliveries/ folder; work-root STATE.md is the
+#            single delivery's home for ## Delivery Lifecycle / ## Delivery Gate)
 #
 # Exit codes:
 #   0 — all tests passed
@@ -134,13 +144,13 @@ TASKSPECEOF
 }
 
 # make_delivery_state WORK_DIR DELIVERY_ID [LIFECYCLE_VALUE]
-# Creates delivery-NNN/STATE.md with ## Delivery Lifecycle and ## Delivery Gate sections.
-# LIFECYCLE_VALUE defaults to "Executing".
+# Creates deliveries/delivery-NNN/STATE.md (full path) with ## Delivery Lifecycle and
+# ## Delivery Gate sections. LIFECYCLE_VALUE defaults to "Executing".
 make_delivery_state() {
     local work_dir="$1" delivery_id="$2" lc_val="${3:-Executing}"
     local padded_d
     padded_d=$(printf '%03d' "$delivery_id")
-    local delivery_dir="${work_dir}/delivery-${padded_d}"
+    local delivery_dir="${work_dir}/deliveries/delivery-${padded_d}"
     mkdir -p "$delivery_dir"
     cat > "${delivery_dir}/STATE.md" <<DELIVSTATEOF
 # Delivery State -- delivery-${padded_d}
@@ -195,11 +205,12 @@ WORKSTATEOF
 }
 
 # ---------------------------------------------------------------------------
-# Global workspace: work root + delivery-001 (tasks 1..5) + delivery-002 (task 6)
+# Global workspace: work root + deliveries/delivery-001 (tasks 1..5) +
+# deliveries/delivery-002 (task 6) -- FULL path (multi-delivery work).
 # ---------------------------------------------------------------------------
 WORK_DIR="${TMPDIR_BASE}/work"
-DELIVERY_001="${WORK_DIR}/delivery-001"
-DELIVERY_002="${WORK_DIR}/delivery-002"
+DELIVERY_001="${WORK_DIR}/deliveries/delivery-001"
+DELIVERY_002="${WORK_DIR}/deliveries/delivery-002"
 
 make_work_state "$WORK_DIR"
 export AID_STATE_FILE="${WORK_DIR}/STATE.md"
@@ -407,7 +418,7 @@ assert_file_contains "${DELIVERY_002}/tasks/task-006/STATE.md" "auto-resolved" "
 # Omit delivery-id AND have no SPEC.md → must fail with exit 5
 ORPHAN_WORK="${TMPDIR_BASE}/orphan-work"
 mkdir -p "$ORPHAN_WORK"
-make_task_state "$ORPHAN_WORK/delivery-001" 99  # state only, no SPEC.md
+make_task_state "$ORPHAN_WORK/deliveries/delivery-001" 99  # state only, no SPEC.md
 code=0
 AID_STATE_FILE="${ORPHAN_WORK}/STATE.md" bash "$SCRIPT" --task-id 99 --field State --value Done 2>/dev/null || code=$?
 assert_exit_eq "$code" 5 "no --delivery-id + no SPEC.md → exit 5 (cannot resolve delivery)"
@@ -462,7 +473,7 @@ echo "=== Unit 8: Concurrent lock contention (5 parallel per-task writes) ==="
 
 # Reset task states to Pending for a clean concurrency baseline
 CONC_WORK="${TMPDIR_BASE}/conc-work"
-CONC_DELIV="${CONC_WORK}/delivery-001"
+CONC_DELIV="${CONC_WORK}/deliveries/delivery-001"
 make_work_state "$CONC_WORK"
 make_delivery_state "$CONC_WORK" 1
 for i in 1 2 3 4 5; do
@@ -731,7 +742,7 @@ echo ""
 echo "=== Unit 12: Isolation — task/findings/block do NOT touch work STATE.md ==="
 
 ISOL_WORK="${TMPDIR_BASE}/isol-work"
-ISOL_DELIV="${ISOL_WORK}/delivery-001"
+ISOL_DELIV="${ISOL_WORK}/deliveries/delivery-001"
 make_work_state "$ISOL_WORK"
 make_delivery_state "$ISOL_WORK" 1
 make_task_state "$ISOL_DELIV" 1
@@ -890,7 +901,7 @@ echo "=== Unit 16: State field enum validation (field=State; replaces old Status
 
 make_state_task() {
     local dir="$1" delivery_id="${2:-1}"
-    local delivery_dir="${dir}/delivery-$(printf '%03d' "$delivery_id")"
+    local delivery_dir="${dir}/deliveries/delivery-$(printf '%03d' "$delivery_id")"
     make_task_state "$delivery_dir" 1
     make_task_spec  "$delivery_dir" 1 "$delivery_id"
 }
@@ -904,13 +915,13 @@ for state_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed" "
     S16_WORK="${S16_DIR}/work"
     make_work_state "$S16_WORK"
     make_delivery_state "$S16_WORK" 1
-    make_task_state "${S16_WORK}/delivery-001" 1
-    make_task_spec  "${S16_WORK}/delivery-001" 1 1
+    make_task_state "${S16_WORK}/deliveries/delivery-001" 1
+    make_task_spec  "${S16_WORK}/deliveries/delivery-001" 1 1
     code=0
     AID_STATE_FILE="${S16_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$state_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "16.1: State='${state_val}' accepted (exit 0)"
-    assert_file_contains "${S16_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    assert_file_contains "${S16_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "**State:** ${state_val}" "16.1: State='${state_val}' written to task STATE.md"
 done
 
@@ -921,13 +932,13 @@ echo "--- 16.2: _none yet_ placeholder accepted ---"
 S16_NONE_WORK="${TMPDIR_BASE}/unit16-none/work"
 make_work_state "$S16_NONE_WORK"
 make_delivery_state "$S16_NONE_WORK" 1
-make_task_state "${S16_NONE_WORK}/delivery-001" 1
-make_task_spec  "${S16_NONE_WORK}/delivery-001" 1 1
+make_task_state "${S16_NONE_WORK}/deliveries/delivery-001" 1
+make_task_spec  "${S16_NONE_WORK}/deliveries/delivery-001" 1 1
 code=0
 AID_STATE_FILE="${S16_NONE_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "_none yet_" 2>/dev/null || code=$?
 assert_exit_zero "$code" "16.2: State='_none yet_' placeholder accepted (exit 0)"
-assert_file_contains "${S16_NONE_WORK}/delivery-001/tasks/task-001/STATE.md" \
+assert_file_contains "${S16_NONE_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "_none yet_" "16.2: _none yet_ placeholder written to task STATE.md"
 
 # 16.3 — Out-of-enum values rejected (exit 4)
@@ -938,14 +949,14 @@ for bad_val in "running" "DONE" "Finished" "in progress" "InProgress" "todo" "PE
     S16_BAD_WORK="${TMPDIR_BASE}/unit16-bad-$(echo "$bad_val" | tr ' /' '_')/work"
     make_work_state "$S16_BAD_WORK"
     make_delivery_state "$S16_BAD_WORK" 1
-    make_task_state "${S16_BAD_WORK}/delivery-001" 1
-    make_task_spec  "${S16_BAD_WORK}/delivery-001" 1 1
+    make_task_state "${S16_BAD_WORK}/deliveries/delivery-001" 1
+    make_task_spec  "${S16_BAD_WORK}/deliveries/delivery-001" 1 1
     code=0
     AID_STATE_FILE="${S16_BAD_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$bad_val" 2>/dev/null || code=$?
     assert_exit_eq "$code" 4 "16.3: State='${bad_val}' rejected (exit 4)"
     # STATE.md still shows Pending
-    assert_file_contains "${S16_BAD_WORK}/delivery-001/tasks/task-001/STATE.md" \
+    assert_file_contains "${S16_BAD_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "**State:** Pending" "16.3: task STATE.md unchanged after rejection of '${bad_val}'"
 done
 
@@ -957,8 +968,8 @@ for legacy_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed";
     S16_LEG_WORK="${TMPDIR_BASE}/unit16-legacy-$(echo "$legacy_val" | tr ' ' '_')/work"
     make_work_state "$S16_LEG_WORK"
     make_delivery_state "$S16_LEG_WORK" 1
-    make_task_state "${S16_LEG_WORK}/delivery-001" 1
-    make_task_spec  "${S16_LEG_WORK}/delivery-001" 1 1
+    make_task_state "${S16_LEG_WORK}/deliveries/delivery-001" 1
+    make_task_spec  "${S16_LEG_WORK}/deliveries/delivery-001" 1 1
     code=0
     AID_STATE_FILE="${S16_LEG_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$legacy_val" 2>/dev/null || code=$?
@@ -972,14 +983,14 @@ echo "--- 16.5: State-only scope — enum does not leak to other fields ---"
 S16_SCOPE_WORK="${TMPDIR_BASE}/unit16-scope/work"
 make_work_state "$S16_SCOPE_WORK"
 make_delivery_state "$S16_SCOPE_WORK" 1
-make_task_state "${S16_SCOPE_WORK}/delivery-001" 1
-make_task_spec  "${S16_SCOPE_WORK}/delivery-001" 1 1
+make_task_state "${S16_SCOPE_WORK}/deliveries/delivery-001" 1
+make_task_spec  "${S16_SCOPE_WORK}/deliveries/delivery-001" 1 1
 
 SCOPE_CODE=0
 AID_STATE_FILE="${S16_SCOPE_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field Notes --value "anything weird !@#" 2>/dev/null || SCOPE_CODE=$?
 assert_exit_zero "$SCOPE_CODE" "16.5: Notes='anything weird !@#' accepted (enum does not leak to Notes)"
-assert_file_contains "${S16_SCOPE_WORK}/delivery-001/tasks/task-001/STATE.md" \
+assert_file_contains "${S16_SCOPE_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
     "anything weird !@#" "16.5: Notes value written successfully"
 
 SCOPE_CODE=0
@@ -999,10 +1010,10 @@ echo "--- 16.6: Deterministic consumability — State grep-recoverable in task S
 S16_CONS_WORK="${TMPDIR_BASE}/unit16-cons/work"
 make_work_state "$S16_CONS_WORK"
 make_delivery_state "$S16_CONS_WORK" 1
-make_task_state "${S16_CONS_WORK}/delivery-001" 1
-make_task_spec  "${S16_CONS_WORK}/delivery-001" 1 1
+make_task_state "${S16_CONS_WORK}/deliveries/delivery-001" 1
+make_task_spec  "${S16_CONS_WORK}/deliveries/delivery-001" 1 1
 
-TASK_STATE_FILE="${S16_CONS_WORK}/delivery-001/tasks/task-001/STATE.md"
+TASK_STATE_FILE="${S16_CONS_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md"
 
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "In Review" 2>/dev/null
@@ -1078,7 +1089,7 @@ fi
 # use different lock files and can proceed fully in parallel.
 PIPE_STATE17B="${TMPDIR_BASE}/pipe17b/STATE.md"
 CONC17B_WORK="${TMPDIR_BASE}/pipe17b"
-CONC17B_DELIV="${CONC17B_WORK}/delivery-001"
+CONC17B_DELIV="${CONC17B_WORK}/deliveries/delivery-001"
 make_pipeline_state "$PIPE_STATE17B"
 make_delivery_state "$CONC17B_WORK" 1
 make_task_state "$CONC17B_DELIV" 1
@@ -1195,7 +1206,7 @@ assert_file_not_contains "$PIPE_STATE19A" "**Pause Reason:**" "19b: Pause Reason
 # 19c: Block path (impediment / Failed task emit sequence)
 PIPE_STATE19C="${TMPDIR_BASE}/pipe19c/STATE.md"
 WORK_19C="${TMPDIR_BASE}/pipe19c"
-DELIV_19C="${WORK_19C}/delivery-001"
+DELIV_19C="${WORK_19C}/deliveries/delivery-001"
 make_pipeline_state "$PIPE_STATE19C"
 make_delivery_state "$WORK_19C" 1
 make_task_state "$DELIV_19C" 1
@@ -1242,6 +1253,88 @@ AID_STATE_FILE="$PIPE_STATE19F" bash "$SCRIPT" --pipeline --field "Pause Reason"
 assert_exit_zero "$code" "19f: Delivery gate non-CODE pause emit → exit 0"
 assert_file_contains "$PIPE_STATE19F" "**Lifecycle:** Paused-Awaiting-Input" "19f: Lifecycle Paused on non-CODE-only gate stop"
 assert_file_contains "$PIPE_STATE19F" "**Pause Reason:** Delivery gate blocked on non-CODE issues" "19f: Pause Reason explains upstream fix needed"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 20: Lite-path resolution (single delivery; no deliveries/ folder) ==="
+
+# A lite work has exactly one delivery and no deliveries/ or delivery-NNN/ folder:
+# tasks live directly at <work-root>/tasks/task-NNN/, and the single delivery's
+# ## Delivery Lifecycle / ## Delivery Gate sections are AUTHORED directly in the
+# work-root STATE.md (work-001-add-deliveries-folder task-001/task-003).
+LITE_WORK="${TMPDIR_BASE}/lite-work"
+mkdir -p "$LITE_WORK"
+cat > "${LITE_WORK}/STATE.md" <<'LITEWORKEOF'
+# Work State — work-lite-test
+
+## Pipeline State
+
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-06-18T00:00:00Z
+
+## Delivery Lifecycle
+
+- **State:** Executing
+- **Updated:** 2026-06-18T00:00:00Z
+- **Block Reason:** --
+- **Block Artifact:** --
+
+## Delivery Gate
+
+- **Reviewer Tier:** --
+- **Grade:** Pending
+- **Issue List:** none
+- **Timestamp:** --
+LITEWORKEOF
+
+make_task_state "$LITE_WORK" 1
+make_task_spec  "$LITE_WORK" 1 1 "work-lite-test"
+
+# 20a: --task-id --delivery-id --field --value resolves directly to tasks/task-NNN/STATE.md
+# (no deliveries/ parent -- the lite-path branch in resolve_task_state_file).
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Progress" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20a: lite-path --task-id --field → exit 0"
+assert_file_contains "${LITE_WORK}/tasks/task-001/STATE.md" "**State:** In Progress" "20a: lite-path task STATE.md written directly under tasks/ (no deliveries/)"
+if [[ ! -e "${LITE_WORK}/deliveries" ]]; then
+    pass "20a: no deliveries/ folder created for lite-path task write"
+else
+    fail "20a: no deliveries/ folder created for lite-path task write — found ${LITE_WORK}/deliveries"
+fi
+
+# 20b: Source-line delivery resolution also works for the lite-flat SPEC.md location
+# (tasks/task-NNN/SPEC.md directly under the work root, no --delivery-id supplied).
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --task-id 1 --field Notes --value "auto-resolved-lite" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20b: lite-path source-line resolution (--delivery-id omitted) → exit 0"
+assert_file_contains "${LITE_WORK}/tasks/task-001/STATE.md" "auto-resolved-lite" "20b: Notes written via lite-path source-line resolution"
+
+# 20c: --delivery-id --lifecycle targets the work-root STATE.md's own
+# ## Delivery Lifecycle section directly (no per-delivery STATE.md file exists
+# for a lite work -- the lite-path branch in resolve_delivery_state_file).
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --lifecycle "Gated" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20c: lite-path --delivery-id --lifecycle → exit 0"
+assert_file_contains "${LITE_WORK}/STATE.md" "**State:** Gated" "20c: work-root STATE.md ## Delivery Lifecycle updated in place"
+assert_file_contains "${LITE_WORK}/STATE.md" "## Pipeline State" "20c: work-root ## Pipeline State section untouched"
+
+# 20d: --delivery-id --block targets the same work-root STATE.md's ## Delivery Gate
+# section (still no separate delivery-level STATE.md / deliveries/ folder created).
+LITE_GATE_BLOCK="- **Reviewer Tier:** Small
+- **Grade:** A+
+- **Issue List:** none
+- **Timestamp:** 2026-06-18T01:00:00Z"
+code=0
+AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --block "$LITE_GATE_BLOCK" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20d: lite-path --delivery-id --block → exit 0"
+assert_file_contains "${LITE_WORK}/STATE.md" "**Grade:** A+" "20d: work-root STATE.md ## Delivery Gate updated in place"
+if [[ ! -e "${LITE_WORK}/deliveries" ]]; then
+    pass "20d: no deliveries/ folder created for lite-path delivery gate write"
+else
+    fail "20d: no deliveries/ folder created for lite-path delivery gate write — found ${LITE_WORK}/deliveries"
+fi
 
 # ---------------------------------------------------------------------------
 echo ""
