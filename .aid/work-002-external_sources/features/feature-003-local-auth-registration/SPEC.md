@@ -7,7 +7,7 @@
 | 2026-07-07 | Feature identified from REQUIREMENTS.md §5 (FR-3) + §9 (AC-3, AC-8); see Source for other §refs | /aid-define |
 | 2026-07-08 | Technical Specification authored (Security Specs, Layers & Components, Feature Flow, Data Model); binds to feature-001's FROZEN keystone contract (the git-ignored `.aid/connectors/.secrets/<connector>` file store; the `file:`/`env:`/`keychain:` reference forms; the committed connectors-local `.aid/connectors/.gitignore`; the descriptor `secret_reference` field) and realizes its WRITE side — the no-echo/no-persist capture, cross-platform store write, and leak-proofing (FR-3, AC-3, AC-8) | /aid-specify |
 | 2026-07-08 | FIX pass (A+ gate C+, 1 MEDIUM + Q7 coherence): resolved the 003↔006 purge-ownership drift per STATE.md Q7 item 2 — feature-003 OWNS the single secret-store twin (`connector-secret.{sh,ps1}`) exposing BOTH `write` and `purge`; feature-006 CALLS `purge` on REMOVE and defines no purge twin. Added the auth-downgrade orphan lifecycle (Q7 item 7): a surviving connector whose `auth_method` drops to `none` (or whose reference leaves the `file:` store) has its orphaned value disposed by feature-003 via the idempotent `purge` op | /aid-specify |
-| 2026-07-08 | FIX pass (re-gate, 1 MEDIUM): added the path-confinement guarantee to the `connector-secret` op contract for BOTH `write` and `purge` — the connector key is a filename stem only, the target resolves strictly under `.aid/connectors/.secrets/`, and any stem containing a path separator (`/` or `\`) or `..` is rejected (non-zero exit + stderr) before any read/write/delete; backs the confinement guard feature-006 relies on (feature-006 SPEC.md:270-271) | /aid-specify |
+| 2026-07-08 | FIX pass (re-gate, 1 MEDIUM): added the path-confinement guarantee to the `connector-secret` op contract for BOTH `write` and `purge` — the connector key is a filename stem only, the target resolves strictly under `.aid/connectors/.secrets/`, and any stem containing a path separator (`/` or `\`) or `..` is rejected (non-zero exit + stderr) before any read/write/delete; backs the confinement guard feature-006 relies on (feature-006 SPEC.md:290) | /aid-specify |
 
 ## Source
 
@@ -151,7 +151,7 @@ twin; it is the single home for all `.aid/connectors/.secrets/` I/O.
   `\`) or a `..` segment is **rejected with a non-zero exit and an stderr diagnostic, before any
   read / write / delete**. This applies identically to `write` and `purge` — a delete op
   especially must be confined — and is the guarantee feature-006's reconcile relies on
-  (feature-006 SPEC.md:270-271, "the op refuses any target escaping `.aid/connectors/.secrets/`").
+  (feature-006 SPEC.md:290, "the op refuses any target escaping `.aid/connectors/.secrets/`").
 - **Contract (`write` op):** input = the connector **key** (the descriptor filename stem —
   feature-001's connector key) plus the interactively-prompted value; effect = **after the
   path-confinement check above**, create/overwrite `.aid/connectors/.secrets/<connector>` with the

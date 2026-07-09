@@ -149,7 +149,7 @@ Feature Flow):
 | `preset-id` | Stable id written into the descriptor's `preset` field (e.g. `github`) |
 | `name` | Default human name |
 | `connection_type` | Default transport from feature-001's enum |
-| `endpoint-template` | Endpoint/launch-spec skeleton (e.g. `npx -y @modelcontextprotocol/server-github`); instance specifics completed at elicitation |
+| `endpoint-template` | Endpoint skeleton; instance specifics completed at elicitation. For a tool-managed (`mcp`) preset this is **informational only** (e.g. "via the host tool's own GitHub MCP") — AID does not launch or wire it (Q10); for an aid-managed preset it is the API/CLI target |
 | `auth_method` | Default auth axis value. For a tool-managed (`mcp`) preset this is `none` — AID registers no auth (the host tool authenticates) |
 | `secret_reference-form` | Default reference form (`env:` / `keychain:` / `file:`), for **aid-managed** presets only (usually `file:`). **Tool-managed (`mcp`) presets carry no `secret_reference`** — AID stores no credential (Q10) |
 | `notes` | One-line human guidance (also seeds the descriptor's `summary`) |

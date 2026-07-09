@@ -55,22 +55,13 @@
 - **Source:** `canonical/aid/templates/discovery-state-template.md` (`## External Documentation` table) and `canonical/skills/aid-discover/references/state-generate.md` (Step 0b "Read `.aid/knowledge/STATE.md` `## External Documentation` for paths from `aid-config`") vs `canonical/skills/aid-config/SKILL.md` (no external-doc elicitation — grep for `External Documentation`/`external doc`/`external source` returns no matches).
 - **Description:** The `## External Documentation` STATE table is scaffolded empty by the template and never interactively populated by `aid-config`; the pre-scan (`references/agent-prompts.md ## Scout`) reads whatever paths are present (none). feature-002 builds the elicitation from zero — it is not reconnecting a live feed. The spec prose should say "build" not "restore a feed".
 
-## KI-006: Codex profile `agent_format` is DORMANT / unconfirmed
+## KI-006: Codex TOML MCP-config write — OBSOLETED (Q10, 2026-07-09)
 
-- **Type:** Bug
-- **Severity:** Medium
-- **Affects:** feature-004-connection-wiring
-- **Source:** `profiles/codex.toml` (`agent_format = "toml"` marked "retained DORMANT (E-CODEX-1 not yet high-confidence)").
-- **Description:** Codex's MCP-config mechanism is TOML-based and its profile format is itself unconfirmed. feature-004's per-host MCP spike (Q1-authorized) inherits this uncertainty; Codex is the highest-risk host for wiring and should be spiked first.
+- **Status:** OBSOLETED by Q10. AID no longer wires any host MCP config (feature-004 rewritten to a no-code catalog/consumption feature; delivery-002 withdrawn), so the codex TOML-writer gap and the codex-wiring risk no longer apply to this work. A `codex`-provided MCP is now tool-managed: the agent requests it from Codex, which owns its own `config.toml` and auth.
 
-## KI-007: copilot-cli + antigravity MCP-config mechanisms unconfirmed; home-scoped hosts write outside the repo tree
+## KI-007: Out-of-repo host-config writes / unconfirmed per-host mechanisms — OBSOLETED (Q10, 2026-07-09)
 
-- **Type:** Bug
-- **Severity:** Medium
-- **Affects:** feature-004-connection-wiring
-- **Source:** No MCP-config wiring exists in `canonical/` or `profiles/` (confirmed by grep — the only `mcpServers` in the repo is the developer-time repo-root `.mcp.json` Playwright config). `profiles/copilot-cli.toml` (install root `.github/`) and `profiles/antigravity.toml` (install root `.agent/`; Windsurf lineage) declare install roots but NOT MCP-config paths.
-- **Description:** feature-004's per-host MCP spike (Q1-authorized) cannot confirm the copilot-cli or antigravity MCP-config path/format from the codebase, and aid-architect cannot web-research — so both are `SPIKE-verify-at-implementation` (paths flagged, not fabricated). With KI-006 (codex), **three of the five AC-4 hosts are unverified**. Additional design nuance: codex (`~/.codex/config.toml`) and — pending the spike — likely antigravity/copilot-cli are **user-home-scoped**, so wiring them writes **outside the repo tree**: a per-machine state mutation, not a committed-repo write, which is beyond feature-001's repo-tree P7-allowlist framing (feature-001 reserved "the per-host MCP-config paths (feature-004, installed hosts only)" but assumed in-repo project-scoped files like `.mcp.json` / `.cursor/mcp.json`). **Mitigation:** wire-only-installed (`.aid/settings.yml` `tools.installed` currently lists `claude-code` only) defers each host's requirement until it is actually installed; the mechanism table (feature-004 SPEC External Integrations) plus implementation-time verification resolves each path per host before the first real write.
-- **See also:** KI-006 (codex format DORMANT/unconfirmed)
+- **Status:** OBSOLETED by Q10. AID writes no host MCP config, so the out-of-repo (user-home) write path and the unconfirmed per-host MCP mechanisms (copilot-cli / antigravity / codex) no longer exist in this work's scope. Tool-managed connectors are requested from the host tool, which owns its own config file and handles auth; AID only catalogs availability.
 
 ## KI-008: Scout pre-scan skips when `external-sources.md` already exists
 

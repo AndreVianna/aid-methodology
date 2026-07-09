@@ -26,7 +26,7 @@ In scope — features:
 - **feature-003-local-auth-registration** — the feature-003-owned `connector-secret` twin (`write`+`purge`, path-confined, no-echo/no-persist); the `file:` default reference form; local git-ignored secret store.
 - **feature-005-registry-persistence-and-consumption** — the deterministic connectors `INDEX.md` builder + regeneration; the documented FR-6 consumption contract in the `## Connectors` context section.
 
-**Out of scope:** MCP host-config wiring (delivery-002 — so `mcp`-typed tools are captured and discoverable here but NOT yet directly invocable); idempotent reconcile / safe re-run (delivery-003); non-MCP agent-side descriptor-consumption code (Q4, out of scope for the whole work).
+**Out of scope:** idempotent reconcile / safe re-run (delivery-003); agent-side code that actively consumes connection descriptors (Q4, out of scope for the whole work). (Host-MCP-config wiring was removed entirely by Q10 — delivery-002 withdrawn — so there is no wiring step anywhere.)
 
 ## Gate Criteria
 
@@ -60,11 +60,12 @@ Navigational overview (authored by `aid-detail`). Full definitions live in `task
 ## Dependencies
 
 - **Depends on:** -- (none — foundation)
-- **Blocks:** delivery-002, delivery-003
+- **Blocks:** delivery-003 (delivery-002 withdrawn — Q10)
 
 ## Notes
 
-Honest boundary: `mcp`-typed tools (including presets like `github`) are captured and
-discoverable in this delivery but become directly **invocable** only after delivery-002 wires
-them into host MCP configs. Non-MCP tools (`api|ssh|url|cli`) and all sources are fully usable
-within this delivery.
+Post-Q10: `mcp`-typed tools (including presets like `github`) are **tool-managed** — the catalog
+records they are available via the host tool's own MCP/plugin and instructs the agent to request
+the connection from the tool (which handles auth); AID stores no credential and wires nothing.
+`api|ssh|url|cli` tools are **aid-managed** (descriptor + local auth reference), and all sources
+are fully usable within this delivery. There is no wiring step anywhere (delivery-002 withdrawn).
