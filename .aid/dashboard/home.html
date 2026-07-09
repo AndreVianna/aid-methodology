@@ -2414,6 +2414,20 @@ footer {
       var lEntry = laneMap[lMapKey2];
       var lNum2 = lEntry.num;  // integer or null
       var lTasks = lEntry.tasks;
+
+      // PF-7: tasks with no PLAN lane render directly in the container (the
+      // delivery body, or the work section for lite works) -- do NOT wrap them
+      // in an "Unsequenced" collapsible lane panel.
+      if (lNum2 == null) {
+        var unseqGrid = document.createElement('div');
+        unseqGrid.className = 'grid g-lane';
+        for (var uti = 0; uti < lTasks.length; uti++) {
+          unseqGrid.appendChild(makeTaskChip(lTasks[uti], workId));
+        }
+        container.appendChild(unseqGrid);
+        continue;
+      }
+
       var lState = getGroupState(lTasks);
 
       // Delivery-scoped uiState key (PF-5): "d<D>-lane<L>" or "d<D>-unseq"
