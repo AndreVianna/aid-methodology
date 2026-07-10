@@ -96,7 +96,7 @@ changelog:
 | D23 | Delivery/task rename (BLUEPRINT.md / DETAIL.md) + nested `deliveries/` | Accepted (supersedes delivery/task SPEC.md) | feature-001; feature-015 |
 | D24 | `/aid-describe` reduced to full-path-only | Accepted | `canonical/skills/aid-describe/SKILL.md`; feature-013 |
 | D25 | `/aid-monitor` re-point (BUG -> `/aid-fix`, CR -> `/aid-triage`) | Accepted | `canonical/skills/aid-monitor/SKILL.md`; feature-012 |
-| D26 | No line-coverage metric (suite-presence coverage for a shell/markdown toolkit) | Accepted | `test-landscape.md` §Coverage Assessment |
+| D26 | No line-coverage metric; effectiveness measured via a dedicated program (tech-debt L4) | Accepted (line-coverage); L4 program open | `test-landscape.md` §Coverage Assessment; `tech-debt.md` L4 |
 
 ---
 
@@ -508,9 +508,16 @@ changelog:
   instruments a small fraction of the product by file count, so a green "X% coverage" badge would
   imply an assurance the shell/markdown/prompt bulk does not have. Revisit only if the
   instrumentable code (`dashboard/`, `site/`) grows into a substantial standalone service.
-- **Status:** Accepted. CONFIRMED no coverage tooling in `.github/workflows/*`;
-  `test-landscape.md` §"Coverage Assessment" (suite-presence table); ratifies the choice the KB
-  previously flagged as "document the deliberate choice" (tech-debt L4).
+- **Follow-on (2026-07-10):** rejecting line-coverage is *not* the same as declining to measure
+  effectiveness, and "suite-presence per subsystem" alone proved insufficient — the `io_bounds.py`
+  incident showed suites can pass without biting. Effectiveness for the deterministic machinery
+  will be measured by a dedicated program — **mutation testing, invariant-anchoring,
+  behavioral-surface coverage, escaped-defect tracking** (plus dogfooding for the prompt layer) —
+  tracked as **tech-debt L4 (High, next release)**. This ADR still governs the "no line-coverage
+  `%`" decision; L4 owns the positive effectiveness program.
+- **Status:** Accepted (no line-coverage `%`). CONFIRMED no coverage tooling in
+  `.github/workflows/*`. The effectiveness-measurement program is an OPEN High-priority item —
+  see `tech-debt.md` L4.
 
 ---
 
