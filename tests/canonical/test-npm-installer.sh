@@ -247,7 +247,7 @@ _nm08_expect=("bin/aid.js" "bin/aid" "bin/aid.ps1" "bin/aid.cmd" \
               "lib/aid-install-core.sh" "lib/AidInstallCore.psm1" "VERSION" \
               "dashboard/MANIFEST")
 while IFS= read -r _mrel; do
-    _mrel="${_mrel%%#*}"; _mrel="$(printf '%s' "$_mrel" | tr -d '[:space:]')"
+    _mrel="${_mrel%%#*}"; _mrel="$(printf '%s' "$_mrel" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
     [[ -n "$_mrel" ]] && _nm08_expect+=("dashboard/${_mrel}")
 done < "${REPO_ROOT}/dashboard/MANIFEST"
 

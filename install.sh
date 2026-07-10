@@ -740,8 +740,6 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     # Clean-replace: remove stale files before copying so upgrades never leave old bits.
     rm -f "${local_bin_dir}/aid" "${local_bin_dir}/aid.ps1" "${local_bin_dir}/aid.cmd" \
           "${local_lib_dir}/aid-install-core.sh" 2>/dev/null || true
-    # Clean-replace the dashboard unit so upgrades never leave old server bits.
-    rm -rf "${AID_HOME}/dashboard" 2>/dev/null || true
 
     # Atomic install: move staged files into AID_HOME.
     mkdir -p "$local_bin_dir" "$local_lib_dir"
@@ -751,8 +749,13 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     [[ -f "${_BOOTSTRAP_STAGE}/bin/aid.cmd" ]] && cp "${_BOOTSTRAP_STAGE}/bin/aid.cmd" "${local_bin_dir}/aid.cmd"
     cp "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh" "${local_lib_dir}/aid-install-core.sh"
     cp "${_BOOTSTRAP_STAGE}/VERSION" "${AID_HOME}/VERSION"
-    # Install the dashboard unit if it was staged (same manifest-derived file set).
+    # Install the dashboard unit ONLY if a replacement was staged (manifest-derived file set).
+    # The clean-replace is guarded on the staged replacement so a missing/empty
+    # dashboard/MANIFEST (or a staging failure) never wipes an existing dashboard without
+    # providing a new one. install.ps1 guards its dashboard clean-replace the same way.
     if [[ -f "${_BOOTSTRAP_STAGE}/dashboard/server/server.py" ]]; then
+        # Clean-replace the dashboard unit so upgrades never leave old server bits.
+        rm -rf "${AID_HOME}/dashboard" 2>/dev/null || true
         mkdir -p "${AID_HOME}/dashboard/reader" "${AID_HOME}/dashboard/server"
         for _df in "${_DASHBOARD_FILES[@]}"; do
             _df_staged="${_BOOTSTRAP_STAGE}/dashboard/${_df}"

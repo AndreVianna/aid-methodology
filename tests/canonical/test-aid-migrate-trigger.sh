@@ -940,7 +940,7 @@ echo "=== Gate 3: vendor-refresh assertions ==="
 # derives from it (VND-E below is the functional proof the file actually lands).
 # ---------------------------------------------------------------------------
 _MANIFEST_FILE="${REPO_ROOT}/dashboard/MANIFEST"
-if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "${_MANIFEST_FILE}" 2>/dev/null) \
+if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "${_MANIFEST_FILE}" 2>/dev/null) \
    && grep -qF "dashboard/MANIFEST" "${VENDOR_JS}"; then
     pass "VND-A01 npm vendor.js: home.html shipped via dashboard/MANIFEST (single source)"
 else
@@ -950,7 +950,7 @@ fi
 # ---------------------------------------------------------------------------
 # VND-B: dashboard/home.html shipped on the pypi channel (vendor.py derives from MANIFEST).
 # ---------------------------------------------------------------------------
-if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "${_MANIFEST_FILE}" 2>/dev/null) \
+if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "${_MANIFEST_FILE}" 2>/dev/null) \
    && grep -qF "dashboard/MANIFEST" "${VENDOR_PY}"; then
     pass "VND-B01 pypi vendor.py: home.html shipped via dashboard/MANIFEST (single source)"
 else
@@ -1036,7 +1036,7 @@ fi
 #   manifest. Verify home.html is in the manifest AND release.sh derives from it.
 #   (test-dashboard-manifest.sh independently guards MANIFEST vs the curated tree.)
 # ---------------------------------------------------------------------------
-if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "${_MANIFEST_FILE}" 2>/dev/null) \
+if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "${_MANIFEST_FILE}" 2>/dev/null) \
    && grep -qF "dashboard/MANIFEST" "${RELEASE_SH}"; then
     pass "VND-G01 release.sh: home.html shipped in CLI bundle via dashboard/MANIFEST"
 else

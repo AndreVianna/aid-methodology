@@ -221,7 +221,7 @@ _VENDOR_PAIRS=(
     "dashboard/MANIFEST:dashboard/MANIFEST"
 )
 while IFS= read -r _mrel; do
-    _mrel="${_mrel%%#*}"; _mrel="$(printf '%s' "$_mrel" | tr -d '[:space:]')"
+    _mrel="${_mrel%%#*}"; _mrel="$(printf '%s' "$_mrel" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
     [[ -n "$_mrel" ]] && _VENDOR_PAIRS+=("dashboard/${_mrel}:dashboard/${_mrel}")
 done < "${REPO_ROOT}/dashboard/MANIFEST"
 for _pair in "${_VENDOR_PAIRS[@]}"; do

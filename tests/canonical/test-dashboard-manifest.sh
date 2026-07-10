@@ -41,7 +41,10 @@ if [[ ! -f "$MANIFEST" ]]; then
 fi
 
 # Parse MANIFEST -> declared set (strip #-comments, blank lines, all whitespace).
-declared=$(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "$MANIFEST" | grep -v '^$' | sort -u)
+# Strip #-comments and trim leading/trailing whitespace ONLY (matching the actual consumers,
+# which trim ends but keep internal whitespace) — so an accidental internal space in a path is
+# NOT silently normalized away here; it stays malformed and DM02/DM03 fail loudly.
+declared=$(sed -e 's/#.*$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$MANIFEST" | grep -v '^$' | sort -u)
 if [[ -n "$declared" ]]; then
     pass "DM01b MANIFEST is non-empty after stripping comments"
 else

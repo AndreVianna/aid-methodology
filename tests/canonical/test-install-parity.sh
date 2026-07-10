@@ -78,7 +78,7 @@ else
     fail "PAR13b install.ps1 does NOT reference dashboard/MANIFEST (reverted to an inline list?)"
 fi
 
-if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "$MANIFEST_FILE" 2>/dev/null); then
+if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "$MANIFEST_FILE" 2>/dev/null); then
     pass "PAR13c dashboard/MANIFEST lists home.html (ships on both sh + ps1 channels)"
 else
     fail "PAR13c dashboard/MANIFEST does NOT list home.html — migration/provisioning source at risk"
