@@ -276,47 +276,72 @@ UNINST2_OUT=$(bash "${INSTALL_SH}" \
 assert_exit_eq "$UNINST2_RC" 6 "E2E06g second uninstall with no manifest → exit 6"
 
 # ---------------------------------------------------------------------------
-# E2E07 — Online-shape verify (no network).
+# E2E07 — Online-shape verify (no network) + endpoint-override gating.
 #
-# Strategy: source aid-install-core.sh in a subshell and inspect the URL
-# constants + helper logic to assert:
-#   1. AID_DOWNLOAD_BASE = "https://github.com/AndreVianna/aid-methodology/releases/download"
-#   2. The per-tool asset URL shape is: ${AID_DOWNLOAD_BASE}/v<version>/<filename>
-#   3. AID_API_BASE = "https://api.github.com/repos/AndreVianna/aid-methodology"
-#   4. The /latest API URL is: ${AID_API_BASE}/releases/latest
-#
-# No curl call is made; we only assert the string values the code computes.
+# Strategy: source aid-install-core.sh in an isolated subshell (env vars
+# scoped to that subshell only) and read back the resolved AID_API_BASE /
+# AID_DOWNLOAD_BASE, for three scenarios:
+#   1. Default (no ambient override, no flag)          -> pinned github.com.
+#   2. AID_API_BASE/AID_DOWNLOAD_BASE set, flag ABSENT  -> override IGNORED
+#      (pinned github.com) -- guards the redirect-to-malicious-host fix.
+#   3. AID_API_BASE/AID_DOWNLOAD_BASE set, flag PRESENT -> override HONORED
+#      (the canonical-test / air-gapped-mirror fixture path is preserved).
+# No curl call is made; we only assert the string values the code resolves.
 # ---------------------------------------------------------------------------
-echo "--- E2E07: online-shape verify (no network) ---"
+echo "--- E2E07: online-shape verify + endpoint-override gating (no network) ---"
 
-# Read constants directly from aid-install-core.sh via grep (avoids sourcing
-# which would inherit set -euo pipefail side-effects in this test's shell).
 CORE_SH="${REPO_ROOT}/lib/aid-install-core.sh"
 
-# The bases are env-overridable: AID_<X>="${AID_<X>:-<default>}". Extract the
-# DEFAULT (the text between ':-' and the closing '}"').
-DOWNLOAD_BASE=$(grep '^AID_DOWNLOAD_BASE=' "${CORE_SH}" | head -1 \
-    | sed 's/.*:-\(.*\)}".*/\1/')
-API_BASE=$(grep '^AID_API_BASE=' "${CORE_SH}" | head -1 \
-    | sed 's/.*:-\(.*\)}".*/\1/')
-
-# Resolve the interpolated values (they embed ${AID_REPO_SLUG}).
-REPO_SLUG=$(grep '^AID_REPO_SLUG=' "${CORE_SH}" | head -1 \
-    | sed 's/AID_REPO_SLUG="\([^"]*\)".*/\1/')
-
-DOWNLOAD_BASE="${DOWNLOAD_BASE/\$\{AID_REPO_SLUG\}/${REPO_SLUG}}"
-API_BASE="${API_BASE/\$\{AID_REPO_SLUG\}/${REPO_SLUG}}"
+# Resolve AID_API_BASE/AID_DOWNLOAD_BASE by actually sourcing the lib in an
+# isolated subshell, with the three input env vars explicitly set/unset for
+# each call (subshell isolation -- no leakage into the outer test process).
+_e2e07_resolve() {
+    local bogus_api="$1" bogus_dl="$2" allow_flag="$3"
+    (
+        unset AID_API_BASE AID_DOWNLOAD_BASE AID_ALLOW_ENDPOINT_OVERRIDE
+        [[ -n "$bogus_api" ]] && export AID_API_BASE="$bogus_api"
+        [[ -n "$bogus_dl" ]] && export AID_DOWNLOAD_BASE="$bogus_dl"
+        [[ -n "$allow_flag" ]] && export AID_ALLOW_ENDPOINT_OVERRIDE="$allow_flag"
+        source "${CORE_SH}" >/dev/null 2>&1
+        printf '%s|%s' "$AID_API_BASE" "$AID_DOWNLOAD_BASE"
+    )
+}
 
 # Expected per the feature-002 SPEC.
 EXP_REPO_SLUG="AndreVianna/aid-methodology"
 EXP_DOWNLOAD_BASE="https://github.com/${EXP_REPO_SLUG}/releases/download"
 EXP_API_BASE="https://api.github.com/repos/${EXP_REPO_SLUG}"
 
-assert_eq "${REPO_SLUG}"      "${EXP_REPO_SLUG}"      "E2E07a AID_REPO_SLUG matches spec"
-assert_eq "${DOWNLOAD_BASE}"  "${EXP_DOWNLOAD_BASE}"   "E2E07b AID_DOWNLOAD_BASE matches spec"
-assert_eq "${API_BASE}"       "${EXP_API_BASE}"         "E2E07c AID_API_BASE matches spec"
+# E2E07a/b — default (no ambient override, no flag) -> pinned github.com.
+DEFAULT_VARS="$(_e2e07_resolve '' '' '')"
+DEFAULT_API_BASE="${DEFAULT_VARS%%|*}"
+DEFAULT_DOWNLOAD_BASE="${DEFAULT_VARS##*|}"
+assert_eq "${DEFAULT_API_BASE}"      "${EXP_API_BASE}"      "E2E07a AID_API_BASE (default) matches spec"
+assert_eq "${DEFAULT_DOWNLOAD_BASE}" "${EXP_DOWNLOAD_BASE}" "E2E07b AID_DOWNLOAD_BASE (default) matches spec"
 
-# Reconstruct the asset URL and SHA256SUMS URL the code would compute.
+# E2E07c/d — override present WITHOUT AID_ALLOW_ENDPOINT_OVERRIDE -> IGNORED
+# (fix: redirect-to-malicious-host risk). This is the security-relevant case.
+BOGUS_API="https://evil.example.com/repos/x"
+BOGUS_DL="https://evil.example.com/releases/download"
+UNFLAGGED_VARS="$(_e2e07_resolve "${BOGUS_API}" "${BOGUS_DL}" '')"
+UNFLAGGED_API="${UNFLAGGED_VARS%%|*}"
+UNFLAGGED_DL="${UNFLAGGED_VARS##*|}"
+assert_eq "${UNFLAGGED_API}" "${EXP_API_BASE}" \
+    "E2E07c AID_API_BASE override WITHOUT AID_ALLOW_ENDPOINT_OVERRIDE is ignored (pinned to github.com)"
+assert_eq "${UNFLAGGED_DL}"  "${EXP_DOWNLOAD_BASE}" \
+    "E2E07d AID_DOWNLOAD_BASE override WITHOUT AID_ALLOW_ENDPOINT_OVERRIDE is ignored (pinned to github.com)"
+
+# E2E07e/f — override present WITH AID_ALLOW_ENDPOINT_OVERRIDE=1 -> HONORED
+# (preserves the canonical-test / air-gapped-mirror fixture path).
+FLAGGED_VARS="$(_e2e07_resolve "${BOGUS_API}" "${BOGUS_DL}" '1')"
+FLAGGED_API="${FLAGGED_VARS%%|*}"
+FLAGGED_DL="${FLAGGED_VARS##*|}"
+assert_eq "${FLAGGED_API}" "${BOGUS_API}" \
+    "E2E07e AID_API_BASE override WITH AID_ALLOW_ENDPOINT_OVERRIDE=1 is honored (test-fixture path preserved)"
+assert_eq "${FLAGGED_DL}"  "${BOGUS_DL}" \
+    "E2E07f AID_DOWNLOAD_BASE override WITH AID_ALLOW_ENDPOINT_OVERRIDE=1 is honored (test-fixture path preserved)"
+
+# Reconstruct the asset URL and SHA256SUMS URL the code would compute (default endpoints).
 TEST_TOOL="claude-code"
 TEST_VER="0.7.0"
 TEST_FILENAME="aid-${TEST_TOOL}-v${TEST_VER}.tar.gz"
@@ -324,31 +349,39 @@ EXPECTED_ASSET_URL="${EXP_DOWNLOAD_BASE}/v${TEST_VER}/${TEST_FILENAME}"
 EXPECTED_SUMS_URL="${EXP_DOWNLOAD_BASE}/v${TEST_VER}/SHA256SUMS"
 EXPECTED_LATEST_API_URL="${EXP_API_BASE}/releases/latest"
 
-# Verify fetch_tarball() would build the correct URL by reproducing the
-# same string construction used in the function body.
-ACTUAL_ASSET_URL="${DOWNLOAD_BASE}/v${TEST_VER}/${TEST_FILENAME}"
-ACTUAL_SUMS_URL="${DOWNLOAD_BASE}/v${TEST_VER}/SHA256SUMS"
-ACTUAL_LATEST_API_URL="${API_BASE}/releases/latest"
+ACTUAL_ASSET_URL="${DEFAULT_DOWNLOAD_BASE}/v${TEST_VER}/${TEST_FILENAME}"
+ACTUAL_SUMS_URL="${DEFAULT_DOWNLOAD_BASE}/v${TEST_VER}/SHA256SUMS"
+ACTUAL_LATEST_API_URL="${DEFAULT_API_BASE}/releases/latest"
 
-assert_eq "${ACTUAL_ASSET_URL}"      "${EXPECTED_ASSET_URL}"      "E2E07d asset URL matches spec shape"
-assert_eq "${ACTUAL_SUMS_URL}"       "${EXPECTED_SUMS_URL}"       "E2E07e SHA256SUMS URL matches spec shape"
-assert_eq "${ACTUAL_LATEST_API_URL}" "${EXPECTED_LATEST_API_URL}" "E2E07f /latest API URL matches spec shape"
+assert_eq "${ACTUAL_ASSET_URL}"      "${EXPECTED_ASSET_URL}"      "E2E07g asset URL matches spec shape"
+assert_eq "${ACTUAL_SUMS_URL}"       "${EXPECTED_SUMS_URL}"       "E2E07h SHA256SUMS URL matches spec shape"
+assert_eq "${ACTUAL_LATEST_API_URL}" "${EXPECTED_LATEST_API_URL}" "E2E07i /latest API URL matches spec shape"
 
 # Confirm the URL shape is present in the source file (code-coverage sanity).
 assert_file_contains "${CORE_SH}" 'AID_DOWNLOAD_BASE}/v${version}/${filename}' \
-    "E2E07g asset URL template present in aid-install-core.sh"
+    "E2E07j asset URL template present in aid-install-core.sh"
 assert_file_contains "${CORE_SH}" 'AID_API_BASE}/releases/latest' \
-    "E2E07h /latest API URL template present in aid-install-core.sh"
+    "E2E07k /latest API URL template present in aid-install-core.sh"
+
+# fail-closed fetch_tarball source-coverage sanity (fix: no more warn-and-proceed).
+assert_file_contains "${CORE_SH}" 'refusing to install unverified tarball (fail-closed)' \
+    "E2E07l fetch_tarball fail-closed error text present in aid-install-core.sh"
+assert_output_not_contains "$(cat "${CORE_SH}")" 'skipping checksum verification' \
+    "E2E07m aid-install-core.sh no longer contains the warn-and-proceed checksum path"
 
 # Same shape assertions for AidInstallCore.psm1 (PowerShell core).
 CORE_PS1="${REPO_ROOT}/lib/AidInstallCore.psm1"
 if [[ -f "${CORE_PS1}" ]]; then
     assert_file_contains "${CORE_PS1}" 'AndreVianna/aid-methodology' \
-        "E2E07i AidInstallCore.psm1 references correct repo slug"
+        "E2E07n AidInstallCore.psm1 references correct repo slug"
     assert_file_contains "${CORE_PS1}" 'releases/download' \
-        "E2E07j AidInstallCore.psm1 references releases/download"
+        "E2E07o AidInstallCore.psm1 references releases/download"
     assert_file_contains "${CORE_PS1}" 'releases/latest' \
-        "E2E07k AidInstallCore.psm1 references releases/latest API path"
+        "E2E07p AidInstallCore.psm1 references releases/latest API path"
+    assert_file_contains "${CORE_PS1}" 'refusing to install unverified tarball (fail-closed)' \
+        "E2E07q Fetch-Tarball fail-closed error text present in AidInstallCore.psm1"
+    assert_output_not_contains "$(cat "${CORE_PS1}")" 'skipping checksum verification' \
+        "E2E07r AidInstallCore.psm1 no longer contains the warn-and-proceed checksum path"
 fi
 
 # ---------------------------------------------------------------------------
@@ -655,6 +688,214 @@ Write-Output \"LASTEXITCODE=\$LASTEXITCODE\"
     fi
     assert_eq "$([[ -f "${_E2E10T_AID_HOME}/bin/aid.ps1" ]] && echo exists || echo gone)" "gone" \
         "E2E10g tampered PS1 bundle: aid.ps1 NOT installed"
+fi
+
+# ---------------------------------------------------------------------------
+# E2E11 — fetch_tarball() fail-closed checksum verification (Bash), exercised
+#          end-to-end via 'aid add <tool>' (the tool-tarball network path,
+#          distinct from the CLI-bundle fetch covered by E2E09).
+#          Uses file:// fixtures (no server, no port binding) with
+#          AID_ALLOW_ENDPOINT_OVERRIDE=1 + AID_DOWNLOAD_BASE pointed at a local
+#          staging tree -- no real network is ever contacted.
+#
+#   E2E11a-c — valid SHA256SUMS present -> aid add succeeds, checksum verified.
+#   E2E11d-f — SHA256SUMS missing at the fixture -> fail-closed (was WARN +
+#              proceed); tool NOT installed.
+#   E2E11g-h — tampered tarball (SHA256SUMS present, wrong hash) -> checksum
+#              mismatch still enforced (exit 4); tool NOT installed. Confirms
+#              the fail-closed change did not weaken the existing
+#              successful-verification / mismatch path.
+# ---------------------------------------------------------------------------
+echo "--- E2E11: fetch_tarball fail-closed checksum verification (Bash, aid add) ---"
+
+_E2E11_TOOL="claude-code"
+
+_E2E11_AID_HOME="${TMP}/e2e11-aid-home"
+mkdir -p "${_E2E11_AID_HOME}/bin" "${_E2E11_AID_HOME}/lib"
+cp "${REPO_ROOT}/bin/aid" "${_E2E11_AID_HOME}/bin/aid"
+chmod +x "${_E2E11_AID_HOME}/bin/aid"
+cp "${REPO_ROOT}/lib/aid-install-core.sh" "${_E2E11_AID_HOME}/lib/aid-install-core.sh"
+printf '%s\n' "${STAGE_VERSION}" > "${_E2E11_AID_HOME}/VERSION"
+
+# E2E11a — valid SHA256SUMS present -> aid add succeeds and verifies checksum.
+_E2E11_SERVE_OK="${TMP}/e2e11-serve-ok"
+mkdir -p "${_E2E11_SERVE_OK}/v${STAGE_VERSION}"
+cp "${STAGE_DIR}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz" \
+   "${_E2E11_SERVE_OK}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
+grep "[[:space:]]aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz$" "${SUMS_FILE}" \
+    > "${_E2E11_SERVE_OK}/v${STAGE_VERSION}/SHA256SUMS"
+
+_E2E11_TARGET_A="${TMP}/e2e11-target-a"
+mkdir -p "${_E2E11_TARGET_A}"
+E2E11A_OUT=$(env -u AID_LIB_PATH AID_HOME="${_E2E11_AID_HOME}" AID_NO_UPDATE_CHECK=1 \
+    AID_ALLOW_ENDPOINT_OVERRIDE=1 \
+    AID_DOWNLOAD_BASE="file://${_E2E11_SERVE_OK}" \
+    bash "${_E2E11_AID_HOME}/bin/aid" add "${_E2E11_TOOL}" \
+    --version "${STAGE_VERSION}" --target "${_E2E11_TARGET_A}" 2>&1); E2E11A_RC=$?
+assert_exit_zero "${E2E11A_RC}" "E2E11a aid add <tool> (valid SHA256SUMS, flagged override) exits 0"
+assert_output_contains "${E2E11A_OUT}" "Checksum OK" "E2E11b aid add verifies checksum via fetch_tarball"
+assert_dir_exists "${_E2E11_TARGET_A}/.claude" "E2E11c tool tree installed"
+
+# E2E11d — SHA256SUMS missing at the fixture -> fail-closed (was WARN + proceed).
+_E2E11_SERVE_NOSUMS="${TMP}/e2e11-serve-nosums"
+mkdir -p "${_E2E11_SERVE_NOSUMS}/v${STAGE_VERSION}"
+cp "${STAGE_DIR}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz" \
+   "${_E2E11_SERVE_NOSUMS}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
+# Deliberately do NOT create SHA256SUMS.
+
+_E2E11_TARGET_D="${TMP}/e2e11-target-d"
+mkdir -p "${_E2E11_TARGET_D}"
+E2E11D_OUT=$(env -u AID_LIB_PATH AID_HOME="${_E2E11_AID_HOME}" AID_NO_UPDATE_CHECK=1 \
+    AID_ALLOW_ENDPOINT_OVERRIDE=1 \
+    AID_DOWNLOAD_BASE="file://${_E2E11_SERVE_NOSUMS}" \
+    bash "${_E2E11_AID_HOME}/bin/aid" add "${_E2E11_TOOL}" \
+    --version "${STAGE_VERSION}" --target "${_E2E11_TARGET_D}" 2>&1); E2E11D_RC=$?
+assert_exit_ne "${E2E11D_RC}" 0 "E2E11d missing SHA256SUMS -> fail-closed non-zero exit (was WARN + proceed)"
+assert_output_contains "${E2E11D_OUT}" "fail-closed" "E2E11e missing-SHA256SUMS error mentions fail-closed"
+assert_eq "$([[ -d "${_E2E11_TARGET_D}/.claude" ]] && echo exists || echo gone)" "gone" \
+    "E2E11f missing SHA256SUMS: tool NOT installed"
+
+# E2E11g — tampered tarball (SHA256SUMS present but wrong hash) -> exit 4,
+# tool NOT installed (mismatch path still enforced after the fail-closed change).
+_E2E11_SERVE_TAMPER="${TMP}/e2e11-serve-tamper"
+mkdir -p "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}"
+cp "${STAGE_DIR}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz" \
+   "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
+printf 'TAMPER' >> "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}/aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz"
+grep "[[:space:]]aid-${_E2E11_TOOL}-v${STAGE_VERSION}.tar.gz$" "${SUMS_FILE}" \
+    > "${_E2E11_SERVE_TAMPER}/v${STAGE_VERSION}/SHA256SUMS"
+
+_E2E11_TARGET_G="${TMP}/e2e11-target-g"
+mkdir -p "${_E2E11_TARGET_G}"
+E2E11G_OUT=$(env -u AID_LIB_PATH AID_HOME="${_E2E11_AID_HOME}" AID_NO_UPDATE_CHECK=1 \
+    AID_ALLOW_ENDPOINT_OVERRIDE=1 \
+    AID_DOWNLOAD_BASE="file://${_E2E11_SERVE_TAMPER}" \
+    bash "${_E2E11_AID_HOME}/bin/aid" add "${_E2E11_TOOL}" \
+    --version "${STAGE_VERSION}" --target "${_E2E11_TARGET_G}" 2>&1); E2E11G_RC=$?
+assert_exit_eq "${E2E11G_RC}" 4 "E2E11g tampered tarball -> exit 4 (checksum mismatch still enforced)"
+assert_eq "$([[ -d "${_E2E11_TARGET_G}/.claude" ]] && echo exists || echo gone)" "gone" \
+    "E2E11h tampered tarball: tool NOT installed"
+
+# ---------------------------------------------------------------------------
+# E2E12 — Fetch-Tarball fail-closed checksum verification (PowerShell), called
+#          directly (module dot-sourced + $script:AID_DOWNLOAD_BASE overridden
+#          in-process -- AidInstallCore.psm1 has no env-var override for
+#          AID_DOWNLOAD_BASE/AID_API_BASE by design, so a fixture redirect can
+#          only be done at this level, not via env vars).
+#          SKIP when pwsh or python3 (http.server) is absent.
+#          NOTE: binds a local TCP port (127.0.0.1) -- per team policy this is
+#          NOT run from the local dev sandbox; authoritative result is the
+#          ubuntu+windows installer/CLI CI run.
+# ---------------------------------------------------------------------------
+if [[ -z "$PWSH" ]]; then
+    echo "--- E2E12: SKIP (pwsh not found) ---"
+elif ! command -v python3 >/dev/null 2>&1; then
+    echo "--- E2E12: SKIP (python3 not found -- needed for http server for PS1 test) ---"
+elif [[ "$(uname -s 2>/dev/null)" != MINGW* && "$(uname -s 2>/dev/null)" != MSYS* && "$(uname -s 2>/dev/null)" != CYGWIN* ]]; then
+    # E2E12 dot-sources AidInstallCore.psm1 and drives Fetch-Tarball directly via pwsh
+    # against a local http.server, overriding the download base with a script-scoped var.
+    # That direct-probe harness is reliable only on the Windows CI runner; on Linux pwsh
+    # the module-scope override does not take effect and the probe produces no result.
+    # This is a TEST-HARNESS limitation, not a product defect: E2E10 (install.ps1 full
+    # loop via pwsh + http.server) PASSES on Linux, proving the PowerShell installer path
+    # itself works cross-platform. The fail-closed checksum logic is covered on Linux by
+    # E2E11 (bash, aid add) + E2E07 (source assertion over BOTH aid-install-core.sh and
+    # AidInstallCore.psm1), and the PS twin is exercised end-to-end on the installer/CLI
+    # windows-latest job (E2E08/E2E10/E2E12). So skip the direct PS probe on non-Windows.
+    echo "--- E2E12: SKIP (PowerShell Fetch-Tarball direct probe runs on the Windows CI runner only; Linux fail-closed coverage = E2E11 bash + E2E07 source) ---"
+else
+    echo "--- E2E12: Fetch-Tarball fail-closed checksum verification (PowerShell) ---"
+
+    _e2e12_find_free_port() {
+        local port=19300
+        while ss -tlnH "sport = :$port" 2>/dev/null | grep -q .; do
+            port=$((port + 1))
+        done
+        echo "$port"
+    }
+
+    _E2E12_TOOL="claude-code"
+    CORE_PS1_SRC="${REPO_ROOT}/lib/AidInstallCore.psm1"
+
+    # Helper: serve $1 on a free port, run the Fetch-Tarball probe against it via
+    # AID_DOWNLOAD_BASE=http://127.0.0.1:<port>, tear the server down, echo the result.
+    _e2e12_run_fetch() {
+        local serve_dir="$1" dest_dir="$2"
+        local port; port=$(_e2e12_find_free_port)
+        python3 -m http.server "${port}" --directory "${serve_dir}" >/dev/null 2>&1 &
+        local pid=$!
+        local waited=0
+        while ! curl -s --max-time 1 "http://127.0.0.1:${port}/" >/dev/null 2>&1; do
+            sleep 0.1
+            waited=$((waited + 1))
+            [[ "$waited" -ge 20 ]] && break
+        done
+
+        local script; script="${TMP}/e2e12-fetch-$$-${RANDOM}.ps1"
+        cat > "$script" <<PSEOF
+\$ErrorActionPreference = 'Stop'
+. '${CORE_PS1_SRC}'
+\$script:AID_DOWNLOAD_BASE = 'http://127.0.0.1:${port}'
+\$ok = Fetch-Tarball -Tool '${_E2E12_TOOL}' -Version '${STAGE_VERSION}' -DestDir '${dest_dir}'
+Write-Output ("RESULT=" + \$ok)
+PSEOF
+        "$PWSH" -NoProfile -File "$script" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'
+        rm -f "$script"
+
+        kill "${pid}" 2>/dev/null || true
+        wait "${pid}" 2>/dev/null || true
+    }
+
+    # E2E12a — valid SHA256SUMS present -> Fetch-Tarball returns $true, verifies checksum.
+    _E2E12_SERVE_OK="${TMP}/e2e12-serve-ok"
+    mkdir -p "${_E2E12_SERVE_OK}/v${STAGE_VERSION}"
+    cp "${STAGE_DIR}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz" \
+       "${_E2E12_SERVE_OK}/v${STAGE_VERSION}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz"
+    grep "[[:space:]]aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz$" "${SUMS_FILE}" \
+        > "${_E2E12_SERVE_OK}/v${STAGE_VERSION}/SHA256SUMS"
+    _E2E12_DEST_A="${TMP}/e2e12-dest-a"
+    mkdir -p "${_E2E12_DEST_A}"
+
+    _E2E12A_OUT="$(_e2e12_run_fetch "${_E2E12_SERVE_OK}" "${_E2E12_DEST_A}")"
+    assert_output_contains "${_E2E12A_OUT}" "RESULT=True" \
+        "E2E12a Fetch-Tarball (valid SHA256SUMS) returns \$true"
+    assert_output_contains "${_E2E12A_OUT}" "Checksum OK" \
+        "E2E12b Fetch-Tarball verifies checksum"
+    assert_file_exists "${_E2E12_DEST_A}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz" \
+        "E2E12c tarball downloaded to DestDir"
+
+    # E2E12d — SHA256SUMS missing at the fixture -> fail-closed ($false, was WARN + $true).
+    _E2E12_SERVE_NOSUMS="${TMP}/e2e12-serve-nosums"
+    mkdir -p "${_E2E12_SERVE_NOSUMS}/v${STAGE_VERSION}"
+    cp "${STAGE_DIR}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz" \
+       "${_E2E12_SERVE_NOSUMS}/v${STAGE_VERSION}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz"
+    # Deliberately do NOT create SHA256SUMS.
+    _E2E12_DEST_D="${TMP}/e2e12-dest-d"
+    mkdir -p "${_E2E12_DEST_D}"
+
+    _E2E12D_OUT="$(_e2e12_run_fetch "${_E2E12_SERVE_NOSUMS}" "${_E2E12_DEST_D}")"
+    assert_output_contains "${_E2E12D_OUT}" "RESULT=False" \
+        "E2E12d Fetch-Tarball (missing SHA256SUMS) returns \$false (fail-closed)"
+    assert_output_contains "${_E2E12D_OUT}" "fail-closed" \
+        "E2E12e missing-SHA256SUMS error mentions fail-closed"
+
+    # E2E12f — tampered tarball (SHA256SUMS present, wrong hash) -> $false,
+    # mismatch path still enforced.
+    _E2E12_SERVE_TAMPER="${TMP}/e2e12-serve-tamper"
+    mkdir -p "${_E2E12_SERVE_TAMPER}/v${STAGE_VERSION}"
+    cp "${STAGE_DIR}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz" \
+       "${_E2E12_SERVE_TAMPER}/v${STAGE_VERSION}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz"
+    printf 'TAMPER' >> "${_E2E12_SERVE_TAMPER}/v${STAGE_VERSION}/aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz"
+    grep "[[:space:]]aid-${_E2E12_TOOL}-v${STAGE_VERSION}.tar.gz$" "${SUMS_FILE}" \
+        > "${_E2E12_SERVE_TAMPER}/v${STAGE_VERSION}/SHA256SUMS"
+    _E2E12_DEST_F="${TMP}/e2e12-dest-f"
+    mkdir -p "${_E2E12_DEST_F}"
+
+    _E2E12F_OUT="$(_e2e12_run_fetch "${_E2E12_SERVE_TAMPER}" "${_E2E12_DEST_F}")"
+    assert_output_contains "${_E2E12F_OUT}" "RESULT=False" \
+        "E2E12f Fetch-Tarball (tampered tarball) returns \$false"
+    assert_output_contains "${_E2E12F_OUT}" "checksum mismatch" \
+        "E2E12g tampered-tarball error mentions checksum mismatch"
 fi
 
 test_summary

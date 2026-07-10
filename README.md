@@ -10,53 +10,38 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-14-skill pipeline · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+92 skills — 14-skill pipeline + 76 verb-first shortcuts + `/aid-triage` + `/aid-ask` · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+
+**Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
 ```mermaid
-flowchart TB
-    classDef prep    fill:#1E3A8A,stroke:#1E3A8A,color:#ffffff
-    classDef def     fill:#6D28D9,stroke:#6D28D9,color:#ffffff
-    classDef map     fill:#0F766E,stroke:#0F766E,color:#ffffff
-    classDef exe     fill:#166534,stroke:#166534,color:#ffffff
-    classDef delopt  fill:#C2410C,stroke:#C2410C,color:#ffffff,stroke-dasharray:5 4
-    classDef aux     fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937,stroke-dasharray:4 3
-    classDef offpipe fill:#374151,stroke:#374151,color:#ffffff,stroke-dasharray:6 4
+flowchart TD
+    subgraph Entry["Choose your entry"]
+        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut — I know my change"]
+        TR["/aid-triage<br/>— not sure? (suggest-only)"]
+        DS["/aid-describe<br/>— broad / new project"]
+        ASK["/aid-ask<br/>— just asking a question"]
+    end
+    TR -. suggests .-> SC
+    TR -. suggests .-> DS
+    TR -. "question" .-> ASK
 
-    subgraph G1[" 1 · Prepare "]
-        Init["aid-config<br/>setup · once"]:::aux
-        Disc["1 · aid-discover<br/>brownfield"]:::prep
-        Sum["aid-summarize<br/>optional"]:::aux
-    end
-    subgraph G2[" 2 · Define "]
-        Desc["2a · aid-describe<br/>gather requirements"]:::def
-        Triage{"TRIAGE<br/>full or lite?"}:::def
-        Def["2b · aid-define<br/>decompose features"]:::def
-        Spec["3 · aid-specify<br/>full path"]:::def
-    end
-    subgraph G3[" 3 · Map "]
-        Plan["4 · aid-plan<br/>full path"]:::map
-        Det["5 · aid-detail<br/>full path"]:::map
-    end
-    subgraph G4[" 4 · Execute "]
-        Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
-    end
-    subgraph G5[" 5 · Deliver (optional) "]
-        Dep["aid-deploy"]:::delopt
-        Mon["aid-monitor"]:::delopt
-    end
+    CFG["/aid-config (bootstrap · once)"] --> DISC["/aid-discover (brownfield)"]
+    DISC --> DS
 
-    HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
+    SC --> ENG["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT<br/>(Describe→Detail, collapsed &amp; autonomous)"]
+    ENG --> HALT{{"Approval halt"}}
 
-    Init --> Disc --> Desc --> Triage
-    Triage -- "full path<br/>broad / multi-target" --> Def --> Spec --> Plan --> Det --> Exe
-    Triage -- "lite path<br/>small, single-target" --> Exe
-    Exe -. "on demand" .-> Dep
-    Exe -. "on demand" .-> Mon
-    Exe -. "when finished" .-> HK
-    HK  -. "targeted KB refresh" .-> Disc
+    DS --> DEF["/aid-define"] --> SPC["/aid-specify"] --> PLN["/aid-plan"] --> DTL["/aid-detail"]
+    DTL --> HALT
+
+    HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
+    EXE --> DEP["/aid-deploy (optional)"] --> MON["/aid-monitor (optional)"]
+    MON -. "bug → /aid-fix" .-> SC
+    MON -. "change request → /aid-triage" .-> TR
 ```
 
-*14 skills · 5 groups · 2 paths (TRIAGE-routed). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*92 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -146,21 +131,24 @@ Open your AI coding tool in your project and run the skills as slash commands:
 ```
 /aid-config           # once per project — scaffolds .aid/ and KB structure
 /aid-discover         # brownfield only: analyze the codebase into the KB
-/aid-describe         # gather requirements; TRIAGE auto-routes full or lite path; on approval, run /aid-define
+/aid-triage           # not sure where to start? suggest-only router — points you to a shortcut, /aid-describe, or /aid-ask
+/aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-change-cli (76 shortcuts)
+/aid-ask              # just have a question? free-form Q&A over the KB + codebase; friendly alias of /aid-query-kb
+/aid-describe         # gather requirements for broad / new-project work (full path only); on approval, run /aid-define
 /aid-define           # decompose approved requirements into features (full path only)
 /aid-specify          # write the technical spec for each feature (full path only)
 /aid-plan             # sequence features into shippable deliveries (full path only)
 /aid-detail           # decompose deliveries into typed, PR-sized tasks (full path only)
 /aid-execute          # implement each task with the built-in adversarial review loop
 /aid-deploy           # optional — package and ship a delivery
-/aid-monitor          # optional — classify production findings and route fixes back
+/aid-monitor          # optional — classify production findings and route fixes back (bug → /aid-fix, change request → /aid-triage)
 /aid-summarize        # optional — generate an offline HTML viewer of the KB
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 /aid-query-kb         # on-demand — answer free-form questions from the KB + codebase; captures gaps
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. Every phase is gated — nothing advances without your approval.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval.
 
 [See it applied step by step →](examples/)
 
@@ -178,7 +166,7 @@ Installing or updating AID now prunes stale AID files — files that were rename
 
 ### Content isolation
 
-AID's own folders now install under an `aid/` subtree (`.claude/aid/{scripts,templates,recipes}`) and every AID file in tool-native folders (`agents/`, `skills/`, `rules/`) carries an `aid-` prefix. AID content and your content cannot collide, and `aid update` can prune AID's own stale files in place without any risk of touching yours.
+AID's own folders now install under an `aid/` subtree (`.claude/aid/{scripts,templates}`) and every AID file in tool-native folders (`agents/`, `skills/`, `rules/`) carries an `aid-` prefix. AID content and your content cannot collide, and `aid update` can prune AID's own stale files in place without any risk of touching yours.
 
 Root-agent files (`CLAUDE.md` / `AGENTS.md`) are now updated in-place and losslessly: AID rewrites only the region between its own `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers; everything you wrote outside those markers is preserved exactly. The old `.aid-new` sidecar file is gone.
 
@@ -229,9 +217,13 @@ AID's phases are gated: you approve every transition. Nothing auto-advances. [Fu
 
 ### The Lite Path
 
-For small, well-scoped work, `/aid-describe` opens with a TRIAGE: you describe the work in your own words and the agent infers the work-type and the best-matching recipe. A confident, single-target match skips the full pipeline and routes straight to `/aid-execute`.
+AID does not make you weigh the cost of the full pipeline against the size of a change yourself — that trade-off is automated. For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) — one of 76 shortcuts spanning 14 families (create · change · fix · refactor · remove · deprecate · migrate · test/experiment · prototype · document · report · review · research · dashboard) — and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Each shortcut is bound to one specific change type, so the engine already knows the shape of the work and skips the generic elicitation a from-scratch interview would need — that's what makes it fast, not just short.
 
-[Lite path and recipes →](docs/aid-methodology.md#2-philosophy)
+Not sure which shortcut fits, or is the change broad or multi-part? `/aid-triage` reads a free-form description and suggests either the matching shortcut or the full `/aid-describe` path. Just asking a question instead of proposing a change? `/aid-triage` points you to `/aid-ask` instead. Either way, nothing runs until you approve it.
+
+This is not a shortcut that skips quality — it's proportionate rigour. The lite path still produces the full artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `DETAIL.md`) and grades every document at GATE — an A+ floor by default — before the approval halt.
+
+[The Lite path and the shortcut engine →](docs/aid-methodology.md#2-philosophy)
 
 ### The Knowledge Base
 

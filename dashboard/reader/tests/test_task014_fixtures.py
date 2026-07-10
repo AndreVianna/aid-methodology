@@ -4,7 +4,7 @@ test_task014_fixtures.py -- Task-014 reader test fixtures and assertions.
 Covers ALL scenarios required by task-014 (work-004 delivery-001):
 
   1. HIERARCHICAL work:
-     - delivery/task folders with per-unit STATE.md/SPEC.md
+     - deliveries/delivery-NNN/tasks/task-NNN folders with per-unit STATE.md/BLUEPRINT.md/DETAIL.md
      - derived ## Tasks State + Pipeline State correct
 
   2. SD-9 SPIKE scenario:
@@ -152,23 +152,23 @@ def _write_task_state(task_dir: Path, state: str = "Pending",
 
 def _write_task_spec(task_dir: Path, task_id: str, task_type: str = "IMPLEMENT",
                      title: str = "A test task") -> None:
-    """Write a task-level SPEC.md."""
+    """Write a task-level DETAIL.md."""
     text = (
         f"# {task_id}: {title}\n\n"
         f"**Type:** {task_type}\n\n"
         "Body of the task spec.\n"
     )
-    (task_dir / "SPEC.md").write_text(text, encoding="utf-8")
+    (task_dir / "DETAIL.md").write_text(text, encoding="utf-8")
 
 
 def _write_delivery_spec(delivery_dir: Path, delivery_id: str,
                          title: str = "A test delivery") -> None:
-    """Write a delivery-level SPEC.md."""
+    """Write a delivery-level BLUEPRINT.md."""
     text = (
-        f"# Delivery SPEC -- {delivery_id}: {title}\n\n"
+        f"# Delivery BLUEPRINT -- {delivery_id}: {title}\n\n"
         "Delivery scope and gate criteria.\n"
     )
-    (delivery_dir / "SPEC.md").write_text(text, encoding="utf-8")
+    (delivery_dir / "BLUEPRINT.md").write_text(text, encoding="utf-8")
 
 
 def _build_hierarchical_work(
@@ -178,11 +178,7 @@ def _build_hierarchical_work(
     work_lifecycle: str = "Running",
     work_updated: str = "2026-06-10T12:00:00Z",
 ) -> Path:
-    """Build a complete hierarchical (full-nested) work fixture under aid/.
-
-    Layout: aid/{work_id}/deliveries/{delivery_id}/tasks/{task_id}/ (task-002
-    delivery-folder relocation -- delivery folders nest under deliveries/,
-    mirroring features/).
+    """Build a complete hierarchical work fixture under aid/.
 
     Returns the work_dir path.
     deliveries: list of delivery specs:
@@ -225,7 +221,7 @@ def _build_hierarchical_work(
 # ---------------------------------------------------------------------------
 
 class TestHierarchicalWork(unittest.TestCase):
-    """Hierarchical work (delivery/task folders with per-unit STATE.md/SPEC.md).
+    """Hierarchical work (deliveries/delivery-NNN/tasks/task-NNN folders with per-unit STATE.md/BLUEPRINT.md/DETAIL.md).
 
     Asserts:
     - Tasks are read from per-unit STATE.md files (not from work-level table)
@@ -312,7 +308,7 @@ class TestHierarchicalWork(unittest.TestCase):
         self.assertEqual(task_map["task-003"].delivery, 2)
 
     def test_deliverables_list_populated(self):
-        """Deliverables list has one entry per delivery-NNN folder."""
+        """Deliverables list has one entry per deliveries/delivery-NNN folder."""
         self._build_fixture()
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -354,7 +350,7 @@ class TestHierarchicalWork(unittest.TestCase):
         self.assertEqual(w.updated, "2026-06-10T12:00:00Z")
 
     def test_task_short_names_from_spec_md(self):
-        """Task short_names are parsed from task SPEC.md H1 heading."""
+        """Task short_names are parsed from task DETAIL.md H1 heading."""
         self._build_fixture()
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -369,7 +365,7 @@ class TestHierarchicalWork(unittest.TestCase):
         self.assertEqual(task_map["task-003"].short_name, "Third task")
 
     def test_task_types_from_spec_md(self):
-        """Task types are parsed from task SPEC.md **Type:** line."""
+        """Task types are parsed from task DETAIL.md **Type:** line."""
         self._build_fixture()
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -544,8 +540,8 @@ class TestSD9SpikeScenario(unittest.TestCase):
         # Verify the fixture itself has separate STATE.md files per delivery
         del1_state = work_dir / "deliveries" / "delivery-001" / "STATE.md"
         del2_state = work_dir / "deliveries" / "delivery-002" / "STATE.md"
-        self.assertTrue(del1_state.is_file(), "deliveries/delivery-001/STATE.md must exist")
-        self.assertTrue(del2_state.is_file(), "deliveries/delivery-002/STATE.md must exist")
+        self.assertTrue(del1_state.is_file(), "delivery-001/STATE.md must exist")
+        self.assertTrue(del2_state.is_file(), "delivery-002/STATE.md must exist")
         # Files are disjoint by path (no shared state file)
         self.assertNotEqual(str(del1_state), str(del2_state))
 

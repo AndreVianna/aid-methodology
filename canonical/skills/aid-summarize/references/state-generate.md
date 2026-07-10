@@ -10,7 +10,7 @@ and the KB is stale.
 
 ```
 if --grade present: MIN_GRADE = flag value (and update .aid/settings.yml summary.minimum_grade via /aid-config)
-else: MIN_GRADE = bash canonical/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
+else: MIN_GRADE = bash canonical/aid/scripts/config/read-setting.sh --skill summary --key minimum_grade --default A
 ```
 
 Persist `--grade` overrides to `.aid/settings.yml` (via `/aid-config` or direct YAML edit). Do NOT write minimum_grade to STATE.md — STATE.md is for run-state (Q&A, Review History, Summarization History), not config.

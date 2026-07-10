@@ -125,8 +125,8 @@ Production mode.
 
 ### `generator:` (required iff `source: generated`)
 
-Name of the build script (relative to `canonical/scripts/` or as a
-project-relative path). Listed in `canonical/templates/generated-files.txt` registry.
+Name of the build script (relative to `canonical/aid/scripts/` or as a
+project-relative path). Listed in `canonical/aid/templates/generated-files.txt` registry.
 
 Examples: `build-kb-index.sh`, `build-metrics.sh`, `build-project-index.sh`.
 
@@ -189,7 +189,7 @@ coverage (f005).
 **Well-formedness rules:**
 - A YAML list (possibly empty: `sources: []`)
 - Each entry is one of:
-  - A **repo-relative path** (`src/foo.ts`, `canonical/scripts/kb/`)
+  - A **repo-relative path** (`src/foo.ts`, `canonical/aid/scripts/kb/`)
   - A **glob** (`src/parsers/*.py`, `canonical/aid/templates/*.md`)
   - A **URL** (`https://vendor.example/spec`)
 - Path/glob/URL *resolution* is NOT checked by this lint (that is f007 freshness); the lint checks *shape* only
@@ -203,7 +203,7 @@ coverage (f005).
 ```yaml
 sources:
   - canonical/aid/templates/knowledge-base/
-  - canonical/scripts/kb/build-kb-index.sh
+  - canonical/aid/scripts/kb/build-kb-index.sh
 ```
 
 **Good (external URL):**

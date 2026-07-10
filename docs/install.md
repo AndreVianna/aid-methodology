@@ -407,9 +407,8 @@ The files written depend on the tool.
 Installs into `.claude/`:
 
 - `.claude/aid/scripts/` — helper scripts (phase-specific, e.g. interview, summarize)
-- `.claude/aid/templates/` — KB document templates and task templates
-- `.claude/aid/recipes/` — 51 lite-path recipe files
-- `.claude/skills/` — 12 `aid-`-prefixed skill markdown files
+- `.claude/aid/templates/` — KB document templates, task templates, and the shortcut system (`shortcut-catalog.yml`, `shortcut-engine.md`, `shortcut-scaffolding/`)
+- `.claude/skills/` — 82 `aid-`-prefixed skill markdown files (14 classic pipeline / on-demand skills + `aid-triage` + 67 Lite-Path shortcut skills)
 - `.claude/agents/` — 9 `aid-`-prefixed agent markdown files
 - `CLAUDE.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
@@ -419,7 +418,7 @@ Installs into `.codex/`:
 
 - `.codex/agents/` — agent TOML files (`aid-`-prefixed)
 - `.codex/skills/` — `aid-`-prefixed skill markdown files
-- `.codex/aid/scripts/`, `.codex/aid/templates/`, `.codex/aid/recipes/` — AID-own support files
+- `.codex/aid/scripts/`, `.codex/aid/templates/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Cursor
@@ -428,7 +427,7 @@ Installs into `.cursor/`:
 
 - `.cursor/skills/` — `aid-`-prefixed skill markdown files
 - `.cursor/agents/` — `aid-`-prefixed agent markdown files
-- `.cursor/aid/scripts/`, `.cursor/aid/templates/`, `.cursor/aid/recipes/` — AID-own support files
+- `.cursor/aid/scripts/`, `.cursor/aid/templates/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### GitHub Copilot CLI
@@ -437,7 +436,7 @@ Installs into `.github/`:
 
 - `.github/agents/` — `aid-`-prefixed agent markdown files
 - `.github/skills/` — `aid-`-prefixed skill markdown files
-- `.github/aid/scripts/`, `.github/aid/templates/`, `.github/aid/recipes/` — AID-own support files
+- `.github/aid/scripts/`, `.github/aid/templates/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Antigravity
@@ -446,7 +445,7 @@ Installs into `.agent/`:
 
 - `.agent/agents/` — `aid-`-prefixed agent markdown files
 - `.agent/skills/` — `aid-`-prefixed skill markdown files
-- `.agent/aid/scripts/`, `.agent/aid/templates/`, `.agent/aid/recipes/` — AID-own support files
+- `.agent/aid/scripts/`, `.agent/aid/templates/` — AID-own support files
 - `AGENTS.md` — project-context file at the project root (AID content fenced by `<!-- AID:BEGIN -->`/`<!-- AID:END -->`)
 
 ### Notes
@@ -454,7 +453,7 @@ Installs into `.agent/`:
 All five profiles contain byte-identical skill and agent bodies — only the wrapper format
 differs per tool. The source of truth is `canonical/`; `profiles/` are generated output.
 
-**Content isolation:** AID's own support folders (`scripts/`, `templates/`, `recipes/`)
+**Content isolation:** AID's own support folders (`scripts/`, `templates/`)
 nest under an `aid/` subtree inside each profile's assets root. AID files in tool-native
 directories (`agents/`, `skills/`) all carry the `aid-` prefix. Your files in
 those same directories are never touched. AID's section in root agent files (`CLAUDE.md`/

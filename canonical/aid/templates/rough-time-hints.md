@@ -17,7 +17,7 @@ and a `Samples` column tracking how many runs informed the figure.
 When a SKILL executes a bracket-pair, the `✓ done` line MUST record the actual
 elapsed time. Periodically (suggested: each `/aid-discover` run or each new
 `/aid-execute` delivery), refresh the ETAs in this table from those observations.
-See `canonical/templates/long-wait-protocol.md` for the orchestrator-side
+See `canonical/aid/templates/long-wait-protocol.md` for the orchestrator-side
 check-in pattern that emits mid-wait status when ETAs exceed 5 minutes.
 
 ## ETA Table (current as of 2026-05-23)

@@ -41,7 +41,7 @@ change to KB content cannot proceed to DONE without an explicit human
 
 **State machine -- each `/aid-update-kb` invocation drives the state machine
 until it hits a natural pause point per
-`canonical/templates/state-machine-chaining.md`.
+`canonical/aid/templates/state-machine-chaining.md`.
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the
 run.**
 
@@ -76,10 +76,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW-HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always -- unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -91,9 +91,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/templates/long-wait-protocol.md` -- full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` -- full L3 spec
-- `canonical/templates/rough-time-hints.md` -- current measured ETAs
+- `canonical/aid/templates/long-wait-protocol.md` -- full L2 spec
+- `canonical/aid/templates/subagent-heartbeat-protocol.md` -- full L3 spec
+- `canonical/aid/templates/rough-time-hints.md` -- current measured ETAs
 
 ---
 
@@ -191,7 +191,7 @@ aid-update-kb  > you are here
 > **FIX loop.** Below-gate REVIEW findings route to the FIX cycle (REVIEW ->
 > fix edits -> REVIEW) until `grade >= minimum_grade AND teach-back PASS`.
 > The minimum grade resolves via:
-> `bash canonical/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`
+> `bash canonical/aid/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`
 
 > **REVIEW reuse (f005).** The REVIEW state does not redefine the review gate
 > -- it invokes f005's five-mandate panel (`aid-reviewer` Correctness,
@@ -209,7 +209,7 @@ aid-update-kb  > you are here
 
 On state entry, print `[State: NAME]` + the "you are here" banner from State
 Detection above. When a state completes, route by its `**Advance:**` type per
-`canonical/templates/state-machine-chaining.md`:
+`canonical/aid/templates/state-machine-chaining.md`:
 
 - **CHAIN** -> begin the next state's reference doc within the same invocation; no exit.
 - **PAUSE-FOR-USER-ACTION** -> print the pause reason + resume command and exit.
@@ -217,5 +217,5 @@ Detection above. When a state completes, route by its `**Advance:**` type per
 
 > **State-machine chaining:** Each `/aid-update-kb` invocation drives the state
 > machine until it hits a natural pause point per
-> `canonical/templates/state-machine-chaining.md`. Mechanical states
+> `canonical/aid/templates/state-machine-chaining.md`. Mechanical states
 > auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.

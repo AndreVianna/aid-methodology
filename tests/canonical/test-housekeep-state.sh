@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-housekeep-state.sh — unit suite for canonical/scripts/housekeep/housekeep-state.sh
+# test-housekeep-state.sh — unit suite for canonical/aid/scripts/housekeep/housekeep-state.sh
 #
 # Tests:
 #   Unit 1:  --read on a file with no ## Housekeep Status section → empty, exit 0

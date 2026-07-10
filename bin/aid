@@ -2006,7 +2006,7 @@ _aid_migrate_repo() {
 
     # ------------------------------------------------------------------
     # STEP 3 -- RELOCATE legacy summary (DM-4 / FR31) -- no-clobber mv.
-    # Exact idiom from canonical/scripts/summarize/summarize-preflight.sh:102-113
+    # Exact idiom from canonical/aid/scripts/summarize/summarize-preflight.sh:102-113
     # ------------------------------------------------------------------
     local _old_summary="${repo}/.aid/knowledge/knowledge-summary.html"
     local _new_summary="${repo}/.aid/dashboard/kb.html"

@@ -23,7 +23,7 @@
     "@astrojs/sitemap": "3.7.3",
     "@astrojs/starlight": "0.39.3",
     "@fontsource/inter": "5.2.8",
-    "astro": "6.4.4",
+    "astro": "6.4.6",
     "astro-mermaid": "2.0.2",
     "marked": "16.4.2",
     "sanitize-html": "2.17.0"
@@ -35,6 +35,8 @@
     "vitest": "^4.1.8"
   },
   "overrides": {
-    "yaml": "^2.8.3"
+    "yaml": "^2.8.3",
+    "dompurify": "^3.4.11",
+    "esbuild": "^0.28.1"
   }
 }

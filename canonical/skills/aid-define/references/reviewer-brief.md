@@ -1,7 +1,7 @@
 # /aid-define — Reviewer Dispatch Brief Template
 
 Loaded by `/aid-define` CROSS-REFERENCE state (State 6). Renders the brief
-passed to the `aid-reviewer` sub-agent. Follows `canonical/templates/reviewer-dispatch.md`.
+passed to the `aid-reviewer` sub-agent. Follows `canonical/aid/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}` and `{{CONTEXT}}` are filled at dispatch time.
 
@@ -16,7 +16,7 @@ CONTEXT:
   plan, detail, execute), flag it as an OOS observation and bound your review
   to the REQUIREMENTS.md + feature SPEC.md files listed in ARTIFACTS.
 
-RUBRIC: canonical/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: canonical/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade REQUIREMENTS.md + feature decomposition for:
     - Internal consistency (objective ↔ functional requirements ↔ acceptance criteria)
     - Consistency with the KB (architecture, technology-stack, integration-map)
@@ -46,8 +46,8 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (REQUIREMENTS | FEATURE | KB)
   - Output location: `.aid/.temp/review-pending/interview-{work}.md`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per canonical/scripts/grade.sh; minimum resolved via
-    `bash canonical/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
+  - Grade: per canonical/aid/scripts/grade.sh; minimum resolved via
+    `bash canonical/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
   - Pending Q&A: write user-facing questions to `.aid/{work}/STATE.md ## Pending Q&A`
     (the consolidated work STATE.md per FR2 area-STATE consolidation; the
     legacy `INTERVIEW-STATE.md` is RETIRED) so the next `/aid-define` run

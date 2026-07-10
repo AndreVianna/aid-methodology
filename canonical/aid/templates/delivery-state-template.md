@@ -58,7 +58,7 @@ so the delivery lifecycle MUST be independently authored.
      Distinct from per-task quick-check findings -- the gate aggregates those deferred [HIGH]
      rows (via delivery-NNN-issues.md) and runs a full grade.sh pass.
      Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`;
-     see `canonical/templates/delivery-issues.md` for the template. -->
+     see `canonical/aid/templates/delivery-issues.md` for the template. -->
 
 - **Reviewer Tier:** Small | Medium | Large
 - **Grade:** {grade or Pending}

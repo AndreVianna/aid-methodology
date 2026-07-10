@@ -2,7 +2,7 @@
 # test-migrate-hierarchy.sh -- canonical suite for migrate-work-hierarchy.sh + .ps1
 #
 # Guards:
-#   1. Hierarchy creation: deliveries/delivery-NNN/{SPEC,STATE}.md + deliveries/delivery-NNN/tasks/task-NNN/{SPEC,STATE}.md
+#   1. Hierarchy creation: deliveries/delivery-NNN/{BLUEPRINT,STATE}.md + deliveries/delivery-NNN/tasks/task-NNN/{DETAIL,STATE}.md
 #   2. No data loss: every task's State/Review/Elapsed/Notes, Quick Check Findings, Dispatch rows;
 #      every delivery's gate block + Cross-phase Q&A; work STATE.md rewritten to derived placeholders.
 #   3. Correct delivery placement: Source -> delivery-NNN token; task-004 (no token) -> delivery-001
@@ -136,22 +136,22 @@ assert_exit_eq "${MIG_RC}" 0 "G1-01 migrate-work-hierarchy.sh exits 0"
 
 # Delivery-001 structure.
 assert_dir_exists  "${G1_WORK}/deliveries/delivery-001"                          "G1-02 delivery-001/ dir created"
-assert_file_exists "${G1_WORK}/deliveries/delivery-001/SPEC.md"                  "G1-03 delivery-001/SPEC.md created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/BLUEPRINT.md"                  "G1-03 delivery-001/BLUEPRINT.md created"
 assert_file_exists "${G1_WORK}/deliveries/delivery-001/STATE.md"                 "G1-04 delivery-001/STATE.md created"
 assert_dir_exists  "${G1_WORK}/deliveries/delivery-001/tasks"                    "G1-05 delivery-001/tasks/ dir created"
-assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-001/SPEC.md"   "G1-06 delivery-001/tasks/task-001/SPEC.md"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-001/DETAIL.md"   "G1-06 delivery-001/tasks/task-001/DETAIL.md"
 assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md"  "G1-07 delivery-001/tasks/task-001/STATE.md"
-assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-002/SPEC.md"   "G1-08 delivery-001/tasks/task-002/SPEC.md"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-002/DETAIL.md"   "G1-08 delivery-001/tasks/task-002/DETAIL.md"
 assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-002/STATE.md"  "G1-09 delivery-001/tasks/task-002/STATE.md"
 # task-004 has no Source token -> defaults to delivery-001.
-assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-004/SPEC.md"   "G1-10 delivery-001/tasks/task-004/SPEC.md (default)"
+assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-004/DETAIL.md"   "G1-10 delivery-001/tasks/task-004/DETAIL.md (default)"
 assert_file_exists "${G1_WORK}/deliveries/delivery-001/tasks/task-004/STATE.md"  "G1-11 delivery-001/tasks/task-004/STATE.md (default)"
 
 # Delivery-002 structure.
 assert_dir_exists  "${G1_WORK}/deliveries/delivery-002"                          "G1-12 delivery-002/ dir created"
-assert_file_exists "${G1_WORK}/deliveries/delivery-002/SPEC.md"                  "G1-13 delivery-002/SPEC.md created"
+assert_file_exists "${G1_WORK}/deliveries/delivery-002/BLUEPRINT.md"                  "G1-13 delivery-002/BLUEPRINT.md created"
 assert_file_exists "${G1_WORK}/deliveries/delivery-002/STATE.md"                 "G1-14 delivery-002/STATE.md created"
-assert_file_exists "${G1_WORK}/deliveries/delivery-002/tasks/task-003/SPEC.md"   "G1-15 delivery-002/tasks/task-003/SPEC.md"
+assert_file_exists "${G1_WORK}/deliveries/delivery-002/tasks/task-003/DETAIL.md"   "G1-15 delivery-002/tasks/task-003/DETAIL.md"
 assert_file_exists "${G1_WORK}/deliveries/delivery-002/tasks/task-003/STATE.md"  "G1-16 delivery-002/tasks/task-003/STATE.md"
 
 # Legacy flat task files must be retained.
@@ -299,17 +299,17 @@ assert_output_contains "${MIG_OUT}" \
 assert_output_contains "${MIG_OUT}" \
     "no parseable delivery token" "G3-07 warning: no parseable delivery token emitted"
 
-# SPEC.md content: delivery-001 SPEC lists task-004 (default) + task-001 + task-002.
-file_has "${G1_WORK}/deliveries/delivery-001/SPEC.md" \
-    "| task-001 |"             "G3-08 delivery-001 SPEC.md lists task-001"
-file_has "${G1_WORK}/deliveries/delivery-001/SPEC.md" \
-    "| task-004 |"             "G3-09 delivery-001 SPEC.md lists task-004 (default)"
+# BLUEPRINT.md content: delivery-001 BLUEPRINT lists task-004 (default) + task-001 + task-002.
+file_has "${G1_WORK}/deliveries/delivery-001/BLUEPRINT.md" \
+    "| task-001 |"             "G3-08 delivery-001 BLUEPRINT.md lists task-001"
+file_has "${G1_WORK}/deliveries/delivery-001/BLUEPRINT.md" \
+    "| task-004 |"             "G3-09 delivery-001 BLUEPRINT.md lists task-004 (default)"
 
-# delivery-002 SPEC lists only task-003.
-file_has "${G1_WORK}/deliveries/delivery-002/SPEC.md" \
-    "| task-003 |"             "G3-10 delivery-002 SPEC.md lists task-003"
-file_lacks "${G1_WORK}/deliveries/delivery-002/SPEC.md" \
-    "| task-001 |"             "G3-11 delivery-002 SPEC.md does NOT list task-001"
+# delivery-002 BLUEPRINT lists only task-003.
+file_has "${G1_WORK}/deliveries/delivery-002/BLUEPRINT.md" \
+    "| task-003 |"             "G3-10 delivery-002 BLUEPRINT.md lists task-003"
+file_lacks "${G1_WORK}/deliveries/delivery-002/BLUEPRINT.md" \
+    "| task-001 |"             "G3-11 delivery-002 BLUEPRINT.md does NOT list task-001"
 
 # ===========================================================================
 # Gate 4 -- Bash: idempotency (second run = no-op)
@@ -412,12 +412,12 @@ else
 
     # Same hierarchy checks as Gate 1.
     assert_dir_exists  "${G6_WORK}/deliveries/delivery-001"                          "G6-02 PS: delivery-001/ created"
-    assert_file_exists "${G6_WORK}/deliveries/delivery-001/SPEC.md"                  "G6-03 PS: delivery-001/SPEC.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/BLUEPRINT.md"                  "G6-03 PS: delivery-001/BLUEPRINT.md"
     assert_file_exists "${G6_WORK}/deliveries/delivery-001/STATE.md"                 "G6-04 PS: delivery-001/STATE.md"
-    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-001/SPEC.md"   "G6-05 PS: task-001/SPEC.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-001/DETAIL.md"   "G6-05 PS: task-001/DETAIL.md"
     assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md"  "G6-06 PS: task-001/STATE.md"
-    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-002/SPEC.md"   "G6-07 PS: task-002/SPEC.md"
-    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-004/SPEC.md"   "G6-08 PS: task-004/SPEC.md (default delivery)"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-002/DETAIL.md"   "G6-07 PS: task-002/DETAIL.md"
+    assert_file_exists "${G6_WORK}/deliveries/delivery-001/tasks/task-004/DETAIL.md"   "G6-08 PS: task-004/DETAIL.md (default delivery)"
     assert_dir_exists  "${G6_WORK}/deliveries/delivery-002"                          "G6-09 PS: delivery-002/ created"
     assert_file_exists "${G6_WORK}/deliveries/delivery-002/tasks/task-003/STATE.md"  "G6-10 PS: task-003/STATE.md"
 

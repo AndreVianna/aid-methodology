@@ -284,7 +284,7 @@ To use it, the `interviewer` agent fills a JSON file with the slot values for
 this specific bug and calls `parse-recipe.sh`:
 
 ```
-bash canonical/scripts/interview/parse-recipe.sh \
+bash canonical/aid/scripts/interview/parse-recipe.sh \
   --render \
   --recipe canonical/recipes/bug-fix.md \
   --slots-json /path/to/slots.json \

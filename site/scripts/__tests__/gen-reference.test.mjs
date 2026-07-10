@@ -78,7 +78,9 @@ describe('gen-reference: hand-authored pages exist', () => {
 describe('gen-reference: generatedFrom frontmatter', () => {
   it('skills.md has generatedFrom frontmatter', () => {
     const content = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    expect(content).toContain("generatedFrom: 'canonical/skills/*/SKILL.md'");
+    expect(content).toContain(
+      "generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'"
+    );
   });
   it('agents.md has generatedFrom frontmatter', () => {
     const content = readFileSync(join(CONTENT_DOCS, 'reference', 'agents.md'), 'utf8');
@@ -96,17 +98,45 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 
 // ── Roster counts match source ────────────────────────────────────────────────
 
+// The curated (non-shortcut) skill roster: the 15 classic pipeline/on-demand
+// skills plus the standalone aid-triage router. Mirrors gen-reference.mjs's
+// SKILL_GROUPS — these render as individual `### \`aid-...\`` sections. The
+// remaining on-disk skill directories are the 76 catalog-driven shortcuts,
+// summarized by family in the "Direct-entry shortcuts" table, not as
+// individual sections.
+const CURATED_SKILL_NAMES = [
+  'aid-config', 'aid-discover', 'aid-summarize',
+  'aid-triage',
+  'aid-describe', 'aid-define', 'aid-specify',
+  'aid-plan', 'aid-detail',
+  'aid-execute',
+  'aid-deploy', 'aid-monitor',
+  'aid-housekeep', 'aid-query-kb', 'aid-ask', 'aid-update-kb',
+].sort();
+
 describe('gen-reference: roster counts', () => {
-  it('skills.md: exactly 14 skill sections matching canonical/skills/', () => {
+  it('skills.md: 92 on-disk skill dirs = 16 curated sections + 76 catalog shortcuts', () => {
     const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
-    expect(skillDirs).toHaveLength(14);
+    expect(skillDirs).toHaveLength(92);
+
+    const shortcutDirs = skillDirs.filter((d) => !CURATED_SKILL_NAMES.includes(d));
+    expect(shortcutDirs).toHaveLength(76);
 
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    // Per-skill sections render as `### \`aid-...\`` headings (one per skill).
+    // Per-skill sections render as `### \`aid-...\`` headings — one per curated
+    // (classic + aid-triage) skill.
     const sections = skillsContent.split('\n').filter((l) => /^### `aid-/.test(l));
-    expect(sections).toHaveLength(14);
+    expect(sections).toHaveLength(CURATED_SKILL_NAMES.length);
+  });
+
+  it('skills.md: has a "Direct-entry shortcuts" section totalling all 76 shortcuts', () => {
+    const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
+    expect(skillsContent).toContain('## Direct-entry shortcuts');
+    // The family table's total row sums to the 76 catalog rows that emit a
+    // skill directory (80-row catalog minus 4 `repurpose: true` rows).
+    expect(skillsContent).toMatch(/\*\*Total\*\*\s*\|\s*\*\*76\*\*/);
   });
 
   it('agents.md: exactly 9 agent sections matching canonical/agents/', () => {
@@ -120,7 +150,7 @@ describe('gen-reference: roster counts', () => {
     expect(sections).toHaveLength(9);
   });
 
-  it('kb.md: exactly 14 KB doc-type rows matching canonical/templates/knowledge-base/', () => {
+  it('kb.md: exactly 14 KB doc-type rows matching canonical/aid/templates/knowledge-base/', () => {
     const kbFiles = readdirSync(KB_DIR)
       .filter((f) => f.endsWith('.md') && f !== 'README.md');
     expect(kbFiles).toHaveLength(14);
@@ -131,15 +161,10 @@ describe('gen-reference: roster counts', () => {
     expect(rows).toHaveLength(14);
   });
 
-  it('skills.md: all canonical skill names are present', () => {
-    const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name)
-      .sort();
-
+  it('skills.md: all curated (non-shortcut) skill names are present', () => {
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    for (const dir of skillDirs) {
-      expect(skillsContent).toContain(`\`${dir}\``);
+    for (const name of CURATED_SKILL_NAMES) {
+      expect(skillsContent).toContain(`\`${name}\``);
     }
   });
 

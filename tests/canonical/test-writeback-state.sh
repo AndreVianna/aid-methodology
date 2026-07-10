@@ -4,23 +4,16 @@
 # Covers the NEW per-unit writeback contract (work-004 Pillar 2 retarget).
 # All writes go to per-unit STATE.md files, NOT to the monolithic work STATE.md.
 #
-# Unit layout under test (FULL path -- multi-delivery work; deliveries/ nests under
-# the work root, mirroring features/):
+# Unit layout under test:
 #   work-NNN-{name}/
 #     STATE.md                          -- work-level (--pipeline target only)
 #     deliveries/
 #       delivery-NNN/
-#         STATE.md                      -- delivery-level (--block / --lifecycle target)
+#         STATE.md                        -- delivery-level (--block / --lifecycle target)
 #         tasks/
 #           task-NNN/
-#             SPEC.md                   -- contains **Source:** line for delivery resolution
-#             STATE.md                  -- task-level (--field / --findings target)
-#
-# The lite single-delivery flat layout -- tasks/ sits directly under the work root,
-# with no deliveries/ or delivery-NNN/ folder, and the single delivery's
-# ## Delivery Lifecycle / ## Delivery Gate sections are AUTHORED directly in the
-# work-root STATE.md -- is covered by Unit 20 below (work-001-add-deliveries-folder
-# task-003; the resolver's own lite-path branch was added by task-001).
+#             DETAIL.md                   -- contains **Source:** line for delivery resolution
+#             STATE.md                    -- task-level (--field / --findings target)
 #
 # Test scenarios:
 #   Unit 1: --task-id --delivery-id --field --value  (per-task STATE.md field update)
@@ -28,7 +21,7 @@
 #   Unit 3: --delivery-id --block                    (per-delivery ## Delivery Gate)
 #   Unit 4: --delivery-id --lifecycle                (per-delivery ## Delivery Lifecycle)
 #   Unit 5: --delivery-id --append-issue             (delivery-NNN-issues.md append)
-#   Unit 6: Source-line delivery resolution          (--delivery-id omitted, SPEC.md used)
+#   Unit 6: Source-line delivery resolution          (--delivery-id omitted, DETAIL.md used)
 #   Unit 7: Idempotency
 #   Unit 8: Concurrent lock contention (5 parallel per-task writes)
 #   Unit 9: --pipeline field writes (section creation + each base field)
@@ -42,8 +35,8 @@
 #   Unit 17: --pipeline ∥ --pipeline and --pipeline ∥ --field concurrency
 #   Unit 18: FR16 derivation primitives — on-disk block determinism
 #   Unit 19: M5 — pause/block signal sequences
-#   Unit 20: Lite-path resolution (no deliveries/ folder; work-root STATE.md is the
-#            single delivery's home for ## Delivery Lifecycle / ## Delivery Gate)
+#   Unit 21: octal footgun regression — zero-padded ids containing 8/9 (008, 090)
+#            must resolve via base-10 (not be misparsed as invalid octal)
 #
 # Exit codes:
 #   0 — all tests passed
@@ -79,7 +72,7 @@ trap 'rm -rf "$TMPDIR_BASE"' EXIT
 # ---------------------------------------------------------------------------
 
 # make_task_state DELIVERY_DIR TASK_ID [STATE_VALUE]
-# Creates delivery-NNN/tasks/task-NNN/STATE.md with ## Task State section.
+# Creates deliveries/delivery-NNN/tasks/task-NNN/STATE.md with ## Task State section.
 # STATE_VALUE defaults to "Pending".
 make_task_state() {
     local delivery_dir="$1" task_id="$2" state_val="${3:-Pending}"
@@ -118,7 +111,7 @@ TASKSTATEOF
 }
 
 # make_task_spec DELIVERY_DIR TASK_ID DELIVERY_ID WORK_NAME
-# Creates delivery-NNN/tasks/task-NNN/SPEC.md with a **Source:** line.
+# Creates deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md with a **Source:** line.
 make_task_spec() {
     local delivery_dir="$1" task_id="$2" delivery_id="$3" work_name="${4:-work-004-test}"
     local padded_t padded_d
@@ -126,7 +119,7 @@ make_task_spec() {
     padded_d=$(printf '%03d' "$delivery_id")
     local task_dir="${delivery_dir}/tasks/task-${padded_t}"
     mkdir -p "$task_dir"
-    cat > "${task_dir}/SPEC.md" <<TASKSPECEOF
+    cat > "${task_dir}/DETAIL.md" <<TASKSPECEOF
 # task-${padded_t}: Test Task
 
 **Type:** IMPLEMENT
@@ -144,8 +137,8 @@ TASKSPECEOF
 }
 
 # make_delivery_state WORK_DIR DELIVERY_ID [LIFECYCLE_VALUE]
-# Creates deliveries/delivery-NNN/STATE.md (full path) with ## Delivery Lifecycle and
-# ## Delivery Gate sections. LIFECYCLE_VALUE defaults to "Executing".
+# Creates deliveries/delivery-NNN/STATE.md with ## Delivery Lifecycle and ## Delivery Gate sections.
+# LIFECYCLE_VALUE defaults to "Executing".
 make_delivery_state() {
     local work_dir="$1" delivery_id="$2" lc_val="${3:-Executing}"
     local padded_d
@@ -205,8 +198,7 @@ WORKSTATEOF
 }
 
 # ---------------------------------------------------------------------------
-# Global workspace: work root + deliveries/delivery-001 (tasks 1..5) +
-# deliveries/delivery-002 (task 6) -- FULL path (multi-delivery work).
+# Global workspace: work root + delivery-001 (tasks 1..5) + delivery-002 (task 6)
 # ---------------------------------------------------------------------------
 WORK_DIR="${TMPDIR_BASE}/work"
 DELIVERY_001="${WORK_DIR}/deliveries/delivery-001"
@@ -276,6 +268,19 @@ assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "[HIGH]" "finding
 assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "Deferred-to-gate" "deferred status in task-001 findings"
 # Work STATE.md must NOT receive findings
 assert_file_not_contains "${WORK_DIR}/STATE.md" "[HIGH]" "work STATE.md NOT modified by --findings (isolation)"
+
+# Regression guard: the `---` separator between ## Quick Check Findings and
+# ## Dispatch Log (task-state-template.md) must survive the --findings
+# rewrite untouched. mode_findings shares the same "swallow everything up to
+# the next `## ` heading" awk pattern as mode_delivery_block (## Delivery
+# Gate), which was found to delete an intervening `---` separator.
+assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "## Dispatch Log" "task-001 STATE.md ## Dispatch Log survives the --findings rewrite"
+FINDINGS_TO_LOG=$(awk '/^## Quick Check Findings/{f=1} f{print} /^## Dispatch Log/{exit}' "${DELIVERY_001}/tasks/task-001/STATE.md")
+if echo "$FINDINGS_TO_LOG" | grep -qE '^---$'; then
+    pass "--- separator between ## Quick Check Findings and ## Dispatch Log survives the --findings rewrite"
+else
+    fail "--- separator between ## Quick Check Findings and ## Dispatch Log was deleted by the --findings rewrite"
+fi
 
 FINDINGS_BLOCK2="**Reviewer Tier:** Small
 ### Findings
@@ -401,7 +406,7 @@ assert_file_contains "$ISSUES_FILE" "task-003" "row1 still present after row2 ap
 echo ""
 echo "=== Unit 6: Source-line delivery resolution (--delivery-id omitted) ==="
 
-# The task SPEC.md already contains "**Source:** work-004-test -> delivery-001".
+# The task DETAIL.md already contains "**Source:** work-004-test -> delivery-001".
 # Resolve the delivery from that line and write to the correct task STATE.md.
 # We must supply AID_STATE_FILE so the script knows the work root.
 code=0
@@ -409,19 +414,19 @@ bash "$SCRIPT" --task-id 3 --field State --value "In Review" 2>/dev/null || code
 assert_exit_zero "$code" "Source-line resolution: task-3 → delivery-001, exit 0"
 assert_file_contains "${DELIVERY_001}/tasks/task-003/STATE.md" "In Review" "task-003 State written via source-line resolution"
 
-# task-6 is in delivery-002 per its SPEC.md
+# task-6 is in delivery-002 per its DETAIL.md
 code=0
 bash "$SCRIPT" --task-id 6 --field Notes --value "auto-resolved" 2>/dev/null || code=$?
 assert_exit_zero "$code" "Source-line resolution: task-6 → delivery-002, exit 0"
 assert_file_contains "${DELIVERY_002}/tasks/task-006/STATE.md" "auto-resolved" "task-006 Notes written via source-line resolution"
 
-# Omit delivery-id AND have no SPEC.md → must fail with exit 5
+# Omit delivery-id AND have no DETAIL.md → must fail with exit 5
 ORPHAN_WORK="${TMPDIR_BASE}/orphan-work"
 mkdir -p "$ORPHAN_WORK"
-make_task_state "$ORPHAN_WORK/deliveries/delivery-001" 99  # state only, no SPEC.md
+make_task_state "$ORPHAN_WORK/deliveries/delivery-001" 99  # state only, no DETAIL.md
 code=0
 AID_STATE_FILE="${ORPHAN_WORK}/STATE.md" bash "$SCRIPT" --task-id 99 --field State --value Done 2>/dev/null || code=$?
-assert_exit_eq "$code" 5 "no --delivery-id + no SPEC.md → exit 5 (cannot resolve delivery)"
+assert_exit_eq "$code" 5 "no --delivery-id + no DETAIL.md → exit 5 (cannot resolve delivery)"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -1256,84 +1261,340 @@ assert_file_contains "$PIPE_STATE19F" "**Pause Reason:** Delivery gate blocked o
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Unit 20: Lite-path resolution (single delivery; no deliveries/ folder) ==="
+echo "=== Unit 20: feature-001 flattened single-delivery layout (auto-detected) ==="
 
-# A lite work has exactly one delivery and no deliveries/ or delivery-NNN/ folder:
-# tasks live directly at <work-root>/tasks/task-NNN/, and the single delivery's
-# ## Delivery Lifecycle / ## Delivery Gate sections are AUTHORED directly in the
-# work-root STATE.md (work-001-add-deliveries-folder task-001/task-003).
-LITE_WORK="${TMPDIR_BASE}/lite-work"
-mkdir -p "$LITE_WORK"
-cat > "${LITE_WORK}/STATE.md" <<'LITEWORKEOF'
-# Work State — work-lite-test
+# Flat layout fixture: no deliveries/ wrapper; tasks/task-NNN/DETAIL.md directly
+# under the work root; the promoted ## Delivery Lifecycle (### Tasks lifecycle)
+# and ## Delivery Gate blocks live in the work-root STATE.md.
+
+# make_flat_task_spec WORK_DIR TASK_ID
+# Creates tasks/task-NNN/DETAIL.md directly under the work root (no per-task STATE.md).
+make_flat_task_spec() {
+    local work_dir="$1" task_id="$2"
+    local padded_t
+    padded_t=$(printf '%03d' "$task_id")
+    local task_dir="${work_dir}/tasks/task-${padded_t}"
+    mkdir -p "$task_dir"
+    cat > "${task_dir}/DETAIL.md" <<FLATTASKEOF
+# task-${padded_t}: Flat test task
+
+**Type:** IMPLEMENT
+
+**Source:** work-flat-test -> delivery-001
+
+**Depends on:** --
+
+**Scope:**
+- Test scope for flat task ${padded_t}
+
+**Acceptance Criteria:**
+- [ ] criterion
+FLATTASKEOF
+}
+
+# make_flat_work_state WORK_DIR
+# Creates the work-root STATE.md with the three promoted feature-001 blocks:
+# ## Delivery Lifecycle (+ ### Tasks lifecycle) and ## Delivery Gate.
+make_flat_work_state() {
+    local work_dir="$1"
+    mkdir -p "$work_dir"
+    cat > "${work_dir}/STATE.md" <<'FLATSTATEEOF'
+# Work State — work-flat-test
 
 ## Pipeline State
 
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-06-18T00:00:00Z
+- **Updated:** 2026-07-08T00:00:00Z
 
 ## Delivery Lifecycle
 
-- **State:** Executing
-- **Updated:** 2026-06-18T00:00:00Z
+- **State:** Specified
+- **Updated:** 2026-07-08T00:00:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
+### Tasks lifecycle
+
+| Task | State | Review | Elapsed | Notes |
+|------|-------|--------|---------|-------|
+| _none yet_ | | | | |
+
 ## Delivery Gate
 
-- **Reviewer Tier:** --
+- **Reviewer Tier:** Small
 - **Grade:** Pending
 - **Issue List:** none
 - **Timestamp:** --
-LITEWORKEOF
 
-make_task_state "$LITE_WORK" 1
-make_task_spec  "$LITE_WORK" 1 1 "work-lite-test"
+---
 
-# 20a: --task-id --delivery-id --field --value resolves directly to tasks/task-NNN/STATE.md
-# (no deliveries/ parent -- the lite-path branch in resolve_task_state_file).
+<!-- ============================================================
+     DERIVED / READ-ONLY VIEWS
+     ============================================================ -->
+
+## Tasks State
+
+| # | Task | Type | Wave | State | Review | Elapsed | Notes |
+|---|------|------|------|-------|--------|---------|-------|
+| _none yet_ | | | | | | | |
+FLATSTATEEOF
+}
+
+# make_flat_blueprint WORK_DIR: the work-root BLUEPRINT.md (delivery definition).
+make_flat_blueprint() {
+    local work_dir="$1"
+    cat > "${work_dir}/BLUEPRINT.md" <<'FLATBPEOF'
+# Delivery BLUEPRINT -- delivery-001: Flat test delivery
+
+## Gate Criteria
+- [ ] criterion
+FLATBPEOF
+}
+
+FLAT_WORK="${TMPDIR_BASE}/work-flat-test"
+make_flat_work_state "$FLAT_WORK"
+make_flat_blueprint "$FLAT_WORK"
+make_flat_task_spec "$FLAT_WORK" 1
+make_flat_task_spec "$FLAT_WORK" 2
+
+FLAT_STATE="${FLAT_WORK}/STATE.md"
+
+# 20a: --task-id --field --value on the flat layout targets the work-root
+# STATE.md's ### Tasks lifecycle table -- NOT a per-task STATE.md (none exists).
 code=0
-AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Progress" 2>/dev/null || code=$?
-assert_exit_zero "$code" "20a: lite-path --task-id --field → exit 0"
-assert_file_contains "${LITE_WORK}/tasks/task-001/STATE.md" "**State:** In Progress" "20a: lite-path task STATE.md written directly under tasks/ (no deliveries/)"
-if [[ ! -e "${LITE_WORK}/deliveries" ]]; then
-    pass "20a: no deliveries/ folder created for lite-path task write"
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Progress" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20a: flat --field write → exit 0"
+assert_file_contains "$FLAT_STATE" "| task-001 | In Progress |" "20a: task-001 row written to ### Tasks lifecycle"
+if [[ ! -f "${FLAT_WORK}/tasks/task-001/STATE.md" ]]; then
+    pass "20a: no per-task STATE.md created for the flat layout"
 else
-    fail "20a: no deliveries/ folder created for lite-path task write — found ${LITE_WORK}/deliveries"
+    fail "20a: a per-task STATE.md was created — flat layout must not use one"
 fi
 
-# 20b: Source-line delivery resolution also works for the lite-flat SPEC.md location
-# (tasks/task-NNN/SPEC.md directly under the work root, no --delivery-id supplied).
-code=0
-AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --task-id 1 --field Notes --value "auto-resolved-lite" 2>/dev/null || code=$?
-assert_exit_zero "$code" "20b: lite-path source-line resolution (--delivery-id omitted) → exit 0"
-assert_file_contains "${LITE_WORK}/tasks/task-001/STATE.md" "auto-resolved-lite" "20b: Notes written via lite-path source-line resolution"
-
-# 20c: --delivery-id --lifecycle targets the work-root STATE.md's own
-# ## Delivery Lifecycle section directly (no per-delivery STATE.md file exists
-# for a lite work -- the lite-path branch in resolve_delivery_state_file).
-code=0
-AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --lifecycle "Gated" 2>/dev/null || code=$?
-assert_exit_zero "$code" "20c: lite-path --delivery-id --lifecycle → exit 0"
-assert_file_contains "${LITE_WORK}/STATE.md" "**State:** Gated" "20c: work-root STATE.md ## Delivery Lifecycle updated in place"
-assert_file_contains "${LITE_WORK}/STATE.md" "## Pipeline State" "20c: work-root ## Pipeline State section untouched"
-
-# 20d: --delivery-id --block targets the same work-root STATE.md's ## Delivery Gate
-# section (still no separate delivery-level STATE.md / deliveries/ folder created).
-LITE_GATE_BLOCK="- **Reviewer Tier:** Small
-- **Grade:** A+
-- **Issue List:** none
-- **Timestamp:** 2026-06-18T01:00:00Z"
-code=0
-AID_STATE_FILE="${LITE_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --block "$LITE_GATE_BLOCK" 2>/dev/null || code=$?
-assert_exit_zero "$code" "20d: lite-path --delivery-id --block → exit 0"
-assert_file_contains "${LITE_WORK}/STATE.md" "**Grade:** A+" "20d: work-root STATE.md ## Delivery Gate updated in place"
-if [[ ! -e "${LITE_WORK}/deliveries" ]]; then
-    pass "20d: no deliveries/ folder created for lite-path delivery gate write"
+# 20b: the ### Tasks lifecycle placeholder row is replaced, not left dangling.
+# NOTE: must match the exact 5-column "### Tasks lifecycle" placeholder LINE,
+# not a bare substring check -- the fixture's OWN plural DERIVED "## Tasks
+# State" section (8 columns) legitimately keeps its own "_none yet_" placeholder
+# forever on the flat layout (nothing ever populates that unused view), and the
+# 8-column placeholder line's first 6 pipe-delimited cells are byte-identical
+# to the ENTIRE 5-column placeholder line -- a plain `grep -F` substring test
+# (assert_file_not_contains) would ALWAYS find the 5-column string as a prefix
+# of the 8-column line and could never pass. Use `grep -x` (exact whole-line
+# match) instead, matching what the comment above always intended.
+if grep -qxF "| _none yet_ | | | | |" "$FLAT_STATE"; then
+    fail "20b: ### Tasks lifecycle placeholder row replaced by the first real task row — exact 5-column placeholder line still present"
 else
-    fail "20d: no deliveries/ folder created for lite-path delivery gate write — found ${LITE_WORK}/deliveries"
+    pass "20b: ### Tasks lifecycle placeholder row replaced by the first real task row"
+fi
+assert_file_contains "$FLAT_STATE" "| _none yet_ | | | | | | | |" "20b: unrelated plural DERIVED ## Tasks State placeholder is untouched"
+
+# 20c: a second task's first write APPENDS a contiguous row (no blank line
+# splitting the table into two blocks)
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 2 --field State --value "Pending" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20c: second flat task --field write → exit 0"
+assert_file_contains "$FLAT_STATE" "| task-002 | Pending |" "20c: task-002 row appended to ### Tasks lifecycle"
+# Contiguity: the line between the task-001 and task-002 rows must itself be
+# a table row (not blank), i.e. the two rows are adjacent in the file.
+BETWEEN_ROWS=$(awk '/^\| task-001 \|/{f=1; next} f{print; exit}' "$FLAT_STATE")
+if [[ "$BETWEEN_ROWS" == "| task-002 |"* ]]; then
+    pass "20c: appended row is contiguous with the existing table (no blank-line split)"
+else
+    fail "20c: appended row broke table contiguity — line after task-001 was: '$BETWEEN_ROWS'"
+fi
+
+# 20d: updating a different field on an existing row preserves the other columns
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Review --value "A" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20d: flat --field Review write on existing row → exit 0"
+assert_file_contains "$FLAT_STATE" "| task-001 | In Progress | A |" "20d: task-001 Review set to A, State preserved"
+assert_file_contains "$FLAT_STATE" "| task-002 | Pending |" "20d: task-002 row unaffected by task-001 update"
+
+# 20e: --delivery-id 001 --lifecycle updates the work-root ## Delivery Lifecycle
+# State line directly (no deliveries/delivery-001/STATE.md is created)
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --lifecycle "Executing" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20e: flat --lifecycle write → exit 0"
+assert_file_contains "$FLAT_STATE" "**State:** Executing" "20e: work-root ## Delivery Lifecycle State set to Executing"
+if [[ ! -d "${FLAT_WORK}/deliveries" ]]; then
+    pass "20e: no deliveries/ directory created for the flat layout"
+else
+    fail "20e: a deliveries/ directory was created — flat layout must not use one"
+fi
+
+# 20f: --delivery-id 001 --block writes the work-root ## Delivery Gate block
+FLAT_GATE_BLOCK="- **Reviewer Tier:** Small
+- **Grade:** A
+- **Issue List:** none
+- **Timestamp:** 2026-07-08T01:00:00Z"
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --block "$FLAT_GATE_BLOCK" 2>/dev/null || code=$?
+assert_exit_zero "$code" "20f: flat --block write → exit 0"
+assert_file_contains "$FLAT_STATE" "**Grade:** A" "20f: work-root ## Delivery Gate grade written"
+# The plural DERIVED ## Tasks State view (distinct section) must be untouched
+assert_file_contains "$FLAT_STATE" "| _none yet_ | | | | | | | |" "20f: plural DERIVED ## Tasks State view still shows the placeholder (untouched)"
+# Regression guard: the `---` separator and the `DERIVED / READ-ONLY VIEWS`
+# banner comment that sit between ## Delivery Gate and ## Tasks State in the
+# real work-state-template.md must survive the --block rewrite untouched (the
+# old awk swallowed everything up to the next `## ` heading, deleting both).
+assert_file_contains "$FLAT_STATE" "DERIVED / READ-ONLY VIEWS" "20f: DERIVED/READ-ONLY VIEWS banner comment survives the --block rewrite"
+GATE_TO_TASKS=$(awk '/^## Delivery Gate$/{f=1} f{print} /^## Tasks State$/{exit}' "$FLAT_STATE")
+if echo "$GATE_TO_TASKS" | grep -qE '^---$'; then
+    pass "20f: --- separator between ## Delivery Gate and ## Tasks State survives the --block rewrite"
+else
+    fail "20f: --- separator between ## Delivery Gate and ## Tasks State was deleted by the --block rewrite"
+fi
+if echo "$GATE_TO_TASKS" | grep -q "DERIVED / READ-ONLY VIEWS"; then
+    pass "20f: DERIVED/READ-ONLY VIEWS banner is positioned between ## Delivery Gate and ## Tasks State (not pulled up/deleted)"
+else
+    fail "20f: DERIVED/READ-ONLY VIEWS banner is NOT between ## Delivery Gate and ## Tasks State — section boundary corrupted"
+fi
+
+# 20g: idempotency — rewriting the same field value leaves the file byte-identical
+BEFORE=$(wc -c < "$FLAT_STATE")
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "In Progress" 2>/dev/null
+AFTER=$(wc -c < "$FLAT_STATE")
+if [[ "$BEFORE" -eq "$AFTER" ]]; then
+    pass "20g: flat --field write is idempotent — no size change on same value"
+else
+    fail "20g: flat --field write not idempotent — size changed from $BEFORE to $AFTER"
+fi
+
+# 20h: malformed flat work (### Tasks lifecycle section absent) → exit 6
+FLAT_MALFORMED="${TMPDIR_BASE}/work-flat-malformed"
+mkdir -p "$FLAT_MALFORMED"
+cat > "${FLAT_MALFORMED}/STATE.md" <<'MALFORMEDEOF'
+# Work State — work-flat-malformed
+
+## Pipeline State
+
+- **Lifecycle:** Running
+MALFORMEDEOF
+# BLUEPRINT.md must be present so is_flat_layout()'s 3-part rule (BLUEPRINT.md
+# present AND DETAIL.md present AND no deliveries/) still routes this fixture
+# through the flat branch -- otherwise it would fall through to the
+# hierarchical --field path (a different, unresolvable delivery-STATE.md path)
+# and this unit would no longer exercise the "malformed flat work" scenario.
+make_flat_blueprint "$FLAT_MALFORMED"
+make_flat_task_spec "$FLAT_MALFORMED" 1
+code=0
+AID_STATE_FILE="${FLAT_MALFORMED}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field State --value "Done" 2>/dev/null || code=$?
+assert_exit_eq "$code" 6 "20h: flat work missing ### Tasks lifecycle → exit 6 (malformed)"
+
+# 20i: nested-path regression — the ORIGINAL hierarchical fixture (has
+# deliveries/) from the top of this file must still route through the
+# per-unit STATE.md files, completely unaffected by the flat-layout branch.
+code=0
+run_field 1 1 State "Done" || code=$?
+assert_exit_zero "$code" "20i: nested-path --field write still succeeds after flat-layout changes"
+assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "Done" "20i: nested-path task-001 STATE.md still the write target"
+assert_file_not_contains "$FLAT_STATE" "task-001 | Done" "20i: nested-path write did not leak into the flat fixture"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 21: octal footgun regression — zero-padded ids containing 8/9 ==="
+
+# A zero-padded id containing an 8 or 9 (e.g. "008", "090") is NOT a valid
+# octal literal. Before the fix, every `printf '%03d' "$id"` site in this
+# script fed the raw id straight to printf, which bash parses as an octal
+# number when it looks like one — "008"/"090" triggered a bash "invalid
+# octal number" error and printf substituted "000" on stdout (captured by
+# the surrounding `$(...)`), silently resolving to the WRONG path
+# (delivery-000/task-000) instead of erroring loudly. The fix wraps every
+# such id in `$((10#$id))` first to force base-10 arithmetic before padding.
+
+WORK_21="${TMPDIR_BASE}/work-octal21"
+DELIVERY_008="${WORK_21}/deliveries/delivery-008"
+DELIVERY_090="${WORK_21}/deliveries/delivery-090"
+
+make_work_state "$WORK_21"
+make_delivery_state "$WORK_21" 8
+make_task_state "$DELIVERY_008" 8
+make_task_spec  "$DELIVERY_008" 8 8 "work-octal21-test"
+make_delivery_state "$WORK_21" 90
+make_task_state "$DELIVERY_090" 9
+
+# 21a: --field with zero-padded --delivery-id/--task-id "008" resolves to
+# delivery-008/tasks/task-008 (NOT delivery-000/tasks/task-000).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "008" --task-id "008" --field State --value "Done" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21a: --delivery-id 008 --task-id 008 --field → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "**State:** Done" "21a: write landed in delivery-008/tasks/task-008/STATE.md"
+if [[ ! -e "${WORK_21}/deliveries/delivery-000" ]]; then
+    pass "21a: no delivery-000 directory was ever consulted (octal misparse would have targeted it)"
+else
+    fail "21a: delivery-000 exists — octal misparse regression"
+fi
+
+# 21b: --field with zero-padded --delivery-id "090" / --task-id "009" resolves
+# to delivery-090/tasks/task-009 (090 is invalid octal; 009 is invalid octal).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "090" --task-id "009" --field Notes --value "octal-ok" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21b: --delivery-id 090 --task-id 009 --field → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_090}/tasks/task-009/STATE.md" "octal-ok" "21b: write landed in delivery-090/tasks/task-009/STATE.md"
+
+# 21c: --delivery-id "090" --lifecycle targets delivery-090/STATE.md directly
+# (mode_delivery_lifecycle's own padded_id site).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "090" --lifecycle "Gated" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21c: --delivery-id 090 --lifecycle → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_090}/STATE.md" "**State:** Gated" "21c: lifecycle written to delivery-090/STATE.md"
+
+# 21d: --delivery-id "008" --block targets delivery-008/STATE.md directly
+# (mode_delivery_block's own padded_id site).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "008" --block "**Grade:** A" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21d: --delivery-id 008 --block → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/STATE.md" "**Grade:** A" "21d: gate block written to delivery-008/STATE.md"
+
+# 21e: --delivery-id "009" --append-issue targets delivery-009-issues.md
+# (mode_append_issue's own padded_id site). AID_DELIVERY_ISSUES_DIR is
+# overridden per-call here -- it was exported globally to the ORIGINAL
+# $WORK_DIR near the top of this file (Unit 5), so without the override
+# this write would land in the wrong (original) work dir, not $WORK_21.
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" AID_DELIVERY_ISSUES_DIR="${WORK_21}" \
+    bash "$SCRIPT" --delivery-id "009" --append-issue "| task-009 | [LOW] | octal footgun regression row | Open |" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21e: --delivery-id 009 --append-issue → exit 0 (no octal parse error)"
+assert_file_contains "${WORK_21}/delivery-009-issues.md" "octal footgun regression row" "21e: issue row appended to delivery-009-issues.md"
+
+# 21f: omitting --delivery-id and resolving from the task's Source line
+# (resolve_delivery_from_task_spec's own padded_t site) for zero-padded
+# task-id "008".
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --task-id "008" --field Review --value "B" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21f: Source-line resolution with task-id 008 → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "**Review:** B" "21f: Source-line-resolved write landed in delivery-008/tasks/task-008/STATE.md"
+
+# 21g: feature-001 flattened layout — write_task_field_flat's own padded_t
+# site for zero-padded task-id "008".
+FLAT_WORK_21="${TMPDIR_BASE}/work-flat-octal21"
+make_flat_work_state "$FLAT_WORK_21"
+make_flat_blueprint "$FLAT_WORK_21"
+make_flat_task_spec "$FLAT_WORK_21" 8
+code=0
+AID_STATE_FILE="${FLAT_WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id "008" --field State --value "In Progress" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21g: flat layout --task-id 008 --field → exit 0 (no octal parse error)"
+assert_file_contains "${FLAT_WORK_21}/STATE.md" "| task-008 | In Progress |" "21g: flat layout row written for task-008 (not task-000)"
+
+# 21h: --findings with zero-padded --delivery-id/--task-id "008" targets
+# delivery-008/tasks/task-008/STATE.md (mode_findings' own padded_id site,
+# used only in its user-facing confirmation message).
+FINDINGS_OCTAL="**Reviewer Tier:** Small
+### Findings
+| # | Severity | Description | Status |
+|---|----------|-------------|--------|
+| 1 | [LOW] | octal footgun regression finding | Deferred-to-gate |"
+code=0
+err_out21h=$(AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "008" --task-id "008" --findings "$FINDINGS_OCTAL" 2>&1) || code=$?
+assert_exit_zero "$code" "21h: --delivery-id 008 --task-id 008 --findings → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "octal footgun regression finding" "21h: findings block written to delivery-008/tasks/task-008/STATE.md"
+if echo "$err_out21h" | grep -q "task-008"; then
+    pass "21h: confirmation message reports 'task-008' (padded_id resolved correctly, not 'task-000')"
+else
+    fail "21h: confirmation message did not report 'task-008' as expected — got: $err_out21h"
 fi
 
 # ---------------------------------------------------------------------------

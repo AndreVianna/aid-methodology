@@ -86,7 +86,7 @@ WARNING: **DO NOT accumulate multiple deliverables "in your head" -- write each 
 
 **Immediately after writing the PLAN.md stanza,** create the delivery folder:
 
-**4a. Create `deliveries/delivery-NNN/SPEC.md`** (seed from `.github/aid/templates/delivery-spec-template.md`):
+**4a. Create `deliveries/delivery-NNN/BLUEPRINT.md`** (seed from `.github/aid/templates/delivery-blueprint-template.md`):
 
 Fill in from the approved PLAN.md stanza:
 - `Delivery:` = delivery-NNN
@@ -100,7 +100,7 @@ Fill in from the approved PLAN.md stanza:
 - `## Dependencies` = Depends on / Blocks from the PLAN.md stanza
 
 A delivery with ZERO tasks (e.g. a SPIKE delivery that defines a sibling delivery) is valid.
-Write the SPEC with the zero-task table (`_none yet_`) -- do not skip SPEC creation.
+Write the BLUEPRINT with the zero-task table (`_none yet_`) -- do not skip BLUEPRINT creation.
 
 **4b. Create `deliveries/delivery-NNN/STATE.md`** (seed from `.github/aid/templates/delivery-state-template.md`):
 
@@ -181,7 +181,7 @@ After all deliverables are written, check for risks that span features:
 2. Confirm every agreed deliverable is written
 3. If any deliverable is missing → write it NOW
 4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
-5. For each delivery-NNN in PLAN.md, confirm both `deliveries/delivery-NNN/SPEC.md` and
+5. For each delivery-NNN in PLAN.md, confirm both `deliveries/delivery-NNN/BLUEPRINT.md` and
    `deliveries/delivery-NNN/STATE.md` exist under `.aid/{work}/`. If either is missing -> create it NOW
    (seed from the templates; set `State: Pending-Spec`).
 
@@ -201,8 +201,8 @@ Cross-cutting risks: {count} identified (see PLAN.md)
 
 PLAN.md written to: .aid/{work}/PLAN.md
 Delivery folders created:
-  .aid/{work}/deliveries/delivery-001/{SPEC.md, STATE.md} (State: Pending-Spec)
-  .aid/{work}/deliveries/delivery-002/{SPEC.md, STATE.md} (State: Pending-Spec)
+  .aid/{work}/deliveries/delivery-001/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
+  .aid/{work}/deliveries/delivery-002/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
   ...
 ```
 

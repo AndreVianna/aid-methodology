@@ -45,9 +45,9 @@ Each deliverable follows the same cycle:
     REQUIREMENTS.md         <- read
     PLAN.md                 <- OUTPUT: execution graph (delivery stanzas)
     deliveries/
-      delivery-NNN/         <- CREATED by aid-plan per delivery approved in PLAN.md
-        SPEC.md             <- OUTPUT: delivery definition (scope, gate criteria, tasks, dependencies)
-        STATE.md            <- OUTPUT: delivery lifecycle (initial State: Pending-Spec) + gate slot + Q&A slot
+      delivery-NNN/           <- CREATED by aid-plan per delivery approved in PLAN.md
+        BLUEPRINT.md          <- OUTPUT: delivery definition (scope, gate criteria, tasks, dependencies)
+        STATE.md              <- OUTPUT: delivery lifecycle (initial State: Pending-Spec) + gate slot + Q&A slot
     features/
       feature-NNN-{name}/
         SPEC.md             <- read (check Features State in work STATE.md)
@@ -55,8 +55,8 @@ Each deliverable follows the same cycle:
 
 > Note: `deliveries/delivery-NNN/` must exist before `aid-detail` nests `tasks/task-NNN/` under it.
 > The work `STATE.md` `## Plan / Deliveries` section is a DERIVED read-only view assembled
-> at read time from `deliveries/delivery-NNN/STATE.md` files. `aid-plan` does NOT write delivery rows
-> into the work `STATE.md`.
+> at read time from `deliveries/delivery-NNN/STATE.md` files. `aid-plan` does NOT write delivery
+> rows into the work `STATE.md`.
 
 ## Arguments
 
@@ -94,7 +94,7 @@ Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
 - No PLAN.md → **FIRST-RUN**
 - PLAN.md exists, grade below minimum or not yet graded → **REVIEW**
-- PLAN.md exists, graded >= minimum, delivery folders (`deliveries/delivery-NNN/SPEC.md` + `deliveries/delivery-NNN/STATE.md`) written for all deliverables -> **DONE**
+- PLAN.md exists, graded >= minimum, delivery folders (`deliveries/delivery-NNN/BLUEPRINT.md` + `deliveries/delivery-NNN/STATE.md`) written for all deliverables -> **DONE**
 
 Print the state-entry line and "you are here" map:
 
@@ -203,13 +203,13 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 *(Omit if all features included.)*
 ```
 
-### 2. `.aid/{work}/deliveries/delivery-NNN/SPEC.md` (delivery definition)
+### 2. `.aid/{work}/deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition)
 
-Seeded from `.codex/aid/templates/delivery-spec-template.md` with the delivery's
+Seeded from `.codex/aid/templates/delivery-blueprint-template.md` with the delivery's
 objective, scope, gate criteria, tasks placeholder, and dependencies filled in from
 the approved PLAN.md stanza. Written immediately after writing the delivery stanza
 to PLAN.md (Step 4 of The Loop). A delivery with zero tasks (e.g. a SPIKE) gets an
-empty Tasks table -- the SPEC still records the delivery's objective and gate criteria.
+empty Tasks table -- the BLUEPRINT still records the delivery's objective and gate criteria.
 
 ### 3. `.aid/{work}/deliveries/delivery-NNN/STATE.md` (delivery lifecycle)
 
@@ -243,6 +243,6 @@ If no PM tool → skip.
 - [ ] Cross-cutting risks only if real
 - [ ] User approved the sequence
 - [ ] Each deliverable was reviewed after writing (step 4)
-- [ ] deliveries/delivery-NNN/SPEC.md written for every delivery (including zero-task SPIKE deliveries)
+- [ ] deliveries/delivery-NNN/BLUEPRINT.md written for every delivery (including zero-task SPIKE deliveries)
 - [ ] deliveries/delivery-NNN/STATE.md written for every delivery with State: Pending-Spec
 - [ ] No delivery rows written into the work STATE.md (Plan/Deliveries is DERIVED)

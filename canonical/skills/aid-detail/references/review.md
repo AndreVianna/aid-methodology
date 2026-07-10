@@ -37,14 +37,14 @@ For each deliverable, check its corresponding tasks:
 
 Render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `whole-list`
-- `{{ARTIFACTS}}` = every `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)
+- `{{ARTIFACTS}}` = every `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)
 - `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`
 
 Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/detail.md` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
-  Output per `canonical/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Dispatch the `aid-reviewer` subagent with the rendered brief.
 
@@ -53,10 +53,10 @@ Dispatch the `aid-reviewer` subagent with the rendered brief.
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/detail.md
 ```
 
-Compare to minimum grade from `bash canonical/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
+Compare to minimum grade from `bash canonical/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|

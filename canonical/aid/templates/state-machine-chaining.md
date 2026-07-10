@@ -79,9 +79,9 @@ On entering a state's reference doc:
 3. If CHAIN: print a short transition line (e.g., `→ Advancing to [State: X]`), then begin executing the next state's reference doc within the same response cycle.
 4. If PAUSE-FOR-USER-ACTION or PAUSE-FOR-USER-DECISION: before printing the pause reason, emit the pipeline pause signal (silent state-write — no output, no gate):
    ```
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "<short reason — the same condition the state's Advance line names>"
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "<short reason — the same condition the state's Advance line names>"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
    Then print the pause reason, the resume command, and exit.
 5. If HALT: print the closing summary and exit.
@@ -110,7 +110,7 @@ Every skill's `SKILL.md` Dispatch section should include the line:
 ```
 > **State-machine chaining:** Each `/aid-<skill>` invocation drives the state
 > machine until it hits a natural pause point per
-> `canonical/templates/state-machine-chaining.md`. Mechanical and inline-question
+> `canonical/aid/templates/state-machine-chaining.md`. Mechanical and inline-question
 > states auto-chain; only PAUSE-FOR-USER-ACTION / -DECISION / HALT stop the run.
 ```
 

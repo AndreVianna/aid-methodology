@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-version-sync.sh — Unit tests for canonical/scripts/release/check-version-sync.sh
+# test-version-sync.sh — Unit tests for canonical/aid/scripts/release/check-version-sync.sh
 # and structural validation of .github/workflows/release.yml.
 #
 # FR10 acceptance check: version-sync becomes a permanent CI invariant, running on

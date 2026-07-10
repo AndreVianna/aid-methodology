@@ -61,4 +61,4 @@ and add a Change Log entry.
 When all questions addressed:
 `[Q&A] Complete. {answered} answered, {skipped} skipped.`
 
-**Advance:** **CHAIN** → [State: TRIAGE] if triage is not yet done, or → [State: CONTINUE] if § Triage **Path:** is already populated. Both continue inline.
+**Advance:** **CHAIN** → [State: CONTINUE] (continue inline).

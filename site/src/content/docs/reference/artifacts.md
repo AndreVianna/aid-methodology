@@ -12,17 +12,47 @@ See [Repository Structure](/reference/repository-structure/) for the layout of t
 
 ## Work-area artifacts
 
-These artifacts live under `.aid/{work-id}/` for each active work item.
+These artifacts live under `.aid/{work-id}/` for each active work item. The **full path**
+(entered via `/aid-describe`) nests delivery- and task-level artifacts under
+`deliveries/delivery-NNN/`; the **lite path** (entered via a shortcut or `/aid-triage`)
+flattens them to the work root — see [Lite-path artifact shape](#lite-path-artifact-shape)
+below.
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| `REQUIREMENTS.md` | `.aid/{work}/REQUIREMENTS.md` | `aid-describe` | Functional and non-functional requirements gathered during the Describe phase. Contains user stories, acceptance criteria, constraints, assumptions, and priority rankings. |
-| `SPEC.md` (work-root) | `.aid/{work}/SPEC.md` | `aid-describe` (lite) or `aid-specify` (full) | The work-root technical specification. On the lite path, produced directly by `aid-describe`; on the full path, produced feature-by-feature by `aid-specify`. |
+| `REQUIREMENTS.md` | `.aid/{work}/REQUIREMENTS.md` | `aid-describe` (full path) or the shortcut engine (lite path) | Functional and non-functional requirements. Contains user stories, acceptance criteria, constraints, assumptions, and priority rankings. |
+| `SPEC.md` (work-root) | `.aid/{work}/SPEC.md` | The shortcut engine | Lite path only. The work-root technical specification for the single implicit delivery. The full path has no work-root `SPEC.md` — specification happens per feature instead. |
 | `SPEC.md` (per-feature) | `.aid/{work}/features/{feature}/SPEC.md` | `aid-specify` | Full-path only. One spec per feature, produced by `aid-specify`. Each feature SPEC is self-contained with its own acceptance criteria and technical decisions. |
-| `PLAN.md` | `.aid/{work}/PLAN.md` | `aid-plan` | The delivery plan: ordered deliverables (each a functional MVP), feature-to-delivery mapping, and the rationale for the sequencing strategy. |
-| `task-{NNN}.md` | `.aid/{work}/tasks/task-{NNN}.md` | `aid-detail` (full path) or `aid-describe` (lite path) | Individual task files. Each task has one of the eight types (`RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`), acceptance criteria, scope, and dependencies. On the full path `aid-detail` produces them; on the lite path `aid-describe` emits them directly. Tasks are the unit of execution for `aid-execute`. |
-| `STATE.md` (work-area) | `.aid/{work}/STATE.md` | all skills | State machine state for the current work item. Records which phase the work is in, what has been completed, and Q&A/review history for re-entrant skill invocations. |
+| `PLAN.md` | `.aid/{work}/PLAN.md` | `aid-plan` (full path) or the shortcut engine (lite path) | The delivery plan: ordered deliverables (each a functional MVP), feature-to-delivery mapping, and the sequencing rationale. On the lite path there is a single implicit delivery. |
+| `BLUEPRINT.md` (delivery definition) | `.aid/{work}/deliveries/{delivery}/BLUEPRINT.md` (full path) or `.aid/{work}/BLUEPRINT.md` (lite path) | `aid-plan` (full path) or the shortcut engine (lite path) | The delivery definition: objective, scope, gate criteria, task list, and dependencies. Full path: one per delivery, nested under `deliveries/delivery-NNN/`. Lite path: the sole delivery's definition, at the work root. |
+| `STATE.md` (delivery-area) | `.aid/{work}/deliveries/{delivery}/STATE.md` | `aid-plan` (created) / `aid-execute` (updated) | Full-path only. Delivery lifecycle state and gate criteria for one delivery. On the lite path, the sole delivery's lifecycle and gate are promoted into the work-area `STATE.md` instead. |
+| `DETAIL.md` (task definition) | `.aid/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) or `.aid/{work}/tasks/{task}/DETAIL.md` (lite path) | `aid-detail` (full path) or the shortcut engine (lite path) | Individual task definition. Each task has one of the eight types (`RESEARCH`, `DESIGN`, `IMPLEMENT`, `TEST`, `DOCUMENT`, `MIGRATE`, `REFACTOR`, `CONFIGURE`), acceptance criteria, scope, and dependencies. Tasks are the unit of execution for `aid-execute`. |
+| `STATE.md` (task-area) | `.aid/{work}/deliveries/{delivery}/tasks/{task}/STATE.md` | `aid-detail` (created) / `aid-execute` (updated) | Full-path only. Task lifecycle state and review history for one task. The lite path has no per-task `STATE.md` — task cells live in the work-root `STATE.md` § `### Tasks lifecycle`. |
+| `STATE.md` (work-area) | `.aid/{work}/STATE.md` | all skills | State machine state for the current work item. Records which phase the work is in, what has been completed, and Q&A/review history for re-entrant skill invocations. On the lite path, the sole delivery's gate and Q&A are promoted directly into this file. |
 | `IMPEDIMENT-task-NNN.md` | `.aid/{work}/IMPEDIMENT-task-NNN.md` | `aid-execute` (developer agent) | Formal escalation artifact, produced by the Execute phase. Created when implementation reveals a spec contradiction or impossible acceptance criterion. Contains: type, evidence, blocked task, and proposed resolution. Triggers the appropriate feedback loop. |
+
+### Lite-path artifact shape
+
+The lite path (entered via a shortcut such as `/aid-fix` or `/aid-create-api`, or via
+`/aid-triage`) flattens the tree above: a single implicit delivery, no `deliveries/` folder,
+no `delivery-001/` folder.
+
+```
+.aid/
+  work-NNN-name/
+    STATE.md          # work lifecycle, with the sole delivery's gate + Q&A promoted into it
+    REQUIREMENTS.md
+    SPEC.md
+    PLAN.md
+    BLUEPRINT.md       # the single delivery's definition, at the work root
+    tasks/
+      task-NNN/
+        DETAIL.md      # task definition — the flattened path has NO per-task STATE.md;
+                       #   each task's cells live in the work-root STATE.md § ### Tasks lifecycle
+```
+
+Terminology is unchanged across both paths: **delivery definition = `BLUEPRINT.md`**, **task
+definition = `DETAIL.md`**, **feature definition = `SPEC.md`**.
 
 ## Knowledge Base artifacts
 

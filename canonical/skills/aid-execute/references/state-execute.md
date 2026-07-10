@@ -46,7 +46,7 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 ### PD-0: Read Configuration
 
 1. **Read `MaxConcurrent`** from `.aid/knowledge/STATE.md` top-of-file metadata:
-   `bash canonical/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
+   `bash canonical/aid/scripts/config/read-setting.sh --path execution.max_parallel_tasks --default 5` (default `5` if absent).
 
 2. **Detect host capability — `run_in_background` probe.**
 
@@ -104,8 +104,13 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
    configured `MaxConcurrent` from step 1 as the effective value.
 
 3. **Locate the Execution Graph:**
-   - If `PLAN.md` exists in the work directory → read the `#### Execution Graph`
-     block from the delivery's section.
+   - **Flat path (feature-001, single-delivery)** — detected by: a work-root
+     `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
+     under the work root AND no `deliveries/` wrapper under it → read the
+     top-level `## Execution Graph` from the work-root `PLAN.md` (no
+     `### delivery-NNN` heading; the single delivery is implicit).
+   - **Full path** — otherwise, if `PLAN.md` exists in the work directory → read
+     the `#### Execution Graph` block from the delivery's section.
    - Otherwise (lite path) → read the equivalent block from the work-root
      `SPEC.md`.
    - Parse the `| Task | Depends On |` table into an in-memory dependency map.
@@ -113,9 +118,10 @@ Each task type dispatches a specific executor agent. The reviewer is always the 
 ### PD-1: Initialize State
 
 Compute the **ready set** — every task whose `Depends On` list is `—` (no deps)
-or whose every dependency already has `State: Done` in its respective
-per-task `STATE.md` `## Task State` section (full path:
-`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md`).
+or whose every dependency already has `State: Done`:
+- **Full path:** in its respective `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
+  `## Task State` section.
+- **Flat path:** in the work-root `STATE.md § ### Tasks lifecycle` row for that task.
 
 Mark all other tasks **Pending** (no state write needed — absence of `Done` implies
 Pending). The **in-flight set** starts empty. The **blocked set** starts empty.
@@ -123,7 +129,7 @@ Pending). The **in-flight set** starts empty. The **blocked set** starts empty.
 **Advance delivery lifecycle to Executing** (silent state-write -- fires once when
 the first task is dispatched, idempotent if already Executing):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --lifecycle Executing
 ```
 
@@ -183,7 +189,11 @@ Repeat until pool is full (`|in-flight| = MaxConcurrent`) or ready set is empty.
 
 #### PD-2a: Per-task Agent Prompt Template
 
-Each dispatched agent receives:
+Each dispatched agent receives a prompt that branches on layout exactly as
+PD-0 step 3 / PD-1 above (a flat work has no `deliveries/` wrapper and no
+per-task `STATE.md`):
+
+**Full path:**
 
 ```
 TASK: task-{NNN}
@@ -195,9 +205,30 @@ HEARTBEAT_INTERVAL: 1m
 
 Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
 EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
-Read task definition from {task-dir}/SPEC.md (full path: .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/SPEC.md;
-lite path: .aid/{work}/tasks/task-{NNN}/SPEC.md directly -- no deliveries/, no delivery-{DDD}/ folder).
-Read task state from {task-dir}/STATE.md (same per-path resolution as above).
+Read task definition from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/DETAIL.md.
+Read task state from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
+Follow the type-specific executor rules from references/task-type-rules.md.
+On completion, commit to the delivery branch in the worktree.
+Report: DONE or FAILED with reason.
+```
+
+**Flat path (feature-001, single-delivery)** -- no `deliveries/` wrapper; the
+task's mutable state cells live in the work-root `STATE.md`'s `### Tasks
+lifecycle` table row, not a per-task `STATE.md`:
+
+```
+TASK: task-{NNN}
+DELIVERY: delivery-{DDD}
+WORK: .aid/{work}/
+WORKTREE: .aid/.worktrees/task-{NNN}/
+HEARTBEAT_FILE: .aid/.heartbeat/{executor}-{ts}.txt
+HEARTBEAT_INTERVAL: 1m
+
+Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
+EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
+Read task definition from .aid/{work}/tasks/task-{NNN}/DETAIL.md.
+Read task state from the work-root .aid/{work}/STATE.md § ### Tasks lifecycle
+(row for task-{NNN}; there is no per-task STATE.md in this layout).
 Follow the type-specific executor rules from references/task-type-rules.md.
 On completion, commit to the delivery branch in the worktree.
 Report: DONE or FAILED with reason.
@@ -270,22 +301,22 @@ Remove `task-{NNN}` from the in-flight set.
 
    Advance delivery lifecycle to Blocked (silent state-write -- no output, no gate):
    ```bash
-   bash canonical/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
+   bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id DDD --lifecycle Blocked
    ```
 
    Emit pipeline block signal (silent state-write -- no output, no gate):
    ```bash
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
-   bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 
 3. Emit `[pool] ✗ task-{NNN} FAILED — computing failure-block-radius`.
 
 4. **Compute the failure-block-radius (transitive-descendant BFS):**
 
-   Run `canonical/scripts/execute/compute-block-radius.sh` with the
+   Run `canonical/aid/scripts/execute/compute-block-radius.sh` with the
    failed task and the reverse dependency graph:
 
    ```bash
@@ -409,12 +440,13 @@ Next steps:
 
 **State invariants at fixed point (Case B):**
 
-- Every task in the failed set has `State: Failed` in its per-task `STATE.md` (full path:
-  `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: `tasks/task-NNN/STATE.md`).
-- Every task in the blocked set has `State: Blocked` in its per-task `STATE.md` (same
-  per-path resolution) with a Notes entry naming its failed ancestor.
-- The `## Delivery Lifecycle` section has `State: Blocked` (full path: in
-  `deliveries/delivery-NNN/STATE.md`; lite path: directly in the work-root `STATE.md`).
+- Every task in the failed set has `State: Failed` in its per-task state cell (full path:
+  `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; flat layout: its `task-NNN` row in the
+  work-root `STATE.md § ### Tasks lifecycle` -- there is no per-task STATE.md in the flat layout).
+- Every task in the blocked set has `State: Blocked` in that same per-task state cell (full path:
+  `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; flat layout: its `task-NNN` row in the
+  work-root `STATE.md § ### Tasks lifecycle`) with a Notes entry naming its failed ancestor.
+- The delivery `STATE.md` `## Delivery Lifecycle` has `State: Blocked`.
 - No Blocked task was dispatched (Blocked tasks never enter the ready set).
 - Every task NOT in the failed or blocked sets and not already `Done` has
   `State: Pending` -- it was not reached this run because it was not yet ready
@@ -495,22 +527,22 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 Update the task State to `In Progress` (silent state-write -- no output):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Progress"
 ```
 
 Advance delivery lifecycle to Executing (silent state-write -- no output, idempotent):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --lifecycle Executing
 ```
 
 Emit pipeline phase (silent state-write only -- no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Execute
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-execute
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Pick the executor by task Type from the Agent Selection table above** (RESEARCH -> `aid-researcher`, DESIGN -> `aid-architect`, IMPLEMENT/TEST/REFACTOR -> `aid-developer`, DOCUMENT -> `aid-tech-writer`, MIGRATE -> `aid-developer`, CONFIGURE -> `aid-developer`).
@@ -528,7 +560,7 @@ Load the section matching the task's Type from `references/task-type-rules.md` a
 ✓ {executor} done (record actual time) -- or ✗ {executor} failed: {reason}
 When execution passes → update task State to `In Review`:
 ```bash
-bash canonical/scripts/execute/writeback-state.sh \
+bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Review"
 ```
 Then proceed to Step 2 (REVIEW).

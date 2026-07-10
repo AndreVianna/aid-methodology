@@ -64,7 +64,7 @@ The bulk of the review effort.
 | LOW | Minor inaccuracy, low blast radius | Awkward phrasing of an otherwise-correct claim |
 | MINOR | Style / convention issue | Single inline T3 or T4 marker; trailing whitespace |
 
-Worst-issue dominates the grade (per `canonical/templates/grading-rubric.md`).
+Worst-issue dominates the grade (per `canonical/aid/templates/grading-rubric.md`).
 
 ## Altitude checks (folded into the M2 Anatomy mandate) — Full Primary only
 
@@ -206,7 +206,7 @@ When all entries are `fixed` or `deferred`, FIX state completes. Delete the file
 
 ## Grade computation
 
-Per `canonical/templates/grading-rubric.md`, the grade is COMPUTED from the severity
+Per `canonical/aid/templates/grading-rubric.md`, the grade is COMPUTED from the severity
 distribution, not judged. Worst issue dominates. Auto-generated and meta files do not
 contribute findings to the grade (they appear in the summary but are filtered out
 of the grade calculation).

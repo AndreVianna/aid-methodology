@@ -3,8 +3,8 @@ name: aid-monitor
 description: >
   Observe production, classify findings, and route actions. Combines telemetry
   interpretation with triage — detect anomalies, perform root cause analysis
-  for bugs, and route findings to aid-describe (bugs via its lite bug-fix
-  triage; change requests as new/changed requirements).
+  for bugs, and route findings — bugs to /aid-fix, change requests to
+  /aid-triage.
   Per-work scope. Use post-deployment, on schedule, or on-demand.
   State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
 allowed-tools: Read, Glob, Grep, Bash, Write
@@ -19,21 +19,35 @@ Monitor production. Detect what's wrong. Route it to where it gets fixed.
 - **Default executor:** `aid-orchestrator` (routes findings; never implements directly).
 - **Telemetry interpretation:** `aid-researcher` (reads logs/metrics, classifies anomalies).
 - **Routing targets:**
-  - BUG classification → re-enters at `aid-describe` (lite bug-fix triage), which creates the task that `aid-developer` implements via `aid-execute`.
-  - Change Request → re-enters at `aid-describe` as new/changed requirements (full lifecycle).
+  - BUG → `/aid-fix` (creates + implements the fix work).
+  - Change Request → `/aid-triage` (routes to the right entry).
   - Infrastructure → escalated to ops (outside AID scope).
 
 ## Argument-Hint
 
 ```
 /aid-monitor work-NNN
+/aid-monitor "<free-form description of what to observe>"
 ```
 
-Required: work ID. If only one work exists, auto-select it.
+**Two invocation modes** (invocation-context detection; see `## ⚠️ Pre-flight Checks`
+Step 0):
 
-Optional flags:
-- `--since "YYYY-MM-DD"` — observation window start (default: last deploy or last monitor run)
-- `--package package-NNN` — scope to a specific deployment package
+- **`work-NNN` present** -- the existing pipeline path below runs unchanged
+  (`OBSERVE -> CLASSIFY -> ROUTE -> DONE`, post-deployment). Required: work ID. If only
+  one work exists, auto-select it.
+
+  Optional flags (this mode only):
+  - `--since "YYYY-MM-DD"` — observation window start (default: last deploy or last monitor run)
+  - `--package package-NNN` — scope to a specific deployment package
+
+- **No `work-NNN`, a free-form description instead** -- the Lite-path direct-entry
+  shortcut: binds `{name}=aid-monitor`, `{verb}=monitor`, `{artifact}=""` (bare verb),
+  `{description}=<the given text>`, then delegates to the shared shortcut engine
+  (`canonical/aid/templates/shortcut-engine.md`, `INTAKE -> ... -> APPROVAL-HALT`),
+  scaffolding a flattened Lite work and running the grading gates. **Never executes** --
+  it halts for approval; this shortcut entry does not replace the pipeline role below,
+  it adds a second, independent entry point to the same skill directory.
 
 ## Workspace
 
@@ -46,9 +60,22 @@ Optional flags:
   known-issues.md              ← known problems
 ```
 
-<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at canonical/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
+<!-- NOTE: The Monitor area STATE is deferred until the area matures. When authored, MONITOR-STATE.md follows the area-STATE pattern documented at canonical/aid/templates/work-state-template.md (per-work) and .aid/knowledge/schemas.md §1A. -->
 
 ## ⚠️ Pre-flight Checks
+
+### Step 0: Invocation-context mode detection
+
+- **`work-NNN` argument present** → proceed with Steps 1–6 below (the existing
+  pipeline path; untouched).
+- **No `work-NNN` argument, but a free-form description was given instead** → the
+  shortcut-scaffold path (see `## Argument-Hint` above): bind `{name}=aid-monitor`,
+  `{verb}=monitor`, `{artifact}=""`, `{description}=<the given text>`, then delegate
+  directly to `canonical/aid/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
+  below do not run for this path (that pre-flight belongs to the post-deployment
+  pipeline role, not the shortcut entry).
+- **Neither `work-NNN` nor a description** → print the `## Argument-Hint` usage block
+  and exit.
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory.
@@ -121,7 +148,7 @@ APM/performance metrics, test trends, user feedback, support tickets, log files.
 
 **From AID artifacts (what's expected):**
 - Feature SPECs (`.aid/{work}/features/*/SPEC.md`) — expected behavior
-- Per-task `SPEC.md` — acceptance criteria; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `.aid/{work}/tasks/task-NNN/SPEC.md`
+- Per-task `DETAIL.md` — acceptance criteria; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/{work}/tasks/task-NNN/DETAIL.md`
 - Package files — what was deployed and when
 - `known-issues.md` — exclude known problems
 
@@ -137,10 +164,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **Before each dispatch:**
 
-1. **Look up ETA** in `canonical/templates/rough-time-hints.md` for the
+1. **Look up ETA** in `canonical/aid/templates/rough-time-hints.md` for the
    subagent's operation class. Capture LOW–HIGH band.
 2. **Read heartbeat config** via
-   `bash canonical/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
+   `bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1`
    (resolves from `.aid/settings.yml`; default 1; `0` = disabled).
 3. **Pre-create heartbeat file** (always — unconditional, per work-003 traceability):
    - Pre-create `.aid/.heartbeat/<agent-name>-<unix-ts>.txt`
@@ -171,9 +198,9 @@ protocol lives in two reference docs; this section is a checklist citing them.
 
 **References:**
 
-- `canonical/templates/long-wait-protocol.md` — full L2 spec
-- `canonical/templates/subagent-heartbeat-protocol.md` — full L3 spec
-- `canonical/templates/rough-time-hints.md` — current measured ETAs
+- `canonical/aid/templates/long-wait-protocol.md` — full L2 spec
+- `canonical/aid/templates/subagent-heartbeat-protocol.md` — full L3 spec
+- `canonical/aid/templates/rough-time-hints.md` — current measured ETAs
 - `canonical/agents/*/AGENT.md ## Heartbeat protocol` — subagent-side contract
 
 The existing `▶ <agent> starting (~<ETA>)` and `✓ <agent> done` bracket-pair

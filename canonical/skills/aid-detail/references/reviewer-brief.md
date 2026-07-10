@@ -2,7 +2,7 @@
 
 Loaded by `/aid-detail` REVIEW state (per-deliverable in Step 3 of The Loop;
 whole-task-list on re-run). Renders the brief passed to the `aid-reviewer`
-sub-agent. Follows `canonical/templates/reviewer-dispatch.md`.
+sub-agent. Follows `canonical/aid/templates/reviewer-dispatch.md`.
 
 `{{ARTIFACTS}}`, `{{CONTEXT}}`, `{{SCOPE}}` are filled at dispatch time.
 
@@ -22,7 +22,7 @@ SCOPE: {{SCOPE}}   # one of: per-deliverable | whole-list
   per-deliverable: Grade the task list for ONE delivery just written.
   whole-list:      Re-grade all task files against current PLAN.md + SPECs.
 
-RUBRIC: canonical/templates/grading-rubric.md (universal severity → grade table)
+RUBRIC: canonical/aid/templates/grading-rubric.md (universal severity → grade table)
   Grade tasks for:
     - Each task has exactly ONE Type (no mixing)
     - Task size fits one agent session
@@ -49,17 +49,17 @@ DELIVERABLES:
   - Findings format: severity-tagged + source-tagged (TASK | PLAN | SPEC | KB)
   - Output location: `.aid/.temp/review-pending/detail-{work}.md`
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
-  - Grade: per canonical/scripts/grade.sh; minimum resolved via
-    `bash canonical/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
+  - Grade: per canonical/aid/scripts/grade.sh; minimum resolved via
+    `bash canonical/aid/scripts/config/read-setting.sh --skill detail --key minimum_grade --default A`
   - The aid-reviewer NEVER edits task files — only grades and lists issues
 ```
 
 ## Substitution at dispatch time
 
-- `{{ARTIFACTS}}` — at per-deliverable scope: the task SPEC.md files just written for
-  delivery-NNN (`.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`) + the Execution
+- `{{ARTIFACTS}}` — at per-deliverable scope: the task DETAIL.md files just written for
+  delivery-NNN (`.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`) + the Execution
   Graph section just appended to PLAN.md. At whole-list scope: every
-  `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` (all deliveries) + the full PLAN.md.
+  `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full PLAN.md.
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
     (per-deliverable) Tasks for delivery-NNN of work-NNN; feature SPECs:

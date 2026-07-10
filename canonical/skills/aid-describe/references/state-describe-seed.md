@@ -52,7 +52,6 @@ adaptive elicitation machinery (step 2). Do NOT re-implement the engine -- consu
 
 DESCRIBE-SEED fires when ALL of the following hold (read from disk):
 
-- `**Path:**` is `full` in STATE.md `## Triage` block.
 - `**Interview State:**` is `In Progress` AND every section in the Section Status table under
   `## Interview State` is `Complete` or `N/A`.
 - Greenfield: no brownfield KB on disk. Read `.aid/knowledge/`: if no `.md` files are present
@@ -226,7 +225,7 @@ Print:
 ```
 [State: DESCRIBE-SEED] -- Authoring forward-authored KB seed (greenfield mode).
 aid-describe > you are here
-  [* FIRST-RUN ] -> [* Q-AND-A ] -> [* TRIAGE ] -> [* CONTINUE ] -> [@ DESCRIBE-SEED ] -> [ COMPLETION ] -> [ /aid-define ]
+  [* FIRST-RUN ] -> [* Q-AND-A ] -> [* CONTINUE ] -> [@ DESCRIBE-SEED ] -> [ COMPLETION ] -> [ /aid-define ]
   (greenfield only: engine-driven 5-element seed + coherence check + greenfield-mode review gate)
 ```
 (* = complete, @ = current state)
@@ -243,10 +242,10 @@ Tracking above).
 | `**Coherence check:**` not `Complete` AND all six stop-predicate conditions pass on the current docs | Step 4 (coherence check) |
 | Stop-predicate conditions NOT all passing | Step 2 (engine loop) |
 
-**Opener de-dup:** check STATE.md `## Triage` for a `**Opener:**` field (written by TRIAGE when
-the D1 opener fired there). If present: the opener already fired; seed the engine with that
-captured answer as the first vocabulary and calibration signal; enter the adaptive loop directly
-at STOP-CHECK / GAP-SELECTION without re-emitting the D1 opener.
+**Opener de-dup:** the D1 opener always already fired earlier in this session, at
+`state-continue.md`'s entry (CONTINUE is DESCRIBE-SEED's unconditional predecessor -- see
+`SKILL.md § Dispatch`). Enter the adaptive loop directly at STOP-CHECK / GAP-SELECTION;
+never re-emit the D1 opener here.
 
 Scan `.aid/knowledge/` to build the current gap inventory: for each of the 5 elements, check
 whether its KB doc exists and whether it meets its fit criterion. A doc that exists but is only
@@ -478,7 +477,7 @@ are empty and the panel degrades gracefully -- not an error.
 **Grade requirement:**
 
 ```bash
-bash canonical/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
+bash canonical/aid/scripts/config/read-setting.sh --skill discover --key minimum_grade --default A
 ```
 
 Compute `ready = (grade >= minimum_grade AND essence_verdict == PASS AND
@@ -506,6 +505,6 @@ COMPLETION's KB Hydration step finds them already populated and proceeds to the 
 requirements-approval gate. The downstream phases (`aid-specify`, `aid-plan`, `aid-execute`) read
 the seed docs from `.aid/knowledge/` unchanged.
 
-Do NOT re-emit the D1 opener in COMPLETION. The opener already fired in TRIAGE (via `**Opener:**`
-in STATE.md `## Triage`) or at the entry to DESCRIBE-SEED; the de-dup check in COMPLETION and
-CONTINUE applies here too.
+Do NOT re-emit the D1 opener in COMPLETION. The opener already fired at the entry to CONTINUE
+(DESCRIBE-SEED's unconditional predecessor); the fire-once check in `state-continue.md` covers
+this for every downstream state.

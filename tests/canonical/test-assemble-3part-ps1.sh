@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-assemble-3part-ps1.sh -- tests for the PowerShell mirror
-# canonical/scripts/summarize/assemble-3part.ps1, which byte-concatenates
+# canonical/aid/scripts/summarize/assemble-3part.ps1, which byte-concatenates
 # Part1 + Part2 into Output (creating Output's dir if needed).
 #
 # CHANGE 7 (FR-51 / D-012): The -Mermaid parameter was removed.

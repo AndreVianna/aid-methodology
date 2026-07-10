@@ -1067,7 +1067,7 @@ details.accord > summary:focus-visible,
 		<p class="subtitle">AI Integrated Development &mdash; a full-lifecycle methodology for building software with AI agents, delivered as a multi-profile CLI installer.</p>
 		<div class="badges">
 			<span class="badge badge-primary">v2.0.6</span>
-			<span class="badge badge-accent">14 skills</span>
+			<span class="badge badge-accent">92 skills (14 + /aid-triage + /aid-ask + 76 shortcuts)</span>
 			<span class="badge badge-info">9 agents / 3 tiers</span>
 			<span class="badge badge-ok">5 install profiles</span>
 			<span class="badge badge-purple">19 KB documents</span>
@@ -1125,7 +1125,7 @@ details.accord > summary:focus-visible,
 		<div class="card">
 			<div class="kicker">The Delivery</div>
 			<h3>A CLI installer for 5 host tools</h3>
-			<p>AID ships as a multi-profile CLI installer. Install into a repo once; get 14 skills, 9 agents, and the full pipeline ready inside Claude Code, Codex, Cursor, GitHub Copilot CLI, or Antigravity.</p>
+			<p>AID ships as a multi-profile CLI installer. Install into a repo once; get 92 skills (14 pipeline/on-demand + <code>/aid-triage</code> + <code>/aid-ask</code> + 76 verb-first shortcuts), 9 agents, and the full pipeline ready inside Claude Code, Codex, Cursor, GitHub Copilot CLI, or Antigravity.</p>
 		</div>
 	</div>
 
@@ -1244,7 +1244,7 @@ details.accord > summary:focus-visible,
 
 		<div class="gloss-card" id="term-work">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-work">Work</a></div>
-			<p class="gloss-def">A self-contained unit of scope created by one aid-describe run, living at <code>.aid/work-NNN-{slug}/</code>. Each Work owns its own requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base. The top-level pipeline scope container.</p>
+			<p class="gloss-def">A self-contained unit of scope created by one Describe &rarr; Define pair (the full path) or by a single direct-entry shortcut (the flattened Lite path), living at <code>.aid/work-NNN-{slug}/</code>. Each Work owns its own requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base. The top-level pipeline scope container.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Relates to</span>
 				<span class="gloss-pill">Delivery</span>
@@ -1345,11 +1345,11 @@ details.accord > summary:focus-visible,
 		</div>
 
 		<div class="gloss-card" id="term-recipe">
-			<div class="gloss-term"><a class="gloss-anchor" href="#term-recipe">Recipe</a></div>
-			<p class="gloss-def">A pre-filled lite-path template for a recurring change pattern, under <code>canonical/aid/recipes/</code>, named by the change it makes (<code>add-X</code> / <code>change-X</code> / <code>fix-X</code>). TRIAGE matches a free-form work description to a recipe. A shortcut for known patterns, not a quality bypass &mdash; it produces the same typed, reviewed task set.</p>
+			<div class="gloss-term"><a class="gloss-anchor" href="#term-recipe">Shortcut</a></div>
+			<p class="gloss-def">One of <strong>76</strong> verb-first, direct-entry skills (<code>aid-fix</code>, <code>aid-create-api</code>, <code>aid-change-ui</code>, <code>aid-review</code>, <code>aid-remove</code>, <code>aid-migrate</code>, &hellip;) &mdash; the way you enter the Lite path by <em>naming</em> your change. Each is a thin doorway that binds a <code>{verb, artifact}</code> pair and delegates to the shared Shortcut Engine; the doorways are generated from an 80-row catalog (<code>canonical/aid/templates/shortcut-catalog.yml</code>) = 51 canonical names + 29 aliases, spanning 14 shortcut families &mdash; including five added in the v2.1.0 follow-on (<code>remove</code>, <code>deprecate</code>, <code>migrate</code>, <code>review</code>, <code>research</code>). Naming a change with a shortcut is one of AID's three entry points, alongside <code>/aid-triage</code> and <code>/aid-describe</code>. This replaced the retired recipe catalog.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Aliases</span>
-				<span class="gloss-pill">Slot</span>
+				<span class="gloss-pill">doorway</span>
 			</div>
 		</div>
 
@@ -1404,23 +1404,23 @@ details.accord > summary:focus-visible,
 
 		<div class="gloss-card" id="term-triage">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-triage">Triage</a></div>
-			<p class="gloss-def">The opening state of <code>/aid-describe</code> (after FIRST-RUN scaffolding, before the conversational interview) that routes a Work down either the full path (every numbered phase) or the lite path (condensed phases, same artifacts). Engine-driven: the seasoned-analyst engine draws out route-deciding signals over a 5-signal gap inventory; a confident single-target recipe match routes to lite automatically.</p>
+			<p class="gloss-def">The standalone <code>/aid-triage</code> router skill &mdash; a stateless, write-free, suggest-only entry helper for the "I don't know which door fits" case. State machine: <code>INTAKE &rarr; CLASSIFY &rarr; SUGGEST &rarr; HALT</code>. It captures one free-form description, infers work-type and scope, then suggests exactly one next step and stops: the matching canonical shortcut for a known single change, or the full path <code>/aid-describe</code> for anything broad, multi-activity, or ambiguous. It writes nothing &mdash; no work folder, no <code>STATE.md</code> &mdash; and dispatches no subagent. This is the extraction of <code>/aid-describe</code>'s former TRIAGE state into its own skill.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Relates to</span>
-				<span class="gloss-pill">Lite Path</span>
-				<span class="gloss-pill">Recipe</span>
-				<span class="gloss-pill">Work</span>
-				<span class="gloss-pill">Seasoned-Analyst Engine</span>
+				<span class="gloss-pill">Shortcut</span>
+				<span class="gloss-pill">Shortcut Engine</span>
+				<span class="gloss-pill">Describe / Define</span>
+				<span class="gloss-pill">NFR-7 Suggested-Answer + Rationale</span>
 			</div>
 		</div>
 
 		<div class="gloss-card" id="term-lite-path">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-lite-path">Lite Path</a></div>
-			<p class="gloss-def">The TRIAGE-routed condensed pipeline for small, single-target work: the same typed, reviewed artifacts as the full path but with phases collapsed (Specify+Plan+Detail fold into the interview's task breakdown). A shortcut for known patterns, not a quality bypass.</p>
+			<p class="gloss-def">The condensed, flattened pipeline for small, single-target work, entered directly by naming the change &mdash; running a verb-first shortcut (<code>/aid-fix</code>, <code>/aid-create-api</code>, &hellip;) &mdash; rather than by any routing state inside <code>aid-describe</code> (which no longer exists). Every shortcut delegates to the shared shortcut engine, which collapses the five definition phases (Describe &rarr; Define &rarr; Specify &rarr; Plan &rarr; Detail) into one fast, mostly-autonomous run and produces the full flattened artifact set &mdash; no <code>features/</code>, no <code>deliveries/</code> folder. Same typed, reviewed artifacts as the full path with the phases collapsed, not skipped.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Relates to</span>
 				<span class="gloss-pill">Triage</span>
-				<span class="gloss-pill">Recipe</span>
+				<span class="gloss-pill">Shortcut Engine</span>
 			</div>
 		</div>
 
@@ -1466,7 +1466,7 @@ details.accord > summary:focus-visible,
 
 		<div class="gloss-card" id="term-delivery-gate">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-delivery-gate">Delivery Gate</a></div>
-			<p class="gloss-def">The per-delivery review gate recorded in <code>delivery-NNN/STATE.md</code>: it aggregates the deferred Quick Check Findings accumulated by Small-tier in-task quick checks and requires the delivery's <code>grade.sh</code> grade to meet the minimum before the delivery ships.</p>
+			<p class="gloss-def">The per-delivery review gate recorded in the delivery's <code>## Delivery Gate</code> block &mdash; full path: <code>deliveries/delivery-NNN/STATE.md</code>; lite path: authored directly in the work-root <code>STATE.md</code> (a lite work has no <code>delivery-NNN/</code> folder). It aggregates the deferred Quick Check Findings accumulated by Small-tier in-task quick checks and requires the delivery's <code>grade.sh</code> grade to meet the minimum before the delivery ships.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Aliases</span>
 				<span class="gloss-pill">Delivery State</span>
@@ -1485,7 +1485,7 @@ details.accord > summary:focus-visible,
 
 		<div class="gloss-card" id="term-describe-define">
 			<div class="gloss-term"><a class="gloss-anchor" href="#term-describe-define">Describe / Define</a></div>
-			<p class="gloss-def">The two skills that together perform Phase 2 (Describe &#8594; Define). <strong><code>aid-describe</code></strong> (Phase 2a) gathers requirements through the seasoned-analyst interview and runs TRIAGE; it produces the approved <code>REQUIREMENTS.md</code> on the full path (or a work-root <code>SPEC.md</code> + task hierarchy on the lite path), and on greenfield authors the forward-authored KB seed. <strong><code>aid-define</code></strong> (Phase 2b, full path only) decomposes the approved <code>REQUIREMENTS.md</code> into per-feature <code>SPEC.md</code> stubs, then cross-references them against the KB and codebase. This pair replaced the former single <code>aid-interview</code> skill.</p>
+			<p class="gloss-def">The two skills that together perform Phase 2 (Describe &#8594; Define). <strong><code>aid-describe</code></strong> (Phase 2a) gathers requirements through the seasoned-analyst interview &mdash; <strong>full path only</strong>: it no longer triages or emits lite work (routing moved to the standalone <code>/aid-triage</code> router; lite work is entered through the shortcut engine) &mdash; and produces the approved <code>REQUIREMENTS.md</code>, and on greenfield authors the forward-authored KB seed. <strong><code>aid-define</code></strong> (Phase 2b, full path only) decomposes the approved <code>REQUIREMENTS.md</code> into per-feature <code>SPEC.md</code> stubs, then cross-references them against the KB and codebase. This pair replaced the former single <code>aid-interview</code> skill.</p>
 			<div class="gloss-meta">
 				<span class="gloss-label">Aliases</span>
 				<span class="gloss-pill">aid-describe</span>
@@ -1869,12 +1869,12 @@ details.accord > summary:focus-visible,
 			<div class="adr-header">
 				<span class="adr-id">D14</span>
 				<span class="adr-title">Lite path + description-first TRIAGE</span>
-				<span class="adr-status accepted">Accepted</span>
+				<span class="adr-status superseded">Superseded</span>
 			</div>
 			<div class="adr-body">
 				<div class="adr-row">
 					<span class="adr-row-label">Decision</span>
-					<span class="adr-row-content">Every interview opens with TRIAGE: the user describes the work in plain language, the agent infers the work-type and best-matching recipe, and a confident match routes to a condensed lite path that skips Specify/Plan/Detail.</span>
+					<span class="adr-row-content"><em>(original decision, 2026-06-28)</em> Every interview opens with TRIAGE: the user describes the work in plain language, the agent infers the work-type and best-matching recipe, and a confident match routes to a condensed lite path that skips Specify/Plan/Detail. <strong>Superseded 2026-07-09 (D20/D21/D24):</strong> the proportionality principle survives, but the mechanism was replaced by the three-door direct-entry model &mdash; routing extracted to the standalone <code>/aid-triage</code> router, recipe matching replaced by the shared shortcut engine, and <code>/aid-describe</code> reduced to full-path only with no TRIAGE state.</span>
 				</div>
 				<div class="adr-row">
 					<span class="adr-row-label">Why</span>
@@ -1993,12 +1993,12 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">What AID does &mdash; capability-inventory.md</span>
 		<h2>Capability Inventory</h2>
-		<p class="lede">AID is a methodology delivered as a multi-profile CLI installer. Its capabilities fall into four groups: the pipeline skills you drive, the on-demand skills you invoke when needed, the CLI that installs and maintains it, and the multi-tool distribution that ships it to five host agents.</p>
+		<p class="lede">AID is a methodology delivered as a multi-profile CLI installer. Its capabilities fall into five groups: the pipeline skills you drive, the direct-entry shortcut skills that enter the fast Lite path, the on-demand skills you invoke when needed, the CLI that installs and maintains it, and the multi-tool distribution that ships it to five host agents.</p>
 	</header>
 
 	<!-- Pipeline skills -->
 	<h3 style="margin-top:0; margin-bottom:0.75rem;">Pipeline Skills &mdash; the lifecycle</h3>
-	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">10 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate. Phase 2 (Describe &#8594; Define) is realized by two chained skills: <code>/aid-describe</code> (Phase 2a) and <code>/aid-define</code> (Phase 2b).</p>
+	<p style="color:var(--text-muted); margin-bottom:1rem; font-size:0.94rem;">10 skills that drive the 6-phase pipeline plus its one-time bootstrap and optional delivery steps. Each skill is a state machine: the user invokes it, the agent works through states (PLAN&nbsp;&rarr;&nbsp;ACT&nbsp;&rarr;&nbsp;REVIEW&nbsp;&rarr;&nbsp;DONE), and the human approves advancement at every gate. Phase 2 (Describe &#8594; Define) is realized by two chained skills: <code>/aid-describe</code> (Phase 2a) and <code>/aid-define</code> (Phase 2b). This full sequence is one of three entry points &mdash; naming a change directly with a verb-first shortcut, or asking <code>/aid-triage</code> to suggest between them, enters the flattened Lite fast path instead.</p>
 	<div class="cap-grid">
 		<div class="cap-card">
 			<span class="cap-kicker">Setup: Config (bootstrap)</span>
@@ -2023,7 +2023,7 @@ details.accord > summary:focus-visible,
 			<span class="cap-name">Gather requirements</span>
 			<code class="cap-invoke">/aid-describe</code>
 			<dl class="cap-dl">
-				<dt>What</dt><dd>Adaptive one-question-at-a-time interview driven by the seasoned-analyst elicitation engine (NFR-7 envelope + five-step selector), producing an approved <code>REQUIREMENTS.md</code>. Runs TRIAGE (full vs. lite routing) and, on greenfield projects, forward-authors a KB seed.</dd>
+				<dt>What</dt><dd>Adaptive one-question-at-a-time interview driven by the seasoned-analyst elicitation engine (NFR-7 envelope + five-step selector), producing an approved <code>REQUIREMENTS.md</code> (full path only &mdash; routing moved to <code>/aid-triage</code>) and, on greenfield projects, forward-authors a KB seed.</dd>
 				<dt>When</dt><dd>After discovery (or directly for greenfield), when starting a new Work. The <code>aid-interviewer</code> agent conducts the dialogue.</dd>
 			</dl>
 		</div>
@@ -2086,7 +2086,7 @@ details.accord > summary:focus-visible,
 			<span class="cap-name">Observe production</span>
 			<code class="cap-invoke">/aid-monitor</code>
 			<dl class="cap-dl">
-				<dt>What</dt><dd>Interprets telemetry, classifies findings, and routes bugs / change requests back into the pipeline.</dd>
+				<dt>What</dt><dd>Interprets telemetry, classifies findings, and routes them back into the pipeline: bugs to <code>/aid-fix</code>, change requests to <code>/aid-triage</code>, infrastructure to ops.</dd>
 				<dt>When</dt><dd>After deployment, to close the feedback loop from production.</dd>
 			</dl>
 		</div>
@@ -2303,14 +2303,14 @@ details.accord > summary:focus-visible,
 				<tr><th>Directory / File</th><th>Purpose</th><th>Notes</th></tr>
 			</thead>
 			<tbody>
-				<tr><td><code>canonical/</code></td><td>Single source of truth for all installable content (skills, agents, templates, scripts, recipes)</td><td>Never edit <code>profiles/</code> directly &mdash; always edit here</td></tr>
+				<tr><td><code>canonical/</code></td><td>Single source of truth for all installable content (skills, agents, templates, scripts)</td><td>Never edit <code>profiles/</code> directly &mdash; always edit here</td></tr>
 				<tr><td><code>profiles/</code></td><td>Five rendered, host-tool-specific install trees (build output)</td><td>claude-code, codex, cursor, copilot-cli, antigravity</td></tr>
 				<tr><td><code>packages/npm/</code></td><td>npm package wrapper</td><td>Vendored bin/lib/dashboard; zero runtime deps</td></tr>
 				<tr><td><code>packages/pypi/</code></td><td>PyPI package wrapper</td><td>Same content; zero runtime deps</td></tr>
 				<tr><td><code>bin/</code></td><td>CLI entry point (<code>bin/aid</code> Bash, <code>bin/aid.ps1</code> PowerShell)</td><td>Cross-platform CLI</td></tr>
 				<tr><td><code>lib/</code></td><td>Shared install/update/remove engines (<code>aid-install-core.sh</code>, <code>AidInstallCore.psm1</code>)</td><td>Polyglot parity: Bash mirrors PowerShell</td></tr>
 				<tr><td><code>dashboard/</code></td><td>Local web dashboard: server (<code>server.mjs</code>, <code>server.py</code>) + reader (<code>reader/</code>)</td><td>Read-only, loopback-only, no LLM</td></tr>
-				<tr><td><code>tests/</code></td><td>105 canonical test suites + bespoke harnesses per language</td><td>Run via <code>tests/run-all.sh</code></td></tr>
+				<tr><td><code>tests/</code></td><td>118 canonical test suites + bespoke harnesses per language</td><td>Run via <code>tests/run-all.sh</code></td></tr>
 				<tr><td><code>site/</code></td><td>Astro-based docs site (TypeScript)</td><td>Published to https://aid.casuloailabs.com</td></tr>
 				<tr><td><code>install.sh</code></td><td>Bash curl-bootstrap installer</td><td>ASCII-only, POSIX-compatible</td></tr>
 				<tr><td><code>install.ps1</code></td><td>PowerShell irm-bootstrap installer</td><td>5.1-compatible, ASCII-only</td></tr>
@@ -2583,7 +2583,7 @@ details.accord > summary:focus-visible,
 			<rect class="plane-accent" x="175" y="10" width="175" height="200" rx="10"/>
 			<text class="plane-label" x="262" y="30" text-anchor="middle">Toolkit</text>
 			<rect class="module-box" x="187" y="40" width="151" height="26" rx="5"/>
-			<text class="module-text" x="262" y="53">canonical/skills/ (14 skills)</text>
+			<text class="module-text" x="262" y="53">canonical/skills/ (92 skills)</text>
 			<rect class="module-box" x="187" y="72" width="151" height="26" rx="5"/>
 			<text class="module-text" x="262" y="85">canonical/agents/ (9 agents)</text>
 			<rect class="module-box" x="187" y="104" width="151" height="26" rx="5"/>
@@ -2591,7 +2591,7 @@ details.accord > summary:focus-visible,
 			<rect class="module-box" x="187" y="136" width="151" height="26" rx="5"/>
 			<text class="module-text" x="262" y="149">canonical/aid/templates/</text>
 			<rect class="module-box" x="187" y="168" width="151" height="26" rx="5"/>
-			<text class="module-text" x="262" y="181">canonical/aid/recipes/</text>
+			<text class="module-text" x="262" y="181">shortcut-engine + catalog</text>
 
 			<!-- Render plane -->
 			<rect class="plane-bg" x="360" y="10" width="165" height="200" rx="10"/>
@@ -2821,7 +2821,7 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Artifact shapes &mdash; artifact-schemas.md</span>
 		<h2>Artifact Schemas</h2>
-		<p class="lede">The structural schema of every artifact the AID methodology produces &mdash; STATE files, SPEC/REQUIREMENTS/feature/task files, settings, and the three manifest formats &mdash; with required fields, closed enums, producers, consumers, and validation points.</p>
+		<p class="lede">The structural schema of every artifact the AID methodology produces &mdash; STATE files, REQUIREMENTS/feature-SPEC/delivery-BLUEPRINT/task-DETAIL files, settings, and the three manifest formats &mdash; with required fields, closed enums, producers, consumers, and validation points.</p>
 	</header>
 
 	<div class="tbl-wrap">
@@ -2831,20 +2831,20 @@ details.accord > summary:focus-visible,
 				<tr>
 					<td><strong>Work STATE.md</strong></td>
 					<td><code>.aid/work-NNN-{slug}/STATE.md</code></td>
-					<td>Pipeline Status (phase, lifecycle), Triage, Tasks Status rollup</td>
+					<td>Pipeline Status (phase, lifecycle), Interview State, Tasks Status rollup</td>
 					<td>/aid-describe, /aid-execute</td>
 					<td>Dashboard reader, /aid-execute</td>
 				</tr>
 				<tr>
 					<td><strong>Delivery STATE.md</strong></td>
-					<td><code>.../delivery-NNN/STATE.md</code></td>
+					<td><code>.../deliveries/delivery-NNN/STATE.md</code> (full path only)</td>
 					<td>Delivery State (status, grade), Delivery Gates, Quick Check Findings</td>
 					<td>/aid-execute</td>
 					<td>Dashboard reader, /aid-deploy</td>
 				</tr>
 				<tr>
 					<td><strong>Task STATE.md</strong></td>
-					<td><code>.../task-NNN/STATE.md</code></td>
+					<td><code>.../deliveries/delivery-NNN/tasks/task-NNN/STATE.md</code> (full path only)</td>
 					<td>status (enum), type (8-value enum), grade, reviewer ledger ref</td>
 					<td>/aid-execute</td>
 					<td>Dashboard reader, Delivery STATE rollup</td>
@@ -2871,8 +2871,8 @@ details.accord > summary:focus-visible,
 					<td>/aid-plan, /aid-detail</td>
 				</tr>
 				<tr>
-					<td><strong>Task SPEC.md</strong></td>
-					<td><code>.../task-NNN/SPEC.md</code></td>
+					<td><strong>Task DETAIL.md</strong></td>
+					<td><code>.../deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md</code> (flattened Lite: <code>tasks/task-NNN/DETAIL.md</code>, no per-task STATE.md)</td>
 					<td>type (enum), depends_on, acceptance criteria</td>
 					<td>/aid-detail</td>
 					<td>/aid-execute</td>
@@ -2941,9 +2941,9 @@ details.accord > summary:focus-visible,
 				</tr>
 				<tr>
 					<td>Phase 2a: Describe</td>
-					<td><code>/aid-describe</code></td>
-					<td>KB, work description (+ forward-authored KB seed for greenfield)</td>
-					<td>Approved <code>REQUIREMENTS.md</code> (full path) or Work SPEC + tasks (lite path); greenfield: KB seed docs</td>
+					<td><code>/aid-describe</code> (full path only)</td>
+					<td>KB, user answers</td>
+					<td>Approved <code>REQUIREMENTS.md</code> (full path only &mdash; lite work is produced by the shortcut engine, not this skill); greenfield: forward-authored KB seed docs</td>
 					<td>Human: requirements approved; grade &ge; minimum</td>
 				</tr>
 				<tr>
@@ -2964,20 +2964,20 @@ details.accord > summary:focus-visible,
 					<td>Plan</td>
 					<td><code>/aid-plan</code></td>
 					<td>Feature SPECs, KB</td>
-					<td><code>PLAN.md</code> (delivery sequence)</td>
+					<td><code>PLAN.md</code> (delivery sequence) + per-delivery <code>BLUEPRINT.md</code> stubs</td>
 					<td>Human: plan accepted (full path only)</td>
 				</tr>
 				<tr>
 					<td>Detail</td>
 					<td><code>/aid-detail</code></td>
-					<td><code>PLAN.md</code>, feature SPECs, KB</td>
-					<td>Task <code>SPEC.md</code> files + Execution Graph (waves)</td>
+					<td><code>PLAN.md</code>, feature SPECs, <code>BLUEPRINT.md</code>, KB</td>
+					<td>Task <code>DETAIL.md</code> files + Execution Graph (waves)</td>
 					<td>Human: task breakdown accepted (full path only)</td>
 				</tr>
 				<tr>
 					<td>Execute</td>
 					<td><code>/aid-execute</code></td>
-					<td>Task SPEC.md, Execution Graph, KB</td>
+					<td>Task DETAIL.md, Execution Graph, KB</td>
 					<td>Code, tests, one git branch per delivery; reviewer ledger; grade</td>
 					<td>grade &ge; minimum per delivery; human: delivery gate approved</td>
 				</tr>
@@ -2992,7 +2992,7 @@ details.accord > summary:focus-visible,
 					<td>Monitor (optional)</td>
 					<td><code>/aid-monitor</code></td>
 					<td>Telemetry / production findings</td>
-					<td>Classified findings, new Work or feedback-loop entries</td>
+					<td>Classified findings; BUG &rarr; <code>/aid-fix</code>, change request &rarr; <code>/aid-triage</code>, infrastructure &rarr; ops</td>
 					<td>Human: findings reviewed</td>
 				</tr>
 			</tbody>
@@ -3043,8 +3043,8 @@ details.accord > summary:focus-visible,
 			<p>Release verification fails; delivery sent back for fixes.</p>
 		</div>
 		<div class="card">
-			<div class="kicker">L11</div><h3>Monitor &rarr; Describe</h3>
-			<p>Production finding triggers a new Work via a new interview.</p>
+			<div class="kicker">L11</div><h3>Monitor &rarr; Fix / Triage</h3>
+			<p>Production finding classified BUG routes to <code>/aid-fix</code>; classified Change Request routes to <code>/aid-triage</code>.</p>
 		</div>
 	</div>
 </section>
@@ -3132,7 +3132,7 @@ details.accord > summary:focus-visible,
 	<header>
 		<span class="eyebrow">Automated suites &mdash; test-landscape.md</span>
 		<h2>Test Landscape</h2>
-		<p class="lede">105 canonical test suites covering the CLI installer, the multi-profile render, the dashboard, and the docs site. A single entrypoint runs all non-Windows suites locally; heavy gates run on master CI only.</p>
+		<p class="lede">118 canonical test suites covering the CLI installer, the multi-profile render, the dashboard, and the docs site. A single entrypoint runs all non-Windows suites locally; heavy gates run on master CI only.</p>
 	</header>
 
 	<div class="grid g4" style="margin-bottom:1.5rem;">
@@ -3424,7 +3424,7 @@ details.accord > summary:focus-visible,
 		<div class="card">
 			<div class="kicker">Layer 1</div>
 			<h3>Automated Tests</h3>
-			<p>105 canonical suites via <code>tests/run-all.sh</code>; CI-gated; catches functional regressions and format violations. Runs before quality gates.</p>
+			<p>118 canonical suites via <code>tests/run-all.sh</code>; CI-gated; catches functional regressions and format violations. Runs before quality gates.</p>
 		</div>
 		<div class="card">
 			<div class="kicker">Layer 2</div>

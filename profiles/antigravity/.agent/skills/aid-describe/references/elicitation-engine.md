@@ -3,8 +3,10 @@
 The engine driver for the seasoned-analyst interview: one fixed opener (D1) plus a
 deterministic five-step next-move selector that runs every subsequent turn (D2). This
 is NOT a question list -- it is an adaptive analyst. Three parameters supplied by the
-caller let feature-003 (greenfield seed authoring) and feature-004 (guided triage)
-CONSUME this engine without re-implementing it (D3).
+caller let feature-003 (greenfield seed authoring) CONSUME this engine without
+re-implementing it (D3). The standalone `/aid-triage` router (feature-014,
+work-001-lite-aid-skills) reuses the D1 opener's reflect-back-turn UX shape as a
+precedent, not as a live three-parameter consumer -- see "Consumption Contract" below.
 
 **Audience.** Two readers at once: a junior maintainer learning how the interview
 works, and the feature implementations that invoke or extend the engine.
@@ -78,7 +80,6 @@ The engine has exactly two parts:
         v
   EXIT --> host state advance:
            full-path interview  --> COMPLETION
-           triage (feature-004) --> routing decision
            seed authoring (feature-003) --> seed gate
 ```
 
@@ -134,7 +135,7 @@ loop, the engine extracts:
 |----------------|---------|
 | Nouns and verbs the user introduced | Step 2 gap detection (rank-3 term-capture gap); Step 3 move-playbook.md Move 2 |
 | Jargon fluency, precision, decisiveness | Calibration state initialization (calibration.md Part A -- continuous READ) |
-| Scope cues (small/simple vs large/sprawling) | Feature-004 triage gap inventory (scope-size signal for Move 5) |
+| Scope cues (small/simple vs large/sprawling) | Step 2 gap detection (scope-size signal for Move 5, the full-path scope-sizing move) |
 
 ---
 
@@ -169,7 +170,6 @@ consumer supplies its own stop predicate:
 |-------------|----------------|
 | Full-path interview | Every REQUIREMENTS.md section is `Complete` or `N/A` (interview-loop.md Section State), and no unresolved coherence conflict is open |
 | Seed authoring (feature-003) | Every mandatory Rec-A seed element passes its per-element fit criterion (findings.md RQ-A5 table) and aid-specify would run with zero KB-gap loopbacks (AC-2) -- feature-003 supplies this checklist |
-| Triage (feature-004) | Enough path/recipe-deciding signal is present to route with confidence -- feature-004 supplies this predicate |
 
 **When the stop check fires:** the engine exits and returns control to the host
 state's advance. It does not emit another question.
@@ -195,9 +195,9 @@ rank-1 gap is open, and so on down the table.
 | 5 | **Under-pinned existing answer** -- a term or claim the user stated with no concrete example (a Partial gap) | Deepen a Partial before declaring done. | interview-strategies.md priority 3; move-playbook.md Move 8 |
 
 **Gap inventory source:** the gap inventory is supplied by the consumer. Feature-003
-supplies the Rec-A seed doc-set; feature-004 supplies the path/recipe signals; the
-full-path interview draws from REQUIREMENTS.md sections. The precedence ranking above
-is the engine's fixed logic; the inventory contents vary by consumer.
+supplies the Rec-A seed doc-set; the full-path interview draws from REQUIREMENTS.md
+sections. The precedence ranking above is the engine's fixed logic; the inventory
+contents vary by consumer.
 
 ---
 
@@ -215,7 +215,7 @@ looks up the table every turn.
 | Undefined or ambiguous term the user used | Move 2: Term-capture + disambiguation |
 | Unnamed boundary or relationship in the architecture | Move 3: Boundary-elicitation |
 | Unknown behavior or flow in a process-heavy domain | Move 4: Event-first, propose-timeline-back |
-| Unknown scope size (full-vs-lite or recipe signal) | Move 5: Backbone-first + walking-skeleton (the move feature-004 leans on) |
+| Unknown scope size (backbone size, sprawl) | Move 5: Backbone-first + walking-skeleton |
 | Missing fit criterion or testability of a requirement | Move 6: Rationale + testability probe |
 | Missing "why" behind a stated intent | Move 7: Bounded why-probe -- climb 2-3 whys, propose the inferred motive back, stop at the terminal value; NEVER the rote "five whys" |
 | A claim or term asserted with no concrete example | Move 8: Concrete-example probe |
@@ -301,9 +301,9 @@ terminal artifact.
 
 | Parameter | Supplied by | Meaning |
 |-----------|-------------|---------|
-| **gap inventory** | consumer | The set of open gaps the adaptive loop draws out. Full-path interview: REQUIREMENTS.md sections. Feature-003: the Rec-A seed doc-set. Feature-004: path/recipe signals. |
-| **stop predicate** | consumer | The minimal-but-sufficient test for this context. Full-path interview: all sections Complete/N/A with no open conflict. Feature-003: the RQ-A5 per-element fit criteria (aid-specify runs with zero KB-gap loopbacks). Feature-004: route-with-confidence signal present. |
-| **record sink** | consumer | Where each confirmed answer is written. Full-path interview: REQUIREMENTS.md sections. Feature-003: the forward-authored KB docs. Feature-004: the triage signal block in STATE.md. |
+| **gap inventory** | consumer | The set of open gaps the adaptive loop draws out. Full-path interview: REQUIREMENTS.md sections. Feature-003: the Rec-A seed doc-set. |
+| **stop predicate** | consumer | The minimal-but-sufficient test for this context. Full-path interview: all sections Complete/N/A with no open conflict. Feature-003: the RQ-A5 per-element fit criteria (aid-specify runs with zero KB-gap loopbacks). |
+| **record sink** | consumer | Where each confirmed answer is written. Full-path interview: REQUIREMENTS.md sections. Feature-003: the forward-authored KB docs. |
 
 **Consume, do not re-implement (D3).**
 
@@ -315,19 +315,23 @@ seed-to-requirements coherence mechanism -- those are feature-003's scope. The e
 only surfaces a coherence conflict it notices (gap rank 1) and routes it to
 capture-and-defer via Move 9.
 
-**feature-004 (guided triage) CONSUMES this engine.** Triage is a thin path over the
-engine that reuses the D1 opener, Move 5 (backbone-first and walking-skeleton, the
-primary scope-sizing move), Move 8 (concrete-example probe), and calibration. Its gap
-inventory is the path/recipe signals; its stop predicate is route-with-confidence. The
-routing decision and confirmation turn (state-triage.md Steps 2-4) remain
-feature-004's. Feature-002 owns only the opener and the adaptive loop it builds on.
-KB-context-awareness (full KB vs seed KB vs no KB, FR-5) is feature-004's
-parameterization of the gap inventory.
+**The in-skill guided-triage consumer has been removed.** `aid-describe` no longer hosts
+a TRIAGE state (work-001-lite-aid-skills feature-013) -- full-vs-lite routing has left this
+skill entirely; `aid-describe` now runs the full-path interview only. The standalone
+`/aid-triage` router (feature-014, work-001-lite-aid-skills) is the engine's external
+reusability precedent for the reflect-back turn: it reuses the D1 opener's UX shape (one
+fixed "what + why" example-anchored capture, `Suggested:`/`Why:` non-optional) as a
+one-shot single-turn capture, but it does NOT run the adaptive loop -- it has no gap
+inventory, no stop predicate, and no record sink of its own (it is suggest-only; see
+`.agent/skills/aid-triage/SKILL.md`). It is a UX-shape consumer, not a three-parameter
+consumer of this Consumption Contract.
 
-**Opener de-dup.** When feature-004 (TRIAGE) has already captured the opener answer
-(signaled by a `## Triage Opener:` field in STATE.md), `state-continue.md` skips
-emitting the D1 opener again. The opener content is feature-002's; the fire-once
-placement is feature-004's.
+**Opener de-dup.** The opener fires exactly once per work, at `state-continue.md`'s
+entry: when all REQUIREMENTS.md sections are still `Pending`, `state-continue.md` emits
+the D1 opener; once any section moves past `Pending`, every later CONTINUE entry (and the
+DESCRIBE-SEED entry that follows it) skips straight to the adaptive loop / resume point
+without re-emitting it. The opener content is feature-002's; the fire-once placement now
+lives entirely in `state-continue.md`.
 
 ---
 
@@ -344,7 +348,7 @@ These invariants hold for every turn the engine runs, including the D1 opener.
 | 5 | The loop halts at minimal-but-sufficient (consumer's stop predicate fires), not at the end of a list | NFR-4 / RQ-A5; Step 1 stop check |
 | 6 | The opener is NEVER the calibration question; the calibration ASK fires as a follow-up at gap rank 2, never on turn 1 | D1 / AC-4; calibration.md Part B gating rule |
 | 7 | Every decision defers to the user; the engine recommends and guides but never decides silently | NFR-1; advisor-stance.md "Expert-Advisor Stance" |
-| 8 | Before the host's approval gate, the assembled intent gathered across all turns is reflected back to the user for confirmation and correction (whole-picture read-back). Per-turn confirmations (Move 10 scribe) do not substitute for this -- the whole must be confirmed, not just individual decisions. In the full-path interview, state-completion.md Step 4 fulfils this invariant. Feature-003 and feature-004 consumers must define an equivalent confirmation step. | web-bestpractice-validation.md G2 (Mircea et al.: "validation loop"); state-completion.md Step 4 |
+| 8 | Before the host's approval gate, the assembled intent gathered across all turns is reflected back to the user for confirmation and correction (whole-picture read-back). Per-turn confirmations (Move 10 scribe) do not substitute for this -- the whole must be confirmed, not just individual decisions. In the full-path interview, state-completion.md Step 4 fulfils this invariant. Feature-003 consumers must define an equivalent confirmation step. | web-bestpractice-validation.md G2 (Mircea et al.: "validation loop"); state-completion.md Step 4 |
 
 ---
 

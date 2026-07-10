@@ -841,6 +841,7 @@ class TestReadRepo(unittest.TestCase):
             reader_dir / "reader.py",
             reader_dir / "models.py",
             reader_dir / "derivation.py",  # task-011: fallback adapter
+            reader_dir / "io_bounds.py",   # v2.1.0 security hardening (FIX-3)
         ]
 
         write_primitives = {"open"}

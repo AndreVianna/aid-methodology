@@ -64,7 +64,7 @@ tolerated (everything after the 3rd `|` is treated as part of `presence`/`when`)
 ## `synth_default_seed` — Default seed when `discovery.doc_set` is unset
 
 When the `discovery.doc_set` section is absent/empty, synthesize the default seed
-deterministically from `canonical/templates/knowledge-base/*.md` paired to the ownership map
+deterministically from `canonical/aid/templates/knowledge-base/*.md` paired to the ownership map
 below. This satisfies FR-P0-4 (no hardcoded doc-count/doc-list literal) by making the default
 set self-describing from the templates that exist on disk.
 
@@ -106,7 +106,7 @@ and not synthesized from templates. (The `skill-self` owner value denotes the sk
 > orientation concern is a mis-tag — the two axes are orthogonal.
 
 ```bash
-# synth_default_seed — enumerate canonical/templates/knowledge-base/*.md and emit
+# synth_default_seed — enumerate canonical/aid/templates/knowledge-base/*.md and emit
 # filename<TAB>owner<TAB>presence rows for each template using the §2.2 ownership map.
 # Called by resolve_doc_set when discovery.doc_set is unset/empty.
 #
@@ -200,7 +200,7 @@ empty (section unset), delegates to `synth_default_seed`.
 # resolve_doc_set — echoes: filename<TAB>owner<TAB>presence  per line
 #
 # Usage:
-#   raw="$(bash "$REPO/canonical/scripts/config/read-setting.sh" \
+#   raw="$(bash "$REPO/canonical/aid/scripts/config/read-setting.sh" \
 #           --path discovery.doc_set 2>/dev/null || true)"
 #   resolve_doc_set "$raw"
 #
@@ -340,7 +340,7 @@ list_reviewable() {
 
 ```bash
 # 1. Read the declared set (returns comma-joined items, or empty if section unset).
-raw="$(bash "$REPO/canonical/scripts/config/read-setting.sh" \
+raw="$(bash "$REPO/canonical/aid/scripts/config/read-setting.sh" \
         --path discovery.doc_set 2>/dev/null || true)"
 
 # 2. Resolve to TSV rows (default seed if unset).
@@ -357,7 +357,7 @@ analyst_files="$(echo "$tsv" | awk -F'\t' -v a="aid-researcher-analyst" '$2==a{p
 > `read-setting.sh`. No new script, no `yq`, no `python`. The `resolve_doc_set` and
 > `synth_default_seed` functions are inlined into the caller (state-generate.md, state-review.md,
 > or any state that needs them) rather than living in a standalone script under
-> `canonical/scripts/kb/`.
+> `canonical/aid/scripts/kb/`.
 
 ---
 

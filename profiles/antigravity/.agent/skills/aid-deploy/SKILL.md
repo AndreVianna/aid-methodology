@@ -22,9 +22,22 @@ Package completed deliveries into a release.
 
 ```
 /aid-deploy work-NNN
+/aid-deploy "<free-form description of what to ship>"
 ```
 
-Required: work ID. If only one work exists, auto-select it.
+**Two invocation modes** (invocation-context detection; see `## ⚠️ Pre-flight Checks`
+Step 0):
+
+- **`work-NNN` present** -- the existing pipeline path below runs unchanged
+  (`IDLE -> SELECTING -> VERIFYING -> PACKAGING -> DONE`, post-Execute). Required: work
+  ID. If only one work exists, auto-select it.
+- **No `work-NNN`, a free-form description instead** -- the Lite-path direct-entry
+  shortcut: binds `{name}=aid-deploy`, `{verb}=deploy`, `{artifact}=""` (bare verb),
+  `{description}=<the given text>`, then delegates to the shared shortcut engine
+  (`.agent/aid/templates/shortcut-engine.md`, `INTAKE -> ... -> APPROVAL-HALT`),
+  scaffolding a flattened Lite work and running the grading gates. **Never executes** --
+  it halts for approval; this shortcut entry does not replace the pipeline role below,
+  it adds a second, independent entry point to the same skill directory.
 
 ## Workspace
 
@@ -44,6 +57,19 @@ Required: work ID. If only one work exists, auto-select it.
 ```
 
 ## ⚠️ Pre-flight Checks
+
+### Step 0: Invocation-context mode detection
+
+- **`work-NNN` argument present** → proceed with Steps 1–6 below (the existing
+  pipeline path; untouched).
+- **No `work-NNN` argument, but a free-form description was given instead** → the
+  shortcut-scaffold path (see `## Argument-Hint` above): bind `{name}=aid-deploy`,
+  `{verb}=deploy`, `{artifact}=""`, `{description}=<the given text>`, then delegate
+  directly to `.agent/aid/templates/shortcut-engine.md § State: INTAKE` — Steps 1–6
+  below do not run for this path (that pre-flight belongs to the post-Execute pipeline
+  role, not the shortcut entry).
+- **Neither `work-NNN` nor a description** → print the `## Argument-Hint` usage block
+  and exit.
 
 1. Verify `.aid/` workspace exists.
 2. Resolve work directory (same routing as other skills).
@@ -101,7 +127,7 @@ aid-deploy  ▸ you are here
 ## Inputs
 
 - `.aid/{work}/PLAN.md` — deliveries, sequencing, success criteria
-- Per-task `SPEC.md` — task scope; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `.aid/{work}/tasks/task-NNN/SPEC.md`
+- Per-task `DETAIL.md` — task scope; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/{work}/tasks/task-NNN/DETAIL.md`
 - `.aid/{work}/features/*/SPEC.md` — what was specified
 - Work `STATE.md` `## Tasks State` table — task statuses and review grades per task (both paths derive into this same rollup)
 - `known-issues.md` — if exists, check for Critical/High blockers

@@ -65,7 +65,7 @@ The `.aid/.temp/review-pending/` directory is gitignored (per `.gitignore` `.aid
 | 1 | `#` | yes | Row counter (1, 2, 3...) for cross-reference in commit messages and fix-agent dispatches. Sequential within the file; never renumbered. |
 | 2 | `Severity` | yes | Bracketed severity tag (`[CRITICAL]`, `[HIGH]`, `[MEDIUM]`, `[LOW]`, `[MINOR]`). Brackets ensure the tag doesn't collide with bare numbers anywhere else in markdown. Drives grade computation. |
 | 3 | `Status` | yes | Plain word (no brackets): `Pending`, `Fixed`, `Recurred`, `Accepted`, `OOS`, or `Invalid`. See **Status values** below. Drives grade computation. |
-| 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `canonical/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
+| 4 | `Doc` | yes | Affected file path (relative to repo root). Examples: `foo.md`, `canonical/aid/scripts/bar.sh`, `tests/canonical/baz.sh`. For doc-wide issues with no specific file, use `—`. |
 | 5 | `Line` | yes | Affected line number, or a line range like `42-45`, or `—` for doc-wide. |
 | 6 | `Description` | yes | ONE sentence stating what's wrong. Form: "claim X is wrong: doc says Y, actual Z." Avoid hedging or explanation; explanation goes in Evidence. |
 | 7 | `Evidence` | yes | The disk-truth that contradicts the doc's claim, AND/OR the source-of-truth command. Form: "`wc -l foo = 1070` (doc claims 1071)" or "`grep -c X bar = 5` (doc claims 6)". For Status=Fixed/Recurred/Accepted/OOS/Invalid, include enough context to justify the status (e.g., "Fixed in commit abc123" or "Accepted: user decision cycle-1 Q5"). |
@@ -105,7 +105,7 @@ Worst severity dominates; count within that severity determines the modifier (1 
 
 ## grade.sh integration
 
-`canonical/scripts/grade.sh` reads the ledger as a markdown table and counts findings by Severity, filtered to Status ∈ {`Pending`, `Recurred`}.
+`canonical/aid/scripts/grade.sh` reads the ledger as a markdown table and counts findings by Severity, filtered to Status ∈ {`Pending`, `Recurred`}.
 
 ```bash
 # Conceptual algorithm — actual implementation in grade.sh
@@ -214,8 +214,8 @@ The `CLAUDE.md` / `AGENTS.md` short rule (always loaded) is the trigger for ad-h
 
 ## See also
 
-- `canonical/scripts/grade.sh` — the grader that parses this ledger
+- `canonical/aid/scripts/grade.sh` — the grader that parses this ledger
 - `canonical/agents/aid-reviewer/AGENT.md` — sub-agent output contract (references this schema)
-- `canonical/templates/reviewer-dispatch.md` — universal reviewer dispatch brief (references this schema)
+- `canonical/aid/templates/reviewer-dispatch.md` — universal reviewer dispatch brief (references this schema)
 - `CLAUDE.md` / `AGENTS.md` — global short rule (points at this schema)
 - Per-skill `references/state-review.md` and `state-done.md` — lifecycle hooks

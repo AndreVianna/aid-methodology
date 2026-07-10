@@ -22,15 +22,8 @@ Print this state-entry banner before proceeding to Step 0.
 
 Advance delivery lifecycle to Gated (silent state-write -- no output, no gate):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Gated
 ```
-
-> **Path-aware target (all `--delivery-id` writeback calls in this file):** `writeback-state.sh`
-> resolves the delivery-level write target automatically -- full path: `deliveries/delivery-NNN/STATE.md`;
-> lite path (no `deliveries/` folder present): the work-root `STATE.md` directly, since a lite
-> work has exactly one delivery and no per-delivery STATE.md of its own. Every `## Delivery
-> Lifecycle` / `## Delivery Gate` / `## Cross-phase Q&A` reference below follows this same
-> per-path resolution -- this is what "gates a lite work at the work level" means.
 
 ## DELIVERY-GATE State Machine
 
@@ -104,8 +97,13 @@ the same tier reviewer).
 ### Complexity Score Computation
 
 Read the delivery's Execution Graph from:
-- **Full path** — `PLAN.md` in the work directory (`#### Execution Graph` block
-  for this delivery).
+- **Flat path (feature-001, single-delivery)** — detected by: a work-root
+  `BLUEPRINT.md` present AND `tasks/task-NNN/DETAIL.md` present directly
+  under the work root AND no `deliveries/` wrapper under it → the top-level
+  `## Execution Graph` in the work-root `PLAN.md` (no
+  `### delivery-NNN` heading; the single delivery is implicit).
+- **Full path** — otherwise, `PLAN.md` in the work directory (`#### Execution
+  Graph` block for this delivery).
 - **Lite path** — the work-root `SPEC.md` (`.aid/{work}/SPEC.md`), which
   contains the merged delivery + dependency graph information.
 
@@ -117,7 +115,7 @@ Parse the `| Task | Depends On |` table to build the dependency map.
 |--------|--------|--------------|
 | Task count | tasks in this delivery (Execution Graph) | +1 per task |
 | Graph depth | longest dependency chain (longest path in DAG) | +1 per edge on the longest chain |
-| Risk-weighted types | each task's `Type` field (per-task `SPEC.md` -- full path: `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `tasks/task-NNN/SPEC.md`) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
+| Risk-weighted types | each task's `Type` field (`deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; flat path: `tasks/task-NNN/DETAIL.md` directly under the work root) | `MIGRATE`/`REFACTOR` +2; `IMPLEMENT`/`TEST` +1; `RESEARCH`/`DESIGN`/`DOCUMENT`/`CONFIGURE` +0 |
 | Specialist consults | count of: quick-check `[CRITICAL]` fix-on-spot events (from `## Quick Check Findings`) + tasks whose Agent-Selection row triggers an `aid-researcher` analysis consult | +1 each |
 
 ### Tier Selection
@@ -173,21 +171,24 @@ Include in the prompt:
   if it exists. For each existing row: verify on disk, update Status if needed
   (Pending→Fixed if resolved; Fixed→Recurred if regressed). Append new findings
   as rows with Status: Pending."
-- **Schema reference:** "Output per `canonical/templates/reviewer-ledger-schema.md`.
+- **Schema reference:** "Output per `canonical/aid/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
 Then append the gate-specific prompt below. The reviewer reads directly from source:
 
 - **All delivery artifacts** — every file produced or modified by tasks in the
   delivery (code, docs, configs, tests, etc.)
-- **All per-task `SPEC.md` files** for this delivery (full path:
-  `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`; lite path: `tasks/task-NNN/SPEC.md`) —
-  Definition zones (Type, Source, Scope, Acceptance Criteria)
+- **All task DETAIL.md files** for this delivery — Definition zones (Type,
+  Source, Scope, Acceptance Criteria):
+  - Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
+  - Flat path: `tasks/task-NNN/DETAIL.md` directly under the work root
 - **Feature SPEC(s):**
   - Full path: per-feature `SPEC.md` files (`.aid/{work}/features/*/SPEC.md`)
+  - Flat path (feature-001, single-delivery): work-root `SPEC.md` (single feature)
   - Lite path: work-root `SPEC.md` (`.aid/{work}/SPEC.md`)
 - **Delivery-level acceptance criteria:**
-  - Full path: from `PLAN.md` (the delivery's acceptance criteria block)
+  - Full path: from the delivery's `BLUEPRINT.md § Gate Criteria`
+  - Flat path: from the work-root `BLUEPRINT.md § Gate Criteria`
   - Lite path: from work-root `SPEC.md`
 - **`delivery-NNN-issues.md`** — the deferred `[HIGH]` prior context (from
   AGGREGATE). Read as context only; the reviewer produces its own fresh list.
@@ -232,7 +233,7 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
 Run `grade.sh` on the ledger file:
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/execute-delivery-NNN.md
 ```
 
 The script parses the Severity and Status columns from the markdown table, counts
@@ -288,11 +289,9 @@ Gate grade below minimum. Next steps:
 
 **Non-CODE issues (TASK, SPEC, KB):**
 - **TASK** → Present to user with suggestion. User updates task, re-run.
-- **SPEC** → Write Q&A to `## Cross-phase Q&A` (SD-5: full path -- the delivery gate
-  writes to its OWN `deliveries/delivery-NNN/STATE.md`, not the shared work STATE.md, to
-  preserve the disjoint-write property, since two delivery branches cannot collide; lite
-  path -- there is no separate delivery STATE.md, so the gate writes directly into the
-  work-root `STATE.md ## Cross-phase Q&A` -- the work IS the delivery) →
+- **SPEC** → Write Q&A to `deliveries/delivery-NNN/STATE.md` `## Cross-phase Q&A` (SD-5:
+  the delivery gate writes to its OWN delivery STATE.md, not the shared work STATE.md,
+  to preserve the disjoint-write property -- two delivery branches cannot collide) →
   suggest `/aid-specify`
 - **KB** → Write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)` →
   suggest `/aid-discover`
@@ -301,10 +300,10 @@ Gate grade below minimum. Next steps:
 can be -- the problem is upstream. Present what needs to change and where.
 Emit delivery and pipeline pause signals (silent state-writes -- no output, no gate):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues -- upstream fix required (SPEC/TASK/KB)"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value "Paused-Awaiting-Input"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues -- upstream fix required (SPEC/TASK/KB)"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → Step 5 (FIX) when grade < minimum; **CHAIN** → Step 6 (RECORD) when grade ≥ minimum.
@@ -349,11 +348,11 @@ Options:
 Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
 is written, emit the delivery and pipeline block signals (silent state-writes -- no output, no gate):
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
 **Advance:** **CHAIN** → back to Step 2 (REVIEW) — fresh reviewer, clean context.
@@ -388,17 +387,23 @@ writeback-state.sh --delivery-id NNN --block "BLOCK"
 ```
 
 > **Helper target:** `writeback-state.sh --delivery-id NNN --block BLOCK`
-> writes the `## Delivery Gate` block -- full path: in `deliveries/delivery-NNN/STATE.md`
-> (SD-5: the delivery gate block is authored by this delivery's branch only; it is NOT
-> written into the shared work STATE.md); lite path: directly in the work-root `STATE.md`
-> (there is no separate delivery STATE.md -- the work IS the delivery). The work-level
-> `## Delivery Gates` (plural, full-path only) view is DERIVED at read time as the union
-> of all delivery gate blocks; a lite work's single gate is authored, not derived.
+> writes the `## Delivery Gate` block in `deliveries/delivery-NNN/STATE.md` (SD-5:
+> the delivery gate block is authored by this delivery's branch only; it is NOT
+> written into the shared work STATE.md). The work-level `## Delivery Gates`
+> view is DERIVED at read time as the union of all delivery gate blocks.
+>
+> **Flat path (feature-001, single-delivery):** with a work-root `BLUEPRINT.md`
+> present and no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
+> call instead writes the singular
+> AUTHORED `## Delivery Gate` block directly into the work-root `STATE.md`
+> (there is exactly one delivery, so the disjoint-write concern above does not
+> apply — see `writeback-state.sh`). This is distinct from the plural DERIVED
+> `## Delivery Gates` view (different heading, singular vs. plural).
 
 ### 6b-2: Advance delivery lifecycle to Done
 
 ```bash
-bash canonical/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Done
+bash canonical/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Done
 ```
 
 ### 6c: Mark Deferred Issues Resolved/Accepted
@@ -413,15 +418,10 @@ Update the file directly (no helper needed — single writer by construction).
 
 ### 6d: Update Delivery Row in Work STATE.md
 
-**Full path:** the work-level `## Plan / Deliveries` derived view is computed at read time
-from the per-delivery `## Delivery Lifecycle` State values. Since we already advanced the
+The work-level `## Plan / Deliveries` derived view is computed at read time from
+the per-delivery `## Delivery Lifecycle` State values. Since we already advanced the
 delivery lifecycle to Done in step 6b-2, the dashboard reader will reflect `Done`
 in the work-level view automatically. No additional writeback is needed here.
-
-**Lite path:** there is no `## Plan / Deliveries` view to update (no PLAN.md, no
-multi-delivery structure) — step 6b-2 already advanced `## Delivery Lifecycle` directly
-in the work-root STATE.md, which IS the authoritative record for a lite work's sole
-delivery. No additional writeback is needed here either.
 
 _(Previously this step wrote a "Status: Done" row to the work STATE.md; under the
 hierarchical layout, the delivery's lifecycle State is the authoritative source.)_

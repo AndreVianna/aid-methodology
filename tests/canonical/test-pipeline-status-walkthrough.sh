@@ -600,9 +600,9 @@ Before the emit:
 
 Emit pipeline phase (silent state-write -- no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 Print: [Step X] Starting phase
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Specify
 ```
 
 After the emit.
@@ -630,7 +630,7 @@ Print: this line is outside the emit block.
 
 Emit pipeline phase (silent state-write -- no output, no gate):
 ```
-bash canonical/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
+bash canonical/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
 ```
 
 Print: this line is also outside the emit block.

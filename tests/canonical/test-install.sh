@@ -1034,7 +1034,7 @@ assert_eq "$([[ -f "$T/.github/aid-workflow.yml" ]] && echo exists || echo gone)
 
 # ---------------------------------------------------------------------------
 # IN40 – Nested-path resolution: AID-own assets install under
-#         <tool-root>/aid/{scripts,templates,recipes}.
+#         <tool-root>/aid/{scripts,templates}.
 # ---------------------------------------------------------------------------
 T=$(newtarget)
 run_install --tool claude-code \
@@ -1043,7 +1043,7 @@ run_install --tool claude-code \
 assert_exit_eq "$RC" 0 "IN40 nested-path install (claude-code) → exit 0"
 # AID assets must be installed under .claude/aid/, not at the .claude/ root.
 assert_dir_exists "$T/.claude/aid" "IN40b .claude/aid/ subtree exists"
-# At least one of recipes/scripts/templates must be present under .claude/aid/.
+# At least one of scripts/templates must be present under .claude/aid/.
 _aid_subtree_files=$(find "$T/.claude/aid" -type f 2>/dev/null | wc -l)
 if [[ "$_aid_subtree_files" -gt 0 ]]; then
     pass "IN40c .claude/aid/ has at least one file installed"

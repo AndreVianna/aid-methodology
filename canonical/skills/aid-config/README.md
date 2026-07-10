@@ -23,7 +23,7 @@ sequences.
 
 ## Settings schema
 
-The canonical schema is at `canonical/templates/settings.yml`. Top-level sections:
+The canonical schema is at `canonical/aid/templates/settings.yml`. Top-level sections:
 
 | Section | Purpose |
 |---|---|
@@ -46,7 +46,7 @@ Consumer skills resolve their settings via:
 2. **Global category default** (`review.minimum_grade`) — otherwise
 3. **Hardcoded skill default** — only if `.aid/settings.yml` is missing entirely
 
-The canonical resolution helper is `canonical/scripts/config/read-setting.sh`.
+The canonical resolution helper is `canonical/aid/scripts/config/read-setting.sh`.
 
 ## Artifacts
 

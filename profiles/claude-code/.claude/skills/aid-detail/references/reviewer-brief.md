@@ -56,10 +56,10 @@ DELIVERABLES:
 
 ## Substitution at dispatch time
 
-- `{{ARTIFACTS}}` — at per-deliverable scope: the task SPEC.md files just written for
-  delivery-NNN (`.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`) + the Execution
+- `{{ARTIFACTS}}` — at per-deliverable scope: the task DETAIL.md files just written for
+  delivery-NNN (`.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`) + the Execution
   Graph section just appended to PLAN.md. At whole-list scope: every
-  `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` (all deliveries) + the full PLAN.md.
+  `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full PLAN.md.
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```
     (per-deliverable) Tasks for delivery-NNN of work-NNN; feature SPECs:

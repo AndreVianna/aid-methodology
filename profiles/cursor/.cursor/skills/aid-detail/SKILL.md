@@ -38,8 +38,8 @@ Each task = one agent session = one reviewable unit = one human review.
 
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Always read actual files on disk.
 
-- No `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` exists under `.aid/{work}/` → **FIRST-RUN**
-- At least one `deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` exists → **REVIEW**
+- No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/{work}/` → **FIRST-RUN**
+- At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **REVIEW**
 - Tasks complete and grade ≥ minimum → **DONE**
 
 Print the state-entry line and "you are here" map:

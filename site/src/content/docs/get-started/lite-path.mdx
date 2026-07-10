@@ -7,78 +7,116 @@ sidebar:
 
 import { Steps } from '@astrojs/starlight/components';
 
-The **lite path** is AID's fast lane for small, well-scoped changes. It skips Specify, Plan, and
-Detail and goes straight from Describe to Execute — the same human-gated output, proportionate
-overhead.
+The **lite path** is AID's fast lane for small, well-scoped changes. Instead of five separate
+human-gated phases, it collapses the same ground — Describe through Detail — into one fast,
+mostly-autonomous pass.
 
-You don't choose the lite path manually. `/aid-describe`'s TRIAGE reads the scope and risk of
-your work and routes it automatically. If TRIAGE classifies your work as small and low-risk, you
-land on the lite path without any extra steps.
+## Two ways in
 
-## When does TRIAGE route to the lite path?
+There is no routing step inside another skill — you enter the lite path directly:
 
-TRIAGE routes to the lite path when the work is:
+- **Name your change with a shortcut.** If you already know what you're changing, invoke the
+  matching verb-first shortcut directly: `/aid-fix` for a bug, `/aid-create-api` for a new
+  endpoint, `/aid-change-ui` for a UI change, and so on. Each shortcut is a thin doorway into
+  the shared **shortcut engine**.
+- **Ask `/aid-triage` when you're not sure.** Describe your change in one free-form sentence.
+  `/aid-triage` infers the work type and scope, then suggests either the matching shortcut or,
+  for broad / multi-activity / ambiguous work, the full path (`/aid-describe`). `/aid-triage` is
+  stateless and write-free — it suggests one next step and stops; it never runs the change
+  itself and creates no work folder.
 
-- **Small** — a single well-defined change, not a multi-feature delivery.
-- **Low-risk** — minimal architectural impact; no cross-cutting concerns.
-- **Well-bounded** — the scope is clear from the interview alone; no discovery needed.
+`/aid-describe` no longer triages. It is a full-path-only skill — every invocation proceeds
+through the full six-phase pipeline described in [Your first work](/get-started/first-work/).
 
-Typical lite-path candidates: bug fixes, small feature tweaks, documentation updates, isolated
-refactors, adding a single test.
+## The shortcut engine
 
-If TRIAGE decides the work needs the full pipeline — because it's complex, risky, or
-under-understood — it routes there automatically. You can read the TRIAGE rationale in the
-output and request a re-route if you disagree.
+Every shortcut delegates to the same shared engine, which runs:
+
+```
+INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT
+```
+
+It collapses the five definition phases (Describe → Define → Specify → Plan → Detail) into one
+run — it never *skips* a phase, it collapses the information capture within each. CAPTURE, SPEC,
+PLAN, and DETAIL run autonomously, without a per-phase human checkpoint (unlike the full path's
+Propose → Discuss → Write → Review loop in each phase). The only interactive moments are an
+occasional CAPTURE gap-question and the terminal approval halt. GATE grades every document the
+engine produces mechanically against your project's minimum grade before halting.
+
+The engine never executes — `/aid-execute` is a separate, user-initiated run after you approve.
+Each shortcut invocation allocates a brand-new `work-NNN`; there is no cross-session resume.
 
 ## The lite path flow
 
 <Steps>
 
-1. **Run `/aid-describe`.**
-
-   In your AI tool, invoke:
+1. **Invoke a shortcut — or ask `/aid-triage` first if you're unsure.**
 
    ```
-   /aid-describe
+   /aid-fix
    ```
 
-   Answer the intake questions. Keep your answers scoped to the change at hand.
+   (or `/aid-create-api`, `/aid-change-config`, … — whichever shortcut matches your change).
+   Describe what you want in a sentence or two.
 
-2. **TRIAGE classifies the work as lite.**
+2. **Answer the rare gap-question, if asked.**
 
-   At the end of intake, TRIAGE confirms the lite routing and Describe emits a work-root
-   `SPEC.md` with the task breakdown already included — no separate Specify, Plan, or Detail
-   phase. Review it and approve.
+   The engine captures your change autonomously. It only stops mid-run to ask when it hits a
+   genuine information gap it cannot infer on its own.
 
-3. **Execute.**
+3. **Review at the approval halt.**
+
+   The engine writes the full flattened artifact set — `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`,
+   `BLUEPRINT.md`, and the task files under `tasks/` — grades every document at GATE, then halts
+   for your approval. Review the set and approve.
+
+4. **Execute.**
 
    ```
    /aid-execute
    ```
 
-   The agent implements the task directly, grades its output, and loops until it passes your
-   acceptance criteria. Review each output and approve.
-
-4. **Done.**
-
-   Your change is implemented. No spec, no plan, no detail phase — just the approved output.
+   The agent implements the task(s) directly, grades its own output, and loops until it passes
+   your acceptance criteria. Review each output and approve.
 
 </Steps>
+
+## What a lite work item looks like on disk
+
+The lite path produces a **flattened** work item: a single implicit delivery, with no
+`deliveries/` folder and no `delivery-001/` folder.
+
+```
+.aid/
+  work-NNN-name/
+    STATE.md          # work lifecycle, with the sole delivery's gate + Q&A promoted into it
+    REQUIREMENTS.md
+    SPEC.md
+    PLAN.md
+    BLUEPRINT.md      # the single delivery's definition, at the work root
+    tasks/
+      task-NNN/
+        DETAIL.md      # task definition — the flattened path has NO per-task STATE.md;
+                       #   each task's cells live in the work-root STATE.md § ### Tasks lifecycle
+```
+
+Compare this to the full path's nested `deliveries/delivery-NNN/` structure, covered in
+[Your first work](/get-started/first-work/).
 
 ## Lite path vs full path
 
 | | Lite path | Full path |
 |--|-----------|-----------|
+| Entry | A shortcut (`/aid-fix`, `/aid-create-api`, …), or a `/aid-triage` suggestion | `/aid-describe` |
 | Best for | Small, low-risk, well-bounded work | Complex, high-risk, or poorly understood work |
-| Phases | Describe → Execute | Discover → Describe/Define → Specify → Plan → Detail → Execute |
-| Artifacts | work-root `SPEC.md` + task files | `REQUIREMENTS.md` + per-feature `SPEC.md` + `PLAN.md` + task files |
-| Gates | 2 (intake, execute review) | one per phase |
-| TRIAGE routing | Automatic | Automatic |
+| Phases | One collapsed, mostly-autonomous engine run (Describe → Detail) | Discover → Describe → Define → Specify → Plan → Detail → Execute |
+| Artifacts | Flattened: `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md` | Nested: `REQUIREMENTS.md`, per-feature `SPEC.md`, `PLAN.md`, `deliveries/delivery-NNN/BLUEPRINT.md`, `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` |
+| Gates | Terminal approval halt (plus rare gap-questions) | One per phase |
 
-The lite path is not a shortcut that skips quality — it is proportionate rigour. TRIAGE is
-conservative: when in doubt, it routes to the full path.
+The lite path is not a shortcut that skips quality — it is proportionate rigour. `/aid-triage` is
+conservative: anything short of one confident single-match routes you to the full path instead.
 
 ## Next steps
 
 - [Your first work](/get-started/first-work/) — the full-path walkthrough for complex changes.
-- [Methodology](/concepts/methodology/) — the complete TRIAGE routing logic and phase philosophy.
+- [Methodology](/concepts/methodology/) — the complete phase philosophy and when each entry point fits.

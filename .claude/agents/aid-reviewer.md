@@ -94,7 +94,7 @@ Cite the KB source in the issue ledger when raising any of these.
 
 Per KB doc `content-isolation.md`: every AID-delivered file must satisfy exactly one of:
 
-1. **Nested under `aid/`** — AID-own dirs (`scripts/`, `templates/`, `recipes/`) live under `<assets-root>/aid/`; flag any AID-own dir emitted at the un-nested path (e.g. `.claude/scripts/` instead of `.claude/aid/scripts/`).
+1. **Nested under `aid/`** — AID-own dirs (`scripts/`, `templates/`) live under `<assets-root>/aid/`; flag any AID-own dir emitted at the un-nested path (e.g. `.claude/scripts/` instead of `.claude/aid/scripts/`).
 2. **Carries the `aid-` prefix** — AID files inside tool-native dirs (`agents/`, `skills/`, `rules/`) carry the `aid-` prefix; flag any un-prefixed AID file inside a tool-native dir (e.g. `skills/README.md` that is AID-managed).
 
 Additionally flag:

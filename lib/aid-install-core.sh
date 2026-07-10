@@ -64,11 +64,24 @@ _AID_INSTALL_CORE_LOADED=1
 # ---------------------------------------------------------------------------
 
 AID_REPO_SLUG="AndreVianna/aid-methodology"
-# Release source. Defaults to GitHub; both are env-overridable so an air-gapped /
-# enterprise mirror (or a local pre-release verification mirror) can serve the
-# release JSON and assets without changing the published defaults.
-AID_API_BASE="${AID_API_BASE:-https://api.github.com/repos/${AID_REPO_SLUG}}"
-AID_DOWNLOAD_BASE="${AID_DOWNLOAD_BASE:-https://github.com/${AID_REPO_SLUG}/releases/download}"
+# Release source. Defaults to GitHub, pinned. The AID_API_BASE / AID_DOWNLOAD_BASE
+# env overrides (for an air-gapped / enterprise mirror, or a canonical test's
+# local fixture server) are honored ONLY when AID_ALLOW_ENDPOINT_OVERRIDE=1 (or
+# 'true') is explicitly set. Combined with the fail-closed SHA256SUMS check in
+# fetch_tarball, gating the override this way prevents a stray or malicious
+# AID_API_BASE / AID_DOWNLOAD_BASE in the ambient environment from silently
+# redirecting a real install to an attacker-controlled host. Canonical tests
+# that need a local fixture (file:// or http://127.0.0.1:<port>) set
+# AID_ALLOW_ENDPOINT_OVERRIDE=1 alongside the base-URL override.
+_AID_DEFAULT_API_BASE="https://api.github.com/repos/${AID_REPO_SLUG}"
+_AID_DEFAULT_DOWNLOAD_BASE="https://github.com/${AID_REPO_SLUG}/releases/download"
+if [[ "${AID_ALLOW_ENDPOINT_OVERRIDE:-0}" == "1" || "${AID_ALLOW_ENDPOINT_OVERRIDE:-0}" == "true" ]]; then
+    AID_API_BASE="${AID_API_BASE:-${_AID_DEFAULT_API_BASE}}"
+    AID_DOWNLOAD_BASE="${AID_DOWNLOAD_BASE:-${_AID_DEFAULT_DOWNLOAD_BASE}}"
+else
+    AID_API_BASE="${_AID_DEFAULT_API_BASE}"
+    AID_DOWNLOAD_BASE="${_AID_DEFAULT_DOWNLOAD_BASE}"
+fi
 
 # Canonical tool ids.
 AID_TOOLS=(claude-code codex cursor copilot-cli antigravity)
@@ -225,12 +238,17 @@ fetch_tarball() {
         return 3
     }
 
-    # Fetch SHA256SUMS (best-effort: warn if absent on older releases).
-    if curl "${curl_args[@]}" -o "$sums_file" "$sums_url" 2>/dev/null; then
-        _verify_checksum "$tarball" "$sums_file" || return 4
-    else
-        echo "WARN: aid-install-core: SHA256SUMS not available for v${version}; skipping checksum verification" >&2
+    # Fetch SHA256SUMS -- fail-closed. Every published release (release.sh Step 6:
+    # "Emit SHA256SUMS") ships a SHA256SUMS asset alongside every tarball, so a
+    # fetch failure, a 404, or an empty response means the release is broken or
+    # the request was tampered with/redirected -- never a legitimate "older
+    # release without SHA256SUMS". Refuse to install an unverified tarball
+    # rather than warn-and-proceed.
+    if ! curl "${curl_args[@]}" -o "$sums_file" "$sums_url" 2>/dev/null || [[ ! -s "$sums_file" ]]; then
+        echo "ERROR: aid-install-core: could not fetch SHA256SUMS from ${sums_url}; refusing to install unverified tarball (fail-closed)" >&2
+        return 3
     fi
+    _verify_checksum "$tarball" "$sums_file" || return 4
 }
 
 # _verify_checksum <tarball> <sums_file>

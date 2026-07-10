@@ -20,6 +20,8 @@ One manifest per profile, placed at the **deepest common parent** of the profile
 | `profiles/claude-code.toml` | `claude-code/emission-manifest.jsonl` |
 | `profiles/codex.toml` | `codex/emission-manifest.jsonl` |
 | `profiles/cursor.toml` | `cursor/emission-manifest.jsonl` |
+| `profiles/copilot-cli.toml` | `copilot-cli/emission-manifest.jsonl` |
+| `profiles/antigravity.toml` | `antigravity/emission-manifest.jsonl` |
 
 For Codex (unified layout: `profiles/codex/.codex/`), the manifest at
 `codex/emission-manifest.jsonl` covers the single output root. Record paths in the manifest
@@ -112,42 +114,26 @@ an install-tree sub-directory per the profile's layout configuration.
 | `canonical/skills/` | `.claude/skills/` | `.codex/skills/` | `.cursor/skills/` | `render.py` |
 | `canonical/aid/scripts/` | `.claude/aid/scripts/` | `.codex/aid/scripts/` | `.cursor/aid/scripts/` | `render.py` |
 | `canonical/aid/templates/` | `.claude/aid/templates/` | `.codex/aid/templates/` | `.cursor/aid/templates/` | `render.py` |
-| `canonical/aid/recipes/` | `.claude/aid/recipes/` | `.codex/aid/recipes/` | `.cursor/aid/recipes/` | `render.py` |
-
-### Recipes asset kind (FR8 — feature-011-recipes back-port, work-001)
-
-`canonical/aid/recipes/` holds pre-filled lite-path templates with `{{slot}}`
-placeholders. Recipes are plain Markdown files (passthrough renderer — no
-format conversion or frontmatter injection). They follow the same profile-
-emission contract as templates:
-
-- **All profiles** (uniform layout): emit under `{root_dir}/aid/recipes/`
-- **Idempotent**: if `canonical/aid/recipes/` is empty or absent, the generator
-  emits nothing and records no manifest entries for this kind.
-- **Mirror-deletion**: removing a recipe and re-running the generator deletes
-  the rendered copy from all install trees via the normal manifest diff.
 
 ## Worked Example
 
 ```jsonl
 {"_manifest_version": 1}
 {"profile": "claude-code", "src": "canonical/agents/aid-architect/AGENT.md", "dst": ".claude/agents/aid-architect.md", "sha256": "a1b2c3d4e5f6..."}
-{"profile": "claude-code", "src": "canonical/recipes/new-feature.md", "dst": ".claude/aid/recipes/new-feature.md", "sha256": "e5f6a1b2c3d4..."}
 {"profile": "claude-code", "src": "canonical/scripts/config/read-setting.sh", "dst": ".claude/aid/scripts/config/read-setting.sh", "sha256": "f6a1b2c3d4e5..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-deploy/SKILL.md", "dst": ".claude/skills/aid-deploy/SKILL.md", "sha256": "b2c3d4e5f6a1..."}
 {"profile": "claude-code", "src": "canonical/skills/aid-discover/references/agent-prompts.md", "dst": ".claude/skills/aid-discover/references/agent-prompts.md", "sha256": "c3d4e5f6a1b2..."}
 {"profile": "claude-code", "src": "canonical/templates/grading-rubric.md", "dst": ".claude/aid/templates/grading-rubric.md", "sha256": "d4e5f6a1b2c3..."}
 ```
 
-The five example records cover:
+The four example records cover:
 1. An agent file
-2. A recipe file (FR8)
-3. A script file (under `aid/scripts/`)
-4. A skill `SKILL.md`
-5. A skill `references/*.md` sub-file
+2. A script file (under `aid/scripts/`)
+3. A skill `SKILL.md`
+4. A skill `references/*.md` sub-file
 
 For Codex (unified layout), all records appear in `codex/emission-manifest.jsonl` with
-`dst` values like `.codex/agents/aid-architect.toml`, `.codex/aid/recipes/new-feature.md`,
+`dst` values like `.codex/agents/aid-architect.toml`,
 `.codex/aid/scripts/config/read-setting.sh`, `.codex/aid/templates/grading-rubric.md`,
 and `.codex/skills/aid-deploy/SKILL.md` — all relative to `codex/`. The uniform
 `{agents, skills, aid}` shape applies under `.codex/` just as under all other host roots.

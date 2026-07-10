@@ -342,6 +342,94 @@ class TestParseDeliveryGate(unittest.TestCase):
         self.assertEqual(grade, "B+")
         self.assertEqual(reviewer_tier, "Small")
 
+    # -----------------------------------------------------------------------
+    # FIX 2: singular ## Delivery Gate fallback (flat/lite promoted layout)
+    # -----------------------------------------------------------------------
+
+    def test_singular_delivery_gate_fallback_when_no_plural_section(self):
+        """A flat/lite work promotes a SINGULAR '## Delivery Gate' block into
+        the work-root STATE.md (no '## Delivery Gates' -> '### delivery-NNN'
+        rollup). When no plural section exists anywhere in the text, the
+        singular block is read as delivery-001's gate."""
+        text = """\
+## Delivery Lifecycle
+
+- **State:** Executing
+- **Updated:** 2026-07-08T12:00:00Z
+- **Block Reason:** --
+- **Block Artifact:** --
+
+### Tasks lifecycle
+
+| Task | State | Review | Elapsed | Notes |
+|------|-------|--------|---------|-------|
+| task-001 | Done | A+ | 1h | -- |
+
+## Delivery Gate
+
+- **Reviewer Tier:** Small
+- **Grade:** A+
+- **Issue List:** none
+- **Timestamp:** 2026-07-08T12:00:00Z
+"""
+        warnings = []
+        grade, reviewer_tier, timestamp = parse_delivery_gate(
+            text, "delivery-001", warnings
+        )
+        self.assertEqual(grade, "A+")
+        self.assertEqual(reviewer_tier, "Small")
+        self.assertEqual(timestamp, "2026-07-08T12:00:00Z")
+        self.assertEqual(warnings, [])
+
+    def test_singular_fallback_only_applies_to_delivery_001(self):
+        """The singular fallback is scoped to delivery-001 (the sole implicit
+        delivery of a flat/lite work) -- it must not fire for any other id,
+        even when a singular '## Delivery Gate' block is present."""
+        text = """\
+## Delivery Gate
+
+- **Reviewer Tier:** Small
+- **Grade:** A+
+- **Timestamp:** 2026-07-08T12:00:00Z
+"""
+        warnings = []
+        grade, reviewer_tier, timestamp = parse_delivery_gate(
+            text, "delivery-002", warnings
+        )
+        self.assertIsNone(grade)
+        self.assertIsNone(reviewer_tier)
+        self.assertIsNone(timestamp)
+
+    def test_plural_section_present_suppresses_singular_fallback(self):
+        """If a plural '## Delivery Gates' section is present ANYWHERE in the
+        text, the singular-block fallback must never fire -- this locks in
+        that FIX 2 is additive and does not change plural (full/hierarchical
+        legacy monolithic) parsing behavior."""
+        text = """\
+## Delivery Gates
+
+### delivery-002
+
+- **Grade:** C
+- **Reviewer Tier:** Small
+- **Timestamp:** 2026-01-01T00:00:00Z
+
+## Delivery Gate
+
+- **Grade:** Z
+- **Reviewer Tier:** Large
+- **Timestamp:** 2099-01-01T00:00:00Z
+"""
+        warnings = []
+        grade, reviewer_tier, timestamp = parse_delivery_gate(
+            text, "delivery-001", warnings
+        )
+        self.assertIsNone(
+            grade, "plural section present -> singular fallback must not fire"
+        )
+        self.assertIsNone(reviewer_tier)
+        self.assertIsNone(timestamp)
+
 
 # ---------------------------------------------------------------------------
 # DR-4: parse_deferred_issues tests

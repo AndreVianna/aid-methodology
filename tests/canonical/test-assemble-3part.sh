@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-assemble-3part.sh -- tests for canonical/scripts/summarize/assemble-3part.sh,
+# test-assemble-3part.sh -- tests for canonical/aid/scripts/summarize/assemble-3part.sh,
 # which assembles the final knowledge-summary.html by byte-concatenating
 # PART1 + PART2 into OUTPUT (creating OUTPUT's dir if needed).
 #

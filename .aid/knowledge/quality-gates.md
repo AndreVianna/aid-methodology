@@ -2,12 +2,13 @@
 kb-category: extension
 source: hand-authored
 objective: The methodology's review-and-grade gates — the deterministic A-grade gating, the reviewer ledger, per-phase REVIEW→FIX loops, minimum-grade thresholds, and the discover review panel — that AID's own work must pass before advancing.
-summary: Read this to understand how AID grades the artifacts its pipeline produces (KB docs, specs, plans, tasks, code, releases) — distinct from the automated test suites in test-landscape.md. Covers the grade scale, the 7-column reviewer ledger, grade.sh, minimum-grade resolution, and which gates block vs advise.
+summary: Read this to understand how AID grades the artifacts its pipeline produces (KB docs, specs, plans, tasks, code, releases) — distinct from the automated test suites in test-landscape.md. Covers the grade scale, the 7-column reviewer ledger, grade.sh, minimum-grade resolution, the delivery gate, and the shortcut/Lite-path GATE + APPROVAL-HALT.
 sources:
   - .claude/aid/scripts/grade.sh
   - .claude/aid/templates/reviewer-ledger-schema.md
   - .claude/aid/templates/grading-rubric.md
   - .claude/aid/templates/reviewer-dispatch.md
+  - .claude/aid/templates/shortcut-engine.md
   - .aid/settings.yml
   - .claude/skills/aid-discover/references/state-review.md
   - .claude/skills/aid-execute/references/state-delivery-gate.md
@@ -18,12 +19,13 @@ audience: [developer, architect, pm]
 intent: |
   The methodology's quality gates: A-grade gating, the reviewer agent + 7-column
   ledger, per-phase REVIEW loops, the A+..F scale, minimum-grade thresholds, the
-  review->fix->re-review loop, and the discover review panel. Distinct from the
-  automated tests in test-landscape.md.
+  review->fix->re-review loop, the discover review panel, the delivery gate, and
+  the shortcut/Lite-path GATE + APPROVAL-HALT. Distinct from the automated tests
+  in test-landscape.md.
 contracts:
   - "Grade is computed ONLY from reviewer-ledger rows where Status in {Pending, Recurred}, by Severity column"
   - "Worst severity dominates; count within it sets the modifier (1 -> +, 2-5 -> none, 6+ -> -)"
-  - "A skill exits REVIEW only when grade >= the resolved minimum_grade (per-skill override -> review.minimum_grade -> hardcoded A)"
+  - "A skill exits REVIEW only when grade >= the resolved minimum_grade (per-skill override -> review.minimum_grade -> hardcoded default; the shortcut/Lite path's built-in default is A+)"
   - "Every reviewer ledger is exactly one 7-column markdown table at .aid/.temp/review-pending/<scope>.md — no narrative"
 changelog:
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
@@ -48,6 +50,7 @@ deliverables*.
 - [The Per-Phase REVIEW to FIX Loop](#the-per-phase-review-to-fix-loop)
 - [The Discover Review Panel](#the-discover-review-panel)
 - [The Delivery Gate (aid-execute)](#the-delivery-gate-aid-execute)
+- [The Shortcut / Lite-Path Gate (shortcut engine)](#the-shortcut--lite-path-gate-shortcut-engine)
 - [The Conformance Check (aid-housekeep)](#the-conformance-check-aid-housekeep)
 - [Mechanical Gates Run by the Orchestrator](#mechanical-gates-run-by-the-orchestrator)
 - [Blocking vs Advisory](#blocking-vs-advisory)
@@ -161,16 +164,22 @@ resolved in three tiers (CONFIRMED in `.claude/aid/templates/grading-rubric.md`)
 2. global `review.minimum_grade` →
 3. hardcoded default `A`.
 
+**One exception:** the **shortcut / Lite path** (the shortcut engine's GATE state) passes its
+own built-in hardcoded default of **`A+`** to the same resolver, not the `A` every other
+skill falls back to. See [The Shortcut / Lite-Path Gate](#the-shortcut--lite-path-gate-shortcut-engine).
+
 Resolution command:
 
 ```bash
 bash .claude/aid/scripts/config/read-setting.sh --skill <name> --key minimum_grade --default A
 ```
 
-In **this** repo (`.aid/settings.yml`): the global `review.minimum_grade` is `A`, and there
-is one active per-skill override — `summary.minimum_grade: A+` (the `/aid-summarize`
-redesign is held to A+). The commented examples show other skills can be pinned similarly
-(e.g. `execute`, `deploy` → A+). CONFIRMED in `.aid/settings.yml`.
+In **this** repo (`.aid/settings.yml`): the global `review.minimum_grade` is **`A+`** (owner
+directive 2026-06-27 — "always use an A+ gate across all phases"), so every grading phase must
+reach zero findings to advance. One explicit per-skill override remains — `summary.minimum_grade:
+A+` (now redundant with the global, retained from the `/aid-summarize` redesign). The commented
+examples show other skills can be pinned individually (e.g. `execute`, `deploy` → A+).
+CONFIRMED in `.aid/settings.yml`.
 
 ---
 
@@ -234,6 +243,55 @@ with no improvement → `CIRCUIT-BREAKER-STOP`.
 **Interlock (invariant):** the delivery gate MUST NOT run while any task in the delivery has
 status `Failed` or `Blocked` — the pool-dispatch guard (PD-5) ensures all tasks are `Done`
 before the gate is entered.
+
+**Flattened Lite layout.** In a shortcut/Lite work there is a single delivery and **no**
+`deliveries/delivery-NNN/` folder, so there is no per-delivery `STATE.md` to write.
+`writeback-state.sh` auto-detects the flat layout (`is_flat_layout`) and records the delivery
+lifecycle + gate directly into the **work-root** `STATE.md` (`## Delivery Lifecycle` /
+`## Delivery Gate`, promoted from the per-delivery file). CONFIRMED in
+`canonical/aid/scripts/execute/writeback-state.sh`.
+
+---
+
+## The Shortcut / Lite-Path Gate (shortcut engine)
+
+Every verb-first shortcut (`/aid-fix`, `/aid-create-api`, …) delegates to the shared
+**shortcut engine** (`canonical/aid/templates/shortcut-engine.md`), which collapses the five
+definition phases into one autonomous run: `INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE →
+APPROVAL-HALT`. Unlike the full path — where each phase has its own per-phase REVIEW loop —
+the Lite path enforces quality **once, mechanically**, in the terminal **GATE** state, then
+stops at a human **APPROVAL-HALT**. CONFIRMED in `shortcut-engine.md`.
+
+**GATE — two batched grading passes.** GATE dispatches `aid-reviewer` (Large) and runs the
+same REVIEW → GRADE → FIX loop as every other phase, batched into two passes over the
+flattened work just produced:
+- **Pass 1 — definition documents:** `REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`
+  (ledger `.aid/.temp/review-pending/shortcut-{work}-defn.md`).
+- **Pass 2 — task set:** every `tasks/task-NNN/DETAIL.md` (ledger `…-tasks.md`), entered only
+  after Pass 1 clears.
+
+Each pass loops until its grade clears the resolved floor. A batched ledger's pooled grade
+equals the floor **iff every document in the pass has zero findings**, so the per-document
+guarantee is preserved while only the round-trip granularity is collapsed. A 3-cycle
+no-improvement **circuit breaker** writes `IMPEDIMENT-gate-{pass}.md`, sets Lifecycle
+`Blocked`, and surfaces to the user (mirrors the delivery-gate circuit breaker). CONFIRMED in
+`shortcut-engine.md`.
+
+**Floor is A+ by default.** The shortcut path resolves `minimum_grade` with the same 3-tier
+order but its **built-in hardcoded default is `A+`** (feature-004), not the `A` every other
+skill falls back to. A project may still lower it with an explicit `{name}.minimum_grade`
+override in `.aid/settings.yml`.
+
+**Where the grades are recorded.** On clearing, GATE appends two rows to the **work-root**
+`STATE.md § ## Lifecycle History` (Pass 1 / Pass 2), then deletes both ledgers. In the
+flattened Lite layout there is no `features/{feature}/SPEC.md`, so the full-path
+`## Features State` Spec-Grade column does not apply — `## Lifecycle History` is the
+authoritative record of these definition-phase gates.
+
+**APPROVAL-HALT — the human gate.** A cleared grade is **necessary but not sufficient**: the
+engine never executes. APPROVAL-HALT presents the GATE-cleared work, sets Lifecycle
+`Paused-Awaiting-Input`, and STOPS — no branch is created, no task runs. Execution is a
+separate, user-initiated `/aid-execute` (FR-10 / NFR-10). CONFIRMED in `shortcut-engine.md`.
 
 ---
 
@@ -303,6 +361,8 @@ These also run in CI's `kb-hygiene` job for this repo (CONFIRMED in
 |---|---|---|
 | Per-phase grade < `minimum_grade` | **Blocking** — phase cannot advance | Lower `minimum_grade` in `.aid/settings.yml`, or orchestrator marks specific findings `Accepted` with explicit user authorization (recorded in the ledger Evidence) |
 | Delivery gate grade | **Blocking** (with 3-cycle circuit breaker → STOP, not auto-pass) | Same `Accepted` path; human decides at the circuit breaker |
+| Shortcut-engine GATE grade < floor (A+ default) | **Blocking** — the Lite path cannot reach APPROVAL-HALT (3-cycle circuit breaker → `IMPEDIMENT` + Lifecycle `Blocked`) | Same `Accepted` path; or lower `{name}.minimum_grade` in `.aid/settings.yml` |
+| Shortcut-engine APPROVAL-HALT | **Human-gated** — a cleared grade is necessary but not sufficient; nothing executes | User approves by launching `/aid-execute`; the engine never auto-advances |
 | Citation / frontmatter / INDEX / version-sync scripts | **Blocking** in `kb-hygiene` / release `gate` CI | Fix the source; there is no skip flag |
 | `visual-fidelity` Playwright gate | Blocking *when `kb.html` exists*; SKIPs (advisory) when absent | Generate the summary, or leave unbuilt |
 | Conformance check (design↔as-built divergence, aid-housekeep) | **Human-gated** — divergences flagged as a Q&A entry; design doc is never auto-updated | User supplies a per-item choice: evolve the design, fix the code, or accept/defer; no auto-pass |
@@ -340,3 +400,4 @@ bash .claude/aid/scripts/grade.sh --non-functional
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial quality-gates analysis (custom C6 doc, quality deep-dive) |
 | 1.1 | 2026-06-28 | work-aid-interview-improvements | Added Conformance Check section (aid-housekeep Conformance Lane: code->design flag-not-overwrite, shadow extraction, 3 new test suites); added Conformance Check row to Blocking vs Advisory table. |
+| 1.2 | 2026-07-09 | work-001 lite-skills refresh | Added the Shortcut / Lite-Path Gate section (shortcut engine's GATE two-pass grading + APPROVAL-HALT human gate, A+ built-in default floor); corrected the stale global `review.minimum_grade` (A → A+, owner directive 2026-06-27); noted the flattened-Lite delivery gate recording into the work-root STATE.md; added shortcut GATE + APPROVAL-HALT rows to Blocking vs Advisory. |

@@ -16,7 +16,7 @@ The result is a structured REQUIREMENTS.md that the Architect can immediately us
 
 | Phase | Purpose |
 |-------|---------|
-| **Interview** | Initial requirements gathering: FIRST-RUN, TRIAGE, CONDENSED-INTAKE, Q-AND-A, CONTINUE, COMPLETION states |
+| **Interview** | Initial requirements gathering: FIRST-RUN, Q-AND-A, CONTINUE, DESCRIBE-SEED, COMPLETION states |
 | **Specify / Detail** | Clarification of specific ambiguities surfaced by Q&A entries in the work STATE file |
 
 Typically invoked by the **aid-describe** skill. May be re-invoked when downstream phases surface gaps that require stakeholder input.
@@ -48,7 +48,7 @@ Typically invoked by the **aid-describe** skill. May be re-invoked when downstre
 
 - *"Start a new interview for a brownfield project."* → Interviewer pre-fills technical context from KB, conducts focused business-requirements dialogue
 - *"The Architect flagged OQ-7: unclear non-functional requirements for latency."* → Interviewer asks one targeted question to resolve OQ-7
-- *"TRIAGE: categorize an incoming change request."* → Interviewer asks one question to classify the request type
+- *"Seed requirements for a new greenfield project."* → Interviewer conducts the DESCRIBE-SEED business-requirements dialogue
 
 ## Key Behaviors
 

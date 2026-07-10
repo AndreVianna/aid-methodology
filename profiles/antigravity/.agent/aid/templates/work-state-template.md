@@ -2,12 +2,22 @@
 
 [!NOTE]
 This is the WORK-LEVEL STATE.md template. It is divided into two zones:
-  AUTHORED (single-writer) -- Pipeline State, Triage, Escalation Carry, Interview State, Lifecycle History,
-    Deploy State.
+  AUTHORED (single-writer) -- Pipeline State, Interview State, Lifecycle History,
+    Deploy State, Delivery Lifecycle (incl. its Tasks lifecycle subsection), Delivery Gate.
   DERIVED (read-only, assembled at read time) -- Features State, Plan/Deliveries, Tasks State,
     Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches.
 The DERIVED sections are NEVER written directly; they are union views over the per-delivery and
 per-task STATE.md files. Agents that write state must target the per-unit STATE.md files instead.
+
+The AUTHORED `## Delivery Lifecycle` / `### Tasks lifecycle` / `## Delivery Gate` sections
+(singular) apply ONLY to single-delivery flattened works (no `deliveries/`/`delivery-NNN/`
+wrapper -- see each section's own note). They are promoted verbatim from
+`delivery-state-template.md` / `task-state-template.md` and are distinct from the plural DERIVED
+`## Delivery Gates` / `## Plan / Deliveries` / `## Tasks State` union views below -- no heading
+collision (singular vs. plural, and `### Tasks lifecycle` differs in both text and heading level
+from `## Tasks State`). Left unused for full multi-delivery works, where each delivery's own
+lifecycle/gate lives in its `delivery-NNN/STATE.md` and each task's own state lives in its
+`delivery-NNN/tasks/task-NNN/STATE.md` instead.
 
 <!-- STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
 
@@ -42,21 +52,11 @@ the ordered list at runtime; schemas.md carries an inline copy derived from this
 > **User Approved:** yes | no
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
-to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory.
+to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory. See also: per-delivery
+`delivery-NNN/STATE.md` (delivery lifecycle + gate + delivery-scoped Q&A + derived task rollup)
+and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 
-**Full path:** delivery/task state lives in per-delivery `deliveries/delivery-NNN/STATE.md`
-(delivery lifecycle + gate + delivery-scoped Q&A + derived task rollup) and per-task
-`deliveries/delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells). This file's
-`## Plan / Deliveries`, `## Tasks State`, `## Delivery Gates`, and the DERIVED half of
-`## Cross-phase Q&A` are read-only unions over those per-delivery files.
-
-**Lite path:** a lite work has exactly one delivery and no `deliveries/` folder at all --
-the work IS the delivery. Its gate result and delivery-scoped Q&A are AUTHORED directly in
-THIS file (see `## Delivery Lifecycle` and `## Delivery Gate` below, and the lite-path note
-under `## Cross-phase Q&A`); its tasks live directly at `tasks/task-NNN/STATE.md` (no
-delivery layer), and `## Tasks State` below derives from those files directly.
-
-Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task SPEC.md) keep their
+Artifact files (REQUIREMENTS.md, per-feature SPEC.md, PLAN.md, per-task DETAIL.md) keep their
 inline `## Change Log` sections -- that is content history (what changed in the document),
 distinct from process state (where are we in the workflow). Both are useful; they live in
 different places.
@@ -80,81 +80,6 @@ different places.
 - **Pause Reason:** {short text} | --          (present only when Lifecycle = Paused-Awaiting-Input)
 - **Block Reason:** {short text} | --          (present only when Lifecycle = Blocked)
 - **Block Artifact:** {relative path} | --     (e.g. IMPEDIMENT-task-NNN.md, or the failed gate)
-
----
-
-## Triage
-
-<!-- AUTHORED -- populated by `aid-describe` TRIAGE state for lite-path works.
-     Left empty for full-path works (aid-describe runs the full interview flow instead). -->
-
-- **Path:** lite | full
-- **Work Type:** bug-fix | new-feature | refactor | {omitted for full path}
-- **Sub-path:** LITE-BUG-FIX | LITE-REFACTOR | LITE-FEATURE | -- (absent for full path)
-- **Sub-path (auto):** {auto-detected sub-path label, or -- if overridden or full path}
-- **Decision rationale:** {one sentence: why this path/sub-path was selected}
-- **Override:** yes | no (yes = human changed auto-detected sub-path)
-- **Recipe:** {recipe-name} | none
-
----
-
-## Delivery Lifecycle
-
-<!-- AUTHORED -- LITE PATH ONLY. Absent entirely for full-path works (their delivery
-     lifecycle lives in the per-delivery `deliveries/delivery-NNN/STATE.md ## Delivery
-     Lifecycle` block instead). A lite work has exactly one delivery and no `deliveries/`
-     folder -- the work IS the delivery, so its lifecycle is authored directly here.
-     Same enum + writer contract as the delivery-level block (delivery-state-template.md):
-     written by `aid-describe` TASK-BREAKDOWN (initial State: Executing -- lite tasks are
-     already approved by the time this section is written, so Pending-Spec/Specified are
-     skipped) and advanced by `aid-execute` (Executing -> Gated -> Done, or Blocked).
-     `writeback-state.sh --delivery-id NNN --lifecycle VALUE` targets THIS file's section
-     for a lite work (resolved automatically -- no `deliveries/` folder present). -->
-
-- **State:** Pending-Spec | Specified | Executing | Gated | Done | Blocked
-- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
-- **Block Reason:** {short text} | --     (present only when State = Blocked)
-- **Block Artifact:** {relative path} | --
-
----
-
-## Delivery Gate
-
-<!-- AUTHORED -- LITE PATH ONLY. Absent entirely for full-path works (their gate lives in
-     the per-delivery `deliveries/delivery-NNN/STATE.md ## Delivery Gate` block instead;
-     the work-level `## Delivery Gates` DERIVED section below unions those). Written by
-     `aid-describe` LITE-REVIEW (pre-execution gate) and updated by `aid-execute`
-     DELIVERY-GATE (post-execution gate) via `writeback-state.sh --delivery-id NNN
-     --block ...`, which targets THIS file's section for a lite work. -->
-
-- **Reviewer Tier:** Small | Medium | Large
-- **Grade:** {grade or Pending}
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
-- **Timestamp:** {YYYY-MM-DDTHH:MM:SSZ}
-
----
-
-## Escalation Carry
-
-<!-- AUTHORED -- written by `aid-describe` lite to full escalation (Steps 3-9 of
-     `lite-to-full-escalation.md`). Present only when a work started on the lite path
-     and was escalated to full. The CONTINUE state reads this section to avoid re-asking
-     questions already answered during the lite-path session. See
-     `references/state-continue.md # Escalation Carry`. -->
-
-- **Escalated from:** {state name} (Sub-path: {sub-path value})
-- **Escalated at:** {YYYY-MM-DDTHH:MM:SSZ}
-- **Escalation rationale:** {one sentence}
-
-### Captured Slot Values
-
-- **{slot-name}:** {slot-value}
-- (no slots captured -- escalation before CONDENSED-INTAKE)
-
-### Artifacts at Escalation
-
-- **SPEC.md:** present | absent -- {notes on content available for seeding}
-- **tasks/:** {N} task files present | absent
 
 ---
 
@@ -204,6 +129,69 @@ different places.
 
 ---
 
+## Delivery Lifecycle
+
+<!-- AUTHORED -- single-delivery FLATTENED works only (no `deliveries/`/`delivery-NNN/` wrapper;
+     `tasks/task-NNN/DETAIL.md` directly under the work root). Promoted VERBATIM from
+     `delivery-state-template.md ## Delivery Lifecycle` (A-8): with exactly one delivery there is
+     exactly one writer, so the disjoint-write rule that forces a separate `delivery-NNN/STATE.md`
+     no longer applies and this section is authored directly here instead. Single writer: this
+     work's active branch only. Written by aid-plan, aid-specify, aid-execute across the delivery
+     pipeline for the synthesized `delivery-001`. Never derived from task rollup. Left absent
+     (section omitted) for full multi-delivery works, where each delivery's own lifecycle lives in
+     its `delivery-NNN/STATE.md` instead (unioned by the DERIVED `## Plan / Deliveries` view
+     below). The enum below is byte-identical to `delivery-state-template.md` -- both reader twins
+     and `writeback-state.sh` bind to the exact strings (no byte-stability break). -->
+
+- **State:** Pending-Spec | Specified | Executing | Gated | Done | Blocked
+- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
+- **Block Reason:** {short text} | --     (present only when State = Blocked)
+- **Block Artifact:** {relative path} | --
+
+### Tasks lifecycle
+
+<!-- AUTHORED -- single-delivery FLATTENED works only (see ## Delivery Lifecycle note above).
+     The single-writer home for per-task mutable state cells, REPLACING the now-absent per-task
+     `STATE.md` (each task is `tasks/task-NNN/DETAIL.md` only -- immutable, no sibling STATE.md).
+     Written by `writeback-state.sh --task-id NNN --field State --value V` (flattened branch),
+     targeting this table instead of a `delivery-NNN/tasks/task-NNN/STATE.md`. Mirrors the REAL
+     fields of `task-state-template.md ## Task State` (State/Review/Elapsed/Notes), one row per
+     task-NNN. This is a `###` subsection of ## Delivery Lifecycle, distinct from the plural
+     DERIVED `## Tasks State` view below (different heading text AND level -- no collision). Left
+     absent (section omitted) for full multi-delivery works, where each task's own state lives in
+     its `delivery-NNN/tasks/task-NNN/STATE.md` instead (unioned by that DERIVED view). The enum
+     below is byte-identical to `task-state-template.md` -- no byte-stability break.
+
+     State enum (closed; single source of truth):
+       Pending | In Progress | In Review | Blocked | Done | Failed | Canceled -->
+
+| Task | State | Review | Elapsed | Notes |
+|------|-------|--------|---------|-------|
+| _none yet_ | | | | |
+
+---
+
+## Delivery Gate
+
+<!-- AUTHORED -- single-delivery FLATTENED works only (see ## Delivery Lifecycle note above).
+     Promoted VERBATIM from `delivery-state-template.md ## Delivery Gate` (A-8). Single writer:
+     the delivery-gate closing step of `aid-execute` on this work's active branch, written via
+     `writeback-state.sh --delivery-id 001 --block ...`. Distinct from per-task quick-check
+     findings -- the gate aggregates those deferred [HIGH] rows (via
+     `.aid/{work}/delivery-001-issues.md`; see `.agent/aid/templates/delivery-issues.md`) and runs
+     a full grade.sh pass. The gate's criteria are read from this work's `BLUEPRINT.md § GATE
+     CRITERIA`, NOT from this STATE.md. Left absent (section omitted) for full multi-delivery
+     works, where each delivery-NNN/STATE.md carries its own gate block (unioned by the DERIVED
+     ## Delivery Gates view below). The enum below is byte-identical to
+     `delivery-state-template.md` -- no byte-stability break. -->
+
+- **Reviewer Tier:** Small | Medium | Large
+- **Grade:** {grade or Pending}
+- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Timestamp:** {YYYY-MM-DDTHH:MM:SSZ}
+
+---
+
 <!-- ============================================================
      DERIVED / READ-ONLY VIEWS
      The sections below are assembled at READ TIME from per-delivery and per-task STATE.md files.
@@ -223,11 +211,9 @@ different places.
 
 ## Plan / Deliveries
 
-<!-- DERIVED -- FULL PATH ONLY. Read-only view assembled from deliveries/delivery-NNN/STATE.md
-     lifecycle fields. Never written here; the delivery-level STATE.md is the authoritative
-     source. One row per delivery from PLAN.md. Omitted / stays "_none yet_" for lite works --
-     a lite work has no PLAN.md and no multi-delivery structure; its single delivery's
-     lifecycle is AUTHORED directly above in `## Delivery Lifecycle`, not derived here. -->
+<!-- DERIVED -- read-only view assembled from delivery-NNN/STATE.md lifecycle fields.
+     Never written here; the delivery-level STATE.md is the authoritative source.
+     One row per delivery from PLAN.md. -->
 
 | Delivery | State | Tasks | Notes |
 |----------|-------|-------|-------|
@@ -235,13 +221,10 @@ different places.
 
 ## Tasks State
 
-<!-- DERIVED -- read-only view assembled at read time from per-task STATE.md files.
-     Never written directly into this file. The state reader unions all delivery branches
-     using the ordering (most-advanced wins). One row per task.
-     Full path: source files are `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; one row
-       per task from PLAN.md execution graph.
-     Lite path: source files are `tasks/task-NNN/STATE.md` directly under the work folder
-       (no delivery layer); one row per task from the work-root SPEC.md `## Execution Graph`.
+<!-- DERIVED -- read-only view assembled at read time from per-task STATE.md files
+     (delivery-NNN/tasks/task-NNN/STATE.md). Never written directly into this file.
+     The state reader unions all delivery branches using the ordering (most-advanced wins).
+     One row per task from PLAN.md execution graph.
      State enum (closed): Pending | In Progress | In Review | Blocked | Done | Failed | Canceled -->
 
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
@@ -250,38 +233,28 @@ different places.
 
 ## Delivery Gates
 
-<!-- DERIVED -- FULL PATH ONLY. Read-only union of each deliveries/delivery-NNN/STATE.md
-     ## Delivery Gate section. The per-delivery gate block is the authoritative source
-     (single writer per delivery branch). Never written here. Omitted / stays "_none yet_"
-     for lite works -- a lite work's single gate is AUTHORED directly above in this file's
-     own `## Delivery Gate` section (singular), not derived here. -->
+<!-- DERIVED -- read-only union of each delivery-NNN/STATE.md ## Delivery Gate section.
+     The per-delivery gate block is the authoritative source (single writer per delivery branch).
+     Never written here. -->
 
-_None yet. Each deliveries/delivery-NNN/STATE.md carries its own gate block (full path);
-lite works author their single gate directly in this file's `## Delivery Gate` section above._
+_None yet. Each delivery-NNN/STATE.md carries its own gate block._
 
 ## Cross-phase Q&A
 
-<!-- DERIVED for full-path works -- read-only union of:
-       (a) each deliveries/delivery-NNN/STATE.md ## Cross-phase Q&A section (delivery-gate Q&A), and
+<!-- DERIVED -- read-only union of:
+       (a) each delivery-NNN/STATE.md ## Cross-phase Q&A section (delivery-gate Q&A), and
        (b) any work-owner-authored Q&A entries in this work's active branch (written below
            this comment by the work owner only; the work owner is the single writer here).
-     Delivery branches write Q&A into their OWN deliveries/delivery-NNN/STATE.md, not here.
+     Delivery branches write Q&A into their OWN delivery-NNN/STATE.md, not here.
      The dashboard reader unions all delivery contributions plus (b) into this view.
-     WORK-OWNER-AUTHORED entries may appear below this block (single writer, work active branch).
-
-     AUTHORED for lite-path works -- a lite work has no delivery-level STATE.md to derive
-     (a) from, so the single delivery's Q&A is written DIRECTLY into this section (same
-     per-Q block shape as the delivery-level template) by `aid-execute` DELIVERY-GATE (SPEC
-     loopback) and any other downstream phase. There is no separate (a)/(b) split for lite --
-     this section IS the delivery's Q&A. -->
+     WORK-OWNER-AUTHORED entries may appear below this block (single writer, work active branch). -->
 
 _None yet._
 
 ## Calibration Log
 
-<!-- DERIVED -- read-only union of per-task ## Dispatch Log entries.
-     Full path: deliveries/delivery-NNN/tasks/task-NNN/STATE.md files.
-     Lite path: tasks/task-NNN/STATE.md files directly under the work folder.
+<!-- DERIVED -- read-only union of per-task ## Dispatch Log entries from
+     delivery-NNN/tasks/task-NNN/STATE.md files.
      Appended by dispatchers at subagent completion (L1+L2+L3 traceability; always-on).
      One row per dispatch. Never written directly here; assemble from per-task logs at read time. -->
 
@@ -291,10 +264,8 @@ _None yet._
 ## Dispatches
 
 <!-- DERIVED -- read-only union of per-task dispatch logs assembled from
-     ## Dispatch Log sections in the per-task STATE.md files (full path:
-     deliveries/delivery-NNN/tasks/task-NNN/STATE.md; lite path: tasks/task-NNN/STATE.md).
+     delivery-NNN/tasks/task-NNN/STATE.md ## Dispatch Log sections.
      Never written here; one sub-section per task that triggered at least one dispatch.
      Updated by the dispatcher on subagent completion alongside the Calibration Log row. -->
 
-_None yet. Full path: task dispatch logs live in deliveries/delivery-NNN/tasks/task-NNN/STATE.md.
-Lite path: task dispatch logs live in tasks/task-NNN/STATE.md directly._
+_None yet. Delivery task dispatch logs live in delivery-NNN/tasks/task-NNN/STATE.md._

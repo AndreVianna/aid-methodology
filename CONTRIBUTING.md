@@ -16,7 +16,7 @@ Understanding the structure is key to contributing in the right place:
 | `profiles/codex/.codex/agents/` | LLMs | .toml | Generated — Codex CLI agent definitions |
 | `profiles/codex/.codex/skills/` | LLMs | SKILL.md | Generated — Codex CLI skill files |
 | `profiles/cursor/.cursor/` | LLMs | .md / .mdc | Generated — Cursor IDE install tree |
-| `templates/` | Both | Markdown | Fill-in templates (canonical source in `canonical/templates/`) |
+| `templates/` | Both | Markdown | Fill-in templates (canonical source in `canonical/aid/templates/`) |
 | `examples/` | Humans | Markdown | Real-world case studies |
 | `docs/` | Humans | Markdown | User-facing documentation, including the core methodology document |
 
@@ -44,6 +44,14 @@ separately when methodology content changes.
 - Skills for edge cases (multi-repo, microservices, data science)
 - **Remember:** Edit `canonical/skills/aid-{phase}/SKILL.md` (and `references/` files if any),
   then run `/generate-profile`. Also update the human `skills/aid-{phase}/README.md` separately.
+- **Shortcuts are different:** the verb-first shortcut skills (`aid-fix`, `aid-create-api`, `aid-change-cli`, …)
+  are not hand-authored. They are generated from the catalog at
+  `canonical/aid/templates/shortcut-catalog.yml` via the maintainer helper
+  `.claude/skills/generate-profile/scripts/build-shortcut-skills.py`, followed by the normal
+  `run_generator.py` pass. To add or change a shortcut, edit the catalog row (and, if the shared
+  behavior itself needs to change, `canonical/aid/templates/shortcut-engine.md` or the relevant
+  `canonical/aid/templates/shortcut-scaffolding/<family>.md`) — never hand-edit a generated
+  `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` directly.
 
 ### Agent Improvements
 - Better system prompts, tool constraints, or role definitions

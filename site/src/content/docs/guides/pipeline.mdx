@@ -22,36 +22,38 @@ duplicate that depth; it points you at the right command and artifact for each s
 ## The pipeline at a glance
 
 ```mermaid
-flowchart LR
-    C(["/aid-config<br/>Step 0"])
-    D(["/aid-discover<br/>Phase 1"])
-    I(["/aid-describe<br/>Phase 2a"])
-    Def(["/aid-define<br/>Phase 2b"])
-    T{"TRIAGE<br/>full or lite?"}
-    S(["/aid-specify<br/>Phase 3"])
-    P(["/aid-plan<br/>Phase 4"])
-    DT(["/aid-detail<br/>Phase 5"])
-    E(["/aid-execute<br/>Phase 6"])
-    DP(["/aid-deploy<br/>Deliver"])
-    M(["/aid-monitor<br/>Deliver"])
+flowchart TD
+    subgraph Entry["Choose your entry"]
+        SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut — I know my change"]
+        TR["/aid-triage<br/>— not sure? (suggest-only)"]
+        DS["/aid-describe<br/>— broad / new project"]
+    end
+    TR -. suggests .-> SC
+    TR -. suggests .-> DS
 
-    C --> D
-    C --> I
-    D --> I
-    I --> T
-    T -- "full path" --> Def --> S
-    S --> P
-    P --> DT
-    DT --> E
-    T -- "lite path<br/>skips Specify/Plan/Detail" --> E
-    E --> DP
-    DP --> M
-    M -->|"findings loop back"| I
+    CFG["/aid-config (bootstrap · once)"] --> DISC["/aid-discover (brownfield)"]
+    DISC --> DS
+
+    SC --> ENG["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT<br/>(Describe→Detail, collapsed &amp; autonomous)"]
+    ENG --> HALT{{"Approval halt"}}
+
+    DS --> DEF["/aid-define"] --> SPC["/aid-specify"] --> PLN["/aid-plan"] --> DTL["/aid-detail"]
+    DTL --> HALT
+
+    HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
+    EXE --> DEP["/aid-deploy (optional)"] --> MON["/aid-monitor (optional)"]
+    MON -. "bug → /aid-fix" .-> SC
+    MON -. "change request → /aid-triage" .-> TR
 ```
 
-The diagram shows the canonical order. Greenfield projects skip Phase 1 (Discover) and
-go directly from Configure to Describe (Phase 2a). The Deliver skills (deploy + monitor) are
-optional and loop findings back into Describe.
+The diagram shows three ways in: a **shortcut** if you already know your change, `/aid-triage`
+if you're not sure, or `/aid-describe` for broad or new-project work. `/aid-config` bootstraps
+the project once; brownfield projects run `/aid-discover` before Describe, greenfield projects
+go directly from Configure to Describe. A shortcut runs the shared **shortcut engine** — a
+collapsed, autonomous Describe→Detail — straight to the approval halt; `/aid-describe` walks
+each phase through its own human gate instead. Both converge on the same halt before Execute.
+The Deliver skills (deploy + monitor) are optional; Monitor routes bug findings to `/aid-fix`
+and change-request findings to `/aid-triage`, closing the loop.
 
 ## Step 0 — Configure (`/aid-config`)
 
@@ -100,9 +102,14 @@ no existing code, go directly to Phase 2 (Describe → Define).
 
 ### Phase 2a — Describe (`/aid-describe`)
 
-The Describe skill gathers requirements conversationally. It asks you structured
-questions about your goals, constraints, and scope, TRIAGE routes full or lite, and on the
-full path writes `REQUIREMENTS.md`. On the lite path it emits a `SPEC.md` + tasks directly.
+The Describe skill gathers requirements conversationally — full path only. It asks you
+structured questions about your goals, constraints, and scope through its elicitation engine,
+then writes `REQUIREMENTS.md`. State machine:
+`FIRST-RUN → Q-AND-A → CONTINUE → {greenfield: DESCRIBE-SEED →} COMPLETION [PAUSE → /aid-define]`. It no longer triages or
+produces lite work — for a small, well-scoped change, invoke a shortcut or ask `/aid-triage`
+instead (see [Lite path quickstart](/get-started/lite-path/)).
+
+**Artifact produced:** `REQUIREMENTS.md`.
 
 ### Phase 2b — Define (`/aid-define`)
 
@@ -137,10 +144,12 @@ then appends a `SPEC.md` section with design decisions and an acceptance-criteri
 ### Phase 4 — Plan (`/aid-plan`)
 
 The Plan skill reads all your feature specs and sequences them into a delivery roadmap.
-It decides which features go into which delivery, respecting dependencies, and writes
-`PLAN.md` with the strategy.
+It decides which features go into which delivery, respecting dependencies, writes `PLAN.md`
+with the strategy, and creates a `deliveries/delivery-NNN/` folder per delivery with its
+`BLUEPRINT.md` — the delivery definition (scope, gate criteria, dependencies).
 
-**Artifact produced:** `PLAN.md` — the delivery sequence and dependency graph.
+**Artifact produced:** `PLAN.md` — the delivery sequence and dependency graph — plus one
+`deliveries/delivery-NNN/BLUEPRINT.md` per delivery.
 
 <LinkCard
   title="Skills reference"
@@ -151,10 +160,12 @@ It decides which features go into which delivery, respecting dependencies, and w
 ### Phase 5 — Detail (`/aid-detail`)
 
 The Detail skill breaks a delivery into typed tasks and produces an execution graph. Each
-task gets a `task-NNN.md` file with one of the eight task types (RESEARCH, DESIGN, IMPLEMENT,
-TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE), acceptance criteria, and dependencies.
+task gets its own `deliveries/delivery-NNN/tasks/task-NNN/` folder with a `DETAIL.md` — the
+task definition — covering one of the eight task types (RESEARCH, DESIGN, IMPLEMENT, TEST,
+DOCUMENT, MIGRATE, REFACTOR, CONFIGURE), acceptance criteria, and dependencies.
 
-**Artifact produced:** `task-NNN.md` files under `.aid/<work>/tasks/` + an execution graph.
+**Artifact produced:** `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + an
+execution graph.
 
 **Run once per delivery** — repeat for each delivery in your plan.
 
@@ -199,9 +210,10 @@ invokes the release pipeline.
 
 ### Monitor (`/aid-monitor`)
 
-The Monitor skill observes the deployed system, classifies incoming findings (bug /
-enhancement / question), and routes actionable items back into `/aid-describe` as new
-requirements. This closes the feedback loop.
+The Monitor skill observes the deployed system, classifies incoming findings, and routes
+actionable items to the entry point that fits: a finding classified **BUG** routes to
+`/aid-fix`; a finding classified **change request** routes to `/aid-triage`. This closes the
+feedback loop.
 
 <Aside type="note">
 Neither Deliver skill is required to use AID. Many teams run the six core phases and
@@ -211,11 +223,13 @@ handle deployment through their existing CI/CD pipeline without `/aid-deploy` or
 
 ## Lite vs full path
 
-Not every project needs all six phases. For small, well-scoped work, `/aid-describe`'s
-TRIAGE routes down the **lite path** — Describe → Execute, **skipping Specify, Plan, and
-Detail** — emitting a work-root `SPEC.md` with tasks directly. The
-[Methodology](/concepts/methodology) page explains when TRIAGE chooses the lite path and
-when the full pipeline pays off.
+Not every change needs all six phases. For small, well-scoped work, skip the full pipeline
+entirely: invoke the matching **shortcut** (`/aid-fix`, `/aid-create-api`, …), or ask
+`/aid-triage` if you're not sure which one fits. The shortcut engine collapses Describe
+through Detail into one fast, mostly-autonomous run and produces the same flattened artifact
+set before halting for your approval — see [Lite path quickstart](/get-started/lite-path/)
+for the flow and the [Methodology](/concepts/methodology) page for when a shortcut is the
+right call versus the full pipeline.
 
 The [Installation guide](/guides/installation) also covers the quick-start flow for new
 adopters who want to get something working before reading the full pipeline.

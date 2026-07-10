@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All 14 AID pipeline skills — grouped by pipeline phase, with what each does and where its definition lives.'
-generatedFrom: 'canonical/skills/*/SKILL.md'
+description: 'All AID skills — 14 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by phase/family, with what each does and where it comes from.'
+generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **14 user-facing skills** across five pipeline groups, plus three off-pipeline on-demand skills. The six numbered phases — Discover through Execute — form the mandatory sequential pipeline; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Each entry below is generated from the skill's own definition in `canonical/skills/`.
+AID ships **92 skill directories** under `canonical/skills/`: **14 classic pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **76 direct-entry shortcut skills** generated from a 80-row catalog (51 canonical names + 29 aliases — 4 of the rows (3 canonical + 1 alias) `repurpose` existing classic skills and emit no directory of their own). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below).
 
 ## Prepare
 
@@ -24,7 +24,7 @@ View or update AID pipeline settings. Bare invocation shows all values in a tabl
 
 **Phase 1 · brownfield**
 
-Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold the KB. Analyzes all repository content (code, configuration, and documentation) to populate KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step per run. State-machine: GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
+Brownfield project discovery with built-in quality gate. Run `/aid-config` first to scaffold the KB. Analyzes all repository content (code, configuration, and documentation) to populate KB documents. Reviews, collects user input, fixes issues, and gets user approval — one step per run. State-machine: ELICIT → GENERATE → REVIEW → Q-AND-A → FIX → APPROVAL → DONE.
 
 [Definition: `canonical/skills/aid-discover/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md)
 
@@ -36,15 +36,27 @@ Generate a single-file kb.html from .aid/knowledge/. Domain-driven, doc-set-base
 
 [Definition: `canonical/skills/aid-summarize/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md)
 
+## Entry points / routing
+
+Not sure which path fits? Route yourself before committing to one.
+
+### `aid-triage`
+
+**router · suggest-only**
+
+Suggest-only router for "I don't know which entry fits." Captures one short free-form description, infers the work type and judges scope, then suggests the single best entry: the matching aid-<verb>[-<artifact>] shortcut for a known single change-type, or the full path via /aid-describe for broad or ambiguous work. Reads canonical/aid/templates/shortcut-catalog.yml to resolve the suggestion to a canonical (non-alias) name. Routes and suggests only -- no interview, no scaffold, no work folder, no STATE.md. State machine: INTAKE -> CLASSIFY -> SUGGEST -> HALT.
+
+[Definition: `canonical/skills/aid-triage/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-triage/SKILL.md)
+
 ## Define
 
 Define the problem and how to solve it.
 
 ### `aid-describe`
 
-**Phase 2a · TRIAGE → full or lite**
+**Phase 2a · full path only**
 
-Conversational requirements gathering through adaptive interview, driven by the seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed D1 opener plus a deterministic five-step next-move selector (stop check, gap selection, move selection, calibration shaping, NFR-7 envelope + emit). First run builds REQUIREMENTS.md incrementally. Subsequent runs resume the interview for incomplete sections. Final step presents approved requirements for handoff to /aid-define. State machine: FIRST-RUN -> Q-AND-A -> TRIAGE -> {full: CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define] | lite: CONDENSED-INTAKE -> TASK-BREAKDOWN -> LITE-REVIEW -> LITE-DONE}.
+Conversational requirements gathering through adaptive interview, driven by the seasoned-analyst elicitation engine (references/elicitation-engine.md): one fixed D1 opener plus a deterministic five-step next-move selector (stop check, gap selection, move selection, calibration shaping, NFR-7 envelope + emit). First run builds REQUIREMENTS.md incrementally. Subsequent runs resume the interview for incomplete sections. Final step presents approved requirements for handoff to /aid-define. State machine: FIRST-RUN -> Q-AND-A -> CONTINUE -> {greenfield: DESCRIBE-SEED ->} COMPLETION [PAUSE -> /aid-define].
 
 [Definition: `canonical/skills/aid-describe/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-describe/SKILL.md)
 
@@ -112,7 +124,7 @@ Package completed deliveries into a release. Selects eligible deliveries, verifi
 
 **optional · on demand**
 
-Observe production, classify findings, and route actions. Combines telemetry interpretation with triage — detect anomalies, perform root cause analysis for bugs, and route findings to aid-describe (bugs via its lite bug-fix triage; change requests as new/changed requirements). Per-work scope. Use post-deployment, on schedule, or on-demand. State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
+Observe production, classify findings, and route actions. Combines telemetry interpretation with triage — detect anomalies, perform root cause analysis for bugs, and route findings — bugs to /aid-fix, change requests to /aid-triage. Per-work scope. Use post-deployment, on schedule, or on-demand. State machine: OBSERVE → CLASSIFY → ROUTE → DONE.
 
 [Definition: `canonical/skills/aid-monitor/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-monitor/SKILL.md)
 
@@ -136,6 +148,14 @@ Optional on-demand Q&A skill. Takes a free-form question and answers it in one p
 
 [Definition: `canonical/skills/aid-query-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md)
 
+### `aid-ask`
+
+**on demand · friendly alias of aid-query-kb**
+
+Friendly-named alias of /aid-query-kb -- the optional on-demand Q&A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/work-*/STATE.md + progress). Returns an answer with source citations. When the available context cannot answer the question, states the gap explicitly and captures it as a Query-Gap entry so it feeds the KB-improvement loop. This file carries no logic of its own -- its full behavior is defined entirely by canonical/skills/aid-query-kb/SKILL.md, which this skill delegates to.
+
+[Definition: `canonical/skills/aid-ask/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md)
+
 ### `aid-update-kb`
 
 **on demand · targeted KB update**
@@ -143,3 +163,33 @@ Optional on-demand Q&A skill. Takes a free-form question and answers it in one p
 Optional on-demand targeted KB update skill. Takes a free-form prompt describing what changed and applies the delta through the same review/calibration gate as aid-discover. Analyzes which KB docs the prompt implies, applies targeted summary+pointer edits, reviews them through f005's five-mandate panel (scoped to the changed docs), and commits only after explicit human approval. State-machine: ANALYZE -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
 
 [Definition: `canonical/skills/aid-update-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md)
+
+## Direct-entry shortcuts
+
+**76 verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (80 rows total: 76 emit a skill directory; the other 4 are `repurpose: true` rows that re-register a pre-existing classic skill — `aid-deploy` / `aid-monitor` / `aid-query-kb` / `aid-ask` — purely so /aid-triage can recognize them, and emit no directory of their own).
+
+Every shortcut delegates to the shared **shortcut engine** — [`canonical/aid/templates/shortcut-engine.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md) — which collapses the five definition phases (Describe → Detail) into one mostly-autonomous run:
+
+```
+INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT
+```
+
+CAPTURE/SPEC/PLAN/DETAIL run without a per-phase human checkpoint (unlike the full path's Propose→Discuss→Write→Review loops); the only interactive moments are a rare CAPTURE gap-question and the terminal APPROVAL-HALT. GATE grades every generated document mechanically against the project's minimum grade before halting. The engine never executes — `/aid-execute` is a separate, user-initiated run after approval. Not sure which shortcut fits your change? `/aid-triage` reads this same catalog and suggests exactly one.
+
+| Family | Count | Forms |
+|--------|-------|-------|
+| Create (+ `add` alias) | 24 | 12 canonical `aid-create*` forms + 12 `aid-add*` aliases |
+| Change (+ `update` alias) | 24 | 12 canonical `aid-change*` forms + 12 `aid-update*` aliases |
+| Fix | 1 | `aid-fix` — diagnose and correct a defect, regression, incident, or vulnerability; no alias |
+| Refactor | 1 | `aid-refactor` — restructure or optimize without changing behavior; no alias |
+| Test + Experiment | 5 | `aid-test` + 3 typed forms (security, performance, data-quality) = 4, plus `aid-experiment`; no alias |
+| Prototype | 2 | `aid-prototype`, `aid-prototype-ui`; no alias |
+| Document | 8 | `aid-document` + 7 typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias |
+| Report | 1 | `aid-report` — analyze data or usage and communicate insight; no alias |
+| Show dashboard | 1 | `aid-show-dashboard` — build a durable dashboard or BI view; no alias |
+| Remove (+ `delete` alias) | 2 | 1 canonical `aid-remove` form + 1 `aid-delete` alias |
+| Deprecate | 1 | `aid-deprecate` — mark an artifact/API deprecated, add warnings and a migration path, without deleting yet; no alias |
+| Migrate | 1 | `aid-migrate` — migrate data, a dependency, framework, or platform, with a rollback plan; no alias |
+| Review (+ `audit` alias) | 2 | 1 canonical `aid-review` form + 1 `aid-audit` alias |
+| Research (+ `investigate`/`spike` aliases) | 3 | 1 canonical `aid-research` form + 2 `aid-investigate`/`aid-spike` aliases |
+| **Total** | **76** | |

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-contrast-check.sh — tests for canonical/scripts/summarize/contrast-check.mjs,
+# test-contrast-check.sh — tests for canonical/aid/scripts/summarize/contrast-check.mjs,
 # the Node validator that extracts CSS custom properties from an inlined <style> block
 # and verifies WCAG AA contrast ratios (>= 4.5:1) for known token pairs across the
 # light and dark themes.

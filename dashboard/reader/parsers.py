@@ -18,6 +18,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
+from .io_bounds import read_bytes_bounded
 from .models import (
     DeliverableRef,
     DeferredIssue,
@@ -113,7 +114,7 @@ def parse_tool_info(
     # Try manifest JSON first.
     if manifest_path.is_file():
         try:
-            raw = manifest_path.read_bytes()
+            raw = read_bytes_bounded(manifest_path)
             bytes_read += len(raw)
             data = json.loads(raw.decode("utf-8", errors="replace"))
         except (OSError, json.JSONDecodeError, ValueError):
@@ -134,7 +135,7 @@ def parse_tool_info(
     # Fallback: .aid/.aid-version (plain string with the version)
     if version_path.is_file():
         try:
-            raw = version_path.read_bytes()
+            raw = read_bytes_bounded(version_path)
             bytes_read += len(raw)
             version_str = raw.decode("utf-8", errors="replace").strip()
         except OSError:
@@ -166,7 +167,7 @@ def parse_project_name(settings_path: Path) -> tuple[str, int]:
         return "", 0
 
     try:
-        raw = settings_path.read_bytes()
+        raw = read_bytes_bounded(settings_path)
     except OSError:
         return "", 0
 
@@ -245,7 +246,7 @@ def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]
         return None, 0
 
     try:
-        raw = settings_path.read_bytes()
+        raw = read_bytes_bounded(settings_path)
     except OSError:
         return None, 0
 
@@ -317,7 +318,7 @@ def parse_kb_state(
     state_path = kb_dir / "STATE.md"
     if state_path.is_file():
         try:
-            raw = state_path.read_bytes()
+            raw = read_bytes_bounded(state_path)
             bytes_read += len(raw)
             state_text = raw.decode("utf-8", errors="replace")
         except OSError:
@@ -328,7 +329,7 @@ def parse_kb_state(
     readme_path = kb_dir / "README.md"
     if readme_path.is_file():
         try:
-            raw = readme_path.read_bytes()
+            raw = read_bytes_bounded(readme_path)
             bytes_read += len(raw)
             readme_text = raw.decode("utf-8", errors="replace")
         except OSError:
@@ -454,7 +455,7 @@ def parse_doc_frontmatter(path: Path) -> tuple[Optional[str], list[str], bool]:
         return None, [], False
 
     try:
-        raw = path.read_bytes()
+        raw = read_bytes_bounded(path)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
         return None, [], False
@@ -565,7 +566,7 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
         return None, None, None, 0
 
     try:
-        raw = path.read_bytes()
+        raw = read_bytes_bounded(path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -645,7 +646,7 @@ def parse_spec_md(spec_path: Path) -> tuple[Optional[str], Optional[str], Option
         return None, None, None, 0
 
     try:
-        raw = spec_path.read_bytes()
+        raw = read_bytes_bounded(spec_path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -707,8 +708,8 @@ def parse_task_short_name(task_path: Path) -> tuple[Optional[str], int]:
         return None, 0
 
     try:
-        # Read up to 4096 bytes to cover long titles; first-line-bounded parse
-        raw = task_path.read_bytes()
+        # Bounded read (5 MB cap; see io_bounds.py) covers long titles fine
+        raw = read_bytes_bounded(task_path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -755,7 +756,7 @@ def parse_execution_graph(plan_path: Path) -> tuple[dict, int]:
         return {}, 0
 
     try:
-        raw = plan_path.read_bytes()
+        raw = read_bytes_bounded(plan_path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -1512,6 +1513,101 @@ def parse_delivery_state_md(
     return pds
 
 
+# ---------------------------------------------------------------------------
+# feature-001 (flattened single-delivery layout): ### Tasks lifecycle parser
+#
+# The flat layout has no per-task STATE.md and no per-delivery STATE.md -- the
+# promoted `## Delivery Lifecycle` / `## Delivery Gate` blocks (parsed above via
+# parse_delivery_state_md, unchanged) plus a `### Tasks lifecycle` SUBSECTION
+# live directly in the work-root STATE.md. This table REPLACES the per-task
+# STATE.md's `## Task State` section, but uses a NARROWER column layout (no
+# leading # / Type / Wave columns -- type comes from DETAIL.md, wave is the
+# synthesized delivery-001 for every task in this layout):
+#
+#   | Task | State | Review | Elapsed | Notes |
+#
+# Called ONLY by the flat reader path (_read_work_flat in reader.py).
+# ---------------------------------------------------------------------------
+
+_RE_TASKS_LIFECYCLE_SECTION = re.compile(r"^###\s+Tasks lifecycle\s*$", re.IGNORECASE)
+# Any ## or ### heading ends the ### Tasks lifecycle subsection (it is nested
+# under ## Delivery Lifecycle, so a plain ## heading -- e.g. ## Delivery Gate --
+# must also close it, not just another ###).
+_RE_SECTION_2_OR_3 = re.compile(r"^#{2,3}\s+\S")
+
+
+def parse_tasks_lifecycle_md(text: str) -> "tuple[dict[str, ParsedTaskState], list[str]]":
+    """Parse the work-root STATE.md `### Tasks lifecycle` table (feature-001 flat layout).
+
+    Returns (task_id_lower -> ParsedTaskState, parse_warnings). Header/separator
+    rows and the `_none yet_` placeholder row are skipped. Unrecognized state
+    literals map to TaskStatus.Unknown (never throws, NFR7).
+
+    Read-only. Called only by the flat reader path.
+    """
+    result: dict[str, ParsedTaskState] = {}
+    warnings: list[str] = []
+
+    try:
+        in_section = False
+        header_seen = False
+
+        for line in text.splitlines():
+            if _RE_TASKS_LIFECYCLE_SECTION.match(line):
+                in_section = True
+                header_seen = False
+                continue
+
+            if in_section and _RE_SECTION_2_OR_3.match(line):
+                in_section = False
+                continue
+
+            if not in_section:
+                continue
+
+            stripped = line.strip()
+            if not stripped.startswith("|"):
+                continue
+            if _RE_TABLE_SEP.match(stripped):
+                continue
+
+            cols = [c.strip() for c in stripped.strip("|").split("|")]
+            if len(cols) < 2:
+                continue
+
+            # First table row encountered is the header row (Task | State | ...)
+            if not header_seen:
+                header_seen = True
+                continue
+
+            if any(_NONE_YET in c for c in cols):
+                continue
+
+            def _col(idx: int) -> Optional[str]:
+                if idx < len(cols):
+                    v = cols[idx].strip()
+                    return None if _is_null(v) else v
+                return None
+
+            task_id = _col(0) or ""
+            if not task_id or task_id.lower() == "task":
+                continue
+
+            pts = ParsedTaskState()
+            pts.state = _parse_task_status(_col(1) or "")
+            pts.review = _col(2)
+            pts.elapsed = _col(3)
+            pts.notes = _col(4)
+            result[task_id.lower()] = pts
+
+    except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
+        warnings.append(
+            f"error parsing ### Tasks lifecycle table ({exc}); returning best-effort"
+        )
+
+    return result, warnings
+
+
 def lines_iter(text: str):
     """Yield lines from text (helper to avoid repeated splitlines() calls)."""
     return text.splitlines()
@@ -2076,6 +2172,14 @@ def parse_delivery_gate(
 
     Returns (grade, reviewer_tier, gate_timestamp). All None if the block is absent.
     Verbatim -- never re-grades (NFR7). Never throws (torn -> parse_warning + None).
+
+    Fallback (flat/lite works): a shortcut-produced work promotes a SINGULAR
+    `## Delivery Gate` block into the work-root STATE.md instead of the derived
+    plural `## Delivery Gates` -> `### delivery-NNN` rollup (see
+    parse_delivery_state_md's docstring). When no plural `## Delivery Gates`
+    section is present at all, the singular `## Delivery Gate` block -- if any --
+    is read as delivery-001's gate. This is additive: it never fires when a
+    plural section exists, so full/hierarchical works are unaffected.
     """
     grade: Optional[str] = None
     reviewer_tier: Optional[str] = None
@@ -2083,6 +2187,7 @@ def parse_delivery_gate(
 
     in_gates = False
     in_delivery_block = False
+    found_gates_section = False
 
     # Normalize for comparison
     delivery_id_lower = delivery_id.lower()
@@ -2092,6 +2197,7 @@ def parse_delivery_gate(
             if _RE_DELIVERY_GATES_SECTION.match(line):
                 in_gates = True
                 in_delivery_block = False
+                found_gates_section = True
                 continue
 
             if in_gates:
@@ -2132,6 +2238,42 @@ def parse_delivery_gate(
                     if grade and reviewer_tier and gate_timestamp:
                         break
 
+        # Fallback: no plural ## Delivery Gates section anywhere in the text --
+        # try the singular ## Delivery Gate block (flat/lite promoted layout),
+        # treated as delivery-001's gate.
+        if not found_gates_section and delivery_id_lower == "delivery-001":
+            in_gate = False
+            for line in state_text.splitlines():
+                if _RE_DELIVERY_GATE_SECTION.match(line):
+                    in_gate = True
+                    continue
+
+                if in_gate:
+                    # Any ## section (not ###) ends the singular gate block
+                    if re.match(r"^##\s+\S", line) and not re.match(r"^###", line):
+                        in_gate = False
+                        continue
+
+                    gm = _RE_GATE_GRADE.match(line)
+                    if gm and grade is None:
+                        raw = gm.group(1).strip()
+                        grade = raw.split()[0] if raw else None
+                        continue
+
+                    rtm = _RE_GATE_REVIEWER_TIER.match(line)
+                    if rtm and reviewer_tier is None:
+                        raw = rtm.group(1).strip()
+                        reviewer_tier = raw.split()[0] if raw else None
+                        continue
+
+                    tsm = _RE_GATE_TIMESTAMP.match(line)
+                    if tsm and gate_timestamp is None:
+                        gate_timestamp = tsm.group(1).strip() or None
+                        continue
+
+                    if grade and reviewer_tier and gate_timestamp:
+                        break
+
     except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
         parse_warnings.append(
             f"{delivery_id}: error parsing ## Delivery Gates ({exc}); "
@@ -2158,7 +2300,7 @@ def parse_deferred_issues(
         return []
 
     try:
-        raw = issues_path.read_bytes()
+        raw = read_bytes_bounded(issues_path)
         text = raw.decode("utf-8", errors="replace")
     except OSError as exc:
         parse_warnings.append(

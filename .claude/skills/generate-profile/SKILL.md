@@ -37,7 +37,7 @@ Before executing any state, verify:
 
 2. `canonical/` directory exists at the repo root:
    ```bash
-   ls canonical/agents/ canonical/skills/ canonical/templates/ canonical/rules/
+   ls canonical/agents/ canonical/skills/ canonical/aid/templates/ canonical/rules/
    ```
 
 3. At least one profile TOML exists:
@@ -98,14 +98,21 @@ Print: `[State: VALIDATE]`
 
 Confirm canonical completeness:
 
-1. Each AID skill has a corresponding `canonical/skills/aid-{name}/` directory with
-   a `SKILL.md`. The 14 expected skills are:
-   `aid-config`, `aid-discover`, `aid-describe`, `aid-define`, `aid-specify`, `aid-plan`,
-   `aid-detail`, `aid-execute`, `aid-deploy`, `aid-monitor`, `aid-summarize`,
-   `aid-housekeep`, `aid-query-kb`, `aid-update-kb`.
+1. Every AID skill has a corresponding `canonical/skills/aid-{name}/` directory with
+   a `SKILL.md`. The full taxonomy is **92 skill directories**: the **14 classic**
+   pipeline / on-demand skills (`aid-config`, `aid-discover`, `aid-describe`,
+   `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`,
+   `aid-monitor`, `aid-summarize`, `aid-housekeep`, `aid-query-kb`, `aid-update-kb`)
+   + the standalone router **`aid-triage`** + the hand-authored **`aid-ask`** Q&A
+   alias of `aid-query-kb` + **76 verb-first shortcut skills**
+   generated one-per-non-`repurpose` row from the 80-row catalog
+   `canonical/aid/templates/shortcut-catalog.yml`. Rather than hardcoding the
+   76 shortcut names, check that every catalog row (excluding `repurpose: true`
+   rows) plus every classic skill, `aid-triage`, and `aid-ask` has a rendered
+   `canonical/skills/<name>/SKILL.md` directory:
 
    ```bash
-   ls canonical/skills/
+   ls canonical/skills/ | wc -l   # expect 92
    ```
 
 2. All 9 canonical agents exist under `canonical/agents/`.
@@ -115,7 +122,7 @@ Confirm canonical completeness:
    ```
    Expected: 9 directories.
 
-3. `canonical/templates/` subtree is non-empty.
+3. `canonical/aid/templates/` subtree is non-empty.
 
 If validation finds missing content, print a clear inventory of what is missing and abort.
 
@@ -234,7 +241,8 @@ Before calling the run complete, confirm:
 
 - [ ] Python 3.11+ available (`python --version` shows 3.11 or higher)
 - [ ] All selected profiles parsed without errors (`validate()` returned `[]`)
-- [ ] `canonical/` completeness verified: 14 skills, 9 agents, non-empty templates
+- [ ] `canonical/` completeness verified: 92 skills (14 classic + aid-triage + aid-ask + 76
+      shortcuts, one per non-`repurpose` catalog row), 9 agents, non-empty templates
 - [ ] All renderers completed without errors
 - [ ] `profiles/{tool}/emission-manifest.jsonl` written for each rendered profile
 - [ ] VERIFY (deterministic): byte-identical re-render PASS, presence audit PASS, frontmatter parse PASS

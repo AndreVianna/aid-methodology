@@ -35,11 +35,11 @@ Detection` (`.aid/.temp/HOUSEKEEP_STATE_<ts>.md`; created on first write). Write
 through `housekeep-state.sh` (never hand-edit `## Housekeep Status`):
 
 ```bash
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "State" --value "KB-DELTA"
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "running"
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Last Run" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -48,10 +48,10 @@ KB-DELTA is the first stage to write, so ensure the `aid/housekeep-*` branch
 exists, then record it:
 
 ```bash
-bash canonical/scripts/housekeep/branch-commit.sh \
+bash canonical/aid/scripts/housekeep/branch-commit.sh \
     --ensure-branch --slug "$(date +%Y-%m-%d)"
 BRANCH=$(git rev-parse --abbrev-ref HEAD)
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Branch" --value "$BRANCH"
 ```
 
@@ -78,7 +78,7 @@ exact set of drifted docs and their drifted sources:
 
 ```bash
 SUSPECT_TSV=".aid/.temp/kb-freshness-$$.tsv"
-bash canonical/scripts/kb/kb-freshness-check.sh \
+bash canonical/aid/scripts/kb/kb-freshness-check.sh \
     --root .aid/knowledge --format tsv > "$SUSPECT_TSV"
 # TSV columns (f007): doc-relpath | verdict | approved_at_commit |
 #                     n_current | n_suspect | n_unknown | suspect_sources_csv
@@ -329,7 +329,7 @@ harvest over the current codebase to produce the ranked as-built term list. The 
 value is the C4 altitude threshold (default 60; tunable at task-034 DoD V5):
 
 ```bash
-bash canonical/scripts/kb/harvest-coined-terms.sh \
+bash canonical/aid/scripts/kb/harvest-coined-terms.sh \
     --root . \
     --output .aid/.temp/conformance/as-built-terms.md \
     --top ${CONFORMANCE_C4_TOP:-60}
@@ -357,7 +357,7 @@ ranked list) and (b) the `closure-check.sh` output for the shadow as-built
 `domain-glossary.md`:
 
 ```bash
-bash canonical/scripts/kb/closure-check.sh \
+bash canonical/aid/scripts/kb/closure-check.sh \
     --output-a .aid/.temp/conformance/closure-a.md \
     --output-b .aid/.temp/conformance/closure-b.md
 ```
@@ -687,7 +687,7 @@ the closure re-verify step after the KB edits land. Record the run start time
 so the closure step can verify the harvest is fresh:
 
 ```bash
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB-DELTA Run Start" \
     --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
@@ -698,7 +698,7 @@ operates **under `SKILL.md S Dispatch Protocol (L1+L2+L3)`** (heartbeat
 pre-create via `read-setting.sh --path traceability.heartbeat_interval
 --default 1`, three armed L2 timers as separate background dispatches,
 Calibration-Log writeback). Inherit that protocol -- do not re-implement it. Take
-the ETA band from `canonical/templates/rough-time-hints.md` for the
+the ETA band from `canonical/aid/templates/rough-time-hints.md` for the
 discovery-subagent class.
 
 After invoking, the stage pauses for `/aid-discover` to settle; the re-entry
@@ -749,7 +749,7 @@ verdict must never be computed against a stale or absent term universe:
 
 ```bash
 # Re-run harvest if candidate-concepts.md is stale or absent:
-bash canonical/scripts/kb/harvest-coined-terms.sh \
+bash canonical/aid/scripts/kb/harvest-coined-terms.sh \
     --root . \
     --output .aid/generated/candidate-concepts.md
 ```
@@ -761,7 +761,7 @@ No new script -- this reuses f004's harvest + `closure-check.sh` (task-008/f004)
 
 ```bash
 CLOSURE_OUT=".aid/.temp/closure-verify-a.md"
-bash canonical/scripts/kb/closure-check.sh \
+bash canonical/aid/scripts/kb/closure-check.sh \
     --output-a "$CLOSURE_OUT" \
     --output-b .aid/.temp/closure-verify-b.md
 ```
@@ -783,13 +783,13 @@ Closure is intact (output (a) is empty). Write the gate fields and commit the
 refreshed KB:
 
 ```bash
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Closure" --value "verified"
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "passed"
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
-bash canonical/scripts/housekeep/branch-commit.sh \
+bash canonical/aid/scripts/housekeep/branch-commit.sh \
     --commit --message "chore(housekeep): KB delta refresh [feature-002]" \
     --add .aid/knowledge/
 ```
@@ -848,9 +848,9 @@ commit (NFR2 idempotent), and do NOT run the closure re-verify step (nothing
 changed):
 
 ```bash
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "skipped"
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "skipped"
 ```
 
@@ -863,11 +863,11 @@ Reached when Step 3 was cancelled (`[3]`), Step 5 found no fresh approval
 closure invariant break (refresh uncommitted):
 
 ```bash
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "KB Stage" --value "stalled"
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "stalled"
-bash canonical/scripts/housekeep/housekeep-state.sh \
+bash canonical/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stall Reason" --value "<reason>"
 ```
 

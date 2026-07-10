@@ -37,11 +37,11 @@ Each deliverable follows the same cycle:
       feature-NNN-{name}/
         SPEC.md             # per-feature tech spec (read)
     deliveries/
-      delivery-NNN/         # OUTPUT: per-delivery folder (one per deliverable in PLAN.md)
+      delivery-NNN/           # OUTPUT: per-delivery folder (one per deliverable in PLAN.md)
         tasks/
-          task-NNN/         # OUTPUT: per-task folder
-            SPEC.md         # task definition (6-section schema; written by aid-detail)
-            STATE.md        # task state, seeded Pending (written by aid-detail; updated by aid-execute)
+          task-NNN/           # OUTPUT: per-task folder
+            DETAIL.md         # task definition (6-section schema; written by aid-detail)
+            STATE.md          # task state, seeded Pending (written by aid-detail; updated by aid-execute)
 ```
 
 ## Arguments
@@ -117,7 +117,8 @@ Not rigid. Not all types appear in every delivery. The user adjusts during discu
 
 Each task is a **folder** containing two files:
 
-- **`deliveries/delivery-NNN/tasks/task-NNN/SPEC.md`** — the immutable task definition (6-section schema):
+- **`deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`** — the immutable task definition (6-section
+  schema), seeded from `.codex/aid/templates/task-detail-template.md`:
 
 ```markdown
 # task-NNN: {Title}
@@ -186,7 +187,7 @@ all 5 auth edge cases per SPEC").
 - [ ] RESEARCH/DESIGN tasks come before their dependent IMPLEMENT tasks
 - [ ] TEST tasks come after their dependent IMPLEMENT tasks
 - [ ] Each deliverable's tasks were reviewed after writing (step 4)
-- [ ] All task files in `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/SPEC.md` (nested hierarchy)
+- [ ] All task files in `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (nested hierarchy)
 
 ## Feedback Loops
 

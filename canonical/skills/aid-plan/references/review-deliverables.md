@@ -41,7 +41,7 @@ Include in the prompt:
 - **Ledger lifecycle:** "Read `.aid/.temp/review-pending/plan.md` if it exists.
   For each existing row: verify on disk, update Status (Pending→Fixed if resolved;
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
-  Output per `canonical/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
+  Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
 Dispatch the `aid-reviewer` subagent with the rendered brief.
 
@@ -50,14 +50,14 @@ Dispatch the `aid-reviewer` subagent with the rendered brief.
 After aid-reviewer returns, run grade.sh:
 
 ```bash
-bash canonical/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
+bash canonical/aid/scripts/grade.sh --explain .aid/.temp/review-pending/plan.md
 ```
 
-Compare to minimum grade from `bash canonical/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
+Compare to minimum grade from `bash canonical/aid/scripts/config/read-setting.sh --skill plan --key minimum_grade --default A`.
 
 | Condition | Action |
 |-----------|--------|
-| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/SPEC.md + STATE.md for each delivery in PLAN.md; create any missing ones with State: Pending-Spec). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
+| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.md for each delivery in PLAN.md; create any missing ones with State: Pending-Spec). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 

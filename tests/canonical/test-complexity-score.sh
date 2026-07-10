@@ -2,7 +2,9 @@
 # test-complexity-score.sh — Unit tests for complexity-score.sh (work-002 bug fixes).
 #
 # Covers the four correctness fixes (work-002 task-001):
-#   A1  Type matching — both **Type:** (bold) and - Type: (flat recipe form) score risk
+#   A1  Type matching — only **Type:** (bold task-template form) scores risk; the
+#       flat "- Type:" recipe form was retired with the recipe catalog
+#       (work-001-lite-aid-skills feature-002) and no longer scores
 #   A2  Portable awk — extraction works under mawk (no gawk 3-arg match); leading-zero
 #       delivery-id matching is numeric (003 == 3)
 #   A3  Lite/recipe specs — top-level "## Execution Graph" (no delivery wrapper) parses,
@@ -83,15 +85,15 @@ cat > "$TMP/plan.md" <<'EOF'
 EOF
 
 # ---------------------------------------------------------------------------
-# A1 — Type matching: flat and bold forms both score
+# A1 — Type matching: only the bold form scores; flat form is retired (+0)
 # ---------------------------------------------------------------------------
 out=$(bash "$SCRIPT" --plan-file "$TMP/lite.md" --tasks-dir "$TMP/tasks"); code=$?
 assert_exit_eq "$code" 0 "A1/A3 lite spec exits 0"
 assert_eq "$(field "$out" tasks)" 2 "A1 tasks=2"
-# REFACTOR(+2, flat) + IMPLEMENT(+1, bold) = 3
-assert_eq "$(field "$out" risk)" 3 "A1 risk=3 (flat - Type: scores, was 0 before fix)"
+# REFACTOR(+0, flat — retired) + IMPLEMENT(+1, bold) = 1
+assert_eq "$(field "$out" risk)" 1 "A1 risk=1 (only bold **Type:** scores; flat - Type: is retired)"
 
-# Isolate the flat form alone (regression: used to score 0).
+# Isolate the flat form alone (regression guard: must NOT score — it was retired).
 cat > "$TMP/flat.md" <<'EOF'
 ## Execution Graph
 | Task | Depends On |
@@ -99,7 +101,7 @@ cat > "$TMP/flat.md" <<'EOF'
 | task-001 | — |
 EOF
 out=$(bash "$SCRIPT" --plan-file "$TMP/flat.md" --tasks-dir "$TMP/tasks")
-assert_eq "$(field "$out" risk)" 2 "A1 flat '- Type: REFACTOR' alone scores +2"
+assert_eq "$(field "$out" risk)" 0 "A1 flat '- Type: REFACTOR' alone scores +0 (retired form, not counted)"
 
 # ---------------------------------------------------------------------------
 # A3 — lite spec: no --delivery-id required; depth correct; ## Tasks not swallowed

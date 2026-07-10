@@ -162,13 +162,15 @@ regardless of calibration state.
 
 ---
 
-## Feature-004 Inheritance
+## Full-Path Substrate
 
-Calibration is shared substrate. Feature-004 (guided triage) inherits it without
-re-implementing it. An unsure user in triage needs more drawing-out to supply the scope and
-type signals that route them correctly; the backbone-first and walking-skeleton moves that
-feature-004 leans on (Gap rank 2 for scope-size unknowns) are shaped by calibration state
-exactly as they are in the full-path interview.
+Calibration is shared substrate for the full-path interview's own adaptive loop -- the
+in-skill guided-triage consumer that used to inherit it here has been removed
+(work-001-lite-aid-skills feature-013: full-vs-lite routing has left `aid-describe`
+entirely). The backbone-first and walking-skeleton moves (Gap rank 2 for scope-size
+unknowns; see `move-playbook.md` Move 5) are still shaped by calibration state exactly as
+described above -- they now size the backbone for the full-path interview itself, not a
+full-vs-lite decision.
 
 ---
 

@@ -7,6 +7,9 @@ sources:
   - install.sh
   - lib/aid-install-core.sh
   - docs/repository-structure.md
+  - canonical/EMISSION-MANIFEST.md
+  - canonical/aid/scripts/execute/writeback-state.sh
+  - .claude/skills/generate-profile/SKILL.md
   - .github/workflows/release.yml
   - release.sh
   - .github/workflows/test.yml
@@ -56,17 +59,9 @@ structural and methodological, not littered code.
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
 | **H1** | Architecture / lockstep | Five install manifests must stay byte-lockstep on the dashboard file set; a silent omission breaks provisioning on one channel | install.sh, install.ps1, vendor.js, vendor.py, release.sh | High | M | P1 |
-| **M1** | Shipping gap | ~~npm + PyPI publish channels BLOCKED on external account setup; effectively GitHub-only~~ DEFERRED — workflow is OIDC-ready; npm-publish gated vars.NPM_ENABLED (release.yml L217), pypi-publish gated vars.PYPI_ENABLED (L284); closure requires owner to create npm @aid scope + PyPI org/Trusted-Publisher and flip repo variables | .github/workflows/release.yml | Medium | M (external) | P2 |
-| **M2** | Test gap / process | ~~Full canonical suite + Astro build run on master/tag only~~ RESOLVED — both now gate `pull_request` to master (test.yml already did; docs.yml build added); deploy stays master-only | .github/workflows/{test,docs}.yml | Medium | S | P2 |
-| **M3** | Stale documentation | ~~Contributor doc cites wrong skill/recipe counts + wrong path~~ RESOLVED — docs/repository-structure.md updated: 14 skills, 52 recipes, canonical/aid/{templates,recipes,scripts} paths corrected (2026-06-27) | docs/repository-structure.md | Medium | S | P2 |
-| **M4** | Test gap / gate coverage | Visual-fidelity gate validates one wide viewport only; a visual can pass yet clip at the narrower dashboard column | canonical/aid/scripts/summarize/validate-visuals.mjs | Medium | S | P2 |
-| **L1** | Dead code | ~~Unreachable `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff branch~~ RESOLVED | install.sh, install.ps1 | Low | S | P3 |
-| **L2** | Deferred feature | `release.sh --sign` exits non-zero (signing not implemented) | release.sh | Low | M | P3 |
-| **L3** | Deprecation debt | Legacy flag-style install path "retained for one release" | install.sh | Low | S | P3 |
-| **L4** | Test gap | No line-coverage metric or `%` enforcement anywhere | (whole pipeline) | Low | M | P3 |
-| **L5** | Cosmetic / hygiene | feature-015 residues: web-app §1 retired metric-grid text; non-ASCII em-dash in a summarize script comment | canonical/aid/templates/knowledge-summary/section-templates/web-app.md, canonical/aid/scripts/summarize/writeback-state.sh | Low | S | P3 |
-| **L6** | Tooling inconsistency | DBI orphan-scan flags gitignored `node_modules/` that `render.py` already excludes from emission | tests/canonical/test-dogfood-byte-identity.sh | Low | S | P3 |
-| **L7** | Capability gap | ~~aid-researcher lacked WebSearch + WebFetch; RESEARCH tasks requiring a web survey had to fall back to general-purpose agents instead of the type-appropriate executor~~ RESOLVED -- web tools granted in work-001 delivery-002 task-009 (2026-06-27) | canonical/agents/aid-researcher/AGENT.md | Low | S | P3 |
+| **M3** | Methodology / no guard | No CI check asserts hand-written skill/agent/profile **counts** across ~10 doc surfaces against the canonical tree, so prose-count drift is caught only by manual review or `/aid-housekeep` (the `EMISSION-MANIFEST.md` 3-of-5 profile enumeration was reconciled 2026-07-10) | docs/*, KB count surfaces | Medium | S | P2 |
+| **L3** | Deprecation debt | Legacy flag-style install path "retained for one release"; the deprecation window has closed, so it can be excised — but as its own installer-CI-gated change, not a doc edit | install.sh | Low | S | P3 |
+| **L4** | Test gap | No line-coverage metric or `%` enforcement anywhere (only test-execution-presence guards) | (whole pipeline) | Low | M | P3 |
 
 **Risk definitions:** High = active risk to reliability/security/maintainability of core
 flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = known, not
@@ -104,155 +99,26 @@ Effort: M.
 
 ---
 
-### [MEDIUM] M1 -- npm and PyPI channels blocked on external setup
+### [MEDIUM] M3 -- Uncaught prose-count drift (no CI guard)
 
-**Type:** Shipping gap
+**Type:** Methodology debt / test gap
 
-**Description:** `release.yml` has fully-written `npm-publish` and `pypi-publish` jobs, but
-both are gated `if: vars.NPM_ENABLED == 'true'` / `PYPI_ENABLED == 'true'` and require
-external accounts that are not yet provisioned (the `@aid` npm scope; the CasuloAI Labs PyPI
-org + reserved `aid-installer` name + a Trusted Publisher). Until those exist and the repo
-variables are flipped, releases publish to the **GitHub Releases channel only**.
+**Description:** Hand-written skill/agent/profile **counts** drift across roughly ten doc
+surfaces whenever the canonical inventory changes (work-001 grew skills from 14 to 92 over two
+passes), and **no CI check asserts prose counts against the canonical tree** — so drift is
+caught only by manual review or `/aid-housekeep`. This very release cycle demonstrated it: the
+82→92 / 67→76 / 69→80-row figures had to be reconciled by hand across the KB, docs, profile
+READMEs, and `kb.html`. The narrower `EMISSION-MANIFEST.md § "One manifest per profile"` 3-of-5
+profile enumeration (it listed only `claude-code`/`codex`/`cursor`, omitting `copilot-cli` and
+`antigravity`) was **reconciled 2026-07-10**; only the general no-guard gap remains.
 
-**Location:** `.github/workflows/release.yml` (header "External-setup blockers" + the two
-publish jobs).
+**Location:** general risk across `docs/*` and KB count surfaces (no CI assertion).
 
-**Risk if unaddressed:** Users following npm/PyPI install instructions may hit a missing or
-stale package; the documented "4 channels" is effectively fewer until enabled.
+**Risk if unaddressed:** A newcomer trusts a stale count.
 
-**Remediation:** Create the scope/org, store credentials/Trusted Publishers, flip
-`NPM_ENABLED` / `PYPI_ENABLED`. External, not code. Effort: M (external).
-
-**Status: DEFERRED (2026-06-27)** — The workflow is already OIDC-ready; no code change is
-needed. The `npm-publish` job is gated `if: vars.NPM_ENABLED == 'true'` (release.yml L217) and
-`pypi-publish` is gated `if: vars.PYPI_ENABLED == 'true'` (release.yml L284). Closure requires
-external account setup that only the owner can perform; an agent cannot create npm scopes, PyPI
-orgs, or Trusted Publishers. Deferred to the next public release cycle when the owner is ready
-to provision those accounts and flip the repo variables. Per AC-9, this explicit
-deferral-with-rationale satisfies the criterion.
-
-**Owner steps to close:**
-1. **npm:** Create and own the `@aid` npm scope (or confirm OIDC Trusted Publishing for
-   `aid-installer`); set repo variable `NPM_ENABLED=true`.
-2. **PyPI:** Create the CasuloAI Labs PyPI org, reserve the `aid-installer` name, and configure
-   a Trusted Publisher pointing at this repo + `release.yml` workflow; set `PYPI_ENABLED=true`.
-   No `PYPI_TOKEN` secret is needed -- auth is via OIDC id-token.
-3. Verify by cutting a release tag and confirming both `npm-publish` and `pypi-publish` jobs run
-   (not skipped by the `vars.*` gate) and succeed; then confirm via
-   `npm view aid-installer@<v> version` and `pip index versions aid-installer`.
-
----
-
-### [MEDIUM] M2 -- Heavy correctness gates run on master/tag only (RESOLVED)
-
-**Type:** Test gap / process
-
-**Resolution (2026-06-26):** Both heavy gates now run on `pull_request` to `master`, so a
-breaking change is caught BEFORE merge rather than after:
-- `test.yml` (`canonical-tests` + render-drift + generator self-tests + KB-hygiene +
-  visual-fidelity) already triggered on `pull_request: branches: [master]`.
-- `docs.yml` (Astro site build) now also triggers on `pull_request: branches: [master]` (same
-  path filter); its `deploy` job is gated `if: github.event_name != 'pull_request'`, so a PR
-  build-validates the site without deploying. Deploy still only happens on a push to `master`
-  or a release.
-
-**Remaining (owner action, not code):** to *block* a merge until these pass, add `Docs / build`
-to the branch-protection **required status checks** for `master` (the canonical-suite jobs are
-already required). The workflows cannot mark themselves required — it is a repo settings change.
-
-**Original gap:** the full canonical suite + the Astro build triggered only on `master`/tag, so a
-change could pass every feature-branch check and red-master only after merge (this happened — the
-master CI broke three ways from exactly this gap).
-
----
-
-### [MEDIUM] M3 -- Stale counts in docs/repository-structure.md
-
-**Type:** Stale documentation (methodology debt)
-
-**Description:** `docs/repository-structure.md` previously said "12 skill definitions" and
-"51 lite-path recipes" and referenced the path `canonical/recipes/`; it has been corrected
-(2026-06-27) to **14** skill directories under `canonical/skills/` and **52** recipe files at
-`canonical/aid/recipes/` (note the `aid/` segment) -- this headline drift is RESOLVED. The
-general risk persists: adding/removing a canonical skill leaves "N user-facing skills" counts
-stale across roughly ten KB/doc surfaces; CI does not catch this. Two related source-doc drifts share this
-item: `docs/aid-methodology.md` ("## 7. Artifacts Reference") describes the flat task layout
-`.aid/{work}/tasks/task-NNN.md` while the live skills + `work-state-template.md` + on-disk
-state use the nested `deliveries/delivery-NNN/tasks/task-NNN/` shape (full path; the lite path
-uses the flatter `tasks/task-NNN/` directly, with no `delivery-NNN/` folder at all); and
-`canonical/EMISSION-MANIFEST.md`
-enumerates only 3 profiles (claude-code/codex/cursor) while the generator emits 5
-(+copilot-cli, +antigravity). All three are stale SOURCE docs; the KB documents the live reality.
-
-**Location:** `docs/repository-structure.md` (skills/recipes counts + `canonical/recipes/`
-path lines); `docs/aid-methodology.md` (flat task layout); `canonical/EMISSION-MANIFEST.md`
-(3-profile enumeration).
-
-**Risk if unaddressed:** A newcomer trusts the wrong path/count.
-
-**Remediation:** Reconcile via `/aid-housekeep` (the established precedent for count drift),
-not inline edits. Effort: S.
-
----
-
-### [MEDIUM] M4 -- Visual-fidelity gate validates a single wide viewport
-
-**Type:** Test gap / gate coverage
-
-**Description:** `validate-visuals.mjs` (the §7 visual-fidelity gate) renders each authored
-visual at a single ~1152px-wide viewport. A visual can pass there yet clip at the dashboard's
-narrower ~732px column (found in feature-015 Phase-3: a lifecycle-timeline pill was cut by
-~24px at 732px and had to be hand-corrected). The gate does not check narrower representative
-widths.
-
-**Location:** `canonical/aid/scripts/summarize/validate-visuals.mjs`;
-`tests/canonical/test-visual-fidelity.sh`.
-
-**Risk if unaddressed:** A generated `kb.html` can ship a horizontally-clipped visual that the
-gate passes, surfacing only in the narrower dashboard / mobile layouts.
-
-**Remediation:** Add a "no horizontal overflow-clip at target widths" check (proposed T4) that
-validates each visual at representative widths (e.g. the dashboard column ~720-760px and a
-mobile ~390px), not just one wide viewport. Effort: S-M.
-
----
-
-### [LOW] L1 -- Unreachable protect-on-diff branch in install.sh (RESOLVED)
-
-**Type:** Dead code
-
-**Status: RESOLVED** -- Dead code removed from `install.sh` and `install.ps1` (2026-06-26).
-
-**Description:** `install.sh` carried an `OVERALL_BLOCKED` / `exit 5` / `*.aid-new`
-merge-warning branch that fired when `install_tool` returned `5` (a root-agent file was not
-overwritten because it differed). That return value no longer occurred: `aid-install-core`
-eliminated the `.aid-new` path and now updates root agent files in place via an
-`AID:BEGIN/END` boundary, always setting `_CORE_ROOT_AGENT_STATUS="owned"`.
-
-**Location (was):** `install.sh` (`OVERALL_BLOCKED=0` ... `exit 5` block); `install.ps1`
-(`$overallBlocked` ... `Exit-Install 5` block).
-
-**Remediation applied:** Removed the dead `OVERALL_BLOCKED`/`$overallBlocked` branches from
-both `install.sh` and `install.ps1`; simplified to `install_tool ... || exit $?` (Bash) and
-`if ($rc -ne 0) { script:Exit-Install $rc }` (PS); dropped exit-code 5 from inline docs in
-both files.
-
----
-
-### [LOW] L2 -- release.sh --sign is deferred
-
-**Type:** Deferred feature
-
-**Description:** `release.sh --sign` (detached signature over `SHA256SUMS`) exits non-zero
-with "not yet implemented (deferred to feature-005)". Releases are checksum-verified but not
-cryptographically signed.
-
-**Location:** `release.sh` (`--sign` guard) + Step 7 placeholder.
-
-**Risk if unaddressed:** No signature-based provenance for the GitHub Release tarballs
-(npm/PyPI do emit OIDC provenance/attestations — see Security Observations).
-
-**Remediation:** Implement the signing approach, then drop the guard. Effort: M.
+**Remediation:** Either add a CI check that extracts the canonical counts (skills =
+`ls canonical/skills/`, catalog rows, profiles) and greps the doc surfaces for a mismatch, or
+keep reconciling via `/aid-housekeep` (the established precedent). Effort: S.
 
 ---
 
@@ -267,7 +133,11 @@ path (`--tool`, `--update`, `--uninstall`), documented as "retained for one rele
 
 **Risk if unaddressed:** Two code paths to maintain; the legacy path widens the test surface.
 
-**Remediation:** Remove after the deprecation window closes. Effort: S.
+**Remediation:** The deprecation window has closed (several releases shipped since the CLI
+evolution), so the legacy `--tool`/`--update`/`--uninstall` path can be excised from
+`install.sh`'s mode-detection peek + its LEGACY handlers + the usage header. Do it as its own
+change gated by the full installer CI (bash + Windows + npm/PyPI channel suites), not folded
+into an unrelated commit. Effort: S.
 
 ---
 
@@ -290,48 +160,6 @@ no-coverage decision. Effort: M.
 
 ---
 
-### [LOW] L5 -- feature-015 cosmetic / hygiene follow-ups
-
-**Type:** Cosmetic / hygiene
-
-**Description:** Two non-blocking residues from the feature-015 build: (a)
-`section-templates/web-app.md` §1 retains the old metric-grid body text as a "kept rendering
-reference" (the header flags it retired and the authoritative generation path enforces the
-newcomer lead); (b) a non-ASCII em-dash in the `writeback-state.sh` line-2 comment. The
-operative `test-ascii-only.sh` excludes agent-side summarize scripts (CI green), but
-shipped-script ASCII hygiene is the standing rule.
-
-**Location:** `canonical/aid/templates/knowledge-summary/section-templates/web-app.md` §1;
-`canonical/aid/scripts/summarize/writeback-state.sh` (header comment block).
-
-**Risk if unaddressed:** None functional -- cosmetic doc-consistency + an ASCII-hygiene exception.
-
-**Remediation:** Trim the retired web-app §1 text; replace the em-dash with ASCII `--` (then
-re-render profiles). Effort: S.
-
----
-
-### [LOW] L6 -- DBI orphan-scan flags gitignored node_modules
-
-**Type:** Tooling inconsistency
-
-**Description:** `test-dogfood-byte-identity.sh`'s orphan-scan flags any on-disk `node_modules/`
-under `.claude/`/`profiles/` as a DBI-ORPHAN, even though `render.py` correctly EXCLUDES
-`node_modules` from emission (D-012). The two disagree. The visual-fidelity gate's on-demand
-`npm ci` (in `canonical/aid/scripts/summarize`) creates such a directory; in a shared checkout
-this can trip the scan. CI is unaffected -- the gate and the DBI suite run in separate job
-checkouts. Build workaround: `rm -rf` the node_modules before DBI.
-
-**Location:** `tests/canonical/test-dogfood-byte-identity.sh` (orphan-scan); `render.py`
-(exclusion).
-
-**Risk if unaddressed:** Spurious DBI failures during local builds that interleave the visual gate.
-
-**Remediation:** Make the DBI orphan-scan skip gitignored paths (`node_modules/`, `.git/`),
-matching `render.py`'s exclusion. Effort: S.
-
----
-
 ## Complexity Hotspots
 
 Large files concentrate complexity (line counts drift — measure on demand). CONFIRMED via
@@ -344,7 +172,7 @@ Large files concentrate complexity (line counts drift — measure on demand). CO
 | `tests/windows/Test-AidInstaller.ps1` (~2406) | Whole installer surface in one PS script | Windows-CI only |
 | `dashboard/reader/parsers.py` (~2232) | Python KB/state parser | Triplicated |
 | `lib/aid-install-core.sh` (~2160) | The install/update/remove engine | Triplicated; most load-bearing shell file |
-| `install.sh` (~1380) | Bootstrap + legacy paths + provisioning | Carries L1/L3 debt |
+| `install.sh` (~1380) | Bootstrap + legacy paths + provisioning | Carries L3 debt (legacy flag path) |
 | `.claude/skills/.../render.py` (~1019) | The profile renderer | Has self-tests |
 
 ---
@@ -355,7 +183,7 @@ Large files concentrate complexity (line counts drift — measure on demand). CO
 |------------------|----------|--------------|------|
 | Prompt-driven skill state machines | none (by design) | integration | Accepted — needs AI host + human; covered by dogfooding + review |
 | Astro site components | partial | unit | Build is the main gate; component logic lightly tested |
-| Windows installer path | strong but Windows-CI-only | — | A green local `run-all.sh` does not exercise it (M2/gotcha) |
+| Windows installer path | strong but Windows-CI-only | — | A green local `run-all.sh` does not exercise it (see Gotchas: master-only heavy gates) |
 
 ---
 
@@ -392,9 +220,9 @@ re-vendoring is the correct workflow.
 
 ## Dead Code
 
-| Item | Location | Evidence of disuse | Safe to remove? |
-|------|----------|--------------------|-----------------|
-| `OVERALL_BLOCKED` / `exit 5` / `.aid-new` branch | `install.sh` | `install_tool` never returns 5 since `aid-install-core` removed the `.aid-new` path (`lib/aid-install-core.sh` comment) | Yes (verify install/update tests still pass) |
+No dead code is currently identified. A scan of the shipped scripts finds no unreachable
+branches. (The previously-listed `OVERALL_BLOCKED` / `exit 5` / `.aid-new` protect-on-diff
+branch was removed from `install.sh` + `install.ps1`; git history is the audit trail.)
 
 ---
 
@@ -407,7 +235,7 @@ model.
 | Observation | Severity | Detail |
 |---|---|---|
 | `curl\|bash` / `irm\|iex` bootstrap | Medium (inherent) | Users pipe a remote script to a shell. Mitigated: the bootstrap fetches the CLI bundle + libs from a **pinned release tag** and verifies them against `SHA256SUMS` before sourcing (CONFIRMED in `release.sh` Step 6 comment + `install.sh` lib-fetch). The trust root is the GitHub Release. |
-| No release-asset signature | Low | `release.sh --sign` is deferred (L2); GitHub tarballs are checksum-verified but unsigned. |
+| No detached signature on GitHub tarballs | Low (accepted) | `release.sh --sign` is a stub (a deferred feature, not wired into `release.yml`). Accepted as not-needed: npm publishes with `--provenance` and PyPI with PEP 740 sigstore attestations (the channels most users install from), and GitHub tarballs are checksum-verified against `SHA256SUMS`. A detached GPG signature would add key-management burden for marginal gain; revisit only if the threat model changes. |
 | Publish auth uses OIDC Trusted Publishing | Positive | npm publishes with `--provenance`; PyPI publishes with PEP 740 attestations via `pypa/gh-action-pypi-publish` — both token-less via OIDC. CONFIRMED in `release.yml`. |
 | Least-privilege CI permissions | Positive | `test.yml` / `installer-tests.yml` use `permissions: contents: read`; `release.yml` grants only `contents: write` + `id-token: write`; `docs.yml` only `pages: write` + `id-token: write`. CONFIRMED. |
 | Optional `NPM_TOKEN` classic automation token | Low | If OIDC is not used for npm, a classic `NPM_TOKEN` secret is the fallback (`release.yml` header). Prefer Trusted Publishing to avoid storing a long-lived token. |
@@ -463,3 +291,6 @@ model.
 | 1.4 | 2026-06-27 | work-001/task-009 | L7 RESOLVED -- aid-researcher granted WebSearch + WebFetch; RESEARCH tasks requiring a web survey can now use the type-appropriate executor instead of falling back to general-purpose agents. |
 | 1.5 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in M3 inventory row and M3 detailed description (aid-interview split into aid-describe + aid-define). |
 | 1.6 | 2026-07-08 | PR #132 (change-delivery) | Updated the M3 stale-doc description: live reality is now `deliveries/delivery-NNN/tasks/task-NNN/` (full path, nested under `deliveries/`) / `tasks/task-NNN/` (lite path, no `delivery-NNN/` folder), superseding the flat `delivery-NNN/tasks/task-NNN/` shape. |
+| 1.7 | 2026-07-09 | work-001 lite-skills refresh | Deleted resolved-in-place items per the removal convention: M2 (heavy gates now gate PRs), L1 (dead install branch removed), L7 (aid-researcher web tools granted in work-001) — closure stays in this log + git. Rewrote M3 to the live remaining drift (EMISSION-MANIFEST 3-of-5 profiles + uncaught prose-count drift), dropping deleted-recipe references and the now-reconciled repository-structure.md / aid-methodology.md instances. Added L8 (writeback-state.sh octal-leading-zero id footgun) + L9 (generate-profile VALIDATE hard-codes a stale 14-skill list). Cleared the Dead Code table; dropped L1 from the install.sh complexity-hotspot note; fixed the dangling M2 reference in Missing Test Coverage. |
+| 1.8 | 2026-07-09 | v2.1.0 skill-count sync | L9 updated to the current state: the v2.1.0 follow-on grew `canonical/skills/` from 82 to 92 (14 classic + `aid-triage` + `aid-ask` + 76 shortcuts), so VALIDATE's stale 14-skill list now leaves 78 (not 68) unlisted directories unvalidated. |
+| 1.9 | 2026-07-10 | v2.1.0 debt re-validation | Validated every open item against disk/CI evidence and removed the stale-resolved ones per the removal convention: **M1** (npm+PyPI publish jobs SUCCEED on the v2.0.6 release run — channels are live, never "blocked/GitHub-only"), **M4** (the visual gate already asserts no-overflow at 732px + 390px — the proposed T4 remediation is implemented), **L6** (DBI orphan-scan now skips gitignored `node_modules/`/`.git/`), **L8** (all `printf '%03d'` sinks in `writeback-state.sh` are now `$((10#$id))`-normalized), **L9** (generate-profile VALIDATE now derives "92" from the catalog, not a hard-coded 14). Reframed **L2** as accepted/won't-do (npm/PyPI already emit sigstore/OIDC provenance; a detached tarball signature is not needed) and moved it to Security Observations. Narrowed **M3** to the remaining no-CI-guard-for-count-drift gap (the `EMISSION-MANIFEST.md` 3-of-5 profile enumeration was reconciled to 5). Updated **L3** remediation (deprecation window has closed; excise as its own installer-CI-gated change). Removed the now-obsolete zero-padded-id gotcha (closed with L8). **Remaining open: H1, M3, L3, L4.** |

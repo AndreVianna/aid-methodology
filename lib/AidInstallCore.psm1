@@ -250,14 +250,24 @@ function Fetch-Tarball {
         return $false
     }
 
-    # Fetch SHA256SUMS (best-effort).
+    # Fetch SHA256SUMS -- fail-closed. Every published release (release.sh Step 6:
+    # "Emit SHA256SUMS") ships a SHA256SUMS asset alongside every tarball, so a
+    # fetch failure, a 404, or an empty response means the release is broken or
+    # the request was tampered with/redirected -- never a legitimate "older
+    # release without SHA256SUMS". Refuse to install an unverified tarball
+    # rather than warn-and-proceed.
     try {
         Invoke-WebRequest -Uri $sumsUrl -OutFile $sumsFile -Headers $headers -UseBasicParsing -ErrorAction Stop
-        if (-not (Invoke-VerifyChecksum -Tarball $tarball -SumsFile $sumsFile)) {
-            return $false
-        }
     } catch {
-        [Console]::Error.WriteLine("WARN: AidInstallCore: SHA256SUMS not available for v$Version; skipping checksum verification")
+        [Console]::Error.WriteLine("ERROR: AidInstallCore: could not fetch SHA256SUMS from $sumsUrl; refusing to install unverified tarball (fail-closed)")
+        return $false
+    }
+    if (-not (Test-Path $sumsFile -PathType Leaf) -or (Get-Item -LiteralPath $sumsFile).Length -eq 0) {
+        [Console]::Error.WriteLine("ERROR: AidInstallCore: SHA256SUMS from $sumsUrl was empty; refusing to install unverified tarball (fail-closed)")
+        return $false
+    }
+    if (-not (Invoke-VerifyChecksum -Tarball $tarball -SumsFile $sumsFile)) {
+        return $false
     }
 
     return $true

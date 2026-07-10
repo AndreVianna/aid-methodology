@@ -60,7 +60,9 @@ if you haven't done that yet.
    Scans the codebase and builds the Knowledge Base under `.aid/knowledge/`. This phase is
    mandatory for existing codebases; skip it for greenfield projects.
 
-   Approve the DISCOVERY-SUMMARY before moving on.
+   When Discover reaches its APPROVAL state, it presents a summary (overall grade, Q&A totals,
+   fix cycles, remaining minor issues) directly in the conversation and asks you to confirm the
+   Knowledge Base under `.aid/knowledge/` is ready for the next phase. Approve it before moving on.
 
 2. **Run the Describe skill.**
 
@@ -70,20 +72,15 @@ if you haven't done that yet.
    /aid-describe
    ```
 
-   Describe opens in **TRIAGE** state. Answer the intake questions about your work item —
-   what you want to change, what's in scope, and roughly how big it is.
+   Describe is a full-path-only skill — every run proceeds through all the phases below;
+   there is no lite branch inside it. Answer the intake questions about your work item —
+   what you want to change, what's in scope, and how it should be built.
 
-3. **TRIAGE routes your work.**
+   If your change is small and well-scoped, you don't need this walkthrough at all: invoke
+   the matching shortcut (`/aid-fix`, `/aid-create-api`, …) or ask `/aid-triage` instead, and
+   follow the [Lite path quickstart](/get-started/lite-path/).
 
-   At the end of intake, TRIAGE classifies the work:
-
-   - **Full path** — the work is complex or high-risk; proceed through all phases below.
-   - **Lite path** — the work is small and well-scoped; jumps directly to Execute. Follow the
-     [Lite path quickstart](/get-started/lite-path/) for this flow.
-
-   For this walkthrough, assume TRIAGE routes to the **full path**.
-
-4. **Review the REQUIREMENTS document.**
+3. **Review the REQUIREMENTS document.**
 
    At the end of Describe, the agent produces a `REQUIREMENTS.md` in `.aid/`. Read it, confirm
    it captures your intent, and approve to advance.
@@ -113,8 +110,11 @@ Each phase produces an artifact. Read it, approve it, and the next phase begins.
    /aid-plan
    ```
 
-   Decomposes the spec into a delivery plan (`PLAN.md`) with milestones and tasks. Review
-   the plan for scope, dependencies, and sequencing.
+   Sequences your feature specs into a delivery roadmap (`PLAN.md`) — each delivery a
+   functional, standalone MVP — and creates a `deliveries/delivery-NNN/` folder per delivery
+   with its own `BLUEPRINT.md` (the delivery definition: scope, gate criteria, dependencies)
+   and `STATE.md` (delivery lifecycle). Review the plan for scope, dependencies, and
+   sequencing.
 
    Approve the plan to advance to detailing.
 
@@ -124,8 +124,10 @@ Each phase produces an artifact. Read it, approve it, and the next phase begins.
    /aid-detail
    ```
 
-   Produces implementation-level task files (one per task) under `.aid/work-XXX/tasks/`.
-   Each task has acceptance criteria and a scope description. Review and approve.
+   Breaks each delivery into small, typed tasks. Each task gets its own
+   `deliveries/delivery-NNN/tasks/task-NNN/` folder with a `DETAIL.md` (the task definition:
+   type, acceptance criteria, scope, dependencies) and a `STATE.md` (task lifecycle). Review
+   and approve.
 
 4. **Execute.**
 
@@ -142,11 +144,11 @@ Each phase produces an artifact. Read it, approve it, and the next phase begins.
 
 | Phase | Artifact | Gate action |
 |-------|----------|-------------|
-| Discover | DISCOVERY-SUMMARY + Knowledge Base | Approve discovery |
+| Discover | Knowledge Base (`.aid/knowledge/`) | Approve discovery |
 | Describe | `REQUIREMENTS.md` | Confirm requirements |
-| Specify | `SPEC.md` | Approve spec |
-| Plan | `PLAN.md` | Approve plan |
-| Detail | Task files under `.aid/work-*/tasks/` | Approve each task |
+| Specify | `SPEC.md` (per feature) | Approve spec |
+| Plan | `PLAN.md` + `deliveries/delivery-NNN/BLUEPRINT.md` | Approve plan |
+| Detail | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` | Approve each task |
 | Execute | Code + test output | Review, approve, or request revision |
 
 Every gate is a human decision. The pipeline never advances without your explicit approval.

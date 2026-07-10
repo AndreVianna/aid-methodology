@@ -53,7 +53,7 @@ Run the freshness check to identify which docs' `sources:` frontmatter may have
 drifted relative to their underlying source:
 
 ```bash
-bash canonical/scripts/kb/kb-freshness-check.sh \
+bash canonical/aid/scripts/kb/kb-freshness-check.sh \
   --root .aid/knowledge --format tsv
 ```
 

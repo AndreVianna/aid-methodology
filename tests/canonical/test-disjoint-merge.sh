@@ -3,23 +3,21 @@
 # produces zero git merge conflicts on merge-back (AC-Disjoint / Pillar 2).
 #
 # Design:
-#   A throwaway git sandbox simulates the two-delivery parallel-branch scenario
-#   (FULL path -- multi-delivery work; deliveries/ nests under the work root,
-#   mirroring features/ -- work-001-add-deliveries-folder task-001/task-003):
+#   A throwaway git sandbox simulates the two-delivery parallel-branch scenario:
 #
 #   main (base)
 #     work-NNN-test/
-#       STATE.md                    (work header -- authored by orchestrator on main)
+#       STATE.md           (work header -- authored by orchestrator on main)
 #       deliveries/
 #         delivery-001/
-#           STATE.md                (stub: Pending-Spec, created on main)
+#           STATE.md         (stub: Pending-Spec, created on main)
 #           tasks/task-001/
-#             SPEC.md
+#             DETAIL.md
 #             STATE.md
 #         delivery-002/
-#           STATE.md                (stub: Pending-Spec, created on main)
+#           STATE.md         (stub: Pending-Spec, created on main)
 #           tasks/task-002/
-#             SPEC.md
+#             DETAIL.md
 #             STATE.md
 #
 #   branch: aid/delivery-001
@@ -121,7 +119,7 @@ TASKSTATEOF
 make_task_spec() {
     local task_dir="$1" task_id="$2" delivery_id="$3" work_name="$4"
     mkdir -p "$task_dir"
-    cat > "${task_dir}/SPEC.md" <<TASKSPECEOF
+    cat > "${task_dir}/DETAIL.md" <<TASKSPECEOF
 # ${task_id}: Test Task
 
 **Type:** IMPLEMENT

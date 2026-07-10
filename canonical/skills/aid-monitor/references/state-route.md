@@ -13,11 +13,11 @@ Finding 1: [CRITICAL] [BUG] Null currency causes 500 error
   Evidence: 342 errors in 48h, payment module, started after package-002
   Root cause: PaymentService.Process() missing null validation
   Patch scope: PaymentService.cs + PaymentServiceTests.cs
-  → Proposed: Route to aid-describe (LITE-BUG-FIX triage) → task → aid-execute
+  → Proposed: Route to /aid-fix
 
 Finding 2: [MEDIUM] [CHANGE REQUEST] Reports need local timezone
   Evidence: 12 support tickets requesting midnight-local instead of midnight-UTC
-  → Proposed: Route to aid-describe → new/changed requirements → pipeline
+  → Proposed: Route to /aid-triage
 
 Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
   Evidence: 3 occurrences in 7 days, all self-resolved < 30s
@@ -31,14 +31,13 @@ Finding 3: [LOW] [NO ACTION] Intermittent 504 on health endpoint
 
 For each approved finding:
 
-**BUG → aid-describe (LITE-BUG-FIX short path):**
+**BUG → /aid-fix:**
 - Record the bug finding in the in-memory monitor context with: root cause, patch scope, test requirements, severity. (A persistent `MONITOR-STATE.md` is deferred until the Monitor area matures — see aid-monitor/SKILL.md.)
-- Hand off to `/aid-describe`: it triages the finding down the **LITE-BUG-FIX** sub-path (T3 = bug fix), turning the diagnosis into the task(s); `aid-execute` then implements (→ optional `aid-deploy`). Interview — not Monitor — creates the task.
-- The short path still skips Specify/Plan/Detail: the spec is already correct, only the code is wrong.
+- Hand off the diagnosis — root cause, patch scope, test requirements — to `/aid-fix`, which scaffolds and implements the fix directly (→ optional `aid-deploy`). The spec is already correct; only the code is wrong, so `/aid-fix` skips Specify/Plan/Detail.
 
-**CHANGE REQUEST → aid-describe:**
+**CHANGE REQUEST → /aid-triage:**
 - Record the change request in the in-memory monitor context (the desired new/changed behavior, with evidence).
-- Hand off to `/aid-describe` as new/changed requirements → the pipeline runs from Interview (Specify → Plan → Detail → Execute); a large-enough CR spins up a new work. Targeted discovery is invoked from Interview only if the CR exposes a KB gap.
+- Hand off the desired change and its evidence to `/aid-triage`, which suggests the right entry — the full path via `/aid-describe` for a broad or ambiguous change (the pipeline then runs from Interview: Specify → Plan → Detail → Execute; a large-enough CR spins up a new work), or a specific direct-entry shortcut for a known single change-type.
 
 **INFRASTRUCTURE → escalate:**
 - Document in the monitor run summary with recommended ops action
@@ -53,7 +52,7 @@ For each approved finding:
 
 Print monitor run summary: date, window, finding count, routing summary.
 
-▶ PM tool ticket creation starting (~10–30 s per ticket per `canonical/templates/rough-time-hints.md`; skip block entirely if no PM tool)
+▶ PM tool ticket creation starting (~10–30 s per ticket per `canonical/aid/templates/rough-time-hints.md`; skip block entirely if no PM tool)
 If PM tool configured (infrastructure.md § Project Management):
 - Create tickets for BUG tasks
 - Link to existing Sprint/Epic

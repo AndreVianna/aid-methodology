@@ -13,7 +13,7 @@ This is the single state file for the **Discovery area** — persistent project 
 > etc.) live in `.aid/settings.yml`, not here. STATE.md is for run-state only —
 > per-area review history, Q&A, current-cycle grade snapshots. Resolve any
 > configured value via:
-> `bash canonical/scripts/config/read-setting.sh --skill <name> --key <key> --default <fallback>`
+> `bash canonical/aid/scripts/config/read-setting.sh --skill <name> --key <key> --default <fallback>`
 
 ## External Documentation
 

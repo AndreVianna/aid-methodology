@@ -2,7 +2,7 @@
 # grade.sh -- Compute AID grade from a reviewer ledger table.
 #
 # Reads a markdown file (or stdin) containing a reviewer findings table per
-# canonical/templates/reviewer-ledger-schema.md. Parses the Severity and
+# canonical/aid/templates/reviewer-ledger-schema.md. Parses the Severity and
 # Status columns of each data row, counts findings where Status is Pending or
 # Recurred by Severity column, applies the universal AID rubric (worst
 # severity dominates, count determines modifier), and prints the grade.

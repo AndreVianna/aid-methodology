@@ -106,7 +106,7 @@ and not synthesized from templates. (The `skill-self` owner value denotes the sk
 > orientation concern is a mis-tag — the two axes are orthogonal.
 
 ```bash
-# synth_default_seed — enumerate canonical/templates/knowledge-base/*.md and emit
+# synth_default_seed — enumerate canonical/aid/templates/knowledge-base/*.md and emit
 # filename<TAB>owner<TAB>presence rows for each template using the §2.2 ownership map.
 # Called by resolve_doc_set when discovery.doc_set is unset/empty.
 #
@@ -200,7 +200,7 @@ empty (section unset), delegates to `synth_default_seed`.
 # resolve_doc_set — echoes: filename<TAB>owner<TAB>presence  per line
 #
 # Usage:
-#   raw="$(bash "$REPO/canonical/scripts/config/read-setting.sh" \
+#   raw="$(bash "$REPO/canonical/aid/scripts/config/read-setting.sh" \
 #           --path discovery.doc_set 2>/dev/null || true)"
 #   resolve_doc_set "$raw"
 #

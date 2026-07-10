@@ -4,7 +4,9 @@
  *
  * Exports readRepo(root) -> model object (same shape as Python RepoModel serialized).
  *
- * Read-only by construction: uses only fs.readFileSync / fs.readdirSync / fs.statSync.
+ * Read-only by construction: uses only fs.readFileSync / fs.readdirSync / fs.statSync,
+ * plus fs.openSync/readSync/closeSync opened read-only ("r") for the bounded-read
+ * helper (readFileBounded, v2.1.0 security hardening -- FIX-3).
  * No fs.write* / fs.appendFile / fs.unlink / fs.open for write anywhere in this file.
  * No agent/LLM import. No third-party deps. Node built-in modules only.
  *
@@ -12,9 +14,49 @@
  * UTF-8 payload content is emitted at runtime, not in source.
  */
 
-import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { readFileSync, readdirSync, statSync, existsSync, openSync, readSync, closeSync } from "fs";
 import { resolve, join, basename } from "path";
 import { execFileSync } from "child_process";
+
+// ---------------------------------------------------------------------------
+// Security hardening (v2.1.0, FIX-3 MEDIUM): shared bounded-read helper.
+// Twin of dashboard/reader/io_bounds.py read_bytes_bounded() (byte-parity minded).
+//
+// Problem: the reader read every STATE.md / DETAIL.md / BLUEPRINT.md / PLAN.md /
+// delivery-NNN-issues.md / KB doc fully into memory with no size cap -- a very
+// large (or maliciously large) file at any of these well-known paths could
+// exhaust process memory (DoS) -- every reader read site called readFileSync()
+// directly with no bound.
+//
+// Fix: every content-read site routes through readFileBounded() instead of
+// readFileSync(). stat() first; size <= MAX_READ_BYTES -> full read (byte-
+// identical to readFileSync(path) for every real-world file -- existing
+// behavior and the Python<->Node parity contract are unchanged for the common
+// case); size > MAX_READ_BYTES -> bounded read of only the first
+// MAX_READ_BYTES bytes. The file is NEVER skipped -- the reader's line-
+// scanners tolerate a truncated tail (degrade gracefully, never throw, never
+// skip -- matches the reader's no-throw posture).
+// ---------------------------------------------------------------------------
+
+const MAX_READ_BYTES = 5 * 1024 * 1024; // 5 MB (matches Python io_bounds.MAX_READ_BYTES)
+
+function readFileBounded(path, maxBytes = MAX_READ_BYTES) {
+  // Byte-identical to readFileSync(path) when the file is <= maxBytes (the
+  // common case for every real repo file). For an oversized file, returns
+  // only the first maxBytes bytes (never skips the file).
+  const size = statSync(path).size;
+  if (size <= maxBytes) {
+    return readFileSync(path);
+  }
+  const fd = openSync(path, "r");
+  try {
+    const buf = Buffer.alloc(maxBytes);
+    const bytesRead = readSync(fd, buf, 0, maxBytes, 0);
+    return buf.subarray(0, bytesRead);
+  } finally {
+    closeSync(fd);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Enum literals (DM-6 -- mirrors models.py verbatim)
@@ -208,7 +250,7 @@ function parseToolInfo(manifestPath, versionPath) {
   if (existsSync(manifestPath)) {
     let raw;
     try {
-      raw = readFileSync(manifestPath);
+      raw = readFileBounded(manifestPath);
       bytesRead += raw.length;
     } catch (_) {
       return [
@@ -241,7 +283,7 @@ function parseToolInfo(manifestPath, versionPath) {
   if (existsSync(versionPath)) {
     let raw;
     try {
-      raw = readFileSync(versionPath);
+      raw = readFileBounded(versionPath);
       bytesRead += raw.length;
     } catch (_) {
       return [
@@ -293,7 +335,7 @@ function parseProjectName(settingsPath) {
   if (!existsSync(settingsPath)) return ["", 0];
   let raw;
   try {
-    raw = readFileSync(settingsPath);
+    raw = readFileBounded(settingsPath);
   } catch (_) {
     return ["", 0];
   }
@@ -337,7 +379,7 @@ function parseKbBaseline(settingsPath) {
   if (!existsSync(settingsPath)) return [null, 0];
   let raw;
   try {
-    raw = readFileSync(settingsPath);
+    raw = readFileBounded(settingsPath);
   } catch (_) {
     return [null, 0];
   }
@@ -453,7 +495,7 @@ function parseKbState(kbDir, dashboardDir) {
   if (existsSync(statePath)) {
     let raw;
     try {
-      raw = readFileSync(statePath);
+      raw = readFileBounded(statePath);
       bytesRead += raw.length;
       const stateText = raw.toString("utf-8");
       [summaryApproved, lastSummaryDate] = parseKbSummaryApproval(stateText);
@@ -466,7 +508,7 @@ function parseKbState(kbDir, dashboardDir) {
   if (existsSync(readmePath)) {
     let raw;
     try {
-      raw = readFileSync(readmePath);
+      raw = readFileBounded(readmePath);
       bytesRead += raw.length;
       const readmeText = raw.toString("utf-8");
       docCount = parseKbDocCount(readmeText);
@@ -572,10 +614,48 @@ function resolveGitBranch(repoRoot, kbBaseline) {
 }
 
 function runGitLog(repoRoot, branch) {
-  // Run: git -C <repoRoot> log -1 --format=%cI <branch>
+  // Run: git -C <repoRoot> log -1 --format=%cI --end-of-options <branch>
   // argv identical to Python twin (no shell).
   // Returns ISO-8601 date string or null on every failure.
-  return runGitCommand(["-C", repoRoot, "log", "-1", "--format=%cI", branch], null);
+  //
+  // SECURITY (HIGH, v2.1.0): branch is read verbatim from an untrusted repo's
+  // .aid/settings.yml (kb_baseline.branch). Without --end-of-options, a value
+  // like "--output=/path/to/file" is parsed as a git OPTION (not a revision),
+  // letting an attacker create/truncate an arbitrary file. --end-of-options
+  // (git 2.24+) forces every argument after it to be treated as a revision,
+  // never an option, closing the injection.
+  return runGitCommand(
+    ["-C", repoRoot, "log", "-1", "--format=%cI", "--end-of-options", branch],
+    null
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Security/perf hardening (v2.1.0, FIX-4 LOW): per-process freshness cache.
+// Twin of derivation.py's git_freshness_check in-process cache (same rationale
+// and TTL). See the Python module comment for the full correctness rationale:
+// a cache keyed on .aid/knowledge/ mtime ALONE would be unsound (the "outdated"
+// verdict tracks the default branch advancing, unrelated to kb_dir mtime), so
+// a short TTL bounds staleness while the mtime key gives early invalidation
+// when the KB folder itself changes.
+// ---------------------------------------------------------------------------
+const FRESHNESS_CACHE = new Map();
+const FRESHNESS_CACHE_TTL_MS = 5000; // 5s (matches Python _FRESHNESS_CACHE_TTL_S)
+
+function _freshnessCacheKey(repoRoot, kbBaseline) {
+  const kbDir = join(repoRoot, ".aid", "knowledge");
+  let mtimeMs = null;
+  try {
+    mtimeMs = statSync(kbDir).mtimeMs;
+  } catch (_) {
+    mtimeMs = null;
+  }
+  return [
+    resolve(repoRoot),
+    kbBaseline.branch || null,
+    kbBaseline.tip_date || null,
+    mtimeMs,
+  ].join("|");
 }
 
 function gitFreshnessCheck(repoRoot, kbBaseline) {
@@ -583,24 +663,45 @@ function gitFreshnessCheck(repoRoot, kbBaseline) {
   // Returns "approved" | "outdated" | "skip".
   // Every failure mode (DD-A2 7-mode degradation matrix) -> "skip" -> stay approved.
   // Twin of Python derivation.py git_freshness_check.
+  //
+  // FIX-4 (LOW, v2.1.0): result is cached in-process for FRESHNESS_CACHE_TTL_MS,
+  // keyed on (repoRoot, branch, baseline, kb_dir mtime).
 
   // Degradation mode 6: kb_baseline absent
   if (!kbBaseline) return "skip";
 
+  const cacheKey = _freshnessCacheKey(repoRoot, kbBaseline);
+  const now = Date.now();
+  const cached = FRESHNESS_CACHE.get(cacheKey);
+  if (cached && (now - cached.at) <= FRESHNESS_CACHE_TTL_MS) {
+    return cached.result;
+  }
+
   const branch = resolveGitBranch(repoRoot, kbBaseline);
-  if (branch === null) return "skip";
+  let result;
+  if (branch === null) {
+    result = "skip";
+  } else {
+    // Run: git -C <repoRoot> log -1 --format=%cI --end-of-options <branch> (via
+    // runGitLog; twin of Python git_freshness_check -> _run_git_log). Any
+    // failure -> null -> skip.
+    const currentTipStr = runGitLog(repoRoot, branch);
+    if (!currentTipStr) {
+      result = "skip";
+    } else {
+      // UTC normalization before compare (R12, never raw string compare)
+      const currentMs = normalizeToUtcMs(currentTipStr);
+      const baselineMs = normalizeToUtcMs(kbBaseline.tip_date || "");
+      if (currentMs === null || baselineMs === null) {
+        result = "skip";
+      } else {
+        result = currentMs > baselineMs ? "outdated" : "approved";
+      }
+    }
+  }
 
-  // Run: git -C <repoRoot> log -1 --format=%cI <branch> (via runGitLog; twin of
-  // Python git_freshness_check -> _run_git_log). Any failure -> null -> skip.
-  const currentTipStr = runGitLog(repoRoot, branch);
-  if (!currentTipStr) return "skip";
-
-  // UTC normalization before compare (R12, never raw string compare)
-  const currentMs = normalizeToUtcMs(currentTipStr);
-  const baselineMs = normalizeToUtcMs(kbBaseline.tip_date || "");
-  if (currentMs === null || baselineMs === null) return "skip";
-
-  return currentMs > baselineMs ? "outdated" : "approved";
+  FRESHNESS_CACHE.set(cacheKey, { result, at: now });
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -671,7 +772,7 @@ function parseDocFrontmatter(docPath) {
 
   let raw;
   try {
-    raw = readFileSync(docPath, "utf-8");
+    raw = readFileBounded(docPath).toString("utf-8");
   } catch (_) {
     return [null, [], false];
   }
@@ -760,7 +861,7 @@ function _readRoutingFields(docPath) {
 
   let raw;
   try {
-    raw = readFileSync(docPath, "utf-8");
+    raw = readFileBounded(docPath).toString("utf-8");
   } catch (_) {
     return ["", ""];
   }
@@ -803,10 +904,15 @@ function _runMergeBaseIsAncestor(repoRoot, cSrc, baseline) {
   // Returns "current" | "suspect" | "unknown".
   // execFileSync throws on non-zero exit; status 1 = NOT ancestor = suspect.
   // Any other error (128 bad object, ENOENT, timeout) = unknown.
+  //
+  // SECURITY (LOW, v2.1.0): baseline is frontmatter-derived (approved_at_commit:)
+  // and cSrc comes from a prior git-log lookup; neither is fully trusted input.
+  // --end-of-options (git 2.24+) guards both trailing commit-ish arguments from
+  // being parsed as options (same rationale as runGitLog's --end-of-options).
   try {
     execFileSync(
       "git",
-      ["-C", repoRoot, "merge-base", "--is-ancestor", cSrc, baseline],
+      ["-C", repoRoot, "merge-base", "--is-ancestor", "--end-of-options", cSrc, baseline],
       {
         timeout: GIT_TIMEOUT_MS,
         stdio: ["ignore", "pipe", "pipe"],
@@ -1264,7 +1370,7 @@ function parseRequirementsMd(reqPath) {
 
   let raw;
   try {
-    raw = readFileSync(reqPath);
+    raw = readFileBounded(reqPath);
   } catch (_) {
     return [null, null, null, 0];
   }
@@ -1343,7 +1449,7 @@ export function parseSpecMd(specPath) {
 
   let raw;
   try {
-    raw = readFileSync(specPath);
+    raw = readFileBounded(specPath);
   } catch (_) {
     return [null, null, null, 0];
   }
@@ -1405,7 +1511,7 @@ function parseTaskShortName(taskPath) {
 
   let raw;
   try {
-    raw = readFileSync(taskPath);
+    raw = readFileBounded(taskPath);
   } catch (_) {
     return [null, 0];
   }
@@ -1443,7 +1549,7 @@ function parseExecutionGraph(planPath) {
 
   let raw;
   try {
-    raw = readFileSync(planPath);
+    raw = readFileBounded(planPath);
   } catch (_) {
     return [{}, 0];
   }
@@ -2182,6 +2288,12 @@ function readWork(workDir, workId) {
     return _readWorkHierarchical(workDir, workId);
   }
 
+  // feature-001: flattened single-delivery layout (per-work, presence-based;
+  // mutually exclusive with the deliveries/ wrapper checked above)
+  if (_detectFlat(workDir)) {
+    return _readWorkFlat(workDir, workId);
+  }
+
   // --- Legacy monolithic path (preserved behavior) ---
   const statePath = join(workDir, "STATE.md");
   const statePathLabel = ".aid/" + workId + "/STATE.md";
@@ -2203,7 +2315,7 @@ function readWork(workDir, workId) {
   let text;
   let raw;
   try {
-    raw = readFileSync(statePath);
+    raw = readFileBounded(statePath);
     bytesRead = raw.length;
     text = raw.toString("utf-8");
   } catch (exc) {
@@ -2511,50 +2623,28 @@ const RE_DELIVERY_DIR = /^delivery-(\d+)$/i;
 const RE_TASK_DIR_H = /^(task-\d+)$/i;
 
 function _detectHierarchy(workDir) {
-  // Return true if this work has the new per-unit STATE.md hierarchy (either
-  // layout below). Otherwise fall back to monolithic parse.
-  //
-  // Detection rule (work-001 delivery-folder relocation, task-002; mirrors
-  // reader.py _detect_hierarchy):
-  //   - Full-nested: workDir/deliveries/ exists as a directory. Presence alone
-  //     is sufficient (a freshly-planned delivery may legitimately have zero
-  //     tasks yet -- e.g. SD-9 Pending-Spec siblings); the hierarchical reader
-  //     handles the zero-task case natively.
-  //   - Lite-flat: workDir/tasks/task-NNN/STATE.md exists directly under
-  //     workDir -- task-NNN must be a SUBFOLDER containing its own STATE.md,
-  //     which distinguishes it from the legacy monolithic
-  //     workDir/tasks/task-NNN.md FILE convention (same "tasks" dir name,
-  //     different shape).
-  //
-  // Clean cutover: the old flat workDir/delivery-NNN/tasks/task-NNN/STATE.md
-  // layout (delivery folders flat at the work root) is intentionally NOT
-  // detected here; a work still using it falls through to the monolithic
-  // fallback path.
-  //
+  // Return true if this work has the new per-unit STATE.md hierarchy.
+  // Detection: if ANY deliveries/delivery-NNN/tasks/task-NNN/STATE.md exists under workDir.
   // Presence-based, per-work. Never throws.
   try {
     const deliveriesDir = join(workDir, "deliveries");
-    let deliveriesIsDir = false;
-    try { deliveriesIsDir = statSync(deliveriesDir).isDirectory(); } catch (_) { deliveriesIsDir = false; }
-    if (deliveriesIsDir) return true;
-  } catch (_) {
-    // pass
-  }
-
-  try {
-    const tasksDir = join(workDir, "tasks");
-    let tasksDirExists = false;
-    try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
-    if (tasksDirExists) {
+    let entries;
+    try { entries = readdirSync(deliveriesDir); } catch (_) { return false; }
+    for (const name of entries) {
+      if (!RE_DELIVERY_DIR.test(name)) continue;
+      const deliveryPath = join(deliveriesDir, name);
+      let isDir = false;
+      try { isDir = statSync(deliveryPath).isDirectory(); } catch (_) { isDir = false; }
+      if (!isDir) continue;
+      const tasksDir = join(deliveryPath, "tasks");
+      let tasksDirExists = false;
+      try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
+      if (!tasksDirExists) continue;
       let taskEntries;
-      try { taskEntries = readdirSync(tasksDir); } catch (_) { taskEntries = []; }
+      try { taskEntries = readdirSync(tasksDir); } catch (_) { continue; }
       for (const tname of taskEntries) {
         if (!RE_TASK_DIR_H.test(tname)) continue;
-        const tpath = join(tasksDir, tname);
-        let isDir = false;
-        try { isDir = statSync(tpath).isDirectory(); } catch (_) { isDir = false; }
-        if (!isDir) continue;
-        const taskStatePath = join(tpath, "STATE.md");
+        const taskStatePath = join(tasksDir, tname, "STATE.md");
         let isFile = false;
         try { isFile = statSync(taskStatePath).isFile(); } catch (_) { isFile = false; }
         if (isFile) return true;
@@ -2563,7 +2653,55 @@ function _detectHierarchy(workDir) {
   } catch (_) {
     // pass
   }
+  return false;
+}
 
+function _detectFlat(workDir) {
+  // Return true if this work has the FLATTENED single-delivery layout (feature-001).
+  // Mirror reader.py _detect_flat.
+  //
+  // Detection rule (3-part; identical across all consumers): a work-root
+  // BLUEPRINT.md exists AND at least one tasks/task-NNN/DETAIL.md exists
+  // directly under the work root AND no `deliveries/` wrapper exists under
+  // the work root. This layout has no per-task STATE.md; this check does not
+  // look for one.
+  //
+  // Mirrors the SAME 3-part detection rule as `is_flat_layout()` in
+  // canonical/aid/scripts/execute/writeback-state.sh and reader.py's
+  // `_detect_flat` (lockstep Python twin).
+  //
+  // Presence-based, per-work. Mutually exclusive with _detectHierarchy by
+  // construction (this function explicitly asserts `deliveries/` absence,
+  // not just call-site ordering). Never throws.
+  try {
+    let blueprintIsFile = false;
+    try { blueprintIsFile = statSync(join(workDir, "BLUEPRINT.md")).isFile(); } catch (_) { blueprintIsFile = false; }
+    if (!blueprintIsFile) return false;
+
+    let deliveriesIsDir = false;
+    try { deliveriesIsDir = statSync(join(workDir, "deliveries")).isDirectory(); } catch (_) { deliveriesIsDir = false; }
+    if (deliveriesIsDir) return false;
+
+    const tasksDir = join(workDir, "tasks");
+    let tasksDirIsDir = false;
+    try { tasksDirIsDir = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirIsDir = false; }
+    if (!tasksDirIsDir) return false;
+
+    let entries;
+    try { entries = readdirSync(tasksDir); } catch (_) { return false; }
+    for (const name of entries) {
+      if (!RE_TASK_DIR_H.test(name)) continue;
+      const taskPath = join(tasksDir, name);
+      let isDir = false;
+      try { isDir = statSync(taskPath).isDirectory(); } catch (_) { isDir = false; }
+      if (!isDir) continue;
+      let detailIsFile = false;
+      try { detailIsFile = statSync(join(taskPath, "DETAIL.md")).isFile(); } catch (_) { detailIsFile = false; }
+      if (detailIsFile) return true;
+    }
+  } catch (_) {
+    // pass
+  }
   return false;
 }
 
@@ -2832,8 +2970,88 @@ function _parseDeliveryStateMd(text, deliveryId) {
   return pds;
 }
 
+// ---------------------------------------------------------------------------
+// feature-001 (flattened single-delivery layout): ### Tasks lifecycle parser
+// Mirror parsers.py parse_tasks_lifecycle_md.
+//
+// The flat layout has no per-task STATE.md and no per-delivery STATE.md -- the
+// promoted ## Delivery Lifecycle / ## Delivery Gate blocks (parsed above via
+// _parseDeliveryStateMd, unchanged) plus a ### Tasks lifecycle SUBSECTION live
+// directly in the work-root STATE.md. This table REPLACES the per-task
+// STATE.md's ## Task State section, but uses a NARROWER column layout (no
+// leading # / Type / Wave columns -- type comes from DETAIL.md, wave is the
+// synthesized delivery-001 for every task in this layout):
+//
+//   | Task | State | Review | Elapsed | Notes |
+// ---------------------------------------------------------------------------
+
+const RE_TASKS_LIFECYCLE_SECTION = /^###\s+Tasks lifecycle\s*$/i;
+// Any ## or ### heading ends the ### Tasks lifecycle subsection (nested under
+// ## Delivery Lifecycle, so a plain ## heading -- e.g. ## Delivery Gate --
+// must also close it, not just another ###).
+const RE_SECTION_2_OR_3 = /^#{2,3}\s+\S/;
+
+function parseTasksLifecycleMd(text) {
+  // Returns [taskIdLowerToState, parseWarnings] where taskIdLowerToState maps
+  // task_id.toLowerCase() -> { state, review, elapsed, notes }.
+  // Header/separator rows and the _none yet_ placeholder row are skipped.
+  // Never throws (NFR7).
+  const result = {};
+  const warnings = [];
+
+  try {
+    let inSection = false;
+    let headerSeen = false;
+
+    for (const line of text.split("\n")) {
+      if (RE_TASKS_LIFECYCLE_SECTION.test(line)) {
+        inSection = true;
+        headerSeen = false;
+        continue;
+      }
+      if (inSection && RE_SECTION_2_OR_3.test(line)) {
+        inSection = false;
+        continue;
+      }
+      if (!inSection) continue;
+
+      const stripped = line.trim();
+      if (!stripped.startsWith("|")) continue;
+      if (RE_TABLE_SEP.test(stripped)) continue;
+
+      const cols = stripped.replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+      if (cols.length < 2) continue;
+
+      if (!headerSeen) {
+        headerSeen = true;
+        continue;
+      }
+      if (cols.some(c => c.includes(NONE_YET))) continue;
+
+      function fcol(idx) {
+        if (idx < cols.length) { const v = cols[idx].trim(); return isNull(v) ? null : v; }
+        return null;
+      }
+
+      const taskId = fcol(0) || "";
+      if (!taskId || taskId.toLowerCase() === "task") continue;
+
+      result[taskId.toLowerCase()] = {
+        state: parseTaskStatus(fcol(1) || ""),
+        review: fcol(2),
+        elapsed: fcol(3),
+        notes: fcol(4),
+      };
+    }
+  } catch (exc) {
+    warnings.push("error parsing ### Tasks lifecycle table (" + exc + "); returning best-effort");
+  }
+
+  return [result, warnings];
+}
+
 function _parseTaskSpecShortName(specText) {
-  // Extract the short name from a task-level SPEC.md.
+  // Extract the short name from a task-level DETAIL.md.
   // Mirror parsers.py _parse_task_spec_short_name.
   // Reads: '# task-NNN: {Title}' -- returns the title portion, or null.
   try {
@@ -2855,7 +3073,7 @@ function _parseTaskSpecShortName(specText) {
 }
 
 function _parseTaskSpecType(specText) {
-  // Extract the task type from a task-level SPEC.md.
+  // Extract the task type from a task-level DETAIL.md.
   // Mirror parsers.py _parse_task_spec_type.
   // Reads: '**Type:** VALUE' line -- returns the type string, or ''.
   try {
@@ -2874,7 +3092,7 @@ function _parseTaskSpecType(specText) {
 }
 
 function _parseDeliverySpecTitle(specText) {
-  // Extract the delivery title from a delivery-level SPEC.md.
+  // Extract the delivery title from a delivery-level BLUEPRINT.md.
   // Mirror parsers.py _parse_delivery_spec_title.
   // Returns the title portion after '# ... delivery-NNN: Title', or null.
   try {
@@ -2894,17 +3112,225 @@ function _parseDeliverySpecTitle(specText) {
   return null;
 }
 
+function _readWorkFlat(workDir, workId) {
+  // Mirror reader.py _read_work_flat.
+  //
+  // Assemble a WorkModel from the FLATTENED single-delivery layout (feature-001).
+  //
+  // Reads:
+  //   - workDir/STATE.md                  -- work-level lifecycle/triage/history, PLUS the
+  //                                           promoted ## Delivery Lifecycle (### Tasks
+  //                                           lifecycle) / ## Delivery Gate AUTHORED blocks
+  //                                           (single writer; no deliveries/ wrapper)
+  //   - workDir/tasks/task-NNN/DETAIL.md  -- task type / short-name (no per-task STATE.md --
+  //                                           mutable cells come from the work STATE.md
+  //                                           ### Tasks lifecycle table)
+  //   - workDir/BLUEPRINT.md              -- the single delivery's title (synthesized
+  //                                           DeliverableRef name)
+  //
+  // Synthesizes exactly ONE DeliverableRef for delivery-001 (every task gets
+  // wave="delivery-001", delivery=1) -- there is no deliveries/ wrapper to enumerate.
+  //
+  // pendingInputs is taken from pw.pendingInputs ONLY -- see reader.py docstring for
+  // why _parseDeliveryStateMd's own Cross-phase Q&A scan is intentionally NOT unioned
+  // here (would double-count the work's single shared ## Cross-phase Q&A section).
+  //
+  // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel]. Never raises.
+  const stateLabel = ".aid/" + workId + "/STATE.md";
+  const parseWarnings = [];
+  let bytesRead = 0;
+
+  const statePath = join(workDir, "STATE.md");
+  let workText = "";
+  let workIsFile = false;
+  try { workIsFile = statSync(statePath).isFile(); } catch (_) { workIsFile = false; }
+
+  if (!workIsFile) {
+    parseWarnings.push(
+      workId + ": STATE.md not found (flat mode); work-level lifecycle will be Unknown."
+    );
+  } else {
+    try {
+      const raw = readFileBounded(statePath);
+      bytesRead += raw.length;
+      workText = raw.toString("utf-8");
+    } catch (exc) {
+      parseWarnings.push(
+        workId + ": STATE.md read error (" + exc + "); work-level lifecycle will be Unknown."
+      );
+    }
+  }
+
+  const pw = parseStateText(workText, workId, workDir);
+  parseWarnings.push(...pw.parseWarnings);
+
+  const name = slugFromWorkId(workId);
+  const workNumber = numberFromWorkId(workId);
+
+  // Identity fields: REQUIREMENTS.md -> SPEC.md fallback (PF-8, unchanged)
+  const reqPath = join(workDir, "REQUIREMENTS.md");
+  let [reqTitle, reqDescription, reqObjective, reqBytes] = parseRequirementsMd(reqPath);
+  bytesRead += reqBytes;
+
+  if (reqTitle === null || reqDescription === null) {
+    const specPath = join(workDir, "SPEC.md");
+    const [specTitle, specDescription, specH1, specBytes] = parseSpecMd(specPath);
+    bytesRead += specBytes;
+    if (reqTitle === null) {
+      if (specTitle !== null) {
+        reqTitle = specTitle;
+      } else if (specH1 !== null) {
+        reqTitle = specH1;
+      }
+    }
+    if (reqDescription === null && specDescription !== null) {
+      reqDescription = specDescription;
+    }
+  }
+
+  // PF-5: parse PLAN.md execution graph for lane assignments. The flat PLAN.md's
+  // top-level ## Execution Graph carries no wave-map fence / "### delivery-NNN
+  // Execution Graph" prose header, so this yields an empty map -- lane stays null
+  // for every task (harmless; no lane derivation is defined for the flat shape).
+  const planPath = join(workDir, "PLAN.md");
+  const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
+  bytesRead += planBytes;
+
+  // Parse the promoted ## Delivery Lifecycle / ## Delivery Gate blocks from the SAME
+  // work-root STATE.md text via the existing _parseDeliveryStateMd -- it keys on the
+  // exact headings regardless of which file they live in. Only pds.deliveryState is
+  // used (see function comment for why pds.pendingInputs is not unioned).
+  const pds = _parseDeliveryStateMd(workText, "delivery-001");
+  parseWarnings.push(...pds.parseWarnings);
+
+  // Parse the promoted ### Tasks lifecycle table (replaces per-task STATE.md)
+  const [tasksLifecycle, tlWarnings] = parseTasksLifecycleMd(workText);
+  parseWarnings.push(...tlWarnings);
+
+  // -----------------------------------------------------------------------
+  // Enumerate tasks/task-NNN/ directly under the work root (no deliveries/
+  // wrapper -- the flat layout's single delivery is implicit/synthesized)
+  // -----------------------------------------------------------------------
+  const allTasks = [];
+  const tasksDir = join(workDir, "tasks");
+  let taskDirEntries = [];
+
+  try {
+    let tasksDirExists = false;
+    try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
+    if (tasksDirExists) {
+      const entries = readdirSync(tasksDir);
+      for (const tname of entries) {
+        if (!RE_TASK_DIR_H.test(tname)) continue;
+        const tpath = join(tasksDir, tname);
+        let isDir = false;
+        try { isDir = statSync(tpath).isDirectory(); } catch (_) { isDir = false; }
+        if (isDir) taskDirEntries.push([tname, tpath]);
+      }
+      taskDirEntries.sort((a, b) => a[0].localeCompare(b[0]));
+    }
+  } catch (exc) {
+    parseWarnings.push(workId + ": could not enumerate flat task dirs (" + exc + "); tasks will be empty.");
+    taskDirEntries = [];
+  }
+
+  for (const [taskIdStr, taskDir] of taskDirEntries) {
+    // Read task DETAIL.md for short_name and type (no per-task STATE.md here)
+    const taskDetailPath = join(taskDir, "DETAIL.md");
+    let shortName = null;
+    let taskType = "";
+    let taskDetailIsFile = false;
+    try { taskDetailIsFile = statSync(taskDetailPath).isFile(); } catch (_) { taskDetailIsFile = false; }
+
+    if (taskDetailIsFile) {
+      try {
+        const raw = readFileBounded(taskDetailPath);
+        bytesRead += raw.length;
+        const detailText = raw.toString("utf-8");
+        shortName = _parseTaskSpecShortName(detailText);
+        taskType = _parseTaskSpecType(detailText);
+      } catch (_) {
+        // pass
+      }
+    }
+
+    // Mutable cells from the work-root STATE.md ### Tasks lifecycle table
+    const pts = tasksLifecycle[taskIdStr.toLowerCase()] || {
+      state: TaskStatus.Unknown, review: null, elapsed: null, notes: null,
+    };
+
+    const laneVal = taskLaneMap[taskIdStr.toLowerCase()];
+    const lane = laneVal !== undefined ? laneVal : null;
+
+    allTasks.push({
+      task_id: taskIdStr,
+      type: taskType,
+      wave: "delivery-001",
+      status: pts.state,
+      review_grade: pts.review,
+      elapsed: pts.elapsed,
+      notes: pts.notes,
+      short_name: shortName,
+      delivery: 1,
+      lane: lane,
+    });
+  }
+
+  // ---- Synthesize the single DeliverableRef for delivery-001 ----
+  const blueprintPath = join(workDir, "BLUEPRINT.md");
+  let deliveryName = "delivery-001";
+  let blueprintIsFile = false;
+  try { blueprintIsFile = statSync(blueprintPath).isFile(); } catch (_) { blueprintIsFile = false; }
+
+  if (blueprintIsFile) {
+    try {
+      const raw = readFileBounded(blueprintPath);
+      bytesRead += raw.length;
+      const bpText = raw.toString("utf-8");
+      const bpName = _parseDeliverySpecTitle(bpText);
+      if (bpName) deliveryName = bpName;
+    } catch (_) {
+      // pass
+    }
+  }
+
+  const deliverables = [{
+    number: 1,
+    name: deliveryName,
+    task_count: allTasks.length,
+    delivery_state: pds.deliveryState,
+  }];
+
+  const workModel = _buildWorkModel({
+    work_id: workId,
+    name,
+    lifecycle: pw.lifecycle,
+    phase: pw.phase,
+    active_skill: pw.activeSkill,
+    updated: pw.updated,
+    created: pw.created,
+    pause_reason: pw.pauseReason,
+    block_reason: pw.blockReason,
+    block_artifact: pw.blockArtifact,
+    tasks: allTasks,
+    pending_inputs: pw.pendingInputs,
+    source_mode: pw.sourceMode,
+    number: workNumber,
+    title: reqTitle,
+    description: reqDescription,
+    objective: reqObjective,
+    work_path: pw.workPath || "lite",
+    recipe: pw.recipe,
+    features: pw.features,
+    deliverables: deliverables,
+  });
+
+  return [workModel, parseWarnings, bytesRead, workText, stateLabel];
+}
+
 function _readWorkHierarchical(workDir, workId) {
   // Mirror reader.py _read_work_hierarchical.
-  // Assemble a WorkModel from the per-unit STATE.md hierarchy. Handles BOTH
-  // new layouts (work-001 delivery-folder relocation, task-002):
-  //   - Full-nested (workDir/deliveries/ present): delivery lifecycle/gate/Q&A
-  //     come from workDir/deliveries/delivery-NNN/STATE.md.
-  //   - Lite-flat (no workDir/deliveries/; tasks directly under workDir): the
-  //     single implicit "delivery-001"'s lifecycle/gate/Q&A come from the
-  //     work-root STATE.md's own AUTHORED sections (the work IS the delivery).
-  // Clean cutover: the old flat workDir/delivery-NNN/-at-work-root layout is
-  // not read.
+  // Assemble a WorkModel from the per-unit STATE.md hierarchy.
   // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel].
   const stateLabel = ".aid/" + workId + "/STATE.md";
   const parseWarnings = [];
@@ -2922,7 +3348,7 @@ function _readWorkHierarchical(workDir, workId) {
     );
   } else {
     try {
-      const raw = readFileSync(statePath);
+      const raw = readFileBounded(statePath);
       bytesRead += raw.length;
       workText = raw.toString("utf-8");
     } catch (exc) {
@@ -2967,198 +3393,56 @@ function _readWorkHierarchical(workDir, workId) {
   const [taskLaneMap, planBytes] = parseExecutionGraph(planPath);
   bytesRead += planBytes;
 
-  // Enumerate deliveries and their tasks from the hierarchy.
-  // Two layouts (work-001 delivery-folder relocation, task-002; mirrors
-  // reader.py _read_work_hierarchical):
-  //   - Full-nested: workDir/deliveries/delivery-NNN/tasks/task-NNN/
-  //   - Lite-flat:   workDir/tasks/task-NNN/ directly (implicit "delivery-001";
-  //                  its lifecycle/gate/Q&A are AUTHORED in the work-root STATE.md)
+  // Enumerate deliveries and their tasks from the hierarchy
   const allTasks = [];
   const allDeliverables = [];
   const allPendingInputs = [];
 
-  const deliveriesRoot = join(workDir, "deliveries");
-  let isFull = false;
-  try { isFull = statSync(deliveriesRoot).isDirectory(); } catch (_) { isFull = false; }
+  let deliveryEntries = [];
+  try {
+    const deliveriesDir = join(workDir, "deliveries");
+    const entries = readdirSync(deliveriesDir);
+    for (const name of entries) {
+      if (!RE_DELIVERY_DIR.test(name)) continue;
+      const fullPath = join(deliveriesDir, name);
+      let isDir = false;
+      try { isDir = statSync(fullPath).isDirectory(); } catch (_) { isDir = false; }
+      if (isDir) deliveryEntries.push([name, fullPath]);
+    }
+    deliveryEntries.sort((a, b) => a[0].localeCompare(b[0]));
+  } catch (exc) {
+    parseWarnings.push(workId + ": could not enumerate delivery dirs (" + exc + "); tasks will be empty.");
+    deliveryEntries = [];
+  }
 
-  if (isFull) {
-    // =========================================================================
-    // FULL-NESTED: workDir/deliveries/delivery-NNN/tasks/task-NNN/
-    // =========================================================================
-    let deliveryEntries = [];
-    try {
-      const entries = readdirSync(deliveriesRoot);
-      for (const name of entries) {
-        if (!RE_DELIVERY_DIR.test(name)) continue;
-        const fullPath = join(deliveriesRoot, name);
-        let isDir = false;
-        try { isDir = statSync(fullPath).isDirectory(); } catch (_) { isDir = false; }
-        if (isDir) deliveryEntries.push([name, fullPath]);
+  for (const [deliveryId, deliveryDir] of deliveryEntries) {
+    const dm = deliveryId.match(RE_DELIVERY_DIR);
+    const deliveryNumber = dm ? parseInt(dm[1], 10) : 0;
+
+    // Read delivery-level STATE.md
+    const deliveryStatePath = join(deliveryDir, "STATE.md");
+    let deliveryStateText = "";
+    let deliveryStateIsFile = false;
+    try { deliveryStateIsFile = statSync(deliveryStatePath).isFile(); } catch (_) { deliveryStateIsFile = false; }
+
+    if (deliveryStateIsFile) {
+      try {
+        const raw = readFileBounded(deliveryStatePath);
+        bytesRead += raw.length;
+        deliveryStateText = raw.toString("utf-8");
+      } catch (exc) {
+        parseWarnings.push(
+          workId + "/" + deliveryId + ": STATE.md read error (" + exc + "); delivery lifecycle will be unknown."
+        );
       }
-      deliveryEntries.sort((a, b) => a[0].localeCompare(b[0]));
-    } catch (exc) {
-      parseWarnings.push(workId + ": could not enumerate delivery dirs (" + exc + "); tasks will be empty.");
-      deliveryEntries = [];
     }
 
-    for (const [deliveryId, deliveryDir] of deliveryEntries) {
-      const dm = deliveryId.match(RE_DELIVERY_DIR);
-      const deliveryNumber = dm ? parseInt(dm[1], 10) : 0;
-
-      // Read delivery-level STATE.md
-      const deliveryStatePath = join(deliveryDir, "STATE.md");
-      let deliveryStateText = "";
-      let deliveryStateIsFile = false;
-      try { deliveryStateIsFile = statSync(deliveryStatePath).isFile(); } catch (_) { deliveryStateIsFile = false; }
-
-      if (deliveryStateIsFile) {
-        try {
-          const raw = readFileSync(deliveryStatePath);
-          bytesRead += raw.length;
-          deliveryStateText = raw.toString("utf-8");
-        } catch (exc) {
-          parseWarnings.push(
-            workId + "/" + deliveryId + ": STATE.md read error (" + exc + "); delivery lifecycle will be unknown."
-          );
-        }
-      }
-
-      const pds = _parseDeliveryStateMd(deliveryStateText, deliveryId);
-      parseWarnings.push(...pds.parseWarnings);
-      allPendingInputs.push(...pds.pendingInputs);
-
-      // Enumerate tasks under this delivery
-      const tasksDir = join(deliveryDir, "tasks");
-      let taskDirEntries = [];
-      let tasksDirExists = false;
-      try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
-
-      if (tasksDirExists) {
-        try {
-          const entries = readdirSync(tasksDir);
-          for (const tname of entries) {
-            if (!RE_TASK_DIR_H.test(tname)) continue;
-            const tpath = join(tasksDir, tname);
-            let isDir = false;
-            try { isDir = statSync(tpath).isDirectory(); } catch (_) { isDir = false; }
-            if (isDir) taskDirEntries.push([tname, tpath]);
-          }
-          taskDirEntries.sort((a, b) => a[0].localeCompare(b[0]));
-        } catch (exc) {
-          parseWarnings.push(workId + "/" + deliveryId + ": could not enumerate task dirs (" + exc + ").");
-          taskDirEntries = [];
-        }
-      }
-
-      let deliveryTaskCount = 0;
-      for (const [taskIdStr, taskDir] of taskDirEntries) {
-        deliveryTaskCount++;
-
-        // Read task-level STATE.md
-        const taskStatePath = join(taskDir, "STATE.md");
-        let taskStateText = "";
-        let taskStateIsFile = false;
-        try { taskStateIsFile = statSync(taskStatePath).isFile(); } catch (_) { taskStateIsFile = false; }
-
-        if (taskStateIsFile) {
-          try {
-            const raw = readFileSync(taskStatePath);
-            bytesRead += raw.length;
-            taskStateText = raw.toString("utf-8");
-          } catch (exc) {
-            parseWarnings.push(
-              workId + "/" + deliveryId + "/" + taskIdStr + ": STATE.md read error (" + exc + "); task state will be Unknown."
-            );
-          }
-        }
-
-        const pts = _parseTaskStateMd(taskStateText, taskIdStr);
-        parseWarnings.push(...pts.parseWarnings);
-
-        // Read task SPEC.md for short_name and type
-        const taskSpecPath = join(taskDir, "SPEC.md");
-        let shortName = null;
-        let taskType = "";
-        let taskSpecIsFile = false;
-        try { taskSpecIsFile = statSync(taskSpecPath).isFile(); } catch (_) { taskSpecIsFile = false; }
-
-        if (taskSpecIsFile) {
-          try {
-            const raw = readFileSync(taskSpecPath);
-            bytesRead += raw.length;
-            const specText = raw.toString("utf-8");
-            shortName = _parseTaskSpecShortName(specText);
-            taskType = _parseTaskSpecType(specText);
-          } catch (_) {
-            // pass
-          }
-        }
-
-        // Lane from PLAN.md wave-map
-        const laneVal = taskLaneMap[taskIdStr.toLowerCase()];
-        const lane = laneVal !== undefined ? laneVal : null;
-
-        allTasks.push({
-          task_id: taskIdStr,
-          type: taskType,
-          wave: deliveryId,        // wave = delivery-NNN in hierarchical works
-          status: pts.state,
-          review_grade: pts.review,
-          elapsed: pts.elapsed,
-          notes: pts.notes,
-          short_name: shortName,
-          delivery: deliveryNumber,
-          lane: lane,
-        });
-      }
-
-      // Build DeliverableRef for this delivery
-      const deliverySpecPath = join(deliveryDir, "SPEC.md");
-      let deliveryName = deliveryId;
-      let deliverySpecIsFile = false;
-      try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
-
-      if (deliverySpecIsFile) {
-        try {
-          const raw = readFileSync(deliverySpecPath);
-          bytesRead += raw.length;
-          const specText = raw.toString("utf-8");
-          const specName = _parseDeliverySpecTitle(specText);
-          if (specName) deliveryName = specName;
-        } catch (_) {
-          // pass
-        }
-      }
-
-      allDeliverables.push({
-        number: deliveryNumber,
-        name: deliveryName,
-        task_count: deliveryTaskCount,
-        delivery_state: pds.deliveryState,
-      });
-    }
-
-  } else {
-    // =========================================================================
-    // LITE-FLAT: workDir/tasks/task-NNN/ (no deliveries/, no delivery-NNN/)
-    // The single implicit delivery is always "delivery-001"; its lifecycle,
-    // gate, and Cross-phase Q&A are AUTHORED directly in the work-root
-    // STATE.md (workText, already read above) -- there is no delivery-level
-    // STATE.md file to read for a lite work.
-    // =========================================================================
-    const deliveryId = "delivery-001";
-    const deliveryNumber = 1;
-
-    // Parse the work-root STATE.md text (already in hand) for the AUTHORED
-    // ## Delivery Lifecycle / ## Delivery Gate sections. NOTE: pds.pendingInputs
-    // is intentionally NOT accumulated into allPendingInputs below -- the same
-    // ## Cross-phase Q&A section was already parsed into pw.pendingInputs by
-    // parseStateText() above; re-adding it here would double-count every entry.
-    const pds = _parseDeliveryStateMd(workText, deliveryId);
+    const pds = _parseDeliveryStateMd(deliveryStateText, deliveryId);
     parseWarnings.push(...pds.parseWarnings);
+    allPendingInputs.push(...pds.pendingInputs);
 
-    // Enumerate tasks directly under workDir/tasks
-    const tasksDir = join(workDir, "tasks");
+    // Enumerate tasks under this delivery
+    const tasksDir = join(deliveryDir, "tasks");
     let taskDirEntries = [];
     let tasksDirExists = false;
     try { tasksDirExists = statSync(tasksDir).isDirectory(); } catch (_) { tasksDirExists = false; }
@@ -3175,7 +3459,7 @@ function _readWorkHierarchical(workDir, workId) {
         }
         taskDirEntries.sort((a, b) => a[0].localeCompare(b[0]));
       } catch (exc) {
-        parseWarnings.push(workId + ": could not enumerate task dirs (" + exc + ").");
+        parseWarnings.push(workId + "/" + deliveryId + ": could not enumerate task dirs (" + exc + ").");
         taskDirEntries = [];
       }
     }
@@ -3192,12 +3476,12 @@ function _readWorkHierarchical(workDir, workId) {
 
       if (taskStateIsFile) {
         try {
-          const raw = readFileSync(taskStatePath);
+          const raw = readFileBounded(taskStatePath);
           bytesRead += raw.length;
           taskStateText = raw.toString("utf-8");
         } catch (exc) {
           parseWarnings.push(
-            workId + "/" + taskIdStr + ": STATE.md read error (" + exc + "); task state will be Unknown."
+            workId + "/" + deliveryId + "/" + taskIdStr + ": STATE.md read error (" + exc + "); task state will be Unknown."
           );
         }
       }
@@ -3205,8 +3489,8 @@ function _readWorkHierarchical(workDir, workId) {
       const pts = _parseTaskStateMd(taskStateText, taskIdStr);
       parseWarnings.push(...pts.parseWarnings);
 
-      // Read task SPEC.md for short_name and type
-      const taskSpecPath = join(taskDir, "SPEC.md");
+      // Read task DETAIL.md for short_name and type
+      const taskSpecPath = join(taskDir, "DETAIL.md");
       let shortName = null;
       let taskType = "";
       let taskSpecIsFile = false;
@@ -3214,7 +3498,7 @@ function _readWorkHierarchical(workDir, workId) {
 
       if (taskSpecIsFile) {
         try {
-          const raw = readFileSync(taskSpecPath);
+          const raw = readFileBounded(taskSpecPath);
           bytesRead += raw.length;
           const specText = raw.toString("utf-8");
           shortName = _parseTaskSpecShortName(specText);
@@ -3224,15 +3508,14 @@ function _readWorkHierarchical(workDir, workId) {
         }
       }
 
-      // Lane from PLAN.md wave-map (lite works typically have no PLAN.md;
-      // taskLaneMap is {} in that case -- lane stays null)
+      // Lane from PLAN.md wave-map
       const laneVal = taskLaneMap[taskIdStr.toLowerCase()];
       const lane = laneVal !== undefined ? laneVal : null;
 
       allTasks.push({
         task_id: taskIdStr,
         type: taskType,
-        wave: deliveryId,        // wave = delivery-001 for lite works
+        wave: deliveryId,        // wave = delivery-NNN in hierarchical works
         status: pts.state,
         review_grade: pts.review,
         elapsed: pts.elapsed,
@@ -3243,11 +3526,23 @@ function _readWorkHierarchical(workDir, workId) {
       });
     }
 
-    // Build the single DeliverableRef for the lite work's delivery.
-    // No delivery-level SPEC.md exists for lite works; use the work's own
-    // title (already resolved above from REQUIREMENTS.md/SPEC.md), falling
-    // back to the deliveryId if the work has no title.
-    const deliveryName = reqTitle ? reqTitle : deliveryId;
+    // Build DeliverableRef for this delivery
+    const deliverySpecPath = join(deliveryDir, "BLUEPRINT.md");
+    let deliveryName = deliveryId;
+    let deliverySpecIsFile = false;
+    try { deliverySpecIsFile = statSync(deliverySpecPath).isFile(); } catch (_) { deliverySpecIsFile = false; }
+
+    if (deliverySpecIsFile) {
+      try {
+        const raw = readFileBounded(deliverySpecPath);
+        bytesRead += raw.length;
+        const specText = raw.toString("utf-8");
+        const specName = _parseDeliverySpecTitle(specText);
+        if (specName) deliveryName = specName;
+      } catch (_) {
+        // pass
+      }
+    }
 
     allDeliverables.push({
       number: deliveryNumber,
@@ -3258,9 +3553,6 @@ function _readWorkHierarchical(workDir, workId) {
   }
 
   // Work-level pending_inputs: union of work-level Q&A + per-delivery Q&A
-  // (work-level Q&A is already in pw.pendingInputs from parseStateText; for
-  // lite works this IS the single delivery's Q&A, so allPendingInputs stays
-  // empty in that branch -- see the lite-flat comment above)
   const unionPendingInputs = [...pw.pendingInputs, ...allPendingInputs];
 
   const workModel = _buildWorkModel({
@@ -3811,6 +4103,13 @@ function parseQuickCheckFindings(stateText, taskId, parseWarnings) {
 
 // DR-3: parse ## Delivery Gates -> ### delivery-NNN for grade/tier/timestamp
 // Twin of parse_delivery_gate in parsers.py (byte-parity minded)
+//
+// Fallback (flat/lite works): a shortcut-produced work promotes a SINGULAR
+// "## Delivery Gate" block into the work-root STATE.md instead of the derived
+// plural "## Delivery Gates" -> "### delivery-NNN" rollup. When no plural
+// section is present at all, the singular block -- if any -- is read as
+// delivery-001's gate. Additive: never fires when a plural section exists, so
+// full/hierarchical works are unaffected.
 function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
   let grade = null;
   let reviewerTier = null;
@@ -3818,6 +4117,7 @@ function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
 
   let inGates = false;
   let inDeliveryBlock = false;
+  let foundGatesSection = false;
   const deliveryIdLower = deliveryId.toLowerCase();
 
   try {
@@ -3825,6 +4125,7 @@ function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
       if (RE_DELIVERY_GATES_SECTION.test(line)) {
         inGates = true;
         inDeliveryBlock = false;
+        foundGatesSection = true;
         continue;
       }
       if (inGates) {
@@ -3864,6 +4165,44 @@ function parseDeliveryGate(stateText, deliveryId, parseWarnings) {
         }
       }
     }
+
+    // Fallback: no plural ## Delivery Gates section anywhere in the text --
+    // try the singular ## Delivery Gate block (flat/lite promoted layout),
+    // treated as delivery-001's gate.
+    if (!foundGatesSection && deliveryIdLower === "delivery-001") {
+      let inGate = false;
+      for (const line of stateText.split("\n")) {
+        if (RE_DELIVERY_GATE_SECTION.test(line)) {
+          inGate = true;
+          continue;
+        }
+        if (inGate) {
+          // Any ## section (not ###) ends the singular gate block
+          if (/^##\s+\S/.test(line) && !/^###/.test(line)) {
+            inGate = false;
+            continue;
+          }
+          const gm = line.match(RE_GATE_GRADE);
+          if (gm && grade === null) {
+            const raw = gm[1].trim();
+            grade = raw ? raw.split(/\s+/)[0] : null;
+            continue;
+          }
+          const rtm = line.match(RE_GATE_REVIEWER_TIER);
+          if (rtm && reviewerTier === null) {
+            const raw = rtm[1].trim();
+            reviewerTier = raw ? raw.split(/\s+/)[0] : null;
+            continue;
+          }
+          const tsm = line.match(RE_GATE_TIMESTAMP);
+          if (tsm && gateTimestamp === null) {
+            gateTimestamp = tsm[1].trim() || null;
+            continue;
+          }
+          if (grade && reviewerTier && gateTimestamp) break;
+        }
+      }
+    }
   } catch (exc) {
     parseWarnings.push(
       deliveryId + ": error parsing ## Delivery Gates (" + exc + "); " +
@@ -3883,7 +4222,7 @@ function parseDeferredIssues(issuesPath, taskId, parseWarnings) {
 
   let raw;
   try {
-    raw = readFileSync(issuesPath);
+    raw = readFileBounded(issuesPath);
   } catch (exc) {
     parseWarnings.push(
       taskId + ": could not read " + basename(issuesPath) + " (" + exc + "); " +
