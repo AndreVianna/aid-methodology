@@ -20,6 +20,8 @@ One manifest per profile, placed at the **deepest common parent** of the profile
 | `profiles/claude-code.toml` | `claude-code/emission-manifest.jsonl` |
 | `profiles/codex.toml` | `codex/emission-manifest.jsonl` |
 | `profiles/cursor.toml` | `cursor/emission-manifest.jsonl` |
+| `profiles/copilot-cli.toml` | `copilot-cli/emission-manifest.jsonl` |
+| `profiles/antigravity.toml` | `antigravity/emission-manifest.jsonl` |
 
 For Codex (unified layout: `profiles/codex/.codex/`), the manifest at
 `codex/emission-manifest.jsonl` covers the single output root. Record paths in the manifest

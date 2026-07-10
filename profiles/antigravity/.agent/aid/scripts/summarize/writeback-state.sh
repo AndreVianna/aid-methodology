@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# writeback-state.sh — append a new ## Summarization History entry to
+# writeback-state.sh -- append a new ## Summarization History entry to
 # the consolidated Discovery area state file (.aid/knowledge/STATE.md, per FR2).
 # Atomic via a sentinel lock file. Pre-FR2 this wrote to DISCOVERY-STATE.md.
 #

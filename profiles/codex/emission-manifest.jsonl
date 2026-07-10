@@ -56,7 +56,7 @@
 {"dst": ".codex/aid/scripts/summarize/validate-diagram-content.mjs", "profile": "codex", "sha256": "a64f5a35ea85687495b32bcd612f2cb3706095e22a8842c37600b5171fd1442b", "src": "canonical/scripts/summarize/validate-diagram-content.mjs"}
 {"dst": ".codex/aid/scripts/summarize/validate-html-output.sh", "profile": "codex", "sha256": "636b963e5860618acf2871bfdf4ed965f247bc90afebdafabcaec119df2a419c", "src": "canonical/scripts/summarize/validate-html-output.sh"}
 {"dst": ".codex/aid/scripts/summarize/validate-visuals.mjs", "profile": "codex", "sha256": "df5ece6ba050042aea104f9aa7bf244ca3106e5d2d1609aad45eaaf763928b78", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
-{"dst": ".codex/aid/scripts/summarize/writeback-state.sh", "profile": "codex", "sha256": "ac36f33a0a8bb791f625d528a9a31b683787be98b761d05f59a14ee71b5a281a", "src": "canonical/scripts/summarize/writeback-state.sh"}
+{"dst": ".codex/aid/scripts/summarize/writeback-state.sh", "profile": "codex", "sha256": "ea890cc813a919e3f9dc0b773ca76f5a2295d019285f2d589138fda53ffb1d64", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".codex/aid/templates/agent-boilerplate.md", "profile": "codex", "sha256": "325d43f1aad44e87faaebca645921c3377a21d4aabadd02f52c5f977c710f60f", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".codex/aid/templates/connectors/preset-catalog.md", "profile": "codex", "sha256": "eae787ae13701be8797df04b9a44e42f64f7dec6373ab46e8de29a9a12d5b090", "src": "canonical/templates/connectors/preset-catalog.md"}
 {"dst": ".codex/aid/templates/delivery-blueprint-template.md", "profile": "codex", "sha256": "ab1776254484d2534cc667ad6dfa44a5abd349238a6455f425e4e23930fd7a5c", "src": "canonical/templates/delivery-blueprint-template.md"}

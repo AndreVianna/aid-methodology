@@ -167,7 +167,7 @@ while IFS= read -r profile_file; do
     else
         pass "DBI-REV ${dst}"
     fi
-done < <(find "$PROFILE_CLAUDE" -type f | sort)
+done < <(find "$PROFILE_CLAUDE" -type f -not -path '*/node_modules/*' -not -path '*/.git/*' | sort)
 
 # ---------------------------------------------------------------------------
 # Direction 3 (repo-orphan sweep): every file under the repo-root dogfood
