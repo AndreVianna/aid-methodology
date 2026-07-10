@@ -33,12 +33,19 @@
 | task-003 | task-002 |
 | task-004 | task-003 |
 | task-005 | task-004 |
+| task-006 | — (none) |
+| task-007 | — (none) |
+| task-008 | — (none) |
 
 ### Can Be Done In Parallel
 
+<!-- The STATE-frontmatter chain (001→002→003→004→005) is strictly linear. The three folded-in
+     hygiene fixes (006 §6-refs, 007 KB-closure, 008 aid --version) are independent of it and of
+     each other — they can run in wave 1 alongside task-001. -->
+
 | Wave | Tasks |
 |------|-------|
-| 1 | task-001 |
+| 1 | task-001, task-006, task-007, task-008 |
 | 2 | task-002 |
 | 3 | task-003 |
 | 4 | task-004 |

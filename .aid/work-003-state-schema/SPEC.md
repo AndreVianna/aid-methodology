@@ -76,7 +76,9 @@ locations), `pipeline-contracts.md` (state writeback contract), `coding-standard
 > **Task list + execution graph** now live in the flattened-work siblings — the delivery's task
 > table and gate criteria are in `BLUEPRINT.md`, and the execution graph is in `PLAN.md`. Each
 > task's full definition is `tasks/task-NNN/DETAIL.md` (no per-task STATE.md; task cells live in
-> `STATE.md § ### Tasks lifecycle`).
+> `STATE.md § ### Tasks lifecycle`). Beyond this STATE-frontmatter feature, delivery-001 also
+> folds in 3 independent maintenance fixes (task-006 §6/section-6 refs, task-007 KB closure
+> hygiene, task-008 `aid --version`) — see `BLUEPRINT.md § Scope`.
 
 ## Revision History
 

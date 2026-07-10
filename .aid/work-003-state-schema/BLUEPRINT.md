@@ -33,8 +33,13 @@ eliminating the regex-fragility bug class without losing the readable ledger.
   emit/update frontmatter atomically without corrupting the markdown body.
 - Migration of every on-disk STATE.md file; re-vendor + `run_generator.py` propagation + CLI rebuild.
 
-**Out of scope:** the `§6`-dangling-ref template-ism, KB closure-hygiene, and `aid --version`
-(tracked separately as the hygiene batch); restructuring the human-narrative sections themselves.
+**Also folded into this delivery** (independent maintenance fixes, tasks 006–008):
+- Normalize the dangling `§6`/`section-6` quality-gate reference across the canonical templates (task-006).
+- Validate + root-cause KB concept-closure hygiene — no security-theater exclusion-padding (task-007).
+- Add a `--version` flag to the `aid` CLI, aliasing the existing `aid version` (task-008).
+
+**Out of scope:** restructuring the human-narrative sections themselves; the version bump to
+v2.1.0 (landed on master via PR #139, inherited here by pull — not a task).
 
 ## Gate Criteria
 
@@ -47,6 +52,9 @@ eliminating the regex-fragility bug class without losing the readable ledger.
 - [ ] Every on-disk STATE file (live-enumerated via `find .aid -name STATE.md`) migrated and read correctly; narrative sections remain human-readable markdown.
 - [ ] Reader re-vendored into `packages/pypi` + `packages/npm`; canonical template/writer/skill changes rendered to all profiles + dogfood via `run_generator.py`; `test-dogfood-byte-identity.sh` passes.
 - [ ] Reader fixtures (`pt1h-kb-approved`, `test_task064/066`) migrated in the same change; new + existing tests pass; git-fed fields routed through v2.1.0's hardened helpers.
+- [ ] The `§6`/`section-6` quality-gate reference is normalized to a non-dangling form across the canonical templates + skill refs; regenerated; `test-dogfood-byte-identity.sh` passes (task-006).
+- [ ] KB concept-closure is validated at HEAD and either root-caused or documented Not Applicable with evidence — no blind `term_exclusions` padding (task-007).
+- [ ] `aid --version` prints the CLI version on both `bin/aid` and `bin/aid.ps1`, aliasing `aid version`, and is documented in `aid -h` (task-008).
 - [ ] All tasks in delivery-001 are Done or Canceled.
 - [ ] All applicable quality gates pass (per `.aid/settings.yml`).
 
@@ -59,6 +67,9 @@ eliminating the regex-fragility bug class without losing the readable ledger.
 | task-003 | CONFIGURE | Ship the new reader to the installed CLI (vendor + resync + pipx) |
 | task-004 | REFACTOR | Emit/update frontmatter in the STATE writers |
 | task-005 | MIGRATE | Migrate on-disk STATE files + verify the real bug is fixed |
+| task-006 | REFACTOR | Normalize the quality-gate standing-line reference across canonical templates |
+| task-007 | REFACTOR | Validate + remediate KB concept-closure hygiene |
+| task-008 | IMPLEMENT | Add a `--version` flag to the aid CLI |
 
 ## Dependencies
 

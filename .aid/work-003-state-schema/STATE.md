@@ -39,8 +39,8 @@ SPEC.md + BLUEPRINT.md.)
 - **Lifecycle:** Paused-Awaiting-Input
 - **Phase:** Detail
 - **Active Skill:** none
-- **Updated:** 2026-07-10T15:32:21Z
-- **Pause Reason:** Definition complete (5 tasks defined) + reconciled to flattened conventions after the 70895e8b merge; delivery gate A+; awaiting /aid-execute work-003-state-schema task-001
+- **Updated:** 2026-07-10T16:40:15Z
+- **Pause Reason:** Definition complete (8 tasks: 5 STATE-frontmatter + 3 folded-in maintenance) at the v2.1.0 base; delivery gate A+; awaiting /aid-execute work-003-state-schema task-001
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -66,6 +66,8 @@ SPEC.md + BLUEPRINT.md.)
 | 2026-07-09 | Pre-execution gate (old lite LITE-REVIEW) | A+ | Task set graded A+ (D+ → fixed 1H+2M+2L → A+) against the pre-merge codebase |
 | 2026-07-10 | Reconciled to flattened Lite-work conventions | -- | After 70895e8b master merge deleted the old lite path + rewrote the reader twins; re-validated plan vs new reader (bug still reproduces; frontmatter+SourceMode still fits), migrated scaffold: tasks/*/SPEC→DETAIL, dropped per-task STATE, created PLAN.md + BLUEPRINT.md, reshaped STATE.md; folded 4 reader-plan updates into DETAILs |
 | 2026-07-10 | Flattened gate review — Grade: A+ | A+ | 2-pass gate (doc consistency + task↔gate-criteria) clean on load-bearing invariants; 2 LOW + 2 MINOR fixed (uniform BLUEPRINT trace anchor, task-003→CONFIGURE, stale REQUIREMENTS mention, pause-reason wording); re-gated A+; reader-parse verified |
+| 2026-07-10 | Folded in 3 hygiene fixes + pulled v2.1.0 | -- | Added task-006 (§6/section-6 refs) / task-007 (KB closure hygiene) / task-008 (aid --version) per user; merged master v2.1.0 (PR #139) into branch (VERSION+packages=2.1.0) |
+| 2026-07-10 | 8-task re-gate — Grade: A+ | A+ | Expanded set re-gated: 1 MED + 3 LOW + 1 MINOR fixed — task-006 re-scoped validate-first/surgical (the "section-6 quality gates" ref is a real concept in authored-visual-catalog, not uniformly dangling); task-007 canonical-edit + re-render discipline; task-008 --version collision (vs existing `--version <v>` pin) + VERSION-file path; STATE pause-reason → 8 tasks; uniform trace annotations; re-gated A+ |
 
 ---
 
@@ -86,7 +88,7 @@ SPEC.md + BLUEPRINT.md.)
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
 - **State:** Specified
-- **Updated:** 2026-07-10T15:32:21Z
+- **Updated:** 2026-07-10T16:40:15Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -103,6 +105,9 @@ SPEC.md + BLUEPRINT.md.)
 | task-003 | Pending | -- | -- | -- |
 | task-004 | Pending | -- | -- | -- |
 | task-005 | Pending | -- | -- | -- |
+| task-006 | Pending | -- | -- | -- |
+| task-007 | Pending | -- | -- | -- |
+| task-008 | Pending | -- | -- | -- |
 
 ---
 
@@ -115,7 +120,7 @@ SPEC.md + BLUEPRINT.md.)
 - **Reviewer Tier:** Small
 - **Grade:** A+
 - **Issue List:** none
-- **Timestamp:** 2026-07-10T15:32:21Z
+- **Timestamp:** 2026-07-10T16:40:15Z
 
 ---
 
