@@ -156,7 +156,7 @@ function waitForPort(port, maxMs) {
   });
 }
 
-function makeRequest(port, path, method) {
+function makeRequest(port, path, method, headers) {
   return new Promise((resolve, reject) => {
     const options = {
       hostname: "127.0.0.1",
@@ -164,6 +164,7 @@ function makeRequest(port, path, method) {
       path: path,
       method: method || "GET",
     };
+    if (headers) options.headers = headers;
     const req = http.request(options, (res) => {
       let bodyBuf = Buffer.alloc(0);
       res.on("data", (chunk) => { bodyBuf = Buffer.concat([bodyBuf, chunk]); });
@@ -271,6 +272,73 @@ for (const lib of LLM_IMPORTS) {
     !readerSrc.includes('"' + lib) && !readerSrc.includes("'" + lib),
     "reader.mjs: no import of " + lib
   );
+}
+
+// ---------------------------------------------------------------------------
+// (12) SEC-6: anti-DNS-rebinding Host-header allowlist -- pure unit test
+// (kept in lockstep with server.mjs's isAllowedHost; server.mjs self-executes
+// on import (parses argv, binds a socket) so its own function is not
+// importable here -- mirrored verbatim instead, same convention as the
+// repoIdFull() helper above.)
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[12] SEC-6: Host-header allowlist (unit test of isAllowedHost)\n");
+
+function isAllowedHost(hostHeader, port) {
+  if (!hostHeader) return true;
+  const h = hostHeader.trim();
+  if (h === "") return true;
+  const hLower = h.toLowerCase();
+
+  if (hLower === "127.0.0.1" || hLower === "localhost" ||
+      hLower === "::1" || hLower === "[::1]") {
+    return true;
+  }
+
+  let hostPart;
+  let portPart;
+  if (h[0] === "[") {
+    const closeIdx = h.indexOf("]");
+    if (closeIdx === -1) return false;
+    hostPart = h.slice(0, closeIdx + 1).toLowerCase();
+    const rest = h.slice(closeIdx + 1);
+    portPart = rest.startsWith(":") ? rest.slice(1) : null;
+  } else {
+    const colonIdx = h.lastIndexOf(":");
+    if (colonIdx === -1 || !/^[0-9]+$/.test(h.slice(colonIdx + 1))) return false;
+    hostPart = h.slice(0, colonIdx).toLowerCase();
+    portPart = h.slice(colonIdx + 1);
+  }
+
+  const ALLOWED_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+  if (!ALLOWED_HOSTS.has(hostPart)) return false;
+  return portPart !== null && Number(portPart) === port;
+}
+
+{
+  const PORT = 8787;
+  // Accept: allowlisted host, with and without the matching port.
+  assert(isAllowedHost("127.0.0.1:8787", PORT), "12.1: 127.0.0.1:<port> -> allowed");
+  assert(isAllowedHost("localhost:8787", PORT), "12.2: localhost:<port> -> allowed");
+  assert(isAllowedHost("[::1]:8787", PORT), "12.3: [::1]:<port> -> allowed");
+  assert(isAllowedHost("127.0.0.1", PORT), "12.4: bare 127.0.0.1 (no port) -> allowed");
+  assert(isAllowedHost("localhost", PORT), "12.5: bare localhost (no port) -> allowed");
+  assert(isAllowedHost("::1", PORT), "12.6: bare ::1 (no port, unbracketed) -> allowed");
+  assert(isAllowedHost("[::1]", PORT), "12.7: bare [::1] (no port, bracketed) -> allowed");
+  assert(isAllowedHost("LOCALHOST:8787", PORT), "12.8: case-insensitive host match -> allowed");
+  assert(isAllowedHost(undefined, PORT), "12.9: missing Host header -> allowed (back-compat)");
+  assert(isAllowedHost("", PORT), "12.10: empty Host header -> allowed (back-compat)");
+
+  // Reject: foreign host names (the DNS-rebinding attack shape).
+  assert(!isAllowedHost("evil.example.com", PORT), "12.11: foreign host (no port) -> rejected");
+  assert(!isAllowedHost("evil.example.com:8787", PORT),
+    "12.12: foreign host with matching port -> rejected");
+  assert(!isAllowedHost("127.0.0.1.evil.example.com:8787", PORT),
+    "12.13: subdomain-suffix trick on loopback -> rejected");
+  // Reject: allowlisted host name but WRONG port (rebind to a different local
+  // service listening on another port would still be a cross-origin read).
+  assert(!isAllowedHost("127.0.0.1:9999", PORT), "12.14: allowlisted host, wrong port -> rejected");
+  assert(!isAllowedHost("localhost:1", PORT), "12.15: allowlisted host, wrong port -> rejected");
 }
 
 // ---------------------------------------------------------------------------
@@ -833,6 +901,57 @@ async function runLiveTests() {
       assert(r1.status === 405, "HEAD / -> 405 (got " + r1.status + ")");
       const r2 = await makeRequest(port, "/r/deadbeef0/home.html", "HEAD");
       assert(r2.status === 405, "HEAD /r/<id>/home.html -> 405 (got " + r2.status + ")");
+    }
+
+    // -----------------------------------------------------------------------
+    // (2b) SEC-6: anti-DNS-rebinding Host-header allowlist (live server)
+    // -----------------------------------------------------------------------
+
+    process.stdout.write("\n[2b] SEC-6: Host-header allowlist (live)\n");
+
+    // Allowlisted loopback Host -> normal response (not rejected).
+    {
+      const r = await makeRequest(port, "/api/home", "GET", { Host: "127.0.0.1:" + port });
+      assert(r.status === 200, "Host 127.0.0.1:<port> -> 200 (got " + r.status + ")");
+    }
+    {
+      const r = await makeRequest(port, "/api/home", "GET", { Host: "localhost:" + port });
+      assert(r.status === 200, "Host localhost:<port> -> 200 (got " + r.status + ")");
+    }
+    // No Host header override (Node's default, hostname:port) -- baseline sanity.
+    {
+      const r = await makeRequest(port, "/api/home", "GET");
+      assert(r.status === 200, "default Host header (no override) -> 200 (got " + r.status + ")");
+    }
+
+    // Foreign Host -> 403 (the DNS-rebinding attack shape: a page served from
+    // evil.example.com whose DNS has been rebound to 127.0.0.1 for the 2nd request).
+    {
+      const r = await makeRequest(port, "/api/home", "GET", { Host: "evil.example.com" });
+      assert(r.status === 403, "Host evil.example.com -> 403 (got " + r.status + ")");
+    }
+    {
+      const r = await makeRequest(port, "/", "GET", { Host: "evil.example.com:" + port });
+      assert(r.status === 403, "Host evil.example.com:<port> on GET / -> 403 (got " + r.status + ")");
+    }
+    // Allowlisted host name but the WRONG port -- still a cross-origin read risk -> 403.
+    {
+      const r = await makeRequest(port, "/api/home", "GET", { Host: "127.0.0.1:1" });
+      assert(r.status === 403, "Host 127.0.0.1:<wrong-port> -> 403 (got " + r.status + ")");
+    }
+
+    // Security response headers present on both an accepted and a rejected response.
+    {
+      const rOk = await makeRequest(port, "/api/home", "GET", { Host: "127.0.0.1:" + port });
+      assert(rOk.headers["x-content-type-options"] === "nosniff",
+        "200 response has X-Content-Type-Options: nosniff");
+      assert(!!rOk.headers["content-security-policy"],
+        "200 response has a Content-Security-Policy header");
+      const rBad = await makeRequest(port, "/api/home", "GET", { Host: "evil.example.com" });
+      assert(rBad.headers["x-content-type-options"] === "nosniff",
+        "403 response has X-Content-Type-Options: nosniff");
+      assert(!!rBad.headers["content-security-policy"],
+        "403 response has a Content-Security-Policy header");
     }
 
     // -----------------------------------------------------------------------

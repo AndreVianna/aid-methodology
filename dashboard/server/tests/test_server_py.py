@@ -173,15 +173,17 @@ class _ServerThread:
         if self._thread:
             self._thread.join(timeout=5)
 
-    def get(self, path: str) -> tuple[int, bytes, dict]:
-        """Return (status_code, body_bytes, headers)."""
+    def get(self, path: str, headers: dict[str, str] | None = None) -> tuple[int, bytes, dict]:
+        """Return (status_code, body_bytes, headers). Optional 'headers' overrides/adds
+        request headers (e.g. {'Host': 'evil.example.com'} for the SEC-6 Host-allowlist
+        tests -- urllib honors a caller-supplied Host header verbatim)."""
         url = f"http://127.0.0.1:{self.port}{path}"
-        req = urllib.request.Request(url)
+        req = urllib.request.Request(url, headers=headers or {})
         try:
             with urllib.request.urlopen(req) as resp:
                 return resp.status, resp.read(), dict(resp.headers)
         except urllib.error.HTTPError as exc:
-            return exc.code, exc.read(), {}
+            return exc.code, exc.read(), dict(exc.headers or {})
 
     def post(self, path: str) -> tuple[int, bytes]:
         url = f"http://127.0.0.1:{self.port}{path}"
@@ -461,6 +463,129 @@ class TestRouteTable(unittest.TestCase):
         with _ServerThread(str(self._aid_home)) as srv:
             status, _ = srv.post(f"/r/{self._id_a}/api/model")
         self.assertEqual(status, 405)
+
+
+# ===========================================================================
+# (2b) SEC-6: anti-DNS-rebinding Host-header allowlist
+# ===========================================================================
+
+class TestSec6HostAllowlistUnit(unittest.TestCase):
+    """Pure unit test of _is_allowed_host (no server/port needed)."""
+
+    def setUp(self) -> None:
+        self._port = 8787
+
+    # Accept: allowlisted host, with and without the matching port.
+    def test_bare_ip_with_matching_port(self):
+        self.assertTrue(_server_module._is_allowed_host("127.0.0.1:8787", self._port))
+
+    def test_localhost_with_matching_port(self):
+        self.assertTrue(_server_module._is_allowed_host("localhost:8787", self._port))
+
+    def test_bracketed_ipv6_with_matching_port(self):
+        self.assertTrue(_server_module._is_allowed_host("[::1]:8787", self._port))
+
+    def test_bare_ip_no_port(self):
+        self.assertTrue(_server_module._is_allowed_host("127.0.0.1", self._port))
+
+    def test_bare_localhost_no_port(self):
+        self.assertTrue(_server_module._is_allowed_host("localhost", self._port))
+
+    def test_bare_ipv6_unbracketed_no_port(self):
+        self.assertTrue(_server_module._is_allowed_host("::1", self._port))
+
+    def test_bare_ipv6_bracketed_no_port(self):
+        self.assertTrue(_server_module._is_allowed_host("[::1]", self._port))
+
+    def test_case_insensitive_host_match(self):
+        self.assertTrue(_server_module._is_allowed_host("LOCALHOST:8787", self._port))
+
+    def test_missing_host_header_allowed(self):
+        """Back-compat: a missing Host header cannot be forged by a remote page
+        the way a forged Host VALUE can via DNS-rebinding (SEC-1 loopback-only bind)."""
+        self.assertTrue(_server_module._is_allowed_host(None, self._port))
+
+    def test_empty_host_header_allowed(self):
+        self.assertTrue(_server_module._is_allowed_host("", self._port))
+
+    # Reject: foreign host names (the DNS-rebinding attack shape).
+    def test_foreign_host_no_port_rejected(self):
+        self.assertFalse(_server_module._is_allowed_host("evil.example.com", self._port))
+
+    def test_foreign_host_matching_port_rejected(self):
+        self.assertFalse(_server_module._is_allowed_host("evil.example.com:8787", self._port))
+
+    def test_subdomain_suffix_trick_rejected(self):
+        self.assertFalse(
+            _server_module._is_allowed_host("127.0.0.1.evil.example.com:8787", self._port)
+        )
+
+    # Reject: allowlisted host name but the WRONG port (rebind to a different
+    # local service listening on another port is still a cross-origin read risk).
+    def test_allowlisted_host_wrong_port_rejected(self):
+        self.assertFalse(_server_module._is_allowed_host("127.0.0.1:9999", self._port))
+
+    def test_allowlisted_localhost_wrong_port_rejected(self):
+        self.assertFalse(_server_module._is_allowed_host("localhost:1", self._port))
+
+
+class TestSec6HostAllowlistLive(unittest.TestCase):
+    """Live-server accept/reject matrix + security response headers."""
+
+    def setUp(self) -> None:
+        self._base = Path(tempfile.mkdtemp())
+        self._aid_home = self._base / "aid_home"
+        _make_aid_home(self._aid_home)
+
+    def tearDown(self) -> None:
+        shutil.rmtree(str(self._base), ignore_errors=True)
+
+    def test_allowlisted_ip_host_200(self):
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, _ = srv.get("/api/home", headers={"Host": f"127.0.0.1:{srv.port}"})
+        self.assertEqual(status, 200)
+
+    def test_allowlisted_localhost_host_200(self):
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, _ = srv.get("/api/home", headers={"Host": f"localhost:{srv.port}"})
+        self.assertEqual(status, 200)
+
+    def test_default_host_header_200(self):
+        """Baseline sanity: urllib's own default Host header (127.0.0.1:<port>) passes."""
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, _ = srv.get("/api/home")
+        self.assertEqual(status, 200)
+
+    def test_foreign_host_403(self):
+        """The DNS-rebinding attack shape: a page served from evil.example.com whose
+        DNS has been rebound to 127.0.0.1 for the 2nd request."""
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, _ = srv.get("/api/home", headers={"Host": "evil.example.com"})
+        self.assertEqual(status, 403)
+
+    def test_foreign_host_with_port_403_on_root(self):
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, _ = srv.get("/", headers={"Host": f"evil.example.com:{srv.port}"})
+        self.assertEqual(status, 403)
+
+    def test_allowlisted_host_wrong_port_403(self):
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, _ = srv.get("/api/home", headers={"Host": "127.0.0.1:1"})
+        self.assertEqual(status, 403)
+
+    def test_security_headers_on_accepted_response(self):
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, headers = srv.get("/api/home", headers={"Host": f"127.0.0.1:{srv.port}"})
+        self.assertEqual(status, 200)
+        self.assertEqual(headers.get("X-Content-Type-Options"), "nosniff")
+        self.assertTrue(headers.get("Content-Security-Policy"))
+
+    def test_security_headers_on_rejected_response(self):
+        with _ServerThread(str(self._aid_home)) as srv:
+            status, _, headers = srv.get("/api/home", headers={"Host": "evil.example.com"})
+        self.assertEqual(status, 403)
+        self.assertEqual(headers.get("X-Content-Type-Options"), "nosniff")
+        self.assertTrue(headers.get("Content-Security-Policy"))
 
 
 # ===========================================================================

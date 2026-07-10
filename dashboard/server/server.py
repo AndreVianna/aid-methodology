@@ -18,6 +18,8 @@
 # No write/append/remove primitive anywhere (SEC-3).
 # No agent/LLM import anywhere (SEC-4).
 # CAN-1 site 3: stored path used verbatim (no realpath/resolve -- SEC-2/DD-5).
+# Host-header allowlist (anti-DNS-rebinding) + X-Content-Type-Options/CSP response
+#   headers on every response, enforced before routing (SEC-6).
 #
 # Invocation:
 #   python3 server.py --host 127.0.0.1 --port <n>
@@ -272,6 +274,70 @@ def _get_id_map(aid_home: str) -> tuple[dict[str, str], list[str]]:
 _R = re.compile(r"\A/r/([0-9a-f]{8,})/(home\.html|kb\.html|api/model)\Z")
 
 _LEAF_ALLOWLIST = frozenset({"home.html", "kb.html"})
+
+
+# ---------------------------------------------------------------------------
+# SEC-6: anti-DNS-rebinding Host-header allowlist + security response headers
+# (mirrors server.mjs -- keep the two in lockstep)
+# ---------------------------------------------------------------------------
+
+# Restrictive CSP for the fully self-contained dashboard: every page inlines
+# its own CSS/JS and never fetches an external origin (same-origin /api/*
+# polling only). 'unsafe-inline' is required because the shipped HTML has no
+# nonce/hash infrastructure for its inline <script>/<style> blocks; data: is
+# allowed for img-src/font-src for any future inlined asset -- there are none
+# today, so this does not widen the current attack surface.
+_CSP_HEADER = (
+    "default-src 'self'; script-src 'self' 'unsafe-inline'; "
+    "style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; "
+    "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+)
+
+_ALLOWED_HOST_LITERALS = frozenset({"127.0.0.1", "localhost", "[::1]"})
+_ALLOWED_BARE_HOSTS = frozenset({"127.0.0.1", "localhost", "::1", "[::1]"})
+
+
+def _is_allowed_host(host_header: str | None, port: int) -> bool:
+    """True iff host_header names THIS server's own loopback bind (127.0.0.1,
+    localhost, or ::1/[::1]), with or without an explicit port; when a port is
+    present it must match the server's actual listen port.
+
+    A MISSING/empty Host header is allowed -- conservative back-compat: the
+    server only ever binds loopback (SEC-1), so an absent header cannot be
+    forged by a remote page the way a forged Host VALUE can via DNS-rebinding
+    (a rebind attack needs a Host value that resolves attacker DNS -> 127.0.0.1;
+    it cannot make a browser omit Host entirely).
+    """
+    if not host_header:
+        return True
+    h = host_header.strip()
+    if h == "":
+        return True
+    h_lower = h.lower()
+
+    # Bare literal forms (no port) -- checked first so the colon-based
+    # host/port split below never has to special-case bracket-less IPv6.
+    if h_lower in _ALLOWED_BARE_HOSTS:
+        return True
+
+    if h[0] == "[":
+        # Bracketed IPv6 literal: [::1] or [::1]:<port>
+        close_idx = h.find("]")
+        if close_idx == -1:
+            return False
+        host_part = h[:close_idx + 1].lower()
+        rest = h[close_idx + 1:]
+        port_part = rest[1:] if rest.startswith(":") else None
+    else:
+        colon_idx = h.rfind(":")
+        if colon_idx == -1 or not h[colon_idx + 1:].isdigit():
+            return False
+        host_part = h[:colon_idx].lower()
+        port_part = h[colon_idx + 1:]
+
+    if host_part not in _ALLOWED_HOST_LITERALS:
+        return False
+    return port_part is not None and int(port_part) == port
 
 
 # ---------------------------------------------------------------------------
@@ -771,9 +837,36 @@ class _DashboardHandler(BaseHTTPRequestHandler):
     def log_error(self, fmt, *args):  # type: ignore[override]
         sys.stderr.write("server error: " + (fmt % args) + "\n")
 
+    # ---- SEC-6: security response headers on every response ---------------
+    # send_response() is the one call every response path makes (directly or
+    # via _send_plain()) before end_headers(), so overriding it here applies
+    # the headers uniformly without touching every route handler.
+
+    def send_response(self, code, message=None):  # type: ignore[override]
+        super().send_response(code, message)
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("Content-Security-Policy", _CSP_HEADER)
+
+    # ---- SEC-6: anti-DNS-rebinding Host-header allowlist -------------------
+
+    def _reject_bad_host(self) -> bool:
+        """Reject requests whose Host header does not name this server's own
+        loopback bind (SEC-6). Checked BEFORE any routing/method dispatch, on
+        every verb. Returns True if a 403 was already sent (caller must
+        return immediately) or False if the request may proceed.
+        """
+        host_header = self.headers.get("Host")
+        port: int = self.server.server_port  # type: ignore[attr-defined]
+        if not _is_allowed_host(host_header, port):
+            self._send_plain(403, b"403 Forbidden (untrusted Host header)")
+            return True
+        return False
+
     # ---- method dispatch ---------------------------------------------------
 
     def do_GET(self) -> None:  # noqa: N802
+        if self._reject_bad_host():
+            return
         # Split path and query string; route on path only (closed allowlist).
         # The raw query string is threaded to _serve_repo_model for ?detail= parsing (task-070).
         parts = self.path.split("?", 1)
@@ -782,6 +875,8 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         self._route_get(path, query_string)
 
     def do_HEAD(self) -> None:  # noqa: N802
+        if self._reject_bad_host():
+            return
         # HEAD is a non-GET verb -> 405 (SPEC route table: "non-GET verb -> 405",
         # NFR2 no write surface). Matches the Node server, which has no HEAD branch and
         # falls through to its non-GET 405 path (SEC-5 cross-runtime parity). The prior
@@ -790,15 +885,23 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         self._send_plain(405, b"Method Not Allowed")
 
     def do_POST(self) -> None:  # noqa: N802
+        if self._reject_bad_host():
+            return
         self._send_plain(405, b"Method Not Allowed")
 
     def do_PUT(self) -> None:  # noqa: N802
+        if self._reject_bad_host():
+            return
         self._send_plain(405, b"Method Not Allowed")
 
     def do_DELETE(self) -> None:  # noqa: N802
+        if self._reject_bad_host():
+            return
         self._send_plain(405, b"Method Not Allowed")
 
     def do_PATCH(self) -> None:  # noqa: N802
+        if self._reject_bad_host():
+            return
         self._send_plain(405, b"Method Not Allowed")
 
     # ---- router ------------------------------------------------------------

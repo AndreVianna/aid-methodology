@@ -56,10 +56,12 @@ from __future__ import annotations
 
 import re
 import subprocess
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+from .io_bounds import read_bytes_bounded
 from .models import DocFreshness, KbBaseline, KbStatus, Lifecycle, PendingInput, SourceMode, TaskModel, TaskStatus
 
 
@@ -104,6 +106,41 @@ _GIT_ALLOWED_VERBS = frozenset({"rev-parse", "symbolic-ref", "log", "merge-base"
 # Degradation timeout (seconds) -- bounded read, never blocks indefinitely
 _GIT_TIMEOUT_S = 2
 
+# ---------------------------------------------------------------------------
+# Security/perf hardening (v2.1.0, FIX-4 LOW): per-process freshness cache.
+#
+# derive_kb_status() spawns a blocking git subprocess on every /api/model poll.
+# This in-process cache bounds subprocess frequency for rapid successive polls
+# without permanently masking a branch that advances between polls: the cache
+# entry is keyed on (repo_root, branch, baseline tip_date, .aid/knowledge/ mtime)
+# AND bounded by a short TTL, so a poll more than _FRESHNESS_CACHE_TTL_S old
+# always re-checks git (staleness is bounded to a few seconds, never permanent).
+#
+# A cache keyed on .aid/knowledge/ mtime ALONE would be unsound here: the
+# "outdated" verdict tracks the default branch advancing, which has nothing to
+# do with .aid/knowledge/'s mtime (that is exactly the scenario FF-A2 exists to
+# detect -- work commits land elsewhere in the repo while the KB folder is
+# untouched). The TTL is the correctness bound; the mtime key is a bonus
+# early-invalidation signal for the case where the KB folder itself changes.
+#
+# Per-process only (module-level dict); a fresh process (e.g. a new test run,
+# or the Node twin's separate process) always starts with an empty cache, so
+# this has no effect on the Python<->Node parity contract (first call in either
+# runtime is always a cache miss and computes the same fresh result).
+# ---------------------------------------------------------------------------
+_FRESHNESS_CACHE: dict[tuple, tuple[str, float]] = {}
+_FRESHNESS_CACHE_TTL_S = 5.0
+
+
+def _freshness_cache_key(repo_root: Path, kb_baseline: KbBaseline) -> tuple:
+    """Build the freshness cache key: (repo_root, branch, tip_date, kb_dir mtime)."""
+    kb_dir = repo_root / ".aid" / "knowledge"
+    try:
+        mtime_ns: Optional[int] = kb_dir.stat().st_mtime_ns
+    except OSError:
+        mtime_ns = None
+    return (str(Path(repo_root).resolve()), kb_baseline.branch, kb_baseline.tip_date, mtime_ns)
+
 
 def git_freshness_check(
     repo_root: Path,
@@ -119,29 +156,44 @@ def git_freshness_check(
     No file written.
 
     argv (identical to Node reader.mjs twin):
-        git -C <repo_root> log -1 --format=%cI <branch>
+        git -C <repo_root> log -1 --format=%cI --end-of-options <branch>
+
+    FIX-4 (LOW, v2.1.0): result is cached in-process for _FRESHNESS_CACHE_TTL_S
+    seconds, keyed on (repo_root, branch, baseline, kb_dir mtime) -- see the
+    cache block comment above for the correctness rationale.
     """
     # Degradation mode 6: kb_baseline absent
     if kb_baseline is None:
         return "skip"
 
+    cache_key = _freshness_cache_key(repo_root, kb_baseline)
+    now = time.monotonic()
+    cached = _FRESHNESS_CACHE.get(cache_key)
+    if cached is not None:
+        cached_result, cached_at = cached
+        if now - cached_at <= _FRESHNESS_CACHE_TTL_S:
+            return cached_result
+
     # Resolve branch: prefer baseline.branch, else origin/HEAD basename, else main/master
     branch = _resolve_git_branch(repo_root, kb_baseline)
     if branch is None:
-        return "skip"
+        result = "skip"
+    else:
+        # Run: git -C <root> log -1 --format=%cI --end-of-options <branch>
+        current_tip_str = _run_git_log(repo_root, branch)
+        if current_tip_str is None:
+            result = "skip"
+        else:
+            # UTC normalization before compare (R12, never raw string compare)
+            current_ms = _normalize_to_utc_ms(current_tip_str)
+            baseline_ms = _normalize_to_utc_ms(kb_baseline.tip_date or "")
+            if current_ms is None or baseline_ms is None:
+                result = "skip"
+            else:
+                result = "outdated" if current_ms > baseline_ms else "approved"
 
-    # Run: git -C <root> log -1 --format=%cI <branch>
-    current_tip_str = _run_git_log(repo_root, branch)
-    if current_tip_str is None:
-        return "skip"
-
-    # UTC normalization before compare (R12, never raw string compare)
-    current_ms = _normalize_to_utc_ms(current_tip_str)
-    baseline_ms = _normalize_to_utc_ms(kb_baseline.tip_date or "")
-    if current_ms is None or baseline_ms is None:
-        return "skip"
-
-    return "outdated" if current_ms > baseline_ms else "approved"
+    _FRESHNESS_CACHE[cache_key] = (result, now)
+    return result
 
 
 def _resolve_git_branch(repo_root: Path, kb_baseline: KbBaseline) -> Optional[str]:
@@ -189,14 +241,22 @@ def _resolve_git_branch(repo_root: Path, kb_baseline: KbBaseline) -> Optional[st
 
 
 def _run_git_log(repo_root: Path, branch: str) -> Optional[str]:
-    """Run: git -C <repo_root> log -1 --format=%cI <branch>
+    """Run: git -C <repo_root> log -1 --format=%cI --end-of-options <branch>
 
     Returns the raw ISO-8601 date string on success, None on every failure.
     Degradation modes: ENOENT (git absent), nonzero, empty, timeout.
+
+    SECURITY (HIGH, v2.1.0): branch is read verbatim from an untrusted repo's
+    .aid/settings.yml (kb_baseline.branch). Without --end-of-options, a value
+    like "--output=/path/to/file" is parsed as a git OPTION (not a revision),
+    letting an attacker create/truncate an arbitrary file. --end-of-options
+    (git 2.24+) forces every argument after it to be treated as a revision,
+    never an option, closing the injection.
     """
     try:
         result = subprocess.run(
-            ["git", "-C", str(repo_root), "log", "-1", "--format=%cI", branch],
+            ["git", "-C", str(repo_root), "log", "-1", "--format=%cI",
+             "--end-of-options", branch],
             capture_output=True,
             text=True,
             timeout=_GIT_TIMEOUT_S,
@@ -476,7 +536,7 @@ def _read_routing_fields(doc_path: Path) -> tuple[str, str]:
     Never raises.
     """
     try:
-        raw = doc_path.read_bytes()
+        raw = read_bytes_bounded(doc_path)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
         return "", ""
@@ -562,7 +622,7 @@ def _run_git_log_hash(repo_root: Path, pathspec: str) -> Optional[str]:
 
 
 def _run_merge_base_is_ancestor(repo_root: Path, c_src: str, baseline: str) -> str:
-    """Run: git -C <repo_root> merge-base --is-ancestor <c_src> <baseline>
+    """Run: git -C <repo_root> merge-base --is-ancestor --end-of-options <c_src> <baseline>
 
     Returns:
       "current"  -- exit 0 (c_src is ancestor of baseline; source unchanged since approval)
@@ -571,10 +631,16 @@ def _run_merge_base_is_ancestor(repo_root: Path, c_src: str, baseline: str) -> s
 
     Uses merge-base verb which is now in _GIT_ALLOWED_VERBS (task-042).
     Never raises; unexpected exit codes degrade to unknown (never a false suspect).
+
+    SECURITY (LOW, v2.1.0): baseline is frontmatter-derived (approved_at_commit:)
+    and c_src comes from a prior git-log lookup; neither is fully trusted input.
+    --end-of-options (git 2.24+) guards both trailing commit-ish arguments from
+    being parsed as options (same rationale as _run_git_log's --end-of-options).
     """
     try:
         result = subprocess.run(
-            ["git", "-C", str(repo_root), "merge-base", "--is-ancestor", c_src, baseline],
+            ["git", "-C", str(repo_root), "merge-base", "--is-ancestor",
+             "--end-of-options", c_src, baseline],
             capture_output=True,
             text=True,
             timeout=_GIT_TIMEOUT_S,

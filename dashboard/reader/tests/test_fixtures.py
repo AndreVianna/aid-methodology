@@ -1185,6 +1185,7 @@ _READER_MODULES = {
     "reader.py": _READER_DIR / "reader.py",
     "models.py": _READER_DIR / "models.py",
     "derivation.py": _READER_DIR / "derivation.py",
+    "io_bounds.py": _READER_DIR / "io_bounds.py",  # v2.1.0 security hardening (FIX-3)
 }
 
 #: Write-mode characters that must not appear in any open() call argument

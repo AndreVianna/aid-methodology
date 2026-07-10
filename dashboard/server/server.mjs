@@ -27,11 +27,13 @@
  *   other path               -> 404
  *   non-GET verb             -> 405
  *
- * Invariants (SEC-1..4):
+ * Invariants (SEC-1..4, SEC-6):
  *   - Binds literal 127.0.0.1 only (SEC-1); never 0.0.0.0/wildcard.
  *   - No fs write/appendFile/unlink primitives in this file (SEC-3).
  *   - No agent/LLM import (SEC-4).
  *   - CAN-1 site 4: stored path used verbatim -- no realpathSync/path.resolve on it (DD-5).
+ *   - Host-header allowlist (anti-DNS-rebinding) + X-Content-Type-Options/CSP response
+ *     headers on every response, enforced before routing (SEC-6).
  *
  * Serialization (DM-3):
  *   - Declared key order, compact, no trailing newline, no BOM, UTF-8.
@@ -294,6 +296,63 @@ function loadRegistry(regPath) {
 const R_ROUTE = /^\/r\/([0-9a-f]{8,})\/(home\.html|kb\.html|api\/model)$/;
 
 const LEAF_ALLOWLIST = new Set(["home.html", "kb.html"]);
+
+// ---------------------------------------------------------------------------
+// SEC-6: anti-DNS-rebinding Host-header allowlist + security response headers
+// ---------------------------------------------------------------------------
+
+// Restrictive CSP for the fully self-contained dashboard: every page inlines
+// its own CSS/JS and never fetches an external origin (same-origin /api/*
+// polling only). 'unsafe-inline' is required because the shipped HTML has no
+// nonce/hash infrastructure for its inline <script>/<style> blocks; data:
+// is allowed for img-src/font-src for any future inlined asset -- there are
+// none today, so this does not widen the current attack surface.
+const CSP_HEADER =
+  "default-src 'self'; script-src 'self' 'unsafe-inline'; " +
+  "style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; " +
+  "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
+
+// isAllowedHost: true iff the Host header names THIS server's own loopback
+// bind (127.0.0.1, localhost, or ::1/[::1]), with or without an explicit
+// port; when a port is present it must match the server's actual listen
+// port. A MISSING/empty Host header is allowed -- conservative back-compat:
+// the server only ever binds loopback (SEC-1), so an absent header cannot be
+// forged by a remote page the way a forged Host VALUE can via DNS-rebinding
+// (a rebind attack needs a Host value that resolves attacker DNS -> 127.0.0.1;
+// it cannot make a browser omit Host entirely).
+function isAllowedHost(hostHeader, port) {
+  if (!hostHeader) return true;
+  const h = hostHeader.trim();
+  if (h === "") return true;
+  const hLower = h.toLowerCase();
+
+  // Bare literal forms (no port) -- checked first so the colon-based
+  // host/port split below never has to special-case bracket-less IPv6.
+  if (hLower === "127.0.0.1" || hLower === "localhost" ||
+      hLower === "::1" || hLower === "[::1]") {
+    return true;
+  }
+
+  let hostPart;
+  let portPart;
+  if (h[0] === "[") {
+    // Bracketed IPv6 literal: [::1] or [::1]:<port>
+    const closeIdx = h.indexOf("]");
+    if (closeIdx === -1) return false;
+    hostPart = h.slice(0, closeIdx + 1).toLowerCase();
+    const rest = h.slice(closeIdx + 1);
+    portPart = rest.startsWith(":") ? rest.slice(1) : null;
+  } else {
+    const colonIdx = h.lastIndexOf(":");
+    if (colonIdx === -1 || !/^[0-9]+$/.test(h.slice(colonIdx + 1))) return false;
+    hostPart = h.slice(0, colonIdx).toLowerCase();
+    portPart = h.slice(colonIdx + 1);
+  }
+
+  const ALLOWED_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+  if (!ALLOWED_HOSTS.has(hostPart)) return false;
+  return portPart !== null && Number(portPart) === port;
+}
 
 // ---------------------------------------------------------------------------
 // /api/home builder (DM-2) -- best-effort, never throws (NFR10)
@@ -584,6 +643,28 @@ function serializeModelWithDetails(model, details) {
 // ---------------------------------------------------------------------------
 
 function handler(req, res) {
+  // SEC-6: security response headers on every response. Set via setHeader()
+  // (not writeHead()) BEFORE any routing so Node merges them into whichever
+  // writeHead() call the eventual route handler makes (headers passed to
+  // writeHead() take precedence over setHeader() but never unset it).
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Content-Security-Policy", CSP_HEADER);
+
+  // SEC-6: anti-DNS-rebinding Host-header allowlist -- rejected BEFORE any
+  // routing/method dispatch. The server binds 127.0.0.1 only (SEC-1), but
+  // without a Host check a malicious web page (fixed default port) could
+  // rebind DNS to 127.0.0.1 and read the whole API through the victim's
+  // browser. Applies to every verb, not just GET.
+  if (!isAllowedHost(req.headers.host, PORT)) {
+    const body = "403 Forbidden (untrusted Host header)\n";
+    res.writeHead(403, {
+      "Content-Type": "text/plain; charset=utf-8",
+      "Content-Length": Buffer.byteLength(body),
+    });
+    res.end(body);
+    return;
+  }
+
   const method = req.method || "GET";
   // Split path and query string; route on path only (closed allowlist).
   // The raw query string is threaded to serveRepoModel for ?detail= parsing (task-070).

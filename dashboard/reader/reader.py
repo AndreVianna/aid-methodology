@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Optional, Union
 
 from .derivation import derive_doc_freshness, derive_kb_status
+from .io_bounds import read_bytes_bounded
 from .locator import enumerate_worktree_roots, locate_aid_root
 from .models import (
     DeferredIssue,
@@ -691,7 +692,7 @@ def _read_work(
         return _minimal_work_model(work_id, parse_warnings), parse_warnings, 0, "", state_label
 
     try:
-        raw = state_path.read_bytes()
+        raw = read_bytes_bounded(state_path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError as exc:
@@ -922,7 +923,7 @@ def _read_work_flat(
         work_text = ""
     else:
         try:
-            raw = state_path.read_bytes()
+            raw = read_bytes_bounded(state_path)
             bytes_read += len(raw)
             work_text = raw.decode("utf-8", errors="replace")
         except OSError as exc:
@@ -1006,7 +1007,7 @@ def _read_work_flat(
         task_type: str = ""
         if task_detail_path.is_file():
             try:
-                raw = task_detail_path.read_bytes()
+                raw = read_bytes_bounded(task_detail_path)
                 bytes_read += len(raw)
                 detail_text = raw.decode("utf-8", errors="replace")
                 short_name = _parse_task_spec_short_name(detail_text)
@@ -1039,7 +1040,7 @@ def _read_work_flat(
     delivery_name = "delivery-001"
     if blueprint_path.is_file():
         try:
-            raw = blueprint_path.read_bytes()
+            raw = read_bytes_bounded(blueprint_path)
             bytes_read += len(raw)
             bp_text = raw.decode("utf-8", errors="replace")
             bp_name = _parse_delivery_spec_title(bp_text)
@@ -1121,7 +1122,7 @@ def _read_work_hierarchical(
         work_text = ""
     else:
         try:
-            raw = state_path.read_bytes()
+            raw = read_bytes_bounded(state_path)
             bytes_read += len(raw)
             work_text = raw.decode("utf-8", errors="replace")
         except OSError as exc:
@@ -1198,7 +1199,7 @@ def _read_work_hierarchical(
         delivery_state_text = ""
         if delivery_state_path.is_file():
             try:
-                raw = delivery_state_path.read_bytes()
+                raw = read_bytes_bounded(delivery_state_path)
                 bytes_read += len(raw)
                 delivery_state_text = raw.decode("utf-8", errors="replace")
             except OSError as exc:
@@ -1241,7 +1242,7 @@ def _read_work_hierarchical(
             task_state_text = ""
             if task_state_path.is_file():
                 try:
-                    raw = task_state_path.read_bytes()
+                    raw = read_bytes_bounded(task_state_path)
                     bytes_read += len(raw)
                     task_state_text = raw.decode("utf-8", errors="replace")
                 except OSError as exc:
@@ -1259,7 +1260,7 @@ def _read_work_hierarchical(
             task_type: str = ""
             if task_spec_path.is_file():
                 try:
-                    raw = task_spec_path.read_bytes()
+                    raw = read_bytes_bounded(task_spec_path)
                     bytes_read += len(raw)
                     spec_text = raw.decode("utf-8", errors="replace")
                     short_name = _parse_task_spec_short_name(spec_text)
@@ -1289,7 +1290,7 @@ def _read_work_hierarchical(
         delivery_name = delivery_id
         if delivery_spec_path.is_file():
             try:
-                raw = delivery_spec_path.read_bytes()
+                raw = read_bytes_bounded(delivery_spec_path)
                 bytes_read += len(raw)
                 spec_text = raw.decode("utf-8", errors="replace")
                 spec_name = _parse_delivery_spec_title(spec_text)

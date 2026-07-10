@@ -17,7 +17,7 @@
 {"dst": ".codex/aid/scripts/connectors/connector-secret.sh", "profile": "codex", "sha256": "e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a", "src": "canonical/scripts/connectors/connector-secret.sh"}
 {"dst": ".codex/aid/scripts/execute/complexity-score.sh", "profile": "codex", "sha256": "c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".codex/aid/scripts/execute/compute-block-radius.sh", "profile": "codex", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "bf4ef534c77dba42129f6f02bad8c8fbb3e5b253ac4c267de726d07edc8d14be", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "ec741e5aed793591fa07d361c7754bac10f033904fccdcedc539fa992052014a", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".codex/aid/scripts/grade.sh", "profile": "codex", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".codex/aid/scripts/housekeep/branch-commit.sh", "profile": "codex", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".codex/aid/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "db267e0a09c065b14aa245dd58f5c4094a6c077be567a5ba323fd72e4279d4e1", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
@@ -32,7 +32,7 @@
 {"dst": ".codex/aid/scripts/kb/kb-actback-task.sh", "profile": "codex", "sha256": "63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5", "src": "canonical/scripts/kb/kb-actback-task.sh"}
 {"dst": ".codex/aid/scripts/kb/kb-citation-lint.sh", "profile": "codex", "sha256": "98e427f0b769c374ec008c242167ba07a3bec61fae081de447062b48285efa4f", "src": "canonical/scripts/kb/kb-citation-lint.sh"}
 {"dst": ".codex/aid/scripts/kb/kb-dual-intent-probes.sh", "profile": "codex", "sha256": "546c21baf89cda6f84de44f6f727bcafd9cb6d438a36c6f0495e0f48697bc6c0", "src": "canonical/scripts/kb/kb-dual-intent-probes.sh"}
-{"dst": ".codex/aid/scripts/kb/kb-freshness-check.sh", "profile": "codex", "sha256": "5a9d4f22df3767ba4347c3edfdb4a1873863e2331c487f759ac2551f8af6b5cd", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
+{"dst": ".codex/aid/scripts/kb/kb-freshness-check.sh", "profile": "codex", "sha256": "f9adcc7c6dc14648df4a13c1b51a497896779f21aa7ce73929b1f6891f5331de", "src": "canonical/scripts/kb/kb-freshness-check.sh"}
 {"dst": ".codex/aid/scripts/kb/kb-teachback-questions.sh", "profile": "codex", "sha256": "3c23e5a272320b0f75a52667b4526f5166555ddd207c43b8fc4416e51537ad3e", "src": "canonical/scripts/kb/kb-teachback-questions.sh"}
 {"dst": ".codex/aid/scripts/kb/lint-frontmatter.sh", "profile": "codex", "sha256": "defef4aa83dab1da773850358fce0340ef461db86511ad4230c1e1a19100341d", "src": "canonical/scripts/kb/lint-frontmatter.sh"}
 {"dst": ".codex/aid/scripts/kb/recon-classify.sh", "profile": "codex", "sha256": "73cf153c549fe7f7e56d199d408e002ef5929b87b0b181068608cb03b3c3090b", "src": "canonical/scripts/kb/recon-classify.sh"}

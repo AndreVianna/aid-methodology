@@ -265,7 +265,10 @@ check_source() {
     # other exit (128 = bad object, etc.) = unknown (never a false suspect)
     # Use || true to prevent set -e from aborting on non-zero exit.
     local rc=0
-    LC_ALL=C git -C "$REPO" merge-base --is-ancestor "$c_src" "$approval_commit" \
+    # --end-of-options guards against a commit-ish that looks like an option
+    # (e.g. "--upload-pack=...") -- approval_commit is read from untrusted KB
+    # frontmatter, so it must never be interpreted as a git option.
+    LC_ALL=C git -C "$REPO" merge-base --is-ancestor --end-of-options "$c_src" "$approval_commit" \
         2>/dev/null || rc=$?
     if [[ $rc -eq 0 ]]; then
         echo "current"

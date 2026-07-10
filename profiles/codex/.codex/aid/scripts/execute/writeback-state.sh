@@ -178,8 +178,10 @@ resolve_task_state_file() {
     fi
     resolve_work_dir
     local padded_d padded_t
-    padded_d=$(printf '%03d' "$delivery_id")
-    padded_t=$(printf '%03d' "$task_id")
+    # Force base-10 arithmetic before padding: a zero-padded id containing 8/9
+    # (e.g. "008", "090") would otherwise be parsed as an invalid octal literal.
+    padded_d=$(printf '%03d' "$((10#$delivery_id))")
+    padded_t=$(printf '%03d' "$((10#$task_id))")
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
         TASK_STATE_FILE="${DELIVERY_DIR_BASE}/tasks/task-${padded_t}/STATE.md"
     else
@@ -205,7 +207,8 @@ resolve_delivery_state_file() {
         return 0
     fi
     local padded_d
-    padded_d=$(printf '%03d' "$delivery_id")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_d=$(printf '%03d' "$((10#$delivery_id))")
     if [[ -n "$DELIVERY_DIR_BASE" ]]; then
         DELIVERY_STATE_FILE="${DELIVERY_DIR_BASE}/STATE.md"
     else
@@ -224,7 +227,8 @@ resolve_delivery_from_task_spec() {
     DELIVERY_ID_RESOLVED=""
     resolve_work_dir
     local padded_t
-    padded_t=$(printf '%03d' "$task_id")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_t=$(printf '%03d' "$((10#$task_id))")
 
     # Try legacy flat task spec first (tasks/task-NNN.md)
     local spec_file="${WORK_DIR}/tasks/task-${padded_t}.md"
@@ -552,7 +556,8 @@ mode_field() {
 
     mv "$tmp" "$TASK_STATE_FILE"
     local padded_t
-    padded_t=$(printf '%03d' "$TASK_ID")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_t=$(printf '%03d' "$((10#$TASK_ID))")
     echo "OK: $TASK_STATE_FILE updated -- task $padded_t field '$FIELD' set to '$FIELD_VALUE'"
 }
 
@@ -572,7 +577,8 @@ mode_field() {
 write_task_field_flat() {
     local field_raw="$1" field_lower="$2" new_val="$3" task_id="$4"
     local padded_t task_row_id col_idx
-    padded_t=$(printf '%03d' "$task_id")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_t=$(printf '%03d' "$((10#$task_id))")
     task_row_id="task-${padded_t}"
 
     case "$field_lower" in
@@ -715,7 +721,8 @@ write_task_field_flat() {
 # ---------------------------------------------------------------------------
 mode_findings() {
     local padded_id
-    padded_id=$(printf '%03d' "$TASK_ID")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_id=$(printf '%03d' "$((10#$TASK_ID))")
 
     resolve_delivery_for_task_mode
     resolve_task_state_file "$DELIVERY_ID" "$TASK_ID"
@@ -799,7 +806,8 @@ mode_findings() {
 # ---------------------------------------------------------------------------
 mode_delivery_lifecycle() {
     local padded_id
-    padded_id=$(printf '%03d' "$DELIVERY_ID")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
 
     # Enum validation (closed enum)
     case "$LIFECYCLE_VALUE" in
@@ -885,7 +893,8 @@ mode_delivery_lifecycle() {
 # ---------------------------------------------------------------------------
 mode_delivery_block() {
     local padded_id
-    padded_id=$(printf '%03d' "$DELIVERY_ID")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
 
     resolve_delivery_state_file "$DELIVERY_ID"
 
@@ -969,7 +978,8 @@ mode_delivery_block() {
 # ---------------------------------------------------------------------------
 mode_append_issue() {
     local padded_id
-    padded_id=$(printf '%03d' "$DELIVERY_ID")
+    # Force base-10 arithmetic before padding (see resolve_task_state_file above).
+    padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
     local issues_file="${DELIVERY_ISSUES_DIR}/delivery-${padded_id}-issues.md"
 
     # Use work-dir-based issues path when DELIVERY_ISSUES_DIR is default

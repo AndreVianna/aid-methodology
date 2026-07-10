@@ -18,6 +18,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
+from .io_bounds import read_bytes_bounded
 from .models import (
     DeliverableRef,
     DeferredIssue,
@@ -113,7 +114,7 @@ def parse_tool_info(
     # Try manifest JSON first.
     if manifest_path.is_file():
         try:
-            raw = manifest_path.read_bytes()
+            raw = read_bytes_bounded(manifest_path)
             bytes_read += len(raw)
             data = json.loads(raw.decode("utf-8", errors="replace"))
         except (OSError, json.JSONDecodeError, ValueError):
@@ -134,7 +135,7 @@ def parse_tool_info(
     # Fallback: .aid/.aid-version (plain string with the version)
     if version_path.is_file():
         try:
-            raw = version_path.read_bytes()
+            raw = read_bytes_bounded(version_path)
             bytes_read += len(raw)
             version_str = raw.decode("utf-8", errors="replace").strip()
         except OSError:
@@ -166,7 +167,7 @@ def parse_project_name(settings_path: Path) -> tuple[str, int]:
         return "", 0
 
     try:
-        raw = settings_path.read_bytes()
+        raw = read_bytes_bounded(settings_path)
     except OSError:
         return "", 0
 
@@ -245,7 +246,7 @@ def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]
         return None, 0
 
     try:
-        raw = settings_path.read_bytes()
+        raw = read_bytes_bounded(settings_path)
     except OSError:
         return None, 0
 
@@ -317,7 +318,7 @@ def parse_kb_state(
     state_path = kb_dir / "STATE.md"
     if state_path.is_file():
         try:
-            raw = state_path.read_bytes()
+            raw = read_bytes_bounded(state_path)
             bytes_read += len(raw)
             state_text = raw.decode("utf-8", errors="replace")
         except OSError:
@@ -328,7 +329,7 @@ def parse_kb_state(
     readme_path = kb_dir / "README.md"
     if readme_path.is_file():
         try:
-            raw = readme_path.read_bytes()
+            raw = read_bytes_bounded(readme_path)
             bytes_read += len(raw)
             readme_text = raw.decode("utf-8", errors="replace")
         except OSError:
@@ -454,7 +455,7 @@ def parse_doc_frontmatter(path: Path) -> tuple[Optional[str], list[str], bool]:
         return None, [], False
 
     try:
-        raw = path.read_bytes()
+        raw = read_bytes_bounded(path)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
         return None, [], False
@@ -565,7 +566,7 @@ def parse_requirements_md(path: Path) -> tuple[Optional[str], Optional[str], Opt
         return None, None, None, 0
 
     try:
-        raw = path.read_bytes()
+        raw = read_bytes_bounded(path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -645,7 +646,7 @@ def parse_spec_md(spec_path: Path) -> tuple[Optional[str], Optional[str], Option
         return None, None, None, 0
 
     try:
-        raw = spec_path.read_bytes()
+        raw = read_bytes_bounded(spec_path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -707,8 +708,8 @@ def parse_task_short_name(task_path: Path) -> tuple[Optional[str], int]:
         return None, 0
 
     try:
-        # Read up to 4096 bytes to cover long titles; first-line-bounded parse
-        raw = task_path.read_bytes()
+        # Bounded read (5 MB cap; see io_bounds.py) covers long titles fine
+        raw = read_bytes_bounded(task_path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -755,7 +756,7 @@ def parse_execution_graph(plan_path: Path) -> tuple[dict, int]:
         return {}, 0
 
     try:
-        raw = plan_path.read_bytes()
+        raw = read_bytes_bounded(plan_path)
         bytes_read = len(raw)
         text = raw.decode("utf-8", errors="replace")
     except OSError:
@@ -2299,7 +2300,7 @@ def parse_deferred_issues(
         return []
 
     try:
-        raw = issues_path.read_bytes()
+        raw = read_bytes_bounded(issues_path)
         text = raw.decode("utf-8", errors="replace")
     except OSError as exc:
         parse_warnings.append(

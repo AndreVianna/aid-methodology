@@ -35,6 +35,8 @@
 #   Unit 17: --pipeline ∥ --pipeline and --pipeline ∥ --field concurrency
 #   Unit 18: FR16 derivation primitives — on-disk block determinism
 #   Unit 19: M5 — pause/block signal sequences
+#   Unit 21: octal footgun regression — zero-padded ids containing 8/9 (008, 090)
+#            must resolve via base-10 (not be misparsed as invalid octal)
 #
 # Exit codes:
 #   0 — all tests passed
@@ -1489,6 +1491,111 @@ run_field 1 1 State "Done" || code=$?
 assert_exit_zero "$code" "20i: nested-path --field write still succeeds after flat-layout changes"
 assert_file_contains "${DELIVERY_001}/tasks/task-001/STATE.md" "Done" "20i: nested-path task-001 STATE.md still the write target"
 assert_file_not_contains "$FLAT_STATE" "task-001 | Done" "20i: nested-path write did not leak into the flat fixture"
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 21: octal footgun regression — zero-padded ids containing 8/9 ==="
+
+# A zero-padded id containing an 8 or 9 (e.g. "008", "090") is NOT a valid
+# octal literal. Before the fix, every `printf '%03d' "$id"` site in this
+# script fed the raw id straight to printf, which bash parses as an octal
+# number when it looks like one — "008"/"090" triggered a bash "invalid
+# octal number" error and printf substituted "000" on stdout (captured by
+# the surrounding `$(...)`), silently resolving to the WRONG path
+# (delivery-000/task-000) instead of erroring loudly. The fix wraps every
+# such id in `$((10#$id))` first to force base-10 arithmetic before padding.
+
+WORK_21="${TMPDIR_BASE}/work-octal21"
+DELIVERY_008="${WORK_21}/deliveries/delivery-008"
+DELIVERY_090="${WORK_21}/deliveries/delivery-090"
+
+make_work_state "$WORK_21"
+make_delivery_state "$WORK_21" 8
+make_task_state "$DELIVERY_008" 8
+make_task_spec  "$DELIVERY_008" 8 8 "work-octal21-test"
+make_delivery_state "$WORK_21" 90
+make_task_state "$DELIVERY_090" 9
+
+# 21a: --field with zero-padded --delivery-id/--task-id "008" resolves to
+# delivery-008/tasks/task-008 (NOT delivery-000/tasks/task-000).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "008" --task-id "008" --field State --value "Done" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21a: --delivery-id 008 --task-id 008 --field → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "**State:** Done" "21a: write landed in delivery-008/tasks/task-008/STATE.md"
+if [[ ! -e "${WORK_21}/deliveries/delivery-000" ]]; then
+    pass "21a: no delivery-000 directory was ever consulted (octal misparse would have targeted it)"
+else
+    fail "21a: delivery-000 exists — octal misparse regression"
+fi
+
+# 21b: --field with zero-padded --delivery-id "090" / --task-id "009" resolves
+# to delivery-090/tasks/task-009 (090 is invalid octal; 009 is invalid octal).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "090" --task-id "009" --field Notes --value "octal-ok" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21b: --delivery-id 090 --task-id 009 --field → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_090}/tasks/task-009/STATE.md" "octal-ok" "21b: write landed in delivery-090/tasks/task-009/STATE.md"
+
+# 21c: --delivery-id "090" --lifecycle targets delivery-090/STATE.md directly
+# (mode_delivery_lifecycle's own padded_id site).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "090" --lifecycle "Gated" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21c: --delivery-id 090 --lifecycle → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_090}/STATE.md" "**State:** Gated" "21c: lifecycle written to delivery-090/STATE.md"
+
+# 21d: --delivery-id "008" --block targets delivery-008/STATE.md directly
+# (mode_delivery_block's own padded_id site).
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "008" --block "**Grade:** A" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21d: --delivery-id 008 --block → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/STATE.md" "**Grade:** A" "21d: gate block written to delivery-008/STATE.md"
+
+# 21e: --delivery-id "009" --append-issue targets delivery-009-issues.md
+# (mode_append_issue's own padded_id site). AID_DELIVERY_ISSUES_DIR is
+# overridden per-call here -- it was exported globally to the ORIGINAL
+# $WORK_DIR near the top of this file (Unit 5), so without the override
+# this write would land in the wrong (original) work dir, not $WORK_21.
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" AID_DELIVERY_ISSUES_DIR="${WORK_21}" \
+    bash "$SCRIPT" --delivery-id "009" --append-issue "| task-009 | [LOW] | octal footgun regression row | Open |" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21e: --delivery-id 009 --append-issue → exit 0 (no octal parse error)"
+assert_file_contains "${WORK_21}/delivery-009-issues.md" "octal footgun regression row" "21e: issue row appended to delivery-009-issues.md"
+
+# 21f: omitting --delivery-id and resolving from the task's Source line
+# (resolve_delivery_from_task_spec's own padded_t site) for zero-padded
+# task-id "008".
+code=0
+AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --task-id "008" --field Review --value "B" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21f: Source-line resolution with task-id 008 → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "**Review:** B" "21f: Source-line-resolved write landed in delivery-008/tasks/task-008/STATE.md"
+
+# 21g: feature-001 flattened layout — write_task_field_flat's own padded_t
+# site for zero-padded task-id "008".
+FLAT_WORK_21="${TMPDIR_BASE}/work-flat-octal21"
+make_flat_work_state "$FLAT_WORK_21"
+make_flat_blueprint "$FLAT_WORK_21"
+make_flat_task_spec "$FLAT_WORK_21" 8
+code=0
+AID_STATE_FILE="${FLAT_WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id "008" --field State --value "In Progress" 2>/dev/null || code=$?
+assert_exit_zero "$code" "21g: flat layout --task-id 008 --field → exit 0 (no octal parse error)"
+assert_file_contains "${FLAT_WORK_21}/STATE.md" "| task-008 | In Progress |" "21g: flat layout row written for task-008 (not task-000)"
+
+# 21h: --findings with zero-padded --delivery-id/--task-id "008" targets
+# delivery-008/tasks/task-008/STATE.md (mode_findings' own padded_id site,
+# used only in its user-facing confirmation message).
+FINDINGS_OCTAL="**Reviewer Tier:** Small
+### Findings
+| # | Severity | Description | Status |
+|---|----------|-------------|--------|
+| 1 | [LOW] | octal footgun regression finding | Deferred-to-gate |"
+code=0
+err_out21h=$(AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "008" --task-id "008" --findings "$FINDINGS_OCTAL" 2>&1) || code=$?
+assert_exit_zero "$code" "21h: --delivery-id 008 --task-id 008 --findings → exit 0 (no octal parse error)"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "octal footgun regression finding" "21h: findings block written to delivery-008/tasks/task-008/STATE.md"
+if echo "$err_out21h" | grep -q "task-008"; then
+    pass "21h: confirmation message reports 'task-008' (padded_id resolved correctly, not 'task-000')"
+else
+    fail "21h: confirmation message did not report 'task-008' as expected — got: $err_out21h"
+fi
 
 # ---------------------------------------------------------------------------
 echo ""

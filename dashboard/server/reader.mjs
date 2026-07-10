@@ -4,7 +4,9 @@
  *
  * Exports readRepo(root) -> model object (same shape as Python RepoModel serialized).
  *
- * Read-only by construction: uses only fs.readFileSync / fs.readdirSync / fs.statSync.
+ * Read-only by construction: uses only fs.readFileSync / fs.readdirSync / fs.statSync,
+ * plus fs.openSync/readSync/closeSync opened read-only ("r") for the bounded-read
+ * helper (readFileBounded, v2.1.0 security hardening -- FIX-3).
  * No fs.write* / fs.appendFile / fs.unlink / fs.open for write anywhere in this file.
  * No agent/LLM import. No third-party deps. Node built-in modules only.
  *
@@ -12,9 +14,49 @@
  * UTF-8 payload content is emitted at runtime, not in source.
  */
 
-import { readFileSync, readdirSync, statSync, existsSync } from "fs";
+import { readFileSync, readdirSync, statSync, existsSync, openSync, readSync, closeSync } from "fs";
 import { resolve, join, basename } from "path";
 import { execFileSync } from "child_process";
+
+// ---------------------------------------------------------------------------
+// Security hardening (v2.1.0, FIX-3 MEDIUM): shared bounded-read helper.
+// Twin of dashboard/reader/io_bounds.py read_bytes_bounded() (byte-parity minded).
+//
+// Problem: the reader read every STATE.md / DETAIL.md / BLUEPRINT.md / PLAN.md /
+// delivery-NNN-issues.md / KB doc fully into memory with no size cap -- a very
+// large (or maliciously large) file at any of these well-known paths could
+// exhaust process memory (DoS) -- every reader read site called readFileSync()
+// directly with no bound.
+//
+// Fix: every content-read site routes through readFileBounded() instead of
+// readFileSync(). stat() first; size <= MAX_READ_BYTES -> full read (byte-
+// identical to readFileSync(path) for every real-world file -- existing
+// behavior and the Python<->Node parity contract are unchanged for the common
+// case); size > MAX_READ_BYTES -> bounded read of only the first
+// MAX_READ_BYTES bytes. The file is NEVER skipped -- the reader's line-
+// scanners tolerate a truncated tail (degrade gracefully, never throw, never
+// skip -- matches the reader's no-throw posture).
+// ---------------------------------------------------------------------------
+
+const MAX_READ_BYTES = 5 * 1024 * 1024; // 5 MB (matches Python io_bounds.MAX_READ_BYTES)
+
+function readFileBounded(path, maxBytes = MAX_READ_BYTES) {
+  // Byte-identical to readFileSync(path) when the file is <= maxBytes (the
+  // common case for every real repo file). For an oversized file, returns
+  // only the first maxBytes bytes (never skips the file).
+  const size = statSync(path).size;
+  if (size <= maxBytes) {
+    return readFileSync(path);
+  }
+  const fd = openSync(path, "r");
+  try {
+    const buf = Buffer.alloc(maxBytes);
+    const bytesRead = readSync(fd, buf, 0, maxBytes, 0);
+    return buf.subarray(0, bytesRead);
+  } finally {
+    closeSync(fd);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Enum literals (DM-6 -- mirrors models.py verbatim)
@@ -208,7 +250,7 @@ function parseToolInfo(manifestPath, versionPath) {
   if (existsSync(manifestPath)) {
     let raw;
     try {
-      raw = readFileSync(manifestPath);
+      raw = readFileBounded(manifestPath);
       bytesRead += raw.length;
     } catch (_) {
       return [
@@ -241,7 +283,7 @@ function parseToolInfo(manifestPath, versionPath) {
   if (existsSync(versionPath)) {
     let raw;
     try {
-      raw = readFileSync(versionPath);
+      raw = readFileBounded(versionPath);
       bytesRead += raw.length;
     } catch (_) {
       return [
@@ -293,7 +335,7 @@ function parseProjectName(settingsPath) {
   if (!existsSync(settingsPath)) return ["", 0];
   let raw;
   try {
-    raw = readFileSync(settingsPath);
+    raw = readFileBounded(settingsPath);
   } catch (_) {
     return ["", 0];
   }
@@ -337,7 +379,7 @@ function parseKbBaseline(settingsPath) {
   if (!existsSync(settingsPath)) return [null, 0];
   let raw;
   try {
-    raw = readFileSync(settingsPath);
+    raw = readFileBounded(settingsPath);
   } catch (_) {
     return [null, 0];
   }
@@ -453,7 +495,7 @@ function parseKbState(kbDir, dashboardDir) {
   if (existsSync(statePath)) {
     let raw;
     try {
-      raw = readFileSync(statePath);
+      raw = readFileBounded(statePath);
       bytesRead += raw.length;
       const stateText = raw.toString("utf-8");
       [summaryApproved, lastSummaryDate] = parseKbSummaryApproval(stateText);
@@ -466,7 +508,7 @@ function parseKbState(kbDir, dashboardDir) {
   if (existsSync(readmePath)) {
     let raw;
     try {
-      raw = readFileSync(readmePath);
+      raw = readFileBounded(readmePath);
       bytesRead += raw.length;
       const readmeText = raw.toString("utf-8");
       docCount = parseKbDocCount(readmeText);
@@ -572,10 +614,48 @@ function resolveGitBranch(repoRoot, kbBaseline) {
 }
 
 function runGitLog(repoRoot, branch) {
-  // Run: git -C <repoRoot> log -1 --format=%cI <branch>
+  // Run: git -C <repoRoot> log -1 --format=%cI --end-of-options <branch>
   // argv identical to Python twin (no shell).
   // Returns ISO-8601 date string or null on every failure.
-  return runGitCommand(["-C", repoRoot, "log", "-1", "--format=%cI", branch], null);
+  //
+  // SECURITY (HIGH, v2.1.0): branch is read verbatim from an untrusted repo's
+  // .aid/settings.yml (kb_baseline.branch). Without --end-of-options, a value
+  // like "--output=/path/to/file" is parsed as a git OPTION (not a revision),
+  // letting an attacker create/truncate an arbitrary file. --end-of-options
+  // (git 2.24+) forces every argument after it to be treated as a revision,
+  // never an option, closing the injection.
+  return runGitCommand(
+    ["-C", repoRoot, "log", "-1", "--format=%cI", "--end-of-options", branch],
+    null
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Security/perf hardening (v2.1.0, FIX-4 LOW): per-process freshness cache.
+// Twin of derivation.py's git_freshness_check in-process cache (same rationale
+// and TTL). See the Python module comment for the full correctness rationale:
+// a cache keyed on .aid/knowledge/ mtime ALONE would be unsound (the "outdated"
+// verdict tracks the default branch advancing, unrelated to kb_dir mtime), so
+// a short TTL bounds staleness while the mtime key gives early invalidation
+// when the KB folder itself changes.
+// ---------------------------------------------------------------------------
+const FRESHNESS_CACHE = new Map();
+const FRESHNESS_CACHE_TTL_MS = 5000; // 5s (matches Python _FRESHNESS_CACHE_TTL_S)
+
+function _freshnessCacheKey(repoRoot, kbBaseline) {
+  const kbDir = join(repoRoot, ".aid", "knowledge");
+  let mtimeMs = null;
+  try {
+    mtimeMs = statSync(kbDir).mtimeMs;
+  } catch (_) {
+    mtimeMs = null;
+  }
+  return [
+    resolve(repoRoot),
+    kbBaseline.branch || null,
+    kbBaseline.tip_date || null,
+    mtimeMs,
+  ].join("|");
 }
 
 function gitFreshnessCheck(repoRoot, kbBaseline) {
@@ -583,24 +663,45 @@ function gitFreshnessCheck(repoRoot, kbBaseline) {
   // Returns "approved" | "outdated" | "skip".
   // Every failure mode (DD-A2 7-mode degradation matrix) -> "skip" -> stay approved.
   // Twin of Python derivation.py git_freshness_check.
+  //
+  // FIX-4 (LOW, v2.1.0): result is cached in-process for FRESHNESS_CACHE_TTL_MS,
+  // keyed on (repoRoot, branch, baseline, kb_dir mtime).
 
   // Degradation mode 6: kb_baseline absent
   if (!kbBaseline) return "skip";
 
+  const cacheKey = _freshnessCacheKey(repoRoot, kbBaseline);
+  const now = Date.now();
+  const cached = FRESHNESS_CACHE.get(cacheKey);
+  if (cached && (now - cached.at) <= FRESHNESS_CACHE_TTL_MS) {
+    return cached.result;
+  }
+
   const branch = resolveGitBranch(repoRoot, kbBaseline);
-  if (branch === null) return "skip";
+  let result;
+  if (branch === null) {
+    result = "skip";
+  } else {
+    // Run: git -C <repoRoot> log -1 --format=%cI --end-of-options <branch> (via
+    // runGitLog; twin of Python git_freshness_check -> _run_git_log). Any
+    // failure -> null -> skip.
+    const currentTipStr = runGitLog(repoRoot, branch);
+    if (!currentTipStr) {
+      result = "skip";
+    } else {
+      // UTC normalization before compare (R12, never raw string compare)
+      const currentMs = normalizeToUtcMs(currentTipStr);
+      const baselineMs = normalizeToUtcMs(kbBaseline.tip_date || "");
+      if (currentMs === null || baselineMs === null) {
+        result = "skip";
+      } else {
+        result = currentMs > baselineMs ? "outdated" : "approved";
+      }
+    }
+  }
 
-  // Run: git -C <repoRoot> log -1 --format=%cI <branch> (via runGitLog; twin of
-  // Python git_freshness_check -> _run_git_log). Any failure -> null -> skip.
-  const currentTipStr = runGitLog(repoRoot, branch);
-  if (!currentTipStr) return "skip";
-
-  // UTC normalization before compare (R12, never raw string compare)
-  const currentMs = normalizeToUtcMs(currentTipStr);
-  const baselineMs = normalizeToUtcMs(kbBaseline.tip_date || "");
-  if (currentMs === null || baselineMs === null) return "skip";
-
-  return currentMs > baselineMs ? "outdated" : "approved";
+  FRESHNESS_CACHE.set(cacheKey, { result, at: now });
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -671,7 +772,7 @@ function parseDocFrontmatter(docPath) {
 
   let raw;
   try {
-    raw = readFileSync(docPath, "utf-8");
+    raw = readFileBounded(docPath).toString("utf-8");
   } catch (_) {
     return [null, [], false];
   }
@@ -760,7 +861,7 @@ function _readRoutingFields(docPath) {
 
   let raw;
   try {
-    raw = readFileSync(docPath, "utf-8");
+    raw = readFileBounded(docPath).toString("utf-8");
   } catch (_) {
     return ["", ""];
   }
@@ -803,10 +904,15 @@ function _runMergeBaseIsAncestor(repoRoot, cSrc, baseline) {
   // Returns "current" | "suspect" | "unknown".
   // execFileSync throws on non-zero exit; status 1 = NOT ancestor = suspect.
   // Any other error (128 bad object, ENOENT, timeout) = unknown.
+  //
+  // SECURITY (LOW, v2.1.0): baseline is frontmatter-derived (approved_at_commit:)
+  // and cSrc comes from a prior git-log lookup; neither is fully trusted input.
+  // --end-of-options (git 2.24+) guards both trailing commit-ish arguments from
+  // being parsed as options (same rationale as runGitLog's --end-of-options).
   try {
     execFileSync(
       "git",
-      ["-C", repoRoot, "merge-base", "--is-ancestor", cSrc, baseline],
+      ["-C", repoRoot, "merge-base", "--is-ancestor", "--end-of-options", cSrc, baseline],
       {
         timeout: GIT_TIMEOUT_MS,
         stdio: ["ignore", "pipe", "pipe"],
@@ -1264,7 +1370,7 @@ function parseRequirementsMd(reqPath) {
 
   let raw;
   try {
-    raw = readFileSync(reqPath);
+    raw = readFileBounded(reqPath);
   } catch (_) {
     return [null, null, null, 0];
   }
@@ -1343,7 +1449,7 @@ export function parseSpecMd(specPath) {
 
   let raw;
   try {
-    raw = readFileSync(specPath);
+    raw = readFileBounded(specPath);
   } catch (_) {
     return [null, null, null, 0];
   }
@@ -1405,7 +1511,7 @@ function parseTaskShortName(taskPath) {
 
   let raw;
   try {
-    raw = readFileSync(taskPath);
+    raw = readFileBounded(taskPath);
   } catch (_) {
     return [null, 0];
   }
@@ -1443,7 +1549,7 @@ function parseExecutionGraph(planPath) {
 
   let raw;
   try {
-    raw = readFileSync(planPath);
+    raw = readFileBounded(planPath);
   } catch (_) {
     return [{}, 0];
   }
@@ -2209,7 +2315,7 @@ function readWork(workDir, workId) {
   let text;
   let raw;
   try {
-    raw = readFileSync(statePath);
+    raw = readFileBounded(statePath);
     bytesRead = raw.length;
     text = raw.toString("utf-8");
   } catch (exc) {
@@ -3045,7 +3151,7 @@ function _readWorkFlat(workDir, workId) {
     );
   } else {
     try {
-      const raw = readFileSync(statePath);
+      const raw = readFileBounded(statePath);
       bytesRead += raw.length;
       workText = raw.toString("utf-8");
     } catch (exc) {
@@ -3138,7 +3244,7 @@ function _readWorkFlat(workDir, workId) {
 
     if (taskDetailIsFile) {
       try {
-        const raw = readFileSync(taskDetailPath);
+        const raw = readFileBounded(taskDetailPath);
         bytesRead += raw.length;
         const detailText = raw.toString("utf-8");
         shortName = _parseTaskSpecShortName(detailText);
@@ -3178,7 +3284,7 @@ function _readWorkFlat(workDir, workId) {
 
   if (blueprintIsFile) {
     try {
-      const raw = readFileSync(blueprintPath);
+      const raw = readFileBounded(blueprintPath);
       bytesRead += raw.length;
       const bpText = raw.toString("utf-8");
       const bpName = _parseDeliverySpecTitle(bpText);
@@ -3242,7 +3348,7 @@ function _readWorkHierarchical(workDir, workId) {
     );
   } else {
     try {
-      const raw = readFileSync(statePath);
+      const raw = readFileBounded(statePath);
       bytesRead += raw.length;
       workText = raw.toString("utf-8");
     } catch (exc) {
@@ -3321,7 +3427,7 @@ function _readWorkHierarchical(workDir, workId) {
 
     if (deliveryStateIsFile) {
       try {
-        const raw = readFileSync(deliveryStatePath);
+        const raw = readFileBounded(deliveryStatePath);
         bytesRead += raw.length;
         deliveryStateText = raw.toString("utf-8");
       } catch (exc) {
@@ -3370,7 +3476,7 @@ function _readWorkHierarchical(workDir, workId) {
 
       if (taskStateIsFile) {
         try {
-          const raw = readFileSync(taskStatePath);
+          const raw = readFileBounded(taskStatePath);
           bytesRead += raw.length;
           taskStateText = raw.toString("utf-8");
         } catch (exc) {
@@ -3392,7 +3498,7 @@ function _readWorkHierarchical(workDir, workId) {
 
       if (taskSpecIsFile) {
         try {
-          const raw = readFileSync(taskSpecPath);
+          const raw = readFileBounded(taskSpecPath);
           bytesRead += raw.length;
           const specText = raw.toString("utf-8");
           shortName = _parseTaskSpecShortName(specText);
@@ -3428,7 +3534,7 @@ function _readWorkHierarchical(workDir, workId) {
 
     if (deliverySpecIsFile) {
       try {
-        const raw = readFileSync(deliverySpecPath);
+        const raw = readFileBounded(deliverySpecPath);
         bytesRead += raw.length;
         const specText = raw.toString("utf-8");
         const specName = _parseDeliverySpecTitle(specText);
@@ -4116,7 +4222,7 @@ function parseDeferredIssues(issuesPath, taskId, parseWarnings) {
 
   let raw;
   try {
-    raw = readFileSync(issuesPath);
+    raw = readFileBounded(issuesPath);
   } catch (exc) {
     parseWarnings.push(
       taskId + ": could not read " + basename(issuesPath) + " (" + exc + "); " +
