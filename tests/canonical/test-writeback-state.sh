@@ -571,7 +571,8 @@ get_frontmatter_block() {
 
 PIPE_STATE="${TMPDIR_BASE}/pipe09/STATE.md"
 make_pipeline_state "$PIPE_STATE"
-BODY_BEFORE_09=$(cat "$PIPE_STATE")
+BODY_BEFORE_09_FILE="${TMPDIR_BASE}/pipe09/before-body.txt"
+cp "$PIPE_STATE" "$BODY_BEFORE_09_FILE"
 
 # 9a: No frontmatter yet — writing Lifecycle synthesizes one (task-004)
 code=0
@@ -615,13 +616,18 @@ assert_file_contains "$PIPE_STATE" "## Deploy State" "9f: Deploy State section p
 
 # 9f-2: body byte-invariance — the ENTIRE original file content (now the body,
 # following the synthesized frontmatter) is still present byte-for-byte.
-# Locate the closing fence dynamically instead of a hardcoded line number.
+# Locate the closing fence dynamically instead of a hardcoded line number, and
+# compare via `cmp` (byte-exact file comparison) rather than `$(...)` command
+# substitution -- the latter silently strips trailing newlines, which would
+# hide exactly the class of regression (findings 4/5, task-004 FIX review)
+# this check exists to catch.
 CLOSE_LINE_09=$(awk '/^---[ \t]*$/{n++; if(n==2){print NR; exit}}' "$PIPE_STATE")
-BODY_AFTER_09=$(tail -n "+$((CLOSE_LINE_09 + 2))" "$PIPE_STATE")
-if [[ "$BODY_AFTER_09" == "$BODY_BEFORE_09" ]]; then
+BODY_AFTER_09_FILE="${TMPDIR_BASE}/pipe09/after-body.txt"
+tail -n "+$((CLOSE_LINE_09 + 2))" "$PIPE_STATE" > "$BODY_AFTER_09_FILE"
+if cmp -s "$BODY_BEFORE_09_FILE" "$BODY_AFTER_09_FILE"; then
     pass "9f-2: original file content preserved byte-for-byte as the BODY after frontmatter synthesis"
 else
-    fail "9f-2: BODY changed after frontmatter synthesis (byte-invariance violated)"
+    fail "9f-2: BODY changed after frontmatter synthesis (byte-invariance violated) — cmp: $(cmp "$BODY_BEFORE_09_FILE" "$BODY_AFTER_09_FILE" 2>&1)"
 fi
 
 # 9g: No frontmatter yet — writing a non-Lifecycle field (Phase) also synthesizes one
@@ -733,7 +739,7 @@ AID_STATE_FILE="$PIPE_STATE11A" bash "$SCRIPT" --pipeline --field Lifecycle --va
 code=0
 AID_STATE_FILE="$PIPE_STATE11A" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Waiting for user clarification" 2>/dev/null || code=$?
 assert_exit_zero "$code" "11a: Pause Reason write under Paused-Awaiting-Input → exit 0"
-assert_file_contains "$PIPE_STATE11A" 'pause_reason: "Waiting for user clarification"' "11a: Pause Reason field written"
+assert_file_contains "$PIPE_STATE11A" "pause_reason: 'Waiting for user clarification'" "11a: Pause Reason field written"
 
 # 11b: Block Reason + Block Artifact written when Lifecycle=Blocked
 PIPE_STATE11B="${TMPDIR_BASE}/pipe11b/STATE.md"
@@ -742,7 +748,7 @@ AID_STATE_FILE="$PIPE_STATE11B" bash "$SCRIPT" --pipeline --field Lifecycle --va
 code=0
 AID_STATE_FILE="$PIPE_STATE11B" bash "$SCRIPT" --pipeline --field "Block Reason" --value "Waiting for dependency" 2>/dev/null || code=$?
 assert_exit_zero "$code" "11b: Block Reason write under Blocked → exit 0"
-assert_file_contains "$PIPE_STATE11B" 'block_reason: "Waiting for dependency"' "11b: Block Reason field written"
+assert_file_contains "$PIPE_STATE11B" "block_reason: 'Waiting for dependency'" "11b: Block Reason field written"
 code=0
 AID_STATE_FILE="$PIPE_STATE11B" bash "$SCRIPT" --pipeline --field "Block Artifact" --value "task-007.md" 2>/dev/null || code=$?
 assert_exit_zero "$code" "11b: Block Artifact write under Blocked → exit 0"
@@ -970,12 +976,14 @@ for state_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed" "
     AID_STATE_FILE="${S16_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$state_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "16.1: State='${state_val}' accepted (exit 0)"
-    # wb_set_frontmatter quotes only values that need it (contain a space, e.g.
-    # "In Progress"/"In Review"); bare single-word values stay unquoted.
+    # wb_set_frontmatter single-quotes only values that need it (contain a
+    # space, e.g. "In Progress"/"In Review"); bare single-word values stay
+    # unquoted (task-004 FIX review finding 1 -- single-quote style, not
+    # double-quote + backslash-escaping).
     if [[ "$state_val" =~ ^[A-Za-z0-9_./+-]+$ ]]; then
         EXPECT16="state: ${state_val}"
     else
-        EXPECT16="state: \"${state_val}\""
+        EXPECT16="state: '${state_val}'"
     fi
     assert_file_contains "${S16_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
         "$EXPECT16" "16.1: State='${state_val}' written to task STATE.md frontmatter"
@@ -1074,21 +1082,22 @@ TASK_STATE_FILE="${S16_CONS_WORK}/deliveries/delivery-001/tasks/task-001/STATE.m
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "In Review" 2>/dev/null
 assert_file_contains "$TASK_STATE_FILE" "## Task State" "16.6: ## Task State section present after State write"
-assert_file_contains "$TASK_STATE_FILE" 'state: "In Review"' "16.6: 'In Review' written as state: line in the frontmatter block"
+assert_file_contains "$TASK_STATE_FILE" "state: 'In Review'" "16.6: 'In Review' written as state: line in the frontmatter block"
 
-# Recover via grep (quoted scalar; strip one layer of surrounding quotes, as
-# the reader twins' parse_frontmatter_scalars/parseFrontmatterScalars do)
-recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed 's/^"\(.*\)"$/\1/')
+# Recover via grep (single-quoted scalar; strip one layer of surrounding
+# quotes -- either style -- as the reader twins'
+# parse_frontmatter_scalars/parseFrontmatterScalars do)
+recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed "s/^\\(.\\)\\(.*\\)\\1\$/\\2/")
 assert_eq "$recovered_state" "In Review" "16.6: State value grep-recoverable from task STATE.md frontmatter"
 
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "Done" 2>/dev/null
-recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed 's/^"\(.*\)"$/\1/')
+recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed "s/^\\(.\\)\\(.*\\)\\1\$/\\2/")
 assert_eq "$recovered_state" "Done" "16.6: State 'Done' grep-recoverable after overwrite"
 
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "Canceled" 2>/dev/null
-recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed 's/^"\(.*\)"$/\1/')
+recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed "s/^\\(.\\)\\(.*\\)\\1\$/\\2/")
 assert_eq "$recovered_state" "Canceled" "16.6: State 'Canceled' grep-recoverable from task STATE.md frontmatter"
 
 # ---------------------------------------------------------------------------
@@ -1205,7 +1214,7 @@ AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Lifecycle --val
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Awaiting spec clarification" 2>/dev/null
 BLOCK18=$(get_frontmatter_block "$PIPE_STATE18")
 assert_output_contains "$BLOCK18" "lifecycle: Paused-Awaiting-Input" "18b: FR16 Paused — lifecycle value derivable"
-assert_output_contains "$BLOCK18" 'pause_reason: "Awaiting spec clarification"' "18b: FR16 Paused — pause_reason present"
+assert_output_contains "$BLOCK18" "pause_reason: 'Awaiting spec clarification'" "18b: FR16 Paused — pause_reason present"
 assert_output_contains "$BLOCK18" "block_reason: --" "18b: FR16 Paused — block_reason at -- sentinel"
 assert_output_contains "$BLOCK18" "block_artifact: --" "18b: FR16 Paused — block_artifact at -- sentinel"
 
@@ -1215,7 +1224,7 @@ AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Block Reason" 
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Block Artifact" --value "pr-001.md" 2>/dev/null
 BLOCK18=$(get_frontmatter_block "$PIPE_STATE18")
 assert_output_contains "$BLOCK18" "lifecycle: Blocked" "18c: FR16 Blocked — lifecycle value derivable"
-assert_output_contains "$BLOCK18" 'block_reason: "Blocked on external review"' "18c: FR16 Blocked — block_reason present"
+assert_output_contains "$BLOCK18" "block_reason: 'Blocked on external review'" "18c: FR16 Blocked — block_reason present"
 assert_output_contains "$BLOCK18" "block_artifact: pr-001.md" "18c: FR16 Blocked — block_artifact present"
 assert_output_contains "$BLOCK18" "pause_reason: --" "18c: FR16 Blocked — pause_reason at -- sentinel"
 
@@ -1253,7 +1262,7 @@ code=0
 AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Blocker pending — awaiting loopback resolution before /aid-specify can continue" 2>/dev/null || code=$?
 assert_exit_zero "$code" "19a: Pause Reason emit after PAUSE transition → exit 0"
 assert_file_contains "$PIPE_STATE19A" "lifecycle: Paused-Awaiting-Input" "19a: Lifecycle set to Paused-Awaiting-Input"
-assert_file_contains "$PIPE_STATE19A" 'pause_reason: "Blocker pending' "19a: Pause Reason written"
+assert_file_contains "$PIPE_STATE19A" "pause_reason: 'Blocker pending" "19a: Pause Reason written"
 
 # 19b: Resume path — M4 Running emit clears Pause Reason
 AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
@@ -1279,7 +1288,7 @@ AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field "Block Reason"
 assert_exit_zero "$code" "19c: Block Reason emit after task failure → exit 0"
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field "Block Artifact" --value ".aid/work-001/IMPEDIMENT-task-001.md" 2>/dev/null
 assert_file_contains "$PIPE_STATE19C" "lifecycle: Blocked" "19c: Lifecycle set to Blocked on task failure"
-assert_file_contains "$PIPE_STATE19C" 'block_reason: "Task failed' "19c: Block Reason written"
+assert_file_contains "$PIPE_STATE19C" "block_reason: 'Task failed" "19c: Block Reason written"
 assert_file_contains "$PIPE_STATE19C" "block_artifact: .aid/work-001/IMPEDIMENT-task-001.md" "19c: Block Artifact written"
 assert_file_contains "$PIPE_STATE19C" "pause_reason: --" "19c: Pause Reason at -- sentinel when Blocked"
 
@@ -1311,7 +1320,7 @@ code=0
 AID_STATE_FILE="$PIPE_STATE19F" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues — upstream fix required (SPEC/TASK/KB)" 2>/dev/null || code=$?
 assert_exit_zero "$code" "19f: Delivery gate non-CODE pause emit → exit 0"
 assert_file_contains "$PIPE_STATE19F" "lifecycle: Paused-Awaiting-Input" "19f: Lifecycle Paused on non-CODE-only gate stop"
-assert_file_contains "$PIPE_STATE19F" 'pause_reason: "Delivery gate blocked on non-CODE issues' "19f: Pause Reason explains upstream fix needed"
+assert_file_contains "$PIPE_STATE19F" "pause_reason: 'Delivery gate blocked on non-CODE issues" "19f: Pause Reason explains upstream fix needed"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -1729,18 +1738,17 @@ code=0
 AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Timestamp --gate-value "2026-07-10T12:00:00Z" 2>/dev/null || code=$?
 assert_exit_zero "$code" "22b: gate-field Timestamp accepted (exit 0)"
 # Quoted -- the value contains ':' (wb_set_frontmatter's quoting rule)
-assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" 'gate_timestamp: "2026-07-10T12:00:00Z"' "22b: gate_timestamp frontmatter key written"
+assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" "gate_timestamp: '2026-07-10T12:00:00Z'" "22b: gate_timestamp frontmatter key written"
 
 code=0
 AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Unknown --gate-value "x" 2>/dev/null || code=$?
 assert_exit_eq "$code" 4 "22b: unknown gate-field name rejected (exit 4)"
 
 # 22c: gate-field isolation — the ## Delivery Gate body block (Complexity
-# Score/Cycles/Issue List) is untouched by --gate-field writes.
-# NOTE: the pattern is deliberately NOT prefixed with "- " -- a leading "-" in
-# a grep -F pattern is misparsed as an option flag (assert_file_contains does
-# not use `grep -- "$pattern"`), so the substring check starts at "**" instead.
-assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" "**Issue List:** none" "22c: ## Delivery Gate body Issue List bullet untouched by --gate-field"
+# Score/Cycles/Issue List) is untouched by --gate-field writes. (assert.sh's
+# grep -qF now uses `--`, so the natural leading-"-" bullet pattern is safe
+# again -- task-004 FIX review finding 3.)
+assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" "- **Issue List:** none" "22c: ## Delivery Gate body Issue List bullet untouched by --gate-field"
 
 # 22d: gate-field flattened layout — targets work-root frontmatter (--delivery-id 001)
 GATE22_FLAT="${TMPDIR_BASE}/gate22-flat"
@@ -1757,34 +1765,155 @@ else
     fail "22d: a deliveries/ directory was created by --gate-field — flat layout must not use one"
 fi
 
-# 22e: body byte-invariance (critical AC) — capture the markdown BODY (every
-# line strictly after the closing frontmatter fence) before and after a
-# sequence of frontmatter writes; it must be byte-identical.
-BINV_WORK="${TMPDIR_BASE}/bodyinvariance-work"
-mkdir -p "$BINV_WORK"
-cat "${SCRIPT_DIR}/../../canonical/aid/templates/work-state-template.md" > "${BINV_WORK}/STATE.md" 2>/dev/null || \
-    make_pipeline_state "${BINV_WORK}/STATE.md"
+# capture_body FILE OUT_FILE
+# Byte-exact copy of everything strictly after the closing frontmatter fence
+# (or the whole file, if it has none) into OUT_FILE. Deliberately file-based,
+# not `$(...)` command substitution -- command substitution silently strips
+# ALL trailing newlines from whatever it captures, which would hide exactly
+# the class of regression (a missing final newline gaining one, or a CRLF
+# body losing its `\r`s) this check exists to catch (task-004 FIX review
+# findings 2/4/5). `cmp`, not string equality, is what actually proves
+# byte-invariance.
 capture_body() {
-    local f="$1"
-    if head -1 "$f" | grep -qE '^---[ \t]*$'; then
+    local f="$1" out="$2"
+    if head -1 "$f" | grep -qE '^---[ \t]*\r?$'; then
         local close_line
-        close_line=$(awk '/^---[ \t]*$/{n++; if(n==2){print NR; exit}}' "$f")
-        tail -n "+$((close_line + 1))" "$f"
+        close_line=$(awk '/^---[ \t]*\r?$/{n++; if(n==2){print NR; exit}}' "$f")
+        tail -n "+$((close_line + 1))" "$f" > "$out"
     else
-        cat "$f"
+        cp "$f" "$out"
     fi
 }
-BODY_BEFORE_22E=$(capture_body "${BINV_WORK}/STATE.md")
+
+# 22e: body byte-invariance (critical AC) — capture the markdown BODY (every
+# line strictly after the closing frontmatter fence) before and after a
+# sequence of frontmatter writes; it must be byte-identical, INCLUDING a
+# missing final newline (the fixture body deliberately has none).
+BINV_WORK="${TMPDIR_BASE}/bodyinvariance-work"
+mkdir -p "$BINV_WORK"
+if [[ -f "${SCRIPT_DIR}/../../canonical/aid/templates/work-state-template.md" ]]; then
+    cat "${SCRIPT_DIR}/../../canonical/aid/templates/work-state-template.md" > "${BINV_WORK}/STATE.md"
+else
+    make_pipeline_state "${BINV_WORK}/STATE.md"
+fi
+# Drop any trailing newline the source template/fixture happens to end with,
+# so this run also exercises the "body lacks a final newline" case (findings
+# 4/5) rather than only the far more common "body ends with \n" case.
+printf '%s' "$(cat "${BINV_WORK}/STATE.md")" > "${BINV_WORK}/STATE.md.tmp" && mv "${BINV_WORK}/STATE.md.tmp" "${BINV_WORK}/STATE.md"
+
+BODY_BEFORE_22E="${BINV_WORK}/before-body.txt"
+capture_body "${BINV_WORK}/STATE.md" "$BODY_BEFORE_22E"
 AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
 AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
 AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-execute 2>/dev/null
 AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field "Pipeline Path" --value lite 2>/dev/null
 AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field "Pipeline Initiator" --value aid-refactor 2>/dev/null
-BODY_AFTER_22E=$(capture_body "${BINV_WORK}/STATE.md")
-if [[ "$BODY_BEFORE_22E" == "$BODY_AFTER_22E" ]]; then
-    pass "22e: markdown BODY byte-identical after a sequence of frontmatter writes (critical AC)"
+BODY_AFTER_22E="${BINV_WORK}/after-body.txt"
+capture_body "${BINV_WORK}/STATE.md" "$BODY_AFTER_22E"
+if cmp -s "$BODY_BEFORE_22E" "$BODY_AFTER_22E"; then
+    pass "22e: markdown BODY byte-identical (cmp) after a sequence of frontmatter writes, incl. missing final newline (critical AC)"
 else
-    fail "22e: markdown BODY changed after frontmatter writes — body byte-invariance violated"
+    fail "22e: markdown BODY changed after frontmatter writes — body byte-invariance violated — cmp: $(cmp "$BODY_BEFORE_22E" "$BODY_AFTER_22E" 2>&1)"
+fi
+
+# 22f: CRLF fixture — a `\r\n` STATE.md must survive a frontmatter write with
+# its body byte-identical (task-004 FIX review finding 2), proven via `cmp`
+# rather than `$(...)` (finding 5), which would silently normalize the very
+# `\r` bytes this check exists to guard.
+CRLF_WORK="${TMPDIR_BASE}/crlf-work"
+mkdir -p "$CRLF_WORK"
+CRLF_STATE="${CRLF_WORK}/STATE.md"
+printf -- '---\r\nlifecycle: Running\r\nphase: Interview\r\n---\r\n\r\n# Work State\r\n\r\nSome body content with CRLF.\r\nSecond line, no trailing newline.' > "$CRLF_STATE"
+CRLF_BODY_BEFORE="${CRLF_WORK}/before-body.txt"
+capture_body "$CRLF_STATE" "$CRLF_BODY_BEFORE"
+code=0
+AID_STATE_FILE="$CRLF_STATE" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null || code=$?
+assert_exit_zero "$code" "22f: CRLF STATE.md frontmatter write → exit 0"
+if head -1 "$CRLF_STATE" | od -An -c | grep -qF -- '\r'; then
+    pass "22f: opening fence still carries \\r (CRLF preserved, no duplicate frontmatter block prepended)"
+else
+    fail "22f: opening fence lost its \\r -- CRLF handling regressed"
+fi
+FENCE_COUNT_22F=$(grep -c -- '^---\r\{0,1\}$' "$CRLF_STATE")
+if [[ "$FENCE_COUNT_22F" -eq 2 ]]; then
+    pass "22f: exactly 2 frontmatter fence lines (no duplicate block prepended)"
+else
+    fail "22f: expected exactly 2 fence lines, found $FENCE_COUNT_22F (duplicate/corrupted frontmatter block)"
+fi
+assert_file_contains "$CRLF_STATE" "phase: Execute" "22f: phase frontmatter key updated"
+CRLF_BODY_AFTER="${CRLF_WORK}/after-body.txt"
+capture_body "$CRLF_STATE" "$CRLF_BODY_AFTER"
+if cmp -s "$CRLF_BODY_BEFORE" "$CRLF_BODY_AFTER"; then
+    pass "22f: CRLF body byte-identical (cmp) after frontmatter write, incl. \\r\\n line endings and missing final newline"
+else
+    fail "22f: CRLF body changed after frontmatter write — cmp: $(cmp "$CRLF_BODY_BEFORE" "$CRLF_BODY_AFTER" 2>&1)"
+fi
+
+# 22g: quoted-value write is valid YAML and PyYAML-round-trips (task-004 FIX
+# review finding 1) -- a value containing `"`, `\`, `:`, `#`, and a leading
+# `-` must produce a single-quoted YAML scalar that survives
+# yaml.safe_load()/yaml.safe_dump() with the exact original text intact
+# (awk's `-v` C-escape reprocessing previously undid any backslash-escaping
+# done in bash, corrupting the emitted YAML for exactly this class of value).
+NASTY_VALUE="- a dash-led value with \"double quotes\", it's a backslash \\ and a colon: plus a #hash"
+NASTY_STATE="${TMPDIR_BASE}/pipe22nasty/STATE.md"
+make_pipeline_state "$NASTY_STATE"
+code=0
+AID_STATE_FILE="$NASTY_STATE" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "$NASTY_VALUE" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22g: quoted (nasty) value write → exit 0"
+
+PYBIN=""
+if command -v python3 >/dev/null 2>&1; then
+    PYBIN=python3
+elif command -v python >/dev/null 2>&1; then
+    PYBIN=python
+fi
+
+if [[ -n "$PYBIN" ]]; then
+    YAML_CHECK_OUT=$("$PYBIN" - "$NASTY_STATE" "$NASTY_VALUE" <<'PYEOF'
+import sys
+try:
+    import yaml
+except ImportError:
+    print("SKIP: PyYAML not installed")
+    sys.exit(0)
+
+path, expected = sys.argv[1], sys.argv[2]
+text = open(path, encoding="utf-8").read()
+fm_text = text.split("---")[1]
+try:
+    data = yaml.safe_load(fm_text)
+except yaml.YAMLError as exc:
+    print(f"FAIL: yaml.safe_load raised: {exc}")
+    sys.exit(1)
+if data is None:
+    print("FAIL: yaml.safe_load returned None")
+    sys.exit(1)
+actual = data.get("pause_reason")
+if actual != expected:
+    print(f"FAIL: round-trip mismatch: expected {expected!r} got {actual!r}")
+    sys.exit(1)
+redumped = yaml.safe_dump(data)
+reloaded = yaml.safe_load(redumped)
+if reloaded.get("pause_reason") != expected:
+    print("FAIL: safe_dump/safe_load round-trip mismatch")
+    sys.exit(1)
+print("OK")
+PYEOF
+    )
+    case "$YAML_CHECK_OUT" in
+        OK)
+            pass "22g: quoted-value frontmatter is valid YAML and round-trips through PyYAML safe_load/safe_dump"
+            ;;
+        SKIP:*)
+            log "22g: skipped ($YAML_CHECK_OUT)"
+            ;;
+        *)
+            fail "22g: quoted-value YAML round-trip failed: $YAML_CHECK_OUT"
+            ;;
+    esac
+else
+    log "22g: skipped (no python interpreter on PATH)"
 fi
 
 # ---------------------------------------------------------------------------

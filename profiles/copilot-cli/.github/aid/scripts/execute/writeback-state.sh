@@ -20,12 +20,15 @@
 # `## Delivery Lifecycle`'s `- **State:**` line, `## Delivery Gate`'s
 # `- **Reviewer Tier:**`/`- **Grade:**`/`- **Timestamp:**` lines) are now static
 # enum-reference/comment-only prose, never rewritten by this script. Values are
-# quoted in the emitted YAML only when the raw text needs it (contains a `:` or
-# starts with a YAML-significant character); closed-enum/short tokens (`Running`,
-# `yes`, `A+`, `aid-refactor`) are written bare, matching the 4 templates' own
-# placeholder style. `wb_set_frontmatter` creates the frontmatter block from
-# scratch (at the very top of the file) when the target file has none yet, so a
-# not-yet-migrated (task-005) STATE.md degrades gracefully instead of failing.
+# single-quoted (`'...'`, doubling any embedded `'`) in the emitted YAML only
+# when the raw text needs it (contains a `:`/`#`/`"`/`\`/leading special char);
+# closed-enum/short tokens (`Running`, `yes`, `A+`, `aid-refactor`) are written
+# bare, matching the 4 templates' own placeholder style. See
+# WB_SET_FRONTMATTER_AWK's own doc comment for why single-quote style (not
+# double-quote + backslash-escaping) is used. `wb_set_frontmatter` creates the
+# frontmatter block from scratch (at the very top of the file) when the target
+# file has none yet, so a not-yet-migrated (task-005) STATE.md degrades
+# gracefully instead of failing.
 #
 # Unit layout (work-004 hierarchy):
 #   work-NNN-{name}/
@@ -498,6 +501,126 @@ release_lock() {
 trap 'release_lock' EXIT
 
 # ---------------------------------------------------------------------------
+# WB_SET_FRONTMATTER_AWK -- the awk program body used by wb_set_frontmatter,
+# below. Kept as a single shared string (rather than duplicated inline across
+# the CRLF and plain-LF invocation paths) so the two call sites can never drift.
+#
+# Reads the RAW value from ENVIRON (not an awk `-v` assignment) because awk's
+# `-v var=value` re-processes C-style escape sequences in `value` -- a `\"`
+# assigned this way silently becomes `"`, corrupting any caller-side
+# backslash-escaping and producing invalid YAML for a value containing a
+# literal `"` or `\` (task-004 FIX review, finding 1). ENVIRON values are NOT
+# escape-reprocessed, so the value arrives byte-for-byte, and ALL YAML
+# quoting/escaping happens here in awk, working from those exact bytes:
+#   - a "bare-word-safe" value (letters/digits/`_.+/-` only) is emitted
+#     unquoted, matching the 4 canonical templates' own placeholder style
+#     (`lifecycle: Running`, not `lifecycle: "Running"`).
+#   - anything else is emitted as a SINGLE-quoted YAML scalar (`'...'`),
+#     doubling any embedded `'` -- the only escaping a single-quoted YAML
+#     scalar ever needs, so this is valid for ANY byte sequence (colons,
+#     hashes, double quotes, backslashes, a leading `-`/`{`) with no
+#     backslash-escaping at all (unlike double-quoted style, which would
+#     reintroduce the same backslash-escaping problem this fix exists to
+#     avoid). A `sprintf("%c", 39)`-produced single-quote character stands in
+#     for a literal `'` in this program's own source text, only to avoid the
+#     bash single-quote-escaping gymnastics of embedding a literal `'` inside
+#     the single-quoted string this whole program is written as.
+# ---------------------------------------------------------------------------
+WB_SET_FRONTMATTER_AWK='
+    BEGIN {
+        in_fm = 0; in_parent = 0; parent_seen = 0; done = 0
+        sq = sprintf("%c", 39)
+        raw = ENVIRON["WB_FM_RAW_VALUE"]
+        if (raw ~ /^[A-Za-z0-9_.+\/-]+$/) {
+            out_value = raw
+        } else {
+            gsub(sq, sq sq, raw)
+            out_value = sq raw sq
+        }
+    }
+
+    NR == 1 && $0 ~ /^---[ \t]*\r?$/ {
+        in_fm = 1
+        print
+        next
+    }
+    NR == 1 {
+        # No frontmatter block present -- synthesize one, then fall through
+        # to print this same first line as the first BODY line, unmodified.
+        print "---"
+        if (parent == "") {
+            print flat_key ": " out_value
+        } else {
+            print parent ":"
+            print "  " child ": " out_value
+        }
+        print "---"
+        print ""
+        print
+        next
+    }
+
+    in_fm && /^---[ \t]*\r?$/ {
+        # Closing fence -- flush an unwritten key here (append at block end).
+        # parent_seen distinguishes "parent mapping exists but child is
+        # missing" (print only the child line, under the existing parent)
+        # from "parent mapping never appeared at all in this frontmatter
+        # block" (print BOTH a fresh parent header and the child line --
+        # otherwise the child would be emitted with no parent, corrupting
+        # the YAML and never satisfying the nested `key.child` lookup).
+        if (parent == "" && !done) { print flat_key ": " out_value; done = 1 }
+        if (parent != "" && !done) {
+            if (!parent_seen) { print parent ":" }
+            print "  " child ": " out_value
+            done = 1
+        }
+        in_fm = 0
+        in_parent = 0
+        print
+        next
+    }
+
+    in_fm && parent == "" {
+        if ($0 ~ ("^" flat_key ":")) {
+            print flat_key ": " out_value
+            done = 1
+            next
+        }
+        print
+        next
+    }
+
+    in_fm && parent != "" {
+        if (!in_parent) {
+            if ($0 ~ ("^" parent ":")) {
+                in_parent = 1
+                parent_seen = 1
+                print
+                next
+            }
+            print
+            next
+        }
+        # Inside the parent mapping -- another top-level key (col 0) ends it
+        if ($0 ~ /^[A-Za-z0-9_-]+:/) {
+            if (!done) { print "  " child ": " out_value; done = 1 }
+            in_parent = 0
+            print
+            next
+        }
+        if ($0 ~ ("^[ \t]+" child ":")) {
+            print "  " child ": " out_value
+            done = 1
+            next
+        }
+        print
+        next
+    }
+
+    { print }
+'
+
+# ---------------------------------------------------------------------------
 # wb_set_frontmatter SOURCE_FILE KEY VALUE
 # Surgical YAML-frontmatter scalar writer (work-003-state-schema task-004).
 # Prints the rewritten file content to stdout; caller redirects to a temp file
@@ -508,7 +631,7 @@ trap 'release_lock' EXIT
 # KEY is either a flat top-level scalar ("lifecycle") or a one-level-nested
 # dotted key ("pipeline.path" -> the `path` child of the `pipeline:` mapping).
 # Reads/updates ONLY the leading `---`...`---` frontmatter block; every line
-# from the closing fence onward (the markdown BODY) is printed byte-for-byte
+# from the closing fence onward (the markdown BODY) is reproduced byte-for-byte
 # unchanged -- this is what makes the write "surgical" (AC: body byte-invariance).
 #
 # Behavior:
@@ -521,12 +644,23 @@ trap 'release_lock' EXIT
 #     is synthesized at the very top of the file holding just this one key; the
 #     entire original file becomes the BODY, unchanged.
 #
-# Value quoting: bare (unquoted) when the value is a safe YAML plain scalar
-# (letters/digits/`_.+/-` only, e.g. "Running", "yes", "A+", "aid-refactor",
-# "--"); double-quoted (with embedded `"` escaped) otherwise -- covers ISO-8601
-# timestamps (contain `:`), free text with spaces, and the empty string. This
-# matches the 4 canonical templates' own placeholder-quoting convention
-# (`started: "{YYYY-MM-DD}"` vs bare `lifecycle: Running | ...`).
+# Value quoting: see WB_SET_FRONTMATTER_AWK's own doc comment above.
+#
+# Cross-platform byte-invariance guards (task-004 FIX review findings 2/4):
+#   - CRLF: some awk builds (notably on Windows) silently strip a `\r` that is
+#     part of $0 on read/print; a strict LF-only awk (Linux) never matches a
+#     `---\r` fence line at all (the fence regex above tolerates a trailing
+#     `\r` as defense-in-depth, but the real fix is architectural: a CRLF
+#     source file is normalized to LF before the awk pass and every line of
+#     the result has `\r` restored afterward, so the awk logic above only
+#     ever sees plain LF content on every platform).
+#   - Trailing newline: awk's `print` unconditionally appends ORS ("\n")
+#     after every record including the last, so a source file with no final
+#     newline would otherwise gain one. The pipeline's FULL output is
+#     captured via an `X`-terminator (a character, not a newline, so `$(...)`
+#     itself strips nothing) and the single spurious line terminator awk
+#     added (`\n`, or `\r\n` for a CRLF source) is stripped back off only
+#     when the source genuinely lacked a final one.
 # ---------------------------------------------------------------------------
 wb_set_frontmatter() {
     local source_file="$1" key="$2" value="$3"
@@ -536,94 +670,39 @@ wb_set_frontmatter() {
         child="${key#*.}"
     fi
 
-    local out_value="$value"
-    if ! [[ "$value" =~ ^[A-Za-z0-9_./+-]+$ ]]; then
-        out_value="\"${value//\"/\\\"}\""
+    local has_crlf=0 had_trailing_nl=1
+    if [[ -s "$source_file" ]]; then
+        local first_line=""
+        IFS= read -r first_line < "$source_file" 2>/dev/null || true
+        [[ "$first_line" == *$'\r' ]] && has_crlf=1
+        [[ "$(tail -c1 "$source_file" | wc -l)" -eq 0 ]] && had_trailing_nl=0
     fi
 
-    awk -v parent="$parent" -v child="$child" -v out_value="$out_value" -v flat_key="$key" '
-        BEGIN { in_fm = 0; in_parent = 0; parent_seen = 0; done = 0 }
+    local raw_output
+    if [[ "$has_crlf" -eq 1 ]]; then
+        raw_output="$(
+            sed 's/\r$//' "$source_file" \
+                | WB_FM_RAW_VALUE="$value" awk -v parent="$parent" -v child="$child" -v flat_key="$key" "$WB_SET_FRONTMATTER_AWK" \
+                | sed 's/$/\r/'
+            printf 'X'
+        )"
+    else
+        raw_output="$(
+            WB_FM_RAW_VALUE="$value" awk -v parent="$parent" -v child="$child" -v flat_key="$key" "$WB_SET_FRONTMATTER_AWK" "$source_file"
+            printf 'X'
+        )"
+    fi
+    raw_output="${raw_output%X}"
 
-        NR == 1 && $0 ~ /^---[ \t]*$/ {
-            in_fm = 1
-            print
-            next
-        }
-        NR == 1 {
-            # No frontmatter block present -- synthesize one, then fall through
-            # to print this same first line as the first BODY line, unmodified.
-            print "---"
-            if (parent == "") {
-                print flat_key ": " out_value
-            } else {
-                print parent ":"
-                print "  " child ": " out_value
-            }
-            print "---"
-            print ""
-            print
-            next
-        }
+    if [[ "$had_trailing_nl" -eq 0 ]]; then
+        if [[ "$has_crlf" -eq 1 ]]; then
+            raw_output="${raw_output%$'\r\n'}"
+        else
+            raw_output="${raw_output%$'\n'}"
+        fi
+    fi
 
-        in_fm && /^---[ \t]*$/ {
-            # Closing fence -- flush an unwritten key here (append at block end).
-            # parent_seen distinguishes "parent mapping exists but child is
-            # missing" (print only the child line, under the existing parent)
-            # from "parent mapping never appeared at all in this frontmatter
-            # block" (print BOTH a fresh parent header and the child line --
-            # otherwise the child would be emitted with no parent, corrupting
-            # the YAML and never satisfying the nested `key.child` lookup).
-            if (parent == "" && !done) { print flat_key ": " out_value; done = 1 }
-            if (parent != "" && !done) {
-                if (!parent_seen) { print parent ":" }
-                print "  " child ": " out_value
-                done = 1
-            }
-            in_fm = 0
-            in_parent = 0
-            print
-            next
-        }
-
-        in_fm && parent == "" {
-            if ($0 ~ ("^" flat_key ":")) {
-                print flat_key ": " out_value
-                done = 1
-                next
-            }
-            print
-            next
-        }
-
-        in_fm && parent != "" {
-            if (!in_parent) {
-                if ($0 ~ ("^" parent ":")) {
-                    in_parent = 1
-                    parent_seen = 1
-                    print
-                    next
-                }
-                print
-                next
-            }
-            # Inside the parent mapping -- another top-level key (col 0) ends it
-            if ($0 ~ /^[A-Za-z0-9_-]+:/) {
-                if (!done) { print "  " child ": " out_value; done = 1 }
-                in_parent = 0
-                print
-                next
-            }
-            if ($0 ~ ("^[ \t]+" child ":")) {
-                print "  " child ": " out_value
-                done = 1
-                next
-            }
-            print
-            next
-        }
-
-        { print }
-    ' "$source_file"
+    printf '%s' "$raw_output"
 }
 
 # wb_frontmatter_verify TMP_FILE KEY
