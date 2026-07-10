@@ -355,7 +355,6 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Human Grade:** Pending (run `manual-checklist.sh` before APPROVAL)
 **Human Grade Source:** `manual-checklist.sh` MANUAL_POOL (K1+K2+V1, 30 pts)
 **Overall Grade:** Pending (= min of Machine and Human letter grades)
-**User Approved:** no
 **Last Run:** {iso8601}
 **Trigger Reason:** {initial | stale-after-review-N | --reset | re-approval-only}
 **Output:** .aid/dashboard/kb.html
@@ -363,6 +362,15 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Last Reviewed KB Date:** {YYYY-MM-DD}
 **Last Summary Date:** {YYYY-MM-DD or N/A}
 **Writeback Status:** pending
+```
+
+Also default the approval scalar in the frontmatter block (relocated by
+work-003-state-schema task-001/004 -- `summary_approved` replaces the OLD
+`**User Approved:** no` bold line that used to live in this same block; a fresh
+GENERATE is never pre-approved):
+
+```bash
+bash .github/aid/scripts/summarize/writeback-state.sh --set summary_approved no
 ```
 
 Print: `[State: GENERATE] complete.`

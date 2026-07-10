@@ -29,11 +29,26 @@ Use `AskUserQuestion` to ask:
 > - **Reject** — exit without recording
 > - **Changes needed** — describe what to change, transition to FIX
 
-On approval: write `**User Approved:** yes` + timestamp to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`, transition to WRITEBACK.
+The summary's approval scalar (`summary_approved`) and its last-run date (`last_summary`)
+live in `.aid/knowledge/STATE.md`'s leading YAML frontmatter block (relocated by
+work-003-state-schema task-001/004 from the old `## Knowledge Summary Status` ad hoc
+`**User Approved:** yes (date)` bold line -- the exact table-row-vs-bold-line misparse
+this delivery exists to fix). Write via the surgical frontmatter helper (never hand-edit
+the bold line again):
 
-On rejection: write `**User Approved:** no` to `## Knowledge Summary Status`, exit. `## Summarization History` is NOT updated.
+On approval:
+```bash
+bash .claude/aid/scripts/summarize/writeback-state.sh --set summary_approved yes --set last_summary "$(date -u +%Y-%m-%d)"
+```
+then transition to WRITEBACK.
 
-On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes`, transition to FIX.
+On rejection:
+```bash
+bash .claude/aid/scripts/summarize/writeback-state.sh --set summary_approved no
+```
+exit. `## Summarization History` is NOT updated.
+
+On changes-needed: capture the user's notes in `.aid/knowledge/STATE.md` `## Knowledge Summary Status` `### Pending Changes` (unaffected markdown-body content), transition to FIX.
 
 Print: `[State: APPROVAL] complete.`
 

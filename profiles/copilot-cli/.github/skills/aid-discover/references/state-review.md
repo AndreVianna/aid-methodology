@@ -552,6 +552,15 @@ Compute:
 Update `.aid/knowledge/STATE.md` `## Review History` with the new entry. Record the
 grade computed by `grade.sh`, not any grade mentioned in the mandate reviewers' prose.
 
+Also record this cycle's grade + review date in the KB run-state frontmatter (the
+`kb_grade`/`last_kb_review` scalars, relocated from the old header-blockquote
+`**Current Grade:**`/`**Last KB Review:**` lines by work-003-state-schema task-001/004
+— surgical frontmatter rewrite, `## Review History` and the rest of the body untouched):
+
+```bash
+bash .github/aid/scripts/summarize/writeback-state.sh --set kb_grade "{grade}" --set last_kb_review "$(date -u +%Y-%m-%d)"
+```
+
 If `--grade` provided, update `.aid/settings.yml` `discover.minimum_grade` (via
 `/aid-config` or direct YAML edit).
 

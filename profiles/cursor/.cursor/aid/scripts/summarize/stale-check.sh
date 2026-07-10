@@ -11,7 +11,10 @@
 # Reads from the consolidated .aid/knowledge/STATE.md:
 #   - KB review date  → `## Review History` (Discovery area history)
 #   - Summary date    → `## Summarization History`
-#   - Approval flag   → `## Knowledge Summary Status` block, **User Approved:** line
+#   - Approval flag   → `summary_approved` frontmatter scalar (task-004; relocated
+#     from the `## Knowledge Summary Status` block's ad hoc **User Approved:** line
+#     by work-003-state-schema task-001) -- frontmatter-first, legacy-prose fallback
+#     for an un-migrated STATE.md.
 
 set -u
 
@@ -83,18 +86,36 @@ if [[ "$LAST_KB_DATE" > "$LAST_SUMMARY_DATE" ]]; then
 fi
 
 # HTML up-to-date. Now check approval.
-# Knowledge Summary Status block lives at the top of STATE.md (section heading
-# "## Knowledge Summary Status"). It has its own **User Approved:** line.
-# We scope the grep to that section so we don't get false positives from the
-# KB Documents Status block's **User Approved:** line.
+# Frontmatter-first (task-004): `summary_approved` in the leading YAML block.
+# Legacy-prose fallback (un-migrated STATE.md, task-005 not yet run for it): the
+# "## Knowledge Summary Status" section's own ad hoc **User Approved:** bold
+# line -- scoped to that section so it never false-positives on the unrelated
+# KB Documents Status block's own **User Approved:** line.
 APPROVED=no
-SUMMARY_APPROVAL=$(awk '
-    /^## Knowledge Summary Status/ {in_section=1; next}
-    in_section && /^## / {in_section=0}
-    in_section && /^\*\*User Approved:\*\*/ {print; exit}
+FM_SUMMARY_APPROVED=$(awk '
+    NR==1 && $0 !~ /^---[ \t]*$/ { exit }
+    NR==1 { in_fm=1; next }
+    in_fm && /^---[ \t]*$/ { exit }
+    in_fm && /^summary_approved:/ {
+        sub(/^summary_approved:[ \t]*/, "")
+        gsub(/^"|"$/, "")
+        print
+        exit
+    }
 ' "$STATE")
-if echo "$SUMMARY_APPROVAL" | grep -q '^\*\*User Approved:\*\* yes'; then
-    APPROVED=yes
+if [ -n "$FM_SUMMARY_APPROVED" ]; then
+    case "$(echo "$FM_SUMMARY_APPROVED" | tr '[:upper:]' '[:lower:]')" in
+        yes|true) APPROVED=yes ;;
+    esac
+else
+    SUMMARY_APPROVAL=$(awk '
+        /^## Knowledge Summary Status/ {in_section=1; next}
+        in_section && /^## / {in_section=0}
+        in_section && /^\*\*User Approved:\*\*/ {print; exit}
+    ' "$STATE")
+    if echo "$SUMMARY_APPROVAL" | grep -q '^\*\*User Approved:\*\* yes'; then
+        APPROVED=yes
+    fi
 fi
 
 if [ "$APPROVED" = "yes" ]; then

@@ -15,29 +15,50 @@ Ensure `.aid/{work}/STATE.md` exists and has an `## Interview State` section and
 `## Cross-phase Q&A` section. Copy from `../../templates/work-state-template.md` if
 the file does not yet exist.
 
-### 1b-ii. Seed the `## Pipeline State` block
+### 1b-ii. Seed the frontmatter block
 
 After the STATE.md file exists (created from the template above or already present), write
-the opening `## Pipeline State` field values directly into `.aid/{work}/STATE.md`, replacing
-the template placeholder lines under `## Pipeline State` with the actual opening values:
+the opening scalar values directly into `.aid/{work}/STATE.md`'s leading YAML frontmatter
+block (the top of the file, before the `# Work State` title), replacing every placeholder
+line the template ships with the actual opening values. Resolve this work's own minimum
+grade first:
 
+```bash
+bash .agent/aid/scripts/config/read-setting.sh --skill describe --key minimum_grade --default A
 ```
-- **Lifecycle:** Running
-- **Phase:** Interview
-- **Active Skill:** aid-describe
-- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}         ← today's UTC timestamp, e.g. 2026-06-10T14:32:00Z
-- **Pause Reason:** —
-- **Block Reason:** —
-- **Block Artifact:** —
+
+then write the whole block:
+
+```yaml
+pipeline:
+  path: full
+  initiator: aid-describe
+started: "{today, YYYY-MM-DD}"
+minimum_grade: "{resolved value from the read-setting.sh call above}"
+user_approved: no
+lifecycle: Running
+phase: Interview
+active_skill: aid-describe
+updated: "{YYYY-MM-DDTHH:MM:SSZ}"         ← today's UTC timestamp, e.g. 2026-06-10T14:32:00Z
+pause_reason: --
+block_reason: --
+block_artifact: --
 ```
+
+(`pipeline.path` is always `full` here -- `aid-describe` is the FULL-pipeline starting
+skill, never a flattened Lite shortcut; the flattened-only `delivery_state`/`gate_tier`/
+`gate_grade`/`gate_timestamp` group is left untouched, since a full-path work's delivery
+lifecycle/gate lives in its own `delivery-NNN/STATE.md` instead.)
 
 This side-effect is a state-write only (no user-visible output, no gate, no prompt). It does
 not change any observable interview behavior — CONTINUE begins immediately after scaffolding.
-The `Pause Reason`, `Block Reason`, and `Block Artifact` lines are included with the sentinel
-value `—` so the grep-recoverable `**Field:** value` format is structurally complete from the
-start. All values are valid opening members of the closed enums declared in the template.
+The `pause_reason`, `block_reason`, and `block_artifact` keys are included with the sentinel
+value `--` so every conditional key is structurally present from the start. All values are
+valid opening members of the closed enums declared in the template. The body's
+`## Pipeline State` section is a static enum-reference blockquote and is never rewritten here
+or by any later `writeback-state.sh --pipeline` call.
 
-**Idempotency:** if `## Pipeline State` already has `Lifecycle: Running` (the work was
+**Idempotency:** if the frontmatter already has `lifecycle: Running` (the work was
 previously scaffolded), skip this step — do not overwrite values that may have been advanced
 by a later phase.
 

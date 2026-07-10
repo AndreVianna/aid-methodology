@@ -183,7 +183,10 @@ After all deliverables are written, check for risks that span features:
 4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
 5. For each delivery-NNN in PLAN.md, confirm both `deliveries/delivery-NNN/BLUEPRINT.md` and
    `deliveries/delivery-NNN/STATE.md` exist under `.aid/{work}/`. If either is missing -> create it NOW
-   (seed from the templates; set `State: Pending-Spec`).
+   (seed from the templates; replace the frontmatter's `delivery_state` placeholder with
+   `delivery_state: Pending-Spec` -- the scalar lives in the leading YAML block per
+   `delivery-state-template.md`, task-001/004; direct field edit, same scaffold-time
+   convention as `state-first-run.md § 1b-ii`).
 
 Then print:
 ```

@@ -38,8 +38,10 @@ if [ ! -f "$KB_DIR/STATE.md" ]; then
     echo "STATE.md seeded from discovery-state-template.md."
   else
     # Fallback: template not found; write a minimal valid scaffold so the
-    # skill can still proceed (the orchestrator will fill it in).
-    printf '# Discovery State\n\n**Status:** Initial\n' > "$KB_DIR/STATE.md"
+    # skill can still proceed (the orchestrator will fill it in). Frontmatter
+    # (not body prose) is the schema for kb_status since work-003-state-schema
+    # task-001/004 -- match that shape even in this degraded fallback path.
+    printf -- '---\nkb_status: Initial\n---\n\n# Discovery State\n' > "$KB_DIR/STATE.md"
     echo "Template not found at ${TEMPLATE_PATH}; wrote minimal STATE.md scaffold."
   fi
 fi

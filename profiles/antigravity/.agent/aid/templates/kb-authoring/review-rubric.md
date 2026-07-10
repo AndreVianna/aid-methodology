@@ -144,10 +144,13 @@ The doc is the skill's working ledger. History entries grow forever; this is
 expected. The reviewer ONLY checks:
 
 1. **Frontmatter parses** + `kb-category: meta` declared.
-2. **Top-of-file status fields are current** — for STATE.md: `**Current Grade:**`,
-   `**User Approved:**`, `**Last KB Review:**`, etc., reflect the latest cycle's
-   reality. Stale = MEDIUM (not HIGH — the values are skill-managed, not
-   human-authored).
+2. **Frontmatter run-state scalars are current** — for STATE.md: `kb_grade`,
+   `kb_status`, `last_kb_review`, `summary_approved`, `last_summary` (relocated
+   from the old header-blockquote `**Current Grade:**`/`**Status:**`/
+   `**Last KB Review:**` lines by work-003-state-schema task-001/004), plus the
+   still-header-blockquote `**User Approved:**` doc-set-approval line, all
+   reflect the latest cycle's reality. Stale = MEDIUM (not HIGH — the values
+   are skill-managed, not human-authored).
 3. **Pending Q&A entries are reachable** — every `**Status:** Pending` entry in
    STATE.md must be surfacable by `aid-discover` Q-AND-A state. Format-broken
    entries = HIGH.

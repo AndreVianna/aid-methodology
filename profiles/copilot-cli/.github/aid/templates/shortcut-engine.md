@@ -242,31 +242,56 @@ Scan `.aid/` for existing `work-NNN-*` directories; the new work is `work-{NNN+1
 
 Create `.aid/work-NNN-<slug>/`.
 
-### Step 4: Scaffold STATE.md (Pipeline State only)
+### Step 4: Scaffold STATE.md (frontmatter only)
 
 Copy `.github/aid/templates/work-state-template.md` to
 `.aid/work-NNN-<slug>/STATE.md` (the same template the full path uses -- the flattened
 engine needs no template of its own; it fills a different subset of the same file's
-sections over time). Then, in the same step, directly replace the `## Pipeline State`
-placeholder lines with the real opening values (direct field write, the same convention
-`aid-describe` FIRST-RUN uses for its own opening `## Pipeline State` seed -- see
-`.github/skills/aid-describe/references/state-first-run.md § 1b-ii`):
+sections over time). Then, in the same step, directly replace the YAML frontmatter
+block's placeholder lines at the top of the file with the real opening values (direct
+field write -- the same convention `aid-describe` FIRST-RUN uses for its own opening
+frontmatter seed -- see `.github/skills/aid-describe/references/state-first-run.md §
+1b-ii`; this is a scaffold-time direct edit, distinct from the runtime
+`writeback-state.sh --pipeline` calls CAPTURE/SPEC/PLAN/DETAIL make below for
+subsequent phase/state transitions -- both target the SAME frontmatter block, just at
+different times by different means). Resolve this shortcut's own minimum grade first:
 
-```
-- **Lifecycle:** Running
-- **Phase:** Interview
-- **Active Skill:** {name}
-- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
-- **Pause Reason:** --
-- **Block Reason:** --
-- **Block Artifact:** --
+```bash
+bash .github/aid/scripts/config/read-setting.sh --skill {name} --key minimum_grade --default A+
 ```
 
-Leave every other section of the copied template untouched at this point (`## Interview State`
-is an `aid-describe`-only block and stays absent/unused for shortcut-generated works; `## Delivery Lifecycle` / `### Tasks
-lifecycle` / `## Delivery Gate` keep their template placeholder text until PLAN/DETAIL
-fill them for real; the DERIVED sections at the bottom of the template are never
-written by this engine).
+then write the frontmatter block (replacing every placeholder line shown in
+`work-state-template.md`, all in the one block):
+
+```yaml
+pipeline:
+  path: lite
+  initiator: {name}
+started: "{today, YYYY-MM-DD}"
+minimum_grade: "{resolved value from the read-setting.sh call above}"
+user_approved: no
+lifecycle: Running
+phase: Interview
+active_skill: {name}
+updated: "{YYYY-MM-DDTHH:MM:SSZ}"
+pause_reason: --
+block_reason: --
+block_artifact: --
+```
+
+(`pipeline.path` is always `lite` for this engine -- it only ever produces the
+flattened, single-delivery, no-`deliveries/`-wrapper shape; `pipeline.initiator` is the
+invoking doorway's own skill name, e.g. `aid-create-api`.) The flattened-only
+`delivery_state`/`gate_tier`/`gate_grade`/`gate_timestamp` group keeps its template
+placeholder text until PLAN/DETAIL (`delivery_state`) and the GATE state
+(`gate_tier`/`gate_grade`/`gate_timestamp`) fill it for real.
+
+Leave every other section of the copied template untouched at this point (the body's
+`## Pipeline State` enum-reference blockquote is static and never rewritten; `##
+Interview State` is an `aid-describe`-only block and stays absent/unused for
+shortcut-generated works; `## Delivery Lifecycle` / `### Tasks lifecycle` / `## Delivery
+Gate` keep their template placeholder body text until PLAN/DETAIL fill them for real;
+the DERIVED sections at the bottom of the template are never written by this engine).
 
 **Idempotency:** this state never re-runs within an invocation -- every invocation
 always allocates a brand-new work (Design Notes). No idempotency check is needed.
@@ -458,13 +483,16 @@ wrapper):
 
 ### Step 3: Initialize `## Delivery Lifecycle` (direct edit)
 
-Directly replace the `## Delivery Lifecycle` block's placeholder `- **State:**` line
-in the work-root `STATE.md` with `- **State:** Pending-Spec` and
-`- **Updated:** {now}` (direct field edit, not `writeback-state.sh` -- this is the
-first population of a section the INTAKE-time template copy only scaffolded as a
-placeholder, the same "first write = direct edit" convention
-`state-first-run.md § 1b-ii` uses for the opening `## Pipeline State` values; see the
-design note below).
+Directly replace the work-root `STATE.md` frontmatter block's placeholder
+`delivery_state` line with `delivery_state: Pending-Spec` (the scalar was
+relocated there by task-001/004 -- the body's own `- **State:**` bullet no
+longer exists); also directly edit the `## Delivery Lifecycle` body block's
+`- **Updated:**` line to `{now}` (Updated stays markdown body -- not
+relocated). Direct field edit, not `writeback-state.sh` -- this is the first
+population of these fields the INTAKE-time template copy only scaffolded as
+placeholders, the same "first write = direct edit" convention
+`state-first-run.md § 1b-ii` uses for the opening frontmatter values; see the
+design note below.
 
 > **Design choice (writeback-state.sh vs. direct edit).** Later, during actual task
 > execution, `/aid-execute` mutates `## Delivery Lifecycle` / `## Delivery Gate` /
@@ -549,10 +577,11 @@ initial population of the table, not a runtime mutation).
 
 ### Step 4: Advance `## Delivery Lifecycle` to Specified
 
-Directly edit the `## Delivery Lifecycle` block's `- **State:**` line from
-`Pending-Spec` to `Specified` and refresh `- **Updated:**` -- all tasks now have a
-`DETAIL.md` and a `### Tasks lifecycle` row (matches the precondition task-011's
-APPROVAL-HALT checks for: `## Delivery Lifecycle` State = `Specified`).
+Directly edit the frontmatter block's `delivery_state` line from `Pending-Spec`
+to `Specified` and refresh the `## Delivery Lifecycle` body block's
+`- **Updated:**` line -- all tasks now have a `DETAIL.md` and a
+`### Tasks lifecycle` row (matches the precondition task-011's APPROVAL-HALT
+checks for: `delivery_state` = `Specified`).
 
 ### Step 5: Update STATE.md
 

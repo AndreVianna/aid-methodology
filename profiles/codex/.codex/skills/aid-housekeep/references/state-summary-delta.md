@@ -148,9 +148,21 @@ Read the following signals from `.aid/knowledge/STATE.md`:
 # Date column (col 3) of the LAST data row, skipping the em-dash placeholder row.
 LAST_SUMMARY_ENTRY=$(grep -E '^\| +[0-9]+ +\|' .aid/knowledge/STATE.md \
     | tail -1 | awk -F'|' '{gsub(/^ +| +$/,"",$3); print $3}')
-# User Approved field in ## Knowledge Summary Status
-USER_APPROVED=$(awk '/^## Knowledge Summary Status/{f=1} f && /^\*\*User Approved:\*\*/{print; exit}' \
-    .aid/knowledge/STATE.md | sed 's/.*\*\*User Approved:\*\* //')
+# Summary approval: frontmatter-first (`summary_approved`, task-004), legacy
+# `## Knowledge Summary Status` **User Approved:** bold line as fallback for an
+# un-migrated STATE.md (same dual-format read as stale-check.sh).
+USER_APPROVED=$(awk '
+    NR==1 && $0 !~ /^---[ \t]*$/ { exit }
+    NR==1 { in_fm=1; next }
+    in_fm && /^---[ \t]*$/ { exit }
+    in_fm && /^summary_approved:/ {
+        sub(/^summary_approved:[ \t]*/, ""); gsub(/^"|"$/, ""); print; exit
+    }
+' .aid/knowledge/STATE.md)
+if [ -z "$USER_APPROVED" ]; then
+    USER_APPROVED=$(awk '/^## Knowledge Summary Status/{f=1} f && /^\*\*User Approved:\*\*/{print; exit}' \
+        .aid/knowledge/STATE.md | sed 's/.*\*\*User Approved:\*\* //')
+fi
 ```
 
 Compare `LAST_SUMMARY_ENTRY` against this run's start timestamp (`**Last Run:**` above):

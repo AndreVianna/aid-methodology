@@ -72,7 +72,10 @@ trap 'rm -rf "$TMPDIR_BASE"' EXIT
 # ---------------------------------------------------------------------------
 
 # make_task_state DELIVERY_DIR TASK_ID [STATE_VALUE]
-# Creates deliveries/delivery-NNN/tasks/task-NNN/STATE.md with ## Task State section.
+# Creates deliveries/delivery-NNN/tasks/task-NNN/STATE.md matching the CURRENT
+# task-state-template.md shape (task-001/004): state/review/elapsed/notes live
+# in the leading YAML frontmatter block; the ## Task State body section is
+# comment-only (no bullets -- those were relocated to frontmatter).
 # STATE_VALUE defaults to "Pending".
 make_task_state() {
     local delivery_dir="$1" task_id="$2" state_val="${3:-Pending}"
@@ -81,6 +84,13 @@ make_task_state() {
     local task_dir="${delivery_dir}/tasks/task-${padded_t}"
     mkdir -p "$task_dir"
     cat > "${task_dir}/STATE.md" <<TASKSTATEOF
+---
+state: ${state_val}
+review: --
+elapsed: --
+notes: --
+---
+
 # Task State -- task-${padded_t}
 
 > **Task:** task-${padded_t}
@@ -89,10 +99,7 @@ make_task_state() {
 
 ## Task State
 
-- **State:** ${state_val}
-- **Review:** --
-- **Elapsed:** --
-- **Notes:** --
+<!-- values live in the frontmatter block above (task-001/004). -->
 
 ---
 
@@ -137,7 +144,11 @@ TASKSPECEOF
 }
 
 # make_delivery_state WORK_DIR DELIVERY_ID [LIFECYCLE_VALUE]
-# Creates deliveries/delivery-NNN/STATE.md with ## Delivery Lifecycle and ## Delivery Gate sections.
+# Creates deliveries/delivery-NNN/STATE.md matching the CURRENT
+# delivery-state-template.md shape (task-001/004): delivery_state/gate_tier/
+# gate_grade/gate_timestamp live in the leading YAML frontmatter block; the
+# ## Delivery Lifecycle / ## Delivery Gate body sections keep only the
+# non-relocated bullets (Updated/Block Reason/Block Artifact/Issue List).
 # LIFECYCLE_VALUE defaults to "Executing".
 make_delivery_state() {
     local work_dir="$1" delivery_id="$2" lc_val="${3:-Executing}"
@@ -146,6 +157,13 @@ make_delivery_state() {
     local delivery_dir="${work_dir}/deliveries/delivery-${padded_d}"
     mkdir -p "$delivery_dir"
     cat > "${delivery_dir}/STATE.md" <<DELIVSTATEOF
+---
+delivery_state: ${lc_val}
+gate_tier: --
+gate_grade: Pending
+gate_timestamp: --
+---
+
 # Delivery State -- delivery-${padded_d}
 
 > **Delivery:** delivery-${padded_d}
@@ -154,17 +172,13 @@ make_delivery_state() {
 
 ## Delivery Lifecycle
 
-- **State:** ${lc_val}
 - **Updated:** 2026-06-18T00:00:00Z
 
 ---
 
 ## Delivery Gate
 
-- **Reviewer Tier:** --
-- **Grade:** Pending
 - **Issue List:** none
-- **Timestamp:** --
 
 ---
 
@@ -362,7 +376,7 @@ echo "=== Unit 4: --delivery-id --lifecycle ==="
 # SD-8 enum: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 bash "$SCRIPT" --delivery-id 1 --lifecycle "Gated"
 assert_file_contains "${DELIVERY_001}/STATE.md" "## Delivery Lifecycle" "delivery-001/STATE.md has ## Delivery Lifecycle"
-assert_file_contains "${DELIVERY_001}/STATE.md" "**State:** Gated" "delivery-001 lifecycle State set to Gated"
+assert_file_contains "${DELIVERY_001}/STATE.md" "delivery_state: Gated" "delivery-001 frontmatter delivery_state set to Gated"
 # Work STATE.md must NOT be touched
 assert_file_not_contains "${WORK_DIR}/STATE.md" "Gated" "work STATE.md NOT modified by --lifecycle (isolation)"
 
@@ -372,7 +386,7 @@ for lc_val in "Pending-Spec" "Specified" "Executing" "Gated" "Done" "Blocked"; d
     bash "$SCRIPT" --delivery-id 2 --lifecycle "$lc_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "--lifecycle $lc_val accepted (exit 0)"
 done
-assert_file_contains "${DELIVERY_002}/STATE.md" "**State:** Blocked" "delivery-002 lifecycle advanced to Blocked"
+assert_file_contains "${DELIVERY_002}/STATE.md" "delivery_state: Blocked" "delivery-002 frontmatter delivery_state advanced to Blocked"
 
 # Invalid lifecycle value → exit 4
 code=0
@@ -524,8 +538,12 @@ assert_file_not_contains "${CONC_WORK}/STATE.md" "Done" "work STATE.md NOT touch
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== Unit 9: --pipeline field writes (section creation + each base field) ==="
+echo "=== Unit 9: --pipeline field writes (frontmatter creation + each base field; task-004) ==="
 
+# make_pipeline_state: a work STATE.md with NO frontmatter at all (an
+# un-migrated, pre-task-001 file) -- exercises wb_set_frontmatter's
+# from-scratch synthesis path. ## Triage / ## Deploy State stand in for
+# arbitrary body content that must survive byte-unchanged.
 make_pipeline_state() {
     local dest="$1"
     mkdir -p "$(dirname "$dest")"
@@ -544,63 +562,85 @@ make_pipeline_state() {
 PIPEEOF
 }
 
-get_pipeline_block() {
+# get_frontmatter_block FILE — the raw text between the leading `---` fences
+# (empty string if the file has no frontmatter block).
+get_frontmatter_block() {
     local f="$1"
-    awk '/^## Pipeline State/{in_ps=1; next} in_ps && /^## /{in_ps=0} in_ps{print}' "$f"
+    awk 'NR==1 && $0!~/^---[ \t]*$/{exit} NR==1{f=1; next} f && /^---[ \t]*$/{exit} f{print}' "$f"
 }
 
 PIPE_STATE="${TMPDIR_BASE}/pipe09/STATE.md"
 make_pipeline_state "$PIPE_STATE"
+BODY_BEFORE_09=$(cat "$PIPE_STATE")
 
-# 9a: Section absent — writing Lifecycle creates ## Pipeline State
+# 9a: No frontmatter yet — writing Lifecycle synthesizes one (task-004)
 code=0
 AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null || code=$?
-assert_exit_zero "$code" "9a: Lifecycle write on absent section → exit 0"
-assert_file_contains "$PIPE_STATE" "## Pipeline State" "9a: ## Pipeline State section created"
-assert_file_contains "$PIPE_STATE" "**Lifecycle:** Running" "9a: Lifecycle field written"
+assert_exit_zero "$code" "9a: Lifecycle write with no prior frontmatter → exit 0"
+assert_file_contains "$PIPE_STATE" "lifecycle: Running" "9a: lifecycle frontmatter key written"
+if head -1 "$PIPE_STATE" | grep -qE '^---[ \t]*$'; then
+    pass "9a: frontmatter block synthesized at the top of the file"
+else
+    fail "9a: no frontmatter fence found at the top of the file after synthesis"
+fi
 
 # 9b: Phase field write
 code=0
 AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null || code=$?
 assert_exit_zero "$code" "9b: Phase write → exit 0"
-assert_file_contains "$PIPE_STATE" "**Phase:** Execute" "9b: Phase field written"
+assert_file_contains "$PIPE_STATE" "phase: Execute" "9b: Phase field written"
 
 # 9c: Active Skill field write
 code=0
 AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field "Active Skill" --value "aid-develop" 2>/dev/null || code=$?
 assert_exit_zero "$code" "9c: Active Skill write → exit 0"
-assert_file_contains "$PIPE_STATE" "**Active Skill:** aid-develop" "9c: Active Skill field written"
+assert_file_contains "$PIPE_STATE" "active_skill: aid-develop" "9c: Active Skill field written"
 
 # 9d: Updated field write
 code=0
 AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Updated --value "2026-06-10" 2>/dev/null || code=$?
 assert_exit_zero "$code" "9d: Updated write → exit 0"
-assert_file_contains "$PIPE_STATE" "**Updated:** 2026-06-10" "9d: Updated field written"
+assert_file_contains "$PIPE_STATE" "updated: 2026-06-10" "9d: Updated field written"
 
-# 9e: All four base fields coexist in the block
-PIPE_BLOCK=$(get_pipeline_block "$PIPE_STATE")
-assert_output_contains "$PIPE_BLOCK" "**Lifecycle:** Running" "9e: Lifecycle line grep-recoverable in Pipeline State block"
-assert_output_contains "$PIPE_BLOCK" "**Phase:** Execute" "9e: Phase line grep-recoverable in Pipeline State block"
-assert_output_contains "$PIPE_BLOCK" "**Active Skill:** aid-develop" "9e: Active Skill line grep-recoverable in Pipeline State block"
-assert_output_contains "$PIPE_BLOCK" "**Updated:** 2026-06-10" "9e: Updated line grep-recoverable in Pipeline State block"
+# 9e: All four base fields coexist in the frontmatter block
+PIPE_BLOCK=$(get_frontmatter_block "$PIPE_STATE")
+assert_output_contains "$PIPE_BLOCK" "lifecycle: Running" "9e: lifecycle grep-recoverable in frontmatter block"
+assert_output_contains "$PIPE_BLOCK" "phase: Execute" "9e: phase grep-recoverable in frontmatter block"
+assert_output_contains "$PIPE_BLOCK" "active_skill: aid-develop" "9e: active_skill grep-recoverable in frontmatter block"
+assert_output_contains "$PIPE_BLOCK" "updated: 2026-06-10" "9e: updated grep-recoverable in frontmatter block"
 
 # 9f: Other STATE.md sections not disturbed
 assert_file_contains "$PIPE_STATE" "## Triage" "9f: Triage section preserved after pipeline writes"
 assert_file_contains "$PIPE_STATE" "## Deploy State" "9f: Deploy State section preserved after pipeline writes"
 
-# 9g: Section absent — writing non-Lifecycle field (Phase) creates the section too
+# 9f-2: body byte-invariance — the ENTIRE original file content (now the body,
+# following the synthesized frontmatter) is still present byte-for-byte.
+# Locate the closing fence dynamically instead of a hardcoded line number.
+CLOSE_LINE_09=$(awk '/^---[ \t]*$/{n++; if(n==2){print NR; exit}}' "$PIPE_STATE")
+BODY_AFTER_09=$(tail -n "+$((CLOSE_LINE_09 + 2))" "$PIPE_STATE")
+if [[ "$BODY_AFTER_09" == "$BODY_BEFORE_09" ]]; then
+    pass "9f-2: original file content preserved byte-for-byte as the BODY after frontmatter synthesis"
+else
+    fail "9f-2: BODY changed after frontmatter synthesis (byte-invariance violated)"
+fi
+
+# 9g: No frontmatter yet — writing a non-Lifecycle field (Phase) also synthesizes one
 PIPE_STATE_G="${TMPDIR_BASE}/pipe09g/STATE.md"
 make_pipeline_state "$PIPE_STATE_G"
 code=0
 AID_STATE_FILE="$PIPE_STATE_G" bash "$SCRIPT" --pipeline --field Phase --value Plan 2>/dev/null || code=$?
-assert_exit_zero "$code" "9g: Phase write on absent section → exit 0"
-assert_file_contains "$PIPE_STATE_G" "## Pipeline State" "9g: ## Pipeline State section created by Phase write"
-assert_file_contains "$PIPE_STATE_G" "**Phase:** Plan" "9g: Phase field written on new section"
+assert_exit_zero "$code" "9g: Phase write with no prior frontmatter → exit 0"
+if head -1 "$PIPE_STATE_G" | grep -qE '^---[ \t]*$'; then
+    pass "9g: frontmatter block created by Phase write"
+else
+    fail "9g: no frontmatter fence found after Phase write"
+fi
+assert_file_contains "$PIPE_STATE_G" "phase: Plan" "9g: Phase field written on new frontmatter block"
 
 # 9h: Update (overwrite) an existing field value
 AID_STATE_FILE="$PIPE_STATE" bash "$SCRIPT" --pipeline --field Lifecycle --value Completed 2>/dev/null
-assert_file_contains "$PIPE_STATE" "**Lifecycle:** Completed" "9h: Lifecycle field overwritten to Completed"
-assert_file_not_contains "$PIPE_STATE" "**Lifecycle:** Running" "9h: old Lifecycle value Running removed"
+assert_file_contains "$PIPE_STATE" "lifecycle: Completed" "9h: Lifecycle field overwritten to Completed"
+assert_file_not_contains "$PIPE_STATE" "lifecycle: Running" "9h: old Lifecycle value Running removed"
 
 # 9i: Active Skill set to 'none' is valid
 PIPE_STATE_I="${TMPDIR_BASE}/pipe09i/STATE.md"
@@ -608,7 +648,7 @@ make_pipeline_state "$PIPE_STATE_I"
 code=0
 AID_STATE_FILE="$PIPE_STATE_I" bash "$SCRIPT" --pipeline --field "Active Skill" --value "none" 2>/dev/null || code=$?
 assert_exit_zero "$code" "9i: Active Skill=none is valid → exit 0"
-assert_file_contains "$PIPE_STATE_I" "**Active Skill:** none" "9i: Active Skill none written"
+assert_file_contains "$PIPE_STATE_I" "active_skill: none" "9i: Active Skill none written"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -693,7 +733,7 @@ AID_STATE_FILE="$PIPE_STATE11A" bash "$SCRIPT" --pipeline --field Lifecycle --va
 code=0
 AID_STATE_FILE="$PIPE_STATE11A" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Waiting for user clarification" 2>/dev/null || code=$?
 assert_exit_zero "$code" "11a: Pause Reason write under Paused-Awaiting-Input → exit 0"
-assert_file_contains "$PIPE_STATE11A" "**Pause Reason:** Waiting for user clarification" "11a: Pause Reason field written"
+assert_file_contains "$PIPE_STATE11A" 'pause_reason: "Waiting for user clarification"' "11a: Pause Reason field written"
 
 # 11b: Block Reason + Block Artifact written when Lifecycle=Blocked
 PIPE_STATE11B="${TMPDIR_BASE}/pipe11b/STATE.md"
@@ -702,20 +742,23 @@ AID_STATE_FILE="$PIPE_STATE11B" bash "$SCRIPT" --pipeline --field Lifecycle --va
 code=0
 AID_STATE_FILE="$PIPE_STATE11B" bash "$SCRIPT" --pipeline --field "Block Reason" --value "Waiting for dependency" 2>/dev/null || code=$?
 assert_exit_zero "$code" "11b: Block Reason write under Blocked → exit 0"
-assert_file_contains "$PIPE_STATE11B" "**Block Reason:** Waiting for dependency" "11b: Block Reason field written"
+assert_file_contains "$PIPE_STATE11B" 'block_reason: "Waiting for dependency"' "11b: Block Reason field written"
 code=0
 AID_STATE_FILE="$PIPE_STATE11B" bash "$SCRIPT" --pipeline --field "Block Artifact" --value "task-007.md" 2>/dev/null || code=$?
 assert_exit_zero "$code" "11b: Block Artifact write under Blocked → exit 0"
-assert_file_contains "$PIPE_STATE11B" "**Block Artifact:** task-007.md" "11b: Block Artifact field written"
+assert_file_contains "$PIPE_STATE11B" "block_artifact: task-007.md" "11b: Block Artifact field written"
 
-# 11c: Transition OUT of Paused-Awaiting-Input clears Pause Reason
+# 11c: Transition OUT of Paused-Awaiting-Input clears Pause Reason (reset to the
+# "--" null sentinel -- the key stays present, just cleared)
 AID_STATE_FILE="$PIPE_STATE11A" bash "$SCRIPT" --pipeline --field Lifecycle --value "Running" 2>/dev/null
-assert_file_not_contains "$PIPE_STATE11A" "**Pause Reason:**" "11c: Pause Reason cleared after Lifecycle→Running"
+assert_file_contains "$PIPE_STATE11A" "pause_reason: --" "11c: Pause Reason cleared after Lifecycle→Running"
+assert_file_not_contains "$PIPE_STATE11A" "Waiting for user clarification" "11c: old Pause Reason value gone after clear"
 
 # 11d: Transition OUT of Blocked clears Block Reason and Block Artifact
 AID_STATE_FILE="$PIPE_STATE11B" bash "$SCRIPT" --pipeline --field Lifecycle --value "Running" 2>/dev/null
-assert_file_not_contains "$PIPE_STATE11B" "**Block Reason:**" "11d: Block Reason cleared after Lifecycle→Running"
-assert_file_not_contains "$PIPE_STATE11B" "**Block Artifact:**" "11d: Block Artifact cleared after Lifecycle→Running"
+assert_file_contains "$PIPE_STATE11B" "block_reason: --" "11d: Block Reason cleared after Lifecycle→Running"
+assert_file_contains "$PIPE_STATE11B" "block_artifact: --" "11d: Block Artifact cleared after Lifecycle→Running"
+assert_file_not_contains "$PIPE_STATE11B" "Waiting for dependency" "11d: old Block Reason value gone after clear"
 
 # 11e: Pause Reason cleared when Lifecycle transitions to Blocked
 PIPE_STATE11E="${TMPDIR_BASE}/pipe11e/STATE.md"
@@ -723,24 +766,25 @@ make_cond_state "$PIPE_STATE11E"
 AID_STATE_FILE="$PIPE_STATE11E" bash "$SCRIPT" --pipeline --field Lifecycle --value "Paused-Awaiting-Input" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE11E" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Waiting for input" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE11E" bash "$SCRIPT" --pipeline --field Lifecycle --value "Blocked" 2>/dev/null
-assert_file_not_contains "$PIPE_STATE11E" "**Pause Reason:**" "11e: Pause Reason cleared when Lifecycle transitions to Blocked"
+assert_file_contains "$PIPE_STATE11E" "pause_reason: --" "11e: Pause Reason cleared when Lifecycle transitions to Blocked"
+assert_file_not_contains "$PIPE_STATE11E" "Waiting for input" "11e: old Pause Reason value gone after Blocked transition"
 
-# 11f: Block Reason + Artifact absent after transition from Blocked to Completed
+# 11f: Block Reason + Artifact reset to -- after transition from Blocked to Completed
 PIPE_STATE11F="${TMPDIR_BASE}/pipe11f/STATE.md"
 make_cond_state "$PIPE_STATE11F"
 AID_STATE_FILE="$PIPE_STATE11F" bash "$SCRIPT" --pipeline --field Lifecycle --value "Blocked" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE11F" bash "$SCRIPT" --pipeline --field "Block Reason" --value "Needs review" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE11F" bash "$SCRIPT" --pipeline --field "Block Artifact" --value "review-001.md" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE11F" bash "$SCRIPT" --pipeline --field Lifecycle --value "Completed" 2>/dev/null
-assert_file_not_contains "$PIPE_STATE11F" "**Block Reason:**" "11f: Block Reason cleared on Lifecycle→Completed"
-assert_file_not_contains "$PIPE_STATE11F" "**Block Artifact:**" "11f: Block Artifact cleared on Lifecycle→Completed"
+assert_file_contains "$PIPE_STATE11F" "block_reason: --" "11f: Block Reason cleared on Lifecycle→Completed"
+assert_file_contains "$PIPE_STATE11F" "block_artifact: --" "11f: Block Artifact cleared on Lifecycle→Completed"
 
-# 11g: Fresh Running state — no conditional fields
+# 11g: Fresh Running state — conditional fields present but at the -- sentinel
 PIPE_STATE11G="${TMPDIR_BASE}/pipe11g/STATE.md"
 make_cond_state "$PIPE_STATE11G"
-assert_file_not_contains "$PIPE_STATE11G" "**Block Reason:**" "11g: Block Reason absent on fresh Running state"
-assert_file_not_contains "$PIPE_STATE11G" "**Block Artifact:**" "11g: Block Artifact absent on fresh Running state"
-assert_file_not_contains "$PIPE_STATE11G" "**Pause Reason:**" "11g: Pause Reason absent on fresh Running state"
+assert_file_contains "$PIPE_STATE11G" "block_reason: --" "11g: Block Reason at -- sentinel on fresh Running state"
+assert_file_contains "$PIPE_STATE11G" "block_artifact: --" "11g: Block Artifact at -- sentinel on fresh Running state"
+assert_file_contains "$PIPE_STATE11G" "pause_reason: --" "11g: Pause Reason at -- sentinel on fresh Running state"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -926,8 +970,15 @@ for state_val in "Pending" "In Progress" "In Review" "Blocked" "Done" "Failed" "
     AID_STATE_FILE="${S16_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$state_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "16.1: State='${state_val}' accepted (exit 0)"
+    # wb_set_frontmatter quotes only values that need it (contain a space, e.g.
+    # "In Progress"/"In Review"); bare single-word values stay unquoted.
+    if [[ "$state_val" =~ ^[A-Za-z0-9_./+-]+$ ]]; then
+        EXPECT16="state: ${state_val}"
+    else
+        EXPECT16="state: \"${state_val}\""
+    fi
     assert_file_contains "${S16_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
-        "**State:** ${state_val}" "16.1: State='${state_val}' written to task STATE.md"
+        "$EXPECT16" "16.1: State='${state_val}' written to task STATE.md frontmatter"
 done
 
 # 16.2 — _none yet_ placeholder accepted
@@ -960,9 +1011,9 @@ for bad_val in "running" "DONE" "Finished" "in progress" "InProgress" "todo" "PE
     AID_STATE_FILE="${S16_BAD_WORK}/STATE.md" bash "$SCRIPT" \
         --delivery-id 1 --task-id 1 --field State --value "$bad_val" 2>/dev/null || code=$?
     assert_exit_eq "$code" 4 "16.3: State='${bad_val}' rejected (exit 4)"
-    # STATE.md still shows Pending
+    # STATE.md frontmatter still shows Pending
     assert_file_contains "${S16_BAD_WORK}/deliveries/delivery-001/tasks/task-001/STATE.md" \
-        "**State:** Pending" "16.3: task STATE.md unchanged after rejection of '${bad_val}'"
+        "state: Pending" "16.3: task STATE.md unchanged after rejection of '${bad_val}'"
 done
 
 # 16.4 — C4 no-regression: the 6 legacy producer strings still accepted
@@ -1008,9 +1059,9 @@ AID_STATE_FILE="${S16_SCOPE_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field Review --value "done" 2>/dev/null || SCOPE_CODE=$?
 assert_exit_zero "$SCOPE_CODE" "16.5: Review='done' accepted (enum does not apply to Review)"
 
-# 16.6 — State value grep-recoverable in task STATE.md ## Task State section
+# 16.6 — State value grep-recoverable in task STATE.md frontmatter (task-004)
 echo ""
-echo "--- 16.6: Deterministic consumability — State grep-recoverable in task STATE.md ---"
+echo "--- 16.6: Deterministic consumability — State grep-recoverable in task STATE.md frontmatter ---"
 
 S16_CONS_WORK="${TMPDIR_BASE}/unit16-cons/work"
 make_work_state "$S16_CONS_WORK"
@@ -1023,21 +1074,22 @@ TASK_STATE_FILE="${S16_CONS_WORK}/deliveries/delivery-001/tasks/task-001/STATE.m
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "In Review" 2>/dev/null
 assert_file_contains "$TASK_STATE_FILE" "## Task State" "16.6: ## Task State section present after State write"
-assert_file_contains "$TASK_STATE_FILE" "**State:** In Review" "16.6: 'In Review' written as **State:** line in ## Task State"
+assert_file_contains "$TASK_STATE_FILE" 'state: "In Review"' "16.6: 'In Review' written as state: line in the frontmatter block"
 
-# Recover via grep
-recovered_state=$(grep -m1 '^\- \*\*State:\*\*' "$TASK_STATE_FILE" | sed 's/^- \*\*State:\*\* //')
-assert_eq "$recovered_state" "In Review" "16.6: State value grep-recoverable from task STATE.md"
+# Recover via grep (quoted scalar; strip one layer of surrounding quotes, as
+# the reader twins' parse_frontmatter_scalars/parseFrontmatterScalars do)
+recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed 's/^"\(.*\)"$/\1/')
+assert_eq "$recovered_state" "In Review" "16.6: State value grep-recoverable from task STATE.md frontmatter"
 
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "Done" 2>/dev/null
-recovered_state=$(grep -m1 '^\- \*\*State:\*\*' "$TASK_STATE_FILE" | sed 's/^- \*\*State:\*\* //')
+recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed 's/^"\(.*\)"$/\1/')
 assert_eq "$recovered_state" "Done" "16.6: State 'Done' grep-recoverable after overwrite"
 
 AID_STATE_FILE="${S16_CONS_WORK}/STATE.md" bash "$SCRIPT" \
     --delivery-id 1 --task-id 1 --field State --value "Canceled" 2>/dev/null
-recovered_state=$(grep -m1 '^\- \*\*State:\*\*' "$TASK_STATE_FILE" | sed 's/^- \*\*State:\*\* //')
-assert_eq "$recovered_state" "Canceled" "16.6: State 'Canceled' grep-recoverable from task STATE.md"
+recovered_state=$(grep -m1 '^state:' "$TASK_STATE_FILE" | sed 's/^state:[ \t]*//' | sed 's/^"\(.*\)"$/\1/')
+assert_eq "$recovered_state" "Canceled" "16.6: State 'Canceled' grep-recoverable from task STATE.md frontmatter"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -1066,20 +1118,20 @@ rm -f "$(dirname "$PIPE_STATE17")/.writeback-state.lock"
     wait
 )
 
-assert_file_contains "$PIPE_STATE17" "## Pipeline State" "17a: ## Pipeline State section intact after concurrent pipeline writes"
+assert_file_contains "$PIPE_STATE17" "## Triage" "17a: unrelated body section intact after concurrent pipeline writes"
 
-BLOCK17=$(get_pipeline_block "$PIPE_STATE17")
-assert_output_contains "$BLOCK17" "**Lifecycle:**" "17a: Lifecycle line present after concurrent writes"
-assert_output_contains "$BLOCK17" "**Phase:**" "17a: Phase line present after concurrent writes"
-assert_output_contains "$BLOCK17" "**Active Skill:**" "17a: Active Skill line present after concurrent writes"
-assert_output_contains "$BLOCK17" "**Updated:**" "17a: Updated line present after concurrent writes"
+BLOCK17=$(get_frontmatter_block "$PIPE_STATE17")
+assert_output_contains "$BLOCK17" "lifecycle:" "17a: lifecycle line present after concurrent writes"
+assert_output_contains "$BLOCK17" "phase:" "17a: phase line present after concurrent writes"
+assert_output_contains "$BLOCK17" "active_skill:" "17a: active_skill line present after concurrent writes"
+assert_output_contains "$BLOCK17" "updated:" "17a: updated line present after concurrent writes"
 
-for f_name in "Lifecycle" "Phase" "Active Skill" "Updated"; do
-    count=$(echo "$BLOCK17" | grep -cF "**${f_name}:**" || true)
+for f_name in "lifecycle" "phase" "active_skill" "updated"; do
+    count=$(echo "$BLOCK17" | grep -cE "^${f_name}:" || true)
     if [[ "$count" -eq 1 ]]; then
-        pass "17a: field '$f_name' appears exactly once in block (no duplication)"
+        pass "17a: field '$f_name' appears exactly once in frontmatter (no duplication)"
     else
-        fail "17a: field '$f_name' appears $count times in block (expected 1)"
+        fail "17a: field '$f_name' appears $count times in frontmatter (expected 1)"
     fi
 done
 
@@ -1117,19 +1169,19 @@ rm -f "${CONC17B_WORK}/.writeback-state.lock"
     wait
 )
 
-assert_file_contains "$PIPE_STATE17B" "## Pipeline State" "17b: Pipeline State intact after --pipeline ∥ --field mix"
+assert_file_contains "$PIPE_STATE17B" "## Triage" "17b: unrelated body section intact after --pipeline ∥ --field mix"
 assert_file_contains "${CONC17B_DELIV}/tasks/task-001/STATE.md" "## Task State" "17b: task STATE.md intact after mixed concurrent writes"
 
-BLOCK17B=$(get_pipeline_block "$PIPE_STATE17B")
-assert_output_contains "$BLOCK17B" "**Lifecycle:**" "17b: Lifecycle line present after mixed concurrent writes"
-assert_output_contains "$BLOCK17B" "**Phase:**" "17b: Phase line present after mixed concurrent writes"
+BLOCK17B=$(get_frontmatter_block "$PIPE_STATE17B")
+assert_output_contains "$BLOCK17B" "lifecycle:" "17b: lifecycle line present after mixed concurrent writes"
+assert_output_contains "$BLOCK17B" "phase:" "17b: phase line present after mixed concurrent writes"
 
-for f_name in "Lifecycle" "Phase"; do
-    count=$(echo "$BLOCK17B" | grep -cF "**${f_name}:**" || true)
+for f_name in "lifecycle" "phase"; do
+    count=$(echo "$BLOCK17B" | grep -cE "^${f_name}:" || true)
     if [[ "$count" -eq 1 ]]; then
         pass "17b: field '$f_name' appears exactly once after mixed concurrent writes"
     else
-        fail "17b: field '$f_name' appears $count times in block after mixed writes (expected 1)"
+        fail "17b: field '$f_name' appears $count times in frontmatter after mixed writes (expected 1)"
     fi
 done
 
@@ -1140,51 +1192,51 @@ echo "=== Unit 18: FR16 derivation primitives — on-disk block determinism ==="
 PIPE_STATE18="${TMPDIR_BASE}/pipe18/STATE.md"
 make_pipeline_state "$PIPE_STATE18"
 
-# 18a: Running state — Lifecycle readable, no conditional fields
+# 18a: Running state — lifecycle readable, conditional fields at the -- sentinel
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-BLOCK18=$(get_pipeline_block "$PIPE_STATE18")
-assert_output_contains "$BLOCK18" "**Lifecycle:** Running" "18a: FR16 Running — Lifecycle value derivable"
-assert_output_not_contains "$BLOCK18" "**Pause Reason:**" "18a: FR16 Running — Pause Reason absent"
-assert_output_not_contains "$BLOCK18" "**Block Reason:**" "18a: FR16 Running — Block Reason absent"
-assert_output_not_contains "$BLOCK18" "**Block Artifact:**" "18a: FR16 Running — Block Artifact absent"
+BLOCK18=$(get_frontmatter_block "$PIPE_STATE18")
+assert_output_contains "$BLOCK18" "lifecycle: Running" "18a: FR16 Running — lifecycle value derivable"
+assert_output_contains "$BLOCK18" "pause_reason: --" "18a: FR16 Running — pause_reason at -- sentinel"
+assert_output_contains "$BLOCK18" "block_reason: --" "18a: FR16 Running — block_reason at -- sentinel"
+assert_output_contains "$BLOCK18" "block_artifact: --" "18a: FR16 Running — block_artifact at -- sentinel"
 
-# 18b: Paused-Awaiting-Input state — Pause Reason present, Block fields absent
+# 18b: Paused-Awaiting-Input state — pause_reason present, Block fields at --
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Lifecycle --value "Paused-Awaiting-Input" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Awaiting spec clarification" 2>/dev/null
-BLOCK18=$(get_pipeline_block "$PIPE_STATE18")
-assert_output_contains "$BLOCK18" "**Lifecycle:** Paused-Awaiting-Input" "18b: FR16 Paused — Lifecycle value derivable"
-assert_output_contains "$BLOCK18" "**Pause Reason:** Awaiting spec clarification" "18b: FR16 Paused — Pause Reason present"
-assert_output_not_contains "$BLOCK18" "**Block Reason:**" "18b: FR16 Paused — Block Reason absent"
-assert_output_not_contains "$BLOCK18" "**Block Artifact:**" "18b: FR16 Paused — Block Artifact absent"
+BLOCK18=$(get_frontmatter_block "$PIPE_STATE18")
+assert_output_contains "$BLOCK18" "lifecycle: Paused-Awaiting-Input" "18b: FR16 Paused — lifecycle value derivable"
+assert_output_contains "$BLOCK18" 'pause_reason: "Awaiting spec clarification"' "18b: FR16 Paused — pause_reason present"
+assert_output_contains "$BLOCK18" "block_reason: --" "18b: FR16 Paused — block_reason at -- sentinel"
+assert_output_contains "$BLOCK18" "block_artifact: --" "18b: FR16 Paused — block_artifact at -- sentinel"
 
-# 18c: Blocked state — Block Reason + Block Artifact present, Pause Reason absent
+# 18c: Blocked state — Block Reason + Block Artifact present, pause_reason at --
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Lifecycle --value Blocked 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Block Reason" --value "Blocked on external review" 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Block Artifact" --value "pr-001.md" 2>/dev/null
-BLOCK18=$(get_pipeline_block "$PIPE_STATE18")
-assert_output_contains "$BLOCK18" "**Lifecycle:** Blocked" "18c: FR16 Blocked — Lifecycle value derivable"
-assert_output_contains "$BLOCK18" "**Block Reason:** Blocked on external review" "18c: FR16 Blocked — Block Reason present"
-assert_output_contains "$BLOCK18" "**Block Artifact:** pr-001.md" "18c: FR16 Blocked — Block Artifact present"
-assert_output_not_contains "$BLOCK18" "**Pause Reason:**" "18c: FR16 Blocked — Pause Reason absent"
+BLOCK18=$(get_frontmatter_block "$PIPE_STATE18")
+assert_output_contains "$BLOCK18" "lifecycle: Blocked" "18c: FR16 Blocked — lifecycle value derivable"
+assert_output_contains "$BLOCK18" 'block_reason: "Blocked on external review"' "18c: FR16 Blocked — block_reason present"
+assert_output_contains "$BLOCK18" "block_artifact: pr-001.md" "18c: FR16 Blocked — block_artifact present"
+assert_output_contains "$BLOCK18" "pause_reason: --" "18c: FR16 Blocked — pause_reason at -- sentinel"
 
-# 18d: Completed state — no conditional fields
+# 18d: Completed state — all conditional fields at the -- sentinel
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Lifecycle --value Completed 2>/dev/null
-BLOCK18=$(get_pipeline_block "$PIPE_STATE18")
-assert_output_contains "$BLOCK18" "**Lifecycle:** Completed" "18d: FR16 Completed — Lifecycle value derivable"
-assert_output_not_contains "$BLOCK18" "**Pause Reason:**" "18d: FR16 Completed — Pause Reason absent"
-assert_output_not_contains "$BLOCK18" "**Block Reason:**" "18d: FR16 Completed — Block Reason absent"
-assert_output_not_contains "$BLOCK18" "**Block Artifact:**" "18d: FR16 Completed — Block Artifact absent"
+BLOCK18=$(get_frontmatter_block "$PIPE_STATE18")
+assert_output_contains "$BLOCK18" "lifecycle: Completed" "18d: FR16 Completed — lifecycle value derivable"
+assert_output_contains "$BLOCK18" "pause_reason: --" "18d: FR16 Completed — pause_reason at -- sentinel"
+assert_output_contains "$BLOCK18" "block_reason: --" "18d: FR16 Completed — block_reason at -- sentinel"
+assert_output_contains "$BLOCK18" "block_artifact: --" "18d: FR16 Completed — block_artifact at -- sentinel"
 
-# 18e: Grep-recovery of field values from on-disk block
+# 18e: Grep-recovery of field values from the on-disk frontmatter block
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
 AID_STATE_FILE="$PIPE_STATE18" bash "$SCRIPT" --pipeline --field "Active Skill" --value "aid-develop" 2>/dev/null
-lc_val=$(grep -oP '(?<=\*\*Lifecycle:\*\* ).*' "$PIPE_STATE18" | head -1)
-ph_val=$(grep -oP '(?<=\*\*Phase:\*\* ).*' "$PIPE_STATE18" | head -1)
-as_val=$(grep -oP '(?<=\*\*Active Skill:\*\* ).*' "$PIPE_STATE18" | head -1)
-assert_eq "$lc_val" "Running" "18e: FR16 Lifecycle value grep-recoverable from on-disk block"
-assert_eq "$ph_val" "Execute" "18e: FR16 Phase value grep-recoverable from on-disk block"
-assert_eq "$as_val" "aid-develop" "18e: FR16 Active Skill value grep-recoverable from on-disk block"
+lc_val=$(grep -m1 '^lifecycle:' "$PIPE_STATE18" | sed 's/^lifecycle:[ \t]*//')
+ph_val=$(grep -m1 '^phase:' "$PIPE_STATE18" | sed 's/^phase:[ \t]*//')
+as_val=$(grep -m1 '^active_skill:' "$PIPE_STATE18" | sed 's/^active_skill:[ \t]*//')
+assert_eq "$lc_val" "Running" "18e: FR16 lifecycle value grep-recoverable from on-disk frontmatter"
+assert_eq "$ph_val" "Execute" "18e: FR16 phase value grep-recoverable from on-disk frontmatter"
+assert_eq "$as_val" "aid-develop" "18e: FR16 active_skill value grep-recoverable from on-disk frontmatter"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -1200,13 +1252,14 @@ AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field Lifecycle --va
 code=0
 AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Blocker pending — awaiting loopback resolution before /aid-specify can continue" 2>/dev/null || code=$?
 assert_exit_zero "$code" "19a: Pause Reason emit after PAUSE transition → exit 0"
-assert_file_contains "$PIPE_STATE19A" "**Lifecycle:** Paused-Awaiting-Input" "19a: Lifecycle set to Paused-Awaiting-Input"
-assert_file_contains "$PIPE_STATE19A" "**Pause Reason:** Blocker pending" "19a: Pause Reason written"
+assert_file_contains "$PIPE_STATE19A" "lifecycle: Paused-Awaiting-Input" "19a: Lifecycle set to Paused-Awaiting-Input"
+assert_file_contains "$PIPE_STATE19A" 'pause_reason: "Blocker pending' "19a: Pause Reason written"
 
 # 19b: Resume path — M4 Running emit clears Pause Reason
 AID_STATE_FILE="$PIPE_STATE19A" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-assert_file_contains "$PIPE_STATE19A" "**Lifecycle:** Running" "19b: Lifecycle returns to Running on resume"
-assert_file_not_contains "$PIPE_STATE19A" "**Pause Reason:**" "19b: Pause Reason cleared on Running transition (M4 resume)"
+assert_file_contains "$PIPE_STATE19A" "lifecycle: Running" "19b: Lifecycle returns to Running on resume"
+assert_file_contains "$PIPE_STATE19A" "pause_reason: --" "19b: Pause Reason cleared on Running transition (M4 resume)"
+assert_file_not_contains "$PIPE_STATE19A" "Blocker pending" "19b: old Pause Reason text gone after clear"
 
 # 19c: Block path (impediment / Failed task emit sequence)
 PIPE_STATE19C="${TMPDIR_BASE}/pipe19c/STATE.md"
@@ -1225,16 +1278,17 @@ code=0
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field "Block Reason" --value "Task failed with unresolved impediment — task-001" 2>/dev/null || code=$?
 assert_exit_zero "$code" "19c: Block Reason emit after task failure → exit 0"
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field "Block Artifact" --value ".aid/work-001/IMPEDIMENT-task-001.md" 2>/dev/null
-assert_file_contains "$PIPE_STATE19C" "**Lifecycle:** Blocked" "19c: Lifecycle set to Blocked on task failure"
-assert_file_contains "$PIPE_STATE19C" "**Block Reason:** Task failed" "19c: Block Reason written"
-assert_file_contains "$PIPE_STATE19C" "**Block Artifact:** .aid/work-001/IMPEDIMENT-task-001.md" "19c: Block Artifact written"
-assert_file_not_contains "$PIPE_STATE19C" "**Pause Reason:**" "19c: Pause Reason absent when Blocked"
+assert_file_contains "$PIPE_STATE19C" "lifecycle: Blocked" "19c: Lifecycle set to Blocked on task failure"
+assert_file_contains "$PIPE_STATE19C" 'block_reason: "Task failed' "19c: Block Reason written"
+assert_file_contains "$PIPE_STATE19C" "block_artifact: .aid/work-001/IMPEDIMENT-task-001.md" "19c: Block Artifact written"
+assert_file_contains "$PIPE_STATE19C" "pause_reason: --" "19c: Pause Reason at -- sentinel when Blocked"
 
 # 19d: Block resolution path — M4 Running emit clears Block fields
 AID_STATE_FILE="$PIPE_STATE19C" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
-assert_file_contains "$PIPE_STATE19C" "**Lifecycle:** Running" "19d: Lifecycle returns to Running after impediment resolved"
-assert_file_not_contains "$PIPE_STATE19C" "**Block Reason:**" "19d: Block Reason cleared on Running transition"
-assert_file_not_contains "$PIPE_STATE19C" "**Block Artifact:**" "19d: Block Artifact cleared on Running transition"
+assert_file_contains "$PIPE_STATE19C" "lifecycle: Running" "19d: Lifecycle returns to Running after impediment resolved"
+assert_file_contains "$PIPE_STATE19C" "block_reason: --" "19d: Block Reason cleared on Running transition"
+assert_file_contains "$PIPE_STATE19C" "block_artifact: --" "19d: Block Artifact cleared on Running transition"
+assert_file_not_contains "$PIPE_STATE19C" "IMPEDIMENT-task-001.md" "19d: old Block Artifact value gone after clear"
 
 # 19e: Delivery-gate circuit-breaker block
 PIPE_STATE19E="${TMPDIR_BASE}/pipe19e/STATE.md"
@@ -1245,8 +1299,8 @@ AID_STATE_FILE="$PIPE_STATE19E" bash "$SCRIPT" --pipeline --field "Block Reason"
 code=0
 AID_STATE_FILE="$PIPE_STATE19E" bash "$SCRIPT" --pipeline --field "Block Artifact" --value ".aid/work-001/IMPEDIMENT-delivery-001.md" 2>/dev/null || code=$?
 assert_exit_zero "$code" "19e: Delivery gate circuit-breaker block emit → exit 0"
-assert_file_contains "$PIPE_STATE19E" "**Lifecycle:** Blocked" "19e: Lifecycle Blocked on circuit-breaker stop"
-assert_file_contains "$PIPE_STATE19E" "**Block Artifact:** .aid/work-001/IMPEDIMENT-delivery-001.md" "19e: Block Artifact is delivery IMPEDIMENT path"
+assert_file_contains "$PIPE_STATE19E" "lifecycle: Blocked" "19e: Lifecycle Blocked on circuit-breaker stop"
+assert_file_contains "$PIPE_STATE19E" "block_artifact: .aid/work-001/IMPEDIMENT-delivery-001.md" "19e: Block Artifact is delivery IMPEDIMENT path"
 
 # 19f: Delivery-gate non-CODE pause (non-CODE-only STOP → Paused-Awaiting-Input)
 PIPE_STATE19F="${TMPDIR_BASE}/pipe19f/STATE.md"
@@ -1256,8 +1310,8 @@ AID_STATE_FILE="$PIPE_STATE19F" bash "$SCRIPT" --pipeline --field Lifecycle --va
 code=0
 AID_STATE_FILE="$PIPE_STATE19F" bash "$SCRIPT" --pipeline --field "Pause Reason" --value "Delivery gate blocked on non-CODE issues — upstream fix required (SPEC/TASK/KB)" 2>/dev/null || code=$?
 assert_exit_zero "$code" "19f: Delivery gate non-CODE pause emit → exit 0"
-assert_file_contains "$PIPE_STATE19F" "**Lifecycle:** Paused-Awaiting-Input" "19f: Lifecycle Paused on non-CODE-only gate stop"
-assert_file_contains "$PIPE_STATE19F" "**Pause Reason:** Delivery gate blocked on non-CODE issues" "19f: Pause Reason explains upstream fix needed"
+assert_file_contains "$PIPE_STATE19F" "lifecycle: Paused-Awaiting-Input" "19f: Lifecycle Paused on non-CODE-only gate stop"
+assert_file_contains "$PIPE_STATE19F" 'pause_reason: "Delivery gate blocked on non-CODE issues' "19f: Pause Reason explains upstream fix needed"
 
 # ---------------------------------------------------------------------------
 echo ""
@@ -1412,12 +1466,12 @@ assert_exit_zero "$code" "20d: flat --field Review write on existing row → exi
 assert_file_contains "$FLAT_STATE" "| task-001 | In Progress | A |" "20d: task-001 Review set to A, State preserved"
 assert_file_contains "$FLAT_STATE" "| task-002 | Pending |" "20d: task-002 row unaffected by task-001 update"
 
-# 20e: --delivery-id 001 --lifecycle updates the work-root ## Delivery Lifecycle
-# State line directly (no deliveries/delivery-001/STATE.md is created)
+# 20e: --delivery-id 001 --lifecycle updates the work-root frontmatter's
+# delivery_state key directly (no deliveries/delivery-001/STATE.md is created)
 code=0
 AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --lifecycle "Executing" 2>/dev/null || code=$?
 assert_exit_zero "$code" "20e: flat --lifecycle write → exit 0"
-assert_file_contains "$FLAT_STATE" "**State:** Executing" "20e: work-root ## Delivery Lifecycle State set to Executing"
+assert_file_contains "$FLAT_STATE" "delivery_state: Executing" "20e: work-root frontmatter delivery_state set to Executing"
 if [[ ! -d "${FLAT_WORK}/deliveries" ]]; then
     pass "20e: no deliveries/ directory created for the flat layout"
 else
@@ -1521,7 +1575,7 @@ make_task_state "$DELIVERY_090" 9
 code=0
 AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "008" --task-id "008" --field State --value "Done" 2>/dev/null || code=$?
 assert_exit_zero "$code" "21a: --delivery-id 008 --task-id 008 --field → exit 0 (no octal parse error)"
-assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "**State:** Done" "21a: write landed in delivery-008/tasks/task-008/STATE.md"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "state: Done" "21a: write landed in delivery-008/tasks/task-008/STATE.md"
 if [[ ! -e "${WORK_21}/deliveries/delivery-000" ]]; then
     pass "21a: no delivery-000 directory was ever consulted (octal misparse would have targeted it)"
 else
@@ -1540,7 +1594,7 @@ assert_file_contains "${DELIVERY_090}/tasks/task-009/STATE.md" "octal-ok" "21b: 
 code=0
 AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --delivery-id "090" --lifecycle "Gated" 2>/dev/null || code=$?
 assert_exit_zero "$code" "21c: --delivery-id 090 --lifecycle → exit 0 (no octal parse error)"
-assert_file_contains "${DELIVERY_090}/STATE.md" "**State:** Gated" "21c: lifecycle written to delivery-090/STATE.md"
+assert_file_contains "${DELIVERY_090}/STATE.md" "delivery_state: Gated" "21c: lifecycle written to delivery-090/STATE.md"
 
 # 21d: --delivery-id "008" --block targets delivery-008/STATE.md directly
 # (mode_delivery_block's own padded_id site).
@@ -1566,7 +1620,7 @@ assert_file_contains "${WORK_21}/delivery-009-issues.md" "octal footgun regressi
 code=0
 AID_STATE_FILE="${WORK_21}/STATE.md" bash "$SCRIPT" --task-id "008" --field Review --value "B" 2>/dev/null || code=$?
 assert_exit_zero "$code" "21f: Source-line resolution with task-id 008 → exit 0 (no octal parse error)"
-assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "**Review:** B" "21f: Source-line-resolved write landed in delivery-008/tasks/task-008/STATE.md"
+assert_file_contains "${DELIVERY_008}/tasks/task-008/STATE.md" "review: B" "21f: Source-line-resolved write landed in delivery-008/tasks/task-008/STATE.md"
 
 # 21g: feature-001 flattened layout — write_task_field_flat's own padded_t
 # site for zero-padded task-id "008".
@@ -1595,6 +1649,142 @@ if echo "$err_out21h" | grep -q "task-008"; then
     pass "21h: confirmation message reports 'task-008' (padded_id resolved correctly, not 'task-000')"
 else
     fail "21h: confirmation message did not report 'task-008' as expected — got: $err_out21h"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
+echo "=== Unit 22: task-004 frontmatter-writer path — new fields + gate-field + body invariance ==="
+
+# 22a: --pipeline --field extended to Started / Minimum Grade / User Approved /
+# Pipeline Path / Pipeline Initiator (all newly handled by mode_pipeline).
+PIPE_STATE22="${TMPDIR_BASE}/pipe22/STATE.md"
+make_pipeline_state "$PIPE_STATE22"
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field Started --value "2026-07-10" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22a: Started write → exit 0"
+assert_file_contains "$PIPE_STATE22" "started: 2026-07-10" "22a: started frontmatter key written"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "Minimum Grade" --value "A+" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22a: Minimum Grade write → exit 0"
+assert_file_contains "$PIPE_STATE22" "minimum_grade: A+" "22a: minimum_grade frontmatter key written"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "Minimum Grade" --value "Z" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "22a: Minimum Grade='Z' (invalid grade) rejected (exit 4)"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "User Approved" --value "yes" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22a: User Approved=yes write → exit 0"
+assert_file_contains "$PIPE_STATE22" "user_approved: yes" "22a: user_approved frontmatter key written"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "User Approved" --value "maybe" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "22a: User Approved='maybe' (invalid) rejected (exit 4)"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "Pipeline Path" --value "lite" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22a: Pipeline Path=lite write → exit 0"
+assert_file_contains "$PIPE_STATE22" "  path: lite" "22a: pipeline.path nested frontmatter key written"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "Pipeline Path" --value "medium" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "22a: Pipeline Path='medium' (invalid) rejected (exit 4)"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "Pipeline Initiator" --value "aid-refactor" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22a: Pipeline Initiator=aid-refactor write → exit 0"
+assert_file_contains "$PIPE_STATE22" "  initiator: aid-refactor" "22a: pipeline.initiator nested frontmatter key written"
+
+code=0
+AID_STATE_FILE="$PIPE_STATE22" bash "$SCRIPT" --pipeline --field "Pipeline Initiator" --value "refactor" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "22a: Pipeline Initiator='refactor' (no aid- prefix) rejected (exit 4)"
+
+# Both nested pipeline.* keys coexist under ONE `pipeline:` parent mapping (no duplicate header)
+PIPELINE_PARENT_COUNT=$(grep -cE '^pipeline:$' "$PIPE_STATE22")
+assert_eq "$PIPELINE_PARENT_COUNT" "1" "22a: exactly one 'pipeline:' parent mapping header (path+initiator share it)"
+
+# 22b: --gate-field enum validation
+GATE22_WORK="${TMPDIR_BASE}/gate22-work"
+make_delivery_state "$GATE22_WORK" 1
+code=0
+AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Tier --gate-value "Medium" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22b: gate-field Tier=Medium accepted (exit 0)"
+assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" "gate_tier: Medium" "22b: gate_tier frontmatter key written"
+
+code=0
+AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Tier --gate-value "Huge" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "22b: gate-field Tier='Huge' (invalid) rejected (exit 4)"
+
+code=0
+AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Grade --gate-value "A-" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22b: gate-field Grade=A- accepted (exit 0)"
+assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" "gate_grade: A-" "22b: gate_grade frontmatter key written"
+
+code=0
+AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Grade --gate-value "Z" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "22b: gate-field Grade='Z' (invalid) rejected (exit 4)"
+
+code=0
+AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Timestamp --gate-value "2026-07-10T12:00:00Z" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22b: gate-field Timestamp accepted (exit 0)"
+# Quoted -- the value contains ':' (wb_set_frontmatter's quoting rule)
+assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" 'gate_timestamp: "2026-07-10T12:00:00Z"' "22b: gate_timestamp frontmatter key written"
+
+code=0
+AID_STATE_FILE="${GATE22_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Unknown --gate-value "x" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "22b: unknown gate-field name rejected (exit 4)"
+
+# 22c: gate-field isolation — the ## Delivery Gate body block (Complexity
+# Score/Cycles/Issue List) is untouched by --gate-field writes.
+# NOTE: the pattern is deliberately NOT prefixed with "- " -- a leading "-" in
+# a grep -F pattern is misparsed as an option flag (assert_file_contains does
+# not use `grep -- "$pattern"`), so the substring check starts at "**" instead.
+assert_file_contains "${GATE22_WORK}/deliveries/delivery-001/STATE.md" "**Issue List:** none" "22c: ## Delivery Gate body Issue List bullet untouched by --gate-field"
+
+# 22d: gate-field flattened layout — targets work-root frontmatter (--delivery-id 001)
+GATE22_FLAT="${TMPDIR_BASE}/gate22-flat"
+make_flat_work_state "$GATE22_FLAT"
+make_flat_blueprint "$GATE22_FLAT"
+make_flat_task_spec "$GATE22_FLAT" 1
+code=0
+AID_STATE_FILE="${GATE22_FLAT}/STATE.md" bash "$SCRIPT" --delivery-id 1 --gate-field Tier --gate-value "Small" 2>/dev/null || code=$?
+assert_exit_zero "$code" "22d: flat-layout gate-field write → exit 0"
+assert_file_contains "${GATE22_FLAT}/STATE.md" "gate_tier: Small" "22d: work-root frontmatter gate_tier set (flat layout)"
+if [[ ! -d "${GATE22_FLAT}/deliveries" ]]; then
+    pass "22d: no deliveries/ directory created for the flat layout gate-field write"
+else
+    fail "22d: a deliveries/ directory was created by --gate-field — flat layout must not use one"
+fi
+
+# 22e: body byte-invariance (critical AC) — capture the markdown BODY (every
+# line strictly after the closing frontmatter fence) before and after a
+# sequence of frontmatter writes; it must be byte-identical.
+BINV_WORK="${TMPDIR_BASE}/bodyinvariance-work"
+mkdir -p "$BINV_WORK"
+cat "${SCRIPT_DIR}/../../canonical/aid/templates/work-state-template.md" > "${BINV_WORK}/STATE.md" 2>/dev/null || \
+    make_pipeline_state "${BINV_WORK}/STATE.md"
+capture_body() {
+    local f="$1"
+    if head -1 "$f" | grep -qE '^---[ \t]*$'; then
+        local close_line
+        close_line=$(awk '/^---[ \t]*$/{n++; if(n==2){print NR; exit}}' "$f")
+        tail -n "+$((close_line + 1))" "$f"
+    else
+        cat "$f"
+    fi
+}
+BODY_BEFORE_22E=$(capture_body "${BINV_WORK}/STATE.md")
+AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field Lifecycle --value Running 2>/dev/null
+AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field Phase --value Execute 2>/dev/null
+AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field "Active Skill" --value aid-execute 2>/dev/null
+AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field "Pipeline Path" --value lite 2>/dev/null
+AID_STATE_FILE="${BINV_WORK}/STATE.md" bash "$SCRIPT" --pipeline --field "Pipeline Initiator" --value aid-refactor 2>/dev/null
+BODY_AFTER_22E=$(capture_body "${BINV_WORK}/STATE.md")
+if [[ "$BODY_BEFORE_22E" == "$BODY_AFTER_22E" ]]; then
+    pass "22e: markdown BODY byte-identical after a sequence of frontmatter writes (critical AC)"
+else
+    fail "22e: markdown BODY changed after frontmatter writes — body byte-invariance violated"
 fi
 
 # ---------------------------------------------------------------------------

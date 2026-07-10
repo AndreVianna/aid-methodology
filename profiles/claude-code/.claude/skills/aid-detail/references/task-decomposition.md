@@ -139,9 +139,12 @@ Each task is a **folder** containing two files:
 
 Six sections. Nothing else.
 
-- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.claude/aid/templates/task-state-template.md`
-  with `State: Pending`, empty Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
-  Updated by `aid-execute`; never written by `aid-detail` after seeding.
+- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.claude/aid/templates/task-state-template.md`,
+  replacing the frontmatter block's placeholder lines with the real opening values
+  (`state: Pending`, `review: --`, `elapsed: --`, `notes: --` — task-001/004; the
+  leading YAML block is the sole home for these 4 scalars), and the correct
+  Task/Delivery/Work header fields. Updated by `aid-execute`
+  (`writeback-state.sh --task-id NNN --field ...`); never written by `aid-detail` after seeding.
 
 Do NOT write task rows into the work `STATE.md` `## Tasks State` section. That is a DERIVED
 read-only view assembled at read time from the per-task STATE.md files (parent derives, never writes).
