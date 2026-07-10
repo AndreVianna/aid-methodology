@@ -15,19 +15,11 @@
 //   lib/AidInstallCore.psm1  -> packages/npm/lib/AidInstallCore.psm1
 //   VERSION              -> packages/npm/VERSION
 //
-// Dashboard server+reader unit (12 files, curated -- excludes tests/ __pycache__ *.pyc README):
-//   dashboard/home.html                   -> packages/npm/dashboard/home.html
-//   dashboard/index.html                  -> packages/npm/dashboard/index.html
-//   dashboard/reader/__init__.py          -> packages/npm/dashboard/reader/__init__.py
-//   dashboard/reader/reader.py            -> packages/npm/dashboard/reader/reader.py
-//   dashboard/reader/models.py            -> packages/npm/dashboard/reader/models.py
-//   dashboard/reader/parsers.py           -> packages/npm/dashboard/reader/parsers.py
-//   dashboard/reader/derivation.py        -> packages/npm/dashboard/reader/derivation.py
-//   dashboard/reader/locator.py           -> packages/npm/dashboard/reader/locator.py
-//   dashboard/server/server.py            -> packages/npm/dashboard/server/server.py
-//   dashboard/server/server.mjs           -> packages/npm/dashboard/server/server.mjs
-//   dashboard/server/reader.mjs           -> packages/npm/dashboard/server/reader.mjs
-//   dashboard/server/__init__.py          -> packages/npm/dashboard/server/__init__.py
+// Dashboard server+reader unit: the curated file set is NOT listed here -- it is read
+// from the single-source manifest dashboard/MANIFEST (shared with install.sh, install.ps1,
+// packages/pypi/scripts/vendor.py and release.sh; guarded by
+// tests/canonical/test-dashboard-manifest.sh). This prevents a new dashboard source file
+// from being silently omitted from the npm channel (the H1 lockstep failure mode).
 
 'use strict';
 
@@ -38,6 +30,15 @@ var path = require('path');
 var repoRoot = path.join(__dirname, '..', '..', '..');
 var pkgRoot  = path.join(__dirname, '..');
 
+// Read the curated dashboard file set from the single-source manifest (dashboard/MANIFEST).
+// One path per line, relative to dashboard/; #-comments and blank lines ignored.
+function readDashboardManifest(root) {
+    var text = fs.readFileSync(path.join(root, 'dashboard', 'MANIFEST'), 'utf8');
+    return text.split('\n')
+        .map(function (line) { return line.replace(/#.*$/, '').trim(); })
+        .filter(function (line) { return line.length > 0; });
+}
+
 var copies = [
     ['bin/aid',                          'bin/aid'],
     ['bin/aid.ps1',                      'bin/aid.ps1'],
@@ -45,20 +46,14 @@ var copies = [
     ['lib/aid-install-core.sh',          'lib/aid-install-core.sh'],
     ['lib/AidInstallCore.psm1',          'lib/AidInstallCore.psm1'],
     ['VERSION',                          'VERSION'],
-    // Dashboard server+reader unit (12 files, curated).
-    ['dashboard/home.html',              'dashboard/home.html'],
-    ['dashboard/index.html',             'dashboard/index.html'],
-    ['dashboard/reader/__init__.py',     'dashboard/reader/__init__.py'],
-    ['dashboard/reader/reader.py',       'dashboard/reader/reader.py'],
-    ['dashboard/reader/models.py',       'dashboard/reader/models.py'],
-    ['dashboard/reader/parsers.py',      'dashboard/reader/parsers.py'],
-    ['dashboard/reader/derivation.py',   'dashboard/reader/derivation.py'],
-    ['dashboard/reader/locator.py',      'dashboard/reader/locator.py'],
-    ['dashboard/server/server.py',       'dashboard/server/server.py'],
-    ['dashboard/server/server.mjs',      'dashboard/server/server.mjs'],
-    ['dashboard/server/reader.mjs',      'dashboard/server/reader.mjs'],
-    ['dashboard/server/__init__.py',     'dashboard/server/__init__.py'],
 ];
+// Append the dashboard server+reader unit from the shared manifest. MANIFEST itself is
+// vendored too, so the npm payload is self-describing (in lockstep with vendor.py and
+// release.sh, which also ship it).
+copies.push(['dashboard/MANIFEST', 'dashboard/MANIFEST']);
+readDashboardManifest(repoRoot).forEach(function (rel) {
+    copies.push(['dashboard/' + rel, 'dashboard/' + rel]);
+});
 
 // Clean slate: remove any prior vendored payload (lib/ dir, dashboard/ dir, the vendored
 // bin scripts, VERSION) so stray runtime artifacts or files from an older version never
@@ -83,6 +78,7 @@ for (var j = 0; j < copies.length; j++) {
     var src  = path.join(repoRoot, copies[j][0]);
     var dest = path.join(pkgRoot,  copies[j][1]);
     try {
+        fs.mkdirSync(path.dirname(dest), { recursive: true });
         fs.copyFileSync(src, dest);
         console.log('vendor: copied ' + copies[j][0] + ' -> packages/npm/' + copies[j][1]);
     } catch (e) {
@@ -95,4 +91,4 @@ if (!ok) {
     process.exit(1);
 }
 
-console.log('vendor: done. 18 files vendored into packages/npm/.');
+console.log('vendor: done. ' + copies.length + ' files vendored into packages/npm/.');

@@ -1,0 +1,33 @@
+# dashboard/MANIFEST -- single source of truth for the dashboard "server + reader" unit.
+#
+# One path per line, relative to dashboard/. Blank lines and #-comments are ignored;
+# trailing #-comments on a path line are stripped. Order is not significant.
+#
+# This is the curated set the installer/vendor paths provision -- it EXCLUDES
+# tests/, __pycache__/, *.pyc, README.md, and this MANIFEST file itself.
+#
+# Consumed by (all five must derive their dashboard file set from this file, never
+# a hand-maintained copy):
+#   - install.sh                          (curl|bash bootstrap + local-checkout provisioning)
+#   - install.ps1                         (PowerShell bootstrap)
+#   - packages/npm/scripts/vendor.js      (npm prepack vendoring)
+#   - packages/pypi/scripts/vendor.py     (hatchling build-hook vendoring)
+#   - release.sh                          (the aid-cli-v*.tar.gz CLI bundle)
+#
+# Guarded by tests/canonical/test-dashboard-manifest.sh, which asserts this list is
+# byte-for-byte the curated dashboard/ tree (so a new dashboard source file cannot be
+# silently omitted from one channel -- the historical H1 failure mode) and that all
+# five consumers reference this manifest rather than an inline list.
+home.html
+index.html
+reader/__init__.py
+reader/io_bounds.py
+reader/derivation.py
+reader/locator.py
+reader/models.py
+reader/parsers.py
+reader/reader.py
+server/__init__.py
+server/reader.mjs
+server/server.mjs
+server/server.py

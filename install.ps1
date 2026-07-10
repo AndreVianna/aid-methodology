@@ -743,8 +743,12 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         }
     }
 
-    # Install the dashboard server+reader unit (12 files, curated).
-    # Source: beside install.ps1 (repo checkout) or extracted CLI bundle (piped bootstrap).
+    # Install the dashboard server+reader unit. The curated file set is read from the
+    # single-source manifest dashboard/MANIFEST (shared with install.sh, vendor.js,
+    # vendor.py and release.sh; guarded by tests/canonical/test-dashboard-manifest.sh) --
+    # never a copy hand-maintained here -- so no source file (home.html, io_bounds.py, ...)
+    # is silently omitted from the irm|iex + bundle channel (the H1 lockstep failure).
+    # Source: beside install.ps1 (repo checkout) or the extracted CLI bundle (piped bootstrap).
     $bsDashSrc = $null
     if ($bsCliBundleExtract) {
         $bsDashSrc = Join-Path $bsCliBundleExtract 'dashboard'
@@ -752,32 +756,27 @@ if ($script:_InstallMode -eq 'BOOTSTRAP') {
         $bsDashSrc = Join-Path (Split-Path -Parent $script:_InstallPs1Path) 'dashboard'
     }
     if ($bsDashSrc -and (Test-Path $bsDashSrc -PathType Container)) {
-        # Clean-replace the dashboard unit so upgrades never leave old server bits.
-        $bsDashDest = Join-Path $aidHome 'dashboard'
-        if (Test-Path $bsDashDest -PathType Container) {
-            Remove-Item -LiteralPath $bsDashDest -Recurse -Force -ErrorAction SilentlyContinue
+        $bsDashManifest = Join-Path $bsDashSrc 'MANIFEST'
+        $bsDashFiles = @()
+        if (Test-Path $bsDashManifest -PathType Leaf) {
+            foreach ($bsLine in (Get-Content -LiteralPath $bsDashManifest -Encoding utf8)) {
+                $bsLine = ($bsLine -replace '#.*$', '').Trim()
+                if ($bsLine) { $bsDashFiles += ($bsLine -replace '/', '\') }
+            }
         }
-        $bsDashFiles = @(
-            'home.html',
-            'index.html',
-            'reader\__init__.py',
-            'reader\reader.py',
-            'reader\models.py',
-            'reader\parsers.py',
-            'reader\derivation.py',
-            'reader\locator.py',
-            'server\server.py',
-            'server\server.mjs',
-            'server\reader.mjs',
-            'server\__init__.py'
-        )
-        New-Item -ItemType Directory -Path (Join-Path $bsDashDest 'reader') -Force | Out-Null
-        New-Item -ItemType Directory -Path (Join-Path $bsDashDest 'server') -Force | Out-Null
-        foreach ($bsDf in $bsDashFiles) {
-            $bsDfSrc = Join-Path $bsDashSrc $bsDf
-            $bsDfDst = Join-Path $bsDashDest $bsDf
-            if (Test-Path $bsDfSrc -PathType Leaf) {
-                Copy-Item -LiteralPath $bsDfSrc -Destination $bsDfDst -Force
+        if ($bsDashFiles.Count -gt 0) {
+            # Clean-replace the dashboard unit so upgrades never leave old server bits.
+            $bsDashDest = Join-Path $aidHome 'dashboard'
+            if (Test-Path $bsDashDest -PathType Container) {
+                Remove-Item -LiteralPath $bsDashDest -Recurse -Force -ErrorAction SilentlyContinue
+            }
+            foreach ($bsDf in $bsDashFiles) {
+                $bsDfSrc = Join-Path $bsDashSrc $bsDf
+                $bsDfDst = Join-Path $bsDashDest $bsDf
+                if (Test-Path $bsDfSrc -PathType Leaf) {
+                    New-Item -ItemType Directory -Path (Split-Path -Parent $bsDfDst) -Force | Out-Null
+                    Copy-Item -LiteralPath $bsDfSrc -Destination $bsDfDst -Force
+                }
             }
         }
     }

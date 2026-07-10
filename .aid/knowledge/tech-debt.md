@@ -5,6 +5,8 @@ objective: Severity-classified open technical and methodology debt in AID — de
 summary: Read this before starting work in any area; declared debt items and the non-obvious gotchas (lockstep manifests, master-only gates, render-drift ordering, HOME-pinning) may change your approach or scope.
 sources:
   - install.sh
+  - dashboard/MANIFEST
+  - tests/canonical/test-dashboard-manifest.sh
   - lib/aid-install-core.sh
   - docs/repository-structure.md
   - canonical/EMISSION-MANIFEST.md
@@ -58,7 +60,6 @@ structural and methodological, not littered code.
 
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
-| **H1** | Architecture / lockstep | Five install manifests must stay byte-lockstep on the dashboard file set; a silent omission breaks provisioning on one channel | install.sh, install.ps1, vendor.js, vendor.py, release.sh | High | M | P1 |
 | **M3** | Methodology / no guard | No CI check asserts hand-written skill/agent/profile **counts** across ~10 doc surfaces against the canonical tree, so prose-count drift is caught only by manual review or `/aid-housekeep` (the `EMISSION-MANIFEST.md` 3-of-5 profile enumeration was reconciled 2026-07-10) | docs/*, KB count surfaces | Medium | S | P2 |
 | **L3** | Deprecation debt | Legacy flag-style install path "retained for one release"; the deprecation window has closed, so it can be excised — but as its own installer-CI-gated change, not a doc edit | install.sh | Low | S | P3 |
 | **L4** | Test gap | No line-coverage metric or `%` enforcement anywhere (only test-execution-presence guards) | (whole pipeline) | Low | M | P3 |
@@ -70,34 +71,6 @@ urgent.
 ---
 
 ## Detailed Debt Items
-
-### [HIGH] H1 -- Five install manifests must stay lockstep on the dashboard file set
-
-**Type:** Architecture / lockstep config
-
-**Description:** The dashboard server+reader file set is vendored independently by five
-install paths. There is no single shared list — each manifest hard-codes the files. Omitting
-one file from one manifest silently breaks that channel (a real bug shipped this way: the
-release CLI bundle once omitted `dashboard/home.html`, so the `curl|bash` + release-bundle
-path provisioned no `home.html` while npm/PyPI were fine).
-
-**Location:**
-- `install.sh` — bootstrap fetch + provisioning
-- `install.ps1` — PowerShell bootstrap
-- `packages/npm/scripts/vendor.js` — npm prepack vendoring
-- `packages/pypi/scripts/vendor.py` — hatchling build-hook vendoring
-- `release.sh` — the `aid-cli-v*.tar.gz` CLI bundle (its `home.html` copy carries an explicit
-  lockstep comment naming the other four)
-
-**Risk if unaddressed:** A per-channel install regression that passes most tests (only the
-affected channel breaks) and is easy to miss because the other four channels look healthy.
-
-**Remediation:** Keep all five in lockstep on any dashboard file-set change; the
-`test-npm-installer.sh` / `test-pypi-installer.sh` / `test-release-install-e2e.sh` suites plus
-the Windows channel smokes are the guard. Consider extracting a single shared file-list.
-Effort: M.
-
----
 
 ### [MEDIUM] M3 -- Uncaught prose-count drift (no CI guard)
 
@@ -214,7 +187,10 @@ track updates. No action item beyond letting Dependabot run. CONFIRMED via proje
 The `canonical/ → profiles/` duplication is machine-guarded (render-drift). The
 `dashboard`/`lib` vendored copies are guarded by the channel install suites; the vendoring is
 done at build/pack time by `vendor.js` / `vendor.py`, so editing the source-of-truth copy and
-re-vendoring is the correct workflow.
+re-vendoring is the correct workflow. The **dashboard file *set*** (which files make up the
+server+reader unit) is no longer duplicated: all five install/vendor paths derive it from the
+single-source `dashboard/MANIFEST`, guarded by `tests/canonical/test-dashboard-manifest.sh`
+(H1, resolved 2026-07-10).
 
 ---
 
@@ -261,9 +237,12 @@ model.
   `python .claude/skills/generate-profile/scripts/run_generator.py` (the full generator), not
   a per-script renderer — otherwise the render-drift gate fails on stale `profiles/`
   emission manifests.
-- **Five install manifests in lockstep:** any change to the dashboard file set must touch
-  `install.sh`, `install.ps1`, `vendor.js`, `vendor.py`, and `release.sh`'s CLI bundle
-  together (H1) or one channel silently provisions the wrong files.
+- **One dashboard manifest, five consumers:** the dashboard server+reader file set lives in
+  `dashboard/MANIFEST` (one path per line). `install.sh`, `install.ps1`, `vendor.js`,
+  `vendor.py`, and `release.sh`'s CLI bundle all DERIVE their file set from it — never re-list
+  the files inline. Add/remove a dashboard source file by editing `dashboard/MANIFEST` only;
+  `tests/canonical/test-dashboard-manifest.sh` fails CI if the manifest drifts from the curated
+  `dashboard/` tree or if a consumer stops referencing it (H1 guard).
 - **Four version carriers must agree:** `VERSION`, `packages/npm/package.json`,
   `packages/pypi/pyproject.toml`, and the git tag must all match, or
   `check-version-sync.sh` fails the release `gate`. Bump them together.
@@ -294,3 +273,4 @@ model.
 | 1.7 | 2026-07-09 | work-001 lite-skills refresh | Deleted resolved-in-place items per the removal convention: M2 (heavy gates now gate PRs), L1 (dead install branch removed), L7 (aid-researcher web tools granted in work-001) — closure stays in this log + git. Rewrote M3 to the live remaining drift (EMISSION-MANIFEST 3-of-5 profiles + uncaught prose-count drift), dropping deleted-recipe references and the now-reconciled repository-structure.md / aid-methodology.md instances. Added L8 (writeback-state.sh octal-leading-zero id footgun) + L9 (generate-profile VALIDATE hard-codes a stale 14-skill list). Cleared the Dead Code table; dropped L1 from the install.sh complexity-hotspot note; fixed the dangling M2 reference in Missing Test Coverage. |
 | 1.8 | 2026-07-09 | v2.1.0 skill-count sync | L9 updated to the current state: the v2.1.0 follow-on grew `canonical/skills/` from 82 to 92 (14 classic + `aid-triage` + `aid-ask` + 76 shortcuts), so VALIDATE's stale 14-skill list now leaves 78 (not 68) unlisted directories unvalidated. |
 | 1.9 | 2026-07-10 | v2.1.0 debt re-validation | Validated every open item against disk/CI evidence and removed the stale-resolved ones per the removal convention: **M1** (npm+PyPI publish jobs SUCCEED on the v2.0.6 release run — channels are live, never "blocked/GitHub-only"), **M4** (the visual gate already asserts no-overflow at 732px + 390px — the proposed T4 remediation is implemented), **L6** (DBI orphan-scan now skips gitignored `node_modules/`/`.git/`), **L8** (all `printf '%03d'` sinks in `writeback-state.sh` are now `$((10#$id))`-normalized), **L9** (generate-profile VALIDATE now derives "92" from the catalog, not a hard-coded 14). Reframed **L2** as accepted/won't-do (npm/PyPI already emit sigstore/OIDC provenance; a detached tarball signature is not needed) and moved it to Security Observations. Narrowed **M3** to the remaining no-CI-guard-for-count-drift gap (the `EMISSION-MANIFEST.md` 3-of-5 profile enumeration was reconciled to 5). Updated **L3** remediation (deprecation window has closed; excise as its own installer-CI-gated change). Removed the now-obsolete zero-padded-id gotcha (closed with L8). **Remaining open: H1, M3, L3, L4.** |
+| 2.0 | 2026-07-10 | tech-debt-followup | **H1 RESOLVED** — extracted the dashboard server+reader file set into a single source, `dashboard/MANIFEST`; `install.sh`, `install.ps1`, `packages/npm/scripts/vendor.js`, `packages/pypi/scripts/vendor.py`, and `release.sh` now all derive the set from it (the MANIFEST is bundled into the CLI tarball and both vendored payloads so bootstrap/sdist paths read it from a trusted, self-describing payload). New guard `tests/canonical/test-dashboard-manifest.sh` fails CI if the manifest drifts from the curated `dashboard/` tree or a consumer stops referencing it. This work uncovered and fixed a **live, unshipped correctness/security bug**: `dashboard/reader/io_bounds.py` (the v2.1.0 5 MB bounded-read DoS guard, added in `d2238d8a` and imported by `reader.py` at 9 sites) was **absent from all five manifests plus the two installer-test expected-file lists** — so a v2.1.0 cut would have vendored a `reader.py` that `ImportError`s on npm/PyPI/curl-bash. The manifest includes it; both vendored payloads now carry it (byte-verified). Updated `test-npm-installer.sh` (NM08) and `test-pypi-installer.sh` (PW05) to derive their expected sets from the manifest rather than a hand-maintained copy. **Remaining open: M3, L3, L4.** |

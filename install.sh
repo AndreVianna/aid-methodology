@@ -733,30 +733,30 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     [[ -f "$_BOOTSTRAP_AID_PS1" ]] && cp "$_BOOTSTRAP_AID_PS1" "${_BOOTSTRAP_STAGE}/bin/aid.ps1"
     [[ -f "$_BOOTSTRAP_AID_CMD" ]] && cp "$_BOOTSTRAP_AID_CMD" "${_BOOTSTRAP_STAGE}/bin/aid.cmd"
 
-    # Stage dashboard server+reader unit (12 files, curated).
-    # Source: beside install.sh (repo checkout) or extracted CLI bundle (piped bootstrap).
+    # Stage the dashboard server+reader unit. The curated file set is read from the
+    # single-source manifest dashboard/MANIFEST (shared with install.ps1, vendor.js,
+    # vendor.py and release.sh; guarded by tests/canonical/test-dashboard-manifest.sh) --
+    # never a copy hand-maintained here -- so no source file (home.html, io_bounds.py, ...)
+    # is silently omitted from the curl|bash + bundle channel (the H1 lockstep failure).
+    # Source: beside install.sh (repo checkout) or the extracted CLI bundle (piped bootstrap).
     _BOOTSTRAP_DASHBOARD_SRC="${SCRIPT_DIR}/dashboard"
     if [[ -n "${_AID_CLI_BUNDLE_EXTRACT_DIR:-}" ]]; then
         _BOOTSTRAP_DASHBOARD_SRC="${_AID_CLI_BUNDLE_EXTRACT_DIR}/dashboard"
     fi
-    if [[ -d "$_BOOTSTRAP_DASHBOARD_SRC" ]]; then
-        for _df in \
-            "home.html" \
-            "index.html" \
-            "reader/__init__.py" \
-            "reader/reader.py" \
-            "reader/models.py" \
-            "reader/parsers.py" \
-            "reader/derivation.py" \
-            "reader/locator.py" \
-            "server/server.py" \
-            "server/server.mjs" \
-            "server/reader.mjs" \
-            "server/__init__.py"
-        do
+    _DASHBOARD_FILES=()
+    if [[ -f "${_BOOTSTRAP_DASHBOARD_SRC}/MANIFEST" ]]; then
+        while IFS= read -r _mline || [[ -n "$_mline" ]]; do
+            _mline="${_mline%%#*}"
+            _mline="${_mline#"${_mline%%[![:space:]]*}"}"
+            _mline="${_mline%"${_mline##*[![:space:]]}"}"
+            [[ -n "$_mline" ]] && _DASHBOARD_FILES+=("$_mline")
+        done < "${_BOOTSTRAP_DASHBOARD_SRC}/MANIFEST"
+    fi
+    if [[ -d "$_BOOTSTRAP_DASHBOARD_SRC" && ${#_DASHBOARD_FILES[@]} -gt 0 ]]; then
+        for _df in "${_DASHBOARD_FILES[@]}"; do
             _df_src="${_BOOTSTRAP_DASHBOARD_SRC}/${_df}"
             _df_dst="${_BOOTSTRAP_STAGE}/dashboard/${_df}"
-            [[ -f "$_df_src" ]] && cp "$_df_src" "$_df_dst"
+            [[ -f "$_df_src" ]] && { mkdir -p "$(dirname "$_df_dst")"; cp "$_df_src" "$_df_dst"; }
         done
     fi
 
@@ -784,25 +784,12 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
     [[ -f "${_BOOTSTRAP_STAGE}/bin/aid.cmd" ]] && cp "${_BOOTSTRAP_STAGE}/bin/aid.cmd" "${local_bin_dir}/aid.cmd"
     cp "${_BOOTSTRAP_STAGE}/lib/aid-install-core.sh" "${local_lib_dir}/aid-install-core.sh"
     cp "${_BOOTSTRAP_STAGE}/VERSION" "${AID_HOME}/VERSION"
-    # Install the dashboard unit if it was staged.
+    # Install the dashboard unit if it was staged (same manifest-derived file set).
     if [[ -f "${_BOOTSTRAP_STAGE}/dashboard/server/server.py" ]]; then
         mkdir -p "${AID_HOME}/dashboard/reader" "${AID_HOME}/dashboard/server"
-        for _df in \
-            "home.html" \
-            "index.html" \
-            "reader/__init__.py" \
-            "reader/reader.py" \
-            "reader/models.py" \
-            "reader/parsers.py" \
-            "reader/derivation.py" \
-            "reader/locator.py" \
-            "server/server.py" \
-            "server/server.mjs" \
-            "server/reader.mjs" \
-            "server/__init__.py"
-        do
+        for _df in "${_DASHBOARD_FILES[@]}"; do
             _df_staged="${_BOOTSTRAP_STAGE}/dashboard/${_df}"
-            [[ -f "$_df_staged" ]] && cp "$_df_staged" "${AID_HOME}/dashboard/${_df}"
+            [[ -f "$_df_staged" ]] && { mkdir -p "$(dirname "${AID_HOME}/dashboard/${_df}")"; cp "$_df_staged" "${AID_HOME}/dashboard/${_df}"; }
         done
     fi
 
