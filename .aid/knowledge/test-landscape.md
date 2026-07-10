@@ -219,9 +219,14 @@ CONFIRMED in `.github/workflows/test.yml`.
 ## Coverage Assessment
 
 There is **no line-coverage metric and no coverage threshold** anywhere in the pipeline.
-Coverage is assessed by *suite presence per subsystem*, not by a percentage. This is
-appropriate for a shell/markdown/installer toolkit but means there is no "X% or CI fails"
-enforcement.
+Coverage is assessed by *suite presence per subsystem*, not by a percentage. This is a
+**deliberate, ratified decision** (see `decisions.md` **D26**), not an omission: the shippable
+product is overwhelmingly non-line-instrumentable (~1800 Markdown/prompt files + ~327
+shell/PowerShell installer files + a byte-identical multi-profile render), and the
+instrumentable minority (`dashboard/reader` Python, `dashboard/server/reader.mjs`, `site/`
+TypeScript) is small enough that a coverage `%` would report a misleadingly precise number that
+ignores the bulk of the product. The meaningful signal is "does each subsystem have a gating
+suite?" — enforced by the CI lanes below — so there is intentionally no "X% or CI fails" gate.
 
 | Subsystem | Test health | Evidence |
 |---|---|---|
@@ -262,7 +267,7 @@ canaries that scan `REAL_HOME` for `.aid` must snapshot before/after. See `tech-
 |---|---|---|---|
 | Windows installer | `Test-AidInstaller.ps1` runs only on Windows CI, never in `run-all.sh` | Medium | CLI behavior changes must migrate this test too; a green local `run-all.sh` does not cover it. |
 | Canonical suite on feature branches | Full `run-all.sh` runs on master/tag only | Medium | Run `bash tests/run-all.sh` + `site` build locally before merge. |
-| Coverage measurement | No line-coverage or `%` gate anywhere | Low | Acceptable for this artifact class; document the deliberate choice. |
+| Coverage measurement | No line-coverage or `%` gate anywhere | Low | Deliberate, ratified — see `decisions.md` D26 (suite-presence coverage for a shell/markdown toolkit). |
 | Prompt-driven skills | State machines not machine-tested | Accepted (by design) | Covered by dogfooding + AI/human review; not automatable here. |
 | Web-output review | Source inspection is not a valid review of rendered pages | High (process) | Any review touching `kb.html` / site MUST visually validate via Playwright (the `visual-fidelity` gate + reviewer rule). |
 

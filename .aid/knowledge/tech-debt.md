@@ -61,7 +61,6 @@ structural and methodological, not littered code.
 | ID | Type | Description | Location | Risk | Effort | Priority |
 |----|------|-------------|----------|------|--------|----------|
 | **L3** | Deprecation debt | Legacy flag-style install path "retained for one release"; the deprecation window has closed, so it can be excised — but as its own installer-CI-gated change, not a doc edit | install.sh | Low | S | P3 |
-| **L4** | Test gap | No line-coverage metric or `%` enforcement anywhere (only test-execution-presence guards) | (whole pipeline) | Low | M | P3 |
 
 **Risk definitions:** High = active risk to reliability/security/maintainability of core
 flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = known, not
@@ -87,25 +86,6 @@ evolution), so the legacy `--tool`/`--update`/`--uninstall` path can be excised 
 `install.sh`'s mode-detection peek + its LEGACY handlers + the usage header. Do it as its own
 change gated by the full installer CI (bash + Windows + npm/PyPI channel suites), not folded
 into an unrelated commit. Effort: S.
-
----
-
-### [LOW] L4 -- No coverage measurement or enforcement
-
-**Type:** Test gap
-
-**Description:** No coverage tool (`nyc`, `coverage.py`, `--cov`) runs in any workflow, and
-there is no `%` threshold. Coverage is assessed by suite-presence per subsystem (see
-`test-landscape.md`).
-
-**Location:** whole pipeline (absence in all four workflows).
-
-**Risk if unaddressed:** A subsystem could lose effective coverage without a metric flagging
-it. Acceptable for a shell/markdown toolkit, but undocumented as a deliberate choice until
-now.
-
-**Remediation:** Either adopt a lightweight coverage signal or formally record the
-no-coverage decision. Effort: M.
 
 ---
 
@@ -249,5 +229,6 @@ model.
 | 1.7 | 2026-07-09 | work-001 lite-skills refresh | Deleted resolved-in-place items per the removal convention: M2 (heavy gates now gate PRs), L1 (dead install branch removed), L7 (aid-researcher web tools granted in work-001) — closure stays in this log + git. Rewrote M3 to the live remaining drift (EMISSION-MANIFEST 3-of-5 profiles + uncaught prose-count drift), dropping deleted-recipe references and the now-reconciled repository-structure.md / aid-methodology.md instances. Added L8 (writeback-state.sh octal-leading-zero id footgun) + L9 (generate-profile VALIDATE hard-codes a stale 14-skill list). Cleared the Dead Code table; dropped L1 from the install.sh complexity-hotspot note; fixed the dangling M2 reference in Missing Test Coverage. |
 | 1.8 | 2026-07-09 | v2.1.0 skill-count sync | L9 updated to the current state: the v2.1.0 follow-on grew `canonical/skills/` from 82 to 92 (14 classic + `aid-triage` + `aid-ask` + 76 shortcuts), so VALIDATE's stale 14-skill list now leaves 78 (not 68) unlisted directories unvalidated. |
 | 1.9 | 2026-07-10 | v2.1.0 debt re-validation | Validated every open item against disk/CI evidence and removed the stale-resolved ones per the removal convention: **M1** (npm+PyPI publish jobs SUCCEED on the v2.0.6 release run — channels are live, never "blocked/GitHub-only"), **M4** (the visual gate already asserts no-overflow at 732px + 390px — the proposed T4 remediation is implemented), **L6** (DBI orphan-scan now skips gitignored `node_modules/`/`.git/`), **L8** (all `printf '%03d'` sinks in `writeback-state.sh` are now `$((10#$id))`-normalized), **L9** (generate-profile VALIDATE now derives "92" from the catalog, not a hard-coded 14). Reframed **L2** as accepted/won't-do (npm/PyPI already emit sigstore/OIDC provenance; a detached tarball signature is not needed) and moved it to Security Observations. Narrowed **M3** to the remaining no-CI-guard-for-count-drift gap (the `EMISSION-MANIFEST.md` 3-of-5 profile enumeration was reconciled to 5). Updated **L3** remediation (deprecation window has closed; excise as its own installer-CI-gated change). Removed the now-obsolete zero-padded-id gotcha (closed with L8). **Remaining open: H1, M3, L3, L4.** |
-| 2.1 | 2026-07-10 | tech-debt-followup | **M3 RESOLVED** — added `tests/canonical/test-doc-counts.sh`, a CI guard (runs in `test.yml` on PR-to-master + the release gate via `run-all.sh`) that derives the canonical counts (skills/agents/profiles from the tree, catalog rows/canonical/alias/repurpose from `shortcut-catalog.yml`) and asserts every user-facing surface (README, `docs/*`, the five profile READMEs) states the CURRENT number. Needles are parameterized on the derived count, so they auto-update when the tree legitimately changes and never assert changelog/history lines (no false positives). Scope excludes the KB (`.aid/knowledge/`), which carries version-history sections and is reconciled by `/aid-housekeep`. Fixed the live drift the guard exposed: `docs/install.md` read "82 skills / 67 shortcuts" → corrected to 92 / 76. **Remaining open: L3, L4.** |
 | 2.0 | 2026-07-10 | tech-debt-followup | **H1 RESOLVED** — extracted the dashboard server+reader file set into a single source, `dashboard/MANIFEST`; `install.sh`, `install.ps1`, `packages/npm/scripts/vendor.js`, `packages/pypi/scripts/vendor.py`, and `release.sh` now all derive the set from it (the MANIFEST is bundled into the CLI tarball and both vendored payloads so bootstrap/sdist paths read it from a trusted, self-describing payload). New guard `tests/canonical/test-dashboard-manifest.sh` fails CI if the manifest drifts from the curated `dashboard/` tree or a consumer stops referencing it. This work uncovered and fixed a **live, unshipped correctness/security bug**: `dashboard/reader/io_bounds.py` (the v2.1.0 5 MB bounded-read DoS guard, added in `d2238d8a` and imported by `reader.py` at 9 sites) was **absent from all five manifests plus the two installer-test expected-file lists** — so a v2.1.0 cut would have vendored a `reader.py` that `ImportError`s on npm/PyPI/curl-bash. The manifest includes it; both vendored payloads now carry it (byte-verified). Updated `test-npm-installer.sh` (NM08) and `test-pypi-installer.sh` (PW05) to derive their expected sets from the manifest rather than a hand-maintained copy. **Remaining open: M3, L3, L4.** |
+| 2.1 | 2026-07-10 | tech-debt-followup | **M3 RESOLVED** — added `tests/canonical/test-doc-counts.sh`, a CI guard (runs in `test.yml` on PR-to-master + the release gate via `run-all.sh`) that derives the canonical counts (skills/agents/profiles from the tree, catalog rows/canonical/alias/repurpose from `shortcut-catalog.yml`) and asserts every user-facing surface (README, `docs/*`, the five profile READMEs) states the CURRENT number. Needles are parameterized on the derived count, so they auto-update when the tree legitimately changes and never assert changelog/history lines (no false positives). Scope excludes the KB (`.aid/knowledge/`), which carries version-history sections and is reconciled by `/aid-housekeep`. Fixed the live drift the guard exposed: `docs/install.md` read "82 skills / 67 shortcuts" → corrected to 92 / 76. **Remaining open: L3, L4.** |
+| 2.2 | 2026-07-10 | tech-debt-followup | **L4 RESOLVED** — recorded the deliberate no-line-coverage decision as ADR **D26** in `decisions.md` (suite-presence coverage is the right model for a shell/markdown toolkit: the product is ~1800 Markdown/prompt + ~327 shell files + a byte-identical render, so a coverage `%` would instrument only the small `dashboard`/`site` minority and mislead). Firmed up `test-landscape.md` §"Coverage Assessment" from "document the deliberate choice" (an open recommendation) to a ratified reference to D26. No coverage tooling adopted (validated premise: it would be security-theater metrics, not a real signal). **Remaining open: L3.** |
