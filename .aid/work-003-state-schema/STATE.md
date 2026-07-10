@@ -47,7 +47,7 @@ SPEC.md + BLUEPRINT.md.)
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-07-10T21:16:58Z
+- **Updated:** 2026-07-10T23:16:15Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -81,6 +81,7 @@ SPEC.md + BLUEPRINT.md.)
 | 2026-07-10 | task-002 scope +lite phase rail | -- | Folded the lite-aware detail-view stage rail into task-002 (user-approved): renderStageRail branches on work_path=lite → compact Defining→Executing→Done (phase-index mapped: Interview–Detail→Defining, Execute→Executing, Deploy/Monitor/Completed→Done); full-path 7-phase stepper unchanged. Broadened BLUEPRINT gate criterion #14 (faithful lite render = label + rail); added task-002 scope bullet + AC. Source dashboard/home.html + served .aid/dashboard/home.html kept byte-identical |
 | 2026-07-10 | Execute task-002 — Done | pass | Dual-format reader twins + state_schema.py + home.html label/rail + fixtures/tests. Sub-agent review (Small tier): 0 HIGH/MED. 2 LOW + 2 MINOR resolved — Row1 placeholder-filter false-positive (dropped free-text scalars containing ' \| ') FIXED via key-aware `is_freetext` suppression in both twins + `{...}` token refinement + regression tests; Row3 missing mixed-shape tests FIXED (task+delivery); Row2 home.html-untested + Row4 no-inline-#-strip ACCEPTED with validated rationale (no JS harness; no live impact / stripping risks truncation). Verified: test_work003 52 passed/14 subtests incl. cross-twin parity; full reader suite 616 passed, same 12 pre-existing Windows-env failures (path-sep + ESM-URL, unrelated), 0 regressions |
 | 2026-07-10 | Execute task-003 — Done | pass | Vendored dual-format reader into packages/pypi + packages/npm (21 files each); built + `pipx install --force` aid_installer-2.1.0 wheel; installed CLI now ships the new reader (verified frontmatter honored end-to-end: work_path=lite, kind=Refactor; aid version=2.1.0). No canonical/ change → dogfood byte-identity preserved (deferred to CI). Sub-agent review: 0 findings, 4/4 ACs verified. User-approved the global reinstall (refreshes ~/.aid). No source diff (build artifacts gitignored) |
+| 2026-07-10 | Execute task-004 — Done | pass | STATE writers emit/update YAML frontmatter (surgical, body-byte-invariant, atomic, enum-validated); scaffold-time pipeline authoring; ~15 hand-authoring skill-ref redirects; run_generator re-render + dogfood resync; test-writeback-state.sh 332/332. Commits a726a494 (impl) + 27b3dd51 (5 review fixes) + 2d76c1cd (reader ''→' contract fix). Sub-agent review: 0 HIGH; 3 MED + 1 LOW + 2 MINOR all FIXED (incl. 1 MED found during my independent verification). Byte-identity/parity deferred to CI (hang locally). NOTE: installed reader now 1 commit behind (missing the cosmetic ''→' fix) — batched into the final re-ship after task-008 |
 
 ---
 
@@ -101,7 +102,7 @@ SPEC.md + BLUEPRINT.md.)
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
 - **State:** Executing
-- **Updated:** 2026-07-10T21:16:58Z
+- **Updated:** 2026-07-10T23:16:15Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -116,7 +117,7 @@ SPEC.md + BLUEPRINT.md.)
 | task-001 | Done | pass | -- | Frontmatter schema in 4 canonical templates + schema-note + render; guard test green (59/0) |
 | task-002 | Done | pass | -- | Both twins: dual-format read (frontmatter-first, legacy-prose fallback) for pipeline/task/delivery/KB scalars; work_path from pipeline.path; kind from pipeline.initiator (shortcut-catalog mirror table); KbStateRef.source_mode extended; yes/no normalization; home.html "Lite path" label fixed + detail-view stage rail made lite-aware (compact Defining→Executing→Done for lite; 7-phase stepper unchanged for full); source+served home.html kept byte-identical; rollout-safety placeholder filter + CRLF-tolerance fix found+fixed during self-test; new state_schema.py module (registered in MANIFEST); pt1h-kb-approved fixture + test_task064/066 migrated to frontmatter form. Review (sub-agent, Small tier): 0 HIGH/MED, 2 LOW + 2 MINOR — Row1 (placeholder filter false-positive) FIXED key-aware in both twins + regression tests; Row3 (missing mixed-shape tests) FIXED; Row2 (home.html untested) + Row4 (no inline-# strip) ACCEPTED w/ validated rationale. Reader suite 616 passed / same 12 pre-existing Windows-env failures / 0 regressions |
 | task-003 | Done | pass | -- | Re-vendored dual-format reader into packages/pypi (_vendor) + packages/npm via vendor.py/vendor.js (21 files each, MANIFEST-driven incl. state_schema.py); built aid_installer-2.1.0 wheel (isolated, self-contained sdist payload); pipx install --force → installed aid live. Verified installed vendored reader honors frontmatter end-to-end (work_path=lite from pipeline.path, kind=Refactor from pipeline.initiator) + aid version=2.1.0. No canonical/ change → dogfood byte-identity preserved from task-001 (canonical byte-identity/parity deferred to CI — hang locally). No committable source diff (vendor trees + dist gitignored). Review (sub-agent): 0 findings, all 4 ACs verified |
-| task-004 | Pending | -- | -- | -- |
+| task-004 | Done | pass | -- | Frontmatter-writer path (wb_set_frontmatter: surgical single-key YAML rewrite, body byte-invariant, atomic+locked, enum-validated); all write modes redirected (execute/writeback-state.sh --pipeline/--field/--lifecycle/--gate-field + summarize --set for KB); scaffold-time pipeline block (shortcut-engine + aid-describe FIRST-RUN); hand-authoring redirects across ~15 skill refs; dual-format read fixes on stale-check/discover-preflight/aid-housekeep. run_generator 1600 files + dogfood resync (0 diff). test-writeback-state.sh 332/332. Review (sub-agent): 2 MED + 1 LOW + 2 MINOR — all FIXED (ENVIRON+single-quote YAML for valid quoting; CRLF normalize/restore byte-invariance; grep -F -- in all 4 assert helpers; trailing-nl preservation + cmp-based test). Independent verify found+fixed a 6th (MED): reader now collapses YAML ''→' to match the writer (both twins, commit 2d76c1cd). Reader tests 54/14 |
 | task-005 | Pending | -- | -- | -- |
 | task-006 | Pending | -- | -- | -- |
 | task-007 | Pending | -- | -- | -- |
