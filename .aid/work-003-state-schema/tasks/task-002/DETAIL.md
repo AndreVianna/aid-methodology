@@ -21,6 +21,14 @@
   `## Tasks (State|Status)`, `## Features (State|Status)`, and the flat/Lite layout
   (`_detect_flat`, promoted `## Delivery Lifecycle` + `### Tasks lifecycle` + singular
   `## Delivery Gate`). The frontmatter fallback must degrade to whichever prose section name is present.
+- **Surface the newly-captured fields + fix the pipeline label.** Read from the frontmatter:
+  `pipeline.path` → `work_path` (stop inferring it via `_detect_flat`); `pipeline.initiator` →
+  a display **kind** (map the shortcut skill → verb via `shortcut-catalog.yml`); plus new model
+  fields for `started`, `minimum_grade`, work-level `user_approved`, and KB `kb_status`/`kb_grade`/
+  `last_kb_review`/`last_summary`. Fix the dashboard label at `dashboard/home.html:1397` so the lite
+  summary reads e.g. **"Lite path: Refactor → 8 Tasks"** (from `pipeline.initiator`) and **drops the
+  redundant word** when the kind is unknown instead of printing "Lite". Retire the fragile `created`
+  "Work created"-row scrape in favor of the `started` scalar.
 - **`parse_doc_frontmatter` is a per-KB-*doc* freshness tool today** (only callers in
   `derivation.py`; never run on STATE.md). Reuse the *algorithm*; there is no existing
   STATE.md→frontmatter path to hook. (The KB `STATE.md` already carries a frontmatter block with
@@ -43,4 +51,6 @@
 - [ ] Any new reader module is registered in `dashboard/MANIFEST`; `test-dashboard-manifest.sh` passes (traces to gate criteria #4, #8).
 - [ ] Cross-twin parity test passes: Python and Node produce identical results for the same fixtures (traces to gate criteria #3).
 - [ ] Reader fixtures (`pt1h-kb-approved`, `test_task064/066`) migrated in this change; new + existing reader/parity tests pass (traces to gate criteria #9).
+- [ ] `work_path` is read from `pipeline.path` (not `_detect_flat`); `started`/`minimum_grade`/work-level `user_approved`/KB `kb_status`/`kb_grade`/`last_kb_review`/`last_summary` are exposed on the reader models (traces to gate criteria #13).
+- [ ] The dashboard lite-path label renders the real kind from `pipeline.initiator` (e.g. "Lite path: Refactor → 8 Tasks") and drops the redundant word when unknown — "Lite path: Lite" no longer appears (traces to gate criteria #14).
 - [ ] All applicable quality gates pass (per `.aid/settings.yml`).
