@@ -61,10 +61,21 @@ _FREETEXT_FM_KEYS = frozenset({"pause_reason", "block_reason", "block_artifact",
 
 
 def _strip_scalar_quotes(raw: str) -> str:
-    """Strip one layer of matching surrounding quotes from a YAML scalar."""
+    """Strip one layer of matching surrounding quotes from a YAML scalar.
+
+    For a SINGLE-quoted scalar, also collapse YAML's ''-escaping (`''` -> `'`) --
+    the exact inverse of the frontmatter writer (task-004 emits a single-quoted
+    scalar for any free-text value that needs quoting, doubling an embedded `'`).
+    Without this, `notes: 'user''s reason'` would read back as `user''s reason`.
+    Double-quoted scalars are stripped as-is (the writer never emits a
+    backslash-escaped double-quoted scalar -- single-quote style is used instead).
+    """
     val = raw.strip()
     if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
-        return val[1:-1]
+        inner = val[1:-1]
+        if val[0] == "'":
+            inner = inner.replace("''", "'")
+        return inner
     return val
 
 

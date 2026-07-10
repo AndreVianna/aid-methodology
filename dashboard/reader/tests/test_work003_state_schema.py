@@ -148,6 +148,20 @@ class TestParseFrontmatterScalars(unittest.TestCase):
         fm = parse_frontmatter_scalars("---\nuser_approved: yes | no\n---\n")
         self.assertNotIn("user_approved", fm)
 
+    def test_single_quoted_scalar_unescapes_doubled_quote(self):
+        """A single-quoted scalar collapses YAML's ''-escaping ('' -> ') -- the
+        exact inverse of the task-004 frontmatter writer, which single-quotes a
+        free-text value and doubles an embedded '. So `'user''s reason'` reads
+        back as the literal `user's reason` (writer<->reader round-trip parity)."""
+        fm = parse_frontmatter_scalars("---\nnotes: 'user''s reason'\n---\n")
+        self.assertEqual(fm.get("notes"), "user's reason")
+
+    def test_double_quoted_scalar_stripped_verbatim(self):
+        """Double-quoted scalars are stripped one layer only (no un-escaping) --
+        the writer never emits a backslash-escaped double-quoted scalar."""
+        fm = parse_frontmatter_scalars('---\nnotes: "plain: value"\n---\n')
+        self.assertEqual(fm.get("notes"), "plain: value")
+
     def test_crlf_line_endings(self):
         """CRLF-authored files (e.g. edited on Windows) parse identically to
         LF-only files. This is the Python side of a cross-twin landmine caught

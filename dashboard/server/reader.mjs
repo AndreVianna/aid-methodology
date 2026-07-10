@@ -132,10 +132,14 @@ const RE_SECTION_HEADER_GENERIC = /^##\s+/;
 
 function _stripScalarQuotes(raw) {
   // Strip one layer of matching surrounding quotes from a YAML scalar.
+  // For a SINGLE-quoted scalar, also collapse YAML's ''-escaping ('' -> '),
+  // the exact inverse of the frontmatter writer (task-004 emits a single-quoted
+  // scalar with embedded ' doubled). Twin of Python _strip_scalar_quotes.
   const val = raw.trim();
   if (val.length >= 2 && val[0] === val[val.length - 1] &&
       (val[0] === "'" || val[0] === '"')) {
-    return val.slice(1, -1);
+    const inner = val.slice(1, -1);
+    return val[0] === "'" ? inner.split("''").join("'") : inner;
   }
   return val;
 }
