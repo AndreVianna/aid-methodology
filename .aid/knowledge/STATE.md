@@ -7,6 +7,11 @@ tags: [meta, state, run-state, review-history, qa, approval]
 see_also: [README.md, INDEX.md]
 owner: skill-self
 audience: [developer, architect]
+kb_status: Approved
+kb_grade: A+
+last_kb_review: 2026-07-09
+summary_approved: yes
+last_summary: 2026-07-09
 ---
 
 # Discovery State

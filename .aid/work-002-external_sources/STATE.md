@@ -1,3 +1,19 @@
+---
+pipeline:
+  path: full
+  initiator: aid-describe
+started: 2026-07-07
+minimum_grade: A
+user_approved: yes
+lifecycle: Paused-Awaiting-Input
+phase: Execute
+active_skill: none
+updated: '2026-07-09T03:41:25Z'
+pause_reason: 'work-002 fully executed & gated A+ (delivery-001 A+, delivery-002 withdrawn [Q10], delivery-003 A+; Q10 correction A+). Execute phase complete. Optional next: /aid-deploy (PR work-002 -> master).'
+block_reason: --
+block_artifact: --
+---
+
 # Work State -- work-002-external_sources
 
 > **State:** Executed (all deliveries A+ / withdrawn; Execute phase complete)

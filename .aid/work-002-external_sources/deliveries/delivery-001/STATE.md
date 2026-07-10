@@ -1,3 +1,10 @@
+---
+delivery_state: Done
+gate_tier: Large
+gate_grade: A+
+gate_timestamp: '2026-07-08T23:35:11Z'
+---
+
 # Delivery State -- delivery-001
 
 > **Delivery:** delivery-001
