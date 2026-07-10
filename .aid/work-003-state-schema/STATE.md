@@ -1,3 +1,11 @@
+---
+pipeline:
+  path: lite
+  initiator: aid-refactor
+started: "2026-07-09"
+minimum_grade: A+
+user_approved: no
+---
 # Work State -- work-003-state-schema
 
 <!-- WORK-LEVEL STATE.md (flattened single-delivery work). Two zones:
@@ -39,7 +47,7 @@ SPEC.md + BLUEPRINT.md.)
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-07-10T17:46:37Z
+- **Updated:** 2026-07-10T20:51:54Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -70,6 +78,8 @@ SPEC.md + BLUEPRINT.md.)
 | 2026-07-10 | 8-task re-gate — Grade: A+ | A+ | Expanded set re-gated: 1 MED + 3 LOW + 1 MINOR fixed — task-006 re-scoped validate-first/surgical (the "section-6 quality gates" ref is a real concept in authored-visual-catalog, not uniformly dangling); task-007 canonical-edit + re-render discipline; task-008 --version collision (vs existing `--version <v>` pin) + VERSION-file path; STATE pause-reason → 8 tasks; uniform trace annotations; re-gated A+ |
 | 2026-07-10 | Schema-enrichment re-gate — Grade: A+ | A+ | STATE frontmatter schema expanded per audit (pipeline{path,initiator} + started/user_approved + KB kb_status/kb_grade/last_kb_review as newly-captured; minimum_grade + KB summary_approved/last_summary as behavior-preserving relocations); task-001/002/004/005 + BLUEPRINT enriched (gate criteria #13/#14). Re-gate caught 1 HIGH + 2 MED (I'd mis-classified minimum_grade + KB approval fields as "never parsed"; task-004 "only Pipeline State" premise was false) + 3 MINOR — all fixed; re-gated A+ |
 | 2026-07-10 | Execute task-001 — Done | pass | Frontmatter schema in 4 canonical templates + schema-note.md + render (run_generator PASS; 33 files: canonical + 5 profiles + dogfood + manifests). Review: 1 HIGH (guard test asserted removed prose) fixed → test-work-state-template.sh 59/0; 1 LOW (yes/no YAML-1.1 bool coercion) carried to task-002 |
+| 2026-07-10 | task-002 scope +lite phase rail | -- | Folded the lite-aware detail-view stage rail into task-002 (user-approved): renderStageRail branches on work_path=lite → compact Defining→Executing→Done (phase-index mapped: Interview–Detail→Defining, Execute→Executing, Deploy/Monitor/Completed→Done); full-path 7-phase stepper unchanged. Broadened BLUEPRINT gate criterion #14 (faithful lite render = label + rail); added task-002 scope bullet + AC. Source dashboard/home.html + served .aid/dashboard/home.html kept byte-identical |
+| 2026-07-10 | Execute task-002 — Done | pass | Dual-format reader twins + state_schema.py + home.html label/rail + fixtures/tests. Sub-agent review (Small tier): 0 HIGH/MED. 2 LOW + 2 MINOR resolved — Row1 placeholder-filter false-positive (dropped free-text scalars containing ' \| ') FIXED via key-aware `is_freetext` suppression in both twins + `{...}` token refinement + regression tests; Row3 missing mixed-shape tests FIXED (task+delivery); Row2 home.html-untested + Row4 no-inline-#-strip ACCEPTED with validated rationale (no JS harness; no live impact / stripping risks truncation). Verified: test_work003 52 passed/14 subtests incl. cross-twin parity; full reader suite 616 passed, same 12 pre-existing Windows-env failures (path-sep + ESM-URL, unrelated), 0 regressions |
 
 ---
 
@@ -90,7 +100,7 @@ SPEC.md + BLUEPRINT.md.)
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
 - **State:** Executing
-- **Updated:** 2026-07-10T17:46:37Z
+- **Updated:** 2026-07-10T20:51:54Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -103,7 +113,7 @@ SPEC.md + BLUEPRINT.md.)
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|
 | task-001 | Done | pass | -- | Frontmatter schema in 4 canonical templates + schema-note + render; guard test green (59/0) |
-| task-002 | In Progress | -- | -- | Reader reads frontmatter + fix "Lite path" label |
+| task-002 | Done | pass | -- | Both twins: dual-format read (frontmatter-first, legacy-prose fallback) for pipeline/task/delivery/KB scalars; work_path from pipeline.path; kind from pipeline.initiator (shortcut-catalog mirror table); KbStateRef.source_mode extended; yes/no normalization; home.html "Lite path" label fixed + detail-view stage rail made lite-aware (compact Defining→Executing→Done for lite; 7-phase stepper unchanged for full); source+served home.html kept byte-identical; rollout-safety placeholder filter + CRLF-tolerance fix found+fixed during self-test; new state_schema.py module (registered in MANIFEST); pt1h-kb-approved fixture + test_task064/066 migrated to frontmatter form. Review (sub-agent, Small tier): 0 HIGH/MED, 2 LOW + 2 MINOR — Row1 (placeholder filter false-positive) FIXED key-aware in both twins + regression tests; Row3 (missing mixed-shape tests) FIXED; Row2 (home.html untested) + Row4 (no inline-# strip) ACCEPTED w/ validated rationale. Reader suite 616 passed / same 12 pre-existing Windows-env failures / 0 regressions |
 | task-003 | Pending | -- | -- | -- |
 | task-004 | Pending | -- | -- | -- |
 | task-005 | Pending | -- | -- | -- |

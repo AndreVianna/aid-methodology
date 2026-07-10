@@ -61,7 +61,7 @@ v2.1.0 (landed on master via PR #139, inherited here by pull — not a task).
 - [ ] KB concept-closure is validated at HEAD and either root-caused or documented Not Applicable with evidence — no blind `term_exclusions` padding (task-007).
 - [ ] `aid --version` prints the CLI version on both `bin/aid` and `bin/aid.ps1`, aliasing `aid version`, and is documented in `aid -h` (task-008).
 - [ ] The frontmatter schema ADDS the genuinely-missing fields (`pipeline{path,initiator}`, `started`, work-level `user_approved`, KB `kb_status`/`kb_grade`/`last_kb_review`) AND relocates the already-parsed-but-brittle ones (`minimum_grade`, KB `summary_approved`/`last_summary`) into frontmatter without regressing existing behavior — authored by the pipeline-starting skills + writers, read by both reader twins (task-001/002/004/005).
-- [ ] The dashboard renders the real pipeline **kind** from `pipeline.initiator` (e.g. "Lite path: Refactor → 8 Tasks"); "Lite path: Lite" no longer appears, and `work_path` comes from `pipeline.path` (not layout inference) (task-002).
+- [ ] The dashboard renders lite works faithfully: the real pipeline **kind** from `pipeline.initiator` (e.g. "Lite path: Refactor → 8 Tasks") — "Lite path: Lite" no longer appears, `work_path` comes from `pipeline.path` (not layout inference); AND the detail-view stage rail shows a compact **Defining → Executing → Done** rail for lite works instead of the full 7-phase stepper (full works unchanged) (task-002).
 - [ ] All tasks in delivery-001 are Done or Canceled.
 - [ ] All applicable quality gates pass (per `.aid/settings.yml`).
 

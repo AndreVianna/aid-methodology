@@ -1376,7 +1376,8 @@ footer {
 
   // Progressive triage-path summary for a work card.
   //   Full: "Full path: 9 features -> 7 deliveries -> 45 Tasks"  (numbers fill in as produced)
-  //   Lite: "Lite path: Bug fix -> 5 Tasks"
+  //   Lite: "Lite path: Refactor -> 5 Tasks"  (kind resolved from pipeline.initiator,
+  //     work-003-state-schema task-002 -- fixes the historical "Lite path: Lite" render)
   //   A bracketed [stage] marks the step in progress; "[Identifying path]" before triage.
   function _pathSummary(work) {
     var ARROW = ' → ';
@@ -1394,8 +1395,12 @@ footer {
       return s + ARROW + tasks(nt);
     }
     if (wp === 'lite') {
-      var rec = _formatRecipe(work.recipe) || 'Lite';
-      var base = 'Lite path: ' + rec;
+      // kind: resolved display verb from pipeline.initiator (e.g. "Refactor",
+      // "Create api"), falling back to the legacy (now dead-prose) Triage recipe.
+      // When neither is known, drop the redundant word entirely instead of
+      // printing the literal "Lite" -- "Lite path: Lite" must never appear.
+      var kind = work.kind || _formatRecipe(work.recipe);
+      var base = kind ? ('Lite path: ' + kind) : 'Lite path';
       return nt === 0 ? base + ARROW + '[writing tasks]' : base + ARROW + tasks(nt);
     }
     return '[Identifying path]';
@@ -2202,6 +2207,16 @@ footer {
       return;
     }
 
+    // Lite works do not traverse the 7 canonical phases — the shortcut engine
+    // (INTAKE→…→GATE) collapses Interview→Detail into a single "Defining" step,
+    // so the full stepper reads as mostly-skipped noise on a lite work. Render a
+    // compact 3-stage rail (Defining → Executing → Done) instead.
+    // (work-003-state-schema task-002 — fixes the full 7-phase stepper showing on lite works.)
+    if ((work.work_path || '').toLowerCase() === 'lite') {
+      _renderLiteStageRail(rail, work, currentIdx);
+      return;
+    }
+
     for (var i = 0; i < PHASE_ORDER.length; i++) {
       var p = PHASE_ORDER[i];
       var pill = document.createElement('span');
@@ -2220,6 +2235,40 @@ footer {
         // Later — upcoming
         pill.className = 'badge badge-dim';
         pill.textContent = '○ ' + p;
+      }
+      rail.appendChild(pill);
+    }
+  }
+
+  // Compact 3-stage rail for lite works (work-003-state-schema task-002).
+  // Maps the canonical phase (via its PHASE_ORDER index) onto the lite lifecycle:
+  //   Interview/Specify/Plan/Detail -> Defining ; Execute -> Executing ;
+  //   Deploy/Monitor (or lifecycle Completed) -> Done.
+  function _renderLiteStageRail(rail, work, currentIdx) {
+    var LITE_STAGES = ['Defining', 'Executing', 'Done'];
+    var stageIdx;
+    if (work.lifecycle === 'Completed') {
+      stageIdx = 2;
+    } else if (currentIdx < PRE_EXEC_STEPS) {    // Interview..Detail
+      stageIdx = 0;
+    } else if (currentIdx === PRE_EXEC_STEPS) {  // Execute
+      stageIdx = 1;
+    } else {                                     // Deploy / Monitor
+      stageIdx = 2;
+    }
+    for (var i = 0; i < LITE_STAGES.length; i++) {
+      var pill = document.createElement('span');
+      pill.setAttribute('role', 'listitem');
+      pill.setAttribute('aria-current', i === stageIdx ? 'step' : 'false');
+      if (i < stageIdx) {
+        pill.className = 'badge badge-ok';
+        pill.textContent = '✓ ' + LITE_STAGES[i];
+      } else if (i === stageIdx) {
+        pill.className = 'badge badge-primary';
+        pill.textContent = '▸ ' + LITE_STAGES[i];
+      } else {
+        pill.className = 'badge badge-dim';
+        pill.textContent = '○ ' + LITE_STAGES[i];
       }
       rail.appendChild(pill);
     }

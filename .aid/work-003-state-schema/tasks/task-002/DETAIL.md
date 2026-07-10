@@ -39,6 +39,13 @@
   directly. Vendoring to the packages + installed CLI is task-003.
 - **Register any new reader module** (e.g. a `state_schema.py`) in `dashboard/MANIFEST` — or it
   silently won't vendor and `tests/canonical/test-dashboard-manifest.sh` goes red.
+- **Make the detail-view phase rail lite-aware.** `renderStageRail` in `dashboard/home.html`
+  renders all 7 canonical `PHASE_ORDER` pills regardless of path, so a lite work shows a
+  mostly-skipped full stepper. Add a compact 3-stage rail (Defining → Executing → Done) for lite
+  works, mapping the canonical phase onto the lite lifecycle (Interview/Specify/Plan/Detail →
+  Defining; Execute → Executing; Deploy/Monitor or lifecycle `Completed` → Done). Full-path works
+  keep the 7-phase stepper unchanged. Mirror the edit into the served copy `.aid/dashboard/home.html`
+  (kept byte-identical to the source).
 - Update/add reader unit tests and cross-twin parity tests (Python + Node) covering new-format,
   legacy-format, and mixed inputs; preserve twin byte-parity behavior. **Migrate the existing
   reader fixtures** (`pt1h-kb-approved`, `test_task064_kb_status.py`, `test_task066_kb_parity.py`)
@@ -53,4 +60,5 @@
 - [ ] Reader fixtures (`pt1h-kb-approved`, `test_task064/066`) migrated in this change; new + existing reader/parity tests pass (traces to gate criteria #9).
 - [ ] `work_path` is read from `pipeline.path` (not `_detect_flat`); `started`/`minimum_grade`/work-level `user_approved`/KB `kb_status`/`kb_grade`/`last_kb_review`/`last_summary` are exposed on the reader models (traces to gate criteria #13).
 - [ ] The dashboard lite-path label renders the real kind from `pipeline.initiator` (e.g. "Lite path: Refactor → 8 Tasks") and drops the redundant word when unknown — "Lite path: Lite" no longer appears (traces to gate criteria #14).
+- [ ] The detail-view stage rail renders a compact 3-stage rail (Defining → Executing → Done) for lite works instead of the full 7-phase stepper; full-path works are unchanged; source + served `.aid/dashboard/home.html` copies stay byte-identical (traces to gate criteria #14).
 - [ ] All applicable quality gates pass (per `.aid/settings.yml`).

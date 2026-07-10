@@ -565,6 +565,8 @@ def _ser_kb_state(obj) -> dict | None:
       retained: summary_approved, last_summary_date, doc_count
       new (task-064): status, summary_present, kb_baseline
       new (task-042/task-043): doc_freshness, suspect_count
+      new (work-003-state-schema task-002): source_mode, kb_status, kb_grade,
+        last_kb_review
     No schema_version bump (DM-A3).
     """
     if obj is None:
@@ -578,6 +580,10 @@ def _ser_kb_state(obj) -> dict | None:
         "kb_baseline":       _ser_kb_baseline(obj.kb_baseline),
         "doc_freshness":     [_ser_doc_freshness(d) for d in (obj.doc_freshness or [])],
         "suspect_count":     obj.suspect_count if isinstance(obj.suspect_count, int) else 0,
+        "source_mode":       obj.source_mode.value if hasattr(obj.source_mode, "value") else str(obj.source_mode),
+        "kb_status":         obj.kb_status,
+        "kb_grade":          obj.kb_grade,
+        "last_kb_review":    obj.last_kb_review,
     }
 
 
@@ -635,7 +641,11 @@ def _ser_deliverable_ref(obj) -> dict:
 
 
 def _ser_work(obj) -> dict:
-    """Serialize WorkModel in declared field order."""
+    """Serialize WorkModel in declared field order.
+
+    Field order ends with the work-003-state-schema task-002 additions:
+    kind, started, minimum_grade, user_approved.
+    """
     return {
         "work_id":        obj.work_id,
         "name":           obj.name,
@@ -658,6 +668,10 @@ def _ser_work(obj) -> dict:
         "recipe":         obj.recipe,
         "features":       [_ser_feature_ref(f) for f in (obj.features or [])],
         "deliverables":   [_ser_deliverable_ref(d) for d in (obj.deliverables or [])],
+        "kind":           obj.kind,
+        "started":        obj.started,
+        "minimum_grade":  obj.minimum_grade,
+        "user_approved":  obj.user_approved,
     }
 
 
