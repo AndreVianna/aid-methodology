@@ -10,6 +10,37 @@ target).
 
 ---
 
+## Step 0: QUESTION short-circuit (v2.1.0 coverage-gap follow-on)
+
+Before inferring `workType` (Step 1), check whether `{description}` is itself
+**a question about the project** rather than a request to change something --
+interrogative phrasing ("why", "where", "how", "what", "does", "is", "can",
+"should", "which", ...; typically ending in `?`) asking for information,
+explanation, or a status check, and naming no target artifact to
+build/change/fix/remove/test/document/etc.
+
+When it is: skip Steps 1-3 entirely -- a question is not itself a unit of work
+the shortcut catalog routes, so there is no `workType` to infer, no scope to
+judge, and no catalog row to match. Hand off directly to
+`references/state-suggest.md`'s **Case D** with `{description}` carried
+forward verbatim as the question text.
+
+Otherwise, continue to Step 1 as normal -- this is the common case, and every
+step below is unchanged from before this branch existed.
+
+**Intended exception to Step 3's "canonical names only" rule:** Case D
+suggests `/aid-ask` directly -- the alias, not its canonical form
+`/aid-query-kb` -- because the QUESTION route never reaches Step 3's
+catalog match in the first place (it short-circuits past it) and because
+`aid-ask` is a hand-authored, user-facing Q&A entry point (`repurpose: true`
+in the catalog), not a thin doorway alias `build-shortcut-skills.py`
+generates. There is no doorway-duplication concern here, so this is not a
+violation of Step 3's rule -- see `state-suggest.md` Case D.
+
+**Advance (QUESTION branch only):** **CHAIN** -> [State: SUGGEST] Case D.
+
+---
+
 ## Step 1: Infer workType
 
 Assign one of the three internal work-type labels (never shown as a menu to
@@ -62,7 +93,11 @@ script is invoked.
 **Candidate set** -- every row whose `alias_of` field is `null` (canonical
 rows only; an alias row's `intent` carries no semantic content of its own --
 just `"Alias of <name>."` -- so it never wins a semantic match and does not
-need to be filtered out by hand).
+need to be filtered out by hand). This canonical-only restriction is scoped
+to *this* step's semantic match (feeding Cases A/B/C) -- it has no bearing on
+Case D, which never runs Step 3 at all (Step 0 short-circuits past it) and
+intentionally suggests the alias `/aid-ask`; see Step 0 above and
+`state-suggest.md` Case D.
 
 **Narrow by `workType` first** (a light filter, not an exclusion -- if
 nothing in the narrowed set fits, widen to the full candidate set before
@@ -71,8 +106,16 @@ concluding "no match"):
 | `workType` | Groups to check first |
 |------------|------------------------|
 | `bug-fix` | G6 (`aid-fix`) |
-| `refactor` | G5 (`aid-change[-artifact]`, `aid-refactor`) |
-| `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-show-dashboard`) |
+| `refactor` | G5 (`aid-change[-artifact]`, `aid-refactor`), plus (v2.1.0 coverage-gap follow-on) G5's `aid-remove`, `aid-deprecate`, `aid-migrate`; G11 (`aid-review`, `aid-research`) |
+| `new-feature` | G4 (`aid-create[-artifact]`), G3 (`aid-prototype[-ui]`), G7 (`aid-test*`, `aid-experiment`), G8 (`aid-document[-artifact]`), G11 (`aid-report`, `aid-show-dashboard`, `aid-review`, `aid-research`) |
+
+(`aid-remove`/`aid-deprecate`/`aid-migrate` and `aid-review`/`aid-research` are
+the v2.1.0 coverage-gap follow-on rows -- G5 and G11 per
+`shortcut-catalog.yml`; widening these two narrow-first hints is the only
+change this follow-on makes here. The intent-match itself already reads every
+canonical catalog row regardless of this table -- narrowing only decides which
+rows get checked *first*, per Step 3's own "narrow, then widen if empty" rule
+above.)
 
 Within the (narrowed, then widened-if-empty) candidate set, read each row's
 `intent:` field and pick the row whose intent text best matches

@@ -19,7 +19,7 @@ aid-methodology/
 |   |-- npm/                    <- npm: aid-installer (Node wrapper that puts aid on PATH)
 |   `-- pypi/                   <- PyPI: aid-installer (Python wrapper that puts aid on PATH)
 |-- canonical/                  <- single source of truth (never edit profiles/ directly)
-|   |-- skills/                 <- 82 skill definitions (14 classic + aid-triage + 67 shortcuts)
+|   |-- skills/                 <- 92 skill definitions (14 classic + aid-triage + aid-ask + 76 shortcuts)
 |   |-- agents/                 <- 9 agent definitions
 |   `-- aid/                    <- AID toolkit root
 |       |-- templates/          <- KB templates, document templates, shortcut engine + catalog
@@ -70,9 +70,9 @@ aid-methodology/
 
 All skill, agent, and template content lives here. The generator (`run_generator.py`) renders `canonical/` into the five `profiles/` install trees. **Never edit `profiles/` directly** — your changes will be overwritten on the next generator run.
 
-- `canonical/skills/` — 82 skill definitions, one directory per skill: 14 classic pipeline / on-demand skills, the standalone `aid-triage` router, and 67 verb-first Lite-Path shortcut skills (`aid-fix`, `aid-create-api`, `aid-change-ui`, …)
+- `canonical/skills/` — 92 skill definitions, one directory per skill: 14 classic pipeline / on-demand skills, the standalone `aid-triage` router, `aid-ask` (a Q&A alias of the classic `aid-query-kb`), and 76 verb-first Lite-Path shortcut skills (`aid-fix`, `aid-create-api`, `aid-change-ui`, …)
 - `canonical/agents/` — 9 agent definitions
-- `canonical/aid/templates/` — KB document templates, grading rubric, task templates, `delivery-blueprint-template.md` and `task-detail-template.md` (delivery/task definitions), plus the shortcut system: `shortcut-catalog.yml` (the 69-row catalog every shortcut and `aid-triage` resolve against), `shortcut-engine.md` (the shared state machine every shortcut delegates to), and `shortcut-scaffolding/` (family-specific SPEC/PLAN/DETAIL scaffolding)
+- `canonical/aid/templates/` — KB document templates, grading rubric, task templates, `delivery-blueprint-template.md` and `task-detail-template.md` (delivery/task definitions), plus the shortcut system: `shortcut-catalog.yml` (the 80-row catalog every shortcut and `aid-triage` resolve against), `shortcut-engine.md` (the shared state machine every shortcut delegates to), and `shortcut-scaffolding/` (family-specific SPEC/PLAN/DETAIL scaffolding)
 - `canonical/aid/scripts/` — helper scripts invoked by skills at runtime (interview, summarize, release, kb-hygiene)
 
 ### `profiles/` — generated install trees

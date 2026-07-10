@@ -94,7 +94,7 @@ AID/
 ├── release.sh                # maintainer release-packaging runbook script
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
-│   ├── skills/               # 82 skill definitions (14 classic + aid-triage + 67 shortcuts)
+│   ├── skills/               # 92 skill definitions (15 classic + aid-triage + 76 shortcuts)
 │   ├── agents/               # agent role definitions (AGENT.md + README.md each)
 │   ├── aid/                  # toolkit payload installed under the tool's aid/ subtree
 │   │   ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
@@ -180,7 +180,7 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `packages/pypi/pyproject.toml` | PyPI `aid-installer` build config. |
 | `site/package.json` | Astro website build config (separate from the CLI). |
 | `canonical/EMISSION-MANIFEST.md` | Declares which files the profile renderer emits per profile. |
-| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 69-row manifest that generates the 67 verb-first shortcut skill directories (45 canonical + 24 aliases); read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
+| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 80-row manifest that generates the 76 verb-first shortcut skill directories (51 canonical + 29 aliases); read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
 | `canonical/aid/templates/shortcut-engine.md` | The shared state machine every shortcut skill delegates to (INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT). |
 | `canonical/aid/templates/shortcut-scaffolding/` | Per-family SPEC/PLAN/DETAIL scaffolding the shortcut engine consults (one file per verb family: create, change-refactor, fix, document, prototype, test-experiment, analyze-report). |
 | `canonical/aid/templates/delivery-blueprint-template.md` | Template for a delivery definition (`BLUEPRINT.md`, formerly the delivery-level `SPEC.md`). |
@@ -321,3 +321,4 @@ These are intentional or notable layout traits a newcomer will trip over:
 | 1.1 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in Unusual Structure Notes (aid-interview split into aid-describe + aid-define). |
 | 1.2 | 2026-07-09 | aid-housekeep | De-hardcoded the version in prose/tree (point at `VERSION`, kb-authoring P1); de-pinned the machine-specific root path; paraphrased the stale "12-skill" README quote; added `.aid/connectors/` to the `.aid/` tree. Connectors + release-drift refresh (housekeep KB-DELTA). |
 | 1.3 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh — removed the `recipes/` tree line and the canonical `aid/{...,recipes}` reference (recipes deleted); dropped the stale "12-skill / 51-recipe / `canonical/recipes/`" drift note (repository-structure.md now says 82 skills); annotated the skills tree/canonical row with the 82-skill taxonomy (14 classic + aid-triage + 67 shortcuts); added the shortcut catalog/engine/scaffolding and `delivery-blueprint-template.md` / `task-detail-template.md` to Key Files. |
+| 1.4 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Updated the skills-tree annotation and the shortcut-catalog Key Files row: skill count 82 -> 92 (15 classic incl. restored `aid-ask` + aid-triage + 76 shortcuts, up from 67); catalog 69-row (45 canonical + 24 aliases) -> 80-row (51 canonical + 29 aliases). |

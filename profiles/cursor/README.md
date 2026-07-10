@@ -19,7 +19,7 @@ cp    path/to/aid-methodology/profiles/cursor/AGENTS.md   AGENTS.md
 See the repo README for npm / pipx / offline install options.
 
 This gives you:
-- `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (82 skills: 14 classic — 11 across five pipeline groups + 3 off-pipeline on-demand — plus /aid-triage and 67 verb-first shortcut skills)
+- `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (92 skills: 14 classic — 11 across five pipeline groups + 3 off-pipeline on-demand — plus /aid-triage, /aid-ask, and 76 verb-first shortcut skills)
 - `.cursor/agents/{name}.md` — Agent definitions (9 agents with `aid-` prefix), dispatched via Task tool when available
 - `.cursor/aid/scripts/`, `.cursor/aid/templates/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
@@ -42,7 +42,7 @@ This gives you:
 
 ## Skills
 
-82 skills total: 14 classic — the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base, plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills — plus `/aid-triage` and 67 verb-first shortcut skills. `/aid-triage` is a stateless, suggest-only router: it reads one free-form description and suggests either the matching shortcut or the full `aid-describe` path, writing nothing itself. The shortcuts (`aid-fix`, `aid-create-api`, `aid-change-ui`, `aid-refactor`, …) are direct-entry doorways that skip straight to a flattened Lite work for a single named change. Each skill lives in `.cursor/skills/aid-<name>/SKILL.md`.
+92 skills total: 14 classic — the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base, plus the on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills — plus `/aid-triage`, `/aid-ask`, and 76 verb-first shortcut skills. `/aid-triage` is a stateless, suggest-only router: it reads one free-form description and suggests either the matching shortcut, the full `aid-describe` path, or — when the input reads as a question — `/aid-ask`, writing nothing itself. `/aid-ask` is a friendly-named Q&A alias of the classic `aid-query-kb` skill. The shortcuts (`aid-fix`, `aid-create-api`, `aid-change-ui`, `aid-refactor`, `aid-review`, `aid-remove`, `aid-migrate`, …) are direct-entry doorways that skip straight to a flattened Lite work for a single named change. Each skill lives in `.cursor/skills/aid-<name>/SKILL.md`.
 
 | Skill | Phase | Description |
 |-------|-------|-------------|

@@ -323,17 +323,19 @@ the `Source`-line resolver. Effort: S.
 **Description:** `.claude/skills/generate-profile/SKILL.md § Mode: VALIDATE` step 1 hard-codes
 "The 14 expected skills are:" followed by a literal list of the 14 classic skills, and the
 success-criteria checklist asserts "`canonical/` completeness verified: 14 skills, 9 agents".
-Work-001 grew `canonical/skills/` from 14 to **82** (14 classic + `aid-triage` + 67 shortcuts),
-so both the enumeration and the "14 skills" figure are stale. Because VALIDATE only checks that
-each of the listed 14 exists (all still do, as a subset), the generator still renders
-correctly — the check does not hard-fail — but its "completeness" claim is misleading and it
-does not validate the 68 newer skill directories. The `9 agents` figure is still correct.
+Work-001 grew `canonical/skills/` from 14 to 82 (14 classic + `aid-triage` + 67 shortcuts); the
+v2.1.0 skill-count follow-on grew it further to the current **92** (14 classic + `aid-triage` +
+`aid-ask` + 76 shortcuts), so both the enumeration and the "14 skills" figure are stale. Because
+VALIDATE only checks that each of the listed 14 exists (all still do, as a subset), the generator
+still renders correctly — the check does not hard-fail — but its "completeness" claim is
+misleading and it does not validate the 78 newer skill directories. The `9 agents` figure is
+still correct.
 
 **Location:** `.claude/skills/generate-profile/SKILL.md` (`Mode: VALIDATE` step 1 enumeration;
 success-criteria "14 skills" line). This maintainer skill lives only under `.claude/skills/`
 (it is not rendered from `canonical/`).
 
-**Risk if unaddressed:** A maintainer following VALIDATE literally may treat the 68 unlisted
+**Risk if unaddressed:** A maintainer following VALIDATE literally may treat the 78 unlisted
 skills as unexpected, or trust a false "completeness" signal.
 
 **Remediation:** Replace the hard-coded enumeration with a count/inventory derived from
@@ -477,3 +479,4 @@ model.
 | 1.5 | 2026-06-28 | work-aid-interview-improvements | Corrected skill count from 13 to 14 in M3 inventory row and M3 detailed description (aid-interview split into aid-describe + aid-define). |
 | 1.6 | 2026-07-08 | PR #132 (change-delivery) | Updated the M3 stale-doc description: live reality is now `deliveries/delivery-NNN/tasks/task-NNN/` (full path, nested under `deliveries/`) / `tasks/task-NNN/` (lite path, no `delivery-NNN/` folder), superseding the flat `delivery-NNN/tasks/task-NNN/` shape. |
 | 1.7 | 2026-07-09 | work-001 lite-skills refresh | Deleted resolved-in-place items per the removal convention: M2 (heavy gates now gate PRs), L1 (dead install branch removed), L7 (aid-researcher web tools granted in work-001) — closure stays in this log + git. Rewrote M3 to the live remaining drift (EMISSION-MANIFEST 3-of-5 profiles + uncaught prose-count drift), dropping deleted-recipe references and the now-reconciled repository-structure.md / aid-methodology.md instances. Added L8 (writeback-state.sh octal-leading-zero id footgun) + L9 (generate-profile VALIDATE hard-codes a stale 14-skill list). Cleared the Dead Code table; dropped L1 from the install.sh complexity-hotspot note; fixed the dangling M2 reference in Missing Test Coverage. |
+| 1.8 | 2026-07-09 | v2.1.0 skill-count sync | L9 updated to the current state: the v2.1.0 follow-on grew `canonical/skills/` from 82 to 92 (14 classic + `aid-triage` + `aid-ask` + 76 shortcuts), so VALIDATE's stale 14-skill list now leaves 78 (not 68) unlisted directories unvalidated. |

@@ -123,6 +123,15 @@ assert_output_contains "$CLASSIFY_TXT" \
 assert_output_contains "$CLASSIFY_TXT" '| `bug-fix` | G6 (`aid-fix`)' "TR12a narrowing: bug-fix -> G6 (aid-fix)"
 assert_output_contains "$CLASSIFY_TXT" '| `refactor` | G5 (`aid-change[-artifact]`, `aid-refactor`)' "TR12b narrowing: refactor -> G5"
 assert_output_contains "$CLASSIFY_TXT" 'G4 (`aid-create[-artifact]`), G3' "TR12c narrowing: new-feature -> G4 (+G3/G7/G8/G11)"
+# TR-12d/e: widened narrowing (v2.1.0 coverage-gap follow-on) surfaces the new-family verbs --
+# refactor's G5 hint widens to aid-remove/aid-deprecate/aid-migrate, and both refactor's and
+# new-feature's G11 hint widens to aid-review/aid-research.
+assert_output_contains "$CLASSIFY_TXT" "G5's \`aid-remove\`, \`aid-deprecate\`, \`aid-migrate\`" \
+    "TR12d widened narrowing: refactor -> G5 also surfaces aid-remove/aid-deprecate/aid-migrate"
+assert_output_contains "$CLASSIFY_TXT" "G11 (\`aid-review\`, \`aid-research\`)" \
+    "TR12e widened narrowing: refactor -> G11 surfaces aid-review/aid-research"
+assert_output_contains "$CLASSIFY_TXT" 'G11 (`aid-report`, `aid-show-dashboard`, `aid-review`, `aid-research`)' \
+    "TR12f widened narrowing: new-feature -> G11 surfaces aid-review/aid-research"
 
 # TR-13: Case C (broad/ambiguous/no-candidate) recommends /aid-describe.
 assert_output_contains "$SUGGEST_TXT" "This looks broad or ambiguous for a single direct-entry shortcut." \
@@ -141,6 +150,10 @@ declare -A FIXTURES=(
     ["add a /orders REST endpoint"]="aid-create-api|G4|Create an API endpoint / middleware (contract, handler, validation)."
     ["rename OrderSvc everywhere"]="aid-refactor|G5|Restructure or optimize code without changing behavior (rename, restructure, or improve performance)."
     ["write an ADR for the DB choice"]="aid-document-decision|G8|Write an ADR: context, decision, alternatives, consequences."
+    # v2.1.0 coverage-gap follow-on: new-family verbs surfaced by the widened narrowing
+    # (TR12d/TR12e/TR12f above) -- G5's aid-remove and G11's aid-review.
+    ["remove the /orders endpoint"]="aid-remove|G5|Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update dependents, tests, and docs."
+    ["review this change"]="aid-review|G11|Review/assess an existing artifact -- code, a change/diff, or a design -- against criteria; produce findings + recommendations."
 )
 
 for description in "${!FIXTURES[@]}"; do
@@ -194,7 +207,7 @@ fi
 echo ""
 echo "--- Part 3: catalog resolution (every suggested name is canonical) ---"
 
-for expected_name in aid-fix aid-create-api aid-refactor aid-document-decision; do
+for expected_name in aid-fix aid-create-api aid-refactor aid-document-decision aid-remove aid-review; do
     ALIAS_CHECK=$(awk -v n="$expected_name" '
         BEGIN{on=0}
         /^  - name:/ {
@@ -218,6 +231,56 @@ else
 fi
 assert_file_exists "${REPO_ROOT}/canonical/skills/aid-describe/SKILL.md" \
     "TR42 aid-describe/SKILL.md exists (the full-path fallback target)"
+
+# ===========================================================================
+# Part 4 -- QUESTION route (v2.1.0 coverage-gap follow-on): Step 0 short-circuit ->
+# Case D -> suggests /aid-ask.
+# ===========================================================================
+echo ""
+echo "--- Part 4: QUESTION route -- Step 0 short-circuit -> Case D -> /aid-ask ---"
+
+declare -A QUESTION_FIXTURES=(
+    ["why does the login handler fail on unicode passwords?"]=1
+    ["where is rate limiting handled in the API layer?"]=1
+)
+for description in "${!QUESTION_FIXTURES[@]}"; do
+    if echo "$description" | grep -qiE '\?$' && echo "$description" | grep -qiE '^(why|where|how|what|does|is|can|should|which)\b'; then
+        pass "TR50 [\"${description}\"] carries the QUESTION interrogative signal (state-classify.md Step 0)"
+    else
+        fail "TR50 [\"${description}\"] expected to carry the QUESTION interrogative signal"
+    fi
+done
+
+assert_output_contains "$CLASSIFY_TXT" "Step 0: QUESTION short-circuit" \
+    "TR51 state-classify.md documents the QUESTION short-circuit (Step 0)"
+assert_output_contains "$CLASSIFY_TXT" "Hand off directly to" \
+    "TR52 Step 0 hands off directly to SUGGEST Case D on a QUESTION match"
+assert_output_contains "$SUGGEST_TXT" "Case D -- QUESTION" \
+    "TR53 state-suggest.md documents Case D (the QUESTION route)"
+assert_output_contains "$SUGGEST_TXT" '/aid-ask "{description}"' \
+    "TR54 Case D suggests /aid-ask (not its canonical form /aid-query-kb)"
+
+# aid-ask itself: a repurpose:true alias row (hand-authored Q&A entry point, not a
+# generated thin doorway) resolving to the canonical aid-query-kb.
+ASK_ROW=$(awk -v n="aid-ask" '
+    BEGIN{on=0}
+    /^  - name:/ {
+        line=$0; sub(/^  - name:[[:space:]]*/, "", line);
+        if (on) { on=0 }
+        if (line == n) { on=1 }
+    }
+    on { print }
+' "$CATALOG")
+assert_output_contains "$ASK_ROW" "alias_of: aid-query-kb" \
+    "TR55a aid-ask resolves to canonical aid-query-kb in the catalog"
+assert_output_contains "$ASK_ROW" "repurpose: true" \
+    "TR55b aid-ask is a repurpose:true row (hand-authored, not a generated doorway)"
+assert_file_exists "${REPO_ROOT}/canonical/skills/aid-ask/SKILL.md" \
+    "TR55c aid-ask/SKILL.md exists (hand-authored friendly alias)"
+
+# The Case D exception to "canonical names only" is documented, not silently contradicted.
+assert_output_contains "$SKILL_TXT" "Intended exception: Case D" \
+    "TR56 SKILL.md documents Case D as an intended exception to the canonical-names-only rule"
 
 echo ""
 test_summary

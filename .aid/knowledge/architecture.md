@@ -125,7 +125,7 @@ This is the architecture that makes AID a *product*. It is a SYNTHESIS concept �
 
 **The flow:**
 
-1. `canonical/` holds the single source: `skills/` (82), `agents/` (9),
+1. `canonical/` holds the single source: `skills/` (92), `agents/` (9),
    `aid/{scripts,templates}`. CONFIRMED via directory listing.
 2. `python .claude/skills/generate-profile/scripts/run_generator.py` renders the source
    into the five `profiles/*` install trees, one per `profiles/*.toml`. CONFIRMED in
@@ -161,8 +161,8 @@ The five profile roots: `.claude/` (Claude Code), `.codex/` (Codex), `.cursor/` 
 (search: "The Five Profiles") and `profiles/*.toml`.
 
 **Note:** the generator/`generate-profile` skill is **maintainer-only** — it lives in
-`.claude/skills/generate-profile/` and is NOT one of the 82 shipped user-facing skills in
-`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 82 dirs, none named
+`.claude/skills/generate-profile/` and is NOT one of the 92 shipped user-facing skills in
+`canonical/skills/`. CONFIRMED: `canonical/skills/` contains 92 dirs, none named
 `generate-profile`.
 
 ---
@@ -185,9 +185,9 @@ Define, Map, Execute, Deliver). Phase 2 (Describe → Define) is realized by **t
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
 phases**; the table below maps each label to what it really is (CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **82 skill
-directories**: 14 classic pipeline / on-demand skills, the standalone `/aid-triage` router, and
-67 verb-first direct-entry shortcut skills):
+`docs/aid-methodology.md` "Skill Inventory" and the `canonical/skills/` listing — **92 skill
+directories**: 15 classic pipeline / on-demand skills, the standalone `/aid-triage` router, and
+76 verb-first direct-entry shortcut skills):
 
 | Workflow label | Skill(s) | Numbered phase? | What it really is |
 |----------------|----------|-----------------|-------------------|
@@ -205,11 +205,12 @@ directories**: 14 classic pipeline / on-demand skills, the standalone `/aid-tria
 | Deploy | `aid-deploy` | No (optional Deliver) | On-demand Deliver-group skill; not a numbered phase. |
 | Track / Monitor | `aid-monitor` | No (optional Deliver) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
 | Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
-| Shortcut (Lite path) | 67 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
+| Shortcut (Lite path) | 76 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
 Off-pipeline / on-demand skills: `aid-housekeep` (KB drift reconciliation),
-`aid-query-kb` (Q&A + gap capture), `aid-update-kb` (targeted KB delta), `aid-summarize`
-(HTML KB viewer). CONFIRMED in `docs/aid-methodology.md` "Skill Inventory".
+`aid-query-kb` (Q&A + gap capture; `aid-ask` is its friendly-named alias), `aid-update-kb`
+(targeted KB delta), `aid-summarize` (HTML KB viewer). CONFIRMED in
+`docs/aid-methodology.md` "Skill Inventory".
 
 **Three entry points, two paths** (CONFIRMED in `docs/aid-methodology.md` §1 "Three Doors In"
 and §4 "The Phases"):
@@ -419,11 +420,15 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **82** directories — 14 classic
-   pipeline / on-demand skills, the standalone `/aid-triage` router, and 67 verb-first
-   direct-entry shortcut skills (added by work-001-lite-aid-skills). `README.md`,
-   `docs/aid-methodology.md`, and `docs/repository-structure.md` now consistently say
-   "82 skills"; the prior 12-/13-/14-skill drift is resolved.
+1. **Skill count (reconciled).** `canonical/skills/` has **92** directories — 15 classic
+   pipeline / on-demand skills, the standalone `/aid-triage` router, and 76 verb-first
+   direct-entry shortcut skills (82/67 added by work-001-lite-aid-skills; extended to
+   92/76 by the v2.1.0 coverage-gap follow-on's `remove`/`deprecate`/`migrate` +
+   `review`/`research` families and the restored `/aid-ask` alias). `README.md`,
+   `docs/aid-methodology.md`, and `docs/repository-structure.md` said "82 skills" as of
+   work-001; CONFIRMED refreshed to "92 skills" / "76 shortcuts" by the v2.1.0
+   skill-count sync (2026-07-09) — the doc-vs-code gap this item tracked is now closed;
+   the prior 12-/13-/14-skill drift is resolved.
 2. **EMISSION-MANIFEST.md lists 3 profiles, reality is 5.** `canonical/EMISSION-MANIFEST.md`
    tables enumerate only claude-code/codex/cursor; the live generator globs all five
    `profiles/*.toml` (copilot-cli and antigravity were added later). The doc predates two
@@ -491,7 +496,7 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 - **The 5 install manifests must move in lockstep on the dashboard file set** — npm, pypi,
   and the three vendored copies; dropping one file from one manifest ships a broken install.
 - **`generate-profile` is maintainer-only** and lives only in `.claude/skills/` — do not look
-  for it in `canonical/skills/` (the 82 shipped skills).
+  for it in `canonical/skills/` (the 92 shipped skills).
 - **Heavy CI gates run only on `master`** (tests/run-all.sh + the Astro site build); feature
   branches skip them. Run `tests/run-all.sh` (HOME-pinned) + the site build locally before
   claiming green. (Project memory: master-ci-only-on-master.)
@@ -508,3 +513,5 @@ Non-obvious traps a change will trip (cannot be inferred from the code alone):
 | 1.3 | 2026-06-28 | tech-writer | Relabeled Phase 2 from "Interview" to "Describe → Define" throughout; section heading renamed to "Phase 2 (Describe → Define)"; pipeline sequence updated to Describe/Define (2a/2b). |
 | 1.4 | 2026-07-09 | tech-writer | Housekeep KB-DELTA refresh: connectors subsystem + release-drift refresh — added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, and added a connectors-registry boundary row (catalog model, not a connection manager). |
 | 1.5 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh — skill count 14 -> 82 (14 classic + `/aid-triage` + 67 verb-first shortcuts); removed the recipe render row / `interview/` script area / recipe mentions; reframed `/aid-describe` full-path-only (state machine FIRST-RUN -> Q-AND-A -> CONTINUE -> {DESCRIBE-SEED ->} COMPLETION, no TRIAGE/lite); documented the shortcut engine + three entry points in the workflow table, "Two paths", and the pipeline data-flow; re-pointed Monitor loopbacks (bug -> `/aid-fix`, change request -> `/aid-triage`). |
+| 1.6 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill count 82 -> 92 (15 classic incl. restored `/aid-ask` + `/aid-triage` + 76 verb-first shortcuts, up from 67); added the `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families to the workflow-label table and off-pipeline skill list. |
+| 1.7 | 2026-07-09 | v2.1.0 skill-count sync | Closed the "Skill count" Doc-vs-Code Discrepancies item: confirmed `README.md`, `docs/aid-methodology.md`, and `docs/repository-structure.md` are refreshed to "92 skills" / "76 shortcuts" (was UNCERTAIN). |

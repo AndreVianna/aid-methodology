@@ -111,6 +111,87 @@ assert_output_contains "$CR_TXT" \
     "\`aid-fix\`. Editing **content/docs** is \`aid-document\`; changing **tests** is" \
     "CRF05d Ownership boundary: content/docs -> aid-document, tests -> aid-test (wrap point 2)"
 
+# CRF-06: aid-remove CAPTURE/SPEC/DETAIL (v2.1.0 coverage-gap follow-on).
+assert_output_contains "$CR_TXT" '## `aid-remove` -- CAPTURE' \
+    "CRF06a aid-remove CAPTURE section present"
+assert_output_contains "$CR_TXT" \
+    '| Removal mode | closed enum: `hard-delete` (delete outright) \| `keep-shim`' \
+    "CRF06b aid-remove captures Removal mode as a closed enum (hard-delete | keep-shim)"
+assert_output_contains "$CR_TXT" '## `aid-remove` -- SPEC section activation' \
+    "CRF06c aid-remove SPEC section present"
+assert_output_contains "$CR_TXT" \
+    'The mandatory three sections apply with no conditional section; `### Data Model`' \
+    "CRF06d aid-remove SPEC: mandatory three, no conditional section"
+assert_output_contains "$CR_TXT" '## `aid-remove` -- DETAIL task breakdown' \
+    "CRF06e aid-remove DETAIL section present"
+assert_output_contains "$CR_TXT" \
+    '| `task-001` | REFACTOR | identify every usage/caller of `{target}`' \
+    "CRF06f aid-remove task-001: REFACTOR, identify usages then remove the target"
+assert_output_contains "$CR_TXT" \
+    '| `task-002` | IMPLEMENT | update every dependent identified in `task-001`' \
+    "CRF06g aid-remove task-002: IMPLEMENT, update every dependent, depends on task-001"
+assert_output_contains "$CR_TXT" \
+    '| `task-003` | TEST | full suite run confirms no residual reference and no regression; depends on `task-002` |' \
+    "CRF06h aid-remove task-003: TEST, full suite confirms no residual reference, depends on task-002"
+
+# CRF-07: aid-deprecate CAPTURE/SPEC/DETAIL (v2.1.0 coverage-gap follow-on).
+assert_output_contains "$CR_TXT" '## `aid-deprecate` -- CAPTURE' \
+    "CRF07a aid-deprecate CAPTURE section present"
+assert_output_contains "$CR_TXT" \
+    '| Removal timeline | when the deprecated target is actually expected to go away' \
+    "CRF07b aid-deprecate captures the Removal timeline"
+assert_output_contains "$CR_TXT" '## `aid-deprecate` -- SPEC section activation' \
+    "CRF07c aid-deprecate SPEC section present"
+assert_output_contains "$CR_TXT" \
+    'documents the deprecation-warning path' \
+    "CRF07d aid-deprecate SPEC: Feature Flow documents the deprecation-warning path"
+assert_output_contains "$CR_TXT" '## `aid-deprecate` -- DETAIL task breakdown' \
+    "CRF07e aid-deprecate DETAIL section present"
+assert_output_contains "$CR_TXT" \
+    '| `task-001` | IMPLEMENT | add the deprecation marker/warning' \
+    "CRF07f aid-deprecate task-001: IMPLEMENT, add the deprecation marker/warning"
+assert_output_contains "$CR_TXT" \
+    "Single-task by default -- deprecating adds a marker/warning, it does not remove" \
+    "CRF07g aid-deprecate stays single-task by default (does not remove anything itself)"
+
+# CRF-08: aid-migrate CAPTURE/SPEC/DETAIL (v2.1.0 coverage-gap follow-on).
+assert_output_contains "$CR_TXT" '## `aid-migrate` -- CAPTURE' \
+    "CRF08a aid-migrate CAPTURE section present"
+assert_output_contains "$CR_TXT" \
+    '| Scope | closed enum: `data` \| `dependency` \| `framework` \| `platform`' \
+    "CRF08b aid-migrate captures Scope as a closed enum (data|dependency|framework|platform)"
+assert_output_contains "$CR_TXT" \
+    '| Rollback plan | how to revert if the migration fails partway' \
+    "CRF08c aid-migrate captures a mandatory Rollback plan"
+assert_output_contains "$CR_TXT" '## `aid-migrate` -- SPEC section activation' \
+    "CRF08d aid-migrate SPEC section present"
+assert_output_contains "$CR_TXT" \
+    '`### Migration Plan` additionally activates' \
+    "CRF08e aid-migrate SPEC: ### Migration Plan additionally activates"
+assert_output_contains "$CR_TXT" '## `aid-migrate` -- DETAIL task breakdown' \
+    "CRF08f aid-migrate DETAIL section present"
+assert_output_contains "$CR_TXT" \
+    '| `task-001` | MIGRATE | write the forward migration script/procedure per `{scope}`' \
+    "CRF08g aid-migrate task-001: MIGRATE, forward migration + rollback script/procedure"
+assert_output_contains "$CR_TXT" \
+    '| `task-002` | TEST | verify the migrated state matches `{To}`, and that the rollback script actually reverts; depends on `task-001` |' \
+    "CRF08h aid-migrate task-002: TEST, verify migrated state + rollback, depends on task-001"
+
+# CRF-09: Ownership boundary -- remove/deprecate/migrate distinguished from each other and
+# from aid-change, plus the review/research carve-out (assessing whether to act at all).
+assert_output_contains "$CR_TXT" \
+    '**Removing** an artifact outright is `aid-remove`, not `aid-change` --' \
+    "CRF09a Ownership boundary: removing outright is aid-remove, not aid-change"
+assert_output_contains "$CR_TXT" \
+    'and `aid-remove`: the target still works, but callers are warned off it ahead' \
+    "CRF09b Ownership boundary: aid-deprecate is the middle step before aid-remove (target still works)"
+assert_output_contains "$CR_TXT" \
+    '**Migrating** data/a dependency/a framework/a platform is `aid-migrate`, kept' \
+    "CRF09c Ownership boundary: aid-migrate covers data/dependency/framework/platform"
+assert_output_contains "$CR_TXT" \
+    'migrated, before committing to the change, is `aid-review`/`aid-research`' \
+    "CRF09d Ownership boundary: assessing whether to remove/deprecate/migrate routes to aid-review/aid-research"
+
 echo ""
 echo "--- Part 2: alias-equivalence + bare-verb contract (checked against the real catalog + skill dirs) ---"
 
@@ -183,6 +264,64 @@ assert_output_contains "$CHANGE_API_BODY" 'ARTIFACT=`api`' "CRF14b aid-change-ap
 assert_output_contains "$UPDATE_API_BODY" 'VERB=`change`' "CRF14c aid-update-api doorway binds the identical VERB=\`change\`"
 assert_output_contains "$UPDATE_API_BODY" 'ARTIFACT=`api`' "CRF14d aid-update-api doorway binds the identical ARTIFACT=\`api\`"
 assert_output_contains "$UPDATE_API_BODY" 'thin alias of `aid-change-api`' "CRF14e aid-update-api doorway self-documents as a thin alias of aid-change-api"
+
+# CRF-15: aid-remove/aid-deprecate/aid-migrate (v2.1.0 coverage-gap follow-on) -- catalog
+# rows exist, G5, bare (artifact ""), a valid default_type from the closed 8-enum,
+# canonical (alias_of: null), skill dirs exist.
+_VALID_TYPES_RE='^(RESEARCH|DESIGN|IMPLEMENT|TEST|DOCUMENT|MIGRATE|REFACTOR|CONFIGURE)$'
+declare -A NEW_FAMILY_DEFAULT_TYPES=(
+    ["aid-remove"]="REFACTOR"
+    ["aid-deprecate"]="IMPLEMENT"
+    ["aid-migrate"]="MIGRATE"
+)
+for name in "${!NEW_FAMILY_DEFAULT_TYPES[@]}"; do
+    expected_dt="${NEW_FAMILY_DEFAULT_TYPES[$name]}"
+    ROW_COUNT=$(grep -c "^  - name: ${name}\$" "$CATALOG" || true)
+    assert_eq "$ROW_COUNT" "1" "CRF15 [${name}] exactly one catalog row named exactly ${name}"
+    assert_dir_exists "${SKILLS_ROOT}/${name}" "CRF15 [${name}] skill directory exists"
+    assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "CRF15 [${name}] SKILL.md exists"
+    grp=$(get_row_field "$name" "group")
+    assert_eq "$grp" "G5" "CRF15 [${name}] row: group == G5"
+    artifact=$(get_row_field "$name" "artifact")
+    assert_eq "$artifact" "" "CRF15 [${name}] row: artifact == \"\" (bare)"
+    dt=$(get_row_field "$name" "default_type")
+    assert_eq "$dt" "$expected_dt" "CRF15 [${name}] row: default_type == ${expected_dt}"
+    if [[ "$dt" =~ $_VALID_TYPES_RE ]]; then
+        pass "CRF15 [${name}] default_type is a member of the closed 8-enum"
+    else
+        fail "CRF15 [${name}] default_type is NOT a member of the closed 8-enum -- got: ${dt}"
+    fi
+    alias_of=$(get_row_field "$name" "alias_of")
+    assert_eq "$alias_of" "null" "CRF15 [${name}] row: alias_of == null (canonical row)"
+done
+
+# CRF-16: aid-delete is a thin alias of aid-remove (identical {verb, artifact} binding).
+REMOVE_VERB=$(get_row_field "aid-remove" "verb")
+DELETE_VERB=$(get_row_field "aid-delete" "verb")
+DELETE_ARTIFACT=$(get_row_field "aid-delete" "artifact")
+DELETE_ALIAS_OF=$(get_row_field "aid-delete" "alias_of")
+assert_dir_exists "${SKILLS_ROOT}/aid-delete" "CRF16a aid-delete skill directory exists"
+assert_eq "$DELETE_VERB" "$REMOVE_VERB" "CRF16b aid-delete row: verb identical to aid-remove's"
+assert_eq "$DELETE_ARTIFACT" "" "CRF16c aid-delete row: artifact == \"\" (bare)"
+assert_eq "$DELETE_ALIAS_OF" "aid-remove" "CRF16d aid-delete row: alias_of == aid-remove"
+
+# CRF-17: aid-deprecate and aid-migrate stay bare -- no alias row, no artifact-suffixed
+# variant (mirrors CRF-13's aid-refactor-stays-bare proof; aid-remove has the one
+# aid-delete alias asserted above, so it is excluded here).
+for base in aid-deprecate aid-migrate; do
+    SUFFIXED_ROWS=$(grep -E "^  - name: ${base}-" "$CATALOG" || true)
+    if [[ -z "$SUFFIXED_ROWS" ]]; then
+        pass "CRF17 [${base}] no artifact-suffixed ${base}-* catalog row exists"
+    else
+        fail "CRF17 [${base}] no artifact-suffixed ${base}-* catalog row exists -- found: ${SUFFIXED_ROWS}"
+    fi
+    ALIAS_ROWS=$(grep -E "^    alias_of: ${base}\$" "$CATALOG" || true)
+    if [[ -z "$ALIAS_ROWS" ]]; then
+        pass "CRF17 [${base}] no catalog row carries alias_of: ${base} (no alias family)"
+    else
+        fail "CRF17 [${base}] no catalog row carries alias_of: ${base} -- found an alias row"
+    fi
+done
 
 # ===========================================================================
 # Part 3 -- Fixture-shape assertions

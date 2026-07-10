@@ -89,10 +89,11 @@ Two contract facts shape every hand-off:
 ## Phase Input/Output Contracts
 
 The mandatory pipeline is six numbered phases; `aid-config` precedes it (bootstrap) and
-`aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-query-kb`, `aid-update-kb`
-are off-pipeline or optional. The 67 verb-first shortcuts and `/aid-triage` are direct-entry
-skills that sit outside the numbered pipeline (the shortcuts drive the shortcut engine; triage
-only suggests). CONFIRMED: `docs/aid-methodology.md` ("Skill Inventory" table, "§4 The Phases").
+`aid-summarize`, `aid-deploy`, `aid-monitor`, `aid-housekeep`, `aid-query-kb` (+ its friendly
+alias `aid-ask`), `aid-update-kb` are off-pipeline or optional. The 76 verb-first shortcuts and
+`/aid-triage` are direct-entry skills that sit outside the numbered pipeline (the shortcuts
+drive the shortcut engine; triage only suggests). CONFIRMED: `docs/aid-methodology.md` ("Skill
+Inventory" table, "§4 The Phases").
 
 | # | Phase (skill) | Consumes | Produces | Gate |
 |---|---------------|----------|----------|------|
@@ -383,12 +384,14 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   the nested full-path `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened
   Lite `tasks/task-NNN/DETAIL.md` (no per-task `STATE.md`) shape, matching the live skills and
   templates.
-- The skill taxonomy is now **82 skill directories** under `canonical/skills/`: 14 classic
-  pipeline/on-demand skills + `/aid-triage` + 67 verb-first direct-entry shortcuts (generated
-  from a 69-row `shortcut-catalog.yml`). The recipe system (`canonical/aid/recipes/`,
-  `parse-recipe.sh`, `{{slot}}` placeholders) was removed and replaced by the shortcut engine +
-  `shortcut-scaffolding/<family>.md`; the prior "51 vs 52 recipes" count drift is closed. Agents
-  (9) and KB doc types (14) are unchanged.
+- The skill taxonomy is now **92 skill directories** under `canonical/skills/`: 15 classic
+  pipeline/on-demand skills (incl. the restored `/aid-ask` friendly alias) + `/aid-triage` + 76
+  verb-first direct-entry shortcuts (generated from an 80-row `shortcut-catalog.yml`) — up from
+  82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the
+  `remove`/`deprecate`/`migrate` + `review`/`research` families. The recipe system
+  (`canonical/aid/recipes/`, `parse-recipe.sh`, `{{slot}}` placeholders) was removed and
+  replaced by the shortcut engine + `shortcut-scaffolding/<family>.md`; the prior "51 vs 52
+  recipes" count drift is closed. Agents (9) and KB doc types (14) are unchanged.
 
 ---
 
@@ -466,3 +469,4 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 | 1.2 | 2026-07-08 | PR #132 (branch `change-delivery`) | Delivery-folder layout rationalized: full path nests delivery folders under `deliveries/`; lite path drops the `delivery-001/` folder entirely (tasks live directly at `tasks/task-NNN/`; the sole delivery's gate + Q&A are AUTHORED in the work-root STATE.md). Rewrote the On-Disk Work Hierarchy section with separate full/lite diagrams and updated stale citations. |
 | 1.3 | 2026-07-09 | housekeep KB-DELTA | Added ELICIT's outputs (E1 `## External Documentation` / E2 `.aid/connectors/` registry) to the Discover Phase-I/O row and the Typed Artifact Contracts table; corrected the 1.2 provenance to PR #132. |
 | 1.4 | 2026-07-09 | work-001 lite-skills refresh | Rewrote the entry model (three doors: verb-first shortcut / `/aid-triage` / `/aid-describe`) and the flattened Lite path: the shared shortcut engine (`INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT`) authors work-root `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md` + `tasks/task-NNN/DETAIL.md` with **no per-task `STATE.md`** (cells live in `STATE.md § ### Tasks lifecycle`). Renamed the delivery definition to `BLUEPRINT.md` and the task definition to `DETAIL.md` across the phase table, artifact contracts, hierarchy trees, and state-machine table (fixing the deleted `delivery-spec-template.md` citation → `delivery-blueprint-template.md`); added a `BLUEPRINT.md` artifact-contract row. Removed `aid-describe`'s TRIAGE/lite states; added `/aid-triage` and the shortcut-engine state machines. Bound L9 → `/aid-fix` and L10 → `/aid-triage`. Retired the recipe system and the stale "14 skills / 51-52 recipes / methodology flat-layout" Known Issues; recorded the 82-directory taxonomy. |
+| 1.5 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill taxonomy 82 -> 92 directories (15 classic incl. restored `/aid-ask` + `/aid-triage` + 76 verb-first shortcuts, up from 67; catalog 69-row -> 80-row) for the new `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families; updated the Phase Input/Output Contracts off-pipeline skill list and the Known Issues skill-count entry. |

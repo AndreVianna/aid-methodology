@@ -22,7 +22,7 @@ owner: architect
 audience: [developer, architect]
 contracts:
   - "canonical/ is the single source of truth; profiles/ and packages/_vendor are rendered/vendored copies"
-  - "82 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
+  - "92 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
 changelog:
   - 2026-07-09: work-001 lite-skills refresh -- skill count 14 -> 82 (14 classic + `/aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/` module row, the `interview/`/`parse-recipe.sh` script-area row + dependency-graph edge + gotcha, and the "how a new recipe goes" convention; added the shortcut catalog/engine/scaffolding wiring (`build-shortcut-skills.py`), the "how a new shortcut goes" convention, and the shortcut-engine dependency edges.
@@ -77,7 +77,7 @@ it produces. The modules fall into four planes:
 | `lib/AidInstallCore.psm1` | Distribution | PowerShell twin of the install-core library (`#Requires -Version 5.1`). | none | large | tested (`Test-AidInstaller.ps1`, `ps51-compat-check.ps1`) | Must stay WinPS-5.1 compatible (see coding-standards.md). |
 | `bin/aid`, `bin/aid.ps1`, `bin/aid.cmd` | Distribution | Persistent `aid` CLI dispatcher: parses subcommands (`update`, `remove`, `dashboard`, ...) and calls install-core. | install-core libs | medium | tested (cli-parity, registry) | `aid.cmd` is a thin cmd.exe shim over `aid.ps1`. |
 | `release.sh` | Distribution | Maintainer runbook: packages the five per-profile tarballs + checksums and cuts a GitHub Release. | `canonical/`, `profiles/`, `check-version-sync.sh` | medium | indirectly (release.yml CI) | Maintainer-only; rebuild bundle from clean HEAD. |
-| `canonical/skills/*` (82) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (82 total: 14 classic pipeline / on-demand skills + the `aid-triage` router + 67 verb-first direct-entry shortcut doorways). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
+| `canonical/skills/*` (92) | Toolkit | Slash-command definitions (`SKILL.md` + `references/*.md`) that drive the pipeline state machines. | `canonical/aid/scripts/*`, `templates/*` | large (collectively) | not machine-tested (by design) | The user-facing surface; one dir per skill (92 total: 15 classic pipeline / on-demand skills + the `aid-triage` router + 76 verb-first direct-entry shortcut doorways). Phase 2 (Describe → Define) is two skills: `aid-describe` (2a) + `aid-define` (2b). Several `references/` clusters are tracked as modules -- see [Notable Skill Reference Modules](#notable-skill-reference-modules). Skill state machines are validated by dogfooding + AI/human review, NOT an automated harness (see test-landscape.md); only the helper scripts they call have suites. |
 | `canonical/agents/*` (9) | Toolkit | Sub-agent role definitions (`AGENT.md` + `README.md`); dispatched by skills. | `templates/agent-boilerplate.md` (include) | medium | n/a (prose) | Roles: architect, clerk, developer, interviewer, operator, orchestrator, researcher, reviewer, tech-writer. The `interviewer` agent is dispatched by `aid-describe`. |
 | `canonical/aid/scripts/*` | Toolkit | Helper scripts grouped by phase area (config, connectors, execute, housekeep, kb, migrate, release, summarize) + top-level `grade.sh`. | `config/read-setting.sh`, `grade.sh` | large | partial (per-area suites + fixtures) | See [Script Modules by Area](#script-modules-by-area). |
 | `canonical/aid/templates/*` | Toolkit | KB doc seeds, state-file templates, schemas, kb-authoring rules, the shortcut catalog + engine + scaffolding. | none (consumed by skills) | large | n/a (data) | The artifact-schema source of truth (see artifact-schemas.md). |
@@ -236,7 +236,7 @@ their own right.
   `canonical/skills/aid-discover/`). The `SKILL.md` carries YAML frontmatter with
   `name:`, `description:`, `allowed-tools:`, `argument-hint:` (see
   `aid-config/SKILL.md`). This is for hand-authored pipeline / on-demand skills; the
-  67 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
+  76 verb-first shortcut doorways are **generated**, not hand-authored -- see "How a
   new shortcut goes" below.
 - **Where a new agent goes:** create `canonical/agents/aid-<role>/AGENT.md` (+
   `README.md`). The `AGENT.md` frontmatter carries `name:`, `description:`,
@@ -322,7 +322,7 @@ their own right.
   toolkit appear many times (dashboard + npm + pypi `_vendor` + five profiles +
   `.claude/`). Do NOT "deduplicate" -- they are rendered/vendored copies of
   `canonical/`.
-- **Shortcut doorways are generated, not hand-authored.** The 67 `aid-<verb>[-<artifact>]`
+- **Shortcut doorways are generated, not hand-authored.** The 76 `aid-<verb>[-<artifact>]`
   skill directories under `canonical/skills/` are emitted by
   `.claude/skills/generate-profile/scripts/build-shortcut-skills.py` from
   `shortcut-catalog.yml`. Edit the catalog + re-run the helper (then the FULL
@@ -342,6 +342,7 @@ their own right.
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
+| 1.4 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill count 82 -> 92 (15 classic incl. restored `/aid-ask` + `aid-triage` + 76 verb-first shortcuts, up from 67); updated the `canonical/skills/*` module row, the "how a new skill goes" / "shortcut doorways are generated" gotchas, and the frontmatter contract count (82 -> 92) for the new `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families. |
 | 1.3 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh: skill count 14 -> 82 (14 classic + `aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/*` module row, the `interview/`/`parse-recipe.sh` script-area row + its dependency-graph edge + its gotcha, and the "how a new recipe goes" convention; updated the templates row (recipe template -> shortcut catalog + engine + scaffolding); added the shortcut-engine/scaffolding dependency edges + the `build-shortcut-skills.py` wiring, the "how a new shortcut goes" convention, and a "shortcut doorways are generated" gotcha; frontmatter contract 14 -> 82. General-staleness sweep also added two `summarize/` scripts (`build-md-export.sh`, `validate-diagram-content.mjs`) that were missing from the Script Modules table. |
 | 1.2 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the `connectors/` row to Script Modules by Area (registry accessor, INDEX builder, secret handler, Bash+PowerShell twins) + its test-suite list; added `connectors` to the scripts-by-area enumeration in Module Inventory; added the ELICIT `.aid/connectors/`/`external-sources.md` write-target line to the Dependency Graph. |
 | 1.1 | 2026-06-28 | work-001-aid-interview-improvements | Split `aid-interview` into `aid-describe` (2a) + `aid-define` (2b); skill count 13 -> 14; reassigned the `interview/` script area + interviewer agent to `aid-describe`; added the Notable Skill Reference Modules section (elicitation engine, greenfield seed-authoring, Conformance Lane) + the forward-authored design->code invariant. |

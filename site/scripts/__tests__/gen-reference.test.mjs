@@ -98,10 +98,10 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 
 // ── Roster counts match source ────────────────────────────────────────────────
 
-// The curated (non-shortcut) skill roster: the 14 classic pipeline/on-demand
+// The curated (non-shortcut) skill roster: the 15 classic pipeline/on-demand
 // skills plus the standalone aid-triage router. Mirrors gen-reference.mjs's
 // SKILL_GROUPS — these render as individual `### \`aid-...\`` sections. The
-// remaining on-disk skill directories are the 67 catalog-driven shortcuts,
+// remaining on-disk skill directories are the 76 catalog-driven shortcuts,
 // summarized by family in the "Direct-entry shortcuts" table, not as
 // individual sections.
 const CURATED_SKILL_NAMES = [
@@ -111,18 +111,18 @@ const CURATED_SKILL_NAMES = [
   'aid-plan', 'aid-detail',
   'aid-execute',
   'aid-deploy', 'aid-monitor',
-  'aid-housekeep', 'aid-query-kb', 'aid-update-kb',
+  'aid-housekeep', 'aid-query-kb', 'aid-ask', 'aid-update-kb',
 ].sort();
 
 describe('gen-reference: roster counts', () => {
-  it('skills.md: 82 on-disk skill dirs = 15 curated sections + 67 catalog shortcuts', () => {
+  it('skills.md: 92 on-disk skill dirs = 16 curated sections + 76 catalog shortcuts', () => {
     const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
-    expect(skillDirs).toHaveLength(82);
+    expect(skillDirs).toHaveLength(92);
 
     const shortcutDirs = skillDirs.filter((d) => !CURATED_SKILL_NAMES.includes(d));
-    expect(shortcutDirs).toHaveLength(67);
+    expect(shortcutDirs).toHaveLength(76);
 
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
     // Per-skill sections render as `### \`aid-...\`` headings — one per curated
@@ -131,12 +131,12 @@ describe('gen-reference: roster counts', () => {
     expect(sections).toHaveLength(CURATED_SKILL_NAMES.length);
   });
 
-  it('skills.md: has a "Direct-entry shortcuts" section totalling all 67 shortcuts', () => {
+  it('skills.md: has a "Direct-entry shortcuts" section totalling all 76 shortcuts', () => {
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
     expect(skillsContent).toContain('## Direct-entry shortcuts');
-    // The family table's total row sums to the 67 catalog rows that emit a
-    // skill directory (69-row catalog minus 2 `repurpose: true` rows).
-    expect(skillsContent).toMatch(/\*\*Total\*\*\s*\|\s*\*\*67\*\*/);
+    // The family table's total row sums to the 76 catalog rows that emit a
+    // skill directory (80-row catalog minus 4 `repurpose: true` rows).
+    expect(skillsContent).toMatch(/\*\*Total\*\*\s*\|\s*\*\*76\*\*/);
   });
 
   it('agents.md: exactly 9 agent sections matching canonical/agents/', () => {

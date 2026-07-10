@@ -122,7 +122,7 @@ Parameter: output_root") produces the as-built view without touching the real KB
 ## Direct-entry shortcuts & the Lite fast path
 
 For a single, well-scoped change the user need not walk the whole pipeline. AID ships
-**67 verb-first direct-entry "shortcut" skills** (e.g. `/aid-fix`, `/aid-create-api`,
+**76 verb-first direct-entry "shortcut" skills** (e.g. `/aid-fix`, `/aid-create-api`,
 `/aid-change-cli`) plus a suggest-only router, `/aid-triage`. Naming a change with a
 shortcut enters the **Lite path**: one fast, mostly-autonomous run that collapses the five
 definition phases (Describe → Define → Specify → Plan → Detail) into a single pass, then
@@ -150,10 +150,10 @@ names + thin aliases, one row per typed entry) is
 
 ### Shortcut families
 
-The 67 shortcut directories are generated from a **69-row catalog** (45 canonical names + 24
-thin aliases); two canonical rows — `aid-deploy` and `aid-monitor` — repurpose existing
-pipeline skills and emit no new directory, which is why 69 rows yield 67 shortcut dirs. Each
-verb family targets an artifact archetype:
+The 76 shortcut directories are generated from an **80-row catalog** (51 canonical names + 29
+thin aliases); four canonical/alias rows — `aid-deploy`, `aid-monitor`, `aid-query-kb`, and
+`aid-ask` — repurpose existing hand-authored skills and emit no new directory, which is why 80
+rows yield 76 shortcut dirs. Each verb family targets an artifact archetype:
 
 | Verb family | Shortcuts (canonical) | Alias family |
 |-------------|-----------------------|--------------|
@@ -161,14 +161,17 @@ verb family targets an artifact archetype:
 | change | `aid-change` + the same artifact suffixes | `aid-update-*` mirrors each |
 | fix | `aid-fix` | — |
 | refactor | `aid-refactor` | — |
+| remove / deprecate / migrate | `aid-remove`, `aid-deprecate`, `aid-migrate` (v2.1.0 coverage-gap follow-on) | `aid-delete` mirrors `aid-remove` |
 | test / experiment | `aid-test`, `-security`, `-performance`, `-data-quality`; `aid-experiment` | — |
 | prototype | `aid-prototype`, `aid-prototype-ui` | — |
 | document | `aid-document`, `-architecture`, `-changelog`, `-decision`, `-guideline`, `-runbook`, `-standard`, `-tutorial` | — |
 | report | `aid-report` | — |
 | show-dashboard | `aid-show-dashboard` | — |
+| review / research | `aid-review`, `aid-research` (v2.1.0 coverage-gap follow-on) | `aid-audit` mirrors `aid-review`; `aid-investigate`/`aid-spike` mirror `aid-research` |
 
-(`/aid-deploy` and `/aid-monitor` also accept a shortcut-style free-form invocation, but keep
-their own directories and are counted among the pipeline skills, not the 67 shortcuts.)
+(`/aid-deploy`, `/aid-monitor`, `/aid-query-kb`, and `/aid-ask` also accept a shortcut-style
+free-form invocation, but keep their own directories and are counted among the classic/on-demand
+skills, not the 76 shortcuts.)
 
 ### The `/aid-triage` router
 
@@ -187,7 +190,7 @@ Optional jobs run outside the linear pipeline, when the user needs them.
 
 | Capability | Skill | What it does for the user |
 |------------|-------|---------------------------|
-| Ask the KB a question | `/aid-query-kb` | Answers a free-form question grounded in the KB, the live code, and in-flight work; cites sources or names the gap. |
+| Ask the KB a question | `/aid-query-kb` (friendly alias: `/aid-ask`) | Answers a free-form question grounded in the KB, the live code, and in-flight work; cites sources or names the gap. |
 | Targeted KB update | `/aid-update-kb` | Applies a described change to the KB through the same review/approval gate as discovery. |
 | Housekeeping | `/aid-housekeep` | Re-discovers changed KB docs, runs the conformance check over forward-authored docs, regenerates the visual summary, and sweeps stale work artifacts. |
 | Visual KB summary | `/aid-summarize` | Generates a single-file `kb.html` — a visually rich, newcomer-friendly view of the Knowledge Base. |
@@ -253,7 +256,7 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 |------------------|----------------------------|
 | Pipeline + on-demand skills | `.claude/skills/<skill>/` (SKILL.md + references) backed by per-area helper scripts under `canonical/aid/scripts/` (`config/`, `connectors/`, `execute/`, `housekeep/`, `kb/`, `migrate/`, `release/`, `summarize/`); each skill dispatches `canonical/agents/*` sub-agents. See module-map.md "toolkit plane" + per-area script table. |
 | Requirements-gathering deep dive | `/aid-describe`'s `references/` engine corpus (`elicitation-engine.md`, `move-playbook.md`, `calibration.md`, `advisor-stance.md`, `coherence-check.md`, `state-describe-seed.md`) + the `aid-housekeep` Conformance Lane. See module-map.md "aid-describe elicitation engine" + "Conformance Lane". |
-| Direct-entry shortcuts & Lite path | 67 thin `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` doorways + the `/aid-triage` router, all delegating to `canonical/aid/templates/shortcut-engine.md`; family scaffolding in `canonical/aid/templates/shortcut-scaffolding/<family>.md`; invocation catalog `canonical/aid/templates/shortcut-catalog.yml` (built into skill dirs by `generate-profile/scripts/build-shortcut-skills.py`). |
+| Direct-entry shortcuts & Lite path | 76 thin `canonical/skills/aid-<verb>[-<artifact>]/SKILL.md` doorways + the `/aid-triage` router, all delegating to `canonical/aid/templates/shortcut-engine.md`; family scaffolding in `canonical/aid/templates/shortcut-scaffolding/<family>.md`; invocation catalog `canonical/aid/templates/shortcut-catalog.yml` (built into skill dirs by `generate-profile/scripts/build-shortcut-skills.py`). |
 | External connections & tool integrations | `.aid/connectors/` (descriptors + generated `INDEX.md` + git-ignored `.secrets/`), populated by `/aid-discover` ELICIT; backed by `canonical/aid/scripts/connectors/` (`connector-registry`, `build-connectors-index`, `connector-secret` bash+PowerShell twins) and the `canonical/aid/templates/connectors/preset-catalog.md` presets. See module-map.md "connectors". |
 | CLI installer (install/update/remove) | `bin/` entry point + `lib/aid-install-core.sh`; `install.sh` / `install.ps1`; the 5 install manifests. See module-map.md "distribution plane". |
 | Dashboard | `dashboard/server/` (multi-repo server) + `dashboard/reader/` (STATE.md parser). See module-map.md "observation plane". |
@@ -267,12 +270,12 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 ## Open items
 
-- **Skill count.** AID ships **82 skill directories** under `canonical/skills/`: the
-  **14 classic skills** (10 pipeline + 4 on-demand), the **`/aid-triage`** router, and
-  **67 verb-first direct-entry shortcuts** (generated from the 69-row
-  `canonical/aid/templates/shortcut-catalog.yml`; two canonical rows repurpose existing
-  pipeline skills and emit no new directory). `README.md` states this taxonomy; the prior
-  12-/13-/14-skill drift is superseded.
+- **Skill count.** AID ships **92 skill directories** under `canonical/skills/`: the
+  **15 classic skills** (10 pipeline + 5 on-demand, including `/aid-ask`), the
+  **`/aid-triage`** router, and **76 verb-first direct-entry shortcuts** (generated from
+  the 80-row `canonical/aid/templates/shortcut-catalog.yml`; four canonical/alias rows
+  repurpose existing hand-authored skills and emit no new directory). `README.md` states
+  this taxonomy; the prior 12-/13-/14-skill drift is superseded.
 
 ## Change Log
 
@@ -283,3 +286,4 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 | 1.2 | 2026-06-28 | Relabeled Phase 2 from "Interview" to "Describe → Define"; pipeline sequence updated to Describe/Define (2a/2b). |
 | 1.3 | 2026-07-09 | work-002 connectors subsystem (PR #133): added the "External connections & tool integrations (connector catalog)" capability, the `connectors/` script area, the connector-catalog capability-lives row, and the `/aid-discover` ELICIT external-source/tool-integration capture. Refreshed by /aid-housekeep KB-DELTA. |
 | 1.4 | 2026-07-09 | work-001 lite-skills refresh — added the "Direct-entry shortcuts & the Lite fast path" capability group (67 shortcuts, shortcut engine, families, `shortcut-catalog.yml`) and the `/aid-triage` router; corrected `/aid-describe` to full-path-only (routing moved to `/aid-triage`); re-pointed `/aid-monitor` routing (bug → `/aid-fix`, change request → `/aid-triage`); updated skill count 14 → 82; completed the section index. |
+| 1.5 | 2026-07-09 | v2.1.0 coverage-gap follow-on — added the `remove`/`deprecate`/`migrate` (G5, + `aid-delete` alias) and `review`/`research` (G11, + `aid-audit`/`aid-investigate`/`aid-spike` aliases) shortcut families to the families table; restored `/aid-ask` as `/aid-query-kb`'s friendly-named alias; updated counts throughout: skill count 82 → 92 (15 classic incl. `aid-ask` + `/aid-triage` + 76 shortcuts), catalog 69-row (45 canonical + 24 aliases) → 80-row (51 canonical + 29 aliases), repurpose rows 2 → 4 (`aid-deploy`/`aid-monitor`/`aid-query-kb`/`aid-ask`). |

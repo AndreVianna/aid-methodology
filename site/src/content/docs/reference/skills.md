@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All AID skills — 14 classic pipeline skills, the aid-triage router, and the catalog-driven direct-entry shortcuts — grouped by phase/family, with what each does and where it comes from.'
+description: 'All AID skills — 14 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by phase/family, with what each does and where it comes from.'
 generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **82 skill directories** under `canonical/skills/`: **14 classic pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone suggest-only router **`/aid-triage`**, and **67 direct-entry shortcut skills** generated from a 69-row catalog (45 canonical names + 24 aliases — 2 of the canonical rows `repurpose` existing classic skills and emit no directory of their own). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below).
+AID ships **92 skill directories** under `canonical/skills/`: **14 classic pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **76 direct-entry shortcut skills** generated from a 80-row catalog (51 canonical names + 29 aliases — 4 of the rows (3 canonical + 1 alias) `repurpose` existing classic skills and emit no directory of their own). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below).
 
 ## Prepare
 
@@ -148,6 +148,14 @@ Optional on-demand Q&A skill. Takes a free-form question and answers it in one p
 
 [Definition: `canonical/skills/aid-query-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-query-kb/SKILL.md)
 
+### `aid-ask`
+
+**on demand · friendly alias of aid-query-kb**
+
+Friendly-named alias of /aid-query-kb -- the optional on-demand Q&A skill. Takes a free-form question and answers it in one pass, grounded in three context sources: the Knowledge Base (.aid/knowledge/), the live codebase, and in-flight AID works (.aid/work-*/STATE.md + progress). Returns an answer with source citations. When the available context cannot answer the question, states the gap explicitly and captures it as a Query-Gap entry so it feeds the KB-improvement loop. This file carries no logic of its own -- its full behavior is defined entirely by canonical/skills/aid-query-kb/SKILL.md, which this skill delegates to.
+
+[Definition: `canonical/skills/aid-ask/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-ask/SKILL.md)
+
 ### `aid-update-kb`
 
 **on demand · targeted KB update**
@@ -158,7 +166,7 @@ Optional on-demand targeted KB update skill. Takes a free-form prompt describing
 
 ## Direct-entry shortcuts
 
-**67 verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (69 rows total: 67 emit a skill directory; the other 2 are `repurpose: true` rows that re-register a pre-existing classic skill — `aid-deploy` / `aid-monitor` — purely so /aid-triage can recognize them, and emit no directory of their own).
+**76 verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (80 rows total: 76 emit a skill directory; the other 4 are `repurpose: true` rows that re-register a pre-existing classic skill — `aid-deploy` / `aid-monitor` / `aid-query-kb` / `aid-ask` — purely so /aid-triage can recognize them, and emit no directory of their own).
 
 Every shortcut delegates to the shared **shortcut engine** — [`canonical/aid/templates/shortcut-engine.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md) — which collapses the five definition phases (Describe → Detail) into one mostly-autonomous run:
 
@@ -179,4 +187,9 @@ CAPTURE/SPEC/PLAN/DETAIL run without a per-phase human checkpoint (unlike the fu
 | Document | 8 | `aid-document` + 7 typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias |
 | Report | 1 | `aid-report` — analyze data or usage and communicate insight; no alias |
 | Show dashboard | 1 | `aid-show-dashboard` — build a durable dashboard or BI view; no alias |
-| **Total** | **67** | |
+| Remove (+ `delete` alias) | 2 | 1 canonical `aid-remove` form + 1 `aid-delete` alias |
+| Deprecate | 1 | `aid-deprecate` — mark an artifact/API deprecated, add warnings and a migration path, without deleting yet; no alias |
+| Migrate | 1 | `aid-migrate` — migrate data, a dependency, framework, or platform, with a rollback plan; no alias |
+| Review (+ `audit` alias) | 2 | 1 canonical `aid-review` form + 1 `aid-audit` alias |
+| Research (+ `investigate`/`spike` aliases) | 3 | 1 canonical `aid-research` form + 2 `aid-investigate`/`aid-spike` aliases |
+| **Total** | **76** | |

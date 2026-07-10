@@ -8,14 +8,14 @@
 #     (AC-1's mechanical proof)
 #   - non-`repurpose` (thin-doorway) rows: the body binds the row's {verb, artifact} and
 #     delegates to the shared engine (canonical/aid/templates/shortcut-engine.md)
-#   - `repurpose: true` rows (the 2 pre-existing FAT pipeline skills, aid-deploy/aid-monitor)
+#   - `repurpose: true` rows (the 4 pre-existing FAT pipeline/hand-authored skills, aid-deploy/aid-monitor/aid-query-kb/aid-ask)
 #     are exempted to dir-exists + name-match + `aid-` prefix ONLY -- no body-content assertion
 #     (feature-012 owns their bodies)
 #   - no orphan directory (a GENERATED-marker doorway with no matching catalog row)
 #   - no orphan row (every row's directory actually exists)
 #
 # Count-AGNOSTIC BY DESIGN: passes whether the catalog carries 1 row (today -- aid-fix,
-# feature-008) or the full 69 (45 canonical + 24 alias). The full 69-row count assertion is
+# feature-008) or the full 80 (51 canonical + 29 alias). The full 80-row count assertion is
 # task-035's own, separate test -- NOT duplicated here.
 #
 # Corroborating oracle: build-shortcut-skills.py --check (the maintainer helper's own byte-level

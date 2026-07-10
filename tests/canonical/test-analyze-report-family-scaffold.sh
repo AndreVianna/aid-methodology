@@ -132,6 +132,49 @@ assert_output_contains "$AR_TXT" \
     '(design + run) is `aid-experiment` (G7) -- `aid-report` analyzes results, it does not' \
     "AFS07f Ownership boundary: a controlled experiment/A-B test design is aid-experiment (G7); aid-report only analyzes results"
 
+# AFS-08: aid-review CAPTURE/SPEC/DETAIL (v2.1.0 coverage-gap follow-on).
+assert_output_contains "$AR_TXT" '## `aid-review` -- CAPTURE' \
+    "AFS08a aid-review CAPTURE section present"
+assert_output_contains "$AR_TXT" \
+    '| Target | the artifact under review -- code, a change/diff, or a design |' \
+    "AFS08b aid-review captures the review Target"
+assert_output_contains "$AR_TXT" '## `aid-review` -- SPEC' \
+    "AFS08c aid-review SPEC section present"
+assert_output_contains "$AR_TXT" \
+    'Base sections only -- the mandatory three (`### Data Model`, `### Feature Flow`,' \
+    "AFS08d aid-review SPEC: base sections only (no conditional section)"
+assert_output_contains "$AR_TXT" '## `aid-review` -- DETAIL' \
+    "AFS08e aid-review DETAIL section present"
+assert_output_contains "$AR_TXT" \
+    '| `task-001` | RESEARCH | assess `{target}` against the captured criteria/rubric;' \
+    "AFS08f aid-review task-001: RESEARCH, assesses target against criteria/rubric"
+assert_output_contains "$AR_TXT" \
+    'Emits the reviewer-ledger per the global review-output schema' \
+    "AFS08g aid-review task-001 emits the reviewer-ledger schema, not prose findings"
+assert_output_contains "$AR_TXT" \
+    '| `task-002` (optional) | DOCUMENT | write up the findings for a stakeholder audience; depends on `task-001` |' \
+    "AFS08h aid-review task-002: optional DOCUMENT, write up findings, depends on task-001"
+
+# AFS-09: aid-research CAPTURE/SPEC/DETAIL (v2.1.0 coverage-gap follow-on).
+assert_output_contains "$AR_TXT" '## `aid-research` -- CAPTURE' \
+    "AFS09a aid-research CAPTURE section present"
+assert_output_contains "$AR_TXT" \
+    '| Question / decision | the open technical question or decision this research resolves |' \
+    "AFS09b aid-research captures the Question / decision"
+assert_output_contains "$AR_TXT" '## `aid-research` -- SPEC' \
+    "AFS09c aid-research SPEC section present"
+assert_output_contains "$AR_TXT" \
+    'research investigates a question, it does not model new' \
+    "AFS09d aid-research SPEC: base sections only, Data Model reads no schema changes"
+assert_output_contains "$AR_TXT" '## `aid-research` -- DETAIL' \
+    "AFS09e aid-research DETAIL section present"
+assert_output_contains "$AR_TXT" \
+    '| `task-001` | RESEARCH | compare >= 2 alternatives against `{decision criteria}`' \
+    "AFS09f aid-research task-001: RESEARCH, compares >= 2 alternatives against decision criteria"
+assert_output_contains "$AR_TXT" \
+    '| `task-002` (optional) | DOCUMENT | write up the recommendation' \
+    "AFS09g aid-research task-002: optional DOCUMENT, write up the recommendation, depends on task-001"
+
 echo ""
 echo "--- Part 2: catalog contract (checked against the real catalog + skill dirs) ---"
 
@@ -175,6 +218,41 @@ assert_eq "$DASHBOARD_ARTIFACT" "" "AFS12c aid-show-dashboard row: artifact == \
 for name in "${G11_NAMES[@]}"; do
     alias_of=$(get_row_field "$name" "alias_of")
     assert_eq "$alias_of" "null" "AFS13 [${name}] row: alias_of == null (no alias family)"
+done
+
+# AFS-15: aid-review + aid-research (v2.1.0 coverage-gap follow-on) -- catalog rows exist,
+# G11, default_type RESEARCH (a valid member of the closed 8-enum), skill dirs exist.
+_VALID_TYPES_RE='^(RESEARCH|DESIGN|IMPLEMENT|TEST|DOCUMENT|MIGRATE|REFACTOR|CONFIGURE)$'
+REVIEW_RESEARCH_NAMES=(aid-review aid-research)
+for name in "${REVIEW_RESEARCH_NAMES[@]}"; do
+    ROW_COUNT=$(grep -c "^  - name: ${name}\$" "$CATALOG" || true)
+    assert_eq "$ROW_COUNT" "1" "AFS15 [${name}] exactly one catalog row named exactly ${name}"
+    assert_dir_exists "${SKILLS_ROOT}/${name}" "AFS15 [${name}] skill directory exists"
+    assert_file_exists "${SKILLS_ROOT}/${name}/SKILL.md" "AFS15 [${name}] SKILL.md exists"
+    grp=$(get_row_field "$name" "group")
+    assert_eq "$grp" "G11" "AFS15 [${name}] row: group == G11"
+    dt=$(get_row_field "$name" "default_type")
+    assert_eq "$dt" "RESEARCH" "AFS15 [${name}] row: default_type == RESEARCH"
+    if [[ "$dt" =~ $_VALID_TYPES_RE ]]; then
+        pass "AFS15 [${name}] default_type is a member of the closed 8-enum"
+    else
+        fail "AFS15 [${name}] default_type is NOT a member of the closed 8-enum -- got: ${dt}"
+    fi
+    alias_of=$(get_row_field "$name" "alias_of")
+    assert_eq "$alias_of" "null" "AFS15 [${name}] row: alias_of == null (canonical row)"
+done
+
+# AFS-16: alias rows -- aid-audit -> aid-review; aid-investigate/aid-spike -> aid-research.
+declare -A REVIEW_RESEARCH_ALIASES=(
+    ["aid-audit"]="aid-review"
+    ["aid-investigate"]="aid-research"
+    ["aid-spike"]="aid-research"
+)
+for alias_name in "${!REVIEW_RESEARCH_ALIASES[@]}"; do
+    canonical_target="${REVIEW_RESEARCH_ALIASES[$alias_name]}"
+    assert_dir_exists "${SKILLS_ROOT}/${alias_name}" "AFS16 [${alias_name}] skill directory exists"
+    alias_of=$(get_row_field "$alias_name" "alias_of")
+    assert_eq "$alias_of" "$canonical_target" "AFS16 [${alias_name}] row: alias_of == ${canonical_target}"
 done
 
 # AFS-14: no aid-report-*/aid-show-dashboard-* suffixed directory exists (bare-only family).

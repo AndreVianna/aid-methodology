@@ -99,19 +99,20 @@ Print: `[State: VALIDATE]`
 Confirm canonical completeness:
 
 1. Every AID skill has a corresponding `canonical/skills/aid-{name}/` directory with
-   a `SKILL.md`. The full taxonomy is **82 skill directories**: the **14 classic**
+   a `SKILL.md`. The full taxonomy is **92 skill directories**: the **15 classic**
    pipeline / on-demand skills (`aid-config`, `aid-discover`, `aid-describe`,
    `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`,
-   `aid-monitor`, `aid-summarize`, `aid-housekeep`, `aid-query-kb`, `aid-update-kb`)
-   + the standalone router **`aid-triage`** + **67 verb-first shortcut skills**
-   generated one-per-non-`repurpose` row from the 69-row catalog
+   `aid-monitor`, `aid-summarize`, `aid-housekeep`, `aid-query-kb`, `aid-ask`,
+   `aid-update-kb`)
+   + the standalone router **`aid-triage`** + **76 verb-first shortcut skills**
+   generated one-per-non-`repurpose` row from the 80-row catalog
    `canonical/aid/templates/shortcut-catalog.yml`. Rather than hardcoding the
-   67 shortcut names, check that every catalog row (excluding `repurpose: true`
+   76 shortcut names, check that every catalog row (excluding `repurpose: true`
    rows) and every classic skill has a rendered `canonical/skills/<name>/SKILL.md`
    directory:
 
    ```bash
-   ls canonical/skills/ | wc -l   # expect 82
+   ls canonical/skills/ | wc -l   # expect 92
    ```
 
 2. All 9 canonical agents exist under `canonical/agents/`.
@@ -240,7 +241,7 @@ Before calling the run complete, confirm:
 
 - [ ] Python 3.11+ available (`python --version` shows 3.11 or higher)
 - [ ] All selected profiles parsed without errors (`validate()` returned `[]`)
-- [ ] `canonical/` completeness verified: 82 skills (14 classic + aid-triage + 67
+- [ ] `canonical/` completeness verified: 92 skills (15 classic + aid-triage + 76
       shortcuts, one per non-`repurpose` catalog row), 9 agents, non-empty templates
 - [ ] All renderers completed without errors
 - [ ] `profiles/{tool}/emission-manifest.jsonl` written for each rendered profile

@@ -142,6 +142,11 @@ re-derivation from this table:
 | document / document-* | DOCUMENT | |
 | report | RESEARCH | EDA / analysis producing a document |
 | show-dashboard | IMPLEMENT | a BI view is code/config |
+| review | RESEARCH | assess target against criteria, end with findings + recommendation (`task-type-rules.md ## RESEARCH`; v2.1.0 coverage-gap follow-on) |
+| remove | REFACTOR | delete without changing surviving behavior; dependents/tests/docs updated (structural, not a defect fix; v2.1.0 coverage-gap follow-on) |
+| deprecate | IMPLEMENT | add a warning + migration path; artifact still functions (v2.1.0 coverage-gap follow-on) |
+| migrate | MIGRATE | data/dependency/framework/platform move + rollback plan (non-schema; schema migrations stay create/change-data-model; v2.1.0 coverage-gap follow-on) |
+| research | RESEARCH | investigate an open question, evaluate options, end with a recommendation (`task-type-rules.md ## RESEARCH`; v2.1.0 coverage-gap follow-on) |
 
 Multi-task shortcuts (e.g. create-data-model -> MIGRATE + IMPLEMENT + TEST) emit
 several tasks at DETAIL, each with one Type (never mixed --
@@ -157,6 +162,28 @@ both resolve `shortcut-scaffolding/create.md`; a family feature that groups more
 one verb under one file documents that grouping in the file's own header -- this engine
 does not hardcode the family list, which lets families land incrementally without an
 engine change).
+
+**Current verb -> family-file groupings** (a convenience index, kept current as each
+family lands; the authoritative grouping is always the named file's own header --
+this table just collects them at a glance, the same incremental-growth precedent
+`Default-Type Mapping (A-6)` above already follows):
+
+| Verb(s) | Family file |
+|---|---|
+| `create` (+ `add-*` aliases) | `shortcut-scaffolding/create.md` |
+| `change` (+ `update-*` aliases), `refactor` | `shortcut-scaffolding/change-refactor.md` |
+| `fix` | `shortcut-scaffolding/fix.md` |
+| `test`, `experiment` | `shortcut-scaffolding/test-experiment.md` |
+| `prototype` | `shortcut-scaffolding/prototype.md` |
+| `document` | `shortcut-scaffolding/document.md` |
+| `report`, `show-dashboard` | `shortcut-scaffolding/analyze-report.md` |
+| `review`, `research` | `shortcut-scaffolding/analyze-report.md` (v2.1.0 coverage-gap follow-on) |
+| `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` (v2.1.0 coverage-gap follow-on) |
+
+`query` (the `aid-query-kb`/`aid-ask` `repurpose: true` rows) is deliberately absent
+from this table -- those rows never enter this engine at all (their doorway is the
+hand-authored, single-shot `.claude/skills/aid-query-kb/SKILL.md`, not a generated
+thin doorway over INTAKE-DETAIL).
 
 These reference files are free-form prose (like any other `state-*.md` reference doc)
 -- the dispatched `aid-architect` reads them for judgment; they are not

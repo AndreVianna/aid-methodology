@@ -71,13 +71,17 @@
 #                 shortcut does. For an alias row this is simply
 #                 `"Alias of <canonical-name>."`.
 #
-#   repurpose     (optional, boolean, default `false`) -- `true` ONLY for the 2
-#                 pre-existing FAT pipeline skills this catalog also registers so the
-#                 parity check and `/aid-triage` recognise them: `aid-deploy` /
-#                 `aid-monitor` (feature-012 re-purposes them; G9/G10). The maintainer
-#                 build helper (`build-shortcut-skills.py`) SKIPS `repurpose: true`
-#                 rows -- it never generates or overwrites their `SKILL.md` (they are
-#                 hand-authored fat skills, not thin doorways).
+#   repurpose     (optional, boolean, default `false`) -- `true` ONLY for the 4
+#                 hand-authored skills this catalog also registers so the parity
+#                 check and `/aid-triage` recognise them: the 2 pre-existing FAT
+#                 pipeline skills `aid-deploy` / `aid-monitor` (feature-012
+#                 re-purposes them; G9/G10), plus the 2 Q&A skills `aid-query-kb`
+#                 (pre-existing) / `aid-ask` (v2.1.0 coverage-gap follow-on;
+#                 restored here as `aid-query-kb`'s friendly-named thin alias, NOT
+#                 pre-existing -- G11; see those rows' own comment block). The
+#                 maintainer build helper (`build-shortcut-skills.py`) SKIPS
+#                 `repurpose: true` rows -- it never generates or overwrites their
+#                 `SKILL.md` (they are hand-authored, not thin doorways).
 #
 # ---------------------------------------------------------------------------
 # Row shape (documentation only -- illustrative; NOT a live row. Family features
@@ -462,6 +466,41 @@ shortcuts:
     group: G5
     intent: "Alias of aid-change-infra."
 
+  # --- G5: Remove + Deprecate + Migrate (v2.1.0 coverage-gap follow-on,
+  # work-001-lite-aid-skills) -- 4 rows: aid-remove + aid-delete alias,
+  # aid-deprecate, aid-migrate. Bare verbs, no artifact suffixes. Non-schema
+  # data/dependency/platform migration; schema migrations stay
+  # create/change-data-model. Family scaffolding:
+  # shortcut-scaffolding/change-refactor.md.
+  - name: aid-remove
+    verb: remove
+    artifact: ""
+    alias_of: null
+    default_type: REFACTOR
+    group: G5
+    intent: "Remove or delete a code artifact, endpoint, dependency, feature, or dead code; update dependents, tests, and docs."
+  - name: aid-delete
+    verb: remove
+    artifact: ""
+    alias_of: aid-remove
+    default_type: REFACTOR
+    group: G5
+    intent: "Alias of aid-remove."
+  - name: aid-deprecate
+    verb: deprecate
+    artifact: ""
+    alias_of: null
+    default_type: IMPLEMENT
+    group: G5
+    intent: "Deprecate an existing artifact/API: mark deprecated, add warnings and a migration path, without deleting yet."
+  - name: aid-migrate
+    verb: migrate
+    artifact: ""
+    alias_of: null
+    default_type: MIGRATE
+    group: G5
+    intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/change-data-model)."
+
   # --- G7: Test + Experiment family (feature-009, task-019) -- 5 rows, no aliases ---
   - name: aid-test
     verb: test
@@ -589,6 +628,47 @@ shortcuts:
     group: G11
     intent: "Build a durable dashboard or BI view (source to visualization to publish/refresh)."
 
+  # --- G11: Review + Research (v2.1.0 coverage-gap follow-on,
+  # work-001-lite-aid-skills) -- 5 rows: aid-review + aid-audit alias,
+  # aid-research + aid-investigate/aid-spike aliases. Bare verbs, no artifact
+  # suffixes. Family scaffolding: shortcut-scaffolding/analyze-report.md (same
+  # RESEARCH-ends-in-a-recommendation shape as aid-report).
+  - name: aid-review
+    verb: review
+    artifact: ""
+    alias_of: null
+    default_type: RESEARCH
+    group: G11
+    intent: "Review/assess an existing artifact -- code, a change/diff, or a design -- against criteria; produce findings + recommendations."
+  - name: aid-audit
+    verb: review
+    artifact: ""
+    alias_of: aid-review
+    default_type: RESEARCH
+    group: G11
+    intent: "Alias of aid-review."
+  - name: aid-research
+    verb: research
+    artifact: ""
+    alias_of: null
+    default_type: RESEARCH
+    group: G11
+    intent: "Investigate an open technical question: evaluate options or run a feasibility spike; end with a recommendation."
+  - name: aid-investigate
+    verb: research
+    artifact: ""
+    alias_of: aid-research
+    default_type: RESEARCH
+    group: G11
+    intent: "Alias of aid-research."
+  - name: aid-spike
+    verb: research
+    artifact: ""
+    alias_of: aid-research
+    default_type: RESEARCH
+    group: G11
+    intent: "Alias of aid-research."
+
   # --- G9/G10: Deploy + Monitor re-purpose (feature-012, task-034) -- 2 rows, no
   # aliases. repurpose: true -- these are the 2 pre-existing FAT pipeline skills this
   # catalog also registers so the parity check and /aid-triage recognise them; the
@@ -609,4 +689,30 @@ shortcuts:
     default_type: CONFIGURE
     group: G10
     intent: "Run, observe, and sustain a live asset (SLOs, observability, toil, capacity)."
+    repurpose: true
+
+  # --- Q&A re-purpose (v2.1.0 coverage-gap follow-on, work-001-lite-aid-skills)
+  # -- 2 rows, repurpose: true, like G9/G10 above. aid-query-kb is the
+  # pre-existing hand-authored single-shot Q&A skill (renamed FROM aid-ask in
+  # commit cf6cb1af); aid-ask is restored here as its friendly-named thin
+  # alias (canonical/skills/aid-ask/SKILL.md, hand-authored, NOT generated by
+  # build-shortcut-skills.py). Group G11 (Analyze & Report): closest in-scope
+  # activity group -- answering a project question by citing KB/codebase/
+  # in-flight-work evidence is this family's "extract insight, communicate it"
+  # shape applied on demand, one-shot, without a work folder.
+  - name: aid-query-kb
+    verb: query
+    artifact: ""
+    alias_of: null
+    default_type: RESEARCH
+    group: G11
+    intent: "Answer a free-form question about the project from the KB, codebase, and in-flight works -- read-only, cited, gap-capturing."
+    repurpose: true
+  - name: aid-ask
+    verb: query
+    artifact: ""
+    alias_of: aid-query-kb
+    default_type: RESEARCH
+    group: G11
+    intent: "Alias of aid-query-kb."
     repurpose: true

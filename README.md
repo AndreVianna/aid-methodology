@@ -10,7 +10,9 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-82 skills — 14-skill pipeline + 67 verb-first shortcuts + `/aid-triage` · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+92 skills — 14-skill pipeline + 76 verb-first shortcuts + `/aid-triage` + `/aid-ask` · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+
+**Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
 ```mermaid
 flowchart TD
@@ -18,9 +20,11 @@ flowchart TD
         SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut — I know my change"]
         TR["/aid-triage<br/>— not sure? (suggest-only)"]
         DS["/aid-describe<br/>— broad / new project"]
+        ASK["/aid-ask<br/>— just asking a question"]
     end
     TR -. suggests .-> SC
     TR -. suggests .-> DS
+    TR -. "question" .-> ASK
 
     CFG["/aid-config (bootstrap · once)"] --> DISC["/aid-discover (brownfield)"]
     DISC --> DS
@@ -37,7 +41,7 @@ flowchart TD
     MON -. "change request → /aid-triage" .-> TR
 ```
 
-*82 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`). Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*92 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -127,8 +131,9 @@ Open your AI coding tool in your project and run the skills as slash commands:
 ```
 /aid-config           # once per project — scaffolds .aid/ and KB structure
 /aid-discover         # brownfield only: analyze the codebase into the KB
-/aid-triage           # not sure where to start? suggest-only router — points you to a shortcut or /aid-describe
-/aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-change-cli (67 shortcuts)
+/aid-triage           # not sure where to start? suggest-only router — points you to a shortcut, /aid-describe, or /aid-ask
+/aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-change-cli (76 shortcuts)
+/aid-ask              # just have a question? free-form Q&A over the KB + codebase; friendly alias of /aid-query-kb
 /aid-describe         # gather requirements for broad / new-project work (full path only); on approval, run /aid-define
 /aid-define           # decompose approved requirements into features (full path only)
 /aid-specify          # write the technical spec for each feature (full path only)
@@ -143,7 +148,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
 ```
 
-**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Every phase is gated — nothing advances without your approval.
+**Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval.
 
 [See it applied step by step →](examples/)
 
@@ -212,7 +217,11 @@ AID's phases are gated: you approve every transition. Nothing auto-advances. [Fu
 
 ### The Lite Path
 
-For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Not sure which shortcut fits, or is the change broad or multi-part? `/aid-triage` reads a free-form description and suggests either the matching shortcut or the full `/aid-describe` path — either way, nothing runs until you approve it.
+AID does not make you weigh the cost of the full pipeline against the size of a change yourself — that trade-off is automated. For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) — one of 76 shortcuts spanning 14 families (create · change · fix · refactor · remove · deprecate · migrate · test/experiment · prototype · document · report · review · research · dashboard) — and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Each shortcut is bound to one specific change type, so the engine already knows the shape of the work and skips the generic elicitation a from-scratch interview would need — that's what makes it fast, not just short.
+
+Not sure which shortcut fits, or is the change broad or multi-part? `/aid-triage` reads a free-form description and suggests either the matching shortcut or the full `/aid-describe` path. Just asking a question instead of proposing a change? `/aid-triage` points you to `/aid-ask` instead. Either way, nothing runs until you approve it.
+
+This is not a shortcut that skips quality — it's proportionate rigour. The lite path still produces the full artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `DETAIL.md`) and grades every document at GATE — an A+ floor by default — before the approval halt.
 
 [The Lite path and the shortcut engine →](docs/aid-methodology.md#2-philosophy)
 

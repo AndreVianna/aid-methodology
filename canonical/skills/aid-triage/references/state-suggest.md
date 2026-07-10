@@ -56,6 +56,35 @@ with a one-line disclaimer that none confidently matched.
 
 ---
 
+## Case D -- QUESTION (v2.1.0 coverage-gap follow-on; `state-classify.md` Step 0
+short-circuited -- `{description}` asks for information, not a change)
+
+**Intended exception, not a violation, of the "canonical names only" rule
+(SKILL.md Constraints; `state-classify.md` Step 3):** this case suggests the
+alias `/aid-ask` directly rather than its canonical form `/aid-query-kb`.
+The rule exists to stop a thin, `build-shortcut-skills.py`-generated doorway
+alias from being suggested in place of its canonical mirror; `aid-ask` is not
+that -- it is a `repurpose: true`, hand-authored, user-facing Q&A entry point
+that the catalog registers purely so /aid-triage recognizes it, and its
+canonical form `aid-query-kb` is an equivalent hand-authored skill, not a
+generated doorway. There is no doorway-duplication concern, so surfacing the
+friendlier name here is deliberate.
+
+```
+This reads like a question about the project, not a change request.
+
+-> /aid-ask "{description}"
+
+[1] Run it now
+[2] Treat this as a task instead (continue triage as a change request)
+```
+
+If the user picks `[2]`, fall through to `state-classify.md` Step 1 (infer
+`workType` from `{description}` as normal, i.e. the Step 0 short-circuit does
+not fire twice for the same run) and continue triage from there.
+
+---
+
 ## Response mapping (all cases)
 
 | User choice | Result carried to HALT |
@@ -63,6 +92,8 @@ with a one-line disclaimer that none confidently matched.
 | `[1]` accept a proposed shortcut (Case A/B) | `{name}` = the accepted row's `name`; print its shortcut invocation |
 | pick a listed alternate shortcut -- `[2]` in Case B directly, or a numbered pick from Case C's catalog sub-list (after choosing `[2]` there) | `{name}` = the chosen row's `name`; print its shortcut invocation |
 | `[3]` full path (Case A/B) or `[1]` full path (Case C) | print the `/aid-describe` invocation |
+| `[1]` run it now (Case D) | `{name}` = `aid-ask`; print `/aid-ask "{description}"` |
+| `[2]` treat as a task instead (Case D) | fall through to `state-classify.md` Step 1 and continue triage; no HALT yet |
 | user rejects every option offered | print the `/aid-describe` invocation (conservative default -- mirrors aid-describe's former TRIAGE state's Step 4 rule: "any signal short of one confident match routes to full") |
 
 The rule is intentionally conservative: any signal short of one confident,
