@@ -95,6 +95,7 @@ This is the single state file for the **Discovery area** — persistent project 
 | Mermaid Version | — (retired in D-012; pre-rendered inline SVG only) |
 | Mermaid Cached | — |
 
+**User Approved:** yes (2026-07-09)
 **Doc-Set Source:** .aid/settings.yml discovery.doc_set
 **Doc-Set Count:** 19 of 19
 **Domain:** hybrid:methodology-tooling+software-cli
