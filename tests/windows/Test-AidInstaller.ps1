@@ -6,7 +6,7 @@
 # Exit codes: 0 = all pass, 1 = any fail.
 #
 # Coverage:
-#   T01  Per-project install via install.ps1 -Tool -FromBundle -TargetDirectory
+#   T01  Per-project install via 'aid add <tool> -FromBundle -Target' (aid.ps1)
 #   T02  Install tree exists, manifest + version files present
 #   T03  Manifest is LF-only, no UTF-8 BOM (byte-level assertion)
 #   T04  .aid-version is LF-only, no UTF-8 BOM
@@ -250,26 +250,21 @@ function Build-FixtureTarball {
 }
 
 # ---------------------------------------------------------------------------
-# Helpers: invoke install.ps1 or aid.ps1 as a sub-process.
+# Helper: invoke aid.ps1 as a sub-process.
 # Output (stdout+stderr merged) -> $script:_LastOut (ANSI stripped).
 # Exit code                     -> $script:_LastRC.
 # AID_LIB_PATH is set to the local lib so no remote fetch is needed.
+#
+# NOTE (legacy excision, tech-debt L3): a Run-Install helper used to live here,
+# driving install.ps1's flag-style -Tool/-TargetDirectory/-Uninstall direct
+# project-install path.  That path has been removed; project-install scenarios
+# now go through Run-AidPs1 (aid.ps1 add/remove/update) below.  install.ps1's
+# own BOOTSTRAP entry point is still exercised directly in T08 (bare, no args).
 # ---------------------------------------------------------------------------
 $script:_LastOut = ''
 $script:_LastRC  = 0
 
 $_AnsiPattern = '\x1b\[[0-9;]*[mK]'
-
-function Run-Install {
-    param([string[]]$InstArgs)
-    $savedLib = $env:AID_LIB_PATH
-    $env:AID_LIB_PATH = $LocalLibPath
-    $outLines = & $PwshExe -NoProfile -File $InstallPs1 @InstArgs 2>&1
-    $script:_LastRC  = $LASTEXITCODE
-    $script:_LastOut = ($outLines | ForEach-Object { [string]$_ }) -join "`n"
-    $script:_LastOut = [System.Text.RegularExpressions.Regex]::Replace($script:_LastOut, $_AnsiPattern, '')
-    $env:AID_LIB_PATH = $savedLib
-}
 
 function Run-AidPs1 {
     param([string]$AidHome, [string[]]$AidArgs)
@@ -341,14 +336,24 @@ Write-Host "  codex      : $FixCodex"
 Write-Host ""
 
 # ===========================================================================
-# T01-T07: Per-project install via install.ps1 -Tool -FromBundle -TargetDirectory
+# T01-T07: Per-project install via 'aid add <tool> -FromBundle -Target'
+#
+# NOTE (legacy excision, tech-debt L3): install.ps1's flag-style direct
+# project-install path (-Tool/-TargetDirectory/-Uninstall) has been removed.
+# These project-install scenarios now drive through Run-AidPs1 (aid.ps1
+# add/remove/update), the same CLI front door T08-T13 already use.  A single
+# throwaway AID_HOME ($ProjectAidHome) is shared across T01-T17/T45/T47 --
+# distinct from $AidHomeT08 below, which specifically tests bootstrap-from-
+# scratch and must start unpopulated.
 # ===========================================================================
 Write-Host "=== T01-T07: Per-project install ==="
+
+$ProjectAidHome = Join-Path $TmpRoot 'aid-home-project'
 
 $ProjT01 = Join-Path $TmpRoot 'project-t01'
 New-Item -ItemType Directory -Path $ProjT01 -Force | Out-Null
 
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT01)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT01)
 Assert-Eq "$($script:_LastRC)" '0' 'T01 install claude-code -> exit 0'
 
 # T02: Install tree exists.
@@ -381,7 +386,7 @@ if (Test-Path $mPathT05 -PathType Leaf) {
 }
 
 # T06: Idempotent re-install -> exit 0 + "up to date".
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT01)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT01)
 Assert-Eq    "$($script:_LastRC)" '0' 'T06a idempotent re-install -> exit 0'
 Assert-Contains $script:_LastOut 'up to date' 'T06b idempotent shows "up to date"'
 
@@ -490,7 +495,7 @@ $userClaudeContent = "# CLAUDE.md`n`n## Project`nMy project description.`n`n## T
 $userClaudeBytes = [System.Text.Encoding]::UTF8.GetBytes($userClaudeContent)
 [System.IO.File]::WriteAllBytes((Join-Path $ProjT14 'CLAUDE.md'), $userClaudeBytes)
 
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT14)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT14)
 Assert-Eq "$($script:_LastRC)" '0' 'T14a root-agent in-place update (C2) -> exit 0'
 
 # No .aid-new must exist under any branch.
@@ -519,7 +524,7 @@ $markedClaudeContent = "# CLAUDE.md`n`n## Project`nUser project section.`n`n<!--
 $markedClaudeBytes = [System.Text.Encoding]::UTF8.GetBytes($markedClaudeContent)
 [System.IO.File]::WriteAllBytes((Join-Path $ProjT15 'CLAUDE.md'), $markedClaudeBytes)
 
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT15)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT15)
 Assert-Eq "$($script:_LastRC)" '0' 'T15a root-agent in-place update (B) -> exit 0'
 
 # No .aid-new must exist.
@@ -553,7 +558,7 @@ $userOnlyContent = "# CLAUDE.md`n`n## My Project`nMy own instructions, nothing f
 [System.IO.File]::WriteAllBytes((Join-Path $ProjT47 'CLAUDE.md'),
     [System.Text.Encoding]::UTF8.GetBytes($userOnlyContent))
 
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT47)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT47)
 Assert-Eq "$($script:_LastRC)" '0' 'T47a install into pure-user CLAUDE.md -> exit 0'
 $updatedContent47 = Get-Content -LiteralPath (Join-Path $ProjT47 'CLAUDE.md') -Raw
 Assert-Contains $updatedContent47 '<!-- AID:BEGIN -->' 'T47b AID region injected (BEGIN) - not dropped'
@@ -599,7 +604,7 @@ $ProjT45 = Join-Path $TmpRoot 'project-t45'
 New-Item -ItemType Directory -Path $ProjT45 -Force | Out-Null
 
 # First install to get a proper baseline manifest.
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT45)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT45)
 Assert-Eq "$($script:_LastRC)" '0' 'T45-pre install claude-code -> exit 0'
 
 # Plant a stale aid-prefixed file in .claude/skills/ (simulating a file from an older profile
@@ -615,7 +620,7 @@ $userBytes45 = [System.Text.Encoding]::UTF8.GetBytes("# user custom skill`n")
 
 # Re-run install (update) - the new profile does not include aid-stale-old-skill.md,
 # so prune must remove it; my-custom-skill.md has no aid- prefix so it must survive.
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT45)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT45)
 Assert-Eq "$($script:_LastRC)" '0' 'T45a update install -> exit 0'
 
 Assert (-not (Test-Path $stalePath45 -PathType Leaf)) `
@@ -631,10 +636,10 @@ Write-Host "=== T16: Uninstall removes dirs ==="
 
 $ProjT16 = Join-Path $TmpRoot 'project-t16'
 New-Item -ItemType Directory -Path $ProjT16 -Force | Out-Null
-Run-Install @('-Tool', 'claude-code', '-FromBundle', $FixClaudeCode, '-TargetDirectory', $ProjT16)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT16)
 Assert-DirExists (Join-Path $ProjT16 '.claude') 'T16-pre .claude/ present before uninstall'
 
-Run-Install @('-Uninstall', '-Tool', 'claude-code', '-TargetDirectory', $ProjT16)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('remove', 'claude-code', '-Target', $ProjT16)
 Assert-Eq "$($script:_LastRC)" '0' 'T16a uninstall -> exit 0'
 Assert-DirGone (Join-Path $ProjT16 '.claude') 'T16b .claude/ gone after uninstall'
 # .aid/ removed on full uninstall: the install-time-seeded settings.yml is
@@ -650,7 +655,7 @@ Write-Host "=== T17: Uninstall with no manifest ==="
 
 $ProjT17 = Join-Path $TmpRoot 'project-t17'
 New-Item -ItemType Directory -Path $ProjT17 -Force | Out-Null
-Run-Install @('-Uninstall', '-Tool', 'claude-code', '-TargetDirectory', $ProjT17)
+Run-AidPs1 -AidHome $ProjectAidHome -AidArgs @('remove', 'claude-code', '-Target', $ProjT17)
 Assert-Eq "$($script:_LastRC)" '6' 'T17 uninstall with no manifest -> exit 6'
 Write-Host ""
 

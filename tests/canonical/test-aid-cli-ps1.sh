@@ -543,21 +543,6 @@ assert_file_exists "${TP}/AGENTS.md" "PS028-P04 PS1 CONVENIENCE: AGENTS.md creat
 assert_output_contains "$OUT" "Done." "PS028-P05 PS1 CONVENIENCE: reports Done."
 
 # ===========================================================================
-# PS028-Q: LEGACY back-compat — install.ps1 -Tool codex -FromBundle <tar> -TargetDirectory <dir>
-# ===========================================================================
-TQ=$(newtarget)
-OUT=$(AID_LIB_PATH="${LIB_CORE_PS1}" \
-     "$PWSH" -NoProfile -File "${INSTALL_PS1}" \
-     -Tool codex \
-     -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     -TargetDirectory "${TQ}" 2>&1 | sed 's/\x1b\[[0-9;]*m//g'); RC=$?
-
-assert_exit_eq "$RC" 0 "PS028-Q01 PS1 LEGACY -Tool codex → exit 0"
-assert_dir_exists "${TQ}/.codex" "PS028-Q02 PS1 LEGACY .codex/ created"
-assert_file_exists "${TQ}/AGENTS.md" "PS028-Q03 PS1 LEGACY AGENTS.md created"
-assert_output_contains "$OUT" "Done." "PS028-Q04 PS1 LEGACY reports Done."
-
-# ===========================================================================
 # PS028-R: install.ps1 -UninstallCli -Force → remove AID_HOME
 # ===========================================================================
 PS028R_HOME=$(newhome)

@@ -3,10 +3,9 @@
 #
 # Purpose:
 #   Bootstrap / install the persistent global `aid` CLI and (optionally) add
-#   an AID profile to the current project in a single command.  Also retains
-#   the legacy flag-style direct-install path for one release.
+#   an AID profile to the current project in a single command.
 #
-# Usage (new - preferred):
+# Usage:
 #   bash install.sh
 #       Install the global aid CLI into $AID_HOME (~/.aid by default) and wire
 #       PATH.  No project install - run 'aid add <tool>' afterwards.
@@ -23,23 +22,12 @@
 #       Remove the global aid CLI (PATH wiring + $AID_HOME).  Fallback for
 #       when 'aid' is not yet on PATH.
 #
-# Usage (legacy - back-compat, hidden, retained for one release):
-#   bash install.sh [--tool <name>[,...]] [--version <v>] [--from-bundle <path>]
-#                   [--force] [--verbose] [--target <dir>] [<target-dir>]
-#       Direct project install (no global CLI install).  Identical to the
-#       pre-CLI-evolution behavior.  Triggers when --tool is given or when
-#       the first non-flag argument is NOT a known subcommand.
-#
-#   bash install.sh --update [...]
-#   bash install.sh --uninstall [...]
-#       Legacy update/uninstall modes (flag style).
-#
 #   bash install.sh -h | --help
 #       Print this help and exit 0.
 #
 # Environment variables:
 #   AID_HOME           Override global install dir (default: ~/.aid).
-#   AID_TOOL           Equivalent to --tool (legacy) or tool arg for 'add'.
+#   AID_TOOL           Tool arg for 'aid add' (bootstrap convenience mode).
 #   AID_VERSION        Equivalent to --version.
 #   AID_TARGET         Equivalent to --target.
 #   AID_FORCE          Set '1'/'true' to enable --force.
@@ -100,27 +88,24 @@ _is_known_subcmd() {
 # Detect the install.sh invocation mode.
 #
 # Modes (mutually exclusive, detected from $@):
-#   BOOTSTRAP  - no args (or only bootstrap flags: --version, --no-path, --from-bundle)
-#   CONVENIENCE - first non-flag arg is a known subcommand
+#   BOOTSTRAP     - no args (or only bootstrap flags: --version, --no-path,
+#                   --from-bundle, --profile-file, --notes-file, --force, --verbose)
+#   CONVENIENCE   - first non-flag arg is a known subcommand
 #   UNINSTALL_CLI - --uninstall-cli flag present
-#   LEGACY     - --tool / --update / --uninstall flags (or first positional is not a subcmd)
+#   USAGE_ERROR   - an unrecognized flag, or a first positional that is not a
+#                   known subcommand (e.g. --tool, --update, --uninstall,
+#                   --target are no longer recognized flags)
 # ---------------------------------------------------------------------------
 _INSTALL_MODE="BOOTSTRAP"  # default
 
 # Peek at arguments to determine mode before full parse.
 # Disambiguation rules (in priority order):
-#   1. --uninstall-cli            -> UNINSTALL_CLI
-#   2. --tool / --update / --uninstall flags  -> LEGACY
-#   3. --from-bundle or --target (without a subcommand) -> LEGACY (project-install flags)
-#   4. First non-flag = known subcommand  -> CONVENIENCE
-#   5. First non-flag = unknown word      -> LEGACY (unknown positional arg)
-#   6. No args / only bootstrap flags     -> BOOTSTRAP
+#   1. --uninstall-cli                     -> UNINSTALL_CLI
+#   2. First non-flag = known subcommand   -> CONVENIENCE
+#   3. First non-flag = unrecognized flag or unknown word -> USAGE_ERROR
+#   4. No args / only recognized bootstrap flags -> BOOTSTRAP
 _peek_first_nonopt=""
-_peek_has_tool=0
-_peek_has_update=0
-_peek_has_uninstall=0
 _peek_has_uninstall_cli=0
-_peek_has_legacy_project_flag=0  # --from-bundle or --target seen (before any subcommand)
 _peek_found_subcommand=0
 _peek_next_skip=0
 
@@ -130,24 +115,14 @@ for _peek_arg in "$@"; do
         continue
     fi
     case "$_peek_arg" in
-        --tool)
-            _peek_has_tool=1
+        --from-bundle|--version|--profile-file|--notes-file)
+            # Recognized value-taking flags; skip their value in the peek.
             _peek_next_skip=1
             ;;
-        --from-bundle|--target)
-            # These are project-install flags; mark LEGACY (unless a subcommand was seen first).
-            [[ "$_peek_found_subcommand" -eq 0 ]] && _peek_has_legacy_project_flag=1
-            _peek_next_skip=1
-            ;;
-        --version|--profile-file|--notes-file)
-            _peek_next_skip=1
-            ;;
-        --update)   _peek_has_update=1 ;;
-        --uninstall) _peek_has_uninstall=1 ;;
         --uninstall-cli) _peek_has_uninstall_cli=1 ;;
         --force|--verbose|--no-path|-h|--help) ;;
         -*)
-            # Unknown flag - treat as LEGACY.
+            # Unknown flag (includes the removed --tool/--update/--uninstall/--target).
             [[ -z "$_peek_first_nonopt" ]] && _peek_first_nonopt="$_peek_arg"
             ;;
         --)
@@ -164,22 +139,16 @@ done
 
 if [[ "$_peek_has_uninstall_cli" -eq 1 ]]; then
     _INSTALL_MODE="UNINSTALL_CLI"
-elif [[ "$_peek_has_tool" -eq 1 || "$_peek_has_update" -eq 1 || "$_peek_has_uninstall" -eq 1 ]]; then
-    _INSTALL_MODE="LEGACY"
-elif [[ "$_peek_has_legacy_project_flag" -eq 1 ]]; then
-    # --from-bundle or --target before any subcommand -> project-install (legacy).
-    _INSTALL_MODE="LEGACY"
 elif [[ -n "$_peek_first_nonopt" ]]; then
     if _is_known_subcmd "$_peek_first_nonopt"; then
         _INSTALL_MODE="CONVENIENCE"
     else
-        _INSTALL_MODE="LEGACY"
+        _INSTALL_MODE="USAGE_ERROR"
     fi
 fi
 
-# AID_TOOL env-var: if set and no legacy-project flags in args, treat as convenience chain.
-# If legacy-project flags are present (e.g. AID_TOOL=codex install.sh --from-bundle X),
-# keep LEGACY mode so the existing install path handles AID_TOOL as --tool equivalent.
+# AID_TOOL env-var: if set and no args resolved a more specific mode, treat as
+# convenience: bootstrap the CLI (if needed) then run 'aid add <AID_TOOL>'.
 if [[ "$_INSTALL_MODE" == "BOOTSTRAP" && -n "${AID_TOOL:-}" ]]; then
     _INSTALL_MODE="CONVENIENCE"
     _AID_TOOL_ENV_ONLY=1
@@ -198,16 +167,12 @@ usage() {
         printf '  bash install.sh --uninstall-cli [--force] Remove global aid CLI\n'
         printf '  bash install.sh -h | --help              Print this help\n'
         printf '\n'
-        printf 'Legacy (back-compat, one release):\n'
-        printf '  bash install.sh [--tool X] [--version v] [--from-bundle p] [--force] [--target d]\n'
-        printf '  bash install.sh --update [...]  | --uninstall [...]\n'
-        printf '\n'
         printf 'Subcommands: status add remove update version help\n'
         printf '\n'
         printf 'Exit codes: 0 ok, 1 failure, 2 usage, 3 network, 4 checksum,\n'
         printf '            6 no manifest, 7 not an AID project\n'
     else
-        sed -n '2,55p' "$0" | sed 's/^# \{0,1\}//'
+        sed -n '2,51p' "$0" | sed 's/^# \{0,1\}//'
     fi
 }
 
@@ -236,14 +201,7 @@ _cleanup_tmplib() {
 _REMOTE_RESOLVED_VER=""
 _REMOTE_SUMS_FILE=""
 
-STAGING_BASE=""
-_cleanup_staging() {
-    if [[ -n "$STAGING_BASE" && -d "$STAGING_BASE" ]]; then
-        rm -rf "$STAGING_BASE"
-    fi
-}
-
-trap '_cleanup_tmplib; _cleanup_staging' EXIT
+trap '_cleanup_tmplib' EXIT
 
 # ---------------------------------------------------------------------------
 # _fetch_and_verify_cli_bundle <resolved_ver> <sums_url>
@@ -275,7 +233,7 @@ _fetch_and_verify_cli_bundle() {
     local sums_file="$2"   # path to already-fetched SHA256SUMS (may be "" if not fetched yet)
 
     _AID_CLI_BUNDLE_TMPDIR="$(mktemp -d /tmp/aid-clibundle-XXXXXX)"
-    trap '_cleanup_tmplib; _cleanup_staging; _cleanup_cli_bundle' EXIT
+    trap '_cleanup_tmplib; _cleanup_cli_bundle' EXIT
 
     local bundle_filename="aid-cli-v${resolved_ver}.tar.gz"
     local bundle_file="${_AID_CLI_BUNDLE_TMPDIR}/${bundle_filename}"
@@ -546,6 +504,15 @@ for _early_arg in "$@"; do
     [[ "$_early_arg" == "--" ]] && break
 done
 
+# ---------------------------------------------------------------------------
+# Usage-error short-circuit (before lib source - no need to fetch/verify the
+# install core just to report a bad invocation).
+# ---------------------------------------------------------------------------
+if [[ "$_INSTALL_MODE" == "USAGE_ERROR" ]]; then
+    usage
+    die "unrecognized option or argument: ${_peek_first_nonopt}" 2
+fi
+
 _source_install_core "$@"
 
 # After sourcing the core, _SOURCED_LIB_FILE holds the path to the lib.
@@ -716,7 +683,7 @@ if [[ "$_INSTALL_MODE" == "BOOTSTRAP" ]]; then
 
     # Stage into a temp dir, then atomic-move into AID_HOME to avoid partial writes.
     _BOOTSTRAP_STAGE="$(mktemp -d /tmp/aid-bootstrap-XXXXXX)"
-    trap '_cleanup_tmplib; _cleanup_staging; _cleanup_cli_bundle; rm -rf "${_BOOTSTRAP_STAGE:-}"' EXIT
+    trap '_cleanup_tmplib; _cleanup_cli_bundle; rm -rf "${_BOOTSTRAP_STAGE:-}"' EXIT
 
     mkdir -p "${_BOOTSTRAP_STAGE}/bin" "${_BOOTSTRAP_STAGE}/lib" \
              "${_BOOTSTRAP_STAGE}/dashboard/reader" \
@@ -1074,279 +1041,3 @@ if [[ "$_INSTALL_MODE" == "CONVENIENCE" ]]; then
     # exec replaces process; we never reach here.
     exit 0
 fi
-
-# ---------------------------------------------------------------------------
-# ============================================================================
-# LEGACY mode - original flag-style direct project install (back-compat).
-#
-# Identical behavior to the pre-CLI-evolution install.sh.
-# Preserved for one release so existing test fixtures keep passing.
-# ============================================================================
-# ---------------------------------------------------------------------------
-
-# Argument parsing (verbatim from the original install.sh).
-MODE="install"
-TOOL_ARG=""
-VERSION_ARG=""
-FROM_BUNDLE=""
-FORCE=0
-TARGET=""
-AID_VERBOSE="${AID_VERBOSE:-0}"
-
-while [[ $# -gt 0 ]]; do
-    case "$1" in
-        -h|--help)
-            usage
-            exit 0
-            ;;
-        --update)
-            MODE="update"
-            shift
-            ;;
-        --uninstall)
-            MODE="uninstall"
-            shift
-            ;;
-        --uninstall-cli)
-            # Should have been handled above; re-route.
-            shift
-            ;;
-        --tool)
-            [[ $# -lt 2 ]] && die "--tool requires a value" 2
-            TOOL_ARG="$2"
-            shift 2
-            ;;
-        --version)
-            [[ $# -lt 2 ]] && die "--version requires a value" 2
-            VERSION_ARG="$2"
-            shift 2
-            ;;
-        --from-bundle)
-            [[ $# -lt 2 ]] && die "--from-bundle requires a value" 2
-            FROM_BUNDLE="$2"
-            shift 2
-            ;;
-        --force)
-            FORCE=1
-            shift
-            ;;
-        --verbose)
-            AID_VERBOSE=1
-            shift
-            ;;
-        --target)
-            [[ $# -lt 2 ]] && die "--target requires a value" 2
-            TARGET="$2"
-            shift 2
-            ;;
-        --no-path)
-            # Bootstrap-only flag; silently ignore in legacy mode.
-            shift
-            ;;
-        --)
-            shift
-            break
-            ;;
-        -*)
-            die "unknown flag: $1" 2
-            ;;
-        *)
-            if [[ -z "$TARGET" ]]; then
-                TARGET="$1"
-                shift
-            else
-                die "unexpected argument: $1 (target already set to '${TARGET}')" 2
-            fi
-            ;;
-    esac
-done
-
-# Consume remaining positionals (after --).
-while [[ $# -gt 0 ]]; do
-    if [[ -z "$TARGET" ]]; then
-        TARGET="$1"
-        shift
-    else
-        die "unexpected argument: $1 (target already set to '${TARGET}')" 2
-    fi
-done
-
-# Apply env-var fallbacks.
-if [[ -z "$TOOL_ARG" && -n "${AID_TOOL:-}" ]]; then
-    TOOL_ARG="$AID_TOOL"
-fi
-if [[ -z "$VERSION_ARG" && -n "${AID_VERSION:-}" ]]; then
-    VERSION_ARG="$AID_VERSION"
-fi
-if [[ -z "$TARGET" && -n "${AID_TARGET:-}" ]]; then
-    TARGET="$AID_TARGET"
-fi
-if [[ "$FORCE" -eq 0 && ( "${AID_FORCE:-0}" == "1" || "${AID_FORCE:-0}" == "true" ) ]]; then
-    FORCE=1
-fi
-export AID_VERBOSE
-
-# Validation.
-if [[ -n "$FROM_BUNDLE" && -n "$VERSION_ARG" ]]; then
-    die "--from-bundle and --version are mutually exclusive" 2
-fi
-if [[ "$MODE" == "uninstall" ]]; then
-    if [[ -n "$FROM_BUNDLE" ]]; then
-        die "--from-bundle is not valid with --uninstall" 2
-    fi
-    if [[ -n "$VERSION_ARG" ]]; then
-        die "--version is not valid with --uninstall" 2
-    fi
-fi
-
-TARGET="${TARGET:-.}"
-if [[ ! -d "$TARGET" ]]; then
-    die "target directory does not exist: ${TARGET}" 2
-fi
-TARGET="$(cd "$TARGET" && pwd)"
-VERSION_ARG="${VERSION_ARG#v}"
-
-# Resolve tool list (same logic as original).
-_RESOLVE_TOOLS_RC=0
-_resolve_tools() {
-    local raw="$1" target_dir="$2" mode="$3" outfile="$4"
-
-    if [[ -z "$raw" ]]; then
-        if [[ "$mode" == "uninstall" ]]; then
-            local manifest="${target_dir}/.aid/.aid-manifest.json"
-            if [[ ! -f "$manifest" ]]; then
-                return 0
-            fi
-            if command -v python3 >/dev/null 2>&1; then
-                python3 - "$manifest" >> "$outfile" <<'PY'
-import json, sys
-try:
-    data = json.load(open(sys.argv[1]))
-    for t in data.get("tools", {}).keys():
-        print(t)
-except Exception:
-    pass
-PY
-            else
-                grep -o '"[a-z][a-zA-Z-]*"[[:space:]]*:[[:space:]]*{' "$manifest" | \
-                    grep -v '"tools"' | sed 's/"//g' | sed 's/[[:space:]]*:[[:space:]]*{//' >> "$outfile"
-            fi
-            return 0
-        fi
-        local detected
-        detected="$(detect_tool "$target_dir")"
-        local _rc=$?
-        if [[ "$_rc" -ne 0 ]]; then
-            return "$_rc"
-        fi
-        echo "$detected" >> "$outfile"
-        return 0
-    fi
-
-    local -a raw_tools=()
-    IFS=',' read -ra raw_tools <<< "$raw"
-    for t in "${raw_tools[@]}"; do
-        t="$(echo "$t" | tr -d '[:space:]')"
-        local canonical
-        canonical="$(normalize_tool "$t")"
-        local _rc=$?
-        if [[ "$_rc" -ne 0 ]]; then
-            return "$_rc"
-        fi
-        echo "$canonical" >> "$outfile"
-    done
-    return 0
-}
-
-STAGING_DIR=""
-RESOLVED_VERSION=""
-
-prepare_tool_staging() {
-    local tool="$1" version="$2" from_bundle="$3"
-
-    local tool_staging
-    tool_staging="$(mktemp -d "${STAGING_BASE}/staging-${tool}-XXXXXX")"
-
-    if [[ -n "$from_bundle" ]]; then
-        local tarball="$from_bundle"
-        if [[ -d "$from_bundle" ]]; then
-            tarball="$(ls "${from_bundle}"/aid-${tool}-v*.tar.gz 2>/dev/null | head -1)"
-            if [[ -z "$tarball" ]]; then
-                die "no tarball found for tool '${tool}' in bundle directory: ${from_bundle}" 1
-            fi
-        fi
-        if [[ ! -f "$tarball" ]]; then
-            die "bundle file not found: ${tarball}" 1
-        fi
-        verify_bundle_checksum "$tarball" || exit $?
-        local tbase
-        tbase="$(basename "$tarball")"
-        RESOLVED_VERSION="$(echo "$tbase" | sed "s/aid-${tool}-v//" | sed 's/\.tar\.gz$//')"
-        [[ -z "$RESOLVED_VERSION" ]] && RESOLVED_VERSION="${version:-unknown}"
-        extract_tarball "$tarball" "$tool_staging" || exit $?
-    else
-        if [[ -z "$version" ]]; then
-            RESOLVED_VERSION="$(resolve_version)" || exit $?
-        else
-            RESOLVED_VERSION="$version"
-        fi
-        local dl_dir
-        dl_dir="$(mktemp -d "${STAGING_BASE}/download-${tool}-XXXXXX")"
-        fetch_tarball "$tool" "$RESOLVED_VERSION" "$dl_dir" || exit $?
-        local tarball="${dl_dir}/aid-${tool}-v${RESOLVED_VERSION}.tar.gz"
-        extract_tarball "$tarball" "$tool_staging" || exit $?
-    fi
-
-    STAGING_DIR="$tool_staging"
-}
-
-STAGING_BASE="$(mktemp -d /tmp/aid-install-XXXXXX)"
-
-_TOOLS_FILE="$(mktemp "${STAGING_BASE}/tools.XXXXXX")"
-_resolve_tools "$TOOL_ARG" "$TARGET" "$MODE" "$_TOOLS_FILE"
-_RESOLVE_TOOLS_RC=$?
-if [[ "$_RESOLVE_TOOLS_RC" -ne 0 ]]; then
-    exit "$_RESOLVE_TOOLS_RC"
-fi
-mapfile -t TOOLS < "$_TOOLS_FILE"
-
-if [[ "${#TOOLS[@]}" -eq 0 && "$MODE" == "uninstall" ]]; then
-    die "uninstall: no manifest found at ${TARGET}/.aid/.aid-manifest.json (exit 6)" 6
-fi
-
-case "$MODE" in
-    install|update)
-        for tool in "${TOOLS[@]}"; do
-            echo ""
-            prepare_tool_staging "$tool" "$VERSION_ARG" "$FROM_BUNDLE"
-            echo "Installing ${tool} v${RESOLVED_VERSION} -> ${TARGET}"
-            install_tool "$STAGING_DIR" "$tool" "$TARGET" "$RESOLVED_VERSION" "$FORCE" || exit $?
-        done
-
-        echo ""
-        echo "Done. AID ${RESOLVED_VERSION:-} installed into: ${TARGET}"
-        exit 0
-        ;;
-
-    uninstall)
-        _MANIFEST="${TARGET}/.aid/.aid-manifest.json"
-        manifest_exists "$_MANIFEST" || {
-            echo "ERROR: install.sh: no manifest at ${TARGET}/.aid/.aid-manifest.json; nothing to uninstall" >&2
-            exit 6
-        }
-
-        for tool in "${TOOLS[@]}"; do
-            echo ""
-            echo "Uninstalling ${tool} from ${TARGET}"
-            uninstall_tool "$_MANIFEST" "$tool" "$TARGET" || {
-                _RC=$?
-                [[ "$_RC" -eq 6 ]] && exit 6
-                exit "$_RC"
-            }
-        done
-
-        echo ""
-        echo "Uninstall complete."
-        exit 0
-        ;;
-esac

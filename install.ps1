@@ -3,10 +3,9 @@
 #
 # Purpose:
 #   Bootstrap / install the persistent global `aid` CLI and (optionally) add
-#   an AID profile to the current project in a single command.  Also retains
-#   the legacy flag-style direct-install path for one release.
+#   an AID profile to the current project in a single command.
 #
-# Usage (new - preferred):
+# Usage:
 #   .\install.ps1
 #       Install the global aid CLI into $AID_HOME (%LOCALAPPDATA%\aid by default)
 #       and wire PATH.  No project install - run 'aid add <tool>' afterwards.
@@ -23,43 +22,23 @@
 #       Remove the global aid CLI (PATH wiring + $AID_HOME).  Fallback for
 #       when 'aid' is not yet on PATH.
 #
-# Usage (legacy - back-compat, hidden, retained for one release):
-#   .\install.ps1 [-Tool <name>[,...]] [-Version <v>] [-FromBundle <path>]
-#                 [-Force] [-Verbose] [-TargetDirectory <dir>]
-#       Direct project install (no global CLI install).  Identical to the
-#       pre-CLI-evolution behavior.  Triggers when -Tool is given or when
-#       -FromBundle / -TargetDirectory are given without a subcommand.
-#
-#   .\install.ps1 -Update [...]
-#   .\install.ps1 -Uninstall [...]
-#       Legacy update/uninstall modes (flag style).
-#
 #   .\install.ps1 -Help
 #       Print this help and exit 0.
 #
 # Parameters:
-#   -Tool <name>[,...]     Host tool(s) to install.  Canonical ids: claude-code, codex,
-#                          cursor, copilot-cli, antigravity.  PascalCase aliases accepted.
-#                          Comma-list installs multiple tools.  Omit to auto-detect from
-#                          target dir.
 #   -Version <v>           Pin to a specific release version (e.g. 0.7.0 or v0.7.0).
 #                          Mutually exclusive with -FromBundle.
-#   -FromBundle <path>     Offline install from a pre-downloaded tarball (single -Tool) or
+#   -FromBundle <path>     Offline install from a pre-downloaded tarball (single tool) or
 #                          a directory of tarballs (comma-list).  No network.
 #   -Force                 Overwrite files that exist and differ, including root agent files.
 #   -Verbose               Print per-file Copied:/Up to date:/Updated:/Removed: lines.
 #                          Default: concise per-tool summary only.
-#   -Update                Re-install over an existing AID setup (refresh to version/latest).
-#   -Uninstall             Manifest-driven removal.  -Tool limits to that tool; without it,
-#                          removes all installed tools.
 #   -UninstallCli          Remove the global aid CLI (PATH wiring + $AID_HOME).
-#   -TargetDirectory <dir> Install root (default: current directory).
 #   -NoPath                Skip PATH wiring during bootstrap (new mode only).
 #   -Help                  Print this help and exit 0.
 #
 # Environment variables (installer options):
-#   AID_TOOL       - equivalent to -Tool.  Also triggers CONVENIENCE mode if set and no
-#                    legacy-project flags are present.
+#   AID_TOOL       - tool arg for 'aid add' (bootstrap convenience mode).
 #   AID_VERSION    - equivalent to -Version.
 #   AID_TARGET     - equivalent to -TargetDirectory.
 #   AID_FORCE      - set to '1' or 'true' to enable -Force.
@@ -85,19 +64,23 @@
 #   6   uninstall with no manifest (nothing installed)
 #   7   aid status: no AID install in cwd
 
-[CmdletBinding()]
+[CmdletBinding(PositionalBinding = $false)]
 param(
-    [string]$Tool             = '',
     [string]$Version          = '',
     [string]$FromBundle       = '',
     [switch]$Force,
-    [switch]$Update,
-    [switch]$Uninstall,
     [switch]$UninstallCli,
-    [string]$TargetDirectory  = '',
+    # -Uninstall (without "Cli") is a removed legacy flag.  Declared here - but never
+    # acted on - purely so PowerShell's parameter-prefix matching does not silently
+    # alias a stray "-Uninstall" to -UninstallCli; see the mode-detection block below,
+    # which routes it to USAGE_ERROR instead.
+    [switch]$Uninstall,
     [switch]$NoPath,
     [switch]$Help,
-    # Catch-all for unknown parameters: any unrecognised flag -> exit 2 (usage error).
+    # Catch-all for unknown/positional parameters: with PositionalBinding disabled,
+    # every bare word (subcommand, tool name, ...) and any unrecognised flag (the
+    # removed -Tool/-Update/-TargetDirectory, etc.) lands here -> exit 2 (usage error)
+    # unless the first word is a known subcommand.
     [Parameter(ValueFromRemainingArguments)]
     [string[]]$RemainingArgs  = @()
 )
@@ -162,7 +145,7 @@ $LibDir = Join-Path $ScriptDir 'lib'
 # Usage helper (prints the header block as plain text).
 # ---------------------------------------------------------------------------
 function Show-Usage {
-    # Extract lines 2..86 of this script (the header comment), strip leading '# '.
+    # Extract lines 2..65 of this script (the header comment), strip leading '# '.
     # Use $script:_InstallPs1Path captured at load time to avoid $MyInvocation scoping issues.
     # When piped ($script:_InstallPs1Path is null), emit a minimal usage stub (FR9 parity
     # with install.sh piped-stub).
@@ -170,32 +153,22 @@ function Show-Usage {
         Write-Host "install.ps1 - AID installer bootstrap (PowerShell 5.1+)."
         Write-Host ""
         Write-Host "Usage:"
-        Write-Host "  .\install.ps1 [-Tool <name>[,...]] [-Version <v>] [-FromBundle <path>]"
-        Write-Host "                [-Force] [-Verbose] [-TargetDirectory <dir>]"
-        Write-Host "  .\install.ps1 -Update  [...params...]"
-        Write-Host "  .\install.ps1 -Uninstall [-Tool <name>[,...]] [-TargetDirectory <dir>]"
-        Write-Host "  .\install.ps1 -Help"
+        Write-Host "  .\install.ps1                              Install global aid CLI"
+        Write-Host "  .\install.ps1 <subcommand> [args]           Bootstrap + run aid <subcmd>"
+        Write-Host "  .\install.ps1 -UninstallCli [-Force]        Remove global aid CLI"
+        Write-Host "  .\install.ps1 -Help                         Print this help"
         Write-Host ""
-        Write-Host "Key parameters:"
-        Write-Host "  -Tool <name>[,...]      Tool id: claude-code, codex, cursor, copilot-cli, antigravity"
-        Write-Host "  -Version <v>            Pin to release version (e.g. 0.7.0)"
-        Write-Host "  -FromBundle <path>      Offline install from pre-downloaded tarball"
-        Write-Host "  -Force                  Overwrite differing files including root agent files"
-        Write-Host "  -Verbose                Print per-file detail (default: concise summary)"
-        Write-Host "  -TargetDirectory <dir>  Install root (default: current directory)"
-        Write-Host ""
-        Write-Host "Env vars: AID_TOOL, AID_VERSION, AID_TARGET, AID_FORCE, AID_VERBOSE"
-        Write-Host "  (equivalent to the params; params take precedence)"
+        Write-Host "Subcommands: status add remove update version help"
         Write-Host ""
         Write-Host "Exit codes: 0 success, 1 failure, 2 usage error, 3 network error,"
-        Write-Host "            4 checksum mismatch, 6 no manifest"
+        Write-Host "            4 checksum mismatch, 6 no manifest, 7 not an AID project"
         Write-Host ""
         Write-Host "Full docs: https://github.com/AndreVianna/aid-methodology/blob/master/docs/install.md"
         return
     }
     $lines = Get-Content -LiteralPath $script:_InstallPs1Path -ErrorAction SilentlyContinue
     if ($lines) {
-        $lines[1..85] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
+        $lines[1..64] | ForEach-Object { $_ -replace '^# ?', '' } | Write-Host
     }
 }
 
@@ -239,9 +212,7 @@ if ($VerbosePreference -eq 'Continue') {
 # Apply env-var fallbacks for installer options.
 # Precedence: explicit param > env var > auto-detect/default.
 # ---------------------------------------------------------------------------
-if (-not $Tool    -and $env:AID_TOOL)    { $Tool    = $env:AID_TOOL }
 if (-not $Version -and $env:AID_VERSION) { $Version = $env:AID_VERSION }
-if (-not $TargetDirectory -and $env:AID_TARGET) { $TargetDirectory = $env:AID_TARGET }
 if (-not $Force -and ($env:AID_FORCE -eq '1' -or $env:AID_FORCE -eq 'true')) {
     $Force = [switch]$true
 }
@@ -526,20 +497,26 @@ function script:Resolve-AidHome {
 # Dual-mode disambiguation (mirrors install.sh logic).
 #
 # Modes (mutually exclusive, detected from parameters):
-#   BOOTSTRAP      - no legacy flags, no subcommand -> install CLI + wire PATH
+#   BOOTSTRAP      - no args (or only recognized bootstrap params: -Version,
+#                    -FromBundle, -Force, -Verbose, -NoPath) -> install CLI + wire PATH
 #   CONVENIENCE    - first positional in $RemainingArgs is a known subcommand
 #   UNINSTALL_CLI  - -UninstallCli switch present
-#   LEGACY         - -Tool / -Update / -Uninstall flags, or -FromBundle / -TargetDirectory
-#                    without a subcommand, or first positional is an unknown word
+#   USAGE_ERROR    - an unrecognized parameter, or a first positional that is not
+#                    a known subcommand (e.g. -Tool, -Update, -Uninstall,
+#                    -TargetDirectory are no longer recognized parameters)
 #
 # Priority order:
-#   1. -UninstallCli              -> UNINSTALL_CLI
-#   2. -Tool / -Update / -Uninstall flags -> LEGACY
-#   3. -FromBundle or -TargetDirectory (without a known subcommand) -> LEGACY
-#   4. First positional = known subcommand -> CONVENIENCE
-#   5. First positional = unknown word -> LEGACY
-#   6. AID_TOOL env-var + no legacy flags + no args -> CONVENIENCE
-#   7. No args / only bootstrap params -> BOOTSTRAP
+#   1. -UninstallCli                       -> UNINSTALL_CLI
+#   2. -Uninstall (removed legacy flag)    -> USAGE_ERROR
+#   3. First positional = known subcommand -> CONVENIENCE
+#   4. First positional = unrecognized parameter or unknown word -> USAGE_ERROR
+#   5. AID_TOOL env-var + no positional    -> CONVENIENCE
+#   6. No args / only recognized bootstrap params -> BOOTSTRAP
+#
+# ($RemainingArgs works because [CmdletBinding(PositionalBinding=$false)] above
+# disables automatic positional binding of -Version/-FromBundle, so bare words
+# like a subcommand or tool name always fall through to $RemainingArgs instead
+# of being silently consumed by those named parameters.)
 # ---------------------------------------------------------------------------
 
 function script:Test-KnownSubcmd {
@@ -547,52 +524,31 @@ function script:Test-KnownSubcmd {
     return ($w -in @('status', 'add', 'remove', 'update', 'version', 'help'))
 }
 
-$script:_InstallMode   = 'BOOTSTRAP'
+$script:_InstallMode    = 'BOOTSTRAP'
 $script:_AidToolEnvOnly = $false
 
-# Positional capture fix: [CmdletBinding()] binds positional args to named params in order.
-# If $Tool received a known subcommand, this was actually a positional subcommand call,
-# not a legacy -Tool flag.  Similarly $Version may have been the tool name.
-# Reconstruct: treat $Tool as positional subcommand and $Version as tool name.
-$_toolIsSubcmd = script:Test-KnownSubcmd $Tool
-
-# First positional: either from $RemainingArgs (unbound), or from $Tool if it's a known subcmd.
-$_firstPositional = if ($_toolIsSubcmd -and $Tool) { $Tool }
-                    elseif ($RemainingArgs -and $RemainingArgs.Count -gt 0) { $RemainingArgs[0] }
-                    else { '' }
-
-# Rebuild RemainingArgs for CONVENIENCE mode: if $Tool was the subcommand, the
-# actual args for aid.ps1 come from: $Version (first positional tool?), then $RemainingArgs.
-$_convPositionals = [System.Collections.Generic.List[string]]::new()
-if ($_toolIsSubcmd -and $Tool) {
-    $_convPositionals.Add($Tool)          # subcommand
-    if ($Version) { $_convPositionals.Add($Version) } # first positional (tool name) if any
-    foreach ($a in $RemainingArgs) { $_convPositionals.Add($a) }
-}
-
-# hasLegacyProjectFlag: -FromBundle or -TargetDirectory given WITHOUT a known subcommand.
-$_hasLegacyProjectFlag = ($FromBundle -or $TargetDirectory) -and -not (script:Test-KnownSubcmd $_firstPositional)
+$_firstPositional = if ($RemainingArgs -and $RemainingArgs.Count -gt 0) { $RemainingArgs[0] } else { '' }
 
 if ($UninstallCli) {
     $script:_InstallMode = 'UNINSTALL_CLI'
-} elseif ($_toolIsSubcmd) {
-    # $Tool was captured positionally as a known subcommand -> CONVENIENCE.
-    $script:_InstallMode = 'CONVENIENCE'
-} elseif ($Tool -or $Update -or $Uninstall) {
-    # Explicit legacy flags (non-subcommand $Tool, -Update, -Uninstall) -> LEGACY.
-    $script:_InstallMode = 'LEGACY'
-} elseif ($_hasLegacyProjectFlag) {
-    $script:_InstallMode = 'LEGACY'
+} elseif ($Uninstall) {
+    $script:_InstallMode = 'USAGE_ERROR'
+    $_firstPositional = '-Uninstall'
 } elseif ($_firstPositional) {
     if (script:Test-KnownSubcmd $_firstPositional) {
         $script:_InstallMode = 'CONVENIENCE'
     } else {
-        $script:_InstallMode = 'LEGACY'
+        $script:_InstallMode = 'USAGE_ERROR'
     }
-} elseif (-not $Tool -and $env:AID_TOOL -and -not $Update -and -not $Uninstall -and -not $FromBundle -and -not $TargetDirectory) {
+} elseif ($env:AID_TOOL) {
     # AID_TOOL env-var only -> CONVENIENCE (synthesise 'add $AID_TOOL').
     $script:_InstallMode = 'CONVENIENCE'
     $script:_AidToolEnvOnly = $true
+}
+
+if ($script:_InstallMode -eq 'USAGE_ERROR') {
+    Show-Usage
+    script:Fail "unrecognized parameter or argument: $_firstPositional" 2
 }
 
 # ---------------------------------------------------------------------------
@@ -877,38 +833,22 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
 
     # Build subcommand args for aid.ps1.
     # $RemainingArgs contains positional args (subcommand + tool names) and any flags that
-    # install.ps1 doesn't recognize (-Target, etc.).  Named parameters that install.ps1 DID
-    # consume ($FromBundle, $Version, $Force, $VerbosePreference) must be reconstructed so
-    # aid.ps1 receives the full argument list.  Bootstrap-only flags (-NoPath) are excluded.
+    # install.ps1 doesn't recognize (-Target, etc. - forwarded verbatim; aid.ps1 parses its
+    # own -Target/--target).  Named parameters that install.ps1 DID consume ($FromBundle,
+    # $Version, $Force, $VerbosePreference) must be reconstructed so aid.ps1 receives the
+    # full argument list.  Bootstrap-only flags (-NoPath) are excluded.
     $convSubcmdArgs = [System.Collections.Generic.List[string]]::new()
 
-    if ($script:_AidToolEnvOnly -eq $true) {
-        # AID_TOOL env-var only -> synthesise 'add <AID_TOOL>'.
+    foreach ($a in $RemainingArgs) { $convSubcmdArgs.Add($a) }
+    if ($FromBundle) { $convSubcmdArgs.Add('-FromBundle'); $convSubcmdArgs.Add($FromBundle) }
+    if ($Version)    { $convSubcmdArgs.Add('-Version');    $convSubcmdArgs.Add($Version)    }
+    if ($Force)      { $convSubcmdArgs.Add('-Force') }
+    if ($VerbosePreference -eq 'Continue') { $convSubcmdArgs.Add('-Verbose') }
+
+    if ($script:_AidToolEnvOnly -and $convSubcmdArgs.Count -eq 0) {
+        # AID_TOOL env-var only, no other args -> synthesise 'add <AID_TOOL>'.
         $convSubcmdArgs.Add('add')
         $convSubcmdArgs.Add($env:AID_TOOL)
-    } elseif ($_toolIsSubcmd) {
-        # $Tool was captured positionally as subcommand (e.g. install.ps1 add codex -FromBundle ...).
-        # $_convPositionals already has [subcmd, toolname?, ...RemainingArgs].
-        foreach ($a in $_convPositionals) { $convSubcmdArgs.Add($a) }
-
-        # Re-append install.ps1 named params that aid.ps1 needs (already consumed by PS binding).
-        # Note: $Version was captured as second positional (tool name), already in $_convPositionals.
-        if ($FromBundle) { $convSubcmdArgs.Add('-FromBundle'); $convSubcmdArgs.Add($FromBundle) }
-        if ($Force)      { $convSubcmdArgs.Add('-Force') }
-        if ($VerbosePreference -eq 'Continue') { $convSubcmdArgs.Add('-Verbose') }
-        # $TargetDirectory: may have been set via -TargetDirectory or -Target abbreviation.
-        if ($TargetDirectory) { $convSubcmdArgs.Add('-Target'); $convSubcmdArgs.Add($TargetDirectory) }
-    } else {
-        # Subcommand came from $RemainingArgs[0] (not positional param binding).
-        foreach ($a in $RemainingArgs) { $convSubcmdArgs.Add($a) }
-
-        # Re-append install.ps1 named params that aid.ps1 needs (if set).
-        if ($FromBundle) { $convSubcmdArgs.Add('-FromBundle'); $convSubcmdArgs.Add($FromBundle) }
-        if ($Version)    { $convSubcmdArgs.Add('-Version');    $convSubcmdArgs.Add($Version)    }
-        if ($Force)      { $convSubcmdArgs.Add('-Force') }
-        if ($VerbosePreference -eq 'Continue') { $convSubcmdArgs.Add('-Verbose') }
-        # Note: -TargetDirectory maps to -Target in aid.ps1.
-        if ($TargetDirectory) { $convSubcmdArgs.Add('-Target'); $convSubcmdArgs.Add($TargetDirectory) }
     }
 
     # Bootstrap the CLI if not already present.
@@ -1051,221 +991,6 @@ if ($script:_InstallMode -eq 'CONVENIENCE') {
     $env:AID_HOME = $aidHome
     & $convAidPs1 @convSubcmdArgs
     script:Exit-Install $LASTEXITCODE
-}
-
-# ---------------------------------------------------------------------------
-# LEGACY mode - original flag-style direct project install (back-compat).
-#
-# Unknown parameters check: applies only in LEGACY mode (CONVENIENCE and
-# BOOTSTRAP don't use RemainingArgs as positional flags).
-# ---------------------------------------------------------------------------
-if ($RemainingArgs -and $RemainingArgs.Count -gt 0) {
-    [Console]::Error.WriteLine("ERROR: install.ps1: unknown parameter: $($RemainingArgs[0])")
-    [Console]::Error.WriteLine("Run with -Help for usage information.")
-    script:Exit-Install 2
-}
-
-# ---------------------------------------------------------------------------
-# Determine mode.
-# ---------------------------------------------------------------------------
-$Mode = 'install'  # install | update | uninstall
-if ($Uninstall) { $Mode = 'uninstall' }
-elseif ($Update) { $Mode = 'update' }
-
-# ---------------------------------------------------------------------------
-# Validation.
-# ---------------------------------------------------------------------------
-
-# -FromBundle and -Version are mutually exclusive.
-if ($FromBundle -and $Version) {
-    script:Fail "-FromBundle and -Version are mutually exclusive" 2
-}
-
-# Uninstall does not accept -FromBundle or -Version.
-if ($Mode -eq 'uninstall') {
-    if ($FromBundle) { script:Fail "-FromBundle is not valid with -Uninstall" 2 }
-    if ($Version)    { script:Fail "-Version is not valid with -Uninstall" 2 }
-}
-
-# Target defaults to current directory.
-if (-not $TargetDirectory) { $TargetDirectory = '.' }
-
-# Resolve and validate target.
-if (-not (Test-Path $TargetDirectory -PathType Container)) {
-    script:Fail "target directory does not exist: $TargetDirectory" 2
-}
-$Target = (Resolve-Path $TargetDirectory).Path
-
-# Strip leading 'v' from version.
-if ($Version) { $Version = $Version -replace '^v', '' }
-
-# ---------------------------------------------------------------------------
-# Resolve tool list.
-# ---------------------------------------------------------------------------
-function Resolve-ToolList {
-    param([string]$RawTool, [string]$TargetDir, [string]$CurrentMode)
-
-    $result = [System.Collections.Generic.List[string]]::new()
-
-    if (-not $RawTool) {
-        if ($CurrentMode -eq 'uninstall') {
-            # No -Tool for uninstall -> all tools in manifest.
-            $mpath = Join-Path $TargetDir (Join-Path '.aid' '.aid-manifest.json')
-            if (-not (Test-Path $mpath -PathType Leaf)) { return $result }
-            try {
-                $data = Get-Content -LiteralPath $mpath -Raw | ConvertFrom-Json
-                if ($data.tools) {
-                    $data.tools.PSObject.Properties | ForEach-Object { $result.Add($_.Name) }
-                }
-            } catch {}
-            return $result
-        }
-        # Auto-detect.
-        $detected = Detect-Tool -TargetPath $TargetDir
-        if (-not $detected) { return $null }
-        $result.Add($detected)
-        return $result
-    }
-
-    # Split on comma.
-    $rawList = $RawTool -split ',' | ForEach-Object { $_.Trim() } | Where-Object { $_ }
-    foreach ($t in $rawList) {
-        $canonical = Normalize-Tool -Raw $t
-        if (-not $canonical) { return $null }
-        $result.Add($canonical)
-    }
-    return $result
-}
-
-$toolList = Resolve-ToolList -RawTool $Tool -TargetDir $Target -CurrentMode $Mode
-if ($null -eq $toolList) {
-    script:Exit-Install 2
-}
-
-if ($toolList.Count -eq 0 -and $Mode -eq 'uninstall') {
-    script:Fail "uninstall: no manifest found at $Target/.aid/.aid-manifest.json (exit 6)" 6
-}
-
-# ---------------------------------------------------------------------------
-# Staging area management.
-# ---------------------------------------------------------------------------
-$StagingBase = $null
-
-function Initialize-StagingBase {
-    $tmp = [System.IO.Path]::GetTempPath()
-    $dir = Join-Path $tmp ("aid-install-" + [System.IO.Path]::GetRandomFileName())
-    New-Item -ItemType Directory -Path $dir -Force | Out-Null
-    return $dir
-}
-
-function Remove-StagingBase {
-    if ($StagingBase -and (Test-Path $StagingBase -PathType Container)) {
-        Remove-Item -LiteralPath $StagingBase -Recurse -Force -ErrorAction SilentlyContinue
-    }
-}
-
-$StagingBase = Initialize-StagingBase
-
-# Prepare-ToolStaging <tool> <version> <fromBundle>
-# Populates $script:StagingDir and $script:ResolvedVersion.
-$script:StagingDir       = ''
-$script:ResolvedVersion  = ''
-
-function Prepare-ToolStaging {
-    param([string]$CurrentTool, [string]$CurrentVersion, [string]$CurrentBundle)
-
-    $toolStaging = Join-Path $StagingBase ("staging-$CurrentTool-" + [System.IO.Path]::GetRandomFileName())
-    New-Item -ItemType Directory -Path $toolStaging -Force | Out-Null
-
-    if ($CurrentBundle) {
-        # Offline mode.
-        $tarball = $CurrentBundle
-        if (Test-Path $CurrentBundle -PathType Container) {
-            # Directory of tarballs.
-            $pattern = Join-Path $CurrentBundle "aid-$CurrentTool-v*.tar.gz"
-            $found   = Get-ChildItem -Path $pattern -ErrorAction SilentlyContinue | Select-Object -First 1
-            if (-not $found) {
-                script:Fail "no tarball found for tool '$CurrentTool' in bundle directory: $CurrentBundle" 1
-            }
-            $tarball = $found.FullName
-        }
-        if (-not (Test-Path $tarball -PathType Leaf)) {
-            script:Fail "bundle file not found: $tarball" 1
-        }
-        # Verify sibling SHA256SUMS if present.
-        if (-not (Verify-BundleChecksum -Tarball $tarball)) { script:Exit-Install 4 }
-        # Extract version from filename: aid-<tool>-v<version>.tar.gz
-        $tbase = [System.IO.Path]::GetFileName($tarball)
-        $script:ResolvedVersion = $tbase -replace "^aid-$CurrentTool-v", '' -replace '\.tar\.gz$', ''
-        if (-not $script:ResolvedVersion) { $script:ResolvedVersion = if ($CurrentVersion) { $CurrentVersion } else { 'unknown' } }
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Install 1 }
-    } else {
-        # Online mode.
-        if (-not $CurrentVersion) {
-            $script:ResolvedVersion = Resolve-AidVersion
-            if (-not $script:ResolvedVersion) { script:Exit-Install 3 }
-        } else {
-            $script:ResolvedVersion = $CurrentVersion
-        }
-        $dlDir = Join-Path $StagingBase ("download-$CurrentTool-" + [System.IO.Path]::GetRandomFileName())
-        New-Item -ItemType Directory -Path $dlDir -Force | Out-Null
-        if (-not (Fetch-Tarball -Tool $CurrentTool -Version $script:ResolvedVersion -DestDir $dlDir)) { script:Exit-Install 3 }
-        $tarball = Join-Path $dlDir "aid-$CurrentTool-v$($script:ResolvedVersion).tar.gz"
-        if (-not (Extract-Tarball -Tarball $tarball -DestDir $toolStaging)) { script:Exit-Install 1 }
-    }
-
-    $script:StagingDir = $toolStaging
-}
-
-# ---------------------------------------------------------------------------
-# Main dispatch.
-# ---------------------------------------------------------------------------
-
-try {
-    switch ($Mode) {
-        { $_ -in 'install', 'update' } {
-            foreach ($t in $toolList) {
-                Write-Host ""
-                Prepare-ToolStaging -CurrentTool $t -CurrentVersion $Version -CurrentBundle $FromBundle
-                Write-Host "Installing $t v$($script:ResolvedVersion) -> $Target"
-                $rc = Install-AidTool -StagingDir $script:StagingDir -Tool $t -Target $Target `
-                         -Version $script:ResolvedVersion -Force ([bool]$Force) `
-                         -AidVerbose $script:_AidVerbose
-                if ($rc -ne 0) { script:Exit-Install $rc }
-            }
-
-            Write-Host ""
-            Write-Host "Done. AID $($script:ResolvedVersion) installed into: $Target"
-            script:Exit-Install 0
-        }
-
-        'uninstall' {
-            $manifestPath = Join-Path $Target (Join-Path '.aid' '.aid-manifest.json')
-            if (-not (Test-ManifestExists -ManifestPath $manifestPath)) {
-                [Console]::Error.WriteLine("ERROR: install.ps1: no manifest at $Target/.aid/.aid-manifest.json; nothing to uninstall")
-                script:Exit-Install 6
-            }
-
-            foreach ($t in $toolList) {
-                Write-Host ""
-                Write-Host "Uninstalling $t from $Target"
-                $rc = Uninstall-AidTool -ManifestPath $manifestPath -Tool $t -Target $Target `
-                         -AidVerbose $script:_AidVerbose
-                if ($rc -eq 6) { script:Exit-Install 6 }
-                if ($rc -ne 0) { script:Exit-Install $rc }
-            }
-
-            Write-Host ""
-            Write-Host "Uninstall complete."
-            script:Exit-Install 0
-        }
-    }
-} finally {
-    Remove-StagingBase
-    if ($script:_AidTmpLibDir -and (Test-Path $script:_AidTmpLibDir -PathType Container)) {
-        Remove-Item -LiteralPath $script:_AidTmpLibDir -Recurse -Force -ErrorAction SilentlyContinue
-    }
-    script:Cleanup-CliBundleTmp
 }
 
 } catch {

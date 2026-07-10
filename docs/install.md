@@ -795,28 +795,24 @@ A plain `.github/` directory (without the AID copilot subtree) does **not** trig
 - Zero markers found → error, exit 2: `cannot auto-detect host tool; pass tool name as argument`.
 - More than one marker found → error, exit 2: `ambiguous host tool (found: X, Y)`.
 
-### Bootstrap scripts (fallback / back-compat)
+### Bootstrap scripts
 
-`install.sh` and `install.ps1` retain the legacy direct-install flag style for **one
-release** as a back-compat path. Prefer `aid add` / `aid remove` / `aid update` for new
-workflows.
+`install.sh` / `install.ps1` bootstrap the persistent `aid` CLI (and, given a
+subcommand, run it immediately — the same one-line pattern shown in
+[One-line first install](#one-line-first-install-bootstrap--add-in-one-command) above).
 
 ```bash
-# Linux / macOS (legacy back-compat — retained one release)
-bash install.sh --tool <name>[,...] [--version <v>] [--from-bundle <path>]
-                [--force] [--verbose] [--target <dir>]
-bash install.sh --update   [--tool ...] [--version <v>] ...
-bash install.sh --uninstall [--tool ...] ...
-bash install.sh --uninstall-cli [--force]
+# Linux / macOS
+bash install.sh                          # bootstrap only
+bash install.sh add codex --from-bundle <path>   # bootstrap + run 'aid add ...'
+bash install.sh --uninstall-cli [--force]        # remove the global aid CLI
 ```
 
 ```powershell
-# Windows (legacy back-compat — retained one release)
-.\install.ps1 -Tool <name>[,...] [-Version <v>] [-FromBundle <path>]
-              [-Force] [-Verbose] [-TargetDirectory <dir>]
-.\install.ps1 -Update   [-Tool ...] [-Version <v>] ...
-.\install.ps1 -Uninstall [-Tool ...] ...
-.\install.ps1 -UninstallCli [-Force]
+# Windows
+.\install.ps1                                     # bootstrap only
+.\install.ps1 add codex -FromBundle <path>         # bootstrap + run 'aid add ...'
+.\install.ps1 -UninstallCli [-Force]               # remove the global aid CLI
 ```
 
 ### Bootstrap `--no-path` / `-NoPath`

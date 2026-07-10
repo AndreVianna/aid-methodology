@@ -873,7 +873,7 @@ profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/
   (byte-identical install trees, format-adapted per profile)
         │
         ▼  install.sh / install.ps1  (end-user installer)
-        │  (--tool <name> or auto-detect; diff-aware copy; protect-on-diff)
+        │  (aid add <tool> or auto-detect; diff-aware copy; protect-on-diff)
         │
 /path/to/user-project/
   {.claude/ | .codex/ | .cursor/ | .github/ | .agent/}
@@ -881,7 +881,7 @@ profiles/{claude-code,codex,cursor,copilot-cli,antigravity}/
 
 A VERIFY (deterministic) gate re-renders all five profiles into a scratch directory and byte-compares them against the committed install trees after every `run_generator.py` execution. Any byte mismatch is a hard failure. This ensures `canonical/` is always the source of truth.
 
-**Per-tool installs:** `install.sh` / `install.ps1` installs one tool per invocation via `--tool <name>` (auto-detect when omitted). Codex, Cursor, Copilot CLI, and Antigravity all write a root `AGENTS.md` context file. When a second AGENTS.md-writing tool is installed into a project, the installer uses **protect-on-diff**: if `AGENTS.md` was not written by AID (or was modified since), the installer writes the incoming version as `AGENTS.md.aid-new` rather than overwriting, and exits with a warning to review and merge. Claude Code uses `CLAUDE.md` and is exempt from the `AGENTS.md` collision. Pass `--force` to overwrite unconditionally.
+**Per-tool installs:** `aid add <tool>` installs one tool per invocation (auto-detect when omitted). Codex, Cursor, Copilot CLI, and Antigravity all write a root `AGENTS.md` context file. When a second AGENTS.md-writing tool is installed into a project, the installer uses **protect-on-diff**: if `AGENTS.md` was not written by AID (or was modified since), the installer writes the incoming version as `AGENTS.md.aid-new` rather than overwriting, and exits with a warning to review and merge. Claude Code uses `CLAUDE.md` and is exempt from the `AGENTS.md` collision. Pass `--force` to overwrite unconditionally.
 
 ### Skill → Agent Dispatch
 

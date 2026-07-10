@@ -478,22 +478,6 @@ assert_file_exists "${TP}/AGENTS.md" "CLI027-P04 CONVENIENCE: AGENTS.md created"
 assert_output_contains "$OUT" "Done." "CLI027-P05 CONVENIENCE: reports Done."
 
 # ===========================================================================
-# CLI027-Q: LEGACY back-compat — install.sh --tool codex --from-bundle <tar> --target <dir>
-# ===========================================================================
-TQ=$(newtarget)
-OUT=$(AID_LIB_PATH="${LIB_CORE}" bash "${INSTALL_SH}" \
-     --tool codex \
-     --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" \
-     --target "${TQ}" 2>&1); RC=$?
-
-assert_exit_eq "$RC" 0 "CLI027-Q01 LEGACY --tool codex → exit 0"
-assert_dir_exists "${TQ}/.codex" "CLI027-Q02 LEGACY .codex/ created"
-assert_file_exists "${TQ}/AGENTS.md" "CLI027-Q03 LEGACY AGENTS.md created"
-assert_output_contains "$OUT" "Done." "CLI027-Q04 LEGACY reports Done."
-# Manifest must exist.
-assert_file_exists "${TQ}/.aid/.aid-manifest.json" "CLI027-Q05 LEGACY manifest created"
-
-# ===========================================================================
 # CLI027-R: install.sh --uninstall-cli --force → remove AID_HOME + PATH block
 # ===========================================================================
 CLI027R_HOME=$(newhome)

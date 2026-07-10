@@ -58,9 +58,7 @@ structural and methodological, not littered code.
 
 ## Debt Inventory
 
-| ID | Type | Description | Location | Risk | Effort | Priority |
-|----|------|-------------|----------|------|--------|----------|
-| **L3** | Deprecation debt | Legacy flag-style install path "retained for one release"; the deprecation window has closed, so it can be excised — but as its own installer-CI-gated change, not a doc edit | install.sh | Low | S | P3 |
+_No open items — see [Change Log](#change-log) for the resolution history._
 
 **Risk definitions:** High = active risk to reliability/security/maintainability of core
 flows; Medium = growing cost, becomes high if unaddressed in 1-2 cycles; Low = known, not
@@ -70,22 +68,7 @@ urgent.
 
 ## Detailed Debt Items
 
-### [LOW] L3 -- Legacy flag-style install path retained
-
-**Type:** Deprecation debt
-
-**Description:** `install.sh` still carries the pre-CLI-evolution flag-style direct-install
-path (`--tool`, `--update`, `--uninstall`), documented as "retained for one release".
-
-**Location:** `install.sh` usage header ("Usage (legacy - back-compat, hidden ...)").
-
-**Risk if unaddressed:** Two code paths to maintain; the legacy path widens the test surface.
-
-**Remediation:** The deprecation window has closed (several releases shipped since the CLI
-evolution), so the legacy `--tool`/`--update`/`--uninstall` path can be excised from
-`install.sh`'s mode-detection peek + its LEGACY handlers + the usage header. Do it as its own
-change gated by the full installer CI (bash + Windows + npm/PyPI channel suites), not folded
-into an unrelated commit. Effort: S.
+_No open items._
 
 ---
 
@@ -101,7 +84,7 @@ Large files concentrate complexity (line counts drift — measure on demand). CO
 | `tests/windows/Test-AidInstaller.ps1` (~2406) | Whole installer surface in one PS script | Windows-CI only |
 | `dashboard/reader/parsers.py` (~2232) | Python KB/state parser | Triplicated |
 | `lib/aid-install-core.sh` (~2160) | The install/update/remove engine | Triplicated; most load-bearing shell file |
-| `install.sh` (~1380) | Bootstrap + legacy paths + provisioning | Carries L3 debt (legacy flag path) |
+| `install.sh` (~1043) | Bootstrap + provisioning | Down from ~1380 after L3 (legacy flag-style install path removed) |
 | `.claude/skills/.../render.py` (~1019) | The profile renderer | Has self-tests |
 
 ---
@@ -232,3 +215,4 @@ model.
 | 2.0 | 2026-07-10 | tech-debt-followup | **H1 RESOLVED** — extracted the dashboard server+reader file set into a single source, `dashboard/MANIFEST`; `install.sh`, `install.ps1`, `packages/npm/scripts/vendor.js`, `packages/pypi/scripts/vendor.py`, and `release.sh` now all derive the set from it (the MANIFEST is bundled into the CLI tarball and both vendored payloads so bootstrap/sdist paths read it from a trusted, self-describing payload). New guard `tests/canonical/test-dashboard-manifest.sh` fails CI if the manifest drifts from the curated `dashboard/` tree or a consumer stops referencing it. This work uncovered and fixed a **live, unshipped correctness/security bug**: `dashboard/reader/io_bounds.py` (the v2.1.0 5 MB bounded-read DoS guard, added in `d2238d8a` and imported by `reader.py` at 9 sites) was **absent from all five manifests plus the two installer-test expected-file lists** — so a v2.1.0 cut would have vendored a `reader.py` that `ImportError`s on npm/PyPI/curl-bash. The manifest includes it; both vendored payloads now carry it (byte-verified). Updated `test-npm-installer.sh` (NM08) and `test-pypi-installer.sh` (PW05) to derive their expected sets from the manifest rather than a hand-maintained copy. **Remaining open: M3, L3, L4.** |
 | 2.1 | 2026-07-10 | tech-debt-followup | **M3 RESOLVED** — added `tests/canonical/test-doc-counts.sh`, a CI guard (runs in `test.yml` on PR-to-master + the release gate via `run-all.sh`) that derives the canonical counts (skills/agents/profiles from the tree, catalog rows/canonical/alias/repurpose from `shortcut-catalog.yml`) and asserts every user-facing surface (README, `docs/*`, the five profile READMEs) states the CURRENT number. Needles are parameterized on the derived count, so they auto-update when the tree legitimately changes and never assert changelog/history lines (no false positives). Scope excludes the KB (`.aid/knowledge/`), which carries version-history sections and is reconciled by `/aid-housekeep`. Fixed the live drift the guard exposed: `docs/install.md` read "82 skills / 67 shortcuts" → corrected to 92 / 76. **Remaining open: L3, L4.** |
 | 2.2 | 2026-07-10 | tech-debt-followup | **L4 RESOLVED** — recorded the deliberate no-line-coverage decision as ADR **D26** in `decisions.md` (suite-presence coverage is the right model for a shell/markdown toolkit: the product is ~1800 Markdown/prompt + ~327 shell files + a byte-identical render, so a coverage `%` would instrument only the small `dashboard`/`site` minority and mislead). Firmed up `test-landscape.md` §"Coverage Assessment" from "document the deliberate choice" (an open recommendation) to a ratified reference to D26. No coverage tooling adopted (validated premise: it would be security-theater metrics, not a real signal). **Remaining open: L3.** |
+| 2.3 | 2026-07-10 | tech-debt-followup | **L3 RESOLVED** — excised the legacy flag-style direct-install path (`--tool`/`--update`/`--uninstall`/`--target`; PS `-Tool`/`-Update`/`-Uninstall`/`-TargetDirectory`) from `install.sh` + `install.ps1`. Mode-detection now routes an unrecognized flag or unknown first positional to a usage error (exit 2) instead of the retired LEGACY dispatch; `--from-bundle` stays a valid BOOTSTRAP/CONVENIENCE flag. `install.ps1` gained `[CmdletBinding(PositionalBinding=$false)]` (bare words land in `$RemainingArgs`, not `-Version`/`-FromBundle` positions) + a declared-but-inert `-Uninstall` switch so prefix-matching cannot alias a stray `-Uninstall` to `-UninstallCli`. Reworded the `detect_tool`/`Detect-Tool` shared-lib error strings that named the removed flag. Tests + docs updated in lockstep: `test-release-install-e2e.sh` and `tests/windows/Test-AidInstaller.ps1` cases that drove distinct install/update/uninstall mechanisms were **converted** to the new `install.sh add/update/remove <tool>` front door (not deleted); `test-install{,-ps1,-parity}.sh` were trimmed to the surviving usage-error/help/piped/static-parity surface (the tool-install mechanics they set up via `--tool` are still exercised through `aid add`/`aid remove` in `test-aid-cli{,-ps1}.sh`); the LEGACY routing cases (CLI027-Q, PS028-Q, PAR01-12, IN02-40) were removed. The one **security**-relevant guard that did not depend on the legacy path — lib-fetch tamper / PWNED-prevention (a tampered `aid-install-core.sh` must exit 4 and never be sourced) — was preserved by **re-adding it via the bootstrap path** as `test-release-install-e2e.sh` E2E09k-n. `bash install.sh --tool/--update/--uninstall/--target` → exit 2 verified locally; PS side + full install suites validated in CI. **All tech-debt items resolved — inventory is empty.** |

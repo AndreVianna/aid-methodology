@@ -168,13 +168,13 @@ detect_tool() {
         echo "${found[0]}"
         return 0
     elif [[ "${#found[@]}" -eq 0 ]]; then
-        echo "ERROR: cannot auto-detect host tool; pass --tool <name>" >&2
+        echo "ERROR: cannot auto-detect host tool; specify the tool explicitly (e.g. 'aid add <name>')" >&2
         return 2
     else
         local list
         list="$(printf '%s, ' "${found[@]}")"
         list="${list%, }"
-        echo "ERROR: ambiguous host tool (found: ${list}); pass --tool <name>" >&2
+        echo "ERROR: ambiguous host tool (found: ${list}); specify the tool explicitly (e.g. 'aid add <name>')" >&2
         return 2
     fi
 }
