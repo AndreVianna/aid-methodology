@@ -63,8 +63,8 @@
 {"dst": ".agent/aid/templates/delivery-issues.md", "profile": "antigravity", "sha256": "00d03020625c61c3561b3d07d203d4dda3c1b4c8f1ba4a3606fe38df4d38d774", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".agent/aid/templates/delivery-plans/flattened-plan-template.md", "profile": "antigravity", "sha256": "aea06e1b9e86a16f68f3eb50ca0f6489ecf45c9da0084b6f386ea46d81517a64", "src": "canonical/templates/delivery-plans/flattened-plan-template.md"}
 {"dst": ".agent/aid/templates/delivery-plans/task-template.md", "profile": "antigravity", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "4023048d78c4afb674310c0fd5e3c6ec02eb04e817706a96ead5958a5f1dc7b1", "src": "canonical/templates/delivery-state-template.md"}
-{"dst": ".agent/aid/templates/discovery-state-template.md", "profile": "antigravity", "sha256": "ab362969654245a8f05d94a20aaa44de8a3443705561c2f236aa8e983c8e231d", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "990f5ef0174a79d7a9aa07d61654c629731d5b9acab773262e55e0e5e14ba362", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".agent/aid/templates/discovery-state-template.md", "profile": "antigravity", "sha256": "e48295fe353998370284c5ebb88166135145df11531fb32048eb8ccd95159542", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".agent/aid/templates/dispatch-protocol-checklist.md", "profile": "antigravity", "sha256": "4070e6cd1a9f970f798e51139503f45e1c8845efb2dcaab77eb44194e262abd0", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".agent/aid/templates/feature-inventory.md", "profile": "antigravity", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".agent/aid/templates/feature.md", "profile": "antigravity", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
@@ -131,8 +131,8 @@
 {"dst": ".agent/aid/templates/state-machine-chaining.md", "profile": "antigravity", "sha256": "628a41921f890ab90fa90ef01cc9eb770cc9e82d20b01819f310e2e6fec77094", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".agent/aid/templates/subagent-heartbeat-protocol.md", "profile": "antigravity", "sha256": "9a4b7b433ad4bf0ec3c5f6e025439172e173992e29cd032f0c7986038edeeb2a", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".agent/aid/templates/task-detail-template.md", "profile": "antigravity", "sha256": "7c4a3db0690b4a1454929b89567aa919c817fb1d4433d5e9e65080bc13983bb3", "src": "canonical/templates/task-detail-template.md"}
-{"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "6ecbf422092135fd920f6fee51c40e912044a900bc3071c6522f96ee9680de4b", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "aa34f49ab00ee7455f6aecb494ce52f259ebc31b58d40b4588634cf1e91280bc", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "8f0eea88a6446b44c25844d1a516a13a13d6285ba2dbb1f1c0c68501507bb5ac", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "85c987e3d1692990213cceb18429cd65385064837c5ddd1400feb31aaf1abb64", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".agent/skills/aid-add-api/SKILL.md", "profile": "antigravity", "sha256": "a1d6acb9649574672c17b2a870d59ef06cd6712c2bfb606517c1a5c115859ce3", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".agent/skills/aid-add-cli/SKILL.md", "profile": "antigravity", "sha256": "21b88eab7f9b7bd97cf6922e38ca0b2dc716197a2a1862fb1fe987b1b9df7c34", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".agent/skills/aid-add-config/SKILL.md", "profile": "antigravity", "sha256": "2bc65a35bf1ddf9fcfe385e6b490ab779717d5280290d7418db8726e1a0c2277", "src": "canonical/skills/aid-add-config/SKILL.md"}

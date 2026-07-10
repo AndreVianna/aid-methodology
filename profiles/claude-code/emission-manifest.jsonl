@@ -63,8 +63,8 @@
 {"dst": ".claude/aid/templates/delivery-issues.md", "profile": "claude-code", "sha256": "b07ffd28acfb8a9ff56afe973dcf5d27616023af457fdbd4b101c80e33ec0e9f", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".claude/aid/templates/delivery-plans/flattened-plan-template.md", "profile": "claude-code", "sha256": "aea06e1b9e86a16f68f3eb50ca0f6489ecf45c9da0084b6f386ea46d81517a64", "src": "canonical/templates/delivery-plans/flattened-plan-template.md"}
 {"dst": ".claude/aid/templates/delivery-plans/task-template.md", "profile": "claude-code", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".claude/aid/templates/delivery-state-template.md", "profile": "claude-code", "sha256": "01cfc3b6306aadad0b39378d9e173a14c3723d2bd88134437f0a338dfbea6008", "src": "canonical/templates/delivery-state-template.md"}
-{"dst": ".claude/aid/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "e6142ee37b96db14a2baf797a1d77801a0142ed2a164ef7f673dfafd5ffff745", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".claude/aid/templates/delivery-state-template.md", "profile": "claude-code", "sha256": "cac5d4317af8408023c62af9be3eeb505caf95d3cec85167d1ebe0d7c62152cf", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".claude/aid/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "3498f433b269de3c30018a98715f61b89a0b79b62ae4998ea9e468c9321db2d4", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".claude/aid/templates/dispatch-protocol-checklist.md", "profile": "claude-code", "sha256": "062a0bf7cdb8f420f4ce67641c23e9bc9efc17c88636c94f3b2ccfc21b96f74c", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".claude/aid/templates/feature-inventory.md", "profile": "claude-code", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".claude/aid/templates/feature.md", "profile": "claude-code", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
@@ -131,8 +131,8 @@
 {"dst": ".claude/aid/templates/state-machine-chaining.md", "profile": "claude-code", "sha256": "857e44a913b8a1480b0fd8d86717cd6301e3547b829d0f75291ff1705cf6b11d", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".claude/aid/templates/subagent-heartbeat-protocol.md", "profile": "claude-code", "sha256": "ea25d930d8fe7ef2649c90196b771a5b6e1cfe84406d9322cb6f2c628cd8b7f8", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".claude/aid/templates/task-detail-template.md", "profile": "claude-code", "sha256": "7e5a9c8da4a1dfa6b61d4efe10bd9b2764d52485a9fffec143849aa9d84048d4", "src": "canonical/templates/task-detail-template.md"}
-{"dst": ".claude/aid/templates/task-state-template.md", "profile": "claude-code", "sha256": "fd113601677e3ba00c5483a3cf823ccbeeb86d99bd36cb59cdea1af9ddfa00cb", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".claude/aid/templates/work-state-template.md", "profile": "claude-code", "sha256": "05a311c92809f4f50ec6915bbd997ead04df7a6eea3128922132d5ccb36265d9", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".claude/aid/templates/task-state-template.md", "profile": "claude-code", "sha256": "bf4c86dda1a66f40c85b361b05cb1952b9fab076f0952791734aa91f57d1cb76", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".claude/aid/templates/work-state-template.md", "profile": "claude-code", "sha256": "fb2b116e4c198a0cf6b7fbc954b967e97d1513edbeb33f900ef430d1f92efd85", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".claude/skills/aid-add-api/SKILL.md", "profile": "claude-code", "sha256": "1f8681f200e6dff701e22078ed05a3bb05683e00ddc405fc4c58eedfdf7504b4", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".claude/skills/aid-add-cli/SKILL.md", "profile": "claude-code", "sha256": "28fa6b080b4125964388b490c0f34550a64af7a4b9d8b01e966bc9afa8574c72", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".claude/skills/aid-add-config/SKILL.md", "profile": "claude-code", "sha256": "946c419e9f72b391c3db017c7fd7a0647d7dc9c9f9407839f93f19ef43fb9677", "src": "canonical/skills/aid-add-config/SKILL.md"}

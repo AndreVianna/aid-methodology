@@ -1,3 +1,10 @@
+---
+delivery_state: Pending-Spec | Specified | Executing | Gated | Done | Blocked
+gate_tier: Small | Medium | Large
+gate_grade: "{grade or Pending}"
+gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+---
+
 # Delivery State -- delivery-NNN
 
 [!NOTE]
@@ -5,11 +12,16 @@ This is the DELIVERY-LEVEL STATE.md template -- FULL PATH ONLY. It lives at
 `.aid/work-NNN-{name}/deliveries/delivery-NNN/STATE.md`. (A lite work has exactly one
 delivery and no `deliveries/` folder at all -- its Delivery Lifecycle / Delivery Gate /
 Cross-phase Q&A are AUTHORED directly in the work-root `STATE.md` instead; see
-`work-state-template.md`.) It is divided into two zones:
-  AUTHORED (single writer = this delivery's branch) --
-      Delivery Lifecycle, Gate Block, Cross-phase Q&A.
+`work-state-template.md`.) It is divided into three zones:
+  FRONTMATTER (single writer = this delivery's branch, machine-parsed scalars) --
+      `delivery_state`, `gate_tier`, `gate_grade`, `gate_timestamp` (the YAML block above).
+  AUTHORED (single writer = this delivery's branch, markdown body) --
+      the narrative remainder of Delivery Lifecycle / Gate Block (Updated/Block Reason/
+      Block Artifact/Issue List), Cross-phase Q&A.
   DERIVED (read-only, assembled at read time) --
       Tasks State (rollup from per-task STATE.md files in tasks/task-NNN/STATE.md).
+Identifiers (`Delivery`/`Work` in the header blockquote below, `Branch`) are INFERRED from
+the folder name and git worktree -- never authored in frontmatter.
 
 <!-- DELIVERY LIFECYCLE ENUM (authored, not derived)
 
@@ -42,9 +54,10 @@ so the delivery lifecycle MUST be independently authored.
 ## Delivery Lifecycle
 
 <!-- AUTHORED -- single writer: this delivery's branch only. Written by aid-plan, aid-specify,
-     aid-execute across the delivery pipeline. Never derived from task rollup. -->
+     aid-execute across the delivery pipeline. Never derived from task rollup.
+     The **State** scalar lives in the YAML frontmatter block at the top of this file
+     (`delivery_state`). Updated/Block Reason/Block Artifact stay here as markdown body. -->
 
-- **State:** Pending-Spec | Specified | Executing | Gated | Done | Blocked
 - **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
 - **Block Reason:** {short text} | --     (present only when State = Blocked)
 - **Block Artifact:** {relative path} | --
@@ -58,12 +71,12 @@ so the delivery lifecycle MUST be independently authored.
      Distinct from per-task quick-check findings -- the gate aggregates those deferred [HIGH]
      rows (via delivery-NNN-issues.md) and runs a full grade.sh pass.
      Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`;
-     see `canonical/aid/templates/delivery-issues.md` for the template. -->
+     see `canonical/aid/templates/delivery-issues.md` for the template.
+     Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block at the top of this
+     file (`gate_tier`, `gate_grade`, `gate_timestamp`). Issue List stays here as markdown
+     body (a variable-length inline list doesn't fit a flat frontmatter scalar). -->
 
-- **Reviewer Tier:** Small | Medium | Large
-- **Grade:** {grade or Pending}
 - **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
-- **Timestamp:** {YYYY-MM-DDTHH:MM:SSZ}
 
 ---
 

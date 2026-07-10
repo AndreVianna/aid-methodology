@@ -1,13 +1,44 @@
+---
+pipeline:
+  path: lite | full                 # lite = flattened (no deliveries/ wrapper); full = deliveries/delivery-NNN/ wrapper
+  initiator: aid-describe | aid-{shortcut-skill}  # the pipeline-starting skill: aid-describe, or a shortcut-catalog.yml skill (e.g. aid-fix, aid-refactor, aid-create-api)
+started: "{YYYY-MM-DD}"
+minimum_grade: "{resolved at runtime by `bash .github/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}"
+user_approved: yes | no
+lifecycle: Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+phase: Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+active_skill: aid-{skill} | none
+updated: "{YYYY-MM-DDTHH:MM:SSZ}"
+pause_reason: "{short text} | --"        # present only when lifecycle = Paused-Awaiting-Input
+block_reason: "{short text} | --"        # present only when lifecycle = Blocked
+block_artifact: "{relative path} | --"   # e.g. IMPEDIMENT-task-NNN.md, or the failed gate
+# --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
+#     omit these 4 keys entirely for full multi-delivery works. ---
+delivery_state: Pending-Spec | Specified | Executing | Gated | Done | Blocked
+gate_tier: Small | Medium | Large
+gate_grade: "{grade or Pending}"
+gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+---
+
 # Work State -- work-NNN-{name}
 
 [!NOTE]
-This is the WORK-LEVEL STATE.md template. It is divided into two zones:
-  AUTHORED (single-writer) -- Pipeline State, Interview State, Lifecycle History,
-    Deploy State, Delivery Lifecycle (incl. its Tasks lifecycle subsection), Delivery Gate.
+This is the WORK-LEVEL STATE.md template. It is divided into three zones:
+  FRONTMATTER (single-writer, machine-parsed scalars) -- the YAML block above: pipeline
+    identity, work-level lifecycle/phase/approval scalars, and (for flattened single-delivery
+    works only) the delivery lifecycle/gate scalars. Written ONLY by `writeback-state.sh`
+    (surgical YAML-block rewrite; the markdown body is never touched by that write).
+  AUTHORED (single-writer, markdown body) -- Interview State, Lifecycle History,
+    Deploy State, the narrative remainder of Delivery Lifecycle (incl. its Tasks lifecycle
+    subsection) and Delivery Gate (Updated/Block Reason/Block Artifact/Issue List -- the
+    values that don't fit a flat frontmatter scalar).
   DERIVED (read-only, assembled at read time) -- Features State, Plan/Deliveries, Tasks State,
     Delivery Gates, Cross-phase Q&A, Calibration Log, Dispatches.
 The DERIVED sections are NEVER written directly; they are union views over the per-delivery and
 per-task STATE.md files. Agents that write state must target the per-unit STATE.md files instead.
+Inferred values (`number` from the folder name, `branch` from the git worktree,
+`title`/`description`/`objective` from REQUIREMENTS/SPEC content files) and derived values
+(counts, readiness/execution %, `source_mode`) are NEVER authored here -- computed at read time.
 
 The AUTHORED `## Delivery Lifecycle` / `### Tasks lifecycle` / `## Delivery Gate` sections
 (singular) apply ONLY to single-delivery flattened works (no `deliveries/`/`delivery-NNN/`
@@ -47,9 +78,6 @@ the ordered list at runtime; schemas.md carries an inline copy derived from this
 
 > **State:** Interview Complete | Specifying | Planning | Detailing | Executing | Deployed
 > **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy
-> **Minimum Grade:** {resolved at runtime by `bash .github/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}
-> **Started:** {YYYY-MM-DD}
-> **User Approved:** yes | no
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
 to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory. See also: per-delivery
@@ -65,21 +93,16 @@ different places.
 
 ## Pipeline State
 
-<!-- AUTHORED -- written ONLY by `writeback-state.sh --pipeline ...` at every phase/state
-     transition the pipeline performs. Never hand-edited. All values are closed enums so a
-     deterministic reader needs no inference. -->
+<!-- AUTHORED -- values live in the YAML frontmatter block at the top of this file
+     (`lifecycle`, `phase`, `active_skill`, `updated`, `pause_reason`, `block_reason`,
+     `block_artifact`), written ONLY by `writeback-state.sh --pipeline ...` at every
+     phase/state transition the pipeline performs (surgical frontmatter rewrite; never
+     hand-edited). All values are closed enums so a deterministic reader needs no
+     inference. This section retains the enum reference below for human readability. -->
 >
 > Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
-
-- **Lifecycle:** Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-- **Phase:** Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
-- **Active Skill:** aid-{skill} | none
-- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
-- **Pause Reason:** {short text} | --          (present only when Lifecycle = Paused-Awaiting-Input)
-- **Block Reason:** {short text} | --          (present only when Lifecycle = Blocked)
-- **Block Artifact:** {relative path} | --     (e.g. IMPEDIMENT-task-NNN.md, or the failed gate)
 
 ---
 
@@ -141,9 +164,13 @@ different places.
      (section omitted) for full multi-delivery works, where each delivery's own lifecycle lives in
      its `delivery-NNN/STATE.md` instead (unioned by the DERIVED `## Plan / Deliveries` view
      below). The enum below is byte-identical to `delivery-state-template.md` -- both reader twins
-     and `writeback-state.sh` bind to the exact strings (no byte-stability break). -->
+     and `writeback-state.sh` bind to the exact strings (no byte-stability break).
 
-- **State:** Pending-Spec | Specified | Executing | Gated | Done | Blocked
+     The **State** scalar lives in the YAML frontmatter block at the top of this file
+     (`delivery_state`) -- see the frontmatter's "Flattened single-delivery works only" group.
+     Updated/Block Reason/Block Artifact stay here as markdown body (not relocated by
+     work-003-state-schema task-001; see the task's schema note). -->
+
 - **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
 - **Block Reason:** {short text} | --     (present only when State = Blocked)
 - **Block Artifact:** {relative path} | --
@@ -183,12 +210,14 @@ different places.
      CRITERIA`, NOT from this STATE.md. Left absent (section omitted) for full multi-delivery
      works, where each delivery-NNN/STATE.md carries its own gate block (unioned by the DERIVED
      ## Delivery Gates view below). The enum below is byte-identical to
-     `delivery-state-template.md` -- no byte-stability break. -->
+     `delivery-state-template.md` -- no byte-stability break.
 
-- **Reviewer Tier:** Small | Medium | Large
-- **Grade:** {grade or Pending}
+     Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block at the top of this
+     file (`gate_tier`, `gate_grade`, `gate_timestamp`) -- see the frontmatter's "Flattened
+     single-delivery works only" group. Issue List stays here as markdown body (a
+     variable-length inline list doesn't fit a flat frontmatter scalar). -->
+
 - **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
-- **Timestamp:** {YYYY-MM-DDTHH:MM:SSZ}
 
 ---
 

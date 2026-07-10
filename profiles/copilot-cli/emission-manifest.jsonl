@@ -63,8 +63,8 @@
 {"dst": ".github/aid/templates/delivery-issues.md", "profile": "copilot-cli", "sha256": "dbfe97a86f2a4bfc8e3c60c57edd6c39de2772b562149adedf4eb7b2acc0c642", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".github/aid/templates/delivery-plans/flattened-plan-template.md", "profile": "copilot-cli", "sha256": "aea06e1b9e86a16f68f3eb50ca0f6489ecf45c9da0084b6f386ea46d81517a64", "src": "canonical/templates/delivery-plans/flattened-plan-template.md"}
 {"dst": ".github/aid/templates/delivery-plans/task-template.md", "profile": "copilot-cli", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".github/aid/templates/delivery-state-template.md", "profile": "copilot-cli", "sha256": "13a998454b47c396cfe9541ab603852d8171926c88e80e6ba14045aae6569016", "src": "canonical/templates/delivery-state-template.md"}
-{"dst": ".github/aid/templates/discovery-state-template.md", "profile": "copilot-cli", "sha256": "8fa80adcbe397bf624cf0ba2f10c81175e36af56130ad735937c78925fe77b87", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".github/aid/templates/delivery-state-template.md", "profile": "copilot-cli", "sha256": "675e489bdf2c94f7ecc9c42869c1cd2c194e55e8fa97a3e88f20a5767fb65951", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".github/aid/templates/discovery-state-template.md", "profile": "copilot-cli", "sha256": "bc4c3b1bf96e2a91d21a9612d38dc726ab3f4a744830621beb148f62a013c40e", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".github/aid/templates/dispatch-protocol-checklist.md", "profile": "copilot-cli", "sha256": "00d41e656caf552cdca99dca3c4cc45e74e4bb876e84a2c6ac0bbb543dff72ca", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".github/aid/templates/feature-inventory.md", "profile": "copilot-cli", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".github/aid/templates/feature.md", "profile": "copilot-cli", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
@@ -131,8 +131,8 @@
 {"dst": ".github/aid/templates/state-machine-chaining.md", "profile": "copilot-cli", "sha256": "5be5402a681feb3aec61d9680323cb2ec60f9404cef30ed33af4d90fcbd8a5da", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".github/aid/templates/subagent-heartbeat-protocol.md", "profile": "copilot-cli", "sha256": "e6ecff83ad53c51bedba5d1ef193c1298a6cdf6c0c3f4198066fea3e0577e346", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".github/aid/templates/task-detail-template.md", "profile": "copilot-cli", "sha256": "aafafb75d812d57c07c1d794fbb0b6be417beeccc75cd462468f1e81f35c26a3", "src": "canonical/templates/task-detail-template.md"}
-{"dst": ".github/aid/templates/task-state-template.md", "profile": "copilot-cli", "sha256": "dce92b7c2aa5e55d336e06081ab563a4c9a3a5192e9427cd98701de5b7e3f129", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".github/aid/templates/work-state-template.md", "profile": "copilot-cli", "sha256": "c59bed50b58ba0d39b54014814452b3b421103b8c04e2b727bd17ab1035733a8", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".github/aid/templates/task-state-template.md", "profile": "copilot-cli", "sha256": "6ef22a5d8e077182fa7c26d14542cfdda31aab9517f786806d5f9e215654dd7a", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".github/aid/templates/work-state-template.md", "profile": "copilot-cli", "sha256": "241fc188b8e0aef3ef3a624f2b9fd7f5c86cf827362b57271d027bbc25d3e1ac", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".github/skills/aid-add-api/SKILL.md", "profile": "copilot-cli", "sha256": "c2b12cffba968db2e70cde7c888c8559292c1d6f1ab870d8de87e59cbf89f31b", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".github/skills/aid-add-cli/SKILL.md", "profile": "copilot-cli", "sha256": "0e814b8d2ffc1482d09dc275cd33245eafa169c478a2f938b1755197a625ab85", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".github/skills/aid-add-config/SKILL.md", "profile": "copilot-cli", "sha256": "f41fccf11342204f5f5d111989e9a685b38f275e9de289421253066104a280db", "src": "canonical/skills/aid-add-config/SKILL.md"}

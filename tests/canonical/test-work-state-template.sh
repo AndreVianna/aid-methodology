@@ -14,19 +14,24 @@
 #
 # Tests:
 #   WS01  work-state-template has ## Pipeline State header (naming contract)
-#   WS02  work-state-template has all 7 Pipeline State fields
+#   WS02  work-state-template has all 7 Pipeline State fields -- Lifecycle/Active Skill/
+#         Pause Reason moved to the YAML frontmatter block (work-003-state-schema task-001),
+#         checked via their frontmatter keys; Phase/Updated/Block Reason/Block Artifact are
+#         still checked as body prose (header blockquote / ## Delivery Lifecycle)
 #   WS03  work-state-template declares Lifecycle enum verbatim (closed, 5 members)
 #   WS04  work-state-template declares Phase enum verbatim (7 members)
-#   WS05  work-state-template declares Active Skill enum placeholder
+#   WS05  work-state-template declares Active Skill enum placeholder (frontmatter key shape)
 #   WS06  (removed) comment-text assertion -- see body note; coverage: WS07 (dogfood), WS03/WS04 (enums)
-#   WS07  Rendered dogfood work-state-template matches canonical (spot checks)
+#   WS07  Rendered dogfood work-state-template matches canonical (spot checks; lifecycle
+#         frontmatter key)
 #   WS08  Rendered profile trees all contain the work-state-template ## Pipeline State header
 #   WS09  No "Status" section/field names remain in any new template (naming contract)
 #   WS10  delivery-state-template carries SD-8 delivery lifecycle enum
 #   WS11  (removed) comment-text assertion -- see body note; delivery enum coverage via WS10
 #   WS12  delivery-state-template has ## Cross-phase Q&A section (SD-5 comment assert removed)
 #   WS13  delivery-state-template has ## Tasks State section (DERIVED comment assert removed)
-#   WS14  task-state-template has the 4 mutable cells (State/Review/Elapsed/Notes)
+#   WS14  task-state-template has the 4 mutable cells (state/review/elapsed/notes), now
+#         YAML frontmatter keys (work-003-state-schema task-001)
 #   WS15  task-state-template has ## Quick Check Findings section
 #   WS16  task-state-template has ## Dispatch Log section
 #   WS17  (removed) comment-text assertion -- see body note (DERIVED markers are HTML comments)
@@ -67,13 +72,24 @@ assert_file_contains \
 
 # ---------------------------------------------------------------------------
 # WS02: work-state-template has all 7 Pipeline State fields
+# Lifecycle/Active Skill/Pause Reason were relocated to the YAML frontmatter
+# block (work-003-state-schema task-001) -- checked via their frontmatter keys.
+# Phase/Updated/Block Reason/Block Artifact still appear as body prose
+# elsewhere in the file (header blockquote / ## Delivery Lifecycle), so those
+# 4 bold-line checks are unchanged.
 # ---------------------------------------------------------------------------
-for field in "**Lifecycle:**" "**Phase:**" "**Active Skill:**" "**Updated:**" \
-             "**Pause Reason:**" "**Block Reason:**" "**Block Artifact:**"; do
+for field in "**Phase:**" "**Updated:**" "**Block Reason:**" "**Block Artifact:**"; do
     assert_file_contains \
         "$WORK_STATE" \
         "$field" \
         "WS02 work-state-template has field $field"
+done
+
+for key in "lifecycle:" "active_skill:" "pause_reason:"; do
+    assert_file_contains \
+        "$WORK_STATE" \
+        "$key" \
+        "WS02 work-state-template has frontmatter key $key"
 done
 
 # ---------------------------------------------------------------------------
@@ -98,6 +114,8 @@ done
 
 # ---------------------------------------------------------------------------
 # WS05: work-state-template declares Active Skill enum placeholder
+# The Active Skill field line moved to the YAML frontmatter block
+# (work-003-state-schema task-001); check its frontmatter-key equivalent.
 # ---------------------------------------------------------------------------
 assert_file_contains \
     "$WORK_STATE" \
@@ -105,8 +123,8 @@ assert_file_contains \
     "WS05 Active Skill enum placeholder aid-{skill} present"
 assert_file_contains \
     "$WORK_STATE" \
-    "**Active Skill:** aid-{skill} | none" \
-    "WS05 Active Skill field line has expected shape"
+    "active_skill: aid-{skill} | none" \
+    "WS05 Active Skill frontmatter key has expected shape"
 
 # ---------------------------------------------------------------------------
 # WS06 removed: tests must not assert comment text (owner directive); render fidelity is covered by the render-drift / byte-identity gates, enum members by WS03/WS04.
@@ -114,6 +132,8 @@ assert_file_contains \
 
 # ---------------------------------------------------------------------------
 # WS07: Rendered dogfood work-state-template has Pipeline State header and fields
+# The Lifecycle field moved to the YAML frontmatter block
+# (work-003-state-schema task-001); check the dogfood-rendered frontmatter key.
 # ---------------------------------------------------------------------------
 if [[ -f "$DOGFOOD_WORK_STATE" ]]; then
     assert_file_contains \
@@ -122,8 +142,8 @@ if [[ -f "$DOGFOOD_WORK_STATE" ]]; then
         "WS07 dogfood rendered work-state-template has ## Pipeline State header"
     assert_file_contains \
         "$DOGFOOD_WORK_STATE" \
-        "**Lifecycle:**" \
-        "WS07 dogfood rendered work-state-template has Lifecycle field"
+        "lifecycle:" \
+        "WS07 dogfood rendered work-state-template has lifecycle frontmatter key"
     assert_file_contains \
         "$DOGFOOD_WORK_STATE" \
         "**Phase:**" \
@@ -210,12 +230,14 @@ assert_file_contains \
 
 # ---------------------------------------------------------------------------
 # WS14: task-state-template has the 4 mutable cells
+# The 4 cells moved to the YAML frontmatter block (work-003-state-schema
+# task-001); check their frontmatter keys.
 # ---------------------------------------------------------------------------
-for cell in "**State:**" "**Review:**" "**Elapsed:**" "**Notes:**"; do
+for cell in "state:" "review:" "elapsed:" "notes:"; do
     assert_file_contains \
         "$TASK_STATE" \
         "$cell" \
-        "WS14 task-state-template has mutable cell $cell"
+        "WS14 task-state-template has mutable-cell frontmatter key $cell"
 done
 
 # ---------------------------------------------------------------------------

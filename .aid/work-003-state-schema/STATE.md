@@ -36,11 +36,11 @@ SPEC.md + BLUEPRINT.md.)
 > Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
 > Active Skill enum: aid-{skill} | none
 
-- **Lifecycle:** Paused-Awaiting-Input
-- **Phase:** Detail
-- **Active Skill:** none
-- **Updated:** 2026-07-10T17:34:53Z
-- **Pause Reason:** Definition complete (8 tasks: 5 STATE-frontmatter + 3 folded-in maintenance) at the v2.1.0 base; delivery gate A+; awaiting /aid-execute work-003-state-schema task-001
+- **Lifecycle:** Running
+- **Phase:** Execute
+- **Active Skill:** aid-execute
+- **Updated:** 2026-07-10T17:46:37Z
+- **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -69,6 +69,7 @@ SPEC.md + BLUEPRINT.md.)
 | 2026-07-10 | Folded in 3 hygiene fixes + pulled v2.1.0 | -- | Added task-006 (§6/section-6 refs) / task-007 (KB closure hygiene) / task-008 (aid --version) per user; merged master v2.1.0 (PR #139) into branch (VERSION+packages=2.1.0) |
 | 2026-07-10 | 8-task re-gate — Grade: A+ | A+ | Expanded set re-gated: 1 MED + 3 LOW + 1 MINOR fixed — task-006 re-scoped validate-first/surgical (the "section-6 quality gates" ref is a real concept in authored-visual-catalog, not uniformly dangling); task-007 canonical-edit + re-render discipline; task-008 --version collision (vs existing `--version <v>` pin) + VERSION-file path; STATE pause-reason → 8 tasks; uniform trace annotations; re-gated A+ |
 | 2026-07-10 | Schema-enrichment re-gate — Grade: A+ | A+ | STATE frontmatter schema expanded per audit (pipeline{path,initiator} + started/user_approved + KB kb_status/kb_grade/last_kb_review as newly-captured; minimum_grade + KB summary_approved/last_summary as behavior-preserving relocations); task-001/002/004/005 + BLUEPRINT enriched (gate criteria #13/#14). Re-gate caught 1 HIGH + 2 MED (I'd mis-classified minimum_grade + KB approval fields as "never parsed"; task-004 "only Pipeline State" premise was false) + 3 MINOR — all fixed; re-gated A+ |
+| 2026-07-10 | Execute task-001 — Done | pass | Frontmatter schema in 4 canonical templates + schema-note.md + render (run_generator PASS; 33 files: canonical + 5 profiles + dogfood + manifests). Review: 1 HIGH (guard test asserted removed prose) fixed → test-work-state-template.sh 59/0; 1 LOW (yes/no YAML-1.1 bool coercion) carried to task-002 |
 
 ---
 
@@ -88,8 +89,8 @@ SPEC.md + BLUEPRINT.md.)
      delivery-state-template.md. Single writer: this work's active branch. State halts at
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
-- **State:** Specified
-- **Updated:** 2026-07-10T17:34:53Z
+- **State:** Executing
+- **Updated:** 2026-07-10T17:46:37Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -101,8 +102,8 @@ SPEC.md + BLUEPRINT.md.)
 
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|
-| task-001 | Pending | -- | -- | -- |
-| task-002 | Pending | -- | -- | -- |
+| task-001 | Done | pass | -- | Frontmatter schema in 4 canonical templates + schema-note + render; guard test green (59/0) |
+| task-002 | In Progress | -- | -- | Reader reads frontmatter + fix "Lite path" label |
 | task-003 | Pending | -- | -- | -- |
 | task-004 | Pending | -- | -- | -- |
 | task-005 | Pending | -- | -- | -- |

@@ -63,8 +63,8 @@
 {"dst": ".cursor/aid/templates/delivery-issues.md", "profile": "cursor", "sha256": "7a0a674a5ca4c05ebcc02a306a5ee747f71043e98d61096682d1e7b807d1680b", "src": "canonical/templates/delivery-issues.md"}
 {"dst": ".cursor/aid/templates/delivery-plans/flattened-plan-template.md", "profile": "cursor", "sha256": "aea06e1b9e86a16f68f3eb50ca0f6489ecf45c9da0084b6f386ea46d81517a64", "src": "canonical/templates/delivery-plans/flattened-plan-template.md"}
 {"dst": ".cursor/aid/templates/delivery-plans/task-template.md", "profile": "cursor", "sha256": "12c9e04352cd6df9e6e355ab412933af60ed006b1043707c93a7a34891ca86f1", "src": "canonical/templates/delivery-plans/task-template.md"}
-{"dst": ".cursor/aid/templates/delivery-state-template.md", "profile": "cursor", "sha256": "3a15ee6fdc380c7e0de1a3d7c65f4c68e674c9be74427695f305e271a80a9ea1", "src": "canonical/templates/delivery-state-template.md"}
-{"dst": ".cursor/aid/templates/discovery-state-template.md", "profile": "cursor", "sha256": "ffcf905383e65c5e65b5bed033add2b234dc5b8992fcb1f62796592117307ec0", "src": "canonical/templates/discovery-state-template.md"}
+{"dst": ".cursor/aid/templates/delivery-state-template.md", "profile": "cursor", "sha256": "42b71b0403f6f74b7a402a713e040136bbd3f97110fe5891621d350cf4772c79", "src": "canonical/templates/delivery-state-template.md"}
+{"dst": ".cursor/aid/templates/discovery-state-template.md", "profile": "cursor", "sha256": "eb4420b89e73d9ef31f0806393393e3cf52b042a99d4287248ec96daf1cf9586", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".cursor/aid/templates/dispatch-protocol-checklist.md", "profile": "cursor", "sha256": "901bee904b169329796a5ae3cf5fa5dc968f789a247c541b942287b2ccb41ceb", "src": "canonical/templates/dispatch-protocol-checklist.md"}
 {"dst": ".cursor/aid/templates/feature-inventory.md", "profile": "cursor", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".cursor/aid/templates/feature.md", "profile": "cursor", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
@@ -131,8 +131,8 @@
 {"dst": ".cursor/aid/templates/state-machine-chaining.md", "profile": "cursor", "sha256": "d43990343a80aaef6bac1da564a436978b857f7a8ea664b85e8d9592c04ea8df", "src": "canonical/templates/state-machine-chaining.md"}
 {"dst": ".cursor/aid/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "e2de186513909cfd6442c9e3c6e9663ddb5675d9dcbc7e6d29728e0f8d3e9c03", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".cursor/aid/templates/task-detail-template.md", "profile": "cursor", "sha256": "efb78d712753bd0d6ea76bc0995031f27d7e4a69fb87456202f79bd7b2c66217", "src": "canonical/templates/task-detail-template.md"}
-{"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "1a0c6be17b9e0a486beb4f34467b15e3d11531f3a2f1208851284e0c4ddd49b8", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "8c60ff941cff5e5b5fde2d7e314b51ea42d7c82f85bd0b1d46831bb781d015a4", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "7807757ff13a80dcf38e9548ae8b9c93f01c70b0628306007d06354f0c0fb258", "src": "canonical/templates/task-state-template.md"}
+{"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "148e2dce6e39dd67b35b0d8263bcc3c759e8ba4865f49762c2c9f0396b441486", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".cursor/skills/aid-add-api/SKILL.md", "profile": "cursor", "sha256": "9a5a5ac95afe5f4c9fe822deac0040ca51ee8b3187a426f0028c24743404de4c", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".cursor/skills/aid-add-cli/SKILL.md", "profile": "cursor", "sha256": "3ee8e28e81e0d474625ae612fad71dc4e2c679768f936f34674d014038728105", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".cursor/skills/aid-add-config/SKILL.md", "profile": "cursor", "sha256": "0c78880c9fbb40d4b6ebbaaadad61752aa699779ae46e95af923312bb18271a7", "src": "canonical/skills/aid-add-config/SKILL.md"}

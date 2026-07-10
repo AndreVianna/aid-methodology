@@ -1,16 +1,27 @@
+---
+state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+review: "{reviewer tier and outcome, or Pending}"
+elapsed: "{HH:MM or --}"
+notes: "{short free-text, or --}"
+---
+
 # Task State -- task-NNN
 
 [!NOTE]
 This is the TASK-LEVEL STATE.md template. It is **full-path only** -- it lives at
-`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`. All sections are AUTHORED by a
-single writer: the delivery branch that owns this task. This file is the SOLE write
-target for all per-task mutable state (state cell, review, elapsed, notes, findings,
-dispatch log). Its parent `deliveries/delivery-NNN/STATE.md ## Tasks State` and the
-work-level `## Tasks State` are DERIVED read-only views assembled from this file at
+`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`. The `## Task State` mutable cell
+(state/review/elapsed/notes) lives in the YAML frontmatter block above; the remaining
+sections (Quick Check Findings, Dispatch Log) are AUTHORED as markdown body. All of it
+is written by a single writer: the delivery branch that owns this task. This file is the
+SOLE write target for all per-task mutable state (state cell, review, elapsed, notes,
+findings, dispatch log). Its parent `deliveries/delivery-NNN/STATE.md ## Tasks State` and
+the work-level `## Tasks State` are DERIVED read-only views assembled from this file at
 read time -- never written directly.
 Lite (flattened) path has **no per-task STATE.md at all**: each task's mutable cells
 live directly in the work-root `STATE.md § ### Tasks lifecycle`, written via
 `writeback-state.sh --task-id` targeting that table row instead of a sibling file.
+`task-NNN`/`delivery-NNN`/`work-NNN-{name}` in the header blockquote below are INFERRED
+from the folder path -- never authored in frontmatter.
 
 > **Task:** task-NNN
 > **Delivery:** delivery-NNN
@@ -20,16 +31,14 @@ live directly in the work-root `STATE.md § ### Tasks lifecycle`, written via
 
 ## Task State
 
-<!-- AUTHORED -- written ONLY by `writeback-state.sh --task-id NNN --field State --value VALUE`.
+<!-- AUTHORED -- values live in the YAML frontmatter block at the top of this file
+     (`state`, `review`, `elapsed`, `notes`), written ONLY by
+     `writeback-state.sh --task-id NNN --field State --value VALUE` (surgical frontmatter
+     rewrite; the markdown body is never touched by that write).
      State enum (closed; single source of truth):
        Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
      Ordering (most-advanced wins on reconcile):
        Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
-
-- **State:** Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
-- **Review:** {reviewer tier and outcome, or Pending}
-- **Elapsed:** {HH:MM or --}
-- **Notes:** {short free-text, or --}
 
 ---
 
