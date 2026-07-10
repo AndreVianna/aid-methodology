@@ -12,3 +12,8 @@
 # CRLF on Linux (intent: blocks parse as "no intent declared"), which broke the
 # kb-hygiene CI check.
 *.md   text eol=lf
+# The dashboard file-set manifest is extensionless (no rule above covers it) and is
+# line-parsed by install.sh / install.ps1 / vendor.js / vendor.py / release.sh. Force LF
+# so a Windows autocrlf checkout can't inject CRLF that a consumer's parser mishandles
+# (a CRLF checkout made vendor.js leak comment lines as bogus file paths).
+dashboard/MANIFEST text eol=lf

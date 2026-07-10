@@ -218,10 +218,20 @@ CONFIRMED in `.github/workflows/test.yml`.
 
 ## Coverage Assessment
 
-There is **no line-coverage metric and no coverage threshold** anywhere in the pipeline.
-Coverage is assessed by *suite presence per subsystem*, not by a percentage. This is
-appropriate for a shell/markdown/installer toolkit but means there is no "X% or CI fails"
-enforcement.
+There is **no line-coverage metric and no coverage threshold** anywhere in the pipeline, and
+that specific choice is deliberate (see `decisions.md` **D26**): the shippable product is
+overwhelmingly non-line-instrumentable (~1800 Markdown/prompt files + ~327 shell/PowerShell
+installer files + a byte-identical multi-profile render), so a coverage `%` would instrument
+only the small minority (`dashboard/reader` Python, `dashboard/server/reader.mjs`, `site/`
+TypeScript) and report a misleadingly precise number that ignores the bulk of the product.
+
+What remains today is **suite-presence per subsystem** (the table below) — but that has proven
+**insufficient on its own**: the `io_bounds.py` incident showed suites can pass without
+*biting* (five manifests asserted each other while all were stale). Measuring test-suite
+**effectiveness** for the deterministic machinery — via **mutation testing, invariant-anchoring,
+behavioral-surface coverage, and escaped-defect tracking** (dogfooding covers the prompt layer)
+— is a committed **High-priority, next-release** program tracked as **tech-debt L4**. Until it
+lands, suite-presence + dogfooding is the floor, not the target.
 
 | Subsystem | Test health | Evidence |
 |---|---|---|
@@ -262,7 +272,7 @@ canaries that scan `REAL_HOME` for `.aid` must snapshot before/after. See `tech-
 |---|---|---|---|
 | Windows installer | `Test-AidInstaller.ps1` runs only on Windows CI, never in `run-all.sh` | Medium | CLI behavior changes must migrate this test too; a green local `run-all.sh` does not cover it. |
 | Canonical suite on feature branches | Full `run-all.sh` runs on master/tag only | Medium | Run `bash tests/run-all.sh` + `site` build locally before merge. |
-| Coverage measurement | No line-coverage or `%` gate anywhere | Low | Acceptable for this artifact class; document the deliberate choice. |
+| Test-suite effectiveness | No line-coverage (deliberate, D26) AND no effectiveness measure for the deterministic machinery | **High** | Tracked as **tech-debt L4** (P1, next release): mutation testing + invariant-anchoring + behavioral-surface + escaped-defect ledger (dogfooding already covers the prompt layer). |
 | Prompt-driven skills | State machines not machine-tested | Accepted (by design) | Covered by dogfooding + AI/human review; not automatable here. |
 | Web-output review | Source inspection is not a valid review of rendered pages | High (process) | Any review touching `kb.html` / site MUST visually validate via Playwright (the `visual-fidelity` gate + reviewer rule). |
 

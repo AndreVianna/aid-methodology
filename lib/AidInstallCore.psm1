@@ -179,11 +179,11 @@ function Detect-Tool {
     if ($found.Count -eq 1) {
         return $found[0]
     } elseif ($found.Count -eq 0) {
-        [Console]::Error.WriteLine("ERROR: cannot auto-detect host tool; pass --tool <name>")
+        [Console]::Error.WriteLine("ERROR: cannot auto-detect host tool; specify the tool explicitly (e.g. 'aid add <name>')")
         return $null
     } else {
         $list = $found -join ', '
-        [Console]::Error.WriteLine("ERROR: ambiguous host tool (found: $list); pass --tool <name>")
+        [Console]::Error.WriteLine("ERROR: ambiguous host tool (found: $list); specify the tool explicitly (e.g. 'aid add <name>')")
         return $null
     }
 }

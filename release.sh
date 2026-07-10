@@ -306,8 +306,7 @@ echo "release.sh: building CLI bundle (aid-cli-v${VERSION}.tar.gz) ..."
 
 CLI_BUNDLE_STAGE="${STAGE_DIR}/.cli-bundle-tmp"
 mkdir -p "${CLI_BUNDLE_STAGE}/bin" "${CLI_BUNDLE_STAGE}/lib" \
-         "${CLI_BUNDLE_STAGE}/dashboard/reader" \
-         "${CLI_BUNDLE_STAGE}/dashboard/server"
+         "${CLI_BUNDLE_STAGE}/dashboard"
 
 cp "${REPO_ROOT}/bin/aid"              "${CLI_BUNDLE_STAGE}/bin/aid"
 cp "${REPO_ROOT}/bin/aid.ps1"          "${CLI_BUNDLE_STAGE}/bin/aid.ps1"
@@ -316,23 +315,26 @@ cp "${REPO_ROOT}/lib/aid-install-core.sh" "${CLI_BUNDLE_STAGE}/lib/aid-install-c
 cp "${REPO_ROOT}/lib/AidInstallCore.psm1" "${CLI_BUNDLE_STAGE}/lib/AidInstallCore.psm1"
 printf '%s\n' "${VERSION}" > "${CLI_BUNDLE_STAGE}/VERSION"
 
-# Dashboard server+reader unit (12 files, curated -- excludes tests/ __pycache__ *.pyc README).
-# home.html is the migration/provisioning source ($AID_HOME/dashboard/home.html that
-# _aid_migrate_repo copies into non-compliant repos); it MUST ship in the bundle in
-# lockstep with install.sh, install.ps1, vendor.js and vendor.py (all of which include
-# it). Omitting it silently breaks home.html provisioning on the curl|bash + bundle path.
-cp "${REPO_ROOT}/dashboard/home.html"               "${CLI_BUNDLE_STAGE}/dashboard/home.html"
-cp "${REPO_ROOT}/dashboard/index.html"              "${CLI_BUNDLE_STAGE}/dashboard/index.html"
-cp "${REPO_ROOT}/dashboard/reader/__init__.py"      "${CLI_BUNDLE_STAGE}/dashboard/reader/__init__.py"
-cp "${REPO_ROOT}/dashboard/reader/reader.py"        "${CLI_BUNDLE_STAGE}/dashboard/reader/reader.py"
-cp "${REPO_ROOT}/dashboard/reader/models.py"        "${CLI_BUNDLE_STAGE}/dashboard/reader/models.py"
-cp "${REPO_ROOT}/dashboard/reader/parsers.py"       "${CLI_BUNDLE_STAGE}/dashboard/reader/parsers.py"
-cp "${REPO_ROOT}/dashboard/reader/derivation.py"    "${CLI_BUNDLE_STAGE}/dashboard/reader/derivation.py"
-cp "${REPO_ROOT}/dashboard/reader/locator.py"       "${CLI_BUNDLE_STAGE}/dashboard/reader/locator.py"
-cp "${REPO_ROOT}/dashboard/server/server.py"        "${CLI_BUNDLE_STAGE}/dashboard/server/server.py"
-cp "${REPO_ROOT}/dashboard/server/server.mjs"       "${CLI_BUNDLE_STAGE}/dashboard/server/server.mjs"
-cp "${REPO_ROOT}/dashboard/server/reader.mjs"       "${CLI_BUNDLE_STAGE}/dashboard/server/reader.mjs"
-cp "${REPO_ROOT}/dashboard/server/__init__.py"      "${CLI_BUNDLE_STAGE}/dashboard/server/__init__.py"
+# Dashboard server+reader unit -- derived from the single-source manifest
+# dashboard/MANIFEST (shared with install.sh, install.ps1, vendor.js and vendor.py;
+# guarded by tests/canonical/test-dashboard-manifest.sh). MANIFEST is itself bundled so
+# the piped-bootstrap installer reads its file set from the fetched, checksum-verified
+# tarball. Deriving from the one manifest keeps every channel in lockstep, so no source
+# file (e.g. home.html, io_bounds.py) is ever silently dropped from one channel -- the
+# historical H1 failure mode.
+_DASH_MANIFEST="${REPO_ROOT}/dashboard/MANIFEST"
+_DASH_FILES=()
+while IFS= read -r _mline || [[ -n "$_mline" ]]; do
+    _mline="${_mline%%#*}"
+    _mline="${_mline#"${_mline%%[![:space:]]*}"}"
+    _mline="${_mline%"${_mline##*[![:space:]]}"}"
+    [[ -n "$_mline" ]] && _DASH_FILES+=("$_mline")
+done < "$_DASH_MANIFEST"
+cp "${_DASH_MANIFEST}" "${CLI_BUNDLE_STAGE}/dashboard/MANIFEST"
+for _df in "${_DASH_FILES[@]}"; do
+    mkdir -p "$(dirname "${CLI_BUNDLE_STAGE}/dashboard/${_df}")"
+    cp "${REPO_ROOT}/dashboard/${_df}" "${CLI_BUNDLE_STAGE}/dashboard/${_df}"
+done
 
 CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
 
@@ -340,25 +342,19 @@ CLI_BUNDLE="${REPO_ROOT}/${STAGE_DIR}/aid-cli-v${VERSION}.tar.gz"
 (
     cd "${CLI_BUNDLE_STAGE}"
     _cli_fl=$(mktemp)
-    printf '%s\n' \
-        "./bin/aid" \
-        "./bin/aid.ps1" \
-        "./bin/aid.cmd" \
-        "./lib/aid-install-core.sh" \
-        "./lib/AidInstallCore.psm1" \
-        "./VERSION" \
-        "./dashboard/home.html" \
-        "./dashboard/index.html" \
-        "./dashboard/reader/__init__.py" \
-        "./dashboard/reader/reader.py" \
-        "./dashboard/reader/models.py" \
-        "./dashboard/reader/parsers.py" \
-        "./dashboard/reader/derivation.py" \
-        "./dashboard/reader/locator.py" \
-        "./dashboard/server/server.py" \
-        "./dashboard/server/server.mjs" \
-        "./dashboard/server/reader.mjs" \
-        "./dashboard/server/__init__.py" > "$_cli_fl"
+    {
+        printf '%s\n' \
+            "./bin/aid" \
+            "./bin/aid.ps1" \
+            "./bin/aid.cmd" \
+            "./lib/aid-install-core.sh" \
+            "./lib/AidInstallCore.psm1" \
+            "./VERSION" \
+            "./dashboard/MANIFEST"
+        for _df in "${_DASH_FILES[@]}"; do
+            printf './dashboard/%s\n' "$_df"
+        done
+    } > "$_cli_fl"
     tar -czf "${CLI_BUNDLE}" --no-recursion -T "$_cli_fl"
     rm -f "$_cli_fl"
 )

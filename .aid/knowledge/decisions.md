@@ -96,6 +96,7 @@ changelog:
 | D23 | Delivery/task rename (BLUEPRINT.md / DETAIL.md) + nested `deliveries/` | Accepted (supersedes delivery/task SPEC.md) | feature-001; feature-015 |
 | D24 | `/aid-describe` reduced to full-path-only | Accepted | `canonical/skills/aid-describe/SKILL.md`; feature-013 |
 | D25 | `/aid-monitor` re-point (BUG -> `/aid-fix`, CR -> `/aid-triage`) | Accepted | `canonical/skills/aid-monitor/SKILL.md`; feature-012 |
+| D26 | No line-coverage metric; effectiveness measured via a dedicated program (tech-debt L4) | Accepted (line-coverage); L4 program open | `test-landscape.md` §Coverage Assessment; `tech-debt.md` L4 |
 
 ---
 
@@ -485,6 +486,38 @@ changelog:
   `.aid/work-001-lite-aid-skills/features/feature-012-deploy-and-monitor-repurpose/SPEC.md`;
   `canonical/skills/aid-monitor/SKILL.md` ("BUG -> /aid-fix", "Change Request -> /aid-triage");
   matches `pipeline-contracts.md` L9/L10.
+
+---
+
+## D26 — No line-coverage metric (suite-presence coverage for a shell/markdown toolkit)
+
+- **What:** AID deliberately does **not** measure or enforce line coverage. No coverage tool
+  (`nyc`, `c8`, `coverage.py`, `--cov`, `pytest-cov`) runs in any workflow and there is no `%`
+  threshold gate. Coverage is assessed by **suite-presence per subsystem** — every shippable
+  subsystem has a gating suite in `tests/run-all.sh` / the CI lanes — as documented in
+  `test-landscape.md` §"Coverage Assessment".
+- **Why:** the shippable product is overwhelmingly **not line-instrumentable** — ~1800
+  Markdown/prompt files plus ~327 shell/PowerShell installer files and a byte-identical
+  multi-profile render, versus a small minority of instrumentable code (the `dashboard/reader`
+  Python, `dashboard/server/reader.mjs`, and the `site/` TypeScript). A line-coverage `%` would
+  instrument only that minority and report a misleadingly precise number that says nothing about
+  the bulk of the product (prompts, installers, the render). The meaningful signal — "does each
+  subsystem have a gating suite?" — is what the CI lanes already enforce; a percentage would add
+  maintenance and flake cost for no real assurance.
+- **Rejected:** adding `pytest --cov` + `vitest --coverage` with a `%` threshold — rejected: it
+  instruments a small fraction of the product by file count, so a green "X% coverage" badge would
+  imply an assurance the shell/markdown/prompt bulk does not have. Revisit only if the
+  instrumentable code (`dashboard/`, `site/`) grows into a substantial standalone service.
+- **Follow-on (2026-07-10):** rejecting line-coverage is *not* the same as declining to measure
+  effectiveness, and "suite-presence per subsystem" alone proved insufficient — the `io_bounds.py`
+  incident showed suites can pass without biting. Effectiveness for the deterministic machinery
+  will be measured by a dedicated program — **mutation testing, invariant-anchoring,
+  behavioral-surface coverage, escaped-defect tracking** (plus dogfooding for the prompt layer) —
+  tracked as **tech-debt L4 (High, next release)**. This ADR still governs the "no line-coverage
+  `%`" decision; L4 owns the positive effectiveness program.
+- **Status:** Accepted (no line-coverage `%`). CONFIRMED no coverage tooling in
+  `.github/workflows/*`. The effectiveness-measurement program is an OPEN High-priority item —
+  see `tech-debt.md` L4.
 
 ---
 

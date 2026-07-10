@@ -1,17 +1,24 @@
 #!/usr/bin/env bash
 # test-release-install-e2e.sh — delivery-001 end-to-end validation.
 #
-# Full loop: release.sh --dry-run → tarballs + SHA256SUMS → install.sh
-# (and install.ps1 when pwsh is available) → update → uninstall, all driven
-# against the staged artifacts (NO pre-built fixtures, no network).
+# Full loop: release.sh --dry-run → tarballs + SHA256SUMS → install.sh add <tool>
+# (CONVENIENCE mode; and install.ps1 when pwsh is available) → update → uninstall,
+# all driven against the staged artifacts (NO pre-built fixtures, no network).
+#
+# NOTE (legacy excision, tech-debt L3): E2E03-E2E06/E2E08 used to drive
+# install.sh/install.ps1 through the flag-style --tool/--target (-Tool/
+# -TargetDirectory) direct project-install path.  That path has been removed;
+# these cases now bootstrap the persistent CLI into a throwaway AID_HOME (via
+# --no-path/-NoPath) and drive the same install/update/uninstall flow through
+# 'install.sh add/update/remove <tool> ...' (CONVENIENCE mode).
 #
 # Cases:
 #   E2E01 — release.sh --dry-run produces 5 tarballs + SHA256SUMS.
 #   E2E02 — Independent sha256sum -c passes against the staged SHA256SUMS.
-#   E2E03 — install.sh --from-bundle <staged-tarball> (claude-code):
+#   E2E03 — install.sh add <tool> --from-bundle <staged-tarball> (claude-code):
 #            byte-fidelity + manifest + .aid-version.
 #   E2E04 — Checksum tamper → install.sh exits 4.
-#   E2E05 — Idempotent re-run (--update) → exit 0, "Up to date:".
+#   E2E05 — Idempotent re-run (update) → exit 0, "Up to date:".
 #   E2E06 — Uninstall → exit 0, dirs removed.
 #   E2E07 — Online-shape verify (no network): assert the URL strings that
 #            aid-install-core.sh constructs for the GitHub Release asset and
@@ -160,15 +167,22 @@ PRIMARY_TOOL="claude-code"
 PRIMARY_TARBALL="${STAGE_DIR}/aid-${PRIMARY_TOOL}-v${STAGE_VERSION}.tar.gz"
 PRIMARY_TARGET=$(mktemp -d "${TMP}/target.XXXXXX")
 
+# CONVENIENCE mode (tech-debt L3: install.sh's legacy --tool/--target flags were
+# retired; bootstrap the persistent CLI into a throwaway AID_HOME and drive the
+# install through 'install.sh add <tool> ...', which is 'install.sh' bootstrapping
+# then exec'ing 'aid add <tool> ...'.  --no-path keeps PATH untouched.
+E2E_AID_HOME="${TMP}/e2e-aid-home"
+
 # Run install — the staged SHA256SUMS is a sibling of the tarball, so
 # verify_bundle_checksum will pick it up automatically.
-INST_OUT=$(bash "${INSTALL_SH}" \
+INST_OUT=$(AID_HOME="${E2E_AID_HOME}" bash "${INSTALL_SH}" \
+    add "${PRIMARY_TOOL}" \
     --verbose \
-    --tool "${PRIMARY_TOOL}" \
     --from-bundle "${PRIMARY_TARBALL}" \
-    --target "${PRIMARY_TARGET}" 2>&1); INST_RC=$?
+    --target "${PRIMARY_TARGET}" \
+    --no-path 2>&1); INST_RC=$?
 
-assert_exit_zero "$INST_RC" "E2E03 install.sh --from-bundle staged tarball exits 0"
+assert_exit_zero "$INST_RC" "E2E03 install.sh add <tool> (CONVENIENCE) staged tarball exits 0"
 assert_output_contains "$INST_OUT" "Copied:"   "E2E03b install --verbose reports Copied:"
 assert_output_contains "$INST_OUT" "Done."     "E2E03c install reports Done."
 
@@ -216,45 +230,48 @@ cp "${SUMS_FILE}" "${TAMPER_DIR}/SHA256SUMS"
 # Corrupt the tarball by appending junk bytes — this changes its sha256.
 printf 'TAMPER_DATA' >> "${TAMPER_TARBALL}"
 
-TAMPER_OUT=$(bash "${INSTALL_SH}" \
-    --tool "${PRIMARY_TOOL}" \
+TAMPER_OUT=$(AID_HOME="${E2E_AID_HOME}" bash "${INSTALL_SH}" \
+    add "${PRIMARY_TOOL}" \
     --from-bundle "${TAMPER_TARBALL}" \
-    --target "${TAMPER_TARGET}" 2>&1); TAMPER_RC=$?
+    --target "${TAMPER_TARGET}" \
+    --no-path 2>&1); TAMPER_RC=$?
 
 assert_exit_eq "$TAMPER_RC" 4 "E2E04 tampered tarball → exit 4"
 assert_output_contains "$TAMPER_OUT" "checksum" "E2E04b error message mentions checksum"
 
 # ---------------------------------------------------------------------------
-# E2E05 — Idempotent re-run (--update) → exit 0, "Up to date:".
+# E2E05 — Idempotent re-run ('update') → exit 0, "Up to date:".
+# FR10: 'aid update' no longer accepts a per-tool positional (see CLI027-J);
+# it updates all manifested tools at --target, which here is just claude-code.
 # ---------------------------------------------------------------------------
-echo "--- E2E05: --update idempotent re-run ---"
+echo "--- E2E05: update idempotent re-run ---"
 
-UPDATE_OUT=$(bash "${INSTALL_SH}" \
+UPDATE_OUT=$(AID_HOME="${E2E_AID_HOME}" bash "${INSTALL_SH}" \
+    update \
     --verbose \
-    --update \
-    --tool "${PRIMARY_TOOL}" \
     --from-bundle "${PRIMARY_TARBALL}" \
-    --target "${PRIMARY_TARGET}" 2>&1); UPDATE_RC=$?
+    --target "${PRIMARY_TARGET}" \
+    --no-path 2>&1); UPDATE_RC=$?
 
-assert_exit_zero "$UPDATE_RC" "E2E05 --update re-run exits 0"
-assert_output_contains "$UPDATE_OUT" "Up to date:" "E2E05b --verbose --update same version reports 'Up to date:'"
-assert_output_not_contains "$UPDATE_OUT" "Copied:" "E2E05c --verbose --update does not re-copy identical files"
+assert_exit_zero "$UPDATE_RC" "E2E05 update re-run exits 0"
+assert_output_contains "$UPDATE_OUT" "Up to date:" "E2E05b --verbose update same version reports 'Up to date:'"
+assert_output_not_contains "$UPDATE_OUT" "Copied:" "E2E05c --verbose update does not re-copy identical files"
 
-# Verify the installed state is unchanged after --update.
+# Verify the installed state is unchanged after update.
 CMP_AFTER=$(cmp -s "${PRIMARY_TARGET}/CLAUDE.md" "${CLONE}/profiles/claude-code/CLAUDE.md" \
             && echo same || echo diff)
-assert_eq "${CMP_AFTER}" "same" "E2E05d CLAUDE.md unchanged after --update"
+assert_eq "${CMP_AFTER}" "same" "E2E05d CLAUDE.md unchanged after update"
 
 # ---------------------------------------------------------------------------
 # E2E06 — Uninstall → exit 0, dirs removed.
 # ---------------------------------------------------------------------------
 echo "--- E2E06: uninstall ---"
 
-UNINST_OUT=$(bash "${INSTALL_SH}" \
+UNINST_OUT=$(AID_HOME="${E2E_AID_HOME}" bash "${INSTALL_SH}" \
+    remove "${PRIMARY_TOOL}" \
     --verbose \
-    --uninstall \
-    --tool "${PRIMARY_TOOL}" \
-    --target "${PRIMARY_TARGET}" 2>&1); UNINST_RC=$?
+    --target "${PRIMARY_TARGET}" \
+    --no-path 2>&1); UNINST_RC=$?
 
 assert_exit_zero "$UNINST_RC" "E2E06 uninstall exits 0"
 assert_output_contains "$UNINST_OUT" "Removed:"          "E2E06b --verbose uninstall reports Removed:"
@@ -269,10 +286,10 @@ assert_eq "$([[ -d "${PRIMARY_TARGET}/.aid" ]]     && echo exists || echo gone)"
     "E2E06f .aid/ dir removed after full uninstall"
 
 # Second uninstall → exit 6 (no manifest).
-UNINST2_OUT=$(bash "${INSTALL_SH}" \
-    --uninstall \
-    --tool "${PRIMARY_TOOL}" \
-    --target "${PRIMARY_TARGET}" 2>&1); UNINST2_RC=$?
+UNINST2_OUT=$(AID_HOME="${E2E_AID_HOME}" bash "${INSTALL_SH}" \
+    remove "${PRIMARY_TOOL}" \
+    --target "${PRIMARY_TARGET}" \
+    --no-path 2>&1); UNINST2_RC=$?
 assert_exit_eq "$UNINST2_RC" 6 "E2E06g second uninstall with no manifest → exit 6"
 
 # ---------------------------------------------------------------------------
@@ -397,6 +414,12 @@ else
 
     PS1_TARGET=$(mktemp -d "${TMP}/target-ps1.XXXXXX")
 
+    # CONVENIENCE mode (tech-debt L3: install.ps1's legacy -Tool/-TargetDirectory
+    # params were retired; bootstrap the persistent CLI into a throwaway AID_HOME
+    # and drive the install through 'install.ps1 add <tool> ...'.  -NoPath keeps
+    # PATH untouched.
+    E2E08_AID_HOME="${TMP}/e2e08-aid-home"
+
     # Helper: run install.ps1, capture output, preserve pwsh exit code.
     # Command substitution loses PIPESTATUS, so we write the exit code to a
     # temp file from within the pipe and read it back after the subshell.
@@ -406,7 +429,8 @@ else
     run_ps1() {
         PS1_OUT=$(
             {
-                env -u AID_LIB_PATH "$PWSH" -NoProfile -File "${INSTALL_PS1}" "$@" 2>&1
+                env -u AID_LIB_PATH AID_HOME="${E2E08_AID_HOME}" \
+                    "$PWSH" -NoProfile -File "${INSTALL_PS1}" "$@" 2>&1
                 printf '%s' "$?" > "${_PS1_RC_FILE}"
             } | sed 's/\x1b\[[0-9;]*m//g'
         )
@@ -414,12 +438,13 @@ else
     }
 
     # E2E08a — Fresh install via install.ps1 (verbose for per-file assertions).
-    run_ps1 -Verbose -Tool "${PRIMARY_TOOL}" \
+    run_ps1 add "${PRIMARY_TOOL}" -Verbose \
         -FromBundle "${PRIMARY_TARBALL}" \
-        -TargetDirectory "${PS1_TARGET}"
+        -Target "${PS1_TARGET}" \
+        -NoPath
     PS1_INST_OUT="$PS1_OUT"; PS1_INST_RC="$PS1_RC"
 
-    assert_exit_zero "$PS1_INST_RC" "E2E08a install.ps1 --from-bundle staged tarball exits 0"
+    assert_exit_zero "$PS1_INST_RC" "E2E08a install.ps1 add <tool> (CONVENIENCE) staged tarball exits 0"
     assert_output_contains "$PS1_INST_OUT" "Copied:" "E2E08b install.ps1 -Verbose reports Copied:"
     assert_output_contains "$PS1_INST_OUT" "Done."   "E2E08c install.ps1 reports Done."
 
@@ -438,24 +463,26 @@ else
     assert_eq "$(cat "${PS1_TARGET}/.aid/.aid-version")" "${STAGE_VERSION}" \
         "E2E08i ps1 .aid-version contains correct version"
 
-    # E2E08b — Idempotent -Update (verbose for per-file assertion).
-    run_ps1 -Verbose -Update \
-        -Tool "${PRIMARY_TOOL}" \
+    # E2E08b — Idempotent update (verbose for per-file assertion).
+    # FR10: 'aid update' no longer accepts a per-tool positional; it updates
+    # all manifested tools at -Target, which here is just claude-code.
+    run_ps1 update -Verbose \
         -FromBundle "${PRIMARY_TARBALL}" \
-        -TargetDirectory "${PS1_TARGET}"
+        -Target "${PS1_TARGET}" \
+        -NoPath
     PS1_UPD_OUT="$PS1_OUT"; PS1_UPD_RC="$PS1_RC"
 
-    assert_exit_zero "$PS1_UPD_RC" "E2E08j install.ps1 -Update exits 0"
-    assert_output_contains "$PS1_UPD_OUT" "Up to date:" "E2E08k install.ps1 -Verbose -Update identical files → Up to date"
-    assert_output_not_contains "$PS1_UPD_OUT" "Copied:" "E2E08l install.ps1 -Verbose -Update does not re-copy"
+    assert_exit_zero "$PS1_UPD_RC" "E2E08j install.ps1 update exits 0"
+    assert_output_contains "$PS1_UPD_OUT" "Up to date:" "E2E08k install.ps1 -Verbose update identical files → Up to date"
+    assert_output_not_contains "$PS1_UPD_OUT" "Copied:" "E2E08l install.ps1 -Verbose update does not re-copy"
 
     # E2E08c — Uninstall (verbose for per-file assertion).
-    run_ps1 -Verbose -Uninstall \
-        -Tool "${PRIMARY_TOOL}" \
-        -TargetDirectory "${PS1_TARGET}"
+    run_ps1 remove "${PRIMARY_TOOL}" -Verbose \
+        -Target "${PS1_TARGET}" \
+        -NoPath
     PS1_UNI_OUT="$PS1_OUT"; PS1_UNI_RC="$PS1_RC"
 
-    assert_exit_zero "$PS1_UNI_RC" "E2E08m install.ps1 -Uninstall exits 0"
+    assert_exit_zero "$PS1_UNI_RC" "E2E08m install.ps1 remove exits 0"
     assert_output_contains "$PS1_UNI_OUT" "Removed:" \
         "E2E08n install.ps1 -Verbose uninstall reports Removed:"
     assert_output_contains "$PS1_UNI_OUT" "Uninstall complete." \
@@ -469,9 +496,9 @@ else
         "E2E08r ps1 .aid/ removed after full uninstall"
 
     # Second uninstall → exit 6 (no manifest).
-    run_ps1 -Uninstall \
-        -Tool "${PRIMARY_TOOL}" \
-        -TargetDirectory "${PS1_TARGET}"
+    run_ps1 remove "${PRIMARY_TOOL}" \
+        -Target "${PS1_TARGET}" \
+        -NoPath
     assert_exit_eq "$PS1_RC" 6 "E2E08s ps1 second uninstall → exit 6 (no manifest)"
 fi
 
@@ -552,6 +579,39 @@ assert_output_contains "${E2E09T_OUT}" "checksum mismatch" \
     "E2E09h tampered CLI bundle error mentions checksum mismatch"
 assert_eq "$([[ -f "${_E2E09_AID_HOME_TAMPER}/bin/aid" ]] && echo exists || echo gone)" "gone" \
     "E2E09i tampered bundle: aid NOT installed to AID_HOME"
+
+# E2E09b2 — tampered LIB (aid-install-core.sh) → exit 4, verified BEFORE sourcing.
+# Verify-before-source RCE guard: the lib is shell code that install.sh SOURCES, so a
+# tampered lib must be rejected on checksum mismatch BEFORE it is sourced, and its injected
+# code must never execute. Regression guard for the lib-fetch tamper / PWNED-prevention case
+# formerly in test-install.sh (IN31c-e); reached here via the bootstrap path now that the
+# legacy --tool/--target flags are removed. The CLI bundle is left intact so the ONLY failure
+# is the lib checksum mismatch.
+_E2E09_LIBTAMPER_DIR="${TMP}/e2e09-libtamper"
+mkdir -p "${_E2E09_LIBTAMPER_DIR}/lib"
+# Tampered lib carries an injected marker that would print to stdout if it were ever sourced.
+printf '#!/usr/bin/env bash\necho AID_PWNED_MARKER\n' > "${_E2E09_LIBTAMPER_DIR}/lib/aid-install-core.sh"
+# SHA256SUMS carries the REAL lib hash (from the staged release) -> mismatch vs the tampered file.
+cp "${SUMS_FILE}" "${_E2E09_LIBTAMPER_DIR}/SHA256SUMS"
+cp "${STAGE_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" "${_E2E09_LIBTAMPER_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz"
+
+_E2E09_AID_HOME_LIBTAMPER="${TMP}/e2e09-aid-home-libtamper"
+E2E09L_OUT=$(cd "${_E2E09_RUN_DIR}" && \
+    env -u AID_LIB_PATH \
+    AID_LIB_VERSION="${STAGE_VERSION}" \
+    AID_LIB_BASE="file://${_E2E09_LIBTAMPER_DIR}/lib" \
+    AID_SUMS_URL="file://${_E2E09_LIBTAMPER_DIR}/SHA256SUMS" \
+    AID_CLI_BUNDLE_URL="file://${_E2E09_LIBTAMPER_DIR}/aid-cli-v${STAGE_VERSION}.tar.gz" \
+    AID_HOME="${_E2E09_AID_HOME_LIBTAMPER}" \
+    AID_NO_PATH=1 \
+    bash -s -- < "${INSTALL_SH}" 2>&1); E2E09L_RC=$?
+assert_exit_eq "${E2E09L_RC}" 4 "E2E09k tampered lib (aid-install-core.sh) -> exit 4 (checksum mismatch)"
+assert_output_contains "${E2E09L_OUT}" "checksum mismatch" \
+    "E2E09l tampered lib error mentions checksum mismatch"
+assert_output_not_contains "${E2E09L_OUT}" "AID_PWNED_MARKER" \
+    "E2E09m PWNED-prevention: tampered lib verified BEFORE sourcing (injected code never runs)"
+assert_eq "$([[ -f "${_E2E09_AID_HOME_LIBTAMPER}/bin/aid" ]] && echo exists || echo gone)" "gone" \
+    "E2E09n tampered lib: aid NOT installed to AID_HOME"
 
 # E2E09c — missing SHA256SUMS → exit 3 (fail-closed), CLI NOT installed.
 _E2E09_NOSUMS_DIR="${TMP}/e2e09-nosums"

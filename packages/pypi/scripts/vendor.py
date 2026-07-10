@@ -19,19 +19,13 @@
 #   lib/AidInstallCore.psm1  -> aid_installer/_vendor/lib/AidInstallCore.psm1
 #   VERSION              -> aid_installer/_vendor/VERSION
 #
-# Dashboard server+reader unit (12 files, curated -- excludes tests/ __pycache__ *.pyc README):
-#   dashboard/home.html             -> aid_installer/_vendor/dashboard/home.html
-#   dashboard/index.html            -> aid_installer/_vendor/dashboard/index.html
-#   dashboard/reader/__init__.py    -> aid_installer/_vendor/dashboard/reader/__init__.py
-#   dashboard/reader/reader.py      -> aid_installer/_vendor/dashboard/reader/reader.py
-#   dashboard/reader/models.py      -> aid_installer/_vendor/dashboard/reader/models.py
-#   dashboard/reader/parsers.py     -> aid_installer/_vendor/dashboard/reader/parsers.py
-#   dashboard/reader/derivation.py  -> aid_installer/_vendor/dashboard/reader/derivation.py
-#   dashboard/reader/locator.py     -> aid_installer/_vendor/dashboard/reader/locator.py
-#   dashboard/server/server.py      -> aid_installer/_vendor/dashboard/server/server.py
-#   dashboard/server/server.mjs     -> aid_installer/_vendor/dashboard/server/server.mjs
-#   dashboard/server/reader.mjs     -> aid_installer/_vendor/dashboard/server/reader.mjs
-#   dashboard/server/__init__.py    -> aid_installer/_vendor/dashboard/server/__init__.py
+# Dashboard server+reader unit: the curated file set is NOT listed here -- it is read
+# from the single-source manifest dashboard/MANIFEST (shared with install.sh, install.ps1,
+# packages/npm/scripts/vendor.js and release.sh; guarded by
+# tests/canonical/test-dashboard-manifest.sh). MANIFEST is itself vendored, so the sdist
+# carries a self-describing payload the build-from-sdist completeness check re-reads.
+# This prevents a new dashboard source file from being silently omitted from the PyPI
+# channel (the H1 lockstep failure mode).
 
 from __future__ import annotations
 
@@ -47,27 +41,38 @@ _REPO_ROOT = _PKG_ROOT.parent.parent  # repo root
 
 _VENDOR_DIR = _PKG_ROOT / "aid_installer" / "_vendor"
 
-COPIES: list[tuple[str, str]] = [
+# The non-dashboard aid-cli files (static). The dashboard server+reader unit is derived
+# from the single-source manifest dashboard/MANIFEST -- see _dashboard_copies().
+_BASE_COPIES: list[tuple[str, str]] = [
     ("bin/aid",                          "bin/aid"),
     ("bin/aid.ps1",                      "bin/aid.ps1"),
     ("bin/aid.cmd",                      "bin/aid.cmd"),
     ("lib/aid-install-core.sh",          "lib/aid-install-core.sh"),
     ("lib/AidInstallCore.psm1",          "lib/AidInstallCore.psm1"),
     ("VERSION",                          "VERSION"),
-    # Dashboard server+reader unit (12 files, curated).
-    ("dashboard/home.html",              "dashboard/home.html"),
-    ("dashboard/index.html",             "dashboard/index.html"),
-    ("dashboard/reader/__init__.py",     "dashboard/reader/__init__.py"),
-    ("dashboard/reader/reader.py",       "dashboard/reader/reader.py"),
-    ("dashboard/reader/models.py",       "dashboard/reader/models.py"),
-    ("dashboard/reader/parsers.py",      "dashboard/reader/parsers.py"),
-    ("dashboard/reader/derivation.py",   "dashboard/reader/derivation.py"),
-    ("dashboard/reader/locator.py",      "dashboard/reader/locator.py"),
-    ("dashboard/server/server.py",       "dashboard/server/server.py"),
-    ("dashboard/server/server.mjs",      "dashboard/server/server.mjs"),
-    ("dashboard/server/reader.mjs",      "dashboard/server/reader.mjs"),
-    ("dashboard/server/__init__.py",     "dashboard/server/__init__.py"),
 ]
+
+_DASHBOARD_MANIFEST_REL = "dashboard/MANIFEST"
+
+
+def _read_dashboard_manifest(manifest_path: Path) -> list[str]:
+    """Parse dashboard/MANIFEST -> dashboard-relative paths (strip #-comments + blanks)."""
+    files: list[str] = []
+    for line in manifest_path.read_text(encoding="utf-8").splitlines():
+        line = line.split("#", 1)[0].strip()
+        if line:
+            files.append(line)
+    return files
+
+
+def _dashboard_copies(root: Path) -> list[tuple[str, str]]:
+    """Dashboard server+reader unit, derived from ``root``/dashboard/MANIFEST. MANIFEST
+    itself is included first so the vendored payload is self-describing (the build-from-
+    sdist completeness check re-reads it from the payload)."""
+    entries: list[tuple[str, str]] = [(_DASHBOARD_MANIFEST_REL, _DASHBOARD_MANIFEST_REL)]
+    for rel in _read_dashboard_manifest(root / "dashboard" / "MANIFEST"):
+        entries.append((f"dashboard/{rel}", f"dashboard/{rel}"))
+    return entries
 
 
 def vendor(repo_root: Path = _REPO_ROOT, vendor_dir: Path = _VENDOR_DIR) -> bool:
@@ -75,16 +80,14 @@ def vendor(repo_root: Path = _REPO_ROOT, vendor_dir: Path = _VENDOR_DIR) -> bool
     # Clean slate: remove any prior payload so stray runtime artifacts (e.g. the
     # CLI's .update-check cache, or files from an older version) never ship in the wheel.
     shutil.rmtree(str(vendor_dir), ignore_errors=True)
-    (vendor_dir / "bin").mkdir(parents=True, exist_ok=True)
-    (vendor_dir / "lib").mkdir(parents=True, exist_ok=True)
-    (vendor_dir / "dashboard" / "reader").mkdir(parents=True, exist_ok=True)
-    (vendor_dir / "dashboard" / "server").mkdir(parents=True, exist_ok=True)
 
+    copies = _BASE_COPIES + _dashboard_copies(repo_root)
     ok = True
-    for src_rel, dst_rel in COPIES:
+    for src_rel, dst_rel in copies:
         src = repo_root / src_rel
         dst = vendor_dir / dst_rel
         try:
+            dst.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(str(src), str(dst))
             print(f"vendor: copied {src_rel} -> aid_installer/_vendor/{dst_rel}")
         except OSError as exc:
@@ -92,7 +95,7 @@ def vendor(repo_root: Path = _REPO_ROOT, vendor_dir: Path = _VENDOR_DIR) -> bool
             ok = False
 
     if ok:
-        print("vendor: done. 18 files vendored into aid_installer/_vendor/.")
+        print(f"vendor: done. {len(copies)} files vendored into aid_installer/_vendor/.")
     return ok
 
 
@@ -103,7 +106,7 @@ try:
     from hatchling.builders.hooks.plugin.interface import BuildHookInterface  # type: ignore[import]
 
     class CustomBuildHook(BuildHookInterface):
-        """Hatchling hook: vendor the 6 aid-cli files before the wheel is built."""
+        """Hatchling hook: vendor the aid-cli files before the wheel is built."""
 
         def initialize(self, version: str, build_data: dict) -> None:  # type: ignore[override]
             """Called by hatchling before sdist/wheel assembly.
@@ -116,20 +119,28 @@ try:
             repo_root = hook_root.parent.parent
             vendor_dir = hook_root / "aid_installer" / "_vendor"
             # sources_present: check a representative subset (bin/aid + one dashboard file).
-            # If the repo root is available the full COPIES list will be vendored.
+            # If the repo root is available the full file set will be vendored.
             sources_present = (repo_root / "bin" / "aid").exists() and \
                               (repo_root / "dashboard" / "index.html").exists()
             if sources_present:
                 if not vendor(repo_root=repo_root, vendor_dir=vendor_dir):
                     raise RuntimeError("vendor.py: failed to vendor aid-cli files; aborting build.")
             else:
-                # Building from an sdist: the payload must already be bundled.
-                missing = [dst for _, dst in COPIES if not (vendor_dir / dst).exists()]
-                if missing:
+                # Building from an sdist: the payload must already be bundled. Re-derive the
+                # expected file set from the vendored MANIFEST (self-describing payload) so
+                # the completeness check stays in lockstep with the single source.
+                payload_manifest = vendor_dir / "dashboard" / "MANIFEST"
+                expected = [dst for _, dst in _BASE_COPIES]
+                expected.append(_DASHBOARD_MANIFEST_REL)
+                if payload_manifest.exists():
+                    for rel in _read_dashboard_manifest(payload_manifest):
+                        expected.append(f"dashboard/{rel}")
+                missing = [dst for dst in expected if not (vendor_dir / dst).exists()]
+                if missing or not payload_manifest.exists():
                     raise RuntimeError(
                         "vendor.py: aid-cli sources not found and the bundled _vendor payload is "
-                        "incomplete (missing: %s). The sdist must include aid_installer/_vendor/."
-                        % ", ".join(missing)
+                        "incomplete (missing: %s). The sdist must include aid_installer/_vendor/ "
+                        "with dashboard/MANIFEST." % ", ".join(missing or ["dashboard/MANIFEST"])
                     )
                 # Payload already present (came in via the sdist); nothing to do.
 

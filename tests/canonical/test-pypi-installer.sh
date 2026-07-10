@@ -206,29 +206,25 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-echo "=== PW05: _vendor/ byte-identical to the 17 repo-root sources (drift gate) ==="
+echo "=== PW05: _vendor/ byte-identical to the repo-root sources (drift gate) ==="
 # ---------------------------------------------------------------------------
-
-_6_PAIRS=(
+# Non-dashboard sources are static; the dashboard set is DERIVED from the single-source
+# manifest dashboard/MANIFEST (never re-listed here), so this drift gate fails loudly if a
+# manifested file — e.g. io_bounds.py — is missing from or differs in the vendored payload.
+_VENDOR_PAIRS=(
     "bin/aid:bin/aid"
     "bin/aid.ps1:bin/aid.ps1"
     "bin/aid.cmd:bin/aid.cmd"
     "lib/aid-install-core.sh:lib/aid-install-core.sh"
     "lib/AidInstallCore.psm1:lib/AidInstallCore.psm1"
     "VERSION:VERSION"
-    "dashboard/index.html:dashboard/index.html"
-    "dashboard/reader/__init__.py:dashboard/reader/__init__.py"
-    "dashboard/reader/reader.py:dashboard/reader/reader.py"
-    "dashboard/reader/models.py:dashboard/reader/models.py"
-    "dashboard/reader/parsers.py:dashboard/reader/parsers.py"
-    "dashboard/reader/derivation.py:dashboard/reader/derivation.py"
-    "dashboard/reader/locator.py:dashboard/reader/locator.py"
-    "dashboard/server/server.py:dashboard/server/server.py"
-    "dashboard/server/server.mjs:dashboard/server/server.mjs"
-    "dashboard/server/reader.mjs:dashboard/server/reader.mjs"
-    "dashboard/server/__init__.py:dashboard/server/__init__.py"
+    "dashboard/MANIFEST:dashboard/MANIFEST"
 )
-for _pair in "${_6_PAIRS[@]}"; do
+while IFS= read -r _mrel; do
+    _mrel="${_mrel%%#*}"; _mrel="$(printf '%s' "$_mrel" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    [[ -n "$_mrel" ]] && _VENDOR_PAIRS+=("dashboard/${_mrel}:dashboard/${_mrel}")
+done < "${REPO_ROOT}/dashboard/MANIFEST"
+for _pair in "${_VENDOR_PAIRS[@]}"; do
     _src_rel="${_pair%%:*}"
     _dst_rel="${_pair##*:}"
     _src="${REPO_ROOT}/${_src_rel}"

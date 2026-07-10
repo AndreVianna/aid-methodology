@@ -236,23 +236,22 @@ assert_output_not_contains "$NM07_OUT" "curl -fsSL" \
 # AID_HOME must not be mutated by a dry-run.
 assert_dir_exists "${NM07_HOME}" "NM07-04 AID_HOME not removed (dry-run mutates nothing)"
 
-echo "=== NM08: npm pack --dry-run lists the 17 vendored files + bin/aid.js ==="
+echo "=== NM08: npm pack --dry-run lists the non-dashboard files + the whole dashboard MANIFEST set ==="
 
 NM08_PACK_OUT=$(cd "${PKG_DIR}" && npm pack --dry-run 2>&1) || true
 
-for _expect in "bin/aid.js" "bin/aid" "bin/aid.ps1" "bin/aid.cmd" \
-               "lib/aid-install-core.sh" "lib/AidInstallCore.psm1" "VERSION" \
-               "dashboard/index.html" \
-               "dashboard/reader/__init__.py" \
-               "dashboard/reader/reader.py" \
-               "dashboard/reader/models.py" \
-               "dashboard/reader/parsers.py" \
-               "dashboard/reader/derivation.py" \
-               "dashboard/reader/locator.py" \
-               "dashboard/server/server.py" \
-               "dashboard/server/server.mjs" \
-               "dashboard/server/reader.mjs" \
-               "dashboard/server/__init__.py"; do
+# Dashboard expectations are DERIVED from the single-source manifest dashboard/MANIFEST
+# (never re-listed here), so this suite fails loudly if a manifested file — e.g.
+# io_bounds.py — is not actually packed into the npm payload (H1 guard).
+_nm08_expect=("bin/aid.js" "bin/aid" "bin/aid.ps1" "bin/aid.cmd" \
+              "lib/aid-install-core.sh" "lib/AidInstallCore.psm1" "VERSION" \
+              "dashboard/MANIFEST")
+while IFS= read -r _mrel; do
+    _mrel="${_mrel%%#*}"; _mrel="$(printf '%s' "$_mrel" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+    [[ -n "$_mrel" ]] && _nm08_expect+=("dashboard/${_mrel}")
+done < "${REPO_ROOT}/dashboard/MANIFEST"
+
+for _expect in "${_nm08_expect[@]}"; do
     if echo "$NM08_PACK_OUT" | grep -qF "$_expect"; then
         pass "NM08 pack --dry-run includes $_expect"
     else
