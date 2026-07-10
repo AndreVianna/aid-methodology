@@ -34,8 +34,11 @@ var pkgRoot  = path.join(__dirname, '..');
 // One path per line, relative to dashboard/; #-comments and blank lines ignored.
 function readDashboardManifest(root) {
     var text = fs.readFileSync(path.join(root, 'dashboard', 'MANIFEST'), 'utf8');
-    return text.split('\n')
-        .map(function (line) { return line.replace(/#.*$/, '').trim(); })
+    // Split on CRLF or LF (a Windows checkout may carry \r\n); strip #-comments and
+    // surrounding whitespace. Using /#.*/ (no $) + \r?\n split avoids the JS-regex gotcha
+    // where '.' and '$' do not span a trailing '\r', which would leak comment lines.
+    return text.split(/\r?\n/)
+        .map(function (line) { return line.replace(/#.*/, '').trim(); })
         .filter(function (line) { return line.length > 0; });
 }
 

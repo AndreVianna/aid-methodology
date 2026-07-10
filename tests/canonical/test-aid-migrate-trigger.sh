@@ -934,23 +934,27 @@ echo ""
 echo "=== Gate 3: vendor-refresh assertions ==="
 
 # ---------------------------------------------------------------------------
-# VND-A: dashboard/home.html present in npm vendor manifest (vendor.js copies list).
+# VND-A: dashboard/home.html shipped on the npm channel. Since H1 (single-source
+# dashboard/MANIFEST) the dashboard file set is no longer inlined in vendor.js -- it is
+# derived from dashboard/MANIFEST. Verify home.html is in the manifest AND vendor.js
+# derives from it (VND-E below is the functional proof the file actually lands).
 # ---------------------------------------------------------------------------
-_VND_A="$(grep -c "dashboard/home.html" "${VENDOR_JS}" 2>/dev/null || echo 0)"
-if [[ "${_VND_A}" -ge 1 ]]; then
-    pass "VND-A01 npm vendor.js: dashboard/home.html present in copies list"
+_MANIFEST_FILE="${REPO_ROOT}/dashboard/MANIFEST"
+if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "${_MANIFEST_FILE}" 2>/dev/null) \
+   && grep -qF "dashboard/MANIFEST" "${VENDOR_JS}"; then
+    pass "VND-A01 npm vendor.js: home.html shipped via dashboard/MANIFEST (single source)"
 else
-    fail "VND-A01 npm vendor.js: dashboard/home.html NOT found in copies list"
+    fail "VND-A01 npm vendor.js: home.html not guaranteed (absent from MANIFEST or vendor.js does not derive from it)"
 fi
 
 # ---------------------------------------------------------------------------
-# VND-B: dashboard/home.html present in pypi vendor manifest (vendor.py COPIES list).
+# VND-B: dashboard/home.html shipped on the pypi channel (vendor.py derives from MANIFEST).
 # ---------------------------------------------------------------------------
-_VND_B="$(grep -c "dashboard/home.html" "${VENDOR_PY}" 2>/dev/null || echo 0)"
-if [[ "${_VND_B}" -ge 1 ]]; then
-    pass "VND-B01 pypi vendor.py: dashboard/home.html present in COPIES list"
+if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "${_MANIFEST_FILE}" 2>/dev/null) \
+   && grep -qF "dashboard/MANIFEST" "${VENDOR_PY}"; then
+    pass "VND-B01 pypi vendor.py: home.html shipped via dashboard/MANIFEST (single source)"
 else
-    fail "VND-B01 pypi vendor.py: dashboard/home.html NOT found in COPIES list"
+    fail "VND-B01 pypi vendor.py: home.html not guaranteed (absent from MANIFEST or vendor.py does not derive from it)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -1024,19 +1028,19 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# VND-G: dashboard/home.html present in release.sh CLI bundle (aid-cli-v*.tar.gz).
-#   This is the GitHub-release bundle the curl|bash bootstrap and the bundle /
-#   `aid update self` curl path download + extract into $AID_HOME. It must ship
-#   home.html in lockstep with the four other manifests (vendor.js/VND-A,E;
-#   vendor.py/VND-B,F; install.sh+install.ps1/PAR13). In release.sh it appears
-#   TWICE -- the cp-into-stage line AND the tar -T file list -- so require >= 2
-#   occurrences, which also catches a half-applied edit (one but not both).
+# VND-G: dashboard/home.html shipped in the release.sh CLI bundle (aid-cli-v*.tar.gz) --
+#   the GitHub-release bundle the curl|bash bootstrap + `aid update self` curl path
+#   download and extract into $AID_HOME. Since H1, release.sh derives the bundle's
+#   dashboard set from dashboard/MANIFEST (and bundles MANIFEST itself) rather than listing
+#   files inline, so home.html ships in lockstep with the other channels via the one
+#   manifest. Verify home.html is in the manifest AND release.sh derives from it.
+#   (test-dashboard-manifest.sh independently guards MANIFEST vs the curated tree.)
 # ---------------------------------------------------------------------------
-_VND_G="$(grep -c "dashboard/home.html" "${RELEASE_SH}" 2>/dev/null || echo 0)"
-if [[ "${_VND_G}" -ge 2 ]]; then
-    pass "VND-G01 release.sh: dashboard/home.html in CLI bundle (cp + tar list)"
+if grep -qxF "home.html" <(sed -e 's/#.*$//' -e 's/[[:space:]]//g' "${_MANIFEST_FILE}" 2>/dev/null) \
+   && grep -qF "dashboard/MANIFEST" "${RELEASE_SH}"; then
+    pass "VND-G01 release.sh: home.html shipped in CLI bundle via dashboard/MANIFEST"
 else
-    fail "VND-G01 release.sh: dashboard/home.html missing from CLI bundle (found ${_VND_G}/2 -- cp line + tar -T list); migration source absent on curl|bash + bundle path"
+    fail "VND-G01 release.sh: home.html not guaranteed in CLI bundle (absent from MANIFEST or release.sh does not derive from it); migration source at risk on curl|bash + bundle path"
 fi
 
 # ===========================================================================
