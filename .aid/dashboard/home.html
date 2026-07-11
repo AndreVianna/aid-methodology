@@ -925,11 +925,12 @@ footer {
   // ---------------------------------------------------------------------------
   var EXPECTED_SCHEMA_VERSION = 3;
   var LS_KEY_POLL_MS = 'aid-dashboard-poll-ms';
-  // The faithful 6-phase full-path pipeline (work-003-state-schema task-010), in the
-  // literal form a work's own `phase:` field can hold. Discover is deliberately absent --
-  // aid-discover is KB-level (writes kb_status, never a work phase:); the full stepper
-  // renders it separately from KB state (see _discoverStageState/_makeDiscoverPill).
-  // Deploy is also absent -- it is an optional POST-Execute indicator, rendered as a
+  // The faithful full-path pipeline (work-003-state-schema task-010), in the literal
+  // form a work's own `phase:` field can hold. Discover is deliberately absent -- it is
+  // NOT a pipeline phase: aid-discover builds the KB BEFORE the pipeline (a prerequisite,
+  // like aid-config), so it is NOT shown in the stepper at all (KB state is surfaced via
+  // the KB card). The pipeline STARTS at Describe (full path) or a shortcut skill (Lite
+  // path). Deploy is also absent -- an optional POST-Execute indicator, rendered as a
   // distinct trailing pill, never a linear pre-Execute stepper slot (see renderStageRail).
   var PHASE_ORDER = ['Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute'];
 
@@ -1298,7 +1299,7 @@ footer {
   function renderWorkView(work, model) {
     renderWorkHeader(work);
     renderAttentionStrip(work);
-    renderStageRail(work, model);
+    renderStageRail(work);
     renderTasks(work);
 
     // Update freshness badge
@@ -2188,38 +2189,12 @@ footer {
   // Stage rail (UI-2)
   // ---------------------------------------------------------------------------
 
-  // Discover is KB-level (aid-discover writes the KB discovery-area STATE's
-  // kb_status, never a work `phase:`), so the full stepper surfaces it from the
-  // repo-wide KB state (the SAME kb_state.status _renderKbCard reads) instead of
-  // any per-work field (work-003-state-schema task-010).
-  // Returns 'done' | 'current' | 'upcoming' -- never throws, degrades to 'upcoming'.
-  function _discoverStageState(model) {
-    var kbState = model && model.repo && model.repo.kb_state;
-    var status = (kbState && kbState.status) || 'pending';
-    if (status === 'approved' || status === 'outdated') return 'done';
-    if (status === 'generating' || status === 'preparing') return 'current';
-    return 'upcoming'; // pending | unrecognized
-  }
-
-  function _makeDiscoverPill(model) {
-    var state = _discoverStageState(model);
-    var pill = document.createElement('span');
-    pill.setAttribute('role', 'listitem');
-    pill.setAttribute('aria-current', state === 'current' ? 'step' : 'false');
-    if (state === 'done') {
-      pill.className = 'badge badge-ok';
-      pill.textContent = '✓ Discover';
-    } else if (state === 'current') {
-      pill.className = 'badge badge-primary';
-      pill.textContent = '▸ Discover';
-    } else {
-      pill.className = 'badge badge-dim';
-      pill.textContent = '○ Discover';
-    }
-    return pill;
-  }
-
-  function renderStageRail(work, model) {
+  // Discover is NOT a pipeline phase: aid-discover builds the KB BEFORE the pipeline
+  // (a prerequisite, like aid-config), never a per-work phase. The pipeline starts at
+  // Describe (full path) or a shortcut skill (Lite path), so the stepper shows NO
+  // Discover pill; KB/Discovery state is surfaced via the KB card only
+  // (work-003-state-schema task-010).
+  function renderStageRail(work) {
     var rail = document.getElementById('stage-rail');
     if (!rail) return;
     rail.innerHTML = '';
@@ -2263,9 +2238,6 @@ footer {
       rail.appendChild(notYetPill2);
       return;
     }
-
-    // Discover — surfaced from KB state (repo-level), never a work phase; see above.
-    rail.appendChild(_makeDiscoverPill(model));
 
     for (var i = 0; i < PHASE_ORDER.length; i++) {
       var p = PHASE_ORDER[i];
