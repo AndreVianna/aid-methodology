@@ -1,8 +1,10 @@
 """
-test_index_html.py -- Structural and behavioral self-checks for .aid/dashboard/home.html
+test_index_html.py -- Structural and behavioral self-checks for dashboard/home.html
                       (feature-003/feature-006, task-019 / task-054).
 
-Renamed from dashboard/index.html → .aid/dashboard/home.html (task-054 R-1).
+History: dashboard/index.html → .aid/dashboard/home.html (task-054 R-1); the
+.aid/dashboard/ folder was then eliminated (467582fa) and home.html now lives at
+dashboard/home.html -- served from the CLI's own copy, no longer a per-repo file.
 The Level-0 CLI panel (LC-L0) was removed (task-054 R-2); its F6-L tests are
 accordingly marked as removed.  The poll URL changed from absolute '/api/model'
 to location-relative './api/model' (task-054 R-1 poll-URL edit); S3 is updated.
@@ -41,10 +43,11 @@ import urllib.request
 from pathlib import Path
 
 # Locate home.html and server module regardless of working directory.
-# task-054 R-1: dashboard/index.html renamed to .aid/dashboard/home.html.
+# home.html now lives at dashboard/home.html (the .aid/dashboard/ folder was
+# eliminated in 467582fa; the CLI serves this copy for every repo).
 _REPO_ROOT = Path(__file__).resolve().parents[3]   # AID/
 _DASHBOARD_DIR = Path(__file__).resolve().parents[2]  # AID/dashboard/
-_INDEX_HTML = _REPO_ROOT / ".aid" / "dashboard" / "home.html"
+_INDEX_HTML = _DASHBOARD_DIR / "home.html"
 
 sys.path.insert(0, str(_REPO_ROOT))
 from dashboard.server import server as _server_module
@@ -114,7 +117,7 @@ class _ServerThread:
 # ---------------------------------------------------------------------------
 
 class TestStructural(unittest.TestCase):
-    """Source-level structural checks on .aid/dashboard/home.html (task-054 rename)."""
+    """Source-level structural checks on dashboard/home.html (the CLI-served SPA)."""
 
     @classmethod
     def setUpClass(cls):

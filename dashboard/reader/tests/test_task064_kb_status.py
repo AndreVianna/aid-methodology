@@ -208,9 +208,9 @@ class TestDeriveKbStatus(unittest.TestCase):
         return kb
 
     def _make_kb_html(self) -> Path:
-        dashboard_dir = self.tmp / ".aid" / "dashboard"
-        dashboard_dir.mkdir(parents=True, exist_ok=True)
-        kb_html = dashboard_dir / "kb.html"
+        kb_dir = self.tmp / ".aid" / "knowledge"
+        kb_dir.mkdir(parents=True, exist_ok=True)
+        kb_html = kb_dir / "kb.html"
         kb_html.write_text("<html></html>", encoding="utf-8")
         return kb_html
 
@@ -421,9 +421,7 @@ class TestReadRepoKbStateExtended(unittest.TestCase):
             "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
             encoding="utf-8",
         )
-        dashboard = aid / "dashboard"
-        dashboard.mkdir()
-        (dashboard / "kb.html").write_text("<html></html>", encoding="utf-8")
+        (kb / "kb.html").write_text("<html></html>", encoding="utf-8")
         model = read_repo(self.root)
         self.assertIsNotNone(model.repo.kb_state)
         assert model.repo.kb_state is not None
@@ -472,7 +470,7 @@ class TestReadRepoKbStateExtended(unittest.TestCase):
     #
     # After the producer's FR31 migration runs, the on-disk state is:
     #   - STATE.md shows "User Approved: yes" (approved)
-    #   - .aid/dashboard/kb.html is present (migrated from old path)
+    #   - .aid/knowledge/kb.html is present (migrated from old path)
     #   - .aid/knowledge/knowledge-summary.html is ABSENT (moved away)
     #
     # The reader must derive 'approved' (or 'outdated') from this state,
@@ -497,9 +495,7 @@ class TestReadRepoKbStateExtended(unittest.TestCase):
         self.assertFalse(old_path.exists(), "pre-condition: old path must not exist")
 
         # NEW path IS present (migration result)
-        dashboard = aid / "dashboard"
-        dashboard.mkdir(parents=True, exist_ok=True)
-        (dashboard / "kb.html").write_text("<html>migrated summary</html>", encoding="utf-8")
+        (kb / "kb.html").write_text("<html>migrated summary</html>", encoding="utf-8")
 
         model = read_repo(self.root)
         self.assertIsNotNone(model.repo.kb_state)
@@ -536,9 +532,7 @@ class TestReadRepoKbStateExtended(unittest.TestCase):
         # OLD path present, NEW path present (both-present case: new is authoritative)
         old_path = kb / "knowledge-summary.html"
         old_path.write_text("<html>old</html>", encoding="utf-8")
-        dashboard = aid / "dashboard"
-        dashboard.mkdir(parents=True, exist_ok=True)
-        (dashboard / "kb.html").write_text("<html>new</html>", encoding="utf-8")
+        (kb / "kb.html").write_text("<html>new</html>", encoding="utf-8")
 
         model = read_repo(self.root)
         self.assertIsNotNone(model.repo.kb_state)

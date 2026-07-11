@@ -50,7 +50,7 @@ Steps:
 1. `npm ci` in `.cursor/aid/scripts/summarize/` — reproducible install from lock file.
 2. `npx playwright install chromium --with-deps` — downloads the pinned Chromium binary +
    its OS-level system dependencies (fonts, libs) required for headless rendering on Ubuntu.
-3. `node .cursor/aid/scripts/summarize/validate-visuals.mjs .aid/dashboard/kb.html` —
+3. `node .cursor/aid/scripts/summarize/validate-visuals.mjs .aid/knowledge/kb.html` —
    runs the visual-fidelity gate against the generated summary.
 
 **Headless, no display server:** Playwright runs Chromium in headless mode by default. No X

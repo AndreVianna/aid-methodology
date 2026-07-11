@@ -281,9 +281,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
                 "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
                 encoding="utf-8",
             )
-            dashboard = aid / "dashboard"
-            dashboard.mkdir()
-            (dashboard / "kb.html").write_text("<html></html>", encoding="utf-8")
+            (kb / "kb.html").write_text("<html></html>", encoding="utf-8")
 
             # No baseline -> freshness skip -> approved
             status = derive_kb_status(kb, True, True, None, root)
@@ -302,9 +300,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
                 "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
                 encoding="utf-8",
             )
-            dashboard = root / ".aid" / "dashboard"
-            dashboard.mkdir()
-            (dashboard / "kb.html").write_text("<html></html>", encoding="utf-8")
+            (kb / "kb.html").write_text("<html></html>", encoding="utf-8")
             # baseline present: old tip_date -> in a git repo this would be outdated
             baseline = KbBaseline(branch="main", tip_date="2000-01-01T00:00:00Z")
             # Non-git dir -> git_freshness_check skips -> approved (not outdated)
@@ -344,9 +340,7 @@ class TestDegradationCoverage(unittest.TestCase):
             "---\nsummary_approved: yes\nlast_summary: \"2026-06-01\"\n---\n",
             encoding="utf-8",
         )
-        dashboard = self.root / ".aid" / "dashboard"
-        dashboard.mkdir()
-        (dashboard / "kb.html").write_text("<html></html>", encoding="utf-8")
+        (kb / "kb.html").write_text("<html></html>", encoding="utf-8")
 
     def _make_approved_kb_tree_legacy_prose(self) -> None:
         """Legacy-prose variant of _make_approved_kb_tree (pre-task-002 form) --
@@ -357,9 +351,7 @@ class TestDegradationCoverage(unittest.TestCase):
             "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
             encoding="utf-8",
         )
-        dashboard = self.root / ".aid" / "dashboard"
-        dashboard.mkdir()
-        (dashboard / "kb.html").write_text("<html></html>", encoding="utf-8")
+        (kb / "kb.html").write_text("<html></html>", encoding="utf-8")
 
     def test_kb_baseline_absent_yields_approved(self):
         """kb_baseline absent -> skip freshness -> approved deterministically."""

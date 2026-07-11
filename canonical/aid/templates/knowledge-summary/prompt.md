@@ -29,7 +29,7 @@ preflight, etc.); this file describes the actual content generation work.
 
 ## Output
 
-`.aid/dashboard/kb.html` — single self-contained file. All CSS and JS inlined;
+`.aid/knowledge/kb.html` — single self-contained file. All CSS and JS inlined;
 no CDN, no split assets, no external framework fetch.
 
 ---
@@ -324,8 +324,8 @@ each section becomes `sections/NN-{slug}.html`; closing shell becomes
 ### Step 9 — Assemble via `assemble.sh`
 
 ```bash
-mkdir -p .aid/dashboard
-bash canonical/aid/scripts/summarize/assemble.sh --output .aid/dashboard/kb.html
+mkdir -p .aid/knowledge
+bash canonical/aid/scripts/summarize/assemble.sh --output .aid/knowledge/kb.html
 ```
 
 The assembled `kb.html` is the single self-contained deliverable (all CSS/JS inlined).

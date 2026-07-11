@@ -267,9 +267,9 @@ If either appears, S2 fails (CDN reference introduced by mistake -- remove it).
 ## How a grading run reports
 
 ```
-$ bash .codex/aid/scripts/summarize/grade-summary.sh .aid/dashboard/kb.html
+$ bash .codex/aid/scripts/summarize/grade-summary.sh .aid/knowledge/kb.html
 
-Validating .aid/dashboard/kb.html ...
+Validating .aid/knowledge/kb.html ...
 Resolved doc-set: 22 docs in discovery.doc_set, 22 present on disk.
 Coverage check: 22/22 resolved docs referenced in HTML (100%)
 

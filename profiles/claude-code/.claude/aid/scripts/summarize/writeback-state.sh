@@ -195,7 +195,7 @@ fi
 GRADE="$1"
 DOMAIN="${2:-?}"
 DOCSET="${3:-?}"
-OUTPUT="${4:-.aid/dashboard/kb.html}"
+OUTPUT="${4:-.aid/knowledge/kb.html}"
 SIZE="${5:-?}"
 NOTES="${6:-Initial generation}"
 

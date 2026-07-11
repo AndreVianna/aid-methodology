@@ -18,7 +18,7 @@ Print:
 
 [State: DONE]
 
-Open .aid/dashboard/kb.html in a browser to view the summary.
+Open .aid/knowledge/kb.html in a browser to view the summary.
 ```
 
 Exit with success.

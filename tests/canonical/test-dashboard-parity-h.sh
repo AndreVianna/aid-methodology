@@ -18,8 +18,8 @@
 #   6. SEC-4: no agent/LLM import in either server source.
 #
 # Registry fixture (checked-in under dashboard/server/tests/fixtures/):
-#   pt1h-repo-a/  -- .aid/ with home+kb, manifest with U+2028/U+2029, STATE.md with chars
-#   pt1h-repo-b/  -- .aid/ minimal (no dashboard/ subdir, no home/kb files)
+#   pt1h-repo-a/  -- .aid/ with .aid/knowledge/kb.html (format 2), manifest with U+2028/U+2029, STATE.md with chars
+#   pt1h-repo-b/  -- .aid/ minimal (no .aid/knowledge/kb.html file)
 #   [entry C]     -- nonexistent path (available=false, NFR10 degrade)
 #
 # The registry.yml is written into a temp dir at runtime with the actual absolute paths.
@@ -514,7 +514,8 @@ for r in d.get('repos', []):
 ")
     assert_eq "$repo_a_flags" "True True True" "[home] repo-a has_home=True has_kb=True available=True"
 
-    # repo-b has_home=false, has_kb=false, available=true
+    # repo-b has_home=true (format 2: has_home == .aid/ exists), has_kb=false, available=true.
+    # (home.html is CLI-served; the has_home signal is simply "repo is AID-initialized".)
     repo_b_flags=$(python3 -c "
 import json
 d = json.load(open('/tmp/pt1h_py_home.json'))
@@ -523,7 +524,7 @@ for r in d.get('repos', []):
         print(r['has_home'], r['has_kb'], r['available'])
         break
 ")
-    assert_eq "$repo_b_flags" "False False True" "[home] repo-b has_home=False has_kb=False available=True"
+    assert_eq "$repo_b_flags" "True False True" "[home] repo-b has_home=True has_kb=False available=True"
 
     # entry-c (nonexistent) is available=false
     repo_c_avail=$(python3 -c "
@@ -811,21 +812,22 @@ check_traversal_refusal "/r/DEADBEEF/api/model" "malformed id (uppercase hex: DE
 check_traversal_refusal "/r/xyz12345/api/model" "malformed id (non-hex chars: xyz12345)"
 
 # 8. Symlinked leaf -> outside (broken symlink: is_file() returns False -> 404)
-# Create a broken symlink at pt1h-repo-a/.aid/dashboard/broken.html -> nonexistent target.
-# Note: the route only accepts home.html/kb.html/api/model, so broken.html won't match anyway.
-# Instead test with a symlink replacing home.html itself in a temp repo.
+# kb.html is served from <repo>/.aid/knowledge/kb.html and is gated on the file
+# existing, so a broken symlink there still resolves is_file()==False -> 404.
+# (home.html is CLI-served and gated only on .aid/ existing in format 2, so a
+# broken symlink at a per-repo home.html would NOT 404 -- hence the kb.html leaf.)
 SYMLINK_SUPPORTED=0
 SYMLINK_REPO="${PT1H_TMP}/symlink-repo"
 
-mkdir -p "${SYMLINK_REPO}/.aid/dashboard"
+mkdir -p "${SYMLINK_REPO}/.aid/knowledge"
 cp "${FIXTURE_REPO_A}/.aid/.aid-manifest.json" "${SYMLINK_REPO}/.aid/"
 cp "${FIXTURE_REPO_A}/.aid/settings.yml" "${SYMLINK_REPO}/.aid/"
 
-# Attempt to create a broken symlink: home.html -> /nonexistent/outside/path
+# Attempt to create a broken symlink: kb.html -> /nonexistent/outside/path
 if ln -s "/nonexistent/outside/path/that/does/not/exist" \
-       "${SYMLINK_REPO}/.aid/dashboard/home.html" 2>/dev/null; then
+       "${SYMLINK_REPO}/.aid/knowledge/kb.html" 2>/dev/null; then
     SYMLINK_SUPPORTED=1
-    log "Symlink created at ${SYMLINK_REPO}/.aid/dashboard/home.html"
+    log "Symlink created at ${SYMLINK_REPO}/.aid/knowledge/kb.html"
 fi
 
 if [[ $SYMLINK_SUPPORTED -eq 1 ]]; then
@@ -896,10 +898,10 @@ sys.exit(1)
                 # The broken symlink should cause is_file() to return False -> 404
                 SYM_PY_STATUS="" SYM_NODE_STATUS=""
                 if [[ $HAS_PYTHON -eq 1 ]]; then
-                    SYM_PY_STATUS=$(fetch_status "$SPYPORT" "/r/${SYM_ID}/home.html")
+                    SYM_PY_STATUS=$(fetch_status "$SPYPORT" "/r/${SYM_ID}/kb.html")
                 fi
                 if [[ $HAS_NODE -eq 1 ]]; then
-                    SYM_NODE_STATUS=$(fetch_status "$SNODEPORT" "/r/${SYM_ID}/home.html")
+                    SYM_NODE_STATUS=$(fetch_status "$SNODEPORT" "/r/${SYM_ID}/kb.html")
                 fi
 
                 if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 ]]; then
@@ -1477,13 +1479,12 @@ else
 
     # Create .aid tree inside the frozen repo
     mkdir -p "${FROZEN_REPO}/.aid/knowledge"
-    mkdir -p "${FROZEN_REPO}/.aid/dashboard"
     cat > "${FROZEN_REPO}/.aid/knowledge/STATE.md" << 'SEOF'
 ## Knowledge Summary Status
 
 **User Approved:** yes (2026-06-01)
 SEOF
-    cat > "${FROZEN_REPO}/.aid/dashboard/kb.html" << 'HEOF'
+    cat > "${FROZEN_REPO}/.aid/knowledge/kb.html" << 'HEOF'
 <!DOCTYPE html>
 <html><head><title>Frozen KB</title></head>
 <body><h1>PT1H frozen-commit outdated fixture</h1></body>

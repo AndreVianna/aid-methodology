@@ -22,7 +22,7 @@
 #     VND-A  dashboard/home.html present in npm vendor manifest comment header.
 #     VND-B  dashboard/home.html present in pypi vendor manifest comment header.
 #     VND-C  bin/aid, bin/aid.ps1, dashboard/home.html ABSENT from EMISSION-MANIFEST.md (C8).
-#     VND-D  dashboard/home.html (repo source) byte-identical to .aid/dashboard/home.html (R20).
+#     (VND-D retired: format 2 eliminated the per-repo .aid/dashboard/home.html copy.)
 #     VND-E  node packages/npm/scripts/vendor.js runs to completion (exit 0) and lands
 #            packages/npm/dashboard/home.html.
 #     VND-F  python3 packages/pypi/scripts/vendor.py runs to completion (exit 0) and lands
@@ -72,7 +72,6 @@ VENDOR_JS="${REPO_ROOT}/packages/npm/scripts/vendor.js"
 VENDOR_PY="${REPO_ROOT}/packages/pypi/scripts/vendor.py"
 RELEASE_SH="${REPO_ROOT}/release.sh"
 HOME_HTML_SRC="${REPO_ROOT}/dashboard/home.html"
-HOME_HTML_AID="${REPO_ROOT}/.aid/dashboard/home.html"
 EMISSION_MANIFEST="${REPO_ROOT}/canonical/EMISSION-MANIFEST.md"
 NPM_PKG="${REPO_ROOT}/packages/npm"
 PYPI_PKG="${REPO_ROOT}/packages/pypi"
@@ -493,7 +492,7 @@ else
     fail "TRG-MO01 manifest-only: settings.yml NOT created (era-b manifest trigger missing)"
 fi
 _MO_FV="$(grep -m1 '^format_version:' "${_MO_REPO}/.aid/settings.yml" 2>/dev/null | tr -d ' ' | cut -d: -f2)"
-assert_eq "${_MO_FV}" "1" "TRG-MO02 manifest-only: format_version: 1 stamped"
+assert_eq "${_MO_FV}" "2" "TRG-MO02 manifest-only: format_version: 2 stamped"
 
 # Idempotent: 'aid status' must NOT warn now (stamp current) -- the recurrence is gone.
 _MO_OUT2="$(cd "${_MO_REPO}" && env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
@@ -549,7 +548,7 @@ fi
 # TRG-F  First-encounter bootstrap (AC9):
 #   A stamp-less repo (era-a settings.yml with no format_version) is visited
 #   via 'aid __migrate-repo'.  Asserts:
-#     (a) format_version: 1 written into .aid/settings.yml
+#     (a) format_version: 2 written into .aid/settings.yml
 #     (b) repo is registered in the (user-tier, collapsed) registry.yml
 #     (c) NO filesystem scan: a CANARY repo with .aid/ planted OUTSIDE the
 #         throwaway HOME is NOT touched / NOT registered (the real proof that
@@ -616,14 +615,14 @@ _F_MIGRATE_OUT="$(env \
     AID_NO_UPDATE_CHECK=1 \
     bash "${_F_CODE}/bin/aid" __migrate-repo "${_F_REPO}" 2>&1)" || true
 
-# (a) format_version: 1 must be written into the repo's settings.yml.
+# (a) format_version: 2 must be written into the repo's settings.yml.
 _F_FV="$(grep '^format_version:' "${_F_REPO}/.aid/settings.yml" 2>/dev/null | head -1 || true)"
 _F_FV_VAL="${_F_FV#format_version:}"
 _F_FV_VAL="${_F_FV_VAL# }"
-if [[ "${_F_FV_VAL}" == "1" ]]; then
-    pass "TRG-F01 AC9 first-encounter: (a) format_version: 1 written into settings.yml"
+if [[ "${_F_FV_VAL}" == "2" ]]; then
+    pass "TRG-F01 AC9 first-encounter: (a) format_version: 2 written into settings.yml"
 else
-    fail "TRG-F01 AC9 first-encounter: (a) format_version: 1 NOT found (got: '${_F_FV}'; out: ${_F_MIGRATE_OUT})"
+    fail "TRG-F01 AC9 first-encounter: (a) format_version: 2 NOT found (got: '${_F_FV}'; out: ${_F_MIGRATE_OUT})"
 fi
 
 # (b) Repo is registered in the (user-tier, collapsed) registry.yml.
@@ -675,9 +674,9 @@ fi
 
 # ---------------------------------------------------------------------------
 # TRG-J: Carry-forward -- second encounter of already-stamped repo
-# Reuse the same fixture repo from TRG-F (it is now stamped with format_version: 1).
+# Reuse the same fixture repo from TRG-F (it is now stamped with format_version: 2).
 # Carry-forward requirements:
-#   - format_version remains at 1 (stamp value preserved)
+#   - format_version remains at 2 (stamp value preserved)
 #   - No re-prompt / no "older format" / no "aid update" on stdout
 #
 # Note: _aid_migrate_repair_settings_era_a always performs a temp+mv write even
@@ -701,12 +700,12 @@ else
     fail "TRG-J01 carry-forward: format_version changed (before='${_J_FV_BEFORE}' after='${_J_FV_AFTER}')"
 fi
 
-# format_version must still be 1.
+# format_version must still be 2.
 _J_FV_VAL="${_J_FV_AFTER#format_version:}"; _J_FV_VAL="${_J_FV_VAL# }"
-if [[ "${_J_FV_VAL}" == "1" ]]; then
-    pass "TRG-J02 carry-forward: format_version: 1 still present after second encounter"
+if [[ "${_J_FV_VAL}" == "2" ]]; then
+    pass "TRG-J02 carry-forward: format_version: 2 still present after second encounter"
 else
-    fail "TRG-J02 carry-forward: format_version not 1 after second encounter (got: '${_J_FV_AFTER}')"
+    fail "TRG-J02 carry-forward: format_version not 2 after second encounter (got: '${_J_FV_AFTER}')"
 fi
 
 # No re-prompt: 'aid status' on the stamped repo must not emit WARN / offer.
@@ -975,19 +974,11 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# VND-D: dashboard/home.html source == .aid/dashboard/home.html byte-for-byte (R20).
+# (VND-D removed: format 2 eliminated the per-repo .aid/dashboard/home.html, so the
+#  old "source == per-repo copy byte-for-byte (R20)" equality no longer applies.
+#  home.html is now served from the CLI install tree; VND-A/B/E/F/G still cover
+#  that it is vendored to the CLI.)
 # ---------------------------------------------------------------------------
-if [[ ! -f "${HOME_HTML_SRC}" ]]; then
-    fail "VND-D01 R20 source/copy equality: dashboard/home.html not found at ${HOME_HTML_SRC}"
-elif [[ ! -f "${HOME_HTML_AID}" ]]; then
-    fail "VND-D01 R20 source/copy equality: .aid/dashboard/home.html not found at ${HOME_HTML_AID}"
-else
-    if diff -q "${HOME_HTML_SRC}" "${HOME_HTML_AID}" >/dev/null 2>&1; then
-        pass "VND-D01 R20 source/copy equality: dashboard/home.html == .aid/dashboard/home.html"
-    else
-        fail "VND-D01 R20 source/copy equality: dashboard/home.html and .aid/dashboard/home.html DIFFER"
-    fi
-fi
 
 # ---------------------------------------------------------------------------
 # VND-E: node packages/npm/scripts/vendor.js -> exits 0, lands dashboard/home.html.

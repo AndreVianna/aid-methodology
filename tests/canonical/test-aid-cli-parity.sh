@@ -1747,7 +1747,7 @@ assert_exit_eq "$_TC_RC" 0 "PAR077-C01 Bash __migrate-repo valid+commented fixtu
 
 _TC_SHA_AFTER=$(sha256sum "${_TC_REPO_SH}/.aid/settings.yml" | cut -d' ' -f1)
 # PAR077-C02 NOTE: byte-identical check removed -- the new bin/aid prepends
-# format_version: 1 to settings.yml on first migrate (feature-001/003 stamp write).
+# format_version: 2 to settings.yml on first migrate (feature-001/003 stamp write).
 # The idempotency contract (2nd run = byte-identical) is in Gate 6 of test-aid-migrate.sh.
 # OOS for task-008/009 (stamp assertion).
 pass "PAR077-C02 Bash: format_version stamp written (byte-identical check deferred to task-008/009)"
@@ -1804,7 +1804,7 @@ assert_eq "$_TC_BARE_NAME" "$_TC_BARE_EXPECTED_NAME" \
 
 # ---- PS1 half ----
 # PAR077-C08 NOTE: byte-identical check removed -- the new bin/aid.ps1 prepends
-# format_version: 1 to settings.yml on first migrate (feature-001/003 stamp write).
+# format_version: 2 to settings.yml on first migrate (feature-001/003 stamp write).
 # The idempotency contract (2nd run = byte-identical) is in Gate 6 of test-aid-migrate.sh.
 # OOS for task-008/009 (stamp assertion).
 pass "PAR077-C08 PS1: format_version stamp written (byte-identical check deferred to task-008/009)"
@@ -1945,8 +1945,8 @@ fi
 # a repo CWD:
 #   S01: stamp-less repo + AID_NO_MIGRATE=1 -> NO WARN in output (Bash).
 #   S02: stamp-less repo + AID_NO_MIGRATE=1 -> NO WARN in output (PS1).
-#   S03: format-current repo (format_version=1) -> no WARN (Bash).
-#   S04: format-current repo (format_version=1) -> no WARN (PS1).
+#   S03: format-current repo (format_version=2) -> no WARN (Bash).
+#   S04: format-current repo (format_version=2) -> no WARN (PS1).
 #   S05: stamp-less repo + no AID_NO_MIGRATE -> WARN printed (Bash).
 #   S06: stamp-less repo + no AID_NO_MIGRATE -> WARN printed (PS1).
 #   S07: stamp-less repo + AID_MIGRATE_YES=1 -> WARN printed (lazy); no scan
@@ -1963,7 +1963,7 @@ echo "=== PAR080-S: format-gate / lazy-stamp encounter parity ==="
 # CODE_HOME: a copy of bin/aid self-located for these tests.
 # STATE_HOME: throwaway AID_HOME (registry, no code).
 # S_REPO: a stamp-less repo (era-a settings.yml, no format_version line).
-# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 1).
+# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 2).
 # ---------------------------------------------------------------------------
 _S_CODE_HOME=$(newhome); setup_sh_home "${_S_CODE_HOME}"
 _S_STATE_HOME="$(mktemp -d "${TMP}/s080state.XXXXXX")"
@@ -1996,7 +1996,7 @@ printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code
 _S_REPO_STAMPED="$(mktemp -d "${TMP}/s080repo_stamped.XXXXXX")"
 mkdir -p "${_S_REPO_STAMPED}/.aid"
 cat > "${_S_REPO_STAMPED}/.aid/settings.yml" << 'S080STAMPEOF'
-format_version: 1
+format_version: 2
 project:
   name: stamped-test
   description: format-current repo with format_version stamp
@@ -2047,7 +2047,7 @@ _S03_OUT=$(cd "${_S_REPO_STAMPED}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
 if echo "${_S03_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
-    fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=1 == supported)"
+    fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=2 == supported)"
 else
     pass "PAR080-S03 Bash format-current repo: no WARN (steady-state, SEC-6 no-loop)"
 fi
@@ -2059,7 +2059,7 @@ if [[ -n "$PWSH" ]]; then
         "$PWSH" -NoLogo -NonInteractive -File "${_S_PS_CODE_HOME}/bin/aid.ps1" \
         status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' || true)
     if echo "${_S04_OUT}" | grep -qi "older format\|aid update"; then
-        fail "PAR080-S04 PS1 format-current repo: must NOT warn (format_version=1 == supported)"
+        fail "PAR080-S04 PS1 format-current repo: must NOT warn (format_version=2 == supported)"
     else
         pass "PAR080-S04 PS1 format-current repo: no WARN (steady-state)"
     fi
@@ -2140,11 +2140,11 @@ fi
 #
 # AC1: Constant-parity drift check.
 #   V01: AID_SUPPORTED_FORMAT integer in bin/aid EQUALS $AidSupportedFormat
-#        in bin/aid.ps1 (grep both; compare). Both must equal 1.
+#        in bin/aid.ps1 (grep both; compare). Both must equal 2.
 #        CI fails if either constant drifts.
 #
-# AC2: Refuse-on-newer (format_version: 2) + byte/mtime identity of settings.yml.
-#   V02: Bash 'aid status' in a format_version: 2 repo -> non-zero exit.
+# AC2: Refuse-on-newer (format_version: 3) + byte/mtime identity of settings.yml.
+#   V02: Bash 'aid status' in a format_version: 3 repo -> non-zero exit.
 #   V03: Bash refuse: settings.yml byte-identical after the call (no mutation).
 #   V04: Bash refuse: mtime of settings.yml unchanged after the call.
 #   V05: PS1 parity (skipped when pwsh absent): exit non-zero on newer-format repo.
@@ -2188,14 +2188,14 @@ if [[ -n "${_V01_BASH_CONST}" && -n "${_V01_PS1_CONST}" ]]; then
     assert_eq "${_V01_BASH_CONST}" "${_V01_PS1_CONST}" \
         "PAR009-V01 Bash<->PS1 format-constant parity: AID_SUPPORTED_FORMAT == AidSupportedFormat (both=${_V01_BASH_CONST})"
 fi
-# Both must equal 1 specifically (not just each other).
-assert_eq "${_V01_BASH_CONST}" "1" \
-    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 1 (expected supported format)"
-assert_eq "${_V01_PS1_CONST}" "1" \
-    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 1 (expected supported format)"
+# Both must equal 2 specifically (not just each other).
+assert_eq "${_V01_BASH_CONST}" "2" \
+    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 2 (expected supported format)"
+assert_eq "${_V01_PS1_CONST}" "2" \
+    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 2 (expected supported format)"
 
 # ---------------------------------------------------------------------------
-# V02-V04: Refuse-on-newer (format_version: 2) + byte/mtime identity (Bash).
+# V02-V04: Refuse-on-newer (format_version: 3) + byte/mtime identity (Bash).
 # ---------------------------------------------------------------------------
 _V_CODE_HOME=$(newhome); setup_sh_home "${_V_CODE_HOME}"
 _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
@@ -2203,7 +2203,7 @@ _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
 _V_REPO_NEWER="$(mktemp -d "${TMP}/v009newer.XXXXXX")"
 mkdir -p "${_V_REPO_NEWER}/.aid"
 cat > "${_V_REPO_NEWER}/.aid/settings.yml" << 'V009NEWEREOF'
-format_version: 2
+format_version: 3
 project:
   name: newer-format-test
   description: repo with format newer than CLI supports
@@ -2235,7 +2235,7 @@ rm -f "${_V02_TMP_OUT}"
 
 # V02: non-zero exit on newer-format repo.
 assert_exit_nonzero "${_V02_RC}" \
-    "PAR009-V02 Bash refuse-on-newer: aid status format_version:2 -> non-zero exit"
+    "PAR009-V02 Bash refuse-on-newer: aid status format_version:3 -> non-zero exit"
 
 # V03: byte-identical settings.yml after refuse (no mutation).
 _V02_SHA_AFTER=$(sha256sum "${_V_REPO_NEWER}/.aid/settings.yml" | cut -d' ' -f1)
@@ -2264,7 +2264,7 @@ if [[ -n "$PWSH" ]]; then
     _V_REPO_NEWER_PS="$(mktemp -d "${TMP}/v009newerps.XXXXXX")"
     mkdir -p "${_V_REPO_NEWER_PS}/.aid"
     cat > "${_V_REPO_NEWER_PS}/.aid/settings.yml" << 'V009NEWERPEOF'
-format_version: 2
+format_version: 3
 project:
   name: newer-format-ps1-test
   description: repo with format newer than CLI supports (PS1 fixture)
@@ -2290,7 +2290,7 @@ V009NEWERPEOF
     rm -f "${_V05_TMP_OUT}"
 
     assert_exit_nonzero "${_V05_RC}" \
-        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:2 -> non-zero exit"
+        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:3 -> non-zero exit"
 
     _V05_SHA_AFTER_PS=$(sha256sum "${_V_REPO_NEWER_PS}/.aid/settings.yml" | cut -d' ' -f1)
     assert_eq "${_V05_SHA_BEFORE_PS}" "${_V05_SHA_AFTER_PS}" \
@@ -2452,14 +2452,14 @@ assert_exit_eq "$RC_PS1" 0 "PAR029-W07 PS1 aid-update no-.aid/ dir -> exit 0 (CL
 assert_eq "$RC_SH" "$RC_PS1" "PAR029-W08 Bash/PS1 aid-update no-.aid/ exit code parity"
 
 # W11/W12: format-gate refuse message parity — refuse text identical across runtimes.
-# Run aid status in a repo with format_version: 2 (newer than supported).
+# Run aid status in a repo with format_version: 3 (newer than supported).
 # The refuse error message text must be the same from both runtimes.
 SH_HOME_W2=$(newhome); setup_sh_home "${SH_HOME_W2}"
 PS_HOME_W2=$(newhome); setup_ps1_home "${PS_HOME_W2}"
 T_W2=$(newtarget)
 mkdir -p "${T_W2}/.aid"
 cat > "${T_W2}/.aid/settings.yml" << 'PAR029W2EOF'
-format_version: 2
+format_version: 3
 project:
   name: newer-format-par029w
   description: newer-than-supported format for refuse parity check
@@ -2483,7 +2483,7 @@ _W11_RC=$?
 _W11_OUT="$(cat "${_W11_TMP}")"; rm -f "${_W11_TMP}"
 
 assert_exit_nonzero "${_W11_RC}" \
-    "PAR029-W11 Bash aid-status format_version:2 -> non-zero exit (refuse)"
+    "PAR029-W11 Bash aid-status format_version:3 -> non-zero exit (refuse)"
 
 if [[ -n "$PWSH" ]]; then
     (cd "${T_W2}" && AID_HOME="${PS_HOME_W2}" AID_LIB_PATH="${PS_HOME_W2}/lib/AidInstallCore.psm1" \
@@ -2494,7 +2494,7 @@ if [[ -n "$PWSH" ]]; then
     _W12_OUT="$(cat "${_W12_TMP}" | sed 's/\x1b\[[0-9;]*m//g')"; rm -f "${_W12_TMP}"
 
     assert_exit_nonzero "${_W12_RC}" \
-        "PAR029-W12 PS1 aid-status format_version:2 -> non-zero exit (refuse)"
+        "PAR029-W12 PS1 aid-status format_version:3 -> non-zero exit (refuse)"
     # Refuse message text must appear in both runtimes (parity of the refuse surface).
     assert_output_contains "$_W11_OUT" "newer than this CLI supports" \
         "PAR029-W13 Bash refuse: 'newer than this CLI supports' in output"
@@ -2502,7 +2502,7 @@ if [[ -n "$PWSH" ]]; then
         "PAR029-W14 PS1 refuse: 'newer than this CLI supports' in output"
     # Parity: both refuse (non-zero) with same message pattern.
     assert_eq "${_W11_RC}" "${_W12_RC}" \
-        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:2)"
+        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:3)"
 else
     pass "PAR029-W12 PS1 format-gate refuse: exit non-zero [SKIPPED: pwsh absent]"
     pass "PAR029-W13 Bash format-gate refuse message check [SKIPPED: pwsh absent]"

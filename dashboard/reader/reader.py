@@ -395,12 +395,11 @@ def _read_repo_full(
         project_name = root.name  # fallback: folder basename (SPEC DM-7 note)
 
     # task-064: parse kb_baseline from settings.yml (DM-A4)
-    dashboard_dir = loc.aid_dir / "dashboard"
     kb_baseline, br = parse_kb_baseline(loc.settings_path)
     bytes_read += br
 
-    # task-064: parse kb_state with summary_present (stat of .aid/dashboard/kb.html)
-    kb_state, br = parse_kb_state(loc.kb_dir, dashboard_dir=dashboard_dir)
+    # task-064: parse kb_state with summary_present (stat of .aid/knowledge/kb.html)
+    kb_state, br = parse_kb_state(loc.kb_dir)
     bytes_read += br
 
     # task-064: derive 5-state KB status (FF-A3 waterfall) and attach fields

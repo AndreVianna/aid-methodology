@@ -22,7 +22,7 @@ Ask the user (use `AskUserQuestion`; the user must have actually opened the HTML
 The agent passes the answers to `manual-checklist.sh` (non-interactive mode — it computes the scores and writes the JSON, so the script stays the single source of truth for scoring):
 ```
 bash .agent/aid/scripts/summarize/manual-checklist.sh \
-  --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes "..." --html .aid/dashboard/kb.html
+  --k1 <y|p|n> --k2 <y|p|n> --v1 <y|n> --notes "..." --html .aid/knowledge/kb.html
 ```
 This writes `.aid/.temp/summarize/manual-checklist.json` with `K1_score`, `K2_score`, `V1_score`, the answers, notes, and timestamp. (A contributor in a raw terminal can instead run `manual-checklist.sh --interactive`.)
 

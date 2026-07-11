@@ -144,7 +144,9 @@ function script:Test-AidIsProjectDir {
 # bump, update ALL carriers together: this line, bin/aid AID_SUPPORTED_FORMAT, and
 # lib/AidInstallCore.psm1 $script:_AidSupportedFormat (the PS seed's source).
 # ---------------------------------------------------------------------------
-Set-Variable -Name AidSupportedFormat -Value 1 -Option Constant -Scope Script
+# format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
+# served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
+Set-Variable -Name AidSupportedFormat -Value 2 -Option Constant -Scope Script
 
 # ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
@@ -2262,37 +2264,51 @@ function script:Invoke-AidMigrateRepo {
     }
 
     # ------------------------------------------------------------------
-    # STEP 2 -- ADD home.html (FR40 / RC-2) -- copy-when-absent only.
+    # STEP 2 -- ELIMINATE .aid/dashboard/ (format 2): relocate kb.html to
+    # .aid/knowledge/ and remove the obsolete per-repo dashboard folder. home.html is
+    # now served by the CLI (no per-repo copy). No-clobber; best-effort.
     # ------------------------------------------------------------------
-    $dashDir   = Join-Path $aidDir 'dashboard'
-    $htmlDest  = Join-Path $dashDir 'home.html'
-    if (-not (Test-Path $htmlDest -PathType Leaf)) {
-        $htmlSrc = Join-Path $script:_AidCodeHome 'dashboard' | Join-Path -ChildPath 'home.html'
-        if (Test-Path $htmlSrc -PathType Leaf) {
+    $dashDir      = Join-Path $aidDir 'dashboard'
+    $knowledgeDir = Join-Path $aidDir 'knowledge'
+    $kbNew        = Join-Path $knowledgeDir 'kb.html'
+    $kbOld        = Join-Path $dashDir 'kb.html'
+    if (Test-Path $kbOld -PathType Leaf) {
+        if (-not (Test-Path $kbNew -PathType Leaf)) {
+            # Proper place is free: relocate the misplaced kb.html into it.
             try {
-                if (-not (Test-Path $dashDir -PathType Container)) {
-                    New-Item -ItemType Directory -Path $dashDir -Force | Out-Null
+                if (-not (Test-Path $knowledgeDir -PathType Container)) {
+                    New-Item -ItemType Directory -Path $knowledgeDir -Force | Out-Null
                 }
-                Copy-Item -LiteralPath $htmlSrc -Destination $htmlDest -ErrorAction Stop
+                Move-Item -LiteralPath $kbOld -Destination $kbNew -ErrorAction Stop
             } catch {
-                [Console]::Error.WriteLine("WARN: aid migrate: copy home.html failed for ${Repo}: $_")
+                [Console]::Error.WriteLine("WARN: aid migrate: relocate kb.html failed for ${Repo}: $_")
             }
         } else {
-            [Console]::Error.WriteLine("WARN: aid migrate: home.html source not found at ${htmlSrc} (continuing)")
+            # Proper place already holds a kb.html (authoritative): drop the stale stray.
+            Remove-Item -LiteralPath $kbOld -Force -ErrorAction SilentlyContinue
+        }
+    }
+    if (Test-Path $dashDir -PathType Container) {
+        # Drop the now-obsolete home.html, then remove the folder only if it is empty.
+        Remove-Item -LiteralPath (Join-Path $dashDir 'home.html') -ErrorAction SilentlyContinue
+        $_dashLeft = @(Get-ChildItem -LiteralPath $dashDir -Force -ErrorAction SilentlyContinue)
+        if ($_dashLeft.Count -eq 0) {
+            Remove-Item -LiteralPath $dashDir -Force -ErrorAction SilentlyContinue
+        } else {
+            [Console]::Error.WriteLine("WARN: aid migrate: .aid/dashboard not empty for ${Repo}; left in place")
         }
     }
 
     # ------------------------------------------------------------------
-    # STEP 3 -- RELOCATE legacy summary (DM-4 / FR31) -- no-clobber mv.
+    # STEP 3 -- RELOCATE legacy summary (DM-4 / FR31) -> .aid/knowledge/kb.html -- no-clobber mv.
     # ------------------------------------------------------------------
-    $oldSummary = Join-Path $aidDir 'knowledge' | Join-Path -ChildPath 'knowledge-summary.html'
-    $newSummary = Join-Path $dashDir 'kb.html'
-    if ((Test-Path $oldSummary -PathType Leaf) -and (-not (Test-Path $newSummary -PathType Leaf))) {
+    $oldSummary = Join-Path $knowledgeDir 'knowledge-summary.html'
+    if ((Test-Path $oldSummary -PathType Leaf) -and (-not (Test-Path $kbNew -PathType Leaf))) {
         try {
-            if (-not (Test-Path $dashDir -PathType Container)) {
-                New-Item -ItemType Directory -Path $dashDir -Force | Out-Null
+            if (-not (Test-Path $knowledgeDir -PathType Container)) {
+                New-Item -ItemType Directory -Path $knowledgeDir -Force | Out-Null
             }
-            Move-Item -LiteralPath $oldSummary -Destination $newSummary -ErrorAction Stop
+            Move-Item -LiteralPath $oldSummary -Destination $kbNew -ErrorAction Stop
         } catch {
             [Console]::Error.WriteLine("WARN: aid migrate: relocate legacy summary failed for ${Repo}: $_")
         }

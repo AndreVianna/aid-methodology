@@ -177,7 +177,7 @@ class KbStateRef:
 
     New fields (feature-007 DM-A1, task-064):
         status          -- FR32 5-state KbStatus (derived, never persisted; NFR2)
-        summary_present -- True if <repo>/.aid/dashboard/kb.html exists (stat only)
+        summary_present -- True if <repo>/.aid/knowledge/kb.html exists (stat only)
         kb_baseline     -- {branch, tip_date} from .aid/settings.yml; None if unset/unparseable
 
     New fields (feature-007 f007, task-042):
@@ -205,7 +205,7 @@ class KbStateRef:
     doc_count: Optional[int] = None          # rows in README.md ## Completeness table
     # feature-007 DM-A1 new fields (task-064):
     status: KbStatus = KbStatus.unknown      # FR32 5-state derived status
-    summary_present: bool = False            # True if .aid/dashboard/kb.html exists
+    summary_present: bool = False            # True if .aid/knowledge/kb.html exists
     kb_baseline: Optional[KbBaseline] = None # {branch, tip_date} or None
     # feature-007 f007 new fields (task-042):
     doc_freshness: list[DocFreshness] = field(default_factory=list)  # per-doc verdicts

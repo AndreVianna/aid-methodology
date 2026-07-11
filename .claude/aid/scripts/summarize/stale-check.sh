@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# stale-check.sh — determine if the KB summary (.aid/dashboard/kb.html) is stale relative to KB.
+# stale-check.sh — determine if the KB summary (.aid/knowledge/kb.html) is stale relative to KB.
 # Usage: stale-check.sh
 # Output (stdout, last line):
 #   STALE                    — needs regeneration
@@ -20,8 +20,8 @@ set -u
 
 KB_DIR=".aid/knowledge"
 STATE="$KB_DIR/STATE.md"
-# The summary lives at .aid/dashboard/kb.html; KB_DIR still anchors the STATE.md read.
-HTML_FILE=".aid/dashboard/kb.html"
+# The summary lives at .aid/knowledge/kb.html (beside its KB source); KB_DIR anchors the STATE.md read.
+HTML_FILE=".aid/knowledge/kb.html"
 
 if [ ! -f "$HTML_FILE" ]; then
     echo "ℹ️  kb.html does not exist."

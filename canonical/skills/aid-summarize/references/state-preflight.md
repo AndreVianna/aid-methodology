@@ -10,7 +10,7 @@ Run `canonical/aid/scripts/summarize/summarize-preflight.sh` before any state. I
 4. Not in Plan Mode (need write access).
 5. Node.js >= 18 is available (required for `validate-visuals.mjs` visual-fidelity validation; the Mermaid network-fetch check was removed in D-012 / Change 7).
 6. **Migrate legacy summary path (FR31 migration):** if `.aid/knowledge/knowledge-summary.html`
-   exists and `.aid/dashboard/kb.html` does not, `mkdir -p .aid/dashboard` and `mv -n` the old
+   exists and `.aid/knowledge/kb.html` does not, `mkdir -p .aid/knowledge` and `mv -n` the old
    file to the new path so STALE-CHECK sees the existing approved summary and skips regeneration.
    Best-effort -- a failure prints a note and does not block. Idempotent: if the new path already
    exists the step is a no-op.

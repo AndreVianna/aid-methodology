@@ -83,10 +83,10 @@ directly or before PREFLIGHT has had a chance to run in this invocation:
 
 ```bash
 OLD_SUMMARY=".aid/knowledge/knowledge-summary.html"
-NEW_SUMMARY=".aid/dashboard/kb.html"
+NEW_SUMMARY=".aid/knowledge/kb.html"
 MIGRATED_THIS_RUN=0
 if [ -f "$OLD_SUMMARY" ] && [ ! -f "$NEW_SUMMARY" ]; then
-    if mkdir -p .aid/dashboard 2>/dev/null && mv -n "$OLD_SUMMARY" "$NEW_SUMMARY" 2>/dev/null; then
+    if mkdir -p .aid/knowledge 2>/dev/null && mv -n "$OLD_SUMMARY" "$NEW_SUMMARY" 2>/dev/null; then
         echo "i  Migrated legacy summary -> $NEW_SUMMARY (FR31 relocation)."
         MIGRATED_THIS_RUN=1
     else
@@ -205,7 +205,7 @@ Commit the regenerated HTML and the `STATE.md` history edit in a **single**
 bash .agent/aid/scripts/housekeep/branch-commit.sh \
     --commit \
     --message "chore(housekeep): summary delta refresh [feature-003]" \
-    --add .aid/dashboard/kb.html \
+    --add .aid/knowledge/kb.html \
     --add .aid/knowledge/STATE.md
 ```
 
@@ -275,7 +275,7 @@ Print:
 AND `## Knowledge Summary Status` shows `**User Approved:** yes` (which means
 `/aid-summarize` exited via DONE-IDEMPOTENT after STALE-CHECK returned
 `CURRENT_APPROVED`). `.aid/knowledge/STATE.md` and
-`.aid/dashboard/kb.html` are **unchanged**.
+`.aid/knowledge/kb.html` are **unchanged**.
 
 Write the gate field:
 
@@ -295,7 +295,7 @@ if [ "${MIGRATED_THIS_RUN:-0}" -eq 1 ]; then
     bash .agent/aid/scripts/housekeep/branch-commit.sh \
         --commit \
         --message "chore(housekeep): migrate kb.html path (FR31 relocation) [feature-007]" \
-        --add .aid/dashboard/kb.html
+        --add .aid/knowledge/kb.html
     # Never block on commit failure -- the file is on disk where the reader needs it.
 fi
 ```

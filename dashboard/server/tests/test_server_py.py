@@ -76,10 +76,13 @@ def _write_registry(aid_home: Path, paths: list[str]) -> None:
     (aid_home / "registry.yml").write_text("".join(lines), encoding="utf-8")
 
 
-def _make_repo(base: Path, *, with_dashboard: bool = False) -> Path:
+def _make_repo(base: Path, *, with_kb: bool = False) -> Path:
     """Create a minimal repo tree under base: .aid/ + settings.yml + manifest.
 
-    If with_dashboard, also create .aid/dashboard/{home.html,kb.html}.
+    If with_kb, also create .aid/knowledge/kb.html.  The .aid/dashboard/ folder was
+    eliminated: home.html is now served from the CLI's own copy (gated only on the
+    repo's .aid/ dir), and the generated kb.html moved beside its source into
+    .aid/knowledge/ -- so no per-repo home.html is written here anymore.
     """
     aid = base / ".aid"
     aid.mkdir(parents=True, exist_ok=True)
@@ -96,11 +99,10 @@ def _make_repo(base: Path, *, with_dashboard: bool = False) -> Path:
         }),
         encoding="utf-8",
     )
-    if with_dashboard:
-        dash = aid / "dashboard"
-        dash.mkdir(exist_ok=True)
-        (dash / "home.html").write_text("<html>home</html>", encoding="utf-8")
-        (dash / "kb.html").write_text("<html>kb</html>", encoding="utf-8")
+    if with_kb:
+        kb = aid / "knowledge"
+        kb.mkdir(exist_ok=True)
+        (kb / "kb.html").write_text("<html>kb</html>", encoding="utf-8")
     return base
 
 
@@ -316,7 +318,7 @@ class TestRouteTable(unittest.TestCase):
 
         # One registered repo with dashboard files and works
         self._repo_a = self._base / "repo-A"
-        _make_repo(self._repo_a, with_dashboard=True)
+        _make_repo(self._repo_a, with_kb=True)
         _make_aid_with_works(self._repo_a, ["work-001-alpha", "work-002-beta"])
         _write_registry(self._aid_home, [str(self._repo_a)])
 
@@ -371,21 +373,25 @@ class TestRouteTable(unittest.TestCase):
             status, body, _ = srv.get("/api/home")
         self.assertFalse(body.endswith(b"\n"), "DM-3: no trailing newline")
 
-    # GET /r/<id>/home.html -> 200 when the file exists
+    # GET /r/<id>/home.html -> 200. Served from the CLI's OWN dashboard/home.html
+    # (self-located), gated only on repo-A having an .aid/ dir -- NOT a per-repo file
+    # (the .aid/dashboard/ folder was eliminated). Body is the real CLI SPA.
     def test_repo_home_html_200(self):
         with _ServerThread(str(self._aid_home)) as srv:
             status, body, headers = srv.get(f"/r/{self._id_a}/home.html")
         self.assertEqual(status, 200)
         self.assertIn("text/html", headers.get("Content-Type", ""))
-        self.assertIn(b"<html>home</html>", body)
+        self.assertIn(b"<!DOCTYPE html>", body)
+        self.assertEqual(headers.get("Cache-Control"), "no-cache")
 
-    # GET /r/<id>/kb.html -> 200 when the file exists
+    # GET /r/<id>/kb.html -> 200 when .aid/knowledge/kb.html exists
     def test_repo_kb_html_200(self):
         with _ServerThread(str(self._aid_home)) as srv:
             status, body, headers = srv.get(f"/r/{self._id_a}/kb.html")
         self.assertEqual(status, 200)
         self.assertIn("text/html", headers.get("Content-Type", ""))
         self.assertIn(b"<html>kb</html>", body)
+        self.assertEqual(headers.get("Cache-Control"), "no-cache")
 
     # GET /r/<id>/api/model -> DM-1 envelope (schema_version 3)
     def test_repo_api_model_200(self):
@@ -604,7 +610,7 @@ class TestSec2RefusalMatrix(unittest.TestCase):
         _make_aid_home(self._aid_home)
 
         self._repo_a = self._base / "repo-A"
-        _make_repo(self._repo_a, with_dashboard=True)
+        _make_repo(self._repo_a, with_kb=True)
         _write_registry(self._aid_home, [str(self._repo_a)])
         self._id_a = _repo_id8(str(self._repo_a))
 
@@ -665,22 +671,18 @@ class TestSec2RefusalMatrix(unittest.TestCase):
         self.assertEqual(status, 404)
 
     def test_symlink_leaf_not_served(self):
-        """A symlink in .aid/dashboard/ that points outside must not serve its target.
+        """A symlink in a served .aid/ dir with a non-allowlisted name must not serve.
 
-        The serve path is constructed as <repo>/.aid/dashboard/<leaf>. If the
-        symlink target does not resolve to a regular file (it points elsewhere),
-        is_file() returns False for broken symlinks, or the symlink is just not in
-        the allowlist name. We test the realistic case: the symlink exists with
-        an allowlisted name but stat says it's present. Since the server uses
-        is_file() on the constructed path, a valid symlink to a real file IS served
-        (that's by design for same-tree symlinks). We test that an extra file
-        accessible only via a name NOT in the allowlist is NOT served.
+        The .aid/dashboard/ folder was eliminated; kb.html now lives in
+        .aid/knowledge/, so we plant the decoy there. "secret.txt" is not in the
+        {home.html, kb.html} leaf allowlist, so the route regex can never map it to
+        a path -- it 404s regardless of whether the symlink resolves to a real file.
         """
-        # Add a file outside .aid/dashboard/ and a non-allowlisted symlink inside
+        # Add a file outside .aid/knowledge/ and a non-allowlisted symlink inside it
         secret = self._repo_a / "secret_data.txt"
         secret.write_text("secret", encoding="utf-8")
-        dash = self._repo_a / ".aid" / "dashboard"
-        link = dash / "secret.txt"  # non-allowlisted name
+        served_dir = self._repo_a / ".aid" / "knowledge"
+        link = served_dir / "secret.txt"  # non-allowlisted name
         try:
             link.symlink_to(secret)
         except OSError:
@@ -693,7 +695,7 @@ class TestSec2RefusalMatrix(unittest.TestCase):
     def test_registered_but_aid_gone_static_404(self):
         """Registered repo whose .aid/ was removed -> 404 for static leaves."""
         repo_b = self._base / "repo-B"
-        _make_repo(repo_b, with_dashboard=True)
+        _make_repo(repo_b, with_kb=True)
         _write_registry(self._aid_home, [str(self._repo_a), str(repo_b)])
         id_b = _repo_id8(str(repo_b))
         # Remove .aid/
@@ -705,7 +707,7 @@ class TestSec2RefusalMatrix(unittest.TestCase):
     def test_registered_but_aid_gone_api_model_200_empty(self):
         """Registered repo whose .aid/ was removed -> 200 with empty RepoModel (NFR10)."""
         repo_b = self._base / "repo-B"
-        _make_repo(repo_b, with_dashboard=True)
+        _make_repo(repo_b, with_kb=True)
         _write_registry(self._aid_home, [str(self._repo_a), str(repo_b)])
         id_b = _repo_id8(str(repo_b))
         # Remove .aid/
@@ -809,11 +811,11 @@ class TestApiHomeDm2Shape(unittest.TestCase):
         self._aid_home = self._base / "aid_home"
         _make_aid_home(self._aid_home)
 
-        # Two repos: A (with dashboard) and B (without dashboard)
+        # Two repos: A (with a generated kb.html) and B (without one). Both have .aid/.
         self._repo_a = self._base / "repo-A"
-        _make_repo(self._repo_a, with_dashboard=True)
+        _make_repo(self._repo_a, with_kb=True)
         self._repo_b = self._base / "repo-B"
-        _make_repo(self._repo_b, with_dashboard=False)
+        _make_repo(self._repo_b, with_kb=False)
 
         # Register in reverse alphabetical order to test sorting
         _write_registry(self._aid_home, [str(self._repo_b), str(self._repo_a)])
@@ -891,16 +893,19 @@ class TestApiHomeDm2Shape(unittest.TestCase):
             self.assertRegex(repo["id"], r'^[0-9a-f]{8,}$',
                              f"repo id {repo['id']!r} is not valid hex")
 
-    def test_repo_with_dashboard_has_home_true(self):
+    def test_repo_with_kb_has_home_and_kb_true(self):
+        # repo-A has an .aid/ dir (-> has_home) and a generated kb.html (-> has_kb).
         data = self._get_home()
         repo_a_entry = next(r for r in data["repos"] if r["path"] == str(self._repo_a))
         self.assertTrue(repo_a_entry["has_home"])
         self.assertTrue(repo_a_entry["has_kb"])
 
-    def test_repo_without_dashboard_has_home_false(self):
+    def test_repo_without_kb_has_home_true_has_kb_false(self):
+        # repo-B has an .aid/ dir (-> has_home=true, the new gate) but never generated
+        # a kb.html (-> has_kb=false). has_home no longer depends on dashboard files.
         data = self._get_home()
         repo_b_entry = next(r for r in data["repos"] if r["path"] == str(self._repo_b))
-        self.assertFalse(repo_b_entry["has_home"])
+        self.assertTrue(repo_b_entry["has_home"])
         self.assertFalse(repo_b_entry["has_kb"])
 
     def test_repo_available_true_when_aid_exists(self):

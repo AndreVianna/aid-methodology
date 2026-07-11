@@ -46,11 +46,13 @@ not a CI-enforced requirement for Python source.
 - delivery-002: Node port + server wiring + byte-parity test (task-014..018).
 - delivery-003: Secure remote exposure (task-024..026).
 
-## home.html — per-repo SPA shell (source of truth)
+## home.html — SPA shell (source of truth)
 
-`dashboard/home.html` is the **single committed source of truth** for the per-repo SPA shell
-(LC-HSRC, DD-5, FR40).  The file `.aid/dashboard/home.html` is a **derived copy** that the
-multi-repo server serves at `/r/<id>/home.html`; it must remain byte-identical to this source.
+`dashboard/home.html` is the **single committed source of truth** for the SPA shell
+(LC-HSRC, DD-5, FR40).  It is vendored into the installed CLI at `$AID_HOME/dashboard/home.html`
+and served directly from there (the multi-repo server serves it at `/r/<id>/home.html`); it is
+**not** copied into each repo. There is no per-repo `.aid/dashboard/home.html`, and the vendored
+copy must remain byte-identical to this source.
 
 Sync direction (one-way, authoritative):
 ```
@@ -58,10 +60,9 @@ dashboard/home.html  (edit here)
        |
        v  CI equality gate enforces byte-identity (tests/canonical/test-home-html-source-sync.sh)
        v  task-076 vendor step copies to $AID_HOME/dashboard/home.html
-       v  task-077 migration step copies per-repo to <repo>/.aid/dashboard/home.html
-.aid/dashboard/home.html  (derived copy — do NOT edit directly)
+$AID_HOME/dashboard/home.html  (vendored copy — served directly by the CLI; do NOT edit directly)
 ```
 
-**Never edit `.aid/dashboard/home.html` directly.**  Always edit `dashboard/home.html` and
-then sync the copy.  The CI gate (`tests/canonical/test-home-html-source-sync.sh`) will fail
+**Never edit `$AID_HOME/dashboard/home.html` directly.**  Always edit `dashboard/home.html` and
+then re-vendor.  The CI gate (`tests/canonical/test-home-html-source-sync.sh`) will fail
 the build on any divergence between the two files (R20).

@@ -674,7 +674,7 @@ assert_eq "${_V05_MTIME_BEFORE}" "${_V05_MTIME_AFTER}" \
 # REG-V06: update-self migrates exactly registered repos.
 #          Register A and B; leave C unregistered.
 #          Run update self (AID_SKIP_SELF_INSTALL=1 + AID_MIGRATE_YES=1).
-#          -> A and B get format_version: 1; C untouched.
+#          -> A and B get format_version: 2; C untouched.
 echo "--- REG-V06: update-self migrates exactly registered ---"
 _V06_AID_HOME=$(newhome)
 setup_aid_home "${_V06_AID_HOME}"
@@ -707,11 +707,11 @@ OUT=$(HOME="${_V06_HOME}" \
       bash "${_V06_AID_HOME}/bin/aid" update self 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "REG-V06a update self with registered A+B -> exit 0"
 
-# A and B: format_version should now be 1.
+# A and B: format_version should now be 2.
 _V06_FV_A=$(grep '^format_version:' "${_V06_REPO_A}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
 _V06_FV_B=$(grep '^format_version:' "${_V06_REPO_B}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
-assert_eq "${_V06_FV_A}" "1" "REG-V06b registered repo A gets format_version: 1 after migrate"
-assert_eq "${_V06_FV_B}" "1" "REG-V06c registered repo B gets format_version: 1 after migrate"
+assert_eq "${_V06_FV_A}" "2" "REG-V06b registered repo A gets format_version: 2 after migrate"
+assert_eq "${_V06_FV_B}" "2" "REG-V06c registered repo B gets format_version: 2 after migrate"
 
 # C: must still have format_version: 0 (unregistered, not touched).
 _V06_FV_C=$(grep '^format_version:' "${_V06_REPO_C}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')

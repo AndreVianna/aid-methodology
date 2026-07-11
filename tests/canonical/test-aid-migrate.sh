@@ -12,8 +12,11 @@
 #   Gate 5b: era-b DISCOVERY_STATE.md variant (RC-4 filename set) -> synthesized settings
 #   Gate 5c: era-b no manifest -> synthesized with installed: []
 #   Gate 6:  run migrate twice on every fixture -> second run byte-identical no-op
-#   Gate 7a: existing kb.html + legacy knowledge-summary.html -> both kept (no-clobber)
-#   Gate 7b: existing home.html -> never overwritten
+#   Gate 7a: existing .aid/knowledge/kb.html + legacy knowledge-summary.html -> both kept (no-clobber)
+#   Gate 7b: format-2 dashboard elimination -- .aid/dashboard/kb.html relocated to
+#             .aid/knowledge/kb.html, obsolete .aid/dashboard/ (incl. home.html) removed
+#   Gate 7c: format-2 both-exist -- stale .aid/dashboard/kb.html + authoritative
+#             .aid/knowledge/kb.html -> proper kept, stale stray dropped, dashboard/ removed
 #   Gate 8:  bare .aid/.temp/ (no marker) -> non-candidate, zero writes
 #
 # ISOLATION: every test builds a throwaway CODE_HOME (bin/aid + lib/ + VERSION + dashboard/)
@@ -69,7 +72,8 @@ mkdir -p "${HOME}"
 # ---------------------------------------------------------------------------
 
 # Build a minimal CODE_HOME with bin/aid + lib/aid-install-core.sh + VERSION
-# and a stub dashboard/home.html so Step-2 (copy home.html) can succeed.
+# and a stub dashboard/home.html (the CLI install-tree template the server serves;
+# NOT a per-repo migrate source -- format 2 no longer copies home.html into repos).
 # bin/aid self-locates this dir as AID_CODE_HOME.
 # Do NOT export this dir as AID_HOME; that is the state home (see new_state_home).
 new_code_home() {
@@ -79,7 +83,7 @@ new_code_home() {
     chmod +x          "${h}/bin/aid"
     cp "${LIB_CORE}"  "${h}/lib/aid-install-core.sh"
     printf '0.7.0\n'  > "${h}/VERSION"
-    # A stub home.html so that migration step 2 (copy-when-absent) has a source.
+    # The CLI-served home.html template lives in the install tree ($AID_CODE_HOME/dashboard/).
     printf '<html><body>AID Dashboard</body></html>\n' > "${h}/dashboard/home.html"
     echo "$h"
 }
@@ -609,20 +613,21 @@ assert_eq "$G6_SHA_5C_BEFORE" "$G6_SHA_5C_AFTER" \
     "G6-12 Gate-5c: 2nd run byte-identical (no-manifest synthesized file unchanged)"
 
 # ===========================================================================
-# Gate 7a -- no-delete: existing kb.html + legacy knowledge-summary.html -> both kept
+# Gate 7a -- no-delete: existing .aid/knowledge/kb.html + legacy knowledge-summary.html -> both kept
 #
 # Fixture has:
 #   .aid/knowledge/knowledge-summary.html  (legacy location)
-#   .aid/dashboard/kb.html                 (already at new location)
-# Migration must NOT clobber kb.html (mv -n guard); legacy file is NOT moved.
+#   .aid/knowledge/kb.html                 (already at the format-2 new location)
+# Migration must NOT clobber kb.html; the legacy summary is NOT moved (STEP-3
+# no-clobber guard: kb.html already present).
 # ===========================================================================
 echo ""
-echo "=== Gate 7a: no-delete -- existing kb.html + legacy summary -> both kept ==="
+echo "=== Gate 7a: no-delete -- existing .aid/knowledge/kb.html + legacy summary -> both kept ==="
 
 G7A_CODE_HOME="$(new_code_home)"
 G7A_STATE_HOME="$(new_state_home)"
 G7A_REPO="$(mktemp -d "${TMP}/g7a-repo.XXXXXX")"
-mkdir -p "${G7A_REPO}/.aid/knowledge" "${G7A_REPO}/.aid/dashboard"
+mkdir -p "${G7A_REPO}/.aid/knowledge"
 
 # Era-a marker so _aid_migrate_repo qualifies it as a candidate.
 cat > "${G7A_REPO}/.aid/settings.yml" << 'G7A_SETTINGS_EOF'
@@ -646,19 +651,19 @@ G7A_SETTINGS_EOF
 
 # Legacy knowledge-summary.html with distinct sentinel content.
 printf 'LEGACY-CONTENT-G7A\n' > "${G7A_REPO}/.aid/knowledge/knowledge-summary.html"
-# kb.html already at the NEW location with different sentinel content.
-printf 'EXISTING-KB-CONTENT-G7A\n' > "${G7A_REPO}/.aid/dashboard/kb.html"
+# kb.html already at the NEW (format-2) location with different sentinel content.
+printf 'EXISTING-KB-CONTENT-G7A\n' > "${G7A_REPO}/.aid/knowledge/kb.html"
 
-G7A_KB_SHA_BEFORE="$(file_sha256 "${G7A_REPO}/.aid/dashboard/kb.html")"
+G7A_KB_SHA_BEFORE="$(file_sha256 "${G7A_REPO}/.aid/knowledge/kb.html")"
 
 run_migrate "${G7A_CODE_HOME}" "${G7A_STATE_HOME}" "${G7A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G7A-01 __migrate-repo with existing kb.html -> exit 0"
 
 # kb.html must NOT be overwritten.
-G7A_KB_SHA_AFTER="$(file_sha256 "${G7A_REPO}/.aid/dashboard/kb.html")"
+G7A_KB_SHA_AFTER="$(file_sha256 "${G7A_REPO}/.aid/knowledge/kb.html")"
 assert_eq "$G7A_KB_SHA_BEFORE" "$G7A_KB_SHA_AFTER" \
-    "G7A-02 existing .aid/dashboard/kb.html NOT overwritten (no-clobber)"
-assert_file_contains "${G7A_REPO}/.aid/dashboard/kb.html" "EXISTING-KB-CONTENT-G7A" \
+    "G7A-02 existing .aid/knowledge/kb.html NOT overwritten (no-clobber)"
+assert_file_contains "${G7A_REPO}/.aid/knowledge/kb.html" "EXISTING-KB-CONTENT-G7A" \
     "G7A-03 existing kb.html content byte-for-byte intact"
 
 # Legacy knowledge-summary.html must still exist (was NOT moved because kb.html exists).
@@ -699,19 +704,22 @@ printf 'LEGACY-CONTENT-G7A2\n' > "${G7A2_REPO}/.aid/knowledge/knowledge-summary.
 
 run_migrate "${G7A2_CODE_HOME}" "${G7A2_STATE_HOME}" "${G7A2_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G7A2-01 __migrate-repo with legacy-only summary -> exit 0"
-assert_file_exists "${G7A2_REPO}/.aid/dashboard/kb.html" \
-    "G7A2-02 legacy knowledge-summary.html relocated to .aid/dashboard/kb.html"
-assert_file_contains "${G7A2_REPO}/.aid/dashboard/kb.html" "LEGACY-CONTENT-G7A2" \
+assert_file_exists "${G7A2_REPO}/.aid/knowledge/kb.html" \
+    "G7A2-02 legacy knowledge-summary.html relocated to .aid/knowledge/kb.html"
+assert_file_contains "${G7A2_REPO}/.aid/knowledge/kb.html" "LEGACY-CONTENT-G7A2" \
     "G7A2-03 relocated kb.html has the original content"
 
 # ===========================================================================
-# Gate 7b -- no-delete: existing home.html is never overwritten
+# Gate 7b -- format-2 dashboard elimination (STEP 2)
 #
-# Fixture already has .aid/dashboard/home.html with sentinel content.
-# Migration step 2 is copy-when-absent only; existing file must survive.
+# Fixture has an obsolete per-repo .aid/dashboard/ holding both home.html and
+# kb.html.  Migration must:
+#   - relocate .aid/dashboard/kb.html -> .aid/knowledge/kb.html (content intact)
+#   - drop the obsolete .aid/dashboard/home.html (home is now CLI-served)
+#   - remove the (now-empty) .aid/dashboard/ folder
 # ===========================================================================
 echo ""
-echo "=== Gate 7b: no-delete -- existing home.html -> never overwritten ==="
+echo "=== Gate 7b: format-2 -- .aid/dashboard/ eliminated; kb.html relocated ==="
 
 G7B_CODE_HOME="$(new_code_home)"
 G7B_STATE_HOME="$(new_state_home)"
@@ -721,7 +729,7 @@ mkdir -p "${G7B_REPO}/.aid/dashboard"
 cat > "${G7B_REPO}/.aid/settings.yml" << 'G7B_SETTINGS_EOF'
 project:
   name: G7BProject
-  description: Gate-7b home.html preservation fixture
+  description: Gate-7b dashboard-elimination fixture
   type: brownfield
 
 tools:
@@ -737,17 +745,79 @@ traceability:
   heartbeat_interval: 1
 G7B_SETTINGS_EOF
 
-printf 'EXISTING-HOME-CONTENT-G7B\n' > "${G7B_REPO}/.aid/dashboard/home.html"
-G7B_HOME_SHA_BEFORE="$(file_sha256 "${G7B_REPO}/.aid/dashboard/home.html")"
+printf 'OBSOLETE-HOME-CONTENT-G7B\n' > "${G7B_REPO}/.aid/dashboard/home.html"
+printf 'DASHBOARD-KB-CONTENT-G7B\n'  > "${G7B_REPO}/.aid/dashboard/kb.html"
 
 run_migrate "${G7B_CODE_HOME}" "${G7B_STATE_HOME}" "${G7B_REPO}"
-assert_exit_eq "$MIG_RC" 0 "G7B-01 __migrate-repo with existing home.html -> exit 0"
+assert_exit_eq "$MIG_RC" 0 "G7B-01 __migrate-repo dashboard-elimination -> exit 0"
 
-G7B_HOME_SHA_AFTER="$(file_sha256 "${G7B_REPO}/.aid/dashboard/home.html")"
-assert_eq "$G7B_HOME_SHA_BEFORE" "$G7B_HOME_SHA_AFTER" \
-    "G7B-02 existing .aid/dashboard/home.html NOT overwritten"
-assert_file_contains "${G7B_REPO}/.aid/dashboard/home.html" "EXISTING-HOME-CONTENT-G7B" \
-    "G7B-03 existing home.html content byte-for-byte intact"
+# kb.html relocated to the format-2 location with content intact.
+assert_file_exists "${G7B_REPO}/.aid/knowledge/kb.html" \
+    "G7B-02 .aid/dashboard/kb.html relocated to .aid/knowledge/kb.html"
+assert_file_contains "${G7B_REPO}/.aid/knowledge/kb.html" "DASHBOARD-KB-CONTENT-G7B" \
+    "G7B-03 relocated kb.html content byte-for-byte intact"
+
+# Obsolete per-repo home.html dropped and the dashboard folder removed.
+if [[ -e "${G7B_REPO}/.aid/dashboard/home.html" ]]; then
+    fail "G7B-04 obsolete .aid/dashboard/home.html must be dropped (home is CLI-served)"
+else
+    pass "G7B-04 obsolete .aid/dashboard/home.html dropped (home is CLI-served)"
+fi
+if [[ -d "${G7B_REPO}/.aid/dashboard" ]]; then
+    fail "G7B-05 obsolete .aid/dashboard/ folder must be removed"
+else
+    pass "G7B-05 obsolete .aid/dashboard/ folder removed"
+fi
+
+# ===========================================================================
+# Gate 7c -- format-2 both-exist: stale .aid/dashboard/kb.html AND authoritative
+#            .aid/knowledge/kb.html both present. The proper one wins; the stale
+#            stray is dropped; the .aid/dashboard/ folder is removed.
+# ===========================================================================
+echo "=== Gate 7c: format-2 -- both-exist kb.html; stale stray dropped, proper kept ==="
+
+G7C_CODE_HOME="$(new_code_home)"
+G7C_STATE_HOME="$(new_state_home)"
+G7C_REPO="$(mktemp -d "${TMP}/g7c-repo.XXXXXX")"
+mkdir -p "${G7C_REPO}/.aid/dashboard" "${G7C_REPO}/.aid/knowledge"
+
+cat > "${G7C_REPO}/.aid/settings.yml" << 'G7C_SETTINGS_EOF'
+project:
+  name: G7CProject
+  description: Gate-7c both-exist fixture
+  type: brownfield
+
+tools:
+  installed: []
+
+review:
+  minimum_grade: A
+
+execution:
+  max_parallel_tasks: 5
+
+traceability:
+  heartbeat_interval: 1
+G7C_SETTINGS_EOF
+
+# Authoritative kb.html already at the format-2 location; a STALE stray at the old path.
+printf 'PROPER-KB-CONTENT-G7C\n'   > "${G7C_REPO}/.aid/knowledge/kb.html"
+printf 'STALE-STRAY-CONTENT-G7C\n' > "${G7C_REPO}/.aid/dashboard/kb.html"
+printf 'OBSOLETE-HOME-CONTENT-G7C\n' > "${G7C_REPO}/.aid/dashboard/home.html"
+
+run_migrate "${G7C_CODE_HOME}" "${G7C_STATE_HOME}" "${G7C_REPO}"
+assert_exit_eq "$MIG_RC" 0 "G7C-01 __migrate-repo both-exist -> exit 0"
+
+# Proper kb.html is authoritative -- content NOT clobbered by the stale stray.
+assert_file_contains "${G7C_REPO}/.aid/knowledge/kb.html" "PROPER-KB-CONTENT-G7C" \
+    "G7C-02 authoritative .aid/knowledge/kb.html preserved (stray not clobbered)"
+
+# The .aid/dashboard/ folder (stale kb.html + obsolete home.html) is fully removed.
+if [[ -d "${G7C_REPO}/.aid/dashboard" ]]; then
+    fail "G7C-03 stale .aid/dashboard/ (incl stray kb.html) must be removed when proper kb.html exists"
+else
+    pass "G7C-03 stale .aid/dashboard/ removed; stray kb.html dropped"
+fi
 
 # ===========================================================================
 # Gate 8 -- bare .aid/.temp/ (no marker) -> non-candidate, zero writes
@@ -829,9 +899,10 @@ fi
 #
 # These lock in the WARN-not-fail / no-data-loss guarantees on inputs the
 # earlier gates never exercised: CRLF line endings, corrupted/non-YAML
-# settings, the home.html absent/positive and source-missing branches, a
-# direct registry-register assertion, the DISCOVERY-STATE.md hyphen variant,
-# and era precedence. Empirically grounded: migration returns 0 and never
+# settings, the format-2 dashboard-elimination branches (no per-repo home.html;
+# kb.html relocation; non-empty dashboard/ WARN), a direct registry-register
+# assertion, the DISCOVERY-STATE.md hyphen variant, and era precedence.
+# Empirically grounded: migration returns 0 and never
 # loses data on any of these.
 # ===========================================================================
 
@@ -850,8 +921,7 @@ assert_file_contains "${G9A_REPO}/.aid/settings.yml" "minimum_grade: A+" \
     "G9A-02 CRLF: minimum_grade A+ override survives (no data loss)"
 assert_file_contains "${G9A_REPO}/.aid/settings.yml" "name: CrlfRepo" \
     "G9A-03 CRLF: project name survives"
-assert_file_exists "${G9A_REPO}/.aid/dashboard/home.html" \
-    "G9A-04 CRLF: home.html still provisioned (step 2 ran)"
+# (format 2: migration no longer provisions a per-repo home.html -- home is CLI-served.)
 # Idempotency on CRLF: a second pass must not keep changing the file.
 G9A_SHA1="$(file_sha256 "${G9A_REPO}/.aid/settings.yml")"
 run_migrate "${G9A_CODE_HOME}" "${G9A_STATE_HOME}" "${G9A_REPO}"
@@ -864,42 +934,55 @@ echo "=== Gate 9b: corrupted settings.yml -> WARN-not-fail, other steps run ==="
 G9B_CODE_HOME="$(new_code_home)"
 G9B_STATE_HOME="$(new_state_home)"
 G9B_REPO="$(mktemp -d "${TMP}/g9b-repo.XXXXXX")"
-mkdir -p "${G9B_REPO}/.aid"
+mkdir -p "${G9B_REPO}/.aid/dashboard"
 printf '\x00\x01binary\xff garbage\nnot: yaml: [unclosed\n' > "${G9B_REPO}/.aid/settings.yml"
+# An obsolete .aid/dashboard/kb.html gives step 2 something observable to do.
+printf 'G9B-KB\n' > "${G9B_REPO}/.aid/dashboard/kb.html"
 run_migrate "${G9B_CODE_HOME}" "${G9B_STATE_HOME}" "${G9B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G9B-01 corrupted settings.yml -> exit 0 (WARN-not-fail, NFR12)"
-assert_file_exists "${G9B_REPO}/.aid/dashboard/home.html" \
-    "G9B-02 corrupted: home.html still provisioned (step 2 continues past a bad step 1)"
+assert_file_exists "${G9B_REPO}/.aid/knowledge/kb.html" \
+    "G9B-02 corrupted: kb.html still relocated (step 2 continues past a bad step 1)"
 
-# --- Gate 9c: home.html absent -> positively provisioned with CODE_HOME source bytes ---
+# --- Gate 9c: migrate NEVER provisions a per-repo home.html (format 2) -------
 echo ""
-echo "=== Gate 9c: home.html absent -> provisioned from \$AID_CODE_HOME source ==="
+echo "=== Gate 9c: format 2 -- migrate does NOT create a per-repo home.html ==="
 G9C_CODE_HOME="$(new_code_home)"
 G9C_STATE_HOME="$(new_state_home)"
 G9C_REPO="$(mktemp -d "${TMP}/g9c-repo.XXXXXX")"
 mkdir -p "${G9C_REPO}/.aid"
 cp "${G4A_REPO}/.aid/settings.yml" "${G9C_REPO}/.aid/settings.yml"   # any valid era-a file
-[[ -f "${G9C_REPO}/.aid/dashboard/home.html" ]] && fail "G9C precondition: home.html should be absent" || pass "G9C-00 precondition: home.html absent"
 run_migrate "${G9C_CODE_HOME}" "${G9C_STATE_HOME}" "${G9C_REPO}"
-assert_exit_eq "$MIG_RC" 0 "G9C-01 absent home.html -> exit 0"
-assert_file_exists "${G9C_REPO}/.aid/dashboard/home.html" "G9C-02 home.html now present"
-G9C_SRC_SHA="$(file_sha256 "${G9C_CODE_HOME}/dashboard/home.html")"
-G9C_DST_SHA="$(file_sha256 "${G9C_REPO}/.aid/dashboard/home.html")"
-assert_eq "$G9C_SRC_SHA" "$G9C_DST_SHA" "G9C-03 provisioned home.html == AID_CODE_HOME source bytes"
+assert_exit_eq "$MIG_RC" 0 "G9C-01 migrate era-a repo -> exit 0"
+if [[ -e "${G9C_REPO}/.aid/dashboard/home.html" ]]; then
+    fail "G9C-02 migrate must NOT provision a per-repo home.html (CLI-served in format 2)"
+else
+    pass "G9C-02 no per-repo home.html provisioned (CLI-served in format 2)"
+fi
+if [[ -d "${G9C_REPO}/.aid/dashboard" ]]; then
+    fail "G9C-03 migrate must NOT create a .aid/dashboard/ folder"
+else
+    pass "G9C-03 no .aid/dashboard/ folder created"
+fi
 
-# --- Gate 9d: home.html SOURCE missing in AID_CODE_HOME -> WARN, migration continues
+# --- Gate 9d: .aid/dashboard/ non-empty -> WARN (left in place), migration continues
 echo ""
-echo "=== Gate 9d: home.html source missing -> WARN, settings still repaired ==="
+echo "=== Gate 9d: dashboard/ non-empty -> WARN, home.html still dropped, settings synthesized ==="
 G9D_CODE_HOME="$(new_code_home)"
 G9D_STATE_HOME="$(new_state_home)"
-rm -f "${G9D_CODE_HOME}/dashboard/home.html"          # remove the provisioning source
 G9D_REPO="$(mktemp -d "${TMP}/g9d-repo.XXXXXX")"
-mkdir -p "${G9D_REPO}/.aid/knowledge"
+mkdir -p "${G9D_REPO}/.aid/knowledge" "${G9D_REPO}/.aid/dashboard"
 printf '# Discovery State\nStatus: complete\n' > "${G9D_REPO}/.aid/knowledge/DISCOVERY_STATE.md"
+printf 'OBSOLETE-HOME\n' > "${G9D_REPO}/.aid/dashboard/home.html"
+printf 'stray\n'         > "${G9D_REPO}/.aid/dashboard/leftover.txt"   # blocks rmdir of dashboard/
 run_migrate "${G9D_CODE_HOME}" "${G9D_STATE_HOME}" "${G9D_REPO}"
-assert_exit_eq "$MIG_RC" 0 "G9D-01 missing home.html source -> exit 0 (continues)"
-assert_output_contains "$MIG_OUT" "home.html source not found" "G9D-02 WARN names the missing source"
-assert_file_exists "${G9D_REPO}/.aid/settings.yml" "G9D-03 settings still synthesized despite missing home.html source"
+assert_exit_eq "$MIG_RC" 0 "G9D-01 dashboard/ non-empty -> exit 0 (continues)"
+assert_output_contains "$MIG_OUT" "not empty" "G9D-02 WARN names the non-empty dashboard left in place"
+if [[ -e "${G9D_REPO}/.aid/dashboard/home.html" ]]; then
+    fail "G9D-03 obsolete home.html dropped even when the dashboard dir cannot be removed"
+else
+    pass "G9D-03 obsolete home.html dropped even when the dashboard dir cannot be removed"
+fi
+assert_file_exists "${G9D_REPO}/.aid/settings.yml" "G9D-04 settings still synthesized despite dashboard-removal WARN"
 
 # --- Gate 9e: direct registry-register assertion ----------------------------
 echo ""
