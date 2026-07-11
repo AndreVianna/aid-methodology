@@ -12,10 +12,10 @@ updated: '2026-07-11T04:42:43Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
-delivery_state: Executing
-gate_tier: Small
+delivery_state: Gated
+gate_tier: Large
 gate_grade: A+
-gate_timestamp: '2026-07-10T17:34:53Z'
+gate_timestamp: '2026-07-11T04:58:00Z'
 ---
 # Work State -- work-003-state-schema
 
@@ -99,6 +99,7 @@ SPEC.md + BLUEPRINT.md.)
 | 2026-07-11 | Execute task-009 — In Review | -- | Emphatic per-transition mandate landed in canonical (commit 9988acc1): aid-execute SKILL/references + task templates (every created task inherits) + CLAUDE.md/AGENTS.md; binds main-agent-or-sub-agent (no bypass); both layouts + single/pool. Validation FIXED 2 real gaps (serial Done + serial Failed writes were missing — only pool wrote them). Regression test 16/16 (fails-when-transition-dropped). Marked In Review before dispatching reviewer — per the mandate itself. |
 | 2026-07-11 | Execute task-008 — Done | pass | Top-level `aid --version`/`-V` on both launcher twins, single-sourced from the VERSION-file read, intercepted before subcommand dispatch; the `--version <v>` release-pin unshadowed (fires only as first-arg). aid -h distinguishes them. Tests CLI027-M1 + PS028-M1. Commit 4b54e551. Reviewer: 0 findings. |
 | 2026-07-11 | Phase-model review (user-flagged) → task-010 | -- | User: dashboard phase stepper is "completely wrong" (Interview/Specify/Plan/Detail/Execute/Deploy/Monitor). Investigation (read-only, 30 tool uses): the machine Phase enum never followed the 2026-06-28 PROSE rename (Interview→Describe→Define). "Interview" is the dead old label for Describe+Define; Discover/Describe/Define missing from the stepper; Monitor is a phantom (no skill writes it); Deploy is optional not linear. Encoded in ~20 places (template + writeback validation + 4 skill write-sites + both reader twins + home.html PHASE_ORDER + 3 vendored trees). USER CHOSE: Faithful 6-phase model (Discover→Describe→Define→Specify→Plan→Detail→Execute; split Interview; Discover from KB state; Deploy=post-Execute indicator; drop dead Monitor; back-compat alias for legacy Interview). Added task-010. |
+| 2026-07-11 | Delivery gate (10 tasks) — Grade: A+ | A+ | Full-delivery gate (Large tier): all 16 substantive gate criteria + both completeness criteria MET with cited evidence; 0 grade-counting findings → A+. Cross-cutting coherence clean (twin parity, phase-enum consistency across template/writer/skills/both twins/home.html, home.html byte-identity, no half-migration, no loose ends). Tests: pytest 625 pass / 12 known Windows baseline; test-work-state-template 59/0; test-task-state-transitions 16/16; test-closure-check 13/13. Byte-identity/full-twin-parity deferred to CI (Linux). 3 out-of-scope residuals surfaced (not blocking): §6 danglers in retired examples/, authored-visual-catalog §6→§7 typo, kb-hydration §11 stray. delivery_state → Gated; ready for PR → master. |
 | 2026-07-11 | Execute task-010 — Done | pass | Faithful pipeline phase model + distinct Lite display (a024e5f6). Full stepper Describe→Define→Specify→Plan→Detail→Execute; back-compat alias Interview→Describe; dead Monitor dropped. USER live-review corrections: removed Discover pill (it's a pre-pipeline prerequisite, not a phase — d30fd37e); Lite rail unified to imperative Describe→Execute→Done (bf34d4a1). Registered the worktree + restarted the 8788 server so the user could see it live (worktree id 373ba661). Review: 0 HIGH, 2 MED + 1 MINOR all resolved (WS19 enum+format fix → 59/0; task-004 prose regression fixed 65388dbd; preparing→current moot). Verified live on the dashboard by the user. |
 | 2026-07-11 | Execute task-009 — Done | pass | Reviewer: 0 HIGH/MED; 4 doc-consistency findings — 3 FIXED (commit 8ea9f4f1: PD-2a sub-agent writes all its own transitions incl. terminal; protocol-table runnable-form line; terminal enum normalized to Done/Failed everywhere + Blocked clarified as orchestrator-assigned-to-downstream), 1 LOW ACCEPTED (pre-existing stale review-tier narrative in state-review.md, not task-009's; surfaced as separate cleanup). run_generator VERIFY PASS + dogfood cmp byte-identical; test 16/16 unchanged. The live-state-tracking mandate is now systemic — every future task execution (any agent, main or sub) must write In Progress/In Review/terminal. |
 | 2026-07-11 | Added task-009 (user-reported live-state gap) | -- | User observed a task shows Pending in the dashboard during execution (only Done was written). Root cause (user-diagnosed): the execution instructions don't emphatically/unmissably require writing task state AS IT CHANGES — and the rule binds the MAIN/orchestrator agent too (I bypassed it, which is a violation). Added task-009 (REFACTOR): make the In Progress/In Review/terminal writes emphatic + unmissable in aid-execute for both layouts + single/pool dispatch, bind whoever executes (main agent OR sub-agent, no bypass), reinforce CLAUDE.md/AGENTS.md, + regression test. BLUEPRINT gate criterion #15 added. Discipline adopted immediately (task-007 marked In Review live). |
@@ -122,8 +123,8 @@ SPEC.md + BLUEPRINT.md.)
      delivery-state-template.md. Single writer: this work's active branch. State halts at
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
-- **State:** Executing
-- **Updated:** 2026-07-11T04:42:43Z
+- **State:** Gated
+- **Updated:** 2026-07-11T04:58:00Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -154,10 +155,10 @@ SPEC.md + BLUEPRINT.md.)
      work's BLUEPRINT.md § Gate Criteria, NOT from this STATE.md. Grade set by the delivery-gate
      review. -->
 
-- **Reviewer Tier:** Small
+- **Reviewer Tier:** Large
 - **Grade:** A+
-- **Issue List:** none
-- **Timestamp:** 2026-07-10T17:34:53Z
+- **Issue List:** 0 grade-counting; 3 out-of-scope residuals surfaced (not lost, not blocking): §6 danglers in retired examples/, authored-visual-catalog.md:13 section-6→§7 typo, kb-hydration.md stray (see §11). A+ contingent on CI confirming the 2 Windows-deferred suites (dogfood byte-identity + full Node twin parity) green on Linux.
+- **Timestamp:** 2026-07-11T04:58:00Z
 
 ---
 
