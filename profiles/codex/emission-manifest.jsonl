@@ -26,7 +26,7 @@
 {"dst": ".codex/aid/scripts/kb/build-metrics.sh", "profile": "codex", "sha256": "fe24706c52b3f2350ba148f2720a9c44a8360e468b63b81f8b847bf8a6f6c7d3", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".codex/aid/scripts/kb/build-project-index.sh", "profile": "codex", "sha256": "96200669a6225d63f5ab17d3d62cc9e93b7819ec5b39cf3d66128eef4edb7186", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".codex/aid/scripts/kb/closure-check.sh", "profile": "codex", "sha256": "7badf6cc83d925816b13ac38a74be443c1a133ef9e1cf1e61110e84656edf70d", "src": "canonical/scripts/kb/closure-check.sh"}
-{"dst": ".codex/aid/scripts/kb/coined-term-denylist.txt", "profile": "codex", "sha256": "c20cd493623158519f8aa61fe40a1ec4577e79fe2b68f8797557c9de9a803c0f", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
+{"dst": ".codex/aid/scripts/kb/coined-term-denylist.txt", "profile": "codex", "sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".codex/aid/scripts/kb/discover-preflight.sh", "profile": "codex", "sha256": "ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".codex/aid/scripts/kb/harvest-coined-terms.sh", "profile": "codex", "sha256": "a9a055b01d4af05a5c7f8518bccbf408b89c39e5bb492eb88e13c5d6890327e5", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".codex/aid/scripts/kb/kb-actback-task.sh", "profile": "codex", "sha256": "63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5", "src": "canonical/scripts/kb/kb-actback-task.sh"}

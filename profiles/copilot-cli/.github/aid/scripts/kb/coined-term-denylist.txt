@@ -33,6 +33,7 @@ auth
 await
 back
 base
+bash
 batch
 before
 begin

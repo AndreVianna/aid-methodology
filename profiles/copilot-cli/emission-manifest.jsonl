@@ -26,7 +26,7 @@
 {"dst": ".github/aid/scripts/kb/build-metrics.sh", "profile": "copilot-cli", "sha256": "2ded57247fc87a37294a9e6ecc291bc3fb19d523db33fca13f1dc05939f4e25e", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".github/aid/scripts/kb/build-project-index.sh", "profile": "copilot-cli", "sha256": "1f8c5b6a1b6e31db4eb044eeb7d8c1247116eec02a7e23ced4e4313c722eba1d", "src": "canonical/scripts/kb/build-project-index.sh"}
 {"dst": ".github/aid/scripts/kb/closure-check.sh", "profile": "copilot-cli", "sha256": "f519298ae9df7a2d0d7131c1f70b30ef7b01011566cf03cc3b1975eee98e2eb2", "src": "canonical/scripts/kb/closure-check.sh"}
-{"dst": ".github/aid/scripts/kb/coined-term-denylist.txt", "profile": "copilot-cli", "sha256": "c20cd493623158519f8aa61fe40a1ec4577e79fe2b68f8797557c9de9a803c0f", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
+{"dst": ".github/aid/scripts/kb/coined-term-denylist.txt", "profile": "copilot-cli", "sha256": "cde35cae105e2d195d107336314f344ffad01aa0cffc35633862101119f871ec", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".github/aid/scripts/kb/discover-preflight.sh", "profile": "copilot-cli", "sha256": "ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".github/aid/scripts/kb/harvest-coined-terms.sh", "profile": "copilot-cli", "sha256": "42bc5cdb775d0c31513bd79a27912caddcbcd309d5fd3fb9817702539fdeec60", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".github/aid/scripts/kb/kb-actback-task.sh", "profile": "copilot-cli", "sha256": "63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5", "src": "canonical/scripts/kb/kb-actback-task.sh"}
