@@ -37,4 +37,4 @@ In `tests/unit/test_order_repository.py`:
 - [ ] Unit test `test_update_order_invalidates_cache` passes.
 - [ ] All existing unit tests in `tests/unit/test_order_repository.py` remain green.
 - [ ] No changes to the `OrdersCache` public interface.
-- [ ] All §6 quality gates pass.
+- [ ] All applicable quality gates pass (per `.aid/settings.yml`).
