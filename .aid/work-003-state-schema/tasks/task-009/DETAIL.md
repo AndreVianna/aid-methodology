@@ -15,6 +15,10 @@
   in `aid-execute/references/state-execute.md` (steps 177/528/564), easy to skip, and the
   sub-agent EXECUTE dispatch does not carry an explicit, mandatory "write the state now" instruction.
   Result: a task sits at `Pending` in the dashboard for its entire execution, then jumps to `Done`.
+- **This must live in the CANONICAL, applying to EVERY task ever created — NOT just documented in
+  this one task's DETAIL.** The deliverable is canonical source changes (skill flow + task templates
+  + context files) that every future task inherits; a note in task-009's own DETAIL fixes nothing
+  systemically.
 - **Fix — make the instruction impossible to miss (canonical edits, then re-render):**
   - `canonical/skills/aid-execute/SKILL.md` + `references/state-execute.md` (+ `state-fix.md`,
     `state-review.md`, `state-execute-drilldown.md` as needed): elevate the state-transition writes
@@ -32,7 +36,15 @@
   - Reinforce the global IMPERATIVE tracking rule in CLAUDE.md/AGENTS.md so it explicitly names the
     per-transition writes (`In Progress` at start, `In Review` at execute-complete, terminal at end)
     and states that no agent — including the main orchestrator executing directly — may bypass them
-    (do NOT cite a context-file by line from a KB doc — per convention).
+    (do NOT cite a context-file by line from a KB doc — per convention). Because CLAUDE.md/AGENTS.md
+    are themselves rendered from `canonical/`, edit the canonical source of the context files (not a
+    generated copy).
+  - **Canonical TASK TEMPLATES** — `canonical/aid/templates/task-detail-template.md` and
+    `canonical/aid/templates/task-state-template.md` (+ the shortcut-engine's task-scaffold step):
+    every task file that gets created MUST itself carry the per-transition state-update mandate (a
+    short, emphatic execution-protocol line), so the requirement travels with each task rather than
+    depending on the executor remembering the skill flow. This is the "written into ANY task that is
+    created" requirement.
 - **Validate-first:** confirm the flattened `--field` write path + both reader twins already
   surface each transition end-to-end (they do, per task-004/002); if any transition is genuinely
   unwired for the flattened/pool path, fix the writer/reference too.
@@ -47,6 +59,7 @@
 - [ ] `aid-execute` SKILL.md + execute references carry an explicit, emphatic, unmissable mandate to write the task state at EACH transition (`In Progress` at start, `In Review` at execute-complete, terminal at end), covering both full and flattened layouts and single + pool dispatch — verified by reading the rendered instructions (traces to BLUEPRINT gate criteria #15).
 - [ ] The mandate explicitly binds the executing agent WHOEVER it is — the main/orchestrator agent executing a task directly AND a dispatched sub-agent — stating no agent may bypass the per-transition writes; the EXECUTE dispatch brief and the orchestrator/self-execute step both require the `In Progress`/`In Review` writes, not only the terminal write (traces to gate criteria #15).
 - [ ] A `tests/canonical/` regression test drives a flattened task row `Pending -> In Progress -> In Review -> Done` and asserts the table + both reader twins reflect each transition (traces to gate criteria #15).
+- [ ] The mandate lives in CANONICAL sources that EVERY future task inherits — the aid-execute flow, the canonical task templates (`task-detail-template.md` / `task-state-template.md` + shortcut-engine task scaffold, so each created task file carries the execution-protocol line), and the canonical context files (CLAUDE.md/AGENTS.md source) — NOT merely documented in task-009's own DETAIL (traces to gate criteria #15).
 - [ ] Consistent with the global IMPERATIVE tracking rule; no KB->context-file line citation introduced.
 - [ ] If canonical was edited: `run_generator.py` re-rendered; dogfood resynced (byte-identity deferred to CI).
 - [ ] All applicable quality gates pass (per `.aid/settings.yml`).
