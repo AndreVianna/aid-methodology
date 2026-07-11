@@ -10,7 +10,7 @@ Design tokens live in `design-tokens.md`. Use only the CSS custom properties
 (`var(--accent)`, `var(--text)`, etc.) -- never hard-code colours -- so the
 visual is automatically correct in both light and dark themes.
 
-The section-6 quality gates validate every authored visual for:
+The section-7 quality gates validate every authored visual for:
 - Readable text (legible font size, not clipped)
 - Minimal / zero element overlap
 - Correct basic layout (non-trivial, not collapsed or empty)
