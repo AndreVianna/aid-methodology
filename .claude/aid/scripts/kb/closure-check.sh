@@ -272,19 +272,59 @@ cat "$TERMS_FILE" "$RELATES_FILE" | sort -u > "$UNIVERSE_FILE"
 #       loop passes them via --dismissed. Once every used term is GROUNDED (matches a concept
 #       heading) or DISMISSED, output (a) is empty and the loop closes deterministically.
 # Compare case-insensitively (denylist authored lowercase; dismissed terms lowercased here).
-EXCLUDE_LC="${TMPDIR_CC}/exclude_lc.txt"
-: > "$EXCLUDE_LC"
+EXCLUDE_RAW="${TMPDIR_CC}/exclude_raw.txt"
+: > "$EXCLUDE_RAW"
 if [[ -n "${DENYLIST:-}" && -f "$DENYLIST" ]]; then
   # `|| true`: on an empty/all-comment file the trailing `grep -v` exits 1, which under
   # `set -euo pipefail` would abort the script. The extraction is best-effort.
-  LC_ALL=C tr '[:upper:]' '[:lower:]' < "$DENYLIST" \
-    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^[[:space:]]*$' \
-    | grep -v '^#' >> "$EXCLUDE_LC" || true
+  sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' "$DENYLIST" | grep -v '^[[:space:]]*$' \
+    | grep -v '^#' >> "$EXCLUDE_RAW" || true
 fi
 if [[ -n "${DISMISSED_ARG:-}" && -f "$DISMISSED_ARG" ]]; then
-  LC_ALL=C tr '[:upper:]' '[:lower:]' < "$DISMISSED_ARG" \
-    | sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' | grep -v '^[[:space:]]*$' \
-    | grep -v '^#' >> "$EXCLUDE_LC" || true
+  sed -E 's/^[[:space:]]+//; s/[[:space:]]+$//' "$DISMISSED_ARG" | grep -v '^[[:space:]]*$' \
+    | grep -v '^#' >> "$EXCLUDE_RAW" || true
+fi
+
+# Expand every raw excluded entry into every lexical FORM the harvester can emit for it,
+# so ONE exclusion decision covers all of them. harvest-coined-terms.sh emits a CamelCase
+# compound as BOTH a joined form (`PowerShell`) and a split, spaced form (`Power Shell`)
+# (its camel_both mode) -- without this expansion, confirming/denylisting only one form
+# leaves the other to resurface as a "new" ungrounded term every run (task-007 confirmed
+# 7 such pairs already stuck in `.aid/settings.yml` term_exclusions: Java Script/
+# javascript, Power Shell+Windows Power/powershell, Script Analyzer/scriptanalyzer,
+# IsWindows/is windows, AidVersion/aid version, File System/filesystem, No Profile/
+# noprofile -- each had exactly one of its two forms excluded).
+# Emitted per raw entry: (a) as-is lowercased; (b) every internal space removed, lowercased
+# (spaced -> joined: "Power Shell" -> "powershell"); (c) CamelCase boundary split, lowercased
+# (joined -> spaced: "IsWindows" -> "is windows"). splitcamel mirrors harvest-coined-terms.sh's
+# function of the same name so both scripts agree on where a boundary falls.
+EXCLUDE_LC="${TMPDIR_CC}/exclude_lc.txt"
+if [[ -s "$EXCLUDE_RAW" ]]; then
+  LC_ALL=C awk '
+    function splitcamel(s,   i,cur,prev,nxt,out) {
+      out=""
+      for (i=1;i<=length(s);i++) {
+        cur=substr(s,i,1)
+        if (i>1) { prev=substr(s,i-1,1); if (prev ~ /[a-z0-9]/ && cur ~ /[A-Z]/) out=out " " }
+        out=out cur
+      }
+      s=out; out=""
+      for (i=1;i<=length(s);i++) {
+        cur=substr(s,i,1); nxt=substr(s,i+1,1); prev=(i>1?substr(s,i-1,1):"")
+        if (prev ~ /[A-Z]/ && cur ~ /[A-Z]/ && nxt ~ /[a-z]/) out=out " "
+        out=out cur
+      }
+      return tolower(out)
+    }
+    {
+      print tolower($0)
+      nospace = $0; gsub(/[[:space:]]+/, "", nospace)
+      print tolower(nospace)
+      print splitcamel($0)
+    }
+  ' "$EXCLUDE_RAW" > "$EXCLUDE_LC"
+else
+  : > "$EXCLUDE_LC"
 fi
 if [[ -s "$EXCLUDE_LC" ]]; then
   LC_ALL=C sort -u -o "$EXCLUDE_LC" "$EXCLUDE_LC"

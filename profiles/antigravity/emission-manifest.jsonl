@@ -25,8 +25,8 @@
 {"dst": ".agent/aid/scripts/kb/build-kb-index.sh", "profile": "antigravity", "sha256": "bc9c0bc138fa65a4e9b56f275df753dcedb0e6f63cfa6ffbf431b0ad0c3ff7f4", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".agent/aid/scripts/kb/build-metrics.sh", "profile": "antigravity", "sha256": "3d63066f2cd54ccd0a5321faad95746b8dc27a20e16b8219df647dfa6f97c31e", "src": "canonical/scripts/kb/build-metrics.sh"}
 {"dst": ".agent/aid/scripts/kb/build-project-index.sh", "profile": "antigravity", "sha256": "74489d122cc2138a525a6076261707999b13bc77d9a5e8801e73955fa366ab8b", "src": "canonical/scripts/kb/build-project-index.sh"}
-{"dst": ".agent/aid/scripts/kb/closure-check.sh", "profile": "antigravity", "sha256": "79f6a6e2be079e53e3a1b3ee070fd9830c55899760b3c411ccea0e219a3c7a4f", "src": "canonical/scripts/kb/closure-check.sh"}
-{"dst": ".agent/aid/scripts/kb/coined-term-denylist.txt", "profile": "antigravity", "sha256": "5b496f1cc7e7c5d336f45966a783dae06727c85d4dc2d66fb8990daae57e0625", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
+{"dst": ".agent/aid/scripts/kb/closure-check.sh", "profile": "antigravity", "sha256": "b5d17e87e0260537c280e391d5f3ef7f9aeaf9ebc1d625f6355f58811aed4e03", "src": "canonical/scripts/kb/closure-check.sh"}
+{"dst": ".agent/aid/scripts/kb/coined-term-denylist.txt", "profile": "antigravity", "sha256": "c20cd493623158519f8aa61fe40a1ec4577e79fe2b68f8797557c9de9a803c0f", "src": "canonical/scripts/kb/coined-term-denylist.txt"}
 {"dst": ".agent/aid/scripts/kb/discover-preflight.sh", "profile": "antigravity", "sha256": "ed1a1dce6fc24ae3f24a541936c7133efb88bfe19d125a38cb900cc1b4163340", "src": "canonical/scripts/kb/discover-preflight.sh"}
 {"dst": ".agent/aid/scripts/kb/harvest-coined-terms.sh", "profile": "antigravity", "sha256": "4312408efc618e0cd96197f5f5dde1e46b531fba15f93222ffacd2b5e8bf6d31", "src": "canonical/scripts/kb/harvest-coined-terms.sh"}
 {"dst": ".agent/aid/scripts/kb/kb-actback-task.sh", "profile": "antigravity", "sha256": "63a7534a1252982753cf2d698fc5e3af63e1f2c79f905200a97da3d377cd56d5", "src": "canonical/scripts/kb/kb-actback-task.sh"}
