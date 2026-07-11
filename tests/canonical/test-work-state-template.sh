@@ -273,16 +273,16 @@ assert_file_contains \
 if [[ -f "$FIRST_RUN" ]]; then
     assert_file_contains \
         "$FIRST_RUN" \
-        "Lifecycle:** Running" \
-        "WS19 aid-describe state-first-run seeds Lifecycle: Running"
+        "lifecycle: Running" \
+        "WS19 aid-describe state-first-run seeds lifecycle: Running (frontmatter, task-004)"
     assert_file_contains \
         "$FIRST_RUN" \
-        "Phase:** Interview" \
-        "WS19 aid-describe state-first-run seeds Phase: Interview"
+        "phase: Describe" \
+        "WS19 aid-describe state-first-run seeds phase: Describe (frontmatter task-004; faithful enum task-010)"
     assert_file_contains \
         "$FIRST_RUN" \
-        "Active Skill:** aid-describe" \
-        "WS19 aid-describe state-first-run seeds Active Skill: aid-describe"
+        "active_skill: aid-describe" \
+        "WS19 aid-describe state-first-run seeds active_skill: aid-describe (frontmatter, task-004)"
 else
     fail "WS19 state-first-run.md not found: $FIRST_RUN"
 fi
