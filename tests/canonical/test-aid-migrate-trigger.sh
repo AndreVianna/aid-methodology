@@ -492,7 +492,7 @@ else
     fail "TRG-MO01 manifest-only: settings.yml NOT created (era-b manifest trigger missing)"
 fi
 _MO_FV="$(grep -m1 '^format_version:' "${_MO_REPO}/.aid/settings.yml" 2>/dev/null | tr -d ' ' | cut -d: -f2)"
-assert_eq "${_MO_FV}" "1" "TRG-MO02 manifest-only: format_version: 1 stamped"
+assert_eq "${_MO_FV}" "2" "TRG-MO02 manifest-only: format_version: 2 stamped"
 
 # Idempotent: 'aid status' must NOT warn now (stamp current) -- the recurrence is gone.
 _MO_OUT2="$(cd "${_MO_REPO}" && env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
@@ -548,7 +548,7 @@ fi
 # TRG-F  First-encounter bootstrap (AC9):
 #   A stamp-less repo (era-a settings.yml with no format_version) is visited
 #   via 'aid __migrate-repo'.  Asserts:
-#     (a) format_version: 1 written into .aid/settings.yml
+#     (a) format_version: 2 written into .aid/settings.yml
 #     (b) repo is registered in the (user-tier, collapsed) registry.yml
 #     (c) NO filesystem scan: a CANARY repo with .aid/ planted OUTSIDE the
 #         throwaway HOME is NOT touched / NOT registered (the real proof that
@@ -615,14 +615,14 @@ _F_MIGRATE_OUT="$(env \
     AID_NO_UPDATE_CHECK=1 \
     bash "${_F_CODE}/bin/aid" __migrate-repo "${_F_REPO}" 2>&1)" || true
 
-# (a) format_version: 1 must be written into the repo's settings.yml.
+# (a) format_version: 2 must be written into the repo's settings.yml.
 _F_FV="$(grep '^format_version:' "${_F_REPO}/.aid/settings.yml" 2>/dev/null | head -1 || true)"
 _F_FV_VAL="${_F_FV#format_version:}"
 _F_FV_VAL="${_F_FV_VAL# }"
-if [[ "${_F_FV_VAL}" == "1" ]]; then
-    pass "TRG-F01 AC9 first-encounter: (a) format_version: 1 written into settings.yml"
+if [[ "${_F_FV_VAL}" == "2" ]]; then
+    pass "TRG-F01 AC9 first-encounter: (a) format_version: 2 written into settings.yml"
 else
-    fail "TRG-F01 AC9 first-encounter: (a) format_version: 1 NOT found (got: '${_F_FV}'; out: ${_F_MIGRATE_OUT})"
+    fail "TRG-F01 AC9 first-encounter: (a) format_version: 2 NOT found (got: '${_F_FV}'; out: ${_F_MIGRATE_OUT})"
 fi
 
 # (b) Repo is registered in the (user-tier, collapsed) registry.yml.
@@ -674,9 +674,9 @@ fi
 
 # ---------------------------------------------------------------------------
 # TRG-J: Carry-forward -- second encounter of already-stamped repo
-# Reuse the same fixture repo from TRG-F (it is now stamped with format_version: 1).
+# Reuse the same fixture repo from TRG-F (it is now stamped with format_version: 2).
 # Carry-forward requirements:
-#   - format_version remains at 1 (stamp value preserved)
+#   - format_version remains at 2 (stamp value preserved)
 #   - No re-prompt / no "older format" / no "aid update" on stdout
 #
 # Note: _aid_migrate_repair_settings_era_a always performs a temp+mv write even
@@ -700,12 +700,12 @@ else
     fail "TRG-J01 carry-forward: format_version changed (before='${_J_FV_BEFORE}' after='${_J_FV_AFTER}')"
 fi
 
-# format_version must still be 1.
+# format_version must still be 2.
 _J_FV_VAL="${_J_FV_AFTER#format_version:}"; _J_FV_VAL="${_J_FV_VAL# }"
-if [[ "${_J_FV_VAL}" == "1" ]]; then
-    pass "TRG-J02 carry-forward: format_version: 1 still present after second encounter"
+if [[ "${_J_FV_VAL}" == "2" ]]; then
+    pass "TRG-J02 carry-forward: format_version: 2 still present after second encounter"
 else
-    fail "TRG-J02 carry-forward: format_version not 1 after second encounter (got: '${_J_FV_AFTER}')"
+    fail "TRG-J02 carry-forward: format_version not 2 after second encounter (got: '${_J_FV_AFTER}')"
 fi
 
 # No re-prompt: 'aid status' on the stamped repo must not emit WARN / offer.
