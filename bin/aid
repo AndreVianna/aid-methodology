@@ -10,6 +10,7 @@
 # Usage:
 #   aid                              Show the dashboard
 #   aid -h | --help                  Show help
+#   aid --version | -V               Print the CLI version and exit (same as 'aid version')
 #   aid version                      Print the CLI version
 #   aid status                       Show AID state of the current project
 #   aid add <tool>[,...]             Add tool(s) to the current project
@@ -21,11 +22,15 @@
 #
 # Flags (shared across subcommands where applicable):
 #   --from-bundle <path>   Offline install from a pre-downloaded tarball / dir.
-#   --version <v>          Pin to a specific release version (e.g. 0.7.0).
+#   --version <v>          (add/remove/update only) Pin to a specific release version (e.g. 0.7.0).
 #   --force                Overwrite differing files / skip confirmation prompts.
 #   --target <dir>         Project root (default: current directory).
 #   --verbose              Print per-file detail (default: concise summary).
 #   --no-path              (bootstrap / update self only) Skip PATH wiring.
+#
+# Top-level-only flag (bare, no value, handled before subcommand dispatch):
+#   --version | -V          Print the CLI version and exit 0. Distinct from the
+#                            subcommand --version <v> pin flag above.
 
 set -uo pipefail
 
@@ -199,6 +204,7 @@ _aid_usage() {
             printf 'Usage:\n'
             printf '  aid                              Show the dashboard\n'
             printf '  aid -h | --help                  Show this help\n'
+            printf '  aid --version | -V               Print the CLI version and exit (same as "aid version")\n'
             printf '  aid version                      Print the CLI version\n'
             printf '  aid status                       Show AID state of the current project\n'
             printf '  aid add <tool>[,...]             Add tool(s) to the current project\n'
@@ -208,10 +214,25 @@ _aid_usage() {
             printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
             printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
-            printf 'Flags: --from-bundle, --version, --force, --dry-run, --target, --verbose\n'
+            printf 'Flags: --from-bundle, --version <v> (add/remove/update only -- pins a release), --force, --dry-run, --target, --verbose\n'
+            printf 'Top-level --version / -V takes NO value and prints the CLI version (distinct from the --version <v> pin above).\n'
             printf "Run 'aid <command> -h' for details.\n"
             ;;
     esac
+}
+
+# ---------------------------------------------------------------------------
+# Version helper: single-source the CLI version via the VERSION-file read.
+# Shared by the 'aid version' subcommand and the top-level bare --version/-V
+# flag -- do NOT duplicate this literal read path elsewhere.
+# ---------------------------------------------------------------------------
+_aid_print_version() {
+    local local_version_file="${AID_CODE_HOME}/VERSION"
+    if [[ -f "$local_version_file" ]]; then
+        cat "$local_version_file"
+    else
+        echo "unknown (VERSION file not found at ${local_version_file})"
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -2701,6 +2722,13 @@ case "$1" in
         _aid_usage
         exit 0
         ;;
+    -V|--version)
+        # Top-level, bare, no-value flag -- distinct from the subcommand
+        # --version <v> pin (add/remove/update, parsed further below). Only
+        # fires when it is the FIRST argument, so it never shadows the pin.
+        _aid_print_version
+        exit 0
+        ;;
 esac
 
 SUBCMD="$1"
@@ -2708,12 +2736,7 @@ shift
 
 # ---- version ----------------------------------------------------------------
 if [[ "$SUBCMD" == "version" ]]; then
-    local_version_file="${AID_CODE_HOME}/VERSION"
-    if [[ -f "$local_version_file" ]]; then
-        cat "$local_version_file"
-    else
-        echo "unknown (VERSION file not found at ${local_version_file})"
-    fi
+    _aid_print_version
     exit 0
 fi
 
