@@ -46,7 +46,7 @@ omission in `order_repository.py`, not a missing feature.
 - [ ] Regression test added that would have caught this bug: unit test mocks
       `OrdersCache` and asserts `cache.invalidate` is called with `order_id`
       as the only argument on every `update_order()` execution.
-- [ ] All §6 quality gates pass.
+- [ ] All applicable quality gates pass (per `.aid/settings.yml`).
 
 ## Tasks
 

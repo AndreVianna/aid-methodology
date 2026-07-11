@@ -22,7 +22,7 @@ that discovery may not have captured.
 | integration-map.md | §8 Dependencies | External services, third-party integrations |
 | domain-glossary.md | All sections | Domain-specific terms used throughout the interview |
 | test-landscape.md | §6 NFRs | Testing strategy, frameworks, coverage goals |
-| coding-standards.md | §6 NFRs | Auth, encryption, data protection conventions (see §11) |
+| coding-standards.md | §6 NFRs | Auth, encryption, data protection conventions |
 | infrastructure.md | §7 Constraints, §8 Assumptions | VCS, CI/CD, deployment targets, hosting, PM tools |
 | tech-debt.md | — | Skip for greenfield (no existing debt). Brownfield: leave to /aid-discover |
 | feature-inventory.md | — | Skip — populated after feature decomposition |
