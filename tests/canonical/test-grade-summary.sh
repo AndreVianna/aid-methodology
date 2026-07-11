@@ -15,7 +15,7 @@
 #        shell landmarks (header/main/nav/footer) and shell-consistency markers
 #        present in html-skeleton.html.
 #   GR   Guardrails C1/C2/C3/C5/C6:
-#        C1 output path .aid/dashboard/kb.html;
+#        C1 output path .aid/knowledge/kb.html;
 #        C2/C3 no CDN / no external script src / no sibling sub-resource fetches;
 #        C5 "## Knowledge Summary Status" -> "**User Approved:** yes" literal;
 #        C6 "## Completeness" + "kb_baseline:" shapes.
@@ -518,7 +518,7 @@ mkdir -p "${REPO_3F}/.aid/knowledge"
 for doc in domain-glossary.md decisions.md capability-inventory.md architecture.md workflow-map.md; do
     make_kb_doc "${REPO_3F}/.aid/knowledge/${doc}" "${doc%.md}"
 done
-KB_HTML_3F="${REPO_3F}/.aid/dashboard/kb.html"
+KB_HTML_3F="${REPO_3F}/.aid/knowledge/kb.html"
 make_kb_html "$KB_HTML_3F"
 
 # Run grade-summary.sh from the fixture dir, capture report
@@ -549,7 +549,7 @@ for doc in domain-glossary.md decisions.md capability-inventory.md architecture.
     make_kb_doc "${REPO_3G}/.aid/knowledge/${doc}" "${doc%.md}"
 done
 # Build HTML that only references 1 of 5 docs (20% coverage -> below 60% -> F)
-KB_HTML_3G="${REPO_3G}/.aid/dashboard/kb.html"
+KB_HTML_3G="${REPO_3G}/.aid/knowledge/kb.html"
 mkdir -p "$(dirname "$KB_HTML_3G")"
 cat > "$KB_HTML_3G" <<'HTMLEOF'
 <!DOCTYPE html>
@@ -691,19 +691,19 @@ fi
 # ===========================================================================
 
 echo ""
-echo "=== GR-C1: stale-check.sh hardcodes output path .aid/dashboard/kb.html ==="
-if grep -qF ".aid/dashboard/kb.html" "$STALE_CHECK_SH"; then
-    pass "GR-C1: stale-check.sh uses .aid/dashboard/kb.html as the output path"
+echo "=== GR-C1: stale-check.sh hardcodes output path .aid/knowledge/kb.html ==="
+if grep -qF ".aid/knowledge/kb.html" "$STALE_CHECK_SH"; then
+    pass "GR-C1: stale-check.sh uses .aid/knowledge/kb.html as the output path"
 else
-    fail "GR-C1: stale-check.sh does not reference .aid/dashboard/kb.html"
+    fail "GR-C1: stale-check.sh does not reference .aid/knowledge/kb.html"
 fi
 
 echo ""
-echo "=== GR-C1b: state-generate.md assemble step targets .aid/dashboard/kb.html ==="
-if grep -qF ".aid/dashboard/kb.html" "$STATE_GENERATE_MD"; then
-    pass "GR-C1b: state-generate.md targets .aid/dashboard/kb.html output path"
+echo "=== GR-C1b: state-generate.md assemble step targets .aid/knowledge/kb.html ==="
+if grep -qF ".aid/knowledge/kb.html" "$STATE_GENERATE_MD"; then
+    pass "GR-C1b: state-generate.md targets .aid/knowledge/kb.html output path"
 else
-    fail "GR-C1b: state-generate.md missing .aid/dashboard/kb.html output path"
+    fail "GR-C1b: state-generate.md missing .aid/knowledge/kb.html output path"
 fi
 
 echo ""
@@ -754,8 +754,8 @@ fi
 echo ""
 echo "=== GR-C5c: test that STATE.md with 'User Approved: yes' is read by stale-check ==="
 REPO_C5="${TMPDIR_BASE}/gc5"
-mkdir -p "${REPO_C5}/.aid/knowledge" "${REPO_C5}/.aid/dashboard"
-echo "<html><body>test</body></html>" > "${REPO_C5}/.aid/dashboard/kb.html"
+mkdir -p "${REPO_C5}/.aid/knowledge"
+echo "<html><body>test</body></html>" > "${REPO_C5}/.aid/knowledge/kb.html"
 cat > "${REPO_C5}/.aid/knowledge/STATE.md" <<'STATEEOF'
 ## Review History
 
@@ -797,7 +797,7 @@ mkdir -p "${REPO_C6}/.aid/knowledge"
 for doc in domain-glossary.md decisions.md capability-inventory.md architecture.md workflow-map.md; do
     make_kb_doc "${REPO_C6}/.aid/knowledge/${doc}" "${doc%.md}"
 done
-KB_HTML_C6="${REPO_C6}/.aid/dashboard/kb.html"
+KB_HTML_C6="${REPO_C6}/.aid/knowledge/kb.html"
 make_kb_html "$KB_HTML_C6"
 GRADE_OUT_C6=$(cd "$REPO_C6" && bash "$GRADE_SH" "$KB_HTML_C6" 2>&1 || true)
 # COV must still work (kb_baseline presence must not break doc_set parsing)

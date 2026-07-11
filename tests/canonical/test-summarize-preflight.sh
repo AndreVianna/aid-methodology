@@ -11,7 +11,7 @@
 #   T1a: old present + new absent  -> after preflight, new exists and old absent
 #   T1b: both present              -> no clobber: new untouched, old still present
 #   T1c: neither present           -> no-op (preflight still exits 0)
-#   T1d: old present + new absent + .aid/dashboard unwritable -> best-effort, exit 0
+#   T1d: old present + new absent + .aid/knowledge unwritable -> best-effort, exit 0
 #   T1e: idempotency               -> run twice, second run is a no-op
 #   T2:  stale-check-after-migrate -> migrated summary makes stale-check.sh return CURRENT_APPROVED
 #
@@ -110,7 +110,7 @@ REPO_1A="${TMPDIR_BASE}/t1a"
 make_kb_fixture "$REPO_1A"
 
 OLD_1A="${REPO_1A}/.aid/knowledge/knowledge-summary.html"
-NEW_1A="${REPO_1A}/.aid/dashboard/kb.html"
+NEW_1A="${REPO_1A}/.aid/knowledge/kb.html"
 
 # Plant the old summary file
 echo "<html>pre-d009 summary</html>" > "$OLD_1A"
@@ -146,9 +146,8 @@ REPO_1B="${TMPDIR_BASE}/t1b"
 make_kb_fixture "$REPO_1B"
 
 OLD_1B="${REPO_1B}/.aid/knowledge/knowledge-summary.html"
-NEW_1B="${REPO_1B}/.aid/dashboard/kb.html"
+NEW_1B="${REPO_1B}/.aid/knowledge/kb.html"
 
-mkdir -p "${REPO_1B}/.aid/dashboard"
 echo "<html>old pre-d009</html>"  > "$OLD_1B"
 echo "<html>new post-d009</html>" > "$NEW_1B"
 ORIG_NEW_CONTENT=$(cat "$NEW_1B")
@@ -181,7 +180,7 @@ REPO_1C="${TMPDIR_BASE}/t1c"
 make_kb_fixture "$REPO_1C"
 
 OLD_1C="${REPO_1C}/.aid/knowledge/knowledge-summary.html"
-NEW_1C="${REPO_1C}/.aid/dashboard/kb.html"
+NEW_1C="${REPO_1C}/.aid/knowledge/kb.html"
 
 run_preflight_in "$REPO_1C" > /dev/null 2>&1
 code_1c=$?
@@ -196,25 +195,25 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
-echo "=== T1d: old present + unwritable dashboard dir -> best-effort, exit 0 ==="
+echo "=== T1d: old present + unwritable knowledge dir -> best-effort, exit 0 ==="
 
 REPO_1D="${TMPDIR_BASE}/t1d"
 make_kb_fixture "$REPO_1D"
 
 OLD_1D="${REPO_1D}/.aid/knowledge/knowledge-summary.html"
-NEW_1D="${REPO_1D}/.aid/dashboard/kb.html"
+NEW_1D="${REPO_1D}/.aid/knowledge/kb.html"
 
 echo "<html>pre-d009</html>" > "$OLD_1D"
 
-# Create dashboard dir and make it unwritable so mv fails
-mkdir -p "${REPO_1D}/.aid/dashboard"
-chmod 000 "${REPO_1D}/.aid/dashboard"
+# Make the target dir read-only (r-x) so the relocation mv fails, while preflight
+# checks 1-5 can still READ the KB (STATE.md + docs live under .aid/knowledge/).
+chmod 555 "${REPO_1D}/.aid/knowledge"
 
 out_1d=$(run_preflight_in "$REPO_1D" 2>&1)
 code_1d=$?
 
 # Restore permissions for cleanup
-chmod 755 "${REPO_1D}/.aid/dashboard"
+chmod 755 "${REPO_1D}/.aid/knowledge"
 
 assert_exit_zero "$code_1d" "T1d: preflight exits 0 even when migrate fails (best-effort)"
 
@@ -222,7 +221,7 @@ assert_exit_zero "$code_1d" "T1d: preflight exits 0 even when migrate fails (bes
 if [[ ! -f "$NEW_1D" ]]; then
     pass "T1d: new path absent after failed migrate (correct)"
 else
-    fail "T1d: new path created despite unwritable dir"
+    fail "T1d: new path created despite unwritable knowledge dir"
 fi
 
 # Old path must still exist (not deleted on failure)
@@ -240,7 +239,7 @@ REPO_1E="${TMPDIR_BASE}/t1e"
 make_kb_fixture "$REPO_1E"
 
 OLD_1E="${REPO_1E}/.aid/knowledge/knowledge-summary.html"
-NEW_1E="${REPO_1E}/.aid/dashboard/kb.html"
+NEW_1E="${REPO_1E}/.aid/knowledge/kb.html"
 
 echo "<html>pre-d009 idempotency</html>" > "$OLD_1E"
 
@@ -288,7 +287,7 @@ REPO_T2="${TMPDIR_BASE}/t2"
 make_kb_fixture "$REPO_T2"
 
 OLD_T2="${REPO_T2}/.aid/knowledge/knowledge-summary.html"
-NEW_T2="${REPO_T2}/.aid/dashboard/kb.html"
+NEW_T2="${REPO_T2}/.aid/knowledge/kb.html"
 
 echo "<html>pre-d009 stale-check test</html>" > "$OLD_T2"
 

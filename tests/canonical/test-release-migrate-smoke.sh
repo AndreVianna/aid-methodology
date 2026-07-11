@@ -11,8 +11,8 @@
 #           (lazy per-repo format_version gate; no scan, no machine marker)
 #   - pypi: pip-installed entry point, same lazy stamp-on-encounter model
 # One seeded "old" repo + one assertion per channel -- not a re-run of the unit
-# fixture matrix. Catches packaging/wiring regressions (e.g. a missing home.html
-# source on the bundle path) that unit tests cannot see.
+# fixture matrix. Catches packaging/wiring regressions (e.g. an install channel
+# that never triggers the format stamp) that unit tests cannot see.
 #
 # ISOLATION: HOME is pinned to a throwaway for the WHOLE process, so the
 # migration scan (defaults to $HOME) can only ever see this suite's fixtures.
@@ -30,9 +30,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 REF_SETTINGS="${REPO_ROOT}/.aid/settings.yml"
-REF_HOME_HTML="${REPO_ROOT}/dashboard/home.html"
-[[ -f "${REF_SETTINGS}" && -f "${REF_HOME_HTML}" ]] || { echo "SKIP: repo reference files missing"; exit 0; }
-HOME_HTML_SIZE="$(wc -c < "${REF_HOME_HTML}")"
+[[ -f "${REF_SETTINGS}" ]] || { echo "SKIP: repo reference files missing"; exit 0; }
 BASEPATH="/usr/local/bin:/usr/bin:/bin"
 
 TMP="$(mktemp -d)"
@@ -45,7 +43,7 @@ REAL_GIT_BEFORE="$(git -C "${REPO_ROOT}" status --porcelain 2>/dev/null | wc -l)
 export HOME="${TMP}/fakehome"; mkdir -p "${HOME}"
 
 # Seed ONE "old" repo that needs migration: valid era-a settings, NO format_version stamp.
-# feature-001: the lazy-stamp model WARNs on encounter; __migrate-repo provisions home.html.
+# feature-001: the lazy-stamp model WARNs on encounter; __migrate-repo stamps format_version.
 seed_old_repo() {  # $1 = code_home (the dir where bin/aid lives)
     local r="$1/legacy-repo"
     mkdir -p "${r}/.aid"
@@ -60,7 +58,8 @@ seed_old_repo() {  # $1 = code_home (the dir where bin/aid lives)
 }
 # Assert feature-001 lazy-stamp behavior:
 #   - 'aid status' in stamp-less repo: WARN "older format" printed, exit 0.
-#   - After explicit 'aid __migrate-repo': home.html provisioned (migration step 2).
+#   - After explicit 'aid __migrate-repo': settings.yml stamped format_version: 2
+#     (the migration side-effect in format 2; home.html is now CLI-served, not per-repo).
 assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_home
     local repo="$1" label="$2" aid_bin="$3" aid_home="$4"
     # Step 1: WARN on encounter.
@@ -72,14 +71,14 @@ assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_hom
     else
         fail "${label}-A -- stamp-less repo encounter: expected WARN 'older format'; got: $(echo "${_warn_out}" | head -3)"
     fi
-    # Step 2: explicit __migrate-repo provisions home.html.
+    # Step 2: explicit __migrate-repo stamps the repo to the current layout format.
     AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
         bash "${aid_bin}" __migrate-repo "${repo}" >/dev/null 2>&1 || true
-    local hh="${repo}/.aid/dashboard/home.html"
-    if [[ -f "${hh}" ]] && [[ "$(wc -c < "${hh}")" == "${HOME_HTML_SIZE}" ]]; then
-        pass "${label}-B -- after __migrate-repo: home.html provisioned (${HOME_HTML_SIZE}B)"
+    local _sf="${repo}/.aid/settings.yml"
+    if grep -q '^format_version: 2' "${_sf}" 2>/dev/null; then
+        pass "${label}-B -- after __migrate-repo: settings.yml stamped format_version: 2"
     else
-        fail "${label}-B -- after __migrate-repo: home.html missing/short at ${hh}"
+        fail "${label}-B -- after __migrate-repo: format_version: 2 stamp missing at ${_sf}"
     fi
 }
 

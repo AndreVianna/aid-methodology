@@ -7,9 +7,9 @@
 #   No skill execution required; no Node runtime needed.
 #
 # Guardrails checked:
-#   C1   Output path is .aid/dashboard/kb.html (not legacy .aid/knowledge/knowledge-summary.html).
+#   C1   Output path is .aid/knowledge/kb.html (not legacy .aid/knowledge/knowledge-summary.html).
 #        - stale-check.sh hardcodes the new path.
-#        - assemble.sh default output is .aid/dashboard/kb.html.
+#        - assemble.sh default output is .aid/knowledge/kb.html.
 #        - state-generate.md documents the target path.
 #
 #   C2/C3  Single self-contained file, no CDN / split asset / framework fetch.
@@ -66,23 +66,23 @@ STATE_GENERATE_MD="${REPO_ROOT}/canonical/skills/aid-summarize/references/state-
 STATE_VALIDATE_MD="${REPO_ROOT}/canonical/skills/aid-summarize/references/state-validate.md"
 
 # ===========================================================================
-# === C1: Output path is .aid/dashboard/kb.html ==============================
+# === C1: Output path is .aid/knowledge/kb.html =============================
 # ===========================================================================
 
 echo ""
-echo "=== C1a: stale-check.sh targets .aid/dashboard/kb.html ==="
-assert_file_contains "$STALE_CHECK_SH" ".aid/dashboard/kb.html" \
-    "C1a stale-check.sh references .aid/dashboard/kb.html"
+echo "=== C1a: stale-check.sh targets .aid/knowledge/kb.html ==="
+assert_file_contains "$STALE_CHECK_SH" ".aid/knowledge/kb.html" \
+    "C1a stale-check.sh references .aid/knowledge/kb.html"
 
 echo ""
-echo "=== C1b: assemble.sh defaults output to .aid/dashboard/kb.html ==="
-assert_file_contains "$ASSEMBLE_SH" ".aid/dashboard/kb.html" \
-    "C1b assemble.sh defaults to .aid/dashboard/kb.html output path"
+echo "=== C1b: assemble.sh defaults output to .aid/knowledge/kb.html ==="
+assert_file_contains "$ASSEMBLE_SH" ".aid/knowledge/kb.html" \
+    "C1b assemble.sh defaults to .aid/knowledge/kb.html output path"
 
 echo ""
-echo "=== C1c: state-generate.md documents .aid/dashboard/kb.html target path ==="
-assert_file_contains "$STATE_GENERATE_MD" ".aid/dashboard/kb.html" \
-    "C1c state-generate.md references .aid/dashboard/kb.html"
+echo "=== C1c: state-generate.md documents .aid/knowledge/kb.html target path ==="
+assert_file_contains "$STATE_GENERATE_MD" ".aid/knowledge/kb.html" \
+    "C1c state-generate.md references .aid/knowledge/kb.html"
 
 echo ""
 echo "=== C1d: stale-check.sh does NOT reference legacy .aid/knowledge/knowledge-summary.html (only in migration code) ==="

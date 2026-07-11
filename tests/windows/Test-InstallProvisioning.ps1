@@ -65,8 +65,8 @@ $results = & $mod {
     rec "SE1b seeded flag" ($script:_SeededSettings -eq $true)
     $se1 = Get-Content -LiteralPath "$t\.aid\settings.yml" -Raw
     rec "SE1c seeded from template" ($se1 -match '<project-name>')
-    rec "SE1d format_version stamped" ($se1 -match '(?m)^format_version: 1')
-    rec "SE1e format_version first line" (((Get-Content -LiteralPath "$t\.aid\settings.yml" -TotalCount 1)) -eq 'format_version: 1')
+    rec "SE1d format_version stamped" ($se1 -match '(?m)^format_version: 2')
+    rec "SE1e format_version first line" (((Get-Content -LiteralPath "$t\.aid\settings.yml" -TotalCount 1)) -eq 'format_version: 2')
 
     # SE2: never clobber existing user config
     $t = newd $tmp

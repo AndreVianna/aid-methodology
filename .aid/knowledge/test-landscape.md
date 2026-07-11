@@ -208,7 +208,7 @@ trees are exactly what the generator produces from `canonical/`.
   `--self-test` invocations — `render_lib.py`, `test_manifest_safety.py`, `render.py`,
   `verify_deterministic.py`, `verify_advisory.py`.
 - **Visual fidelity** (`test.yml` `visual-fidelity` job): installs Playwright + Chromium and
-  runs `validate-visuals.mjs` against `.aid/dashboard/kb.html`. It **gracefully degrades** —
+  runs `validate-visuals.mjs` against `.aid/knowledge/kb.html`. It **gracefully degrades** —
   exits 0 with a SKIP if `kb.html` or the validator is absent (the gate only fires once a
   summary has been generated).
 
@@ -302,8 +302,8 @@ python .claude/skills/generate-profile/scripts/render.py --self-test --canonical
 python .claude/skills/generate-profile/scripts/verify_deterministic.py --self-test --canonical-root .
 python .claude/skills/generate-profile/scripts/verify_advisory.py --self-test --canonical-root .
 
-# Visual-fidelity gate (requires a generated .aid/dashboard/kb.html)
-node canonical/aid/scripts/summarize/validate-visuals.mjs .aid/dashboard/kb.html
+# Visual-fidelity gate (requires a generated .aid/knowledge/kb.html)
+node canonical/aid/scripts/summarize/validate-visuals.mjs .aid/knowledge/kb.html
 
 # Version-sync assertion (the release gate)
 bash canonical/aid/scripts/release/check-version-sync.sh --expect "$(tr -d '[:space:]' < VERSION)"

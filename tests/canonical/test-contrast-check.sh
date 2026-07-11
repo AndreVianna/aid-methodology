@@ -86,11 +86,11 @@ run "$TMP/dark-fail.html"
 assert_exit_eq "$RC" 1 "CC08 dark-theme override fails while light passes → exit 1"
 
 # --- Integration: the shipped summary must meet WCAG AA ---------------------
-# d009 relocated the approved KB summary from .aid/knowledge/knowledge-summary.html
-# to .aid/dashboard/kb.html (the path the dashboard serves at /r/<id>/kb.html);
-# content was unchanged (a git mv). Follow it here so CC09 keeps gating the
-# real shipped artifact instead of asserting a path that no longer exists.
-SUMMARY="${REPO_ROOT}/.aid/dashboard/kb.html"
+# The approved KB summary is committed at .aid/knowledge/kb.html (format 2: it
+# lives beside its KB source; the dashboard serves it at /r/<id>/kb.html).
+# Follow it here so CC09 keeps gating the real shipped artifact instead of
+# asserting a path that no longer exists.
+SUMMARY="${REPO_ROOT}/.aid/knowledge/kb.html"
 assert_file_exists "$SUMMARY" "CC09 shipped kb.html summary present"
 if [[ -f "$SUMMARY" ]]; then
     run "$SUMMARY"

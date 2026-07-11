@@ -55,7 +55,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
 
-COMMITTED_KB="${REPO_ROOT}/.aid/dashboard/kb.html"
+COMMITTED_KB="${REPO_ROOT}/.aid/knowledge/kb.html"
 BUILD_MD_EXPORT_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/build-md-export.sh"
 VALIDATE_HTML_SH="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-html-output.sh"
 VALIDATE_VISUALS_MJS="${REPO_ROOT}/canonical/aid/scripts/summarize/validate-visuals.mjs"

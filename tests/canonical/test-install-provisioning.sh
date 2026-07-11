@@ -78,7 +78,7 @@ assert_file_exists "${t}/.aid/settings.yml" "SE1 settings.yml seeded when missin
 assert_eq "$_CORE_SEEDED_SETTINGS" "1" "SE1b seeded flag set"
 assert_file_contains "${t}/.aid/settings.yml" "<project-name>" "SE1c seeded from template"
 assert_file_contains "${t}/.aid/settings.yml" "format_version:" "SE1d format_version stamped (format gate)"
-assert_eq "$(head -1 "${t}/.aid/settings.yml")" "format_version: 1" "SE1e format_version is the first line"
+assert_eq "$(head -1 "${t}/.aid/settings.yml")" "format_version: 2" "SE1e format_version is the first line"
 
 # SE2 — existing settings.yml → NEVER overwritten
 t=$(newdir); mk_target_with_template "$t" ".claude"

@@ -22,7 +22,7 @@
 #     VND-A  dashboard/home.html present in npm vendor manifest comment header.
 #     VND-B  dashboard/home.html present in pypi vendor manifest comment header.
 #     VND-C  bin/aid, bin/aid.ps1, dashboard/home.html ABSENT from EMISSION-MANIFEST.md (C8).
-#     VND-D  dashboard/home.html (repo source) byte-identical to .aid/dashboard/home.html (R20).
+#     (VND-D retired: format 2 eliminated the per-repo .aid/dashboard/home.html copy.)
 #     VND-E  node packages/npm/scripts/vendor.js runs to completion (exit 0) and lands
 #            packages/npm/dashboard/home.html.
 #     VND-F  python3 packages/pypi/scripts/vendor.py runs to completion (exit 0) and lands
@@ -72,7 +72,6 @@ VENDOR_JS="${REPO_ROOT}/packages/npm/scripts/vendor.js"
 VENDOR_PY="${REPO_ROOT}/packages/pypi/scripts/vendor.py"
 RELEASE_SH="${REPO_ROOT}/release.sh"
 HOME_HTML_SRC="${REPO_ROOT}/dashboard/home.html"
-HOME_HTML_AID="${REPO_ROOT}/.aid/dashboard/home.html"
 EMISSION_MANIFEST="${REPO_ROOT}/canonical/EMISSION-MANIFEST.md"
 NPM_PKG="${REPO_ROOT}/packages/npm"
 PYPI_PKG="${REPO_ROOT}/packages/pypi"
@@ -975,19 +974,11 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# VND-D: dashboard/home.html source == .aid/dashboard/home.html byte-for-byte (R20).
+# (VND-D removed: format 2 eliminated the per-repo .aid/dashboard/home.html, so the
+#  old "source == per-repo copy byte-for-byte (R20)" equality no longer applies.
+#  home.html is now served from the CLI install tree; VND-A/B/E/F/G still cover
+#  that it is vendored to the CLI.)
 # ---------------------------------------------------------------------------
-if [[ ! -f "${HOME_HTML_SRC}" ]]; then
-    fail "VND-D01 R20 source/copy equality: dashboard/home.html not found at ${HOME_HTML_SRC}"
-elif [[ ! -f "${HOME_HTML_AID}" ]]; then
-    fail "VND-D01 R20 source/copy equality: .aid/dashboard/home.html not found at ${HOME_HTML_AID}"
-else
-    if diff -q "${HOME_HTML_SRC}" "${HOME_HTML_AID}" >/dev/null 2>&1; then
-        pass "VND-D01 R20 source/copy equality: dashboard/home.html == .aid/dashboard/home.html"
-    else
-        fail "VND-D01 R20 source/copy equality: dashboard/home.html and .aid/dashboard/home.html DIFFER"
-    fi
-fi
 
 # ---------------------------------------------------------------------------
 # VND-E: node packages/npm/scripts/vendor.js -> exits 0, lands dashboard/home.html.

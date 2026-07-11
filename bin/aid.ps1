@@ -2272,14 +2272,20 @@ function script:Invoke-AidMigrateRepo {
     $knowledgeDir = Join-Path $aidDir 'knowledge'
     $kbNew        = Join-Path $knowledgeDir 'kb.html'
     $kbOld        = Join-Path $dashDir 'kb.html'
-    if ((Test-Path $kbOld -PathType Leaf) -and (-not (Test-Path $kbNew -PathType Leaf))) {
-        try {
-            if (-not (Test-Path $knowledgeDir -PathType Container)) {
-                New-Item -ItemType Directory -Path $knowledgeDir -Force | Out-Null
+    if (Test-Path $kbOld -PathType Leaf) {
+        if (-not (Test-Path $kbNew -PathType Leaf)) {
+            # Proper place is free: relocate the misplaced kb.html into it.
+            try {
+                if (-not (Test-Path $knowledgeDir -PathType Container)) {
+                    New-Item -ItemType Directory -Path $knowledgeDir -Force | Out-Null
+                }
+                Move-Item -LiteralPath $kbOld -Destination $kbNew -ErrorAction Stop
+            } catch {
+                [Console]::Error.WriteLine("WARN: aid migrate: relocate kb.html failed for ${Repo}: $_")
             }
-            Move-Item -LiteralPath $kbOld -Destination $kbNew -ErrorAction Stop
-        } catch {
-            [Console]::Error.WriteLine("WARN: aid migrate: relocate kb.html failed for ${Repo}: $_")
+        } else {
+            # Proper place already holds a kb.html (authoritative): drop the stale stray.
+            Remove-Item -LiteralPath $kbOld -Force -ErrorAction SilentlyContinue
         }
     }
     if (Test-Path $dashDir -PathType Container) {

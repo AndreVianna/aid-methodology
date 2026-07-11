@@ -2016,10 +2016,16 @@ _aid_migrate_repo() {
     # ------------------------------------------------------------------
     local _kb_new="${repo}/.aid/knowledge/kb.html"
     local _kb_old="${repo}/.aid/dashboard/kb.html"
-    if [[ -f "${_kb_old}" ]] && [[ ! -f "${_kb_new}" ]]; then
-        mkdir -p "${repo}/.aid/knowledge" 2>/dev/null || true
-        mv -n "${_kb_old}" "${_kb_new}" 2>/dev/null || \
-            echo "WARN: aid migrate: relocate kb.html failed for ${repo} (continuing)" >&2
+    if [[ -f "${_kb_old}" ]]; then
+        if [[ ! -f "${_kb_new}" ]]; then
+            # Proper place is free: relocate the misplaced kb.html into it.
+            mkdir -p "${repo}/.aid/knowledge" 2>/dev/null || true
+            mv -n "${_kb_old}" "${_kb_new}" 2>/dev/null || \
+                echo "WARN: aid migrate: relocate kb.html failed for ${repo} (continuing)" >&2
+        else
+            # Proper place already holds a kb.html (authoritative): drop the stale stray.
+            rm -f "${_kb_old}" 2>/dev/null || true
+        fi
     fi
     if [[ -d "${repo}/.aid/dashboard" ]]; then
         # Drop the now-obsolete home.html, then remove the folder only if it is empty.
