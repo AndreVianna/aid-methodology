@@ -20,7 +20,16 @@ Please review .aid/knowledge/ and let us know if there is anything else to consi
 
 ### Step 3: Process Response
 
-- **[1] Approved:** Add `**User Approved:** yes` to `.aid/knowledge/STATE.md`. Add Review History entry under `## Review History`.
+- **[1] Approved:** Add `**User Approved:** yes` to `.aid/knowledge/STATE.md` (the
+  header-blockquote doc-set-level approval line -- untouched by
+  work-003-state-schema; distinct from the KB summary's own `summary_approved`
+  frontmatter scalar, set separately by `/aid-summarize`'s own APPROVAL state).
+  Also set the KB status scalar in the run-state frontmatter (relocated from the
+  old header-blockquote `**Status:**` line by task-001/004):
+  ```bash
+  bash .codex/aid/scripts/summarize/writeback-state.sh --set kb_status Approved
+  ```
+  Add Review History entry under `## Review History`.
   Print: `✅ Discovery complete. Grade: {grade}. KB approved and ready for the Interview phase.`
 - **[2] Consideration:** Add as new Q&A entry in STATE.md `## Q&A (Pending)` (Category: `User Feedback`, Impact: `High`, Status: `Pending`).
   Print: `[Approval] Consideration recorded as Q{N}. Run /aid-discover again to address it.`

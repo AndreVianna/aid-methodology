@@ -27,6 +27,7 @@ reader/locator.py
 reader/models.py
 reader/parsers.py
 reader/reader.py
+reader/state_schema.py
 server/__init__.py
 server/reader.mjs
 server/server.mjs

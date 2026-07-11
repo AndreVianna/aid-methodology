@@ -51,4 +51,4 @@ its runtime is absent, so a host missing one still runs the rest. CI provides bo
 - The renderer (`run_generator.py`) — its own deterministic verify check runs at end of every render and exits 1 on failure.
 - Sub-agent definitions — see `canonical/agents/*/AGENT.md`.
 - Cross-tool consistency (Cursor vs Claude Code vs Codex) — covered by the renderer's byte-identity assertion across the 3 profiles.
-- End-to-end pipeline behavior (Discover → Interview → Specify → Plan → Detail → Execute → Deploy → Monitor) — exercised by dogfooding (this repo IS the test suite for the methodology) rather than scripted E2E tests.
+- End-to-end pipeline behavior (Discover → Describe → Define → Specify → Plan → Detail → Execute → Deploy) — exercised by dogfooding (this repo IS the test suite for the methodology) rather than scripted E2E tests.

@@ -82,7 +82,9 @@ The state-detection logic determines which mode this run executes:
    - If ## Summarization History missing/empty → mode = GENERATE.
    - If LAST_KB_CHANGE_DATE > LAST_SUMMARY_DATE → mode = GENERATE.
    - If LAST_KB_CHANGE_DATE <= LAST_SUMMARY_DATE AND HTML exists:
-       AND ## Knowledge Summary Status says **User Approved:** yes → mode = DONE-IDEMPOTENT (exit cleanly)
+       AND STATE.md's `summary_approved` frontmatter scalar is `yes` (or, for an
+       un-migrated file, the legacy `## Knowledge Summary Status` `**User Approved:** yes`
+       bold line) → mode = DONE-IDEMPOTENT (exit cleanly)
        OTHERWISE → mode = APPROVAL (HTML is current; just need user sign-off)
 
 4. If mode = GENERATE:

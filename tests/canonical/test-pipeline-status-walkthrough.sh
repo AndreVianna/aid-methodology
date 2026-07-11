@@ -59,12 +59,21 @@ pipeline_write() {
         bash "$WRITEBACK" --pipeline --field "$field" --value "$val" 2>/dev/null
 }
 
-# Helper: extract the ## Pipeline State block from a STATE.md.
-# Accepts both "## Pipeline State" (work-004 rename) and the legacy
-# "## Pipeline Status" heading so the helper stays robust against both.
-get_block() {
+# Helper: extract the leading YAML frontmatter block (between the opening and
+# closing "---" fences) from a STATE.md.
+#
+# work-003-state-schema task-004 relocated every Pipeline State scalar
+# (Lifecycle/Phase/Active Skill/Updated/Pause Reason/Block Reason/Block
+# Artifact) from a "## Pipeline State" body bullet into this frontmatter block
+# via writeback-state.sh's wb_set_frontmatter -- the body section is now a
+# static enum-reference blockquote/comment that writeback-state.sh never
+# touches (and, in this suite's make_state fixture, does not exist at all --
+# the fixture only ships ## Tasks Status / ## Deploy Status). Every Part A
+# assertion below reads this frontmatter block, not the body, to see the
+# value a --pipeline write actually produced.
+get_frontmatter_block() {
     local f="$1"
-    awk '/^## Pipeline Stat(e|us)$/{in_ps=1; next} in_ps && /^## /{in_ps=0} in_ps{print}' "$f"
+    awk 'NR==1 && /^---[ \t]*$/{in_fm=1; next} in_fm && /^---[ \t]*$/{exit} in_fm{print}' "$f"
 }
 
 # ===========================================================================
@@ -76,8 +85,10 @@ echo "=== Part A: Lifecycle SM walk-through ==="
 
 # ---------------------------------------------------------------------------
 # A1: Full phase progression
-#   Running/Interview -> Running/Specify -> Running/Plan ->
+#   Running/Describe -> Running/Define -> Running/Specify -> Running/Plan ->
 #   Running/Detail -> Running/Execute -> Running/Deploy
+# (work-003-state-schema task-010: faithful 6-phase pipeline -- Interview split
+# into Describe + Define; the dead Monitor value is not part of this walkthrough.)
 #
 # Assert Phase + Active Skill + Lifecycle: Running at each step;
 # block stays well-formed throughout.
@@ -89,8 +100,8 @@ A1_STATE="${TMPDIR_BASE}/a1/STATE.md"
 make_state "$A1_STATE"
 
 # Declare an ordered array of (Phase, Active Skill) pairs
-A1_PHASES=("Interview" "Specify" "Plan" "Detail" "Execute" "Deploy")
-A1_SKILLS=("aid-describe" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy")
+A1_PHASES=("Describe" "Define" "Specify" "Plan" "Detail" "Execute" "Deploy")
+A1_SKILLS=("aid-describe" "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy")
 
 for i in "${!A1_PHASES[@]}"; do
     phase="${A1_PHASES[$i]}"
@@ -101,30 +112,32 @@ for i in "${!A1_PHASES[@]}"; do
     pipeline_write "$A1_STATE" "Active Skill" "$skill"
     pipeline_write "$A1_STATE" Updated "2026-06-10T00:00:00Z"
 
-    BLOCK=$(get_block "$A1_STATE")
+    FM=$(get_frontmatter_block "$A1_STATE")
 
-    assert_output_contains "$BLOCK" "**Lifecycle:** Running" \
+    assert_output_contains "$FM" "lifecycle: Running" \
         "A1 phase=$phase: Lifecycle=Running"
-    assert_output_contains "$BLOCK" "**Phase:** ${phase}" \
+    assert_output_contains "$FM" "phase: ${phase}" \
         "A1 phase=$phase: Phase field correct"
-    assert_output_contains "$BLOCK" "**Active Skill:** ${skill}" \
+    assert_output_contains "$FM" "active_skill: ${skill}" \
         "A1 phase=$phase: Active Skill correct"
 
-    # Block must contain no conditional (pause/block) fields in Running state
-    assert_output_not_contains "$BLOCK" "**Pause Reason:**" \
-        "A1 phase=$phase: Pause Reason absent during Running"
-    assert_output_not_contains "$BLOCK" "**Block Reason:**" \
-        "A1 phase=$phase: Block Reason absent during Running"
-    assert_output_not_contains "$BLOCK" "**Block Artifact:**" \
-        "A1 phase=$phase: Block Artifact absent during Running"
+    # Conditional fields are never removed (task-004: the key stays present so
+    # the frontmatter shape is stable across every write) -- during Running
+    # they must hold the "--" null sentinel, never a real reason/artifact.
+    assert_output_contains "$FM" "pause_reason: --" \
+        "A1 phase=$phase: Pause Reason sentinel during Running"
+    assert_output_contains "$FM" "block_reason: --" \
+        "A1 phase=$phase: Block Reason sentinel during Running"
+    assert_output_contains "$FM" "block_artifact: --" \
+        "A1 phase=$phase: Block Artifact sentinel during Running"
 
-    # Each field appears exactly once (well-formed, no duplication)
-    for fname in "Lifecycle" "Phase" "Active Skill" "Updated"; do
-        count=$(echo "$BLOCK" | grep -cF "**${fname}:**" || true)
+    # Each key appears exactly once (well-formed, no duplication)
+    for fname in "lifecycle" "phase" "active_skill" "updated"; do
+        count=$(echo "$FM" | grep -cE "^${fname}:" || true)
         if [[ "$count" -eq 1 ]]; then
-            pass "A1 phase=$phase: field '$fname' appears exactly once in block"
+            pass "A1 phase=$phase: frontmatter key '$fname' appears exactly once"
         else
-            fail "A1 phase=$phase: field '$fname' appears $count times in block (expected 1)"
+            fail "A1 phase=$phase: frontmatter key '$fname' appears $count times (expected 1)"
         fi
     done
 
@@ -157,15 +170,17 @@ pipeline_write "$A2_STATE" Lifecycle "Paused-Awaiting-Input"
 pipeline_write "$A2_STATE" "Pause Reason" "Blocker pending -- awaiting loopback resolution before /aid-specify can continue"
 pipeline_write "$A2_STATE" Updated "2026-06-10T01:01:00Z"
 
-BLOCK_PAUSED=$(get_block "$A2_STATE")
-assert_output_contains "$BLOCK_PAUSED" "**Lifecycle:** Paused-Awaiting-Input" \
+FM_PAUSED=$(get_frontmatter_block "$A2_STATE")
+assert_output_contains "$FM_PAUSED" "lifecycle: Paused-Awaiting-Input" \
     "A2 pause: Lifecycle=Paused-Awaiting-Input"
-assert_output_contains "$BLOCK_PAUSED" "**Pause Reason:**" \
-    "A2 pause: Pause Reason present while paused"
-assert_output_not_contains "$BLOCK_PAUSED" "**Block Reason:**" \
-    "A2 pause: Block Reason absent during Paused state"
-assert_output_not_contains "$BLOCK_PAUSED" "**Block Artifact:**" \
-    "A2 pause: Block Artifact absent during Paused state"
+# Real reason text (substring check -- the value is single-quoted in YAML
+# because it contains spaces, so we match the text, not the key: prefix).
+assert_output_contains "$FM_PAUSED" "Blocker pending -- awaiting loopback resolution before /aid-specify can continue" \
+    "A2 pause: Pause Reason set to real text while paused"
+assert_output_contains "$FM_PAUSED" "block_reason: --" \
+    "A2 pause: Block Reason sentinel during Paused state"
+assert_output_contains "$FM_PAUSED" "block_artifact: --" \
+    "A2 pause: Block Artifact sentinel during Paused state"
 
 # Resume: user re-invokes /aid-specify -- state-continue emits Running
 pipeline_write "$A2_STATE" Lifecycle Running
@@ -173,20 +188,20 @@ pipeline_write "$A2_STATE" Phase Specify
 pipeline_write "$A2_STATE" "Active Skill" aid-specify
 pipeline_write "$A2_STATE" Updated "2026-06-10T01:02:00Z"
 
-BLOCK_RESUMED=$(get_block "$A2_STATE")
-assert_output_contains "$BLOCK_RESUMED" "**Lifecycle:** Running" \
+FM_RESUMED=$(get_frontmatter_block "$A2_STATE")
+assert_output_contains "$FM_RESUMED" "lifecycle: Running" \
     "A2 resume: Lifecycle returns to Running"
-assert_output_not_contains "$BLOCK_RESUMED" "**Pause Reason:**" \
-    "A2 resume: Pause Reason CLEARED on Running transition"
-assert_output_not_contains "$BLOCK_RESUMED" "**Block Reason:**" \
-    "A2 resume: Block Reason absent after resume"
+assert_output_contains "$FM_RESUMED" "pause_reason: --" \
+    "A2 resume: Pause Reason reset to the '--' sentinel on Running transition"
+assert_output_contains "$FM_RESUMED" "block_reason: --" \
+    "A2 resume: Block Reason sentinel after resume"
 
-# Lifecycle field appears exactly once after resume (no duplication)
-count=$(get_block "$A2_STATE" | grep -cF "**Lifecycle:**" || true)
+# lifecycle key appears exactly once after resume (no duplication)
+count=$(get_frontmatter_block "$A2_STATE" | grep -cE "^lifecycle:" || true)
 if [[ "$count" -eq 1 ]]; then
-    pass "A2 resume: Lifecycle field appears exactly once (no duplication)"
+    pass "A2 resume: lifecycle key appears exactly once (no duplication)"
 else
-    fail "A2 resume: Lifecycle field appears $count times (expected 1)"
+    fail "A2 resume: lifecycle key appears $count times (expected 1)"
 fi
 
 # ---------------------------------------------------------------------------
@@ -216,15 +231,15 @@ pipeline_write "$A3_STATE" "Block Reason" "Task failed with unresolved impedimen
 pipeline_write "$A3_STATE" "Block Artifact" ".aid/work-test/IMPEDIMENT-task-001.md"
 pipeline_write "$A3_STATE" Updated "2026-06-10T02:01:00Z"
 
-BLOCK_BLOCKED=$(get_block "$A3_STATE")
-assert_output_contains "$BLOCK_BLOCKED" "**Lifecycle:** Blocked" \
+FM_BLOCKED=$(get_frontmatter_block "$A3_STATE")
+assert_output_contains "$FM_BLOCKED" "lifecycle: Blocked" \
     "A3 block: Lifecycle=Blocked"
-assert_output_contains "$BLOCK_BLOCKED" "**Block Reason:** Task failed" \
-    "A3 block: Block Reason present while blocked"
-assert_output_contains "$BLOCK_BLOCKED" "**Block Artifact:** .aid/work-test/IMPEDIMENT-task-001.md" \
+assert_output_contains "$FM_BLOCKED" "Task failed with unresolved impediment" \
+    "A3 block: Block Reason set to real text while blocked"
+assert_output_contains "$FM_BLOCKED" "block_artifact: .aid/work-test/IMPEDIMENT-task-001.md" \
     "A3 block: Block Artifact present while blocked"
-assert_output_not_contains "$BLOCK_BLOCKED" "**Pause Reason:**" \
-    "A3 block: Pause Reason absent while Blocked"
+assert_output_contains "$FM_BLOCKED" "pause_reason: --" \
+    "A3 block: Pause Reason sentinel while Blocked"
 
 # Resolve: user fixes impediment, re-runs /aid-execute
 pipeline_write "$A3_STATE" Lifecycle Running
@@ -232,15 +247,15 @@ pipeline_write "$A3_STATE" Phase Execute
 pipeline_write "$A3_STATE" "Active Skill" aid-execute
 pipeline_write "$A3_STATE" Updated "2026-06-10T02:02:00Z"
 
-BLOCK_RESOLVED=$(get_block "$A3_STATE")
-assert_output_contains "$BLOCK_RESOLVED" "**Lifecycle:** Running" \
+FM_RESOLVED=$(get_frontmatter_block "$A3_STATE")
+assert_output_contains "$FM_RESOLVED" "lifecycle: Running" \
     "A3 resolve: Lifecycle returns to Running"
-assert_output_not_contains "$BLOCK_RESOLVED" "**Block Reason:**" \
-    "A3 resolve: Block Reason CLEARED on Running transition"
-assert_output_not_contains "$BLOCK_RESOLVED" "**Block Artifact:**" \
-    "A3 resolve: Block Artifact CLEARED on Running transition"
-assert_output_not_contains "$BLOCK_RESOLVED" "**Pause Reason:**" \
-    "A3 resolve: Pause Reason absent after resolution"
+assert_output_contains "$FM_RESOLVED" "block_reason: --" \
+    "A3 resolve: Block Reason reset to the '--' sentinel on Running transition"
+assert_output_contains "$FM_RESOLVED" "block_artifact: --" \
+    "A3 resolve: Block Artifact reset to the '--' sentinel on Running transition"
+assert_output_contains "$FM_RESOLVED" "pause_reason: --" \
+    "A3 resolve: Pause Reason sentinel after resolution"
 
 # ---------------------------------------------------------------------------
 # A4: Valid-only transitions -- assert helper rejects illegal lifecycle values
@@ -264,9 +279,9 @@ for bad_val in "running" "InProgress" "Paused" "blocked" "COMPLETED" "Unknown"; 
     fi
 done
 
-# Verify the block still holds the original Running value (rejected write did not corrupt)
-assert_file_contains "$A4_STATE" "**Lifecycle:** Running" \
-    "A4: block intact after rejected illegal lifecycle writes"
+# Verify the frontmatter still holds the original Running value (rejected write did not corrupt)
+assert_file_contains "$A4_STATE" "lifecycle: Running" \
+    "A4: frontmatter intact after rejected illegal lifecycle writes"
 
 # ---------------------------------------------------------------------------
 # A5: Pause -> Block (cross-state conditional field clear)
@@ -282,17 +297,19 @@ pipeline_write "$A5_STATE" Lifecycle "Paused-Awaiting-Input"
 pipeline_write "$A5_STATE" "Pause Reason" "Awaiting interview re-run"
 pipeline_write "$A5_STATE" Updated "2026-06-10T03:00:00Z"
 
-assert_file_contains "$A5_STATE" "**Pause Reason:**" \
-    "A5 setup: Pause Reason present before transition"
+assert_file_contains "$A5_STATE" "Awaiting interview re-run" \
+    "A5 setup: Pause Reason set to real text before transition"
 
 # Now transition to Blocked
 pipeline_write "$A5_STATE" Lifecycle Blocked
 pipeline_write "$A5_STATE" "Block Reason" "Delivery gate circuit breaker"
 pipeline_write "$A5_STATE" "Block Artifact" ".aid/work-test/IMPEDIMENT-delivery-001.md"
 
-assert_file_not_contains "$A5_STATE" "**Pause Reason:**" \
-    "A5: Pause Reason cleared when Lifecycle transitions to Blocked"
-assert_file_contains "$A5_STATE" "**Block Reason:** Delivery gate circuit breaker" \
+assert_file_not_contains "$A5_STATE" "Awaiting interview re-run" \
+    "A5: Pause Reason real text cleared when Lifecycle transitions to Blocked"
+assert_file_contains "$A5_STATE" "pause_reason: --" \
+    "A5: Pause Reason reset to the '--' sentinel when Lifecycle transitions to Blocked"
+assert_file_contains "$A5_STATE" "Delivery gate circuit breaker" \
     "A5: Block Reason present after transition to Blocked"
 
 # ===========================================================================
@@ -319,7 +336,7 @@ M4_FILES["aid-execute"]="${REPO_ROOT}/canonical/skills/aid-execute/references/st
 M4_FILES["aid-deploy"]="${REPO_ROOT}/canonical/skills/aid-deploy/references/state-idle.md"
 
 declare -A M4_PHASES
-M4_PHASES["aid-define"]="Interview"
+M4_PHASES["aid-define"]="Define"
 M4_PHASES["aid-specify"]="Specify"
 M4_PHASES["aid-plan"]="Plan"
 M4_PHASES["aid-detail"]="Detail"

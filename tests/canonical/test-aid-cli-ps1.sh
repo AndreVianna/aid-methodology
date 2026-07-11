@@ -482,6 +482,42 @@ setup_aid_home_ps1 "${PS028M_HOME}"
 run_aid_ps1 "${PS028M_HOME}" version
 assert_exit_eq "$RC" 0 "PS028-M01 aid.ps1 version → exit 0"
 assert_output_contains "$OUT" "${VERSION}" "PS028-M02 aid.ps1 version prints version string"
+_PS_M_VERSION_SUBCMD_OUT="$OUT"
+
+# ===========================================================================
+# PS028-M1: top-level bare `aid.ps1 --version` / `-V` (task-008) → exit 0,
+#           identical output to `aid.ps1 version`. Regression: the pre-existing
+#           add/remove/update `-Version <v>` value-flag (release pin) is
+#           unaffected -- it is only matched among the args AFTER the
+#           subcommand, so the top-level bare-flag check (first arg only)
+#           never shadows it.
+# ===========================================================================
+run_aid_ps1 "${PS028M_HOME}" --version
+assert_exit_eq "$RC" 0 "PS028-M1-01 aid.ps1 --version → exit 0"
+assert_output_contains "$OUT" "${VERSION}" "PS028-M1-02 aid.ps1 --version prints version string"
+assert_eq "$OUT" "$_PS_M_VERSION_SUBCMD_OUT" "PS028-M1-03 aid.ps1 --version output identical to 'aid.ps1 version'"
+
+run_aid_ps1 "${PS028M_HOME}" -V
+assert_exit_eq "$RC" 0 "PS028-M1-04 aid.ps1 -V → exit 0"
+assert_eq "$OUT" "$_PS_M_VERSION_SUBCMD_OUT" "PS028-M1-05 aid.ps1 -V output identical to 'aid.ps1 version'"
+
+# Regression: subcommand -Version <v> pin flag still requires (and parses) a
+# value -- proves the top-level bare --version/-V check does not intercept it
+# (SUBCMD is already "add" by the time this loop runs, not the bare first-arg
+# check above).
+run_aid_ps1 "${PS028M_HOME}" add -Version
+assert_exit_eq "$RC" 2 "PS028-M1-06 'aid.ps1 add -Version' (no value) still errors -- pin flag unaffected"
+assert_output_contains "$OUT" "-Version requires a value" "PS028-M1-07 pin flag value-required message unchanged"
+
+# Regression (positive path): -Version <v> together with -FromBundle
+# correctly hits the PRE-EXISTING mutual-exclusivity guard -- proving the
+# value was parsed and consumed by the same downstream logic as before,
+# unaffected by the new top-level flag.
+PSM1_T=$(newtarget)
+run_aid_ps1 "${PS028M_HOME}" add codex -Version "${VERSION}" \
+    -FromBundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" -DryRun -Target "${PSM1_T}"
+assert_exit_eq "$RC" 2 "PS028-M1-08 add -Version <v> + -FromBundle → exit 2 (pre-existing mutual-exclusivity guard, unaffected)"
+assert_output_contains "$OUT" "mutually exclusive" "PS028-M1-09 pin flag reaches the same downstream validation as before"
 
 # ===========================================================================
 # PS028-N: aid.ps1 help / -h → exit 0, prints Usage

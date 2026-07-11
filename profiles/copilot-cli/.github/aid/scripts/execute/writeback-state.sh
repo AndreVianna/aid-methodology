@@ -2,9 +2,33 @@
 # writeback-state.sh -- row-level write coordination for FR6 parallel pool
 # x per-unit STATE writes in AID aid-execute.
 #
-# Provides 6 safe write modes targeting PER-UNIT STATE.md files (Pillar 2).
+# Provides 8 safe write modes targeting PER-UNIT STATE.md files (Pillar 2).
 # Uses a sentinel-file lock (set -o noclobber + atomic create + sleep-poll retry)
 # to prevent races when multiple parallel tasks dispatch reviewers concurrently.
+#
+# Frontmatter-writer path (work-003-state-schema task-004): every machine-parsed
+# field (pipeline/task-state/delivery-lifecycle/delivery-gate scalars) is written
+# via a surgical YAML-frontmatter rewrite (`wb_set_frontmatter`, below) -- a single
+# flat top-level key (e.g. `lifecycle`) or one-level-nested key (e.g.
+# `pipeline.path`) is created-or-updated in the leading `---`...`---` block at the
+# top of the target STATE.md, and the markdown BODY (everything from the first
+# non-frontmatter line onward) is never touched -- byte-identical before/after.
+# This replaces the OLDER convention (pre-task-004) of rewriting a
+# `- **Field:** value` bullet inside a body section -- the 4 canonical templates
+# (task-001) moved every one of these scalars into frontmatter, so the body
+# sections they used to live in (`## Pipeline State`, `## Task State`,
+# `## Delivery Lifecycle`'s `- **State:**` line, `## Delivery Gate`'s
+# `- **Reviewer Tier:**`/`- **Grade:**`/`- **Timestamp:**` lines) are now static
+# enum-reference/comment-only prose, never rewritten by this script. Values are
+# single-quoted (`'...'`, doubling any embedded `'`) in the emitted YAML only
+# when the raw text needs it (contains a `:`/`#`/`"`/`\`/leading special char);
+# closed-enum/short tokens (`Running`, `yes`, `A+`, `aid-refactor`) are written
+# bare, matching the 4 templates' own placeholder style. See
+# WB_SET_FRONTMATTER_AWK's own doc comment for why single-quote style (not
+# double-quote + backslash-escaping) is used. `wb_set_frontmatter` creates the
+# frontmatter block from scratch (at the very top of the file) when the target
+# file has none yet, so a not-yet-migrated (task-005) STATE.md degrades
+# gracefully instead of failing.
 #
 # Unit layout (work-004 hierarchy):
 #   work-NNN-{name}/
@@ -36,8 +60,11 @@
 #
 # Usage:
 #   writeback-state.sh [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
-#       Update a single named field in the task's ## Task State section of
-#       deliveries/delivery-NNN/tasks/task-NNN/STATE.md (one-writer-per-branch file).
+#       Full-nested layout: surgical frontmatter write of a single scalar key
+#       (state | review | elapsed | notes) in the leading YAML block of
+#       deliveries/delivery-NNN/tasks/task-NNN/STATE.md (one-writer-per-branch file);
+#       the ## Task State body section is static comment-only prose and is never
+#       rewritten by this mode (task-004).
 #       Fields: State | Review | Elapsed | Notes
 #       --delivery-id is optional; if omitted the delivery is resolved from the
 #       task's Source line (e.g. "**Source:** work-NNN -> delivery-NNN").
@@ -45,6 +72,9 @@
 #       Flattened layout (feature-001, auto-detected): targets the matching
 #       task-NNN row of the work-root STATE.md's ### Tasks lifecycle table instead
 #       (creates the row on first write; replaces the placeholder "_none yet_" row).
+#       This table is NOT relocated to frontmatter (schema-note.md): it aggregates
+#       many tasks in one file, so it stays a markdown table; this branch is
+#       unchanged by task-004.
 #
 #   writeback-state.sh [--delivery-id NNN] --task-id NNN --findings BLOCK
 #       Write/replace the ## Quick Check Findings block in
@@ -58,27 +88,47 @@
 #       the singular ## Delivery Gate block into the work-root STATE.md instead.
 #
 #   writeback-state.sh --delivery-id NNN --lifecycle VALUE
-#       Update the State: line in the ## Delivery Lifecycle section of
-#       deliveries/delivery-NNN/STATE.md (SD-8 authored delivery state).
+#       Surgical frontmatter write of the `delivery_state` key (SD-8 authored
+#       delivery state) -- the ## Delivery Lifecycle body's `- **State:**` bullet
+#       was relocated to frontmatter by task-001 and is never rewritten here
+#       (task-004); the body's Updated/Block Reason/Block Artifact bullets are
+#       untouched (not relocated -- see schema-note.md).
 #       VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 #       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
 #       Emits no user-facing output (C4 behavior-preserving).
-#       Flattened layout (feature-001, auto-detected; --delivery-id 001): updates
-#       the ## Delivery Lifecycle State: line in the work-root STATE.md instead.
+#       Flattened layout (feature-001, auto-detected; --delivery-id 001): targets
+#       the work-root STATE.md's own frontmatter instead (same `delivery_state` key;
+#       see work-state-template.md's "Flattened single-delivery works only" group).
+#
+#   writeback-state.sh --delivery-id NNN --gate-field FIELD --gate-value VALUE
+#       Surgical frontmatter write of one Delivery Gate scalar (relocated by
+#       task-001; the ## Delivery Gate body block -- written via --block below --
+#       now carries only Complexity Score / Cycles / Issue List, never these three).
+#       FIELD must be one of: Tier | Grade | Timestamp -> gate_tier | gate_grade | gate_timestamp
+#       Tier is closed-enum validated (Small | Medium | Large); Grade must match
+#       ^[A-F][+-]?$ (grade.sh's own output alphabet). Timestamp is free ISO-8601 text.
+#       Override env: AID_DELIVERY_STATE_FILE (absolute path) skips path resolution.
+#       Emits no user-facing output (C4 behavior-preserving).
+#       Flattened layout (feature-001, auto-detected; --delivery-id 001): targets
+#       the work-root STATE.md's own frontmatter instead (same 3 keys).
 #
 #   writeback-state.sh --delivery-id NNN --append-issue ROW
 #       Append a single issue row to the delivery's delivery-NNN-issues.md.
 #       ROW must be a valid markdown table row (pipe-delimited).
 #
 #   writeback-state.sh --pipeline --field FIELD --value VALUE
-#       Write/update a single field in the ## Pipeline State block of the work
-#       STATE.md. FIELD must be one of: Lifecycle | Phase | Active Skill | Updated |
-#         Pause Reason | Block Reason | Block Artifact
-#       Lifecycle, Phase, and Active Skill are closed-enum validated.
+#       Surgical frontmatter write of a single scalar key in the leading YAML
+#       block of the work STATE.md (relocated by task-001; the ## Pipeline State
+#       body section is now a static enum-reference blockquote and is never
+#       rewritten by this mode). FIELD must be one of: Lifecycle | Phase |
+#         Active Skill | Updated | Pause Reason | Block Reason | Block Artifact |
+#         Started | Minimum Grade | User Approved | Pipeline Path | Pipeline Initiator
+#       Lifecycle, Phase, Active Skill, User Approved, and Pipeline Path are
+#       closed-enum validated; Minimum Grade must match ^[A-F][+-]?$.
 #       Conditional fields: Pause Reason written only when Lifecycle is
 #         Paused-Awaiting-Input; Block Reason + Block Artifact written only when
 #         Lifecycle is Blocked. On Lifecycle change, conditional fields that no
-#         longer apply are cleared (removed from the block).
+#         longer apply are cleared (reset to the "--" null sentinel in frontmatter).
 #       Emits no user-facing output (C4 behavior-preserving).
 #
 #   writeback-state.sh -h | --help
@@ -131,7 +181,7 @@ LOCK_TIMEOUT="${AID_LOCK_TIMEOUT:-10}"   # max retries (0.5s each -> 5s default)
 
 # ---------------------------------------------------------------------------
 usage() {
-    sed -n '2,89p' "$0" | sed 's/^# \{0,1\}//'
+    sed -n '2,146p' "$0" | sed 's/^# \{0,1\}//'
 }
 
 die() { echo "ERROR: writeback-state.sh: $*" >&2; exit "${2:-1}"; }
@@ -284,6 +334,8 @@ DELIVERY_BLOCK=""
 LIFECYCLE_VALUE=""
 ISSUE_ROW=""
 PIPELINE_FLAG=0
+GATE_FIELD=""
+GATE_VALUE=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -322,6 +374,14 @@ while [[ $# -gt 0 ]]; do
             [[ $# -lt 2 ]] && die "--lifecycle requires a value" 5
             LIFECYCLE_VALUE="$2"; shift 2
             ;;
+        --gate-field)
+            [[ $# -lt 2 ]] && die "--gate-field requires a value" 5
+            GATE_FIELD="$2"; shift 2
+            ;;
+        --gate-value)
+            [[ $# -lt 2 ]] && die "--gate-value requires a value" 5
+            GATE_VALUE="$2"; shift 2
+            ;;
         --append-issue)
             [[ $# -lt 2 ]] && die "--append-issue requires a value" 5
             ISSUE_ROW="$2"; shift 2
@@ -347,6 +407,9 @@ elif [[ -n "$DELIVERY_ID" && -n "$DELIVERY_BLOCK" ]]; then
     MODE="delivery-block"
 elif [[ -n "$DELIVERY_ID" && -n "$LIFECYCLE_VALUE" ]]; then
     MODE="delivery-lifecycle"
+elif [[ -n "$DELIVERY_ID" && -n "$GATE_FIELD" ]]; then
+    MODE="gate-field"
+    [[ -z "$GATE_VALUE" ]] && die "--gate-value is required with --gate-field" 5
 elif [[ -n "$DELIVERY_ID" && -n "$ISSUE_ROW" ]]; then
     MODE="append-issue"
 else
@@ -438,6 +501,227 @@ release_lock() {
 trap 'release_lock' EXIT
 
 # ---------------------------------------------------------------------------
+# WB_SET_FRONTMATTER_AWK -- the awk program body used by wb_set_frontmatter,
+# below. Kept as a single shared string (rather than duplicated inline across
+# the CRLF and plain-LF invocation paths) so the two call sites can never drift.
+#
+# Reads the RAW value from ENVIRON (not an awk `-v` assignment) because awk's
+# `-v var=value` re-processes C-style escape sequences in `value` -- a `\"`
+# assigned this way silently becomes `"`, corrupting any caller-side
+# backslash-escaping and producing invalid YAML for a value containing a
+# literal `"` or `\` (task-004 FIX review, finding 1). ENVIRON values are NOT
+# escape-reprocessed, so the value arrives byte-for-byte, and ALL YAML
+# quoting/escaping happens here in awk, working from those exact bytes:
+#   - a "bare-word-safe" value (letters/digits/`_.+/-` only) is emitted
+#     unquoted, matching the 4 canonical templates' own placeholder style
+#     (`lifecycle: Running`, not `lifecycle: "Running"`).
+#   - anything else is emitted as a SINGLE-quoted YAML scalar (`'...'`),
+#     doubling any embedded `'` -- the only escaping a single-quoted YAML
+#     scalar ever needs, so this is valid for ANY byte sequence (colons,
+#     hashes, double quotes, backslashes, a leading `-`/`{`) with no
+#     backslash-escaping at all (unlike double-quoted style, which would
+#     reintroduce the same backslash-escaping problem this fix exists to
+#     avoid). A `sprintf("%c", 39)`-produced single-quote character stands in
+#     for a literal `'` in this program's own source text, only to avoid the
+#     bash single-quote-escaping gymnastics of embedding a literal `'` inside
+#     the single-quoted string this whole program is written as.
+# ---------------------------------------------------------------------------
+WB_SET_FRONTMATTER_AWK='
+    BEGIN {
+        in_fm = 0; in_parent = 0; parent_seen = 0; done = 0
+        sq = sprintf("%c", 39)
+        raw = ENVIRON["WB_FM_RAW_VALUE"]
+        if (raw ~ /^[A-Za-z0-9_.+\/-]+$/) {
+            out_value = raw
+        } else {
+            gsub(sq, sq sq, raw)
+            out_value = sq raw sq
+        }
+    }
+
+    NR == 1 && $0 ~ /^---[ \t]*\r?$/ {
+        in_fm = 1
+        print
+        next
+    }
+    NR == 1 {
+        # No frontmatter block present -- synthesize one, then fall through
+        # to print this same first line as the first BODY line, unmodified.
+        print "---"
+        if (parent == "") {
+            print flat_key ": " out_value
+        } else {
+            print parent ":"
+            print "  " child ": " out_value
+        }
+        print "---"
+        print ""
+        print
+        next
+    }
+
+    in_fm && /^---[ \t]*\r?$/ {
+        # Closing fence -- flush an unwritten key here (append at block end).
+        # parent_seen distinguishes "parent mapping exists but child is
+        # missing" (print only the child line, under the existing parent)
+        # from "parent mapping never appeared at all in this frontmatter
+        # block" (print BOTH a fresh parent header and the child line --
+        # otherwise the child would be emitted with no parent, corrupting
+        # the YAML and never satisfying the nested `key.child` lookup).
+        if (parent == "" && !done) { print flat_key ": " out_value; done = 1 }
+        if (parent != "" && !done) {
+            if (!parent_seen) { print parent ":" }
+            print "  " child ": " out_value
+            done = 1
+        }
+        in_fm = 0
+        in_parent = 0
+        print
+        next
+    }
+
+    in_fm && parent == "" {
+        if ($0 ~ ("^" flat_key ":")) {
+            print flat_key ": " out_value
+            done = 1
+            next
+        }
+        print
+        next
+    }
+
+    in_fm && parent != "" {
+        if (!in_parent) {
+            if ($0 ~ ("^" parent ":")) {
+                in_parent = 1
+                parent_seen = 1
+                print
+                next
+            }
+            print
+            next
+        }
+        # Inside the parent mapping -- another top-level key (col 0) ends it
+        if ($0 ~ /^[A-Za-z0-9_-]+:/) {
+            if (!done) { print "  " child ": " out_value; done = 1 }
+            in_parent = 0
+            print
+            next
+        }
+        if ($0 ~ ("^[ \t]+" child ":")) {
+            print "  " child ": " out_value
+            done = 1
+            next
+        }
+        print
+        next
+    }
+
+    { print }
+'
+
+# ---------------------------------------------------------------------------
+# wb_set_frontmatter SOURCE_FILE KEY VALUE
+# Surgical YAML-frontmatter scalar writer (work-003-state-schema task-004).
+# Prints the rewritten file content to stdout; caller redirects to a temp file
+# (`wb_set_frontmatter "$STATE_FILE" lifecycle Running > "$tmp"`) and is
+# responsible for the lock + sanity-check + atomic mv (same discipline as
+# every other mode in this script -- this helper only computes the bytes).
+#
+# KEY is either a flat top-level scalar ("lifecycle") or a one-level-nested
+# dotted key ("pipeline.path" -> the `path` child of the `pipeline:` mapping).
+# Reads/updates ONLY the leading `---`...`---` frontmatter block; every line
+# from the closing fence onward (the markdown BODY) is reproduced byte-for-byte
+# unchanged -- this is what makes the write "surgical" (AC: body byte-invariance).
+#
+# Behavior:
+#   - Key already present (even holding the template's own un-instantiated
+#     placeholder text, e.g. "lifecycle: Running | Paused-Awaiting-Input | ...")
+#     -> its line is replaced with the real single value.
+#   - Key absent but its frontmatter block exists -> the key is appended at the
+#     end of the block (flat) or at the end of its parent mapping (nested).
+#   - No frontmatter block at all (a not-yet-migrated STATE.md, task-005) -> one
+#     is synthesized at the very top of the file holding just this one key; the
+#     entire original file becomes the BODY, unchanged.
+#
+# Value quoting: see WB_SET_FRONTMATTER_AWK's own doc comment above.
+#
+# Cross-platform byte-invariance guards (task-004 FIX review findings 2/4):
+#   - CRLF: some awk builds (notably on Windows) silently strip a `\r` that is
+#     part of $0 on read/print; a strict LF-only awk (Linux) never matches a
+#     `---\r` fence line at all (the fence regex above tolerates a trailing
+#     `\r` as defense-in-depth, but the real fix is architectural: a CRLF
+#     source file is normalized to LF before the awk pass and every line of
+#     the result has `\r` restored afterward, so the awk logic above only
+#     ever sees plain LF content on every platform).
+#   - Trailing newline: awk's `print` unconditionally appends ORS ("\n")
+#     after every record including the last, so a source file with no final
+#     newline would otherwise gain one. The pipeline's FULL output is
+#     captured via an `X`-terminator (a character, not a newline, so `$(...)`
+#     itself strips nothing) and the single spurious line terminator awk
+#     added (`\n`, or `\r\n` for a CRLF source) is stripped back off only
+#     when the source genuinely lacked a final one.
+# ---------------------------------------------------------------------------
+wb_set_frontmatter() {
+    local source_file="$1" key="$2" value="$3"
+    local parent="" child="$key"
+    if [[ "$key" == *.* ]]; then
+        parent="${key%%.*}"
+        child="${key#*.}"
+    fi
+
+    local has_crlf=0 had_trailing_nl=1
+    if [[ -s "$source_file" ]]; then
+        local first_line=""
+        IFS= read -r first_line < "$source_file" 2>/dev/null || true
+        [[ "$first_line" == *$'\r' ]] && has_crlf=1
+        [[ "$(tail -c1 "$source_file" | wc -l)" -eq 0 ]] && had_trailing_nl=0
+    fi
+
+    local raw_output
+    if [[ "$has_crlf" -eq 1 ]]; then
+        raw_output="$(
+            sed 's/\r$//' "$source_file" \
+                | WB_FM_RAW_VALUE="$value" awk -v parent="$parent" -v child="$child" -v flat_key="$key" "$WB_SET_FRONTMATTER_AWK" \
+                | sed 's/$/\r/'
+            printf 'X'
+        )"
+    else
+        raw_output="$(
+            WB_FM_RAW_VALUE="$value" awk -v parent="$parent" -v child="$child" -v flat_key="$key" "$WB_SET_FRONTMATTER_AWK" "$source_file"
+            printf 'X'
+        )"
+    fi
+    raw_output="${raw_output%X}"
+
+    if [[ "$had_trailing_nl" -eq 0 ]]; then
+        if [[ "$has_crlf" -eq 1 ]]; then
+            raw_output="${raw_output%$'\r\n'}"
+        else
+            raw_output="${raw_output%$'\n'}"
+        fi
+    fi
+
+    printf '%s' "$raw_output"
+}
+
+# wb_frontmatter_verify TMP_FILE KEY
+# Sanity check after a wb_set_frontmatter write: the file is non-empty and the
+# target key (flat or the dotted-nested child) is present in the output.
+# Returns non-zero (caller must discard TMP_FILE and die) on failure.
+wb_frontmatter_verify() {
+    local tmp_file="$1" key="$2" child="$2"
+    [[ -s "$tmp_file" ]] || return 1
+    if [[ "$key" == *.* ]]; then
+        child="${key#*.}"
+        grep -q "^  ${child}:" "$tmp_file" || return 1
+    else
+        grep -q "^${key}:" "$tmp_file" || return 1
+    fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Mode: [--delivery-id NNN] --task-id NNN --field FIELD --value VALUE
 # Update a single named field in the task's ## Task State section of
 # delivery-NNN/tasks/task-NNN/STATE.md.
@@ -487,7 +771,10 @@ mode_field() {
         die "$TASK_STATE_FILE does not exist" 1
     fi
 
-    # Verify ## Task State section exists
+    # Verify ## Task State section exists (the body header itself is still
+    # present -- only the "- **Field:** value" bullets under it were relocated
+    # to frontmatter by task-001; this presence check still guards against a
+    # malformed/foreign file).
     if ! grep -q '^## Task State' "$TASK_STATE_FILE"; then
         die "malformed task STATE.md: ## Task State section not found in $TASK_STATE_FILE" 6
     fi
@@ -495,60 +782,19 @@ mode_field() {
     init_lock_file "$TASK_STATE_FILE"
     acquire_lock
 
+    # Surgical frontmatter write (task-004): `state`/`review`/`elapsed`/`notes`
+    # are flat top-level keys in task-state-template.md's frontmatter block --
+    # field_lower IS the frontmatter key verbatim, no name mapping needed.
     local tmp
     tmp=$(mktemp)
+    wb_set_frontmatter "$TASK_STATE_FILE" "$field_lower" "$FIELD_VALUE" > "$tmp"
 
-    # Field lines in ## Task State section have the form:
-    # - **Field:** value
-    # We use awk to find the ## Task State section and rewrite the matching field line.
-    awk -v field_lower="$field_lower" -v new_val="$FIELD_VALUE" '
-        BEGIN { in_ts=0; updated=0 }
-
-        /^## Task State/ { in_ts=1; print; next }
-
-        in_ts && /^## / { in_ts=0 }
-
-        in_ts {
-            # Match lines like: - **Field:** value
-            if ($0 ~ /^- \*\*[^*]+:\*\*/) {
-                line = $0
-                sub(/^- \*\*/, "", line)
-                sub(/:\*\*.*$/, "", line)
-                cur_field = line
-                cur_lower = tolower(cur_field)
-
-                if (cur_lower == field_lower) {
-                    print "- **" cur_field ":** " new_val
-                    updated = 1
-                    next
-                }
-            }
-            print
-            next
-        }
-
-        { print }
-
-        END {
-            if (!updated) {
-                print "ERROR: field '" field_lower "' not updated in ## Task State" > "/dev/stderr"
-                exit 3
-            }
-        }
-    ' "$TASK_STATE_FILE" > "$tmp"
-    local awk_exit=$?
-    if [[ "$awk_exit" -ne 0 ]]; then
+    if ! wb_frontmatter_verify "$tmp" "$field_lower"; then
         rm -f "$tmp"
-        die "writeback awk failed (exit $awk_exit); $TASK_STATE_FILE preserved" "$awk_exit"
+        die "writeback sanity check failed: frontmatter key '$field_lower' not found in output; $TASK_STATE_FILE preserved" 3
     fi
 
-    # Verify output is non-empty
-    if [[ ! -s "$tmp" ]]; then
-        rm -f "$tmp"
-        die "writeback produced empty output; $TASK_STATE_FILE preserved" 3
-    fi
-
-    # Sanity: ## Task State section must still be present in output
+    # Sanity: ## Task State section must still be present in output (body untouched)
     if ! grep -q '^## Task State' "$tmp"; then
         rm -f "$tmp"
         die "writeback sanity check failed: ## Task State disappeared from output" 3
@@ -558,7 +804,7 @@ mode_field() {
     local padded_t
     # Force base-10 arithmetic before padding (see resolve_task_state_file above).
     padded_t=$(printf '%03d' "$((10#$TASK_ID))")
-    echo "OK: $TASK_STATE_FILE updated -- task $padded_t field '$FIELD' set to '$FIELD_VALUE'"
+    echo "OK: $TASK_STATE_FILE updated -- task $padded_t field '$FIELD' set to '$FIELD_VALUE' (frontmatter)"
 }
 
 # ---------------------------------------------------------------------------
@@ -799,8 +1045,12 @@ mode_findings() {
 
 # ---------------------------------------------------------------------------
 # Mode: --delivery-id NNN --lifecycle VALUE
-# Update the State: line in the ## Delivery Lifecycle section of
-# delivery-NNN/STATE.md.
+# Surgical frontmatter write of the `delivery_state` key (SD-8) in the leading
+# YAML block of delivery-NNN/STATE.md (or the work-root STATE.md for the
+# flattened layout -- resolve_delivery_state_file already targets the right
+# file either way). The ## Delivery Lifecycle body's `- **State:**` bullet was
+# relocated to frontmatter by task-001 and is never rewritten here; the body's
+# Updated/Block Reason/Block Artifact bullets are untouched (not relocated).
 # VALUE must be one of: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 # Emits no user-facing output.
 # ---------------------------------------------------------------------------
@@ -821,7 +1071,8 @@ mode_delivery_lifecycle() {
         die "$DELIVERY_STATE_FILE does not exist" 1
     fi
 
-    # Verify ## Delivery Lifecycle section exists
+    # Verify ## Delivery Lifecycle section exists (the body header itself is
+    # still present -- only its `- **State:**` bullet was relocated).
     if ! grep -q '^## Delivery Lifecycle' "$DELIVERY_STATE_FILE"; then
         die "malformed delivery STATE.md: ## Delivery Lifecycle section not found in $DELIVERY_STATE_FILE" 6
     fi
@@ -831,53 +1082,78 @@ mode_delivery_lifecycle() {
 
     local tmp
     tmp=$(mktemp)
+    wb_set_frontmatter "$DELIVERY_STATE_FILE" "delivery_state" "$LIFECYCLE_VALUE" > "$tmp"
 
-    # Rewrite only the FIRST - **State:** line within ## Delivery Lifecycle.
-    # The done flag prevents degenerate multi-line input from corrupting subsequent
-    # State lines (e.g. nested sub-sections that may carry their own State fields).
-    # The section uses "- **State:** VALUE" format (same as ## Task State).
-    awk -v new_val="$LIFECYCLE_VALUE" '
-        BEGIN { in_dl=0; updated=0; done=0 }
-
-        /^## Delivery Lifecycle/ { in_dl=1; print; next }
-
-        in_dl && /^## / { in_dl=0 }
-
-        in_dl {
-            if (!done && $0 ~ /^- \*\*State:\*\*/) {
-                print "- **State:** " new_val
-                updated=1
-                done=1
-                next
-            }
-            print
-            next
-        }
-
-        { print }
-
-        END {
-            if (!updated) {
-                print "ERROR: State field not found in ## Delivery Lifecycle" > "/dev/stderr"
-                exit 3
-            }
-        }
-    ' "$DELIVERY_STATE_FILE" > "$tmp"
-    local awk_exit=$?
-    if [[ "$awk_exit" -ne 0 ]]; then
+    if ! wb_frontmatter_verify "$tmp" "delivery_state"; then
         rm -f "$tmp"
-        die "writeback awk failed (exit $awk_exit); $DELIVERY_STATE_FILE preserved" "$awk_exit"
+        die "writeback sanity check failed: frontmatter key 'delivery_state' not found in output; $DELIVERY_STATE_FILE preserved" 3
     fi
 
-    if [[ ! -s "$tmp" ]]; then
-        rm -f "$tmp"
-        die "writeback produced empty output; $DELIVERY_STATE_FILE preserved" 3
-    fi
-
-    # Sanity: ## Delivery Lifecycle section must still be present
+    # Sanity: ## Delivery Lifecycle section must still be present (body untouched)
     if ! grep -q '^## Delivery Lifecycle' "$tmp"; then
         rm -f "$tmp"
         die "writeback sanity check failed: ## Delivery Lifecycle disappeared from output" 3
+    fi
+
+    mv "$tmp" "$DELIVERY_STATE_FILE"
+    # No user-facing output
+}
+
+# ---------------------------------------------------------------------------
+# Mode: --delivery-id NNN --gate-field FIELD --gate-value VALUE
+# Surgical frontmatter write of one Delivery Gate scalar (relocated by task-001):
+#   Tier      -> gate_tier       (Small | Medium | Large)
+#   Grade     -> gate_grade      (matches ^[A-F][+-]?$)
+#   Timestamp -> gate_timestamp  (free ISO-8601 text)
+# Targets the same file --lifecycle/--block resolve to (delivery-NNN/STATE.md,
+# or the work-root STATE.md for the flattened layout).
+# Emits no user-facing output.
+# ---------------------------------------------------------------------------
+mode_gate_field() {
+    local padded_id
+    padded_id=$(printf '%03d' "$((10#$DELIVERY_ID))")
+
+    local field_lower fm_key
+    field_lower="${GATE_FIELD,,}"
+    case "$field_lower" in
+        tier)      fm_key="gate_tier" ;;
+        grade)     fm_key="gate_grade" ;;
+        timestamp) fm_key="gate_timestamp" ;;
+        *) die "unknown --gate-field '$GATE_FIELD'; allowed: Tier Grade Timestamp" 4 ;;
+    esac
+
+    case "$field_lower" in
+        tier)
+            case "$GATE_VALUE" in
+                Small|Medium|Large) ;;
+                *) die "invalid --gate-field Tier value '$GATE_VALUE'; must be one of: Small | Medium | Large" 4 ;;
+            esac
+            ;;
+        grade)
+            [[ "$GATE_VALUE" =~ ^[A-F][+-]?$ ]] || die "invalid --gate-field Grade value '$GATE_VALUE'; must match ^[A-F][+-]?\$ (e.g. A, A-, B+, F)" 4
+            ;;
+    esac
+
+    if [[ "$GATE_VALUE" == *$'\n'* ]]; then
+        die "--gate-value cannot contain newline characters" 4
+    fi
+
+    resolve_delivery_state_file "$DELIVERY_ID"
+
+    if [[ ! -f "$DELIVERY_STATE_FILE" ]]; then
+        die "$DELIVERY_STATE_FILE does not exist" 1
+    fi
+
+    init_lock_file "$DELIVERY_STATE_FILE"
+    acquire_lock
+
+    local tmp
+    tmp=$(mktemp)
+    wb_set_frontmatter "$DELIVERY_STATE_FILE" "$fm_key" "$GATE_VALUE" > "$tmp"
+
+    if ! wb_frontmatter_verify "$tmp" "$fm_key"; then
+        rm -f "$tmp"
+        die "writeback sanity check failed: frontmatter key '$fm_key' not found in output; $DELIVERY_STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$DELIVERY_STATE_FILE"
@@ -1026,44 +1302,70 @@ EOF
 
 # ---------------------------------------------------------------------------
 # Mode: --pipeline --field FIELD --value VALUE
-# Write/update a single field in the ## Pipeline State block of the work STATE.md.
-# The block shape (grep-recoverable **Field:** value lines) matches the
-# work-state-template.md ## Pipeline State section.
+# Surgical frontmatter write of a single scalar key in the leading YAML block
+# of the work STATE.md (task-004; relocated by task-001). The ## Pipeline State
+# body section is now a static enum-reference blockquote and is never
+# rewritten by this mode -- the body is byte-unchanged by every call here.
 #
-# Fields (canonical casing): Lifecycle | Phase | Active Skill | Updated |
-#   Pause Reason | Block Reason | Block Artifact
+# Fields (canonical casing) -> frontmatter key:
+#   Lifecycle -> lifecycle | Phase -> phase | Active Skill -> active_skill |
+#   Updated -> updated | Pause Reason -> pause_reason |
+#   Block Reason -> block_reason | Block Artifact -> block_artifact |
+#   Started -> started | Minimum Grade -> minimum_grade |
+#   User Approved -> user_approved | Pipeline Path -> pipeline.path |
+#   Pipeline Initiator -> pipeline.initiator
 #
 # Enum-validated fields (closed enums from work-state-template.md):
-#   Lifecycle:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-#   Phase:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
-#   Active Skill: any string matching "aid-{skill}" pattern, or "none"
+#   Lifecycle:      Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
+#   Phase:          Describe | Define | Specify | Plan | Detail | Execute | Deploy
+#   Active Skill:   any string matching "aid-{skill}" pattern, or "none"
+#   Minimum Grade:  matches ^[A-F][+-]?$
+#   User Approved:  yes | no
+#   Pipeline Path:  lite | full
+#   Pipeline Initiator: any string matching "aid-{skill}" pattern
 #
 # Conditional fields (written only when Lifecycle matches; cleared otherwise):
 #   Pause Reason   -> present only when Lifecycle = Paused-Awaiting-Input
 #   Block Reason   -> present only when Lifecycle = Blocked
 #   Block Artifact -> present only when Lifecycle = Blocked
+#   On a Lifecycle change, a conditional field that no longer applies is reset
+#   to the "--" null sentinel in frontmatter (never physically removed -- the
+#   key stays present so the block's shape is stable across every write).
 #
-# Creates the ## Pipeline State section if absent. Emits no user-facing
-# output. Acquires the existing sentinel lock.
+# Creates the frontmatter block from scratch if the target file has none yet
+# (wb_set_frontmatter). Emits no user-facing output. Acquires the existing
+# sentinel lock.
 # ---------------------------------------------------------------------------
 mode_pipeline() {
     if [[ ! -f "$STATE_FILE" ]]; then
         die "$STATE_FILE does not exist" 1
     fi
 
+    # Reject newline characters -- a raw newline in a YAML flow scalar would
+    # corrupt the frontmatter block (same defensive class as mode_field's
+    # pipe/newline checks).
+    if [[ "$FIELD_VALUE" == *$'\n'* ]]; then
+        die "--value cannot contain newline characters; rephrase to single line" 4
+    fi
+
     # Validate field name (canonical casing stored; comparison is case-insensitive)
     local field_lower
     field_lower="${FIELD,,}"
-    local canonical_field
+    local canonical_field fm_key
     case "$field_lower" in
-        lifecycle)       canonical_field="Lifecycle" ;;
-        phase)           canonical_field="Phase" ;;
-        "active skill")  canonical_field="Active Skill" ;;
-        updated)         canonical_field="Updated" ;;
-        "pause reason")  canonical_field="Pause Reason" ;;
-        "block reason")  canonical_field="Block Reason" ;;
-        "block artifact") canonical_field="Block Artifact" ;;
-        *) die "unknown --pipeline field '$FIELD'; allowed: Lifecycle Phase \"Active Skill\" Updated \"Pause Reason\" \"Block Reason\" \"Block Artifact\"" 4 ;;
+        lifecycle)          canonical_field="Lifecycle";          fm_key="lifecycle" ;;
+        phase)              canonical_field="Phase";              fm_key="phase" ;;
+        "active skill")     canonical_field="Active Skill";       fm_key="active_skill" ;;
+        updated)            canonical_field="Updated";            fm_key="updated" ;;
+        "pause reason")     canonical_field="Pause Reason";       fm_key="pause_reason" ;;
+        "block reason")     canonical_field="Block Reason";       fm_key="block_reason" ;;
+        "block artifact")   canonical_field="Block Artifact";     fm_key="block_artifact" ;;
+        started)            canonical_field="Started";            fm_key="started" ;;
+        "minimum grade")    canonical_field="Minimum Grade";      fm_key="minimum_grade" ;;
+        "user approved")    canonical_field="User Approved";      fm_key="user_approved" ;;
+        "pipeline path")    canonical_field="Pipeline Path";      fm_key="pipeline.path" ;;
+        "pipeline initiator") canonical_field="Pipeline Initiator"; fm_key="pipeline.initiator" ;;
+        *) die "unknown --pipeline field '$FIELD'; allowed: Lifecycle Phase \"Active Skill\" Updated \"Pause Reason\" \"Block Reason\" \"Block Artifact\" Started \"Minimum Grade\" \"User Approved\" \"Pipeline Path\" \"Pipeline Initiator\"" 4 ;;
     esac
 
     # Enum validation for closed-enum fields
@@ -1076,8 +1378,8 @@ mode_pipeline() {
             ;;
         Phase)
             case "$FIELD_VALUE" in
-                Interview|Specify|Plan|Detail|Execute|Deploy|Monitor) ;;
-                *) die "invalid Phase value '$FIELD_VALUE'; must be one of: Interview | Specify | Plan | Detail | Execute | Deploy | Monitor" 4 ;;
+                Describe|Define|Specify|Plan|Detail|Execute|Deploy) ;;
+                *) die "invalid Phase value '$FIELD_VALUE'; must be one of: Describe | Define | Specify | Plan | Detail | Execute | Deploy" 4 ;;
             esac
             ;;
         "Active Skill")
@@ -1086,6 +1388,24 @@ mode_pipeline() {
                 die "invalid Active Skill value '$FIELD_VALUE'; must match aid-{skill} or be \"none\"" 4
             fi
             ;;
+        "Minimum Grade")
+            [[ "$FIELD_VALUE" =~ ^[A-F][+-]?$ ]] || die "invalid Minimum Grade value '$FIELD_VALUE'; must match ^[A-F][+-]?\$ (e.g. A, A-, B+, F)" 4
+            ;;
+        "User Approved")
+            case "$FIELD_VALUE" in
+                yes|no) ;;
+                *) die "invalid User Approved value '$FIELD_VALUE'; must be one of: yes | no" 4 ;;
+            esac
+            ;;
+        "Pipeline Path")
+            case "$FIELD_VALUE" in
+                lite|full) ;;
+                *) die "invalid Pipeline Path value '$FIELD_VALUE'; must be one of: lite | full" 4 ;;
+            esac
+            ;;
+        "Pipeline Initiator")
+            [[ "$FIELD_VALUE" =~ ^aid-[a-zA-Z0-9_-]+$ ]] || die "invalid Pipeline Initiator value '$FIELD_VALUE'; must match aid-{skill}" 4
+            ;;
     esac
 
     init_lock_file "$STATE_FILE"
@@ -1093,131 +1413,32 @@ mode_pipeline() {
 
     local tmp
     tmp=$(mktemp)
+    wb_set_frontmatter "$STATE_FILE" "$fm_key" "$FIELD_VALUE" > "$tmp"
 
-    # Accept both old "## Pipeline Status" and new "## Pipeline State" section headers.
-    # On create/update, always write the "## Pipeline State" header.
-    if grep -qE '^## Pipeline Stat(us|e)' "$STATE_FILE"; then
-        # Section exists (either name) -- update/add the target field within it, and manage
-        # conditional fields when Lifecycle changes.
-        awk \
-            -v field="$canonical_field" \
-            -v value="$FIELD_VALUE" \
-            '
-            BEGIN {
-                in_ps = 0
-                field_written = 0
-            }
-
-            /^## Pipeline Stat(us|e)/ {
-                in_ps = 1
-                # Normalize header to "## Pipeline State" on every rewrite
-                print "## Pipeline State"
-                next
-            }
-
-            in_ps && /^## / {
-                # Leaving the section -- flush any field not yet written
-                if (!field_written) {
-                    print "- **" field ":** " value
-                    field_written = 1
-                }
-                in_ps = 0
-                print
-                next
-            }
-
-            in_ps {
-                # Check if this line is a **Field:** line in the block.
-                # Format: - **Field:** value  (colon is inside the bold markers)
-                if ($0 ~ /^- \*\*[^*]+:\*\*/) {
-                    # Extract field name between ** markers (strip colon too)
-                    line = $0
-                    sub(/^- \*\*/, "", line)
-                    sub(/:\*\*.*$/, "", line)
-                    cur_field = line
-
-                    if (cur_field == field) {
-                        # Replace with the new value
-                        print "- **" field ":** " value
-                        field_written = 1
-                        next
-                    }
-
-                    # For conditional Pause/Block fields: suppress them when
-                    # we are writing Lifecycle and the new Lifecycle does not
-                    # match the condition.
-                    if (field == "Lifecycle") {
-                        if (cur_field == "Pause Reason" && value != "Paused-Awaiting-Input") {
-                            # Clear -- omit this line
-                            next
-                        }
-                        if ((cur_field == "Block Reason" || cur_field == "Block Artifact") && value != "Blocked") {
-                            # Clear -- omit this line
-                            next
-                        }
-                    }
-                }
-                print
-                next
-            }
-
-            { print }
-
-            END {
-                if (!field_written) {
-                    print "- **" field ":** " value
-                }
-            }
-            ' "$STATE_FILE" > "$tmp"
-    else
-        # ## Pipeline State section absent -- build a minimal block and append.
-        {
-            cat "$STATE_FILE"
-            printf '\n'
-            printf '## Pipeline State\n'
-            printf '\n'
-            printf '> Single-source derivation summary for read-only consumers (the dashboard reader).\n'
-            printf '> Written ONLY by the helper `writeback-state.sh --pipeline ...` at every existing\n'
-            printf '> phase/state transition the pipeline already performs. Never hand-edited. All values are\n'
-            printf '> closed enums so a deterministic reader needs no inference.\n'
-            printf '>\n'
-            printf '> Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled\n'
-            printf '> Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor\n'
-            printf '> Active Skill enum: aid-{skill} | none\n'
-            printf '\n'
-            # Write all 7 field lines; for the target field use the provided value;
-            # for others use a dash placeholder (will be updated by later calls).
-            local lc ph as up pr br ba
-            lc="-"; ph="-"; as="-"; up="-"; pr=""; br=""; ba=""
-            case "$canonical_field" in
-                Lifecycle)       lc="$FIELD_VALUE" ;;
-                Phase)           ph="$FIELD_VALUE" ;;
-                "Active Skill")  as="$FIELD_VALUE" ;;
-                Updated)         up="$FIELD_VALUE" ;;
-                "Pause Reason")  pr="$FIELD_VALUE" ;;
-                "Block Reason")  br="$FIELD_VALUE" ;;
-                "Block Artifact") ba="$FIELD_VALUE" ;;
-            esac
-            echo "- **Lifecycle:** $lc"
-            echo "- **Phase:** $ph"
-            echo "- **Active Skill:** $as"
-            echo "- **Updated:** $up"
-            # Conditional fields: only emit if relevant
-            [[ -n "$pr" ]] && echo "- **Pause Reason:** $pr"
-            [[ -n "$br" ]] && echo "- **Block Reason:** $br"
-            [[ -n "$ba" ]] && echo "- **Block Artifact:** $ba"
-        } > "$tmp"
+    # Lifecycle change: clear conditional fields that no longer apply (chained
+    # writes over the same evolving temp file -- each wb_set_frontmatter call
+    # only ever touches the frontmatter block, so chaining preserves the
+    # untouched body across every step).
+    if [[ "$canonical_field" == "Lifecycle" ]]; then
+        local tmp2
+        if [[ "$FIELD_VALUE" != "Paused-Awaiting-Input" ]]; then
+            tmp2=$(mktemp)
+            wb_set_frontmatter "$tmp" "pause_reason" "--" > "$tmp2"
+            mv "$tmp2" "$tmp"
+        fi
+        if [[ "$FIELD_VALUE" != "Blocked" ]]; then
+            tmp2=$(mktemp)
+            wb_set_frontmatter "$tmp" "block_reason" "--" > "$tmp2"
+            mv "$tmp2" "$tmp"
+            tmp2=$(mktemp)
+            wb_set_frontmatter "$tmp" "block_artifact" "--" > "$tmp2"
+            mv "$tmp2" "$tmp"
+        fi
     fi
 
-    if [[ ! -s "$tmp" ]]; then
+    if ! wb_frontmatter_verify "$tmp" "$fm_key"; then
         rm -f "$tmp"
-        die "writeback produced empty output; $STATE_FILE preserved" 3
-    fi
-
-    # Sanity: ## Pipeline State section must be present in output (either name accepted)
-    if ! grep -qE '^## Pipeline Stat(us|e)' "$tmp"; then
-        rm -f "$tmp"
-        die "## Pipeline State section was not written to output" 3
+        die "writeback sanity check failed: frontmatter key '$fm_key' not found in output; $STATE_FILE preserved" 3
     fi
 
     mv "$tmp" "$STATE_FILE"
@@ -1233,6 +1454,7 @@ case "$MODE" in
     findings)            mode_findings ;;
     delivery-block)      mode_delivery_block ;;
     delivery-lifecycle)  mode_delivery_lifecycle ;;
+    gate-field)          mode_gate_field ;;
     append-issue)        mode_append_issue ;;
     *) die "internal error: unknown mode '$MODE'" 1 ;;
 esac

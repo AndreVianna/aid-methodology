@@ -366,38 +366,44 @@ delivery Done.
 
 ### 6a: Build the Delivery Gate Block
 
-Compose the final gate block:
+Reviewer Tier / Grade / Timestamp were relocated to frontmatter by
+work-003-state-schema task-001/004 (`gate_tier`/`gate_grade`/`gate_timestamp`);
+only Complexity Score / Cycles / Issue List remain as the `## Delivery Gate`
+body block content. Compose the reduced block:
 
 ```markdown
-- **Reviewer Tier:** {Small | Medium | Large}
 - **Complexity Score:** {N}
-- **Grade:** {grade}
 - **Cycles:** {N}
-- **Timestamp:** {YYYY-MM-DDTHH:MM:SSZ}
 - **Issue List:**
   {gate reviewer's issue list, all severities, or "none" if A+}
 ```
 
-### 6b: Write to `## Delivery Gate` in Delivery STATE.md
+### 6b: Write to Delivery STATE.md
 
-Use the writeback helper:
+Set the 3 relocated frontmatter scalars, then write the reduced body block:
 
 ```bash
-writeback-state.sh --delivery-id NNN --block "BLOCK"
+bash .cursor/aid/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Tier --gate-value "{Small|Medium|Large}"
+bash .cursor/aid/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Grade --gate-value "{grade}"
+bash .cursor/aid/scripts/execute/writeback-state.sh --delivery-id NNN --gate-field Timestamp --gate-value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+bash .cursor/aid/scripts/execute/writeback-state.sh --delivery-id NNN --block "BLOCK"
 ```
 
-> **Helper target:** `writeback-state.sh --delivery-id NNN --block BLOCK`
-> writes the `## Delivery Gate` block in `deliveries/delivery-NNN/STATE.md` (SD-5:
-> the delivery gate block is authored by this delivery's branch only; it is NOT
-> written into the shared work STATE.md). The work-level `## Delivery Gates`
-> view is DERIVED at read time as the union of all delivery gate blocks.
+> **Helper target:** the `--gate-field`/`--gate-value` calls write the
+> `gate_tier`/`gate_grade`/`gate_timestamp` frontmatter scalars (surgical
+> rewrite; markdown body untouched); `--block BLOCK` writes the reduced
+> `## Delivery Gate` body block (Complexity Score/Cycles/Issue List only) in
+> `deliveries/delivery-NNN/STATE.md` (SD-5: the delivery gate is authored by
+> this delivery's branch only; it is NOT written into the shared work
+> STATE.md). The work-level `## Delivery Gates` view is DERIVED at read time
+> as the union of all delivery gate blocks (body) + frontmatter (scalars).
 >
 > **Flat path (feature-001, single-delivery):** with a work-root `BLUEPRINT.md`
 > present and no `deliveries/` wrapper (`--delivery-id 001`), the SAME helper
-> call instead writes the singular
-> AUTHORED `## Delivery Gate` block directly into the work-root `STATE.md`
-> (there is exactly one delivery, so the disjoint-write concern above does not
-> apply — see `writeback-state.sh`). This is distinct from the plural DERIVED
+> calls instead target the work-root `STATE.md`'s own frontmatter + the
+> singular AUTHORED `## Delivery Gate` body block directly (there is exactly
+> one delivery, so the disjoint-write concern above does not apply — see
+> `writeback-state.sh`). This is distinct from the plural DERIVED
 > `## Delivery Gates` view (different heading, singular vs. plural).
 
 ### 6b-2: Advance delivery lifecycle to Done

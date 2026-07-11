@@ -186,10 +186,10 @@ State 6: GRADE file, grade >= min, ZERO Pending Q&A,
    (read via `read-setting.sh --path discovery.doc_set` → list-filenames accessor,
    `references/doc-set-resolve.md` §2.1; default seed when the section is unset).
 2. A document is "populated" only if it contains real content (files with only `❌ Pending` = missing). If any are missing → **GENERATE**
-3. If all declared docs populated and `.aid/knowledge/STATE.md` has `**Grade:** Pending` or `Not Started` → **REVIEW**
+3. If all declared docs populated and `.aid/knowledge/STATE.md`'s `kb_grade` frontmatter scalar (or the legacy `**Current Grade:**` header-blockquote line, for an un-migrated file) is `Pending` or absent → **REVIEW**
 4. If all declared docs populated but no `.aid/knowledge/STATE.md` → **REVIEW** (legacy)
 5. If `.aid/knowledge/STATE.md` exists with a grade:
-   - Read current/minimum grade; if `--grade` provided, update minimum
+   - Read current/minimum grade (`kb_grade` frontmatter scalar, legacy `**Current Grade:**` fallback); if `--grade` provided, update minimum
    - Read `## Q&A (Pending)` section of `.aid/knowledge/STATE.md` for `**Status:** Pending` entries
    - **If ANY `**Status:** Pending` entry exists → Q-AND-A** (regardless of grade OR Impact —
      discovery is NOT complete while any question is unanswered; `Impact` only orders the work,
@@ -336,7 +336,7 @@ When a Q&A entry in `.aid/knowledge/STATE.md` or an IMPEDIMENT triggers re-disco
 3. Dispatch ONLY the relevant subagent
 4. Regenerate README.md and INDEX.md
 5. Update README.md revision history
-6. Reset the `**Grade:**` field in STATE.md to `Pending` so next run re-reviews
+6. Reset the `kb_grade` frontmatter scalar in STATE.md to `Pending` (`bash canonical/aid/scripts/summarize/writeback-state.sh --set kb_grade Pending`) so next run re-reviews
 7. Report completion
 
 ---

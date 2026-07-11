@@ -1,11 +1,23 @@
+---
+kb-category: meta
+source: generated
+objective: Discovery-area run-state ledger — the Knowledge Base's review/grade history, approval state, pending Q&A, and visual-summary status for this project.
+summary: Read this for the KB's current grade, approval state, open questions, and summarization status — the process/run-state behind the knowledge docs, not knowledge content itself. One STATE.md per `.aid/knowledge/`.
+tags: [meta, state, run-state, review-history, qa, approval]
+see_also: [README.md, INDEX.md]
+owner: skill-self
+audience: [developer, architect]
+kb_status: Initial | In Progress | Approved
+kb_grade: "{grade or Pending}"
+last_kb_review: "{YYYY-MM-DD or --}"
+summary_approved: yes | no
+last_summary: "{YYYY-MM-DD or --}"
+---
+
 # Discovery State
 
 > **Source:** aid-config (creates) · aid-discover + aid-summarize (update)
-> **Status:** Initial | In Progress | Approved
-> **Current Grade:** {grade or Pending}
 > **User Approved:** yes | no
-> **Last KB Review:** {YYYY-MM-DD or —}
-> **Last Summary:** {YYYY-MM-DD or —}
 
 This is the single state file for the **Discovery area** — persistent project knowledge: the Knowledge Base + the visual summary. One STATE.md per project's `.aid/knowledge/` directory. Absorbs what used to be `DISCOVERY-STATE.md` + `SUMMARY-STATE.md`.
 
@@ -35,6 +47,12 @@ This is the single state file for the **Discovery area** — persistent project 
 
 ## Knowledge Summary Status
 
+<!-- The summary's approval scalar (`summary_approved`) and its last-run date
+     (`last_summary`) live in the YAML frontmatter block at the top of this file --
+     the single scalar there replaces the table-row-vs-bold-line dual representation
+     that used to cause a silent misparse. The remaining fields below are non-approval
+     run-state (profile/theme/grades/output) and stay here as markdown body. -->
+
 | Field | Value |
 |-------|-------|
 | Profile | {auto-detected: web-app/library/cli/microservices/data-pipeline OR user-specified} |
@@ -43,8 +61,6 @@ This is the single state file for the **Discovery area** — persistent project 
 | Theme | default | brand-{name} |
 | Machine Grade | {grade or Pending} |
 | Human Grade | {grade or Pending} |
-| User Approved | yes | no |
-| Last Run | {YYYY-MM-DD or —} |
 | Output | {kb.html (size) or —} |
 | Mermaid Version | {pinned version or —} |
 | Mermaid Cached | {.aid/knowledge/.cache/mermaid.min.js (sha256) or —} |

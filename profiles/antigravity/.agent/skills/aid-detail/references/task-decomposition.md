@@ -123,6 +123,10 @@ Each task is a **folder** containing two files:
 ```markdown
 # task-NNN: {Title}
 
+> **Execution protocol** blockquote note (write State at each transition;
+> binds whoever executes -- carried verbatim from task-detail-template.md,
+> not shown again here for brevity)
+
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
 **Source:** work-NNN-{name} -> delivery-NNN
@@ -137,11 +141,16 @@ Each task is a **folder** containing two files:
 - [ ] Criterion 2 -- concrete, testable
 ```
 
-Six sections. Nothing else.
+Six sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria) plus
+the fixed Execution protocol note carried automatically from the template.
+Nothing else.
 
-- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.agent/aid/templates/task-state-template.md`
-  with `State: Pending`, empty Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
-  Updated by `aid-execute`; never written by `aid-detail` after seeding.
+- **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.agent/aid/templates/task-state-template.md`,
+  replacing the frontmatter block's placeholder lines with the real opening values
+  (`state: Pending`, `review: --`, `elapsed: --`, `notes: --` — task-001/004; the
+  leading YAML block is the sole home for these 4 scalars), and the correct
+  Task/Delivery/Work header fields. Updated by `aid-execute`
+  (`writeback-state.sh --task-id NNN --field ...`); never written by `aid-detail` after seeding.
 
 Do NOT write task rows into the work `STATE.md` `## Tasks State` section. That is a DERIVED
 read-only view assembled at read time from the per-task STATE.md files (parent derives, never writes).

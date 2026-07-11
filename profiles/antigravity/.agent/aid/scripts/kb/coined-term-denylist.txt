@@ -33,6 +33,7 @@ auth
 await
 back
 base
+bash
 batch
 before
 begin
@@ -72,6 +73,7 @@ component
 config
 connection
 console
+const
 container
 content
 context
@@ -108,6 +110,7 @@ environment
 error
 event
 execute
+execution
 exists
 export
 extend
@@ -120,13 +123,16 @@ file
 filter
 find
 finish
+fixture
 flag
 flow
 for
 format
 forward
+found
 from
 function
+generated
 get
 given
 global
@@ -175,6 +181,7 @@ model
 module
 more
 name
+never
 new
 next
 node
@@ -183,6 +190,7 @@ now
 null
 number
 object
+only
 open
 option
 opus
@@ -192,6 +200,7 @@ override
 package
 param
 parse
+pass
 path
 pattern
 pipe
@@ -203,6 +212,7 @@ port
 post
 pre
 prefix
+present
 print
 process
 property
@@ -215,10 +225,13 @@ queue
 read
 record
 register
+registry
 relative
 remove
+repo
 request
 require
+required
 resolve
 resource
 response
@@ -232,6 +245,7 @@ schema
 scope
 script
 select
+self
 send
 server
 service
@@ -240,8 +254,10 @@ set
 settings
 simple
 size
+skip
 sonnet
 source
+sources
 stack
 start
 state
@@ -258,6 +274,7 @@ template
 test
 text
 that
+then
 this
 thread
 throw
@@ -271,6 +288,7 @@ trigger
 true
 try
 type
+unknown
 update
 use
 user

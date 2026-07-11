@@ -57,7 +57,7 @@ Compare to minimum grade from `bash .codex/aid/scripts/config/read-setting.sh --
 
 | Condition | Action |
 |-----------|--------|
-| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.md for each delivery in PLAN.md; create any missing ones with State: Pending-Spec). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
+| Grade >= minimum | Ensure all delivery folders exist (deliveries/delivery-NNN/BLUEPRINT.md + STATE.md for each delivery in PLAN.md; create any missing ones, seeding the frontmatter's `delivery_state` scalar as `Pending-Spec` -- task-001/004). Delete ledger: `rm -f .aid/.temp/review-pending/plan.md`. Print summary, done. |
 | Grade < minimum, deliverables fixable | List findings, re-enter loop for affected deliverables. |
 | Grade < minimum, sequence invalidated | Recommend `--reset`. |
 

@@ -409,6 +409,43 @@ setup_aid_home "${CLI027M_HOME}"
 run_aid "${CLI027M_HOME}" version
 assert_exit_eq "$RC" 0 "CLI027-M01 aid version → exit 0"
 assert_output_contains "$OUT" "${VERSION}" "CLI027-M02 aid version prints version string"
+_M_VERSION_SUBCMD_OUT="$OUT"
+
+# ===========================================================================
+# CLI027-M1: top-level bare `aid --version` / `-V` (task-008) → exit 0,
+#            identical output to `aid version`. Regression: the pre-existing
+#            add/remove/update `--version <v>` value-flag (release pin) is
+#            unaffected -- it is only matched among the args AFTER the
+#            subcommand, so the top-level bare-flag check (first arg only)
+#            never shadows it.
+# ===========================================================================
+run_aid "${CLI027M_HOME}" --version
+assert_exit_eq "$RC" 0 "CLI027-M1-01 aid --version → exit 0"
+assert_output_contains "$OUT" "${VERSION}" "CLI027-M1-02 aid --version prints version string"
+assert_eq "$OUT" "$_M_VERSION_SUBCMD_OUT" "CLI027-M1-03 aid --version output identical to 'aid version'"
+
+run_aid "${CLI027M_HOME}" -V
+assert_exit_eq "$RC" 0 "CLI027-M1-04 aid -V → exit 0"
+assert_eq "$OUT" "$_M_VERSION_SUBCMD_OUT" "CLI027-M1-05 aid -V output identical to 'aid version'"
+
+# Regression: subcommand `--version <v>` pin flag still requires (and parses) a
+# value -- proves the top-level bare --version/-V check does not intercept it
+# (SUBCMD is already "add" by the time this loop runs, not the bare first-arg
+# check above).
+run_aid "${CLI027M_HOME}" add --version
+assert_exit_eq "$RC" 2 "CLI027-M1-06 'aid add --version' (no value) still errors -- pin flag unaffected"
+assert_output_contains "$OUT" "--version requires a value" "CLI027-M1-07 pin flag value-required message unchanged"
+
+# Regression (positive path): --version <v> together with --from-bundle
+# correctly hits the PRE-EXISTING mutual-exclusivity guard (a --from-bundle
+# install IS the pinned artifact; --version has nothing to resolve) -- proving
+# the value was parsed and consumed by the same downstream logic as before,
+# unaffected by the new top-level flag.
+TM1=$(newtarget)
+run_aid "${CLI027M_HOME}" add codex --version "${VERSION}" \
+    --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --dry-run --target "${TM1}"
+assert_exit_eq "$RC" 2 "CLI027-M1-08 add --version <v> + --from-bundle → exit 2 (pre-existing mutual-exclusivity guard, unaffected)"
+assert_output_contains "$OUT" "mutually exclusive" "CLI027-M1-09 pin flag reaches the same downstream validation as before"
 
 # ===========================================================================
 # CLI027-N: aid help / -h / --help → exit 0, prints Usage

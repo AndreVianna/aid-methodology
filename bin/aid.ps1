@@ -10,6 +10,7 @@
 # Usage:
 #   aid                              Show the dashboard
 #   aid -h | --help                  Show help
+#   aid --version | -V               Print the CLI version and exit (same as 'aid version')
 #   aid version                      Print the CLI version
 #   aid status                       Show AID state of the current project
 #   aid add <tool>[,...]             Add tool(s) to the current project
@@ -19,11 +20,15 @@
 #
 # Flags (shared across subcommands where applicable):
 #   -FromBundle <path>   Offline install from a pre-downloaded tarball / dir.
-#   -Version <v>         Pin to a specific release version (e.g. 0.7.0).
+#   -Version <v>         (add/remove/update only) Pin to a specific release version (e.g. 0.7.0).
 #   -Force               Overwrite differing files / skip confirmation prompts.
 #   -Target <dir>        Project root (default: current directory).
 #   -Verbose             Print per-file detail (default: concise summary).
 #   -NoPath              (bootstrap / update self only) Skip PATH wiring.
+#
+# Top-level-only flag (bare, no value, handled before subcommand dispatch):
+#   --version | -V         Print the CLI version and exit 0. Distinct from the
+#                          subcommand -Version <v> pin flag above.
 
 # ---------------------------------------------------------------------------
 # Bootstrap URL - single place to update when the branch merges to master.
@@ -250,6 +255,7 @@ function script:Show-AidUsage {
             Write-Host 'Usage:'
             Write-Host '  aid                              Show the dashboard'
             Write-Host '  aid -h | --help                  Show this help'
+            Write-Host '  aid --version | -V               Print the CLI version and exit (same as "aid version")'
             Write-Host '  aid version                      Print the CLI version'
             Write-Host '  aid status                       Show AID state of the current project'
             Write-Host '  aid add <tool>[,...]             Add tool(s) to the current project'
@@ -259,9 +265,24 @@ function script:Show-AidUsage {
             Write-Host '  aid projects [list|add|remove]   List/register/unregister AID projects'
             Write-Host "  aid <command> -h | --help        Per-command help"
             Write-Host ''
-            Write-Host 'Flags: -FromBundle, -Version, -Force, -DryRun, -Target, -Verbose'
+            Write-Host 'Flags: -FromBundle, -Version <v> (add/remove/update only -- pins a release), -Force, -DryRun, -Target, -Verbose'
+            Write-Host 'Top-level --version / -V takes NO value and prints the CLI version (distinct from the -Version <v> pin above).'
             Write-Host "Run 'aid <command> -h' for details."
         }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Version helper: single-source the CLI version via the VERSION-file read.
+# Shared by the 'aid version' subcommand and the top-level bare --version/-V
+# flag -- do NOT duplicate this literal read path elsewhere.
+# ---------------------------------------------------------------------------
+function script:Show-AidVersion {
+    $versionFile = Join-Path $script:_AidCodeHome 'VERSION'
+    if (Test-Path $versionFile -PathType Leaf) {
+        Write-Host (Get-Content -LiteralPath $versionFile -Raw).Trim()
+    } else {
+        Write-Host "unknown (VERSION file not found at $versionFile)"
     }
 }
 
@@ -2106,6 +2127,15 @@ if ($script:_RawArgs[0] -in @('-h', '--help', '-Help', '/help', '/?')) {
     script:Exit-Aid 0
 }
 
+# ---- Early top-level --version / -V (bare, no value) ----
+# Distinct from the subcommand -Version <v> pin flag parsed further below
+# (add/remove/update). Only fires when it is the FIRST argument, so it never
+# shadows the pin (which is only matched among the args AFTER the subcommand).
+if ($script:_RawArgs[0] -in @('-V', '--version')) {
+    script:Show-AidVersion
+    script:Exit-Aid 0
+}
+
 $SUBCMD = $script:_RawArgs[0]
 $script:_RemArgs = @($script:_RawArgs | Select-Object -Skip 1)
 
@@ -2113,12 +2143,7 @@ $script:_RemArgs = @($script:_RawArgs | Select-Object -Skip 1)
 # version
 # ---------------------------------------------------------------------------
 if ($SUBCMD -eq 'version') {
-    $versionFile = Join-Path $script:_AidCodeHome 'VERSION'
-    if (Test-Path $versionFile -PathType Leaf) {
-        Write-Host (Get-Content -LiteralPath $versionFile -Raw).Trim()
-    } else {
-        Write-Host "unknown (VERSION file not found at $versionFile)"
-    }
+    script:Show-AidVersion
     script:Exit-Aid 0
 }
 

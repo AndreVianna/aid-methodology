@@ -307,6 +307,10 @@ def _reconcile_same_work(
         # branch_label: None on a reconciled model (multiple branches contributed);
         # provenance is retained on each TaskModel via its wave/delivery field.
         branch_label=None,
+        kind=winner_wm.kind,
+        started=winner_wm.started,
+        minimum_grade=winner_wm.minimum_grade,
+        user_approved=winner_wm.user_approved,
     )
     return reconciled, winner_text, winner_label
 
@@ -799,6 +803,10 @@ def _read_work(
         recipe=pw.recipe,
         features=pw.features,
         deliverables=pw.deliverables,
+        kind=pw.kind,
+        started=pw.started,
+        minimum_grade=pw.minimum_grade,
+        user_approved=pw.user_approved,
     )
 
     return work_model, parse_warnings, bytes_read, text, state_label
@@ -1078,6 +1086,10 @@ def _read_work_flat(
         recipe=pw.recipe,
         features=pw.features,
         deliverables=deliverables,
+        kind=pw.kind,
+        started=pw.started,
+        minimum_grade=pw.minimum_grade,
+        user_approved=pw.user_approved,
     )
 
     return work_model, parse_warnings, bytes_read, work_text, state_label
@@ -1331,10 +1343,18 @@ def _read_work_hierarchical(
         title=req_title,
         description=req_description,
         objective=req_objective,
-        work_path=pw.work_path,
+        # work_path: frontmatter `pipeline.path` first; else "full" -- the
+        # hierarchical deliveries/ wrapper only exists for full multi-delivery
+        # works, so layout detection is a sound fallback default here (symmetric
+        # with _read_work_flat's `pw.work_path or "lite"` fallback below).
+        work_path=pw.work_path or "full",
         recipe=pw.recipe,
         features=pw.features,
         deliverables=all_deliverables,
+        kind=pw.kind,
+        started=pw.started,
+        minimum_grade=pw.minimum_grade,
+        user_approved=pw.user_approved,
     )
 
     return work_model, parse_warnings, bytes_read, work_text, state_label

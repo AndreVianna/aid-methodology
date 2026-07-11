@@ -75,8 +75,11 @@ Once approved:
      definition, seeded from `canonical/aid/templates/task-detail-template.md` (the former flat
      `tasks/task-NNN.md`; same schema, now lives in the task folder).
    - `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md` -- seeded from
-     `canonical/aid/templates/task-state-template.md` with `State: Pending`, empty
-     Review/Elapsed/Notes, and the correct Task/Delivery/Work header fields.
+     `canonical/aid/templates/task-state-template.md`, replacing the frontmatter
+     block's placeholder lines with the real opening values (`state: Pending`,
+     `review: --`, `elapsed: --`, `notes: --` -- task-001/004; direct field edit,
+     the leading YAML block is the sole home for these 4 scalars), and the
+     correct Task/Delivery/Work header fields.
    Do NOT write task rows into the work `STATE.md` `## Tasks State` -- that is a
    DERIVED read-only view assembled at read time from the per-task STATE.md files.
 2. **Review immediately:** Do the tasks hold up?

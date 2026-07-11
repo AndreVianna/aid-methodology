@@ -39,7 +39,13 @@ from .models import (
     TaskStatus,
     ToolInfo,
 )
-from .derivation import derive_lifecycle
+from .derivation import derive_lifecycle, _parse_minimum_grade
+from .state_schema import (
+    parse_bool_yesno,
+    parse_frontmatter_scalars,
+    parse_header_bold_field,
+    resolve_kind,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -70,6 +76,11 @@ class ParsedWork:
         "features",
         "deliverables",
         "created",
+        # work-003-state-schema task-002: dual-format frontmatter read, new fields
+        "kind",
+        "started",
+        "minimum_grade",
+        "user_approved",
     )
 
     def __init__(self) -> None:
@@ -91,6 +102,11 @@ class ParsedWork:
         self.features: list[FeatureRef] = []
         self.deliverables: list[DeliverableRef] = []
         self.created: Optional[str] = None
+        # work-003-state-schema task-002: dual-format frontmatter read, new fields
+        self.kind: Optional[str] = None
+        self.started: Optional[str] = None
+        self.minimum_grade: Optional[str] = None
+        self.user_approved: Optional[bool] = None
 
 
 # ---------------------------------------------------------------------------
@@ -301,10 +317,17 @@ def parse_kb_state(
     after derivation (FF-A3) and parsing (parse_kb_baseline).
 
     Fields populated:
-      summary_approved  -- from STATE.md "**User Approved:** yes ..."
-      last_summary_date -- extracted from same line (parenthesized date)
+      summary_approved  -- frontmatter `summary_approved` (task-002, dual-format),
+                            else the legacy "**User Approved:** yes ..." bold line
+      last_summary_date -- frontmatter `last_summary`, else the parenthesized date
+                            on the legacy bold line
       doc_count         -- count of data rows in README.md ## Completeness table
       summary_present   -- True if dashboard_dir/kb.html exists (stat only)
+      source_mode       -- Normalized (frontmatter) | Fallback (legacy prose or
+                            nothing present) -- extends SourceMode onto the KB
+                            path (task-002 gate criteria #3)
+      kb_status/kb_grade/last_kb_review -- newly-captured discovery scalars:
+                            frontmatter-first, legacy header-blockquote fallback
     """
     if not kb_dir.is_dir():
         return None, 0
@@ -313,6 +336,10 @@ def parse_kb_state(
     summary_approved = False
     last_summary_date: Optional[str] = None
     doc_count: Optional[int] = None
+    source_mode = SourceMode.Fallback
+    kb_status_val: Optional[str] = None
+    kb_grade_val: Optional[str] = None
+    last_kb_review_val: Optional[str] = None
 
     # Parse STATE.md for summary approval.
     state_path = kb_dir / "STATE.md"
@@ -323,7 +350,37 @@ def parse_kb_state(
             state_text = raw.decode("utf-8", errors="replace")
         except OSError:
             state_text = ""
-        summary_approved, last_summary_date = _parse_kb_summary_approval(state_text)
+        fm = parse_frontmatter_scalars(state_text)
+        summary_approved, last_summary_date, source_mode = _parse_kb_summary_approval(
+            state_text, fm
+        )
+
+        # Newly-captured discovery-status scalars (task-002): frontmatter-first,
+        # legacy header-blockquote fallback (never parsed by any reader before
+        # this task -- schema-note.md classifies these "Newly captured").
+        v = fm.get("kb_status")
+        if v is not None and not _is_null(v):
+            kb_status_val = v.strip()
+        else:
+            legacy = parse_header_bold_field(state_text, "Status")
+            if legacy is not None and not _is_null(legacy):
+                kb_status_val = legacy
+
+        v = fm.get("kb_grade")
+        if v is not None and not _is_null(v):
+            kb_grade_val = v.strip()
+        else:
+            legacy = parse_header_bold_field(state_text, "Current Grade")
+            if legacy is not None and not _is_null(legacy):
+                kb_grade_val = legacy
+
+        v = fm.get("last_kb_review")
+        if v is not None and not _is_null(v):
+            last_kb_review_val = v.strip()
+        else:
+            legacy = parse_header_bold_field(state_text, "Last KB Review")
+            if legacy is not None and not _is_null(legacy):
+                last_kb_review_val = legacy
 
     # Parse README.md for doc_count.
     readme_path = kb_dir / "README.md"
@@ -351,15 +408,42 @@ def parse_kb_state(
         doc_count=doc_count,
         summary_present=summary_present,
         # status and kb_baseline are set by reader.py after derivation
+        source_mode=source_mode,
+        kb_status=kb_status_val,
+        kb_grade=kb_grade_val,
+        last_kb_review=last_kb_review_val,
     ), bytes_read
 
 
-def _parse_kb_summary_approval(text: str) -> tuple[bool, Optional[str]]:
-    """Find the Knowledge Summary Status '**User Approved:** yes' line.
+def _parse_kb_summary_approval(
+    text: str, fm: Optional[dict] = None
+) -> tuple[bool, Optional[str], SourceMode]:
+    """Find the KB summary approval + last-run date (frontmatter-first).
 
-    Returns (approved: bool, date: Optional[str]).
-    The date is extracted from the first parenthesized group on that line if present.
+    Returns (approved: bool, date: Optional[str], source_mode: SourceMode).
+
+    Frontmatter-first (task-002): if `summary_approved` is present in the
+    already-parsed frontmatter dict `fm`, that scalar (yes/no/true/false,
+    case-insensitive) is authoritative and `last_summary` supplies the date;
+    source_mode=Normalized.
+
+    Legacy-prose fallback (UNCHANGED behavior): scans the
+    '## Knowledge Summary Status' section for a '**User Approved:** yes ...'
+    BOLD LINE (not a table row -- the historical misparse this whole work
+    exists to fix; the ad hoc bold line IS what state-generate.md/
+    state-approval.md actually write below the table, so this scan remains the
+    real legacy-compat path for un-migrated files); source_mode=Fallback.
     """
+    if fm is not None:
+        fm_approved = fm.get("summary_approved")
+        if fm_approved is not None:
+            approved = bool(parse_bool_yesno(fm_approved))
+            fm_last = fm.get("last_summary")
+            date: Optional[str] = None
+            if fm_last is not None and not _is_null(fm_last):
+                date = fm_last.strip()
+            return approved, date, SourceMode.Normalized
+
     # Look for the section ## Knowledge Summary Status then **User Approved:**
     in_summary_status = False
     for line in text.splitlines():
@@ -376,8 +460,8 @@ def _parse_kb_summary_approval(text: str) -> tuple[bool, Optional[str]]:
                 approved = val.lower().startswith("yes")
                 date_m = re.search(r"\((\d{4}-\d{2}-\d{2})", val)
                 date = date_m.group(1) if date_m else None
-                return approved, date
-    return False, None
+                return approved, date, SourceMode.Fallback
+    return False, None, SourceMode.Fallback
 
 
 def _parse_kb_doc_count(text: str) -> Optional[int]:
@@ -935,8 +1019,15 @@ def parse_state_md(
 
     This function is pure (text-only) when work_dir is None. When work_dir is
     supplied it performs one filesystem scan for IMPEDIMENT files; no writes.
+
+    Dual-format (work-003-state-schema task-002): the YAML frontmatter block at
+    the top of the file (if any) is parsed ONCE via parse_frontmatter_scalars()
+    and applied AFTER the legacy prose line-scan below -- frontmatter wins
+    whenever both are present (dual-format / back-compat tolerant read). See
+    _apply_pipeline_frontmatter / _apply_identity_frontmatter.
     """
     pw = ParsedWork()
+    fm = parse_frontmatter_scalars(text)
     lines = text.splitlines()
 
     # State machine over sections
@@ -1109,8 +1200,21 @@ def parse_state_md(
     # Flush any trailing Q block
     _flush_q()
 
-    # Normalized path: if ## Pipeline Status was found, set source_mode=normalized.
-    if pipeline_status_found:
+    # Dual-format (task-002): frontmatter-first override for the ## Pipeline State
+    # scalars, applied AFTER the legacy prose scan above so frontmatter (the newer,
+    # authoritative source) wins whenever both are present. A migrated STATE.md's
+    # ## Pipeline State section body is enum-reference prose ONLY (no more
+    # "- **Lifecycle:** ..." bullets) -- without this override, a migrated work would
+    # render Lifecycle.Unknown despite pipeline_status_found=True (the section header
+    # alone would still be seen). fm_lifecycle_present tracks whether the frontmatter
+    # itself supplies a normalized-quality signal (used below alongside the legacy
+    # pipeline_status_found flag, so a frontmatter-only fixture with no ## Pipeline
+    # State section at all still resolves to Normalized).
+    fm_lifecycle_present = _apply_pipeline_frontmatter(fm, pw)
+
+    # Normalized path: if ## Pipeline Status was found (legacy prose) OR the
+    # frontmatter supplied a valid `lifecycle` scalar, set source_mode=normalized.
+    if pipeline_status_found or fm_lifecycle_present:
         pw.source_mode = SourceMode.Normalized
     else:
         # LC-3 FALLBACK ADAPTER (task-011, audited task-013 M6):
@@ -1142,6 +1246,11 @@ def parse_state_md(
         if pw.updated is None:
             pw.updated = fallback_updated
         pw.parse_warnings.extend(extra_warnings)
+
+    # Dual-format (task-002): pipeline-identity + newly-captured scalars.
+    # Independent of the lifecycle/source_mode decision above -- these fields have
+    # their own frontmatter-first / legacy-prose-fallback resolution.
+    _apply_identity_frontmatter(fm, pw, text)
 
     return pw
 
@@ -1253,11 +1362,18 @@ def parse_task_state_md(
     The closed State enum values are the same as the work-level TaskStatus enum
     (Pending | In Progress | In Review | Blocked | Done | Failed | Canceled).
 
+    Dual-format (work-003-state-schema task-002): the task-state-template.md
+    frontmatter block (`state`/`review`/`elapsed`/`notes`, flat scalars) is
+    read frontmatter-first; the ## Task State bullet scan below is the
+    legacy-prose fallback for un-migrated files (a migrated file's ## Task
+    State section body is comment-only, no bullets).
+
     Read-only; never throws (parse_warnings on error). Called only by the
     hierarchical reader path for a task-NNN/STATE.md file (full-nested:
     deliveries/delivery-NNN/tasks/task-NNN/STATE.md; lite-flat: tasks/task-NNN/STATE.md).
     """
     pts = ParsedTaskState()
+    fm = parse_frontmatter_scalars(text)
 
     try:
         in_task_state = False
@@ -1299,6 +1415,27 @@ def parse_task_state_md(
                 pts.notes = None if _is_null(val) else val
                 continue
 
+        # Frontmatter-first override (applied after the legacy prose scan so
+        # frontmatter wins whenever both are present).
+        v = fm.get("state")
+        if v is not None and not _is_null(v):
+            pts.state = _parse_task_status(v.strip())
+
+        v = fm.get("review")
+        if v is not None:
+            vv = v.strip()
+            pts.review = None if _is_null(vv) else vv
+
+        v = fm.get("elapsed")
+        if v is not None:
+            vv = v.strip()
+            pts.elapsed = None if _is_null(vv) else vv
+
+        v = fm.get("notes")
+        if v is not None:
+            vv = v.strip()
+            pts.notes = None if _is_null(vv) else vv
+
     except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
         pts.parse_warnings.append(
             f"{task_id}: error parsing task STATE.md ({exc}); "
@@ -1331,8 +1468,14 @@ def parse_delivery_state_md(
     STATE.md text itself (the single implicit delivery's lifecycle/gate/Q&A are
     AUTHORED directly in the work-root file for lite works, so the same generic
     section parser applies to either text -- see reader.py _read_work_hierarchical).
+
+    Dual-format (work-003-state-schema task-002): the delivery-state-template.md
+    frontmatter block (`delivery_state`/`gate_tier`/`gate_grade`/`gate_timestamp`,
+    flat scalars) is read frontmatter-first; the ## Delivery Lifecycle / ## Delivery
+    Gate bullet scans below are the legacy-prose fallback for un-migrated files.
     """
     pds = ParsedDeliveryState()
+    fm = parse_frontmatter_scalars(text)
 
     try:
         in_lifecycle = False
@@ -1503,6 +1646,35 @@ def parse_delivery_state_md(
 
         # Flush any trailing Q block
         _flush_q()
+
+        # Frontmatter-first override (applied after the legacy prose scan so
+        # frontmatter wins whenever both are present).
+        v = fm.get("delivery_state")
+        if v is not None and not _is_null(v):
+            raw = v.strip()
+            if raw in _DELIVERY_STATE_VALUES:
+                pds.delivery_state = raw
+            else:
+                pds.parse_warnings.append(
+                    f"{delivery_id}: unknown frontmatter delivery_state '{raw}'; "
+                    f"expected one of {sorted(_DELIVERY_STATE_VALUES)}"
+                )
+
+        v = fm.get("gate_tier")
+        if v is not None and not _is_null(v):
+            split = v.strip().split()
+            if split:
+                pds.gate_reviewer_tier = split[0]
+
+        v = fm.get("gate_grade")
+        if v is not None and not _is_null(v):
+            split = v.strip().split()
+            if split and split[0].lower() != "pending":
+                pds.gate_grade = split[0]
+
+        v = fm.get("gate_timestamp")
+        if v is not None and not _is_null(v):
+            pds.gate_timestamp = v.strip()
 
     except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
         pds.parse_warnings.append(
@@ -1680,6 +1852,116 @@ def _parse_pipeline_status_line(line: str, pw: ParsedWork) -> None:
         val = m.group(1).strip()
         pw.block_artifact = None if _is_null(val) else val
         return
+
+
+# ---------------------------------------------------------------------------
+# Dual-format frontmatter overrides (work-003-state-schema task-002)
+#
+# Applied AFTER the legacy prose line-scan (parse_state_md), so the frontmatter
+# (the newer, authoritative source) wins whenever both are present. Absent
+# frontmatter keys never regress a prose-derived value to null -- each field is
+# only overridden when its frontmatter key is itself present and non-null.
+# ---------------------------------------------------------------------------
+
+def _apply_pipeline_frontmatter(fm: dict, pw: ParsedWork) -> bool:
+    """Frontmatter-first override for the ## Pipeline State scalar fields.
+
+    Returns True iff the 'lifecycle' key was present with a valid (non-null)
+    value -- the caller (parse_state_md) uses this alongside the legacy
+    pipeline_status_found flag to decide source_mode.
+    """
+    lifecycle_present = False
+
+    v = fm.get("lifecycle")
+    if v is not None and not _is_null(v):
+        pw.lifecycle = _parse_lifecycle(v.strip())
+        lifecycle_present = True
+
+    v = fm.get("phase")
+    if v is not None and not _is_null(v):
+        pw.phase = _parse_phase(v.strip())
+
+    v = fm.get("active_skill")
+    if v is not None:
+        vv = v.strip()
+        pw.active_skill = None if (_is_null(vv) or vv.lower() == "none") else vv
+
+    v = fm.get("updated")
+    if v is not None and not _is_null(v):
+        pw.updated = v.strip()
+
+    v = fm.get("pause_reason")
+    if v is not None:
+        vv = v.strip()
+        pw.pause_reason = None if _is_null(vv) else vv
+
+    v = fm.get("block_reason")
+    if v is not None:
+        vv = v.strip()
+        pw.block_reason = None if _is_null(vv) else vv
+
+    v = fm.get("block_artifact")
+    if v is not None:
+        vv = v.strip()
+        pw.block_artifact = None if _is_null(vv) else vv
+
+    return lifecycle_present
+
+
+def _apply_identity_frontmatter(fm: dict, pw: ParsedWork, text: str) -> None:
+    """Frontmatter-first (legacy header-blockquote fallback) for the
+    pipeline-identity + newly-captured work scalars: `pipeline.path` ->
+    work_path, `pipeline.initiator` -> kind, `started`, `minimum_grade`,
+    `user_approved`.
+    """
+    # pipeline.path -> work_path (stop inferring via _detect_flat/_detect_hierarchy
+    # when present; reader.py keeps those layout-detection heuristics as the
+    # fallback default for un-migrated works).
+    v = fm.get("pipeline.path")
+    if v is not None and not _is_null(v):
+        pw.work_path = v.strip().lower()
+
+    # pipeline.initiator -> kind (display verb, shortcut-catalog.yml mapping).
+    # No legacy prose equivalent exists (the old ## Triage **Recipe:** field --
+    # still read into pw.recipe above -- is a distinct, older, dead-prose concept).
+    v = fm.get("pipeline.initiator")
+    if v is not None and not _is_null(v):
+        pw.kind = resolve_kind(v.strip())
+
+    # started (frontmatter-only; schema-note.md: the header blockquote's own
+    # '**Started:**' line "was never actually parsed... the row-scrape was the
+    # only working path" -- so there is no working legacy prose fallback to wire
+    # here). Retires the fragile 'Work created' row-scrape for migrated works:
+    # pw.created is ALSO backfilled so existing consumers (home.html work.created,
+    # the JSON 'created' key) keep working unchanged.
+    v = fm.get("started")
+    if v is not None and not _is_null(v):
+        started_val = v.strip()
+        pw.started = started_val
+        pw.created = started_val
+
+    # minimum_grade: frontmatter-first; legacy fallback reuses the EXISTING
+    # header-blockquote parse (derivation._parse_minimum_grade) -- its role in
+    # the sub-minimum Blocked-gate derivation (derivation.py:_find_subminimum_gate)
+    # is UNCHANGED; this is a separate exposure of the same value onto the model.
+    v = fm.get("minimum_grade")
+    if v is not None and not _is_null(v):
+        pw.minimum_grade = v.strip().upper()
+    else:
+        legacy_grade = _parse_minimum_grade(text)
+        if legacy_grade:
+            pw.minimum_grade = legacy_grade
+
+    # user_approved: frontmatter yes/no/true/false (case-insensitive) -> bool;
+    # legacy header-blockquote '**User Approved:**' line as fallback. Work-level
+    # approval, distinct from the KB's summary_approved (parse_kb_state).
+    v = fm.get("user_approved")
+    if v is not None:
+        pw.user_approved = parse_bool_yesno(v)
+    else:
+        legacy_val = parse_header_bold_field(text, "User Approved")
+        if legacy_val is not None and not _is_null(legacy_val):
+            pw.user_approved = parse_bool_yesno(legacy_val)
 
 
 def _parse_tasks_line(line: str, pw: ParsedWork, header_seen: bool) -> None:
@@ -1921,15 +2203,21 @@ _LIFECYCLE_MAP: dict[str, Lifecycle] = {
     "Canceled": Lifecycle.Canceled,
 }
 
-# Phase mapping
+# Phase mapping (work-003-state-schema task-010 -- faithful 6-phase pipeline).
+# "Interview" is a back-compat READ alias for the retired label (split into
+# Describe + Define by the 2026-06-28 rename); it maps to Describe, its first
+# half, so pre-migration files/fixtures still parse. "Monitor" is a dead value
+# (no skill ever wrote it) tolerated as Unknown rather than dropped/crashing.
 _PHASE_MAP: dict[str, Phase] = {
-    "Interview": Phase.Interview,
+    "Interview": Phase.Describe,   # back-compat alias, never written
+    "Describe": Phase.Describe,
+    "Define": Phase.Define,
     "Specify": Phase.Specify,
     "Plan": Phase.Plan,
     "Detail": Phase.Detail,
     "Execute": Phase.Execute,
     "Deploy": Phase.Deploy,
-    "Monitor": Phase.Monitor,
+    "Monitor": Phase.Unknown,      # dead value, tolerated on read
 }
 
 # TaskStatus mapping (feature-001 M3 closed enum)

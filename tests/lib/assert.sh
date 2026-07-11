@@ -39,7 +39,10 @@ assert_eq() {
 
 assert_output_contains() {
     local output="$1" pattern="$2" label="$3"
-    if echo "$output" | grep -qF "$pattern"; then
+    # `--` marks end-of-options so a pattern that itself starts with `-`
+    # (e.g. a markdown bullet "- **Field:**") is never reparsed by grep as an
+    # option flag (task-004 FIX review, finding 3).
+    if echo "$output" | grep -qF -- "$pattern"; then
         pass "$label"
     else
         fail "$label — pattern not found: '$pattern'"
@@ -49,7 +52,7 @@ assert_output_contains() {
 
 assert_output_not_contains() {
     local output="$1" pattern="$2" label="$3"
-    if ! echo "$output" | grep -qF "$pattern"; then
+    if ! echo "$output" | grep -qF -- "$pattern"; then
         pass "$label"
     else
         fail "$label — unexpected pattern found: '$pattern'"
@@ -58,7 +61,7 @@ assert_output_not_contains() {
 
 assert_file_contains() {
     local file="$1" pattern="$2" label="$3"
-    if grep -qF "$pattern" "$file" 2>/dev/null; then
+    if grep -qF -- "$pattern" "$file" 2>/dev/null; then
         pass "$label"
     else
         fail "$label — pattern not found: '$pattern' in $file"
@@ -68,7 +71,7 @@ assert_file_contains() {
 
 assert_file_not_contains() {
     local file="$1" pattern="$2" label="$3"
-    if ! grep -qF "$pattern" "$file" 2>/dev/null; then
+    if ! grep -qF -- "$pattern" "$file" 2>/dev/null; then
         pass "$label"
     else
         fail "$label — unexpected pattern found: '$pattern' in $file"

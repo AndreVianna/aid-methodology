@@ -2,6 +2,70 @@
 
 Task work is dispatched to the type-appropriate executor agent to produce deliverables; state is entered when no prior execution exists or when resuming an in-progress task.
 
+## MANDATORY: State-Write Protocol -- read this before doing anything else
+
+> **A task's `State` field MUST be written to disk THE MOMENT it changes -- not
+> batched, not deferred, not "I'll do it at the end." This is not a formality:
+> it is the entire mechanism that makes the dashboard show live progress
+> instead of a task sitting at `Pending` for its whole execution and then
+> jumping straight to `Done`.**
+
+**Full runnable form (every row below is an abbreviation of this):**
+`writeback-state.sh [--delivery-id NNN] --task-id NNN --field State --value "VALUE"`
+(`--delivery-id` is optional -- it is resolved from the task's own `Source`
+line when omitted; the layout, full or flat, is auto-detected either way.)
+
+| Transition | When | Write (abbreviated -- see full runnable form above) |
+|---|---|---|
+| -> `In Progress` | BEFORE any work begins (EXECUTE entry, Step 1 below) | `... --field State --value "In Progress"` |
+| -> `In Review` | At EXECUTE-complete, BEFORE dispatching the reviewer | `... --field State --value "In Review"` |
+| -> `Done` | At the per-task REVIEW quick-check's terminal chain (`references/state-review.md`) -- written by the executing agent itself, whether that is the main/orchestrator agent (single-task invocation) or a dispatched sub-agent (single-task dispatch OR a pool-dispatch worker running its own per-task pipeline, per `PD-2a` below) | `... --field State --value "Done"` |
+| -> `Failed` | The moment this task raises an unresolved IMPEDIMENT (single-task path -- `SKILL.md § Impediments`; quick-check CRITICAL-persists path -- `state-review.md`) -- same "whoever is executing writes it" rule as `Done` above | `... --field State --value "Failed"` |
+| -> `Done` / `Failed` (pool dispatch, orchestrator side) | PD-4 on completion/failure (`## EXECUTE-WAVE: Pool Dispatch` below) -- a belt-and-suspenders backstop for AFTER the sub-agent reports back, not a substitute for the sub-agent's own write above | same abbreviated form, `--task-id` from the pool loop |
+
+**Why this matters:** the dashboard (and every downstream dependency check --
+`SKILL.md § Check 2b`) reads this field LIVE, straight off disk. An unwritten
+transition is not a cosmetic gap -- it is an INVISIBLE or MISLEADING task: the
+dashboard shows `Pending` while real work is already underway, a dependent
+task cannot distinguish "not started yet" from "actually running," and a
+stalled task never surfaces as `Failed` for anyone watching the board.
+
+**Who this binds -- NO EXCEPTIONS:**
+- The **main/orchestrator agent** executing a task **directly** (no dispatched
+  sub-agent) MUST perform every write above itself, at the same points, as
+  part of its own inline execution. "I'm doing this myself, not delegating
+  it" is NOT a reason to skip a write -- the write is not paperwork attached
+  to the work, it IS part of the work of making a transition.
+- A **dispatched sub-agent** (single-task dispatch OR a pool-dispatch worker
+  running its own full per-task pipeline, per `PD-2a` below) MUST perform
+  these writes itself, at the same points, as it executes.
+- **Neither may bypass, batch, or defer these writes** -- not "to save a
+  round-trip," not "because the task will finish soon anyway." A transition
+  that happened but was never written is, from the dashboard's point of view,
+  indistinguishable from a transition that never happened at all.
+
+**Both layouts, no special-casing:** `writeback-state.sh --delivery-id DDD
+--task-id NNN --field State --value V` auto-detects the layout -- **full
+layout** writes the per-task `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
+frontmatter; **flat layout** (feature-001) writes the SAME task's row in the
+work-root `STATE.md § ### Tasks lifecycle` table instead. Same command, same
+call sites, no branching in the instructions above -- the script handles the
+layout difference so the executing agent does not have to.
+
+**Both dispatch modes, no special-casing:** for a **single-task invocation**
+the writes above happen inline as the task's own EXECUTE/REVIEW states run
+(Step 1 below; `state-review.md`'s terminal chain). For **pool dispatch**
+(`## EXECUTE-WAVE: Pool Dispatch` below) the orchestrator's PD-2/PD-4 steps
+ALSO write `In Progress`/`Done`/`Failed` for the task it just dispatched or
+just reaped, AND each dispatched sub-agent runs the SAME single-task flow
+internally (PD-2a's prompt template says so explicitly) -- so `In Progress`,
+`In Review`, AND the terminal `Done`/`Failed` are ALL written by the
+sub-agent itself too, exactly as if it were a single-task invocation.
+Belt-and-suspenders, not either-or: the orchestrator's writes are a backstop,
+never a substitute for the executing agent's own -- a redundant write of the
+same already-current value is harmless and idempotent; a MISSING write is
+the bug this protocol exists to prevent.
+
 ## Task Types
 
 | Type | What the agent does | What the reviewer checks |
@@ -174,10 +238,15 @@ While `|in-flight| < MaxConcurrent` and the ready set is non-empty:
    > sub-agent returns. Treat the returned result as the completion event and
    > proceed directly to PD-4 for that task, then loop back to PD-2.
 
-5. Update task State to `In Progress` via:
+5. **MANDATORY (State-Write Protocol above) -- do this BEFORE moving on to
+   step 6:** update task State to `In Progress` via:
    ```
    writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "In Progress"
    ```
+   This is the orchestrator's own write for the pool path; the dispatched
+   sub-agent ALSO writes `In Progress` (and later `In Review`) itself as it
+   runs its own per-task EXECUTE state -- both are expected, both are
+   idempotent, neither is optional.
 
 6. Pre-create heartbeat file: `.aid/.heartbeat/<executor>-<unix-ts>.txt`
    Include `HEARTBEAT_FILE=<path>` and `HEARTBEAT_INTERVAL=1m` in the prompt.
@@ -208,6 +277,15 @@ EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
 Read task definition from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/DETAIL.md.
 Read task state from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
 Follow the type-specific executor rules from references/task-type-rules.md.
+MANDATORY: write your own State at EVERY transition you run yourself --
+In Progress at your own EXECUTE entry, In Review at your own execute-complete,
+and your OWN terminal Done/Failed at your own REVIEW quick-check's terminal
+chain (state-execute.md's Step 1 + state-review.md's terminal write -- you are
+running these states yourself, not just the orchestrator). Do not skip any of
+these writes on the theory that "the orchestrator's PD-4 write covers it" --
+PD-4's write is a belt-and-suspenders backstop for AFTER you report back, not
+a substitute for your own. Writing the same already-current value twice is
+expected and idempotent; a MISSING write is the bug this mandate prevents.
 On completion, commit to the delivery branch in the worktree.
 Report: DONE or FAILED with reason.
 ```
@@ -230,6 +308,15 @@ Read task definition from .aid/{work}/tasks/task-{NNN}/DETAIL.md.
 Read task state from the work-root .aid/{work}/STATE.md § ### Tasks lifecycle
 (row for task-{NNN}; there is no per-task STATE.md in this layout).
 Follow the type-specific executor rules from references/task-type-rules.md.
+MANDATORY: write your own State at EVERY transition you run yourself --
+In Progress at your own EXECUTE entry, In Review at your own execute-complete,
+and your OWN terminal Done/Failed at your own REVIEW quick-check's terminal
+chain (state-execute.md's Step 1 + state-review.md's terminal write -- you are
+running these states yourself, not just the orchestrator). Do not skip any of
+these writes on the theory that "the orchestrator's PD-4 write covers it" --
+PD-4's write is a belt-and-suspenders backstop for AFTER you report back, not
+a substitute for your own. Writing the same already-current value twice is
+expected and idempotent; a MISSING write is the bug this mandate prevents.
 On completion, commit to the delivery branch in the worktree.
 Report: DONE or FAILED with reason.
 ```
@@ -268,7 +355,8 @@ Remove `task-{NNN}` from the in-flight set.
    ```
    (Expected output: the sub-agent's commits, already on the delivery branch.)
 
-2. **Update State to Done:**
+2. **MANDATORY (State-Write Protocol above), do NOT skip even though the task
+   already reports success -- Update State to Done:**
    ```bash
    writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Done"
    ```
@@ -294,7 +382,9 @@ Remove `task-{NNN}` from the in-flight set.
 
 1. Emit `✗ <executor> FAILED for task-{NNN} after <elapsed>`.
 
-2. Update state:
+2. **MANDATORY (State-Write Protocol above) -- update state before doing
+   anything else below** (the failed task must never be left showing
+   `In Progress`/`In Review` on the dashboard):
    ```bash
    writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
    ```
@@ -525,7 +615,12 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 ## Step 1: EXECUTE (Do the Work)
 
-Update the task State to `In Progress` (silent state-write -- no output):
+**MANDATORY, first action, before any other work -- per the State-Write
+Protocol above:** update the task State to `In Progress` (silent state-write
+-- no output). This applies whether YOU (the main/orchestrator agent) are
+executing this task directly or you are the dispatched sub-agent running it --
+either way, this is the FIRST thing that happens in this state, not something
+deferred until "real work" starts:
 ```bash
 bash .codex/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Progress"
@@ -558,11 +653,22 @@ Load the section matching the task's Type from `references/task-type-rules.md` a
 
 **When agent reports done:** verify relevant gates pass (build, lint, tests -- as applicable to the type).
 ✓ {executor} done (record actual time) -- or ✗ {executor} failed: {reason}
-When execution passes → update task State to `In Review`:
+
+**MANDATORY, before dispatching the reviewer -- per the State-Write Protocol
+above:** when execution passes → update task State to `In Review`. This write
+happens HERE, at EXECUTE-complete -- not after the reviewer has already been
+dispatched, not batched together with a later write:
 ```bash
 bash .codex/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Review"
 ```
 Then proceed to Step 2 (REVIEW).
+
+**If execution instead raises an unresolved IMPEDIMENT** (the agent cannot
+proceed -- see `SKILL.md § Impediments`): update task State to `Failed` there,
+per the State-Write Protocol above, before writing the IMPEDIMENT file. Do NOT
+leave the task's State at `In Progress` while surfacing an impediment -- an
+agent stuck mid-task and an agent that has genuinely failed must be
+distinguishable on the dashboard.
 
 **Advance:** **CHAIN** -> [State: REVIEW] (continue inline).

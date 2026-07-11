@@ -1,3 +1,10 @@
+---
+state: Done
+review: Pending
+elapsed: '~35m'
+notes: 'ELICIT state authored (references/state-elicit.md, E0-E3) + all SKILL.md sites wired (frontmatter/banner/detection/dispatch/6 maps/new block); Q9 SKIPPED/DECLARED-EMPTY/ENGAGED marker encoded. Render to profiles deferred to delivery consolidation per dispatch scope.'
+---
+
 # Task State -- task-008
 
 [!NOTE]

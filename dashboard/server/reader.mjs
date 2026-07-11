@@ -71,14 +71,19 @@ const Lifecycle = {
   Unknown: "Unknown",
 };
 
+// Faithful 6-phase pipeline (work-003-state-schema task-010; mirrors models.py Phase).
+// Discover is NOT a member -- aid-discover is KB-level (writes kb_status, never a
+// work phase:); it is surfaced from KbStatus instead. Deploy is an optional
+// post-Execute indicator. Back-compat read aliases (never written; see PHASE_MAP):
+// "Interview" -> Describe, "Monitor" -> Unknown.
 const Phase = {
-  Interview: "Interview",
+  Describe: "Describe",
+  Define: "Define",
   Specify: "Specify",
   Plan: "Plan",
   Detail: "Detail",
   Execute: "Execute",
   Deploy: "Deploy",
-  Monitor: "Monitor",
   Unknown: "Unknown",
 };
 
@@ -121,6 +126,257 @@ function isNull(val) {
 }
 
 // ---------------------------------------------------------------------------
+// STATE YAML-frontmatter dual-format read (work-003-state-schema task-002)
+// Twin of dashboard/reader/state_schema.py -- keep the two in lockstep.
+// ---------------------------------------------------------------------------
+
+const RE_FM_FENCE_GENERIC = /^---\s*$/;
+const RE_TOPLEVEL_KV = /^([A-Za-z0-9_\-]+):\s*(.*)$/;
+const RE_NESTED_KV = /^[ \t]+([A-Za-z0-9_\-]+):\s*(.*)$/;
+const RE_SECTION_HEADER_GENERIC = /^##\s+/;
+
+function _stripScalarQuotes(raw) {
+  // Strip one layer of matching surrounding quotes from a YAML scalar.
+  // For a SINGLE-quoted scalar, also collapse YAML's ''-escaping ('' -> '),
+  // the exact inverse of the frontmatter writer (task-004 emits a single-quoted
+  // scalar with embedded ' doubled). Twin of Python _strip_scalar_quotes.
+  const val = raw.trim();
+  if (val.length >= 2 && val[0] === val[val.length - 1] &&
+      (val[0] === "'" || val[0] === '"')) {
+    const inner = val.slice(1, -1);
+    return val[0] === "'" ? inner.split("''").join("'") : inner;
+  }
+  return val;
+}
+
+// A '{...}' template token anywhere in the value (matching braces, no nested
+// '}'). Every un-instantiated placeholder in the 4 STATE templates carries one.
+const RE_PLACEHOLDER_TOKEN = /\{[^}]*\}/;
+
+// Frontmatter keys whose value is human/skill free-text, NOT a closed enum.
+// Twin of Python _FREETEXT_FM_KEYS -- the ' | ' enum-list marker is suppressed
+// for these so a real free-text value containing ' | ' is not discarded; their
+// own placeholders still carry a '{...}' token. Keep in lockstep with Python.
+const FREETEXT_FM_KEYS = new Set(["pause_reason", "block_reason", "block_artifact", "notes"]);
+
+function _looksLikeUnfilledPlaceholder(val, isFreetext) {
+  // True if val is un-instantiated TEMPLATE placeholder text, not real data.
+  // Twin of Python _looks_like_unfilled_placeholder() -- see its docstring for
+  // the rollout-safety rationale (BLUEPRINT gate criteria #6). Two markers:
+  //   - a '{...}' token anywhere (always a placeholder), and
+  //   - a ' | ' enum-alternatives list, but ONLY for closed-enum fields; it is
+  //     suppressed when isFreetext (real free-text may contain ' | ').
+  if (RE_PLACEHOLDER_TOKEN.test(val)) return true;
+  if (!isFreetext && val.includes(" | ")) return true;
+  return false;
+}
+
+function parseFrontmatterScalars(text) {
+  // Tolerant flat + one-level-nested frontmatter scalar scan.
+  // Twin of Python parse_frontmatter_scalars(). Returns a plain object:
+  //   top-level scalar keys map directly:       {started: "2026-07-10"}
+  //   one level of nested mapping is dot-joined: {"pipeline.path": "lite"}
+  // Never throws (NFR7). No file I/O. Returns {} when no opening '---' fence.
+  const result = {};
+  let inFm = false;
+  let fmEntered = false;
+  let currentPrefix = null;
+
+  // CRLF tolerance: text.split("\n") leaves a trailing "\r" on each line for
+  // CRLF-authored files (e.g. edited on Windows); JS's "." and "$" both treat
+  // "\r" as a line terminator (unlike Python's splitlines(), which already
+  // strips it), so an un-stripped "\r" would silently fail every (.*)$-shaped
+  // capture below. Stripping it here keeps this function's behavior identical
+  // to the Python twin for both LF-only and CRLF-authored STATE.md files.
+  for (const rawLine of text.split("\n")) {
+    const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+    if (RE_FM_FENCE_GENERIC.test(line)) {
+      if (!fmEntered) {
+        inFm = true;
+        fmEntered = true;
+        continue;
+      } else {
+        break; // closing fence
+      }
+    }
+    if (!inFm) break; // no opening fence -- no frontmatter at all
+
+    if (!line.trim()) continue;
+
+    if (line[0] === " " || line[0] === "\t") {
+      // Nested continuation line
+      if (currentPrefix === null) continue; // orphan indented line; ignore
+      const m = line.match(RE_NESTED_KV);
+      if (m) {
+        const key = m[1];
+        const val = _stripScalarQuotes(m[2]);
+        if (val !== "" && !_looksLikeUnfilledPlaceholder(val, FREETEXT_FM_KEYS.has(key))) {
+          result[`${currentPrefix}.${key}`] = val;
+        }
+      }
+      continue;
+    }
+
+    // Top-level line
+    const m = line.match(RE_TOPLEVEL_KV);
+    if (!m) {
+      currentPrefix = null;
+      continue;
+    }
+    const key = m[1];
+    const rest = m[2].trim();
+    if (rest === "") {
+      // Bare 'key:' -- nested mapping follows
+      currentPrefix = key;
+      continue;
+    }
+    currentPrefix = null;
+    const val = _stripScalarQuotes(rest);
+    if (!_looksLikeUnfilledPlaceholder(val, FREETEXT_FM_KEYS.has(key))) {
+      result[key] = val;
+    }
+  }
+
+  return result;
+}
+
+function parseHeaderBoldField(text, label) {
+  // Legacy-prose fallback: scan the pre-first-"##" header-blockquote zone for
+  // a '**{label}:** value' line (optionally '>'-prefixed), case-insensitive.
+  // Twin of Python parse_header_bold_field(). Returns trimmed value or null.
+  const escaped = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp("\\*\\*" + escaped + ":\\*\\*\\s*(.+)", "i");
+  for (const line of text.split("\n")) {
+    if (RE_SECTION_HEADER_GENERIC.test(line)) break;
+    const m = line.match(pattern);
+    if (m) return m[1].trim();
+  }
+  return null;
+}
+
+function parseBoolYesno(raw) {
+  // Normalize a yes/no/true/false (case-insensitive) scalar to bool.
+  // Twin of Python parse_bool_yesno() -- see its docstring for the
+  // twin-parity landmine rationale (PyYAML 1.1 vs js-yaml 1.2 yes/no coercion).
+  // Returns null when raw is null/undefined or an unrecognized token.
+  if (raw === null || raw === undefined) return null;
+  const v = String(raw).trim().toLowerCase();
+  if (v === "yes" || v === "true") return true;
+  if (v === "no" || v === "false") return false;
+  return null;
+}
+
+// pipeline.initiator -> display kind: static mirror of
+// canonical/aid/templates/shortcut-catalog.yml's {name: [verb, artifact]} rows.
+// NOT read from disk at runtime -- see state_schema.py's SHORTCUT_KIND_MAP
+// docstring for the full rationale. Keep in lockstep with the Python twin.
+const SHORTCUT_KIND_MAP = {
+  "aid-fix": ["fix", ""],
+  "aid-create": ["create", ""],
+  "aid-create-api": ["create", "api"],
+  "aid-create-ui": ["create", "ui"],
+  "aid-create-theme": ["create", "theme"],
+  "aid-create-cli": ["create", "cli"],
+  "aid-create-data-model": ["create", "data-model"],
+  "aid-create-data-pipeline": ["create", "data-pipeline"],
+  "aid-create-messaging": ["create", "messaging"],
+  "aid-create-integration": ["create", "integration"],
+  "aid-create-job": ["create", "job"],
+  "aid-create-config": ["create", "config"],
+  "aid-create-infra": ["create", "infra"],
+  "aid-add": ["create", ""],
+  "aid-add-api": ["create", "api"],
+  "aid-add-ui": ["create", "ui"],
+  "aid-add-theme": ["create", "theme"],
+  "aid-add-cli": ["create", "cli"],
+  "aid-add-data-model": ["create", "data-model"],
+  "aid-add-data-pipeline": ["create", "data-pipeline"],
+  "aid-add-messaging": ["create", "messaging"],
+  "aid-add-integration": ["create", "integration"],
+  "aid-add-job": ["create", "job"],
+  "aid-add-config": ["create", "config"],
+  "aid-add-infra": ["create", "infra"],
+  "aid-change": ["change", ""],
+  "aid-change-api": ["change", "api"],
+  "aid-change-ui": ["change", "ui"],
+  "aid-change-theme": ["change", "theme"],
+  "aid-change-cli": ["change", "cli"],
+  "aid-change-data-model": ["change", "data-model"],
+  "aid-change-data-pipeline": ["change", "data-pipeline"],
+  "aid-change-messaging": ["change", "messaging"],
+  "aid-change-integration": ["change", "integration"],
+  "aid-change-job": ["change", "job"],
+  "aid-change-config": ["change", "config"],
+  "aid-change-infra": ["change", "infra"],
+  "aid-refactor": ["refactor", ""],
+  "aid-update": ["change", ""],
+  "aid-update-api": ["change", "api"],
+  "aid-update-ui": ["change", "ui"],
+  "aid-update-theme": ["change", "theme"],
+  "aid-update-cli": ["change", "cli"],
+  "aid-update-data-model": ["change", "data-model"],
+  "aid-update-data-pipeline": ["change", "data-pipeline"],
+  "aid-update-messaging": ["change", "messaging"],
+  "aid-update-integration": ["change", "integration"],
+  "aid-update-job": ["change", "job"],
+  "aid-update-config": ["change", "config"],
+  "aid-update-infra": ["change", "infra"],
+  "aid-remove": ["remove", ""],
+  "aid-delete": ["remove", ""],
+  "aid-deprecate": ["deprecate", ""],
+  "aid-migrate": ["migrate", ""],
+  "aid-test": ["test", ""],
+  "aid-test-security": ["test", "security"],
+  "aid-test-performance": ["test", "performance"],
+  "aid-test-data-quality": ["test", "data-quality"],
+  "aid-experiment": ["experiment", ""],
+  "aid-prototype": ["prototype", ""],
+  "aid-prototype-ui": ["prototype", "ui"],
+  "aid-document": ["document", ""],
+  "aid-document-decision": ["document", "decision"],
+  "aid-document-architecture": ["document", "architecture"],
+  "aid-document-guideline": ["document", "guideline"],
+  "aid-document-standard": ["document", "standard"],
+  "aid-document-runbook": ["document", "runbook"],
+  "aid-document-tutorial": ["document", "tutorial"],
+  "aid-document-changelog": ["document", "changelog"],
+  "aid-report": ["report", ""],
+  "aid-show-dashboard": ["show-dashboard", ""],
+  "aid-review": ["review", ""],
+  "aid-audit": ["review", ""],
+  "aid-research": ["research", ""],
+  "aid-investigate": ["research", ""],
+  "aid-spike": ["research", ""],
+  "aid-deploy": ["deploy", ""],
+  "aid-monitor": ["monitor", ""],
+  "aid-query-kb": ["query", ""],
+  "aid-ask": ["query", ""],
+};
+
+// The FULL-pipeline starting skill -- never a shortcut-catalog.yml row.
+const FULL_PATH_INITIATOR = "aid-describe";
+const FULL_PATH_KIND = "full path";
+
+function resolveKind(initiator) {
+  // Resolve a pipeline.initiator skill name to a human display verb.
+  // Twin of Python resolve_kind(). Unknown/absent -> null (caller drops the
+  // redundant word instead of rendering a literal "Unknown"/"Lite").
+  if (!initiator) return null;
+  const trimmed = initiator.trim();
+  if (!trimmed) return null;
+  if (trimmed === FULL_PATH_INITIATOR) return FULL_PATH_KIND;
+
+  const entry = SHORTCUT_KIND_MAP[trimmed];
+  if (!entry) return null;
+
+  const [verb, artifact] = entry;
+  let label = verb.replace(/-/g, " ");
+  if (label) label = label[0].toUpperCase() + label.slice(1);
+  if (artifact) label = `${label} ${artifact.replace(/-/g, " ")}`;
+  return label;
+}
+
+// ---------------------------------------------------------------------------
 // Enum parse helpers (mirrors parsers.py _parse_* functions)
 // ---------------------------------------------------------------------------
 
@@ -133,13 +389,15 @@ const LIFECYCLE_MAP = {
 };
 
 const PHASE_MAP = {
-  "Interview": Phase.Interview,
+  "Interview": Phase.Describe,   // back-compat alias, never written
+  "Describe": Phase.Describe,
+  "Define": Phase.Define,
   "Specify": Phase.Specify,
   "Plan": Phase.Plan,
   "Detail": Phase.Detail,
   "Execute": Phase.Execute,
   "Deploy": Phase.Deploy,
-  "Monitor": Phase.Monitor,
+  "Monitor": Phase.Unknown,      // dead value, tolerated on read
 };
 
 const TASK_STATUS_MAP = {
@@ -422,7 +680,26 @@ function parseKbBaseline(settingsPath) {
   return [{ branch: branch, tip_date: tipDate }, bytesRead];
 }
 
-function parseKbSummaryApproval(text) {
+function parseKbSummaryApproval(text, fm) {
+  // Frontmatter-first (task-002): summary_approved/last_summary scalars.
+  // Twin of Python _parse_kb_summary_approval(). Returns
+  // [approved, date, sourceMode].
+  if (fm) {
+    const fmApproved = fm.summary_approved;
+    if (fmApproved !== undefined) {
+      const approved = !!parseBoolYesno(fmApproved);
+      const fmLast = fm.last_summary;
+      let date = null;
+      if (fmLast !== undefined && !isNull(fmLast)) {
+        date = fmLast.trim();
+      }
+      return [approved, date, SourceMode.Normalized];
+    }
+  }
+
+  // Legacy-prose fallback (UNCHANGED behavior): '## Knowledge Summary Status'
+  // bold line (not a table row -- see parsers.py's _parse_kb_summary_approval
+  // docstring for why this remains the real legacy-compat path).
   let inSummaryStatus = false;
   for (const line of text.split("\n")) {
     if (/^##\s+Knowledge Summary Status/.test(line)) {
@@ -437,11 +714,11 @@ function parseKbSummaryApproval(text) {
         const approved = val.toLowerCase().startsWith("yes");
         const dateM = val.match(/\((\d{4}-\d{2}-\d{2})/);
         const date = dateM ? dateM[1] : null;
-        return [approved, date];
+        return [approved, date, SourceMode.Fallback];
       }
     }
   }
-  return [false, null];
+  return [false, null, SourceMode.Fallback];
 }
 
 function parseKbDocCount(text) {
@@ -490,6 +767,10 @@ function parseKbState(kbDir, dashboardDir) {
   let summaryApproved = false;
   let lastSummaryDate = null;
   let docCount = null;
+  let sourceMode = SourceMode.Fallback;
+  let kbStatusVal = null;
+  let kbGradeVal = null;
+  let lastKbReviewVal = null;
 
   const statePath = join(kbDir, "STATE.md");
   if (existsSync(statePath)) {
@@ -498,7 +779,34 @@ function parseKbState(kbDir, dashboardDir) {
       raw = readFileBounded(statePath);
       bytesRead += raw.length;
       const stateText = raw.toString("utf-8");
-      [summaryApproved, lastSummaryDate] = parseKbSummaryApproval(stateText);
+      const fm = parseFrontmatterScalars(stateText);
+      [summaryApproved, lastSummaryDate, sourceMode] = parseKbSummaryApproval(stateText, fm);
+
+      // Newly-captured discovery-status scalars (task-002): frontmatter-first,
+      // legacy header-blockquote fallback.
+      let v = fm["kb_status"];
+      if (v !== undefined && !isNull(v)) {
+        kbStatusVal = v.trim();
+      } else {
+        const legacy = parseHeaderBoldField(stateText, "Status");
+        if (legacy !== null && !isNull(legacy)) kbStatusVal = legacy;
+      }
+
+      v = fm["kb_grade"];
+      if (v !== undefined && !isNull(v)) {
+        kbGradeVal = v.trim();
+      } else {
+        const legacy = parseHeaderBoldField(stateText, "Current Grade");
+        if (legacy !== null && !isNull(legacy)) kbGradeVal = legacy;
+      }
+
+      v = fm["last_kb_review"];
+      if (v !== undefined && !isNull(v)) {
+        lastKbReviewVal = v.trim();
+      } else {
+        const legacy = parseHeaderBoldField(stateText, "Last KB Review");
+        if (legacy !== null && !isNull(legacy)) lastKbReviewVal = legacy;
+      }
     } catch (_) {
       // ignore
     }
@@ -537,6 +845,10 @@ function parseKbState(kbDir, dashboardDir) {
       // status and kb_baseline set by readRepo after derivation
       status: KbStatus.unknown,
       kb_baseline: null,
+      source_mode: sourceMode,
+      kb_status: kbStatusVal,
+      kb_grade: kbGradeVal,
+      last_kb_review: lastKbReviewVal,
     },
     bytesRead,
   ];
@@ -1713,6 +2025,10 @@ const RE_QN_SUGGEST = /^\s*-\s*\*\*Suggested:\*\*\s*(.+)/i;
 const NONE_YET = "_none yet_";
 
 function parseStateText(text, workId, workDir) {
+  // Dual-format (task-002): parse the YAML frontmatter block ONCE; applied
+  // AFTER the legacy prose line-scan below (frontmatter wins when present).
+  const fm = parseFrontmatterScalars(text);
+
   // ParsedWork fields
   let lifecycle = Lifecycle.Unknown;
   let phase = null;
@@ -1731,6 +2047,11 @@ function parseStateText(text, workId, workDir) {
   let recipe = null;
   const features = [];
   const deliverables = [];
+  // work-003-state-schema task-002: dual-format frontmatter read, new fields
+  let kind = null;
+  let started = null;
+  let minimumGrade = null;
+  let userApproved = null;
 
   let inPipelineStatus = false;
   let pipelineStatusFound = false;
@@ -2064,7 +2385,53 @@ function parseStateText(text, workId, workDir) {
 
   flushQ();
 
-  if (pipelineStatusFound) {
+  // Dual-format (task-002): frontmatter-first override for the ## Pipeline
+  // State scalars, applied AFTER the legacy prose scan above so frontmatter
+  // (the newer, authoritative source) wins whenever both are present. A
+  // migrated STATE.md's ## Pipeline State section body is enum-reference
+  // prose ONLY (no more "- **Lifecycle:** ..." bullets) -- without this
+  // override, a migrated work would render Lifecycle.Unknown despite
+  // pipelineStatusFound=true (the section header alone is still seen).
+  let fmLifecyclePresent = false;
+  {
+    let v = fm["lifecycle"];
+    if (v !== undefined && !isNull(v)) {
+      lifecycle = parseLifecycle(v.trim());
+      fmLifecyclePresent = true;
+    }
+    v = fm["phase"];
+    if (v !== undefined && !isNull(v)) {
+      phase = parsePhase(v.trim());
+    }
+    v = fm["active_skill"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      activeSkill = (isNull(vv) || vv.toLowerCase() === "none") ? null : vv;
+    }
+    v = fm["updated"];
+    if (v !== undefined && !isNull(v)) {
+      updated = v.trim();
+    }
+    v = fm["pause_reason"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      pauseReason = isNull(vv) ? null : vv;
+    }
+    v = fm["block_reason"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      blockReason = isNull(vv) ? null : vv;
+    }
+    v = fm["block_artifact"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      blockArtifact = isNull(vv) ? null : vv;
+    }
+  }
+
+  // Normalized path: if ## Pipeline Status was found (legacy prose) OR the
+  // frontmatter supplied a valid `lifecycle` scalar, set source_mode=normalized.
+  if (pipelineStatusFound || fmLifecyclePresent) {
     sourceMode = SourceMode.Normalized;
   } else {
     // LC-3 FALLBACK ADAPTER
@@ -2091,6 +2458,64 @@ function parseStateText(text, workId, workDir) {
     parseWarnings.push(...extraWarnings);
   }
 
+  // Dual-format (task-002): pipeline-identity + newly-captured scalars.
+  // Independent of the lifecycle/sourceMode decision above -- these fields
+  // have their own frontmatter-first / legacy-prose-fallback resolution.
+  {
+    // pipeline.path -> workPath (stop inferring via _detectFlat/_detectHierarchy
+    // when present; readWork/_readWorkFlat/_readWorkHierarchical keep those
+    // layout-detection heuristics as the fallback default for un-migrated works).
+    let v = fm["pipeline.path"];
+    if (v !== undefined && !isNull(v)) {
+      workPath = v.trim().toLowerCase();
+    }
+
+    // pipeline.initiator -> kind (display verb, shortcut-catalog.yml mapping).
+    // No legacy prose equivalent exists (the old ## Triage **Recipe:** field --
+    // still read into `recipe` above -- is a distinct, older, dead-prose concept).
+    v = fm["pipeline.initiator"];
+    if (v !== undefined && !isNull(v)) {
+      kind = resolveKind(v.trim());
+    }
+
+    // started (frontmatter-only; no working legacy prose fallback ever existed
+    // -- see state_schema.py's docstring). Retires the fragile 'Work created'
+    // row-scrape for migrated works: `created` is ALSO backfilled here so
+    // existing consumers (home.html work.created, the JSON 'created' key)
+    // keep working unchanged.
+    v = fm["started"];
+    if (v !== undefined && !isNull(v)) {
+      const startedVal = v.trim();
+      started = startedVal;
+      created = startedVal;
+    }
+
+    // minimum_grade: frontmatter-first; legacy fallback reuses the EXISTING
+    // header-blockquote scan (parseMinimumGrade) -- its role in the
+    // sub-minimum Blocked-gate derivation (findSubminimumGate) is UNCHANGED;
+    // this is a separate exposure of the same value onto the model.
+    v = fm["minimum_grade"];
+    if (v !== undefined && !isNull(v)) {
+      minimumGrade = v.trim().toUpperCase();
+    } else {
+      const legacyGrade = parseMinimumGrade(text);
+      if (legacyGrade) minimumGrade = legacyGrade;
+    }
+
+    // user_approved: frontmatter yes/no/true/false (case-insensitive) -> bool;
+    // legacy header-blockquote '**User Approved:**' line as fallback.
+    // Work-level approval, distinct from the KB's summary_approved.
+    v = fm["user_approved"];
+    if (v !== undefined) {
+      userApproved = parseBoolYesno(v);
+    } else {
+      const legacyVal = parseHeaderBoldField(text, "User Approved");
+      if (legacyVal !== null && !isNull(legacyVal)) {
+        userApproved = parseBoolYesno(legacyVal);
+      }
+    }
+  }
+
   return {
     lifecycle,
     phase,
@@ -2108,6 +2533,10 @@ function parseStateText(text, workId, workDir) {
     features,
     deliverables,
     created,
+    kind,
+    started,
+    minimumGrade,
+    userApproved,
   };
 }
 
@@ -2412,6 +2841,10 @@ function readWork(workDir, workId) {
     recipe: pw.recipe,
     features: pw.features,
     deliverables: pw.deliverables,
+    kind: pw.kind,
+    started: pw.started,
+    minimum_grade: pw.minimumGrade,
+    user_approved: pw.userApproved,
   });
 
   return [workModel, parseWarnings, bytesRead, text, statePathLabel];
@@ -2775,6 +3208,29 @@ function _parseTaskStateMd(text, taskId) {
         continue;
       }
     }
+
+    // Frontmatter-first override (task-002): applied after the legacy prose
+    // scan so frontmatter wins whenever both are present.
+    const fm = parseFrontmatterScalars(text);
+    let v = fm["state"];
+    if (v !== undefined && !isNull(v)) {
+      pts.state = parseTaskStatus(v.trim());
+    }
+    v = fm["review"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      pts.review = isNull(vv) ? null : vv;
+    }
+    v = fm["elapsed"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      pts.elapsed = isNull(vv) ? null : vv;
+    }
+    v = fm["notes"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      pts.notes = isNull(vv) ? null : vv;
+    }
   } catch (exc) {
     pts.parseWarnings.push(
       taskId + ": error parsing task STATE.md (" + exc + "); returning best-effort task state"
@@ -2961,6 +3417,40 @@ function _parseDeliveryStateMd(text, deliveryId) {
     }
 
     flushQ();
+
+    // Frontmatter-first override (task-002): applied after the legacy prose
+    // scan so frontmatter wins whenever both are present.
+    const fm = parseFrontmatterScalars(text);
+    let v = fm["delivery_state"];
+    if (v !== undefined && !isNull(v)) {
+      const raw = v.trim();
+      if (DELIVERY_STATE_VALUES.has(raw)) {
+        pds.deliveryState = raw;
+      } else {
+        pds.parseWarnings.push(
+          deliveryId + ": unknown frontmatter delivery_state '" + raw + "'"
+        );
+      }
+    }
+
+    v = fm["gate_tier"];
+    if (v !== undefined && !isNull(v)) {
+      const split = v.trim().split(/\s+/);
+      if (split.length && split[0]) pds.gateReviewerTier = split[0];
+    }
+
+    v = fm["gate_grade"];
+    if (v !== undefined && !isNull(v)) {
+      const split = v.trim().split(/\s+/);
+      if (split.length && split[0] && split[0].toLowerCase() !== "pending") {
+        pds.gateGrade = split[0];
+      }
+    }
+
+    v = fm["gate_timestamp"];
+    if (v !== undefined && !isNull(v)) {
+      pds.gateTimestamp = v.trim();
+    }
   } catch (exc) {
     pds.parseWarnings.push(
       deliveryId + ": error parsing delivery STATE.md (" + exc + "); returning best-effort delivery state"
@@ -3323,6 +3813,10 @@ function _readWorkFlat(workDir, workId) {
     recipe: pw.recipe,
     features: pw.features,
     deliverables: deliverables,
+    kind: pw.kind,
+    started: pw.started,
+    minimum_grade: pw.minimumGrade,
+    user_approved: pw.userApproved,
   });
 
   return [workModel, parseWarnings, bytesRead, workText, stateLabel];
@@ -3573,10 +4067,18 @@ function _readWorkHierarchical(workDir, workId) {
     title: reqTitle,
     description: reqDescription,
     objective: reqObjective,
-    work_path: pw.workPath,
+    // work_path: frontmatter `pipeline.path` first; else "full" -- the
+    // hierarchical deliveries/ wrapper only exists for full multi-delivery
+    // works, so layout detection is a sound fallback default here (symmetric
+    // with _readWorkFlat's `pw.workPath || "lite"` fallback above).
+    work_path: pw.workPath || "full",
     recipe: pw.recipe,
     features: pw.features,
     deliverables: allDeliverables,
+    kind: pw.kind,
+    started: pw.started,
+    minimum_grade: pw.minimumGrade,
+    user_approved: pw.userApproved,
   });
 
   return [workModel, parseWarnings, bytesRead, workText, stateLabel];
@@ -3753,6 +4255,10 @@ function _reconcileSameWork(copies) {
     deliverables: mergedDeliverables,
     // branch_label: null on a reconciled model (multiple branches contributed)
     branch_label: null,
+    kind: winnerWm.kind,
+    started: winnerWm.started,
+    minimum_grade: winnerWm.minimum_grade,
+    user_approved: winnerWm.user_approved,
   });
 
   return [reconciled, winnerText, winnerLabel];
@@ -3788,6 +4294,8 @@ function _buildKbStateRef(kb) {
   //   retained: summary_approved, last_summary_date, doc_count
   //   new:      status, summary_present, kb_baseline
   // task-042 additions: doc_freshness, suspect_count
+  // work-003-state-schema task-002 additions: source_mode, kb_status, kb_grade,
+  //   last_kb_review
   return {
     summary_approved:  kb.summary_approved,
     last_summary_date: kb.last_summary_date,
@@ -3797,6 +4305,10 @@ function _buildKbStateRef(kb) {
     kb_baseline:       _buildKbBaseline(kb.kb_baseline),
     doc_freshness:     Array.isArray(kb.doc_freshness) ? kb.doc_freshness.map(_buildDocFreshness) : [],
     suspect_count:     typeof kb.suspect_count === "number" ? kb.suspect_count : 0,
+    source_mode:       kb.source_mode !== undefined ? kb.source_mode : SourceMode.Fallback,
+    kb_status:         kb.kb_status !== undefined ? kb.kb_status : null,
+    kb_grade:          kb.kb_grade !== undefined ? kb.kb_grade : null,
+    last_kb_review:    kb.last_kb_review !== undefined ? kb.last_kb_review : null,
   };
 }
 
@@ -3870,7 +4382,8 @@ function _buildDeliverableRef(d) {
 function _buildWorkModel(wm) {
   // WorkModel field order: work_id, name, lifecycle, phase, active_skill, updated, created,
   //   pause_reason, block_reason, block_artifact, tasks, pending_inputs, source_mode,
-  //   number, title, description, objective, work_path, recipe, features, deliverables
+  //   number, title, description, objective, work_path, recipe, features, deliverables,
+  //   kind, started, minimum_grade, user_approved (work-003-state-schema task-002)
   //
   // NOTE: branch_label is an internal reconcile field (work-004 Pillar 4) tracked
   // directly on raw objects between readWork() and _reconcileSameWork(); it is NOT
@@ -3899,6 +4412,10 @@ function _buildWorkModel(wm) {
     recipe: wm.recipe !== undefined ? wm.recipe : null,
     features: (wm.features || []).map(_buildFeatureRef),
     deliverables: (wm.deliverables || []).map(_buildDeliverableRef),
+    kind: wm.kind !== undefined ? wm.kind : null,
+    started: wm.started !== undefined ? wm.started : null,
+    minimum_grade: wm.minimum_grade !== undefined ? wm.minimum_grade : null,
+    user_approved: wm.user_approved !== undefined ? wm.user_approved : null,
   };
   // Carry branch_label as a non-enumerable property so the reconcile logic can
   // read it (wm.branch_label) without it appearing in JSON.stringify output.

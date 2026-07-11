@@ -711,8 +711,11 @@ After invoking, the stage pauses for `/aid-discover` to settle; the re-entry
 On re-entry, re-read `.aid/knowledge/STATE.md` (filesystem = source of truth):
 
 - `/aid-discover`'s targeted re-entry flips the synthesized entry's
-  `**Status:**` to `Answered` and resets `**Grade:**` to `Pending`, so a fresh
-  REVIEW runs; on APPROVAL it writes `**User Approved:** yes` with a fresh date
+  `**Status:**` to `Answered` and resets the `kb_grade` frontmatter scalar to
+  `Pending` (`bash .cursor/aid/scripts/summarize/writeback-state.sh --set kb_grade Pending`
+  -- relocated from the old header-blockquote `**Current Grade:**` line by
+  work-003-state-schema task-001/004), so a fresh REVIEW runs; on APPROVAL it
+  writes `**User Approved:** yes` with a fresh date
   (`aid-discover/references/state-approval.md`).
 - Check that `**User Approved:** yes` carries a date **newer than this run's
   start** (`grep -m1 '\*\*User Approved:\*\*'`).

@@ -26,7 +26,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]  # AID/
 sys.path.insert(0, str(_REPO_ROOT))
 
 from dashboard.reader import read_repo
-from dashboard.reader.models import KbBaseline, KbStatus, KbStateRef
+from dashboard.reader.models import KbBaseline, KbStatus, KbStateRef, SourceMode
 from dashboard.reader.parsers import parse_kb_baseline
 from dashboard.reader.derivation import (
     _normalize_to_utc_ms,
@@ -549,6 +549,150 @@ class TestReadRepoKbStateExtended(unittest.TestCase):
             model.repo.kb_state.status,
             (KbStatus.approved, KbStatus.outdated),
         )
+
+
+# ---------------------------------------------------------------------------
+# work-003-state-schema task-002: dual-format frontmatter read for KbStateRef
+#
+# The tests above (TestReadRepoKbStateExtended) are all legacy-prose-only --
+# they double as the "keep at least one legacy-prose fixture to prove the
+# fallback" requirement. These new tests exercise the frontmatter-first path
+# added by task-002, plus the newly-extended KbStateRef.source_mode and the
+# newly-captured kb_status/kb_grade/last_kb_review scalars.
+# ---------------------------------------------------------------------------
+
+class TestReadRepoKbStateFrontmatter(unittest.TestCase):
+    """read_repo() KbStateRef via the frontmatter-first dual-format read (task-002)."""
+
+    def setUp(self):
+        self._tmp = tempfile.mkdtemp()
+        self.root = Path(self._tmp)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self._tmp, ignore_errors=True)
+
+    def _make_minimal_repo(self) -> Path:
+        aid = self.root / ".aid"
+        aid.mkdir(parents=True, exist_ok=True)
+        return aid
+
+    def test_frontmatter_summary_approved_yields_normalized_source_mode(self):
+        aid = self._make_minimal_repo()
+        kb = aid / "knowledge"
+        kb.mkdir()
+        (kb / "STATE.md").write_text(
+            "---\nsummary_approved: yes\nlast_summary: \"2026-06-01\"\n---\n",
+            encoding="utf-8",
+        )
+        model = read_repo(self.root)
+        ref = model.repo.kb_state
+        self.assertIsNotNone(ref)
+        assert ref is not None
+        self.assertTrue(ref.summary_approved)
+        self.assertEqual(ref.last_summary_date, "2026-06-01")
+        self.assertEqual(ref.source_mode, SourceMode.Normalized)
+
+    def test_legacy_prose_summary_approved_yields_fallback_source_mode(self):
+        """Same legacy-prose shape as the existing tests above, but explicitly
+        asserting the NEW source_mode field this task adds."""
+        aid = self._make_minimal_repo()
+        kb = aid / "knowledge"
+        kb.mkdir()
+        (kb / "STATE.md").write_text(
+            "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
+            encoding="utf-8",
+        )
+        model = read_repo(self.root)
+        ref = model.repo.kb_state
+        self.assertIsNotNone(ref)
+        assert ref is not None
+        self.assertTrue(ref.summary_approved)
+        self.assertEqual(ref.source_mode, SourceMode.Fallback)
+
+    def test_kb_status_kb_grade_last_kb_review_from_frontmatter(self):
+        aid = self._make_minimal_repo()
+        kb = aid / "knowledge"
+        kb.mkdir()
+        (kb / "STATE.md").write_text(
+            "---\n"
+            "kb_status: Approved\n"
+            "kb_grade: A\n"
+            "last_kb_review: \"2026-06-01\"\n"
+            "summary_approved: yes\n"
+            "---\n",
+            encoding="utf-8",
+        )
+        model = read_repo(self.root)
+        ref = model.repo.kb_state
+        self.assertIsNotNone(ref)
+        assert ref is not None
+        self.assertEqual(ref.kb_status, "Approved")
+        self.assertEqual(ref.kb_grade, "A")
+        self.assertEqual(ref.last_kb_review, "2026-06-01")
+
+    def test_kb_status_kb_grade_last_kb_review_from_legacy_header(self):
+        """Newly-captured fields (never parsed by any reader before task-002)
+        also have a legacy header-blockquote fallback."""
+        aid = self._make_minimal_repo()
+        kb = aid / "knowledge"
+        kb.mkdir()
+        (kb / "STATE.md").write_text(
+            "> **Status:** In Progress\n"
+            "> **Current Grade:** Pending\n"
+            "> **Last KB Review:** --\n",
+            encoding="utf-8",
+        )
+        model = read_repo(self.root)
+        ref = model.repo.kb_state
+        self.assertIsNotNone(ref)
+        assert ref is not None
+        self.assertEqual(ref.kb_status, "In Progress")
+        self.assertEqual(ref.kb_grade, "Pending")
+        self.assertIsNone(ref.last_kb_review, "'--' null sentinel must normalize to None")
+
+    def test_yesno_normalization_case_insensitive_and_true_false(self):
+        """summary_approved accepts yes/no/true/false, case-insensitive (the
+        PyYAML-vs-js-yaml twin-parity landmine this task's DETAIL calls out)."""
+        for token, expected in (("YES", True), ("true", True), ("No", False), ("FALSE", False)):
+            with self.subTest(token=token):
+                tmp2 = tempfile.mkdtemp()
+                try:
+                    root2 = Path(tmp2)
+                    aid2 = root2 / ".aid"
+                    kb2 = aid2 / "knowledge"
+                    kb2.mkdir(parents=True)
+                    (kb2 / "STATE.md").write_text(
+                        f"---\nsummary_approved: {token}\n---\n", encoding="utf-8"
+                    )
+                    model2 = read_repo(root2)
+                    ref2 = model2.repo.kb_state
+                    self.assertIsNotNone(ref2)
+                    assert ref2 is not None
+                    self.assertEqual(ref2.summary_approved, expected)
+                    self.assertEqual(ref2.source_mode, SourceMode.Normalized)
+                finally:
+                    import shutil
+                    shutil.rmtree(tmp2, ignore_errors=True)
+
+    def test_frontmatter_wins_over_legacy_prose_mixed_input(self):
+        """Mixed shape: both frontmatter and legacy prose present -- frontmatter
+        must win (proves per-field precedence, not just format detection)."""
+        aid = self._make_minimal_repo()
+        kb = aid / "knowledge"
+        kb.mkdir()
+        (kb / "STATE.md").write_text(
+            "---\nsummary_approved: yes\nlast_summary: \"2026-07-01\"\n---\n\n"
+            "## Knowledge Summary Status\n\n**User Approved:** no\n",
+            encoding="utf-8",
+        )
+        model = read_repo(self.root)
+        ref = model.repo.kb_state
+        self.assertIsNotNone(ref)
+        assert ref is not None
+        self.assertTrue(ref.summary_approved, "frontmatter must win over conflicting legacy prose")
+        self.assertEqual(ref.last_summary_date, "2026-07-01")
+        self.assertEqual(ref.source_mode, SourceMode.Normalized)
 
 
 if __name__ == "__main__":

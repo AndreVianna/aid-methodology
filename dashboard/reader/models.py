@@ -38,20 +38,28 @@ class Lifecycle(str, Enum):
 
 
 class Phase(str, Enum):
-    """Pipeline phase enum.
+    """Pipeline phase enum -- the faithful 6-phase pipeline (work-003-state-schema task-010).
 
-    Members from feature-001 work-state-template.md:
-        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+    Members from feature-001 work-state-template.md (rebuilt task-010 to follow the
+    2026-06-28 architecture.md prose rename, Interview -> Describe/Define):
+        Describe | Define | Specify | Plan | Detail | Execute | Deploy
+    NOT a member here: Discover. `aid-discover` is KB-level -- it writes the KB
+    discovery-area STATE (`kb_status`), never a work `phase:` -- so Discover is
+    surfaced in the dashboard stepper from `KbStateRef.status` (KbStatus), not from
+    this enum. Deploy is an optional post-Execute indicator (aid-deploy pipeline mode).
     Reader-only:
         Unknown -- for an unrecognized Phase literal.
+    Back-compat read alias (never written, see `_PHASE_MAP` / `PHASE_MAP`):
+        "Interview" -> Phase.Describe (retired label, split into Describe + Define).
+        "Monitor" -> Phase.Unknown (dead value; no skill ever wrote it).
     """
-    Interview = "Interview"
+    Describe = "Describe"
+    Define = "Define"
     Specify = "Specify"
     Plan = "Plan"
     Detail = "Detail"
     Execute = "Execute"
     Deploy = "Deploy"
-    Monitor = "Monitor"
     Unknown = "Unknown"  # reader-only sentinel; never written to disk
 
 
@@ -75,8 +83,14 @@ class TaskStatus(str, Enum):
 
 
 class SourceMode(str, Enum):
-    """Records which derivation path produced WorkModel.lifecycle."""
-    Normalized = "normalized"   # ## Pipeline Status block was present
+    """Records which derivation path produced WorkModel.lifecycle.
+
+    Extended (work-003-state-schema task-002) onto the KB path: KbStateRef.source_mode
+    uses the same two values to record whether summary_approved/last_summary_date came
+    from the frontmatter `summary_approved` scalar (Normalized) or the legacy
+    `## Knowledge Summary Status` bold-line prose / nothing present (Fallback).
+    """
+    Normalized = "normalized"   # ## Pipeline Status block OR STATE frontmatter was present
     Fallback = "fallback"       # legacy derivation (task-011)
     Mixed = "mixed"             # rare: partial migration (task-011)
 
@@ -169,6 +183,22 @@ class KbStateRef:
     New fields (feature-007 f007, task-042):
         doc_freshness   -- per-doc freshness list [{doc, verdict, suspect_sources}, ...]
         suspect_count   -- count of docs with verdict=="suspect" (badge rollup)
+
+    New fields (work-003-state-schema task-002, dual-format frontmatter read):
+        source_mode     -- which path produced summary_approved/last_summary_date:
+                            Normalized (frontmatter `summary_approved` key present) or
+                            Fallback (legacy `## Knowledge Summary Status` bold-line
+                            prose, or nothing present). Extends the per-work SourceMode
+                            machinery onto the KB path (it was work-only before this task).
+        kb_status       -- discovery-workflow status (frontmatter `kb_status` or legacy
+                            header blockquote `**Status:**`); a raw authored string
+                            (Initial | In Progress | Approved), distinct from the derived
+                            5-state `status` field above (never an enum here -- no reader
+                            derivation involved).
+        kb_grade        -- discovery current grade (frontmatter `kb_grade` or legacy
+                            header blockquote `**Current Grade:**`); e.g. "A" or "Pending".
+        last_kb_review  -- discovery last-review date (frontmatter `last_kb_review` or
+                            legacy header blockquote `**Last KB Review:**`); ISO date or None.
     """
     summary_approved: bool
     last_summary_date: Optional[str] = None  # from STATE.md "User Approved: yes (YYYY-MM-DD...)"
@@ -180,6 +210,11 @@ class KbStateRef:
     # feature-007 f007 new fields (task-042):
     doc_freshness: list[DocFreshness] = field(default_factory=list)  # per-doc verdicts
     suspect_count: int = 0                   # count of suspect docs (badge rollup)
+    # work-003-state-schema task-002 new fields (dual-format frontmatter read):
+    source_mode: SourceMode = SourceMode.Fallback  # Normalized|Fallback; see docstring
+    kb_status: Optional[str] = None          # raw authored discovery status (never an enum)
+    kb_grade: Optional[str] = None           # raw authored current grade
+    last_kb_review: Optional[str] = None     # raw authored last-review date
 
 
 @dataclass
@@ -271,7 +306,9 @@ class WorkModel:
     phase: Optional[Phase] = None
     active_skill: Optional[str] = None
     updated: Optional[str] = None   # ISO-8601 or None
-    created: Optional[str] = None   # date string from ## Lifecycle History "Work created" row
+    created: Optional[str] = None   # frontmatter `started` if present (task-002 retires the
+                                     # fragile row-scrape for migrated works), else the legacy
+                                     # ## Lifecycle History "Work created" row-scrape fallback
     pause_reason: Optional[str] = None  # present only when lifecycle=Paused-Awaiting-Input
     block_reason: Optional[str] = None  # present only when lifecycle=Blocked
     block_artifact: Optional[str] = None  # e.g. "IMPEDIMENT-task-NNN.md"
@@ -290,6 +327,24 @@ class WorkModel:
     # work-004 Pillar 4: branch label from the worktree that owns this work folder.
     # "main" for the main worktree; branch name for persistent worktrees; None if unknown.
     branch_label: Optional[str] = None
+    # --- work-003-state-schema task-002: dual-format frontmatter read, new fields ---
+    kind: Optional[str] = None              # display verb resolved from pipeline.initiator
+                                             # (e.g. "Refactor", "Create api", "full path");
+                                             # None when initiator absent/unrecognized -- the
+                                             # dashboard drops the redundant word in that case.
+    started: Optional[str] = None           # frontmatter `started` scalar (ISO date); None
+                                             # for un-migrated works (no working legacy prose
+                                             # fallback ever existed for this field -- see
+                                             # `created` below, which retains its own fallback).
+    minimum_grade: Optional[str] = None      # frontmatter `minimum_grade`, else the legacy
+                                             # header-blockquote `**Minimum Grade:**` scan
+                                             # (derivation._parse_minimum_grade, unchanged --
+                                             # this is a SEPARATE exposure, not a behavior change
+                                             # to the sub-minimum Blocked-gate derivation).
+    user_approved: Optional[bool] = None     # frontmatter `user_approved` (yes/no/true/false,
+                                             # case-insensitive) or the legacy header-blockquote
+                                             # `**User Approved:**` line; work-level approval,
+                                             # distinct from KB KbStateRef.summary_approved.
 
 
 # ---------------------------------------------------------------------------

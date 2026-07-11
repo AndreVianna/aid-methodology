@@ -365,8 +365,11 @@ class TestEnumFallback(unittest.TestCase):
             self.assertIn(f"'{lit}':", self.src, f"TaskStatus literal {lit!r} not found in JS map")
 
     def test_phase_order_all_phases(self):
-        for phase in ['Interview', 'Specify', 'Plan', 'Detail', 'Execute', 'Deploy', 'Monitor']:
-            self.assertIn(f"'{phase}'", self.src, f"Phase {phase!r} not found in PHASE_ORDER")
+        # work-003-state-schema task-010: faithful 6-phase pipeline. Describe..Execute
+        # are PHASE_ORDER members; Deploy is an optional post-Execute indicator handled
+        # separately (checked as its own literal, not a PHASE_ORDER member).
+        for phase in ['Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute', 'Deploy']:
+            self.assertIn(f"'{phase}'", self.src, f"Phase {phase!r} not found in source")
 
     def test_attention_callout_warn_for_paused(self):
         # Paused-Awaiting-Input triggers callout.warn attention strip
@@ -1237,11 +1240,13 @@ class TestFeature006CardRework(unittest.TestCase):
 
     def test_f6rw7_pre_exec_steps_constant(self):
         self.assertIn('PRE_EXEC_STEPS', self.src,
-                      "PRE_EXEC_STEPS constant must be defined (Interview/Specify/Plan/Detail = 4)")
+                      "PRE_EXEC_STEPS constant must be defined (Describe/Define/Specify/Plan/Detail = 5)")
 
-    def test_f6rw7_pre_exec_steps_value_4(self):
-        self.assertIn('PRE_EXEC_STEPS = 4', self.src,
-                      "PRE_EXEC_STEPS must equal 4 (Interview, Specify, Plan, Detail)")
+    def test_f6rw7_pre_exec_steps_value_5(self):
+        # work-003-state-schema task-010: Interview split into Describe+Define, so the
+        # pre-Execute pipeline grew from 4 to 5 steps.
+        self.assertIn('PRE_EXEC_STEPS = 5', self.src,
+                      "PRE_EXEC_STEPS must equal 5 (Describe, Define, Specify, Plan, Detail)")
 
     def test_f6rw7_label_appended_before_track(self):
         # _renderProgress appends label before track (percentage above the bar)

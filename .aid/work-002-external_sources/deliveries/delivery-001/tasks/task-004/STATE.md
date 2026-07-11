@@ -1,3 +1,10 @@
+---
+state: Done
+review: Pending
+elapsed: '~7m'
+notes: --
+---
+
 # Task State -- task-004
 
 [!NOTE]

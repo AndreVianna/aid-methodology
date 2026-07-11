@@ -427,14 +427,21 @@ fi
 echo ""
 echo "=== DM02: delivery-001 edits survived the merge ==="
 
-assert_file_contains "${DELIV1}/STATE.md" "**State:** Done" \
-    "DM02a: delivery-001/STATE.md lifecycle State=Done"
+# work-003-state-schema task-004 relocated the delivery lifecycle State
+# (--lifecycle mode) into the frontmatter `delivery_state` key; the body's
+# "## Delivery Lifecycle" `- **State:**` bullet is a static fixture placeholder
+# (make_delivery_state's lc_val) that writeback-state.sh never rewrites.
+assert_file_contains "${DELIV1}/STATE.md" "delivery_state: Done" \
+    "DM02a: delivery-001/STATE.md frontmatter delivery_state=Done"
 assert_file_contains "${DELIV1}/STATE.md" "**Grade:** A+" \
     "DM02b: delivery-001/STATE.md has Grade: A+"
 assert_file_contains "${DELIV1}/STATE.md" "delivery-001 gate surfaced Q&A" \
     "DM02c: delivery-001/STATE.md has Cross-phase Q&A entry"
-assert_file_contains "${DELIV1}/tasks/task-001/STATE.md" "**State:** Done" \
-    "DM02d: delivery-001/tasks/task-001/STATE.md State=Done"
+# Per-task State (--field State mode) is likewise relocated to the frontmatter
+# `state` key; the body's "## Task State" `- **State:**` bullet is the
+# make_task_state fixture's static placeholder, never rewritten.
+assert_file_contains "${DELIV1}/tasks/task-001/STATE.md" "state: Done" \
+    "DM02d: delivery-001/tasks/task-001/STATE.md frontmatter state=Done"
 assert_file_contains "${DELIV1}/tasks/task-001/STATE.md" "delivery-001 missing edge case" \
     "DM02e: delivery-001/tasks/task-001/STATE.md has findings"
 
@@ -444,16 +451,16 @@ assert_file_contains "${DELIV1}/tasks/task-001/STATE.md" "delivery-001 missing e
 echo ""
 echo "=== DM03: delivery-002 edits survived the merge ==="
 
-assert_file_contains "${DELIV2}/STATE.md" "**State:** Done" \
-    "DM03a: delivery-002/STATE.md lifecycle State=Done"
+assert_file_contains "${DELIV2}/STATE.md" "delivery_state: Done" \
+    "DM03a: delivery-002/STATE.md frontmatter delivery_state=Done"
 assert_file_contains "${DELIV2}/STATE.md" "**Grade:** A" \
     "DM03b: delivery-002/STATE.md has Grade: A"
 assert_file_contains "${DELIV2}/STATE.md" "delivery-002 gate surfaced Q&A" \
     "DM03c: delivery-002/STATE.md has Cross-phase Q&A entry"
-assert_file_contains "${DELIV2}/tasks/task-002/STATE.md" "**State:** Done" \
-    "DM03d: delivery-002/tasks/task-002/STATE.md State=Done"
-assert_file_contains "${DELIV2}/tasks/task-002/STATE.md" "**Elapsed:** 8m" \
-    "DM03e: delivery-002/tasks/task-002/STATE.md Elapsed=8m"
+assert_file_contains "${DELIV2}/tasks/task-002/STATE.md" "state: Done" \
+    "DM03d: delivery-002/tasks/task-002/STATE.md frontmatter state=Done"
+assert_file_contains "${DELIV2}/tasks/task-002/STATE.md" "elapsed: 8m" \
+    "DM03e: delivery-002/tasks/task-002/STATE.md frontmatter elapsed=8m"
 
 # ---------------------------------------------------------------------------
 # DM04: work-level STATE.md NOT touched by either delivery branch.

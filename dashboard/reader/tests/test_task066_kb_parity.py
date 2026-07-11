@@ -35,7 +35,7 @@ _REPO_ROOT = Path(__file__).resolve().parents[3]  # AID/
 sys.path.insert(0, str(_REPO_ROOT))
 
 from dashboard.reader import read_repo
-from dashboard.reader.models import KbBaseline, KbStatus
+from dashboard.reader.models import KbBaseline, KbStatus, SourceMode
 from dashboard.reader.parsers import parse_kb_baseline
 from dashboard.reader.derivation import (
     _normalize_to_utc_ms,
@@ -332,7 +332,25 @@ class TestDegradationCoverage(unittest.TestCase):
         shutil.rmtree(self._tmp, ignore_errors=True)
 
     def _make_approved_kb_tree(self) -> None:
-        """Create a minimal .aid/ tree with KB approved + kb.html."""
+        """Create a minimal .aid/ tree with KB approved + kb.html.
+
+        work-003-state-schema task-002: migrated to the frontmatter form (the
+        form the product now emits). test_schema_version_stays_3_with_legacy_prose_fixture
+        below keeps a legacy-prose variant to prove the fallback still works.
+        """
+        kb = self.root / ".aid" / "knowledge"
+        kb.mkdir(parents=True)
+        (kb / "STATE.md").write_text(
+            "---\nsummary_approved: yes\nlast_summary: \"2026-06-01\"\n---\n",
+            encoding="utf-8",
+        )
+        dashboard = self.root / ".aid" / "dashboard"
+        dashboard.mkdir()
+        (dashboard / "kb.html").write_text("<html></html>", encoding="utf-8")
+
+    def _make_approved_kb_tree_legacy_prose(self) -> None:
+        """Legacy-prose variant of _make_approved_kb_tree (pre-task-002 form) --
+        kept so at least one fixture in this file proves the fallback path."""
         kb = self.root / ".aid" / "knowledge"
         kb.mkdir(parents=True)
         (kb / "STATE.md").write_text(
@@ -392,6 +410,28 @@ class TestDegradationCoverage(unittest.TestCase):
             # Fallback: check via a server-rendered JSON that it contains schema_version:3
             # by importing the serializer
             pass  # The schema_version constant lives in the reader; no change expected
+
+    def test_schema_version_stays_3_with_legacy_prose_fixture(self):
+        """work-003-state-schema task-002: the legacy-prose fixture form (kept
+        for fallback coverage in this file) reads identically -- schema_version
+        is unaffected by which STATE.md format produced the KB approval."""
+        self._make_approved_kb_tree_legacy_prose()
+        model = read_repo(self.root)
+        self.assertIsNotNone(model.repo.kb_state)
+        assert model.repo.kb_state is not None
+        self.assertTrue(model.repo.kb_state.summary_approved)
+        self.assertEqual(model.repo.kb_state.source_mode, SourceMode.Fallback)
+
+    def test_frontmatter_fixture_source_mode_normalized(self):
+        """The migrated _make_approved_kb_tree fixture (frontmatter form)
+        yields KbStateRef.source_mode == Normalized (task-002 gate criteria #3:
+        SourceMode extended onto the KB path)."""
+        self._make_approved_kb_tree()
+        model = read_repo(self.root)
+        self.assertIsNotNone(model.repo.kb_state)
+        assert model.repo.kb_state is not None
+        self.assertEqual(model.repo.kb_state.source_mode, SourceMode.Normalized)
+        self.assertEqual(model.repo.kb_state.status, KbStatus.approved)
 
 
 # ---------------------------------------------------------------------------
