@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-10T23:47:11Z'
+updated: '2026-07-11T00:07:08Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -58,7 +58,7 @@ SPEC.md + BLUEPRINT.md.)
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-07-10T23:47:11Z
+- **Updated:** 2026-07-11T00:07:08Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -94,6 +94,7 @@ SPEC.md + BLUEPRINT.md.)
 | 2026-07-10 | Execute task-003 — Done | pass | Vendored dual-format reader into packages/pypi + packages/npm (21 files each); built + `pipx install --force` aid_installer-2.1.0 wheel; installed CLI now ships the new reader (verified frontmatter honored end-to-end: work_path=lite, kind=Refactor; aid version=2.1.0). No canonical/ change → dogfood byte-identity preserved (deferred to CI). Sub-agent review: 0 findings, 4/4 ACs verified. User-approved the global reinstall (refreshes ~/.aid). No source diff (build artifacts gitignored) |
 | 2026-07-10 | Execute task-004 — Done | pass | STATE writers emit/update YAML frontmatter (surgical, body-byte-invariant, atomic, enum-validated); scaffold-time pipeline authoring; ~15 hand-authoring skill-ref redirects; run_generator re-render + dogfood resync; test-writeback-state.sh 332/332. Commits a726a494 (impl) + 27b3dd51 (5 review fixes) + 2d76c1cd (reader ''→' contract fix). Sub-agent review: 0 HIGH; 3 MED + 1 LOW + 2 MINOR all FIXED (incl. 1 MED found during my independent verification). Byte-identity/parity deferred to CI (hang locally). NOTE: installed reader now 1 commit behind (missing the cosmetic ''→' fix) — batched into the final re-ship after task-008 |
 | 2026-07-10 | Execute task-005 — Done | pass | Migrated all 19 on-disk STATE.md → frontmatter (commit 476aa0c6), 144 insertions/0 deletions (body byte-preserved), real values backfilled, all blocks valid YAML. ORIGINAL DEFECT VERIFIED FIXED — the approved KB is read as approved via frontmatter (was misparsed as "Building"), independently reproduced by the reviewer (3 repros; `outdated` freshness is only reachable AFTER the approval gate → proves correct parse; kb.html opens). No rollout regression. Reviewer 0 HIGH/MED/LOW + 2 MINOR (dev U+FFFD disclosure false-alarm → Invalid; stale header blockquote → Fixed here). Reader suite 535 pass / 0 regressions. DISCLOSE: KB shows approved-but-`outdated` because `.aid/settings.yml` kb_baseline.tip_date (2026-07-09) predates master's v2.1.0 merge — a legitimate re-baseline signal, separate from this work |
+| 2026-07-11 | Execute task-006 — Done (Not Applicable) | N/A | Validate-first §6/section-6 pass: every occurrence in canonical/skills is LEGITIMATE (KB-contract standing line + real self-referential §N headings), nothing genuinely dangling in scope → no edit/commit (premise was false; avoided a blanket grep-replace). SURFACED 3 out-of-scope residuals for the user to decide (NOT fixed here): (R1) examples/brownfield-lite-path/{sample-spec,sample-task-001}.md carry a genuinely-dangling "All §6 quality gates pass" — retired old-lite-path examples, no numbered §6; patch-vs-retire is a judgment call. (R2) authored-visual-catalog.md:13 "section-6" is an objective §6→§7 typo (concept is §7 everywhere else). (R3, minor) aid-describe/references/kb-hydration.md:25 stray "(see §11)" — REQUIREMENTS.md has only 10 sections. |
 
 ---
 
@@ -114,7 +115,7 @@ SPEC.md + BLUEPRINT.md.)
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
 - **State:** Executing
-- **Updated:** 2026-07-10T23:47:11Z
+- **Updated:** 2026-07-11T00:07:08Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -131,7 +132,7 @@ SPEC.md + BLUEPRINT.md.)
 | task-003 | Done | pass | -- | Re-vendored dual-format reader into packages/pypi (_vendor) + packages/npm via vendor.py/vendor.js (21 files each, MANIFEST-driven incl. state_schema.py); built aid_installer-2.1.0 wheel (isolated, self-contained sdist payload); pipx install --force → installed aid live. Verified installed vendored reader honors frontmatter end-to-end (work_path=lite from pipeline.path, kind=Refactor from pipeline.initiator) + aid version=2.1.0. No canonical/ change → dogfood byte-identity preserved from task-001 (canonical byte-identity/parity deferred to CI — hang locally). No committable source diff (vendor trees + dist gitignored). Review (sub-agent): 0 findings, all 4 ACs verified |
 | task-004 | Done | pass | -- | Frontmatter-writer path (wb_set_frontmatter: surgical single-key YAML rewrite, body byte-invariant, atomic+locked, enum-validated); all write modes redirected (execute/writeback-state.sh --pipeline/--field/--lifecycle/--gate-field + summarize --set for KB); scaffold-time pipeline block (shortcut-engine + aid-describe FIRST-RUN); hand-authoring redirects across ~15 skill refs; dual-format read fixes on stale-check/discover-preflight/aid-housekeep. run_generator 1600 files + dogfood resync (0 diff). test-writeback-state.sh 332/332. Review (sub-agent): 2 MED + 1 LOW + 2 MINOR — all FIXED (ENVIRON+single-quote YAML for valid quoting; CRLF normalize/restore byte-invariance; grep -F -- in all 4 assert helpers; trailing-nl preservation + cmp-based test). Independent verify found+fixed a 6th (MED): reader now collapses YAML ''→' to match the writer (both twins, commit 2d76c1cd). Reader tests 54/14 |
 | task-005 | Done | pass | -- | Migrated all 19 on-disk STATE.md files to frontmatter (work-002 tree + 14 task files, .aid/knowledge/STATE.md, this work's own STATE.md) — 144 insertions / 0 deletions, every body byte-preserved (only frontmatter added). Backfilled real values (work-002=full/aid-describe, work-003=lite/aid-refactor, KB=Approved/summary_approved:yes). ORIGINAL BUG VERIFIED FIXED: reader reads KB approved via frontmatter (summary_approved=True, kb_status=Approved, source_mode=Normalized), frontmatter-driven (3 independent repros incl. synthetic original-bug shape); kb.html opens (not dead-button). No rollout regression (migrated + legacy both read). Review (sub-agent): 0 HIGH/MED/LOW; 2 MINOR — #1 dev's U+FFFD disclosure was a false alarm (valid em-dashes) Invalid, #2 stale header blockquote Fixed |
-| task-006 | Pending | -- | -- | -- |
+| task-006 | Done | N/A | -- | Closed NOT APPLICABLE (validate-first, per DETAIL). Enumerated + classified every §6/section-6 quality-gate ref in canonical/skills: all LEGITIMATE — the KB contract (artifact-schemas.md:277/305, pipeline-contracts.md:218) documents "All section-6 quality gates pass" as the intended standing criterion; shortcut engine guarantees a real §6 (REQUIREMENTS.md) before templates seed. No dangling standing line in scope → no edit, no re-render, no commit. Independently verified the 3 load-bearing claims. SURFACED 2 out-of-scope residuals (see Lifecycle History) — not fixed under task-006's DETAIL scope |
 | task-007 | Pending | -- | -- | -- |
 | task-008 | Pending | -- | -- | -- |
 
