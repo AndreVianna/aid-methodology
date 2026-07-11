@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-11T01:54:20Z'
+updated: '2026-07-11T02:15:30Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -58,7 +58,7 @@ SPEC.md + BLUEPRINT.md.)
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-07-11T01:54:20Z
+- **Updated:** 2026-07-11T02:15:30Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -97,6 +97,7 @@ SPEC.md + BLUEPRINT.md.)
 | 2026-07-11 | Execute task-007 — Done | pass | KB closure hygiene root-cause fix (denylist +18 + closure-check dual-form exclusion expansion; 86→67 terms; settings.yml untouched). Review: 0 HIGH, 1 MED (exclusion-expansion untested) FIXED via new C09 test proven to guard the logic (fails-when-reverted; 13/13), 1 LOW accepted. Commits 8d8b5737+0d3ecafc+75f9eea3. Surfaced `Skill`/`Tool` glossary gap → /aid-discover follow-up. |
 | 2026-07-11 | Execute task-009 — In Progress | -- | Started the emphatic live-state-tracking fix (applying the discipline it enforces: marked In Progress before starting work). |
 | 2026-07-11 | Execute task-009 — In Review | -- | Emphatic per-transition mandate landed in canonical (commit 9988acc1): aid-execute SKILL/references + task templates (every created task inherits) + CLAUDE.md/AGENTS.md; binds main-agent-or-sub-agent (no bypass); both layouts + single/pool. Validation FIXED 2 real gaps (serial Done + serial Failed writes were missing — only pool wrote them). Regression test 16/16 (fails-when-transition-dropped). Marked In Review before dispatching reviewer — per the mandate itself. |
+| 2026-07-11 | Execute task-009 — Done | pass | Reviewer: 0 HIGH/MED; 4 doc-consistency findings — 3 FIXED (commit 8ea9f4f1: PD-2a sub-agent writes all its own transitions incl. terminal; protocol-table runnable-form line; terminal enum normalized to Done/Failed everywhere + Blocked clarified as orchestrator-assigned-to-downstream), 1 LOW ACCEPTED (pre-existing stale review-tier narrative in state-review.md, not task-009's; surfaced as separate cleanup). run_generator VERIFY PASS + dogfood cmp byte-identical; test 16/16 unchanged. The live-state-tracking mandate is now systemic — every future task execution (any agent, main or sub) must write In Progress/In Review/terminal. |
 | 2026-07-11 | Added task-009 (user-reported live-state gap) | -- | User observed a task shows Pending in the dashboard during execution (only Done was written). Root cause (user-diagnosed): the execution instructions don't emphatically/unmissably require writing task state AS IT CHANGES — and the rule binds the MAIN/orchestrator agent too (I bypassed it, which is a violation). Added task-009 (REFACTOR): make the In Progress/In Review/terminal writes emphatic + unmissable in aid-execute for both layouts + single/pool dispatch, bind whoever executes (main agent OR sub-agent, no bypass), reinforce CLAUDE.md/AGENTS.md, + regression test. BLUEPRINT gate criterion #15 added. Discipline adopted immediately (task-007 marked In Review live). |
 | 2026-07-11 | Execute task-006 — Done (Not Applicable) | N/A | Validate-first §6/section-6 pass: every occurrence in canonical/skills is LEGITIMATE (KB-contract standing line + real self-referential §N headings), nothing genuinely dangling in scope → no edit/commit (premise was false; avoided a blanket grep-replace). SURFACED 3 out-of-scope residuals for the user to decide (NOT fixed here): (R1) examples/brownfield-lite-path/{sample-spec,sample-task-001}.md carry a genuinely-dangling "All §6 quality gates pass" — retired old-lite-path examples, no numbered §6; patch-vs-retire is a judgment call. (R2) authored-visual-catalog.md:13 "section-6" is an objective §6→§7 typo (concept is §7 everywhere else). (R3, minor) aid-describe/references/kb-hydration.md:25 stray "(see §11)" — REQUIREMENTS.md has only 10 sections. |
 
@@ -119,7 +120,7 @@ SPEC.md + BLUEPRINT.md.)
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
 - **State:** Executing
-- **Updated:** 2026-07-11T01:54:20Z
+- **Updated:** 2026-07-11T02:15:30Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -139,7 +140,7 @@ SPEC.md + BLUEPRINT.md.)
 | task-006 | Done | N/A | -- | Closed NOT APPLICABLE (validate-first, per DETAIL). Enumerated + classified every §6/section-6 quality-gate ref in canonical/skills: all LEGITIMATE — the KB contract (artifact-schemas.md:277/305, pipeline-contracts.md:218) documents "All section-6 quality gates pass" as the intended standing criterion; shortcut engine guarantees a real §6 (REQUIREMENTS.md) before templates seed. No dangling standing line in scope → no edit, no re-render, no commit. Independently verified the 3 load-bearing claims. SURFACED 2 out-of-scope residuals (see Lifecycle History) — not fixed under task-006's DETAIL scope |
 | task-007 | Done | pass | -- | Root-cause fix (harvester coined-term-denylist +18 code-identifier/stopword tokens; closure-check.sh exclusion-builder expands each entry into as-is/joined/CamelCase-split forms so one exclusion decision covers both harvester variants — no term_exclusions padding). closure-check 86→67 terms. run_generator VERIFY PASS + dogfood resync; KB-script suites green. Surfaced genuine residual (`Skill`/`Tool` no glossary heading → /aid-discover). Commits 8d8b5737 + 0d3ecafc + 75f9eea3. Review (sub-agent): 0 HIGH; 1 MED (exclusion-expansion untested) FIXED — new C09 test proven to guard the logic (fails against pre-fix closure-check.sh, 13/13 after); 1 LOW (residual over-characterized) ACCEPTED w/ corrected note (phrase-junk filter = separate future concern). |
 | task-008 | Pending | -- | -- | -- |
-| task-009 | In Review | -- | -- | EXECUTE complete (commit 9988acc1): emphatic per-transition mandate landed in CANONICAL — aid-execute SKILL.md ⚠️⚠️ banner + state-execute.md `## MANDATORY: State-Write Protocol` (binds main-agent-or-sub-agent, no bypass, both layouts + single/pool); task-detail/state/work templates + shortcut-engine (every created task inherits it); CLAUDE.md + all profiles' CLAUDE.md/AGENTS.md 4th tracking bullet. Validation found+FIXED 2 real gaps: serial (non-pool) path never wrote terminal Done; serial Impediments never wrote Failed. New test-task-state-transitions.sh 16/16 (proven fails-when-transition-dropped). run_generator 1600 files VERIFY PASS + dogfood resync (10 files cmp byte-identical). Review pending. |
+| task-009 | Done | pass | -- | Emphatic per-transition mandate in CANONICAL (commits 9988acc1 + 8ea9f4f1): aid-execute SKILL.md ⚠️⚠️ banner + state-execute.md MANDATORY State-Write Protocol (binds main-agent-or-sub-agent, no bypass, both layouts + single/pool); task-detail/state/work templates + shortcut-engine (every created task inherits it); CLAUDE.md + all profiles' CLAUDE.md/AGENTS.md 4th tracking bullet. Validation found+FIXED 2 real gaps (serial Done + serial Failed writes were missing). test-task-state-transitions.sh 16/16 (fails-when-transition-dropped). Review (sub-agent): 0 HIGH/MED; 4 doc-consistency findings — 3 FIXED (PD-2a sub-agent writes all its transitions; protocol-table runnable-form; terminal enum normalized Done/Failed + Blocked clarified as orchestrator-assigned), 1 LOW ACCEPTED (pre-existing stale review-tier narrative in state-review.md → surfaced as separate doc-cleanup). run_generator VERIFY PASS + dogfood byte-identical. |
 
 ---
 
