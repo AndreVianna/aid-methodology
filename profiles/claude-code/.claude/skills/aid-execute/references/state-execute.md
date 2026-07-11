@@ -10,13 +10,18 @@ Task work is dispatched to the type-appropriate executor agent to produce delive
 > instead of a task sitting at `Pending` for its whole execution and then
 > jumping straight to `Done`.**
 
-| Transition | When | Write |
+**Full runnable form (every row below is an abbreviation of this):**
+`writeback-state.sh [--delivery-id NNN] --task-id NNN --field State --value "VALUE"`
+(`--delivery-id` is optional -- it is resolved from the task's own `Source`
+line when omitted; the layout, full or flat, is auto-detected either way.)
+
+| Transition | When | Write (abbreviated -- see full runnable form above) |
 |---|---|---|
-| -> `In Progress` | BEFORE any work begins (EXECUTE entry, Step 1 below) | `writeback-state.sh --field State --value "In Progress"` |
-| -> `In Review` | At EXECUTE-complete, BEFORE dispatching the reviewer | `writeback-state.sh --field State --value "In Review"` |
-| -> `Done` | At the per-task REVIEW quick-check's terminal chain (`references/state-review.md`), for single-task/serial invocation | `writeback-state.sh --field State --value "Done"` |
-| -> `Failed` | The moment this task raises an unresolved IMPEDIMENT (single-task path -- `SKILL.md § Impediments`; quick-check CRITICAL-persists path -- `state-review.md`) | `writeback-state.sh --field State --value "Failed"` |
-| -> `Done` / `Failed` (pool dispatch) | PD-4 on completion/failure (`## EXECUTE-WAVE: Pool Dispatch` below) | same command, `--task-id` from the pool loop |
+| -> `In Progress` | BEFORE any work begins (EXECUTE entry, Step 1 below) | `... --field State --value "In Progress"` |
+| -> `In Review` | At EXECUTE-complete, BEFORE dispatching the reviewer | `... --field State --value "In Review"` |
+| -> `Done` | At the per-task REVIEW quick-check's terminal chain (`references/state-review.md`) -- written by the executing agent itself, whether that is the main/orchestrator agent (single-task invocation) or a dispatched sub-agent (single-task dispatch OR a pool-dispatch worker running its own per-task pipeline, per `PD-2a` below) | `... --field State --value "Done"` |
+| -> `Failed` | The moment this task raises an unresolved IMPEDIMENT (single-task path -- `SKILL.md § Impediments`; quick-check CRITICAL-persists path -- `state-review.md`) -- same "whoever is executing writes it" rule as `Done` above | `... --field State --value "Failed"` |
+| -> `Done` / `Failed` (pool dispatch, orchestrator side) | PD-4 on completion/failure (`## EXECUTE-WAVE: Pool Dispatch` below) -- a belt-and-suspenders backstop for AFTER the sub-agent reports back, not a substitute for the sub-agent's own write above | same abbreviated form, `--task-id` from the pool loop |
 
 **Why this matters:** the dashboard (and every downstream dependency check --
 `SKILL.md § Check 2b`) reads this field LIVE, straight off disk. An unwritten
@@ -51,12 +56,15 @@ layout difference so the executing agent does not have to.
 the writes above happen inline as the task's own EXECUTE/REVIEW states run
 (Step 1 below; `state-review.md`'s terminal chain). For **pool dispatch**
 (`## EXECUTE-WAVE: Pool Dispatch` below) the orchestrator's PD-2/PD-4 steps
-write `In Progress`/`Done`/`Failed` for the task it just dispatched or just
-reaped, AND each dispatched sub-agent runs the SAME single-task flow
-internally (PD-2a's prompt template says so explicitly) -- so `In Review`
-gets written by the sub-agent itself either way. Belt-and-suspenders, not
-either-or: a redundant write of the same already-current value is harmless
-and idempotent; a MISSING write is the bug this protocol exists to prevent.
+ALSO write `In Progress`/`Done`/`Failed` for the task it just dispatched or
+just reaped, AND each dispatched sub-agent runs the SAME single-task flow
+internally (PD-2a's prompt template says so explicitly) -- so `In Progress`,
+`In Review`, AND the terminal `Done`/`Failed` are ALL written by the
+sub-agent itself too, exactly as if it were a single-task invocation.
+Belt-and-suspenders, not either-or: the orchestrator's writes are a backstop,
+never a substitute for the executing agent's own -- a redundant write of the
+same already-current value is harmless and idempotent; a MISSING write is
+the bug this protocol exists to prevent.
 
 ## Task Types
 
@@ -269,11 +277,15 @@ EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
 Read task definition from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/DETAIL.md.
 Read task state from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
 Follow the type-specific executor rules from references/task-type-rules.md.
-MANDATORY: write your own State to In Progress at your own EXECUTE entry and
-In Review at your own execute-complete (state-execute.md's Step 1 -- you are
-running that state yourself, not just the orchestrator) -- do not skip these
-writes just because the pool orchestrator also writes In Progress/Done around
-your dispatch; both writes are expected and idempotent.
+MANDATORY: write your own State at EVERY transition you run yourself --
+In Progress at your own EXECUTE entry, In Review at your own execute-complete,
+and your OWN terminal Done/Failed at your own REVIEW quick-check's terminal
+chain (state-execute.md's Step 1 + state-review.md's terminal write -- you are
+running these states yourself, not just the orchestrator). Do not skip any of
+these writes on the theory that "the orchestrator's PD-4 write covers it" --
+PD-4's write is a belt-and-suspenders backstop for AFTER you report back, not
+a substitute for your own. Writing the same already-current value twice is
+expected and idempotent; a MISSING write is the bug this mandate prevents.
 On completion, commit to the delivery branch in the worktree.
 Report: DONE or FAILED with reason.
 ```
@@ -296,11 +308,15 @@ Read task definition from .aid/{work}/tasks/task-{NNN}/DETAIL.md.
 Read task state from the work-root .aid/{work}/STATE.md § ### Tasks lifecycle
 (row for task-{NNN}; there is no per-task STATE.md in this layout).
 Follow the type-specific executor rules from references/task-type-rules.md.
-MANDATORY: write your own State to In Progress at your own EXECUTE entry and
-In Review at your own execute-complete (state-execute.md's Step 1 -- you are
-running that state yourself, not just the orchestrator) -- do not skip these
-writes just because the pool orchestrator also writes In Progress/Done around
-your dispatch; both writes are expected and idempotent.
+MANDATORY: write your own State at EVERY transition you run yourself --
+In Progress at your own EXECUTE entry, In Review at your own execute-complete,
+and your OWN terminal Done/Failed at your own REVIEW quick-check's terminal
+chain (state-execute.md's Step 1 + state-review.md's terminal write -- you are
+running these states yourself, not just the orchestrator). Do not skip any of
+these writes on the theory that "the orchestrator's PD-4 write covers it" --
+PD-4's write is a belt-and-suspenders backstop for AFTER you report back, not
+a substitute for your own. Writing the same already-current value twice is
+expected and idempotent; a MISSING write is the bug this mandate prevents.
 On completion, commit to the delivery branch in the worktree.
 Report: DONE or FAILED with reason.
 ```

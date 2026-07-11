@@ -43,9 +43,11 @@ from the folder path -- never authored in frontmatter.
      MANDATORY (aid-execute/references/state-execute.md § State-Write Protocol):
      `state` MUST be written the INSTANT it changes -- In Progress before work
      starts, In Review before the reviewer is dispatched, a terminal value
-     (Done/Failed/Blocked) when finished. Binds whoever executes this task --
-     the main/orchestrator agent running it directly, or a dispatched
-     sub-agent -- with no exception either way. -->
+     (Done/Failed) when finished. Binds whoever executes this task -- the
+     main/orchestrator agent running it directly, or a dispatched sub-agent --
+     with no exception either way. (Blocked is a distinct, orchestrator-
+     assigned value for a different, downstream task that depends on a failed
+     one -- never self-written by the task being executed.) -->
 
 ---
 

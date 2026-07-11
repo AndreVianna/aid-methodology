@@ -195,9 +195,12 @@ different places.
      MANDATORY (aid-execute/references/state-execute.md § State-Write Protocol):
      each row's State cell MUST be written the INSTANT that task's state
      changes -- In Progress before work starts, In Review before the reviewer
-     is dispatched, a terminal value (Done/Failed/Blocked) when finished.
-     Binds whoever executes the task -- the main/orchestrator agent running
-     it directly, or a dispatched sub-agent -- with no exception either way. -->
+     is dispatched, a terminal value (Done/Failed) when finished. Binds
+     whoever executes the task -- the main/orchestrator agent running it
+     directly, or a dispatched sub-agent -- with no exception either way.
+     (Blocked is a distinct, orchestrator-assigned value for a different,
+     downstream task that depends on a failed one -- never self-written by
+     the task being executed.) -->
 
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|
