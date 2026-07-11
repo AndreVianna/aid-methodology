@@ -1786,9 +1786,9 @@ fi
 # byte-invariance.
 capture_body() {
     local f="$1" out="$2"
-    if head -1 "$f" | grep -qE '^---[ \t]*\r?$'; then
+    if head -1 "$f" | grep -qE '^---[[:space:]]*$'; then
         local close_line
-        close_line=$(awk '/^---[ \t]*\r?$/{n++; if(n==2){print NR; exit}}' "$f")
+        close_line=$(awk '/^---[[:space:]]*$/{n++; if(n==2){print NR; exit}}' "$f")
         tail -n "+$((close_line + 1))" "$f" > "$out"
     else
         cp "$f" "$out"
@@ -1844,7 +1844,7 @@ if head -1 "$CRLF_STATE" | od -An -c | grep -qF -- '\r'; then
 else
     fail "22f: opening fence lost its \\r -- CRLF handling regressed"
 fi
-FENCE_COUNT_22F=$(grep -c -- '^---\r\{0,1\}$' "$CRLF_STATE")
+FENCE_COUNT_22F=$(grep -c -- '^---[[:space:]]*$' "$CRLF_STATE")
 if [[ "$FENCE_COUNT_22F" -eq 2 ]]; then
     pass "22f: exactly 2 frontmatter fence lines (no duplicate block prepended)"
 else

@@ -42,7 +42,18 @@ READ_SETTING="${REPO_ROOT}/canonical/aid/scripts/config/read-setting.sh"
 echo "=== Shortcut engine GATE + halt + batching (task-012, feature-004) ==="
 
 assert_file_exists "$ENGINE" "SGH00a shortcut-engine.md exists"
-assert_file_exists "$FEATURE_SPEC" "SGH00b feature-004 SPEC.md exists"
+# SGH00b: feature-004's SPEC.md is a DESIGN doc from work-001-lite-aid-skills,
+# which was merged then cleaned up (removed in the eead245e housekeep). Its
+# assertions (SGH06c/d/e below) validate that removed design fixture; the ACTUAL
+# batching/GATE behavior is validated against the LIVE engine (SGH06a/b). So the
+# SPEC is OPTIONAL: run its assertions only when the fixture is still present,
+# skip them otherwise, rather than hard-failing on a legitimately-removed artifact.
+HAVE_SPEC=0
+if [[ -f "$FEATURE_SPEC" ]]; then
+    HAVE_SPEC=1
+else
+    echo "  SKIP: SGH00b / SGH06c-e — feature-004 SPEC absent (work-001 merged + cleaned up); engine-contract assertions still run"
+fi
 assert_file_exists "$GRADE" "SGH00c grade.sh exists"
 assert_file_exists "$READ_SETTING" "SGH00d read-setting.sh exists"
 
@@ -52,7 +63,8 @@ if [[ $FAIL -gt 0 ]]; then
 fi
 
 ENGINE_TXT=$(cat "$ENGINE")
-SPEC_TXT=$(cat "$FEATURE_SPEC")
+SPEC_TXT=""
+[[ "$HAVE_SPEC" -eq 1 ]] && SPEC_TXT=$(cat "$FEATURE_SPEC")
 
 # ===========================================================================
 # Part 1 -- Contract assertions (prose)
@@ -124,19 +136,21 @@ assert_output_contains "$ENGINE_TXT" \
 assert_output_contains "$ENGINE_TXT" \
     'ARTIFACTS UNDER REVIEW:** `.aid/{work}/REQUIREMENTS.md`,' \
     "SGH06b Pass 1 reviews all 4 definition docs in ONE dispatch (not one-per-document)"
-assert_output_contains "$SPEC_TXT" \
-    'batch into **two** dispatches, each one ledger' \
-    "SGH06c feature-004 SPEC confirms exactly two dispatches, each one ledger"
-# (this sentence also wraps across two source lines -- same two-phrase treatment.)
-assert_output_contains "$SPEC_TXT" \
-    "exactly two reviewer dispatches / two ledgers for a representative" \
-    "SGH06d1 feature-004 Testing Strategy states the batching assertion (wrap point 1)"
-assert_output_contains "$SPEC_TXT" \
-    "work (not one-per-document)" \
-    "SGH06d2 feature-004 Testing Strategy states the batching assertion (wrap point 2)"
-assert_output_contains "$SPEC_TXT" \
-    'Each document still clears `minimum_grade` via its own REVIEW->FIX loop within the pass' \
-    "SGH06e batching changes dispatch granularity only -- per-document guarantee (AC-11) intact"
+if [[ "$HAVE_SPEC" -eq 1 ]]; then
+    assert_output_contains "$SPEC_TXT" \
+        'batch into **two** dispatches, each one ledger' \
+        "SGH06c feature-004 SPEC confirms exactly two dispatches, each one ledger"
+    # (this sentence also wraps across two source lines -- same two-phrase treatment.)
+    assert_output_contains "$SPEC_TXT" \
+        "exactly two reviewer dispatches / two ledgers for a representative" \
+        "SGH06d1 feature-004 Testing Strategy states the batching assertion (wrap point 1)"
+    assert_output_contains "$SPEC_TXT" \
+        "work (not one-per-document)" \
+        "SGH06d2 feature-004 Testing Strategy states the batching assertion (wrap point 2)"
+    assert_output_contains "$SPEC_TXT" \
+        'Each document still clears `minimum_grade` via its own REVIEW->FIX loop within the pass' \
+        "SGH06e batching changes dispatch granularity only -- per-document guarantee (AC-11) intact"
+fi
 
 # SGH-07: ledger-scope count in the engine prose is exactly 2, distinct (defn, tasks) --
 # a mechanical cross-check that the prose never grows a third/per-document scope pattern.
