@@ -38,7 +38,14 @@ from the folder path -- never authored in frontmatter.
      State enum (closed; single source of truth):
        Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
      Ordering (most-advanced wins on reconcile):
-       Done > Canceled > In Review > In Progress > Blocked > Failed > Pending -->
+       Done > Canceled > In Review > In Progress > Blocked > Failed > Pending
+
+     MANDATORY (aid-execute/references/state-execute.md § State-Write Protocol):
+     `state` MUST be written the INSTANT it changes -- In Progress before work
+     starts, In Review before the reviewer is dispatched, a terminal value
+     (Done/Failed/Blocked) when finished. Binds whoever executes this task --
+     the main/orchestrator agent running it directly, or a dispatched
+     sub-agent -- with no exception either way. -->
 
 ---
 

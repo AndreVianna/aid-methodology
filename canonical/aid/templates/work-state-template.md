@@ -190,7 +190,14 @@ different places.
      below is byte-identical to `task-state-template.md` -- no byte-stability break.
 
      State enum (closed; single source of truth):
-       Pending | In Progress | In Review | Blocked | Done | Failed | Canceled -->
+       Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
+
+     MANDATORY (aid-execute/references/state-execute.md § State-Write Protocol):
+     each row's State cell MUST be written the INSTANT that task's state
+     changes -- In Progress before work starts, In Review before the reviewer
+     is dispatched, a terminal value (Done/Failed/Blocked) when finished.
+     Binds whoever executes the task -- the main/orchestrator agent running
+     it directly, or a dispatched sub-agent -- with no exception either way. -->
 
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|

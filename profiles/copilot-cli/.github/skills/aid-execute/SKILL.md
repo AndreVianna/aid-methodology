@@ -13,6 +13,20 @@ argument-hint: "work-001 (required if multiple works)  task-001 (required)"
 
 Read the type. Do the work. Review it. Fix it. Ship it.
 
+## ⚠️⚠️ MANDATORY: write task State AS IT CHANGES -- read this first
+
+> **Whoever executes this task -- the main/orchestrator agent running it
+> DIRECTLY, or a dispatched sub-agent -- MUST write the task's `State` field
+> the instant it changes: `In Progress` before starting work, `In Review`
+> before dispatching the reviewer, and a terminal value (`Done` / `Failed`)
+> when finished. No agent may skip, batch, or defer these writes, on the
+> flat OR full layout, whether this task is run alone or as part of a pool
+> dispatch.** The full mandate, the exact command for each transition, and the
+> why lives in `references/state-execute.md § MANDATORY: State-Write
+> Protocol` -- read it before Step 1 below. Skipping these writes is the
+> single most common root cause of a task that shows `Pending` in the
+> dashboard for its entire execution and then jumps straight to `Done`.
+
 ## ⚠️ Pre-flight Checks
 
 ### Check 1: Locate Work and Task
@@ -300,6 +314,17 @@ When executing a delivery wave, render a sub-unit snapshot after each sub-unit t
 
 If the agent encounters something it can't resolve:
 
+**MANDATORY, before writing the IMPEDIMENT file -- per `references/state-execute.md § MANDATORY: State-Write Protocol`:**
+update the task's own State to `Failed`, whether this task is being executed
+by the main/orchestrator agent directly or by a dispatched sub-agent. Do NOT
+leave the task showing `In Progress`/`In Review` while an unresolved
+impediment sits unaddressed -- that is exactly the "invisible/misleading task"
+state the protocol exists to prevent:
+```bash
+bash .github/aid/scripts/execute/writeback-state.sh \
+    --delivery-id DDD --task-id NNN --field State --value "Failed"
+```
+
 ```markdown
 # Impediment — task-NNN
 
@@ -319,7 +344,9 @@ Resolution by type:
 - **missing-dependency** → `/aid-detail` (might need another task first)
 - **wrong-assumption** → update task or SPEC, retry
 
-After resolving: delete IMPEDIMENT file, retry from Step 1.
+After resolving: delete IMPEDIMENT file; write task State back to `In Progress`
+(the same mandatory write as Step 1's EXECUTE entry — this is a fresh entry
+into EXECUTE, not a continuation that can skip it); retry from Step 1.
 
 ## Output
 

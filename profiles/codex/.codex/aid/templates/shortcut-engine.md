@@ -551,6 +551,11 @@ description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shor
   always `All section-6 quality gates pass.`.
 - No sibling `STATE.md` is created -- the flat layout has none; each task's mutable
   cells live only in the work-root `STATE.md § ### Tasks lifecycle` (Step 3 below).
+- The template's own `**Execution protocol**` blockquote note (the per-transition
+  State-write mandate, binding whoever later executes the task) carries through
+  automatically -- it is seeded from `task-detail-template.md` verbatim, not
+  re-authored here; no extra step is needed for a shortcut-scaffolded task to
+  carry it (work-003-state-schema task-009).
 
 **c. Fills PLAN.md's real `## Execution Graph`** (replacing the PLAN-state
 placeholder): `### Task Dependencies` (`| Task | Depends On |`) and

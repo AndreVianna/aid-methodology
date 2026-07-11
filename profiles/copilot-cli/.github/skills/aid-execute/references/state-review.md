@@ -9,6 +9,13 @@ Task output is graded by a lightweight quick-check pass first; then a clean-cont
 > is triggered from pool dispatch PD-5 (in `references/state-execute.md`), not
 > from this per-task state.
 
+> ⚠️ **MANDATORY State-Write Protocol applies in this state too:** this task's
+> `State` MUST be written the moment it changes -- to `Failed` if a
+> `[CRITICAL]` finding persists after fix-on-spot (below), and to `Done` at
+> this state's terminal chain. See `references/state-execute.md § MANDATORY:
+> State-Write Protocol` for the full mandate -- it binds whoever is running
+> this state, main/orchestrator agent or dispatched sub-agent, no exceptions.
+
 ## Step 1.5: QUICK CHECK (Pre-Reviewer Triage)
 
 A lightweight single-pass reviewer runs **before** the full reviewer to catch
@@ -70,6 +77,13 @@ For each `[CRITICAL]` finding:
 2. Re-verify build/lint/test gates after the fix.
 3. If the critical persists after the fix → **STOP.** Raise an IMPEDIMENT
    (`type: architecture-conflict`). Do not attempt a second fix cycle.
+   **MANDATORY (State-Write Protocol, `state-execute.md`) — update this
+   task's own State to `Failed` before or alongside the pipeline block
+   signal below** (the task must not be left showing `In Progress`/`In
+   Review` while blocked on an unresolved impediment):
+   ```bash
+   bash .github/aid/scripts/execute/writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
+   ```
    Write the IMPEDIMENT to `.aid/{work}/IMPEDIMENT-task-{NNN}.md` and emit the pipeline block
    signal (silent state-write — no output, no gate):
    ```bash
@@ -132,7 +146,32 @@ The helper writes/replaces the `### task-NNN` block under `## Quick Check
 Findings` in the work `STATE.md` (keyed by task-id, single-writer per task
 by construction — safe under FR6 parallel execution).
 
-**Advance:** **CHAIN** → [State: DONE] after triage and findings write (continue inline).
+### MANDATORY Terminal Write: Task State → Done
+
+Per `references/state-execute.md § MANDATORY: State-Write Protocol` — this is
+the task's own terminal state write for a **single-task invocation** (whether
+run directly by the main/orchestrator agent or by a sub-agent running its own
+per-task pipeline under pool dispatch, per `state-execute.md`'s `PD-2a`
+prompt template). It happens HERE, the moment REVIEW's quick-check triage
+completes — not deferred, not left for whatever process happens to touch
+this task next:
+
+```bash
+bash .github/aid/scripts/execute/writeback-state.sh \
+    --delivery-id DDD --task-id NNN --field State --value "Done"
+```
+
+This write is also what makes `SKILL.md § Check 2b` (dependency-readiness)
+and pool dispatch's own ready-set computation (`PD-1`/`PD-4` step 3 in
+`state-execute.md`) see this task as unblocking its dependents — without it,
+a task that finished its own work would never actually register as `Done`
+anywhere the rest of the pipeline reads from. (Under pool dispatch, PD-4
+step 2 in `state-execute.md` ALSO writes `Done` for this task from the
+orchestrator side after the sub-agent reports back — that is a second,
+redundant, idempotent write, not a substitute for this one; the sub-agent
+must not skip its own write on the assumption "the orchestrator will do it.")
+
+**Advance:** **CHAIN** → [State: DONE] after triage, findings write, and the terminal State write above (continue inline).
 
 > **Two-tier model contract (feature-004 SPEC §State Machines):** Per-task REVIEW
 > runs the quick-check pass only. **No grade is computed at the task level.**

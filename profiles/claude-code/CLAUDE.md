@@ -19,6 +19,15 @@ cross-phase process state). Keeping it current is **not optional**:
   by a DIRECT PROMPT, and whether on the FULL or the LITE path.
 - If no tracking file exists for the work yet, **create it first** (from the
   work-state template) before doing anything else.
+- **Task execution is the sharpest case of this rule.** During `/aid-execute`,
+  a task's `State` MUST be written the instant it changes — `In Progress` at
+  the start of EXECUTE, `In Review` before the reviewer is dispatched, and a
+  terminal value (`Done` / `Failed` / `Blocked`) at the end. This binds
+  **whoever executes the task** — the main/orchestrator agent executing it
+  DIRECTLY (not only a dispatched sub-agent) MUST perform these writes itself,
+  at the same points, with **no exception and no bypass**. A task that sits
+  at `Pending` in the dashboard for its entire execution and then jumps
+  straight to `Done` is exactly the failure mode this rule exists to prevent.
 
 ## Knowledge Base
 

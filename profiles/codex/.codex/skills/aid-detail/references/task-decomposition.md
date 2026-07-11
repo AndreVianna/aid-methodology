@@ -123,6 +123,10 @@ Each task is a **folder** containing two files:
 ```markdown
 # task-NNN: {Title}
 
+> **Execution protocol** blockquote note (write State at each transition;
+> binds whoever executes -- carried verbatim from task-detail-template.md,
+> not shown again here for brevity)
+
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
 **Source:** work-NNN-{name} -> delivery-NNN
@@ -137,7 +141,9 @@ Each task is a **folder** containing two files:
 - [ ] Criterion 2 -- concrete, testable
 ```
 
-Six sections. Nothing else.
+Six sections (Title, Type, Source, Depends on, Scope, Acceptance Criteria) plus
+the fixed Execution protocol note carried automatically from the template.
+Nothing else.
 
 - **`deliveries/delivery-NNN/tasks/task-NNN/STATE.md`** — seeded from `.codex/aid/templates/task-state-template.md`,
   replacing the frontmatter block's placeholder lines with the real opening values

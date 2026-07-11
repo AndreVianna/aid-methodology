@@ -12,6 +12,14 @@
 > **When to use:** automatically on every sub-unit transition (PD-2 / PD-4) and
 > on explicit user "status" request during a long-running pool wait (PD-3).
 
+> **Why this snapshot is trustworthy:** every `State` value this snapshot
+> renders (`✓ done`, `● running`, `✗ failed`, `⊘ blocked`, `(queued)`) is only
+> ever as fresh as the last write to disk. `references/state-execute.md §
+> MANDATORY: State-Write Protocol` is what guarantees a write happens the
+> instant each transition occurs -- this file only renders what is already
+> there; it does not (and must not) infer or backfill a transition that was
+> never written.
+
 ### Icon Vocabulary (complete set — no glyph replacements)
 
 FR1's existing icons are **reused verbatim**. Task-035 adds only `⊘ blocked`.

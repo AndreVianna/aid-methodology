@@ -5,6 +5,16 @@ This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for th
 Written once by aid-detail; not a state file. State lives in task-NNN/STATE.md.
 Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md.
 
+> **Execution protocol (binding on whoever executes this task -- no
+> exceptions):** the moment this task's `State` changes, write it --
+> `In Progress` before starting work, `In Review` before dispatching the
+> reviewer, and the terminal value (`Done` / `Failed` / `Blocked`) at the
+> end -- via `writeback-state.sh --field State --value ...`. This applies
+> equally whether the main/orchestrator agent executes this task directly
+> or dispatches it to a sub-agent; neither may skip, batch, or defer these
+> writes. Full mandate: `aid-execute/references/state-execute.md § MANDATORY:
+> State-Write Protocol`.
+
 **Type:** RESEARCH | DESIGN | IMPLEMENT | TEST | DOCUMENT | MIGRATE | REFACTOR | CONFIGURE
 
 **Source:** work-NNN-{name} -> delivery-NNN
