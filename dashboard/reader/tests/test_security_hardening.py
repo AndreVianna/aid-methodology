@@ -184,9 +184,7 @@ class TestGitBranchInjectionNeutralized(unittest.TestCase):
             "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
             encoding="utf-8",
         )
-        dashboard_dir = aid / "dashboard"
-        dashboard_dir.mkdir()
-        (dashboard_dir / "kb.html").write_text("<html></html>", encoding="utf-8")
+        (kb / "kb.html").write_text("<html></html>", encoding="utf-8")
         (aid / "settings.yml").write_text(
             "project:\n  name: Test\n"
             "kb_baseline:\n"
@@ -216,9 +214,7 @@ class TestGitBranchInjectionNeutralized(unittest.TestCase):
             "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
             encoding="utf-8",
         )
-        dashboard_dir = aid / "dashboard"
-        dashboard_dir.mkdir()
-        (dashboard_dir / "kb.html").write_text("<html></html>", encoding="utf-8")
+        (kb / "kb.html").write_text("<html></html>", encoding="utf-8")
         (aid / "settings.yml").write_text(
             "project:\n  name: Test\n"
             "kb_baseline:\n"

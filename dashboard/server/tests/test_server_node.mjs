@@ -85,7 +85,7 @@ function writeRegistry(aidHome, paths) {
   writeFileSync(join(aidHome, "registry.yml"), content, "utf8");
 }
 
-function makeRepo(base, withDashboard) {
+function makeRepo(base, withKb) {
   const aid = join(base, ".aid");
   mkdirSync(aid, { recursive: true });
   writeFileSync(join(aid, "settings.yml"),
@@ -97,11 +97,13 @@ function makeRepo(base, withDashboard) {
       installed_at: "2026-01-01T00:00:00Z",
       tools: { "claude-code": { installed_at: "2026-01-01T00:00:00Z" } },
     }), "utf8");
-  if (withDashboard) {
-    const dash = join(aid, "dashboard");
-    mkdirSync(dash, { recursive: true });
-    writeFileSync(join(dash, "home.html"), "<html>home</html>", "utf8");
-    writeFileSync(join(dash, "kb.html"), "<html>kb</html>", "utf8");
+  if (withKb) {
+    // kb.html is a per-repo GENERATED artifact; it now lives beside its KB source
+    // in .aid/knowledge/ (the .aid/dashboard/ folder was eliminated). home.html is
+    // no longer a per-repo file -- the CLI serves its OWN copy -- so none is written.
+    const kb = join(aid, "knowledge");
+    mkdirSync(kb, { recursive: true });
+    writeFileSync(join(kb, "kb.html"), "<html>kb</html>", "utf8");
   }
 }
 
@@ -617,13 +619,12 @@ process.stdout.write("\n[10] task-064 KB status extension (reader.mjs)\n");
   // --- readRepo() with approved STATE.md + kb.html + no baseline -> status=approved ---
   const tmp4 = join(tmpdir(), "aid-kb064-" + Date.now());
   mkdirSync(join(tmp4, ".aid", "knowledge"), { recursive: true });
-  mkdirSync(join(tmp4, ".aid", "dashboard"), { recursive: true });
   writeFileSync(
     join(tmp4, ".aid", "knowledge", "STATE.md"),
     "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
     "utf-8"
   );
-  writeFileSync(join(tmp4, ".aid", "dashboard", "kb.html"), "<html></html>", "utf-8");
+  writeFileSync(join(tmp4, ".aid", "knowledge", "kb.html"), "<html></html>", "utf-8");
   try {
     const m4 = readRepo(tmp4);
     assert(m4.repo.kb_state !== null, "10.11: kb_state present");
@@ -638,13 +639,12 @@ process.stdout.write("\n[10] task-064 KB status extension (reader.mjs)\n");
   // --- readRepo() with kb_baseline in settings.yml -> parsed correctly ---
   const tmp5 = join(tmpdir(), "aid-kb064-" + Date.now());
   mkdirSync(join(tmp5, ".aid", "knowledge"), { recursive: true });
-  mkdirSync(join(tmp5, ".aid", "dashboard"), { recursive: true });
   writeFileSync(
     join(tmp5, ".aid", "knowledge", "STATE.md"),
     "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
     "utf-8"
   );
-  writeFileSync(join(tmp5, ".aid", "dashboard", "kb.html"), "<html></html>", "utf-8");
+  writeFileSync(join(tmp5, ".aid", "knowledge", "kb.html"), "<html></html>", "utf-8");
   writeFileSync(
     join(tmp5, ".aid", "settings.yml"),
     "project:\n  name: Test\nkb_baseline:\n  branch: main\n  tip_date: 2026-06-01T00:00:00Z\n",
@@ -677,13 +677,12 @@ process.stdout.write("\n[10] task-064 KB status extension (reader.mjs)\n");
   // --- Degradation: non-git dir + baseline -> freshness degrades to 'approved' ---
   const tmp6 = join(tmpdir(), "aid-kb064-" + Date.now());
   mkdirSync(join(tmp6, ".aid", "knowledge"), { recursive: true });
-  mkdirSync(join(tmp6, ".aid", "dashboard"), { recursive: true });
   writeFileSync(
     join(tmp6, ".aid", "knowledge", "STATE.md"),
     "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
     "utf-8"
   );
-  writeFileSync(join(tmp6, ".aid", "dashboard", "kb.html"), "<html></html>", "utf-8");
+  writeFileSync(join(tmp6, ".aid", "knowledge", "kb.html"), "<html></html>", "utf-8");
   writeFileSync(
     join(tmp6, ".aid", "settings.yml"),
     "kb_baseline:\n  branch: main\n  tip_date: 2000-01-01T00:00:00Z\n",
@@ -746,7 +745,7 @@ async function runLiveTests() {
   makeAidWithWorks(repoA, ["work-003-gamma", "work-001-alpha", "work-002-beta"]);
 
   const repoB = join(base, "repo-B");
-  makeRepo(repoB, false);  // no dashboard files
+  makeRepo(repoB, false);  // has .aid/ but no generated kb.html
 
   // Register both (reverse alpha to test sort)
   writeRegistry(aidHome, [repoB, repoA]);
@@ -807,22 +806,30 @@ async function runLiveTests() {
       assert(!!(data && Array.isArray(data.repos)), "GET /api/home has repos array");
     }
 
-    // GET /r/<id>/home.html -> 200
+    // GET /r/<id>/home.html -> 200. home.html is now served from the CLI's OWN copy
+    // ($AID_CODE_HOME/dashboard/home.html, self-located from server.mjs) and is gated
+    // only on the repo having an .aid/ dir (repo-A does). So the body is the real CLI
+    // SPA, not a per-repo "<html>home</html>" stub. Also sends Cache-Control: no-cache.
     {
       const r = await makeRequest(port, "/r/" + idA + "/home.html", "GET");
       assert(r.status === 200, "GET /r/<id>/home.html -> 200 (got " + r.status + ")");
-      assert(r.body.includes("<html>home</html>"), "GET /r/<id>/home.html body correct");
+      assert(r.body.includes("<!DOCTYPE html>"),
+        "GET /r/<id>/home.html serves the CLI's own home.html SPA");
       assert(
         !!(r.headers["content-type"] && r.headers["content-type"].includes("text/html")),
         "GET /r/<id>/home.html Content-Type is text/html"
       );
+      assert(r.headers["cache-control"] === "no-cache",
+        "GET /r/<id>/home.html sends Cache-Control: no-cache");
     }
 
-    // GET /r/<id>/kb.html -> 200
+    // GET /r/<id>/kb.html -> 200 (served from <repo>/.aid/knowledge/kb.html)
     {
       const r = await makeRequest(port, "/r/" + idA + "/kb.html", "GET");
       assert(r.status === 200, "GET /r/<id>/kb.html -> 200 (got " + r.status + ")");
       assert(r.body.includes("<html>kb</html>"), "GET /r/<id>/kb.html body correct");
+      assert(r.headers["cache-control"] === "no-cache",
+        "GET /r/<id>/kb.html sends Cache-Control: no-cache");
     }
 
     // GET /r/<id>/api/model -> 200 DM-1 envelope
@@ -1002,14 +1009,18 @@ async function runLiveTests() {
       assert(r.status === 404, "unregistered id deadbeef/api/model -> 404 (got " + r.status + ")");
     }
 
-    // repo-B has no dashboard files -> 404 for static leaves
+    // repo-B has an .aid/ dir but never generated a kb.html.
     {
+      // home.html is served from the CLI's own copy and gated only on .aid/ existence
+      // (repo-B has one) -> 200. The 404 path for home.html is now "no .aid/ at all",
+      // exercised by the registered-but-.aid-gone case below.
       const r = await makeRequest(port, "/r/" + idB + "/home.html", "GET");
-      assert(r.status === 404, "repo without dashboard home.html -> 404 (got " + r.status + ")");
+      assert(r.status === 200, "repo-B (.aid present, no kb) home.html -> 200 (got " + r.status + ")");
     }
     {
+      // kb.html is per-repo (.aid/knowledge/kb.html) and repo-B has none -> 404.
       const r = await makeRequest(port, "/r/" + idB + "/kb.html", "GET");
-      assert(r.status === 404, "repo without dashboard kb.html -> 404 (got " + r.status + ")");
+      assert(r.status === 404, "repo without kb.html -> 404 (got " + r.status + ")");
     }
 
     // Symlinked non-allowlisted file -> 404 (route regex can't reach it)
@@ -1017,8 +1028,11 @@ async function runLiveTests() {
       // Put a secret file in the repo-A dir and symlink it with a non-allowlisted name
       const secretFile = join(repoA, "secret_data.txt");
       writeFileSync(secretFile, "secret", "utf8");
-      const dashA = join(repoA, ".aid", "dashboard");
-      const linkPath = join(dashA, "secret.txt");
+      // The .aid/dashboard/ folder was eliminated; place the decoy in .aid/knowledge/
+      // (a real served dir). "secret.txt" is still not in the {home.html,kb.html}
+      // leaf allowlist, so the route regex can never reach it -> 404.
+      const knowledgeA = join(repoA, ".aid", "knowledge");
+      const linkPath = join(knowledgeA, "secret.txt");
       let symlinkOk = false;
       try { symlinkSync(secretFile, linkPath); symlinkOk = true; } catch (_) {}
       if (symlinkOk) {
@@ -1207,14 +1221,16 @@ async function runLiveTests() {
         assert(/^[0-9a-f]{8,}$/.test(repo.id || ""), "DM-2: repo.id is hex8+");
       }
 
-      // repo-A has dashboard files
+      // repo-A has an .aid/ dir (-> has_home) and a generated kb.html (-> has_kb)
       const repoAEntry = (repos || []).find((r) => r.path === repoA);
       assert(!!(repoAEntry && repoAEntry.has_home), "DM-2: repo-A has_home=true");
       assert(!!(repoAEntry && repoAEntry.has_kb), "DM-2: repo-A has_kb=true");
 
-      // repo-B has no dashboard files
+      // repo-B has an .aid/ dir (-> has_home=true, the new gate) but no generated
+      // kb.html (-> has_kb=false). has_home no longer depends on dashboard files.
       const repoBEntry = (repos || []).find((r) => r.path === repoB);
-      assert(!!(repoBEntry && !repoBEntry.has_home), "DM-2: repo-B has_home=false");
+      assert(!!(repoBEntry && repoBEntry.has_home),
+        "DM-2: repo-B has_home=true (has .aid/, even without a generated dashboard)");
       assert(!!(repoBEntry && !repoBEntry.has_kb), "DM-2: repo-B has_kb=false");
 
       // read panel
@@ -1376,7 +1392,6 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
   // Well-formed producer block -> readRepo -> same {branch, tip_date}
   const tmpRt = join(tmpdir(), "aid-066-rt-" + Date.now());
   mkdirSync(join(tmpRt, ".aid", "knowledge"), { recursive: true });
-  mkdirSync(join(tmpRt, ".aid", "dashboard"), { recursive: true });
 
   const PRODUCER_BLOCK =
     "project:\n  name: RT-Test\n" +
@@ -1390,7 +1405,7 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
     "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
     "utf8"
   );
-  writeFileSync(join(tmpRt, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+  writeFileSync(join(tmpRt, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
 
   try {
     const mRt = readRepo(tmpRt);
@@ -1481,13 +1496,12 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
   // kb_baseline absent -> no freshness check -> approved
   const tmpDg1 = join(tmpdir(), "aid-066-dg1-" + Date.now());
   mkdirSync(join(tmpDg1, ".aid", "knowledge"), { recursive: true });
-  mkdirSync(join(tmpDg1, ".aid", "dashboard"), { recursive: true });
   writeFileSync(
     join(tmpDg1, ".aid", "knowledge", "STATE.md"),
     "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
     "utf8"
   );
-  writeFileSync(join(tmpDg1, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+  writeFileSync(join(tmpDg1, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
   // No settings.yml -> kb_baseline absent
   try {
     const mDg1 = readRepo(tmpDg1);
@@ -1502,13 +1516,12 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
   // Not a git repo + old baseline -> degradation -> approved (not outdated)
   const tmpDg2 = join(tmpdir(), "aid-066-dg2-" + Date.now());
   mkdirSync(join(tmpDg2, ".aid", "knowledge"), { recursive: true });
-  mkdirSync(join(tmpDg2, ".aid", "dashboard"), { recursive: true });
   writeFileSync(
     join(tmpDg2, ".aid", "knowledge", "STATE.md"),
     "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
     "utf8"
   );
-  writeFileSync(join(tmpDg2, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+  writeFileSync(join(tmpDg2, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
   writeFileSync(
     join(tmpDg2, ".aid", "settings.yml"),
     "kb_baseline:\n  branch: main\n  tip_date: 2000-01-01T00:00:00Z\n",  // very old
@@ -1527,13 +1540,12 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
   // Baseline present but tip_date unparseable -> skip -> approved
   const tmpDg3 = join(tmpdir(), "aid-066-dg3-" + Date.now());
   mkdirSync(join(tmpDg3, ".aid", "knowledge"), { recursive: true });
-  mkdirSync(join(tmpDg3, ".aid", "dashboard"), { recursive: true });
   writeFileSync(
     join(tmpDg3, ".aid", "knowledge", "STATE.md"),
     "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
     "utf8"
   );
-  writeFileSync(join(tmpDg3, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+  writeFileSync(join(tmpDg3, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
   writeFileSync(
     join(tmpDg3, ".aid", "settings.yml"),
     "kb_baseline:\n  branch: main\n  tip_date: not-a-valid-date\n",
@@ -1617,13 +1629,12 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
     try {
       buildFrozenRepo(tmpFc1, "2026-06-10T12:00:00+00:00");
       mkdirSync(join(tmpFc1, ".aid", "knowledge"), { recursive: true });
-      mkdirSync(join(tmpFc1, ".aid", "dashboard"), { recursive: true });
       writeFileSync(
         join(tmpFc1, ".aid", "knowledge", "STATE.md"),
         "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
         "utf8"
       );
-      writeFileSync(join(tmpFc1, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      writeFileSync(join(tmpFc1, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
       writeFileSync(
         join(tmpFc1, ".aid", "settings.yml"),
         "kb_baseline:\n  branch: master\n  tip_date: 2026-06-01T00:00:00Z\n",
@@ -1647,13 +1658,12 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
     try {
       buildFrozenRepo(tmpFc2, "2026-06-01T12:00:00+00:00");
       mkdirSync(join(tmpFc2, ".aid", "knowledge"), { recursive: true });
-      mkdirSync(join(tmpFc2, ".aid", "dashboard"), { recursive: true });
       writeFileSync(
         join(tmpFc2, ".aid", "knowledge", "STATE.md"),
         "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
         "utf8"
       );
-      writeFileSync(join(tmpFc2, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      writeFileSync(join(tmpFc2, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
       writeFileSync(
         join(tmpFc2, ".aid", "settings.yml"),
         "kb_baseline:\n  branch: master\n  tip_date: 2026-06-10T00:00:00Z\n",
@@ -1676,13 +1686,12 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
     try {
       buildFrozenRepo(tmpFc3Z, "2026-06-10T12:00:00+00:00");
       mkdirSync(join(tmpFc3Z, ".aid", "knowledge"), { recursive: true });
-      mkdirSync(join(tmpFc3Z, ".aid", "dashboard"), { recursive: true });
       writeFileSync(
         join(tmpFc3Z, ".aid", "knowledge", "STATE.md"),
         "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
         "utf8"
       );
-      writeFileSync(join(tmpFc3Z, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      writeFileSync(join(tmpFc3Z, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
       // Baseline Z form (11:59:59 UTC -> 1 second before 12:00 UTC commit)
       writeFileSync(
         join(tmpFc3Z, ".aid", "settings.yml"),
@@ -1692,13 +1701,12 @@ process.stdout.write("\n[11] task-066: KB-state parity + round-trip + degradatio
 
       buildFrozenRepo(tmpFc3N, "2026-06-10T12:00:00+00:00");
       mkdirSync(join(tmpFc3N, ".aid", "knowledge"), { recursive: true });
-      mkdirSync(join(tmpFc3N, ".aid", "dashboard"), { recursive: true });
       writeFileSync(
         join(tmpFc3N, ".aid", "knowledge", "STATE.md"),
         "## Knowledge Summary Status\n**User Approved:** yes (2026-06-01)\n",
         "utf8"
       );
-      writeFileSync(join(tmpFc3N, ".aid", "dashboard", "kb.html"), "<html></html>", "utf8");
+      writeFileSync(join(tmpFc3N, ".aid", "knowledge", "kb.html"), "<html></html>", "utf8");
       // Baseline -04:00 form: 07:59:59 -04:00 == 11:59:59 UTC (same instant)
       writeFileSync(
         join(tmpFc3N, ".aid", "settings.yml"),
