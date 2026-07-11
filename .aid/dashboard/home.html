@@ -2201,7 +2201,7 @@ footer {
 
     // Lite/shortcut works render a DISTINCT compact rail, never the full 6-phase
     // stepper below -- the shortcut engine (INTAKE→…→GATE) collapses Describe→
-    // Detail into a single "Defining" step, so the full stepper would read as
+    // Detail into a single "Describe" step, so the full stepper would read as
     // mostly-skipped noise. Checked FIRST (before any phase validity gate) and
     // driven only by work_path + this work's own phase/lifecycle, never by
     // reinterpreting the full-path PHASE_ORDER index (work-003-state-schema
@@ -2278,14 +2278,15 @@ footer {
   // Driven directly by this work's own real phase/lifecycle signals (never by
   // reinterpreting the full-path PHASE_ORDER index):
   //   lifecycle Completed, or phase Deploy -> Done
-  //   phase Execute                        -> Executing
+  //   phase Execute                        -> Execute
   //   anything else (Describe/Define/Specify/Plan/Detail, or not yet recorded)
-  //                                         -> Defining
+  //                                         -> Describe
   // The shortcut engine's real states (INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→
-  // APPROVAL-HALT, which halts pre-Execute) all collapse into "Defining" until
-  // /aid-execute starts.
+  // APPROVAL-HALT, which halts pre-Execute) all collapse into "Describe" until
+  // /aid-execute starts. Labels use the same imperative form as the full-path
+  // stepper (Describe/Execute) for cross-path grammatical consistency.
   function _renderLiteStageRail(rail, work) {
-    var LITE_STAGES = ['Defining', 'Executing', 'Done'];
+    var LITE_STAGES = ['Describe', 'Execute', 'Done'];
     var stageIdx;
     if (work.lifecycle === 'Completed' || work.phase === 'Deploy') {
       stageIdx = 2;
