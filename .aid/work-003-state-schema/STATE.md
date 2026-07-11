@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-11T02:58:22Z'
+updated: '2026-07-11T03:01:33Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -58,7 +58,7 @@ SPEC.md + BLUEPRINT.md.)
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-07-11T02:58:22Z
+- **Updated:** 2026-07-11T03:01:33Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -122,7 +122,7 @@ SPEC.md + BLUEPRINT.md.)
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
 - **State:** Executing
-- **Updated:** 2026-07-11T02:58:22Z
+- **Updated:** 2026-07-11T03:01:33Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -142,6 +142,7 @@ SPEC.md + BLUEPRINT.md.)
 | task-006 | Done | N/A | -- | Closed NOT APPLICABLE (validate-first, per DETAIL). Enumerated + classified every §6/section-6 quality-gate ref in canonical/skills: all LEGITIMATE — the KB contract (artifact-schemas.md:277/305, pipeline-contracts.md:218) documents "All section-6 quality gates pass" as the intended standing criterion; shortcut engine guarantees a real §6 (REQUIREMENTS.md) before templates seed. No dangling standing line in scope → no edit, no re-render, no commit. Independently verified the 3 load-bearing claims. SURFACED 2 out-of-scope residuals (see Lifecycle History) — not fixed under task-006's DETAIL scope |
 | task-007 | Done | pass | -- | Root-cause fix (harvester coined-term-denylist +18 code-identifier/stopword tokens; closure-check.sh exclusion-builder expands each entry into as-is/joined/CamelCase-split forms so one exclusion decision covers both harvester variants — no term_exclusions padding). closure-check 86→67 terms. run_generator VERIFY PASS + dogfood resync; KB-script suites green. Surfaced genuine residual (`Skill`/`Tool` no glossary heading → /aid-discover). Commits 8d8b5737 + 0d3ecafc + 75f9eea3. Review (sub-agent): 0 HIGH; 1 MED (exclusion-expansion untested) FIXED — new C09 test proven to guard the logic (fails against pre-fix closure-check.sh, 13/13 after); 1 LOW (residual over-characterized) ACCEPTED w/ corrected note (phrase-junk filter = separate future concern). |
 | task-008 | Done | pass | -- | Bare top-level `--version`/`-V` in both bin/aid + bin/aid.ps1 via a single-sourced VERSION-read helper (`_aid_print_version` / `Show-AidVersion`), intercepted before subcommand dispatch (commit 4b54e551). Verified: --version/-V/version all print 2.1.0 exit 0; subcommand `--version <v>` pin unshadowed (fires only when flag is first arg — proven 3 ways). `aid -h` lists both flags distinctly. Tests: test-aid-cli.sh CLI027-M1 + test-aid-cli-ps1.sh PS028-M1 (9+9). Review (sub-agent): 0 findings, all 4 ACs + gate #12 satisfied. Ship (re-vendor+reinstall) folded into the final gate. |
+| task-010 | In Progress | -- | -- | STARTED (marked In Progress before work, per the mandate) — faithful phase-model rebuild: Phase enum → Discover/Describe/Define/Specify/Plan/Detail/Execute (split Interview; Discover from KB state; Deploy=post-Execute indicator; drop dead Monitor) across template + writeback validation + 4 skill write-sites + both reader twins + home.html; back-compat alias (legacy Interview→Describe) + on-disk/fixture migration; DISTINCT Lite-path display; re-render + re-vendor. |
 | task-009 | Done | pass | -- | Emphatic per-transition mandate in CANONICAL (commits 9988acc1 + 8ea9f4f1): aid-execute SKILL.md ⚠️⚠️ banner + state-execute.md MANDATORY State-Write Protocol (binds main-agent-or-sub-agent, no bypass, both layouts + single/pool); task-detail/state/work templates + shortcut-engine (every created task inherits it); CLAUDE.md + all profiles' CLAUDE.md/AGENTS.md 4th tracking bullet. Validation found+FIXED 2 real gaps (serial Done + serial Failed writes were missing). test-task-state-transitions.sh 16/16 (fails-when-transition-dropped). Review (sub-agent): 0 HIGH/MED; 4 doc-consistency findings — 3 FIXED (PD-2a sub-agent writes all its transitions; protocol-table runnable-form; terminal enum normalized Done/Failed + Blocked clarified as orchestrator-assigned), 1 LOW ACCEPTED (pre-existing stale review-tier narrative in state-review.md → surfaced as separate doc-cleanup). run_generator VERIFY PASS + dogfood byte-identical. |
 
 ---
