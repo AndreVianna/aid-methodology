@@ -324,7 +324,7 @@ started: "{YYYY-MM-DD}"
 minimum_grade: "{resolved at runtime by some script}"
 user_approved: yes | no
 lifecycle: Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-phase: Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+phase: Describe | Define | Specify | Plan | Detail | Execute | Deploy
 active_skill: aid-{skill} | none
 updated: "{YYYY-MM-DDTHH:MM:SSZ}"
 ---
@@ -394,6 +394,68 @@ class TestParseStateMdDualFormat(unittest.TestCase):
         self.assertIsNone(pw.started, "placeholder started must not be captured")
         self.assertIsNone(pw.minimum_grade, "placeholder minimum_grade must not be captured "
                                              "(no legacy header-blockquote line present either)")
+
+
+# ---------------------------------------------------------------------------
+# Phase enum migration (work-003-state-schema task-010): new members read via
+# frontmatter, plus the legacy `phase: Interview` back-compat read alias.
+# ---------------------------------------------------------------------------
+
+_PHASE_DESCRIBE_STATE = """---
+pipeline:
+  path: full
+  initiator: aid-describe
+lifecycle: Running
+phase: Describe
+active_skill: aid-describe
+---
+
+# Work State -- work-910-demo
+"""
+
+_PHASE_DEFINE_STATE = """---
+pipeline:
+  path: full
+  initiator: aid-describe
+lifecycle: Running
+phase: Define
+active_skill: aid-define
+---
+
+# Work State -- work-911-demo
+"""
+
+_LEGACY_PHASE_INTERVIEW_STATE = """---
+pipeline:
+  path: full
+  initiator: aid-describe
+lifecycle: Running
+phase: Interview
+active_skill: aid-describe
+---
+
+# Work State -- work-912-demo
+"""
+
+
+class TestPhaseTask010Migration(unittest.TestCase):
+    """parse_state_md reads the faithful 6-phase enum + the legacy Interview alias
+    (work-003-state-schema task-010, BLUEPRINT gate criteria #16)."""
+
+    def test_frontmatter_phase_describe(self):
+        pw = parse_state_md(_PHASE_DESCRIBE_STATE, work_id="work-910-demo")
+        self.assertEqual(pw.phase, Phase.Describe)
+
+    def test_frontmatter_phase_define(self):
+        pw = parse_state_md(_PHASE_DEFINE_STATE, work_id="work-911-demo")
+        self.assertEqual(pw.phase, Phase.Define)
+
+    def test_legacy_frontmatter_phase_interview_aliases_to_describe(self):
+        # Back-compat: a not-yet-migrated file that still carries the retired
+        # `phase: Interview` value must still parse -- aliased to Describe (its
+        # first half), never Unknown and never a crash.
+        pw = parse_state_md(_LEGACY_PHASE_INTERVIEW_STATE, work_id="work-912-demo")
+        self.assertEqual(pw.phase, Phase.Describe)
 
 
 # ---------------------------------------------------------------------------
@@ -875,6 +937,61 @@ class TestCrossTwinParity(unittest.TestCase):
         node_w = _run_node_work(self.root, self.pinned_home)
         self.assertEqual(py_w, node_w,
                           "Python and Node must agree for a legacy-prose-only work too")
+
+    def _write_frontmatter_work_with_phase(self, work_id: str, phase_value: str) -> None:
+        """Same shape as _write_frontmatter_work, with a parameterized `phase:`
+        value (work-003-state-schema task-010 phase-enum parity coverage)."""
+        work_dir = self.aid / work_id
+        work_dir.mkdir(parents=True)
+        (work_dir / "BLUEPRINT.md").write_text(
+            "# Delivery BLUEPRINT -- delivery-001: Demo\n\n"
+            "## Objective\n\nDemo.\n\n## Gate Criteria\n\n- [ ] pass\n",
+            encoding="utf-8",
+        )
+        (work_dir / "STATE.md").write_text(
+            "---\n"
+            "pipeline:\n"
+            "  path: full\n"
+            "  initiator: aid-describe\n"
+            'started: "2026-07-10"\n'
+            "minimum_grade: A\n"
+            "user_approved: no\n"
+            "lifecycle: Running\n"
+            f"phase: {phase_value}\n"
+            "active_skill: aid-describe\n"
+            'updated: "2026-07-10T12:00:00Z"\n'
+            "---\n\n## Pipeline State\n",
+            encoding="utf-8",
+        )
+        tasks_dir = work_dir / "tasks" / "task-001"
+        tasks_dir.mkdir(parents=True)
+        (tasks_dir / "DETAIL.md").write_text(
+            "# task-001: Demo task\n\n**Type:** REFACTOR\n", encoding="utf-8"
+        )
+
+    def test_new_phase_enum_parity(self):
+        """work-003-state-schema task-010: both twins agree on the new
+        Describe/Define phase members (BLUEPRINT gate criteria #16)."""
+        for phase_value in ("Describe", "Define"):
+            with self.subTest(phase=phase_value):
+                work_id = f"work-970-{phase_value.lower()}"
+                self._write_frontmatter_work_with_phase(work_id, phase_value)
+                py_w = self._read_python_work()
+                node_w = _run_node_work(self.root, self.pinned_home)
+                self.assertEqual(py_w, node_w,
+                                  f"Python and Node must agree on phase={phase_value!r}")
+                self.assertEqual(py_w["phase"], phase_value)
+
+    def test_legacy_phase_interview_alias_parity(self):
+        """Both twins alias the retired `phase: Interview` to Describe on read
+        (back-compat, task-010) -- never Unknown, never a crash, and identical
+        across twins."""
+        self._write_frontmatter_work_with_phase("work-971-interview", "Interview")
+        py_w = self._read_python_work()
+        node_w = _run_node_work(self.root, self.pinned_home)
+        self.assertEqual(py_w, node_w,
+                          "Python and Node must agree on the legacy Interview alias")
+        self.assertEqual(py_w["phase"], "Describe")
 
     def _run_node_kb_summary_approved(self, root: Path, pinned_home: Path) -> "bool | None":
         script = (

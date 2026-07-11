@@ -76,8 +76,10 @@ echo "=== Part A: Lifecycle SM walk-through ==="
 
 # ---------------------------------------------------------------------------
 # A1: Full phase progression
-#   Running/Interview -> Running/Specify -> Running/Plan ->
+#   Running/Describe -> Running/Define -> Running/Specify -> Running/Plan ->
 #   Running/Detail -> Running/Execute -> Running/Deploy
+# (work-003-state-schema task-010: faithful 6-phase pipeline -- Interview split
+# into Describe + Define; the dead Monitor value is not part of this walkthrough.)
 #
 # Assert Phase + Active Skill + Lifecycle: Running at each step;
 # block stays well-formed throughout.
@@ -89,8 +91,8 @@ A1_STATE="${TMPDIR_BASE}/a1/STATE.md"
 make_state "$A1_STATE"
 
 # Declare an ordered array of (Phase, Active Skill) pairs
-A1_PHASES=("Interview" "Specify" "Plan" "Detail" "Execute" "Deploy")
-A1_SKILLS=("aid-describe" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy")
+A1_PHASES=("Describe" "Define" "Specify" "Plan" "Detail" "Execute" "Deploy")
+A1_SKILLS=("aid-describe" "aid-define" "aid-specify" "aid-plan" "aid-detail" "aid-execute" "aid-deploy")
 
 for i in "${!A1_PHASES[@]}"; do
     phase="${A1_PHASES[$i]}"
@@ -319,7 +321,7 @@ M4_FILES["aid-execute"]="${REPO_ROOT}/canonical/skills/aid-execute/references/st
 M4_FILES["aid-deploy"]="${REPO_ROOT}/canonical/skills/aid-deploy/references/state-idle.md"
 
 declare -A M4_PHASES
-M4_PHASES["aid-define"]="Interview"
+M4_PHASES["aid-define"]="Define"
 M4_PHASES["aid-specify"]="Specify"
 M4_PHASES["aid-plan"]="Plan"
 M4_PHASES["aid-detail"]="Detail"

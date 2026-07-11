@@ -680,11 +680,21 @@ code=0
 AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Lifecycle --value "running" 2>/dev/null || code=$?
 assert_exit_eq "$code" 4 "10c: Lifecycle=running (lowercase) rejected (exit 4)"
 
-# 10d: All valid Phase values accepted (rc 0)
-for ph_val in Interview Specify Plan Detail Execute Deploy Monitor; do
+# 10d: All valid Phase values accepted (rc 0) -- work-003-state-schema task-010:
+# faithful 6-phase pipeline (Interview split into Describe+Define; Monitor removed).
+for ph_val in Describe Define Specify Plan Detail Execute Deploy; do
     code=0
     AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Phase --value "$ph_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "10d: Phase=$ph_val accepted (exit 0)"
+done
+
+# 10d-ii: retired Phase values rejected on WRITE (task-010) -- the reader's
+# back-compat alias (Interview -> Describe, Monitor -> Unknown) is a READ-side
+# concession for pre-migration files; writers must emit only the new enum.
+for ph_val in Interview Monitor; do
+    code=0
+    AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Phase --value "$ph_val" 2>/dev/null || code=$?
+    assert_exit_eq "$code" 4 "10d-ii: Phase=$ph_val (retired) rejected (exit 4)"
 done
 
 # 10e: Invalid Phase value → exit 4
@@ -1823,7 +1833,7 @@ fi
 CRLF_WORK="${TMPDIR_BASE}/crlf-work"
 mkdir -p "$CRLF_WORK"
 CRLF_STATE="${CRLF_WORK}/STATE.md"
-printf -- '---\r\nlifecycle: Running\r\nphase: Interview\r\n---\r\n\r\n# Work State\r\n\r\nSome body content with CRLF.\r\nSecond line, no trailing newline.' > "$CRLF_STATE"
+printf -- '---\r\nlifecycle: Running\r\nphase: Describe\r\n---\r\n\r\n# Work State\r\n\r\nSome body content with CRLF.\r\nSecond line, no trailing newline.' > "$CRLF_STATE"
 CRLF_BODY_BEFORE="${CRLF_WORK}/before-body.txt"
 capture_body "$CRLF_STATE" "$CRLF_BODY_BEFORE"
 code=0

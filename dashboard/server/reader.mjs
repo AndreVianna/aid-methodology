@@ -71,14 +71,19 @@ const Lifecycle = {
   Unknown: "Unknown",
 };
 
+// Faithful 6-phase pipeline (work-003-state-schema task-010; mirrors models.py Phase).
+// Discover is NOT a member -- aid-discover is KB-level (writes kb_status, never a
+// work phase:); it is surfaced from KbStatus instead. Deploy is an optional
+// post-Execute indicator. Back-compat read aliases (never written; see PHASE_MAP):
+// "Interview" -> Describe, "Monitor" -> Unknown.
 const Phase = {
-  Interview: "Interview",
+  Describe: "Describe",
+  Define: "Define",
   Specify: "Specify",
   Plan: "Plan",
   Detail: "Detail",
   Execute: "Execute",
   Deploy: "Deploy",
-  Monitor: "Monitor",
   Unknown: "Unknown",
 };
 
@@ -384,13 +389,15 @@ const LIFECYCLE_MAP = {
 };
 
 const PHASE_MAP = {
-  "Interview": Phase.Interview,
+  "Interview": Phase.Describe,   // back-compat alias, never written
+  "Describe": Phase.Describe,
+  "Define": Phase.Define,
   "Specify": Phase.Specify,
   "Plan": Phase.Plan,
   "Detail": Phase.Detail,
   "Execute": Phase.Execute,
   "Deploy": Phase.Deploy,
-  "Monitor": Phase.Monitor,
+  "Monitor": Phase.Unknown,      // dead value, tolerated on read
 };
 
 const TASK_STATUS_MAP = {

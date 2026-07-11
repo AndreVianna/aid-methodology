@@ -86,7 +86,7 @@ def _looks_like_unfilled_placeholder(val: str, *, is_freetext: bool = False) -> 
     rollout"): a STATE.md freshly scaffolded from work-state-template.md (or
     any of the other 3 templates) BEFORE the writers are migrated (task-004)
     carries the frontmatter block VERBATIM from the template -- e.g.
-    `phase: Interview | Specify | Plan | Detail | Execute | Deploy | Monitor`
+    `phase: Describe | Define | Specify | Plan | Detail | Execute | Deploy`
     or `started: "{YYYY-MM-DD}"` -- while the REAL value lives in the legacy
     prose bullets the not-yet-migrated writer DOES update. Treating that
     verbatim placeholder text as authored data would silently clobber the
@@ -356,7 +356,7 @@ SHORTCUT_KIND_MAP: dict[str, tuple[str, str]] = {
 }
 
 # The FULL-pipeline starting skill -- never a shortcut-catalog.yml row (it
-# starts Interview -> Specify -> Plan -> Detail -> Execute, not a Lite
+# starts Describe -> Define -> Specify -> Plan -> Detail -> Execute, not a Lite
 # shortcut). Resolved to a distinct literal so callers/tests can special-case
 # it explicitly rather than silently falling through to "unknown".
 _FULL_PATH_INITIATOR = "aid-describe"

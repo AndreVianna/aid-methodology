@@ -103,9 +103,11 @@ for member in "Running" "Paused-Awaiting-Input" "Blocked" "Completed" "Canceled"
 done
 
 # ---------------------------------------------------------------------------
-# WS04: work-state-template declares Phase enum verbatim (all 7 members)
+# WS04: work-state-template declares Phase enum verbatim (all 7 members) --
+# faithful 6-phase pipeline + Deploy (work-003-state-schema task-010: Interview
+# split into Describe + Define; the dead Monitor value removed).
 # ---------------------------------------------------------------------------
-for member in "Interview" "Specify" "Plan" "Detail" "Execute" "Deploy" "Monitor"; do
+for member in "Describe" "Define" "Specify" "Plan" "Detail" "Execute" "Deploy"; do
     assert_file_contains \
         "$WORK_STATE" \
         "$member" \

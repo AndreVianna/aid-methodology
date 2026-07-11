@@ -584,14 +584,16 @@ class TestEnumParsing(unittest.TestCase):
         self.assertEqual(_parse_lifecycle("running"), Lifecycle.Unknown)  # case-sensitive
 
     def test_all_phase_members(self):
+        # work-003-state-schema task-010: faithful 6-phase pipeline (Interview split
+        # into Describe + Define; the dead Monitor value removed as a Phase member).
         cases = {
-            "Interview": Phase.Interview,
+            "Describe": Phase.Describe,
+            "Define": Phase.Define,
             "Specify": Phase.Specify,
             "Plan": Phase.Plan,
             "Detail": Phase.Detail,
             "Execute": Phase.Execute,
             "Deploy": Phase.Deploy,
-            "Monitor": Phase.Monitor,
         }
         for raw, expected in cases.items():
             with self.subTest(raw=raw):
@@ -599,6 +601,16 @@ class TestEnumParsing(unittest.TestCase):
 
     def test_unknown_phase(self):
         self.assertEqual(_parse_phase("unknown"), Phase.Unknown)
+
+    def test_legacy_phase_interview_aliases_to_describe(self):
+        # Back-compat read alias (task-010): retired "Interview" label -> its
+        # Describe half, so pre-migration files/fixtures still parse.
+        self.assertEqual(_parse_phase("Interview"), Phase.Describe)
+
+    def test_dead_phase_monitor_tolerated_as_unknown(self):
+        # "Monitor" is a dead value -- no skill ever wrote it -- tolerated as
+        # Unknown on read rather than kept as a live Phase member (task-010).
+        self.assertEqual(_parse_phase("Monitor"), Phase.Unknown)
 
     def test_all_task_status_members(self):
         cases = {

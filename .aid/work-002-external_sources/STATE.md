@@ -41,7 +41,7 @@ different places.
      deterministic reader needs no inference. -->
 >
 > Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-> Phase enum:        Interview | Specify | Plan | Detail | Execute | Deploy | Monitor
+> Phase enum:        Describe | Define | Specify | Plan | Detail | Execute | Deploy
 > Active Skill enum: aid-{skill} | none
 
 - **Lifecycle:** Paused-Awaiting-Input

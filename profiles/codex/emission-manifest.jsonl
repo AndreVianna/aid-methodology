@@ -17,7 +17,7 @@
 {"dst": ".codex/aid/scripts/connectors/connector-secret.sh", "profile": "codex", "sha256": "e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a", "src": "canonical/scripts/connectors/connector-secret.sh"}
 {"dst": ".codex/aid/scripts/execute/complexity-score.sh", "profile": "codex", "sha256": "c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".codex/aid/scripts/execute/compute-block-radius.sh", "profile": "codex", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "a2ea08647c5321e3f79cfd5543850101b0e1f91e007092566b3557204d785b5e", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "a7211be2bfd27f0c9e22b4034e1b29472be9960470d5843da0b044e41e2fae9e", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".codex/aid/scripts/grade.sh", "profile": "codex", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".codex/aid/scripts/housekeep/branch-commit.sh", "profile": "codex", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".codex/aid/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "db267e0a09c065b14aa245dd58f5c4094a6c077be567a5ba323fd72e4279d4e1", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
@@ -119,7 +119,7 @@
 {"dst": ".codex/aid/templates/self-review-protocol.md", "profile": "codex", "sha256": "70eec7e2214c7d1d6bb83b352c65ff16460e588f638cc517e313dd632594c7eb", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".codex/aid/templates/settings.yml", "profile": "codex", "sha256": "41e497c14d7b869e779a11b04233b282af073a0ccac96bda424fc66e883bd575", "src": "canonical/templates/settings.yml"}
 {"dst": ".codex/aid/templates/shortcut-catalog.yml", "profile": "codex", "sha256": "a808f7f27d60289b96bde55365ba0620275dd86892813e99be618cc0e69cb817", "src": "canonical/templates/shortcut-catalog.yml"}
-{"dst": ".codex/aid/templates/shortcut-engine.md", "profile": "codex", "sha256": "c897510e9c814d2a8182e3c871550b1bba9f89cc4008696f90ec76f58847ddf2", "src": "canonical/templates/shortcut-engine.md"}
+{"dst": ".codex/aid/templates/shortcut-engine.md", "profile": "codex", "sha256": "0fdf72b7b1e87cb1020c1935222c289f5030c6428e13063b96529bab4027294d", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "codex", "sha256": "1f7517dae294a9f6aa10aecf6290ba3fc9fe70a8ae586cfe36770770554b3b2a", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "codex", "sha256": "b6d6dddd98d0d07cc1d4b0712900856f14f73e28e9435a19f87dbba8be36142e", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/create.md", "profile": "codex", "sha256": "d23f41c14dfe9d44f52ab09a0a31573d0dff6650d27adb72217ec26e102346ae", "src": "canonical/templates/shortcut-scaffolding/create.md"}
@@ -132,7 +132,7 @@
 {"dst": ".codex/aid/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "31b2e054ae4f401f873285351838ced02e92a4dedd7a3e2654f3b853c19c8187", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".codex/aid/templates/task-detail-template.md", "profile": "codex", "sha256": "4308d96447c89fd37448f5f662d549c19012c6abde5548c440e69321acb7377b", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".codex/aid/templates/task-state-template.md", "profile": "codex", "sha256": "1072e731330ae131c26451baea972ee20531c88101c465fb95a5feb4ddc07aed", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".codex/aid/templates/work-state-template.md", "profile": "codex", "sha256": "2e4b290068aa5b0a8a46faa03590b08c1280a6cf016b842b0b26ff2c67b79ed6", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".codex/aid/templates/work-state-template.md", "profile": "codex", "sha256": "055373fe0b8b46121834c08dca61f5614702f780bb76ce8a4f11c5cf5f5ffecf", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/skills/aid-add-api/SKILL.md", "profile": "codex", "sha256": "9a80baed8bd20950a6bd6ad03cc09b6c276d01d1e6691f7fec78f1756ccefe55", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".codex/skills/aid-add-cli/SKILL.md", "profile": "codex", "sha256": "de64b78a51f8961b4fc22787acbacc3fd825bebd229c8390a908aba857a56275", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".codex/skills/aid-add-config/SKILL.md", "profile": "codex", "sha256": "79a166466983abaec69a42602a426919628509ba2a08483ae855ee1cc9d8add8", "src": "canonical/skills/aid-add-config/SKILL.md"}
@@ -178,7 +178,7 @@
 {"dst": ".codex/skills/aid-define/references/reviewer-brief.md", "profile": "codex", "sha256": "8d44b4998e7cadf564a440392f0c82a4796bf923b7e0bc14a504dcdb0de40f91", "src": "canonical/skills/aid-define/references/reviewer-brief.md"}
 {"dst": ".codex/skills/aid-define/references/state-cross-reference.md", "profile": "codex", "sha256": "b43fbc4388cee0c3b53015d396d910f5fca144b3c5da6d8d9a6e25a9884863ba", "src": "canonical/skills/aid-define/references/state-cross-reference.md"}
 {"dst": ".codex/skills/aid-define/references/state-done.md", "profile": "codex", "sha256": "a112e57f832bbd571f1153b926b0c8e9109b29ec981a44eb5a8be6359bf0cfee", "src": "canonical/skills/aid-define/references/state-done.md"}
-{"dst": ".codex/skills/aid-define/references/state-feature-decomposition.md", "profile": "codex", "sha256": "f8b1ae278cfa1f5b77ebeccbf3c8c828776931d0e54c84cbb6a850ffc1ea5b9a", "src": "canonical/skills/aid-define/references/state-feature-decomposition.md"}
+{"dst": ".codex/skills/aid-define/references/state-feature-decomposition.md", "profile": "codex", "sha256": "8acfb32c67537886be089bb260961fe2f578a88173aeb419b9e11e19d0643fe8", "src": "canonical/skills/aid-define/references/state-feature-decomposition.md"}
 {"dst": ".codex/skills/aid-delete/SKILL.md", "profile": "codex", "sha256": "e20109240a25cc248bb98b7cb86adcc9c7ca278bd6ac99cd64256a4419ef75ad", "src": "canonical/skills/aid-delete/SKILL.md"}
 {"dst": ".codex/skills/aid-deploy/SKILL.md", "profile": "codex", "sha256": "fb2324ab6ef7a5ef4bad8b369431367dc3af3bba8e60fcea68c0f54f120c8ac8", "src": "canonical/skills/aid-deploy/SKILL.md"}
 {"dst": ".codex/skills/aid-deploy/references/state-done.md", "profile": "codex", "sha256": "d464d535693b7c2595ab3f8112298e64ade349e800c7b37be6357466fd93f4bb", "src": "canonical/skills/aid-deploy/references/state-done.md"}
@@ -200,7 +200,7 @@
 {"dst": ".codex/skills/aid-describe/references/state-completion.md", "profile": "codex", "sha256": "89f780e21b285762b1a83f6e681750de3545c05c1477ecc2755385d06193875f", "src": "canonical/skills/aid-describe/references/state-completion.md"}
 {"dst": ".codex/skills/aid-describe/references/state-continue.md", "profile": "codex", "sha256": "beb01664d66f1b5710213effb8ad80047598c5a1d17edfd416856027d9aae863", "src": "canonical/skills/aid-describe/references/state-continue.md"}
 {"dst": ".codex/skills/aid-describe/references/state-describe-seed.md", "profile": "codex", "sha256": "470beda1dd45374cac833e729a87f8281e7a190570e8d253ce690472cc3d11a3", "src": "canonical/skills/aid-describe/references/state-describe-seed.md"}
-{"dst": ".codex/skills/aid-describe/references/state-first-run.md", "profile": "codex", "sha256": "663383134f38775c90d9bd3810d60c9da553fc93c94a79542f93b70a64fffddb", "src": "canonical/skills/aid-describe/references/state-first-run.md"}
+{"dst": ".codex/skills/aid-describe/references/state-first-run.md", "profile": "codex", "sha256": "af812d3e5e1e7b1a96e56cf8bf8c188a07ea45b1fe896650a5cb6e043cc2b529", "src": "canonical/skills/aid-describe/references/state-first-run.md"}
 {"dst": ".codex/skills/aid-describe/references/state-q-and-a.md", "profile": "codex", "sha256": "d6fbf9bab6af2d88ae9369243544a12bd69fdfdd6c5cc013635c860974bb6751", "src": "canonical/skills/aid-describe/references/state-q-and-a.md"}
 {"dst": ".codex/skills/aid-detail/SKILL.md", "profile": "codex", "sha256": "1e1af80f87cf9df40c9332db5a8a3b36ca8302ac80593c407c1c7371dde2e9f7", "src": "canonical/skills/aid-detail/SKILL.md"}
 {"dst": ".codex/skills/aid-detail/references/execution-graph-generation.md", "profile": "codex", "sha256": "a14c3031e4c6f97833fdd58cce02325e1b1e579e639e5ef7def94ac47d71bc03", "src": "canonical/skills/aid-detail/references/execution-graph-generation.md"}

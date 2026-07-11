@@ -37,7 +37,7 @@ started: "{today, YYYY-MM-DD}"
 minimum_grade: "{resolved value from the read-setting.sh call above}"
 user_approved: no
 lifecycle: Running
-phase: Interview
+phase: Describe
 active_skill: aid-describe
 updated: "{YYYY-MM-DDTHH:MM:SSZ}"         ← today's UTC timestamp, e.g. 2026-06-10T14:32:00Z
 pause_reason: --

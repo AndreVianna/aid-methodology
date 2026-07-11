@@ -5,7 +5,7 @@ Requirements are approved and no feature folders exist yet; decompose Functional
 Emit pipeline phase (silent state-write only — no output, no gate):
 ```
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Interview
+bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Define
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-define
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
