@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-11T00:07:08Z'
+updated: '2026-07-11T00:40:51Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -58,7 +58,7 @@ SPEC.md + BLUEPRINT.md.)
 - **Lifecycle:** Running
 - **Phase:** Execute
 - **Active Skill:** aid-execute
-- **Updated:** 2026-07-11T00:07:08Z
+- **Updated:** 2026-07-11T00:40:51Z
 - **Pause Reason:** --
 - **Block Reason:** --
 - **Block Artifact:** --
@@ -115,7 +115,7 @@ SPEC.md + BLUEPRINT.md.)
      `Specified` pre-execute; aid-execute advances it (Executing → Gated → Done). -->
 
 - **State:** Executing
-- **Updated:** 2026-07-11T00:07:08Z
+- **Updated:** 2026-07-11T00:40:51Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -133,7 +133,7 @@ SPEC.md + BLUEPRINT.md.)
 | task-004 | Done | pass | -- | Frontmatter-writer path (wb_set_frontmatter: surgical single-key YAML rewrite, body byte-invariant, atomic+locked, enum-validated); all write modes redirected (execute/writeback-state.sh --pipeline/--field/--lifecycle/--gate-field + summarize --set for KB); scaffold-time pipeline block (shortcut-engine + aid-describe FIRST-RUN); hand-authoring redirects across ~15 skill refs; dual-format read fixes on stale-check/discover-preflight/aid-housekeep. run_generator 1600 files + dogfood resync (0 diff). test-writeback-state.sh 332/332. Review (sub-agent): 2 MED + 1 LOW + 2 MINOR — all FIXED (ENVIRON+single-quote YAML for valid quoting; CRLF normalize/restore byte-invariance; grep -F -- in all 4 assert helpers; trailing-nl preservation + cmp-based test). Independent verify found+fixed a 6th (MED): reader now collapses YAML ''→' to match the writer (both twins, commit 2d76c1cd). Reader tests 54/14 |
 | task-005 | Done | pass | -- | Migrated all 19 on-disk STATE.md files to frontmatter (work-002 tree + 14 task files, .aid/knowledge/STATE.md, this work's own STATE.md) — 144 insertions / 0 deletions, every body byte-preserved (only frontmatter added). Backfilled real values (work-002=full/aid-describe, work-003=lite/aid-refactor, KB=Approved/summary_approved:yes). ORIGINAL BUG VERIFIED FIXED: reader reads KB approved via frontmatter (summary_approved=True, kb_status=Approved, source_mode=Normalized), frontmatter-driven (3 independent repros incl. synthetic original-bug shape); kb.html opens (not dead-button). No rollout regression (migrated + legacy both read). Review (sub-agent): 0 HIGH/MED/LOW; 2 MINOR — #1 dev's U+FFFD disclosure was a false alarm (valid em-dashes) Invalid, #2 stale header blockquote Fixed |
 | task-006 | Done | N/A | -- | Closed NOT APPLICABLE (validate-first, per DETAIL). Enumerated + classified every §6/section-6 quality-gate ref in canonical/skills: all LEGITIMATE — the KB contract (artifact-schemas.md:277/305, pipeline-contracts.md:218) documents "All section-6 quality gates pass" as the intended standing criterion; shortcut engine guarantees a real §6 (REQUIREMENTS.md) before templates seed. No dangling standing line in scope → no edit, no re-render, no commit. Independently verified the 3 load-bearing claims. SURFACED 2 out-of-scope residuals (see Lifecycle History) — not fixed under task-006's DETAIL scope |
-| task-007 | Pending | -- | -- | -- |
+| task-007 | In Review | -- | -- | EXECUTE complete: root-cause fix (harvester coined-term-denylist +18 code-identifier/stopword tokens; closure-check.sh exclusion-builder now expands each entry into as-is/joined/CamelCase-split forms so one exclusion decision covers both harvester-emitted variants — no term_exclusions padding). closure-check 86→67 terms (483→294 rows, −22%/−39%). run_generator VERIFY PASS + dogfood resync; 9 KB-script test suites green. Surfaced genuine residual: `Skill`/`Tool` have no domain-glossary.md heading → routes to /aid-discover (not this task). Commits 8d8b5737 + 0d3ecafc. Review pending. |
 | task-008 | Pending | -- | -- | -- |
 
 ---
