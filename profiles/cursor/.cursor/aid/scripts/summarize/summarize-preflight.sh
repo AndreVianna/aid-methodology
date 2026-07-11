@@ -78,9 +78,9 @@ fi
 # Relocate a legacy summary so the dashboard's summary_present flips true and
 # STALE-CHECK sees the existing approved summary (skips regeneration).
 OLD_SUMMARY=".aid/knowledge/knowledge-summary.html"
-NEW_SUMMARY=".aid/dashboard/kb.html"
+NEW_SUMMARY=".aid/knowledge/kb.html"
 if [ -f "$OLD_SUMMARY" ] && [ ! -f "$NEW_SUMMARY" ]; then
-    if mkdir -p .aid/dashboard 2>/dev/null && mv -n "$OLD_SUMMARY" "$NEW_SUMMARY" 2>/dev/null; then
+    if mkdir -p .aid/knowledge 2>/dev/null && mv -n "$OLD_SUMMARY" "$NEW_SUMMARY" 2>/dev/null; then
         echo "i  Migrated legacy summary -> $NEW_SUMMARY (FR31 relocation)."
     else
         echo "i  Could not migrate legacy summary (continuing; summary will regenerate)." >&2

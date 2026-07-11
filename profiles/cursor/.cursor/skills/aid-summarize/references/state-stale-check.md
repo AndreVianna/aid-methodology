@@ -3,7 +3,7 @@
 STALE-CHECK compares the KB review date against the last summary date to determine if regeneration is needed; it is selected immediately after PREFLIGHT passes.
 
 Note: PREFLIGHT's FR31 migration step (step 6) relocates a pre-d009 `knowledge-summary.html`
-to `.aid/dashboard/kb.html` before STALE-CHECK runs, so a just-migrated file is seen here
+to `.aid/knowledge/kb.html` before STALE-CHECK runs, so a just-migrated file is seen here
 at the new path and treated as `CURRENT_APPROVED` when the summary is still current -- no
 regeneration is needed.
 

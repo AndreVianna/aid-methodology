@@ -33,7 +33,7 @@
 #
 # Options:
 #   --src DIR         Source layout dir    (default: .aid/.temp/summarize/summary-src)
-#   --output PATH     Output path          (default: .aid/dashboard/kb.html)
+#   --output PATH     Output path          (default: .aid/knowledge/kb.html)
 #   --manifest FILE   Section manifest     (one filename per line, relative to
 #                                           sections/; blank + # lines ignored)
 #   -h / --help       Print this help
@@ -41,7 +41,7 @@
 set -euo pipefail
 
 SRC_DIR=".aid/.temp/summarize/summary-src"
-OUTPUT=".aid/dashboard/kb.html"
+OUTPUT=".aid/knowledge/kb.html"
 MANIFEST_FILE=""
 
 while [[ $# -gt 0 ]]; do

@@ -8,7 +8,7 @@ Print summary in the standard format:
 
 ```
 ✅ kb.html ready for approval
-   Path:           .aid/dashboard/kb.html
+   Path:           .aid/knowledge/kb.html
    Size:           {MB}
    Domain:         {domain value from .aid/knowledge/STATE.md ## Discovery Domain}
    Doc-set:        {N resolved} of {M total} docs covered
@@ -19,7 +19,7 @@ Print summary in the standard format:
    Trigger:        {reason}
 
 Preview:  python -m http.server 8000   # then open
-          http://localhost:8000/.aid/dashboard/kb.html
+          http://localhost:8000/.aid/knowledge/kb.html
    Or open the file directly in your browser.
 ```
 

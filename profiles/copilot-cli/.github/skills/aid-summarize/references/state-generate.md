@@ -311,21 +311,21 @@ multi-source layout into the final single-file `kb.html`. The `--manifest` flag 
 structural output, reproducible + auditable, FR-50):
 
 ```bash
-mkdir -p .aid/dashboard
+mkdir -p .aid/knowledge
 bash .github/aid/scripts/summarize/assemble.sh \
     --manifest .aid/.temp/summarize/summary-src/section-manifest.txt \
-    --output .aid/dashboard/kb.html
+    --output .aid/knowledge/kb.html
 #   reads:  .aid/.temp/summarize/summary-src/{skeleton-head.html,
 #             sections/* in manifest order, skeleton-foot.html,
 #             md-export-payload.html (if present), post-script.html}
-#   writes: .aid/dashboard/kb.html
+#   writes: .aid/knowledge/kb.html
 ```
 
 Flags:
 - `--src DIR`       — override source layout path (default `.aid/.temp/summarize/summary-src`)
 - `--manifest FILE` — section manifest (one filename per line, relative to `sections/`);
                       required for doc-set-deterministic ordering
-- `--output PATH`   — override output path (default `.aid/dashboard/kb.html`)
+- `--output PATH`   — override output path (default `.aid/knowledge/kb.html`)
 
 The script validates that all required source files exist and are non-empty before assembling.
 Without `--manifest` it falls back to lexical glob order (backward-compatible but not
@@ -357,7 +357,7 @@ Write initial fields to `.aid/knowledge/STATE.md` `## Knowledge Summary Status`:
 **Overall Grade:** Pending (= min of Machine and Human letter grades)
 **Last Run:** {iso8601}
 **Trigger Reason:** {initial | stale-after-review-N | --reset | re-approval-only}
-**Output:** .aid/dashboard/kb.html
+**Output:** .aid/knowledge/kb.html
 **Output Size:** {MB}
 **Last Reviewed KB Date:** {YYYY-MM-DD}
 **Last Summary Date:** {YYYY-MM-DD or N/A}

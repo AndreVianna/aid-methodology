@@ -6,7 +6,7 @@ Generate a single offline HTML summary of the Knowledge Base after `/aid-discove
 
 ## What It Does
 
-Produces one self-contained `kb.html` at `.aid/dashboard/` from `.aid/knowledge/`. The output is a **newcomer-facing product** — visually rich, plain-language, and distinct from the KB itself (which is a dual-audience technical artifact for humans + AI agents).
+Produces one self-contained `kb.html` at `.aid/knowledge/` from `.aid/knowledge/`. The output is a **newcomer-facing product** — visually rich, plain-language, and distinct from the KB itself (which is a dual-audience technical artifact for humans + AI agents).
 
 1. **Read the doc-set** — reads `discovery.doc_set` from `.aid/settings.yml` and the domain from `.aid/knowledge/STATE.md`. Resolves the section manifest: one section per KB doc present on disk, derived from each doc's frontmatter (`kb-category`, `objective`, `summary`, `tags`, `see_also`). No project-type profile is selected; section content is driven by the doc-set.
 2. **Generate** — builds a multi-source layout under `.aid/.temp/summarize/summary-src/` (one HTML file per section), then assembles them into a single self-contained `kb.html`. Three KB docs receive bespoke content components rendered inline as readable content (not links): glossary terms (`domain-glossary.md`), ADR/decision cards (`decisions.md`), and capability entries (`capability-inventory.md`). All other resolved docs fall through to a generic per-fact format (table, card, prose, or infographic — whichever best communicates each fact to a newcomer).
@@ -25,7 +25,7 @@ Produces one self-contained `kb.html` at `.aid/dashboard/` from `.aid/knowledge/
 
 | Artifact | Location | Purpose |
 |----------|----------|---------|
-| `kb.html` | `.aid/dashboard/` | Single-file offline visual summary (newcomer-facing) |
+| `kb.html` | `.aid/knowledge/` | Single-file offline visual summary (newcomer-facing) |
 | `summary-src/` | `.aid/.temp/summarize/summary-src/` | Multi-source layout (one section file per resolved doc; assembled into `kb.html`) |
 | `## Knowledge Summary Status` | `.aid/knowledge/STATE.md` | Domain, doc-set, grades, approval status, last-run metadata |
 

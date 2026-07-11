@@ -16,7 +16,7 @@ Run `.claude/aid/scripts/summarize/writeback-state.sh`. It atomically:
    - **Grade:** {final}
    - **Domain:** {domain value from .aid/knowledge/STATE.md ## Discovery Domain}
    - **Doc-set:** {N resolved} of {M total} docs
-   - **Output:** `.aid/dashboard/kb.html ({size})`
+   - **Output:** `.aid/knowledge/kb.html ({size})`
    - **Notes:** {one-liner — "Initial generation" or "Regenerated after KB review cycle N (date)"}
 6. Writes back, preserving everything else byte-for-byte.
 7. Releases lock.
