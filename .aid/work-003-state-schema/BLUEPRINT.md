@@ -38,10 +38,11 @@ eliminating the regex-fragility bug class without losing the readable ledger.
   emit/update frontmatter atomically without corrupting the markdown body.
 - Migration of every on-disk STATE.md file; re-vendor + `run_generator.py` propagation + CLI rebuild.
 
-**Also folded into this delivery** (independent maintenance fixes, tasks 006–008):
+**Also folded into this delivery** (independent maintenance fixes, tasks 006–009):
 - Normalize the dangling `§6`/`section-6` quality-gate reference across the canonical templates (task-006).
 - Validate + root-cause KB concept-closure hygiene — no security-theater exclusion-padding (task-007).
 - Add a `--version` flag to the `aid` CLI, aliasing the existing `aid version` (task-008).
+- Make task-state updates emphatic + unmissable in the execution flow so the dashboard shows live progress (task-009, user-reported gap).
 
 **Out of scope:** restructuring the human-narrative sections themselves; the version bump to
 v2.1.0 (landed on master via PR #139, inherited here by pull — not a task).
@@ -62,6 +63,7 @@ v2.1.0 (landed on master via PR #139, inherited here by pull — not a task).
 - [ ] `aid --version` prints the CLI version on both `bin/aid` and `bin/aid.ps1`, aliasing `aid version`, and is documented in `aid -h` (task-008).
 - [ ] The frontmatter schema ADDS the genuinely-missing fields (`pipeline{path,initiator}`, `started`, work-level `user_approved`, KB `kb_status`/`kb_grade`/`last_kb_review`) AND relocates the already-parsed-but-brittle ones (`minimum_grade`, KB `summary_approved`/`last_summary`) into frontmatter without regressing existing behavior — authored by the pipeline-starting skills + writers, read by both reader twins (task-001/002/004/005).
 - [ ] The dashboard renders lite works faithfully: the real pipeline **kind** from `pipeline.initiator` (e.g. "Lite path: Refactor → 8 Tasks") — "Lite path: Lite" no longer appears, `work_path` comes from `pipeline.path` (not layout inference); AND the detail-view stage rail shows a compact **Defining → Executing → Done** rail for lite works instead of the full 7-phase stepper (full works unchanged) (task-002).
+- [ ] The execution flow **emphatically and unmissably** mandates writing the task state at each transition (`In Progress` at EXECUTE-start, `In Review` at execute-complete, terminal at end) for both full and flattened layouts + single/pool dispatch, so the dashboard reflects live progress instead of a task stuck at `Pending`; regression-tested for the flattened `### Tasks lifecycle` path through both reader twins (task-009).
 - [ ] All tasks in delivery-001 are Done or Canceled.
 - [ ] All applicable quality gates pass (per `.aid/settings.yml`).
 
@@ -77,6 +79,7 @@ v2.1.0 (landed on master via PR #139, inherited here by pull — not a task).
 | task-006 | REFACTOR | Normalize genuinely-dangling quality-gate references in AID templates |
 | task-007 | REFACTOR | Validate + remediate KB concept-closure hygiene |
 | task-008 | IMPLEMENT | Add a `--version` flag to the aid CLI |
+| task-009 | REFACTOR | Make task-state updates emphatic + unmissable in the execution flow |
 
 ## Dependencies
 
