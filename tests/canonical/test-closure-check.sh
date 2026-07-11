@@ -262,6 +262,80 @@ else
   [[ "$VERBOSE" -eq 1 ]] && diff "$MAIN_B" "$MAIN_B2"
 fi
 
+# ============================================================
+# C09: Dual-form exclusion expansion (task-007) -- dismissing ONE lexical
+#      form of a CamelCase compound excludes BOTH the harvester-emitted
+#      joined and split forms; an unrelated undefined term is NOT
+#      over-excluded.
+#
+# Throwaway fixture (built inline here, not the shared main/closed
+# fixtures): candidate-concepts.md carries FOUR terms --
+#   `PowerShell` (joined) + `Power Shell` (split)   -- under test
+#   `RelativeBus` (joined) + `Relative Bus` (split)  -- unrelated control
+# all four used in doc1.md prose; the spine defines nothing, so absent
+# the exclusion-expansion fix ALL FOUR would be ungrounded. --dismissed
+# names ONLY the split form "Power Shell" (one confirmation decision).
+# An explicit EMPTY --denylist isolates the case from the real project
+# denylist (avoids coupling this assertion to unrelated future edits).
+# Expect: powershell + power shell BOTH excluded (one decision covers
+# both forms); relativebus + relative bus BOTH remain ungrounded (the
+# expansion must not reach past what was actually dismissed).
+# ============================================================
+DUALFORM_DIR="${TMPDIR_TEST}/dualform"
+mkdir -p "${DUALFORM_DIR}/kb"
+cat > "${DUALFORM_DIR}/candidate-concepts.md" <<'EOF'
+# Candidate Concepts
+
+| # | Source | Term | Class | Freq | Spread | Channels | Salience | Example source |
+|---|--------|------|-------|------|--------|----------|----------|----------------|
+| 1 | harvest | `PowerShell` | camel | 10 | 2 | code,docs | 30 | `x` |
+| 2 | harvest | `Power Shell` | phrase | 10 | 2 | code,docs | 30 | `x` |
+| 3 | harvest | `RelativeBus` | camel | 10 | 2 | code,docs | 30 | `x` |
+| 4 | harvest | `Relative Bus` | phrase | 10 | 2 | code,docs | 30 | `x` |
+EOF
+cat > "${DUALFORM_DIR}/kb/domain-glossary.md" <<'EOF'
+# Domain Glossary
+
+## Concept Spine
+
+### Spine
+EOF
+cat > "${DUALFORM_DIR}/kb/doc1.md" <<'EOF'
+---
+sources: []
+---
+This doc mentions PowerShell and Power Shell and RelativeBus and Relative Bus in prose.
+EOF
+cat > "${DUALFORM_DIR}/dismissed.txt" <<'EOF'
+Power Shell
+EOF
+: > "${DUALFORM_DIR}/empty-denylist.txt"
+
+DUALFORM_OUT_A="${TMPDIR_TEST}/dualform_a.md"
+HOME=$(mktemp -d) bash "$SUT" \
+  --root "${DUALFORM_DIR}" \
+  --concepts "${DUALFORM_DIR}/candidate-concepts.md" \
+  --spine "${DUALFORM_DIR}/kb/domain-glossary.md" \
+  --kb-dir "${DUALFORM_DIR}/kb" \
+  --denylist "${DUALFORM_DIR}/empty-denylist.txt" \
+  --dismissed "${DUALFORM_DIR}/dismissed.txt" \
+  --output-a "$DUALFORM_OUT_A" \
+  2>/dev/null
+
+log "C09: dismissing split 'Power Shell' also excludes joined 'powershell'"
+assert_file_not_contains "$DUALFORM_OUT_A" "| powershell |" \
+  "C09a joined 'powershell' excluded when only the split form was dismissed"
+
+log "C09: dismissing split 'Power Shell' excludes the split form itself"
+assert_file_not_contains "$DUALFORM_OUT_A" "| power shell |" \
+  "C09b split 'power shell' excluded (directly dismissed)"
+
+log "C09: unrelated control term RelativeBus/Relative Bus is NOT over-excluded"
+assert_file_contains "$DUALFORM_OUT_A" "| relativebus |" \
+  "C09c joined 'relativebus' (undismissed, unrelated) remains ungrounded"
+assert_file_contains "$DUALFORM_OUT_A" "| relative bus |" \
+  "C09d split 'relative bus' (undismissed, unrelated) remains ungrounded"
+
 # ---------------------------------------------------------------------------
 # Summary
 # ---------------------------------------------------------------------------
