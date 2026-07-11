@@ -105,7 +105,9 @@ _aid_is_project_dir() {
 # AidSupportedFormat, and lib/AidInstallCore.psm1 $script:_AidSupportedFormat.
 # (lib/aid-install-core.sh reads THIS var via ${AID_SUPPORTED_FORMAT:-1}.)
 # ---------------------------------------------------------------------------
-readonly AID_SUPPORTED_FORMAT=1
+# format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
+# served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
+readonly AID_SUPPORTED_FORMAT=2
 
 # ---------------------------------------------------------------------------
 # Source the shared install core from AID_CODE_HOME/lib/.
@@ -2008,36 +2010,33 @@ _aid_migrate_repo() {
     fi
 
     # ------------------------------------------------------------------
-    # STEP 2 -- ADD home.html (FR40 / RC-2) -- copy-when-absent only.
+    # STEP 2 -- ELIMINATE .aid/dashboard/ (format 2): relocate kb.html to
+    # .aid/knowledge/ and remove the obsolete per-repo dashboard folder. home.html is
+    # now served by the CLI (no per-repo copy). No-clobber; best-effort.
     # ------------------------------------------------------------------
-    local _home_html_dest="${repo}/.aid/dashboard/home.html"
-    if [[ ! -f "${_home_html_dest}" ]]; then
-        local _home_html_src="${AID_CODE_HOME}/dashboard/home.html"
-        if [[ -f "${_home_html_src}" ]]; then
-            mkdir -p "${repo}/.aid/dashboard" 2>/dev/null || \
-                echo "WARN: aid migrate: mkdir .aid/dashboard failed for ${repo} (continuing)" >&2
-            if [[ -d "${repo}/.aid/dashboard" ]]; then
-                cp "${_home_html_src}" "${_home_html_dest}" 2>/dev/null || \
-                    echo "WARN: aid migrate: copy home.html failed for ${repo} (continuing)" >&2
-            fi
-        else
-            echo "WARN: aid migrate: home.html source not found at ${_home_html_src} (continuing)" >&2
-        fi
+    local _kb_new="${repo}/.aid/knowledge/kb.html"
+    local _kb_old="${repo}/.aid/dashboard/kb.html"
+    if [[ -f "${_kb_old}" ]] && [[ ! -f "${_kb_new}" ]]; then
+        mkdir -p "${repo}/.aid/knowledge" 2>/dev/null || true
+        mv -n "${_kb_old}" "${_kb_new}" 2>/dev/null || \
+            echo "WARN: aid migrate: relocate kb.html failed for ${repo} (continuing)" >&2
+    fi
+    if [[ -d "${repo}/.aid/dashboard" ]]; then
+        # Drop the now-obsolete home.html, then remove the folder only if it is empty.
+        rm -f "${repo}/.aid/dashboard/home.html" 2>/dev/null || true
+        rmdir "${repo}/.aid/dashboard" 2>/dev/null || \
+            echo "WARN: aid migrate: .aid/dashboard not empty for ${repo}; left in place" >&2
     fi
 
     # ------------------------------------------------------------------
-    # STEP 3 -- RELOCATE legacy summary (DM-4 / FR31) -- no-clobber mv.
+    # STEP 3 -- RELOCATE legacy summary (DM-4 / FR31) -> .aid/knowledge/kb.html -- no-clobber mv.
     # Exact idiom from canonical/aid/scripts/summarize/summarize-preflight.sh:102-113
     # ------------------------------------------------------------------
     local _old_summary="${repo}/.aid/knowledge/knowledge-summary.html"
-    local _new_summary="${repo}/.aid/dashboard/kb.html"
-    if [[ -f "${_old_summary}" ]] && [[ ! -f "${_new_summary}" ]]; then
-        mkdir -p "${repo}/.aid/dashboard" 2>/dev/null || \
-            echo "WARN: aid migrate: mkdir .aid/dashboard failed for ${repo} (step 3, continuing)" >&2
-        if [[ -d "${repo}/.aid/dashboard" ]]; then
-            mv -n "${_old_summary}" "${_new_summary}" 2>/dev/null || \
-                echo "WARN: aid migrate: relocate legacy summary failed for ${repo} (continuing)" >&2
-        fi
+    if [[ -f "${_old_summary}" ]] && [[ ! -f "${_kb_new}" ]]; then
+        mkdir -p "${repo}/.aid/knowledge" 2>/dev/null || true
+        mv -n "${_old_summary}" "${_kb_new}" 2>/dev/null || \
+            echo "WARN: aid migrate: relocate legacy summary failed for ${repo} (continuing)" >&2
     fi
 
     # ------------------------------------------------------------------

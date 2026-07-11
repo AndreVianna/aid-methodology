@@ -305,14 +305,15 @@ def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]
 
 def parse_kb_state(
     kb_dir: Path,
-    dashboard_dir: Optional[Path] = None,
 ) -> tuple[Optional["KbStateRef"], int]:
     """Parse .aid/knowledge/STATE.md + README.md into a KbStateRef hook.
 
     If .aid/knowledge/ does not exist, returns (None, 0) -- repo never ran
     /aid-discover; render gracefully.
 
-    dashboard_dir: if supplied, stat .aid/dashboard/kb.html for summary_present.
+    summary_present is stat'd from kb_dir/kb.html: the generated KB summary now
+    lives beside its KB source in .aid/knowledge/ (the .aid/dashboard/ folder was
+    eliminated -- home.html is served by the CLI, kb.html moved here).
     The status field and kb_baseline are populated by the caller (reader.py)
     after derivation (FF-A3) and parsing (parse_kb_baseline).
 
@@ -322,7 +323,7 @@ def parse_kb_state(
       last_summary_date -- frontmatter `last_summary`, else the parenthesized date
                             on the legacy bold line
       doc_count         -- count of data rows in README.md ## Completeness table
-      summary_present   -- True if dashboard_dir/kb.html exists (stat only)
+      summary_present   -- True if kb_dir/kb.html exists (stat only)
       source_mode       -- Normalized (frontmatter) | Fallback (legacy prose or
                             nothing present) -- extends SourceMode onto the KB
                             path (task-002 gate criteria #3)
@@ -393,14 +394,14 @@ def parse_kb_state(
             readme_text = ""
         doc_count = _parse_kb_doc_count(readme_text)
 
-    # Stat .aid/dashboard/kb.html for summary_present.
+    # Stat kb_dir/kb.html for summary_present (kb.html now lives beside its KB
+    # source in .aid/knowledge/, not in the eliminated .aid/dashboard/ folder).
     summary_present = False
-    if dashboard_dir is not None:
-        kb_html = dashboard_dir / "kb.html"
-        try:
-            summary_present = kb_html.is_file()
-        except OSError:
-            summary_present = False
+    kb_html = kb_dir / "kb.html"
+    try:
+        summary_present = kb_html.is_file()
+    except OSError:
+        summary_present = False
 
     return KbStateRef(
         summary_approved=summary_approved,

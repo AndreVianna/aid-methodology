@@ -753,8 +753,10 @@ function parseKbDocCount(text) {
   return inCompleteness ? count : null;
 }
 
-function parseKbState(kbDir, dashboardDir) {
-  // dashboardDir: optional path to .aid/dashboard/ for kb.html stat (task-064)
+function parseKbState(kbDir) {
+  // summary_present is stat'd from kbDir/kb.html: the generated KB summary now
+  // lives beside its KB source in .aid/knowledge/ (the .aid/dashboard/ folder was
+  // eliminated -- home.html is served by the CLI, kb.html moved here). (task-064)
   let isDir = false;
   try {
     isDir = statSync(kbDir).isDirectory();
@@ -825,15 +827,14 @@ function parseKbState(kbDir, dashboardDir) {
     }
   }
 
-  // task-064: stat .aid/dashboard/kb.html for summary_present
+  // task-064: stat kbDir/kb.html for summary_present (kb.html now lives beside its
+  // KB source in .aid/knowledge/, not in the eliminated .aid/dashboard/ folder).
   let summaryPresent = false;
-  if (dashboardDir) {
-    const kbHtmlPath = join(dashboardDir, "kb.html");
-    try {
-      summaryPresent = statSync(kbHtmlPath).isFile();
-    } catch (_) {
-      summaryPresent = false;
-    }
+  const kbHtmlPath = join(kbDir, "kb.html");
+  try {
+    summaryPresent = statSync(kbHtmlPath).isFile();
+  } catch (_) {
+    summaryPresent = false;
   }
 
   return [
@@ -2609,12 +2610,11 @@ function _readRepoFull(root) {
   }
 
   // task-064: parse kb_baseline from settings.yml (DM-A4)
-  const dashboardDir = join(loc.aidDir, "dashboard");
   const [kbBaseline, brBaseline] = parseKbBaseline(loc.settingsPath);
   bytesRead += brBaseline;
 
-  // task-064: parse kb_state with summary_present (stat of .aid/dashboard/kb.html)
-  const [kbState, br2] = parseKbState(loc.kbDir, dashboardDir);
+  // task-064: parse kb_state with summary_present (stat of .aid/knowledge/kb.html)
+  const [kbState, br2] = parseKbState(loc.kbDir);
   bytesRead += br2;
 
   // task-064: derive 5-state KB status (FF-A3 waterfall) and attach fields

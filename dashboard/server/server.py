@@ -6,8 +6,8 @@
 # Routes (NEW closed allowlist -- replaces feature-003 two-route server):
 #   GET /                       -> CLI-home index.html from $AID_CODE_HOME/dashboard/index.html
 #   GET /api/home               -> build DM-2 model -> 200 JSON
-#   GET /r/<id>/home.html       -> <repo(id)>/.aid/dashboard/home.html  (SEC-2 by construction)
-#   GET /r/<id>/kb.html         -> <repo(id)>/.aid/dashboard/kb.html    (SEC-2 by construction)
+#   GET /r/<id>/home.html       -> $AID_CODE_HOME/dashboard/home.html (CLI template; gated on <repo>/.aid/)
+#   GET /r/<id>/kb.html         -> <repo(id)>/.aid/knowledge/kb.html   (SEC-2 by construction)
 #   GET /r/<id>/api/model       -> read_repo(repo(id)) -> DM-1 envelope
 #   *                           -> 404
 #   non-GET                     -> 405
@@ -470,11 +470,16 @@ def build_home_model(
             except Exception:
                 pass
             try:
-                entry["has_home"] = (aid_dir / "dashboard" / "home.html").is_file()
+                # home.html is a data-free CLI template served from $AID_CODE_HOME
+                # (not a per-repo file); the opt-in signal that this repo has a
+                # dashboard is simply that it is AID-initialized (.aid/ exists).
+                entry["has_home"] = aid_dir.is_dir()
             except Exception:
                 pass
             try:
-                entry["has_kb"] = (aid_dir / "dashboard" / "kb.html").is_file()
+                # kb.html is the generated KB summary, now beside its source in
+                # .aid/knowledge/ (the .aid/dashboard/ folder was eliminated).
+                entry["has_kb"] = (aid_dir / "knowledge" / "kb.html").is_file()
             except Exception:
                 pass
             # Pipeline counts (FR27 home summary): total works + how many are Running.
@@ -1008,12 +1013,42 @@ class _DashboardHandler(BaseHTTPRequestHandler):
             self._serve_repo_model(canon_path, query_string)
 
     def _serve_static_leaf(self, canon_path: str, leaf: str) -> None:
-        """SEC-2: served path constructed as registry[id]/.aid/dashboard/<leaf>."""
+        """Serve a dashboard leaf (home.html | kb.html) for a repo.
+
+        home.html is a DATA-FREE CLI TEMPLATE -- byte-identical across all repos, it
+        derives the repo from the URL and pulls every value live from ./api/model. So
+        it is served from the installed CLI's OWN copy ($AID_CODE_HOME/dashboard/
+        home.html, self-located via _DASHBOARD_DIR) -- always current with the running
+        server -- NOT from a per-repo copy (which drifted across CLI versions and was
+        the cause of "updated the CLI but the dashboard is stale"). The repo just needs
+        to be AID-initialized (.aid/ exists) to gate access.
+
+        kb.html is a per-repo GENERATED artifact -- the summarize skill bakes the KB
+        docs into it -- and lives beside its source at .aid/knowledge/kb.html (the
+        .aid/dashboard/ folder was eliminated). Served from the repo copy (SEC-2: path
+        constructed as registry[id]/.aid/knowledge/kb.html; a broken symlink there
+        fails is_file() -> 404).
+        """
         # The leaf is from the fixed allowlist {home.html, kb.html} -- not from the request.
-        file_path = Path(canon_path) / ".aid" / "dashboard" / leaf
-        if not file_path.is_file():
-            self._send_plain(404, b"Not Found")
-            return
+        if leaf == "home.html":
+            # Opt-in gate: only AID-initialized repos expose a dashboard.
+            if not (Path(canon_path) / ".aid").is_dir():
+                self._send_plain(404, b"Not Found")
+                return
+            file_path = _DASHBOARD_DIR / "home.html"
+            if not file_path.is_file():
+                # home.html genuinely missing from the install tree; repair via 'aid update'.
+                self._send_plain(
+                    503,
+                    b"503 dashboard home.html missing from install tree; run 'aid update' to repair",
+                )
+                return
+        else:
+            # kb.html (per-repo generated leaf): served from .aid/knowledge/.
+            file_path = Path(canon_path) / ".aid" / "knowledge" / leaf
+            if not file_path.is_file():
+                self._send_plain(404, b"Not Found")
+                return
         try:
             data = file_path.read_bytes()
         except OSError as exc:
@@ -1022,6 +1057,10 @@ class _DashboardHandler(BaseHTTPRequestHandler):
             return
         self.send_response(200)
         self.send_header("Content-Type", "text/html; charset=utf-8")
+        # home.html is CLI-served and changes across CLI versions; kb.html changes on
+        # re-summarize. Force revalidation so an updated CLI/summary shows without a
+        # manual hard-refresh (this simple server has no ETag, so revalidate == re-send).
+        self.send_header("Cache-Control", "no-cache")
         self.send_header("Content-Length", str(len(data)))
         self.end_headers()
         self.wfile.write(data)

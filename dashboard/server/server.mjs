@@ -21,8 +21,8 @@
  * Routes (NEW closed allowlist -- replaces feature-003 two-route server):
  *   GET /                    -> CLI-home index.html from $AID_CODE_HOME/dashboard/index.html
  *   GET /api/home            -> build DM-2 model -> 200 JSON
- *   GET /r/<id>/home.html    -> <repo(id)>/.aid/dashboard/home.html (SEC-2 by construction)
- *   GET /r/<id>/kb.html      -> <repo(id)>/.aid/dashboard/kb.html  (SEC-2 by construction)
+ *   GET /r/<id>/home.html    -> $AID_CODE_HOME/dashboard/home.html (CLI template; gated on <repo>/.aid/)
+ *   GET /r/<id>/kb.html      -> <repo(id)>/.aid/knowledge/kb.html  (SEC-2 by construction)
  *   GET /r/<id>/api/model    -> readRepo(repo(id)) -> DM-1 envelope
  *   other path               -> 404
  *   non-GET verb             -> 405
@@ -493,10 +493,15 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime) {
         entry.tools_installed = toolsInstalled;
       } catch (_) {}
       try {
-        entry.has_home = fileExists(join(canonPath, ".aid", "dashboard", "home.html"));
+        // home.html is a data-free CLI template served from $AID_CODE_HOME (not a
+        // per-repo file); the opt-in signal is simply that the repo is AID-initialized
+        // (.aid/ exists). fileExists() is really "path exists" (file or dir).
+        entry.has_home = fileExists(join(canonPath, ".aid"));
       } catch (_) {}
       try {
-        entry.has_kb = fileExists(join(canonPath, ".aid", "dashboard", "kb.html"));
+        // kb.html is the generated KB summary, now beside its source in
+        // .aid/knowledge/ (the .aid/dashboard/ folder was eliminated).
+        entry.has_kb = fileExists(join(canonPath, ".aid", "knowledge", "kb.html"));
       } catch (_) {}
       // Pipeline counts (FR27 home summary): total works + how many are Running.
       // CLI home is load-once, so this per-project readRepo is paid once per page
@@ -776,13 +781,43 @@ function serveRepoRoute(res, rid, leaf, queryString) {
 }
 
 function serveStaticLeaf(res, canonPath, leaf) {
-  // SEC-2: served path constructed as registry[id]/.aid/dashboard/<leaf>.
-  // The leaf is from the fixed allowlist -- not from the request.
-  const filePath = join(canonPath, ".aid", "dashboard", leaf);
-  if (!existsSync(filePath)) {
-    res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
-    res.end("404 Not Found\n");
-    return;
+  // home.html is a DATA-FREE CLI TEMPLATE (byte-identical across repos: derives the
+  // repo from the URL, pulls all state from ./api/model). Serve the installed CLI's
+  // OWN copy (_DASHBOARD_DIR_MJS/home.html) so it is always current with the running
+  // server, NOT a per-repo copy (which drifted across CLI versions -- the cause of
+  // "updated the CLI but the dashboard is stale"). The repo just needs to be
+  // AID-initialized (.aid/ exists) to gate access.
+  //
+  // kb.html is a per-repo GENERATED artifact (summarize bakes the KB docs) and lives
+  // beside its source at .aid/knowledge/kb.html (the .aid/dashboard/ folder was
+  // eliminated). Served from the repo copy (SEC-2: registry[id]/.aid/knowledge/kb.html;
+  // a broken symlink there fails existsSync -> 404).
+  let filePath;
+  if (leaf === "home.html") {
+    // Opt-in gate: only AID-initialized repos expose a dashboard.
+    if (!existsSync(join(canonPath, ".aid"))) {
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("404 Not Found\n");
+      return;
+    }
+    filePath = join(_DASHBOARD_DIR_MJS, "home.html");
+    if (!existsSync(filePath)) {
+      const body = Buffer.from(
+        "503 dashboard home.html missing from install tree; run 'aid update' to repair",
+        "utf-8",
+      );
+      res.writeHead(503, { "Content-Type": "text/plain; charset=utf-8", "Content-Length": body.length });
+      res.end(body);
+      return;
+    }
+  } else {
+    // kb.html (per-repo generated leaf): served from .aid/knowledge/.
+    filePath = join(canonPath, ".aid", "knowledge", leaf);
+    if (!existsSync(filePath)) {
+      res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
+      res.end("404 Not Found\n");
+      return;
+    }
   }
   let data;
   try {
@@ -793,8 +828,12 @@ function serveStaticLeaf(res, canonPath, leaf) {
     res.end("500 Internal Server Error\n");
     return;
   }
+  // home.html is CLI-served and changes across CLI versions; kb.html changes on
+  // re-summarize. Force revalidation so an updated CLI/summary shows without a manual
+  // hard-refresh (this simple server has no ETag, so revalidate == re-send).
   res.writeHead(200, {
     "Content-Type": "text/html; charset=utf-8",
+    "Cache-Control": "no-cache",
     "Content-Length": data.length,
   });
   res.end(data);
