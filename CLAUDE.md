@@ -42,18 +42,13 @@ cross-phase process state). Keeping it current is **not optional**:
 
 @.aid/connectors/INDEX.md.
 
-- Before connecting to an external tool, scan the connectors index to find
-  its descriptor, then open the descriptor for full fields and auth details.
-- For an `mcp` connector (tool-managed), request the connection from your
-  host tool's own MCP/plugin — the tool provides it and handles auth; AID
-  stores no credential for it. The descriptor exists for discovery and
-  audit, not connect-time consumption.
-- For `api` / `ssh` / `url` / `cli`, resolve the descriptor's
-  `secret_reference` at use-time: `env:` reads an environment variable,
-  `file:` reads `.aid/connectors/.secrets/<connector>`, `keychain:` reads the
-  OS keychain.
-- Out of scope: no agent-side code that actively consumes non-MCP
-  descriptors is built here — this section documents the contract only.
+- Connectors are catalogued via `aid-discover` (ELICIT) and can be added, updated, or removed on
+  demand — without re-running discovery — with `aid-set-connector` / `aid-unset-connector`.
+- Consumption is MCP-first (`.claude/aid/templates/connectors/consumption-protocol.md`): scan the
+  index, and for a `connection_type: mcp` connector, request the connection from your host tool's
+  own MCP/plugin — AID resolves nothing and stores no credential for it.
+- aid-managed consumption (`api` / `ssh` / `url` / `cli`) remains deferred; those descriptors exist
+  for discovery and audit only, not for live use.
 
 ## Workflow
 

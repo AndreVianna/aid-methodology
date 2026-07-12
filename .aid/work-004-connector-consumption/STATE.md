@@ -101,7 +101,7 @@ consumption** wiring. Started via `aid-describe`, converted to the lite path 202
 | task-002 | Done | -- | -- | -- |
 | task-003 | Done | -- | -- | -- |
 | task-004 | Done | -- | -- | -- |
-| task-005 | Pending | -- | -- | -- |
+| task-005 | Done | -- | -- | -- |
 | task-006 | Pending | -- | -- | -- |
 | task-007 | Pending | -- | -- | -- |
 
