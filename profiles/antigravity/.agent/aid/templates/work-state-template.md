@@ -12,6 +12,7 @@ updated: "{YYYY-MM-DDTHH:MM:SSZ}"
 pause_reason: "{short text} | --"        # present only when lifecycle = Paused-Awaiting-Input
 block_reason: "{short text} | --"        # present only when lifecycle = Blocked
 block_artifact: "{relative path} | --"   # e.g. IMPEDIMENT-task-NNN.md, or the failed gate
+ticket_ref: "{connector-stem}:{external-id} | --"   # OPTIONAL; e.g. jira:PROJ-123 -- see ticket_ref contract note below
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
 delivery_state: Pending-Spec | Specified | Executing | Gated | Done | Blocked
@@ -49,6 +50,14 @@ collision (singular vs. plural, and `### Tasks lifecycle` differs in both text a
 from `## Tasks State`). Left unused for full multi-delivery works, where each delivery's own
 lifecycle/gate lives in its `delivery-NNN/STATE.md` and each task's own state lives in its
 `delivery-NNN/tasks/task-NNN/STATE.md` instead.
+
+Optional `ticket_ref` scalar (frontmatter, top-level, both layouts): links this work to an
+external tracker item (`<connector-stem>:<external-id>`, e.g. `jira:PROJ-123`). Left `--` when
+this work is not linked; readers/dashboard ignore it. Nearest-ancestor resolution + MCP-first
+consumption contract: `.agent/aid/templates/connectors/consumption-protocol.md`. Coordinate
+with the in-flight `work-003-state-schema` frontmatter conventions when both touch this file's
+frontmatter block. `ticket_ref` is a lifecycle-unit field only -- the connector descriptor schema
+is unchanged.
 
 <!-- STATE ADVANCEMENT ORDERING (authoritative source; schemas.md inline copy is downstream)
 

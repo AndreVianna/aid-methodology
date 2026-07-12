@@ -3,6 +3,7 @@ state: Pending | In Progress | In Review | Blocked | Done | Failed | Canceled
 review: "{reviewer tier and outcome, or Pending}"
 elapsed: "{HH:MM or --}"
 notes: "{short free-text, or --}"
+ticket_ref: "{connector-stem}:{external-id} | --"   # OPTIONAL; e.g. jira:PROJ-123 -- see ticket_ref contract note below
 ---
 
 # Task State -- task-NNN
@@ -22,6 +23,16 @@ live directly in the work-root `STATE.md § ### Tasks lifecycle`, written via
 `writeback-state.sh --task-id` targeting that table row instead of a sibling file.
 `task-NNN`/`delivery-NNN`/`work-NNN-{name}` in the header blockquote below are INFERRED
 from the folder path -- never authored in frontmatter.
+
+Optional `ticket_ref` (frontmatter, full-path only): links this task to an external tracker item
+(`<connector-stem>:<external-id>`, e.g. `jira:PROJ-123`). Left `--` when this task is not
+independently linked; resolution then falls back to this task's owning (SPEC-traced) feature,
+else its delivery, else the work (nearest-ancestor contract:
+`.agent/aid/templates/connectors/consumption-protocol.md`). The flattened path (no per-task
+STATE.md, `### Tasks lifecycle` above) carries no separate task-level `ticket_ref` of its own --
+resolution for a flattened task passes straight through to its delivery/work levels, which do
+carry the scalar (`work-state-template.md`'s frontmatter, both layouts). Coordinate with the
+in-flight `work-003-state-schema` frontmatter conventions.
 
 > **Task:** task-NNN
 > **Delivery:** delivery-NNN

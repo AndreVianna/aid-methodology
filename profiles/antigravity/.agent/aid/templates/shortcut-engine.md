@@ -364,6 +364,17 @@ the family scaffolding pointer (or "none landed yet"). The agent writes
   where natural); §10 Priority defaults to `Must` unless the description says
   otherwise.
 
+### Step 4b: Connector awareness — record a source ticket's `ticket_ref` (optional)
+
+If `{description}` (or a Step 1/Step 3 answer) names, or clearly traces to, an already-filed
+ticket in a catalogued issue-tracker connector, read it via that connector per
+`.agent/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`;
+for a `connection_type: mcp` match, request the connection from the host tool's own MCP -- AID
+resolves nothing and stores no credential) and record `ticket_ref: <stem>:<external-id>` in the
+work's `STATE.md` frontmatter (seeded at INTAKE Step 4). Applies to every shortcut this engine
+serves (`aid-fix` and its siblings), not `aid-fix` alone. Skip silently when no such ticket
+applies or no matching connector is catalogued.
+
 ### Step 5: Update STATE.md
 
 ```

@@ -95,6 +95,18 @@ directly to `/aid-fix`; see `aid-monitor/references/state-route.md` Step 5.)
 **Note:** Sections are empty — no placeholder markers. The STATE.md `## Interview State` tracks
 which sections have been filled.
 
+### 1e. Connector awareness — record a source ticket's `ticket_ref` (optional)
+
+If this interview's originating context names, or clearly traces to, an already-filed ticket in a
+catalogued issue-tracker connector (e.g. the Monitor-routed finding in Step 1d cites one, or the
+requester names one directly), read it via that connector per
+`.agent/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`; for
+a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID resolves
+nothing and stores no credential) and record `ticket_ref: <stem>:<external-id>` in this work's
+`STATE.md` frontmatter (the same block seeded at Step 1b-ii). Skip silently when no such ticket is
+named or no matching connector is catalogued — purely additive; never blocks or alters the
+interview flow.
+
 ---
 
 **Advance:** **CHAIN** → [State: CONTINUE] after scaffolding is complete (continue inline). CONTINUE emits the D1 opener and runs the full-path interview.
