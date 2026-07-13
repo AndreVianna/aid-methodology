@@ -77,7 +77,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*92 skill directories, five pipeline groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` (friendly alias: `/aid-ask`) answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+*94 skill directories, five pipeline groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` (friendly alias: `/aid-ask`) answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -99,9 +99,9 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 ### Skill Inventory
 
-*92 skill directories in total — 14 classic pipeline/on-demand skills, the `/aid-triage` router, `/aid-ask` (a Q&A alias of the classic `/aid-query-kb`), and 76 verb-first direct-entry shortcuts across 14 shortcut families. Unchanged: 9 agents, 14 KB doc types — only the skill count changed.*
+*94 skill directories in total — 16 classic pipeline/on-demand skills, the `/aid-triage` router, `/aid-ask` (a Q&A alias of the classic `/aid-query-kb`), and 76 verb-first direct-entry shortcuts across 14 shortcut families. Unchanged: 9 agents, 14 KB doc types — only the skill count changed.*
 
-**A. The 14 classic skills** — their groups, phase numbers, and mandatory pipeline membership.
+**A. The 16 classic skills** — their groups, phase numbers, and mandatory pipeline membership.
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
@@ -119,6 +119,8 @@ The shortcut path is not a fallback — it is the default entry for the majority
 | `aid-housekeep` | Off-pipeline | — | On demand; off the pipeline entirely |
 | `aid-query-kb` | Off-pipeline | — | On demand; Q&A + gap-capture (STATE.md backlog only) |
 | `aid-update-kb` | Off-pipeline | — | On demand; targeted KB update through review gate; human-gated |
+| `aid-set-connector` | Off-pipeline | — | On demand; create or update a connector descriptor for an external tool |
+| `aid-unset-connector` | Off-pipeline | — | On demand; remove a connector descriptor and purge its secret |
 
 **B. `/aid-triage`** — the suggest-only router. Not a pipeline phase and not a shortcut itself: one stateless skill (`INTAKE → CLASSIFY → SUGGEST → HALT`) that reads the shortcut catalog and points at a shortcut, the full path, or — when the input reads as a question rather than a change — `/aid-ask` (below). It writes nothing — no interview, no scaffold, no work folder, no `STATE.md`.
 
@@ -860,7 +862,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (92 skill directories — 14 classic + aid-triage + aid-ask + 76 shortcuts)
+  ├── skills/        (94 skill directories — 16 classic + aid-triage + aid-ask + 76 shortcuts)
   ├── agents/        (9 agents)
   └── aid/
         ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)

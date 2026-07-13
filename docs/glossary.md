@@ -6,7 +6,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 14 classic pipeline / on-demand skills across 5 groups, plus 76 verb-first Lite-Path shortcut skills, the standalone `/aid-triage` router, and `/aid-ask` (a Q&A alias of the classic `/aid-query-kb`) — 92 skills total; delivery (Deploy, Monitor), the summary skill, the on-demand Q&A skill, and the targeted KB update skill are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by 16 classic pipeline / on-demand skills across 5 groups, plus 76 verb-first Lite-Path shortcut skills, the standalone `/aid-triage` router, and `/aid-ask` (a Q&A alias of the classic `/aid-query-kb`) — 94 skills total; delivery (Deploy, Monitor), the summary skill, the on-demand Q&A/KB-update/connector skills are optional. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`. Note: "3 meta-documents" is a *role* distinction (generated/process ledgers, review-exempt) — it is orthogonal to the *concern* axis. A standard document (among the 14) may carry an *orientation* concern (cross-cutting, not mapped to a single spine dimension); `external-sources.md` is exactly this: it is a standard, authored, review-eligible KB document whose concern is orientation — orientation on the concern axis does not make a document a meta-document on the role axis.
 
@@ -53,7 +53,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Off-Pipeline Skills
 
-**aid-housekeep:** One of AID's 4 off-pipeline, on-demand skills (alongside `aid-query-kb`, `aid-update-kb`, `aid-summarize`) within the 14-skill classic pipeline taxonomy — distinct from the Lite Path's 76 shortcut skills and `/aid-triage`. Run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
+**aid-housekeep:** One of AID's 6 off-pipeline, on-demand skills (alongside `aid-query-kb`, `aid-update-kb`, `aid-summarize`, `aid-set-connector`, `aid-unset-connector`) within the 16-skill classic pipeline taxonomy — distinct from the Lite Path's 76 shortcut skills and `/aid-triage`. Run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
 
 **aid-query-kb:** Off-pipeline, on-demand Q&A skill — answers free-form questions about the project from the Knowledge Base, codebase, and in-flight works, with source citations. When context is insufficient, captures the gap as a Query-Gap entry in the KB's Q&A backlog (STATE.md) to feed the KB-improvement loop. Write scope is restricted to the gap-capture path — no KB doc, settings file, or code file is ever written. Run from any directory at any phase.
 

@@ -2,7 +2,7 @@
 // gen-reference.mjs — Manifest-driven reference generator (feature-006).
 //
 // Generates four reference pages from canonical/ + .aid/settings.yml:
-//   reference/skills.md    — 92 skill directories (14 classic + aid-triage + aid-ask +
+//   reference/skills.md    — 94 skill directories (16 classic + aid-triage + aid-ask +
 //                            76 catalog-driven shortcuts), grouped + summarized
 //   reference/agents.md    — 9 agents table
 //   reference/kb.md        — 14 KB doc-types table
@@ -141,7 +141,7 @@ function loadShortcutCatalog() {
 
 // Per-skill group + pipeline phase (grounded in docs/aid-methodology.md §1 Skill
 // Inventory + §4 The Phases). Order within each group is execution order. These
-// are the 14 classic skills — the shortcut skills are summarized separately,
+// are the 16 classic skills — the shortcut skills are summarized separately,
 // data-driven from the shortcut catalog (see generateShortcutFamiliesSection).
 const SKILL_GROUPS = [
   {
@@ -196,6 +196,8 @@ const SKILL_GROUPS = [
       { name: 'aid-query-kb', phase: 'on demand · read-only Q&A' },
       { name: 'aid-ask', phase: 'on demand · friendly alias of aid-query-kb' },
       { name: 'aid-update-kb', phase: 'on demand · targeted KB update' },
+      { name: 'aid-set-connector', phase: 'on demand · upsert a connector into the catalog' },
+      { name: 'aid-unset-connector', phase: 'on demand · remove a connector from the catalog' },
     ],
   },
 ];
@@ -363,7 +365,7 @@ function generateSkillsPage() {
   // Expected skill-directory set = the curated classic skills (which already
   // include `aid-triage`'s own entry-points group above) ∪ the shortcut names
   // derived from the catalog's emitting rows. Compare against on-disk
-  // `canonical/skills/` — this is the drift guard's real job against 92
+  // `canonical/skills/` — this is the drift guard's real job against 94
   // directories, not the old hardcoded 14.
   const curatedNames = SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name));
   const expected = [...new Set([...curatedNames, ...shortcutNames])].sort();
@@ -384,7 +386,7 @@ function generateSkillsPage() {
   const repurposedAliasForIntro = repurposedRowsForIntro.filter((r) => r.alias_of !== 'null').length;
   // aid-ask is an ALIAS of the classic aid-query-kb (a repurpose row), not a distinct
   // capability — it renders in the Off-pipeline section but is NOT counted among the
-  // classic skills (matching the README/methodology "14 classic + /aid-triage + /aid-ask"
+  // classic skills (matching the README/methodology "16 classic + /aid-triage + /aid-ask"
   // framing).
   const classicSkillCount = SKILL_GROUPS
     .filter((g) => g.group !== 'Entry points / routing')

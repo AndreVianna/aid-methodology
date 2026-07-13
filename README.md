@@ -10,7 +10,7 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-92 skills — 14-skill pipeline + 76 verb-first shortcuts + `/aid-triage` + `/aid-ask` · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+94 skills — 16-skill pipeline + 76 verb-first shortcuts + `/aid-triage` + `/aid-ask` · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
 
 **Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
@@ -41,7 +41,7 @@ flowchart TD
     MON -. "change request → /aid-triage" .-> TR
 ```
 
-*92 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*94 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -146,6 +146,8 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-housekeep        # on-demand — keep the Knowledge Base current (off-pipeline)
 /aid-query-kb         # on-demand — answer free-form questions from the KB + codebase; captures gaps
 /aid-update-kb        # on-demand — apply a targeted delta to KB docs through the review gate
+/aid-set-connector    # on-demand — create or update a connector descriptor for an external tool
+/aid-unset-connector  # on-demand — remove a connector descriptor and purge its secret
 ```
 
 **Brownfield** projects run `/aid-config` → `/aid-discover` → `/aid-describe` → `/aid-define`. **Greenfield** projects skip Discovery and start at `/aid-describe`. For a small, well-scoped change, skip straight to a shortcut instead — or run `/aid-triage` if you're not sure which one fits. Just have a question, not a change? Run `/aid-ask`. Every phase is gated — nothing advances without your approval.

@@ -19,7 +19,7 @@ cp    path/to/aid-methodology/profiles/codex/AGENTS.md  AGENTS.md
 See the repo README for npm / pipx / offline install options.
 
 This gives you:
-- `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (92 skills: 14 classic — 11 across five pipeline groups + 3 off-pipeline on-demand — plus /aid-triage, /aid-ask, and 76 verb-first shortcut skills)
+- `.codex/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (94 skills: 16 classic — 11 across five pipeline groups + 5 off-pipeline on-demand — plus /aid-triage, /aid-ask, and 76 verb-first shortcut skills)
 - `.codex/agents/{name}.toml` — Agent definitions in Codex TOML format (9 agents with `aid-` prefix)
 - `.codex/aid/scripts/`, `.codex/aid/templates/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
@@ -52,9 +52,9 @@ The Reviewer ≥ Executor invariant is enforced: the agent that grades is never 
 
 ## Skills
 
-92 skills total: 14 classic — the pipeline phase skills, the optional `aid-summarize` for
+94 skills total: 16 classic — the pipeline phase skills, the optional `aid-summarize` for
 generating a single-file visual HTML summary of the Knowledge Base, plus the
-on-demand `aid-housekeep`, `aid-query-kb`, and `aid-update-kb` skills — plus `/aid-triage`, `/aid-ask`, and 76 verb-first shortcut skills. `/aid-triage` is a stateless, suggest-only router: it reads one free-form description and suggests either the matching shortcut, the full `aid-describe` path, or — when the input reads as a question — `/aid-ask`, writing nothing itself. `/aid-ask` is a friendly-named Q&A alias of the classic `aid-query-kb` skill. The shortcuts (`aid-fix`, `aid-create-api`, `aid-change-ui`, `aid-refactor`, `aid-review`, `aid-remove`, `aid-migrate`, …) are direct-entry doorways that skip straight to a flattened Lite work for a single named change. Each skill lives in `.codex/skills/aid-<name>/SKILL.md` — Codex reads skills from this directory.
+on-demand `aid-housekeep`, `aid-query-kb`, `aid-update-kb`, `aid-set-connector`, and `aid-unset-connector` skills — plus `/aid-triage`, `/aid-ask`, and 76 verb-first shortcut skills. `/aid-triage` is a stateless, suggest-only router: it reads one free-form description and suggests either the matching shortcut, the full `aid-describe` path, or — when the input reads as a question — `/aid-ask`, writing nothing itself. `/aid-ask` is a friendly-named Q&A alias of the classic `aid-query-kb` skill. The shortcuts (`aid-fix`, `aid-create-api`, `aid-change-ui`, `aid-refactor`, `aid-review`, `aid-remove`, `aid-migrate`, …) are direct-entry doorways that skip straight to a flattened Lite work for a single named change. Each skill lives in `.codex/skills/aid-<name>/SKILL.md` — Codex reads skills from this directory.
 
 Notable mechanisms:
 - **aid-execute** uses an `agents:` selector that picks the executor by task type (RESEARCH→aid-researcher, IMPLEMENT→aid-developer, etc.) and aid-reviewer for grading. Grade is computed by `.codex/aid/scripts/grade.sh` from the Reviewer's structured issue list.

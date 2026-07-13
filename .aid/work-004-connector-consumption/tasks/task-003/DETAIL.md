@@ -24,8 +24,10 @@
   connector, **single-stem**, on-demand / off-pipeline (never invokes or requires `aid-discover`).
 - **Feature flow:** resolve `<tool>` → descriptor stem → run the shared `reconcile.md` **single-stem
   REMOVE** (`connector-secret purge` → delete the one descriptor) → `build-connectors-index`
-  rebuilds `INDEX.md` from the remaining descriptors. Never diffs the registry; an **absent** stem
-  is a clean idempotent no-op (no `list`, no `purge`, no `read` on the missing stem).
+  rebuilds `INDEX.md` from the remaining descriptors. Never diffs the registry (no `list`, no `read`
+  on the missing stem); `connector-secret purge` runs **unconditionally** against `<tool>`'s stem
+  whether or not it is currently catalogued — on an **absent** stem it is a clean idempotent no-op
+  (deletes nothing, exits 0), never a special-cased branch that checks first and skips the purge.
 - **Write-zone:** only `.aid/connectors/` (P7 exemption). Reuses existing scripts only
   (`connector-secret`, `build-connectors-index`); **no new scripts**.
 

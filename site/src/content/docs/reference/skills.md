@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All AID skills — 14 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by phase/family, with what each does and where it comes from.'
+description: 'All AID skills — 16 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by phase/family, with what each does and where it comes from.'
 generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **92 skill directories** under `canonical/skills/`: **14 classic pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **76 direct-entry shortcut skills** generated from a 80-row catalog (51 canonical names + 29 aliases — 4 of the rows (3 canonical + 1 alias) `repurpose` existing classic skills and emit no directory of their own). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below).
+AID ships **94 skill directories** under `canonical/skills/`: **16 classic pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **76 direct-entry shortcut skills** generated from a 80-row catalog (51 canonical names + 29 aliases — 4 of the rows (3 canonical + 1 alias) `repurpose` existing classic skills and emit no directory of their own). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below).
 
 ## Prepare
 
@@ -163,6 +163,22 @@ Friendly-named alias of /aid-query-kb -- the optional on-demand Q&A skill. Takes
 Optional on-demand targeted KB update skill. Takes a free-form prompt describing what changed and applies the delta through the same review/calibration gate as aid-discover. Analyzes which KB docs the prompt implies, applies targeted summary+pointer edits, reviews them through f005's five-mandate panel (scoped to the changed docs), and commits only after explicit human approval. State-machine: ANALYZE -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
 
 [Definition: `canonical/skills/aid-update-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md)
+
+### `aid-set-connector`
+
+**on demand · upsert a connector into the catalog**
+
+On-demand, off-pipeline upsert into the connector catalog. `aid-set-connector <tool> <type>` creates `.aid/connectors/<stem>.md` when the stem is absent, or updates that SAME descriptor in place when present (including an in-place connection_type transition) -- never invokes /aid-discover. Branches on <type> (mcp|api|ssh|url|cli) to ask the matching config question-set, prefilled from canonical/aid/templates/connectors/preset-catalog.md when <tool> matches a preset; the user confirms or edits. Reconciles the secret (connector-secret write/purge) per set-skill logic and runs reconcile.md's single-stem mode, so every OTHER catalogued connector is left byte-for-byte untouched.
+
+[Definition: `canonical/skills/aid-set-connector/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md)
+
+### `aid-unset-connector`
+
+**on demand · remove a connector from the catalog**
+
+On-demand, off-pipeline removal from the connector catalog. `aid-unset-connector <tool>` deletes `.aid/connectors/<stem>.md` and purges its secret via connector-secret purge -- never invokes /aid-discover. Runs reconcile.md's single-stem REMOVE (purge-then-delete) so every OTHER catalogued connector is left byte-for-byte untouched, then rebuilds INDEX.md from whatever descriptors remain on disk. Idempotent: an already-absent stem is a clean no-op.
+
+[Definition: `canonical/skills/aid-unset-connector/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md)
 
 ## Direct-entry shortcuts
 
