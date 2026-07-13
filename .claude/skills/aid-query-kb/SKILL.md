@@ -102,6 +102,16 @@ INSTRUCTIONS:
 Wait for `aid-researcher` to complete. Use its returned message as the answer
 body for Step 3.
 
+### Step 2c — Connector enrichment (optional)
+
+When the question concerns a specific item tracked in a catalogued connector (e.g. "what's the
+status of PROJ-45?"), consult it per
+`.claude/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`;
+for a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID
+resolves nothing and stores no credential) and fold what it returns into the answer, cited the
+same way as any other source (Step 3). Skip silently when no matching connector is catalogued —
+this never blocks or replaces the KB/codebase/in-flight-work answer path above.
+
 ### Step 3 — Compose and emit the reply
 
 Format the answer as:

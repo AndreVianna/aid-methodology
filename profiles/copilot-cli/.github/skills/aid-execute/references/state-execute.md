@@ -66,6 +66,19 @@ never a substitute for the executing agent's own -- a redundant write of the
 same already-current value is harmless and idempotent; a MISSING write is
 the bug this protocol exists to prevent.
 
+## Connector Mirroring (`ticket_ref`, optional)
+
+Additive to the State-Write Protocol above -- never a substitute, never a precondition. Whenever
+a task's `State` is written by any of the transitions in the table above (`In Progress` /
+`In Review` / `Done` / `Failed`, single-task or pool dispatch, orchestrator or sub-agent), also
+resolve the **nearest** `ticket_ref` for this task per
+`.github/aid/templates/connectors/consumption-protocol.md` (`task -> its owning (SPEC-traced)
+feature -> its delivery -> work`) and, when one resolves AND a `connection_type: mcp` connector
+matches its stem, mirror the same transition to that ticket via the host tool's MCP (the
+consumption protocol's seam recipe). When no `ticket_ref` resolves anywhere in the chain, or no
+matching MCP connector is catalogued, skip the mirror silently -- the local `writeback-state.sh`
+write above still runs unconditionally either way.
+
 ## Task Types
 
 | Type | What the agent does | What the reviewer checks |

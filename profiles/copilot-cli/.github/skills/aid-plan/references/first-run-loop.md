@@ -123,6 +123,15 @@ Fill in:
 > The `## Plan / Deliveries` view in the WORK STATE.md is DERIVED at read time from these
 > deliveries/delivery-NNN/STATE.md files. `aid-plan` does NOT write any rows into the work STATE.md.
 
+**4c. Connector awareness — record this delivery's `ticket_ref` (optional).** If this deliverable
+corresponds to (or the user names) an external tracker item, or the team wants one filed for it,
+create/register it via a catalogued issue-tracker connector per
+`.github/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`; for
+a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID resolves
+nothing and stores no credential) and record `ticket_ref: <stem>:<external-id>` in the delivery's
+`STATE.md` frontmatter just written above (4b). Skip silently when no such ticket applies or no
+matching connector is catalogued.
+
 **Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
 **Dispatch package:** render `references/reviewer-brief.md` with:

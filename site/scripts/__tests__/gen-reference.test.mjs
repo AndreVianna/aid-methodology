@@ -98,12 +98,12 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 
 // ── Roster counts match source ────────────────────────────────────────────────
 
-// The curated (non-shortcut) skill roster: the 15 classic pipeline/on-demand
-// skills plus the standalone aid-triage router. Mirrors gen-reference.mjs's
-// SKILL_GROUPS — these render as individual `### \`aid-...\`` sections. The
-// remaining on-disk skill directories are the 76 catalog-driven shortcuts,
-// summarized by family in the "Direct-entry shortcuts" table, not as
-// individual sections.
+// The curated (non-shortcut) skill roster: the 16 classic pipeline/on-demand
+// skills (11 pipeline + 5 off-pipeline on-demand) plus the standalone
+// aid-triage router. Mirrors gen-reference.mjs's SKILL_GROUPS — these render
+// as individual `### \`aid-...\`` sections. The remaining on-disk skill
+// directories are the 76 catalog-driven shortcuts, summarized by family in
+// the "Direct-entry shortcuts" table, not as individual sections.
 const CURATED_SKILL_NAMES = [
   'aid-config', 'aid-discover', 'aid-summarize',
   'aid-triage',
@@ -112,14 +112,15 @@ const CURATED_SKILL_NAMES = [
   'aid-execute',
   'aid-deploy', 'aid-monitor',
   'aid-housekeep', 'aid-query-kb', 'aid-ask', 'aid-update-kb',
+  'aid-set-connector', 'aid-unset-connector',
 ].sort();
 
 describe('gen-reference: roster counts', () => {
-  it('skills.md: 92 on-disk skill dirs = 16 curated sections + 76 catalog shortcuts', () => {
+  it('skills.md: 94 on-disk skill dirs = 18 curated sections + 76 catalog shortcuts', () => {
     const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
-    expect(skillDirs).toHaveLength(92);
+    expect(skillDirs).toHaveLength(94);
 
     const shortcutDirs = skillDirs.filter((d) => !CURATED_SKILL_NAMES.includes(d));
     expect(shortcutDirs).toHaveLength(76);

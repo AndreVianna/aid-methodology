@@ -91,6 +91,16 @@ bash .cursor/aid/scripts/execute/writeback-state.sh --pipeline --field "Active S
 bash .cursor/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 
+### Step 3b: Connector awareness — record this feature's `ticket_ref` (optional)
+
+If this feature's requirements trace to, or the user names, an already-filed ticket in a
+catalogued issue-tracker connector, read it via that connector per
+`.cursor/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`; for
+a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID resolves
+nothing and stores no credential) and record a `**Ticket:** <stem>:<external-id>` line in this
+feature's `SPEC.md` (per `specs/spec-template.md`). Skip silently when no such ticket applies or
+no matching connector is catalogued.
+
 ### Step 4: Present and Start
 
 Present activated sections + ambiguous questions:

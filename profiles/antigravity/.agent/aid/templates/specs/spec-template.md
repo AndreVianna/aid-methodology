@@ -1,5 +1,14 @@
 # {Feature Title}
 
+> **Ticket:** {connector-stem}:{external-id}
+<!-- OPTIONAL `ticket_ref` -- e.g. `jira:PROJ-123`; links this feature to an external tracker
+     item. Omit the line above entirely when this feature has no linked tracker item
+     (readers/dashboard ignore its absence). Nearest-ancestor resolution + MCP-first consumption
+     contract: `.agent/aid/templates/connectors/consumption-protocol.md`. This is a SPEC body
+     line, not frontmatter -- SPEC.md carries no frontmatter block. `ticket_ref` is a
+     lifecycle-unit field only -- the connector descriptor schema is unchanged. Coordinate with
+     the in-flight `work-003-state-schema` frontmatter conventions. -->
+
 ## Change Log
 
 | Date | Change | Source |

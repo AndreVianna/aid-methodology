@@ -3,6 +3,7 @@ delivery_state: Pending-Spec | Specified | Executing | Gated | Done | Blocked
 gate_tier: Small | Medium | Large
 gate_grade: "{grade or Pending}"
 gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+ticket_ref: "{connector-stem}:{external-id} | --"   # OPTIONAL; e.g. jira:PROJ-123 -- see ticket_ref contract note below
 ---
 
 # Delivery State -- delivery-NNN
@@ -14,7 +15,7 @@ delivery and no `deliveries/` folder at all -- its Delivery Lifecycle / Delivery
 Cross-phase Q&A are AUTHORED directly in the work-root `STATE.md` instead; see
 `work-state-template.md`.) It is divided into three zones:
   FRONTMATTER (single writer = this delivery's branch, machine-parsed scalars) --
-      `delivery_state`, `gate_tier`, `gate_grade`, `gate_timestamp` (the YAML block above).
+      `delivery_state`, `gate_tier`, `gate_grade`, `gate_timestamp`, `ticket_ref` (the YAML block above).
   AUTHORED (single writer = this delivery's branch, markdown body) --
       the narrative remainder of Delivery Lifecycle / Gate Block (Updated/Block Reason/
       Block Artifact/Issue List), Cross-phase Q&A.
@@ -22,6 +23,12 @@ Cross-phase Q&A are AUTHORED directly in the work-root `STATE.md` instead; see
       Tasks State (rollup from per-task STATE.md files in tasks/task-NNN/STATE.md).
 Identifiers (`Delivery`/`Work` in the header blockquote below, `Branch`) are INFERRED from
 the folder name and git worktree -- never authored in frontmatter.
+
+Optional `ticket_ref` (frontmatter): links this delivery to an external tracker item
+(`<connector-stem>:<external-id>`, e.g. `jira:PROJ-123`). Left `--` when this delivery is not
+independently linked; resolution then falls back to the work's own `ticket_ref` (nearest-ancestor
+contract: `.github/aid/templates/connectors/consumption-protocol.md`). Coordinate with the
+in-flight `work-003-state-schema` frontmatter conventions.
 
 <!-- DELIVERY LIFECYCLE ENUM (authored, not derived)
 

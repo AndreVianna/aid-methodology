@@ -21,7 +21,7 @@ fact, grep the **"Update triggers"** index below to find every diagram that must
 | If you change… | Update these diagrams |
 |----------------|------------------------|
 | A pipeline **phase** name / order / count (e.g. the Phase-2 Describe→Define split) | kb.html **Pipeline**; site **methodology G1-G5 flow**; site **pipeline.mdx / index.mdx** flows; README **R1** |
-| A **skill** rename / add / remove (changes the **92** count: 14 classic + `aid-triage` + `aid-ask` + 76 shortcuts) | kb.html **Four-plane module map** ("92 skills"); site **methodology skill diagrams**; README **R1**; the `gen-reference` roster test (asserts 92 on-disk dirs = 16 curated sections + 76 catalog shortcuts — keep this assertion in sync if the count changes again) |
+| A **skill** rename / add / remove (changes the **94** count: 16 classic + `aid-triage` + `aid-ask` + 76 shortcuts) | kb.html **Four-plane module map** ("94 skills"); site **methodology skill diagrams**; README **R1**; the `gen-reference` roster test (asserts 94 on-disk dirs = 18 curated sections + 76 catalog shortcuts — keep this assertion in sync if the count changes again) |
 | The **entry-point model** (shortcut / `/aid-triage` / `/aid-describe`) or the **shortcut engine**'s collapsed-phase list | README **R1**; site **methodology G1-G5 flow**; site **pipeline.mdx / index.mdx** flows (TRIAGE-inside-describe is gone — do not reintroduce it) |
 | The **shortcut catalog** (`shortcut-catalog.yml`) or recipe-era content (recipes are **deleted** — do not reintroduce "recipe(s)", `{{slot}}`, or `canonical/aid/recipes/`) | kb.html **Four-plane module map** (Toolkit plane's former "recipes" box); site **methodology** build-pipeline tree/listing |
 | **`/aid-monitor`**'s loopback targets (bug / change-request routing, L9/L10) | site **methodology feedback-loops** Mermaid; README **R1** (`MON -. "bug" .-> SC` / `MON -. "change request" .-> TR`) |
@@ -99,14 +99,14 @@ HTTP) and reading the `<text>`/`<tspan>` labels.
 ### D4 — Four-plane module map
 - **Location:** `07-module-map.html`, `aria-label="AID four-plane module map"`.
 - **Must show:** four planes — **Distribution** (install scripts, `lib/` install-core, `bin/`, `packages/`),
-  **Toolkit** (`canonical/skills/` **92 skills** — 14 classic + `aid-triage` + `aid-ask` + 76 shortcuts,
+  **Toolkit** (`canonical/skills/` **94 skills** — 16 classic + `aid-triage` + `aid-ask` + 76 shortcuts,
   `canonical/agents/` **9 agents**, `canonical/aid/scripts/`, `canonical/aid/templates/`, and the
   shortcut catalog/scaffolding — `canonical/aid/templates/shortcut-catalog.yml` +
   `shortcut-scaffolding/` — in the box that used to read `canonical/aid/recipes/` (recipes are
   deleted; do not reintroduce them)), **Render** (`generate-profile` skill), **Observation**.
-- **Source of truth:** `.aid/knowledge/module-map.md` · skill count = `ls -1d canonical/skills/*/ | wc -l` (92) ·
+- **Source of truth:** `.aid/knowledge/module-map.md` · skill count = `ls -1d canonical/skills/*/ | wc -l` (94) ·
   agent count = `ls -1d canonical/agents/*/ | wc -l` (9).
-- **Update when:** the skill count (**92**) or agent count (**9**) changes; a plane/module is added;
+- **Update when:** the skill count (**94**) or agent count (**9**) changes; a plane/module is added;
   the shortcut catalog is renamed or moved.
 
 ---
