@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Specify
 active_skill: none
-updated: "2026-07-15T21:08:21Z"
+updated: "2026-07-15T21:27:32Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -60,6 +60,7 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-15 | task-004 design started | -- | experiment; deltas from aid-research/report |
 | 2026-07-15 | task-004 RECLASSIFIED | -- | experiment is NOT a collapse; keep the plan->execute cycle + specialize its rigor (pre-run design + pre-registered AC + design-validity gate) |
 | 2026-07-15 | aid-experiment spec LOCKED | -- | specs/aid-experiment.md; content-only scaffolding adaptation, no engine/catalog change; +3 capture slots |
+| 2026-07-15 | Classification refined + folded in | -- | specs/classification.md; 2-axis discriminator; gray zone resolved (prototype->collapse; test family restructured); tasks 006/007 split out |
 
 ---
 
@@ -79,8 +80,9 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 | task-002 research / investigate / spike | In Progress | -- | -- | Spec LOCKED (specs/aid-research.md); canonical implementation pending |
 | task-003 report | In Progress | -- | -- | Spec LOCKED (specs/aid-report.md); canonical implementation pending |
 | task-004 experiment | In Progress | -- | -- | Spec LOCKED (specs/aid-experiment.md). NOT a collapse: keep cycle, engine-driven; content-only adaptation of test-experiment.md (3 new capture slots, rigor->REQUIREMENTS, validation->SPEC). Implementation pending |
-| task-005 document (+7 kinds) | Pending | -- | -- | Clear mismatch; not yet designed |
-| task-006 prototype* / test* (gray zone) | Pending | -- | -- | Verdict still open; revisit after the clear set |
+| task-005 document (+7 kinds) | Pending | -- | -- | Collapse; not yet designed |
+| task-006 prototype / prototype-ui | Pending | -- | -- | Gray -> Collapse (throwaway/isolated, spike-shaped); not yet designed |
+| task-007 test-family restructure | Pending | -- | -- | NEW +4 skills (aid-create-test/+add-test, aid-change-test/+update-test = keep-cycle); aid-test -> generic run+consolidate (collapse); test-security/performance/data-quality -> hint-aliases; removal via bare aid-remove. Not yet designed |
 
 ---
 
@@ -92,8 +94,9 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 
 ## Notes
 
-- **Reference:** the full mismatch analysis + fast-path design history is in this
-  session's transcript; the locked contract is `specs/aid-review.md`.
+- **Classification map:** `specs/classification.md` is the authoritative refactor map
+  (refined 2-axis discriminator; collapse / keep-cycle / correct-as-is; the test-family
+  restructure). Per-skill locked contracts live in `specs/aid-*.md`.
 - **Regeneration reminder:** any `canonical/` edit here must flow through
   `build-shortcut-skills.py` → full `run_generator.py` → dogfood `.claude/` resync
   (test-dogfood-byte-identity enforces it) before the change reaches an installed CLI.
