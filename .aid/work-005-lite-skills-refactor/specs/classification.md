@@ -48,18 +48,20 @@ Axis (A) and/or (B) holds — the plan → approve → execute gate is a feature
 | Skill(s) | Why keep the cycle | Change needed | Spec |
 |---|---|---|---|
 | `aid-experiment` | (B) pre-registered design/AC before a costly run | content-only: rigor→REQUIREMENTS, validation→SPEC, +3 capture slots (engine-driven, no `repurpose`) | ✅ `specs/aid-experiment.md` |
-| **`aid-create-test`** (+ `aid-add-test` alias) *(new)* | (A) authoring test code is a committed mutation | new create-family rows + scaffolding | ⏳ task-007 |
-| **`aid-change-test`** (+ `aid-update-test` alias) *(new)* | (A) changing test code is a committed mutation | new change-family rows + scaffolding | ⏳ task-007 |
+| **`aid-create-test`** (+ `aid-add-test` alias) *(new)* | (A) authoring test code is a committed mutation | new create-family rows + scaffolding | ✅ `specs/aid-test.md` |
+| **`aid-change-test`** (+ `aid-update-test` alias) *(new)* | (A) changing test code is a committed mutation | new change-family rows + scaffolding | ✅ `specs/aid-test.md` |
+| **`aid-create-dashboard`** / **`aid-change-dashboard`** (+ `add`/`update` aliases) *(new; `aid-show-dashboard` → hint-alias)* | (A) a durable/published BI view is a real build | naming/topology reframe of `show-dashboard`; behavior unchanged | ✅ `specs/aid-dashboard.md` |
 
 ## C. Correct-as-is (no change)
 
 Axis (A) plainly holds (genuine production/infra mutation); the cycle is already right.
 
 `aid-create*` (12 + 12 `add` aliases) · `aid-change*` (12 + 12 `update` aliases) ·
-`aid-refactor` · `aid-fix` · `aid-remove`/`aid-delete` · `aid-deprecate` · `aid-migrate` ·
-`aid-show-dashboard`. **Test removal/deprecate/migrate use the bare `aid-remove` /
-`aid-deprecate` / `aid-migrate`** — no per-artifact remover exists anywhere in the
-catalog, so no `aid-remove-test`.
+`aid-refactor` · `aid-fix` · `aid-remove`/`aid-delete` · `aid-deprecate` · `aid-migrate`.
+(`show-dashboard` moved to **B** — reframed to the `dashboard` artifact, keep-cycle.)
+**Test/dashboard removal/deprecate/migrate use the bare `aid-remove` / `aid-deprecate` /
+`aid-migrate`** — no per-artifact remover exists anywhere in the catalog, so no
+`aid-remove-test`/`aid-remove-dashboard`.
 
 ---
 
@@ -94,13 +96,15 @@ Notes:
 
 ## Net effect on the catalog
 
-- **New skills (+10):**
+- **New skills (+14):**
   - test: `aid-create-test`, `aid-add-test`, `aid-change-test`, `aid-update-test` (+4).
   - document: `aid-create-document`, `aid-add-document`, `aid-change-document`,
     `aid-update-document`, `aid-create-diagram` (+5).
   - design: `aid-design` (+1 — fills the DESIGN lite gap).
-- **0 removed:** the three `aid-test-*`, the 8 `aid-document*`, and `aid-prototype-ui`
-  all stay as backward-compatible hint-aliases.
+  - dashboard: `aid-create-dashboard`, `aid-add-dashboard`, `aid-change-dashboard`,
+    `aid-update-dashboard` (+4 — reframe of `show-dashboard`).
+- **0 removed:** the three `aid-test-*`, the 8 `aid-document*`, `aid-prototype-ui`, and
+  `aid-show-dashboard` all stay as backward-compatible hint-aliases.
 - **Behavior changed:** the collapse families (review, research, report, document,
   prototype) + the `aid-test` run consolidation; 1 keep-cycle content-specialization
   (`aid-experiment`); test authoring split into create/change-test.
