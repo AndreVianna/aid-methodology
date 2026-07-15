@@ -37,7 +37,8 @@ costly/irreversible to gate, no pre-registration needed.
 | `aid-research` / `aid-investigate` / `aid-spike` | curated verified answer | ✅ `specs/aid-research.md` |
 | `aid-report` | insight report | ✅ `specs/aid-report.md` |
 | `document` family → **restructured** into `aid-create-document` / `aid-change-document` (+ `add`/`update` aliases); the 8 old `aid-document*` + `aid-create-diagram` become hint-aliases | the document (format + genre by intelligence) | ✅ `specs/aid-document.md` |
-| `aid-prototype` / `aid-prototype-ui` | throwaway/isolated model (spike-shaped) | ⏳ task-006 |
+| `aid-prototype` (generic; `aid-prototype-ui` → hint-alias) | throwaway/isolated model (spike-shaped); **light** verify | ✅ `specs/aid-prototype-design.md` |
+| **`aid-design`** (NEW — fills the DESIGN lite gap) | a kept design artifact (UX/flow/component/interface/a11y); full verify | ✅ `specs/aid-prototype-design.md` |
 | `aid-test` (run) + `aid-test-security`/`-performance`/`-data-quality` (hint-aliases) | consolidated test/verification findings | ⏳ task-007 |
 
 ## B. Keep the cycle
@@ -93,12 +94,13 @@ Notes:
 
 ## Net effect on the catalog
 
-- **New skills (+9):**
+- **New skills (+10):**
   - test: `aid-create-test`, `aid-add-test`, `aid-change-test`, `aid-update-test` (+4).
   - document: `aid-create-document`, `aid-add-document`, `aid-change-document`,
     `aid-update-document`, `aid-create-diagram` (+5).
-- **0 removed:** the three `aid-test-*` and the 8 `aid-document*` all stay as
-  backward-compatible hint-aliases.
+  - design: `aid-design` (+1 — fills the DESIGN lite gap).
+- **0 removed:** the three `aid-test-*`, the 8 `aid-document*`, and `aid-prototype-ui`
+  all stay as backward-compatible hint-aliases.
 - **Behavior changed:** the collapse families (review, research, report, document,
   prototype) + the `aid-test` run consolidation; 1 keep-cycle content-specialization
   (`aid-experiment`); test authoring split into create/change-test.

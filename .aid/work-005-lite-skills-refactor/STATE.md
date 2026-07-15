@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Specify
 active_skill: none
-updated: "2026-07-15T23:21:08Z"
+updated: "2026-07-15T23:31:05Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -63,6 +63,8 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-15 | Classification refined + folded in | -- | specs/classification.md; 2-axis discriminator; gray zone resolved (prototype->collapse; test family restructured); tasks 006/007 split out |
 | 2026-07-15 | task-005 design started | -- | document*; producer=aid-tech-writer, 8 archetypes, placement gate, KB boundary |
 | 2026-07-15 | aid-document spec LOCKED | -- | specs/aid-document.md; RESTRUCTURED to create/change-document artifact + generic skill + hint-aliases (genre+format); collapse; KB boundary |
+| 2026-07-15 | task-006 design started | -- | prototype/prototype-ui; spike-shaped collapse, producer=aid-architect |
+| 2026-07-15 | aid-prototype + aid-design spec LOCKED | -- | specs/aid-prototype-design.md; split throwaway(prototype)/kept(design); NEW aid-design; light vs full verify by longevity |
 
 ---
 
@@ -83,7 +85,7 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 | task-003 report | In Progress | -- | -- | Spec LOCKED (specs/aid-report.md); canonical implementation pending |
 | task-004 experiment | In Progress | -- | -- | Spec LOCKED (specs/aid-experiment.md). NOT a collapse: keep cycle, engine-driven; content-only adaptation of test-experiment.md (3 new capture slots, rigor->REQUIREMENTS, validation->SPEC). Implementation pending |
 | task-005 document family restructure | In Progress | -- | -- | Spec LOCKED (specs/aid-document.md). RESTRUCTURED: document is a create/change ARTIFACT -> generic aid-create-document/aid-change-document (+add/update aliases); 8 old aid-document* + aid-create-diagram = hint-aliases; collapse; KB boundary. Implementation pending |
-| task-006 prototype / prototype-ui | Pending | -- | -- | Gray -> Collapse (throwaway/isolated, spike-shaped); not yet designed |
+| task-006 prototype + new aid-design | In Progress | -- | -- | Spec LOCKED (specs/aid-prototype-design.md). aid-prototype generic (throwaway, LIGHT verify); aid-prototype-ui -> hint-alias; NEW aid-design (kept design, full verify, fills DESIGN gap). Both collapse. Implementation pending |
 | task-007 test-family restructure | Pending | -- | -- | NEW +4 skills (aid-create-test/+add-test, aid-change-test/+update-test = keep-cycle); aid-test -> generic run+consolidate (collapse); test-security/performance/data-quality -> hint-aliases; removal via bare aid-remove. Not yet designed |
 
 ---
