@@ -36,7 +36,7 @@ costly/irreversible to gate, no pre-registration needed.
 | `aid-review` / `aid-audit` | findings + grade | ✅ `specs/aid-review.md` |
 | `aid-research` / `aid-investigate` / `aid-spike` | curated verified answer | ✅ `specs/aid-research.md` |
 | `aid-report` | insight report | ✅ `specs/aid-report.md` |
-| `aid-document` + 7 kinds | the document | ⏳ task-005 |
+| `document` family → **restructured** into `aid-create-document` / `aid-change-document` (+ `add`/`update` aliases); the 8 old `aid-document*` + `aid-create-diagram` become hint-aliases | the document (format + genre by intelligence) | ✅ `specs/aid-document.md` |
 | `aid-prototype` / `aid-prototype-ui` | throwaway/isolated model (spike-shaped) | ⏳ task-006 |
 | `aid-test` (run) + `aid-test-security`/`-performance`/`-data-quality` (hint-aliases) | consolidated test/verification findings | ⏳ task-007 |
 
@@ -93,8 +93,16 @@ Notes:
 
 ## Net effect on the catalog
 
-- **+4 skills:** `aid-create-test`, `aid-add-test`, `aid-change-test`, `aid-update-test`.
-- **0 removed:** the three `aid-test-*` stay as hint-aliases (backward-compatible).
-- **Behavior changed:** 6 collapse families + the `aid-test` run consolidation; 1
-  keep-cycle content-specialization (`aid-experiment`).
+- **New skills (+9):**
+  - test: `aid-create-test`, `aid-add-test`, `aid-change-test`, `aid-update-test` (+4).
+  - document: `aid-create-document`, `aid-add-document`, `aid-change-document`,
+    `aid-update-document`, `aid-create-diagram` (+5).
+- **0 removed:** the three `aid-test-*` and the 8 `aid-document*` all stay as
+  backward-compatible hint-aliases.
+- **Behavior changed:** the collapse families (review, research, report, document,
+  prototype) + the `aid-test` run consolidation; 1 keep-cycle content-specialization
+  (`aid-experiment`); test authoring split into create/change-test.
+- **Recurring principle:** *defer to agent intelligence, don't enumerate* — applied to
+  review targets, test suites, and now document format/genre (one generic skill + thin
+  hint-aliases each time).
 - **55+ correct-as-is untouched.**
