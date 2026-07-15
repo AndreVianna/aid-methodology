@@ -5,11 +5,11 @@ pipeline:
 started: "2026-07-15"
 minimum_grade: "A"
 user_approved: no
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Specify
 active_skill: none
-updated: "2026-07-15T23:41:51Z"
-pause_reason: --
+updated: "2026-07-15T23:45:32Z"
+pause_reason: "Phase-0 decision (shared collapse-engine vs per-skill bodies) before review implementation"
 block_reason: --
 block_artifact: --
 delivery_state: Pending-Spec
@@ -68,6 +68,8 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-15 | task-007 design started | -- | test-family restructure; formalizing settled shape |
 | 2026-07-15 | aid-test spec LOCKED | -- | specs/aid-test.md; create/change-test keep-cycle + aid-test run-consolidate collapse + test-* hint-aliases |
 | 2026-07-15 | task-008 folded in + aid-dashboard spec LOCKED | -- | specs/aid-dashboard.md; show-dashboard reframed to create/change-dashboard artifact (2nd re-examination find); +14 new skills total |
+| 2026-07-15 | DESIGN PHASE COMPLETE (8/8 tasks locked) | -- | all specs/ locked; implementation-plan.md written |
+| 2026-07-15 | Paused: Phase-0 decision | -- | shared collapse-engine vs per-skill bodies -- awaiting user before review implementation |
 
 ---
 
