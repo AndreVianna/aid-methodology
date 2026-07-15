@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Specify
 active_skill: none
-updated: "2026-07-15T20:44:45Z"
+updated: "2026-07-15T20:49:53Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -55,6 +55,8 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-15 | aid-review/aid-audit spec LOCKED | -- | specs/aid-review.md; 3 open items settled with user |
 | 2026-07-15 | task-002 design started | -- | research/investigate/spike; deltas from aid-review |
 | 2026-07-15 | aid-research spec LOCKED | -- | specs/aid-research.md; resolves-nothing frame, 2-tier grounding, authorized-spike escalation |
+| 2026-07-15 | task-003 design started | -- | report; deltas from aid-research |
+| 2026-07-15 | aid-report spec LOCKED | -- | specs/aid-report.md; data/usage input, data-quality caveats first-class, viz-vs-dashboard boundary |
 
 ---
 
@@ -72,7 +74,7 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 |------|-------|--------|---------|-------|
 | task-001 aid-review / aid-audit | In Progress | -- | -- | Spec LOCKED (specs/aid-review.md); canonical implementation pending |
 | task-002 research / investigate / spike | In Progress | -- | -- | Spec LOCKED (specs/aid-research.md); canonical implementation pending |
-| task-003 report | Pending | -- | -- | Clear mismatch; not yet designed |
+| task-003 report | In Progress | -- | -- | Spec LOCKED (specs/aid-report.md); canonical implementation pending |
 | task-004 experiment | Pending | -- | -- | Clear mismatch (heavier: may run something); not yet designed |
 | task-005 document (+7 kinds) | Pending | -- | -- | Clear mismatch; not yet designed |
 | task-006 prototype* / test* (gray zone) | Pending | -- | -- | Verdict still open; revisit after the clear set |
