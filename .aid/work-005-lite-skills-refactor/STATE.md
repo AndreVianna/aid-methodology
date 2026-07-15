@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Specify
 active_skill: none
-updated: "2026-07-15T20:25:30Z"
+updated: "2026-07-15T20:44:45Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -53,6 +53,8 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-15 | Work created | -- | Direct-prompt maintainer effort; branch work-005-lite-skills-refactor |
 | 2026-07-15 | Mismatch analysis | -- | Classified all engine-driven Lite skills; 15 clear mismatches, 6 gray, 55 correct-as-is |
 | 2026-07-15 | aid-review/aid-audit spec LOCKED | -- | specs/aid-review.md; 3 open items settled with user |
+| 2026-07-15 | task-002 design started | -- | research/investigate/spike; deltas from aid-review |
+| 2026-07-15 | aid-research spec LOCKED | -- | specs/aid-research.md; resolves-nothing frame, 2-tier grounding, authorized-spike escalation |
 
 ---
 
@@ -69,7 +71,7 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|
 | task-001 aid-review / aid-audit | In Progress | -- | -- | Spec LOCKED (specs/aid-review.md); canonical implementation pending |
-| task-002 research / investigate / spike | Pending | -- | -- | Clear mismatch; not yet designed |
+| task-002 research / investigate / spike | In Progress | -- | -- | Spec LOCKED (specs/aid-research.md); canonical implementation pending |
 | task-003 report | Pending | -- | -- | Clear mismatch; not yet designed |
 | task-004 experiment | Pending | -- | -- | Clear mismatch (heavier: may run something); not yet designed |
 | task-005 document (+7 kinds) | Pending | -- | -- | Clear mismatch; not yet designed |
