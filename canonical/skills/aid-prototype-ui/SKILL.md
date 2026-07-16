@@ -1,7 +1,7 @@
 ---
 name: aid-prototype-ui
 description: >
-  Alias of /aid-prototype (ui hint) -- build a THROWAWAY low-fidelity UI
+  A ui kind-sibling of /aid-prototype -- build a THROWAWAY low-fidelity UI
   wireframe/mock + interaction flow NOW to validate a UX direction, then present
   what it shows and hand the real build off. Resolves nothing; isolated and
   throwaway. This file carries no logic of its own -- its full behavior is defined
@@ -10,13 +10,14 @@ allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
 argument-hint: "<screen/flow> -- the UI screen(s)/flow whose direction to validate"
 ---
 
-# Prototype UI (alias of /aid-prototype)
+# Prototype UI (ui kind-sibling of /aid-prototype)
 
-`/aid-prototype-ui` is the backward-compatible **ui hint-alias** of `/aid-prototype`
-(`canonical/skills/aid-prototype/SKILL.md`), per the alias-is-a-full-directory convention
-the shortcut catalog uses. Registered `alias_of: aid-prototype`, `repurpose: true`
-(hand-authored; skipped by `build-shortcut-skills.py`). Historically its own skill; folded
-into generic `aid-prototype` in work-005 because a UI is just one prototype target.
+`/aid-prototype-ui` is a thin **ui kind-sibling** of `/aid-prototype`
+(`canonical/skills/aid-prototype/SKILL.md`) -- not an alias: it is its own catalog row
+(`alias_of: null`, its own `{verb: prototype, artifact: ui}`), `repurpose: true`
+(hand-authored; skipped by `build-shortcut-skills.py`). Historically its own generated
+skill; its behavior folded into generic `aid-prototype` in work-005 because a UI is just
+one prototype target.
 
 **This file has no logic of its own.** Execute `canonical/skills/aid-prototype/SKILL.md`
 exactly as written, with the prototype **target bound to `ui`** -- so INTAKE captures the

@@ -6,8 +6,9 @@ description: >
   e2e, a security scan (SAST/DAST/fuzz/dependency-audit), a performance
   benchmark/load/stress test, a data-quality check (schema/freshness/completeness/
   uniqueness), or a model evaluation -- and reports. It RESOLVES NOTHING and is
-  read-only on the source: findings hand off to /aid-fix; it never fixes. Run +
-  consolidation + verification are done by the aid-reviewer agent (review-shaped).
+  read-only on the source: findings hand off to /aid-fix; it never fixes. The
+  skill runs the tool itself (read-only); consolidation + verification are done by
+  the aid-reviewer agent (review-shaped).
   Allocates a work-NNN folder. To AUTHOR test code, use /aid-create-test (a
   keep-cycle create-family skill), not this.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, Agent
@@ -117,6 +118,7 @@ findings ledger on disk for `/aid-fix`. Keep the work folder as the audit record
   runs + reports.
 - **Read-only** on the source; never fixes (findings -> `/aid-fix`).
 - **Resolves nothing**; presents consolidated findings.
-- **Clean context**; **run + consolidation + verification are `aid-reviewer` sub-agent
-  dispatches**, never inline.
+- **Clean context**; the controlling agent runs the tool itself (read-only, via Bash),
+  and **consolidation + verification are `aid-reviewer` sub-agent dispatches** (clean
+  context) -- the findings are never graded inline.
 - **Tracking:** write STATE `lifecycle` at every transition.

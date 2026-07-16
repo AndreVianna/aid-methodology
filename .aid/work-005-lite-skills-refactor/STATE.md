@@ -3,19 +3,19 @@ pipeline:
   path: lite
   initiator: none
 started: "2026-07-15"
-minimum_grade: "A"
+minimum_grade: "A+"
 user_approved: no
 lifecycle: Paused-Awaiting-Input
 phase: Detail
 active_skill: none
-updated: "2026-07-16T00:51:59Z"
-pause_reason: "pre-regen checkpoint -- all 8 families' canonical source done; batch regen (run_generator + dogfood resync + verify) pending user go-ahead"
+updated: "2026-07-16T02:03:12Z"
+pause_reason: "pre-regen checkpoint -- canonical source A+ gate CLEARED; batch regen (run_generator + dogfood resync + verify) pending user go-ahead"
 block_reason: --
 block_artifact: --
 delivery_state: Pending-Spec
 gate_tier: Large
-gate_grade: "Pending"
-gate_timestamp: "--"
+gate_grade: "A+"
+gate_timestamp: "2026-07-16T02:03:12Z"
 ---
 
 # Work State -- work-005-lite-skills-refactor
@@ -82,6 +82,7 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-16 | task-007 canonical source done | -- | test restructure: create/change-test authoring doorways generated; aid-test run collapse + 3 kind-siblings; create.md test artifact + ownership fix; engine detach; --check 60/30/0. (build-shortcut-skills WRITE deleted the marker-orphan test doorways before I re-authored them -- expected) |
 | 2026-07-16 | task-008 canonical source done | -- | dashboard reframe: create/change-dashboard + aliases + show-dashboard alias (engine-driven); create.md dashboard artifact; engine detach; --check 64/30/0 |
 | 2026-07-16 | ALL 8 families canonical source DONE -- PRE-REGEN CHECKPOINT | -- | catalog 94 rows, 64 doorways / 30 repurpose / 0 orphans; +14 new skills; batch regen (run_generator + dogfood resync + verify) pending user go-ahead |
+| 2026-07-16 | A+ GATE cleared (canonical source) | A+ | aid-reviewer adversarial gate, 5 REVIEW->FIX cycles: C (4 findings) -> 3 fix-everywhere residuals -> A+ (0 findings). minimum_grade raised A -> A+. Ledger: .aid/.temp/review-pending/work-005-impl.md |
 
 ---
 
