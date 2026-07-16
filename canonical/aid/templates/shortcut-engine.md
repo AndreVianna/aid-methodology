@@ -142,7 +142,6 @@ re-derivation from this table:
 | document / document-* | DOCUMENT | |
 | report | RESEARCH | EDA / analysis producing a document |
 | show-dashboard | IMPLEMENT | a BI view is code/config |
-| review | RESEARCH | assess target against criteria, end with findings + recommendation (`task-type-rules.md ## RESEARCH`; v2.1.0 coverage-gap follow-on) |
 | remove | REFACTOR | delete without changing surviving behavior; dependents/tests/docs updated (structural, not a defect fix; v2.1.0 coverage-gap follow-on) |
 | deprecate | IMPLEMENT | add a warning + migration path; artifact still functions (v2.1.0 coverage-gap follow-on) |
 | migrate | MIGRATE | data/dependency/framework/platform move + rollback plan (non-schema; schema migrations stay create/change-data-model; v2.1.0 coverage-gap follow-on) |
@@ -177,7 +176,7 @@ this table just collects them at a glance, the same incremental-growth precedent
 | `prototype` | `shortcut-scaffolding/prototype.md` |
 | `document` | `shortcut-scaffolding/document.md` |
 | `report`, `show-dashboard` | `shortcut-scaffolding/analyze-report.md` |
-| `review`, `research` | `shortcut-scaffolding/analyze-report.md` (v2.1.0 coverage-gap follow-on) |
+| `research` | `shortcut-scaffolding/analyze-report.md` (v2.1.0 coverage-gap follow-on; `review` detached -- now a hand-authored collapse skill, work-005) |
 | `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` (v2.1.0 coverage-gap follow-on) |
 
 `query` (the `aid-query-kb`/`aid-ask` `repurpose: true` rows) is deliberately absent

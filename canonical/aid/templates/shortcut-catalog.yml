@@ -633,6 +633,11 @@ shortcuts:
   # aid-research + aid-investigate/aid-spike aliases. Bare verbs, no artifact
   # suffixes. Family scaffolding: shortcut-scaffolding/analyze-report.md (same
   # RESEARCH-ends-in-a-recommendation shape as aid-report).
+  # aid-review / aid-audit: HAND-AUTHORED collapse skills (work-005). repurpose: true so
+  # build-shortcut-skills.py never generates/overwrites them. A review runs NOW and returns
+  # findings + a grade (single-shot: INTAKE -> REVIEW -> VERIFY -> PRESENT -> PUBLISH -> DONE);
+  # it no longer plans-and-halts through the shortcut engine. See
+  # .aid/work-005-lite-skills-refactor/specs/aid-review.md.
   - name: aid-review
     verb: review
     artifact: ""
@@ -640,6 +645,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Review/assess an existing artifact -- code, a change/diff, or a design -- against criteria; produce findings + recommendations."
+    repurpose: true
   - name: aid-audit
     verb: review
     artifact: ""
@@ -647,6 +653,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Alias of aid-review."
+    repurpose: true
   - name: aid-research
     verb: research
     artifact: ""

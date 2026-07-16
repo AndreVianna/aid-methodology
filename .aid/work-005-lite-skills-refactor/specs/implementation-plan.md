@@ -27,11 +27,12 @@ one single-shot skeleton: `INTAKE → produce → clean-context VERIFY → PRESE
 → DONE`, plus the standalone-STATE convention (normal work-state template, `phase` not driven),
 grounding enforcement, present-before-commit gate, printed handoffs, per-call tiering.
 
-**Decision:** build that skeleton **once as a shared collapse-engine reference** (thin
-doorways delegate + bind producer / publish / verify-depth — mirrors the existing
-`shortcut-engine.md` precedent), **or** hand-author each collapse `SKILL.md` from a common
-pattern (no new engine, ~6× duplication). *Lean: shared collapse-engine* — same rationale
-that justified the original shortcut-engine. **Confirm before review implementation.**
+**Decision — RESOLVED 2026-07-15: per-skill hand-authored bodies** (the `aid-query-kb`
+model). No shared collapse-engine. Each collapse `SKILL.md` is self-contained and follows a
+common pattern — nothing delegates at runtime. The **`review` pilot's `SKILL.md` is the
+template** the other five collapses (research, report, prototype, `aid-test`-run, and the
+document/dashboard collapse bodies) are modeled on; keep them consistent by copying its
+shape, not by referencing it.
 
 ## Order (one family at a time)
 

@@ -5,11 +5,11 @@ pipeline:
 started: "2026-07-15"
 minimum_grade: "A"
 user_approved: no
-lifecycle: Paused-Awaiting-Input
-phase: Specify
+lifecycle: Running
+phase: Detail
 active_skill: none
-updated: "2026-07-15T23:45:32Z"
-pause_reason: "Phase-0 decision (shared collapse-engine vs per-skill bodies) before review implementation"
+updated: "2026-07-15T23:49:03Z"
+pause_reason: --
 block_reason: --
 block_artifact: --
 delivery_state: Pending-Spec
@@ -70,6 +70,8 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-15 | task-008 folded in + aid-dashboard spec LOCKED | -- | specs/aid-dashboard.md; show-dashboard reframed to create/change-dashboard artifact (2nd re-examination find); +14 new skills total |
 | 2026-07-15 | DESIGN PHASE COMPLETE (8/8 tasks locked) | -- | all specs/ locked; implementation-plan.md written |
 | 2026-07-15 | Paused: Phase-0 decision | -- | shared collapse-engine vs per-skill bodies -- awaiting user before review implementation |
+| 2026-07-15 | Phase-0 RESOLVED | -- | per-skill hand-authored bodies (aid-query-kb model), no shared collapse-engine |
+| 2026-07-15 | task-001 implementation started | -- | review pilot: source edits (catalog repurpose, aid-review + aid-audit SKILL.md, engine detach) |
 
 ---
 
@@ -85,7 +87,7 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|
-| task-001 aid-review / aid-audit | In Progress | -- | -- | Spec LOCKED (specs/aid-review.md); canonical implementation pending |
+| task-001 aid-review / aid-audit | In Progress | -- | -- | Spec LOCKED; PILOT implementation in progress (per-skill hand-authored body; sets the collapse pattern for tasks 002/003/006) |
 | task-002 research / investigate / spike | In Progress | -- | -- | Spec LOCKED (specs/aid-research.md); canonical implementation pending |
 | task-003 report | In Progress | -- | -- | Spec LOCKED (specs/aid-report.md); canonical implementation pending |
 | task-004 experiment | In Progress | -- | -- | Spec LOCKED (specs/aid-experiment.md). NOT a collapse: keep cycle, engine-driven; content-only adaptation of test-experiment.md (3 new capture slots, rigor->REQUIREMENTS, validation->SPEC). Implementation pending |
