@@ -1,10 +1,10 @@
 {
   "manifest_version": 1,
-  "aid_version": "2.1.0",
+  "aid_version": "2.2.0",
   "installed_at": "06/06/2026 20:01:03",
   "tools": {
     "claude-code": {
-      "version": "2.1.0",
+      "version": "2.2.0",
       "installed_at": "06/06/2026 20:01:03",
       "paths": [
         ".claude/agents/aid-architect.md",
@@ -538,7 +538,21 @@
         ".claude/skills/aid-update-messaging/SKILL.md",
         ".claude/skills/aid-update-theme/SKILL.md",
         ".claude/skills/aid-update-ui/SKILL.md",
-        ".claude/skills/aid-update/SKILL.md"
+        ".claude/skills/aid-update/SKILL.md",
+        ".claude/skills/aid-add-dashboard/SKILL.md",
+        ".claude/skills/aid-add-document/SKILL.md",
+        ".claude/skills/aid-add-test/SKILL.md",
+        ".claude/skills/aid-change-dashboard/SKILL.md",
+        ".claude/skills/aid-change-document/SKILL.md",
+        ".claude/skills/aid-change-test/SKILL.md",
+        ".claude/skills/aid-create-dashboard/SKILL.md",
+        ".claude/skills/aid-create-diagram/SKILL.md",
+        ".claude/skills/aid-create-document/SKILL.md",
+        ".claude/skills/aid-create-test/SKILL.md",
+        ".claude/skills/aid-design/SKILL.md",
+        ".claude/skills/aid-update-dashboard/SKILL.md",
+        ".claude/skills/aid-update-document/SKILL.md",
+        ".claude/skills/aid-update-test/SKILL.md"
       ],
       "root_agent_files": [
         {

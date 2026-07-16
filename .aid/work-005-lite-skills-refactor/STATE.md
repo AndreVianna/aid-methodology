@@ -5,11 +5,11 @@ pipeline:
 started: "2026-07-15"
 minimum_grade: "A+"
 user_approved: no
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 phase: Detail
 active_skill: none
-updated: "2026-07-16T02:23:42Z"
-pause_reason: "regen done (profiles rendered, deterministic verify PASS); v2.2.0 bundles built; dogfood .claude/ resync pending (aid add claude-code --from-bundle -- needs global CLI, touches ~/.aid)"
+updated: "2026-07-16T02:33:25Z"
+pause_reason: --
 block_reason: --
 block_artifact: --
 delivery_state: Pending-Spec
@@ -85,6 +85,7 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-16 | A+ GATE cleared (canonical source) | A+ | aid-reviewer adversarial gate, 5 REVIEW->FIX cycles: C (4 findings) -> 3 fix-everywhere residuals -> A+ (0 findings). minimum_grade raised A -> A+. Ledger: .aid/.temp/review-pending/work-005-impl.md |
 | 2026-07-16 | Batch regen done | -- | run_generator: 1695 files across 5 trees; VERIFY deterministic PASS. Committed 0f85caa9 (profiles only) |
 | 2026-07-16 | Version -> 2.2.0 + v2.2.0 bundles built | -- | VERSION/npm/pypi/.aid-version -> 2.2.0 (dcbb8992); release.sh --dry-run staged .aid/.temp/release-2.2.0/ (aid-claude-code-v2.2.0.tar.gz + SHA256SUMS). NOT a release (no tag/publish) |
+| 2026-07-16 | Dogfood resync done + VERIFIED | -- | user ran aid add claude-code --from-bundle (v2.2.0); test-dogfood-byte-identity PASS 683/0; .aid-version 2.2.0, manifest updated, README absent. canonical=profiles=dogfood all in sync at A+ |
 
 ---
 
