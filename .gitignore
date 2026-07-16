@@ -49,36 +49,15 @@ desktop.ini
 # Editor backups
 *.orig
 
-# Generated knowledge-summary cache
-.aid/knowledge/.cache/
-
 # Claude Code files
 .claude/worktrees/
 .claude/projects/
 .claude/settings.local.json
 
-# Subagent heartbeat files (ephemeral runtime artifacts; visibility-patch L3)
-.aid/.heartbeat/
-
-# Transient AID lifecycle scratch + review-pending ledgers (explicit dir entry,
-# not just the *.temp glob above — resilient to a future rename)
-.aid/.temp/
-
-# Reversible-migration trash dir (W3): retired AID-owned files moved here by
-# _migrate_retired_layout; never committed so users can inspect/restore but
-# don't accidentally track recovered files.
-.aid/.trash/
-
-# generator verify-report default output path (verify_deterministic.py / verify_advisory.py) -- tooling artifact, not a work
-.aid/work-002-canonical-generator/
-
 # Playwright MCP capture output (screenshots, snapshots, console logs) — ephemeral, never commit.
 # Captured images should be written to a temp folder (e.g. $CLAUDE_JOB_DIR/tmp); this is a backstop.
 .playwright-mcp/
 /*.png
-
-# Discovery scratch / intermediate generation outputs — NOT the KB (the KB is .aid/knowledge/).
-.aid/generated/
 
 # >>> AID managed -- do not edit (aid add/update maintains this block) >>>
 .aid/.temp/
