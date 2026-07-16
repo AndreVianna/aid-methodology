@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Detail
 active_skill: none
-updated: "2026-07-15T23:49:03Z"
+updated: "2026-07-16T00:16:50Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -72,6 +72,9 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-15 | Paused: Phase-0 decision | -- | shared collapse-engine vs per-skill bodies -- awaiting user before review implementation |
 | 2026-07-15 | Phase-0 RESOLVED | -- | per-skill hand-authored bodies (aid-query-kb model), no shared collapse-engine |
 | 2026-07-15 | task-001 implementation started | -- | review pilot: source edits (catalog repurpose, aid-review + aid-audit SKILL.md, engine detach) |
+| 2026-07-16 | Housekeeping committed (a0007312) | -- | v2.1.0 install residue honored + knowledge-base/README removed everywhere + aid-discover link fixed |
+| 2026-07-16 | task-001 pilot source committed (c03ae93d) + APPROVED | -- | user reviewed the collapse pattern; approved to replicate |
+| 2026-07-16 | task-002 canonical source done | -- | aid-research collapse + investigate/spike aliases + engine detach; --check: 71 up-to-date, 9 repurpose, 0 orphans |
 
 ---
 
@@ -87,8 +90,8 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|
-| task-001 aid-review / aid-audit | In Progress | -- | -- | Spec LOCKED; PILOT implementation in progress (per-skill hand-authored body; sets the collapse pattern for tasks 002/003/006) |
-| task-002 research / investigate / spike | In Progress | -- | -- | Spec LOCKED (specs/aid-research.md); canonical implementation pending |
+| task-001 aid-review / aid-audit | In Progress | -- | -- | PILOT: canonical source committed (c03ae93d), pattern APPROVED by user; profiles/dogfood pending batch regen |
+| task-002 research / investigate / spike | In Progress | -- | -- | Canonical source done (aid-research hand-authored + investigate/spike aliases + engine detach); profiles/dogfood pending batch regen |
 | task-003 report | In Progress | -- | -- | Spec LOCKED (specs/aid-report.md); canonical implementation pending |
 | task-004 experiment | In Progress | -- | -- | Spec LOCKED (specs/aid-experiment.md). NOT a collapse: keep cycle, engine-driven; content-only adaptation of test-experiment.md (3 new capture slots, rigor->REQUIREMENTS, validation->SPEC). Implementation pending |
 | task-005 document family restructure | In Progress | -- | -- | Spec LOCKED (specs/aid-document.md). RESTRUCTURED: document is a create/change ARTIFACT -> generic aid-create-document/aid-change-document (+add/update aliases); 8 old aid-document* + aid-create-diagram = hint-aliases; collapse; KB boundary. Implementation pending |

@@ -654,13 +654,19 @@ shortcuts:
     group: G11
     intent: "Alias of aid-review."
     repurpose: true
+  # aid-research / aid-investigate / aid-spike: HAND-AUTHORED collapse skills (work-005).
+  # A research investigation runs NOW and returns a curated, verified answer -- it RESOLVES
+  # NOTHING (presents conclusions +/-, conflicts with their reasons, and gaps for the user
+  # to resolve). aid-researcher produces, aid-reviewer verifies. See
+  # .aid/work-005-lite-skills-refactor/specs/aid-research.md.
   - name: aid-research
     verb: research
     artifact: ""
     alias_of: null
     default_type: RESEARCH
     group: G11
-    intent: "Investigate an open technical question: evaluate options or run a feasibility spike; end with a recommendation."
+    intent: "Investigate an open technical question (evaluate options or run a feasibility spike); present curated, verified conclusions, conflicts, and gaps for the user to resolve."
+    repurpose: true
   - name: aid-investigate
     verb: research
     artifact: ""
@@ -668,6 +674,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Alias of aid-research."
+    repurpose: true
   - name: aid-spike
     verb: research
     artifact: ""
@@ -675,6 +682,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Alias of aid-research."
+    repurpose: true
 
   # --- G9/G10: Deploy + Monitor re-purpose (feature-012, task-034) -- 2 rows, no
   # aliases. repurpose: true -- these are the 2 pre-existing FAT pipeline skills this
