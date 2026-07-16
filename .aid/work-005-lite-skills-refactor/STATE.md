@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Detail
 active_skill: none
-updated: "2026-07-16T02:33:25Z"
+updated: "2026-07-16T02:38:51Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -86,6 +86,7 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-16 | Batch regen done | -- | run_generator: 1695 files across 5 trees; VERIFY deterministic PASS. Committed 0f85caa9 (profiles only) |
 | 2026-07-16 | Version -> 2.2.0 + v2.2.0 bundles built | -- | VERSION/npm/pypi/.aid-version -> 2.2.0 (dcbb8992); release.sh --dry-run staged .aid/.temp/release-2.2.0/ (aid-claude-code-v2.2.0.tar.gz + SHA256SUMS). NOT a release (no tag/publish) |
 | 2026-07-16 | Dogfood resync done + VERIFIED | -- | user ran aid add claude-code --from-bundle (v2.2.0); test-dogfood-byte-identity PASS 683/0; .aid-version 2.2.0, manifest updated, README absent. canonical=profiles=dogfood all in sync at A+ |
+| 2026-07-16 | Pushed + PR opened | -- | branch work-005-lite-skills-refactor pushed to origin (AndreVianna account); PR #144 -> master (https://github.com/AndreVianna/aid-methodology/pull/144); CI runs the heavy parity suites. gh account restored to AndreVianna-Ross |
 
 ---
 
