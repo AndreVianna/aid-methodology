@@ -682,6 +682,11 @@ only ever run for the two brownfield paths.
   one agent. The prompt it receives is the combined foundation reference block (below) plus the
   full target list. Print `[2-5/5] Single understand-pass (brownfield-small): covering all targets in one pass...`
 
+Dispatch every discovery `aid-researcher` (fan-out or single-pass) at its default Medium
+tier and **`low` reasoning effort** -- discovery is retrieval / cataloguing, and depth does
+not aid retrieval (`.codex/aid/templates/agent-dispatch-tiering.md`, Retrieval-heavy row).
+Escalate only a lane that hits genuinely hard analysis.
+
 For **brownfield-large** (full fan-out) -- compute each agent's target list from the declared
 set (§2.5 mapping-honors-declared-set):
 

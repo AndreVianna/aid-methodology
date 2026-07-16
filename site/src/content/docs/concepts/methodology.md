@@ -81,7 +81,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*92 skill directories, five pipeline groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` (friendly alias: `/aid-ask`) answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+*108 skill directories, five pipeline groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` (friendly alias: `/aid-ask`) answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -93,7 +93,7 @@ Greenfield projects skip Discover (no existing system to understand) and enter a
 
 AID does not make you weigh the cost of the full pipeline against the size of a change — that weighing is automated across three entry points:
 
-- **A direct-entry shortcut** (`/aid-fix`, `/aid-create-api`, `/aid-document-runbook`, …) — you already know what kind of change this is. 76 verb-first shortcuts, generated from an 80-row catalog, each a thin doorway into a shared **shortcut engine** that collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run and produces the full flattened Lite artifact set. Each shortcut binds to one fixed `{verb, artifact}` pair, so the engine already knows the shape of the work before CAPTURE even starts.
+- **A direct-entry shortcut** (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) — you already know what kind of change this is. 64 verb-first shortcuts, generated from a 94-row catalog, each a thin doorway into a shared **shortcut engine** that collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run and produces the full flattened Lite artifact set. Each shortcut binds to one fixed `{verb, artifact}` pair, so the engine already knows the shape of the work before CAPTURE even starts. (The catalog's other 30 rows are hand-authored `repurpose` skills — review, research, report, document, test, prototype, design, and the re-registered `aid-deploy` / `aid-monitor` / `aid-query-kb` / `aid-ask` — each with its own directory but not a thin engine doorway.)
 - **`/aid-triage`** — you don't know which door fits. A stateless, write-free, suggest-only router: describe the work in one sentence and it suggests either the matching shortcut, the full path (`/aid-describe`), or — when your input reads as a question rather than a change — `/aid-ask`. It never runs anything on your behalf.
 - **`/aid-describe`** — broad, multi-activity, or new-project work. Enters the full path directly; it no longer triages or produces lite work itself.
 
@@ -103,9 +103,9 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 ### Skill Inventory
 
-*92 skill directories in total — 14 classic pipeline/on-demand skills, the `/aid-triage` router, `/aid-ask` (a Q&A alias of the classic `/aid-query-kb`), and 76 verb-first direct-entry shortcuts across 14 shortcut families. Unchanged: 9 agents, 14 KB doc types — only the skill count changed.*
+*108 skill directories in total — 14 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (58 canonical names + 36 aliases; 64 engine-generated verb-first shortcut doorways + 30 hand-authored `repurpose` skills). Unchanged: 9 agents, 14 KB doc types.*
 
-**A. The 14 classic skills** — their groups, phase numbers, and mandatory pipeline membership.
+**A. The 14 curated skills** — the pipeline phases plus the on-demand and router skills that are *not* in the shortcut catalog; their groups, phase numbers, and mandatory pipeline membership. (`aid-deploy`, `aid-monitor`, and `aid-query-kb` are now catalog `repurpose` rows — see table D.)
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
@@ -118,19 +118,19 @@ The shortcut path is not a fallback — it is the default entry for the majority
 | `aid-plan` | Map | 4 | Full path only |
 | `aid-detail` | Map | 5 | Full path only |
 | `aid-execute` | Execute | 6 | Yes |
-| `aid-deploy` | Deliver | — (optional) | On demand; not a numbered phase |
-| `aid-monitor` | Deliver | — (optional) | On demand; not a numbered phase |
 | `aid-housekeep` | Off-pipeline | — | On demand; off the pipeline entirely |
-| `aid-query-kb` | Off-pipeline | — | On demand; Q&A + gap-capture (STATE.md backlog only) |
 | `aid-update-kb` | Off-pipeline | — | On demand; targeted KB update through review gate; human-gated |
+| `aid-set-connector` | Off-pipeline | — | On demand; create or update a connector descriptor for an external tool |
+| `aid-unset-connector` | Off-pipeline | — | On demand; remove a connector descriptor and purge its secret |
+| `aid-triage` | Off-pipeline | — (router) | On demand; stateless suggest-only router — writes nothing |
 
 **B. `/aid-triage`** — the suggest-only router. Not a pipeline phase and not a shortcut itself: one stateless skill (`INTAKE → CLASSIFY → SUGGEST → HALT`) that reads the shortcut catalog and points at a shortcut, the full path, or — when the input reads as a question rather than a change — `/aid-ask` (below). It writes nothing — no interview, no scaffold, no work folder, no `STATE.md`.
 
-**C. `/aid-ask`** — a friendly-named alias of the classic `/aid-query-kb` (table A, Off-pipeline). Same read-only, cited, gap-capturing Q&A skill, under a name that reads as a question — reachable directly, or suggested by `/aid-triage` when your input reads as a question rather than a change. Hand-authored, like `aid-query-kb`; not generated by the shortcut build helper.
+**C. `/aid-ask`** — a friendly-named alias of `/aid-query-kb`. Both are `repurpose` rows in the shortcut catalog (table D below): the same read-only, cited, gap-capturing Q&A skill, under a name that reads as a question — reachable directly, or suggested by `/aid-triage` when your input reads as a question rather than a change. Hand-authored, not generated by the shortcut build helper.
 
-**D. The 76 direct-entry shortcuts**, by family. Generated from an 80-row catalog (`canonical/aid/templates/shortcut-catalog.yml`) = 51 canonical names + 29 aliases, of which 4 rows are `repurpose: true` — they register a pre-existing, hand-authored skill for the parity check and `/aid-triage` rather than describing a new directory: `aid-deploy` + `aid-monitor` + `aid-query-kb` (table A) and `aid-ask` (table C above). The remaining 76 rows are what the build helper (`build-shortcut-skills.py`) generates as thin-doorway `canonical/skills/<name>/SKILL.md` directories, across 14 families.
+**D. The 94 shortcut-catalog skills**, by family. The catalog (`canonical/aid/templates/shortcut-catalog.yml`) has 94 rows = 58 canonical names + 36 aliases. 64 rows are the verb-first thin doorways the build helper (`build-shortcut-skills.py`) generates as `canonical/skills/<name>/SKILL.md` directories; the other 30 rows are `repurpose: true` — hand-authored skills the helper never generates or overwrites, each of which owns its own directory too. Those 30 are the 4 re-registered classic skills (`aid-deploy`, `aid-monitor`, `aid-query-kb`, `aid-ask`) plus 26 work-005 collapse & kind-sibling skills (review/audit, research/investigate/spike, report, prototype/prototype-ui, design, the document family, and the `aid-test` run-siblings). Every one of the 94 rows owns a `canonical/skills/<name>/` directory.
 
-| **Family** | **Shortcuts** | **Count** |
+| **Family** | **Skills** | **Count** |
 |-----------|---------------|-----------|
 | create (+ `add` alias) | `aid-create`, `aid-create-api`, `-cli`, `-config`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-theme`, `-ui`; `aid-add-*` mirrors each | 24 |
 | change (+ `update` alias) | `aid-change`, `aid-change-api`, `-cli`, `-config`, `-data-model`, `-data-pipeline`, `-infra`, `-integration`, `-job`, `-messaging`, `-theme`, `-ui`; `aid-update-*` mirrors each | 24 |
@@ -139,14 +139,15 @@ The shortcut path is not a fallback — it is the default entry for the majority
 | remove (+ `delete` alias) | `aid-remove`; `aid-delete` mirrors it | 2 |
 | deprecate | `aid-deprecate` | 1 |
 | migrate | `aid-migrate` | 1 |
-| test + experiment | `aid-test`, `aid-test-security`, `-performance`, `-data-quality`; `aid-experiment` | 5 |
-| prototype | `aid-prototype`, `aid-prototype-ui` | 2 |
-| document | `aid-document`, `-architecture`, `-changelog`, `-decision`, `-guideline`, `-runbook`, `-standard`, `-tutorial` | 8 |
-| report | `aid-report` | 1 |
-| show-dashboard | `aid-show-dashboard` | 1 |
-| review (+ `audit` alias) | `aid-review`; `aid-audit` mirrors it | 2 |
-| research (+ `investigate`/`spike` aliases) | `aid-research`; `aid-investigate` and `aid-spike` mirror it | 3 |
-| **Total** | | **76** |
+| test + experiment | `aid-create-test` / `aid-change-test` (+ `add`/`update-test` aliases); `aid-test` (+ `-security` / `-performance` / `-data-quality` run-siblings, `repurpose`); `aid-experiment` | 9 |
+| prototype + design | `aid-prototype`, `aid-prototype-ui`, `aid-design` (`repurpose`) | 3 |
+| document | `aid-create-document` / `aid-change-document` (+ `add`/`update-document` aliases); `aid-create-diagram`; `aid-document` (+ 7 genre siblings: `-decision`, `-architecture`, `-guideline`, `-standard`, `-runbook`, `-tutorial`, `-changelog`) — all `repurpose` | 13 |
+| report + dashboard | `aid-report` (`repurpose`); `aid-create-dashboard` / `aid-change-dashboard` (+ `add`/`update`/`show-dashboard` aliases) | 6 |
+| review (+ `audit` alias) | `aid-review`; `aid-audit` mirrors it (both `repurpose`) | 2 |
+| research (+ `investigate`/`spike` aliases) | `aid-research`; `aid-investigate` and `aid-spike` mirror it (all `repurpose`) | 3 |
+| deploy + monitor (`repurpose`) | `aid-deploy`, `aid-monitor` | 2 |
+| query (+ `ask` alias, `repurpose`) | `aid-query-kb`; `aid-ask` mirrors it | 2 |
+| **Total** | | **94** |
 
 ---
 
@@ -403,11 +404,11 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 | `aid-monitor` | Deliver | — (optional) | classified findings → `/aid-fix` (bugs) or `/aid-triage` (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
 | `aid-housekeep` | Off-pipeline | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
 | `aid-triage` | Off-pipeline | — | A suggested next command (shortcut, `/aid-describe`, or `/aid-ask` for a plain question); writes nothing |
-| `aid-<verb>[-<artifact>]` (76 shortcuts) | Lite entry | — | Full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
+| `aid-<verb>[-<artifact>]` (64 shortcuts) | Lite entry | — | Full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
 
 AID organizes six numbered development phases into five groups. The six phases (Discover through Execute) form the mandatory sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required sequential phases. The pipeline is linear with feedback loops.
 
-The Prepare group holds two non-phase skills: `aid-config` (bootstrap, run once) and `aid-summarize` (optional KB viewer). A third off-pipeline skill, `aid-housekeep`, runs outside all groups entirely — on-demand KB maintenance when drift accumulates between discovery cycles. These skills are not numbered phases; they do not participate in phase gates. Three more mechanisms sit outside the phase table entirely: `/aid-triage`, a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask`; `/aid-ask` itself, the Q&A alias of `aid-query-kb`; and the 76 direct-entry shortcuts, each a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
+The Prepare group holds two non-phase skills: `aid-config` (bootstrap, run once) and `aid-summarize` (optional KB viewer). A third off-pipeline skill, `aid-housekeep`, runs outside all groups entirely — on-demand KB maintenance when drift accumulates between discovery cycles. These skills are not numbered phases; they do not participate in phase gates. Three more mechanisms sit outside the phase table entirely: `/aid-triage`, a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask`; `/aid-ask` itself, the Q&A alias of `aid-query-kb`; and the 64 direct-entry shortcuts, each a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
 
 ---
 
@@ -539,7 +540,7 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 ##### The Lite Path: Direct-Entry Shortcuts
 
-The lite path is no longer produced by `aid-describe` — it has its own entry. A direct-entry shortcut (`/aid-fix`, `/aid-create-api`, `/aid-document-runbook`, …) is one of 76 verb-first skills generated from an 80-row catalog (`canonical/aid/templates/shortcut-catalog.yml`), grouped into 14 families: create, change, fix, refactor, remove, deprecate, migrate, test + experiment, prototype, document, report, show-dashboard, review, research. Binding a shortcut to one fixed `{verb, artifact}` pair pre-shapes CAPTURE, SPEC, and DETAIL for that specific shape of change, so the engine skips the generic elicitation a from-scratch interview would need — that specialization is what makes the lite path fast, not merely short. See §1, *Skill Inventory*, for the full family breakdown.
+The lite path is no longer produced by `aid-describe` — it has its own entry. A direct-entry shortcut (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) is one of 64 verb-first shortcut skills generated from a 94-row catalog (`canonical/aid/templates/shortcut-catalog.yml`), grouped into families: create, change, fix, refactor, remove, deprecate, migrate, test + experiment, prototype, design, document, report + dashboard, review, research. Binding a shortcut to one fixed `{verb, artifact}` pair pre-shapes CAPTURE, SPEC, and DETAIL for that specific shape of change, so the engine skips the generic elicitation a from-scratch interview would need — that specialization is what makes the lite path fast, not merely short. See §1, *Skill Inventory*, for the full family breakdown.
 
 **Not sure which shortcut fits — or whether this needs the full path at all?** Run `/aid-triage` first. It is a stateless, write-free, suggest-only router (`INTAKE → CLASSIFY → SUGGEST → HALT`): describe the work in one sentence, and it infers the work-type and scope, then suggests exactly one next step — a matching canonical shortcut for a known, single-target change, or the full path (`/aid-describe`) for anything broad, multi-activity, or ambiguous — and stops. It writes nothing: no interview, no scaffold, no work folder, no `STATE.md`. The conservative default routes anything short of a confident single match to the full path.
 
@@ -796,19 +797,19 @@ flowchart TB
     classDef med   fill:#0F766E,stroke:#0F766E,color:#ffffff
     classDef small fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937
 
-    subgraph L["Large tier — 4 · highest-stakes (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
+    subgraph L["Large tier — 1 default · highest-stakes reasoning (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
         direction LR
-        LA["aid-interviewer"]:::large
         LB["aid-architect"]:::large
-        LC["aid-researcher"]:::large
-        LD["aid-reviewer"]:::large
     end
-    subgraph M["Medium tier — 4 · production workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
+    subgraph M["Medium tier — 7 default · workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
         direction LR
         MA["aid-developer"]:::med
         MB["aid-operator"]:::med
         MC["aid-orchestrator"]:::med
         MD["aid-tech-writer"]:::med
+        ME["aid-interviewer"]:::med
+        MF["aid-researcher"]:::med
+        MG["aid-reviewer"]:::med
     end
     subgraph S["Small tier — 1 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
         direction LR
@@ -823,9 +824,11 @@ AID dispatches 9 specialist agents across three model tiers. The key design inva
 
 ### The Three Tiers
 
-- **Large (4 agents):** `aid-interviewer`, `aid-architect`, `aid-researcher`, `aid-reviewer`. Large agents handle the highest-stakes work — requirements gathering, architectural decisions, brownfield discovery (KB authoring, replacing the former five discovery-* agents), and adversarial review.
-- **Medium (4 agents):** `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`. The production workhorses — they implement, operate releases, route pipeline findings, and author user-facing documentation. `aid-developer` absorbs former data-engineer and devops roles; `aid-architect` absorbs former ux-designer advisory work.
-- **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where Large-tier reasoning is unnecessary overhead.
+These are **default** tiers, not fixed ceilings (work-006). Each dispatch site picks the model tier **and** reasoning effort from the task's difficulty via a shared rubric (`agent-dispatch-tiering.md`), defaulting low and escalating the hard minority; effort is a second, independent lever (often better than switching tiers).
+
+- **Large (1 default):** `aid-architect`. The one role kept on the top tier by default — architecture and design decomposition, where reasoning depth genuinely pays off. Escalates to `xhigh` effort for hard decompositions.
+- **Medium (7 default):** `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`, `aid-interviewer`, `aid-researcher`, `aid-reviewer`. The workhorses — implement, operate releases, route, document, interview, research/KB-author, and review. `aid-interviewer`, `aid-researcher`, and `aid-reviewer` were lowered from Large in work-006; each escalates back to Large for genuinely hard work (complex requirement synthesis, deep analysis, complex/security/design review, or to match a Large executor). `aid-researcher` runs at `low` effort by default — depth does not aid retrieval.
+- **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where larger-tier reasoning is unnecessary overhead.
 
 The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses Prepare navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses Map teal (`#0F766E`) because Medium agents handle operational execution (like Map/Execute). This is semantic overlap by design.
 
@@ -864,7 +867,7 @@ AID ships as five rendered install trees. The single canonical source (`canonica
 
 ```
 canonical/  (single source of truth — never edit profiles/ directly)
-  ├── skills/        (92 skill directories — 14 classic + aid-triage + aid-ask + 76 shortcuts)
+  ├── skills/        (108 skill directories — 14 curated + 94 catalog skills)
   ├── agents/        (9 agents)
   └── aid/
         ├── templates/     (KB templates, document templates, shortcut-catalog.yml, shortcut-scaffolding/)
@@ -1400,7 +1403,7 @@ flowchart TB
 | **Post-delivery** | Not addressed | Monitor routes bugs to `/aid-fix`, change requests to `/aid-triage` |
 | **Scope** | Code generation | Full lifecycle: discovery through production maintenance |
 | **Human role** | Spec writer, reviewer | Co-pilot across all phases |
-| **Scale options** | One path | Full path (`/aid-describe`) + a lite path via 76 direct-entry shortcuts, with `/aid-triage` to route when unsure, or `/aid-ask` for a plain question |
+| **Scale options** | One path | Full path (`/aid-describe`) + a lite path via 64 direct-entry shortcuts, with `/aid-triage` to route when unsure, or `/aid-ask` for a plain question |
 
 ### The Core Argument
 

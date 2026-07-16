@@ -91,8 +91,15 @@ which is answered on the same turn and does not exit the invocation.
 **Agent dispatch (C-2).** Authoring states (CAPTURE/SPEC/PLAN/DETAIL) dispatch
 `aid-architect` (Large tier -- design work, mirroring how `aid-describe`'s former
 lite-path task-breakdown step used `aid-architect` before that lite path was retired);
-GATE dispatches `aid-reviewer` (Large). Reviewer tier >= executor tier and the writer
-never grades its own work (`architecture.md § Agent / Sub-Agent Dispatch Model`).
+GATE dispatches `aid-reviewer` (Large -- matches the Large `aid-architect` executor,
+preserving reviewer tier >= executor tier). The writer never grades its own work
+(`architecture.md § Agent / Sub-Agent Dispatch Model`). **Effort** (not tier) is the
+cost lever here per `.agent/aid/templates/agent-dispatch-tiering.md`: dispatch
+`aid-architect` at `medium` effort by default (escalate to `xhigh` only for a genuinely
+hard decomposition -- a large multi-feature SPEC or a non-trivial task graph), and the
+GATE `aid-reviewer` scales its effort to the artifact (`medium` for a small/simple
+change, `high` for a complex/security/design one). Do not leave effort at the host
+default (`high`) for routine changes.
 
 ## Capture-Minimization Rules
 

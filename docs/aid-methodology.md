@@ -793,19 +793,19 @@ flowchart TB
     classDef med   fill:#0F766E,stroke:#0F766E,color:#ffffff
     classDef small fill:#E5E7EB,stroke:#9CA3AF,color:#1F2937
 
-    subgraph L["Large tier — 4 · highest-stakes (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
+    subgraph L["Large tier — 1 default · highest-stakes reasoning (Opus / GPT-5.5 / Gemini-3 Pro hi)"]
         direction LR
-        LA["aid-interviewer"]:::large
         LB["aid-architect"]:::large
-        LC["aid-researcher"]:::large
-        LD["aid-reviewer"]:::large
     end
-    subgraph M["Medium tier — 4 · production workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
+    subgraph M["Medium tier — 7 default · workhorses (Sonnet / GPT-5.4 / Gemini-3 Pro lo)"]
         direction LR
         MA["aid-developer"]:::med
         MB["aid-operator"]:::med
         MC["aid-orchestrator"]:::med
         MD["aid-tech-writer"]:::med
+        ME["aid-interviewer"]:::med
+        MF["aid-researcher"]:::med
+        MG["aid-reviewer"]:::med
     end
     subgraph S["Small tier — 1 · mechanical (Haiku / GPT-5.4-mini / Gemini-3 Flash)"]
         direction LR
@@ -820,9 +820,11 @@ AID dispatches 9 specialist agents across three model tiers. The key design inva
 
 ### The Three Tiers
 
-- **Large (4 agents):** `aid-interviewer`, `aid-architect`, `aid-researcher`, `aid-reviewer`. Large agents handle the highest-stakes work — requirements gathering, architectural decisions, brownfield discovery (KB authoring, replacing the former five discovery-* agents), and adversarial review.
-- **Medium (4 agents):** `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`. The production workhorses — they implement, operate releases, route pipeline findings, and author user-facing documentation. `aid-developer` absorbs former data-engineer and devops roles; `aid-architect` absorbs former ux-designer advisory work.
-- **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where Large-tier reasoning is unnecessary overhead.
+These are **default** tiers, not fixed ceilings (work-006). Each dispatch site picks the model tier **and** reasoning effort from the task's difficulty via a shared rubric (`agent-dispatch-tiering.md`), defaulting low and escalating the hard minority; effort is a second, independent lever (often better than switching tiers).
+
+- **Large (1 default):** `aid-architect`. The one role kept on the top tier by default — architecture and design decomposition, where reasoning depth genuinely pays off. Escalates to `xhigh` effort for hard decompositions.
+- **Medium (7 default):** `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`, `aid-interviewer`, `aid-researcher`, `aid-reviewer`. The workhorses — implement, operate releases, route, document, interview, research/KB-author, and review. `aid-interviewer`, `aid-researcher`, and `aid-reviewer` were lowered from Large in work-006; each escalates back to Large for genuinely hard work (complex requirement synthesis, deep analysis, complex/security/design review, or to match a Large executor). `aid-researcher` runs at `low` effort by default — depth does not aid retrieval.
+- **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where larger-tier reasoning is unnecessary overhead.
 
 The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses Prepare navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses Map teal (`#0F766E`) because Medium agents handle operational execution (like Map/Execute). This is semantic overlap by design.
 

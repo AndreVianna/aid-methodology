@@ -2,7 +2,7 @@
 
 Requirements are approved and features exist but cross-reference validation has not yet been completed; validate REQUIREMENTS.md against KB documents and codebase, grade findings, and create Q&A entries for gaps.
 
-**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-interviewer`).
+**Agent:** This is adversarial validation, not interview work. Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-interviewer`) **at Large tier** — the features were decomposed by the Large `aid-architect`, so reviewer tier >= executor tier (`canonical/aid/templates/agent-dispatch-tiering.md`).
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{ARTIFACTS}}` = `.aid/{work}/REQUIREMENTS.md` + every `.aid/{work}/features/feature-*/SPEC.md` scaffold

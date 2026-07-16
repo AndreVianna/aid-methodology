@@ -1,7 +1,7 @@
 ---
 name: aid-reviewer
 description: Adversarial quality evaluator. Reviews any artifact (code, tasks, specs, plans, KB docs) against its acceptance criteria, rubric, and KB conventions. Produces the 7-column issue ledger with source and severity tags. Does NOT fix anything; does NOT compute the grade.
-tier: large
+tier: medium
 tools: Read, Glob, Grep, Bash
 ---
 

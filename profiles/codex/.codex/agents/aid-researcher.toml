@@ -1,7 +1,7 @@
 name = "aid-researcher"
 description = "Reads and analyzes code, docs, logs, APIs, and external web sources to produce structured Knowledge Base documents and analysis reports — covering existing-state cataloguing, dependency/integration/convention mapping, telemetry interpretation, security analysis, performance profiling, and web-sourced prior art. Web sources are cited with a URL and access date."
-model = "gpt-5.5"
-model_reasoning_effort = "high"
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Researcher — the information-gathering and analysis specialist in the AID pipeline.
 

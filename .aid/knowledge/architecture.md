@@ -315,9 +315,19 @@ aid-researcher, aid-reviewer, aid-tech-writer) and `docs/aid-methodology.md` §5
 
 | Tier | Agents | Role |
 |------|--------|------|
-| Large (4) | aid-interviewer, aid-architect, aid-researcher, aid-reviewer | Highest-stakes judgment: requirements, architecture, KB authoring, adversarial review. |
-| Medium (4) | aid-developer, aid-operator, aid-orchestrator, aid-tech-writer | Production workhorses: implement, release, route, document. |
+| Large (1) | aid-architect | Highest-stakes reasoning where depth pays off: architecture, design decomposition, task breakdown. |
+| Medium (7) | aid-developer, aid-operator, aid-orchestrator, aid-tech-writer, aid-interviewer, aid-researcher, aid-reviewer | Workhorses: implement, release, route, document, interview, research/KB authoring, adversarial review. |
 | Small (1) | aid-clerk | Mechanical extract/format/glob. |
+
+These are **default** tiers, not fixed ceilings (work-006). A dispatch site picks the
+model tier **and** reasoning effort from the task's difficulty via
+`canonical/aid/templates/agent-dispatch-tiering.md`, defaulting low and escalating the
+hard minority to `large` + `high`/`xhigh`. Effort is a second, independent lever
+(often better than switching tiers) and defaults below the host `high` for routine and
+retrieval-heavy work; `aid-researcher` in particular runs at `low` effort (research
+depth does not aid retrieval). work-006 lowered interviewer/researcher/reviewer from
+Large to Medium by default; escalation restores Large where the executor or the review
+genuinely needs it.
 
 **The dispatch invariant:** the reviewer's tier is always >= the executor's tier, and the
 reviewer runs in a clean context after the executor finishes (never sees the executor's

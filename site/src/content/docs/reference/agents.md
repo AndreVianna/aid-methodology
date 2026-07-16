@@ -20,30 +20,6 @@ Transforms requirements, SPEC, and KB into design output — SPEC sections, type
 
 [Definition: `canonical/agents/aid-architect/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-architect/AGENT.md)
 
-### `aid-interviewer`
-
-**Tools:** Read, Glob, Grep, Bash
-
-Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gather requirements, clarify ambiguity, and produce REQUIREMENTS.md or Q&A entries.
-
-[Definition: `canonical/agents/aid-interviewer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-interviewer/AGENT.md)
-
-### `aid-researcher`
-
-**Tools:** Read, Glob, Grep, Bash, Write, WebSearch, WebFetch
-
-Reads and analyzes code, docs, logs, APIs, and external web sources to produce structured Knowledge Base documents and analysis reports — covering existing-state cataloguing, dependency/integration/convention mapping, telemetry interpretation, security analysis, performance profiling, and web-sourced prior art. Web sources are cited with a URL and access date.
-
-[Definition: `canonical/agents/aid-researcher/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-researcher/AGENT.md)
-
-### `aid-reviewer`
-
-**Tools:** Read, Glob, Grep, Bash
-
-Adversarial quality evaluator. Reviews any artifact (code, tasks, specs, plans, KB docs) against its acceptance criteria, rubric, and KB conventions. Produces the 7-column issue ledger with source and severity tags. Does NOT fix anything; does NOT compute the grade.
-
-[Definition: `canonical/agents/aid-reviewer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-reviewer/AGENT.md)
-
 ## Medium tier
 
 The production workhorses — implementation, delivery, coordination, and documentation.
@@ -55,6 +31,14 @@ The production workhorses — implementation, delivery, coordination, and docume
 The only agent that modifies production code. Implements TASK files following specs and KB conventions across all implementation task types (IMPLEMENT, TEST, REFACTOR, CONFIGURE, MIGRATE, FIX), with mandatory build verification and formal IMPEDIMENT.md escalation.
 
 [Definition: `canonical/agents/aid-developer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-developer/AGENT.md)
+
+### `aid-interviewer`
+
+**Tools:** Read, Glob, Grep, Bash
+
+Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gather requirements, clarify ambiguity, and produce REQUIREMENTS.md or Q&A entries.
+
+[Definition: `canonical/agents/aid-interviewer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-interviewer/AGENT.md)
 
 ### `aid-operator`
 
@@ -71,6 +55,22 @@ Runs final release verification, packages artifacts, creates PRs and release not
 Routes pipeline findings to the next phase or skill, enforces human gates, dispatches agents with context, and manages parallel execution.
 
 [Definition: `canonical/agents/aid-orchestrator/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-orchestrator/AGENT.md)
+
+### `aid-researcher`
+
+**Tools:** Read, Glob, Grep, Bash, Write, WebSearch, WebFetch
+
+Reads and analyzes code, docs, logs, APIs, and external web sources to produce structured Knowledge Base documents and analysis reports — covering existing-state cataloguing, dependency/integration/convention mapping, telemetry interpretation, security analysis, performance profiling, and web-sourced prior art. Web sources are cited with a URL and access date.
+
+[Definition: `canonical/agents/aid-researcher/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-researcher/AGENT.md)
+
+### `aid-reviewer`
+
+**Tools:** Read, Glob, Grep, Bash
+
+Adversarial quality evaluator. Reviews any artifact (code, tasks, specs, plans, KB docs) against its acceptance criteria, rubric, and KB conventions. Produces the 7-column issue ledger with source and severity tags. Does NOT fix anything; does NOT compute the grade.
+
+[Definition: `canonical/agents/aid-reviewer/AGENT.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/agents/aid-reviewer/AGENT.md)
 
 ### `aid-tech-writer`
 

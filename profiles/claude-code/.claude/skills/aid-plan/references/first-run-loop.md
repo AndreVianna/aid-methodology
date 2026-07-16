@@ -132,7 +132,7 @@ nothing and stores no credential) and record `ticket_ref: <stem>:<external-id>` 
 `STATE.md` frontmatter just written above (4b). Skip silently when no such ticket applies or no
 matching connector is catalogued.
 
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.claude/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 
 **Dispatch package:** render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `per-deliverable`

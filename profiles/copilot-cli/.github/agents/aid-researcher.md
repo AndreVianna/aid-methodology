@@ -2,7 +2,7 @@
 name: aid-researcher
 description: Reads and analyzes code, docs, logs, APIs, and external web sources to produce structured Knowledge Base documents and analysis reports — covering existing-state cataloguing, dependency/integration/convention mapping, telemetry interpretation, security analysis, performance profiling, and web-sourced prior art. Web sources are cited with a URL and access date.
 tools: Read, Glob, Grep, shell, Write, WebSearch, WebFetch
-model: claude-opus-4.8
+model: claude-sonnet-4.6
 permissionMode: bypassPermissions
 background: true
 ---
