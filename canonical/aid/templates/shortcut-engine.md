@@ -138,7 +138,6 @@ re-derivation from this table:
 | refactor | REFACTOR | |
 | test / test-* | TEST | |
 | experiment | RESEARCH | hypothesis -> analyze -> recommend |
-| document / document-* | DOCUMENT | |
 | show-dashboard | IMPLEMENT | a BI view is code/config |
 | remove | REFACTOR | delete without changing surviving behavior; dependents/tests/docs updated (structural, not a defect fix; v2.1.0 coverage-gap follow-on) |
 | deprecate | IMPLEMENT | add a warning + migration path; artifact still functions (v2.1.0 coverage-gap follow-on) |
@@ -170,7 +169,6 @@ this table just collects them at a glance, the same incremental-growth precedent
 | `change` (+ `update-*` aliases), `refactor` | `shortcut-scaffolding/change-refactor.md` |
 | `fix` | `shortcut-scaffolding/fix.md` |
 | `test`, `experiment` | `shortcut-scaffolding/test-experiment.md` |
-| `document` | `shortcut-scaffolding/document.md` |
 | `show-dashboard` | `shortcut-scaffolding/analyze-report.md` (`review` + `research` + `report` detached to hand-authored collapse skills, work-005) |
 | `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` (v2.1.0 coverage-gap follow-on) |
 

@@ -556,10 +556,10 @@ shortcuts:
   - name: aid-prototype-ui
     verb: prototype
     artifact: ui
-    alias_of: aid-prototype
+    alias_of: null
     default_type: DESIGN
     group: G3
-    intent: "Alias of aid-prototype -- wireframe/mock a UI to validate UX direction (ui hint)."
+    intent: "Wireframe/mock a UI to validate UX direction (ui kind of aid-prototype; body delegates)."
     repurpose: true
   - name: aid-design
     verb: design
@@ -570,14 +570,62 @@ shortcuts:
     intent: "Produce a kept design artifact (UX/flow/component/interface, with a11y notes) to inform the build; resolves nothing."
     repurpose: true
 
-  # --- G8: Document family (feature-010, task-023) -- 8 rows, no aliases ---
+  # --- G8: Document family -- work-005 reframe of feature-010 --
+  # `document` is a create/change ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
+  # Canonical: aid-create-document / aid-change-document (generic; format+genre resolved by
+  # intelligence) + aid-add/update-document pure aliases. The 8 legacy aid-document* and
+  # aid-create-diagram are KIND-SIBLINGS (repurpose, alias_of null, own {verb,artifact};
+  # their hand-authored body delegates to aid-create-document, binding a genre/format hint).
+  # Producer aid-tech-writer, verifier aid-reviewer; present-before-place; NEVER writes
+  # .aid/knowledge/ (that is aid-update-kb's territory). See specs/aid-document.md.
+  - name: aid-create-document
+    verb: create
+    artifact: document
+    alias_of: null
+    default_type: DOCUMENT
+    group: G8
+    intent: "Create a document NOW (format/genre resolved by intelligence -- markdown, diagram, ADR, runbook, ...); resolves nothing; present before placing."
+    repurpose: true
+  - name: aid-add-document
+    verb: create
+    artifact: document
+    alias_of: aid-create-document
+    default_type: DOCUMENT
+    group: G8
+    intent: "Alias of aid-create-document."
+    repurpose: true
+  - name: aid-change-document
+    verb: change
+    artifact: document
+    alias_of: null
+    default_type: DOCUMENT
+    group: G8
+    intent: "Update an existing document NOW; resolves nothing; present before placing."
+    repurpose: true
+  - name: aid-update-document
+    verb: change
+    artifact: document
+    alias_of: aid-change-document
+    default_type: DOCUMENT
+    group: G8
+    intent: "Alias of aid-change-document."
+    repurpose: true
+  - name: aid-create-diagram
+    verb: create
+    artifact: diagram
+    alias_of: null
+    default_type: DOCUMENT
+    group: G8
+    intent: "Create a diagram (mermaid/graphviz) -- diagram kind of aid-create-document; body delegates."
+    repurpose: true
   - name: aid-document
     verb: document
     artifact: ""
     alias_of: null
     default_type: DOCUMENT
     group: G8
-    intent: "Write a general how-to/reference/explanation document or a status/progress report."
+    intent: "Write a general how-to/reference/explanation document or status/progress report (general kind; body delegates to aid-create-document)."
+    repurpose: true
   - name: aid-document-decision
     verb: document
     artifact: decision
@@ -585,6 +633,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write an ADR: context, decision, alternatives, consequences."
+    repurpose: true
   - name: aid-document-architecture
     verb: document
     artifact: architecture
@@ -592,6 +641,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Document a system's components, boundaries, interactions, and diagrams."
+    repurpose: true
   - name: aid-document-guideline
     verb: document
     artifact: guideline
@@ -599,6 +649,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write an advisory guideline: recommended practice with rationale and examples."
+    repurpose: true
   - name: aid-document-standard
     verb: document
     artifact: standard
@@ -606,6 +657,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write a mandatory standard: rule, scope, compliance/enforcement, exceptions."
+    repurpose: true
   - name: aid-document-runbook
     verb: document
     artifact: runbook
@@ -613,6 +665,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write an operational runbook: trigger, diagnostic, remediation, escalation."
+    repurpose: true
   - name: aid-document-tutorial
     verb: document
     artifact: tutorial
@@ -620,6 +673,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write a learning-oriented tutorial: prerequisites, worked steps, outcome."
+    repurpose: true
   - name: aid-document-changelog
     verb: document
     artifact: changelog
@@ -627,6 +681,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write changelog/release notes (Added/Changed/Fixed/Removed/Security)."
+    repurpose: true
 
   # --- G11: Analyze & Report family (feature-011, task-025) -- 2 rows, no aliases ---
   # aid-report: HAND-AUTHORED collapse skill (work-005). Analyzes data/usage NOW and
