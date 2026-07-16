@@ -72,6 +72,10 @@ desktop.ini
 # generator verify-report default output path (verify_deterministic.py / verify_advisory.py) -- tooling artifact, not a work
 .aid/work-002-canonical-generator/
 
+# work-005 lite-skills-refactor: process tracking + design specs, kept LOCAL only
+# (removed from PR #144 per maintainer request; not merged to master).
+.aid/work-005-lite-skills-refactor/
+
 # Playwright MCP capture output (screenshots, snapshots, console logs) — ephemeral, never commit.
 # Captured images should be written to a temp folder (e.g. $CLAUDE_JOB_DIR/tmp); this is a backstop.
 .playwright-mcp/
