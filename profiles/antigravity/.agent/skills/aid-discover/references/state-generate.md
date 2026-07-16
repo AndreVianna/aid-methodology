@@ -676,7 +676,6 @@ only ever run for the two brownfield paths.
   `aid-researcher` dispatches, one per concern lane.
 - **brownfield-small:** **skip the 4-way fan-out.** Dispatch **ONE `aid-researcher`** with the
   full declared-set target list as a single understand-pass over the (small) source. The
-  full declared-set target list as a single understand-pass over the (small) source. The
   single-pass researcher receives all targets from all concern lanes (architecture + analyst +
   integrator + quality docs) in one prompt, covering the declared set in one pass. Skip the
   per-lane target-list computation below; instead assemble all declared-set targets and dispatch
