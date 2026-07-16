@@ -74,7 +74,7 @@
 {"dst": ".codex/aid/templates/generated-files.txt", "profile": "codex", "sha256": "06d692a2067e21cd5c37072eb53da14bc97a64ce68d7b53a435cf933b66214c4", "src": "canonical/templates/generated-files.txt"}
 {"dst": ".codex/aid/templates/grading-rubric.md", "profile": "codex", "sha256": "0fcacab62f960aabe32d60aa17d07983334840d1d6e150837766b98c1e5273cb", "src": "canonical/templates/grading-rubric.md"}
 {"dst": ".codex/aid/templates/kb-authoring/concern-model.md", "profile": "codex", "sha256": "9fbb6eccd1e5b6553fc5d97c5b9bc177fdfd3c76892f8964a51a20d46f263038", "src": "canonical/templates/kb-authoring/concern-model.md"}
-{"dst": ".codex/aid/templates/kb-authoring/domain-doc-matrix.md", "profile": "codex", "sha256": "a350b8c6f38b9bd20d6ee01edbf25c7fe1419b4cbee7a7c501d9e8c120ad6d37", "src": "canonical/templates/kb-authoring/domain-doc-matrix.md"}
+{"dst": ".codex/aid/templates/kb-authoring/domain-doc-matrix.md", "profile": "codex", "sha256": "7e48d8f77910142778ba8497249f74d3c6d89fd3306caaedb090237b4907e3d5", "src": "canonical/templates/kb-authoring/domain-doc-matrix.md"}
 {"dst": ".codex/aid/templates/kb-authoring/frontmatter-schema.md", "profile": "codex", "sha256": "9d4ea36d979a3b8f90202ba1f0ac05c61394cda76ebc899032304198c1d4b4bc", "src": "canonical/templates/kb-authoring/frontmatter-schema.md"}
 {"dst": ".codex/aid/templates/kb-authoring/principles.md", "profile": "codex", "sha256": "feec44882431205cecdeb946d7c91c8e2fd07026221374616d735d223f4c2c34", "src": "canonical/templates/kb-authoring/principles.md"}
 {"dst": ".codex/aid/templates/kb-authoring/review-rubric.md", "profile": "codex", "sha256": "0969054fe6f0d7459f4bbdd0cfbf9162fc3d9915d9acb9cd88323e52f3219ee2", "src": "canonical/templates/kb-authoring/review-rubric.md"}

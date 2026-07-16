@@ -10,7 +10,7 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-94 skills — 16-skill pipeline + 76 verb-first shortcuts + `/aid-triage` + `/aid-ask` · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+108 skills — 14 pipeline / on-demand / router skills + a 94-row shortcut catalog (64 verb-first shortcuts + 30 hand-authored repurpose skills) · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
 
 **Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
@@ -41,7 +41,7 @@ flowchart TD
     MON -. "change request → /aid-triage" .-> TR
 ```
 
-*94 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*108 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.
@@ -132,7 +132,7 @@ Open your AI coding tool in your project and run the skills as slash commands:
 /aid-config           # once per project — scaffolds .aid/ and KB structure
 /aid-discover         # brownfield only: analyze the codebase into the KB
 /aid-triage           # not sure where to start? suggest-only router — points you to a shortcut, /aid-describe, or /aid-ask
-/aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-change-cli (76 shortcuts)
+/aid-<verb>[-<artifact>]  # shortcut — you know the change; e.g. /aid-fix, /aid-create-api, /aid-change-cli (64 shortcuts)
 /aid-ask              # just have a question? free-form Q&A over the KB + codebase; friendly alias of /aid-query-kb
 /aid-describe         # gather requirements for broad / new-project work (full path only); on approval, run /aid-define
 /aid-define           # decompose approved requirements into features (full path only)
@@ -219,7 +219,7 @@ AID's phases are gated: you approve every transition. Nothing auto-advances. [Fu
 
 ### The Lite Path
 
-AID does not make you weigh the cost of the full pipeline against the size of a change yourself — that trade-off is automated. For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) — one of 76 shortcuts spanning 14 families (create · change · fix · refactor · remove · deprecate · migrate · test/experiment · prototype · document · report · review · research · dashboard) — and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Each shortcut is bound to one specific change type, so the engine already knows the shape of the work and skips the generic elicitation a from-scratch interview would need — that's what makes it fast, not just short.
+AID does not make you weigh the cost of the full pipeline against the size of a change yourself — that trade-off is automated. For a small, well-scoped change, skip the full pipeline entirely: name it with a verb-first shortcut (`/aid-fix`, `/aid-create-api`, `/aid-change-cli`, …) — one of 64 shortcuts spanning the shortcut families (create · change · fix · refactor · remove · deprecate · migrate · test · experiment · prototype · design · document · report · dashboard · review · research) — and the shared shortcut engine collapses Describe → Define → Specify → Plan → Detail into one fast, mostly-autonomous run, then halts for your approval. Each shortcut is bound to one specific change type, so the engine already knows the shape of the work and skips the generic elicitation a from-scratch interview would need — that's what makes it fast, not just short.
 
 Not sure which shortcut fits, or is the change broad or multi-part? `/aid-triage` reads a free-form description and suggests either the matching shortcut or the full `/aid-describe` path. Just asking a question instead of proposing a change? `/aid-triage` points you to `/aid-ask` instead. Either way, nothing runs until you approve it.
 

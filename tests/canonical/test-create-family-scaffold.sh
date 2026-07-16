@@ -104,16 +104,24 @@ assert_output_contains "$CREATE_TXT" \
     '(`task-002` depends on `task-001`, `task-003` depends on `task-002`)' \
     "CFS04b strictly-sequential task-dependency rule stated (wrap point 2)"
 
-# CFS-05: Ownership boundary -- test/experiment/doc/report carved out of create.
+# CFS-05: Ownership boundary -- test/experiment/doc/report/dashboard carved out of create
+# (work-005: routing re-authored -- running-tests -> aid-test, doc -> aid-create-document,
+# report -> aid-report, dashboard -> aid-create-dashboard; each on its own source line).
 assert_output_contains "$CREATE_TXT" \
-    '`aid-test`**, **experiment -> `aid-experiment`**,' \
-    "CFS05a Ownership boundary: test -> aid-test, experiment -> aid-experiment"
+    '**running tests / verification -> `aid-test`**' \
+    "CFS05a Ownership boundary: running tests/verification -> aid-test"
 assert_output_contains "$CREATE_TXT" \
-    '`aid-document`**, **report/dashboard -> `aid-report` / `aid-show-dashboard`**.' \
-    "CFS05b Ownership boundary: doc/content -> aid-document, report/dashboard -> aid-report/aid-show-dashboard"
+    '**experiment -> `aid-experiment`**,' \
+    "CFS05b Ownership boundary: experiment -> aid-experiment"
 assert_output_contains "$CREATE_TXT" \
-    '**existing** artifact is `aid-change` (`shortcut-scaffolding/change-refactor.md`),' \
-    "CFS05c Ownership boundary: modifying an existing artifact routes to aid-change"
+    '`aid-create-document`**, **report -> `aid-report`**, **dashboard ->' \
+    "CFS05c Ownership boundary: doc/content -> aid-create-document, report -> aid-report"
+assert_output_contains "$CREATE_TXT" \
+    '`aid-create-dashboard`**.' \
+    "CFS05d Ownership boundary: dashboard -> aid-create-dashboard"
+assert_output_contains "$CREATE_TXT" \
+    '`aid-change` (`shortcut-scaffolding/change-refactor.md`),' \
+    "CFS05e Ownership boundary: modifying an existing artifact routes to aid-change"
 
 echo ""
 echo "--- Part 2: alias-equivalence contract (checked against the real catalog + skill dirs) ---"

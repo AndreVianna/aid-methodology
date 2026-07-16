@@ -153,8 +153,15 @@ else
         PWHL="$(ls "${PD}"/aid_installer-*.whl 2>/dev/null | head -1)"
         if [[ -n "${PWHL}" ]] && "${PV}/bin/pip" install --quiet "${PWHL}" >/dev/null 2>&1; then
             pass "RMS-PYPI-01 wheel build + pip install succeeded"
-            # Locate bin/aid installed by pip into the venv.
-            _PYPI_AID_BIN="$(find "${PV}" -name aid -type f 2>/dev/null | head -1)"
+            # Locate the aid entry installed by pip. pip installs TWO files named
+            # `aid`: the Python console-script at ${PV}/bin/aid (a launcher that just
+            # spawns the vendored bash worker) and the vendored bash worker itself at
+            # .../aid_installer/_vendor/bin/aid. A bare `find -name aid | head -1` picks
+            # either one depending on filesystem traversal order (flaky); running the
+            # Python launcher under `bash` yields "import: command not found". Target the
+            # vendored bash worker deterministically -- it is the real aid home
+            # (_vendor/ has bin/ + lib/ + VERSION + dashboard) that the launcher execs.
+            _PYPI_AID_BIN="$(find "${PV}" -path '*/_vendor/bin/aid' -type f 2>/dev/null | head -1)"
             if [[ -n "${_PYPI_AID_BIN}" && -x "${_PYPI_AID_BIN}" ]]; then
                 _PYPI_CODE_HOME="$(cd "$(dirname "${_PYPI_AID_BIN}")/.." && pwd)"
                 PREPO="$(seed_old_repo "${_PYPI_CODE_HOME}")"

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # test-kb-template-authoring-standard.sh -- Mechanical authoring-standard checks for the
-# 15 knowledge-base seed templates under canonical/aid/templates/knowledge-base/*.md.
+# 14 knowledge-base seed templates under canonical/aid/templates/knowledge-base/*.md.
+# (README.md was retired from the knowledge-base seed templates in work-005, 15 -> 14.)
 #
 # Tests (AS01-AS05):
 #
-#   Per-template mechanical checks (run for each of the 15 seed templates):
+#   Per-template mechanical checks (run for each of the 14 seed templates):
 #   AS01  each template starts with YAML frontmatter (first line is ---)
 #   AS02  each template has a ## Contents index section
 #   AS03  each template has ## Change Log as the LAST top-level section
@@ -12,7 +13,7 @@
 #   AS05  frontmatter contains the required fields (kb-category, intent)
 #
 #   Aggregate:
-#   AS06  exactly 15 template files are present (the synth_default_seed count)
+#   AS06  exactly 14 template files are present (the synth_default_seed count)
 #
 # Every check is run for every template, so a failure names the offending file.
 #
@@ -49,8 +50,8 @@ TEMPLATE_COUNT="${#TEMPLATES[@]}"
 # ---------------------------------------------------------------------------
 # AS06: exactly 15 template files present
 # ---------------------------------------------------------------------------
-assert_eq "$TEMPLATE_COUNT" "15" \
-  "AS06 exactly 15 knowledge-base template files present (synth_default_seed count)"
+assert_eq "$TEMPLATE_COUNT" "14" \
+  "AS06 exactly 14 knowledge-base template files present (synth_default_seed count)"
 
 # ---------------------------------------------------------------------------
 # Per-template checks (AS01-AS05)

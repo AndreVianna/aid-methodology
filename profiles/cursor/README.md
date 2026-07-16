@@ -19,7 +19,7 @@ cp    path/to/aid-methodology/profiles/cursor/AGENTS.md   AGENTS.md
 See the repo README for npm / pipx / offline install options.
 
 This gives you:
-- `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (94 skills: 16 classic — 11 across five pipeline groups + 5 off-pipeline on-demand — plus /aid-triage, /aid-ask, and 76 verb-first shortcut skills)
+- `.cursor/skills/aid-{phase}/SKILL.md` — Phase instructions in AgentSkills format (108 skills: 14 curated pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills — 64 verb-first shortcut doorways + 30 hand-authored repurpose skills)
 - `.cursor/agents/{name}.md` — Agent definitions (9 agents with `aid-` prefix), dispatched via Task tool when available
 - `.cursor/aid/scripts/`, `.cursor/aid/templates/` — AID-own support files
 - `AGENTS.md` — Project context for AI agents (edit with your project details)
@@ -42,7 +42,7 @@ This gives you:
 
 ## Skills
 
-94 skills total: 16 classic — the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base, plus the on-demand `aid-housekeep`, `aid-query-kb`, `aid-update-kb`, `aid-set-connector`, and `aid-unset-connector` skills — plus `/aid-triage`, `/aid-ask`, and 76 verb-first shortcut skills. `/aid-triage` is a stateless, suggest-only router: it reads one free-form description and suggests either the matching shortcut, the full `aid-describe` path, or — when the input reads as a question — `/aid-ask`, writing nothing itself. `/aid-ask` is a friendly-named Q&A alias of the classic `aid-query-kb` skill. The shortcuts (`aid-fix`, `aid-create-api`, `aid-change-ui`, `aid-refactor`, `aid-review`, `aid-remove`, `aid-migrate`, …) are direct-entry doorways that skip straight to a flattened Lite work for a single named change. Each skill lives in `.cursor/skills/aid-<name>/SKILL.md`.
+108 skills total: 14 curated skills — the pipeline phase skills, the optional `aid-summarize` for generating a single-file visual HTML summary of the Knowledge Base, the on-demand `aid-housekeep`, `aid-update-kb`, `aid-set-connector`, and `aid-unset-connector` skills, and the `/aid-triage` router — plus the 94-row shortcut catalog's skills: 64 verb-first shortcut doorways and 30 hand-authored `repurpose` skills (`aid-review`, `aid-research`, `aid-report`, `aid-document`, `aid-test`, `aid-prototype`, `aid-design`, and the re-registered `aid-deploy` / `aid-monitor` / `aid-query-kb` / `aid-ask`). `/aid-triage` is a stateless, suggest-only router: it reads one free-form description and suggests either the matching shortcut, the full `aid-describe` path, or — when the input reads as a question — `/aid-ask`, writing nothing itself. `/aid-ask` is a friendly-named Q&A alias of the classic `aid-query-kb` skill. The shortcuts (`aid-fix`, `aid-create-api`, `aid-change-ui`, `aid-refactor`, `aid-review`, `aid-remove`, `aid-migrate`, …) are direct-entry doorways that skip straight to a flattened Lite work for a single named change. Each skill lives in `.cursor/skills/aid-<name>/SKILL.md`.
 
 | Skill | Phase | Description |
 |-------|-------|-------------|
