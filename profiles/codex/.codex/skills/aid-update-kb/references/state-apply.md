@@ -82,7 +82,12 @@ as needed.
 
 For docs whose content requires domain depth beyond the change plan's
 description (e.g. a deep architecture doc), dispatch an `aid-architect` or
-`aid-researcher` sub-agent to author the edit. The sub-agent receives:
+`aid-researcher` sub-agent to author the edit **at Medium tier with low/medium
+effort** -- authoring/editing a KB doc is Retrieval-heavy work
+(`.codex/aid/templates/agent-dispatch-tiering.md`), and Medium keeps the author
+at or below this skill's REVIEW panel reviewer (reviewer tier >= executor tier). Only
+a genuinely hard/deep doc justifies escalating the author to Large -- and then the
+REVIEW panel reviewer must escalate to Large to match. The sub-agent receives:
 - The doc path.
 - The change-type and description from the change plan.
 - The native language and concept-spine constraint (preserve coined terms from

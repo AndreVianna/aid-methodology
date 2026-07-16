@@ -1,7 +1,7 @@
 ---
 name: aid-interviewer
 description: Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gather requirements, clarify ambiguity, and produce REQUIREMENTS.md or Q&A entries.
-tier: large
+tier: medium
 tools: Read, Glob, Grep, Bash
 ---
 

@@ -46,7 +46,9 @@ Include in the prompt:
   Fixed→Recurred if regressed). Append new findings with Status: Pending.
   Output per `canonical/aid/templates/reviewer-ledger-schema.md` — ONE table, no narrative."
 
-Dispatch the `aid-reviewer` subagent with the rendered brief.
+Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
+`aid-architect`; reviewer tier >= executor tier per
+`canonical/aid/templates/agent-dispatch-tiering.md`) with the rendered brief.
 
 ### Grade Overall
 

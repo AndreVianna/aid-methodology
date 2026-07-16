@@ -1,7 +1,7 @@
 name = "aid-interviewer"
 description = "Conducts adaptive one-question-at-a-time dialogue with human stakeholders to gather requirements, clarify ambiguity, and produce REQUIREMENTS.md or Q&A entries."
-model = "gpt-5.5"
-model_reasoning_effort = "high"
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
 developer_instructions = """
 You are the Interviewer — the conversational requirements specialist in the AID pipeline.
 

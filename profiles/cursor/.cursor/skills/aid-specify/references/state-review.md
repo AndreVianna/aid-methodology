@@ -40,7 +40,9 @@ Include in the prompt:
 - **Schema reference:** "Output per `.cursor/aid/templates/reviewer-ledger-schema.md`.
   The ledger is the entire file — ONE markdown table, no headers, no narrative."
 
-Dispatch the `aid-reviewer` subagent with the rendered brief.
+Dispatch the `aid-reviewer` subagent **at Large tier** (the executor is the Large
+`aid-architect`; reviewer tier >= executor tier per
+`.cursor/aid/templates/agent-dispatch-tiering.md`) with the rendered brief.
 
 ### Grade Overall
 

@@ -676,11 +676,17 @@ only ever run for the two brownfield paths.
   `aid-researcher` dispatches, one per concern lane.
 - **brownfield-small:** **skip the 4-way fan-out.** Dispatch **ONE `aid-researcher`** with the
   full declared-set target list as a single understand-pass over the (small) source. The
+  full declared-set target list as a single understand-pass over the (small) source. The
   single-pass researcher receives all targets from all concern lanes (architecture + analyst +
   integrator + quality docs) in one prompt, covering the declared set in one pass. Skip the
   per-lane target-list computation below; instead assemble all declared-set targets and dispatch
   one agent. The prompt it receives is the combined foundation reference block (below) plus the
   full target list. Print `[2-5/5] Single understand-pass (brownfield-small): covering all targets in one pass...`
+
+Dispatch every discovery `aid-researcher` (fan-out or single-pass) at its default Medium
+tier and **`low` reasoning effort** -- discovery is retrieval / cataloguing, and depth does
+not aid retrieval (`.codex/aid/templates/agent-dispatch-tiering.md`, Retrieval-heavy row).
+Escalate only a lane that hits genuinely hard analysis.
 
 For **brownfield-large** (full fan-out) -- compute each agent's target list from the declared
 set (§2.5 mapping-honors-declared-set):

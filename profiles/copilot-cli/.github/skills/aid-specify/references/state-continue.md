@@ -66,7 +66,7 @@ When agreed:
 
 ### 4. Review
 
-**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes. Print before dispatch: `[Review] Dispatching aid-reviewer for SPEC validation.`
+**Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.github/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes. Print before dispatch: `[Review] Dispatching aid-reviewer for SPEC validation.`
 
 ▶ aid-reviewer starting (~1–2 min)
 
