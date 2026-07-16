@@ -735,13 +735,46 @@ shortcuts:
     group: G11
     intent: "Analyze data or usage and communicate insight (EDA, metrics, A/B analysis)."
     repurpose: true
-  - name: aid-show-dashboard
-    verb: show-dashboard
-    artifact: ""
+  # dashboard: work-005 reframe of show-dashboard into a create/change ARTIFACT --
+  # ENGINE-DRIVEN, keep-cycle (a durable/published BI view is a real build). aid-show-dashboard
+  # kept as a backward-compat alias of aid-create-dashboard. group G11 for discovery. Boundary:
+  # aid-create-dashboard = durable/refreshable BI view; aid-report = one-time analysis.
+  # See specs/aid-dashboard.md.
+  - name: aid-create-dashboard
+    verb: create
+    artifact: dashboard
     alias_of: null
     default_type: IMPLEMENT
     group: G11
-    intent: "Build a durable dashboard or BI view (source to visualization to publish/refresh)."
+    intent: "Build a durable dashboard / BI view (source -> visualization -> publish/refresh)."
+  - name: aid-add-dashboard
+    verb: create
+    artifact: dashboard
+    alias_of: aid-create-dashboard
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Alias of aid-create-dashboard."
+  - name: aid-change-dashboard
+    verb: change
+    artifact: dashboard
+    alias_of: null
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Change an existing dashboard / BI view (source, visualization, or refresh cadence)."
+  - name: aid-update-dashboard
+    verb: change
+    artifact: dashboard
+    alias_of: aid-change-dashboard
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Alias of aid-change-dashboard."
+  - name: aid-show-dashboard
+    verb: create
+    artifact: dashboard
+    alias_of: aid-create-dashboard
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Alias of aid-create-dashboard (backward-compatible name)."
 
   # --- G11: Review + Research (v2.1.0 coverage-gap follow-on,
   # work-001-lite-aid-skills) -- 5 rows: aid-review + aid-audit alias,

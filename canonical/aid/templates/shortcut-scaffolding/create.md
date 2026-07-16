@@ -37,6 +37,7 @@ stack/framework/persistence-layer/test-framework from the KB
 | `config` | option name; purpose; default + validation; affected behavior |
 | `infra` | resource name; purpose; access policy; config/retention |
 | `test` | target under test; level (unit/integration/e2e); behavior; each test traces to a specific acceptance criterion (framework inferred from the KB `test-landscape.md`) |
+| `dashboard` | data source(s); metrics/views to visualize; publish target; refresh cadence |
 
 **Escalation.** The generic engine rule already covers this: escalate to the
 one combined CAPTURE question only when §5/§9 cannot be made concrete and
@@ -66,6 +67,7 @@ activate none beyond the mandatory three):
 | `config` | none -- base sections document the option directly |
 | `infra` | `### Cloud Support` / `### Hardware Requirements` |
 | `test` | `### BDD Scenarios` (optional -- when the behavior under test reads naturally as Given/When/Then) |
+| `dashboard` | none beyond the mandatory three (source/view/refresh live in `### Feature Flow` + `### Layers & Components`) |
 
 ## DETAIL -- default task breakdown, per artifact
 
@@ -91,6 +93,7 @@ reference rather than duplicating -- edit artifact specifics here, once.
 | `config` | `task-001` CONFIGURE (define + wire + document) |
 | `infra` | `task-001` IMPLEMENT (provision + wire + verify connectivity) |
 | `test` | `task-001` TEST (author/extend the tests; each traces to a specific acceptance criterion) |
+| `dashboard` | `task-001` IMPLEMENT (source + visualization + publish/refresh wiring), `task-002` TEST (data-accuracy / refresh check) |
 
 Every multi-task artifact's task dependencies are strictly sequential
 (`task-002` depends on `task-001`, `task-003` depends on `task-002`) --

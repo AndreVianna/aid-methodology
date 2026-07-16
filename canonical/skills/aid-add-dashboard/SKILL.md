@@ -1,7 +1,7 @@
 ---
-name: aid-show-dashboard
+name: aid-add-dashboard
 description: >
-  Direct-entry Lite-path shortcut (Alias of aid-create-dashboard (backward-compatible name).) -- skips the aid-describe
+  Direct-entry Lite-path shortcut (Alias of aid-create-dashboard.) -- skips the aid-describe
   interview/triage. Binds VERB=`create` ARTIFACT=`dashboard` and runs the shared
   shortcut engine, producing a fully-graded flattened Lite work that halts for
   approval.

@@ -5,11 +5,11 @@ pipeline:
 started: "2026-07-15"
 minimum_grade: "A"
 user_approved: no
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Detail
 active_skill: none
-updated: "2026-07-16T00:48:19Z"
-pause_reason: --
+updated: "2026-07-16T00:51:59Z"
+pause_reason: "pre-regen checkpoint -- all 8 families' canonical source done; batch regen (run_generator + dogfood resync + verify) pending user go-ahead"
 block_reason: --
 block_artifact: --
 delivery_state: Pending-Spec
@@ -80,6 +80,8 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-16 | task-004 canonical source done | -- | experiment: content-only scaffolding adaptation (test-experiment.md); no catalog/engine/skill change |
 | 2026-07-16 | task-005 canonical source done | -- | document restructure: create/change-document + aliases + create-diagram + 8 genre kind-siblings (subagent-authored delegations, spot-checked) + engine detach; --check 60/26/0 |
 | 2026-07-16 | task-007 canonical source done | -- | test restructure: create/change-test authoring doorways generated; aid-test run collapse + 3 kind-siblings; create.md test artifact + ownership fix; engine detach; --check 60/30/0. (build-shortcut-skills WRITE deleted the marker-orphan test doorways before I re-authored them -- expected) |
+| 2026-07-16 | task-008 canonical source done | -- | dashboard reframe: create/change-dashboard + aliases + show-dashboard alias (engine-driven); create.md dashboard artifact; engine detach; --check 64/30/0 |
+| 2026-07-16 | ALL 8 families canonical source DONE -- PRE-REGEN CHECKPOINT | -- | catalog 94 rows, 64 doorways / 30 repurpose / 0 orphans; +14 new skills; batch regen (run_generator + dogfood resync + verify) pending user go-ahead |
 
 ---
 
@@ -102,7 +104,7 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 | task-005 document family restructure | In Progress | -- | -- | Canonical source done: aid-create/change-document full bodies + add/update pure aliases + aid-create-diagram + 8 legacy aid-document* rewritten as kind-siblings (delegate) + engine detach; --check 60/26/0 (catalog 86 rows). profiles/dogfood pending batch regen |
 | task-006 prototype + new aid-design | In Progress | -- | -- | Canonical source done: aid-prototype hand-authored collapse (LIGHT verify), aid-prototype-ui hint-alias, NEW aid-design (kept, full verify) + engine detach; profiles/dogfood pending batch regen |
 | task-007 test-family restructure | In Progress | -- | -- | Canonical source done: create/change-test (+add/update) engine-driven authoring doorways generated; aid-test hand-authored run collapse + 3 kind-siblings; create.md gains test artifact + ownership fix; engine detach. --check 60/30/0 (catalog 90). FOLLOW-UP: trim dormant test sections in test-experiment.md. profiles/dogfood pending batch regen |
-| task-008 dashboard reframe | In Progress | -- | -- | Spec LOCKED (specs/aid-dashboard.md). show-dashboard -> aid-create-dashboard/aid-change-dashboard (+add/update aliases); aid-show-dashboard hint-alias; keep-cycle, behavior unchanged (naming/topology only). Implementation pending |
+| task-008 dashboard reframe | In Progress | -- | -- | Canonical source done: create/change-dashboard (+add/update + show-dashboard aliases) engine-driven doorways generated; create.md gains dashboard artifact; engine detach (analyze-report.md now orphaned -- follow-up trim). --check 64/30/0 (catalog 94). profiles/dogfood pending batch regen |
 
 ---
 
