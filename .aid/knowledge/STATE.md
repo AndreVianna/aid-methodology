@@ -94,13 +94,13 @@ This is the single state file for the **Discovery area** — persistent project 
 | Theme | default |
 | Machine Grade | A+ (grade-summary AUTO_POOL 68/68) |
 | Human Grade | A+ (K1 10/10, K2 15/15, V1 5/5; V1 orchestrator visual gate via Playwright — hero/glossary/pipeline-SVG render clean in light+dark, theme toggle + lightbox open/Esc verified) |
-| User Approved | yes (2026-07-09; /aid-housekeep SUMMARY-DELTA, orchestrator V1 visual gate) |
-| Last Run | 2026-07-09 |
+| User Approved | yes (2026-07-16; /aid-housekeep SUMMARY-DELTA count-patch, orchestrator V1 visual gate) |
+| Last Run | 2026-07-16 |
 | Output | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) |
 | Mermaid Version | — (retired in D-012; pre-rendered inline SVG only) |
 | Mermaid Cached | — |
 
-**User Approved:** yes (2026-07-09)
+**User Approved:** yes (2026-07-16)
 **Doc-Set Source:** .aid/settings.yml discovery.doc_set
 **Doc-Set Count:** 19 of 19
 **Domain:** hybrid:methodology-tooling+software-cli
@@ -227,8 +227,10 @@ This is the single state file for the **Discovery area** — persistent project 
 | 1 | 2026-06-28 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | .aid/dashboard/kb.html (198882 bytes, 21 sections) | Forced KB-refresh regen after the work-001 doc reconcile. Machine A+ (68/68); Human A+ (V1 Playwright-rendered + screenshot-validated, validate-visuals 4/4 T1-T4, contrast both themes). Reflects the aid-describe/aid-define split (14 skills), the seasoned-analyst engine (NFR-7), greenfield forward-authored inversion, and the conformance check. |
 
 | 2 | 2026-06-25 | A+ | hybrid:methodology-tooling+software-cli | 18 of 18 docs | kb.html (177780 bytes) | Initial generation (domain-driven 18-doc KB; Machine A+/Human A+; V1 Playwright-validated) |
+
 | 3 | 2026-06-28 | A+ (Machine) | hybrid:methodology-tooling+software-cli | 19 of 19 docs | kb.html (198882 bytes, 4172 lines, 21 sections) | Forced KB-refresh: aid-interview split to aid-describe/aid-define; 14 skills (was 13); seasoned-analyst engine + greenfield seed + conformance check added. Machine A+ 68/68; Human pending orchestrator. |
 | 4 | 2026-07-09 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | .aid/dashboard/kb.html (679695 bytes, 4194 lines, 21 sections) | /aid-housekeep SUMMARY-DELTA: surgical refresh of the existing summary for the work-002 connectors subsystem + release drift — version 2.0.0->2.0.6, test count 82->105, new Connector Registry glossary card + integration-map connectors row + lede clause. Machine A+ 68/68; Human A+ 30/30 (V1 orchestrator visual gate via Playwright — light+dark + lightbox verified). |
+| 5 | 2026-07-16 | A+ | hybrid:methodology-tooling+software-cli | none (retired) | kb.html | /aid-housekeep SUMMARY-DELTA targeted count-patch (the skill's STALE-CHECK was DONE-IDEMPOTENT because the lighter manual KB count-fix did not advance the Review-History date, so no full GENERATE ran): synced the live skill/catalog counts in 5 kb.html spots (92 skills/76 shortcuts/80-row -> 108/64/94-row, 58 canonical + 36 aliases, 30 repurpose). Human V1 visual gate passed (orchestrator; rendered kb.html confirmed by the user). |
 
 ## Calibration Log
 

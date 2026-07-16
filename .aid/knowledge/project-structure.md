@@ -94,7 +94,7 @@ AID/
 ├── release.sh                # maintainer release-packaging runbook script
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
-│   ├── skills/               # 92 skill definitions (15 classic + aid-triage + 76 shortcuts)
+│   ├── skills/               # 108 skill definitions (14 curated + 94 catalog skills)
 │   ├── agents/               # agent role definitions (AGENT.md + README.md each)
 │   ├── aid/                  # toolkit payload installed under the tool's aid/ subtree
 │   │   ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
@@ -180,7 +180,7 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `packages/pypi/pyproject.toml` | PyPI `aid-installer` build config. |
 | `site/package.json` | Astro website build config (separate from the CLI). |
 | `canonical/EMISSION-MANIFEST.md` | Declares which files the profile renderer emits per profile. |
-| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 80-row manifest that generates the 76 verb-first shortcut skill directories (51 canonical + 29 aliases); read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
+| `canonical/aid/templates/shortcut-catalog.yml` | Single-source 94-row manifest (58 canonical + 36 aliases) that generates the 64 verb-first shortcut doorway directories, alongside 30 hand-authored `repurpose` skills that own their own directories; read by the maintainer build helper (`build-shortcut-skills.py`) and by `/aid-triage`. |
 | `canonical/aid/templates/shortcut-engine.md` | The shared state machine every shortcut skill delegates to (INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT). |
 | `canonical/aid/templates/shortcut-scaffolding/` | Per-family SPEC/PLAN/DETAIL scaffolding the shortcut engine consults (one file per verb family: create, change-refactor, fix, document, prototype, test-experiment, analyze-report). |
 | `canonical/aid/templates/delivery-blueprint-template.md` | Template for a delivery definition (`BLUEPRINT.md`, formerly the delivery-level `SPEC.md`). |
