@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Detail
 active_skill: none
-updated: "2026-07-16T00:21:02Z"
+updated: "2026-07-16T00:24:15Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -76,6 +76,7 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-16 | task-001 pilot source committed (c03ae93d) + APPROVED | -- | user reviewed the collapse pattern; approved to replicate |
 | 2026-07-16 | task-002 canonical source done | -- | aid-research collapse + investigate/spike aliases + engine detach; --check: 71 up-to-date, 9 repurpose, 0 orphans |
 | 2026-07-16 | task-003 canonical source done | -- | aid-report collapse (aid-researcher producer, data/usage input, caveats mandatory) + engine detach; --check: 70/10/0 |
+| 2026-07-16 | task-006 canonical source done | -- | aid-prototype collapse + aid-prototype-ui hint-alias + NEW aid-design skill + engine detach; --check: 68/13/0 (catalog +1) |
 
 ---
 
@@ -96,7 +97,7 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 | task-003 report | In Progress | -- | -- | Canonical source done (aid-report hand-authored collapse; engine detach); profiles/dogfood pending batch regen |
 | task-004 experiment | In Progress | -- | -- | Spec LOCKED (specs/aid-experiment.md). NOT a collapse: keep cycle, engine-driven; content-only adaptation of test-experiment.md (3 new capture slots, rigor->REQUIREMENTS, validation->SPEC). Implementation pending |
 | task-005 document family restructure | In Progress | -- | -- | Spec LOCKED (specs/aid-document.md). RESTRUCTURED: document is a create/change ARTIFACT -> generic aid-create-document/aid-change-document (+add/update aliases); 8 old aid-document* + aid-create-diagram = hint-aliases; collapse; KB boundary. Implementation pending |
-| task-006 prototype + new aid-design | In Progress | -- | -- | Spec LOCKED (specs/aid-prototype-design.md). aid-prototype generic (throwaway, LIGHT verify); aid-prototype-ui -> hint-alias; NEW aid-design (kept design, full verify, fills DESIGN gap). Both collapse. Implementation pending |
+| task-006 prototype + new aid-design | In Progress | -- | -- | Canonical source done: aid-prototype hand-authored collapse (LIGHT verify), aid-prototype-ui hint-alias, NEW aid-design (kept, full verify) + engine detach; profiles/dogfood pending batch regen |
 | task-007 test-family restructure | In Progress | -- | -- | Spec LOCKED (specs/aid-test.md). create/change-test keep-cycle (engine-driven, aid-developer); aid-test generic run+consolidate (collapse, aid-reviewer); test-* hint-aliases; scaffolding reorg. Implementation pending |
 | task-008 dashboard reframe | In Progress | -- | -- | Spec LOCKED (specs/aid-dashboard.md). show-dashboard -> aid-create-dashboard/aid-change-dashboard (+add/update aliases); aid-show-dashboard hint-alias; keep-cycle, behavior unchanged (naming/topology only). Implementation pending |
 

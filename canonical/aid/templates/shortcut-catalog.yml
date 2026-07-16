@@ -538,7 +538,13 @@ shortcuts:
     group: G7
     intent: "Design, run, and analyze a controlled experiment or A/B test."
 
-  # --- G3: Prototype family (feature-005, task-021) -- 2 rows, no aliases ---
+  # --- G3: Prototype + Design (work-005 reframe of feature-005) --
+  # HAND-AUTHORED collapse skills. aid-prototype: build a THROWAWAY model to validate a
+  # direction NOW (LIGHT verify; resolves nothing; hand off the real build to /aid-create*).
+  # aid-prototype-ui -> backward-compat hint-alias (ui target). aid-design: NEW -- produce a
+  # KEPT design artifact (UX/flow/component/interface/a11y) to inform the build (FULL verify).
+  # Both producer=aid-architect. prototype = throwaway/validate; design = kept/inform-the-build.
+  # See specs/aid-prototype-design.md.
   - name: aid-prototype
     verb: prototype
     artifact: ""
@@ -546,13 +552,23 @@ shortcuts:
     default_type: DESIGN
     group: G3
     intent: "Build a low-fidelity model to validate a direction before committing to a full build."
+    repurpose: true
   - name: aid-prototype-ui
     verb: prototype
     artifact: ui
+    alias_of: aid-prototype
+    default_type: DESIGN
+    group: G3
+    intent: "Alias of aid-prototype -- wireframe/mock a UI to validate UX direction (ui hint)."
+    repurpose: true
+  - name: aid-design
+    verb: design
+    artifact: ""
     alias_of: null
     default_type: DESIGN
     group: G3
-    intent: "Wireframe/mock a UI plus its interaction flow to validate UX direction."
+    intent: "Produce a kept design artifact (UX/flow/component/interface, with a11y notes) to inform the build; resolves nothing."
+    repurpose: true
 
   # --- G8: Document family (feature-010, task-023) -- 8 rows, no aliases ---
   - name: aid-document

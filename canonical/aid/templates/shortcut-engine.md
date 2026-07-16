@@ -131,7 +131,6 @@ re-derivation from this table:
 
 | Verb (representative) | Default task Type | Note |
 |---|---|---|
-| prototype | DESIGN | low-fidelity model / wireframe (`task-type-rules.md ## DESIGN`) |
 | create / change (code, api, ui, cli, messaging, integration, infra) | IMPLEMENT | |
 | create-data-model / change-data-model | MIGRATE (+ IMPLEMENT) | entity/schema + migration |
 | create-config / change-config | CONFIGURE | feature-flag / rule |
@@ -171,7 +170,6 @@ this table just collects them at a glance, the same incremental-growth precedent
 | `change` (+ `update-*` aliases), `refactor` | `shortcut-scaffolding/change-refactor.md` |
 | `fix` | `shortcut-scaffolding/fix.md` |
 | `test`, `experiment` | `shortcut-scaffolding/test-experiment.md` |
-| `prototype` | `shortcut-scaffolding/prototype.md` |
 | `document` | `shortcut-scaffolding/document.md` |
 | `show-dashboard` | `shortcut-scaffolding/analyze-report.md` (`review` + `research` + `report` detached to hand-authored collapse skills, work-005) |
 | `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` (v2.1.0 coverage-gap follow-on) |
