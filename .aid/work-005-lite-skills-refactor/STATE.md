@@ -115,6 +115,16 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 
 ---
 
+## Follow-ups (deferred; not in the A+-graded set)
+
+- **Reframe + re-gate `test-experiment.md` (test half) + `analyze-report.md`.** Both still
+  carry the stale "consulted by the shared engine" framing for now-detached families
+  (same class the A+ gate fixed in document.md/prototype.md). Deferred out of the gate
+  scope deliberately; reframe them and run their own A+ gate together, then regenerate.
+  (`test-experiment.md` is still live for `experiment`; `analyze-report.md` is orphaned.)
+- **`generate-profile` VALIDATE prose** hardcodes "92 skills / 76 shortcuts / aid-ask
+  only hand-authored" -- update to the new counts (maintainer tooling; not shipped).
+
 ## Notes
 
 - **Classification map:** `specs/classification.md` is the authoritative refactor map
