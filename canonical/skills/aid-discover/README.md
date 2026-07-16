@@ -230,5 +230,5 @@ Without Discovery, specs are generic and agents improvise. With Discovery, specs
 
 ## See Also
 
-- [KB Document Templates](../../templates/knowledge-base/README.md) — Full templates for each KB document.
+- [KB Document Templates](../../templates/knowledge-base/) — Per-document templates for each KB document.
 - [AID Methodology](../../docs/aid-methodology.md) — The complete methodology.
