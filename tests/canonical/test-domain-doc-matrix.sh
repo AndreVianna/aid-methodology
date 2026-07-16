@@ -4,12 +4,12 @@
 # Tests (MT01-MT18):
 #
 #   Software seed parity:
-#   MT01  software-cli required docs == exactly the 15 synth_default_seed filenames
-#   MT02  software-web required docs == exactly the 15 synth_default_seed filenames
+#   MT01  software-cli required docs == exactly the 14 synth_default_seed filenames
+#   MT02  software-web required docs == exactly the 14 synth_default_seed filenames
 #   MT03  software-cli and software-web required sets are byte-identical
 #   MT04  decisions.md is conditional (not required) in software-cli
 #   MT05  decisions.md is conditional (not required) in software-web
-#   MT06  the 15-doc seed table in the Seed-consistency section lists exactly 15 rows
+#   MT06  the 14-doc seed table in the Seed-consistency section lists exactly 14 rows
 #
 #   Domain row coverage invariant (every row covers all 11 spine dimensions or marks conditional):
 #   MT07  software-cli row covers all 11 spine dimensions (C0-C9 + D as conditional)
@@ -149,7 +149,7 @@ SEED_FILES="$(get_seed_filenames)"
 SEED_COUNT="$(echo "$SEED_FILES" | grep -c .)"
 
 # ---------------------------------------------------------------------------
-# MT01: software-cli required docs == the 15-doc synth_default_seed set
+# MT01: software-cli required docs == the 14-doc synth_default_seed set
 # ---------------------------------------------------------------------------
 CLI_REQUIRED="$(extract_required_docs_for_domain "software-cli" "$MATRIX" | sort)"
 CLI_COUNT="$(echo "$CLI_REQUIRED" | grep -c .)"
@@ -161,7 +161,7 @@ assert_eq "$CLI_DIFF" "" \
   "MT01 software-cli required docs == synth_default_seed filenames (byte-exact)"
 
 # ---------------------------------------------------------------------------
-# MT02: software-web required docs == the 15-doc synth_default_seed set
+# MT02: software-web required docs == the 14-doc synth_default_seed set
 # ---------------------------------------------------------------------------
 WEB_REQUIRED="$(extract_required_docs_for_domain "software-web" "$MATRIX" | sort)"
 WEB_COUNT="$(echo "$WEB_REQUIRED" | grep -c .)"
@@ -208,13 +208,13 @@ assert_eq "$WEB_DECISIONS_REQ" "0" \
   "MT05 decisions.md is NOT in software-web required set"
 
 # ---------------------------------------------------------------------------
-# MT06: Seed-consistency section table has exactly 15 rows (the 15 seed docs)
+# MT06: Seed-consistency section table has exactly 14 rows (the 14 seed docs)
 # ---------------------------------------------------------------------------
 SEED_TABLE_ROWS="$(awk '/^## Seed-consistency/{in_sec=1;next}
   /^## /{in_sec=0}
   in_sec && /^\| [0-9]/{print}' "$MATRIX" | grep -c .)"
-assert_eq "$SEED_TABLE_ROWS" "15" \
-  "MT06 Seed-consistency table has exactly 15 numbered rows"
+assert_eq "$SEED_TABLE_ROWS" "14" \
+  "MT06 Seed-consistency table has exactly 14 numbered rows"
 
 # ---------------------------------------------------------------------------
 # MT07-MT14: Domain coverage invariant.

@@ -4,7 +4,7 @@
 > should produce. Each row's docs are anchored to the domain-agnostic **dimension spine**
 > (see [concern-model.md](concern-model.md)). Consumed by `aid-discover` (doc-set proposal:
 > matrix-lookup -> research-on-miss -> propose -> confirm). The **software-cli** /
-> **software-web** required rows reproduce today's 15-doc `synth_default_seed` exactly, so
+> **software-web** required rows reproduce today's 14-doc `synth_default_seed` exactly, so
 > existing behavior is preserved as one cached row.
 >
 > This is a `canonical/` artifact: it ships, is installed, and is changed only by
@@ -21,7 +21,7 @@
 - [The matrix](#the-matrix) -- one section per common domain
 - [Provenance: curated vs auto-researched](#provenance-curated-vs-auto-researched)
 - [Hybrid composition rule](#hybrid-composition-rule)
-- [Seed-consistency check](#seed-consistency-check) -- proof the software required row == the 15-doc seed
+- [Seed-consistency check](#seed-consistency-check) -- proof the software required row == the 14-doc seed
 - [See also](#see-also)
 
 ---
@@ -115,12 +115,12 @@ is conditional by default. The matrix rows below satisfy this per domain.
 ## The matrix
 
 One section per common domain. Each is `provenance: curated`. Docs are grouped
-required-first, then conditional. A `--` in the spine column for `README.md` /
+required-first, then conditional. A `--` in the spine column for
 `external-sources.md` means `meta` (orientation, not a spine dimension).
 
 ### Domain: `software-cli`
 
-The reference row. Its **required** docs reproduce the 15-doc `synth_default_seed` **exactly**
+The reference row. Its **required** docs reproduce the 14-doc `synth_default_seed` **exactly**
 (see [Seed-consistency check](#seed-consistency-check)). `decisions.md` is an **additive
 conditional** entry -- the 11th dimension's conditional realization -- and is **not** part of
 the byte-stable seed.
@@ -143,15 +143,14 @@ the byte-stable seed.
 | `tech-debt.md` | C7 | `aid-researcher-quality` | required |
 | `infrastructure.md` | C8 | `aid-researcher-quality` | required |
 | `feature-inventory.md` | C9 | `skill-self` | required |
-| `README.md` | meta | `skill-self` | required |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:project has recorded rationale-bearing decisions |
 
-15 required docs (the seed) + 1 conditional (`decisions.md`). `INDEX.md` is generated meta
+14 required docs (the seed) + 1 conditional (`decisions.md`). `INDEX.md` is generated meta
 (by `build-kb-index.sh`), never a matrix row.
 
 ### Domain: `software-web`
 
-A web/service application. Same spine, same 15-doc required core as `software-cli` (a CLI
+A web/service application. Same spine, same 14-doc required core as `software-cli` (a CLI
 and a web app share the universal product concerns); the conditional set leans toward
 user-facing presentation (C9) and deployment (C8).
 
@@ -173,11 +172,10 @@ user-facing presentation (C9) and deployment (C8).
 | `tech-debt.md` | C7 | `aid-researcher-quality` | required |
 | `infrastructure.md` | C8 | `aid-researcher-quality` | required |
 | `feature-inventory.md` | C9 | `skill-self` | required |
-| `README.md` | meta | `skill-self` | required |
 | `repo-presentation.md` | C9 | `aid-researcher-architecture` | conditional:project has a user-facing UI; brand; or marketing surface |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:project has recorded rationale-bearing decisions |
 
-> **Note.** `software-cli` and `software-web` share the same 15 required docs. They are kept
+> **Note.** `software-cli` and `software-web` share the same 14 required docs. They are kept
 > as separate rows (not folded into one `software` row) because their *conditional* sets
 > differ and discovery's classifier distinguishes them; both required cores are byte-identical
 > to the seed, so either software classification preserves today's behavior.
@@ -204,7 +202,6 @@ include data-handling rules.
 | `tech-debt.md` | C7 | `aid-researcher-quality` | required |
 | `infrastructure.md` | C8 | `aid-researcher-quality` | required |
 | `feature-inventory.md` | C9 | `skill-self` | required |
-| `README.md` | meta | `skill-self` | required |
 | `architecture.md` | C1 | `aid-researcher-architecture` | conditional:project has a non-trivial system architecture beyond the pipeline |
 | `experiment-log.md` | D | `aid-researcher-architecture` | conditional:project records experiment results and the decisions drawn from them |
 
@@ -227,7 +224,6 @@ quality is editorial review.
 | `editorial-process.md` | C6 | `aid-researcher-quality` | required |
 | `publishing-pipeline.md` | C8 | `aid-researcher-quality` | required |
 | `tooling-stack.md` | C0 | `aid-researcher-architecture` | required |
-| `README.md` | meta | `skill-self` | required |
 | `content-map.md` | C2 | `aid-researcher-integrator` | conditional:content is cross-linked or has a non-trivial navigation/dependency structure |
 | `tech-debt.md` | C7 | `aid-researcher-quality` | conditional:content has known gaps; stale sections; or migration debt |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:content strategy records rationale-bearing decisions |
@@ -251,7 +247,6 @@ are the central artifact (research is decision-and-rationale heavy), so `D` is r
 | `validation-landscape.md` | C6 | `aid-researcher-quality` | required |
 | `findings-log.md` | D | `aid-researcher-architecture` | required |
 | `tooling-stack.md` | C0 | `aid-researcher-architecture` | required |
-| `README.md` | meta | `skill-self` | required |
 | `limitations.md` | C7 | `aid-researcher-quality` | conditional:study has documented threats-to-validity or open caveats |
 | `evidence-map.md` | C2 | `aid-researcher-integrator` | conditional:findings connect across multiple evidence sources or sub-studies |
 | `dissemination.md` | C8 | `aid-researcher-quality` | conditional:findings are published; released; or otherwise shipped to an audience |
@@ -278,7 +273,6 @@ accessibility + design review.
 | `glossary.md` | C4 | `aid-researcher-integrator` | required |
 | `accessibility-landscape.md` | C6 | `aid-researcher-quality` | required |
 | `tooling-stack.md` | C0 | `aid-researcher-architecture` | required |
-| `README.md` | meta | `skill-self` | required |
 | `tech-debt.md` | C7 | `aid-researcher-quality` | conditional:design system has known inconsistencies or deprecation debt |
 | `delivery-pipeline.md` | C8 | `aid-researcher-quality` | conditional:design ships as a published artifact (a released token package or hosted design site) |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:design records rationale-bearing decisions (a design-decision log) |
@@ -304,7 +298,6 @@ the platform topology.
 | `glossary.md` | C4 | `aid-researcher-integrator` | required |
 | `technology-stack.md` | C0 | `aid-researcher-architecture` | required |
 | `tech-debt.md` | C7 | `aid-researcher-quality` | required |
-| `README.md` | meta | `skill-self` | required |
 | `decisions.md` | D | `aid-researcher-architecture` | conditional:platform records rationale-bearing decisions (a runbook/ADR log) |
 
 ### Domain: `methodology-tooling`
@@ -328,7 +321,6 @@ of decisions), so `D` is required.
 | `quality-gates.md` | C6 | `aid-researcher-quality` | required |
 | `decisions.md` | D | `aid-researcher-architecture` | required |
 | `tooling-stack.md` | C0 | `aid-researcher-architecture` | required |
-| `README.md` | meta | `skill-self` | required |
 | `tech-debt.md` | C7 | `aid-researcher-quality` | conditional:methodology has known gaps or deprecated guidance |
 | `infrastructure.md` | C8 | `aid-researcher-quality` | conditional:the tooling ships/runs as a deployed artifact |
 
@@ -388,13 +380,13 @@ one spine; the domain rows are overlays on it, and overlays compose.
 
 ## Seed-consistency check
 
-This section proves the **software required row == the 15-doc `synth_default_seed`** exactly,
+This section proves the **software required row == the 14-doc `synth_default_seed`** exactly,
 and that `decisions.md` is additive-conditional (NOT in the seed). It is the byte-stability
 contract the task and FR-39 require.
 
-**The 15 `synth_default_seed` docs** (from `doc-set-resolve.md` ownership map; all `required`)
-and the `software-cli` / `software-web` required rows are the **same 15 filenames with the
-same 15 owners**:
+**The 14 `synth_default_seed` docs** (from `doc-set-resolve.md` ownership map; all `required`)
+and the `software-cli` / `software-web` required rows are the **same 14 filenames with the
+same 14 owners**:
 
 | # | filename (seed) | owner (seed) | spine-dimension | in software required row? |
 |---|-----------------|--------------|-----------------|---------------------------|
@@ -412,16 +404,14 @@ same 15 owners**:
 | 12 | `tech-debt.md` | `aid-researcher-quality` | C7 | yes |
 | 13 | `infrastructure.md` | `aid-researcher-quality` | C8 | yes |
 | 14 | `feature-inventory.md` | `skill-self` | C9 | yes |
-| 15 | `README.md` | `skill-self` | meta | yes |
-
-- **Same 15 filenames, same 15 owners, all `required`** -> the `software-cli` and
+- **Same 14 filenames, same 14 owners, all `required`** -> the `software-cli` and
   `software-web` required rows are **byte-consistent** with `synth_default_seed`. A project
-  classified as either software domain that accepts the defaults gets exactly today's 15 docs.
-- **`decisions.md` is NOT row 16 of the seed.** It is an **additive conditional** entry
+  classified as either software domain that accepts the defaults gets exactly today's 14 docs.
+- **`decisions.md` is NOT row 15 of the seed.** It is an **additive conditional** entry
   (presence `conditional`, owner `aid-researcher-architecture`, spine-dimension `D`) -- the
   11th spine dimension's conditional realization, mirroring `concern-model.md`'s
   seed-coverage check. It is proposed only when a project has rationale-bearing decisions; it
-  is never added to `synth_default_seed`, so the byte-stable software seed remains exactly 15
+  is never added to `synth_default_seed`, so the byte-stable software seed remains exactly 14
   docs.
 - **`repo-presentation.md`** (in the `software-web` row) is likewise a **conditional**
   extension, NOT a seed doc -- consistent with `concern-model.md` and `doc-set-resolve.md`,

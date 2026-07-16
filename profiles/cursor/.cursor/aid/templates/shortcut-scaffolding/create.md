@@ -36,6 +36,8 @@ stack/framework/persistence-layer/test-framework from the KB
 | `job` | purpose; schedule/trigger; logic; error/retry policy |
 | `config` | option name; purpose; default + validation; affected behavior |
 | `infra` | resource name; purpose; access policy; config/retention |
+| `test` | target under test; level (unit/integration/e2e); behavior; each test traces to a specific acceptance criterion (framework inferred from the KB `test-landscape.md`) |
+| `dashboard` | data source(s); metrics/views to visualize; publish target; refresh cadence |
 
 **Escalation.** The generic engine rule already covers this: escalate to the
 one combined CAPTURE question only when §5/§9 cannot be made concrete and
@@ -64,6 +66,8 @@ activate none beyond the mandatory three):
 | `job` | `### Batch/Jobs` |
 | `config` | none -- base sections document the option directly |
 | `infra` | `### Cloud Support` / `### Hardware Requirements` |
+| `test` | `### BDD Scenarios` (optional -- when the behavior under test reads naturally as Given/When/Then) |
+| `dashboard` | none beyond the mandatory three (source/view/refresh live in `### Feature Flow` + `### Layers & Components`) |
 
 ## DETAIL -- default task breakdown, per artifact
 
@@ -88,6 +92,8 @@ reference rather than duplicating -- edit artifact specifics here, once.
 | `job` | `task-001` IMPLEMENT (job + schedule), `task-002` TEST |
 | `config` | `task-001` CONFIGURE (define + wire + document) |
 | `infra` | `task-001` IMPLEMENT (provision + wire + verify connectivity) |
+| `test` | `task-001` TEST (author/extend the tests; each traces to a specific acceptance criterion) |
+| `dashboard` | `task-001` IMPLEMENT (source + visualization + publish/refresh wiring), `task-002` TEST (data-accuracy / refresh check) |
 
 Every multi-task artifact's task dependencies are strictly sequential
 (`task-002` depends on `task-001`, `task-003` depends on `task-002`) --
@@ -96,15 +102,17 @@ DETAIL's `## Execution Graph` places each in its own wave.
 ## Ownership boundary
 
 Bare `aid-create` owns **internal code** (module/interface/type/member -- no
-`-code` suffix, which would collide with the bare verb). The following do
-**not** belong to create even when phrased as "create a ...": **test ->
-`aid-test`**, **experiment -> `aid-experiment`**, **doc/content ->
-`aid-document`**, **report/dashboard -> `aid-report` / `aid-show-dashboard`**.
-A create work still emits its own `TEST` task for the artifact it builds (the
-same coverage the legacy `add-*` recipes carried) -- that is coverage of the
-new artifact, not a standalone test-authoring request. Modifying an
-**existing** artifact is `aid-change` (`shortcut-scaffolding/change-refactor.md`),
-not create.
+`-code` suffix, which would collide with the bare verb). **Authoring test code
+IS this family** -- the `test` artifact (`aid-create-test` / `aid-change-test`,
+work-005): committed test code, keep-cycle, executed by `aid-developer`. What
+does **not** belong to create: **running tests / verification -> `aid-test`**
+(+ its `security`/`performance`/`data-quality` kind-siblings; a hand-authored
+collapse, work-005), **experiment -> `aid-experiment`**, **doc/content ->
+`aid-create-document`**, **report -> `aid-report`**, **dashboard ->
+`aid-create-dashboard`**. A create work for a non-test artifact still emits its
+own `TEST` task for the artifact it builds (coverage of the new artifact, not a
+standalone test-authoring request). Modifying an **existing** artifact is
+`aid-change` (`shortcut-scaffolding/change-refactor.md`), not create.
 
 ## See also
 

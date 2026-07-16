@@ -99,9 +99,8 @@ discovery:
     - tech-debt.md|aid-researcher-quality|required
     - infrastructure.md|aid-researcher-quality|required
     - feature-inventory.md|orchestrator|required
-    - README.md|orchestrator|required
 EOF
-  # Note: test-landscape.md deliberately OMITTED
+  # Note: test-landscape.md deliberately OMITTED (README.md retired from the seed in work-005)
 }
 
 # Baseline: standard set + repo-presentation.md (addition fixture)

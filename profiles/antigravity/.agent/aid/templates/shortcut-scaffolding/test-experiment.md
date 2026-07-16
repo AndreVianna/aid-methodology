@@ -114,17 +114,32 @@ experiment or A/B test (hypothesis -> variants -> metric -> significance).
 
 ### CAPTURE
 
+Pre-registered rigor -- these slots are authored INTO REQUIREMENTS (the hypothesis + the
+decision it informs into §5; the measurable bars into §9 Acceptance Criteria), fixed
+BEFORE any run (the anti-p-hacking guarantee; work-005):
+
 | Slot | Notes |
 |---|---|
-| Hypothesis | the specific, falsifiable claim under test |
+| Hypothesis | the specific, falsifiable claim under test (-> REQUIREMENTS §5) |
 | Variants | at least 2 (control + at least one treatment) |
-| Success metric | the metric the experiment decides on |
-| Significance criteria | the statistical bar a result must clear to be actionable |
+| Success metric | the primary metric the experiment decides on (-> §9 AC) |
+| Significance criteria | the statistical bar a result must clear to be actionable (-> §9 AC) |
+| Sample size / power | the sample size / power the result needs to be trustworthy (-> §9 AC) |
+| Guardrail metric(s) | metric(s) that must NOT degrade (-> §9 AC) |
+| Duration / stopping rule | how long it runs / when to stop (-> §9 AC) |
 | Audience/segment | who the experiment runs against |
+
+The §9 Acceptance Criteria are the **pre-registered, measurable success/failure
+conditions**; the run (at Execute) validates against them, not against a post-hoc target.
 
 ### SPEC
 
-Base sections only (no conditional section).
+Activates a defined **`### Experiment Design`** section (not base-only): the independent /
+dependent variables, control vs. treatment assignment + randomization, metric computation
+(primary + guardrails), the sample-size / power calculation, and the statistical method --
+i.e. *how* the pre-registered criteria are validated. This is the "special validation,
+defined in the spec"; the normal GATE grades it (no special gate mechanism). `### Data
+Model` stays "no schema changes" (an experiment is throwaway).
 
 ### DETAIL
 

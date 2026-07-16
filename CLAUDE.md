@@ -56,7 +56,6 @@ cross-phase process state). Keeping it current is **not optional**:
 - Follow the current numbered phase: Discover → Describe → Define → Specify → Plan → Detail → Execute. `aid-config` bootstraps before the pipeline; Deploy and Monitor are optional Deliver skills after it.
 - Produce verifiable artifacts at each phase.
 - Quality gates must pass before proceeding.
-- Pipeline settings (installed tools, quality-gate thresholds) live in `.aid/settings.yml`; consult it before assuming a default.
 
 ## Review output format (global)
 

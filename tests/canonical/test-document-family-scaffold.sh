@@ -67,24 +67,21 @@ assert_output_contains "$DOC_TXT" \
     '| `aid-document-runbook` | the trigger/alert; diagnostic + remediation steps; escalation path |' \
     "DFS01b aid-document-runbook CAPTURE: the trigger/alert; diagnostic + remediation steps; escalation path"
 
-# DFS-02: SPEC -- mandatory three always apply, no conditional section, for all 8 archetypes.
+# DFS-02: document is a hand-authored collapse artifact (work-005) -- the body produces the
+# document directly, emits no separate SPEC.md, and activates no ## Technical Specification.
+# (Was an engine family with a generated SPEC carrying the mandatory three; now detached.)
 assert_output_contains "$DOC_TXT" \
-    'The mandatory three sections (`### Data Model`, `### Feature Flow`,' \
-    "DFS02a mandatory three SPEC sections named (wrap point 1)"
+    'The hand-authored collapse body produces the document **directly** and emits no separate' \
+    "DFS02a collapse produces the document directly, emits no separate SPEC.md"
 assert_output_contains "$DOC_TXT" \
-    'No archetype activates a conditional `## Technical Specification`' \
-    "DFS02b no archetype activates a conditional SPEC section (wrap point 1)"
-assert_output_contains "$DOC_TXT" \
-    'section.' \
-    "DFS02c no archetype activates a conditional SPEC section (wrap point 2, trailing period line)"
+    'there is no `## Technical Specification` to activate and no schema change' \
+    "DFS02b no ## Technical Specification to activate (no schema change)"
 
-# DFS-03: DETAIL -- single DOCUMENT task-001 per archetype (grounded in add-docs, task=1).
+# DFS-03: DETAIL -- the collapse emits no task or SPEC artifact (aid-create-document writes
+# the document directly). (Was: one generated DOCUMENT task-001 per archetype; now detached.)
 assert_output_contains "$DOC_TXT" \
-    'Every archetype emits exactly one `task-001` DOCUMENT task (grounded in the legacy' \
-    "DFS03a every archetype emits exactly one task-001 DOCUMENT task (wrap point 1)"
-assert_output_contains "$DOC_TXT" \
-    '`add-docs` recipe'"'"'s task=1 shape); the archetype only changes the **Scope**'"'"'s' \
-    "DFS03b grounded in the legacy add-docs recipe's task=1 shape (wrap point 2)"
+    'the collapse emits no task or SPEC artifact' \
+    "DFS03a collapse emits no task or SPEC artifact"
 
 # DFS-04: exact per-archetype document-shape rows (the DETAIL table).
 assert_output_contains "$DOC_TXT" \

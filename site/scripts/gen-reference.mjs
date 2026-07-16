@@ -336,13 +336,13 @@ function generateShortcutFamiliesSection(catalog) {
 
   return (
     `## Direct-entry shortcuts\n\n` +
-    `**${emitting.length} verb-first shortcut skills** — a fast, mostly-autonomous alternative to the ` +
-    `full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from ` +
-    `one row of [\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) (${rows.length} rows total: ` +
-    `${emitting.length} emit a skill directory; the other ${repurposed} are \`repurpose: true\` rows that ` +
-    `re-register a pre-existing classic skill — ${repurposedNames} — purely so /aid-triage ` +
-    `can recognize them, and emit no directory of their own).\n\n` +
-    `Every shortcut delegates to the shared **shortcut engine** — ` +
+    `**${emitting.length} engine-driven verb-first shortcut skills** — a fast, mostly-autonomous ` +
+    `alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway ` +
+    `generated from one non-\`repurpose\` row of [\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) ` +
+    `(${rows.length} rows total; the other ${repurposed} are \`repurpose: true\` — the 4 classic re-registered ` +
+    `skills (\`aid-deploy\`/\`aid-monitor\`/\`aid-query-kb\`/\`aid-ask\`) plus the work-005 hand-authored ` +
+    `single-shot "collapse" skills, all hand-authored with their own directory).\n\n` +
+    `Every engine-driven shortcut delegates to the shared **shortcut engine** — ` +
     `[\`${SHORTCUT_ENGINE_FILE}\`](${BLOB}/${SHORTCUT_ENGINE_FILE}) — which collapses the five definition ` +
     `phases (Describe → Detail) into one mostly-autonomous run:\n\n` +
     '```\nINTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT\n```\n\n' +
@@ -363,12 +363,16 @@ function generateSkillsPage() {
   const shortcutNames = catalog.emitting.map((r) => r.name);
 
   // Expected skill-directory set = the curated classic skills (which already
-  // include `aid-triage`'s own entry-points group above) ∪ the shortcut names
-  // derived from the catalog's emitting rows. Compare against on-disk
-  // `canonical/skills/` — this is the drift guard's real job against 94
-  // directories, not the old hardcoded 14.
+  // include `aid-triage`'s entry-points group + the 4 classic repurpose skills
+  // deploy/monitor/query-kb/ask) ∪ EVERY catalog row name. work-005 turned many
+  // `repurpose` rows into hand-authored single-shot "collapse" skills that DO
+  // have their own directory (unlike the 4 classic repurpose rows curated above),
+  // so the guard now expects every catalog row's directory — not just the
+  // engine-driven (non-`repurpose`) emitting ones. Compare against on-disk
+  // `canonical/skills/`.
   const curatedNames = SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name));
-  const expected = [...new Set([...curatedNames, ...shortcutNames])].sort();
+  const allCatalogNames = catalog.rows.map((r) => r.name);
+  const expected = [...new Set([...curatedNames, ...allCatalogNames])].sort();
   const onDisk = readdirSync(SKILLS_DIR, { withFileTypes: true })
     .filter((d) => d.isDirectory())
     .map((d) => d.name)
@@ -395,11 +399,11 @@ function generateSkillsPage() {
   const intro =
     `AID ships **${onDisk.length} skill directories** under \`canonical/skills/\`: **${classicSkillCount} classic ` +
     'pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone ' +
-    `suggest-only router **\`/aid-triage\`**, the friendly **\`/aid-ask\`** Q&A alias (of \`/aid-query-kb\`), and **${shortcutNames.length} direct-entry shortcut ` +
+    `suggest-only router **\`/aid-triage\`**, the friendly **\`/aid-ask\`** Q&A alias (of \`/aid-query-kb\`), and **${shortcutNames.length} engine-driven direct-entry shortcut ` +
     `skills** generated from a ${catalog.rows.length}-row catalog (${canonicalCatalogNames} canonical ` +
-    `names + ${aliasCatalogNames} aliases — ${repurposedRowsForIntro.length} of the rows (` +
-    `${repurposedCanonicalForIntro} canonical + ${repurposedAliasForIntro} alias) \`repurpose\` existing classic ` +
-    'skills and emit no directory of their own). The six numbered phases — Discover through Execute — ' +
+    `names + ${aliasCatalogNames} aliases); ${repurposedRowsForIntro.length} of the rows (` +
+    `${repurposedCanonicalForIntro} canonical + ${repurposedAliasForIntro} alias) are \`repurpose: true\` — the 4 classic ` +
+    're-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — ' +
     'form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) ' +
     "inside your AI host tool. Classic and router skills below are generated from each skill's own " +
     'definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see ' +

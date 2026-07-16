@@ -501,35 +501,74 @@ shortcuts:
     group: G5
     intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/change-data-model)."
 
-  # --- G7: Test + Experiment family (feature-009, task-019) -- 5 rows, no aliases ---
+  # --- G7: Test + Experiment family -- work-005 restructure of feature-009 --
+  # Test AUTHORING is a create/change ARTIFACT: aid-create-test / aid-change-test (+ add/update
+  # aliases) -- ENGINE-DRIVEN, keep-cycle, executed by aid-developer (test code is code);
+  # artifact=test, group G7 for discovery; they consult create.md / change-refactor.md.
+  # Test RUNNING is aid-test -- a HAND-AUTHORED collapse (run any suite/verification +
+  # consolidate findings; aid-reviewer, review-shaped; resolves nothing; fixes -> /aid-fix).
+  # aid-test-security/-performance/-data-quality are kind-siblings (repurpose; body delegates
+  # to aid-test). Removal via bare aid-remove. See specs/aid-test.md.
+  - name: aid-create-test
+    verb: create
+    artifact: test
+    alias_of: null
+    default_type: TEST
+    group: G7
+    intent: "Author new tests (unit/integration/e2e); each test traces to an acceptance criterion; framework inferred from the KB."
+  - name: aid-add-test
+    verb: create
+    artifact: test
+    alias_of: aid-create-test
+    default_type: TEST
+    group: G7
+    intent: "Alias of aid-create-test."
+  - name: aid-change-test
+    verb: change
+    artifact: test
+    alias_of: null
+    default_type: TEST
+    group: G7
+    intent: "Change or extend existing tests."
+  - name: aid-update-test
+    verb: change
+    artifact: test
+    alias_of: aid-change-test
+    default_type: TEST
+    group: G7
+    intent: "Alias of aid-change-test."
   - name: aid-test
     verb: test
     artifact: ""
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Author, extend, or run functional tests (unit/integration/e2e) or a model evaluation."
+    intent: "Run any requested test suite/verification (unit/integration/e2e, security, performance, data-quality, model-eval) and consolidate findings; resolves nothing; hand fixes off to /aid-fix."
+    repurpose: true
   - name: aid-test-security
     verb: test
     artifact: security
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Verify security posture via SAST, DAST, fuzzing, or dependency audit."
+    intent: "Run a security verification (SAST/DAST/fuzz/dependency-audit) and report -- security kind of aid-test; body delegates."
+    repurpose: true
   - name: aid-test-performance
     verb: test
     artifact: performance
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Benchmark, load-test, or stress-test against a performance threshold."
+    intent: "Run a performance benchmark/load/stress test against a threshold and report -- performance kind of aid-test; body delegates."
+    repurpose: true
   - name: aid-test-data-quality
     verb: test
     artifact: data-quality
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Check a dataset or pipeline's schema, freshness, completeness, or uniqueness."
+    intent: "Run data-quality checks (schema/freshness/completeness/uniqueness) and report -- data-quality kind of aid-test; body delegates."
+    repurpose: true
   - name: aid-experiment
     verb: experiment
     artifact: ""
@@ -538,7 +577,13 @@ shortcuts:
     group: G7
     intent: "Design, run, and analyze a controlled experiment or A/B test."
 
-  # --- G3: Prototype family (feature-005, task-021) -- 2 rows, no aliases ---
+  # --- G3: Prototype + Design (work-005 reframe of feature-005) --
+  # HAND-AUTHORED collapse skills. aid-prototype: build a THROWAWAY model to validate a
+  # direction NOW (LIGHT verify; resolves nothing; hand off the real build to /aid-create*).
+  # aid-prototype-ui -> backward-compat hint-alias (ui target). aid-design: NEW -- produce a
+  # KEPT design artifact (UX/flow/component/interface/a11y) to inform the build (FULL verify).
+  # Both producer=aid-architect. prototype = throwaway/validate; design = kept/inform-the-build.
+  # See specs/aid-prototype-design.md.
   - name: aid-prototype
     verb: prototype
     artifact: ""
@@ -546,22 +591,80 @@ shortcuts:
     default_type: DESIGN
     group: G3
     intent: "Build a low-fidelity model to validate a direction before committing to a full build."
+    repurpose: true
   - name: aid-prototype-ui
     verb: prototype
     artifact: ui
     alias_of: null
     default_type: DESIGN
     group: G3
-    intent: "Wireframe/mock a UI plus its interaction flow to validate UX direction."
+    intent: "Wireframe/mock a UI to validate UX direction (ui kind of aid-prototype; body delegates)."
+    repurpose: true
+  - name: aid-design
+    verb: design
+    artifact: ""
+    alias_of: null
+    default_type: DESIGN
+    group: G3
+    intent: "Produce a kept design artifact (UX/flow/component/interface, with a11y notes) to inform the build; resolves nothing."
+    repurpose: true
 
-  # --- G8: Document family (feature-010, task-023) -- 8 rows, no aliases ---
+  # --- G8: Document family -- work-005 reframe of feature-010 --
+  # `document` is a create/change ARTIFACT, not a verb. HAND-AUTHORED collapse skills.
+  # Canonical: aid-create-document / aid-change-document (generic; format+genre resolved by
+  # intelligence) + aid-add/update-document pure aliases. The 8 legacy aid-document* and
+  # aid-create-diagram are KIND-SIBLINGS (repurpose, alias_of null, own {verb,artifact};
+  # their hand-authored body delegates to aid-create-document, binding a genre/format hint).
+  # Producer aid-tech-writer, verifier aid-reviewer; present-before-place; NEVER writes
+  # .aid/knowledge/ (that is aid-update-kb's territory). See specs/aid-document.md.
+  - name: aid-create-document
+    verb: create
+    artifact: document
+    alias_of: null
+    default_type: DOCUMENT
+    group: G8
+    intent: "Create a document NOW (format/genre resolved by intelligence -- markdown, diagram, ADR, runbook, ...); resolves nothing; present before placing."
+    repurpose: true
+  - name: aid-add-document
+    verb: create
+    artifact: document
+    alias_of: aid-create-document
+    default_type: DOCUMENT
+    group: G8
+    intent: "Alias of aid-create-document."
+    repurpose: true
+  - name: aid-change-document
+    verb: change
+    artifact: document
+    alias_of: null
+    default_type: DOCUMENT
+    group: G8
+    intent: "Update an existing document NOW; resolves nothing; present before placing."
+    repurpose: true
+  - name: aid-update-document
+    verb: change
+    artifact: document
+    alias_of: aid-change-document
+    default_type: DOCUMENT
+    group: G8
+    intent: "Alias of aid-change-document."
+    repurpose: true
+  - name: aid-create-diagram
+    verb: create
+    artifact: diagram
+    alias_of: null
+    default_type: DOCUMENT
+    group: G8
+    intent: "Create a diagram (mermaid/graphviz) -- diagram kind of aid-create-document; body delegates."
+    repurpose: true
   - name: aid-document
     verb: document
     artifact: ""
     alias_of: null
     default_type: DOCUMENT
     group: G8
-    intent: "Write a general how-to/reference/explanation document or a status/progress report."
+    intent: "Write a general how-to/reference/explanation document or status/progress report (general kind; body delegates to aid-create-document)."
+    repurpose: true
   - name: aid-document-decision
     verb: document
     artifact: decision
@@ -569,6 +672,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write an ADR: context, decision, alternatives, consequences."
+    repurpose: true
   - name: aid-document-architecture
     verb: document
     artifact: architecture
@@ -576,6 +680,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Document a system's components, boundaries, interactions, and diagrams."
+    repurpose: true
   - name: aid-document-guideline
     verb: document
     artifact: guideline
@@ -583,6 +688,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write an advisory guideline: recommended practice with rationale and examples."
+    repurpose: true
   - name: aid-document-standard
     verb: document
     artifact: standard
@@ -590,6 +696,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write a mandatory standard: rule, scope, compliance/enforcement, exceptions."
+    repurpose: true
   - name: aid-document-runbook
     verb: document
     artifact: runbook
@@ -597,6 +704,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write an operational runbook: trigger, diagnostic, remediation, escalation."
+    repurpose: true
   - name: aid-document-tutorial
     verb: document
     artifact: tutorial
@@ -604,6 +712,7 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write a learning-oriented tutorial: prerequisites, worked steps, outcome."
+    repurpose: true
   - name: aid-document-changelog
     verb: document
     artifact: changelog
@@ -611,8 +720,13 @@ shortcuts:
     default_type: DOCUMENT
     group: G8
     intent: "Write changelog/release notes (Added/Changed/Fixed/Removed/Security)."
+    repurpose: true
 
   # --- G11: Analyze & Report family (feature-011, task-025) -- 2 rows, no aliases ---
+  # aid-report: HAND-AUTHORED collapse skill (work-005). Analyzes data/usage NOW and
+  # presents an insight report (findings, conclusions +/-, caveats, conflicts, gaps);
+  # resolves nothing. aid-researcher produces, aid-reviewer verifies. Durable dashboards
+  # are aid-create-dashboard's job, not this. See specs/aid-report.md.
   - name: aid-report
     verb: report
     artifact: ""
@@ -620,19 +734,58 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Analyze data or usage and communicate insight (EDA, metrics, A/B analysis)."
-  - name: aid-show-dashboard
-    verb: show-dashboard
-    artifact: ""
+    repurpose: true
+  # dashboard: work-005 reframe of show-dashboard into a create/change ARTIFACT --
+  # ENGINE-DRIVEN, keep-cycle (a durable/published BI view is a real build). aid-show-dashboard
+  # kept as a backward-compat alias of aid-create-dashboard. group G11 for discovery. Boundary:
+  # aid-create-dashboard = durable/refreshable BI view; aid-report = one-time analysis.
+  # See specs/aid-dashboard.md.
+  - name: aid-create-dashboard
+    verb: create
+    artifact: dashboard
     alias_of: null
     default_type: IMPLEMENT
     group: G11
-    intent: "Build a durable dashboard or BI view (source to visualization to publish/refresh)."
+    intent: "Build a durable dashboard / BI view (source -> visualization -> publish/refresh)."
+  - name: aid-add-dashboard
+    verb: create
+    artifact: dashboard
+    alias_of: aid-create-dashboard
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Alias of aid-create-dashboard."
+  - name: aid-change-dashboard
+    verb: change
+    artifact: dashboard
+    alias_of: null
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Change an existing dashboard / BI view (source, visualization, or refresh cadence)."
+  - name: aid-update-dashboard
+    verb: change
+    artifact: dashboard
+    alias_of: aid-change-dashboard
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Alias of aid-change-dashboard."
+  - name: aid-show-dashboard
+    verb: create
+    artifact: dashboard
+    alias_of: aid-create-dashboard
+    default_type: IMPLEMENT
+    group: G11
+    intent: "Alias of aid-create-dashboard (backward-compatible name)."
 
   # --- G11: Review + Research (v2.1.0 coverage-gap follow-on,
   # work-001-lite-aid-skills) -- 5 rows: aid-review + aid-audit alias,
   # aid-research + aid-investigate/aid-spike aliases. Bare verbs, no artifact
   # suffixes. Family scaffolding: shortcut-scaffolding/analyze-report.md (same
   # RESEARCH-ends-in-a-recommendation shape as aid-report).
+  # aid-review / aid-audit: HAND-AUTHORED collapse skills (work-005). repurpose: true so
+  # build-shortcut-skills.py never generates/overwrites them. A review runs NOW and returns
+  # findings + a grade (single-shot: INTAKE -> REVIEW -> VERIFY -> PRESENT -> PUBLISH -> DONE);
+  # it no longer plans-and-halts through the shortcut engine. See
+  # .aid/work-005-lite-skills-refactor/specs/aid-review.md.
   - name: aid-review
     verb: review
     artifact: ""
@@ -640,6 +793,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Review/assess an existing artifact -- code, a change/diff, or a design -- against criteria; produce findings + recommendations."
+    repurpose: true
   - name: aid-audit
     verb: review
     artifact: ""
@@ -647,13 +801,20 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Alias of aid-review."
+    repurpose: true
+  # aid-research / aid-investigate / aid-spike: HAND-AUTHORED collapse skills (work-005).
+  # A research investigation runs NOW and returns a curated, verified answer -- it RESOLVES
+  # NOTHING (presents conclusions +/-, conflicts with their reasons, and gaps for the user
+  # to resolve). aid-researcher produces, aid-reviewer verifies. See
+  # .aid/work-005-lite-skills-refactor/specs/aid-research.md.
   - name: aid-research
     verb: research
     artifact: ""
     alias_of: null
     default_type: RESEARCH
     group: G11
-    intent: "Investigate an open technical question: evaluate options or run a feasibility spike; end with a recommendation."
+    intent: "Investigate an open technical question (evaluate options or run a feasibility spike); present curated, verified conclusions, conflicts, and gaps for the user to resolve."
+    repurpose: true
   - name: aid-investigate
     verb: research
     artifact: ""
@@ -661,6 +822,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Alias of aid-research."
+    repurpose: true
   - name: aid-spike
     verb: research
     artifact: ""
@@ -668,6 +830,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Alias of aid-research."
+    repurpose: true
 
   # --- G9/G10: Deploy + Monitor re-purpose (feature-012, task-034) -- 2 rows, no
   # aliases. repurpose: true -- these are the 2 pre-existing FAT pipeline skills this

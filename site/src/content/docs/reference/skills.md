@@ -6,7 +6,7 @@ generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-ca
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **94 skill directories** under `canonical/skills/`: **16 classic pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **76 direct-entry shortcut skills** generated from a 80-row catalog (51 canonical names + 29 aliases — 4 of the rows (3 canonical + 1 alias) `repurpose` existing classic skills and emit no directory of their own). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below).
+AID ships **108 skill directories** under `canonical/skills/`: **16 classic pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **64 engine-driven direct-entry shortcut skills** generated from a 94-row catalog (58 canonical names + 36 aliases); 30 of the rows (24 canonical + 6 alias) are `repurpose: true` — the 4 classic re-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below).
 
 ## Prepare
 
@@ -182,9 +182,9 @@ On-demand, off-pipeline removal from the connector catalog. `aid-unset-connector
 
 ## Direct-entry shortcuts
 
-**76 verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (80 rows total: 76 emit a skill directory; the other 4 are `repurpose: true` rows that re-register a pre-existing classic skill — `aid-deploy` / `aid-monitor` / `aid-query-kb` / `aid-ask` — purely so /aid-triage can recognize them, and emit no directory of their own).
+**64 engine-driven verb-first shortcut skills** — a fast, mostly-autonomous alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway generated from one non-`repurpose` row of [`canonical/aid/templates/shortcut-catalog.yml`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-catalog.yml) (94 rows total; the other 30 are `repurpose: true` — the 4 classic re-registered skills (`aid-deploy`/`aid-monitor`/`aid-query-kb`/`aid-ask`) plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directory).
 
-Every shortcut delegates to the shared **shortcut engine** — [`canonical/aid/templates/shortcut-engine.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md) — which collapses the five definition phases (Describe → Detail) into one mostly-autonomous run:
+Every engine-driven shortcut delegates to the shared **shortcut engine** — [`canonical/aid/templates/shortcut-engine.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/aid/templates/shortcut-engine.md) — which collapses the five definition phases (Describe → Detail) into one mostly-autonomous run:
 
 ```
 INTAKE → CAPTURE → SPEC → PLAN → DETAIL → GATE → APPROVAL-HALT
@@ -194,18 +194,18 @@ CAPTURE/SPEC/PLAN/DETAIL run without a per-phase human checkpoint (unlike the fu
 
 | Family | Count | Forms |
 |--------|-------|-------|
-| Create (+ `add` alias) | 24 | 12 canonical `aid-create*` forms + 12 `aid-add*` aliases |
-| Change (+ `update` alias) | 24 | 12 canonical `aid-change*` forms + 12 `aid-update*` aliases |
+| Create (+ `add` alias) | 29 | 14 canonical `aid-create*` forms + 15 `aid-add*` aliases |
+| Change (+ `update` alias) | 28 | 14 canonical `aid-change*` forms + 14 `aid-update*` aliases |
 | Fix | 1 | `aid-fix` — diagnose and correct a defect, regression, incident, or vulnerability; no alias |
 | Refactor | 1 | `aid-refactor` — restructure or optimize without changing behavior; no alias |
-| Test + Experiment | 5 | `aid-test` + 3 typed forms (security, performance, data-quality) = 4, plus `aid-experiment`; no alias |
-| Prototype | 2 | `aid-prototype`, `aid-prototype-ui`; no alias |
-| Document | 8 | `aid-document` + 7 typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias |
-| Report | 1 | `aid-report` — analyze data or usage and communicate insight; no alias |
-| Show dashboard | 1 | `aid-show-dashboard` — build a durable dashboard or BI view; no alias |
+| Test + Experiment | 1 | `aid-test` + 3 typed forms (security, performance, data-quality) = 0, plus `aid-experiment`; no alias |
+| Prototype | 0 | `aid-prototype`, `aid-prototype-ui`; no alias |
+| Document | 0 | `aid-document` + -1 typed forms (decision, architecture, guideline, standard, runbook, tutorial, changelog); no alias |
+| Report | 0 | `aid-report` — analyze data or usage and communicate insight; no alias |
+| Show dashboard | 0 | `aid-show-dashboard` — build a durable dashboard or BI view; no alias |
 | Remove (+ `delete` alias) | 2 | 1 canonical `aid-remove` form + 1 `aid-delete` alias |
 | Deprecate | 1 | `aid-deprecate` — mark an artifact/API deprecated, add warnings and a migration path, without deleting yet; no alias |
 | Migrate | 1 | `aid-migrate` — migrate data, a dependency, framework, or platform, with a rollback plan; no alias |
-| Review (+ `audit` alias) | 2 | 1 canonical `aid-review` form + 1 `aid-audit` alias |
-| Research (+ `investigate`/`spike` aliases) | 3 | 1 canonical `aid-research` form + 2 `aid-investigate`/`aid-spike` aliases |
-| **Total** | **76** | |
+| Review (+ `audit` alias) | 0 | 0 canonical `aid-review` form + 0 `aid-audit` alias |
+| Research (+ `investigate`/`spike` aliases) | 0 | 0 canonical `aid-research` form + 0 `aid-investigate`/`aid-spike` aliases |
+| **Total** | **64** | |

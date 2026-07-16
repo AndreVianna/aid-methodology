@@ -1,16 +1,17 @@
 # Shortcut Scaffolding: document
 
-Per-family scaffolding reference for the **`document`** verb (bare `aid-document`
-plus the seven archetype-suffixed forms `-decision`, `-architecture`, `-guideline`,
-`-standard`, `-runbook`, `-tutorial`, `-changelog`; feature-010,
-work-001-lite-aid-skills). Consulted by the shared engine
-(`.claude/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
-CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field resolves to
-`document`. No `aid-document*` row carries an alias (feature-010 SPEC "Catalog rows
-owned" -- 8 canonical, no aliases; the artifact suffix selects the document's
-**structure**, not a synonym). Free-form prose, like any other `state-*.md` reference
-doc -- the dispatched `aid-architect` reads this for judgment; it is not
-machine-parsed.
+**Genre-structures reference for the document family (work-005 reframe of feature-010).**
+`document` is now a create/change **artifact**, not an engine verb: it is served by the
+hand-authored collapse skills `aid-create-document` / `aid-change-document` (+ the `-add`/
+`-update` aliases, the genre kind-siblings `aid-document-decision`/`-architecture`/
+`-guideline`/`-standard`/`-runbook`/`-tutorial`/`-changelog`, and the `aid-create-diagram`
+format sibling). This file is **no longer consulted by the shared engine** -- instead the
+hand-authored `aid-create-document`/`aid-change-document` bodies read it for the per-genre
+document **structure** (ADR, C4/arc42, runbook, tutorial, changelog, Diataxis, ...) they
+produce. Free-form prose, like any other `state-*.md` reference doc -- read for judgment,
+not machine-parsed. (The CAPTURE/SPEC/DETAIL sections below are retained as that structural
+guidance; the collapse bodies own the actual state machine, so read the shapes here, not the
+engine flow.)
 
 Grounded in the eight archetypes' materially different document shapes -- general
 explanatory writing, an ADR, an architecture write-up, a guideline, a mandatory
@@ -23,8 +24,8 @@ current codebase and KB ... ADRs follow: Context -> Decision -> Consequences for
 
 Every archetype first captures the two generic slots **subject** (what the document
 is about) and **audience** (who reads it), then the archetype-specific fields below.
-The engine infers the project's documentation style/location from the KB, so those
-are never capture slots.
+The hand-authored collapse body infers the project's documentation style/location from
+the KB, so those are never capture slots.
 
 | Archetype | CAPTURE slots beyond subject/audience |
 |---|---|
@@ -37,29 +38,28 @@ are never capture slots.
 | `aid-document-tutorial` | the learning goal; the worked example |
 | `aid-document-changelog` | version; headline changes; breaking changes |
 
-**Escalation.** Same rule as the generic engine: escalate to the one combined CAPTURE
-question only when the subject or the archetype-specific fields above cannot be made
-concrete from `{description}` + KB context -- for `aid-document` this most often
+**Escalation.** Same minimal-escalation discipline the engine's Capture-Minimization
+Rules define (the hand-authored collapse body applies it -- the engine no longer runs
+this family): escalate to the one combined CAPTURE question only when the subject or the
+archetype-specific fields above cannot be made concrete from `{description}` + KB context -- for `aid-document` this most often
 means which shape (Diataxis type vs. status report) is genuinely ambiguous.
 
-## SPEC -- always the mandatory three, no conditional section
+## Document structure -- the genre shape, not a SPEC.md
 
-The mandatory three sections (`### Data Model`, `### Feature Flow`,
-`### Layers & Components`) always apply, per the engine's own contract -- every
-generated `SPEC.md` carries them regardless of family. For every one of the 8
-archetypes: `### Data Model` reads "no schema changes"; `### Feature Flow` and
-`### Layers & Components` stay light (the document's own structure -- Diataxis shape,
-ADR sections, C4/arc42 views, etc. -- lives in the task's Scope, not a conditional
-SPEC section). No archetype activates a conditional `## Technical Specification`
-section.
+The hand-authored collapse body produces the document **directly** and emits no separate
+`SPEC.md`. The document's own internal structure is the per-genre shape in the DETAIL table
+below (Diataxis shape, ADR sections, C4/arc42 views, runbook steps, changelog headings,
+etc.) -- there is no `## Technical Specification` to activate and no schema change. (Legacy
+note: when this family was engine-driven, a generated `SPEC.md` carried the mandatory three
+sections with `### Data Model` = "no schema changes"; the collapse drops that scaffolding.)
 
-## DETAIL -- single DOCUMENT task, per archetype
+## Genre structure -- per archetype (what the collapse produces)
 
-Every archetype emits exactly one `task-001` DOCUMENT task (grounded in the legacy
-`add-docs` recipe's task=1 shape); the archetype only changes the **Scope**'s
-required document structure:
+The collapse body produces the document in the archetype's structure below -- this table is
+the substantive genre guidance this file exists to convey (`aid-create-document` reads it and
+writes the document directly; the collapse emits no task or SPEC artifact):
 
-| Archetype | `task-001` Scope requires this document shape |
+| Archetype | Document shape the collapse produces |
 |---|---|
 | `aid-document` (general) | Diataxis how-to / reference / explanation **or** status/progress report, per the captured shape |
 | `aid-document-decision` | ADR: **Context -> Decision -> Alternatives -> Consequences** |
@@ -89,8 +89,9 @@ stays here, as the bare `aid-document` shape.
 
 ## See also
 
-- `.claude/aid/templates/shortcut-engine.md § Family Scaffolding Consult` -- how
-  this file is looked up and what happens when it is absent
+- `.claude/skills/aid-create-document/SKILL.md` (+ `aid-change-document`) -- the
+  hand-authored collapse bodies that read this file for per-genre document structure
+  (work-005; `document` is no longer engine-consulted)
 - `.claude/aid/templates/shortcut-scaffolding/analyze-report.md § Ownership
   boundary` -- where an analytical report routes instead
 - `features/feature-010-document-family/SPEC.md` (work-001-lite-aid-skills) -- the

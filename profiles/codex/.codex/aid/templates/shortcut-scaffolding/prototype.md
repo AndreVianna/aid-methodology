@@ -1,11 +1,10 @@
 # Shortcut Scaffolding: prototype
 
-Per-family scaffolding reference for the **`prototype`** verb (bare `aid-prototype`
-plus the artifact-suffixed `aid-prototype-ui`; feature-005, work-001-lite-aid-skills).
-Consulted by the shared engine
-(`.codex/aid/templates/shortcut-engine.md § Family Scaffolding Consult`) at
-CAPTURE, SPEC, and DETAIL for every `{verb, artifact}` whose `verb` field resolves to
-`prototype`. Neither row carries an alias (feature-005 SPEC "Catalog rows owned" -- 2
+Scaffolding reference for the **`prototype`** family (bare `aid-prototype` plus the
+`ui` kind-sibling `aid-prototype-ui`; work-005 reframe of feature-005). `prototype` is now
+a hand-authored collapse skill, **no longer consulted by the shared engine** -- instead the
+hand-authored `aid-prototype` body reads this file for the per-slot capture / detail
+guidance below. Neither row carries an alias (feature-005 SPEC "Catalog rows owned" -- 2
 canonical, no aliases). Free-form prose, like any other `state-*.md` reference doc --
 the dispatched `aid-architect` reads this for judgment; it is not machine-parsed.
 
@@ -25,28 +24,31 @@ Bare verb, no artifact parameter:
 | Success signal | the observable signal that would validate the direction |
 | Scope boundary | what the prototype does **not** attempt (explicit -- keeps the model throwaway) |
 
-**Escalation.** Same rule as the generic engine: escalate to the one combined CAPTURE
-question only when the direction/hypothesis or the success signal cannot be made
-concrete and testable from `{description}` + KB context -- for a prototype this most
+**Escalation.** Same minimal-escalation discipline the engine's Capture-Minimization
+Rules define (the hand-authored collapse body applies it -- the engine no longer runs
+this family): escalate to the one combined CAPTURE question only when the
+direction/hypothesis or the success signal cannot be made concrete and testable from
+`{description}` + KB context -- for a prototype this most
 often means the validation question itself is missing, not merely terse. Fidelity
 level never blocks CAPTURE -- default to `low-fi`.
 
-## `aid-prototype` -- SPEC
+## `aid-prototype` -- structure (no SPEC.md)
 
-The mandatory three sections (`### Data Model`, `### Feature Flow`,
-`### Layers & Components`) always apply. `### Data Model` reads "no schema changes"
-(a prototype is throwaway); `### Feature Flow` carries the validation narrative.
-`aid-prototype` activates no conditional section on top of the mandatory three.
+The collapse produces the throwaway model directly and emits no `SPEC.md`. A prototype is
+throwaway (no schema change); the **validation narrative** it needs lives in the model + the
+validation assessment (BUILD / PRESENT in `aid-prototype/SKILL.md`), not a
+`## Technical Specification` section.
 
-## `aid-prototype` -- DETAIL
+## `aid-prototype` -- what the collapse builds
 
-| Task | Type | Notes |
-|---|---|---|
-| `task-001` | DESIGN | "Build the low-fidelity model of {direction} and capture the validation signal" |
-| `task-002` (optional) | IMPLEMENT | throwaway runnable spike -- only when a working model is required to validate the direction; depends on `task-001` |
+The `aid-prototype` collapse body builds, in its BUILD state (it emits no tasks):
 
-`task-002` is never a production build (see Ownership boundary below) -- it exists
-only to make the direction's own success signal observable.
+- the **low-fidelity model** of `{direction}` and captures the validation signal (DESIGN work); and
+- **optionally, a throwaway runnable spike** -- only when a working model is required to make the
+  success signal observable.
+
+The runnable spike is **never a production build** (see Ownership boundary below); it exists
+only to observe the direction's own success signal.
 
 ## `aid-prototype-ui` -- CAPTURE
 
@@ -60,35 +62,32 @@ only to make the direction's own success signal observable.
 **Escalation.** Same rule: escalate only when the target screen(s)/flow cannot be made
 concrete from `{description}` + KB context.
 
-## `aid-prototype-ui` -- SPEC
+## `aid-prototype-ui` -- structure (no SPEC.md)
 
-Activates `### UI Specs` on top of the mandatory three -- `### Feature Flow` carries
-the interaction flow (states, transitions), `### Data Model` reads "no schema
-changes" -- with an accessibility note per `task-type-rules.md ## DESIGN` ("Note
-accessibility considerations").
+A ui prototype likewise emits no `SPEC.md`: the **interaction flow** (states, transitions)
+and **accessibility notes** (`task-type-rules.md ## DESIGN`) are part of the wireframe/mock
+the collapse produces (no schema change), not a `### UI Specs` SPEC section.
 
-## `aid-prototype-ui` -- DETAIL
+## `aid-prototype-ui` -- what the collapse builds
 
-| Task | Type | Notes |
-|---|---|---|
-| `task-001` | DESIGN | "Wireframe/mock {screens} + interaction flow (states, transitions, a11y notes)" |
-| `task-002` (optional) | DESIGN | clickable flow prototype; depends on `task-001` |
+For a ui prototype the collapse builds a **wireframe/mock of `{screens}` + interaction flow**
+(states, transitions, a11y notes), and **optionally a clickable flow prototype** -- all
+throwaway, all DESIGN work.
 
 ## Ownership boundary
 
 A prototype **validates direction; it is not the production build**. When the user's
 real intent is to build the validated thing, hand off to `aid-create[-artifact]` (or
-`aid-change` when the target already exists) -- prototype work never emits a
-production `IMPLEMENT` task against real modules; its own optional
-`IMPLEMENT`/`DESIGN` follow-up tasks stay scoped to the throwaway spike / clickable
-flow only. Testing the prototype with real users (usability testing, a controlled
-A/B test) is a G7 activity (`aid-experiment` / `aid-test`), not part of this
-Detail-only prototype work.
+`aid-change` when the target already exists) -- prototype work never touches production
+modules; its optional runnable spike / clickable flow stays throwaway. Testing the
+prototype with real users (usability testing, a controlled A/B test) is a G7 activity
+(`aid-experiment` / `aid-test`), not part of this throwaway prototype work.
 
 ## See also
 
-- `.codex/aid/templates/shortcut-engine.md § Family Scaffolding Consult` -- how
-  this file is looked up and what happens when it is absent
+- `.codex/skills/aid-prototype/SKILL.md` -- the hand-authored collapse body that
+  reads this file for per-slot capture/detail guidance (work-005; `prototype` is no
+  longer engine-consulted)
 - `.codex/aid/templates/shortcut-scaffolding/create.md` -- where the validated
   direction's real build routes
 - `.codex/aid/templates/shortcut-scaffolding/test-experiment.md § aid-experiment` --

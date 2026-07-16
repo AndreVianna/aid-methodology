@@ -284,27 +284,30 @@ for name in aid-deploy aid-monitor; do
 done
 
 # ===========================================================================
-# Part 4 -- Full 80-row catalog-to-dirs parity (independently re-derived count)
+# Part 4 -- Full 94-row catalog-to-dirs parity (independently re-derived count)
 # ===========================================================================
 echo ""
-echo "--- Part 4: full 80-row catalog-to-dirs parity ---"
+echo "--- Part 4: full 94-row catalog-to-dirs parity ---"
 
 TOTAL_ROWS=$(grep -cE '^  - name:' "$CATALOG")
 CANONICAL_ROWS=$(grep -cE '^    alias_of: null$' "$CATALOG")
 ALIAS_ROWS=$(grep -cE '^    alias_of: aid-' "$CATALOG")
 REPURPOSE_ROWS=$(grep -cE '^    repurpose: true$' "$CATALOG")
 
-assert_eq "$TOTAL_ROWS" "80" "DMR30 catalog carries exactly 80 total rows"
-assert_eq "$CANONICAL_ROWS" "51" "DMR31 catalog carries exactly 51 canonical (alias_of: null) rows"
-assert_eq "$ALIAS_ROWS" "29" "DMR32 catalog carries exactly 29 alias rows"
-assert_eq "$REPURPOSE_ROWS" "4" "DMR33 catalog carries exactly 4 repurpose:true rows (aid-deploy, aid-monitor, aid-query-kb, aid-ask)"
+# work-005 grew the catalog (collapse skills + artifact reframes + kind-siblings): 80 -> 94
+# rows, and repurpose:true rows 4 -> 30 (the 4 classic re-registered skills plus 26 work-005
+# hand-authored collapse/kind-sibling skills, all now owning their own directory).
+assert_eq "$TOTAL_ROWS" "94" "DMR30 catalog carries exactly 94 total rows"
+assert_eq "$CANONICAL_ROWS" "58" "DMR31 catalog carries exactly 58 canonical (alias_of: null) rows"
+assert_eq "$ALIAS_ROWS" "36" "DMR32 catalog carries exactly 36 alias rows"
+assert_eq "$REPURPOSE_ROWS" "30" "DMR33 catalog carries exactly 30 repurpose:true rows (4 classic re-registered + 26 work-005 collapse/kind-sibling skills)"
 CANONICAL_PLUS_ALIAS=$((CANONICAL_ROWS + ALIAS_ROWS))
 assert_eq "$CANONICAL_PLUS_ALIAS" "$TOTAL_ROWS" "DMR34 canonical + alias == total (no row miscounted/double-counted)"
 
 # DMR-35: every row's directory exists (no orphan row) -- independent re-derivation, not
 # importing build-shortcut-skills.py's internals.
 mapfile -t ALL_NAMES < <(awk '/^  - name:/ { line=$0; sub(/^  - name:[[:space:]]*/, "", line); print line }' "$CATALOG")
-assert_eq "${#ALL_NAMES[@]}" "80" "DMR35a re-derived name list carries exactly 80 entries"
+assert_eq "${#ALL_NAMES[@]}" "94" "DMR35a re-derived name list carries exactly 94 entries"
 
 orphan_row=0
 for name in "${ALL_NAMES[@]}"; do

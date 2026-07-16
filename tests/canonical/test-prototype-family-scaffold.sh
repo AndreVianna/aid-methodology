@@ -73,41 +73,43 @@ assert_output_contains "$PROTO_TXT" \
     'Key interactions + states | the interactions and states to mock (loading, empty, error, success' \
     "PFS02b aid-prototype-ui captures key interactions + states"
 
-# PFS-03: aid-prototype SPEC -- mandatory three + Data Model "no schema changes"; no
-# conditional section (two-phrase -- wraps source lines).
+# PFS-03: aid-prototype is a hand-authored collapse skill (work-005) -- it produces the
+# throwaway model directly and emits NO SPEC.md and NO tasks; a prototype is throwaway
+# (no schema change). (Was an engine family with a generated SPEC + task table; detached.)
 assert_output_contains "$PROTO_TXT" \
-    'The mandatory three sections (`### Data Model`, `### Feature Flow`,' \
-    "PFS03a mandatory three SPEC sections named (wrap point 1)"
+    'emits no `SPEC.md`. A prototype is' \
+    "PFS03a aid-prototype collapse emits no SPEC.md"
 assert_output_contains "$PROTO_TXT" \
-    '`### Data Model` reads "no schema changes"' \
-    "PFS03b aid-prototype Data Model reads no schema changes (prototype is throwaway)"
+    'throwaway (no schema change)' \
+    "PFS03b aid-prototype is throwaway (no schema change)"
 assert_output_contains "$PROTO_TXT" \
-    'activates no conditional section on top of the mandatory three' \
-    "PFS03c bare aid-prototype activates no conditional SPEC section"
+    'it emits no tasks' \
+    "PFS03c aid-prototype collapse emits no tasks"
 
-# PFS-04: aid-prototype-ui SPEC -- activates ### UI Specs on top of the mandatory three.
+# PFS-04: aid-prototype-ui likewise emits no SPEC.md (its interaction flow / a11y notes are
+# part of the wireframe, not a ### UI Specs SPEC section).
 assert_output_contains "$PROTO_TXT" \
-    'Activates `### UI Specs` on top of the mandatory three' \
-    "PFS04 aid-prototype-ui activates ### UI Specs on top of the mandatory three"
+    'A ui prototype likewise emits no `SPEC.md`' \
+    "PFS04 aid-prototype-ui emits no SPEC.md"
 
-# PFS-05: aid-prototype DETAIL -- task-001 DESIGN, optional task-002 IMPLEMENT (spike).
+# PFS-05: aid-prototype BUILD -- low-fidelity model + optional throwaway spike, never production.
 assert_output_contains "$PROTO_TXT" \
-    '| `task-001` | DESIGN | "Build the low-fidelity model of {direction} and capture the validation signal" |' \
-    "PFS05a aid-prototype task-001: DESIGN, build the low-fidelity model + capture validation signal"
+    'the **low-fidelity model** of `{direction}`' \
+    "PFS05a aid-prototype builds the low-fidelity model of {direction}"
 assert_output_contains "$PROTO_TXT" \
-    '| `task-002` (optional) | IMPLEMENT | throwaway runnable spike -- only when a working model is required' \
-    "PFS05b aid-prototype task-002: optional IMPLEMENT, throwaway runnable spike only"
+    'optionally, a throwaway runnable spike' \
+    "PFS05b aid-prototype optionally builds a throwaway runnable spike"
 assert_output_contains "$PROTO_TXT" \
-    '`task-002` is never a production build' \
-    "PFS05c aid-prototype task-002 is explicitly never a production build"
+    'never a production build' \
+    "PFS05c aid-prototype runnable spike is never a production build"
 
-# PFS-06: aid-prototype-ui DETAIL -- task-001 DESIGN, optional task-002 DESIGN (clickable flow).
+# PFS-06: aid-prototype-ui BUILD -- wireframe/mock + interaction flow, optional clickable flow.
 assert_output_contains "$PROTO_TXT" \
-    '| `task-001` | DESIGN | "Wireframe/mock {screens} + interaction flow (states, transitions, a11y notes)" |' \
-    "PFS06a aid-prototype-ui task-001: DESIGN, wireframe/mock + interaction flow (states, transitions, a11y)"
+    'a **wireframe/mock of `{screens}` + interaction flow**' \
+    "PFS06a aid-prototype-ui builds a wireframe/mock + interaction flow"
 assert_output_contains "$PROTO_TXT" \
-    '| `task-002` (optional) | DESIGN | clickable flow prototype; depends on `task-001` |' \
-    "PFS06b aid-prototype-ui task-002: optional DESIGN, clickable flow prototype, depends on task-001"
+    'optionally a clickable flow prototype' \
+    "PFS06b aid-prototype-ui optionally builds a clickable flow prototype"
 
 # PFS-07: Ownership boundary -- validates direction, not the production build; hands off to
 # aid-create[-artifact]/aid-change; testing with users is G7.
@@ -118,11 +120,14 @@ assert_output_contains "$PROTO_TXT" \
     'hand off to `aid-create[-artifact]` (or' \
     "PFS07b Ownership boundary: hands off to aid-create[-artifact] (wrap point 1)"
 assert_output_contains "$PROTO_TXT" \
-    '`aid-change` when the target already exists) -- prototype work never emits a' \
+    '`aid-change` when the target already exists) -- prototype work never touches production' \
     "PFS07c Ownership boundary: or aid-change when the target already exists (wrap point 2)"
 assert_output_contains "$PROTO_TXT" \
-    'is a G7 activity (`aid-experiment` / `aid-test`), not part of this' \
-    "PFS07d Ownership boundary: testing the prototype with real users is a G7 activity"
+    'is a G7 activity' \
+    "PFS07d Ownership boundary: testing the prototype with real users is a G7 activity (wrap point 1)"
+assert_output_contains "$PROTO_TXT" \
+    '(`aid-experiment` / `aid-test`), not part of this' \
+    "PFS07e Ownership boundary: testing routes to aid-experiment/aid-test (wrap point 2)"
 
 echo ""
 echo "--- Part 2: catalog contract (checked against the real catalog + skill dirs) ---"
