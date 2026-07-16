@@ -613,6 +613,10 @@ shortcuts:
     intent: "Write changelog/release notes (Added/Changed/Fixed/Removed/Security)."
 
   # --- G11: Analyze & Report family (feature-011, task-025) -- 2 rows, no aliases ---
+  # aid-report: HAND-AUTHORED collapse skill (work-005). Analyzes data/usage NOW and
+  # presents an insight report (findings, conclusions +/-, caveats, conflicts, gaps);
+  # resolves nothing. aid-researcher produces, aid-reviewer verifies. Durable dashboards
+  # are aid-create-dashboard's job, not this. See specs/aid-report.md.
   - name: aid-report
     verb: report
     artifact: ""
@@ -620,6 +624,7 @@ shortcuts:
     default_type: RESEARCH
     group: G11
     intent: "Analyze data or usage and communicate insight (EDA, metrics, A/B analysis)."
+    repurpose: true
   - name: aid-show-dashboard
     verb: show-dashboard
     artifact: ""
