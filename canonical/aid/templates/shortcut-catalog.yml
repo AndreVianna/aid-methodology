@@ -501,35 +501,74 @@ shortcuts:
     group: G5
     intent: "Migrate data, a dependency, framework, or platform, with a rollback plan (non-schema; schema migrations use create/change-data-model)."
 
-  # --- G7: Test + Experiment family (feature-009, task-019) -- 5 rows, no aliases ---
+  # --- G7: Test + Experiment family -- work-005 restructure of feature-009 --
+  # Test AUTHORING is a create/change ARTIFACT: aid-create-test / aid-change-test (+ add/update
+  # aliases) -- ENGINE-DRIVEN, keep-cycle, executed by aid-developer (test code is code);
+  # artifact=test, group G7 for discovery; they consult create.md / change-refactor.md.
+  # Test RUNNING is aid-test -- a HAND-AUTHORED collapse (run any suite/verification +
+  # consolidate findings; aid-reviewer, review-shaped; resolves nothing; fixes -> /aid-fix).
+  # aid-test-security/-performance/-data-quality are kind-siblings (repurpose; body delegates
+  # to aid-test). Removal via bare aid-remove. See specs/aid-test.md.
+  - name: aid-create-test
+    verb: create
+    artifact: test
+    alias_of: null
+    default_type: TEST
+    group: G7
+    intent: "Author new tests (unit/integration/e2e); each test traces to an acceptance criterion; framework inferred from the KB."
+  - name: aid-add-test
+    verb: create
+    artifact: test
+    alias_of: aid-create-test
+    default_type: TEST
+    group: G7
+    intent: "Alias of aid-create-test."
+  - name: aid-change-test
+    verb: change
+    artifact: test
+    alias_of: null
+    default_type: TEST
+    group: G7
+    intent: "Change or extend existing tests."
+  - name: aid-update-test
+    verb: change
+    artifact: test
+    alias_of: aid-change-test
+    default_type: TEST
+    group: G7
+    intent: "Alias of aid-change-test."
   - name: aid-test
     verb: test
     artifact: ""
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Author, extend, or run functional tests (unit/integration/e2e) or a model evaluation."
+    intent: "Run any requested test suite/verification (unit/integration/e2e, security, performance, data-quality, model-eval) and consolidate findings; resolves nothing; hand fixes off to /aid-fix."
+    repurpose: true
   - name: aid-test-security
     verb: test
     artifact: security
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Verify security posture via SAST, DAST, fuzzing, or dependency audit."
+    intent: "Run a security verification (SAST/DAST/fuzz/dependency-audit) and report -- security kind of aid-test; body delegates."
+    repurpose: true
   - name: aid-test-performance
     verb: test
     artifact: performance
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Benchmark, load-test, or stress-test against a performance threshold."
+    intent: "Run a performance benchmark/load/stress test against a threshold and report -- performance kind of aid-test; body delegates."
+    repurpose: true
   - name: aid-test-data-quality
     verb: test
     artifact: data-quality
     alias_of: null
     default_type: TEST
     group: G7
-    intent: "Check a dataset or pipeline's schema, freshness, completeness, or uniqueness."
+    intent: "Run data-quality checks (schema/freshness/completeness/uniqueness) and report -- data-quality kind of aid-test; body delegates."
+    repurpose: true
   - name: aid-experiment
     verb: experiment
     artifact: ""

@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Detail
 active_skill: none
-updated: "2026-07-16T00:41:16Z"
+updated: "2026-07-16T00:48:19Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -79,6 +79,7 @@ the 7-phase `phase` scalar (see `specs/aid-review.md §10`).
 | 2026-07-16 | task-006 canonical source done | -- | aid-prototype collapse + aid-prototype-ui hint-alias + NEW aid-design skill + engine detach; --check: 68/13/0 (catalog +1) |
 | 2026-07-16 | task-004 canonical source done | -- | experiment: content-only scaffolding adaptation (test-experiment.md); no catalog/engine/skill change |
 | 2026-07-16 | task-005 canonical source done | -- | document restructure: create/change-document + aliases + create-diagram + 8 genre kind-siblings (subagent-authored delegations, spot-checked) + engine detach; --check 60/26/0 |
+| 2026-07-16 | task-007 canonical source done | -- | test restructure: create/change-test authoring doorways generated; aid-test run collapse + 3 kind-siblings; create.md test artifact + ownership fix; engine detach; --check 60/30/0. (build-shortcut-skills WRITE deleted the marker-orphan test doorways before I re-authored them -- expected) |
 
 ---
 
@@ -100,7 +101,7 @@ State enum: Pending | In Progress | In Review | Blocked | Done | Failed | Cancel
 | task-004 experiment | In Progress | -- | -- | Canonical source done: test-experiment.md aid-experiment section adapted (+3 capture slots, rigor->REQUIREMENTS §5/§9, Experiment Design section in SPEC). Engine-driven, unchanged topology; profiles/dogfood pending batch regen |
 | task-005 document family restructure | In Progress | -- | -- | Canonical source done: aid-create/change-document full bodies + add/update pure aliases + aid-create-diagram + 8 legacy aid-document* rewritten as kind-siblings (delegate) + engine detach; --check 60/26/0 (catalog 86 rows). profiles/dogfood pending batch regen |
 | task-006 prototype + new aid-design | In Progress | -- | -- | Canonical source done: aid-prototype hand-authored collapse (LIGHT verify), aid-prototype-ui hint-alias, NEW aid-design (kept, full verify) + engine detach; profiles/dogfood pending batch regen |
-| task-007 test-family restructure | In Progress | -- | -- | Spec LOCKED (specs/aid-test.md). create/change-test keep-cycle (engine-driven, aid-developer); aid-test generic run+consolidate (collapse, aid-reviewer); test-* hint-aliases; scaffolding reorg. Implementation pending |
+| task-007 test-family restructure | In Progress | -- | -- | Canonical source done: create/change-test (+add/update) engine-driven authoring doorways generated; aid-test hand-authored run collapse + 3 kind-siblings; create.md gains test artifact + ownership fix; engine detach. --check 60/30/0 (catalog 90). FOLLOW-UP: trim dormant test sections in test-experiment.md. profiles/dogfood pending batch regen |
 | task-008 dashboard reframe | In Progress | -- | -- | Spec LOCKED (specs/aid-dashboard.md). show-dashboard -> aid-create-dashboard/aid-change-dashboard (+add/update aliases); aid-show-dashboard hint-alias; keep-cycle, behavior unchanged (naming/topology only). Implementation pending |
 
 ---

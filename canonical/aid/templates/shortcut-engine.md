@@ -136,7 +136,7 @@ re-derivation from this table:
 | create-config / change-config | CONFIGURE | feature-flag / rule |
 | fix | IMPLEMENT | |
 | refactor | REFACTOR | |
-| test / test-* | TEST | |
+| create-test / change-test (test authoring) | TEST | each test traces to an acceptance criterion |
 | experiment | RESEARCH | hypothesis -> analyze -> recommend |
 | show-dashboard | IMPLEMENT | a BI view is code/config |
 | remove | REFACTOR | delete without changing surviving behavior; dependents/tests/docs updated (structural, not a defect fix; v2.1.0 coverage-gap follow-on) |
@@ -168,7 +168,7 @@ this table just collects them at a glance, the same incremental-growth precedent
 | `create` (+ `add-*` aliases) | `shortcut-scaffolding/create.md` |
 | `change` (+ `update-*` aliases), `refactor` | `shortcut-scaffolding/change-refactor.md` |
 | `fix` | `shortcut-scaffolding/fix.md` |
-| `test`, `experiment` | `shortcut-scaffolding/test-experiment.md` |
+| `experiment` | `shortcut-scaffolding/test-experiment.md` (test AUTHORING -> create.md/change-refactor.md `test` artifact; test RUNNING -> hand-authored aid-test + kind-siblings, work-005) |
 | `show-dashboard` | `shortcut-scaffolding/analyze-report.md` (`review` + `research` + `report` detached to hand-authored collapse skills, work-005) |
 | `remove`, `deprecate`, `migrate` | `shortcut-scaffolding/change-refactor.md` (v2.1.0 coverage-gap follow-on) |
 
