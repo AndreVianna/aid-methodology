@@ -280,15 +280,15 @@ per-task `STATE.md`):
 ```
 TASK: task-{NNN}
 DELIVERY: delivery-{DDD}
-WORK: .aid/{work}/
+WORK: .aid/works/{work}/
 WORKTREE: .aid/.worktrees/task-{NNN}/
 HEARTBEAT_FILE: .aid/.heartbeat/{executor}-{ts}.txt
 HEARTBEAT_INTERVAL: 1m
 
 Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
 EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
-Read task definition from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/DETAIL.md.
-Read task state from .aid/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
+Read task definition from .aid/works/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/DETAIL.md.
+Read task state from .aid/works/{work}/deliveries/delivery-{DDD}/tasks/task-{NNN}/STATE.md.
 Follow the type-specific executor rules from references/task-type-rules.md.
 MANDATORY: write your own State at EVERY transition you run yourself --
 In Progress at your own EXECUTE entry, In Review at your own execute-complete,
@@ -310,15 +310,15 @@ lifecycle` table row, not a per-task `STATE.md`:
 ```
 TASK: task-{NNN}
 DELIVERY: delivery-{DDD}
-WORK: .aid/{work}/
+WORK: .aid/works/{work}/
 WORKTREE: .aid/.worktrees/task-{NNN}/
 HEARTBEAT_FILE: .aid/.heartbeat/{executor}-{ts}.txt
 HEARTBEAT_INTERVAL: 1m
 
 Execute task-{NNN} using the aid-execute skill in per-task mode -- full pipeline
 EXECUTE -> QUICK CHECK -> REVIEW -> cycles until DONE.
-Read task definition from .aid/{work}/tasks/task-{NNN}/DETAIL.md.
-Read task state from the work-root .aid/{work}/STATE.md § ### Tasks lifecycle
+Read task definition from .aid/works/{work}/tasks/task-{NNN}/DETAIL.md.
+Read task state from the work-root .aid/works/{work}/STATE.md § ### Tasks lifecycle
 (row for task-{NNN}; there is no per-task STATE.md in this layout).
 Follow the type-specific executor rules from references/task-type-rules.md.
 MANDATORY: write your own State at EVERY transition you run yourself --
@@ -411,7 +411,7 @@ Remove `task-{NNN}` from the in-flight set.
    ```bash
    bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
    bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Task failed with unresolved impediment -- task-{NNN}"
-   bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-task-{NNN}.md"
    bash .agent/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 
@@ -478,7 +478,7 @@ Remove `task-{NNN}` from the in-flight set.
 6. Re-render EXECUTE-WAVE snapshot: `task-{NNN}` → `✗ failed`;
    each blocked descendant → `⊘ blocked`.
 
-7. Surface the IMPEDIMENT: read `.aid/{work}/IMPEDIMENT-task-{NNN}.md` and
+7. Surface the IMPEDIMENT: read `.aid/works/{work}/IMPEDIMENT-task-{NNN}.md` and
    print it. The pool **continues operating** on unrelated chains — do NOT stop.
    Tasks already in flight at the moment of failure are NOT cancelled — they are
    graph-independent of the failed task. Pending tasks in unrelated chains
@@ -524,7 +524,7 @@ Tasks Blocked: {B}
 Tasks Pending: {P}  (should be 0 at fixed point — verify if non-zero)
 
 Failed tasks (with Impediment references):
-  ✗ task-{NNN} — IMPEDIMENT: .aid/{work}/IMPEDIMENT-task-{NNN}.md
+  ✗ task-{NNN} — IMPEDIMENT: .aid/works/{work}/IMPEDIMENT-task-{NNN}.md
   ...
 
 Blocked tasks (transitive descendants of failed ancestors):

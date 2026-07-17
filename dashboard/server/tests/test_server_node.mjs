@@ -111,7 +111,7 @@ function makeAidWithWorks(repo, workIds) {
   const aid = join(repo, ".aid");
   mkdirSync(aid, { recursive: true });
   for (const wid of workIds) {
-    const wdir = join(aid, wid);
+    const wdir = join(aid, "works", wid);
     mkdirSync(wdir, { recursive: true });
     writeFileSync(join(wdir, "STATE.md"), [
       "# Work State",
@@ -382,7 +382,7 @@ process.stdout.write("\n[8] Malformed-input regression (delivery-006 fixes)\n");
   // Case e1: headerless Tasks table
   const tmpE1 = join(tmpdir(), "aid-e1-" + Date.now());
   const aidE1 = join(tmpE1, ".aid");
-  const wdirE1 = join(aidE1, "work-001-headerless");
+  const wdirE1 = join(aidE1, "works", "work-001-headerless");
   mkdirSync(wdirE1, { recursive: true });
   writeFileSync(join(wdirE1, "STATE.md"), [
     "## Pipeline Status",
@@ -417,7 +417,7 @@ process.stdout.write("\n[8] Malformed-input regression (delivery-006 fixes)\n");
   // Case e2: ## Pipeline Status section with no typed fields
   const tmpE2 = join(tmpdir(), "aid-e2-" + Date.now());
   const aidE2 = join(tmpE2, ".aid");
-  const wdirE2 = join(aidE2, "work-001-psonly");
+  const wdirE2 = join(aidE2, "works", "work-001-psonly");
   mkdirSync(wdirE2, { recursive: true });
   writeFileSync(join(wdirE2, "STATE.md"), [
     "## Pipeline Status",
@@ -508,7 +508,7 @@ process.stdout.write("\n[9] PF-8 parseSpecMd + Lite fixture (HT-2)\n");
   if (!fixturePresent) {
     process.stdout.write("  SKIP: pt1-aid fixture not found\n");
   } else {
-    const liteWorkDir = join(fixtureRoot, ".aid", "work-006-lite-sample");
+    const liteWorkDir = join(fixtureRoot, ".aid", "works", "work-006-lite-sample");
     let litePresent = false;
     try { statSync(liteWorkDir); litePresent = true; } catch (_) {}
     if (!litePresent) {

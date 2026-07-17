@@ -5,7 +5,7 @@
 #   1. RESOLVE    verify aid_root/.aid exists; absent -> empty RepoModel + parse_warning
 #   2. LEVEL-0    parse .aid/.aid-manifest.json (+ .aid/.aid-version)    -> ToolInfo
 #   3. LEVEL-1    parse .aid/settings.yml + stat .aid/knowledge/          -> RepoInfo
-#   4. ENUMERATE  glob .aid/work-NNN-*/ (dirs only; FR12)                -> work_id list
+#   4. ENUMERATE  list .aid/works/* (all direct subdirs; name not a filter) -> work_id list
 #   5. PER WORK   read STATE.md once; parse normalized block + tasks + Q&A -> WorkModel list
 #   6. RECONCILE  merge same-work_id roots (work-004 Pillar 5 / SD-2)    -> deduplicated list
 #   7. ASSEMBLE   RepoModel{tool, repo, works, read=ReadMeta}             -> return
@@ -577,7 +577,7 @@ def read_repo_detail(
         # DR-1: get STATE.md text from the always-on pass cache (no disk re-read).
         # If work_id was not enumerated in the always-on pass (detail for a non-enumerated
         # work), use empty text and add a warning -- never re-read from disk (NFR4).
-        state_path_label: str = f".aid/{work_id}/STATE.md"
+        state_path_label: str = f".aid/works/{work_id}/STATE.md"
         if work_id in state_text_cache:
             state_text, state_path_label = state_text_cache[work_id]
         else:
@@ -615,10 +615,10 @@ def read_repo_detail(
                 state_text, delivery_id, task_warnings
             )
 
-        # DR-4: read .aid/{work}/delivery-NNN-issues.md; filter to Source task == task_id
+        # DR-4: read .aid/works/{work}/delivery-NNN-issues.md; filter to Source task == task_id
         deferred_issues: list[DeferredIssue] = []
         if delivery_id is not None:
-            issues_path = aid_dir / work_id / f"{delivery_id}-issues.md"
+            issues_path = aid_dir / "works" / work_id / f"{delivery_id}-issues.md"
             deferred_issues = parse_deferred_issues(issues_path, task_id, task_warnings)
 
         ledger = TaskLedger(
@@ -669,7 +669,7 @@ def _read_work(
 
     Returns (WorkModel, parse_warnings, bytes_read, state_text, state_label).
     state_text is the decoded work-level STATE.md content (empty string on error/absent).
-    state_label is the relative path label for raw_state (e.g. '.aid/work-001/STATE.md').
+    state_label is the relative path label for raw_state (e.g. '.aid/works/work-001/STATE.md').
     Never raises: any exception yields a parse_warning + best-effort WorkModel.
     """
     # Pillar 6: hierarchy detection (per-work, presence-based)
@@ -683,7 +683,7 @@ def _read_work(
 
     # --- Legacy monolithic path (preserved behavior) ---
     state_path = work_dir / "STATE.md"
-    state_label = f".aid/{work_id}/STATE.md"
+    state_label = f".aid/works/{work_id}/STATE.md"
     parse_warnings: list[str] = []
     bytes_read = 0
 
@@ -918,7 +918,7 @@ def _read_work_flat(
     Never raises.
     """
     state_path = work_dir / "STATE.md"
-    state_label = f".aid/{work_id}/STATE.md"
+    state_label = f".aid/works/{work_id}/STATE.md"
     parse_warnings: list[str] = []
     bytes_read = 0
 
@@ -1120,7 +1120,7 @@ def _read_work_hierarchical(
     Never raises.
     """
     state_path = work_dir / "STATE.md"
-    state_label = f".aid/{work_id}/STATE.md"
+    state_label = f".aid/works/{work_id}/STATE.md"
     parse_warnings: list[str] = []
     bytes_read = 0
 

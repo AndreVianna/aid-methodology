@@ -66,7 +66,7 @@ For every adjustment:
 
 When the user agrees on a deliverable, **IMMEDIATELY write it to the file.**
 
-**First deliverable:** Create `.aid/{work}/PLAN.md` with the header and first deliverable:
+**First deliverable:** Create `.aid/works/{work}/PLAN.md` with the header and first deliverable:
 ```markdown
 # Plan -- {Work Name}
 
@@ -186,12 +186,12 @@ After all deliverables are written, check for risks that span features:
 ### Step 7: Final Summary
 
 **Before printing the summary, verify PLAN.md and delivery folders are complete:**
-1. Read `.aid/{work}/PLAN.md` from disk
+1. Read `.aid/works/{work}/PLAN.md` from disk
 2. Confirm every agreed deliverable is written
 3. If any deliverable is missing → write it NOW
 4. If Cross-Cutting Risks or Deferred sections apply → append them NOW
 5. For each delivery-NNN in PLAN.md, confirm both `deliveries/delivery-NNN/BLUEPRINT.md` and
-   `deliveries/delivery-NNN/STATE.md` exist under `.aid/{work}/`. If either is missing -> create it NOW
+   `deliveries/delivery-NNN/STATE.md` exist under `.aid/works/{work}/`. If either is missing -> create it NOW
    (seed from the templates; replace the frontmatter's `delivery_state` placeholder with
    `delivery_state: Pending-Spec` -- the scalar lives in the leading YAML block per
    `delivery-state-template.md`, task-001/004; direct field edit, same scaffold-time
@@ -211,10 +211,10 @@ Deferred: feature-006 (Could-have, revisit after delivery-003 feedback)
 {If cross-cutting risks:}
 Cross-cutting risks: {count} identified (see PLAN.md)
 
-PLAN.md written to: .aid/{work}/PLAN.md
+PLAN.md written to: .aid/works/{work}/PLAN.md
 Delivery folders created:
-  .aid/{work}/deliveries/delivery-001/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
-  .aid/{work}/deliveries/delivery-002/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
+  .aid/works/{work}/deliveries/delivery-001/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
+  .aid/works/{work}/deliveries/delivery-002/{BLUEPRINT.md, STATE.md} (State: Pending-Spec)
   ...
 ```
 

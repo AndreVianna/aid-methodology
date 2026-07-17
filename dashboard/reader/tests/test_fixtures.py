@@ -111,7 +111,7 @@ def _write_settings(aid: Path, project_name: str = "TestProject") -> None:
 
 
 def _make_work_dir(aid: Path, work_id: str) -> Path:
-    wd = aid / work_id
+    wd = aid / "works" / work_id
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 

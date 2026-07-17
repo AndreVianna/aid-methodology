@@ -52,7 +52,7 @@ Step 0):
 ## Workspace
 
 ```
-.aid/{work}/
+.aid/works/{work}/
   packages/                    ← deployment history
   features/                    ← SPECs (expected behavior)
   deliveries/delivery-NNN/tasks/task-NNN/  ← full path: task files (acceptance criteria)
@@ -147,8 +147,8 @@ Any combination of: error tracking (Sentry, AppInsights, CloudWatch), CI/CD resu
 APM/performance metrics, test trends, user feedback, support tickets, log files.
 
 **From AID artifacts (what's expected):**
-- Feature SPECs (`.aid/{work}/features/*/SPEC.md`) — expected behavior
-- Per-task `DETAIL.md` — acceptance criteria; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/{work}/tasks/task-NNN/DETAIL.md`
+- Feature SPECs (`.aid/works/{work}/features/*/SPEC.md`) — expected behavior
+- Per-task `DETAIL.md` — acceptance criteria; full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
 - Package files — what was deployed and when
 - `known-issues.md` — exclude known problems
 

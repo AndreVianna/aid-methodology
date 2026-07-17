@@ -4,7 +4,7 @@ description: >
   Friendly-named alias of /aid-query-kb -- the optional on-demand Q&A skill.
   Takes a free-form question and answers it in one pass, grounded in three
   context sources: the Knowledge Base (.aid/knowledge/), the live codebase,
-  and in-flight AID works (.aid/work-*/STATE.md + progress). Returns an
+  and in-flight AID works (.aid/works/work-*/STATE.md + progress). Returns an
   answer with source citations. When the available context cannot answer the
   question, states the gap explicitly and captures it as a Query-Gap entry so
   it feeds the KB-improvement loop. This file carries no logic of its own --
@@ -36,7 +36,7 @@ exclusively by `canonical/skills/aid-query-kb/SKILL.md`. Read that file and
 execute it exactly as written, substituting nothing except the invocation
 name in any printed usage example (`/aid-ask` instead of `/aid-query-kb`):
 single-shot, read-only except for the one gap-capture write, grounded in the
-Knowledge Base + the live codebase + in-flight `.aid/work-*/STATE.md` works,
+Knowledge Base + the live codebase + in-flight `.aid/works/work-*/STATE.md` works,
 cited, no work folder, no state machine of its own. Duplicating that logic
 here would let the two skills drift out of sync (`feedback` precedent: KB
 docs never re-derive what another document already owns); this file exists
@@ -66,4 +66,4 @@ gap-reply shape when context is insufficient), and Step 4 (gap capture: append
 a `### Q{N}` Query-Gap entry to the resolved backlog's `## Q&A (Pending)`
 section). Every constraint that file states (`§ Constraints`) applies here
 unchanged: cite sources, never fabricate, write nothing beyond the one
-gap-capture append, no `.aid/work-*/` folder or `STATE.md` of `/aid-ask`'s own.
+gap-capture append, no `.aid/works/work-*/` folder or `STATE.md` of `/aid-ask`'s own.

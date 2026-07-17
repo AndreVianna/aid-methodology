@@ -31,7 +31,7 @@ Ask for:
 Create the package file from template (`../../templates/package.md`):
 - Fill in: deliveries, deployment type/target from KB, environment from KB
 - Determine package number (next sequential after existing packages)
-- Save to `.aid/{work}/packages/package-NNN-{slug}.md`
+- Save to `.aid/works/{work}/packages/package-NNN-{slug}.md`
 
 Update work `STATE.md` `## Deploy State`: Status → Verifying, Active Package → package-NNN.
 

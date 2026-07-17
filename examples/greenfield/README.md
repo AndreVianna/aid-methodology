@@ -142,7 +142,7 @@ endpoint. (See the brownfield lite-path example for that scenario.)
 
 `aid-describe` produces:
 - `REQUIREMENTS.md` — the canonical requirements document
-- `.aid/work-001-tasktracker-api/features/` — one directory per feature with an
+- `.aid/works/work-001-tasktracker-api/features/` — one directory per feature with an
   empty `SPEC.md` stub
 
 > Sample `REQUIREMENTS.md` excerpt: [samples/REQUIREMENTS.md](samples/REQUIREMENTS.md)
@@ -222,7 +222,7 @@ is what the coding agent reads during execution.
 ```
 
 AID reads `PLAN.md` and each `SPEC.md`, then produces `task-NNN.md` files in
-`.aid/work-001-tasktracker-api/tasks/`. It also writes an execution graph showing
+`.aid/works/work-001-tasktracker-api/tasks/`. It also writes an execution graph showing
 which tasks can run in parallel vs. must be sequential.
 
 **Tasks produced (D1 — Authentication):**

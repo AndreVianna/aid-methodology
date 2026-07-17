@@ -1,5 +1,5 @@
 # dashboard/reader/locator.py
-# LC-1 Locator: resolve .aid/ root, enumerate work-NNN-*/ dirs, stat manifest/KB.
+# LC-1 Locator: resolve .aid/ root, enumerate .aid/works/* dirs, stat manifest/KB.
 #
 # Responsibility: filesystem listing + read-only git worktree enumeration.
 # No parse (beyond worktree-list output), no write, no derivation.
@@ -16,13 +16,6 @@ import re
 from pathlib import Path
 from typing import NamedTuple, Optional
 
-# Work-folder glob pattern: exactly work-[0-9]*-* (FR12 / feature-002 LC-1)
-# Matches work-NNN-{slug} directories only; excludes .temp/, .heartbeat/, etc.
-_WORK_GLOB = "work-[0-9]*-*"
-
-# Compiled pattern for the same rule (used to double-check against symlinks or files)
-_WORK_RE = re.compile(r"^work-[0-9]+-")
-
 
 class LocatorResult(NamedTuple):
     """Output of locate_aid_root()."""
@@ -32,19 +25,20 @@ class LocatorResult(NamedTuple):
     version_path: Path     # .aid/.aid-version (may not exist; fallback for ToolInfo)
     settings_path: Path    # .aid/settings.yml
     kb_dir: Path           # .aid/knowledge/ (may not exist)
-    work_dirs: list[Path]  # .aid/work-NNN-*/ directories (sorted, dirs only)
+    work_dirs: list[Path]  # .aid/works/* directories (sorted, dirs only)
     heartbeat_dir: Path    # .aid/.heartbeat/ (stat-only; may not exist)
 
 
 def locate_aid_root(repo_root: str | Path) -> LocatorResult:
     """Resolve the .aid/ tree from repo_root and enumerate work folders.
 
-    Structurally excludes .aid/.temp/ and .aid/.heartbeat/ -- only work-NNN-*
-    dirs are returned as works (the work-glob is the only filter needed; no
-    special-casing of .temp or .heartbeat is required because they don't match
-    the glob).
+    Works are the direct subfolders of the .aid/works/ container. The non-work
+    siblings (.temp/, .heartbeat/, knowledge/, settings.yml, .aid-manifest.json,
+    ...) live BESIDE works/ under .aid/, not inside it, so enumerating
+    .aid/works/* excludes them structurally -- no name-based filtering needed.
 
-    Never throws. If .aid/ is absent, aid_exists=False and work_dirs=[].
+    Never throws. aid_exists reflects .aid/ itself; if .aid/ (or .aid/works/)
+    is absent, work_dirs=[].
     """
     root = Path(repo_root).resolve()
     aid_dir = root / ".aid"
@@ -74,27 +68,28 @@ def locate_aid_root(repo_root: str | Path) -> LocatorResult:
 
 
 def _enumerate_work_dirs(aid_dir: Path) -> list[Path]:
-    """Return sorted list of .aid/work-NNN-*/ directories.
+    """Return the sorted list of work directories under the .aid/works/ container.
 
-    Uses the exact glob work-[0-9]*-* (FR12). Returns only entries that:
-    - match the glob
-    - are actual directories (not files, not symlinks to non-dirs)
-    - match the _WORK_RE pattern (belt-and-suspenders: glob already filters,
-      but explicit check guards against oddly-named dirs on case-insensitive FS)
+    The container .aid/works/ is the discovery selector: EVERY direct subfolder
+    of it is a work. The folder name is no longer a visibility filter -- a work
+    is any direct subdirectory of works/, numbered (work-NNN-*) or not.
+    ^work-([0-9]+)- survives only as a best-effort ordering / short-id key
+    (parsed in reader._number_from_work_id); it never includes or excludes here.
 
-    .aid/.temp/ and .aid/.heartbeat/ are structurally excluded by the glob --
-    they do not start with "work-[0-9]" so they are never yielded.
+    The non-work siblings (.temp/, .heartbeat/, knowledge/, settings.yml,
+    .aid-manifest.json, ...) live beside works/ under .aid/, not inside it, so a
+    plain "all subfolders of .aid/works/" listing excludes them structurally.
+
+    Returns only actual directories (files / broken symlinks are skipped).
+    Never throws: a missing or unreadable .aid/works/ yields [].
     """
+    works_dir = aid_dir / "works"
     try:
-        candidates = list(aid_dir.glob(_WORK_GLOB))
+        candidates = list(works_dir.iterdir())
     except OSError:
         return []
 
-    result = []
-    for p in candidates:
-        if p.is_dir() and _WORK_RE.match(p.name):
-            result.append(p)
-
+    result = [p for p in candidates if p.is_dir()]
     result.sort(key=lambda p: p.name)
     return result
 

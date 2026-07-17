@@ -540,14 +540,14 @@ compute_status_note() {
 }
 
 # ---------------------------------------------------------------------------
-# S6: .aid/work-*/ folders
+# S6: .aid/works/*/ folders
 # Every work folder is offered (never silently hidden); the (i)/(ii) signals are
 # informational context only. The single hard exclusion is the work folder whose
 # branch is currently checked out (is_active_folder). The user confirms each.
 # ---------------------------------------------------------------------------
 scan_s6() {
     local folder_path
-    for folder_path in "${AID_DIR}"/work-*/; do
+    for folder_path in "${AID_DIR}"/works/*/; do
         [[ -d "$folder_path" ]] || continue
         local folder_name
         folder_name=$(basename "$folder_path")

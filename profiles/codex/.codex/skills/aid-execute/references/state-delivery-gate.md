@@ -59,7 +59,7 @@ from SPEC Data Model "Parallel-write coordination").**
    (e.g., `delivery-003` → NNN = `003`).
 
 2. **Check whether `delivery-NNN-issues.md` exists** at
-   `.aid/{work}/delivery-NNN-issues.md`.
+   `.aid/works/{work}/delivery-NNN-issues.md`.
    - If it exists (written incrementally by quick-check via
      `writeback-state.sh --delivery-id NNN --append-issue ROW`):
      read the file; it already contains all deferred `[HIGH]` rows.
@@ -104,7 +104,7 @@ Read the delivery's Execution Graph from:
   `### delivery-NNN` heading; the single delivery is implicit).
 - **Full path** — otherwise, `PLAN.md` in the work directory (`#### Execution
   Graph` block for this delivery).
-- **Lite path** — the work-root `SPEC.md` (`.aid/{work}/SPEC.md`), which
+- **Lite path** — the work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`), which
   contains the merged delivery + dependency graph information.
 
 Parse the `| Task | Depends On |` table to build the dependency map.
@@ -183,9 +183,9 @@ Then append the gate-specific prompt below. The reviewer reads directly from sou
   - Full path: `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
   - Flat path: `tasks/task-NNN/DETAIL.md` directly under the work root
 - **Feature SPEC(s):**
-  - Full path: per-feature `SPEC.md` files (`.aid/{work}/features/*/SPEC.md`)
+  - Full path: per-feature `SPEC.md` files (`.aid/works/{work}/features/*/SPEC.md`)
   - Flat path (feature-001, single-delivery): work-root `SPEC.md` (single feature)
-  - Lite path: work-root `SPEC.md` (`.aid/{work}/SPEC.md`)
+  - Lite path: work-root `SPEC.md` (`.aid/works/{work}/SPEC.md`)
 - **Delivery-level acceptance criteria:**
   - Full path: from the delivery's `BLUEPRINT.md § Gate Criteria`
   - Flat path: from the work-root `BLUEPRINT.md § Gate Criteria`
@@ -345,13 +345,13 @@ Options:
 2. Raise an IMPEDIMENT (architecture-conflict) if the issue is structural.
 ```
 
-Write impediment to `.aid/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
+Write impediment to `.aid/works/{work}/IMPEDIMENT-delivery-NNN.md` if stopping. When the impediment
 is written, emit the delivery and pipeline block signals (silent state-writes -- no output, no gate):
 ```bash
 bash .codex/aid/scripts/execute/writeback-state.sh --delivery-id NNN --lifecycle Blocked
 bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
 bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Delivery gate circuit breaker triggered -- grade not improving after 3 cycles"
-bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-delivery-{NNN}.md"
+bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-delivery-{NNN}.md"
 bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```
 

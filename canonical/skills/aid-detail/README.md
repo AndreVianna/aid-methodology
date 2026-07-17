@@ -31,14 +31,15 @@ Each deliverable follows the same cycle:
 ```
 .aid/
   knowledge/                ← shared KB (read)
-  work-NNN-{name}/
-    PLAN.md                 ← deliverables (read — must exist)
-    features/
-      feature-NNN-{name}/
-        SPEC.md             ← per-feature tech spec (read)
-    tasks/                  ← OUTPUT
-      task-001.md
-      task-002.md
+  works/
+    work-NNN-{name}/
+      PLAN.md                 ← deliverables (read — must exist)
+      features/
+        feature-NNN-{name}/
+          SPEC.md             ← per-feature tech spec (read)
+      tasks/                  ← OUTPUT
+        task-001.md
+        task-002.md
 ```
 
 ## How It Works

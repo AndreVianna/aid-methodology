@@ -84,12 +84,12 @@ For each `[CRITICAL]` finding:
    ```bash
    bash .github/aid/scripts/execute/writeback-state.sh --delivery-id DDD --task-id NNN --field State --value "Failed"
    ```
-   Write the IMPEDIMENT to `.aid/{work}/IMPEDIMENT-task-{NNN}.md` and emit the pipeline block
+   Write the IMPEDIMENT to `.aid/works/{work}/IMPEDIMENT-task-{NNN}.md` and emit the pipeline block
    signal (silent state-write — no output, no gate):
    ```bash
    bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
    bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "Critical finding persists after fix attempt — architecture-conflict impediment raised"
-   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-task-{NNN}.md"
+   bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-task-{NNN}.md"
    bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
 4. Mark the finding as `Fixed-on-spot` in the quick-check findings block (see §
@@ -110,7 +110,7 @@ For each `[HIGH]` finding:
    | task-NNN | [HIGH] | {one-line description} | Open |
    ```
 
-   The delivery issue log is at `.aid/work-NNN/delivery-NNN-issues.md`. The
+   The delivery issue log is at `.aid/works/work-NNN/delivery-NNN-issues.md`. The
    script creates the file (from the `delivery-issues.md` template) if it does
    not yet exist.
 

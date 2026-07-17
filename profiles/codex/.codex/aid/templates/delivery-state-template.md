@@ -10,7 +10,7 @@ ticket_ref: "{connector-stem}:{external-id} | --"   # OPTIONAL; e.g. jira:PROJ-1
 
 [!NOTE]
 This is the DELIVERY-LEVEL STATE.md template -- FULL PATH ONLY. It lives at
-`.aid/work-NNN-{name}/deliveries/delivery-NNN/STATE.md`. (A lite work has exactly one
+`.aid/works/work-NNN-{name}/deliveries/delivery-NNN/STATE.md`. (A lite work has exactly one
 delivery and no `deliveries/` folder at all -- its Delivery Lifecycle / Delivery Gate /
 Cross-phase Q&A are AUTHORED directly in the work-root `STATE.md` instead; see
 `work-state-template.md`.) It is divided into three zones:
@@ -77,7 +77,7 @@ so the delivery lifecycle MUST be independently authored.
      delivery's branch. Written via `writeback-state.sh --delivery-id NNN --block ...`.
      Distinct from per-task quick-check findings -- the gate aggregates those deferred [HIGH]
      rows (via delivery-NNN-issues.md) and runs a full grade.sh pass.
-     Instances of the deferred-[HIGH] log live at `.aid/work-NNN/delivery-NNN-issues.md`;
+     Instances of the deferred-[HIGH] log live at `.aid/works/work-NNN/delivery-NNN-issues.md`;
      see `.codex/aid/templates/delivery-issues.md` for the template.
      Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block at the top of this
      file (`gate_tier`, `gate_grade`, `gate_timestamp`). Issue List stays here as markdown

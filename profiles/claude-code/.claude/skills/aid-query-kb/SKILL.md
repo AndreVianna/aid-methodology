@@ -4,7 +4,7 @@ description: >
   Optional on-demand Q&A skill. Takes a free-form question and answers it in
   one pass, grounded in three context sources: the Knowledge Base
   (.aid/knowledge/), the live codebase, and in-flight AID works
-  (.aid/work-*/STATE.md + progress). Returns an answer with source citations
+  (.aid/works/work-*/STATE.md + progress). Returns an answer with source citations
   (KB doc names, file paths, or work-NNN STATE references). When the available
   context cannot answer the question, states the gap explicitly rather than
   fabricating an answer AND captures the gap as a Query-Gap entry in the
@@ -92,7 +92,7 @@ INSTRUCTIONS:
 1. Load .aid/knowledge/INDEX.md to navigate the KB.
 2. Read the KB docs relevant to the question.
 3. Glob or Grep the codebase as needed to gather evidence.
-4. Read .aid/work-*/STATE.md files if the question concerns in-flight works.
+4. Read .aid/works/work-*/STATE.md files if the question concerns in-flight works.
 5. Return a structured answer with source citations (KB doc names, file paths,
    work-NNN STATE references). Do not fabricate facts; if the context cannot
    answer the question, state the gap explicitly.
@@ -166,8 +166,8 @@ When Step 3 emits a gap reply, immediately capture the gap into the Q&A backlog.
 **Target-file resolution:**
 
 - If the query was about an **in-flight work** (the question concerns a specific
-  `.aid/work-NNN-*/` effort whose STATE.md exists), write to that work's
-  `.aid/work-NNN-*/STATE.md` `## Q&A (Pending)` section.
+  `.aid/works/work-NNN-*/` effort whose STATE.md exists), write to that work's
+  `.aid/works/work-NNN-*/STATE.md` `## Q&A (Pending)` section.
 - Otherwise write to the **knowledge backlog** at
   `.aid/knowledge/STATE.md` `## Q&A (Pending)`.
 - **When ambiguous** (the query touches both a work and the KB), default to
@@ -230,7 +230,7 @@ required prompt.
   Query-Gap `### Q{N}` entry to a `STATE.md ## Q&A (Pending)` section. No KB
   doc, settings, or code file is ever written. The answer path stays read-only;
   only the gap-append branch writes.
-- **No work folder.** `/aid-query-kb` does not create `.aid/work-*/` directories or
+- **No work folder.** `/aid-query-kb` does not create `.aid/works/work-*/` directories or
   STATE.md files for its own use.
 - **Cite sources.** Every factual claim in the answer must be traceable to a KB
   doc, a file path, or a work STATE.md reference.

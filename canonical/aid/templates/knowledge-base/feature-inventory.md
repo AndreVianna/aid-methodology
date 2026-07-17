@@ -4,7 +4,7 @@ source: hand-authored
 objective: Canonical feature list with status and traceability to work items for {project}.
 summary: Read this to understand WHAT the project does at a feature level; status is Shipped / Partial / Deferred.
 sources:
-  - .aid/work-*/SPEC.md         # work-item specs that define features
+  - .aid/works/work-*/SPEC.md   # work-item specs that define features
   - {path/to/product/backlog}   # any external backlog or requirements doc
 tags: [C9, features, status, traceability]
 see_also: [architecture.md, tech-debt.md]

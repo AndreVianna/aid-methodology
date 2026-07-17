@@ -63,7 +63,7 @@ Available features:
   work-002-reporting/feature-001-dashboard     [Ready ✅]
 ```
 
-Scan all `.aid/work-*/features/feature-*/` directories.
+Scan all `.aid/works/work-*/features/feature-*/` directories.
 For each, check the work STATE.md `## Features State` row for this feature and show status. Exit.
 
 **Shortcut:** If only one work exists, accept bare `feature-001` and resolve automatically.
@@ -71,8 +71,8 @@ For each, check the work STATE.md `## Features State` row for this feature and s
 ### Check 2: Feature Exists
 
 Resolve the feature path using **prefix matching** (glob):
-- `feature-001` → match `.aid/{work}/features/feature-001-*/SPEC.md`
-- `work-001/feature-002` → match `.aid/work-001-*/features/feature-002-*/SPEC.md`
+- `feature-001` → match `.aid/works/{work}/features/feature-001-*/SPEC.md`
+- `work-001/feature-002` → match `.aid/works/work-001-*/features/feature-002-*/SPEC.md`
 
 **If zero matches:** Exit with instruction to run `/aid-describe` first.
 **If multiple matches:** List them, ask user to be more specific. Exit.
@@ -97,7 +97,7 @@ Resolve the feature path using **prefix matching** (glob):
 
 ## State Detection
 
-All paths relative to `.aid/{work}/features/{feature}/`.
+All paths relative to `.aid/works/{work}/features/{feature}/`.
 
 ```
 State 1: No Feature State row in work STATE.md               → INITIALIZE

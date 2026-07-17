@@ -21,6 +21,7 @@ intent: |
   Read this to understand HOW the system hangs together — not WHAT each module does.
 contracts: []
 changelog:
+  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the KB-vs-works boundary row and the pipeline-flow diagram's work location to `.aid/works/work-NNN-*/`.
   - 2026-07-09: work-001 lite-skills refresh — skill count 14 -> 82 (14 classic + `/aid-triage` router + 67 verb-first shortcuts); removed recipes / `parse-recipe.sh` / the `interview/` script area and the recipe render row; reframed `/aid-describe` as full-path-only (no TRIAGE/lite states); documented the shortcut engine + three entry points; re-pointed the Monitor loopbacks (bug -> `/aid-fix`, change request -> `/aid-triage`)
   - 2026-07-09: Housekeep KB-DELTA refresh — connectors subsystem + release-drift refresh (added ELICIT as Discover's first state, added `connectors/` to the script-area list, rephrased the Version-lockstep invariant to stop hard-coding a version number, added a connectors-registry boundary note)
   - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a / aid-define 2b); added the seasoned-analyst elicitation engine, the greenfield forward-authoring inversion, and the build conformance check; skill count 13 -> 14
@@ -106,7 +107,7 @@ The boundaries are not class/layer boundaries (this is not an OO app). They are
 | `profiles/` vs `packages/` | `packages/` vendors `bin/`, `lib/`, `dashboard/` for publication; it does not author logic. | Publication channels (npm/PyPI) wrap, never fork, the engine. |
 | Product (`canonical/`,`bin/`,`lib/`) vs Dogfood (`.aid/`,`.claude/`) | Dogfood state is real working state, never product source. | The repo eats its own cooking without contaminating the shipped artifact. |
 | Executor agent vs Reviewer agent | The agent that writes never grades its own work; reviewer tier >= executor tier. | Adversarial separation is the quality mechanism (see Agent Dispatch). |
-| `.aid/knowledge/` (KB) vs `.aid/work-NNN-*/` (works) | The KB is shared, cross-work, living; a work is one scoped unit. | One KB, many works — institutional memory outlives any single work. |
+| `.aid/knowledge/` (KB) vs `.aid/works/work-NNN-*/` (works) | The KB is shared, cross-work, living; a work is one scoped unit. | One KB, many works — institutional memory outlives any single work. |
 | `.aid/connectors/` (registry) vs host-tool config | The connectors registry is a CATALOG — it lists the connections available to a repo's agents and how to use them; it is not a connection manager and does not wire any host tool's config. | Host tools (Claude Code, Codex, Cursor, …) already own their own MCP servers and auth for what they provide; AID records only what it itself manages. |
 
 CONFIRMED. The canonical/profiles rule is stated in `docs/aid-methodology.md` (search:
@@ -402,7 +403,7 @@ CONFIRMED in `README.md` "Install" and `docs/aid-methodology.md` §10.
        lite  : /aid-<verb>[-<artifact>] shortcut -> shortcut engine
                  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT)
        unsure: /aid-triage -> suggests one of the two above (runs nothing itself)
-  -> work in .aid/work-NNN-*/  -> approval halt -> /aid-execute
+  -> work in .aid/works/work-NNN-*/  -> approval halt -> /aid-execute
   -> optional /aid-deploy -> /aid-monitor
        (Monitor: bug -> /aid-fix; change request -> /aid-triage)
   (any phase -> Q&A entry in a STATE.md -> targeted re-discovery)

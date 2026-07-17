@@ -363,7 +363,7 @@ class TestReadRepoSurvivesOversizedStateMd(unittest.TestCase):
 
     def _make_oversized_work(self) -> tuple[Path, int]:
         aid = self.root / ".aid"
-        work_dir = aid / "work-001-huge"
+        work_dir = aid / "works" / "work-001-huge"
         work_dir.mkdir(parents=True)
         header = (
             "# Work State -- work-001-huge\n\n"

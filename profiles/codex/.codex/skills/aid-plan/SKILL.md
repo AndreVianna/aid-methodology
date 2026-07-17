@@ -77,7 +77,7 @@ Each deliverable follows the same cycle:
 
 ### Check 2: Verify Feature SPECs
 
-1. Scan `.aid/{work}/features/*/SPEC.md`
+1. Scan `.aid/works/{work}/features/*/SPEC.md`
 2. Check work STATE.md `## Features State` — each feature should be `Ready`
 3. No features → **STOP.** "Run `/aid-describe` then `/aid-specify`."
 4. Some not Ready → warn, offer to plan with completed only or wait
@@ -125,7 +125,7 @@ aid-plan  ▸ you are here
 - **REQUIREMENTS.md** — scope boundaries, overall priority
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, use summaries to pull
   relevant docs (typically architecture, module-map, tech-debt — but let the INDEX guide you)
-- **Known Issues** — `.aid/{work}/known-issues.md` (if exists). Issues registered
+- **Known Issues** — `.aid/works/{work}/known-issues.md` (if exists). Issues registered
   by Specify that block or affect features. Plan may create a fix-first deliverable
   or sequence features to address issues before dependent work.
 
@@ -167,7 +167,7 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 
 `aid-plan` produces three artifact types when a delivery is approved:
 
-### 1. `.aid/{work}/PLAN.md` (execution graph)
+### 1. `.aid/works/{work}/PLAN.md` (execution graph)
 
 ```markdown
 # Plan -- {Work Name}
@@ -203,7 +203,7 @@ Plan is approved and up to date. Run /aid-plan again with --reset to restart.
 *(Omit if all features included.)*
 ```
 
-### 2. `.aid/{work}/deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition)
+### 2. `.aid/works/{work}/deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition)
 
 Seeded from `.codex/aid/templates/delivery-blueprint-template.md` with the delivery's
 objective, scope, gate criteria, tasks placeholder, and dependencies filled in from
@@ -211,7 +211,7 @@ the approved PLAN.md stanza. Written immediately after writing the delivery stan
 to PLAN.md (Step 4 of The Loop). A delivery with zero tasks (e.g. a SPIKE) gets an
 empty Tasks table -- the BLUEPRINT still records the delivery's objective and gate criteria.
 
-### 3. `.aid/{work}/deliveries/delivery-NNN/STATE.md` (delivery lifecycle)
+### 3. `.aid/works/{work}/deliveries/delivery-NNN/STATE.md` (delivery lifecycle)
 
 Seeded from `.codex/aid/templates/delivery-state-template.md` with:
 - `State: Pending-Spec`  (SD-8: delivery's own independent lifecycle; NOT derived from tasks)

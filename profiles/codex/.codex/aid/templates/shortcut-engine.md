@@ -38,18 +38,30 @@ four bound values before the state machine below starts:
   APPROVAL-HALT presentation (added by task-011/feature-004). Quality is enforced once,
   mechanically, by the GATE state's grading loop -- not by a human checkpoint at every
   state.
-- **One run, one work.** Every invocation allocates a brand-new `work-NNN`; the
-  shortcut doorways carry no `work-NNN` resume argument (contrast `aid-plan`/
-  `aid-detail`, which accept one). The common-case run drives INTAKE all the way to the
-  terminal halt in one continuous invocation
-  (`.codex/aid/templates/state-machine-chaining.md` CHAIN), pausing only for
-  CAPTURE's rare inline question and the terminal halt.
-- **Accepted limitation -- no cross-session resume.** Because a shortcut invocation is
-  a single continuous run with no resume argument, an interrupted run (a crashed
-  session, not a normal CAPTURE question) has no re-entry point: re-invoking the same
-  shortcut allocates a new `work-NNN` rather than continuing the partial one. This
-  mirrors the scope of task-008 (INTAKE through DETAIL only); a richer resume story is
-  not required by any FR/AC here and is not built speculatively.
+- **One run, one work -- gated at the front door.** INTAKE consults the shared Work
+  Initiation Gate (`.codex/aid/templates/work-initiation-gate.md`) *before* it
+  allocates (INTAKE Step 3): when no works exist it proceeds and allocates a brand-new
+  `work-NNN`; when works already exist it asks the user new-vs-continuation, and on
+  "continuation" the gate routes to the chosen work's own resume door and this engine
+  never runs at all. So the engine still only ever **authors one fresh work per run**
+  (it carries no `work-NNN` resume argument -- contrast `aid-plan`/`aid-detail`, which
+  accept one); the gate supersedes the old "always allocate a brand-new work" rule with
+  an explicit gate. The common-case NEW run drives INTAKE all the way to the terminal
+  halt in one continuous invocation
+  (`.codex/aid/templates/state-machine-chaining.md` CHAIN), pausing only for the
+  gate's question (when works exist), CAPTURE's rare inline question, and the terminal
+  halt.
+- **Accepted limitation -- no cross-session resume (the engine does not resume itself).**
+  This engine has no re-entry point of its own: an interrupted run (a crashed session,
+  not a normal CAPTURE question) is never resumed *by re-running the shortcut*. Instead,
+  continuing a partial work is the Work Initiation Gate's job -- on "continuation" it
+  reads the chosen work's `STATE.md` and routes the user to the correct existing resume
+  door (`/aid-execute` for a halted shortcut work; the `phase`-matched skill for a
+  partial full-path work), rather than re-entering this engine's own INTAKE->DETAIL
+  states. This keeps the engine a one-shot producer (INTAKE through DETAIL only, task-008
+  scope); the per-state idempotency/re-entry machinery a self-resume would need is
+  deliberately not built speculatively (no FR/AC requires it) -- see the gate's
+  "Rejected alternative".
 - **Forward-compatible with incremental family landings.** Family features 005-013
   land `shortcut-scaffolding/<family>.md` references incrementally. Every state below
   degrades gracefully to the generic minimal-capture / single-task default when a
@@ -204,8 +216,9 @@ independent of its family reference's landing order.
 
 ## State: INTAKE
 
-Purpose: parse the bound invocation values; resolve the catalog row; allocate a new
-`work-NNN`; scaffold `STATE.md` (Pipeline State only). FR-2.
+Purpose: parse the bound invocation values; resolve the catalog row; consult the Work
+Initiation Gate (new-vs-continuation) and, on NEW, allocate a new `work-NNN`; scaffold
+`STATE.md` (Pipeline State only). FR-2.
 
 ### Step 1: Resolve the catalog row
 
@@ -225,9 +238,27 @@ the single bootstrapping question before any content is authored. INTAKE does no
 on an empty description (allocating the work folder does not need real content yet;
 only a slug does -- Step 3).
 
-### Step 3: Allocate work-NNN
+### Step 3: Consult the Work Initiation Gate, then allocate work-NNN
 
-Scan `.aid/` for existing `work-NNN-*` directories; the new work is `work-{NNN+1}`
+**First, consult the shared Work Initiation Gate**
+(`.codex/aid/templates/work-initiation-gate.md`) before allocating anything. Run its
+enumeration helper:
+
+```bash
+bash .codex/aid/scripts/works/enumerate-works.sh
+```
+
+- **No works exist anywhere (empty output)** -> proceed with the allocation below, no
+  prompt (the common first-work case).
+- **One or more works exist** -> ask the gate's single new-vs-continuation question,
+  showing the enumerated list (main tree + every git worktree). On **continuation**, the
+  gate routes to the chosen work's own resume door (`/aid-execute <work>` for a halted
+  shortcut work; the `phase`-matched skill for a partial full-path work) and **this engine
+  HALTS -- it allocates nothing and does not run**. On **new work**, proceed with the
+  allocation below.
+
+**Then allocate (only on the NEW branch).** Scan `.aid/works/` for existing `work-NNN-*`
+directories; the new work is `work-{NNN+1}`
 (`work-001` if none exist -- the same allocation rule `aid-describe` uses; see its
 `SKILL.md § Task Routing`). Derive a short kebab-case slug:
 
@@ -238,12 +269,12 @@ Scan `.aid/` for existing `work-NNN-*` directories; the new work is `work-{NNN+1
   cosmetic identifier only; it is never renamed after the fact even if CAPTURE's
   bootstrapping question later reveals a more specific subject.
 
-Create `.aid/work-NNN-<slug>/`.
+Create `.aid/works/work-NNN-<slug>/`.
 
 ### Step 4: Scaffold STATE.md (frontmatter only)
 
 Copy `.codex/aid/templates/work-state-template.md` to
-`.aid/work-NNN-<slug>/STATE.md` (the same template the full path uses -- the flattened
+`.aid/works/work-NNN-<slug>/STATE.md` (the same template the full path uses -- the flattened
 engine needs no template of its own; it fills a different subset of the same file's
 sections over time). Then, in the same step, directly replace the YAML frontmatter
 block's placeholder lines at the top of the file with the real opening values (direct
@@ -291,8 +322,10 @@ shortcut-generated works; `## Delivery Lifecycle` / `### Tasks lifecycle` / `## 
 Gate` keep their template placeholder body text until PLAN/DETAIL fill them for real;
 the DERIVED sections at the bottom of the template are never written by this engine).
 
-**Idempotency:** this state never re-runs within an invocation -- every invocation
-always allocates a brand-new work (Design Notes). No idempotency check is needed.
+**Idempotency:** this state never re-runs within an invocation -- an invocation that
+reaches allocation (the gate's NEW branch, Step 3) allocates exactly one brand-new work
+(Design Notes); a CONTINUATION invocation halts at the gate before this state's
+allocation ever runs. No idempotency check is needed.
 
 **Advance:** CHAIN -> CAPTURE.
 
@@ -344,7 +377,7 @@ multi-turn drilling (bounded minimal-slot fill, not a conversational interview).
 Dispatch `aid-architect` (Large; per the Dispatch Protocol above) with: `{name}`,
 `{verb}`, `{artifact}`, `{description}`, any Step 1/Step 3 answers, the KB pointer, and
 the family scaffolding pointer (or "none landed yet"). The agent writes
-`.aid/{work}/REQUIREMENTS.md` seeded from
+`.aid/works/{work}/REQUIREMENTS.md` seeded from
 `.codex/aid/templates/requirements/requirements-template.md`:
 
 - **Identity block** (MUST, the same composition rule `aid-describe`'s former
@@ -413,7 +446,7 @@ conditional `## Technical Specification` sections this `{verb, artifact}` activa
 e.g. an `api` artifact activates `### API Contracts`, a `data-model` artifact
 activates `### Migration Plan`; fall back to the mandatory three
 (`### Data Model`, `### Feature Flow`, `### Layers & Components`) with no conditional
-sections when no family file has landed yet). The agent writes `.aid/{work}/SPEC.md`
+sections when no family file has landed yet). The agent writes `.aid/works/{work}/SPEC.md`
 seeded from `.codex/aid/templates/specs/spec-template.md`:
 
 - `# {Feature Title}` (the same title as the REQUIREMENTS.md identity block).
@@ -455,7 +488,7 @@ Same three `writeback-state.sh --pipeline` calls as SPEC Step 1, with
 Dispatch `aid-architect` (Large) with: `SPEC.md` (just written), REQUIREMENTS.md §10
 Priority. The agent writes, in this order:
 
-**a. `.aid/{work}/PLAN.md`**, seeded from
+**a. `.aid/works/{work}/PLAN.md`**, seeded from
 `.codex/aid/templates/delivery-plans/flattened-plan-template.md`:
 
 - `## Deliverables`: one entry -- `**Delivery:** delivery-001 -- {Name}`;
@@ -470,7 +503,7 @@ Priority. The agent writes, in this order:
   add any `### delivery-NNN` subsection heading (feature-001's parser-compatibility
   constraint).
 
-**b. `.aid/{work}/BLUEPRINT.md`**, seeded from
+**b. `.aid/works/{work}/BLUEPRINT.md`**, seeded from
 `.codex/aid/templates/delivery-blueprint-template.md`, placed at the work root
 (not under a `deliveries/delivery-NNN/` folder -- the flattened layout has no such
 wrapper):
@@ -550,7 +583,7 @@ fallback is exactly one task, typed the catalog row's `default_type`, titled fro
 description, scoped to the full SPEC.md Acceptance Criteria set. Multi-task shortcuts
 (MIGRATE + IMPLEMENT + TEST, or IMPLEMENT + TEST) still keep one type per task (A-6).
 
-**b. Writes each `.aid/{work}/tasks/task-NNN/DETAIL.md`**, seeded from
+**b. Writes each `.aid/works/{work}/tasks/task-NNN/DETAIL.md`**, seeded from
 `.codex/aid/templates/task-detail-template.md`:
 
 - `**Type:**` bold shape (one of the 8).
@@ -646,8 +679,8 @@ Ledger: `.aid/.temp/review-pending/shortcut-{work}-defn.md`. Run the Generic
 REVIEW -> GRADE -> FIX loop (Step 4 below) with this pass's own brief
 content:
 
-- **ARTIFACTS UNDER REVIEW:** `.aid/{work}/REQUIREMENTS.md`,
-  `.aid/{work}/SPEC.md`, `.aid/{work}/PLAN.md`, `.aid/{work}/BLUEPRINT.md`.
+- **ARTIFACTS UNDER REVIEW:** `.aid/works/{work}/REQUIREMENTS.md`,
+  `.aid/works/{work}/SPEC.md`, `.aid/works/{work}/PLAN.md`, `.aid/works/{work}/BLUEPRINT.md`.
 - **CONTEXT:** these are the collapsed-lifecycle definition documents for a
   direct-entry shortcut work (`/{name}` binds `{verb}`/`{artifact}`); a
   single feature, a single delivery (feature-001's flattened shape); the
@@ -677,7 +710,7 @@ Only entered once Pass 1 clears (Step 2). Ledger:
 REVIEW -> GRADE -> FIX loop (Step 4 below) with this pass's own brief
 content:
 
-- **ARTIFACTS UNDER REVIEW:** every `.aid/{work}/tasks/task-NNN/DETAIL.md`
+- **ARTIFACTS UNDER REVIEW:** every `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
   actually on disk (an explicit file list built from disk, not from memory
   -- `reviewer-dispatch.md § Deriving {{ARTIFACTS}}`).
 - **CONTEXT:** the task breakdown for the same shortcut work, whose
@@ -749,12 +782,12 @@ content:
    consecutive cycles, STOP (mirrors
    `.codex/skills/aid-execute/references/state-delivery-gate.md § Step
    5`; `quality-gates.md § The Per-Phase REVIEW to FIX Loop`). Write
-   `.aid/{work}/IMPEDIMENT-gate-{pass}.md` (`{pass}` = `defn` or `tasks`)
+   `.aid/works/{work}/IMPEDIMENT-gate-{pass}.md` (`{pass}` = `defn` or `tasks`)
    and:
    ```bash
    bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Blocked
    bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Reason" --value "GATE {pass} pass circuit breaker -- grade not improving after 3 cycles"
-   bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/{work}/IMPEDIMENT-gate-{pass}.md"
+   bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field "Block Artifact" --value ".aid/works/{work}/IMPEDIMENT-gate-{pass}.md"
    bash .codex/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
    ```
    and surface it to the user instead of looping further.

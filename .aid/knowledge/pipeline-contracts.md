@@ -23,6 +23,7 @@ intent: |
   an artifact template, or any phase boundary.
 contracts: []
 changelog:
+  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the on-disk work hierarchy (full + flattened Lite diagrams) and the two `.aid/{work}/` artifact-location references to the `.aid/works/work-NNN-{slug}/` container tree.
   - 2026-07-09: work-001 lite-skills refresh -- rewrote the entry model (three doors -- verb-first shortcut / /aid-triage / /aid-describe) and the flattened Lite path (shared shortcut engine INTAKE->CAPTURE->SPEC->PLAN->DETAIL->GATE->APPROVAL-HALT producing work-root REQUIREMENTS.md/SPEC.md/PLAN.md/BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no per-task STATE.md); renamed delivery def to BLUEPRINT.md and task def to DETAIL.md; bound L9 -> /aid-fix and L10 -> /aid-triage; removed the recipe system and aid-describe's TRIAGE/lite states; skill taxonomy now 82 directories.
   - 2026-06-28: Relabeled Phase 2 from "Interview" to "Describe → Define" throughout (Phase 2 label now "Describe → Define" in all prose).
   - 2026-06-28: Reconciled Phase 2 to the aid-interview split (aid-describe 2a + aid-define 2b); rewrote the Phase-2 state-machine model; added the greenfield forward-authoring entry + the conformance feedback; skill count 13 -> 14
@@ -139,22 +140,23 @@ cells are authored directly at the work root.
 ```
 .aid/
   knowledge/                                  # shared KB (from Discovery) — one per project
-  work-NNN-{slug}/
-    STATE.md                                  # work-area run-state (DERIVED rollups + Q&A)
-    REQUIREMENTS.md                           # full path only
-    features/feature-NNN-{name}/
-      SPEC.md                                 # feature definition (Define) + tech spec (Specify)
-      STATE.md                                # feature-level state
-    PLAN.md                                   # full path only (Detail appends the execution graph)
-    deliveries/delivery-NNN/
-      BLUEPRINT.md                            # delivery definition (objective/scope/gate criteria/tasks)
-      STATE.md                                # delivery lifecycle + gate + delivery-scoped Q&A
-      tasks/task-NNN/
-        DETAIL.md                             # the task definition (Type, Source, Depends on, Scope, AC)
-        STATE.md                              # mutable task cells (State, Review, Elapsed, Notes)
-    IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
-    packages/package-NNN-{slug}.md             # written by Deploy
-    DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
+  works/
+    work-NNN-{slug}/
+      STATE.md                                  # work-area run-state (DERIVED rollups + Q&A)
+      REQUIREMENTS.md                           # full path only
+      features/feature-NNN-{name}/
+        SPEC.md                                 # feature definition (Define) + tech spec (Specify)
+        STATE.md                                # feature-level state
+      PLAN.md                                   # full path only (Detail appends the execution graph)
+      deliveries/delivery-NNN/
+        BLUEPRINT.md                            # delivery definition (objective/scope/gate criteria/tasks)
+        STATE.md                                # delivery lifecycle + gate + delivery-scoped Q&A
+        tasks/task-NNN/
+          DETAIL.md                             # the task definition (Type, Source, Depends on, Scope, AC)
+          STATE.md                              # mutable task cells (State, Review, Elapsed, Notes)
+      IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
+      packages/package-NNN-{slug}.md             # written by Deploy
+      DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
 **Flattened Lite path** (no `deliveries/`, no `delivery-NNN/` folder, and no per-task `STATE.md`):
@@ -162,21 +164,22 @@ cells are authored directly at the work root.
 ```
 .aid/
   knowledge/                                  # shared KB (from Discovery) — one per project
-  work-NNN-{slug}/
-    STATE.md                                  # work-area run-state; ALSO carries the sole
-                                               # delivery's ## Delivery Lifecycle (with its
-                                               # ### Tasks lifecycle table) / ## Delivery Gate /
-                                               # ## Cross-phase Q&A (AUTHORED directly)
-    REQUIREMENTS.md                           # shortcut engine CAPTURE
-    SPEC.md                                   # single work-root feature spec (requirements + technical)
-    PLAN.md                                   # single-delivery plan + execution graph
-    BLUEPRINT.md                              # the sole delivery's definition, at the work root
-    tasks/task-NNN/
-      DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.md;
-                                               # mutable cells live in STATE.md ### Tasks lifecycle
-    IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
-    packages/package-NNN-{slug}.md             # written by Deploy
-    DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
+  works/
+    work-NNN-{slug}/
+      STATE.md                                  # work-area run-state; ALSO carries the sole
+                                                 # delivery's ## Delivery Lifecycle (with its
+                                                 # ### Tasks lifecycle table) / ## Delivery Gate /
+                                                 # ## Cross-phase Q&A (AUTHORED directly)
+      REQUIREMENTS.md                           # shortcut engine CAPTURE
+      SPEC.md                                   # single work-root feature spec (requirements + technical)
+      PLAN.md                                   # single-delivery plan + execution graph
+      BLUEPRINT.md                              # the sole delivery's definition, at the work root
+      tasks/task-NNN/
+        DETAIL.md                               # the task definition — IMMUTABLE, no sibling STATE.md;
+                                                 # mutable cells live in STATE.md ### Tasks lifecycle
+      IMPEDIMENT-task-NNN.md                     # written by Execute on an unresolved contradiction
+      packages/package-NNN-{slug}.md             # written by Deploy
+      DEPLOYMENT-STATE.md · MONITOR-STATE.md     # written by Deploy / Monitor
 ```
 
 CONFIRMED: `canonical/aid/templates/work-state-template.md` (`deliveries/delivery-NNN/STATE.md`
@@ -380,7 +383,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 ## Known Issues
 
 - No open pipeline-contract drift. The former methodology-doc drift (the flat
-  `.aid/{work}/tasks/task-NNN.md` layout) is resolved: `docs/aid-methodology.md` now describes
+  `.aid/works/{work}/tasks/task-NNN.md` layout) is resolved: `docs/aid-methodology.md` now describes
   the nested full-path `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened
   Lite `tasks/task-NNN/DETAIL.md` (no per-task `STATE.md`) shape, matching the live skills and
   templates.
@@ -406,7 +409,7 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   `canonical/aid/templates/shortcut-catalog.yml` and regenerated — the shortcut doorway is a
   thin delegate to `shortcut-engine.md`, never a hand-authored state machine.
 - **A new artifact type** gets a template under `canonical/aid/templates/`, a fixed location
-  under `.aid/{work}/`, and an entry in the artifact reference. Downstream skills find it by
+  under `.aid/works/{work}/`, and an entry in the artifact reference. Downstream skills find it by
   convention (fixed path), never by search.
 - **A new feedback path** must produce a formal record (Q&A entry, IMPEDIMENT file, or
   MONITOR finding) with a revision trail — never an inline silent fix.

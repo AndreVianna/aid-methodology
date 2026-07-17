@@ -110,7 +110,7 @@ Wait for the answer. Record it internally as `{description}`.
 
 Print the recommended invocation the user should type next, then **STOP**.
 `/aid-triage` never invokes another skill on the user's behalf -- it
-suggests; the user runs the command. No file is written; no `.aid/work-*/`
+suggests; the user runs the command. No file is written; no `.aid/works/work-*/`
 folder is created; no `STATE.md` exists for this skill.
 
 **Shortcut suggested:**

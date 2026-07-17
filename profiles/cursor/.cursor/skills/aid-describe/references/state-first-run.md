@@ -11,14 +11,14 @@ If no KB exists, that's fine — this is a greenfield project.
 
 ### 1b. Create or update STATE.md
 
-Ensure `.aid/{work}/STATE.md` exists and has an `## Interview State` section and a
+Ensure `.aid/works/{work}/STATE.md` exists and has an `## Interview State` section and a
 `## Cross-phase Q&A` section. Copy from `../../templates/work-state-template.md` if
 the file does not yet exist.
 
 ### 1b-ii. Seed the frontmatter block
 
 After the STATE.md file exists (created from the template above or already present), write
-the opening scalar values directly into `.aid/{work}/STATE.md`'s leading YAML frontmatter
+the opening scalar values directly into `.aid/works/{work}/STATE.md`'s leading YAML frontmatter
 block (the top of the file, before the `# Work State` title), replacing every placeholder
 line the template ships with the actual opening values. Resolve this work's own minimum
 grade first:
@@ -65,7 +65,7 @@ by a later phase.
 ### 1c. Create REQUIREMENTS.md scaffold
 
 Copy the template from `../../templates/requirements.md` to
-`.aid/{work}/REQUIREMENTS.md`.
+`.aid/works/{work}/REQUIREMENTS.md`.
 Add the first Change Log entry: `| {today} | Initial interview started | /aid-describe |`
 
 **Identity header seeding:** the template already carries the identity block between

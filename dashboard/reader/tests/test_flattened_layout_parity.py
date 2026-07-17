@@ -88,7 +88,7 @@ def _build_flat_work(
     No features/ folder, no deliveries/ wrapper -- A-10 clean switch.
     Returns the work_dir path.
     """
-    work_dir = aid / work_id
+    work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
 
     (work_dir / "REQUIREMENTS.md").write_text(

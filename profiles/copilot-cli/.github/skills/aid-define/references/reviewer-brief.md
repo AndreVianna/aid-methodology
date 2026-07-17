@@ -48,7 +48,7 @@ DELIVERABLES:
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .github/aid/scripts/grade.sh; minimum resolved via
     `bash .github/aid/scripts/config/read-setting.sh --skill interview --key minimum_grade --default A`
-  - Pending Q&A: write user-facing questions to `.aid/{work}/STATE.md ## Pending Q&A`
+  - Pending Q&A: write user-facing questions to `.aid/works/{work}/STATE.md ## Pending Q&A`
     (the consolidated work STATE.md per FR2 area-STATE consolidation; the
     legacy `INTERVIEW-STATE.md` is RETIRED) so the next `/aid-define` run
     picks them up in Q&A mode
@@ -57,8 +57,8 @@ DELIVERABLES:
 
 ## Substitution at dispatch time
 
-- `{{ARTIFACTS}}` — `.aid/{work}/REQUIREMENTS.md` plus the scaffold SPEC.md
-  files in `.aid/{work}/features/feature-*/SPEC.md` (the auto-generated portion
+- `{{ARTIFACTS}}` — `.aid/works/{work}/REQUIREMENTS.md` plus the scaffold SPEC.md
+  files in `.aid/works/{work}/features/feature-*/SPEC.md` (the auto-generated portion
   written during Feature Decomposition — State 5).
 - `{{CONTEXT}}` — short, descriptive-only background:
   ```

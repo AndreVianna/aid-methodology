@@ -426,8 +426,6 @@ function parseTaskStatus(raw) {
 // Locator (mirrors locator.py locate_aid_root / _enumerate_work_dirs)
 // ---------------------------------------------------------------------------
 
-const WORK_RE = /^work-[0-9]+-/;
-
 function locateAidRoot(repoRoot) {
   const root = resolve(repoRoot);
   const aidDir = join(root, ".aid");
@@ -464,17 +462,21 @@ function locateAidRoot(repoRoot) {
 }
 
 function enumerateWorkDirs(aidDir) {
+  // Enumerate EVERY direct subfolder of the .aid/works/ container -- the
+  // container is the discovery selector, so the folder name is no longer a
+  // visibility filter (numberless works included). Mirrors locator.py
+  // _enumerate_work_dirs.
+  const worksDir = join(aidDir, "works");
   let entries;
   try {
-    entries = readdirSync(aidDir);
+    entries = readdirSync(worksDir);
   } catch (_) {
     return [];
   }
 
   const result = [];
   for (const name of entries) {
-    if (!WORK_RE.test(name)) continue;
-    const fullPath = join(aidDir, name);
+    const fullPath = join(worksDir, name);
     try {
       if (statSync(fullPath).isDirectory()) {
         result.push(fullPath);
@@ -2725,7 +2727,7 @@ function readWork(workDir, workId) {
 
   // --- Legacy monolithic path (preserved behavior) ---
   const statePath = join(workDir, "STATE.md");
-  const statePathLabel = ".aid/" + workId + "/STATE.md";
+  const statePathLabel = ".aid/works/" + workId + "/STATE.md";
   const parseWarnings = [];
   let bytesRead = 0;
 
@@ -3626,7 +3628,7 @@ function _readWorkFlat(workDir, workId) {
   // here (would double-count the work's single shared ## Cross-phase Q&A section).
   //
   // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel]. Never raises.
-  const stateLabel = ".aid/" + workId + "/STATE.md";
+  const stateLabel = ".aid/works/" + workId + "/STATE.md";
   const parseWarnings = [];
   let bytesRead = 0;
 
@@ -3826,7 +3828,7 @@ function _readWorkHierarchical(workDir, workId) {
   // Mirror reader.py _read_work_hierarchical.
   // Assemble a WorkModel from the per-unit STATE.md hierarchy.
   // Returns [workModel, parseWarnings, bytesRead, stateText, stateLabel].
-  const stateLabel = ".aid/" + workId + "/STATE.md";
+  const stateLabel = ".aid/works/" + workId + "/STATE.md";
   const parseWarnings = [];
   let bytesRead = 0;
 
@@ -4945,7 +4947,7 @@ export function readRepoDetail(root, detailTaskIds) {
     // If work_id was not enumerated (detail for a non-enumerated work), use empty
     // text and add a warning -- never re-read from disk (DR-1/DD-3/NFR4).
     let stateText = "";
-    let statePathLabel = ".aid/" + workId + "/STATE.md";
+    let statePathLabel = ".aid/works/" + workId + "/STATE.md";
 
     if (stateCache[workId] !== undefined) {
       [stateText, statePathLabel] = stateCache[workId];
@@ -4994,7 +4996,7 @@ export function readRepoDetail(root, detailTaskIds) {
     // DR-4: read delivery-NNN-issues.md and filter to Source task == task_id
     let deferredIssues = [];
     if (deliveryId !== null) {
-      const issuesPath = join(aidDir, workId, deliveryId + "-issues.md");
+      const issuesPath = join(aidDir, "works", workId, deliveryId + "-issues.md");
       deferredIssues = parseDeferredIssues(issuesPath, taskId, taskWarnings);
     }
 

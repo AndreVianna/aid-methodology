@@ -40,9 +40,14 @@ DONE**. Print the `[State: NAME] -- {purpose}` entry line on each state.
    signal / fidelity first.
 4. **Classify complexity (model + effort):** simple -> `aid-architect` at **sonnet /
    medium**; complex (a runnable spike, a rich flow) -> **opus / high**.
-5. **Allocate the work folder + STATE** (`pipeline.path: lite`, `initiator: aid-prototype`,
-   `lifecycle: Running`, `active_skill: aid-prototype`; `phase` not driven). For a
-   **runnable spike**, associate an opt-in git worktree so the throwaway code is isolated.
+5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
+   the gate (`.codex/aid/templates/work-initiation-gate.md`):
+   `bash .codex/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
+   route to the chosen work's resume door and STOP (allocate nothing); on **new work**
+   allocate (`pipeline.path: lite`, `initiator: aid-prototype`, `lifecycle: Running`,
+   `active_skill: aid-prototype`; `phase` not driven). For a **runnable spike**, associate
+   an opt-in git worktree so the throwaway code is isolated.
 
 **Advance:** BUILD.
 

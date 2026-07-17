@@ -32,12 +32,13 @@ Each deliverable follows the same cycle:
 ```
 .aid/
   knowledge/                ← shared KB (read)
-  work-NNN-{name}/
-    REQUIREMENTS.md         ← read
-    PLAN.md                 ← OUTPUT
-    features/
-      feature-NNN-{name}/
-        SPEC.md             ← read
+  works/
+    work-NNN-{name}/
+      REQUIREMENTS.md         ← read
+      PLAN.md                 ← OUTPUT
+      features/
+        feature-NNN-{name}/
+          SPEC.md             ← read
 ```
 
 ## How It Works
@@ -69,7 +70,7 @@ Already covered by Specify:
 
 ## Output
 
-`.aid/{work}/PLAN.md`:
+`.aid/works/{work}/PLAN.md`:
 
 ```markdown
 # Plan — {Work Name}
@@ -91,5 +92,5 @@ Already covered by Specify:
 ## Feedback Loops
 
 - **→ Discovery:** KB insufficient → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-- **→ Specify:** SPEC ambiguous → Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`
-- **→ Interview:** Priority unclear → Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Specify:** SPEC ambiguous → Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Interview:** Priority unclear → Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`

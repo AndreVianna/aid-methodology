@@ -73,7 +73,7 @@ Process feedback:
 - **[2] / [3]:** accept the user's correction and update the relevant value. Confirm once
   more before proceeding.
 
-Once confirmed, write the two lines into `.aid/{work}/REQUIREMENTS.md`, replacing the
+Once confirmed, write the two lines into `.aid/works/{work}/REQUIREMENTS.md`, replacing the
 `*(pending)*` seeds:
 
 ```

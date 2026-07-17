@@ -44,9 +44,13 @@ State machine: **INTAKE -> ANALYZE -> VERIFY (loop) -> PRESENT [user resolves] -
 3. **Classify complexity (model + effort):** simple (small dataset, one metric) ->
    `aid-researcher` at **sonnet / medium**; standard/complex (large data, A/B significance,
    deep telemetry) -> **opus / high**. Verifier tier >= producer tier.
-4. **Allocate the work folder + STATE** (`pipeline.path: lite`, `initiator: aid-report`,
-   `lifecycle: Running`, `active_skill: aid-report`; `phase` not driven), same as the other
-   collapse skills.
+4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
+   the gate (`.agent/aid/templates/work-initiation-gate.md`):
+   `bash .agent/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
+   route to the chosen work's resume door and STOP (allocate nothing); on **new work**
+   allocate (`pipeline.path: lite`, `initiator: aid-report`, `lifecycle: Running`,
+   `active_skill: aid-report`; `phase` not driven), same as the other collapse skills.
 
 **Advance:** ANALYZE.
 

@@ -86,10 +86,18 @@ Fast path: implicit. Guided path: part of the plan the user confirms.
 
 ### Step 5 -- allocate the work folder + STATE
 
-Scan `.aid/` for `work-NNN-*`; the new work is `work-{NNN+1}` (`work-001` if none).
-Derive a short kebab-case slug from the target. Create `.aid/work-NNN-<slug>/`.
+**Consult the Work Initiation Gate first**
+(`.claude/aid/templates/work-initiation-gate.md`): run
+`bash .claude/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+Empty output -> proceed with the allocation below, no prompt. Works exist -> ask the
+gate's single new-vs-continuation question with the enumerated list; on **continuation**
+the gate routes to the chosen work's resume door and this skill **STOPs (allocates
+nothing)**; on **new work**, allocate below.
+
+Scan `.aid/works/` for `work-NNN-*`; the new work is `work-{NNN+1}` (`work-001` if none).
+Derive a short kebab-case slug from the target. Create `.aid/works/work-NNN-<slug>/`.
 Copy `.claude/aid/templates/work-state-template.md` to
-`.aid/work-NNN-<slug>/STATE.md` and write the opening frontmatter (direct edit):
+`.aid/works/work-NNN-<slug>/STATE.md` and write the opening frontmatter (direct edit):
 `pipeline.path: lite`, `initiator: aid-review`, `lifecycle: Running`, `active_skill:
 aid-review`, `started`/`updated` timestamps. Leave the 7-phase `phase` scalar at its
 template value -- a standalone review is not a pipeline run and does not drive it
@@ -137,7 +145,7 @@ Purpose: ensure the review is grounded, correct, and complete before the human s
 3. **Grade the review:** `bash .claude/aid/scripts/grade.sh --explain <verify-ledger>`.
    If it is not clean, loop back to REVIEW so the first reviewer revises (drop ungrounded
    findings, add missed ones). **Circuit-breaker: 3 cycles** -> write
-   `.aid/{work}/IMPEDIMENT-review.md`, set STATE `lifecycle: Blocked` with a block reason,
+   `.aid/works/{work}/IMPEDIMENT-review.md`, set STATE `lifecycle: Blocked` with a block reason,
    and surface it instead of looping.
 
 Note: the *target's* grade (`grade.sh --explain` on the review ledger) is computed for

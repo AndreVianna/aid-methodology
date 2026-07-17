@@ -34,7 +34,7 @@ For each deliverable in PLAN.md, run step 4:
 
 Render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `whole-plan`
-- `{{ARTIFACTS}}` = full `PLAN.md` + every `.aid/{work}/features/feature-*/SPEC.md`
+- `{{ARTIFACTS}}` = full `PLAN.md` + every `.aid/works/{work}/features/feature-*/SPEC.md`
 - `{{CONTEXT}}` = `PLAN.md for work-NNN with N deliveries; re-review against current SPECs.`
 
 Include in the prompt:

@@ -111,7 +111,7 @@ def _make_aid_with_works(repo: Path, work_ids: list[str]) -> None:
     aid = repo / ".aid"
     aid.mkdir(parents=True, exist_ok=True)
     for wid in work_ids:
-        wdir = aid / wid
+        wdir = aid / "works" / wid
         wdir.mkdir(parents=True, exist_ok=True)
         (wdir / "STATE.md").write_text(
             "# Work State\n\n## Pipeline Status\n\nLifecycle: Running\n\n"

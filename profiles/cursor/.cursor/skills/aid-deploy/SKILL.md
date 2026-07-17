@@ -45,7 +45,7 @@ Step 0):
 .aid/
   knowledge/
     STATE.md                   ← Q&A, Review History (settings → .aid/settings.yml), Q&A (Pending)
-.aid/{work}/
+.aid/works/{work}/
   STATE.md                     ← § Deploy State (current operation status, history)
   packages/                    ← product (one file per release)
     package-001-{name}.md
@@ -126,9 +126,9 @@ aid-deploy  ▸ you are here
 
 ## Inputs
 
-- `.aid/{work}/PLAN.md` — deliveries, sequencing, success criteria
-- Per-task `DETAIL.md` — task scope; full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/{work}/tasks/task-NNN/DETAIL.md`
-- `.aid/{work}/features/*/SPEC.md` — what was specified
+- `.aid/works/{work}/PLAN.md` — deliveries, sequencing, success criteria
+- Per-task `DETAIL.md` — task scope; full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`; lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
+- `.aid/works/{work}/features/*/SPEC.md` — what was specified
 - Work `STATE.md` `## Tasks State` table — task statuses and review grades per task (both paths derive into this same rollup)
 - `known-issues.md` — if exists, check for Critical/High blockers
 - **KB via INDEX.md** — Read `.aid/knowledge/INDEX.md`, pull:

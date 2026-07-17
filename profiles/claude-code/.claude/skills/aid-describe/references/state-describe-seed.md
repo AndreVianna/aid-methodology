@@ -395,7 +395,7 @@ MUST run; neither can be skipped (coherence-check.md Invariant 1).
 
 **Inputs:**
 - The just-authored seed docs: all elements now in `.aid/knowledge/` authored by this step.
-- The gathered REQUIREMENTS: `.aid/{work}/REQUIREMENTS.md`.
+- The gathered REQUIREMENTS: `.aid/works/{work}/REQUIREMENTS.md`.
 
 The check reads both inputs as they stand on disk at invocation time. Complete both layers before
 surfacing any conflict (coherence-check.md Invariant 2 -- do not interleave).

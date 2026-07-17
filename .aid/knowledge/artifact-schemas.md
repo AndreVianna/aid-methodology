@@ -35,6 +35,7 @@ contracts:
   - "Connector descriptor connection_type enum (closed, 5): mcp | api | ssh | url | cli"
   - "Connector descriptor auth_method enum (closed, 5): none | token | pat | oauth | ssh-key"
 changelog:
+  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the State-File Hierarchy diagrams, the REQUIREMENTS.md location, and the flattened-path BLUEPRINT.md location to the `.aid/works/work-NNN-{name}/` container tree.
   - 2026-07-09: work-001 lite-skills refresh -- renamed the task-definition section to Task DETAIL.md (source `task-detail-template.md`) and the delivery definition to BLUEPRINT.md (new Delivery BLUEPRINT.md section, source `delivery-blueprint-template.md`); rewrote the flattened Lite path throughout (shortcut engine produces work-root REQUIREMENTS/SPEC/PLAN/BLUEPRINT + tasks/task-NNN/DETAIL.md with NO per-task STATE.md -- cells live in the work-root STATE.md ### Tasks lifecycle); removed the retired Triage/Recipe + Escalation-Carry work-STATE blocks and the CONDENSED-INTAKE/TASK-BREAKDOWN/recipe-emit references; corrected the REQUIREMENTS.md location to the work root.
   - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the Connector Registry Artifacts section (descriptor schema, derived management mode, secret_reference forms, preset catalog, generated INDEX.md, .mcp.json boundary note); corrected the Rev 1.2 changelog attribution to PR #132.
   - 2026-06-27: aid-describe/aid-define split -- rekeyed REQUIREMENTS.md + lite work-root SPEC.md producers to aid-describe and feature SPEC stubs to aid-define; added the forward-authored source value + greenfield 5-element seed doc-set
@@ -91,7 +92,7 @@ views are DERIVED (assembled at read time), never written directly.
 **Full path** (nests deliveries under a `deliveries/` parent, mirroring `features/`):
 
 ```
-.aid/work-NNN-{name}/STATE.md                                    (work level)
+.aid/works/work-NNN-{name}/STATE.md                              (work level)
   -> deliveries/delivery-NNN/STATE.md                            (delivery level)
        -> tasks/task-NNN/STATE.md                                (task level -- sole write target for task cells)
 .aid/knowledge/STATE.md                                          (discovery area -- KB + summary state)
@@ -100,7 +101,7 @@ views are DERIVED (assembled at read time), never written directly.
 **Flattened Lite path** (exactly one delivery, no `deliveries/` folder, no per-task STATE.md -- the work IS the delivery):
 
 ```
-.aid/work-NNN-{name}/STATE.md                         (work level -- ALSO carries the sole delivery's
+.aid/works/work-NNN-{name}/STATE.md                   (work level -- ALSO carries the sole delivery's
                                                         ## Delivery Lifecycle [with its ### Tasks lifecycle
                                                         table] / ## Delivery Gate / ## Cross-phase Q&A,
                                                         AUTHORED directly; see Work STATE.md below)
@@ -215,7 +216,7 @@ project-level settings (grades, parallelism) live in `settings.yml`, **not** her
 ## REQUIREMENTS.md
 
 Source: `requirements/requirements-template.md`. A first-class pipeline artifact at
-`.aid/work-NNN-{name}/REQUIREMENTS.md` (uppercase, at the work root). Produced by `aid-describe`
+`.aid/works/work-NNN-{name}/REQUIREMENTS.md` (uppercase, at the work root). Produced by `aid-describe`
 (Phase 2a, **full path**) as the approved requirements document. On the **flattened Lite path**
 it is produced instead by the **shortcut engine**'s CAPTURE step (written to the same work-root
 path, all 10 sections) ahead of the engine's SPEC/PLAN/DETAIL steps -- the Lite path produces the
@@ -265,7 +266,7 @@ only when relevant.
 Source: `delivery-blueprint-template.md`. The **immutable** delivery definition -- written once
 by `aid-plan` (creates the stub) and refined by `aid-specify` on the full path (at
 `deliveries/delivery-NNN/BLUEPRINT.md`), or authored by the shortcut engine's PLAN step on the
-flattened Lite path (at the work root, `.aid/{work}/BLUEPRINT.md`). Not a state file -- the
+flattened Lite path (at the work root, `.aid/works/{work}/BLUEPRINT.md`). Not a state file -- the
 delivery's mutable lifecycle/gate lives in the delivery `STATE.md` (full path) or the work-root
 `STATE.md` (flattened).
 

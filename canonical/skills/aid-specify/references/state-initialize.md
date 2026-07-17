@@ -17,9 +17,9 @@ Read ALL before making any proposal:
    - **Greenfield:** If KB docs are init placeholders (`❌ Pending`), treat as empty.
      Propose from scratch; decisions will seed KB during Write step.
 4. **Codebase** — `Grep`/`Glob` to explore relevant source code. Skip for greenfield.
-5. **Known Issues** — Read `.aid/{work}/known-issues.md` if it exists. Check `tech-debt.md` in KB.
+5. **Known Issues** — Read `.aid/works/{work}/known-issues.md` if it exists. Check `tech-debt.md` in KB.
 
-**During codebase exploration, register known issues** in `.aid/{work}/known-issues.md`
+**During codebase exploration, register known issues** in `.aid/works/{work}/known-issues.md`
 (create from `../../templates/known-issues.md` if missing). Only register issues in code
 that this feature touches. See [Known Issues Scope](#known-issues-scope) for criteria.
 
@@ -78,7 +78,7 @@ Each has two paths: **Auto-activate** (obvious from context) or **Ask** (use def
 
 ### Step 3: Register in work STATE.md
 
-In the work's `.aid/{work}/STATE.md`, update the `## Features State` table:
+In the work's `.aid/works/{work}/STATE.md`, update the `## Features State` table:
 - Find or add a row for this feature
 - Set State to `In Discussion`, Started date to today
 - Columns: Feature | State | Sections | Started | Last Updated | Notes

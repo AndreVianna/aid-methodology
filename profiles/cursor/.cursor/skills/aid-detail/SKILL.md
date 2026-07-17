@@ -26,7 +26,7 @@ Each task = one agent session = one reviewable unit = one human review.
 
 ### Check 2: Verify PLAN.md Exists
 
-1. Check for `.aid/{work}/PLAN.md`
+1. Check for `.aid/works/{work}/PLAN.md`
 2. If missing → **STOP.** "No PLAN.md found. Run `/aid-plan` first."
 
 ### Check 3: Verify Not in Plan Mode
@@ -38,7 +38,7 @@ Each task = one agent session = one reviewable unit = one human review.
 
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.** Always read actual files on disk.
 
-- No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/{work}/` → **FIRST-RUN**
+- No `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists under `.aid/works/{work}/` → **FIRST-RUN**
 - At least one `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` exists → **REVIEW**
 - Tasks complete and grade ≥ minimum → **DONE**
 

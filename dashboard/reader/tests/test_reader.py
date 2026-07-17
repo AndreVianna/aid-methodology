@@ -96,7 +96,12 @@ def write_settings(aid: Path, project_name: str = "TestProject") -> None:
 
 
 def make_work_dir(aid: Path, work_id: str) -> Path:
-    wd = aid / work_id
+    """Create a work directory inside the .aid/works/ container (work-016).
+
+    Works are direct subfolders of .aid/works/ -- the container is the
+    discovery selector, so the folder name is not a visibility filter.
+    """
+    wd = aid / "works" / work_id
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 
@@ -242,10 +247,18 @@ class TestLocator(unittest.TestCase):
         self.assertEqual(loc.work_dirs, [])
 
     def test_enumerate_work_dirs(self):
+        """work-016 container contract: EVERY direct subfolder of .aid/works/ is a
+        work (name-independent), and the non-work siblings that live BESIDE works/
+        under .aid/ are excluded structurally -- not by any ^work-[0-9]+- name match.
+        """
         aid = make_aid_dir(self.root)
         make_work_dir(aid, "work-001-alpha")
         make_work_dir(aid, "work-002-beta")
-        # These should NOT appear (not matching work-[0-9]*-*)
+        # A numberless / arbitrarily-named subfolder of .aid/works/ IS still a work
+        # (the reported symptom cannot recur -- visibility no longer depends on the name).
+        make_work_dir(aid, "numberless-work")
+        # These live BESIDE works/ under .aid/ (NOT inside works/), so a plain
+        # "all subfolders of .aid/works/" enumeration excludes them structurally.
         (aid / ".temp").mkdir()
         (aid / ".heartbeat").mkdir()
         (aid / "knowledge").mkdir()
@@ -256,11 +269,12 @@ class TestLocator(unittest.TestCase):
         names = [p.name for p in loc.work_dirs]
         self.assertIn("work-001-alpha", names)
         self.assertIn("work-002-beta", names)
+        self.assertIn("numberless-work", names)  # name-independent discovery
         self.assertNotIn(".temp", names)
         self.assertNotIn(".heartbeat", names)
         self.assertNotIn("knowledge", names)
-        self.assertNotIn("not-a-work", names)
-        self.assertEqual(len(names), 2)
+        self.assertNotIn("not-a-work", names)  # sibling of works/, not inside it
+        self.assertEqual(len(names), 3)
 
     def test_work_dirs_sorted(self):
         aid = make_aid_dir(self.root)
@@ -1141,7 +1155,7 @@ class TestPF5ExecutionGraph(unittest.TestCase):
         with _tmp.TemporaryDirectory() as d:
             root = Path(d)
             aid = root / ".aid"
-            work = aid / "work-001-test"
+            work = aid / "works" / "work-001-test"
             work.mkdir(parents=True)
             tasks_dir = work / "tasks"
             tasks_dir.mkdir()
@@ -1259,7 +1273,7 @@ class TestSchemaVersion3Serialization(unittest.TestCase):
         with _tmp.TemporaryDirectory() as d:
             root = Path(d)
             aid = root / ".aid"
-            work = aid / "work-001-test"
+            work = aid / "works" / "work-001-test"
             work.mkdir(parents=True)
             (work / "STATE.md").write_text(
                 "## Pipeline Status\n\n"
@@ -1447,7 +1461,7 @@ class TestPF8ParseSpecMd(unittest.TestCase):
             self.skipTest("work-006-lite-sample not found in fixture")
 
         # Must have NO REQUIREMENTS.md (this is the Lite path)
-        req_path = fixture_root / ".aid" / "work-006-lite-sample" / "REQUIREMENTS.md"
+        req_path = fixture_root / ".aid" / "works" / "work-006-lite-sample" / "REQUIREMENTS.md"
         self.assertFalse(req_path.exists(), "work-006-lite-sample must NOT have REQUIREMENTS.md")
 
         # Title comes from SPEC.md Name (not de-slug)
@@ -1585,7 +1599,7 @@ class TestCreatedField(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             aid = root / ".aid"
-            work = aid / "work-001-cr"
+            work = aid / "works" / "work-001-cr"
             work.mkdir(parents=True)
             (work / "STATE.md").write_text(self._STATE_WITH_HISTORY, encoding="utf-8")
             model = read_repo(root)
@@ -1598,7 +1612,7 @@ class TestCreatedField(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             root = Path(d)
             aid = root / ".aid"
-            work = aid / "work-001-nocr"
+            work = aid / "works" / "work-001-nocr"
             work.mkdir(parents=True)
             (work / "STATE.md").write_text(self._STATE_WITHOUT_HISTORY, encoding="utf-8")
             model = read_repo(root)
