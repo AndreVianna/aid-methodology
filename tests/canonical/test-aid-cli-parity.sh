@@ -74,6 +74,19 @@ trap 'rm -rf "$TMP"' EXIT
 # test process and every spawned subprocess (aid, pwsh, harness scripts)
 # inherits the throwaway and can never reach the real $HOME.
 # REAL_HOME is saved before the override for the end-of-suite canary check.
+#
+# Windows twin: native (non-WSL) pwsh derives its automatic $HOME variable
+# from $env:USERPROFILE (falling back to $env:HOMEDRIVE + $env:HOMEPATH), and
+# NEVER from a bash-exported $HOME -- confirmed empirically: with USERPROFILE
+# left at its real value, a child pwsh sees $HOME == the REAL user profile
+# even though bash's own $HOME was just overridden above. bin/aid.ps1's user-
+# tier registry path is `Join-Path $HOME '.aid'`, so leaving USERPROFILE
+# untouched would let this suite's PS-side `projects remove <N>` cases
+# (PAR018-Y) index/delete over the REAL developer registry on a local Windows
+# run. Pin USERPROFILE/HOMEDRIVE/HOMEPATH to the SAME fake-HOME dir (Windows-
+# path form via cygpath) so bin/aid.ps1 resolves the sandbox too. Harmless/
+# no-op on Linux CI: cygpath is absent there, so the block below is skipped,
+# and pwsh on non-Windows derives $HOME from $env:HOME (already pinned above).
 # ---------------------------------------------------------------------------
 REAL_HOME="${HOME}"
 # Snapshot .aid/dashboard/ dirs in the real HOME before the suite runs.
@@ -82,6 +95,12 @@ _CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 \
     -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
 export HOME="${TMP}/fakehome"
 mkdir -p "${HOME}"
+if command -v cygpath >/dev/null 2>&1; then
+    _WIN_FAKEHOME="$(cygpath -w "${HOME}")"
+    export USERPROFILE="${_WIN_FAKEHOME}"
+    export HOMEDRIVE="${_WIN_FAKEHOME:0:2}"
+    export HOMEPATH="${_WIN_FAKEHOME:2}"
+fi
 
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
@@ -3438,9 +3457,50 @@ else
     for _n in 92 93 94; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
 fi
 pass "PAR018-Y95 AC-13 digit-named-folder: bare index vs path form confirmed on both twins (Y83..Y94)"
-pass "PAR018-Y96 (reserved)"
-pass "PAR018-Y97 (reserved)"
-pass "PAR018-Y98 AC-9: numbered list + remove-by-index + every error case confirmed byte-identical across Bash/PS1 (Y10, Y19/Y25, Y35/Y36, Y41, Y52b, Y57/Y58, Y65/Y66, Y72, Y78, Y89, Y94)"
+
+# ---------------------------------------------------------------------------
+# Y96/Y97: SPEC AC-9 / FR-7 help-text regression guard (delivery-gate FIX E) --
+# 'aid projects help' documents the numbered list + the 'remove <N>' index
+# form, and the 'remove' documentation no longer claims the pre-task-018
+# "Idempotent"/"Works on stale/missing" semantics -- identically on both
+# twins. The stale-wording check is scoped to the 'remove' paragraph only
+# (sed extraction) -- NOT the whole help block -- because 'add' legitimately
+# still says "Idempotent" (only remove's semantics changed).
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_Y}" projects help
+SH_OUT_YHELP="$OUT_SH"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y96 Bash projects help -> exit 0"
+assert_output_contains "$SH_OUT_YHELP" "aid projects remove [<path>|<N>]" \
+    "PAR018-Y96a Bash help: usage synopsis documents remove index form <N>"
+assert_output_contains "$SH_OUT_YHELP" "show all registered projects, numbered from 1" \
+    "PAR018-Y96b Bash help: list description documents numbered rows"
+_SH_YHELP_REMOVE_BLOCK="$(printf '%s\n' "$SH_OUT_YHELP" | tr -d '\r' | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+assert_output_not_contains "$_SH_YHELP_REMOVE_BLOCK" "Idempotent" \
+    "PAR018-Y96c Bash help: remove documentation no longer claims Idempotent"
+assert_output_not_contains "$_SH_YHELP_REMOVE_BLOCK" "Works on stale" \
+    "PAR018-Y96d Bash help: remove documentation no longer claims to work on stale/missing entries"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects help
+    PS_OUT_YHELP="$OUT_PS1"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y97 PS1 projects help -> exit 0"
+    assert_output_contains "$PS_OUT_YHELP" "aid projects remove [<path>|<N>]" \
+        "PAR018-Y97a PS1 help: usage synopsis documents remove index form <N>"
+    assert_output_contains "$PS_OUT_YHELP" "show all registered projects, numbered from 1" \
+        "PAR018-Y97b PS1 help: list description documents numbered rows"
+    _PS_YHELP_REMOVE_BLOCK="$(printf '%s\n' "$PS_OUT_YHELP" | tr -d '\r' | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+    assert_output_not_contains "$_PS_YHELP_REMOVE_BLOCK" "Idempotent" \
+        "PAR018-Y97c PS1 help: remove documentation no longer claims Idempotent"
+    assert_output_not_contains "$_PS_YHELP_REMOVE_BLOCK" "Works on stale" \
+        "PAR018-Y97d PS1 help: remove documentation no longer claims to work on stale/missing entries"
+    # Parity: the remove documentation block must be byte-identical across twins.
+    assert_eq "$_SH_YHELP_REMOVE_BLOCK" "$_PS_YHELP_REMOVE_BLOCK" \
+        "PAR018-Y97e Bash<->PS1 parity: remove documentation block byte-identical (CRLF-normalized)"
+else
+    for _n in 97 97a 97b 97c 97d 97e; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+pass "PAR018-Y98 AC-9: numbered list + remove-by-index + every error case confirmed byte-identical across Bash/PS1 (Y10, Y19/Y25, Y35/Y36, Y41, Y52b, Y57/Y58, Y65/Y66, Y72, Y78, Y89, Y94, Y97e)"
 
 # ===========================================================================
 # PAR-SH: state-home exclusion parity (BUG-1 regression).

@@ -1421,10 +1421,17 @@ Write-Host ""
 # ===========================================================================
 # T37-T42: aid projects command (list / add / remove / help)
 # Mirrors the bash REG-P0x contract in the Windows-native PS suite.
-# All tests pin AID_HOME to isolated temp dirs so registry writes never touch
-# the developer's real $HOME/.aid.  The fallback tier ($HOME/.aid/registry.yml)
-# is read-only for these tests (not written to); assertions are path-specific,
-# so any pre-existing real entries are benign.
+# All tests pin AID_HOME to isolated temp dirs, AND pin HOME/USERPROFILE/
+# HOMEDRIVE/HOMEPATH to a throwaway fake-home (same mechanism as
+# Run-AidPs1Home, ~line 293) so registry writes never touch the developer's
+# real $HOME/.aid. This isolation is NOT optional: Registry-Unregister's
+# fallback/secondary tier (bin/aid.ps1 ~2077-2096) reads -- and can WRITE to
+# -- Join-Path $HOME '.aid' registry.yml whenever AID_STATE_HOME (the
+# isolated AidHome passed in) is writable and differs from $HOME/.aid, which
+# is true for every call in this section (a throwaway AID_HOME is never
+# $HOME/.aid, so $perUser is always false). Without the HOME/USERPROFILE pin,
+# T42g/h/i (and every other Run-AidProjects call) would read, and could
+# mutate, the REAL developer $HOME/.aid/registry.yml.
 # ===========================================================================
 Write-Host "=== T37-T42: aid projects (list / add / remove / help) ==="
 
@@ -1441,16 +1448,40 @@ Copy-Item -LiteralPath $LocalLibPath `
 [System.IO.File]::WriteAllBytes((Join-Path $AidHomeTP 'VERSION'),
     [System.Text.Encoding]::UTF8.GetBytes("$Ver`n"))
 
+# Shared throwaway fake-home for every Run-AidProjects call in this section
+# (see isolation rationale in the T37-T42 header comment above).
+$script:_AidProjectsFakeHome = Join-Path $TmpRoot 'fakehome-projects'
+
 # Helper: invoke aid.ps1 for projects tests with an isolated AID_HOME.
 # Captures stdout+stderr merged into $script:_LastOut and $script:_LastRC.
+# Also pins HOME/USERPROFILE/HOMEDRIVE/HOMEPATH to a throwaway fake-home
+# (same pattern as Run-AidPs1Home, ~line 293) so Registry-Unregister's
+# fallback/secondary tier (bin/aid.ps1 ~2077-2096), which reads/writes
+# Join-Path $HOME '.aid' registry.yml, never touches the real developer home.
 function Run-AidProjects {
-    param([string]$AidHome, [string[]]$AidArgs, [string]$FromDir = '')
-    $savedHome = $env:AID_HOME
-    $savedLib  = $env:AID_LIB_PATH
+    param(
+        [string]$AidHome,
+        [string[]]$AidArgs,
+        [string]$FromDir = '',
+        [string]$FakeHome = $script:_AidProjectsFakeHome
+    )
+    if (-not (Test-Path $FakeHome -PathType Container)) {
+        New-Item -ItemType Directory -Path $FakeHome -Force | Out-Null
+    }
+    $savedHome  = $env:AID_HOME
+    $savedLib   = $env:AID_LIB_PATH
     $savedNoUpd = $env:AID_NO_UPDATE_CHECK
+    $savedUP    = $env:USERPROFILE
+    $savedEH    = $env:HOME
+    $savedHD    = $env:HOMEDRIVE
+    $savedHP    = $env:HOMEPATH
     $env:AID_HOME            = $AidHome
     $env:AID_LIB_PATH        = $LocalLibPath
     $env:AID_NO_UPDATE_CHECK = '1'
+    $env:HOME        = $FakeHome
+    $env:USERPROFILE = $FakeHome
+    $env:HOMEDRIVE   = (Split-Path -Qualifier $FakeHome)
+    $env:HOMEPATH    = (Split-Path -NoQualifier $FakeHome)
     $aidPs1Path = Join-Path (Join-Path $AidHome 'bin') 'aid.ps1'
     if (-not (Test-Path $aidPs1Path -PathType Leaf)) {
         $aidPs1Path = Join-Path (Join-Path $RepoRoot 'bin') 'aid.ps1'
@@ -1469,6 +1500,10 @@ function Run-AidProjects {
     $env:AID_HOME            = $savedHome
     $env:AID_LIB_PATH        = $savedLib
     $env:AID_NO_UPDATE_CHECK = $savedNoUpd
+    $env:USERPROFILE         = $savedUP
+    $env:HOME                = $savedEH
+    $env:HOMEDRIVE           = $savedHD
+    $env:HOMEPATH            = $savedHP
 }
 
 # ---------------------------------------------------------------------------

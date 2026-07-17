@@ -16,6 +16,9 @@
 #   aid add <tool>[,...]             Add tool(s) to the current project
 #   aid update [self]                Update to latest; inside repo = CLI + all tools; 'self' = CLI only
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid projects [list|add|remove|help] [path|N] [--local|--shared] [--verbose]
+#                                    List (numbered from 1), register, or unregister;
+#                                    remove accepts a list number (<N>) or a <path>
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):

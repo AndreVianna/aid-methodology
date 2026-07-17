@@ -1750,6 +1750,50 @@ assert_file_not_contains "${_P08D_AID_INST}/registry.yml" "${_P08D_DIGIT}" \
     "REG-P08an remove ./1: '1'-named folder removed by PATH"
 
 # ===========================================================================
+# REG-P09: 'aid projects help' text documents the numbered list + the
+# 'remove <N>' index form, and the 'remove' documentation no longer claims
+# the pre-task-018 "Idempotent" / "Works on stale/missing" semantics (SPEC
+# AC-9 / FR-7 help-text regression guard; delivery-gate FIX E).
+#
+# The stale-wording check is scoped to the 'remove' paragraph only (via sed
+# extraction) -- NOT the whole help block -- because the 'add' line still
+# legitimately says "Idempotent" (add IS idempotent; only remove's semantics
+# changed).
+# ===========================================================================
+echo "--- REG-P09: projects help text -- numbered list + remove <N>, no stale wording ---"
+_P09_AID_INST=$(newhome)
+setup_aid_home "${_P09_AID_INST}"
+_P09_HOME=$(mktemp -d "${TMP}/p09_home.XXXXXX")
+
+# (a) 'aid projects help' (explicit sub-action form).
+run_projects "${_P09_AID_INST}" "${_P09_HOME}" projects help
+assert_exit_eq "$RC" 0 "REG-P09a projects help -> exit 0"
+assert_output_contains "$OUT" "aid projects remove [<path>|<N>]" \
+    "REG-P09b help: usage synopsis documents remove index form <N>"
+assert_output_contains "$OUT" "show all registered projects, numbered from 1" \
+    "REG-P09c help: list description documents numbered rows"
+assert_output_contains "$OUT" "remove [path=cwd|<N>]: unregister a project from the registry" \
+    "REG-P09d help: remove description documents the <N> form"
+assert_output_contains "$OUT" "<N> (all-digits) targets the Nth row from 'aid projects list'" \
+    "REG-P09e help: remove description documents the index-targeting rule"
+_P09_REMOVE_BLOCK="$(printf '%s\n' "$OUT" | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+assert_output_not_contains "$_P09_REMOVE_BLOCK" "Idempotent" \
+    "REG-P09f help: remove documentation no longer claims Idempotent"
+assert_output_not_contains "$_P09_REMOVE_BLOCK" "Works on stale" \
+    "REG-P09g help: remove documentation no longer claims to work on stale/missing entries"
+
+# (b) 'aid projects -h' (flag alias) -- same content, guards against the two
+#     dispatch paths (see bin/aid: top-of-subcommand -h check vs _cmd_projects
+#     flag-loop -h) drifting apart.
+run_projects "${_P09_AID_INST}" "${_P09_HOME}" projects -h
+assert_exit_eq "$RC" 0 "REG-P09h projects -h -> exit 0"
+assert_output_contains "$OUT" "aid projects remove [<path>|<N>]" \
+    "REG-P09i help (-h alias): usage synopsis documents remove index form <N>"
+_P09H_REMOVE_BLOCK="$(printf '%s\n' "$OUT" | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+assert_output_not_contains "$_P09H_REMOVE_BLOCK" "Idempotent" \
+    "REG-P09j help (-h alias): remove documentation no longer claims Idempotent"
+
+# ===========================================================================
 # REG-SH: state-home exclusion -- bare 'aid' / 'aid status' from a dir whose
 # .aid/ IS the CLI state home must behave as a non-project dir.
 #

@@ -2649,6 +2649,22 @@ _cmd_projects_remove() {
         # Parse base-10 explicitly: leading-zero forms containing an 8/9 (008, 009)
         # would otherwise trip bash's octal-literal error under plain $((...)).
         local _n=$((10#$_raw_path))
+        # Overflow guard: bash's $(( )) arithmetic is a fixed-width (64-bit)
+        # integer; a decimal string beyond that range silently wraps (e.g.
+        # 18446744073709551618 -> 2) instead of erroring, unlike PowerShell's
+        # [long]::TryParse. Detect wraparound by stripping _raw_path's leading
+        # zeros and comparing the result to _n re-stringified: a mismatch (or a
+        # negative _n, which the ^[0-9]+$ regex can only yield via wraparound)
+        # means the value is out of the representable range -- route it to the
+        # same out-of-range error as N > count (parity with the PS twin).
+        local _stripped="$_raw_path"
+        while [[ "$_stripped" == 0* && "${#_stripped}" -gt 1 ]]; do
+            _stripped="${_stripped#0}"
+        done
+        if [[ "$_n" -lt 0 || "$_n" != "$_stripped" ]]; then
+            echo "ERROR: aid projects: no project numbered ${_raw_path} (${_count} registered)" >&2
+            exit 2
+        fi
         if [[ "$_n" -lt 1 ]]; then
             echo "ERROR: aid projects: index must be a positive integer (>= 1): ${_raw_path}" >&2
             exit 2
