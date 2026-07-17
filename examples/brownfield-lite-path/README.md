@@ -163,7 +163,7 @@ The architect proposes:
 | task-002 | TEST | Integration test — update → read cycle confirms fresh data |
 
 Two tasks. task-002 depends on task-001. The task files are written to
-`.aid/work-001-fix-stale-cache/tasks/`.
+`.aid/works/work-001-fix-stale-cache/tasks/`.
 
 See [sample-task-001.md](sample-task-001.md) for what a lite-path task file looks
 like.
@@ -288,7 +288,7 @@ bash canonical/aid/scripts/interview/parse-recipe.sh \
   --render \
   --recipe canonical/recipes/bug-fix.md \
   --slots-json /path/to/slots.json \
-  --work-dir .aid/work-001-fix-stale-cache
+  --work-dir .aid/works/work-001-fix-stale-cache
 ```
 
 where `slots.json` contains:

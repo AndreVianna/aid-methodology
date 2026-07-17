@@ -107,7 +107,9 @@ make_work_state() {
     local sha="${4:-}"
     local pr_label="${5:-}"
 
-    local folder="${repo}/.aid/${folder_name}"
+    # Container model (work-016): work folders live under .aid/works/; that is the
+    # exact glob cleanup-classify.sh's scan_s6 enumerates ("${AID_DIR}"/works/*/).
+    local folder="${repo}/.aid/works/${folder_name}"
     mkdir -p "$folder"
 
     # Build the deploy row based on what's provided
@@ -239,8 +241,8 @@ git -C "$REPO2" fetch -q origin 2>/dev/null || true
 # (ii)✗: Status IS Deployed (passes rule c) but no terminal Deploy Status row
 # (empty deploy row means signal(ii) finds no non-empty PR + terminal state)
 # We create a STATE.md manually to have Deployed status but no terminal row.
-mkdir -p "${REPO2}/.aid/work-098-partial"
-cat > "${REPO2}/.aid/work-098-partial/STATE.md" <<STATEEOF2
+mkdir -p "${REPO2}/.aid/works/work-098-partial"
+cat > "${REPO2}/.aid/works/work-098-partial/STATE.md" <<STATEEOF2
 # Work State — work-098-partial
 
 > **Status:** Deployed
@@ -319,8 +321,8 @@ CLEANUP_BARE+=("$BARE4")
 make_aid_dir "$REPO4"
 
 # Create work folder with NO STATE.md
-mkdir -p "${REPO4}/.aid/work-096-nostatemd"
-echo "some file" > "${REPO4}/.aid/work-096-nostatemd/notes.txt"
+mkdir -p "${REPO4}/.aid/works/work-096-nostatemd"
+echo "some file" > "${REPO4}/.aid/works/work-096-nostatemd/notes.txt"
 
 OUT4=$(run_classify "$REPO4" --active-work "NONE_ACTIVE")
 log "OUT4=$OUT4"
@@ -449,10 +451,10 @@ SHA9=$(add_commit "$REPO9" "feat: deliver work-091")
 git -C "$REPO9" push -q origin master 2>/dev/null || true
 git -C "$REPO9" fetch -q origin 2>/dev/null || true
 
-mkdir -p "${REPO9}/.aid/work-091-housekeep"
+mkdir -p "${REPO9}/.aid/works/work-091-housekeep"
 
 # STATE.md with Deployed + SHA + ## Housekeep Status block (rule a)
-cat > "${REPO9}/.aid/work-091-housekeep/STATE.md" <<HKEOF
+cat > "${REPO9}/.aid/works/work-091-housekeep/STATE.md" <<HKEOF
 # Work State — work-091-housekeep
 
 > **Status:** Deployed

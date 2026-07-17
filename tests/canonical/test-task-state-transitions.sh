@@ -76,7 +76,10 @@ cleanup() { rm -rf "${TMP_ROOT}"; }
 trap cleanup EXIT
 
 WORK_ID="work-999-task009-demo"
-WORK_DIR="${TMP_ROOT}/.aid/${WORK_ID}"
+# Container model (work-016): works live under the .aid/works/ container; both
+# reader twins enumerate .aid/works/* (never top-level .aid/work-*), so the
+# scratch fixture MUST be built under works/ or read_repo/readRepo won't find it.
+WORK_DIR="${TMP_ROOT}/.aid/works/${WORK_ID}"
 mkdir -p "${WORK_DIR}/tasks/task-001"
 
 cat > "${WORK_DIR}/BLUEPRINT.md" << 'EOF'

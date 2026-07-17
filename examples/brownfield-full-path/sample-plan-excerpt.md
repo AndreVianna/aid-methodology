@@ -1,6 +1,6 @@
 > **SAMPLE OUTPUT** — This file illustrates what a delivery plan looks like after
 > running `/aid-plan` for the Refund Workflow work item. It is an excerpt of
-> `.aid/work-003/PLAN.md`. Actual AID output is tailored to each project's features
+> `.aid/works/work-003/PLAN.md`. Actual AID output is tailored to each project's features
 > and dependencies. The structure and conventions shown here are accurate to the
 > current AID methodology.
 

@@ -86,7 +86,7 @@ if [[ -n "$DIRECTIVE_HITS" ]]; then
 else
     pass "TR02b no directive verb (create/write/scaffold/mkdir) paired with .aid/work-*/ or STATE.md"
 fi
-assert_output_contains "$SKILL_TXT" "no \`.aid/work-*/\`" "TR02c SKILL.md explicitly states no .aid/work-*/ folder is created"
+assert_output_contains "$SKILL_TXT" "no \`.aid/works/work-*/\`" "TR02c SKILL.md explicitly states no .aid/works/work-*/ folder is created"
 assert_output_contains "$SKILL_TXT" "no \`STATE.md\`" "TR02d SKILL.md explicitly states no STATE.md is created"
 
 # ===========================================================================

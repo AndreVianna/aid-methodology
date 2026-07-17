@@ -39,7 +39,12 @@ State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate, diff]
 3. **Pick the path** (fast if the document + change are clear; guided otherwise) and
    **classify complexity** -> `aid-tech-writer` model/effort (sonnet/medium default; opus/high
    for a large rewrite). Verifier tier >= producer.
-4. **Allocate the work folder + STATE** (`initiator: aid-change-document`; `phase` not driven).
+4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
+   the gate (`.codex/aid/templates/work-initiation-gate.md`):
+   `bash .codex/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
+   route to the chosen work's resume door and STOP (allocate nothing); on **new work**
+   allocate (`initiator: aid-change-document`; `phase` not driven).
 
 **Advance:** AUTHOR.
 

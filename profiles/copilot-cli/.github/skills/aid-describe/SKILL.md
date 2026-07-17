@@ -83,39 +83,59 @@ Exit. Do not proceed.
 
 ## Task Routing
 
-When no work ID is provided:
+When no work ID is provided, consult the shared **Work Initiation Gate**
+(`.github/aid/templates/work-initiation-gate.md`) before doing anything else. Run its
+enumeration helper (which scans `.aid/works/*` across the main tree **and every git
+worktree**):
 
-### No tasks exist
+```bash
+bash .github/aid/scripts/works/enumerate-works.sh
+```
 
-If `.aid/` has no `work-*` directories:
+### No works exist (empty output) -> NEW, no prompt
 
 1. Ask for a short name for this work:
    ```
    What's a short name for this work? (e.g., "user-auth", "reporting", "api-v2")
    ```
-2. Create `.aid/work-001-{name}/`
+2. Create `.aid/works/work-001-{name}/`
 3. Proceed to State Detection with this work.
 
-### Tasks exist
+### One or more works exist -> ASK (never auto-continue)
 
-If `.aid/` has one or more `work-*` directories:
+Present the gate's single new-vs-continuation question, showing the enumerated list
+(group by `work_id`; annotate each with its `[phase · lifecycle]` and worktree/branch
+label from the helper's record columns):
 
 ```
-Existing works:
-  work-001-user-auth   [Status: Approved, 3 features]
-  work-002-reporting   [Status: In Progress, §5 Partial]
+Works already exist. Is this a NEW work, or a CONTINUATION of an existing one?
 
+Existing works:
+  work-001-user-auth        [Describe · Running]                (main)
+  work-002-reporting        [Plan · Running]                    (main)
+  work-016-numberless-...   [Specify · Paused-Awaiting-Input]   (worktree: work-016)
+
+[N] New work
 [1] Continue work-001-user-auth
 [2] Continue work-002-reporting
-[3] Create new work
+[3] Continue work-016-numberless-...
 ```
 
-Wait for response:
-- **Continue existing:** proceed to State Detection for that work
-- **Create new:** ask for name, create `work-{N+1}-{name}/`, proceed
+Wait for the response, then act per the gate:
 
-**Shortcut:** If only one work exists and it's not yet Approved, go directly to it
-without asking.
+- **New work:** ask for a name, create `.aid/works/work-{N+1}-{name}/`, proceed to State
+  Detection.
+- **Continuation:** route per the chosen work's `STATE.md` `phase`/`lifecycle` (gate
+  Step 3b). When the gate resolves to **`/aid-describe <work>`** (the chosen work is a
+  Describe-phase work), proceed straight to **State Detection** for that work in this
+  same invocation -- that IS aid-describe resuming. When it resolves to a **different**
+  door (a later-phase full-path work, or a halted shortcut work -> `/aid-execute`), print
+  the resolved resume command and STOP; do not create or drive a work here.
+
+> There is **no** auto-continue shortcut: a lone unapproved work is never silently
+> resumed. The gate always asks when any work exists (deliberate UX change; the previous
+> "if only one work exists and it's not yet Approved, go directly to it" behavior is
+> removed).
 
 ---
 
@@ -124,7 +144,7 @@ without asking.
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
 Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
-All paths below are relative to `.aid/{work}/`.
+All paths below are relative to `.aid/works/{work}/`.
 
 ```plaintext
 State 1:  No STATE.md (§ Interview State)                           -> FIRST-RUN

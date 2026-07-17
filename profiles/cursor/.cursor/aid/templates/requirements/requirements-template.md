@@ -1,6 +1,6 @@
 # REQUIREMENTS.md Template
 
-This template defines the structure for `.aid/{work}/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-describe](../../skills/aid-describe/) on the full path, or by the shortcut engine on the lite path.
+This template defines the structure for `.aid/works/{work}/REQUIREMENTS.md` — a first-class methodology artifact produced by [aid-describe](../../skills/aid-describe/) on the full path, or by the shortcut engine on the lite path.
 
 ## Usage
 
@@ -13,7 +13,7 @@ This template defines the structure for `.aid/{work}/REQUIREMENTS.md` — a firs
 - **Sections can be marked N/A** if not applicable to the project.
 - **`*(pending)*`** marks sections not yet addressed during the interview.
 - **Cross-reference runs** add Change Log entries with source `/aid-describe (cross-reference)`.
-- **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact at the work root, `.aid/{work}/REQUIREMENTS.md`.
+- **File is uppercase** (`REQUIREMENTS.md`) — it's a first-class artifact at the work root, `.aid/works/{work}/REQUIREMENTS.md`.
 
 ---
 

@@ -49,9 +49,13 @@ approval) -> DONE**. Print the `[State: NAME] -- {purpose}` entry line on each s
    -> scope subject / audience / kind first.
 4. **Classify complexity (model + effort):** most docs -> `aid-tech-writer` at **sonnet /
    medium**; a heavy architecture write-up -> **opus / high**. Verifier tier >= producer.
-5. **Allocate the work folder + STATE** (`pipeline.path: lite`, `initiator:
-   aid-create-document`, `lifecycle: Running`, `active_skill: aid-create-document`; `phase`
-   not driven).
+5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
+   the gate (`.codex/aid/templates/work-initiation-gate.md`):
+   `bash .codex/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
+   route to the chosen work's resume door and STOP (allocate nothing); on **new work**
+   allocate (`pipeline.path: lite`, `initiator: aid-create-document`, `lifecycle: Running`,
+   `active_skill: aid-create-document`; `phase` not driven).
 
 **Advance:** AUTHOR.
 

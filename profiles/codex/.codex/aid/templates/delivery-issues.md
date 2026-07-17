@@ -12,7 +12,7 @@ to `work-NNN/STATE.md ## Quick Check Findings`). It is the input to the delivery
 (step 2 REVIEW of `aid-execute`'s DELIVERY-GATE flow). After the gate passes, every row is updated
 to `Resolved` or `Accepted`.
 
-Instances live at `.aid/work-NNN/delivery-NNN-issues.md`. Template source:
+Instances live at `.aid/works/work-NNN/delivery-NNN-issues.md`. Template source:
 `.codex/aid/templates/delivery-issues.md`.
 
 ## Deferred [HIGH] Issues

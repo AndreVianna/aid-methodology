@@ -155,9 +155,9 @@ This is the single state file for the **Discovery area** — persistent project 
 - **Category:** Documentation drift
 - **Impact:** Low
 - **Status:** Answered
-- **Context:** `docs/aid-methodology.md` ("## 7. Artifacts Reference") describes the flat task layout `.aid/{work}/tasks/task-NNN.md`. The live skills + `canonical/aid/templates/work-state-template.md` use the nested shape `.aid/{work}/delivery-NNN/tasks/task-NNN/SPEC.md` (+ sibling `STATE.md`), confirmed by the on-disk `.aid/work-001-kb-skills-improvement/` tree. The two representations disagree.
+- **Context:** `docs/aid-methodology.md` ("## 7. Artifacts Reference") describes the flat task layout `.aid/works/{work}/tasks/task-NNN.md`. The live skills + `canonical/aid/templates/work-state-template.md` use the nested shape `.aid/works/{work}/delivery-NNN/tasks/task-NNN/SPEC.md` (+ sibling `STATE.md`), confirmed by the on-disk `.aid/works/work-001-kb-skills-improvement/` tree. The two representations disagree.
 - **Suggested:** Likely a prose-simplification lag in the user-facing methodology doc; the template + on-disk state agree, and pipeline-contracts.md documents the live nested shape as authoritative. Confirm whether `docs/aid-methodology.md` should be updated (Tech-Writer task, out of scope for discovery).
-- **Answer:** CONFIRMED from source: the live skills, `canonical/aid/templates/work-state-template.md`, and the on-disk `.aid/work-001-*` tree all use the nested `delivery-NNN/tasks/task-NNN/` shape; pipeline-contracts.md documents it as authoritative. `docs/aid-methodology.md`'s flat shape is stale SOURCE documentation; updating it is a tech-writer task out of discovery scope. No KB change needed.
+- **Answer:** CONFIRMED from source: the live skills, `canonical/aid/templates/work-state-template.md`, and the on-disk `.aid/works/work-001-*` tree all use the nested `delivery-NNN/tasks/task-NNN/` shape; pipeline-contracts.md documents it as authoritative. `docs/aid-methodology.md`'s flat shape is stale SOURCE documentation; updating it is a tech-writer task out of discovery scope. No KB change needed.
 - **Applied to:** pipeline-contracts.md (documents live shape); no KB correction needed
 
 ### Q5

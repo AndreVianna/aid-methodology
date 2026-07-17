@@ -191,7 +191,7 @@ def _build_hierarchical_work(
         ]
       }
     """
-    work_dir = aid / work_id
+    work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
     _write_work_state(work_dir, lifecycle=work_lifecycle, updated=work_updated)
 
@@ -836,7 +836,7 @@ class TestLegacyMonolithicWork(unittest.TestCase):
 """
 
     def _write_legacy_repo(self, work_id: str, state_text: str) -> Path:
-        work_dir = self.aid / work_id
+        work_dir = self.aid / "works" / work_id
         work_dir.mkdir(parents=True, exist_ok=True)
         (work_dir / "STATE.md").write_text(state_text, encoding="utf-8")
         return work_dir
@@ -982,7 +982,7 @@ class TestMixedVintageRepo(unittest.TestCase):
         )
 
         # Legacy monolithic work
-        legacy_dir = self.aid / "work-002-legacy"
+        legacy_dir = self.aid / "works" / "work-002-legacy"
         legacy_dir.mkdir(parents=True, exist_ok=True)
         (legacy_dir / "STATE.md").write_text(
             "## Pipeline State\n\n"
@@ -1018,14 +1018,14 @@ class TestMixedVintageRepo(unittest.TestCase):
         """Hierarchical work is routed to the hierarchical reader path."""
         from dashboard.reader.reader import _detect_hierarchy
         self._build_mixed_fixture()
-        hier_dir = self.aid / "work-001-hierarchical"
+        hier_dir = self.aid / "works" / "work-001-hierarchical"
         self.assertTrue(_detect_hierarchy(hier_dir))
 
     def test_mixed_legacy_routed_correctly(self):
         """Legacy work is NOT routed to the hierarchical reader path."""
         from dashboard.reader.reader import _detect_hierarchy
         self._build_mixed_fixture()
-        legacy_dir = self.aid / "work-002-legacy"
+        legacy_dir = self.aid / "works" / "work-002-legacy"
         self.assertFalse(_detect_hierarchy(legacy_dir))
 
     def test_mixed_hierarchical_task_state_correct(self):
@@ -1230,15 +1230,15 @@ class TestMultiWorktreeRepo(unittest.TestCase):
         root, aid = _make_repo(self.tmp)
 
         # Main worktree has work-001
-        work_main = aid / "work-001-main"
+        work_main = aid / "works" / "work-001-main"
         work_main.mkdir(parents=True, exist_ok=True)
         _write_work_state(work_main, lifecycle="Running", updated="2026-06-10T09:00:00Z")
 
         # Second worktree (feat-branch) has work-002
         wt_root = self.tmp / "wt-feat"
         wt_aid = wt_root / ".aid"
-        (wt_aid / "work-002-feat").mkdir(parents=True, exist_ok=True)
-        _write_work_state(wt_aid / "work-002-feat", lifecycle="Running",
+        (wt_aid / "works" / "work-002-feat").mkdir(parents=True, exist_ok=True)
+        _write_work_state(wt_aid / "works" / "work-002-feat", lifecycle="Running",
                           updated="2026-06-10T11:00:00Z")
 
         with mock.patch(
@@ -1259,12 +1259,12 @@ class TestMultiWorktreeRepo(unittest.TestCase):
         """Each work in the model carries the correct branch_label from its worktree."""
         root, aid = _make_repo(self.tmp)
 
-        (aid / "work-001-main").mkdir(parents=True, exist_ok=True)
-        _write_work_state(aid / "work-001-main")
+        (aid / "works" / "work-001-main").mkdir(parents=True, exist_ok=True)
+        _write_work_state(aid / "works" / "work-001-main")
 
         wt_aid = self.tmp / "wt-feat" / ".aid"
-        (wt_aid / "work-002-feat").mkdir(parents=True, exist_ok=True)
-        _write_work_state(wt_aid / "work-002-feat")
+        (wt_aid / "works" / "work-002-feat").mkdir(parents=True, exist_ok=True)
+        _write_work_state(wt_aid / "works" / "work-002-feat")
 
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -1286,12 +1286,12 @@ class TestMultiWorktreeRepo(unittest.TestCase):
         root, aid = _make_repo(self.tmp)
         work_id = "work-001-common"
 
-        (aid / work_id).mkdir(parents=True, exist_ok=True)
-        _write_work_state(aid / work_id, updated="2026-06-10T09:00:00Z")
+        (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        _write_work_state(aid / "works" / work_id, updated="2026-06-10T09:00:00Z")
 
         wt_aid = self.tmp / "wt-feat" / ".aid"
-        (wt_aid / work_id).mkdir(parents=True, exist_ok=True)
-        _write_work_state(wt_aid / work_id, updated="2026-06-10T12:00:00Z")
+        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        _write_work_state(wt_aid / "works" / work_id, updated="2026-06-10T12:00:00Z")
 
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -1311,12 +1311,12 @@ class TestMultiWorktreeRepo(unittest.TestCase):
         root, aid = _make_repo(self.tmp)
         work_id = "work-001-dedup"
 
-        (aid / work_id).mkdir(parents=True, exist_ok=True)
-        _write_work_state(aid / work_id, updated="2026-06-10T09:00:00Z")
+        (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        _write_work_state(aid / "works" / work_id, updated="2026-06-10T09:00:00Z")
 
         wt_aid = self.tmp / "wt" / ".aid"
-        (wt_aid / work_id).mkdir(parents=True, exist_ok=True)
-        _write_work_state(wt_aid / work_id, updated="2026-06-10T12:00:00Z")
+        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        _write_work_state(wt_aid / "works" / work_id, updated="2026-06-10T12:00:00Z")
 
         with mock.patch(
             "dashboard.reader.reader.enumerate_worktree_roots",
@@ -1553,8 +1553,8 @@ class TestSameWorkReconcileAllBoundaries(unittest.TestCase):
             work_id = "work-001-reconcile"
 
             # Main root: task-001 Pending, task-002 In Progress
-            (aid / work_id).mkdir(parents=True, exist_ok=True)
-            (aid / work_id / "STATE.md").write_text(
+            (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+            (aid / "works" / work_id / "STATE.md").write_text(
                 "## Pipeline State\n\n"
                 "- **Lifecycle:** Running\n"
                 "- **Phase:** Execute\n"
@@ -1573,8 +1573,8 @@ class TestSameWorkReconcileAllBoundaries(unittest.TestCase):
 
             # Second root (feat): task-001 Done, task-003 Blocked
             wt_aid = root / "wt" / ".aid"
-            (wt_aid / work_id).mkdir(parents=True, exist_ok=True)
-            (wt_aid / work_id / "STATE.md").write_text(
+            (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+            (wt_aid / "works" / work_id / "STATE.md").write_text(
                 "## Pipeline State\n\n"
                 "- **Lifecycle:** Running\n"
                 "- **Phase:** Execute\n"
@@ -1692,8 +1692,8 @@ class TestGitDegradeScenario(unittest.TestCase):
 
     def test_read_repo_degrades_gracefully_git_absent(self):
         """read_repo with git absent still reads the main root and never throws."""
-        (self.aid / "work-001-test").mkdir(parents=True, exist_ok=True)
-        _write_work_state(self.aid / "work-001-test")
+        (self.aid / "works" / "work-001-test").mkdir(parents=True, exist_ok=True)
+        _write_work_state(self.aid / "works" / "work-001-test")
 
         with mock.patch("dashboard.reader.derivation.run_worktree_list", return_value=None):
             with mock.patch("dashboard.reader.derivation.detect_main_branch_label", return_value="main"):
@@ -1708,8 +1708,8 @@ class TestGitDegradeScenario(unittest.TestCase):
 
     def test_read_repo_never_throws_on_non_git_dir(self):
         """read_repo on a non-git directory never throws."""
-        (self.aid / "work-001-test").mkdir(parents=True, exist_ok=True)
-        _write_work_state(self.aid / "work-001-test")
+        (self.aid / "works" / "work-001-test").mkdir(parents=True, exist_ok=True)
+        _write_work_state(self.aid / "works" / "work-001-test")
 
         # Don't mock git -- the test uses a temp dir that is NOT a real git repo
         # The _is_git_toplevel guard in derivation.py will return False, causing degrade
@@ -1727,8 +1727,8 @@ class TestGitDegradeScenario(unittest.TestCase):
         except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
             self.skipTest("node not available")
 
-        (self.aid / "work-001-test").mkdir(parents=True, exist_ok=True)
-        _write_work_state(self.aid / "work-001-test")
+        (self.aid / "works" / "work-001-test").mkdir(parents=True, exist_ok=True)
+        _write_work_state(self.aid / "works" / "work-001-test")
 
         reader_mjs = _REPO_ROOT / "dashboard" / "server" / "reader.mjs"
         script = (
@@ -1894,7 +1894,7 @@ class TestParityHierarchicalFixture(unittest.TestCase):
             ],
         )
         # Legacy monolithic work
-        legacy = self.aid / "work-002-parity-legacy"
+        legacy = self.aid / "works" / "work-002-parity-legacy"
         legacy.mkdir(parents=True, exist_ok=True)
         (legacy / "STATE.md").write_text(
             "## Pipeline State\n\n"

@@ -196,12 +196,12 @@ all 5 auth edge cases per SPEC").
 - [ ] RESEARCH/DESIGN tasks come before their dependent IMPLEMENT tasks
 - [ ] TEST tasks come after their dependent IMPLEMENT tasks
 - [ ] Each deliverable's tasks were reviewed after writing (step 4)
-- [ ] All task files in `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (nested hierarchy)
+- [ ] All task files in `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (nested hierarchy)
 
 ## Feedback Loops
 
 - **→ Plan:** Plan too vague to decompose → return to `/aid-plan`
-- **→ Specify:** SPEC missing detail for scope → write Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Specify:** SPEC missing detail for scope → write Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
 - **→ Discovery:** KB gap → write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
 
 ## Project Management Sync (conditional)

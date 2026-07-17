@@ -169,8 +169,8 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         )
 
         # Work folder seeded from the real template
-        self.work_dir = self.aid_dir / "work-001-integration-test"
-        self.work_dir.mkdir()
+        self.work_dir = self.aid_dir / "works" / "work-001-integration-test"
+        self.work_dir.mkdir(parents=True)
         self.state_file = self.work_dir / "STATE.md"
 
         if _WORK_STATE_TEMPLATE.is_file():

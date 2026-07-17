@@ -165,7 +165,7 @@ Run the deterministic gate:
 ```bash
 python .claude/skills/generate-profile/scripts/verify_deterministic.py \
   --canonical-root . \
-  --report-path .aid/work-001-agents-review/verify-deterministic-report.json
+  --report-path .aid/works/work-001-agents-review/verify-deterministic-report.json
 ```
 
 If the exit code is non-zero: **abort**. Print the verify-deterministic-report.json offenders.
@@ -181,7 +181,7 @@ Run the advisory conformance check:
 ```bash
 python .claude/skills/generate-profile/scripts/verify_advisory.py \
   --canonical-root . \
-  --report-path .aid/work-001-agents-review/verify-advisory-report.json
+  --report-path .aid/works/work-001-agents-review/verify-advisory-report.json
 ```
 
 Always exits 0. Capture `skipped_count` and `warning_count` from the JSON report for REPORT.

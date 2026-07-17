@@ -54,7 +54,7 @@ from dashboard.reader.models import SourceMode, TaskModel
 def _make_repo(root: Path, work_id: str = "work-001-test") -> tuple[Path, Path]:
     """Create a minimal .aid/ tree and return (aid_dir, work_dir)."""
     aid = root / ".aid"
-    work = aid / work_id
+    work = aid / "works" / work_id
     work.mkdir(parents=True, exist_ok=True)
     return aid, work
 

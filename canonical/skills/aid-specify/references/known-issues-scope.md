@@ -5,7 +5,7 @@ during codebase exploration, and how to handle feature-specific quality requirem
 
 ## Known Issues Scope
 
-**File:** `.aid/{work}/known-issues.md` — one per work, shared across all features.
+**File:** `.aid/works/{work}/known-issues.md` — one per work, shared across all features.
 Created from `../../../templates/known-issues.md` on first issue found.
 
 **Only register issues found in code this feature touches.** The filter:

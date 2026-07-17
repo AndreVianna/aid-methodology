@@ -14,7 +14,7 @@ note the loopback in work STATE.md `## Features State`, continue with non-blocke
 
 **Simple fix:** Fix REQUIREMENTS.md and SPEC.md directly, add Change Log entries.
 
-**Needs re-interview:** Add Q&A entry to `.aid/{work}/STATE.md` `## Cross-phase Q&A`,
+**Needs re-interview:** Add Q&A entry to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`,
 note the loopback in work STATE.md `## Features State`.
 
 ## Spike Needed (State 3)

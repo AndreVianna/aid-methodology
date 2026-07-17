@@ -494,22 +494,23 @@ Across the run, discovery covers:
 ```
 .aid/
   knowledge/                    ← shared KB (from Discovery)
-  work-001-user-auth/           ← one work per interview
-    STATE.md                    ← work-area state — process tracking (section status, Q&A, grade)
-    REQUIREMENTS.md             ← product (stakeholder requirements)
-    features/
-      feature-001-login/
-        SPEC.md                 ← feature definition — requirements side (Describe) + tech spec (Specify)
-      feature-002-password-reset/
-        SPEC.md
-    deliveries/
-      delivery-001/
-        BLUEPRINT.md             ← delivery definition (from Plan)
-        STATE.md                 ← delivery lifecycle
-        tasks/
-          task-001/
-            DETAIL.md             ← task definition (from Detail)
-            STATE.md              ← task lifecycle
+  works/
+    work-001-user-auth/           ← one work per interview
+      STATE.md                    ← work-area state — process tracking (section status, Q&A, grade)
+      REQUIREMENTS.md             ← product (stakeholder requirements)
+      features/
+        feature-001-login/
+          SPEC.md                 ← feature definition — requirements side (Describe) + tech spec (Specify)
+        feature-002-password-reset/
+          SPEC.md
+      deliveries/
+        delivery-001/
+          BLUEPRINT.md             ← delivery definition (from Plan)
+          STATE.md                 ← delivery lifecycle
+          tasks/
+            task-001/
+              DETAIL.md             ← task definition (from Detail)
+              STATE.md              ← task lifecycle
 ```
 
 Multiple works can coexist — a client requests auth now, reporting later. Each work has its own requirements and features, sharing the same KB.
@@ -532,7 +533,7 @@ When a KB exists (brownfield), suggested answers are additionally grounded in KB
 
 **One grading rubric across the pipeline.** Every development phase that grades — Discover, Describe → Define, Specify, Plan, Detail, Execute — works the same way: the reviewer classifies each issue it finds by severity (`[CRITICAL]` / `[HIGH]` / `[MEDIUM]` / `[LOW]` / `[MINOR]`), and the letter grade is computed **deterministically** — the worst severity present dominates, and the count within that tier sets the modifier. A scale that runs A+ down to F, with an E band for critical-severity issues. The reviewer never hand-picks a grade. Each phase loops until its grade meets the project's minimum (set at `aid-config`). See §7 and `canonical/aid/templates/grading-rubric.md`.
 
-**Output (full path):** `.aid/{work}/REQUIREMENTS.md` + `.aid/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
+**Output (full path):** `.aid/works/{work}/REQUIREMENTS.md` + `.aid/works/{work}/features/feature-NNN-{name}/SPEC.md` (requirements side only).
 
 ##### The Lite Path: Direct-Entry Shortcuts
 
@@ -585,16 +586,17 @@ The engine **collapses** the five definition phases (Describe → Define → Spe
 
 ```
 .aid/
-  work-NNN-name/
-    STATE.md                          ← work lifecycle; the sole delivery's gate + Q&A are
-                                         promoted into it (## Delivery Lifecycle / ## Delivery Gate)
-    REQUIREMENTS.md
-    SPEC.md
-    PLAN.md
-    BLUEPRINT.md                      ← the single delivery's definition, at the work root
-    tasks/
-      task-NNN/
-        DETAIL.md                     ← task definition (no per-task STATE.md on this path)
+  works/
+    work-NNN-name/
+      STATE.md                          ← work lifecycle; the sole delivery's gate + Q&A are
+                                           promoted into it (## Delivery Lifecycle / ## Delivery Gate)
+      REQUIREMENTS.md
+      SPEC.md
+      PLAN.md
+      BLUEPRINT.md                      ← the single delivery's definition, at the work root
+      tasks/
+        task-NNN/
+          DETAIL.md                     ← task definition (no per-task STATE.md on this path)
 ```
 
 The engine produces the **full** flattened artifact set — the same document shapes the full path produces, just nested one level shallower and authored without a per-phase checkpoint. One structural difference from the full path: the flattened Lite work has **no per-task `STATE.md`** — each task's mutable cells live in the work-root `STATE.md` under `### Tasks lifecycle`.
@@ -622,7 +624,7 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Process:** One feature per run. Determines applicable sections: 3 core (Data Model, Feature Flow, Layers & Components) always present, plus up to 19 conditional sections activated by context (API Contracts, UI Specs, Events, Security, Migration, etc.).
 
-**Output:** `## Technical Specification` section added to `.aid/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections.
+**Output:** `## Technical Specification` section added to `.aid/works/{work}/features/feature-NNN/SPEC.md` — Data Model, Feature Flow, Layers & Components, plus activated conditional sections.
 
 **Full path only:** Specify is skipped on the lite path — the shortcut engine's SPEC state collapses Define + Specify into one authoring step.
 
@@ -646,7 +648,7 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Why two-level planning matters:** In most methodologies there is one level of planning — a backlog, a sprint, a roadmap. AID separates strategy (Plan) from tactics (Detail). Plan answers "what goes in MVP vs. v2 vs. v3." Detail answers "how do we build MVP — what are the tasks, what are their dependencies." Mixing these levels is where planning sessions get bogged down in micro-decisions before the macro-structure is settled.
 
-**Output:** `.aid/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list — plus, per approved deliverable, `deliveries/delivery-NNN/BLUEPRINT.md` (the delivery definition: objective, scope, gate criteria, task listing, dependencies) and `deliveries/delivery-NNN/STATE.md` (the delivery's own lifecycle, seeded `Pending-Spec`).
+**Output:** `.aid/works/{work}/PLAN.md` — ordered deliverables (each a shippable MVP), optional cross-cutting risks, optional deferred features list — plus, per approved deliverable, `deliveries/delivery-NNN/BLUEPRINT.md` (the delivery definition: objective, scope, gate criteria, task listing, dependencies) and `deliveries/delivery-NNN/STATE.md` (the delivery's own lifecycle, seeded `Pending-Spec`).
 
 **Full path only:** Plan is skipped on the lite path — the shortcut engine's PLAN state collapses it into a single-delivery `PLAN.md` + work-root `BLUEPRINT.md`.
 
@@ -656,7 +658,7 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 **Purpose:** Break each deliverable into small, sequential, testable tasks. Each task = one agent session = one PR = one human review. The ultimate breakdown.
 
-**Input:** `.aid/{work}/PLAN.md` + feature SPECs + KB (architecture, module-map, coding-standards).
+**Input:** `.aid/works/{work}/PLAN.md` + feature SPECs + KB (architecture, module-map, coding-standards).
 
 **The universal loop:** Each deliverable follows Propose, Discuss, Write, Review — this time producing task files rather than specifications.
 
@@ -673,7 +675,7 @@ The eight task types are:
 - **REFACTOR** — restructure code without changing behavior
 - **CONFIGURE** — config files, CI/CD, environment setup
 
-**Output:** `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files — each with its own sibling `STATE.md` for task lifecycle — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md` under the corresponding delivery.
+**Output:** `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files — each with its own sibling `STATE.md` for task lifecycle — plus an execution graph (dependency and parallel-wave tables) appended to `PLAN.md` under the corresponding delivery.
 
 **Full path only:** Detail is skipped on the lite path — the shortcut engine's DETAIL state decides the task breakdown directly and emits `tasks/task-NNN/DETAIL.md` at the work root, with no per-task `STATE.md` (task mutable state lives in the work-root `STATE.md § ### Tasks lifecycle` table instead).
 
@@ -1012,7 +1014,7 @@ The design-phase loops record the gap as a **Q&A entry appended to the relevant 
 - **Suggested:** {answer if inferrable, or —}
 ```
 
-The one feedback loop with its own dedicated file is **`IMPEDIMENT-task-NNN.md`** — written by Execute to `.aid/{work}/` when a task hits a contradiction it cannot resolve within scope:
+The one feedback loop with its own dedicated file is **`IMPEDIMENT-task-NNN.md`** — written by Execute to `.aid/works/{work}/` when a task hits a contradiction it cannot resolve within scope:
 
 ```markdown
 # Impediment — task-NNN
@@ -1043,20 +1045,20 @@ wrong-assumption | missing-dependency | architecture-conflict | kb-gap
 | INDEX.md | `.aid/knowledge/` | Init, Discover, Describe | All phases | Seeded at init; regenerated by Discovery; maintained by Describe |
 | STATE.md (discovery area) | `.aid/knowledge/` | Init, Discover, Summarize | Discover (resume), all phases | Living — grade, review & summarization history; any phase appends Q&A entries |
 | project-index.md | `.aid/generated/` | Discover (pre-pass) | Discovery sub-agents | Regenerated each discovery run |
-| REQUIREMENTS.md | `.aid/{work}/` | Describe (full path) or the shortcut engine's CAPTURE state (lite path) | Specify, Plan / the engine's own SPEC state | Frozen after approval (rev-tracked) |
-| SPEC.md (work-root) | `.aid/{work}/` | The shortcut engine's SPEC state (lite path only) | Execute | Single consolidated spec for lite works |
-| STATE.md (work area) | `.aid/{work}/` | Describe (full path) or the shortcut engine's INTAKE state (lite path) | All phases for this work | Process tracking |
-| Feature SPEC.md | `.aid/{work}/features/{feature}/` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes requirements side, Specify adds technical spec |
-| known-issues.md | `.aid/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
-| PLAN.md | `.aid/{work}/` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
+| REQUIREMENTS.md | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's CAPTURE state (lite path) | Specify, Plan / the engine's own SPEC state | Frozen after approval (rev-tracked) |
+| SPEC.md (work-root) | `.aid/works/{work}/` | The shortcut engine's SPEC state (lite path only) | Execute | Single consolidated spec for lite works |
+| STATE.md (work area) | `.aid/works/{work}/` | Describe (full path) or the shortcut engine's INTAKE state (lite path) | All phases for this work | Process tracking |
+| Feature SPEC.md | `.aid/works/{work}/features/{feature}/` | Describe + Specify (full path) | Plan, Detail, Execute | Living — Describe writes requirements side, Specify adds technical spec |
+| known-issues.md | `.aid/works/{work}/` | Specify (Monitor updates) | Plan, Execute, Deploy, Monitor | Living — created when the first issue is registered |
+| PLAN.md | `.aid/works/{work}/` | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Deploy | Living — rev-tracked; Detail appends the execution graph |
 | BLUEPRINT.md (delivery definition) | Full path: `deliveries/delivery-NNN/`; lite path: work root | Plan (full path) or the shortcut engine's PLAN state (lite path) | Detail, Execute | Immutable — objective, scope, gate criteria, task listing, dependencies |
 | STATE.md (delivery area) | Full path: `deliveries/delivery-NNN/`; lite path: promoted into the work-root `STATE.md § Delivery Lifecycle` | Plan | Execute | Living — delivery lifecycle, `Pending-Spec` → … → `Done`/`Blocked` |
-| DETAIL.md (task definition) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: `.aid/{work}/tasks/task-NNN/` | Detail (full path) or the shortcut engine's DETAIL state (lite path) | Execute | Immutable definition; rev-tracked if amended |
+| DETAIL.md (task definition) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: `.aid/works/{work}/tasks/task-NNN/` | Detail (full path) or the shortcut engine's DETAIL state (lite path) | Execute | Immutable definition; rev-tracked if amended |
 | STATE.md (task area) | Full path: `deliveries/delivery-NNN/tasks/task-NNN/`; lite path: rolled into the work-root `STATE.md § Tasks lifecycle` | Detail (seeded); Execute (updated) | Execute (resume), Monitor | Living — full review history for the task |
-| IMPEDIMENT-task-NNN.md | `.aid/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
-| package-NNN-{slug}.md | `.aid/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
-| DEPLOYMENT-STATE.md | `.aid/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
-| MONITOR-STATE.md _(deferred)_ | `.aid/{work}/` | Monitor | `/aid-fix` (bugs), `/aid-triage` (change requests) | Planned — currently an in-memory observation log across runs |
+| IMPEDIMENT-task-NNN.md | `.aid/works/{work}/` | Execute | Specify, Detail, Discovery | Closed when resolved |
+| package-NNN-{slug}.md | `.aid/works/{work}/packages/` | Deploy | Monitor, stakeholders | One per shipped release package |
+| DEPLOYMENT-STATE.md | `.aid/works/{work}/` | Deploy | Deploy (resume) | Living — operation status + history |
+| MONITOR-STATE.md _(deferred)_ | `.aid/works/{work}/` | Monitor | `/aid-fix` (bugs), `/aid-triage` (change requests) | Planned — currently an in-memory observation log across runs |
 | KB-DELTA Q&A entry | `.aid/knowledge/STATE.md` | aid-housekeep | aid-discover (targeted re-discovery) | Appended by housekeep; resolved by next targeted discovery run |
 
 Within Execute, the reviewer produces a structured issue list that `canonical/aid/scripts/grade.sh` scores; the issues, the grade, and the full review history are recorded in the task's own `STATE.md` (full path: `deliveries/delivery-NNN/tasks/task-NNN/STATE.md`; lite path: the work-root `STATE.md § Tasks lifecycle` row). There is no separate persistent `REVIEW.md` or `TEST-REPORT.md` file.

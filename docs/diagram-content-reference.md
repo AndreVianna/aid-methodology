@@ -34,7 +34,7 @@ fact, grep the **"Update triggers"** index below to find every diagram that must
 **No diagram covers this yet — get it right the first time if you add one:** the delivery/task
 artifact rename (delivery definition = `BLUEPRINT.md`, task definition = `DETAIL.md`, both nested
 under `deliveries/delivery-NNN/tasks/task-NNN/`; feature definition stays `SPEC.md`). No D-series or
-S-series diagram currently renders the `.aid/work-NNN/` tree at that depth.
+S-series diagram currently renders the `.aid/works/work-NNN/` tree at that depth.
 
 ---
 

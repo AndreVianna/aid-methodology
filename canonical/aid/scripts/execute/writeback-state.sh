@@ -154,7 +154,7 @@ set -u
 # Defaults -- caller can override via environment for testing
 # ---------------------------------------------------------------------------
 # Work-level STATE.md (--pipeline target)
-STATE_FILE="${AID_STATE_FILE:-.aid/work/STATE.md}"
+STATE_FILE="${AID_STATE_FILE:-.aid/works/work/STATE.md}"
 
 # Work root (base for resolving delivery/task paths)
 # Derived from STATE_FILE parent when not overridden.
@@ -172,7 +172,7 @@ DELIVERY_STATE_FILE="${AID_DELIVERY_STATE_FILE:-}"
 
 # Issues directory: directory containing delivery-NNN-issues.md files
 # Defaults to the work directory (same dir as work STATE.md).
-DELIVERY_ISSUES_DIR="${AID_DELIVERY_ISSUES_DIR:-.aid/work}"
+DELIVERY_ISSUES_DIR="${AID_DELIVERY_ISSUES_DIR:-.aid/works/work}"
 
 # Lock directory -- defaults to derived per-call below (see acquire_lock)
 LOCK_DIR="${AID_LOCK_DIR:-}"
@@ -1260,7 +1260,7 @@ mode_append_issue() {
 
     # Use work-dir-based issues path when DELIVERY_ISSUES_DIR is default
     # and WORK_DIR is resolvable, for consistency with path resolution.
-    if [[ "$DELIVERY_ISSUES_DIR" == ".aid/work" && -n "$AID_STATE_FILE" ]]; then
+    if [[ "$DELIVERY_ISSUES_DIR" == ".aid/works/work" && -n "$AID_STATE_FILE" ]]; then
         resolve_work_dir
         issues_file="${WORK_DIR}/delivery-${padded_id}-issues.md"
     fi

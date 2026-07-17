@@ -32,12 +32,13 @@ Each technical section follows the same cycle:
 ```
 .aid/
   knowledge/               ← shared KB
-  work-NNN-{name}/
-    REQUIREMENTS.md
-    features/
-      feature-NNN-{name}/
-        SPEC.md            ← product (requirements + technical specification)
-        STATE.md           ← process state (section status, Q&A, loopbacks)
+  works/
+    work-NNN-{name}/
+      REQUIREMENTS.md
+      features/
+        feature-NNN-{name}/
+          SPEC.md            ← product (requirements + technical specification)
+          STATE.md           ← process state (section status, Q&A, loopbacks)
 ```
 
 ## How It Works
@@ -95,7 +96,7 @@ The agent is a **tech lead**, not an interviewer:
 ## Feedback Loops
 
 - **→ Discovery:** KB wrong → Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
-- **→ Interview:** Requirements wrong → Q&A to `.aid/{work}/STATE.md` `## Cross-phase Q&A`
+- **→ Interview:** Requirements wrong → Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
 - **→ Spike:** Investigation needed → pause, record, resume later
 - **→ Split/Merge:** Feature scope → create/merge feature folders
 

@@ -887,9 +887,31 @@ class TestFeature006Router(unittest.TestCase):
                       "/aid-describe must be set as textContent of a code element")
 
     def test_f6e_empty_state_verify_step_present(self):
-        # Step 3: verify step is present
-        self.assertIn('work-NNN-', self.src,
-                      "Empty-state must include work-NNN-* verification instruction")
+        # Step 3: verify step names the .aid/works/ container (work-016).
+        # RED-FAILS pre-fix: the help step named .aid/work-NNN-<name>/ (no works/).
+        self.assertIn('.aid/works/work-NNN-', self.src,
+                      "Empty-state help must reference .aid/works/work-NNN-<name>/ (work-016 AC-4)")
+
+    def test_f6e_empty_state_references_works_container(self):
+        # The live feature-006 empty-state heading names the .aid/works/ container.
+        # RED-FAILS pre-fix (it read "no AID works in .aid/ yet").
+        self.assertIn('no AID works in .aid/works/', self.src,
+                      "Live empty-state text must reference .aid/works/ (work-016 AC-4)")
+
+    def test_f6e_legacy_empty_state_markup_references_works(self):
+        # The legacy/dead #empty-state markup (hidden by feature-006) is updated
+        # for consistency. RED-FAILS pre-fix ("No works found in `.aid/`").
+        self.assertIn('No works found in <code>.aid/works/</code>', self.src,
+                      "Legacy #empty-state markup must reference .aid/works/ (work-016 AC-4)")
+
+    def test_client_fallback_path_uses_works_container(self):
+        # home.html's client-side per-work path fallback (browser twin of the
+        # reader per-work path re-derivation) must resolve to .aid/works/{workId}/.
+        # RED-FAILS pre-fix: the fallback was ('.aid/' + workId + '/STATE.md').
+        self.assertIn("'.aid/works/' + workId + '/STATE.md'", self.src,
+                      "Client fallback path must resolve to .aid/works/{workId}/STATE.md (work-016 AC-4)")
+        self.assertNotIn("'.aid/' + workId + '/STATE.md'", self.src,
+                         "The old .aid/{workId}/STATE.md client fallback must be gone (no dual path)")
 
     def test_f6e_empty_state_poll_interval_ref(self):
         # The empty-state must reference pollMs to show the live interval

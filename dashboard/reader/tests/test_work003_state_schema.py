@@ -678,7 +678,7 @@ class TestWorkPathFromPipeline(unittest.TestCase):
         """A flat-layout work whose frontmatter explicitly says pipeline.path:
         full (an unusual but legal override) must be honored, not silently
         replaced by the "lite" layout-detection default."""
-        work_dir = self.aid / "work-950-demo"
+        work_dir = self.aid / "works" / "work-950-demo"
         work_dir.mkdir(parents=True)
         (work_dir / "BLUEPRINT.md").write_text(
             "# Delivery BLUEPRINT -- delivery-001: Demo\n\n"
@@ -702,7 +702,7 @@ class TestWorkPathFromPipeline(unittest.TestCase):
     def test_flat_layout_default_fallback(self):
         """No pipeline.path frontmatter -> falls back to the flat-detect
         default ('lite')."""
-        work_dir = self.aid / "work-951-demo"
+        work_dir = self.aid / "works" / "work-951-demo"
         work_dir.mkdir(parents=True)
         (work_dir / "BLUEPRINT.md").write_text(
             "# Delivery BLUEPRINT -- delivery-001: Demo\n\n"
@@ -724,7 +724,7 @@ class TestWorkPathFromPipeline(unittest.TestCase):
     def test_hierarchical_layout_default_fallback(self):
         """No pipeline.path frontmatter on a hierarchical (deliveries/) work
         -> falls back to "full" (task-002 fix; previously left None)."""
-        work_dir = self.aid / "work-952-demo"
+        work_dir = self.aid / "works" / "work-952-demo"
         work_dir.mkdir(parents=True)
         (work_dir / "STATE.md").write_text(
             "## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8"
@@ -741,7 +741,7 @@ class TestWorkPathFromPipeline(unittest.TestCase):
                           "must default to 'full' (symmetric with the flat->'lite' default)")
 
     def test_hierarchical_layout_frontmatter_override(self):
-        work_dir = self.aid / "work-953-demo"
+        work_dir = self.aid / "works" / "work-953-demo"
         work_dir.mkdir(parents=True)
         (work_dir / "STATE.md").write_text(
             "---\npipeline:\n  path: lite\n  initiator: aid-create-api\n---\n\n"
@@ -827,7 +827,7 @@ class TestCrossTwinParity(unittest.TestCase):
         return _ser_work(model.works[0])
 
     def _write_frontmatter_work(self, work_id: str) -> None:
-        work_dir = self.aid / work_id
+        work_dir = self.aid / "works" / work_id
         work_dir.mkdir(parents=True)
         (work_dir / "BLUEPRINT.md").write_text(
             "# Delivery BLUEPRINT -- delivery-001: Demo\n\n"
@@ -874,7 +874,7 @@ class TestCrossTwinParity(unittest.TestCase):
         tolerance comment) -- Python's splitlines() already tolerated it, so
         only the Node side needed the fix; this test pins both directions."""
         work_id = "work-962-demo"
-        work_dir = self.aid / work_id
+        work_dir = self.aid / "works" / work_id
         work_dir.mkdir(parents=True)
         (work_dir / "BLUEPRINT.md").write_bytes(
             b"# Delivery BLUEPRINT -- delivery-001: Demo\r\n\r\n"
@@ -906,7 +906,7 @@ class TestCrossTwinParity(unittest.TestCase):
                           "CRLF must not silently degrade frontmatter parsing to Unknown")
 
     def _write_legacy_prose_work(self, work_id: str) -> None:
-        work_dir = self.aid / work_id
+        work_dir = self.aid / "works" / work_id
         work_dir.mkdir(parents=True)
         (work_dir / "BLUEPRINT.md").write_text(
             "# Delivery BLUEPRINT -- delivery-001: Demo\n\n"
@@ -941,7 +941,7 @@ class TestCrossTwinParity(unittest.TestCase):
     def _write_frontmatter_work_with_phase(self, work_id: str, phase_value: str) -> None:
         """Same shape as _write_frontmatter_work, with a parameterized `phase:`
         value (work-003-state-schema task-010 phase-enum parity coverage)."""
-        work_dir = self.aid / work_id
+        work_dir = self.aid / "works" / work_id
         work_dir.mkdir(parents=True)
         (work_dir / "BLUEPRINT.md").write_text(
             "# Delivery BLUEPRINT -- delivery-001: Demo\n\n"

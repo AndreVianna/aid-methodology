@@ -105,7 +105,7 @@ errors = []
 
 for w in model.works:
     # Always reconstruct work_dir from aid_root + work_id (work_path is triage source mode, not a path)
-    work_dir = os.path.join(aid_root, '.aid', w.work_id)
+    work_dir = os.path.join(aid_root, '.aid', 'works', w.work_id)
 
     has_requirements = os.path.isfile(os.path.join(work_dir, 'REQUIREMENTS.md'))
     has_spec = os.path.isfile(os.path.join(work_dir, 'SPEC.md'))
@@ -187,16 +187,22 @@ run_node_check() {
     local node_script="${TMP_ROOT}/pf9_check.mjs"
     mkdir -p "${TMP_ROOT}"
     cat > "${node_script}" << MJSEOF
-import { readRepo } from '${REPO_ROOT}/dashboard/server/reader.mjs';
+import { pathToFileURL } from 'node:url';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-const aidRoot  = process.argv[2];
+// Windows robustness: pass reader.mjs as an argv path (MSYS rewrites a POSIX
+// argv path to native form before node.exe sees it; a path baked into heredoc
+// source is NOT rewritten and breaks on Windows), resolved via a runtime
+// import(pathToFileURL(...)). Same rationale as test-task-state-transitions.sh.
+const readerPath = process.argv[2];
+const aidRoot = process.argv[3];
+const { readRepo } = await import(pathToFileURL(readerPath).href);
 const errors = [];
 const model = readRepo(aidRoot);
 
 for (const w of model.works) {
-    const workDir = join(aidRoot, '.aid', w.work_id);
+    const workDir = join(aidRoot, '.aid', 'works', w.work_id);
     const hasRequirements = existsSync(join(workDir, 'REQUIREMENTS.md'));
     const hasSpec = existsSync(join(workDir, 'SPEC.md'));
     const isConforming = hasRequirements || hasSpec;
@@ -245,7 +251,7 @@ MJSEOF
 
     local out rc
     set +e
-    out=$(node "${node_script}" "${aid_root}" 2>&1)
+    out=$(node "${node_script}" "${REPO_ROOT}/dashboard/server/reader.mjs" "${aid_root}" 2>&1)
     rc=$?
     set -e
 
@@ -283,7 +289,7 @@ build_degraded_fixture() {
 
     cp -r "${src}/." "${dst}"
 
-    local WORK_DIR="${dst}/.aid/work-001-running-parallel"
+    local WORK_DIR="${dst}/.aid/works/work-001-running-parallel"
 
     # Degrade REQUIREMENTS.md: remove the - **Name:** line -> title will be null
     if [[ -f "${WORK_DIR}/REQUIREMENTS.md" ]]; then
@@ -360,7 +366,7 @@ model = read_repo(aid_root)
 errors = []
 
 for w in model.works:
-    work_dir = os.path.join(aid_root, '.aid', w.work_id)
+    work_dir = os.path.join(aid_root, '.aid', 'works', w.work_id)
 
     has_requirements = os.path.isfile(os.path.join(work_dir, 'REQUIREMENTS.md'))
     has_spec = os.path.isfile(os.path.join(work_dir, 'SPEC.md'))
@@ -444,16 +450,22 @@ run_node_check_with_lane_proof() {
     local node_script="${TMP_ROOT}/pf9_check_lane.mjs"
     mkdir -p "${TMP_ROOT}"
     cat > "${node_script}" << MJSEOF
-import { readRepo } from '${REPO_ROOT}/dashboard/server/reader.mjs';
+import { pathToFileURL } from 'node:url';
 import { existsSync } from 'fs';
 import { join } from 'path';
 
-const aidRoot  = process.argv[2];
+// Windows robustness: pass reader.mjs as an argv path (MSYS rewrites a POSIX
+// argv path to native form before node.exe sees it; a path baked into heredoc
+// source is NOT rewritten and breaks on Windows), resolved via a runtime
+// import(pathToFileURL(...)). Same rationale as test-task-state-transitions.sh.
+const readerPath = process.argv[2];
+const aidRoot = process.argv[3];
+const { readRepo } = await import(pathToFileURL(readerPath).href);
 const errors = [];
 const model = readRepo(aidRoot);
 
 for (const w of model.works) {
-    const workDir = join(aidRoot, '.aid', w.work_id);
+    const workDir = join(aidRoot, '.aid', 'works', w.work_id);
     const hasRequirements = existsSync(join(workDir, 'REQUIREMENTS.md'));
     const hasSpec = existsSync(join(workDir, 'SPEC.md'));
     const isConforming = hasRequirements || hasSpec;
@@ -502,7 +514,7 @@ MJSEOF
 
     local out rc
     set +e
-    out=$(node "${node_script}" "${aid_root}" 2>&1)
+    out=$(node "${node_script}" "${REPO_ROOT}/dashboard/server/reader.mjs" "${aid_root}" 2>&1)
     rc=$?
     set -e
 
@@ -547,7 +559,7 @@ run_node_check   "${FIXTURE_FULL}" "positive-node"   "0"
 echo ""
 echo "--- SPEC-only coverage guard (work-006-lite-sample must be present and pass) ---"
 
-SPEC_WORK_DIR="${FIXTURE_FULL}/.aid/work-006-lite-sample"
+SPEC_WORK_DIR="${FIXTURE_FULL}/.aid/works/work-006-lite-sample"
 if [[ ! -d "${SPEC_WORK_DIR}" ]]; then
     fail "[spec-guard] work-006-lite-sample directory not found in fixture"
 elif [[ -f "${SPEC_WORK_DIR}/REQUIREMENTS.md" ]]; then
@@ -580,12 +592,14 @@ if [[ $HAS_NODE -eq 1 ]]; then
     spec_node_script="${TMP_ROOT}/spec_guard.mjs"
     mkdir -p "${TMP_ROOT}"
     cat > "${spec_node_script}" << SPECEOF
-import { readRepo } from '${REPO_ROOT}/dashboard/server/reader.mjs';
-const model = readRepo(process.argv[2]);
+import { pathToFileURL } from 'node:url';
+const readerPath = process.argv[2];
+const { readRepo } = await import(pathToFileURL(readerPath).href);
+const model = readRepo(process.argv[3]);
 const w = model.works.find(x => x.work_id === 'work-006-lite-sample');
 process.stdout.write((w && w.title) ? w.title : '');
 SPECEOF
-    spec_title_node=$(node "${spec_node_script}" "${FIXTURE_FULL}" 2>/dev/null)
+    spec_title_node=$(node "${spec_node_script}" "${REPO_ROOT}/dashboard/server/reader.mjs" "${FIXTURE_FULL}" 2>/dev/null)
     if [[ -n "${spec_title_node}" && "${spec_title_node}" != "lite-sample" ]]; then
         pass "[spec-guard] node: SPEC-only work title is non-null and non-slug: ${spec_title_node}"
     else

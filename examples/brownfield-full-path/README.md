@@ -161,9 +161,9 @@ TRIAGE result: **full path**. The skill proceeds to the full Interview state mac
 
 **The interview produces:**
 
-- `REQUIREMENTS.md` at `.aid/work-NNN/REQUIREMENTS.md` — the scope boundary and
+- `REQUIREMENTS.md` at `.aid/works/work-NNN/REQUIREMENTS.md` — the scope boundary and
   business requirements for this work item
-- A feature stub at `.aid/work-NNN/features/refund-workflow/SPEC.md` — the feature's
+- A feature stub at `.aid/works/work-NNN/features/refund-workflow/SPEC.md` — the feature's
   shell, ready for technical specification
 
 **Sample REQUIREMENTS.md structure:**
@@ -200,7 +200,7 @@ specification for each feature SPEC stub created by Interview.
 
 **What `aid-specify` does:**
 
-For each feature stub in `.aid/work-NNN/features/`, the `aid-architect` agent reads:
+For each feature stub in `.aid/works/work-NNN/features/`, the `aid-architect` agent reads:
 - The feature's `SPEC.md` stub (business requirements from Interview)
 - The relevant KB documents (especially `architecture.md`, `module-map.md`,
   `domain-glossary.md`, `schemas.md`, and `pipeline-contracts.md`)
@@ -246,7 +246,7 @@ sequences work into PR-sized deliveries, respecting dependencies.
 **What `aid-plan` does:**
 
 The `aid-architect` agent reads all feature SPECs and produces `PLAN.md` at
-`.aid/work-NNN/PLAN.md`. It identifies dependencies between features, breaks large
+`.aid/works/work-NNN/PLAN.md`. It identifies dependencies between features, breaks large
 features into deliveries, and assigns a priority sequence.
 
 For the Refund workflow (a single feature), the plan breaks it into two deliveries:
@@ -278,7 +278,7 @@ each delivery, creating the execution graph.
 **What `aid-detail` does:**
 
 For each delivery in `PLAN.md`, the `aid-architect` agent writes one `task-NNN.md` file
-per unit of work under `.aid/work-NNN/tasks/`. Each task file has:
+per unit of work under `.aid/works/work-NNN/tasks/`. Each task file has:
 
 - A **type** (RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, CONFIGURE)
 - A **scope** — which files it touches
@@ -343,7 +343,7 @@ For each task in the execution graph:
 **For OrderFlow's Refund feature, task-001 (MIGRATE) produces:**
 
 ```sql
--- .aid/work-003/migrations/0001_create_refunds.sql
+-- .aid/works/work-003/migrations/0001_create_refunds.sql
 CREATE TABLE refunds (
     id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id        UUID NOT NULL REFERENCES orders(id),
@@ -395,10 +395,10 @@ After completing all six steps for the Refund workflow, OrderFlow has:
 | Artifact | Location | Description |
 |----------|----------|-------------|
 | Knowledge Base (14 docs) | `.aid/knowledge/` | Permanent asset — reused for every future work item |
-| REQUIREMENTS.md | `.aid/work-003/` | Scope boundary and business requirements |
-| SPEC.md (Refund feature) | `.aid/work-003/features/refund-workflow/` | Full technical specification |
-| PLAN.md | `.aid/work-003/` | Delivery sequence with dependency mapping |
-| task-001 through task-010 | `.aid/work-003/tasks/` | Typed, PR-sized task files |
+| REQUIREMENTS.md | `.aid/works/work-003/` | Scope boundary and business requirements |
+| SPEC.md (Refund feature) | `.aid/works/work-003/features/refund-workflow/` | Full technical specification |
+| PLAN.md | `.aid/works/work-003/` | Delivery sequence with dependency mapping |
+| task-001 through task-010 | `.aid/works/work-003/tasks/` | Typed, PR-sized task files |
 | Migration file | Committed to the repo | PostgreSQL migration for `refunds` table |
 | `RefundService.js` | Committed to the repo | State machine + Stripe integration |
 | REST controllers | Committed to the repo | Three new API endpoints |

@@ -15,12 +15,13 @@ Each interview creates a *work* — a self-contained unit of scope:
 ```
 .aid/
   knowledge/                    <- shared KB (from Discovery)
-  work-NNN-{name}/              <- one work per interview
-    work `STATE.md` `## Interview State`           <- process (section status, Q&A, grade, review history)
-    REQUIREMENTS.md             <- product (stakeholder requirements)
-    features/
-      feature-NNN-{name}/
-        SPEC.md                 <- requirements side (from Interview) + tech spec (from Specify)
+  works/
+    work-NNN-{name}/              <- one work per interview
+      work `STATE.md` `## Interview State`           <- process (section status, Q&A, grade, review history)
+      REQUIREMENTS.md             <- product (stakeholder requirements)
+      features/
+        feature-NNN-{name}/
+          SPEC.md                 <- requirements side (from Interview) + tech spec (from Specify)
 ```
 
 Multiple works can coexist — a client requests auth now, reporting later. Each work has its own requirements and features, sharing the same KB.
@@ -122,8 +123,8 @@ Downstream phases (Specify, Plan, Detail) can inject Q&A entries into work `STAT
 
 ## Output
 
-- `.aid/{work}/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections.
-- `.aid/{work}/work `STATE.md` `## Interview State`` — process tracking (section status, Q&A, grade, review history).
+- `.aid/works/{work}/REQUIREMENTS.md` — structured requirements with Change Log, 10 sections.
+- `.aid/works/{work}/work `STATE.md` `## Interview State`` — process tracking (section status, Q&A, grade, review history).
 
 Hand-off: run `/aid-define {work}` after requirements are approved.
 

@@ -144,7 +144,7 @@ function makeAidFixture(base) {
 }
 
 function makeWorkDir(aid, workId, stateContent) {
-  const wdir = join(aid, workId);
+  const wdir = join(aid, "works", workId);
   mkdirSync(wdir, { recursive: true });
   writeFileSync(join(wdir, "STATE.md"), stateContent, "utf8");
   return wdir;
@@ -156,7 +156,7 @@ function makeWorkDir(aid, workId, stateContent) {
 // dashboard/reader/tests/test_flattened_layout_parity.py's fixture shape --
 // used to exercise FIX 2 (parseDeliveryGate's singular-block fallback).
 function makeFlatWorkDir(aid, workId, stateContent) {
-  const wdir = join(aid, workId);
+  const wdir = join(aid, "works", workId);
   mkdirSync(wdir, { recursive: true });
   writeFileSync(join(wdir, "BLUEPRINT.md"), (
     "# Delivery BLUEPRINT -- delivery-001: Flat Delivery Title\n\n" +

@@ -37,7 +37,7 @@ For each deliverable, check its corresponding tasks:
 
 Render `references/reviewer-brief.md` with:
 - `{{SCOPE}}` = `whole-list`
-- `{{ARTIFACTS}}` = every `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)
+- `{{ARTIFACTS}}` = every `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (all deliveries) + the full `PLAN.md` (incl. Execution Graphs)
 - `{{CONTEXT}}` = `Re-review of all tasks for work-NNN after PLAN/SPEC changes.`
 
 Include in the prompt:

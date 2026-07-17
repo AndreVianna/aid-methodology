@@ -480,7 +480,7 @@ class TestReconcileIntegration(unittest.TestCase):
         """
         root, aid = _make_repo(self.tmp)
         # Main root work
-        work_main = aid / work_id
+        work_main = aid / "works" / work_id
         work_main.mkdir(parents=True, exist_ok=True)
         (work_main / "STATE.md").write_text(
             _state_text(updated=main_updated, tasks=main_tasks),
@@ -494,7 +494,7 @@ class TestReconcileIntegration(unittest.TestCase):
         work_id = "work-001-merge"
 
         # Main root work
-        work_main = aid / work_id
+        work_main = aid / "works" / work_id
         work_main.mkdir(parents=True, exist_ok=True)
         (work_main / "STATE.md").write_text(
             _state_text(
@@ -507,8 +507,8 @@ class TestReconcileIntegration(unittest.TestCase):
         # Simulate a second root with the same work_id (a worktree)
         wt_root = self.tmp / "worktree-feat"
         wt_aid = wt_root / ".aid"
-        (wt_aid / work_id).mkdir(parents=True, exist_ok=True)
-        (wt_aid / work_id / "STATE.md").write_text(
+        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        (wt_aid / "works" / work_id / "STATE.md").write_text(
             _state_text(
                 updated="2026-06-10T12:00:00Z",   # NEWER
                 tasks=[("task-001", "Done"), ("task-003", "Blocked")],
@@ -553,15 +553,15 @@ class TestReconcileIntegration(unittest.TestCase):
         """model.read.work_count reflects deduplicated count (1, not 2)."""
         root, aid = _make_repo(self.tmp)
         work_id = "work-002-count-check"
-        (aid / work_id).mkdir(parents=True, exist_ok=True)
-        (aid / work_id / "STATE.md").write_text(
+        (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        (aid / "works" / work_id / "STATE.md").write_text(
             _state_text(updated="2026-06-01T00:00:00Z", tasks=[("task-001", "Pending")]),
             encoding="utf-8",
         )
         wt_root = self.tmp / "wt"
         wt_aid = wt_root / ".aid"
-        (wt_aid / work_id).mkdir(parents=True, exist_ok=True)
-        (wt_aid / work_id / "STATE.md").write_text(
+        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        (wt_aid / "works" / work_id / "STATE.md").write_text(
             _state_text(updated="2026-06-02T00:00:00Z", tasks=[("task-001", "In Progress")]),
             encoding="utf-8",
         )
@@ -590,13 +590,13 @@ class TestReconcileIntegration(unittest.TestCase):
             tasks=[("task-001", "Done")],
         )
 
-        (aid / work_id).mkdir(parents=True, exist_ok=True)
-        (aid / work_id / "STATE.md").write_text(older_text, encoding="utf-8")
+        (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        (aid / "works" / work_id / "STATE.md").write_text(older_text, encoding="utf-8")
 
         wt_root = self.tmp / "wt2"
         wt_aid = wt_root / ".aid"
-        (wt_aid / work_id).mkdir(parents=True, exist_ok=True)
-        (wt_aid / work_id / "STATE.md").write_text(newer_text, encoding="utf-8")
+        (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+        (wt_aid / "works" / work_id / "STATE.md").write_text(newer_text, encoding="utf-8")
 
         import unittest.mock as mock
         with mock.patch(
@@ -658,8 +658,8 @@ class TestReconcileNeverThrows(unittest.TestCase):
             root = Path(d)
             root_, aid = _make_repo(root)
             work_id = "work-001-bad"
-            (aid / work_id).mkdir(parents=True, exist_ok=True)
-            (aid / work_id / "STATE.md").write_text(
+            (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+            (aid / "works" / work_id / "STATE.md").write_text(
                 "## Pipeline Status\n\n- **Lifecycle",  # truncated
                 encoding="utf-8",
             )
@@ -677,15 +677,15 @@ class TestReconcileNeverThrows(unittest.TestCase):
             work_id = "work-001-nostate"
 
             # Main root has STATE.md
-            (aid / work_id).mkdir(parents=True, exist_ok=True)
-            (aid / work_id / "STATE.md").write_text(
+            (aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
+            (aid / "works" / work_id / "STATE.md").write_text(
                 _state_text(updated="2026-06-10T00:00:00Z", tasks=[("task-001", "Done")]),
                 encoding="utf-8",
             )
 
             # Second root has no STATE.md
             wt_aid = Path(d) / "wt" / ".aid"
-            (wt_aid / work_id).mkdir(parents=True, exist_ok=True)
+            (wt_aid / "works" / work_id).mkdir(parents=True, exist_ok=True)
             # Deliberately omit STATE.md
 
             with mock.patch(
@@ -714,8 +714,8 @@ class TestReconcileDistinctWorks(unittest.TestCase):
             root_, aid = _make_repo(root)
 
             for wid in ["work-001-alpha", "work-002-beta"]:
-                (aid / wid).mkdir(parents=True, exist_ok=True)
-                (aid / wid / "STATE.md").write_text(
+                (aid / "works" / wid).mkdir(parents=True, exist_ok=True)
+                (aid / "works" / wid / "STATE.md").write_text(
                     _state_text(updated="2026-06-10T00:00:00Z", tasks=[("task-001", "Done")]),
                     encoding="utf-8",
                 )

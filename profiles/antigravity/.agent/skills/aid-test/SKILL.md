@@ -48,8 +48,13 @@ Print the `[State: NAME] -- {purpose}` entry line on each state.
    -> scope target / kind / threshold first.
 4. **Classify complexity (model + effort):** simple run -> `aid-reviewer` at **sonnet /
    medium**; deep security/perf analysis -> **opus / high**. Verifier tier >= producer.
-5. **Allocate the work folder + STATE** (`pipeline.path: lite`, `initiator: aid-test`,
-   `lifecycle: Running`, `active_skill: aid-test`; `phase` not driven).
+5. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
+   the gate (`.agent/aid/templates/work-initiation-gate.md`):
+   `bash .agent/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
+   route to the chosen work's resume door and STOP (allocate nothing); on **new work**
+   allocate (`pipeline.path: lite`, `initiator: aid-test`, `lifecycle: Running`,
+   `active_skill: aid-test`; `phase` not driven).
 
 **Advance:** RUN.
 

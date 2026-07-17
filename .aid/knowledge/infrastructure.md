@@ -27,6 +27,7 @@ contracts:
   - "All four version carriers (VERSION, package.json, pyproject.toml, tag) must agree or the release gate fails"
   - "github-release runs before npm/PyPI so the authoritative artifact channel exists first"
 changelog:
+  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the dashboard-reader and project-management-tooling STATE.md paths to `.aid/works/work-NNN-*/`.
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
 
@@ -228,7 +229,7 @@ The one component AID *runs* is a local, read-only web dashboard over `.aid/` pi
 CONFIRMED in `bin/aid` (dashboard help block) + `installer-tests.yml` dashboard smoke test
 (exit-code contract).
 
-The dashboard reader (`dashboard/reader/*.py`) parses `.aid/work-NNN/STATE.md`
+The dashboard reader (`dashboard/reader/*.py`) parses `.aid/works/work-NNN/STATE.md`
 (Pipeline Status + Tasks Status) plus the KB — `STATE.md` is the tracking spine the reader and
 `/aid-execute` both consume.
 
@@ -237,7 +238,7 @@ The dashboard reader (`dashboard/reader/*.py`) parses `.aid/work-NNN/STATE.md`
 ## Project Management Tooling
 
 **No external project-management tool** (Jira/Azure Boards/etc.). All work, tasks, and
-deliverables are tracked **in-repo** in `.aid/work-NNN-*/STATE.md` files (the tracking spine),
+deliverables are tracked **in-repo** in `.aid/works/work-NNN-*/STATE.md` files (the tracking spine),
 plus `.aid/knowledge/STATE.md` for cross-phase process state. GitHub Issue templates exist
 (`.github/ISSUE_TEMPLATE/feedback.yml`) for user feedback, and `.github/dependabot.yml` tracks
 dependency updates. CONFIRMED via `.aid/settings.yml` + the `.github/` listing.

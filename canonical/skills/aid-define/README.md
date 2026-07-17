@@ -10,18 +10,19 @@ Decompose approved requirements into discrete feature folders and cross-referenc
 
 ## Precondition
 
-`## Interview State: Approved` must be present in `.aid/{work}/STATE.md`. Run `/aid-describe {work}` first if requirements are not yet approved.
+`## Interview State: Approved` must be present in `.aid/works/{work}/STATE.md`. Run `/aid-describe {work}` first if requirements are not yet approved.
 
 ## Workspace
 
 ```
 .aid/
   knowledge/                    <- shared KB (from Discovery)
-  work-NNN-{name}/
-    REQUIREMENTS.md             <- approved (produced by /aid-describe)
-    features/
-      feature-NNN-{name}/
-        SPEC.md                 <- requirements side (from Interview) + tech spec (from /aid-specify)
+  works/
+    work-NNN-{name}/
+      REQUIREMENTS.md             <- approved (produced by /aid-describe)
+      features/
+        feature-NNN-{name}/
+          SPEC.md                 <- requirements side (from Interview) + tech spec (from /aid-specify)
 ```
 
 ## When to Use
@@ -69,8 +70,8 @@ Cross-reference complete. The work is ready for `/aid-specify`.
 
 ## Output
 
-- `.aid/{work}/features/feature-NNN-{name}/SPEC.md` — per-feature requirements side (description, user stories, priority, acceptance criteria).
-- `.aid/{work}/STATE.md ## Interview State` — cross-reference grade and Q&A entries.
+- `.aid/works/{work}/features/feature-NNN-{name}/SPEC.md` — per-feature requirements side (description, user stories, priority, acceptance criteria).
+- `.aid/works/{work}/STATE.md ## Interview State` — cross-reference grade and Q&A entries.
 
 ## Feedback Loops
 

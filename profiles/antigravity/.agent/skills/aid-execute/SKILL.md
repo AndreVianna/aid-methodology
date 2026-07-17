@@ -35,16 +35,16 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 2. If work arg not provided (or shorthand): if single work exists → auto-select; if multiple works → list them, ask user to choose
 3. Read second arg (or first arg when shorthand): the `task-NNN` identifier; also resolve `delivery-NNN` from the task identifier or from the Source field
 4. **Detect the layout** (per-work, presence-based; additive — does not change the full-path resolution below):
-   - **Full path (nested):** `.aid/{work}/deliveries/` exists → tasks live at `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`.
-   - **Flat path (feature-001, single-delivery):** a work-root `BLUEPRINT.md` present AND `.aid/{work}/tasks/task-NNN/DETAIL.md` exists directly under the work root AND no `deliveries/` wrapper under it → the delivery is always the synthesized `delivery-001` (no per-task `STATE.md`; task mutable cells live in the work-root `STATE.md § ### Tasks lifecycle` instead — see `## Workspace` below).
+   - **Full path (nested):** `.aid/works/{work}/deliveries/` exists → tasks live at `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`.
+   - **Flat path (feature-001, single-delivery):** a work-root `BLUEPRINT.md` present AND `.aid/works/{work}/tasks/task-NNN/DETAIL.md` exists directly under the work root AND no `deliveries/` wrapper under it → the delivery is always the synthesized `delivery-001` (no per-task `STATE.md`; task mutable cells live in the work-root `STATE.md § ### Tasks lifecycle` instead — see `## Workspace` below).
 5. Find the task definition at the layout-appropriate path from step 4.
 6. Task not found → **STOP.** List available tasks.
 
 ### Check 2: Read Task
 
 Read the task definition from:
-- **Full path:** `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
-- **Flat path:** `.aid/{work}/tasks/task-NNN/DETAIL.md`
+- **Full path:** `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
+- **Flat path:** `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
 
 It has 6 sections:
 - **Title** — what this task does
@@ -163,19 +163,19 @@ KB docs are relevant to this task, then load them. Let the INDEX guide you.
 
 **Always load (not KB):**
 - Task definition — primary prompt:
-  - Full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
-  - Flat path: `.aid/{work}/tasks/task-NNN/DETAIL.md`
+  - Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`
+  - Flat path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md`
 - Task mutable state (State, Review, Elapsed, Notes):
-  - Full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
-  - Flat path: work-root `.aid/{work}/STATE.md § ### Tasks lifecycle` row for `task-NNN`
+  - Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md`
+  - Flat path: work-root `.aid/works/{work}/STATE.md § ### Tasks lifecycle` row for `task-NNN`
 - Feature / architectural spec:
-  - Full path: `.aid/{work}/features/{feature}/SPEC.md` — Technical Specification
-  - Flat path: work-root `.aid/{work}/SPEC.md` — the single feature's Technical Specification
-- `.aid/{work}/PLAN.md` — delivery context and **Execution Graph** (dependencies and parallelism;
+  - Full path: `.aid/works/{work}/features/{feature}/SPEC.md` — Technical Specification
+  - Flat path: work-root `.aid/works/{work}/SPEC.md` — the single feature's Technical Specification
+- `.aid/works/{work}/PLAN.md` — delivery context and **Execution Graph** (dependencies and parallelism;
   flat path: the top-level `## Execution Graph`, single delivery)
 
 **Load if exists:**
-- `.aid/{work}/known-issues.md` — issues in code the task touches
+- `.aid/works/{work}/known-issues.md` — issues in code the task touches
 
 ## Dispatch
 
@@ -207,21 +207,22 @@ dispatch in this skill.
 .aid/
   knowledge/                ← shared KB (via INDEX.md)
     STATE.md                ← Q&A, Review History (settings -> .aid/settings.yml)
-  work-NNN-{name}/
-    STATE.md                ← work-level pipeline header (AUTHORED); derived views (read-only)
-    PLAN.md                 ← delivery context (full path)
-    SPEC.md                 ← work definition + delivery/task graph (lite path)
-    known-issues.md         ← issues to watch for
-    deliveries/
-      delivery-NNN/
-        STATE.md              ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
-        tasks/
-          task-NNN/
-            DETAIL.md         ← PRIMARY INPUT (task definition: Type, Scope, AC)
-            STATE.md          ← task mutable state: State, Review, Elapsed, Notes
-    features/
-      feature-NNN-{name}/
-        SPEC.md             ← architectural constraints (full path only)
+  works/
+    work-NNN-{name}/
+      STATE.md                ← work-level pipeline header (AUTHORED); derived views (read-only)
+      PLAN.md                 ← delivery context (full path)
+      SPEC.md                 ← work definition + delivery/task graph (lite path)
+      known-issues.md         ← issues to watch for
+      deliveries/
+        delivery-NNN/
+          STATE.md              ← delivery lifecycle (SD-8, AUTHORED) + gate + Q&A + derived task rollup
+          tasks/
+            task-NNN/
+              DETAIL.md         ← PRIMARY INPUT (task definition: Type, Scope, AC)
+              STATE.md          ← task mutable state: State, Review, Elapsed, Notes
+      features/
+        feature-NNN-{name}/
+          SPEC.md             ← architectural constraints (full path only)
 ```
 
 **Flat (single-delivery) layout — feature-001.** Detected by: a work-root
@@ -231,22 +232,23 @@ full path above (AC-9 — no regression):
 
 ```
 .aid/
-  work-NNN-{name}/                     (flat / single-delivery — no features/, no deliveries/)
-    STATE.md                ← work-level pipeline header (AUTHORED) + the promoted
-                               ## Delivery Lifecycle (### Tasks lifecycle) /
-                               ## Delivery Gate AUTHORED blocks (single writer;
-                               replaces delivery-NNN/STATE.md + per-task STATE.md)
-    REQUIREMENTS.md          ← requirements
-    SPEC.md                  ← the single feature spec (no features/ folder)
-    PLAN.md                  ← the single delivery's Deliverables + top-level
-                               ## Execution Graph (no ### delivery-NNN heading)
-    BLUEPRINT.md              ← the single delivery definition: objective, scope,
-                               Gate Criteria, task listing, dependencies
-    tasks/
-      task-NNN/
-        DETAIL.md            ← PRIMARY INPUT (task definition: Type, Scope, AC);
-                               NO per-task STATE.md — cells live in the work
-                               STATE.md § ### Tasks lifecycle instead
+  works/
+    work-NNN-{name}/                     (flat / single-delivery — no features/, no deliveries/)
+      STATE.md                ← work-level pipeline header (AUTHORED) + the promoted
+                                 ## Delivery Lifecycle (### Tasks lifecycle) /
+                                 ## Delivery Gate AUTHORED blocks (single writer;
+                                 replaces delivery-NNN/STATE.md + per-task STATE.md)
+      REQUIREMENTS.md          ← requirements
+      SPEC.md                  ← the single feature spec (no features/ folder)
+      PLAN.md                  ← the single delivery's Deliverables + top-level
+                                 ## Execution Graph (no ### delivery-NNN heading)
+      BLUEPRINT.md              ← the single delivery definition: objective, scope,
+                                 Gate Criteria, task listing, dependencies
+      tasks/
+        task-NNN/
+          DETAIL.md            ← PRIMARY INPUT (task definition: Type, Scope, AC);
+                                 NO per-task STATE.md — cells live in the work
+                                 STATE.md § ### Tasks lifecycle instead
 ```
 
 Branch is synthesized `aid/{work}-delivery-001` (Check 5); delivery gate criteria
@@ -336,7 +338,7 @@ bash .agent/aid/scripts/execute/writeback-state.sh \
 **Recommendation:** Option {N} because {reason}
 ```
 
-Write to `.aid/{work}/IMPEDIMENT-task-NNN.md`.
+Write to `.aid/works/{work}/IMPEDIMENT-task-NNN.md`.
 
 Resolution by type:
 - **kb-gap** → targeted `/aid-discover` → update KB → retry

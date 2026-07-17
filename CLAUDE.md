@@ -8,7 +8,7 @@ A full-lifecycle methodology for building software with AI agents
 ## Tracking discipline (IMPERATIVE)
 
 Every project, task, and deliverable is tracked in a state file — the work's
-`.aid/work-NNN-*/STATE.md` (plus `.aid/knowledge/STATE.md` for knowledge-base and
+`.aid/works/work-NNN-*/STATE.md` (plus `.aid/knowledge/STATE.md` for knowledge-base and
 cross-phase process state). Keeping it current is **not optional**:
 
 - **ANY and ALL** changes to the state of a project, task, or deliverable —

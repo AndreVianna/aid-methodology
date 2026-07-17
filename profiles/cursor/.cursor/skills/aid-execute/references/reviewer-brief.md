@@ -51,7 +51,7 @@ OUT-OF-SCOPE FINDINGS POLICY:
 DELIVERABLES:
   - Findings format: severity-tagged + source-tagged list (CODE | TASK | SPEC | KB)
   - Output location:
-      per-task:     `.aid/{work}/STATE.md ## Tasks State` row for this task
+      per-task:     `.aid/works/{work}/STATE.md ## Tasks State` row for this task
       per-delivery: `.aid/.temp/review-pending/execute-delivery-{N}.md` then aggregated
   - Severity scale: CRITICAL | HIGH | MEDIUM | LOW | MINOR (per grading-rubric.md)
   - Grade: per .cursor/aid/scripts/grade.sh; minimum resolved via

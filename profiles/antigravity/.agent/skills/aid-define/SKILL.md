@@ -28,7 +28,7 @@ Decompose approved `REQUIREMENTS.md` into feature folders, then cross-reference 
 result against the Knowledge Base and codebase. Produces per-feature `SPEC.md` stubs
 ready for `/aid-specify`.
 
-**Precondition:** `## Interview State: Approved` must be present in `.aid/{work}/STATE.md`.
+**Precondition:** `## Interview State: Approved` must be present in `.aid/works/{work}/STATE.md`.
 If requirements are not yet approved, run `/aid-describe {work}` first to gather and
 approve requirements.
 
@@ -112,7 +112,7 @@ Wait for response and proceed to State Detection for that work.
 ⚠️ **FILESYSTEM IS THE ONLY SOURCE OF TRUTH.**
 Do NOT rely on memory from previous runs. ALWAYS read the actual files on disk.
 
-All paths below are relative to `.aid/{work}/`.
+All paths below are relative to `.aid/works/{work}/`.
 
 ```plaintext
 Precondition: Interview State: Approved in STATE.md -- HALT if not met (see below)

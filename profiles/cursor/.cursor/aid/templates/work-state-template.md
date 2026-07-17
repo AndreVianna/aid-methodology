@@ -89,7 +89,7 @@ the ordered list at runtime; schemas.md carries an inline copy derived from this
 > **Phase:** Describe | Define | Specify | Plan | Detail | Execute | Deploy
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
-to impl to deploy. One STATE.md per `.aid/work-NNN-{name}/` directory. See also: per-delivery
+to impl to deploy. One STATE.md per `.aid/works/work-NNN-{name}/` directory. See also: per-delivery
 `delivery-NNN/STATE.md` (delivery lifecycle + gate + delivery-scoped Q&A + derived task rollup)
 and per-task `delivery-NNN/tasks/task-NNN/STATE.md` (mutable task cells).
 
@@ -224,7 +224,7 @@ different places.
      the delivery-gate closing step of `aid-execute` on this work's active branch, written via
      `writeback-state.sh --delivery-id 001 --block ...`. Distinct from per-task quick-check
      findings -- the gate aggregates those deferred [HIGH] rows (via
-     `.aid/{work}/delivery-001-issues.md`; see `.cursor/aid/templates/delivery-issues.md`) and runs
+     `.aid/works/{work}/delivery-001-issues.md`; see `.cursor/aid/templates/delivery-issues.md`) and runs
      a full grade.sh pass. The gate's criteria are read from this work's `BLUEPRINT.md § GATE
      CRITERIA`, NOT from this STATE.md. Left absent (section omitted) for full multi-delivery
      works, where each delivery-NNN/STATE.md carries its own gate block (unioned by the DERIVED

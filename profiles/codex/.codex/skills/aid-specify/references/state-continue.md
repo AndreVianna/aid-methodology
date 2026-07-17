@@ -39,7 +39,7 @@ Update section status to `In Discussion` in work STATE.md `## Features State`.
 - Use domain terms from `domain-glossary.md`
 - Call out explicitly if changing something that exists
 - **Known issues:** If codebase exploration reveals new issues in code this feature
-  touches, register them in `.aid/{work}/known-issues.md` before proposing.
+  touches, register them in `.aid/works/{work}/known-issues.md` before proposing.
   Check existing entries first to avoid duplicates. Check `tech-debt.md` — if already
   catalogued there, reference it: `See tech-debt.md #TD-NNN`.
 

@@ -317,7 +317,9 @@ scan_s5() {
 # ---------------------------------------------------------------------------
 compute_signal_i() {
     local folder_name="$1"
-    local state_md="${AID_DIR}/${folder_name}/STATE.md"
+    # Container model (work-016): scan_s6 enumerates "${AID_DIR}"/works/*/, so a
+    # folder_name (basename) resolves to its STATE.md UNDER the works/ container.
+    local state_md="${AID_DIR}/works/${folder_name}/STATE.md"
 
     # No STATE.md → unevaluable → fail
     if [[ ! -f "$state_md" ]]; then
@@ -448,7 +450,8 @@ compute_signal_i() {
 # ---------------------------------------------------------------------------
 compute_signal_ii() {
     local folder_name="$1"
-    local state_md="${AID_DIR}/${folder_name}/STATE.md"
+    # Container model (work-016): STATE.md lives under the .aid/works/ container.
+    local state_md="${AID_DIR}/works/${folder_name}/STATE.md"
 
     [[ ! -f "$state_md" ]] && { echo "fail:no STATE.md"; return 0; }
 
@@ -527,7 +530,8 @@ compute_signal_ii() {
 # in the explicit-confirm prompt). Never gates; just informs the user.
 # ---------------------------------------------------------------------------
 compute_status_note() {
-    local state_md="${AID_DIR}/$1/STATE.md"
+    # Container model (work-016): STATE.md lives under the .aid/works/ container.
+    local state_md="${AID_DIR}/works/$1/STATE.md"
     [[ -f "$state_md" ]] || { echo "no STATE.md"; return 0; }
     local s
     s=$(grep -m1 '^> \*\*Status:\*\*' "$state_md" 2>/dev/null) || s=""
@@ -540,14 +544,14 @@ compute_status_note() {
 }
 
 # ---------------------------------------------------------------------------
-# S6: .aid/work-*/ folders
+# S6: .aid/works/*/ folders
 # Every work folder is offered (never silently hidden); the (i)/(ii) signals are
 # informational context only. The single hard exclusion is the work folder whose
 # branch is currently checked out (is_active_folder). The user confirms each.
 # ---------------------------------------------------------------------------
 scan_s6() {
     local folder_path
-    for folder_path in "${AID_DIR}"/work-*/; do
+    for folder_path in "${AID_DIR}"/works/*/; do
         [[ -d "$folder_path" ]] || continue
         local folder_name
         folder_name=$(basename "$folder_path")

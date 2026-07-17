@@ -294,7 +294,7 @@ class DeliverableRef:
 
 @dataclass
 class WorkModel:
-    """Level-2 work folder state. One per .aid/work-NNN-*/ directory.
+    """Level-2 work folder state. One per .aid/works/work-NNN-*/ directory.
 
     Retention = folder persistence (FR12): the model contains exactly the work
     folders that exist on disk; completed and in-flight works are represented
@@ -406,7 +406,7 @@ class RawStateRef:
 
     text:     whole work STATE.md verbatim (reused from memory, no re-read)
     byte_len: len(text) in bytes (corroborates NFR4 payload budget)
-    path:     '.aid/{work}/STATE.md' -- read-only caption label, NOT an edit link
+    path:     '.aid/works/{work}/STATE.md' -- read-only caption label, NOT an edit link
     """
     text: str
     byte_len: int
@@ -478,7 +478,7 @@ class RepoModel:
     RepoModel
     +-- tool:  ToolInfo         Level 0 -- machine CLI (FR7)
     +-- repo:  RepoInfo         Level 1 -- project / .aid/ + KB-state hook
-    +-- works: list[WorkModel]  Level 2 -- one per .aid/work-NNN-*/ folder (FR12)
+    +-- works: list[WorkModel]  Level 2 -- one per .aid/works/work-NNN-*/ folder (FR12)
     +-- read:  ReadMeta         provenance of THIS read pass
     """
     tool: ToolInfo

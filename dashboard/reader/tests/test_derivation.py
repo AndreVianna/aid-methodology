@@ -60,7 +60,7 @@ def make_task(status: TaskStatus, task_id: str = "task-001") -> TaskModel:
 
 
 def make_work_dir(root: Path, work_id: str = "work-001-test") -> Path:
-    wd = root / ".aid" / work_id
+    wd = root / ".aid" / "works" / work_id
     wd.mkdir(parents=True, exist_ok=True)
     return wd
 

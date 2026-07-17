@@ -30,7 +30,7 @@ RUBRIC: canonical/aid/templates/grading-rubric.md (universal severity → grade 
     - Every Ready feature is assigned to a delivery OR explicitly Deferred
     - Sequence respects KB architecture (no delivery requires a not-yet-built dependency)
     - Cross-cutting risks only if real
-    - Known-issues from `.aid/{work}/known-issues.md` Critical/High addressed (fix-first delivery or sequenced)
+    - Known-issues from `.aid/works/{work}/known-issues.md` Critical/High addressed (fix-first delivery or sequenced)
 
 OUT OF SCOPE (do NOT grade against):
   - Per-task breakdown — that's /aid-detail's domain (a delivery has no "tasks" yet at /aid-plan time)

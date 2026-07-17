@@ -1,7 +1,7 @@
 # Plan -- {Work Name}
 
 [!NOTE]
-This is the FLATTENED single-delivery `PLAN.md` template: `.aid/work-NNN-{name}/PLAN.md`, used
+This is the FLATTENED single-delivery `PLAN.md` template: `.aid/works/work-NNN-{name}/PLAN.md`, used
 when the work has exactly one feature and one delivery (no `features/` folder, no
 `deliveries/`/`delivery-NNN/` wrapper -- feature-001). It carries the plan's single
 `## Deliverables` entry plus a top-level `## Execution Graph`. The delivery's own objective,

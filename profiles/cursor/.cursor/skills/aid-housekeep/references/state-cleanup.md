@@ -124,7 +124,7 @@ Print:
 > **Tier definitions:**
 > - **Tier-0 (clearly safe):** gitignored scratch, heartbeat, cache, stray tool
 >   reports, unregistered build outputs. Default: **checked** `[x]`.
-> - **Tier-1 (work folders):** `.aid/work-*/` folders that passed signal (i)
+> - **Tier-1 (work folders):** `.aid/works/work-*/` folders that passed signal (i)
 >   (merged to `master`). Default: **unchecked** `[ ]`.
 > - **Tier-2 (review):** loose `.aid/` files that look hand-authored. Default:
 >   **unchecked** `[ ]`.
@@ -162,10 +162,10 @@ Tier-0 — clearly safe (pre-checked):
   [x] .aid/.temp/h5-interview-brief.md  (untracked)  — S1: gitignored temp scratch (.aid/.temp/)
   [x] .aid/.temp/review-pending/scope.md  (untracked)  — S1: gitignored temp scratch (.aid/.temp/)
   [x] .aid/.temp/summarize/spot-check-facts.txt  (untracked)  — S1: gitignored temp scratch (.aid/.temp/)
-  [x] .aid/work-002-canonical-generator/verify-deterministic-report.json  (untracked)  — S4: stray tool report (verify JSON)
+  [x] .aid/works/work-002-canonical-generator/verify-deterministic-report.json  (untracked)  — S4: stray tool report (verify JSON)
 
 Tier-1 — work folders offered for deletion (unchecked):
-  [ ] .aid/work-002-canonical-generator  (git rm)  — review: S6: work folder merged+concluded
+  [ ] .aid/works/work-002-canonical-generator  (git rm)  — review: S6: work folder merged+concluded
 
 Tier-2 — review: hand-authored files (unchecked):
   [ ] .aid/some-loose-file.md  (tracked)  — review: Tier-2: loose .aid/ file (hand-authored, not in a known scan root)
@@ -207,7 +207,7 @@ Example prompt (one per explicit-confirm folder):
 
 ```
 Use AskUserQuestion:
-"Work folder '.aid/work-003-example' shows a discrepancy:
+"Work folder '.aid/works/work-003-example' shows a discrepancy:
 
   Signal (i) — merged to master: PASS (PR is MERGED)
   Signal (ii) — STATE.md concluded: FAIL — <why: e.g. STATUS is 'Executing', no merged Deploy row>
@@ -217,7 +217,7 @@ This folder's PR appears merged, but its STATE.md does not show a Deployed
 STATE.md was not updated.
 
 Delete this folder?
-- Yes — add '.aid/work-003-example' to the deletion set (git rm)
+- Yes — add '.aid/works/work-003-example' to the deletion set (git rm)
 - No — skip this folder (leave it on disk)"
 ```
 

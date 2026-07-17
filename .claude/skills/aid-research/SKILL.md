@@ -52,9 +52,14 @@ on each state.
    <=1 web source) -> `aid-researcher` at **sonnet / medium**; standard/complex (broad
    options analysis, deep traversal, many web sources, a spike) -> **opus / high**.
    Verifier tier is always >= producer tier.
-4. **Allocate the work folder + STATE.** New `work-{NNN+1}` under `.aid/`; slug from the
-   question. Copy `.claude/aid/templates/work-state-template.md` to
-   `.aid/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,
+4. **Consult the Work Initiation Gate, then allocate the work folder + STATE.** First run
+   the gate (`.claude/aid/templates/work-initiation-gate.md`):
+   `bash .claude/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
+   Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the
+   enumerated list; on **continuation** route to the chosen work's resume door and STOP
+   (allocate nothing); on **new work** allocate: new `work-{NNN+1}` under `.aid/works/`;
+   slug from the question. Copy `.claude/aid/templates/work-state-template.md` to
+   `.aid/works/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,
    `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,
    `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree
    only if a spike is later authorized (INVESTIGATE).
@@ -100,7 +105,7 @@ throwaway spike (isolated), fold the finding into `RESEARCH.md`, continue. On **
    `.aid/.temp/review-pending/<work>-verify.md`.
 3. **Grade the response:** `bash .claude/aid/scripts/grade.sh --explain <ledger>`. Not
    clean -> loop back to INVESTIGATE for the researcher to revise. **Circuit-breaker: 3
-   cycles** -> write `.aid/{work}/IMPEDIMENT-research.md`, set STATE `lifecycle: Blocked`,
+   cycles** -> write `.aid/works/{work}/IMPEDIMENT-research.md`, set STATE `lifecycle: Blocked`,
    surface it.
 
 (Single grade -- the response *is* the deliverable; there is no separate target artifact.)

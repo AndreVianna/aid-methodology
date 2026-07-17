@@ -892,7 +892,7 @@ footer {
 
   <!-- Empty / no works state (legacy; hidden by feature-006 render path) -->
   <div class="empty-state" id="empty-state" style="display:none">
-    <p>No works found in <code>.aid/</code>. Start a pipeline to see progress here.</p>
+    <p>No works found in <code>.aid/works/</code>. Start a pipeline to see progress here.</p>
   </div>
 
   <!-- Initial loading state -->
@@ -1796,7 +1796,7 @@ footer {
     card.appendChild(kicker);
 
     var h3 = document.createElement('h3');
-    h3.textContent = 'This repo has no AID works in .aid/ yet.';
+    h3.textContent = 'This repo has no AID works in .aid/works/ yet.';
     card.appendChild(h3);
 
     var intro = document.createElement('p');
@@ -1807,7 +1807,7 @@ footer {
     var steps = [
       null, // step 1 is special (has <code>)
       'Follow the interview prompts to capture requirements.',
-      'Verify: a work-NNN-* folder now appears under .aid/, and this page shows a card for it on the next refresh (within the poll interval).'
+      'Verify: a work-NNN-* folder now appears under .aid/works/, and this page shows a card for it on the next refresh (within the poll interval).'
     ];
 
     // Step 1: special — contains code element
@@ -1816,7 +1816,7 @@ footer {
     var codeEl = document.createElement('code');
     codeEl.textContent = '/aid-describe';
     li1.appendChild(codeEl);
-    li1.appendChild(document.createTextNode(' — begins a new work (creates .aid/work-NNN-<name>/ + its STATE.md).'));
+    li1.appendChild(document.createTextNode(' — begins a new work (creates .aid/works/work-NNN-<name>/ + its STATE.md).'));
     ol.appendChild(li1);
 
     // Steps 2, 3
@@ -3236,7 +3236,7 @@ footer {
     var captionEl = document.createElement('p');
     captionEl.className = 'meta';
     captionEl.style.cssText = 'font-size:0.8rem;color:var(--text-dim);margin:0.3rem 0 0.5rem;';
-    var sourcePath = rawState.path ? rawState.path : ('.aid/' + workId + '/STATE.md');
+    var sourcePath = rawState.path ? rawState.path : ('.aid/works/' + workId + '/STATE.md');
     captionEl.textContent = 'source: ' + sourcePath + ' · read-only';
     card.appendChild(captionEl);
 

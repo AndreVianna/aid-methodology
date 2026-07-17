@@ -151,7 +151,7 @@ def _build_lite_flat_work(aid: Path, work_id: str) -> Path:
     AUTHORED directly in the work-root STATE.md (the work IS the delivery for a
     lite work -- work-001-add-deliveries-folder task-001/task-003).
     """
-    work_dir = aid / work_id
+    work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
     (work_dir / "BLUEPRINT.md").write_text(
         "# Delivery BLUEPRINT -- delivery-001: Lite-flat delivery\n\n"
@@ -193,7 +193,7 @@ def _build_full_nested_work(aid: Path, work_id: str) -> Path:
     fixture shape: BLUEPRINT.md at the delivery level, DETAIL.md at the task
     level -- reader.py's hierarchical path reads the delivery title from
     BLUEPRINT.md, never SPEC.md)."""
-    work_dir = aid / work_id
+    work_dir = aid / "works" / work_id
     work_dir.mkdir(parents=True, exist_ok=True)
     (work_dir / "STATE.md").write_text(_PIPELINE_STATE_BLOCK, encoding="utf-8")
 

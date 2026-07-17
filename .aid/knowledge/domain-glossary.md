@@ -27,6 +27,7 @@ intent: |
   particular in AID; the canonical reference for naming. Concept Spine + supporting lexicon.
 contracts: []
 changelog:
+  - 2026-07-16: work-016 .aid/works/ container relocation -- updated the Work spine-concept definition and the Work lexicon row to `.aid/works/work-NNN-*/`.
   - 2026-07-09: work-001 lite-skills refresh — removed the deleted Recipe/Slot spine concept; redefined Triage as the standalone /aid-triage router and Lite Path around the shortcut engine; added Shortcut and Shortcut Engine spine concepts and a Lexicon — Work Artifacts table; fixed the Task definition artifact (SPEC.md -> DETAIL.md) and the flat-Lite no-per-task-STATE.md accounting, the Describe/Define + Seasoned-Analyst + NFR-7 triage-extraction wording, the stale work-state-template section quote, and the summary(recipe) lexicon row.
   - 2026-07-09: Connectors subsystem refresh (housekeep KB-DELTA) — added the Connector Registry spine concept, the Lexicon — Connectors section, broadened MCP, corrected the KB seed count 14 -> 15, corrected PR #132 provenance.
   - 2026-06-27: aid-describe/aid-define split — rekeyed Triage to /aid-describe; added Seasoned-Analyst Engine, Describe / Define, Forward-Authored Seed, and Conformance Check spine concepts; strengthened Concept Spine (ubiquitous-language alias / greenfield seed keystone)
@@ -102,7 +103,7 @@ per-profile emission), AGENTS.md/CLAUDE.md (the per-profile context file).
 
 **Definition-as-used-here:** A self-contained unit of scope created by one Describe → Define pair (Phase 2 —
 the `aid-describe`→`aid-define` pair) on the full path, or by a single direct-entry shortcut on the Lite
-path, living at `.aid/work-NNN-{slug}/`. Each work owns its own
+path, living at `.aid/works/work-NNN-{slug}/`. Each work owns its own
 requirements, features, plan, deliveries, and tasks while sharing the project-wide Knowledge Base.
 Multiple works coexist (e.g. one per client request). "Work" is the top-level pipeline scope
 container, not a generic job.
@@ -823,7 +824,7 @@ lives).
 | Canonical | "standard / conventional" | the `canonical/` source-of-truth tree; the authority over `profiles/` |
 | Profile | a user/config profile | one of the five rendered host-tool install trees |
 | Delivery | a deployment/shipment | an ordered, independently shippable MVP grouping of features within a work |
-| Work | a generic job/effort | a self-contained pipeline scope unit at `.aid/work-NNN-*/` |
+| Work | a generic job/effort | a self-contained pipeline scope unit at `.aid/works/work-NNN-*/` |
 | Wave | an ocean wave / release wave | a parallel batch of dependency-ready tasks in the Execution Graph |
 | Grade | an academic mark assigned by a person | a value *computed* deterministically by `grade.sh` from severity tags, never hand-picked |
 | Lite | "lightweight version" | the shortcut-entered condensed path for small work — same artifacts, fewer phases |

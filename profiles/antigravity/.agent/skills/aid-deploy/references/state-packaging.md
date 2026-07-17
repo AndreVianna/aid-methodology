@@ -93,7 +93,7 @@ Print what was done:
    Tasks: {total count}
    Verification: ✅ Build + Tests + Lint
    Output: {what was produced}
-   Package file: .aid/{work}/packages/package-NNN-{slug}.md
+   Package file: .aid/works/{work}/packages/package-NNN-{slug}.md
    KB updates: {count} Q&A entries routed to .aid/knowledge/STATE.md
 ```
 
