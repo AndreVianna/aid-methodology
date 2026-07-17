@@ -20,7 +20,7 @@
 {"dst": ".cursor/aid/scripts/execute/writeback-state.sh", "profile": "cursor", "sha256": "13cfbc555131bd9f0b83b563effab5fbb721258035d8e52050ce82a402200109", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".cursor/aid/scripts/grade.sh", "profile": "cursor", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".cursor/aid/scripts/housekeep/branch-commit.sh", "profile": "cursor", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
-{"dst": ".cursor/aid/scripts/housekeep/cleanup-classify.sh", "profile": "cursor", "sha256": "eacd72967e481adea88eb5c7401f78b7bc339a3a052754f92fd434b6572bae7f", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
+{"dst": ".cursor/aid/scripts/housekeep/cleanup-classify.sh", "profile": "cursor", "sha256": "5e0e8d36ffd037677f2843e78df547c6be824e0041cfe5c76a21204d452784e0", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".cursor/aid/scripts/housekeep/housekeep-state.sh", "profile": "cursor", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-kb-index.sh", "profile": "cursor", "sha256": "3f298f8754ff59ce2434d6487ba1aa8bdc6154c4d5c6bf560e0ad4f292dbca7e", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".cursor/aid/scripts/kb/build-metrics.sh", "profile": "cursor", "sha256": "f0b750e67ac6faa05119c903801f8e51aace182937c6d8757e7ad5f448aa902a", "src": "canonical/scripts/kb/build-metrics.sh"}
