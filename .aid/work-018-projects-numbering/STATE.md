@@ -201,7 +201,7 @@ different places.
 
 | Task | State | Review | Elapsed | Notes |
 |------|-------|--------|---------|-------|
-| task-001 | Pending | -- | -- | -- |
+| task-001 | Done | quick-check pass (2 fixed, 1 accepted) | -- | -- |
 | task-002 | Pending | -- | -- | -- |
 
 ---

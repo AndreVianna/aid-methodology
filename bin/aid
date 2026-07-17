@@ -16,8 +16,9 @@
 #   aid add <tool>[,...]             Add tool(s) to the current project
 #   aid update [self]                Update to latest; inside repo = CLI + all tools; 'self' = CLI only
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
-#   aid projects [list|add|remove|help] [path] [--local|--shared] [--verbose]
-#                                    List, register, or unregister AID projects
+#   aid projects [list|add|remove|help] [path|N] [--local|--shared] [--verbose]
+#                                    List (numbered from 1), register, or unregister;
+#                                    remove accepts a list number (<N>) or a <path>
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -187,15 +188,19 @@ _aid_usage() {
         projects)
             printf 'aid projects [list] [--local|--shared] [--verbose]\n'
             printf 'aid projects add  [<path>] [--local|--shared]\n'
-            printf 'aid projects remove [<path>]\n'
+            printf 'aid projects remove [<path>|<N>]\n'
             printf '  List, register, or unregister AID projects in the registry.\n'
-            printf '  list (default): show all registered projects with state, tools, and tier.\n'
+            printf '  list (default): show all registered projects, numbered from 1, with state,\n'
+            printf '    tools, and tier.\n'
             printf '    The current directory is marked with "*" in the leading marker column.\n'
             printf '    Unregistered cwd with .aid/ present is shown as a footnote.\n'
             printf '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,\n'
             printf '    no tools are installed.  Idempotent.  Prints the tier written.\n'
-            printf '  remove [path=cwd]: unregister a project from the registry; no files removed.\n'
-            printf '    Works on stale/missing/no-aid entries.  Idempotent.\n'
+            printf '  remove [path=cwd|<N>]: unregister a project from the registry; no files removed.\n'
+            printf '    <N> (all-digits) targets the Nth row from '"'"'aid projects list'"'"'; N < 1 or\n'
+            printf '    N greater than the registered count errors to stderr with exit 2.  A <path>\n'
+            printf '    that does not resolve to a currently-registered project now errors (exit 2)\n'
+            printf '    instead of the prior idempotent no-op.\n'
             printf '  --local   force user tier for add\n'
             printf '  --shared  force shared tier for add\n'
             printf '  --verbose print extra detail\n'
@@ -2505,13 +2510,15 @@ _cmd_projects_list() {
     done < <(_registry_read_raw_union)
 
     # Column header.
-    printf '%-2s  %-45s  %-10s  %-20s  %s\n' " " "PATH" "STATE" "TOOLS" "TIER"
-    printf '%-2s  %-45s  %-10s  %-20s  %s\n' "--" "----" "-----" "-----" "----"
+    printf '%3s  %-2s  %-45s  %-10s  %-20s  %s\n' "#" " " "PATH" "STATE" "TOOLS" "TIER"
+    printf '%3s  %-2s  %-45s  %-10s  %-20s  %s\n' "---" "--" "----" "-----" "-----" "----"
 
     local _cwd_registered=0
     local _entry
+    local _num=0
     for _entry in "${_paths[@]+"${_paths[@]}"}"; do
         local _state _tools _tier _marker
+        _num=$((_num + 1))
         _state="$(_aid_project_state "$_entry")"
         _tools="$(_aid_project_tools "$_entry")"
         _tier="$(_which_tier_holds "$_entry")"
@@ -2522,8 +2529,8 @@ _cmd_projects_list() {
         fi
         # Truncate long tools string for display.
         local _tools_display="${_tools:--}"
-        printf '%-2s  %-45s  %-10s  %-20s  %s\n' \
-            "$_marker" "$_entry" "$_state" "$_tools_display" "$_tier"
+        printf '%3d  %-2s  %-45s  %-10s  %-20s  %s\n' \
+            "$_num" "$_marker" "$_entry" "$_state" "$_tools_display" "$_tier"
         if [[ "$_verbose" -eq 1 ]]; then
             local _reg_src
             if [[ "$_tier" == "shared" && "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
@@ -2629,33 +2636,57 @@ _cmd_projects_add() {
 _cmd_projects_remove() {
     local _raw_path="${1:-.}"
     local _verbose="${2:-0}"
-
-    # Canonicalize without requiring the directory to exist.
     local _canon
-    if _canon="$(cd "$_raw_path" 2>/dev/null && pwd)"; then
-        : # directory exists; use canonical path
-    else
-        # Directory absent (stale entry); use the raw path as-is after normalizing.
-        _canon="$_raw_path"
-    fi
 
-    # Unregister (idempotent; registry_unregister prints on real change).
-    # Check first so we can emit the idempotent no-op message ourselves.
-    local _primary_reg="${AID_STATE_HOME}/registry.yml"
-    local _user_reg="${HOME}/.aid/registry.yml"
-    local _found=0
-    if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_canon"; then
-        _found=1
-    elif [[ "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
-        if _registry_read_repos "$_user_reg" 2>/dev/null | grep -qxF "$_canon"; then
+    if [[ "$_raw_path" =~ ^[0-9]+$ ]]; then
+        # All-digits: always a 1-based index, never a path -- even if a folder of
+        # that literal name exists (AC-13).
+        local -a _paths=()
+        while IFS= read -r _p; do
+            [[ -n "$_p" ]] && _paths+=("$_p")
+        done < <(_registry_read_raw_union)
+        local _count="${#_paths[@]}"
+        # Parse base-10 explicitly: leading-zero forms containing an 8/9 (008, 009)
+        # would otherwise trip bash's octal-literal error under plain $((...)).
+        local _n=$((10#$_raw_path))
+        if [[ "$_n" -lt 1 ]]; then
+            echo "ERROR: aid projects: index must be a positive integer (>= 1): ${_raw_path}" >&2
+            exit 2
+        fi
+        if [[ "$_n" -gt "$_count" ]]; then
+            echo "ERROR: aid projects: no project numbered ${_n} (${_count} registered)" >&2
+            exit 2
+        fi
+        _canon="${_paths[$((_n - 1))]}"
+    else
+        # Contains a non-digit: a path. Canonicalize without requiring existence.
+        if _canon="$(cd "$_raw_path" 2>/dev/null && pwd)"; then
+            : # directory exists; use canonical path
+        else
+            # Directory absent (stale entry); use the raw path as-is after normalizing.
+            _canon="$_raw_path"
+        fi
+
+        local _primary_reg="${AID_STATE_HOME}/registry.yml"
+        local _user_reg="${HOME}/.aid/registry.yml"
+        local _found=0
+        if _registry_read_repos "$_primary_reg" 2>/dev/null | grep -qxF "$_canon"; then
             _found=1
+        elif [[ "$AID_STATE_HOME" != "${HOME}/.aid" ]]; then
+            if _registry_read_repos "$_user_reg" 2>/dev/null | grep -qxF "$_canon"; then
+                _found=1
+            fi
+        fi
+
+        if [[ "$_found" -eq 0 ]]; then
+            echo "ERROR: aid projects: '${_canon}' is not registered (nothing to remove; see 'aid projects list')" >&2
+            exit 2
         fi
     fi
 
+    # $_canon now names a currently-registered project; unregister it.
     registry_unregister "$_canon"
-    if [[ "$_found" -eq 0 ]]; then
-        printf "aid projects: '%s' was not registered (nothing to remove).\n" "$_canon"
-    elif [[ "$_verbose" -eq 1 ]]; then
+    if [[ "$_verbose" -eq 1 ]]; then
         printf "aid projects: removed '%s' from registry.\n" "$_canon"
     fi
     return 0
