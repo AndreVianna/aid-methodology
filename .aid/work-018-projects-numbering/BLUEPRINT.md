@@ -54,38 +54,38 @@ out-of-scope limitation.
 
 ## Gate Criteria
 
-- [ ] `aid projects list` prefixes each project row with a 1-based sequential number (first row
+- [x] `aid projects list` prefixes each project row with a 1-based sequential number (first row
   `1`) in `_registry_read_raw_union` order, with the `*` cwd marker preserved. *(SPEC AC-1)*
-- [ ] `aid projects remove K` for an all-digits `K` in `1 <= K <= N` unregisters the Kth listed
+- [x] `aid projects remove K` for an all-digits `K` in `1 <= K <= N` unregisters the Kth listed
   project and changes no other registry entry. *(SPEC AC-2)*
-- [ ] `aid projects remove <path>` (argument containing a non-digit) that canonicalizes to a
+- [x] `aid projects remove <path>` (argument containing a non-digit) that canonicalizes to a
   registered project unregisters that path exactly as before. *(SPEC AC-3)*
-- [ ] `aid projects remove K` with an all-digits `K > N` prints a clear stderr message, exits
+- [x] `aid projects remove K` with an all-digits `K > N` prints a clear stderr message, exits
   `2`, and leaves the registry unchanged. *(SPEC AC-4)*
-- [ ] `aid projects remove 1` against an empty registry prints a clear stderr message and exits
+- [x] `aid projects remove 1` against an empty registry prints a clear stderr message and exits
   `2`. *(SPEC AC-5)*
-- [ ] The number `list` shows for a project equals the number that `remove <N>` resolves to it
+- [x] The number `list` shows for a project equals the number that `remove <N>` resolves to it
   (single `_registry_read_raw_union` ordering). *(SPEC AC-6)*
-- [ ] `aid projects add <path>` behavior and output are unchanged. *(SPEC AC-7)*
-- [ ] `aid projects list` on an empty registry prints `(no projects registered)` with no
+- [x] `aid projects add <path>` behavior and output are unchanged. *(SPEC AC-7)*
+- [x] `aid projects list` on an empty registry prints `(no projects registered)` with no
   numbered rows. *(SPEC AC-8)*
-- [ ] The Bash and PowerShell twins produce identical output/behavior for `list` and
+- [x] The Bash and PowerShell twins produce identical output/behavior for `list` and
   `remove <N>` (including the error cases), both twins' usage/help + synopsis document
   `remove <N>` and the numbered list, and the `remove` usage line no longer claims
   "Idempotent"/"works on stale/missing" but states that an unregistered/nonexistent path now
   errors. *(SPEC AC-9)*
-- [ ] `aid projects remove 0` (or `00`) — an all-digits value `< 1` — prints a clear stderr
+- [x] `aid projects remove 0` (or `00`) — an all-digits value `< 1` — prints a clear stderr
   message ("index must be `>= 1`"), exits `2`, and leaves the registry unchanged. *(SPEC AC-10)*
-- [ ] `aid projects remove -1` is rejected upstream as an unknown flag with exit `2`, the
+- [x] `aid projects remove -1` is rejected upstream as an unknown flag with exit `2`, the
   registry unchanged (never classified as an index). *(SPEC AC-11)*
-- [ ] `aid projects remove <path>` (argument containing a non-digit) that does NOT canonicalize
+- [x] `aid projects remove <path>` (argument containing a non-digit) that does NOT canonicalize
   to a registered project prints a clear stderr message and exits `2` — not the former
   idempotent no-op. *(SPEC AC-12)*
-- [ ] A project whose folder is literally named `1` is removed via the path form (`aid projects
+- [x] A project whose folder is literally named `1` is removed via the path form (`aid projects
   remove ./1` or its absolute path), while `aid projects remove 1` resolves as an index and
   never targets that folder. *(SPEC AC-13)*
-- [ ] All tasks in delivery-001 are Done or Canceled.
-- [ ] All section-6 quality gates pass.
+- [x] All tasks in delivery-001 are Done or Canceled.
+- [x] All section-6 quality gates pass.
 
 ## Tasks
 
