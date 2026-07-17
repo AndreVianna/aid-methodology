@@ -1226,8 +1226,11 @@ assert_eq "$_P03c_COUNT" "1" "REG-P03c idempotent: only one registry entry after
 # ===========================================================================
 # REG-P04: 'aid projects remove' via full CLI.
 # (a) remove unregisters (tools/files untouched by remove).
-# (b) repairs a stale/missing entry (no .aid/ required).
-# (c) idempotent: remove an already-absent path -> no-op message, exit 0.
+# (b) repairs a stale/missing entry (no .aid/ required -- it is still a
+#     REGISTERED entry, just pointing at a directory that no longer exists).
+# (c) errors on a non-digit path that does NOT resolve to a currently-
+#     registered project -- exit 2, clear stderr message, registry unchanged
+#     (work-018/task-002 SPEC AC-12; replaces the former idempotent no-op).
 # ===========================================================================
 echo "--- REG-P04: aid projects remove behavior ---"
 _P04_HOME=$(mktemp -d "${TMP}/p04_home.XXXXXX")
@@ -1267,12 +1270,19 @@ assert_exit_eq "$RC" 0 "REG-P04b remove stale/missing entry -> exit 0"
 assert_file_not_contains "${_P04_AID_INST}/registry.yml" "${_P04b_STALE}" \
     "REG-P04b-02 stale entry removed from registry"
 
-# (c) Idempotent: remove a path not in registry -> no-op message, exit 0.
+# (c) Error: a non-digit path that does NOT resolve to a currently-registered
+#     project now errors -- exit 2, clear stderr message, registry unchanged
+#     (work-018/task-002 SPEC AC-12; this REPLACES the former idempotent
+#     "was not registered (nothing to remove)" no-op / exit 0).
 _P04c_ABSENT="${TMP}/p04c_absent_$(date +%s)"
+_P04c_REG_BEFORE="$(cat "${_P04_AID_INST}/registry.yml" 2>/dev/null || true)"
 run_projects "${_P04_AID_INST}" "${_P04_HOME}" projects remove "${_P04c_ABSENT}"
-assert_exit_eq "$RC" 0 "REG-P04c remove absent path -> exit 0 (idempotent)"
-assert_output_contains "$OUT" "was not registered" \
-    "REG-P04c-02 remove absent path -> no-op message emitted"
+assert_exit_eq "$RC" 2 "REG-P04c remove unregistered path -> exit 2 (no longer idempotent no-op)"
+assert_output_contains "$OUT" "is not registered (nothing to remove" \
+    "REG-P04c-02 remove unregistered path -> clear error message emitted"
+_P04c_REG_AFTER="$(cat "${_P04_AID_INST}/registry.yml" 2>/dev/null || true)"
+assert_eq "$_P04c_REG_AFTER" "$_P04c_REG_BEFORE" \
+    "REG-P04c-03 remove unregistered path -> registry unchanged"
 
 # ===========================================================================
 # REG-P05: Tier resolution via _aid_resolve_tier (inline harness).
@@ -1560,6 +1570,228 @@ assert_file_contains "${_P07_STATE}/registry.yml" "${_P07_PROJ_B}" \
     "REG-P07i after re-key: project B still in registry"
 assert_file_contains "${_P07_STATE}/registry.yml" "${_P07_NEW_PROJ}" \
     "REG-P07j after re-key: new project also in registry"
+
+# ===========================================================================
+# REG-P08: numbered 'aid projects list' + 'remove <N>' via full CLI
+# (work-018-projects-numbering / task-002; SPEC AC-1..AC-13, NFR-1).
+#
+# Fixture: three projects under ONE common parent directory so the lexical
+# sort order is deterministic (proj-a < proj-b < proj-c) regardless of locale
+# -- registry_register always writes with `sort -u`, so registry.yml (and
+# therefore _registry_read_raw_union / list / remove-by-index) is always in
+# full-path alphabetical order, never plain insertion order.
+#   (a) list: numbered rows 1/2/3 in that order (AC-1).
+#   (b) remove <K> in range: unregisters exactly the Kth listed entry,
+#       no other entry changes (AC-2, AC-6).
+#   (c) registered path-form removal still works (AC-3).
+#   (d) index > count / empty registry -> exit 2, registry unchanged (AC-4, AC-5).
+#   (e) index < 1 (0, 00) -> exit 2, registry unchanged (AC-10).
+#   (f) negative (-1) -> rejected upstream as an unknown flag, exit 2 (AC-11).
+#   (g) unregistered non-digit path -> exit 2, registry unchanged (AC-12).
+#   (h) leading-zero base-10 index (008) -> decimal 8, never a raw
+#       shell/octal error (NFR-1).
+#   (i) add unaffected (AC-7).
+#   (j) empty-registry list -> "(no projects registered)" (AC-8).
+#   (k) digit-named folder ("1"): bare index always wins over the folder
+#       name; the path form (absolute / "./1") targets the folder (AC-13).
+# ===========================================================================
+echo "--- REG-P08: numbered list + remove-by-index (task-018 AC-1..AC-13) ---"
+_P08_HOME=$(mktemp -d "${TMP}/p08_home.XXXXXX")
+_P08_AID_INST=$(newhome)
+setup_aid_home "${_P08_AID_INST}"
+
+# Three known-order projects under one common parent (deterministic sort key).
+_P08_ROOT=$(mktemp -d "${TMP}/p08_root.XXXXXX")
+_P08_A="${_P08_ROOT}/proj-a"
+_P08_B="${_P08_ROOT}/proj-b"
+_P08_C="${_P08_ROOT}/proj-c"
+mkdir -p "${_P08_A}/.aid" "${_P08_B}/.aid" "${_P08_C}/.aid"
+
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects add "${_P08_A}"
+assert_exit_eq "$RC" 0 "REG-P08-setup-a add proj-a -> exit 0"
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects add "${_P08_B}"
+assert_exit_eq "$RC" 0 "REG-P08-setup-b add proj-b -> exit 0"
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects add "${_P08_C}"
+assert_exit_eq "$RC" 0 "REG-P08-setup-c add proj-c -> exit 0"
+
+# (a) AC-1: numbered list, rows 1/2/3 in raw_union (alphabetical) order.
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects list
+assert_exit_eq "$RC" 0 "REG-P08a projects list (numbered) -> exit 0"
+_P08_LINE_A="$(printf '%s\n' "$OUT" | grep -F "${_P08_A}")"
+_P08_LINE_B="$(printf '%s\n' "$OUT" | grep -F "${_P08_B}")"
+_P08_LINE_C="$(printf '%s\n' "$OUT" | grep -F "${_P08_C}")"
+_P08_NUM_A="$(awk '{print $1}' <<< "$_P08_LINE_A")"
+_P08_NUM_B="$(awk '{print $1}' <<< "$_P08_LINE_B")"
+_P08_NUM_C="$(awk '{print $1}' <<< "$_P08_LINE_C")"
+assert_eq "$_P08_NUM_A" "1" "REG-P08b list: proj-a numbered row 1 (raw_union order)"
+assert_eq "$_P08_NUM_B" "2" "REG-P08c list: proj-b numbered row 2"
+assert_eq "$_P08_NUM_C" "3" "REG-P08d list: proj-c numbered row 3"
+assert_output_contains "$OUT" "#" "REG-P08e list: leading '#' index column header present"
+
+# (b) AC-2/AC-6: remove 2 (in range) unregisters exactly proj-b.
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove 2
+assert_exit_eq "$RC" 0 "REG-P08f remove 2 (in-range index) -> exit 0"
+assert_file_not_contains "${_P08_AID_INST}/registry.yml" "${_P08_B}" \
+    "REG-P08g remove 2: proj-b (row 2) gone from registry"
+assert_file_contains "${_P08_AID_INST}/registry.yml" "${_P08_A}" \
+    "REG-P08h remove 2: proj-a (row 1) untouched"
+assert_file_contains "${_P08_AID_INST}/registry.yml" "${_P08_C}" \
+    "REG-P08i remove 2: proj-c (row 3) untouched"
+
+# (c) AC-3: registered path-form removal still works (remove proj-c by path).
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove "${_P08_C}"
+assert_exit_eq "$RC" 0 "REG-P08j remove <path> (registered path form) -> exit 0"
+assert_file_not_contains "${_P08_AID_INST}/registry.yml" "${_P08_C}" \
+    "REG-P08k remove <path>: proj-c gone from registry"
+
+# (d) AC-4: index > count -> exit 2, registry unchanged. Only proj-a remains.
+_P08_REG_BEFORE="$(cat "${_P08_AID_INST}/registry.yml")"
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove 99
+assert_exit_eq "$RC" 2 "REG-P08l remove 99 (index > count) -> exit 2"
+assert_output_contains "$OUT" "no project numbered 99" \
+    "REG-P08m remove 99: clear stderr message"
+_P08_REG_AFTER="$(cat "${_P08_AID_INST}/registry.yml")"
+assert_eq "$_P08_REG_AFTER" "$_P08_REG_BEFORE" "REG-P08n remove 99: registry unchanged"
+
+# (d) AC-5: empty registry -> remove 1 -> exit 2.
+_P08E_HOME=$(mktemp -d "${TMP}/p08e_home.XXXXXX")
+_P08E_AID_INST=$(newhome)
+setup_aid_home "${_P08E_AID_INST}"
+run_projects "${_P08E_AID_INST}" "${_P08E_HOME}" projects remove 1
+assert_exit_eq "$RC" 2 "REG-P08o empty registry: remove 1 -> exit 2"
+assert_output_contains "$OUT" "no project numbered 1 (0 registered)" \
+    "REG-P08p empty registry: clear stderr message"
+
+# (j) AC-8: empty-registry list -> "(no projects registered)", no numbered rows.
+run_projects "${_P08E_AID_INST}" "${_P08E_HOME}" projects list
+assert_exit_eq "$RC" 0 "REG-P08q empty registry: list -> exit 0"
+assert_output_contains "$OUT" "(no projects registered)" \
+    "REG-P08r empty registry: '(no projects registered)' message"
+
+# (e) AC-10: index < 1 (0, 00) -> exit 2, registry unchanged.
+_P08_REG_BEFORE2="$(cat "${_P08_AID_INST}/registry.yml")"
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove 0
+assert_exit_eq "$RC" 2 "REG-P08s remove 0 -> exit 2"
+assert_output_contains "$OUT" "index must be a positive integer (>= 1)" \
+    "REG-P08t remove 0: clear stderr message"
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove 00
+assert_exit_eq "$RC" 2 "REG-P08u remove 00 -> exit 2"
+assert_output_contains "$OUT" "index must be a positive integer (>= 1)" \
+    "REG-P08v remove 00: clear stderr message"
+_P08_REG_AFTER2="$(cat "${_P08_AID_INST}/registry.yml")"
+assert_eq "$_P08_REG_AFTER2" "$_P08_REG_BEFORE2" "REG-P08w remove 0/00: registry unchanged"
+
+# (f) AC-11: remove -1 -> rejected upstream as an unknown flag, exit 2.
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove -1
+assert_exit_eq "$RC" 2 "REG-P08x remove -1 -> exit 2 (rejected upstream, never an index)"
+assert_output_contains "$OUT" "unknown flag: -1" \
+    "REG-P08y remove -1: rejected as unknown flag (not an index/path error)"
+
+# (g) AC-12: unregistered non-digit path -> exit 2, registry unchanged.
+_P08_REG_BEFORE3="$(cat "${_P08_AID_INST}/registry.yml")"
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove abc
+assert_exit_eq "$RC" 2 "REG-P08z remove abc (unregistered path) -> exit 2"
+assert_output_contains "$OUT" "'abc' is not registered (nothing to remove" \
+    "REG-P08aa remove abc: clear stderr message"
+_P08_REG_AFTER3="$(cat "${_P08_AID_INST}/registry.yml")"
+assert_eq "$_P08_REG_AFTER3" "$_P08_REG_BEFORE3" "REG-P08ab remove abc: registry unchanged"
+
+# (h) NFR-1: leading-zero base-10 index (008) -> decimal 8, never a raw
+#     shell/octal error. Only proj-a remains (count 1) so 8 is out of range --
+#     a clean exit-2 error is the expected (and acceptable) outcome; the point
+#     is the ERROR TEXT, never a bash "value too great for base" crash.
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects remove 008
+assert_exit_eq "$RC" 2 "REG-P08ac remove 008 -> exit 2 (parsed as decimal 8, out of range)"
+assert_output_contains "$OUT" "no project numbered 8" \
+    "REG-P08ad remove 008: base-10 decimal 8 in message (never octal)"
+assert_output_not_contains "$OUT" "value too great for base" \
+    "REG-P08ae remove 008: never a raw bash octal-literal error"
+
+# (i) AC-7: add unaffected.
+_P08_NEWPROJ=$(mktemp -d "${TMP}/p08_newproj.XXXXXX")
+mkdir -p "${_P08_NEWPROJ}/.aid"
+run_projects "${_P08_AID_INST}" "${_P08_HOME}" projects add "${_P08_NEWPROJ}"
+assert_exit_eq "$RC" 0 "REG-P08af add unaffected: exit 0"
+assert_output_contains "$OUT" "registered in" \
+    "REG-P08ag add unaffected: 'registered in' message printed"
+
+# (k) AC-13: digit-named folder -- bare index always wins; path form targets
+#     the folder. Two entries under one parent, sorted so the digit folder is
+#     NOT at position 1 (numeric '0' sorts before '1' in any ASCII collation).
+_P08D_HOME=$(mktemp -d "${TMP}/p08d_home.XXXXXX")
+_P08D_AID_INST=$(newhome)
+setup_aid_home "${_P08D_AID_INST}"
+_P08D_ROOT=$(mktemp -d "${TMP}/p08d_root.XXXXXX")
+_P08D_OTHER="${_P08D_ROOT}/0-other"
+_P08D_DIGIT="${_P08D_ROOT}/1"
+mkdir -p "${_P08D_OTHER}/.aid" "${_P08D_DIGIT}/.aid"
+run_projects "${_P08D_AID_INST}" "${_P08D_HOME}" projects add "${_P08D_OTHER}"
+assert_exit_eq "$RC" 0 "REG-P08ah digit-folder setup: add 0-other -> exit 0"
+run_projects "${_P08D_AID_INST}" "${_P08D_HOME}" projects add "${_P08D_DIGIT}"
+assert_exit_eq "$RC" 0 "REG-P08ai digit-folder setup: add '1'-named folder -> exit 0"
+
+# remove 1 (bare index): must hit list row 1 (0-other), NEVER the '1' folder.
+run_projects "${_P08D_AID_INST}" "${_P08D_HOME}" projects remove 1
+assert_exit_eq "$RC" 0 "REG-P08aj remove 1 (bare index) -> exit 0"
+assert_file_not_contains "${_P08D_AID_INST}/registry.yml" "${_P08D_OTHER}" \
+    "REG-P08ak remove 1: 0-other (row 1) removed by INDEX"
+assert_file_contains "${_P08D_AID_INST}/registry.yml" "${_P08D_DIGIT}" \
+    "REG-P08al remove 1: '1'-named folder untouched (index never resolves as path)"
+
+# remove ./1 (relative path form, run from the parent dir): targets the
+# folder literally named '1', by path.
+_P08D_REL_OUT=$(cd "${_P08D_ROOT}" && \
+    HOME="${_P08D_HOME}" AID_HOME="${_P08D_AID_INST}" AID_STATE_HOME="${_P08D_AID_INST}" \
+    AID_LIB_PATH="${_P08D_AID_INST}/lib/aid-install-core.sh" \
+    bash "${_P08D_AID_INST}/bin/aid" projects remove ./1 2>&1)
+_P08D_REL_RC=$?
+assert_exit_eq "$_P08D_REL_RC" 0 "REG-P08am remove ./1 (path form) -> exit 0"
+assert_file_not_contains "${_P08D_AID_INST}/registry.yml" "${_P08D_DIGIT}" \
+    "REG-P08an remove ./1: '1'-named folder removed by PATH"
+
+# ===========================================================================
+# REG-P09: 'aid projects help' text documents the numbered list + the
+# 'remove <N>' index form, and the 'remove' documentation no longer claims
+# the pre-task-018 "Idempotent" / "Works on stale/missing" semantics (SPEC
+# AC-9 / FR-7 help-text regression guard; delivery-gate FIX E).
+#
+# The stale-wording check is scoped to the 'remove' paragraph only (via sed
+# extraction) -- NOT the whole help block -- because the 'add' line still
+# legitimately says "Idempotent" (add IS idempotent; only remove's semantics
+# changed).
+# ===========================================================================
+echo "--- REG-P09: projects help text -- numbered list + remove <N>, no stale wording ---"
+_P09_AID_INST=$(newhome)
+setup_aid_home "${_P09_AID_INST}"
+_P09_HOME=$(mktemp -d "${TMP}/p09_home.XXXXXX")
+
+# (a) 'aid projects help' (explicit sub-action form).
+run_projects "${_P09_AID_INST}" "${_P09_HOME}" projects help
+assert_exit_eq "$RC" 0 "REG-P09a projects help -> exit 0"
+assert_output_contains "$OUT" "aid projects remove [<path>|<N>]" \
+    "REG-P09b help: usage synopsis documents remove index form <N>"
+assert_output_contains "$OUT" "show all registered projects, numbered from 1" \
+    "REG-P09c help: list description documents numbered rows"
+assert_output_contains "$OUT" "remove [path=cwd|<N>]: unregister a project from the registry" \
+    "REG-P09d help: remove description documents the <N> form"
+assert_output_contains "$OUT" "<N> (all-digits) targets the Nth row from 'aid projects list'" \
+    "REG-P09e help: remove description documents the index-targeting rule"
+_P09_REMOVE_BLOCK="$(printf '%s\n' "$OUT" | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+assert_output_not_contains "$_P09_REMOVE_BLOCK" "Idempotent" \
+    "REG-P09f help: remove documentation no longer claims Idempotent"
+assert_output_not_contains "$_P09_REMOVE_BLOCK" "Works on stale" \
+    "REG-P09g help: remove documentation no longer claims to work on stale/missing entries"
+
+# (b) 'aid projects -h' (flag alias) -- same content, guards against the two
+#     dispatch paths (see bin/aid: top-of-subcommand -h check vs _cmd_projects
+#     flag-loop -h) drifting apart.
+run_projects "${_P09_AID_INST}" "${_P09_HOME}" projects -h
+assert_exit_eq "$RC" 0 "REG-P09h projects -h -> exit 0"
+assert_output_contains "$OUT" "aid projects remove [<path>|<N>]" \
+    "REG-P09i help (-h alias): usage synopsis documents remove index form <N>"
+_P09H_REMOVE_BLOCK="$(printf '%s\n' "$OUT" | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+assert_output_not_contains "$_P09H_REMOVE_BLOCK" "Idempotent" \
+    "REG-P09j help (-h alias): remove documentation no longer claims Idempotent"
 
 # ===========================================================================
 # REG-SH: state-home exclusion -- bare 'aid' / 'aid status' from a dir whose

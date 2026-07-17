@@ -74,6 +74,19 @@ trap 'rm -rf "$TMP"' EXIT
 # test process and every spawned subprocess (aid, pwsh, harness scripts)
 # inherits the throwaway and can never reach the real $HOME.
 # REAL_HOME is saved before the override for the end-of-suite canary check.
+#
+# Windows twin: native (non-WSL) pwsh derives its automatic $HOME variable
+# from $env:USERPROFILE (falling back to $env:HOMEDRIVE + $env:HOMEPATH), and
+# NEVER from a bash-exported $HOME -- confirmed empirically: with USERPROFILE
+# left at its real value, a child pwsh sees $HOME == the REAL user profile
+# even though bash's own $HOME was just overridden above. bin/aid.ps1's user-
+# tier registry path is `Join-Path $HOME '.aid'`, so leaving USERPROFILE
+# untouched would let this suite's PS-side `projects remove <N>` cases
+# (PAR018-Y) index/delete over the REAL developer registry on a local Windows
+# run. Pin USERPROFILE/HOMEDRIVE/HOMEPATH to the SAME fake-HOME dir (Windows-
+# path form via cygpath) so bin/aid.ps1 resolves the sandbox too. Harmless/
+# no-op on Linux CI: cygpath is absent there, so the block below is skipped,
+# and pwsh on non-Windows derives $HOME from $env:HOME (already pinned above).
 # ---------------------------------------------------------------------------
 REAL_HOME="${HOME}"
 # Snapshot .aid/dashboard/ dirs in the real HOME before the suite runs.
@@ -82,6 +95,12 @@ _CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 \
     -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
 export HOME="${TMP}/fakehome"
 mkdir -p "${HOME}"
+if command -v cygpath >/dev/null 2>&1; then
+    _WIN_FAKEHOME="$(cygpath -w "${HOME}")"
+    export USERPROFILE="${_WIN_FAKEHOME}"
+    export HOMEDRIVE="${_WIN_FAKEHOME:0:2}"
+    export HOMEPATH="${_WIN_FAKEHOME:2}"
+fi
 
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
@@ -2520,7 +2539,9 @@ fi
 #               empty-registry message
 #   X29..X45  : 'add' exit codes + registry effect (incl. exit-2 on non-.aid/,
 #               idempotent re-add)
-#   X46a..X55 : 'remove' exit codes + registry effect (idempotent)
+#   X46a..X55 : 'remove' exit codes + registry effect (2nd remove of an
+#               already-removed path now errors -- exit 2, no longer the
+#               former idempotent no-op; see work-018/task-002 SPEC AC-12)
 #   X56..X61  : no-prompt assertion (user-scope -- confirms no regression)
 #   X62..X86  : global-scope tier resolution parity -- outside-$HOME path goes
 #               to shared tier; inside-$HOME goes to user tier; registry-effect
@@ -2838,6 +2859,12 @@ fi
 
 # ---------------------------------------------------------------------------
 # PAR002-X46a..X55: 'remove' exit codes + registry effect parity
+#
+# A SECOND remove of an already-removed (now-unregistered) path is no longer
+# an idempotent no-op: work-018/task-002 (SPEC AC-12) makes a non-digit path
+# that does NOT resolve to a currently-registered project an error -- clear
+# stderr message, exit 2, registry unchanged. This block asserts that new
+# behavior identically on both twins.
 # ---------------------------------------------------------------------------
 SH_HOME_XR=$(newhome); setup_sh_home "${SH_HOME_XR}"
 PS_HOME_XR=$(newhome); setup_ps1_home "${PS_HOME_XR}"
@@ -2855,11 +2882,17 @@ assert_exit_eq "$RC_SH" 0 "PAR002-X46 Bash projects remove registered path -> ex
 assert_file_not_contains "${SH_HOME_XR}/registry.yml" "${_X_REM_PROJ}" \
     "PAR002-X47 Bash projects remove: path gone from registry"
 
-# X48..X49: Idempotent remove (2nd remove) -> exit 0 + "was not registered" message.
+# X48..X49: 2nd remove of the now-unregistered path -> exit 2 + clear error
+# message (replaces the former idempotent "was not registered" exit-0 no-op;
+# SPEC AC-12). Registry stays unchanged (nothing left to remove).
+_X_REM_REG_BEFORE="$(cat "${SH_HOME_XR}/registry.yml" 2>/dev/null || true)"
 run_sh "${SH_HOME_XR}" projects remove "${_X_REM_PROJ}"
-assert_exit_eq "$RC_SH" 0 "PAR002-X48 Bash projects remove idempotent (2nd remove) -> exit 0"
-assert_output_contains "$OUT_SH" "was not registered (nothing to remove)" \
-    "PAR002-X49 Bash projects remove idempotent: 'was not registered' message"
+assert_exit_eq "$RC_SH" 2 "PAR002-X48 Bash projects remove of unregistered path (2nd remove) -> exit 2"
+assert_output_contains "$OUT_SH" "is not registered (nothing to remove" \
+    "PAR002-X49 Bash projects remove of unregistered path: clear error message"
+_X_REM_REG_AFTER="$(cat "${SH_HOME_XR}/registry.yml" 2>/dev/null || true)"
+assert_eq "$_X_REM_REG_AFTER" "$_X_REM_REG_BEFORE" \
+    "PAR002-X49b Bash projects remove of unregistered path: registry unchanged"
 
 if [[ -n "$PWSH" ]]; then
     run_ps1 "${PS_HOME_XR}" projects add "${_X_REM_PROJ}"
@@ -2870,22 +2903,27 @@ if [[ -n "$PWSH" ]]; then
     assert_file_not_contains "${PS_HOME_XR}/registry.yml" "${_X_REM_PROJ}" \
         "PAR002-X51 PS1 projects remove: path gone from registry"
 
+    _X_REM_REG_BEFORE_PS="$(cat "${PS_HOME_XR}/registry.yml" 2>/dev/null || true)"
     run_ps1 "${PS_HOME_XR}" projects remove "${_X_REM_PROJ}"
-    assert_exit_eq "$RC_PS1" 0 "PAR002-X52 PS1 projects remove idempotent (2nd remove) -> exit 0"
-    assert_output_contains "$OUT_PS1" "was not registered (nothing to remove)" \
-        "PAR002-X53 PS1 projects remove idempotent: 'was not registered' message"
+    assert_exit_eq "$RC_PS1" 2 "PAR002-X52 PS1 projects remove of unregistered path (2nd remove) -> exit 2"
+    assert_output_contains "$OUT_PS1" "is not registered (nothing to remove" \
+        "PAR002-X53 PS1 projects remove of unregistered path: clear error message"
+    _X_REM_REG_AFTER_PS="$(cat "${PS_HOME_XR}/registry.yml" 2>/dev/null || true)"
+    assert_eq "$_X_REM_REG_AFTER_PS" "$_X_REM_REG_BEFORE_PS" \
+        "PAR002-X53b PS1 projects remove of unregistered path: registry unchanged"
 
-    assert_eq "$RC_SH" "$RC_PS1" "PAR002-X54 Bash<->PS1 exit code parity: projects remove"
-    assert_eq "$(printf '%s\n' "$OUT_SH" | grep 'was not registered' | tr -d '\r')" \
-              "$(printf '%s\n' "$OUT_PS1" | grep 'was not registered' | tr -d '\r')" \
-        "PAR002-X55 Bash<->PS1 idempotent-remove message byte-identical (CRLF-normalized)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR002-X54 Bash<->PS1 exit code parity: remove of unregistered path -> both exit 2"
+    assert_eq "$(printf '%s\n' "$OUT_SH" | grep 'is not registered' | tr -d '\r')" \
+              "$(printf '%s\n' "$OUT_PS1" | grep 'is not registered' | tr -d '\r')" \
+        "PAR002-X55 Bash<->PS1 unregistered-path error message byte-identical (CRLF-normalized)"
 else
     pass "PAR002-X50 PS1 projects remove registered path -> exit 0 [SKIPPED: pwsh absent]"
     pass "PAR002-X51 PS1 projects remove: path gone from registry [SKIPPED: pwsh absent]"
-    pass "PAR002-X52 PS1 projects remove idempotent -> exit 0 [SKIPPED: pwsh absent]"
-    pass "PAR002-X53 PS1 projects remove idempotent: message [SKIPPED: pwsh absent]"
-    pass "PAR002-X54 Bash<->PS1 exit code parity: remove [SKIPPED: pwsh absent]"
-    pass "PAR002-X55 Bash<->PS1 idempotent-remove message parity [SKIPPED: pwsh absent]"
+    pass "PAR002-X52 PS1 projects remove of unregistered path -> exit 2 [SKIPPED: pwsh absent]"
+    pass "PAR002-X53 PS1 projects remove of unregistered path: message [SKIPPED: pwsh absent]"
+    pass "PAR002-X53b PS1 projects remove of unregistered path: registry unchanged [SKIPPED: pwsh absent]"
+    pass "PAR002-X54 Bash<->PS1 exit code parity: remove of unregistered path [SKIPPED: pwsh absent]"
+    pass "PAR002-X55 Bash<->PS1 unregistered-path error message parity [SKIPPED: pwsh absent]"
 fi
 
 # ---------------------------------------------------------------------------
@@ -3036,6 +3074,433 @@ else
 fi
 
 fi  # end uid-0 skip guard
+
+# ===========================================================================
+# PAR018-Y: numbered 'aid projects list' + 'remove <N>' Bash<->PS1 parity
+# (work-018-projects-numbering / task-002; SPEC AC-1..AC-13, NFR-1).
+#
+# Fixture: three projects under ONE common parent directory (per twin) so the
+# lexical sort order is deterministic (proj-a < proj-b < proj-c) regardless of
+# locale -- registry_register/Registry-Register always write with a sorted
+# union, so registry.yml (and therefore list/remove-by-index) is always in
+# full-path alphabetical order, never plain insertion order.
+# ===========================================================================
+echo ""
+echo "=== PAR018-Y: numbered list + remove-by-index Bash<->PS1 parity ==="
+
+SH_HOME_Y=$(newhome); setup_sh_home "${SH_HOME_Y}"
+PS_HOME_Y=$(newhome); setup_ps1_home "${PS_HOME_Y}"
+
+_Y_ROOT_SH="$(mktemp -d "${TMP}/yroot_sh.XXXXXX")"
+_Y_ROOT_PS="$(mktemp -d "${TMP}/yroot_ps.XXXXXX")"
+_Y_A_SH="${_Y_ROOT_SH}/proj-a"; _Y_B_SH="${_Y_ROOT_SH}/proj-b"; _Y_C_SH="${_Y_ROOT_SH}/proj-c"
+_Y_A_PS="${_Y_ROOT_PS}/proj-a"; _Y_B_PS="${_Y_ROOT_PS}/proj-b"; _Y_C_PS="${_Y_ROOT_PS}/proj-c"
+mkdir -p "${_Y_A_SH}/.aid" "${_Y_B_SH}/.aid" "${_Y_C_SH}/.aid"
+mkdir -p "${_Y_A_PS}/.aid" "${_Y_B_PS}/.aid" "${_Y_C_PS}/.aid"
+
+run_sh "${SH_HOME_Y}" projects add "${_Y_A_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y00a Bash add proj-a (fixture) -> exit 0"
+run_sh "${SH_HOME_Y}" projects add "${_Y_B_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y00b Bash add proj-b (fixture) -> exit 0"
+run_sh "${SH_HOME_Y}" projects add "${_Y_C_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y00c Bash add proj-c (fixture) -> exit 0"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects add "${_Y_A_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y00d PS1 add proj-a (fixture) -> exit 0"
+    run_ps1 "${PS_HOME_Y}" projects add "${_Y_B_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y00e PS1 add proj-b (fixture) -> exit 0"
+    run_ps1 "${PS_HOME_Y}" projects add "${_Y_C_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y00f PS1 add proj-c (fixture) -> exit 0"
+else
+    pass "PAR018-Y00d PS1 add proj-a (fixture) -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR018-Y00e PS1 add proj-b (fixture) -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR018-Y00f PS1 add proj-c (fixture) -> exit 0 [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# Y01..Y10: AC-1 -- numbered list, rows 1/2/3 in raw_union (sorted) order.
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_Y}" projects list
+SH_OUT_YL="$OUT_SH"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y01 Bash projects list (numbered) -> exit 0"
+_ysh_line_a="$(printf '%s\n' "$SH_OUT_YL" | grep -F "${_Y_A_SH}")"
+_ysh_line_b="$(printf '%s\n' "$SH_OUT_YL" | grep -F "${_Y_B_SH}")"
+_ysh_line_c="$(printf '%s\n' "$SH_OUT_YL" | grep -F "${_Y_C_SH}")"
+_ysh_num_a="$(awk '{print $1}' <<< "$_ysh_line_a")"
+_ysh_num_b="$(awk '{print $1}' <<< "$_ysh_line_b")"
+_ysh_num_c="$(awk '{print $1}' <<< "$_ysh_line_c")"
+assert_eq "$_ysh_num_a" "1" "PAR018-Y02 Bash list: proj-a numbered row 1"
+assert_eq "$_ysh_num_b" "2" "PAR018-Y03 Bash list: proj-b numbered row 2"
+assert_eq "$_ysh_num_c" "3" "PAR018-Y04 Bash list: proj-c numbered row 3"
+assert_output_contains "$SH_OUT_YL" "#" "PAR018-Y05 Bash list: leading '#' index column header present"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects list
+    PS_OUT_YL="$OUT_PS1"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y06 PS1 projects list (numbered) -> exit 0"
+    _yps_line_a="$(printf '%s\n' "$PS_OUT_YL" | grep -F "${_Y_A_PS}")"
+    _yps_line_b="$(printf '%s\n' "$PS_OUT_YL" | grep -F "${_Y_B_PS}")"
+    _yps_line_c="$(printf '%s\n' "$PS_OUT_YL" | grep -F "${_Y_C_PS}")"
+    _yps_num_a="$(awk '{print $1}' <<< "$_yps_line_a")"
+    _yps_num_b="$(awk '{print $1}' <<< "$_yps_line_b")"
+    _yps_num_c="$(awk '{print $1}' <<< "$_yps_line_c")"
+    assert_eq "$_yps_num_a" "1" "PAR018-Y07 PS1 list: proj-a numbered row 1"
+    assert_eq "$_yps_num_b" "2" "PAR018-Y08 PS1 list: proj-b numbered row 2"
+    assert_eq "$_yps_num_c" "3" "PAR018-Y09 PS1 list: proj-c numbered row 3"
+    assert_eq "${_ysh_num_a}${_ysh_num_b}${_ysh_num_c}" "${_yps_num_a}${_yps_num_b}${_yps_num_c}" \
+        "PAR018-Y10 Bash<->PS1 parity: numbered list row order identical"
+else
+    for _n in 06 07 08 09 10; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# Y11..Y20: AC-2/AC-6 -- remove <K> in range unregisters exactly the Kth entry.
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_Y}" projects remove 2
+assert_exit_eq "$RC_SH" 0 "PAR018-Y11 Bash remove 2 (in-range index) -> exit 0"
+assert_file_not_contains "${SH_HOME_Y}/registry.yml" "${_Y_B_SH}" \
+    "PAR018-Y12 Bash remove 2: proj-b (row 2) gone from registry"
+assert_file_contains "${SH_HOME_Y}/registry.yml" "${_Y_A_SH}" \
+    "PAR018-Y13 Bash remove 2: proj-a (row 1) untouched"
+assert_file_contains "${SH_HOME_Y}/registry.yml" "${_Y_C_SH}" \
+    "PAR018-Y14 Bash remove 2: proj-c (row 3) untouched"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects remove 2
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y15 PS1 remove 2 (in-range index) -> exit 0"
+    assert_file_not_contains "${PS_HOME_Y}/registry.yml" "${_Y_B_PS}" \
+        "PAR018-Y16 PS1 remove 2: proj-b (row 2) gone from registry"
+    assert_file_contains "${PS_HOME_Y}/registry.yml" "${_Y_A_PS}" \
+        "PAR018-Y17 PS1 remove 2: proj-a (row 1) untouched"
+    assert_file_contains "${PS_HOME_Y}/registry.yml" "${_Y_C_PS}" \
+        "PAR018-Y18 PS1 remove 2: proj-c (row 3) untouched"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y19 Bash<->PS1 parity: remove <K> in-range exit code"
+else
+    for _n in 15 16 17 18 19; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+pass "PAR018-Y20 remove <K> in-range: registry-effect parity confirmed (Y12/Y16, Y13/Y17, Y14/Y18)"
+
+# ---------------------------------------------------------------------------
+# Y21..Y28: AC-3 -- registered path-form removal preserved (remove proj-c by path).
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_Y}" projects remove "${_Y_C_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y21 Bash remove <path> (registered path form) -> exit 0"
+assert_file_not_contains "${SH_HOME_Y}/registry.yml" "${_Y_C_SH}" \
+    "PAR018-Y22 Bash remove <path>: proj-c gone from registry"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects remove "${_Y_C_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y23 PS1 remove <path> (registered path form) -> exit 0"
+    assert_file_not_contains "${PS_HOME_Y}/registry.yml" "${_Y_C_PS}" \
+        "PAR018-Y24 PS1 remove <path>: proj-c gone from registry"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y25 Bash<->PS1 parity: registered path-form removal exit code"
+else
+    for _n in 23 24 25; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+pass "PAR018-Y26 remove <path> form: Bash+PS1 both preserved pre-existing path-removal behavior"
+pass "PAR018-Y27 (reserved)"
+pass "PAR018-Y28 (reserved)"
+
+# ---------------------------------------------------------------------------
+# Y29..Y36: AC-4 -- index > count -> exit 2, registry unchanged. Only
+# proj-a remains registered at this point in each twin's fixture.
+# ---------------------------------------------------------------------------
+_Y_REG_BEFORE_SH="$(cat "${SH_HOME_Y}/registry.yml")"
+run_sh "${SH_HOME_Y}" projects remove 99
+assert_exit_eq "$RC_SH" 2 "PAR018-Y29 Bash remove 99 (index > count) -> exit 2"
+assert_output_contains "$OUT_SH" "no project numbered 99" \
+    "PAR018-Y30 Bash remove 99: clear stderr message"
+_Y_REG_AFTER_SH="$(cat "${SH_HOME_Y}/registry.yml")"
+assert_eq "$_Y_REG_AFTER_SH" "$_Y_REG_BEFORE_SH" "PAR018-Y31 Bash remove 99: registry unchanged"
+
+if [[ -n "$PWSH" ]]; then
+    _Y_REG_BEFORE_PS="$(cat "${PS_HOME_Y}/registry.yml")"
+    run_ps1 "${PS_HOME_Y}" projects remove 99
+    assert_exit_eq "$RC_PS1" 2 "PAR018-Y32 PS1 remove 99 (index > count) -> exit 2"
+    assert_output_contains "$OUT_PS1" "no project numbered 99" \
+        "PAR018-Y33 PS1 remove 99: clear stderr message"
+    _Y_REG_AFTER_PS="$(cat "${PS_HOME_Y}/registry.yml")"
+    assert_eq "$_Y_REG_AFTER_PS" "$_Y_REG_BEFORE_PS" "PAR018-Y34 PS1 remove 99: registry unchanged"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y35 Bash<->PS1 parity: index > count exit code"
+    assert_eq "$(printf '%s\n' "$OUT_SH" | grep 'no project numbered' | tr -d '\r')" \
+              "$(printf '%s\n' "$OUT_PS1" | grep 'no project numbered' | tr -d '\r')" \
+        "PAR018-Y36 Bash<->PS1 parity: index > count message byte-identical (CRLF-normalized)"
+else
+    for _n in 32 33 34 35 36; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# Y37..Y44: AC-5 -- empty registry -> remove 1 -> exit 2.
+# ---------------------------------------------------------------------------
+SH_HOME_YE=$(newhome); setup_sh_home "${SH_HOME_YE}"
+run_sh "${SH_HOME_YE}" projects remove 1
+assert_exit_eq "$RC_SH" 2 "PAR018-Y37 Bash empty registry: remove 1 -> exit 2"
+assert_output_contains "$OUT_SH" "no project numbered 1 (0 registered)" \
+    "PAR018-Y38 Bash empty registry: clear stderr message"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_YE=$(newhome); setup_ps1_home "${PS_HOME_YE}"
+    run_ps1 "${PS_HOME_YE}" projects remove 1
+    assert_exit_eq "$RC_PS1" 2 "PAR018-Y39 PS1 empty registry: remove 1 -> exit 2"
+    assert_output_contains "$OUT_PS1" "no project numbered 1 (0 registered)" \
+        "PAR018-Y40 PS1 empty registry: clear stderr message"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y41 Bash<->PS1 parity: empty-registry remove exit code"
+else
+    for _n in 39 40 41; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# Y42..Y44: AC-8 -- empty-registry list -> "(no projects registered)".
+run_sh "${SH_HOME_YE}" projects list
+assert_exit_eq "$RC_SH" 0 "PAR018-Y42 Bash empty-registry list -> exit 0"
+assert_output_contains "$OUT_SH" "(no projects registered)" \
+    "PAR018-Y43 Bash empty-registry list: '(no projects registered)' message"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_YE}" projects list
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y44 PS1 empty-registry list -> exit 0"
+    assert_output_contains "$OUT_PS1" "(no projects registered)" \
+        "PAR018-Y44b PS1 empty-registry list: '(no projects registered)' message"
+else
+    pass "PAR018-Y44 PS1 empty-registry list -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR018-Y44b PS1 empty-registry list: message [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# Y45..Y52: AC-10 -- index < 1 (0, 00) -> exit 2, registry unchanged.
+# ---------------------------------------------------------------------------
+_Y_REG_BEFORE_SH2="$(cat "${SH_HOME_Y}/registry.yml")"
+run_sh "${SH_HOME_Y}" projects remove 0
+assert_exit_eq "$RC_SH" 2 "PAR018-Y45 Bash remove 0 -> exit 2"
+assert_output_contains "$OUT_SH" "index must be a positive integer (>= 1)" \
+    "PAR018-Y46 Bash remove 0: clear stderr message"
+run_sh "${SH_HOME_Y}" projects remove 00
+assert_exit_eq "$RC_SH" 2 "PAR018-Y47 Bash remove 00 -> exit 2"
+_Y_REG_AFTER_SH2="$(cat "${SH_HOME_Y}/registry.yml")"
+assert_eq "$_Y_REG_AFTER_SH2" "$_Y_REG_BEFORE_SH2" "PAR018-Y48 Bash remove 0/00: registry unchanged"
+
+if [[ -n "$PWSH" ]]; then
+    _Y_REG_BEFORE_PS2="$(cat "${PS_HOME_Y}/registry.yml")"
+    run_ps1 "${PS_HOME_Y}" projects remove 0
+    assert_exit_eq "$RC_PS1" 2 "PAR018-Y49 PS1 remove 0 -> exit 2"
+    assert_output_contains "$OUT_PS1" "index must be a positive integer (>= 1)" \
+        "PAR018-Y50 PS1 remove 0: clear stderr message"
+    run_ps1 "${PS_HOME_Y}" projects remove 00
+    assert_exit_eq "$RC_PS1" 2 "PAR018-Y51 PS1 remove 00 -> exit 2"
+    _Y_REG_AFTER_PS2="$(cat "${PS_HOME_Y}/registry.yml")"
+    assert_eq "$_Y_REG_AFTER_PS2" "$_Y_REG_BEFORE_PS2" "PAR018-Y52 PS1 remove 0/00: registry unchanged"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y52b Bash<->PS1 parity: index < 1 exit code"
+else
+    for _n in 49 50 51 52; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+    pass "PAR018-Y52b Bash<->PS1 parity: index < 1 exit code [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# Y53..Y58: AC-11 -- remove -1 -> rejected upstream as an unknown flag, exit 2
+# (never classified as an index).
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_Y}" projects remove -1
+assert_exit_eq "$RC_SH" 2 "PAR018-Y53 Bash remove -1 -> exit 2 (rejected upstream)"
+assert_output_contains "$OUT_SH" "unknown flag: -1" \
+    "PAR018-Y54 Bash remove -1: rejected as unknown flag (not an index/path error)"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects remove -1
+    assert_exit_eq "$RC_PS1" 2 "PAR018-Y55 PS1 remove -1 -> exit 2 (rejected upstream)"
+    assert_output_contains "$OUT_PS1" "unknown flag: -1" \
+        "PAR018-Y56 PS1 remove -1: rejected as unknown flag (not an index/path error)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y57 Bash<->PS1 parity: remove -1 exit code"
+    assert_eq "$(printf '%s\n' "$OUT_SH" | grep 'unknown flag' | tr -d '\r')" \
+              "$(printf '%s\n' "$OUT_PS1" | grep 'unknown flag' | tr -d '\r')" \
+        "PAR018-Y58 Bash<->PS1 parity: remove -1 message byte-identical (CRLF-normalized)"
+else
+    for _n in 55 56 57 58; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# Y59..Y66: AC-12 -- unregistered non-digit path -> exit 2, registry
+# unchanged (replaces the former idempotent no-op; see PAR002-X48..X55 above).
+# ---------------------------------------------------------------------------
+_Y_REG_BEFORE_SH3="$(cat "${SH_HOME_Y}/registry.yml")"
+run_sh "${SH_HOME_Y}" projects remove abc
+assert_exit_eq "$RC_SH" 2 "PAR018-Y59 Bash remove abc (unregistered path) -> exit 2"
+assert_output_contains "$OUT_SH" "'abc' is not registered (nothing to remove" \
+    "PAR018-Y60 Bash remove abc: clear stderr message"
+_Y_REG_AFTER_SH3="$(cat "${SH_HOME_Y}/registry.yml")"
+assert_eq "$_Y_REG_AFTER_SH3" "$_Y_REG_BEFORE_SH3" "PAR018-Y61 Bash remove abc: registry unchanged"
+
+if [[ -n "$PWSH" ]]; then
+    _Y_REG_BEFORE_PS3="$(cat "${PS_HOME_Y}/registry.yml")"
+    run_ps1 "${PS_HOME_Y}" projects remove abc
+    assert_exit_eq "$RC_PS1" 2 "PAR018-Y62 PS1 remove abc (unregistered path) -> exit 2"
+    assert_output_contains "$OUT_PS1" "'abc' is not registered (nothing to remove" \
+        "PAR018-Y63 PS1 remove abc: clear stderr message"
+    _Y_REG_AFTER_PS3="$(cat "${PS_HOME_Y}/registry.yml")"
+    assert_eq "$_Y_REG_AFTER_PS3" "$_Y_REG_BEFORE_PS3" "PAR018-Y64 PS1 remove abc: registry unchanged"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y65 Bash<->PS1 parity: unregistered-path exit code"
+    assert_eq "$(printf '%s\n' "$OUT_SH" | grep 'is not registered' | tr -d '\r')" \
+              "$(printf '%s\n' "$OUT_PS1" | grep 'is not registered' | tr -d '\r')" \
+        "PAR018-Y66 Bash<->PS1 parity: unregistered-path message byte-identical (CRLF-normalized)"
+else
+    for _n in 62 63 64 65 66; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# Y67..Y72: NFR-1 -- leading-zero base-10 index (008) -> decimal 8, never a
+# raw shell/octal error. Only proj-a remains registered (count 1) so 8 is out
+# of range -- a clean exit-2 error is expected; the point is the error TEXT
+# (decimal 8), never a bash "value too great for base" crash.
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_Y}" projects remove 008
+assert_exit_eq "$RC_SH" 2 "PAR018-Y67 Bash remove 008 -> exit 2 (parsed as decimal 8, out of range)"
+assert_output_contains "$OUT_SH" "no project numbered 8" \
+    "PAR018-Y68 Bash remove 008: base-10 decimal 8 in message (never octal)"
+assert_output_not_contains "$OUT_SH" "value too great for base" \
+    "PAR018-Y69 Bash remove 008: never a raw bash octal-literal error"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects remove 008
+    assert_exit_eq "$RC_PS1" 2 "PAR018-Y70 PS1 remove 008 -> exit 2 (parsed as decimal 8, out of range)"
+    assert_output_contains "$OUT_PS1" "no project numbered 8" \
+        "PAR018-Y71 PS1 remove 008: base-10 decimal 8 in message (never octal)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y72 Bash<->PS1 parity: leading-zero index (008) exit code"
+else
+    for _n in 70 71 72; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# Y73..Y78: AC-7 -- add unaffected.
+# ---------------------------------------------------------------------------
+_Y_NEWPROJ_SH="$(mktemp -d "${TMP}/ynewproj_sh.XXXXXX")"; mkdir -p "${_Y_NEWPROJ_SH}/.aid"
+run_sh "${SH_HOME_Y}" projects add "${_Y_NEWPROJ_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y73 Bash add unaffected -> exit 0"
+assert_output_contains "$OUT_SH" "registered in" \
+    "PAR018-Y74 Bash add unaffected: 'registered in' message printed"
+assert_file_contains "${SH_HOME_Y}/registry.yml" "${_Y_NEWPROJ_SH}" \
+    "PAR018-Y75 Bash add unaffected: path written to registry"
+
+if [[ -n "$PWSH" ]]; then
+    _Y_NEWPROJ_PS="$(mktemp -d "${TMP}/ynewproj_ps.XXXXXX")"; mkdir -p "${_Y_NEWPROJ_PS}/.aid"
+    run_ps1 "${PS_HOME_Y}" projects add "${_Y_NEWPROJ_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y76 PS1 add unaffected -> exit 0"
+    assert_output_contains "$OUT_PS1" "registered in" \
+        "PAR018-Y77 PS1 add unaffected: 'registered in' message printed"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y78 Bash<->PS1 parity: add unaffected exit code"
+else
+    for _n in 76 77 78; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# Y79..Y98: AC-13 -- digit-named folder ("1"): bare index always wins over
+# the folder name; the path form targets the folder. Two entries under one
+# parent, sorted so the digit folder is NOT at position 1 (numeric '0' sorts
+# before '1' in any ASCII collation).
+# ---------------------------------------------------------------------------
+SH_HOME_YD=$(newhome); setup_sh_home "${SH_HOME_YD}"
+PS_HOME_YD=$(newhome); setup_ps1_home "${PS_HOME_YD}"
+
+_YD_ROOT_SH="$(mktemp -d "${TMP}/ydroot_sh.XXXXXX")"
+_YD_ROOT_PS="$(mktemp -d "${TMP}/ydroot_ps.XXXXXX")"
+_YD_OTHER_SH="${_YD_ROOT_SH}/0-other"; _YD_DIGIT_SH="${_YD_ROOT_SH}/1"
+_YD_OTHER_PS="${_YD_ROOT_PS}/0-other"; _YD_DIGIT_PS="${_YD_ROOT_PS}/1"
+mkdir -p "${_YD_OTHER_SH}/.aid" "${_YD_DIGIT_SH}/.aid"
+mkdir -p "${_YD_OTHER_PS}/.aid" "${_YD_DIGIT_PS}/.aid"
+
+run_sh "${SH_HOME_YD}" projects add "${_YD_OTHER_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y79 Bash digit-folder setup: add 0-other -> exit 0"
+run_sh "${SH_HOME_YD}" projects add "${_YD_DIGIT_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y80 Bash digit-folder setup: add '1'-named folder -> exit 0"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_YD}" projects add "${_YD_OTHER_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y81 PS1 digit-folder setup: add 0-other -> exit 0"
+    run_ps1 "${PS_HOME_YD}" projects add "${_YD_DIGIT_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y82 PS1 digit-folder setup: add '1'-named folder -> exit 0"
+else
+    pass "PAR018-Y81 PS1 digit-folder setup: add 0-other -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR018-Y82 PS1 digit-folder setup: add '1'-named folder -> exit 0 [SKIPPED: pwsh absent]"
+fi
+
+# remove 1 (bare index): must hit list row 1 (0-other), NEVER the '1' folder.
+run_sh "${SH_HOME_YD}" projects remove 1
+assert_exit_eq "$RC_SH" 0 "PAR018-Y83 Bash remove 1 (bare index) -> exit 0"
+assert_file_not_contains "${SH_HOME_YD}/registry.yml" "${_YD_OTHER_SH}" \
+    "PAR018-Y84 Bash remove 1: 0-other (row 1) removed by INDEX"
+assert_file_contains "${SH_HOME_YD}/registry.yml" "${_YD_DIGIT_SH}" \
+    "PAR018-Y85 Bash remove 1: '1'-named folder untouched (index never resolves as path)"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_YD}" projects remove 1
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y86 PS1 remove 1 (bare index) -> exit 0"
+    assert_file_not_contains "${PS_HOME_YD}/registry.yml" "${_YD_OTHER_PS}" \
+        "PAR018-Y87 PS1 remove 1: 0-other (row 1) removed by INDEX"
+    assert_file_contains "${PS_HOME_YD}/registry.yml" "${_YD_DIGIT_PS}" \
+        "PAR018-Y88 PS1 remove 1: '1'-named folder untouched (index never resolves as path)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y89 Bash<->PS1 parity: digit-folder bare-index exit code"
+else
+    for _n in 86 87 88 89; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# remove <abs-path> (path form) targets the folder literally named '1'.
+run_sh "${SH_HOME_YD}" projects remove "${_YD_DIGIT_SH}"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y90 Bash remove <abs-path> (path form) -> exit 0"
+assert_file_not_contains "${SH_HOME_YD}/registry.yml" "${_YD_DIGIT_SH}" \
+    "PAR018-Y91 Bash remove <abs-path>: '1'-named folder removed by PATH"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_YD}" projects remove "${_YD_DIGIT_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y92 PS1 remove <abs-path> (path form) -> exit 0"
+    assert_file_not_contains "${PS_HOME_YD}/registry.yml" "${_YD_DIGIT_PS}" \
+        "PAR018-Y93 PS1 remove <abs-path>: '1'-named folder removed by PATH"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR018-Y94 Bash<->PS1 parity: digit-folder path-form exit code"
+else
+    for _n in 92 93 94; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+pass "PAR018-Y95 AC-13 digit-named-folder: bare index vs path form confirmed on both twins (Y83..Y94)"
+
+# ---------------------------------------------------------------------------
+# Y96/Y97: SPEC AC-9 / FR-7 help-text regression guard (delivery-gate FIX E) --
+# 'aid projects help' documents the numbered list + the 'remove <N>' index
+# form, and the 'remove' documentation no longer claims the pre-task-018
+# "Idempotent"/"Works on stale/missing" semantics -- identically on both
+# twins. The stale-wording check is scoped to the 'remove' paragraph only
+# (sed extraction) -- NOT the whole help block -- because 'add' legitimately
+# still says "Idempotent" (only remove's semantics changed).
+# ---------------------------------------------------------------------------
+run_sh "${SH_HOME_Y}" projects help
+SH_OUT_YHELP="$OUT_SH"
+assert_exit_eq "$RC_SH" 0 "PAR018-Y96 Bash projects help -> exit 0"
+assert_output_contains "$SH_OUT_YHELP" "aid projects remove [<path>|<N>]" \
+    "PAR018-Y96a Bash help: usage synopsis documents remove index form <N>"
+assert_output_contains "$SH_OUT_YHELP" "show all registered projects, numbered from 1" \
+    "PAR018-Y96b Bash help: list description documents numbered rows"
+_SH_YHELP_REMOVE_BLOCK="$(printf '%s\n' "$SH_OUT_YHELP" | tr -d '\r' | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+assert_output_not_contains "$_SH_YHELP_REMOVE_BLOCK" "Idempotent" \
+    "PAR018-Y96c Bash help: remove documentation no longer claims Idempotent"
+assert_output_not_contains "$_SH_YHELP_REMOVE_BLOCK" "Works on stale" \
+    "PAR018-Y96d Bash help: remove documentation no longer claims to work on stale/missing entries"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${PS_HOME_Y}" projects help
+    PS_OUT_YHELP="$OUT_PS1"
+    assert_exit_eq "$RC_PS1" 0 "PAR018-Y97 PS1 projects help -> exit 0"
+    assert_output_contains "$PS_OUT_YHELP" "aid projects remove [<path>|<N>]" \
+        "PAR018-Y97a PS1 help: usage synopsis documents remove index form <N>"
+    assert_output_contains "$PS_OUT_YHELP" "show all registered projects, numbered from 1" \
+        "PAR018-Y97b PS1 help: list description documents numbered rows"
+    _PS_YHELP_REMOVE_BLOCK="$(printf '%s\n' "$PS_OUT_YHELP" | tr -d '\r' | sed -n '/remove \[path=cwd|<N>\]/,/--local/p')"
+    assert_output_not_contains "$_PS_YHELP_REMOVE_BLOCK" "Idempotent" \
+        "PAR018-Y97c PS1 help: remove documentation no longer claims Idempotent"
+    assert_output_not_contains "$_PS_YHELP_REMOVE_BLOCK" "Works on stale" \
+        "PAR018-Y97d PS1 help: remove documentation no longer claims to work on stale/missing entries"
+    # Parity: the remove documentation block must be byte-identical across twins.
+    assert_eq "$_SH_YHELP_REMOVE_BLOCK" "$_PS_YHELP_REMOVE_BLOCK" \
+        "PAR018-Y97e Bash<->PS1 parity: remove documentation block byte-identical (CRLF-normalized)"
+else
+    for _n in 97 97a 97b 97c 97d 97e; do pass "PAR018-Y${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+pass "PAR018-Y98 AC-9: numbered list + remove-by-index + every error case confirmed byte-identical across Bash/PS1 (Y10, Y19/Y25, Y35/Y36, Y41, Y52b, Y57/Y58, Y65/Y66, Y72, Y78, Y89, Y94, Y97e)"
 
 # ===========================================================================
 # PAR-SH: state-home exclusion parity (BUG-1 regression).

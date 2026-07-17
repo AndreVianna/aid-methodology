@@ -16,6 +16,9 @@
 #   aid add <tool>[,...]             Add tool(s) to the current project
 #   aid update [self]                Update to latest; inside repo = CLI + all tools; 'self' = CLI only
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
+#   aid projects [list|add|remove|help] [path|N] [--local|--shared] [--verbose]
+#                                    List (numbered from 1), register, or unregister;
+#                                    remove accepts a list number (<N>) or a <path>
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -238,15 +241,19 @@ function script:Show-AidUsage {
         'projects' {
             Write-Host 'aid projects [list] [--local|--shared] [--verbose]'
             Write-Host 'aid projects add  [<path>] [--local|--shared]'
-            Write-Host 'aid projects remove [<path>]'
+            Write-Host 'aid projects remove [<path>|<N>]'
             Write-Host '  List, register, or unregister AID projects in the registry.'
-            Write-Host '  list (default): show all registered projects with state, tools, and tier.'
+            Write-Host '  list (default): show all registered projects, numbered from 1, with state,'
+            Write-Host '    tools, and tier.'
             Write-Host '    The current directory is marked with "*" in the leading marker column.'
             Write-Host '    Unregistered cwd with .aid/ present is shown as a footnote.'
             Write-Host '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,'
             Write-Host '    no tools are installed.  Idempotent.  Prints the tier written.'
-            Write-Host '  remove [path=cwd]: unregister a project from the registry; no files removed.'
-            Write-Host '    Works on stale/missing/no-aid entries.  Idempotent.'
+            Write-Host '  remove [path=cwd|<N>]: unregister a project from the registry; no files removed.'
+            Write-Host "    <N> (all-digits) targets the Nth row from 'aid projects list'; N < 1 or"
+            Write-Host '    N greater than the registered count errors to stderr with exit 2.  A <path>'
+            Write-Host '    that does not resolve to a currently-registered project now errors (exit 2)'
+            Write-Host '    instead of the prior idempotent no-op.'
             Write-Host '  --local   force user tier for add'
             Write-Host '  --shared  force shared tier for add'
             Write-Host '  --verbose print extra detail'
@@ -1611,11 +1618,13 @@ function script:Invoke-AidProjectsList {
     $paths = @(script:Get-RegistryRawUnion)
 
     # Column header.
-    Write-Host ('{0,-2}  {1,-45}  {2,-10}  {3,-20}  {4}' -f ' ', 'PATH', 'STATE', 'TOOLS', 'TIER')
-    Write-Host ('{0,-2}  {1,-45}  {2,-10}  {3,-20}  {4}' -f '--', '----', '-----', '-----', '----')
+    Write-Host ('{0,3}  {1,-2}  {2,-45}  {3,-10}  {4,-20}  {5}' -f '#', ' ', 'PATH', 'STATE', 'TOOLS', 'TIER')
+    Write-Host ('{0,3}  {1,-2}  {2,-45}  {3,-10}  {4,-20}  {5}' -f '---', '--', '----', '-----', '-----', '----')
 
     $cwdRegistered = $false
+    $num = 0
     foreach ($entry in $paths) {
+        $num++
         $state  = script:Get-AidProjectState  -Path $entry
         $tools  = script:Get-AidProjectTools  -Path $entry
         $tier   = script:Get-WhichTierHolds   -Path $entry
@@ -1625,7 +1634,7 @@ function script:Invoke-AidProjectsList {
             $cwdRegistered = $true
         }
         $toolsDisplay = if ($tools) { $tools } else { '-' }
-        Write-Host ('{0,-2}  {1,-45}  {2,-10}  {3,-20}  {4}' -f $marker, $entry, $state, $toolsDisplay, $tier)
+        Write-Host ('{0,3}  {1,-2}  {2,-45}  {3,-10}  {4,-20}  {5}' -f $num, $marker, $entry, $state, $toolsDisplay, $tier)
         if ($Verbose) {
             $regSrc = if ($tier -eq 'shared' -and
                 ([System.IO.Path]::GetFullPath($script:_AidStateHome) -ne [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid')))) {
@@ -1706,32 +1715,62 @@ function script:Invoke-AidProjectsRemove {
         [bool]  $Verbose = $false
     )
 
-    # Canonicalize without requiring the directory to exist.
-    $resolvedRem = Resolve-Path -LiteralPath $RawPath -ErrorAction SilentlyContinue
-    $canon = if ($resolvedRem) { $resolvedRem.Path } else { $null }
-    if (-not $canon) {
-        # Directory absent (stale entry); use raw path as-is.
-        $canon = $RawPath
-    }
+    $canon = $null
 
-    # Check if registered before unregistering (for idempotency message).
-    $primaryReg = Join-Path $script:_AidStateHome 'registry.yml'
-    $userReg    = Join-Path (Join-Path $HOME '.aid') 'registry.yml'
-    $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
-    $userNorm    = [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid'))
-    $found = $false
-    if ((script:Get-RegistryRepos -RegPath $primaryReg) -contains $canon) {
-        $found = $true
-    } elseif ($primaryNorm -ne $userNorm) {
-        if ((script:Get-RegistryRepos -RegPath $userReg) -contains $canon) {
+    if ($RawPath -match '^[0-9]+$') {
+        # All-digits: always a 1-based index, never a path -- even if a folder of
+        # that literal name exists (AC-13).
+        $paths = @(script:Get-RegistryRawUnion)
+        $count = $paths.Count
+        # Parse as a 64-bit integer (matches bash's 64-bit `10#` arithmetic) via
+        # TryParse so an all-digits value outside Int64 range (or otherwise
+        # unparseable) routes to the same clean out-of-range error below instead
+        # of leaking a native "Cannot convert ... to System.Int32"-style exception.
+        [long]$n = 0
+        if (-not [long]::TryParse($RawPath, [ref]$n)) {
+            [Console]::Error.WriteLine("ERROR: aid projects: no project numbered $RawPath ($count registered)")
+            script:Exit-Aid 2
+        }
+        if ($n -lt 1) {
+            [Console]::Error.WriteLine("ERROR: aid projects: index must be a positive integer (>= 1): $RawPath")
+            script:Exit-Aid 2
+        }
+        if ($n -gt $count) {
+            [Console]::Error.WriteLine("ERROR: aid projects: no project numbered $n ($count registered)")
+            script:Exit-Aid 2
+        }
+        $canon = $paths[$n - 1]
+    } else {
+        # Contains a non-digit: a path. Canonicalize without requiring existence.
+        $resolvedRem = Resolve-Path -LiteralPath $RawPath -ErrorAction SilentlyContinue
+        $canon = if ($resolvedRem) { $resolvedRem.Path } else { $null }
+        if (-not $canon) {
+            # Directory absent (stale entry); use raw path as-is.
+            $canon = $RawPath
+        }
+
+        $primaryReg = Join-Path $script:_AidStateHome 'registry.yml'
+        $userReg    = Join-Path (Join-Path $HOME '.aid') 'registry.yml'
+        $primaryNorm = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+        $userNorm    = [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid'))
+        $found = $false
+        if ((script:Get-RegistryRepos -RegPath $primaryReg) -contains $canon) {
             $found = $true
+        } elseif ($primaryNorm -ne $userNorm) {
+            if ((script:Get-RegistryRepos -RegPath $userReg) -contains $canon) {
+                $found = $true
+            }
+        }
+
+        if (-not $found) {
+            [Console]::Error.WriteLine("ERROR: aid projects: '$canon' is not registered (nothing to remove; see 'aid projects list')")
+            script:Exit-Aid 2
         }
     }
 
+    # $canon now names a currently-registered project; unregister it.
     script:Registry-Unregister -Repo $canon
-    if (-not $found) {
-        Write-Host ("aid projects: '$canon' was not registered (nothing to remove).")
-    } elseif ($Verbose) {
+    if ($Verbose) {
         Write-Host ("aid projects: removed '$canon' from registry.")
     }
 }
