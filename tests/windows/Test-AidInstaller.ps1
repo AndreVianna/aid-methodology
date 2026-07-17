@@ -29,7 +29,9 @@
 #   T39  aid projects add registers existing .aid/ project (tools untouched)
 #   T40  aid projects add non-.aid/ path -> exit 2 + error message
 #   T41  aid projects add idempotent (double add -> single registry entry)
-#   T42  aid projects remove unregisters / repairs stale entry / idempotent no-op
+#   T42  aid projects remove unregisters / repairs a stale-but-registered entry;
+#        an unregistered non-digit path now errors (exit 2), no longer an
+#        idempotent no-op (work-018-projects-numbering / task-002 SPEC AC-12)
 #
 # Old-layout migration acceptance (AC5 + AC8 -- mirrors task-012 bash Gates 10-13):
 #   T49  Codex old-layout: .agents/ retired AID trees gone; new .codex/{agents,aid} present;
@@ -1652,11 +1654,17 @@ Assert-Eq "$($script:_LastRC)" '0' 'T42e remove stale/missing entry -> exit 0 (r
 $regContT42b_post = Get-Content -LiteralPath $regT42 -Raw -ErrorAction SilentlyContinue
 Assert-NotContains "$regContT42b_post" $stalePathT42 'T42f stale entry removed from registry'
 
-# (c) Idempotent: remove a path not in registry -> no-op message, exit 0.
+# (c) Error: a non-digit path that does NOT resolve to a currently-registered
+#     project now errors -- exit 2, clear stderr message, registry unchanged
+#     (work-018/task-002 SPEC AC-12; this REPLACES the former idempotent
+#     "was not registered (nothing to remove)" no-op / exit 0).
 $absentPathT42 = Join-Path $TmpRoot 'absent-t42-not-registered'
+$regContT42c_pre = Get-Content -LiteralPath $regT42 -Raw -ErrorAction SilentlyContinue
 Run-AidProjects -AidHome $AidHomeT42 -AidArgs @('projects', 'remove', $absentPathT42)
-Assert-Eq "$($script:_LastRC)" '0' 'T42g remove absent path -> exit 0 (idempotent no-op)'
-Assert-Contains $script:_LastOut 'was not registered' 'T42h no-op: "was not registered" message emitted'
+Assert-Eq "$($script:_LastRC)" '2' 'T42g remove unregistered path -> exit 2 (no longer idempotent no-op)'
+Assert-Contains $script:_LastOut 'is not registered (nothing to remove' 'T42h clear error message emitted'
+$regContT42c_post = Get-Content -LiteralPath $regT42 -Raw -ErrorAction SilentlyContinue
+Assert-Eq "$regContT42c_post" "$regContT42c_pre" 'T42i remove unregistered path: registry unchanged'
 Write-Host ""
 
 # ---------------------------------------------------------------------------
