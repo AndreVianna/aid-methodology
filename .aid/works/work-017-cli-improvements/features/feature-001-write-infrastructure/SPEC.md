@@ -8,6 +8,7 @@
 | 2026-07-17 | Technical Specification authored (autonomous run): server op endpoints, writer dispatch, settings + REQUIREMENTS writers, --allow-writes gate, reader-twin parity, truthful re-render. Q1 gate design specified; Q3 resolved (build writer, not retarget). KI-001 registered. | /aid-specify |
 | 2026-07-17 | Re-opened (work STATE.md Q5, user-decided) to close a foundation gap found in feature-009 review: write-op target resolution assumed the served tree and would 404 for a worktree-isolated pipeline (work-017's own topology). Added worktree-aware `resolve_work_dir` (reuses the reader's `enumerate_worktree_roots` + reconcile-winner), invariant WT-1, and a WT-1 acceptance criterion; updated Data Model / Feature Flow / Layers / API Contracts. | /aid-specify |
 | 2026-07-17 | Re-opened (plan-review CRITICAL / KI-004): added the OPTIONAL per-op `status_map` field to the `OP_TABLE` row schema (dispatcher uses `op.status_map or DEFAULT_MAP`) so `aid`-CLI-backed ops (features 003/004) can map `aid`'s exit alphabet without touching the STATE-op default. Documented in Layers + API Contracts + OP_TABLE column + OP-SM acceptance note. Optional + default-behavior-preserving. | /aid-specify |
+| 2026-07-18 | Execute-time correction (task-003 quick-check CRITICAL): the `write-setting.sh`/`write-requirement.sh` exit-code prose said "mirror `read-setting.sh` (2 arg/IO)", contradicting `DEFAULT_MAP` where exit `2` = lock contention (→409). Corrected the writer contracts to conform to `DEFAULT_MAP` (0 ok / 4 invalid-value / 5 missing-arg / 3 IO-or-write-fail; never 2). `read-setting.sh` is a reader whose exits the server never maps. No `DEFAULT_MAP` change — the map was already correct; only the writer prose + the new writers' emitted codes were wrong. | /aid-execute |
 
 ## Source
 
@@ -386,8 +387,15 @@ write-setting.sh --path <section.key> --value <V> [--file <settings.yml>]
   value inside the strip-only alphabet every settings reader round-trips identically).
 - Surgical flat-section rewrite of the `<section>:` → `  <key>: <value>` line (mirrors
   `read-setting.sh`'s `lookup` model); creates the key (and section) if absent; every other line
-  byte-preserved; atomic temp-file + `mv`. Exit codes mirror `read-setting.sh` (0 ok; 2 arg/IO;
-  plus 4 invalid value). bash-only (as `read-setting.sh` is; the dashboard already requires bash).
+  byte-preserved; atomic temp-file + `mv`. Exit codes conform to the server `DEFAULT_MAP`
+  (§API Contracts) / `writeback-state.sh`'s alphabet: **0** ok; **4** invalid value
+  (allowlist / grade regex / forbidden charset); **5** missing or malformed required arg; **3**
+  IO or unverifiable-write failure. These lock-free writers MUST NOT emit exit **2** — that code is
+  reserved for `writeback-state.sh` lock contention (→ 409 `busy`) and would be mis-mapped by
+  `DEFAULT_MAP`. (Corrected during EXECUTE task-003: the earlier "mirror `read-setting.sh` (2 arg/IO)"
+  wording was wrong — `read-setting.sh` is a *reader* whose exit codes the server never maps; the
+  dispatched write-side writers must conform to `DEFAULT_MAP`, where `2` = lock contention.) bash-only
+  (the dashboard already requires bash).
 
 **`write-requirement.sh` contract** (new; Q3 resolution):
 

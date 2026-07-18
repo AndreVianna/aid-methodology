@@ -31,6 +31,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - Server `_parse_args` (`server.py` ~line 1113) and `parseArgs` (`server.mjs` ~line 65): add a `--allow-writes` store-true; absent => read-only (fail-safe default). The flag is a fixed token, never read from request/config/env (SEC-1 bind posture preserved).
 - Additive `write_enabled` key: DM-1 `serialize_model` top level (beside `generated_by`) and DM-2 `machine` block (`build_home_model`, after `cli_runtime`), applied identically to `server.py` and `server.mjs`. No `schema_version` bump (DM-1 stays 3, DM-2 stays 1; DM-A3 / RC-2 no-bump precedent). Regenerate golden fixtures for both twins in lockstep.
 - `_aid_remote_expose` (~line 951): extend the tailnet-ACL guidance note to state that with `--allow-writes`, any granted identity can also modify this project's state.
+- `bin/aid.ps1` (Windows CLI twin — module-map maintains `bin/aid <-> bin/aid.ps1` as a behavior-parity pair): mirror ALL of the above into the PowerShell reimplementation — `Invoke-AidDashboardCtl` accepts `--allow-writes` for `start` and rejects it for `stop`; the `_dc_start`-equivalent spawn computes the identical `write_enabled` policy and appends `--allow-writes` to the server spawn argv IFF `write_enabled`; the remote-expose guidance note carries the same write-reachability warning. Required because on native Windows (no Git-Bash) `aid.ps1`/`aid.cmd` is the path that starts the dashboard; without this the gate defaults the server to read-only even on loopback once task-004 wires enforcement. (Scope extension recorded during EXECUTE — the original DETAIL named only `bin/aid`; the `bin/aid.ps1` twin was surfaced by the task-001 executor and folded in per "fix everywhere".)
 
 **Acceptance Criteria:**
 - [ ] `aid dashboard start --allow-writes` is accepted; the flag is rejected for the `stop` verb (parity with `--remote`).
@@ -38,6 +39,7 @@ Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md
 - [ ] `_dc_start` appends `--allow-writes` to the spawn argv iff `write_enabled`; a bare `server ... --host 127.0.0.1 --port N` (no flag) parses as read-only in both twins.
 - [ ] `write_enabled` appears at the DM-1 envelope top level and in the DM-2 `machine` block, identically in `server.py` and `server.mjs`, with `schema_version` unchanged (DM-1 = 3, DM-2 = 1); golden fixtures are regenerated in lockstep and the cross-runtime parity suites stay green (AC4).
 - [ ] `_aid_remote_expose` guidance names the write-reachability consequence of `--allow-writes` for granted tailnet identities (AC8).
+- [ ] `bin/aid.ps1` mirrors the `--allow-writes` gate identically to `bin/aid` (accepted for `start`, rejected for `stop`; same `write_enabled` policy; flag appended to the server spawn argv iff `write_enabled`; remote-expose note updated) — the two CLI twins stay behavior-consistent.
 - [ ] Unit tests for all new public methods/endpoints
 - [ ] All existing tests still pass
 - [ ] Build passes
