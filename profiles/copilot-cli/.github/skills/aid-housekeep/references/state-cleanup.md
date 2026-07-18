@@ -55,7 +55,8 @@ Determine `REPO_ROOT` (the root of the git repository; the directory containing
 `.aid/`) and invoke the classifier. There is **no active work folder to exclude**:
 housekeep run-state lives in `.aid/.temp/HOUSEKEEP_STATE_*.md` (not in a work
 folder), so `--active-work` is not passed. `cleanup-classify.sh` still hard-skips
-the one work folder whose `aid/work-NNN-*` branch is currently checked out, and it
+the one work folder whose `work-NNN` branch is currently checked out (the legacy
+`aid/work-NNN-*` form is also tolerated), and it
 **offers every other work folder** for the user to confirm or decline (the user has
 the last word — no folder is silently hidden):
 
@@ -253,6 +254,103 @@ Advance: **CHAIN** → [State: DONE].
 
 ---
 
+## Step 4b — Worktree teardown offer (per confirmed Tier-1 folder)
+
+Reached only when `CONFIRMED_ALL` is non-empty (Step 4's cancel/empty-selection
+check above did not chain to DONE). Extends the confirm-before-delete gate with
+an opt-in worktree-teardown offer (FR7/AC7), defaulting to **Keep** — nothing is
+torn down without an explicit toggle (NFR1/NFR3).
+
+Teardown targets **only Tier-1** work folders. Gate on the classifier's own
+`TIER` field (field 2 of the candidate record), NOT the basename alone: a
+coincidentally `work-NNN`-named Tier-2 loose file (e.g.
+`.aid/work-099-notes.md`, emitted by `scan_tier2`) must never trigger a
+teardown offer against work-099's real worktree. `CONFIRMED_ALL` paths equal
+the candidate `PATH` field, so look `TIER` up in `$CANDIDATES`:
+
+```bash
+CONFIRMED_WT=()   # entries: "<work-id>|<worktree-path>|<force?>"
+for path in "${CONFIRMED_ALL[@]}"; do
+    tier=""
+    while IFS='|' read -r c_path c_tier _rest; do
+        [[ "$c_path" == "$path" ]] && { tier="$c_tier"; break; }
+    done <<< "$CANDIDATES"
+    [[ "$tier" == "1" ]] || continue                  # not a Tier-1 work folder → no teardown
+    folder="$(basename "${path%/}")"
+    [[ "$folder" =~ ^(work-[0-9]+)- ]] || continue    # defensive: Tier-1 is always .aid/works/work-NNN-*/
+    work_id="${BASH_REMATCH[1]}"                       # e.g. work-099
+
+    # Presence pre-check (read-only): anything to tear down?
+    has_branch=0; has_wt=0
+    git -C "$REPO_ROOT" rev-parse --verify --quiet "refs/heads/${work_id}" >/dev/null 2>&1 && has_branch=1
+    git -C "$REPO_ROOT" worktree list --porcelain 2>/dev/null \
+        | grep -q "^branch refs/heads/${work_id}$" && has_wt=1
+    if [[ $has_branch -eq 0 && $has_wt -eq 0 ]]; then
+        echo "  • ${work_id}: no worktree or ${work_id} branch present — nothing to tear down."
+        continue
+    fi
+
+    # Resolve the path via the feature-001 helper (no fabrication: pre-check proved existence).
+    LOC=$(bash .github/aid/scripts/works/worktree-lifecycle.sh locate "$work_id") \
+        || { echo "  • ${work_id}: locate failed — skipping teardown (folder deletion still applies)."; continue; }
+    IFS=$'\t' read -r WT_PATH WT_STATUS <<< "$LOC"   # TAB-separated: <path>\t<status> (feature-001 contract)
+
+    # NFR3 safety probe (surfaced in the offer; gates --force).
+    dirty=0; ahead=0
+    [[ -n "$(git -C "$WT_PATH" status --porcelain 2>/dev/null)" ]] && dirty=1
+    [[ "$(git -C "$REPO_ROOT" rev-list --count "master..${work_id}" 2>/dev/null || echo 0)" -gt 0 ]] && ahead=1
+    # → issue the AskUserQuestion below. On confirm, push "$work_id|$WT_PATH|<force|noforce>".
+done
+```
+
+Note the pre-check is deliberately read-only and runs **before** `locate` is
+ever called: `locate` resolves via the feature-001 4-rung ladder and *may
+create* a worktree when none exists (rung 3 → status `created`). Teardown
+must never fabricate a worktree just to delete it, so `locate` is only called
+once the pre-check has proven a branch or worktree already exists — meaning
+the status returned here is always `registered` or `recreated`, never
+`created` (and never `current`: teardown targets only *other* works' folders,
+never the worktree the agent is standing in — CLEANUP cannot even be reached
+from inside a work's own worktree; see `state-preflight.md` Check 4). If
+neither a branch nor a worktree exists, teardown is skipped for that folder
+(nothing to remove) and `locate` is not called.
+
+Issue a **separate** `AskUserQuestion` for each folder that reaches this point
+(i.e., every Tier-1 folder with a branch or worktree present):
+
+```
+Use AskUserQuestion:
+"'.aid/works/work-099-done' is confirmed for deletion. It also has an isolated worktree:
+
+  Worktree : <WT_PATH>            (status: <WT_STATUS>)
+  Branch   : work-099
+
+  [ if dirty ]  ⚠ the worktree has UNCOMMITTED changes.
+  [ if ahead ]  ⚠ branch work-099 has commits NOT on master (unmerged).
+
+Also remove this worktree and prune branch work-099?
+- Keep — leave the worktree and branch intact (default).
+- Remove — git worktree remove + prune the work-099 branch.
+  [ if dirty/ahead ]  Removing DISCARDS the uncommitted/unmerged work above."
+```
+
+Semantics:
+- **Decline (Keep):** the folder is still deleted+committed by Steps 5–6, but
+  the worktree and branch are left fully intact (AC7).
+- **Confirm (Remove), clean case (`dirty=0 && ahead=0`):** record
+  `"$work_id|$WT_PATH|noforce"` into `CONFIRMED_WT[]`.
+- **Confirm (Remove), dirty/ahead case:** removal requires an **additional
+  explicit confirmation** (shown inline in the prompt above) before it may be
+  recorded as `force`; only then record `"$work_id|$WT_PATH|force"`. Without
+  that second explicit confirm, treat the response as Decline (NFR3 edge
+  case) — never silently escalate to `--force`.
+
+No worktree or branch is ever removed without appearing in a confirmed
+`AskUserQuestion` response first (NFR1, mirroring the folder-deletion
+invariant in Step 5).
+
+---
+
 ## Step 5 — Apply deletions (tracked/untracked split)
 
 For each path in `CONFIRMED_ALL`, partition into `to_git_rm[]` and `to_rm[]`
@@ -302,6 +400,38 @@ git history (NFR1, AC8).
 
 ---
 
+## Step 5b — Apply worktree teardown
+
+Runs after Step 5's folder deletions, for every entry `CONFIRMED_WT[]`
+collected in Step 4b. `git worktree remove` and `git branch -D` mutate git's
+worktree registry and refs (under `.git/`), **not** tracked working-tree
+content, so they are executed directly here and are **not** part of the
+`branch-commit.sh` commit in Step 6 (that commit covers only the `git rm`
+folder deletions staged in Step 5):
+
+```bash
+for entry in "${CONFIRMED_WT[@]}"; do
+    IFS='|' read -r wid wpath force <<< "$entry"
+    if [[ "$force" == "force" ]]; then
+        git -C "$REPO_ROOT" worktree remove --force "$wpath"   # dirty/ahead + explicit extra confirm
+    else
+        git -C "$REPO_ROOT" worktree remove "$wpath"           # git itself refuses if dirty (NFR3 backstop)
+    fi
+    git -C "$REPO_ROOT" branch -D "$wid"    # worktree removed first → branch is free to delete
+    git -C "$REPO_ROOT" worktree prune      # sweep stale admin entries
+done
+```
+
+Ordering is load-bearing: `git worktree remove` must precede `git branch -D`
+(git refuses to delete a branch still checked out in a worktree). `git
+worktree prune` runs last, as a sweep. A folder whose teardown offer was
+declined in Step 4b never populates `CONFIRMED_WT[]`, so its worktree and
+branch reach this step untouched — only explicitly confirmed removals loop
+here (NFR1/NFR3). The completion summary in Step 6 lists each torn-down
+worktree/branch alongside the deleted folders.
+
+---
+
 ## Step 6 — Single commit, write gate field, chain to DONE
 
 Make exactly **one** commit via `branch-commit.sh` for the staged deletions.
@@ -328,14 +458,20 @@ bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
-Print the completion summary:
+Print the completion summary. When `CONFIRMED_WT[]` (Step 4b/5b) is non-empty,
+list each torn-down worktree/branch alongside the deleted folders:
 
 ```
 ✓ CLEANUP: <N> item(s) deleted — committed.
   Deleted:
     <list each deleted path with mechanism: (git rm) or (rm)>
+  Worktrees removed:
+    <list each entry from CONFIRMED_WT[] as: work-NNN — <worktree-path> (branch pruned)>
   Cleanup Stage: passed.
 ```
+
+Omit the `Worktrees removed:` block entirely when `CONFIRMED_WT[]` is empty
+(no teardown was offered or confirmed for this run).
 
 **D2 coordination note:** This stage sweeps any residual
 `verify-deterministic-report.json` / `verify-advisory-report.json` under

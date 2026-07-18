@@ -20,7 +20,7 @@
 {"dst": ".agent/aid/scripts/execute/writeback-state.sh", "profile": "antigravity", "sha256": "13cfbc555131bd9f0b83b563effab5fbb721258035d8e52050ce82a402200109", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".agent/aid/scripts/grade.sh", "profile": "antigravity", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".agent/aid/scripts/housekeep/branch-commit.sh", "profile": "antigravity", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
-{"dst": ".agent/aid/scripts/housekeep/cleanup-classify.sh", "profile": "antigravity", "sha256": "0cfb0af9c2ce2326585465d859c94a9fc11150991d46248e86a7d706abcb0153", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
+{"dst": ".agent/aid/scripts/housekeep/cleanup-classify.sh", "profile": "antigravity", "sha256": "d9f0abab4118f3ed97f3f54c67524a8e68f6dda763edf95e918d020f3c454d8c", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".agent/aid/scripts/housekeep/housekeep-state.sh", "profile": "antigravity", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".agent/aid/scripts/kb/build-kb-index.sh", "profile": "antigravity", "sha256": "bc9c0bc138fa65a4e9b56f275df753dcedb0e6f63cfa6ffbf431b0ad0c3ff7f4", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".agent/aid/scripts/kb/build-metrics.sh", "profile": "antigravity", "sha256": "3d63066f2cd54ccd0a5321faad95746b8dc27a20e16b8219df647dfa6f97c31e", "src": "canonical/scripts/kb/build-metrics.sh"}
@@ -266,7 +266,7 @@
 {"dst": ".agent/skills/aid-experiment/SKILL.md", "profile": "antigravity", "sha256": "2d68ffe82ca32f8ab982d2bb39d4c8b5900daafb76a8aac7b40706d0b2aa271b", "src": "canonical/skills/aid-experiment/SKILL.md"}
 {"dst": ".agent/skills/aid-fix/SKILL.md", "profile": "antigravity", "sha256": "ce457d4326b4a21143d3421b3c5568a4706da938951ba245818446235fa1d096", "src": "canonical/skills/aid-fix/SKILL.md"}
 {"dst": ".agent/skills/aid-housekeep/SKILL.md", "profile": "antigravity", "sha256": "a7171cdd0816a44adbb60a187214b27f405801153d2bdca6bafb81bdc7bb5cea", "src": "canonical/skills/aid-housekeep/SKILL.md"}
-{"dst": ".agent/skills/aid-housekeep/references/state-cleanup.md", "profile": "antigravity", "sha256": "5c03cff69b003b02de13afffcd822b949d2cdfb4794511d6c49365715ea23c52", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
+{"dst": ".agent/skills/aid-housekeep/references/state-cleanup.md", "profile": "antigravity", "sha256": "9b769ff9c5bacaf4a17891b11603f6a800315cb73a51f0efa13fec6eefc0db6a", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
 {"dst": ".agent/skills/aid-housekeep/references/state-done.md", "profile": "antigravity", "sha256": "b0575ea1a054bd2b15559b210231e58d79432783c2b3bda543d81afe04dbb9f4", "src": "canonical/skills/aid-housekeep/references/state-done.md"}
 {"dst": ".agent/skills/aid-housekeep/references/state-kb-delta.md", "profile": "antigravity", "sha256": "df56cccfefa4a66cce2ad7c8a3dd05d9f68e3006e9671209322a51cdf9600ffa", "src": "canonical/skills/aid-housekeep/references/state-kb-delta.md"}
 {"dst": ".agent/skills/aid-housekeep/references/state-preflight.md", "profile": "antigravity", "sha256": "dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a", "src": "canonical/skills/aid-housekeep/references/state-preflight.md"}

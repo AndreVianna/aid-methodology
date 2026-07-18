@@ -20,7 +20,7 @@
 {"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "13cfbc555131bd9f0b83b563effab5fbb721258035d8e52050ce82a402200109", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".codex/aid/scripts/grade.sh", "profile": "codex", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".codex/aid/scripts/housekeep/branch-commit.sh", "profile": "codex", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
-{"dst": ".codex/aid/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "d1a5f4fd95c3cc3e0d3e26c304d71aba95374e6d7c4a86443c8e6093b2688832", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
+{"dst": ".codex/aid/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "126eadce795c1475bc200d585765b4bd17827ba94ba0a047d65e1267b974770c", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
 {"dst": ".codex/aid/scripts/housekeep/housekeep-state.sh", "profile": "codex", "sha256": "34efca63b146b2025d864172c0880123eee18e0b6e9a5ba0b754b652c7fe6a98", "src": "canonical/scripts/housekeep/housekeep-state.sh"}
 {"dst": ".codex/aid/scripts/kb/build-kb-index.sh", "profile": "codex", "sha256": "2b889a377250968d3174dc10f751a4d261f3e60a74012183d50f80f8724d82ac", "src": "canonical/scripts/kb/build-kb-index.sh"}
 {"dst": ".codex/aid/scripts/kb/build-metrics.sh", "profile": "codex", "sha256": "fe24706c52b3f2350ba148f2720a9c44a8360e468b63b81f8b847bf8a6f6c7d3", "src": "canonical/scripts/kb/build-metrics.sh"}
@@ -266,7 +266,7 @@
 {"dst": ".codex/skills/aid-experiment/SKILL.md", "profile": "codex", "sha256": "e036519b65b8eee126fd7b1d3e27bf21701f29f20483f876502dc5fe5b1ff19e", "src": "canonical/skills/aid-experiment/SKILL.md"}
 {"dst": ".codex/skills/aid-fix/SKILL.md", "profile": "codex", "sha256": "c87c4052cacd4e02fe6a29a7856b06995419ef6c01443623e90fef926b16a6f4", "src": "canonical/skills/aid-fix/SKILL.md"}
 {"dst": ".codex/skills/aid-housekeep/SKILL.md", "profile": "codex", "sha256": "39726c2e3b84ee602b59d7f8426e44232b33a3878a4e405bc46090671d8a1556", "src": "canonical/skills/aid-housekeep/SKILL.md"}
-{"dst": ".codex/skills/aid-housekeep/references/state-cleanup.md", "profile": "codex", "sha256": "b70c1e8ae2f285be42d120fa15e4e483c4c1fadd31f955fd62ef0bf45330c702", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
+{"dst": ".codex/skills/aid-housekeep/references/state-cleanup.md", "profile": "codex", "sha256": "b01b2a602596cfd54d794d3ca19b5c11aa46b30510c387ede609ea6fe39f5edb", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
 {"dst": ".codex/skills/aid-housekeep/references/state-done.md", "profile": "codex", "sha256": "7870013c5ef82273157d59f323a4c037d30367e42e2910550e8c6c1736ab3446", "src": "canonical/skills/aid-housekeep/references/state-done.md"}
 {"dst": ".codex/skills/aid-housekeep/references/state-kb-delta.md", "profile": "codex", "sha256": "82ae86daece3c0799120695dd93421f1895ea4c21807415d084555aa53266b41", "src": "canonical/skills/aid-housekeep/references/state-kb-delta.md"}
 {"dst": ".codex/skills/aid-housekeep/references/state-preflight.md", "profile": "codex", "sha256": "dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a", "src": "canonical/skills/aid-housekeep/references/state-preflight.md"}
