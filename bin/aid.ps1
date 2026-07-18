@@ -228,12 +228,15 @@ function script:Show-AidUsage {
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
         'dashboard' {
-            Write-Host 'aid dashboard start <node|python> [--remote] [--port <n>]'
+            Write-Host 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]'
             Write-Host 'aid dashboard stop'
             Write-Host '  Start or stop the machine-level pipeline dashboard (serves all registered projects).'
             Write-Host '  <node|python>  select the server runtime to launch.'
             Write-Host '  --remote       also expose it to authorized users over a private channel (never public);'
             Write-Host '                 fails clearly if that mechanism is unavailable -- never binds publicly.'
+            Write-Host '  --allow-writes opt in to interactive writes. On loopback writes are always enabled'
+            Write-Host '                 (this flag is then accepted but redundant, no error); under --remote the'
+            Write-Host '                 dashboard is read-only unless this flag is also given.'
             Write-Host '  --port <n>     listen port on 127.0.0.1 (default 8787).'
             Write-Host "  The dashboard binds to 127.0.0.1 only. 'stop' is idempotent and also tears down --remote."
             Write-Host '  Works from any directory (not tied to the current project).'
@@ -780,6 +783,7 @@ function script:Invoke-AidRemoteExpose {
     [Console]::Error.WriteLine('  https://login.tailscale.com/admin/acls/file')
     [Console]::Error.WriteLine("  {`"grants`":[{`"src`":[`"$srcPlaceholder`"],`"dst`":[`"$dstPlaceholder`"],`"ip`":[`"tcp:443`"]}]}")
     [Console]::Error.WriteLine("Note: granted identities see all registered project paths/names. See 'aid dashboard --help'.")
+    [Console]::Error.WriteLine("Note: with --allow-writes, any granted identity can also modify this project's state.")
     [Console]::Error.WriteLine('')
 
     # Step 6: Emit handle + URL on stdout, exit 0.
@@ -866,6 +870,7 @@ function script:Invoke-AidDashboardCtl {
     $dcVerbose = $false
     $dcPort    = 8787
     $dcRemote  = $false
+    $dcAllowWrites = $false
     $dcRuntime = ''
 
     $idx = 0
@@ -891,6 +896,13 @@ function script:Invoke-AidDashboardCtl {
                     script:Exit-Aid 2
                 }
                 $dcRemote = $true
+            }
+            { $_ -in @('-AllowWrites', '--allow-writes') } {
+                if ($verb -eq 'stop') {
+                    [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown flag: $a")
+                    script:Exit-Aid 2
+                }
+                $dcAllowWrites = $true
             }
             { $_ -in @('-Port', '--port') } {
                 if ($verb -eq 'stop') {
@@ -923,7 +935,7 @@ function script:Invoke-AidDashboardCtl {
     }
 
     if ($verb -eq 'start') {
-        script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -Verbose $dcVerbose
+        script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -AllowWrites $dcAllowWrites -Verbose $dcVerbose
     } else {
         script:Invoke-DcStop -Verbose $dcVerbose
     }
@@ -966,7 +978,7 @@ function script:Invoke-DcReapPort {
 }
 
 function script:Invoke-DcStart {
-    param([string]$Runtime, [int]$Port, [bool]$Remote, [bool]$Verbose)
+    param([string]$Runtime, [int]$Port, [bool]$Remote, [bool]$AllowWrites, [bool]$Verbose)
 
     # Step 1: validate runtime.
     if ([string]::IsNullOrEmpty($Runtime)) {
@@ -1039,6 +1051,14 @@ function script:Invoke-DcStart {
     $tempDir = Join-Path $HOME (Join-Path '.aid' '.temp')
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
+    # Fail-safe write gate (Q1/NFR2/C3/AC8, feature-001 task-001):
+    #   write_enabled = (loopback) OR (--remote AND --allow-writes).
+    # Loopback is always write-enabled; --remote alone is read-only; --remote
+    # --allow-writes is write-enabled; --allow-writes on loopback is accepted and
+    # redundant (no error). The server only learns write_enabled via the spawn argv
+    # below -- it is never read from request/config/env (SEC-1 posture unaffected).
+    $writeEnabled = (-not $Remote) -or ($Remote -and $AllowWrites)
+
     # Step 7: spawn the server child (detached daemon).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
     # WINDOWS/POWERSHELL: do NOT pass -RedirectStandardOutput/-RedirectStandardError here.
@@ -1056,6 +1076,7 @@ function script:Invoke-DcStart {
     # registry via its legacy AID_HOME env var (delivery-008 seam).
     $env:AID_HOME = $script:_AidStateHome
     $spawnArgs = @($entryPoint, '--host', '127.0.0.1', '--port', "$Port")
+    if ($writeEnabled) { $spawnArgs += '--allow-writes' }
     $proc = Start-Process -FilePath $interp `
         -ArgumentList $spawnArgs `
         -PassThru `
