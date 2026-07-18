@@ -58,6 +58,7 @@
 {"dst": ".agent/aid/scripts/summarize/validate-visuals.mjs", "profile": "antigravity", "sha256": "aef93e119cdaa1992c45ab5179e1a7ef0f90a39981625025ce039657e7fe243b", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".agent/aid/scripts/summarize/writeback-state.sh", "profile": "antigravity", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".agent/aid/scripts/works/enumerate-works.sh", "profile": "antigravity", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
+{"dst": ".agent/aid/scripts/works/worktree-lifecycle.sh", "profile": "antigravity", "sha256": "367f231fbc11ef6abcc03d81f1bc91e8b212951d40f2a59b1837ae0f359f64ad", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
 {"dst": ".agent/aid/templates/agent-boilerplate.md", "profile": "antigravity", "sha256": "563f43a7616f75caa987b12fa0bf050c5f833d914f9c02e058eba9866c0e8744", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".agent/aid/templates/agent-dispatch-tiering.md", "profile": "antigravity", "sha256": "0124185b1885b472894f63ebc9a79fe09688b56d8ee25bb111694d146c3cc9d2", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".agent/aid/templates/connectors/consumption-protocol.md", "profile": "antigravity", "sha256": "0b123d12304ad4f6d44375d7d36ce91c5e08b083bc3b129799baa9c1c86c192a", "src": "canonical/templates/connectors/consumption-protocol.md"}
@@ -137,6 +138,7 @@
 {"dst": ".agent/aid/templates/task-state-template.md", "profile": "antigravity", "sha256": "04a534014f781a3e40d2f503686ab28593d1a128c5ee86227c9b2547415ee6fd", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".agent/aid/templates/work-initiation-gate.md", "profile": "antigravity", "sha256": "0409568637ddee0e27d331dd9eae00eb3e5a326d26707a7b92c13661a7d08be0", "src": "canonical/templates/work-initiation-gate.md"}
 {"dst": ".agent/aid/templates/work-state-template.md", "profile": "antigravity", "sha256": "702a476ec476821a8f419ccf1f4d74900355b32c628b885a58687a133f917b13", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".agent/aid/templates/worktree-lifecycle.md", "profile": "antigravity", "sha256": "7da48f7e6240194a9329ea0e86e0bcfbca0951b27dde5742d16b54bff970b760", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".agent/skills/aid-add-api/SKILL.md", "profile": "antigravity", "sha256": "a1d6acb9649574672c17b2a870d59ef06cd6712c2bfb606517c1a5c115859ce3", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".agent/skills/aid-add-cli/SKILL.md", "profile": "antigravity", "sha256": "21b88eab7f9b7bd97cf6922e38ca0b2dc716197a2a1862fb1fe987b1b9df7c34", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".agent/skills/aid-add-config/SKILL.md", "profile": "antigravity", "sha256": "2bc65a35bf1ddf9fcfe385e6b490ab779717d5280290d7418db8726e1a0c2277", "src": "canonical/skills/aid-add-config/SKILL.md"}

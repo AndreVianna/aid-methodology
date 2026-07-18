@@ -58,6 +58,7 @@
 {"dst": ".cursor/aid/scripts/summarize/validate-visuals.mjs", "profile": "cursor", "sha256": "ec9e13511fee1a43471f30043f61857e597ca609ae527d8074251cd98b77d5f4", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".cursor/aid/scripts/summarize/writeback-state.sh", "profile": "cursor", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".cursor/aid/scripts/works/enumerate-works.sh", "profile": "cursor", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
+{"dst": ".cursor/aid/scripts/works/worktree-lifecycle.sh", "profile": "cursor", "sha256": "14049f77297b49c7d9909bb504496f49517d36c3c56517007176b7aac91c2616", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
 {"dst": ".cursor/aid/templates/agent-boilerplate.md", "profile": "cursor", "sha256": "ce21236493480b23cddd2a319be7108b8c089ecd75b08e13a938fffe9fc3feb5", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".cursor/aid/templates/agent-dispatch-tiering.md", "profile": "cursor", "sha256": "af60bee6347d7983a87ff985a607edef24aaf2cd55374524be4d182a11ccaca0", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".cursor/aid/templates/connectors/consumption-protocol.md", "profile": "cursor", "sha256": "0b123d12304ad4f6d44375d7d36ce91c5e08b083bc3b129799baa9c1c86c192a", "src": "canonical/templates/connectors/consumption-protocol.md"}
@@ -137,6 +138,7 @@
 {"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "e547113b2c20a5f55b018d3b0228661eb8178f804d277f313336dcc0a09fcca9", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".cursor/aid/templates/work-initiation-gate.md", "profile": "cursor", "sha256": "72f53a1991483108d77d21bb15eca05ba20c1e372c3441c77906b51d3be5c26e", "src": "canonical/templates/work-initiation-gate.md"}
 {"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "e11d8c9521946d0d8677168e3a9fb775aba9f0e47dab735106a72db6729fa2b5", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".cursor/aid/templates/worktree-lifecycle.md", "profile": "cursor", "sha256": "dcb20fb03449b82d3e5eb27d1c6cf04f72543a970c6ffd39a9d3e94acaf95752", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".cursor/skills/aid-add-api/SKILL.md", "profile": "cursor", "sha256": "9a5a5ac95afe5f4c9fe822deac0040ca51ee8b3187a426f0028c24743404de4c", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".cursor/skills/aid-add-cli/SKILL.md", "profile": "cursor", "sha256": "3ee8e28e81e0d474625ae612fad71dc4e2c679768f936f34674d014038728105", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".cursor/skills/aid-add-config/SKILL.md", "profile": "cursor", "sha256": "0c78880c9fbb40d4b6ebbaaadad61752aa699779ae46e95af923312bb18271a7", "src": "canonical/skills/aid-add-config/SKILL.md"}

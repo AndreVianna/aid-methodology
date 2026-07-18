@@ -58,6 +58,7 @@
 {"dst": ".github/aid/scripts/summarize/validate-visuals.mjs", "profile": "copilot-cli", "sha256": "9e607a5da7a57da0af187519a8c7b7ac73859da7f683c50a4625ccb1f78dc275", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".github/aid/scripts/summarize/writeback-state.sh", "profile": "copilot-cli", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".github/aid/scripts/works/enumerate-works.sh", "profile": "copilot-cli", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
+{"dst": ".github/aid/scripts/works/worktree-lifecycle.sh", "profile": "copilot-cli", "sha256": "44726cdd9aeb19a4af75c829ade0aead9e868ed1e18079df7908561eb529ab22", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
 {"dst": ".github/aid/templates/agent-boilerplate.md", "profile": "copilot-cli", "sha256": "40c2e6cedf895af995235b5432550ebd936ba11106bdcdb7b43b4f4513db0479", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".github/aid/templates/agent-dispatch-tiering.md", "profile": "copilot-cli", "sha256": "9b70a5dd616c4ead142343f1e01db788889b7223d352b51afc26115ff010a77e", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".github/aid/templates/connectors/consumption-protocol.md", "profile": "copilot-cli", "sha256": "0b123d12304ad4f6d44375d7d36ce91c5e08b083bc3b129799baa9c1c86c192a", "src": "canonical/templates/connectors/consumption-protocol.md"}
@@ -137,6 +138,7 @@
 {"dst": ".github/aid/templates/task-state-template.md", "profile": "copilot-cli", "sha256": "a230743d16f72a37a71151a789392acb73c48c912bbef6ed1d927a45032591d3", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".github/aid/templates/work-initiation-gate.md", "profile": "copilot-cli", "sha256": "659ec51eba8280167f8b1d85ed2c4fa8c371a3600dba90bc07c724af7a539718", "src": "canonical/templates/work-initiation-gate.md"}
 {"dst": ".github/aid/templates/work-state-template.md", "profile": "copilot-cli", "sha256": "7537203a793d8302f2bd6b273961a77ac28aaf93b983b022025eb303b10b8fa0", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".github/aid/templates/worktree-lifecycle.md", "profile": "copilot-cli", "sha256": "ffc3d911691b85d54d1b90ade357eedce6092d1caa9806ccc91ff49bdb59d8e1", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".github/skills/aid-add-api/SKILL.md", "profile": "copilot-cli", "sha256": "c2b12cffba968db2e70cde7c888c8559292c1d6f1ab870d8de87e59cbf89f31b", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".github/skills/aid-add-cli/SKILL.md", "profile": "copilot-cli", "sha256": "0e814b8d2ffc1482d09dc275cd33245eafa169c478a2f938b1755197a625ab85", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".github/skills/aid-add-config/SKILL.md", "profile": "copilot-cli", "sha256": "f41fccf11342204f5f5d111989e9a685b38f275e9de289421253066104a280db", "src": "canonical/skills/aid-add-config/SKILL.md"}
