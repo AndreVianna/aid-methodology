@@ -743,8 +743,8 @@ mode_field() {
     local field_lower
     field_lower="${FIELD,,}"   # bash 4+ lowercase
     case "$field_lower" in
-        state|review|elapsed|notes) ;;
-        *) die "unknown field '$FIELD'; allowed: State Review Elapsed Notes" 4 ;;
+        state|review|elapsed|notes|name) ;;
+        *) die "unknown field '$FIELD'; allowed: State Review Elapsed Notes Name" 4 ;;
     esac
 
     # Enum validation for the State field (closed enum).
@@ -784,14 +784,24 @@ mode_field() {
 
     # Surgical frontmatter write (task-004): `state`/`review`/`elapsed`/`notes`
     # are flat top-level keys in task-state-template.md's frontmatter block --
-    # field_lower IS the frontmatter key verbatim, no name mapping needed.
+    # field_lower IS the frontmatter key verbatim for those four, no mapping
+    # needed. The ONE exception is `name` (feature-005): its reader key is
+    # `display_name` (models.py TaskModel.display_name), so it is routed
+    # through the same fm_key indirection mode_gate_field already uses for
+    # Tier/Grade/Timestamp -> gate_* -- writing a literal `name:` key would be
+    # silently unread by both dashboard reader twins.
+    local fm_key="$field_lower"
+    case "$field_lower" in
+        name) fm_key="display_name" ;;
+    esac
+
     local tmp
     tmp=$(mktemp)
-    wb_set_frontmatter "$TASK_STATE_FILE" "$field_lower" "$FIELD_VALUE" > "$tmp"
+    wb_set_frontmatter "$TASK_STATE_FILE" "$fm_key" "$FIELD_VALUE" > "$tmp"
 
-    if ! wb_frontmatter_verify "$tmp" "$field_lower"; then
+    if ! wb_frontmatter_verify "$tmp" "$fm_key"; then
         rm -f "$tmp"
-        die "writeback sanity check failed: frontmatter key '$field_lower' not found in output; $TASK_STATE_FILE preserved" 3
+        die "writeback sanity check failed: frontmatter key '$fm_key' not found in output; $TASK_STATE_FILE preserved" 3
     fi
 
     # Sanity: ## Task State section must still be present in output (body untouched)
@@ -813,7 +823,17 @@ mode_field() {
 # work-root STATE.md's ### Tasks lifecycle table -- the single-writer home
 # that REPLACES the now-absent per-task STATE.md ## Task State section.
 # Table shape (byte-identical closed State enum -- validated by the caller):
-#   | Task | State | Review | Elapsed | Notes |
+#   | Task | State | Review | Elapsed | Notes | Name |
+# Name (feature-005) is a trailing 6th DATA column (col_idx=7 -- column 2 is
+# the task-id cell) holding the same mutable display-name override the nested
+# layout stores under `display_name`. This function touches DATA rows only:
+# the header and separator rows are printed byte-verbatim elsewhere in this
+# awk program, with NO column-count reconciliation -- a legacy 5-column
+# header/separator (pre-feature-005 work) is left exactly as-is; only
+# work-state-template.md's SEEDED header/separator gain the Name column for
+# newly-created works. A legacy DATA row missing column 7 reads as an empty
+# trailing cell (awk's split() naturally yields "" for an absent field), so
+# rewriting any field on such a row is backward-compatible by construction.
 # The placeholder "_none yet_" row is replaced by the first task row ever
 # written; subsequent tasks are appended just before the section ends.
 # Rewriting an existing row's field preserves its other columns unchanged.
@@ -832,6 +852,7 @@ write_task_field_flat() {
         review)  col_idx=4 ;;
         elapsed) col_idx=5 ;;
         notes)   col_idx=6 ;;
+        name)    col_idx=7 ;;
         *) die "internal error: unknown field_lower '$field_lower' in write_task_field_flat" 1 ;;
     esac
 
@@ -854,7 +875,7 @@ write_task_field_flat() {
         function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
         function new_row(    line, c, v) {
             line = "| " task_row_id " |"
-            for (c = 3; c <= 6; c++) {
+            for (c = 3; c <= 7; c++) {
                 v = (c == col_idx) ? new_val : "--"
                 line = line " " v " |"
             }
@@ -908,7 +929,7 @@ write_task_field_flat() {
 
             if (tolower(first_cell) == tolower(task_row_id)) {
                 line = "| " first_cell " |"
-                for (c = 3; c <= 6; c++) {
+                for (c = 3; c <= 7; c++) {
                     v = (c == col_idx) ? new_val : cols[c]
                     line = line " " v " |"
                 }
