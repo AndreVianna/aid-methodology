@@ -247,6 +247,7 @@ main {
 .callout.ok   { border-left-color: var(--ok);   background: var(--ok-bg);   color: var(--text); }
 .callout h4 { margin: 0 0 0.2em 0; font-size: 0.78rem; color: inherit; opacity: 0.85; }
 .callout p:last-child { margin-bottom: 0; }
+.callout .btn-ghost { margin-top: 0.5rem; }
 
 /* ---------- Footer ---------- */
 footer {
@@ -536,6 +537,18 @@ footer {
     <p>Dashboard assets are out of date &#8212; restart <code>aid dashboard</code> to get the latest version.</p>
   </div>
 
+  <!-- Restart-advisory banner (feature-004, KI-002/KI-006): hidden by default;
+       shown after a successful "Update CLI" (tools.update-self, unconditionally)
+       or "Update Tools" (tools.update, when the re-fetched machine.aid_version
+       differs from the pre-op value -- aid update's stale-CLI self-update
+       preamble ran). The running server keeps executing pre-update code until
+       `aid dashboard` is restarted. Dismissible (not auto-hidden). -->
+  <div class="callout warn" id="restart-advisory-banner" style="display:none" role="alert">
+    <h4>AID CLI updated</h4>
+    <p>AID CLI updated &#8212; restart <code>aid dashboard</code> to load the new dashboard code.</p>
+    <button type="button" class="btn-ghost" id="restart-advisory-dismiss">Dismiss</button>
+  </div>
+
   <!-- Machine panel (UI-H1) -->
   <div id="machine-panel"></div>
 
@@ -613,6 +626,10 @@ footer {
     if (refreshBtn) {
       refreshBtn.addEventListener('click', function () { doFetch(); });
     }
+    var restartDismissBtn = document.getElementById('restart-advisory-dismiss');
+    if (restartDismissBtn) {
+      restartDismissBtn.addEventListener('click', hideRestartAdvisory);
+    }
     initTheme();
     doFetch();
   })();
@@ -621,7 +638,12 @@ footer {
   // Fetch (single-shot; no recurring poll -- the CLI home updates only on Refresh
   // or a browser reload)
   // ---------------------------------------------------------------------------
-  function doFetch() {
+  // onLoaded (optional): called with the fresh envelope after a successful
+  // re-render (feature-004 tools.update/tools.update-self re-fetch + restart-
+  // advisory version-diff check, index.html:onSuccess-driven re-render already
+  // covers the plain re-render; onLoaded lets a caller additionally react to
+  // the fetched envelope, e.g. compare machine.aid_version pre/post-op).
+  function doFetch(onLoaded) {
     if (fetchPending) return;            // single in-flight
     fetchPending = true;
     updateFreshnessBadge('loading');
@@ -635,6 +657,7 @@ footer {
       .then(function (envelope) {
         fetchPending = false;
         onSuccess(envelope);
+        if (typeof onLoaded === 'function') onLoaded(envelope);
       })
       .catch(function (err) {
         fetchPending = false;
@@ -723,6 +746,21 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
+  // Restart-advisory banner (feature-004, KI-002/KI-006). See its HTML comment
+  // above for when each caller shows it. Dismissible via its own button; not
+  // auto-hidden by any subsequent re-render.
+  // ---------------------------------------------------------------------------
+  function showRestartAdvisory() {
+    var el = document.getElementById('restart-advisory-banner');
+    if (el) el.style.display = '';
+  }
+
+  function hideRestartAdvisory() {
+    var el = document.getElementById('restart-advisory-banner');
+    if (el) el.style.display = 'none';
+  }
+
+  // ---------------------------------------------------------------------------
   // Escape HTML (safety for dynamic text insertion)
   // ---------------------------------------------------------------------------
   function escHtml(s) {
@@ -800,7 +838,70 @@ footer {
 
     card.appendChild(dl);
 
+    // feature-004 (task-016) -- global "Update CLI" action (tools.update-self).
+    // Shown only when machine.write_enabled === true (feature-001 DM-2 gate;
+    // missing => false, fail-safe). card.plugin is a plain <div> (not a
+    // card-link <a>), so the button lives directly inside it -- no sibling-tile
+    // wrapper is needed here (that scaffold is only required for anchor cards).
+    if (machine && machine.write_enabled === true) {
+      var updateActions = document.createElement('div');
+      updateActions.className = 'card-actions';
+      var updateItem = document.createElement('span');
+      updateItem.className = 'card-action-item';
+      updateActions.appendChild(updateItem);
+      _renderUpdateSelfIdle(updateItem);
+      card.appendChild(updateActions);
+    }
+
     container.appendChild(card);
+  }
+
+  // Idle state: a single "Update CLI" .btn-ghost + its inline error slot.
+  function _renderUpdateSelfIdle(item) {
+    item.innerHTML = '';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Update CLI';
+    var err = document.createElement('p');
+    err.className = 'card-action-error';
+    err.setAttribute('aria-live', 'polite');
+    btn.addEventListener('click', function () { _submitUpdateSelf(btn, err); });
+    item.appendChild(btn);
+    item.appendChild(err);
+  }
+
+  // POST tools.update-self. Busy-state (KI-003): disable + "Updating..." until
+  // the op resolves (a real update takes seconds-to-minutes and, on the Node
+  // runtime, blocks the whole server for the duration). On ok: re-fetch
+  // /api/home (the aid_version pill refreshes) and show the restart-advisory
+  // notice unconditionally (KI-002 -- aid update self always mutates the
+  // running server's own code). On failure: re-enable the button and surface
+  // the writer's error/detail inline via textContent (no innerHTML, no silent
+  // failure).
+  function _submitUpdateSelf(btn, errEl) {
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    errEl.textContent = '';
+    fetch('/api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'tools.update-self' })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        if (resp.ok && body && body.ok) {
+          doFetch(function () { showRestartAdvisory(); });
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Update CLI';
+          errEl.textContent = (body && (body.detail || body.error)) || 'Could not update the CLI.';
+        }
+      });
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Update CLI';
+      errEl.textContent = 'Network error: ' + String(err);
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -1153,17 +1254,82 @@ footer {
   // UI-P2 -- Remove Project control + shared card-actions scaffold (KI-004).
   // The card-actions <div> is a sibling of the card <a>/<div> (never nested
   // inside it, so its <button>s never live inside a card-link anchor) --
-  // feature-004 (task-016) reuses this SAME row for its "Update Tools" button.
+  // feature-004 (task-016) reuses this SAME row for its "Update Tools" button
+  // (below), not a second independently-invented action row.
   // ---------------------------------------------------------------------------
   function _buildCardActions(repo, writeEnabled) {
     if (!writeEnabled) return null;
     var actions = document.createElement('div');
     actions.className = 'card-actions';
+
+    // feature-004 (task-016): "Update Tools" (tools.update) -- available repos
+    // ONLY (repo.available === true); an unavailable repo has no .aid/manifest
+    // to update, so _renderUnavailableCard's call here gets no button. Reuses
+    // this SAME shared row (KI-004), not a second independently-invented one.
+    if (repo.available === true) {
+      var updateItem = document.createElement('span');
+      updateItem.className = 'card-action-item';
+      actions.appendChild(updateItem);
+      _renderUpdateToolsIdle(updateItem, repo);
+    }
+
     var item = document.createElement('span');
     item.className = 'card-action-item';
     actions.appendChild(item);
     _renderRemoveIdle(item, repo);
     return actions;
+  }
+
+  // Idle state: a single "Update Tools" .btn-ghost + its inline error slot.
+  function _renderUpdateToolsIdle(item, repo) {
+    item.innerHTML = '';
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-ghost';
+    btn.textContent = 'Update Tools';
+    var err = document.createElement('p');
+    err.className = 'card-action-error';
+    err.setAttribute('aria-live', 'polite');
+    btn.addEventListener('click', function () { _submitUpdateTools(repo, btn, err); });
+    item.appendChild(btn);
+    item.appendChild(err);
+  }
+
+  // POST tools.update for this repo.id. Busy-state (KI-003): disable +
+  // "Updating..." until the op resolves. On ok: re-fetch /api/home (the
+  // card's repo.aid_version chips refresh, AC2/NFR3); if the re-fetched
+  // machine.aid_version differs from the value captured just before firing
+  // this op, `aid update`'s stale-CLI self-update preamble ran (KI-006) --
+  // show the same restart-advisory notice as "Update CLI" (KI-002), because
+  // the running server's code was mutated as a side effect. On failure:
+  // re-enable the button and surface error/detail inline via textContent.
+  function _submitUpdateTools(repo, btn, errEl) {
+    btn.disabled = true;
+    btn.textContent = 'Updating...';
+    errEl.textContent = '';
+    var preVersion = (lastGoodEnvelope && lastGoodEnvelope.machine) ? lastGoodEnvelope.machine.aid_version : undefined;
+    fetch('/r/' + repo.id + '/api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'tools.update' })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        if (resp.ok && body && body.ok) {
+          doFetch(function (envelope) {
+            var postVersion = envelope.machine && envelope.machine.aid_version;
+            if (postVersion !== preVersion) showRestartAdvisory();
+          });
+        } else {
+          btn.disabled = false;
+          btn.textContent = 'Update Tools';
+          errEl.textContent = (body && (body.detail || body.error)) || 'Could not update tools.';
+        }
+      });
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Update Tools';
+      errEl.textContent = 'Network error: ' + String(err);
+    });
   }
 
   // Idle state: a single "Remove" .btn-ghost. Click flips (in place, via direct

@@ -119,12 +119,16 @@ class TestStructural(unittest.TestCase):
     def test_s2_does_not_read_model_dot_generated_by(self):
         self.assertNotIn('model.generated_by', self.src)
 
-    # S3 -- fetch targets are /api/home (read poll) and /api/op (feature-003
-    # task-014 write-dispatch: project.add/project.remove), both same-origin.
+    # S3 -- fetch targets are /api/home (read poll), /api/op (feature-003
+    # task-014 write-dispatch: project.add/project.remove; feature-004 task-016:
+    # tools.update-self), both same-origin, plus the per-repo '/r/<id>/api/op'
+    # route (feature-004 task-016: tools.update) built via string concatenation
+    # ('/r/' + repo.id + '/api/op') -- the regex below only captures the literal
+    # quoted prefix immediately after fetch(, i.e. '/r/' for that call.
     def test_s3_fetches_api_home(self):
         fetch_calls = re.findall(r"fetch\s*\(\s*['\"]([^'\"]+)['\"]", self.src)
         self.assertTrue(len(fetch_calls) > 0, "No fetch() call found")
-        allowed = ('/api/home', '/api/op')
+        allowed = ('/api/home', '/api/op', '/r/')
         for url in fetch_calls:
             self.assertIn(url, allowed,
                          f"Unexpected fetch target: {url!r} -- only {allowed} allowed")
@@ -133,6 +137,11 @@ class TestStructural(unittest.TestCase):
         # feature-003 (task-014): project.add / project.remove both dispatch via
         # POST /api/op -- confirm at least one such call exists (not just /api/home).
         self.assertIn("fetch('/api/op'", self.src)
+
+    def test_s3_fetches_per_repo_api_op_present(self):
+        # feature-004 (task-016): tools.update dispatches to the per-repo route,
+        # with repo.id interpolated (never hard-coded, never derived from path).
+        self.assertIn("fetch('/r/' + repo.id + '/api/op'", self.src)
 
     def test_s3_no_http_fetch(self):
         self.assertNotRegex(self.src, r"fetch\s*\(\s*['\"]https?://")
@@ -897,6 +906,230 @@ class TestFeature003RegistryUi(unittest.TestCase):
     def test_safe_no_innerhtml_with_repo_path_or_detail(self):
         self.assertNotRegex(self.src, r"\.innerHTML\s*=\s*[^;]*\brepo\.(path|id)")
         self.assertNotRegex(self.src, r"\.innerHTML\s*=\s*[^;]*\bdetail\b")
+
+
+class TestFeature004UpdateToolsUi(unittest.TestCase):
+    """
+    UI (feature-004-update-tools, task-016): the global "Update CLI"
+    (tools.update-self) and per-repo "Update Tools" (tools.update) controls,
+    the restart-advisory banner (KI-002/KI-006), and the busy-state (KI-003).
+
+    UC -- global "Update CLI" (machine panel).
+    UT -- per-repo "Update Tools" (shared card-actions scaffold, KI-004 reuse).
+    RA -- restart-advisory banner.
+    BS -- busy-state (disable + "Updating..." until the op resolves).
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = _CLI_HOME_HTML.read_text(encoding="utf-8")
+
+    # ---- UC: global "Update CLI" control (machine panel) ----
+
+    def test_uc_idle_function_present(self):
+        self.assertIn('function _renderUpdateSelfIdle(item)', self.src)
+
+    def test_uc_submit_function_present(self):
+        self.assertIn('function _submitUpdateSelf(btn, errEl)', self.src)
+
+    def test_uc_button_labelled_update_cli(self):
+        idx = self.src.find('function _renderUpdateSelfIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 500]
+        self.assertIn("btn.textContent = 'Update CLI'", snippet)
+
+    def test_uc_gated_on_machine_write_enabled(self):
+        # renderMachinePanel appends the action row only when
+        # machine.write_enabled === true (missing => false, fail-safe).
+        idx = self.src.find('function renderMachinePanel(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 3000]
+        self.assertIn('machine.write_enabled === true', snippet)
+        self.assertIn('_renderUpdateSelfIdle(updateItem)', snippet)
+
+    def test_uc_reuses_card_actions_class(self):
+        # The machine-panel action row reuses the SAME .card-actions /
+        # .card-action-item classes as the repo-card scaffold (KI-004) --
+        # not an independently-invented class.
+        idx = self.src.find('function renderMachinePanel(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 3000]
+        self.assertIn("updateActions.className = 'card-actions'", snippet)
+        self.assertIn("updateItem.className = 'card-action-item'", snippet)
+
+    def test_uc_submit_posts_tools_update_self(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn("op: 'tools.update-self'", snippet)
+        self.assertIn("fetch('/api/op'", snippet)
+
+    def test_uc_busy_state_disable_and_label(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn('btn.disabled = true', snippet)
+        self.assertIn("btn.textContent = 'Updating...'", snippet)
+
+    def test_uc_ok_refetches_and_shows_restart_advisory(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn('doFetch(function () { showRestartAdvisory(); });', snippet)
+
+    def test_uc_failure_reenables_button_and_shows_error(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        else_idx = snippet.find('} else {')
+        self.assertNotEqual(else_idx, -1)
+        else_branch = snippet[else_idx:else_idx + 300]
+        self.assertIn('btn.disabled = false', else_branch)
+        self.assertIn("btn.textContent = 'Update CLI'", else_branch)
+        self.assertIn('errEl.textContent', else_branch)
+
+    def test_uc_error_live_region_polite(self):
+        idx = self.src.find('function _renderUpdateSelfIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 600]
+        self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
+
+    # ---- UT: per-repo "Update Tools" control (shared card-actions scaffold) ----
+
+    def test_ut_idle_function_present(self):
+        self.assertIn('function _renderUpdateToolsIdle(item, repo)', self.src)
+
+    def test_ut_submit_function_present(self):
+        self.assertIn('function _submitUpdateTools(repo, btn, errEl)', self.src)
+
+    def test_ut_button_labelled_update_tools(self):
+        idx = self.src.find('function _renderUpdateToolsIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 500]
+        self.assertIn("btn.textContent = 'Update Tools'", snippet)
+
+    def test_ut_gated_on_repo_available_inside_shared_scaffold(self):
+        # _buildCardActions (the SAME shared scaffold task-014 introduced,
+        # KI-004) gates the Update Tools item on repo.available === true, in
+        # addition to the write_enabled gate already applied by its caller.
+        idx = self.src.find('function _buildCardActions(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn('if (!writeEnabled) return null;', snippet)
+        self.assertIn('repo.available === true', snippet)
+        self.assertIn('_renderUpdateToolsIdle(updateItem, repo)', snippet)
+        self.assertIn('_renderRemoveIdle(item, repo)', snippet)
+
+    def test_ut_submit_posts_tools_update_to_per_repo_route(self):
+        idx = self.src.find('function _submitUpdateTools(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1600]
+        self.assertIn("op: 'tools.update'", snippet)
+        self.assertIn("fetch('/r/' + repo.id + '/api/op'", snippet)
+
+    def test_ut_busy_state_disable_and_label(self):
+        idx = self.src.find('function _submitUpdateTools(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn('btn.disabled = true', snippet)
+        self.assertIn("btn.textContent = 'Updating...'", snippet)
+
+    def test_ut_captures_pre_op_version_before_fetch(self):
+        # The pre-op machine.aid_version must be captured BEFORE the fetch()
+        # call fires (so it reflects the value prior to this op's side effect).
+        idx = self.src.find('function _submitUpdateTools(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1600]
+        pre_idx = snippet.find('var preVersion =')
+        fetch_idx = snippet.find("fetch('/r/'")
+        self.assertNotEqual(pre_idx, -1)
+        self.assertNotEqual(fetch_idx, -1)
+        self.assertLess(pre_idx, fetch_idx,
+                        "preVersion must be captured before the fetch() call")
+
+    def test_ut_ok_refetches_and_conditionally_shows_restart_advisory(self):
+        # On ok, re-fetch /api/home; show the restart advisory ONLY when the
+        # re-fetched machine.aid_version differs from the captured pre-op
+        # value (KI-002/KI-006 -- aid update's stale-CLI self-update preamble).
+        idx = self.src.find('function _submitUpdateTools(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1800]
+        self.assertIn('doFetch(function (envelope) {', snippet)
+        self.assertIn('postVersion !== preVersion', snippet)
+        self.assertIn('showRestartAdvisory();', snippet)
+
+    def test_ut_failure_reenables_button_and_shows_error(self):
+        idx = self.src.find('function _submitUpdateTools(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1800]
+        else_idx = snippet.find('} else {')
+        self.assertNotEqual(else_idx, -1)
+        else_branch = snippet[else_idx:else_idx + 300]
+        self.assertIn('btn.disabled = false', else_branch)
+        self.assertIn("btn.textContent = 'Update Tools'", else_branch)
+        self.assertIn('errEl.textContent', else_branch)
+
+    def test_ut_error_live_region_polite(self):
+        idx = self.src.find('function _renderUpdateToolsIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 600]
+        self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
+
+    def test_ut_unavailable_card_gets_no_update_tools_button(self):
+        # _buildCardActions is called from BOTH _renderRepoCard (available)
+        # and _renderUnavailableCard (stale); the Update Tools item must only
+        # render when repo.available === true, so an unavailable card never
+        # gets the button (it has no .aid/manifest to update).
+        idx = self.src.find('function _buildCardActions(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        avail_guard_idx = snippet.find('if (repo.available === true) {')
+        update_idx = snippet.find('_renderUpdateToolsIdle(')
+        self.assertNotEqual(avail_guard_idx, -1)
+        self.assertNotEqual(update_idx, -1)
+        self.assertLess(avail_guard_idx, update_idx,
+                        "_renderUpdateToolsIdle must be called inside the repo.available guard")
+
+    # ---- RA: restart-advisory banner (KI-002/KI-006) ----
+
+    def test_ra_banner_markup_present(self):
+        self.assertIn('id="restart-advisory-banner"', self.src)
+        self.assertIn('id="restart-advisory-dismiss"', self.src)
+
+    def test_ra_banner_hidden_by_default(self):
+        idx = self.src.find('id="restart-advisory-banner"')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[max(0, idx - 50):idx + 200]
+        self.assertIn('display:none', snippet)
+
+    def test_ra_banner_copy_text(self):
+        self.assertIn(
+            'AID CLI updated &#8212; restart <code>aid dashboard</code> to load the new dashboard code.',
+            self.src,
+        )
+
+    def test_ra_show_hide_functions_present(self):
+        self.assertIn('function showRestartAdvisory()', self.src)
+        self.assertIn('function hideRestartAdvisory()', self.src)
+
+    def test_ra_dismiss_button_wired_to_hide(self):
+        idx = self.src.find("getElementById('restart-advisory-dismiss')")
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 200]
+        self.assertIn('hideRestartAdvisory', snippet)
+
+    def test_ra_not_a_native_alert_or_confirm(self):
+        # Dismissible in-page banner, never a blocking browser dialog.
+        self.assertNotIn('window.alert', self.src)
+        self.assertNotIn('window.confirm', self.src)
+
+    # ---- doFetch onLoaded callback plumbing ----
+
+    def test_dofetch_accepts_optional_onloaded_callback(self):
+        idx = self.src.find('function doFetch(onLoaded)')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 700]
+        self.assertIn("if (typeof onLoaded === 'function') onLoaded(envelope);", snippet)
 
 
 if __name__ == "__main__":
