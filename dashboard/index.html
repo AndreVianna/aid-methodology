@@ -467,6 +467,23 @@ footer {
 .card-unavailable { color: var(--text-dim); }
 .card-unavailable h3 { color: var(--text-dim); }
 
+/* UI-P1/UI-P2 (feature-003): Add/Remove Project controls */
+.repo-section-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; }
+/* repo-tile: the grid item -- a container holding the card (<a>/<div>) plus the
+   sibling .card-actions row (KI-004 scaffold). Buttons must never nest inside
+   a card-link <a>, so the tile -- not the card -- is the grid cell. */
+.repo-tile { display: flex; flex-direction: column; }
+.card-actions { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; flex-wrap: wrap; }
+.card-action-item { display: inline-flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+.card-action-confirm-copy { font-size: 0.78rem; color: var(--text-dim); }
+.card-action-error { font-size: 0.78rem; color: var(--err); margin: 0; }
+.add-project-form { display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; margin-top: 0.5rem; max-width: 420px; }
+.add-project-input { width: 100%; text-align: left; }
+.add-project-hint { margin: 0; }
+.add-project-error { font-size: 0.82rem; color: var(--err); margin: 0; min-height: 1em; }
+.add-project-actions { display: flex; gap: 0.5rem; }
+#empty-registry .add-project-form { margin-left: auto; margin-right: auto; align-items: center; text-align: left; }
+
 /* Work-card attention borders (kept for CSS class integrity) */
 .card.border-warn { border-left: 4px solid var(--warn); }
 .card.border-err  { border-left: 4px solid var(--err); }
@@ -524,13 +541,20 @@ footer {
 
   <!-- Projects grid section (UI-H2) -->
   <div id="repo-section" style="display:none">
-    <h2 class="main-section-head">Projects</h2>
+    <div class="repo-section-head">
+      <h2 class="main-section-head">Projects</h2>
+      <!-- UI-P1 Add Project control (feature-003): rendered only when write_enabled -->
+      <div id="add-project-slot"></div>
+    </div>
     <div class="grid projects" id="repo-grid"></div>
   </div>
 
   <!-- Empty registry state (UI-H3 empty) -->
   <div class="empty-state" id="empty-registry" style="display:none">
     <p>No repos registered yet &#8212; run <code>aid add &lt;tool&gt;</code> in a repo to see it here.</p>
+    <!-- UI-P1 Add Project control mirrored here so the first project can be registered
+         from an empty registry (feature-003); rendered only when write_enabled -->
+    <div id="add-project-slot-empty"></div>
   </div>
 
   <!-- Initial loading state -->
@@ -569,6 +593,16 @@ footer {
   var fetchPending = false;
   var lastGoodEnvelope = null;
   var lastSuccessTime = null;
+
+  // write_enabled (feature-001 AC8), read once per load in onSuccess and threaded
+  // into the render (missing => false, fail-safe). Also mirrored here so UI-only
+  // event handlers (Cancel / retry) can re-render without waiting on a new fetch.
+  var currentWriteEnabled = false;
+
+  // UI-P1 Add Project: transient UI-only state (never sent to / read from the
+  // server, never derived from the envelope). open/path/errorMessage/submitting
+  // are mutated only by this control's own event handlers.
+  var addProjectState = { open: false, path: '', errorMessage: null, submitting: false };
 
   // ---------------------------------------------------------------------------
   // Boot: the CLI home loads ONCE and does NOT auto-poll. Click Refresh (in-page
@@ -619,6 +653,10 @@ footer {
     lastSuccessTime = Date.now();
     lastGoodEnvelope = envelope;
 
+    // write_enabled (feature-001 AC8): read once per load; missing => false
+    // (fail-safe). Threaded into every render below that offers a write control.
+    currentWriteEnabled = !!(envelope.machine && envelope.machine.write_enabled === true);
+
     // Hide loading state
     var loadEl = document.getElementById('loading-state');
     if (loadEl) loadEl.style.display = 'none';
@@ -630,7 +668,8 @@ footer {
     }
 
     renderMachinePanel(envelope.machine);
-    renderRepoGrid(envelope.repos);
+    renderRepoGrid(envelope.repos, currentWriteEnabled);
+    _renderAddProjectControls(currentWriteEnabled);
     updateFreshnessBadge('loaded');
   }
 
@@ -765,9 +804,149 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
+  // UI-P1 -- Add Project control (feature-003). Consumes the project.add op
+  // (feature-001/task-013) via POST /api/op; on success the client re-fetches
+  // /api/home (doFetch) and re-renders from disk -- no optimistic mutation.
+  // Rendered into both #add-project-slot (repo-section head) and
+  // #add-project-slot-empty (empty-registry state); only one host is ever
+  // visible at a time (renderRepoGrid toggles #repo-section/#empty-registry),
+  // so the two independently-built instances never compete for a user's input.
+  // ---------------------------------------------------------------------------
+  function _renderAddProjectControls(writeEnabled) {
+    var slotHead = document.getElementById('add-project-slot');
+    var slotEmpty = document.getElementById('add-project-slot-empty');
+    if (slotHead) {
+      slotHead.innerHTML = '';
+      if (writeEnabled) slotHead.appendChild(_buildAddProjectControl());
+    }
+    if (slotEmpty) {
+      slotEmpty.innerHTML = '';
+      if (writeEnabled) slotEmpty.appendChild(_buildAddProjectControl());
+    }
+  }
+
+  // Builds either the closed "Add project" .btn-ghost or (addProjectState.open)
+  // the inline typed-path form. No native form-element submit is used at all
+  // (CSP form-action 'none'); Register/Cancel are fetch-driven button elements
+  // (type=button).
+  function _buildAddProjectControl() {
+    if (!addProjectState.open) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'btn-ghost';
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = 'Add project';
+      btn.addEventListener('click', function () {
+        addProjectState.open = true;
+        addProjectState.errorMessage = null;
+        _renderAddProjectControls(currentWriteEnabled);
+      });
+      return btn;
+    }
+
+    var wrap = document.createElement('div');
+    wrap.className = 'add-project-form';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'interval-input add-project-input';
+    input.placeholder = '/absolute/path/to/aid/project';
+    input.setAttribute('aria-label', 'Absolute path to the AID project to register');
+    input.value = addProjectState.path || '';
+    wrap.appendChild(input);
+
+    var hint = document.createElement('p');
+    hint.className = 'meta add-project-hint';
+    hint.textContent = 'Must already be an AID project — Add only registers it, it installs nothing.';
+    wrap.appendChild(hint);
+
+    // Error live region (aria-live="polite", consistent with #freshness-badge).
+    // Populated via textContent only -- never innerHTML -- with either the
+    // client-side empty-input message or the writer's own detail (422/500).
+    var err = document.createElement('p');
+    err.className = 'add-project-error';
+    err.setAttribute('aria-live', 'polite');
+    if (addProjectState.errorMessage) err.textContent = addProjectState.errorMessage;
+    wrap.appendChild(err);
+
+    var actions = document.createElement('div');
+    actions.className = 'add-project-actions';
+
+    var registerBtn = document.createElement('button');
+    registerBtn.type = 'button';
+    registerBtn.className = 'btn-ghost';
+    registerBtn.textContent = 'Register';
+    registerBtn.disabled = addProjectState.submitting;
+    registerBtn.addEventListener('click', function () { _submitAddProject(input.value); });
+    actions.appendChild(registerBtn);
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-ghost';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.disabled = addProjectState.submitting;
+    cancelBtn.addEventListener('click', function () {
+      addProjectState.open = false;
+      addProjectState.path = '';
+      addProjectState.errorMessage = null;
+      _renderAddProjectControls(currentWriteEnabled);
+    });
+    actions.appendChild(cancelBtn);
+
+    wrap.appendChild(actions);
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); registerBtn.click(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+    });
+
+    return wrap;
+  }
+
+  // Validate (empty input -> inline validation, NO request) + POST project.add
+  // with the trimmed path. On 200: close the form, re-fetch /api/home (doFetch)
+  // and re-render from disk (AC2). On 422/500: surface the writer's `detail`
+  // inline via textContent, input stays populated so the user can correct it.
+  function _submitAddProject(rawValue) {
+    var trimmed = (rawValue || '').trim();
+    if (!trimmed) {
+      addProjectState.errorMessage = 'Enter an absolute path.';
+      addProjectState.path = rawValue;
+      _renderAddProjectControls(currentWriteEnabled);
+      return;
+    }
+    addProjectState.submitting = true;
+    addProjectState.path = trimmed;
+    addProjectState.errorMessage = null;
+    _renderAddProjectControls(currentWriteEnabled);
+    fetch('/api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'project.add', args: { path: trimmed } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        addProjectState.submitting = false;
+        if (resp.ok && body && body.ok) {
+          addProjectState.open = false;
+          addProjectState.path = '';
+          addProjectState.errorMessage = null;
+          doFetch();
+        } else {
+          addProjectState.errorMessage = (body && (body.detail || body.error)) || 'Could not register the project.';
+          _renderAddProjectControls(currentWriteEnabled);
+        }
+      });
+    }).catch(function (err) {
+      addProjectState.submitting = false;
+      addProjectState.errorMessage = 'Network error: ' + String(err);
+      _renderAddProjectControls(currentWriteEnabled);
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // UI-H2 + UI-H3 -- Repo card grid
   // ---------------------------------------------------------------------------
-  function renderRepoGrid(repos) {
+  function renderRepoGrid(repos, writeEnabled) {
     var repoSection = document.getElementById('repo-section');
     var emptyRegistry = document.getElementById('empty-registry');
     var grid = document.getElementById('repo-grid');
@@ -794,7 +973,7 @@ footer {
     });
 
     for (var i = 0; i < sorted.length; i++) {
-      grid.appendChild(_renderRepoCard(sorted[i]));
+      grid.appendChild(_renderRepoCard(sorted[i], writeEnabled));
     }
   }
 
@@ -812,12 +991,12 @@ footer {
     return '—';
   }
 
-  function _renderRepoCard(repo) {
+  function _renderRepoCard(repo, writeEnabled) {
     var available = repo.available === true;
     var hasHome = repo.has_home === true;
 
     if (!available) {
-      return _renderUnavailableCard(repo);
+      return _renderUnavailableCard(repo, writeEnabled);
     }
 
     // Available card: whole-card click if has_home, non-clickable div otherwise
@@ -895,11 +1074,21 @@ footer {
       card.appendChild(noteEl);
     }
 
-    return card;
+    // KI-004 card-actions sibling-row scaffold: buttons must never nest inside
+    // a card-link <a>, so the grid item is a tile containing the card PLUS the
+    // sibling .card-actions row (never inside the card itself).
+    var tile = document.createElement('div');
+    tile.className = 'repo-tile';
+    tile.appendChild(card);
+    var actions = _buildCardActions(repo, writeEnabled);
+    if (actions) tile.appendChild(actions);
+
+    return tile;
   }
 
-  // UI-H3 unavailable card: muted, non-clickable, FR18 prune guidance
-  function _renderUnavailableCard(repo) {
+  // UI-H3 unavailable card: muted, non-clickable, FR18 prune guidance (read-only
+  // fallback) / UI-P2 Remove control (write_enabled) -- see _buildCardActions.
+  function _renderUnavailableCard(repo, writeEnabled) {
     var card = document.createElement('div');
     card.className = 'card card-unavailable';
 
@@ -918,33 +1107,141 @@ footer {
     pathEl.appendChild(pathCode);
     card.appendChild(pathEl);
 
-    // FR18 prune guidance (step-by-step, no write button, NFR2)
-    var introEl = document.createElement('p');
-    introEl.className = 'meta';
-    introEl.style.marginTop = '0.75rem';
-    introEl.textContent = "This repo's folder is gone. To remove it from the CLI home:";
-    card.appendChild(introEl);
+    // FR18 prune guidance (step-by-step, no write button, NFR2) -- READ-ONLY
+    // FALLBACK ONLY. UI-P2: the Remove control (in the sibling .card-actions
+    // row, built below) REPLACES this guidance when write_enabled === true; it
+    // is not supplemented, per feature-003 SPEC.md §UI Specs.
+    if (!writeEnabled) {
+      var introEl = document.createElement('p');
+      introEl.className = 'meta';
+      introEl.style.marginTop = '0.75rem';
+      introEl.textContent = "This repo's folder is gone. To remove it from the CLI home:";
+      card.appendChild(introEl);
 
-    var ol = document.createElement('ol');
-    ol.style.color = 'var(--text-dim)';
-    ol.style.fontSize = '0.85rem';
-    ol.style.margin = '0.25rem 0 0 0';
+      var ol = document.createElement('ol');
+      ol.style.color = 'var(--text-dim)';
+      ol.style.fontSize = '0.85rem';
+      ol.style.margin = '0.25rem 0 0 0';
 
-    var li1 = document.createElement('li');
-    li1.appendChild(document.createTextNode('Run '));
-    var cmdCode = document.createElement('code');
-    cmdCode.textContent = 'aid remove --target ' + (repo.path || '');
-    li1.appendChild(cmdCode);
-    li1.appendChild(document.createTextNode(' (unregisters the now-unavailable repo).'));
-    ol.appendChild(li1);
+      var li1 = document.createElement('li');
+      li1.appendChild(document.createTextNode('Run '));
+      var cmdCode = document.createElement('code');
+      // OQ-P2: reconciled from the stale tool-uninstall `aid remove --target`
+      // to the untrack-only `aid projects remove <path>`.
+      cmdCode.textContent = 'aid projects remove ' + (repo.path || '');
+      li1.appendChild(cmdCode);
+      li1.appendChild(document.createTextNode(' (unregisters the now-unavailable repo).'));
+      ol.appendChild(li1);
 
-    var li2 = document.createElement('li');
-    li2.textContent = 'Verify: this card disappears the next time you refresh the page.';
-    ol.appendChild(li2);
+      var li2 = document.createElement('li');
+      li2.textContent = 'Verify: this card disappears the next time you refresh the page.';
+      ol.appendChild(li2);
 
-    card.appendChild(ol);
+      card.appendChild(ol);
+    }
 
-    return card;
+    var tile = document.createElement('div');
+    tile.className = 'repo-tile';
+    tile.appendChild(card);
+    var actions = _buildCardActions(repo, writeEnabled);
+    if (actions) tile.appendChild(actions);
+
+    return tile;
+  }
+
+  // ---------------------------------------------------------------------------
+  // UI-P2 -- Remove Project control + shared card-actions scaffold (KI-004).
+  // The card-actions <div> is a sibling of the card <a>/<div> (never nested
+  // inside it, so its <button>s never live inside a card-link anchor) --
+  // feature-004 (task-016) reuses this SAME row for its "Update Tools" button.
+  // ---------------------------------------------------------------------------
+  function _buildCardActions(repo, writeEnabled) {
+    if (!writeEnabled) return null;
+    var actions = document.createElement('div');
+    actions.className = 'card-actions';
+    var item = document.createElement('span');
+    item.className = 'card-action-item';
+    actions.appendChild(item);
+    _renderRemoveIdle(item, repo);
+    return actions;
+  }
+
+  // Idle state: a single "Remove" .btn-ghost. Click flips (in place, via direct
+  // DOM mutation of `item` -- NOT a whole-grid re-render) to the inline confirm.
+  function _renderRemoveIdle(item, repo) {
+    item.innerHTML = '';
+    var removeBtn = document.createElement('button');
+    removeBtn.type = 'button';
+    removeBtn.className = 'btn-ghost';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', function () { _renderRemoveConfirm(item, repo); });
+    item.appendChild(removeBtn);
+  }
+
+  // Confirm state (inline button-flip, NOT the browser's native blocking
+  // confirm dialog -- keyboard-reachable, .btn-ghost-stylable,
+  // aria-live-announceable): "Confirm untrack" + "Cancel"
+  // with the "no files are removed" copy. Confirm POSTs project.remove with the
+  // card's repo.id; on 200 the client re-fetches /api/home (doFetch) and
+  // re-renders (AC2). On error, a transient inline message (textContent, no
+  // innerHTML) with aria-live="polite", consistent with #freshness-badge.
+  function _renderRemoveConfirm(item, repo) {
+    item.innerHTML = '';
+
+    var copy = document.createElement('span');
+    copy.className = 'card-action-confirm-copy';
+    copy.textContent = 'Untracks this project from the dashboard. No files are removed.';
+    item.appendChild(copy);
+
+    var confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'btn-ghost';
+    confirmBtn.textContent = 'Confirm untrack';
+    item.appendChild(confirmBtn);
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-ghost';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function () { _renderRemoveIdle(item, repo); });
+    item.appendChild(cancelBtn);
+
+    var err = document.createElement('p');
+    err.className = 'card-action-error';
+    err.setAttribute('aria-live', 'polite');
+    item.appendChild(err);
+
+    confirmBtn.addEventListener('click', function () {
+      confirmBtn.disabled = true;
+      cancelBtn.disabled = true;
+      _submitRemoveProject(repo, err, confirmBtn, cancelBtn);
+    });
+  }
+
+  // POST project.remove {target:{id: repo.id}}. On 200: doFetch() re-renders
+  // the grid from disk (the removed card disappears, AC2). On error: re-enable
+  // the buttons and surface the writer's `detail` inline (textContent) --
+  // the card stays in its confirm state so the user can retry or Cancel.
+  function _submitRemoveProject(repo, errEl, confirmBtn, cancelBtn) {
+    fetch('/api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'project.remove', target: { id: repo.id } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        if (resp.ok && body && body.ok) {
+          doFetch();
+        } else {
+          confirmBtn.disabled = false;
+          cancelBtn.disabled = false;
+          errEl.textContent = (body && (body.detail || body.error)) || 'Could not remove the project.';
+        }
+      });
+    }).catch(function (err) {
+      confirmBtn.disabled = false;
+      cancelBtn.disabled = false;
+      errEl.textContent = 'Network error: ' + String(err);
+    });
   }
 
   // ---------------------------------------------------------------------------
