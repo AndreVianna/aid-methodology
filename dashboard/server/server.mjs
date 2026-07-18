@@ -839,6 +839,12 @@ function runWriter(writerName, argv, envOverrides) {
       env: childEnv,
       encoding: "utf8",
       timeout: 30000,
+      // Twin parity with server.py _run_writer's subprocess.run(capture_output=
+      // True), which has no output-size cap: disable Node's default 1 MiB
+      // maxBuffer so a large-output writer is never SIGTERM-killed here while
+      // completing on the Python side. (Writers emit little, but the two twins
+      // must not diverge on the edge -- same rationale as runAidCli.)
+      maxBuffer: Infinity,
     });
     if (result.error) {
       return [3, String(result.error)];
@@ -889,22 +895,31 @@ function runAidCli(argv, envOverrides, timeoutMs) {
       env: childEnv,
       encoding: "utf8",
       timeout: ms,
+      // Match Python's subprocess.run(capture_output=True), which buffers the
+      // child's stdout/stderr with NO size cap: disable Node's default 1 MiB
+      // maxBuffer. Otherwise a verbose-but-valid `aid update`/`aid update self`
+      // child (npm/pip/git progress logs) that emits >1 MiB gets SIGTERM-killed
+      // here (result.error.code 'ENOBUFS') while completing normally on the
+      // Python twin -- a KI-004 twin-parity break. See runWriter for the same
+      // rationale and TestToolsUpdateLargeOutputParity for the guard.
+      maxBuffer: Infinity,
     });
-    // Timeout detection MUST precede the generic-error branch: on Windows,
-    // spawnSync's own timeout-kill sets BOTH result.signal ('SIGTERM') AND
-    // result.error (code 'ETIMEDOUT') simultaneously, so a `if (result.error)`
-    // check first would misreport a 600s-ceiling kill as a generic exec
-    // failure (exit 3 -> 500 'update-failed') instead of the spec'd timeout
-    // sentinel (-> 504 'timed-out'). This ordering is the twin of Python's
-    // `except subprocess.TimeoutExpired` being caught before the generic
-    // `except Exception` (server.py _run_aid_cli). result.signal is the timeout
-    // source in this code path; the result.error.code === 'ETIMEDOUT' clause is
-    // the belt-and-suspenders form for any platform that surfaces only the
-    // error object without a signal.
-    if (result.signal || (result.error && result.error.code === "ETIMEDOUT")) {
+    // Timeout detection MUST precede the generic-error branch AND must key off
+    // the ETIMEDOUT code SPECIFICALLY -- never a bare `result.signal`. On a
+    // 600s-ceiling kill, spawnSync sets result.error with code 'ETIMEDOUT'
+    // (plus, on Windows, result.signal 'SIGTERM'); the code is the precise,
+    // portable timeout signal and the twin of Python's `except
+    // subprocess.TimeoutExpired` (caught before the generic `except Exception`
+    // in server.py _run_aid_cli). A bare `result.signal` test is too broad --
+    // spawnSync ALSO sets result.signal 'SIGTERM' when it kills the child for
+    // exceeding maxBuffer (code 'ENOBUFS'), so gating the timeout sentinel on
+    // signal would misreport a non-timeout failure as 504; that is exactly why
+    // maxBuffer is disabled above and only the ETIMEDOUT code gates here.
+    if (result.error && result.error.code === "ETIMEDOUT") {
       return [AID_CLI_TIMEOUT_EXIT, result.stderr || ""];
     }
     if (result.error) {
+      // Any other exec failure (bash/aid missing -> 'ENOENT', etc.) -> exit 3.
       return [3, String(result.error)];
     }
     const code = (result.status === null || result.status === undefined) ? 3 : result.status;

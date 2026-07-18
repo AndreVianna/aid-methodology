@@ -57,19 +57,28 @@ def _make_aid_home(base: Path) -> Path:
     """Create a minimal AID_HOME tree: VERSION + registry.yml (empty) + dashboard/ dir."""
     base.mkdir(parents=True, exist_ok=True)
     (base / "VERSION").write_text("1.0.0-test\n", encoding="utf-8")
-    # Empty registry (repos: with no items -- NFR10 valid form)
+    # Empty registry (projects: with no items -- NFR10 valid form)
     _write_registry(base, [])
     (base / "dashboard").mkdir(exist_ok=True)
     return base
 
 
 def _write_registry(aid_home: Path, paths: list[str]) -> None:
-    """Write a registry.yml with the given absolute paths into aid_home."""
+    """Write a registry.yml with the given absolute paths into aid_home.
+
+    Uses the canonical `projects:` key -- the format `bin/aid projects add`
+    actually writes (bin/aid L1675/1707/1758) and feature-003 SPEC.md documents
+    ("a flat `projects:` list of base-folder paths"). The reader treats the
+    header key leniently (loadRegistry / load_registry collect `- <path>` items
+    regardless of the header, and additionally skip a legacy `repos:` header),
+    so the specific edge-case fixtures below that write a literal `repos:` block
+    still exercise that legacy-tolerance path on purpose.
+    """
     lines = [
         "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).\n",
         "# Holds ONLY the base folders of repos this CLI install manages.\n",
         "schema: 1\n",
-        "repos:\n",
+        "projects:\n",
     ]
     for p in paths:
         lines.append(f"  - {p}\n")

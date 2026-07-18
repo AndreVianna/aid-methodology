@@ -149,6 +149,10 @@ _FAKE_AID_SCRIPT = (
     "    exit 0 ;;\n"
     "  noop_clean) exit 0 ;;\n"
     "  slow) sleep 3 ;;\n"
+    # >1 MiB of stdout then a clean exit 0: exercises the maxBuffer twin-parity
+    # path (Node's default 1 MiB cap must be disabled so a verbose child is not
+    # SIGTERM-killed, matching Python's unbounded capture_output). ~2 MB.
+    "  bigout) yes X | head -c 2000000 ; exit 0 ;;\n"
     "esac\n"
 )
 
@@ -639,6 +643,51 @@ class TestToolsUpdateTimeoutParity(_NodeSlicedDispatchFixture, unittest.TestCase
         with mock.patch.dict("os.environ", {"FAKE_MODE": "slow"}, clear=False):
             py_result = srv._dispatch_op(srv.HOME_OP_TABLE, {"op": "tools.update-self"}, "/state/home")
         _assert_parity(self, py_result, node_result, 504, "timed-out")
+
+
+# ===========================================================================
+# (E2) tools.update / tools.update-self LARGE-OUTPUT (>1 MiB stdout) twin
+# parity -- regression guard for the maxBuffer fix. A verbose-but-valid child
+# must NOT be killed on either runtime: Python's subprocess.run(capture_output=
+# True) has no output cap, so server.mjs's spawnSync must disable Node's default
+# 1 MiB maxBuffer to match. Before the fix, Node SIGTERM-killed the child
+# (result.error 'ENOBUFS', signal 'SIGTERM') and -- because the timeout branch
+# then keyed off a bare result.signal -- misreported it as 504 'timed-out',
+# diverging from Python's exit-0 -> 200. Both twins now return 200 in lockstep.
+# ===========================================================================
+
+@unittest.skipUnless(_NODE_AVAILABLE, "node not available on PATH -- twin parity skipped")
+class TestToolsUpdateLargeOutputParity(_NodeSlicedDispatchFixture, unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        super().setUpClass()
+        cls._orig_aid_cli_path = srv._AID_CLI_PATH
+        srv._AID_CLI_PATH = cls._fake_cli_path
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        srv._AID_CLI_PATH = cls._orig_aid_cli_path
+        super().tearDownClass()
+
+    def test_tools_update_large_output_parity(self) -> None:
+        node_result = self._node_dispatch_many([{
+            "table": "OP_TABLE", "parsed": {"op": "tools.update"},
+            "servedRoot": "/repo/path", "aidHome": "/state/home",
+            "env": {"FAKE_MODE": "bigout"},
+        }])[0]
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "bigout"}, clear=False):
+            py_result = srv._dispatch_op(srv.OP_TABLE, {"op": "tools.update"}, "/repo/path", aid_home="/state/home")
+        _assert_parity(self, py_result, node_result, 200, None)
+
+    def test_tools_update_self_large_output_parity(self) -> None:
+        node_result = self._node_dispatch_many([{
+            "table": "HOME_OP_TABLE", "parsed": {"op": "tools.update-self"},
+            "servedRoot": "/state/home", "aidHome": "/state/home",
+            "env": {"FAKE_MODE": "bigout"},
+        }])[0]
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "bigout"}, clear=False):
+            py_result = srv._dispatch_op(srv.HOME_OP_TABLE, {"op": "tools.update-self"}, "/state/home")
+        _assert_parity(self, py_result, node_result, 200, None)
 
 
 # ===========================================================================
