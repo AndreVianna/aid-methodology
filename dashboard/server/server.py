@@ -9,14 +9,23 @@
 #   GET /r/<id>/home.html       -> $AID_CODE_HOME/dashboard/home.html (CLI template; gated on <repo>/.aid/)
 #   GET /r/<id>/kb.html         -> <repo(id)>/.aid/knowledge/kb.html   (SEC-2 by construction)
 #   GET /r/<id>/api/model       -> read_repo(repo(id)) -> DM-1 envelope
+#   POST /r/<id>/api/op         -> _serve_op: closed OP_TABLE write/operation dispatch
+#                                  (feature-001 task-004; 403 when not write_enabled)
+#   POST /api/op                -> _serve_home_op: home-level op dispatch (HOME_OP_TABLE is
+#                                  empty until feature-003/004 register rows -> 400 unknown op)
 #   *                           -> 404
-#   non-GET                     -> 405
+#   other POST / PUT/DELETE/PATCH/HEAD -> 405
 #
 # Registry: two-tier union of $AID_STATE_HOME/registry.yml (primary) and $HOME/.aid/registry.yml
 #   (user fallback) -- mirrors _registry_read_raw_union in bin/aid.  Per-user collapse when both
 #   resolve to the same path.  mtime+size-keyed id->path map cache (NFR4).
-# No write/append/remove primitive anywhere (SEC-3).
-# No agent/LLM import anywhere (SEC-4).
+# SEC-3 (refined, feature-001 task-004): no IN-PROCESS write/append/remove primitive
+#   anywhere in this file -- every mutation is delegated to a co-vendored writer script
+#   (writeback-state.sh / write-setting.sh / write-requirement.sh, dashboard/scripts/)
+#   spawned via subprocess.run() with an argv ARRAY (never shell=True, never a
+#   concatenated command string). See OP_TABLE below.
+# No agent/LLM import anywhere (SEC-4). Writer children are shell scripts, never an
+#   agent/LLM import (SEC-4 holds for the dispatched child too).
 # CAN-1 site 3: stored path used verbatim (no realpath/resolve -- SEC-2/DD-5).
 # Host-header allowlist (anti-DNS-rebinding) + X-Content-Type-Options/CSP response
 #   headers on every response, enforced before routing (SEC-6).
@@ -25,6 +34,7 @@
 #   python3 server.py --host 127.0.0.1 --port <n> [--allow-writes]
 #   --allow-writes: fail-safe write gate (feature-001 task-001) -- absent => read-only;
 #   a fixed token appended only by bin/aid's spawn policy, never read from request/config/env.
+#   When absent, POST /r/<id>/api/op and POST /api/op both 403 "read-only" (task-004).
 #
 # AID_HOME (state home) resolution for registry.yml:
 #   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
@@ -43,7 +53,9 @@ import hashlib
 import json
 import os
 import re
+import shutil
 import signal
+import subprocess
 import sys
 import threading
 from datetime import datetime, timezone
@@ -60,7 +72,7 @@ _DASHBOARD_DIR = _SERVER_DIR.parent              # dashboard/
 if str(_DASHBOARD_DIR) not in sys.path:
     sys.path.insert(0, str(_DASHBOARD_DIR))
 
-from reader import read_repo, read_repo_detail  # noqa: E402  (inserted sys.path above)
+from reader import read_repo, read_repo_detail, resolve_work_dir  # noqa: E402  (inserted sys.path above)
 from reader.parsers import _strip_yaml_inline_comment  # noqa: E402  (shared PF-6 rule)
 
 
@@ -276,6 +288,9 @@ def _get_id_map(aid_home: str) -> tuple[dict[str, str], list[str]]:
 _R = re.compile(r"\A/r/([0-9a-f]{8,})/(home\.html|kb\.html|api/model)\Z")
 
 _LEAF_ALLOWLIST = frozenset({"home.html", "kb.html"})
+
+# POST /r/<id>/api/op route (feature-001 task-004; separate from the GET-only _R above).
+_R_OP = re.compile(r"\A/r/([0-9a-f]{8,})/api/op\Z")
 
 
 # ---------------------------------------------------------------------------
@@ -868,6 +883,298 @@ def serialize_home(home_model: dict) -> bytes:
 
 
 # ---------------------------------------------------------------------------
+# Write / operation dispatch (feature-001-write-infrastructure, task-004)
+#
+# POST /r/<id>/api/op -> _serve_op (per-repo) / POST /api/op -> _serve_home_op (home).
+# Order enforced by the handlers below: SEC-6 Host allowlist (do_POST, unchanged) ->
+# write gate (write_enabled, 403 "read-only") -> body parse (400 "bad-request") ->
+# closed OP_TABLE lookup (400 "bad-request" for unknown/missing op) -> target/arg
+# shape validation (400) -> pipeline-scoped work_id resolution via resolve_work_dir
+# (404 "not-found") -> writer spawn (argv ARRAY, never shell) -> exit-code -> HTTP
+# status via the op's effective map (`op.status_map or DEFAULT_MAP`, OP-SM).
+#
+# The server never interprets a client-supplied path or command: OP_TABLE is a
+# closed, static dict; each row names a fixed writer script and an argv-builder
+# that only ever fills placeholders from validated, server-resolved values (never
+# echoes a raw client path). SEC-3/SEC-4 hold: no in-process fs mutation, no
+# agent/LLM import; the child is always a co-vendored shell script.
+# ---------------------------------------------------------------------------
+
+_MAX_BODY_BYTES = 64 * 1024   # 64 KiB request-body cap (API Contracts)
+_MAX_DETAIL_BYTES = 1024      # 1 KiB failure 'detail' cap (writer stderr)
+
+# Writers are co-vendored with the dashboard unit and self-located from the
+# server's own install-tree location (_DASHBOARD_DIR = $AID_CODE_HOME/dashboard/),
+# never from AID_HOME (per-machine state) -- same rationale as home.html
+# (bin/aid ~line 1196 `assets_dir="$AID_CODE_HOME/dashboard"`).
+_WRITER_DIR = _DASHBOARD_DIR / "scripts"
+
+# DEFAULT_MAP: writer exit code -> (http_status, error_class). Derived from
+# writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
+# 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
+# STATE.md); write-setting.sh / write-requirement.sh reuse the SAME alphabet and
+# never emit 2 (reserved for lock contention). An OP_TABLE row's OPTIONAL
+# `status_map` field overrides this per-op (OP-SM foundation contract for
+# features 003/004's `aid`-CLI-backed ops).
+DEFAULT_MAP: dict[int, tuple[int, str]] = {
+    1: (404, "not-found"),
+    2: (409, "busy"),
+    4: (422, "invalid-value"),
+    5: (422, "invalid-value"),
+    3: (500, "write-failed"),
+    6: (500, "write-failed"),
+}
+_DEFAULT_FALLBACK = (500, "write-failed")   # any other/unknown exit code
+
+_RE_WORK_ID_SHAPE = re.compile(r"^work-[0-9]+")
+_RE_DELIVERY_TASK_ID = re.compile(r"\A\d{1,3}\Z")
+
+
+def _map_exit_code(exit_code: int, status_map: "dict[int, tuple[int, str]] | None") -> tuple[int, str]:
+    """Resolve the op's effective status map (`op.status_map or DEFAULT_MAP`, OP-SM)
+    and map exit_code -> (http_status, error_class). An exit code absent from the
+    effective map falls back to (500, 'write-failed') -- DEFAULT_MAP's own '3/6/*'
+    catch-all row.
+    """
+    effective = status_map if status_map else DEFAULT_MAP
+    return effective.get(exit_code, _DEFAULT_FALLBACK)
+
+
+def _parse_op_body(raw: bytes) -> "tuple[dict | None, str | None]":
+    """Parse a POST op-request body. Returns (parsed_dict, None) on success, or
+    (None, error_detail) on malformed JSON / a non-object top level (400 'bad-request').
+    """
+    try:
+        parsed = json.loads(raw.decode("utf-8"))
+    except Exception as exc:
+        return None, f"malformed JSON body: {exc}"
+    if not isinstance(parsed, dict):
+        return None, "body must be a JSON object"
+    return parsed, None
+
+
+def _op_ok_body(op: str) -> bytes:
+    """Success envelope: {"ok": true, "op": "<op>"} (API Contracts)."""
+    return json.dumps({"ok": True, "op": op}, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _truncate_detail(text: str) -> str:
+    """Bound a failure 'detail' string to <= 1 KiB (API Contracts)."""
+    encoded = text.encode("utf-8")
+    if len(encoded) <= _MAX_DETAIL_BYTES:
+        return text
+    return encoded[:_MAX_DETAIL_BYTES].decode("utf-8", errors="ignore")
+
+
+def _op_fail_body(op: "str | None", error: str, detail: str) -> bytes:
+    """Failure envelope: {"ok": false, "op": <op|None>, "error": "<class>", "detail": "<=1KiB"}."""
+    envelope = {"ok": False, "op": op, "error": error, "detail": _truncate_detail(detail)}
+    return json.dumps(envelope, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+
+
+def _run_writer(writer_name: str, argv: list[str], env_overrides: dict[str, str]) -> tuple[int, str]:
+    """Spawn a co-vendored writer script via `bash <writer> <argv...>` -- an argv
+    ARRAY, never shell=True / a concatenated command string (SEC-3/SEC-4 injection
+    defense). Returns (exit_code, stderr_text). Never raises: an exec failure
+    (writer missing, bash missing, timeout) is reported as exit 3 (the
+    'empty/unverifiable write' class -> 500 write-failed) with the exception text
+    as detail, so a broken install degrades to a clean HTTP error instead of a
+    stack trace.
+    """
+    writer_path = _WRITER_DIR / writer_name
+    child_env = dict(os.environ)
+    child_env.update(env_overrides)
+    # Resolve bash's ABSOLUTE path via shutil.which() rather than passing the bare
+    # string "bash" to subprocess.run(). On Windows, CreateProcess's own search
+    # order checks the System32 directory BEFORE consuming the PATH env var's
+    # entries -- and Windows 10+ ships a WSL-launcher stub at
+    # C:\Windows\System32\bash.exe. A bare "bash" argv[0] therefore silently
+    # resolves to that WSL stub (which cannot see a "C:/..." host path) instead of
+    # Git-Bash, even when Git-Bash appears earlier in PATH. shutil.which() performs
+    # a plain PATH-order search (matching this script's own portability
+    # expectations) and sidesteps CreateProcess's fixed system-dir-first order.
+    bash_exe = shutil.which("bash") or "bash"
+    try:
+        # .as_posix() (not str()): on Windows, an MSYS/Git-Bash `bash.exe` mangles a
+        # backslash-separated argv element (its own CreateProcess/argv-conversion
+        # layer treats '\x' sequences as escapes), silently corrupting the script
+        # path. Forward-slash form is accepted identically by bash on every platform.
+        proc = subprocess.run(
+            [bash_exe, writer_path.as_posix(), *argv],
+            env=child_env,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        return proc.returncode, proc.stderr or ""
+    except Exception as exc:  # noqa: BLE001 -- never raises; reported as a write failure
+        return 3, str(exc)
+
+
+def _validate_args(schema: dict, args: dict) -> "str | None":
+    """Schema-level (shape-only) arg validation: required-key presence + string
+    type. Returns an error message on violation, else None. Deeper SEMANTIC
+    validation (enum membership, grade format, forbidden charset) is the writer's
+    own job -- it returns exit 4/5, mapped to 422 'invalid-value' by DEFAULT_MAP;
+    this function only prevents a malformed REQUEST from ever reaching a child
+    spawn (400 'bad-request').
+    """
+    for key, spec in schema.items():
+        if spec.get("required") and key not in args:
+            return f"missing required arg '{key}'"
+        if key in args and not isinstance(args[key], str):
+            return f"arg '{key}' must be a string"
+    return None
+
+
+# ---- OP_TABLE argv-builders (feature-001-owned rows; see SPEC.md API Contracts) ----
+# Each builder has signature (work_dir, served_root, target, args) -> (argv, env_overrides).
+# work_dir is the resolve_work_dir() result (None for scope="project" ops); served_root
+# is the resolved repo canon_path (per-repo ops) or aid_home (home ops, unused today --
+# HOME_OP_TABLE is empty). Builders never echo a raw client path -- work_dir/served_root
+# are already server-resolved.
+
+def _op_task_set_notes_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """task.set-notes -> writeback-state.sh [--delivery-id <d>] --task-id <t> --field Notes --value <v>."""
+    argv: list[str] = []
+    delivery_id = target.get("delivery_id")
+    if delivery_id:
+        argv += ["--delivery-id", str(delivery_id)]
+    argv += ["--task-id", str(target.get("task_id")), "--field", "Notes", "--value", args["value"]]
+    env = {"AID_STATE_FILE": str(work_dir / "STATE.md"), "AID_WORK_DIR": str(work_dir)}
+    return argv, env
+
+
+def _op_pipeline_finish_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """pipeline.finish -> writeback-state.sh --pipeline --field Lifecycle --value Completed.
+
+    Value is FIXED to 'Completed' -- the op takes no lifecycle argument and forwards
+    no other of writeback-state.sh's Lifecycle enum values (general pipeline-lifecycle
+    editing stays closed per REQUIREMENTS Sec 5.2). args is accepted but ignored.
+    """
+    argv = ["--pipeline", "--field", "Lifecycle", "--value", "Completed"]
+    env = {"AID_STATE_FILE": str(work_dir / "STATE.md"), "AID_WORK_DIR": str(work_dir)}
+    return argv, env
+
+
+def _op_settings_set_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """settings.set (project-scoped; no work_id) -> write-setting.sh --path <p> --value <v>
+    --file <served-root>/.aid/settings.yml."""
+    # .as_posix(): this is an ARGV element (not env) -- see _run_writer's MSYS note.
+    settings_file = (Path(served_root) / ".aid" / "settings.yml").as_posix()
+    argv = ["--path", args["path"], "--value", args["value"], "--file", settings_file]
+    return argv, {}
+
+
+def _op_pipeline_rename_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """pipeline.rename -> write-requirement.sh --field Name --value <v>
+    (env AID_REQUIREMENTS_FILE=<resolved-work-dir>/REQUIREMENTS.md).
+    """
+    argv = ["--field", "Name", "--value", args["value"]]
+    env = {"AID_REQUIREMENTS_FILE": str(work_dir / "REQUIREMENTS.md")}
+    return argv, env
+
+
+# OP_TABLE: closed static dict seeded by feature-001 (the 4 feature-001-owned rows).
+# 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
+# "project" (no work_id -- settings.set targets the served root directly).
+# 'status_map': None -> dispatcher uses DEFAULT_MAP (OP-SM); a later feature's row
+# may set its own {exit -> (status, error)} map for the `aid`-CLI exit alphabet.
+OP_TABLE: dict[str, dict] = {
+    "task.set-notes": {
+        "scope": "task",
+        "writer": "writeback-state.sh",
+        "arg_schema": {"value": {"required": True}},
+        "build_argv": _op_task_set_notes_argv,
+        "status_map": None,
+    },
+    "pipeline.finish": {
+        "scope": "pipeline",
+        "writer": "writeback-state.sh",
+        "arg_schema": {},
+        "build_argv": _op_pipeline_finish_argv,
+        "status_map": None,
+    },
+    "settings.set": {
+        "scope": "project",
+        "writer": "write-setting.sh",
+        "arg_schema": {"path": {"required": True}, "value": {"required": True}},
+        "build_argv": _op_settings_set_argv,
+        "status_map": None,
+    },
+    "pipeline.rename": {
+        "scope": "pipeline",
+        "writer": "write-requirement.sh",
+        "arg_schema": {"value": {"required": True}},
+        "build_argv": _op_pipeline_rename_argv,
+        "status_map": None,
+    },
+}
+
+# HOME_OP_TABLE: empty until feature-003 (project.add/remove) / feature-004
+# (tools.update/tools.update-self) register their home-scoped rows. Every op
+# dispatched through _serve_home_op is therefore 'unknown' -> 400 today; the
+# gate/body-parsing/dispatch plumbing is wired so those features only add rows.
+HOME_OP_TABLE: dict[str, dict] = {}
+
+
+def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tuple[int, bytes]:
+    """Validate + dispatch a parsed op-request body against op_table.
+
+    served_root is the resolved repo canon_path (per-repo ops) or aid_home (home
+    ops). Never spawns a writer child before every schema/shape check below has
+    passed (no client-controlled bytes reach subprocess argv unvalidated).
+    """
+    op = parsed.get("op")
+    if not isinstance(op, str) or op not in op_table:
+        return 400, _op_fail_body(op if isinstance(op, str) else None, "bad-request", "unknown or missing 'op'")
+
+    row = op_table[op]
+
+    target = parsed.get("target")
+    if target is None:
+        target = {}
+    if not isinstance(target, dict):
+        return 400, _op_fail_body(op, "bad-request", "'target' must be an object")
+
+    args = parsed.get("args")
+    if args is None:
+        args = {}
+    if not isinstance(args, dict):
+        return 400, _op_fail_body(op, "bad-request", "'args' must be an object")
+
+    delivery_id = target.get("delivery_id")
+    if delivery_id is not None and not _RE_DELIVERY_TASK_ID.match(str(delivery_id)):
+        return 400, _op_fail_body(op, "bad-request", "invalid target.delivery_id")
+    task_id_raw = target.get("task_id")
+    if task_id_raw is not None and not _RE_DELIVERY_TASK_ID.match(str(task_id_raw)):
+        return 400, _op_fail_body(op, "bad-request", "invalid target.task_id")
+
+    scope = row["scope"]
+    work_dir: "Path | None" = None
+    if scope in ("task", "pipeline"):
+        work_id = target.get("work_id")
+        if not isinstance(work_id, str) or not _RE_WORK_ID_SHAPE.match(work_id):
+            return 400, _op_fail_body(op, "bad-request", "missing or invalid target.work_id")
+        if scope == "task" and not task_id_raw:
+            return 400, _op_fail_body(op, "bad-request", "this op requires target.task_id")
+        work_dir = resolve_work_dir(served_root, work_id)
+        if work_dir is None:
+            return 404, _op_fail_body(op, "not-found", f"no worktree holds work_id '{work_id}'")
+
+    arg_err = _validate_args(row["arg_schema"], args)
+    if arg_err is not None:
+        return 400, _op_fail_body(op, "bad-request", arg_err)
+
+    argv, env_overrides = row["build_argv"](work_dir, served_root, target, args)
+    exit_code, stderr_text = _run_writer(row["writer"], argv, env_overrides)
+    if exit_code == 0:
+        return 200, _op_ok_body(op)
+    status, error_class = _map_exit_code(exit_code, row.get("status_map"))
+    return status, _op_fail_body(op, error_class, stderr_text.strip())
+
+
+# ---------------------------------------------------------------------------
 # HTTP handler
 # ---------------------------------------------------------------------------
 
@@ -929,6 +1236,14 @@ class _DashboardHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802
         if self._reject_bad_host():
+            return
+        path = self.path.split("?", 1)[0]
+        if path == "/api/op":
+            self._serve_home_op()
+            return
+        m = _R_OP.match(path)
+        if m:
+            self._serve_op(m.group(1))
             return
         self._send_plain(405, b"Method Not Allowed")
 
@@ -1119,6 +1434,67 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    def _serve_op(self, rid: str) -> None:
+        """POST /r/<id>/api/op -- per-repo write/operation dispatch (feature-001 task-004).
+
+        Order: write gate (403 'read-only') -> repo id resolution (404 'not-found') ->
+        body parse (400 'bad-request') -> OP_TABLE dispatch (_dispatch_op). SEC-6
+        (_reject_bad_host) already ran in do_POST before this is reached.
+        """
+        if not getattr(self.server, "write_enabled", False):
+            self._send_json(403, _op_fail_body(
+                None, "read-only",
+                "write endpoints disabled (server not spawned with --allow-writes)",
+            ))
+            return
+
+        aid_home: str = self.server.aid_home  # type: ignore[attr-defined]
+        id_map, _ = _get_id_map(aid_home)
+        canon_path = id_map.get(rid)
+        if canon_path is None:
+            self._send_json(404, _op_fail_body(None, "not-found", "unknown repo id"))
+            return
+
+        raw = self._read_body()
+        if raw is None:
+            self._send_json(400, _op_fail_body(None, "bad-request", "body exceeds 64 KiB or is unreadable"))
+            return
+        parsed, err = _parse_op_body(raw)
+        if parsed is None:
+            self._send_json(400, _op_fail_body(None, "bad-request", err or "malformed body"))
+            return
+
+        status, body = _dispatch_op(OP_TABLE, parsed, canon_path)
+        self._send_json(status, body)
+
+    def _serve_home_op(self) -> None:
+        """POST /api/op -- home-level write/operation dispatch (feature-001 task-004).
+
+        feature-001 seeds no home-scoped rows (HOME_OP_TABLE is empty); features
+        003 (project.add/remove) and 004 (tools.update/tools.update-self) register
+        into it. Every op is therefore 'unknown' -> 400 today -- the gate/body-parsing/
+        dispatch plumbing is wired so those features only need to add OP_TABLE rows.
+        """
+        if not getattr(self.server, "write_enabled", False):
+            self._send_json(403, _op_fail_body(
+                None, "read-only",
+                "write endpoints disabled (server not spawned with --allow-writes)",
+            ))
+            return
+
+        raw = self._read_body()
+        if raw is None:
+            self._send_json(400, _op_fail_body(None, "bad-request", "body exceeds 64 KiB or is unreadable"))
+            return
+        parsed, err = _parse_op_body(raw)
+        if parsed is None:
+            self._send_json(400, _op_fail_body(None, "bad-request", err or "malformed body"))
+            return
+
+        aid_home: str = self.server.aid_home  # type: ignore[attr-defined]
+        status, body = _dispatch_op(HOME_OP_TABLE, parsed, aid_home)
+        self._send_json(status, body)
+
     # ---- helpers -----------------------------------------------------------
 
     def _send_plain(self, code: int, body: bytes) -> None:
@@ -1127,6 +1503,31 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         self.send_header("Content-Length", str(len(body)))
         self.end_headers()
         self.wfile.write(body)
+
+    def _send_json(self, code: int, body: bytes) -> None:
+        """Send a JSON op-response envelope (used by _serve_op / _serve_home_op)."""
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _read_body(self) -> "bytes | None":
+        """Read the POST body, enforcing the 64 KiB cap (API Contracts).
+
+        Returns None (caller sends 400) when Content-Length is missing/invalid/
+        negative/over the cap, or the read itself fails.
+        """
+        try:
+            length = int(self.headers.get("Content-Length", "0") or "0")
+        except ValueError:
+            return None
+        if length < 0 or length > _MAX_BODY_BYTES:
+            return None
+        try:
+            return self.rfile.read(length)
+        except Exception:
+            return None
 
 
 # ---------------------------------------------------------------------------

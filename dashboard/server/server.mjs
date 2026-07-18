@@ -7,6 +7,7 @@
  *   node dashboard/server/server.mjs --host 127.0.0.1 --port <n> [--allow-writes]
  *   --allow-writes: fail-safe write gate (feature-001 task-001) -- absent => read-only;
  *   a fixed token appended only by bin/aid's spawn policy, never read from request/config/env.
+ *   When absent, POST /r/<id>/api/op and POST /api/op both 403 "read-only" (task-004).
  *
  * AID_HOME (state home) resolution for registry.yml:
  *   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
@@ -26,13 +27,22 @@
  *   GET /r/<id>/home.html    -> $AID_CODE_HOME/dashboard/home.html (CLI template; gated on <repo>/.aid/)
  *   GET /r/<id>/kb.html      -> <repo(id)>/.aid/knowledge/kb.html  (SEC-2 by construction)
  *   GET /r/<id>/api/model    -> readRepo(repo(id)) -> DM-1 envelope
+ *   POST /r/<id>/api/op      -> serveOp: closed OP_TABLE write/operation dispatch
+ *                               (feature-001 task-004; 403 when not WRITE_ENABLED)
+ *   POST /api/op             -> serveHomeOp: home-level op dispatch (HOME_OP_TABLE is
+ *                               empty until feature-003/004 register rows -> 400 unknown op)
  *   other path               -> 404
- *   non-GET verb             -> 405
+ *   other POST / non-GET verb -> 405
  *
  * Invariants (SEC-1..4, SEC-6):
  *   - Binds literal 127.0.0.1 only (SEC-1); never 0.0.0.0/wildcard.
- *   - No fs write/appendFile/unlink primitives in this file (SEC-3).
- *   - No agent/LLM import (SEC-4).
+ *   - SEC-3 (refined, feature-001 task-004): no IN-PROCESS write/appendFile/unlink
+ *     primitive anywhere in this file -- every mutation is delegated to a co-vendored
+ *     writer script (writeback-state.sh / write-setting.sh / write-requirement.sh,
+ *     dashboard/scripts/) spawned via spawnSync() with an argv ARRAY (never a shell
+ *     string). See OP_TABLE below.
+ *   - No agent/LLM import (SEC-4). Writer children are shell scripts, never an
+ *     agent/LLM import (SEC-4 holds for the dispatched child too).
  *   - CAN-1 site 4: stored path used verbatim -- no realpathSync/path.resolve on it (DD-5).
  *   - Host-header allowlist (anti-DNS-rebinding) + X-Content-Type-Options/CSP response
  *     headers on every response, enforced before routing (SEC-6).
@@ -48,11 +58,12 @@
 
 import { createServer } from "http";
 import { readFileSync, statSync, existsSync } from "fs";
-import { join, dirname, basename, normalize } from "path";
+import { join, dirname, basename, normalize, delimiter, sep } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
+import { spawnSync } from "child_process";
 
-import { readRepo, readRepoDetail } from "./reader.mjs";
+import { readRepo, readRepoDetail, resolveWorkDir } from "./reader.mjs";
 
 // ---------------------------------------------------------------------------
 // Arg parsing
@@ -304,6 +315,9 @@ function loadRegistry(regPath) {
 const R_ROUTE = /^\/r\/([0-9a-f]{8,})\/(home\.html|kb\.html|api\/model)$/;
 
 const LEAF_ALLOWLIST = new Set(["home.html", "kb.html"]);
+
+// POST /r/<id>/api/op route (feature-001 task-004; separate from the GET-only R_ROUTE above).
+const R_OP = /^\/r\/([0-9a-f]{8,})\/api\/op$/;
 
 // ---------------------------------------------------------------------------
 // SEC-6: anti-DNS-rebinding Host-header allowlist + security response headers
@@ -663,6 +677,431 @@ function serializeModelWithDetails(model, details, writeEnabled) {
 }
 
 // ---------------------------------------------------------------------------
+// Write / operation dispatch (feature-001-write-infrastructure, task-004)
+//
+// POST /r/<id>/api/op -> serveOp (per-repo) / POST /api/op -> serveHomeOp (home).
+// Order enforced by the handlers below: SEC-6 Host allowlist (handler(), unchanged) ->
+// write gate (WRITE_ENABLED, 403 "read-only") -> body parse (400 "bad-request") ->
+// closed OP_TABLE lookup (400 "bad-request" for unknown/missing op) -> target/arg
+// shape validation (400) -> pipeline-scoped work_id resolution via resolveWorkDir
+// (404 "not-found") -> writer spawn (argv ARRAY, never shell) -> exit-code -> HTTP
+// status via the op's effective map (`op.status_map or DEFAULT_MAP`, OP-SM).
+//
+// The server never interprets a client-supplied path or command: OP_TABLE is a
+// closed, static object; each row names a fixed writer script and an argv-builder
+// that only ever fills placeholders from validated, server-resolved values (never
+// echoes a raw client path). SEC-3/SEC-4 hold: no in-process fs mutation, no
+// agent/LLM import; the child is always a co-vendored shell script.
+// ---------------------------------------------------------------------------
+
+const MAX_BODY_BYTES = 64 * 1024;   // 64 KiB request-body cap (API Contracts)
+const MAX_DETAIL_BYTES = 1024;      // 1 KiB failure 'detail' cap (writer stderr)
+
+// Writers are co-vendored with the dashboard unit and self-located from the
+// server's own install-tree location (_DASHBOARD_DIR_MJS = $AID_CODE_HOME/dashboard/),
+// never from AID_HOME (per-machine state) -- same rationale as home.html
+// (bin/aid ~line 1196 `assets_dir="$AID_CODE_HOME/dashboard"`).
+const WRITER_DIR = join(_DASHBOARD_DIR_MJS, "scripts");
+
+// DEFAULT_MAP: writer exit code -> [http_status, error_class]. Derived from
+// writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
+// 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
+// STATE.md); write-setting.sh / write-requirement.sh reuse the SAME alphabet and
+// never emit 2 (reserved for lock contention). An OP_TABLE row's OPTIONAL
+// `statusMap` field overrides this per-op (OP-SM foundation contract for features
+// 003/004's `aid`-CLI-backed ops).
+const DEFAULT_MAP = {
+  1: [404, "not-found"],
+  2: [409, "busy"],
+  4: [422, "invalid-value"],
+  5: [422, "invalid-value"],
+  3: [500, "write-failed"],
+  6: [500, "write-failed"],
+};
+const DEFAULT_FALLBACK = [500, "write-failed"];   // any other/unknown exit code
+
+const RE_WORK_ID_SHAPE = /^work-[0-9]+/;
+const RE_DELIVERY_TASK_ID = /^\d{1,3}$/;
+
+// bash.exe resolution (feature-001 task-004; mirrors server.py's shutil.which() note):
+// on Windows, spawning the bare string "bash" via child_process (no shell: true) goes
+// through CreateProcess, whose OWN search order checks the System32 directory BEFORE
+// consuming the PATH env var's entries -- and Windows 10+ ships a WSL-launcher stub at
+// C:\Windows\System32\bash.exe. A bare "bash" would therefore silently resolve to that
+// WSL stub (which cannot see a "C:/..." host path) instead of Git-Bash, even when
+// Git-Bash appears earlier in PATH. Resolve bash's ABSOLUTE path ourselves via a plain
+// PATH-order search (matching this script's own portability expectations) so the writer
+// spawn below never depends on CreateProcess's fixed system-dir-first order.
+function resolveBashExe() {
+  const pathEnv = process.env.PATH || process.env.Path || "";
+  const exeNames = process.platform === "win32" ? ["bash.exe", "bash.EXE"] : ["bash"];
+  for (const dir of pathEnv.split(delimiter)) {
+    if (!dir) continue;
+    for (const exeName of exeNames) {
+      const candidate = join(dir, exeName);
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return "bash";   // fall back to bare name; spawnSync reports ENOENT if truly absent
+}
+
+const BASH_EXE = resolveBashExe();
+
+// toPosixArg: forward-slash form of a path, for use as a bash ARGV element only
+// (never for an env-var value -- those are unaffected, see the doc comment below).
+// Empirically (feature-001 task-004), Node's spawnSync() on Windows mangles a
+// backslash-separated ARGV element passed to an MSYS/Git-Bash bash.exe (distinct
+// from the CreateProcess system-dir-first issue resolveBashExe() above works
+// around): the backslashes are silently stripped, corrupting the path, even
+// though the SAME absolute path passed via the `env` option (not argv) reaches
+// the child unmodified. Every writer-script-path / --file argv element below is
+// therefore posix-ified; AID_STATE_FILE/AID_WORK_DIR/AID_REQUIREMENTS_FILE (env
+// overrides) are passed through unmodified in their native form.
+function toPosixArg(p) {
+  return p.split(sep).join("/");
+}
+
+function mapExitCode(exitCode, statusMap) {
+  // Resolve the op's effective status map (`op.status_map or DEFAULT_MAP`, OP-SM)
+  // and map exitCode -> [httpStatus, errorClass]. An exit code absent from the
+  // effective map falls back to [500, 'write-failed'] -- DEFAULT_MAP's own '3/6/*'
+  // catch-all row.
+  const effective = statusMap || DEFAULT_MAP;
+  return effective[exitCode] || DEFAULT_FALLBACK;
+}
+
+function opOkBody(op) {
+  // Success envelope: {"ok": true, "op": "<op>"} (API Contracts).
+  return Buffer.from(JSON.stringify({ ok: true, op: op }), "utf-8");
+}
+
+function truncateDetail(text) {
+  // Bound a failure 'detail' string to <= 1 KiB (API Contracts).
+  const buf = Buffer.from(text, "utf-8");
+  if (buf.length <= MAX_DETAIL_BYTES) return text;
+  return buf.slice(0, MAX_DETAIL_BYTES).toString("utf-8");
+}
+
+function opFailBody(op, error, detail) {
+  // Failure envelope: {"ok": false, "op": <op|null>, "error": "<class>", "detail": "<=1KiB"}.
+  const envelope = { ok: false, op: op, error: error, detail: truncateDetail(detail) };
+  return Buffer.from(JSON.stringify(envelope), "utf-8");
+}
+
+function parseOpBody(raw) {
+  // Parse a POST op-request body. Returns [parsedObj, null] on success, or
+  // [null, errorDetail] on malformed JSON / a non-object top level (400 'bad-request').
+  let parsed;
+  try {
+    parsed = JSON.parse(raw.toString("utf8"));
+  } catch (e) {
+    return [null, "malformed JSON body: " + String(e)];
+  }
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    return [null, "body must be a JSON object"];
+  }
+  return [parsed, null];
+}
+
+function runWriter(writerName, argv, envOverrides) {
+  // Spawn a co-vendored writer script via `bash <writer> <argv...>` -- an argv
+  // ARRAY, never a shell string (SEC-3/SEC-4 injection defense). Returns
+  // [exitCode, stderrText]. Never throws: an exec failure (writer missing, bash
+  // missing, timeout) is reported as exit 3 (the 'empty/unverifiable write' class
+  // -> 500 write-failed) with the error text as detail, so a broken install
+  // degrades to a clean HTTP error instead of an unhandled exception.
+  const writerPath = toPosixArg(join(WRITER_DIR, writerName));
+  const childEnv = Object.assign({}, process.env, envOverrides || {});
+  try {
+    const result = spawnSync(BASH_EXE, [writerPath, ...argv], {
+      env: childEnv,
+      encoding: "utf8",
+      timeout: 30000,
+    });
+    if (result.error) {
+      return [3, String(result.error)];
+    }
+    const code = (result.status === null || result.status === undefined) ? 3 : result.status;
+    return [code, result.stderr || ""];
+  } catch (e) {
+    return [3, String(e)];
+  }
+}
+
+function validateArgs(schema, args) {
+  // Schema-level (shape-only) arg validation: required-key presence + string
+  // type. Returns an error message on violation, else null. Deeper SEMANTIC
+  // validation (enum membership, grade format, forbidden charset) is the writer's
+  // own job -- it returns exit 4/5, mapped to 422 'invalid-value' by DEFAULT_MAP;
+  // this function only prevents a malformed REQUEST from ever reaching a child
+  // spawn (400 'bad-request').
+  for (const key of Object.keys(schema)) {
+    const spec = schema[key];
+    if (spec.required && !(key in args)) {
+      return "missing required arg '" + key + "'";
+    }
+    if (key in args && typeof args[key] !== "string") {
+      return "arg '" + key + "' must be a string";
+    }
+  }
+  return null;
+}
+
+// ---- OP_TABLE argv-builders (feature-001-owned rows; see SPEC.md API Contracts) ----
+// Each builder has signature (workDir, servedRoot, target, args) -> [argv, envOverrides].
+// workDir is the resolveWorkDir() result (null for scope="project" ops); servedRoot
+// is the resolved repo canonPath (per-repo ops) or aidHome (home ops, unused today --
+// HOME_OP_TABLE is empty). Builders never echo a raw client path -- workDir/servedRoot
+// are already server-resolved.
+
+function opTaskSetNotesArgv(workDir, servedRoot, target, args) {
+  // task.set-notes -> writeback-state.sh [--delivery-id <d>] --task-id <t> --field Notes --value <v>.
+  const argv = [];
+  const deliveryId = target.delivery_id;
+  if (deliveryId !== undefined && deliveryId !== null && deliveryId !== "") {
+    argv.push("--delivery-id", String(deliveryId));
+  }
+  argv.push("--task-id", String(target.task_id), "--field", "Notes", "--value", args.value);
+  const env = { AID_STATE_FILE: join(workDir, "STATE.md"), AID_WORK_DIR: workDir };
+  return [argv, env];
+}
+
+function opPipelineFinishArgv(workDir, servedRoot, target, args) {
+  // pipeline.finish -> writeback-state.sh --pipeline --field Lifecycle --value Completed.
+  // Value is FIXED to 'Completed' -- the op takes no lifecycle argument and forwards
+  // no other of writeback-state.sh's Lifecycle enum values (general pipeline-lifecycle
+  // editing stays closed per REQUIREMENTS Sec 5.2). args is accepted but ignored.
+  const argv = ["--pipeline", "--field", "Lifecycle", "--value", "Completed"];
+  const env = { AID_STATE_FILE: join(workDir, "STATE.md"), AID_WORK_DIR: workDir };
+  return [argv, env];
+}
+
+function opSettingsSetArgv(workDir, servedRoot, target, args) {
+  // settings.set (project-scoped; no work_id) -> write-setting.sh --path <p> --value <v>
+  // --file <served-root>/.aid/settings.yml. toPosixArg: this is an ARGV element
+  // (not env) -- see runWriter's doc comment.
+  const settingsFile = toPosixArg(join(servedRoot, ".aid", "settings.yml"));
+  const argv = ["--path", args.path, "--value", args.value, "--file", settingsFile];
+  return [argv, {}];
+}
+
+function opPipelineRenameArgv(workDir, servedRoot, target, args) {
+  // pipeline.rename -> write-requirement.sh --field Name --value <v>
+  // (env AID_REQUIREMENTS_FILE=<resolved-work-dir>/REQUIREMENTS.md).
+  const argv = ["--field", "Name", "--value", args.value];
+  const env = { AID_REQUIREMENTS_FILE: join(workDir, "REQUIREMENTS.md") };
+  return [argv, env];
+}
+
+// OP_TABLE: closed static object seeded by feature-001 (the 4 feature-001-owned rows).
+// 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
+// "project" (no work_id -- settings.set targets the served root directly).
+// 'statusMap': null -> dispatcher uses DEFAULT_MAP (OP-SM); a later feature's row
+// may set its own {exit -> [status, error]} map for the `aid`-CLI exit alphabet.
+const OP_TABLE = {
+  "task.set-notes": {
+    scope: "task",
+    writer: "writeback-state.sh",
+    argSchema: { value: { required: true } },
+    buildArgv: opTaskSetNotesArgv,
+    statusMap: null,
+  },
+  "pipeline.finish": {
+    scope: "pipeline",
+    writer: "writeback-state.sh",
+    argSchema: {},
+    buildArgv: opPipelineFinishArgv,
+    statusMap: null,
+  },
+  "settings.set": {
+    scope: "project",
+    writer: "write-setting.sh",
+    argSchema: { path: { required: true }, value: { required: true } },
+    buildArgv: opSettingsSetArgv,
+    statusMap: null,
+  },
+  "pipeline.rename": {
+    scope: "pipeline",
+    writer: "write-requirement.sh",
+    argSchema: { value: { required: true } },
+    buildArgv: opPipelineRenameArgv,
+    statusMap: null,
+  },
+};
+
+// HOME_OP_TABLE: empty until feature-003 (project.add/remove) / feature-004
+// (tools.update/tools.update-self) register their home-scoped rows. Every op
+// dispatched through serveHomeOp is therefore 'unknown' -> 400 today; the
+// gate/body-parsing/dispatch plumbing is wired so those features only add rows.
+const HOME_OP_TABLE = {};
+
+function dispatchOp(opTable, parsed, servedRoot) {
+  // Validate + dispatch a parsed op-request body against opTable.
+  //
+  // servedRoot is the resolved repo canonPath (per-repo ops) or aidHome (home
+  // ops). Never spawns a writer child before every schema/shape check below has
+  // passed (no client-controlled bytes reach subprocess argv unvalidated).
+  const op = parsed.op;
+  if (typeof op !== "string" || !Object.prototype.hasOwnProperty.call(opTable, op)) {
+    return [400, opFailBody(typeof op === "string" ? op : null, "bad-request", "unknown or missing 'op'")];
+  }
+
+  const row = opTable[op];
+
+  let target = parsed.target;
+  if (target === undefined || target === null) target = {};
+  if (typeof target !== "object" || Array.isArray(target)) {
+    return [400, opFailBody(op, "bad-request", "'target' must be an object")];
+  }
+
+  let args = parsed.args;
+  if (args === undefined || args === null) args = {};
+  if (typeof args !== "object" || Array.isArray(args)) {
+    return [400, opFailBody(op, "bad-request", "'args' must be an object")];
+  }
+
+  const deliveryId = target.delivery_id;
+  if (deliveryId !== undefined && deliveryId !== null && !RE_DELIVERY_TASK_ID.test(String(deliveryId))) {
+    return [400, opFailBody(op, "bad-request", "invalid target.delivery_id")];
+  }
+  const taskIdRaw = target.task_id;
+  if (taskIdRaw !== undefined && taskIdRaw !== null && !RE_DELIVERY_TASK_ID.test(String(taskIdRaw))) {
+    return [400, opFailBody(op, "bad-request", "invalid target.task_id")];
+  }
+
+  const scope = row.scope;
+  let workDir = null;
+  if (scope === "task" || scope === "pipeline") {
+    const workId = target.work_id;
+    if (typeof workId !== "string" || !RE_WORK_ID_SHAPE.test(workId)) {
+      return [400, opFailBody(op, "bad-request", "missing or invalid target.work_id")];
+    }
+    if (scope === "task" && (taskIdRaw === undefined || taskIdRaw === null || taskIdRaw === "")) {
+      return [400, opFailBody(op, "bad-request", "this op requires target.task_id")];
+    }
+    workDir = resolveWorkDir(servedRoot, workId);
+    if (workDir === null) {
+      return [404, opFailBody(op, "not-found", "no worktree holds work_id '" + workId + "'")];
+    }
+  }
+
+  const argErr = validateArgs(row.argSchema, args);
+  if (argErr !== null) {
+    return [400, opFailBody(op, "bad-request", argErr)];
+  }
+
+  const [argv, envOverrides] = row.buildArgv(workDir, servedRoot, target, args);
+  const [exitCode, stderrText] = runWriter(row.writer, argv, envOverrides);
+  if (exitCode === 0) {
+    return [200, opOkBody(op)];
+  }
+  const [status, errorClass] = mapExitCode(exitCode, row.statusMap);
+  return [status, opFailBody(op, errorClass, (stderrText || "").trim())];
+}
+
+function readBodyBounded(req, maxBytes) {
+  // Read the request body, enforcing the 64 KiB cap (API Contracts). Resolves
+  // null (caller sends 400) when the body exceeds maxBytes or the stream errors.
+  return new Promise((resolve) => {
+    const chunks = [];
+    let total = 0;
+    let settled = false;
+    function finish(result) {
+      if (settled) return;
+      settled = true;
+      resolve(result);
+    }
+    req.on("data", (chunk) => {
+      total += chunk.length;
+      if (total > maxBytes) {
+        finish(null);
+        req.destroy();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on("end", () => {
+      finish(Buffer.concat(chunks));
+    });
+    req.on("error", () => {
+      finish(null);
+    });
+    req.on("aborted", () => {
+      finish(null);
+    });
+  });
+}
+
+function sendJson(res, code, body) {
+  // Send a JSON op-response envelope (used by serveOp / serveHomeOp).
+  res.writeHead(code, {
+    "Content-Type": "application/json; charset=utf-8",
+    "Content-Length": body.length,
+  });
+  res.end(body);
+}
+
+async function serveOp(req, res, rid) {
+  // POST /r/<id>/api/op -- per-repo write/operation dispatch (feature-001 task-004).
+  //
+  // Order: write gate (403 'read-only') -> repo id resolution (404 'not-found') ->
+  // body parse (400 'bad-request') -> OP_TABLE dispatch (dispatchOp). SEC-6
+  // (isAllowedHost) already ran in handler() before this is reached.
+  if (!WRITE_ENABLED) {
+    sendJson(res, 403, opFailBody(null, "read-only", "write endpoints disabled (server not spawned with --allow-writes)"));
+    return;
+  }
+
+  const { idMap } = getIdMap(AID_HOME);
+  const canonPath = idMap.get(rid);
+  if (!canonPath) {
+    sendJson(res, 404, opFailBody(null, "not-found", "unknown repo id"));
+    return;
+  }
+
+  const raw = await readBodyBounded(req, MAX_BODY_BYTES);
+  if (raw === null) {
+    sendJson(res, 400, opFailBody(null, "bad-request", "body exceeds 64 KiB or is unreadable"));
+    return;
+  }
+  const [parsed, err] = parseOpBody(raw);
+  if (parsed === null) {
+    sendJson(res, 400, opFailBody(null, "bad-request", err || "malformed body"));
+    return;
+  }
+
+  const [status, body] = dispatchOp(OP_TABLE, parsed, canonPath);
+  sendJson(res, status, body);
+}
+
+async function serveHomeOp(req, res) {
+  // POST /api/op -- home-level write/operation dispatch (feature-001 task-004).
+  //
+  // feature-001 seeds no home-scoped rows (HOME_OP_TABLE is empty); features 003
+  // (project.add/remove) and 004 (tools.update/tools.update-self) register into it.
+  // Every op is therefore 'unknown' -> 400 today -- the gate/body-parsing/dispatch
+  // plumbing is wired so those features only need to add OP_TABLE rows.
+  if (!WRITE_ENABLED) {
+    sendJson(res, 403, opFailBody(null, "read-only", "write endpoints disabled (server not spawned with --allow-writes)"));
+    return;
+  }
+
+  const raw = await readBodyBounded(req, MAX_BODY_BYTES);
+  if (raw === null) {
+    sendJson(res, 400, opFailBody(null, "bad-request", "body exceeds 64 KiB or is unreadable"));
+    return;
+  }
+  const [parsed, err] = parseOpBody(raw);
+  if (parsed === null) {
+    sendJson(res, 400, opFailBody(null, "bad-request", err || "malformed body"));
+    return;
+  }
+
+  const [status, body] = dispatchOp(HOME_OP_TABLE, parsed, AID_HOME);
+  sendJson(res, status, body);
+}
+
+// ---------------------------------------------------------------------------
 // Request handler
 // ---------------------------------------------------------------------------
 
@@ -697,7 +1136,24 @@ function handler(req, res) {
   const url = qMark === -1 ? rawUrl : rawUrl.slice(0, qMark);
   const queryString = qMark === -1 ? "" : rawUrl.slice(qMark + 1);
 
-  // Non-GET -> 405
+  // POST: /api/op (home) and /r/<id>/api/op (per-repo) dispatch to the write/
+  // operation layer (feature-001 task-004); any other POST path -> 405.
+  if (method === "POST") {
+    if (url === "/api/op") {
+      serveHomeOp(req, res);
+      return;
+    }
+    const opMatch = R_OP.exec(url);
+    if (opMatch) {
+      serveOp(req, res, opMatch[1]);
+      return;
+    }
+    res.writeHead(405, { "Content-Type": "text/plain; charset=utf-8", "Allow": "GET" });
+    res.end("405 Method Not Allowed\n");
+    return;
+  }
+
+  // Non-GET (PUT/DELETE/PATCH/HEAD/other) -> 405
   if (method !== "GET") {
     res.writeHead(405, { "Content-Type": "text/plain; charset=utf-8", "Allow": "GET" });
     res.end("405 Method Not Allowed\n");

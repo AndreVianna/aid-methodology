@@ -15,6 +15,13 @@
  *   (7) <id> derivation: sha256(CAN-1(path))[:8] for a known path -- Node side of cross-runtime parity.
  *   (8) reader.mjs malformed-input regression (delivery-006 fixes).
  *   (9) PF-8 parseSpecMd + Lite fixture (HT-2).
+ *   (2c) POST /r/<id>/api/op + POST /api/op write gate (feature-001 task-004): every op
+ *        403s "read-only" on a write-disabled spawn; other POST paths still 405.
+ *   (5c-op) OP_TABLE dispatch smoke test (feature-001 task-004, write-enabled spawn):
+ *        settings.set 200 round-trip (writer actually mutates settings.yml on disk),
+ *        unknown op -> 400, unresolvable work_id -> 404 (WT-1). The full per-op matrix
+ *        (task.set-notes/pipeline.finish/pipeline.rename fixtures, status-map overrides)
+ *        is task-011's "dispatch round-trip suite" mandate.
  *
  * ASCII-only source. Node built-in modules only.
  */
@@ -158,28 +165,39 @@ function waitForPort(port, maxMs) {
   });
 }
 
-function makeRequest(port, path, method, headers) {
+function makeRequest(port, path, method, headers, requestBody) {
+  // requestBody (feature-001 task-004, optional): a Buffer/string request body
+  // (e.g. a JSON op-request payload). Content-Length is set automatically.
   return new Promise((resolve, reject) => {
+    const bodyBuf = requestBody === undefined ? null : Buffer.from(requestBody);
     const options = {
       hostname: "127.0.0.1",
       port: port,
       path: path,
       method: method || "GET",
     };
-    if (headers) options.headers = headers;
+    options.headers = Object.assign({}, headers || {});
+    if (bodyBuf !== null && options.headers["Content-Length"] === undefined) {
+      options.headers["Content-Length"] = bodyBuf.length;
+    }
     const req = http.request(options, (res) => {
-      let bodyBuf = Buffer.alloc(0);
-      res.on("data", (chunk) => { bodyBuf = Buffer.concat([bodyBuf, chunk]); });
+      let respBuf = Buffer.alloc(0);
+      res.on("data", (chunk) => { respBuf = Buffer.concat([respBuf, chunk]); });
       res.on("end", () => resolve({
         status: res.statusCode,
-        body: bodyBuf.toString("utf-8"),
-        bodyBuf: bodyBuf,
+        body: respBuf.toString("utf-8"),
+        bodyBuf: respBuf,
         headers: res.headers,
       }));
     });
     req.on("error", reject);
-    req.end();
+    req.end(bodyBuf === null ? undefined : bodyBuf);
   });
+}
+
+function postJson(port, path, payload, headers) {
+  // Convenience wrapper: POST a JSON-encoded op-request body (feature-001 task-004).
+  return makeRequest(port, path, "POST", Object.assign({ "Content-Type": "application/json" }, headers || {}), JSON.stringify(payload));
 }
 
 // Spawn the server against an aidHome, return {proc, port}.
@@ -983,6 +1001,34 @@ async function runLiveTests() {
     }
 
     // -----------------------------------------------------------------------
+    // (2c) POST /r/<id>/api/op + POST /api/op write gate (feature-001 task-004)
+    // This server instance was spawned with NO --allow-writes (write-disabled,
+    // the fail-safe default) -- every op must 403 regardless of op/target shape.
+    // The full OP_TABLE dispatch matrix (success round-trips, 400/404/422 paths,
+    // WT-1 worktree resolution) is task-011's "dispatch round-trip suite"
+    // mandate; this group covers the gate + routing wiring task-004 introduces.
+    // -----------------------------------------------------------------------
+
+    process.stdout.write("\n[2c] POST /api/op write gate (write-disabled)\n");
+
+    {
+      const r = await postJson(port, "/r/" + idA + "/api/op", { op: "settings.set", args: { path: "project.name", value: "x" } });
+      assert(r.status === 403, "POST /r/<id>/api/op (write-disabled) -> 403 (got " + r.status + ")");
+      let data = null;
+      try { data = JSON.parse(r.body); } catch (_) {}
+      assert(!!(data && data.ok === false && data.error === "read-only"), "write-disabled op -> {ok:false, error:'read-only'}");
+    }
+    {
+      const r = await postJson(port, "/api/op", { op: "project.add" });
+      assert(r.status === 403, "POST /api/op (write-disabled) -> 403 (got " + r.status + ")");
+    }
+    {
+      // Other POST paths (not /api/op or /r/<id>/api/op) still 405, unaffected by the gate.
+      const r = await makeRequest(port, "/foo/bar", "POST");
+      assert(r.status === 405, "POST /foo/bar (non-op path) -> 405 (got " + r.status + ")");
+    }
+
+    // -----------------------------------------------------------------------
     // (2b) SEC-6: anti-DNS-rebinding Host-header allowlist (live server)
     // -----------------------------------------------------------------------
 
@@ -1349,6 +1395,44 @@ async function runLiveTests() {
           !!(modelData && modelData.write_enabled === true),
           "--allow-writes: /r/<id>/api/model write_enabled===true"
         );
+
+        // -------------------------------------------------------------------
+        // (5c-op) OP_TABLE dispatch smoke test (feature-001 task-004) -- the
+        // gate is open now, so a real op should reach its writer. settings.set
+        // is the simplest round-trip: repoA already has .aid/settings.yml
+        // (makeRepo(repoA, true)), no work-dir fixture needed. The full
+        // per-op matrix (task.set-notes/pipeline.finish/pipeline.rename
+        // against real flat/nested work-dir fixtures, WT-1 worktree
+        // resolution, status-map overrides) is task-011's mandate.
+        // -------------------------------------------------------------------
+
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.name", value: "renamed-by-op" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 200, "settings.set (write-enabled) -> 200 (got " + r.status + ")");
+          assert(!!(data && data.ok === true && data.op === "settings.set"), "settings.set success envelope {ok:true, op}");
+          const settingsAfter = readFileSync(join(repoA, ".aid", "settings.yml"), "utf8");
+          assert(settingsAfter.includes("renamed-by-op"), "settings.set writer round-trip updated settings.yml on disk");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", { op: "not-a-real-op" });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 400, "unknown op (write-enabled) -> 400 (got " + r.status + ")");
+          assert(!!(data && data.ok === false && data.error === "bad-request"), "unknown op -> {ok:false, error:'bad-request'}");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "pipeline.rename", target: { work_id: "work-999-nonexistent" }, args: { value: "x" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 404, "pipeline.rename unresolvable work_id -> 404 (got " + r.status + ")");
+          assert(!!(data && data.error === "not-found"), "unresolvable work_id -> error:'not-found' (WT-1)");
+        }
       }
     }
 

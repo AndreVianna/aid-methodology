@@ -200,6 +200,19 @@ class _ServerThread:
         except urllib.error.HTTPError as exc:
             return exc.code, exc.read()
 
+    def post_json(self, path: str, payload: dict) -> tuple[int, bytes]:
+        """POST a JSON-encoded op-request body (feature-001 task-004)."""
+        url = f"http://127.0.0.1:{self.port}{path}"
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=data, method="POST", headers={"Content-Type": "application/json"},
+        )
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return resp.status, resp.read()
+        except urllib.error.HTTPError as exc:
+            return exc.code, exc.read()
+
     def put(self, path: str) -> tuple[int, bytes]:
         url = f"http://127.0.0.1:{self.port}{path}"
         req = urllib.request.Request(url, data=b"", method="PUT")
@@ -992,6 +1005,84 @@ class TestWriteEnabledGatePropagation(unittest.TestCase):
         self.assertEqual(status, 200)
         data = json.loads(body)
         self.assertFalse(data["write_enabled"])
+
+
+# ===========================================================================
+# (5c-op) POST /r/<id>/api/op + POST /api/op live-server smoke test
+# (feature-001 task-004)
+#
+# The dispatch/argv/status-map LOGIC (OP_TABLE, DEFAULT_MAP, _dispatch_op, the
+# 4 argv-builders, real writer subprocess round-trips) has its own dedicated,
+# non-server-binding unit suite in test_task004_op_dispatch.py. This class
+# covers the do_POST -> _serve_op/_serve_home_op ROUTING/WIRING over a real
+# socket -- the write gate across both states, and one representative op
+# round-trip through the actual HTTP path. The full per-op matrix (task.set-
+# notes/pipeline.finish/pipeline.rename fixtures, WT-1 worktree resolution,
+# status-map overrides) is task-011's "dispatch round-trip suite" mandate.
+# ===========================================================================
+
+class TestOpDispatchLive(unittest.TestCase):
+    """do_POST routing + write gate + one OP_TABLE round-trip, over a real socket."""
+
+    def setUp(self) -> None:
+        self._base = Path(tempfile.mkdtemp())
+        self._aid_home = self._base / "aid_home"
+        _make_aid_home(self._aid_home)
+        self._repo_a = self._base / "repo-A"
+        _make_repo(self._repo_a)
+        _write_registry(self._aid_home, [str(self._repo_a)])
+        self._id_a = _repo_id8(str(self._repo_a))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(str(self._base), ignore_errors=True)
+
+    def test_write_disabled_op_403s_read_only(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "settings.set", "args": {"path": "project.name", "value": "x"}},
+            )
+        self.assertEqual(status, 403)
+        data = json.loads(body)
+        self.assertEqual(data, {"ok": False, "op": None, "error": "read-only",
+                                 "detail": "write endpoints disabled (server not spawned with --allow-writes)"})
+
+    def test_write_disabled_home_op_403s_read_only(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, _ = srv.post_json("/api/op", {"op": "project.add"})
+        self.assertEqual(status, 403)
+
+    def test_other_post_path_still_405_regardless_of_gate(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, _ = srv.post("/foo/bar")
+        self.assertEqual(status, 405)
+
+    def test_settings_set_round_trip_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "settings.set", "args": {"path": "project.name", "value": "renamed-by-op"}},
+            )
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertEqual(data, {"ok": True, "op": "settings.set"})
+        settings_after = (self._repo_a / ".aid" / "settings.yml").read_text(encoding="utf-8")
+        self.assertIn("renamed-by-op", settings_after)
+
+    def test_unknown_op_400_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(f"/r/{self._id_a}/api/op", {"op": "not-a-real-op"})
+        self.assertEqual(status, 400)
+        self.assertEqual(json.loads(body)["error"], "bad-request")
+
+    def test_unresolvable_work_id_404_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "pipeline.rename", "target": {"work_id": "work-999-nonexistent"}, "args": {"value": "x"}},
+            )
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"], "not-found")
 
 
 # ===========================================================================
