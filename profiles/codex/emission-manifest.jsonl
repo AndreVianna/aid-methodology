@@ -17,7 +17,7 @@
 {"dst": ".codex/aid/scripts/connectors/connector-secret.sh", "profile": "codex", "sha256": "e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a", "src": "canonical/scripts/connectors/connector-secret.sh"}
 {"dst": ".codex/aid/scripts/execute/complexity-score.sh", "profile": "codex", "sha256": "c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".codex/aid/scripts/execute/compute-block-radius.sh", "profile": "codex", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "13cfbc555131bd9f0b83b563effab5fbb721258035d8e52050ce82a402200109", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".codex/aid/scripts/execute/writeback-state.sh", "profile": "codex", "sha256": "566832632342ccdc3092187f2fa4cb89c7723e5dff233ed724b3cb7f4b0d11c0", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".codex/aid/scripts/grade.sh", "profile": "codex", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".codex/aid/scripts/housekeep/branch-commit.sh", "profile": "codex", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".codex/aid/scripts/housekeep/cleanup-classify.sh", "profile": "codex", "sha256": "d1a5f4fd95c3cc3e0d3e26c304d71aba95374e6d7c4a86443c8e6093b2688832", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
@@ -136,7 +136,7 @@
 {"dst": ".codex/aid/templates/task-detail-template.md", "profile": "codex", "sha256": "4308d96447c89fd37448f5f662d549c19012c6abde5548c440e69321acb7377b", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".codex/aid/templates/task-state-template.md", "profile": "codex", "sha256": "e41407527367c187f01f84406f6754d4b8204f9937ebb5169a02bdfff0b85687", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".codex/aid/templates/work-initiation-gate.md", "profile": "codex", "sha256": "be98990ce7656fb6c62c4fc7a55dec320df595db7d3aeff82df5b7e1f62c144d", "src": "canonical/templates/work-initiation-gate.md"}
-{"dst": ".codex/aid/templates/work-state-template.md", "profile": "codex", "sha256": "6e66b4cde76d451f1f0f629cb6d7ad2af07b6b0a9a4da9eb94c903608b2e3780", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".codex/aid/templates/work-state-template.md", "profile": "codex", "sha256": "457d8c774120cc998825fe199ea9bc0d9dceb96ed682f7e9e149d34dd5ac6eac", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/skills/aid-add-api/SKILL.md", "profile": "codex", "sha256": "9a80baed8bd20950a6bd6ad03cc09b6c276d01d1e6691f7fec78f1756ccefe55", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".codex/skills/aid-add-cli/SKILL.md", "profile": "codex", "sha256": "de64b78a51f8961b4fc22787acbacc3fd825bebd229c8390a908aba857a56275", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".codex/skills/aid-add-config/SKILL.md", "profile": "codex", "sha256": "79a166466983abaec69a42602a426919628509ba2a08483ae855ee1cc9d8add8", "src": "canonical/skills/aid-add-config/SKILL.md"}

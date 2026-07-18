@@ -17,7 +17,7 @@
 {"dst": ".claude/aid/scripts/connectors/connector-secret.sh", "profile": "claude-code", "sha256": "e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a", "src": "canonical/scripts/connectors/connector-secret.sh"}
 {"dst": ".claude/aid/scripts/execute/complexity-score.sh", "profile": "claude-code", "sha256": "c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".claude/aid/scripts/execute/compute-block-radius.sh", "profile": "claude-code", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
-{"dst": ".claude/aid/scripts/execute/writeback-state.sh", "profile": "claude-code", "sha256": "13cfbc555131bd9f0b83b563effab5fbb721258035d8e52050ce82a402200109", "src": "canonical/scripts/execute/writeback-state.sh"}
+{"dst": ".claude/aid/scripts/execute/writeback-state.sh", "profile": "claude-code", "sha256": "566832632342ccdc3092187f2fa4cb89c7723e5dff233ed724b3cb7f4b0d11c0", "src": "canonical/scripts/execute/writeback-state.sh"}
 {"dst": ".claude/aid/scripts/grade.sh", "profile": "claude-code", "sha256": "478103d69baa1eb0f080538923ebe4a583629cbce540d04c567f15b4c76350f3", "src": "canonical/scripts/grade.sh"}
 {"dst": ".claude/aid/scripts/housekeep/branch-commit.sh", "profile": "claude-code", "sha256": "4317500099dcff627c2ed2d4dd59ecaf78d1173a9536baa6a35330dd9d7b9a9f", "src": "canonical/scripts/housekeep/branch-commit.sh"}
 {"dst": ".claude/aid/scripts/housekeep/cleanup-classify.sh", "profile": "claude-code", "sha256": "52e26ea3343093dc35d90a89ff5d834c0ee43b1126d7270bc8044fe7104534d4", "src": "canonical/scripts/housekeep/cleanup-classify.sh"}
@@ -136,7 +136,7 @@
 {"dst": ".claude/aid/templates/task-detail-template.md", "profile": "claude-code", "sha256": "05bdae3a5253aa93715176c3df294f9809a2f5dcac566f512543917838f9d229", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".claude/aid/templates/task-state-template.md", "profile": "claude-code", "sha256": "c6196cc294b450f9dca651978a2fdf992c9a49038aa497ea60bce09eb52dc2e4", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".claude/aid/templates/work-initiation-gate.md", "profile": "claude-code", "sha256": "3373781c3d338c9252ccf6d31c54aedbd3c4f2c0c556573391beacb37fda521f", "src": "canonical/templates/work-initiation-gate.md"}
-{"dst": ".claude/aid/templates/work-state-template.md", "profile": "claude-code", "sha256": "e98bd7c8ea38c91f19dc5e64ba7195a389d809893b14935718ba68d10c3b759b", "src": "canonical/templates/work-state-template.md"}
+{"dst": ".claude/aid/templates/work-state-template.md", "profile": "claude-code", "sha256": "55f6270e1819b75cb6fc11556cab2e7981cd68c96779604fed93ef0a0fd76885", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".claude/skills/aid-add-api/SKILL.md", "profile": "claude-code", "sha256": "1f8681f200e6dff701e22078ed05a3bb05683e00ddc405fc4c58eedfdf7504b4", "src": "canonical/skills/aid-add-api/SKILL.md"}
 {"dst": ".claude/skills/aid-add-cli/SKILL.md", "profile": "claude-code", "sha256": "28fa6b080b4125964388b490c0f34550a64af7a4b9d8b01e966bc9afa8574c72", "src": "canonical/skills/aid-add-cli/SKILL.md"}
 {"dst": ".claude/skills/aid-add-config/SKILL.md", "profile": "claude-code", "sha256": "946c419e9f72b391c3db017c7fd7a0647d7dc9c9f9407839f93f19ef43fb9677", "src": "canonical/skills/aid-add-config/SKILL.md"}

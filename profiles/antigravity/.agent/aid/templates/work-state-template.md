@@ -211,9 +211,9 @@ different places.
      downstream task that depends on a failed one -- never self-written by
      the task being executed.) -->
 
-| Task | State | Review | Elapsed | Notes |
-|------|-------|--------|---------|-------|
-| _none yet_ | | | | |
+| Task | State | Review | Elapsed | Notes | Name |
+|------|-------|--------|---------|-------|------|
+| _none yet_ | | | | | |
 
 ---
 
