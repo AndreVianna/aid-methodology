@@ -132,6 +132,29 @@ function repoIdFull(canonPath) {
   return createHash("sha256").update(canonPath, "utf8").digest("hex");
 }
 
+const MSYS_DRIVE_PATH = /^\/([A-Za-z])(\/.*)?$/;
+
+function nativeFsPath(p, isWin) {
+  // Map an MSYS/Git-Bash absolute path ('/c/Users/x') to a native-Windows drive
+  // path ('C:/Users/x') FOR FILESYSTEM ACCESS ONLY (KI-008). `aid projects
+  // add`/`remove` run under bash (KI-004: the dashboard spawns `bash bin/aid`) and
+  // store the MSYS form '/<drive>/rest' in registry.yml; native-Windows Node cannot
+  // resolve it, so a project registered via the dashboard would render with no
+  // metadata (name/version null). SYNTACTIC only -- never touches the disk, follows
+  // a symlink, or realpath-resolves -- so the CAN-1/DD-5 "no realpathSync" security
+  // intent (see the note above repoIdFull) is preserved. Applied ONLY at the
+  // reader's filesystem boundary; the id-hash, the displayed/echoed path, and the
+  // bash-backed write ops (which already accept '/c/...') stay verbatim. NO-OP off
+  // Windows (on POSIX '/c/foo' is a real absolute path) and NO-OP on an
+  // already-native 'C:/...' input. Twin of server.py's _native_fs_path(). `isWin`
+  // is an injectable seam so the Linux CI suite can exercise the Windows branch.
+  const win = isWin === undefined ? process.platform === "win32" : isWin;
+  if (!win) return p;
+  const m = MSYS_DRIVE_PATH.exec(p);
+  if (m) return m[1].toUpperCase() + ":" + (m[2] || "/");
+  return p;
+}
+
 function buildIdMap(repos) {
   // Build {id -> canonPath} map with collision-lengthen (DD-1 SS 3.5).
   // Each id starts as the first 8 hex chars of sha256(CAN-1(path)).
@@ -489,9 +512,11 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime, writeEnabled
   let unavailableCount = 0;
 
   for (const [rid, canonPath] of idMap) {
+    // FS access uses the native-drive form (KI-008); id + displayed path stay verbatim.
+    const fsPath = nativeFsPath(canonPath);
     let available = false;
     try {
-      available = fileExists(join(canonPath, ".aid"));
+      available = fileExists(join(fsPath, ".aid"));
     } catch (_) {}
 
     const entry = {
@@ -510,12 +535,12 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime, writeEnabled
 
     if (available) {
       try {
-        const { name, description } = readSettings(canonPath);
+        const { name, description } = readSettings(fsPath);
         entry.name = name;
         entry.description = description;
       } catch (_) {}
       try {
-        const { aidVersion, toolsInstalled } = readManifest(canonPath);
+        const { aidVersion, toolsInstalled } = readManifest(fsPath);
         entry.aid_version = aidVersion;
         entry.tools_installed = toolsInstalled;
       } catch (_) {}
@@ -523,19 +548,19 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime, writeEnabled
         // home.html is a data-free CLI template served from $AID_CODE_HOME (not a
         // per-repo file); the opt-in signal is simply that the repo is AID-initialized
         // (.aid/ exists). fileExists() is really "path exists" (file or dir).
-        entry.has_home = fileExists(join(canonPath, ".aid"));
+        entry.has_home = fileExists(join(fsPath, ".aid"));
       } catch (_) {}
       try {
         // kb.html is the generated KB summary, now beside its source in
         // .aid/knowledge/ (the .aid/dashboard/ folder was eliminated).
-        entry.has_kb = fileExists(join(canonPath, ".aid", "knowledge", "kb.html"));
+        entry.has_kb = fileExists(join(fsPath, ".aid", "knowledge", "kb.html"));
       } catch (_) {}
       // Pipeline counts (FR27 home summary): total works + how many are Running.
       // CLI home is load-once, so this per-project readRepo is paid once per page
       // load, not per poll. Best-effort: never throws (NFR10). Byte-parity twin of
       // the Python server's read_repo-based counts.
       try {
-        const rm = readRepo(canonPath);
+        const rm = readRepo(fsPath);
         const works = (rm && Array.isArray(rm.works)) ? rm.works : [];
         entry.pipeline_count = works.length;
         entry.pipelines_in_progress = works.filter((w) => w && w.lifecycle === "Running").length;
@@ -1911,10 +1936,13 @@ function serveStaticLeaf(res, canonPath, leaf) {
   // beside its source at .aid/knowledge/kb.html (the .aid/dashboard/ folder was
   // eliminated). Served from the repo copy (SEC-2: registry[id]/.aid/knowledge/kb.html;
   // a broken symlink there fails existsSync -> 404).
+  // FS access uses the native-drive form (KI-008); SEC-2 already resolved canonPath
+  // from <id> via idMap (never the request body) upstream in serveRepoRoute.
+  const fsPath = nativeFsPath(canonPath);
   let filePath;
   if (leaf === "home.html") {
     // Opt-in gate: only AID-initialized repos expose a dashboard.
-    if (!existsSync(join(canonPath, ".aid"))) {
+    if (!existsSync(join(fsPath, ".aid"))) {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("404 Not Found\n");
       return;
@@ -1931,7 +1959,7 @@ function serveStaticLeaf(res, canonPath, leaf) {
     }
   } else {
     // kb.html (per-repo generated leaf): served from .aid/knowledge/.
-    filePath = join(canonPath, ".aid", "knowledge", leaf);
+    filePath = join(fsPath, ".aid", "knowledge", leaf);
     if (!existsSync(filePath)) {
       res.writeHead(404, { "Content-Type": "text/plain; charset=utf-8" });
       res.end("404 Not Found\n");
@@ -1967,13 +1995,15 @@ function serveRepoModel(res, canonPath, queryString) {
   // key is OMITTED entirely when ?detail= is not supplied (NFR4 byte-identical
   // bare-poll path). schema_version stays at 3 (RC-2 no-bump decision).
   const detailKeys = parseDetailParam(queryString || "");
+  // FS access uses the native-drive form (KI-008); canonPath was SEC-2-resolved upstream.
+  const fsPath = nativeFsPath(canonPath);
   let bodyBuf;
   try {
     if (detailKeys.length > 0) {
-      const { model, details } = readRepoDetail(canonPath, detailKeys);
+      const { model, details } = readRepoDetail(fsPath, detailKeys);
       bodyBuf = serializeModelWithDetails(model, details, WRITE_ENABLED);
     } else {
-      const model = readRepo(canonPath);
+      const model = readRepo(fsPath);
       bodyBuf = serializeModel(model, WRITE_ENABLED);
     }
   } catch (err) {

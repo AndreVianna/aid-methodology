@@ -203,7 +203,7 @@ def _sliced_server_mjs_source(aid_cli_path: Path, tools_timeout_ms: "int | None"
             old_timeout_line, f"const TOOLS_UPDATE_TIMEOUT = {tools_timeout_ms};", 1,
         )
 
-    return sliced + "\nexport { dispatchOp, OP_TABLE, HOME_OP_TABLE };\n"
+    return sliced + "\nexport { dispatchOp, OP_TABLE, HOME_OP_TABLE, nativeFsPath };\n"
 
 
 class _NodeSlicedDispatchFixture:
@@ -815,6 +815,75 @@ class TestToolsUpdateUnknownRepoIdLive(unittest.TestCase):
             json.loads(body),
             {"ok": False, "op": None, "error": "not-found", "detail": "unknown repo id"},
         )
+
+
+# ===========================================================================
+# (H) KI-008: MSYS '/c/x' -> native 'C:/x' filesystem-path normalizer.
+# `aid projects add`/`remove` run under bash and store the MSYS '/<drive>/rest'
+# form; native-Windows Python/Node cannot resolve it, so a dashboard-added
+# project rendered with no metadata. Both reader twins normalize ONLY at the
+# filesystem boundary (id + displayed path stay verbatim). These tests use the
+# injectable is_windows/isWin seam so the Linux CI runner exercises the Windows
+# branch. Pure Python-side unit checks (no Node) + a cross-twin parity check.
+# ===========================================================================
+
+class TestNativeFsPathUnit(unittest.TestCase):
+    def test_windows_msys_drive_paths_map_to_native(self) -> None:
+        self.assertEqual(srv._native_fs_path("/c/Projects/x", is_windows=True), "C:/Projects/x")
+        self.assertEqual(srv._native_fs_path("/d/data/y", is_windows=True), "D:/data/y")
+        self.assertEqual(srv._native_fs_path("/c", is_windows=True), "C:/")
+        self.assertEqual(srv._native_fs_path("/c/", is_windows=True), "C:/")
+        # already-native and non-drive absolute paths are untouched even on Windows
+        self.assertEqual(srv._native_fs_path("C:/already/native", is_windows=True), "C:/already/native")
+        self.assertEqual(srv._native_fs_path("/home/user/aid", is_windows=True), "/home/user/aid")
+        self.assertEqual(srv._native_fs_path("/usr/local", is_windows=True), "/usr/local")
+        self.assertEqual(srv._native_fs_path("relative/path", is_windows=True), "relative/path")
+
+    def test_posix_branch_is_a_pure_noop(self) -> None:
+        # On POSIX '/c/foo' is a legitimate absolute path -- MUST NOT be rewritten.
+        for p in ("/c/Projects/x", "/c", "/home/user", "C:/x", "relative", ""):
+            self.assertEqual(srv._native_fs_path(p, is_windows=False), p)
+
+
+_NATIVE_FS_PATH_CASES = [
+    "/c/Projects/Personal/AID", "/c/Users/andre/x", "/d/data", "/c", "/c/",
+    "C:/already/native", "/home/user/aid", "/usr/local", "relative/path", "",
+]
+
+
+@unittest.skipUnless(_NODE_AVAILABLE, "node not available on PATH -- twin parity skipped")
+class TestNativeFsPathParity(_NodeSlicedDispatchFixture, unittest.TestCase):
+    """The KI-008 normalizer must be byte-identical across the Python and Node
+    reader twins for BOTH the Windows branch and the POSIX no-op branch."""
+
+    def _node_native_fs_path(self, is_win: bool) -> list[str]:
+        driver = (
+            "import { nativeFsPath } from "
+            f"{json.dumps(self._slice_path.resolve().as_uri())};\n"
+            f"const cases = {json.dumps(_NATIVE_FS_PATH_CASES)};\n"
+            f"const isWin = {json.dumps(is_win)};\n"
+            "process.stdout.write(JSON.stringify(cases.map((c) => nativeFsPath(c, isWin))));\n"
+        )
+        result = subprocess.run(
+            ["node", "--input-type=module"],
+            input=driver, capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"node nativeFsPath driver failed: {result.stderr[:1000]}")
+        return list(json.loads(result.stdout.strip()))
+
+    def test_windows_branch_twin_parity(self) -> None:
+        node_out = self._node_native_fs_path(True)
+        py_out = [srv._native_fs_path(c, is_windows=True) for c in _NATIVE_FS_PATH_CASES]
+        self.assertEqual(py_out, node_out, "python/node nativeFsPath DIVERGE (Windows branch)")
+        # anchor the intended transform so a regression can't pass by both twins agreeing on wrong
+        self.assertEqual(py_out[0], "C:/Projects/Personal/AID")
+
+    def test_posix_branch_twin_parity_is_noop(self) -> None:
+        node_out = self._node_native_fs_path(False)
+        py_out = [srv._native_fs_path(c, is_windows=False) for c in _NATIVE_FS_PATH_CASES]
+        self.assertEqual(py_out, node_out, "python/node nativeFsPath DIVERGE (POSIX branch)")
+        self.assertEqual(py_out, _NATIVE_FS_PATH_CASES, "POSIX branch must be a pure no-op")
 
 
 if __name__ == "__main__":

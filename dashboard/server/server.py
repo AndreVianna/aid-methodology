@@ -123,6 +123,38 @@ def repo_id(canon_path: str) -> str:
     return hashlib.sha256(canon_path.encode("utf-8")).hexdigest()
 
 
+_MSYS_DRIVE_PATH = re.compile(r"^/([A-Za-z])(/.*)?$")
+
+
+def _native_fs_path(path: str, is_windows: "bool | None" = None) -> str:
+    """Map an MSYS/Git-Bash absolute path ('/c/Users/x') to a native-Windows
+    drive path ('C:/Users/x') FOR FILESYSTEM ACCESS ONLY (KI-008).
+
+    `aid projects add`/`remove` run under bash (KI-004: the dashboard spawns
+    `bash bin/aid`), which canonicalizes and stores the MSYS form
+    '/<drive>/rest' in registry.yml. Native-Windows Python cannot resolve that
+    form, so a project registered via the dashboard would render with no
+    metadata (name/version None). This maps it back to the native drive form so
+    the reader's `<path>/.aid/...` reads resolve.
+
+    SYNTACTIC only -- never touches the disk, follows a symlink, or
+    realpath-resolves -- so the CAN-1/DD-5 "no realpathSync" security intent is
+    preserved. Applied ONLY at the reader's filesystem boundary; the id-hash and
+    the displayed/echoed path (and the bash-backed write ops, which already
+    accept '/c/...') stay verbatim. NO-OP off Windows (on POSIX, '/c/foo' is a
+    real absolute path) and NO-OP on an already-native 'C:/...' input. The twin
+    of server.mjs's nativeFsPath(). `is_windows` is an injectable seam so the
+    Linux CI suite can exercise the Windows branch."""
+    if is_windows is None:
+        is_windows = os.name == "nt"
+    if not is_windows:
+        return path
+    m = _MSYS_DRIVE_PATH.match(path)
+    if m:
+        return f"{m.group(1).upper()}:{m.group(2) or '/'}"
+    return path
+
+
 def build_id_map(repos: list[str]) -> dict[str, str]:
     """Build {id -> canon_path} map with collision-lengthen (DD-1 SS 3.5).
 
@@ -463,8 +495,10 @@ def build_home_model(
     # Build unsorted first, then sort by path (PT-1 determinism).
     repo_entries: list[dict] = []
     for rid, canon_path in id_map.items():
+        # FS access uses the native-drive form (KI-008); id + displayed path stay verbatim.
+        fs_path = _native_fs_path(canon_path)
         try:
-            aid_dir = Path(canon_path) / ".aid"
+            aid_dir = Path(fs_path) / ".aid"
             available = aid_dir.is_dir()
         except Exception:
             available = False
@@ -485,11 +519,11 @@ def build_home_model(
 
         if available:
             try:
-                entry["name"], entry["description"] = _read_settings(canon_path)
+                entry["name"], entry["description"] = _read_settings(fs_path)
             except Exception:
                 pass
             try:
-                entry["aid_version"], entry["tools_installed"] = _read_manifest(canon_path)
+                entry["aid_version"], entry["tools_installed"] = _read_manifest(fs_path)
             except Exception:
                 pass
             try:
@@ -509,7 +543,7 @@ def build_home_model(
             # The CLI home is load-once, so a per-project read_repo here is paid once
             # per page load, not per poll. Best-effort: never raise (NFR10).
             try:
-                _rm = read_repo(canon_path)
+                _rm = read_repo(fs_path)
                 _works = getattr(_rm, "works", []) or []
                 entry["pipeline_count"] = len(_works)
                 entry["pipelines_in_progress"] = sum(
@@ -1995,10 +2029,13 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         constructed as registry[id]/.aid/knowledge/kb.html; a broken symlink there
         fails is_file() -> 404).
         """
+        # FS access uses the native-drive form (KI-008); SEC-2 already resolved
+        # canon_path from <id> via id_map (never the request body) upstream.
+        fs_path = _native_fs_path(canon_path)
         # The leaf is from the fixed allowlist {home.html, kb.html} -- not from the request.
         if leaf == "home.html":
             # Opt-in gate: only AID-initialized repos expose a dashboard.
-            if not (Path(canon_path) / ".aid").is_dir():
+            if not (Path(fs_path) / ".aid").is_dir():
                 self._send_plain(404, b"Not Found")
                 return
             file_path = _DASHBOARD_DIR / "home.html"
@@ -2011,7 +2048,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
                 return
         else:
             # kb.html (per-repo generated leaf): served from .aid/knowledge/.
-            file_path = Path(canon_path) / ".aid" / "knowledge" / leaf
+            file_path = Path(fs_path) / ".aid" / "knowledge" / leaf
             if not file_path.is_file():
                 self._send_plain(404, b"Not Found")
                 return
@@ -2043,12 +2080,14 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         """
         detail_keys = _parse_detail_param(query_string)
         write_enabled = getattr(self.server, "write_enabled", False)
+        # FS access uses the native-drive form (KI-008); canon_path was SEC-2-resolved upstream.
+        fs_path = _native_fs_path(canon_path)
         try:
             if detail_keys:
-                model, details = read_repo_detail(canon_path, detail_keys)
+                model, details = read_repo_detail(fs_path, detail_keys)
                 body = serialize_model_with_details(model, details, write_enabled)
             else:
-                model = read_repo(canon_path)
+                model = read_repo(fs_path)
                 body = serialize_model(model, write_enabled)
         except Exception as exc:
             sys.stderr.write(f"server: /r/<id>/api/model error: {exc}\n")
