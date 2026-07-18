@@ -15,9 +15,12 @@
 #   Unit 5:  no PR/no SHA in STATE.md → offered, gate=explicit-confirm (merge unverified)
 #   Unit 6:  --active-work caller exclusion → NEVER offered (still honored)
 #   Unit 7:  non-Deployed (Executing) status → offered, explicit-confirm (rule (c) REMOVED)
-#   Unit 8:  current-branch work folder (rule (b)) → NEVER offered (the one hard skip)
+#   Unit 8:  current-branch work folder (rule (b), real bare `work-NNN` convention,
+#            + legacy `aid/work-NNN-*` regression) → NEVER offered (the one hard skip)
 #   Unit 9:  stale ## Housekeep Status block in a work folder → offered (rule (a) REMOVED)
 #   Unit 10: gh absent (SKIP guard) — command -v gh returns nonzero → no gh calls
+#   Unit 11: Tier-1 merged+concluded folder → teardown trigger surfaced (TIER-gated work-id derivation)
+#   Unit 12: classifier stays read-only → no worktree/branch mutation
 #
 # Usage:
 #   test-housekeep-workfolder-safety.sh [-v | --verbose]
@@ -410,7 +413,7 @@ fi
 
 # ===========================================================================
 echo ""
-echo "=== Unit 8: Active folder via (b) branch match → NEVER offered ==="
+echo "=== Unit 8 (AC8): Active folder via (b) branch match, real bare work-NNN convention → NEVER offered ==="
 
 REPO8=$(mktemp -d)
 CLEANUP_DIRS+=("$REPO8")
@@ -425,16 +428,26 @@ git -C "$REPO8" fetch -q origin 2>/dev/null || true
 # Create work-092, Deployed+SHA (would normally be offered — but branch match excludes it)
 make_work_state "$REPO8" "work-092-branch" "Deployed" "$SHA8" "merged"
 
-# Switch to a branch matching work-092 so rule (b) triggers
-git -C "$REPO8" switch -c "aid/work-092-branch" -q 2>/dev/null || true
-
+# Real convention: bare work-092 (this is the case the old regex MISSED).
+git -C "$REPO8" switch -c "work-092" -q 2>/dev/null || true
 OUT8=$(run_classify "$REPO8")
 log "OUT8=$OUT8"
 
 if echo "$OUT8" | grep -F "work-092-branch" | grep -q "|1|"; then
-    fail "U8: branch-matched folder emitted as Tier-1 (must be excluded by rule (b))"
+    fail "U8 (AC8): bare work-092 checkout must exclude the work-092 folder (guard did not fire)"
 else
-    pass "U8: branch-matched folder not offered as Tier-1 (rule b)"
+    pass "U8 (AC8): bare work-092 branch excludes work-092 folder (real convention)"
+fi
+
+# Regression guard: the legacy/delivery form must still be tolerated.
+git -C "$REPO8" switch -c "aid/work-092-delivery-001" -q 2>/dev/null || true
+OUT8b=$(run_classify "$REPO8")
+log "OUT8b=$OUT8b"
+
+if echo "$OUT8b" | grep -F "work-092-branch" | grep -q "|1|"; then
+    fail "U8 (AC8): legacy aid/work-092-* checkout must still exclude the work-092 folder"
+else
+    pass "U8 (AC8): legacy aid/work-092-* form still guarded"
 fi
 
 # ===========================================================================
@@ -518,6 +531,37 @@ if [[ -z "$MATCHING10" ]]; then
 else
     GATE10=$(echo "$MATCHING10" | cut -d'|' -f6)
     assert_eq "$GATE10" "offer" "U10: ancestry fallback used (gh absent) → gate=offer"
+fi
+
+# ===========================================================================
+echo ""
+echo "=== Unit 11 (AC7): Tier-1 merged+concluded folder → teardown trigger surfaced ==="
+
+# Reuses OUT1's work-099-done (Unit 1). Step 4b gates teardown on the candidate's
+# TIER field (must be 1) and only then derives work-099 from the PATH for locate —
+# so this pins BOTH the TIER gate (guards against a work-NNN-named Tier-2 file) and
+# the work-id derivation.
+CAND11=$(echo "$OUT1" | grep -F "work-099-done" | head -1)
+TIER11=$(echo "$CAND11" | cut -d'|' -f2)
+PATH11=$(echo "$CAND11" | cut -d'|' -f1)
+assert_eq "$TIER11" "1" "U11 (AC7): teardown-eligible candidate is Tier-1 (the Step-4b gate key)"
+if [[ "$(basename "$PATH11")" =~ ^work-([0-9]+)- ]]; then
+    pass "U11 (AC7): Tier-1 candidate PATH yields work-id work-${BASH_REMATCH[1]} for locate"
+else
+    fail "U11 (AC7): candidate PATH does not yield a work-NNN id: $PATH11"
+fi
+assert_eq "$(parse_gate "$OUT1" "work-099-done")" "offer" "U11 (AC7): teardown-eligible gate is offer"
+
+# ===========================================================================
+echo ""
+echo "=== Unit 12 (AC7): classifier stays read-only → no worktree/branch mutation ==="
+
+# The classifier performs NO worktree/branch mutation — teardown cannot happen
+# silently from the read-only classifier; it is gated in the state-cleanup.md prose.
+if grep -Eq 'git[[:space:]]+worktree[[:space:]]+(remove|prune)|git[[:space:]]+branch[[:space:]]+-D' "$SUT"; then
+    fail "U12 (AC7): cleanup-classify.sh contains a worktree/branch mutation (must stay read-only)"
+else
+    pass "U12 (AC7): classifier has no worktree/branch mutation (teardown gated in prose)"
 fi
 
 # ===========================================================================
