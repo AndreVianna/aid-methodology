@@ -4090,6 +4090,46 @@ function _readWorkHierarchical(workDir, workId) {
 // work-004 Pillar 5: Same-work reconcile (no winner) -- mirror reader.py
 // ---------------------------------------------------------------------------
 
+function _pipelineWinnerSortKey(updated, branchLabel) {
+  // Shared Pipeline-State winner-rule sort key (SD-2 / Pillar 5 step 2); mirror
+  // reader.py _pipeline_winner_sort_key verbatim.
+  //
+  // Newest `updated` wins; tie -> branch_label lexical sort, "main" first. This
+  // is the SINGLE encoding of the winner rule -- used by BOTH _reconcileSameWork
+  // (ranking WorkModel copies) and resolveWorkDir (task-002, WT-1: ranking raw
+  // worktree candidates) so the "same winner rule" invariant holds by
+  // construction rather than by two independently-maintained copies.
+  //
+  // Key: [tier, invUpdated, secondary]
+  //   tier=0 if updated present, tier=1 if absent.
+  //   invUpdated: char-complement so larger (newer) timestamp sorts smaller (ascending).
+  //   secondary: [0, ""] for "main", else [1, label].
+  const upd = updated || "";
+  const label = branchLabel || "";
+  const secondary = label === "main" ? [0, ""] : [1, label];
+  if (upd) {
+    const invUpdated = upd.split("").map(c => {
+      const cp = c.charCodeAt(0);
+      return String.fromCharCode(0x7F - Math.min(cp, 0x7F));
+    }).join("");
+    return [0, invUpdated, secondary];
+  }
+  return [1, "", secondary];
+}
+
+function _pipelineWinnerKeyCmp(ka, kb) {
+  // Compare two keys returned by _pipelineWinnerSortKey.
+  if (ka[0] !== kb[0]) return ka[0] - kb[0];
+  if (ka[1] < kb[1]) return -1;
+  if (ka[1] > kb[1]) return 1;
+  const [sat, sal] = ka[2];
+  const [sbt, sbl] = kb[2];
+  if (sat !== sbt) return sat - sbt;
+  if (sal < sbl) return -1;
+  if (sal > sbl) return 1;
+  return 0;
+}
+
 function _reconcileSameWork(copies) {
   // Merge N WorkModel copies for the same work_id into one reconciled model.
   //
@@ -4130,43 +4170,15 @@ function _reconcileSameWork(copies) {
 
   // Step 2: pick the Pipeline-State winner by newest Updated timestamp.
   // Tie-break: branch_label lexical sort, "main" sorting first.
-  //
-  // Key: (tier, inv_updated, secondary)
-  //   tier=0 if updated present, tier=1 if absent.
-  //   inv_updated: char-complement so larger (newer) timestamp sorts smaller (ascending).
-  //   secondary: [0, ""] for "main", else [1, label].
+  // The sort key itself is the shared _pipelineWinnerSortKey (see its comment
+  // above) -- reused verbatim by resolveWorkDir (task-002).
   function _pipelineWinnerKey(entry) {
     const wm = entry[0];
-    const updated = wm.updated || "";
-    const label = wm.branch_label || "";
-    const secondary = label === "main" ? [0, ""] : [1, label];
-    if (updated) {
-      // Char-complement: clamped to [0, 0x7F]
-      const invUpdated = updated.split("").map(c => {
-        const cp = c.charCodeAt(0);
-        return String.fromCharCode(0x7F - Math.min(cp, 0x7F));
-      }).join("");
-      return [0, invUpdated, secondary];
-    }
-    return [1, "", secondary];
+    return _pipelineWinnerSortKey(wm.updated, wm.branch_label);
   }
 
   function _keyCmp(a, b) {
-    // Compare two keys returned by _pipelineWinnerKey
-    const ka = _pipelineWinnerKey(a);
-    const kb = _pipelineWinnerKey(b);
-    // tier
-    if (ka[0] !== kb[0]) return ka[0] - kb[0];
-    // inv_updated (string compare)
-    if (ka[1] < kb[1]) return -1;
-    if (ka[1] > kb[1]) return 1;
-    // secondary: [tier, label]
-    const [sat, sal] = ka[2];
-    const [sbt, sbl] = kb[2];
-    if (sat !== sbt) return sat - sbt;
-    if (sal < sbl) return -1;
-    if (sal > sbl) return 1;
-    return 0;
+    return _pipelineWinnerKeyCmp(_pipelineWinnerKey(a), _pipelineWinnerKey(b));
   }
 
   const sortedCopies = copies.slice().sort(_keyCmp);
@@ -4264,6 +4276,97 @@ function _reconcileSameWork(copies) {
   });
 
   return [reconciled, winnerText, winnerLabel];
+}
+
+// ---------------------------------------------------------------------------
+// Worktree-aware work-directory resolver (WT-1) -- task-002; mirror reader.py
+// resolve_work_dir / _peek_work_updated verbatim.
+// ---------------------------------------------------------------------------
+
+export function resolveWorkDir(servedRoot, workId) {
+  // Resolve workId to the REAL on-disk work directory (worktree-aware; WT-1).
+  //
+  // Reuses _enumerateWorktreeRoots to walk the served repo's git worktrees,
+  // selects every worktree whose <wt>/.aid/works/<workId> exists, and applies
+  // the SAME winner rule as _reconcileSameWork step 2 (the shared
+  // _pipelineWinnerSortKey: newest `updated` wins; tie -> branch_label lexical,
+  // "main" first) -- so the directory returned is the very copy the reader
+  // would render for this work_id (a write hits exactly what the reader
+  // rendered).
+  //
+  // Returns null when no worktree of the served repo holds workId (the caller
+  // maps this to 404 -- the reader would not have rendered this work either).
+  // Inherits the reader's SD-3 degradation (git absent / non-git -> main-root-
+  // only) via _enumerateWorktreeRoots, so this resolver can only ever be asked
+  // to target a work the reader itself surfaced -- consistency by construction.
+  //
+  // servedRoot may be the repo root or a path ending in ".aid" (same convention
+  // as readRepo). The caller is responsible for validating workId's shape
+  // (^work-[0-9]+) before calling -- this function only resolves an
+  // already-validated id to a directory; it never reconstructs a served-tree
+  // path itself (each candidate directory comes verbatim from
+  // _enumerateWorktreeRoots's real on-disk .aid dir).
+  //
+  // Read-only. Never throws.
+  let root = resolve(servedRoot);
+  if (basename(root) === ".aid") {
+    root = resolve(root, "..");
+  }
+
+  const worktreeRoots = _enumerateWorktreeRoots(root);
+
+  // [updated, branchLabel, workDir] for every worktree that actually holds workId.
+  const candidates = [];
+  for (const [branchLabel, wtAidDir] of worktreeRoots) {
+    const workDir = join(wtAidDir, "works", workId);
+    let isDir = false;
+    try {
+      isDir = statSync(workDir).isDirectory();
+    } catch (_) {
+      isDir = false;
+    }
+    if (!isDir) continue;
+    candidates.push([_peekWorkUpdated(workDir, workId), branchLabel, workDir]);
+  }
+
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) =>
+    _pipelineWinnerKeyCmp(
+      _pipelineWinnerSortKey(a[0], a[1]),
+      _pipelineWinnerSortKey(b[0], b[1])
+    )
+  );
+  return candidates[0][2];
+}
+
+function _peekWorkUpdated(workDir, workId) {
+  // Best-effort read of a work directory's Pipeline State `updated` field.
+  // Used only by resolveWorkDir to break ties between worktree copies of the
+  // same work_id (the winner rule needs `updated`, not a full WorkModel). Reads
+  // workDir/STATE.md -- present regardless of monolithic/flat/hierarchical
+  // layout, since all three read the work-root STATE.md for Pipeline State --
+  // and parses it with the SAME parseStateText() the always-on read path uses.
+  //
+  // Returns null on a missing STATE.md or any read/parse failure; never
+  // throws. A null result only affects tie-break ordering, never candidate
+  // inclusion -- the work_id directory's presence is the sole inclusion test
+  // (WT-1).
+  const statePath = join(workDir, "STATE.md");
+  let isFile = false;
+  try {
+    isFile = statSync(statePath).isFile();
+  } catch (_) {
+    isFile = false;
+  }
+  if (!isFile) return null;
+  try {
+    const raw = readFileBounded(statePath);
+    const text = raw.toString("utf-8");
+    return parseStateText(text, workId, workDir).updated;
+  } catch (_) {
+    return null;
+  }
 }
 
 // ---------------------------------------------------------------------------
