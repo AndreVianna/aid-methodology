@@ -707,6 +707,39 @@ class TestExitAlphabetDistinctness(unittest.TestCase):
         self.assertNotEqual(srv._PROJECT_OP_STATUS_MAP, srv._TOOLS_UPDATE_STATUS_MAP)
 
 
+class TestSharedAidCliResolverAlreadyCovered(unittest.TestCase):
+    """AC-traceability pointer only (task-017 Scope: "Shared-mechanism
+    assertions (KI-004)... assert that all four ops dispatch through the
+    single self-located $AID_CODE_HOME/bin/aid resolver with an argv array").
+    ALREADY covered:
+      - the resolver's OWN contract (argv array, AID_HOME threading, no
+        AID_CODE_HOME leak) -- test_task013_project_registry_ops.py's
+        TestRunAidCliContract (Python) / test_task013_project_registry_ops.mjs
+        group [A] (Node, scoped to runAidCli's function body).
+      - all FOUR rows (project.add, project.remove, tools.update,
+        tools.update-self) reusing the SAME spawn function, not a re-invented
+        one per op -- test_task015_tools_update_ops.py's TestOpTableRegistration.
+        test_both_ops_reuse_the_same_shared_aid_cli_spawn_as_project_ops.
+    Not duplicated here; this file's TestProjectAddParity/TestProjectRemoveParity/
+    TestToolsUpdateParity/TestToolsUpdateSelfParity above additionally prove
+    (as a byproduct of driving all four ops through ONE shared fake-CLI script
+    on both runtimes) that a mis-wired resolver would be caught: every case's
+    expected status/body depends on the fake script's argv-position-sensitive
+    behavior (e.g. project.remove's `path="$3"`) actually being reached."""
+
+    def test_pointer_to_resolver_contract_coverage(self) -> None:
+        from dashboard.server.tests import test_task013_project_registry_ops as t013
+        from dashboard.server.tests import test_task015_tools_update_ops as t015
+        self.assertTrue(hasattr(t013, "TestRunAidCliContract"))
+        self.assertTrue(hasattr(t015.TestOpTableRegistration, "test_both_ops_reuse_the_same_shared_aid_cli_spawn_as_project_ops"))
+        # Direct structural re-assertion (cheap, in-process): all FOUR rows
+        # this task-017 file exercises share the identical spawn function.
+        self.assertIs(srv.HOME_OP_TABLE["project.add"]["spawn"], srv._spawn_aid_cli)
+        self.assertIs(srv.HOME_OP_TABLE["project.remove"]["spawn"], srv._spawn_aid_cli)
+        self.assertIs(srv.OP_TABLE["tools.update"]["spawn"], srv._spawn_aid_cli)
+        self.assertIs(srv.HOME_OP_TABLE["tools.update-self"]["spawn"], srv._spawn_aid_cli)
+
+
 # ===========================================================================
 # (G) tools.update unknown-<id> 404 -- HTTP-layer (_serve_op), live socket.
 # ===========================================================================
