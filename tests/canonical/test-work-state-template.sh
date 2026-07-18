@@ -19,7 +19,7 @@
 #         checked via their frontmatter keys; Phase/Updated/Block Reason/Block Artifact are
 #         still checked as body prose (header blockquote / ## Delivery Lifecycle)
 #   WS03  work-state-template declares Lifecycle enum verbatim (closed, 5 members)
-#   WS04  work-state-template declares Phase enum verbatim (7 members)
+#   WS04  work-state-template declares Phase enum verbatim (6 members)
 #   WS05  work-state-template declares Active Skill enum placeholder (frontmatter key shape)
 #   WS06  (removed) comment-text assertion -- see body note; coverage: WS07 (dogfood), WS03/WS04 (enums)
 #   WS07  Rendered dogfood work-state-template matches canonical (spot checks; lifecycle
@@ -103,11 +103,11 @@ for member in "Running" "Paused-Awaiting-Input" "Blocked" "Completed" "Canceled"
 done
 
 # ---------------------------------------------------------------------------
-# WS04: work-state-template declares Phase enum verbatim (all 7 members) --
-# faithful 6-phase pipeline + Deploy (work-003-state-schema task-010: Interview
-# split into Describe + Define; the dead Monitor value removed).
+# WS04: work-state-template declares Phase enum verbatim (all 6 members) --
+# faithful numbered pipeline; ends at Execute (Deploy is a separate path, not a
+# phase; Interview/Monitor retired).
 # ---------------------------------------------------------------------------
-for member in "Describe" "Define" "Specify" "Plan" "Detail" "Execute" "Deploy"; do
+for member in "Describe" "Define" "Specify" "Plan" "Detail" "Execute"; do
     assert_file_contains \
         "$WORK_STATE" \
         "$member" \

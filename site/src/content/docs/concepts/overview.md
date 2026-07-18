@@ -19,7 +19,7 @@ This section covers the *why* and *how* behind AID's design. It is explanation-o
 
 If you are new to AID, read [The AID Methodology](/concepts/methodology/) first. It covers:
 
-1. **The Pipeline** — the six numbered phases (Discover → Describe/Define → Specify → Plan → Detail → Execute), organized into five groups (Prepare, Define, Map, Execute, Deliver), and how the flow maps to human/AI collaboration
+1. **The Pipeline** — the six numbered phases (Discover → Describe/Define → Specify → Plan → Detail → Execute), organized into four groups (Support, Knowledge Base Maintenance, Definition, Execution), and how the flow maps to human/AI collaboration
 2. **Philosophy** — why rigor + AI beats Agile's rigor compromise
 3. **The Knowledge Base** — the 14-document living specification that makes every subsequent task faster
 4. **The Phases** — what each phase produces and when to skip it

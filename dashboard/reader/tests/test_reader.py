@@ -185,7 +185,7 @@ STATE_NONE_YET = """\
 ## Pipeline Status
 
 - **Lifecycle:** Completed
-- **Phase:** Deploy
+- **Phase:** Execute
 - **Active Skill:** none
 - **Updated:** 2026-06-01T00:00:00Z
 - **Pause Reason:** --
@@ -598,8 +598,7 @@ class TestEnumParsing(unittest.TestCase):
         self.assertEqual(_parse_lifecycle("running"), Lifecycle.Unknown)  # case-sensitive
 
     def test_all_phase_members(self):
-        # work-003-state-schema task-010: faithful 6-phase pipeline (Interview split
-        # into Describe + Define; the dead Monitor value removed as a Phase member).
+        # Faithful numbered pipeline; ends at Execute.
         cases = {
             "Describe": Phase.Describe,
             "Define": Phase.Define,
@@ -607,7 +606,6 @@ class TestEnumParsing(unittest.TestCase):
             "Plan": Phase.Plan,
             "Detail": Phase.Detail,
             "Execute": Phase.Execute,
-            "Deploy": Phase.Deploy,
         }
         for raw, expected in cases.items():
             with self.subTest(raw=raw):
@@ -615,16 +613,6 @@ class TestEnumParsing(unittest.TestCase):
 
     def test_unknown_phase(self):
         self.assertEqual(_parse_phase("unknown"), Phase.Unknown)
-
-    def test_legacy_phase_interview_aliases_to_describe(self):
-        # Back-compat read alias (task-010): retired "Interview" label -> its
-        # Describe half, so pre-migration files/fixtures still parse.
-        self.assertEqual(_parse_phase("Interview"), Phase.Describe)
-
-    def test_dead_phase_monitor_tolerated_as_unknown(self):
-        # "Monitor" is a dead value -- no skill ever wrote it -- tolerated as
-        # Unknown on read rather than kept as a live Phase member (task-010).
-        self.assertEqual(_parse_phase("Monitor"), Phase.Unknown)
 
     def test_all_task_status_members(self):
         cases = {
@@ -1512,7 +1500,7 @@ class TestCreatedField(unittest.TestCase):
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|--------------------------|-------|-------|
 | 2026-05-15 | Work created | -- | Initial creation |
-| 2026-05-20 | Interview -> Specify | A | -- |
+| 2026-05-20 | Define -> Specify | A | -- |
 | 2026-06-01 | Specify -> Plan | A | -- |
 """
 
@@ -1520,7 +1508,7 @@ class TestCreatedField(unittest.TestCase):
 ## Pipeline Status
 
 - **Lifecycle:** Completed
-- **Phase:** Deploy
+- **Phase:** Execute
 - **Active Skill:** none
 - **Updated:** 2026-06-12T00:00:00Z
 - **Pause Reason:** --

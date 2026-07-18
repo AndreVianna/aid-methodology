@@ -229,7 +229,7 @@ _PF1_REQUIREMENTS = """\
 
 | Date | Change | Source |
 |------|--------|--------|
-| 2026-06-11 | Interview complete | /aid-describe |
+| 2026-06-11 | Describe complete | /aid-describe |
 
 ## 1. Objective
 
@@ -1029,7 +1029,7 @@ _T8_STATE = """\
 
 | Date | Phase | Event | Phase Transition / Gate | Notes |
 |------|-------|-------|--------------------------|-------|
-| 2026-06-01 | Interview | Work created | Interview start | -- |
+| 2026-06-01 | Describe | Work created | Describe start | -- |
 
 """
 

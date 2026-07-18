@@ -680,7 +680,7 @@ each pass until every document clears the resolved `minimum_grade`. FR-11.
 No pipeline `Phase` change here: GATE is still validating the collapsed
 Detail-phase output before Execute (which never runs in this engine), and
 `writeback-state.sh`'s `Phase` enum (`Describe | Define | Specify | Plan |
-Detail | Execute | Deploy`) has no `Gate` value -- `Phase` stays `Detail`
+Detail | Execute`) has no `Gate` value -- `Phase` stays `Detail`
 (its last write, DETAIL Step 1).
 
 ### Step 1: Resolve the floor

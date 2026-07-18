@@ -3,7 +3,7 @@
 
 # Package & Ship
 
-Final verification, PR creation, delivery summary, and documentation updates. An optional, on-demand delivery skill — positioned at the end of the pipeline, run after Execute when the project's delivery model calls for it.
+Final verification, PR creation, delivery summary, and documentation updates. An optional, on-demand delivery skill and a separate, independently-invoked path — not a step in the numbered sequence (which ends at Execute); run it when the project's delivery model calls for it.
 
 ## Core Principle
 

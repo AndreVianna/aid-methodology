@@ -136,8 +136,8 @@ door, per this decision (first match wins):
 | Chosen work's state | Resume entry point |
 |---|---|
 | Flattened Lite work halted at the shortcut engine's APPROVAL-HALT (`lifecycle: Paused-Awaiting-Input` **and** `delivery_state: Specified`) | `/aid-execute <work>` |
+| Deploy in progress (`active_skill: aid-deploy` -- an interrupted `/aid-deploy`; Deploy is a separate path, no longer a `phase:`) | `/aid-deploy <work>` |
 | Mid-Execute or beyond (`phase: Execute`, or `delivery_state` is `Executing`/`Gated`/`Done`) | `/aid-execute <work>` |
-| In the Deploy phase (`phase: Deploy`) | `/aid-deploy <work>` |
 | Partial full-path work still in a definition phase -- route to the skill matching `STATE.md` `phase` | `Describe` -> `/aid-describe <work>`; `Define` -> `/aid-define <work>`; `Specify` -> `/aid-specify <work>`; `Plan` -> `/aid-plan <work>`; `Detail` -> `/aid-detail <work>` |
 | Already `Completed` / `Canceled` | Tell the user the work is finished (nothing to resume) and stop; suggest a NEW work if they meant to start fresh |
 

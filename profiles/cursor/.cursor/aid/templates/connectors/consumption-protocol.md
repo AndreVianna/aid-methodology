@@ -135,7 +135,7 @@ identically to before this protocol existed.
 | `aid-researcher` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, use the host tool's MCP to gather additional evidence for a RESEARCH task or a broad `aid-query-kb` dispatch — the same read-heavy, evidence-cited discipline it already applies to KB/codebase sources. |
 | `aid-developer` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, use the host tool's MCP to pull additional context for an IMPLEMENT/TEST/REFACTOR/CONFIGURE/MIGRATE task (e.g. re-reading the linked ticket's latest description/comments before implementing) — read-only enrichment; never a substitute for the TASK file's own Scope/Acceptance Criteria. |
 
-**Ingest vs. target, restated.** An **ingest** seam runs early in the pipeline (Describe/Specify/
+**Ingest vs. target, restated.** An **ingest** seam runs early in the pipeline (Describe/Define/Specify/
 Plan/the shortcut engine's INTAKE) and *records* a `ticket_ref` at the level it is creating, sourced
 from a ticket that already exists externally. A **target** seam (`aid-execute`) runs later and
 *resolves + acts on* whatever `ticket_ref` is nearest, mirroring state it is producing back out to

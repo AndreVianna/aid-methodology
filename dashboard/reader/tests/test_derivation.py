@@ -205,7 +205,7 @@ STATE_CANCELED = """\
 
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
-| 2026-06-01 | Interview -> Execute | -- | -- |
+| 2026-06-01 | Describe -> Execute | -- | -- |
 | 2026-06-10 | Canceled | -- | User request |
 """
 
@@ -226,7 +226,7 @@ STATE_WITH_HISTORY_DATE = """\
 
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
-| 2026-06-01 | Interview start | -- | -- |
+| 2026-06-01 | Describe start | -- | -- |
 | 2026-06-10 | Execute start | -- | -- |
 """
 
@@ -782,7 +782,7 @@ class TestFallbackHelpers(unittest.TestCase):
 
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
-| 2026-05-01 | Interview start | -- | -- |
+| 2026-05-01 | Describe start | -- | -- |
 | 2026-06-10 | Execute start | -- | -- |
 | 2026-04-15 | Specify start | -- | -- |
 """

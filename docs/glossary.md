@@ -37,7 +37,7 @@ Terms and concepts used throughout the AID methodology.
 | **Deploy** *(optional)* | Deliver | Shipped delivery, PR, KB update |
 | **Monitor** *(optional)* | Deliver | Classified findings routed to fixes (BUG → `/aid-fix` / Change Request → `/aid-triage` / Infrastructure / No Action) |
 
-> *Deploy and Monitor are **optional**, on-demand delivery skills positioned at the end of the pipeline — not required, numbered phases. Run them when the project's delivery model calls for them; neither presupposes the other.*
+> *Deploy and Monitor are **optional**, on-demand delivery skills — separate, independently-invoked paths, not required, numbered phases (the numbered sequence ends at Execute). Run them when the project's delivery model calls for them; neither presupposes the other.*
 
 ---
 

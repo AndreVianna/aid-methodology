@@ -17,7 +17,7 @@ No. Use what applies:
 - **Quick bug fix or small change?** Skip Describe entirely — run the matching shortcut (e.g. `/aid-fix`) directly, or `/aid-triage` if you're not sure which one fits.
 - **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
 
-The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional and run on demand at the end of the pipeline; many projects ship by other means and never invoke them. But know what you're skipping and why.
+The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional, separately-invoked paths, not steps in the numbered sequence (which ends at Execute); many projects ship by other means and never invoke them. But know what you're skipping and why.
 
 ### How do I start a new project?
 Run `/aid-config` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (14 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-describe` (new project).
