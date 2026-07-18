@@ -1,8 +1,8 @@
 ---
 delivery_state: Executing
 gate_tier: Small
-gate_grade: "Pending"
-gate_timestamp: "--"
+gate_grade: Pending
+gate_timestamp: "2026-07-18T00:00:00Z"
 ticket_ref: "--"
 ---
 
@@ -10,7 +10,6 @@ ticket_ref: "--"
 
 > **Delivery:** delivery-001
 > **Work:** work-017-cli-improvements
-> **Branch:** aid/work-017-delivery-001
 
 ---
 
@@ -38,3 +37,4 @@ _None yet._
 
 | # | Task | Type | Wave | State | Review | Elapsed | Notes |
 |---|------|------|------|-------|--------|---------|-------|
+| _none yet_ | | | | | | | |
