@@ -28,12 +28,16 @@
 # EOF if the section itself is entirely absent. Every OTHER line in the file is reproduced
 # byte-for-byte. The write is atomic (temp-file + mv).
 #
-# Exit codes (mirrors read-setting.sh; shared alphabet with writeback-state.sh so the
-# dashboard server's DEFAULT_MAP maps both writers' exits correctly):
+# Exit codes (conforms to the dashboard server's DEFAULT_MAP -- see
+# feature-001-write-infrastructure SPEC.md Sec API Contracts; the lock-contention exit code
+# (writeback-state.sh's -> HTTP 409 busy) is RESERVED and MUST NEVER be emitted here):
 #   0 -- value written
-#   2 -- argument error, or settings.yml missing/unreadable, or write produced no output
 #   4 -- invalid --path (not in the allowlist), invalid review.minimum_grade format, or
-#        invalid --value (KI-001 charset)
+#        invalid --value (KI-001 charset)                                    -> 422 invalid-value
+#   5 -- missing/malformed required arg (--path/--value/--file given with no value,
+#        unknown flag, or neither --path nor --value supplied)               -> 422 invalid-value
+#   3 -- IO or unverifiable-write failure (settings.yml missing/unreadable, write
+#        produced no output, or sanity check failed)                        -> 500 write-failed
 #
 # Format: settings.yml is YAML 1.2, flat two-level sections only (same assumption
 # read-setting.sh makes). bash-only (no external YAML parser dependency).
@@ -48,15 +52,15 @@ HAS_VALUE=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --path)
-            [[ $# -lt 2 ]] && { echo "write-setting.sh: --path requires a value" >&2; exit 2; }
+            [[ $# -lt 2 ]] && { echo "write-setting.sh: --path requires a value" >&2; exit 5; }
             DPATH="$2"; shift 2
             ;;
         --value)
-            [[ $# -lt 2 ]] && { echo "write-setting.sh: --value requires a value" >&2; exit 2; }
+            [[ $# -lt 2 ]] && { echo "write-setting.sh: --value requires a value" >&2; exit 5; }
             VALUE="$2"; HAS_VALUE=1; shift 2
             ;;
         --file)
-            [[ $# -lt 2 ]] && { echo "write-setting.sh: --file requires a value" >&2; exit 2; }
+            [[ $# -lt 2 ]] && { echo "write-setting.sh: --file requires a value" >&2; exit 5; }
             SETTINGS_FILE="$2"; shift 2
             ;;
         -h|--help)
@@ -72,14 +76,14 @@ HELP
             ;;
         *)
             echo "write-setting.sh: unknown flag: $1" >&2
-            exit 2
+            exit 5
             ;;
     esac
 done
 
 if [[ -z "$DPATH" || "$HAS_VALUE" -eq 0 ]]; then
     echo "write-setting.sh: requires --path A.B and --value V" >&2
-    exit 2
+    exit 5
 fi
 
 # Closed allowlist. Rejection here is an invalid-VALUE-class error (exit 4), not an argument
@@ -118,7 +122,7 @@ fi
 
 if [[ ! -f "$SETTINGS_FILE" ]]; then
     echo "write-setting.sh: settings file not found at $SETTINGS_FILE" >&2
-    exit 2
+    exit 3
 fi
 
 # ---------------------------------------------------------------------------
@@ -172,13 +176,13 @@ fi
 if [[ ! -s "$tmp" ]]; then
     rm -f "$tmp"
     echo "write-setting.sh: write produced empty output; $SETTINGS_FILE preserved" >&2
-    exit 2
+    exit 3
 fi
 
 if ! grep -q "^  ${KEY}:" "$tmp"; then
     rm -f "$tmp"
     echo "write-setting.sh: sanity check failed: key '${KEY}' not found in output; $SETTINGS_FILE preserved" >&2
-    exit 2
+    exit 3
 fi
 
 mv "$tmp" "$SETTINGS_FILE"

@@ -25,11 +25,16 @@
 # line -- it never renames/moves the work folder, never touches the git branch, and never
 # touches the worktree (AC5).
 #
-# Exit codes (shared alphabet with write-setting.sh / writeback-state.sh so the dashboard
-# server's DEFAULT_MAP maps every writer's exits correctly):
+# Exit codes (conforms to the dashboard server's DEFAULT_MAP -- see
+# feature-001-write-infrastructure SPEC.md Sec API Contracts; the lock-contention exit code
+# (writeback-state.sh's -> HTTP 409 busy) is RESERVED and MUST NEVER be emitted here):
 #   0 -- value written
-#   2 -- argument error, or REQUIREMENTS.md missing/unreadable, or write produced no output
-#   4 -- invalid --field (not Name/Description), or invalid --value (newline / pipe)
+#   4 -- invalid --field (not Name/Description), or invalid --value (newline / pipe)  -> 422 invalid-value
+#   5 -- missing/malformed required arg (--field/--value given with no value, unknown
+#        flag, --field or --value omitted entirely, or no bullet/heading anchor to
+#        place the value -- no valid write mode)                                     -> 422 invalid-value
+#   3 -- IO or unverifiable-write failure (REQUIREMENTS.md missing/unreadable, write
+#        produced no output, or sanity check failed)                                 -> 500 write-failed
 #
 # bash-only (no external dependency).
 
@@ -43,11 +48,11 @@ HAS_VALUE=0
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --field)
-            [[ $# -lt 2 ]] && { echo "write-requirement.sh: --field requires a value" >&2; exit 2; }
+            [[ $# -lt 2 ]] && { echo "write-requirement.sh: --field requires a value" >&2; exit 5; }
             FIELD="$2"; shift 2
             ;;
         --value)
-            [[ $# -lt 2 ]] && { echo "write-requirement.sh: --value requires a value" >&2; exit 2; }
+            [[ $# -lt 2 ]] && { echo "write-requirement.sh: --value requires a value" >&2; exit 5; }
             VALUE="$2"; HAS_VALUE=1; shift 2
             ;;
         -h|--help)
@@ -63,14 +68,14 @@ HELP
             ;;
         *)
             echo "write-requirement.sh: unknown flag: $1" >&2
-            exit 2
+            exit 5
             ;;
     esac
 done
 
 if [[ -z "$FIELD" || "$HAS_VALUE" -eq 0 ]]; then
     echo "write-requirement.sh: requires --field <Name|Description> and --value V" >&2
-    exit 2
+    exit 5
 fi
 
 # Closed field allowlist (case-insensitive input; canonical output case is Title-case,
@@ -96,7 +101,7 @@ fi
 
 if [[ ! -f "$REQ_FILE" ]]; then
     echo "write-requirement.sh: requirements file not found at $REQ_FILE" >&2
-    exit 2
+    exit 3
 fi
 
 # Decide the write mode BEFORE touching the file: replace the existing bullet if present,
@@ -109,8 +114,8 @@ if grep -qiE "$BULLET_RE" "$REQ_FILE"; then
 elif grep -qE "$HEADING_RE" "$REQ_FILE"; then
     MODE="insert"
 else
-    echo "write-requirement.sh: no '${FIELD}' bullet and no '# Requirements' heading found in $REQ_FILE; cannot place it" >&2
-    exit 2
+    echo "write-requirement.sh: no '${FIELD}' bullet and no '# Requirements' heading found in $REQ_FILE; no valid write mode -- cannot place it" >&2
+    exit 5
 fi
 
 tmp=$(mktemp)
@@ -147,13 +152,13 @@ fi
 if [[ ! -s "$tmp" ]]; then
     rm -f "$tmp"
     echo "write-requirement.sh: write produced empty output; $REQ_FILE preserved" >&2
-    exit 2
+    exit 3
 fi
 
 if ! grep -qE "^-[[:space:]]*\\*\\*${FIELD}:\\*\\*" "$tmp"; then
     rm -f "$tmp"
     echo "write-requirement.sh: sanity check failed: '${FIELD}' bullet not found in output; $REQ_FILE preserved" >&2
-    exit 2
+    exit 3
 fi
 
 mv "$tmp" "$REQ_FILE"

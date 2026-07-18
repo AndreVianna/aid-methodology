@@ -10,12 +10,12 @@
 #   Unit 5  — unknown --field exits 4
 #   Unit 6  — --value with an embedded newline exits 4
 #   Unit 7  — --value with an embedded pipe exits 4
-#   Unit 8  — requirements file missing exits 2
-#   Unit 9  — missing required args exits 2
+#   Unit 8  — requirements file missing exits 3
+#   Unit 9  — missing required args exits 5
 #   Unit 10 — AID_REQUIREMENTS_FILE env var is honored
 #   Unit 11 — no env var set → defaults to <cwd>/REQUIREMENTS.md
 #   Unit 12 — every OTHER line (Change Log, etc.) is byte-preserved
-#   Unit 13 — neither bullet nor "# Requirements" heading present → exit 2
+#   Unit 13 — neither bullet nor "# Requirements" heading present → exit 5 (no valid write mode)
 #   Unit 14 — write is atomic: no stray temp file left behind on success
 #
 # Exit codes:
@@ -148,7 +148,7 @@ assert_exit_eq "$ec" 4 "U7 pipe in --value exits 4"
 # ---------------------------------------------------------------------------
 out=$(AID_REQUIREMENTS_FILE="${TMPDIR_BASE}/does-not-exist.md" bash "$SUT" --field Name --value "X" 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U8 missing requirements file exits 2"
+assert_exit_eq "$ec" 3 "U8 missing requirements file exits 3"
 
 # ---------------------------------------------------------------------------
 # Unit 9: missing required args
@@ -157,11 +157,11 @@ f="${TMPDIR_BASE}/u9.md"
 fixture_full > "$f"
 out=$(AID_REQUIREMENTS_FILE="$f" bash "$SUT" --field Name 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U9 missing --value exits 2"
+assert_exit_eq "$ec" 5 "U9 missing --value exits 5"
 
 out=$(AID_REQUIREMENTS_FILE="$f" bash "$SUT" --value "X" 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U9b missing --field exits 2"
+assert_exit_eq "$ec" 5 "U9b missing --field exits 5"
 
 # ---------------------------------------------------------------------------
 # Unit 10: AID_REQUIREMENTS_FILE env var honored
@@ -196,7 +196,7 @@ f="${TMPDIR_BASE}/u13.md"
 fixture_no_heading > "$f"
 out=$(AID_REQUIREMENTS_FILE="$f" bash "$SUT" --field Name --value "X" 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U13 no heading + no bullet exits 2"
+assert_exit_eq "$ec" 5 "U13 no heading + no bullet exits 5 (no valid write mode)"
 
 # ---------------------------------------------------------------------------
 # Unit 14: atomic write — no stray temp file left behind (mktemp's scratch dir

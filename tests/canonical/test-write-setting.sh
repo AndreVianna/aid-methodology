@@ -13,9 +13,9 @@
 #   Unit 8  — --value with an embedded backslash exits 4
 #   Unit 9  — section absent → section + key created fresh at EOF
 #   Unit 10 — section present, key absent → key appended at end of section
-#   Unit 11 — settings file missing exits 2
-#   Unit 12 — missing --path/--value exits 2
-#   Unit 13 — unknown flag exits 2
+#   Unit 11 — settings file missing exits 3
+#   Unit 12 — missing --path/--value exits 5
+#   Unit 13 — unknown flag exits 5
 #   Unit 14 — every OTHER line is byte-preserved (surgical rewrite)
 #   Unit 15 — write is atomic: no stray temp file left behind on success
 #   Unit 16 — writing an empty --value is accepted (clears a scalar)
@@ -171,7 +171,7 @@ assert_file_contains "$f" "  name: Existing" "U10 sibling key untouched"
 f="${TMPDIR_BASE}/does-not-exist.yml"
 out=$(bash "$SUT" --path project.name --value "X" --file "$f" 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U11 missing settings file exits 2"
+assert_exit_eq "$ec" 3 "U11 missing settings file exits 3"
 
 # ---------------------------------------------------------------------------
 # Unit 12: missing required args
@@ -180,18 +180,18 @@ f="${TMPDIR_BASE}/u12.yml"
 fixture_full > "$f"
 out=$(bash "$SUT" --path project.name --file "$f" 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U12 missing --value exits 2"
+assert_exit_eq "$ec" 5 "U12 missing --value exits 5"
 
 out=$(bash "$SUT" --value "X" --file "$f" 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U12b missing --path exits 2"
+assert_exit_eq "$ec" 5 "U12b missing --path exits 5"
 
 # ---------------------------------------------------------------------------
 # Unit 13: unknown flag
 # ---------------------------------------------------------------------------
 out=$(bash "$SUT" --bogus 2>&1)
 ec=$?
-assert_exit_eq "$ec" 2 "U13 unknown flag exits 2"
+assert_exit_eq "$ec" 5 "U13 unknown flag exits 5"
 
 # ---------------------------------------------------------------------------
 # Unit 14: byte-preservation — every OTHER line survives untouched
