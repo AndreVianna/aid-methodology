@@ -34,6 +34,12 @@
 #   Group M  contract surface (--help / unknown operation / missing positional)
 #   Group N  prose-ref (worktree-lifecycle.md) -- host-switch + cwd-fallback +
 #            enter-is-an-agent-action + consumption contract (AC4 coverage)
+#   Group O  create rung 2 (branch-only recreate: committed-preserved (NFR3) +
+#            no re-branch + <work-id>-<name> dir naming + subsequent idempotent
+#            re-run resolves via rung 1)
+#   Group P  create rung 4 (already-inside target worktree: no-op, ignores a
+#            differing <name>) + already-registered no-op from outside -- no
+#            duplicate worktree/branch across any of the re-runs
 #
 # This suite validates the EXISTING task-001 implementation (not a red/green
 # fixture): every assertion below is expected to pass against the current tree.
@@ -459,6 +465,86 @@ assert_file_contains "$DOC" "Enter is an agent action, never a script call." "N:
 assert_file_contains "$DOC" "feature-002 work-starting automation" "N: consumption contract names feature-002"
 assert_file_contains "$DOC" "feature-003 downstream locate-and-enter" "N: consumption contract names feature-003"
 assert_file_contains "$DOC" 'feature-004 `aid-housekeep` teardown' "N: consumption contract names feature-004"
+
+# ===========================================================================
+echo ""
+echo "=== Group O: create -- rung 2 (branch-only recreate) ==="
+
+REPO_O=$(make_git_repo); CLEANUP_DIRS+=("$REPO_O")
+REPO_O_ABS="$(cd "$REPO_O" && pwd -P)"
+TMPWT_O_PARENT=$(mktemp -d); CLEANUP_DIRS+=("$TMPWT_O_PARENT")
+TMPWT_O="${TMPWT_O_PARENT}/tmpwt-606"
+git -C "$REPO_O_ABS" branch work-606 master
+git -C "$REPO_O_ABS" worktree add -q "$TMPWT_O" work-606
+echo "committed content" > "$TMPWT_O/committed.txt"
+git -C "$TMPWT_O" add -A
+git -C "$TMPWT_O" commit -q -m "add committed.txt on work-606"
+BRANCH_TIP_O_BEFORE="$(git -C "$REPO_O_ABS" rev-parse work-606)"
+MASTER_TIP_O="$(git -C "$REPO_O_ABS" rev-parse master)"
+git -C "$REPO_O_ABS" worktree remove --force "$TMPWT_O" 2>/dev/null || rm -rf "$TMPWT_O"
+git -C "$REPO_O_ABS" worktree prune
+
+run_sut "$REPO_O" "" create work-606 theta
+assert_exit_zero "$_CODE" "O: create rung2 branch-only recreate exits 0"
+PATH_O="$_OUT"
+if [[ -n "$PATH_O" ]]; then pass "O: create rung2 recreate produced a non-empty path"; else fail "O: create rung2 recreate produced a non-empty path"; fi
+assert_eq "$(basename "$PATH_O")" "work-606-theta" "O: worktree dir composed as <work-id>-<name> (create always uses the passed name, unlike locate's bare-<work-id> fallback)"
+assert_file_exists "${PATH_O}/committed.txt" "O: committed file preserved into the recreated worktree (NFR3)"
+assert_eq "$(git -C "$PATH_O" symbolic-ref --short HEAD)" "work-606" "O: recreated worktree is on branch work-606"
+BRANCH_TIP_O_AFTER="$(git -C "$REPO_O_ABS" rev-parse work-606)"
+assert_eq "$BRANCH_TIP_O_AFTER" "$BRANCH_TIP_O_BEFORE" "O: branch tip unchanged across recreate (no re-branch -- the EXISTING branch was reused, not recreated)"
+if [[ "$BRANCH_TIP_O_AFTER" == "$MASTER_TIP_O" ]]; then
+    fail "O: branch tip must differ from master's tip (else the committed.txt commit was lost / branch was force-reset off --base)"
+else
+    pass "O: branch tip differs from master's tip (the committed.txt commit is genuinely preserved, not rebuilt off --base)"
+fi
+WT_COUNT_O="$(git -C "$REPO_O_ABS" worktree list --porcelain | grep -c '^branch refs/heads/work-606$')"
+assert_eq "$WT_COUNT_O" "1" "O: exactly ONE worktree registered for branch work-606 after recreate (no duplicate)"
+
+run_sut "$REPO_O" "" create work-606 theta
+assert_exit_zero "$_CODE" "O: subsequent create re-run exits 0"
+assert_eq "$_OUT" "$PATH_O" "O: subsequent create re-run re-prints the byte-identical path (now resolved via rung 1, not rung 2 again)"
+
+# ===========================================================================
+echo ""
+echo "=== Group P: create -- rung 4 (already-inside no-op) + already-registered no-op ==="
+
+REPO_P=$(make_git_repo); CLEANUP_DIRS+=("$REPO_P")
+REPO_P_ABS="$(cd "$REPO_P" && pwd -P)"
+
+run_sut "$REPO_P" "" create work-333 kappa
+assert_exit_zero "$_CODE" "P: initial create exits 0"
+PATH_P="$_OUT"
+WT_COUNT_P_BEFORE="$(git -C "$REPO_P_ABS" worktree list --porcelain | grep -c '^worktree ')"
+BRANCH_COUNT_P_BEFORE="$(git -C "$REPO_P_ABS" branch --list | wc -l | tr -d ' ')"
+
+# P1: re-run from OUTSIDE the worktree (already registered) -- rung 1 no-op.
+run_sut "$REPO_P" "" create work-333 kappa
+assert_exit_zero "$_CODE" "P1: outside re-run (already registered) exits 0"
+assert_eq "$_OUT" "$PATH_P" "P1: outside re-run re-prints the existing path"
+
+# P2: re-run with cwd ALREADY INSIDE the target worktree -- rung 4 no-op, the
+# code path at op_create's cur_branch==work_id check (lines ~264-279), which
+# is checked BEFORE rung 1's own no-op and is otherwise wholly uncovered.
+run_sut "$PATH_P" "" create work-333 kappa
+assert_exit_zero "$_CODE" "P2: cwd-inside re-run exits 0 (rung4 no-op)"
+assert_eq "$_OUT" "$PATH_P" "P2: cwd-inside re-run re-prints the existing path (byte-identical)"
+
+# P3: cwd-inside re-run with a DIFFERENT <name> -- rung4 short-circuits on
+# cur_branch alone (before rung1's name-mismatch check ever runs), so the
+# differing name is silently ignored AND no "ignoring differing name" stderr
+# note is emitted (that note is rung1-only) -- proves rung4, not rung1, ran.
+run_sut "$PATH_P" "" create work-333 differentname
+assert_exit_zero "$_CODE" "P3: cwd-inside re-run with a DIFFERENT name still exits 0 (rung4 no-op, name irrelevant)"
+assert_eq "$_OUT" "$PATH_P" "P3: cwd-inside re-run with a different name re-prints the SAME existing path"
+assert_output_not_contains "$_ERR" "ignoring differing name" "P3: no rung1 differing-name note emitted (confirms rung4's short-circuit ran, not rung1)"
+
+# No no-op re-run (outside or inside, same name or different) may register a
+# second worktree or create a second branch.
+WT_COUNT_P_AFTER="$(git -C "$REPO_P_ABS" worktree list --porcelain | grep -c '^worktree ')"
+assert_eq "$WT_COUNT_P_AFTER" "$WT_COUNT_P_BEFORE" "P: worktree count unchanged across every no-op re-run (no duplicate worktree)"
+BRANCH_COUNT_P_AFTER="$(git -C "$REPO_P_ABS" branch --list | wc -l | tr -d ' ')"
+assert_eq "$BRANCH_COUNT_P_AFTER" "$BRANCH_COUNT_P_BEFORE" "P: branch count unchanged across every no-op re-run (no duplicate branch)"
 
 # ---------------------------------------------------------------------------
 echo ""
