@@ -10,7 +10,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by the curated classic pipeline / on-demand skills across 5 groups, plus a 94-row shortcut catalog — 64 shortcut skills (engine-generated verb-first doorways) plus 30 hand-authored `repurpose` skills — and the standalone `/aid-triage` router: 108 skills total (14 curated + 94 catalog). Delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A/KB-update/connector skills are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by the curated classic pipeline / on-demand skills across 4 groups (Support, Knowledge Base Maintenance, Definition, Execution), plus a 94-row shortcut catalog — 64 shortcut skills (engine-generated verb-first doorways) plus 30 hand-authored `repurpose` skills — and the standalone `/aid-triage` router: 108 skills total (14 curated + 94 catalog). Delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A/KB-update/connector skills are optional. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`. Note: "3 meta-documents" is a *role* distinction (generated/process ledgers, review-exempt) — it is orthogonal to the *concern* axis. A standard document (among the 14) may carry an *orientation* concern (cross-cutting, not mapped to a single spine dimension); `external-sources.md` is exactly this: it is a standard, authored, review-eligible KB document whose concern is orientation — orientation on the concern axis does not make a document a meta-document on the role axis.
 
@@ -32,14 +32,12 @@ Terms and concepts used throughout the AID methodology.
 
 | Phase | Group | Produces |
 |-------|-------|----------|
-| **Discover** | Prepare | Knowledge Base (14 standard documents) |
-| **Describe → Define** | Define | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path (via a shortcut): work-root `SPEC.md` directly. |
-| **Specify** | Define | Technical specification added to each feature's `SPEC.md` (full path only) |
-| **Plan** | Map | `PLAN.md` (execution graph) + `deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition) — full path only |
-| **Detail** | Map | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (task definition) — full path only |
-| **Execute** | Execute | Reviewed, graded code (8 task types, built-in review loop) |
-| **Deploy** *(optional)* | Deliver | Shipped delivery, PR, KB update |
-| **Monitor** *(optional)* | Deliver | Classified findings routed to fixes (BUG → `/aid-fix` / Change Request → `/aid-triage` / Infrastructure / No Action) |
+| **Discover** | Knowledge Base Maintenance | Knowledge Base (14 standard documents) |
+| **Describe → Define** | Definition | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path (via a shortcut): work-root `SPEC.md` directly. |
+| **Specify** | Definition | Technical specification added to each feature's `SPEC.md` (full path only) |
+| **Plan** | Definition | `PLAN.md` (execution graph) + `deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition) — full path only |
+| **Detail** | Definition | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (task definition) — full path only |
+| **Execute** | Execution | Reviewed, graded code (8 task types, built-in review loop) |
 
 > *Deploy and Monitor are **optional**, on-demand delivery skills — separate, independently-invoked paths, not required, numbered phases (the numbered sequence ends at Execute). Run them when the project's delivery model calls for them; neither presupposes the other.*
 
@@ -97,13 +95,12 @@ Terms and concepts used throughout the AID methodology.
 
 ## Groups
 
-| Group | Phases | Focus |
-|-------|--------|-------|
-| **Prepare** | Discover (+ aid-config, aid-summarize) | Set up the workspace and understand the system |
-| **Define** | Describe → Define, Specify | Define the problem and how to solve it |
-| **Map** | Plan, Detail | From requirements to an executable task list |
-| **Execute** | Execute | Build, review, and test |
-| **Deliver** | Deploy, Monitor *(optional)* | Optionally ship, monitor, and route what breaks |
+| Group | Phases / Skills | Focus |
+|-------|-----------------|-------|
+| **Support** | aid-config (+ set/unset-connector) | Bootstrap and configuration |
+| **Knowledge Base Maintenance** | Discover (+ Summarize, Housekeep, Update-KB, Query-KB/Ask) | Build and maintain the Knowledge Base |
+| **Definition** | Describe → Define, Specify, Plan, Detail (+ Triage, shortcuts, Deploy/Monitor) | Define the problem, plan it, and detail the work |
+| **Execution** | Execute | Build, review, and test |
 
 ---
 
