@@ -266,7 +266,7 @@
 {"dst": ".codex/skills/aid-experiment/SKILL.md", "profile": "codex", "sha256": "e036519b65b8eee126fd7b1d3e27bf21701f29f20483f876502dc5fe5b1ff19e", "src": "canonical/skills/aid-experiment/SKILL.md"}
 {"dst": ".codex/skills/aid-fix/SKILL.md", "profile": "codex", "sha256": "c87c4052cacd4e02fe6a29a7856b06995419ef6c01443623e90fef926b16a6f4", "src": "canonical/skills/aid-fix/SKILL.md"}
 {"dst": ".codex/skills/aid-housekeep/SKILL.md", "profile": "codex", "sha256": "39726c2e3b84ee602b59d7f8426e44232b33a3878a4e405bc46090671d8a1556", "src": "canonical/skills/aid-housekeep/SKILL.md"}
-{"dst": ".codex/skills/aid-housekeep/references/state-cleanup.md", "profile": "codex", "sha256": "b01b2a602596cfd54d794d3ca19b5c11aa46b30510c387ede609ea6fe39f5edb", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
+{"dst": ".codex/skills/aid-housekeep/references/state-cleanup.md", "profile": "codex", "sha256": "f878e58529cc5eb4613fa5cbe726c3e7d03c364f58ee27a948cbd52a2bb3303b", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
 {"dst": ".codex/skills/aid-housekeep/references/state-done.md", "profile": "codex", "sha256": "7870013c5ef82273157d59f323a4c037d30367e42e2910550e8c6c1736ab3446", "src": "canonical/skills/aid-housekeep/references/state-done.md"}
 {"dst": ".codex/skills/aid-housekeep/references/state-kb-delta.md", "profile": "codex", "sha256": "82ae86daece3c0799120695dd93421f1895ea4c21807415d084555aa53266b41", "src": "canonical/skills/aid-housekeep/references/state-kb-delta.md"}
 {"dst": ".codex/skills/aid-housekeep/references/state-preflight.md", "profile": "codex", "sha256": "dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a", "src": "canonical/skills/aid-housekeep/references/state-preflight.md"}

@@ -298,7 +298,21 @@ for path in "${CONFIRMED_ALL[@]}"; do
     # NFR3 safety probe (surfaced in the offer; gates --force).
     dirty=0; ahead=0
     [[ -n "$(git -C "$WT_PATH" status --porcelain 2>/dev/null)" ]] && dirty=1
-    [[ "$(git -C "$REPO_ROOT" rev-list --count "master..${work_id}" 2>/dev/null || echo 0)" -gt 0 ]] && ahead=1
+
+    # `ahead` must be computed against an UP-TO-DATE remote-tracking ref, not
+    # local `master` — a stale local `master` under-reports ahead=0 and would
+    # silently skip the extra-confirm gate below Step 5b's `git branch -D`.
+    # Mirror compute_signal_i's own approach (cleanup-classify.sh): a
+    # best-effort fetch, then compare against `origin/master`. Degrade to the
+    # safe side when offline/no-origin (fetch fails or origin/master does not
+    # resolve) — treat the branch as potentially-ahead so the extra-confirm
+    # gate always fires rather than being silently skipped.
+    git -C "$REPO_ROOT" fetch origin >/dev/null 2>&1 || true
+    if git -C "$REPO_ROOT" rev-parse --verify --quiet origin/master >/dev/null 2>&1; then
+        [[ "$(git -C "$REPO_ROOT" rev-list --count "origin/master..${work_id}" 2>/dev/null || echo 0)" -gt 0 ]] && ahead=1
+    else
+        ahead=1   # safe side: origin/master unresolvable → assume potentially-ahead
+    fi
     # → issue the AskUserQuestion below. On confirm, push "$work_id|$WT_PATH|<force|noforce>".
 done
 ```
@@ -407,19 +421,44 @@ collected in Step 4b. `git worktree remove` and `git branch -D` mutate git's
 worktree registry and refs (under `.git/`), **not** tracked working-tree
 content, so they are executed directly here and are **not** part of the
 `branch-commit.sh` commit in Step 6 (that commit covers only the `git rm`
-folder deletions staged in Step 5):
+folder deletions staged in Step 5). Each command's exit status is checked —
+a git-side refusal (e.g. `worktree remove` refusing a dirty tree, or
+`branch -D` refusing a branch still checked out somewhere) must be surfaced,
+never silently swallowed as an unconditional success:
 
 ```bash
+WT_RESULTS=()   # entries: "<work-id>|<worktree-path>|<outcome>[|<detail>]"
+                # outcome: removed (full success) | wt-only (branch -D failed) | failed
 for entry in "${CONFIRMED_WT[@]}"; do
     IFS='|' read -r wid wpath force <<< "$entry"
+
     if [[ "$force" == "force" ]]; then
-        git -C "$REPO_ROOT" worktree remove --force "$wpath"   # dirty/ahead + explicit extra confirm
+        rm_err=$(git -C "$REPO_ROOT" worktree remove --force "$wpath" 2>&1)   # dirty/ahead + explicit extra confirm
     else
-        git -C "$REPO_ROOT" worktree remove "$wpath"           # git itself refuses if dirty (NFR3 backstop)
+        rm_err=$(git -C "$REPO_ROOT" worktree remove "$wpath" 2>&1)           # git itself refuses if dirty (NFR3 backstop)
     fi
-    git -C "$REPO_ROOT" branch -D "$wid"    # worktree removed first → branch is free to delete
-    git -C "$REPO_ROOT" worktree prune      # sweep stale admin entries
+    rm_status=$?
+    if [[ $rm_status -ne 0 ]]; then
+        WT_RESULTS+=("${wid}|${wpath}|failed|worktree remove: ${rm_err}")
+        continue   # branch is still checked out in the worktree — branch -D would fail too
+    fi
+
+    br_err=$(git -C "$REPO_ROOT" branch -D "$wid" 2>&1)    # worktree removed first → branch is free to delete
+    br_status=$?
+    if [[ $br_status -ne 0 ]]; then
+        WT_RESULTS+=("${wid}|${wpath}|wt-only|branch -D: ${br_err}")
+        continue
+    fi
+
+    WT_RESULTS+=("${wid}|${wpath}|removed")
 done
+
+# Sweep stale admin entries. Best-effort/global (not per-entry): a failure here
+# does not change any entry's WT_RESULTS outcome above, but is not swallowed —
+# surface it as a warning so it is visible in the run's output.
+if ! prune_err=$(git -C "$REPO_ROOT" worktree prune 2>&1); then
+    echo "WARN: git worktree prune failed (non-fatal sweep): ${prune_err}"
+fi
 ```
 
 Ordering is load-bearing: `git worktree remove` must precede `git branch -D`
@@ -427,8 +466,10 @@ Ordering is load-bearing: `git worktree remove` must precede `git branch -D`
 worktree prune` runs last, as a sweep. A folder whose teardown offer was
 declined in Step 4b never populates `CONFIRMED_WT[]`, so its worktree and
 branch reach this step untouched — only explicitly confirmed removals loop
-here (NFR1/NFR3). The completion summary in Step 6 lists each torn-down
-worktree/branch alongside the deleted folders.
+here (NFR1/NFR3). The completion summary in Step 6 reports each `WT_RESULTS[]`
+entry's ACTUAL outcome (`removed` / `wt-only` / `failed` — see the array's
+comment above) alongside the deleted folders — never an unconditional success
+line.
 
 ---
 
@@ -458,20 +499,29 @@ bash .github/aid/scripts/housekeep/housekeep-state.sh \
     --state <STATE_FILE> --write --field "Stage Status" --value "passed"
 ```
 
-Print the completion summary. When `CONFIRMED_WT[]` (Step 4b/5b) is non-empty,
-list each torn-down worktree/branch alongside the deleted folders:
+Print the completion summary. When `WT_RESULTS[]` (Step 4b/5b) is non-empty,
+list each entry's ACTUAL outcome alongside the deleted folders — a git-side
+refusal must be reported as a failure, never folded into an unconditional
+success line:
 
 ```
 ✓ CLEANUP: <N> item(s) deleted — committed.
   Deleted:
     <list each deleted path with mechanism: (git rm) or (rm)>
   Worktrees removed:
-    <list each entry from CONFIRMED_WT[] as: work-NNN — <worktree-path> (branch pruned)>
+    <list each entry from WT_RESULTS[], one line per entry, per its outcome field:
+       outcome=removed  → work-NNN — <worktree-path> (removed; branch pruned)
+       outcome=wt-only  → work-NNN — <worktree-path> (worktree removed; branch -D FAILED: <detail>)
+       outcome=failed   → work-NNN — <worktree-path> (FAILED: <detail>)>
   Cleanup Stage: passed.
 ```
 
-Omit the `Worktrees removed:` block entirely when `CONFIRMED_WT[]` is empty
-(no teardown was offered or confirmed for this run).
+Omit the `Worktrees removed:` block entirely when `WT_RESULTS[]` is empty (no
+teardown was offered or confirmed for this run). `Cleanup Stage: passed` still
+reflects the folder deletions/commit in Steps 5–6 (unaffected by a worktree
+teardown failure) — a `failed`/`wt-only` entry is a reported worktree-teardown
+outcome, not a Cleanup-stage failure; the user re-runs `/aid-housekeep` (or
+handles the leftover worktree/branch manually) to retry teardown separately.
 
 **D2 coordination note:** This stage sweeps any residual
 `verify-deterministic-report.json` / `verify-advisory-report.json` under

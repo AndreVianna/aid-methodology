@@ -266,7 +266,7 @@
 {"dst": ".cursor/skills/aid-experiment/SKILL.md", "profile": "cursor", "sha256": "59fbe32b21f27ca5ede56cb1e9c6d337c563f40710b4f1c55712370189d709a8", "src": "canonical/skills/aid-experiment/SKILL.md"}
 {"dst": ".cursor/skills/aid-fix/SKILL.md", "profile": "cursor", "sha256": "d0984d64de85dcc4f447b33bf5750b2e864045899dfe1c40183b38b79bedc79f", "src": "canonical/skills/aid-fix/SKILL.md"}
 {"dst": ".cursor/skills/aid-housekeep/SKILL.md", "profile": "cursor", "sha256": "ccce7eca537dbe8f2661aba7fa76e50a974ad602637ecf2ef9e7b49eb0cb23a1", "src": "canonical/skills/aid-housekeep/SKILL.md"}
-{"dst": ".cursor/skills/aid-housekeep/references/state-cleanup.md", "profile": "cursor", "sha256": "0a00948cefd0c30b219f39c5f84f44c877d94ae83b65fa61eddebfe96c6dff01", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
+{"dst": ".cursor/skills/aid-housekeep/references/state-cleanup.md", "profile": "cursor", "sha256": "428fa049f1de1a5b818f2537df8c542c477b9c21c9aefeb076e021c1788993da", "src": "canonical/skills/aid-housekeep/references/state-cleanup.md"}
 {"dst": ".cursor/skills/aid-housekeep/references/state-done.md", "profile": "cursor", "sha256": "566c5a0293a6ef58c9dd860d781fbb28dcdc19330a864df6ee5d62ca80cad755", "src": "canonical/skills/aid-housekeep/references/state-done.md"}
 {"dst": ".cursor/skills/aid-housekeep/references/state-kb-delta.md", "profile": "cursor", "sha256": "02e7351adf6d561390b540e03e5d8d8f0ab4197f2811f03e6d0e3ae1d41f6807", "src": "canonical/skills/aid-housekeep/references/state-kb-delta.md"}
 {"dst": ".cursor/skills/aid-housekeep/references/state-preflight.md", "profile": "cursor", "sha256": "dac8ac8d2dad07431027f8d1f4cf814401c893cdfeda9ca8c47ef1402b66421a", "src": "canonical/skills/aid-housekeep/references/state-preflight.md"}

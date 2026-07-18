@@ -558,7 +558,17 @@ echo "=== Unit 12 (AC7): classifier stays read-only → no worktree/branch mutat
 
 # The classifier performs NO worktree/branch mutation — teardown cannot happen
 # silently from the read-only classifier; it is gated in the state-cleanup.md prose.
-if grep -Eq 'git[[:space:]]+worktree[[:space:]]+(remove|prune)|git[[:space:]]+branch[[:space:]]+-D' "$SUT"; then
+#
+# The grep below must catch the mutating verb regardless of an intervening
+# `-C <path>` (or any other flags) between `git` and `worktree`/`branch` — the
+# codebase's dominant idiom is `git -C "$REPO_ROOT" <verb>`, not bare `git
+# <verb>`. Each optional-flags group ([[:space:]]+[^[:space:]]+)* consumes zero
+# or more whitespace-separated tokens (e.g. `-C "$REPO_ROOT"`) between the
+# anchors; the trailing ([[:space:]]|$) boundary keeps `remove`/`prune`/`-D`
+# from matching as a substring of a longer token.
+_git_mutation_re='git([[:space:]]+[^[:space:]]+)*[[:space:]]+worktree([[:space:]]+[^[:space:]]+)*[[:space:]]+(remove|prune)([[:space:]]|$)'
+_git_mutation_re+='|git([[:space:]]+[^[:space:]]+)*[[:space:]]+branch([[:space:]]+[^[:space:]]+)*[[:space:]]+-D([[:space:]]|$)'
+if grep -Eq "$_git_mutation_re" "$SUT"; then
     fail "U12 (AC7): cleanup-classify.sh contains a worktree/branch mutation (must stay read-only)"
 else
     pass "U12 (AC7): classifier has no worktree/branch mutation (teardown gated in prose)"
