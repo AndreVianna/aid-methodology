@@ -1,5 +1,5 @@
 ---
-delivery_state: Executing
+delivery_state: Gated
 gate_tier: Small | Medium | Large
 gate_grade: "{grade or Pending}"
 gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
