@@ -378,6 +378,20 @@ footer {
   margin-bottom: 0.25rem;
 }
 .work-overview-header:hover { opacity: 0.85; }
+
+/* Pipeline rename (feature-005): the toggle button shares its row with the
+   write-gated rename pencil (a sibling, never nested -- see markup comment). */
+.work-overview-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.work-overview-header-row .work-overview-header {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
 .work-overview-chevron {
   font-size: 0.72rem;
   display: inline-block;
@@ -854,18 +868,29 @@ footer {
       <div class="work-overview" id="work-overview-panel">
 
         <!-- Collapsible header row: always visible summary -->
-        <button type="button" class="work-overview-header" id="work-overview-header-btn"
-                aria-expanded="false" aria-controls="work-overview-body">
-          <!-- Chevron -->
-          <span class="work-overview-chevron" aria-hidden="true">&#9658;</span>
-          <!-- Identity line: #N · Title -->
-          <div class="work-overview-identity">
-            <span class="work-overview-number" id="overview-number"></span>
-            <span class="work-overview-title" id="overview-title"></span>
-          </div>
-          <!-- Lifecycle + skill badges (inline in summary) -->
-          <span id="overview-badges" style="display:inline-flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-left:0.25rem"></span>
-        </button>
+        <div class="work-overview-header-row">
+          <button type="button" class="work-overview-header" id="work-overview-header-btn"
+                  aria-expanded="false" aria-controls="work-overview-body">
+            <!-- Chevron -->
+            <span class="work-overview-chevron" aria-hidden="true">&#9658;</span>
+            <!-- Identity line: #N · Title -->
+            <div class="work-overview-identity">
+              <span class="work-overview-number" id="overview-number"></span>
+              <span class="work-overview-title" id="overview-title"></span>
+            </div>
+            <!-- Lifecycle + skill badges (inline in summary) -->
+            <span id="overview-badges" style="display:inline-flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-left:0.25rem"></span>
+          </button>
+          <!-- Pipeline rename (feature-005): write-gated pencil, sibling of the toggle
+               button (never nested inside it -- a <button> cannot validly contain
+               another interactive control). Rendered only when write_enabled. -->
+          <span id="overview-title-edit-btn"></span>
+        </div>
+
+        <!-- Pipeline rename inline editor (feature-005): hidden unless editing -->
+        <div id="overview-title-editor" class="project-header-editor" style="display:none"></div>
+        <div id="overview-title-error" class="callout err" style="display:none;margin-bottom:0.5rem"></div>
+        <div id="overview-title-status" class="sr-only" aria-live="polite"></div>
 
         <!-- Collapsible body: all detail below the summary line -->
         <div class="work-overview-body" id="work-overview-body">
@@ -1349,7 +1374,7 @@ footer {
   // The four per-work calls are VERBATIM; only their caller changes.
   // ---------------------------------------------------------------------------
   function renderWorkView(work, model) {
-    renderWorkHeader(work);
+    renderWorkHeader(work, model);
     renderAttentionStrip(work);
     renderStageRail(work);
     renderTasks(work);
@@ -2320,9 +2345,182 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
+  // Display rename (feature-005): pipeline.rename + task.rename op clients.
+  // Both reuse feature-001's POST ./api/op envelope (location-relative -- resolves
+  // to /r/<id>/api/op when this file is served per-repo) and the truthful
+  // re-fetch/re-render round-trip (_refetchModelForHeader, above). Rename controls
+  // are write-gated (model.write_enabled === true) and render only when so.
+  // ---------------------------------------------------------------------------
+
+  // Shared args.value client-side mirror of the server's _validate_rename_value
+  // (SPEC.md API Contracts): single-line, no reserved '|' separator. Defense-in-
+  // depth ahead of the server's own semantic_validate hook (belt-and-suspenders,
+  // mirrors _validateSettingValue's role for settings.set).
+  function _validateRenameValueClient(value) {
+    if (value.indexOf('\n') !== -1) return 'Value cannot contain a line break.';
+    if (value.indexOf('|') !== -1) return "Value cannot contain '|' (reserved column separator).";
+    return null;
+  }
+
+  // pipelineRenameState: transient UI-only edit state for pipeline.rename, mirroring
+  // projectHeaderState's skip-during-edit pattern -- while editing/saving,
+  // _renderPipelineTitleControl leaves the title-edit region alone so an
+  // in-progress edit survives the poll loop; the rest of renderWorkHeader keeps
+  // updating live (badges, stat strip, etc.) since only this sub-region is guarded.
+  var pipelineRenameState = { editing: false, saving: false, errorMessage: null };
+
+  // POST ./api/op {op:"pipeline.rename", target:{work_id}, args:{value}}; onDone
+  // receives {ok, body} -- mirrors _postSettingsSet's shape verbatim.
+  function _postPipelineRename(workId, value, onDone) {
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'pipeline.rename', target: { work_id: workId }, args: { value: value } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  function _setPipelineTitleStatus(text) {
+    var live = document.getElementById('overview-title-status');
+    if (live) live.textContent = text || '';
+  }
+
+  // Build the write-gated pencil (display mode) or the inline edit form (input +
+  // Save/Cancel) for the pipeline title, next to #overview-title. Called from
+  // renderWorkHeader on every render; guards itself while editing/saving so the
+  // poll loop never clobbers an in-progress edit (mirrors _renderProjectHeader).
+  function _renderPipelineTitleControl(work, writeEnabled) {
+    var btnSlot = document.getElementById('overview-title-edit-btn');
+    var editorSlot = document.getElementById('overview-title-editor');
+    var errSlot = document.getElementById('overview-title-error');
+    if (!btnSlot || !editorSlot) return;
+
+    if (pipelineRenameState.editing || pipelineRenameState.saving) return;
+
+    btnSlot.innerHTML = '';
+    editorSlot.innerHTML = '';
+    editorSlot.style.display = 'none';
+
+    if (errSlot) {
+      if (pipelineRenameState.errorMessage) {
+        errSlot.textContent = pipelineRenameState.errorMessage;
+        errSlot.style.display = '';
+      } else {
+        errSlot.style.display = 'none';
+      }
+    }
+
+    if (!writeEnabled) return;
+
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'btn-ghost';
+    editBtn.setAttribute('aria-label', 'Rename pipeline');
+    editBtn.title = 'Rename pipeline';
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', function () {
+      pipelineRenameState.editing = true;
+      pipelineRenameState.errorMessage = null;
+      if (errSlot) errSlot.style.display = 'none';
+      _buildPipelineTitleEditor(work);
+    });
+    btnSlot.appendChild(editBtn);
+  }
+
+  // Build the inline text-input + Save/Cancel editor, prefilled with work.title
+  // (empty when unset -- FR-PL1). Cancel restores (no op posted); Save posts
+  // pipeline.rename with an empty args.value when the title is cleared (the
+  // server-side task-008 argv-builder substitutes the *(pending)* null sentinel).
+  function _buildPipelineTitleEditor(work) {
+    var btnSlot = document.getElementById('overview-title-edit-btn');
+    var editorSlot = document.getElementById('overview-title-editor');
+    if (!editorSlot) return;
+    if (btnSlot) btnSlot.innerHTML = '';
+
+    editorSlot.innerHTML = '';
+    editorSlot.style.display = '';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'interval-input project-header-name-input';
+    input.value = work.title || '';
+    input.setAttribute('aria-label', 'Pipeline title');
+    editorSlot.appendChild(input);
+
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn-ghost';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', function () {
+      // Disable immediately -- guards against a double-submit while in flight.
+      saveBtn.disabled = true;
+      cancelBtn.disabled = true;
+      _savePipelineRename(work, input.value);
+    });
+    editorSlot.appendChild(saveBtn);
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-ghost';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function () {
+      pipelineRenameState.editing = false;
+      pipelineRenameState.errorMessage = null;
+      _setPipelineTitleStatus('');
+      _renderPipelineTitleControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+    });
+    editorSlot.appendChild(cancelBtn);
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+    });
+
+    input.focus();
+  }
+
+  // Validate + dispatch a pipeline.rename save. On success: exit edit mode,
+  // re-fetch the model, re-render from disk (AC2 -- the existing title/de-slug
+  // fallback code then shows the new title). On failure: exit edit mode WITHOUT
+  // mutating the model, surface the error inline.
+  function _savePipelineRename(work, value) {
+    var clientErr = _validateRenameValueClient(value);
+    if (clientErr) {
+      pipelineRenameState.errorMessage = clientErr;
+      pipelineRenameState.editing = false;
+      _setPipelineTitleStatus('Error: ' + clientErr);
+      _renderPipelineTitleControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      return;
+    }
+    pipelineRenameState.saving = true;
+    pipelineRenameState.errorMessage = null;
+    _setPipelineTitleStatus('Saving…');
+    _postPipelineRename(work.work_id, value, function (result) {
+      pipelineRenameState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        pipelineRenameState.editing = false;
+        pipelineRenameState.errorMessage = null;
+        _setPipelineTitleStatus('Saved.');
+        _refetchModelForHeader();
+      } else {
+        var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+        pipelineRenameState.editing = false;
+        pipelineRenameState.errorMessage = detail;
+        _setPipelineTitleStatus('Error: ' + detail);
+        _renderPipelineTitleControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Work overview header (prototype: delivery-002 work-overview header)
   // ---------------------------------------------------------------------------
-  function renderWorkHeader(work) {
+  function renderWorkHeader(work, model) {
     var panel = document.getElementById('work-overview-panel');
     if (!panel) return;
 
@@ -2361,6 +2559,11 @@ footer {
         titleEl.title = 'Name not yet recorded (' + (work.work_id || '') + ')';
       }
     }
+
+    // Pipeline rename (feature-005): write-gated pencil / inline editor next to
+    // #overview-title (AC1/AC2/AC8 UI half). Not rendered at all when write_enabled
+    // is false (defense-in-depth -- the server 403s the op even if forced).
+    _renderPipelineTitleControl(work, model && model.write_enabled === true);
 
     // Lifecycle + skill badges inline with identity
     var badgesEl = document.getElementById('overview-badges');
@@ -3011,6 +3214,17 @@ footer {
     }
   }
 
+  // Task label precedence (feature-005, task-009): display_name -> short_name ->
+  // task_id. display_name is the mutable rename override (task.rename); short_name
+  // is the immutable DETAIL.md-derived title (PF-3); task_id is the ultimate
+  // fallback (PF-7, always present). Shared by makeTaskChip (task card) and
+  // renderTaskView (task drill view) so both render sites stay in lockstep (AC3).
+  function _taskDisplayLabel(task) {
+    if (task.display_name != null && String(task.display_name).trim()) return task.display_name;
+    if (task.short_name != null && String(task.short_name).trim()) return task.short_name;
+    return task.task_id;
+  }
+
   function makeTaskChip(task, workId) {
     var card = document.createElement('div');
     card.className = 'task-chip';
@@ -3057,11 +3271,11 @@ footer {
     var statusBadge = makeTaskStatusBadge(task.status);
     card.appendChild(statusBadge);
 
-    // Line 2: short_name from task file header (PF-3); fallback to task_id when null (PF-7)
-    var shortName = (task.short_name != null && String(task.short_name).trim()) ? task.short_name : task.task_id;
+    // Line 2: display_name -> short_name -> task_id (feature-005 label precedence)
+    var displayLabel = _taskDisplayLabel(task);
     var nameEl = document.createElement('div');
     nameEl.className = 'chip-short-name';
-    nameEl.textContent = shortName || '';
+    nameEl.textContent = displayLabel || '';
     card.appendChild(nameEl);
 
     return card;
@@ -3298,14 +3512,159 @@ footer {
   // ---------------------------------------------------------------------------
   // renderTaskView: SEAM-2 drill view (task-071)
   // ---------------------------------------------------------------------------
+  // taskRenameState: transient UI-only edit state for task.rename (feature-005).
+  // key is the drill key ("<work_id>/<task_id>") currently being edited, so
+  // renderTaskView's poll-loop guard (below) only pauses the rebuild while THIS
+  // task is being edited -- navigating to a different task (or leaving the drill
+  // view) still renders fresh, unlike a single unscoped editing flag would.
+  var taskRenameState = { key: null, editing: false, saving: false, errorMessage: null };
+
+  // POST ./api/op {op:"task.rename", target:{work_id,delivery_id?,task_id}, args:{value}};
+  // onDone receives {ok, body} -- mirrors _postSettingsSet's shape verbatim.
+  // delivery_id is included only when the task's TaskModel.delivery is set (nested
+  // layout); omitted for flat, matching task-008's arg-schema.
+  function _postTaskRename(workId, deliveryId, taskId, value, onDone) {
+    var target = { work_id: workId, task_id: taskId };
+    if (deliveryId != null) target.delivery_id = deliveryId;
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'task.rename', target: target, args: { value: value } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  // Re-render the current route from the last-known-good model (mirrors
+  // onHashChange) -- used to refresh the task view once an edit ends without
+  // waiting for the next poll tick.
+  function _rerenderCurrentRoute() {
+    if (lastGoodModel) render(lastGoodModel, parseRoute(location.hash));
+  }
+
+  // Validate + dispatch a task.rename save. On success: exit edit mode, re-fetch
+  // the model, re-render from disk (AC2 -- the display_name -> short_name ->
+  // task_id precedence then shows the new name). On failure: exit edit mode
+  // WITHOUT mutating the model, surface the error inline.
+  function _saveTaskRename(workId, task, detailKey, value) {
+    var clientErr = _validateRenameValueClient(value);
+    if (clientErr) {
+      taskRenameState.errorMessage = clientErr;
+      taskRenameState.editing = false;
+      taskRenameState.key = null;
+      _rerenderCurrentRoute();
+      return;
+    }
+    taskRenameState.saving = true;
+    taskRenameState.errorMessage = null;
+    _postTaskRename(workId, task.delivery, task.task_id, value, function (result) {
+      taskRenameState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        taskRenameState.editing = false;
+        taskRenameState.key = null;
+        taskRenameState.errorMessage = null;
+        _refetchModelForHeader();
+      } else {
+        var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+        taskRenameState.editing = false;
+        taskRenameState.key = null;
+        taskRenameState.errorMessage = detail;
+        _rerenderCurrentRoute();
+      }
+    });
+  }
+
+  // Build the write-gated pencil (display mode) or the inline edit form (input +
+  // Save/Cancel) for the task name, next to the task's at-a-glance header. Not
+  // rendered at all when write_enabled is false (AC8 UI half; the server 403s
+  // the op even if forced).
+  function _renderTaskRenameControl(workId, task, detailKey, writeEnabled) {
+    var wrap = document.createElement('span');
+    wrap.style.cssText = 'display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap';
+
+    if (taskRenameState.editing && taskRenameState.key === detailKey) {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'interval-input project-header-name-input';
+      input.value = _taskDisplayLabel(task) || '';
+      input.setAttribute('aria-label', 'Task name');
+      wrap.appendChild(input);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      saveBtn.addEventListener('click', function () {
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        _saveTaskRename(workId, task, detailKey, input.value);
+      });
+      wrap.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function () {
+        taskRenameState.editing = false;
+        taskRenameState.key = null;
+        taskRenameState.errorMessage = null;
+        _rerenderCurrentRoute();
+      });
+      wrap.appendChild(cancelBtn);
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+      });
+
+      if (taskRenameState.errorMessage) {
+        var err = document.createElement('span');
+        err.className = 'callout err';
+        err.style.cssText = 'display:block;width:100%;margin-top:0.3rem';
+        err.textContent = taskRenameState.errorMessage;
+        wrap.appendChild(err);
+      }
+    } else if (writeEnabled) {
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn-ghost';
+      editBtn.setAttribute('aria-label', 'Rename task');
+      editBtn.title = 'Rename task';
+      editBtn.textContent = '✎';
+      editBtn.addEventListener('click', function () {
+        taskRenameState.editing = true;
+        taskRenameState.key = detailKey;
+        taskRenameState.errorMessage = null;
+        _rerenderCurrentRoute();
+      });
+      wrap.appendChild(editBtn);
+    }
+
+    return wrap;
+  }
+
   function renderTaskView(model, route) {
     var container = document.getElementById('task-view');
     if (!container) return;
-    container.innerHTML = '';
 
     var workId = route.workId;
     var taskId = route.taskId;
     var detailKey = workId + '/' + taskId;
+
+    // Preserve an in-progress task-rename edit / in-flight save across the poll
+    // loop's periodic re-render (mirrors _renderProjectHeader's identical guard),
+    // scoped to the task currently being edited so navigating away still renders
+    // fresh (unlike an unscoped flag would).
+    if ((taskRenameState.editing || taskRenameState.saving) && taskRenameState.key === detailKey) {
+      return;
+    }
+
+    container.innerHTML = '';
 
     // Find the work
     var work = findWorkById(model.works || [], workId);
@@ -3360,12 +3719,18 @@ footer {
         headerDiv.appendChild(typeEl);
       }
       headerDiv.appendChild(makeTaskStatusBadge(task.status));
-      if (task.short_name) {
+      // Task rename (feature-005): display_name -> short_name -> task_id label
+      // precedence, in lockstep with makeTaskChip's identical precedence (AC3).
+      var taskLabel = _taskDisplayLabel(task);
+      if (taskLabel) {
         var snEl = document.createElement('span');
         snEl.style.cssText = 'font-weight:500;font-size:0.95rem;';
-        snEl.textContent = task.short_name;
+        snEl.textContent = taskLabel;
         headerDiv.appendChild(snEl);
       }
+      // Write-gated rename pencil / inline editor, next to the task name (AC8 UI half).
+      var taskWriteEnabled = model.write_enabled === true;
+      headerDiv.appendChild(_renderTaskRenameControl(workId, task, detailKey, taskWriteEnabled));
     } else {
       // Task not found — show notice, never blank (FC-3/UI-5)
       var noTaskCallout = document.createElement('div');
