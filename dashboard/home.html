@@ -759,6 +759,46 @@ footer {
   font-size: 0.85rem;
 }
 .pending-input-item .meta { color: var(--text-dim); font-size: 0.8rem; margin-top: 0.2rem; }
+
+/* Project header panel (feature-002): identity/edit header at the top of #main-page.
+   Reuses .work-overview / .work-overview-title / .work-overview-desc / .btn-ghost /
+   .interval-input / .badge / .callout.err verbatim -- these are the only new rules. */
+.project-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.project-header-row + .project-header-row { margin-top: 0.5rem; }
+.project-header-editor {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+.project-header-name-input {
+  width: 100%;
+  max-width: 22rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: left;
+}
+.project-header-textarea {
+  width: 100%;
+  max-width: 32rem;
+  min-height: 4.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+}
+.project-header-textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.project-header-grade-label { font-size: 0.82rem; color: var(--text-muted); margin-right: 0.5rem; }
 </style>
 </head>
 <body>
@@ -872,6 +912,12 @@ footer {
 
   <!-- Main page (feature-006): card grid + KB card -->
   <div id="main-page" style="display:none">
+    <!-- Project header panel (feature-002): identity/edit header, rendered first -->
+    <div id="project-header"></div>
+    <!-- Persistent (never rebuilt) live region for project-header Save/error status,
+         so a text update on it is a DOM mutation an AT can reliably announce. -->
+    <div id="project-header-status" class="sr-only" aria-live="polite"></div>
+
     <!-- Knowledge Base section — fixed-size header band, rendered first -->
     <h2 class="main-section-head kt-head">Knowledge Base</h2>
     <div class="grid g2 kt-section" id="knowledge-tool-section"></div>
@@ -1079,6 +1125,12 @@ footer {
     // `model`, present ONLY on ?detail= polls) onto the model so the drill view can
     // read it via model.details. Absent on bare polls -> {} (first-tick loading state).
     if (lastGoodModel) { lastGoodModel.details = envelope.details || {}; }
+
+    // Graft the envelope-level `write_enabled` signal (feature-001 task-001) onto the
+    // model so every render function can read it via model.write_enabled -- shared
+    // infrastructure this feature (feature-002) introduces as the first consumer;
+    // features 005/006 reuse the same graft. Missing -> false (fail-safe).
+    if (lastGoodModel) { lastGoodModel.write_enabled = (envelope.write_enabled === true); }
 
     // Update footer generated_by (envelope-level field, NOT the model subtree)
     var genByEl = document.getElementById('footer-generated-by');
@@ -1313,9 +1365,381 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
+  // Project header panel (feature-002): editable name / description / global
+  // minimum grade + an "Open Knowledge Base" button, at the top of #main-page.
+  // Consumes the settings.set op (feature-001) via POST ./api/op; on success the
+  // client re-fetches ./api/model and re-renders from disk (no optimistic mutation).
+  // ---------------------------------------------------------------------------
+
+  // projectHeaderState: transient UI-only state (never sent to / read from the
+  // server), mirroring this file's other uiState-style poll-survival pattern.
+  // editingField: null | 'name' | 'description' -- while non-null, _renderProjectHeader
+  // skips rebuilding the panel so the user's in-progress edit survives the poll loop;
+  // Save/Cancel explicitly re-invoke _renderProjectHeader once editing ends.
+  var projectHeaderState = { editingField: null, saving: false, errorMessage: null };
+
+  var PROJECT_HEADER_GRADE_OPTIONS = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+
+  // KB button status label per 5-state kb_state.status (mirrors _renderKbCard's own
+  // language); 'approved' carries none (the button is simply clickable + plain).
+  var PROJECT_HEADER_KB_LABEL = {
+    pending: 'No KB yet',
+    generating: 'Building…',
+    preparing: 'Preparing…',
+    outdated: 'Outdated'
+  };
+
+  // Client-side mirror of the settings.set arg-schema (SPEC.md API Contracts) --
+  // defense-in-depth ahead of the server's own semantic_validate hook; returns an
+  // error string, or null when the value is acceptable for that path.
+  function _validateSettingValue(path, value) {
+    if (path === 'review.minimum_grade') {
+      return /^[A-F][+-]?$/.test(value) ? null : 'Grade must be one of A+ through F (e.g. A, A-, B+).';
+    }
+    if (value.indexOf('\n') !== -1) return 'Value cannot contain a line break.';
+    if (value.indexOf('"') !== -1) return 'Value cannot contain a double-quote (").';
+    if (value.indexOf('\\') !== -1) return 'Value cannot contain a backslash (\\).';
+    if (path === 'project.name' && value === '') return 'Project name is required.';
+    return null;
+  }
+
+  // POST ./api/op {op:"settings.set", target:{}, args:{path,value}}; onDone receives
+  // {ok, body} where ok mirrors the HTTP status and body is the parsed JSON envelope
+  // (best-effort {} on a non-JSON/network failure).
+  function _postSettingsSet(path, value, onDone) {
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'settings.set', target: {}, args: { path: path, value: value } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  // Independent raw re-fetch of ./api/model (does NOT participate in the poll loop's
+  // fetchPending guard) so a just-completed save is reflected immediately, even if a
+  // regular poll tick happens to be in flight at the same moment (no drift, AC2).
+  function _refetchModelForHeader() {
+    fetch('./api/model')
+      .then(function (resp) { return resp.json(); })
+      .then(function (envelope) { onSuccess(envelope); })
+      .catch(function () { /* best-effort; the next scheduled poll will retry */ });
+  }
+
+  function _setProjectHeaderStatus(text) {
+    var live = document.getElementById('project-header-status');
+    if (live) live.textContent = text || '';
+  }
+
+  // Validate + dispatch a settings.set save for one field. On success: exit edit
+  // mode, re-fetch the model, re-render from disk. On failure: exit edit mode WITHOUT
+  // mutating the model (the field reverts to its last on-disk value by construction --
+  // the edit was only ever local to the input's own DOM value), surface the error.
+  function _saveProjectSetting(path, value) {
+    var clientErr = _validateSettingValue(path, value);
+    if (clientErr) {
+      projectHeaderState.errorMessage = clientErr;
+      _setProjectHeaderStatus(clientErr);
+      _renderProjectHeader(lastGoodModel);
+      return;
+    }
+    projectHeaderState.saving = true;
+    projectHeaderState.errorMessage = null;
+    _setProjectHeaderStatus('Saving…');
+    _postSettingsSet(path, value, function (result) {
+      projectHeaderState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = null;
+        _setProjectHeaderStatus('Saved.');
+        _refetchModelForHeader();
+      } else {
+        var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = detail;
+        _setProjectHeaderStatus('Error: ' + detail);
+        _renderProjectHeader(lastGoodModel);
+      }
+    });
+  }
+
+  // Build the "Open Knowledge Base" .btn-ghost -- same target + 5-state clickability
+  // rule as _renderKbCard (line ~1618: clickable only when approved/outdated), carrying
+  // the status label on the button itself so the signal isn't lost when subsumed here.
+  function _renderProjectHeaderKbButton(kbState) {
+    var KB_STATUSES = ['pending', 'generating', 'preparing', 'approved', 'outdated'];
+    var status = (kbState && kbState.status && KB_STATUSES.indexOf(kbState.status) !== -1)
+      ? kbState.status : 'pending';
+    var isClickable = (status === 'approved' || status === 'outdated');
+    var suffix = PROJECT_HEADER_KB_LABEL[status];
+    var label = 'Open Knowledge Base' + (suffix ? ' (' + suffix + ')' : '');
+
+    if (isClickable) {
+      var link = document.createElement('a');
+      link.className = 'btn-ghost project-header-kb-btn';
+      link.href = './kb.html';  // location-relative (LC-A3): resolves to /r/<id>/kb.html
+      link.textContent = label;
+      return link;
+    }
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-ghost project-header-kb-btn';
+    btn.setAttribute('aria-disabled', 'true');
+    btn.textContent = label;
+    // aria-disabled (not the native `disabled` attribute, not removal): the button
+    // stays focusable/reachable and its status label stays readable; a click is a
+    // no-op rather than a navigation.
+    btn.addEventListener('click', function (e) { e.preventDefault(); });
+    return btn;
+  }
+
+  // Build the name row: display (title + Edit pencil, write_enabled only) or the
+  // edit form (text input + Save/Cancel) when projectHeaderState.editingField==='name'.
+  function _renderProjectHeaderNameRow(repo, writeEnabled) {
+    var row = document.createElement('div');
+    row.className = 'project-header-row';
+
+    if (projectHeaderState.editingField === 'name') {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'interval-input project-header-name-input';
+      input.value = repo.project_name || '';
+      input.setAttribute('aria-label', 'Project name');
+      row.appendChild(input);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      saveBtn.disabled = projectHeaderState.saving;
+      saveBtn.addEventListener('click', function () {
+        // Disable immediately (not just at next render) to guard against a double-
+        // submit while the request is in flight -- _renderProjectHeader itself is
+        // skipped for the whole in-flight window (projectHeaderState.saving).
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        _saveProjectSetting('project.name', input.value);
+      });
+      row.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function () {
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = null;
+        _setProjectHeaderStatus('');
+        _renderProjectHeader(lastGoodModel);
+      });
+      row.appendChild(cancelBtn);
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+      });
+    } else {
+      var title = document.createElement('span');
+      title.className = 'work-overview-title';
+      title.id = 'project-header-title';
+      title.textContent = repo.project_name || '(untitled project)';
+      row.appendChild(title);
+
+      if (writeEnabled) {
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn-ghost';
+        editBtn.setAttribute('aria-expanded', 'false');
+        editBtn.setAttribute('aria-label', 'Edit project name');
+        editBtn.textContent = '✎ Edit';
+        editBtn.addEventListener('click', function () {
+          projectHeaderState.editingField = 'name';
+          projectHeaderState.errorMessage = null;
+          _setProjectHeaderStatus('');
+          _renderProjectHeader(lastGoodModel);
+        });
+        row.appendChild(editBtn);
+      }
+    }
+    return row;
+  }
+
+  // Build the description row: display (.work-overview-desc, muted placeholder when
+  // empty, + Edit pencil) or the edit form (<textarea> + Save/Cancel) when
+  // projectHeaderState.editingField==='description'.
+  function _renderProjectHeaderDescriptionRow(repo, writeEnabled) {
+    var row = document.createElement('div');
+    row.className = 'project-header-row';
+
+    if (projectHeaderState.editingField === 'description') {
+      var editorWrap = document.createElement('div');
+      editorWrap.className = 'project-header-editor';
+
+      var textarea = document.createElement('textarea');
+      textarea.className = 'project-header-textarea';
+      textarea.value = repo.project_description || '';
+      textarea.setAttribute('aria-label', 'Project description');
+      editorWrap.appendChild(textarea);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      saveBtn.disabled = projectHeaderState.saving;
+      saveBtn.addEventListener('click', function () {
+        // Disable immediately -- see the name-row Save handler's identical comment.
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        _saveProjectSetting('project.description', textarea.value);
+      });
+      editorWrap.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function () {
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = null;
+        _setProjectHeaderStatus('');
+        _renderProjectHeader(lastGoodModel);
+      });
+      editorWrap.appendChild(cancelBtn);
+
+      textarea.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+      });
+
+      row.appendChild(editorWrap);
+    } else {
+      var desc = document.createElement('p');
+      desc.className = 'work-overview-desc';
+      desc.id = 'project-header-desc';
+      if (repo.project_description) {
+        desc.textContent = repo.project_description;
+      } else {
+        desc.textContent = 'No description set.';
+        desc.style.opacity = '0.6';
+      }
+      row.appendChild(desc);
+
+      if (writeEnabled) {
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn-ghost';
+        editBtn.setAttribute('aria-expanded', 'false');
+        editBtn.setAttribute('aria-label', 'Edit project description');
+        editBtn.textContent = '✎ Edit';
+        editBtn.addEventListener('click', function () {
+          projectHeaderState.editingField = 'description';
+          projectHeaderState.errorMessage = null;
+          _setProjectHeaderStatus('');
+          _renderProjectHeader(lastGoodModel);
+        });
+        row.appendChild(editBtn);
+      }
+    }
+    return row;
+  }
+
+  // Build the global minimum-grade row: a <select> (write_enabled) that dispatches
+  // settings.set on change, or a read-only .badge (mirrors _renderKbCard's badge use).
+  function _renderProjectHeaderGradeRow(repo, writeEnabled) {
+    var row = document.createElement('div');
+    row.className = 'project-header-row';
+
+    var label = document.createElement('label');
+    label.className = 'project-header-grade-label';
+    label.textContent = 'Global minimum grade';
+    label.setAttribute('for', 'project-header-grade-select');
+    row.appendChild(label);
+
+    if (writeEnabled) {
+      var select = document.createElement('select');
+      select.className = 'interval-input';
+      select.id = 'project-header-grade-select';
+      select.disabled = projectHeaderState.saving;
+      for (var i = 0; i < PROJECT_HEADER_GRADE_OPTIONS.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = PROJECT_HEADER_GRADE_OPTIONS[i];
+        opt.textContent = PROJECT_HEADER_GRADE_OPTIONS[i];
+        select.appendChild(opt);
+      }
+      // repo.minimum_grade is read LITERALLY (no resolution -- read-setting.sh remains
+      // the resolution contract); when the settings.yml key is absent, 'A' is only the
+      // documented system-wide default pre-selection (aid-config / read-setting.sh
+      // --default A), not a resolved/optimistic value -- selecting it and changing
+      // nothing issues no write.
+      select.value = repo.minimum_grade || 'A';
+      select.addEventListener('change', function () {
+        // Disable immediately -- see the name-row Save handler's identical comment.
+        select.disabled = true;
+        _saveProjectSetting('review.minimum_grade', select.value);
+      });
+      row.appendChild(select);
+    } else {
+      var badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.id = 'project-header-grade-badge';
+      badge.textContent = repo.minimum_grade || 'A (default)';
+      row.appendChild(badge);
+    }
+    return row;
+  }
+
+  function _renderProjectHeader(model) {
+    var container = document.getElementById('project-header');
+    if (!container) return;
+
+    // Preserve an in-progress edit / in-flight save across the poll loop's periodic
+    // re-render; Save/Cancel/the save callback explicitly re-invoke this function
+    // once editing ends, so the panel never goes stale for longer than that.
+    if (projectHeaderState.editingField !== null || projectHeaderState.saving) {
+      return;
+    }
+
+    container.innerHTML = '';
+    var repo = model.repo || {};
+    var writeEnabled = model.write_enabled === true;
+
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+    panel.id = 'project-header-panel';
+
+    var identity = document.createElement('div');
+    identity.className = 'work-overview-identity';
+    identity.appendChild(_renderProjectHeaderNameRow(repo, writeEnabled));
+    panel.appendChild(identity);
+
+    panel.appendChild(_renderProjectHeaderDescriptionRow(repo, writeEnabled));
+    panel.appendChild(_renderProjectHeaderGradeRow(repo, writeEnabled));
+
+    if (projectHeaderState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.textContent = projectHeaderState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    var kbRow = document.createElement('div');
+    kbRow.className = 'project-header-row';
+    kbRow.style.marginTop = '0.75rem';
+    kbRow.appendChild(_renderProjectHeaderKbButton(repo.kb_state));
+    panel.appendChild(kbRow);
+
+    container.appendChild(panel);
+  }
+
+  // ---------------------------------------------------------------------------
   // renderMainPage: the feature-006 main page (card grid + KB card)
   // ---------------------------------------------------------------------------
   function renderMainPage(model) {
+    _renderProjectHeader(model);
+
     var works = model.works || [];
 
     // Render pipelines section

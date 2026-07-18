@@ -885,6 +885,46 @@ function opSettingsSetArgv(workDir, servedRoot, target, args) {
   return [argv, {}];
 }
 
+// settings.set semantic (per-path) arg validation (feature-002, task-006): the closed
+// args.path allowlist + per-path value rules the finalized arg-schema pins (SPEC.md
+// API Contracts). Same alphabet as write-setting.sh's own (redundant, belt-and-suspenders)
+// checks -- the writer remains the ultimate authority on what reaches settings.yml, but
+// pre-validating here lets an invalid request 422 cleanly (API Contracts: "the server
+// pre-validates for a clean status") without ever spawning a child.
+const RE_GRADE = /^[A-F][+-]?$/;
+const SETTINGS_SET_PATH_ALLOWLIST = new Set(["project.name", "project.description", "review.minimum_grade"]);
+
+function validateSettingsSetArgs(args) {
+  // Semantic validation for the settings.set op (task-006). Returns an error message
+  // on violation, else null. Called AFTER the generic shape check (validateArgs), so
+  // args.path/args.value are guaranteed present strings by the time this runs.
+  const path = args.path;
+  const value = args.value;
+  if (!SETTINGS_SET_PATH_ALLOWLIST.has(path)) {
+    return "'path' must be one of: " + Array.from(SETTINGS_SET_PATH_ALLOWLIST).sort().join(", ");
+  }
+  if (path === "review.minimum_grade") {
+    if (!RE_GRADE.test(value)) {
+      return "'value' must match ^[A-F][+-]?$ (e.g. A, A-, B+, F)";
+    }
+    return null;
+  }
+  // project.name / project.description share the KI-001 output-charset guard.
+  if (value.indexOf("\n") !== -1) {
+    return "'value' cannot contain a newline";
+  }
+  if (value.indexOf('"') !== -1) {
+    return "'value' cannot contain a double-quote (\")";
+  }
+  if (value.indexOf("\\") !== -1) {
+    return "'value' cannot contain a backslash (\\)";
+  }
+  if (path === "project.name" && value === "") {
+    return "'value' is required for project.name (cannot be empty)";
+  }
+  return null;
+}
+
 function opPipelineRenameArgv(workDir, servedRoot, target, args) {
   // pipeline.rename -> write-requirement.sh --field Name --value <v>
   // (env AID_REQUIREMENTS_FILE=<resolved-work-dir>/REQUIREMENTS.md).
@@ -918,6 +958,7 @@ const OP_TABLE = {
     writer: "write-setting.sh",
     argSchema: { path: { required: true }, value: { required: true } },
     buildArgv: opSettingsSetArgv,
+    semanticValidate: validateSettingsSetArgs,
     statusMap: null,
   },
   "pipeline.rename": {
@@ -988,6 +1029,17 @@ function dispatchOp(opTable, parsed, servedRoot) {
   const argErr = validateArgs(row.argSchema, args);
   if (argErr !== null) {
     return [400, opFailBody(op, "bad-request", argErr)];
+  }
+
+  // Optional per-op semantic (value-level) validation hook (task-006's OP-SM-style
+  // extension point): a row with one 422s a request the writer would reject anyway,
+  // ahead of any child spawn; a row without one skips straight to buildArgv/spawn.
+  const semanticValidateFn = row.semanticValidate;
+  if (semanticValidateFn) {
+    const semanticErr = semanticValidateFn(args);
+    if (semanticErr !== null && semanticErr !== undefined) {
+      return [422, opFailBody(op, "invalid-value", semanticErr)];
+    }
   }
 
   const [argv, envOverrides] = row.buildArgv(workDir, servedRoot, target, args);

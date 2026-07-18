@@ -181,16 +181,22 @@ class TestStructural(unittest.TestCase):
         self.assertNotIn('model.generated_by', self.src,
                          "JS must NOT read model.generated_by -- use envelope.generated_by")
 
-    # S3 -- only same-origin fetch('./api/model'), no external fetches
+    # S3 -- only same-origin fetch('./api/model' | './api/op'), no external fetches
     # task-054 R-1: poll URL changed from absolute '/api/model' to
     # location-relative './api/model' so that home.html served at
     # /r/<id>/home.html polls /r/<id>/api/model (per-repo route).
+    # task-006 (feature-002): './api/op' is home.html's first write-dispatch fetch
+    # target (the project-header panel's settings.set client call) -- still
+    # location-relative/same-origin, just a second legitimate endpoint alongside
+    # the read poll.
     def test_s3_only_api_model_fetch(self):
-        # All fetch() calls must target ./api/model (location-relative, same-origin)
+        # All fetch() calls must target ./api/model or ./api/op (location-relative,
+        # same-origin -- never an absolute/external URL).
         fetch_calls = re.findall(r"fetch\s*\(\s*['\"]([^'\"]+)['\"]", self.src)
+        allowed = ('./api/model', './api/op')
         for url in fetch_calls:
-            self.assertEqual(url, './api/model',
-                             f"Found unexpected fetch target: {url!r} -- only ./api/model allowed")
+            self.assertIn(url, allowed,
+                          f"Found unexpected fetch target: {url!r} -- only {allowed} allowed")
 
     def test_s3_no_http_fetch(self):
         # No fetch('http://...') or fetch('https://...')
@@ -839,11 +845,15 @@ class TestFeature006Router(unittest.TestCase):
                       "schema_version EXPECTED must remain 3 (DM-A3 — no bump for 5-state card)")
 
     def test_f6k5_no_new_fetch_call(self):
-        # Only one fetch target allowed: ./api/model (no new network call for KB files)
+        # No new network call for KB files specifically: every fetch() call still
+        # targets one of the two legitimate same-origin endpoints (./api/model read
+        # poll; ./api/op write-dispatch, added by task-006/feature-002) -- never a
+        # KB-file-specific fetch of its own.
         fetch_calls = re.findall(r"fetch\s*\(\s*['\"]([^'\"]+)['\"]", self.src)
+        allowed = ('./api/model', './api/op')
         for url in fetch_calls:
-            self.assertEqual(url, './api/model',
-                             f"Found unexpected fetch target: {url!r} — only ./api/model allowed (LC-A3)")
+            self.assertIn(url, allowed,
+                          f"Found unexpected fetch target: {url!r} — only {allowed} allowed (LC-A3)")
 
     # doc_count and last_summary_date are still read (retained fields)
     def test_f6k_kb_card_doc_count(self):

@@ -1066,6 +1066,41 @@ def _op_settings_set_argv(work_dir: "Path | None", served_root: str, target: dic
     return argv, {}
 
 
+# settings.set semantic (per-path) arg validation (feature-002, task-006): the closed
+# args.path allowlist + per-path value rules the finalized arg-schema pins (SPEC.md
+# API Contracts). Same alphabet as write-setting.sh's own (redundant, belt-and-suspenders)
+# checks -- the writer remains the ultimate authority on what reaches settings.yml, but
+# pre-validating here lets an invalid request 422 cleanly (API Contracts: "the server
+# pre-validates for a clean status") without ever spawning a child.
+_RE_GRADE = re.compile(r"^[A-F][+-]?$")
+_SETTINGS_SET_PATH_ALLOWLIST = frozenset({"project.name", "project.description", "review.minimum_grade"})
+
+
+def _validate_settings_set_args(args: dict) -> "str | None":
+    """Semantic validation for the settings.set op (task-006). Returns an error message
+    on violation, else None. Called AFTER the generic shape check (_validate_args), so
+    args['path']/args['value'] are guaranteed present strings by the time this runs.
+    """
+    path = args["path"]
+    value = args["value"]
+    if path not in _SETTINGS_SET_PATH_ALLOWLIST:
+        return "'path' must be one of: " + ", ".join(sorted(_SETTINGS_SET_PATH_ALLOWLIST))
+    if path == "review.minimum_grade":
+        if not _RE_GRADE.match(value):
+            return "'value' must match ^[A-F][+-]?$ (e.g. A, A-, B+, F)"
+        return None
+    # project.name / project.description share the KI-001 output-charset guard.
+    if "\n" in value:
+        return "'value' cannot contain a newline"
+    if '"' in value:
+        return "'value' cannot contain a double-quote (\")"
+    if "\\" in value:
+        return "'value' cannot contain a backslash (\\)"
+    if path == "project.name" and value == "":
+        return "'value' is required for project.name (cannot be empty)"
+    return None
+
+
 def _op_pipeline_rename_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
     """pipeline.rename -> write-requirement.sh --field Name --value <v>
     (env AID_REQUIREMENTS_FILE=<resolved-work-dir>/REQUIREMENTS.md).
@@ -1100,6 +1135,7 @@ OP_TABLE: dict[str, dict] = {
         "writer": "write-setting.sh",
         "arg_schema": {"path": {"required": True}, "value": {"required": True}},
         "build_argv": _op_settings_set_argv,
+        "semantic_validate": _validate_settings_set_args,
         "status_map": None,
     },
     "pipeline.rename": {
@@ -1165,6 +1201,15 @@ def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tup
     arg_err = _validate_args(row["arg_schema"], args)
     if arg_err is not None:
         return 400, _op_fail_body(op, "bad-request", arg_err)
+
+    # Optional per-op semantic (value-level) validation hook (task-006's OP-SM-style
+    # extension point): a row with one 422s a request the writer would reject anyway,
+    # ahead of any child spawn; a row without one skips straight to build_argv/spawn.
+    semantic_validate = row.get("semantic_validate")
+    if semantic_validate is not None:
+        semantic_err = semantic_validate(args)
+        if semantic_err is not None:
+            return 422, _op_fail_body(op, "invalid-value", semantic_err)
 
     argv, env_overrides = row["build_argv"](work_dir, served_root, target, args)
     exit_code, stderr_text = _run_writer(row["writer"], argv, env_overrides)

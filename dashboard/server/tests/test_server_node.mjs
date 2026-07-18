@@ -1417,6 +1417,59 @@ async function runLiveTests() {
           const settingsAfter = readFileSync(join(repoA, ".aid", "settings.yml"), "utf8");
           assert(settingsAfter.includes("renamed-by-op"), "settings.set writer round-trip updated settings.yml on disk");
         }
+
+        // -------------------------------------------------------------------
+        // (5c-op-006) settings.set semantic arg-schema finalization (task-006,
+        // feature-002-project-header-edit): the server's OWN pre-validation hook
+        // (validateSettingsSetArgs) 422s an invalid request BEFORE the writer spawn --
+        // closed args.path allowlist, review.minimum_grade ^[A-F][+-]?$, and the
+        // KI-001 name/description charset guard (reject \n/"/\), empty name required.
+        // -------------------------------------------------------------------
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "not.allowed", value: "x" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set out-of-allowlist path -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "out-of-allowlist path -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "review.minimum_grade", value: "Z" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set invalid grade -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "invalid grade -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.name", value: "" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set empty project.name -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "empty project.name -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.description", value: 'has "quote"' },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set embedded double-quote value -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "embedded double-quote -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.description", value: "" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 200, "settings.set empty project.description (clears) -> 200 (got " + r.status + ")");
+          assert(!!(data && data.ok === true), "empty project.description -> {ok:true} (clearing is allowed)");
+        }
         {
           const r = await postJson(port, "/r/" + idA + "/api/op", { op: "not-a-real-op" });
           let data = null;

@@ -241,7 +241,11 @@ class TestOpWriterRoundTrips(unittest.TestCase):
             self.assertIn("new-name", (aid / "settings.yml").read_text(encoding="utf-8"))
 
     def test_settings_set_writer_semantic_failure_maps_to_422(self):
-        """An out-of-allowlist --path is the WRITER's own exit 4 -> DEFAULT_MAP 422."""
+        """An out-of-allowlist --path is now caught by the server's OWN pre-validation
+        (task-006's `semantic_validate` hook, added ahead of this test's original writer-
+        exit-4 path) -> 422 'invalid-value' without a child spawn. write-setting.sh
+        independently re-validates the same rule as a second line of defense (see
+        test_task006_settings_set_validation.py) -- this test only pins the status."""
         with _TmpRepo() as root:
             _make_settings_repo(root)
             status, body = srv._dispatch_op(
