@@ -58,7 +58,7 @@
 {"dst": ".claude/aid/scripts/summarize/validate-visuals.mjs", "profile": "claude-code", "sha256": "9714d5db759f33ee37f595745d2f2e5ed6885beede83a4f093f8864ed5f1a808", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".claude/aid/scripts/summarize/writeback-state.sh", "profile": "claude-code", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".claude/aid/scripts/works/enumerate-works.sh", "profile": "claude-code", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
-{"dst": ".claude/aid/scripts/works/worktree-lifecycle.sh", "profile": "claude-code", "sha256": "5a0e5f9a65b6d5b0f7101f2c86f5f2ed318d3b679faf858a76568ddb41422acd", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
+{"dst": ".claude/aid/scripts/works/worktree-lifecycle.sh", "profile": "claude-code", "sha256": "2bbae5910e5d67145338dfa0e43cba7201900fe53ad6ff327faa1f94008e0f52", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
 {"dst": ".claude/aid/templates/agent-boilerplate.md", "profile": "claude-code", "sha256": "0075499d72c4710b375198b762ac2f0979f2ed935d289d62d91036db53d6c769", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".claude/aid/templates/agent-dispatch-tiering.md", "profile": "claude-code", "sha256": "1d747e00693eff11233f79ec067a76c4d1eb19c5f00f8d995c7c808718b57442", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".claude/aid/templates/connectors/consumption-protocol.md", "profile": "claude-code", "sha256": "741930866f2ce8d0e9af8fa5bee4e0eee812041c31a0d34761cd43ed1bafa893", "src": "canonical/templates/connectors/consumption-protocol.md"}

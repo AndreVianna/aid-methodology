@@ -58,7 +58,7 @@
 {"dst": ".cursor/aid/scripts/summarize/validate-visuals.mjs", "profile": "cursor", "sha256": "ec9e13511fee1a43471f30043f61857e597ca609ae527d8074251cd98b77d5f4", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".cursor/aid/scripts/summarize/writeback-state.sh", "profile": "cursor", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".cursor/aid/scripts/works/enumerate-works.sh", "profile": "cursor", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
-{"dst": ".cursor/aid/scripts/works/worktree-lifecycle.sh", "profile": "cursor", "sha256": "14049f77297b49c7d9909bb504496f49517d36c3c56517007176b7aac91c2616", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
+{"dst": ".cursor/aid/scripts/works/worktree-lifecycle.sh", "profile": "cursor", "sha256": "1d65c114c74ea73aa4d5b6fcf7ac853168994590467576ab55480c9d4e767a1e", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
 {"dst": ".cursor/aid/templates/agent-boilerplate.md", "profile": "cursor", "sha256": "ce21236493480b23cddd2a319be7108b8c089ecd75b08e13a938fffe9fc3feb5", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".cursor/aid/templates/agent-dispatch-tiering.md", "profile": "cursor", "sha256": "af60bee6347d7983a87ff985a607edef24aaf2cd55374524be4d182a11ccaca0", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".cursor/aid/templates/connectors/consumption-protocol.md", "profile": "cursor", "sha256": "741930866f2ce8d0e9af8fa5bee4e0eee812041c31a0d34761cd43ed1bafa893", "src": "canonical/templates/connectors/consumption-protocol.md"}
@@ -253,7 +253,7 @@
 {"dst": ".cursor/skills/aid-document-standard/SKILL.md", "profile": "cursor", "sha256": "760395d1fec70547f2c6a5817a688d012431606af2cb808662bd1b21014a453b", "src": "canonical/skills/aid-document-standard/SKILL.md"}
 {"dst": ".cursor/skills/aid-document-tutorial/SKILL.md", "profile": "cursor", "sha256": "8989e08d83394b1875a477e1994d6cd2572bafdf1e16207e7411c5377fc06ee5", "src": "canonical/skills/aid-document-tutorial/SKILL.md"}
 {"dst": ".cursor/skills/aid-document/SKILL.md", "profile": "cursor", "sha256": "9878b4a72709f5ebaeb76736930bb6e923d836b25b11d43c834689845200eb2f", "src": "canonical/skills/aid-document/SKILL.md"}
-{"dst": ".cursor/skills/aid-execute/SKILL.md", "profile": "cursor", "sha256": "7826eda365ce0ff2798c63b21389f579e651818616638dfdde6260cbcde293df", "src": "canonical/skills/aid-execute/SKILL.md"}
+{"dst": ".cursor/skills/aid-execute/SKILL.md", "profile": "cursor", "sha256": "4a7fe67cece045853e7ae0ec42759830a78296e8f4de0795fe2e562c58c04471", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".cursor/skills/aid-execute/references/reviewer-brief.md", "profile": "cursor", "sha256": "3ee7bfeaa64cdf275d24d73851701ce569b6d1c87c188333256730a7c8536845", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
 {"dst": ".cursor/skills/aid-execute/references/reviewer-guide.md", "profile": "cursor", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".cursor/skills/aid-execute/references/state-delivery-gate.md", "profile": "cursor", "sha256": "407baec1a5052b8e32cfc3df21c85f88117f97cf04fedf4577cd5dc0fabbb0b5", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}

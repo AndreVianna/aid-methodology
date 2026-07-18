@@ -279,7 +279,7 @@ parallel-branch mechanism visible to the dashboard.
 **Nesting with the work-level worktree:** Check 1 step 3's locate+enter paragraph above already
 entered this work's persistent worktree before any of the above runs, so these per-task ephemeral
 worktrees are provisioned **nested, unchanged, inside** that entered work-level worktree —
-different root (`.aid/.worktrees/task-NNN/` vs. the work-level `.claude/worktrees/work-NNN-{name}`),
+different root (`.aid/.worktrees/task-NNN/` vs. the work-level `.codex/worktrees/work-NNN-{name}`),
 different branch, different purpose; the two compose without conflict
 (`.codex/aid/templates/downstream-worktree-entry.md § Composition with aid-execute's per-task
 worktrees`).

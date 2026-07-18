@@ -5,7 +5,7 @@
 #   The single shared implementation of the git-worktree mechanics every
 #   worktree-consuming feature binds to (work-starting automation, downstream
 #   locate-and-enter, housekeep teardown): create a work's worktree (branch
-#   <work-id>, directory .claude/worktrees/<work-id>-<name>, off master) and
+#   <work-id>, directory <install-root>/worktrees/<work-id>-<name>, off master) and
 #   resolve-and-enter an existing one via the 4-rung "most-intact-state-first"
 #   fallback ladder. This script is PURE GIT MECHANICS -- it never switches a
 #   session; see canonical/aid/templates/worktree-lifecycle.md for the agent
@@ -151,7 +151,7 @@ _is_git_toplevel() {
 }
 
 # _main_root -> the absolute path of the repository's MAIN worktree (the one
-# whose .claude/worktrees/ every work's worktree nests under), regardless of
+# whose <install-root>/worktrees/ every work's worktree nests under), regardless of
 # which worktree the script is currently running from. Derived from the
 # shared git-common-dir (the one .git directory every worktree links back
 # to): its parent is always the main worktree's root. Empty + non-zero on
@@ -165,11 +165,11 @@ _main_root() {
 }
 
 # _worktrees_root_from <main-root> -> the realpath-canonicalized, created
-# .claude/worktrees/ container under <main-root>. Empty + non-zero on
+# <install-root>/worktrees/ container under <main-root>. Empty + non-zero on
 # failure (e.g. cannot create the directory).
 _worktrees_root_from() {
     local main_root="$1" wt_root
-    wt_root="${main_root}/.claude/worktrees"
+    wt_root="${main_root}/.codex/worktrees"
     mkdir -p "$wt_root" 2>/dev/null || return 1
     _abs_path "$wt_root"
 }
@@ -296,7 +296,7 @@ op_create() {
         exit 0
     fi
 
-    # Resolve the main worktree root + the .claude/worktrees/ container.
+    # Resolve the main worktree root + the <install-root>/worktrees/ container.
     local main_root worktrees_root
     main_root="$(_main_root)" || { echo "${SCRIPT_NAME}: cannot resolve repository root; cannot isolate" >&2; exit 1; }
     worktrees_root="$(_worktrees_root_from "$main_root")" || { echo "${SCRIPT_NAME}: cannot create worktrees container; cannot isolate" >&2; exit 1; }
@@ -372,7 +372,7 @@ op_locate() {
         exit 0
     fi
 
-    # Resolve the main worktree root + the .claude/worktrees/ container.
+    # Resolve the main worktree root + the <install-root>/worktrees/ container.
     local main_root worktrees_root
     main_root="$(_main_root)" || _locate_degrade
     worktrees_root="$(_worktrees_root_from "$main_root")" || _locate_degrade

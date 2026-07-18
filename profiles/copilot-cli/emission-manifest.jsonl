@@ -58,7 +58,7 @@
 {"dst": ".github/aid/scripts/summarize/validate-visuals.mjs", "profile": "copilot-cli", "sha256": "9e607a5da7a57da0af187519a8c7b7ac73859da7f683c50a4625ccb1f78dc275", "src": "canonical/scripts/summarize/validate-visuals.mjs"}
 {"dst": ".github/aid/scripts/summarize/writeback-state.sh", "profile": "copilot-cli", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".github/aid/scripts/works/enumerate-works.sh", "profile": "copilot-cli", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
-{"dst": ".github/aid/scripts/works/worktree-lifecycle.sh", "profile": "copilot-cli", "sha256": "44726cdd9aeb19a4af75c829ade0aead9e868ed1e18079df7908561eb529ab22", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
+{"dst": ".github/aid/scripts/works/worktree-lifecycle.sh", "profile": "copilot-cli", "sha256": "7a1d7c4018d4e4770424a0bd2d348a84a991cc3b0b072aeddd2991deaf255644", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
 {"dst": ".github/aid/templates/agent-boilerplate.md", "profile": "copilot-cli", "sha256": "40c2e6cedf895af995235b5432550ebd936ba11106bdcdb7b43b4f4513db0479", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".github/aid/templates/agent-dispatch-tiering.md", "profile": "copilot-cli", "sha256": "9b70a5dd616c4ead142343f1e01db788889b7223d352b51afc26115ff010a77e", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".github/aid/templates/connectors/consumption-protocol.md", "profile": "copilot-cli", "sha256": "741930866f2ce8d0e9af8fa5bee4e0eee812041c31a0d34761cd43ed1bafa893", "src": "canonical/templates/connectors/consumption-protocol.md"}
@@ -253,7 +253,7 @@
 {"dst": ".github/skills/aid-document-standard/SKILL.md", "profile": "copilot-cli", "sha256": "e3171cf9f5323979233572094348ba01f81dbee664878c1bfbe32fecd86f1c77", "src": "canonical/skills/aid-document-standard/SKILL.md"}
 {"dst": ".github/skills/aid-document-tutorial/SKILL.md", "profile": "copilot-cli", "sha256": "ff268894583f3d1a79ae4862dc775589ba47466f1c2bd60ecb20c980abf10c7f", "src": "canonical/skills/aid-document-tutorial/SKILL.md"}
 {"dst": ".github/skills/aid-document/SKILL.md", "profile": "copilot-cli", "sha256": "eb4a1d80df01b3dea7e547b548ffab83e3087dd048c2219c9ce4e717b485a94b", "src": "canonical/skills/aid-document/SKILL.md"}
-{"dst": ".github/skills/aid-execute/SKILL.md", "profile": "copilot-cli", "sha256": "25e743580349ff688f582fd2a38ebced8be89161d3d392676a0a41e513c6f8ef", "src": "canonical/skills/aid-execute/SKILL.md"}
+{"dst": ".github/skills/aid-execute/SKILL.md", "profile": "copilot-cli", "sha256": "10f362bda668c549a1770a64fc9dfc68ca3d59310350d8e77d30d38c770c5870", "src": "canonical/skills/aid-execute/SKILL.md"}
 {"dst": ".github/skills/aid-execute/references/reviewer-brief.md", "profile": "copilot-cli", "sha256": "9c6cc521a3082caf4f876a747611b083f8e2a49d4af6cedfdc3cec5b9ecf705d", "src": "canonical/skills/aid-execute/references/reviewer-brief.md"}
 {"dst": ".github/skills/aid-execute/references/reviewer-guide.md", "profile": "copilot-cli", "sha256": "7827b5132ccf3a33d78a372e9a224773d7440cd6a176e6862abb77359a85510f", "src": "canonical/skills/aid-execute/references/reviewer-guide.md"}
 {"dst": ".github/skills/aid-execute/references/state-delivery-gate.md", "profile": "copilot-cli", "sha256": "604caa1a6f2501664a1e9a56fbf69bedc8cf2ba485be63a783e4c8f5e5ef5a0b", "src": "canonical/skills/aid-execute/references/state-delivery-gate.md"}
