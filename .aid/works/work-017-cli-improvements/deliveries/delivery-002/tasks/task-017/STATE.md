@@ -1,5 +1,5 @@
 ---
-state: 'In Review'
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -38,15 +38,8 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id 017 --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-002-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-
+- **Reviewer Tier:** Small
+- **Findings:** none
 ---
 
 ## Dispatch Log

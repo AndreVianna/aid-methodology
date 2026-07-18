@@ -1,5 +1,5 @@
 ---
-state: 'In Review'
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -38,15 +38,9 @@ ticket_ref: "--"
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id 016 --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-002-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
+- **Reviewer Tier:** Small
 - **Findings:**
-
+  - [HIGH] Pre-existing test failure: test_s9_brand_contains_aid_this_machine expects 'AID' in brand div; brand HTML contains only '<strong>Home</strong>', not '<strong>AID ... this machine</strong>'; blocks build gate — dashboard/server/tests/test_cli_home_html.py L127-135; test failure in full test suite (1 fail, 173 passed in test_cli_home_html.py); git diff shows brand section unchanged by task-016; pre-dates task-016 commit b24354a4 — Deferred-to-gate
 ---
 
 ## Dispatch Log
