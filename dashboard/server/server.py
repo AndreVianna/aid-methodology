@@ -1102,6 +1102,12 @@ def _validate_task_set_notes_args(args: dict) -> "str | None":
         return "'value' cannot contain a newline"
     if "|" in value:
         return "'value' cannot contain '|' (reserved column separator)"
+    # A literal backslash reaches writeback-state.sh's write_task_field_flat awk
+    # vector; even though that vector now reads the value via ENVIRON (immune to
+    # awk -v escape-reprocessing), reject it here too -- same KI-001-class guard
+    # _validate_settings_set_args already applies (delivery-001 gate finding).
+    if "\\" in value:
+        return "'value' cannot contain a backslash (\\)"
     if len(value.encode("utf-8")) > _MAX_NOTES_VALUE_BYTES:
         return f"'value' exceeds max length ({_MAX_NOTES_VALUE_BYTES} bytes)"
     return None
@@ -1225,6 +1231,12 @@ def _validate_rename_value(value: str) -> "str | None":
         return "'value' cannot contain a newline"
     if "|" in value:
         return "'value' cannot contain '|' (reserved column separator)"
+    # A literal backslash reaches write-requirement.sh's / writeback-state.sh's
+    # awk vectors; even though both now read the value via ENVIRON (immune to
+    # awk -v escape-reprocessing), reject it here too -- same KI-001-class guard
+    # _validate_settings_set_args already applies (delivery-001 gate finding).
+    if "\\" in value:
+        return "'value' cannot contain a backslash (\\)"
     if len(value) > _MAX_RENAME_VALUE_LEN:
         return f"'value' exceeds max length ({_MAX_RENAME_VALUE_LEN} chars)"
     return None

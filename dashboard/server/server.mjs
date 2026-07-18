@@ -901,6 +901,13 @@ function validateTaskSetNotesArgs(args) {
   if (value.indexOf("|") !== -1) {
     return "'value' cannot contain '|' (reserved column separator)";
   }
+  // A literal backslash reaches writeback-state.sh's write_task_field_flat awk
+  // vector; even though that vector now reads the value via ENVIRON (immune to
+  // awk -v escape-reprocessing), reject it here too -- same KI-001-class guard
+  // validateSettingsSetArgs already applies (delivery-001 gate finding).
+  if (value.indexOf("\\") !== -1) {
+    return "'value' cannot contain a backslash (\\)";
+  }
   if (Buffer.byteLength(value, "utf-8") > MAX_NOTES_VALUE_BYTES) {
     return "'value' exceeds max length (" + MAX_NOTES_VALUE_BYTES + " bytes)";
   }
@@ -1023,6 +1030,13 @@ function validateRenameValue(value) {
   }
   if (value.indexOf("|") !== -1) {
     return "'value' cannot contain '|' (reserved column separator)";
+  }
+  // A literal backslash reaches write-requirement.sh's / writeback-state.sh's
+  // awk vectors; even though both now read the value via ENVIRON (immune to
+  // awk -v escape-reprocessing), reject it here too -- same KI-001-class guard
+  // validateSettingsSetArgs already applies (delivery-001 gate finding).
+  if (value.indexOf("\\") !== -1) {
+    return "'value' cannot contain a backslash (\\)";
   }
   if (value.length > MAX_RENAME_VALUE_LEN) {
     return "'value' exceeds max length (" + MAX_RENAME_VALUE_LEN + " chars)";
