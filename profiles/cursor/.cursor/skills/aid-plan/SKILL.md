@@ -71,9 +71,23 @@ Each deliverable follows the same cycle:
 ### Check 1: Locate Work
 
 1. If arg provided → use that work directory
-2. If single work exists → auto-select
-3. If multiple works → list them, ask user to choose
-4. If no works → **STOP.** "No works found. Run `/aid-describe` first."
+2. If no arg → enumerate works **cross-worktree**: run
+   `bash .cursor/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
+   each record's field-1 `work_id`
+3. Single record → auto-select it
+4. Multiple records → list them, ask user to choose
+5. Zero records on any worktree → **STOP.** "No works found. Run `/aid-describe` first."
+
+### Locate + Enter the Work's Worktree
+
+**As soon as Check 1 resolves the work id** and **before** Check 2 scans
+`.aid/works/{work}/features/*/SPEC.md`, follow
+`.cursor/aid/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
+`work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
+`<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero backstop
+that stops rather than operate blindly — it should not fire against the real helper. Never create
+a new worktree — creation belongs to the work-starting skills only.
 
 ### Check 2: Verify Feature SPECs
 
