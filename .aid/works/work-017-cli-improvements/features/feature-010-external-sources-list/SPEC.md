@@ -301,26 +301,28 @@ The write path is feature-001's; this feature adds no network surface and no new
   to any other artifact; `writeback-state.sh` untouched (C1). The empty/initial state (the `- (none)`
   placeholder, or no `sources:` key) is handled by the writer's add path and by the reader's `[]`
   default.
-- **KB follow-up (REAL — must be reconciled with a human before build; flagged, not fixed here).**
+- **KB ownership model (RESOLVED — STATE.md Q6, 2026-07-17; KI-005 closed).**
   This feature makes the dashboard a **second writer** of `external-sources.md`'s frontmatter
-  `sources:`, which directly contradicts a documented discovery invariant: `aid-discover`'s
+  `sources:`, which contradicted a documented discovery invariant: `aid-discover`'s
   `state-elicit.md` states "Scout remains its single writer" (STATE.md Q7 item 4;
   `canonical/skills/aid-discover/references/state-elicit.md` line 119), and on an ELICIT E1 reset
   (when the declared `## External Documentation` path set changes) "Scout fully rewrites the doc
-  (including frontmatter) on its next pass regardless" (same file, line 115). That is a genuine
+  (including frontmatter) on its next pass regardless" (same file, line 115). That was flagged as a
   **silent-data-loss path**: a dashboard-added source survives the immediate re-fetch (AC1/AC2 hold
   *within* the dashboard round-trip), but a later discovery GENERATE pass can wholesale-overwrite
-  the frontmatter and drop it — so **AC1's persistence guarantee does not extend across a subsequent
-  Scout run.** This is not resolvable by writer plumbing alone; it needs a human decision on the
-  ownership model, e.g. (a) make Scout's rewrite merge/preserve dashboard-managed `sources:` rather
-  than replace, (b) mark dashboard-added entries so Scout retains them, or (c) accept the loss and
-  redocument `external-sources.md` as discovery-owned with dashboard edits declared explicitly
-  transient. The "single writer" language in `state-elicit.md` (and STATE.md Q7 item 4) must be
-  reconciled with this feature's shared-ownership reality. `/aid-specify` edits no KB text — this is
-  a flag for the human, not a change. **Registered via the work's established coordination channels
-  for /aid-plan to consume:** work `known-issues.md` **KI-005** (sequencing hazard) and work
-  `STATE.md` Cross-phase Q&A **Q5** (Pending, Impact: High) — feature-010 must not reach EXECUTE
-  until this ownership decision is made.
+  the frontmatter and drop it. **Resolution (option (c), decided by the user):**
+  `external-sources.md` is **discovery-owned** — Scout is the **authoritative** writer (may
+  update/overwrite, including a wholesale frontmatter rewrite, on any run); the dashboard is a
+  **subordinate maintainer** performing **atomic single-entry** edits only (`write-external-source.sh`
+  adds/removes exactly one `sources:` entry and NEVER rewrites the whole file), whose entries Scout
+  **may drop on its next run (accepted)**. AC1's persistence guarantee therefore holds *within the
+  dashboard round-trip* but is explicitly **not durable across a subsequent Scout run** — dashboard
+  edits are declared transient against discovery. No `/aid-discover` behaviour change is required, so
+  **nothing here is EXECUTE-gated** and feature-010 is **UNBLOCKED**. The only residual is a
+  **non-blocking, post-ship KB-DELTA follow-up**: reconcile `state-elicit.md`'s "single writer"
+  wording to "authoritative writer; the dashboard makes subordinate atomic single-entry edits"
+  (documentation only — no behaviour change, does not block this delivery). Tracked in work
+  `known-issues.md` **KI-005** (Resolved) and work `STATE.md` Cross-phase Q&A **Q6** (Answered).
 
 ### UI Specs
 
