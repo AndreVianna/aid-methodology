@@ -8,7 +8,7 @@
 
 - **Type:** Bug
 - **Severity:** Medium
-- **Affects:** feature-001-write-infrastructure, feature-002-project-header-edit
+- **Affects:** feature-001-write-infrastructure, feature-002-project-header-edit, feature-005-display-rename, feature-006-task-notes (the settings.set output-charset guard — reject `"`/`\`/newline — was extended to the rename/notes validators during the delivery-001 gate)
 - **Source:** `dashboard/server/server.py:347` (`_read_settings`), `dashboard/server/server.mjs:380` (`readSettings`), `dashboard/reader/parsers.py` / `dashboard/server/reader.mjs:594` (`parseProjectName`), `.claude/aid/scripts/config/read-setting.sh:139` (`lookup`)
 - **Description:** `project.name` / `project.description` are read by at least four
   independent, hand-rolled parsers, each with slightly different quote-handling

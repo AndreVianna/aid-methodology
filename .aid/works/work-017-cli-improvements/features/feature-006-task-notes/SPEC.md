@@ -229,9 +229,12 @@ reconstructed `<repo>/.aid/works/<work_id>` served-tree path — WT-1).
   `writeback-state.sh` resolves it itself (flat layout: ignored — `is_flat_layout`; nested: read from
   the task `**Source:**` line, `resolve_delivery_from_task_spec`). It only ever selects a numeric
   `delivery-NNN` subdir under the already-validated `work_id` path — never a caller-supplied path.
-- `args.value` (required): string, length ≤ 1 KiB; **rejects** `|` and newline (422 `invalid-value`)
-  — mirrors the writer's `mode_field` guards (lines 733/738) so a bad value fails validation *before*
-  any child spawn. An **empty string is accepted** and mapped by the argv-builder to the null
+- `args.value` (required): string, length ≤ 1 KiB; **rejects** `|`, newline, and backslash `\`
+  (422 `invalid-value`) — the `|`/newline guards mirror the writer's `mode_field` (lines 733/738);
+  the backslash guard (added during the delivery-001 gate, mirroring `settings.set`'s KI-001) stops a
+  two-char `\n`/`\t` sequence corrupting the STATE table cell. Defense-in-depth: the writer reads the
+  value via `ENVIRON[...]` in `awk`, so a stray backslash is written literally, not interpreted. A bad
+  value fails validation *before* any child spawn. An **empty string is accepted** and mapped by the argv-builder to the null
   sentinel `--` (the writer forbids an empty `--value`, exit 5; the reader renders `--` as null).
 
 **Argv-builder (registered by this feature):**
