@@ -29,8 +29,9 @@
  *   GET /r/<id>/api/model    -> readRepo(repo(id)) -> DM-1 envelope
  *   POST /r/<id>/api/op      -> serveOp: closed OP_TABLE write/operation dispatch
  *                               (feature-001 task-004; 403 when not WRITE_ENABLED)
- *   POST /api/op             -> serveHomeOp: home-level op dispatch (HOME_OP_TABLE is
- *                               empty until feature-003/004 register rows -> 400 unknown op)
+ *   POST /api/op             -> serveHomeOp: home-level op dispatch (HOME_OP_TABLE
+ *                               carries feature-003's project.add/project.remove rows;
+ *                               feature-004's tools.update-self row is still pending)
  *   other path               -> 404
  *   other POST / non-GET verb -> 405
  *
@@ -58,7 +59,7 @@
 
 import { createServer } from "http";
 import { readFileSync, statSync, existsSync } from "fs";
-import { join, dirname, basename, normalize, delimiter, sep } from "path";
+import { join, dirname, basename, normalize, delimiter, sep, isAbsolute } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 import { spawnSync } from "child_process";
@@ -703,6 +704,14 @@ const MAX_DETAIL_BYTES = 1024;      // 1 KiB failure 'detail' cap (writer stderr
 // (bin/aid ~line 1196 `assets_dir="$AID_CODE_HOME/dashboard"`).
 const WRITER_DIR = join(_DASHBOARD_DIR_MJS, "scripts");
 
+// $AID_CODE_HOME/bin/aid: the shared aid-CLI resolver's target (KI-004,
+// feature-003 project.add/remove; feature-004 tools.update/tools.update-self
+// reuse this SAME anchor). Self-located via _CODE_HOME -- the identical anchor
+// readAidVersion()/toolsCatalog() already use for VERSION / tools-catalog.txt.
+// Never co-vendored (bin/aid already ships in the CLI package) and never
+// resolved from AID_HOME (a code asset, not per-machine state).
+const AID_CLI_PATH = join(_CODE_HOME, "bin", "aid");
+
 // DEFAULT_MAP: writer exit code -> [http_status, error_class]. Derived from
 // writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
 // 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
@@ -837,6 +846,79 @@ function runWriter(writerName, argv, envOverrides) {
   }
 }
 
+const DEFAULT_AID_CLI_TIMEOUT = 30000;   // ms; fast registry ops (project.add/remove,
+// feature-003). A row's optional 'aidCliTimeout' overrides this (feature-004's
+// tools.update/tools.update-self need a much longer ceiling).
+
+// A spawnSync(...) timeout kill is reported with this out-of-band sentinel --
+// never a real aid-CLI exit code (0..255) -- so a per-op statusMap row can
+// distinguish a timeout from a normal exit (feature-004 maps it to 504
+// 'timed-out'; this feature's own statusMap has no entry for it, so it falls
+// through to the [500, 'write-failed'] catch-all, the correct fallback here too).
+const AID_CLI_TIMEOUT_EXIT = -1;
+
+function runAidCli(argv, envOverrides, timeoutMs) {
+  // Shared aid-CLI resolver + argv-array child dispatch (KI-004): spawn the
+  // shipped `aid` CLI via `bash <bin/aid> <argv...>` -- an argv ARRAY, never a
+  // shell string (SEC-3/SEC-4). Self-locates $AID_CODE_HOME/bin/aid via
+  // AID_CLI_PATH (_CODE_HOME -- the identical self-location readAidVersion()/
+  // toolsCatalog() already use). No OS branch, no bundled-Windows-shim
+  // alternative, no PATH fallback, no co-vendoring (bin/aid already ships in
+  // the CLI package). Single reusable unit: feature-003 (project.add/remove)
+  // and feature-004 (tools.update/tools.update-self) both call this, never
+  // re-inventing their own spawn.
+  //
+  // envOverrides is applied on top of a copy of the current environment (same
+  // convention as runWriter) -- callers set ONLY AID_HOME (never
+  // AID_CODE_HOME; bin/aid self-locates that from its own BASH_SOURCE[0],
+  // bin/aid L45-52).
+  //
+  // Returns [exitCode, stderrText]. Never throws: an exec failure (aid
+  // missing, bash missing) is reported as exit 3 (mirrors runWriter's own
+  // convention); a timeout is reported as AID_CLI_TIMEOUT_EXIT (never a real
+  // 0..255 exit code).
+  const ms = timeoutMs === undefined ? DEFAULT_AID_CLI_TIMEOUT : timeoutMs;
+  const aidCliPath = toPosixArg(AID_CLI_PATH);
+  const childEnv = Object.assign({}, process.env, envOverrides || {});
+  try {
+    const result = spawnSync(BASH_EXE, [aidCliPath, ...argv], {
+      env: childEnv,
+      encoding: "utf8",
+      timeout: ms,
+    });
+    if (result.error) {
+      return [3, String(result.error)];
+    }
+    if (result.signal) {
+      // Killed by spawnSync's own timeout handling -- the only signal source
+      // in this code path (mirrors Python's subprocess.TimeoutExpired branch).
+      return [AID_CLI_TIMEOUT_EXIT, result.stderr || ""];
+    }
+    const code = (result.status === null || result.status === undefined) ? 3 : result.status;
+    return [code, result.stderr || ""];
+  } catch (e) {
+    return [3, String(e)];
+  }
+}
+
+function spawnWriter(row, argv, envOverrides) {
+  // Default OP_TABLE spawn: run the row's co-vendored writer script
+  // (dashboard/scripts/) via runWriter. A row may override this via an
+  // optional 'spawn' field (e.g. spawnAidCli) for ops backed by a different
+  // child (KI-004: the aid CLI).
+  return runWriter(row.writer, argv, envOverrides);
+}
+
+function spawnAidCli(row, argv, envOverrides) {
+  // OP_TABLE 'spawn' override for aid-CLI-backed ops (KI-004 shared resolver):
+  // spawn $AID_CODE_HOME/bin/aid via runAidCli instead of a co-vendored writer
+  // script. An optional per-row 'aidCliTimeout' (ms) overrides the default
+  // (feature-004's tools.update/tools.update-self need a longer ceiling than
+  // the fast registry ops this feature introduces).
+  const timeout = row.aidCliTimeout !== undefined ? row.aidCliTimeout : DEFAULT_AID_CLI_TIMEOUT;
+  return runAidCli(argv, envOverrides, timeout);
+}
+
 function validateArgs(schema, args) {
   // Schema-level (shape-only) arg validation: required-key presence + string
   // type. Returns an error message on violation, else null. Deeper SEMANTIC
@@ -858,10 +940,15 @@ function validateArgs(schema, args) {
 
 // ---- OP_TABLE argv-builders (feature-001-owned rows; see SPEC.md API Contracts) ----
 // Each builder has signature (workDir, servedRoot, target, args) -> [argv, envOverrides].
-// workDir is the resolveWorkDir() result (null for scope="project" ops); servedRoot
-// is the resolved repo canonPath (per-repo ops) or aidHome (home ops, unused today --
-// HOME_OP_TABLE is empty). Builders never echo a raw client path -- workDir/servedRoot
-// are already server-resolved.
+// workDir is the resolveWorkDir() result (null for scope="project"/"home" ops);
+// servedRoot is the resolved repo canonPath (per-repo ops) or aidHome (home ops --
+// feature-003's project.add/remove pass it through as the child's AID_HOME env
+// override, KI-004). Builders never echo a raw client path EXCEPT feature-003's
+// project.add, a documented exception (SPEC.md API Contracts "Rationale for
+// accepting a body path"): a not-yet-registered folder has no id to resolve, so
+// registration is intrinsically path-driven; the path is pre-validated
+// (validateProjectAddArgs) and only ever handed to the aid CLI argv, never used
+// to read/serve a file directly.
 
 const TASK_NOTES_NULL_SENTINEL = "--";
 
@@ -1052,11 +1139,146 @@ function validatePipelineRenameArgs(args) {
   return validateRenameValue(args.value);
 }
 
+// ---------------------------------------------------------------------------
+// feature-003-project-registry (task-013): project.add / project.remove --
+// home-scoped ops backed by the shared aid-CLI resolver (KI-004), registered
+// into HOME_OP_TABLE below. See SPEC.md API Contracts for the full citation
+// trail this section implements.
+// ---------------------------------------------------------------------------
+
+const MAX_PROJECT_PATH_LEN = 4096;   // chars (API Contracts: args.path length <= 4096)
+
+function validateProjectAddArgs(args) {
+  // project.add PRE-dispatch (shape/charset) validation: args.path must be
+  // non-empty, free of NUL/newline/other control chars, <=4096 chars, and
+  // absolute (path.isAbsolute -- a POSIX '/' or a Windows drive/UNC root). A
+  // relative path is rejected rather than silently resolved against the
+  // SERVER's own cwd -- meaningless under --remote and not the browser user's
+  // cwd (SPEC.md API Contracts). Wired as the 'preValidate' hook (400
+  // 'bad-request'), NOT 'semanticValidate' (422) -- this is malformed-REQUEST
+  // shape/charset validation, not a semantic value-domain check; the `aid`
+  // CLI remains the sole authority on path existence / AID-project-ness
+  // (surfaced via its own exit 2 -> 422 'invalid-value', PROJECT_OP_STATUS_MAP
+  // below).
+  const value = args.path;
+  if (value === "") {
+    return "'path' is required (cannot be empty)";
+  }
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code < 0x20 || code === 0x7f) {
+      return "'path' cannot contain NUL, a newline, or another control character";
+    }
+  }
+  if (value.length > MAX_PROJECT_PATH_LEN) {
+    return "'path' exceeds max length (" + MAX_PROJECT_PATH_LEN + " chars)";
+  }
+  if (!isAbsolute(value)) {
+    return "'path' must be an absolute path";
+  }
+  return null;
+}
+
+function opProjectAddArgv(workDir, servedRoot, target, args) {
+  // project.add -> bash $AID_CODE_HOME/bin/aid projects add <validated-path>
+  // (KI-004 shared resolver, spawned via spawnAidCli). env
+  // AID_HOME=<server aid_home> (servedRoot here IS aid_home -- home scope) so
+  // the child resolves the SAME registry union /api/home enumerates;
+  // AID_CODE_HOME is NOT exported (bin/aid self-locates it, bin/aid L45-52).
+  // No --local/--shared/--verbose (tier selection is the CLI's own
+  // _aid_resolve_tier).
+  const argv = ["projects", "add", toPosixArg(args.path)];
+  const env = { AID_HOME: servedRoot };
+  return [argv, env];
+}
+
+function resolveProjectRemoveTarget(servedRoot, target) {
+  // project.remove pre-dispatch target resolution (wired as the
+  // 'resolveTarget' hook): target.id must be a current key of the server's
+  // idMap (built from servedRoot == aid_home) -- returns the idMap-resolved
+  // canonical path VERBATIM (SEC-2), never a body-supplied path. null (->
+  // caller 404s 'not-found') on a missing, non-string, empty, or unknown id.
+  const targetId = target.id;
+  if (typeof targetId !== "string" || targetId === "") {
+    return null;
+  }
+  const { idMap } = getIdMap(servedRoot);
+  return idMap.has(targetId) ? idMap.get(targetId) : null;
+}
+
+function opProjectRemoveArgv(workDir, servedRoot, target, args) {
+  // project.remove -> bash $AID_CODE_HOME/bin/aid projects remove
+  // <id_map-resolved-path> (never a body-supplied path -- target._resolvedPath
+  // is set by resolveProjectRemoveTarget, SEC-2). env
+  // AID_HOME=<server aid_home>.
+  const argv = ["projects", "remove", toPosixArg(target._resolvedPath)];
+  const env = { AID_HOME: servedRoot };
+  return [argv, env];
+}
+
+// Fail-open guard (feature-003, API Contracts "Fail-open guard"): aid
+// projects add/remove are fail-open by design -- a shared-tier write needing
+// unavailable elevation prints an UNCONDITIONAL 'WARN: aid: ...' (or the
+// _aid_priv_run real-probe 'ERROR: aid: ...' line that precedes it) to
+// stderr and still exits 0. The dashboard passes no --verbose, so on THIS
+// invocation shape every emitted 'WARN: aid:' line is an unconditional
+// degrade signal (the only benign WARN -- the user-tier-fallback notice -- is
+// itself --verbose-gated).
+const RE_AID_FAIL_OPEN = /^(?:WARN|ERROR): aid:/m;
+
+function postVerifyProjectAdd(exitCode, stderrText, target, args, servedRoot) {
+  // Post-dispatch fail-open guard for project.add (wired as the 'postVerify'
+  // hook): an exit-0 'WARN: aid:' (or 'ERROR: aid:') line means the write
+  // degraded to a no-op (fail-open) rather than landing -- surfaced as 500
+  // 'write-unverified', never a phantom 200. Returns null (no override --
+  // proceed to the normal exit-code mapping) on a verified-clean exit or any
+  // non-zero exit (already handled by statusMap).
+  if (exitCode === 0 && RE_AID_FAIL_OPEN.test(stderrText)) {
+    return [500, "write-unverified", stderrText.trim()];
+  }
+  return null;
+}
+
+function postVerifyProjectRemove(exitCode, stderrText, target, args, servedRoot) {
+  // Post-dispatch fail-open guard for project.remove (wired as the
+  // 'postVerify' hook): corroborated CANONICALISATION-FREE (the resolved path
+  // is the verbatim idMap value, SEC-2) -- re-loads the union and requires
+  // that exact string to now be absent. A 'WARN: aid:'/'ERROR: aid:' line OR
+  // the path still present in the re-loaded union means the write degraded to
+  // a no-op -> 500 'write-unverified'.
+  if (exitCode !== 0) return null;
+  let failOpen = RE_AID_FAIL_OPEN.test(stderrText);
+  if (!failOpen) {
+    const resolvedPath = target._resolvedPath;
+    const { repos } = loadUnionRepos(servedRoot);
+    if (resolvedPath !== undefined && resolvedPath !== null && repos.includes(resolvedPath)) {
+      failOpen = true;
+    }
+  }
+  if (failOpen) {
+    return [500, "write-unverified", stderrText.trim()];
+  }
+  return null;
+}
+
+// project.add/remove share one statusMap: the `aid`-CLI exit alphabet (0 ok,
+// 2 = user/validation error for every `aid projects` failure) differs from
+// writeback-state.sh's DEFAULT_MAP (where 2 = lock contention). Any other
+// non-zero exit (including AID_CLI_TIMEOUT_EXIT / the exec-failure sentinel 3)
+// falls through to DEFAULT_FALLBACK (500 'write-failed'), matching the API
+// Contracts row "other non-zero -> 500 write-failed".
+const PROJECT_OP_STATUS_MAP = {
+  2: [422, "invalid-value"],
+};
+
 // OP_TABLE: closed static object seeded by feature-001 (the 4 feature-001-owned rows).
 // 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
-// "project" (no work_id -- settings.set targets the served root directly).
+// "project" (no work_id -- settings.set targets the served root directly) |
+// "home" (HOME_OP_TABLE rows below -- no work_id, no per-repo <id>;
+// feature-003's project.add/remove).
 // 'statusMap': null -> dispatcher uses DEFAULT_MAP (OP-SM); a later feature's row
-// may set its own {exit -> [status, error]} map for the `aid`-CLI exit alphabet.
+// may set its own {exit -> [status, error]} map for the `aid`-CLI exit alphabet
+// (feature-003's PROJECT_OP_STATUS_MAP is the first such override).
 const OP_TABLE = {
   "task.set-notes": {
     scope: "task",
@@ -1099,11 +1321,30 @@ const OP_TABLE = {
   },
 };
 
-// HOME_OP_TABLE: empty until feature-003 (project.add/remove) / feature-004
-// (tools.update/tools.update-self) register their home-scoped rows. Every op
-// dispatched through serveHomeOp is therefore 'unknown' -> 400 today; the
-// gate/body-parsing/dispatch plumbing is wired so those features only add rows.
-const HOME_OP_TABLE = {};
+// HOME_OP_TABLE: feature-003 (project.add/project.remove, task-013) registers
+// the first two home-scoped rows below; feature-004 (tools.update-self) adds
+// its own row next. Every OTHER op dispatched through serveHomeOp is
+// 'unknown' -> 400.
+const HOME_OP_TABLE = {
+  "project.add": {
+    scope: "home",
+    argSchema: { path: { required: true } },
+    buildArgv: opProjectAddArgv,
+    preValidate: validateProjectAddArgs,
+    spawn: spawnAidCli,
+    postVerify: postVerifyProjectAdd,
+    statusMap: PROJECT_OP_STATUS_MAP,
+  },
+  "project.remove": {
+    scope: "home",
+    argSchema: {},
+    buildArgv: opProjectRemoveArgv,
+    resolveTarget: resolveProjectRemoveTarget,
+    spawn: spawnAidCli,
+    postVerify: postVerifyProjectRemove,
+    statusMap: PROJECT_OP_STATUS_MAP,
+  },
+};
 
 function dispatchOp(opTable, parsed, servedRoot) {
   // Validate + dispatch a parsed op-request body against opTable.
@@ -1162,9 +1403,34 @@ function dispatchOp(opTable, parsed, servedRoot) {
     }
   }
 
+  // Optional per-op target resolution hook (feature-003, KI-004-adjacent
+  // extension point): a row with one resolves target.<field> against
+  // servedRoot (e.g. project.remove's target.id -> idMap) BEFORE any arg
+  // validation / child spawn; null means "not found" (404), never a generic
+  // 400 -- the target genuinely does not name a current server-side resource.
+  if (row.resolveTarget) {
+    const resolved = row.resolveTarget(servedRoot, target);
+    if (resolved === null || resolved === undefined) {
+      return [404, opFailBody(op, "not-found", "target.id not found in the registry")];
+    }
+    target._resolvedPath = resolved;
+  }
+
   const argErr = validateArgs(row.argSchema, args);
   if (argErr !== null) {
     return [400, opFailBody(op, "bad-request", argErr)];
+  }
+
+  // Optional per-op PRE-dispatch (shape/charset) validation hook (feature-003):
+  // distinct from semanticValidate below -- this maps to 400 'bad-request' (a
+  // malformed REQUEST, e.g. project.add's non-absolute/over-length/control-char
+  // path), never 422 (a well-formed request the writer would reject on VALUE
+  // grounds).
+  if (row.preValidate) {
+    const preErr = row.preValidate(args);
+    if (preErr !== null && preErr !== undefined) {
+      return [400, opFailBody(op, "bad-request", preErr)];
+    }
   }
 
   // Optional per-op semantic (value-level) validation hook (task-006's OP-SM-style
@@ -1179,7 +1445,22 @@ function dispatchOp(opTable, parsed, servedRoot) {
   }
 
   const [argv, envOverrides] = row.buildArgv(workDir, servedRoot, target, args);
-  const [exitCode, stderrText] = runWriter(row.writer, argv, envOverrides);
+  const spawnFn = row.spawn || spawnWriter;
+  const [exitCode, stderrText] = spawnFn(row, argv, envOverrides);
+
+  // Optional per-op post-dispatch verification hook (feature-003 fail-open
+  // guard, KI-004-adjacent extension point): overrides the normal exit-code
+  // mapping when an apparently-clean exit actually degraded to a no-op (e.g. a
+  // shared-tier registry write that fails open with a stderr WARN yet still
+  // exits 0).
+  if (row.postVerify) {
+    const override = row.postVerify(exitCode, stderrText, target, args, servedRoot);
+    if (override !== null && override !== undefined) {
+      const [ovStatus, ovErrorClass, ovDetail] = override;
+      return [ovStatus, opFailBody(op, ovErrorClass, ovDetail)];
+    }
+  }
+
   if (exitCode === 0) {
     return [200, opOkBody(op)];
   }
@@ -1306,10 +1587,11 @@ async function serveOp(req, res, rid) {
 async function serveHomeOp(req, res) {
   // POST /api/op -- home-level write/operation dispatch (feature-001 task-004).
   //
-  // feature-001 seeds no home-scoped rows (HOME_OP_TABLE is empty); features 003
-  // (project.add/remove) and 004 (tools.update/tools.update-self) register into it.
-  // Every op is therefore 'unknown' -> 400 today -- the gate/body-parsing/dispatch
-  // plumbing is wired so those features only need to add OP_TABLE rows.
+  // feature-001 seeds no home-scoped rows itself; feature-003 (task-013)
+  // registers project.add/project.remove into HOME_OP_TABLE, and feature-004
+  // (tools.update-self) adds its own row next. Any OTHER op is 'unknown' -> 400
+  // -- the gate/body-parsing/dispatch plumbing is wired so each feature only
+  // needs to add its own HOME_OP_TABLE row(s).
   if (!WRITE_ENABLED) {
     sendJson(res, 403, opFailBody(null, "read-only", "write endpoints disabled (server not spawned with --allow-writes)"));
     return;

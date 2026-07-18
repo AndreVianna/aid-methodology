@@ -11,8 +11,9 @@
 #   GET /r/<id>/api/model       -> read_repo(repo(id)) -> DM-1 envelope
 #   POST /r/<id>/api/op         -> _serve_op: closed OP_TABLE write/operation dispatch
 #                                  (feature-001 task-004; 403 when not write_enabled)
-#   POST /api/op                -> _serve_home_op: home-level op dispatch (HOME_OP_TABLE is
-#                                  empty until feature-003/004 register rows -> 400 unknown op)
+#   POST /api/op                -> _serve_home_op: home-level op dispatch (HOME_OP_TABLE
+#                                  carries feature-003's project.add/project.remove rows;
+#                                  feature-004's tools.update-self row is still pending)
 #   *                           -> 404
 #   other POST / PUT/DELETE/PATCH/HEAD -> 405
 #
@@ -910,6 +911,14 @@ _MAX_DETAIL_BYTES = 1024      # 1 KiB failure 'detail' cap (writer stderr)
 # (bin/aid ~line 1196 `assets_dir="$AID_CODE_HOME/dashboard"`).
 _WRITER_DIR = _DASHBOARD_DIR / "scripts"
 
+# $AID_CODE_HOME/bin/aid: the shared aid-CLI resolver's target (KI-004, feature-003
+# project.add/remove; feature-004 tools.update/tools.update-self reuse this SAME
+# anchor). Self-located via _DASHBOARD_DIR.parent -- the identical anchor
+# _read_aid_version() / _tools_catalog() already use for VERSION / tools-catalog.txt.
+# Never co-vendored (bin/aid already ships in the CLI package) and never resolved
+# from AID_HOME (a code asset, not per-machine state).
+_AID_CLI_PATH = _DASHBOARD_DIR.parent / "bin" / "aid"
+
 # DEFAULT_MAP: writer exit code -> (http_status, error_class). Derived from
 # writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
 # 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
@@ -1040,6 +1049,88 @@ def _run_writer(writer_name: str, argv: list[str], env_overrides: dict[str, str]
         return 3, str(exc)
 
 
+def _posix_argv_path(path_str: str) -> str:
+    """Forward-slash form of a path-like ARGV element passed to the bash child
+    (never for an env-var value) -- the same MSYS/Git-Bash argv-mangling
+    mitigation _run_writer's docstring applies to a writer-script-path / --file
+    element. No-op on POSIX (os.sep == '/'); on Windows, backslashes are swapped
+    for forward slashes so bash.exe's own argv-parsing layer cannot mangle it.
+    """
+    return path_str.replace(os.sep, "/") if os.sep != "/" else path_str
+
+
+_DEFAULT_AID_CLI_TIMEOUT = 30   # seconds; fast registry ops (project.add/remove,
+# feature-003). A row's optional 'aid_cli_timeout' overrides this (feature-004's
+# tools.update/tools.update-self need a much longer ceiling).
+
+# A subprocess.run(timeout=...) kill is reported with this out-of-band sentinel --
+# never a real aid-CLI exit code (0..255) -- so a per-op status_map row can
+# distinguish a timeout from a normal exit (feature-004 maps it to 504
+# 'timed-out'; this feature's own status_map has no entry for it, so it falls
+# through to the (500, 'write-failed') catch-all, the correct fallback here too).
+_AID_CLI_TIMEOUT_EXIT = -1
+
+
+def _run_aid_cli(
+    argv: list[str], env_overrides: dict[str, str], timeout: int = _DEFAULT_AID_CLI_TIMEOUT
+) -> tuple[int, str]:
+    """Shared aid-CLI resolver + argv-array child dispatch (KI-004): spawn the
+    shipped `aid` CLI via `bash <bin/aid> <argv...>` -- an argv ARRAY, never
+    shell=True / a concatenated command string (SEC-3/SEC-4). Self-locates
+    $AID_CODE_HOME/bin/aid via _AID_CLI_PATH (_DASHBOARD_DIR.parent -- the
+    identical self-location _read_aid_version()/_tools_catalog() already use).
+    No OS branch, no bundled-Windows-shim alternative, no PATH fallback, no
+    co-vendoring (bin/aid already ships in the CLI package). Single reusable
+    unit: feature-003 (project.add/remove) and feature-004 (tools.update/
+    tools.update-self) both call this, never re-inventing their own spawn.
+
+    env_overrides is applied on top of a copy of the current environment (same
+    convention as _run_writer) -- callers set ONLY AID_HOME (never
+    AID_CODE_HOME; bin/aid self-locates that from its own BASH_SOURCE[0],
+    bin/aid L45-52).
+
+    Returns (exit_code, stderr_text). Never raises: an exec failure (aid
+    missing, bash missing) is reported as exit 3 (mirrors _run_writer's own
+    convention); a timeout is reported as _AID_CLI_TIMEOUT_EXIT (never a real
+    0..255 exit code).
+    """
+    child_env = dict(os.environ)
+    child_env.update(env_overrides)
+    bash_exe = _BASH_EXE
+    try:
+        proc = subprocess.run(
+            [bash_exe, _AID_CLI_PATH.as_posix(), *argv],
+            env=child_env,
+            capture_output=True,
+            text=True,
+            timeout=timeout,
+        )
+        return proc.returncode, proc.stderr or ""
+    except subprocess.TimeoutExpired as exc:
+        stderr = exc.stderr if isinstance(exc.stderr, str) else ""
+        return _AID_CLI_TIMEOUT_EXIT, stderr
+    except Exception as exc:  # noqa: BLE001 -- never raises; reported as a write failure
+        return 3, str(exc)
+
+
+def _spawn_writer(row: dict, argv: list[str], env_overrides: dict[str, str]) -> tuple[int, str]:
+    """Default OP_TABLE spawn: run the row's co-vendored writer script
+    (dashboard/scripts/) via _run_writer. A row may override this via an
+    optional 'spawn' field (e.g. _spawn_aid_cli) for ops backed by a different
+    child (KI-004: the aid CLI)."""
+    return _run_writer(row["writer"], argv, env_overrides)
+
+
+def _spawn_aid_cli(row: dict, argv: list[str], env_overrides: dict[str, str]) -> tuple[int, str]:
+    """OP_TABLE 'spawn' override for aid-CLI-backed ops (KI-004 shared
+    resolver): spawn $AID_CODE_HOME/bin/aid via _run_aid_cli instead of a
+    co-vendored writer script. An optional per-row 'aid_cli_timeout' (seconds)
+    overrides the default (feature-004's tools.update/tools.update-self need a
+    longer ceiling than the fast registry ops this feature introduces)."""
+    timeout = row.get("aid_cli_timeout", _DEFAULT_AID_CLI_TIMEOUT)
+    return _run_aid_cli(argv, env_overrides, timeout)
+
+
 def _validate_args(schema: dict, args: dict) -> "str | None":
     """Schema-level (shape-only) arg validation: required-key presence + string
     type. Returns an error message on violation, else None. Deeper SEMANTIC
@@ -1058,10 +1149,15 @@ def _validate_args(schema: dict, args: dict) -> "str | None":
 
 # ---- OP_TABLE argv-builders (feature-001-owned rows; see SPEC.md API Contracts) ----
 # Each builder has signature (work_dir, served_root, target, args) -> (argv, env_overrides).
-# work_dir is the resolve_work_dir() result (None for scope="project" ops); served_root
-# is the resolved repo canon_path (per-repo ops) or aid_home (home ops, unused today --
-# HOME_OP_TABLE is empty). Builders never echo a raw client path -- work_dir/served_root
-# are already server-resolved.
+# work_dir is the resolve_work_dir() result (None for scope="project"/"home" ops);
+# served_root is the resolved repo canon_path (per-repo ops) or aid_home (home ops --
+# feature-003's project.add/remove pass it through as the child's AID_HOME env
+# override, KI-004). Builders never echo a raw client path EXCEPT feature-003's
+# project.add, a documented exception (SPEC.md API Contracts "Rationale for
+# accepting a body path"): a not-yet-registered folder has no id to resolve, so
+# registration is intrinsically path-driven; the path is pre-validated
+# (_validate_project_add_args) and only ever handed to the aid CLI argv, never
+# used to read/serve a file directly.
 
 _TASK_NOTES_NULL_SENTINEL = "--"
 
@@ -1250,11 +1346,168 @@ def _validate_pipeline_rename_args(args: dict) -> "str | None":
     return _validate_rename_value(args["value"])
 
 
+# ---------------------------------------------------------------------------
+# feature-003-project-registry (task-013): project.add / project.remove --
+# home-scoped ops backed by the shared aid-CLI resolver (KI-004), registered
+# into HOME_OP_TABLE below. See SPEC.md API Contracts for the full citation
+# trail this section implements.
+# ---------------------------------------------------------------------------
+
+_MAX_PROJECT_PATH_LEN = 4096   # chars (API Contracts: args.path length <= 4096)
+
+
+def _is_absolute_path(value: str) -> bool:
+    """Cross-runtime-STABLE absolute-path check -- deliberately NOT delegating
+    to os.path.isabs() on Windows. Python 3.13 changed ntpath.isabs() to
+    require a drive letter for an absolute verdict (a bare '/foo' now returns
+    False), while Node's path.isAbsolute() -- server.mjs's own check, unchanged
+    -- still treats a leading '/' or '\\' as absolute on Windows (matching
+    every Python version before 3.13 too). Left as os.path.isabs() this
+    validation would silently diverge between the two twins (and even between
+    Python minor versions) for the exact same input; this hand-reimplements
+    Node's path.win32.isAbsolute() algorithm (leading '/'/'\\', OR a drive
+    letter + ':' + separator, e.g. 'C:\\'/'C:/') so both twins agree
+    regardless of which Python minor version (3.11..3.13+) is installed. On
+    POSIX (os.sep == '/'), unaffected by this Windows-only skew -- delegates
+    to os.path.isabs() (posixpath: startswith('/')) unchanged.
+    """
+    if os.sep != "\\":
+        return os.path.isabs(value)
+    if not value:
+        return False
+    first = value[0]
+    if first in ("/", "\\"):
+        return True
+    if len(value) > 2 and value[1] == ":" and value[2] in ("/", "\\") and first.isalpha():
+        return True
+    return False
+
+
+def _validate_project_add_args(args: dict) -> "str | None":
+    """project.add PRE-dispatch (shape/charset) validation: args.path must be
+    non-empty, free of NUL/newline/other control chars, <=4096 chars, and
+    absolute (_is_absolute_path -- a POSIX '/' or a Windows drive/UNC root). A
+    relative path is rejected rather than silently resolved against the
+    SERVER's own cwd -- meaningless under --remote and not the browser user's
+    cwd (SPEC.md API Contracts). Wired as the 'pre_validate' hook (400
+    'bad-request'), NOT 'semantic_validate' (422) -- this is malformed-REQUEST
+    shape/charset validation, not a semantic value-domain check; the `aid` CLI
+    remains the sole authority on path existence / AID-project-ness (surfaced
+    via its own exit 2 -> 422 'invalid-value', _PROJECT_OP_STATUS_MAP below).
+    """
+    value = args["path"]
+    if value == "":
+        return "'path' is required (cannot be empty)"
+    if any(ord(ch) < 0x20 or ord(ch) == 0x7F for ch in value):
+        return "'path' cannot contain NUL, a newline, or another control character"
+    if len(value) > _MAX_PROJECT_PATH_LEN:
+        return f"'path' exceeds max length ({_MAX_PROJECT_PATH_LEN} chars)"
+    if not _is_absolute_path(value):
+        return "'path' must be an absolute path"
+    return None
+
+
+def _op_project_add_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """project.add -> bash $AID_CODE_HOME/bin/aid projects add <validated-path>
+    (KI-004 shared resolver, spawned via _spawn_aid_cli). env
+    AID_HOME=<server aid_home> (served_root here IS aid_home -- home scope) so
+    the child resolves the SAME registry union /api/home enumerates;
+    AID_CODE_HOME is NOT exported (bin/aid self-locates it, bin/aid L45-52). No
+    --local/--shared/--verbose (tier selection is the CLI's own
+    _aid_resolve_tier)."""
+    argv = ["projects", "add", _posix_argv_path(args["path"])]
+    env = {"AID_HOME": served_root}
+    return argv, env
+
+
+def _resolve_project_remove_target(served_root: str, target: dict) -> "str | None":
+    """project.remove pre-dispatch target resolution (wired as the
+    'resolve_target' hook): target.id must be a current key of the server's
+    id_map (built from served_root == aid_home) -- returns the id_map-resolved
+    canonical path VERBATIM (SEC-2), never a body-supplied path. None (-> caller
+    404s 'not-found') on a missing, non-string, empty, or unknown id."""
+    target_id = target.get("id")
+    if not isinstance(target_id, str) or not target_id:
+        return None
+    id_map, _warnings = _get_id_map(served_root)
+    return id_map.get(target_id)
+
+
+def _op_project_remove_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """project.remove -> bash $AID_CODE_HOME/bin/aid projects remove
+    <id_map-resolved-path> (never a body-supplied path -- target['_resolved_path']
+    is set by _resolve_project_remove_target, SEC-2). env
+    AID_HOME=<server aid_home>."""
+    argv = ["projects", "remove", _posix_argv_path(target["_resolved_path"])]
+    env = {"AID_HOME": served_root}
+    return argv, env
+
+
+# Fail-open guard (feature-003, API Contracts "Fail-open guard"): aid projects
+# add/remove are fail-open by design -- a shared-tier write needing unavailable
+# elevation prints an UNCONDITIONAL 'WARN: aid: ...' (or the _aid_priv_run
+# real-probe 'ERROR: aid: ...' line that precedes it) to stderr and still exits
+# 0. The dashboard passes no --verbose, so on THIS invocation shape every
+# emitted 'WARN: aid:' line is an unconditional degrade signal (the only
+# benign WARN -- the user-tier-fallback notice -- is itself --verbose-gated).
+_RE_AID_FAIL_OPEN = re.compile(r"(?m)^(?:WARN|ERROR): aid:")
+
+
+def _post_verify_project_add(
+    exit_code: int, stderr_text: str, target: dict, args: dict, served_root: str
+) -> "tuple[int, str, str] | None":
+    """Post-dispatch fail-open guard for project.add (wired as the
+    'post_verify' hook): an exit-0 'WARN: aid:' (or 'ERROR: aid:') line means
+    the write degraded to a no-op (fail-open) rather than landing -- surfaced
+    as 500 'write-unverified', never a phantom 200. Returns None (no override --
+    proceed to the normal exit-code mapping) on a verified-clean exit or any
+    non-zero exit (already handled by status_map)."""
+    if exit_code == 0 and _RE_AID_FAIL_OPEN.search(stderr_text):
+        return 500, "write-unverified", stderr_text.strip()
+    return None
+
+
+def _post_verify_project_remove(
+    exit_code: int, stderr_text: str, target: dict, args: dict, served_root: str
+) -> "tuple[int, str, str] | None":
+    """Post-dispatch fail-open guard for project.remove (wired as the
+    'post_verify' hook): corroborated CANONICALISATION-FREE (the resolved path
+    is the verbatim id_map value, SEC-2) -- re-loads the union and requires
+    that exact string to now be absent. A 'WARN: aid:'/'ERROR: aid:' line OR
+    the path still present in the re-loaded union means the write degraded to
+    a no-op -> 500 'write-unverified'."""
+    if exit_code != 0:
+        return None
+    fail_open = bool(_RE_AID_FAIL_OPEN.search(stderr_text))
+    if not fail_open:
+        resolved_path = target.get("_resolved_path")
+        repos, _warnings, _primary, _fallback = _load_union_repos(served_root)
+        if resolved_path is not None and resolved_path in repos:
+            fail_open = True
+    if fail_open:
+        return 500, "write-unverified", stderr_text.strip()
+    return None
+
+
+# project.add/remove share one status_map: the `aid`-CLI exit alphabet (0 ok,
+# 2 = user/validation error for every `aid projects` failure) differs from
+# writeback-state.sh's DEFAULT_MAP (where 2 = lock contention). Any other
+# non-zero exit (including _AID_CLI_TIMEOUT_EXIT / the exec-failure sentinel 3)
+# falls through to _DEFAULT_FALLBACK (500 'write-failed'), matching the API
+# Contracts row "other non-zero -> 500 write-failed".
+_PROJECT_OP_STATUS_MAP: dict[int, tuple[int, str]] = {
+    2: (422, "invalid-value"),
+}
+
+
 # OP_TABLE: closed static dict seeded by feature-001 (the 4 feature-001-owned rows).
 # 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
-# "project" (no work_id -- settings.set targets the served root directly).
+# "project" (no work_id -- settings.set targets the served root directly) |
+# "home" (HOME_OP_TABLE rows below -- no work_id, no per-repo <id>; feature-003's
+# project.add/remove).
 # 'status_map': None -> dispatcher uses DEFAULT_MAP (OP-SM); a later feature's row
-# may set its own {exit -> (status, error)} map for the `aid`-CLI exit alphabet.
+# may set its own {exit -> (status, error)} map for the `aid`-CLI exit alphabet
+# (feature-003's _PROJECT_OP_STATUS_MAP is the first such override).
 OP_TABLE: dict[str, dict] = {
     "task.set-notes": {
         "scope": "task",
@@ -1297,11 +1550,30 @@ OP_TABLE: dict[str, dict] = {
     },
 }
 
-# HOME_OP_TABLE: empty until feature-003 (project.add/remove) / feature-004
-# (tools.update/tools.update-self) register their home-scoped rows. Every op
-# dispatched through _serve_home_op is therefore 'unknown' -> 400 today; the
-# gate/body-parsing/dispatch plumbing is wired so those features only add rows.
-HOME_OP_TABLE: dict[str, dict] = {}
+# HOME_OP_TABLE: feature-003 (project.add/project.remove, task-013) registers
+# the first two home-scoped rows below; feature-004 (tools.update-self) adds
+# its own row next. Every OTHER op dispatched through _serve_home_op is
+# 'unknown' -> 400.
+HOME_OP_TABLE: dict[str, dict] = {
+    "project.add": {
+        "scope": "home",
+        "arg_schema": {"path": {"required": True}},
+        "build_argv": _op_project_add_argv,
+        "pre_validate": _validate_project_add_args,
+        "spawn": _spawn_aid_cli,
+        "post_verify": _post_verify_project_add,
+        "status_map": _PROJECT_OP_STATUS_MAP,
+    },
+    "project.remove": {
+        "scope": "home",
+        "arg_schema": {},
+        "build_argv": _op_project_remove_argv,
+        "resolve_target": _resolve_project_remove_target,
+        "spawn": _spawn_aid_cli,
+        "post_verify": _post_verify_project_remove,
+        "status_map": _PROJECT_OP_STATUS_MAP,
+    },
+}
 
 
 def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tuple[int, bytes]:
@@ -1354,9 +1626,32 @@ def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tup
         if work_dir is None:
             return 404, _op_fail_body(op, "not-found", f"no worktree holds work_id '{work_id}'")
 
+    # Optional per-op target resolution hook (feature-003, KI-004-adjacent
+    # extension point): a row with one resolves target.<field> against
+    # served_root (e.g. project.remove's target.id -> id_map) BEFORE any arg
+    # validation / child spawn; None means "not found" (404), never a generic
+    # 400 -- the target genuinely does not name a current server-side resource.
+    resolve_target = row.get("resolve_target")
+    if resolve_target is not None:
+        resolved = resolve_target(served_root, target)
+        if resolved is None:
+            return 404, _op_fail_body(op, "not-found", "target.id not found in the registry")
+        target["_resolved_path"] = resolved
+
     arg_err = _validate_args(row["arg_schema"], args)
     if arg_err is not None:
         return 400, _op_fail_body(op, "bad-request", arg_err)
+
+    # Optional per-op PRE-dispatch (shape/charset) validation hook (feature-003):
+    # distinct from semantic_validate below -- this maps to 400 'bad-request' (a
+    # malformed REQUEST, e.g. project.add's non-absolute/over-length/control-char
+    # path), never 422 (a well-formed request the writer would reject on VALUE
+    # grounds).
+    pre_validate = row.get("pre_validate")
+    if pre_validate is not None:
+        pre_err = pre_validate(args)
+        if pre_err is not None:
+            return 400, _op_fail_body(op, "bad-request", pre_err)
 
     # Optional per-op semantic (value-level) validation hook (task-006's OP-SM-style
     # extension point): a row with one 422s a request the writer would reject anyway,
@@ -1368,7 +1663,21 @@ def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tup
             return 422, _op_fail_body(op, "invalid-value", semantic_err)
 
     argv, env_overrides = row["build_argv"](work_dir, served_root, target, args)
-    exit_code, stderr_text = _run_writer(row["writer"], argv, env_overrides)
+    spawn_fn = row.get("spawn", _spawn_writer)
+    exit_code, stderr_text = spawn_fn(row, argv, env_overrides)
+
+    # Optional per-op post-dispatch verification hook (feature-003 fail-open
+    # guard, KI-004-adjacent extension point): overrides the normal exit-code
+    # mapping when an apparently-clean exit actually degraded to a no-op (e.g. a
+    # shared-tier registry write that fails open with a stderr WARN yet still
+    # exits 0).
+    post_verify = row.get("post_verify")
+    if post_verify is not None:
+        override = post_verify(exit_code, stderr_text, target, args, served_root)
+        if override is not None:
+            ov_status, ov_error_class, ov_detail = override
+            return ov_status, _op_fail_body(op, ov_error_class, ov_detail)
+
     if exit_code == 0:
         return 200, _op_ok_body(op)
     status, error_class = _map_exit_code(exit_code, row.get("status_map"))
@@ -1671,10 +1980,11 @@ class _DashboardHandler(BaseHTTPRequestHandler):
     def _serve_home_op(self) -> None:
         """POST /api/op -- home-level write/operation dispatch (feature-001 task-004).
 
-        feature-001 seeds no home-scoped rows (HOME_OP_TABLE is empty); features
-        003 (project.add/remove) and 004 (tools.update/tools.update-self) register
-        into it. Every op is therefore 'unknown' -> 400 today -- the gate/body-parsing/
-        dispatch plumbing is wired so those features only need to add OP_TABLE rows.
+        feature-001 seeds no home-scoped rows itself; feature-003 (task-013)
+        registers project.add/project.remove into HOME_OP_TABLE, and feature-004
+        (tools.update-self) adds its own row next. Any OTHER op is 'unknown' ->
+        400 -- the gate/body-parsing/dispatch plumbing is wired so each feature
+        only needs to add its own HOME_OP_TABLE row(s).
         """
         if not getattr(self.server, "write_enabled", False):
             self._send_json(403, _op_fail_body(

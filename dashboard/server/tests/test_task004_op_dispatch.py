@@ -15,7 +15,10 @@ socket, both twins) is task-011's "Foundation parity + dispatch round-trip suite
 mandate; this file covers the dispatch/argv/status-map LOGIC task-004 introduces.
 
 Validates:
-  1. OP_TABLE seeds exactly the 4 feature-001-owned rows; HOME_OP_TABLE is empty.
+  1. OP_TABLE seeds exactly the 4 feature-001-owned rows (a 5th, task.rename, was
+     added by feature-005/task-008); HOME_OP_TABLE was empty at task-004 time and
+     now seeds feature-003's project.add/project.remove rows (task-013) -- see
+     test_task013_project_registry_ops.py for their own dedicated coverage.
   2. DEFAULT_MAP resolves the documented exit-code -> (status, error) rows, with an
      unknown exit code falling back to (500, 'write-failed').
   3. `op.status_map or DEFAULT_MAP`: a row with no status_map uses DEFAULT_MAP
@@ -117,9 +120,20 @@ class TestOpTableShape(unittest.TestCase):
             {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename"},
         )
 
-    def test_home_op_table_is_empty(self):
-        """feature-001 owns no home-scoped rows -- 003/004 register into it later."""
-        self.assertEqual(srv.HOME_OP_TABLE, {})
+    def test_home_op_table_seeds_the_two_feature003_rows(self):
+        # feature-001 owned no home-scoped rows itself (this test originally
+        # pinned HOME_OP_TABLE == {}) -- feature-003 (task-013) now registers
+        # project.add/project.remove; feature-004's tools.update-self (task-015)
+        # will add a 3rd row on top of these 2.
+        self.assertEqual(set(srv.HOME_OP_TABLE.keys()), {"project.add", "project.remove"})
+
+    def test_home_op_table_rows_declare_scope_argv_builder_and_spawn(self):
+        for op, row in srv.HOME_OP_TABLE.items():
+            with self.subTest(op=op):
+                self.assertEqual(row["scope"], "home")
+                self.assertIn("arg_schema", row)
+                self.assertTrue(callable(row["build_argv"]))
+                self.assertTrue(callable(row["spawn"]))
 
     def test_op_table_rows_declare_scope_writer_schema_argv_builder(self):
         for op, row in srv.OP_TABLE.items():
