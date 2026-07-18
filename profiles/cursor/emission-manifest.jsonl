@@ -123,7 +123,7 @@
 {"dst": ".cursor/aid/templates/self-review-protocol.md", "profile": "cursor", "sha256": "c8f42a5da3d5771112bd1ef2bc12d1e26127b1a11f173b7c5b7791d9d8e3e7d0", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".cursor/aid/templates/settings.yml", "profile": "cursor", "sha256": "41e497c14d7b869e779a11b04233b282af073a0ccac96bda424fc66e883bd575", "src": "canonical/templates/settings.yml"}
 {"dst": ".cursor/aid/templates/shortcut-catalog.yml", "profile": "cursor", "sha256": "ab01dd571ed3e8856ba9a6523f7f98c749e59525d41f77ecfab06755c2a853f7", "src": "canonical/templates/shortcut-catalog.yml"}
-{"dst": ".cursor/aid/templates/shortcut-engine.md", "profile": "cursor", "sha256": "d86c4222c372f2f6cd276216cd1cebc7e6012c19ba091f0691348594c34c7340", "src": "canonical/templates/shortcut-engine.md"}
+{"dst": ".cursor/aid/templates/shortcut-engine.md", "profile": "cursor", "sha256": "fba724476b2d3bd44694dbe783015cc864e228eb7e79d1db14101b1f2461a9ab", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".cursor/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "cursor", "sha256": "4c1a0e5bf8889009c403b4c2409e5ff206bf67ee5808f380369aca2a50ae32d3", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".cursor/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "cursor", "sha256": "4ed7dd12d80208ab684dfc770d0fbaa7cf27ec12054697cf3d94e1c168886215", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}
 {"dst": ".cursor/aid/templates/shortcut-scaffolding/create.md", "profile": "cursor", "sha256": "552532376b1ff559562fbc6adbce87ab42cf8be7dbb9f39cf3cd467f4fecd3dc", "src": "canonical/templates/shortcut-scaffolding/create.md"}
@@ -136,7 +136,7 @@
 {"dst": ".cursor/aid/templates/subagent-heartbeat-protocol.md", "profile": "cursor", "sha256": "e2de186513909cfd6442c9e3c6e9663ddb5675d9dcbc7e6d29728e0f8d3e9c03", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".cursor/aid/templates/task-detail-template.md", "profile": "cursor", "sha256": "27eea30883783e391762b405019e39f173f0d18d8c9a49b67aaae09ff98639e6", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".cursor/aid/templates/task-state-template.md", "profile": "cursor", "sha256": "e547113b2c20a5f55b018d3b0228661eb8178f804d277f313336dcc0a09fcca9", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".cursor/aid/templates/work-initiation-gate.md", "profile": "cursor", "sha256": "72f53a1991483108d77d21bb15eca05ba20c1e372c3441c77906b51d3be5c26e", "src": "canonical/templates/work-initiation-gate.md"}
+{"dst": ".cursor/aid/templates/work-initiation-gate.md", "profile": "cursor", "sha256": "5b8a270f8f79d49eb763b91e1fc90181ace5a223189176ca9b3c5b3242bcc874", "src": "canonical/templates/work-initiation-gate.md"}
 {"dst": ".cursor/aid/templates/work-state-template.md", "profile": "cursor", "sha256": "e11d8c9521946d0d8677168e3a9fb775aba9f0e47dab735106a72db6729fa2b5", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".cursor/aid/templates/worktree-lifecycle.md", "profile": "cursor", "sha256": "dcb20fb03449b82d3e5eb27d1c6cf04f72543a970c6ffd39a9d3e94acaf95752", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".cursor/skills/aid-add-api/SKILL.md", "profile": "cursor", "sha256": "9a5a5ac95afe5f4c9fe822deac0040ca51ee8b3187a426f0028c24743404de4c", "src": "canonical/skills/aid-add-api/SKILL.md"}

@@ -254,13 +254,21 @@ bash .cursor/aid/scripts/works/enumerate-works.sh
   showing the enumerated list (main tree + every git worktree). On **continuation**, the
   gate routes to the chosen work's own resume door (`/aid-execute <work>` for a halted
   shortcut work; the `phase`-matched skill for a partial full-path work) and **this engine
-  HALTS -- it allocates nothing and does not run**. On **new work**, proceed with the
-  allocation below.
+  HALTS -- it allocates nothing and does not run** (no worktree create/enter happens here
+  either -- this engine never resumes itself, so it never reaches the gate's in-invocation
+  locate+enter case; the routed command's own run resolves the worktree, gate § 3b). On
+  **new work**, proceed with the allocation below.
 
-**Then allocate (only on the NEW branch).** Scan `.aid/works/` for existing `work-NNN-*`
-directories; the new work is `work-{NNN+1}`
-(`work-001` if none exist -- the same allocation rule `aid-describe` uses; see its
-`SKILL.md § Task Routing`). Derive a short kebab-case slug:
+**Resolve `<work-id>` (only on the NEW branch).** The new work is `work-{NNN+1}`, where
+`NNN` is the **maximum `work-NNN` numeric prefix across every record the enumeration above
+already returned** (cross-worktree by construction); parse each record's column-1 full
+folder id for its leading `work-([0-9]+)` and take the maximum -- `work-001` if the
+enumeration returned no records at all (the same allocation rule `aid-describe` uses; see
+its `SKILL.md § Task Routing`). **Never** re-scan a local `.aid/works/` glob for this
+number: the worktree about to be created is freshly branched off `master`, which tracks no
+`.aid/works/` at all, so a fresh local glob inside it would find nothing and re-allocate a
+colliding `work-001` (`work-initiation-gate.md § 3a`; `feature-002/SPEC.md § Next-work-NNN
+derivation`). Derive a short kebab-case slug:
 
 - From `{description}` when it is non-empty (first few salient words, kebab-cased,
   the same style as any other AID work-folder name).
@@ -269,7 +277,25 @@ directories; the new work is `work-{NNN+1}`
   cosmetic identifier only; it is never renamed after the fact even if CAPTURE's
   bootstrapping question later reveals a more specific subject.
 
-Create `.aid/works/work-NNN-<slug>/`.
+**Create and enter the worktree, BEFORE authoring anything:**
+
+```bash
+bash .cursor/aid/scripts/works/worktree-lifecycle.sh create <work-id> <name>
+```
+
+Idempotent (a no-op re-print if the worktree already exists, keyed on the `<work-id>`
+branch); prints the worktree's **absolute path** on success/no-op; exits 0 on
+success/no-op, non-zero with **empty stdout** on failure. **Create-failure guard
+(fail-closed):** on a non-zero exit **or** an empty path, surface the error and **STOP**
+-- do **not** fall through to allocate the new work on the current (possibly `master`)
+tree. On success, **enter** the resolved path per
+`.cursor/aid/templates/worktree-lifecycle.md § Step 2` (host-native `EnterWorktree` tool
+where available, else treat the resolved path as the working directory for all subsequent
+file operations and surface it to the user -- FR4 fallback).
+
+**Only now**, inside the entered worktree, create `.aid/works/work-NNN-<slug>/` (reusing
+the `<work-id>` resolved above -- do **not** re-derive it from the fresh worktree's own,
+still-empty `.aid/works/`).
 
 ### Step 4: Scaffold STATE.md (frontmatter only)
 

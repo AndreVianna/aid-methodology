@@ -123,7 +123,7 @@
 {"dst": ".codex/aid/templates/self-review-protocol.md", "profile": "codex", "sha256": "70eec7e2214c7d1d6bb83b352c65ff16460e588f638cc517e313dd632594c7eb", "src": "canonical/templates/self-review-protocol.md"}
 {"dst": ".codex/aid/templates/settings.yml", "profile": "codex", "sha256": "41e497c14d7b869e779a11b04233b282af073a0ccac96bda424fc66e883bd575", "src": "canonical/templates/settings.yml"}
 {"dst": ".codex/aid/templates/shortcut-catalog.yml", "profile": "codex", "sha256": "ab01dd571ed3e8856ba9a6523f7f98c749e59525d41f77ecfab06755c2a853f7", "src": "canonical/templates/shortcut-catalog.yml"}
-{"dst": ".codex/aid/templates/shortcut-engine.md", "profile": "codex", "sha256": "bef1a6ebd8a03d269a5d5cb82cacfa09dfa6e72184d6a76053d4b70423ac81b1", "src": "canonical/templates/shortcut-engine.md"}
+{"dst": ".codex/aid/templates/shortcut-engine.md", "profile": "codex", "sha256": "6d68c9184d6ea5b608693c5ee707ca1c05878ded8be5e80bfe134fcfdd2ad892", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "codex", "sha256": "1f7517dae294a9f6aa10aecf6290ba3fc9fe70a8ae586cfe36770770554b3b2a", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/change-refactor.md", "profile": "codex", "sha256": "b6d6dddd98d0d07cc1d4b0712900856f14f73e28e9435a19f87dbba8be36142e", "src": "canonical/templates/shortcut-scaffolding/change-refactor.md"}
 {"dst": ".codex/aid/templates/shortcut-scaffolding/create.md", "profile": "codex", "sha256": "78d846585429a81313aba08b7b47d5d7c68bee2a37ab6cd1a016e5ad55dadfef", "src": "canonical/templates/shortcut-scaffolding/create.md"}
@@ -136,7 +136,7 @@
 {"dst": ".codex/aid/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "31b2e054ae4f401f873285351838ced02e92a4dedd7a3e2654f3b853c19c8187", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".codex/aid/templates/task-detail-template.md", "profile": "codex", "sha256": "4308d96447c89fd37448f5f662d549c19012c6abde5548c440e69321acb7377b", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".codex/aid/templates/task-state-template.md", "profile": "codex", "sha256": "e41407527367c187f01f84406f6754d4b8204f9937ebb5169a02bdfff0b85687", "src": "canonical/templates/task-state-template.md"}
-{"dst": ".codex/aid/templates/work-initiation-gate.md", "profile": "codex", "sha256": "be98990ce7656fb6c62c4fc7a55dec320df595db7d3aeff82df5b7e1f62c144d", "src": "canonical/templates/work-initiation-gate.md"}
+{"dst": ".codex/aid/templates/work-initiation-gate.md", "profile": "codex", "sha256": "7152c95d732c1d022e6de42688bc331bb38641b2eb7fbc06eed5d0c1c36c66fb", "src": "canonical/templates/work-initiation-gate.md"}
 {"dst": ".codex/aid/templates/work-state-template.md", "profile": "codex", "sha256": "6e66b4cde76d451f1f0f629cb6d7ad2af07b6b0a9a4da9eb94c903608b2e3780", "src": "canonical/templates/work-state-template.md"}
 {"dst": ".codex/aid/templates/worktree-lifecycle.md", "profile": "codex", "sha256": "41b8a2d8bbcafdd1614071137f315fd3700048430ae1004460f557cf1857a311", "src": "canonical/templates/worktree-lifecycle.md"}
 {"dst": ".codex/skills/aid-add-api/SKILL.md", "profile": "codex", "sha256": "9a80baed8bd20950a6bd6ad03cc09b6c276d01d1e6691f7fec78f1756ccefe55", "src": "canonical/skills/aid-add-api/SKILL.md"}
