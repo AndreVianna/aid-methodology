@@ -15,6 +15,7 @@
 {"dst": ".cursor/aid/scripts/connectors/connector-registry.sh", "profile": "cursor", "sha256": "ab83b69202d7c7686e0ab42aa965bdafdf679a286df9425424977d34c0c3135f", "src": "canonical/scripts/connectors/connector-registry.sh"}
 {"dst": ".cursor/aid/scripts/connectors/connector-secret.ps1", "profile": "cursor", "sha256": "e28788564730d3c6b5970e639debef112b3622034ba1c3499c9f801104ddb3ef", "src": "canonical/scripts/connectors/connector-secret.ps1"}
 {"dst": ".cursor/aid/scripts/connectors/connector-secret.sh", "profile": "cursor", "sha256": "e9dda644f7d8ec238dd4b53492f1d6dd33154d4373537f4473988c178afca86a", "src": "canonical/scripts/connectors/connector-secret.sh"}
+{"dst": ".cursor/aid/scripts/connectors/write-connector.sh", "profile": "cursor", "sha256": "f2bc4970b7eca844e23954b9b905b789c937d94202c0c08a3bee02afadc71c54", "src": "canonical/scripts/connectors/write-connector.sh"}
 {"dst": ".cursor/aid/scripts/execute/complexity-score.sh", "profile": "cursor", "sha256": "c906f9b512c6fecf6635254ea1f199479da2582d5b8a44c24101b1008da3583c", "src": "canonical/scripts/execute/complexity-score.sh"}
 {"dst": ".cursor/aid/scripts/execute/compute-block-radius.sh", "profile": "cursor", "sha256": "eea2a8d8dd12d5e118ea97664fb874343b738a650c984c866363e6adab5bde05", "src": "canonical/scripts/execute/compute-block-radius.sh"}
 {"dst": ".cursor/aid/scripts/execute/writeback-state.sh", "profile": "cursor", "sha256": "34cc4455c3b1d9a7471259c906fcd160b5e2a4e1734b225cffd9c271dfd96140", "src": "canonical/scripts/execute/writeback-state.sh"}
