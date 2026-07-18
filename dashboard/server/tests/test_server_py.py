@@ -139,8 +139,9 @@ def _repo_id8(path: str) -> str:
 class _ServerThread:
     """Start the multi-repo server in a background thread against a tmp AID_HOME."""
 
-    def __init__(self, aid_home: str) -> None:
+    def __init__(self, aid_home: str, write_enabled: bool = False) -> None:
         self._aid_home = aid_home
+        self._write_enabled = write_enabled
         self._httpd = None
         self._thread = None
         self.port: int = 0
@@ -154,6 +155,9 @@ class _ServerThread:
             ("127.0.0.1", self.port), _server_module._DashboardHandler
         )
         self._httpd.aid_home = self._aid_home  # type: ignore[attr-defined]
+        # Fail-safe write gate (feature-001 task-001): mirrors main()'s
+        # server.write_enabled = args.allow_writes; defaults to False (read-only).
+        self._httpd.write_enabled = self._write_enabled  # type: ignore[attr-defined]
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
         self._wait_ready()
@@ -868,6 +872,18 @@ class TestApiHomeDm2Shape(unittest.TestCase):
         self.assertIn("cli_runtime", machine)
         self.assertEqual(machine["cli_runtime"], "python")
 
+    # write_enabled (additive, feature-001 task-001): fail-safe gate signal.
+    def test_machine_panel_has_write_enabled(self):
+        data = self._get_home()
+        machine = data["machine"]
+        self.assertIn("write_enabled", machine)
+        self.assertIsInstance(machine["write_enabled"], bool)
+
+    def test_machine_panel_write_enabled_false_by_default(self):
+        """A server started without the write gate is read-only (fail-safe default)."""
+        data = self._get_home()
+        self.assertFalse(data["machine"]["write_enabled"])
+
     # repos[] sorted by path ascending
     def test_repos_sorted_by_path(self):
         data = self._get_home()
@@ -931,6 +947,54 @@ class TestApiHomeDm2Shape(unittest.TestCase):
 
 
 # ===========================================================================
+# (5b) write_enabled gate propagation (feature-001 task-001)
+# ===========================================================================
+
+class TestWriteEnabledGatePropagation(unittest.TestCase):
+    """server.write_enabled (fail-safe default False) flows into both DM envelopes."""
+
+    def setUp(self) -> None:
+        self._base = Path(tempfile.mkdtemp())
+        self._aid_home = self._base / "aid_home"
+        _make_aid_home(self._aid_home)
+        self._repo_a = self._base / "repo-A"
+        _make_repo(self._repo_a)
+        _write_registry(self._aid_home, [str(self._repo_a)])
+        self._id_a = _repo_id8(str(self._repo_a))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(str(self._base), ignore_errors=True)
+
+    def test_api_home_write_enabled_true_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body, _ = srv.get("/api/home")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertTrue(data["machine"]["write_enabled"])
+
+    def test_api_home_write_enabled_false_when_gate_closed(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body, _ = srv.get("/api/home")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertFalse(data["machine"]["write_enabled"])
+
+    def test_api_model_write_enabled_true_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body, _ = srv.get(f"/r/{self._id_a}/api/model")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertTrue(data["write_enabled"])
+
+    def test_api_model_write_enabled_false_when_gate_closed(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body, _ = srv.get(f"/r/{self._id_a}/api/model")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertFalse(data["write_enabled"])
+
+
+# ===========================================================================
 # (6) Serialization (DM-3)
 # ===========================================================================
 
@@ -966,7 +1030,7 @@ class TestSerializationDm3(unittest.TestCase):
     def test_envelope_key_order(self):
         data = self._get_model()
         keys = list(data.keys())
-        self.assertEqual(keys, ["schema_version", "generated_by", "model"])
+        self.assertEqual(keys, ["schema_version", "generated_by", "write_enabled", "model"])
 
     def test_repo_model_key_order(self):
         data = self._get_model()
@@ -1154,6 +1218,18 @@ class TestArgValidation(unittest.TestCase):
         self.assertEqual(args.host, "127.0.0.1")
         self.assertEqual(args.port, 8787)
 
+    # --allow-writes (feature-001 task-001): fail-safe write gate flag.
+    def test_allow_writes_absent_defaults_false(self):
+        """Bare invocation (no --allow-writes) parses as read-only (fail-safe default)."""
+        args = _server_module._parse_args(["--host", "127.0.0.1", "--port", "8787"])
+        self.assertFalse(args.allow_writes)
+
+    def test_allow_writes_flag_sets_true(self):
+        args = _server_module._parse_args(
+            ["--host", "127.0.0.1", "--port", "8787", "--allow-writes"]
+        )
+        self.assertTrue(args.allow_writes)
+
     def test_accepts_loopback_ipv6(self):
         args = _server_module._parse_args(["--host", "::1", "--port", "8787"])
         self.assertEqual(args.host, "::1")
@@ -1245,6 +1321,117 @@ class TestAidHomeResolution(unittest.TestCase):
         finally:
             import shutil as _shutil
             _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_subprocess_bare_invocation_is_read_only(self):
+        """A bare 'server.py --host 127.0.0.1 --port N' (no --allow-writes) is
+        read-only (feature-001 task-001 AC: fail-safe default)."""
+        base = Path(tempfile.mkdtemp())
+        try:
+            aid_home = base / "aid_home"
+            _make_aid_home(aid_home)
+
+            with socket.socket() as s:
+                s.bind(("127.0.0.1", 0))
+                port = s.getsockname()[1]
+
+            proc = subprocess.Popen(
+                [sys.executable, str(_SERVER_SCRIPT), "--host", "127.0.0.1", "--port", str(port)],
+                env={**os.environ, "AID_HOME": str(aid_home)},
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            try:
+                deadline = time.monotonic() + 5.0
+                ready = False
+                while time.monotonic() < deadline:
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                            ready = True
+                            break
+                    except OSError:
+                        time.sleep(0.05)
+                self.assertTrue(ready, "Server did not become ready within 5s")
+
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/api/home")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    data = json.loads(resp.read())
+                self.assertFalse(data["machine"]["write_enabled"])
+            finally:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_subprocess_allow_writes_flag_opens_gate(self):
+        """'server.py ... --allow-writes' flips write_enabled true in both envelopes."""
+        base = Path(tempfile.mkdtemp())
+        try:
+            aid_home = base / "aid_home"
+            _make_aid_home(aid_home)
+            repo_a = base / "repo-a"
+            _make_repo(repo_a)
+            _write_registry(aid_home, [str(repo_a)])
+            id_a = _repo_id8(str(repo_a))
+
+            with socket.socket() as s:
+                s.bind(("127.0.0.1", 0))
+                port = s.getsockname()[1]
+
+            proc = subprocess.Popen(
+                [
+                    sys.executable, str(_SERVER_SCRIPT),
+                    "--host", "127.0.0.1", "--port", str(port), "--allow-writes",
+                ],
+                env={**os.environ, "AID_HOME": str(aid_home)},
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            try:
+                deadline = time.monotonic() + 5.0
+                ready = False
+                while time.monotonic() < deadline:
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                            ready = True
+                            break
+                    except OSError:
+                        time.sleep(0.05)
+                self.assertTrue(ready, "Server did not become ready within 5s")
+
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/api/home")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    home_data = json.loads(resp.read())
+                self.assertTrue(home_data["machine"]["write_enabled"])
+
+                req2 = urllib.request.Request(f"http://127.0.0.1:{port}/r/{id_a}/api/model")
+                with urllib.request.urlopen(req2, timeout=5) as resp2:
+                    model_data = json.loads(resp2.read())
+                self.assertTrue(model_data["write_enabled"])
+            finally:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_help_mentions_allow_writes_flag(self):
+        """--help output must mention --allow-writes (the new fail-safe write gate)."""
+        import subprocess as _sp
+        result = _sp.run(
+            [sys.executable, str(_SERVER_SCRIPT), "--help"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertIn("--allow-writes", result.stdout)
 
     def test_help_no_longer_mentions_aid_home_flag(self):
         """--help output must NOT mention --aid-home (the flag is removed)."""

@@ -184,11 +184,12 @@ function makeRequest(port, path, method, headers) {
 
 // Spawn the server against an aidHome, return {proc, port}.
 // AID_HOME is passed via environment (delivery-008 refinement: no --aid-home flag).
-async function spawnServer(aidHome) {
+// extraArgs (feature-001 task-001): optional additional argv tokens, e.g. ["--allow-writes"].
+async function spawnServer(aidHome, extraArgs) {
   const port = await getFreePort();
   const proc = spawn(
     process.execPath,
-    [SERVER_MJS, "--host", "127.0.0.1", "--port", String(port)],
+    [SERVER_MJS, "--host", "127.0.0.1", "--port", String(port), ...(extraArgs || [])],
     {
       stdio: ["ignore", "ignore", "pipe"],
       env: Object.assign({}, process.env, { AID_HOME: aidHome }),
@@ -845,6 +846,9 @@ async function runLiveTests() {
       assert(data !== null, "GET /r/<id>/api/model body is valid JSON");
       assert(!!(data && data.schema_version === 3), "schema_version===3");
       assert(!!(data && data.generated_by === "node"), 'generated_by==="node"');
+      // write_enabled (additive, feature-001 task-001): fail-safe gate signal, false
+      // by default (server spawned here with no --allow-writes).
+      assert(!!(data && data.write_enabled === false), "write_enabled===false by default");
       assert(!!(data && data.model && typeof data.model === "object"), "has model object");
       const model = data && data.model;
       assert(Array.isArray(model && model.works), "model.works is array");
@@ -1190,7 +1194,8 @@ async function runLiveTests() {
       // Machine panel keys
       const machine = data && data.machine;
       assert(machine !== null && machine !== undefined, "DM-2: machine panel present");
-      for (const k of ["aid_version", "aid_home", "tools_catalog", "registry_path", "cli_runtime"]) {
+      for (const k of ["aid_version", "aid_home", "tools_catalog", "registry_path", "cli_runtime",
+                        "write_enabled"]) {
         assert(!!(machine && machine[k] !== undefined), "DM-2: machine has key " + k);
       }
       assert(!!(machine && machine.cli_runtime === "node"), 'DM-2: machine.cli_runtime==="node"');
@@ -1200,6 +1205,8 @@ async function runLiveTests() {
         !!(machine && machine.registry_path && machine.registry_path.includes("registry.yml")),
         "DM-2: registry_path includes registry.yml"
       );
+      // write_enabled (additive, feature-001 task-001): false by default (no --allow-writes).
+      assert(!!(machine && machine.write_enabled === false), "DM-2: write_enabled===false by default");
 
       // repos[] sorted by path ascending
       const repos = data && data.repos;
@@ -1239,6 +1246,55 @@ async function runLiveTests() {
         assert(!!(read && read[k] !== undefined), "DM-2: read has key " + k);
       }
       assert(!!(read && read.repo_count === 2), "DM-2: repo_count===2");
+    }
+
+    // -----------------------------------------------------------------------
+    // (5c) --allow-writes write gate (feature-001 task-001)
+    // A bare spawn (no flag, exercised above in [5]) is read-only; spawning with
+    // --allow-writes flips write_enabled true in BOTH DM envelopes.
+    // -----------------------------------------------------------------------
+
+    process.stdout.write("\n[5c] --allow-writes write gate\n");
+
+    {
+      await killServer(proc);
+      const s5c = await spawnServer(aidHome, ["--allow-writes"]);
+      proc = s5c.proc;
+      port = s5c.port;
+      if (!s5c.ready) {
+        assert(false, "server spawned with --allow-writes");
+      } else {
+        assert(true, "server spawned with --allow-writes");
+
+        const rHome = await makeRequest(port, "/api/home", "GET");
+        let homeData = null;
+        try { homeData = JSON.parse(rHome.body); } catch (_) {}
+        assert(
+          !!(homeData && homeData.machine && homeData.machine.write_enabled === true),
+          "--allow-writes: /api/home machine.write_enabled===true"
+        );
+
+        const rModel = await makeRequest(port, "/r/" + idA + "/api/model", "GET");
+        let modelData = null;
+        try { modelData = JSON.parse(rModel.body); } catch (_) {}
+        assert(
+          !!(modelData && modelData.write_enabled === true),
+          "--allow-writes: /r/<id>/api/model write_enabled===true"
+        );
+      }
+    }
+
+    // Restart WITHOUT --allow-writes for the remaining (DM-3) tests.
+    {
+      await killServer(proc);
+      const s5d = await spawnServer(aidHome);
+      proc = s5d.proc;
+      port = s5d.port;
+      if (!s5d.ready) {
+        assert(false, "server re-spawned (no --allow-writes) for DM-3 tests");
+        return;
+      }
+      assert(true, "server re-spawned (no --allow-writes) for DM-3 tests");
     }
 
     // -----------------------------------------------------------------------

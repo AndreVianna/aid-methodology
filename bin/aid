@@ -175,12 +175,15 @@ _aid_usage() {
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
         dashboard)
-            printf 'aid dashboard start <node|python> [--remote] [--port <n>]\n'
+            printf 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]\n'
             printf 'aid dashboard stop\n'
             printf '  Start or stop the machine-level pipeline dashboard (serves all registered projects).\n'
             printf '  <node|python>  select the server runtime to launch.\n'
             printf '  --remote       also expose it to authorized users over a private channel (never public);\n'
             printf '                 fails clearly if that mechanism is unavailable -- never binds publicly.\n'
+            printf '  --allow-writes opt in to interactive writes. On loopback writes are always enabled\n'
+            printf '                 (this flag is then accepted but redundant, no error); under --remote the\n'
+            printf '                 dashboard is read-only unless this flag is also given.\n'
             printf '  --port <n>     listen port on 127.0.0.1 (default 8787).\n'
             printf '  The dashboard binds to 127.0.0.1 only. '"'"'stop'"'"' is idempotent and also tears down --remote.\n'
             printf '  Works from any directory (not tied to the current project).\n'
@@ -955,6 +958,7 @@ To restrict access to only you, add a deny-by-default ACL grant in the tailnet p
   https://login.tailscale.com/admin/acls/file
   {"grants":[{"src":["${src_placeholder}"],"dst":["${dst_placeholder}"],"ip":["tcp:443"]}]}
 Note: granted identities see all registered project paths/names. See 'aid dashboard --help'.
+Note: with --allow-writes, any granted identity can also modify this project's state.
 
 GUIDANCE_EOF
 
@@ -1036,6 +1040,7 @@ _cmd_dashboard_ctl() {
     local _dc_verbose=0
     local _dc_port=8787
     local _dc_remote=0
+    local _dc_allow_writes=0
     local _dc_runtime=""
 
     if [[ "$verb" == "start" ]]; then
@@ -1058,6 +1063,11 @@ _cmd_dashboard_ctl() {
                     echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
                 fi
                 _dc_remote=1; shift ;;
+            --allow-writes)
+                if [[ "$verb" == "stop" ]]; then
+                    echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
+                fi
+                _dc_allow_writes=1; shift ;;
             --port)
                 if [[ "$verb" == "stop" ]]; then
                     echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
@@ -1082,7 +1092,7 @@ _cmd_dashboard_ctl() {
     done
 
     if [[ "$verb" == "start" ]]; then
-        _dc_start "$_dc_runtime" "$_dc_port" "$_dc_remote" "$_dc_verbose"
+        _dc_start "$_dc_runtime" "$_dc_port" "$_dc_remote" "$_dc_verbose" "$_dc_allow_writes"
     else
         _dc_stop "$_dc_verbose"
     fi
@@ -1143,6 +1153,7 @@ _dc_start() {
     local port="$2"
     local remote="$3"
     local verbose="$4"
+    local allow_writes="${5:-0}"
 
     # Step 1: validate runtime.
     if [[ -z "$runtime" ]]; then
@@ -1208,12 +1219,25 @@ _dc_start() {
     # Ensure log dir exists (per-user state home, always writable).
     mkdir -p "${HOME}/.aid/.temp"
 
+    # Fail-safe write gate (Q1/NFR2/C3/AC8, feature-001 task-001):
+    #   write_enabled = (loopback) OR (--remote AND --allow-writes).
+    # Loopback is always write-enabled; --remote alone is read-only; --remote
+    # --allow-writes is write-enabled; --allow-writes on loopback is accepted and
+    # redundant (no error). The server only learns write_enabled via the spawn argv
+    # below -- it is never read from request/config/env (SEC-1 posture unaffected).
+    local write_enabled=0
+    if [[ "$remote" -eq 0 || ( "$remote" -eq 1 && "$allow_writes" -eq 1 ) ]]; then
+        write_enabled=1
+    fi
+
     # Step 7: spawn the server child in a new session (clean process-group kill on stop).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
     # The multi-repo server (feature-010) serves every registered repo from the
     # registry under AID_STATE_HOME; export AID_HOME=AID_STATE_HOME so the server
     # resolves the registry via its legacy AID_HOME env var (delivery-008 seam).
-    AID_HOME="$AID_STATE_HOME" setsid "$interp" "$entry_point" --host 127.0.0.1 --port "$port" \
+    local -a _dc_spawn_argv=(--host 127.0.0.1 --port "$port")
+    [[ "$write_enabled" -eq 1 ]] && _dc_spawn_argv+=(--allow-writes)
+    AID_HOME="$AID_STATE_HOME" setsid "$interp" "$entry_point" "${_dc_spawn_argv[@]}" \
         >"$log_file" 2>&1 &
     local child_pid=$!
 

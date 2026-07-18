@@ -4,7 +4,9 @@
  * Byte-parity sibling of server.py (task-051).
  *
  * Entry-point:
- *   node dashboard/server/server.mjs --host 127.0.0.1 --port <n>
+ *   node dashboard/server/server.mjs --host 127.0.0.1 --port <n> [--allow-writes]
+ *   --allow-writes: fail-safe write gate (feature-001 task-001) -- absent => read-only;
+ *   a fixed token appended only by bin/aid's spawn policy, never read from request/config/env.
  *
  * AID_HOME (state home) resolution for registry.yml:
  *   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
@@ -66,12 +68,18 @@ function parseArgs(argv) {
   const args = argv.slice(2); // strip node + script
   let host = null;
   let port = null;
+  // Fail-safe write gate (feature-001 task-001): absent => read-only. A fixed
+  // store-true token appended only by bin/aid's spawn policy -- never read
+  // from request/config/env (SEC-1 posture unaffected).
+  let allowWrites = false;
 
   for (let i = 0; i < args.length; i++) {
     if (args[i] === "--host" && i + 1 < args.length) {
       host = args[++i];
     } else if (args[i] === "--port" && i + 1 < args.length) {
       port = parseInt(args[++i], 10);
+    } else if (args[i] === "--allow-writes") {
+      allowWrites = true;
     }
   }
 
@@ -97,7 +105,7 @@ function parseArgs(argv) {
   // (2) self-locate: server.mjs -> server/ -> dashboard/ -> $AID_HOME.
   const aidHome = process.env.AID_HOME || join(__dirname_srv, "..", "..");
 
-  return { aidHome, host, port };
+  return { aidHome, host, port, allowWrites };
 }
 
 // ---------------------------------------------------------------------------
@@ -454,8 +462,12 @@ function fileExists(path) {
   try { statSync(path); return true; } catch (_) { return false; }
 }
 
-function buildHomeModel(aidHome, regPath, idMap, warnings, runtime) {
+function buildHomeModel(aidHome, regPath, idMap, warnings, runtime, writeEnabled) {
   // Build DM-2 /api/home model. Never throws (NFR10).
+  // writeEnabled (additive, feature-001 task-001): echoes the server's fail-safe write
+  // gate so the UI can hide controls the server would refuse (403). Defaults to false
+  // (fail-safe) when the caller omits it.
+  writeEnabled = !!writeEnabled;
   const now = new Date().toISOString().replace(/\.\d{3}Z$/, "Z");
 
   const repoEntries = [];
@@ -536,6 +548,7 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime) {
       tools_catalog:  toolsCatalog(),
       registry_path:  regPath,
       cli_runtime:    runtime,
+      write_enabled:  writeEnabled,
     },
     repos: repoEntries,
     read: {
@@ -563,7 +576,7 @@ function dm3PostProcess(raw) {
             .replace(new RegExp(PS, "gu"), "\\u2029");
 }
 
-function serializeModel(model) {
+function serializeModel(model, writeEnabled) {
   // Sort works by work_id ascending (DM-3 determinism).
   if (model.works) {
     model.works = model.works.slice().sort((a, b) =>
@@ -571,10 +584,13 @@ function serializeModel(model) {
     );
   }
 
-  // DM-1 envelope: schema_version + generated_by at top level, then model.
+  // DM-1 envelope: schema_version + generated_by + write_enabled at top level, then model.
+  // write_enabled (additive, feature-001 task-001): defaults to false (fail-safe) when
+  // the caller omits it -- same contract as serializeModelWithDetails().
   const envelope = {
     schema_version: 3,
     generated_by:   "node",
+    write_enabled:  !!writeEnabled,
     model:          model,
   };
 
@@ -617,7 +633,7 @@ function parseDetailParam(queryString) {
 // 'details' values are ALREADY plain objects from readRepoDetail (_buildTaskDetail).
 // Keys are sorted ascending (DM-2 key-order parity); re-sorting here is defensive.
 // schema_version stays at 3 (RC-2 no-bump decision).
-function serializeModelWithDetails(model, details) {
+function serializeModelWithDetails(model, details, writeEnabled) {
   // Sort model.works ascending by work_id (DM-3 determinism).
   if (model.works) {
     model.works = model.works.slice().sort((a, b) =>
@@ -631,10 +647,13 @@ function serializeModelWithDetails(model, details) {
     sortedDetails[k] = details[k];
   }
 
-  // DM-1 envelope: schema_version + generated_by + model + details (details is LAST).
+  // DM-1 envelope: schema_version + generated_by + write_enabled + model + details
+  // (details is LAST). write_enabled: see serializeModel() -- same additive top-level
+  // key, same fail-safe default.
   const envelope = {
     schema_version: 3,
     generated_by:   "node",
+    write_enabled:  !!writeEnabled,
     model:          model,
     details:        sortedDetails,
   };
@@ -747,7 +766,7 @@ function serveApiHome(res) {
     const { idMap, warnings } = getIdMap(AID_HOME);
     // registry_path in the machine block shows the primary (state-home) path.
     const regPath = join(AID_HOME, "registry.yml");
-    const model = buildHomeModel(AID_HOME, regPath, idMap, warnings, "node");
+    const model = buildHomeModel(AID_HOME, regPath, idMap, warnings, "node", WRITE_ENABLED);
     bodyBuf = serializeHome(model);
   } catch (err) {
     process.stderr.write("server.mjs: /api/home error: " + String(err) + "\n");
@@ -852,10 +871,10 @@ function serveRepoModel(res, canonPath, queryString) {
   try {
     if (detailKeys.length > 0) {
       const { model, details } = readRepoDetail(canonPath, detailKeys);
-      bodyBuf = serializeModelWithDetails(model, details);
+      bodyBuf = serializeModelWithDetails(model, details, WRITE_ENABLED);
     } else {
       const model = readRepo(canonPath);
-      bodyBuf = serializeModel(model);
+      bodyBuf = serializeModel(model, WRITE_ENABLED);
     }
   } catch (err) {
     process.stderr.write("server.mjs: readRepo error: " + String(err) + "\n");
@@ -875,7 +894,7 @@ function serveRepoModel(res, canonPath, queryString) {
 // Main: parse args, create server, bind, register SIGTERM
 // ---------------------------------------------------------------------------
 
-const { aidHome: AID_HOME, host: HOST, port: PORT } = parseArgs(process.argv);
+const { aidHome: AID_HOME, host: HOST, port: PORT, allowWrites: WRITE_ENABLED } = parseArgs(process.argv);
 
 const server = createServer(handler);
 

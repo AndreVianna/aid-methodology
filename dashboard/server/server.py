@@ -22,7 +22,9 @@
 #   headers on every response, enforced before routing (SEC-6).
 #
 # Invocation:
-#   python3 server.py --host 127.0.0.1 --port <n>
+#   python3 server.py --host 127.0.0.1 --port <n> [--allow-writes]
+#   --allow-writes: fail-safe write gate (feature-001 task-001) -- absent => read-only;
+#   a fixed token appended only by bin/aid's spawn policy, never read from request/config/env.
 #
 # AID_HOME (state home) resolution for registry.yml:
 #   1. AID_HOME environment variable if set and non-empty (bin/aid always passes AID_HOME=$AID_STATE_HOME).
@@ -431,8 +433,14 @@ def build_home_model(
     id_map: dict[str, str],
     warnings: list[str],
     runtime: str,
+    write_enabled: bool = False,
 ) -> dict:
-    """Build the DM-2 /api/home model. Never raises (NFR10)."""
+    """Build the DM-2 /api/home model. Never raises (NFR10).
+
+    write_enabled (additive, feature-001 task-001): echoes the server's fail-safe
+    write gate so the UI can hide controls the server would refuse (403). Defaults
+    to False (fail-safe) when the caller does not pass the server's actual state.
+    """
     now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     unavailable = 0
@@ -518,6 +526,7 @@ def build_home_model(
             "tools_catalog":  _tools_catalog(),
             "registry_path":  str(reg_path),
             "cli_runtime":    runtime,
+            "write_enabled":  write_enabled,
         },
         "repos": repo_entries,
         "read": {
@@ -803,33 +812,41 @@ def _dm3_post_process(raw: str) -> bytes:
     return raw.encode("utf-8")
 
 
-def serialize_model(model) -> bytes:
+def serialize_model(model, write_enabled: bool = False) -> bytes:
     """Serialize a RepoModel to the DM-1 envelope bytes (feature-003 compatible).
 
     NFR4: bare /r/<id>/api/model call (no ?detail=) is byte-for-byte unchanged --
     the 'details' key is OMITTED entirely (not present) when details is None/not supplied.
+
+    write_enabled (additive, feature-001 task-001): echoes the server's fail-safe
+    write gate at the envelope top level (beside 'generated_by'). Defaults to False
+    (fail-safe) when the caller does not pass the server's actual state.
     """
     envelope = {
         "schema_version": 3,
         "generated_by":   "python",
+        "write_enabled":  write_enabled,
         "model":          _ser_repo_model(model),
     }
     raw = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
     return _dm3_post_process(raw)
 
 
-def serialize_model_with_details(model, details: dict) -> bytes:
+def serialize_model_with_details(model, details: dict, write_enabled: bool = False) -> bytes:
     """Serialize a RepoModel with a TaskDetail map appended (LC-SD, task-070).
 
     'details' is the LAST envelope key (after 'model'), present ONLY when ?detail= was supplied.
     Keys are sorted ascending (DM-2 key-order parity) -- the caller (read_repo_detail) returns
     them already sorted, but we re-sort here to be defensive.
     schema_version stays at 3 (RC-2 no-bump decision).
+
+    write_enabled: see serialize_model() -- same additive top-level key, same fail-safe default.
     """
     sorted_details = {k: _ser_task_detail(v) for k, v in sorted(details.items())}
     envelope = {
         "schema_version": 3,
         "generated_by":   "python",
+        "write_enabled":  write_enabled,
         "model":          _ser_repo_model(model),
         "details":        sorted_details,
     }
@@ -984,6 +1001,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
                 id_map=id_map,
                 warnings=warnings,
                 runtime="python",
+                write_enabled=getattr(self.server, "write_enabled", False),
             )
             body = serialize_home(model)
         except Exception as exc:
@@ -1076,13 +1094,14 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         bare-poll path). schema_version stays at 3 (RC-2 no-bump decision).
         """
         detail_keys = _parse_detail_param(query_string)
+        write_enabled = getattr(self.server, "write_enabled", False)
         try:
             if detail_keys:
                 model, details = read_repo_detail(canon_path, detail_keys)
-                body = serialize_model_with_details(model, details)
+                body = serialize_model_with_details(model, details, write_enabled)
             else:
                 model = read_repo(canon_path)
-                body = serialize_model(model)
+                body = serialize_model(model, write_enabled)
         except Exception as exc:
             sys.stderr.write(f"server: /r/<id>/api/model error: {exc}\n")
             self._send_plain(500, b"Internal Server Error")
@@ -1117,6 +1136,16 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--host",     required=True, help="Bind host (must be 127.0.0.1 or ::1)")
     parser.add_argument("--port",     required=True, type=int, help="TCP port 1024..65535")
+    parser.add_argument(
+        "--allow-writes",
+        action="store_true",
+        default=False,
+        help=(
+            "Enable write/operation endpoints (fail-safe default: read-only when absent). "
+            "A fixed token appended by bin/aid's spawn policy -- never read from "
+            "request/config/env (SEC-1 posture unaffected)."
+        ),
+    )
     args = parser.parse_args(argv)
 
     # SEC-1: reject any non-loopback host (never 0.0.0.0/wildcard, never config-read)
@@ -1149,6 +1178,8 @@ def main(argv: list[str] | None = None) -> None:
     # Bind before any slow work (LC-1 readiness contract).
     server = ThreadingHTTPServer((args.host, args.port), _DashboardHandler)
     server.aid_home = aid_home  # type: ignore[attr-defined]
+    # Fail-safe write gate (feature-001 task-001): absent --allow-writes -> read-only.
+    server.write_enabled = args.allow_writes  # type: ignore[attr-defined]
 
     # Clean exit on SIGTERM.
     def _handle_sigterm(signum, frame):  # noqa: ANN001
