@@ -86,7 +86,7 @@ def _looks_like_unfilled_placeholder(val: str, *, is_freetext: bool = False) -> 
     rollout"): a STATE.md freshly scaffolded from work-state-template.md (or
     any of the other 3 templates) BEFORE the writers are migrated (task-004)
     carries the frontmatter block VERBATIM from the template -- e.g.
-    `phase: Describe | Define | Specify | Plan | Detail | Execute | Deploy`
+    `phase: Describe | Define | Specify | Plan | Detail | Execute`
     or `started: "{YYYY-MM-DD}"` -- while the REAL value lives in the legacy
     prose bullets the not-yet-migrated writer DOES update. Treating that
     verbatim placeholder text as authored data would silently clobber the

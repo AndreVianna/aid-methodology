@@ -76,11 +76,58 @@ Exit. Do not proceed.
 
 ## Task Routing
 
-When no work ID is provided:
+When no work ID is provided, resolve the `Approved` candidate set in two layers — a
+cross-worktree candidate set (the same source the other downstream skills use), refined
+by an `## Interview State: Approved` sub-filter this skill alone needs, because the
+enumerate record carries no Interview-State field.
 
-### No approved works exist
+### Layer 1 — cross-worktree candidate set
 
-If `.aid/` has no `work-*` directories with `Interview State: Approved`:
+Enumerate works **cross-worktree**: run
+`bash .github/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree;
+never the local `.aid/works/` glob, which is empty on `master`), taking each record's
+field-1 `work_id` and field-4 `branch_label`.
+
+**Zero records on any worktree** → **STOP.**
+```
+No approved works found. Run /aid-describe first to gather and approve requirements.
+```
+Exit.
+
+### Layer 2 — per-candidate `Approved` sub-filter (read-only `git show`)
+
+For each `(work_id, branch_label)` candidate from Layer 1, determine `Approved` without
+entering any worktree:
+
+- **`branch_label` is the literal `(detached)`** (a detached-HEAD worktree — not a
+  resolvable git ref): **skip** the `git show` check for this candidate and **retain**
+  it in the menu rather than drop it. Its `Approved` status is deferred to the
+  authoritative post-enter `## State Detection` step 2 below, which HALTs if the
+  entered work turns out not to be `Approved`. Never pass a `(detached)` label to
+  `git show`.
+- **Otherwise**, run a read-only `git show "<branch_label>:.aid/works/<work_id>/STATE.md"`
+  and check whether its `## Interview State` section shows `Approved`:
+  - **Shows `Approved`** → retain the candidate.
+  - **Does not show `Approved`** (including "file not found at that ref") → drop the
+    candidate from the menu.
+- **De-duplicate** by `work_id` when the same work appears on more than one
+  `branch_label`.
+
+This `git show` reads the **committed** view only — best-effort, and it can skew in
+either direction against a live worktree's uncommitted `STATE.md`:
+- **False positive** (committed shows `Approved`, a live worktree has since regressed
+  it): the candidate is retained here; `## State Detection` step 2 (post-enter, over the
+  live file) HALTs on the non-`Approved` value — fail-closed, this can never route into
+  a non-Approved work.
+- **False negative** (a live worktree holds `Approved` **uncommitted**, the committed
+  tip still shows pre-`Approved`): this pre-filter cannot see it, so the work is
+  silently absent from the auto-generated menu below — a menu-completeness gap, not a
+  correctness defect. **Documented fallback:** invoke `/aid-define work-NNN` directly.
+  The argument path bypasses Task Routing (and this filter) entirely — see "Locate +
+  Enter the Work's Worktree" below — so `## State Detection` step 2 confirms `Approved`
+  from the live, entered `STATE.md`.
+
+### No candidates survive Layer 2
 
 ```
 No approved works found. Run /aid-describe first to gather and approve requirements.
@@ -88,9 +135,7 @@ No approved works found. Run /aid-describe first to gather and approve requireme
 
 Exit.
 
-### Approved works exist
-
-If `.aid/` has one or more approved `work-*` directories:
+### One or more candidates survive Layer 2
 
 ```
 Approved works ready for feature definition:
@@ -103,7 +148,19 @@ Approved works ready for feature definition:
 
 Wait for response and proceed to State Detection for that work.
 
-**Shortcut:** If only one approved work exists, go directly to it without asking.
+**Shortcut:** If only one candidate survives Layer 2, go directly to it without asking.
+
+---
+
+## Locate + Enter the Work's Worktree
+
+**As soon as `<work-id>` is known** — from the `work-NNN` argument, or from Task Routing above —
+and **before** State Detection reads `.aid/works/{work}/STATE.md`, follow
+`.github/aid/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
+`work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
+`<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero backstop
+that stops rather than operate blindly — it should not fire against the real helper. Never create
+a new worktree — creation belongs to the work-starting skills only.
 
 ---
 

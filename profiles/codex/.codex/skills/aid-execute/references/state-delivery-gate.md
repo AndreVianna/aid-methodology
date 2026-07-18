@@ -446,7 +446,7 @@ rmdir --ignore-fail-on-non-empty .aid/.temp/review-pending/ 2>/dev/null || true
 Grade: {grade}  Cycles: {N}  Tier: {tier}
 
 ✅ Delivery complete. Branch aid/{work}-delivery-NNN is Done.
-Optional next steps (independent, not required, not sequential): /aid-deploy, /aid-monitor.
+Optional separate paths (each its own entry point; not part of the numbered sequence, which ends at Execute): /aid-deploy, /aid-monitor.
 
 If this work has forward-authored seed docs (a KB doc with `source: forward-authored` in its
 frontmatter), consider running `/aid-housekeep` to surface any divergence between the

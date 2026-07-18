@@ -72,7 +72,20 @@ Step 0):
   and exit.
 
 1. Verify `.aid/` workspace exists.
-2. Resolve work directory (same routing as other skills).
+2. Resolve work directory: if the `work-NNN` argument was given, use that work
+   directory; if not (single-work auto-select), enumerate works **cross-worktree**:
+   run `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
+   each record's field-1 `work_id` — single record → auto-select; multiple records →
+   list them, ask user to choose; zero records on any worktree → **STOP.** "No works
+   found. Run `/aid-describe` first." **Then locate + enter the work's
+   worktree**, before item 3 below reads work `STATE.md`: follow
+   `canonical/aid/templates/downstream-worktree-entry.md` to normalize the work id to its bare
+   `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
+   `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero
+   backstop that stops rather than operate blindly — it should not fire against the real helper.
+   Never create a new worktree — creation belongs to the work-starting skills only. (Applies only
+   to this `work-NNN` pipeline path — the free-form shortcut mode in Step 0 does not reach here.)
 3. Read work `STATE.md` `## Deploy State` section (or create it if absent).
 4. Read `PLAN.md` — identify deliveries and their statuses.
 5. Check work `STATE.md` `## Tasks State` — check statuses and grades.

@@ -41,29 +41,27 @@ flowchart TB
     end
     TR -. suggests .-> SC
 
-    subgraph G1[" 1 · Prepare "]
+    subgraph GS[" Support "]
         Init["aid-config<br/>setup · once"]:::aux
+    end
+    subgraph G1[" Knowledge Base Maintenance "]
         Disc["1 · aid-discover<br/>brownfield"]:::prep
         Sum["aid-summarize<br/>optional"]:::aux
+        HK["aid-housekeep<br/>on-demand · KB refresh"]:::offpipe
     end
-    subgraph G2[" 2 · Describe → Define "]
+    subgraph G2[" Definition "]
         Desc["2a · aid-describe<br/>full path only"]:::def
         Def["2b · aid-define<br/>decompose features"]:::def
         Spec["3 · aid-specify<br/>full path only"]:::def
-    end
-    subgraph G3[" 3 · Map "]
         Plan["4 · aid-plan<br/>full path only"]:::map
         Det["5 · aid-detail<br/>full path only"]:::map
     end
-    subgraph G4[" 4 · Execute "]
+    subgraph G4[" Execution "]
         Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
     end
-    subgraph G5[" 5 · Deliver (optional) "]
-        Dep["aid-deploy"]:::delopt
-        Mon["aid-monitor"]:::delopt
-    end
 
-    HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY · CLEANUP"]:::offpipe
+    Dep["aid-deploy<br/>shortcut path"]:::delopt
+    Mon["aid-monitor<br/>shortcut path"]:::delopt
 
     TR -. suggests .-> Desc
     Init --> Disc --> Desc --> Def --> Spec --> Plan --> Det --> Exe
@@ -77,7 +75,7 @@ flowchart TB
     HK  -. "targeted KB refresh" .-> Disc
 ```
 
-*108 skill directories, five pipeline groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional end-of-pipeline Deliver skills. `aid-housekeep` runs off the pipeline on demand for KB maintenance. `/aid-query-kb` (friendly alias: `/aid-ask`) answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
+*108 skill directories, four skill groups plus a direct-entry shortcut layer. Three doors in: a **shortcut** (`aid-<verb>[-<artifact>]`) when you already know the kind of change; **`/aid-triage`** when you don't — it suggests, never runs, either a shortcut, the full path, or `/aid-ask` when your input is a question rather than a change; or **`/aid-describe`** directly for broad or new-project work. The six numbered phases (Discover through Execute) form the mandatory sequential pipeline for the full path — brownfield enters at Discover, greenfield at Describe (Phase 2a). A shortcut instead drives the shared shortcut engine, which collapses Describe through Detail into one autonomous run and hands off straight to Execute. Deploy and Monitor are optional shortcut paths in the Definition group. `aid-housekeep` is a Knowledge Base Maintenance skill that runs off the pipeline on demand. `/aid-query-kb` (friendly alias: `/aid-ask`) answers project questions on demand and captures knowledge gaps. `/aid-update-kb` applies targeted KB updates through the review gate.*
 
 ### The Full Path
 
@@ -105,20 +103,20 @@ The shortcut path is not a fallback — it is the default entry for the majority
 
 | **Skill** | Group | Phase | Mandatory pipeline? |
 |-----------|-------|-------|---------------------|
-| `aid-config` | Prepare | — (bootstrap) | Run once before pipeline; not a numbered phase |
-| `aid-discover` | Prepare | 1 | Mandatory for brownfield; skipped for greenfield |
-| `aid-summarize` | Prepare | — (optional viewer) | On demand; not a numbered phase |
-| `aid-describe` | Define | 2a | Yes — full path only; no longer triages or produces lite work |
-| `aid-define` | Define | 2b | Full path only — decompose approved requirements into features |
-| `aid-specify` | Define | 3 | Full path only |
-| `aid-plan` | Map | 4 | Full path only |
-| `aid-detail` | Map | 5 | Full path only |
-| `aid-execute` | Execute | 6 | Yes |
-| `aid-housekeep` | Off-pipeline | — | On demand; off the pipeline entirely |
-| `aid-update-kb` | Off-pipeline | — | On demand; targeted KB update through review gate; human-gated |
-| `aid-set-connector` | Off-pipeline | — | On demand; create or update a connector descriptor for an external tool |
-| `aid-unset-connector` | Off-pipeline | — | On demand; remove a connector descriptor and purge its secret |
-| `aid-triage` | Off-pipeline | — (router) | On demand; stateless suggest-only router — writes nothing |
+| `aid-config` | Support | — (bootstrap) | Run once before pipeline; not a numbered phase |
+| `aid-discover` | Knowledge Base Maintenance | 1 | Mandatory for brownfield; skipped for greenfield |
+| `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | On demand; not a numbered phase |
+| `aid-describe` | Definition | 2a | Yes — full path only; no longer triages or produces lite work |
+| `aid-define` | Definition | 2b | Full path only — decompose approved requirements into features |
+| `aid-specify` | Definition | 3 | Full path only |
+| `aid-plan` | Definition | 4 | Full path only |
+| `aid-detail` | Definition | 5 | Full path only |
+| `aid-execute` | Execution | 6 | Yes |
+| `aid-housekeep` | Knowledge Base Maintenance | — | On demand; off the numbered pipeline |
+| `aid-update-kb` | Knowledge Base Maintenance | — | On demand; targeted KB update through review gate; human-gated |
+| `aid-set-connector` | Support | — | On demand; create or update a connector descriptor for an external tool |
+| `aid-unset-connector` | Support | — | On demand; remove a connector descriptor and purge its secret |
+| `aid-triage` | Definition | — (router) | On demand; stateless suggest-only router — writes nothing |
 
 **B. `/aid-triage`** — the suggest-only router. Not a pipeline phase and not a shortcut itself: one stateless skill (`INTAKE → CLASSIFY → SUGGEST → HALT`) that reads the shortcut catalog and points at a shortcut, the full path, or — when the input reads as a question rather than a change — `/aid-ask` (below). It writes nothing — no interview, no scaffold, no work folder, no `STATE.md`.
 
@@ -387,30 +385,30 @@ This is the third conviction underlying AID: the Knowledge Base is the gravitati
 
 | **Skill** | Group | Phase | Output |
 |-----------|-------|-------|--------|
-| `aid-config` | Prepare | — (bootstrap) | `.aid/` scaffold · KB placeholders (14 templates + meta) · context file · `STATE.md` seeds |
-| `aid-discover` | Prepare | 1 | 14-document Knowledge Base · `project-index.md` pre-pass · `STATE.md` discovery grade/Q&A |
-| `aid-summarize` | Prepare | — (optional viewer) | `knowledge-summary.html` — offline KB viewer |
-| `aid-describe` | Define | 2a | `REQUIREMENTS.md` — full path only |
-| `aid-define` | Define | 2b | Per-feature `SPEC.md` stubs + feature decomposition (full path only) |
-| `aid-specify` | Define | 3 | Technical spec added to each feature's `SPEC.md` |
-| `aid-plan` | Map | 4 | `PLAN.md` + per-delivery `deliveries/delivery-NNN/BLUEPRINT.md` + `STATE.md` |
-| `aid-detail` | Map | 5 | Typed, PR-sized `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + execution graph |
-| `aid-execute` | Execute | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
-| `aid-deploy` | Deliver | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
-| `aid-monitor` | Deliver | — (optional) | classified findings → `/aid-fix` (bugs) or `/aid-triage` (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
-| `aid-housekeep` | Off-pipeline | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
-| `aid-triage` | Off-pipeline | — | A suggested next command (shortcut, `/aid-describe`, or `/aid-ask` for a plain question); writes nothing |
-| `aid-<verb>[-<artifact>]` (64 shortcuts) | Lite entry | — | Full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
+| `aid-config` | Support | — (bootstrap) | `.aid/` scaffold · KB placeholders (14 templates + meta) · context file · `STATE.md` seeds |
+| `aid-discover` | Knowledge Base Maintenance | 1 | 14-document Knowledge Base · `project-index.md` pre-pass · `STATE.md` discovery grade/Q&A |
+| `aid-summarize` | Knowledge Base Maintenance | — (optional viewer) | `knowledge-summary.html` — offline KB viewer |
+| `aid-describe` | Definition | 2a | `REQUIREMENTS.md` — full path only |
+| `aid-define` | Definition | 2b | Per-feature `SPEC.md` stubs + feature decomposition (full path only) |
+| `aid-specify` | Definition | 3 | Technical spec added to each feature's `SPEC.md` |
+| `aid-plan` | Definition | 4 | `PLAN.md` + per-delivery `deliveries/delivery-NNN/BLUEPRINT.md` + `STATE.md` |
+| `aid-detail` | Definition | 5 | Typed, PR-sized `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` files + execution graph |
+| `aid-execute` | Execution | 6 | Implemented + reviewed code to grade ≥ minimum; 8 task types |
+| `aid-deploy` | Definition (shortcut path) | — (optional) | Release package · `package-NNN.md` · `DEPLOYMENT-STATE.md` |
+| `aid-monitor` | Definition (shortcut path) | — (optional) | classified findings → `/aid-fix` (bugs) or `/aid-triage` (change requests); observation log kept in-memory (persistent `MONITOR-STATE.md` deferred) |
+| `aid-housekeep` | Knowledge Base Maintenance | — | KB-DELTA refresh · SUMMARY-DELTA · workspace CLEANUP |
+| `aid-triage` | Definition | — | A suggested next command (shortcut, `/aid-describe`, or `/aid-ask` for a plain question); writes nothing |
+| `aid-<verb>[-<artifact>]` (64 shortcuts) | Definition | — | Full flattened artifact set (`REQUIREMENTS.md`, `SPEC.md`, `PLAN.md`, `BLUEPRINT.md`, `tasks/task-NNN/DETAIL.md`) via the shared shortcut engine |
 
-AID organizes six numbered development phases into five groups. The six phases (Discover through Execute) form the mandatory sequential pipeline; the fifth group, Deliver, holds two **optional** end-of-pipeline skills (`aid-deploy`, `aid-monitor`) that are invoked on demand rather than as required sequential phases. The pipeline is linear with feedback loops.
+AID organizes its skills into four groups — **Support**, **Knowledge Base Maintenance**, **Definition**, and **Execution**. Groups are a non-sequential way to organize the skills, not a running order. The six numbered development phases (Discover through Execute) still form the mandatory sequential pipeline: Discover sits in Knowledge Base Maintenance, Describe through Detail sit in Definition, and Execute is the sole Execution skill. `aid-deploy` and `aid-monitor` are **optional** shortcut paths in the Definition group, invoked on demand rather than as required phases. The pipeline is linear with feedback loops.
 
-The Prepare group holds two non-phase skills: `aid-config` (bootstrap, run once) and `aid-summarize` (optional KB viewer). A third off-pipeline skill, `aid-housekeep`, runs outside all groups entirely — on-demand KB maintenance when drift accumulates between discovery cycles. These skills are not numbered phases; they do not participate in phase gates. Three more mechanisms sit outside the phase table entirely: `/aid-triage`, a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask`; `/aid-ask` itself, the Q&A alias of `aid-query-kb`; and the 64 direct-entry shortcuts, each a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
+`aid-config` (bootstrap, run once) is the sole **Support** skill. **Knowledge Base Maintenance** additionally holds the on-demand KB skills: `aid-summarize` (optional KB viewer), `aid-housekeep` (KB drift maintenance between discovery cycles), `aid-update-kb` (targeted KB updates through the review gate), and `aid-query-kb`/`aid-ask` (Q&A). None of these are numbered phases; they do not participate in phase gates. `/aid-triage` — a stateless suggest-only router that also recognizes a plain question and points it at `/aid-ask` — and the 64 direct-entry shortcuts belong to the **Definition** group; each shortcut is a thin doorway into the shared shortcut engine that collapses Describe through Detail into one autonomous run. See below, *The Lite Path: Direct-Entry Shortcuts*, for the deep dive.
 
 ---
 
-### Group 1: Prepare
+### Support
 
-*Set up the workspace and build an understanding of the existing system.*
+*Set up the workspace, once, before the pipeline begins.*
 
 ---
 
@@ -421,6 +419,14 @@ The Prepare group holds two non-phase skills: `aid-config` (bootstrap, run once)
 `aid-config` collects project metadata (greenfield or brownfield, project name, description, minimum grade threshold), scaffolds `.aid/knowledge/` with the KB document templates (14 standard templates from the default seed plus the meta-documents), creates the host-tool context file (`CLAUDE.md` for Claude Code; `AGENTS.md` for Codex, Cursor, Copilot CLI, and Antigravity), and asks whether the `.aid/` workspace should be committed to Git.
 
 The scaffold is the blank canvas. After `aid-config`, the KB directory exists with empty placeholders; Discovery fills it.
+
+---
+
+### Knowledge Base Maintenance
+
+*Build and keep current the team's understanding of the existing system.*
+
+This group's deep-dives below cover Discover (Phase 1) and `aid-summarize`. `aid-housekeep` (deep-dive further down, under *Off-Pipeline*), `aid-update-kb`, and `aid-query-kb`/`aid-ask` also belong to this group — see §1, *Skill Inventory*, table A, for their group membership and table B/C for `aid-query-kb`/`aid-ask` detail.
 
 ---
 
@@ -477,9 +483,9 @@ Across the run, discovery covers:
 
 ---
 
-### Group 2: Define
+### Definition
 
-*Gather requirements and formalize the problem statement.*
+*Gather requirements, specify the technical approach, sequence the roadmap, and decompose into executable tasks.*
 
 ---
 
@@ -630,12 +636,6 @@ The key distinction from generic spec generation: the agent does not ask "what t
 
 ---
 
-### Group 3: Map
-
-*Define the roadmap and decompose into executable tasks.*
-
----
-
 #### Phase 4: Plan (`aid-plan`)
 
 **Purpose:** Sequence features into deliverables — each one a functional MVP that builds on the previous. Plan answers ONE question: *"In what order do we deliver, and does each delivery stand on its own?"*
@@ -681,7 +681,7 @@ The eight task types are:
 
 ---
 
-### Group 4: Execute
+### Execution
 
 *Execute every task to a graded bar — code, tests, research, design, docs, and more.*
 
@@ -718,13 +718,13 @@ The eight task types are:
 
 ---
 
-### Group 5: Deliver
+### Optional Deliver Paths
 
 *Optionally ship, monitor, and classify issues.*
 
-The two Deliver-group skills — `aid-deploy` and `aid-monitor` — are **optional, on-demand skills, not numbered pipeline phases.** They are positioned at the end of the pipeline, but neither is required to complete a development cycle and neither is a forced sequential step after Execute. A project may ship by other means, may run monitoring without using `aid-deploy`, or may skip both entirely. Run them when the project's delivery model calls for them.
+`aid-deploy` and `aid-monitor` are not their own group — they are **optional shortcut paths in the Definition group**, invoked on demand rather than as required phases. Both are **optional, on-demand skills, not numbered pipeline phases.** The numbered pipeline ends at Execute; each is a **separate, independently-invoked path** (`/aid-deploy` and `/aid-monitor` each have their own direct entry), not a continuation of the sequence — neither is required to complete a development cycle and neither runs as a step after Execute. A project may ship by other means, may run monitoring without using `aid-deploy`, or may skip both entirely. Run them when the project's delivery model calls for them.
 
-This mirrors `aid-summarize` — an optional skill in the Prepare group — and `aid-housekeep`, the optional off-pipeline maintenance skill described below. The feedback loops they participate in (§6, Loops 8–10) apply only when these skills are run.
+This mirrors `aid-summarize` — an optional skill in the Knowledge Base Maintenance group — and `aid-housekeep`, the optional off-pipeline maintenance skill described below. The feedback loops they participate in (§6, Loops 8–10) apply only when these skills are run.
 
 ---
 
@@ -769,7 +769,7 @@ This mirrors `aid-summarize` — an optional skill in the Prepare group — and 
 
 ### Off-Pipeline: `aid-housekeep`
 
-**Purpose:** Reconcile Knowledge Base drift without running a full discovery cycle. An optional, on-demand skill with no phase gate — not in the mandatory pipeline flow and not a member of any group's sequential flow.
+**Purpose:** Reconcile Knowledge Base drift without running a full discovery cycle. An optional, on-demand skill with no phase gate — not in the mandatory numbered pipeline flow, though it belongs to the Knowledge Base Maintenance group.
 
 As a project evolves, the codebase drifts from the KB. New dependencies appear. Modules are refactored. Integration patterns shift. The KB becomes stale without a discovery re-run to update it. `aid-housekeep` is the lightweight mechanism for catching and closing that drift without re-running full discovery.
 
@@ -828,7 +828,7 @@ These are **default** tiers, not fixed ceilings (work-006). Each dispatch site p
 - **Medium (7 default):** `aid-developer`, `aid-operator`, `aid-orchestrator`, `aid-tech-writer`, `aid-interviewer`, `aid-researcher`, `aid-reviewer`. The workhorses — implement, operate releases, route, document, interview, research/KB-author, and review. `aid-interviewer`, `aid-researcher`, and `aid-reviewer` were lowered from Large in work-006; each escalates back to Large for genuinely hard work (complex requirement synthesis, deep analysis, complex/security/design review, or to match a Large executor). `aid-researcher` runs at `low` effort by default — depth does not aid retrieval.
 - **Small (1 agent):** `aid-clerk`. Deterministic, fast, low-cost. One parameterized utility dispatched for mechanical operations (extract / format / glob) where larger-tier reasoning is unnecessary overhead.
 
-The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses Prepare navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses Map teal (`#0F766E`) because Medium agents handle operational execution (like Map/Execute). This is semantic overlap by design.
+The tier colors in the diagram intentionally echo pipeline group colors — Large tier uses the Knowledge Base Maintenance navy (`#1E3A8A`) because Large agents handle high-stakes judgment (like Discovery); Medium uses the teal (`#0F766E`) shared by Plan and Detail in the Definition group because Medium agents handle operational execution (like Plan, Detail, and Execute). This is semantic overlap by design.
 
 ### Tier Mapping per Profile
 
@@ -936,7 +936,7 @@ flowchart TB
 
 *Eleven formal feedback loops — eight within development, two from production out to the shortcut/triage entry layer, one cross-cutting from any phase. Each dashed arrow is a formal protocol that produces a Q&A entry in a STATE file, an IMPEDIMENT file, or an aid-monitor finding.*
 
-The development pipeline (Discover through Execute) is sequential by default; the optional Deliver-group skills (Deploy, Monitor) run on demand at the end. But real engineering is not linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
+The development pipeline (Discover through Execute) is sequential by default; the optional Deploy and Monitor shortcut paths (Definition group) are separate, on-demand paths, not a continuation of it. But real engineering is not linear. Assumptions break. Gaps appear. Production reveals truths that development couldn't anticipate. AID defines **eleven formal feedback loops** — eight within development, two connecting production back to development, and one cross-cutting re-entry available from any phase.
 
 ### The Eleven Loops
 
@@ -1383,7 +1383,7 @@ flowchart TB
     end
 ```
 
-*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and optional Deliver skills (Deploy, Monitor) that route post-production changes out to the shortcut/triage entry layer rather than back into the numbered pipeline.*
+*Left: SDD starts from a written spec and loops back to re-spec from scratch on changes. Right: AID begins with Discovery and a persistent Knowledge Base, uses two-level planning, eleven formal feedback loops, and the optional Deploy/Monitor shortcut paths that route post-production changes out to the shortcut/triage entry layer rather than back into the numbered pipeline.*
 
 | **Dimension** | SDD | AID |
 |--------------|-----|-----|

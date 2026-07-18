@@ -178,9 +178,9 @@ describe('AC5 — Home pipeline diagram', () => {
     expect(src).toContain('flowchart TB');
   });
 
-  it('index.mdx lists the six core phases in order', () => {
+  it('index.mdx lists Discover and the six core phases in order', () => {
     const src = readDoc('index.mdx');
-    for (const phase of ['Discover', 'Describe', 'Specify', 'Plan', 'Detail', 'Execute']) {
+    for (const phase of ['Discover', 'Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute']) {
       expect(src).toContain(phase);
     }
   });

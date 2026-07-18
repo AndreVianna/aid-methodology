@@ -94,15 +94,26 @@ gate's single new-vs-continuation question with the enumerated list; on **contin
 the gate routes to the chosen work's resume door and this skill **STOPs (allocates
 nothing)**; on **new work**, allocate below.
 
-Scan `.aid/works/` for `work-NNN-*`; the new work is `work-{NNN+1}` (`work-001` if none).
-Derive a short kebab-case slug from the target. Create `.aid/works/work-NNN-<slug>/`.
-Copy `.claude/aid/templates/work-state-template.md` to
+**Resolve `<work-id>`** as `work-{NNN+1}`, where `NNN` is the maximum `work-NNN` numeric
+prefix across every record the enumeration above already returned (cross-worktree by
+construction -- never re-scan a local `.aid/works/` glob for this number; gate `§ 3a` step
+1; `work-001` if none). Derive a short kebab-case slug from the target.
+
+**Create and enter the worktree, before authoring anything** (gate `§ 3a` step 2):
+`bash .claude/aid/scripts/works/worktree-lifecycle.sh create <work-id> <name>` --
+idempotent; prints the worktree's absolute path on success/no-op; on a non-zero exit or an
+empty path, surface the error and **STOP** (do not allocate on the current, possibly
+`master`, tree); on success, enter the resolved path (host-native `EnterWorktree` where
+available, else cwd + surface -- `worktree-lifecycle.md § Step 2`).
+
+**Only now**, inside the entered worktree, create `.aid/works/work-NNN-<slug>/` (reusing
+the `<work-id>` resolved above). Copy `.claude/aid/templates/work-state-template.md` to
 `.aid/works/work-NNN-<slug>/STATE.md` and write the opening frontmatter (direct edit):
 `pipeline.path: lite`, `initiator: aid-review`, `lifecycle: Running`, `active_skill:
 aid-review`, `started`/`updated` timestamps. Leave the 7-phase `phase` scalar at its
 template value -- a standalone review is not a pipeline run and does not drive it
-(specs/aid-review.md 10). Optionally associate a git worktree when the review will
-produce working artifacts (inline-comment drafts) or run tools that touch the tree.
+(specs/aid-review.md 10). The work-level git worktree is created and entered above by the
+gate's `§ 3a` step -- mandatory per FR1, no longer optional.
 
 **Advance:** REVIEW.
 

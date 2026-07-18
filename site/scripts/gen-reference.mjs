@@ -140,65 +140,58 @@ function loadShortcutCatalog() {
 }
 
 // Per-skill group + pipeline phase (grounded in docs/aid-methodology.md §1 Skill
-// Inventory + §4 The Phases). Order within each group is execution order. These
-// are the 16 classic skills — the shortcut skills are summarized separately,
-// data-driven from the shortcut catalog (see generateShortcutFamiliesSection).
+// Inventory + §4 The Phases). Groups are the four non-sequential AID skill
+// groups — Support, Knowledge Base Maintenance, Definition, Execution — always
+// presented in that order; they are NOT the numbered pipeline phases (shown per
+// skill via `phase`). Order within each group is execution order. These are the
+// 16 classic skills — the shortcut skills are summarized separately, data-driven
+// from the shortcut catalog (see generateShortcutFamiliesSection), and rendered
+// nested inside the Definition group (see `shortcutsAfter` below).
 const SKILL_GROUPS = [
   {
-    group: 'Prepare',
-    blurb: 'Set up the workspace and understand the system.',
+    group: 'Support',
+    blurb: 'Set up the workspace and manage connectors.',
     skills: [
       { name: 'aid-config', phase: 'bootstrap · run once' },
-      { name: 'aid-discover', phase: 'Phase 1 · brownfield' },
-      { name: 'aid-summarize', phase: 'optional viewer' },
-    ],
-  },
-  {
-    group: 'Entry points / routing',
-    blurb: 'Not sure which path fits? Route yourself before committing to one.',
-    skills: [{ name: 'aid-triage', phase: 'router · suggest-only' }],
-  },
-  {
-    group: 'Define',
-    blurb: 'Define the problem and how to solve it.',
-    skills: [
-      { name: 'aid-describe', phase: 'Phase 2a · full path only' },
-      { name: 'aid-define', phase: 'Phase 2b · full path only · decompose features' },
-      { name: 'aid-specify', phase: 'Phase 3 · full path only' },
-    ],
-  },
-  {
-    group: 'Map',
-    blurb: 'Turn requirements into an executable task list.',
-    skills: [
-      { name: 'aid-plan', phase: 'Phase 4 · full path only' },
-      { name: 'aid-detail', phase: 'Phase 5 · full path only' },
-    ],
-  },
-  {
-    group: 'Execute',
-    blurb: 'Build, review, and test.',
-    skills: [{ name: 'aid-execute', phase: 'Phase 6 · 8 task types · graded loop' }],
-  },
-  {
-    group: 'Deliver (optional)',
-    blurb: 'Optionally ship, monitor, and route what breaks back into the pipeline.',
-    skills: [
-      { name: 'aid-deploy', phase: 'optional · on demand' },
-      { name: 'aid-monitor', phase: 'optional · on demand' },
-    ],
-  },
-  {
-    group: 'Off-pipeline',
-    blurb: 'On-demand skills, outside the numbered phases.',
-    skills: [
-      { name: 'aid-housekeep', phase: 'on demand' },
-      { name: 'aid-query-kb', phase: 'on demand · read-only Q&A' },
-      { name: 'aid-ask', phase: 'on demand · friendly alias of aid-query-kb' },
-      { name: 'aid-update-kb', phase: 'on demand · targeted KB update' },
       { name: 'aid-set-connector', phase: 'on demand · upsert a connector into the catalog' },
       { name: 'aid-unset-connector', phase: 'on demand · remove a connector from the catalog' },
     ],
+  },
+  {
+    group: 'Knowledge Base Maintenance',
+    blurb: "Build and keep current the team's understanding of the existing system.",
+    skills: [
+      { name: 'aid-discover', phase: 'Phase 1 · brownfield' },
+      { name: 'aid-summarize', phase: 'optional viewer' },
+      { name: 'aid-housekeep', phase: 'on demand' },
+      { name: 'aid-update-kb', phase: 'on demand · targeted KB update' },
+      { name: 'aid-query-kb', phase: 'on demand · read-only Q&A' },
+      { name: 'aid-ask', phase: 'on demand · friendly alias of aid-query-kb' },
+    ],
+  },
+  {
+    group: 'Definition',
+    blurb: 'Route, gather requirements, decide how to solve it, sequence the roadmap, and break it into tasks — the full path, or a shortcut.',
+    skills: [
+      { name: 'aid-triage', phase: 'router · suggest-only' },
+      { name: 'aid-describe', phase: 'Phase 2a · full path only' },
+      { name: 'aid-define', phase: 'Phase 2b · full path only · decompose features' },
+      { name: 'aid-specify', phase: 'Phase 3 · full path only' },
+      { name: 'aid-plan', phase: 'Phase 4 · full path only' },
+      { name: 'aid-detail', phase: 'Phase 5 · full path only' },
+      { name: 'aid-deploy', phase: 'optional shortcut path · on demand' },
+      { name: 'aid-monitor', phase: 'optional shortcut path · on demand' },
+    ],
+    // The 64 direct-entry shortcuts (and the shared shortcut engine they delegate
+    // to) are also Definition-group members — render the family summary nested
+    // here, right after the full-path skills and before the Deploy/Monitor
+    // shortcut paths.
+    shortcutsAfter: 'aid-detail',
+  },
+  {
+    group: 'Execution',
+    blurb: 'Build, review, and test.',
+    skills: [{ name: 'aid-execute', phase: 'Phase 6 · 8 task types · graded loop' }],
   },
 ];
 
@@ -307,8 +300,9 @@ const SHORTCUT_FAMILIES = [
   },
 ];
 
-function generateShortcutFamiliesSection(catalog) {
+function generateShortcutFamiliesSection(catalog, headingLevel = 2) {
   const { rows, emitting } = catalog;
+  const heading = '#'.repeat(headingLevel);
 
   const familyRows = SHORTCUT_FAMILIES.map((f) => {
     const matched = emitting.filter(f.match);
@@ -335,7 +329,7 @@ function generateShortcutFamiliesSection(catalog) {
   const repurposedNames = repurposedRows.map((r) => `\`${r.name}\``).join(' / ');
 
   return (
-    `## Direct-entry shortcuts\n\n` +
+    `${heading} Direct-entry shortcuts\n\n` +
     `**${emitting.length} engine-driven verb-first shortcut skills** — a fast, mostly-autonomous ` +
     `alternative to the full Describe→Detail path for a single, well-scoped change. Each is a thin doorway ` +
     `generated from one non-\`repurpose\` row of [\`${SHORTCUT_CATALOG_SRC}\`](${BLOB}/${SHORTCUT_CATALOG_SRC}) ` +
@@ -363,13 +357,13 @@ function generateSkillsPage() {
   const shortcutNames = catalog.emitting.map((r) => r.name);
 
   // Expected skill-directory set = the curated classic skills (which already
-  // include `aid-triage`'s entry-points group + the 4 classic repurpose skills
-  // deploy/monitor/query-kb/ask) ∪ EVERY catalog row name. work-005 turned many
-  // `repurpose` rows into hand-authored single-shot "collapse" skills that DO
-  // have their own directory (unlike the 4 classic repurpose rows curated above),
-  // so the guard now expects every catalog row's directory — not just the
-  // engine-driven (non-`repurpose`) emitting ones. Compare against on-disk
-  // `canonical/skills/`.
+  // include `aid-triage` in the Definition group + the 4 classic repurpose
+  // skills deploy/monitor/query-kb/ask) ∪ EVERY catalog row name. work-005
+  // turned many `repurpose` rows into hand-authored single-shot "collapse"
+  // skills that DO have their own directory (unlike the 4 classic repurpose
+  // rows curated above), so the guard now expects every catalog row's
+  // directory — not just the engine-driven (non-`repurpose`) emitting ones.
+  // Compare against on-disk `canonical/skills/`.
   const curatedNames = SKILL_GROUPS.flatMap((g) => g.skills.map((s) => s.name));
   const allCatalogNames = catalog.rows.map((r) => r.name);
   const expected = [...new Set([...curatedNames, ...allCatalogNames])].sort();
@@ -389,16 +383,17 @@ function generateSkillsPage() {
   const repurposedCanonicalForIntro = repurposedRowsForIntro.filter((r) => r.alias_of === 'null').length;
   const repurposedAliasForIntro = repurposedRowsForIntro.filter((r) => r.alias_of !== 'null').length;
   // aid-ask is an ALIAS of the classic aid-query-kb (a repurpose row), not a distinct
-  // capability — it renders in the Off-pipeline section but is NOT counted among the
-  // classic skills (matching the README/methodology "16 classic + /aid-triage + /aid-ask"
-  // framing).
-  const classicSkillCount = SKILL_GROUPS
-    .filter((g) => g.group !== 'Entry points / routing')
-    .reduce((sum, g) => sum + g.skills.filter((s) => s.name !== 'aid-ask').length, 0);
+  // capability — it renders in the Knowledge Base Maintenance group but is NOT counted
+  // among the classic skills (matching the README/methodology "16 classic + /aid-triage +
+  // /aid-ask" framing). aid-triage (the suggest-only router) is likewise counted separately.
+  const classicSkillCount = SKILL_GROUPS.reduce(
+    (sum, g) => sum + g.skills.filter((s) => s.name !== 'aid-ask' && s.name !== 'aid-triage').length,
+    0
+  );
 
   const intro =
     `AID ships **${onDisk.length} skill directories** under \`canonical/skills/\`: **${classicSkillCount} classic ` +
-    'pipeline skills** across five phase groups (plus off-pipeline on-demand skills), the standalone ' +
+    'pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the ' +
     `suggest-only router **\`/aid-triage\`**, the friendly **\`/aid-ask\`** Q&A alias (of \`/aid-query-kb\`), and **${shortcutNames.length} engine-driven direct-entry shortcut ` +
     `skills** generated from a ${catalog.rows.length}-row catalog (${canonicalCatalogNames} canonical ` +
     `names + ${aliasCatalogNames} aliases); ${repurposedRowsForIntro.length} of the rows (` +
@@ -407,36 +402,49 @@ function generateSkillsPage() {
     'form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) ' +
     "inside your AI host tool. Classic and router skills below are generated from each skill's own " +
     'definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see ' +
-    '"Direct-entry shortcuts" below).';
+    '"Direct-entry shortcuts" below, nested inside the Definition group).';
+
+  // The 64 direct-entry shortcuts are rendered as an H3 family-summary table
+  // nested inside the Definition group's H2 (see SKILL_GROUPS' `shortcutsAfter`)
+  // rather than as their own top-level H2 — Groups are exactly four (Support,
+  // Knowledge Base Maintenance, Definition, Execution).
+  const shortcutsSectionH3 = generateShortcutFamiliesSection(catalog, 3);
 
   const sections = SKILL_GROUPS.map((g) => {
-    const items = g.skills
-      .map((s) => {
-        const desc = readSkillDescription(s.name);
-        const src = `canonical/skills/${s.name}/SKILL.md`;
-        return (
+    const blocks = g.skills.map((s) => {
+      const desc = readSkillDescription(s.name);
+      const src = `canonical/skills/${s.name}/SKILL.md`;
+      return {
+        name: s.name,
+        text:
           `### \`${s.name}\`\n\n` +
           `**${s.phase}**\n\n` +
           `${desc}\n\n` +
-          `[Definition: \`${src}\`](${BLOB}/${src})\n`
-        );
-      })
-      .join('\n');
-    return `## ${g.group}\n\n${g.blurb}\n\n${items}`;
+          `[Definition: \`${src}\`](${BLOB}/${src})\n`,
+      };
+    });
+    let itemTexts = blocks.map((b) => b.text);
+    if (g.shortcutsAfter) {
+      const idx = blocks.findIndex((b) => b.name === g.shortcutsAfter);
+      itemTexts = [
+        ...itemTexts.slice(0, idx + 1),
+        shortcutsSectionH3,
+        ...itemTexts.slice(idx + 1),
+      ];
+    }
+    return `## ${g.group}\n\n${g.blurb}\n\n${itemTexts.join('\n')}`;
   }).join('\n');
-
-  const shortcutsSection = generateShortcutFamiliesSection(catalog);
 
   const fm = serializeFrontmatter({
     title: 'Skills',
     description:
       `All AID skills — ${classicSkillCount} classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the ` +
-      'catalog-driven direct-entry shortcuts — grouped by phase/family, with what each does and where ' +
-      'it comes from.',
+      'catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and ' +
+      'where it comes from.',
     generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml',
   });
   const note = `\n<!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->\n\n`;
-  return fm + note + intro + '\n\n' + sections + '\n' + shortcutsSection;
+  return fm + note + intro + '\n\n' + sections + '\n';
 }
 
 // ── Agents page generator (grouped per-tier sections) ───────────────────────────

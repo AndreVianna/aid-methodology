@@ -930,8 +930,8 @@ footer {
   // NOT a pipeline phase: aid-discover builds the KB BEFORE the pipeline (a prerequisite,
   // like aid-config), so it is NOT shown in the stepper at all (KB state is surfaced via
   // the KB card). The pipeline STARTS at Describe (full path) or a shortcut skill (Lite
-  // path). Deploy is also absent -- an optional POST-Execute indicator, rendered as a
-  // distinct trailing pill, never a linear pre-Execute stepper slot (see renderStageRail).
+  // path). Deploy is also absent -- the numbered sequence ends at Execute; /aid-deploy
+  // is a separate path (no longer a work phase:), so it is never a stepper slot.
   var PHASE_ORDER = ['Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute'];
 
   // ---------------------------------------------------------------------------
@@ -1508,10 +1508,10 @@ footer {
     badgeWrap.appendChild(makeLifecycleBadge(work.lifecycle));
     card.appendChild(badgeWrap);
 
-    // Current phase -- labelled, no progress counter (the 6 phases are fixed and Deploy
-    // is an optional post-Execute indicator, so an index/total adds little here)
+    // Current phase -- labelled, no progress counter (the phases are fixed, so an
+    // index/total adds little here)
     var phase = work.phase;
-    if (phase && phase !== 'Unknown' && (PHASE_ORDER.indexOf(phase) !== -1 || phase === 'Deploy')) {
+    if (phase && phase !== 'Unknown' && PHASE_ORDER.indexOf(phase) !== -1) {
       var phaseLine = document.createElement('div');
       phaseLine.style.cssText = 'display:flex;align-items:center;gap:0.45rem;flex-wrap:wrap;margin:0.4rem 0;';
       var phaseLabel = document.createElement('span');
@@ -2211,7 +2211,7 @@ footer {
       return;
     }
 
-    var phase = work.phase; // may be null, "Unknown", or "Deploy" (post-Execute)
+    var phase = work.phase; // may be null or "Unknown" (unrecognized/retired)
     if (!phase || phase === 'Unknown') {
       // PF-4/PF-7: neutral sentinel — not a garbage "phase unknown" error badge
       var notYetPill = document.createElement('span');
@@ -2222,15 +2222,10 @@ footer {
       return;
     }
 
-    // Deploy is an optional POST-Execute indicator -- it has no PHASE_ORDER slot
-    // (never a linear pre-Execute stepper step). Treat it as "past the last real
-    // phase" so the dot loop below renders every real phase as done, then append
-    // a distinct trailing pill for it.
-    var isDeployed = (phase === 'Deploy');
-    var currentIdx = isDeployed ? PHASE_ORDER.length : PHASE_ORDER.indexOf(phase);
-    // If phase not in canonical order and not Deploy (future/unrecognized), treat
-    // as not-yet-recorded (PF-7 forward-compat)
-    if (!isDeployed && currentIdx === -1) {
+    var currentIdx = PHASE_ORDER.indexOf(phase);
+    // If phase not in canonical order (future/unrecognized), treat as
+    // not-yet-recorded (PF-7 forward-compat)
+    if (currentIdx === -1) {
       var notYetPill2 = document.createElement('span');
       notYetPill2.className = 'badge badge-dim';
       notYetPill2.setAttribute('role', 'listitem');
@@ -2260,24 +2255,13 @@ footer {
       }
       rail.appendChild(pill);
     }
-
-    if (isDeployed) {
-      // Post-Execute optional indicator — its own trailing pill, distinct from
-      // (never folded into) the linear pre-Execute dot sequence above.
-      var deployPill = document.createElement('span');
-      deployPill.className = 'badge badge-ok';
-      deployPill.setAttribute('role', 'listitem');
-      deployPill.setAttribute('aria-current', 'false');
-      deployPill.textContent = '✓ Deployed';
-      rail.appendChild(deployPill);
-    }
   }
 
   // Compact 3-stage rail for lite/shortcut works — a DISTINCT display from the
   // full 6-phase stepper above (user requirement, work-003-state-schema task-010).
   // Driven directly by this work's own real phase/lifecycle signals (never by
   // reinterpreting the full-path PHASE_ORDER index):
-  //   lifecycle Completed, or phase Deploy -> Done
+  //   lifecycle Completed                  -> Done
   //   phase Execute                        -> Execute
   //   anything else (Describe/Define/Specify/Plan/Detail, or not yet recorded)
   //                                         -> Describe
@@ -2288,7 +2272,7 @@ footer {
   function _renderLiteStageRail(rail, work) {
     var LITE_STAGES = ['Describe', 'Execute', 'Done'];
     var stageIdx;
-    if (work.lifecycle === 'Completed' || work.phase === 'Deploy') {
+    if (work.lifecycle === 'Completed') {
       stageIdx = 2;
     } else if (work.phase === 'Execute') {
       stageIdx = 1;

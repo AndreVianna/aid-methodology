@@ -478,7 +478,7 @@ class TestProducerConsumerRoundTrip(unittest.TestCase):
         """
         # Simulate full pipeline flow: work runs, then completes (state-done.md emit)
         self._produce("Lifecycle", "Running")
-        self._produce("Phase", "Deploy")
+        self._produce("Phase", "Execute")
         self._produce("Active Skill", "aid-deploy")
         self._produce("Updated", "2026-06-11T10:00:00Z")
 

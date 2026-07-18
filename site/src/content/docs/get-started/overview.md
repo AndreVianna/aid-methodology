@@ -24,7 +24,7 @@ requires human approval. The pipeline never auto-advances.
 
 ## The six-phase pipeline
 
-AID organises work into five groups and six numbered phases:
+AID organises work into four groups and six numbered phases:
 
 1. **Discover** — scan the codebase; build the Knowledge Base.
 2. **Describe → Define** — TRIAGE routes the work: full path or lite path.

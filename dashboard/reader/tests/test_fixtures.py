@@ -225,7 +225,7 @@ _STATE_COMPLETED = """\
 ## Pipeline Status
 
 - **Lifecycle:** Completed
-- **Phase:** Deploy
+- **Phase:** Execute
 - **Active Skill:** none
 - **Updated:** 2026-06-05T08:00:00Z
 - **Pause Reason:** --
@@ -263,7 +263,7 @@ _STATE_FALLBACK = """\
 
 | Date | Phase | Event | Phase Transition / Gate | Notes |
 |------|-------|-------|--------------------------|-------|
-| 2026-06-01 | Interview | Work created | Interview start | -- |
+| 2026-06-01 | Describe | Work created | Describe start | -- |
 | 2026-06-09 | Execute | Execution started | Specify -> Execute | -- |
 
 """

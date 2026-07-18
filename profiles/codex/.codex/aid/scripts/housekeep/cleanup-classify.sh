@@ -108,7 +108,9 @@ AID_DIR="${REPO_ROOT}/.aid"
 # Builds the set of work-folder names that must NEVER be offered.
 #
 # (caller) Any name passed via --active-work (highest priority).
-# (b)      The folder matching the current branch (aid/work-NNN-* pattern).
+# (b)      The folder matching the current branch (real bare `work-NNN`
+#          convention; the legacy/delivery `aid/work-NNN[-...]` form is
+#          also tolerated).
 # ---------------------------------------------------------------------------
 
 # is_active_folder <folder_name>
@@ -122,12 +124,14 @@ is_active_folder() {
         [[ "$af" == "$folder_name" ]] && return 0
     done
 
-    # (b) Matches the current branch pattern aid/work-NNN-* — never offer the work
-    # folder whose branch is currently checked out.
+    # (b) Current branch belongs to a work — never offer that work's own folder.
+    # Real convention (work-018): the work branch is the BARE `work-NNN`. Also
+    # tolerate the legacy/delivery form `aid/work-NNN[-...]` so a delivery-branch
+    # checkout stays guarded. The work number is capture group 2 in both forms.
     local current_branch
     current_branch=$(git -C "$REPO_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null) || current_branch=""
-    if [[ -n "$current_branch" && "$current_branch" =~ ^aid/work-([0-9]+)-(.+)$ ]]; then
-        local branch_num="${BASH_REMATCH[1]}"
+    if [[ -n "$current_branch" && "$current_branch" =~ ^(aid/)?work-([0-9]+)(-.*)?$ ]]; then
+        local branch_num="${BASH_REMATCH[2]}"
         if [[ "$folder_name" =~ ^work-([0-9]+)- ]]; then
             local folder_num="${BASH_REMATCH[1]}"
             [[ "$folder_num" == "$branch_num" ]] && return 0

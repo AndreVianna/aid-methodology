@@ -10,7 +10,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by the curated classic pipeline / on-demand skills across 5 groups, plus a 94-row shortcut catalog — 64 shortcut skills (engine-generated verb-first doorways) plus 30 hand-authored `repurpose` skills — and the standalone `/aid-triage` router: 108 skills total (14 curated + 94 catalog). Delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A/KB-update/connector skills are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by the curated classic pipeline / on-demand skills across 4 groups (Support, Knowledge Base Maintenance, Definition, Execution), plus a 94-row shortcut catalog — 64 shortcut skills (engine-generated verb-first doorways) plus 30 hand-authored `repurpose` skills — and the standalone `/aid-triage` router: 108 skills total (14 curated + 94 catalog). Delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A/KB-update/connector skills are optional. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`. Note: "3 meta-documents" is a *role* distinction (generated/process ledgers, review-exempt) — it is orthogonal to the *concern* axis. A standard document (among the 14) may carry an *orientation* concern (cross-cutting, not mapped to a single spine dimension); `external-sources.md` is exactly this: it is a standard, authored, review-eligible KB document whose concern is orientation — orientation on the concern axis does not make a document a meta-document on the role axis.
 
@@ -32,16 +32,14 @@ Terms and concepts used throughout the AID methodology.
 
 | Phase | Group | Produces |
 |-------|-------|----------|
-| **Discover** | Prepare | Knowledge Base (14 standard documents) |
-| **Describe → Define** | Define | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path (via a shortcut): work-root `SPEC.md` directly. |
-| **Specify** | Define | Technical specification added to each feature's `SPEC.md` (full path only) |
-| **Plan** | Map | `PLAN.md` (execution graph) + `deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition) — full path only |
-| **Detail** | Map | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (task definition) — full path only |
-| **Execute** | Execute | Reviewed, graded code (8 task types, built-in review loop) |
-| **Deploy** *(optional)* | Deliver | Shipped delivery, PR, KB update |
-| **Monitor** *(optional)* | Deliver | Classified findings routed to fixes (BUG → `/aid-fix` / Change Request → `/aid-triage` / Infrastructure / No Action) |
+| **Discover** | Knowledge Base Maintenance | Knowledge Base (14 standard documents) |
+| **Describe → Define** | Definition | Full path: `REQUIREMENTS.md` + per-feature `SPEC.md` stubs. Lite path (via a shortcut): work-root `SPEC.md` directly. |
+| **Specify** | Definition | Technical specification added to each feature's `SPEC.md` (full path only) |
+| **Plan** | Definition | `PLAN.md` (execution graph) + `deliveries/delivery-NNN/BLUEPRINT.md` (delivery definition) — full path only |
+| **Detail** | Definition | `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` (task definition) — full path only |
+| **Execute** | Execution | Reviewed, graded code (8 task types, built-in review loop) |
 
-> *Deploy and Monitor are **optional**, on-demand delivery skills positioned at the end of the pipeline — not required, numbered phases. Run them when the project's delivery model calls for them; neither presupposes the other.*
+> *Deploy and Monitor are **optional**, on-demand delivery skills — separate, independently-invoked paths, not required, numbered phases (the numbered sequence ends at Execute). Run them when the project's delivery model calls for them; neither presupposes the other.*
 
 ---
 
@@ -79,15 +77,15 @@ Terms and concepts used throughout the AID methodology.
 
 ## Artifacts
 
-**SPEC.md:** Formal specification grounded in the Knowledge Base. Treated as a hypothesis — refined by evidence from implementation. In the full path, one SPEC.md lives under each feature (`.aid/{work}/features/{feature}/SPEC.md`, augmented with a Technical Specification by `aid-specify`). In the lite path, a single work-root SPEC.md covers the whole work item. Feature definition stays `SPEC.md` on both paths — only the delivery and task definitions were renamed (see `BLUEPRINT.md`, `DETAIL.md`).
+**SPEC.md:** Formal specification grounded in the Knowledge Base. Treated as a hypothesis — refined by evidence from implementation. In the full path, one SPEC.md lives under each feature (`.aid/works/{work}/features/{feature}/SPEC.md`, augmented with a Technical Specification by `aid-specify`). In the lite path, a single work-root SPEC.md covers the whole work item. Feature definition stays `SPEC.md` on both paths — only the delivery and task definitions were renamed (see `BLUEPRINT.md`, `DETAIL.md`).
 
-**BLUEPRINT.md:** The delivery definition — scope, gate criteria, tasks, and dependencies for one delivery. Full path: `.aid/{work}/deliveries/delivery-NNN/BLUEPRINT.md`, one per delivery, written by `aid-plan`. Lite path: a single `BLUEPRINT.md` at the work root (no `deliveries/` nesting), written by the shortcut engine's SPEC/PLAN states. Formerly the delivery-level `SPEC.md` — renamed to disambiguate from the feature-level `SPEC.md`.
+**BLUEPRINT.md:** The delivery definition — scope, gate criteria, tasks, and dependencies for one delivery. Full path: `.aid/works/{work}/deliveries/delivery-NNN/BLUEPRINT.md`, one per delivery, written by `aid-plan`. Lite path: a single `BLUEPRINT.md` at the work root (no `deliveries/` nesting), written by the shortcut engine's SPEC/PLAN states. Formerly the delivery-level `SPEC.md` — renamed to disambiguate from the feature-level `SPEC.md`.
 
-**DETAIL.md:** The task definition. Full path: `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`, written by `aid-detail`. Lite path: `.aid/{work}/tasks/task-NNN/DETAIL.md` at the work root, written by the shortcut engine's DETAIL state. Formerly `tasks/task-NNN.md` (a flat file, not a folder) — now a per-task folder. On the full path that folder also holds a sibling `STATE.md`; the lite path has no per-task `STATE.md` — task cells live in the work-root `STATE.md` § `### Tasks lifecycle` instead.
+**DETAIL.md:** The task definition. Full path: `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`, written by `aid-detail`. Lite path: `.aid/works/{work}/tasks/task-NNN/DETAIL.md` at the work root, written by the shortcut engine's DETAIL state. Formerly `tasks/task-NNN.md` (a flat file, not a folder) — now a per-task folder. On the full path that folder also holds a sibling `STATE.md`; the lite path has no per-task `STATE.md` — task cells live in the work-root `STATE.md` § `### Tasks lifecycle` instead.
 
-**Q&A entry:** Appended to a STATE file (`.aid/knowledge/STATE.md` for discovery-area, `.aid/{work}/STATE.md` for work-area, or `.aid/{work}/features/{feature}/STATE.md` for feature-level) when a phase finds the Knowledge Base or an upstream artifact deficient. The owning phase resolves it on its next run — targeted, not a full restart.
+**Q&A entry:** Appended to a STATE file (`.aid/knowledge/STATE.md` for discovery-area, `.aid/works/{work}/STATE.md` for work-area, or `.aid/works/{work}/features/{feature}/STATE.md` for feature-level) when a phase finds the Knowledge Base or an upstream artifact deficient. The owning phase resolves it on its next run — targeted, not a full restart.
 
-**STATE.md:** The runtime state ledger for a given area. Post-FR2: discovery-area state lives at `.aid/knowledge/STATE.md`; work-area state at `.aid/{work}/STATE.md`; feature state at `.aid/{work}/features/{feature}/STATE.md`. Full path adds delivery-area state at `.aid/{work}/deliveries/delivery-NNN/STATE.md` and task-area state at `.aid/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md`. The lite path has no per-delivery or per-task `STATE.md` — the sole delivery's gate and Q&A, and every task's lifecycle cells, are promoted into the work-root `STATE.md` instead (§ `### Tasks lifecycle`). Holds Q&A history, review history, and calibration log.
+**STATE.md:** The runtime state ledger for a given area. Post-FR2: discovery-area state lives at `.aid/knowledge/STATE.md`; work-area state at `.aid/works/{work}/STATE.md`; feature state at `.aid/works/{work}/features/{feature}/STATE.md`. Full path adds delivery-area state at `.aid/works/{work}/deliveries/delivery-NNN/STATE.md` and task-area state at `.aid/works/{work}/deliveries/delivery-NNN/tasks/task-NNN/STATE.md`. The lite path has no per-delivery or per-task `STATE.md` — the sole delivery's gate and Q&A, and every task's lifecycle cells, are promoted into the work-root `STATE.md` instead (§ `### Tasks lifecycle`). Holds Q&A history, review history, and calibration log.
 
 **IMPEDIMENT.md:** Filed when implementation discovers the plan or spec is wrong. Contains: what was assumed, what's true, proposed revision, and impact assessment.
 
@@ -97,13 +95,12 @@ Terms and concepts used throughout the AID methodology.
 
 ## Groups
 
-| Group | Phases | Focus |
-|-------|--------|-------|
-| **Prepare** | Discover (+ aid-config, aid-summarize) | Set up the workspace and understand the system |
-| **Define** | Describe → Define, Specify | Define the problem and how to solve it |
-| **Map** | Plan, Detail | From requirements to an executable task list |
-| **Execute** | Execute | Build, review, and test |
-| **Deliver** | Deploy, Monitor *(optional)* | Optionally ship, monitor, and route what breaks |
+| Group | Phases / Skills | Focus |
+|-------|-----------------|-------|
+| **Support** | aid-config (+ set/unset-connector) | Bootstrap and configuration |
+| **Knowledge Base Maintenance** | Discover (+ Summarize, Housekeep, Update-KB, Query-KB/Ask) | Build and maintain the Knowledge Base |
+| **Definition** | Describe → Define, Specify, Plan, Detail (+ Triage, shortcuts, Deploy/Monitor) | Define the problem, plan it, and detail the work |
+| **Execution** | Execute | Build, review, and test |
 
 ---
 
