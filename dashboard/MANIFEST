@@ -28,6 +28,9 @@ reader/models.py
 reader/parsers.py
 reader/reader.py
 reader/state_schema.py
+scripts/write-requirement.sh
+scripts/write-setting.sh
+scripts/writeback-state.sh
 server/__init__.py
 server/reader.mjs
 server/server.mjs
