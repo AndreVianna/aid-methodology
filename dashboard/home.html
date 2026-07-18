@@ -742,6 +742,11 @@ footer {
   text-align: center;
 }
 .interval-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Native <select> option popup: on some platforms (e.g. Windows Chrome) the option
+   list is painted on a system-white background, so a dark-theme light --text becomes
+   light-on-white and unreadable. Pin the theme surface + text so the dropdown reads in
+   both themes. Reused by any .interval-input <select> (grade selector, and later index.html). */
+.interval-input option { color: var(--text); background-color: var(--bg-elev); }
 
 /* Running pulse animation — disabled with prefers-reduced-motion */
 @keyframes pulse-dot {
