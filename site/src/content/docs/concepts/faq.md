@@ -21,7 +21,7 @@ No. Use what applies:
 - **Quick bug fix or small change?** Skip Describe entirely — run the matching shortcut (e.g. `/aid-fix`) directly, or `/aid-triage` if you're not sure which one fits.
 - **Spike/prototype?** Use Discover → Specify → Execute. Skip planning.
 
-The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional and run on demand at the end of the pipeline; many projects ship by other means and never invoke them. But know what you're skipping and why.
+The phases are a menu, not a checklist. The two Deliver skills — `aid-deploy` and `aid-monitor` — are optional, separately-invoked paths, not steps in the numbered sequence (which ends at Execute); many projects ship by other means and never invoke them. But know what you're skipping and why.
 
 ### How do I start a new project?
 Run `/aid-config` first — regardless of whether it's greenfield or brownfield. Init scaffolds the Knowledge Base structure (14 empty templates), creates `AGENTS.md` and `CLAUDE.md` placeholders, and records project metadata. Once init is done, proceed to `/aid-discover` (existing codebase) or `/aid-describe` (new project).
@@ -155,8 +155,8 @@ The impediment artifact creates an audit trail. You can always answer "why did t
 All AID runtime state lives under `.aid/` in your project. Key locations:
 - `.aid/knowledge/` — the Knowledge Base (14 standard docs + meta)
 - `.aid/knowledge/STATE.md` — discovery-area state (Q&A, review history)
-- `.aid/{work}/STATE.md` — work-area state for each work item
-- `.aid/{work}/SPEC.md` — work-root spec (lite path, via a shortcut) or per-feature `features/{feature}/SPEC.md` (full path, via `/aid-describe`)
-- `.aid/{work}/BLUEPRINT.md` (lite path) or `.aid/{work}/deliveries/{delivery}/BLUEPRINT.md` (full path) — delivery definition
-- `.aid/{work}/tasks/{task}/DETAIL.md` (lite path) or `.aid/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) — task definition, ready for execution
+- `.aid/works/{work}/STATE.md` — work-area state for each work item
+- `.aid/works/{work}/SPEC.md` — work-root spec (lite path, via a shortcut) or per-feature `features/{feature}/SPEC.md` (full path, via `/aid-describe`)
+- `.aid/works/{work}/BLUEPRINT.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/BLUEPRINT.md` (full path) — delivery definition
+- `.aid/works/{work}/tasks/{task}/DETAIL.md` (lite path) or `.aid/works/{work}/deliveries/{delivery}/tasks/{task}/DETAIL.md` (full path) — task definition, ready for execution
 - `.aid/settings.yml` — project configuration (including `discovery.doc_set`)

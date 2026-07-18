@@ -21,10 +21,12 @@ If infrastructure.md has no Deployment section or it's a placeholder:
 
 Update work `STATE.md` `## Deploy State`: Status → Selecting.
 
-Emit pipeline phase (silent state-write only — no output, no gate):
+Emit pipeline lifecycle state (silent state-write only — no output, no gate). Deploy is a
+separate path, not a numbered phase, so this does NOT change the work's `Phase` (it stays at
+`Execute`); it only marks the Running lifecycle + active skill so the work-initiation gate can
+resume an interrupted deploy via `active_skill: aid-deploy`:
 ```
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Lifecycle --value Running
-bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Phase --value Deploy
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field "Active Skill" --value aid-deploy
 bash .github/aid/scripts/execute/writeback-state.sh --pipeline --field Updated --value "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 ```

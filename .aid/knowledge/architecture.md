@@ -180,8 +180,9 @@ its "Skill Inventory" table):
 Discover -> Describe/Define (2a/2b) -> Specify -> Plan -> Detail -> Execute
 ```
 
-These six map onto skills (Phase 1-6) and sit inside **five skill groups** (Prepare,
-Define, Map, Execute, Deliver). Phase 2 (Describe → Define) is realized by **two** skills —
+These six map onto skills (Phase 1-6), organized into **four skill groups** (Support,
+Knowledge Base Maintenance, Definition, Execution). Groups organize the skills; they are
+not a running order (the numbered phases carry the sequence). Phase 2 (Describe → Define) is realized by **two** skills —
 `aid-describe` (2a) and `aid-define` (2b) — after the `aid-interview` split (see "The
 Describe → Define Phase" below); every other numbered phase is one skill. Several lifecycle labels
 from everyday SDLC talk — Init, Implement, Review, Test, Track, Triage — are **not numbered
@@ -203,15 +204,15 @@ directories**: 15 classic pipeline / on-demand skills, the standalone `/aid-tria
 | Implement | `aid-execute` | No | One of Execute's 8 task types (IMPLEMENT), not a phase. |
 | Review | (inside `aid-execute`) | No | A state of the Execute loop (EXECUTE -> REVIEW -> FIX -> DONE), not a phase. |
 | Test | `aid-execute` | No | A task type (TEST) inside Execute, not a phase. |
-| Deploy | `aid-deploy` | No (optional Deliver) | On-demand Deliver-group skill; not a numbered phase. |
-| Track / Monitor | `aid-monitor` | No (optional Deliver) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
+| Deploy | `aid-deploy` | No (Definition shortcut path) | On-demand optional shortcut path in the Definition group; not a numbered phase. |
+| Track / Monitor | `aid-monitor` | No (Definition shortcut path) | On-demand observe -> classify -> route; not a numbered phase. ("Track" has no separate referent.) Routes findings out: bug -> `/aid-fix`, change request -> `/aid-triage`. |
 | Triage | `aid-triage` (standalone skill); `aid-monitor` classify | No | `/aid-triage` is now its own **suggest-only router** skill (INTAKE -> CLASSIFY -> SUGGEST -> HALT) — the extraction of `aid-describe`'s former TRIAGE state; it writes nothing and creates no work. Monitor still classifies its own findings. |
 | Shortcut (Lite path) | 76 `aid-<verb>[-<artifact>]` skills + the shared shortcut engine | No (collapses Describe→Detail) | Verb-first direct-entry doorways (`/aid-fix`, `/aid-create-api`, …) that delegate to `canonical/aid/templates/shortcut-engine.md` (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT). The autonomous Lite path — enter by naming your change. |
 
-Off-pipeline / on-demand skills: `aid-housekeep` (KB drift reconciliation),
-`aid-query-kb` (Q&A + gap capture; `aid-ask` is its friendly-named alias), `aid-update-kb`
-(targeted KB delta), `aid-summarize` (HTML KB viewer). CONFIRMED in
-`docs/aid-methodology.md` "Skill Inventory".
+Knowledge Base Maintenance group (on-demand, off the numbered pipeline): `aid-housekeep`
+(KB drift reconciliation), `aid-query-kb` (Q&A + gap capture; `aid-ask` is its friendly-named
+alias), `aid-update-kb` (targeted KB delta), `aid-summarize` (HTML KB viewer) — alongside
+`aid-discover` (Phase 1). CONFIRMED in `docs/aid-methodology.md` "Skill Inventory".
 
 **Three entry points, two paths** (CONFIRMED in `docs/aid-methodology.md` §1 "Three Doors In"
 and §4 "The Phases"):
@@ -403,8 +404,8 @@ CONFIRMED in `README.md` "Install" and `docs/aid-methodology.md` §10.
        lite  : /aid-<verb>[-<artifact>] shortcut -> shortcut engine
                  (INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT)
        unsure: /aid-triage -> suggests one of the two above (runs nothing itself)
-  -> work in .aid/works/work-NNN-*/  -> approval halt -> /aid-execute
-  -> optional /aid-deploy -> /aid-monitor
+  -> work in .aid/works/work-NNN-*/  -> approval halt -> /aid-execute   (numbered sequence ends here)
+  separate on-demand paths (own entry, not sequential): /aid-deploy, /aid-monitor
        (Monitor: bug -> /aid-fix; change request -> /aid-triage)
   (any phase -> Q&A entry in a STATE.md -> targeted re-discovery)
 ```

@@ -36,7 +36,8 @@ flowchart TD
     DTL --> HALT
 
     HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
-    EXE --> DEP["/aid-deploy (optional)"] --> MON["/aid-monitor (optional)"]
+    EXE -. "optional separate path" .-> DEP["/aid-deploy"]
+    DEP -. optional .-> MON["/aid-monitor"]
     MON -. "bug → /aid-fix" .-> SC
     MON -. "change request → /aid-triage" .-> TR
 ```
@@ -213,7 +214,7 @@ Hand a capable coding agent a vague task and a large repository and you get pred
 
 ### The Pipeline
 
-Six numbered development phases form the mandatory sequential path. Deploy and Monitor are optional. `aid-housekeep` runs off the pipeline on demand.
+Six numbered development phases form the mandatory sequential path, ending at Execute. Deploy and Monitor are optional, separately-invoked paths. `aid-housekeep` runs off the pipeline on demand.
 
 AID's phases are gated: you approve every transition. Nothing auto-advances. [Full pipeline deep-dive →](docs/aid-methodology.md#1-the-pipeline)
 

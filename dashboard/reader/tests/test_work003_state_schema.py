@@ -324,7 +324,7 @@ started: "{YYYY-MM-DD}"
 minimum_grade: "{resolved at runtime by some script}"
 user_approved: yes | no
 lifecycle: Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-phase: Describe | Define | Specify | Plan | Detail | Execute | Deploy
+phase: Describe | Define | Specify | Plan | Detail | Execute
 active_skill: aid-{skill} | none
 updated: "{YYYY-MM-DDTHH:MM:SSZ}"
 ---
@@ -397,8 +397,7 @@ class TestParseStateMdDualFormat(unittest.TestCase):
 
 
 # ---------------------------------------------------------------------------
-# Phase enum migration (work-003-state-schema task-010): new members read via
-# frontmatter, plus the legacy `phase: Interview` back-compat read alias.
+# Phase enum: members read via frontmatter (faithful numbered pipeline).
 # ---------------------------------------------------------------------------
 
 _PHASE_DESCRIBE_STATE = """---
@@ -425,21 +424,9 @@ active_skill: aid-define
 # Work State -- work-911-demo
 """
 
-_LEGACY_PHASE_INTERVIEW_STATE = """---
-pipeline:
-  path: full
-  initiator: aid-describe
-lifecycle: Running
-phase: Interview
-active_skill: aid-describe
----
-
-# Work State -- work-912-demo
-"""
-
 
 class TestPhaseTask010Migration(unittest.TestCase):
-    """parse_state_md reads the faithful 6-phase enum + the legacy Interview alias
+    """parse_state_md reads the faithful numbered-pipeline phase enum
     (work-003-state-schema task-010, BLUEPRINT gate criteria #16)."""
 
     def test_frontmatter_phase_describe(self):
@@ -449,13 +436,6 @@ class TestPhaseTask010Migration(unittest.TestCase):
     def test_frontmatter_phase_define(self):
         pw = parse_state_md(_PHASE_DEFINE_STATE, work_id="work-911-demo")
         self.assertEqual(pw.phase, Phase.Define)
-
-    def test_legacy_frontmatter_phase_interview_aliases_to_describe(self):
-        # Back-compat: a not-yet-migrated file that still carries the retired
-        # `phase: Interview` value must still parse -- aliased to Describe (its
-        # first half), never Unknown and never a crash.
-        pw = parse_state_md(_LEGACY_PHASE_INTERVIEW_STATE, work_id="work-912-demo")
-        self.assertEqual(pw.phase, Phase.Describe)
 
 
 # ---------------------------------------------------------------------------
@@ -981,17 +961,6 @@ class TestCrossTwinParity(unittest.TestCase):
                 self.assertEqual(py_w, node_w,
                                   f"Python and Node must agree on phase={phase_value!r}")
                 self.assertEqual(py_w["phase"], phase_value)
-
-    def test_legacy_phase_interview_alias_parity(self):
-        """Both twins alias the retired `phase: Interview` to Describe on read
-        (back-compat, task-010) -- never Unknown, never a crash, and identical
-        across twins."""
-        self._write_frontmatter_work_with_phase("work-971-interview", "Interview")
-        py_w = self._read_python_work()
-        node_w = _run_node_work(self.root, self.pinned_home)
-        self.assertEqual(py_w, node_w,
-                          "Python and Node must agree on the legacy Interview alias")
-        self.assertEqual(py_w["phase"], "Describe")
 
     def _run_node_kb_summary_approved(self, root: Path, pinned_home: Path) -> "bool | None":
         script = (

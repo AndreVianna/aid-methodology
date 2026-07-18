@@ -374,10 +374,10 @@ class TestEnumFallback(unittest.TestCase):
             self.assertIn(f"'{lit}':", self.src, f"TaskStatus literal {lit!r} not found in JS map")
 
     def test_phase_order_all_phases(self):
-        # work-003-state-schema task-010: faithful 6-phase pipeline. Describe..Execute
-        # are PHASE_ORDER members; Deploy is an optional post-Execute indicator handled
-        # separately (checked as its own literal, not a PHASE_ORDER member).
-        for phase in ['Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute', 'Deploy']:
+        # Faithful numbered pipeline; ends at Execute. Describe..Execute are the
+        # PHASE_ORDER members. Deploy is retired (no longer a phase; /aid-deploy is a
+        # separate path), so 'Deploy' is not asserted present in the source.
+        for phase in ['Describe', 'Define', 'Specify', 'Plan', 'Detail', 'Execute']:
             self.assertIn(f"'{phase}'", self.src, f"Phase {phase!r} not found in source")
 
     def test_attention_callout_warn_for_paused(self):

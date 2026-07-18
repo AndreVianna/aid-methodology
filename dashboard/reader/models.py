@@ -40,18 +40,17 @@ class Lifecycle(str, Enum):
 class Phase(str, Enum):
     """Pipeline phase enum -- the faithful 6-phase pipeline (work-003-state-schema task-010).
 
-    Members from feature-001 work-state-template.md (rebuilt task-010 to follow the
-    2026-06-28 architecture.md prose rename, Interview -> Describe/Define):
-        Describe | Define | Specify | Plan | Detail | Execute | Deploy
+    Members from feature-001 work-state-template.md:
+        Describe | Define | Specify | Plan | Detail | Execute
     NOT a member here: Discover. `aid-discover` is KB-level -- it writes the KB
     discovery-area STATE (`kb_status`), never a work `phase:` -- so Discover is
     surfaced in the dashboard stepper from `KbStateRef.status` (KbStatus), not from
-    this enum. Deploy is an optional post-Execute indicator (aid-deploy pipeline mode).
+    this enum. NOT a member either: Deploy. The numbered sequence ends at Execute;
+    `/aid-deploy` is a separate, independently-invoked path (no longer a work
+    `phase:`) -- a deploying work stays at phase Execute and its progress lives in
+    `## Deploy State`.
     Reader-only:
         Unknown -- for an unrecognized Phase literal.
-    Back-compat read alias (never written, see `_PHASE_MAP` / `PHASE_MAP`):
-        "Interview" -> Phase.Describe (retired label, split into Describe + Define).
-        "Monitor" -> Phase.Unknown (dead value; no skill ever wrote it).
     """
     Describe = "Describe"
     Define = "Define"
@@ -59,7 +58,6 @@ class Phase(str, Enum):
     Plan = "Plan"
     Detail = "Detail"
     Execute = "Execute"
-    Deploy = "Deploy"
     Unknown = "Unknown"  # reader-only sentinel; never written to disk
 
 

@@ -32,8 +32,21 @@ Read the type. Do the work. Review it. Fix it. Ship it.
 ### Check 1: Locate Work and Task
 
 1. Read first arg: if it starts with `work-` → use that work directory; if it starts with `task-` → treat as shorthand (single-work auto-select below)
-2. If work arg not provided (or shorthand): if single work exists → auto-select; if multiple works → list them, ask user to choose
+2. If work arg not provided (or shorthand): enumerate works **cross-worktree**: run
+   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
+   each record's field-1 `work_id` — single record → auto-select; multiple records →
+   list them, ask user to choose; zero records on any worktree → **STOP.** "No works
+   found. Run `/aid-describe` first."
 3. Read second arg (or first arg when shorthand): the `task-NNN` identifier; also resolve `delivery-NNN` from the task identifier or from the Source field
+
+   **Locate + enter the work's worktree.** Now that the work id is resolved (steps 1-3 above) and
+   **before** step 4 below reads anything under `.aid/works/{work}/…`, follow
+   `canonical/aid/templates/downstream-worktree-entry.md` to normalize the work id to its bare
+   `work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
+   `<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero
+   backstop that stops rather than operate blindly — it should not fire against the real helper.
+   Never create a new worktree — creation belongs to the work-starting skills only.
 4. **Detect the layout** (per-work, presence-based; additive — does not change the full-path resolution below):
    - **Full path (nested):** `.aid/works/{work}/deliveries/` exists → tasks live at `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md`.
    - **Flat path (feature-001, single-delivery):** a work-root `BLUEPRINT.md` present AND `.aid/works/{work}/tasks/task-NNN/DETAIL.md` exists directly under the work root AND no `deliveries/` wrapper under it → the delivery is always the synthesized `delivery-001` (no per-task `STATE.md`; task mutable cells live in the work-root `STATE.md § ### Tasks lifecycle` instead — see `## Workspace` below).
@@ -262,6 +275,14 @@ They are distinct from the PERSISTENT worktrees the dashboard discovers (Pillar 
 — `git worktree list`). Do not confuse the two: the ephemeral worktrees are an
 execution-isolation mechanism; the persistent worktrees are a user-registered
 parallel-branch mechanism visible to the dashboard.
+
+**Nesting with the work-level worktree:** Check 1 step 3's locate+enter paragraph above already
+entered this work's persistent worktree before any of the above runs, so these per-task ephemeral
+worktrees are provisioned **nested, unchanged, inside** that entered work-level worktree —
+different root (`.aid/.worktrees/task-NNN/` vs. the work-level `.claude/worktrees/work-NNN-{name}`),
+different branch, different purpose; the two compose without conflict
+(`canonical/aid/templates/downstream-worktree-entry.md § Composition with aid-execute's per-task
+worktrees`).
 
 ## Delivery Lifecycle
 

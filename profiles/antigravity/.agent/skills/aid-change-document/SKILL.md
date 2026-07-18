@@ -43,8 +43,11 @@ State machine: **INTAKE -> AUTHOR -> VERIFY (loop) -> PRESENT [human gate, diff]
    the gate (`.agent/aid/templates/work-initiation-gate.md`):
    `bash .agent/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate, no prompt. Works exist -> ask new-vs-continuation; on **continuation**
-   route to the chosen work's resume door and STOP (allocate nothing); on **new work**
-   allocate (`initiator: aid-change-document`; `phase` not driven).
+   route to the chosen work's resume door and STOP (allocate nothing); on **new work**:
+   create and enter the worktree per the gate's `§ 3a` step 2
+   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
+   else enter the resolved path), **then** allocate (`initiator: aid-change-document`;
+   `phase` not driven).
 
 **Advance:** AUTHOR.
 

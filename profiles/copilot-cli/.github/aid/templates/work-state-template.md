@@ -6,7 +6,7 @@ started: "{YYYY-MM-DD}"
 minimum_grade: "{resolved at runtime by `bash .github/aid/scripts/config/read-setting.sh --skill {phase} --key minimum_grade --default A`; source is `.aid/settings.yml`}"
 user_approved: yes | no
 lifecycle: Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-phase: Describe | Define | Specify | Plan | Detail | Execute | Deploy
+phase: Describe | Define | Specify | Plan | Detail | Execute
 active_skill: aid-{skill} | none
 updated: "{YYYY-MM-DDTHH:MM:SSZ}"
 pause_reason: "{short text} | --"        # present only when lifecycle = Paused-Awaiting-Input
@@ -85,8 +85,8 @@ This ordering is encoded ONCE here. Both reader twins (Python + Node) reference 
 the ordered list at runtime; schemas.md carries an inline copy derived from this source.
 -->
 
-> **State:** Describing | Defining | Specifying | Planning | Detailing | Executing | Deployed
-> **Phase:** Describe | Define | Specify | Plan | Detail | Execute | Deploy
+> **State:** Describing | Defining | Specifying | Planning | Detailing | Executing
+> **Phase:** Describe | Define | Specify | Plan | Detail | Execute
 
 This is the single state file for **this work** -- the full dev lifecycle from req to spec to plan
 to impl to deploy. One STATE.md per `.aid/works/work-NNN-{name}/` directory. See also: per-delivery
@@ -110,7 +110,7 @@ different places.
      inference. This section retains the enum reference below for human readability. -->
 >
 > Lifecycle enum:    Running | Paused-Awaiting-Input | Blocked | Completed | Canceled
-> Phase enum:        Describe | Define | Specify | Plan | Detail | Execute | Deploy
+> Phase enum:        Describe | Define | Specify | Plan | Detail | Execute
 > Active Skill enum: aid-{skill} | none
 
 ---

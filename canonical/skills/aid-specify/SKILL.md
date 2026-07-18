@@ -52,21 +52,60 @@ Every section follows the same cycle:
 
 ### Check 1: Feature Path Required
 
-If no feature path was provided, list available features across all works:
+If no feature path was provided, resolve **work-first**: features live inside each
+work's own worktree, so they cannot be listed from the main checkout until one is
+entered — the feature glob below runs only after that.
 
-```
-Usage: /aid-specify work-001/feature-001
+1. Enumerate works **cross-worktree**: run
+   `bash canonical/aid/scripts/works/enumerate-works.sh` (main tree + every git
+   worktree; never the local `.aid/works/` glob, which is empty on `master`), taking
+   each record's field-1 `work_id`.
+2. **Zero works** → **STOP.**
+   ```
+   No works found. Run /aid-describe first.
+   ```
+   Exit.
+3. **Single work** → normalize its `work_id` to the bare `work-NNN` branch name and
+   `locate`+enter it (`canonical/aid/templates/downstream-worktree-entry.md` — the
+   same mechanics as "Locate + Enter the Work's Worktree" below), then list *that*
+   work's features locally, now visible inside the entered tree:
+   ```
+   Usage: /aid-specify feature-001
 
-Available features:
-  work-001-user-auth/feature-001-login        [No STATE — not started]
-  work-001-user-auth/feature-002-password      [In Discussion — 2/5 sections]
-  work-002-reporting/feature-001-dashboard     [Ready ✅]
-```
+   Available features in work-001-user-auth:
+     feature-001-login        [No STATE — not started]
+     feature-002-password      [In Discussion — 2/5 sections]
+   ```
+   Scan `.aid/works/{work}/features/feature-*/` inside the entered worktree. For each,
+   check the work STATE.md `## Features State` row for this feature and show status.
+   Exit.
+4. **Multiple works** → present the work list:
+   ```
+   Usage: /aid-specify work-001/feature-001
 
-Scan all `.aid/works/work-*/features/feature-*/` directories.
-For each, check the work STATE.md `## Features State` row for this feature and show status. Exit.
+   Available works:
+     work-001-user-auth
+     work-002-reporting
 
-**Shortcut:** If only one work exists, accept bare `feature-001` and resolve automatically.
+   [1] work-001-user-auth
+   [2] work-002-reporting
+   ```
+   Ask which work. Once chosen, normalize + `locate`+enter it exactly as step 3, then
+   list its features the same way. Exit.
+
+**Shortcut:** If only one work exists, accept bare `feature-001` and resolve
+automatically — this is step 3 above; the single-work case already enters the work
+before the feature glob runs.
+
+### Locate + Enter the Work's Worktree
+
+**As soon as the `work-NNN` prefix is parsed / auto-selected** (right after Check 1) and
+**before** Check 2 globs `.aid/works/{work}/features/…/SPEC.md`, follow
+`canonical/aid/templates/downstream-worktree-entry.md` to normalize `<work-id>` to its bare
+`work-NNN` branch name, `locate` the worktree (which **always exits 0** and returns
+`<path>\t<status>`), and enter the returned path. Keep the defensive empty-path/non-zero backstop
+that stops rather than operate blindly — it should not fire against the real helper. Never create
+a new worktree — creation belongs to the work-starting skills only.
 
 ### Check 2: Feature Exists
 

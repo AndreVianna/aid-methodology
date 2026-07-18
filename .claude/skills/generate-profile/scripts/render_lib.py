@@ -215,7 +215,14 @@ def rewrite_install_paths(body: str, install_root: str) -> str:
         if stripped.startswith("#"):
             out_lines.append(line)  # comment line -- preserve verbatim
         else:
-            out_lines.append(_CANONICAL_PATH_RE.sub(_replace, line))
+            rewritten = _CANONICAL_PATH_RE.sub(_replace, line)
+            # work-018: the worktree container lives under the tool's OWN install
+            # root (.claude/worktrees for claude-code, .cursor/worktrees for cursor,
+            # etc.). Rewrite the claude-native literal per profile so non-claude
+            # trees stay isolation-clean (test-multitool-isolation T23/T25). Canonical
+            # + claude-code keep ".claude/worktrees" (no-op when install_root==".claude").
+            rewritten = rewritten.replace(".claude/worktrees", f"{install_root}/worktrees")
+            out_lines.append(rewritten)
     return "".join(out_lines)
 
 

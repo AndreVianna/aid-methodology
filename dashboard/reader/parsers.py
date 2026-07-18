@@ -2295,21 +2295,14 @@ _LIFECYCLE_MAP: dict[str, Lifecycle] = {
     "Canceled": Lifecycle.Canceled,
 }
 
-# Phase mapping (work-003-state-schema task-010 -- faithful 6-phase pipeline).
-# "Interview" is a back-compat READ alias for the retired label (split into
-# Describe + Define by the 2026-06-28 rename); it maps to Describe, its first
-# half, so pre-migration files/fixtures still parse. "Monitor" is a dead value
-# (no skill ever wrote it) tolerated as Unknown rather than dropped/crashing.
+# Phase mapping (faithful numbered pipeline; ends at Execute).
 _PHASE_MAP: dict[str, Phase] = {
-    "Interview": Phase.Describe,   # back-compat alias, never written
     "Describe": Phase.Describe,
     "Define": Phase.Define,
     "Specify": Phase.Specify,
     "Plan": Phase.Plan,
     "Detail": Phase.Detail,
     "Execute": Phase.Execute,
-    "Deploy": Phase.Deploy,
-    "Monitor": Phase.Unknown,      # dead value, tolerated on read
 }
 
 # TaskStatus mapping (feature-001 M3 closed enum)

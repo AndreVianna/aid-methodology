@@ -680,18 +680,18 @@ code=0
 AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Lifecycle --value "running" 2>/dev/null || code=$?
 assert_exit_eq "$code" 4 "10c: Lifecycle=running (lowercase) rejected (exit 4)"
 
-# 10d: All valid Phase values accepted (rc 0) -- work-003-state-schema task-010:
-# faithful 6-phase pipeline (Interview split into Describe+Define; Monitor removed).
-for ph_val in Describe Define Specify Plan Detail Execute Deploy; do
+# 10d: All valid Phase values accepted (rc 0) -- faithful numbered pipeline;
+# ends at Execute (Deploy/Monitor/Interview are not phases -- see 10d-ii).
+for ph_val in Describe Define Specify Plan Detail Execute; do
     code=0
     AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Phase --value "$ph_val" 2>/dev/null || code=$?
     assert_exit_zero "$code" "10d: Phase=$ph_val accepted (exit 0)"
 done
 
-# 10d-ii: retired Phase values rejected on WRITE (task-010) -- the reader's
-# back-compat alias (Interview -> Describe, Monitor -> Unknown) is a READ-side
-# concession for pre-migration files; writers must emit only the new enum.
-for ph_val in Interview Monitor; do
+# 10d-ii: non-phase / retired values rejected on WRITE -- Deploy is a separate
+# path (no longer a phase); Interview/Monitor are retired labels. Writers emit
+# only the numbered-pipeline enum; the reader tolerates any stray value as Unknown.
+for ph_val in Deploy Interview Monitor; do
     code=0
     AID_STATE_FILE="$PIPE_STATE10" bash "$SCRIPT" --pipeline --field Phase --value "$ph_val" 2>/dev/null || code=$?
     assert_exit_eq "$code" 4 "10d-ii: Phase=$ph_val (retired) rejected (exit 4)"

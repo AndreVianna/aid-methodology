@@ -41,7 +41,8 @@ flowchart TD
     DTL --> HALT
 
     HALT --> EXE["/aid-execute (graded loop · 8 task types)"]
-    EXE --> DEP["/aid-deploy (optional)"] --> MON["/aid-monitor (optional)"]
+    EXE -. "optional separate path" .-> DEP["/aid-deploy"]
+    DEP -. optional .-> MON["/aid-monitor"]
     MON -. "bug → /aid-fix" .-> SC
     MON -. "change request → /aid-triage" .-> TR
 ```

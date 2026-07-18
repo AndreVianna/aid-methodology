@@ -36,31 +36,29 @@ flowchart TB
     subgraph G0[" 0 · Choose your entry "]
         SC["/aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut · I know my change"]:::entry
         TR["/aid-triage<br/>not sure? suggest-only"]:::entry
-        Desc["2a · /aid-describe<br/>broad / new project"]:::def
     end
-    subgraph G1[" 1 · Prepare "]
+    subgraph GS[" Support "]
         Init["aid-config<br/>setup · once"]:::aux
+    end
+    subgraph G1[" Knowledge Base Maintenance "]
         Disc["1 · aid-discover<br/>brownfield"]:::prep
         Sum["aid-summarize<br/>optional"]:::aux
+        HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
     end
-    subgraph G2[" 2 · Define "]
+    subgraph G2[" Definition "]
+        Desc["2a · /aid-describe<br/>broad / new project"]:::def
         Def["2b · aid-define<br/>decompose features"]:::def
         Spec["3 · aid-specify<br/>full path"]:::def
-    end
-    subgraph G3[" 3 · Map "]
         Plan["4 · aid-plan<br/>full path"]:::map
         Det["5 · aid-detail<br/>full path"]:::map
     end
-    subgraph G4[" 4 · Execute "]
-        Eng["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE<br/>collapsed Describe→Detail · autonomous"]:::exe
+    subgraph G4[" Execution "]
         Exe["6 · aid-execute<br/>8 task types · graded loop"]:::exe
     end
-    subgraph G5[" 5 · Deliver (optional) "]
-        Dep["aid-deploy"]:::delopt
-        Mon["aid-monitor"]:::delopt
-    end
 
-    HK["aid-housekeep<br/>on-demand · off-pipeline<br/>KB-DELTA · SUMMARY-DELTA · CLEANUP"]:::offpipe
+    Eng["Shortcut engine<br/>INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE<br/>collapsed Describe→Detail · autonomous"]:::def
+    Dep["aid-deploy<br/>shortcut path"]:::delopt
+    Mon["aid-monitor<br/>shortcut path"]:::delopt
 
     TR -. suggests .-> SC
     TR -. suggests .-> Desc
