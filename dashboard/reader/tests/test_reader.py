@@ -4,8 +4,8 @@ test_reader.py -- Unit tests for the AID state reader (feature-002, task-010).
 Focused unit tests for:
   - read_repo()      : the public entry point
   - LC-1 Locator     : locate_aid_root(), enumerate work dirs
-  - LC-2 Parsers     : parse_tool_info(), parse_project_name(), parse_kb_state(),
-                        parse_state_md()
+  - LC-2 Parsers     : parse_tool_info(), parse_project_name(), parse_project_settings(),
+                        parse_minimum_grade(), parse_kb_state(), parse_state_md()
   - Enum parsing     : Lifecycle, Phase, TaskStatus round-trips
 
 The comprehensive fixture suite is task-012; these tests cover the normalized path
@@ -50,7 +50,9 @@ from dashboard.reader.parsers import (
     _parse_task_status,
     parse_execution_graph,
     parse_kb_state,
+    parse_minimum_grade,
     parse_project_name,
+    parse_project_settings,
     parse_requirements_md,
     parse_spec_md,
     parse_state_md,
@@ -390,6 +392,161 @@ class TestParseProjectName(unittest.TestCase):
         sp.write_text("tools:\n  installed:\n    - claude-code\n", encoding="utf-8")
         name, br = parse_project_name(sp)
         self.assertEqual(name, "")
+
+
+class TestParseProjectSettings(unittest.TestCase):
+    """parse_project_settings() tests (feature-002, work-017 task-005)."""
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.aid = Path(self.tmp)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_absent_settings(self):
+        name, description, br = parse_project_settings(self.aid / "settings.yml")
+        self.assertEqual(name, "")
+        self.assertIsNone(description)
+        self.assertEqual(br, 0)
+
+    def test_reads_name_and_description(self):
+        sp = self.aid / "settings.yml"
+        sp.write_text(
+            "project:\n  name: MyProject\n  description: A test project\n  type: brownfield\n",
+            encoding="utf-8",
+        )
+        name, description, br = parse_project_settings(sp)
+        self.assertEqual(name, "MyProject")
+        self.assertEqual(description, "A test project")
+        self.assertGreater(br, 0)
+
+    def test_description_absent_is_none(self):
+        sp = self.aid / "settings.yml"
+        sp.write_text("project:\n  name: MyProject\n", encoding="utf-8")
+        name, description, br = parse_project_settings(sp)
+        self.assertEqual(name, "MyProject")
+        self.assertIsNone(description)
+
+    def test_description_before_name(self):
+        # Order within the block shouldn't matter -- both are captured regardless
+        # of which scalar comes first.
+        sp = self.aid / "settings.yml"
+        sp.write_text(
+            "project:\n  description: A test project\n  name: MyProject\n",
+            encoding="utf-8",
+        )
+        name, description, br = parse_project_settings(sp)
+        self.assertEqual(name, "MyProject")
+        self.assertEqual(description, "A test project")
+
+    def test_real_settings_yml_format_with_comment(self):
+        # Simulates the actual settings.yml format in this repo (inline comment on name:).
+        content = (
+            "project:\n"
+            "  name: AID                          # set during /aid-config INIT\n"
+            "  description: AI Integrated Development\n"
+        )
+        sp = self.aid / "settings.yml"
+        sp.write_text(content, encoding="utf-8")
+        name, description, br = parse_project_settings(sp)
+        self.assertEqual(name, "AID")
+        self.assertEqual(description, "AI Integrated Development")
+
+    def test_quoted_description_with_comment(self):
+        content = 'project:\n  name: MyProject\n  description: "Foo Bar" # comment\n'
+        sp = self.aid / "settings.yml"
+        sp.write_text(content, encoding="utf-8")
+        name, description, br = parse_project_settings(sp)
+        self.assertEqual(description, "Foo Bar")
+
+    def test_no_project_section(self):
+        sp = self.aid / "settings.yml"
+        sp.write_text("tools:\n  installed:\n    - claude-code\n", encoding="utf-8")
+        name, description, br = parse_project_settings(sp)
+        self.assertEqual(name, "")
+        self.assertIsNone(description)
+
+    def test_parse_project_name_wrapper_matches(self):
+        # parse_project_name remains a thin wrapper: same name result as
+        # parse_project_settings()[0], for existing callers/tests.
+        sp = self.aid / "settings.yml"
+        sp.write_text("project:\n  name: MyProject\n  description: Desc\n", encoding="utf-8")
+        name_only, br_only = parse_project_name(sp)
+        name_combined, _description, br_combined = parse_project_settings(sp)
+        self.assertEqual(name_only, name_combined)
+        self.assertEqual(br_only, br_combined)
+
+
+class TestParseMinimumGrade(unittest.TestCase):
+    """parse_minimum_grade() tests (feature-002, work-017 task-005).
+
+    Global review.minimum_grade -- a SEPARATE 'review:'-section scan from
+    parse_project_settings's 'project:'-section scan (a real settings.yml has
+    'tools:' between them, so the project-section break-on-next-top-level-key
+    logic cannot reach 'review:').
+    """
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp()
+        self.aid = Path(self.tmp)
+
+    def tearDown(self):
+        import shutil
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def test_absent_settings(self):
+        grade, br = parse_minimum_grade(self.aid / "settings.yml")
+        self.assertIsNone(grade)
+        self.assertEqual(br, 0)
+
+    def test_reads_minimum_grade(self):
+        sp = self.aid / "settings.yml"
+        sp.write_text("review:\n  minimum_grade: A+\n", encoding="utf-8")
+        grade, br = parse_minimum_grade(sp)
+        self.assertEqual(grade, "A+")
+        self.assertGreater(br, 0)
+
+    def test_no_review_section(self):
+        sp = self.aid / "settings.yml"
+        sp.write_text("project:\n  name: MyProject\n", encoding="utf-8")
+        grade, br = parse_minimum_grade(sp)
+        self.assertIsNone(grade)
+
+    def test_real_settings_yml_layout_tools_between_project_and_review(self):
+        # Real settings.yml has 'tools:' between 'project:' and 'review:' --
+        # this is the exact hazard that makes reusing the project-section scan
+        # impossible (SPEC.md UI Specs / Layers & Components).
+        content = (
+            "project:\n"
+            "  name: AID\n"
+            "  description: AI Integrated Development\n"
+            "tools:\n"
+            "  installed:\n"
+            "    - claude-code\n"
+            "review:\n"
+            "  minimum_grade: A+   # owner directive\n"
+        )
+        sp = self.aid / "settings.yml"
+        sp.write_text(content, encoding="utf-8")
+        grade, br = parse_minimum_grade(sp)
+        self.assertEqual(grade, "A+")
+
+    def test_strips_inline_comment(self):
+        sp = self.aid / "settings.yml"
+        sp.write_text(
+            "review:\n  minimum_grade: A+   # owner directive 2026-06-27\n",
+            encoding="utf-8",
+        )
+        grade, br = parse_minimum_grade(sp)
+        self.assertEqual(grade, "A+")
+
+    def test_quoted_value(self):
+        sp = self.aid / "settings.yml"
+        sp.write_text('review:\n  minimum_grade: "A-"\n', encoding="utf-8")
+        grade, br = parse_minimum_grade(sp)
+        self.assertEqual(grade, "A-")
 
 
 class TestParseKbState(unittest.TestCase):

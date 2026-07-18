@@ -591,18 +591,25 @@ function stripYamlInlineComment(scalar) {
   return s;
 }
 
-function parseProjectName(settingsPath) {
-  if (!existsSync(settingsPath)) return ["", 0];
+// parseProjectSettings: extracts project.name + project.description from
+// .aid/settings.yml. Both scalars live in the SAME 'project:' block, so this
+// is one shared line-scan (feature-002, work-017 task-005). Returns
+// [name, description, bytesRead]; on any failure ["", null, 0].
+// Twin of parsers.py parse_project_settings().
+function parseProjectSettings(settingsPath) {
+  if (!existsSync(settingsPath)) return ["", null, 0];
   let raw;
   try {
     raw = readFileBounded(settingsPath);
   } catch (_) {
-    return ["", 0];
+    return ["", null, 0];
   }
   const bytesRead = raw.length;
   const text = raw.toString("utf-8");
 
   let inProject = false;
+  let name = null;
+  let description = null;
   for (const line of text.split("\n")) {
     const stripped = line.trim();
     if (stripped === "project:" || stripped.startsWith("project: ")) {
@@ -612,19 +619,81 @@ function parseProjectName(settingsPath) {
     if (inProject) {
       if (line.length > 0 && !/^\s/.test(line) && !line.startsWith("#") && line.includes(":")) {
         const key = line.split(":")[0].trim();
-        if (key !== "name") {
+        if (key !== "name" && key !== "description") {
           if (!/^\s/.test(line)) break;
         }
       }
-      const m = line.match(/^\s+name:\s+(.+)/);
-      if (m) {
+      let m = line.match(/^\s+name:\s+(.+)/);
+      if (m && name === null) {
         // PF-6: strip inline YAML comment
-        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
-        return [val, bytesRead];
+        name = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        continue;
+      }
+      m = line.match(/^\s+description:\s+(.+)/);
+      if (m && description === null) {
+        description = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        continue;
       }
     }
   }
-  return ["", bytesRead];
+  return [name !== null ? name : "", description, bytesRead];
+}
+
+// parseProjectName: thin wrapper over parseProjectSettings (kept for existing
+// callers that only need the name). Twin of parsers.py parse_project_name().
+function parseProjectName(settingsPath) {
+  const [name, , bytesRead] = parseProjectSettings(settingsPath);
+  return [name, bytesRead];
+}
+
+// parseSettingsMinimumGrade: extracts the GLOBAL review.minimum_grade from
+// .aid/settings.yml. Its own 'review:'-section line-scan -- structurally
+// SEPARATE from the 'project:' block (a real settings.yml has 'tools:'
+// between 'project:' and 'review:', so parseProjectSettings's
+// break-on-next-top-level-key logic cannot reach 'review:'). Returns
+// [grade, bytesRead]; absent/unreadable -> [null, bytesRead or 0]. Read
+// literally as a display scalar -- no resolution. Twin of parsers.py
+// parse_minimum_grade() -- named parseSettingsMinimumGrade (not
+// parseMinimumGrade) in this flat file only to avoid colliding with the
+// pre-existing per-work parseMinimumGrade(text) below (twin of
+// derivation.py's _parse_minimum_grade, a STATE.md-text scan -- Python
+// keeps the two apart via module namespacing + the underscore prefix;
+// this single-file Node twin needs a distinct name instead).
+function parseSettingsMinimumGrade(settingsPath) {
+  if (!existsSync(settingsPath)) return [null, 0];
+  let raw;
+  try {
+    raw = readFileBounded(settingsPath);
+  } catch (_) {
+    return [null, 0];
+  }
+  const bytesRead = raw.length;
+  const text = raw.toString("utf-8");
+
+  let inReview = false;
+  let grade = null;
+  for (const line of text.split("\n")) {
+    const stripped = line.trim();
+    if (stripped === "review:" || stripped.startsWith("review: ")) {
+      inReview = true;
+      continue;
+    }
+    if (inReview) {
+      if (line.length > 0 && !/^\s/.test(line) && !line.startsWith("#") && line.includes(":")) {
+        const key = line.split(":")[0].trim();
+        if (key !== "minimum_grade") {
+          if (!/^\s/.test(line)) break;
+        }
+      }
+      const m = line.match(/^\s+minimum_grade:\s+(.+)/);
+      if (m && grade === null) {
+        const val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        if (val) grade = val;
+        continue;
+      }
+    }
+  }
+  return [grade, bytesRead];
 }
 
 // ---------------------------------------------------------------------------
@@ -2605,11 +2674,17 @@ function _readRepoFull(root) {
   bytesRead += br0;
 
   // Step 3: LEVEL-1 RepoInfo
-  let [projectName, br1] = parseProjectName(loc.settingsPath);
+  let [projectName, projectDescription, br1] = parseProjectSettings(loc.settingsPath);
   bytesRead += br1;
   if (!projectName) {
     projectName = basename(resolvedRoot);
   }
+
+  // feature-002 (work-017 task-005): GLOBAL review.minimum_grade -- its own
+  // 'review:'-section scan (a real settings.yml has 'tools:' between 'project:'
+  // and 'review:', so the project-section scan above cannot reach it).
+  const [minimumGrade, brGrade] = parseSettingsMinimumGrade(loc.settingsPath);
+  bytesRead += brGrade;
 
   // task-064: parse kb_baseline from settings.yml (DM-A4)
   const [kbBaseline, brBaseline] = parseKbBaseline(loc.settingsPath);
@@ -2637,7 +2712,13 @@ function _readRepoFull(root) {
     kbState.suspect_count = docFreshness.filter(d => d.verdict === "suspect").length;
   }
 
-  const repoInfo = { project_name: projectName, aid_dir: loc.aidDir, kb_state: kbState };
+  const repoInfo = {
+    project_name: projectName,
+    aid_dir: loc.aidDir,
+    kb_state: kbState,
+    project_description: projectDescription,
+    minimum_grade: minimumGrade,
+  };
 
   // Step 4: ENUMERATE worktrees + work folders (work-004 Pillar 4 / SD-3)
   // _enumerateWorktreeRoots returns [[branchLabel, aidDir], ...] with main root first.
@@ -4428,9 +4509,13 @@ function _buildDocFreshness(df) {
 }
 
 function _buildRepoInfo(ri) {
-  // RepoInfo field order: project_name, aid_dir, kb_state
+  // RepoInfo field order: project_name, project_description, minimum_grade,
+  // aid_dir, kb_state (feature-002, work-017 task-005: two additive keys
+  // inserted after project_name; schema_version stays 3).
   return {
     project_name: ri.project_name,
+    project_description: ri.project_description !== undefined ? ri.project_description : null,
+    minimum_grade: ri.minimum_grade !== undefined ? ri.minimum_grade : null,
     aid_dir: ri.aid_dir,
     kb_state: _buildKbStateRef(ri.kb_state),
   };

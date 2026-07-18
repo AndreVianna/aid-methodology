@@ -67,7 +67,8 @@ from .parsers import (
     parse_kb_baseline,
     parse_kb_state,
     parse_log_availability,
-    parse_project_name,
+    parse_minimum_grade,
+    parse_project_settings,
     parse_quick_check_findings,
     parse_requirements_md,
     parse_spec_md,
@@ -485,10 +486,16 @@ def _read_repo_full(
     bytes_read += br
 
     # Step 3: LEVEL-1 -- RepoInfo + KbStateRef (LC-2)
-    project_name, br = parse_project_name(loc.settings_path)
+    project_name, project_description, br = parse_project_settings(loc.settings_path)
     bytes_read += br
     if not project_name:
         project_name = root.name  # fallback: folder basename (SPEC DM-7 note)
+
+    # feature-002 (work-017 task-005): GLOBAL review.minimum_grade -- its own
+    # 'review:'-section scan (a real settings.yml has 'tools:' between 'project:'
+    # and 'review:', so the project-section scan above cannot reach it).
+    minimum_grade, br = parse_minimum_grade(loc.settings_path)
+    bytes_read += br
 
     # task-064: parse kb_baseline from settings.yml (DM-A4)
     kb_baseline, br = parse_kb_baseline(loc.settings_path)
@@ -520,6 +527,8 @@ def _read_repo_full(
         project_name=project_name,
         aid_dir=str(loc.aid_dir),
         kb_state=kb_state,
+        project_description=project_description,
+        minimum_grade=minimum_grade,
     )
 
     # Step 4: ENUMERATE -- worktrees + work folders (work-004 Pillar 4 / SD-3)

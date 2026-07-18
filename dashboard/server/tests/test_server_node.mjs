@@ -728,6 +728,74 @@ process.stdout.write("\n[10] task-064 KB status extension (reader.mjs)\n");
 }
 
 // ---------------------------------------------------------------------------
+// (10b) feature-002 (work-017 task-005): DM-1 reader exposure of
+//       project.description + global review.minimum_grade
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[10b] task-005 project_description + minimum_grade (reader.mjs)\n");
+
+{
+  // --- repo key order: project_name, project_description, minimum_grade,
+  //     aid_dir, kb_state (additive keys inserted after project_name) ---
+  const tmp8 = join(tmpdir(), "aid-task005-" + Date.now());
+  mkdirSync(join(tmp8, ".aid"), { recursive: true });
+  try {
+    const m8 = readRepo(tmp8);
+    const keys8 = Object.keys(m8.repo);
+    assert(keys8[0] === "project_name", "10b.1: first key is project_name");
+    assert(keys8[1] === "project_description", "10b.2: second key is project_description (new)");
+    assert(keys8[2] === "minimum_grade", "10b.3: third key is minimum_grade (new)");
+    assert(keys8[3] === "aid_dir", "10b.4: fourth key is aid_dir");
+    assert(keys8[4] === "kb_state", "10b.5: fifth key is kb_state");
+    assert(m8.repo.project_description === null, "10b.6: project_description=null when absent");
+    assert(m8.repo.minimum_grade === null, "10b.7: minimum_grade=null when absent");
+  } finally {
+    try { rmSync(tmp8, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- real settings.yml layout: tools: sits between project: and review: ---
+  const tmp9 = join(tmpdir(), "aid-task005-" + Date.now());
+  mkdirSync(join(tmp9, ".aid"), { recursive: true });
+  writeFileSync(
+    join(tmp9, ".aid", "settings.yml"),
+    "project:\n" +
+    "  name: AID                          # set during /aid-config INIT\n" +
+    "  description: AI Integrated Development\n" +
+    "  type: brownfield\n" +
+    "tools:\n" +
+    "  installed:\n" +
+    "    - claude-code\n" +
+    "review:\n" +
+    "  minimum_grade: A+   # owner directive 2026-06-27\n",
+    "utf-8"
+  );
+  try {
+    const m9 = readRepo(tmp9);
+    assert(m9.repo.project_name === "AID", "10b.8: project_name parsed");
+    assert(m9.repo.project_description === "AI Integrated Development",
+      "10b.9: project_description parsed from the same project: block");
+    assert(m9.repo.minimum_grade === "A+",
+      "10b.10: minimum_grade parsed from the SEPARATE review: block " +
+      "(tools: sits in between in a real settings.yml)");
+  } finally {
+    try { rmSync(tmp9, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- no .aid/ -> empty model leaves both fields null (no crash) ---
+  const tmp10 = join(tmpdir(), "aid-task005-noaid-" + Date.now());
+  mkdirSync(tmp10, { recursive: true });
+  try {
+    const m10 = readRepo(tmp10);
+    assert(m10.repo.project_description === null,
+      "10b.11: no-.aid/ empty model: project_description=null");
+    assert(m10.repo.minimum_grade === null,
+      "10b.12: no-.aid/ empty model: minimum_grade=null");
+  } finally {
+    try { rmSync(tmp10, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Live server tests: (2) route table, (3) SEC-2, (4) registry tolerance,
 //                   (5) /api/home DM-2 shape, (6) serialization DM-3
 // ---------------------------------------------------------------------------

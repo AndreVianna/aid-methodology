@@ -170,29 +170,33 @@ def parse_tool_info(
 # Level-1: RepoInfo helpers
 # ---------------------------------------------------------------------------
 
-def parse_project_name(settings_path: Path) -> tuple[str, int]:
-    """Extract project.name from .aid/settings.yml.
+def parse_project_settings(settings_path: Path) -> tuple[str, Optional[str], int]:
+    """Extract project.name and project.description from .aid/settings.yml.
 
-    Uses a simple line-scan for 'name:' under the 'project:' block.
-    Returns (name, bytes_read). On any failure, returns ("", 0).
+    Both scalars live in the SAME 'project:' block, so this is one shared
+    line-scan (feature-002, work-017 task-005) -- the combined pass
+    `parse_project_name` used to run alone before this field was added.
+    Returns (name, description, bytes_read). On any failure, returns ("", None, 0).
 
-    This is display-only: we read only the literal name scalar, not
+    This is display-only: we read only the literal scalars, not
     grade-resolution semantics (read-setting.sh is the contract for resolution).
     """
     if not settings_path.is_file():
-        return "", 0
+        return "", None, 0
 
     try:
         raw = read_bytes_bounded(settings_path)
     except OSError:
-        return "", 0
+        return "", None, 0
 
     bytes_read = len(raw)
     text = raw.decode("utf-8", errors="replace")
 
-    # Find 'project:' section then the first 'name:' line after it.
-    # Simple anchored line-scan: no YAML parser needed for this one scalar.
+    # Find 'project:' section then the 'name:'/'description:' lines within it.
+    # Simple anchored line-scan: no YAML parser needed for these scalars.
     in_project = False
+    name: Optional[str] = None
+    description: Optional[str] = None
     for line in text.splitlines():
         stripped = line.strip()
         if stripped == "project:" or stripped.startswith("project: "):
@@ -202,19 +206,87 @@ def parse_project_name(settings_path: Path) -> tuple[str, int]:
             # Another top-level key ends the project block
             if line and line[0] not in (" ", "\t", "#", "") and ":" in line:
                 key = line.split(":")[0].strip()
-                if key != "name":
+                if key not in ("name", "description"):
                     # If this is a new top-level section (no leading whitespace), stop.
                     if not line[0].isspace():
                         break
             m = re.match(r"^\s+name:\s+(.+)", line)
-            if m:
-                val = m.group(1)
+            if m and name is None:
                 # PF-6: strip inline YAML comment -- drop from first unquoted '#' to EOL
-                val = _strip_yaml_inline_comment(val)
-                val = val.strip().strip('"').strip("'")
-                return val, bytes_read
+                val = _strip_yaml_inline_comment(m.group(1))
+                name = val.strip().strip('"').strip("'")
+                continue
+            m = re.match(r"^\s+description:\s+(.+)", line)
+            if m and description is None:
+                val = _strip_yaml_inline_comment(m.group(1))
+                description = val.strip().strip('"').strip("'")
+                continue
 
-    return "", bytes_read
+    return (name if name is not None else ""), description, bytes_read
+
+
+def parse_project_name(settings_path: Path) -> tuple[str, int]:
+    """Extract project.name from .aid/settings.yml.
+
+    Thin wrapper over `parse_project_settings` (kept for existing
+    callers/tests that only need the name). Returns (name, bytes_read).
+    On any failure, returns ("", 0).
+
+    This is display-only: we read only the literal name scalar, not
+    grade-resolution semantics (read-setting.sh is the contract for resolution).
+    """
+    name, _description, bytes_read = parse_project_settings(settings_path)
+    return name, bytes_read
+
+
+def parse_minimum_grade(settings_path: Path) -> tuple[Optional[str], int]:
+    """Extract the GLOBAL review.minimum_grade from .aid/settings.yml.
+
+    Its own 'review:'-section line-scan -- structurally SEPARATE from the
+    'project:' block. In a real settings.yml the 'tools:' section sits
+    between 'project:' and 'review:', so `parse_project_settings`'s
+    break-on-next-top-level-key logic exits the loop at 'tools:' and never
+    reaches 'review:'; reusing that scan is impossible, hence the dedicated pass.
+
+    Returns (grade, bytes_read). Absent/unreadable -> (None, bytes_read or 0).
+
+    Read literally as a display scalar -- no resolution (read-setting.sh
+    remains the resolution contract, same posture as parse_project_name).
+    """
+    if not settings_path.is_file():
+        return None, 0
+
+    try:
+        raw = read_bytes_bounded(settings_path)
+    except OSError:
+        return None, 0
+
+    bytes_read = len(raw)
+    text = raw.decode("utf-8", errors="replace")
+
+    in_review = False
+    grade: Optional[str] = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped == "review:" or stripped.startswith("review: "):
+            in_review = True
+            continue
+        if in_review:
+            # Another top-level key ends the review block
+            if line and line[0] not in (" ", "\t", "#", "") and ":" in line:
+                key = line.split(":")[0].strip()
+                if key != "minimum_grade":
+                    if not line[0].isspace():
+                        break
+            m = re.match(r"^\s+minimum_grade:\s+(.+)", line)
+            if m and grade is None:
+                val = _strip_yaml_inline_comment(m.group(1))
+                val = val.strip().strip('"').strip("'")
+                if val:
+                    grade = val
+                continue
+
+    return grade, bytes_read
 
 
 def _strip_yaml_inline_comment(scalar: str) -> str:

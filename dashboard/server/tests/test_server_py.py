@@ -1044,9 +1044,14 @@ class TestSerializationDm3(unittest.TestCase):
                          ["manifest_present", "aid_version", "installed_at", "tools_installed"])
 
     def test_repo_info_key_order(self):
+        # feature-002 (work-017 task-005): project_description + minimum_grade are
+        # additive keys inserted after project_name (schema_version stays 3).
         data = self._get_model()
         repo = data["model"]["repo"]
-        self.assertEqual(list(repo.keys()), ["project_name", "aid_dir", "kb_state"])
+        self.assertEqual(
+            list(repo.keys()),
+            ["project_name", "project_description", "minimum_grade", "aid_dir", "kb_state"],
+        )
 
     def test_read_meta_key_order(self):
         data = self._get_model()

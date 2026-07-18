@@ -223,6 +223,18 @@ class RepoInfo:
     project_name: str           # from .aid/settings.yml project.name; fallback: dir basename
     aid_dir: str                # resolved .aid/ root path (as string)
     kb_state: Optional[KbStateRef] = None
+    # feature-002 (work-017 task-005): DM-1 exposure of the two settings scalars the
+    # redesigned project-header panel displays. Declared here (after aid_dir/kb_state,
+    # since dataclass fields with a default must follow those without one) but
+    # SERIALIZED before aid_dir/kb_state -- declared field order project_name,
+    # project_description, minimum_grade, aid_dir, kb_state (see
+    # server.py _ser_repo_info / reader.mjs _buildRepoInfo).
+    project_description: Optional[str] = None  # .aid/settings.yml project.description;
+                                                 # None if absent/unreadable
+    minimum_grade: Optional[str] = None  # GLOBAL .aid/settings.yml review.minimum_grade,
+                                          # read literally (no resolution); deliberately
+                                          # distinct from WorkModel.minimum_grade (per-work
+                                          # value). None if absent/unreadable.
 
 
 # ---------------------------------------------------------------------------

@@ -602,11 +602,18 @@ def _ser_kb_state(obj) -> dict | None:
 
 
 def _ser_repo_info(obj) -> dict:
-    """Serialize RepoInfo in declared field order."""
+    """Serialize RepoInfo in declared field order.
+
+    feature-002 (work-017 task-005): project_description + minimum_grade are
+    additive keys inserted after project_name (schema_version stays 3 --
+    DM-A3/RC-2 no-bump precedent).
+    """
     return {
-        "project_name": obj.project_name,
-        "aid_dir":      obj.aid_dir,
-        "kb_state":     _ser_kb_state(obj.kb_state),
+        "project_name":        obj.project_name,
+        "project_description": obj.project_description,
+        "minimum_grade":       obj.minimum_grade,
+        "aid_dir":             obj.aid_dir,
+        "kb_state":            _ser_kb_state(obj.kb_state),
     }
 
 
