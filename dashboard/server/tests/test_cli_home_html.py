@@ -259,14 +259,14 @@ class TestStructural(unittest.TestCase):
         self.assertNotIn('setTimeout(function', self.src)
 
     # S9 -- brand is static "AID . this machine" (no id="brand-name")
-    def test_s9_brand_contains_aid_this_machine(self):
-        self.assertIn('this machine', self.src)
-        # Check AID text is in the brand div
+    def test_s9_brand_present(self):
+        # The CLI-home (all-projects) brand deliberately reads "Home" (breadcrumb IA:
+        # Home > Project); the older "AID · this machine" header was intentionally
+        # retired (commit 628c9810). Assert the brand div is present and labelled.
         idx = self.src.find('class="brand"')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 200]
-        self.assertIn('AID', snippet)
-        self.assertIn('this machine', snippet)
+        self.assertIn('Home', snippet)
 
     def test_s9_no_brand_name_id(self):
         # The CLI home brand is static -- no dynamic id="brand-name" injection needed
