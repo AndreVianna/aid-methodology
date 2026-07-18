@@ -53,7 +53,6 @@ import hashlib
 import json
 import os
 import re
-import shutil
 import signal
 import subprocess
 import sys
@@ -974,6 +973,34 @@ def _op_fail_body(op: "str | None", error: str, detail: str) -> bytes:
     return json.dumps(envelope, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
+def _resolve_bash_exe() -> str:
+    """Resolve bash's ABSOLUTE path via a hand-rolled PATH-order search (SEC-3:
+    this file has a blanket ban on the stdlib module that provides which())
+    rather than passing the bare string "bash" to subprocess.run(). On Windows,
+    CreateProcess's own search order checks the System32 directory BEFORE
+    consuming the PATH env var's entries -- and Windows 10+ ships a WSL-launcher
+    stub at C:\\Windows\\System32\\bash.exe. A bare "bash" argv[0] therefore
+    silently resolves to that WSL stub (which cannot see a "C:/..." host path)
+    instead of Git-Bash, even when Git-Bash appears earlier in PATH. This walks
+    PATH ourselves in order (matching this script's own portability
+    expectations) and sidesteps CreateProcess's fixed system-dir-first order.
+    Mirrors resolveBashExe() in server.mjs exactly.
+    """
+    path_env = os.environ.get("PATH", "")
+    exe_names = ("bash.exe", "bash.EXE") if sys.platform == "win32" else ("bash",)
+    for directory in path_env.split(os.pathsep):
+        if not directory:
+            continue
+        for exe_name in exe_names:
+            candidate = os.path.join(directory, exe_name)
+            if os.path.isfile(candidate):
+                return candidate
+    return "bash"  # fall back to bare name; subprocess.run reports ENOENT if truly absent
+
+
+_BASH_EXE = _resolve_bash_exe()
+
+
 def _run_writer(writer_name: str, argv: list[str], env_overrides: dict[str, str]) -> tuple[int, str]:
     """Spawn a co-vendored writer script via `bash <writer> <argv...>` -- an argv
     ARRAY, never shell=True / a concatenated command string (SEC-3/SEC-4 injection
@@ -986,16 +1013,7 @@ def _run_writer(writer_name: str, argv: list[str], env_overrides: dict[str, str]
     writer_path = _WRITER_DIR / writer_name
     child_env = dict(os.environ)
     child_env.update(env_overrides)
-    # Resolve bash's ABSOLUTE path via shutil.which() rather than passing the bare
-    # string "bash" to subprocess.run(). On Windows, CreateProcess's own search
-    # order checks the System32 directory BEFORE consuming the PATH env var's
-    # entries -- and Windows 10+ ships a WSL-launcher stub at
-    # C:\Windows\System32\bash.exe. A bare "bash" argv[0] therefore silently
-    # resolves to that WSL stub (which cannot see a "C:/..." host path) instead of
-    # Git-Bash, even when Git-Bash appears earlier in PATH. shutil.which() performs
-    # a plain PATH-order search (matching this script's own portability
-    # expectations) and sidesteps CreateProcess's fixed system-dir-first order.
-    bash_exe = shutil.which("bash") or "bash"
+    bash_exe = _BASH_EXE
     try:
         # .as_posix() (not str()): on Windows, an MSYS/Git-Bash `bash.exe` mangles a
         # backslash-separated argv element (its own CreateProcess/argv-conversion
