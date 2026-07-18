@@ -721,7 +721,16 @@ const DEFAULT_MAP = {
 const DEFAULT_FALLBACK = [500, "write-failed"];   // any other/unknown exit code
 
 const RE_WORK_ID_SHAPE = /^work-[0-9]+/;
-const RE_DELIVERY_TASK_ID = /^\d{1,3}$/;
+const RE_DELIVERY_ID = /^\d{1,3}$/;
+// target.task_id (feature-006-task-notes, task-010): a deliberate SUPERSET that
+// accepts both the prefixed 'task-NNN' form (what TaskModel.task_id -- and so
+// home.html's task.task_id -- actually carries, e.g. "task-008") and the bare
+// 'NNN' form (feature-001's own stated regex), reconciling feature-001's own
+// regex-vs-example self-contradiction (SPEC.md API Contracts). The captured
+// group is the bare numeric id, normalized in dispatchOp below BEFORE any
+// argv-builder runs -- writeback-state.sh's --task-id expects a bare number
+// (base-10 arithmetic on it, write_task_field_flat line ~827).
+const RE_TASK_ID_TARGET = /^(?:task-)?(\d{1,3})$/;
 
 // bash.exe resolution (feature-001 task-004; mirrors server.py's shutil.which() note):
 // on Windows, spawning the bare string "bash" via child_process (no shell: true) goes
@@ -854,16 +863,48 @@ function validateArgs(schema, args) {
 // HOME_OP_TABLE is empty). Builders never echo a raw client path -- workDir/servedRoot
 // are already server-resolved.
 
+const TASK_NOTES_NULL_SENTINEL = "--";
+
 function opTaskSetNotesArgv(workDir, servedRoot, target, args) {
   // task.set-notes -> writeback-state.sh [--delivery-id <d>] --task-id <t> --field Notes --value <v>.
+  //
+  // Empty args.value means "clear notes" (feature-006-task-notes, "clear notes"
+  // semantic): writeback-state.sh dies exit 5 on a literally empty --value
+  // ('--value is required with --task-id --field'), so an empty value is
+  // substituted with the '--' null sentinel before spawn -- the same sentinel
+  // task.rename already uses (TASK_RENAME_NULL_SENTINEL), mapped back to null by
+  // the reader's isNull/NULL_SENTINELS set.
+  let value = args.value;
+  if (value === "") value = TASK_NOTES_NULL_SENTINEL;
   const argv = [];
   const deliveryId = target.delivery_id;
   if (deliveryId !== undefined && deliveryId !== null && deliveryId !== "") {
     argv.push("--delivery-id", String(deliveryId));
   }
-  argv.push("--task-id", String(target.task_id), "--field", "Notes", "--value", args.value);
+  argv.push("--task-id", String(target.task_id), "--field", "Notes", "--value", value);
   const env = { AID_STATE_FILE: join(workDir, "STATE.md"), AID_WORK_DIR: workDir };
   return [argv, env];
+}
+
+// task.set-notes semantic (args.value) validation (feature-006-task-notes, task-010):
+// <=1 KiB, rejects '|'/newline -- mirrors writeback-state.sh's mode_field guards
+// (lines 733/738) so a bad value 422s before any child spawn. An empty string is
+// explicitly ALLOWED (clear-to-null; the argv-builder above substitutes the '--'
+// sentinel, never forwarding "" literally to the writer).
+const MAX_NOTES_VALUE_BYTES = 1024;   // 1 KiB cap (API Contracts: args.value <= 1 KiB)
+
+function validateTaskSetNotesArgs(args) {
+  const value = args.value;
+  if (value.indexOf("\n") !== -1) {
+    return "'value' cannot contain a newline";
+  }
+  if (value.indexOf("|") !== -1) {
+    return "'value' cannot contain '|' (reserved column separator)";
+  }
+  if (Buffer.byteLength(value, "utf-8") > MAX_NOTES_VALUE_BYTES) {
+    return "'value' exceeds max length (" + MAX_NOTES_VALUE_BYTES + " bytes)";
+  }
+  return null;
 }
 
 function opPipelineFinishArgv(workDir, servedRoot, target, args) {
@@ -1008,6 +1049,7 @@ const OP_TABLE = {
     writer: "writeback-state.sh",
     argSchema: { value: { required: true } },
     buildArgv: opTaskSetNotesArgv,
+    semanticValidate: validateTaskSetNotesArgs,
     statusMap: null,
   },
   "pipeline.finish": {
@@ -1075,12 +1117,19 @@ function dispatchOp(opTable, parsed, servedRoot) {
   }
 
   const deliveryId = target.delivery_id;
-  if (deliveryId !== undefined && deliveryId !== null && !RE_DELIVERY_TASK_ID.test(String(deliveryId))) {
+  if (deliveryId !== undefined && deliveryId !== null && !RE_DELIVERY_ID.test(String(deliveryId))) {
     return [400, opFailBody(op, "bad-request", "invalid target.delivery_id")];
   }
   const taskIdRaw = target.task_id;
-  if (taskIdRaw !== undefined && taskIdRaw !== null && !RE_DELIVERY_TASK_ID.test(String(taskIdRaw))) {
-    return [400, opFailBody(op, "bad-request", "invalid target.task_id")];
+  if (taskIdRaw !== undefined && taskIdRaw !== null) {
+    const taskIdMatch = RE_TASK_ID_TARGET.exec(String(taskIdRaw));
+    if (!taskIdMatch) {
+      return [400, opFailBody(op, "bad-request", "invalid target.task_id")];
+    }
+    // Normalize the prefixed 'task-NNN' form to the bare numeric id BEFORE any
+    // argv-builder runs, so every "task"-scoped op (task.set-notes, task.rename)
+    // sees the same bare value regardless of which form the client sent.
+    target.task_id = taskIdMatch[1];
   }
 
   const scope = row.scope;

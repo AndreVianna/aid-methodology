@@ -928,7 +928,16 @@ DEFAULT_MAP: dict[int, tuple[int, str]] = {
 _DEFAULT_FALLBACK = (500, "write-failed")   # any other/unknown exit code
 
 _RE_WORK_ID_SHAPE = re.compile(r"^work-[0-9]+")
-_RE_DELIVERY_TASK_ID = re.compile(r"\A\d{1,3}\Z")
+_RE_DELIVERY_ID = re.compile(r"\A\d{1,3}\Z")
+# target.task_id (feature-006-task-notes, task-010): a deliberate SUPERSET that
+# accepts both the prefixed 'task-NNN' form (what TaskModel.task_id -- and so
+# home.html's task.task_id -- actually carries, e.g. "task-008") and the bare
+# 'NNN' form (feature-001's own stated regex), reconciling feature-001's own
+# regex-vs-example self-contradiction (SPEC.md API Contracts). The captured
+# group is the bare numeric id, normalized in _dispatch_op below BEFORE any
+# argv-builder runs -- writeback-state.sh's --task-id expects a bare number
+# (base-10 arithmetic on it, write_task_field_flat line ~827).
+_RE_TASK_ID_TARGET = re.compile(r"\A(?:task-)?(\d{1,3})\Z")
 
 
 def _map_exit_code(exit_code: int, status_map: "dict[int, tuple[int, str]] | None") -> tuple[int, str]:
@@ -1054,15 +1063,48 @@ def _validate_args(schema: dict, args: dict) -> "str | None":
 # HOME_OP_TABLE is empty). Builders never echo a raw client path -- work_dir/served_root
 # are already server-resolved.
 
+_TASK_NOTES_NULL_SENTINEL = "--"
+
+
 def _op_task_set_notes_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
-    """task.set-notes -> writeback-state.sh [--delivery-id <d>] --task-id <t> --field Notes --value <v>."""
+    """task.set-notes -> writeback-state.sh [--delivery-id <d>] --task-id <t> --field Notes --value <v>.
+
+    Empty args.value means "clear notes" (feature-006-task-notes, "clear notes"
+    semantic): writeback-state.sh's mode_field dies exit 5 on a literally empty
+    --value ('--value is required with --task-id --field'), so an empty value is
+    substituted with the '--' null sentinel before spawn -- the same sentinel
+    task.rename already uses (_TASK_RENAME_NULL_SENTINEL), and the value the
+    reader's NULL_SENTINELS set already maps back to None.
+    """
+    value = args["value"]
+    if value == "":
+        value = _TASK_NOTES_NULL_SENTINEL
     argv: list[str] = []
     delivery_id = target.get("delivery_id")
     if delivery_id:
         argv += ["--delivery-id", str(delivery_id)]
-    argv += ["--task-id", str(target.get("task_id")), "--field", "Notes", "--value", args["value"]]
+    argv += ["--task-id", str(target.get("task_id")), "--field", "Notes", "--value", value]
     env = {"AID_STATE_FILE": str(work_dir / "STATE.md"), "AID_WORK_DIR": str(work_dir)}
     return argv, env
+
+
+# task.set-notes semantic (args.value) validation (feature-006-task-notes, task-010):
+# <=1 KiB, rejects '|'/newline -- mirrors writeback-state.sh's mode_field guards
+# (lines 733/738) so a bad value 422s before any child spawn. An empty string is
+# explicitly ALLOWED (clear-to-null; the argv-builder above substitutes the '--'
+# sentinel, never forwarding "" literally to the writer).
+_MAX_NOTES_VALUE_BYTES = 1024  # 1 KiB cap (API Contracts: args.value <= 1 KiB)
+
+
+def _validate_task_set_notes_args(args: dict) -> "str | None":
+    value = args["value"]
+    if "\n" in value:
+        return "'value' cannot contain a newline"
+    if "|" in value:
+        return "'value' cannot contain '|' (reserved column separator)"
+    if len(value.encode("utf-8")) > _MAX_NOTES_VALUE_BYTES:
+        return f"'value' exceeds max length ({_MAX_NOTES_VALUE_BYTES} bytes)"
+    return None
 
 
 def _op_pipeline_finish_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
@@ -1207,6 +1249,7 @@ OP_TABLE: dict[str, dict] = {
         "writer": "writeback-state.sh",
         "arg_schema": {"value": {"required": True}},
         "build_argv": _op_task_set_notes_argv,
+        "semantic_validate": _validate_task_set_notes_args,
         "status_map": None,
     },
     "pipeline.finish": {
@@ -1275,11 +1318,17 @@ def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tup
         return 400, _op_fail_body(op, "bad-request", "'args' must be an object")
 
     delivery_id = target.get("delivery_id")
-    if delivery_id is not None and not _RE_DELIVERY_TASK_ID.match(str(delivery_id)):
+    if delivery_id is not None and not _RE_DELIVERY_ID.match(str(delivery_id)):
         return 400, _op_fail_body(op, "bad-request", "invalid target.delivery_id")
     task_id_raw = target.get("task_id")
-    if task_id_raw is not None and not _RE_DELIVERY_TASK_ID.match(str(task_id_raw)):
-        return 400, _op_fail_body(op, "bad-request", "invalid target.task_id")
+    if task_id_raw is not None:
+        task_id_match = _RE_TASK_ID_TARGET.match(str(task_id_raw))
+        if not task_id_match:
+            return 400, _op_fail_body(op, "bad-request", "invalid target.task_id")
+        # Normalize the prefixed 'task-NNN' form to the bare numeric id BEFORE any
+        # argv-builder runs, so every "task"-scoped op (task.set-notes, task.rename)
+        # sees the same bare value regardless of which form the client sent.
+        target["task_id"] = task_id_match.group(1)
 
     scope = row["scope"]
     work_dir: "Path | None" = None

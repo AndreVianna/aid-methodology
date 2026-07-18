@@ -3648,6 +3648,176 @@ footer {
     return wrap;
   }
 
+  // ---------------------------------------------------------------------------
+  // Task Notes (feature-006-task-notes, task-010): write-gated "TASK NOTES" card
+  // + inline editor in the task drill view. Reuses feature-001's POST ./api/op
+  // envelope via the new thin postOp() helper (below), which generalizes the
+  // shape _postSettingsSet/_postTaskRename already established (task-006/009)
+  // into a single reusable function.
+  // ---------------------------------------------------------------------------
+
+  // Thin generic op-dispatch helper: POST ./api/op {op, target, args}; onDone
+  // receives {ok, body} where ok mirrors the HTTP status and body is the parsed
+  // JSON envelope (best-effort {} on a non-JSON/network failure). Modeled on
+  // doFetch (above).
+  function postOp(op, target, args, onDone) {
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: op, target: target, args: args })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  // Shared args.value client-side mirror of the server's task.set-notes
+  // semantic_validate (SPEC.md API Contracts): <=1 KiB, no reserved '|'
+  // separator; newline is structurally prevented by the single-line <input>
+  // but checked defensively too (mirrors _validateRenameValueClient's role for
+  // task.rename).
+  var MAX_NOTES_VALUE_LEN = 1024;
+  function _validateNotesValueClient(value) {
+    if (value.indexOf('\n') !== -1) return 'Value cannot contain a line break.';
+    if (value.indexOf('|') !== -1) return "Value cannot contain '|' (reserved column separator).";
+    if (value.length > MAX_NOTES_VALUE_LEN) return 'Value exceeds max length (' + MAX_NOTES_VALUE_LEN + ' characters).';
+    return null;
+  }
+
+  // taskNotesState: transient UI-only edit state for task.set-notes. key is the
+  // drill key ("<work_id>/<task_id>") currently being edited -- while editing
+  // (or an edit's own save request is in flight), renderTaskView's guard
+  // (below) leaves this card's DOM alone entirely (never rebuilt), so a failed
+  // save's inline error and the user's typed value both survive any poll tick
+  // / route re-render until Cancel or a successful Save explicitly ends the
+  // edit (mirrors taskRenameState's identical skip-during-edit contract).
+  var taskNotesState = { key: null, editing: false, saving: false };
+
+  // Build the "TASK NOTES" card: read-only display (task.notes or a dimmed
+  // empty state) always renders; the write-gated Edit affordance (single-line
+  // input + Save/Cancel) appears only when writeEnabled. Built ONCE per edit
+  // session -- renderTaskView's guard prevents any rebuild while
+  // taskNotesState.editing is true for this detailKey, so Save/Cancel's own
+  // click handlers patch this same DOM directly on failure (never a full
+  // re-render), which is how the input keeps the user's text on a failed save.
+  function _renderTaskNotesPanel(workId, task, detailKey, writeEnabled) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '1rem';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'TASK NOTES';
+    card.appendChild(kicker);
+
+    var editing = taskNotesState.editing && taskNotesState.key === detailKey;
+
+    if (editing) {
+      var editWrap = document.createElement('div');
+      editWrap.style.cssText = 'display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-top:0.5rem;';
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'interval-input project-header-name-input';
+      input.style.flex = '1 1 auto';
+      input.value = task.notes || '';
+      input.setAttribute('aria-label', 'Task notes');
+      editWrap.appendChild(input);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      editWrap.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      editWrap.appendChild(cancelBtn);
+
+      card.appendChild(editWrap);
+
+      var errSlot = document.createElement('p');
+      errSlot.className = 'callout warn';
+      errSlot.style.cssText = 'margin-top:0.5rem;display:none;';
+      card.appendChild(errSlot);
+
+      cancelBtn.addEventListener('click', function () {
+        taskNotesState.editing = false;
+        taskNotesState.key = null;
+        _rerenderCurrentRoute();
+      });
+
+      var attemptSave = function () {
+        var value = input.value;
+        var clientErr = _validateNotesValueClient(value);
+        if (clientErr) {
+          errSlot.textContent = clientErr;
+          errSlot.style.display = '';
+          return;
+        }
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        errSlot.style.display = 'none';
+        taskNotesState.saving = true;
+        var target = { work_id: workId, task_id: task.task_id };
+        if (task.delivery != null) target.delivery_id = task.delivery;
+        postOp('task.set-notes', target, { value: value }, function (result) {
+          taskNotesState.saving = false;
+          if (result.ok && result.body && result.body.ok) {
+            taskNotesState.editing = false;
+            taskNotesState.key = null;
+            doFetch();
+          } else {
+            var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            errSlot.textContent = detail;
+            errSlot.style.display = '';
+          }
+        });
+      };
+
+      saveBtn.addEventListener('click', attemptSave);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); if (!saveBtn.disabled) attemptSave(); }
+        else if (e.key === 'Escape') { e.preventDefault(); if (!cancelBtn.disabled) cancelBtn.click(); }
+      });
+    } else {
+      var body = document.createElement('p');
+      body.className = 'meta';
+      body.style.marginTop = '0.5rem';
+      if (task.notes) {
+        body.textContent = task.notes;
+      } else {
+        body.style.color = 'var(--text-dim)';
+        body.textContent = 'No notes.';
+      }
+      card.appendChild(body);
+
+      if (writeEnabled) {
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn-ghost';
+        editBtn.style.marginTop = '0.5rem';
+        editBtn.setAttribute('aria-label', 'Edit task notes');
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function () {
+          taskNotesState.editing = true;
+          taskNotesState.key = detailKey;
+          _rerenderCurrentRoute();
+        });
+        card.appendChild(editBtn);
+      }
+    }
+
+    return card;
+  }
+
   function renderTaskView(model, route) {
     var container = document.getElementById('task-view');
     if (!container) return;
@@ -3661,6 +3831,10 @@ footer {
     // scoped to the task currently being edited so navigating away still renders
     // fresh (unlike an unscoped flag would).
     if ((taskRenameState.editing || taskRenameState.saving) && taskRenameState.key === detailKey) {
+      return;
+    }
+    // Same guard for an in-progress task.set-notes edit (feature-006, task-010).
+    if ((taskNotesState.editing || taskNotesState.saving) && taskNotesState.key === detailKey) {
       return;
     }
 
@@ -3743,6 +3917,12 @@ footer {
       return;
     }
     container.appendChild(headerDiv);
+
+    // TASK NOTES card (feature-006-task-notes, task-010): renders even before
+    // the forensic `detail` payload loads -- task.notes comes from the
+    // already-present model, not from `details` (placed before the
+    // `if (!detail)` first-tick early-return below).
+    container.appendChild(_renderTaskNotesPanel(workId, task, detailKey, taskWriteEnabled));
 
     // Get detail (may be absent on first tick — lazy load)
     var details = (model.details) ? model.details : {};

@@ -158,6 +158,28 @@ function makeFlatWorkMalformedState(repoRoot, workId) {
   return workDir;
 }
 
+// A NESTED-layout work (deliveries/ wrapper, no BLUEPRINT.md -- isFlatLayout()
+// is false) whose task-001 DETAIL.md carries NO '**Source:**' bullet --
+// writeback-state.sh's resolve_delivery_from_task_spec() can't recover a
+// delivery number, so resolve_delivery_for_task_mode() dies exit 5 ('cannot
+// resolve delivery for task ...') when --delivery-id is omitted (mirrors the
+// Python twin's _make_nested_work_unresolvable_delivery). Used to drive the
+// DEFAULT_MAP exit-5 -> 422 row via a DIFFERENT path than an empty --value now
+// that task-010's argv-builder substitutes the '--' null sentinel before spawn
+// (so an empty task.set-notes value no longer reaches writeback-state.sh's own
+// '--value is required' exit-5 guard).
+function makeNestedWorkUnresolvableDelivery(repoRoot, workId) {
+  const workDir = join(repoRoot, ".aid", "works", workId);
+  const delDir = join(workDir, "deliveries", "delivery-001");
+  const taskDir = join(delDir, "tasks", "task-001");
+  mkdirSync(taskDir, { recursive: true });
+  writeFileSync(join(workDir, "STATE.md"), "## Pipeline State\n\n- **Lifecycle:** Running\n", "utf8");
+  writeFileSync(join(delDir, "STATE.md"), "## Delivery Lifecycle\n\n- **State:** Executing\n", "utf8");
+  writeFileSync(join(taskDir, "DETAIL.md"), "# task-001: Nested task (no Source line)\n\n**Type:** IMPLEMENT\n", "utf8");
+  writeFileSync(join(taskDir, "STATE.md"), "---\nstate: Pending\n---\n\n## Task State\n", "utf8");
+  return workDir;
+}
+
 // ---------------------------------------------------------------------------
 // Helpers: network + process (slim, self-contained duplicates of
 // test_server_node.mjs's own spawnServer/killServer/makeRequest/postJson --
@@ -380,16 +402,22 @@ async function runLiveTests() {
       assert(!!(data && data.error === "invalid-value"), "A.2b: error class 'invalid-value'");
     }
 
-    // exit 5 -> 422 invalid-value: empty value.
+    // exit 5 -> 422 invalid-value: unresolvable delivery (nested layout, no
+    // --delivery-id, task DETAIL.md has no '**Source:**' bullet). NOTE: this
+    // replaces the file's original exit-5 case (an empty args.value) -- task-010
+    // (feature-006-task-notes) added an argv-builder substitution that maps an
+    // empty value to the '--' null sentinel BEFORE spawn, so an empty
+    // task.set-notes value now round-trips to a SUCCESSFUL 200 write, never
+    // reaching writeback-state.sh's own '--value is required' exit-5 guard.
     {
-      makeFlatWork(repoA, "work-715-empty");
+      makeNestedWorkUnresolvableDelivery(repoA, "work-715-nodelivery");
       const r = await postJson(s.port, "/r/" + idA + "/api/op", {
         op: "task.set-notes",
-        target: { work_id: "work-715-empty", task_id: "001" },
-        args: { value: "" },
+        target: { work_id: "work-715-nodelivery", task_id: "001" },
+        args: { value: "hi" },
       });
       let data = null; try { data = JSON.parse(r.body); } catch (_) {}
-      assert(r.status === 422, "A.3: exit 5 (empty value) -> 422 (got " + r.status + ")");
+      assert(r.status === 422, "A.3: exit 5 (unresolvable delivery) -> 422 (got " + r.status + ")");
       assert(!!(data && data.error === "invalid-value"), "A.3b: error class 'invalid-value'");
     }
 

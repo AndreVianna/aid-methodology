@@ -142,6 +142,34 @@ def _make_flat_work_malformed_state(root: Path, work_id: str) -> Path:
     return work_dir
 
 
+def _make_nested_work_unresolvable_delivery(root: Path, work_id: str) -> Path:
+    """A NESTED-layout work (deliveries/ wrapper -- is_flat_layout() is false) whose
+    task-001 DETAIL.md carries NO '**Source:**' bullet -- writeback-state.sh's
+    resolve_delivery_from_task_spec() can't recover a delivery number, so
+    resolve_delivery_for_task_mode() dies exit 5 ('cannot resolve delivery for
+    task ...') when --delivery-id is omitted (mirrors test_task008_display_rename.py's
+    _make_hierarchical_work). Used to drive the DEFAULT_MAP exit-5 -> 422 row via a
+    DIFFERENT path than an empty --value now that task-010's argv-builder substitutes
+    the '--' null sentinel before spawn (so an empty task.set-notes value no longer
+    reaches writeback-state.sh's own '--value is required' exit-5 guard)."""
+    del_dir = root / ".aid" / "works" / work_id / "deliveries" / "delivery-001"
+    task_dir = del_dir / "tasks" / "task-001"
+    task_dir.mkdir(parents=True, exist_ok=True)
+    (root / ".aid" / "works" / work_id / "STATE.md").write_text(
+        "## Pipeline State\n\n- **Lifecycle:** Running\n", encoding="utf-8",
+    )
+    (del_dir / "STATE.md").write_text(
+        "## Delivery Lifecycle\n\n- **State:** Executing\n", encoding="utf-8",
+    )
+    (task_dir / "DETAIL.md").write_text(
+        "# task-001: Nested task (no Source line)\n\n**Type:** IMPLEMENT\n", encoding="utf-8",
+    )
+    (task_dir / "STATE.md").write_text(
+        "---\nstate: Pending\n---\n\n## Task State\n", encoding="utf-8",
+    )
+    return root / ".aid" / "works" / work_id
+
+
 # ===========================================================================
 # (A) DEFAULT_MAP writer-exit -> HTTP-status matrix, over a REAL live socket,
 # each driven by a REAL writer script (never a stub).
@@ -229,19 +257,30 @@ class TestDefaultMapExitMatrixLive(unittest.TestCase):
         self.assertEqual(status, 422)
         self.assertEqual(json.loads(body)["error"], "invalid-value")
 
-    def test_exit5_empty_value_is_422_invalid_value(self):
-        """task.set-notes args.value = "" passes the server's generic shape
-        check (present, str) but writeback-state.sh's own
-        `[[ -z "$FIELD_VALUE" ]]` guard treats it as a missing required value
-        -> exit 5 -> DEFAULT_MAP 422 (same HTTP status as exit 4 -- both are
-        the invalid-value class -- but a DISTINCT writer-side exit path)."""
-        _make_flat_work(self._repo_a, "work-715-empty")
+    def test_exit5_unresolvable_delivery_is_422_invalid_value(self):
+        """task.set-notes against a NESTED-layout task whose DETAIL.md carries no
+        '**Source:**' bullet, with --delivery-id omitted -> writeback-state.sh's
+        resolve_delivery_for_task_mode() can't recover a delivery number -> exit 5
+        -> DEFAULT_MAP 422 (same HTTP status as exit 4 -- both are the
+        invalid-value class -- but a DISTINCT writer-side exit path).
+
+        NOTE: this scenario replaces the file's original exit-5 case (an empty
+        args.value) -- task-010 (feature-006-task-notes) added an argv-builder
+        substitution that maps an empty value to the '--' null sentinel BEFORE
+        spawn, so an empty task.set-notes value now round-trips to a SUCCESSFUL
+        200 write (see test_task010_task_notes.py's
+        TestTaskSetNotesEmptyValueClearsToNull), never reaching
+        writeback-state.sh's own '--value is required' exit-5 guard. This test
+        proves the DEFAULT_MAP exit-5 -> 422 row is still reachable via the
+        OTHER documented exit-5 path (feature-006 SPEC.md API Contracts:
+        'unresolvable delivery ... resolve_delivery_for_task_mode')."""
+        _make_nested_work_unresolvable_delivery(self._repo_a, "work-715-nodelivery")
         with _ServerThread(str(self._aid_home), write_enabled=True) as server:
             status, body = server.post_json(
                 f"/r/{self._id_a}/api/op",
                 {"op": "task.set-notes",
-                 "target": {"work_id": "work-715-empty", "task_id": "001"},
-                 "args": {"value": ""}},
+                 "target": {"work_id": "work-715-nodelivery", "task_id": "001"},
+                 "args": {"value": "hi"}},
             )
         self.assertEqual(status, 422)
         self.assertEqual(json.loads(body)["error"], "invalid-value")

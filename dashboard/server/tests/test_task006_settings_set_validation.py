@@ -23,8 +23,11 @@ Validates:
      allowed (clears it).
   5. `_dispatch_op` maps a semantic-validation failure to 422 'invalid-value' WITHOUT
      spawning the writer (proven via a settings-file-absent fixture).
-  6. OP_TABLE["settings.set"] carries the semantic_validate hook; the other 3
-     feature-001-owned rows do not (this op-specific extension is not applied broadly).
+  6. OP_TABLE["settings.set"] carries the semantic_validate hook; pipeline.finish
+     (the one feature-001-owned row with no client-forwarded value) still does not
+     (this op-specific extension is not applied broadly). NOTE: task.set-notes has
+     since gained its own semantic_validate hook (work-017 task-010, feature-006) --
+     see test_task010_task_notes.py -- so it is no longer asserted hook-less here.
 
 Python 3.11+ stdlib only. No third-party deps.
 """
@@ -179,7 +182,10 @@ class TestOpTableSettingsSetSemanticHook(unittest.TestCase):
     def test_other_rows_carry_no_semantic_validate_hook(self):
         # pipeline.rename / task.rename DO carry a semantic_validate hook as of
         # work-017 task-008 (feature-005) -- see test_task008_display_rename.py.
-        for op in ("task.set-notes", "pipeline.finish"):
+        # task.set-notes DOES too as of work-017 task-010 (feature-006) -- see
+        # test_task010_task_notes.py. pipeline.finish is the only remaining row
+        # with no per-op semantic validation (it forwards no client value at all).
+        for op in ("pipeline.finish",):
             with self.subTest(op=op):
                 self.assertIsNone(srv.OP_TABLE[op].get("semantic_validate"))
 

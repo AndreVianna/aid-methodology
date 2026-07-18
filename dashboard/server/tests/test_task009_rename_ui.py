@@ -261,7 +261,11 @@ class TestLabelPrecedenceBothSites(unittest.TestCase):
 
     def test_r3_drill_view_uses_shared_helper(self):
         idx = self.src.find("function renderTaskView(model, route)")
-        snippet = self.src[idx:idx + 3000]
+        # Window widened past 3000 (work-017 task-010, feature-006-task-notes):
+        # the new taskNotesState poll-loop guard + the "TASK NOTES" card
+        # insertion push _taskDisplayLabel(task)'s call site further into the
+        # function than before.
+        snippet = self.src[idx:idx + 3500]
         self.assertIn("_taskDisplayLabel(task)", snippet)
 
 
