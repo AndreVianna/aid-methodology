@@ -105,6 +105,16 @@ class TestValidateTaskSetNotesArgs(unittest.TestCase):
         err = srv._validate_task_set_notes_args({"value": "a|b"})
         self.assertIsNotNone(err)
 
+    def test_backslash_rejected(self):
+        """delivery-001 gate finding: a literal backslash used to reach the writer's
+        `awk -v new_val=...` vector in write_task_field_flat, where awk's escape-
+        reprocessing could turn `\t`/`\n` into a real TAB/newline and corrupt the
+        STATE table row. Reject it here (same KI-001-class guard
+        `_validate_settings_set_args` already applies), even though the writer now
+        reads the value via ENVIRON (immune to that reprocessing)."""
+        err = srv._validate_task_set_notes_args({"value": "a\\b"})
+        self.assertIsNotNone(err)
+
     def test_over_length_rejected(self):
         err = srv._validate_task_set_notes_args({"value": "x" * (srv._MAX_NOTES_VALUE_BYTES + 1)})
         self.assertIsNotNone(err)

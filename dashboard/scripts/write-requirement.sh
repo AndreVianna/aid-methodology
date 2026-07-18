@@ -120,9 +120,16 @@ fi
 
 tmp=$(mktemp)
 
+# The value is read from ENVIRON (not an awk `-v` assignment) because awk's
+# `-v var=value` re-processes C-style escape sequences in `value` -- a
+# `foo\tbar` assigned this way silently becomes "foo<TAB>bar", corrupting the
+# bullet with a literal control character the caller never wrote (delivery-001
+# gate finding; same bug class writeback-state.sh's wb_set_frontmatter already
+# fixed via WB_FM_RAW_VALUE -- see its doc comment above). ENVIRON values are
+# NOT escape-reprocessed, so the value arrives byte-for-byte.
 if [[ "$MODE" == "replace" ]]; then
-    awk -v field="$FIELD" -v value="$VALUE" '
-        BEGIN { done = 0; patt = "^[[:space:]]*-[[:space:]]*\\*\\*" tolower(field) ":\\*\\*" }
+    AID_WR_RAW_VALUE="$VALUE" awk -v field="$FIELD" '
+        BEGIN { done = 0; patt = "^[[:space:]]*-[[:space:]]*\\*\\*" tolower(field) ":\\*\\*"; value = ENVIRON["AID_WR_RAW_VALUE"] }
         !done && tolower($0) ~ patt {
             print "- **" field ":** " value
             done = 1
@@ -131,8 +138,8 @@ if [[ "$MODE" == "replace" ]]; then
         { print }
     ' "$REQ_FILE" > "$tmp"
 else
-    awk -v field="$FIELD" -v value="$VALUE" '
-        BEGIN { done = 0 }
+    AID_WR_RAW_VALUE="$VALUE" awk -v field="$FIELD" '
+        BEGIN { done = 0; value = ENVIRON["AID_WR_RAW_VALUE"] }
         !done && $0 ~ /^#[[:space:]]+[Rr]equirements[[:space:]]*$/ {
             print
             print "- **" field ":** " value

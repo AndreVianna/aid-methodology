@@ -871,7 +871,14 @@ write_task_field_flat() {
     local tmp
     tmp=$(mktemp)
 
-    awk -v task_row_id="$task_row_id" -v col_idx="$col_idx" -v new_val="$new_val" '
+    # new_val is read from ENVIRON (not an awk `-v` assignment) because awk's
+    # `-v var=value` re-processes C-style escape sequences in `value` -- a
+    # `foo\tbar` assigned this way silently becomes "foo<TAB>bar", corrupting
+    # the row with a literal control character the caller never wrote
+    # (delivery-001 gate finding; same bug class wb_set_frontmatter above
+    # already fixed via WB_FM_RAW_VALUE). ENVIRON values are NOT
+    # escape-reprocessed, so the value arrives byte-for-byte.
+    AID_WB_RAW_VALUE="$new_val" awk -v task_row_id="$task_row_id" -v col_idx="$col_idx" '
         function trim(s) { gsub(/^[ \t]+|[ \t]+$/, "", s); return s }
         function new_row(    line, c, v) {
             line = "| " task_row_id " |"
@@ -889,7 +896,7 @@ write_task_field_flat() {
             if (!found && last_was_row) { print new_row(); found=1 }
         }
 
-        BEGIN { in_tl=0; header_seen=0; found=0; last_was_row=0 }
+        BEGIN { in_tl=0; header_seen=0; found=0; last_was_row=0; new_val = ENVIRON["AID_WB_RAW_VALUE"] }
 
         /^### Tasks lifecycle/ { in_tl=1; header_seen=0; last_was_row=0; print; next }
 

@@ -153,6 +153,16 @@ class TestValidateRenameValue(unittest.TestCase):
         err = srv._validate_rename_value("a|b")
         self.assertIsNotNone(err)
 
+    def test_backslash_rejected(self):
+        """delivery-001 gate finding: a literal backslash used to reach the writer's
+        `awk -v value=...` vector, where awk's escape-reprocessing could turn `\t`/`\n`
+        into a real TAB/newline and corrupt REQUIREMENTS.md / the STATE table. Reject it
+        here (same KI-001-class guard `_validate_settings_set_args` already applies),
+        even though the writers now read the value via ENVIRON (immune to that
+        reprocessing)."""
+        err = srv._validate_rename_value("a\\b")
+        self.assertIsNotNone(err)
+
     def test_over_length_rejected(self):
         err = srv._validate_rename_value("x" * (srv._MAX_RENAME_VALUE_LEN + 1))
         self.assertIsNotNone(err)

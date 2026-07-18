@@ -235,6 +235,31 @@ class TestTaskSetNotesCrossRuntimeParity(unittest.TestCase):
         self.assertEqual(json.loads(py_body)["error"], "invalid-value")
         self.assertEqual(json.loads(node_body)["error"], "invalid-value")
 
+    def test_backslash_value_is_422_both_runtimes(self):
+        """delivery-001 gate finding: a literal backslash used to reach
+        write_task_field_flat's `awk -v new_val=...` vector, where awk's C-style
+        escape-reprocessing could turn `\\t`/`\\n` into a real TAB/newline and
+        corrupt the STATE table row -- reproduced upstream of this fix via
+        `--value 'foo\\tbar'` writing a literal TAB. Both runtimes now 422
+        'invalid-value' before ever spawning the writer."""
+        py_root = self._tmp / "py-repo"
+        node_root = self._tmp / "node-repo"
+        _make_flat_work(py_root, "work-905-backslash")
+        _make_flat_work(node_root, "work-905-backslash")
+
+        request = {
+            "op": "task.set-notes",
+            "target": {"work_id": "work-905-backslash", "task_id": "001"},
+            "args": {"value": "foo\\tbar"},
+        }
+        py_status, py_body = self._py_dispatch(str(py_root), request)
+        node_status, node_body = self._node_dispatch(str(node_root), request)
+
+        self.assertEqual(py_status, 422)
+        self.assertEqual(node_status, 422)
+        self.assertEqual(json.loads(py_body)["error"], "invalid-value")
+        self.assertEqual(json.loads(node_body)["error"], "invalid-value")
+
     def test_oversize_value_is_422_both_runtimes(self):
         py_root = self._tmp / "py-repo"
         node_root = self._tmp / "node-repo"
