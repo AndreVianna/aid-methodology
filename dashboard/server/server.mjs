@@ -1187,10 +1187,43 @@ function dispatchOp(opTable, parsed, servedRoot) {
   return [status, opFailBody(op, errorClass, (stderrText || "").trim())];
 }
 
+function parseContentLength(headerValue) {
+  // Mirrors server.py's `_read_body`: `int(headers.get("Content-Length", "0") or
+  // "0")` -- a MISSING header or a present-but-EMPTY header value is treated as
+  // "0" (Python's `dict.get` default / falsy-string `or` fallback); any other
+  // value must parse as a base-10 integer (optional sign, digits only -- Python's
+  // `int()` also tolerates surrounding whitespace) or the request is invalid.
+  // Returns null on a non-numeric header (caller 400s), matching Python's
+  // ValueError -> None path.
+  const raw = headerValue === undefined || headerValue === "" ? "0" : headerValue;
+  const trimmed = String(raw).trim();
+  if (!/^[+-]?\d+$/.test(trimmed)) return null;
+  return Number(trimmed);
+}
+
 function readBodyBounded(req, maxBytes) {
-  // Read the request body, enforcing the 64 KiB cap (API Contracts). Resolves
-  // null (caller sends 400) when the body exceeds maxBytes or the stream errors.
+  // Read the request body, SIZED FROM THE Content-Length HEADER -- twin parity
+  // with server.py's `_read_body` (delivery-001 gate finding row#3: this used to
+  // accumulate whatever the stream actually delivered regardless of the header,
+  // so a POST with NO Content-Length parsed successfully here while Python's
+  // header-driven read treated it as an empty (0-byte) body -- a status-code
+  // divergence on the exact same request). Resolves null (caller sends 400) when
+  // the header is missing/non-numeric/negative/over maxBytes -- BEFORE any
+  // stream accumulation, exactly mirroring Python's bound check ordering -- or
+  // when the stream itself errors/aborts.
   return new Promise((resolve) => {
+    const length = parseContentLength(req.headers["content-length"]);
+    if (length === null || length < 0 || length > maxBytes) {
+      resolve(null);
+      return;
+    }
+    if (length === 0) {
+      // Missing/zero Content-Length -> empty body, same as Python's
+      // `rfile.read(0)` -- never blocks on the stream waiting for bytes the
+      // header didn't declare.
+      resolve(Buffer.alloc(0));
+      return;
+    }
     const chunks = [];
     let total = 0;
     let settled = false;
@@ -1201,14 +1234,22 @@ function readBodyBounded(req, maxBytes) {
     }
     req.on("data", (chunk) => {
       total += chunk.length;
-      if (total > maxBytes) {
-        finish(null);
+      if (total >= length) {
+        // Declared length reached -- take exactly `length` bytes total,
+        // ignoring anything streamed past it (mirrors rfile.read(length)
+        // never reading past the declared count).
+        const overflow = total - length;
+        chunks.push(overflow > 0 ? chunk.subarray(0, chunk.length - overflow) : chunk);
+        finish(Buffer.concat(chunks));
         req.destroy();
         return;
       }
       chunks.push(chunk);
     });
     req.on("end", () => {
+      // Stream ended before `length` bytes arrived (short body) -- resolve
+      // with whatever was actually received, a best-effort analogue of
+      // rfile.read(length)'s own short-read-on-early-close behavior.
       finish(Buffer.concat(chunks));
     });
     req.on("error", () => {
