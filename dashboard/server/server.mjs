@@ -925,12 +925,76 @@ function validateSettingsSetArgs(args) {
   return null;
 }
 
+const PIPELINE_RENAME_NULL_SENTINEL = "*(pending)*";
+
 function opPipelineRenameArgv(workDir, servedRoot, target, args) {
   // pipeline.rename -> write-requirement.sh --field Name --value <v>
   // (env AID_REQUIREMENTS_FILE=<resolved-work-dir>/REQUIREMENTS.md).
-  const argv = ["--field", "Name", "--value", args.value];
+  //
+  // Empty args.value means clear-to-fallback (AC2): write-requirement.sh needs a
+  // non-empty bullet value, so an empty value is substituted with the
+  // '*(pending)*' null sentinel before spawn -- the exact placeholder
+  // parseRequirementsMd's RE_NAME/PENDING_PLACEHOLDER already maps back to
+  // title=null (reader.mjs), which home.html's de-slug fallback then renders.
+  let value = args.value;
+  if (value === "") value = PIPELINE_RENAME_NULL_SENTINEL;
+  const argv = ["--field", "Name", "--value", value];
   const env = { AID_REQUIREMENTS_FILE: join(workDir, "REQUIREMENTS.md") };
   return [argv, env];
+}
+
+const TASK_RENAME_NULL_SENTINEL = "--";
+
+function opTaskRenameArgv(workDir, servedRoot, target, args) {
+  // task.rename -> writeback-state.sh [--delivery-id <d>] --task-id <t> --field Name --value <v>
+  // (env AID_STATE_FILE/AID_WORK_DIR=<resolved-work-dir>).
+  //
+  // Empty args.value means clear-to-fallback (AC2): writeback-state.sh dies exit 5
+  // on a literally empty --value ('--value is required with --task-id --field',
+  // fired before mode_field/layout detection ever runs), so an empty value is
+  // substituted with the '--' null sentinel before spawn -- the same sentinel
+  // mode_field/write_task_field_flat write for a cleared cell, and the value the
+  // reader's isNull/NULL_SENTINELS set already maps back to null.
+  let value = args.value;
+  if (value === "") value = TASK_RENAME_NULL_SENTINEL;
+  const argv = [];
+  const deliveryId = target.delivery_id;
+  if (deliveryId !== undefined && deliveryId !== null && deliveryId !== "") {
+    argv.push("--delivery-id", String(deliveryId));
+  }
+  argv.push("--task-id", String(target.task_id), "--field", "Name", "--value", value);
+  const env = { AID_STATE_FILE: join(workDir, "STATE.md"), AID_WORK_DIR: workDir };
+  return [argv, env];
+}
+
+// feature-005 (work-017 task-008) shared args.value semantic validation for
+// task.rename / pipeline.rename: a single-line, length-capped string. Mirrors
+// (belt-and-suspenders) the same charset guard both writers already enforce
+// (write-requirement.sh rejects \n/| -> exit 4; writeback-state.sh mode_field
+// rejects \n/| -> exit 4) -- an empty string is explicitly ALLOWED here (it means
+// clear-to-fallback, AC2); the argv-builders substitute each writer's null
+// sentinel for an empty value before spawn, never forwarding "" literally.
+const MAX_RENAME_VALUE_LEN = 200;
+
+function validateRenameValue(value) {
+  if (value.indexOf("\n") !== -1) {
+    return "'value' cannot contain a newline";
+  }
+  if (value.indexOf("|") !== -1) {
+    return "'value' cannot contain '|' (reserved column separator)";
+  }
+  if (value.length > MAX_RENAME_VALUE_LEN) {
+    return "'value' exceeds max length (" + MAX_RENAME_VALUE_LEN + " chars)";
+  }
+  return null;
+}
+
+function validateTaskRenameArgs(args) {
+  return validateRenameValue(args.value);
+}
+
+function validatePipelineRenameArgs(args) {
+  return validateRenameValue(args.value);
 }
 
 // OP_TABLE: closed static object seeded by feature-001 (the 4 feature-001-owned rows).
@@ -966,6 +1030,15 @@ const OP_TABLE = {
     writer: "write-requirement.sh",
     argSchema: { value: { required: true } },
     buildArgv: opPipelineRenameArgv,
+    semanticValidate: validatePipelineRenameArgs,
+    statusMap: null,
+  },
+  "task.rename": {
+    scope: "task",
+    writer: "writeback-state.sh",
+    argSchema: { value: { required: true } },
+    buildArgv: opTaskRenameArgv,
+    semanticValidate: validateTaskRenameArgs,
     statusMap: null,
   },
 };

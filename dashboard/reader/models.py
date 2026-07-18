@@ -253,6 +253,13 @@ class TaskModel:
         short_name -- parsed from tasks/task-NNN.md first line "# task-NNN: <title>"
         delivery   -- integer parsed from STATE Wave "delivery-NNN" (PF-5c; STATE wins)
         lane       -- integer derived from PLAN.md wave-map or prose fallback (PF-5a/5b)
+
+    feature-005 (display-rename, work-017 task-008):
+        display_name -- mutable override of short_name, written via `writeback-state.sh
+            --field Name` (task.rename op). Read from the per-task STATE frontmatter
+            `display_name` key (nested layout) or the ### Tasks lifecycle table's
+            trailing Name column (flat layout). None when unset (fallback to
+            short_name -> task_id, home.html label precedence).
     """
     task_id: str
     type: str
@@ -265,6 +272,8 @@ class TaskModel:
     short_name: Optional[str] = None
     delivery: Optional[int] = None
     lane: Optional[int] = None
+    # feature-005 (no schema_version bump; additive optional field)
+    display_name: Optional[str] = None
 
 
 # ---------------------------------------------------------------------------

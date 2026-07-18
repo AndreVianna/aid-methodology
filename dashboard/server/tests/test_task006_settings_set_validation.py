@@ -177,7 +177,9 @@ class TestOpTableSettingsSetSemanticHook(unittest.TestCase):
         self.assertTrue(callable(srv.OP_TABLE["settings.set"]["semantic_validate"]))
 
     def test_other_rows_carry_no_semantic_validate_hook(self):
-        for op in ("task.set-notes", "pipeline.finish", "pipeline.rename"):
+        # pipeline.rename / task.rename DO carry a semantic_validate hook as of
+        # work-017 task-008 (feature-005) -- see test_task008_display_rename.py.
+        for op in ("task.set-notes", "pipeline.finish"):
             with self.subTest(op=op):
                 self.assertIsNone(srv.OP_TABLE[op].get("semantic_validate"))
 

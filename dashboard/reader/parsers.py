@@ -1380,16 +1380,19 @@ _DELIVERY_STATE_VALUES = frozenset({
 class ParsedTaskState:
     """Parsed result for one task-level STATE.md (task-NNN/STATE.md).
 
-    Covers: State / Review / Elapsed / Notes from ## Task State section.
+    Covers: State / Review / Elapsed / Notes from ## Task State section, plus
+    the feature-005 mutable `display_name` override (frontmatter-only -- no
+    legacy prose bullet form; None when unset).
     Used by the hierarchical reader path only.
     """
-    __slots__ = ("state", "review", "elapsed", "notes", "parse_warnings")
+    __slots__ = ("state", "review", "elapsed", "notes", "display_name", "parse_warnings")
 
     def __init__(self) -> None:
         self.state: TaskStatus = TaskStatus.Unknown
         self.review: Optional[str] = None
         self.elapsed: Optional[str] = None
         self.notes: Optional[str] = None
+        self.display_name: Optional[str] = None
         self.parse_warnings: list[str] = []
 
 
@@ -1508,6 +1511,14 @@ def parse_task_state_md(
         if v is not None:
             vv = v.strip()
             pts.notes = None if _is_null(vv) else vv
+
+        # feature-005 (work-017 task-008): display_name is a NEW frontmatter-only
+        # key -- no legacy prose bullet form exists, so it is read only here (no
+        # body-scan counterpart above, unlike state/review/elapsed/notes).
+        v = fm.get("display_name")
+        if v is not None:
+            vv = v.strip()
+            pts.display_name = None if _is_null(vv) else vv
 
     except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
         pts.parse_warnings.append(
@@ -1784,6 +1795,10 @@ _RE_SECTION_2_OR_3 = re.compile(r"^#{2,3}\s+\S")
 def parse_tasks_lifecycle_md(text: str) -> "tuple[dict[str, ParsedTaskState], list[str]]":
     """Parse the work-root STATE.md `### Tasks lifecycle` table (feature-001 flat layout).
 
+    Columns: | Task | State | Review | Elapsed | Notes | Name |
+    Name (feature-005, work-017 task-008) is the trailing col 5 (0-indexed) --
+    a legacy 5-column row (pre-feature-005) yields display_name None.
+
     Returns (task_id_lower -> ParsedTaskState, parse_warnings). Header/separator
     rows and the `_none yet_` placeholder row are skipped. Unrecognized state
     literals map to TaskStatus.Unknown (never throws, NFR7).
@@ -1843,6 +1858,10 @@ def parse_tasks_lifecycle_md(text: str) -> "tuple[dict[str, ParsedTaskState], li
             pts.review = _col(2)
             pts.elapsed = _col(3)
             pts.notes = _col(4)
+            # feature-005 (work-017 task-008): trailing Name column (col 5); a
+            # legacy 5-column row (no Name column authored yet) yields
+            # _col(5) is None -> display_name None -> short_name/task_id fallback.
+            pts.display_name = _col(5)
             result[task_id.lower()] = pts
 
     except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)

@@ -1145,6 +1145,7 @@ def _read_work_flat(
             short_name=short_name,
             delivery=1,
             lane=lane,
+            display_name=pts.display_name,
         ))
 
     # ---- Synthesize the single DeliverableRef for delivery-001 ----
@@ -1398,6 +1399,7 @@ def _read_work_hierarchical(
                 short_name=short_name,
                 delivery=delivery_number,
                 lane=lane,
+                display_name=pts.display_name,
             ))
 
         # ---- Build DeliverableRef for this delivery ----

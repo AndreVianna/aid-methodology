@@ -109,9 +109,12 @@ class TestOpTableShape(unittest.TestCase):
     """OP_TABLE / HOME_OP_TABLE / DEFAULT_MAP static shape (no I/O)."""
 
     def test_op_table_seeds_the_four_feature001_rows(self):
+        # work-017 task-008 (feature-005) registers a 5th row, task.rename, on top
+        # of the 4 feature-001-owned rows this test originally pinned -- see
+        # test_task008_display_rename.py for its dedicated coverage.
         self.assertEqual(
             set(srv.OP_TABLE.keys()),
-            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename"},
+            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename"},
         )
 
     def test_home_op_table_is_empty(self):

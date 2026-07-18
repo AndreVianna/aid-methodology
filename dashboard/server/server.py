@@ -633,7 +633,8 @@ def _ser_repo_info(obj) -> dict:
 
 
 def _ser_task(obj) -> dict:
-    """Serialize TaskModel in declared field order (schema_version 3)."""
+    """Serialize TaskModel in declared field order (schema_version 3; display_name
+    is an additive feature-005 field, no schema_version bump -- DM-A3/RC-2 precedent)."""
     return {
         "task_id":      obj.task_id,
         "type":         obj.type,
@@ -645,6 +646,7 @@ def _ser_task(obj) -> dict:
         "short_name":   obj.short_name,
         "delivery":     obj.delivery,
         "lane":         obj.lane,
+        "display_name": obj.display_name,
     }
 
 
@@ -1101,13 +1103,79 @@ def _validate_settings_set_args(args: dict) -> "str | None":
     return None
 
 
+_PIPELINE_RENAME_NULL_SENTINEL = "*(pending)*"
+
+
 def _op_pipeline_rename_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
     """pipeline.rename -> write-requirement.sh --field Name --value <v>
     (env AID_REQUIREMENTS_FILE=<resolved-work-dir>/REQUIREMENTS.md).
+
+    Empty args.value means clear-to-fallback (AC2): write-requirement.sh needs a
+    non-empty bullet value, so an empty value is substituted with the
+    '*(pending)*' null sentinel before spawn -- the exact placeholder
+    parse_requirements_md's _re_name/_PENDING_PLACEHOLDER already maps back to
+    title=None (parsers.py), which home.html's de-slug fallback then renders.
     """
-    argv = ["--field", "Name", "--value", args["value"]]
+    value = args["value"]
+    if value == "":
+        value = _PIPELINE_RENAME_NULL_SENTINEL
+    argv = ["--field", "Name", "--value", value]
     env = {"AID_REQUIREMENTS_FILE": str(work_dir / "REQUIREMENTS.md")}
     return argv, env
+
+
+_TASK_RENAME_NULL_SENTINEL = "--"
+
+
+def _op_task_rename_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """task.rename -> writeback-state.sh [--delivery-id <d>] --task-id <t> --field Name --value <v>
+    (env AID_STATE_FILE/AID_WORK_DIR=<resolved-work-dir>).
+
+    Empty args.value means clear-to-fallback (AC2): writeback-state.sh dies exit 5
+    on a literally empty --value ('--value is required with --task-id --field',
+    fired before mode_field/layout detection ever runs), so an empty value is
+    substituted with the '--' null sentinel before spawn -- the same sentinel
+    mode_field/write_task_field_flat write for a cleared cell, and the value the
+    reader's _is_null/_NULL_SENTINELS set already maps back to None.
+    """
+    value = args["value"]
+    if value == "":
+        value = _TASK_RENAME_NULL_SENTINEL
+    argv: list[str] = []
+    delivery_id = target.get("delivery_id")
+    if delivery_id:
+        argv += ["--delivery-id", str(delivery_id)]
+    argv += ["--task-id", str(target.get("task_id")), "--field", "Name", "--value", value]
+    env = {"AID_STATE_FILE": str(work_dir / "STATE.md"), "AID_WORK_DIR": str(work_dir)}
+    return argv, env
+
+
+# feature-005 (work-017 task-008) shared args.value semantic validation for
+# task.rename / pipeline.rename: a single-line, length-capped string. Mirrors
+# (belt-and-suspenders) the same charset guard both writers already enforce
+# (write-requirement.sh rejects \n/| -> exit 4; writeback-state.sh mode_field
+# rejects \n/| -> exit 4) -- an empty string is explicitly ALLOWED here (it means
+# clear-to-fallback, AC2); the argv-builders substitute each writer's null
+# sentinel for an empty value before spawn, never forwarding "" literally.
+_MAX_RENAME_VALUE_LEN = 200
+
+
+def _validate_rename_value(value: str) -> "str | None":
+    if "\n" in value:
+        return "'value' cannot contain a newline"
+    if "|" in value:
+        return "'value' cannot contain '|' (reserved column separator)"
+    if len(value) > _MAX_RENAME_VALUE_LEN:
+        return f"'value' exceeds max length ({_MAX_RENAME_VALUE_LEN} chars)"
+    return None
+
+
+def _validate_task_rename_args(args: dict) -> "str | None":
+    return _validate_rename_value(args["value"])
+
+
+def _validate_pipeline_rename_args(args: dict) -> "str | None":
+    return _validate_rename_value(args["value"])
 
 
 # OP_TABLE: closed static dict seeded by feature-001 (the 4 feature-001-owned rows).
@@ -1143,6 +1211,15 @@ OP_TABLE: dict[str, dict] = {
         "writer": "write-requirement.sh",
         "arg_schema": {"value": {"required": True}},
         "build_argv": _op_pipeline_rename_argv,
+        "semantic_validate": _validate_pipeline_rename_args,
+        "status_map": None,
+    },
+    "task.rename": {
+        "scope": "task",
+        "writer": "writeback-state.sh",
+        "arg_schema": {"value": {"required": True}},
+        "build_argv": _op_task_rename_argv,
+        "semantic_validate": _validate_task_rename_args,
         "status_map": None,
     },
 }

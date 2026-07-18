@@ -3248,12 +3248,13 @@ const DELIVERY_STATE_VALUES = new Set([
 
 function _parseTaskStateMd(text, taskId) {
   // Mirror parsers.py parse_task_state_md.
-  // Returns { state, review, elapsed, notes, parseWarnings }
+  // Returns { state, review, elapsed, notes, displayName, parseWarnings }
   const pts = {
     state: TaskStatus.Unknown,
     review: null,
     elapsed: null,
     notes: null,
+    displayName: null,
     parseWarnings: [],
   };
 
@@ -3313,6 +3314,15 @@ function _parseTaskStateMd(text, taskId) {
     if (v !== undefined) {
       const vv = v.trim();
       pts.notes = isNull(vv) ? null : vv;
+    }
+
+    // feature-005 (work-017 task-008): display_name is a NEW frontmatter-only
+    // key -- no legacy prose bullet form exists, so it is read only here (no
+    // body-scan counterpart above, unlike state/review/elapsed/notes).
+    v = fm["display_name"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      pts.displayName = isNull(vv) ? null : vv;
     }
   } catch (exc) {
     pts.parseWarnings.push(
@@ -3555,7 +3565,10 @@ function _parseDeliveryStateMd(text, deliveryId) {
 // leading # / Type / Wave columns -- type comes from DETAIL.md, wave is the
 // synthesized delivery-001 for every task in this layout):
 //
-//   | Task | State | Review | Elapsed | Notes |
+//   | Task | State | Review | Elapsed | Notes | Name |
+//
+// Name (feature-005, work-017 task-008) is the trailing col 5 (0-indexed) --
+// a legacy 5-column row (pre-feature-005) yields displayName null.
 // ---------------------------------------------------------------------------
 
 const RE_TASKS_LIFECYCLE_SECTION = /^###\s+Tasks lifecycle\s*$/i;
@@ -3609,11 +3622,15 @@ function parseTasksLifecycleMd(text) {
       const taskId = fcol(0) || "";
       if (!taskId || taskId.toLowerCase() === "task") continue;
 
+      // feature-005 (work-017 task-008): trailing Name column (col 5); a
+      // legacy 5-column row (no Name column authored yet) yields
+      // fcol(5) === null -> displayName null -> shortName/taskId fallback.
       result[taskId.toLowerCase()] = {
         state: parseTaskStatus(fcol(1) || ""),
         review: fcol(2),
         elapsed: fcol(3),
         notes: fcol(4),
+        displayName: fcol(5),
       };
     }
   } catch (exc) {
@@ -3829,7 +3846,7 @@ function _readWorkFlat(workDir, workId) {
 
     // Mutable cells from the work-root STATE.md ### Tasks lifecycle table
     const pts = tasksLifecycle[taskIdStr.toLowerCase()] || {
-      state: TaskStatus.Unknown, review: null, elapsed: null, notes: null,
+      state: TaskStatus.Unknown, review: null, elapsed: null, notes: null, displayName: null,
     };
 
     const laneVal = taskLaneMap[taskIdStr.toLowerCase()];
@@ -3846,6 +3863,7 @@ function _readWorkFlat(workDir, workId) {
       short_name: shortName,
       delivery: 1,
       lane: lane,
+      display_name: pts.displayName,
     });
   }
 
@@ -4100,6 +4118,7 @@ function _readWorkHierarchical(workDir, workId) {
         short_name: shortName,
         delivery: deliveryNumber,
         lane: lane,
+        display_name: pts.displayName,
       });
     }
 
@@ -4534,7 +4553,8 @@ function _buildPendingInput(pi) {
 
 function _buildTaskModel(t) {
   // TaskModel field order: task_id, type, wave, status, review_grade, elapsed, notes,
-  //   short_name, delivery, lane  (schema_version 3 fields -- PF-3/PF-5)
+  //   short_name, delivery, lane  (schema_version 3 fields -- PF-3/PF-5),
+  //   display_name (feature-005, work-017 task-008 -- additive, no schema_version bump)
   return {
     task_id: t.task_id,
     type: t.type,
@@ -4546,6 +4566,7 @@ function _buildTaskModel(t) {
     short_name: t.short_name !== undefined ? t.short_name : null,
     delivery: t.delivery !== undefined ? t.delivery : null,
     lane: t.lane !== undefined ? t.lane : null,
+    display_name: t.display_name !== undefined ? t.display_name : null,
   };
 }
 
