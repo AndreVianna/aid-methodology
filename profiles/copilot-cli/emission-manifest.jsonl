@@ -71,7 +71,7 @@
 {"dst": ".github/aid/templates/delivery-state-template.md", "profile": "copilot-cli", "sha256": "1eee8bf3a943a1d63c1a3bbe9c2d3818241de46aaea7e031c0d6344e35de4406", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".github/aid/templates/discovery-state-template.md", "profile": "copilot-cli", "sha256": "bc4c3b1bf96e2a91d21a9612d38dc726ab3f4a744830621beb148f62a013c40e", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".github/aid/templates/dispatch-protocol-checklist.md", "profile": "copilot-cli", "sha256": "00d41e656caf552cdca99dca3c4cc45e74e4bb876e84a2c6ac0bbb543dff72ca", "src": "canonical/templates/dispatch-protocol-checklist.md"}
-{"dst": ".github/aid/templates/downstream-worktree-entry.md", "profile": "copilot-cli", "sha256": "b8567d1a2d1d7c4da4031bd86b53c989e3e19c77647f483ae4c343e7caa61fab", "src": "canonical/templates/downstream-worktree-entry.md"}
+{"dst": ".github/aid/templates/downstream-worktree-entry.md", "profile": "copilot-cli", "sha256": "a1575f8a962a7e5886f7d38001479555c8ea88e431098c92e54ff6357c1bdcee", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".github/aid/templates/feature-inventory.md", "profile": "copilot-cli", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".github/aid/templates/feature.md", "profile": "copilot-cli", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".github/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "copilot-cli", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}

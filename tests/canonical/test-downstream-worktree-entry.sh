@@ -75,24 +75,40 @@ _line_of_at_start() {
     awk -v p="$pat" 'index($0, p) == 1 { print NR; exit }' "$file"
 }
 
-# assert_pointer_before <file> <before-anchor-substring> <label> [mode] --
-# asserts the shared-doc reference ("downstream-worktree-entry.md") appears,
-# in file order, strictly BEFORE the given first-local-read anchor substring.
-# mode="heading" requires the anchor to begin at column 1 (guards against an
-# earlier inline backtick cross-reference to the same heading's name, e.g.
-# aid-define's Layer-2 prose names `## State Detection` step 2 by name
-# well before the actual `## State Detection` heading).
+# assert_pointer_before <file> <before-anchor-substring> <label> [mode]
+#     [pointer-pat] [pointer-mode] --
+# asserts the shared-doc reference (default pattern "downstream-worktree-entry.md")
+# appears, in file order, strictly BEFORE the given first-local-read anchor
+# substring. mode="heading" requires the ANCHOR to begin at column 1 (guards
+# against an earlier inline backtick cross-reference to the same heading's
+# name, e.g. aid-define's Layer-2 prose names `## State Detection` step 2 by
+# name well before the actual `## State Detection` heading).
+#
+# pointer-pat/pointer-mode (default "downstream-worktree-entry.md" / "any")
+# override what counts as the POINTER itself. Pass pointer-mode="heading" with
+# a real section-heading pointer-pat when the plain substring
+# "downstream-worktree-entry.md" occurs more than once earlier in the file
+# (e.g. an inline cross-reference to the pointer section, as in aid-specify's
+# Check-1 step 3 prose) -- otherwise `_line_of`'s first-occurrence match would
+# silently anchor on the inline mention instead of the real pointer section,
+# making the ordering assertion vacuous against a misplacement of the real
+# section.
 assert_pointer_before() {
     local file="$1" anchor="$2" label="$3" mode="${4:-any}"
+    local pointer_pat="${5:-downstream-worktree-entry.md}" pointer_mode="${6:-any}"
     local pointer_line anchor_line
-    pointer_line=$(_line_of "$file" "downstream-worktree-entry.md")
+    if [[ "$pointer_mode" == "heading" ]]; then
+        pointer_line=$(_line_of_at_start "$file" "$pointer_pat")
+    else
+        pointer_line=$(_line_of "$file" "$pointer_pat")
+    fi
     if [[ "$mode" == "heading" ]]; then
         anchor_line=$(_line_of_at_start "$file" "$anchor")
     else
         anchor_line=$(_line_of "$file" "$anchor")
     fi
     if [[ -z "$pointer_line" ]]; then
-        fail "$label -- 'downstream-worktree-entry.md' reference not found in $(basename "$file")"
+        fail "$label -- pointer not found: '$pointer_pat' in $(basename "$file")"
     elif [[ -z "$anchor_line" ]]; then
         fail "$label -- anchor not found: '$anchor' in $(basename "$file")"
     elif [[ "$pointer_line" -lt "$anchor_line" ]]; then
@@ -156,8 +172,15 @@ echo "    .aid/works/{work}/... read (§12 assertion 2) ==="
 
 assert_pointer_before "$DEFINE_MD"  "## State Detection" \
     "G2 aid-define -- pointer precedes '## State Detection' (STATE.md read)" "heading"
+# aid-specify: "downstream-worktree-entry.md" occurs TWICE before Check 2 --
+# an inline cross-reference in Check-1 step 3 prose, then the real pointer
+# section. Anchor the pointer on the real section's heading (column-1
+# match) rather than the first substring occurrence, or this assertion
+# would stay vacuously green even if the real section were moved after
+# Check 2.
 assert_pointer_before "$SPECIFY_MD" "### Check 2: Feature Exists" \
-    "G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob)"
+    "G2 aid-specify -- pointer precedes '### Check 2: Feature Exists' (SPEC.md glob)" \
+    "any" "### Locate + Enter the Work's Worktree" "heading"
 assert_pointer_before "$PLAN_MD"    "### Check 2: Verify Feature SPECs" \
     "G2 aid-plan -- pointer precedes '### Check 2: Verify Feature SPECs'"
 assert_pointer_before "$DETAIL_MD"  "### Check 2: Verify PLAN.md Exists" \

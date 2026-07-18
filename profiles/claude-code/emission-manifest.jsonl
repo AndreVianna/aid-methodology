@@ -71,7 +71,7 @@
 {"dst": ".claude/aid/templates/delivery-state-template.md", "profile": "claude-code", "sha256": "3373f30484d581251dd699c3e9687684bdade73fa2ddc140d833a3e68fb3f21c", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".claude/aid/templates/discovery-state-template.md", "profile": "claude-code", "sha256": "3498f433b269de3c30018a98715f61b89a0b79b62ae4998ea9e468c9321db2d4", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".claude/aid/templates/dispatch-protocol-checklist.md", "profile": "claude-code", "sha256": "062a0bf7cdb8f420f4ce67641c23e9bc9efc17c88636c94f3b2ccfc21b96f74c", "src": "canonical/templates/dispatch-protocol-checklist.md"}
-{"dst": ".claude/aid/templates/downstream-worktree-entry.md", "profile": "claude-code", "sha256": "e9087ade7484f39266e516e6b677a6bd0f83c1ae2df0735e06a9302dbb9a6ec7", "src": "canonical/templates/downstream-worktree-entry.md"}
+{"dst": ".claude/aid/templates/downstream-worktree-entry.md", "profile": "claude-code", "sha256": "5a4f4a0891d02152b782539b3ff25f7313ff16a47f2dd20279b36c3a8f5545af", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".claude/aid/templates/feature-inventory.md", "profile": "claude-code", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".claude/aid/templates/feature.md", "profile": "claude-code", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".claude/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "claude-code", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}

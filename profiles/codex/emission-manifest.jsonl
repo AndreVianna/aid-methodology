@@ -71,7 +71,7 @@
 {"dst": ".codex/aid/templates/delivery-state-template.md", "profile": "codex", "sha256": "ef0961dbd84a51cd12dc501ca3a10bc16a6b38898f8bb263ced63e7aa7a53426", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".codex/aid/templates/discovery-state-template.md", "profile": "codex", "sha256": "b6a8f5e279296db4fae0324612400f84d785df53639f03e6ba5069fb030bd4fb", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".codex/aid/templates/dispatch-protocol-checklist.md", "profile": "codex", "sha256": "06f29a40fb47a8777e11d9bdf4b2357310ba90420b16e227b91ff60d73199989", "src": "canonical/templates/dispatch-protocol-checklist.md"}
-{"dst": ".codex/aid/templates/downstream-worktree-entry.md", "profile": "codex", "sha256": "1f7c8905f893875cfcaa24d413d02c6230c20ed04f5a3f7b7238464310b5376b", "src": "canonical/templates/downstream-worktree-entry.md"}
+{"dst": ".codex/aid/templates/downstream-worktree-entry.md", "profile": "codex", "sha256": "21df82b7ac96d0658b0dffd67f950552b4604745dd53dadf7c3f9a1e62d6daa5", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".codex/aid/templates/feature-inventory.md", "profile": "codex", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".codex/aid/templates/feature.md", "profile": "codex", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".codex/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "codex", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}

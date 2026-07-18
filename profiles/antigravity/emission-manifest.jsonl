@@ -71,7 +71,7 @@
 {"dst": ".agent/aid/templates/delivery-state-template.md", "profile": "antigravity", "sha256": "448730000040c7a46a87a0707947d7390f7282c9078fcc006d2ea84ef4fb49af", "src": "canonical/templates/delivery-state-template.md"}
 {"dst": ".agent/aid/templates/discovery-state-template.md", "profile": "antigravity", "sha256": "e48295fe353998370284c5ebb88166135145df11531fb32048eb8ccd95159542", "src": "canonical/templates/discovery-state-template.md"}
 {"dst": ".agent/aid/templates/dispatch-protocol-checklist.md", "profile": "antigravity", "sha256": "4070e6cd1a9f970f798e51139503f45e1c8845efb2dcaab77eb44194e262abd0", "src": "canonical/templates/dispatch-protocol-checklist.md"}
-{"dst": ".agent/aid/templates/downstream-worktree-entry.md", "profile": "antigravity", "sha256": "ef77160f5d282a0e28ce7d625a97aa960eff7768982e92dd0a7f2c0886dd1e59", "src": "canonical/templates/downstream-worktree-entry.md"}
+{"dst": ".agent/aid/templates/downstream-worktree-entry.md", "profile": "antigravity", "sha256": "56dd8fd1b7d9e1b9696b6c414ac638ee32a47174225615a0f57e5d37780a0a7f", "src": "canonical/templates/downstream-worktree-entry.md"}
 {"dst": ".agent/aid/templates/feature-inventory.md", "profile": "antigravity", "sha256": "81d14cc8d0bd7bf7b1c900779d617e5dbfd68c19bd2320c9ab9839258fa43de6", "src": "canonical/templates/feature-inventory.md"}
 {"dst": ".agent/aid/templates/feature.md", "profile": "antigravity", "sha256": "f2431502406233a2f9f083346f9a06fc2b5c5d289f6f61c951099af505f731c7", "src": "canonical/templates/feature.md"}
 {"dst": ".agent/aid/templates/feedback-artifacts/IMPEDIMENT.md", "profile": "antigravity", "sha256": "79b88f114c2ad3e1b30cb84699049c1a4fdb968e14f52fec37ed721417a22b26", "src": "canonical/templates/feedback-artifacts/IMPEDIMENT.md"}

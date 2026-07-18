@@ -2,11 +2,11 @@
 
 The single shared pre-flight step every downstream pipeline skill (`aid-define`, `aid-specify`,
 `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy`) follows once the work id it is operating on
-is known: **normalize -> `locate` -> enter -> never `create`.** It is the Concern C downstream
+is known: **normalize -> `locate` -> enter -> never `create`.** It is the Concern D downstream
 counterpart to `.codex/aid/templates/work-initiation-gate.md` (Concern B, work-starting) and
 consumes -- without re-implementing -- the fixed contract in
 `.codex/aid/scripts/works/worktree-lifecycle.sh` and
-`.codex/aid/templates/worktree-lifecycle.md`.
+`.codex/aid/templates/worktree-lifecycle.md` (Concern C).
 
 Consulted by: `aid-define`, `aid-specify`, `aid-plan`, `aid-detail`, `aid-execute`, `aid-deploy` --
 each references THIS file at its own pre-flight anchor (see each `SKILL.md`'s pointer for the
