@@ -258,11 +258,12 @@ class TestStructural(unittest.TestCase):
         # the single-shot fetch uses no recurring timer to re-call doFetch
         self.assertNotIn('setTimeout(function', self.src)
 
-    # S9 -- brand is static "AID . this machine" (no id="brand-name")
+    # S9 -- brand is the static "Home" breadcrumb root (no id="brand-name")
     def test_s9_brand_present(self):
         # The CLI-home (all-projects) brand deliberately reads "Home" (breadcrumb IA:
-        # Home > Project); the older "AID · this machine" header was intentionally
-        # retired (commit 628c9810). Assert the brand div is present and labelled.
+        # Home > Project). The original "AID · this machine" header was retired in two
+        # steps: 628c9810 renamed it "AID CLI", then c6c24757 renamed "AID CLI" -> "Home"
+        # (breadcrumb-root consistency). Assert the brand div is present and labelled.
         idx = self.src.find('class="brand"')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 200]

@@ -890,13 +890,22 @@ function runAidCli(argv, envOverrides, timeoutMs) {
       encoding: "utf8",
       timeout: ms,
     });
+    // Timeout detection MUST precede the generic-error branch: on Windows,
+    // spawnSync's own timeout-kill sets BOTH result.signal ('SIGTERM') AND
+    // result.error (code 'ETIMEDOUT') simultaneously, so a `if (result.error)`
+    // check first would misreport a 600s-ceiling kill as a generic exec
+    // failure (exit 3 -> 500 'update-failed') instead of the spec'd timeout
+    // sentinel (-> 504 'timed-out'). This ordering is the twin of Python's
+    // `except subprocess.TimeoutExpired` being caught before the generic
+    // `except Exception` (server.py _run_aid_cli). result.signal is the timeout
+    // source in this code path; the result.error.code === 'ETIMEDOUT' clause is
+    // the belt-and-suspenders form for any platform that surfaces only the
+    // error object without a signal.
+    if (result.signal || (result.error && result.error.code === "ETIMEDOUT")) {
+      return [AID_CLI_TIMEOUT_EXIT, result.stderr || ""];
+    }
     if (result.error) {
       return [3, String(result.error)];
-    }
-    if (result.signal) {
-      // Killed by spawnSync's own timeout handling -- the only signal source
-      // in this code path (mirrors Python's subprocess.TimeoutExpired branch).
-      return [AID_CLI_TIMEOUT_EXIT, result.stderr || ""];
     }
     const code = (result.status === null || result.status === undefined) ? 3 : result.status;
     return [code, result.stderr || ""];

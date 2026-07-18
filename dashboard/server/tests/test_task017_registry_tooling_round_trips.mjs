@@ -154,7 +154,7 @@ async function runLiveTest() {
   const aidHome = join(base, "aid_home");
   mkdirSync(aidHome, { recursive: true });
   mkdirSync(join(aidHome, "dashboard"), { recursive: true });
-  writeFileSync(join(aidHome, "registry.yml"), "schema: 1\nrepos:\n", "utf8");   // empty union
+  writeFileSync(join(aidHome, "registry.yml"), "schema: 1\nprojects:\n", "utf8");   // empty union
 
   const s = await spawnServer(aidHome, ["--allow-writes"]);
   if (!s.ready) {

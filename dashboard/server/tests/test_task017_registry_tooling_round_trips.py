@@ -585,55 +585,41 @@ class TestToolsUpdateTimeoutParity(_NodeSlicedDispatchFixture, unittest.TestCase
         super().tearDownClass()
 
     def test_tools_update_python_side_timeout_is_504(self) -> None:
-        """Python-side half of the timeout case (unaffected by the Node-only
-        bug documented at _NODE_WINDOWS_TIMEOUT_BUG_REASON below) -- proves
-        srv._dispatch_op maps the AID_CLI_TIMEOUT_EXIT sentinel to 504
-        'timed-out' for tools.update. Mirrors (thin, not duplicating)
-        test_task015_tools_update_ops.py's own TestToolsUpdateTimeout."""
+        """Python-side half of the timeout case (was always unaffected by the
+        Node-only timeout-ordering bug fixed in runAidCli -- see the parity
+        methods below) -- proves srv._dispatch_op maps the AID_CLI_TIMEOUT_EXIT
+        sentinel to 504 'timed-out' for tools.update. Mirrors (thin, not
+        duplicating) test_task015_tools_update_ops.py's own TestToolsUpdateTimeout."""
         with mock.patch.dict("os.environ", {"FAKE_MODE": "slow"}, clear=False):
             status, body = srv._dispatch_op(srv.OP_TABLE, {"op": "tools.update"}, "/repo/path", aid_home="/state/home")
         self.assertEqual(status, 504)
         self.assertEqual(json.loads(body)["error"], "timed-out")
 
     def test_tools_update_self_python_side_timeout_is_504(self) -> None:
-        """Python-side half of the timeout case (unaffected by the Node-only
-        bug documented at _NODE_WINDOWS_TIMEOUT_BUG_REASON below)."""
+        """Python-side half of the timeout case (was always unaffected by the
+        Node-only timeout-ordering bug fixed in runAidCli -- see the parity
+        methods below)."""
         with mock.patch.dict("os.environ", {"FAKE_MODE": "slow"}, clear=False):
             status, body = srv._dispatch_op(srv.HOME_OP_TABLE, {"op": "tools.update-self"}, "/state/home")
         self.assertEqual(status, 504)
         self.assertEqual(json.loads(body)["error"], "timed-out")
 
-    # -- DISCOVERED BUG (see reason string below) -- these two parity methods
-    # are skipped, not deleted: the body is kept EXACTLY as the spec'd target
-    # behavior so re-enabling is a one-line change once server.mjs is fixed.
+    # -- Node/Python timeout parity (regression guard) -- these two methods
+    # guard a bug discovered while authoring task-017: on Windows, Node's
+    # spawnSync(...) populates BOTH result.error (an Error with code
+    # 'ETIMEDOUT') AND result.signal ('SIGTERM') when its `timeout` option
+    # kills the child, so server.mjs's runAidCli(...) -- which originally
+    # checked `if (result.error)` BEFORE `if (result.signal)` -- misreported a
+    # genuine 600s-ceiling kill as a generic exec failure (exit 3 -> 500
+    # 'update-failed') instead of the spec'd 504 'timed-out' (feature-004
+    # SPEC.md API Contracts: 'Child exceeds the 600s ceiling (killed) -> 504
+    # timed-out'). Fixed in runAidCli by checking `result.signal ||
+    # (result.error && result.error.code === 'ETIMEDOUT')` BEFORE the generic
+    # result.error branch, mirroring Python's `except subprocess.TimeoutExpired`
+    # being caught before the generic `except Exception`. These parity tests
+    # (previously @unittest.skip'd against the target behavior) are now enabled
+    # so the twins can never drift back apart.
 
-    _NODE_WINDOWS_TIMEOUT_BUG_REASON = (
-        "DISCOVERED BUG while authoring task-017 (production code is task-015's "
-        "server.mjs -- out of this TEST task's authoring scope, so NOT fixed "
-        "here): on Windows, Node's spawnSync(...) populates BOTH result.error "
-        "(an Error with code 'ETIMEDOUT') AND result.signal ('SIGTERM') when "
-        "its `timeout` option kills the child -- confirmed via a minimal "
-        "`spawnSync('bash', ['-c','sleep 3'], {timeout:500})` repro run "
-        "during this task's verification pass. server.mjs's runAidCli(...) "
-        "checks `if (result.error) return [3, ...]` BEFORE `if (result.signal)`, "
-        "so on Windows a genuine child timeout is misreported as a generic "
-        "exec failure (exit 3, falling through to statusMapDefault) rather "
-        "than the dedicated AID_CLI_TIMEOUT_EXIT sentinel -- the Node twin "
-        "returns 500 'update-failed' instead of the spec'd 504 'timed-out' "
-        "(feature-004 SPEC.md API Contracts row: 'Child exceeds the 600s "
-        "ceiling (killed) -> 504 timed-out'). The Python side is unaffected "
-        "(subprocess.TimeoutExpired is unambiguous -- see this class's own "
-        "test_tools_update*_python_side_timeout_is_504, both green, and "
-        "test_task015_tools_update_ops.py's TestToolsUpdateTimeout, also "
-        "green). Fix belongs in runAidCli's timeout branch (check "
-        "`result.signal || (result.error && result.error.code === 'ETIMEDOUT')` "
-        "BEFORE the generic result.error branch) -- production code, out of "
-        "task-017's TEST-only scope; reported to the orchestrator as a "
-        "follow-up fix against task-015/server.mjs. Re-enable this skip once "
-        "fixed."
-    )
-
-    @unittest.skip(_NODE_WINDOWS_TIMEOUT_BUG_REASON)
     def test_tools_update_timeout_parity(self) -> None:
         node_result = self._node_dispatch_many([{
             "table": "OP_TABLE", "parsed": {"op": "tools.update"},
@@ -644,7 +630,6 @@ class TestToolsUpdateTimeoutParity(_NodeSlicedDispatchFixture, unittest.TestCase
             py_result = srv._dispatch_op(srv.OP_TABLE, {"op": "tools.update"}, "/repo/path", aid_home="/state/home")
         _assert_parity(self, py_result, node_result, 504, "timed-out")
 
-    @unittest.skip(_NODE_WINDOWS_TIMEOUT_BUG_REASON)
     def test_tools_update_self_timeout_parity(self) -> None:
         node_result = self._node_dispatch_many([{
             "table": "HOME_OP_TABLE", "parsed": {"op": "tools.update-self"},
