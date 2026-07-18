@@ -57,8 +57,14 @@ on each state.
    `bash .cursor/aid/scripts/works/enumerate-works.sh` (main tree + every git worktree).
    Empty -> allocate below, no prompt. Works exist -> ask new-vs-continuation with the
    enumerated list; on **continuation** route to the chosen work's resume door and STOP
-   (allocate nothing); on **new work** allocate: new `work-{NNN+1}` under `.aid/works/`;
-   slug from the question. Copy `.cursor/aid/templates/work-state-template.md` to
+   (allocate nothing); on **new work**: resolve `<work-id>` as `work-{NNN+1}`, where `NNN`
+   is the maximum `work-NNN` numeric prefix across every record the enumeration above
+   already returned (cross-worktree by construction -- never a local `.aid/works/` glob;
+   gate `§ 3a` step 1); create and enter the worktree per the gate's `§ 3a` step 2
+   (`worktree-lifecycle.sh create <work-id> <name>`, STOP on a non-zero exit or empty path,
+   else enter the resolved path); **only then** allocate: `.aid/works/<work-id>-<slug>/`
+   under `.aid/works/`; slug from the question. Copy
+   `.cursor/aid/templates/work-state-template.md` to
    `.aid/works/work-NNN-<slug>/STATE.md`; write opening frontmatter (`pipeline.path: lite`,
    `initiator: aid-research`, `lifecycle: Running`, `active_skill: aid-research`,
    `started`/`updated`). Do NOT drive the 7-phase `phase` scalar. Associate a git worktree
