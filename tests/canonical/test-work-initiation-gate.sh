@@ -14,7 +14,8 @@
 # Gate reference (prose contract the routing depends on):
 #   canonical/aid/templates/work-initiation-gate.md
 #
-# What this suite asserts (mapped to task-006 / SPEC ACs):
+# What this suite asserts (mapped to task-006 / SPEC ACs, plus the work-018
+# feature-002 worktree-automation extensions added by work-018 task-005):
 #   Group A  empty -> NEW (no prompt):     SPEC AC-8   (absent + present-but-empty)
 #   Group B  non-empty -> enumerated:      SPEC AC-7/AC-9 (main tree + git worktree,
 #                                          full 5-field record, name-independent)
@@ -24,9 +25,24 @@
 #                                          timeout -> main-tree-only, exit 0)
 #   Group E  helper arg/contract surface   (exit codes 0/2, --help)
 #   Group F  gate-doc structure:           SPEC AC-9/AC-10 (empty->new / non-empty
-#                                          ->ask / continuation->route branches)
+#                                          ->ask / continuation->route branches),
+#                                          extended (work-018 feature-002) with the
+#                                          § 3a create+enter / § 3b locate+enter
+#                                          sub-steps, the create-failure guard, the
+#                                          create-before-allocate file-order
+#                                          invariant, the cross-worktree
+#                                          next-number source, and a regression
+#                                          guard that § 3b never mislabels
+#                                          `locate` as fail-closed/exit-1
 #   Group G  starter coverage:             SPEC AC-11  (all TEN affected starters
-#                                          consult the shared gate)
+#                                          consult the shared gate), extended
+#                                          (work-018 feature-002) with each
+#                                          starter's own worktree-create reference
+#                                          and its create-before-allocate file-order
+#                                          invariant
+#   Reconciliation  aid-review's now-mandatory work-level worktree (FR1) vs.
+#                   aid-research/aid-prototype's surviving SPIKE-only opt-in
+#                   worktree sentences (work-018 feature-002)
 #
 # Fail-pre / pass-post contract:
 #   These tests pass against the POST-task-005 tree (the shared helper + gate
@@ -38,6 +54,10 @@
 #   the gate reference would be absent (Group F red), and no starter would cite
 #   it (Group G red). The suite therefore establishes the gate's contract by
 #   construction rather than by mutating known-good code back to a broken state.
+#   The Group F/G worktree-wiring extensions and the Reconciliation group (added
+#   by work-018 task-005) pass against the tree wired by work-018 task-003/004
+#   (`worktree-lifecycle.sh create`/`locate` threaded through the gate doc and
+#   all ten starters); pre-task-003/004 none of those references existed either.
 #
 # Usage:
 #   test-work-initiation-gate.sh [-v | --verbose]
@@ -317,6 +337,43 @@ assert_file_contains "$GATE_DOC" "enumerate-works.sh" "F: doc points starters at
 assert_file_contains "$GATE_DOC" '<work_id>\t<phase>\t<lifecycle>\t<branch_label>\t<title>' \
     "F: doc documents the 5-field record contract the gate consumes"
 
+# --- Group F extensions: §3a create+enter / §3b locate+enter worktree wiring
+# (feature-002 SPEC § Testing). ---
+assert_file_contains "$GATE_DOC" "### 3a" "F: doc documents the § 3a create+enter sub-step"
+assert_file_contains "$GATE_DOC" "### 3b" "F: doc documents the § 3b locate+enter sub-step"
+assert_file_contains "$GATE_DOC" "worktree-lifecycle.sh create" "F: doc names worktree-lifecycle.sh create"
+assert_file_contains "$GATE_DOC" "worktree-lifecycle.sh locate" "F: doc names worktree-lifecycle.sh locate"
+assert_file_contains "$GATE_DOC" "Create-failure guard" "F: doc documents § 3a's create-failure guard"
+
+# create-before-allocate ordering: the `create` mention precedes the STATE.md-scaffold
+# mention in file order (§ 3a Feature Flow -- number resolution + create+enter happen
+# BEFORE the work folder + STATE.md are authored).
+gate_create_line=$(grep -nF -- "worktree-lifecycle.sh create <work-id> <name>" "$GATE_DOC" | head -1 | cut -d: -f1)
+gate_scaffold_line=$(grep -nF -- 'scaffold `STATE.md`' "$GATE_DOC" | head -1 | cut -d: -f1)
+if [[ -z "$gate_create_line" ]]; then
+    fail "F: gate doc — 'worktree-lifecycle.sh create <work-id> <name>' mention not found"
+elif [[ -z "$gate_scaffold_line" ]]; then
+    fail "F: gate doc — 'scaffold \`STATE.md\`' mention not found"
+elif [[ "$gate_create_line" -lt "$gate_scaffold_line" ]]; then
+    pass "F: § 3a create mention (line $gate_create_line) precedes the STATE.md-scaffold mention (line $gate_scaffold_line)"
+else
+    fail "F: § 3a create mention (line $gate_create_line) does NOT precede the STATE.md-scaffold mention (line $gate_scaffold_line)"
+fi
+
+assert_file_contains "$GATE_DOC" "Never** re-scan a local" \
+    "F: § 3a's next-number source is the cross-worktree enumeration, not a local .aid/works/ glob"
+
+# § 3b regression guard: locate's guard is framed as a defensive backstop, and § 3b never
+# describes `locate` itself as fail-closed / exit-1 (feature-001's FROZEN contract: locate
+# always exits 0, degrading to a non-empty `<cwd-abs>\tcurrent`).
+assert_file_contains "$GATE_DOC" "Defensive backstop (NOT fail-closed)" \
+    "F: § 3b frames its locate guard as a defensive backstop, NOT fail-closed"
+section_3b=$(awk '/^### 3b\./{flag=1} /^## Invariant/{flag=0} flag' "$GATE_DOC")
+assert_output_not_contains "$section_3b" "(fail-closed):**" \
+    "F: § 3b does NOT mislabel locate's guard as fail-closed (regression guard)"
+assert_output_contains "$section_3b" "exits 0 on every resolution" \
+    "F: § 3b documents locate's exits-0-always contract (never fail-closed)"
+
 # ===========================================================================
 echo ""
 echo "=== Group G: all TEN affected work-starters consult the shared gate (SPEC AC-11) ==="
@@ -336,14 +393,83 @@ STARTERS=(
     "canonical/skills/aid-change-document/SKILL.md"
 )
 assert_eq "${#STARTERS[@]}" "10" "G: exactly ten affected work-starters under coverage"
+
+# Per-starter anchor for the create-before-allocate ordering check below: the first line,
+# after the `worktree-lifecycle.sh create` mention, that is this starter's own
+# STATE.md-scaffold / work-folder-allocation line (wording differs per starter -- some
+# name `STATE.md` literally, some fold the allocation into a single "**then** allocate ("
+# clause; each anchor here is verified unique-enough to sit strictly after its file's first
+# `create` mention).
+declare -A STARTER_ALLOC_ANCHOR=(
+    ["canonical/aid/templates/shortcut-engine.md"]="### Step 4: Scaffold STATE.md"
+    ["canonical/skills/aid-describe/SKILL.md"]="create \`.aid/works/work-001-{name}/\`"
+    ["canonical/skills/aid-review/SKILL.md"]="STATE.md"
+    ["canonical/skills/aid-research/SKILL.md"]="STATE.md"
+    ["canonical/skills/aid-design/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-report/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-test/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-prototype/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-create-document/SKILL.md"]="**then** allocate (\`"
+    ["canonical/skills/aid-change-document/SKILL.md"]="**then** allocate (\`"
+)
+
 for rel in "${STARTERS[@]}"; do
     f="${REPO_ROOT}/${rel}"
     if [[ -f "$f" ]]; then
         assert_file_contains "$f" "work-initiation-gate.md" "G: ${rel} consults the shared gate"
+        assert_file_contains "$f" "worktree-lifecycle.sh create" \
+            "G: ${rel} references the gate's worktree-create step at its allocation point"
+
+        anchor="${STARTER_ALLOC_ANCHOR[$rel]:-}"
+        create_line=$(grep -nF -- "worktree-lifecycle.sh create" "$f" | head -1 | cut -d: -f1)
+        scaffold_line=$(grep -nF -- "$anchor" "$f" | head -1 | cut -d: -f1)
+        if [[ -z "$anchor" ]]; then
+            fail "G: ${rel} — no allocation-line anchor configured for the ordering check"
+        elif [[ -z "$create_line" ]]; then
+            fail "G: ${rel} — 'worktree-lifecycle.sh create' mention not found"
+        elif [[ -z "$scaffold_line" ]]; then
+            fail "G: ${rel} — STATE.md-scaffold/allocation line not found (anchor: '$anchor')"
+        elif [[ "$create_line" -lt "$scaffold_line" ]]; then
+            pass "G: ${rel} — create mention (line $create_line) precedes STATE.md-scaffold/allocation line (line $scaffold_line)"
+        else
+            fail "G: ${rel} — create mention (line $create_line) does NOT precede STATE.md-scaffold/allocation line (line $scaffold_line)"
+        fi
     else
         fail "G: starter file missing: ${rel}"
     fi
 done
+
+# ===========================================================================
+echo ""
+echo "=== Reconciliation group: aid-review mandatory / aid-research+aid-prototype spike opt-in survives ==="
+
+AID_REVIEW="${REPO_ROOT}/canonical/skills/aid-review/SKILL.md"
+AID_RESEARCH="${REPO_ROOT}/canonical/skills/aid-research/SKILL.md"
+AID_PROTOTYPE="${REPO_ROOT}/canonical/skills/aid-prototype/SKILL.md"
+
+# aid-review: the WORK-LEVEL worktree is no longer merely optional (FR1) -- its old
+# "Optionally associate a git worktree ..." sentence is replaced by the mandatory gate § 3a
+# create+enter.
+assert_file_not_contains "$AID_REVIEW" "Optionally associate a git worktree" \
+    "Recon: aid-review's old work-level opt-in worktree sentence is gone"
+assert_file_contains "$AID_REVIEW" "mandatory per FR1, no longer optional" \
+    "Recon: aid-review documents the work-level worktree as mandatory (FR1), not optional"
+assert_file_contains "$AID_REVIEW" "gate \`§ 3a\` step 2" \
+    "Recon: aid-review references gate § 3a work-level create+enter at its allocation step"
+
+# aid-research / aid-prototype: the opposite -- their SPIKE/throwaway opt-in worktree
+# sentences survive UNCHANGED (a distinct, nested concern from the now-mandatory
+# work-level worktree; see the gate doc's Edge Cases), while a gate § 3a work-level
+# create+enter reference is now ALSO present at their allocation step.
+assert_file_contains "$AID_RESEARCH" "Associate a git worktree" \
+    "Recon: aid-research's spike opt-in worktree sentence survives unchanged"
+assert_file_contains "$AID_RESEARCH" "gate's \`§ 3a\` step 2" \
+    "Recon: aid-research references gate § 3a work-level create+enter at its allocation step"
+
+assert_file_contains "$AID_PROTOTYPE" "associate an opt-in git worktree so the throwaway" \
+    "Recon: aid-prototype's spike opt-in worktree sentence survives unchanged"
+assert_file_contains "$AID_PROTOTYPE" "gate's \`§ 3a\` step 2" \
+    "Recon: aid-prototype references gate § 3a work-level create+enter at its allocation step"
 
 # ---------------------------------------------------------------------------
 echo ""
