@@ -49,6 +49,9 @@
 #        (precondition is create-if-absent, never append/overwrite)
 #   U37  self-location: the dashboard co-vendored copy resolves its siblings from
 #        its OWN directory (dashboard/scripts/), independent of canonical/
+#   U38  orphan-secret purge: an existing on-disk .secrets/<stem> file is
+#        actually DELETED (not just the descriptor's secret_reference dropped)
+#        when a credentialed connector transitions to mcp on a re-set
 #
 # Usage:
 #   bash tests/canonical/test-write-connector.sh [--verbose]
@@ -385,6 +388,25 @@ if [[ -f "$SUT_DASHBOARD" ]]; then
     assert_file_exists "${root}/INDEX.md" "U37 dashboard copy self-located build-connectors-index.sh"
 else
     fail "U37 dashboard co-vendored copy not found at $SUT_DASHBOARD"
+fi
+
+# ---------------------------------------------------------------------------
+# U38 -- orphan-secret purge actually deletes an existing .secrets/<stem> file
+# (not just drops the descriptor's secret_reference field) when a credentialed
+# connector transitions to mcp on a re-set.
+# ---------------------------------------------------------------------------
+root="${TMPDIR_BASE}/u38/connectors"
+bash "$SUT" set --root "$root" --name "Jira" --type api --endpoint e --auth token >/dev/null 2>&1
+mkdir -p "${root}/.secrets"
+printf 'super-secret-value' > "${root}/.secrets/jira"
+assert_file_exists "${root}/.secrets/jira" "U38 fixture secret file exists before transition"
+out=$(bash "$SUT" set --root "$root" --name "Jira" --type mcp 2>&1)
+ec=$?
+assert_exit_zero "$ec" "U38 re-set to mcp exits 0"
+if [[ ! -f "${root}/.secrets/jira" ]]; then
+    pass "U38 orphaned secret file actually deleted on type transition to mcp"
+else
+    fail "U38 orphaned secret file still present after transition to mcp"
 fi
 
 echo
