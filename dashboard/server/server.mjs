@@ -779,13 +779,17 @@ function toPosixArg(p) {
   return p.split(sep).join("/");
 }
 
-function mapExitCode(exitCode, statusMap) {
+function mapExitCode(exitCode, statusMap, defaultStatus) {
   // Resolve the op's effective status map (`op.status_map or DEFAULT_MAP`, OP-SM)
   // and map exitCode -> [httpStatus, errorClass]. An exit code absent from the
-  // effective map falls back to [500, 'write-failed'] -- DEFAULT_MAP's own '3/6/*'
-  // catch-all row.
+  // effective map falls back to `defaultStatus` if the row supplied one (the
+  // per-op 'statusMapDefault' extension, feature-004: `aid update`'s exit
+  // alphabet is not individually enumerable, so every non-zero/non-timeout exit
+  // must collapse to ONE 'update-failed' class rather than the generic
+  // 'write-failed'), else the shared DEFAULT_FALLBACK (500, 'write-failed') --
+  // DEFAULT_MAP's own '3/6/*' catch-all row.
   const effective = statusMap || DEFAULT_MAP;
-  return effective[exitCode] || DEFAULT_FALLBACK;
+  return effective[exitCode] || defaultStatus || DEFAULT_FALLBACK;
 }
 
 function opOkBody(op) {
@@ -1271,6 +1275,78 @@ const PROJECT_OP_STATUS_MAP = {
   2: [422, "invalid-value"],
 };
 
+// ---------------------------------------------------------------------------
+// feature-004-update-tools (task-015): tools.update / tools.update-self --
+// reuse the SAME shared aid-CLI resolver task-013 introduced (KI-004, not
+// re-invented); no new spawn mechanism, no new resolver. See SPEC.md API
+// Contracts for the full citation trail this section implements.
+// ---------------------------------------------------------------------------
+
+function validateNoArgs(args) {
+  // Shared semanticValidate hook for feature-004's argument-free ops
+  // (tools.update, tools.update-self): a non-empty args object is a 422
+  // 'invalid-value' (SPEC.md API Contracts arg-schema convention) -- neither
+  // op accepts --force/--dry-run/per-tool knobs in v1 (D4). Absent/empty args
+  // (the {} argSchema on both rows lets any object through validateArgs
+  // unexamined) passes here.
+  if (args && Object.keys(args).length > 0) {
+    return "this op accepts no arguments";
+  }
+  return null;
+}
+
+function opToolsUpdateArgv(workDir, servedRoot, target, args) {
+  // tools.update (per-repo, PROJECT-scoped; no work_id) -> bash
+  // $AID_CODE_HOME/bin/aid update --target <servedRoot> (KI-004 shared
+  // resolver, spawned via spawnAidCli). servedRoot here IS the repo's own
+  // canonPath -- resolved solely from <id> via idMap by serveOp (SEC-2),
+  // never from target.work_id. env AID_HOME=<server aid_home>: since
+  // servedRoot is the REPO path here (not aid_home), dispatchOp stashes the
+  // server's own state home into target._aidHome before calling this builder
+  // (mirrors project.remove's target._resolvedPath smuggling pattern --
+  // buildArgv's call signature is frozen at (workDir, servedRoot, target,
+  // args) across every OP_TABLE row, so this is the only pass-through
+  // available) so `aid update`'s self-update-if-stale preamble / registry
+  // reads resolve the SAME state home the dashboard itself uses;
+  // AID_CODE_HOME is NOT exported (bin/aid self-locates it, bin/aid L45-52).
+  const argv = ["update", "--target", toPosixArg(servedRoot)];
+  const env = { AID_HOME: target._aidHome };
+  return [argv, env];
+}
+
+function opToolsUpdateSelfArgv(workDir, servedRoot, target, args) {
+  // tools.update-self (home; no <id>, no work_id) -> bash
+  // $AID_CODE_HOME/bin/aid update self (KI-004 shared resolver, spawned via
+  // spawnAidCli). servedRoot here IS aid_home (home scope, mirrors
+  // project.add/project.remove exactly). env AID_HOME=<server aid_home>;
+  // AID_CODE_HOME NOT exported.
+  const argv = ["update", "self"];
+  const env = { AID_HOME: servedRoot };
+  return [argv, env];
+}
+
+// tools.update / tools.update-self share one statusMap (feature-004): unlike
+// project.add/remove's enumerable 0/2 `aid`-CLI alphabet, `aid update`'s exit
+// codes are not individually enumerable here -- the server controls the
+// entire argv, so `aid`'s own usage-error exits (e.g. the tool-positional
+// reject, `bin/aid` line 3054-3062) are not reachable through this closed
+// surface (API Contracts) -- so EVERY non-zero, non-timeout exit collapses to
+// the single 'update-failed' class via the row's 'statusMapDefault' (the
+// OP-SM default-status extension mapExitCode supports), rather than falling
+// through to the shared DEFAULT_FALLBACK's generic 'write-failed'. Only the
+// out-of-band timeout sentinel (AID_CLI_TIMEOUT_EXIT, never a real 0..255
+// exit) gets its own explicit row, mapping to 504 'timed-out'.
+const TOOLS_UPDATE_STATUS_MAP = {
+  [AID_CLI_TIMEOUT_EXIT]: [504, "timed-out"],
+};
+const TOOLS_UPDATE_STATUS_DEFAULT = [500, "update-failed"];
+
+// 600000ms (10 min): a generous ceiling for `aid update`/`aid update self`,
+// which can fetch + install every configured tool profile (or the channel CLI
+// package) -- far longer than the 30s default sized for the fast registry
+// ops above.
+const TOOLS_UPDATE_TIMEOUT = 600000;
+
 // OP_TABLE: closed static object seeded by feature-001 (the 4 feature-001-owned rows).
 // 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
 // "project" (no work_id -- settings.set targets the served root directly) |
@@ -1319,11 +1395,21 @@ const OP_TABLE = {
     semanticValidate: validateTaskRenameArgs,
     statusMap: null,
   },
+  "tools.update": {
+    scope: "project",
+    argSchema: {},
+    buildArgv: opToolsUpdateArgv,
+    semanticValidate: validateNoArgs,
+    spawn: spawnAidCli,
+    aidCliTimeout: TOOLS_UPDATE_TIMEOUT,
+    statusMap: TOOLS_UPDATE_STATUS_MAP,
+    statusMapDefault: TOOLS_UPDATE_STATUS_DEFAULT,
+  },
 };
 
 // HOME_OP_TABLE: feature-003 (project.add/project.remove, task-013) registers
-// the first two home-scoped rows below; feature-004 (tools.update-self) adds
-// its own row next. Every OTHER op dispatched through serveHomeOp is
+// the first two home-scoped rows below; feature-004 (task-015) adds
+// tools.update-self. Every OTHER op dispatched through serveHomeOp is
 // 'unknown' -> 400.
 const HOME_OP_TABLE = {
   "project.add": {
@@ -1344,14 +1430,32 @@ const HOME_OP_TABLE = {
     postVerify: postVerifyProjectRemove,
     statusMap: PROJECT_OP_STATUS_MAP,
   },
+  "tools.update-self": {
+    scope: "home",
+    argSchema: {},
+    buildArgv: opToolsUpdateSelfArgv,
+    semanticValidate: validateNoArgs,
+    spawn: spawnAidCli,
+    aidCliTimeout: TOOLS_UPDATE_TIMEOUT,
+    statusMap: TOOLS_UPDATE_STATUS_MAP,
+    statusMapDefault: TOOLS_UPDATE_STATUS_DEFAULT,
+  },
 };
 
-function dispatchOp(opTable, parsed, servedRoot) {
+function dispatchOp(opTable, parsed, servedRoot, aidHome) {
   // Validate + dispatch a parsed op-request body against opTable.
   //
   // servedRoot is the resolved repo canonPath (per-repo ops) or aidHome (home
   // ops). Never spawns a writer child before every schema/shape check below has
   // passed (no client-controlled bytes reach subprocess argv unvalidated).
+  //
+  // aidHome (task-015 extension, KI-004-adjacent): the server's own state home,
+  // needed ONLY by a PROJECT-scoped op whose servedRoot is a repo canonPath
+  // rather than aidHome (feature-004's tools.update) so its buildArgv can still
+  // set AID_HOME=<aidHome> in the child env. Defaults to servedRoot when the
+  // caller omits it -- the correct value for every existing call site
+  // (home-scope ops already pass servedRoot == aidHome; other
+  // project/task/pipeline-scope ops never read it).
   const op = parsed.op;
   if (typeof op !== "string" || !Object.prototype.hasOwnProperty.call(opTable, op)) {
     return [400, opFailBody(typeof op === "string" ? op : null, "bad-request", "unknown or missing 'op'")];
@@ -1364,6 +1468,11 @@ function dispatchOp(opTable, parsed, servedRoot) {
   if (typeof target !== "object" || Array.isArray(target)) {
     return [400, opFailBody(op, "bad-request", "'target' must be an object")];
   }
+  // Stash the resolved aidHome into target (mirrors project.remove's
+  // target._resolvedPath smuggling pattern below) so a buildArgv can read it
+  // despite buildArgv's frozen (workDir, servedRoot, target, args) signature --
+  // harmless for every op that never reads this key.
+  target._aidHome = aidHome !== undefined && aidHome !== null ? aidHome : servedRoot;
 
   let args = parsed.args;
   if (args === undefined || args === null) args = {};
@@ -1464,7 +1573,7 @@ function dispatchOp(opTable, parsed, servedRoot) {
   if (exitCode === 0) {
     return [200, opOkBody(op)];
   }
-  const [status, errorClass] = mapExitCode(exitCode, row.statusMap);
+  const [status, errorClass] = mapExitCode(exitCode, row.statusMap, row.statusMapDefault);
   return [status, opFailBody(op, errorClass, (stderrText || "").trim())];
 }
 
@@ -1580,7 +1689,7 @@ async function serveOp(req, res, rid) {
     return;
   }
 
-  const [status, body] = dispatchOp(OP_TABLE, parsed, canonPath);
+  const [status, body] = dispatchOp(OP_TABLE, parsed, canonPath, AID_HOME);
   sendJson(res, status, body);
 }
 

@@ -112,20 +112,25 @@ class TestOpTableShape(unittest.TestCase):
     """OP_TABLE / HOME_OP_TABLE / DEFAULT_MAP static shape (no I/O)."""
 
     def test_op_table_seeds_the_four_feature001_rows(self):
-        # work-017 task-008 (feature-005) registers a 5th row, task.rename, on top
-        # of the 4 feature-001-owned rows this test originally pinned -- see
-        # test_task008_display_rename.py for its dedicated coverage.
+        # work-017 task-008 (feature-005) registers a 5th row, task.rename;
+        # task-015 (feature-004) registers a 6th, tools.update -- on top of the
+        # 4 feature-001-owned rows this test originally pinned -- see
+        # test_task008_display_rename.py / test_task015_tools_update_ops.py for
+        # their dedicated coverage.
         self.assertEqual(
             set(srv.OP_TABLE.keys()),
-            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename"},
+            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename", "tools.update"},
         )
 
     def test_home_op_table_seeds_the_two_feature003_rows(self):
         # feature-001 owned no home-scoped rows itself (this test originally
-        # pinned HOME_OP_TABLE == {}) -- feature-003 (task-013) now registers
-        # project.add/project.remove; feature-004's tools.update-self (task-015)
-        # will add a 3rd row on top of these 2.
-        self.assertEqual(set(srv.HOME_OP_TABLE.keys()), {"project.add", "project.remove"})
+        # pinned HOME_OP_TABLE == {}) -- feature-003 (task-013) registered
+        # project.add/project.remove; feature-004's tools.update-self
+        # (task-015) adds a 3rd row on top of those 2 -- see
+        # test_task015_tools_update_ops.py for its dedicated coverage.
+        self.assertEqual(
+            set(srv.HOME_OP_TABLE.keys()), {"project.add", "project.remove", "tools.update-self"}
+        )
 
     def test_home_op_table_rows_declare_scope_argv_builder_and_spawn(self):
         for op, row in srv.HOME_OP_TABLE.items():
@@ -139,7 +144,14 @@ class TestOpTableShape(unittest.TestCase):
         for op, row in srv.OP_TABLE.items():
             with self.subTest(op=op):
                 self.assertIn(row["scope"], ("task", "pipeline", "project"))
-                self.assertTrue(row["writer"].endswith(".sh"))
+                # Every row is either co-vendored-writer-backed ('writer', a
+                # .sh script under dashboard/scripts/) or aid-CLI-backed (a
+                # 'spawn' override -- KI-004's shared resolver, e.g.
+                # tools.update -- with no 'writer' key at all).
+                if "writer" in row:
+                    self.assertTrue(row["writer"].endswith(".sh"))
+                else:
+                    self.assertTrue(callable(row["spawn"]))
                 self.assertIn("arg_schema", row)
                 self.assertTrue(callable(row["build_argv"]))
 

@@ -119,9 +119,12 @@ def _make_hierarchical_work(root: Path, work_id: str) -> Path:
 
 class TestOpTableTaskRenameRow(unittest.TestCase):
     def test_op_table_now_has_five_rows(self):
+        # task-015 (feature-004) registers a 6th row, tools.update, on top of
+        # the 5 rows this test originally pinned -- see
+        # test_task015_tools_update_ops.py for its dedicated coverage.
         self.assertEqual(
             set(srv.OP_TABLE.keys()),
-            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename"},
+            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename", "tools.update"},
         )
 
     def test_task_rename_row_shape(self):

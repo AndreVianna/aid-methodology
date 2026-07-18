@@ -949,14 +949,23 @@ _RE_DELIVERY_ID = re.compile(r"\A\d{1,3}\Z")
 _RE_TASK_ID_TARGET = re.compile(r"\A(?:task-)?(\d{1,3})\Z")
 
 
-def _map_exit_code(exit_code: int, status_map: "dict[int, tuple[int, str]] | None") -> tuple[int, str]:
+def _map_exit_code(
+    exit_code: int,
+    status_map: "dict[int, tuple[int, str]] | None",
+    default_status: "tuple[int, str] | None" = None,
+) -> tuple[int, str]:
     """Resolve the op's effective status map (`op.status_map or DEFAULT_MAP`, OP-SM)
     and map exit_code -> (http_status, error_class). An exit code absent from the
-    effective map falls back to (500, 'write-failed') -- DEFAULT_MAP's own '3/6/*'
-    catch-all row.
+    effective map falls back to `default_status` if the row supplied one (the
+    per-op 'status_map_default' extension, feature-004: `aid update`'s exit
+    alphabet is not individually enumerable, so every non-zero/non-timeout exit
+    must collapse to ONE 'update-failed' class rather than the generic
+    'write-failed'), else the shared _DEFAULT_FALLBACK (500, 'write-failed') --
+    DEFAULT_MAP's own '3/6/*' catch-all row.
     """
     effective = status_map if status_map else DEFAULT_MAP
-    return effective.get(exit_code, _DEFAULT_FALLBACK)
+    fallback = default_status if default_status is not None else _DEFAULT_FALLBACK
+    return effective.get(exit_code, fallback)
 
 
 def _parse_op_body(raw: bytes) -> "tuple[dict | None, str | None]":
@@ -1500,6 +1509,78 @@ _PROJECT_OP_STATUS_MAP: dict[int, tuple[int, str]] = {
 }
 
 
+# ---------------------------------------------------------------------------
+# feature-004-update-tools (task-015): tools.update / tools.update-self --
+# reuse the SAME shared aid-CLI resolver task-013 introduced (KI-004, not
+# re-invented); no new spawn mechanism, no new resolver. See SPEC.md API
+# Contracts for the full citation trail this section implements.
+# ---------------------------------------------------------------------------
+
+
+def _validate_no_args(args: dict) -> "str | None":
+    """Shared semantic_validate hook for feature-004's argument-free ops
+    (tools.update, tools.update-self): a non-empty args object is a 422
+    'invalid-value' (SPEC.md API Contracts arg-schema convention) -- neither op
+    accepts --force/--dry-run/per-tool knobs in v1 (D4). Absent/empty args
+    (the {} arg_schema on both rows lets any object through _validate_args
+    unexamined) passes here."""
+    if args:
+        return "this op accepts no arguments"
+    return None
+
+
+def _op_tools_update_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """tools.update (per-repo, PROJECT-scoped; no work_id) -> bash
+    $AID_CODE_HOME/bin/aid update --target <served-root> (KI-004 shared
+    resolver, spawned via _spawn_aid_cli). served_root here IS the repo's own
+    canon_path -- resolved solely from <id> via id_map by _serve_op (SEC-2),
+    never from target.work_id. env AID_HOME=<server aid_home>: since
+    served_root is the REPO path here (not aid_home), _dispatch_op stashes the
+    server's own state home into target['_aid_home'] before calling this
+    builder (mirrors project.remove's target['_resolved_path'] smuggling
+    pattern -- build_argv's call signature is frozen at (work_dir, served_root,
+    target, args) across every OP_TABLE row, so this is the only pass-through
+    available) so `aid update`'s self-update-if-stale preamble / registry
+    reads resolve the SAME state home the dashboard itself uses; AID_CODE_HOME
+    is NOT exported (bin/aid self-locates it, bin/aid L45-52)."""
+    argv = ["update", "--target", _posix_argv_path(served_root)]
+    env = {"AID_HOME": target["_aid_home"]}
+    return argv, env
+
+
+def _op_tools_update_self_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """tools.update-self (home; no <id>, no work_id) -> bash
+    $AID_CODE_HOME/bin/aid update self (KI-004 shared resolver, spawned via
+    _spawn_aid_cli). served_root here IS aid_home (home scope, mirrors
+    project.add/project.remove exactly). env AID_HOME=<server aid_home>;
+    AID_CODE_HOME NOT exported."""
+    argv = ["update", "self"]
+    env = {"AID_HOME": served_root}
+    return argv, env
+
+
+# tools.update / tools.update-self share one status_map (feature-004): unlike
+# project.add/remove's enumerable 0/2 `aid`-CLI alphabet, `aid update`'s exit
+# codes are not individually enumerable here -- the server controls the entire
+# argv, so `aid`'s own usage-error exits (e.g. the tool-positional reject,
+# `bin/aid` line 3054-3062) are not reachable through this closed surface
+# (API Contracts) -- so EVERY non-zero, non-timeout exit collapses to the
+# single 'update-failed' class via the row's 'status_map_default' (the OP-SM
+# default-status extension _map_exit_code supports), rather than falling
+# through to the shared _DEFAULT_FALLBACK's generic 'write-failed'. Only the
+# out-of-band timeout sentinel (_AID_CLI_TIMEOUT_EXIT, never a real 0..255
+# exit) gets its own explicit row, mapping to 504 'timed-out'.
+_TOOLS_UPDATE_STATUS_MAP: dict[int, tuple[int, str]] = {
+    _AID_CLI_TIMEOUT_EXIT: (504, "timed-out"),
+}
+_TOOLS_UPDATE_STATUS_DEFAULT: tuple[int, str] = (500, "update-failed")
+
+# 600s (10 min): a generous ceiling for `aid update`/`aid update self`, which can
+# fetch + install every configured tool profile (or the channel CLI package) --
+# far longer than the 30s default sized for the fast registry ops above.
+_TOOLS_UPDATE_TIMEOUT = 600
+
+
 # OP_TABLE: closed static dict seeded by feature-001 (the 4 feature-001-owned rows).
 # 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
 # "project" (no work_id -- settings.set targets the served root directly) |
@@ -1548,11 +1629,21 @@ OP_TABLE: dict[str, dict] = {
         "semantic_validate": _validate_task_rename_args,
         "status_map": None,
     },
+    "tools.update": {
+        "scope": "project",
+        "arg_schema": {},
+        "build_argv": _op_tools_update_argv,
+        "semantic_validate": _validate_no_args,
+        "spawn": _spawn_aid_cli,
+        "aid_cli_timeout": _TOOLS_UPDATE_TIMEOUT,
+        "status_map": _TOOLS_UPDATE_STATUS_MAP,
+        "status_map_default": _TOOLS_UPDATE_STATUS_DEFAULT,
+    },
 }
 
 # HOME_OP_TABLE: feature-003 (project.add/project.remove, task-013) registers
-# the first two home-scoped rows below; feature-004 (tools.update-self) adds
-# its own row next. Every OTHER op dispatched through _serve_home_op is
+# the first two home-scoped rows below; feature-004 (task-015) adds
+# tools.update-self. Every OTHER op dispatched through _serve_home_op is
 # 'unknown' -> 400.
 HOME_OP_TABLE: dict[str, dict] = {
     "project.add": {
@@ -1573,15 +1664,35 @@ HOME_OP_TABLE: dict[str, dict] = {
         "post_verify": _post_verify_project_remove,
         "status_map": _PROJECT_OP_STATUS_MAP,
     },
+    "tools.update-self": {
+        "scope": "home",
+        "arg_schema": {},
+        "build_argv": _op_tools_update_self_argv,
+        "semantic_validate": _validate_no_args,
+        "spawn": _spawn_aid_cli,
+        "aid_cli_timeout": _TOOLS_UPDATE_TIMEOUT,
+        "status_map": _TOOLS_UPDATE_STATUS_MAP,
+        "status_map_default": _TOOLS_UPDATE_STATUS_DEFAULT,
+    },
 }
 
 
-def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tuple[int, bytes]:
+def _dispatch_op(
+    op_table: dict, parsed: dict, served_root: "str | None", aid_home: "str | None" = None
+) -> tuple[int, bytes]:
     """Validate + dispatch a parsed op-request body against op_table.
 
     served_root is the resolved repo canon_path (per-repo ops) or aid_home (home
     ops). Never spawns a writer child before every schema/shape check below has
     passed (no client-controlled bytes reach subprocess argv unvalidated).
+
+    aid_home (task-015 extension, KI-004-adjacent): the server's own state home,
+    needed ONLY by a PROJECT-scoped op whose served_root is a repo canon_path
+    rather than aid_home (feature-004's tools.update) so its build_argv can still
+    set AID_HOME=<aid_home> in the child env. Defaults to served_root when the
+    caller omits it -- the correct value for every existing call site (home-scope
+    ops already pass served_root == aid_home; other project/task/pipeline-scope
+    ops never read it).
     """
     op = parsed.get("op")
     if not isinstance(op, str) or op not in op_table:
@@ -1594,6 +1705,11 @@ def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tup
         target = {}
     if not isinstance(target, dict):
         return 400, _op_fail_body(op, "bad-request", "'target' must be an object")
+    # Stash the resolved aid_home into target (mirrors project.remove's
+    # target['_resolved_path'] smuggling pattern below) so a build_argv can read
+    # it despite build_argv's frozen (work_dir, served_root, target, args)
+    # signature -- harmless for every op that never reads this key.
+    target["_aid_home"] = aid_home if aid_home is not None else served_root
 
     args = parsed.get("args")
     if args is None:
@@ -1680,7 +1796,7 @@ def _dispatch_op(op_table: dict, parsed: dict, served_root: "str | None") -> tup
 
     if exit_code == 0:
         return 200, _op_ok_body(op)
-    status, error_class = _map_exit_code(exit_code, row.get("status_map"))
+    status, error_class = _map_exit_code(exit_code, row.get("status_map"), row.get("status_map_default"))
     return status, _op_fail_body(op, error_class, stderr_text.strip())
 
 
@@ -1974,7 +2090,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
             self._send_json(400, _op_fail_body(None, "bad-request", err or "malformed body"))
             return
 
-        status, body = _dispatch_op(OP_TABLE, parsed, canon_path)
+        status, body = _dispatch_op(OP_TABLE, parsed, canon_path, aid_home=aid_home)
         self._send_json(status, body)
 
     def _serve_home_op(self) -> None:
