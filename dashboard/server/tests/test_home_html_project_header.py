@@ -235,5 +235,94 @@ class TestAccessibility(unittest.TestCase):
         self.assertIn("select.id = 'project-header-grade-select'", snippet)
 
 
+class TestEditEntryGuardBypass(unittest.TestCase):
+    """Regression coverage for a dogfood-found bug (work-017 delivery-001): the Edit
+    button handlers for name/description set projectHeaderState.editingField and THEN
+    call _renderProjectHeader(lastGoodModel), whose own first action is a guard meant
+    to preserve an in-progress edit across the poll loop -- `if (editingField !== null
+    ...) return;`. Because the flag is already set by the time the guard runs, the
+    guarded render early-returned and the editor never drew (name/description Edit was
+    a dead click). The fix: a one-shot `_projectHeaderExplicitRender` flag that the
+    Edit-button handlers (and the client-validation-error path, which must also
+    re-surface its message while still editing) set to true immediately before calling
+    _renderProjectHeader; the guard consumes-and-clears it via
+    _consumeProjectHeaderExplicitRender(), so ONLY that one render bypasses the guard
+    -- a subsequent poll-loop re-render (renderMainPage's unconditional
+    `_renderProjectHeader(model)` call) still sees the flag already cleared and so
+    still preserves an in-progress edit/save exactly as before.
+
+    NOTE (test-infrastructure gap): like every other test in this file, this is a
+    static source-text parse -- it asserts the flag-set/flag-consume wiring is present
+    and correctly ordered, but it does NOT execute the click handler or render
+    function, so it cannot itself observe the DOM the way a real click would. This
+    codebase has no jsdom/DOM-executing harness for home.html (only source-text
+    parses); that is a genuine coverage gap this fix does not close.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = _HOME_HTML.read_text(encoding="utf-8")
+
+    def test_consume_helper_defined_and_reads_then_clears(self):
+        idx = self.src.find("function _consumeProjectHeaderExplicitRender()")
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 200]
+        self.assertIn("_projectHeaderExplicitRender = false;", snippet)
+        self.assertIn("return v;", snippet)
+
+    def test_guard_consumes_flag_before_checking_editing_state(self):
+        idx = self.src.find('function _renderProjectHeader(model)')
+        snippet = self.src[idx:idx + 1500]
+        self.assertIn(
+            "if (!_consumeProjectHeaderExplicitRender() && "
+            "(projectHeaderState.editingField !== null || projectHeaderState.saving)) {",
+            snippet,
+        )
+
+    def test_name_edit_button_sets_flag_before_rendering(self):
+        idx_name = self.src.find('function _renderProjectHeaderNameRow(')
+        idx_desc = self.src.find('function _renderProjectHeaderDescriptionRow(')
+        snippet = self.src[idx_name:idx_desc]
+        idx_click = snippet.find("editingField = 'name'")
+        self.assertNotEqual(idx_click, -1)
+        idx_flag = snippet.find("_projectHeaderExplicitRender = true;", idx_click)
+        idx_render = snippet.find("_renderProjectHeader(lastGoodModel);", idx_click)
+        self.assertNotEqual(idx_flag, -1)
+        self.assertNotEqual(idx_render, -1)
+        self.assertLess(idx_flag, idx_render,
+                         "the flag must be set BEFORE the render call it needs to bypass")
+
+    def test_description_edit_button_sets_flag_before_rendering(self):
+        idx_desc = self.src.find('function _renderProjectHeaderDescriptionRow(')
+        idx_grade = self.src.find('function _renderProjectHeaderGradeRow(')
+        snippet = self.src[idx_desc:idx_grade]
+        idx_click = snippet.find("editingField = 'description'")
+        self.assertNotEqual(idx_click, -1)
+        idx_flag = snippet.find("_projectHeaderExplicitRender = true;", idx_click)
+        idx_render = snippet.find("_renderProjectHeader(lastGoodModel);", idx_click)
+        self.assertNotEqual(idx_flag, -1)
+        self.assertNotEqual(idx_render, -1)
+        self.assertLess(idx_flag, idx_render,
+                         "the flag must be set BEFORE the render call it needs to bypass")
+
+    def test_validation_error_path_also_forces_render(self):
+        idx = self.src.find('function _saveProjectSetting(path, value)')
+        snippet = self.src[idx:idx + 600]
+        idx_flag = snippet.find("_projectHeaderExplicitRender = true;")
+        idx_render = snippet.find("_renderProjectHeader(lastGoodModel);")
+        self.assertNotEqual(idx_flag, -1,
+                             "a client validation error leaves editingField set, so it "
+                             "needs the same bypass as edit-entry to show the error banner")
+        self.assertLess(idx_flag, idx_render)
+
+    def test_poll_loop_main_render_call_is_unconditional(self):
+        # renderMainPage's own call site must NOT set the flag beforehand -- the poll
+        # loop's periodic re-render must still be subject to the guard unmodified.
+        idx_fn = self.src.find('function renderMainPage(model) {')
+        snippet = self.src[idx_fn:idx_fn + 300]
+        self.assertRegex(snippet, r"function renderMainPage\(model\) \{\s*\n\s*_renderProjectHeader\(model\);")
+        self.assertNotIn("_projectHeaderExplicitRender = true", snippet)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -1408,6 +1408,20 @@ footer {
   // Save/Cancel explicitly re-invoke _renderProjectHeader once editing ends.
   var projectHeaderState = { editingField: null, saving: false, errorMessage: null };
 
+  // One-shot explicit-render flag: an edit-ENTRY transition (Edit button clicked)
+  // or a client-side validation error (which must re-surface its message while
+  // editingField stays set) needs _renderProjectHeader to render immediately even
+  // though the poll-loop-preservation guard below would otherwise skip it. The
+  // call site sets this flag right before invoking _renderProjectHeader;
+  // _consumeProjectHeaderExplicitRender() reads + clears it in the same call, so
+  // only that one render bypasses the guard -- never a later poll-loop re-render.
+  var _projectHeaderExplicitRender = false;
+  function _consumeProjectHeaderExplicitRender() {
+    var v = _projectHeaderExplicitRender;
+    _projectHeaderExplicitRender = false;
+    return v;
+  }
+
   var PROJECT_HEADER_GRADE_OPTIONS = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
 
   // KB button status label per 5-state kb_state.status (mirrors _renderKbCard's own
@@ -1474,6 +1488,10 @@ footer {
     if (clientErr) {
       projectHeaderState.errorMessage = clientErr;
       _setProjectHeaderStatus(clientErr);
+      // editingField is still set (the row's editor stays open) -- force the
+      // render so the error banner actually appears (see the explicit-render
+      // flag comment on projectHeaderState's declaration above).
+      _projectHeaderExplicitRender = true;
       _renderProjectHeader(lastGoodModel);
       return;
     }
@@ -1590,6 +1608,9 @@ footer {
           projectHeaderState.editingField = 'name';
           projectHeaderState.errorMessage = null;
           _setProjectHeaderStatus('');
+          // Force this render: the guard would otherwise skip it right back,
+          // since editingField is now non-null (see the flag comment above).
+          _projectHeaderExplicitRender = true;
           _renderProjectHeader(lastGoodModel);
         });
         row.appendChild(editBtn);
@@ -1668,6 +1689,9 @@ footer {
           projectHeaderState.editingField = 'description';
           projectHeaderState.errorMessage = null;
           _setProjectHeaderStatus('');
+          // Force this render: the guard would otherwise skip it right back,
+          // since editingField is now non-null (see the flag comment above).
+          _projectHeaderExplicitRender = true;
           _renderProjectHeader(lastGoodModel);
         });
         row.appendChild(editBtn);
@@ -1728,7 +1752,7 @@ footer {
     // Preserve an in-progress edit / in-flight save across the poll loop's periodic
     // re-render; Save/Cancel/the save callback explicitly re-invoke this function
     // once editing ends, so the panel never goes stale for longer than that.
-    if (projectHeaderState.editingField !== null || projectHeaderState.saving) {
+    if (!_consumeProjectHeaderExplicitRender() && (projectHeaderState.editingField !== null || projectHeaderState.saving)) {
       return;
     }
 
@@ -3524,6 +3548,20 @@ footer {
   // view) still renders fresh, unlike a single unscoped editing flag would.
   var taskRenameState = { key: null, editing: false, saving: false, errorMessage: null };
 
+  // One-shot explicit-render flag: mirrors _projectHeaderExplicitRender's role,
+  // scoped to the task-rename edit-ENTRY transition specifically (rather than
+  // task notes) so opening the OTHER field's editor never has to bypass this
+  // one's guard. The Edit-button handler (below) sets this immediately before
+  // its _rerenderCurrentRoute() call; renderTaskView's guard reads + clears it
+  // via _consumeTaskRenameExplicitRender() so only that one render bypasses the
+  // poll-loop-preservation guard -- never a later poll-loop re-render.
+  var _taskRenameExplicitRender = false;
+  function _consumeTaskRenameExplicitRender() {
+    var v = _taskRenameExplicitRender;
+    _taskRenameExplicitRender = false;
+    return v;
+  }
+
   // POST ./api/op {op:"task.rename", target:{work_id,delivery_id?,task_id}, args:{value}};
   // onDone receives {ok, body} -- mirrors _postSettingsSet's shape verbatim.
   // delivery_id is included only when the task's TaskModel.delivery is set (nested
@@ -3645,6 +3683,9 @@ footer {
         taskRenameState.editing = true;
         taskRenameState.key = detailKey;
         taskRenameState.errorMessage = null;
+        // Force the very next renderTaskView call so the editor appears
+        // immediately (see _taskRenameExplicitRender's declaration above).
+        _taskRenameExplicitRender = true;
         _rerenderCurrentRoute();
       });
       wrap.appendChild(editBtn);
@@ -3700,6 +3741,17 @@ footer {
   // / route re-render until Cancel or a successful Save explicitly ends the
   // edit (mirrors taskRenameState's identical skip-during-edit contract).
   var taskNotesState = { key: null, editing: false, saving: false };
+
+  // One-shot explicit-render flag: mirrors _taskRenameExplicitRender's role
+  // (see its declaration above), scoped independently to the task-notes
+  // edit-ENTRY transition so the two fields' guards never cross-clobber each
+  // other's in-progress, unsaved edit when only one of them is being entered.
+  var _taskNotesExplicitRender = false;
+  function _consumeTaskNotesExplicitRender() {
+    var v = _taskNotesExplicitRender;
+    _taskNotesExplicitRender = false;
+    return v;
+  }
 
   // Build the "TASK NOTES" card: read-only display (task.notes or a dimmed
   // empty state) always renders; the write-gated Edit affordance (single-line
@@ -3814,6 +3866,9 @@ footer {
         editBtn.addEventListener('click', function () {
           taskNotesState.editing = true;
           taskNotesState.key = detailKey;
+          // Force the very next renderTaskView call so the editor appears
+          // immediately (see _taskNotesExplicitRender's declaration above).
+          _taskNotesExplicitRender = true;
           _rerenderCurrentRoute();
         });
         card.appendChild(editBtn);
@@ -3835,12 +3890,16 @@ footer {
     // loop's periodic re-render (mirrors _renderProjectHeader's identical guard),
     // scoped to the task currently being edited so navigating away still renders
     // fresh (unlike an unscoped flag would).
-    if ((taskRenameState.editing || taskRenameState.saving) && taskRenameState.key === detailKey) {
-      return;
+    if (!_consumeTaskRenameExplicitRender()) {
+      if ((taskRenameState.editing || taskRenameState.saving) && taskRenameState.key === detailKey) {
+        return;
+      }
     }
     // Same guard for an in-progress task.set-notes edit (feature-006, task-010).
-    if ((taskNotesState.editing || taskNotesState.saving) && taskNotesState.key === detailKey) {
-      return;
+    if (!_consumeTaskNotesExplicitRender()) {
+      if ((taskNotesState.editing || taskNotesState.saving) && taskNotesState.key === detailKey) {
+        return;
+      }
     }
 
     container.innerHTML = '';

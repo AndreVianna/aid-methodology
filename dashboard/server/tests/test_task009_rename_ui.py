@@ -305,5 +305,79 @@ class TestNoNewPageOrRoute(unittest.TestCase):
         self.assertNotIn("task.rename", src)
 
 
+class TestEditEntryGuardBypass(unittest.TestCase):
+    """Regression coverage for a dogfood-found bug (work-017 delivery-001): the
+    task-rename pencil's Edit handler sets taskRenameState.editing=true and THEN calls
+    _rerenderCurrentRoute() -> render() -> renderTaskView, whose own first action was a
+    guard meant to preserve an in-progress edit across the poll loop -- `if
+    ((taskRenameState.editing || saving) && key === detailKey) return;`. Because
+    editing was already true by the time the guard ran, the guarded render
+    early-returned and the inline editor never drew (task-rename Edit was a dead
+    click). The fix: a one-shot `_taskRenameExplicitRender` flag the Edit-button
+    handler sets to true immediately before _rerenderCurrentRoute(); renderTaskView's
+    guard consumes-and-clears it via _consumeTaskRenameExplicitRender(), so ONLY that
+    one render bypasses the guard -- a later poll-loop re-render still sees the flag
+    already cleared and so still preserves an in-progress edit/save exactly as before.
+    Scoped independently from the sibling task-notes flag (test_task010_task_notes_ui
+    .py's TestEditEntryGuardBypass) so opening one field's editor can never discard an
+    unsaved, in-progress edit in the other field.
+
+    NOTE (test-infrastructure gap): like every other test in this file, this is a
+    static source-text parse -- it asserts the flag-set/flag-consume wiring is present
+    and correctly ordered, but it does NOT execute the click handler or render
+    function, so it cannot itself observe the DOM the way a real click would. This
+    codebase has no jsdom/DOM-executing harness for home.html (only source-text
+    parses); that is a genuine coverage gap this fix does not close.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = _HOME_HTML.read_text(encoding="utf-8")
+
+    def test_consume_helper_defined_and_reads_then_clears(self):
+        idx = self.src.find("function _consumeTaskRenameExplicitRender()")
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 200]
+        self.assertIn("_taskRenameExplicitRender = false;", snippet)
+        self.assertIn("return v;", snippet)
+
+    def test_guard_consumes_flag_before_checking_editing_state(self):
+        idx_fn = self.src.find("function renderTaskView(model, route)")
+        snippet = self.src[idx_fn:idx_fn + 1000]
+        idx_wrap = snippet.find("if (!_consumeTaskRenameExplicitRender()) {")
+        self.assertNotEqual(idx_wrap, -1)
+        idx_inner = snippet.find(
+            "if ((taskRenameState.editing || taskRenameState.saving) && "
+            "taskRenameState.key === detailKey) {",
+            idx_wrap,
+        )
+        self.assertNotEqual(idx_inner, -1)
+        self.assertLess(idx_wrap, idx_inner,
+                         "the flag-consuming wrapper must be OUTSIDE the original guard")
+
+    def test_edit_button_sets_flag_before_rerendering(self):
+        idx = self.src.find("function _renderTaskRenameControl(")
+        snippet = self.src[idx:idx + 2600]
+        idx_click = snippet.find("taskRenameState.editing = true;")
+        self.assertNotEqual(idx_click, -1)
+        idx_flag = snippet.find("_taskRenameExplicitRender = true;", idx_click)
+        idx_rerender = snippet.find("_rerenderCurrentRoute();", idx_click)
+        self.assertNotEqual(idx_flag, -1)
+        self.assertNotEqual(idx_rerender, -1)
+        self.assertLess(idx_flag, idx_rerender,
+                         "the flag must be set BEFORE the re-render call it needs to bypass")
+
+    def test_cancel_does_not_need_and_does_not_set_the_flag(self):
+        # Cancel already worked pre-fix (it sets editing=false before re-rendering, so
+        # the original guard's own condition is already false) -- confirm the fix
+        # didn't add an unnecessary flag-set here.
+        idx = self.src.find("function _renderTaskRenameControl(")
+        snippet = self.src[idx:idx + 2600]
+        idx_cancel = snippet.find("cancelBtn.addEventListener")
+        cancel_snippet = snippet[idx_cancel:idx_cancel + 300]
+        self.assertIn("taskRenameState.editing = false;", cancel_snippet)
+        self.assertNotIn("_taskRenameExplicitRender", cancel_snippet)
+
+
 if __name__ == "__main__":
     unittest.main()
