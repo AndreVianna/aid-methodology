@@ -1,8 +1,8 @@
 ---
-delivery_state: Gated
-gate_tier: Small | Medium | Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+delivery_state: Done
+gate_tier: Medium
+gate_grade: A+
+gate_timestamp: '2026-07-19T08:06:57Z'
 ticket_ref: "--"
 ---
 
@@ -67,18 +67,9 @@ so the delivery lifecycle MUST be independently authored.
 
 ## Delivery Gate
 
-<!-- AUTHORED -- single writer: the delivery-gate closing step of `aid-execute` on this
-     delivery's branch. Written via `writeback-state.sh --delivery-id NNN --block ...`.
-     Distinct from per-task quick-check findings -- the gate aggregates those deferred [HIGH]
-     rows (via delivery-NNN-issues.md) and runs a full grade.sh pass.
-     Instances of the deferred-[HIGH] log live at `.aid/works/work-NNN/delivery-NNN-issues.md`;
-     see `.claude/aid/templates/delivery-issues.md` for the template.
-     Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block at the top of this
-     file (`gate_tier`, `gate_grade`, `gate_timestamp`). Issue List stays here as markdown
-     body (a variable-length inline list doesn't fit a flat frontmatter scalar). -->
-
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
-
+- **Complexity Score:** Medium
+- **Cycles:** 1 (gate passed after one fix cycle: 10 deferred/verified findings adjudicated + 1 new [LOW] _git_bounded-wrapper fix; grade A+). Browser-dogfood of the Danger-zone Delete modal: PASS (type-to-confirm gate; non-Running delete->200->removed; Running->409 guard held; branch retained).
+- **Issue List:** none -- all 11 ledger findings Fixed; grade.sh A+ (0 open). See delivery-004-issues.md + execute-delivery-004 ledger.
 ---
 
 ## Cross-phase Q&A
