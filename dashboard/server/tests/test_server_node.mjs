@@ -754,7 +754,9 @@ process.stdout.write("\n[10b] task-005 project_description + minimum_grade (read
 
 {
   // --- repo key order: project_name, project_description, minimum_grade,
-  //     aid_dir, kb_state (additive keys inserted after project_name) ---
+  //     aid_dir, kb_state (additive keys inserted after project_name),
+  //     connectors (feature-007, task-019: additive key inserted after
+  //     kb_state) ---
   const tmp8 = join(tmpdir(), "aid-task005-" + Date.now());
   mkdirSync(join(tmp8, ".aid"), { recursive: true });
   try {
@@ -765,8 +767,11 @@ process.stdout.write("\n[10b] task-005 project_description + minimum_grade (read
     assert(keys8[2] === "minimum_grade", "10b.3: third key is minimum_grade (new)");
     assert(keys8[3] === "aid_dir", "10b.4: fourth key is aid_dir");
     assert(keys8[4] === "kb_state", "10b.5: fifth key is kb_state");
+    assert(keys8[5] === "connectors", "10b.5b: sixth key is connectors (task-019, new)");
     assert(m8.repo.project_description === null, "10b.6: project_description=null when absent");
     assert(m8.repo.minimum_grade === null, "10b.7: minimum_grade=null when absent");
+    assert(Array.isArray(m8.repo.connectors) && m8.repo.connectors.length === 0,
+           "10b.8: connectors=[] when .aid/connectors/ absent");
   } finally {
     try { rmSync(tmp8, { recursive: true, force: true }); } catch (_) {}
   }

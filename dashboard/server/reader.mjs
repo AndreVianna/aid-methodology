@@ -1233,6 +1233,152 @@ function parseDocFrontmatter(docPath) {
   return [approvedAtCommit, sourcesList, sourcesFieldPresent];
 }
 
+// ---------------------------------------------------------------------------
+// feature-007-connectors-list (work-017 task-019): connectors registry parser
+// (byte-parity twin of Python parsers.parse_connectors()).
+// ---------------------------------------------------------------------------
+
+// The six connector-descriptor frontmatter scalars (feature-001's frozen
+// schema) -- the SAME fields build-connectors-index.sh's ef() and
+// connector-registry.sh's read_field address.
+const CONNECTOR_FM_FIELDS = [
+  "name", "connection_type", "endpoint", "auth_method", "secret_reference", "summary",
+];
+
+function _parseConnectorFrontmatterScalars(text) {
+  // Extract the six connector-descriptor frontmatter scalars from the FIRST
+  // frontmatter block only. Twin of Python
+  // parsers._parse_connector_frontmatter_scalars().
+  //
+  // Same semantics as connector-registry.sh's read_field() / build-connectors-
+  // index.sh's ef(): a single-line 'field: value' scalar, with ONE pair of
+  // surrounding quotes stripped, first occurrence wins. A body-level
+  // thematic-break '---' is never re-entered as frontmatter -- the scan stops
+  // the instant the frontmatter block closes.
+  //
+  // Returns a plain object keyed by field name; a field absent from the
+  // frontmatter (or a wholly frontmatter-less file) is simply absent from the
+  // returned object. Never throws.
+  const result = {};
+  let inFm = false;
+  let fmEntered = false;
+
+  const lines = text.split("\n");
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\r$/, "");
+    if (RE_FM_FENCE.test(line)) {
+      if (!fmEntered) {
+        inFm = true;
+        fmEntered = true;
+        continue;
+      } else {
+        // Closing fence -- stop scanning entirely (never re-enter
+        // frontmatter for a body-level thematic break).
+        break;
+      }
+    }
+    if (!inFm) {
+      break;
+    }
+
+    for (const fld of CONNECTOR_FM_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(result, fld)) continue; // first occurrence wins
+      const prefix = fld + ":";
+      if (line.startsWith(prefix)) {
+        let val = line.slice(prefix.length).trim();
+        if (val.length >= 1 && (val[0] === '"' || val[0] === "'")) {
+          val = val.slice(1);
+        }
+        if (val.length >= 1 && (val[val.length - 1] === '"' || val[val.length - 1] === "'")) {
+          val = val.slice(0, -1);
+        }
+        result[fld] = val;
+      }
+    }
+  }
+
+  return result;
+}
+
+export function parseConnectors(connectorsDir) {
+  // Enumerate <aid_dir>/connectors/*.md into a stem-sorted array of
+  // ConnectorRef-shaped plain objects. Twin of Python parsers.parse_connectors().
+  //
+  // Uses the EXACT filter connector-registry.sh's `list` op uses
+  // (connector-registry.sh lines 151-154): `*.md` files directly under
+  // connectorsDir, excluding `INDEX.md` and dotfiles, sorted by stem. A
+  // missing connectorsDir -> [] (non-error; mirrors the script's own
+  // missing-root behavior).
+  //
+  // Returns [refs, bytesRead]. Never throws.
+  let isDir = false;
+  try {
+    isDir = statSync(connectorsDir).isDirectory();
+  } catch (_) {
+    isDir = false;
+  }
+  if (!isDir) return [[], 0];
+
+  let entries = [];
+  try {
+    entries = readdirSync(connectorsDir);
+  } catch (_) {
+    return [[], 0];
+  }
+
+  const candidates = entries
+    .filter((name) => name.endsWith(".md") && name !== "INDEX.md" && !name.startsWith("."))
+    .filter((name) => {
+      try {
+        return statSync(join(connectorsDir, name)).isFile();
+      } catch (_) {
+        return false;
+      }
+    });
+
+  const stemOf = (name) => name.slice(0, -3); // strip trailing ".md"
+  candidates.sort((a, b) => {
+    const sa = stemOf(a);
+    const sb = stemOf(b);
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
+  });
+
+  let bytesRead = 0;
+  const refs = [];
+  for (const name of candidates) {
+    const stem = stemOf(name);
+    const path = join(connectorsDir, name);
+    let text = "";
+    try {
+      const raw = readFileBounded(path);
+      bytesRead += raw.length;
+      text = raw.toString("utf-8");
+    } catch (_) {
+      text = "";
+    }
+
+    const fm = _parseConnectorFrontmatterScalars(text);
+    const name_ = fm.name || stem;
+    const connectionType = fm.connection_type !== undefined ? fm.connection_type : "";
+    const endpoint = fm.endpoint || null;
+    const authMethod = fm.auth_method || null;
+    const secretReference = fm.secret_reference || null;
+    const summary = fm.summary || null;
+
+    refs.push({
+      stem,
+      name: name_,
+      connection_type: connectionType,
+      endpoint,
+      auth_method: authMethod,
+      secret_reference: secretReference,
+      summary,
+    });
+  }
+
+  return [refs, bytesRead];
+}
+
 function _readRoutingFields(docPath) {
   // Read kb-category and source frontmatter scalars for doc routing.
   // Returns [kbCategory, sourceField]. Absent fields return "".
@@ -2708,12 +2854,18 @@ function _readRepoFull(root) {
     kbState.suspect_count = docFreshness.filter(d => d.verdict === "suspect").length;
   }
 
+  // feature-007 (work-017 task-019): parse the project-level connectors registry
+  // (.aid/connectors/*.md), sorted by stem. Missing dir -> [] (non-error).
+  const [connectors, brConnectors] = parseConnectors(join(loc.aidDir, "connectors"));
+  bytesRead += brConnectors;
+
   const repoInfo = {
     project_name: projectName,
     aid_dir: loc.aidDir,
     kb_state: kbState,
     project_description: projectDescription,
     minimum_grade: minimumGrade,
+    connectors: connectors,
   };
 
   // Step 4: ENUMERATE worktrees + work folders (work-004 Pillar 4 / SD-3)
@@ -4523,16 +4675,35 @@ function _buildDocFreshness(df) {
   };
 }
 
+function _buildConnectorRef(cr) {
+  // ConnectorRef field order: stem, name, connection_type, endpoint,
+  // auth_method, secret_reference, summary (feature-007, task-019).
+  // Twin of Python ConnectorRef dataclass (models.py).
+  return {
+    stem:              cr.stem,
+    name:              cr.name,
+    connection_type:   cr.connection_type,
+    endpoint:          cr.endpoint !== undefined ? cr.endpoint : null,
+    auth_method:       cr.auth_method !== undefined ? cr.auth_method : null,
+    secret_reference:  cr.secret_reference !== undefined ? cr.secret_reference : null,
+    summary:           cr.summary !== undefined ? cr.summary : null,
+  };
+}
+
 function _buildRepoInfo(ri) {
   // RepoInfo field order: project_name, project_description, minimum_grade,
   // aid_dir, kb_state (feature-002, work-017 task-005: two additive keys
-  // inserted after project_name; schema_version stays 3).
+  // inserted after project_name; schema_version stays 3), connectors
+  // (feature-007, work-017 task-019: additive key inserted AFTER kb_state;
+  // schema_version stays 3). Surfaced ONLY in the DM-1 model -- the DM-2
+  // /api/home entry builder never calls this function.
   return {
     project_name: ri.project_name,
     project_description: ri.project_description !== undefined ? ri.project_description : null,
     minimum_grade: ri.minimum_grade !== undefined ? ri.minimum_grade : null,
     aid_dir: ri.aid_dir,
     kb_state: _buildKbStateRef(ri.kb_state),
+    connectors: Array.isArray(ri.connectors) ? ri.connectors.map(_buildConnectorRef) : [],
   };
 }
 

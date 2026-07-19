@@ -20,6 +20,7 @@ from typing import Optional
 
 from .io_bounds import read_bytes_bounded
 from .models import (
+    ConnectorRef,
     DeliverableRef,
     DeferredIssue,
     DocFreshness,
@@ -698,6 +699,138 @@ def is_url_source(entry: str) -> bool:
     Identical to kb-freshness-check.sh is_url() and the Node twin isUrlSource().
     """
     return bool(_RE_URL.match(entry))
+
+
+# ---------------------------------------------------------------------------
+# feature-007-connectors-list (work-017 task-019): connectors registry parser
+# ---------------------------------------------------------------------------
+
+# The six connector-descriptor frontmatter scalars (feature-001's frozen
+# schema) -- the SAME fields build-connectors-index.sh's ef() and
+# connector-registry.sh's read_field address.
+_CONNECTOR_FM_FIELDS = (
+    "name", "connection_type", "endpoint", "auth_method", "secret_reference", "summary",
+)
+
+
+def _parse_connector_frontmatter_scalars(text: str) -> dict[str, str]:
+    """Extract the six connector-descriptor frontmatter scalars from the FIRST
+    frontmatter block only.
+
+    Same semantics as connector-registry.sh's read_field() / build-connectors-
+    index.sh's ef(): a single-line 'field: value' scalar, with ONE pair of
+    surrounding quotes stripped, first occurrence wins. A body-level
+    thematic-break '---' is never re-entered as frontmatter -- the scan stops
+    the instant the frontmatter block closes (mirrors ef()'s
+    "if (i > 1 && !in_fm) return ''" early-exit: nothing found before the
+    close is nothing found, full stop).
+
+    A field absent from the frontmatter (or a wholly frontmatter-less file)
+    is simply absent from the returned dict. Never raises (NFR7); no I/O
+    (pure text -> dict, mirrors parse_doc_frontmatter's own boundary).
+    """
+    result: dict[str, str] = {}
+    in_fm = False
+    fm_entered = False
+
+    for line in text.splitlines():
+        if _RE_FM_FENCE.match(line):
+            if not fm_entered:
+                # Opening fence
+                in_fm = True
+                fm_entered = True
+                continue
+            else:
+                # Closing fence -- stop scanning entirely (never re-enter
+                # frontmatter for a body-level thematic break).
+                break
+
+        if not in_fm:
+            # No opening fence yet -- not in frontmatter (or no frontmatter at all)
+            break
+
+        for fld in _CONNECTOR_FM_FIELDS:
+            if fld in result:
+                continue  # first occurrence wins
+            prefix = fld + ":"
+            if line.startswith(prefix):
+                val = line[len(prefix):].strip()
+                if len(val) >= 1 and val[0] in "\"'":
+                    val = val[1:]
+                if len(val) >= 1 and val[-1] in "\"'":
+                    val = val[:-1]
+                result[fld] = val
+
+    return result
+
+
+def parse_connectors(connectors_dir: Path) -> "tuple[list[ConnectorRef], int]":
+    """Enumerate <aid_dir>/connectors/*.md into a stem-sorted list[ConnectorRef].
+
+    Uses the EXACT filter connector-registry.sh's `list` op uses
+    (connector-registry.sh lines 151-154): `*.md` files directly under
+    connectors_dir, excluding `INDEX.md` and dotfiles, sorted by stem. A
+    missing connectors_dir -> [] (non-error; mirrors the script's own
+    missing-root behavior).
+
+    Per descriptor, extracts the six frontmatter scalars (name,
+    connection_type, endpoint, auth_method, secret_reference, summary) via
+    _parse_connector_frontmatter_scalars(). `name` defaults to the
+    descriptor's own stem when absent (Data Model "human name; defaults to
+    <stem>" -- the same default build-connectors-index.sh's ef()+fallback
+    applies for its INDEX.md Connector column). `connection_type` is a raw,
+    possibly-empty scalar (a required str field; the reader adds no enum).
+    endpoint/auth_method/secret_reference/summary are None when absent from
+    the descriptor.
+
+    Never reads/serializes the secret VALUE or the `.secrets/` directory
+    contents -- descriptor frontmatter only. Returns (refs, bytes_read).
+    Never raises (NFR7).
+    """
+    if not connectors_dir.is_dir():
+        return [], 0
+
+    try:
+        candidates = [
+            p for p in connectors_dir.iterdir()
+            if p.is_file() and p.name.endswith(".md")
+            and p.name != "INDEX.md" and not p.name.startswith(".")
+        ]
+    except OSError:
+        return [], 0
+
+    candidates.sort(key=lambda p: p.stem)
+
+    bytes_read = 0
+    refs: list[ConnectorRef] = []
+    for path in candidates:
+        stem = path.stem
+        try:
+            raw = read_bytes_bounded(path)
+            bytes_read += len(raw)
+            text = raw.decode("utf-8", errors="replace")
+        except OSError:
+            text = ""
+
+        fm = _parse_connector_frontmatter_scalars(text)
+        name = fm.get("name") or stem
+        connection_type = fm.get("connection_type", "")
+        endpoint = fm.get("endpoint") or None
+        auth_method = fm.get("auth_method") or None
+        secret_reference = fm.get("secret_reference") or None
+        summary = fm.get("summary") or None
+
+        refs.append(ConnectorRef(
+            stem=stem,
+            name=name,
+            connection_type=connection_type,
+            endpoint=endpoint,
+            auth_method=auth_method,
+            secret_reference=secret_reference,
+            summary=summary,
+        ))
+
+    return refs, bytes_read
 
 
 # ---------------------------------------------------------------------------

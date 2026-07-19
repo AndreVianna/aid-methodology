@@ -60,6 +60,7 @@ from .models import (
 from .parsers import (
     ParsedTaskState,
     ParsedWork,
+    parse_connectors,
     parse_deferred_issues,
     parse_delivery_gate,
     parse_delivery_state_md,
@@ -523,12 +524,18 @@ def _read_repo_full(
         kb_state.doc_freshness = doc_freshness
         kb_state.suspect_count = sum(1 for d in doc_freshness if d.verdict == "suspect")
 
+    # feature-007 (work-017 task-019): parse the project-level connectors registry
+    # (.aid/connectors/*.md), sorted by stem. Missing dir -> [] (non-error).
+    connectors, br = parse_connectors(loc.aid_dir / "connectors")
+    bytes_read += br
+
     repo_info = RepoInfo(
         project_name=project_name,
         aid_dir=str(loc.aid_dir),
         kb_state=kb_state,
         project_description=project_description,
         minimum_grade=minimum_grade,
+        connectors=connectors,
     )
 
     # Step 4: ENUMERATE -- worktrees + work folders (work-004 Pillar 4 / SD-3)

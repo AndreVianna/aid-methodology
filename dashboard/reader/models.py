@@ -216,6 +216,43 @@ class KbStateRef:
 
 
 @dataclass
+class ConnectorRef:
+    """A single `.aid/connectors/<stem>.md` descriptor (feature-007 DM, task-019).
+
+    Read-only, never persisted (NFR2) -- populated by parse_connectors() /
+    parseConnectors() from the descriptor's flat-YAML frontmatter: the SAME six
+    scalars build-connectors-index.sh's INDEX.md builder (`ef()`) and
+    connector-registry.sh's `read` (`read_field`) address. The reader adds no
+    enum/derivation here -- a connector has no lifecycle.
+
+    Fields (declared order -- also the serializer's field order):
+        stem              -- descriptor filename stem (<stem>.md); the
+                             connector.remove op's row key.
+        name              -- human name; the raw `name:` frontmatter scalar,
+                             falling back to `stem` when absent (Data Model
+                             "human name; defaults to <stem>").
+        connection_type   -- raw scalar (mcp | api | ssh | url | cli); no enum.
+        endpoint          -- informational for `mcp`; the concrete connect
+                             target for an aid-managed type. None if absent.
+        auth_method       -- none | token | pat | oauth | ssh-key. None if absent.
+        secret_reference  -- a REFERENCE literal (env:/file:/keychain: form),
+                             never a credential value. None if absent (mcp /
+                             auth_method: none).
+        summary           -- one-line human guidance. None if absent.
+
+    Never reads/serializes the secret VALUE or the `.secrets/` directory
+    contents -- descriptor frontmatter only.
+    """
+    stem: str
+    name: str
+    connection_type: str
+    endpoint: Optional[str] = None
+    auth_method: Optional[str] = None
+    secret_reference: Optional[str] = None
+    summary: Optional[str] = None
+
+
+@dataclass
 class RepoInfo:
     """Level-1 project / .aid/ state."""
     project_name: str           # from .aid/settings.yml project.name; fallback: dir basename
@@ -233,6 +270,14 @@ class RepoInfo:
                                           # read literally (no resolution); deliberately
                                           # distinct from WorkModel.minimum_grade (per-work
                                           # value). None if absent/unreadable.
+    # feature-007 (work-017 task-019): DM-1 exposure of the project-level connectors
+    # registry (.aid/connectors/*.md) -- connectors are project-level `.aid/` state,
+    # so they sit beside kb_state (the other project-level `.aid/` reference).
+    # Additive; no schema_version bump (DM-A3/RC-2 precedent). Sorted by stem (the
+    # same order connector-registry.sh list / build-connectors-index.sh use).
+    # Surfaced ONLY in the DM-1 RepoModel (GET /r/<id>/api/model) -- never the DM-2
+    # home model (/api/home).
+    connectors: list[ConnectorRef] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------

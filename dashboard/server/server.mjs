@@ -1277,6 +1277,128 @@ function validateSettingsSetArgs(args) {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// feature-007-connectors-list (work-017 task-019): connector.set / connector.remove
+// -- per-repo, project-scoped ops (target: {} -- no work_id) dispatched to the
+// co-vendored write-connector.sh writer (task-018). Both rows rely on
+// feature-001's generic exit->HTTP map (DEFAULT_MAP already covers the writer's
+// 0/4/5/3 alphabet); no per-op statusMap override.
+// ---------------------------------------------------------------------------
+
+const CONNECTOR_TYPES = new Set(["mcp", "api", "ssh", "url", "cli"]);
+const CONNECTOR_AUTH_METHODS = new Set(["none", "token", "pat", "oauth", "ssh-key"]);
+const CONNECTOR_ENDPOINT_REQUIRED_TYPES = new Set(["api", "ssh", "url", "cli"]);
+const CONNECTOR_AUTH_REQUIRED_TYPES = new Set(["api", "url", "cli"]);
+
+const MAX_CONNECTOR_NAME_LEN = 80;
+const MAX_CONNECTOR_ENDPOINT_LEN = 200;
+const MAX_CONNECTOR_SECRET_REF_LEN = 200;
+
+// name: reject newline / '|' / any control character (0x00-0x1F, 0x7F -- newline
+// is itself a control char, folded into one regex for simplicity).
+const RE_CONNECTOR_NAME_BAD = /[\x00-\x1f\x7f|]/;
+// endpoint: reject newline / '|' only (per API Contracts -- looser than name).
+const RE_CONNECTOR_ENDPOINT_BAD = /[\n|]/;
+// secret_ref: env:<VAR> | file:<path> | keychain:<key> -- reference form only,
+// never a credential value (write-connector.sh validate_secret_ref, mirrored).
+const RE_CONNECTOR_SECRET_REF = /^(env:[A-Za-z_][A-Za-z0-9_]*|file:[^\n|]+|keychain:[^\n|]+)$/;
+const RE_CONNECTOR_STEM = /^[a-z0-9][a-z0-9-]*$/;
+
+function opConnectorSetArgv(workDir, servedRoot, target, args) {
+  // connector.set (project-scoped; no work_id) -> write-connector.sh set --root
+  // <served-root>/.aid/connectors --name <n> --type <t> [--endpoint <e>]
+  // [--auth <a>] [--secret-ref <r>].
+  const root = toPosixArg(join(servedRoot, ".aid", "connectors"));
+  const argv = ["set", "--root", root, "--name", args.name, "--type", args.type];
+  if (args.endpoint) {
+    argv.push("--endpoint", args.endpoint);
+  }
+  if (args.auth) {
+    argv.push("--auth", args.auth);
+  }
+  if (args.secret_ref) {
+    argv.push("--secret-ref", args.secret_ref);
+  }
+  return [argv, {}];
+}
+
+function validateConnectorSetArgs(args) {
+  // Semantic validation for the connector.set op (task-019). Returns an error
+  // message on violation, else null. Called AFTER the generic shape check
+  // (validateArgs), so args.name/args.type are guaranteed present strings (and
+  // any of endpoint/auth/secret_ref present in args is a string) by the time
+  // this runs. write-connector.sh independently re-validates the same rules
+  // (belt-and-suspenders) -- this pre-validation only lets a bad request 422
+  // cleanly, before any child spawn.
+  const name = args.name;
+  if (!(name.length >= 1 && name.length <= MAX_CONNECTOR_NAME_LEN)) {
+    return `'name' must be 1-${MAX_CONNECTOR_NAME_LEN} characters`;
+  }
+  if (RE_CONNECTOR_NAME_BAD.test(name)) {
+    return "'name' cannot contain a newline, '|', or a control character";
+  }
+
+  const ctype = args.type;
+  if (!CONNECTOR_TYPES.has(ctype)) {
+    return "'type' must be one of: " + Array.from(CONNECTOR_TYPES).sort().join(", ");
+  }
+
+  const endpoint = args.endpoint;
+  if (CONNECTOR_ENDPOINT_REQUIRED_TYPES.has(ctype) && !endpoint) {
+    return `'endpoint' is required for type '${ctype}'`;
+  }
+  if (endpoint) {
+    if (endpoint.length > MAX_CONNECTOR_ENDPOINT_LEN) {
+      return `'endpoint' exceeds max length (${MAX_CONNECTOR_ENDPOINT_LEN} chars)`;
+    }
+    if (RE_CONNECTOR_ENDPOINT_BAD.test(endpoint)) {
+      return "'endpoint' cannot contain a newline or '|'";
+    }
+  }
+
+  const auth = args.auth;
+  if (CONNECTOR_AUTH_REQUIRED_TYPES.has(ctype) && !auth) {
+    return `'auth' is required for type '${ctype}'`;
+  }
+  if (auth && !CONNECTOR_AUTH_METHODS.has(auth)) {
+    return "'auth' must be one of: " + Array.from(CONNECTOR_AUTH_METHODS).sort().join(", ");
+  }
+
+  const secretRef = args.secret_ref;
+  if (secretRef) {
+    if (ctype === "mcp" || auth === "none") {
+      return "'secret_ref' is forbidden for type 'mcp' or auth 'none'";
+    }
+    if (secretRef.length > MAX_CONNECTOR_SECRET_REF_LEN) {
+      return `'secret_ref' exceeds max length (${MAX_CONNECTOR_SECRET_REF_LEN} chars)`;
+    }
+    if (!RE_CONNECTOR_SECRET_REF.test(secretRef)) {
+      return "'secret_ref' must match env:<VAR> | file:<path> | keychain:<key>";
+    }
+  }
+
+  return null;
+}
+
+function opConnectorRemoveArgv(workDir, servedRoot, target, args) {
+  // connector.remove (project-scoped; no work_id) -> write-connector.sh remove
+  // --root <served-root>/.aid/connectors --stem <stem>.
+  const root = toPosixArg(join(servedRoot, ".aid", "connectors"));
+  const argv = ["remove", "--root", root, "--stem", args.stem];
+  return [argv, {}];
+}
+
+function validateConnectorRemoveArgs(args) {
+  // Semantic validation for the connector.remove op (task-019): stem must
+  // match the bare-filename alphabet write-connector.sh/connector-secret.sh
+  // independently re-enforce (path-confinement defense in depth).
+  const stem = args.stem;
+  if (!RE_CONNECTOR_STEM.test(stem)) {
+    return "'stem' must match ^[a-z0-9][a-z0-9-]*$";
+  }
+  return null;
+}
+
 const PIPELINE_RENAME_NULL_SENTINEL = "*(pending)*";
 
 function opPipelineRenameArgv(workDir, servedRoot, target, args) {
@@ -1617,6 +1739,28 @@ const OP_TABLE = {
     aidCliTimeout: TOOLS_UPDATE_TIMEOUT,
     statusMap: TOOLS_UPDATE_STATUS_MAP,
     statusMapDefault: TOOLS_UPDATE_STATUS_DEFAULT,
+  },
+  "connector.set": {
+    scope: "project",
+    writer: "write-connector.sh",
+    argSchema: {
+      name: { required: true },
+      type: { required: true },
+      endpoint: {},
+      auth: {},
+      secret_ref: {},
+    },
+    buildArgv: opConnectorSetArgv,
+    semanticValidate: validateConnectorSetArgs,
+    statusMap: null,
+  },
+  "connector.remove": {
+    scope: "project",
+    writer: "write-connector.sh",
+    argSchema: { stem: { required: true } },
+    buildArgv: opConnectorRemoveArgv,
+    semanticValidate: validateConnectorRemoveArgs,
+    statusMap: null,
   },
 };
 

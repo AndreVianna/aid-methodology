@@ -652,12 +652,33 @@ def _ser_kb_state(obj) -> dict | None:
     }
 
 
+def _ser_connector_ref(obj) -> dict:
+    """Serialize ConnectorRef in declared field order (feature-007, task-019).
+
+    Never serializes the secret VALUE or `.secrets/` contents -- obj carries
+    only the descriptor's frontmatter scalars (a reference literal at most).
+    """
+    return {
+        "stem":             obj.stem,
+        "name":             obj.name,
+        "connection_type":  obj.connection_type,
+        "endpoint":         obj.endpoint,
+        "auth_method":      obj.auth_method,
+        "secret_reference": obj.secret_reference,
+        "summary":          obj.summary,
+    }
+
+
 def _ser_repo_info(obj) -> dict:
     """Serialize RepoInfo in declared field order.
 
     feature-002 (work-017 task-005): project_description + minimum_grade are
     additive keys inserted after project_name (schema_version stays 3 --
     DM-A3/RC-2 no-bump precedent).
+    feature-007 (work-017 task-019): connectors is an additive key inserted
+    AFTER kb_state (schema_version stays 3 -- same no-bump precedent). Surfaced
+    ONLY here (the DM-1 RepoModel) -- build_home_model's DM-2 entry never
+    calls this function.
     """
     return {
         "project_name":        obj.project_name,
@@ -665,6 +686,7 @@ def _ser_repo_info(obj) -> dict:
         "minimum_grade":       obj.minimum_grade,
         "aid_dir":             obj.aid_dir,
         "kb_state":            _ser_kb_state(obj.kb_state),
+        "connectors":          [_ser_connector_ref(c) for c in (obj.connectors or [])],
     }
 
 
@@ -1491,6 +1513,118 @@ def _validate_settings_set_args(args: dict) -> "str | None":
     return None
 
 
+# ---------------------------------------------------------------------------
+# feature-007-connectors-list (work-017 task-019): connector.set / connector.remove
+# -- per-repo, project-scoped ops (target: {} -- no work_id) dispatched to the
+# co-vendored write-connector.sh writer (task-018). Both rows rely on
+# feature-001's generic exit->HTTP map (DEFAULT_MAP already covers the writer's
+# 0/4/5/3 alphabet); no per-op status_map override.
+# ---------------------------------------------------------------------------
+
+_CONNECTOR_TYPES = frozenset({"mcp", "api", "ssh", "url", "cli"})
+_CONNECTOR_AUTH_METHODS = frozenset({"none", "token", "pat", "oauth", "ssh-key"})
+_CONNECTOR_ENDPOINT_REQUIRED_TYPES = frozenset({"api", "ssh", "url", "cli"})
+_CONNECTOR_AUTH_REQUIRED_TYPES = frozenset({"api", "url", "cli"})
+
+_MAX_CONNECTOR_NAME_LEN = 80
+_MAX_CONNECTOR_ENDPOINT_LEN = 200
+_MAX_CONNECTOR_SECRET_REF_LEN = 200
+
+# name: reject newline / '|' / any control character (0x00-0x1F, 0x7F -- newline
+# is itself a control char, folded into one regex for simplicity).
+_RE_CONNECTOR_NAME_BAD = re.compile(r"[\x00-\x1f\x7f|]")
+# endpoint: reject newline / '|' only (per API Contracts -- looser than name).
+_RE_CONNECTOR_ENDPOINT_BAD = re.compile(r"[\n|]")
+# secret_ref: env:<VAR> | file:<path> | keychain:<key> -- reference form only,
+# never a credential value (write-connector.sh validate_secret_ref, mirrored).
+_RE_CONNECTOR_SECRET_REF = re.compile(
+    r"^(env:[A-Za-z_][A-Za-z0-9_]*|file:[^\n|]+|keychain:[^\n|]+)$"
+)
+_RE_CONNECTOR_STEM = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+
+
+def _op_connector_set_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """connector.set (project-scoped; no work_id) -> write-connector.sh set --root
+    <served-root>/.aid/connectors --name <n> --type <t> [--endpoint <e>] [--auth <a>]
+    [--secret-ref <r>]."""
+    root = (Path(served_root) / ".aid" / "connectors").as_posix()
+    argv = ["set", "--root", root, "--name", args["name"], "--type", args["type"]]
+    endpoint = args.get("endpoint")
+    if endpoint:
+        argv += ["--endpoint", endpoint]
+    auth = args.get("auth")
+    if auth:
+        argv += ["--auth", auth]
+    secret_ref = args.get("secret_ref")
+    if secret_ref:
+        argv += ["--secret-ref", secret_ref]
+    return argv, {}
+
+
+def _validate_connector_set_args(args: dict) -> "str | None":
+    """Semantic validation for the connector.set op (task-019). Returns an error
+    message on violation, else None. Called AFTER the generic shape check
+    (_validate_args), so args['name']/args['type'] are guaranteed present strings
+    (and any of endpoint/auth/secret_ref present in args is a string) by the time
+    this runs. write-connector.sh independently re-validates the same rules
+    (belt-and-suspenders) -- this pre-validation only lets a bad request 422
+    cleanly, before any child spawn.
+    """
+    name = args["name"]
+    if not (1 <= len(name) <= _MAX_CONNECTOR_NAME_LEN):
+        return f"'name' must be 1-{_MAX_CONNECTOR_NAME_LEN} characters"
+    if _RE_CONNECTOR_NAME_BAD.search(name):
+        return "'name' cannot contain a newline, '|', or a control character"
+
+    ctype = args["type"]
+    if ctype not in _CONNECTOR_TYPES:
+        return "'type' must be one of: " + ", ".join(sorted(_CONNECTOR_TYPES))
+
+    endpoint = args.get("endpoint")
+    if ctype in _CONNECTOR_ENDPOINT_REQUIRED_TYPES and not endpoint:
+        return f"'endpoint' is required for type '{ctype}'"
+    if endpoint:
+        if len(endpoint) > _MAX_CONNECTOR_ENDPOINT_LEN:
+            return f"'endpoint' exceeds max length ({_MAX_CONNECTOR_ENDPOINT_LEN} chars)"
+        if _RE_CONNECTOR_ENDPOINT_BAD.search(endpoint):
+            return "'endpoint' cannot contain a newline or '|'"
+
+    auth = args.get("auth")
+    if ctype in _CONNECTOR_AUTH_REQUIRED_TYPES and not auth:
+        return f"'auth' is required for type '{ctype}'"
+    if auth and auth not in _CONNECTOR_AUTH_METHODS:
+        return "'auth' must be one of: " + ", ".join(sorted(_CONNECTOR_AUTH_METHODS))
+
+    secret_ref = args.get("secret_ref")
+    if secret_ref:
+        if ctype == "mcp" or auth == "none":
+            return "'secret_ref' is forbidden for type 'mcp' or auth 'none'"
+        if len(secret_ref) > _MAX_CONNECTOR_SECRET_REF_LEN:
+            return f"'secret_ref' exceeds max length ({_MAX_CONNECTOR_SECRET_REF_LEN} chars)"
+        if not _RE_CONNECTOR_SECRET_REF.match(secret_ref):
+            return "'secret_ref' must match env:<VAR> | file:<path> | keychain:<key>"
+
+    return None
+
+
+def _op_connector_remove_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """connector.remove (project-scoped; no work_id) -> write-connector.sh remove
+    --root <served-root>/.aid/connectors --stem <stem>."""
+    root = (Path(served_root) / ".aid" / "connectors").as_posix()
+    argv = ["remove", "--root", root, "--stem", args["stem"]]
+    return argv, {}
+
+
+def _validate_connector_remove_args(args: dict) -> "str | None":
+    """Semantic validation for the connector.remove op (task-019): stem must
+    match the bare-filename alphabet write-connector.sh/connector-secret.sh
+    independently re-enforce (path-confinement defense in depth)."""
+    stem = args["stem"]
+    if not _RE_CONNECTOR_STEM.match(stem):
+        return "'stem' must match ^[a-z0-9][a-z0-9-]*$"
+    return None
+
+
 _PIPELINE_RENAME_NULL_SENTINEL = "*(pending)*"
 
 
@@ -1855,6 +1989,28 @@ OP_TABLE: dict[str, dict] = {
         "aid_cli_timeout": _TOOLS_UPDATE_TIMEOUT,
         "status_map": _TOOLS_UPDATE_STATUS_MAP,
         "status_map_default": _TOOLS_UPDATE_STATUS_DEFAULT,
+    },
+    "connector.set": {
+        "scope": "project",
+        "writer": "write-connector.sh",
+        "arg_schema": {
+            "name": {"required": True},
+            "type": {"required": True},
+            "endpoint": {},
+            "auth": {},
+            "secret_ref": {},
+        },
+        "build_argv": _op_connector_set_argv,
+        "semantic_validate": _validate_connector_set_args,
+        "status_map": None,
+    },
+    "connector.remove": {
+        "scope": "project",
+        "writer": "write-connector.sh",
+        "arg_schema": {"stem": {"required": True}},
+        "build_argv": _op_connector_remove_argv,
+        "semantic_validate": _validate_connector_remove_args,
+        "status_map": None,
     },
 }
 
