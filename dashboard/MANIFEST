@@ -30,6 +30,7 @@ reader/reader.py
 reader/state_schema.py
 scripts/build-connectors-index.sh
 scripts/connector-secret.sh
+scripts/delete-pipeline.sh
 scripts/write-connector.sh
 scripts/write-external-source.sh
 scripts/write-requirement.sh
