@@ -355,7 +355,7 @@ fi
 # from (the main worktree is never a removal target, so this only applies to
 # a non-main winner).
 if [[ "$IS_MAIN" -eq 0 ]]; then
-    CUR="$(git -C "$PWD" rev-parse --show-toplevel 2>/dev/null)" || CUR=""
+    CUR="$(_git_bounded "$PWD" rev-parse --show-toplevel)" || CUR=""
     if [[ -n "$CUR" ]]; then
         CUR_REAL="$(cd "$CUR" 2>/dev/null && pwd -P)" || CUR_REAL=""
         if [[ -n "$CUR_REAL" && -n "$W_REAL" && "$CUR_REAL" == "$W_REAL" ]]; then
