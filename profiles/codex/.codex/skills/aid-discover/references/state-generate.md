@@ -871,20 +871,20 @@ only ever runs for the two brownfield paths.
 
 Dispatch `aid-architect` to run the comprehension/closure loop. The loop body is defined in
 `references/state-closure.md` (thin-router pattern). The orchestrator invokes it with the
-cap-override argument interface (defaults from `discovery.closure` in `.aid/settings.yml`):
+cap-override argument interface (fixed defaults -- the closure caps are no longer a
+settings.yml key; the values below are baked in):
 
 ```
---max-clean-passes <N>   default: discovery.closure.max_clean_passes (2)
---max-rounds <N>         default: discovery.closure.max_rounds (4)
---token-budget <N>       default: discovery.closure.token_budget (0 = use pass/round caps)
+--max-clean-passes <N>   default: 2
+--max-rounds <N>         default: 4
+--token-budget <N>       default: 0 (use pass/round caps)
 ```
 
 **Per-path closure-cap wiring (f006 path-config -- `references/path-config.md`):**
 
-Read the confirmed path from `## Discovery Triage` in `.aid/knowledge/STATE.md`, then read the
-`discovery.closure` defaults from `.aid/settings.yml` (NOT via `read-setting.sh`, which
-resolves only 2-level `section.key` paths -- the 3-level `discovery.closure.max_clean_passes`
-is outside its reach). Apply the per-path override per the matrix:
+Read the confirmed path from `## Discovery Triage` in `.aid/knowledge/STATE.md`; the closure
+caps use the fixed defaults above (they are no longer stored in `.aid/settings.yml`). Apply
+the per-path override per the matrix:
 
 ```bash
 # Read confirmed path
