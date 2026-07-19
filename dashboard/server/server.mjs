@@ -1639,8 +1639,8 @@ function opTaskStopArgv(workDir, servedRoot, target, args) {
   //
   // workDir is resolveWorkDir's result (already confirmed non-null by
   // dispatchOp's scope block) -- the SAME real, worktree-resolved directory
-  // the reader's own stop_requested stat derives relative to (task-029 §Data
-  // Model), never a reconstructed <servedRoot>/.aid/works/<work_id> path.
+  // the reader's own stop_requested stat derives relative to (task-029 Data
+  // Model section), never a reconstructed <servedRoot>/.aid/works/<work_id> path.
   // servedRoot is unused (write-control-signal.sh needs only AID_WORK_DIR --
   // unlike delete-pipeline.sh, it never re-derives a repo/worktree root
   // itself); the parameter is kept for buildArgv's frozen call signature.

@@ -1879,8 +1879,8 @@ def _op_task_stop_argv(work_dir: Path, served_root: str, target: dict, args: dic
 
     work_dir is resolve_work_dir's result (already confirmed non-None by
     _dispatch_op's scope block) -- the SAME real, worktree-resolved directory
-    the reader's own stop_requested stat derives relative to (task-029 §Data
-    Model), never a reconstructed <served_root>/.aid/works/<work_id> path.
+    the reader's own stop_requested stat derives relative to (task-029 Data
+    Model section), never a reconstructed <served_root>/.aid/works/<work_id> path.
     served_root is unused (write-control-signal.sh needs only AID_WORK_DIR --
     unlike delete-pipeline.sh, it never re-derives a repo/worktree root
     itself); the parameter is kept for build_argv's frozen call signature.
