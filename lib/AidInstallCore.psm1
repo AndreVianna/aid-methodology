@@ -1523,6 +1523,7 @@ function script:Get-AidGitignoreBlock {
         ".aid/.temp/",
         ".aid/.trash/",
         ".aid/.heartbeat/",
+        ".aid/.control/",
         ".aid/generated/",
         ".aid/knowledge/.cache/",
         $script:_AidGiEnd

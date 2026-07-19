@@ -2069,6 +2069,7 @@ _aid_gitignore_block() {
         ".aid/.temp/" \
         ".aid/.trash/" \
         ".aid/.heartbeat/" \
+        ".aid/.control/" \
         ".aid/generated/" \
         ".aid/knowledge/.cache/"
     printf '%s' "$_AID_GI_END"
