@@ -11,7 +11,9 @@
 #   Unit 6  — --value with an embedded newline exits 4
 #   Unit 7  — --value with an embedded double-quote exits 4
 #   Unit 8  — --value with an embedded backslash exits 4
-#   Unit 9  — section absent → section + key created fresh at EOF
+#   Unit 9  — no legacy project:/review: block present (flat file) → key
+#             written as a flat top-level scalar at EOF (no section header,
+#             no nesting)
 #   Unit 10 — section present, key absent → key appended at end of section
 #   Unit 11 — settings file missing exits 3
 #   Unit 12 — missing --path/--value exits 5
@@ -131,7 +133,12 @@ ec=$?
 assert_exit_eq "$ec" 4 'U8 embedded backslash in --value exits 4'
 
 # ---------------------------------------------------------------------------
-# Unit 9: section entirely absent -> created fresh
+# Unit 9: no legacy project:/review: block present (flat file) -> the key is
+# written as a flat top-level scalar, matching the flat settings schema (no
+# project: header, no 2-space nesting). write-setting.sh is schema-aware: it
+# writes the legacy NESTED shape only when a `<section>:` block is ALREADY
+# present in the file (see Unit 10, whose fixture has a pre-existing project:
+# block); a flat/new file gets the flat top-level `<key>: <value>` line instead.
 # ---------------------------------------------------------------------------
 f="${TMPDIR_BASE}/u9.yml"
 cat > "$f" <<'EOF'
@@ -143,8 +150,16 @@ EOF
 out=$(bash "$SUT" --path project.name --value "Fresh" --file "$f" 2>&1)
 ec=$?
 assert_exit_zero "$ec" "U9 write-setting exits 0"
-assert_file_contains "$f" "project:" "U9 fresh section header created"
-assert_file_contains "$f" "  name: Fresh" "U9 fresh key created"
+if grep -qE '^name: Fresh$' "$f"; then
+    pass "U9 flat top-level key written ('name: Fresh' at column 0)"
+else
+    fail "U9 flat top-level key not written; expected 'name: Fresh' at column 0"
+fi
+if grep -qE '^project:[[:space:]]*$' "$f"; then
+    fail "U9 unexpected project: header created in a flat file (should stay flat)"
+else
+    pass "U9 no project: header created (flat write matches flat schema, no nesting)"
+fi
 
 # ---------------------------------------------------------------------------
 # Unit 10: section present, key absent -> appended at end of section

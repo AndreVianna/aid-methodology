@@ -1637,18 +1637,28 @@ Write-Host ""
 # ---------------------------------------------------------------------------
 Write-Host "--- T41: aid projects add idempotent ---"
 
+# Capture the registry entry count BEFORE the idempotent re-add. The registry is
+# shared with T39/T40 (T40 initialized + registered a second, bare project into the
+# same $AidHomeT39), so the absolute total is >1 by design; idempotency is that
+# re-adding $ProjT39 does NOT change the count -- not that the registry holds exactly one.
+$regContT41pre = Get-Content -LiteralPath $regT39 -Raw -ErrorAction SilentlyContinue
+$entryCountT41pre = 0
+foreach ($ln in ($regContT41pre -split "`n")) {
+    if ($ln -match '^\s+-\s+') { $entryCountT41pre++ }
+}
+
 # Add the T39 project a second time -> should succeed (exit 0) with no duplicate.
 Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT39)
 Assert-Eq "$($script:_LastRC)" '0' 'T41a add same project twice -> exit 0 (idempotent)'
 
-# Count '  - ' lines in registry to confirm single entry.
+# Count '  - ' lines in registry to confirm the re-add created NO new entry.
 $regContT41 = Get-Content -LiteralPath $regT39 -Raw -ErrorAction SilentlyContinue
 $entryCountT41 = 0
 foreach ($ln in ($regContT41 -split "`n")) {
     if ($ln -match '^\s+-\s+') { $entryCountT41++ }
 }
-Assert ($entryCountT41 -eq 1) 'T41b idempotent: exactly one registry entry after double add' `
-    "expected 1 entry, found $entryCountT41"
+Assert ($entryCountT41 -eq $entryCountT41pre) 'T41b idempotent: registry entry count unchanged after double add' `
+    "expected $entryCountT41pre entries (unchanged), found $entryCountT41"
 Write-Host ""
 
 # ---------------------------------------------------------------------------

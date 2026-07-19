@@ -1230,11 +1230,16 @@ assert_file_contains "${_P03b_NOAID}/.aid/.aid-manifest.json" "aid_version" \
     "REG-P03b-04e scaffolded manifest records aid_version"
 assert_file_contains "${_P03_AID_INST}/registry.yml" "${_P03b_NOAID}" "REG-P03b-05 registry.yml contains the initialized project"
 
-# (c) Idempotent: add the same project a second time -> still one entry.
+# (c) Idempotent: add the same project a second time -> still one entry for
+# THIS project. By this point the registry also holds _P03b_NOAID (registered
+# by REG-P03b above), so a raw total-entry count is legitimately 2 -- that is
+# not a regression. The idempotency property under test is narrower: re-adding
+# _P03_PROJ must not duplicate ITS OWN entry. Count only lines matching
+# _P03_PROJ's own path.
 run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03_PROJ}"
 assert_exit_eq "$RC" 0 "REG-P03c aid projects add same project twice -> exit 0"
-_P03c_COUNT=$(grep -c '  - ' "${_P03_AID_INST}/registry.yml" 2>/dev/null || echo 0)
-assert_eq "$_P03c_COUNT" "1" "REG-P03c idempotent: only one registry entry after double add"
+_P03c_COUNT=$(grep -cF -- "${_P03_PROJ}" "${_P03_AID_INST}/registry.yml" 2>/dev/null || echo 0)
+assert_eq "$_P03c_COUNT" "1" "REG-P03c idempotent: only one registry entry for _P03_PROJ after double add"
 
 # ===========================================================================
 # REG-P04: 'aid projects remove' via full CLI.

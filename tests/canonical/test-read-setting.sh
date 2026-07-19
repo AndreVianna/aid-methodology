@@ -10,7 +10,8 @@
 #   6. Missing settings.yml + no --default → exits 1
 #   7. Inline comments stripped from value
 #   8. Quoted values stripped of quotes
-#   9. Bad --path format (no dot) → exits 2
+#   9. Dotless --path is a flat top-level scalar lookup (found → exit 0;
+#      absent + no --default → exit 1, NOT an argument error)
 #  10. Unknown flag → exits 2
 #  11. --skill without --key (or vice versa) → exits 2
 #
@@ -199,16 +200,32 @@ else
 fi
 
 # ---------------------------------------------------------------------------
-# Test 9: --path requires dotted format (no dot → exit 2)
+# Test 9: dotless --path is a flat top-level scalar lookup, not an argument
+# error. A dotless --path <key> resolves against a top-level `key: value` line
+# (the flat settings schema keeps name/description/type/minimum_grade etc. at
+# the top level, no longer nested under project:/review:). Found → exit 0;
+# absent with no --default → exit 1 (value missing), NOT exit 2.
 # ---------------------------------------------------------------------------
 fixture="$TMPDIR/t9.yml"
-settings_full > "$fixture"
-out=$(bash "$SUT" --file "$fixture" --path nodot --default X 2>&1)
+cat > "$fixture" <<'EOF'
+name: test-project
+description: A test project
+type: brownfield
+EOF
+out=$(bash "$SUT" --file "$fixture" --path name --default X 2>&1)
 ec=$?
-if [[ $ec -eq 2 ]]; then
-    pass "T9: --path without dot exits 2"
+if [[ "$out" == "test-project" && $ec -eq 0 ]]; then
+    pass "T9a: dotless --path name resolves the flat top-level scalar"
 else
-    fail "T9: bad path format" "got ec=$ec, expected 2; out='$out'"
+    fail "T9a: dotless path top-level lookup" "got '$out' (ec=$ec), expected 'test-project'"
+fi
+
+out=$(bash "$SUT" --file "$fixture" --path nonexistent_key 2>&1)
+ec=$?
+if [[ $ec -eq 1 ]]; then
+    pass "T9b: dotless --path for an absent key with no --default exits 1 (not found), not an argument error"
+else
+    fail "T9b: dotless path absent key" "got ec=$ec, expected 1; out='$out'"
 fi
 
 # ---------------------------------------------------------------------------

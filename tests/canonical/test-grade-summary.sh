@@ -809,15 +809,17 @@ $(echo "$GRADE_OUT_C6" | grep -E "COV|Coverage|Error" | head -10)"
 fi
 
 echo ""
-echo "=== GR-C6b: canonical settings template preserves kb_baseline shape ==="
-# Guardrail C6: .aid/settings.yml kb_baseline: shape must be preserved (reader derives
-# doc_count / outdated from it). The settings template in canonical/ is the authoritative
-# definition; its presence + content confirms the shape is not removed.
+echo "=== GR-C6b: canonical settings template preserves knowledge: baseline shape ==="
+# Guardrail C6: .aid/settings.yml completeness/baseline shape must be preserved (reader
+# derives doc_count / outdated from it). The kb_baseline: block was superseded by the flat
+# schema's knowledge: block (source/last_update/doc_set/term_exclusions); the settings
+# template in canonical/ is the authoritative definition -- its presence + content confirms
+# the (renamed) shape is not removed.
 SETTINGS_TEMPLATE="${REPO_ROOT}/canonical/aid/templates/settings.yml"
-if [[ -f "$SETTINGS_TEMPLATE" ]] && grep -qF "kb_baseline" "$SETTINGS_TEMPLATE"; then
-    pass "GR-C6b: canonical settings.yml template preserves kb_baseline shape"
+if [[ -f "$SETTINGS_TEMPLATE" ]] && grep -qF "knowledge:" "$SETTINGS_TEMPLATE" && grep -qF "source:" "$SETTINGS_TEMPLATE"; then
+    pass "GR-C6b: canonical settings.yml template preserves knowledge: baseline shape"
 else
-    fail "GR-C6b: canonical settings.yml template missing kb_baseline shape"
+    fail "GR-C6b: canonical settings.yml template missing knowledge: baseline shape"
 fi
 
 # ===========================================================================
