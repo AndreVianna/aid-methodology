@@ -835,6 +835,46 @@ footer {
 }
 .project-header-textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .project-header-grade-label { font-size: 0.82rem; color: var(--text-muted); margin-right: 0.5rem; }
+
+/* Danger zone (feature-009-pipeline-delete, task-026): a single-button
+   destructive-action section appended to #work-overview-body by
+   _renderDangerZone, gated on model.write_enabled. Reuses .work-overview /
+   .border-err verbatim (the existing Blocked-work treatment) -- only the
+   button + modal rules below are new. */
+.danger-zone { margin-top: 1rem; }
+.danger-zone .kicker { color: var(--err); }
+.btn-danger {
+  background: var(--err);
+  border: 1px solid var(--err);
+  color: #FFFFFF;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+}
+.btn-danger:hover { opacity: 0.88; }
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger:focus-visible { outline: 2px solid var(--err); outline-offset: 2px; }
+
+/* Type-to-confirm modal (native <dialog>, vanilla JS -- no library): the
+   destructive human gate for pipeline.delete (§UI Specs). */
+.confirm-modal {
+  max-width: 30rem;
+  width: calc(100% - 2rem);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  background: var(--bg-elev);
+  color: var(--text);
+  padding: 1.3rem 1.4rem;
+}
+.confirm-modal::backdrop { background: rgba(0,0,0,0.5); }
+.confirm-modal h3 { margin-top: 0; }
+.confirm-modal label { display: block; font-size: 0.85rem; color: var(--text-muted); margin: 0.9rem 0 0.3rem; }
+.confirm-modal-warning { color: var(--err); font-weight: 600; }
+.confirm-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.1rem; }
 </style>
 </head>
 <body>
@@ -942,6 +982,12 @@ footer {
             </button>
             <ul class="work-disclosure-body" id="overview-features-body"></ul>
           </div>
+
+          <!-- Danger zone (feature-009-pipeline-delete, task-026): built entirely
+               by _renderDangerZone (renderWorkHeader's last step) -- an empty
+               container unless model.write_enabled === true (AC8); never present
+               on index.html / the main-grid work card (_renderWorkCard). -->
+          <div id="overview-danger-zone"></div>
 
         </div><!-- /#work-overview-body -->
 
@@ -3192,6 +3238,13 @@ footer {
     // Features disclosure (full path only); Deliverables removed from work card
     var isFullPath = work.work_path === 'full';
     _renderFeaturesDisclosure(work.features, isFullPath);
+
+    // Danger zone (feature-009-pipeline-delete, task-026): LAST step of the
+    // build (§UI Specs placement) -- write-gated Delete control + its
+    // type-to-confirm modal. Detail-route-only by construction: this whole
+    // function is called only from renderWorkView (#/work/<work_id>), never
+    // from _renderWorkCard (the main-grid card) or index.html.
+    _renderDangerZone(work, model && model.write_enabled === true);
   }
 
   // Apply uiState.workOpen to the panel DOM (idempotent; called each render)
@@ -3348,6 +3401,322 @@ footer {
         if (stateKey) uiState[stateKey] = true;
       }
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Danger zone (feature-009-pipeline-delete, task-026): a write-gated
+  // "Delete pipeline" control + type-to-confirm modal on the pipeline DETAIL
+  // route ONLY (#/work/<work_id> via renderWorkHeader) -- never index.html,
+  // never the main-grid card (_renderWorkCard never calls this). Consumes
+  // feature-001's `pipeline.delete` op (task-025) via the shared postOp()
+  // helper, then navigates to the main route and doFetch()s (AC2).
+  // ---------------------------------------------------------------------------
+
+  // deleteModalState: transient UI-only state for the confirm modal.
+  // `open` gates whether the modal is drawn at all; while true,
+  // _renderDangerZone's guard (below) leaves the WHOLE danger-zone region
+  // alone on a poll-triggered rebuild -- so the poll loop can never tear down
+  // (and thereby close / defocus / wipe the typed value of) an in-progress
+  // delete confirmation. `workId` records which pipeline the modal was opened
+  // for, so a route change to a DIFFERENT work_id (e.g. browser back/forward)
+  // is detected and resets the modal instead of leaking a stale confirmation
+  // onto the new pipeline's page. `typedValue` mirrors the confirm input's
+  // live DOM value into JS state -- a backstop for the one case where this
+  // region IS explicitly rebuilt while still open (a 4xx/5xx inline error),
+  // so the user's typed value survives that rebuild too. `saving` is true for
+  // the duration of the in-flight pipeline.delete POST; `errorMessage`
+  // surfaces the server's 4xx/5xx error/detail inline without closing the
+  // modal.
+  var deleteModalState = { open: false, workId: null, typedValue: '', saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag (mirrors _projectHeaderExplicitRender / the
+  // delivery-001 dogfood fix, commit 41ea5d28, and _connectorsExplicitRender /
+  // task-022): the Delete-button click sets deleteModalState.open = true and
+  // then calls the GUARDED _renderDangerZone to draw the modal -- without this
+  // flag the guard below would see open === true and skip the very render
+  // meant to draw it (the delivery-001 bug shape exactly, applied to a modal
+  // instead of an inline editor). The call site sets this flag right before
+  // that one render; _consumeDeleteModalExplicitRender() reads + clears it in
+  // the same call, so only that render bypasses the skip -- a later poll-loop
+  // re-render still sees the flag already cleared and so still preserves the
+  // open modal (and whatever the user has typed) untouched.
+  var _deleteModalExplicitRender = false;
+  function _consumeDeleteModalExplicitRender() {
+    var v = _deleteModalExplicitRender;
+    _deleteModalExplicitRender = false;
+    return v;
+  }
+
+  // Maps the server's `error` code (SPEC.md API Contracts failure table) to
+  // the exact inline copy the Feature Flow specifies for the two named cases;
+  // any other code (busy / invalid-value / write-failed / bad-request /
+  // bad-host / read-only) falls back to the server's own detail/error text.
+  function _friendlyDeleteError(body) {
+    var code = body && body.error;
+    if (code === 'pipeline-active') return 'This pipeline is Running — Finish it before deleting.';
+    if (code === 'not-found') return 'Pipeline not found — it may already be gone.';
+    return (body && (body.detail || body.error)) || 'Could not delete pipeline.';
+  }
+
+  // Build the "Delete pipeline" button and (in the resolved dialog case)
+  // showModal() the confirm dialog and focus its input. Called from
+  // renderWorkHeader on every render; guards itself while the modal is open so
+  // the poll loop never clobbers an in-progress confirmation.
+  function _renderDangerZone(work, writeEnabled) {
+    var container = document.getElementById('overview-danger-zone');
+    if (!container) return;
+
+    // Route moved to a DIFFERENT work_id while the modal was open (e.g.
+    // browser back/forward navigated #/work/<A> -> #/work/<B> without the
+    // user cancelling) -- reset rather than leak A's confirmation onto B's
+    // page.
+    if (deleteModalState.open && deleteModalState.workId !== work.work_id) {
+      deleteModalState.open = false;
+      deleteModalState.workId = null;
+      deleteModalState.typedValue = '';
+      deleteModalState.errorMessage = null;
+      deleteModalState.saving = false;
+    }
+
+    if (!_consumeDeleteModalExplicitRender() && deleteModalState.open) return;
+
+    container.innerHTML = '';
+    if (!writeEnabled) return; // read-only: no delete affordance at all (AC8)
+
+    var section = document.createElement('div');
+    section.className = 'work-overview border-err danger-zone';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'DANGER ZONE';
+    section.appendChild(kicker);
+
+    var desc = document.createElement('p');
+    desc.className = 'meta';
+    desc.textContent = 'Permanently delete this pipeline and its on-disk artifacts.';
+    section.appendChild(desc);
+
+    var deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.id = 'danger-zone-delete-btn';
+    deleteBtn.className = 'btn-danger';
+    deleteBtn.textContent = 'Delete pipeline';
+    deleteBtn.addEventListener('click', function () {
+      deleteModalState.open = true;
+      deleteModalState.workId = work.work_id;
+      deleteModalState.typedValue = '';
+      deleteModalState.saving = false;
+      deleteModalState.errorMessage = null;
+      // Force this render: the guard above would otherwise skip it right
+      // back, since deleteModalState.open is now true (see the explicit-
+      // render flag comment on its declaration, above).
+      _deleteModalExplicitRender = true;
+      _renderDangerZone(work, writeEnabled);
+    });
+    section.appendChild(deleteBtn);
+
+    container.appendChild(section);
+
+    if (deleteModalState.open) {
+      var modal = _buildDeleteModal(work);
+      container.appendChild(modal);
+      if (typeof modal.showModal === 'function') {
+        modal.showModal();
+      } else {
+        // Fallback for a runtime lacking <dialog>.showModal(): the element
+        // still carries role="dialog"/aria-modal="true" (set unconditionally
+        // in _buildDeleteModal below), just without the browser's own
+        // top-layer/inert focus-trap -- the manual Tab-trap keydown handler
+        // (also wired below) covers this path.
+        modal.setAttribute('open', '');
+      }
+      var input = document.getElementById('delete-confirm-input');
+      if (input) input.focus();
+    }
+  }
+
+  // Close the modal with NO side effect (Cancel / Esc / backdrop click) and
+  // return focus to the Delete button (Accessibility, §UI Specs).
+  function _closeDeleteModal(work) {
+    deleteModalState.open = false;
+    deleteModalState.workId = null;
+    deleteModalState.typedValue = '';
+    deleteModalState.errorMessage = null;
+    deleteModalState.saving = false;
+    var dlgEl = document.getElementById('delete-pipeline-modal');
+    if (dlgEl && typeof dlgEl.close === 'function' && dlgEl.open) dlgEl.close();
+    _renderDangerZone(work, lastGoodModel && lastGoodModel.write_enabled === true);
+    var delBtn = document.getElementById('danger-zone-delete-btn');
+    if (delBtn) delBtn.focus();
+  }
+
+  // Build the type-to-confirm <dialog> -- worktree-agnostic copy keyed ONLY
+  // on work.work_id (the DM-1 envelope carries no branch_label). Confirm
+  // stays disabled until the typed value === work_id (GitHub "type the name"
+  // pattern). Vanilla JS only; no library.
+  function _buildDeleteModal(work) {
+    var workId = work.work_id;
+
+    var dlg = document.createElement('dialog');
+    dlg.id = 'delete-pipeline-modal';
+    dlg.className = 'confirm-modal';
+    // Explicit role/aria-modal (belt-and-suspenders with the implicit
+    // semantics <dialog>.showModal() already carries) so the fallback
+    // open-attribute path (no showModal support) is still correctly exposed.
+    dlg.setAttribute('role', 'dialog');
+    dlg.setAttribute('aria-modal', 'true');
+    dlg.setAttribute('aria-label', 'Delete pipeline ' + workId);
+    dlg.setAttribute('aria-labelledby', 'delete-modal-heading');
+
+    var heading = document.createElement('h3');
+    heading.id = 'delete-modal-heading';
+    heading.textContent = 'Delete pipeline';
+    dlg.appendChild(heading);
+
+    // Worktree-agnostic conditional-outcome copy (verbatim, §UI Specs) --
+    // keyed only on work_id; never reads/hardcodes a worktree path.
+    var copyP = document.createElement('p');
+    copyP.textContent = 'This removes the work folder .aid/works/' + workId +
+      '. If this pipeline has its own worktree, that worktree is removed too; ' +
+      'a worktree shared with other pipelines is kept. The git branch is not deleted.';
+    dlg.appendChild(copyP);
+
+    // Irreversibility warning (verbatim, §UI Specs).
+    var warnP = document.createElement('p');
+    warnP.className = 'confirm-modal-warning';
+    warnP.textContent = 'This permanently deletes the pipeline. Any work not pushed ' +
+      'to git will be lost and cannot be recovered.';
+    dlg.appendChild(warnP);
+
+    var label = document.createElement('label');
+    label.setAttribute('for', 'delete-confirm-input');
+    label.textContent = 'Type "' + workId + '" to confirm:';
+    dlg.appendChild(label);
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'delete-confirm-input';
+    input.className = 'interval-input';
+    input.style.width = '100%';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('aria-label', 'Type ' + workId + ' to confirm deletion');
+    input.value = deleteModalState.typedValue;
+    input.disabled = deleteModalState.saving;
+    dlg.appendChild(input);
+
+    if (deleteModalState.errorMessage) {
+      var errSlot = document.createElement('div');
+      errSlot.className = 'callout err';
+      errSlot.setAttribute('aria-live', 'polite');
+      errSlot.textContent = deleteModalState.errorMessage;
+      dlg.appendChild(errSlot);
+    }
+
+    var actions = document.createElement('div');
+    actions.className = 'confirm-modal-actions';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-ghost';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.disabled = deleteModalState.saving;
+    cancelBtn.addEventListener('click', function () { _closeDeleteModal(work); });
+    actions.appendChild(cancelBtn);
+
+    var confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.id = 'delete-confirm-btn';
+    confirmBtn.className = 'btn-danger';
+    confirmBtn.textContent = deleteModalState.saving ? 'Deleting…' : 'Delete ' + workId;
+    confirmBtn.disabled = (deleteModalState.typedValue !== workId) || deleteModalState.saving;
+    confirmBtn.addEventListener('click', function () {
+      if (confirmBtn.disabled) return;
+      _submitPipelineDelete(work);
+    });
+    actions.appendChild(confirmBtn);
+
+    dlg.appendChild(actions);
+
+    // Type-to-confirm gate: Confirm un-disables ONLY when the typed value is
+    // an EXACT match for work_id.
+    input.addEventListener('input', function () {
+      deleteModalState.typedValue = input.value;
+      confirmBtn.disabled = (input.value !== workId) || deleteModalState.saving;
+    });
+
+    // Native <dialog> Esc handling: the browser fires 'cancel' (then would
+    // auto-close) on Escape while this dialog is the topmost modal --
+    // preventDefault stops the auto-close so our own state reset + re-render
+    // + focus-return runs instead (no side effect, §UI Specs).
+    dlg.addEventListener('cancel', function (e) { e.preventDefault(); _closeDeleteModal(work); });
+
+    // Redundant Esc handling for the role="dialog" fallback path (no native
+    // 'cancel' event without showModal()); harmless no-op double-fire in the
+    // native path since _closeDeleteModal is idempotent against already-closed
+    // state.
+    dlg.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); _closeDeleteModal(work); return; }
+      if (e.key !== 'Tab') return;
+      // Manual Tab-trap (defense-in-depth alongside the browser's own
+      // inert/top-layer focus containment for a native showModal() dialog;
+      // the ONLY trap in the role="dialog" fallback path).
+      var focusables = dlg.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    // Backdrop click: a click whose target IS the <dialog> element itself
+    // (not a descendant) landed on the ::backdrop -- the standard vanilla-JS
+    // native-<dialog> backdrop-click-to-close idiom (::backdrop has no DOM
+    // node of its own to attach a listener to).
+    dlg.addEventListener('click', function (e) {
+      if (e.target === dlg) _closeDeleteModal(work);
+    });
+
+    return dlg;
+  }
+
+  // Confirm: POST pipeline.delete; on 200 close + navigate to main + re-fetch
+  // (AC2); on 4xx/5xx keep the modal open and show the server's error/detail
+  // inline (§Feature Flow).
+  function _submitPipelineDelete(work) {
+    deleteModalState.saving = true;
+    deleteModalState.errorMessage = null;
+    // Force this render: the guard in _renderDangerZone would otherwise skip
+    // it right back, since deleteModalState.open is still true (see the
+    // explicit-render flag comment on its declaration, above).
+    _deleteModalExplicitRender = true;
+    _renderDangerZone(work, lastGoodModel && lastGoodModel.write_enabled === true);
+
+    postOp('pipeline.delete', { work_id: work.work_id }, {}, function (result) {
+      if (result.ok && result.body && result.body.ok) {
+        deleteModalState.open = false;
+        deleteModalState.workId = null;
+        deleteModalState.saving = false;
+        deleteModalState.typedValue = '';
+        deleteModalState.errorMessage = null;
+        var dlgEl = document.getElementById('delete-pipeline-modal');
+        if (dlgEl && typeof dlgEl.close === 'function' && dlgEl.open) dlgEl.close();
+        location.hash = ''; // main route
+        doFetch();          // truthful re-fetch -- the deleted pipeline is gone (AC2)
+      } else {
+        deleteModalState.saving = false;
+        deleteModalState.errorMessage = _friendlyDeleteError(result.body);
+        _deleteModalExplicitRender = true;
+        _renderDangerZone(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
