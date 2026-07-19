@@ -31,6 +31,7 @@ reader/state_schema.py
 scripts/build-connectors-index.sh
 scripts/connector-secret.sh
 scripts/write-connector.sh
+scripts/write-external-source.sh
 scripts/write-requirement.sh
 scripts/write-setting.sh
 scripts/writeback-state.sh
