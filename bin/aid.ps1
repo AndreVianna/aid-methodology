@@ -2480,14 +2480,23 @@ function script:Invoke-AidMigrateRepo {
 }
 
 # script:Invoke-AidRepairSettingsEraA <SettingsFile> <RepoName>
-# Era-a: validate/repair REQUIRED keys via targeted edits only.
-# A valid file -> no write (idempotent).
+# Era-a: settings.yml already exists (either the OLD nested schema, or the
+# NEW flat schema from a prior run of this same function). Read every value
+# tolerantly -- NEW flat top-level location first, else the OLD nested
+# location, else the documented default -- then rewrite the file from
+# scratch in the NEW flat schema (format_version 3).
+# This is a full read-then-rewrite, not a targeted line-edit, so the
+# function is naturally idempotent (re-running it on its own output
+# reproduces byte-identical content) and flattens an old nested file in a
+# single pass. Crash-safe: same-directory temp + Move-Item -Force; skips the
+# write entirely when the rebuilt content equals the original (re-normalized
+# to LF) content.
 function script:Invoke-AidRepairSettingsEraA {
     param([string]$SettingsFile, [string]$RepoName)
     if (-not (Test-Path $SettingsFile -PathType Leaf)) { throw "settings file not found" }
 
-    $lines   = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $SettingsFile -Encoding utf8 -ErrorAction Stop)
-    $changed = $false
+    $lines = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $SettingsFile -Encoding utf8 -ErrorAction Stop)
+    $origJoined = ($lines -join "`n") + "`n"
 
     # ---- locate section header index ("^<sect>:\s*$") ----
     $findSection = {
@@ -2509,152 +2518,218 @@ function script:Invoke-AidRepairSettingsEraA {
         return -1
     }
 
-    # ---- get scalar value from "  key: value" line ----
+    # ---- get scalar value from a "key: value" or "  key: value" line ----
+    # (\s* -- not \s+ -- so this also reads NEW-flat column-0 keys.)
     $getScalarValue = {
         param([string]$ln, [string]$key)
-        $v = ($ln -replace "^\s+${key}:\s*", '') -replace '\s*#.*$', ''
+        $v = ($ln -replace "^\s*${key}:\s*", '') -replace '\s*#.*$', ''
         $v = $v.Trim().Trim('"').Trim("'")
         return $v
     }
 
-    # ---- insert a line after index ----
-    $insertAfter = {
-        param([int]$idx, [string]$newLine)
-        $lines.Insert($idx + 1, $newLine)
-        $changed = $true
-    }
-
-    # ---- append a block at EOF ----
-    # Prepends a blank line so the new section is visually separated from the
-    # preceding content (matching the template's blank-line-between-sections style).
-    # Idempotency is preserved: on a 2nd run the section exists, so this path is skipped.
-    $appendBlock = {
-        param([string]$block)
-        $lines.Add("")
-        foreach ($bl in ($block -split "`n")) {
-            $lines.Add($bl)
-        }
-        $changed = $true
-    }
-
-    # ---- replace single line (IDIOM-A) ----
-    $replaceLine = {
-        param([int]$idx, [string]$newLine)
-        $lines[$idx] = $newLine
-        $changed = $true
-    }
-
-    # --- C3': format_version ensure-key step (top-of-file column-0 prepend) ---
-    # If a ^format_version: line is present, replace it in-place (IDIOM-A).
-    # If absent, prepend format_version: <sup> at index 0 above project:.
-    $fvIdx = -1
-    for ($fi = 0; $fi -lt $lines.Count; $fi++) {
-        if ($lines[$fi] -match '^format_version:') { $fvIdx = $fi; break }
-    }
-    if ($fvIdx -ge 0) {
-        # Key present: replace with canonical value (IDIOM-A).
-        & $replaceLine $fvIdx "format_version: $($script:AidSupportedFormat)"
-    } else {
-        # Key absent: prepend at index 0 (new top-of-file col-0 insert above project:).
-        $lines.Insert(0, "format_version: $($script:AidSupportedFormat)")
-        $changed = $true
-    }
-
-    # --- project section ---
-    $projIdx = & $findSection 'project'
-    if ($projIdx -eq -1) {
-        & $appendBlock "project:`n  name: ${RepoName}`n  description: <project-description>`n  type: brownfield"
-        $changed = $true
-    } else {
-        $nameIdx = & $findKeyInSection $projIdx 'name'
-        if ($nameIdx -eq -1) {
-            & $insertAfter $projIdx "  name: ${RepoName}"; $changed = $true
-        } else {
-            $nv = & $getScalarValue $lines[$nameIdx] 'name'
-            if ([string]::IsNullOrEmpty($nv)) { & $replaceLine $nameIdx "  name: ${RepoName}"; $changed = $true }
-        }
-
-        $descIdx = & $findKeyInSection $projIdx 'description'
-        if ($descIdx -eq -1) {
-            $nameIdx2 = & $findKeyInSection $projIdx 'name'
-            $insAfterDesc = if ($nameIdx2 -ne -1) { $nameIdx2 } else { $projIdx }
-            & $insertAfter $insAfterDesc '  description: <project-description>'; $changed = $true
-        }
-
-        $typeIdx = & $findKeyInSection $projIdx 'type'
-        if ($typeIdx -eq -1) {
-            $descIdx2 = & $findKeyInSection $projIdx 'description'
-            $nameIdx3 = & $findKeyInSection $projIdx 'name'
-            $insAfterType = if ($descIdx2 -ne -1) { $descIdx2 } elseif ($nameIdx3 -ne -1) { $nameIdx3 } else { $projIdx }
-            & $insertAfter $insAfterType '  type: brownfield'; $changed = $true
-        } else {
-            $tv = & $getScalarValue $lines[$typeIdx] 'type'
-            if ($tv -ne 'brownfield' -and $tv -ne 'greenfield') {
-                & $replaceLine $typeIdx '  type: brownfield'; $changed = $true
+    # ---- read a NEW-flat top-level "^key:<rest>" scalar. Sets $found.Value
+    # when the key line is present at column 0 (value may be empty). ----
+    $topScalar = {
+        param([string]$key, [ref]$found)
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match "^${key}:") {
+                if ($found) { $found.Value = $true }
+                return (& $getScalarValue $lines[$i] $key)
             }
         }
+        if ($found) { $found.Value = $false }
+        return ''
     }
 
-    # --- tools section ---
-    $toolsIdx = & $findSection 'tools'
-    if ($toolsIdx -eq -1) {
-        & $appendBlock "tools:`n  installed: []"; $changed = $true
-    } else {
-        $instIdx = & $findKeyInSection $toolsIdx 'installed'
-        if ($instIdx -eq -1) { & $insertAfter $toolsIdx '  installed: []'; $changed = $true }
+    # ---- read an OLD-nested "<section>.<key>" scalar. Sets $found.Value
+    # when both the section and the key are present. ----
+    $nestedScalar = {
+        param([string]$sect, [string]$key, [ref]$found)
+        $sidx = & $findSection $sect
+        if ($sidx -eq -1) { if ($found) { $found.Value = $false }; return '' }
+        $kidx = & $findKeyInSection $sidx $key
+        if ($kidx -eq -1) { if ($found) { $found.Value = $false }; return '' }
+        if ($found) { $found.Value = $true }
+        return (& $getScalarValue $lines[$kidx] $key)
     }
 
-    # --- review section ---
-    $revIdx = & $findSection 'review'
-    if ($revIdx -eq -1) {
-        & $appendBlock "review:`n  minimum_grade: A"; $changed = $true
-    } else {
-        $mgIdx = & $findKeyInSection $revIdx 'minimum_grade'
-        if ($mgIdx -eq -1) {
-            & $insertAfter $revIdx '  minimum_grade: A'; $changed = $true
-        } else {
-            $mv = & $getScalarValue $lines[$mgIdx] 'minimum_grade'
-            if ($mv -notmatch '^[A-F][+-]?$') { & $replaceLine $mgIdx '  minimum_grade: A'; $changed = $true }
+    # ---- trim surrounding whitespace + one layer of matching quotes ----
+    $trimQuote = {
+        param([string]$s)
+        $s = $s.Trim()
+        if ($s.Length -ge 2 -and $s.StartsWith('"') -and $s.EndsWith('"')) {
+            $s = $s.Substring(1, $s.Length - 2)
+        } elseif ($s.Length -ge 2 -and $s.StartsWith("'") -and $s.EndsWith("'")) {
+            $s = $s.Substring(1, $s.Length - 2)
         }
+        return $s
     }
 
-    # --- execution section ---
-    $execIdx = & $findSection 'execution'
-    if ($execIdx -eq -1) {
-        & $appendBlock "execution:`n  max_parallel_tasks: 5"; $changed = $true
-    } else {
-        $mptIdx = & $findKeyInSection $execIdx 'max_parallel_tasks'
-        if ($mptIdx -eq -1) {
-            & $insertAfter $execIdx '  max_parallel_tasks: 5'; $changed = $true
-        } else {
-            $mv2 = & $getScalarValue $lines[$mptIdx] 'max_parallel_tasks'
-            if ($mv2 -notmatch '^\d+$' -or [int]$mv2 -le 0) {
-                & $replaceLine $mptIdx '  max_parallel_tasks: 5'; $changed = $true
+    # ---- list reader: given a section index + key, return an array of items
+    # (one per element). Supports inline "[a, b]" and block "- a" / "- b"
+    # forms. Returns an empty array when the key is absent / resolves empty. ----
+    $readListInSection = {
+        param([int]$sectIdx, [string]$key)
+        $kidx = & $findKeyInSection $sectIdx $key
+        if ($kidx -eq -1) { return @() }
+        $ln  = $lines[$kidx]
+        $val = ($ln -replace "^\s*${key}:\s*", '') -replace '\s*#.*$', ''
+        $val = $val.Trim()
+        $items = @()
+        if ($val -match '^\[.*\]$') {
+            $inner = $val.Substring(1, $val.Length - 2)
+            foreach ($it in ($inner -split ',')) {
+                $clean = & $trimQuote $it
+                if ($clean) { $items += $clean }
+            }
+        } elseif ([string]::IsNullOrEmpty($val)) {
+            $keyIndent = $ln.Length - $ln.TrimStart().Length
+            for ($i = $kidx + 1; $i -lt $lines.Count; $i++) {
+                $bl = $lines[$i]
+                if ($bl.Trim().Length -gt 0) {
+                    $blIndent = $bl.Length - $bl.TrimStart().Length
+                    if ($blIndent -le $keyIndent) { break }
+                }
+                if ($bl -match '^\s*-\s*(.+)$') {
+                    $item = & $trimQuote $Matches[1]
+                    if ($item) { $items += $item }
+                }
             }
         }
+        return $items
     }
 
-    # --- traceability section ---
-    $traceIdx = & $findSection 'traceability'
-    if ($traceIdx -eq -1) {
-        & $appendBlock "traceability:`n  heartbeat_interval: 1"; $changed = $true
-    } else {
-        $hbIdx = & $findKeyInSection $traceIdx 'heartbeat_interval'
-        if ($hbIdx -eq -1) {
-            & $insertAfter $traceIdx '  heartbeat_interval: 1'; $changed = $true
+    # ---- list resolver -- try (sectA,keyA) then (sectB,keyB); first
+    # non-empty list wins; returns an empty array when neither has one. ----
+    $resolveList = {
+        param([string]$sectA, [string]$keyA, [string]$sectB, [string]$keyB)
+        $sidx = & $findSection $sectA
+        if ($sidx -ne -1) {
+            $items = @(& $readListInSection $sidx $keyA)
+            if ($items.Count -gt 0) { return $items }
+        }
+        $sidx = & $findSection $sectB
+        if ($sidx -ne -1) {
+            $items = @(& $readListInSection $sidx $keyB)
+            if ($items.Count -gt 0) { return $items }
+        }
+        return @()
+    }
+
+    # ------------------------------------------------------------------
+    # Resolve each REQUIRED top-level scalar: NEW-flat top-level location
+    # wins, else the OLD-nested location, else the documented default.
+    # A found-but-invalid value is treated the same as absent (repair).
+    # ------------------------------------------------------------------
+
+    # name: blank is not a valid name -- fall through to the next source.
+    $name = & $topScalar 'name' ([ref]$null)
+    if ([string]::IsNullOrEmpty($name)) {
+        $name = & $nestedScalar 'project' 'name' ([ref]$null)
+        if ([string]::IsNullOrEmpty($name)) { $name = $RepoName }
+    }
+
+    # description: presence (not non-emptiness) decides -- an explicit empty
+    # description ("") is a valid final value, matching the target schema.
+    $descFoundTop = $false
+    $description = & $topScalar 'description' ([ref]$descFoundTop)
+    if (-not $descFoundTop) {
+        $descFoundNested = $false
+        $description = & $nestedScalar 'project' 'description' ([ref]$descFoundNested)
+        if (-not $descFoundNested) { $description = '' }
+    }
+
+    # type: must be brownfield|greenfield; else fall through / default.
+    $type = & $topScalar 'type' ([ref]$null)
+    if ($type -ne 'brownfield' -and $type -ne 'greenfield') {
+        $type = & $nestedScalar 'project' 'type' ([ref]$null)
+        if ($type -ne 'brownfield' -and $type -ne 'greenfield') { $type = 'brownfield' }
+    }
+
+    # source_control: top-level value if valid, else detect from .git presence.
+    # <repo> is two levels above <repo>\.aid\settings.yml.
+    $sourceControl = & $topScalar 'source_control' ([ref]$null)
+    if ($sourceControl -ne 'none' -and $sourceControl -ne 'git' `
+       -and $sourceControl -ne 'svn' -and $sourceControl -ne 'mercurial') {
+        $repoDir = Split-Path (Split-Path $SettingsFile -Parent) -Parent
+        if (Test-Path (Join-Path $repoDir '.git') -PathType Container) {
+            $sourceControl = 'git'
         } else {
-            $hv = & $getScalarValue $lines[$hbIdx] 'heartbeat_interval'
-            if ($hv -notmatch '^\d+$') { & $replaceLine $hbIdx '  heartbeat_interval: 1'; $changed = $true }
+            $sourceControl = 'none'
         }
     }
 
-    # Write only if changed (idempotent: no edit -> no write).
-    if (-not $changed) { return }
+    # minimum_grade: top-level, else review.minimum_grade, else default A.
+    $minimumGrade = & $topScalar 'minimum_grade' ([ref]$null)
+    if ($minimumGrade -notmatch '^[A-F][+-]?$') {
+        $minimumGrade = & $nestedScalar 'review' 'minimum_grade' ([ref]$null)
+        if ($minimumGrade -notmatch '^[A-F][+-]?$') { $minimumGrade = 'A' }
+    }
+
+    # heartbeat_interval: top-level, else traceability.heartbeat_interval, else 1.
+    $heartbeatInterval = & $topScalar 'heartbeat_interval' ([ref]$null)
+    if ($heartbeatInterval -notmatch '^\d+$') {
+        $heartbeatInterval = & $nestedScalar 'traceability' 'heartbeat_interval' ([ref]$null)
+        if ($heartbeatInterval -notmatch '^\d+$') { $heartbeatInterval = '1' }
+    }
+
+    # ------------------------------------------------------------------
+    # Resolve the OPTIONAL knowledge block. knowledge.source/last_update fall
+    # back to kb_baseline.branch/tip_date; doc_set/term_exclusions fall back
+    # to discovery.doc_set/discovery.term_exclusions. The whole block is
+    # omitted when none of the four sub-values are present.
+    # ------------------------------------------------------------------
+    $knSource = & $nestedScalar 'knowledge' 'source' ([ref]$null)
+    if ([string]::IsNullOrEmpty($knSource)) { $knSource = & $nestedScalar 'kb_baseline' 'branch' ([ref]$null) }
+
+    $knLastUpdate = & $nestedScalar 'knowledge' 'last_update' ([ref]$null)
+    if ([string]::IsNullOrEmpty($knLastUpdate)) { $knLastUpdate = & $nestedScalar 'kb_baseline' 'tip_date' ([ref]$null) }
+
+    $knDocSet = @(& $resolveList 'knowledge' 'doc_set' 'discovery' 'doc_set')
+    $knTermExclusions = @(& $resolveList 'knowledge' 'term_exclusions' 'discovery' 'term_exclusions')
+
+    $haveKnowledge = ((-not [string]::IsNullOrEmpty($knSource)) -or (-not [string]::IsNullOrEmpty($knLastUpdate)) `
+        -or ($knDocSet.Count -gt 0) -or ($knTermExclusions.Count -gt 0))
+
+    # ------------------------------------------------------------------
+    # Build the NEW flat output, then write only if it differs from the
+    # original (re-normalized) content.
+    # ------------------------------------------------------------------
+    $out = [System.Collections.Generic.List[string]]::new()
+    [void]$out.Add("format_version: $($script:AidSupportedFormat)")
+    [void]$out.Add("name: ${name}")
+    if ([string]::IsNullOrEmpty($description)) {
+        [void]$out.Add('description: ""')
+    } else {
+        [void]$out.Add("description: ${description}")
+    }
+    [void]$out.Add("type: ${type}")
+    [void]$out.Add("source_control: ${sourceControl}")
+    [void]$out.Add("minimum_grade: ${minimumGrade}")
+    [void]$out.Add("heartbeat_interval: ${heartbeatInterval}")
+
+    if ($haveKnowledge) {
+        [void]$out.Add('')
+        [void]$out.Add('knowledge:')
+        if (-not [string]::IsNullOrEmpty($knSource)) { [void]$out.Add("  source: ${knSource}") }
+        if (-not [string]::IsNullOrEmpty($knLastUpdate)) { [void]$out.Add("  last_update: ${knLastUpdate}") }
+        if ($knDocSet.Count -gt 0) {
+            [void]$out.Add('  doc_set:')
+            foreach ($dsi in $knDocSet) { [void]$out.Add("    - ${dsi}") }
+        }
+        if ($knTermExclusions.Count -gt 0) {
+            [void]$out.Add('  term_exclusions:')
+            foreach ($tei in $knTermExclusions) { [void]$out.Add("    - ${tei}") }
+        }
+    }
+
+    $newContent = (($out.ToArray()) -join "`n") + "`n"
+    if ($newContent -eq $origJoined) { return }
 
     $sfDir = Split-Path $SettingsFile -Parent
     $tmp   = Join-Path $sfDir ("settings.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
-        [System.IO.File]::WriteAllText($tmp, (($lines.ToArray()) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($tmp, $newContent, [System.Text.UTF8Encoding]::new($false))
         Move-Item -LiteralPath $tmp -Destination $SettingsFile -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
@@ -2663,36 +2738,27 @@ function script:Invoke-AidRepairSettingsEraA {
 }
 
 # script:Invoke-AidSynthesizeSettingsEraB <SettingsFile> <RepoName> <ManifestPath>
-# Era-b: write fresh template-derived settings.yml (crash-safe temp+mv).
+# Era-b: write a fresh settings.yml (NEW flat schema, format_version 3) when
+# none exists yet. name = <RepoName>; description = ""; type = brownfield;
+# source_control = detected (.git present -> git, else none); minimum_grade
+# = A; heartbeat_interval = 1. No knowledge block (nothing to carry forward).
+# <ManifestPath> is accepted for call-site parity (tools/AID-version now live
+# only in the manifest -- never written into settings) but is otherwise
+# unused here. Crash-safe: same-directory temp + Move-Item -Force.
 function script:Invoke-AidSynthesizeSettingsEraB {
     param([string]$SettingsFile, [string]$RepoName, [string]$ManifestPath)
 
-    $toolIds = @(Read-ManifestTools -ManifestPath $ManifestPath)
+    $repoDir = Split-Path (Split-Path $SettingsFile -Parent) -Parent
+    $sourceControl = if (Test-Path (Join-Path $repoDir '.git') -PathType Container) { 'git' } else { 'none' }
 
     $sb = [System.Text.StringBuilder]::new()
-    # C2': format_version stamp is the FIRST line (before project:).
     [void]$sb.Append("format_version: $($script:AidSupportedFormat)`n")
-    [void]$sb.Append("project:`n")
-    [void]$sb.Append("  name: ${RepoName}`n")
-    [void]$sb.Append("  description: <project-description>`n")
-    [void]$sb.Append("  type: brownfield`n")
-    [void]$sb.Append("`n")
-    [void]$sb.Append("tools:`n")
-    if ($toolIds.Count -eq 0) {
-        [void]$sb.Append("  installed: []`n")
-    } else {
-        [void]$sb.Append("  installed:`n")
-        foreach ($t in $toolIds) { [void]$sb.Append("    - ${t}`n") }
-    }
-    [void]$sb.Append("`n")
-    [void]$sb.Append("review:`n")
-    [void]$sb.Append("  minimum_grade: A`n")
-    [void]$sb.Append("`n")
-    [void]$sb.Append("execution:`n")
-    [void]$sb.Append("  max_parallel_tasks: 5`n")
-    [void]$sb.Append("`n")
-    [void]$sb.Append("traceability:`n")
-    [void]$sb.Append("  heartbeat_interval: 1`n")
+    [void]$sb.Append("name: ${RepoName}`n")
+    [void]$sb.Append("description: `"`"`n")
+    [void]$sb.Append("type: brownfield`n")
+    [void]$sb.Append("source_control: ${sourceControl}`n")
+    [void]$sb.Append("minimum_grade: A`n")
+    [void]$sb.Append("heartbeat_interval: 1`n")
 
     $sfDir   = Split-Path $SettingsFile -Parent
     if (-not (Test-Path $sfDir -PathType Container)) {
