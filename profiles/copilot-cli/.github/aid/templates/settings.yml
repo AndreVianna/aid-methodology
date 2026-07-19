@@ -1,21 +1,15 @@
-# .aid/settings.yml — AID pipeline configuration (single source of truth).
+# .aid/settings.yml - AID pipeline configuration (user-owned project settings).
 # Read by AID skills at invocation. Managed by /aid-config; manual edits allowed.
+# The AID version + installed tools are recorded in the manifest
+# (.aid/.aid-manifest.json), not here.
 
-project:
-  name: <project-name>               # set during /aid-config INIT
-  description: <project-description>  # sole source of truth (not duplicated in CLAUDE.md/AGENTS.md)
-  type: brownfield                   # brownfield | greenfield
-
-tools:
-  installed:
-    - claude-code
-    # - codex
-    # - cursor
+name: <project-name>               # set during /aid-config INIT
+description: <project-description>  # sole source of truth (not in CLAUDE.md/AGENTS.md)
+type: brownfield                   # brownfield | greenfield
 
 # Global quality bar: every skill with a REVIEW state exits only when its grade
 # is >= minimum_grade. Per-skill overrides at the bottom of this file.
-review:
-  minimum_grade: A
+minimum_grade: A
 
 execution:
   max_parallel_tasks: 5   # parallel dispatch pool capacity
@@ -45,7 +39,7 @@ triage:
   large_min_dirs:              25    # RM3 >= this => brownfield-large
   large_min_concepts:          40    # RM4 >= this => brownfield-large
 
-# Optional per-skill overrides of review.minimum_grade (uncomment + set as needed).
+# Optional per-skill overrides of the global minimum_grade (uncomment + set).
 # Keys: discover, describe, define, specify, plan, detail, execute, deploy, monitor, summary, housekeep.
 # Valid grades: A+ .. F (E+/E/E- rarely useful as a floor; most projects pick A..D).
 # execute:

@@ -124,7 +124,7 @@
 {"dst": ".agent/aid/templates/reviewer-ledger-schema.md", "profile": "antigravity", "sha256": "b20484f9ffee22992765601bdb07889e7a7b84bf416315eca4863ee745510717", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".agent/aid/templates/rough-time-hints.md", "profile": "antigravity", "sha256": "c2ade084bc1923ab0fad44ec6ae3cdc149f5d3efea6abab20bf2d50f3847dac2", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".agent/aid/templates/self-review-protocol.md", "profile": "antigravity", "sha256": "10a9e6d79fec69e9f4865b37018813910a7c0d328ecb8431779c7c7dd8e55c00", "src": "canonical/templates/self-review-protocol.md"}
-{"dst": ".agent/aid/templates/settings.yml", "profile": "antigravity", "sha256": "41e497c14d7b869e779a11b04233b282af073a0ccac96bda424fc66e883bd575", "src": "canonical/templates/settings.yml"}
+{"dst": ".agent/aid/templates/settings.yml", "profile": "antigravity", "sha256": "f683367894d6d2b32643d5197ec9f0c62ef9629cd32723a11d9746d441745e18", "src": "canonical/templates/settings.yml"}
 {"dst": ".agent/aid/templates/shortcut-catalog.yml", "profile": "antigravity", "sha256": "ab01dd571ed3e8856ba9a6523f7f98c749e59525d41f77ecfab06755c2a853f7", "src": "canonical/templates/shortcut-catalog.yml"}
 {"dst": ".agent/aid/templates/shortcut-engine.md", "profile": "antigravity", "sha256": "3dbd9f771e0b3fb64023192da0d1dfe2575cff7db6202c214dddc8cc702693fe", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".agent/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "antigravity", "sha256": "ed95462c96d7817eabaf5d7d4d2e2e0f597e89159da5462686997067d10cb889", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}

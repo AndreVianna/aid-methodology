@@ -124,7 +124,7 @@
 {"dst": ".github/aid/templates/reviewer-ledger-schema.md", "profile": "copilot-cli", "sha256": "55b2b870f60aaab8f5311166bbcaa68812911d7886038595e212150a8692e03d", "src": "canonical/templates/reviewer-ledger-schema.md"}
 {"dst": ".github/aid/templates/rough-time-hints.md", "profile": "copilot-cli", "sha256": "5bb11ab80c2facbfd390376816280db8e65abe895a29c4a28b14fb967a8fb629", "src": "canonical/templates/rough-time-hints.md"}
 {"dst": ".github/aid/templates/self-review-protocol.md", "profile": "copilot-cli", "sha256": "84a4bed374301ba632de1621c5b19c9e0723a9f18194a4dc11c55b84aa398420", "src": "canonical/templates/self-review-protocol.md"}
-{"dst": ".github/aid/templates/settings.yml", "profile": "copilot-cli", "sha256": "41e497c14d7b869e779a11b04233b282af073a0ccac96bda424fc66e883bd575", "src": "canonical/templates/settings.yml"}
+{"dst": ".github/aid/templates/settings.yml", "profile": "copilot-cli", "sha256": "f683367894d6d2b32643d5197ec9f0c62ef9629cd32723a11d9746d441745e18", "src": "canonical/templates/settings.yml"}
 {"dst": ".github/aid/templates/shortcut-catalog.yml", "profile": "copilot-cli", "sha256": "ab01dd571ed3e8856ba9a6523f7f98c749e59525d41f77ecfab06755c2a853f7", "src": "canonical/templates/shortcut-catalog.yml"}
 {"dst": ".github/aid/templates/shortcut-engine.md", "profile": "copilot-cli", "sha256": "1ef2156933db70c3b7dcb0e7081fab5bd6bb489d314a6a4fdcf7aa069244a846", "src": "canonical/templates/shortcut-engine.md"}
 {"dst": ".github/aid/templates/shortcut-scaffolding/analyze-report.md", "profile": "copilot-cli", "sha256": "57841dc9ddf237b3b233d9e1d5f1c22efe67b842f4ba5490f94a9c9fd226a111", "src": "canonical/templates/shortcut-scaffolding/analyze-report.md"}
