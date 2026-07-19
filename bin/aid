@@ -2313,7 +2313,7 @@ _aid_migrate_repair_settings_era_a() {
     if [[ "${_source_control}" != "none" && "${_source_control}" != "git" \
        && "${_source_control}" != "svn" && "${_source_control}" != "mercurial" ]]; then
         local _repo_dir; _repo_dir="$(dirname "$(dirname "${_sf}")")"
-        if [[ -d "${_repo_dir}/.git" ]]; then
+        if [[ -e "${_repo_dir}/.git" ]]; then
             _source_control="git"
         else
             _source_control="none"
@@ -2420,7 +2420,7 @@ _aid_migrate_synthesize_settings_era_b() {
 
     local _repo_dir; _repo_dir="$(dirname "$(dirname "${_sf}")")"
     local _source_control="none"
-    [[ -d "${_repo_dir}/.git" ]] && _source_control="git"
+    [[ -e "${_repo_dir}/.git" ]] && _source_control="git"
 
     local _tmp
     _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
@@ -2640,7 +2640,8 @@ _aid_scaffold_bare_project() {
     _ver=""
     [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
         _ver="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION" 2>/dev/null)"
-    if [[ -d "${_canon}/.git" ]]; then _sc="git"; else _sc="none"; fi
+    # -e (not -d): a git worktree / submodule has .git as a FILE, not a dir.
+    if [[ -e "${_canon}/.git" ]]; then _sc="git"; else _sc="none"; fi
 
     mkdir -p "${_canon}/.aid/connectors" "${_canon}/.aid/knowledge" "${_canon}/.aid/works"
 
