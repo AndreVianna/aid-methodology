@@ -8,7 +8,7 @@
 {"dst": ".codex/agents/aid-researcher.toml", "profile": "codex", "sha256": "d7d5b755c6e3e73826d0be37a37c444b7338c59b07207de534ce355f7fc5c26a", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".codex/agents/aid-reviewer.toml", "profile": "codex", "sha256": "8ed0327a717b6c2ff81dd6f26ba8fc6163eeabfddcb349cfa9c8269a6ba7d29f", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".codex/agents/aid-tech-writer.toml", "profile": "codex", "sha256": "bb2afbb6da18359022b380e70aeff702a7c6346be4622eb272df9265ffa174c6", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
-{"dst": ".codex/aid/scripts/config/read-setting.sh", "profile": "codex", "sha256": "7539989e0a59cddade8d82e3cabe18ecc10a983638c3808ee64d23c719bd5eb0", "src": "canonical/scripts/config/read-setting.sh"}
+{"dst": ".codex/aid/scripts/config/read-setting.sh", "profile": "codex", "sha256": "ba64625d0880f2d07f2f4e8527d7b15b4ffc66c68eac591d74d7a563ca834e4c", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".codex/aid/scripts/connectors/build-connectors-index.ps1", "profile": "codex", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
 {"dst": ".codex/aid/scripts/connectors/build-connectors-index.sh", "profile": "codex", "sha256": "297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c", "src": "canonical/scripts/connectors/build-connectors-index.sh"}
 {"dst": ".codex/aid/scripts/connectors/connector-registry.ps1", "profile": "codex", "sha256": "6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe", "src": "canonical/scripts/connectors/connector-registry.ps1"}

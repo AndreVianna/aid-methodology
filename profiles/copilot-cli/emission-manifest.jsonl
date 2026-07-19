@@ -8,7 +8,7 @@
 {"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "0294cc3399007c50fb98d7cdbf4d22f78489b6938d0a3e917ac0924befec9ad8", "src": "canonical/agents/aid-researcher/AGENT.md"}
 {"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "e824e1890a978d729dddc35fedf991f4857808944900f2201d9972c5c5e6413f", "src": "canonical/agents/aid-reviewer/AGENT.md"}
 {"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "7eca7a7e36d373fe6748a39231eb2ddf72385c9152a2a16b85b0c811b8d9aea1", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
-{"dst": ".github/aid/scripts/config/read-setting.sh", "profile": "copilot-cli", "sha256": "7539989e0a59cddade8d82e3cabe18ecc10a983638c3808ee64d23c719bd5eb0", "src": "canonical/scripts/config/read-setting.sh"}
+{"dst": ".github/aid/scripts/config/read-setting.sh", "profile": "copilot-cli", "sha256": "ba64625d0880f2d07f2f4e8527d7b15b4ffc66c68eac591d74d7a563ca834e4c", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".github/aid/scripts/connectors/build-connectors-index.ps1", "profile": "copilot-cli", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
 {"dst": ".github/aid/scripts/connectors/build-connectors-index.sh", "profile": "copilot-cli", "sha256": "297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c", "src": "canonical/scripts/connectors/build-connectors-index.sh"}
 {"dst": ".github/aid/scripts/connectors/connector-registry.ps1", "profile": "copilot-cli", "sha256": "6a8feb93e1fc5bd2aac5dfc2e32c67966c962fc1874e8abb93acfdcf27bd95fe", "src": "canonical/scripts/connectors/connector-registry.ps1"}
