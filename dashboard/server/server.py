@@ -1858,7 +1858,13 @@ def _op_task_stop_argv(work_dir: Path, served_root: str, target: dict, args: dic
     itself); the parameter is kept for build_argv's frozen call signature.
     """
     argv = ["--task-id", str(target.get("task_id")), "--action", "stop"]
-    env = {"AID_WORK_DIR": str(work_dir)}
+    # .as_posix() (not str()): write-control-signal.sh does forward-slash path
+    # arithmetic on AID_WORK_DIR (`${WORK_DIR##*/}` + `/../../.control/...`), which
+    # breaks on a native Windows backslash path (the signal file lands at a garbled
+    # location while the writer still exits 0, so stop_requested silently never
+    # flips). Forward-slash form is accepted identically by bash on every platform
+    # (same convention as _posix_argv_path for argv elements).
+    env = {"AID_WORK_DIR": work_dir.as_posix()}
     return argv, env
 
 
@@ -1869,7 +1875,9 @@ def _op_task_resume_argv(work_dir: Path, served_root: str, target: dict, args: d
     See _op_task_stop_argv's docstring -- identical shape, --action resume.
     """
     argv = ["--task-id", str(target.get("task_id")), "--action", "resume"]
-    env = {"AID_WORK_DIR": str(work_dir)}
+    # .as_posix() (not str()): see _op_task_stop_argv -- bash writer needs a
+    # forward-slash AID_WORK_DIR or its path arithmetic garbles the signal path.
+    env = {"AID_WORK_DIR": work_dir.as_posix()}
     return argv, env
 
 

@@ -1621,7 +1621,13 @@ function opTaskStopArgv(workDir, servedRoot, target, args) {
   // unlike delete-pipeline.sh, it never re-derives a repo/worktree root
   // itself); the parameter is kept for buildArgv's frozen call signature.
   const argv = ["--task-id", String(target.task_id), "--action", "stop"];
-  const env = { AID_WORK_DIR: String(workDir) };
+  // toPosixArg (not a raw String): write-control-signal.sh does forward-slash path
+  // arithmetic on AID_WORK_DIR (`${WORK_DIR##*/}` + `/../../.control/...`), which
+  // breaks on a native Windows backslash path (the signal file lands at a garbled
+  // location while the writer still exits 0, so stop_requested silently never
+  // flips). Forward-slash form is accepted identically by bash on every platform
+  // (twin of server.py's work_dir.as_posix()).
+  const env = { AID_WORK_DIR: toPosixArg(String(workDir)) };
   return [argv, env];
 }
 
@@ -1631,7 +1637,9 @@ function opTaskResumeArgv(workDir, servedRoot, target, args) {
   //
   // See opTaskStopArgv's docstring -- identical shape, --action resume.
   const argv = ["--task-id", String(target.task_id), "--action", "resume"];
-  const env = { AID_WORK_DIR: String(workDir) };
+  // toPosixArg (not a raw String): see opTaskStopArgv -- bash writer needs a
+  // forward-slash AID_WORK_DIR or its path arithmetic garbles the signal path.
+  const env = { AID_WORK_DIR: toPosixArg(String(workDir)) };
   return [argv, env];
 }
 

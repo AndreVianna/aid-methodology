@@ -224,23 +224,22 @@ _BASH_EXE_RESOLVED = _bash_available()
 # redirection (real filesystem I/O, which Windows accepts with either slash
 # style), never string-arithmetic on it.
 #
-# The tests below that exercise the REAL write-control-signal.sh round trip
-# are marked (skipIf) on this defect so this suite stays fully GREEN (and
-# fully exercises every assertion) on a POSIX host / CI runner, where
-# str(work_dir) is already forward-slash and the bug does not manifest.
-# TestKnownDefectAidWorkDirBackslashOnWindows (below) is a Windows-only
-# regression canary that POSITIVELY demonstrates the current (buggy)
-# behavior -- once the production fix lands (e.g. `.as_posix()` on the env
-# value, mirroring `_posix_argv_path`'s existing convention), that canary
-# will start FAILING, signaling the skipIf guards above should be removed.
+# FIXED (2026-07-19, task-033 fix cycle): the dispatcher now hands
+# write-control-signal.sh a FORWARD-SLASH $AID_WORK_DIR --
+# `_op_task_stop_argv`/`_op_task_resume_argv` use `work_dir.as_posix()` and the
+# Node twins `opTaskStopArgv`/`opTaskResumeArgv` use `toPosixArg(String(workDir))`
+# (mirroring `_posix_argv_path`'s existing argv convention) -- so the writer's
+# `${WORK_DIR##*/}` + `/../../.control/...` arithmetic resolves correctly on
+# every host. The REAL-writer round trips below therefore run + PASS on Windows
+# too; the flag is retained as a `False` regression tripwire (if it ever regresses
+# to a backslash path the skipIf guards would re-skip). The old Windows-only
+# "defect canary" was removed with the fix.
 # ---------------------------------------------------------------------------
-_AID_WORK_DIR_BACKSLASH_DEFECT = (os.name == "nt")
+_AID_WORK_DIR_BACKSLASH_DEFECT = False
 _DEFECT_SKIP_REASON = (
-    "KNOWN PRODUCTION DEFECT (not fixed by this TEST-type task; see "
-    "IMPEDIMENT-task-033.md): write-control-signal.sh's forward-slash path "
-    "arithmetic on $AID_WORK_DIR breaks when the dispatcher hands it a "
-    "native (backslash) Windows path -- see this module's own top-of-file "
-    "comment for the full root-cause. Passes on POSIX (CI)."
+    "regression tripwire (fixed 2026-07-19): the dispatcher passes a "
+    "forward-slash $AID_WORK_DIR (work_dir.as_posix() / toPosixArg), so "
+    "write-control-signal.sh's path arithmetic resolves on every host."
 )
 
 
@@ -896,45 +895,12 @@ class TestTaskStopResumeRealWriterTwinParity(_NodeSlicedDispatchFixture, unittes
 
 
 # ===========================================================================
-# Regression canary for the KNOWN DEFECT documented above /
-# IMPEDIMENT-task-033.md. Windows-only (no-op / self-skip on POSIX, where the
-# defect does not manifest); ALWAYS GREEN today. When the production fix
-# lands (env value posix-ified before being handed to write-control-signal.sh
-# -- e.g. `.as_posix()` on both twins' AID_WORK_DIR), this test's own
-# assertion flips and it starts FAILING -- that is the intended signal to
-# remove this canary AND the skipIf guards above.
+# (The Windows-only "defect canary" that lived here was removed in the
+# 2026-07-19 fix cycle: the AID_WORK_DIR backslash defect it demonstrated is
+# fixed (work_dir.as_posix() / toPosixArg on both twins), so the REAL-writer
+# round-trip tests above now run + pass on Windows and ARE the regression
+# guard. See IMPEDIMENT-task-033.md for the original root-cause.)
 # ===========================================================================
-
-@unittest.skipUnless(_AID_WORK_DIR_BACKSLASH_DEFECT and _BASH_EXE_RESOLVED,
-                      "defect only manifests on Windows with bash available")
-class TestKnownDefectAidWorkDirBackslashOnWindows(unittest.TestCase):
-    def test_real_writer_creates_signal_at_wrong_path_on_windows(self):
-        with _TmpRepo() as tmp:
-            root, aid = _make_repo(tmp)
-            work_id = "work-999-defect-canary"
-            _seed_hierarchical_task(aid, work_id, "task-001", status="In Progress")
-
-            status, body = srv._dispatch_op(
-                srv.OP_TABLE, {"op": "task.stop", "target": {"work_id": work_id, "task_id": "001"}}, str(root),
-            )
-            # The writer itself still reports success (its own path arithmetic
-            # never errors -- it just computes the WRONG path) -- this is
-            # exactly what makes the defect dangerous: no visible failure.
-            self.assertEqual(status, 200)
-            self.assertEqual(json.loads(body), {"ok": True, "op": "task.stop"})
-
-            intended_signal = _control_signal_path(aid, work_id, "task-001")
-            self.assertFalse(
-                intended_signal.exists(),
-                "CANARY TRIPPED: the intended control-signal path now exists on "
-                "Windows -- the AID_WORK_DIR backslash defect has been fixed. "
-                "Remove this canary AND the _AID_WORK_DIR_BACKSLASH_DEFECT-gated "
-                "skipIf guards elsewhere in this file (see IMPEDIMENT-task-033.md).",
-            )
-            # stop_requested correspondingly never re-derives true (the reader
-            # looks at the CORRECT, slash-agnostic pathlib path and finds nothing).
-            data = _read_model_json(root, write_enabled=True)
-            self.assertFalse(_find_task(data, work_id, "task-001")["stop_requested"])
 
 
 class TestNoScopeCreepPointer(unittest.TestCase):
