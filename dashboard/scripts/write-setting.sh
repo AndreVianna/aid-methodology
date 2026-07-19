@@ -89,9 +89,9 @@ fi
 # Closed allowlist. Rejection here is an invalid-VALUE-class error (exit 4), not an argument
 # error: --path is well-formed, it is simply not one the dashboard may write.
 case "$DPATH" in
-    project.name)         SECTION="project"; KEY="name" ;;
-    project.description)  SECTION="project"; KEY="description" ;;
-    review.minimum_grade) SECTION="review";  KEY="minimum_grade" ;;
+    project.name)         SECTION="project"; KEY="name";          TOPKEY="name" ;;
+    project.description)  SECTION="project"; KEY="description";   TOPKEY="description" ;;
+    review.minimum_grade) SECTION="review";  KEY="minimum_grade"; TOPKEY="minimum_grade" ;;
     *)
         echo "write-setting.sh: --path '$DPATH' is not writable; allowed: project.name, project.description, review.minimum_grade" >&2
         exit 4
@@ -126,46 +126,46 @@ if [[ ! -f "$SETTINGS_FILE" ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Surgical flat-section rewrite -- the write-side mirror of read-setting.sh's `lookup` awk.
-#   - Section found, key found inside it  -> that child line is replaced.
-#   - Section found, key absent           -> the child line is appended at the end of the
-#                                             section (just before the next top-level key,
-#                                             or at EOF if the section runs to the end of
-#                                             the file).
-#   - Section entirely absent             -> a fresh `<section>:` / `  <key>: <value>` pair
-#                                             is appended at EOF.
+# Schema-aware surgical rewrite. The flat schema keeps these keys at the TOP
+# level (name/description/minimum_grade); the legacy schema nested them under
+# project:/review:. Write to whichever shape the file already uses -- matching
+# where the readers look (they prefer the nested block when one is present):
+#   - legacy nested `<section>:` block present -> replace/append its `  <key>:` child.
+#   - otherwise (flat file)                    -> replace/append the top-level `<key>:`.
+# Every other line is reproduced byte-for-byte; the write is atomic (temp + mv).
 # ---------------------------------------------------------------------------
-SETTING_WRITE_AWK='
+if grep -qE "^${SECTION}:[[:space:]]*$" "$SETTINGS_FILE"; then
+    WRITE_MODE="nested"
+else
+    WRITE_MODE="flat"
+fi
+
+NESTED_WRITE_AWK='
     BEGIN { in_section = 0; section_seen = 0; done = 0 }
-    $0 ~ "^" section ":[[:space:]]*$" {
-        in_section = 1
-        section_seen = 1
-        print
-        next
-    }
-    in_section && /^[A-Za-z]/ {
-        if (!done) { print "  " key ": " value; done = 1 }
-        in_section = 0
-        print
-        next
-    }
-    in_section && $0 ~ "^[[:space:]]+" key ":" {
-        print "  " key ": " value
-        done = 1
-        next
-    }
+    $0 ~ "^" section ":[[:space:]]*$" { in_section = 1; section_seen = 1; print; next }
+    in_section && /^[A-Za-z]/ { if (!done) { print "  " key ": " value; done = 1 } in_section = 0; print; next }
+    in_section && $0 ~ "^[[:space:]]+" key ":" { print "  " key ": " value; done = 1; next }
     { print }
     END {
         if (in_section && !done) { print "  " key ": " value; done = 1 }
-        if (!section_seen) {
-            print section ":"
-            print "  " key ": " value
-        }
+        if (!section_seen) { print section ":"; print "  " key ": " value }
     }
+'
+FLAT_WRITE_AWK='
+    BEGIN { done = 0 }
+    $0 ~ "^" key ":" { print key ": " value; done = 1; next }
+    { print }
+    END { if (!done) print key ": " value }
 '
 
 tmp=$(mktemp)
-awk -v section="$SECTION" -v key="$KEY" -v value="$VALUE" "$SETTING_WRITE_AWK" "$SETTINGS_FILE" > "$tmp"
+if [[ "$WRITE_MODE" == "nested" ]]; then
+    awk -v section="$SECTION" -v key="$KEY" -v value="$VALUE" "$NESTED_WRITE_AWK" "$SETTINGS_FILE" > "$tmp"
+    SANITY_RE="^  ${KEY}:"
+else
+    awk -v key="$TOPKEY" -v value="$VALUE" "$FLAT_WRITE_AWK" "$SETTINGS_FILE" > "$tmp"
+    SANITY_RE="^${TOPKEY}:"
+fi
 
 # A no-trailing-newline source file must not silently gain one.
 if [[ -s "$SETTINGS_FILE" ]] && [[ "$(tail -c1 "$SETTINGS_FILE" | wc -l)" -eq 0 ]] && [[ -s "$tmp" ]]; then
@@ -179,7 +179,7 @@ if [[ ! -s "$tmp" ]]; then
     exit 3
 fi
 
-if ! grep -q "^  ${KEY}:" "$tmp"; then
+if ! grep -qE "$SANITY_RE" "$tmp"; then
     rm -f "$tmp"
     echo "write-setting.sh: sanity check failed: key '${KEY}' not found in output; $SETTINGS_FILE preserved" >&2
     exit 3
