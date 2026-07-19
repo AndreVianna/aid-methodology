@@ -1781,6 +1781,21 @@ function script:Invoke-AidProjectsAdd {
         }
         script:Invoke-AidScaffoldBareProject -Canon $canon
         Write-Host ("aid projects: initialized a bare AID project at '$canon' (no tools; run 'aid add <tool>' to install a host tool).")
+    } else {
+        # Existing AID project: bring it current before registering. Refuse a
+        # newer format than this CLI supports; migrate an older one (settings
+        # flatten etc.), mirroring the format gate on other reaches.
+        $repoFmt = script:Get-AidRepoFormat -Repo $canon
+        if ($repoFmt -gt $script:AidSupportedFormat) {
+            [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' uses a newer AID format (v$repoFmt) than this CLI supports (v$($script:AidSupportedFormat)). Upgrade the aid CLI: aid update self.")
+            script:Exit-Aid 1
+        }
+        if ($repoFmt -lt $script:AidSupportedFormat) {
+            Write-Host "aid projects: '$canon' uses an older AID format (v$repoFmt); migrating to v$($script:AidSupportedFormat)..."
+            try { $null = script:Invoke-AidMigrateRepo -Repo $canon 6>$null } catch {
+                [Console]::Error.WriteLine("WARN: aid projects add: migration reported an issue for '$canon' (continuing)")
+            }
+        }
     }
 
     # Resolve tier.

@@ -2712,6 +2712,22 @@ _cmd_projects_add() {
         fi
         _aid_scaffold_bare_project "${_canon}"
         echo "aid projects: initialized a bare AID project at '${_canon}' (no tools; run 'aid add <tool>' to install a host tool)."
+    else
+        # Existing AID project: bring it current before registering. Refuse a
+        # newer format than this CLI supports; migrate an older one (settings
+        # flatten etc.) -- so adding an already-AID folder also updates it,
+        # mirroring the format gate on other reaches.
+        local _repo_fmt
+        _repo_fmt="$(_aid_repo_format "${_canon}")"
+        if [[ "${_repo_fmt}" =~ ^[0-9]+$ && "${_repo_fmt}" -gt "${AID_SUPPORTED_FORMAT}" ]]; then
+            echo "ERROR: aid projects add: '${_canon}' uses a newer AID format (v${_repo_fmt}) than this CLI supports (v${AID_SUPPORTED_FORMAT}). Upgrade the aid CLI: aid update self." >&2
+            exit 1
+        fi
+        if [[ "${_repo_fmt}" =~ ^[0-9]+$ && "${_repo_fmt}" -lt "${AID_SUPPORTED_FORMAT}" ]]; then
+            echo "aid projects: '${_canon}' uses an older AID format (v${_repo_fmt}); migrating to v${AID_SUPPORTED_FORMAT}..."
+            _aid_migrate_repo "${_canon}" >/dev/null || \
+                echo "WARN: aid projects add: migration reported an issue for '${_canon}' (continuing)" >&2
+        fi
     fi
 
     # Resolve tier.
