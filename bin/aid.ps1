@@ -1526,7 +1526,9 @@ function script:Resolve-AidTier {
 #   "no-aid"    -- directory exists but has no .aid/ subdirectory
 #   "untracked" -- .aid/ exists but no .aid/.aid-manifest.json is present
 #   "vX.Y.Z"   -- tracked; semver version string from .aid/.aid-manifest.json
-#                  (key "aid_version"), falling back to .aid/.aid-version
+#                  (key "aid_version"), falling back to a top-level aid_version
+#                  in .aid/settings.yml (tool-less projects; the .aid-version
+#                  marker is retired).
 # Never errors; always returns normally.
 # Mirror of bash _aid_project_state.
 function script:Get-AidProjectState {
@@ -1535,7 +1537,6 @@ function script:Get-AidProjectState {
     $aidDir = Join-Path $Path '.aid'
     if (-not (Test-Path $aidDir -PathType Container)) { return 'no-aid' }
     $manifest = Join-Path $aidDir '.aid-manifest.json'
-    $verFile   = Join-Path $aidDir '.aid-version'
     if (Test-Path $manifest -PathType Leaf) {
         $content = Get-Content -LiteralPath $manifest -Raw -Encoding utf8 -ErrorAction SilentlyContinue
         if ($content -and $content -match '"aid_version"\s*:\s*"([^"]*)"') {
@@ -1545,10 +1546,17 @@ function script:Get-AidProjectState {
             }
         }
     }
-    if (Test-Path $verFile -PathType Leaf) {
-        $vfContent = Get-Content -LiteralPath $verFile -Raw -Encoding utf8 -ErrorAction SilentlyContinue
-        if ($vfContent -and $vfContent -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
-            return $Matches[1]
+    $settings = Join-Path $aidDir 'settings.yml'
+    if (Test-Path $settings -PathType Leaf) {
+        $sLines = Get-Content -LiteralPath $settings -Encoding utf8 -ErrorAction SilentlyContinue
+        foreach ($sLine in $sLines) {
+            if ($sLine -match '^aid_version:\s*(.+)$') {
+                $sVal = $Matches[1]
+                if ($sVal -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
+                    return $Matches[1]
+                }
+                break
+            }
         }
     }
     return 'untracked'
@@ -2373,6 +2381,12 @@ function script:Invoke-AidMigrateRepo {
             [Console]::Error.WriteLine("WARN: aid migrate: relocate legacy summary failed for ${Repo}: $_")
         }
     }
+
+    # ------------------------------------------------------------------
+    # STEP 3b -- RETIRE the redundant .aid/.aid-version marker (version now lives
+    # in the manifest / settings.yml). Best-effort delete; idempotent.
+    # ------------------------------------------------------------------
+    Remove-Item -LiteralPath (Join-Path $aidDir '.aid-version') -Force -ErrorAction SilentlyContinue
 
     # ------------------------------------------------------------------
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.

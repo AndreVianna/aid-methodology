@@ -7,9 +7,15 @@
 #
 # Coverage:
 #   T01  Per-project install via 'aid add <tool> -FromBundle -Target' (aid.ps1)
-#   T02  Install tree exists, manifest + version files present
+#   T02  Install tree exists, manifest present (aid_version recorded in the
+#        manifest; the standalone .aid/.aid-version marker file is retired
+#        and must NOT be created)
 #   T03  Manifest is LF-only, no UTF-8 BOM (byte-level assertion)
-#   T04  .aid-version is LF-only, no UTF-8 BOM
+#   T04  (RETIRED) formerly asserted .aid/.aid-version LF-only/no-BOM. The
+#        marker file no longer exists (see docs/install.md "Manifest
+#        location"); its LF/no-BOM coverage is already provided by T03
+#        (manifest) and T13c (VERSION), so the check was removed rather
+#        than duplicated onto an existing file.
 #   T05  Manifest JSON parses; contains tool + "status":"owned"
 #   T06  Idempotent re-install (exit 0; "up to date" in output)
 #   T07  aid status (via installed bin/aid.ps1) shows the tool
@@ -134,6 +140,7 @@ function Assert-FileLF {
 }
 
 function Assert-FileExists { param([string]$Path, [string]$Label); Assert (Test-Path $Path -PathType Leaf) $Label "file does not exist: $Path" }
+function Assert-FileGone   { param([string]$Path, [string]$Label); Assert (-not (Test-Path $Path -PathType Leaf)) $Label "file still exists: $Path" }
 function Assert-DirExists  { param([string]$Path, [string]$Label); Assert (Test-Path $Path -PathType Container) $Label "directory does not exist: $Path" }
 function Assert-DirGone    { param([string]$Path, [string]$Label); Assert (-not (Test-Path $Path)) $Label "path still exists: $Path" }
 
@@ -362,13 +369,19 @@ Assert-Eq "$($script:_LastRC)" '0' 'T01 install claude-code -> exit 0'
 Assert-DirExists  (Join-Path $ProjT01 '.claude')                     'T02a .claude/ created'
 Assert-FileExists (Join-Path $ProjT01 'CLAUDE.md')                   'T02b CLAUDE.md created'
 Assert-FileExists (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json')   'T02c manifest exists'
-Assert-FileExists (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version')         'T02d .aid-version exists'
+# The standalone .aid/.aid-version marker file is retired -- the installer must NOT
+# create it. The installed AID version is recorded instead in the manifest's
+# top-level aid_version key (asserted below).
+Assert-FileGone (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version')          'T02d .aid-version NOT created (retired)'
+$m02Raw = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json') -Raw
+Assert-Contains $m02Raw '"aid_version"' 'T02e manifest records aid_version (version lives here now)'
 
 # T03: Manifest bytes are LF-only, no BOM.
 Assert-FileLF (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json') 'T03 manifest'
 
-# T04: .aid-version bytes are LF-only, no BOM.
-Assert-FileLF (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version') 'T04 .aid-version'
+# T04: (RETIRED) -- see header comment above. The .aid/.aid-version marker no
+# longer exists, so there is nothing left to byte-check here; T03 (manifest) and
+# T13c (VERSION) already cover the "installer writes LF-only files" invariant.
 
 # T05: Manifest JSON parses; contains claude-code tool + "status":"owned".
 $mPathT05 = Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json'
@@ -470,12 +483,13 @@ Assert-Eq      "$($script:_LastRC)" '0' 'T12a aid remove -Force (all) -> exit 0'
 Assert-Contains $script:_LastOut 'Uninstall complete.' 'T12b remove banner'
 Assert-DirGone (Join-Path $ProjT09 '.codex') 'T12c .codex/ gone after remove'
 
-# T13: Manifest and version files are LF/no-BOM after all CLI operations.
+# T13: Manifest and VERSION files are LF/no-BOM after all CLI operations; the
+# retired .aid/.aid-version marker must still not exist.
 $ProjT13 = Join-Path $TmpRoot 'project-t13'
 New-Item -ItemType Directory -Path $ProjT13 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT13)
 Assert-FileLF (Join-Path (Join-Path $ProjT13 '.aid') '.aid-manifest.json') 'T13a manifest after aid add'
-Assert-FileLF (Join-Path (Join-Path $ProjT13 '.aid') '.aid-version')       'T13b .aid-version after aid add'
+Assert-FileGone (Join-Path (Join-Path $ProjT13 '.aid') '.aid-version')     'T13b .aid-version NOT created after aid add (retired)'
 Assert-FileLF (Join-Path $AidHomeT08 'VERSION')                'T13c AID_HOME/VERSION'
 Write-Host ""
 

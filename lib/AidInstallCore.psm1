@@ -30,7 +30,6 @@
 #   Remove-ManifestTool <manifest> <tool>        - removes a tool section from manifest
 #   Test-ManifestExists <manifest>               - returns $true when manifest exists/parseable
 #   Uninstall-AidTool <manifest> <tool> <target> [aidVerbose] - manifest-driven removal
-#   Write-VersionMarker <target> <version>       - writes <target>/.aid/.aid-version
 #
 # Verbose mode:
 #   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile /
@@ -1490,23 +1489,6 @@ function Invoke-MigrateRetiredLayout {
 }
 
 # ---------------------------------------------------------------------------
-# Version marker
-# ---------------------------------------------------------------------------
-
-# Write-VersionMarker <target> <version>
-function Write-VersionMarker {
-    param([string]$Target, [string]$Version)
-    $aidDir = Join-Path $Target '.aid'
-    if (-not (Test-Path $aidDir -PathType Container)) {
-        New-Item -ItemType Directory -Path $aidDir -Force | Out-Null
-    }
-    $markerPath = Join-Path $aidDir '.aid-version'
-    # Write with LF newline.
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes("$Version`n")
-    [System.IO.File]::WriteAllBytes($markerPath, $bytes)
-}
-
-# ---------------------------------------------------------------------------
 # Project-level provisioning (work-007): required runtime file + VCS hygiene.
 # Parity with bash seed_settings_yml / update_gitignore. Both idempotent.
 # ---------------------------------------------------------------------------
@@ -1692,7 +1674,7 @@ function script:Invoke-MigrateTermExclusions {
 # Returns:
 #   0 - success (all files installed or up-to-date)
 #
-# Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
+# Side effects: writes <target>/.aid/.aid-manifest.json.
 function Install-AidTool {
     param(
         [string]$StagingDir,
@@ -1829,9 +1811,6 @@ function Install-AidTool {
     foreach ($p in $installPaths) { $pruneSet.Add($p) | Out-Null }
     Invoke-PruneToolDirs -Target $Target -Tool $Tool -ManifestPathSet $pruneSet -AidVerbose $AidVerbose
 
-    # Write version marker.
-    Write-VersionMarker -Target $Target -Version $Version
-
     # Project-level provisioning (work-007): seed required settings.yml and
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     script:Initialize-AidSettingsFile -Target $Target -Tool $Tool
@@ -1958,10 +1937,6 @@ function Uninstall-AidTool {
     # project files so a full uninstall leaves .aid/ clean (work-007).
     if (-not (Test-Path $ManifestPath -PathType Leaf)) {
         $aidMetaDir = [System.IO.Path]::GetDirectoryName($ManifestPath)
-        $versionMarker = Join-Path $aidMetaDir '.aid-version'
-        if (Test-Path $versionMarker -PathType Leaf) {
-            Remove-Item -LiteralPath $versionMarker -Force
-        }
         # Remove the install-time-seeded settings.yml (symmetric with the seed).
         # Only fires when NO tools remain; a partial uninstall keeps it.
         $seededSettings = Join-Path $aidMetaDir 'settings.yml'
@@ -2261,7 +2236,6 @@ Export-ModuleMember -Function @(
     'Remove-ManifestTool',
     'Test-ManifestExists',
     'Uninstall-AidTool',
-    'Write-VersionMarker',
     'Get-ManifestToolList',
     'Get-AidStatusBody',
     'Get-AidStatus',

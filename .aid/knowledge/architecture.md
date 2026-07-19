@@ -478,8 +478,9 @@ What a change must never break (each stated as a hard rule + where enforced):
   files are updated in-place only between `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers.
   Enforced by the installer + manifests. `README.md` (search: "Content isolation").
 - **Version lockstep:** the single `VERSION` string MUST stay in sync across
-  `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and `.aid/.aid-version` (see
-  `VERSION` for the current value). Enforced by
+  `packages/npm/package.json`, `packages/pypi/pyproject.toml`, and the `aid_version` key in
+  `.aid/.aid-manifest.json` (see `VERSION` for the current value; the standalone
+  `.aid/.aid-version` marker file is retired). Enforced by
   `.claude/aid/scripts/release/check-version-sync.sh`.
 - **Polyglot parity:** behavior implemented in Bash (`lib/aid-install-core.sh`) MUST match
   the PowerShell equivalent (`lib/AidInstallCore.psm1`). Enforced by

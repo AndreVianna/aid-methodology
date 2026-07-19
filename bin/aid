@@ -1555,9 +1555,12 @@ _aid_resolve_tier() {
 #   "no-aid"      -- directory exists but has no .aid/ subdirectory
 #   "untracked"   -- .aid/ exists but no .aid/.aid-manifest.json is present
 #   "vX.Y.Z"      -- tracked; semver version string from .aid/.aid-manifest.json
-#                    (key "aid_version"), falling back to .aid/.aid-version
+#                    (key "aid_version"), falling back to a top-level aid_version
+#                    in .aid/settings.yml (tool-less projects; the .aid-version
+#                    marker is retired).
 # The version is extracted by the same semver regex on both paths -- a malformed
-# aid_version value in the manifest falls through to untracked (not returned raw).
+# aid_version value in the manifest falls through to the settings fallback, then
+# to untracked (never returned raw).
 # Never errors; always returns 0.
 _aid_project_state() {
     local _path="$1"
@@ -1570,10 +1573,9 @@ _aid_project_state() {
         return 0
     fi
     local _manifest="${_path}/.aid/.aid-manifest.json"
-    local _ver_file="${_path}/.aid/.aid-version"
     if [[ -f "$_manifest" ]]; then
         local _ver
-        # Extract aid_version value; then validate as semver (same guard as .aid-version branch).
+        # Extract aid_version value; then validate as semver (same guard as the settings fallback below).
         _ver="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "$_manifest" 2>/dev/null \
             | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/' \
             | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' \
@@ -1583,12 +1585,17 @@ _aid_project_state() {
             return 0
         fi
     fi
-    # Fallback: .aid/.aid-version plain-text file.
-    if [[ -f "$_ver_file" ]]; then
-        local _vf_ver
-        _vf_ver="$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' "$_ver_file" 2>/dev/null | head -1)"
-        if [[ -n "$_vf_ver" ]]; then
-            printf '%s\n' "$_vf_ver"
+    # Fallback: top-level aid_version in .aid/settings.yml (tool-less projects
+    # record their AID version here; the .aid/.aid-version marker is retired).
+    local _settings="${_path}/.aid/settings.yml"
+    if [[ -f "$_settings" ]]; then
+        local _sv_ver
+        _sv_ver="$(grep -E '^aid_version:' "$_settings" 2>/dev/null \
+            | head -1 \
+            | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' \
+            | head -1)"
+        if [[ -n "$_sv_ver" ]]; then
+            printf '%s\n' "$_sv_ver"
             return 0
         fi
     fi
@@ -2073,6 +2080,14 @@ _aid_migrate_repo() {
         mv -n "${_old_summary}" "${_kb_new}" 2>/dev/null || \
             echo "WARN: aid migrate: relocate legacy summary failed for ${repo} (continuing)" >&2
     fi
+
+    # ------------------------------------------------------------------
+    # STEP 3b -- RETIRE the redundant .aid/.aid-version marker. The AID version
+    # is recorded in the manifest (.aid-manifest.json aid_version) for tool
+    # installs and in settings.yml (aid_version) for tool-less projects, so the
+    # standalone marker is pure duplication. Best-effort delete; idempotent.
+    # ------------------------------------------------------------------
+    rm -f "${repo}/.aid/.aid-version" 2>/dev/null || true
 
     # ------------------------------------------------------------------
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.

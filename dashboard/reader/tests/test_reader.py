@@ -316,10 +316,7 @@ class TestParseToolInfo(unittest.TestCase):
         shutil.rmtree(self.tmp, ignore_errors=True)
 
     def test_absent_manifest_returns_false(self):
-        info, br = parse_tool_info(
-            self.aid / ".aid-manifest.json",
-            self.aid / ".aid-version",
-        )
+        info, br = parse_tool_info(self.aid / ".aid-manifest.json")
         self.assertFalse(info.manifest_present)
         self.assertIsNone(info.aid_version)
         self.assertEqual(br, 0)
@@ -334,7 +331,7 @@ class TestParseToolInfo(unittest.TestCase):
         mp = self.aid / ".aid-manifest.json"
         mp.write_text(json.dumps(manifest), encoding="utf-8")
 
-        info, br = parse_tool_info(mp, self.aid / ".aid-version")
+        info, br = parse_tool_info(mp)
         self.assertTrue(info.manifest_present)
         self.assertEqual(info.aid_version, "1.2.3")
         self.assertEqual(info.installed_at, "2026-01-01T00:00:00Z")
@@ -342,19 +339,21 @@ class TestParseToolInfo(unittest.TestCase):
         self.assertIn("codex", info.tools_installed)
         self.assertGreater(br, 0)
 
-    def test_version_file_fallback(self):
+    def test_version_file_no_longer_read(self):
+        # The retired .aid/.aid-version marker is no longer consulted: with no
+        # manifest, aid_version is None even if the legacy marker is present.
         vp = self.aid / ".aid-version"
         vp.write_text("2.0.0\n", encoding="utf-8")
 
-        info, br = parse_tool_info(self.aid / ".aid-manifest.json", vp)
+        info, br = parse_tool_info(self.aid / ".aid-manifest.json")
         self.assertFalse(info.manifest_present)
-        self.assertEqual(info.aid_version, "2.0.0")
-        self.assertGreater(br, 0)
+        self.assertIsNone(info.aid_version)
+        self.assertEqual(br, 0)
 
     def test_malformed_json_returns_false(self):
         mp = self.aid / ".aid-manifest.json"
         mp.write_text("not json{{", encoding="utf-8")
-        info, br = parse_tool_info(mp, self.aid / ".aid-version")
+        info, br = parse_tool_info(mp)
         self.assertFalse(info.manifest_present)
 
 

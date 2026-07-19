@@ -39,8 +39,6 @@
 #   manifest_exists <manifest>  -> exit 0 when manifest exists and is parseable, else exit 6
 #   uninstall_tool <manifest> <tool> <target>
 #                               -> manifest-driven removal of one tool's files
-#   write_version_marker <target> <version>
-#                               -> writes <target>/.aid/.aid-version
 #
 # Verbose mode:
 #   Set AID_VERBOSE=1 (or pass --verbose to install.sh) to print per-file
@@ -1505,7 +1503,7 @@ aid_status_body() {
 
 # aid_status <target>
 # Renders the "aid status" output for the AID project rooted at <target>.
-# Reads <target>/.aid/.aid-manifest.json (and .aid/.aid-version).
+# Reads <target>/.aid/.aid-manifest.json.
 # Returns:
 #   0 - manifest found; status printed to stdout.
 #   7 - no manifest in <target>; "not an AID project here" message printed to stdout.
@@ -1992,17 +1990,6 @@ _migrate_term_exclusions() {
 }
 
 # ---------------------------------------------------------------------------
-# Version marker
-# ---------------------------------------------------------------------------
-
-# write_version_marker <target> <version>
-write_version_marker() {
-    local target="$1" version="$2"
-    mkdir -p "${target}/.aid"
-    printf '%s\n' "$version" > "${target}/.aid/.aid-version"
-}
-
-# ---------------------------------------------------------------------------
 # Project-level provisioning (work-007): required runtime file + VCS hygiene.
 # Both are idempotent and safe to run once per tool during a multi-tool add.
 # ---------------------------------------------------------------------------
@@ -2137,7 +2124,7 @@ update_gitignore() {
 # Returns:
 #   0 - success (all files installed or up-to-date)
 #
-# Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
+# Side effects: writes <target>/.aid/.aid-manifest.json.
 install_tool() {
     local staging="$1" tool="$2" target="$3" version="$4" force="${5:-0}"
     local manifest="${target}/.aid/.aid-manifest.json"
@@ -2282,9 +2269,6 @@ install_tool() {
     _prune_tool_dirs "$target" "$tool" "_prune_manifest_set"
     unset _prune_manifest_set
 
-    # Write version marker.
-    write_version_marker "$target" "$version"
-
     # Project-level provisioning (work-007): seed the required settings.yml and
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     seed_settings_yml "$target" "$tool"
@@ -2421,7 +2405,6 @@ uninstall_tool() {
     if [[ ! -f "$manifest" ]]; then
         local aid_meta_dir
         aid_meta_dir="$(dirname "$manifest")"
-        rm -f "${aid_meta_dir}/.aid-version"
         # Remove the install-time-seeded settings.yml (symmetric with seed_settings_yml).
         # Only fires when NO tools remain -- a partial uninstall keeps settings.yml
         # for the remaining tools.

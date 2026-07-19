@@ -22,7 +22,6 @@ class LocatorResult(NamedTuple):
     aid_dir: Path          # resolved .aid/ path (always set; may not exist)
     aid_exists: bool       # whether .aid/ actually exists on disk
     manifest_path: Path    # .aid/.aid-manifest.json (may not exist)
-    version_path: Path     # .aid/.aid-version (may not exist; fallback for ToolInfo)
     settings_path: Path    # .aid/settings.yml
     kb_dir: Path           # .aid/knowledge/ (may not exist)
     work_dirs: list[Path]  # .aid/works/* directories (sorted, dirs only)
@@ -44,7 +43,6 @@ def locate_aid_root(repo_root: str | Path) -> LocatorResult:
     aid_dir = root / ".aid"
 
     manifest_path = aid_dir / ".aid-manifest.json"
-    version_path = aid_dir / ".aid-version"
     settings_path = aid_dir / "settings.yml"
     kb_dir = aid_dir / "knowledge"
     heartbeat_dir = aid_dir / ".heartbeat"
@@ -59,7 +57,6 @@ def locate_aid_root(repo_root: str | Path) -> LocatorResult:
         aid_dir=aid_dir,
         aid_exists=aid_exists,
         manifest_path=manifest_path,
-        version_path=version_path,
         settings_path=settings_path,
         kb_dir=kb_dir,
         work_dirs=work_dirs,

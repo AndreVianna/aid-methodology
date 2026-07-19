@@ -111,24 +111,22 @@ class ParsedWork:
 
 
 # ---------------------------------------------------------------------------
-# Level-0: ToolInfo from .aid-manifest.json (+ .aid-version fallback)
+# Level-0: ToolInfo from .aid-manifest.json
 # ---------------------------------------------------------------------------
 
 def parse_tool_info(
     manifest_path: Path,
-    version_path: Path,
 ) -> tuple[ToolInfo, int]:
     """Parse .aid/.aid-manifest.json into ToolInfo.
 
-    Falls back to .aid/.aid-version (plain string) for aid_version if the JSON
-    manifest is absent.
-
     Returns (ToolInfo, bytes_read).
-    manifest_present=False -> all fields None, no error (DM-2).
+    manifest_present=False -> all fields None, no error (DM-2). The retired
+    .aid/.aid-version marker is no longer consulted; a tool-less project (no
+    manifest) records its AID version in settings.yml instead, surfaced by the
+    home-grid reader.
     """
     bytes_read = 0
 
-    # Try manifest JSON first.
     if manifest_path.is_file():
         try:
             raw = read_bytes_bounded(manifest_path)
@@ -149,21 +147,7 @@ def parse_tool_info(
             tools_installed=tools_installed,
         ), bytes_read
 
-    # Fallback: .aid/.aid-version (plain string with the version)
-    if version_path.is_file():
-        try:
-            raw = read_bytes_bounded(version_path)
-            bytes_read += len(raw)
-            version_str = raw.decode("utf-8", errors="replace").strip()
-        except OSError:
-            version_str = None
-
-        return ToolInfo(
-            manifest_present=False,
-            aid_version=version_str or None,
-        ), bytes_read
-
-    # No manifest, no version file.
+    # No manifest.
     return ToolInfo(manifest_present=False), bytes_read
 
 

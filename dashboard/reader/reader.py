@@ -3,7 +3,7 @@
 #
 # Feature-002 Feature Flow (step numbers match the SPEC.md):
 #   1. RESOLVE    verify aid_root/.aid exists; absent -> empty RepoModel + parse_warning
-#   2. LEVEL-0    parse .aid/.aid-manifest.json (+ .aid/.aid-version)    -> ToolInfo
+#   2. LEVEL-0    parse .aid/.aid-manifest.json    -> ToolInfo
 #   3. LEVEL-1    parse .aid/settings.yml + stat .aid/knowledge/          -> RepoInfo
 #   4. ENUMERATE  list .aid/works/* (all direct subdirs; name not a filter) -> work_id list
 #   5. PER WORK   read STATE.md once; parse normalized block + tasks + Q&A -> WorkModel list
@@ -484,7 +484,7 @@ def _read_repo_full(
         return empty_model, {}
 
     # Step 2: LEVEL-0 -- ToolInfo (LC-2)
-    tool_info, br = parse_tool_info(loc.manifest_path, loc.version_path)
+    tool_info, br = parse_tool_info(loc.manifest_path)
     bytes_read += br
 
     # Step 3: LEVEL-1 -- RepoInfo + KbStateRef (LC-2)

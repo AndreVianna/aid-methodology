@@ -1085,7 +1085,7 @@ mkdir -p "${_P01_TRACKED}/.aid"
 printf '{"aid_version": "1.2.3", "tools": {"codex": {}}}\n' \
     > "${_P01_TRACKED}/.aid/.aid-manifest.json"
 
-# Path 2: untracked -- .aid/ exists but no manifest (no .aid-manifest.json / .aid-version).
+# Path 2: untracked -- .aid/ exists but no manifest (no .aid-manifest.json).
 _P01_UNTRACKED=$(mktemp -d "${TMP}/p01_untracked.XXXXXX")
 mkdir -p "${_P01_UNTRACKED}/.aid"
 

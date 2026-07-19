@@ -16,7 +16,7 @@
 #   E2E01 — release.sh --dry-run produces 5 tarballs + SHA256SUMS.
 #   E2E02 — Independent sha256sum -c passes against the staged SHA256SUMS.
 #   E2E03 — install.sh add <tool> --from-bundle <staged-tarball> (claude-code):
-#            byte-fidelity + manifest + .aid-version.
+#            byte-fidelity + manifest (aid_version).
 #   E2E04 — Checksum tamper → install.sh exits 4.
 #   E2E05 — Idempotent re-run (update) → exit 0, "Up to date:".
 #   E2E06 — Uninstall → exit 0, dirs removed.
@@ -157,7 +157,7 @@ for _t in "${TOOLS[@]}"; do
 done
 
 # ---------------------------------------------------------------------------
-# E2E03 — install.sh --from-bundle <staged-tarball>: byte-fidelity + manifest + .aid-version.
+# E2E03 — install.sh --from-bundle <staged-tarball>: byte-fidelity + manifest (aid_version).
 # Uses claude-code as the representative tool.
 # ---------------------------------------------------------------------------
 echo "--- E2E03: install.sh --from-bundle (claude-code, from staged tarball) ---"
@@ -205,10 +205,13 @@ assert_file_contains "${E2E_MANIFEST}" '"CLAUDE.md"'       "E2E03k manifest list
 assert_file_contains "${E2E_MANIFEST}" '"sha256"'          "E2E03l manifest records root_agent sha256"
 assert_file_contains "${E2E_MANIFEST}" '"status": "owned"' "E2E03m root_agent status is owned"
 
-# Version marker.
-assert_file_exists "${PRIMARY_TARGET}/.aid/.aid-version" "E2E03n .aid-version marker written"
-assert_eq "$(cat "${PRIMARY_TARGET}/.aid/.aid-version")" "${STAGE_VERSION}" \
-    "E2E03o .aid-version contains correct version"
+# Version marker: the standalone .aid/.aid-version file is retired — the installed
+# AID release version lives in the manifest's aid_version key instead.
+assert_eq "$([[ -e "${PRIMARY_TARGET}/.aid/.aid-version" ]] && echo exists || echo gone)" "gone" \
+    "E2E03n .aid-version marker NOT written (retired)"
+assert_eq "$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${E2E_MANIFEST}" | sed 's/.*"\([^"]*\)"$/\1/')" \
+    "${STAGE_VERSION}" \
+    "E2E03o manifest aid_version contains correct version"
 
 # Manifest must not contain absolute paths.
 assert_output_not_contains "$(cat "${E2E_MANIFEST}")" "${PRIMARY_TARGET}" \
@@ -456,12 +459,15 @@ else
               && echo same || echo diff)
     assert_eq "${PS1_CMP}" "same" "E2E08f ps1-installed CLAUDE.md byte-identical to clone profile"
 
-    # Manifest + version marker.
+    # Manifest + version: the standalone .aid/.aid-version file is retired — the
+    # installed AID release version lives in the manifest's aid_version key instead.
     PS1_MANIFEST="${PS1_TARGET}/.aid/.aid-manifest.json"
     assert_file_exists "${PS1_MANIFEST}"  "E2E08g ps1 manifest created"
-    assert_file_exists "${PS1_TARGET}/.aid/.aid-version" "E2E08h ps1 .aid-version written"
-    assert_eq "$(cat "${PS1_TARGET}/.aid/.aid-version")" "${STAGE_VERSION}" \
-        "E2E08i ps1 .aid-version contains correct version"
+    assert_eq "$([[ -e "${PS1_TARGET}/.aid/.aid-version" ]] && echo exists || echo gone)" "gone" \
+        "E2E08h ps1 .aid-version NOT written (retired)"
+    assert_eq "$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${PS1_MANIFEST}" | sed 's/.*"\([^"]*\)"$/\1/')" \
+        "${STAGE_VERSION}" \
+        "E2E08i ps1 manifest aid_version contains correct version"
 
     # E2E08b — Idempotent update (verbose for per-file assertion).
     # FR10: 'aid update' no longer accepts a per-tool positional; it updates

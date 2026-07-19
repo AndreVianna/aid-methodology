@@ -233,7 +233,10 @@ run_ps1 "${PS_HOME_A}" add codex \
 assert_exit_eq "$RC_PS1" 0 "PAR029-A02 PS1 add codex → exit 0"
 
 # Both targets must have the same structure.
-for _chk in .codex AGENTS.md .aid/.aid-manifest.json .aid/.aid-version; do
+# (.aid/.aid-version is retired -- the installer no longer writes it -- so it is
+# excluded from this comparison set; the manifest's aid_version key carries the
+# installed version instead and is compared below.)
+for _chk in .codex AGENTS.md .aid/.aid-manifest.json; do
     if [[ -d "${T_SH_A}/${_chk}" ]]; then
         assert_dir_exists "${T_PS1_A}/${_chk}" "PAR029-A03 both have ${_chk}/"
     else
@@ -245,10 +248,6 @@ done
 SH_MANI_NORM=$(manifest_normalize "${T_SH_A}/.aid/.aid-manifest.json")
 PS_MANI_NORM=$(manifest_normalize "${T_PS1_A}/.aid/.aid-manifest.json")
 assert_eq "$SH_MANI_NORM" "$PS_MANI_NORM" "PAR029-A04 Bash↔PS1 manifest content identical (modulo timestamps)"
-
-# .aid-version identical.
-assert_eq "$(cat "${T_SH_A}/.aid/.aid-version")" "$(cat "${T_PS1_A}/.aid/.aid-version")" \
-    "PAR029-A05 .aid-version identical"
 
 # ===========================================================================
 # PAR029-B: status output parity after identical install
@@ -2614,7 +2613,8 @@ run_ps1_global() {
 #
 # Set up two identical fixture registries (one for Bash, one for PS1),
 # each containing three projects with distinct states:
-#   - tracked (has .aid/.aid-manifest.json + .aid-version)
+#   - tracked (has .aid/.aid-manifest.json with an aid_version key -- the
+#     standalone .aid/.aid-version marker is retired and is never written/read)
 #   - untracked (.aid/ exists, no manifest)
 #   - no-aid (registered while .aid/ existed; .aid/ removed afterwards so
 #             list renders the "no-aid" state for that entry)
@@ -2633,7 +2633,8 @@ _X_TRACKED="$(mktemp -d "${TMP}/xtracked.XXXXXX")"
 _X_UNTRACKED="$(mktemp -d "${TMP}/xuntracked.XXXXXX")"
 _X_NOAID="$(mktemp -d "${TMP}/xnoaid.XXXXXX")"
 
-# tracked: .aid/ with manifest + version.
+# tracked: .aid/ with manifest carrying aid_version (the version now lives here;
+# the retired standalone .aid/.aid-version marker is intentionally NOT written).
 mkdir -p "${_X_TRACKED}/.aid"
 cat > "${_X_TRACKED}/.aid/.aid-manifest.json" << XTRACKEOF
 {
@@ -2641,7 +2642,6 @@ cat > "${_X_TRACKED}/.aid/.aid-manifest.json" << XTRACKEOF
   "tools": {}
 }
 XTRACKEOF
-printf '0.7.0\n' > "${_X_TRACKED}/.aid/.aid-version"
 
 # untracked: .aid/ exists, no manifest.
 mkdir -p "${_X_UNTRACKED}/.aid"

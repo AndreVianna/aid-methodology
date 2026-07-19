@@ -427,7 +427,6 @@ function locateAidRoot(repoRoot) {
   const aidDir = join(root, ".aid");
 
   const manifestPath = join(aidDir, ".aid-manifest.json");
-  const versionPath = join(aidDir, ".aid-version");
   const settingsPath = join(aidDir, "settings.yml");
   const kbDir = join(aidDir, "knowledge");
   const heartbeatDir = join(aidDir, ".heartbeat");
@@ -449,7 +448,6 @@ function locateAidRoot(repoRoot) {
     aidDir,
     aidExists,
     manifestPath,
-    versionPath,
     settingsPath,
     kbDir,
     workDirs,
@@ -500,7 +498,7 @@ function statPath(p) {
 // Level-0: ToolInfo from .aid-manifest.json (mirrors parsers.py parse_tool_info)
 // ---------------------------------------------------------------------------
 
-function parseToolInfo(manifestPath, versionPath) {
+function parseToolInfo(manifestPath) {
   let bytesRead = 0;
 
   if (existsSync(manifestPath)) {
@@ -535,25 +533,9 @@ function parseToolInfo(manifestPath, versionPath) {
     ];
   }
 
-  // Fallback: .aid-version
-  if (existsSync(versionPath)) {
-    let raw;
-    try {
-      raw = readFileBounded(versionPath);
-      bytesRead += raw.length;
-    } catch (_) {
-      return [
-        { manifest_present: false, aid_version: null, installed_at: null, tools_installed: [] },
-        bytesRead,
-      ];
-    }
-    const versionStr = raw.toString("utf-8").trim() || null;
-    return [
-      { manifest_present: false, aid_version: versionStr, installed_at: null, tools_installed: [] },
-      bytesRead,
-    ];
-  }
-
+  // No manifest. (The retired .aid/.aid-version marker is no longer consulted;
+  // a tool-less project records its AID version in settings.yml, surfaced by the
+  // home-grid reader.)
   return [
     { manifest_present: false, aid_version: null, installed_at: null, tools_installed: [] },
     bytesRead,
@@ -2844,7 +2826,7 @@ function _readRepoFull(root) {
   }
 
   // Step 2: LEVEL-0 ToolInfo
-  const [toolInfo, br0] = parseToolInfo(loc.manifestPath, loc.versionPath);
+  const [toolInfo, br0] = parseToolInfo(loc.manifestPath);
   bytesRead += br0;
 
   // Step 3: LEVEL-1 RepoInfo
