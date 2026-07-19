@@ -6,41 +6,17 @@
 name: <project-name>               # set during /aid-config INIT
 description: <project-description>  # sole source of truth (not in CLAUDE.md/AGENTS.md)
 type: brownfield                   # brownfield | greenfield
+source_control: git                # none | git | svn | mercurial
+minimum_grade: A                   # global quality bar: every REVIEW-state skill
+                                   # exits only when its grade is >= this
+heartbeat_interval: 1              # minutes between long-running sub-agent heartbeat updates
 
-# Global quality bar: every skill with a REVIEW state exits only when its grade
-# is >= minimum_grade. Per-skill overrides at the bottom of this file.
-minimum_grade: A
-
-execution:
-  max_parallel_tasks: 5   # parallel dispatch pool capacity
-
-traceability:
-  heartbeat_interval: 1   # minutes between long-running sub-agent heartbeat updates
-
-# kb_baseline: git baseline the KB reflects. Written by aid-discover / aid-housekeep;
-# absent until the first KB generation.
-# kb_baseline:
-#   branch: master
-#   tip_date: 2026-06-12T14:03:00Z   # ISO-8601 tip commit date at generation time
-
-discovery:
-  # doc_set and term_exclusions are runtime-written by aid-discover, not seeded here.
-  closure:
-    max_clean_passes: 2   # consecutive zero-ungrounded DETECT passes required to close
-    max_rounds: 4         # hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds
-    token_budget: 0       # 0 = use pass/round caps; >0 = stop past this cumulative loop budget
-
-# triage: thresholds the 3-path classifier PROPOSES from (human confirms).
-# RM1 = source files, RM2 = source LOC, RM3 = dir count, RM4 = candidate-concept count.
-triage:
-  greenfield_max_source_files: 5     # RM1 <= this (with RM2 <= loc) => greenfield
-  greenfield_max_source_loc:   500   # RM2 ceiling for greenfield
-  large_min_source_loc:        20000 # RM2 >= this => brownfield-large
-  large_min_dirs:              25    # RM3 >= this => brownfield-large
-  large_min_concepts:          40    # RM4 >= this => brownfield-large
-
-# Optional per-skill overrides of the global minimum_grade (uncomment + set).
-# Keys: discover, describe, define, specify, plan, detail, execute, deploy, monitor, summary, housekeep.
-# Valid grades: A+ .. F (E+/E/E- rarely useful as a floor; most projects pick A..D).
-# execute:
-#   minimum_grade: A+
+# knowledge: KB baseline + discovery inputs. `source` is the branch the KB is
+# compared against for freshness (ties to source_control); `last_update` is the
+# ISO-8601 timestamp of the last KB build; doc_set + term_exclusions are written
+# by aid-discover at runtime (not seeded here).
+knowledge:
+  source: master                   # branch compared for KB freshness (set to your main branch)
+  # last_update:                   # ISO-8601 datetime of the last KB build vs source
+  # doc_set: []                    # runtime-written by aid-discover
+  # term_exclusions: []            # runtime-written by aid-discover

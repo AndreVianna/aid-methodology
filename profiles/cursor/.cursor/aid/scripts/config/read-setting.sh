@@ -301,6 +301,11 @@ if [[ "$MODE" == "path" ]]; then
             project.description)  val=$(lookup_toplevel "$SETTINGS_FILE" "description") ;;
             project.type)         val=$(lookup_toplevel "$SETTINGS_FILE" "type") ;;
             review.minimum_grade) val=$(lookup_toplevel "$SETTINGS_FILE" "minimum_grade") ;;
+            # heartbeat_interval promoted to top level (traceability: wrapper removed)
+            traceability.heartbeat_interval) val=$(lookup_toplevel "$SETTINGS_FILE" "heartbeat_interval") ;;
+            # doc_set / term_exclusions moved from discovery: into knowledge:
+            discovery.doc_set)         val=$(lookup_list "$SETTINGS_FILE" "knowledge" "doc_set") ;;
+            discovery.term_exclusions) val=$(lookup_list "$SETTINGS_FILE" "knowledge" "term_exclusions") ;;
         esac
     fi
     if [[ -n "$val" ]]; then
