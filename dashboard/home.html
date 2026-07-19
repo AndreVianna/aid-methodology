@@ -558,6 +558,23 @@ footer {
    from the teal pipelines below. */
 .kt-head { color: var(--info); }
 .kt-section .card { border-left: 3px solid var(--info); }
+
+/* List-CRUD scaffold (feature-007-connectors-list / feature-010-external-sources-list,
+   task-022): the Connectors table and the External Sources list share this read-view +
+   write_enabled-gated Add row + inline error pattern. Unlike index.html's .card-actions
+   (KI-004 -- a sibling row beside a card-link tile, so buttons never nest inside an
+   anchor), these entries are table rows / list items with no anchor-nesting constraint,
+   so each row/item owns its own Remove control directly. */
+.list-crud-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.25rem; }
+.list-crud-table th { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); color: var(--text-dim); font-weight: 500; }
+.list-crud-table td { padding: 0.35rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--border); }
+.list-crud-empty { color: var(--text-dim); }
+.list-crud-hint { font-size: 0.78rem; color: var(--text-dim); margin: 0.2rem 0 0; }
+.list-crud-list { list-style: none; padding: 0; margin: 0.25rem 0 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.list-crud-list-item { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+.list-crud-list-item:last-child { border-bottom: none; }
+.list-crud-add-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
+
 /* Work-card progress bar: Readiness (pre-execution) vs Execution (task completion) */
 .progress-row { margin: 0.55rem 0 0; }
 .progress-track { height: 6px; background: var(--bg-sunken); border-radius: 4px; overflow: hidden; }
@@ -951,6 +968,15 @@ footer {
     <!-- Knowledge Base section — fixed-size header band, rendered first -->
     <h2 class="main-section-head kt-head">Knowledge Base</h2>
     <div class="grid g2 kt-section" id="knowledge-tool-section"></div>
+
+    <!-- Connectors section (feature-007-connectors-list, task-022): sibling of the KB
+         band -- connectors are the other project-level .aid/-derived registry. -->
+    <h2 class="main-section-head" style="margin-top:2rem">Connectors</h2>
+    <div id="connectors-section"></div>
+
+    <!-- External Sources section (feature-010-external-sources-list, task-022) -->
+    <h2 class="main-section-head" style="margin-top:2rem">External Sources</h2>
+    <div id="external-sources-section"></div>
 
     <!-- Pipelines section -->
     <h2 class="main-section-head" style="margin-top:2rem">Pipelines</h2>
@@ -1828,6 +1854,15 @@ footer {
       ktEl.appendChild(_renderKbCard(model.repo && model.repo.kb_state));
     }
 
+    // Render Connectors section (feature-007, task-022) -- manages its own
+    // container directly (mirrors _renderProjectHeader), so no innerHTML/appendChild
+    // here; write_enabled is read from the SAME envelope graft onSuccess already
+    // performs for schema_version/details/generated_by (line ~1163).
+    _renderConnectorsCard(model.repo && model.repo.connectors, model.write_enabled === true);
+
+    // Render External Sources section (feature-010, task-022)
+    _renderExternalSourcesCard(model.repo, model.write_enabled === true);
+
     // Update freshness badge
     var readAt = model.read && model.read.read_at;
     var hasWarnings = model.read && model.read.parse_warnings && model.read.parse_warnings.length > 0;
@@ -2260,6 +2295,517 @@ footer {
     }
 
     return card;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Connectors section (feature-007-connectors-list, task-022): a list-CRUD
+  // sibling of the KB band -- view table (always shown) + write_enabled-gated
+  // Add form + per-row Remove (confirm() guard) + inline error surface. Reuses
+  // feature-002's POST ./api/op envelope (target: {} -- project-scoped, no
+  // work_id) via the generic postOp() helper (feature-006/task-010, below) and
+  // the truthful _refetchModelForHeader() re-fetch/re-render round-trip.
+  // ---------------------------------------------------------------------------
+
+  var CONNECTOR_TYPES = ['mcp', 'api', 'ssh', 'url', 'cli'];
+  var CONNECTOR_AUTH_METHODS = ['none', 'token', 'pat', 'oauth', 'ssh-key'];
+  var CONNECTOR_ENDPOINT_REQUIRED_TYPES = ['api', 'ssh', 'url', 'cli'];
+  var CONNECTOR_AUTH_REQUIRED_TYPES = ['api', 'url', 'cli'];
+
+  // connectorsUiState: transient UI-only Add-form state (never sent to/read from
+  // the server). `fields` mirrors the Add form's live input values so a container
+  // rebuild -- the poll loop calls renderMainPage (and so _renderConnectorsCard)
+  // unconditionally on every successful poll, exactly like the KB card -- never
+  // discards an in-progress entry: every rebuild re-populates each input from
+  // `fields` instead of a fixed default (the only cost is a focus reset if a poll
+  // tick lands mid-keystroke, never data loss). `saving` is true for the duration
+  // of any in-flight connector.set/connector.remove request; while true,
+  // _renderConnectorsCard's own guard (below) skips a poll-triggered rebuild so a
+  // just-drawn busy/disabled state is not clobbered mid-request by a concurrent
+  // poll tick.
+  var connectorsUiState = {
+    saving: false,
+    errorMessage: null,
+    fields: { name: '', type: 'mcp', endpoint: '', auth: 'none', secret_ref: '' }
+  };
+
+  // One-shot explicit-render flag (mirrors _projectHeaderExplicitRender / the
+  // delivery-001 dogfood fix, commit 41ea5d28): entering the saving state must
+  // force _renderConnectorsCard to redraw the disabled/busy form immediately, even
+  // though the guard below would otherwise skip a render while saving is true --
+  // this is EXACTLY the delivery-001 bug shape (set a guard-tripping flag, then
+  // call the guarded render expecting it to draw the new state) applied to a
+  // `saving` flag instead of an `editingField`. The caller sets this flag right
+  // before the forced render; the guard consumes + clears it in the same call, so
+  // only that one render bypasses the skip -- a later poll-loop-triggered render
+  // still sees the flag already cleared and so still preserves the in-flight
+  // busy state untouched.
+  var _connectorsExplicitRender = false;
+  function _consumeConnectorsExplicitRender() {
+    var v = _connectorsExplicitRender;
+    _connectorsExplicitRender = false;
+    return v;
+  }
+
+  // Manages its own container directly (mirrors _renderProjectHeader) -- the
+  // caller (renderMainPage) does not touch #connectors-section itself.
+  function _renderConnectorsCard(connectors, writeEnabled) {
+    var container = document.getElementById('connectors-section');
+    if (!container) return;
+    if (!_consumeConnectorsExplicitRender() && connectorsUiState.saving) return;
+
+    container.innerHTML = '';
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+
+    var list = connectors || [];
+    if (list.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'meta list-crud-empty';
+      empty.textContent = 'No connectors registered.';
+      panel.appendChild(empty);
+    } else {
+      panel.appendChild(_buildConnectorsTable(list, writeEnabled));
+    }
+
+    if (connectorsUiState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.setAttribute('aria-live', 'polite');
+      err.textContent = connectorsUiState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    if (writeEnabled) {
+      panel.appendChild(_buildConnectorAddForm());
+    }
+
+    container.appendChild(panel);
+  }
+
+  // Read table: Connector · Type · Endpoint · Auth · Secret Ref · Summary --
+  // matching build-connectors-index.sh's column contract (feature-007 UI Specs),
+  // plus a write_enabled-only trailing Actions column for per-row Remove.
+  function _buildConnectorsTable(list, writeEnabled) {
+    var table = document.createElement('table');
+    table.className = 'list-crud-table';
+
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    var headers = ['Connector', 'Type', 'Endpoint', 'Auth', 'Secret Ref', 'Summary'];
+    for (var h = 0; h < headers.length; h++) {
+      var th = document.createElement('th');
+      th.textContent = headers[h];
+      headRow.appendChild(th);
+    }
+    if (writeEnabled) headRow.appendChild(document.createElement('th'));
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    for (var i = 0; i < list.length; i++) {
+      tbody.appendChild(_buildConnectorRow(list[i], writeEnabled));
+    }
+    table.appendChild(tbody);
+    return table;
+  }
+
+  // Build one connector's <tr> -- takes the connector as its OWN function
+  // parameter (not a closure over a shared loop variable), so its Remove
+  // handler's captured `c`/`stem` is safe per-row (matches _renderWorkCard's
+  // established per-item-function convention elsewhere in this file).
+  function _buildConnectorRow(c, writeEnabled) {
+    var tr = document.createElement('tr');
+
+    var tdName = document.createElement('td');
+    tdName.textContent = c.name || c.stem || '';
+    tr.appendChild(tdName);
+
+    var tdType = document.createElement('td');
+    tdType.textContent = c.connection_type || '';
+    tr.appendChild(tdType);
+
+    var tdEndpoint = document.createElement('td');
+    tdEndpoint.textContent = c.endpoint || '—';
+    tr.appendChild(tdEndpoint);
+
+    var tdAuth = document.createElement('td');
+    tdAuth.textContent = c.auth_method || '—';
+    tr.appendChild(tdAuth);
+
+    var tdSecret = document.createElement('td');
+    tdSecret.textContent = c.secret_reference || '—';
+    // Secret hint (feature-007 §Security/§UI Specs): an aid-managed credentialed
+    // connector (auth_method != none) whose secret_reference uses the file: form
+    // may not have had its VALUE captured yet -- captured out-of-band via
+    // `connector-secret.sh write <stem>`. The reader never reads .secrets/
+    // contents (NFR2), so this hint is unconditional on the descriptor shape
+    // alone, never an actual on-disk check; no secret value is ever read,
+    // rendered, or posted here.
+    if (c.auth_method && c.auth_method !== 'none' && c.secret_reference &&
+        c.secret_reference.indexOf('file:') === 0) {
+      var hint = document.createElement('p');
+      hint.className = 'meta list-crud-hint';
+      hint.textContent = 'secret not yet stored — run connector-secret.sh write ' + (c.stem || '');
+      tdSecret.appendChild(hint);
+    }
+    tr.appendChild(tdSecret);
+
+    var tdSummary = document.createElement('td');
+    tdSummary.textContent = c.summary || '—';
+    tr.appendChild(tdSummary);
+
+    if (writeEnabled) {
+      var tdActions = document.createElement('td');
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-ghost';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', function () {
+        // feature-007 §UI Specs: Remove uses a confirm() guard (a deliberate
+        // per-feature UX choice -- unlike index.html's Remove-Project inline-flip
+        // pattern, KI-004). A stale/already-removed stem simply 404s, surfaced
+        // inline by _submitConnectorRemove's failure branch.
+        if (!window.confirm('Remove connector "' + (c.name || c.stem) + '"?')) return;
+        _submitConnectorRemove(c.stem);
+      });
+      tdActions.appendChild(removeBtn);
+      tr.appendChild(tdActions);
+    }
+
+    return tr;
+  }
+
+  // Add form: name / type <select> / endpoint / auth <select> / secret_reference.
+  // Always rendered when write_enabled (feature-007 UI Specs describe no separate
+  // open/close toggle); every field's value lives in connectorsUiState.fields so a
+  // poll-triggered rebuild reconstructs the SAME in-progress entry.
+  function _buildConnectorAddForm() {
+    var f = connectorsUiState.fields;
+    var wrap = document.createElement('div');
+    wrap.className = 'list-crud-add-row';
+
+    var nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'interval-input';
+    nameInput.placeholder = 'Name';
+    nameInput.setAttribute('aria-label', 'Connector name');
+    nameInput.value = f.name;
+    nameInput.disabled = connectorsUiState.saving;
+    nameInput.addEventListener('input', function () { f.name = nameInput.value; });
+    wrap.appendChild(nameInput);
+
+    var typeSelect = document.createElement('select');
+    typeSelect.className = 'interval-input';
+    typeSelect.setAttribute('aria-label', 'Connector type');
+    for (var i = 0; i < CONNECTOR_TYPES.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = CONNECTOR_TYPES[i];
+      opt.textContent = CONNECTOR_TYPES[i];
+      typeSelect.appendChild(opt);
+    }
+    typeSelect.value = f.type;
+    typeSelect.disabled = connectorsUiState.saving;
+    typeSelect.addEventListener('change', function () { f.type = typeSelect.value; });
+    wrap.appendChild(typeSelect);
+
+    var endpointInput = document.createElement('input');
+    endpointInput.type = 'text';
+    endpointInput.className = 'interval-input';
+    endpointInput.placeholder = 'Endpoint';
+    endpointInput.setAttribute('aria-label', 'Connector endpoint');
+    endpointInput.value = f.endpoint;
+    endpointInput.disabled = connectorsUiState.saving;
+    endpointInput.addEventListener('input', function () { f.endpoint = endpointInput.value; });
+    wrap.appendChild(endpointInput);
+
+    var authSelect = document.createElement('select');
+    authSelect.className = 'interval-input';
+    authSelect.setAttribute('aria-label', 'Connector auth method');
+    for (var j = 0; j < CONNECTOR_AUTH_METHODS.length; j++) {
+      var aOpt = document.createElement('option');
+      aOpt.value = CONNECTOR_AUTH_METHODS[j];
+      aOpt.textContent = CONNECTOR_AUTH_METHODS[j];
+      authSelect.appendChild(aOpt);
+    }
+    authSelect.value = f.auth;
+    authSelect.disabled = connectorsUiState.saving;
+    authSelect.addEventListener('change', function () { f.auth = authSelect.value; });
+    wrap.appendChild(authSelect);
+
+    var secretInput = document.createElement('input');
+    secretInput.type = 'text';
+    secretInput.className = 'interval-input';
+    secretInput.placeholder = 'Secret reference (optional)';
+    secretInput.setAttribute('aria-label', 'Connector secret reference');
+    secretInput.value = f.secret_ref;
+    secretInput.disabled = connectorsUiState.saving;
+    secretInput.addEventListener('input', function () { f.secret_ref = secretInput.value; });
+    wrap.appendChild(secretInput);
+
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-ghost';
+    addBtn.textContent = connectorsUiState.saving ? 'Adding…' : 'Add Connector';
+    addBtn.disabled = connectorsUiState.saving;
+    addBtn.addEventListener('click', function () { _submitConnectorAdd(); });
+    wrap.appendChild(addBtn);
+
+    return wrap;
+  }
+
+  // Client-side mirror of connector.set's per-type conditional arg-schema
+  // (task-019 API Contracts / server.py _validate_connector_set_args): name
+  // required; endpoint required for api/ssh/url/cli; auth required for
+  // api/url/cli. Defense-in-depth ahead of the server's own 422 validation.
+  function _validateConnectorFields(f) {
+    if (!f.name || !f.name.trim()) return 'Name is required.';
+    if (CONNECTOR_TYPES.indexOf(f.type) === -1) return 'Choose a connector type.';
+    if (CONNECTOR_ENDPOINT_REQUIRED_TYPES.indexOf(f.type) !== -1 && (!f.endpoint || !f.endpoint.trim())) {
+      return 'Endpoint is required for this connector type.';
+    }
+    if (CONNECTOR_AUTH_REQUIRED_TYPES.indexOf(f.type) !== -1 && !f.auth) {
+      return 'Auth method is required for this connector type.';
+    }
+    return null;
+  }
+
+  function _submitConnectorAdd() {
+    var f = connectorsUiState.fields;
+    var clientErr = _validateConnectorFields(f);
+    if (clientErr) {
+      connectorsUiState.errorMessage = clientErr;
+      _connectorsExplicitRender = true;
+      _renderConnectorsCard(lastGoodModel.repo && lastGoodModel.repo.connectors, lastGoodModel.write_enabled === true);
+      return;
+    }
+
+    connectorsUiState.saving = true;
+    connectorsUiState.errorMessage = null;
+    // Force this render: the guard in _renderConnectorsCard would otherwise skip
+    // it right back, since `saving` is now true (see the explicit-render flag
+    // comment on connectorsUiState's declaration, above).
+    _connectorsExplicitRender = true;
+    _renderConnectorsCard(lastGoodModel.repo && lastGoodModel.repo.connectors, lastGoodModel.write_enabled === true);
+
+    var args = { name: f.name, type: f.type };
+    if (f.endpoint) args.endpoint = f.endpoint;
+    if (f.auth) args.auth = f.auth;
+    if (f.secret_ref) args.secret_ref = f.secret_ref;
+
+    postOp('connector.set', {}, args, function (result) {
+      connectorsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        connectorsUiState.fields = { name: '', type: 'mcp', endpoint: '', auth: 'none', secret_ref: '' };
+        connectorsUiState.errorMessage = null;
+      } else {
+        connectorsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not add connector.';
+      }
+      // Re-render from the fresh model on EITHER outcome (feature-007 AC2 /
+      // task-022 Actions & re-render): even on failure the on-disk registry may
+      // have changed underneath us, so the client re-fetches rather than
+      // trusting the pre-op cached model.
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitConnectorRemove(stem) {
+    connectorsUiState.saving = true;
+    connectorsUiState.errorMessage = null;
+    _connectorsExplicitRender = true;
+    _renderConnectorsCard(lastGoodModel.repo && lastGoodModel.repo.connectors, lastGoodModel.write_enabled === true);
+
+    postOp('connector.remove', {}, { stem: stem }, function (result) {
+      connectorsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        connectorsUiState.errorMessage = null;
+      } else {
+        connectorsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not remove connector.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // External Sources section (feature-010-external-sources-list, task-022):
+  // shares the SAME list-CRUD scaffold shape as Connectors (view + write_enabled-
+  // gated Add row + per-row Remove + inline error), just a single-value list
+  // instead of a multi-field descriptor table.
+  // ---------------------------------------------------------------------------
+
+  // Browser-side URL-detection twin -- byte-identical to Python `_RE_URL`
+  // (parsers.py) / Node `RE_URL_SOURCE` (reader.mjs): a match renders the entry
+  // as a link; anything else renders as plain text (feature-010 UI Specs).
+  var _RE_URL_CLIENT = /^[a-z][a-z0-9+.\-]*:\/\//;
+
+  // externalSourcesUiState: transient UI-only Add-row state, mirroring
+  // connectorsUiState's identical rationale (state-tracked `value` survives a
+  // poll-triggered rebuild mid-typing; `saving` guards the busy window).
+  var externalSourcesUiState = { saving: false, errorMessage: null, value: '' };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender,
+  // scoped independently so the two sections' guards never cross-clobber.
+  var _externalSourcesExplicitRender = false;
+  function _consumeExternalSourcesExplicitRender() {
+    var v = _externalSourcesExplicitRender;
+    _externalSourcesExplicitRender = false;
+    return v;
+  }
+
+  function _renderExternalSourcesCard(repo, writeEnabled) {
+    var container = document.getElementById('external-sources-section');
+    if (!container) return;
+    if (!_consumeExternalSourcesExplicitRender() && externalSourcesUiState.saving) return;
+
+    container.innerHTML = '';
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+
+    var sources = (repo && Array.isArray(repo.external_sources)) ? repo.external_sources : [];
+
+    if (sources.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'meta list-crud-empty';
+      empty.textContent = 'No external sources registered.';
+      panel.appendChild(empty);
+    } else {
+      var ul = document.createElement('ul');
+      ul.className = 'list-crud-list';
+      for (var i = 0; i < sources.length; i++) {
+        ul.appendChild(_buildExternalSourceItem(sources[i], writeEnabled));
+      }
+      panel.appendChild(ul);
+    }
+
+    if (externalSourcesUiState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.setAttribute('aria-live', 'polite');
+      err.textContent = externalSourcesUiState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    if (writeEnabled) {
+      panel.appendChild(_buildExternalSourceAddRow());
+    }
+
+    container.appendChild(panel);
+  }
+
+  // Build one entry's <li> -- takes `value` as its own function parameter (safe
+  // per-item closure for the Remove handler; same convention as
+  // _buildConnectorRow).
+  function _buildExternalSourceItem(value, writeEnabled) {
+    var li = document.createElement('li');
+    li.className = 'list-crud-list-item';
+
+    if (_RE_URL_CLIENT.test(value)) {
+      var a = document.createElement('a');
+      a.href = value;
+      a.rel = 'noopener noreferrer';
+      a.textContent = value;
+      li.appendChild(a);
+    } else {
+      var span = document.createElement('span');
+      span.textContent = value;
+      li.appendChild(span);
+    }
+
+    if (writeEnabled) {
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-ghost';
+      removeBtn.textContent = 'Remove';
+      removeBtn.addEventListener('click', function () { _submitExternalSourceRemove(value); });
+      li.appendChild(removeBtn);
+    }
+
+    return li;
+  }
+
+  // Add row: one text input + Add button (feature-010 UI Specs -- no separate
+  // open/close toggle, unlike the Connectors form's five fields).
+  function _buildExternalSourceAddRow() {
+    var wrap = document.createElement('div');
+    wrap.className = 'list-crud-add-row';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'interval-input';
+    input.placeholder = 'https://… or path/to/doc';
+    input.setAttribute('aria-label', 'External source URL or path');
+    input.value = externalSourcesUiState.value;
+    input.disabled = externalSourcesUiState.saving;
+    input.addEventListener('input', function () { externalSourcesUiState.value = input.value; });
+    wrap.appendChild(input);
+
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-ghost';
+    addBtn.textContent = externalSourcesUiState.saving ? 'Adding…' : 'Add';
+    addBtn.disabled = externalSourcesUiState.saving;
+    addBtn.addEventListener('click', function () { _submitExternalSourceAdd(); });
+    wrap.appendChild(addBtn);
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); if (!addBtn.disabled) _submitExternalSourceAdd(); }
+    });
+
+    return wrap;
+  }
+
+  // Client-side mirror of external-source.add/.remove's args.value shape
+  // (task-021 API Contracts): trim, then block empty and any-whitespace values
+  // before POST -- fast feedback only; the server + write-external-source.sh
+  // remain the authority.
+  function _validateExternalSourceValueClient(trimmed) {
+    if (!trimmed) return 'Enter a URL or a path with no spaces.';
+    if (/\s/.test(trimmed)) return 'Enter a URL or a path with no spaces.';
+    return null;
+  }
+
+  function _submitExternalSourceAdd() {
+    var trimmed = (externalSourcesUiState.value || '').trim();
+    var clientErr = _validateExternalSourceValueClient(trimmed);
+    if (clientErr) {
+      externalSourcesUiState.errorMessage = clientErr;
+      _externalSourcesExplicitRender = true;
+      _renderExternalSourcesCard(lastGoodModel.repo, lastGoodModel.write_enabled === true);
+      return;
+    }
+
+    externalSourcesUiState.saving = true;
+    externalSourcesUiState.errorMessage = null;
+    // Force this render: see the identical comment on _submitConnectorAdd, above.
+    _externalSourcesExplicitRender = true;
+    _renderExternalSourcesCard(lastGoodModel.repo, lastGoodModel.write_enabled === true);
+
+    postOp('external-source.add', {}, { value: trimmed }, function (result) {
+      externalSourcesUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        externalSourcesUiState.value = '';
+        externalSourcesUiState.errorMessage = null;
+      } else {
+        externalSourcesUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not add source.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitExternalSourceRemove(value) {
+    externalSourcesUiState.saving = true;
+    externalSourcesUiState.errorMessage = null;
+    _externalSourcesExplicitRender = true;
+    _renderExternalSourcesCard(lastGoodModel.repo, lastGoodModel.write_enabled === true);
+
+    postOp('external-source.remove', {}, { value: value }, function (result) {
+      externalSourcesUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        externalSourcesUiState.errorMessage = null;
+      } else {
+        externalSourcesUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not remove source.';
+      }
+      _refetchModelForHeader();
+    });
   }
 
   // Build the FR18 step-by-step empty-state panel
