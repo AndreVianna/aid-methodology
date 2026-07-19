@@ -1536,6 +1536,59 @@ function validatePipelineRenameArgs(args) {
 }
 
 // ---------------------------------------------------------------------------
+// feature-009-pipeline-delete (work-017 task-025): pipeline.delete -- per-repo,
+// pipeline-scoped op (target: {work_id}; no delivery_id/task_id) dispatched to
+// the co-vendored delete-pipeline.sh writer (task-024). This is the FIRST row
+// to override the generic work_id shape check in dispatchOp's scope block
+// (see the 'workIdRe'/'workIdMaxLen'/'workIdInvalidStatus' OPTIONAL fields
+// there): every other pipeline/task-scoped op keeps the loose ^work-[0-9]+
+// prefix check + the shared 400 'bad-request' class unchanged (byte-identical
+// to the pre-task-025 combined check); pipeline.delete validates the FULL
+// folder-name shape (feature-009 SPEC.md API Contracts:
+// ^work-[0-9]+(-[a-z0-9][a-z0-9-]*)?$, <=64 chars) and maps a failing VALUE
+// to 422 'invalid-value' (never the 400 a structurally malformed/absent
+// target gets from the typeof check above it) -- delete-pipeline.sh's own
+// RE_WORK_ID backstop (exit 4) validates the identical shape.
+//
+// args MUST be absent/empty -- argSchema {} + semanticValidate reuses
+// feature-004's validateNoArgs (a non-empty args object -> 422
+// 'invalid-value', step 7, AFTER the step-6 work_id/resolveWorkDir checks
+// above it run) -- delete takes no parameters (branch retention is fixed
+// policy, OQ-PL3). Also adds ONE row to the exit-code->HTTP map (OP-SM):
+// writer exit 7 (guard tripped -- lifecycle=Running, or target is the current
+// worktree) -> 409 'pipeline-active'; every DEFAULT_MAP row (1/2/3/4/5) is
+// preserved verbatim via the object-spread below -- no other status changes.
+// ---------------------------------------------------------------------------
+
+const RE_WORK_ID_STRICT = /^work-[0-9]+(-[a-z0-9][a-z0-9-]*)?$/;
+const WORK_ID_MAX_LEN = 64; // chars (feature-009 SPEC.md API Contracts)
+
+function opPipelineDeleteArgv(workDir, servedRoot, target, args) {
+  // pipeline.delete -> delete-pipeline.sh --work-id <work_id> (env
+  // AID_REPO_ROOT=<servedRoot>).
+  //
+  // workDir (resolveWorkDir's result, already confirmed non-null by
+  // dispatchOp's scope block) is NOT forwarded to the child -- delete-
+  // pipeline.sh (task-024) re-derives the owning worktree root + branch
+  // itself from its OWN `git worktree list --porcelain` enumeration + the
+  // SAME reconcile-winner rule resolveWorkDir uses (feature-009 SPEC.md API
+  // Contracts Algorithm step 5; WT-1 consistency by construction -- W is
+  // exactly the copy resolveWorkDir returned). servedRoot is the repo
+  // canonPath resolved verbatim from idMap by serveOp (SEC-2) -- no path is
+  // EVER taken from the request body (SEC-2/SEC-3); the writer receives only
+  // the validated work_id + this server-resolved repo root.
+  const workId = target.work_id;
+  const argv = ["--work-id", workId];
+  const env = { AID_REPO_ROOT: servedRoot };
+  return [argv, env];
+}
+
+const PIPELINE_DELETE_STATUS_MAP = {
+  ...DEFAULT_MAP,
+  7: [409, "pipeline-active"],
+};
+
+// ---------------------------------------------------------------------------
 // feature-003-project-registry (task-013): project.add / project.remove --
 // home-scoped ops backed by the shared aid-CLI resolver (KI-004), registered
 // into HOME_OP_TABLE below. See SPEC.md API Contracts for the full citation
@@ -1835,6 +1888,17 @@ const OP_TABLE = {
     semanticValidate: validateExternalSourceArgs,
     statusMap: null,
   },
+  "pipeline.delete": {
+    scope: "pipeline",
+    writer: "delete-pipeline.sh",
+    argSchema: {},
+    buildArgv: opPipelineDeleteArgv,
+    semanticValidate: validateNoArgs,
+    workIdRe: RE_WORK_ID_STRICT,
+    workIdMaxLen: WORK_ID_MAX_LEN,
+    workIdInvalidStatus: [422, "invalid-value"],
+    statusMap: PIPELINE_DELETE_STATUS_MAP,
+  },
 };
 
 // HOME_OP_TABLE: feature-003 (project.add/project.remove, task-013) registers
@@ -1930,8 +1994,24 @@ function dispatchOp(opTable, parsed, servedRoot, aidHome) {
   let workDir = null;
   if (scope === "task" || scope === "pipeline") {
     const workId = target.work_id;
-    if (typeof workId !== "string" || !RE_WORK_ID_SHAPE.test(workId)) {
+    if (typeof workId !== "string") {
       return [400, opFailBody(op, "bad-request", "missing or invalid target.work_id")];
+    }
+    // OPTIONAL per-op work_id shape override (feature-009, task-025's OP-SM-
+    // style extension point): a row without one falls back to the generic
+    // loose RE_WORK_ID_SHAPE prefix check + the shared 400 'bad-request'
+    // class (byte-identical to the pre-task-025 combined check for every
+    // existing row); pipeline.delete supplies its OWN full anchored regex +
+    // length cap + a 422 'invalid-value' class (SPEC.md API Contracts: "a
+    // value that fails the regex/length check" is 422, distinct from the 400
+    // a structurally malformed/absent target gets above).
+    const workIdRe = row.workIdRe || RE_WORK_ID_SHAPE;
+    const workIdMaxLen = row.workIdMaxLen;
+    const shapeOk = workIdRe.test(workId) &&
+      (workIdMaxLen === undefined || workIdMaxLen === null || workId.length <= workIdMaxLen);
+    if (!shapeOk) {
+      const [invStatus, invErrorClass] = row.workIdInvalidStatus || [400, "bad-request"];
+      return [invStatus, opFailBody(op, invErrorClass, "missing or invalid target.work_id")];
     }
     if (scope === "task" && (taskIdRaw === undefined || taskIdRaw === null || taskIdRaw === "")) {
       return [400, opFailBody(op, "bad-request", "this op requires target.task_id")];
