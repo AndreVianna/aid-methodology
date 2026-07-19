@@ -58,8 +58,8 @@ seed_old_repo() {  # $1 = code_home (the dir where bin/aid lives)
 }
 # Assert feature-001 lazy-stamp behavior:
 #   - 'aid status' in stamp-less repo: WARN "older format" printed, exit 0.
-#   - After explicit 'aid __migrate-repo': settings.yml stamped format_version: 2
-#     (the migration side-effect in format 2; home.html is now CLI-served, not per-repo).
+#   - After explicit 'aid __migrate-repo': settings.yml stamped format_version: 3
+#     (config-schema redesign: flat schema, format 3; home.html is CLI-served, not per-repo).
 assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_home
     local repo="$1" label="$2" aid_bin="$3" aid_home="$4"
     # Step 1: WARN on encounter.
@@ -75,10 +75,10 @@ assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_hom
     AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
         bash "${aid_bin}" __migrate-repo "${repo}" >/dev/null 2>&1 || true
     local _sf="${repo}/.aid/settings.yml"
-    if grep -q '^format_version: 2' "${_sf}" 2>/dev/null; then
-        pass "${label}-B -- after __migrate-repo: settings.yml stamped format_version: 2"
+    if grep -q '^format_version: 3' "${_sf}" 2>/dev/null; then
+        pass "${label}-B -- after __migrate-repo: settings.yml stamped format_version: 3"
     else
-        fail "${label}-B -- after __migrate-repo: format_version: 2 stamp missing at ${_sf}"
+        fail "${label}-B -- after __migrate-repo: format_version: 3 stamp missing at ${_sf}"
     fi
 }
 

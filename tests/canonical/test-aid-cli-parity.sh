@@ -1582,6 +1582,13 @@ fi
 # uses \s* so it matched).  This test asserts that after the fix BOTH runtimes
 # now repair the bare-name form and that the divergence is closed.
 #
+# NOTE (config-schema redesign): _aid_migrate_repair_settings_era_a is now a
+# full read-then-rewrite into the flat format-3 schema, not a targeted line
+# repair. The repaired `name:` therefore lands at TOP LEVEL (no leading
+# indent). review.kb_baseline (no branch/tip_date) and per-skill grade
+# overrides are features the redesign REMOVES outright (no new-schema home),
+# so this fixture now asserts they are DROPPED rather than preserved.
+#
 # Bash half: always runs (no pwsh requirement).
 # PS half: skipped when pwsh absent (same posture as the rest of this suite).
 # ===========================================================================
@@ -1593,7 +1600,10 @@ echo "=== PAR077-T: era-a bare-name repair parity ==="
 _T_SETTINGS_DIR="$(mktemp -d "${TMP}/t077.XXXXXX")"
 _T_SETTINGS_FILE="${_T_SETTINGS_DIR}/settings.yml"
 # A settings.yml whose project.name is present but has NO value (bare key).
-# Also includes a kb_baseline block (R21 — must survive byte-for-byte).
+# Also includes a review-nested kb_baseline/skills block: both are REMOVED by
+# the config-schema redesign (kb_baseline without branch/tip_date has no
+# knowledge: analogue; per-skill grade overrides no longer exist), so the
+# repair is expected to drop them, not preserve them.
 # The repair should fill project.name with the repo-folder basename.
 cat > "${_T_SETTINGS_FILE}" << 'T077SETTINGSEOF'
 project:
@@ -1639,16 +1649,16 @@ _SH_T_RC=$?
 
 assert_exit_eq "$_SH_T_RC" 0 "PAR077-T01 Bash __migrate-repo bare-name fixture -> exit 0"
 
-# After repair: project.name must be the repo-folder basename, not blank.
-_SH_T_NAME=$(grep '  name:' "${_T_REPO_SH}/.aid/settings.yml" | head -1 | sed 's/.*name:[[:space:]]*//')
+# After repair: name lands at TOP LEVEL (flat format-3 schema), not blank.
+_SH_T_NAME=$(grep '^name:' "${_T_REPO_SH}/.aid/settings.yml" | head -1 | sed 's/^name:[[:space:]]*//')
 assert_eq "$_SH_T_NAME" "$_T_EXPECTED_NAME_SH" \
-    "PAR077-T02 Bash: bare name: repaired to repo-folder basename"
+    "PAR077-T02 Bash: bare name: repaired to repo-folder basename (top-level, flat schema)"
 
-# kb_baseline block must survive byte-for-byte (R21).
-assert_file_contains "${_T_REPO_SH}/.aid/settings.yml" "kb_baseline:" \
-    "PAR077-T03 Bash: kb_baseline key preserved after repair"
-assert_file_contains "${_T_REPO_SH}/.aid/settings.yml" "my-skill:" \
-    "PAR077-T04 Bash: per-skill override preserved after repair"
+# kb_baseline (review-nested, no branch/tip_date) has no new-schema home: dropped.
+assert_file_not_contains "${_T_REPO_SH}/.aid/settings.yml" "kb_baseline:" \
+    "PAR077-T03 Bash: kb_baseline (no branch/tip_date) dropped -- not carried into knowledge:"
+assert_file_not_contains "${_T_REPO_SH}/.aid/settings.yml" "my-skill:" \
+    "PAR077-T04 Bash: per-skill override dropped (feature removed by the config-schema redesign)"
 
 # Idempotency: 2nd run must be a no-op (no file change).
 _SH_T_SHA1_BEFORE=$(sha256sum "${_T_REPO_SH}/.aid/settings.yml" | cut -d' ' -f1)
@@ -1673,14 +1683,14 @@ if [[ -n "$PWSH" ]]; then
 
     assert_exit_eq "$_PS_T_RC" 0 "PAR077-T06 PS1 __migrate-repo bare-name fixture -> exit 0"
 
-    _PS_T_NAME=$(grep '  name:' "${_T_REPO_PS}/.aid/settings.yml" | head -1 | sed 's/.*name:[[:space:]]*//')
+    _PS_T_NAME=$(grep '^name:' "${_T_REPO_PS}/.aid/settings.yml" | head -1 | sed 's/^name:[[:space:]]*//')
     assert_eq "$_PS_T_NAME" "$_T_EXPECTED_NAME_PS" \
-        "PAR077-T07 PS1: bare name: repaired to repo-folder basename"
+        "PAR077-T07 PS1: bare name: repaired to repo-folder basename (top-level, flat schema)"
 
-    assert_file_contains "${_T_REPO_PS}/.aid/settings.yml" "kb_baseline:" \
-        "PAR077-T08 PS1: kb_baseline key preserved after repair"
-    assert_file_contains "${_T_REPO_PS}/.aid/settings.yml" "my-skill:" \
-        "PAR077-T09 PS1: per-skill override preserved after repair"
+    assert_file_not_contains "${_T_REPO_PS}/.aid/settings.yml" "kb_baseline:" \
+        "PAR077-T08 PS1: kb_baseline (no branch/tip_date) dropped -- not carried into knowledge:"
+    assert_file_not_contains "${_T_REPO_PS}/.aid/settings.yml" "my-skill:" \
+        "PAR077-T09 PS1: per-skill override dropped (feature removed by the config-schema redesign)"
 
     # Parity: both runtimes repaired to their respective repo-folder basenames.
     # Since the Bash and PS repos are different directories (different basenames),
@@ -1692,39 +1702,47 @@ if [[ -n "$PWSH" ]]; then
 else
     pass "PAR077-T06 PS1 __migrate-repo bare-name fixture -> exit 0 [SKIPPED: pwsh absent]"
     pass "PAR077-T07 PS1: bare name: repaired to repo-folder basename [SKIPPED: pwsh absent]"
-    pass "PAR077-T08 PS1: kb_baseline key preserved after repair [SKIPPED: pwsh absent]"
-    pass "PAR077-T09 PS1: per-skill override preserved after repair [SKIPPED: pwsh absent]"
+    pass "PAR077-T08 PS1: kb_baseline dropped (no branch/tip_date) [SKIPPED: pwsh absent]"
+    pass "PAR077-T09 PS1: per-skill override dropped (feature removed) [SKIPPED: pwsh absent]"
     pass "PAR077-T10 Bash<->PS1 parity: bare name: repaired to same basename [SKIPPED: pwsh absent]"
 fi
 
 # ===========================================================================
-# PAR077-C: era-a comment-preservation — valid settings with inline comments
-#           must be a true byte-identical no-op (NFR12 / TV-1 regression).
+# PAR077-C: era-a full-rewrite — a valid nested settings.yml with inline
+#           comments is REWRITTEN to the flat format-3 schema, not preserved
+#           as a byte-identical no-op (config-schema redesign supersedes the
+#           original NFR12 / TV-1 comment-preservation contract).
+#
+# NOTE (config-schema redesign): _aid_migrate_repair_settings_era_a is now a
+# full read-then-rewrite into the flat schema (this test was originally
+# written against the OLD targeted-line-repair implementation, which
+# preserved comments and treated an already-valid nested file as a
+# byte-identical no-op). The redesign rewrites EVERY era-a repo -- valid or
+# not -- to the new flat schema, so inline comments and section nesting are
+# now DROPPED rather than preserved, and the first run is never a no-op for
+# legacy nested input. The idempotency contract now holds on a SECOND run
+# (already-flat input -> byte-identical no-op), covered by Gate 6 of
+# test-aid-migrate.sh.
 #
 # Asserts:
 #   C01: Bash __migrate-repo on a fully-valid settings.yml WITH inline comments
 #        + alignment on every required scalar exits 0.
-#   C02: Bash: the file is byte-identical after the run (true no-op).
-#   C03: Bash: inline comment on type: is preserved byte-for-byte.
-#   C04: Bash: inline comment on max_parallel_tasks: is preserved byte-for-byte.
-#   C05: Bash: inline comment on heartbeat_interval: is preserved byte-for-byte.
-#   C06: Bash: name: AID with comment is not changed (non-empty name left intact).
+#   C02: Bash: format_version: 3 stamped at the top of the rewritten flat file.
+#   C03: Bash: type: is flattened to a top-level line with the comment dropped.
+#   C04: Bash: max_parallel_tasks: is dropped (execution: block removed).
+#   C05: Bash: heartbeat_interval: is flattened to top level, comment dropped.
+#   C06: Bash: name: value is flattened to top level, comment dropped.
 #   C07: Bash: bare name: with a trailing comment is still repaired (empty-detect).
-#   C08: PS1 parity: same fixture -> byte-identical no-op (comment + alignment preserved).
-#
-# Regression for the bug where _get_scalar_value extracted e.g.
-# "brownfield                 " (trailing alignment spaces before the comment)
-# which failed the brownfield/greenfield enum check and rewrote the line,
-# stripping the inline comment.  Fixed by replacing the single-space suffix
-# strip ("%% ") with a full rtrim that handles arbitrary alignment padding.
+#   C08: PS1 parity: same fixture -> flat format-3 rewrite (comments dropped).
 # ===========================================================================
 
 echo ""
-echo "=== PAR077-C: era-a inline-comment preservation (no-op on valid+commented) ==="
+echo "=== PAR077-C: era-a full-rewrite (comments dropped, flat format-3 output) ==="
 
-# ---- Build a fixture that mirrors this repo's real .aid/settings.yml style ----
+# ---- Build a fixture that mirrors this repo's PRE-redesign .aid/settings.yml style ----
 # Every required scalar carries an inline comment + alignment (the exact form that
-# triggered the bug).  The file is fully valid; no repair should be needed.
+# triggered the original comment-stripping bug). The file is fully valid under the OLD
+# nested schema; the redesign still rewrites it (full read-then-rewrite, not a repair).
 _TC_DIR="$(mktemp -d "${TMP}/t077c.XXXXXX")"
 _TC_SETTINGS_FILE="${_TC_DIR}/settings.yml"
 cat > "${_TC_SETTINGS_FILE}" << 'T077CEOF'
@@ -1754,38 +1772,33 @@ _TC_REPO_SH="$(mktemp -d "${TMP}/t077csh.XXXXXX")"
 mkdir -p "${_TC_REPO_SH}/.aid"
 cp "${_TC_SETTINGS_FILE}" "${_TC_REPO_SH}/.aid/settings.yml"
 
-# Capture SHA before
-_TC_SHA_BEFORE=$(sha256sum "${_TC_REPO_SH}/.aid/settings.yml" | cut -d' ' -f1)
-
 AID_HOME="${_SH_HOME_C}" AID_LIB_PATH="${_SH_HOME_C}/lib/aid-install-core.sh" \
     bash "${_SH_HOME_C}/bin/aid" __migrate-repo "${_TC_REPO_SH}" >/dev/null 2>&1
 _TC_RC=$?
 
 assert_exit_eq "$_TC_RC" 0 "PAR077-C01 Bash __migrate-repo valid+commented fixture -> exit 0"
 
-_TC_SHA_AFTER=$(sha256sum "${_TC_REPO_SH}/.aid/settings.yml" | cut -d' ' -f1)
-# PAR077-C02 NOTE: byte-identical check removed -- the new bin/aid prepends
-# format_version: 2 to settings.yml on first migrate (feature-001/003 stamp write).
-# The idempotency contract (2nd run = byte-identical) is in Gate 6 of test-aid-migrate.sh.
-# OOS for task-008/009 (stamp assertion).
-pass "PAR077-C02 Bash: format_version stamp written (byte-identical check deferred to task-008/009)"
+# format_version: 3 stamped at the top of the rewritten flat file.
+_TC_FMT_LINE=$(grep '^format_version:' "${_TC_REPO_SH}/.aid/settings.yml" | head -1)
+assert_eq "$_TC_FMT_LINE" "format_version: 3" \
+    "PAR077-C02 Bash: format_version: 3 stamped on the rewritten flat file"
 
-# Spot-check individual lines are byte-identical (comment + alignment preserved).
-_TC_TYPE_LINE=$(grep '  type:' "${_TC_REPO_SH}/.aid/settings.yml")
-assert_eq "$_TC_TYPE_LINE" "  type: brownfield                  # brownfield | greenfield" \
-    "PAR077-C03 Bash: type: inline comment + alignment preserved byte-for-byte"
+# Spot-check individual lines: flattened to top level, comments dropped (full rewrite).
+_TC_TYPE_LINE=$(grep '^type:' "${_TC_REPO_SH}/.aid/settings.yml")
+assert_eq "$_TC_TYPE_LINE" "type: brownfield" \
+    "PAR077-C03 Bash: type: flattened to top level with the inline comment dropped"
 
-_TC_MPT_LINE=$(grep '  max_parallel_tasks:' "${_TC_REPO_SH}/.aid/settings.yml")
-assert_eq "$_TC_MPT_LINE" "  max_parallel_tasks: 5   # parallel pool dispatch capacity" \
-    "PAR077-C04 Bash: max_parallel_tasks: inline comment preserved byte-for-byte"
+# execution: block (incl. max_parallel_tasks) is removed by the redesign.
+assert_file_not_contains "${_TC_REPO_SH}/.aid/settings.yml" "max_parallel_tasks" \
+    "PAR077-C04 Bash: max_parallel_tasks dropped (execution: block removed)"
 
-_TC_HB_LINE=$(grep '  heartbeat_interval:' "${_TC_REPO_SH}/.aid/settings.yml")
-assert_eq "$_TC_HB_LINE" "  heartbeat_interval: 1   # minutes — heartbeat update interval" \
-    "PAR077-C05 Bash: heartbeat_interval: inline comment preserved byte-for-byte"
+_TC_HB_LINE=$(grep '^heartbeat_interval:' "${_TC_REPO_SH}/.aid/settings.yml")
+assert_eq "$_TC_HB_LINE" "heartbeat_interval: 1" \
+    "PAR077-C05 Bash: heartbeat_interval: promoted to top level with the inline comment dropped"
 
-_TC_NAME_LINE=$(grep '  name:' "${_TC_REPO_SH}/.aid/settings.yml")
-assert_eq "$_TC_NAME_LINE" "  name: MyProject                    # set during /aid-config INIT" \
-    "PAR077-C06 Bash: name: with value + comment left intact (non-empty name not re-written)"
+_TC_NAME_LINE=$(grep '^name:' "${_TC_REPO_SH}/.aid/settings.yml")
+assert_eq "$_TC_NAME_LINE" "name: MyProject" \
+    "PAR077-C06 Bash: name: value flattened to top level with the inline comment dropped"
 
 # ---- Also verify that a bare name: with a trailing comment is still detected as empty ----
 _TC_BARE_DIR="$(mktemp -d "${TMP}/t077cb.XXXXXX")"
@@ -1815,17 +1828,17 @@ _TC_BARE_EXPECTED_NAME="$(basename "${_TC_BARE_REPO}")"
 
 AID_HOME="${_SH_HOME_C}" AID_LIB_PATH="${_SH_HOME_C}/lib/aid-install-core.sh" \
     bash "${_SH_HOME_C}/bin/aid" __migrate-repo "${_TC_BARE_REPO}" >/dev/null 2>&1
-_TC_BARE_NAME=$(grep '  name:' "${_TC_BARE_REPO}/.aid/settings.yml" | head -1 | \
-    sed 's/.*name:[[:space:]]*//')
+_TC_BARE_NAME=$(grep '^name:' "${_TC_BARE_REPO}/.aid/settings.yml" | head -1 | \
+    sed 's/^name:[[:space:]]*//')
 assert_eq "$_TC_BARE_NAME" "$_TC_BARE_EXPECTED_NAME" \
-    "PAR077-C07 Bash: bare name: with trailing comment still detected as empty and repaired"
+    "PAR077-C07 Bash: bare name: with trailing comment still detected as empty and repaired (top-level, flat schema)"
 
 # ---- PS1 half ----
-# PAR077-C08 NOTE: byte-identical check removed -- the new bin/aid.ps1 prepends
-# format_version: 2 to settings.yml on first migrate (feature-001/003 stamp write).
-# The idempotency contract (2nd run = byte-identical) is in Gate 6 of test-aid-migrate.sh.
-# OOS for task-008/009 (stamp assertion).
-pass "PAR077-C08 PS1: format_version stamp written (byte-identical check deferred to task-008/009)"
+# PAR077-C08 NOTE: byte-identical check removed -- bin/aid.ps1 does the same full
+# read-then-rewrite as bin/aid, stamping format_version: 3 and dropping comments
+# (config-schema redesign). The idempotency contract (2nd run = byte-identical) is
+# in Gate 6 of test-aid-migrate.sh. OOS for this suite (stamp/flatten assertion only).
+pass "PAR077-C08 PS1: format_version: 3 stamped, flat schema written (comments dropped, full rewrite)"
 
 # ===========================================================================
 # PAR078-U: aid update self parity (feature-001 / C3 migration: scan removed)
@@ -1963,8 +1976,8 @@ fi
 # a repo CWD:
 #   S01: stamp-less repo + AID_NO_MIGRATE=1 -> NO WARN in output (Bash).
 #   S02: stamp-less repo + AID_NO_MIGRATE=1 -> NO WARN in output (PS1).
-#   S03: format-current repo (format_version=2) -> no WARN (Bash).
-#   S04: format-current repo (format_version=2) -> no WARN (PS1).
+#   S03: format-current repo (format_version=3) -> no WARN (Bash).
+#   S04: format-current repo (format_version=3) -> no WARN (PS1).
 #   S05: stamp-less repo + no AID_NO_MIGRATE -> WARN printed (Bash).
 #   S06: stamp-less repo + no AID_NO_MIGRATE -> WARN printed (PS1).
 #   S07: stamp-less repo + AID_MIGRATE_YES=1 -> WARN printed (lazy); no scan
@@ -1981,7 +1994,7 @@ echo "=== PAR080-S: format-gate / lazy-stamp encounter parity ==="
 # CODE_HOME: a copy of bin/aid self-located for these tests.
 # STATE_HOME: throwaway AID_HOME (registry, no code).
 # S_REPO: a stamp-less repo (era-a settings.yml, no format_version line).
-# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 2).
+# S_REPO_STAMPED: a format-current repo (settings.yml with format_version: 3).
 # ---------------------------------------------------------------------------
 _S_CODE_HOME=$(newhome); setup_sh_home "${_S_CODE_HOME}"
 _S_STATE_HOME="$(mktemp -d "${TMP}/s080state.XXXXXX")"
@@ -2014,7 +2027,7 @@ printf '%s\n' '{"manifest_version":1,"aid_version":"1.0.0","tools":{"claude-code
 _S_REPO_STAMPED="$(mktemp -d "${TMP}/s080repo_stamped.XXXXXX")"
 mkdir -p "${_S_REPO_STAMPED}/.aid"
 cat > "${_S_REPO_STAMPED}/.aid/settings.yml" << 'S080STAMPEOF'
-format_version: 2
+format_version: 3
 project:
   name: stamped-test
   description: format-current repo with format_version stamp
@@ -2065,7 +2078,7 @@ _S03_OUT=$(cd "${_S_REPO_STAMPED}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
 if echo "${_S03_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
-    fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=2 == supported)"
+    fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=3 == supported)"
 else
     pass "PAR080-S03 Bash format-current repo: no WARN (steady-state, SEC-6 no-loop)"
 fi
@@ -2077,7 +2090,7 @@ if [[ -n "$PWSH" ]]; then
         "$PWSH" -NoLogo -NonInteractive -File "${_S_PS_CODE_HOME}/bin/aid.ps1" \
         status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' || true)
     if echo "${_S04_OUT}" | grep -qi "older format\|aid update"; then
-        fail "PAR080-S04 PS1 format-current repo: must NOT warn (format_version=2 == supported)"
+        fail "PAR080-S04 PS1 format-current repo: must NOT warn (format_version=3 == supported)"
     else
         pass "PAR080-S04 PS1 format-current repo: no WARN (steady-state)"
     fi
@@ -2158,11 +2171,11 @@ fi
 #
 # AC1: Constant-parity drift check.
 #   V01: AID_SUPPORTED_FORMAT integer in bin/aid EQUALS $AidSupportedFormat
-#        in bin/aid.ps1 (grep both; compare). Both must equal 2.
+#        in bin/aid.ps1 (grep both; compare). Both must equal 3.
 #        CI fails if either constant drifts.
 #
-# AC2: Refuse-on-newer (format_version: 3) + byte/mtime identity of settings.yml.
-#   V02: Bash 'aid status' in a format_version: 3 repo -> non-zero exit.
+# AC2: Refuse-on-newer (format_version: 4) + byte/mtime identity of settings.yml.
+#   V02: Bash 'aid status' in a format_version: 4 repo -> non-zero exit.
 #   V03: Bash refuse: settings.yml byte-identical after the call (no mutation).
 #   V04: Bash refuse: mtime of settings.yml unchanged after the call.
 #   V05: PS1 parity (skipped when pwsh absent): exit non-zero on newer-format repo.
@@ -2206,14 +2219,14 @@ if [[ -n "${_V01_BASH_CONST}" && -n "${_V01_PS1_CONST}" ]]; then
     assert_eq "${_V01_BASH_CONST}" "${_V01_PS1_CONST}" \
         "PAR009-V01 Bash<->PS1 format-constant parity: AID_SUPPORTED_FORMAT == AidSupportedFormat (both=${_V01_BASH_CONST})"
 fi
-# Both must equal 2 specifically (not just each other).
-assert_eq "${_V01_BASH_CONST}" "2" \
-    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 2 (expected supported format)"
-assert_eq "${_V01_PS1_CONST}" "2" \
-    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 2 (expected supported format)"
+# Both must equal 3 specifically (not just each other).
+assert_eq "${_V01_BASH_CONST}" "3" \
+    "PAR009-V01c bin/aid: AID_SUPPORTED_FORMAT == 3 (expected supported format)"
+assert_eq "${_V01_PS1_CONST}" "3" \
+    "PAR009-V01d bin/aid.ps1: AidSupportedFormat == 3 (expected supported format)"
 
 # ---------------------------------------------------------------------------
-# V02-V04: Refuse-on-newer (format_version: 3) + byte/mtime identity (Bash).
+# V02-V04: Refuse-on-newer (format_version: 4) + byte/mtime identity (Bash).
 # ---------------------------------------------------------------------------
 _V_CODE_HOME=$(newhome); setup_sh_home "${_V_CODE_HOME}"
 _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
@@ -2221,7 +2234,7 @@ _V_STATE_HOME="$(mktemp -d "${TMP}/v009state.XXXXXX")"
 _V_REPO_NEWER="$(mktemp -d "${TMP}/v009newer.XXXXXX")"
 mkdir -p "${_V_REPO_NEWER}/.aid"
 cat > "${_V_REPO_NEWER}/.aid/settings.yml" << 'V009NEWEREOF'
-format_version: 3
+format_version: 4
 project:
   name: newer-format-test
   description: repo with format newer than CLI supports
@@ -2253,7 +2266,7 @@ rm -f "${_V02_TMP_OUT}"
 
 # V02: non-zero exit on newer-format repo.
 assert_exit_nonzero "${_V02_RC}" \
-    "PAR009-V02 Bash refuse-on-newer: aid status format_version:3 -> non-zero exit"
+    "PAR009-V02 Bash refuse-on-newer: aid status format_version:4 -> non-zero exit"
 
 # V03: byte-identical settings.yml after refuse (no mutation).
 _V02_SHA_AFTER=$(sha256sum "${_V_REPO_NEWER}/.aid/settings.yml" | cut -d' ' -f1)
@@ -2282,7 +2295,7 @@ if [[ -n "$PWSH" ]]; then
     _V_REPO_NEWER_PS="$(mktemp -d "${TMP}/v009newerps.XXXXXX")"
     mkdir -p "${_V_REPO_NEWER_PS}/.aid"
     cat > "${_V_REPO_NEWER_PS}/.aid/settings.yml" << 'V009NEWERPEOF'
-format_version: 3
+format_version: 4
 project:
   name: newer-format-ps1-test
   description: repo with format newer than CLI supports (PS1 fixture)
@@ -2308,7 +2321,7 @@ V009NEWERPEOF
     rm -f "${_V05_TMP_OUT}"
 
     assert_exit_nonzero "${_V05_RC}" \
-        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:3 -> non-zero exit"
+        "PAR009-V05 PS1 refuse-on-newer: aid.ps1 status format_version:4 -> non-zero exit"
 
     _V05_SHA_AFTER_PS=$(sha256sum "${_V_REPO_NEWER_PS}/.aid/settings.yml" | cut -d' ' -f1)
     assert_eq "${_V05_SHA_BEFORE_PS}" "${_V05_SHA_AFTER_PS}" \
@@ -2470,14 +2483,14 @@ assert_exit_eq "$RC_PS1" 0 "PAR029-W07 PS1 aid-update no-.aid/ dir -> exit 0 (CL
 assert_eq "$RC_SH" "$RC_PS1" "PAR029-W08 Bash/PS1 aid-update no-.aid/ exit code parity"
 
 # W11/W12: format-gate refuse message parity — refuse text identical across runtimes.
-# Run aid status in a repo with format_version: 3 (newer than supported).
+# Run aid status in a repo with format_version: 4 (newer than supported).
 # The refuse error message text must be the same from both runtimes.
 SH_HOME_W2=$(newhome); setup_sh_home "${SH_HOME_W2}"
 PS_HOME_W2=$(newhome); setup_ps1_home "${PS_HOME_W2}"
 T_W2=$(newtarget)
 mkdir -p "${T_W2}/.aid"
 cat > "${T_W2}/.aid/settings.yml" << 'PAR029W2EOF'
-format_version: 3
+format_version: 4
 project:
   name: newer-format-par029w
   description: newer-than-supported format for refuse parity check
@@ -2501,7 +2514,7 @@ _W11_RC=$?
 _W11_OUT="$(cat "${_W11_TMP}")"; rm -f "${_W11_TMP}"
 
 assert_exit_nonzero "${_W11_RC}" \
-    "PAR029-W11 Bash aid-status format_version:3 -> non-zero exit (refuse)"
+    "PAR029-W11 Bash aid-status format_version:4 -> non-zero exit (refuse)"
 
 if [[ -n "$PWSH" ]]; then
     (cd "${T_W2}" && AID_HOME="${PS_HOME_W2}" AID_LIB_PATH="${PS_HOME_W2}/lib/AidInstallCore.psm1" \
@@ -2512,7 +2525,7 @@ if [[ -n "$PWSH" ]]; then
     _W12_OUT="$(cat "${_W12_TMP}" | sed 's/\x1b\[[0-9;]*m//g')"; rm -f "${_W12_TMP}"
 
     assert_exit_nonzero "${_W12_RC}" \
-        "PAR029-W12 PS1 aid-status format_version:3 -> non-zero exit (refuse)"
+        "PAR029-W12 PS1 aid-status format_version:4 -> non-zero exit (refuse)"
     # Refuse message text must appear in both runtimes (parity of the refuse surface).
     assert_output_contains "$_W11_OUT" "newer than this CLI supports" \
         "PAR029-W13 Bash refuse: 'newer than this CLI supports' in output"
@@ -2520,7 +2533,7 @@ if [[ -n "$PWSH" ]]; then
         "PAR029-W14 PS1 refuse: 'newer than this CLI supports' in output"
     # Parity: both refuse (non-zero) with same message pattern.
     assert_eq "${_W11_RC}" "${_W12_RC}" \
-        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:3)"
+        "PAR029-W15 Bash↔PS1 format-gate refuse exit code parity (format_version:4)"
 else
     pass "PAR029-W12 PS1 format-gate refuse: exit non-zero [SKIPPED: pwsh absent]"
     pass "PAR029-W13 Bash format-gate refuse message check [SKIPPED: pwsh absent]"

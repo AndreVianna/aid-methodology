@@ -392,7 +392,7 @@ if (Test-Path $mPathT05 -PathType Leaf) {
         Assert ($mObj.tools.PSObject.Properties.Name -contains 'claude-code') `
             'T05a manifest contains claude-code' 'claude-code not in manifest.tools'
         Assert-Contains $mRaw '"status": "owned"' 'T05b manifest status:owned'
-        Assert-Contains $mRaw '"manifest_version"' 'T05c manifest has manifest_version'
+        Assert-Contains $mRaw '"format_version"' 'T05c manifest has format_version'
     } catch {
         script:RecordFail 'T05 manifest JSON parse' "exception: $_"
     }
@@ -604,7 +604,7 @@ $env:AID_NO_UPDATE_CHECK = '1'
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
 Assert-FileExists (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') 'T48b settings.yml synthesized by update (era-b via manifest)'
 $s48 = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') -Raw
-Assert-Contains $s48 'format_version: 2' 'T48c format_version: 2 stamped'
+Assert-Contains $s48 'format_version: 3' 'T48c format_version: 3 stamped'
 # Second update: the gate must no longer warn (stamp current now).
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
 Assert-NotContains $script:_LastOut 'older format' 'T48d no recurring older-format WARN after stamp'
