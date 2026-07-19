@@ -108,7 +108,10 @@ _aid_is_project_dir() {
 # ---------------------------------------------------------------------------
 # format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
 # served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
-readonly AID_SUPPORTED_FORMAT=2
+# format 3 (was 2): settings.yml flattened -- top-level name/description/type/
+# source_control/minimum_grade/heartbeat_interval + a knowledge: block; the installed
+# tools + AID version now live only in the manifest (.aid/.aid-manifest.json).
+readonly AID_SUPPORTED_FORMAT=3
 
 # ---------------------------------------------------------------------------
 # Source the shared install core from AID_CODE_HOME/lib/.
@@ -1556,12 +1559,10 @@ _aid_resolve_tier() {
 #   "no-aid"      -- directory exists but has no .aid/ subdirectory
 #   "untracked"   -- .aid/ exists but no .aid/.aid-manifest.json is present
 #   "vX.Y.Z"      -- tracked; semver version string from .aid/.aid-manifest.json
-#                    (key "aid_version"), falling back to a top-level aid_version
-#                    in .aid/settings.yml (tool-less projects; the .aid-version
-#                    marker is retired).
-# The version is extracted by the same semver regex on both paths -- a malformed
-# aid_version value in the manifest falls through to the settings fallback, then
-# to untracked (never returned raw).
+#                    (key "aid_version"). Every AID project (tool install or
+#                    tool-less scaffold) has a manifest, so it is the single
+#                    version source; a malformed value falls through to untracked
+#                    (never returned raw).
 # Never errors; always returns 0.
 _aid_project_state() {
     local _path="$1"
@@ -1576,27 +1577,13 @@ _aid_project_state() {
     local _manifest="${_path}/.aid/.aid-manifest.json"
     if [[ -f "$_manifest" ]]; then
         local _ver
-        # Extract aid_version value; then validate as semver (same guard as the settings fallback below).
+        # Extract aid_version value; then validate as semver.
         _ver="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "$_manifest" 2>/dev/null \
             | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/' \
             | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' \
             | head -1)"
         if [[ -n "$_ver" ]]; then
             printf '%s\n' "$_ver"
-            return 0
-        fi
-    fi
-    # Fallback: top-level aid_version in .aid/settings.yml (tool-less projects
-    # record their AID version here; the .aid/.aid-version marker is retired).
-    local _settings="${_path}/.aid/settings.yml"
-    if [[ -f "$_settings" ]]; then
-        local _sv_ver
-        _sv_ver="$(grep -E '^aid_version:' "$_settings" 2>/dev/null \
-            | head -1 \
-            | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' \
-            | head -1)"
-        if [[ -n "$_sv_ver" ]]; then
-            printf '%s\n' "$_sv_ver"
             return 0
         fi
     fi
@@ -2636,35 +2623,47 @@ _which_tier_holds() {
 # recorded in settings.yml (no manifest exists for a tool-less project).
 _aid_scaffold_bare_project() {
     local _canon="$1"
-    local _name _fmt _ver
+    local _name _fmt _ver _sc _now
     _name="$(basename "$_canon")"
-    _fmt="${AID_SUPPORTED_FORMAT:-2}"
+    _fmt="${AID_SUPPORTED_FORMAT:-3}"
     _ver=""
     [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
         _ver="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION" 2>/dev/null)"
+    if [[ -d "${_canon}/.git" ]]; then _sc="git"; else _sc="none"; fi
 
     mkdir -p "${_canon}/.aid/connectors" "${_canon}/.aid/knowledge" "${_canon}/.aid/works"
 
+    # Flat, user-owned settings.yml (the AID version + installed tools live in
+    # the manifest, not here). format_version stamps the .aid/ layout.
     local _settings="${_canon}/.aid/settings.yml"
     if [[ ! -f "$_settings" ]]; then
         {
             printf 'format_version: %s\n' "$_fmt"
-            [[ -n "$_ver" ]] && printf 'aid_version: %s\n' "$_ver"
-            printf '# .aid/settings.yml - AID pipeline configuration (single source of truth).\n'
+            printf '# .aid/settings.yml - AID pipeline configuration (user-owned project settings).\n'
             printf '# Initialized by `aid projects add` for a tool-less project (no host tool yet).\n'
             printf '# Run /aid-config to configure, or `aid add <tool>` to install a host tool.\n'
-            printf '\n'
-            printf 'project:\n'
-            printf '  name: %s\n' "$_name"
-            printf '  description: ""\n'
-            printf '  type: brownfield\n'
-            printf '\n'
-            printf 'tools:\n'
-            printf '  installed: []\n'
-            printf '\n'
-            printf 'review:\n'
-            printf '  minimum_grade: A\n'
+            printf 'name: %s\n' "$_name"
+            printf 'description: ""\n'
+            printf 'type: brownfield\n'
+            printf 'source_control: %s\n' "$_sc"
+            printf 'minimum_grade: A\n'
+            printf 'heartbeat_interval: 1\n'
         } > "$_settings"
+    fi
+
+    # Minimal AID-owned manifest: the single version source of truth. tools:{}
+    # is populated when `aid add <tool>` installs a host tool.
+    local _manifest="${_canon}/.aid/.aid-manifest.json"
+    if [[ ! -f "$_manifest" ]]; then
+        _now="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
+        {
+            printf '{\n'
+            printf '  "format_version": 2,\n'
+            [[ -n "$_ver" ]] && printf '  "aid_version": "%s",\n' "$_ver"
+            printf '  "installed_at": "%s",\n' "$_now"
+            printf '  "tools": {}\n'
+            printf '}\n'
+        } > "$_manifest"
     fi
 }
 

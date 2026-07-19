@@ -149,7 +149,10 @@ function script:Test-AidIsProjectDir {
 # ---------------------------------------------------------------------------
 # format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
 # served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
-Set-Variable -Name AidSupportedFormat -Value 2 -Option Constant -Scope Script
+# format 3 (was 2): settings.yml flattened -- top-level name/description/type/
+# source_control/minimum_grade/heartbeat_interval + a knowledge: block; the installed
+# tools + AID version now live only in the manifest (.aid/.aid-manifest.json).
+Set-Variable -Name AidSupportedFormat -Value 3 -Option Constant -Scope Script
 
 # ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
@@ -1527,9 +1530,8 @@ function script:Resolve-AidTier {
 #   "no-aid"    -- directory exists but has no .aid/ subdirectory
 #   "untracked" -- .aid/ exists but no .aid/.aid-manifest.json is present
 #   "vX.Y.Z"   -- tracked; semver version string from .aid/.aid-manifest.json
-#                  (key "aid_version"), falling back to a top-level aid_version
-#                  in .aid/settings.yml (tool-less projects; the .aid-version
-#                  marker is retired).
+#                  (key "aid_version"). Every AID project has a manifest, so it
+#                  is the single version source; a malformed value -> untracked.
 # Never errors; always returns normally.
 # Mirror of bash _aid_project_state.
 function script:Get-AidProjectState {
@@ -1544,19 +1546,6 @@ function script:Get-AidProjectState {
             $raw = $Matches[1]
             if ($raw -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
                 return $Matches[1]
-            }
-        }
-    }
-    $settings = Join-Path $aidDir 'settings.yml'
-    if (Test-Path $settings -PathType Leaf) {
-        $sLines = Get-Content -LiteralPath $settings -Encoding utf8 -ErrorAction SilentlyContinue
-        foreach ($sLine in $sLines) {
-            if ($sLine -match '^aid_version:\s*(.+)$') {
-                $sVal = $Matches[1]
-                if ($sVal -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
-                    return $Matches[1]
-                }
-                break
             }
         }
     }
@@ -1708,32 +1697,46 @@ function script:Invoke-AidScaffoldBareProject {
         $ver = ((Get-Content -LiteralPath $verFile -Raw -Encoding utf8 -ErrorAction SilentlyContinue) -replace '\s','')
     }
 
+    $sc = if (Test-Path (Join-Path $Canon '.git')) { 'git' } else { 'none' }
+
     $aidDir = Join-Path $Canon '.aid'
     foreach ($sub in @('connectors','knowledge','works')) {
         New-Item -ItemType Directory -Force -Path (Join-Path $aidDir $sub) -ErrorAction SilentlyContinue | Out-Null
     }
 
+    # Flat, user-owned settings.yml (the AID version + installed tools live in
+    # the manifest, not here). format_version stamps the .aid/ layout.
     $settings = Join-Path $aidDir 'settings.yml'
     if (-not (Test-Path $settings -PathType Leaf)) {
         $lines = [System.Collections.Generic.List[string]]::new()
         [void]$lines.Add("format_version: $fmt")
-        if ($ver) { [void]$lines.Add("aid_version: $ver") }
-        [void]$lines.Add('# .aid/settings.yml - AID pipeline configuration (single source of truth).')
+        [void]$lines.Add('# .aid/settings.yml - AID pipeline configuration (user-owned project settings).')
         [void]$lines.Add('# Initialized by `aid projects add` for a tool-less project (no host tool yet).')
         [void]$lines.Add('# Run /aid-config to configure, or `aid add <tool>` to install a host tool.')
-        [void]$lines.Add('')
-        [void]$lines.Add('project:')
-        [void]$lines.Add("  name: $name")
-        [void]$lines.Add('  description: ""')
-        [void]$lines.Add('  type: brownfield')
-        [void]$lines.Add('')
-        [void]$lines.Add('tools:')
-        [void]$lines.Add('  installed: []')
-        [void]$lines.Add('')
-        [void]$lines.Add('review:')
-        [void]$lines.Add('  minimum_grade: A')
+        [void]$lines.Add("name: $name")
+        [void]$lines.Add('description: ""')
+        [void]$lines.Add('type: brownfield')
+        [void]$lines.Add("source_control: $sc")
+        [void]$lines.Add('minimum_grade: A')
+        [void]$lines.Add('heartbeat_interval: 1')
         $content = ($lines -join "`n") + "`n"
         [System.IO.File]::WriteAllText($settings, $content, (New-Object System.Text.UTF8Encoding($false)))
+    }
+
+    # Minimal AID-owned manifest: the single version source of truth. tools:{}
+    # is populated when `aid add <tool>` installs a host tool.
+    $manifest = Join-Path $aidDir '.aid-manifest.json'
+    if (-not (Test-Path $manifest -PathType Leaf)) {
+        $now = [System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        $mlines = [System.Collections.Generic.List[string]]::new()
+        [void]$mlines.Add('{')
+        [void]$mlines.Add('  "format_version": 2,')
+        if ($ver) { [void]$mlines.Add("  `"aid_version`": `"$ver`",") }
+        [void]$mlines.Add("  `"installed_at`": `"$now`",")
+        [void]$mlines.Add('  "tools": {}')
+        [void]$mlines.Add('}')
+        $mcontent = ($mlines -join "`n") + "`n"
+        [System.IO.File]::WriteAllText($manifest, $mcontent, (New-Object System.Text.UTF8Encoding($false)))
     }
 }
 

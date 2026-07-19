@@ -71,7 +71,7 @@ $script:_SeededSettings  = $false
 $script:_GitignoreAction = 'unchanged'
 # Settings format stamp. MUST equal bin/aid AID_SUPPORTED_FORMAT / bin/aid.ps1
 # AidSupportedFormat. Used to stamp a seeded settings.yml so the format gate is quiet.
-$script:_AidSupportedFormat = 2  # format 2: .aid/dashboard/ eliminated (home from CLI, kb.html in .aid/knowledge/)
+$script:_AidSupportedFormat = 3  # format 2: .aid/dashboard/ eliminated (home from CLI, kb.html in .aid/knowledge/)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -846,7 +846,7 @@ function script:Build-ManifestJson {
 
     $sb = [System.Text.StringBuilder]::new()
     [void]$sb.Append("{`n")
-    [void]$sb.Append("  `"manifest_version`": 1,`n")
+    [void]$sb.Append("  `"format_version`": 2,`n")
     [void]$sb.Append("  `"aid_version`": `"$(script:Escape-JsonString $TopVersion)`",`n")
     [void]$sb.Append("  `"installed_at`": `"$(script:Escape-JsonString $TopInstalledAt)`",`n")
     [void]$sb.Append("  `"tools`": {`n")
@@ -913,7 +913,7 @@ function script:Build-ManifestJson {
 #
 # Reads the existing manifest (if any), merges the tool entry, writes back atomically
 # (via a temp file).  Creates <target>/.aid/ as needed.
-# Key order contract: manifest_version, aid_version, installed_at, tools;
+# Key order contract: format_version, aid_version, installed_at, tools;
 #   per-tool: version, installed_at, paths, root_agent_files;
 #   root_agent_files entry: path, sha256, status.
 # 2-space indent, LF newlines, trailing newline.
@@ -1128,7 +1128,7 @@ function Test-ManifestExists {
     if (-not (Test-Path $ManifestPath -PathType Leaf)) { return $false }
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        return $null -ne $data.manifest_version
+        return ($null -ne $data.format_version) -or ($null -ne $data.manifest_version)
     } catch {
         return $false
     }
@@ -2127,7 +2127,7 @@ function Get-AidStatusBody {
     if (Test-Path $manifest -PathType Leaf) {
         try {
             $raw = Get-Content -LiteralPath $manifest -Raw
-            if ($raw -match '"manifest_version"') {
+            if ($raw -match '"(manifest_version|format_version)"') {
                 $manifestOk = $true
             }
         } catch {}
@@ -2172,12 +2172,12 @@ function Get-AidStatus {
 
     $manifest = Join-Path $targetPath (Join-Path '.aid' '.aid-manifest.json')
 
-    # Check if manifest exists and has manifest_version key.
+    # Check if manifest exists and has a manifest_version or format_version key.
     $manifestOk = $false
     if (Test-Path $manifest -PathType Leaf) {
         try {
             $raw = Get-Content -LiteralPath $manifest -Raw
-            if ($raw -match '"manifest_version"') {
+            if ($raw -match '"(manifest_version|format_version)"') {
                 $manifestOk = $true
             }
         } catch {}

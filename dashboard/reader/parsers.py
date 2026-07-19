@@ -330,16 +330,61 @@ def _strip_yaml_inline_comment(scalar: str) -> str:
     return s
 
 
-def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]:
-    """Parse the kb_baseline block from .aid/settings.yml (DM-A4, task-064).
+def _scan_block_pair(
+    text: str, block_key: str, key1: str, key2: str
+) -> tuple[Optional[str], Optional[str], bool]:
+    """Tolerant line-scan for a top-level ``block_key`` (e.g. 'knowledge:')
+    block, extracting the ``key1`` and ``key2`` scalar values found inside it.
 
-    Tolerant line-scan of the 'kb_baseline:' nested block, reusing the
-    parse_project_name posture (parsers.py:148):
-      - Scan for 'kb_baseline:' top-level key
-      - Within that block, extract 'branch:' and 'tip_date:' scalar values
+    Returns (key1_value, key2_value, block_found).
+    """
+    in_block = False
+    found = False
+    val1: Optional[str] = None
+    val2: Optional[str] = None
+    key1_re = re.compile(r"^\s+" + re.escape(key1) + r"\s+(.+)")
+    key2_re = re.compile(r"^\s+" + re.escape(key2) + r"\s+(.+)")
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped == block_key or stripped.startswith(block_key + " "):
+            in_block = True
+            found = True
+            continue
+        if in_block:
+            # Another top-level key (no leading whitespace) ends the block
+            if line and not line[0].isspace() and ":" in line and not stripped.startswith("#"):
+                break
+            m = key1_re.match(line)
+            if m and val1 is None:
+                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+                if val:
+                    val1 = val
+                continue
+            m = key2_re.match(line)
+            if m and val2 is None:
+                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+                if val:
+                    val2 = val
+                continue
+
+    return val1, val2, found
+
+
+def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]:
+    """Parse the KB baseline from .aid/settings.yml (DM-A4, task-064).
+
+    Tolerant line-scan, reusing the parse_project_name posture (parsers.py:148):
+      - Scan for the 'knowledge:' top-level key
+      - Within that block, extract 'source:' (-> branch) and 'last_update:'
+        (-> tip_date) scalar values
+      - When 'knowledge:' is absent, fall back to the legacy 'kb_baseline:'
+        block ('branch:' / 'tip_date:' scalars) for pre-migration settings.yml
       - Absent/unparseable -> None (skip freshness, stay approved; FF-A2)
 
-    Returns (KbBaseline or None, bytes_read).
+    Returns (KbBaseline or None, bytes_read). The returned struct keeps the
+    same branch/tip_date field names regardless of which schema it was read
+    from, so downstream freshness logic is unchanged.
     Never raises (NFR7). Never writes.
     """
     if not settings_path.is_file():
@@ -353,33 +398,13 @@ def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]
     bytes_read = len(raw)
     text = raw.decode("utf-8", errors="replace")
 
-    in_baseline = False
-    branch: Optional[str] = None
-    tip_date: Optional[str] = None
-
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped == "kb_baseline:" or stripped.startswith("kb_baseline: "):
-            in_baseline = True
-            continue
-        if in_baseline:
-            # Another top-level key (no leading whitespace) ends the block
-            if line and not line[0].isspace() and ":" in line and not stripped.startswith("#"):
-                break
-            # Extract branch:
-            m = re.match(r"^\s+branch:\s+(.+)", line)
-            if m and branch is None:
-                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
-                if val:
-                    branch = val
-                continue
-            # Extract tip_date:
-            m = re.match(r"^\s+tip_date:\s+(.+)", line)
-            if m and tip_date is None:
-                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
-                if val:
-                    tip_date = val
-                continue
+    branch, tip_date, knowledge_found = _scan_block_pair(
+        text, "knowledge:", "source:", "last_update:"
+    )
+    if not knowledge_found:
+        branch, tip_date, _ = _scan_block_pair(
+            text, "kb_baseline:", "branch:", "tip_date:"
+        )
 
     if branch is None and tip_date is None:
         return None, bytes_read

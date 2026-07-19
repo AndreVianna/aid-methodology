@@ -698,14 +698,57 @@ function parseSettingsMinimumGrade(settingsPath) {
 }
 
 // ---------------------------------------------------------------------------
-// task-064: parseKbBaseline -- tolerant line-scan of settings.yml kb_baseline block
+// task-064: parseKbBaseline -- tolerant line-scan of settings.yml KB baseline
 // Twin of dashboard/reader/parsers.py parse_kb_baseline (byte-parity minded, DM-A4)
 // ---------------------------------------------------------------------------
 
+function scanBlockPair(text, blockKey, key1, key2) {
+  // Tolerant line-scan for a top-level `blockKey` (e.g. 'knowledge:') block,
+  // extracting the `key1` and `key2` scalar values found inside it.
+  // Returns [key1Value, key2Value, blockFound].
+  let inBlock = false;
+  let found = false;
+  let val1 = null;
+  let val2 = null;
+  const key1Re = new RegExp("^\\s+" + key1.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s+(.+)");
+  const key2Re = new RegExp("^\\s+" + key2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s+(.+)");
+
+  for (const line of text.split("\n")) {
+    const stripped = line.trim();
+    if (stripped === blockKey || stripped.startsWith(blockKey + " ")) {
+      inBlock = true;
+      found = true;
+      continue;
+    }
+    if (inBlock) {
+      // Another top-level key (no leading whitespace) ends the block
+      if (line.length > 0 && !/^\s/.test(line) && line.includes(":") && !stripped.startsWith("#")) {
+        break;
+      }
+      let m = line.match(key1Re);
+      if (m && val1 === null) {
+        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        if (val) val1 = val;
+        continue;
+      }
+      m = line.match(key2Re);
+      if (m && val2 === null) {
+        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        if (val) val2 = val;
+        continue;
+      }
+    }
+  }
+
+  return [val1, val2, found];
+}
+
 function parseKbBaseline(settingsPath) {
   // Returns [{branch, tip_date}|null, bytesRead]
-  // Tolerant line-scan of the 'kb_baseline:' nested block in .aid/settings.yml.
-  // Absent/unparseable -> null (skip freshness, stay approved; FF-A2).
+  // Tolerant line-scan of the 'knowledge:' nested block in .aid/settings.yml
+  // ('source:' -> branch, 'last_update:' -> tip_date), falling back to the
+  // legacy 'kb_baseline:' block ('branch:' / 'tip_date:') when 'knowledge:'
+  // is absent. Absent/unparseable -> null (skip freshness, stay approved; FF-A2).
   if (!existsSync(settingsPath)) return [null, 0];
   let raw;
   try {
@@ -716,36 +759,9 @@ function parseKbBaseline(settingsPath) {
   const bytesRead = raw.length;
   const text = raw.toString("utf-8");
 
-  let inBaseline = false;
-  let branch = null;
-  let tipDate = null;
-
-  for (const line of text.split("\n")) {
-    const stripped = line.trim();
-    if (stripped === "kb_baseline:" || stripped.startsWith("kb_baseline: ")) {
-      inBaseline = true;
-      continue;
-    }
-    if (inBaseline) {
-      // Another top-level key (no leading whitespace) ends the block
-      if (line.length > 0 && !/^\s/.test(line) && line.includes(":") && !stripped.startsWith("#")) {
-        break;
-      }
-      // Extract branch:
-      let m = line.match(/^\s+branch:\s+(.+)/);
-      if (m && branch === null) {
-        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
-        if (val) branch = val;
-        continue;
-      }
-      // Extract tip_date:
-      m = line.match(/^\s+tip_date:\s+(.+)/);
-      if (m && tipDate === null) {
-        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
-        if (val) tipDate = val;
-        continue;
-      }
-    }
+  let [branch, tipDate, knowledgeFound] = scanBlockPair(text, "knowledge:", "source:", "last_update:");
+  if (!knowledgeFound) {
+    [branch, tipDate] = scanBlockPair(text, "kb_baseline:", "branch:", "tip_date:");
   }
 
   if (branch === null && tipDate === null) return [null, bytesRead];

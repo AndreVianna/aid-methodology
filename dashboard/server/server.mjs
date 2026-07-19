@@ -477,26 +477,6 @@ function readManifest(repoPath) {
   }
 }
 
-function readSettingsAidVersion(repoPath) {
-  // Top-level `aid_version:` scalar from .aid/settings.yml. Display fallback for
-  // a project with NO manifest: a tool-less `aid projects add` scaffold records
-  // its AID version here (the .aid/.aid-version marker is retired). null on any
-  // failure or absence. Mirrors server.py _read_settings_aid_version.
-  try {
-    const text = readFileSync(join(repoPath, ".aid", "settings.yml"), "utf8");
-    for (const line of text.split(/\r?\n/)) {
-      // Top-level key only (no leading whitespace).
-      if (line.startsWith("aid_version:")) {
-        const v = stripYamlInlineComment(line.slice("aid_version:".length)).trim().replace(/^["']|["']$/g, "");
-        return v || null;
-      }
-    }
-    return null;
-  } catch (_) {
-    return null;
-  }
-}
-
 // _CODE_HOME: $AID_CODE_HOME resolved via self-location.
 // server.mjs lives at $AID_CODE_HOME/dashboard/server/server.mjs, so:
 //   __dirname_srv             = $AID_CODE_HOME/dashboard/server/
@@ -576,10 +556,6 @@ function buildHomeModel(aidHome, regPath, idMap, warnings, runtime, writeEnabled
         entry.aid_version = aidVersion;
         entry.tools_installed = toolsInstalled;
       } catch (_) {}
-      // Tool-less project (no manifest): fall back to settings.yml aid_version.
-      if (entry.aid_version === null) {
-        try { entry.aid_version = readSettingsAidVersion(fsPath); } catch (_) {}
-      }
       try {
         // home.html is a data-free CLI template served from $AID_CODE_HOME (not a
         // per-repo file); the opt-in signal is simply that the repo is AID-initialized

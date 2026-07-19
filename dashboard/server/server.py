@@ -451,28 +451,6 @@ def _read_manifest(repo_path: str) -> tuple[str | None, list[str]]:
         return None, []
 
 
-def _read_settings_aid_version(repo_path: str) -> str | None:
-    """Read a top-level `aid_version:` scalar from <repo>/.aid/settings.yml.
-
-    Display fallback for a project with NO manifest: a tool-less `aid projects
-    add` scaffold records its AID version here (the .aid/.aid-version marker is
-    retired). Tolerant line-scan; None on any failure or absence.
-    """
-    try:
-        settings = (Path(repo_path) / ".aid" / "settings.yml").read_text(
-            encoding="utf-8", errors="surrogateescape"
-        )
-        for line in settings.splitlines():
-            # Top-level key only (no leading whitespace) -- distinct from any
-            # nested key that might share the name.
-            if line.startswith("aid_version:"):
-                val = _strip_yaml_inline_comment(line[len("aid_version:"):]).strip().strip('"').strip("'")
-                return val or None
-        return None
-    except Exception:
-        return None
-
-
 def _read_aid_version() -> str | None:
     """Read VERSION from the code home ($AID_CODE_HOME/VERSION). None if absent.
 
@@ -560,12 +538,6 @@ def build_home_model(
                 entry["aid_version"], entry["tools_installed"] = _read_manifest(fs_path)
             except Exception:
                 pass
-            # Tool-less project (no manifest): fall back to settings.yml aid_version.
-            if entry["aid_version"] is None:
-                try:
-                    entry["aid_version"] = _read_settings_aid_version(fs_path)
-                except Exception:
-                    pass
             try:
                 # home.html is a data-free CLI template served from $AID_CODE_HOME
                 # (not a per-repo file); the opt-in signal that this repo has a
