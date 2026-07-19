@@ -123,16 +123,19 @@ class TestOpTableTaskRenameRow(unittest.TestCase):
         # (feature-007) registers a 7th/8th, connector.set/connector.remove;
         # task-021 (feature-010) registers a 9th/10th,
         # external-source.add/external-source.remove; task-025
-        # (feature-009-pipeline-delete) registers an 11th, pipeline.delete --
-        # on top of the 5 rows this test originally pinned -- see
-        # test_task015_tools_update_ops.py / test_task019_connector_ops.py /
-        # test_task021_external_source_ops.py / test_task025_pipeline_delete_
-        # ops.py for their dedicated coverage.
+        # (feature-009-pipeline-delete) registers an 11th, pipeline.delete;
+        # task-029 (feature-008-execution-control) registers a 12th/13th,
+        # task.stop/task.resume -- on top of the 5 rows this test originally
+        # pinned -- see test_task015_tools_update_ops.py /
+        # test_task019_connector_ops.py / test_task021_external_source_ops.py /
+        # test_task025_pipeline_delete_ops.py /
+        # test_task029_task_stop_resume_ops.py for their dedicated coverage.
         self.assertEqual(
             set(srv.OP_TABLE.keys()),
             {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename",
              "tools.update", "connector.set", "connector.remove",
-             "external-source.add", "external-source.remove", "pipeline.delete"},
+             "external-source.add", "external-source.remove", "pipeline.delete",
+             "task.stop", "task.resume"},
         )
 
     def test_task_rename_row_shape(self):
@@ -469,10 +472,15 @@ class TestSerTaskDisplayName(unittest.TestCase):
         obj.delivery = 1
         obj.lane = None
         obj.display_name = "Renamed task"
+        # feature-008 (work-017 task-029): stop_requested is now the LAST
+        # declared field, appended after display_name -- see
+        # TestSerTaskStopRequested below for that field's own coverage.
+        obj.stop_requested = False
 
         serialized = srv._ser_task(obj)
         self.assertEqual(serialized["display_name"], "Renamed task")
-        self.assertEqual(list(serialized.keys())[-1], "display_name")
+        self.assertEqual(list(serialized.keys())[-2], "display_name")
+        self.assertEqual(list(serialized.keys())[-1], "stop_requested")
 
 
 if __name__ == "__main__":

@@ -1589,6 +1589,53 @@ const PIPELINE_DELETE_STATUS_MAP = {
 };
 
 // ---------------------------------------------------------------------------
+// feature-008-execution-control (work-017 task-029): task.stop / task.resume --
+// TASK-scoped ops (target: {work_id, task_id}; same scope shape as task.rename/
+// task.set-notes -- BOTH work_id and task_id required) dispatched to the
+// co-vendored write-control-signal.sh writer (task-028). Neither row overrides
+// the generic work_id shape check (SPEC.md API Contracts: "validated
+// ^work-[0-9]+ + dir-exists per feature-001" -- the SAME loose prefix check
+// every pre-task-025 pipeline/task-scoped row uses, NOT pipeline.delete's own
+// stricter full-shape override); resolveWorkDir's dir-exists check (404 on a
+// well-formed-but-absent work_id) is unchanged either way. `args` MUST be
+// absent/empty -- argSchema {} + semanticValidate reuses feature-004's
+// validateNoArgs (a non-empty args object -> 422 'invalid-value', evaluated
+// AFTER the work_id/task_id/resolveWorkDir checks) -- the action (stop vs
+// resume) is encoded in the op name, never a client value (mirrors how
+// feature-001 fixed pipeline.finish's value to 'Completed'; SPEC.md API
+// Contracts). Neither row overrides statusMap: write-control-signal.sh reuses
+// the writeback exit alphabet verbatim (0 ok / 2 IO-failure / 4 invalid-value /
+// 5 missing-arg), which DEFAULT_MAP already maps correctly (4/5 -> 422,
+// 2 -> 409, other -> 500) -- no OP-SM extension needed here.
+// ---------------------------------------------------------------------------
+
+function opTaskStopArgv(workDir, servedRoot, target, args) {
+  // task.stop -> write-control-signal.sh --task-id <t> --action stop
+  // (env AID_WORK_DIR=<resolveWorkDir output>, worktree-aware per WT-1).
+  //
+  // workDir is resolveWorkDir's result (already confirmed non-null by
+  // dispatchOp's scope block) -- the SAME real, worktree-resolved directory
+  // the reader's own stop_requested stat derives relative to (task-029 §Data
+  // Model), never a reconstructed <servedRoot>/.aid/works/<work_id> path.
+  // servedRoot is unused (write-control-signal.sh needs only AID_WORK_DIR --
+  // unlike delete-pipeline.sh, it never re-derives a repo/worktree root
+  // itself); the parameter is kept for buildArgv's frozen call signature.
+  const argv = ["--task-id", String(target.task_id), "--action", "stop"];
+  const env = { AID_WORK_DIR: String(workDir) };
+  return [argv, env];
+}
+
+function opTaskResumeArgv(workDir, servedRoot, target, args) {
+  // task.resume -> write-control-signal.sh --task-id <t> --action resume
+  // (env AID_WORK_DIR=<resolveWorkDir output>, worktree-aware per WT-1).
+  //
+  // See opTaskStopArgv's docstring -- identical shape, --action resume.
+  const argv = ["--task-id", String(target.task_id), "--action", "resume"];
+  const env = { AID_WORK_DIR: String(workDir) };
+  return [argv, env];
+}
+
+// ---------------------------------------------------------------------------
 // feature-003-project-registry (task-013): project.add / project.remove --
 // home-scoped ops backed by the shared aid-CLI resolver (KI-004), registered
 // into HOME_OP_TABLE below. See SPEC.md API Contracts for the full citation
@@ -1898,6 +1945,22 @@ const OP_TABLE = {
     workIdMaxLen: WORK_ID_MAX_LEN,
     workIdInvalidStatus: [422, "invalid-value"],
     statusMap: PIPELINE_DELETE_STATUS_MAP,
+  },
+  "task.stop": {
+    scope: "task",
+    writer: "write-control-signal.sh",
+    argSchema: {},
+    buildArgv: opTaskStopArgv,
+    semanticValidate: validateNoArgs,
+    statusMap: null,
+  },
+  "task.resume": {
+    scope: "task",
+    writer: "write-control-signal.sh",
+    argSchema: {},
+    buildArgv: opTaskResumeArgv,
+    semanticValidate: validateNoArgs,
+    statusMap: null,
   },
 };
 

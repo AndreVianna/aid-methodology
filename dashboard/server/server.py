@@ -697,19 +697,21 @@ def _ser_repo_info(obj) -> dict:
 
 def _ser_task(obj) -> dict:
     """Serialize TaskModel in declared field order (schema_version 3; display_name
-    is an additive feature-005 field, no schema_version bump -- DM-A3/RC-2 precedent)."""
+    is an additive feature-005 field, stop_requested an additive feature-008 field --
+    neither bumps schema_version, DM-A3/RC-2 precedent)."""
     return {
-        "task_id":      obj.task_id,
-        "type":         obj.type,
-        "wave":         obj.wave,
-        "status":       obj.status.value,
-        "review_grade": obj.review_grade,
-        "elapsed":      obj.elapsed,
-        "notes":        obj.notes,
-        "short_name":   obj.short_name,
-        "delivery":     obj.delivery,
-        "lane":         obj.lane,
-        "display_name": obj.display_name,
+        "task_id":        obj.task_id,
+        "type":           obj.type,
+        "wave":           obj.wave,
+        "status":         obj.status.value,
+        "review_grade":   obj.review_grade,
+        "elapsed":        obj.elapsed,
+        "notes":          obj.notes,
+        "short_name":     obj.short_name,
+        "delivery":       obj.delivery,
+        "lane":           obj.lane,
+        "display_name":   obj.display_name,
+        "stop_requested": obj.stop_requested,
     }
 
 
@@ -1823,6 +1825,55 @@ _PIPELINE_DELETE_STATUS_MAP: dict[int, tuple[int, str]] = {
 
 
 # ---------------------------------------------------------------------------
+# feature-008-execution-control (work-017 task-029): task.stop / task.resume --
+# TASK-scoped ops (target: {work_id, task_id}; same scope shape as task.rename/
+# task.set-notes -- BOTH work_id and task_id required) dispatched to the
+# co-vendored write-control-signal.sh writer (task-028). Neither row overrides
+# the generic work_id shape check (SPEC.md API Contracts: "validated
+# ^work-[0-9]+ + dir-exists per feature-001" -- the SAME loose prefix check
+# every pre-task-025 pipeline/task-scoped row uses, NOT pipeline.delete's own
+# stricter full-shape override); resolve_work_dir's dir-exists check (404 on a
+# well-formed-but-absent work_id) is unchanged either way. `args` MUST be
+# absent/empty -- arg_schema {} + semantic_validate reuses feature-004's
+# _validate_no_args (a non-empty args object -> 422 'invalid-value', evaluated
+# AFTER the work_id/task_id/resolve_work_dir checks) -- the action (stop vs
+# resume) is encoded in the op name, never a client value (mirrors how
+# feature-001 fixed pipeline.finish's value to 'Completed'; SPEC.md API
+# Contracts). Neither row overrides status_map: write-control-signal.sh reuses
+# the writeback exit alphabet verbatim (0 ok / 2 IO-failure / 4 invalid-value /
+# 5 missing-arg), which DEFAULT_MAP already maps correctly (4/5 -> 422,
+# 2 -> 409, other -> 500) -- no OP-SM extension needed here.
+# ---------------------------------------------------------------------------
+
+def _op_task_stop_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """task.stop -> write-control-signal.sh --task-id <t> --action stop
+    (env AID_WORK_DIR=<resolve_work_dir output>, worktree-aware per WT-1).
+
+    work_dir is resolve_work_dir's result (already confirmed non-None by
+    _dispatch_op's scope block) -- the SAME real, worktree-resolved directory
+    the reader's own stop_requested stat derives relative to (task-029 §Data
+    Model), never a reconstructed <served_root>/.aid/works/<work_id> path.
+    served_root is unused (write-control-signal.sh needs only AID_WORK_DIR --
+    unlike delete-pipeline.sh, it never re-derives a repo/worktree root
+    itself); the parameter is kept for build_argv's frozen call signature.
+    """
+    argv = ["--task-id", str(target.get("task_id")), "--action", "stop"]
+    env = {"AID_WORK_DIR": str(work_dir)}
+    return argv, env
+
+
+def _op_task_resume_argv(work_dir: Path, served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """task.resume -> write-control-signal.sh --task-id <t> --action resume
+    (env AID_WORK_DIR=<resolve_work_dir output>, worktree-aware per WT-1).
+
+    See _op_task_stop_argv's docstring -- identical shape, --action resume.
+    """
+    argv = ["--task-id", str(target.get("task_id")), "--action", "resume"]
+    env = {"AID_WORK_DIR": str(work_dir)}
+    return argv, env
+
+
+# ---------------------------------------------------------------------------
 # feature-003-project-registry (task-013): project.add / project.remove --
 # home-scoped ops backed by the shared aid-CLI resolver (KI-004), registered
 # into HOME_OP_TABLE below. See SPEC.md API Contracts for the full citation
@@ -2154,6 +2205,22 @@ OP_TABLE: dict[str, dict] = {
         "work_id_max_len": _WORK_ID_MAX_LEN,
         "work_id_invalid_status": (422, "invalid-value"),
         "status_map": _PIPELINE_DELETE_STATUS_MAP,
+    },
+    "task.stop": {
+        "scope": "task",
+        "writer": "write-control-signal.sh",
+        "arg_schema": {},
+        "build_argv": _op_task_stop_argv,
+        "semantic_validate": _validate_no_args,
+        "status_map": None,
+    },
+    "task.resume": {
+        "scope": "task",
+        "writer": "write-control-signal.sh",
+        "arg_schema": {},
+        "build_argv": _op_task_resume_argv,
+        "semantic_validate": _validate_no_args,
+        "status_map": None,
     },
 }
 

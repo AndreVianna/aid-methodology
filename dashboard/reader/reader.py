@@ -772,6 +772,35 @@ def read_repo_detail(
     return repo_model, sorted_details
 
 
+def _task_stop_requested(work_dir: Path, work_id: str, task_id: str) -> bool:
+    """Derive TaskModel.stop_requested (feature-008-execution-control, work-017
+    task-029): a filesystem `stat` of the cooperative stop-signal file
+    `write-control-signal.sh` (task-028) creates on `task.stop` / removes on
+    `task.resume`.
+
+    Computed RELATIVE to work_dir -- the walked worktree copy of
+    `.aid/works/<work_id>` this read pass is currently processing (WT-1) --
+    NEVER a reconstructed `<served-root>/.aid/.control/<work_id>/` path.
+    `work_dir/../../.control/<work_id>/` is the `.aid/.control/<work_id>/`
+    sibling of work_dir's own `.aid/works/`, exactly mirroring
+    `write-control-signal.sh`'s own path derivation (`dashboard/scripts/
+    write-control-signal.sh`: `WORK_DIR/../../.control/WORK_ID`) so the reader
+    stats the identical tree the writer and the `aid-execute` poll act on.
+
+    Never parsed from / written to STATE.md (the control file is a new
+    control-artifact class, outside STATE.md's C1 single-writer scope -- see
+    feature-008 SPEC.md "C1 scope note"). Fail-safe: a missing `.control/`
+    directory, a missing signal file, or any OSError all yield False -- never
+    a parse_warning, never a raised exception (mirrors the reader's
+    forward-compat posture for every other derived field).
+    """
+    try:
+        control_file = work_dir.parent.parent / ".control" / work_id / f"{task_id}.stop"
+        return control_file.is_file()
+    except OSError:
+        return False
+
+
 def _read_work(
     work_dir: Path, work_id: str
 ) -> "tuple[WorkModel, list[str], int, str, str]":
@@ -895,6 +924,7 @@ def _read_work(
             short_name=short_name,
             delivery=delivery,
             lane=lane,
+            stop_requested=_task_stop_requested(work_dir, work_id, task.task_id),
         ))
 
     # Step 5e: set source_mode; step 5f: lifecycle already set by parsers
@@ -1160,6 +1190,7 @@ def _read_work_flat(
             delivery=1,
             lane=lane,
             display_name=pts.display_name,
+            stop_requested=_task_stop_requested(work_dir, work_id, task_id_str),
         ))
 
     # ---- Synthesize the single DeliverableRef for delivery-001 ----
@@ -1414,6 +1445,7 @@ def _read_work_hierarchical(
                 delivery=delivery_number,
                 lane=lane,
                 display_name=pts.display_name,
+                stop_requested=_task_stop_requested(work_dir, work_id, task_id_str),
             ))
 
         # ---- Build DeliverableRef for this delivery ----

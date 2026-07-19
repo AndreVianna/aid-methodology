@@ -312,6 +312,16 @@ class TaskModel:
             `display_name` key (nested layout) or the ### Tasks lifecycle table's
             trailing Name column (flat layout). None when unset (fallback to
             short_name -> task_id, home.html label precedence).
+
+    feature-008 (execution-control, work-017 task-029):
+        stop_requested -- DERIVED (never parsed from / written to STATE.md) boolean:
+            True iff a cooperative stop signal is present for this task, i.e. a
+            filesystem `stat` of `<walked-work-dir>/../../.control/<work_id>/
+            <task_id>.stop` (the `.aid/.control/` sibling of the SAME worktree copy
+            the reader is walking, WT-1) finds the file `write-control-signal.sh`
+            (task-028) creates on `task.stop` / removes on `task.resume`. A missing
+            `.control/` directory or signal file -> False (fail-safe, never throws).
+            No schema_version bump (additive, same precedent as display_name).
     """
     task_id: str
     type: str
@@ -326,6 +336,8 @@ class TaskModel:
     lane: Optional[int] = None
     # feature-005 (no schema_version bump; additive optional field)
     display_name: Optional[str] = None
+    # feature-008 (no schema_version bump; additive derived field)
+    stop_requested: bool = False
 
 
 # ---------------------------------------------------------------------------

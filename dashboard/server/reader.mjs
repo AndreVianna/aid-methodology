@@ -2980,6 +2980,37 @@ function _readRepoFull(root) {
   return { model, stateCache };
 }
 
+function _taskStopRequested(workDir, workId, taskId) {
+  // Derive TaskModel.stop_requested (feature-008-execution-control, work-017
+  // task-029): a filesystem `stat` of the cooperative stop-signal file
+  // `write-control-signal.sh` (task-028) creates on `task.stop` / removes on
+  // `task.resume`.
+  //
+  // Computed RELATIVE to workDir -- the walked worktree copy of
+  // `.aid/works/<work_id>` this read pass is currently processing (WT-1) --
+  // NEVER a reconstructed `<served-root>/.aid/.control/<work_id>/` path.
+  // `join(workDir, "..", "..", ".control", workId)` is the `.aid/.control/
+  // <work_id>/` sibling of workDir's own `.aid/works/`, exactly mirroring
+  // `write-control-signal.sh`'s own path derivation (`dashboard/scripts/
+  // write-control-signal.sh`: `WORK_DIR/../../.control/WORK_ID`) so the reader
+  // stats the identical tree the writer and the `aid-execute` poll act on --
+  // the Python twin's `_task_stop_requested` (reader.py) performs the
+  // byte-identical stat via `work_dir.parent.parent`.
+  //
+  // Never parsed from / written to STATE.md (the control file is a new
+  // control-artifact class, outside STATE.md's C1 single-writer scope -- see
+  // feature-008 SPEC.md "C1 scope note"). Fail-safe: a missing `.control/`
+  // directory, a missing signal file, or any error all yield false -- never a
+  // parse warning, never a thrown exception (mirrors the reader's
+  // forward-compat posture for every other derived field).
+  try {
+    const controlFile = join(workDir, "..", "..", ".control", workId, taskId + ".stop");
+    return statSync(controlFile).isFile();
+  } catch (_) {
+    return false;
+  }
+}
+
 function readWork(workDir, workId) {
   // Pillar 6: hierarchy detection (per-work, presence-based)
   if (_detectHierarchy(workDir)) {
@@ -3085,6 +3116,7 @@ function readWork(workDir, workId) {
       short_name: shortName,
       delivery: delivery,
       lane: laneVal,
+      stop_requested: _taskStopRequested(workDir, workId, task.task_id),
     });
   });
 
@@ -4050,6 +4082,7 @@ function _readWorkFlat(workDir, workId) {
       delivery: 1,
       lane: lane,
       display_name: pts.displayName,
+      stop_requested: _taskStopRequested(workDir, workId, taskIdStr),
     });
   }
 
@@ -4305,6 +4338,7 @@ function _readWorkHierarchical(workDir, workId) {
         delivery: deliveryNumber,
         lane: lane,
         display_name: pts.displayName,
+        stop_requested: _taskStopRequested(workDir, workId, taskIdStr),
       });
     }
 
@@ -4762,7 +4796,9 @@ function _buildPendingInput(pi) {
 function _buildTaskModel(t) {
   // TaskModel field order: task_id, type, wave, status, review_grade, elapsed, notes,
   //   short_name, delivery, lane  (schema_version 3 fields -- PF-3/PF-5),
-  //   display_name (feature-005, work-017 task-008 -- additive, no schema_version bump)
+  //   display_name (feature-005, work-017 task-008 -- additive, no schema_version bump),
+  //   stop_requested (feature-008, work-017 task-029 -- additive derived field, no
+  //   schema_version bump)
   return {
     task_id: t.task_id,
     type: t.type,
@@ -4775,6 +4811,7 @@ function _buildTaskModel(t) {
     delivery: t.delivery !== undefined ? t.delivery : null,
     lane: t.lane !== undefined ? t.lane : null,
     display_name: t.display_name !== undefined ? t.display_name : null,
+    stop_requested: !!t.stop_requested,
   };
 }
 
