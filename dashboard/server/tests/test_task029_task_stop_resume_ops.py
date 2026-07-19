@@ -211,7 +211,9 @@ class TestTaskStopArgvBuilder(unittest.TestCase):
         argv, env = srv._op_task_stop_argv(Path("/some/resolved/workdir"), "/repo/root", {"task_id": "008"}, {})
         self.assertIsInstance(argv, list)
         self.assertEqual(argv, ["--task-id", "008", "--action", "stop"])
-        self.assertEqual(env, {"AID_WORK_DIR": str(Path("/some/resolved/workdir"))})
+        # .as_posix(): the builder forward-slashes AID_WORK_DIR for the bash writer's
+        # path arithmetic (the KI/AID_WORK_DIR fix); backslash str() would break on Windows.
+        self.assertEqual(env, {"AID_WORK_DIR": Path("/some/resolved/workdir").as_posix()})
 
     def test_no_aid_state_file_env(self):
         """Unlike task.rename/task.set-notes, write-control-signal.sh never
@@ -228,7 +230,7 @@ class TestTaskStopArgvBuilder(unittest.TestCase):
             {"task_id": "008", "AID_WORK_DIR": "/evil/path", "work_dir": "/evil/path"},
             {"AID_WORK_DIR": "/evil/path"},
         )
-        self.assertEqual(env["AID_WORK_DIR"], str(Path("/real/resolved/dir")))
+        self.assertEqual(env["AID_WORK_DIR"], Path("/real/resolved/dir").as_posix())
         self.assertNotIn("/evil/path", argv)
         self.assertNotIn("/evil/path", env.values())
 
@@ -238,7 +240,9 @@ class TestTaskResumeArgvBuilder(unittest.TestCase):
         argv, env = srv._op_task_resume_argv(Path("/some/resolved/workdir"), "/repo/root", {"task_id": "008"}, {})
         self.assertIsInstance(argv, list)
         self.assertEqual(argv, ["--task-id", "008", "--action", "resume"])
-        self.assertEqual(env, {"AID_WORK_DIR": str(Path("/some/resolved/workdir"))})
+        # .as_posix(): the builder forward-slashes AID_WORK_DIR for the bash writer's
+        # path arithmetic (the KI/AID_WORK_DIR fix); backslash str() would break on Windows.
+        self.assertEqual(env, {"AID_WORK_DIR": Path("/some/resolved/workdir").as_posix()})
 
     def test_no_aid_state_file_env(self):
         _argv, env = srv._op_task_resume_argv(Path("/some/resolved/workdir"), "/repo/root", {"task_id": "008"}, {})
@@ -411,7 +415,8 @@ class TestTaskStopResumeDispatchValidation(unittest.TestCase):
             # (never a hand-built str(root/...) path) -- .resolve() may normalize
             # to an 8.3 short-path alias on some Windows hosts, which a
             # hand-built path string would not reproduce.
-            expected_work_dir = str(srv.resolve_work_dir(str(root), "work-042-sample"))
+            # .as_posix(): the builder forward-slashes AID_WORK_DIR for the bash writer.
+            expected_work_dir = srv.resolve_work_dir(str(root), "work-042-sample").as_posix()
             self.assertEqual(calls[0][1], {"AID_WORK_DIR": expected_work_dir})
 
     def test_task_resume_reaches_spawn_stage_with_correct_argv(self):
@@ -443,7 +448,8 @@ class TestTaskStopResumeDispatchValidation(unittest.TestCase):
             self.assertEqual(json.loads(body), {"ok": True, "op": "task.resume"})
             self.assertEqual(len(calls), 1)
             self.assertEqual(calls[0][0], ["--task-id", "001", "--action", "resume"])
-            expected_work_dir = str(srv.resolve_work_dir(str(root), "work-043-sample"))
+            # .as_posix(): the builder forward-slashes AID_WORK_DIR for the bash writer.
+            expected_work_dir = srv.resolve_work_dir(str(root), "work-043-sample").as_posix()
             self.assertEqual(calls[0][1], {"AID_WORK_DIR": expected_work_dir})
 
 

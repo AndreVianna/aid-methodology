@@ -359,7 +359,9 @@ function testEmptyArgsObjectReachesSpawnStageWithCorrectArgv() {
     // Computed via the SAME resolveWorkDir() the dispatcher itself calls
     // (never a hand-built path string) -- avoids a Windows 8.3-short-path
     // mismatch some hosts introduce via realpath-style resolution.
-    const expectedWorkDir = resolveWorkDir(root, "work-042-sample");
+    // forward-slashed: the builder posix-ifies AID_WORK_DIR for the bash writer
+    // (toPosixArg(String(workDir))); backslash native form would break on Windows.
+    const expectedWorkDir = String(resolveWorkDir(root, "work-042-sample")).replace(/\\/g, "/");
     assertDeepEquals(calls[0][1], { AID_WORK_DIR: expectedWorkDir }, "env built by the dispatcher matches opTaskStopArgv");
   } finally {
     if (hadSpawn) {
@@ -393,7 +395,8 @@ function testTaskResumeReachesSpawnStageWithCorrectArgv() {
     );
     assertEquals(calls.length, 1, "spawn stub invoked exactly once");
     assertDeepEquals(calls[0][0], ["--task-id", "001", "--action", "resume"], "argv built by the dispatcher matches opTaskResumeArgv");
-    const expectedWorkDir = resolveWorkDir(root, "work-043-sample");
+    // forward-slashed: the builder posix-ifies AID_WORK_DIR for the bash writer.
+    const expectedWorkDir = String(resolveWorkDir(root, "work-043-sample")).replace(/\\/g, "/");
     assertDeepEquals(calls[0][1], { AID_WORK_DIR: expectedWorkDir }, "env built by the dispatcher matches opTaskResumeArgv");
   } finally {
     if (hadSpawn) {
