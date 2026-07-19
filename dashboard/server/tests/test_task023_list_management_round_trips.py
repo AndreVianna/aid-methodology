@@ -1046,8 +1046,8 @@ class TestDm1SerializerConnectorsExternalSourcesParity(unittest.TestCase):
             self.assertEqual(py_json["schema_version"], 3)
             self.assertEqual(node_json["schema_version"], 3)
 
-            # Two fields are EXPECTED to differ, both pre-existing/environmental,
-            # neither a connectors/external_sources regression -- normalized
+            # THREE fields are EXPECTED to differ, all pre-existing/environmental,
+            # none a connectors/external_sources regression -- normalized
             # before the byte comparison below:
             #   - generated_by: INTENTIONALLY runtime-specific ("python" vs
             #     "node" -- both serialize_model/serializeModel hardcode their
@@ -1058,17 +1058,25 @@ class TestDm1SerializerConnectorsExternalSourcesParity(unittest.TestCase):
             #     short-name form for a sufficiently long username component
             #     (the documented pre-existing 8.3-path gap that also affects
             #     ~11 test_server_py.py cases -- unrelated to this feature).
+            #   - read.read_at: the read-time timestamp, captured INDEPENDENTLY
+            #     by the Python read_repo() and the (milliseconds-later) Node
+            #     readRepo() call -- a wall-clock artifact of running the twins
+            #     sequentially, never a serialization divergence. Without this
+            #     normalization the byte comparison flakes on the timestamp.
             self.assertEqual(py_json["generated_by"], "python")
             self.assertEqual(node_json["generated_by"], "node")
             py_aid_dir = py_json["model"]["repo"]["aid_dir"]
             node_aid_dir = node_json["model"]["repo"]["aid_dir"]
-            py_normalized = (
+            _READ_AT_RE = r'"read_at":"[^"]*"'
+            py_normalized = re.sub(
+                _READ_AT_RE, '"read_at":"NORMALIZED"',
                 py_raw.replace('"generated_by":"python"', '"generated_by":"RUNTIME"', 1)
-                      .replace(json.dumps(py_aid_dir), json.dumps("AID_DIR"), 1)
+                      .replace(json.dumps(py_aid_dir), json.dumps("AID_DIR"), 1),
             )
-            node_normalized = (
+            node_normalized = re.sub(
+                _READ_AT_RE, '"read_at":"NORMALIZED"',
                 node_raw.replace('"generated_by":"node"', '"generated_by":"RUNTIME"', 1)
-                        .replace(json.dumps(node_aid_dir), json.dumps("AID_DIR"), 1)
+                        .replace(json.dumps(node_aid_dir), json.dumps("AID_DIR"), 1),
             )
             self.assertEqual(
                 py_normalized, node_normalized,
