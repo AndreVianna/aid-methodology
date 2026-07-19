@@ -2460,6 +2460,10 @@ footer {
       removeBtn.type = 'button';
       removeBtn.className = 'btn-ghost';
       removeBtn.textContent = 'Remove';
+      // Disabled during any in-flight connector.set/.remove request (shared
+      // `saving` flag) -- prevents a double-submit race while a rebuild is
+      // guard-skipped mid-flight (mirrors the Add button's identical guard).
+      removeBtn.disabled = connectorsUiState.saving;
       removeBtn.addEventListener('click', function () {
         // feature-007 §UI Specs: Remove uses a confirm() guard (a deliberate
         // per-feature UX choice -- unlike index.html's Remove-Project inline-flip
@@ -2715,6 +2719,9 @@ footer {
       removeBtn.type = 'button';
       removeBtn.className = 'btn-ghost';
       removeBtn.textContent = 'Remove';
+      // Disabled during any in-flight add/remove request (shared `saving`
+      // flag) -- prevents a double-submit race, mirrors the Add button.
+      removeBtn.disabled = externalSourcesUiState.saving;
       removeBtn.addEventListener('click', function () { _submitExternalSourceRemove(value); });
       li.appendChild(removeBtn);
     }

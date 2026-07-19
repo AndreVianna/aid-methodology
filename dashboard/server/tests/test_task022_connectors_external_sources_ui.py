@@ -296,6 +296,19 @@ class TestWriteEnabledGate(unittest.TestCase):
         self.assertLess(guard_idx, remove_idx,
                         "the Remove button must be built INSIDE the writeEnabled guard")
 
+    def test_g1_connector_remove_button_disabled_while_saving(self):
+        # Regression: the Remove button must be gated on the shared `saving`
+        # flag (like the Add button) so a rebuild mid-flight can't be double-
+        # clicked into a second overlapping request.
+        idx = self.src.find('function _buildConnectorRow(')
+        snippet = self.src[idx:idx + 3000]
+        self.assertIn('removeBtn.disabled = connectorsUiState.saving;', snippet)
+
+    def test_g1_external_source_remove_button_disabled_while_saving(self):
+        idx = self.src.find('function _buildExternalSourceItem(')
+        snippet = self.src[idx:idx + 900]
+        self.assertIn('removeBtn.disabled = externalSourcesUiState.saving;', snippet)
+
     def test_g1_read_views_are_unconditional(self):
         # The empty-state / table / list construction happens BEFORE any
         # writeEnabled check -- confirm the length-check branch precedes the
