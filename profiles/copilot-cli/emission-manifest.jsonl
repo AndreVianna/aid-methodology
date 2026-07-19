@@ -1,13 +1,13 @@
 {"_manifest_version": 1}
-{"dst": ".github/agents/aid-architect.md", "profile": "copilot-cli", "sha256": "bd2c202b1fb07de931e7322532027fb4bafefe2a5a751b05ee3273cfadfa50fa", "src": "canonical/agents/aid-architect/AGENT.md"}
-{"dst": ".github/agents/aid-clerk.md", "profile": "copilot-cli", "sha256": "f23d8e482ac5f9fbdd179a3d3dfbedb660767e41a18f1ee75ff9760b50b79ba9", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".github/agents/aid-developer.md", "profile": "copilot-cli", "sha256": "e4a34ac16dae497bfac412f3edb2009c0720a1c8650f8597f6ed003ce11eee4b", "src": "canonical/agents/aid-developer/AGENT.md"}
-{"dst": ".github/agents/aid-interviewer.md", "profile": "copilot-cli", "sha256": "5da6095e8c7fc7e3fd52b8764cf47a7fff6cdd52b9bf97a291bdac8d0f481491", "src": "canonical/agents/aid-interviewer/AGENT.md"}
-{"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "b50135b6ecb17b0d28259afbe607ca42d2b8b981b2c1c8bbf2a5e2e9933d0e02", "src": "canonical/agents/aid-operator/AGENT.md"}
-{"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "d4b2b0457080872dc1fa031c1709d395bf9cddee873df1a57c1f0dd020bf8c93", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "982d2e21a2ba967ab936bc74ca29bccb91a683efd2a02fe7bc3c8623274ce3e3", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "cbfe52bc31fb5746718fa7316c402f8316b10aed86d3a1bff4878d480de27d09", "src": "canonical/agents/aid-reviewer/AGENT.md"}
-{"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "fb47e7652cd641f27c256a20004616c9decd3cc1721ec62fbc6d73b17664b306", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
+{"dst": ".github/agents/aid-architect.md", "profile": "copilot-cli", "sha256": "0ab10cc77dfa991a8bfecdf42ad9bc72b826d1c31a992efea7bce81e04ab7bd4", "src": "canonical/agents/aid-architect/AGENT.md"}
+{"dst": ".github/agents/aid-clerk.md", "profile": "copilot-cli", "sha256": "e60947592d42764ba39dfe92e06f10a9c5cf4b91ee808dc5dde3be7a5c12ac68", "src": "canonical/agents/aid-clerk/AGENT.md"}
+{"dst": ".github/agents/aid-developer.md", "profile": "copilot-cli", "sha256": "42b8a65e171be23b8f673d07649098c1a71188ae43a79a539861fbbcd2d1ceac", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".github/agents/aid-interviewer.md", "profile": "copilot-cli", "sha256": "1cd1d76823c2bfc88d4c47413647afcd77ac7f7f91aa802d4080b01b942cdc18", "src": "canonical/agents/aid-interviewer/AGENT.md"}
+{"dst": ".github/agents/aid-operator.md", "profile": "copilot-cli", "sha256": "0ab71c13549650cd70fb46f9123ac4bd6e910610d33188c06308df7dcc7b995f", "src": "canonical/agents/aid-operator/AGENT.md"}
+{"dst": ".github/agents/aid-orchestrator.md", "profile": "copilot-cli", "sha256": "4709f07ba0270b062bee3d51f5957125822aa0573abfc774d890f64e5d20fa03", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
+{"dst": ".github/agents/aid-researcher.md", "profile": "copilot-cli", "sha256": "0294cc3399007c50fb98d7cdbf4d22f78489b6938d0a3e917ac0924befec9ad8", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".github/agents/aid-reviewer.md", "profile": "copilot-cli", "sha256": "e824e1890a978d729dddc35fedf991f4857808944900f2201d9972c5c5e6413f", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".github/agents/aid-tech-writer.md", "profile": "copilot-cli", "sha256": "7eca7a7e36d373fe6748a39231eb2ddf72385c9152a2a16b85b0c811b8d9aea1", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".github/aid/scripts/config/read-setting.sh", "profile": "copilot-cli", "sha256": "7539989e0a59cddade8d82e3cabe18ecc10a983638c3808ee64d23c719bd5eb0", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".github/aid/scripts/connectors/build-connectors-index.ps1", "profile": "copilot-cli", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
 {"dst": ".github/aid/scripts/connectors/build-connectors-index.sh", "profile": "copilot-cli", "sha256": "297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c", "src": "canonical/scripts/connectors/build-connectors-index.sh"}
@@ -61,7 +61,7 @@
 {"dst": ".github/aid/scripts/summarize/writeback-state.sh", "profile": "copilot-cli", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".github/aid/scripts/works/enumerate-works.sh", "profile": "copilot-cli", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
 {"dst": ".github/aid/scripts/works/worktree-lifecycle.sh", "profile": "copilot-cli", "sha256": "7a1d7c4018d4e4770424a0bd2d348a84a991cc3b0b072aeddd2991deaf255644", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
-{"dst": ".github/aid/templates/agent-boilerplate.md", "profile": "copilot-cli", "sha256": "40c2e6cedf895af995235b5432550ebd936ba11106bdcdb7b43b4f4513db0479", "src": "canonical/templates/agent-boilerplate.md"}
+{"dst": ".github/aid/templates/agent-boilerplate.md", "profile": "copilot-cli", "sha256": "46778b137957b4b8c2cf77aa544a25f29be529141f8adc669889a67a8fadc9f1", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".github/aid/templates/agent-dispatch-tiering.md", "profile": "copilot-cli", "sha256": "9b70a5dd616c4ead142343f1e01db788889b7223d352b51afc26115ff010a77e", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".github/aid/templates/connectors/consumption-protocol.md", "profile": "copilot-cli", "sha256": "741930866f2ce8d0e9af8fa5bee4e0eee812041c31a0d34761cd43ed1bafa893", "src": "canonical/templates/connectors/consumption-protocol.md"}
 {"dst": ".github/aid/templates/connectors/preset-catalog.md", "profile": "copilot-cli", "sha256": "eae787ae13701be8797df04b9a44e42f64f7dec6373ab46e8de29a9a12d5b090", "src": "canonical/templates/connectors/preset-catalog.md"}
@@ -136,7 +136,7 @@
 {"dst": ".github/aid/templates/shortcut-scaffolding/test-experiment.md", "profile": "copilot-cli", "sha256": "986eb6c99dce325097288c844cb2b5f08aa6c4ea086cc44dcea3e252950f5322", "src": "canonical/templates/shortcut-scaffolding/test-experiment.md"}
 {"dst": ".github/aid/templates/specs/spec-template.md", "profile": "copilot-cli", "sha256": "9ec4147ce689065ad89e008344ae85a8c9996ddd8e1ddd146fe1752a28e48e95", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".github/aid/templates/state-machine-chaining.md", "profile": "copilot-cli", "sha256": "5be5402a681feb3aec61d9680323cb2ec60f9404cef30ed33af4d90fcbd8a5da", "src": "canonical/templates/state-machine-chaining.md"}
-{"dst": ".github/aid/templates/subagent-heartbeat-protocol.md", "profile": "copilot-cli", "sha256": "e6ecff83ad53c51bedba5d1ef193c1298a6cdf6c0c3f4198066fea3e0577e346", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
+{"dst": ".github/aid/templates/subagent-heartbeat-protocol.md", "profile": "copilot-cli", "sha256": "0eb0bf8e84cd8f12e24a4fddedee7a8f5b846420cd0de23ca4d0f42b5dca4e06", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".github/aid/templates/task-detail-template.md", "profile": "copilot-cli", "sha256": "794e173cc7ef471afffaae0f6995496b53b3c5f4850789972fa4c79333a7839c", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".github/aid/templates/task-state-template.md", "profile": "copilot-cli", "sha256": "a230743d16f72a37a71151a789392acb73c48c912bbef6ed1d927a45032591d3", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".github/aid/templates/work-initiation-gate.md", "profile": "copilot-cli", "sha256": "858bd2952eec63c7754c617b58f6608c540a23eb6e4b7af2edb39e24b844e2fc", "src": "canonical/templates/work-initiation-gate.md"}

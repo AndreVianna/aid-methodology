@@ -1,13 +1,13 @@
 {"_manifest_version": 1}
-{"dst": ".codex/agents/aid-architect.toml", "profile": "codex", "sha256": "0c3b589976e94f1057416e0e69bcdc5d2f19702246985ed2ef48f60624f80f69", "src": "canonical/agents/aid-architect/AGENT.md"}
-{"dst": ".codex/agents/aid-clerk.toml", "profile": "codex", "sha256": "b37c5c2a92e5b6f4c25f919e33de7cd390c19e88fc162d212ad29fc4cd235652", "src": "canonical/agents/aid-clerk/AGENT.md"}
-{"dst": ".codex/agents/aid-developer.toml", "profile": "codex", "sha256": "6121d7381a560a25ce9af56c229f06af78cd358ed66bde1cea172d08e21d8905", "src": "canonical/agents/aid-developer/AGENT.md"}
-{"dst": ".codex/agents/aid-interviewer.toml", "profile": "codex", "sha256": "f796d77840da0969411b986f4b033e42aaaa2e25428d8418394bef70f1db5fb3", "src": "canonical/agents/aid-interviewer/AGENT.md"}
-{"dst": ".codex/agents/aid-operator.toml", "profile": "codex", "sha256": "346d828e91396da39607aadbf9b57b1ee33ea77c066c046e02e197cb9f98c01b", "src": "canonical/agents/aid-operator/AGENT.md"}
-{"dst": ".codex/agents/aid-orchestrator.toml", "profile": "codex", "sha256": "f8589b62a7343a3dd58f55f4ce188130d4a7b730620306e68d0dfdaeafc53ba9", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
-{"dst": ".codex/agents/aid-researcher.toml", "profile": "codex", "sha256": "0778eac5e78e0e0715d478ed9b996446a72db160c94b4e44d3f935e89c6da5d0", "src": "canonical/agents/aid-researcher/AGENT.md"}
-{"dst": ".codex/agents/aid-reviewer.toml", "profile": "codex", "sha256": "1d9b230b2ce89c38ecc4635381186faabcac05e40a92704b0f51aab4d8c79cbd", "src": "canonical/agents/aid-reviewer/AGENT.md"}
-{"dst": ".codex/agents/aid-tech-writer.toml", "profile": "codex", "sha256": "8178e6ea71ca3b9ef9c6bca89ba1a5eda0d8da3eae8c1f5340f4f6da895a7af8", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
+{"dst": ".codex/agents/aid-architect.toml", "profile": "codex", "sha256": "b21eb86e95ed5e72c19b347902fb4dac77b444c498b3fb22bbf9d5add082d007", "src": "canonical/agents/aid-architect/AGENT.md"}
+{"dst": ".codex/agents/aid-clerk.toml", "profile": "codex", "sha256": "77efe197dfc1e1773a93a3f6438b28dcf9e7479254029dec921ab1f1d45700a8", "src": "canonical/agents/aid-clerk/AGENT.md"}
+{"dst": ".codex/agents/aid-developer.toml", "profile": "codex", "sha256": "acac0199da91c867590cca32d445ad221b570e3d818cc49f6b62c66805ce65b1", "src": "canonical/agents/aid-developer/AGENT.md"}
+{"dst": ".codex/agents/aid-interviewer.toml", "profile": "codex", "sha256": "516d92b1bf1711d67cf2c5b6eddee35180b3d69ecb56fcf13d73397c2317108c", "src": "canonical/agents/aid-interviewer/AGENT.md"}
+{"dst": ".codex/agents/aid-operator.toml", "profile": "codex", "sha256": "2114eea3db1420df8601437f93b9d00ae02dec930fc20a8973338eab4b08152f", "src": "canonical/agents/aid-operator/AGENT.md"}
+{"dst": ".codex/agents/aid-orchestrator.toml", "profile": "codex", "sha256": "128a5b189240e1513a2fac42cbe2e0a471ccb2464033d48c9af087653d249dde", "src": "canonical/agents/aid-orchestrator/AGENT.md"}
+{"dst": ".codex/agents/aid-researcher.toml", "profile": "codex", "sha256": "d7d5b755c6e3e73826d0be37a37c444b7338c59b07207de534ce355f7fc5c26a", "src": "canonical/agents/aid-researcher/AGENT.md"}
+{"dst": ".codex/agents/aid-reviewer.toml", "profile": "codex", "sha256": "8ed0327a717b6c2ff81dd6f26ba8fc6163eeabfddcb349cfa9c8269a6ba7d29f", "src": "canonical/agents/aid-reviewer/AGENT.md"}
+{"dst": ".codex/agents/aid-tech-writer.toml", "profile": "codex", "sha256": "bb2afbb6da18359022b380e70aeff702a7c6346be4622eb272df9265ffa174c6", "src": "canonical/agents/aid-tech-writer/AGENT.md"}
 {"dst": ".codex/aid/scripts/config/read-setting.sh", "profile": "codex", "sha256": "7539989e0a59cddade8d82e3cabe18ecc10a983638c3808ee64d23c719bd5eb0", "src": "canonical/scripts/config/read-setting.sh"}
 {"dst": ".codex/aid/scripts/connectors/build-connectors-index.ps1", "profile": "codex", "sha256": "5f1c2060c42217d7da1f7b1e52286e1f75732554866ce1a1191ec0177572a7e9", "src": "canonical/scripts/connectors/build-connectors-index.ps1"}
 {"dst": ".codex/aid/scripts/connectors/build-connectors-index.sh", "profile": "codex", "sha256": "297e2406c97c6d86bb6384c961899773cda97d5fab08c3485f63bbda9f5fce0c", "src": "canonical/scripts/connectors/build-connectors-index.sh"}
@@ -61,7 +61,7 @@
 {"dst": ".codex/aid/scripts/summarize/writeback-state.sh", "profile": "codex", "sha256": "f28a7741468f990effa3d1736426200c242ad2526c21d5d33d38c192d548ff0a", "src": "canonical/scripts/summarize/writeback-state.sh"}
 {"dst": ".codex/aid/scripts/works/enumerate-works.sh", "profile": "codex", "sha256": "256b18145d15003a840b1ba7e473c2b693748ac060416cefa16d998a0b77767b", "src": "canonical/scripts/works/enumerate-works.sh"}
 {"dst": ".codex/aid/scripts/works/worktree-lifecycle.sh", "profile": "codex", "sha256": "23b323d81f28fea4afe626fa73041128ea489a8a20a20135eb96d2503cba0bd4", "src": "canonical/scripts/works/worktree-lifecycle.sh"}
-{"dst": ".codex/aid/templates/agent-boilerplate.md", "profile": "codex", "sha256": "325d43f1aad44e87faaebca645921c3377a21d4aabadd02f52c5f977c710f60f", "src": "canonical/templates/agent-boilerplate.md"}
+{"dst": ".codex/aid/templates/agent-boilerplate.md", "profile": "codex", "sha256": "fd6483452ec4325bb000c12a60feb56f319148e732dad98f1f8e6b3db3df2280", "src": "canonical/templates/agent-boilerplate.md"}
 {"dst": ".codex/aid/templates/agent-dispatch-tiering.md", "profile": "codex", "sha256": "1f95327e46c5713d5bb5e484c435f458576c0f90bfcc3b4d2dd2f0d46e09404f", "src": "canonical/templates/agent-dispatch-tiering.md"}
 {"dst": ".codex/aid/templates/connectors/consumption-protocol.md", "profile": "codex", "sha256": "741930866f2ce8d0e9af8fa5bee4e0eee812041c31a0d34761cd43ed1bafa893", "src": "canonical/templates/connectors/consumption-protocol.md"}
 {"dst": ".codex/aid/templates/connectors/preset-catalog.md", "profile": "codex", "sha256": "eae787ae13701be8797df04b9a44e42f64f7dec6373ab46e8de29a9a12d5b090", "src": "canonical/templates/connectors/preset-catalog.md"}
@@ -136,7 +136,7 @@
 {"dst": ".codex/aid/templates/shortcut-scaffolding/test-experiment.md", "profile": "codex", "sha256": "b5a2256a1bd101db639303650529841202ef26b9dcab50b47d3d78cee66091dd", "src": "canonical/templates/shortcut-scaffolding/test-experiment.md"}
 {"dst": ".codex/aid/templates/specs/spec-template.md", "profile": "codex", "sha256": "4b46624469623650f2e3efc1f271a308e760724221c32457d85edb68c411d312", "src": "canonical/templates/specs/spec-template.md"}
 {"dst": ".codex/aid/templates/state-machine-chaining.md", "profile": "codex", "sha256": "7c675a75e8172b0ca79f96c80bed2b684fd3494c535561586e37afd12f71073c", "src": "canonical/templates/state-machine-chaining.md"}
-{"dst": ".codex/aid/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "31b2e054ae4f401f873285351838ced02e92a4dedd7a3e2654f3b853c19c8187", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
+{"dst": ".codex/aid/templates/subagent-heartbeat-protocol.md", "profile": "codex", "sha256": "9ce9b065f581bfcd703e2c3bd0e056aeba972a37ed008963bd5f838206de0394", "src": "canonical/templates/subagent-heartbeat-protocol.md"}
 {"dst": ".codex/aid/templates/task-detail-template.md", "profile": "codex", "sha256": "4308d96447c89fd37448f5f662d549c19012c6abde5548c440e69321acb7377b", "src": "canonical/templates/task-detail-template.md"}
 {"dst": ".codex/aid/templates/task-state-template.md", "profile": "codex", "sha256": "e41407527367c187f01f84406f6754d4b8204f9937ebb5169a02bdfff0b85687", "src": "canonical/templates/task-state-template.md"}
 {"dst": ".codex/aid/templates/work-initiation-gate.md", "profile": "codex", "sha256": "830391c848110018d5701b4ad08d3988900506b8cfcabb4b60108b6f48bfeeeb", "src": "canonical/templates/work-initiation-gate.md"}
