@@ -1790,7 +1790,9 @@ function script:Invoke-AidProjectsAdd {
             [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' uses a newer AID format (v$repoFmt) than this CLI supports (v$($script:AidSupportedFormat)). Upgrade the aid CLI: aid update self.")
             script:Exit-Aid 1
         }
-        if ($repoFmt -lt $script:AidSupportedFormat) {
+        # Migrate only a project that actually has a settings.yml (a bare .aid/
+        # has nothing to migrate -- just register it).
+        if ($repoFmt -lt $script:AidSupportedFormat -and (Test-Path (Join-Path (Join-Path $canon '.aid') 'settings.yml') -PathType Leaf)) {
             Write-Host "aid projects: '$canon' uses an older AID format (v$repoFmt); migrating to v$($script:AidSupportedFormat)..."
             try { $null = script:Invoke-AidMigrateRepo -Repo $canon 6>$null } catch {
                 [Console]::Error.WriteLine("WARN: aid projects add: migration reported an issue for '$canon' (continuing)")
