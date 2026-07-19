@@ -22,7 +22,7 @@
  * mirrors test_task013_project_registry_ops.mjs's own live-server group [C]
  * convention. Expected body is asserted against the EXACT literal envelope
  * the Python twin (TestToolsUpdateUnknownRepoIdLive) asserts against
- * (`{"ok":false,"op":null,"error":"not-found","detail":"unknown repo id"}`),
+ * (`{"ok":false,"op":null,"error":"not-found","detail":"unknown project id"}`),
  * which is how parity is proven for this HTTP-layer case without a live
  * cross-process comparison at runtime.
  *
@@ -165,7 +165,7 @@ async function runLiveTest() {
     const r = await postJson(s.port, "/r/deadbeefcafe/api/op", { op: "tools.update" });
     assert(r.status === 404, "G.1: unknown repo <id> -> 404 (got " + r.status + ")");
 
-    const expectedBody = JSON.stringify({ ok: false, op: null, error: "not-found", detail: "unknown repo id" });
+    const expectedBody = JSON.stringify({ ok: false, op: null, error: "not-found", detail: "unknown project id" });
     assert(r.body === expectedBody,
       "G.2: response body is the EXACT literal envelope the Python twin asserts "
       + "(got " + r.body + ", expected " + expectedBody + ")");

@@ -2898,7 +2898,7 @@ footer {
     card.appendChild(kicker);
 
     var h3 = document.createElement('h3');
-    h3.textContent = 'This repo has no AID works in .aid/works/ yet.';
+    h3.textContent = 'This project has no AID works in .aid/works/ yet.';
     card.appendChild(h3);
 
     var intro = document.createElement('p');
@@ -2914,7 +2914,7 @@ footer {
 
     // Step 1: special — contains code element
     var li1 = document.createElement('li');
-    li1.appendChild(document.createTextNode('In this repo, run: '));
+    li1.appendChild(document.createTextNode('In this project, run: '));
     var codeEl = document.createElement('code');
     codeEl.textContent = '/aid-describe';
     li1.appendChild(codeEl);
@@ -2970,7 +2970,7 @@ footer {
     var callout = document.createElement('div');
     callout.className = 'callout warn';
     callout.innerHTML = '<h4>Pipeline not found</h4>' +
-      '<p>That pipeline (<code>' + escHtml(workId) + '</code>) is no longer in this repo.</p>';
+      '<p>That pipeline (<code>' + escHtml(workId) + '</code>) is no longer in this project.</p>';
     el.appendChild(callout);
     var backLink = document.createElement('p');
     backLink.style.marginTop = '0.75rem';
@@ -5138,7 +5138,7 @@ footer {
       var callout = document.createElement('div');
       callout.className = 'callout warn';
       callout.innerHTML = '<h4>Work not found</h4>' +
-        '<p>The work <code>' + escHtml(workId) + '</code> is no longer in this repo.</p>';
+        '<p>The work <code>' + escHtml(workId) + '</code> is no longer in this project.</p>';
       container.appendChild(callout);
       var backP = document.createElement('p');
       backP.style.marginTop = '0.75rem';

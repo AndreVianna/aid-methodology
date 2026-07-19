@@ -159,8 +159,8 @@ _aid_usage() {
             printf 'aid update [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
             printf 'aid update self [--from-bundle <path>] [--dry-run]\n'
             printf '  Update to latest.\n'
-            printf '  Outside an AID repo: updates the CLI only (no-op if already latest).\n'
-            printf '  Inside an AID repo: updates the CLI first, then ALL installed tools to one version.\n'
+            printf '  Outside an AID project: updates the CLI only (no-op if already latest).\n'
+            printf '  Inside an AID project: updates the CLI first, then ALL installed tools to one version.\n'
             printf '  No per-tool selection -- any tool positional is an error (use "self" only).\n'
             printf '  self: COMPLETELY update the aid CLI, channel-aware:\n'
             printf '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.sh.\n'
@@ -218,7 +218,7 @@ _aid_usage() {
             printf '  aid version                      Print the CLI version\n'
             printf '  aid status                       Show AID state of the current project\n'
             printf '  aid add <tool>[,...]             Add tool(s) to the current project\n'
-            printf '  aid update [self]                Update to latest; inside repo = all tools\n'
+            printf '  aid update [self]                Update to latest; inside a project = all tools\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
             printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
@@ -3343,10 +3343,10 @@ case "$SUBCMD" in
             if [[ -n "$_AID_VERSION_ARG" ]]; then
                 # --version on add: validate it won't create a mixed-version repo.
                 if [[ -n "$_FR11_EXISTING_VER" && "$_AID_VERSION_ARG" != "$_FR11_EXISTING_VER" ]]; then
-                    echo "ERROR: aid add: --version ${_AID_VERSION_ARG} would create a mixed-version repo." >&2
+                    echo "ERROR: aid add: --version ${_AID_VERSION_ARG} would create a mixed-version project." >&2
                     echo "       Existing tools are at v${_FR11_EXISTING_VER}. Either:" >&2
-                    echo "         - Omit --version to install at the repo version (v${_FR11_EXISTING_VER}), or" >&2
-                    echo "         - Run 'aid update --version ${_AID_VERSION_ARG}' first to advance the whole repo." >&2
+                    echo "         - Omit --version to install at the project version (v${_FR11_EXISTING_VER}), or" >&2
+                    echo "         - Run 'aid update --version ${_AID_VERSION_ARG}' first to advance the whole project." >&2
                     rm -rf "$_AID_STAGING_BASE"
                     exit 2
                 fi
@@ -3356,7 +3356,7 @@ case "$SUBCMD" in
                 _AID_VERSION_ARG="$_FR11_EXISTING_VER"
                 # Skew notice when CLI is ahead of the repo version.
                 if [[ -n "$_FR11_CLI_VER" ]] && _semver_lt "$_FR11_EXISTING_VER" "$_FR11_CLI_VER"; then
-                    echo "repo is at v${_FR11_EXISTING_VER}; new tool(s) installed at v${_FR11_EXISTING_VER} to keep the repo uniform. Run 'aid update' to advance all tools to v${_FR11_CLI_VER}."
+                    echo "project is at v${_FR11_EXISTING_VER}; new tool(s) installed at v${_FR11_EXISTING_VER} to keep the project uniform. Run 'aid update' to advance all tools to v${_FR11_CLI_VER}."
                 fi
             else
                 # First-tool: pin to CLI version (bundle supplies its own version; skip if so).
@@ -3436,7 +3436,7 @@ case "$SUBCMD" in
                 _COMMIT_RC=$?
                 echo "" >&2
                 echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
-                echo "       The repo may be at mixed versions. Re-run 'aid update' to heal." >&2
+                echo "       The project may be at mixed versions. Re-run 'aid update' to heal." >&2
                 rm -rf "$_AID_STAGING_BASE"
                 exit "${_COMMIT_RC}"
             }

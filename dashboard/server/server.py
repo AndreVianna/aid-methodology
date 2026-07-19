@@ -2691,7 +2691,7 @@ class _DashboardHandler(BaseHTTPRequestHandler):
         id_map, _ = _get_id_map(aid_home)
         canon_path = id_map.get(rid)
         if canon_path is None:
-            self._send_json(404, _op_fail_body(None, "not-found", "unknown repo id"))
+            self._send_json(404, _op_fail_body(None, "not-found", "unknown project id"))
             return
 
         raw = self._read_body()

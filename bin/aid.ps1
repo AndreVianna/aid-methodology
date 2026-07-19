@@ -212,8 +212,8 @@ function script:Show-AidUsage {
             Write-Host 'aid update [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
             Write-Host 'aid update self [-FromBundle <path>] [-DryRun]'
             Write-Host '  Update to latest.'
-            Write-Host '  Outside an AID repo: updates the CLI only (no-op if already latest).'
-            Write-Host '  Inside an AID repo: updates the CLI first, then ALL installed tools to one version.'
+            Write-Host '  Outside an AID project: updates the CLI only (no-op if already latest).'
+            Write-Host '  Inside an AID project: updates the CLI first, then ALL installed tools to one version.'
             Write-Host '  No per-tool selection -- any tool positional is an error (use "self" only).'
             Write-Host '  self: COMPLETELY update the aid CLI, channel-aware:'
             Write-Host '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.ps1.'
@@ -271,7 +271,7 @@ function script:Show-AidUsage {
             Write-Host '  aid version                      Print the CLI version'
             Write-Host '  aid status                       Show AID state of the current project'
             Write-Host '  aid add <tool>[,...]             Add tool(s) to the current project'
-            Write-Host '  aid update [self]                Update to latest; inside repo = all tools'
+            Write-Host '  aid update [self]                Update to latest; inside a project = all tools'
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
             Write-Host '  aid projects [list|add|remove]   List/register/unregister AID projects'
@@ -3261,10 +3261,10 @@ try {
                 if ($_AidVersionArg) {
                     # -Version on add: validate it won't create a mixed-version repo.
                     if ($_fr11ExistingVer -and $_AidVersionArg -ne $_fr11ExistingVer) {
-                        [Console]::Error.WriteLine("ERROR: aid add: -Version $_AidVersionArg would create a mixed-version repo.")
+                        [Console]::Error.WriteLine("ERROR: aid add: -Version $_AidVersionArg would create a mixed-version project.")
                         [Console]::Error.WriteLine("       Existing tools are at v$_fr11ExistingVer. Either:")
-                        [Console]::Error.WriteLine("         - Omit -Version to install at the repo version (v$_fr11ExistingVer), or")
-                        [Console]::Error.WriteLine("         - Run 'aid update -Version $_AidVersionArg' first to advance the whole repo.")
+                        [Console]::Error.WriteLine("         - Omit -Version to install at the project version (v$_fr11ExistingVer), or")
+                        [Console]::Error.WriteLine("         - Run 'aid update -Version $_AidVersionArg' first to advance the whole project.")
                         script:Exit-Aid 2
                     }
                     # -Version provided and no conflict: apply to all tools (passed through to staging).
@@ -3285,7 +3285,7 @@ try {
                             if ($fr11vA -gt $fr11vB) { break }
                         }
                         if ($fr11IsLt) {
-                            Write-Host "repo is at v$_fr11ExistingVer; new tool(s) installed at v$_fr11ExistingVer to keep the repo uniform. Run 'aid update' to advance all tools to v$_fr11CliVer."
+                            Write-Host "project is at v$_fr11ExistingVer; new tool(s) installed at v$_fr11ExistingVer to keep the project uniform. Run 'aid update' to advance all tools to v$_fr11CliVer."
                         }
                     }
                 } else {
@@ -3365,7 +3365,7 @@ try {
                 if ($rc -ne 0) {
                     Write-Host ""
                     [Console]::Error.WriteLine("ERROR: aid $SUBCMD failed mid-commit for tool '$t' (rc=$rc).")
-                    [Console]::Error.WriteLine("       The repo may be at mixed versions. Re-run 'aid update' to heal.")
+                    [Console]::Error.WriteLine("       The project may be at mixed versions. Re-run 'aid update' to heal.")
                     script:Exit-Aid $rc
                 }
             }

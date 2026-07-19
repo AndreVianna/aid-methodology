@@ -564,7 +564,7 @@ footer {
 
   <!-- Empty registry state (UI-H3 empty) -->
   <div class="empty-state" id="empty-registry" style="display:none">
-    <p>No repos registered yet &#8212; run <code>aid add &lt;tool&gt;</code> in a repo to see it here.</p>
+    <p>No projects registered yet &#8212; run <code>aid add &lt;tool&gt;</code> in a folder to see it here.</p>
     <!-- UI-P1 Add Project control mirrored here so the first project can be registered
          from an empty registry (feature-003); rendered only when write_enabled -->
     <div id="add-project-slot-empty"></div>
@@ -1216,7 +1216,7 @@ footer {
       var introEl = document.createElement('p');
       introEl.className = 'meta';
       introEl.style.marginTop = '0.75rem';
-      introEl.textContent = "This repo's folder is gone. To remove it from the CLI home:";
+      introEl.textContent = "This project's folder is gone. To remove it from the CLI home:";
       card.appendChild(introEl);
 
       var ol = document.createElement('ol');
@@ -1231,7 +1231,7 @@ footer {
       // to the untrack-only `aid projects remove <path>`.
       cmdCode.textContent = 'aid projects remove ' + (repo.path || '');
       li1.appendChild(cmdCode);
-      li1.appendChild(document.createTextNode(' (unregisters the now-unavailable repo).'));
+      li1.appendChild(document.createTextNode(' (unregisters the now-unavailable project).'));
       ol.appendChild(li1);
 
       var li2 = document.createElement('li');

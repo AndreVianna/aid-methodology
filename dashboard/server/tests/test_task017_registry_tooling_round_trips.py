@@ -833,7 +833,7 @@ class TestToolsUpdateUnknownRepoIdLive(unittest.TestCase):
     spawn), so no FAKE_MODE plumbing is needed here.
 
     Expected body is asserted against the EXACT literal envelope
-    (`_op_fail_body(None, "not-found", "unknown repo id")`) -- the same
+    (`_op_fail_body(None, "not-found", "unknown project id")`) -- the same
     literal this class's Node twin (test_task017_registry_tooling_round_
     trips.mjs) asserts against, which is how twin parity is proven for this
     HTTP-layer case without a live cross-process comparison at runtime.
@@ -858,7 +858,7 @@ class TestToolsUpdateUnknownRepoIdLive(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertEqual(
             json.loads(body),
-            {"ok": False, "op": None, "error": "not-found", "detail": "unknown repo id"},
+            {"ok": False, "op": None, "error": "not-found", "detail": "unknown project id"},
         )
 
 

@@ -2255,7 +2255,7 @@ async function serveOp(req, res, rid) {
   const { idMap } = getIdMap(AID_HOME);
   const canonPath = idMap.get(rid);
   if (!canonPath) {
-    sendJson(res, 404, opFailBody(null, "not-found", "unknown repo id"));
+    sendJson(res, 404, opFailBody(null, "not-found", "unknown project id"));
     return;
   }
 
