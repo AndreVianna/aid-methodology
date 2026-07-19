@@ -16,12 +16,15 @@
  *   (8) reader.mjs malformed-input regression (delivery-006 fixes).
  *   (9) PF-8 parseSpecMd + Lite fixture (HT-2).
  *   (2c) POST /r/<id>/api/op + POST /api/op write gate (feature-001 task-004): every op
- *        403s "read-only" on a write-disabled spawn; other POST paths still 405.
+ *        403s "read-only" on a write-disabled spawn (incl. pipeline.delete, task-027);
+ *        other POST paths still 405.
  *   (5c-op) OP_TABLE dispatch smoke test (feature-001 task-004, write-enabled spawn):
  *        settings.set 200 round-trip (writer actually mutates settings.yml on disk),
- *        unknown op -> 400, unresolvable work_id -> 404 (WT-1). The full per-op matrix
- *        (task.set-notes/pipeline.finish/pipeline.rename fixtures, status-map overrides)
- *        is task-011's "dispatch round-trip suite" mandate.
+ *        unknown op -> 400, unresolvable work_id -> 404 (WT-1, incl. pipeline.delete,
+ *        task-027). The full per-op matrix (task.set-notes/pipeline.finish/pipeline.rename
+ *        fixtures, status-map overrides) is task-011's "dispatch round-trip suite" mandate;
+ *        pipeline.delete's own real-writer guard/topology/containment/post-delete matrix +
+ *        twin byte-parity is test_task027_pipeline_delete_round_trips.py's mandate.
  *
  * ASCII-only source. Node built-in modules only.
  */
@@ -1036,6 +1039,21 @@ async function runLiveTests() {
       const r = await makeRequest(port, "/foo/bar", "POST");
       assert(r.status === 405, "POST /foo/bar (non-op path) -> 405 (got " + r.status + ")");
     }
+    {
+      // feature-009-pipeline-delete (task-027): pipeline.delete is subject to
+      // the SAME write gate as every other op -- mirrors this group's own
+      // settings.set/project.add cases immediately above. The full guard/
+      // topology/containment/post-delete matrix (real git worktree fixtures,
+      // real delete-pipeline.sh spawns, twin byte-parity) lives in
+      // test_task027_pipeline_delete_round_trips.py's own sliced-dispatchOp
+      // parity suite (no live socket needed there).
+      const r = await postJson(port, "/r/" + idA + "/api/op",
+        { op: "pipeline.delete", target: { work_id: "work-999-does-not-matter" } });
+      assert(r.status === 403, "pipeline.delete (write-disabled) -> 403 (got " + r.status + ")");
+      let data = null;
+      try { data = JSON.parse(r.body); } catch (_) {}
+      assert(!!(data && data.ok === false && data.error === "read-only"), "write-disabled pipeline.delete -> {ok:false, error:'read-only'}");
+    }
 
     // -----------------------------------------------------------------------
     // (2b) SEC-6: anti-DNS-rebinding Host-header allowlist (live server)
@@ -1494,6 +1512,22 @@ async function runLiveTests() {
           try { data = JSON.parse(r.body); } catch (_) {}
           assert(r.status === 404, "pipeline.rename unresolvable work_id -> 404 (got " + r.status + ")");
           assert(!!(data && data.error === "not-found"), "unresolvable work_id -> error:'not-found' (WT-1)");
+        }
+        {
+          // feature-009-pipeline-delete (task-027): pipeline.delete's WT-1
+          // 404 wiring, over the real HTTP path -- mirrors the pipeline.rename
+          // case immediately above. Real writer round-trips (200 happy across
+          // all 3 removal topologies, 409 guards, containment, post-delete
+          // truthfulness, twin byte-parity) are covered at the _dispatch_op/
+          // dispatchOp layer by test_task027_pipeline_delete_round_trips.py
+          // (no live socket needed there).
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "pipeline.delete", target: { work_id: "work-999-nonexistent" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 404, "pipeline.delete unresolvable work_id -> 404 (got " + r.status + ")");
+          assert(!!(data && data.error === "not-found"), "pipeline.delete unresolvable work_id -> error:'not-found' (WT-1)");
         }
       }
     }

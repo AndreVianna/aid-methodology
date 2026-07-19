@@ -1118,6 +1118,33 @@ class TestOpDispatchLive(unittest.TestCase):
         self.assertEqual(status, 404)
         self.assertEqual(json.loads(body)["error"], "not-found")
 
+    # feature-009-pipeline-delete (task-027): the write_enabled 403 gate and
+    # WT-1 404 wiring for pipeline.delete, over the real HTTP path -- mirrors
+    # this class's own pipeline.rename cases immediately above. The full
+    # guard/topology/containment/post-delete matrix (real git worktree
+    # fixtures, real delete-pipeline.sh spawns, twin byte-parity) lives in
+    # test_task027_pipeline_delete_round_trips.py's own _dispatch_op-layer
+    # suite (no _ServerThread needed there).
+    def test_pipeline_delete_403s_read_only(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "pipeline.delete", "target": {"work_id": "work-999-does-not-matter"}},
+            )
+        self.assertEqual(status, 403)
+        data = json.loads(body)
+        self.assertEqual(data, {"ok": False, "op": None, "error": "read-only",
+                                 "detail": "write endpoints disabled (server not spawned with --allow-writes)"})
+
+    def test_pipeline_delete_unresolvable_work_id_404_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "pipeline.delete", "target": {"work_id": "work-999-nonexistent"}},
+            )
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"], "not-found")
+
 
 # ===========================================================================
 # (6) Serialization (DM-3)
