@@ -59,6 +59,17 @@ convention):
       technique, generalized to a self-contained slice here rather than
       importing that file's fixture -- same "duplicated rather than
       imported" rationale test_task013's own .mjs file documents).
+  (F) The NODE-side symmetric counterpart to (D): a REAL end-to-end
+      dispatch through the ACTUAL bin/aid.ps1 (never a fake) via server.mjs's
+      OWN `runAidCli` (exported directly through the slice technique -- not
+      merely `dispatchOp`), asserting Python<->Node BYTE-parity of the exit
+      code/stderr/response-body for `version`, a `projects add` validation
+      failure (exit 2), and a full project.add/remove 200 round trip. Closes
+      a review-flagged gap: (D)/(E) alone never proved the NODE runAidCli's
+      Windows branch reaches a real, working aid.ps1. Gated on an ACTUAL
+      Windows host (`sys.platform == 'win32'`, unlike (D)'s cross-platform
+      pwsh-only gate) + pwsh-or-powershell.exe present; skips cleanly on
+      non-Windows CI.
 
 LOCAL TEST NOTE: every class here calls `srv._resolve_bash_exe(...)` /
 `srv._resolve_pwsh_exe(...)` / `srv._run_aid_cli(...)` / `srv._dispatch_op(...)`
@@ -74,6 +85,7 @@ Python 3.11+ stdlib only. No third-party deps.
 from __future__ import annotations
 
 import json
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -375,7 +387,7 @@ class TestRunAidCliRealPs1Dispatch(unittest.TestCase):
         """Full HOME_OP_TABLE round trip (200 + real registry.yml
         persistence) through the REAL PowerShell dispatch branch."""
         base = Path(tempfile.mkdtemp())
-        self.addCleanup(lambda: __import__("shutil").rmtree(str(base), ignore_errors=True))
+        self.addCleanup(lambda: shutil.rmtree(str(base), ignore_errors=True))
         aid_home = base / "aid_home"
         _make_aid_home(aid_home)
         proj = base / "real-project-ki009"
@@ -524,6 +536,246 @@ class TestBashPwshResolverParity(unittest.TestCase):
         py_result = srv._resolve_pwsh_exe(env, lambda p: p in files)
         self.assertEqual(py_result, node_result)
         self.assertEqual(py_result, r"C:\Program Files\PowerShell\7\pwsh.exe")
+
+
+# ===========================================================================
+# (F) Node-side REAL end-to-end dispatch through the ACTUAL bin/aid.ps1 (never
+# a fake) -- symmetric counterpart to (D)'s Python-only TestRunAidCliRealPs1
+# Dispatch. Closes a review-flagged [MEDIUM] gap: (D) proved the PYTHON
+# _run_aid_cli's Windows branch reaches a real, working aid.ps1; (E)'s
+# cross-twin parity covers only the resolver helpers (resolveBashExe/
+# resolvePwshExe) -- neither proved the NODE runAidCli's Windows branch
+# actually dispatches correctly through a real aid.ps1, so a Node-only
+# regression there (wrong argv order/shape, wrong PWSH_EXE selection, a
+# broken toPosixArg on AID_CLI_PATH_PS1, etc.) could have gone undetected
+# even with the identical Python-side logic staying correct.
+#
+# runAidCli IS cleanly exportable via this slice technique (proven here, not
+# merely dispatchOp) and callable directly with the SAME argv Python uses, so
+# every assertion below is a genuine Python<->Node BYTE-parity check (not
+# just "both look plausible") -- both twins spawn the SAME underlying aid.ps1
+# script with the SAME argv, so stderr/response-body text is expected to be
+# byte-identical, not merely equivalent.
+#
+# Gated on sys.platform == 'win32' (UNLIKE (D), which deliberately forces
+# is_windows=True from ANY host since pwsh is cross-platform): this class
+# asserts parity of runAidCli's ACTUAL output on THIS host, so it must run
+# against a genuine Windows PowerShell install (pwsh, or the always-present
+# powershell.exe fallback) -- skips cleanly on non-Windows CI (e.g. this
+# project's Linux runner).
+# ===========================================================================
+
+def _win32_pwsh_or_powershell_available() -> bool:
+    if sys.platform != "win32":
+        return False
+    if _PWSH_AVAILABLE:
+        return True
+    try:
+        r = subprocess.run(
+            ["powershell.exe", "-NoProfile", "-Command", "$PSVersionTable.PSVersion"],
+            capture_output=True, timeout=15,
+        )
+        return r.returncode == 0
+    except Exception:
+        return False
+
+
+_WIN32_PWSH_OR_POWERSHELL_AVAILABLE = _win32_pwsh_or_powershell_available()
+
+
+def _sliced_server_mjs_source_full() -> str:
+    """Like _sliced_server_mjs_source() above, but exports runAidCli ITSELF
+    (proven cleanly reachable via this slice technique -- not just
+    dispatchOp), plus dispatchOp/HOME_OP_TABLE/getIdMap for the full-round-
+    trip case. No AID_CLI_PATH/AID_CLI_PATH_PS1 redirection here -- this
+    slice dispatches through the REAL bin/aid.ps1, never a fake, mirroring
+    (D)'s Python class exactly."""
+    text = _SERVER_MJS.read_text(encoding="utf-8")
+    idx = text.find(_MAIN_MARKER)
+    assert idx != -1, (
+        "server.mjs's 'Main: parse args, create server, bind, register SIGTERM' "
+        "marker comment is gone -- this test's source-slice cut point needs updating"
+    )
+    sliced = text[:idx]
+    return sliced + "\nexport { runAidCli, dispatchOp, HOME_OP_TABLE, getIdMap };\n"
+
+
+@unittest.skipUnless(
+    _NODE_AVAILABLE and _WIN32_PWSH_OR_POWERSHELL_AVAILABLE,
+    "requires an actual Windows host + node + (pwsh or powershell.exe) on PATH -- "
+    "real Node aid.ps1 dispatch skipped",
+)
+class TestRunAidCliRealPs1DispatchNodeParity(unittest.TestCase):
+    """Node-side symmetric counterpart to (D)'s TestRunAidCliRealPs1Dispatch:
+    runs the REAL server.mjs runAidCli (never a fake) through the ACTUAL
+    bin/aid.ps1 via a resolved real PowerShell exe, and asserts BYTE-parity
+    against Python's _run_aid_cli for the identical argv."""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls._slice_path = _SERVER_DIR / f"_test_ki009_full_slice_{uuid.uuid4().hex}.mjs"
+        cls._slice_path.write_text(_sliced_server_mjs_source_full(), encoding="utf-8")
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        cls._slice_path.unlink(missing_ok=True)
+
+    def _node_run_aid_cli(self, argv: list[str], env_overrides: dict) -> "tuple[int, str]":
+        driver = (
+            "import { runAidCli } from "
+            f"{json.dumps(self._slice_path.resolve().as_uri())};\n"
+            f"const r = runAidCli({json.dumps(argv)}, {json.dumps(env_overrides)}, undefined, true);\n"
+            "process.stdout.write(JSON.stringify(r));\n"
+        )
+        result = subprocess.run(
+            ["node", "--input-type=module"], input=driver, capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Node runAidCli driver failed: {result.stderr[:2000]}")
+        code, stderr_text = json.loads(result.stdout.strip())
+        return code, stderr_text
+
+    def _node_dispatch_project_op(self, parsed: dict, aid_home: str) -> "tuple[int, str]":
+        driver = (
+            "import { dispatchOp, HOME_OP_TABLE } from "
+            f"{json.dumps(self._slice_path.resolve().as_uri())};\n"
+            f"const r = dispatchOp(HOME_OP_TABLE, {json.dumps(parsed)}, {json.dumps(aid_home)}, {json.dumps(aid_home)});\n"
+            "process.stdout.write(JSON.stringify([r[0], Buffer.from(r[1]).toString('utf-8')]));\n"
+        )
+        result = subprocess.run(
+            ["node", "--input-type=module"], input=driver, capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Node dispatchOp driver failed: {result.stderr[:2000]}")
+        status, body = json.loads(result.stdout.strip())
+        return status, body
+
+    def _node_get_id_map(self, aid_home: str) -> dict:
+        driver = (
+            "import { getIdMap } from "
+            f"{json.dumps(self._slice_path.resolve().as_uri())};\n"
+            f"const r = getIdMap({json.dumps(aid_home)});\n"
+            "process.stdout.write(JSON.stringify(Object.fromEntries(r.idMap)));\n"
+        )
+        result = subprocess.run(
+            ["node", "--input-type=module"], input=driver, capture_output=True, text=True, timeout=30,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(f"Node getIdMap driver failed: {result.stderr[:2000]}")
+        return json.loads(result.stdout.strip())
+
+    def test_version_exit_0_byte_parity(self) -> None:
+        py_code, py_stderr = srv._run_aid_cli(["version"], {}, is_windows=True)
+        node_code, node_stderr = self._node_run_aid_cli(["version"], {})
+        self.assertEqual(py_code, 0, py_stderr)
+        self.assertEqual(node_code, 0, node_stderr)
+        self.assertEqual(py_code, node_code, "python/node runAidCli exit-code DIVERGE for 'version'")
+
+    def test_projects_add_validation_failure_exit_2_byte_parity(self) -> None:
+        """KI-009 exit-alphabet parity claim, now proven on the NODE side too
+        (this is the [MEDIUM] gap a review flagged: only the Python side had
+        a real-dispatch proof before this class) -- the SAME argv is used on
+        both runtimes, so stderr is asserted content-IDENTICAL modulo the
+        two runtimes' own line-ending CAPTURE convention (Python's
+        subprocess.run(text=True) auto-translates the child's raw CRLF to LF
+        per universal-newlines mode; Node's spawnSync(encoding:'utf8') does
+        NOT -- this is an artifact of how each stdlib decodes a captured
+        pipe, not a real divergence in aid.ps1's own output or in the
+        dispatch logic under test, so both sides are normalized before
+        comparing)."""
+        argv = ["projects", "add", "/definitely/does/not/exist/xyz123-ki009-parity"]
+        env = {"AID_HOME": "/tmp/ki009-fake-parity"}
+        py_code, py_stderr = srv._run_aid_cli(argv, env, is_windows=True)
+        node_code, node_stderr = self._node_run_aid_cli(argv, env)
+        self.assertEqual(py_code, 2, py_stderr)
+        self.assertEqual(node_code, 2, node_stderr)
+        self.assertEqual(
+            py_code, node_code, "python/node runAidCli exit-code DIVERGE for projects-add-validation-failure",
+        )
+        self.assertEqual(
+            py_stderr.replace("\r\n", "\n"), node_stderr.replace("\r\n", "\n"),
+            "python/node runAidCli stderr text DIVERGE (same aid.ps1, same argv; CRLF-normalized)",
+        )
+        self.assertIn("path does not exist", py_stderr)
+
+    def test_project_add_remove_round_trip_dispatch_op_byte_parity(self) -> None:
+        """Full HOME_OP_TABLE 200 round trip (project.add then project.remove)
+        through the REAL PowerShell dispatch on BOTH runtimes -- separate temp
+        aid_home/project dirs per runtime (each side really mutates its own
+        disk), asserting the JSON envelope bodies are byte-identical (the
+        success envelope carries no path-specific data, so this IS a
+        meaningful byte-parity assertion, not a tautology)."""
+        py_base = Path(tempfile.mkdtemp())
+        node_base = Path(tempfile.mkdtemp())
+        self.addCleanup(lambda: shutil.rmtree(str(py_base), ignore_errors=True))
+        self.addCleanup(lambda: shutil.rmtree(str(node_base), ignore_errors=True))
+
+        py_aid_home = py_base / "aid_home"
+        _make_aid_home(py_aid_home)
+        py_proj = py_base / "real-project-ki009-py"
+        (py_proj / ".aid").mkdir(parents=True, exist_ok=True)
+
+        node_aid_home = node_base / "aid_home"
+        _make_aid_home(node_aid_home)
+        node_proj = node_base / "real-project-ki009-node"
+        (node_proj / ".aid").mkdir(parents=True, exist_ok=True)
+
+        # Node side add.
+        node_add_status, node_add_body = self._node_dispatch_project_op(
+            {"op": "project.add", "args": {"path": str(node_proj).replace("\\", "/")}},
+            str(node_aid_home).replace("\\", "/"),
+        )
+        self.assertEqual(node_add_status, 200, node_add_body)
+
+        # Python side add -- forced is_windows=True the same way (D)'s class
+        # does (_dispatch_op -> _spawn_aid_cli -> _run_aid_cli carries no
+        # is_windows override of its own, so redirect-then-restore the
+        # module-level _run_aid_cli for the duration of this call only).
+        orig = srv._run_aid_cli
+
+        def forced(argv, env_overrides, timeout=srv._DEFAULT_AID_CLI_TIMEOUT):
+            return orig(argv, env_overrides, timeout, is_windows=True)
+
+        srv._run_aid_cli = forced
+        try:
+            py_add_status, py_add_body_raw = srv._dispatch_op(
+                srv.HOME_OP_TABLE, {"op": "project.add", "args": {"path": str(py_proj).replace("\\", "/")}},
+                str(py_aid_home),
+            )
+            # _dispatch_op returns BYTES (Python's own wire-body type); the
+            # Node driver already decodes to a JS/JSON string on its side
+            # (Buffer.from(...).toString('utf-8')) -- decode here too so the
+            # cross-runtime comparison is content-vs-content, not
+            # bytes-vs-str (mirrors test_task017's _assert_parity convention).
+            py_add_body = py_add_body_raw.decode("utf-8")
+            self.assertEqual(py_add_status, 200, py_add_body)
+            self.assertEqual(py_add_status, node_add_status, "python/node project.add status DIVERGE")
+            self.assertEqual(py_add_body, node_add_body, "python/node project.add response body DIVERGE")
+
+            py_id_map, _warnings = srv._get_id_map(str(py_aid_home))
+            py_target_id = next((k for k, v in py_id_map.items() if "real-project-ki009-py" in v), None)
+            self.assertIsNotNone(py_target_id, py_id_map)
+
+            py_remove_status, py_remove_body_raw = srv._dispatch_op(
+                srv.HOME_OP_TABLE, {"op": "project.remove", "target": {"id": py_target_id}}, str(py_aid_home),
+            )
+            py_remove_body = py_remove_body_raw.decode("utf-8")
+            self.assertEqual(py_remove_status, 200, py_remove_body)
+        finally:
+            srv._run_aid_cli = orig
+
+        node_id_map = self._node_get_id_map(str(node_aid_home).replace("\\", "/"))
+        node_target_id = next((k for k, v in node_id_map.items() if "real-project-ki009-node" in v), None)
+        self.assertIsNotNone(node_target_id, node_id_map)
+
+        node_remove_status, node_remove_body = self._node_dispatch_project_op(
+            {"op": "project.remove", "target": {"id": node_target_id}},
+            str(node_aid_home).replace("\\", "/"),
+        )
+        self.assertEqual(node_remove_status, 200, node_remove_body)
+
+        self.assertEqual(py_remove_status, node_remove_status, "python/node project.remove status DIVERGE")
+        self.assertEqual(py_remove_body, node_remove_body, "python/node project.remove response body DIVERGE")
 
 
 if __name__ == "__main__":
