@@ -252,7 +252,10 @@ class TestLabelPrecedenceBothSites(unittest.TestCase):
         self.assertLess(idx_short, idx_id)
 
     def test_r3_task_card_uses_shared_helper(self):
-        idx = self.src.find("function makeTaskChip(task, workId)")
+        # Signature gained a 3rd `writeEnabled` param (work-017 task-030,
+        # feature-008-execution-control) -- the Stop/Resume AC6 gate.
+        idx = self.src.find("function makeTaskChip(task, workId, writeEnabled)")
+        self.assertNotEqual(idx, -1)
         idx_end = idx + 2000
         snippet = self.src[idx:idx_end]
         self.assertIn("_taskDisplayLabel(task)", snippet)
@@ -261,11 +264,10 @@ class TestLabelPrecedenceBothSites(unittest.TestCase):
 
     def test_r3_drill_view_uses_shared_helper(self):
         idx = self.src.find("function renderTaskView(model, route)")
-        # Window widened past 3000 (work-017 task-010, feature-006-task-notes):
-        # the new taskNotesState poll-loop guard + the "TASK NOTES" card
-        # insertion push _taskDisplayLabel(task)'s call site further into the
-        # function than before.
-        snippet = self.src[idx:idx + 3500]
+        # Window widened past 3500 (work-017 task-030, feature-008-execution-
+        # control): the new taskControlState poll-loop guard pushes
+        # _taskDisplayLabel(task)'s call site further into the function.
+        snippet = self.src[idx:idx + 4200]
         self.assertIn("_taskDisplayLabel(task)", snippet)
 
 

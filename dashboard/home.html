@@ -738,6 +738,16 @@ footer {
   gap: 0.4em;
   align-items: center;
 }
+/* Stop/Resume toggle + "paused" pill row (feature-008-execution-control,
+   task-030) -- a THIRD chip line, appended only when the AC6 gate control
+   and/or the decorative paused pill actually render (never an empty row). */
+.task-chip .chip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: center;
+  margin-top: 0.15rem;
+}
 
 /* Interval input in controls */
 .interval-control {
@@ -843,6 +853,13 @@ footer {
    button + modal rules below are new. */
 .danger-zone { margin-top: 1rem; }
 .danger-zone .kicker { color: var(--err); }
+
+/* Pipeline Finish (feature-008-execution-control, task-030): a write-gated,
+   NON-destructive action section appended to #work-overview-body by
+   _renderFinishControl, gated on work.lifecycle === 'Running' &&
+   model.write_enabled. Reuses .work-overview / .btn-ghost verbatim -- only
+   the margin rule below is new (mirrors .danger-zone's identical role). */
+.finish-zone { margin-top: 1rem; }
 .btn-danger {
   background: var(--err);
   border: 1px solid var(--err);
@@ -982,6 +999,14 @@ footer {
             </button>
             <ul class="work-disclosure-body" id="overview-features-body"></ul>
           </div>
+
+          <!-- Pipeline Finish (feature-008-execution-control, task-030): built
+               entirely by _renderFinishControl -- an empty container unless
+               work.lifecycle === 'Running' && model.write_enabled === true;
+               never present on index.html / the main-grid work card
+               (_renderWorkCard), same detail-route-only construction as the
+               Danger zone below. -->
+          <div id="overview-finish-zone"></div>
 
           <!-- Danger zone (feature-009-pipeline-delete, task-026): built entirely
                by _renderDangerZone (renderWorkHeader's last step) -- an empty
@@ -1454,7 +1479,7 @@ footer {
     renderWorkHeader(work, model);
     renderAttentionStrip(work);
     renderStageRail(work);
-    renderTasks(work);
+    renderTasks(work, model.write_enabled === true);
 
     // Update freshness badge
     var readAt = model.read && model.read.read_at;
@@ -3239,6 +3264,13 @@ footer {
     var isFullPath = work.work_path === 'full';
     _renderFeaturesDisclosure(work.features, isFullPath);
 
+    // Pipeline Finish (feature-008-execution-control, task-030): a write-gated,
+    // terminal-but-non-destructive control, placed BEFORE the Danger zone
+    // (less severe than Delete). Same detail-route-only construction: this
+    // whole function is called only from renderWorkView (#/work/<work_id>),
+    // never from _renderWorkCard (the main-grid card) or index.html.
+    _renderFinishControl(work, model && model.write_enabled === true);
+
     // Danger zone (feature-009-pipeline-delete, task-026): LAST step of the
     // build (§UI Specs placement) -- write-gated Delete control + its
     // type-to-confirm modal. Detail-route-only by construction: this whole
@@ -3401,6 +3433,135 @@ footer {
         if (stateKey) uiState[stateKey] = true;
       }
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pipeline Finish (feature-008-execution-control, task-030): a write-gated,
+  // NON-destructive "Finish" action on the pipeline DETAIL route (same
+  // detail-route-only placement rationale as the Danger zone below --
+  // renderWorkHeader is never called from _renderWorkCard/index.html, so this
+  // control never reaches the main-grid card). Consumes feature-001's
+  // `pipeline.finish` OP_TABLE row (already functional --
+  // writeback-state.sh --pipeline --field Lifecycle --value Completed) via
+  // the shared postOp() helper. Unlike FR-PL3 Delete, Finish is guarded by a
+  // PLAIN window.confirm() (§UI Specs -- "a plain confirm, distinct from
+  // FR-PL3 Delete's strong destructive guard"), never a type-to-confirm modal.
+  // ---------------------------------------------------------------------------
+
+  // finishPipelineState: transient UI-only state for the in-flight Finish
+  // POST. workId scopes the guard below to the pipeline the request was
+  // issued for (mirrors deleteModalState.workId's identical role) so
+  // navigating to a DIFFERENT pipeline mid-flight never blocks that other
+  // pipeline's own render.
+  var finishPipelineState = { workId: null, saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender /
+  // _deleteModalExplicitRender (delivery-001 dogfood fix, commit 41ea5d28):
+  // window.confirm() is a blocking, synchronous native dialog (no re-render
+  // needed to SHOW it), but the POST-confirm `saving = true` transition (and
+  // any inline failure) still needs to force its OWN render immediately --
+  // else the guard below would see `saving === true` and skip the very
+  // render meant to draw the disabled "Finishing…" state. Only THAT render
+  // bypasses the guard; a later poll-loop tick still preserves it untouched.
+  var _finishExplicitRender = false;
+  function _consumeFinishExplicitRender() {
+    var v = _finishExplicitRender;
+    _finishExplicitRender = false;
+    return v;
+  }
+
+  // Build the write-gated "Finish" button. Rendered ONLY when
+  // work.lifecycle === 'Running' && writeEnabled (finishing a
+  // Completed/Canceled/Blocked/Paused-Awaiting-Input pipeline is meaningless);
+  // an empty container otherwise -- defense-in-depth, the server 403s the op
+  // even if forced. Guards itself while a Finish POST is in flight so the
+  // poll loop never clobbers the disabled button mid-request.
+  function _renderFinishControl(work, writeEnabled) {
+    var container = document.getElementById('overview-finish-zone');
+    if (!container) return;
+
+    // Route moved to a DIFFERENT work_id while a Finish request was in flight
+    // (e.g. browser back/forward) -- reset rather than leak state onto the
+    // new pipeline's page (mirrors _renderDangerZone's identical guard).
+    if (finishPipelineState.workId !== null && finishPipelineState.workId !== work.work_id) {
+      finishPipelineState.workId = null;
+      finishPipelineState.saving = false;
+      finishPipelineState.errorMessage = null;
+    }
+
+    if (!_consumeFinishExplicitRender() && finishPipelineState.saving &&
+        finishPipelineState.workId === work.work_id) {
+      return;
+    }
+
+    container.innerHTML = '';
+    if (!writeEnabled) return;                // read-only: no Finish affordance at all
+    if (work.lifecycle !== 'Running') return; // only a Running pipeline can be finished
+
+    var section = document.createElement('div');
+    section.className = 'work-overview finish-zone';
+
+    var desc = document.createElement('p');
+    desc.className = 'meta';
+    desc.textContent = 'Mark this pipeline Completed and stop any running work.';
+    section.appendChild(desc);
+
+    var finishBtn = document.createElement('button');
+    finishBtn.type = 'button';
+    finishBtn.id = 'overview-finish-btn';
+    finishBtn.className = 'btn-ghost';
+    var thisSaving = finishPipelineState.saving && finishPipelineState.workId === work.work_id;
+    finishBtn.disabled = thisSaving;
+    finishBtn.textContent = thisSaving ? 'Finishing…' : 'Finish';
+    finishBtn.addEventListener('click', function () {
+      if (finishBtn.disabled) return;
+      // Lightweight confirm() guard (§UI Specs) -- a plain confirm, NOT the
+      // type-to-confirm destructive pattern FR-PL3 Delete uses.
+      if (!window.confirm('Finish this pipeline? This marks it Completed and stops any running work.')) return;
+      _submitPipelineFinish(work);
+    });
+    section.appendChild(finishBtn);
+
+    if (finishPipelineState.errorMessage && finishPipelineState.workId === work.work_id) {
+      var err = document.createElement('p');
+      err.className = 'callout err';
+      err.style.marginTop = '0.5rem';
+      err.textContent = finishPipelineState.errorMessage;
+      section.appendChild(err);
+    }
+
+    container.appendChild(section);
+  }
+
+  // Confirm: POST pipeline.finish; on 200 re-fetch (AC2 -- the card then
+  // shows LIFECYCLE_MAP['Completed']); on 4xx/5xx keep the button visible and
+  // show the server's error/detail inline (mirrors _submitConnectorRemove's
+  // shape).
+  function _submitPipelineFinish(work) {
+    finishPipelineState.workId = work.work_id;
+    finishPipelineState.saving = true;
+    finishPipelineState.errorMessage = null;
+    // Force this render: the guard in _renderFinishControl would otherwise
+    // skip it right back, since finishPipelineState.saving is now true (see
+    // the explicit-render flag comment on its declaration, above).
+    _finishExplicitRender = true;
+    _renderFinishControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+
+    postOp('pipeline.finish', { work_id: work.work_id }, {}, function (result) {
+      finishPipelineState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        finishPipelineState.workId = null;
+        finishPipelineState.errorMessage = null;
+        // Truthful re-fetch + re-render from disk -- the card then shows
+        // LIFECYCLE_MAP['Completed'] (AC2, never optimistically flipped
+        // client-side).
+        _refetchModelForHeader();
+      } else {
+        finishPipelineState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not finish pipeline.';
+        _finishExplicitRender = true;
+        _renderFinishControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -3921,9 +4082,23 @@ footer {
     return badge;
   }
 
-  function renderTasks(work) {
+  function renderTasks(work, writeEnabled) {
     var section = document.getElementById('tasks-section');
     if (!section) return;
+
+    // Guard: an in-flight task.stop/task.resume POST for a task WITHIN this
+    // work must not have its disabled "Stopping…"/"Resuming…" chip button
+    // clobbered by a poll-triggered full rebuild (mirrors
+    // _renderConnectorsCard's/_renderDangerZone's identical `saving`-guard
+    // convention; delivery-001 dogfood fix, commit 41ea5d28). Scoped to the
+    // CURRENT work only (not a global freeze) via the work_id prefix of the
+    // shared detail key -- a click on a task belonging to a DIFFERENT work is
+    // never blocked by this.
+    if (!_consumeTaskControlExplicitRender() && taskControlState.saving &&
+        taskControlState.key && taskControlState.key.indexOf(work.work_id + '/') === 0) {
+      return;
+    }
+
     section.innerHTML = '';
 
     var tasks = work.tasks || [];
@@ -3935,14 +4110,14 @@ footer {
     var workPath = work.work_path || 'full';
 
     if (workPath === 'full') {
-      renderTasksFull(section, tasks, work.work_id);
+      renderTasksFull(section, tasks, work.work_id, writeEnabled);
     } else {
       // Lite: render lanes at top level (no delivery wrapper)
-      renderLanes(section, tasks, null, work.work_id);
+      renderLanes(section, tasks, null, work.work_id, writeEnabled);
     }
   }
 
-  function renderTasksFull(container, tasks, workId) {
+  function renderTasksFull(container, tasks, workId, writeEnabled) {
     // Group by task.delivery (real integer from reader; null -> "unsequenced" bucket)
     // Never uses parseWave() or the invented delivery-NNN-wave-M string.
     var deliveryOrder = [];   // integer delivery numbers, ascending (null last)
@@ -4008,7 +4183,7 @@ footer {
       body.className = 'delivery-panel-body' + (dOpen ? ' open' : '');
 
       // Render lanes inside the body (pass dNum2 for delivery-scoped uiState keys)
-      renderLanes(body, dTasks, dNum2, workId);
+      renderLanes(body, dTasks, dNum2, workId, writeEnabled);
 
       // Toggle handler (closure over dStateKey, summaryBtn, body)
       (function(sk, btn, bd) {
@@ -4034,7 +4209,7 @@ footer {
     }
   }
 
-  function renderLanes(container, tasks, deliveryNum, workId) {
+  function renderLanes(container, tasks, deliveryNum, workId, writeEnabled) {
     // Group by task.lane (integer from PLAN execution graph; null -> "unsequenced" lane)
     // deliveryNum: the integer delivery number (or null for the unsequenced delivery bucket)
     // uiState key is delivery-scoped: "d<D>-lane<L>" or "d<D>-unseq" — never collides across deliveries
@@ -4072,7 +4247,7 @@ footer {
         var unseqGrid = document.createElement('div');
         unseqGrid.className = 'grid g-lane';
         for (var uti = 0; uti < lTasks.length; uti++) {
-          unseqGrid.appendChild(makeTaskChip(lTasks[uti], workId));
+          unseqGrid.appendChild(makeTaskChip(lTasks[uti], workId, writeEnabled));
         }
         container.appendChild(unseqGrid);
         continue;
@@ -4121,7 +4296,7 @@ footer {
       var grid = document.createElement('div');
       grid.className = 'grid g-lane';
       for (var ti = 0; ti < lTasks.length; ti++) {
-        grid.appendChild(makeTaskChip(lTasks[ti], workId));
+        grid.appendChild(makeTaskChip(lTasks[ti], workId, writeEnabled));
       }
       lBody.appendChild(grid);
 
@@ -4160,7 +4335,116 @@ footer {
     return task.task_id;
   }
 
-  function makeTaskChip(task, workId) {
+  // ---------------------------------------------------------------------------
+  // Task Stop/Resume (feature-008-execution-control, task-030): a single
+  // toggle control shared by makeTaskChip (task card) AND renderTaskView
+  // (task drill view), so both stay in lockstep (mirrors _taskDisplayLabel's
+  // identical shared-helper role). Consumes feature-001's shared postOp()
+  // helper against the task.stop/task.resume OP_TABLE rows task-029 added.
+  // ---------------------------------------------------------------------------
+
+  // taskControlState: transient UI-only state for an in-flight task.stop/
+  // task.resume POST. A SINGLE shared object (never a per-task map) --
+  // mirrors connectorsUiState's identical single-flight rationale: only one
+  // manual click can be in flight at a time in a single-threaded browser.
+  // `key` is the drill key ("<work_id>/<task_id>") whose toggle is currently
+  // mid-flight, so the guards (renderTasks' + renderTaskView's) only pause a
+  // rebuild while THAT task's own toggle is saving -- a click on a DIFFERENT
+  // task's toggle (or navigating away) is never blocked.
+  var taskControlState = { key: null, saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender /
+  // _deleteModalExplicitRender (delivery-001 dogfood fix, commit 41ea5d28):
+  // entering `saving` needs its OWN forced render (else the guards below
+  // would see saving===true and skip the very render meant to draw the
+  // disabled "Stopping…"/"Resuming…" state) -- only that one render bypasses
+  // the guard; a later poll-loop tick still preserves it untouched.
+  var _taskControlExplicitRender = false;
+  function _consumeTaskControlExplicitRender() {
+    var v = _taskControlExplicitRender;
+    _taskControlExplicitRender = false;
+    return v;
+  }
+
+  // Build the Stop/Resume toggle for a task. AC6 visibility gate: returns
+  // null (renders NOTHING) unless task.status === 'In Progress' &&
+  // writeEnabled -- Pending/Blocked/Done/Failed/Canceled/In Review all get no
+  // control (no rerun/start affordance anywhere); In Review is DELIBERATELY
+  // excluded even though the chip's own "active" CSS class (above) treats it
+  // like In Progress -- its executor has already finished (a reviewer
+  // sub-agent is what is running). Label/action flips on task.stop_requested
+  // (false -> "Stop"/task.stop; true -> "Resume"/task.resume, §UI Specs).
+  function _buildTaskStopResumeControl(workId, task, writeEnabled) {
+    if (task.status !== 'In Progress' || !writeEnabled) return null;
+
+    var detailKey = workId + '/' + task.task_id;
+    var isPaused = task.stop_requested === true;
+    var thisSaving = taskControlState.saving && taskControlState.key === detailKey;
+
+    // Wrapping <span> (mirrors _renderTaskRenameControl's identical shape) so
+    // a failed POST's inline error can sit alongside the button without the
+    // caller (makeTaskChip / renderTaskView) needing to know about it.
+    var wrap = document.createElement('span');
+    wrap.style.cssText = 'display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-ghost';
+    btn.disabled = thisSaving;
+    btn.textContent = thisSaving ? (isPaused ? 'Resuming…' : 'Stopping…') : (isPaused ? 'Resume' : 'Stop');
+    btn.setAttribute('aria-label', (isPaused ? 'Resume' : 'Stop') + ' task ' + task.task_id);
+    btn.addEventListener('click', function (e) {
+      // The chip itself is a clickable SEAM-2 drill-nav surface
+      // (card.onclick, below) -- stop the click from bubbling so this toggle
+      // never ALSO navigates away.
+      if (e) e.stopPropagation();
+      if (btn.disabled) return;
+      _submitTaskStopResume(workId, task, detailKey, isPaused ? 'task.resume' : 'task.stop');
+    });
+    wrap.appendChild(btn);
+
+    if (taskControlState.errorMessage && taskControlState.key === detailKey) {
+      var err = document.createElement('span');
+      err.className = 'callout err';
+      err.style.cssText = 'display:block;width:100%;margin-top:0.2rem;font-size:0.72rem;';
+      err.textContent = taskControlState.errorMessage;
+      wrap.appendChild(err);
+    }
+
+    return wrap;
+  }
+
+  // Dispatch the toggle POST; on success re-fetch + re-render from disk (the
+  // re-derived task.stop_requested, AC2 -- never optimistically flipped
+  // client-side); on failure surface the error inline and re-render from the
+  // still-cached (unchanged) model.
+  function _submitTaskStopResume(workId, task, detailKey, op) {
+    taskControlState.key = detailKey;
+    taskControlState.saving = true;
+    taskControlState.errorMessage = null;
+    // Force this render: the guards in renderTasks/renderTaskView would
+    // otherwise skip it right back, since taskControlState.saving is now true
+    // (see the explicit-render flag comment on its declaration, above).
+    _taskControlExplicitRender = true;
+    _rerenderCurrentRoute();
+
+    var target = { work_id: workId, task_id: task.task_id };
+    if (task.delivery != null) target.delivery_id = task.delivery;
+    postOp(op, target, {}, function (result) {
+      taskControlState.saving = false;
+      taskControlState.key = null;
+      if (result.ok && result.body && result.body.ok) {
+        taskControlState.errorMessage = null;
+        _refetchModelForHeader();
+      } else {
+        taskControlState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not update task.';
+        _taskControlExplicitRender = true;
+        _rerenderCurrentRoute();
+      }
+    });
+  }
+
+  function makeTaskChip(task, workId, writeEnabled) {
     var card = document.createElement('div');
     card.className = 'task-chip';
 
@@ -4212,6 +4496,21 @@ footer {
     nameEl.className = 'chip-short-name';
     nameEl.textContent = displayLabel || '';
     card.appendChild(nameEl);
+
+    // Line 3: Stop/Resume toggle (AC6 gate) + decorative "paused" pill
+    // (feature-008-execution-control, task-030). The pill is purely
+    // informational (reflects on-disk stop_requested state) and is shown
+    // independent of write_enabled; the toggle itself IS write-gated
+    // (defense-in-depth -- the server 403s the op even if forced).
+    var isPaused = task.status === 'In Progress' && task.stop_requested === true;
+    var stopResumeBtn = _buildTaskStopResumeControl(workId, task, writeEnabled === true);
+    if (isPaused || stopResumeBtn) {
+      var actionsRow = document.createElement('div');
+      actionsRow.className = 'chip-actions';
+      if (isPaused) actionsRow.appendChild(makeStopRequestedPill());
+      if (stopResumeBtn) actionsRow.appendChild(stopResumeBtn);
+      card.appendChild(actionsRow);
+    }
 
     return card;
   }
@@ -4266,6 +4565,20 @@ footer {
       badge.textContent = '? ' + (status || 'Unknown');
     }
     return badge;
+  }
+
+  // "Paused" pill (UI-3/UI-4 family, feature-008-execution-control task-030):
+  // a small DECORATIVE glyph badge -- never a substitute for
+  // makeTaskStatusBadge (the task State enum is untouched by a pause, per
+  // OQ-T2; a paused task stays 'In Progress' and its own status badge is
+  // rendered separately, unchanged). Shown ALONGSIDE the status badge, never
+  // instead of it.
+  function makeStopRequestedPill() {
+    var pill = document.createElement('span');
+    pill.className = 'badge badge-warn';
+    pill.title = 'A stop has been requested for this task';
+    pill.textContent = '❚❚ Paused';
+    return pill;
   }
 
   // ---------------------------------------------------------------------------
@@ -4807,6 +5120,14 @@ footer {
         return;
       }
     }
+    // Same guard for an in-flight task.stop/task.resume POST
+    // (feature-008-execution-control, task-030) -- prevents a poll tick from
+    // clobbering the disabled "Stopping…"/"Resuming…" button mid-request.
+    if (!_consumeTaskControlExplicitRender()) {
+      if (taskControlState.saving && taskControlState.key === detailKey) {
+        return;
+      }
+    }
 
     container.innerHTML = '';
 
@@ -4875,6 +5196,15 @@ footer {
       // Write-gated rename pencil / inline editor, next to the task name (AC8 UI half).
       var taskWriteEnabled = model.write_enabled === true;
       headerDiv.appendChild(_renderTaskRenameControl(workId, task, detailKey, taskWriteEnabled));
+      // Task Stop/Resume mirror (feature-008-execution-control, task-030):
+      // the SAME shared builder as the chip (identical AC6 gate + label/action
+      // flip), for discoverability on the drill route. Paused pill shown
+      // alongside the status badge above, never replacing it.
+      if (task.status === 'In Progress' && task.stop_requested === true) {
+        headerDiv.appendChild(makeStopRequestedPill());
+      }
+      var stopResumeCtl = _buildTaskStopResumeControl(workId, task, taskWriteEnabled);
+      if (stopResumeCtl) headerDiv.appendChild(stopResumeCtl);
     } else {
       // Task not found — show notice, never blank (FC-3/UI-5)
       var noTaskCallout = document.createElement('div');
