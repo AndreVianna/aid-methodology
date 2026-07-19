@@ -20,7 +20,7 @@
  *   [C] Live-server integration groups: spawn the REAL server.mjs (--allow-
  *       writes) against a temp AID_HOME, dispatching through the REAL bin/aid
  *       CLI (never a stub) -- project.add / project.remove happy paths (real
- *       registry.yml mutation observed), the CLI's own 422 paths (nonexistent
+ *       registry.yml mutation observed), the CLI's own 422 path (nonexistent
  *       path, not-an-AID-project), a 400 pre-validate rejection (relative
  *       path, never reaching the CLI), and a 404 for an unknown target.id.
  *
@@ -301,15 +301,15 @@ async function runLiveTests() {
       assert(!!(data && data.error === "invalid-value"), "C.2b: error class 'invalid-value'");
     }
 
-    // C.3: not-an-AID-project -> 422 invalid-value.
+    // C.3: a folder without .aid/ is INITIALIZED as a bare, tool-less project + 200.
     {
-      const notAProject = join(base, "not-an-aid-project");
-      mkdirSync(notAProject, { recursive: true });
-      const r = await postJson(s.port, "/api/op", { op: "project.add", args: { path: notAProject } });
+      const notYet = join(base, "not-yet-an-aid-project");
+      mkdirSync(notYet, { recursive: true });
+      const r = await postJson(s.port, "/api/op", { op: "project.add", args: { path: notYet } });
       let data = null; try { data = JSON.parse(r.body); } catch (_) {}
-      assert(r.status === 422, "C.3: not-an-AID-project -> 422 (got " + r.status + ")");
-      assert(!!(data && data.detail && data.detail.includes("not an AID project")),
-        "C.3b: detail cites the CLI's own 'not an AID project' message");
+      assert(r.status === 200, "C.3: non-.aid/ path scaffolds + registers -> 200 (got " + r.status + ")");
+      assert(!!(data && data.ok === true && data.op === "project.add"), "C.3b: ok:true op:project.add");
+      assert(existsSync(join(notYet, ".aid", "settings.yml")), "C.3c: bare .aid/settings.yml scaffolded");
     }
 
     // C.4: happy path add -> 200, registry.yml actually gains an entry.

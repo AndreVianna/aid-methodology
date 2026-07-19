@@ -197,8 +197,9 @@ _aid_usage() {
             printf '    tools, and tier.\n'
             printf '    The current directory is marked with "*" in the leading marker column.\n'
             printf '    Unregistered cwd with .aid/ present is shown as a footnote.\n'
-            printf '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,\n'
-            printf '    no tools are installed.  Idempotent.  Prints the tier written.\n'
+            printf '  add [path=cwd]: register a project. If the folder is not yet an AID project,\n'
+            printf '    it is initialized as a bare project (.aid/ with no tools installed).\n'
+            printf '    Idempotent.  Prints the tier written.\n'
             printf '  remove [path=cwd|<N>]: unregister a project from the registry; no files removed.\n'
             printf '    <N> (all-digits) targets the Nth row from '"'"'aid projects list'"'"'; N < 1 or\n'
             printf '    N greater than the registered count errors to stderr with exit 2.  A <path>\n'
@@ -2626,8 +2627,50 @@ _which_tier_holds() {
     _aid_resolve_tier "$_p"
 }
 
+# _aid_scaffold_bare_project <canon>
+# Initialize a bare, tool-less AID project at <canon>: create the .aid/ tree and
+# a minimal settings.yml (format_version + aid_version + empty tools). Used by
+# `aid projects add` when the target folder is not yet an AID project, so any
+# folder can be onboarded (e.g. from the dashboard) without first installing a
+# host tool. Never clobbers an existing settings.yml. The AID release version is
+# recorded in settings.yml (no manifest exists for a tool-less project).
+_aid_scaffold_bare_project() {
+    local _canon="$1"
+    local _name _fmt _ver
+    _name="$(basename "$_canon")"
+    _fmt="${AID_SUPPORTED_FORMAT:-2}"
+    _ver=""
+    [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
+        _ver="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION" 2>/dev/null)"
+
+    mkdir -p "${_canon}/.aid/connectors" "${_canon}/.aid/knowledge" "${_canon}/.aid/works"
+
+    local _settings="${_canon}/.aid/settings.yml"
+    if [[ ! -f "$_settings" ]]; then
+        {
+            printf 'format_version: %s\n' "$_fmt"
+            [[ -n "$_ver" ]] && printf 'aid_version: %s\n' "$_ver"
+            printf '# .aid/settings.yml - AID pipeline configuration (single source of truth).\n'
+            printf '# Initialized by `aid projects add` for a tool-less project (no host tool yet).\n'
+            printf '# Run /aid-config to configure, or `aid add <tool>` to install a host tool.\n'
+            printf '\n'
+            printf 'project:\n'
+            printf '  name: %s\n' "$_name"
+            printf '  description: ""\n'
+            printf '  type: brownfield\n'
+            printf '\n'
+            printf 'tools:\n'
+            printf '  installed: []\n'
+            printf '\n'
+            printf 'review:\n'
+            printf '  minimum_grade: A\n'
+        } > "$_settings"
+    fi
+}
+
 # _cmd_projects_add [path] [verbose]
-# Register a project path (default: cwd) in the deterministic tier.
+# Register a project path (default: cwd) in the deterministic tier. If the folder
+# is not yet an AID project, initialize a bare .aid/ (no tools) first.
 _cmd_projects_add() {
     local _raw_path="${1:-.}"
     local _verbose="${2:-0}"
@@ -2639,10 +2682,26 @@ _cmd_projects_add() {
         exit 2
     fi
 
-    # Require a real AID project (.aid/ present AND not the CLI state home).
+    # If the folder is not yet an AID project, initialize a bare .aid/ (no tools)
+    # rather than refusing. _aid_is_project_dir is also false when .aid/ resolves
+    # to the CLI state home -- never scaffold/register that, so distinguish it by
+    # the presence of an existing .aid/ dir.
     if ! _aid_is_project_dir "${_canon}"; then
-        echo "ERROR: aid projects add: '${_canon}' is not an AID project; run 'aid add <tool>' first." >&2
-        exit 2
+        # _aid_is_project_dir is ALSO false when <dir>/.aid IS the CLI state home.
+        # Refuse that explicitly (path compare, existence-agnostic -- mirrors the
+        # guard in _aid_is_project_dir) so we never initialize $HOME/.aid or
+        # $AID_STATE_HOME as a project. Otherwise the folder just has no .aid/ yet
+        # -> initialize a bare, tool-less project.
+        local _ca_n _sh_n _hd_n
+        _ca_n="$(cd "${_canon}/.aid" 2>/dev/null && pwd -P)" || _ca_n="${_canon}/.aid"
+        _sh_n="$(cd "${AID_STATE_HOME}" 2>/dev/null && pwd -P)" || _sh_n="${AID_STATE_HOME}"
+        _hd_n="$(cd "${HOME}/.aid" 2>/dev/null && pwd -P)" || _hd_n="${HOME}/.aid"
+        if [[ "${_ca_n}" == "${_sh_n}" || "${_ca_n}" == "${_hd_n}" ]]; then
+            echo "ERROR: aid projects add: '${_canon}' is the AID state home, not a project." >&2
+            exit 2
+        fi
+        _aid_scaffold_bare_project "${_canon}"
+        echo "aid projects: initialized a bare AID project at '${_canon}' (no tools; run 'aid add <tool>' to install a host tool)."
     fi
 
     # Resolve tier.

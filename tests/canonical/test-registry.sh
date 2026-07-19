@@ -1211,11 +1211,14 @@ assert_file_exists "${_P03_PROJ}/.aid/sentinel.txt" "REG-P03a-03 add: tools unto
 assert_file_contains "${_P03_AID_INST}/registry.yml" "${_P03_PROJ}" \
     "REG-P03a-04 registry.yml contains registered project path"
 
-# (b) Reject a non-.aid/ path with exit 2.
+# (b) A non-.aid/ path is INITIALIZED as a bare, tool-less project, then registered.
 _P03b_NOAID=$(mktemp -d "${TMP}/p03b_noaid.XXXXXX")
 run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03b_NOAID}"
-assert_exit_eq "$RC" 2 "REG-P03b aid projects add non-.aid/ path -> exit 2"
-assert_output_contains "$OUT" "not an AID project" "REG-P03b-02 error message mentions not an AID project"
+assert_exit_eq "$RC" 0 "REG-P03b aid projects add non-.aid/ path -> initialized + exit 0"
+assert_output_contains "$OUT" "initialized a bare AID project" "REG-P03b-02 output announces bare-project init"
+assert_file_exists "${_P03b_NOAID}/.aid/settings.yml" "REG-P03b-03 bare .aid/settings.yml scaffolded"
+assert_file_contains "${_P03b_NOAID}/.aid/settings.yml" "installed: []" "REG-P03b-04 scaffolded settings.yml records no tools"
+assert_file_contains "${_P03_AID_INST}/registry.yml" "${_P03b_NOAID}" "REG-P03b-05 registry.yml contains the initialized project"
 
 # (c) Idempotent: add the same project a second time -> still one entry.
 run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03_PROJ}"
@@ -1876,7 +1879,7 @@ OUT=$(HOME="${_SH_HOME}" AID_HOME="${_SH_AID_HOME}" AID_STATE_HOME="${_SH_HOME}/
       AID_NO_UPDATE_CHECK=1 \
       bash "${_SH_AID_HOME}/bin/aid" projects add "${_SH_HOME}" 2>&1); _SH04_RC=$?
 assert_exit_eq "$_SH04_RC" 2 "REG-SH04a 'projects add' on state-home dir -> exit 2 (rejected)"
-assert_output_contains "$OUT" "is not an AID project" "REG-SH04b 'projects add' state-home: clear rejection"
+assert_output_contains "$OUT" "is the AID state home" "REG-SH04b 'projects add' state-home: clear rejection"
 if grep -qxF "  - ${_SH_HOME}" "${_SH_HOME}/.aid/registry.yml" 2>/dev/null; then
     fail "REG-SH04c 'projects add' state-home: NOT registered (state-home found in registry)"
 else

@@ -2818,22 +2818,25 @@ else
     pass "PAR002-X35 Bash<->PS1 exit code parity: projects add [SKIPPED: pwsh absent]"
 fi
 
-# X36..X40: add non-.aid/ path -> exit 2 (rejects path lacking .aid/).
+# X36..X40: add a non-.aid/ path -> INITIALIZE a bare, tool-less project + exit 0.
+# (Separate fresh paths per twin so BOTH exercise the scaffold branch -- a shared
+# path would leave the second twin seeing the first twin's just-created .aid/.)
 _X_NOAID_PATH="$(mktemp -d "${TMP}/xnoaidpath.XXXXXX")"
 run_sh "${SH_HOME_XA}" projects add "${_X_NOAID_PATH}"
-assert_exit_eq "$RC_SH" 2 "PAR002-X36 Bash projects add non-.aid/ path -> exit 2"
-assert_output_contains "$OUT_SH" "is not an AID project" \
-    "PAR002-X37 Bash projects add non-.aid/: error message printed"
+assert_exit_eq "$RC_SH" 0 "PAR002-X36 Bash projects add non-.aid/ path -> initialized + exit 0"
+assert_output_contains "$OUT_SH" "initialized a bare AID project" \
+    "PAR002-X37 Bash projects add non-.aid/: bare-project init announced"
 
 if [[ -n "$PWSH" ]]; then
-    run_ps1 "${PS_HOME_XA}" projects add "${_X_NOAID_PATH}"
-    assert_exit_eq "$RC_PS1" 2 "PAR002-X38 PS1 projects add non-.aid/ path -> exit 2"
-    assert_output_contains "$OUT_PS1" "is not an AID project" \
-        "PAR002-X39 PS1 projects add non-.aid/: error message printed"
+    _X_NOAID_PATH_PS="$(mktemp -d "${TMP}/xnoaidpathps.XXXXXX")"
+    run_ps1 "${PS_HOME_XA}" projects add "${_X_NOAID_PATH_PS}"
+    assert_exit_eq "$RC_PS1" 0 "PAR002-X38 PS1 projects add non-.aid/ path -> initialized + exit 0"
+    assert_output_contains "$OUT_PS1" "initialized a bare AID project" \
+        "PAR002-X39 PS1 projects add non-.aid/: bare-project init announced"
     assert_eq "$RC_SH" "$RC_PS1" "PAR002-X40 Bash<->PS1 exit code parity: add non-.aid/"
 else
-    pass "PAR002-X38 PS1 projects add non-.aid/ -> exit 2 [SKIPPED: pwsh absent]"
-    pass "PAR002-X39 PS1 projects add non-.aid/: error message [SKIPPED: pwsh absent]"
+    pass "PAR002-X38 PS1 projects add non-.aid/ -> exit 0 [SKIPPED: pwsh absent]"
+    pass "PAR002-X39 PS1 projects add non-.aid/: init message [SKIPPED: pwsh absent]"
     pass "PAR002-X40 Bash<->PS1 exit code parity: add non-.aid/ [SKIPPED: pwsh absent]"
 fi
 

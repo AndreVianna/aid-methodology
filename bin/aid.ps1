@@ -250,8 +250,9 @@ function script:Show-AidUsage {
             Write-Host '    tools, and tier.'
             Write-Host '    The current directory is marked with "*" in the leading marker column.'
             Write-Host '    Unregistered cwd with .aid/ present is shown as a footnote.'
-            Write-Host '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,'
-            Write-Host '    no tools are installed.  Idempotent.  Prints the tier written.'
+            Write-Host '  add [path=cwd]: register a project. If the folder is not yet an AID project,'
+            Write-Host '    it is initialized as a bare project (.aid/ with no tools installed).'
+            Write-Host '    Idempotent.  Prints the tier written.'
             Write-Host '  remove [path=cwd|<N>]: unregister a project from the registry; no files removed.'
             Write-Host "    <N> (all-digits) targets the Nth row from 'aid projects list'; N < 1 or"
             Write-Host '    N greater than the registered count errors to stderr with exit 2.  A <path>'
@@ -1692,8 +1693,53 @@ function script:Invoke-AidProjectsList {
     }
 }
 
+# Invoke-AidScaffoldBareProject <Canon>
+# Initialize a bare, tool-less AID project at <Canon> (mirror of bash
+# _aid_scaffold_bare_project): create the .aid/ tree and a minimal settings.yml
+# (format_version + aid_version + empty tools). Never clobbers an existing
+# settings.yml. Written LF-only, no BOM -- byte-identical to the bash writer.
+function script:Invoke-AidScaffoldBareProject {
+    param([string]$Canon)
+    $name = Split-Path $Canon -Leaf
+    $fmt  = $script:AidSupportedFormat
+    $ver  = ''
+    $verFile = Join-Path $script:_AidCodeHome 'VERSION'
+    if (Test-Path $verFile -PathType Leaf) {
+        $ver = ((Get-Content -LiteralPath $verFile -Raw -Encoding utf8 -ErrorAction SilentlyContinue) -replace '\s','')
+    }
+
+    $aidDir = Join-Path $Canon '.aid'
+    foreach ($sub in @('connectors','knowledge','works')) {
+        New-Item -ItemType Directory -Force -Path (Join-Path $aidDir $sub) -ErrorAction SilentlyContinue | Out-Null
+    }
+
+    $settings = Join-Path $aidDir 'settings.yml'
+    if (-not (Test-Path $settings -PathType Leaf)) {
+        $lines = [System.Collections.Generic.List[string]]::new()
+        [void]$lines.Add("format_version: $fmt")
+        if ($ver) { [void]$lines.Add("aid_version: $ver") }
+        [void]$lines.Add('# .aid/settings.yml - AID pipeline configuration (single source of truth).')
+        [void]$lines.Add('# Initialized by `aid projects add` for a tool-less project (no host tool yet).')
+        [void]$lines.Add('# Run /aid-config to configure, or `aid add <tool>` to install a host tool.')
+        [void]$lines.Add('')
+        [void]$lines.Add('project:')
+        [void]$lines.Add("  name: $name")
+        [void]$lines.Add('  description: ""')
+        [void]$lines.Add('  type: brownfield')
+        [void]$lines.Add('')
+        [void]$lines.Add('tools:')
+        [void]$lines.Add('  installed: []')
+        [void]$lines.Add('')
+        [void]$lines.Add('review:')
+        [void]$lines.Add('  minimum_grade: A')
+        $content = ($lines -join "`n") + "`n"
+        [System.IO.File]::WriteAllText($settings, $content, (New-Object System.Text.UTF8Encoding($false)))
+    }
+}
+
 # Invoke-AidProjectsAdd [RawPath] [TierOverride] [Verbose]
-# Register a project path (default: cwd) in the deterministic tier.
+# Register a project path (default: cwd) in the deterministic tier. If the folder
+# is not yet an AID project, initialize a bare .aid/ (no tools) first.
 # Mirror of bash _cmd_projects_add.
 function script:Invoke-AidProjectsAdd {
     param(
@@ -1710,10 +1756,28 @@ function script:Invoke-AidProjectsAdd {
         script:Exit-Aid 2
     }
 
-    # Require a real AID project (.aid/ present AND not the CLI state home).
+    # If the folder is not yet an AID project, initialize a bare .aid/ (no tools)
+    # rather than refusing. Test-AidIsProjectDir is also false when .aid/ resolves
+    # to the CLI state home -- never scaffold/register that; distinguish it by the
+    # presence of an existing .aid/ dir.
     if (-not (script:Test-AidIsProjectDir -Dir $canon)) {
-        [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' is not an AID project; run 'aid add <tool>' first.")
-        script:Exit-Aid 2
+        # Test-AidIsProjectDir is ALSO false when <dir>\.aid IS the CLI state home.
+        # Refuse that explicitly (path compare, existence-agnostic -- mirrors the
+        # guard in Test-AidIsProjectDir) so we never initialize $HOME\.aid or the
+        # state home as a project. Otherwise the folder just has no .aid/ yet ->
+        # initialize a bare, tool-less project.
+        $caSub = Join-Path $canon '.aid'
+        $caN = try { (Resolve-Path -LiteralPath $caSub -ErrorAction Stop).Path } catch { $caSub }
+        $shN = try { (Resolve-Path -LiteralPath $script:_AidStateHome -ErrorAction Stop).Path } catch { $script:_AidStateHome }
+        $hdSub = Join-Path $HOME '.aid'
+        $hdN = try { (Resolve-Path -LiteralPath $hdSub -ErrorAction Stop).Path } catch { $hdSub }
+        if ([string]::Equals($caN, $shN, [System.StringComparison]::OrdinalIgnoreCase) -or
+            [string]::Equals($caN, $hdN, [System.StringComparison]::OrdinalIgnoreCase)) {
+            [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' is the AID state home, not a project.")
+            script:Exit-Aid 2
+        }
+        script:Invoke-AidScaffoldBareProject -Canon $canon
+        Write-Host ("aid projects: initialized a bare AID project at '$canon' (no tools; run 'aid add <tool>' to install a host tool).")
     }
 
     # Resolve tier.

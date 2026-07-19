@@ -26,7 +26,7 @@ Covers, all in-process (no socket bind -- see LOCAL TEST NOTE below):
   6. A genuine END-TO-END round trip through the REAL bin/aid CLI (no fake, no
      monkeypatch) -- register/unregister a real temp AID project and read the
      registry back via _load_union_repos, proving AC1 (persists to disk) for
-     real, plus the CLI's own 422 'not an AID project' path. Bounded: a single
+     real, plus the CLI's tool-less scaffold-and-register path. Bounded: a single
      `bash bin/aid projects ...` subprocess call per assertion (fast, no
      socket bind), same class of check test_task012's own "REAL co-vendored
      writer" round trips already run locally.
@@ -549,18 +549,22 @@ class TestProjectRegistryRealCliRoundTrip(unittest.TestCase):
         repos_after, _warnings, _primary, _fallback = srv._load_union_repos(str(self._aid_home))
         self.assertEqual(repos_after, [])
 
-    def test_add_non_aid_project_is_422_invalid_value(self):
-        not_a_project = self._base / "not-an-aid-project"
-        not_a_project.mkdir(parents=True, exist_ok=True)   # no .aid/ subfolder
+    def test_add_non_aid_project_scaffolds_and_registers(self):
+        # A folder without .aid/ is INITIALIZED as a bare, tool-less project
+        # (aid projects add scaffolds it) rather than refused.
+        not_yet = self._base / "not-yet-an-aid-project"
+        not_yet.mkdir(parents=True, exist_ok=True)   # no .aid/ subfolder yet
         status, body = srv._dispatch_op(
             srv.HOME_OP_TABLE,
-            {"op": "project.add", "args": {"path": str(not_a_project)}},
+            {"op": "project.add", "args": {"path": str(not_yet)}},
             str(self._aid_home),
         )
-        self.assertEqual(status, 422)
-        data = json.loads(body)
-        self.assertEqual(data["error"], "invalid-value")
-        self.assertIn("not an AID project", data["detail"])
+        self.assertEqual(status, 200, f"expected scaffold+register 200, got {status}: {body!r}")
+        self.assertEqual(json.loads(body), {"ok": True, "op": "project.add"})
+        self.assertTrue(
+            (not_yet / ".aid" / "settings.yml").is_file(),
+            "a bare .aid/settings.yml should have been scaffolded",
+        )
 
     def test_add_nonexistent_path_is_422_invalid_value(self):
         nonexistent = str(self._base / "does-not-exist-at-all")

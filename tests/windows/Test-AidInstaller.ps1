@@ -1618,17 +1618,18 @@ Assert-FileExists (Join-Path (Join-Path $ProjT39 '.aid') 'sentinel.txt') 'T39e t
 Write-Host ""
 
 # ---------------------------------------------------------------------------
-# T40: aid projects add non-.aid/ path -> exit 2, error message.
+# T40: aid projects add on a non-.aid/ path -> INITIALIZE a bare project + exit 0.
 # ---------------------------------------------------------------------------
-Write-Host "--- T40: aid projects add non-.aid/ path ---"
+Write-Host "--- T40: aid projects add non-.aid/ path (initialize) ---"
 
 $ProjT40NoAid = Join-Path $TmpRoot 'project-t40-noaid'
 New-Item -ItemType Directory -Path $ProjT40NoAid -Force | Out-Null
-# No .aid/ directory created.
+# No .aid/ directory created -- add should scaffold a bare, tool-less project.
 
 Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT40NoAid)
-Assert-Eq "$($script:_LastRC)" '2' 'T40a add non-.aid/ path -> exit 2'
-Assert-Contains $script:_LastOut 'not an AID project' 'T40b error message mentions "not an AID project"'
+Assert-Eq "$($script:_LastRC)" '0' 'T40a add non-.aid/ path -> initialized + exit 0'
+Assert-Contains $script:_LastOut 'initialized a bare AID project' 'T40b output announces bare-project init'
+Assert-FileExists (Join-Path (Join-Path $ProjT40NoAid '.aid') 'settings.yml') 'T40c bare .aid/settings.yml scaffolded'
 Write-Host ""
 
 # ---------------------------------------------------------------------------
