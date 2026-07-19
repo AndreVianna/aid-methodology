@@ -113,13 +113,19 @@ class TestOpTableShape(unittest.TestCase):
 
     def test_op_table_seeds_the_four_feature001_rows(self):
         # work-017 task-008 (feature-005) registers a 5th row, task.rename;
-        # task-015 (feature-004) registers a 6th, tools.update -- on top of the
-        # 4 feature-001-owned rows this test originally pinned -- see
-        # test_task008_display_rename.py / test_task015_tools_update_ops.py for
-        # their dedicated coverage.
+        # task-015 (feature-004) registers a 6th, tools.update; task-019
+        # (feature-007) registers a 7th/8th, connector.set/connector.remove;
+        # task-021 (feature-010) registers a 9th/10th,
+        # external-source.add/external-source.remove -- on top of the 4
+        # feature-001-owned rows this test originally pinned -- see
+        # test_task008_display_rename.py / test_task015_tools_update_ops.py /
+        # test_task019_connector_ops.py / test_task021_external_source_ops.py
+        # for their dedicated coverage.
         self.assertEqual(
             set(srv.OP_TABLE.keys()),
-            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename", "tools.update"},
+            {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename",
+             "tools.update", "connector.set", "connector.remove",
+             "external-source.add", "external-source.remove"},
         )
 
     def test_home_op_table_seeds_the_two_feature003_rows(self):

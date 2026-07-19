@@ -834,6 +834,45 @@ def parse_connectors(connectors_dir: Path) -> "tuple[list[ConnectorRef], int]":
 
 
 # ---------------------------------------------------------------------------
+# feature-010-external-sources-list (work-017 task-021): external-sources
+# registry wrapper -- NO new frontmatter parser. A thin wrapper over the
+# existing byte-parity-tested parse_doc_frontmatter() (line 586).
+# ---------------------------------------------------------------------------
+
+def parse_external_sources(kb_dir: Path) -> list[str]:
+    """Return the deduped, order-preserved `sources:` entries of
+    `<kb_dir>/external-sources.md`, with the discovery placeholder `(none)`
+    filtered out.
+
+    A thin wrapper -- NOT a new parser -- over the existing
+    parse_doc_frontmatter(): takes its `sources_list`, drops the literal
+    `(none)` placeholder entry, dedupes while preserving first-seen order, and
+    returns the result. An absent/frontmatter-less file -> parse_doc_frontmatter
+    already returns `[]` for sources_list, so this wrapper returns `[]` too
+    (NFR-never-raises; no separate absent-file branch needed here).
+
+    Reader-parity note (feature-010 SPEC): parse_doc_frontmatter's block-list
+    continuation only matches CONTIGUOUS leading-whitespace "-" item lines --
+    a comment or blank line between `sources:` and its items ends the block
+    (and it does not strip a trailing inline `# comment` from a block item).
+    The write-external-source.sh writer (task-020) normalizes the block to
+    contiguous `  - <item>` lines directly under `sources:`, with no inline
+    comment, so every dashboard-managed entry is reader-visible here (AC2).
+    """
+    _, sources_list, _ = parse_doc_frontmatter(kb_dir / "external-sources.md")
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in sources_list:
+        if item == "(none)":
+            continue
+        if item in seen:
+            continue
+        seen.add(item)
+        result.append(item)
+    return result
+
+
+# ---------------------------------------------------------------------------
 # Prototype: REQUIREMENTS.md parser (work-overview header, delivery-002)
 # ---------------------------------------------------------------------------
 

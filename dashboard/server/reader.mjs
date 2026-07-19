@@ -1379,6 +1379,38 @@ export function parseConnectors(connectorsDir) {
   return [refs, bytesRead];
 }
 
+// ---------------------------------------------------------------------------
+// feature-010-external-sources-list (work-017 task-021): external-sources
+// registry wrapper (byte-parity twin of Python parsers.parse_external_sources()).
+// NO new frontmatter parser -- a thin wrapper over the existing
+// parseDocFrontmatter().
+// ---------------------------------------------------------------------------
+
+export function parseExternalSources(kbDir) {
+  // Twin of Python parsers.parse_external_sources(). Returns the deduped,
+  // order-preserved sources: entries of <kbDir>/external-sources.md, with the
+  // discovery placeholder "(none)" filtered out. Absent/frontmatter-less file
+  // -> parseDocFrontmatter already returns [] for sourcesList -> [].
+  //
+  // Reader-parity note (feature-010 SPEC): parseDocFrontmatter's block-list
+  // continuation only matches CONTIGUOUS leading-whitespace '-' item lines --
+  // a comment or blank line between sources: and its items ends the block
+  // (and it does not strip a trailing inline '# comment' from a block item).
+  // The write-external-source.sh writer (task-020) normalizes the block to
+  // contiguous '  - <item>' lines directly under sources:, with no inline
+  // comment, so every dashboard-managed entry is reader-visible here (AC2).
+  const [, sourcesList] = parseDocFrontmatter(join(kbDir, "external-sources.md"));
+  const seen = new Set();
+  const result = [];
+  for (const item of sourcesList) {
+    if (item === "(none)") continue;
+    if (seen.has(item)) continue;
+    seen.add(item);
+    result.push(item);
+  }
+  return result;
+}
+
 function _readRoutingFields(docPath) {
   // Read kb-category and source frontmatter scalars for doc routing.
   // Returns [kbCategory, sourceField]. Absent fields return "".
@@ -2859,6 +2891,11 @@ function _readRepoFull(root) {
   const [connectors, brConnectors] = parseConnectors(join(loc.aidDir, "connectors"));
   bytesRead += brConnectors;
 
+  // feature-010 (work-017 task-021): parse the project-level external-sources
+  // registry (.aid/knowledge/external-sources.md sources: list). A thin wrapper
+  // over parseDocFrontmatter (no new parser); absent file -> [] (non-error).
+  const externalSources = parseExternalSources(loc.kbDir);
+
   const repoInfo = {
     project_name: projectName,
     aid_dir: loc.aidDir,
@@ -2866,6 +2903,7 @@ function _readRepoFull(root) {
     project_description: projectDescription,
     minimum_grade: minimumGrade,
     connectors: connectors,
+    external_sources: externalSources,
   };
 
   // Step 4: ENUMERATE worktrees + work folders (work-004 Pillar 4 / SD-3)
@@ -4695,8 +4733,10 @@ function _buildRepoInfo(ri) {
   // aid_dir, kb_state (feature-002, work-017 task-005: two additive keys
   // inserted after project_name; schema_version stays 3), connectors
   // (feature-007, work-017 task-019: additive key inserted AFTER kb_state;
-  // schema_version stays 3). Surfaced ONLY in the DM-1 model -- the DM-2
-  // /api/home entry builder never calls this function.
+  // schema_version stays 3), external_sources (feature-010, work-017
+  // task-021: additive key inserted AFTER connectors; schema_version stays
+  // 3). Surfaced ONLY in the DM-1 model -- the DM-2 /api/home entry builder
+  // never calls this function.
   return {
     project_name: ri.project_name,
     project_description: ri.project_description !== undefined ? ri.project_description : null,
@@ -4704,6 +4744,7 @@ function _buildRepoInfo(ri) {
     aid_dir: ri.aid_dir,
     kb_state: _buildKbStateRef(ri.kb_state),
     connectors: Array.isArray(ri.connectors) ? ri.connectors.map(_buildConnectorRef) : [],
+    external_sources: Array.isArray(ri.external_sources) ? ri.external_sources : [],
   };
 }
 

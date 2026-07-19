@@ -1399,6 +1399,63 @@ function validateConnectorRemoveArgs(args) {
   return null;
 }
 
+// ---------------------------------------------------------------------------
+// feature-010-external-sources-list (work-017 task-021): external-source.add /
+// external-source.remove -- per-repo, project-scoped ops (target: {} -- no
+// work_id) dispatched to the co-vendored write-external-source.sh writer
+// (task-020). Neither row overrides statusMap -- feature-001's DEFAULT_MAP
+// already matches write-external-source.sh's canonical exit alphabet (0 ok /
+// 1 remove-target-absent -> 404 / 2 lock-contention -> 409 / 3 IO -> 500 /
+// 4 invalid-value -> 422).
+// ---------------------------------------------------------------------------
+
+const MAX_EXTERNAL_SOURCE_VALUE_LEN = 2048; // chars (feature-010 SPEC: args.value 1-2048)
+// Same alphabet lint-frontmatter.sh's sources_entry_shape() accepts: a URL
+// (^https?://\S+$) or a whitespace-free path/glob (^\S+$) -- mirrored here so a
+// value that reaches write-external-source.sh (task-020) is guaranteed to pass
+// its own re-validation (defense in depth, never the sole gate).
+const RE_EXTERNAL_SOURCE_URL = /^https?:\/\/\S+$/;
+const RE_EXTERNAL_SOURCE_PATH = /^\S+$/;
+
+function opExternalSourceAddArgv(workDir, servedRoot, target, args) {
+  // external-source.add (project-scoped; no work_id) -> write-external-source.sh
+  // --op add --value <v> --file <served-root>/.aid/knowledge/external-sources.md.
+  const extFile = toPosixArg(join(servedRoot, ".aid", "knowledge", "external-sources.md"));
+  const argv = ["--op", "add", "--value", args.value, "--file", extFile];
+  return [argv, {}];
+}
+
+function opExternalSourceRemoveArgv(workDir, servedRoot, target, args) {
+  // external-source.remove (project-scoped; no work_id) -> write-external-source.sh
+  // --op remove --value <v> --file <served-root>/.aid/knowledge/external-sources.md.
+  const extFile = toPosixArg(join(servedRoot, ".aid", "knowledge", "external-sources.md"));
+  const argv = ["--op", "remove", "--value", args.value, "--file", extFile];
+  return [argv, {}];
+}
+
+function validateExternalSourceArgs(args) {
+  // Semantic validation shared by external-source.add / external-source.remove
+  // (task-021). Returns an error message on violation, else null. Called AFTER
+  // the generic shape check (validateArgs), so args.value is guaranteed a
+  // present string by the time this runs. write-external-source.sh (task-020)
+  // independently re-validates the same rules (belt-and-suspenders) -- this
+  // pre-validation only lets a bad request 422 cleanly, before any child spawn.
+  const value = args.value;
+  if (!(value.length >= 1 && value.length <= MAX_EXTERNAL_SOURCE_VALUE_LEN)) {
+    return `'value' must be 1-${MAX_EXTERNAL_SOURCE_VALUE_LEN} characters`;
+  }
+  if (value.indexOf("\n") !== -1) {
+    return "'value' cannot contain a newline";
+  }
+  if (value.indexOf("|") !== -1) {
+    return "'value' cannot contain '|'";
+  }
+  if (!(RE_EXTERNAL_SOURCE_URL.test(value) || RE_EXTERNAL_SOURCE_PATH.test(value))) {
+    return "'value' must be a URL (https?://...) or a whitespace-free path/glob";
+  }
+  return null;
+}
+
 const PIPELINE_RENAME_NULL_SENTINEL = "*(pending)*";
 
 function opPipelineRenameArgv(workDir, servedRoot, target, args) {
@@ -1760,6 +1817,22 @@ const OP_TABLE = {
     argSchema: { stem: { required: true } },
     buildArgv: opConnectorRemoveArgv,
     semanticValidate: validateConnectorRemoveArgs,
+    statusMap: null,
+  },
+  "external-source.add": {
+    scope: "project",
+    writer: "write-external-source.sh",
+    argSchema: { value: { required: true } },
+    buildArgv: opExternalSourceAddArgv,
+    semanticValidate: validateExternalSourceArgs,
+    statusMap: null,
+  },
+  "external-source.remove": {
+    scope: "project",
+    writer: "write-external-source.sh",
+    argSchema: { value: { required: true } },
+    buildArgv: opExternalSourceRemoveArgv,
+    semanticValidate: validateExternalSourceArgs,
     statusMap: null,
   },
 };

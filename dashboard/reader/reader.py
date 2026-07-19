@@ -65,6 +65,7 @@ from .parsers import (
     parse_delivery_gate,
     parse_delivery_state_md,
     parse_execution_graph,
+    parse_external_sources,
     parse_kb_baseline,
     parse_kb_state,
     parse_log_availability,
@@ -529,6 +530,11 @@ def _read_repo_full(
     connectors, br = parse_connectors(loc.aid_dir / "connectors")
     bytes_read += br
 
+    # feature-010 (work-017 task-021): parse the project-level external-sources
+    # registry (.aid/knowledge/external-sources.md sources: list). A thin wrapper
+    # over parse_doc_frontmatter (no new parser); absent file -> [] (non-error).
+    external_sources = parse_external_sources(loc.kb_dir)
+
     repo_info = RepoInfo(
         project_name=project_name,
         aid_dir=str(loc.aid_dir),
@@ -536,6 +542,7 @@ def _read_repo_full(
         project_description=project_description,
         minimum_grade=minimum_grade,
         connectors=connectors,
+        external_sources=external_sources,
     )
 
     # Step 4: ENUMERATE -- worktrees + work folders (work-004 Pillar 4 / SD-3)

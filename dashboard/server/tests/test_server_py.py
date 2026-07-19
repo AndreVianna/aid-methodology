@@ -1173,14 +1173,17 @@ class TestSerializationDm3(unittest.TestCase):
         # additive keys inserted after project_name (schema_version stays 3).
         # feature-007 (work-017 task-019): connectors is an additive key inserted
         # after kb_state (schema_version stays 3).
+        # feature-010 (work-017 task-021): external_sources is an additive key
+        # inserted after connectors (schema_version stays 3).
         data = self._get_model()
         repo = data["model"]["repo"]
         self.assertEqual(
             list(repo.keys()),
             ["project_name", "project_description", "minimum_grade", "aid_dir", "kb_state",
-             "connectors"],
+             "connectors", "external_sources"],
         )
         self.assertEqual(repo["connectors"], [])
+        self.assertEqual(repo["external_sources"], [])
 
     def test_read_meta_key_order(self):
         data = self._get_model()

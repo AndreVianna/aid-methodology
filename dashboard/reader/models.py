@@ -278,6 +278,15 @@ class RepoInfo:
     # Surfaced ONLY in the DM-1 RepoModel (GET /r/<id>/api/model) -- never the DM-2
     # home model (/api/home).
     connectors: list[ConnectorRef] = field(default_factory=list)
+    # feature-010-external-sources-list (work-017 task-021): DM-1 exposure of the
+    # project-level external-sources registry (.aid/knowledge/external-sources.md
+    # frontmatter `sources:` list). Additive; no schema_version bump (DM-A3/RC-2
+    # precedent). Deduped, order-preserved, discovery placeholder `(none)` filtered
+    # out (populated by parse_external_sources()/parseExternalSources() -- a thin
+    # wrapper over the existing parse_doc_frontmatter(), NOT a new parser).
+    # Surfaced ONLY in the DM-1 RepoModel (GET /r/<id>/api/model) -- never the DM-2
+    # home model (/api/home).
+    external_sources: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------

@@ -679,6 +679,10 @@ def _ser_repo_info(obj) -> dict:
     AFTER kb_state (schema_version stays 3 -- same no-bump precedent). Surfaced
     ONLY here (the DM-1 RepoModel) -- build_home_model's DM-2 entry never
     calls this function.
+    feature-010 (work-017 task-021): external_sources is an additive key
+    inserted AFTER connectors (schema_version stays 3 -- same no-bump
+    precedent). Surfaced ONLY here (the DM-1 RepoModel) -- build_home_model's
+    DM-2 entry never calls this function.
     """
     return {
         "project_name":        obj.project_name,
@@ -687,6 +691,7 @@ def _ser_repo_info(obj) -> dict:
         "aid_dir":             obj.aid_dir,
         "kb_state":            _ser_kb_state(obj.kb_state),
         "connectors":          [_ser_connector_ref(c) for c in (obj.connectors or [])],
+        "external_sources":    list(obj.external_sources or []),
     }
 
 
@@ -1625,6 +1630,61 @@ def _validate_connector_remove_args(args: dict) -> "str | None":
     return None
 
 
+# ---------------------------------------------------------------------------
+# feature-010-external-sources-list (work-017 task-021): external-source.add /
+# external-source.remove -- per-repo, project-scoped ops (target: {} -- no
+# work_id) dispatched to the co-vendored write-external-source.sh writer
+# (task-020). Neither row overrides status_map -- feature-001's DEFAULT_MAP
+# already matches write-external-source.sh's canonical exit alphabet (0 ok /
+# 1 remove-target-absent -> 404 / 2 lock-contention -> 409 / 3 IO -> 500 /
+# 4 invalid-value -> 422).
+# ---------------------------------------------------------------------------
+
+_MAX_EXTERNAL_SOURCE_VALUE_LEN = 2048  # chars (feature-010 SPEC: args.value 1-2048)
+# Same alphabet lint-frontmatter.sh's sources_entry_shape() accepts: a URL
+# (^https?://\S+$) or a whitespace-free path/glob (^\S+$) -- mirrored here so a
+# value that reaches write-external-source.sh (task-020) is guaranteed to pass
+# its own re-validation (defense in depth, never the sole gate).
+_RE_EXTERNAL_SOURCE_URL = re.compile(r"^https?://\S+$")
+_RE_EXTERNAL_SOURCE_PATH = re.compile(r"^\S+$")
+
+
+def _op_external_source_add_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """external-source.add (project-scoped; no work_id) -> write-external-source.sh
+    --op add --value <v> --file <served-root>/.aid/knowledge/external-sources.md."""
+    ext_file = (Path(served_root) / ".aid" / "knowledge" / "external-sources.md").as_posix()
+    argv = ["--op", "add", "--value", args["value"], "--file", ext_file]
+    return argv, {}
+
+
+def _op_external_source_remove_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """external-source.remove (project-scoped; no work_id) -> write-external-source.sh
+    --op remove --value <v> --file <served-root>/.aid/knowledge/external-sources.md."""
+    ext_file = (Path(served_root) / ".aid" / "knowledge" / "external-sources.md").as_posix()
+    argv = ["--op", "remove", "--value", args["value"], "--file", ext_file]
+    return argv, {}
+
+
+def _validate_external_source_args(args: dict) -> "str | None":
+    """Semantic validation shared by external-source.add / external-source.remove
+    (task-021). Returns an error message on violation, else None. Called AFTER
+    the generic shape check (_validate_args), so args['value'] is guaranteed a
+    present string by the time this runs. write-external-source.sh (task-020)
+    independently re-validates the same rules (belt-and-suspenders) -- this
+    pre-validation only lets a bad request 422 cleanly, before any child spawn.
+    """
+    value = args["value"]
+    if not (1 <= len(value) <= _MAX_EXTERNAL_SOURCE_VALUE_LEN):
+        return f"'value' must be 1-{_MAX_EXTERNAL_SOURCE_VALUE_LEN} characters"
+    if "\n" in value:
+        return "'value' cannot contain a newline"
+    if "|" in value:
+        return "'value' cannot contain '|'"
+    if not (_RE_EXTERNAL_SOURCE_URL.match(value) or _RE_EXTERNAL_SOURCE_PATH.match(value)):
+        return "'value' must be a URL (https?://...) or a whitespace-free path/glob"
+    return None
+
+
 _PIPELINE_RENAME_NULL_SENTINEL = "*(pending)*"
 
 
@@ -2010,6 +2070,22 @@ OP_TABLE: dict[str, dict] = {
         "arg_schema": {"stem": {"required": True}},
         "build_argv": _op_connector_remove_argv,
         "semantic_validate": _validate_connector_remove_args,
+        "status_map": None,
+    },
+    "external-source.add": {
+        "scope": "project",
+        "writer": "write-external-source.sh",
+        "arg_schema": {"value": {"required": True}},
+        "build_argv": _op_external_source_add_argv,
+        "semantic_validate": _validate_external_source_args,
+        "status_map": None,
+    },
+    "external-source.remove": {
+        "scope": "project",
+        "writer": "write-external-source.sh",
+        "arg_schema": {"value": {"required": True}},
+        "build_argv": _op_external_source_remove_argv,
+        "semantic_validate": _validate_external_source_args,
         "status_map": None,
     },
 }
