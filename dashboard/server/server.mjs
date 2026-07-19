@@ -59,7 +59,7 @@
 
 import { createServer } from "http";
 import { readFileSync, statSync, existsSync } from "fs";
-import { join, dirname, basename, normalize, delimiter, sep, isAbsolute } from "path";
+import { join, dirname, basename, normalize, sep, isAbsolute, win32, posix } from "path";
 import { fileURLToPath } from "url";
 import { createHash } from "crypto";
 import { spawnSync } from "child_process";
@@ -737,6 +737,16 @@ const WRITER_DIR = join(_DASHBOARD_DIR_MJS, "scripts");
 // resolved from AID_HOME (a code asset, not per-machine state).
 const AID_CLI_PATH = join(_CODE_HOME, "bin", "aid");
 
+// $AID_CODE_HOME/bin/aid.ps1 (KI-009 Part A): the native-Windows CLI twin,
+// spawned in place of bash+bin/aid when the SERVER PROCESS's own OS is
+// Windows (never a client/request signal -- see runAidCli). aid.ps1 is a
+// co-vendored behavior-parity twin of bin/aid (NOT run_generator-rendered)
+// that implements the same `projects add/remove` / `update` / `update self`
+// surface with a matching exit alphabet (tests/canonical/
+// test-aid-cli-parity.sh); maintaining that parity is this twin's own
+// contract, not this server's. Self-located the same way as AID_CLI_PATH.
+const AID_CLI_PATH_PS1 = join(_CODE_HOME, "bin", "aid.ps1");
+
 // DEFAULT_MAP: writer exit code -> [http_status, error_class]. Derived from
 // writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
 // 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
@@ -775,20 +785,138 @@ const RE_TASK_ID_TARGET = /^(?:task-)?(\d{1,3})$/;
 // Git-Bash appears earlier in PATH. Resolve bash's ABSOLUTE path ourselves via a plain
 // PATH-order search (matching this script's own portability expectations) so the writer
 // spawn below never depends on CreateProcess's fixed system-dir-first order.
-function resolveBashExe() {
-  const pathEnv = process.env.PATH || process.env.Path || "";
-  const exeNames = process.platform === "win32" ? ["bash.exe", "bash.EXE"] : ["bash"];
-  for (const dir of pathEnv.split(delimiter)) {
-    if (!dir) continue;
+//
+// KI-009 Part B hardening: `aid dashboard start` runs in the user's OWN shell
+// (typically PowerShell on Windows, not Git Bash), so Git's real bash.exe
+// (Git\bin / Git\usr\bin) is often not on PATH at all -- only Git\cmd
+// (git.exe) is. A plain PATH walk then falls through to the bare "bash"
+// fallback, which CreateProcess resolves to the very System32 WSL stub this
+// function exists to dodge. This now, on Windows:
+//   1. Honors an AID_BASH_EXE env override (if set and it names an existing
+//      file) -- an escape hatch for a non-standard Git install.
+//   2. Walks PATH for bash.exe, SKIPPING any directory that IS the Windows
+//      System32 dir (so a System32 hit earlier in PATH than Git's own bin/
+//      can never win).
+//   3. Falls back to probing Git's own known install locations
+//      (<ProgramFiles>/Git/bin, <ProgramFiles>/Git/usr/bin, and the
+//      <ProgramFiles(x86)> equivalents), plus a location DERIVED from
+//      git.exe's own PATH entry (<X>/Git/cmd/git.exe -> <X>/Git/bin/bash.exe
+//      or <X>/Git/usr/bin/bash.exe).
+//   4. Falls back to the bare "bash" name (spawnSync reports ENOENT if truly
+//      absent).
+// The Windows-only path/PATH-delimiter semantics above are modeled with
+// Node's `path.win32` submodule explicitly (never the platform-dependent
+// bare `path` import, which follows the HOST's own OS) so this branch is
+// exercisable byte-for-byte from the Linux CI runner via the injected
+// `isWin=true` seam; the Unix branch mirrors this with `path.posix` + a
+// hardcoded ':' delimiter (POSIX's own, always). `isWin`/`env`/`existsFn`
+// are injectable seams (mirrors nativeFsPath's `isWin` convention). Twin of
+// server.py's _resolve_bash_exe() exactly.
+function resolveBashExe(isWin, env, existsFn) {
+  const win = isWin === undefined ? process.platform === "win32" : isWin;
+  const e = env === undefined ? process.env : env;
+  const exists = existsFn === undefined ? existsSync : existsFn;
+
+  if (!win) {
+    // Unchanged Unix behavior: a plain PATH-order search for "bash".
+    const pathEnv = e.PATH || "";
+    for (const dir of pathEnv.split(":")) {
+      if (!dir) continue;
+      const candidate = posix.join(dir, "bash");
+      if (exists(candidate)) return candidate;
+    }
+    return "bash";   // fall back to bare name; spawnSync reports ENOENT if truly absent
+  }
+
+  // --- Windows branch (KI-009 Part B) -----------------------------------
+  const exeNames = ["bash.exe", "bash.EXE"];
+  const pathEnv = e.PATH || e.Path || "";
+
+  // 1. AID_BASH_EXE override.
+  const override = e.AID_BASH_EXE || "";
+  if (override && exists(override)) return override;
+
+  const stripTrailingSep = (p) => p.replace(/[\\/]+$/, "") || p;
+  const sysRoot = e.SystemRoot || e.windir || "";
+  const system32 = sysRoot
+    ? stripTrailingSep(win32.normalize(win32.join(sysRoot, "System32"))).toLowerCase()
+    : null;
+
+  function isSystem32(dir) {
+    if (!system32 || !dir) return false;
+    return stripTrailingSep(win32.normalize(dir)).toLowerCase() === system32;
+  }
+
+  // 2. PATH walk, skipping the System32 WSL-stub dir.
+  for (const dir of pathEnv.split(";")) {
+    if (!dir || isSystem32(dir)) continue;
     for (const exeName of exeNames) {
-      const candidate = join(dir, exeName);
-      if (existsSync(candidate)) return candidate;
+      const candidate = win32.join(dir, exeName);
+      if (exists(candidate)) return candidate;
     }
   }
+
+  // 3. Probe Git's own known install locations.
+  const probeDirs = [];
+  for (const pfVar of ["ProgramFiles", "ProgramFiles(x86)"]) {
+    const pf = e[pfVar];
+    if (pf) {
+      probeDirs.push(win32.join(pf, "Git", "bin"));
+      probeDirs.push(win32.join(pf, "Git", "usr", "bin"));
+    }
+  }
+  // Derive from git.exe's own PATH entry: <X>/Git/cmd/git.exe -> <X>/Git/bin,
+  // <X>/Git/usr/bin.
+  for (const dir of pathEnv.split(";")) {
+    if (!dir) continue;
+    const gitCandidate = win32.join(dir, "git.exe");
+    if (exists(gitCandidate)) {
+      const gitRoot = win32.dirname(win32.normalize(dir));
+      probeDirs.push(win32.join(gitRoot, "bin"));
+      probeDirs.push(win32.join(gitRoot, "usr", "bin"));
+    }
+  }
+  for (const dir of probeDirs) {
+    for (const exeName of exeNames) {
+      const candidate = win32.join(dir, exeName);
+      if (exists(candidate)) return candidate;
+    }
+  }
+
   return "bash";   // fall back to bare name; spawnSync reports ENOENT if truly absent
 }
 
+// PowerShell resolution (KI-009 Part A): prefer 'pwsh' (PowerShell 7+), else
+// the real 'powershell.exe' (Windows PowerShell 5.1). UNLIKE resolveBashExe,
+// this does NOT skip System32 -- System32\WindowsPowerShell\v1.0\
+// powershell.exe IS the genuine Windows PowerShell (no WSL-launcher-stub
+// hazard exists for PowerShell). PATH is split on ';' explicitly (not the
+// platform-dependent `path` module's own delimiter) via `path.win32` so this
+// stays exercisable from the Linux CI runner. `env`/`existsFn` are
+// injectable seams. Twin of server.py's _resolve_pwsh_exe() exactly.
+function resolvePwshExe(env, existsFn) {
+  const e = env === undefined ? process.env : env;
+  const exists = existsFn === undefined ? existsSync : existsFn;
+  const pathEnv = e.PATH || e.Path || "";
+  for (const exeName of ["pwsh.exe", "pwsh"]) {
+    for (const dir of pathEnv.split(";")) {
+      if (!dir) continue;
+      const candidate = win32.join(dir, exeName);
+      if (exists(candidate)) return candidate;
+    }
+  }
+  for (const exeName of ["powershell.exe", "powershell"]) {
+    for (const dir of pathEnv.split(";")) {
+      if (!dir) continue;
+      const candidate = win32.join(dir, exeName);
+      if (exists(candidate)) return candidate;
+    }
+  }
+  return "pwsh";   // fall back to bare name; spawnSync reports ENOENT if truly absent
+}
+
 const BASH_EXE = resolveBashExe();
+const PWSH_EXE = resolvePwshExe();
 
 // toPosixArg: forward-slash form of a path, for use as a bash ARGV element only
 // (never for an env-var value -- those are unaffected, see the doc comment below).
@@ -892,43 +1020,77 @@ const DEFAULT_AID_CLI_TIMEOUT = 30000;   // ms; fast registry ops (project.add/r
 // through to the [500, 'write-failed'] catch-all, the correct fallback here too).
 const AID_CLI_TIMEOUT_EXIT = -1;
 
-function runAidCli(argv, envOverrides, timeoutMs) {
-  // Shared aid-CLI resolver + argv-array child dispatch (KI-004): spawn the
-  // shipped `aid` CLI via `bash <bin/aid> <argv...>` -- an argv ARRAY, never a
-  // shell string (SEC-3/SEC-4). Self-locates $AID_CODE_HOME/bin/aid via
-  // AID_CLI_PATH (_CODE_HOME -- the identical self-location readAidVersion()/
-  // toolsCatalog() already use). No OS branch, no bundled-Windows-shim
-  // alternative, no PATH fallback, no co-vendoring (bin/aid already ships in
-  // the CLI package). Single reusable unit: feature-003 (project.add/remove)
-  // and feature-004 (tools.update/tools.update-self) both call this, never
-  // re-inventing their own spawn.
+function runAidCli(argv, envOverrides, timeoutMs, isWin) {
+  // Shared aid-CLI resolver + argv-array child dispatch (KI-004/KI-009).
+  //
+  // OS branch keyed SOLELY off the SERVER PROCESS's own OS
+  // (process.platform -- never any client/request/browser signal): this is
+  // what keeps `--remote` correct -- the CLI/writers always run on whichever
+  // host the dashboard SERVER process itself is running on, using THAT
+  // host's native shell, regardless of what OS the browser hitting the API
+  // happens to be on.
+  //   - Unix (win false): unchanged since KI-004 -- `bash <bin/aid> <argv...>`.
+  //   - Windows (win true, KI-009 Part A): `aid dashboard start` runs in the
+  //     user's OWN shell (typically PowerShell, not Git Bash), and a bare
+  //     PATH search for bash.exe from that launch resolves to the unusable
+  //     WSL-launcher stub (see resolveBashExe) -- so this spawns the native
+  //     PowerShell twin instead: `<pwsh> -NoProfile -NonInteractive -File
+  //     <bin/aid.ps1> <argv...>`. -NoProfile -NonInteractive keep this
+  //     headless-safe (no profile load, no prompt, no TTY assumption) for
+  //     the `--remote` container/VM case too.
+  // Both branches are an argv ARRAY, never a shell string (SEC-3/SEC-4).
+  // Self-locates $AID_CODE_HOME/bin/aid (AID_CLI_PATH) / bin/aid.ps1
+  // (AID_CLI_PATH_PS1) via _CODE_HOME (the identical self-location
+  // readAidVersion()/toolsCatalog() already use). No PATH fallback, no
+  // co-vendoring (both CLI twins already ship in the CLI package). Single
+  // reusable unit: feature-003 (project.add/remove) and feature-004
+  // (tools.update/tools.update-self) both call this, never re-inventing
+  // their own spawn.
+  //
+  // aid.ps1 is a co-vendored behavior-parity twin of bin/aid (NOT
+  // run_generator-rendered) -- its exit alphabet for `projects add/remove`
+  // (0 ok, 2 user/validation error -> the SAME PROJECT_OP_STATUS_MAP applies
+  // unchanged) and `update`/`update self` (0 ok, any other non-zero
+  // collapses to the SAME TOOLS_UPDATE_STATUS_MAP 'update-failed') is
+  // maintained in lockstep with bin/aid's own; see
+  // tests/canonical/test-aid-cli-parity.sh.
   //
   // envOverrides is applied on top of a copy of the current environment (same
   // convention as runWriter) -- callers set ONLY AID_HOME (never
-  // AID_CODE_HOME; bin/aid self-locates that from its own BASH_SOURCE[0],
-  // bin/aid L45-52).
+  // AID_CODE_HOME; both bin/aid and bin/aid.ps1 self-locate that from their
+  // own invocation path).
   //
-  // Returns [exitCode, stderrText]. Never throws: an exec failure (aid
-  // missing, bash missing) is reported as exit 3 (mirrors runWriter's own
+  // Returns [exitCode, stderrText]. Never throws: an exec failure (aid/bash/
+  // pwsh missing) is reported as exit 3 (mirrors runWriter's own
   // convention); a timeout is reported as AID_CLI_TIMEOUT_EXIT (never a real
-  // 0..255 exit code).
+  // 0..255 exit code). `isWin` is an injectable seam (mirrors nativeFsPath's
+  // convention) so the Linux CI suite can exercise the Windows dispatch
+  // branch; production callers never pass it, so the default always
+  // resolves from the real server-host process.platform.
+  const win = isWin === undefined ? process.platform === "win32" : isWin;
   const ms = timeoutMs === undefined ? DEFAULT_AID_CLI_TIMEOUT : timeoutMs;
-  const aidCliPath = toPosixArg(AID_CLI_PATH);
   const childEnv = Object.assign({}, process.env, envOverrides || {});
   try {
-    const result = spawnSync(BASH_EXE, [aidCliPath, ...argv], {
-      env: childEnv,
-      encoding: "utf8",
-      timeout: ms,
-      // Match Python's subprocess.run(capture_output=True), which buffers the
-      // child's stdout/stderr with NO size cap: disable Node's default 1 MiB
-      // maxBuffer. Otherwise a verbose-but-valid `aid update`/`aid update self`
-      // child (npm/pip/git progress logs) that emits >1 MiB gets SIGTERM-killed
-      // here (result.error.code 'ENOBUFS') while completing normally on the
-      // Python twin -- a KI-004 twin-parity break. See runWriter for the same
-      // rationale and TestToolsUpdateLargeOutputParity for the guard.
-      maxBuffer: Infinity,
-    });
+    const result = win
+      ? spawnSync(PWSH_EXE, ["-NoProfile", "-NonInteractive", "-File", toPosixArg(AID_CLI_PATH_PS1), ...argv], {
+          env: childEnv,
+          encoding: "utf8",
+          timeout: ms,
+          // Match Python's subprocess.run(capture_output=True), which buffers the
+          // child's stdout/stderr with NO size cap: disable Node's default 1 MiB
+          // maxBuffer. Otherwise a verbose-but-valid `aid update`/`aid update self`
+          // child (npm/pip/git progress logs) that emits >1 MiB gets SIGTERM-killed
+          // here (result.error.code 'ENOBUFS') while completing normally on the
+          // Python twin -- a KI-004 twin-parity break. See runWriter for the same
+          // rationale and TestToolsUpdateLargeOutputParity for the guard.
+          maxBuffer: Infinity,
+        })
+      : spawnSync(BASH_EXE, [toPosixArg(AID_CLI_PATH), ...argv], {
+          env: childEnv,
+          encoding: "utf8",
+          timeout: ms,
+          maxBuffer: Infinity,
+        });
     // Timeout detection MUST precede the generic-error branch AND must key off
     // the ETIMEDOUT code SPECIFICALLY -- never a bare `result.signal`. On a
     // 600s-ceiling kill, spawnSync sets result.error with code 'ETIMEDOUT'
@@ -939,12 +1101,14 @@ function runAidCli(argv, envOverrides, timeoutMs) {
     // spawnSync ALSO sets result.signal 'SIGTERM' when it kills the child for
     // exceeding maxBuffer (code 'ENOBUFS'), so gating the timeout sentinel on
     // signal would misreport a non-timeout failure as 504; that is exactly why
-    // maxBuffer is disabled above and only the ETIMEDOUT code gates here.
+    // maxBuffer is disabled above and only the ETIMEDOUT code gates here. This
+    // applies IDENTICALLY to the Windows/PowerShell branch above -- pwsh's own
+    // -NoProfile -NonInteractive spawn is killed the same way on a timeout.
     if (result.error && result.error.code === "ETIMEDOUT") {
       return [AID_CLI_TIMEOUT_EXIT, result.stderr || ""];
     }
     if (result.error) {
-      // Any other exec failure (bash/aid missing -> 'ENOENT', etc.) -> exit 3.
+      // Any other exec failure (bash/pwsh/aid missing -> 'ENOENT', etc.) -> exit 3.
       return [3, String(result.error)];
     }
     const code = (result.status === null || result.status === undefined) ? 3 : result.status;

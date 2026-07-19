@@ -141,6 +141,31 @@ def _repo_id8(path: str) -> str:
     return _repo_id(path)[:8]
 
 
+def _patch_run_aid_cli_force_unix(server_module) -> "callable":
+    """KI-009: `_run_aid_cli`'s default `is_windows` seam now resolves from
+    the REAL os.name (never a hardcoded value -- see KI-009 Part A), so a
+    fake/probe-CLI test class that redirects `_AID_CLI_PATH` to a
+    bash-shebang script must force the Unix/bash dispatch branch EXPLICITLY
+    when the suite happens to run on an actual Windows host (this repo's own
+    local dev sandbox) -- otherwise the default would spawn PowerShell
+    against a bash script and every such fake-CLI assertion would fail.
+    On real Linux CI this is a no-op in EFFECT (the default already resolves
+    to the Unix branch there), but forcing it explicitly keeps these
+    pre-KI-009 tests host-independent either way, matching their original
+    intent: proving the shared resolver's argv/env-threading CONTRACT, not
+    OS branch selection (that is KI-009's own test_ki009_windows_dispatch.py's
+    job). Returns the ORIGINAL `_run_aid_cli` for restoration by the caller
+    (mirrors this file's own save/restore convention for `_AID_CLI_PATH`).
+    """
+    orig = server_module._run_aid_cli
+
+    def _forced(argv, env_overrides, timeout=server_module._DEFAULT_AID_CLI_TIMEOUT):
+        return orig(argv, env_overrides, timeout, is_windows=False)
+
+    server_module._run_aid_cli = _forced
+    return orig
+
+
 # ---------------------------------------------------------------------------
 # Server thread context manager
 # ---------------------------------------------------------------------------

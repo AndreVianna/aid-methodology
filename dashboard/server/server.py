@@ -52,7 +52,9 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import ntpath
 import os
+import posixpath
 import re
 import signal
 import subprocess
@@ -953,6 +955,16 @@ _WRITER_DIR = _DASHBOARD_DIR / "scripts"
 # from AID_HOME (a code asset, not per-machine state).
 _AID_CLI_PATH = _DASHBOARD_DIR.parent / "bin" / "aid"
 
+# $AID_CODE_HOME/bin/aid.ps1 (KI-009 Part A): the native-Windows CLI twin, spawned
+# in place of bash+bin/aid when the SERVER PROCESS's own OS is Windows (never a
+# client/request signal -- see _run_aid_cli). aid.ps1 is a co-vendored
+# behavior-parity twin of bin/aid (NOT run_generator-rendered) that implements
+# the same `projects add/remove` / `update` / `update self` surface with a
+# matching exit alphabet (tests/canonical/test-aid-cli-parity.sh); maintaining
+# that parity is this twin's own contract, not this server's. Self-located the
+# same way as _AID_CLI_PATH.
+_AID_CLI_PATH_PS1 = _DASHBOARD_DIR.parent / "bin" / "aid.ps1"
+
 # DEFAULT_MAP: writer exit code -> (http_status, error_class). Derived from
 # writeback-state.sh's exit alphabet (0 ok / 1 missing-artifact / 2 lock-contention /
 # 3 empty-or-unverifiable-write / 4 invalid-value / 5 missing-arg / 6 malformed
@@ -1034,7 +1046,11 @@ def _op_fail_body(op: "str | None", error: str, detail: str) -> bytes:
     return json.dumps(envelope, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
 
 
-def _resolve_bash_exe() -> str:
+def _resolve_bash_exe(
+    is_windows: "bool | None" = None,
+    env: "dict[str, str] | None" = None,
+    exists_fn=None,
+) -> str:
     """Resolve bash's ABSOLUTE path via a hand-rolled PATH-order search (SEC-3:
     this file has a blanket ban on the stdlib module that provides which())
     rather than passing the bare string "bash" to subprocess.run(). On Windows,
@@ -1045,21 +1061,142 @@ def _resolve_bash_exe() -> str:
     instead of Git-Bash, even when Git-Bash appears earlier in PATH. This walks
     PATH ourselves in order (matching this script's own portability
     expectations) and sidesteps CreateProcess's fixed system-dir-first order.
-    Mirrors resolveBashExe() in server.mjs exactly.
+
+    KI-009 Part B hardening: `aid dashboard start` runs in the user's OWN shell
+    (typically PowerShell on Windows, not Git Bash), so Git's real bash.exe
+    (Git\\bin / Git\\usr\\bin) is often not on PATH at all -- only Git\\cmd
+    (git.exe) is. A plain PATH walk then falls through to the bare "bash"
+    fallback, which CreateProcess resolves to the very System32 WSL stub this
+    function exists to dodge. This now, on Windows:
+      1. Honors an AID_BASH_EXE env override (if set and it names an existing
+         file) -- an escape hatch for a non-standard Git install.
+      2. Walks PATH for bash.exe, SKIPPING any directory that IS the Windows
+         System32 dir (so a System32 hit earlier in PATH than Git's own bin/
+         can never win).
+      3. Falls back to probing Git's own known install locations
+         (<ProgramFiles>/Git/bin, <ProgramFiles>/Git/usr/bin, and the
+         <ProgramFiles(x86)> equivalents), plus a location DERIVED from
+         git.exe's own PATH entry (<X>/Git/cmd/git.exe -> <X>/Git/bin/bash.exe
+         or <X>/Git/usr/bin/bash.exe).
+      4. Falls back to the bare "bash" name (subprocess reports ENOENT if
+         truly absent).
+    The Windows-only path/PATH-delimiter semantics above are modeled with the
+    `ntpath` module explicitly (never os.path/os.pathsep, which follow the
+    HOST's own OS) so this branch is exercisable byte-for-byte from the Linux
+    CI runner via the injected `is_windows=True` seam. `is_windows`/`env`/
+    `exists_fn` are injectable seams (mirrors _native_fs_path's `is_windows`
+    convention). Mirrors resolveBashExe() in server.mjs exactly.
     """
-    path_env = os.environ.get("PATH", "")
-    exe_names = ("bash.exe", "bash.EXE") if sys.platform == "win32" else ("bash",)
-    for directory in path_env.split(os.pathsep):
-        if not directory:
+    if is_windows is None:
+        is_windows = os.name == "nt"
+    e = os.environ if env is None else env
+    exists = os.path.isfile if exists_fn is None else exists_fn
+
+    if not is_windows:
+        # Unchanged Unix behavior: a plain PATH-order search for "bash". Uses
+        # `posixpath` explicitly (not os.path, which follows the HOST's own
+        # OS) and a hardcoded ':' PATH delimiter (POSIX's own, always -- unlike
+        # Windows, there is no host-dependent alternative) so this branch is
+        # host-independent/testable the same way the Windows branch is, and
+        # behaves identically to the pre-KI-009 code on a real POSIX host
+        # (where os.pathsep == ':' and os.path IS posixpath already).
+        path_env = e.get("PATH", "")
+        for directory in path_env.split(":"):
+            if not directory:
+                continue
+            candidate = posixpath.join(directory, "bash")
+            if exists(candidate):
+                return candidate
+        return "bash"  # fall back to bare name; subprocess.run reports ENOENT if truly absent
+
+    # --- Windows branch (KI-009 Part B) ------------------------------------
+    exe_names = ("bash.exe", "bash.EXE")
+    path_env = e.get("PATH", "") or e.get("Path", "")
+
+    # 1. AID_BASH_EXE override.
+    override = e.get("AID_BASH_EXE", "")
+    if override and exists(override):
+        return override
+
+    sys_root = e.get("SystemRoot") or e.get("windir") or ""
+    system32 = ntpath.normpath(ntpath.join(sys_root, "System32")).casefold() if sys_root else None
+
+    def _is_system32(directory: str) -> bool:
+        if not system32 or not directory:
+            return False
+        return ntpath.normpath(directory).casefold() == system32
+
+    # 2. PATH walk, skipping the System32 WSL-stub dir.
+    for directory in path_env.split(";"):
+        if not directory or _is_system32(directory):
             continue
         for exe_name in exe_names:
-            candidate = os.path.join(directory, exe_name)
-            if os.path.isfile(candidate):
+            candidate = ntpath.join(directory, exe_name)
+            if exists(candidate):
                 return candidate
+
+    # 3. Probe Git's own known install locations.
+    probe_dirs: list[str] = []
+    for pf_var in ("ProgramFiles", "ProgramFiles(x86)"):
+        pf = e.get(pf_var, "")
+        if pf:
+            probe_dirs.append(ntpath.join(pf, "Git", "bin"))
+            probe_dirs.append(ntpath.join(pf, "Git", "usr", "bin"))
+    # Derive from git.exe's own PATH entry: <X>/Git/cmd/git.exe -> <X>/Git/bin,
+    # <X>/Git/usr/bin.
+    for directory in path_env.split(";"):
+        if not directory:
+            continue
+        git_candidate = ntpath.join(directory, "git.exe")
+        if exists(git_candidate):
+            git_root = ntpath.dirname(ntpath.normpath(directory))
+            probe_dirs.append(ntpath.join(git_root, "bin"))
+            probe_dirs.append(ntpath.join(git_root, "usr", "bin"))
+    for directory in probe_dirs:
+        for exe_name in exe_names:
+            candidate = ntpath.join(directory, exe_name)
+            if exists(candidate):
+                return candidate
+
     return "bash"  # fall back to bare name; subprocess.run reports ENOENT if truly absent
 
 
+def _resolve_pwsh_exe(
+    env: "dict[str, str] | None" = None,
+    exists_fn=None,
+) -> str:
+    """Resolve a PowerShell executable via a hand-rolled PATH-order search
+    (same no-which()-style convention as _resolve_bash_exe, KI-009 Part A):
+    prefer 'pwsh' (PowerShell 7+), else the real 'powershell.exe' (Windows
+    PowerShell 5.1). UNLIKE _resolve_bash_exe, this does NOT skip System32 --
+    System32\\WindowsPowerShell\\v1.0\\powershell.exe IS the genuine Windows
+    PowerShell (no WSL-launcher-stub hazard exists for PowerShell). PATH is
+    split on ';' explicitly (not os.pathsep, which follows the HOST's own OS)
+    so this stays exercisable from the Linux CI runner. `env`/`exists_fn` are
+    injectable seams. Mirrors resolvePwshExe() in server.mjs exactly.
+    """
+    e = os.environ if env is None else env
+    exists = os.path.isfile if exists_fn is None else exists_fn
+    path_env = e.get("PATH", "") or e.get("Path", "")
+    for exe_name in ("pwsh.exe", "pwsh"):
+        for directory in path_env.split(";"):
+            if not directory:
+                continue
+            candidate = ntpath.join(directory, exe_name)
+            if exists(candidate):
+                return candidate
+    for exe_name in ("powershell.exe", "powershell"):
+        for directory in path_env.split(";"):
+            if not directory:
+                continue
+            candidate = ntpath.join(directory, exe_name)
+            if exists(candidate):
+                return candidate
+    return "pwsh"  # fall back to bare name; subprocess.run reports ENOENT if truly absent
+
+
 _BASH_EXE = _resolve_bash_exe()
+_PWSH_EXE = _resolve_pwsh_exe()
 
 
 def _run_writer(writer_name: str, argv: list[str], env_overrides: dict[str, str]) -> tuple[int, str]:
@@ -1115,39 +1252,85 @@ _AID_CLI_TIMEOUT_EXIT = -1
 
 
 def _run_aid_cli(
-    argv: list[str], env_overrides: dict[str, str], timeout: int = _DEFAULT_AID_CLI_TIMEOUT
+    argv: list[str],
+    env_overrides: dict[str, str],
+    timeout: int = _DEFAULT_AID_CLI_TIMEOUT,
+    is_windows: "bool | None" = None,
 ) -> tuple[int, str]:
-    """Shared aid-CLI resolver + argv-array child dispatch (KI-004): spawn the
-    shipped `aid` CLI via `bash <bin/aid> <argv...>` -- an argv ARRAY, never
-    shell=True / a concatenated command string (SEC-3/SEC-4). Self-locates
-    $AID_CODE_HOME/bin/aid via _AID_CLI_PATH (_DASHBOARD_DIR.parent -- the
-    identical self-location _read_aid_version()/_tools_catalog() already use).
-    No OS branch, no bundled-Windows-shim alternative, no PATH fallback, no
-    co-vendoring (bin/aid already ships in the CLI package). Single reusable
-    unit: feature-003 (project.add/remove) and feature-004 (tools.update/
-    tools.update-self) both call this, never re-inventing their own spawn.
+    """Shared aid-CLI resolver + argv-array child dispatch (KI-004/KI-009).
+
+    OS branch keyed SOLELY off the SERVER PROCESS's own OS (`os.name` -- never
+    any client/request/browser signal): this is what keeps `--remote` correct
+    -- the CLI/writers always run on whichever host the dashboard SERVER
+    process itself is running on, using THAT host's native shell, regardless
+    of what OS the browser hitting the API happens to be on.
+      - Unix (is_windows False): unchanged since KI-004 -- `bash <bin/aid>
+        <argv...>`.
+      - Windows (is_windows True, KI-009 Part A): `aid dashboard start` runs
+        in the user's OWN shell (typically PowerShell, not Git Bash), and a
+        bare PATH search for bash.exe from that launch resolves to the
+        unusable WSL-launcher stub (see _resolve_bash_exe) -- so this spawns
+        the native PowerShell twin instead: `<pwsh> -NoProfile -NonInteractive
+        -File <bin/aid.ps1> <argv...>`. `-NoProfile -NonInteractive` keep this
+        headless-safe (no profile load, no prompt, no TTY assumption) for the
+        `--remote` container/VM case too.
+    Both branches are an argv ARRAY, never shell=True / a concatenated command
+    string (SEC-3/SEC-4). Self-locates $AID_CODE_HOME/bin/aid (_AID_CLI_PATH)
+    / bin/aid.ps1 (_AID_CLI_PATH_PS1) via _DASHBOARD_DIR.parent (the identical
+    self-location _read_aid_version()/_tools_catalog() already use). No PATH
+    fallback, no co-vendoring (both CLI twins already ship in the CLI
+    package). Single reusable unit: feature-003 (project.add/remove) and
+    feature-004 (tools.update/tools.update-self) both call this, never
+    re-inventing their own spawn.
+
+    bin/aid.ps1 is a co-vendored behavior-parity twin of bin/aid (NOT
+    run_generator-rendered) -- its exit alphabet for `projects add/remove`
+    (0 ok, 2 user/validation error -> the SAME _PROJECT_OP_STATUS_MAP applies
+    unchanged) and `update`/`update self` (0 ok, any other non-zero collapses
+    to the SAME _TOOLS_UPDATE_STATUS_MAP 'update-failed') is maintained in
+    lockstep with bin/aid's own; see tests/canonical/test-aid-cli-parity.sh.
 
     env_overrides is applied on top of a copy of the current environment (same
     convention as _run_writer) -- callers set ONLY AID_HOME (never
-    AID_CODE_HOME; bin/aid self-locates that from its own BASH_SOURCE[0],
-    bin/aid L45-52).
+    AID_CODE_HOME; both bin/aid and bin/aid.ps1 self-locate that from their
+    own invocation path).
 
-    Returns (exit_code, stderr_text). Never raises: an exec failure (aid
-    missing, bash missing) is reported as exit 3 (mirrors _run_writer's own
+    Returns (exit_code, stderr_text). Never raises: an exec failure (aid/bash/
+    pwsh missing) is reported as exit 3 (mirrors _run_writer's own
     convention); a timeout is reported as _AID_CLI_TIMEOUT_EXIT (never a real
-    0..255 exit code).
+    0..255 exit code) -- subprocess.run(timeout=...) -> TimeoutExpired is
+    caught identically for either branch. `is_windows` is an injectable seam
+    (mirrors _native_fs_path's convention) so the Linux CI suite can exercise
+    the Windows dispatch branch; production callers never pass it, so the
+    default always resolves from the real server-host os.name.
     """
+    if is_windows is None:
+        is_windows = os.name == "nt"
     child_env = dict(os.environ)
     child_env.update(env_overrides)
-    bash_exe = _BASH_EXE
     try:
-        proc = subprocess.run(
-            [bash_exe, _AID_CLI_PATH.as_posix(), *argv],
-            env=child_env,
-            capture_output=True,
-            text=True,
-            timeout=timeout,
-        )
+        # SEC-3 (test_task011's AST guard, TestSec3Sec4DispatchGuard): every
+        # subprocess.run(...) call site's first positional arg must be an
+        # inline LIST LITERAL (an argv array), never a variable holding a
+        # pre-built list -- so each OS branch gets its OWN literal
+        # subprocess.run([...], ...) call below rather than sharing one call
+        # site fed by an intermediate argv_full variable.
+        if is_windows:
+            proc = subprocess.run(
+                [_PWSH_EXE, "-NoProfile", "-NonInteractive", "-File", _AID_CLI_PATH_PS1.as_posix(), *argv],
+                env=child_env,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+        else:
+            proc = subprocess.run(
+                [_BASH_EXE, _AID_CLI_PATH.as_posix(), *argv],
+                env=child_env,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
         return proc.returncode, proc.stderr or ""
     except subprocess.TimeoutExpired as exc:
         stderr = exc.stderr if isinstance(exc.stderr, str) else ""

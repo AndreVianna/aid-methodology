@@ -104,7 +104,7 @@ if str(_REPO_ROOT) not in sys.path:
 
 from dashboard.server import server as srv
 from dashboard.server.tests.test_server_py import (
-    _ServerThread, _make_aid_home, _write_registry, _repo_id8,
+    _ServerThread, _make_aid_home, _write_registry, _repo_id8, _patch_run_aid_cli_force_unix,
 )
 
 _SERVER_MJS = _DASHBOARD_DIR / "server" / "server.mjs"
@@ -203,6 +203,27 @@ def _sliced_server_mjs_source(aid_cli_path: Path, tools_timeout_ms: "int | None"
             old_timeout_line, f"const TOOLS_UPDATE_TIMEOUT = {tools_timeout_ms};", 1,
         )
 
+    # KI-009: force runAidCli's default isWin resolution to the Unix/bash
+    # branch, regardless of the ACTUAL host OS this Node driver runs on --
+    # every fake CLI this fixture spawns is a bash-shebang script (never a
+    # .ps1 twin), so a Windows-host test run must not silently take the
+    # Windows/PowerShell dispatch branch. Scoped to JUST runAidCli's own
+    # isWin-default line via its enclosing function body (the IDENTICAL text
+    # also appears in resolveBashExe/nativeFsPath, which must NOT be touched --
+    # those seams are exercised with an EXPLICIT isWin argument by their own
+    # tests, never relying on this default).
+    func_marker = "function runAidCli("
+    func_idx = sliced.find(func_marker)
+    assert func_idx != -1, "server.mjs's runAidCli(...) function is gone -- this slice needs updating"
+    old_default_line = 'const win = isWin === undefined ? process.platform === "win32" : isWin;'
+    default_idx = sliced.find(old_default_line, func_idx)
+    assert default_idx != -1, (
+        "runAidCli's isWin-default line has changed shape -- this slice's KI-009 "
+        "force-Unix-dispatch cut point needs updating"
+    )
+    new_default_line = "const win = isWin === undefined ? false : isWin;"
+    sliced = sliced[:default_idx] + new_default_line + sliced[default_idx + len(old_default_line):]
+
     return sliced + "\nexport { dispatchOp, OP_TABLE, HOME_OP_TABLE, nativeFsPath };\n"
 
 
@@ -213,7 +234,19 @@ class _NodeSlicedDispatchFixture:
     per-call fork overhead -- this repo's own perf note: forking is
     ~1s/spawn on this host's Git-Bash/MSYS class of environment) and returns a
     list of (status, body_text) tuples in the same order, resetting
-    FAKE_MODE/FAKE_REG_FILE between cases so no state leaks across them."""
+    FAKE_MODE/FAKE_REG_FILE between cases so no state leaks across them.
+
+    KI-009: every fake CLI this fixture spawns is a bash-shebang script (never
+    a .ps1 twin), so BOTH runtimes' default `is_windows`/`isWin` dispatch
+    resolution must be forced to the Unix/bash branch regardless of the
+    ACTUAL host OS the suite runs on -- otherwise a Windows-host run (this
+    repo's own local dev sandbox) would spawn PowerShell/pwsh against a bash
+    script on either side. `_sliced_server_mjs_source` forces the Node side
+    (a source-text substitution scoped to JUST runAidCli's own isWin-default
+    line -- resolveBashExe/nativeFsPath's identical lines are left untouched,
+    since those seams are exercised with an EXPLICIT isWin argument by their
+    own tests elsewhere); each subclass below forces the Python side via
+    `_patch_run_aid_cli_force_unix` in its own setUpClass/tearDownClass."""
 
     _slice_path: Path
     _fake_cli_path: Path
@@ -305,10 +338,12 @@ class TestProjectAddParity(_NodeSlicedDispatchFixture, unittest.TestCase):
         super().setUpClass()
         cls._orig_aid_cli_path = srv._AID_CLI_PATH
         srv._AID_CLI_PATH = cls._fake_cli_path
+        cls._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
 
     @classmethod
     def tearDownClass(cls) -> None:
         srv._AID_CLI_PATH = cls._orig_aid_cli_path
+        srv._run_aid_cli = cls._orig_run_aid_cli
         super().tearDownClass()
 
     def test_all_cases_parity(self) -> None:
@@ -382,10 +417,12 @@ class TestProjectRemoveParity(_NodeSlicedDispatchFixture, unittest.TestCase):
         super().setUpClass()
         cls._orig_aid_cli_path = srv._AID_CLI_PATH
         srv._AID_CLI_PATH = cls._fake_cli_path
+        cls._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
 
     @classmethod
     def tearDownClass(cls) -> None:
         srv._AID_CLI_PATH = cls._orig_aid_cli_path
+        srv._run_aid_cli = cls._orig_run_aid_cli
         super().tearDownClass()
 
     def setUp(self) -> None:
@@ -480,10 +517,12 @@ class TestToolsUpdateParity(_NodeSlicedDispatchFixture, unittest.TestCase):
         super().setUpClass()
         cls._orig_aid_cli_path = srv._AID_CLI_PATH
         srv._AID_CLI_PATH = cls._fake_cli_path
+        cls._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
 
     @classmethod
     def tearDownClass(cls) -> None:
         srv._AID_CLI_PATH = cls._orig_aid_cli_path
+        srv._run_aid_cli = cls._orig_run_aid_cli
         super().tearDownClass()
 
     def test_all_cases_parity(self) -> None:
@@ -524,10 +563,12 @@ class TestToolsUpdateSelfParity(_NodeSlicedDispatchFixture, unittest.TestCase):
         super().setUpClass()
         cls._orig_aid_cli_path = srv._AID_CLI_PATH
         srv._AID_CLI_PATH = cls._fake_cli_path
+        cls._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
 
     @classmethod
     def tearDownClass(cls) -> None:
         srv._AID_CLI_PATH = cls._orig_aid_cli_path
+        srv._run_aid_cli = cls._orig_run_aid_cli
         super().tearDownClass()
 
     def test_all_cases_parity(self) -> None:
@@ -573,6 +614,7 @@ class TestToolsUpdateTimeoutParity(_NodeSlicedDispatchFixture, unittest.TestCase
         super().setUpClass()
         cls._orig_aid_cli_path = srv._AID_CLI_PATH
         srv._AID_CLI_PATH = cls._fake_cli_path
+        cls._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
         # Deep-copy the two rows so the 1s test-local timeout override never
         # leaks into the module-level OP_TABLE/HOME_OP_TABLE for other tests
         # (mirrors test_task015_tools_update_ops.py's TestToolsUpdateTimeout).
@@ -584,6 +626,7 @@ class TestToolsUpdateTimeoutParity(_NodeSlicedDispatchFixture, unittest.TestCase
     @classmethod
     def tearDownClass(cls) -> None:
         srv._AID_CLI_PATH = cls._orig_aid_cli_path
+        srv._run_aid_cli = cls._orig_run_aid_cli
         srv.OP_TABLE["tools.update"] = cls._orig_op_row
         srv.HOME_OP_TABLE["tools.update-self"] = cls._orig_home_row
         super().tearDownClass()
@@ -663,10 +706,12 @@ class TestToolsUpdateLargeOutputParity(_NodeSlicedDispatchFixture, unittest.Test
         super().setUpClass()
         cls._orig_aid_cli_path = srv._AID_CLI_PATH
         srv._AID_CLI_PATH = cls._fake_cli_path
+        cls._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
 
     @classmethod
     def tearDownClass(cls) -> None:
         srv._AID_CLI_PATH = cls._orig_aid_cli_path
+        srv._run_aid_cli = cls._orig_run_aid_cli
         super().tearDownClass()
 
     def test_tools_update_large_output_parity(self) -> None:

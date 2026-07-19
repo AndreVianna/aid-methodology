@@ -63,7 +63,9 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from dashboard.server import server as srv
-from dashboard.server.tests.test_server_py import _make_aid_home, _write_registry, _repo_id8
+from dashboard.server.tests.test_server_py import (
+    _make_aid_home, _write_registry, _repo_id8, _patch_run_aid_cli_force_unix,
+)
 
 
 # ===========================================================================
@@ -148,7 +150,16 @@ class TestRunAidCliContract(unittest.TestCase):
     """Never touches the real bin/aid -- a throwaway probe script stands in
     (mirrors TestOpStatusMapOverrideHook's own probe-writer convention in
     test_task011_dispatch_round_trip.py). Only srv._AID_CLI_PATH is redirected
-    for the duration of this test class, restored in tearDown."""
+    for the duration of this test class, restored in tearDown.
+
+    KI-009: every direct _run_aid_cli(...) call below passes is_windows=False
+    explicitly -- this probe script has a bash shebang, so the test must force
+    the (still-unchanged) Unix/bash dispatch branch regardless of the ACTUAL
+    host OS running the suite (the default `is_windows` seam now resolves
+    from the real os.name; on this repo's own Windows dev sandbox that would
+    otherwise spawn PowerShell against a bash script). See
+    test_ki009_windows_dispatch.py for the OS-branch-selection tests
+    themselves."""
 
     def setUp(self) -> None:
         self._tmp = Path(tempfile.mkdtemp())
@@ -170,7 +181,7 @@ class TestRunAidCliContract(unittest.TestCase):
 
     def test_argv_array_env_threading_and_no_code_home_leak(self):
         exit_code, stderr_text = srv._run_aid_cli(
-            ["projects", "add", "/abs/path"], {"AID_HOME": "/pinned/aid_home"}
+            ["projects", "add", "/abs/path"], {"AID_HOME": "/pinned/aid_home"}, is_windows=False,
         )
         self.assertEqual(exit_code, 0)
         self.assertIn("ARGV:projects add /abs/path", stderr_text)
@@ -183,7 +194,9 @@ class TestRunAidCliContract(unittest.TestCase):
         shared resolver forwards whatever argv it is given verbatim, so an
         argv-builder that emits exactly 3 elements never grows a --local/
         --shared/--verbose flag by passing through _run_aid_cli."""
-        exit_code, stderr_text = srv._run_aid_cli(["projects", "remove", "/abs/path"], {"AID_HOME": "/x"})
+        exit_code, stderr_text = srv._run_aid_cli(
+            ["projects", "remove", "/abs/path"], {"AID_HOME": "/x"}, is_windows=False,
+        )
         self.assertEqual(exit_code, 0)
         self.assertIn("ARGV:projects remove /abs/path", stderr_text)
         for flag in ("--local", "--shared", "--verbose"):
@@ -275,12 +288,19 @@ class TestPostVerifyProjectRemove(unittest.TestCase):
 class TestProjectAddDispatchFakeCli(unittest.TestCase):
     """Fake aid: reads FAKE_AID_MODE from the environment to control its exit
     code / stderr. Never touches the real bin/aid -- srv._AID_CLI_PATH is
-    redirected for the duration of this test class, restored in tearDown."""
+    redirected for the duration of this test class, restored in tearDown.
+
+    KI-009: this fake has a bash shebang, so _run_aid_cli's default dispatch
+    is forced to the Unix/bash branch (_patch_run_aid_cli_force_unix) for the
+    duration of each test -- otherwise, on an ACTUAL Windows host (the
+    default `is_windows` seam resolves from the real os.name), the dispatch
+    would spawn PowerShell against this bash script instead."""
 
     def setUp(self) -> None:
         self._base = Path(tempfile.mkdtemp())
         self._aid_home = self._base / "aid_home"
         _make_aid_home(self._aid_home)
+        self._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
         self._fake = self._base / "fake-aid.sh"
         self._fake.write_text(
             "#!/usr/bin/env bash\n"
@@ -298,6 +318,7 @@ class TestProjectAddDispatchFakeCli(unittest.TestCase):
 
     def tearDown(self) -> None:
         srv._AID_CLI_PATH = self._orig_path
+        srv._run_aid_cli = self._orig_run_aid_cli
         shutil.rmtree(str(self._base), ignore_errors=True)
 
     def _dispatch(self, path_value: str):
@@ -362,12 +383,17 @@ class TestProjectRemoveDispatchFakeCli(unittest.TestCase):
     matching '  - <path>' line from FAKE_REG_FILE (simulating a real CLI
     removal) so the post-dispatch union re-check can observe persistence.
     On FAKE_AID_MODE=noop_clean, exits 0 WITHOUT touching the file -- the
-    "phantom success" scenario the fail-open guard must catch."""
+    "phantom success" scenario the fail-open guard must catch.
+
+    KI-009: this fake has a bash shebang, so _run_aid_cli's default dispatch
+    is forced to the Unix/bash branch (_patch_run_aid_cli_force_unix) for the
+    duration of each test -- see TestProjectAddDispatchFakeCli's own note."""
 
     def setUp(self) -> None:
         self._base = Path(tempfile.mkdtemp())
         self._aid_home = self._base / "aid_home"
         _make_aid_home(self._aid_home)
+        self._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
         self._path = "/tmp/fake/remove-me"
         _write_registry(self._aid_home, [self._path])
         self._id = _repo_id8(self._path)
@@ -395,6 +421,7 @@ class TestProjectRemoveDispatchFakeCli(unittest.TestCase):
 
     def tearDown(self) -> None:
         srv._AID_CLI_PATH = self._orig_path
+        srv._run_aid_cli = self._orig_run_aid_cli
         shutil.rmtree(str(self._base), ignore_errors=True)
 
     def _dispatch(self, target_id: str, env: dict):

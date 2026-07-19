@@ -73,6 +73,7 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from dashboard.server import server as srv
+from dashboard.server.tests.test_server_py import _patch_run_aid_cli_force_unix
 
 
 # ===========================================================================
@@ -132,10 +133,17 @@ class TestToolsUpdateDispatchFakeCli(unittest.TestCase):
     code / stderr, and echoes back the argv + env it received (proving the
     env/argv wiring), mirroring test_task013's own probe-writer convention.
     srv._AID_CLI_PATH is redirected for the duration of this test class,
-    restored in tearDown."""
+    restored in tearDown.
+
+    KI-009: this fake has a bash shebang, so _run_aid_cli's default dispatch
+    is forced to the Unix/bash branch (_patch_run_aid_cli_force_unix) for the
+    duration of each test -- otherwise, on an ACTUAL Windows host (the
+    default `is_windows` seam resolves from the real os.name), the dispatch
+    would spawn PowerShell against this bash script instead."""
 
     def setUp(self) -> None:
         self._tmp = Path(tempfile.mkdtemp())
+        self._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
         self._fake = self._tmp / "fake-aid.sh"
         self._fake.write_text(
             "#!/usr/bin/env bash\n"
@@ -155,6 +163,7 @@ class TestToolsUpdateDispatchFakeCli(unittest.TestCase):
 
     def tearDown(self) -> None:
         srv._AID_CLI_PATH = self._orig_path
+        srv._run_aid_cli = self._orig_run_aid_cli
         shutil.rmtree(str(self._tmp), ignore_errors=True)
 
     # -- tools.update (per-repo, OP_TABLE) -----------------------------------
@@ -248,8 +257,14 @@ class TestToolsUpdateDispatchFakeCli(unittest.TestCase):
 # ===========================================================================
 
 class TestToolsUpdateTimeout(unittest.TestCase):
+    """KI-009: the slow probe below has a bash shebang, so _run_aid_cli's
+    default dispatch is forced to the Unix/bash branch
+    (_patch_run_aid_cli_force_unix) for the duration of each test -- see
+    TestToolsUpdateDispatchFakeCli's own note."""
+
     def setUp(self) -> None:
         self._tmp = Path(tempfile.mkdtemp())
+        self._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
         self._slow = self._tmp / "slow-aid.sh"
         self._slow.write_text("#!/usr/bin/env bash\nsleep 3\n", encoding="utf-8")
         self._orig_path = srv._AID_CLI_PATH
@@ -263,6 +278,7 @@ class TestToolsUpdateTimeout(unittest.TestCase):
 
     def tearDown(self) -> None:
         srv._AID_CLI_PATH = self._orig_path
+        srv._run_aid_cli = self._orig_run_aid_cli
         srv.OP_TABLE["tools.update"] = self._orig_op_row
         srv.HOME_OP_TABLE["tools.update-self"] = self._orig_home_row
         shutil.rmtree(str(self._tmp), ignore_errors=True)

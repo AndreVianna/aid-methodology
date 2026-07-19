@@ -212,6 +212,18 @@ process.stdout.write("\n[A] SEC-3/SEC-4 static guard (scoped to runAidCli(...))\
     "A.4: runAidCli never uses child_process.exec() (shell-interpreted command string)");
   assert(runAidCliCode.includes("AID_CLI_PATH"),
     "A.5: runAidCli resolves the shared AID_CLI_PATH anchor (KI-004), not an ad-hoc path");
+
+  // KI-009 Part A: the Windows dispatch branch is ALSO an argv array (never a
+  // shell string), spawning the resolved PowerShell exe against the
+  // co-vendored aid.ps1 twin -- never an ad-hoc path.
+  assert(/spawnSync\(\s*PWSH_EXE\s*,\s*\[/.test(runAidCliCode),
+    "A.6: runAidCli's Windows branch spawns via spawnSync(PWSH_EXE, [argv array]) -- also an argv array, never a shell string");
+  assert(runAidCliCode.includes("AID_CLI_PATH_PS1"),
+    "A.7: runAidCli resolves the Windows-branch anchor AID_CLI_PATH_PS1 (KI-009), not an ad-hoc path");
+  assert(runAidCliCode.includes("-NoProfile") && runAidCliCode.includes("-NonInteractive"),
+    "A.8: runAidCli's PowerShell spawn passes -NoProfile -NonInteractive (headless-safe, no profile/prompt)");
+  assert(/process\.platform\s*===\s*"win32"/.test(runAidCliCode),
+    "A.9: runAidCli's OS branch is keyed off process.platform (the SERVER's own OS), not any client/request signal");
 }
 
 // ---------------------------------------------------------------------------
