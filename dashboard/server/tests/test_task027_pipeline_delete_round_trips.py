@@ -81,6 +81,7 @@ import json
 import os
 import shlex
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
@@ -153,6 +154,38 @@ def _git(args: list[str], cwd: Path) -> subprocess.CompletedProcess:
     return subprocess.run(["git", *args], cwd=str(cwd), capture_output=True, text=True, timeout=15)
 
 
+def _rmtree_onerror(func, path, _exc_info) -> None:
+    """shutil.rmtree onerror handler: git marks packed objects/refs read-only
+    on Windows, which a plain shutil.rmtree(..., ignore_errors=True) silently
+    fails to delete (leaving an orphaned .git/ directory behind under the OS
+    temp dir on every run -- a real test-hygiene gap, not merely cosmetic).
+    Clears the read-only bit and retries once; still swallows any residual
+    failure (best-effort cleanup, never fails a test)."""
+    try:
+        os.chmod(path, stat.S_IWRITE)
+        func(path)
+    except Exception:
+        pass
+
+
+def _rmtree(path: "Path | str") -> None:
+    """Robust throwaway-fixture removal used EVERYWHERE in this file instead
+    of a bare shutil.rmtree(..., ignore_errors=True) -- see _rmtree_onerror."""
+    shutil.rmtree(str(path), onerror=_rmtree_onerror)
+
+
+def _rmtree_if_exists(path: "Path | str") -> None:
+    """Belt-and-suspenders cleanup for a worktree directory a SUCCESSFUL
+    delete-pipeline.sh dispatch is EXPECTED to have already removed (dedicated-
+    worktree topology): a no-op when the dispatch behaved as expected, but
+    still cleans up the throwaway fixture (rather than leaking it under the OS
+    temp dir) if an assertion fires before that point or the dispatch
+    unexpectedly failed to remove it."""
+    p = Path(path)
+    if p.exists():
+        _rmtree(p)
+
+
 class _GitRepo:
     """A throwaway git repo (main worktree) with an empty .aid/works/
     container and one commit, cleaned up on exit. NEVER this repo's own
@@ -186,7 +219,7 @@ class _GitRepo:
         return self.path
 
     def __exit__(self, *_exc) -> None:
-        shutil.rmtree(str(self.path), ignore_errors=True)
+        _rmtree(self.path)
 
 
 def _make_work(root: Path, work_id: str, lifecycle: str = "Pending",
@@ -298,7 +331,7 @@ class TestGuardsRealGitFixture(unittest.TestCase):
                 self.assertTrue(work_dir.is_dir())
                 self.assertTrue(wt.is_dir(), "the current worktree itself must not be removed")
             finally:
-                shutil.rmtree(str(wt), ignore_errors=True)
+                _rmtree_if_exists(wt)
 
 
 # ===========================================================================
@@ -324,16 +357,19 @@ class TestHappyPathTopologiesRealGitFixture(unittest.TestCase):
         with _GitRepo() as root:
             wt = root.parent / f"aid-t027-wt-ded-{uuid.uuid4().hex}"
             branch = f"feature-ded-{uuid.uuid4().hex[:8]}"
-            _make_worktree(root, wt, branch)
-            _make_work(wt, "work-301-ded")
-            _commit_all(wt, "add work-301-ded")
-            status, body = srv._dispatch_op(
-                srv.OP_TABLE, {"op": "pipeline.delete", "target": {"work_id": "work-301-ded"}}, str(root),
-            )
-            self.assertEqual(status, 200)
-            self.assertEqual(json.loads(body), {"ok": True, "op": "pipeline.delete"})
-            self.assertFalse(wt.exists(), "dedicated worktree directory must be gone")
-            self.assertTrue(_branch_exists(root, branch), "branch RETAINED (OQ-PL3)")
+            try:
+                _make_worktree(root, wt, branch)
+                _make_work(wt, "work-301-ded")
+                _commit_all(wt, "add work-301-ded")
+                status, body = srv._dispatch_op(
+                    srv.OP_TABLE, {"op": "pipeline.delete", "target": {"work_id": "work-301-ded"}}, str(root),
+                )
+                self.assertEqual(status, 200)
+                self.assertEqual(json.loads(body), {"ok": True, "op": "pipeline.delete"})
+                self.assertFalse(wt.exists(), "dedicated worktree directory must be gone")
+                self.assertTrue(_branch_exists(root, branch), "branch RETAINED (OQ-PL3)")
+            finally:
+                _rmtree_if_exists(wt)
 
     def test_shared_worktree_removes_folder_only_sibling_and_worktree_survive(self):
         with _GitRepo() as root:
@@ -354,7 +390,7 @@ class TestHappyPathTopologiesRealGitFixture(unittest.TestCase):
                 self.assertTrue(wt.is_dir(), "shared worktree checkout itself survives")
                 self.assertTrue(_branch_exists(root, branch))
             finally:
-                shutil.rmtree(str(wt), ignore_errors=True)
+                _rmtree_if_exists(wt)
 
 
 # ===========================================================================
@@ -396,7 +432,7 @@ class TestContainmentRejectionRealGitFixture(unittest.TestCase):
                 self.assertEqual(json.loads(body)["error"], "write-failed")
                 self.assertTrue(marker.exists(), "outside target must be untouched -- no traversal")
             finally:
-                shutil.rmtree(str(outside), ignore_errors=True)
+                _rmtree(outside)
 
 
 # ===========================================================================
@@ -424,14 +460,17 @@ class TestPostDeleteTruthfulnessRealGitFixture(unittest.TestCase):
         with _GitRepo() as root:
             wt = root.parent / f"aid-t027-wt-branch-{uuid.uuid4().hex}"
             branch = f"feature-branch-check-{uuid.uuid4().hex[:8]}"
-            _make_worktree(root, wt, branch)
-            _make_work(wt, "work-401-branch")
-            _commit_all(wt, "add work-401-branch")
-            status, _ = srv._dispatch_op(
-                srv.OP_TABLE, {"op": "pipeline.delete", "target": {"work_id": "work-401-branch"}}, str(root),
-            )
-            self.assertEqual(status, 200)
-            self.assertTrue(_branch_exists(root, branch), "OQ-PL3: branch never deleted")
+            try:
+                _make_worktree(root, wt, branch)
+                _make_work(wt, "work-401-branch")
+                _commit_all(wt, "add work-401-branch")
+                status, _ = srv._dispatch_op(
+                    srv.OP_TABLE, {"op": "pipeline.delete", "target": {"work_id": "work-401-branch"}}, str(root),
+                )
+                self.assertEqual(status, 200)
+                self.assertTrue(_branch_exists(root, branch), "OQ-PL3: branch never deleted")
+            finally:
+                _rmtree_if_exists(wt)
 
     def test_shadowed_work_id_wt1_symmetry_only_winner_removed_shadow_resurfaces(self):
         """A work_id present in BOTH the main root (OLDER `updated`) and a
@@ -446,33 +485,36 @@ class TestPostDeleteTruthfulnessRealGitFixture(unittest.TestCase):
             _commit_all(root, "add older main copy")
             wt = root.parent / f"aid-t027-wt-shadow-{uuid.uuid4().hex}"
             branch = f"feature-shadow-{uuid.uuid4().hex[:8]}"
-            _make_worktree(root, wt, branch)
-            winner_dir = _make_work(wt, "work-402-shadow", updated="2026-06-01T00:00:00Z")
-            _commit_all(wt, "add newer worktree copy")
+            try:
+                _make_worktree(root, wt, branch)
+                winner_dir = _make_work(wt, "work-402-shadow", updated="2026-06-01T00:00:00Z")
+                _commit_all(wt, "add newer worktree copy")
 
-            before = read_repo(str(root))
-            self.assertIn("work-402-shadow", [w.work_id for w in before.works])
+                before = read_repo(str(root))
+                self.assertIn("work-402-shadow", [w.work_id for w in before.works])
 
-            status, _ = srv._dispatch_op(
-                srv.OP_TABLE, {"op": "pipeline.delete", "target": {"work_id": "work-402-shadow"}}, str(root),
-            )
-            self.assertEqual(status, 200)
-            self.assertFalse(winner_dir.exists(), "the newer (winner) worktree copy must be removed")
-            self.assertTrue(
-                shadow_dir.is_dir(),
-                "the older (shadow) main copy must be left untouched -- WT-1 symmetry, no bulk delete",
-            )
-            # This worktree hosted ONLY work-402-shadow -- 'dedicated' classification,
-            # so the whole worktree is removed together with the folder.
-            self.assertFalse(wt.exists())
-            self.assertTrue(_branch_exists(root, branch), "OQ-PL3: branch retained even for the winner's worktree")
+                status, _ = srv._dispatch_op(
+                    srv.OP_TABLE, {"op": "pipeline.delete", "target": {"work_id": "work-402-shadow"}}, str(root),
+                )
+                self.assertEqual(status, 200)
+                self.assertFalse(winner_dir.exists(), "the newer (winner) worktree copy must be removed")
+                self.assertTrue(
+                    shadow_dir.is_dir(),
+                    "the older (shadow) main copy must be left untouched -- WT-1 symmetry, no bulk delete",
+                )
+                # This worktree hosted ONLY work-402-shadow -- 'dedicated' classification,
+                # so the whole worktree is removed together with the folder.
+                self.assertFalse(wt.exists())
+                self.assertTrue(_branch_exists(root, branch), "OQ-PL3: branch retained even for the winner's worktree")
 
-            after = read_repo(str(root))
-            after_ids = [w.work_id for w in after.works]
-            self.assertIn(
-                "work-402-shadow", after_ids,
-                "the shadow copy re-surfaces as the sole remaining copy on the next read (truthful to disk)",
-            )
+                after = read_repo(str(root))
+                after_ids = [w.work_id for w in after.works]
+                self.assertIn(
+                    "work-402-shadow", after_ids,
+                    "the shadow copy re-surfaces as the sole remaining copy on the next read (truthful to disk)",
+                )
+            finally:
+                _rmtree_if_exists(wt)
 
 
 # ===========================================================================
@@ -555,10 +597,14 @@ class TestTwinDispatchParity(_NodeSlicedDispatchFixture, unittest.TestCase):
     def _assert_case_parity(self, build_fixture, parsed_fn, expected_status: int,
                              expected_error: "str | None" = None) -> None:
         """build_fixture(root) seeds the fixture under a fresh _GitRepo root;
-        it may return a Path needing manual cleanup (e.g. a shared worktree
-        left behind after a folder-only removal) or None. parsed_fn() returns
-        the op-request dict (called fresh for each runtime -- no shared
-        mutable state)."""
+        it may return a Path that MIGHT need manual cleanup (a worktree a
+        successful dispatch is expected to remove, or a shared worktree left
+        behind after a folder-only removal) or None. Cleanup is always a
+        no-op (_rmtree_if_exists) when the dispatch already removed it --
+        belt-and-suspenders so a failed assertion (or an unexpectedly-failed
+        dispatch) never leaks the fixture under the OS temp dir. parsed_fn()
+        returns the op-request dict (called fresh for each runtime -- no
+        shared mutable state)."""
         extra_dirs: list[Path] = []
         with _GitRepo() as py_root:
             extra = build_fixture(py_root)
@@ -576,7 +622,7 @@ class TestTwinDispatchParity(_NodeSlicedDispatchFixture, unittest.TestCase):
             _assert_parity(self, py_result, node_result, expected_status, expected_error)
         finally:
             for d in extra_dirs:
-                shutil.rmtree(str(d), ignore_errors=True)
+                _rmtree_if_exists(d)
 
     def test_404_not_found_parity(self) -> None:
         self._assert_case_parity(
@@ -622,12 +668,16 @@ class TestTwinDispatchParity(_NodeSlicedDispatchFixture, unittest.TestCase):
         )
 
     def test_200_dedicated_worktree_parity(self) -> None:
-        def build(root: Path) -> "Path | None":
+        def build(root: Path) -> Path:
             wt = root.parent / f"aid-t027-parity-ded-{uuid.uuid4().hex}"
             _make_worktree(root, wt, f"feature-parity-ded-{uuid.uuid4().hex[:8]}")
             _make_work(wt, "work-301-ded")
             _commit_all(wt, "add work-301-ded")
-            return None  # removed by the dispatch itself on BOTH runtimes' success path
+            # Expected to be removed by the dispatch itself on BOTH runtimes'
+            # success path -- returned anyway so _assert_case_parity's
+            # belt-and-suspenders _rmtree_if_exists cleans it up if an
+            # assertion fires first or the dispatch unexpectedly fails to.
+            return wt
 
         self._assert_case_parity(
             build, lambda: {"op": "pipeline.delete", "target": {"work_id": "work-301-ded"}}, 200,
@@ -688,7 +738,7 @@ class TestTwinDispatchParity(_NodeSlicedDispatchFixture, unittest.TestCase):
         finally:
             os.chdir(old_cwd)
             for d in extra_dirs:
-                shutil.rmtree(str(d), ignore_errors=True)
+                _rmtree_if_exists(d)
 
 
 class TestNoScopeCreepPointer(unittest.TestCase):
