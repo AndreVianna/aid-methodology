@@ -445,6 +445,18 @@ function readSettings(repoPath) {
         }
       }
     }
+    // Flat-schema fallback: top-level name/description (project: wrapper removed).
+    if (name === null || description === null) {
+      for (const line of text.split(/\r?\n/)) {
+        if (name === null && line.startsWith("name:")) {
+          const v = stripYamlInlineComment(line.slice("name:".length)).trim().replace(/^["']|["']$/g, "");
+          name = v || null;
+        } else if (description === null && line.startsWith("description:")) {
+          const v = stripYamlInlineComment(line.slice("description:".length)).trim().replace(/^["']|["']$/g, "");
+          description = v || null;
+        }
+      }
+    }
     return { name, description };
   } catch (_) {
     return { name: null, description: null };

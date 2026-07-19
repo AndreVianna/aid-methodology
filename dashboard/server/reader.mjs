@@ -569,6 +569,23 @@ function stripYamlInlineComment(scalar) {
   return s;
 }
 
+// parseTopLevelScalar: reads a column-0 `key: value` scalar (the flat settings
+// schema where name/description/type/minimum_grade live at the top level).
+// Returns the value, or null if absent / empty / an inline list. Twin of
+// parsers.py _parse_toplevel_scalar().
+function parseTopLevelScalar(text, key) {
+  const re = new RegExp("^" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":\\s*(.*)$");
+  for (const line of text.split("\n")) {
+    const m = line.match(re);
+    if (m) {
+      const val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+      if (val.startsWith("[") && val.endsWith("]")) return null;
+      return val || null;
+    }
+  }
+  return null;
+}
+
 // parseProjectSettings: extracts project.name + project.description from
 // .aid/settings.yml. Both scalars live in the SAME 'project:' block, so this
 // is one shared line-scan (feature-002, work-017 task-005). Returns
@@ -614,6 +631,10 @@ function parseProjectSettings(settingsPath) {
       }
     }
   }
+  // Flat-schema fallback: name/description at the top level (project: wrapper
+  // removed). Legacy projects have them nested (found above).
+  if (name === null) name = parseTopLevelScalar(text, "name");
+  if (description === null) description = parseTopLevelScalar(text, "description");
   return [name !== null ? name : "", description, bytesRead];
 }
 
@@ -671,6 +692,8 @@ function parseSettingsMinimumGrade(settingsPath) {
       }
     }
   }
+  // Flat-schema fallback: top-level minimum_grade (review: wrapper removed).
+  if (grade === null) grade = parseTopLevelScalar(text, "minimum_grade");
   return [grade, bytesRead];
 }
 

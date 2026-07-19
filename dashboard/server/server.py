@@ -418,6 +418,16 @@ def _read_settings(repo_path: str) -> tuple[str | None, str | None]:
                     description = val if val else None
                 elif stripped and not stripped.startswith("#") and not line.startswith(" "):
                     in_project = False
+        # Flat-schema fallback: name/description at the top level (project:
+        # wrapper removed in the flat schema).
+        if name is None or description is None:
+            for line in settings.splitlines():
+                if name is None and line.startswith("name:"):
+                    v = _strip_yaml_inline_comment(line[len("name:"):]).strip().strip('"').strip("'")
+                    name = v or None
+                elif description is None and line.startswith("description:"):
+                    v = _strip_yaml_inline_comment(line[len("description:"):]).strip().strip('"').strip("'")
+                    description = v or None
         return name, description
     except Exception:
         return None, None

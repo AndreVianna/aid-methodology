@@ -207,6 +207,14 @@ def parse_project_settings(settings_path: Path) -> tuple[str, Optional[str], int
                 description = val.strip().strip('"').strip("'")
                 continue
 
+    # Flat-schema fallback: name/description at the top level (the project:
+    # wrapper is removed in the flat schema). A migrated project has them at
+    # column 0; a legacy project has them nested (found above).
+    if name is None:
+        name = _parse_toplevel_scalar(text, "name")
+    if description is None:
+        description = _parse_toplevel_scalar(text, "description")
+
     return (name if name is not None else ""), description, bytes_read
 
 
@@ -271,7 +279,26 @@ def parse_minimum_grade(settings_path: Path) -> tuple[Optional[str], int]:
                     grade = val
                 continue
 
+    # Flat-schema fallback: top-level minimum_grade (review: wrapper removed).
+    if grade is None:
+        grade = _parse_toplevel_scalar(text, "minimum_grade")
+
     return grade, bytes_read
+
+
+def _parse_toplevel_scalar(text: str, key: str) -> Optional[str]:
+    """Read a column-0 ``key: value`` scalar (the flat settings schema, where
+    name/description/type/minimum_grade live at the top level). Returns the
+    stripped value, or None if absent / empty / an inline list / block-marker."""
+    pat = re.compile(r"^" + re.escape(key) + r":\s*(.*)$")
+    for line in text.splitlines():
+        m = pat.match(line)
+        if m:
+            val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+            if val.startswith("[") and val.endswith("]"):
+                return None
+            return val or None
+    return None
 
 
 def _strip_yaml_inline_comment(scalar: str) -> str:
