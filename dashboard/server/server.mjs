@@ -856,14 +856,28 @@ function resolveBashExe(isWin, env, existsFn) {
     ? stripTrailingSep(win32.normalize(win32.join(sysRoot, "System32"))).toLowerCase()
     : null;
 
-  function isSystem32(dir) {
-    if (!system32 || !dir) return false;
-    return stripTrailingSep(win32.normalize(dir)).toLowerCase() === system32;
+  // Skip directories that hold a WSL/Store *launcher stub* named bash.exe (never
+  // a real Git-Bash), so the PATH walk can never return one:
+  //   - <SystemRoot>\System32                 -- the classic WSL bash.exe stub.
+  //   - <LocalAppData>\Microsoft\WindowsApps   -- the Store "App Execution Alias"
+  //     stub: a reparse point that launches the default WSL distro, whose internal
+  //     shell is /bin/bash and cannot open a "C:/..." host path. It is on PATH by
+  //     default. The Python twin's os.path.isfile() returns True for the alias so
+  //     it MUST skip this dir or every writer op fails with "/bin/bash: C:/...: No
+  //     such file or directory" (KI-011). Node's existsSync() returns False for the
+  //     alias (EACCES on the reparse point), so the node walk already skips it in
+  //     practice -- this check keeps the twins symmetric and hardens against a
+  //     future runtime that DOES stat the alias. Matched by fixed trailing segment.
+  function isLauncherStubDir(dir) {
+    if (!dir) return false;
+    const norm = stripTrailingSep(win32.normalize(dir)).toLowerCase();
+    if (system32 && norm === system32) return true;
+    return norm.endsWith("\\microsoft\\windowsapps");
   }
 
-  // 2. PATH walk, skipping the System32 WSL-stub dir.
+  // 2. PATH walk, skipping the WSL/Store launcher-stub dirs.
   for (const dir of pathEnv.split(";")) {
-    if (!dir || isSystem32(dir)) continue;
+    if (!dir || isLauncherStubDir(dir)) continue;
     for (const exeName of exeNames) {
       const candidate = win32.join(dir, exeName);
       if (exists(candidate)) return candidate;
@@ -912,16 +926,26 @@ function resolvePwshExe(env, existsFn) {
   const e = env === undefined ? process.env : env;
   const exists = existsFn === undefined ? existsSync : existsFn;
   const pathEnv = e.PATH || e.Path || "";
+  // Skip the <LocalAppData>\Microsoft\WindowsApps dir (KI-011): a pwsh.exe there
+  // is a Store App-Execution-Alias reparse point, not a real install, and spawning
+  // it via child_process (no shell) can fail (EACCES) -- the same alias hazard that
+  // broke bash resolution. UNLIKE resolveBashExe we do NOT skip System32: the
+  // genuine Windows PowerShell 5.1 (System32\WindowsPowerShell\v1.0\powershell.exe)
+  // is a valid fallback (aid.ps1 declares `#Requires -Version 5.1`). Dropping
+  // WindowsApps passes an MSI pwsh 7 (found elsewhere on PATH) through unchanged and
+  // a Store-only pwsh through to that 5.1 powershell.exe.
+  const isWindowsAppsDir = (dir) =>
+    !!dir && win32.normalize(dir).replace(/[\\/]+$/, "").toLowerCase().endsWith("\\microsoft\\windowsapps");
   for (const exeName of ["pwsh.exe", "pwsh"]) {
     for (const dir of pathEnv.split(";")) {
-      if (!dir) continue;
+      if (!dir || isWindowsAppsDir(dir)) continue;
       const candidate = win32.join(dir, exeName);
       if (exists(candidate)) return candidate;
     }
   }
   for (const exeName of ["powershell.exe", "powershell"]) {
     for (const dir of pathEnv.split(";")) {
-      if (!dir) continue;
+      if (!dir || isWindowsAppsDir(dir)) continue;
       const candidate = win32.join(dir, exeName);
       if (exists(candidate)) return candidate;
     }
