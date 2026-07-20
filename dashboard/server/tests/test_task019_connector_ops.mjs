@@ -168,28 +168,42 @@ function testValidateConnectorSetArgs() {
   assert(validateSet({ name: "a\x01b", type: "mcp" }) !== null, "name with control char rejected");
 
   assert(validateSet({ name: "n", type: "ftp" }) !== null, "invalid type rejected");
+  assert(
+    validateSet({ name: "n", type: "url", endpoint: "https://x", auth: "none" }) !== null,
+    "url type no longer valid (schema simplification dropped it)"
+  );
   assertEquals(
     validateSet({ name: "n", type: "api", endpoint: "https://x", auth: "token" }),
     null, "valid api type with required fields passes"
   );
   assertEquals(
     validateSet({ name: "n", type: "ssh", endpoint: "host:22" }),
-    null, "valid ssh type (auth omitted, writer forces ssh-key) passes"
+    null, "valid ssh type (auth omitted, writer forces auth none) passes"
+  );
+  assertEquals(
+    validateSet({ name: "n", type: "cli", endpoint: "cmd" }),
+    null, "valid cli type (auth omitted, writer forces auth none) passes"
   );
 
-  for (const ctype of ["api", "ssh", "url", "cli"]) {
+  for (const ctype of ["api", "ssh", "cli"]) {
     const args = { name: "n", type: ctype };
-    if (ctype !== "ssh") args.auth = "token";
+    if (ctype === "api") args.auth = "token";
     assert(validateSet(args) !== null, `endpoint required for type ${ctype}`);
   }
   assertEquals(validateSet({ name: "n", type: "mcp" }), null, "endpoint optional for mcp");
 
-  for (const ctype of ["api", "url", "cli"]) {
-    assert(
-      validateSet({ name: "n", type: ctype, endpoint: "https://x" }) !== null,
-      `auth required for type ${ctype}`
-    );
-  }
+  assert(
+    validateSet({ name: "n", type: "api", endpoint: "https://x" }) !== null,
+    "auth required for type api (the only credentialed type)"
+  );
+  assertEquals(
+    validateSet({ name: "n", type: "ssh", endpoint: "host" }),
+    null, "auth NOT required for type ssh"
+  );
+  assertEquals(
+    validateSet({ name: "n", type: "cli", endpoint: "cmd" }),
+    null, "auth NOT required for type cli"
+  );
   assert(
     validateSet({ name: "n", type: "api", endpoint: "https://x", auth: "bearer" }) !== null,
     "invalid auth enum rejected"
@@ -214,8 +228,11 @@ function testValidateConnectorSetArgs() {
     null, "env: form accepted"
   );
   assertEquals(
-    validateSet({ name: "n", type: "ssh", endpoint: "host", secret_ref: "file:.aid/connectors/.secrets/n" }),
-    null, "file: form accepted"
+    validateSet({
+      name: "n", type: "api", endpoint: "https://x", auth: "pat",
+      secret_ref: "file:.aid/connectors/.secrets/n",
+    }),
+    null, "file: form accepted (secret_ref now only for 'api')"
   );
   assert(
     validateSet({
@@ -229,10 +246,16 @@ function testValidateConnectorSetArgs() {
   );
   assert(
     validateSet({
-      name: "n", type: "url", endpoint: "https://x", auth: "none", secret_ref: "env:MY_TOKEN",
+      name: "n", type: "api", endpoint: "https://x", auth: "none", secret_ref: "env:MY_TOKEN",
     }) !== null,
     "secret_ref forbidden for auth none"
   );
+  for (const [ctype, endpoint] of [["ssh", "host"], ["cli", "cmd"]]) {
+    assert(
+      validateSet({ name: "n", type: ctype, endpoint, secret_ref: "env:MY_TOKEN" }) !== null,
+      `secret_ref forbidden for non-api type ${ctype}`
+    );
+  }
 }
 
 function testValidateConnectorRemoveArgs() {

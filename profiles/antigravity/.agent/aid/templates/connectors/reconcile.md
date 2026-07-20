@@ -128,8 +128,11 @@ Step S2 below):
 
 1. **Write `.aid/connectors/<stem>.md`** with the frontmatter fields from feature-001's Data
    Model plus a short human body, branching by the management mode (tool-managed `mcp` vs
-   aid-managed `api|ssh|url|cli` — resolved by the caller before this helper is invoked: ELICIT's
-   "Management-mode branch" for bulk mode, or the `<type>` argument for single-stem mode):
+   aid-managed `api|ssh|cli` — resolved by the caller before this helper is invoked: ELICIT's
+   "Management-mode branch" for bulk mode, or the `<type>` argument for single-stem mode). Within
+   aid-managed, `api` is the **only** type that ever carries a credential; `ssh`/`cli` are
+   self-authenticating (endpoint required, but no stored auth/secret — same as `mcp` on that
+   axis):
    - **Tool-managed (`mcp`):** `name`, `connection_type: mcp`, `endpoint` (informational),
      `auth_method: none`, **no `secret_reference` field**, `preset`, `objective`, `summary`,
      `tags`, `audience`. Body mirrors feature-001's worked `github.md` example: a `# <Name>`
@@ -137,17 +140,26 @@ Step S2 below):
      credential)` summary line, and one or two lines of human-readable purpose that instruct the
      agent to **request the connection from the host tool's own MCP/plugin** — AID stores no
      credential for it.
-   - **Aid-managed (`api | ssh | url | cli`):** `name`, `connection_type`, `endpoint`,
-     `auth_method`, `secret_reference` (when `auth_method != none`), `preset`, `objective`,
-     `summary`, `tags`, `audience`. Body mirrors feature-001's worked `m365.md` example: a
-     `# <Name>` heading, a `> Connection: <type> · Mode: aid-managed · Auth: <auth_method>
-     (reference: <secret_reference>)` summary line, and one or two lines of human-readable
-     purpose. The descriptor carries **only** the `secret_reference` — never a value.
-2. **Secret capture is aid-managed-only (Q10).** For a **tool-managed (`mcp`)** connector, **no
-   secret is captured** — no prompt is presented and feature-003's `connector-secret` twin is
-   **never invoked** (there is no `secret_reference` to fill). For an **aid-managed
-   (`api|ssh|url|cli`)** connector on ADD, or on UPDATE when `auth_method`/`secret_reference`
-   changed this cycle, **hand the secret VALUE to feature-003's twin — never capture it here.**
+   - **Aid-managed, credentialed (`api`):** `name`, `connection_type: api`, `endpoint` (required,
+     concrete), `auth_method` (required — `none|token|pat|oauth`), `secret_reference` (when
+     `auth_method != none`), `preset`, `objective`, `summary`, `tags`, `audience`. Body mirrors
+     feature-001's worked `m365.md` example: a `# <Name>` heading, a `> Connection: api · Mode:
+     aid-managed · Auth: <auth_method> (reference: <secret_reference>)` summary line, and one or
+     two lines of human-readable purpose. The descriptor carries **only** the `secret_reference`
+     — never a value.
+   - **Aid-managed, self-authenticating (`ssh | cli`):** `name`, `connection_type`, `endpoint`
+     (required, concrete — e.g. `user@host` for `ssh`, the command name for `cli`),
+     `auth_method: none`, **no `secret_reference` field**, `preset`, `objective`, `summary`,
+     `tags`, `audience`. Body: a `# <Name>` heading, a `> Connection: <type> · Mode: aid-managed ·
+     Auth: none` summary line, and one or two lines of human-readable purpose noting that the
+     connection authenticates externally (ssh keys/ssh-agent, or the CLI's own login/config) — AID
+     stores no credential for it.
+2. **Secret capture is `api`-only (Q10).** For a **tool-managed (`mcp`)** connector or an
+   **aid-managed, self-authenticating (`ssh`/`cli`)** connector, **no secret is captured** — no
+   prompt is presented and feature-003's `connector-secret` twin is **never invoked** (neither
+   carries a `secret_reference` to fill). For an **aid-managed, credentialed (`api`)** connector
+   with `auth_method != none`, on ADD, or on UPDATE when `auth_method`/`secret_reference` changed
+   this cycle, **hand the secret VALUE to feature-003's twin — never capture it here.**
    When `secret_reference` uses the `file:` form (the default), invoke:
    ```bash
    bash .agent/aid/scripts/connectors/connector-secret.sh write <stem> --root .aid/connectors

@@ -19,11 +19,13 @@ A synthetic `.aid/` tree exercising every reader path in one snapshot:
 A directory with **no** `.aid/` — the empty-repo case.
 
 ## `pt023-connectors/`
-Five committed `.aid/connectors/*.md` descriptors (task-023, feature-007-connectors-list),
-one per connector type — `github.md` (mcp), `jira.md` (api, credentialed), `build-host.md`
-(ssh, credentialed), `public-docs.md` (url, auth none), `ci-runner.md` (cli, credentialed).
-Confirmed byte-identical to `write-connector.sh`'s own real output during task-023's
-authoring; used as a shared golden fixture set by both
+Five committed `.aid/connectors/*.md` descriptors (task-023, feature-007-connectors-list)
+-- `github.md` (mcp), `jira.md` (api, credentialed), `build-host.md` (ssh, endpoint-only /
+auth none), `public-docs.md` (api, auth none), `ci-runner.md` (cli, endpoint-only / auth
+none). `url` and `ssh-key` were dropped by the feature-007 schema simplification -- `api` is
+now the only credentialed connector type; ssh/cli are endpoint-only (auth forced none).
+Confirmed byte-identical to `write-connector.sh`'s own real output; used as a shared golden
+fixture set by both
 `dashboard/reader/tests/test_task023_list_management_parity.py` (parser cross-twin parity)
 and `dashboard/server/tests/test_task023_list_management_round_trips.py` (real-writer
 round-trip / DM-1 serializer assertions).

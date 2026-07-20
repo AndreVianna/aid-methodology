@@ -1565,10 +1565,13 @@ def _validate_settings_set_args(args: dict) -> "str | None":
 # 0/4/5/3 alphabet); no per-op status_map override.
 # ---------------------------------------------------------------------------
 
-_CONNECTOR_TYPES = frozenset({"mcp", "api", "ssh", "url", "cli"})
-_CONNECTOR_AUTH_METHODS = frozenset({"none", "token", "pat", "oauth", "ssh-key"})
-_CONNECTOR_ENDPOINT_REQUIRED_TYPES = frozenset({"api", "ssh", "url", "cli"})
-_CONNECTOR_AUTH_REQUIRED_TYPES = frozenset({"api", "url", "cli"})
+# Connector schema (simplified): `url` dropped (no preset, redundant with `api`);
+# `ssh-key` auth dropped. Only `api` records a credential; `ssh`/`cli` are
+# endpoint-only (they self-authenticate via keys/ssh-agent or the CLI's own login).
+_CONNECTOR_TYPES = frozenset({"mcp", "api", "ssh", "cli"})
+_CONNECTOR_AUTH_METHODS = frozenset({"none", "token", "pat", "oauth"})
+_CONNECTOR_ENDPOINT_REQUIRED_TYPES = frozenset({"api", "ssh", "cli"})
+_CONNECTOR_AUTH_REQUIRED_TYPES = frozenset({"api"})
 
 _MAX_CONNECTOR_NAME_LEN = 80
 _MAX_CONNECTOR_ENDPOINT_LEN = 200
@@ -1641,8 +1644,10 @@ def _validate_connector_set_args(args: dict) -> "str | None":
 
     secret_ref = args.get("secret_ref")
     if secret_ref:
-        if ctype == "mcp" or auth == "none":
-            return "'secret_ref' is forbidden for type 'mcp' or auth 'none'"
+        # Only an 'api' connector with a real (non-'none') auth records a secret;
+        # mcp/ssh/cli carry none (they self-authenticate or are tool-managed).
+        if ctype != "api" or not auth or auth == "none":
+            return "'secret_ref' is allowed only for an 'api' connector with a non-'none' auth method"
         if len(secret_ref) > _MAX_CONNECTOR_SECRET_REF_LEN:
             return f"'secret_ref' exceeds max length ({_MAX_CONNECTOR_SECRET_REF_LEN} chars)"
         if not _RE_CONNECTOR_SECRET_REF.match(secret_ref):

@@ -143,8 +143,7 @@ class TestValidateConnectorSetArgsType(unittest.TestCase):
             {"name": "n", "type": "mcp"},
             {"name": "n", "type": "api", "endpoint": "https://x", "auth": "token"},
             {"name": "n", "type": "ssh", "endpoint": "host:22"},
-            {"name": "n", "type": "url", "endpoint": "https://x", "auth": "none"},
-            {"name": "n", "type": "cli", "endpoint": "cmd", "auth": "pat"},
+            {"name": "n", "type": "cli", "endpoint": "cmd"},
         ]
         for args in cases:
             with self.subTest(args=args):
@@ -155,13 +154,23 @@ class TestValidateConnectorSetArgsType(unittest.TestCase):
         self.assertIsNotNone(err)
         self.assertIn("type", err)
 
+    def test_url_type_no_longer_valid(self):
+        """feature-007 schema simplification: `url` was dropped (no preset,
+        redundant with `api`) -- it must now be rejected the same as any other
+        unknown type."""
+        err = srv._validate_connector_set_args(
+            {"name": "n", "type": "url", "endpoint": "https://x", "auth": "none"}
+        )
+        self.assertIsNotNone(err)
+        self.assertIn("type", err)
+
 
 class TestValidateConnectorSetArgsEndpointAuth(unittest.TestCase):
     def test_endpoint_required_for_aid_managed_types(self):
-        for ctype in ("api", "ssh", "url", "cli"):
+        for ctype in ("api", "ssh", "cli"):
             with self.subTest(ctype=ctype):
                 args = {"name": "n", "type": ctype}
-                if ctype in ("api", "url", "cli"):
+                if ctype == "api":
                     args["auth"] = "token"
                 err = srv._validate_connector_set_args(args)
                 self.assertIsNotNone(err, f"endpoint should be required for {ctype}")
@@ -172,17 +181,18 @@ class TestValidateConnectorSetArgsEndpointAuth(unittest.TestCase):
             srv._validate_connector_set_args({"name": "n", "type": "mcp", "endpoint": "info"})
         )
 
-    def test_auth_required_for_api_url_cli(self):
-        for ctype in ("api", "url", "cli"):
-            with self.subTest(ctype=ctype):
-                err = srv._validate_connector_set_args(
-                    {"name": "n", "type": ctype, "endpoint": "https://x"}
-                )
-                self.assertIsNotNone(err)
+    def test_auth_required_for_api_only(self):
+        """feature-007 schema simplification: `api` is now the ONLY type that
+        requires --auth (ssh/cli self-authenticate; `url` was dropped)."""
+        err = srv._validate_connector_set_args({"name": "n", "type": "api", "endpoint": "https://x"})
+        self.assertIsNotNone(err)
 
-    def test_auth_optional_for_ssh_and_mcp(self):
+    def test_auth_optional_for_ssh_cli_and_mcp(self):
         self.assertIsNone(
             srv._validate_connector_set_args({"name": "n", "type": "ssh", "endpoint": "host"})
+        )
+        self.assertIsNone(
+            srv._validate_connector_set_args({"name": "n", "type": "cli", "endpoint": "cmd"})
         )
         self.assertIsNone(srv._validate_connector_set_args({"name": "n", "type": "mcp"}))
 
@@ -222,9 +232,12 @@ class TestValidateConnectorSetArgsSecretRef(unittest.TestCase):
         )
 
     def test_file_form_accepted(self):
+        """secret_ref is now allowed ONLY for 'api' connectors -- ssh/cli
+        self-authenticate and never carry one (feature-007 schema
+        simplification)."""
         self.assertIsNone(
             srv._validate_connector_set_args({
-                "name": "n", "type": "ssh", "endpoint": "host",
+                "name": "n", "type": "api", "endpoint": "https://x", "auth": "token",
                 "secret_ref": "file:.aid/connectors/.secrets/n",
             })
         )
@@ -232,7 +245,7 @@ class TestValidateConnectorSetArgsSecretRef(unittest.TestCase):
     def test_keychain_form_accepted(self):
         self.assertIsNone(
             srv._validate_connector_set_args({
-                "name": "n", "type": "cli", "endpoint": "cmd", "auth": "pat",
+                "name": "n", "type": "api", "endpoint": "https://x", "auth": "pat",
                 "secret_ref": "keychain:my-key",
             })
         )
@@ -259,10 +272,22 @@ class TestValidateConnectorSetArgsSecretRef(unittest.TestCase):
 
     def test_secret_ref_forbidden_for_auth_none(self):
         err = srv._validate_connector_set_args({
-            "name": "n", "type": "url", "endpoint": "https://x", "auth": "none",
+            "name": "n", "type": "api", "endpoint": "https://x", "auth": "none",
             "secret_ref": "env:MY_TOKEN",
         })
         self.assertIsNotNone(err)
+
+    def test_secret_ref_forbidden_for_non_api_types(self):
+        """feature-007 schema simplification: secret_ref is allowed ONLY for
+        an 'api' connector -- ssh/cli are always rejected regardless of any
+        auth-like value passed alongside (mcp already covered above)."""
+        for ctype, endpoint in (("ssh", "host"), ("cli", "cmd")):
+            with self.subTest(ctype=ctype):
+                err = srv._validate_connector_set_args({
+                    "name": "n", "type": ctype, "endpoint": endpoint,
+                    "secret_ref": "env:MY_TOKEN",
+                })
+                self.assertIsNotNone(err)
 
     def test_secret_ref_over_length_rejected(self):
         err = srv._validate_connector_set_args({

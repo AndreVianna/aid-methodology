@@ -4,13 +4,13 @@ description: >
   On-demand, off-pipeline upsert into the connector catalog. `aid-set-connector <tool> <type>`
   creates `.aid/connectors/<stem>.md` when the stem is absent, or updates that SAME descriptor in
   place when present (including an in-place connection_type transition) -- never invokes
-  /aid-discover. Branches on <type> (mcp|api|ssh|url|cli) to ask the matching config
+  /aid-discover. Branches on <type> (mcp|api|ssh|cli) to ask the matching config
   question-set, prefilled from .codex/aid/templates/connectors/preset-catalog.md when <tool>
   matches a preset; the user confirms or edits. Reconciles the secret (connector-secret
   write/purge) per set-skill logic and runs reconcile.md's single-stem mode, so every OTHER
   catalogued connector is left byte-for-byte untouched.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit, AskUserQuestion
-argument-hint: "<tool> <type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|url|cli)"
+argument-hint: "<tool> <type> [--rotate-secret]  -- e.g. aid-set-connector Jira mcp   (type: mcp|api|ssh|cli)"
 ---
 
 # Set Connector
@@ -43,14 +43,14 @@ never a remove-then-add pair.
 
 1. Fewer than 2 positional arguments → print and exit non-zero:
    ```
-   Usage: aid-set-connector <tool> <type>   (type: mcp | api | ssh | url | cli)
+   Usage: aid-set-connector <tool> <type>   (type: mcp | api | ssh | cli)
    Example: aid-set-connector Jira mcp
    ```
-2. `<type>` MUST be one of the closed enum `mcp | api | ssh | url | cli` (feature-001 Data Model,
+2. `<type>` MUST be one of the closed enum `mcp | api | ssh | cli` (feature-001 Data Model,
    `.aid/work-002-external_sources/features/feature-001-integration-store-placement/SPEC.md`
    "Data Model"). An unrecognized value is **refused, not coerced** — e.g. `db` is not a value:
    ```
-   Unknown type: <type>   (expected one of: mcp, api, ssh, url, cli)
+   Unknown type: <type>   (expected one of: mcp, api, ssh, cli)
    ```
    exit non-zero.
 3. Any flag other than `--rotate-secret` is unknown:
@@ -98,15 +98,16 @@ resolved `<type>`, prefilled per Step 1 (ADD) or from the on-disk descriptor whe
 unchanged from what's on disk (UPDATE, same type). Ask via `AskUserQuestion` — **do not use the
 `preview` field** (it switches the UI to a layout that suppresses the auto-injected `Other`
 free-text option); use `description` only, so a suggestion plus free-form `Other` are both always
-available. Resolve: `name`, `endpoint` (when the type asks for one), `auth_method` (forced for
-`mcp`/`ssh`, chosen for `api`/`url`/`cli`), and — only for a credentialed aid-managed result — the
-`secret_reference` FORM (default `file:.aid/connectors/.secrets/$STEM`).
+available. Resolve: `name`, `endpoint` (required for `api`/`ssh`/`cli`; optional and
+informational-only for `mcp`), `auth_method` (forced `none` for `mcp`/`ssh`/`cli` — `api` is the
+only type that is ever asked and may resolve to `token`/`pat`/`oauth`), and — only for `api` with a
+non-`none` result — the `secret_reference` FORM (default `file:.aid/connectors/.secrets/$STEM`).
 
 `tags` / `audience` are **never prompted** — auto-derived exactly as ELICIT does: the preset row's
 `tags` column when present, else `[connector, <type>]`; `audience` always `[developer, architect]`.
 
-Hold the resolved `auth_method` in `$NEW_AUTH` (forced for `mcp`/`ssh`, chosen for `api`/`url`/`cli`)
-— Step 5b's decision procedure compares `$TYPE`/`$NEW_AUTH` (this run's result) against
+Hold the resolved `auth_method` in `$NEW_AUTH` (forced `none` for `mcp`/`ssh`/`cli`, chosen for
+`api` only) — Step 5b's decision procedure compares `$TYPE`/`$NEW_AUTH` (this run's result) against
 `$OLD_TYPE`/`$OLD_AUTH` (Step 3, on-disk).
 
 ---

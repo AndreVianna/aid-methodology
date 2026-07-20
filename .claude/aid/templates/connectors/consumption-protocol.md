@@ -13,8 +13,9 @@
 > mcp`) connectors only**. A seam requests the connection from the **host tool's own MCP/plugin** —
 > AID resolves nothing and stores no credential for it (matches the root `## Connectors` context-file
 > section and `preset-catalog.md`'s Q10 management-mode split). **aid-managed consumption**
-> (`api`/`ssh`/`url`/`cli` — resolving `secret_reference` and making a live call) is explicitly
-> **out of scope** here; the descriptor still exists for discovery/audit (an agent may read it,
+> (`api`/`ssh`/`cli` — resolving `secret_reference` when the type carries one (`api` only) and
+> making a live call) is explicitly **out of scope** here; the descriptor still exists for
+> discovery/audit (an agent may read it,
 > cite it, or point a human at it), but no seam in this protocol resolves its secret or calls out to
 > it. A `connector-secret resolve` primitive + the security pass that would need to accompany
 > aid-managed consumption is a follow-up (`SPEC.md § Out of Scope / Deferred`).
@@ -36,7 +37,7 @@ a seam blocks on.
    `issue-tracker` — is the same purpose-matching signal ELICIT already uses).
 2. **Confirm via the descriptor.** Open the matched `.aid/connectors/<stem>.md` and confirm
    `connection_type: mcp`. No match, or a match whose `connection_type` is anything else
-   (`api`/`ssh`/`url`/`cli`) → this protocol does not apply; the seam proceeds without connector
+   (`api`/`ssh`/`cli`) → this protocol does not apply; the seam proceeds without connector
    interaction (aid-managed consumption is out of scope here, per the header note above).
 3. **Request the connection from the host tool.** Never from AID's own descriptor fields — the
    descriptor's `endpoint` (if present) is **informational only** (`preset-catalog.md`'s Q10

@@ -148,9 +148,10 @@ class TestStructuralPlacement(unittest.TestCase):
 class TestConnectorFormTypeDependentFields(unittest.TestCase):
     """The Add-connector form shows ONLY the fields that apply to the selected
     type (mirrors the server's connector.set validation): endpoint for
-    api/ssh/url/cli; auth for every non-mcp type; secret ONLY when type != mcp
-    AND auth != 'none'. Changing type/auth rebuilds the row + drops now-hidden
-    values."""
+    api/ssh/cli; auth for api only (ssh/cli self-authenticate; `url` was
+    dropped by the feature-007 schema simplification); secret ONLY when
+    type == api AND auth != 'none'. Changing type/auth rebuilds the row +
+    drops now-hidden values."""
 
     @classmethod
     def setUpClass(cls):
@@ -164,16 +165,19 @@ class TestConnectorFormTypeDependentFields(unittest.TestCase):
         self.assertIn("var showEndpoint = CONNECTOR_ENDPOINT_REQUIRED_TYPES.indexOf(f.type) !== -1", self.form)
         self.assertIn("if (showEndpoint)", self.form)
 
-    def test_auth_gated_on_non_mcp_type(self):
-        self.assertIn("var showAuth = f.type !== 'mcp'", self.form)
+    def test_auth_gated_on_api_only(self):
+        # auth applies to `api` only now (ssh/cli self-authenticate; mcp tool-managed)
+        self.assertIn("var showAuth = CONNECTOR_AUTH_REQUIRED_TYPES.indexOf(f.type) !== -1", self.form)
         self.assertIn("if (showAuth)", self.form)
 
-    def test_secret_gated_on_non_mcp_and_auth_not_none(self):
+    def test_secret_gated_on_api_and_auth_not_none(self):
         self.assertIn("var showSecret = showAuth && !!f.auth && f.auth !== 'none'", self.form)
         self.assertIn("if (showSecret)", self.form)
 
     def test_type_change_clears_hidden_fields_and_rebuilds(self):
-        self.assertIn("if (f.type === 'mcp') { f.endpoint = ''; f.auth = 'none'; f.secret_ref = ''; }", self.form)
+        # mcp drops the (uncollected) endpoint; any non-api type drops auth+secret.
+        self.assertIn("if (f.type === 'mcp') { f.endpoint = ''; }", self.form)
+        self.assertIn("if (f.type !== 'api') { f.auth = 'none'; f.secret_ref = ''; }", self.form)
         self.assertIn("_rebuildConnectorAddForm()", self.form)
 
     def test_auth_change_clears_secret_when_none(self):
@@ -445,18 +449,21 @@ class TestConnectorOps(unittest.TestCase):
     def test_op1_connector_type_and_auth_enums_match_server(self):
         server_py = (_REPO_ROOT / "dashboard" / "server" / "server.py").read_text(encoding="utf-8")
         self.assertIn(
-            '_CONNECTOR_TYPES = frozenset({"mcp", "api", "ssh", "url", "cli"})', server_py
+            '_CONNECTOR_TYPES = frozenset({"mcp", "api", "ssh", "cli"})', server_py
         )
         self.assertIn(
-            "var CONNECTOR_TYPES = ['mcp', 'api', 'ssh', 'url', 'cli'];", self.src
+            "var CONNECTOR_TYPES = ['mcp', 'api', 'ssh', 'cli'];", self.src
         )
         self.assertIn(
-            '_CONNECTOR_AUTH_METHODS = frozenset({"none", "token", "pat", "oauth", "ssh-key"})',
+            '_CONNECTOR_AUTH_METHODS = frozenset({"none", "token", "pat", "oauth"})',
             server_py,
         )
         self.assertIn(
-            "var CONNECTOR_AUTH_METHODS = ['none', 'token', 'pat', 'oauth', 'ssh-key'];", self.src
+            "var CONNECTOR_AUTH_METHODS = ['none', 'token', 'pat', 'oauth'];", self.src
         )
+        # `url` type and `ssh-key` auth are gone everywhere.
+        self.assertNotIn('"url"', server_py.split("_CONNECTOR_TYPES")[1].split("\n")[0])
+        self.assertNotIn("'ssh-key'", self.src.split("CONNECTOR_AUTH_METHODS")[1].split("\n")[0])
 
 
 class TestExternalSourceOps(unittest.TestCase):

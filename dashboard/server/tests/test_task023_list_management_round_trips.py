@@ -18,8 +18,9 @@ matching a committed golden) have no round-trip assertion at all yet.
 
 Sections:
   (A) Real-writer round-trips: gaps in tasks 019/021's own real-writer coverage
-      -- per-type (ssh/url/cli) descriptor content via _dispatch_op, connector.
-      remove purging a REAL on-disk secret file (not just the descriptor),
+      -- per-type (ssh/cli, both endpoint-only/auth-forced-none under the
+      feature-007 schema simplification) descriptor content via _dispatch_op,
+      connector.remove purging a REAL on-disk secret file (not just the descriptor),
       INDEX.md byte-identical across two dispatch-level runs (AC2 idempotence,
       exercised through _dispatch_op rather than a raw script invocation), a
       "no secret VALUE anywhere under root" sweep, external-source.add mirroring
@@ -59,9 +60,11 @@ management_parity.py for this task's OWN (non-duplicative, fixture-FILE-based,
 five-connector-type / three-external-sources-state) parser-parity leg.
 
 Fixtures: dashboard/server/tests/fixtures/pt023-connectors/ (five connector
-types incl. credentialed ssh/api/cli + mcp + auth-none url -- confirmed
-byte-identical to write-connector.sh's own real output during this task's
-authoring) and dashboard/server/tests/fixtures/pt023-external-sources/
+descriptors incl. a credentialed api + endpoint-only auth-none ssh/cli + mcp +
+a second auth-none api -- feature-007 schema simplification dropped `url` and
+`ssh-key`; api is now the only credentialed type -- confirmed byte-identical
+to write-connector.sh's own real output during this task's authoring) and
+dashboard/server/tests/fixtures/pt023-external-sources/
 (placeholder-only / single-entry / multi-entry-with-hand-authored-content
 states) -- shared with dashboard/reader/tests/test_task023_list_management_
 parity.py (the established "permanent test data" location per fixtures/README.md;
@@ -179,16 +182,17 @@ def _seed_external_sources_from_fixture(root: Path, fixture_name: str) -> Path:
 @unittest.skipUnless(_BASH_EXE_RESOLVED, "bash not available/resolvable")
 class TestConnectorPerTypeRealRoundTrips(unittest.TestCase):
     """task-019's own TestConnectorOpsRealWriterRoundTrips only dispatches mcp
-    and api through the REAL writer end to end -- ssh/url/cli's per-type
-    normalize (feature-007 AC1: 'ssh -> ssh-key'; 'api/url/cli require endpoint
-    +auth') is proven only at the PURE VALIDATION layer there (args pass
+    and api through the REAL writer end to end -- ssh/cli's per-type normalize
+    (feature-007 AC1, schema simplification: 'ssh/cli -> endpoint required,
+    auth_method forced none, no secret_reference -- only api ever carries a
+    credential') is proven only at the PURE VALIDATION layer there (args pass
     _validate_connector_set_args), never round-tripped to an actual descriptor
-    on disk via _dispatch_op. Closes that gap for all three remaining types,
-    each assertion additionally diffed against this task's own committed
+    on disk via _dispatch_op. Closes that gap for both remaining aid-managed
+    types, each assertion additionally diffed against this task's own committed
     golden fixture (confirmed byte-identical to the real writer's output
     during this task's authoring -- see module docstring)."""
 
-    def test_ssh_forces_auth_ssh_key_and_default_secret_ref(self):
+    def test_ssh_endpoint_only_forces_auth_none_and_no_secret_ref(self):
         with _TmpRepo() as root:
             status, body = srv._dispatch_op(
                 srv.OP_TABLE,
@@ -202,30 +206,37 @@ class TestConnectorPerTypeRealRoundTrips(unittest.TestCase):
             descriptor = root / ".aid" / "connectors" / "build-host.md"
             text = descriptor.read_text(encoding="utf-8")
             self.assertIn("connection_type: ssh", text)
-            self.assertIn("auth_method: ssh-key", text)
-            self.assertIn('secret_reference: "file:.aid/connectors/.secrets/build-host"', text)
+            self.assertIn("auth_method: none", text)
+            self.assertNotIn("secret_reference:", text)
             golden = (_FIXTURES_CONNECTORS / "build-host.md").read_text(encoding="utf-8")
             self.assertEqual(text, golden, "real-writer output diverged from the committed golden fixture")
 
-    def test_url_auth_none_carries_no_secret_reference(self):
+    def test_api_auth_none_carries_no_secret_reference(self):
+        """feature-007 schema simplification: `url` was dropped (no preset,
+        redundant with `api`) -- an endpoint-only `api` connector with
+        auth: none is the still-valid replacement shape, and carries no
+        secret_reference (only a non-'none' auth ever does)."""
         with _TmpRepo() as root:
             status, body = srv._dispatch_op(
                 srv.OP_TABLE,
                 {"op": "connector.set", "target": {},
-                 "args": {"name": "Public Docs", "type": "url",
+                 "args": {"name": "Public Docs", "type": "api",
                           "endpoint": "https://docs.example.com/api", "auth": "none"}},
                 str(root),
             )
             self.assertEqual(status, 200)
             descriptor = root / ".aid" / "connectors" / "public-docs.md"
             text = descriptor.read_text(encoding="utf-8")
-            self.assertIn("connection_type: url", text)
+            self.assertIn("connection_type: api", text)
             self.assertIn("auth_method: none", text)
             self.assertNotIn("secret_reference:", text)
             golden = (_FIXTURES_CONNECTORS / "public-docs.md").read_text(encoding="utf-8")
             self.assertEqual(text, golden)
 
-    def test_cli_credentialed_gets_default_secret_ref(self):
+    def test_cli_endpoint_only_forces_auth_none_and_drops_any_passed_auth(self):
+        """A client-supplied --auth is silently dropped for cli (auth_method
+        is always forced 'none', mirroring ssh/mcp -- api is the only type
+        AID ever records a credential for)."""
         with _TmpRepo() as root:
             status, body = srv._dispatch_op(
                 srv.OP_TABLE,
@@ -238,8 +249,8 @@ class TestConnectorPerTypeRealRoundTrips(unittest.TestCase):
             descriptor = root / ".aid" / "connectors" / "ci-runner.md"
             text = descriptor.read_text(encoding="utf-8")
             self.assertIn("connection_type: cli", text)
-            self.assertIn("auth_method: pat", text)
-            self.assertIn('secret_reference: "file:.aid/connectors/.secrets/ci-runner"', text)
+            self.assertIn("auth_method: none", text)
+            self.assertNotIn("secret_reference:", text)
             golden = (_FIXTURES_CONNECTORS / "ci-runner.md").read_text(encoding="utf-8")
             self.assertEqual(text, golden)
 
@@ -295,17 +306,21 @@ class TestConnectorSetNeverWritesSecretValue(unittest.TestCase):
     literal marker string a real secret VALUE would use."""
 
     def test_no_file_under_root_ever_carries_a_secret_value_marker(self):
+        """secret_ref is now allowed ONLY for an 'api' connector with a
+        non-'none' auth method (feature-007 schema simplification) -- ssh/cli
+        are endpoint-only (auth forced none, no secret_ref accepted), so only
+        the 'Jira' (api) case below carries one."""
         marker = "MARKER-THIS-WOULD-BE-A-SECRET-VALUE"
         with _TmpRepo() as root:
             for name, ctype, kwargs in (
-                ("Jira", "api", {"endpoint": "https://x", "auth": "token"}),
+                ("Jira", "api", {"endpoint": "https://x", "auth": "token", "secret_ref": "env:JIRA"}),
                 ("Build Host", "ssh", {"endpoint": "host:22"}),
-                ("CI Runner", "cli", {"endpoint": "cmd", "auth": "pat"}),
+                ("CI Runner", "cli", {"endpoint": "cmd"}),
             ):
                 status, _ = srv._dispatch_op(
                     srv.OP_TABLE,
                     {"op": "connector.set", "target": {},
-                     "args": {"name": name, "type": ctype, "secret_ref": f"env:{name.replace(' ', '_').upper()}", **kwargs}},
+                     "args": {"name": name, "type": ctype, **kwargs}},
                     str(root),
                 )
                 self.assertEqual(status, 200)
@@ -381,7 +396,7 @@ class TestConnectorSetTouchesOnlyItsOwnDescriptor(unittest.TestCase):
             status, _ = srv._dispatch_op(
                 srv.OP_TABLE,
                 {"op": "connector.set", "target": {},
-                 "args": {"name": "Public Docs", "type": "url", "endpoint": "https://docs.example.com/api", "auth": "none"}},
+                 "args": {"name": "Public Docs", "type": "api", "endpoint": "https://docs.example.com/api", "auth": "none"}},
                 str(root),
             )
             self.assertEqual(status, 200)

@@ -2192,11 +2192,8 @@ footer {
       card.href = './kb.html';  // location-relative (LC-A3): resolves to /r/<id>/kb.html
     }
 
-    // Kicker
-    var kicker = document.createElement('div');
-    kicker.className = 'kicker';
-    kicker.textContent = 'KNOWLEDGE BASE';
-    card.appendChild(kicker);
+    // (No in-card "KNOWLEDGE BASE" kicker: the section's own <h2>Knowledge Base</h2>
+    // header already titles this panel -- the kicker duplicated it.)
 
     // Badge + label per state (UI-A)
     var badge = document.createElement('span');
@@ -2206,10 +2203,7 @@ footer {
     if (status === 'pending') {
       badge.className = 'badge badge-dim';
       badge.textContent = '⊘ No KB';  // ⊘
-      var h3 = document.createElement('h3');
-      h3.textContent = 'No Knowledge Base yet';
       card.appendChild(badge);
-      card.appendChild(h3);
       var meta = document.createElement('p');
       meta.className = 'meta';
       meta.textContent = 'run /aid-discover to build the Knowledge Base';
@@ -2218,10 +2212,7 @@ footer {
     } else if (status === 'generating') {
       badge.className = 'badge badge-info';
       badge.textContent = '◴ Building';  // ◴
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Building';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -2240,10 +2231,7 @@ footer {
     } else if (status === 'preparing') {
       badge.className = 'badge badge-info';
       badge.textContent = '◴ Preparing';  // ◴
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Preparing';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -2262,10 +2250,7 @@ footer {
     } else if (status === 'approved') {
       badge.className = 'badge badge-ok';
       badge.textContent = '✓ Ready';  // ✓
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Ready';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -2288,10 +2273,7 @@ footer {
       // status === 'outdated'
       badge.className = 'badge badge-warn';
       badge.textContent = '⚠ Outdated';  // ⚠
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Outdated';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -2367,10 +2349,13 @@ footer {
   // the truthful _refetchModelForHeader() re-fetch/re-render round-trip.
   // ---------------------------------------------------------------------------
 
-  var CONNECTOR_TYPES = ['mcp', 'api', 'ssh', 'url', 'cli'];
-  var CONNECTOR_AUTH_METHODS = ['none', 'token', 'pat', 'oauth', 'ssh-key'];
-  var CONNECTOR_ENDPOINT_REQUIRED_TYPES = ['api', 'ssh', 'url', 'cli'];
-  var CONNECTOR_AUTH_REQUIRED_TYPES = ['api', 'url', 'cli'];
+  // Connector schema (simplified): `url` dropped (no preset, redundant with `api`);
+  // `ssh-key` auth dropped. Only `api` records a credential; `ssh`/`cli` are
+  // endpoint-only (they self-authenticate via keys/ssh-agent or the CLI's own login).
+  var CONNECTOR_TYPES = ['mcp', 'api', 'ssh', 'cli'];
+  var CONNECTOR_AUTH_METHODS = ['none', 'token', 'pat', 'oauth'];
+  var CONNECTOR_ENDPOINT_REQUIRED_TYPES = ['api', 'ssh', 'cli'];
+  var CONNECTOR_AUTH_REQUIRED_TYPES = ['api'];
 
   // connectorsUiState: transient UI-only Add-form state (never sent to/read from
   // the server). `fields` mirrors the Add form's live input values so a container
@@ -2551,15 +2536,17 @@ footer {
 
     // Only the fields that APPLY to the selected type are shown (mirrors the
     // server's connector.set validation, _validate_connector_set_args):
-    //   - endpoint: api/ssh/url/cli (not mcp)  [CONNECTOR_ENDPOINT_REQUIRED_TYPES]
-    //   - auth:     every non-mcp type (required for api/url/cli; optional for ssh)
-    //   - secret:   ONLY when type != mcp AND auth != 'none' (the server FORBIDS a
-    //               secret_ref for type mcp or auth none)
+    //   - endpoint: api/ssh/cli (not mcp)  [CONNECTOR_ENDPOINT_REQUIRED_TYPES]
+    //   - auth:     api ONLY               [CONNECTOR_AUTH_REQUIRED_TYPES]
+    //               (ssh/cli self-authenticate externally; mcp is tool-managed)
+    //   - secret:   ONLY api with auth != 'none' (the server allows a secret_ref
+    //               only for an api connector with a real auth method)
     // Changing type/auth rebuilds the row (via _rebuildConnectorAddForm) so
     // now-irrelevant fields disappear AND their stored values are dropped, so a
-    // hidden field is never submitted. Default type 'mcp' => just Name + Type.
+    // hidden field is never submitted. Default type 'mcp' => just Name + Type;
+    // ssh/cli => Name + Type + Endpoint.
     var showEndpoint = CONNECTOR_ENDPOINT_REQUIRED_TYPES.indexOf(f.type) !== -1;
-    var showAuth = f.type !== 'mcp';
+    var showAuth = CONNECTOR_AUTH_REQUIRED_TYPES.indexOf(f.type) !== -1;
     var showSecret = showAuth && !!f.auth && f.auth !== 'none';
 
     // Name (always required).
@@ -2587,7 +2574,8 @@ footer {
     typeSelect.disabled = connectorsUiState.saving;
     typeSelect.addEventListener('change', function () {
       f.type = typeSelect.value;
-      if (f.type === 'mcp') { f.endpoint = ''; f.auth = 'none'; f.secret_ref = ''; }
+      if (f.type === 'mcp') { f.endpoint = ''; }        // mcp: endpoint not collected (informational)
+      if (f.type !== 'api') { f.auth = 'none'; f.secret_ref = ''; }  // only api carries auth/secret
       _rebuildConnectorAddForm();
     });
     wrap.appendChild(typeSelect);

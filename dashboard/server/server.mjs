@@ -1314,10 +1314,13 @@ function validateSettingsSetArgs(args) {
 // 0/4/5/3 alphabet); no per-op statusMap override.
 // ---------------------------------------------------------------------------
 
-const CONNECTOR_TYPES = new Set(["mcp", "api", "ssh", "url", "cli"]);
-const CONNECTOR_AUTH_METHODS = new Set(["none", "token", "pat", "oauth", "ssh-key"]);
-const CONNECTOR_ENDPOINT_REQUIRED_TYPES = new Set(["api", "ssh", "url", "cli"]);
-const CONNECTOR_AUTH_REQUIRED_TYPES = new Set(["api", "url", "cli"]);
+// Connector schema (simplified): `url` dropped (no preset, redundant with `api`);
+// `ssh-key` auth dropped. Only `api` records a credential; `ssh`/`cli` are
+// endpoint-only (they self-authenticate via keys/ssh-agent or the CLI's own login).
+const CONNECTOR_TYPES = new Set(["mcp", "api", "ssh", "cli"]);
+const CONNECTOR_AUTH_METHODS = new Set(["none", "token", "pat", "oauth"]);
+const CONNECTOR_ENDPOINT_REQUIRED_TYPES = new Set(["api", "ssh", "cli"]);
+const CONNECTOR_AUTH_REQUIRED_TYPES = new Set(["api"]);
 
 const MAX_CONNECTOR_NAME_LEN = 80;
 const MAX_CONNECTOR_ENDPOINT_LEN = 200;
@@ -1395,8 +1398,10 @@ function validateConnectorSetArgs(args) {
 
   const secretRef = args.secret_ref;
   if (secretRef) {
-    if (ctype === "mcp" || auth === "none") {
-      return "'secret_ref' is forbidden for type 'mcp' or auth 'none'";
+    // Only an 'api' connector with a real (non-'none') auth records a secret;
+    // mcp/ssh/cli carry none (they self-authenticate or are tool-managed).
+    if (ctype !== "api" || !auth || auth === "none") {
+      return "'secret_ref' is allowed only for an 'api' connector with a non-'none' auth method";
     }
     if (secretRef.length > MAX_CONNECTOR_SECRET_REF_LEN) {
       return `'secret_ref' exceeds max length (${MAX_CONNECTOR_SECRET_REF_LEN} chars)`;

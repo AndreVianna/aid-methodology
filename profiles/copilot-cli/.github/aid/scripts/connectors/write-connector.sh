@@ -15,8 +15,8 @@
 #
 # Two subcommands:
 #
-#   set --root <dir> --name <N> --type <mcp|api|ssh|url|cli>
-#       [--endpoint <E>] [--auth <none|token|pat|oauth|ssh-key>] [--secret-ref <R>]
+#   set --root <dir> --name <N> --type <mcp|api|ssh|cli>
+#       [--endpoint <E>] [--auth <none|token|pat|oauth>] [--secret-ref <R>]
 #     Derives <stem> from --name via the skills' EXACT slug rule (SKILL.md Step 1:
 #     `tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/-/g; s/^-+|-+$//g'`), so
 #     dashboard- and skill-authored stems are byte-identical. Atomically (temp-file + mv)
@@ -26,20 +26,23 @@
 #     stays authoritative).
 #
 #     Per-type normalize + fail-closed enforcement (question-sets.md
-#     Sec-mcp / Sec-api-url / Sec-ssh / Sec-cli):
+#     Sec-mcp / Sec-api / Sec-ssh / Sec-cli):
 #       mcp          -> auth_method forced 'none'; secret_reference dropped; endpoint
 #                       is informational (optional)
-#       ssh          -> auth_method forced 'ssh-key'; --endpoint REQUIRED
-#       api|url|cli  -> --endpoint AND --auth both REQUIRED
+#       ssh | cli    -> --endpoint REQUIRED; auth_method forced 'none' (ssh keys /
+#                       the CLI's own login authenticate externally -- AID stores no
+#                       credential); any --auth/--secret-ref dropped
+#       api          -> --endpoint AND --auth both REQUIRED (api is the ONLY type
+#                       AID records a credential for)
 #     A missing required field for the resolved type fail-closes (exit 5) rather than
 #     persisting a descriptor the skill would never author.
 #
-#     secret_reference: a credentialed connector (ssh always -- auth_method is forced
-#     ssh-key; api|url|cli when auth != none) MUST carry one
+#     secret_reference: only an `api` connector with auth != none carries one
 #     (artifact-schemas.md "yes iff aid-managed AND auth_method != none"). When
 #     --secret-ref is omitted, the default is the skill's own
-#     `file:.aid/connectors/.secrets/<stem>` form (never a fabricated VALUE). `mcp` / any
-#     `auth_method: none` result carries none (dropped even when --secret-ref was given).
+#     `file:.aid/connectors/.secrets/<stem>` form (never a fabricated VALUE). `mcp` /
+#     `ssh` / `cli` / any `auth_method: none` result carries none (dropped even when
+#     --secret-ref was given).
 #     Reference FORM only -- this script never accepts, echoes, prompts for, or stores a
 #     secret VALUE.
 #
@@ -99,20 +102,20 @@ aid-set-connector / aid-unset-connector skill counterpart the LLM-free dashboard
 can dispatch; SEC-4).
 
 Usage:
-  write-connector.sh set    --root <dir> --name <N> --type <mcp|api|ssh|url|cli>
-                             [--endpoint <E>] [--auth <none|token|pat|oauth|ssh-key>]
+  write-connector.sh set    --root <dir> --name <N> --type <mcp|api|ssh|cli>
+                             [--endpoint <E>] [--auth <none|token|pat|oauth>]
                              [--secret-ref <env:VAR|file:PATH|keychain:KEY>]
   write-connector.sh remove --root <dir> --stem <STEM>
 
 Per-type normalize (fail-closed -- a missing required field for the resolved type
 exits 5):
   mcp          -> auth_method forced 'none'; no secret_reference; endpoint informational
-  ssh          -> auth_method forced 'ssh-key'; --endpoint REQUIRED
-  api|url|cli  -> --endpoint and --auth both REQUIRED
+  ssh | cli    -> --endpoint REQUIRED; auth_method forced 'none' (self-authenticating);
+                  no secret_reference
+  api          -> --endpoint and --auth both REQUIRED (the only credentialed type)
 
-A credentialed result (ssh always; api|url|cli when auth != none) with --secret-ref
-omitted defaults to file:.aid/connectors/.secrets/<stem>. Never accepts, echoes, or
-stores a secret VALUE.
+An api result with auth != none and --secret-ref omitted defaults to
+file:.aid/connectors/.secrets/<stem>. Never accepts, echoes, or stores a secret VALUE.
 
 Exit codes (feature-001's shared alphabet -- never 1 or 2):
   0  success
@@ -241,14 +244,14 @@ if [[ "$OP" == "set" ]]; then
     reject_unsafe endpoint "$ENDPOINT"
 
     case "$TYPE" in
-        mcp|api|ssh|url|cli) ;;
-        *) die "invalid --type '$TYPE' (expected one of: mcp, api, ssh, url, cli)" 4 ;;
+        mcp|api|ssh|cli) ;;
+        *) die "invalid --type '$TYPE' (expected one of: mcp, api, ssh, cli)" 4 ;;
     esac
 
     if [[ -n "$AUTH" ]]; then
         case "$AUTH" in
-            none|token|pat|oauth|ssh-key) ;;
-            *) die "invalid --auth '$AUTH' (expected one of: none, token, pat, oauth, ssh-key)" 4 ;;
+            none|token|pat|oauth) ;;
+            *) die "invalid --auth '$AUTH' (expected one of: none, token, pat, oauth)" 4 ;;
         esac
     fi
 
@@ -258,17 +261,22 @@ if [[ "$OP" == "set" ]]; then
     [[ "$STEM" =~ ^[a-z0-9][a-z0-9-]*$ ]] || die "computed stem '$STEM' is not a valid bare slug" 4
 
     # --- per-type normalize + fail-closed enforcement ---
+    # api is the ONLY type AID records a credential for. ssh authenticates via the
+    # ssh layer (keys/ssh-agent) and cli via the invoked tool's own config/login
+    # (docker socket, `gh auth`, `aws` config) -- both self-authenticate, so AID
+    # stores no auth/secret for them (auth forced 'none', any --auth/--secret-ref
+    # dropped, same as mcp) but DOES record their real endpoint.
     case "$TYPE" in
         mcp)
             FINAL_AUTH="none"
             ;;
-        ssh)
-            [[ -n "$ENDPOINT" ]] || die "--endpoint is required for type 'ssh'" 5
-            FINAL_AUTH="ssh-key"
-            ;;
-        api|url|cli)
+        ssh|cli)
             [[ -n "$ENDPOINT" ]] || die "--endpoint is required for type '$TYPE'" 5
-            [[ -n "$AUTH" ]] || die "--auth is required for type '$TYPE'" 5
+            FINAL_AUTH="none"
+            ;;
+        api)
+            [[ -n "$ENDPOINT" ]] || die "--endpoint is required for type 'api'" 5
+            [[ -n "$AUTH" ]] || die "--auth is required for type 'api'" 5
             FINAL_AUTH="$AUTH"
             ;;
     esac

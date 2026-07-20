@@ -10,10 +10,11 @@
 #   U2   set mcp: .secrets/ gitignore precondition created
 #   U3   set mcp: trace line reports 'secret purged'
 #   U4   set ssh: missing --endpoint -> exit 5, nothing written
-#   U5   set ssh: auth_method forced ssh-key + default secret_reference
+#   U5   set ssh: endpoint required; auth_method forced none, no secret_reference
+#        (ssh keys/ssh-agent authenticate externally -- AID stores no credential)
 #   U6   set api: missing --endpoint -> exit 5, nothing written
 #   U7   set api: missing --auth -> exit 5, nothing written
-#   U8   set url: auth none -> no secret_reference persisted (dropped)
+#   U8   set: --type url is no longer a valid connector type -> exit 4
 #   U9   set api: auth token, --secret-ref omitted -> defaults to
 #        file:.aid/connectors/.secrets/<stem>
 #   U10  set api: explicit --secret-ref (env: form) stored verbatim
@@ -52,6 +53,9 @@
 #   U38  orphan-secret purge: an existing on-disk .secrets/<stem> file is
 #        actually DELETED (not just the descriptor's secret_reference dropped)
 #        when a credentialed connector transitions to mcp on a re-set
+#   U39  set: --auth ssh-key is no longer a valid auth_method -> exit 4
+#   U40  set cli: endpoint required; --auth NOT required (docker-style);
+#        auth_method forced none, no secret_reference
 #
 # Usage:
 #   bash tests/canonical/test-write-connector.sh [--verbose]
@@ -111,14 +115,15 @@ assert_exit_eq "$ec" 5 "U4 ssh missing --endpoint exits 5"
 if [[ ! -f "${root}/box.md" ]]; then pass "U4 nothing written"; else fail "U4 unexpected file written"; fi
 
 # ---------------------------------------------------------------------------
-# U5 -- set ssh: forced ssh-key + default secret_reference
+# U5 -- set ssh: endpoint required; auth_method forced none, no secret_reference
+# (ssh keys/ssh-agent authenticate externally -- AID stores no credential)
 # ---------------------------------------------------------------------------
 root="${TMPDIR_BASE}/u5/connectors"
 out=$(bash "$SUT" set --root "$root" --name "Box" --type ssh --endpoint "box.example.com" 2>&1)
 ec=$?
 assert_exit_zero "$ec" "U5 ssh with endpoint exits 0"
-assert_file_contains "${root}/box.md" 'auth_method: ssh-key' "U5 auth_method forced ssh-key"
-assert_file_contains "${root}/box.md" 'secret_reference: "file:.aid/connectors/.secrets/box"' "U5 default secret_reference"
+assert_file_contains "${root}/box.md" 'auth_method: none' "U5 auth_method forced none"
+assert_file_not_contains "${root}/box.md" 'secret_reference' "U5 no secret_reference persisted for ssh"
 
 # ---------------------------------------------------------------------------
 # U6 -- set api missing --endpoint
@@ -139,14 +144,13 @@ assert_exit_eq "$ec" 5 "U7 api missing --auth exits 5"
 if [[ ! -f "${root}/jira.md" ]]; then pass "U7 nothing written"; else fail "U7 unexpected file written"; fi
 
 # ---------------------------------------------------------------------------
-# U8 -- set url auth none -> no secret_reference
+# U8 -- set: --type url is no longer a valid connector type -> exit 4
 # ---------------------------------------------------------------------------
 root="${TMPDIR_BASE}/u8/connectors"
 out=$(bash "$SUT" set --root "$root" --name "Docker" --type url --endpoint "https://x" --auth none 2>&1)
 ec=$?
-assert_exit_zero "$ec" "U8 url auth none exits 0"
-assert_file_contains "${root}/docker.md" 'auth_method: none' "U8 auth_method none"
-assert_file_not_contains "${root}/docker.md" 'secret_reference' "U8 no secret_reference persisted"
+assert_exit_eq "$ec" 4 "U8 invalid --type url is rejected (exit 4)"
+if [[ ! -f "${root}/docker.md" ]]; then pass "U8 nothing written for rejected type"; else fail "U8 unexpected file written"; fi
 
 # ---------------------------------------------------------------------------
 # U9 -- set api auth token, --secret-ref omitted -> default form
@@ -259,10 +263,10 @@ root="${TMPDIR_BASE}/u23/connectors"
 bash "$SUT" set --root "$root" --name "Jira" --type api --endpoint e1 --auth token >/dev/null 2>&1
 bash "$SUT" set --root "$root" --name "GitHub" --type mcp >/dev/null 2>&1
 before_github=$(cat "${root}/github.md")
-out=$(bash "$SUT" set --root "$root" --name "Jira" --type url --endpoint e2 --auth pat 2>&1)
+out=$(bash "$SUT" set --root "$root" --name "Jira" --type ssh --endpoint e2 2>&1)
 ec=$?
 assert_exit_zero "$ec" "U23 re-set (UPDATE) exits 0"
-assert_file_contains "${root}/jira.md" 'connection_type: url' "U23 jira overwritten in place (new type)"
+assert_file_contains "${root}/jira.md" 'connection_type: ssh' "U23 jira overwritten in place (new type)"
 assert_file_contains "${root}/jira.md" 'endpoint: "e2"' "U23 jira overwritten in place (new endpoint)"
 after_github=$(cat "${root}/github.md")
 assert_eq "$after_github" "$before_github" "U23 sibling descriptor (github.md) byte-for-byte untouched"
@@ -408,6 +412,27 @@ if [[ ! -f "${root}/.secrets/jira" ]]; then
 else
     fail "U38 orphaned secret file still present after transition to mcp"
 fi
+
+# ---------------------------------------------------------------------------
+# U39 -- --auth ssh-key is no longer a valid auth_method -> exit 4
+# ---------------------------------------------------------------------------
+root="${TMPDIR_BASE}/u39/connectors"
+out=$(bash "$SUT" set --root "$root" --name "Box" --type ssh --endpoint "box.example.com" --auth ssh-key 2>&1)
+ec=$?
+assert_exit_eq "$ec" 4 "U39 --auth ssh-key is rejected (exit 4)"
+if [[ ! -f "${root}/box.md" ]]; then pass "U39 nothing written for rejected auth"; else fail "U39 unexpected file written"; fi
+
+# ---------------------------------------------------------------------------
+# U40 -- set cli: endpoint required; --auth NOT required (docker-style);
+# auth_method forced none, no secret_reference
+# ---------------------------------------------------------------------------
+root="${TMPDIR_BASE}/u40/connectors"
+out=$(bash "$SUT" set --root "$root" --name "Docker" --type cli --endpoint "docker" 2>&1)
+ec=$?
+assert_exit_zero "$ec" "U40 cli with endpoint and no --auth exits 0"
+assert_file_contains "${root}/docker.md" 'connection_type: cli' "U40 connection_type cli"
+assert_file_contains "${root}/docker.md" 'auth_method: none' "U40 auth_method forced none"
+assert_file_not_contains "${root}/docker.md" 'secret_reference' "U40 no secret_reference persisted for cli"
 
 echo
 test_summary

@@ -2,17 +2,16 @@
 name: "CI Runner"
 connection_type: cli
 endpoint: "ci-runner-cli --profile prod"
-auth_method: pat
-secret_reference: "file:.aid/connectors/.secrets/ci-runner"
+auth_method: none
 preset: custom
 objective: "Connect to CI Runner via cli at ci-runner-cli --profile prod."
-summary: "CI Runner (cli) -- auth: pat."
+summary: "CI Runner (cli) -- auth: none."
 tags: [connector, cli]
 audience: [developer, architect]
 ---
 
 # CI Runner
 
-> Connection: cli · Mode: aid-managed · Auth: pat (reference: file:.aid/connectors/.secrets/ci-runner)
+> Connection: cli · Mode: aid-managed · Auth: none
 
-Resolve the credential via `file:.aid/connectors/.secrets/ci-runner` at use-time; AID never stores the secret value in this descriptor.
+Connects directly with no stored credential.

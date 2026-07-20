@@ -11,8 +11,10 @@ parseExternalSources() byte-identical across the Python and Node twins over
 their OWN inline-string-literal fixture sets (three connector descriptors:
 github/jira/minimal; one external-sources.md body per case) -- this file does
 NOT duplicate that; it consumes this task's own COMMITTED FIXTURE FILES
-(dashboard/server/tests/fixtures/pt023-connectors/ -- all FIVE connector types
-incl. credentialed ssh/api/cli + mcp + auth-none url; dashboard/server/tests/
+(dashboard/server/tests/fixtures/pt023-connectors/ -- all FIVE connector
+descriptors incl. a credentialed api + endpoint-only auth-none ssh/cli + mcp +
+a second auth-none api (feature-007 schema simplification dropped `url` and
+`ssh-key`; api is now the only credentialed type); dashboard/server/tests/
 fixtures/pt023-external-sources/ -- placeholder-only/single-entry/multi-entry
 states) that task-023's DETAIL explicitly calls for ("connector descriptors
 across all five types incl. credentialed + mcp"; "an external-sources.md with
@@ -125,12 +127,15 @@ class TestFiveConnectorTypesFixtureSetContent(unittest.TestCase):
         self.assertEqual(ref.auth_method, "none")
         self.assertIsNone(ref.secret_reference)
 
-    def test_ssh_type_auth_forced_ssh_key_credentialed(self):
+    def test_ssh_type_endpoint_only_auth_none_no_secret_reference(self):
+        """feature-007 schema simplification: ssh no longer forces auth_method
+        ssh-key/a secret -- it is endpoint-only (auth forced none), same
+        shape as cli/mcp; api is the only credentialed type now."""
         refs, _ = parse_connectors(_FIXTURES_CONNECTORS)
         ref = next(r for r in refs if r.stem == "build-host")
         self.assertEqual(ref.connection_type, "ssh")
-        self.assertEqual(ref.auth_method, "ssh-key")
-        self.assertEqual(ref.secret_reference, "file:.aid/connectors/.secrets/build-host")
+        self.assertEqual(ref.auth_method, "none")
+        self.assertIsNone(ref.secret_reference)
 
     def test_api_type_credentialed_with_default_secret_reference(self):
         refs, _ = parse_connectors(_FIXTURES_CONNECTORS)
@@ -139,19 +144,26 @@ class TestFiveConnectorTypesFixtureSetContent(unittest.TestCase):
         self.assertEqual(ref.auth_method, "token")
         self.assertEqual(ref.secret_reference, "file:.aid/connectors/.secrets/jira")
 
-    def test_url_type_auth_none_no_secret_reference(self):
+    def test_second_api_type_auth_none_no_secret_reference(self):
+        """`url` was dropped by the feature-007 schema simplification (no
+        preset, redundant with `api`) -- this fixture's 'public-docs' entry is
+        the still-valid replacement shape: an endpoint-only `api` connector
+        with auth: none."""
         refs, _ = parse_connectors(_FIXTURES_CONNECTORS)
         ref = next(r for r in refs if r.stem == "public-docs")
-        self.assertEqual(ref.connection_type, "url")
+        self.assertEqual(ref.connection_type, "api")
         self.assertEqual(ref.auth_method, "none")
         self.assertIsNone(ref.secret_reference)
 
-    def test_cli_type_credentialed_with_default_secret_reference(self):
+    def test_cli_type_endpoint_only_auth_none_no_secret_reference(self):
+        """feature-007 schema simplification: cli no longer requires --auth
+        -- it is endpoint-only (auth forced none, no secret_reference), same
+        shape as ssh/mcp."""
         refs, _ = parse_connectors(_FIXTURES_CONNECTORS)
         ref = next(r for r in refs if r.stem == "ci-runner")
         self.assertEqual(ref.connection_type, "cli")
-        self.assertEqual(ref.auth_method, "pat")
-        self.assertEqual(ref.secret_reference, "file:.aid/connectors/.secrets/ci-runner")
+        self.assertEqual(ref.auth_method, "none")
+        self.assertIsNone(ref.secret_reference)
 
     def test_no_secret_value_anywhere_in_parsed_output(self):
         refs, _ = parse_connectors(_FIXTURES_CONNECTORS)
