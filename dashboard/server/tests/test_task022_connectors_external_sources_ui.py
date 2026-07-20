@@ -145,6 +145,48 @@ class TestStructuralPlacement(unittest.TestCase):
             self.assertIn(cls, self.src, f"CSS class {cls} missing from home.html")
 
 
+class TestConnectorFormTypeDependentFields(unittest.TestCase):
+    """The Add-connector form shows ONLY the fields that apply to the selected
+    type (mirrors the server's connector.set validation): endpoint for
+    api/ssh/url/cli; auth for every non-mcp type; secret ONLY when type != mcp
+    AND auth != 'none'. Changing type/auth rebuilds the row + drops now-hidden
+    values."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = _HOME_HTML.read_text(encoding="utf-8")
+        i = cls.src.find("function _buildConnectorAddForm(")
+        j = cls.src.find("function _rebuildConnectorAddForm(")
+        assert i != -1 and j != -1, "connector add-form / rebuild helper not found"
+        cls.form = cls.src[i:j]
+
+    def test_endpoint_gated_on_endpoint_required_types(self):
+        self.assertIn("var showEndpoint = CONNECTOR_ENDPOINT_REQUIRED_TYPES.indexOf(f.type) !== -1", self.form)
+        self.assertIn("if (showEndpoint)", self.form)
+
+    def test_auth_gated_on_non_mcp_type(self):
+        self.assertIn("var showAuth = f.type !== 'mcp'", self.form)
+        self.assertIn("if (showAuth)", self.form)
+
+    def test_secret_gated_on_non_mcp_and_auth_not_none(self):
+        self.assertIn("var showSecret = showAuth && !!f.auth && f.auth !== 'none'", self.form)
+        self.assertIn("if (showSecret)", self.form)
+
+    def test_type_change_clears_hidden_fields_and_rebuilds(self):
+        self.assertIn("if (f.type === 'mcp') { f.endpoint = ''; f.auth = 'none'; f.secret_ref = ''; }", self.form)
+        self.assertIn("_rebuildConnectorAddForm()", self.form)
+
+    def test_auth_change_clears_secret_when_none(self):
+        self.assertIn("if (f.auth === 'none') { f.secret_ref = ''; }", self.form)
+
+    def test_rebuild_helper_forces_render_of_connectors_card(self):
+        idx = self.src.find("function _rebuildConnectorAddForm(")
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn("_connectorsExplicitRender = true", snippet)
+        self.assertIn("_renderConnectorsCard(", snippet)
+
+
 class TestConnectorsTable(unittest.TestCase):
     """R1: the Connectors read table matches build-connectors-index.sh's columns."""
 

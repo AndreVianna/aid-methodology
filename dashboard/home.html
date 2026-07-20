@@ -2549,6 +2549,20 @@ footer {
     var wrap = document.createElement('div');
     wrap.className = 'list-crud-add-row';
 
+    // Only the fields that APPLY to the selected type are shown (mirrors the
+    // server's connector.set validation, _validate_connector_set_args):
+    //   - endpoint: api/ssh/url/cli (not mcp)  [CONNECTOR_ENDPOINT_REQUIRED_TYPES]
+    //   - auth:     every non-mcp type (required for api/url/cli; optional for ssh)
+    //   - secret:   ONLY when type != mcp AND auth != 'none' (the server FORBIDS a
+    //               secret_ref for type mcp or auth none)
+    // Changing type/auth rebuilds the row (via _rebuildConnectorAddForm) so
+    // now-irrelevant fields disappear AND their stored values are dropped, so a
+    // hidden field is never submitted. Default type 'mcp' => just Name + Type.
+    var showEndpoint = CONNECTOR_ENDPOINT_REQUIRED_TYPES.indexOf(f.type) !== -1;
+    var showAuth = f.type !== 'mcp';
+    var showSecret = showAuth && !!f.auth && f.auth !== 'none';
+
+    // Name (always required).
     var nameInput = document.createElement('input');
     nameInput.type = 'text';
     nameInput.className = 'interval-input';
@@ -2559,6 +2573,7 @@ footer {
     nameInput.addEventListener('input', function () { f.name = nameInput.value; });
     wrap.appendChild(nameInput);
 
+    // Type (always) -- on change, drop now-irrelevant field values, then rebuild.
     var typeSelect = document.createElement('select');
     typeSelect.className = 'interval-input';
     typeSelect.setAttribute('aria-label', 'Connector type');
@@ -2570,42 +2585,59 @@ footer {
     }
     typeSelect.value = f.type;
     typeSelect.disabled = connectorsUiState.saving;
-    typeSelect.addEventListener('change', function () { f.type = typeSelect.value; });
+    typeSelect.addEventListener('change', function () {
+      f.type = typeSelect.value;
+      if (f.type === 'mcp') { f.endpoint = ''; f.auth = 'none'; f.secret_ref = ''; }
+      _rebuildConnectorAddForm();
+    });
     wrap.appendChild(typeSelect);
 
-    var endpointInput = document.createElement('input');
-    endpointInput.type = 'text';
-    endpointInput.className = 'interval-input';
-    endpointInput.placeholder = 'Endpoint';
-    endpointInput.setAttribute('aria-label', 'Connector endpoint');
-    endpointInput.value = f.endpoint;
-    endpointInput.disabled = connectorsUiState.saving;
-    endpointInput.addEventListener('input', function () { f.endpoint = endpointInput.value; });
-    wrap.appendChild(endpointInput);
-
-    var authSelect = document.createElement('select');
-    authSelect.className = 'interval-input';
-    authSelect.setAttribute('aria-label', 'Connector auth method');
-    for (var j = 0; j < CONNECTOR_AUTH_METHODS.length; j++) {
-      var aOpt = document.createElement('option');
-      aOpt.value = CONNECTOR_AUTH_METHODS[j];
-      aOpt.textContent = CONNECTOR_AUTH_METHODS[j];
-      authSelect.appendChild(aOpt);
+    // Endpoint (api/ssh/url/cli only).
+    if (showEndpoint) {
+      var endpointInput = document.createElement('input');
+      endpointInput.type = 'text';
+      endpointInput.className = 'interval-input';
+      endpointInput.placeholder = 'Endpoint';
+      endpointInput.setAttribute('aria-label', 'Connector endpoint');
+      endpointInput.value = f.endpoint;
+      endpointInput.disabled = connectorsUiState.saving;
+      endpointInput.addEventListener('input', function () { f.endpoint = endpointInput.value; });
+      wrap.appendChild(endpointInput);
     }
-    authSelect.value = f.auth;
-    authSelect.disabled = connectorsUiState.saving;
-    authSelect.addEventListener('change', function () { f.auth = authSelect.value; });
-    wrap.appendChild(authSelect);
 
-    var secretInput = document.createElement('input');
-    secretInput.type = 'text';
-    secretInput.className = 'interval-input';
-    secretInput.placeholder = 'Secret reference (optional)';
-    secretInput.setAttribute('aria-label', 'Connector secret reference');
-    secretInput.value = f.secret_ref;
-    secretInput.disabled = connectorsUiState.saving;
-    secretInput.addEventListener('input', function () { f.secret_ref = secretInput.value; });
-    wrap.appendChild(secretInput);
+    // Auth method (every non-mcp type) -- on change, drop the secret when 'none'.
+    if (showAuth) {
+      var authSelect = document.createElement('select');
+      authSelect.className = 'interval-input';
+      authSelect.setAttribute('aria-label', 'Connector auth method');
+      for (var j = 0; j < CONNECTOR_AUTH_METHODS.length; j++) {
+        var aOpt = document.createElement('option');
+        aOpt.value = CONNECTOR_AUTH_METHODS[j];
+        aOpt.textContent = CONNECTOR_AUTH_METHODS[j];
+        authSelect.appendChild(aOpt);
+      }
+      authSelect.value = f.auth;
+      authSelect.disabled = connectorsUiState.saving;
+      authSelect.addEventListener('change', function () {
+        f.auth = authSelect.value;
+        if (f.auth === 'none') { f.secret_ref = ''; }
+        _rebuildConnectorAddForm();
+      });
+      wrap.appendChild(authSelect);
+    }
+
+    // Secret reference (only when a non-'none' auth is set on a non-mcp type).
+    if (showSecret) {
+      var secretInput = document.createElement('input');
+      secretInput.type = 'text';
+      secretInput.className = 'interval-input';
+      secretInput.placeholder = 'Secret reference (optional)';
+      secretInput.setAttribute('aria-label', 'Connector secret reference');
+      secretInput.value = f.secret_ref;
+      secretInput.disabled = connectorsUiState.saving;
+      secretInput.addEventListener('input', function () { f.secret_ref = secretInput.value; });
+      wrap.appendChild(secretInput);
+    }
 
     var addBtn = document.createElement('button');
     addBtn.type = 'button';
@@ -2616,6 +2648,16 @@ footer {
     wrap.appendChild(addBtn);
 
     return wrap;
+  }
+
+  // Re-render the connectors card so the add-row rebuilds with only the fields
+  // that apply to the just-changed type/auth (explicit-render bypasses the poll
+  // guard -- the same one-shot pattern _submitConnectorAdd uses).
+  function _rebuildConnectorAddForm() {
+    _connectorsExplicitRender = true;
+    _renderConnectorsCard(
+      lastGoodModel && lastGoodModel.repo && lastGoodModel.repo.connectors,
+      lastGoodModel && lastGoodModel.write_enabled === true);
   }
 
   // Client-side mirror of connector.set's per-type conditional arg-schema
