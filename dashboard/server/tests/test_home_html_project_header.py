@@ -173,38 +173,32 @@ class TestClientSideValidation(unittest.TestCase):
         self.assertIn(r"/^[A-F][+-]?$/", server_mjs)
 
 
-class TestKbButton(unittest.TestCase):
-    """R4: the "Open Knowledge Base" button preserves target + clickability rule."""
+class TestNoRedundantKbButton(unittest.TestCase):
+    """R4 (revised): the redundant header "Open Knowledge Base" button was removed.
+    The Knowledge Base card (_renderKbCard, its own section) IS the open-KB
+    affordance -- the whole card is clickable to ./kb.html when approved/outdated
+    -- so the header button duplicated it and is gone (with its dead helper +
+    label map)."""
 
     @classmethod
     def setUpClass(cls):
         cls.src = _HOME_HTML.read_text(encoding="utf-8")
 
-    def test_r4_kb_button_function_defined(self):
-        self.assertIn('function _renderProjectHeaderKbButton(kbState)', self.src)
+    def test_r4_header_kb_button_builder_removed(self):
+        self.assertNotIn("function _renderProjectHeaderKbButton(", self.src)
 
-    def test_r4_href_is_relative_kb_html(self):
-        idx = self.src.find('function _renderProjectHeaderKbButton(')
-        snippet = self.src[idx:idx + 1500]
-        self.assertIn("link.href = './kb.html';", snippet)
+    def test_r4_header_kb_button_class_not_used(self):
+        self.assertNotIn("project-header-kb-btn", self.src)
 
-    def test_r4_clickable_only_when_approved_or_outdated(self):
-        idx = self.src.find('function _renderProjectHeaderKbButton(')
-        snippet = self.src[idx:idx + 1500]
-        self.assertIn("status === 'approved' || status === 'outdated'", snippet)
+    def test_r4_dead_label_map_removed(self):
+        self.assertNotIn("PROJECT_HEADER_KB_LABEL", self.src)
 
-    def test_r4_disabled_variant_uses_aria_disabled_not_native_disabled(self):
-        idx = self.src.find('function _renderProjectHeaderKbButton(')
-        snippet = self.src[idx:idx + 1500]
-        self.assertIn("setAttribute('aria-disabled', 'true')", snippet)
-        self.assertNotIn("btn.disabled = true", snippet)
-
-    def test_r4_five_state_label_map_present(self):
-        idx = self.src.find('var PROJECT_HEADER_KB_LABEL')
+    def test_r4_kb_card_carries_the_open_affordance(self):
+        # The KB card is where ./kb.html is opened now (not a header button).
+        idx = self.src.find("function _renderKbCard(")
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 300]
-        for state in ("pending", "generating", "preparing", "outdated"):
-            self.assertIn(state, snippet)
+        snippet = self.src[idx:idx + 1500]
+        self.assertIn("./kb.html", snippet)
 
 
 class TestAccessibility(unittest.TestCase):

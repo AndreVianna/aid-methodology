@@ -574,6 +574,14 @@ footer {
 .list-crud-list-item { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
 .list-crud-list-item:last-child { border-bottom: none; }
 .list-crud-add-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
+/* Add-row fields (Connectors / External Sources / Tools) reuse the .interval-input
+   base but must NOT inherit its fixed 3.5em, centred sizing (meant for the poll
+   spinner) -- that collapses & clips text fields. Text inputs grow to fill the row;
+   selects size to their widest option; the trailing Add button stays natural width. */
+.list-crud-add-row .interval-input { width: auto; text-align: left; }
+.list-crud-add-row input.interval-input { flex: 1 1 9rem; min-width: 7rem; }
+.list-crud-add-row select.interval-input { flex: 0 0 auto; min-width: 6rem; }
+.list-crud-add-row button { flex: 0 0 auto; }
 
 /* Work-card progress bar: Readiness (pre-execution) vs Execution (task completion) */
 .progress-row { margin: 0.55rem 0 0; }
@@ -1509,7 +1517,8 @@ footer {
 
   // ---------------------------------------------------------------------------
   // Project header panel (feature-002): editable name / description / global
-  // minimum grade + an "Open Knowledge Base" button, at the top of #main-page.
+  // minimum grade, at the top of #main-page. (The redundant "Open Knowledge
+  // Base" button was removed -- the Knowledge Base card is the open-KB affordance.)
   // Consumes the settings.set op (feature-001) via POST ./api/op; on success the
   // client re-fetches ./api/model and re-renders from disk (no optimistic mutation).
   // ---------------------------------------------------------------------------
@@ -1536,15 +1545,6 @@ footer {
   }
 
   var PROJECT_HEADER_GRADE_OPTIONS = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
-
-  // KB button status label per 5-state kb_state.status (mirrors _renderKbCard's own
-  // language); 'approved' carries none (the button is simply clickable + plain).
-  var PROJECT_HEADER_KB_LABEL = {
-    pending: 'No KB yet',
-    generating: 'Building…',
-    preparing: 'Preparing…',
-    outdated: 'Outdated'
-  };
 
   // Client-side mirror of the settings.set arg-schema (SPEC.md API Contracts) --
   // defense-in-depth ahead of the server's own semantic_validate hook; returns an
@@ -1626,36 +1626,6 @@ footer {
         _renderProjectHeader(lastGoodModel);
       }
     });
-  }
-
-  // Build the "Open Knowledge Base" .btn-ghost -- same target + 5-state clickability
-  // rule as _renderKbCard (line ~1618: clickable only when approved/outdated), carrying
-  // the status label on the button itself so the signal isn't lost when subsumed here.
-  function _renderProjectHeaderKbButton(kbState) {
-    var KB_STATUSES = ['pending', 'generating', 'preparing', 'approved', 'outdated'];
-    var status = (kbState && kbState.status && KB_STATUSES.indexOf(kbState.status) !== -1)
-      ? kbState.status : 'pending';
-    var isClickable = (status === 'approved' || status === 'outdated');
-    var suffix = PROJECT_HEADER_KB_LABEL[status];
-    var label = 'Open Knowledge Base' + (suffix ? ' (' + suffix + ')' : '');
-
-    if (isClickable) {
-      var link = document.createElement('a');
-      link.className = 'btn-ghost project-header-kb-btn';
-      link.href = './kb.html';  // location-relative (LC-A3): resolves to /r/<id>/kb.html
-      link.textContent = label;
-      return link;
-    }
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn-ghost project-header-kb-btn';
-    btn.setAttribute('aria-disabled', 'true');
-    btn.textContent = label;
-    // aria-disabled (not the native `disabled` attribute, not removal): the button
-    // stays focusable/reachable and its status label stays readable; a click is a
-    // no-op rather than a navigation.
-    btn.addEventListener('click', function (e) { e.preventDefault(); });
-    return btn;
   }
 
   // Build the name row: display (title + Edit pencil, write_enabled only) or the
@@ -1892,11 +1862,10 @@ footer {
       panel.appendChild(err);
     }
 
-    var kbRow = document.createElement('div');
-    kbRow.className = 'project-header-row';
-    kbRow.style.marginTop = '0.75rem';
-    kbRow.appendChild(_renderProjectHeaderKbButton(repo.kb_state));
-    panel.appendChild(kbRow);
+    // The "Open Knowledge Base" header button was removed as redundant: the
+    // Knowledge Base card (below, its own section) IS the open-KB affordance --
+    // the whole card is clickable to ./kb.html when approved/outdated and carries
+    // the same status label -- so the header button duplicated it.
 
     container.appendChild(panel);
   }
@@ -2834,6 +2803,15 @@ footer {
         allNote.className = 'meta';
         allNote.textContent = 'All available tools are installed.';
         panel.appendChild(allNote);
+      } else {
+        // catalog empty -> the /api/model envelope carried no tools_catalog: a
+        // version skew (a newer home.html served by an older server.py that
+        // predates the tools_catalog field). Surface it rather than leaving a
+        // silent dead-end with no way to add a tool.
+        var skewNote = document.createElement('p');
+        skewNote.className = 'meta';
+        skewNote.textContent = 'Tool catalog unavailable — restart `aid dashboard` so its server matches this page, or run `aid add <tool>` from the CLI.';
+        panel.appendChild(skewNote);
       }
     }
 
