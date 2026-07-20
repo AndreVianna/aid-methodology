@@ -7,9 +7,15 @@
 #
 # Coverage:
 #   T01  Per-project install via 'aid add <tool> -FromBundle -Target' (aid.ps1)
-#   T02  Install tree exists, manifest + version files present
+#   T02  Install tree exists, manifest present (aid_version recorded in the
+#        manifest; the standalone .aid/.aid-version marker file is retired
+#        and must NOT be created)
 #   T03  Manifest is LF-only, no UTF-8 BOM (byte-level assertion)
-#   T04  .aid-version is LF-only, no UTF-8 BOM
+#   T04  (RETIRED) formerly asserted .aid/.aid-version LF-only/no-BOM. The
+#        marker file no longer exists (see docs/install.md "Manifest
+#        location"); its LF/no-BOM coverage is already provided by T03
+#        (manifest) and T13c (VERSION), so the check was removed rather
+#        than duplicated onto an existing file.
 #   T05  Manifest JSON parses; contains tool + "status":"owned"
 #   T06  Idempotent re-install (exit 0; "up to date" in output)
 #   T07  aid status (via installed bin/aid.ps1) shows the tool
@@ -134,6 +140,7 @@ function Assert-FileLF {
 }
 
 function Assert-FileExists { param([string]$Path, [string]$Label); Assert (Test-Path $Path -PathType Leaf) $Label "file does not exist: $Path" }
+function Assert-FileGone   { param([string]$Path, [string]$Label); Assert (-not (Test-Path $Path -PathType Leaf)) $Label "file still exists: $Path" }
 function Assert-DirExists  { param([string]$Path, [string]$Label); Assert (Test-Path $Path -PathType Container) $Label "directory does not exist: $Path" }
 function Assert-DirGone    { param([string]$Path, [string]$Label); Assert (-not (Test-Path $Path)) $Label "path still exists: $Path" }
 
@@ -362,13 +369,19 @@ Assert-Eq "$($script:_LastRC)" '0' 'T01 install claude-code -> exit 0'
 Assert-DirExists  (Join-Path $ProjT01 '.claude')                     'T02a .claude/ created'
 Assert-FileExists (Join-Path $ProjT01 'CLAUDE.md')                   'T02b CLAUDE.md created'
 Assert-FileExists (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json')   'T02c manifest exists'
-Assert-FileExists (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version')         'T02d .aid-version exists'
+# The standalone .aid/.aid-version marker file is retired -- the installer must NOT
+# create it. The installed AID version is recorded instead in the manifest's
+# top-level aid_version key (asserted below).
+Assert-FileGone (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version')          'T02d .aid-version NOT created (retired)'
+$m02Raw = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json') -Raw
+Assert-Contains $m02Raw '"aid_version"' 'T02e manifest records aid_version (version lives here now)'
 
 # T03: Manifest bytes are LF-only, no BOM.
 Assert-FileLF (Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json') 'T03 manifest'
 
-# T04: .aid-version bytes are LF-only, no BOM.
-Assert-FileLF (Join-Path (Join-Path $ProjT01 '.aid') '.aid-version') 'T04 .aid-version'
+# T04: (RETIRED) -- see header comment above. The .aid/.aid-version marker no
+# longer exists, so there is nothing left to byte-check here; T03 (manifest) and
+# T13c (VERSION) already cover the "installer writes LF-only files" invariant.
 
 # T05: Manifest JSON parses; contains claude-code tool + "status":"owned".
 $mPathT05 = Join-Path (Join-Path $ProjT01 '.aid') '.aid-manifest.json'
@@ -379,7 +392,7 @@ if (Test-Path $mPathT05 -PathType Leaf) {
         Assert ($mObj.tools.PSObject.Properties.Name -contains 'claude-code') `
             'T05a manifest contains claude-code' 'claude-code not in manifest.tools'
         Assert-Contains $mRaw '"status": "owned"' 'T05b manifest status:owned'
-        Assert-Contains $mRaw '"manifest_version"' 'T05c manifest has manifest_version'
+        Assert-Contains $mRaw '"format_version"' 'T05c manifest has format_version'
     } catch {
         script:RecordFail 'T05 manifest JSON parse' "exception: $_"
     }
@@ -470,12 +483,13 @@ Assert-Eq      "$($script:_LastRC)" '0' 'T12a aid remove -Force (all) -> exit 0'
 Assert-Contains $script:_LastOut 'Uninstall complete.' 'T12b remove banner'
 Assert-DirGone (Join-Path $ProjT09 '.codex') 'T12c .codex/ gone after remove'
 
-# T13: Manifest and version files are LF/no-BOM after all CLI operations.
+# T13: Manifest and VERSION files are LF/no-BOM after all CLI operations; the
+# retired .aid/.aid-version marker must still not exist.
 $ProjT13 = Join-Path $TmpRoot 'project-t13'
 New-Item -ItemType Directory -Path $ProjT13 -Force | Out-Null
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('add', 'claude-code', '-FromBundle', $FixClaudeCode, '-Target', $ProjT13)
 Assert-FileLF (Join-Path (Join-Path $ProjT13 '.aid') '.aid-manifest.json') 'T13a manifest after aid add'
-Assert-FileLF (Join-Path (Join-Path $ProjT13 '.aid') '.aid-version')       'T13b .aid-version after aid add'
+Assert-FileGone (Join-Path (Join-Path $ProjT13 '.aid') '.aid-version')     'T13b .aid-version NOT created after aid add (retired)'
 Assert-FileLF (Join-Path $AidHomeT08 'VERSION')                'T13c AID_HOME/VERSION'
 Write-Host ""
 
@@ -590,7 +604,7 @@ $env:AID_NO_UPDATE_CHECK = '1'
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
 Assert-FileExists (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') 'T48b settings.yml synthesized by update (era-b via manifest)'
 $s48 = Get-Content -LiteralPath (Join-Path (Join-Path $ProjT48 '.aid') 'settings.yml') -Raw
-Assert-Contains $s48 'format_version: 2' 'T48c format_version: 2 stamped'
+Assert-Contains $s48 'format_version: 3' 'T48c format_version: 3 stamped'
 # Second update: the gate must no longer warn (stamp current now).
 Run-AidPs1 -AidHome $AidHomeT08 -AidArgs @('update', '-FromBundle', $FixClaudeCode, '-Target', $ProjT48)
 Assert-NotContains $script:_LastOut 'older format' 'T48d no recurring older-format WARN after stamp'
@@ -1604,17 +1618,18 @@ Assert-FileExists (Join-Path (Join-Path $ProjT39 '.aid') 'sentinel.txt') 'T39e t
 Write-Host ""
 
 # ---------------------------------------------------------------------------
-# T40: aid projects add non-.aid/ path -> exit 2, error message.
+# T40: aid projects add on a non-.aid/ path -> INITIALIZE a bare project + exit 0.
 # ---------------------------------------------------------------------------
-Write-Host "--- T40: aid projects add non-.aid/ path ---"
+Write-Host "--- T40: aid projects add non-.aid/ path (initialize) ---"
 
 $ProjT40NoAid = Join-Path $TmpRoot 'project-t40-noaid'
 New-Item -ItemType Directory -Path $ProjT40NoAid -Force | Out-Null
-# No .aid/ directory created.
+# No .aid/ directory created -- add should scaffold a bare, tool-less project.
 
 Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT40NoAid)
-Assert-Eq "$($script:_LastRC)" '2' 'T40a add non-.aid/ path -> exit 2'
-Assert-Contains $script:_LastOut 'not an AID project' 'T40b error message mentions "not an AID project"'
+Assert-Eq "$($script:_LastRC)" '0' 'T40a add non-.aid/ path -> initialized + exit 0'
+Assert-Contains $script:_LastOut 'initialized a bare AID project' 'T40b output announces bare-project init'
+Assert-FileExists (Join-Path (Join-Path $ProjT40NoAid '.aid') 'settings.yml') 'T40c bare .aid/settings.yml scaffolded'
 Write-Host ""
 
 # ---------------------------------------------------------------------------
@@ -1622,18 +1637,28 @@ Write-Host ""
 # ---------------------------------------------------------------------------
 Write-Host "--- T41: aid projects add idempotent ---"
 
+# Capture the registry entry count BEFORE the idempotent re-add. The registry is
+# shared with T39/T40 (T40 initialized + registered a second, bare project into the
+# same $AidHomeT39), so the absolute total is >1 by design; idempotency is that
+# re-adding $ProjT39 does NOT change the count -- not that the registry holds exactly one.
+$regContT41pre = Get-Content -LiteralPath $regT39 -Raw -ErrorAction SilentlyContinue
+$entryCountT41pre = 0
+foreach ($ln in ($regContT41pre -split "`n")) {
+    if ($ln -match '^\s+-\s+') { $entryCountT41pre++ }
+}
+
 # Add the T39 project a second time -> should succeed (exit 0) with no duplicate.
 Run-AidProjects -AidHome $AidHomeT39 -AidArgs @('projects', 'add', $ProjT39)
 Assert-Eq "$($script:_LastRC)" '0' 'T41a add same project twice -> exit 0 (idempotent)'
 
-# Count '  - ' lines in registry to confirm single entry.
+# Count '  - ' lines in registry to confirm the re-add created NO new entry.
 $regContT41 = Get-Content -LiteralPath $regT39 -Raw -ErrorAction SilentlyContinue
 $entryCountT41 = 0
 foreach ($ln in ($regContT41 -split "`n")) {
     if ($ln -match '^\s+-\s+') { $entryCountT41++ }
 }
-Assert ($entryCountT41 -eq 1) 'T41b idempotent: exactly one registry entry after double add' `
-    "expected 1 entry, found $entryCountT41"
+Assert ($entryCountT41 -eq $entryCountT41pre) 'T41b idempotent: registry entry count unchanged after double add' `
+    "expected $entryCountT41pre entries (unchanged), found $entryCountT41"
 Write-Host ""
 
 # ---------------------------------------------------------------------------

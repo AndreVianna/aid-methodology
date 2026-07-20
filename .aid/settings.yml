@@ -1,99 +1,14 @@
-format_version: 1
-# .aid/settings.yml — AID pipeline configuration (single source of truth)
-#
-# This file is the AUTHORITATIVE source for all AID pipeline settings.
-# Other AID skills (aid-discover, aid-execute, aid-summarize, ...) read
-# their configuration from here at invocation time.
-#
-# Managed by: /aid-config skill. Run /aid-config to view or update.
-# Format: YAML 1.2.
-# Convention: edit via /aid-config; manual edits are allowed but discouraged.
+format_version: 3
+name: AID
+description: AI Integrated Development
+type: brownfield
+source_control: git
+minimum_grade: A+
+heartbeat_interval: 1
 
-# ---------------------------------------------------------------------------
-# project: identifying metadata for this AID-managed project
-# ---------------------------------------------------------------------------
-project:
-  name: AID                          # set during /aid-config INIT
-  description: AI Integrated Development
-  type: brownfield                  # brownfield | greenfield
-
-# ---------------------------------------------------------------------------
-# tools: which AI host tools have AID installed in this project
-# ---------------------------------------------------------------------------
-tools:
-  installed:
-    - claude-code
-    # - codex
-    # - cursor
-
-# ---------------------------------------------------------------------------
-# review: quality bar for every skill's REVIEW state
-# ---------------------------------------------------------------------------
-# Global default. Applies to every skill that has a REVIEW state and grades
-# its artifacts (discover, summary, interview, specify, plan, detail,
-# execute, deploy, monitor). Skills compare their computed grade against
-# this value and only exit when grade >= minimum_grade.
-#
-# Per-skill overrides are allowed — see the bottom of this file.
-review:
-  minimum_grade: A+   # owner directive 2026-06-27: always use an A+ gate across all phases
-
-# Per-skill override: the /aid-summarize redesign (work-001 feature-015) is held
-# to A+ — see .aid/work-001-kb-skills-improvement/features/feature-015-*/SPEC.md §12.
-summary:
-  minimum_grade: A+
-
-# ---------------------------------------------------------------------------
-# execution: settings specific to /aid-execute + /aid-deploy
-# ---------------------------------------------------------------------------
-execution:
-  max_parallel_tasks: 5   # parallel pool dispatch capacity (work-001 feature-009)
-
-# ---------------------------------------------------------------------------
-# traceability: heartbeat + L2 timer subagent visibility (work-003)
-# ---------------------------------------------------------------------------
-traceability:
-  heartbeat_interval: 1   # minutes — interval at which long-running sub-agents update their heartbeat file
-
-# ---------------------------------------------------------------------------
-# Optional per-skill overrides
-# ---------------------------------------------------------------------------
-# Each top-level skill-name key (when set) overrides the corresponding
-# global value in `review:`. Uncomment + set as needed.
-#
-# Valid grade values: A+, A, A-, B+, B, B-, C+, C, C-, D+, D, D-, E+, E, E-, F
-# E+/E/E- are accepted but rarely useful as a floor — E grades indicate CRITICAL
-# severity findings; setting one as the minimum means "do not block on any
-# non-critical issues." Most projects should pick from A..D.
-#
-# Examples:
-# discover:
-#   minimum_grade: A+
-# summary:
-#   minimum_grade: A+
-# interview:
-#   minimum_grade: A-
-# specify:
-#   minimum_grade: A
-# plan:
-#   minimum_grade: A
-# detail:
-#   minimum_grade: A
-# execute:
-#   minimum_grade: A+
-# deploy:
-#   minimum_grade: A+
-# monitor:
-#   minimum_grade: A
-
-discovery:
-  closure:
-    max_clean_passes: 2   # CLOSED after this many consecutive zero-ungrounded DETECT passes (default 2)
-    max_rounds: 4         # hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds (wall-clock guard)
-    token_budget: 0       # optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget
-  # doc_set: confirmed at aid-discover Step 0d (2026-06-25) for domain
-  #          hybrid:methodology-tooling+software-cli (provenance: curated). 19 required docs.
-  #          release-tracking.md (hand-authored release ledger) added 2026-06-25.
+knowledge:
+  source: master
+  last_update: 2026-07-09T00:44:01-04:00
   doc_set:
     - project-structure.md|aid-researcher-scout|required
     - external-sources.md|aid-researcher-scout|required
@@ -114,10 +29,6 @@ discovery:
     - capability-inventory.md|skill-self|required
     - decisions.md|aid-researcher-architecture|required
     - README.md|skill-self|required
-  # term_exclusions: not-concept terms (field values, code tokens, generic words) the
-  #   /aid-discover closure loop subtracts so re-runs never re-ask (Step 5c exclusion gate).
-  #   Relocated out of the KB dir (.aid/knowledge/.term-exclusions.md) into settings.yml
-  #   (work-013). Read via: read-setting.sh --path discovery.term_exclusions
   term_exclusions:
     - In Progress
     - User Approved
@@ -199,26 +110,3 @@ discovery:
     - File Sync
     - Hub Release
     - Hub Releases
-
-# ---------------------------------------------------------------------------
-# triage: recon-pre-pass thresholds for the 3-path discovery classifier (f006)
-# ---------------------------------------------------------------------------
-# Read by recon-classify.sh to PROPOSE a path (greenfield / brownfield-small /
-# brownfield-large); the human CONFIRMS (the path is measured, not declared --
-# project.type is never read as authoritative). Defaults are sensible starting
-# points, calibratable per project. All four metrics are read from the
-# already-generated project-index.md + candidate-concepts.md (no second scan).
-#
-# RM1 = source-file count; RM2 = source LOC; RM3 = directory count;
-# RM4 = candidate-concept count (Cross-source spread >= 2 from harvest).
-# Absent block => these defaults; a project may override any single key.
-triage:
-  greenfield_max_source_files: 5     # RM1 <= this AND RM2 <= loc => greenfield (little/no source)
-  greenfield_max_source_loc:   500   # RM2 ceiling for greenfield
-  large_min_source_loc:        20000 # RM2 >= this => brownfield-large (size)
-  large_min_dirs:              25    # RM3 >= this => brownfield-large (breadth / fan-out)
-  large_min_concepts:          40    # RM4 >= this => brownfield-large (concept density)
-
-kb_baseline:
-  branch: master
-  tip_date: 2026-07-09T00:44:01-04:00

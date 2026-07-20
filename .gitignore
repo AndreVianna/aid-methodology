@@ -63,6 +63,7 @@ desktop.ini
 .aid/.temp/
 .aid/.trash/
 .aid/.heartbeat/
+.aid/.control/
 .aid/generated/
 .aid/knowledge/.cache/
 # <<< AID managed <<<

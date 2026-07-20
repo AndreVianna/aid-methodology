@@ -20,6 +20,7 @@ from typing import Optional
 
 from .io_bounds import read_bytes_bounded
 from .models import (
+    ConnectorRef,
     DeliverableRef,
     DeferredIssue,
     DocFreshness,
@@ -110,24 +111,22 @@ class ParsedWork:
 
 
 # ---------------------------------------------------------------------------
-# Level-0: ToolInfo from .aid-manifest.json (+ .aid-version fallback)
+# Level-0: ToolInfo from .aid-manifest.json
 # ---------------------------------------------------------------------------
 
 def parse_tool_info(
     manifest_path: Path,
-    version_path: Path,
 ) -> tuple[ToolInfo, int]:
     """Parse .aid/.aid-manifest.json into ToolInfo.
 
-    Falls back to .aid/.aid-version (plain string) for aid_version if the JSON
-    manifest is absent.
-
     Returns (ToolInfo, bytes_read).
-    manifest_present=False -> all fields None, no error (DM-2).
+    manifest_present=False -> all fields None, no error (DM-2). The retired
+    .aid/.aid-version marker is no longer consulted; a tool-less project (no
+    manifest) records its AID version in settings.yml instead, surfaced by the
+    home-grid reader.
     """
     bytes_read = 0
 
-    # Try manifest JSON first.
     if manifest_path.is_file():
         try:
             raw = read_bytes_bounded(manifest_path)
@@ -148,21 +147,7 @@ def parse_tool_info(
             tools_installed=tools_installed,
         ), bytes_read
 
-    # Fallback: .aid/.aid-version (plain string with the version)
-    if version_path.is_file():
-        try:
-            raw = read_bytes_bounded(version_path)
-            bytes_read += len(raw)
-            version_str = raw.decode("utf-8", errors="replace").strip()
-        except OSError:
-            version_str = None
-
-        return ToolInfo(
-            manifest_present=False,
-            aid_version=version_str or None,
-        ), bytes_read
-
-    # No manifest, no version file.
+    # No manifest.
     return ToolInfo(manifest_present=False), bytes_read
 
 
@@ -170,29 +155,33 @@ def parse_tool_info(
 # Level-1: RepoInfo helpers
 # ---------------------------------------------------------------------------
 
-def parse_project_name(settings_path: Path) -> tuple[str, int]:
-    """Extract project.name from .aid/settings.yml.
+def parse_project_settings(settings_path: Path) -> tuple[str, Optional[str], int]:
+    """Extract project.name and project.description from .aid/settings.yml.
 
-    Uses a simple line-scan for 'name:' under the 'project:' block.
-    Returns (name, bytes_read). On any failure, returns ("", 0).
+    Both scalars live in the SAME 'project:' block, so this is one shared
+    line-scan (feature-002, work-017 task-005) -- the combined pass
+    `parse_project_name` used to run alone before this field was added.
+    Returns (name, description, bytes_read). On any failure, returns ("", None, 0).
 
-    This is display-only: we read only the literal name scalar, not
+    This is display-only: we read only the literal scalars, not
     grade-resolution semantics (read-setting.sh is the contract for resolution).
     """
     if not settings_path.is_file():
-        return "", 0
+        return "", None, 0
 
     try:
         raw = read_bytes_bounded(settings_path)
     except OSError:
-        return "", 0
+        return "", None, 0
 
     bytes_read = len(raw)
     text = raw.decode("utf-8", errors="replace")
 
-    # Find 'project:' section then the first 'name:' line after it.
-    # Simple anchored line-scan: no YAML parser needed for this one scalar.
+    # Find 'project:' section then the 'name:'/'description:' lines within it.
+    # Simple anchored line-scan: no YAML parser needed for these scalars.
     in_project = False
+    name: Optional[str] = None
+    description: Optional[str] = None
     for line in text.splitlines():
         stripped = line.strip()
         if stripped == "project:" or stripped.startswith("project: "):
@@ -202,19 +191,114 @@ def parse_project_name(settings_path: Path) -> tuple[str, int]:
             # Another top-level key ends the project block
             if line and line[0] not in (" ", "\t", "#", "") and ":" in line:
                 key = line.split(":")[0].strip()
-                if key != "name":
+                if key not in ("name", "description"):
                     # If this is a new top-level section (no leading whitespace), stop.
                     if not line[0].isspace():
                         break
             m = re.match(r"^\s+name:\s+(.+)", line)
-            if m:
-                val = m.group(1)
+            if m and name is None:
                 # PF-6: strip inline YAML comment -- drop from first unquoted '#' to EOL
-                val = _strip_yaml_inline_comment(val)
-                val = val.strip().strip('"').strip("'")
-                return val, bytes_read
+                val = _strip_yaml_inline_comment(m.group(1))
+                name = val.strip().strip('"').strip("'")
+                continue
+            m = re.match(r"^\s+description:\s+(.+)", line)
+            if m and description is None:
+                val = _strip_yaml_inline_comment(m.group(1))
+                description = val.strip().strip('"').strip("'")
+                continue
 
-    return "", bytes_read
+    # Flat-schema fallback: name/description at the top level (the project:
+    # wrapper is removed in the flat schema). A migrated project has them at
+    # column 0; a legacy project has them nested (found above).
+    if name is None:
+        name = _parse_toplevel_scalar(text, "name")
+    if description is None:
+        description = _parse_toplevel_scalar(text, "description")
+
+    return (name if name is not None else ""), description, bytes_read
+
+
+def parse_project_name(settings_path: Path) -> tuple[str, int]:
+    """Extract project.name from .aid/settings.yml.
+
+    Thin wrapper over `parse_project_settings` (kept for existing
+    callers/tests that only need the name). Returns (name, bytes_read).
+    On any failure, returns ("", 0).
+
+    This is display-only: we read only the literal name scalar, not
+    grade-resolution semantics (read-setting.sh is the contract for resolution).
+    """
+    name, _description, bytes_read = parse_project_settings(settings_path)
+    return name, bytes_read
+
+
+def parse_minimum_grade(settings_path: Path) -> tuple[Optional[str], int]:
+    """Extract the GLOBAL review.minimum_grade from .aid/settings.yml.
+
+    Its own 'review:'-section line-scan -- structurally SEPARATE from the
+    'project:' block. In a real settings.yml the 'tools:' section sits
+    between 'project:' and 'review:', so `parse_project_settings`'s
+    break-on-next-top-level-key logic exits the loop at 'tools:' and never
+    reaches 'review:'; reusing that scan is impossible, hence the dedicated pass.
+
+    Returns (grade, bytes_read). Absent/unreadable -> (None, bytes_read or 0).
+
+    Read literally as a display scalar -- no resolution (read-setting.sh
+    remains the resolution contract, same posture as parse_project_name).
+    """
+    if not settings_path.is_file():
+        return None, 0
+
+    try:
+        raw = read_bytes_bounded(settings_path)
+    except OSError:
+        return None, 0
+
+    bytes_read = len(raw)
+    text = raw.decode("utf-8", errors="replace")
+
+    in_review = False
+    grade: Optional[str] = None
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped == "review:" or stripped.startswith("review: "):
+            in_review = True
+            continue
+        if in_review:
+            # Another top-level key ends the review block
+            if line and line[0] not in (" ", "\t", "#", "") and ":" in line:
+                key = line.split(":")[0].strip()
+                if key != "minimum_grade":
+                    if not line[0].isspace():
+                        break
+            m = re.match(r"^\s+minimum_grade:\s+(.+)", line)
+            if m and grade is None:
+                val = _strip_yaml_inline_comment(m.group(1))
+                val = val.strip().strip('"').strip("'")
+                if val:
+                    grade = val
+                continue
+
+    # Flat-schema fallback: top-level minimum_grade (review: wrapper removed).
+    if grade is None:
+        grade = _parse_toplevel_scalar(text, "minimum_grade")
+
+    return grade, bytes_read
+
+
+def _parse_toplevel_scalar(text: str, key: str) -> Optional[str]:
+    """Read a column-0 ``key: value`` scalar (the flat settings schema, where
+    name/description/type/minimum_grade live at the top level). Returns the
+    stripped value, or None if absent / empty / an inline list / block-marker."""
+    pat = re.compile(r"^" + re.escape(key) + r":\s*(.*)$")
+    for line in text.splitlines():
+        m = pat.match(line)
+        if m:
+            val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+            if val.startswith("[") and val.endswith("]"):
+                return None
+            return val or None
+    return None
 
 
 def _strip_yaml_inline_comment(scalar: str) -> str:
@@ -246,16 +330,61 @@ def _strip_yaml_inline_comment(scalar: str) -> str:
     return s
 
 
-def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]:
-    """Parse the kb_baseline block from .aid/settings.yml (DM-A4, task-064).
+def _scan_block_pair(
+    text: str, block_key: str, key1: str, key2: str
+) -> tuple[Optional[str], Optional[str], bool]:
+    """Tolerant line-scan for a top-level ``block_key`` (e.g. 'knowledge:')
+    block, extracting the ``key1`` and ``key2`` scalar values found inside it.
 
-    Tolerant line-scan of the 'kb_baseline:' nested block, reusing the
-    parse_project_name posture (parsers.py:148):
-      - Scan for 'kb_baseline:' top-level key
-      - Within that block, extract 'branch:' and 'tip_date:' scalar values
+    Returns (key1_value, key2_value, block_found).
+    """
+    in_block = False
+    found = False
+    val1: Optional[str] = None
+    val2: Optional[str] = None
+    key1_re = re.compile(r"^\s+" + re.escape(key1) + r"\s+(.+)")
+    key2_re = re.compile(r"^\s+" + re.escape(key2) + r"\s+(.+)")
+
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped == block_key or stripped.startswith(block_key + " "):
+            in_block = True
+            found = True
+            continue
+        if in_block:
+            # Another top-level key (no leading whitespace) ends the block
+            if line and not line[0].isspace() and ":" in line and not stripped.startswith("#"):
+                break
+            m = key1_re.match(line)
+            if m and val1 is None:
+                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+                if val:
+                    val1 = val
+                continue
+            m = key2_re.match(line)
+            if m and val2 is None:
+                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
+                if val:
+                    val2 = val
+                continue
+
+    return val1, val2, found
+
+
+def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]:
+    """Parse the KB baseline from .aid/settings.yml (DM-A4, task-064).
+
+    Tolerant line-scan, reusing the parse_project_name posture (parsers.py:148):
+      - Scan for the 'knowledge:' top-level key
+      - Within that block, extract 'source:' (-> branch) and 'last_update:'
+        (-> tip_date) scalar values
+      - When 'knowledge:' is absent, fall back to the legacy 'kb_baseline:'
+        block ('branch:' / 'tip_date:' scalars) for pre-migration settings.yml
       - Absent/unparseable -> None (skip freshness, stay approved; FF-A2)
 
-    Returns (KbBaseline or None, bytes_read).
+    Returns (KbBaseline or None, bytes_read). The returned struct keeps the
+    same branch/tip_date field names regardless of which schema it was read
+    from, so downstream freshness logic is unchanged.
     Never raises (NFR7). Never writes.
     """
     if not settings_path.is_file():
@@ -269,33 +398,13 @@ def parse_kb_baseline(settings_path: Path) -> tuple[Optional["KbBaseline"], int]
     bytes_read = len(raw)
     text = raw.decode("utf-8", errors="replace")
 
-    in_baseline = False
-    branch: Optional[str] = None
-    tip_date: Optional[str] = None
-
-    for line in text.splitlines():
-        stripped = line.strip()
-        if stripped == "kb_baseline:" or stripped.startswith("kb_baseline: "):
-            in_baseline = True
-            continue
-        if in_baseline:
-            # Another top-level key (no leading whitespace) ends the block
-            if line and not line[0].isspace() and ":" in line and not stripped.startswith("#"):
-                break
-            # Extract branch:
-            m = re.match(r"^\s+branch:\s+(.+)", line)
-            if m and branch is None:
-                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
-                if val:
-                    branch = val
-                continue
-            # Extract tip_date:
-            m = re.match(r"^\s+tip_date:\s+(.+)", line)
-            if m and tip_date is None:
-                val = _strip_yaml_inline_comment(m.group(1)).strip().strip('"').strip("'")
-                if val:
-                    tip_date = val
-                continue
+    branch, tip_date, knowledge_found = _scan_block_pair(
+        text, "knowledge:", "source:", "last_update:"
+    )
+    if not knowledge_found:
+        branch, tip_date, _ = _scan_block_pair(
+            text, "kb_baseline:", "branch:", "tip_date:"
+        )
 
     if branch is None and tip_date is None:
         return None, bytes_read
@@ -626,6 +735,177 @@ def is_url_source(entry: str) -> bool:
     Identical to kb-freshness-check.sh is_url() and the Node twin isUrlSource().
     """
     return bool(_RE_URL.match(entry))
+
+
+# ---------------------------------------------------------------------------
+# feature-007-connectors-list (work-017 task-019): connectors registry parser
+# ---------------------------------------------------------------------------
+
+# The six connector-descriptor frontmatter scalars (feature-001's frozen
+# schema) -- the SAME fields build-connectors-index.sh's ef() and
+# connector-registry.sh's read_field address.
+_CONNECTOR_FM_FIELDS = (
+    "name", "connection_type", "endpoint", "auth_method", "secret_reference", "summary",
+)
+
+
+def _parse_connector_frontmatter_scalars(text: str) -> dict[str, str]:
+    """Extract the six connector-descriptor frontmatter scalars from the FIRST
+    frontmatter block only.
+
+    Same semantics as connector-registry.sh's read_field() / build-connectors-
+    index.sh's ef(): a single-line 'field: value' scalar, with ONE pair of
+    surrounding quotes stripped, first occurrence wins. A body-level
+    thematic-break '---' is never re-entered as frontmatter -- the scan stops
+    the instant the frontmatter block closes (mirrors ef()'s
+    "if (i > 1 && !in_fm) return ''" early-exit: nothing found before the
+    close is nothing found, full stop).
+
+    A field absent from the frontmatter (or a wholly frontmatter-less file)
+    is simply absent from the returned dict. Never raises (NFR7); no I/O
+    (pure text -> dict, mirrors parse_doc_frontmatter's own boundary).
+    """
+    result: dict[str, str] = {}
+    in_fm = False
+    fm_entered = False
+
+    for line in text.splitlines():
+        if _RE_FM_FENCE.match(line):
+            if not fm_entered:
+                # Opening fence
+                in_fm = True
+                fm_entered = True
+                continue
+            else:
+                # Closing fence -- stop scanning entirely (never re-enter
+                # frontmatter for a body-level thematic break).
+                break
+
+        if not in_fm:
+            # No opening fence yet -- not in frontmatter (or no frontmatter at all)
+            break
+
+        for fld in _CONNECTOR_FM_FIELDS:
+            if fld in result:
+                continue  # first occurrence wins
+            prefix = fld + ":"
+            if line.startswith(prefix):
+                val = line[len(prefix):].strip()
+                if len(val) >= 1 and val[0] in "\"'":
+                    val = val[1:]
+                if len(val) >= 1 and val[-1] in "\"'":
+                    val = val[:-1]
+                result[fld] = val
+
+    return result
+
+
+def parse_connectors(connectors_dir: Path) -> "tuple[list[ConnectorRef], int]":
+    """Enumerate <aid_dir>/connectors/*.md into a stem-sorted list[ConnectorRef].
+
+    Uses the EXACT filter connector-registry.sh's `list` op uses
+    (connector-registry.sh lines 151-154): `*.md` files directly under
+    connectors_dir, excluding `INDEX.md` and dotfiles, sorted by stem. A
+    missing connectors_dir -> [] (non-error; mirrors the script's own
+    missing-root behavior).
+
+    Per descriptor, extracts the six frontmatter scalars (name,
+    connection_type, endpoint, auth_method, secret_reference, summary) via
+    _parse_connector_frontmatter_scalars(). `name` defaults to the
+    descriptor's own stem when absent (Data Model "human name; defaults to
+    <stem>" -- the same default build-connectors-index.sh's ef()+fallback
+    applies for its INDEX.md Connector column). `connection_type` is a raw,
+    possibly-empty scalar (a required str field; the reader adds no enum).
+    endpoint/auth_method/secret_reference/summary are None when absent from
+    the descriptor.
+
+    Never reads/serializes the secret VALUE or the `.secrets/` directory
+    contents -- descriptor frontmatter only. Returns (refs, bytes_read).
+    Never raises (NFR7).
+    """
+    if not connectors_dir.is_dir():
+        return [], 0
+
+    try:
+        candidates = [
+            p for p in connectors_dir.iterdir()
+            if p.is_file() and p.name.endswith(".md")
+            and p.name != "INDEX.md" and not p.name.startswith(".")
+        ]
+    except OSError:
+        return [], 0
+
+    candidates.sort(key=lambda p: p.stem)
+
+    bytes_read = 0
+    refs: list[ConnectorRef] = []
+    for path in candidates:
+        stem = path.stem
+        try:
+            raw = read_bytes_bounded(path)
+            bytes_read += len(raw)
+            text = raw.decode("utf-8", errors="replace")
+        except OSError:
+            text = ""
+
+        fm = _parse_connector_frontmatter_scalars(text)
+        name = fm.get("name") or stem
+        connection_type = fm.get("connection_type", "")
+        endpoint = fm.get("endpoint") or None
+        auth_method = fm.get("auth_method") or None
+        secret_reference = fm.get("secret_reference") or None
+        summary = fm.get("summary") or None
+
+        refs.append(ConnectorRef(
+            stem=stem,
+            name=name,
+            connection_type=connection_type,
+            endpoint=endpoint,
+            auth_method=auth_method,
+            secret_reference=secret_reference,
+            summary=summary,
+        ))
+
+    return refs, bytes_read
+
+
+# ---------------------------------------------------------------------------
+# feature-010-external-sources-list (work-017 task-021): external-sources
+# registry wrapper -- NO new frontmatter parser. A thin wrapper over the
+# existing byte-parity-tested parse_doc_frontmatter() (line 586).
+# ---------------------------------------------------------------------------
+
+def parse_external_sources(kb_dir: Path) -> list[str]:
+    """Return the deduped, order-preserved `sources:` entries of
+    `<kb_dir>/external-sources.md`, with the discovery placeholder `(none)`
+    filtered out.
+
+    A thin wrapper -- NOT a new parser -- over the existing
+    parse_doc_frontmatter(): takes its `sources_list`, drops the literal
+    `(none)` placeholder entry, dedupes while preserving first-seen order, and
+    returns the result. An absent/frontmatter-less file -> parse_doc_frontmatter
+    already returns `[]` for sources_list, so this wrapper returns `[]` too
+    (NFR-never-raises; no separate absent-file branch needed here).
+
+    Reader-parity note (feature-010 SPEC): parse_doc_frontmatter's block-list
+    continuation only matches CONTIGUOUS leading-whitespace "-" item lines --
+    a comment or blank line between `sources:` and its items ends the block
+    (and it does not strip a trailing inline `# comment` from a block item).
+    The write-external-source.sh writer (task-020) normalizes the block to
+    contiguous `  - <item>` lines directly under `sources:`, with no inline
+    comment, so every dashboard-managed entry is reader-visible here (AC2).
+    """
+    _, sources_list, _ = parse_doc_frontmatter(kb_dir / "external-sources.md")
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in sources_list:
+        if item == "(none)":
+            continue
+        if item in seen:
+            continue
+        seen.add(item)
+        result.append(item)
+    return result
 
 
 # ---------------------------------------------------------------------------
@@ -1308,16 +1588,19 @@ _DELIVERY_STATE_VALUES = frozenset({
 class ParsedTaskState:
     """Parsed result for one task-level STATE.md (task-NNN/STATE.md).
 
-    Covers: State / Review / Elapsed / Notes from ## Task State section.
+    Covers: State / Review / Elapsed / Notes from ## Task State section, plus
+    the feature-005 mutable `display_name` override (frontmatter-only -- no
+    legacy prose bullet form; None when unset).
     Used by the hierarchical reader path only.
     """
-    __slots__ = ("state", "review", "elapsed", "notes", "parse_warnings")
+    __slots__ = ("state", "review", "elapsed", "notes", "display_name", "parse_warnings")
 
     def __init__(self) -> None:
         self.state: TaskStatus = TaskStatus.Unknown
         self.review: Optional[str] = None
         self.elapsed: Optional[str] = None
         self.notes: Optional[str] = None
+        self.display_name: Optional[str] = None
         self.parse_warnings: list[str] = []
 
 
@@ -1436,6 +1719,14 @@ def parse_task_state_md(
         if v is not None:
             vv = v.strip()
             pts.notes = None if _is_null(vv) else vv
+
+        # feature-005 (work-017 task-008): display_name is a NEW frontmatter-only
+        # key -- no legacy prose bullet form exists, so it is read only here (no
+        # body-scan counterpart above, unlike state/review/elapsed/notes).
+        v = fm.get("display_name")
+        if v is not None:
+            vv = v.strip()
+            pts.display_name = None if _is_null(vv) else vv
 
     except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)
         pts.parse_warnings.append(
@@ -1712,6 +2003,10 @@ _RE_SECTION_2_OR_3 = re.compile(r"^#{2,3}\s+\S")
 def parse_tasks_lifecycle_md(text: str) -> "tuple[dict[str, ParsedTaskState], list[str]]":
     """Parse the work-root STATE.md `### Tasks lifecycle` table (feature-001 flat layout).
 
+    Columns: | Task | State | Review | Elapsed | Notes | Name |
+    Name (feature-005, work-017 task-008) is the trailing col 5 (0-indexed) --
+    a legacy 5-column row (pre-feature-005) yields display_name None.
+
     Returns (task_id_lower -> ParsedTaskState, parse_warnings). Header/separator
     rows and the `_none yet_` placeholder row are skipped. Unrecognized state
     literals map to TaskStatus.Unknown (never throws, NFR7).
@@ -1771,6 +2066,10 @@ def parse_tasks_lifecycle_md(text: str) -> "tuple[dict[str, ParsedTaskState], li
             pts.review = _col(2)
             pts.elapsed = _col(3)
             pts.notes = _col(4)
+            # feature-005 (work-017 task-008): trailing Name column (col 5); a
+            # legacy 5-column row (no Name column authored yet) yields
+            # _col(5) is None -> display_name None -> short_name/task_id fallback.
+            pts.display_name = _col(5)
             result[task_id.lower()] = pts
 
     except Exception as exc:  # noqa: BLE001 -- never throws (NFR7)

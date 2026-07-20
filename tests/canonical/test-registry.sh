@@ -674,7 +674,7 @@ assert_eq "${_V05_MTIME_BEFORE}" "${_V05_MTIME_AFTER}" \
 # REG-V06: update-self migrates exactly registered repos.
 #          Register A and B; leave C unregistered.
 #          Run update self (AID_SKIP_SELF_INSTALL=1 + AID_MIGRATE_YES=1).
-#          -> A and B get format_version: 2; C untouched.
+#          -> A and B get format_version: 3; C untouched.
 echo "--- REG-V06: update-self migrates exactly registered ---"
 _V06_AID_HOME=$(newhome)
 setup_aid_home "${_V06_AID_HOME}"
@@ -707,11 +707,11 @@ OUT=$(HOME="${_V06_HOME}" \
       bash "${_V06_AID_HOME}/bin/aid" update self 2>&1); RC=$?
 assert_exit_eq "$RC" 0 "REG-V06a update self with registered A+B -> exit 0"
 
-# A and B: format_version should now be 2.
+# A and B: format_version should now be 3.
 _V06_FV_A=$(grep '^format_version:' "${_V06_REPO_A}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
 _V06_FV_B=$(grep '^format_version:' "${_V06_REPO_B}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
-assert_eq "${_V06_FV_A}" "2" "REG-V06b registered repo A gets format_version: 2 after migrate"
-assert_eq "${_V06_FV_B}" "2" "REG-V06c registered repo B gets format_version: 2 after migrate"
+assert_eq "${_V06_FV_A}" "3" "REG-V06b registered repo A gets format_version: 3 after migrate"
+assert_eq "${_V06_FV_B}" "3" "REG-V06c registered repo B gets format_version: 3 after migrate"
 
 # C: must still have format_version: 0 (unregistered, not touched).
 _V06_FV_C=$(grep '^format_version:' "${_V06_REPO_C}/.aid/settings.yml" 2>/dev/null | head -1 | sed 's/format_version:[[:space:]]*//')
@@ -1085,7 +1085,7 @@ mkdir -p "${_P01_TRACKED}/.aid"
 printf '{"aid_version": "1.2.3", "tools": {"codex": {}}}\n' \
     > "${_P01_TRACKED}/.aid/.aid-manifest.json"
 
-# Path 2: untracked -- .aid/ exists but no manifest (no .aid-manifest.json / .aid-version).
+# Path 2: untracked -- .aid/ exists but no manifest (no .aid-manifest.json).
 _P01_UNTRACKED=$(mktemp -d "${TMP}/p01_untracked.XXXXXX")
 mkdir -p "${_P01_UNTRACKED}/.aid"
 
@@ -1211,17 +1211,35 @@ assert_file_exists "${_P03_PROJ}/.aid/sentinel.txt" "REG-P03a-03 add: tools unto
 assert_file_contains "${_P03_AID_INST}/registry.yml" "${_P03_PROJ}" \
     "REG-P03a-04 registry.yml contains registered project path"
 
-# (b) Reject a non-.aid/ path with exit 2.
+# (b) A non-.aid/ path is INITIALIZED as a bare, tool-less project, then registered.
 _P03b_NOAID=$(mktemp -d "${TMP}/p03b_noaid.XXXXXX")
 run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03b_NOAID}"
-assert_exit_eq "$RC" 2 "REG-P03b aid projects add non-.aid/ path -> exit 2"
-assert_output_contains "$OUT" "not an AID project" "REG-P03b-02 error message mentions not an AID project"
+assert_exit_eq "$RC" 0 "REG-P03b aid projects add non-.aid/ path -> initialized + exit 0"
+assert_output_contains "$OUT" "initialized a bare AID project" "REG-P03b-02 output announces bare-project init"
+assert_file_exists "${_P03b_NOAID}/.aid/settings.yml" "REG-P03b-03 bare .aid/settings.yml scaffolded"
+# config-schema redesign: the scaffold writes a FLAT settings.yml (top-level name:
+# + format_version: 3, no tools: block -- tools live in the manifest instead).
+assert_file_contains "${_P03b_NOAID}/.aid/settings.yml" "name: $(basename "${_P03b_NOAID}")" \
+    "REG-P03b-04a scaffolded settings.yml has top-level name:"
+assert_file_contains "${_P03b_NOAID}/.aid/settings.yml" "format_version: 3" \
+    "REG-P03b-04b scaffolded settings.yml stamped format_version: 3"
+assert_file_not_contains "${_P03b_NOAID}/.aid/settings.yml" "tools:" \
+    "REG-P03b-04c scaffolded settings.yml has NO tools: block (tools live in the manifest)"
+assert_file_exists "${_P03b_NOAID}/.aid/.aid-manifest.json" "REG-P03b-04d minimal .aid-manifest.json scaffolded"
+assert_file_contains "${_P03b_NOAID}/.aid/.aid-manifest.json" "aid_version" \
+    "REG-P03b-04e scaffolded manifest records aid_version"
+assert_file_contains "${_P03_AID_INST}/registry.yml" "${_P03b_NOAID}" "REG-P03b-05 registry.yml contains the initialized project"
 
-# (c) Idempotent: add the same project a second time -> still one entry.
+# (c) Idempotent: add the same project a second time -> still one entry for
+# THIS project. By this point the registry also holds _P03b_NOAID (registered
+# by REG-P03b above), so a raw total-entry count is legitimately 2 -- that is
+# not a regression. The idempotency property under test is narrower: re-adding
+# _P03_PROJ must not duplicate ITS OWN entry. Count only lines matching
+# _P03_PROJ's own path.
 run_projects "${_P03_AID_INST}" "${_P03_HOME}" projects add "${_P03_PROJ}"
 assert_exit_eq "$RC" 0 "REG-P03c aid projects add same project twice -> exit 0"
-_P03c_COUNT=$(grep -c '  - ' "${_P03_AID_INST}/registry.yml" 2>/dev/null || echo 0)
-assert_eq "$_P03c_COUNT" "1" "REG-P03c idempotent: only one registry entry after double add"
+_P03c_COUNT=$(grep -cF -- "${_P03_PROJ}" "${_P03_AID_INST}/registry.yml" 2>/dev/null || echo 0)
+assert_eq "$_P03c_COUNT" "1" "REG-P03c idempotent: only one registry entry for _P03_PROJ after double add"
 
 # ===========================================================================
 # REG-P04: 'aid projects remove' via full CLI.
@@ -1876,7 +1894,7 @@ OUT=$(HOME="${_SH_HOME}" AID_HOME="${_SH_AID_HOME}" AID_STATE_HOME="${_SH_HOME}/
       AID_NO_UPDATE_CHECK=1 \
       bash "${_SH_AID_HOME}/bin/aid" projects add "${_SH_HOME}" 2>&1); _SH04_RC=$?
 assert_exit_eq "$_SH04_RC" 2 "REG-SH04a 'projects add' on state-home dir -> exit 2 (rejected)"
-assert_output_contains "$OUT" "is not an AID project" "REG-SH04b 'projects add' state-home: clear rejection"
+assert_output_contains "$OUT" "is the AID state home" "REG-SH04b 'projects add' state-home: clear rejection"
 if grep -qxF "  - ${_SH_HOME}" "${_SH_HOME}/.aid/registry.yml" 2>/dev/null; then
     fail "REG-SH04c 'projects add' state-home: NOT registered (state-home found in registry)"
 else

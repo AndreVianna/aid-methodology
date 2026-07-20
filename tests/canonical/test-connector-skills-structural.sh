@@ -25,9 +25,18 @@
 #               (not an inline copy); the real E2 markers SKIPPED /
 #               DECLARED-EMPTY / ENGAGED are present; the forbidden marker
 #               spelling `RESOLVED` is absent (work-004 SPEC gate-fix history)
-#   ST25-ST30   "no new scripts" (SPEC.md Note) -- every script path the new
-#               markdown references resolves to one of the 3 pre-existing
-#               connector scripts; no stray script/template file exists under
+#   ST25-ST30   "no new scripts" (SPEC.md Note, work-004-connector-consumption)
+#               -- every script path the two SKILL.md files / reconcile.md /
+#               consumption-protocol.md reference resolves to one of the 3
+#               pre-existing connector scripts (unchanged by this suite's own
+#               later history); the scripts/connectors/ directory listing is a
+#               closed set of the 3 pre-existing twins PLUS the one documented
+#               exception -- `write-connector.sh`, introduced by a LATER, separate
+#               work (feature-007-connectors-list, work-017 task-018) as the
+#               dashboard-dispatchable, bash-only, non-interactive counterpart to
+#               the two skills (SEC-4: the skills require AskUserQuestion/LLM
+#               authoring, which the LLM-free dashboard server cannot invoke); no
+#               OTHER stray script/template file exists under
 #               canonical/aid/scripts/connectors/ or
 #               canonical/aid/templates/connectors/
 #   ST31-ST38   AC8 -- `## Connectors` is present (and substantively wired to
@@ -146,10 +155,15 @@ assert_file_contains "$RECONCILE" "R0-R5; feature-006 orchestration" \
     "ST24 reconcile.md's bulk mode documents the R0-R5 step numbering ELICIT's own text also cites"
 
 # ===========================================================================
-# ST25-ST30  "No new scripts" (SPEC.md's own Note) -- every script reference
-# in the new markdown resolves to one of the 3 pre-existing connector
-# scripts; no stray file exists under scripts/connectors/ or
-# templates/connectors/.
+# ST25-ST30  "No new scripts" (SPEC.md's own Note, work-004-connector-consumption)
+# -- every script reference in the two skills' / reconcile.md's / consumption-
+# protocol.md's markdown resolves to one of the 3 pre-existing connector
+# scripts; the scripts/connectors/ directory is a closed set of those 3 twins
+# PLUS the one later, documented exception (write-connector.sh, feature-007-
+# connectors-list / work-017 task-018 -- a deliberate bash-only, no-.ps1-twin
+# script the LLM-free dashboard server dispatches; see that script's own header
+# and DETAIL.md for the full rationale); no OTHER stray file exists under
+# scripts/connectors/ or templates/connectors/.
 # ===========================================================================
 KNOWN_SCRIPT_BASES="connector-registry connector-secret build-connectors-index"
 
@@ -170,8 +184,8 @@ assert_eq "$unexpected_script" "" \
     "ST25 every script the new markdown references is one of the 3 known connector scripts (no new script introduced)"
 
 script_files="$(cd "$SCRIPTS_DIR" && ls -1 | sort | tr '\n' ' ')"
-assert_eq "$script_files" "build-connectors-index.ps1 build-connectors-index.sh connector-registry.ps1 connector-registry.sh connector-secret.ps1 connector-secret.sh " \
-    "ST26 canonical/aid/scripts/connectors/ contains exactly the 6 known files (3 scripts x 2 twins), no new script file"
+assert_eq "$script_files" "build-connectors-index.ps1 build-connectors-index.sh connector-registry.ps1 connector-registry.sh connector-secret.ps1 connector-secret.sh write-connector.sh " \
+    "ST26 canonical/aid/scripts/connectors/ contains exactly the 6 pre-existing files (3 scripts x 2 twins) plus the one documented exception (write-connector.sh, feature-007/task-018) -- no OTHER new script file"
 
 template_files="$(cd "$TEMPLATES_DIR" && ls -1 | sort | tr '\n' ' ')"
 assert_eq "$template_files" "consumption-protocol.md preset-catalog.md reconcile.md " \

@@ -427,7 +427,6 @@ function locateAidRoot(repoRoot) {
   const aidDir = join(root, ".aid");
 
   const manifestPath = join(aidDir, ".aid-manifest.json");
-  const versionPath = join(aidDir, ".aid-version");
   const settingsPath = join(aidDir, "settings.yml");
   const kbDir = join(aidDir, "knowledge");
   const heartbeatDir = join(aidDir, ".heartbeat");
@@ -449,7 +448,6 @@ function locateAidRoot(repoRoot) {
     aidDir,
     aidExists,
     manifestPath,
-    versionPath,
     settingsPath,
     kbDir,
     workDirs,
@@ -500,7 +498,7 @@ function statPath(p) {
 // Level-0: ToolInfo from .aid-manifest.json (mirrors parsers.py parse_tool_info)
 // ---------------------------------------------------------------------------
 
-function parseToolInfo(manifestPath, versionPath) {
+function parseToolInfo(manifestPath) {
   let bytesRead = 0;
 
   if (existsSync(manifestPath)) {
@@ -535,25 +533,9 @@ function parseToolInfo(manifestPath, versionPath) {
     ];
   }
 
-  // Fallback: .aid-version
-  if (existsSync(versionPath)) {
-    let raw;
-    try {
-      raw = readFileBounded(versionPath);
-      bytesRead += raw.length;
-    } catch (_) {
-      return [
-        { manifest_present: false, aid_version: null, installed_at: null, tools_installed: [] },
-        bytesRead,
-      ];
-    }
-    const versionStr = raw.toString("utf-8").trim() || null;
-    return [
-      { manifest_present: false, aid_version: versionStr, installed_at: null, tools_installed: [] },
-      bytesRead,
-    ];
-  }
-
+  // No manifest. (The retired .aid/.aid-version marker is no longer consulted;
+  // a tool-less project records its AID version in settings.yml, surfaced by the
+  // home-grid reader.)
   return [
     { manifest_present: false, aid_version: null, installed_at: null, tools_installed: [] },
     bytesRead,
@@ -587,18 +569,42 @@ function stripYamlInlineComment(scalar) {
   return s;
 }
 
-function parseProjectName(settingsPath) {
-  if (!existsSync(settingsPath)) return ["", 0];
+// parseTopLevelScalar: reads a column-0 `key: value` scalar (the flat settings
+// schema where name/description/type/minimum_grade live at the top level).
+// Returns the value, or null if absent / empty / an inline list. Twin of
+// parsers.py _parse_toplevel_scalar().
+function parseTopLevelScalar(text, key) {
+  const re = new RegExp("^" + key.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ":\\s*(.*)$");
+  for (const line of text.split("\n")) {
+    const m = line.match(re);
+    if (m) {
+      const val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+      if (val.startsWith("[") && val.endsWith("]")) return null;
+      return val || null;
+    }
+  }
+  return null;
+}
+
+// parseProjectSettings: extracts project.name + project.description from
+// .aid/settings.yml. Both scalars live in the SAME 'project:' block, so this
+// is one shared line-scan (feature-002, work-017 task-005). Returns
+// [name, description, bytesRead]; on any failure ["", null, 0].
+// Twin of parsers.py parse_project_settings().
+function parseProjectSettings(settingsPath) {
+  if (!existsSync(settingsPath)) return ["", null, 0];
   let raw;
   try {
     raw = readFileBounded(settingsPath);
   } catch (_) {
-    return ["", 0];
+    return ["", null, 0];
   }
   const bytesRead = raw.length;
   const text = raw.toString("utf-8");
 
   let inProject = false;
+  let name = null;
+  let description = null;
   for (const line of text.split("\n")) {
     const stripped = line.trim();
     if (stripped === "project:" || stripped.startsWith("project: ")) {
@@ -608,30 +614,51 @@ function parseProjectName(settingsPath) {
     if (inProject) {
       if (line.length > 0 && !/^\s/.test(line) && !line.startsWith("#") && line.includes(":")) {
         const key = line.split(":")[0].trim();
-        if (key !== "name") {
+        if (key !== "name" && key !== "description") {
           if (!/^\s/.test(line)) break;
         }
       }
-      const m = line.match(/^\s+name:\s+(.+)/);
-      if (m) {
+      let m = line.match(/^\s+name:\s+(.+)/);
+      if (m && name === null) {
         // PF-6: strip inline YAML comment
-        let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
-        return [val, bytesRead];
+        name = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        continue;
+      }
+      m = line.match(/^\s+description:\s+(.+)/);
+      if (m && description === null) {
+        description = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        continue;
       }
     }
   }
-  return ["", bytesRead];
+  // Flat-schema fallback: name/description at the top level (project: wrapper
+  // removed). Legacy projects have them nested (found above).
+  if (name === null) name = parseTopLevelScalar(text, "name");
+  if (description === null) description = parseTopLevelScalar(text, "description");
+  return [name !== null ? name : "", description, bytesRead];
 }
 
-// ---------------------------------------------------------------------------
-// task-064: parseKbBaseline -- tolerant line-scan of settings.yml kb_baseline block
-// Twin of dashboard/reader/parsers.py parse_kb_baseline (byte-parity minded, DM-A4)
-// ---------------------------------------------------------------------------
+// parseProjectName: thin wrapper over parseProjectSettings (kept for existing
+// callers that only need the name). Twin of parsers.py parse_project_name().
+function parseProjectName(settingsPath) {
+  const [name, , bytesRead] = parseProjectSettings(settingsPath);
+  return [name, bytesRead];
+}
 
-function parseKbBaseline(settingsPath) {
-  // Returns [{branch, tip_date}|null, bytesRead]
-  // Tolerant line-scan of the 'kb_baseline:' nested block in .aid/settings.yml.
-  // Absent/unparseable -> null (skip freshness, stay approved; FF-A2).
+// parseSettingsMinimumGrade: extracts the GLOBAL review.minimum_grade from
+// .aid/settings.yml. Its own 'review:'-section line-scan -- structurally
+// SEPARATE from the 'project:' block (a real settings.yml has 'tools:'
+// between 'project:' and 'review:', so parseProjectSettings's
+// break-on-next-top-level-key logic cannot reach 'review:'). Returns
+// [grade, bytesRead]; absent/unreadable -> [null, bytesRead or 0]. Read
+// literally as a display scalar -- no resolution. Twin of parsers.py
+// parse_minimum_grade() -- named parseSettingsMinimumGrade (not
+// parseMinimumGrade) in this flat file only to avoid colliding with the
+// pre-existing per-work parseMinimumGrade(text) below (twin of
+// derivation.py's _parse_minimum_grade, a STATE.md-text scan -- Python
+// keeps the two apart via module namespacing + the underscore prefix;
+// this single-file Node twin needs a distinct name instead).
+function parseSettingsMinimumGrade(settingsPath) {
   if (!existsSync(settingsPath)) return [null, 0];
   let raw;
   try {
@@ -642,36 +669,99 @@ function parseKbBaseline(settingsPath) {
   const bytesRead = raw.length;
   const text = raw.toString("utf-8");
 
-  let inBaseline = false;
-  let branch = null;
-  let tipDate = null;
+  let inReview = false;
+  let grade = null;
+  for (const line of text.split("\n")) {
+    const stripped = line.trim();
+    if (stripped === "review:" || stripped.startsWith("review: ")) {
+      inReview = true;
+      continue;
+    }
+    if (inReview) {
+      if (line.length > 0 && !/^\s/.test(line) && !line.startsWith("#") && line.includes(":")) {
+        const key = line.split(":")[0].trim();
+        if (key !== "minimum_grade") {
+          if (!/^\s/.test(line)) break;
+        }
+      }
+      const m = line.match(/^\s+minimum_grade:\s+(.+)/);
+      if (m && grade === null) {
+        const val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
+        if (val) grade = val;
+        continue;
+      }
+    }
+  }
+  // Flat-schema fallback: top-level minimum_grade (review: wrapper removed).
+  if (grade === null) grade = parseTopLevelScalar(text, "minimum_grade");
+  return [grade, bytesRead];
+}
+
+// ---------------------------------------------------------------------------
+// task-064: parseKbBaseline -- tolerant line-scan of settings.yml KB baseline
+// Twin of dashboard/reader/parsers.py parse_kb_baseline (byte-parity minded, DM-A4)
+// ---------------------------------------------------------------------------
+
+function scanBlockPair(text, blockKey, key1, key2) {
+  // Tolerant line-scan for a top-level `blockKey` (e.g. 'knowledge:') block,
+  // extracting the `key1` and `key2` scalar values found inside it.
+  // Returns [key1Value, key2Value, blockFound].
+  let inBlock = false;
+  let found = false;
+  let val1 = null;
+  let val2 = null;
+  const key1Re = new RegExp("^\\s+" + key1.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s+(.+)");
+  const key2Re = new RegExp("^\\s+" + key2.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\s+(.+)");
 
   for (const line of text.split("\n")) {
     const stripped = line.trim();
-    if (stripped === "kb_baseline:" || stripped.startsWith("kb_baseline: ")) {
-      inBaseline = true;
+    if (stripped === blockKey || stripped.startsWith(blockKey + " ")) {
+      inBlock = true;
+      found = true;
       continue;
     }
-    if (inBaseline) {
+    if (inBlock) {
       // Another top-level key (no leading whitespace) ends the block
       if (line.length > 0 && !/^\s/.test(line) && line.includes(":") && !stripped.startsWith("#")) {
         break;
       }
-      // Extract branch:
-      let m = line.match(/^\s+branch:\s+(.+)/);
-      if (m && branch === null) {
+      let m = line.match(key1Re);
+      if (m && val1 === null) {
         let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
-        if (val) branch = val;
+        if (val) val1 = val;
         continue;
       }
-      // Extract tip_date:
-      m = line.match(/^\s+tip_date:\s+(.+)/);
-      if (m && tipDate === null) {
+      m = line.match(key2Re);
+      if (m && val2 === null) {
         let val = stripYamlInlineComment(m[1]).trim().replace(/^"|"$/g, "").replace(/^'|'$/g, "");
-        if (val) tipDate = val;
+        if (val) val2 = val;
         continue;
       }
     }
+  }
+
+  return [val1, val2, found];
+}
+
+function parseKbBaseline(settingsPath) {
+  // Returns [{branch, tip_date}|null, bytesRead]
+  // Tolerant line-scan of the 'knowledge:' nested block in .aid/settings.yml
+  // ('source:' -> branch, 'last_update:' -> tip_date), falling back to the
+  // legacy 'kb_baseline:' block ('branch:' / 'tip_date:') when 'knowledge:'
+  // is absent. Absent/unparseable -> null (skip freshness, stay approved; FF-A2).
+  if (!existsSync(settingsPath)) return [null, 0];
+  let raw;
+  try {
+    raw = readFileBounded(settingsPath);
+  } catch (_) {
+    return [null, 0];
+  }
+  const bytesRead = raw.length;
+  const text = raw.toString("utf-8");
+
+  let [branch, tipDate, knowledgeFound] = scanBlockPair(text, "knowledge:", "source:", "last_update:");
+  if (!knowledgeFound) {
+    [branch, tipDate] = scanBlockPair(text, "kb_baseline:", "branch:", "tip_date:");
   }
 
   if (branch === null && tipDate === null) return [null, bytesRead];
@@ -1162,6 +1252,184 @@ function parseDocFrontmatter(docPath) {
   }
 
   return [approvedAtCommit, sourcesList, sourcesFieldPresent];
+}
+
+// ---------------------------------------------------------------------------
+// feature-007-connectors-list (work-017 task-019): connectors registry parser
+// (byte-parity twin of Python parsers.parse_connectors()).
+// ---------------------------------------------------------------------------
+
+// The six connector-descriptor frontmatter scalars (feature-001's frozen
+// schema) -- the SAME fields build-connectors-index.sh's ef() and
+// connector-registry.sh's read_field address.
+const CONNECTOR_FM_FIELDS = [
+  "name", "connection_type", "endpoint", "auth_method", "secret_reference", "summary",
+];
+
+function _parseConnectorFrontmatterScalars(text) {
+  // Extract the six connector-descriptor frontmatter scalars from the FIRST
+  // frontmatter block only. Twin of Python
+  // parsers._parse_connector_frontmatter_scalars().
+  //
+  // Same semantics as connector-registry.sh's read_field() / build-connectors-
+  // index.sh's ef(): a single-line 'field: value' scalar, with ONE pair of
+  // surrounding quotes stripped, first occurrence wins. A body-level
+  // thematic-break '---' is never re-entered as frontmatter -- the scan stops
+  // the instant the frontmatter block closes.
+  //
+  // Returns a plain object keyed by field name; a field absent from the
+  // frontmatter (or a wholly frontmatter-less file) is simply absent from the
+  // returned object. Never throws.
+  const result = {};
+  let inFm = false;
+  let fmEntered = false;
+
+  const lines = text.split("\n");
+  for (const rawLine of lines) {
+    const line = rawLine.replace(/\r$/, "");
+    if (RE_FM_FENCE.test(line)) {
+      if (!fmEntered) {
+        inFm = true;
+        fmEntered = true;
+        continue;
+      } else {
+        // Closing fence -- stop scanning entirely (never re-enter
+        // frontmatter for a body-level thematic break).
+        break;
+      }
+    }
+    if (!inFm) {
+      break;
+    }
+
+    for (const fld of CONNECTOR_FM_FIELDS) {
+      if (Object.prototype.hasOwnProperty.call(result, fld)) continue; // first occurrence wins
+      const prefix = fld + ":";
+      if (line.startsWith(prefix)) {
+        let val = line.slice(prefix.length).trim();
+        if (val.length >= 1 && (val[0] === '"' || val[0] === "'")) {
+          val = val.slice(1);
+        }
+        if (val.length >= 1 && (val[val.length - 1] === '"' || val[val.length - 1] === "'")) {
+          val = val.slice(0, -1);
+        }
+        result[fld] = val;
+      }
+    }
+  }
+
+  return result;
+}
+
+export function parseConnectors(connectorsDir) {
+  // Enumerate <aid_dir>/connectors/*.md into a stem-sorted array of
+  // ConnectorRef-shaped plain objects. Twin of Python parsers.parse_connectors().
+  //
+  // Uses the EXACT filter connector-registry.sh's `list` op uses
+  // (connector-registry.sh lines 151-154): `*.md` files directly under
+  // connectorsDir, excluding `INDEX.md` and dotfiles, sorted by stem. A
+  // missing connectorsDir -> [] (non-error; mirrors the script's own
+  // missing-root behavior).
+  //
+  // Returns [refs, bytesRead]. Never throws.
+  let isDir = false;
+  try {
+    isDir = statSync(connectorsDir).isDirectory();
+  } catch (_) {
+    isDir = false;
+  }
+  if (!isDir) return [[], 0];
+
+  let entries = [];
+  try {
+    entries = readdirSync(connectorsDir);
+  } catch (_) {
+    return [[], 0];
+  }
+
+  const candidates = entries
+    .filter((name) => name.endsWith(".md") && name !== "INDEX.md" && !name.startsWith("."))
+    .filter((name) => {
+      try {
+        return statSync(join(connectorsDir, name)).isFile();
+      } catch (_) {
+        return false;
+      }
+    });
+
+  const stemOf = (name) => name.slice(0, -3); // strip trailing ".md"
+  candidates.sort((a, b) => {
+    const sa = stemOf(a);
+    const sb = stemOf(b);
+    return sa < sb ? -1 : sa > sb ? 1 : 0;
+  });
+
+  let bytesRead = 0;
+  const refs = [];
+  for (const name of candidates) {
+    const stem = stemOf(name);
+    const path = join(connectorsDir, name);
+    let text = "";
+    try {
+      const raw = readFileBounded(path);
+      bytesRead += raw.length;
+      text = raw.toString("utf-8");
+    } catch (_) {
+      text = "";
+    }
+
+    const fm = _parseConnectorFrontmatterScalars(text);
+    const name_ = fm.name || stem;
+    const connectionType = fm.connection_type !== undefined ? fm.connection_type : "";
+    const endpoint = fm.endpoint || null;
+    const authMethod = fm.auth_method || null;
+    const secretReference = fm.secret_reference || null;
+    const summary = fm.summary || null;
+
+    refs.push({
+      stem,
+      name: name_,
+      connection_type: connectionType,
+      endpoint,
+      auth_method: authMethod,
+      secret_reference: secretReference,
+      summary,
+    });
+  }
+
+  return [refs, bytesRead];
+}
+
+// ---------------------------------------------------------------------------
+// feature-010-external-sources-list (work-017 task-021): external-sources
+// registry wrapper (byte-parity twin of Python parsers.parse_external_sources()).
+// NO new frontmatter parser -- a thin wrapper over the existing
+// parseDocFrontmatter().
+// ---------------------------------------------------------------------------
+
+export function parseExternalSources(kbDir) {
+  // Twin of Python parsers.parse_external_sources(). Returns the deduped,
+  // order-preserved sources: entries of <kbDir>/external-sources.md, with the
+  // discovery placeholder "(none)" filtered out. Absent/frontmatter-less file
+  // -> parseDocFrontmatter already returns [] for sourcesList -> [].
+  //
+  // Reader-parity note (feature-010 SPEC): parseDocFrontmatter's block-list
+  // continuation only matches CONTIGUOUS leading-whitespace '-' item lines --
+  // a comment or blank line between sources: and its items ends the block
+  // (and it does not strip a trailing inline '# comment' from a block item).
+  // The write-external-source.sh writer (task-020) normalizes the block to
+  // contiguous '  - <item>' lines directly under sources:, with no inline
+  // comment, so every dashboard-managed entry is reader-visible here (AC2).
+  const [, sourcesList] = parseDocFrontmatter(join(kbDir, "external-sources.md"));
+  const seen = new Set();
+  const result = [];
+  for (const item of sourcesList) {
+    if (item === "(none)") continue;
+    if (seen.has(item)) continue;
+    seen.add(item);
+    result.push(item);
+  }
+  return result;
 }
 
 function _readRoutingFields(docPath) {
@@ -2597,15 +2865,21 @@ function _readRepoFull(root) {
   }
 
   // Step 2: LEVEL-0 ToolInfo
-  const [toolInfo, br0] = parseToolInfo(loc.manifestPath, loc.versionPath);
+  const [toolInfo, br0] = parseToolInfo(loc.manifestPath);
   bytesRead += br0;
 
   // Step 3: LEVEL-1 RepoInfo
-  let [projectName, br1] = parseProjectName(loc.settingsPath);
+  let [projectName, projectDescription, br1] = parseProjectSettings(loc.settingsPath);
   bytesRead += br1;
   if (!projectName) {
     projectName = basename(resolvedRoot);
   }
+
+  // feature-002 (work-017 task-005): GLOBAL review.minimum_grade -- its own
+  // 'review:'-section scan (a real settings.yml has 'tools:' between 'project:'
+  // and 'review:', so the project-section scan above cannot reach it).
+  const [minimumGrade, brGrade] = parseSettingsMinimumGrade(loc.settingsPath);
+  bytesRead += brGrade;
 
   // task-064: parse kb_baseline from settings.yml (DM-A4)
   const [kbBaseline, brBaseline] = parseKbBaseline(loc.settingsPath);
@@ -2633,7 +2907,25 @@ function _readRepoFull(root) {
     kbState.suspect_count = docFreshness.filter(d => d.verdict === "suspect").length;
   }
 
-  const repoInfo = { project_name: projectName, aid_dir: loc.aidDir, kb_state: kbState };
+  // feature-007 (work-017 task-019): parse the project-level connectors registry
+  // (.aid/connectors/*.md), sorted by stem. Missing dir -> [] (non-error).
+  const [connectors, brConnectors] = parseConnectors(join(loc.aidDir, "connectors"));
+  bytesRead += brConnectors;
+
+  // feature-010 (work-017 task-021): parse the project-level external-sources
+  // registry (.aid/knowledge/external-sources.md sources: list). A thin wrapper
+  // over parseDocFrontmatter (no new parser); absent file -> [] (non-error).
+  const externalSources = parseExternalSources(loc.kbDir);
+
+  const repoInfo = {
+    project_name: projectName,
+    aid_dir: loc.aidDir,
+    kb_state: kbState,
+    project_description: projectDescription,
+    minimum_grade: minimumGrade,
+    connectors: connectors,
+    external_sources: externalSources,
+  };
 
   // Step 4: ENUMERATE worktrees + work folders (work-004 Pillar 4 / SD-3)
   // _enumerateWorktreeRoots returns [[branchLabel, aidDir], ...] with main root first.
@@ -2707,6 +2999,37 @@ function _readRepoFull(root) {
     },
   });
   return { model, stateCache };
+}
+
+function _taskStopRequested(workDir, workId, taskId) {
+  // Derive TaskModel.stop_requested (feature-008-execution-control, work-017
+  // task-029): a filesystem `stat` of the cooperative stop-signal file
+  // `write-control-signal.sh` (task-028) creates on `task.stop` / removes on
+  // `task.resume`.
+  //
+  // Computed RELATIVE to workDir -- the walked worktree copy of
+  // `.aid/works/<work_id>` this read pass is currently processing (WT-1) --
+  // NEVER a reconstructed `<served-root>/.aid/.control/<work_id>/` path.
+  // `join(workDir, "..", "..", ".control", workId)` is the `.aid/.control/
+  // <work_id>/` sibling of workDir's own `.aid/works/`, exactly mirroring
+  // `write-control-signal.sh`'s own path derivation (`dashboard/scripts/
+  // write-control-signal.sh`: `WORK_DIR/../../.control/WORK_ID`) so the reader
+  // stats the identical tree the writer and the `aid-execute` poll act on --
+  // the Python twin's `_task_stop_requested` (reader.py) performs the
+  // byte-identical stat via `work_dir.parent.parent`.
+  //
+  // Never parsed from / written to STATE.md (the control file is a new
+  // control-artifact class, outside STATE.md's C1 single-writer scope -- see
+  // feature-008 SPEC.md "C1 scope note"). Fail-safe: a missing `.control/`
+  // directory, a missing signal file, or any error all yield false -- never a
+  // parse warning, never a thrown exception (mirrors the reader's
+  // forward-compat posture for every other derived field).
+  try {
+    const controlFile = join(workDir, "..", "..", ".control", workId, taskId + ".stop");
+    return statSync(controlFile).isFile();
+  } catch (_) {
+    return false;
+  }
 }
 
 function readWork(workDir, workId) {
@@ -2814,6 +3137,7 @@ function readWork(workDir, workId) {
       short_name: shortName,
       delivery: delivery,
       lane: laneVal,
+      stop_requested: _taskStopRequested(workDir, workId, task.task_id),
     });
   });
 
@@ -3163,12 +3487,13 @@ const DELIVERY_STATE_VALUES = new Set([
 
 function _parseTaskStateMd(text, taskId) {
   // Mirror parsers.py parse_task_state_md.
-  // Returns { state, review, elapsed, notes, parseWarnings }
+  // Returns { state, review, elapsed, notes, displayName, parseWarnings }
   const pts = {
     state: TaskStatus.Unknown,
     review: null,
     elapsed: null,
     notes: null,
+    displayName: null,
     parseWarnings: [],
   };
 
@@ -3228,6 +3553,15 @@ function _parseTaskStateMd(text, taskId) {
     if (v !== undefined) {
       const vv = v.trim();
       pts.notes = isNull(vv) ? null : vv;
+    }
+
+    // feature-005 (work-017 task-008): display_name is a NEW frontmatter-only
+    // key -- no legacy prose bullet form exists, so it is read only here (no
+    // body-scan counterpart above, unlike state/review/elapsed/notes).
+    v = fm["display_name"];
+    if (v !== undefined) {
+      const vv = v.trim();
+      pts.displayName = isNull(vv) ? null : vv;
     }
   } catch (exc) {
     pts.parseWarnings.push(
@@ -3470,7 +3804,10 @@ function _parseDeliveryStateMd(text, deliveryId) {
 // leading # / Type / Wave columns -- type comes from DETAIL.md, wave is the
 // synthesized delivery-001 for every task in this layout):
 //
-//   | Task | State | Review | Elapsed | Notes |
+//   | Task | State | Review | Elapsed | Notes | Name |
+//
+// Name (feature-005, work-017 task-008) is the trailing col 5 (0-indexed) --
+// a legacy 5-column row (pre-feature-005) yields displayName null.
 // ---------------------------------------------------------------------------
 
 const RE_TASKS_LIFECYCLE_SECTION = /^###\s+Tasks lifecycle\s*$/i;
@@ -3524,11 +3861,15 @@ function parseTasksLifecycleMd(text) {
       const taskId = fcol(0) || "";
       if (!taskId || taskId.toLowerCase() === "task") continue;
 
+      // feature-005 (work-017 task-008): trailing Name column (col 5); a
+      // legacy 5-column row (no Name column authored yet) yields
+      // fcol(5) === null -> displayName null -> shortName/taskId fallback.
       result[taskId.toLowerCase()] = {
         state: parseTaskStatus(fcol(1) || ""),
         review: fcol(2),
         elapsed: fcol(3),
         notes: fcol(4),
+        displayName: fcol(5),
       };
     }
   } catch (exc) {
@@ -3744,7 +4085,7 @@ function _readWorkFlat(workDir, workId) {
 
     // Mutable cells from the work-root STATE.md ### Tasks lifecycle table
     const pts = tasksLifecycle[taskIdStr.toLowerCase()] || {
-      state: TaskStatus.Unknown, review: null, elapsed: null, notes: null,
+      state: TaskStatus.Unknown, review: null, elapsed: null, notes: null, displayName: null,
     };
 
     const laneVal = taskLaneMap[taskIdStr.toLowerCase()];
@@ -3761,6 +4102,8 @@ function _readWorkFlat(workDir, workId) {
       short_name: shortName,
       delivery: 1,
       lane: lane,
+      display_name: pts.displayName,
+      stop_requested: _taskStopRequested(workDir, workId, taskIdStr),
     });
   }
 
@@ -4015,6 +4358,8 @@ function _readWorkHierarchical(workDir, workId) {
         short_name: shortName,
         delivery: deliveryNumber,
         lane: lane,
+        display_name: pts.displayName,
+        stop_requested: _taskStopRequested(workDir, workId, taskIdStr),
       });
     }
 
@@ -4086,6 +4431,46 @@ function _readWorkHierarchical(workDir, workId) {
 // work-004 Pillar 5: Same-work reconcile (no winner) -- mirror reader.py
 // ---------------------------------------------------------------------------
 
+function _pipelineWinnerSortKey(updated, branchLabel) {
+  // Shared Pipeline-State winner-rule sort key (SD-2 / Pillar 5 step 2); mirror
+  // reader.py _pipeline_winner_sort_key verbatim.
+  //
+  // Newest `updated` wins; tie -> branch_label lexical sort, "main" first. This
+  // is the SINGLE encoding of the winner rule -- used by BOTH _reconcileSameWork
+  // (ranking WorkModel copies) and resolveWorkDir (task-002, WT-1: ranking raw
+  // worktree candidates) so the "same winner rule" invariant holds by
+  // construction rather than by two independently-maintained copies.
+  //
+  // Key: [tier, invUpdated, secondary]
+  //   tier=0 if updated present, tier=1 if absent.
+  //   invUpdated: char-complement so larger (newer) timestamp sorts smaller (ascending).
+  //   secondary: [0, ""] for "main", else [1, label].
+  const upd = updated || "";
+  const label = branchLabel || "";
+  const secondary = label === "main" ? [0, ""] : [1, label];
+  if (upd) {
+    const invUpdated = upd.split("").map(c => {
+      const cp = c.charCodeAt(0);
+      return String.fromCharCode(0x7F - Math.min(cp, 0x7F));
+    }).join("");
+    return [0, invUpdated, secondary];
+  }
+  return [1, "", secondary];
+}
+
+function _pipelineWinnerKeyCmp(ka, kb) {
+  // Compare two keys returned by _pipelineWinnerSortKey.
+  if (ka[0] !== kb[0]) return ka[0] - kb[0];
+  if (ka[1] < kb[1]) return -1;
+  if (ka[1] > kb[1]) return 1;
+  const [sat, sal] = ka[2];
+  const [sbt, sbl] = kb[2];
+  if (sat !== sbt) return sat - sbt;
+  if (sal < sbl) return -1;
+  if (sal > sbl) return 1;
+  return 0;
+}
+
 function _reconcileSameWork(copies) {
   // Merge N WorkModel copies for the same work_id into one reconciled model.
   //
@@ -4126,43 +4511,15 @@ function _reconcileSameWork(copies) {
 
   // Step 2: pick the Pipeline-State winner by newest Updated timestamp.
   // Tie-break: branch_label lexical sort, "main" sorting first.
-  //
-  // Key: (tier, inv_updated, secondary)
-  //   tier=0 if updated present, tier=1 if absent.
-  //   inv_updated: char-complement so larger (newer) timestamp sorts smaller (ascending).
-  //   secondary: [0, ""] for "main", else [1, label].
+  // The sort key itself is the shared _pipelineWinnerSortKey (see its comment
+  // above) -- reused verbatim by resolveWorkDir (task-002).
   function _pipelineWinnerKey(entry) {
     const wm = entry[0];
-    const updated = wm.updated || "";
-    const label = wm.branch_label || "";
-    const secondary = label === "main" ? [0, ""] : [1, label];
-    if (updated) {
-      // Char-complement: clamped to [0, 0x7F]
-      const invUpdated = updated.split("").map(c => {
-        const cp = c.charCodeAt(0);
-        return String.fromCharCode(0x7F - Math.min(cp, 0x7F));
-      }).join("");
-      return [0, invUpdated, secondary];
-    }
-    return [1, "", secondary];
+    return _pipelineWinnerSortKey(wm.updated, wm.branch_label);
   }
 
   function _keyCmp(a, b) {
-    // Compare two keys returned by _pipelineWinnerKey
-    const ka = _pipelineWinnerKey(a);
-    const kb = _pipelineWinnerKey(b);
-    // tier
-    if (ka[0] !== kb[0]) return ka[0] - kb[0];
-    // inv_updated (string compare)
-    if (ka[1] < kb[1]) return -1;
-    if (ka[1] > kb[1]) return 1;
-    // secondary: [tier, label]
-    const [sat, sal] = ka[2];
-    const [sbt, sbl] = kb[2];
-    if (sat !== sbt) return sat - sbt;
-    if (sal < sbl) return -1;
-    if (sal > sbl) return 1;
-    return 0;
+    return _pipelineWinnerKeyCmp(_pipelineWinnerKey(a), _pipelineWinnerKey(b));
   }
 
   const sortedCopies = copies.slice().sort(_keyCmp);
@@ -4263,6 +4620,97 @@ function _reconcileSameWork(copies) {
 }
 
 // ---------------------------------------------------------------------------
+// Worktree-aware work-directory resolver (WT-1) -- task-002; mirror reader.py
+// resolve_work_dir / _peek_work_updated verbatim.
+// ---------------------------------------------------------------------------
+
+export function resolveWorkDir(servedRoot, workId) {
+  // Resolve workId to the REAL on-disk work directory (worktree-aware; WT-1).
+  //
+  // Reuses _enumerateWorktreeRoots to walk the served repo's git worktrees,
+  // selects every worktree whose <wt>/.aid/works/<workId> exists, and applies
+  // the SAME winner rule as _reconcileSameWork step 2 (the shared
+  // _pipelineWinnerSortKey: newest `updated` wins; tie -> branch_label lexical,
+  // "main" first) -- so the directory returned is the very copy the reader
+  // would render for this work_id (a write hits exactly what the reader
+  // rendered).
+  //
+  // Returns null when no worktree of the served repo holds workId (the caller
+  // maps this to 404 -- the reader would not have rendered this work either).
+  // Inherits the reader's SD-3 degradation (git absent / non-git -> main-root-
+  // only) via _enumerateWorktreeRoots, so this resolver can only ever be asked
+  // to target a work the reader itself surfaced -- consistency by construction.
+  //
+  // servedRoot may be the repo root or a path ending in ".aid" (same convention
+  // as readRepo). The caller is responsible for validating workId's shape
+  // (^work-[0-9]+) before calling -- this function only resolves an
+  // already-validated id to a directory; it never reconstructs a served-tree
+  // path itself (each candidate directory comes verbatim from
+  // _enumerateWorktreeRoots's real on-disk .aid dir).
+  //
+  // Read-only. Never throws.
+  let root = resolve(servedRoot);
+  if (basename(root) === ".aid") {
+    root = resolve(root, "..");
+  }
+
+  const worktreeRoots = _enumerateWorktreeRoots(root);
+
+  // [updated, branchLabel, workDir] for every worktree that actually holds workId.
+  const candidates = [];
+  for (const [branchLabel, wtAidDir] of worktreeRoots) {
+    const workDir = join(wtAidDir, "works", workId);
+    let isDir = false;
+    try {
+      isDir = statSync(workDir).isDirectory();
+    } catch (_) {
+      isDir = false;
+    }
+    if (!isDir) continue;
+    candidates.push([_peekWorkUpdated(workDir, workId), branchLabel, workDir]);
+  }
+
+  if (candidates.length === 0) return null;
+
+  candidates.sort((a, b) =>
+    _pipelineWinnerKeyCmp(
+      _pipelineWinnerSortKey(a[0], a[1]),
+      _pipelineWinnerSortKey(b[0], b[1])
+    )
+  );
+  return candidates[0][2];
+}
+
+function _peekWorkUpdated(workDir, workId) {
+  // Best-effort read of a work directory's Pipeline State `updated` field.
+  // Used only by resolveWorkDir to break ties between worktree copies of the
+  // same work_id (the winner rule needs `updated`, not a full WorkModel). Reads
+  // workDir/STATE.md -- present regardless of monolithic/flat/hierarchical
+  // layout, since all three read the work-root STATE.md for Pipeline State --
+  // and parses it with the SAME parseStateText() the always-on read path uses.
+  //
+  // Returns null on a missing STATE.md or any read/parse failure; never
+  // throws. A null result only affects tie-break ordering, never candidate
+  // inclusion -- the work_id directory's presence is the sole inclusion test
+  // (WT-1).
+  const statePath = join(workDir, "STATE.md");
+  let isFile = false;
+  try {
+    isFile = statSync(statePath).isFile();
+  } catch (_) {
+    isFile = false;
+  }
+  if (!isFile) return null;
+  try {
+    const raw = readFileBounded(statePath);
+    const text = raw.toString("utf-8");
+    return parseStateText(text, workId, workDir).updated;
+  } catch (_) {
+    return null;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Object builders -- FIELD ORDER matches Python dataclasses EXACTLY (DM-3)
 // V8 preserves string-key insertion order; order here IS the serialization order.
 // ---------------------------------------------------------------------------
@@ -4320,12 +4768,38 @@ function _buildDocFreshness(df) {
   };
 }
 
+function _buildConnectorRef(cr) {
+  // ConnectorRef field order: stem, name, connection_type, endpoint,
+  // auth_method, secret_reference, summary (feature-007, task-019).
+  // Twin of Python ConnectorRef dataclass (models.py).
+  return {
+    stem:              cr.stem,
+    name:              cr.name,
+    connection_type:   cr.connection_type,
+    endpoint:          cr.endpoint !== undefined ? cr.endpoint : null,
+    auth_method:       cr.auth_method !== undefined ? cr.auth_method : null,
+    secret_reference:  cr.secret_reference !== undefined ? cr.secret_reference : null,
+    summary:           cr.summary !== undefined ? cr.summary : null,
+  };
+}
+
 function _buildRepoInfo(ri) {
-  // RepoInfo field order: project_name, aid_dir, kb_state
+  // RepoInfo field order: project_name, project_description, minimum_grade,
+  // aid_dir, kb_state (feature-002, work-017 task-005: two additive keys
+  // inserted after project_name; schema_version stays 3), connectors
+  // (feature-007, work-017 task-019: additive key inserted AFTER kb_state;
+  // schema_version stays 3), external_sources (feature-010, work-017
+  // task-021: additive key inserted AFTER connectors; schema_version stays
+  // 3). Surfaced ONLY in the DM-1 model -- the DM-2 /api/home entry builder
+  // never calls this function.
   return {
     project_name: ri.project_name,
+    project_description: ri.project_description !== undefined ? ri.project_description : null,
+    minimum_grade: ri.minimum_grade !== undefined ? ri.minimum_grade : null,
     aid_dir: ri.aid_dir,
     kb_state: _buildKbStateRef(ri.kb_state),
+    connectors: Array.isArray(ri.connectors) ? ri.connectors.map(_buildConnectorRef) : [],
+    external_sources: Array.isArray(ri.external_sources) ? ri.external_sources : [],
   };
 }
 
@@ -4342,7 +4816,10 @@ function _buildPendingInput(pi) {
 
 function _buildTaskModel(t) {
   // TaskModel field order: task_id, type, wave, status, review_grade, elapsed, notes,
-  //   short_name, delivery, lane  (schema_version 3 fields -- PF-3/PF-5)
+  //   short_name, delivery, lane  (schema_version 3 fields -- PF-3/PF-5),
+  //   display_name (feature-005, work-017 task-008 -- additive, no schema_version bump),
+  //   stop_requested (feature-008, work-017 task-029 -- additive derived field, no
+  //   schema_version bump)
   return {
     task_id: t.task_id,
     type: t.type,
@@ -4354,6 +4831,8 @@ function _buildTaskModel(t) {
     short_name: t.short_name !== undefined ? t.short_name : null,
     delivery: t.delivery !== undefined ? t.delivery : null,
     lane: t.lane !== undefined ? t.lane : null,
+    display_name: t.display_name !== undefined ? t.display_name : null,
+    stop_requested: !!t.stop_requested,
   };
 }
 

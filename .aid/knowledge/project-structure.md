@@ -49,7 +49,7 @@ changelog:
 | Property | Value |
 |----------|-------|
 | **Root directory** | the local checkout root (machine-specific path; not a stable fact) |
-| **Project version** | see `VERSION` (single canonical string; kept in sync across `packages/` and `.aid/.aid-version`) |
+| **Project version** | see `VERSION` (single canonical string; kept in sync across `packages/` and the `aid_version` key in `.aid/.aid-manifest.json`; the standalone `.aid/.aid-version` marker file is retired) |
 | **Primary language(s)** | Markdown, Shell, Python, JavaScript, PowerShell (most-used first) |
 | **Build / package systems** | npm (`packages/npm/package.json`), PyPI (`packages/pypi/pyproject.toml`), Astro (`site/package.json`) |
 | **License** | MIT (`LICENSE`) |
@@ -175,7 +175,7 @@ CONFIRMED. The "edit in canonical, not profiles" rule is stated in
 | `lib/aid-install-core.sh` | The shared Bash install/update/remove engine (the largest shell file). |
 | `lib/AidInstallCore.psm1` | The PowerShell equivalent install-core module. |
 | `release.sh` | Maintainer-only script that packages the five per-profile tarballs and cuts a GitHub Release. |
-| `VERSION` | Single-line canonical version string; kept in sync across packages and `.aid/.aid-version`. |
+| `VERSION` | Single-line canonical version string; kept in sync across packages and the `aid_version` key in `.aid/.aid-manifest.json` (the standalone `.aid/.aid-version` marker file is retired). |
 | `packages/npm/package.json` | npm `aid-installer` manifest. |
 | `packages/pypi/pyproject.toml` | PyPI `aid-installer` build config. |
 | `site/package.json` | Astro website build config (separate from the CLI). |

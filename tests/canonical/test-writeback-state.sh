@@ -1928,5 +1928,116 @@ fi
 
 # ---------------------------------------------------------------------------
 echo ""
+echo "=== Unit 23: task-007 — Name -> display_name task field (feature-005) ==="
+
+# 23a: nested layout — --field Name writes the display_name frontmatter key,
+# NOT a literal `name:` key (fm_key indirection).
+NAME_WORK="${TMPDIR_BASE}/name-nested-work"
+NAME_DELIV="${NAME_WORK}/deliveries/delivery-001"
+make_task_state "$NAME_DELIV" 1
+make_task_spec  "$NAME_DELIV" 1 1 "work-name-test"
+NAME_TASK_STATE="${NAME_DELIV}/tasks/task-001/STATE.md"
+
+code=0
+AID_STATE_FILE="${NAME_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Name --value "Custom Task Title" 2>/dev/null || code=$?
+assert_exit_zero "$code" "23a: nested --field Name write → exit 0"
+assert_file_contains "$NAME_TASK_STATE" "display_name: 'Custom Task Title'" "23a: display_name frontmatter key written (quoted -- value contains spaces)"
+if grep -qE '^name:' "$NAME_TASK_STATE"; then
+    fail "23a: a literal 'name:' frontmatter key was written (must be mapped to display_name)"
+else
+    pass "23a: no literal 'name:' frontmatter key present (fm_key indirection correct)"
+fi
+assert_file_contains "$NAME_TASK_STATE" "## Task State" "23a: ## Task State section still present after Name write (body untouched)"
+assert_file_contains "$NAME_TASK_STATE" "state: Pending" "23a: other frontmatter fields (state) untouched by the Name write"
+
+# 23b: idempotency — rewriting the same Name value leaves the file byte-identical
+BEFORE=$(wc -c < "$NAME_TASK_STATE")
+AID_STATE_FILE="${NAME_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Name --value "Custom Task Title" 2>/dev/null
+AFTER=$(wc -c < "$NAME_TASK_STATE")
+if [[ "$BEFORE" -eq "$AFTER" ]]; then
+    pass "23b: nested Name write idempotent — no size change on same value"
+else
+    fail "23b: nested Name write not idempotent — size changed from $BEFORE to $AFTER"
+fi
+
+# 23c: unknown-field error message now lists Name in the allowed set
+code=0
+NAME_ERR_OUT=$(AID_STATE_FILE="${NAME_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Bogus --value "x" 2>&1) || code=$?
+assert_exit_eq "$code" 4 "23c: unknown field still rejected (exit 4)"
+assert_output_contains "$NAME_ERR_OUT" "Name" "23c: unknown-field error message lists Name in the allowed set"
+
+# 23d/23e: the existing pipe/newline row-corruption guards still cover Name values
+code=0
+AID_STATE_FILE="${NAME_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Name --value "bad|value" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "23d: Name value containing '|' rejected (exit 4)"
+
+code=0
+AID_STATE_FILE="${NAME_WORK}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Name --value "$(printf 'line1\nline2')" 2>/dev/null || code=$?
+assert_exit_eq "$code" 4 "23e: Name value containing newline rejected (exit 4)"
+
+# 23f: flat layout — Name write on the EXISTING legacy 5-column-header fixture
+# ($FLAT_STATE, from Unit 20) proves the header/separator are left byte-verbatim
+# (no column-count reconciliation) while the DATA row gains the trailing col-7
+# Name cell (State/Review preserved from Unit 20's earlier writes).
+FLAT_HEADER_BEFORE=$(grep -m1 '^| Task |' "$FLAT_STATE")
+FLAT_SEP_BEFORE=$(grep -m1 -E '^\|-+' "$FLAT_STATE")
+code=0
+AID_STATE_FILE="$FLAT_STATE" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Name --value "Custom Flat Title" 2>/dev/null || code=$?
+assert_exit_zero "$code" "23f: flat --field Name write → exit 0"
+assert_file_contains "$FLAT_STATE" "| task-001 | In Progress | A | -- | -- | Custom Flat Title |" "23f: Name written to trailing col 7, State/Review preserved"
+FLAT_HEADER_AFTER=$(grep -m1 '^| Task |' "$FLAT_STATE")
+FLAT_SEP_AFTER=$(grep -m1 -E '^\|-+' "$FLAT_STATE")
+assert_eq "$FLAT_HEADER_AFTER" "$FLAT_HEADER_BEFORE" "23f: legacy 5-column header left byte-verbatim (no column-count reconciliation)"
+assert_eq "$FLAT_SEP_AFTER" "$FLAT_SEP_BEFORE" "23f: legacy 5-column separator left byte-verbatim (no column-count reconciliation)"
+
+# 23g: flat layout — a FRESH work seeded with the Name-column ### Tasks
+# lifecycle header/separator (matching work-state-template.md's updated seed)
+# proves the writer and the newly-seeded template agree on shape end-to-end.
+FLAT_WORK_NAME="${TMPDIR_BASE}/work-flat-name-seeded"
+mkdir -p "$FLAT_WORK_NAME"
+cat > "${FLAT_WORK_NAME}/STATE.md" <<'FLATNAMEEOF'
+# Work State — work-flat-name-seeded
+
+## Delivery Lifecycle
+
+- **State:** Specified
+
+### Tasks lifecycle
+
+| Task | State | Review | Elapsed | Notes | Name |
+|------|-------|--------|---------|-------|------|
+| _none yet_ | | | | | |
+
+## Delivery Gate
+
+- **Issue List:** none
+FLATNAMEEOF
+make_flat_blueprint "$FLAT_WORK_NAME"
+make_flat_task_spec "$FLAT_WORK_NAME" 1
+
+code=0
+AID_STATE_FILE="${FLAT_WORK_NAME}/STATE.md" bash "$SCRIPT" --delivery-id 1 --task-id 1 --field Name --value "Seeded Title" 2>/dev/null || code=$?
+assert_exit_zero "$code" "23g: flat --field Name write on a Name-column-seeded work → exit 0"
+assert_file_contains "${FLAT_WORK_NAME}/STATE.md" "| task-001 | -- | -- | -- | -- | Seeded Title |" "23g: new row created with Name in col 7, other cols at -- sentinel"
+if grep -qxF "| _none yet_ | | | | | |" "${FLAT_WORK_NAME}/STATE.md"; then
+    fail "23g: 6-column _none yet_ placeholder row not replaced by the new task row"
+else
+    pass "23g: 6-column _none yet_ placeholder row replaced by the new task row"
+fi
+assert_file_contains "${FLAT_WORK_NAME}/STATE.md" "| Task | State | Review | Elapsed | Notes | Name |" "23g: 6-column header (matching work-state-template.md's seed) preserved"
+assert_file_contains "${FLAT_WORK_NAME}/STATE.md" "|------|-------|--------|---------|-------|------|" "23g: 6-column separator (matching work-state-template.md's seed) preserved"
+
+# 23h: work-state-template.md itself — the seed ### Tasks lifecycle header AND
+# separator carry the trailing Name column (Migration item (4), task-007 AC3).
+TEMPLATE_FILE="${SCRIPT_DIR}/../../canonical/aid/templates/work-state-template.md"
+if [[ -f "$TEMPLATE_FILE" ]]; then
+    assert_file_contains "$TEMPLATE_FILE" "| Task | State | Review | Elapsed | Notes | Name |" "23h: work-state-template.md ### Tasks lifecycle header carries the Name column"
+    assert_file_contains "$TEMPLATE_FILE" "|------|-------|--------|---------|-------|------|" "23h: work-state-template.md ### Tasks lifecycle separator carries the Name column"
+else
+    log "23h: skipped — work-state-template.md not found at expected path"
+fi
+
+# ---------------------------------------------------------------------------
+echo ""
 test_summary
 exit $?

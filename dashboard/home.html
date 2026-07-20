@@ -378,6 +378,20 @@ footer {
   margin-bottom: 0.25rem;
 }
 .work-overview-header:hover { opacity: 0.85; }
+
+/* Pipeline rename (feature-005): the toggle button shares its row with the
+   write-gated rename pencil (a sibling, never nested -- see markup comment). */
+.work-overview-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.work-overview-header-row .work-overview-header {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-bottom: 0;
+}
 .work-overview-chevron {
   font-size: 0.72rem;
   display: inline-block;
@@ -544,6 +558,31 @@ footer {
    from the teal pipelines below. */
 .kt-head { color: var(--info); }
 .kt-section .card { border-left: 3px solid var(--info); }
+
+/* List-CRUD scaffold (feature-007-connectors-list / feature-010-external-sources-list,
+   task-022): the Connectors table and the External Sources list share this read-view +
+   write_enabled-gated Add row + inline error pattern. Unlike index.html's .card-actions
+   (KI-004 -- a sibling row beside a card-link tile, so buttons never nest inside an
+   anchor), these entries are table rows / list items with no anchor-nesting constraint,
+   so each row/item owns its own Remove control directly. */
+.list-crud-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 0.25rem; }
+.list-crud-table th { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); color: var(--text-dim); font-weight: 500; }
+.list-crud-table td { padding: 0.35rem 0.5rem; vertical-align: top; border-bottom: 1px solid var(--border); }
+.list-crud-empty { color: var(--text-dim); }
+.list-crud-hint { font-size: 0.78rem; color: var(--text-dim); margin: 0.2rem 0 0; }
+.list-crud-list { list-style: none; padding: 0; margin: 0.25rem 0 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.list-crud-list-item { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; padding: 0.3rem 0; border-bottom: 1px solid var(--border); }
+.list-crud-list-item:last-child { border-bottom: none; }
+.list-crud-add-row { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; margin-top: 0.75rem; }
+/* Add-row fields (Connectors / External Sources / Tools) reuse the .interval-input
+   base but must NOT inherit its fixed 3.5em, centred sizing (meant for the poll
+   spinner) -- that collapses & clips text fields. Text inputs grow to fill the row;
+   selects size to their widest option; the trailing Add button stays natural width. */
+.list-crud-add-row .interval-input { width: auto; text-align: left; }
+.list-crud-add-row input.interval-input { flex: 1 1 9rem; min-width: 7rem; }
+.list-crud-add-row select.interval-input { flex: 0 0 auto; min-width: 6rem; }
+.list-crud-add-row button { flex: 0 0 auto; }
+
 /* Work-card progress bar: Readiness (pre-execution) vs Execution (task completion) */
 .progress-row { margin: 0.55rem 0 0; }
 .progress-track { height: 6px; background: var(--bg-sunken); border-radius: 4px; overflow: hidden; }
@@ -707,6 +746,16 @@ footer {
   gap: 0.4em;
   align-items: center;
 }
+/* Stop/Resume toggle + "paused" pill row (feature-008-execution-control,
+   task-030) -- a THIRD chip line, appended only when the AC6 gate control
+   and/or the decorative paused pill actually render (never an empty row). */
+.task-chip .chip-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4em;
+  align-items: center;
+  margin-top: 0.15rem;
+}
 
 /* Interval input in controls */
 .interval-control {
@@ -728,6 +777,11 @@ footer {
   text-align: center;
 }
 .interval-input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* Native <select> option popup: on some platforms (e.g. Windows Chrome) the option
+   list is painted on a system-white background, so a dark-theme light --text becomes
+   light-on-white and unreadable. Pin the theme surface + text so the dropdown reads in
+   both themes. Reused by any .interval-input <select> (grade selector, and later index.html). */
+.interval-input option { color: var(--text); background-color: var(--bg-elev); }
 
 /* Running pulse animation — disabled with prefers-reduced-motion */
 @keyframes pulse-dot {
@@ -759,6 +813,93 @@ footer {
   font-size: 0.85rem;
 }
 .pending-input-item .meta { color: var(--text-dim); font-size: 0.8rem; margin-top: 0.2rem; }
+
+/* Project header panel (feature-002): identity/edit header at the top of #main-page.
+   Reuses .work-overview / .work-overview-title / .work-overview-desc / .btn-ghost /
+   .interval-input / .badge / .callout.err verbatim -- these are the only new rules. */
+.project-header-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+.project-header-row + .project-header-row { margin-top: 0.5rem; }
+.project-header-editor {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.4rem;
+}
+.project-header-name-input {
+  width: 100%;
+  max-width: 22rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-align: left;
+}
+.project-header-textarea {
+  width: 100%;
+  max-width: 32rem;
+  min-height: 4.5rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  font-family: inherit;
+  resize: vertical;
+}
+.project-header-textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.project-header-grade-label { font-size: 0.82rem; color: var(--text-muted); margin-right: 0.5rem; }
+
+/* Danger zone (feature-009-pipeline-delete, task-026): a single-button
+   destructive-action section appended to #work-overview-body by
+   _renderDangerZone, gated on model.write_enabled. Reuses .work-overview /
+   .border-err verbatim (the existing Blocked-work treatment) -- only the
+   button + modal rules below are new. */
+.danger-zone { margin-top: 1rem; }
+.danger-zone .kicker { color: var(--err); }
+
+/* Pipeline Finish (feature-008-execution-control, task-030): a write-gated,
+   NON-destructive action section appended to #work-overview-body by
+   _renderFinishControl, gated on work.lifecycle === 'Running' &&
+   model.write_enabled. Reuses .work-overview / .btn-ghost verbatim -- only
+   the margin rule below is new (mirrors .danger-zone's identical role). */
+.finish-zone { margin-top: 1rem; }
+.btn-danger {
+  background: var(--err);
+  border: 1px solid var(--err);
+  color: #FFFFFF;
+  padding: 0.4rem 0.8rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  font-family: inherit;
+}
+.btn-danger:hover { opacity: 0.88; }
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger:focus-visible { outline: 2px solid var(--err); outline-offset: 2px; }
+
+/* Type-to-confirm modal (native <dialog>, vanilla JS -- no library): the
+   destructive human gate for pipeline.delete (§UI Specs). */
+.confirm-modal {
+  max-width: 30rem;
+  width: calc(100% - 2rem);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+  background: var(--bg-elev);
+  color: var(--text);
+  padding: 1.3rem 1.4rem;
+}
+.confirm-modal::backdrop { background: rgba(0,0,0,0.5); }
+.confirm-modal h3 { margin-top: 0; }
+.confirm-modal label { display: block; font-size: 0.85rem; color: var(--text-muted); margin: 0.9rem 0 0.3rem; }
+.confirm-modal-warning { color: var(--err); font-weight: 600; }
+.confirm-modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.1rem; }
 </style>
 </head>
 <body>
@@ -814,18 +955,29 @@ footer {
       <div class="work-overview" id="work-overview-panel">
 
         <!-- Collapsible header row: always visible summary -->
-        <button type="button" class="work-overview-header" id="work-overview-header-btn"
-                aria-expanded="false" aria-controls="work-overview-body">
-          <!-- Chevron -->
-          <span class="work-overview-chevron" aria-hidden="true">&#9658;</span>
-          <!-- Identity line: #N · Title -->
-          <div class="work-overview-identity">
-            <span class="work-overview-number" id="overview-number"></span>
-            <span class="work-overview-title" id="overview-title"></span>
-          </div>
-          <!-- Lifecycle + skill badges (inline in summary) -->
-          <span id="overview-badges" style="display:inline-flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-left:0.25rem"></span>
-        </button>
+        <div class="work-overview-header-row">
+          <button type="button" class="work-overview-header" id="work-overview-header-btn"
+                  aria-expanded="false" aria-controls="work-overview-body">
+            <!-- Chevron -->
+            <span class="work-overview-chevron" aria-hidden="true">&#9658;</span>
+            <!-- Identity line: #N · Title -->
+            <div class="work-overview-identity">
+              <span class="work-overview-number" id="overview-number"></span>
+              <span class="work-overview-title" id="overview-title"></span>
+            </div>
+            <!-- Lifecycle + skill badges (inline in summary) -->
+            <span id="overview-badges" style="display:inline-flex;gap:0.4rem;flex-wrap:wrap;align-items:center;margin-left:0.25rem"></span>
+          </button>
+          <!-- Pipeline rename (feature-005): write-gated pencil, sibling of the toggle
+               button (never nested inside it -- a <button> cannot validly contain
+               another interactive control). Rendered only when write_enabled. -->
+          <span id="overview-title-edit-btn"></span>
+        </div>
+
+        <!-- Pipeline rename inline editor (feature-005): hidden unless editing -->
+        <div id="overview-title-editor" class="project-header-editor" style="display:none"></div>
+        <div id="overview-title-error" class="callout err" style="display:none;margin-bottom:0.5rem"></div>
+        <div id="overview-title-status" class="sr-only" aria-live="polite"></div>
 
         <!-- Collapsible body: all detail below the summary line -->
         <div class="work-overview-body" id="work-overview-body">
@@ -856,6 +1008,20 @@ footer {
             <ul class="work-disclosure-body" id="overview-features-body"></ul>
           </div>
 
+          <!-- Pipeline Finish (feature-008-execution-control, task-030): built
+               entirely by _renderFinishControl -- an empty container unless
+               work.lifecycle === 'Running' && model.write_enabled === true;
+               never present on index.html / the main-grid work card
+               (_renderWorkCard), same detail-route-only construction as the
+               Danger zone below. -->
+          <div id="overview-finish-zone"></div>
+
+          <!-- Danger zone (feature-009-pipeline-delete, task-026): built entirely
+               by _renderDangerZone (renderWorkHeader's last step) -- an empty
+               container unless model.write_enabled === true (AC8); never present
+               on index.html / the main-grid work card (_renderWorkCard). -->
+          <div id="overview-danger-zone"></div>
+
         </div><!-- /#work-overview-body -->
 
       </div><!-- /.work-overview -->
@@ -872,9 +1038,30 @@ footer {
 
   <!-- Main page (feature-006): card grid + KB card -->
   <div id="main-page" style="display:none">
+    <!-- Project header panel (feature-002): identity/edit header, rendered first -->
+    <div id="project-header"></div>
+    <!-- Persistent (never rebuilt) live region for project-header Save/error status,
+         so a text update on it is a DOM mutation an AT can reliably announce. -->
+    <div id="project-header-status" class="sr-only" aria-live="polite"></div>
+
+    <!-- Tools section (work-017 post-dogfood): per-project host-tool management
+         (Add / Update / Remove). Moved off the home card so a tool-less project
+         can gain its first tool from the dashboard. -->
+    <h2 class="main-section-head" style="margin-top:2rem">Tools</h2>
+    <div id="tools-section"></div>
+
     <!-- Knowledge Base section — fixed-size header band, rendered first -->
     <h2 class="main-section-head kt-head">Knowledge Base</h2>
     <div class="grid g2 kt-section" id="knowledge-tool-section"></div>
+
+    <!-- Connectors section (feature-007-connectors-list, task-022): sibling of the KB
+         band -- connectors are the other project-level .aid/-derived registry. -->
+    <h2 class="main-section-head" style="margin-top:2rem">Connectors</h2>
+    <div id="connectors-section"></div>
+
+    <!-- External Sources section (feature-010-external-sources-list, task-022) -->
+    <h2 class="main-section-head" style="margin-top:2rem">External Sources</h2>
+    <div id="external-sources-section"></div>
 
     <!-- Pipelines section -->
     <h2 class="main-section-head" style="margin-top:2rem">Pipelines</h2>
@@ -903,7 +1090,7 @@ footer {
 </main>
 
 <footer id="page-footer">
-  <p>served locally by <code>aid dashboard</code> &middot; read-only &middot;
+  <p>served locally by <code>aid dashboard</code> &middot; <span id="footer-mode">read-only</span> &middot;
   refreshes every <span id="footer-interval">5</span>s &middot;
   <span id="footer-generated-by"></span></p>
 </footer>
@@ -1080,11 +1267,27 @@ footer {
     // read it via model.details. Absent on bare polls -> {} (first-tick loading state).
     if (lastGoodModel) { lastGoodModel.details = envelope.details || {}; }
 
+    // Graft the envelope-level `write_enabled` signal (feature-001 task-001) onto the
+    // model so every render function can read it via model.write_enabled -- shared
+    // infrastructure this feature (feature-002) introduces as the first consumer;
+    // features 005/006 reuse the same graft. Missing -> false (fail-safe).
+    if (lastGoodModel) { lastGoodModel.write_enabled = (envelope.write_enabled === true); }
+
+    // Graft the envelope-level `tools_catalog` (the installable host-tool catalog,
+    // added for the Tools section) onto the model so _renderToolsCard reads it via
+    // model.tools_catalog. Missing/non-array -> [] (fail-safe: Add offers nothing).
+    if (lastGoodModel) { lastGoodModel.tools_catalog = Array.isArray(envelope.tools_catalog) ? envelope.tools_catalog : []; }
+
     // Update footer generated_by (envelope-level field, NOT the model subtree)
     var genByEl = document.getElementById('footer-generated-by');
     if (genByEl && envelope.generated_by) {
       genByEl.textContent = 'via ' + envelope.generated_by;
     }
+
+    // Footer mode label reflects the server's actual write gate (previously a
+    // static "read-only" that mislabelled a server spawned with --allow-writes).
+    var footerModeEl = document.getElementById('footer-mode');
+    if (footerModeEl) footerModeEl.textContent = (envelope.write_enabled === true) ? 'writable' : 'read-only';
 
     renderModel(lastGoodModel);
     updateFreshnessBadge('live');
@@ -1297,10 +1500,10 @@ footer {
   // The four per-work calls are VERBATIM; only their caller changes.
   // ---------------------------------------------------------------------------
   function renderWorkView(work, model) {
-    renderWorkHeader(work);
+    renderWorkHeader(work, model);
     renderAttentionStrip(work);
     renderStageRail(work);
-    renderTasks(work);
+    renderTasks(work, model.write_enabled === true);
 
     // Update freshness badge
     var readAt = model.read && model.read.read_at;
@@ -1313,9 +1516,371 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
+  // Project header panel (feature-002): editable name / description / global
+  // minimum grade, at the top of #main-page. (The redundant "Open Knowledge
+  // Base" button was removed -- the Knowledge Base card is the open-KB affordance.)
+  // Consumes the settings.set op (feature-001) via POST ./api/op; on success the
+  // client re-fetches ./api/model and re-renders from disk (no optimistic mutation).
+  // ---------------------------------------------------------------------------
+
+  // projectHeaderState: transient UI-only state (never sent to / read from the
+  // server), mirroring this file's other uiState-style poll-survival pattern.
+  // editingField: null | 'name' | 'description' -- while non-null, _renderProjectHeader
+  // skips rebuilding the panel so the user's in-progress edit survives the poll loop;
+  // Save/Cancel explicitly re-invoke _renderProjectHeader once editing ends.
+  var projectHeaderState = { editingField: null, saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag: an edit-ENTRY transition (Edit button clicked)
+  // or a client-side validation error (which must re-surface its message while
+  // editingField stays set) needs _renderProjectHeader to render immediately even
+  // though the poll-loop-preservation guard below would otherwise skip it. The
+  // call site sets this flag right before invoking _renderProjectHeader;
+  // _consumeProjectHeaderExplicitRender() reads + clears it in the same call, so
+  // only that one render bypasses the guard -- never a later poll-loop re-render.
+  var _projectHeaderExplicitRender = false;
+  function _consumeProjectHeaderExplicitRender() {
+    var v = _projectHeaderExplicitRender;
+    _projectHeaderExplicitRender = false;
+    return v;
+  }
+
+  var PROJECT_HEADER_GRADE_OPTIONS = ['A+', 'A', 'A-', 'B+', 'B', 'B-', 'C+', 'C', 'C-', 'D+', 'D', 'D-', 'F'];
+
+  // Client-side mirror of the settings.set arg-schema (SPEC.md API Contracts) --
+  // defense-in-depth ahead of the server's own semantic_validate hook; returns an
+  // error string, or null when the value is acceptable for that path.
+  function _validateSettingValue(path, value) {
+    if (path === 'review.minimum_grade') {
+      return /^[A-F][+-]?$/.test(value) ? null : 'Grade must be one of A+ through F (e.g. A, A-, B+).';
+    }
+    if (value.indexOf('\n') !== -1) return 'Value cannot contain a line break.';
+    if (value.indexOf('"') !== -1) return 'Value cannot contain a double-quote (").';
+    if (value.indexOf('\\') !== -1) return 'Value cannot contain a backslash (\\).';
+    if (path === 'project.name' && value === '') return 'Project name is required.';
+    return null;
+  }
+
+  // POST ./api/op {op:"settings.set", target:{}, args:{path,value}}; onDone receives
+  // {ok, body} where ok mirrors the HTTP status and body is the parsed JSON envelope
+  // (best-effort {} on a non-JSON/network failure).
+  function _postSettingsSet(path, value, onDone) {
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'settings.set', target: {}, args: { path: path, value: value } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  // Independent raw re-fetch of ./api/model (does NOT participate in the poll loop's
+  // fetchPending guard) so a just-completed save is reflected immediately, even if a
+  // regular poll tick happens to be in flight at the same moment (no drift, AC2).
+  function _refetchModelForHeader() {
+    fetch('./api/model')
+      .then(function (resp) { return resp.json(); })
+      .then(function (envelope) { onSuccess(envelope); })
+      .catch(function () { /* best-effort; the next scheduled poll will retry */ });
+  }
+
+  function _setProjectHeaderStatus(text) {
+    var live = document.getElementById('project-header-status');
+    if (live) live.textContent = text || '';
+  }
+
+  // Validate + dispatch a settings.set save for one field. On success: exit edit
+  // mode, re-fetch the model, re-render from disk. On failure: exit edit mode WITHOUT
+  // mutating the model (the field reverts to its last on-disk value by construction --
+  // the edit was only ever local to the input's own DOM value), surface the error.
+  function _saveProjectSetting(path, value) {
+    var clientErr = _validateSettingValue(path, value);
+    if (clientErr) {
+      projectHeaderState.errorMessage = clientErr;
+      _setProjectHeaderStatus(clientErr);
+      // editingField is still set (the row's editor stays open) -- force the
+      // render so the error banner actually appears (see the explicit-render
+      // flag comment on projectHeaderState's declaration above).
+      _projectHeaderExplicitRender = true;
+      _renderProjectHeader(lastGoodModel);
+      return;
+    }
+    projectHeaderState.saving = true;
+    projectHeaderState.errorMessage = null;
+    _setProjectHeaderStatus('Saving…');
+    _postSettingsSet(path, value, function (result) {
+      projectHeaderState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = null;
+        _setProjectHeaderStatus('Saved.');
+        _refetchModelForHeader();
+      } else {
+        var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = detail;
+        _setProjectHeaderStatus('Error: ' + detail);
+        _renderProjectHeader(lastGoodModel);
+      }
+    });
+  }
+
+  // Build the name row: display (title + Edit pencil, write_enabled only) or the
+  // edit form (text input + Save/Cancel) when projectHeaderState.editingField==='name'.
+  function _renderProjectHeaderNameRow(repo, writeEnabled) {
+    var row = document.createElement('div');
+    row.className = 'project-header-row';
+
+    if (projectHeaderState.editingField === 'name') {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'interval-input project-header-name-input';
+      input.value = repo.project_name || '';
+      input.setAttribute('aria-label', 'Project name');
+      row.appendChild(input);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      saveBtn.disabled = projectHeaderState.saving;
+      saveBtn.addEventListener('click', function () {
+        // Disable immediately (not just at next render) to guard against a double-
+        // submit while the request is in flight -- _renderProjectHeader itself is
+        // skipped for the whole in-flight window (projectHeaderState.saving).
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        _saveProjectSetting('project.name', input.value);
+      });
+      row.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function () {
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = null;
+        _setProjectHeaderStatus('');
+        _renderProjectHeader(lastGoodModel);
+      });
+      row.appendChild(cancelBtn);
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+      });
+    } else {
+      var title = document.createElement('span');
+      title.className = 'work-overview-title';
+      title.id = 'project-header-title';
+      title.textContent = repo.project_name || '(untitled project)';
+      row.appendChild(title);
+
+      if (writeEnabled) {
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn-ghost';
+        editBtn.setAttribute('aria-expanded', 'false');
+        editBtn.setAttribute('aria-label', 'Edit project name');
+        editBtn.textContent = '✎ Edit';
+        editBtn.addEventListener('click', function () {
+          projectHeaderState.editingField = 'name';
+          projectHeaderState.errorMessage = null;
+          _setProjectHeaderStatus('');
+          // Force this render: the guard would otherwise skip it right back,
+          // since editingField is now non-null (see the flag comment above).
+          _projectHeaderExplicitRender = true;
+          _renderProjectHeader(lastGoodModel);
+        });
+        row.appendChild(editBtn);
+      }
+    }
+    return row;
+  }
+
+  // Build the description row: display (.work-overview-desc, muted placeholder when
+  // empty, + Edit pencil) or the edit form (<textarea> + Save/Cancel) when
+  // projectHeaderState.editingField==='description'.
+  function _renderProjectHeaderDescriptionRow(repo, writeEnabled) {
+    var row = document.createElement('div');
+    row.className = 'project-header-row';
+
+    if (projectHeaderState.editingField === 'description') {
+      var editorWrap = document.createElement('div');
+      editorWrap.className = 'project-header-editor';
+
+      var textarea = document.createElement('textarea');
+      textarea.className = 'project-header-textarea';
+      textarea.value = repo.project_description || '';
+      textarea.setAttribute('aria-label', 'Project description');
+      editorWrap.appendChild(textarea);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      saveBtn.disabled = projectHeaderState.saving;
+      saveBtn.addEventListener('click', function () {
+        // Disable immediately -- see the name-row Save handler's identical comment.
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        _saveProjectSetting('project.description', textarea.value);
+      });
+      editorWrap.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function () {
+        projectHeaderState.editingField = null;
+        projectHeaderState.errorMessage = null;
+        _setProjectHeaderStatus('');
+        _renderProjectHeader(lastGoodModel);
+      });
+      editorWrap.appendChild(cancelBtn);
+
+      textarea.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+      });
+
+      row.appendChild(editorWrap);
+    } else {
+      var desc = document.createElement('p');
+      desc.className = 'work-overview-desc';
+      desc.id = 'project-header-desc';
+      if (repo.project_description) {
+        desc.textContent = repo.project_description;
+      } else {
+        desc.textContent = 'No description set.';
+        desc.style.opacity = '0.6';
+      }
+      row.appendChild(desc);
+
+      if (writeEnabled) {
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn-ghost';
+        editBtn.setAttribute('aria-expanded', 'false');
+        editBtn.setAttribute('aria-label', 'Edit project description');
+        editBtn.textContent = '✎ Edit';
+        editBtn.addEventListener('click', function () {
+          projectHeaderState.editingField = 'description';
+          projectHeaderState.errorMessage = null;
+          _setProjectHeaderStatus('');
+          // Force this render: the guard would otherwise skip it right back,
+          // since editingField is now non-null (see the flag comment above).
+          _projectHeaderExplicitRender = true;
+          _renderProjectHeader(lastGoodModel);
+        });
+        row.appendChild(editBtn);
+      }
+    }
+    return row;
+  }
+
+  // Build the global minimum-grade row: a <select> (write_enabled) that dispatches
+  // settings.set on change, or a read-only .badge (mirrors _renderKbCard's badge use).
+  function _renderProjectHeaderGradeRow(repo, writeEnabled) {
+    var row = document.createElement('div');
+    row.className = 'project-header-row';
+
+    var label = document.createElement('label');
+    label.className = 'project-header-grade-label';
+    label.textContent = 'Global minimum grade';
+    label.setAttribute('for', 'project-header-grade-select');
+    row.appendChild(label);
+
+    if (writeEnabled) {
+      var select = document.createElement('select');
+      select.className = 'interval-input';
+      select.id = 'project-header-grade-select';
+      select.disabled = projectHeaderState.saving;
+      for (var i = 0; i < PROJECT_HEADER_GRADE_OPTIONS.length; i++) {
+        var opt = document.createElement('option');
+        opt.value = PROJECT_HEADER_GRADE_OPTIONS[i];
+        opt.textContent = PROJECT_HEADER_GRADE_OPTIONS[i];
+        select.appendChild(opt);
+      }
+      // repo.minimum_grade is read LITERALLY (no resolution -- read-setting.sh remains
+      // the resolution contract); when the settings.yml key is absent, 'A' is only the
+      // documented system-wide default pre-selection (aid-config / read-setting.sh
+      // --default A), not a resolved/optimistic value -- selecting it and changing
+      // nothing issues no write.
+      select.value = repo.minimum_grade || 'A';
+      select.addEventListener('change', function () {
+        // Disable immediately -- see the name-row Save handler's identical comment.
+        select.disabled = true;
+        _saveProjectSetting('review.minimum_grade', select.value);
+      });
+      row.appendChild(select);
+    } else {
+      var badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.id = 'project-header-grade-badge';
+      badge.textContent = repo.minimum_grade || 'A (default)';
+      row.appendChild(badge);
+    }
+    return row;
+  }
+
+  function _renderProjectHeader(model) {
+    var container = document.getElementById('project-header');
+    if (!container) return;
+
+    // Preserve an in-progress edit / in-flight save across the poll loop's periodic
+    // re-render; Save/Cancel/the save callback explicitly re-invoke this function
+    // once editing ends, so the panel never goes stale for longer than that.
+    if (!_consumeProjectHeaderExplicitRender() && (projectHeaderState.editingField !== null || projectHeaderState.saving)) {
+      return;
+    }
+
+    container.innerHTML = '';
+    var repo = model.repo || {};
+    var writeEnabled = model.write_enabled === true;
+
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+    panel.id = 'project-header-panel';
+
+    var identity = document.createElement('div');
+    identity.className = 'work-overview-identity';
+    identity.appendChild(_renderProjectHeaderNameRow(repo, writeEnabled));
+    panel.appendChild(identity);
+
+    panel.appendChild(_renderProjectHeaderDescriptionRow(repo, writeEnabled));
+    panel.appendChild(_renderProjectHeaderGradeRow(repo, writeEnabled));
+
+    if (projectHeaderState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.textContent = projectHeaderState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    // The "Open Knowledge Base" header button was removed as redundant: the
+    // Knowledge Base card (below, its own section) IS the open-KB affordance --
+    // the whole card is clickable to ./kb.html when approved/outdated and carries
+    // the same status label -- so the header button duplicated it.
+
+    container.appendChild(panel);
+  }
+
+  // ---------------------------------------------------------------------------
   // renderMainPage: the feature-006 main page (card grid + KB card)
   // ---------------------------------------------------------------------------
   function renderMainPage(model) {
+    _renderProjectHeader(model);
+
+    // Render Tools section (work-017 post-dogfood) -- manages its own container
+    // directly (mirrors _renderProjectHeader/_renderConnectorsCard); write_enabled
+    // comes from the same envelope graft onSuccess performs.
+    _renderToolsCard(model, model.write_enabled === true);
+
     var works = model.works || [];
 
     // Render pipelines section
@@ -1349,6 +1914,15 @@ footer {
       ktEl.innerHTML = '';
       ktEl.appendChild(_renderKbCard(model.repo && model.repo.kb_state));
     }
+
+    // Render Connectors section (feature-007, task-022) -- manages its own
+    // container directly (mirrors _renderProjectHeader), so no innerHTML/appendChild
+    // here; write_enabled is read from the SAME envelope graft onSuccess already
+    // performs for schema_version/details/generated_by (line ~1163).
+    _renderConnectorsCard(model.repo && model.repo.connectors, model.write_enabled === true);
+
+    // Render External Sources section (feature-010, task-022)
+    _renderExternalSourcesCard(model.repo, model.write_enabled === true);
 
     // Update freshness badge
     var readAt = model.read && model.read.read_at;
@@ -1618,11 +2192,8 @@ footer {
       card.href = './kb.html';  // location-relative (LC-A3): resolves to /r/<id>/kb.html
     }
 
-    // Kicker
-    var kicker = document.createElement('div');
-    kicker.className = 'kicker';
-    kicker.textContent = 'KNOWLEDGE BASE';
-    card.appendChild(kicker);
+    // (No in-card "KNOWLEDGE BASE" kicker: the section's own <h2>Knowledge Base</h2>
+    // header already titles this panel -- the kicker duplicated it.)
 
     // Badge + label per state (UI-A)
     var badge = document.createElement('span');
@@ -1632,10 +2203,7 @@ footer {
     if (status === 'pending') {
       badge.className = 'badge badge-dim';
       badge.textContent = '⊘ No KB';  // ⊘
-      var h3 = document.createElement('h3');
-      h3.textContent = 'No Knowledge Base yet';
       card.appendChild(badge);
-      card.appendChild(h3);
       var meta = document.createElement('p');
       meta.className = 'meta';
       meta.textContent = 'run /aid-discover to build the Knowledge Base';
@@ -1644,10 +2212,7 @@ footer {
     } else if (status === 'generating') {
       badge.className = 'badge badge-info';
       badge.textContent = '◴ Building';  // ◴
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Building';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -1666,10 +2231,7 @@ footer {
     } else if (status === 'preparing') {
       badge.className = 'badge badge-info';
       badge.textContent = '◴ Preparing';  // ◴
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Preparing';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -1688,10 +2250,7 @@ footer {
     } else if (status === 'approved') {
       badge.className = 'badge badge-ok';
       badge.textContent = '✓ Ready';  // ✓
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Ready';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -1714,10 +2273,7 @@ footer {
       // status === 'outdated'
       badge.className = 'badge badge-warn';
       badge.textContent = '⚠ Outdated';  // ⚠
-      var h3 = document.createElement('h3');
-      h3.textContent = 'Outdated';
       card.appendChild(badge);
-      card.appendChild(h3);
       if (kbState && kbState.doc_count != null) {
         var stat = document.createElement('div');
         stat.className = 'stat';
@@ -1784,6 +2340,821 @@ footer {
     return card;
   }
 
+  // ---------------------------------------------------------------------------
+  // Connectors section (feature-007-connectors-list, task-022): a list-CRUD
+  // sibling of the KB band -- view table (always shown) + write_enabled-gated
+  // Add form + per-row Remove (confirm() guard) + inline error surface. Reuses
+  // feature-002's POST ./api/op envelope (target: {} -- project-scoped, no
+  // work_id) via the generic postOp() helper (feature-006/task-010, below) and
+  // the truthful _refetchModelForHeader() re-fetch/re-render round-trip.
+  // ---------------------------------------------------------------------------
+
+  // Connector schema (simplified): `url` dropped (no preset, redundant with `api`);
+  // `ssh-key` auth dropped. Only `api` records a credential; `ssh`/`cli` are
+  // endpoint-only (they self-authenticate via keys/ssh-agent or the CLI's own login).
+  var CONNECTOR_TYPES = ['mcp', 'api', 'ssh', 'cli'];
+  var CONNECTOR_AUTH_METHODS = ['none', 'token', 'pat', 'oauth'];
+  var CONNECTOR_ENDPOINT_REQUIRED_TYPES = ['api', 'ssh', 'cli'];
+  var CONNECTOR_AUTH_REQUIRED_TYPES = ['api'];
+
+  // connectorsUiState: transient UI-only Add-form state (never sent to/read from
+  // the server). `fields` mirrors the Add form's live input values so a container
+  // rebuild -- the poll loop calls renderMainPage (and so _renderConnectorsCard)
+  // unconditionally on every successful poll, exactly like the KB card -- never
+  // discards an in-progress entry: every rebuild re-populates each input from
+  // `fields` instead of a fixed default (the only cost is a focus reset if a poll
+  // tick lands mid-keystroke, never data loss). `saving` is true for the duration
+  // of any in-flight connector.set/connector.remove request; while true,
+  // _renderConnectorsCard's own guard (below) skips a poll-triggered rebuild so a
+  // just-drawn busy/disabled state is not clobbered mid-request by a concurrent
+  // poll tick.
+  var connectorsUiState = {
+    saving: false,
+    errorMessage: null,
+    fields: { name: '', type: 'mcp', endpoint: '', auth: 'none', secret_ref: '' }
+  };
+
+  // One-shot explicit-render flag (mirrors _projectHeaderExplicitRender / the
+  // delivery-001 dogfood fix, commit 41ea5d28): entering the saving state must
+  // force _renderConnectorsCard to redraw the disabled/busy form immediately, even
+  // though the guard below would otherwise skip a render while saving is true --
+  // this is EXACTLY the delivery-001 bug shape (set a guard-tripping flag, then
+  // call the guarded render expecting it to draw the new state) applied to a
+  // `saving` flag instead of an `editingField`. The caller sets this flag right
+  // before the forced render; the guard consumes + clears it in the same call, so
+  // only that one render bypasses the skip -- a later poll-loop-triggered render
+  // still sees the flag already cleared and so still preserves the in-flight
+  // busy state untouched.
+  var _connectorsExplicitRender = false;
+  function _consumeConnectorsExplicitRender() {
+    var v = _connectorsExplicitRender;
+    _connectorsExplicitRender = false;
+    return v;
+  }
+
+  // Manages its own container directly (mirrors _renderProjectHeader) -- the
+  // caller (renderMainPage) does not touch #connectors-section itself.
+  function _renderConnectorsCard(connectors, writeEnabled) {
+    var container = document.getElementById('connectors-section');
+    if (!container) return;
+    if (!_consumeConnectorsExplicitRender() && connectorsUiState.saving) return;
+
+    container.innerHTML = '';
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+
+    var list = connectors || [];
+    if (list.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'meta list-crud-empty';
+      empty.textContent = 'No connectors registered.';
+      panel.appendChild(empty);
+    } else {
+      panel.appendChild(_buildConnectorsTable(list, writeEnabled));
+    }
+
+    if (connectorsUiState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.setAttribute('aria-live', 'polite');
+      err.textContent = connectorsUiState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    if (writeEnabled) {
+      panel.appendChild(_buildConnectorAddForm());
+    }
+
+    container.appendChild(panel);
+  }
+
+  // Read table: Connector · Type · Endpoint · Auth · Secret Ref · Summary --
+  // matching build-connectors-index.sh's column contract (feature-007 UI Specs),
+  // plus a write_enabled-only trailing Actions column for per-row Remove.
+  function _buildConnectorsTable(list, writeEnabled) {
+    var table = document.createElement('table');
+    table.className = 'list-crud-table';
+
+    var thead = document.createElement('thead');
+    var headRow = document.createElement('tr');
+    var headers = ['Connector', 'Type', 'Endpoint', 'Auth', 'Secret Ref', 'Summary'];
+    for (var h = 0; h < headers.length; h++) {
+      var th = document.createElement('th');
+      th.textContent = headers[h];
+      headRow.appendChild(th);
+    }
+    if (writeEnabled) headRow.appendChild(document.createElement('th'));
+    thead.appendChild(headRow);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    for (var i = 0; i < list.length; i++) {
+      tbody.appendChild(_buildConnectorRow(list[i], writeEnabled));
+    }
+    table.appendChild(tbody);
+    return table;
+  }
+
+  // Build one connector's <tr> -- takes the connector as its OWN function
+  // parameter (not a closure over a shared loop variable), so its Remove
+  // handler's captured `c`/`stem` is safe per-row (matches _renderWorkCard's
+  // established per-item-function convention elsewhere in this file).
+  function _buildConnectorRow(c, writeEnabled) {
+    var tr = document.createElement('tr');
+
+    var tdName = document.createElement('td');
+    tdName.textContent = c.name || c.stem || '';
+    tr.appendChild(tdName);
+
+    var tdType = document.createElement('td');
+    tdType.textContent = c.connection_type || '';
+    tr.appendChild(tdType);
+
+    var tdEndpoint = document.createElement('td');
+    tdEndpoint.textContent = c.endpoint || '—';
+    tr.appendChild(tdEndpoint);
+
+    var tdAuth = document.createElement('td');
+    tdAuth.textContent = c.auth_method || '—';
+    tr.appendChild(tdAuth);
+
+    var tdSecret = document.createElement('td');
+    tdSecret.textContent = c.secret_reference || '—';
+    // Secret hint (feature-007 §Security/§UI Specs): an aid-managed credentialed
+    // connector (auth_method != none) whose secret_reference uses the file: form
+    // may not have had its VALUE captured yet -- captured out-of-band via
+    // `connector-secret.sh write <stem>`. The reader never reads .secrets/
+    // contents (NFR2), so this hint is unconditional on the descriptor shape
+    // alone, never an actual on-disk check; no secret value is ever read,
+    // rendered, or posted here.
+    if (c.auth_method && c.auth_method !== 'none' && c.secret_reference &&
+        c.secret_reference.indexOf('file:') === 0) {
+      var hint = document.createElement('p');
+      hint.className = 'meta list-crud-hint';
+      hint.textContent = 'secret not yet stored — run connector-secret.sh write ' + (c.stem || '');
+      tdSecret.appendChild(hint);
+    }
+    tr.appendChild(tdSecret);
+
+    var tdSummary = document.createElement('td');
+    tdSummary.textContent = c.summary || '—';
+    tr.appendChild(tdSummary);
+
+    if (writeEnabled) {
+      var tdActions = document.createElement('td');
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-ghost';
+      removeBtn.textContent = 'Remove';
+      // Disabled during any in-flight connector.set/.remove request (shared
+      // `saving` flag) -- prevents a double-submit race while a rebuild is
+      // guard-skipped mid-flight (mirrors the Add button's identical guard).
+      removeBtn.disabled = connectorsUiState.saving;
+      removeBtn.addEventListener('click', function () {
+        // feature-007 §UI Specs: Remove uses a confirm() guard (a deliberate
+        // per-feature UX choice -- unlike index.html's Remove-Project inline-flip
+        // pattern, KI-004). A stale/already-removed stem simply 404s, surfaced
+        // inline by _submitConnectorRemove's failure branch.
+        if (!window.confirm('Remove connector "' + (c.name || c.stem) + '"?')) return;
+        _submitConnectorRemove(c.stem);
+      });
+      tdActions.appendChild(removeBtn);
+      tr.appendChild(tdActions);
+    }
+
+    return tr;
+  }
+
+  // Add form: name / type <select> / endpoint / auth <select> / secret_reference.
+  // Always rendered when write_enabled (feature-007 UI Specs describe no separate
+  // open/close toggle); every field's value lives in connectorsUiState.fields so a
+  // poll-triggered rebuild reconstructs the SAME in-progress entry.
+  function _buildConnectorAddForm() {
+    var f = connectorsUiState.fields;
+    var wrap = document.createElement('div');
+    wrap.className = 'list-crud-add-row';
+
+    // Only the fields that APPLY to the selected type are shown (mirrors the
+    // server's connector.set validation, _validate_connector_set_args):
+    //   - endpoint: api/ssh/cli (not mcp)  [CONNECTOR_ENDPOINT_REQUIRED_TYPES]
+    //   - auth:     api ONLY               [CONNECTOR_AUTH_REQUIRED_TYPES]
+    //               (ssh/cli self-authenticate externally; mcp is tool-managed)
+    //   - secret:   ONLY api with auth != 'none' (the server allows a secret_ref
+    //               only for an api connector with a real auth method)
+    // Changing type/auth rebuilds the row (via _rebuildConnectorAddForm) so
+    // now-irrelevant fields disappear AND their stored values are dropped, so a
+    // hidden field is never submitted. Default type 'mcp' => just Name + Type;
+    // ssh/cli => Name + Type + Endpoint.
+    var showEndpoint = CONNECTOR_ENDPOINT_REQUIRED_TYPES.indexOf(f.type) !== -1;
+    var showAuth = CONNECTOR_AUTH_REQUIRED_TYPES.indexOf(f.type) !== -1;
+    var showSecret = showAuth && !!f.auth && f.auth !== 'none';
+
+    // Name (always required).
+    var nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'interval-input';
+    nameInput.placeholder = 'Name';
+    nameInput.setAttribute('aria-label', 'Connector name');
+    nameInput.value = f.name;
+    nameInput.disabled = connectorsUiState.saving;
+    nameInput.addEventListener('input', function () { f.name = nameInput.value; });
+    wrap.appendChild(nameInput);
+
+    // Type (always) -- on change, drop now-irrelevant field values, then rebuild.
+    var typeSelect = document.createElement('select');
+    typeSelect.className = 'interval-input';
+    typeSelect.setAttribute('aria-label', 'Connector type');
+    for (var i = 0; i < CONNECTOR_TYPES.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = CONNECTOR_TYPES[i];
+      opt.textContent = CONNECTOR_TYPES[i];
+      typeSelect.appendChild(opt);
+    }
+    typeSelect.value = f.type;
+    typeSelect.disabled = connectorsUiState.saving;
+    typeSelect.addEventListener('change', function () {
+      f.type = typeSelect.value;
+      if (f.type === 'mcp') { f.endpoint = ''; }        // mcp: endpoint not collected (informational)
+      if (f.type !== 'api') { f.auth = 'none'; f.secret_ref = ''; }  // only api carries auth/secret
+      _rebuildConnectorAddForm();
+    });
+    wrap.appendChild(typeSelect);
+
+    // Endpoint (api/ssh/url/cli only).
+    if (showEndpoint) {
+      var endpointInput = document.createElement('input');
+      endpointInput.type = 'text';
+      endpointInput.className = 'interval-input';
+      endpointInput.placeholder = 'Endpoint';
+      endpointInput.setAttribute('aria-label', 'Connector endpoint');
+      endpointInput.value = f.endpoint;
+      endpointInput.disabled = connectorsUiState.saving;
+      endpointInput.addEventListener('input', function () { f.endpoint = endpointInput.value; });
+      wrap.appendChild(endpointInput);
+    }
+
+    // Auth method (every non-mcp type) -- on change, drop the secret when 'none'.
+    if (showAuth) {
+      var authSelect = document.createElement('select');
+      authSelect.className = 'interval-input';
+      authSelect.setAttribute('aria-label', 'Connector auth method');
+      for (var j = 0; j < CONNECTOR_AUTH_METHODS.length; j++) {
+        var aOpt = document.createElement('option');
+        aOpt.value = CONNECTOR_AUTH_METHODS[j];
+        aOpt.textContent = CONNECTOR_AUTH_METHODS[j];
+        authSelect.appendChild(aOpt);
+      }
+      authSelect.value = f.auth;
+      authSelect.disabled = connectorsUiState.saving;
+      authSelect.addEventListener('change', function () {
+        f.auth = authSelect.value;
+        if (f.auth === 'none') { f.secret_ref = ''; }
+        _rebuildConnectorAddForm();
+      });
+      wrap.appendChild(authSelect);
+    }
+
+    // Secret reference (only when a non-'none' auth is set on a non-mcp type).
+    if (showSecret) {
+      var secretInput = document.createElement('input');
+      secretInput.type = 'text';
+      secretInput.className = 'interval-input';
+      secretInput.placeholder = 'Secret reference (optional)';
+      secretInput.setAttribute('aria-label', 'Connector secret reference');
+      secretInput.value = f.secret_ref;
+      secretInput.disabled = connectorsUiState.saving;
+      secretInput.addEventListener('input', function () { f.secret_ref = secretInput.value; });
+      wrap.appendChild(secretInput);
+    }
+
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-ghost';
+    addBtn.textContent = connectorsUiState.saving ? 'Adding…' : 'Add Connector';
+    addBtn.disabled = connectorsUiState.saving;
+    addBtn.addEventListener('click', function () { _submitConnectorAdd(); });
+    wrap.appendChild(addBtn);
+
+    return wrap;
+  }
+
+  // Re-render the connectors card so the add-row rebuilds with only the fields
+  // that apply to the just-changed type/auth (explicit-render bypasses the poll
+  // guard -- the same one-shot pattern _submitConnectorAdd uses).
+  function _rebuildConnectorAddForm() {
+    _connectorsExplicitRender = true;
+    _renderConnectorsCard(
+      lastGoodModel && lastGoodModel.repo && lastGoodModel.repo.connectors,
+      lastGoodModel && lastGoodModel.write_enabled === true);
+  }
+
+  // Client-side mirror of connector.set's per-type conditional arg-schema
+  // (task-019 API Contracts / server.py _validate_connector_set_args): name
+  // required; endpoint required for api/ssh/url/cli; auth required for
+  // api/url/cli. Defense-in-depth ahead of the server's own 422 validation.
+  function _validateConnectorFields(f) {
+    if (!f.name || !f.name.trim()) return 'Name is required.';
+    if (CONNECTOR_TYPES.indexOf(f.type) === -1) return 'Choose a connector type.';
+    if (CONNECTOR_ENDPOINT_REQUIRED_TYPES.indexOf(f.type) !== -1 && (!f.endpoint || !f.endpoint.trim())) {
+      return 'Endpoint is required for this connector type.';
+    }
+    if (CONNECTOR_AUTH_REQUIRED_TYPES.indexOf(f.type) !== -1 && !f.auth) {
+      return 'Auth method is required for this connector type.';
+    }
+    return null;
+  }
+
+  function _submitConnectorAdd() {
+    var f = connectorsUiState.fields;
+    var clientErr = _validateConnectorFields(f);
+    if (clientErr) {
+      connectorsUiState.errorMessage = clientErr;
+      _connectorsExplicitRender = true;
+      _renderConnectorsCard(lastGoodModel.repo && lastGoodModel.repo.connectors, lastGoodModel.write_enabled === true);
+      return;
+    }
+
+    connectorsUiState.saving = true;
+    connectorsUiState.errorMessage = null;
+    // Force this render: the guard in _renderConnectorsCard would otherwise skip
+    // it right back, since `saving` is now true (see the explicit-render flag
+    // comment on connectorsUiState's declaration, above).
+    _connectorsExplicitRender = true;
+    _renderConnectorsCard(lastGoodModel.repo && lastGoodModel.repo.connectors, lastGoodModel.write_enabled === true);
+
+    var args = { name: f.name, type: f.type };
+    if (f.endpoint) args.endpoint = f.endpoint;
+    if (f.auth) args.auth = f.auth;
+    if (f.secret_ref) args.secret_ref = f.secret_ref;
+
+    postOp('connector.set', {}, args, function (result) {
+      connectorsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        connectorsUiState.fields = { name: '', type: 'mcp', endpoint: '', auth: 'none', secret_ref: '' };
+        connectorsUiState.errorMessage = null;
+      } else {
+        connectorsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not add connector.';
+      }
+      // Re-render from the fresh model on EITHER outcome (feature-007 AC2 /
+      // task-022 Actions & re-render): even on failure the on-disk registry may
+      // have changed underneath us, so the client re-fetches rather than
+      // trusting the pre-op cached model.
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitConnectorRemove(stem) {
+    connectorsUiState.saving = true;
+    connectorsUiState.errorMessage = null;
+    _connectorsExplicitRender = true;
+    _renderConnectorsCard(lastGoodModel.repo && lastGoodModel.repo.connectors, lastGoodModel.write_enabled === true);
+
+    postOp('connector.remove', {}, { stem: stem }, function (result) {
+      connectorsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        connectorsUiState.errorMessage = null;
+      } else {
+        connectorsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not remove connector.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tools section (work-017 post-dogfood): per-project host-tool management.
+  // Lists the tools installed in this project's .aid/ manifest and, when
+  // write_enabled, lets the user Add a tool from the installable catalog
+  // (tools.add -> `aid add <tool> --target`), Update all installed tools
+  // (tools.update), or Remove one (tools.remove). REPLACES the home card's
+  // former "Update Tools" button, whose all-tools `aid update` produced a
+  // misleading "no manifest; nothing to update" dead end on a tool-less project.
+  // Mirrors the connectors/external-sources list-CRUD scaffold: a poll-safe
+  // `saving` guard + one-shot explicit-render flag so a background poll never
+  // clobbers an in-flight op.
+  // ---------------------------------------------------------------------------
+
+  // toolsUiState: transient UI-only state. `selected` is the Add-picker's chosen
+  // catalog tool (survives a poll-triggered rebuild); `saving` guards the busy
+  // window (shared by Add/Update/Remove -- one tool op in flight at a time);
+  // `errorMessage` is the inline failure text.
+  // `restartFromVersion`: the project's aid_version captured just before a
+  // tools.update. `aid update` inside a repo runs bin/aid's self-update-if-stale
+  // preamble (FF-3), which can rewrite the RUNNING server's own code (KI-002/
+  // KI-006); if the post-update version differs, the server is serving stale
+  // code until `aid dashboard` is restarted, and we surface a restart advisory.
+  // (tools.add does NOT run that preamble, so only Update sets this.)
+  var toolsUiState = { saving: false, errorMessage: null, selected: '', restartFromVersion: null };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender /
+  // _externalSourcesExplicitRender, scoped independently.
+  var _toolsExplicitRender = false;
+  function _consumeToolsExplicitRender() {
+    var v = _toolsExplicitRender;
+    _toolsExplicitRender = false;
+    return v;
+  }
+
+  function _renderToolsCard(model, writeEnabled) {
+    var container = document.getElementById('tools-section');
+    if (!container) return;
+    // Poll-safe: skip a background rebuild while an op is in flight, unless this
+    // render was explicitly forced (mirrors connectors/external-sources).
+    if (!_consumeToolsExplicitRender() && toolsUiState.saving) return;
+
+    container.innerHTML = '';
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+
+    var tool = (model && model.tool) || {};
+    var installed = Array.isArray(tool.tools_installed) ? tool.tools_installed : [];
+    var version = tool.aid_version || '';
+    var catalog = (model && Array.isArray(model.tools_catalog)) ? model.tools_catalog : [];
+
+    // Installed list (always shown) -- per-tool Remove when write_enabled.
+    if (installed.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'meta list-crud-empty';
+      empty.textContent = 'No tools installed yet.';
+      panel.appendChild(empty);
+    } else {
+      var ul = document.createElement('ul');
+      ul.className = 'list-crud-list';
+      for (var i = 0; i < installed.length; i++) {
+        ul.appendChild(_buildToolRow(installed[i], version, writeEnabled));
+      }
+      panel.appendChild(ul);
+    }
+
+    // Inline error (either outcome may set it).
+    if (toolsUiState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.setAttribute('aria-live', 'polite');
+      err.textContent = toolsUiState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    // Restart advisory: a successful tools.update that changed aid_version means
+    // `aid update`'s self-update-if-stale preamble bumped the CLI (KI-002/KI-006),
+    // so the running server is executing pre-update code until restarted. Persists
+    // across polls (version stays changed) until the next Update or a page reload.
+    if (toolsUiState.restartFromVersion !== null && toolsUiState.restartFromVersion !== version) {
+      var advisory = document.createElement('div');
+      advisory.className = 'callout warn';
+      advisory.setAttribute('aria-live', 'polite');
+      advisory.textContent = 'AID CLI updated (v' + toolsUiState.restartFromVersion +
+        ' → v' + version + ') — restart `aid dashboard` to load the new dashboard code.';
+      panel.appendChild(advisory);
+    }
+
+    if (writeEnabled) {
+      // "Update tools" -- re-sync installed tools to the CLI version. Shown only
+      // when >=1 tool is installed (an empty manifest has nothing to update --
+      // exactly the dead end this redesign removes from the home card).
+      if (installed.length > 0) {
+        var updateRow = document.createElement('div');
+        updateRow.className = 'list-crud-add-row';
+        var updateBtn = document.createElement('button');
+        updateBtn.type = 'button';
+        updateBtn.className = 'btn-ghost';
+        updateBtn.textContent = toolsUiState.saving ? 'Working…' : 'Update tools';
+        updateBtn.disabled = toolsUiState.saving;
+        updateBtn.addEventListener('click', function () { _submitToolsUpdate(); });
+        updateRow.appendChild(updateBtn);
+        panel.appendChild(updateRow);
+      }
+
+      // "Add tool" -- pick a catalog tool not already installed.
+      var available = catalog.filter(function (t) { return installed.indexOf(t) === -1; });
+      if (available.length > 0) {
+        panel.appendChild(_buildToolAddRow(available));
+      } else if (catalog.length > 0) {
+        var allNote = document.createElement('p');
+        allNote.className = 'meta';
+        allNote.textContent = 'All available tools are installed.';
+        panel.appendChild(allNote);
+      } else {
+        // catalog empty -> the /api/model envelope carried no tools_catalog: a
+        // version skew (a newer home.html served by an older server.py that
+        // predates the tools_catalog field). Surface it rather than leaving a
+        // silent dead-end with no way to add a tool.
+        var skewNote = document.createElement('p');
+        skewNote.className = 'meta';
+        skewNote.textContent = 'Tool catalog unavailable — restart `aid dashboard` so its server matches this page, or run `aid add <tool>` from the CLI.';
+        panel.appendChild(skewNote);
+      }
+    }
+
+    container.appendChild(panel);
+  }
+
+  // One installed tool's row: "<tool> v<version>" + a write-gated Remove.
+  function _buildToolRow(toolName, version, writeEnabled) {
+    var li = document.createElement('li');
+    li.className = 'list-crud-list-item';
+
+    var label = document.createElement('span');
+    label.textContent = version ? (toolName + ' v' + version) : toolName;
+    li.appendChild(label);
+
+    if (writeEnabled) {
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-ghost';
+      removeBtn.textContent = 'Remove';
+      // Disabled during any in-flight tool op (shared `saving` flag) -- prevents
+      // a double-submit race, mirrors connectors/external-sources.
+      removeBtn.disabled = toolsUiState.saving;
+      removeBtn.addEventListener('click', function () {
+        // confirm() guard (mirrors the connectors Remove UX). A stale/already-
+        // removed tool surfaces the CLI's own failure inline.
+        if (!window.confirm('Remove tool "' + toolName + '" from this project?')) return;
+        _submitToolsRemove(toolName);
+      });
+      li.appendChild(removeBtn);
+    }
+    return li;
+  }
+
+  // Add row: a <select> of installable catalog tools not yet installed + Add.
+  function _buildToolAddRow(available) {
+    var wrap = document.createElement('div');
+    wrap.className = 'list-crud-add-row';
+
+    var select = document.createElement('select');
+    select.className = 'interval-input';
+    select.setAttribute('aria-label', 'Tool to add');
+    // Keep the prior selection if still available; else default to the first.
+    if (available.indexOf(toolsUiState.selected) === -1) toolsUiState.selected = available[0];
+    for (var i = 0; i < available.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = available[i];
+      opt.textContent = available[i];
+      select.appendChild(opt);
+    }
+    select.value = toolsUiState.selected;
+    select.disabled = toolsUiState.saving;
+    select.addEventListener('change', function () { toolsUiState.selected = select.value; });
+    wrap.appendChild(select);
+
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-ghost';
+    addBtn.textContent = toolsUiState.saving ? 'Working…' : 'Add tool';
+    addBtn.disabled = toolsUiState.saving;
+    addBtn.addEventListener('click', function () { _submitToolsAdd(toolsUiState.selected); });
+    wrap.appendChild(addBtn);
+
+    return wrap;
+  }
+
+  // Force a Tools re-render past the saving-guard (busy-state paint).
+  function _forceToolsRender() {
+    _toolsExplicitRender = true;
+    _renderToolsCard(lastGoodModel, lastGoodModel && lastGoodModel.write_enabled === true);
+  }
+
+  function _submitToolsAdd(toolName) {
+    if (!toolName) return;
+    toolsUiState.saving = true;
+    toolsUiState.errorMessage = null;
+    _forceToolsRender();
+    postOp('tools.add', {}, { tool: toolName }, function (result) {
+      toolsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        toolsUiState.errorMessage = null;
+        toolsUiState.selected = '';
+      } else {
+        toolsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not add the tool.';
+      }
+      // Re-fetch on EITHER outcome: the on-disk manifest may have changed.
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitToolsUpdate() {
+    // Capture the pre-update version so the post-refetch render can detect a
+    // CLI self-update (see toolsUiState.restartFromVersion). Reset the advisory
+    // at the start of each attempt so a prior one doesn't linger.
+    var preVersion = (lastGoodModel && lastGoodModel.tool) ? lastGoodModel.tool.aid_version : null;
+    toolsUiState.saving = true;
+    toolsUiState.errorMessage = null;
+    toolsUiState.restartFromVersion = null;
+    _forceToolsRender();
+    postOp('tools.update', {}, {}, function (result) {
+      toolsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        toolsUiState.errorMessage = null;
+        // Arm the advisory; the re-render compares this to the fresh aid_version.
+        toolsUiState.restartFromVersion = (preVersion === undefined ? null : preVersion);
+      } else {
+        toolsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not update tools.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitToolsRemove(toolName) {
+    toolsUiState.saving = true;
+    toolsUiState.errorMessage = null;
+    _forceToolsRender();
+    postOp('tools.remove', {}, { tool: toolName }, function (result) {
+      toolsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        toolsUiState.errorMessage = null;
+      } else {
+        toolsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not remove the tool.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // External Sources section (feature-010-external-sources-list, task-022):
+  // shares the SAME list-CRUD scaffold shape as Connectors (view + write_enabled-
+  // gated Add row + per-row Remove + inline error), just a single-value list
+  // instead of a multi-field descriptor table.
+  // ---------------------------------------------------------------------------
+
+  // Browser-side URL-detection twin -- byte-identical to Python `_RE_URL`
+  // (parsers.py) / Node `RE_URL_SOURCE` (reader.mjs): a match renders the entry
+  // as a link; anything else renders as plain text (feature-010 UI Specs).
+  var _RE_URL_CLIENT = /^[a-z][a-z0-9+.\-]*:\/\//;
+
+  // externalSourcesUiState: transient UI-only Add-row state, mirroring
+  // connectorsUiState's identical rationale (state-tracked `value` survives a
+  // poll-triggered rebuild mid-typing; `saving` guards the busy window).
+  var externalSourcesUiState = { saving: false, errorMessage: null, value: '' };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender,
+  // scoped independently so the two sections' guards never cross-clobber.
+  var _externalSourcesExplicitRender = false;
+  function _consumeExternalSourcesExplicitRender() {
+    var v = _externalSourcesExplicitRender;
+    _externalSourcesExplicitRender = false;
+    return v;
+  }
+
+  function _renderExternalSourcesCard(repo, writeEnabled) {
+    var container = document.getElementById('external-sources-section');
+    if (!container) return;
+    if (!_consumeExternalSourcesExplicitRender() && externalSourcesUiState.saving) return;
+
+    container.innerHTML = '';
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+
+    var sources = (repo && Array.isArray(repo.external_sources)) ? repo.external_sources : [];
+
+    if (sources.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'meta list-crud-empty';
+      empty.textContent = 'No external sources registered.';
+      panel.appendChild(empty);
+    } else {
+      var ul = document.createElement('ul');
+      ul.className = 'list-crud-list';
+      for (var i = 0; i < sources.length; i++) {
+        ul.appendChild(_buildExternalSourceItem(sources[i], writeEnabled));
+      }
+      panel.appendChild(ul);
+    }
+
+    if (externalSourcesUiState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.setAttribute('aria-live', 'polite');
+      err.textContent = externalSourcesUiState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    if (writeEnabled) {
+      panel.appendChild(_buildExternalSourceAddRow());
+    }
+
+    container.appendChild(panel);
+  }
+
+  // Build one entry's <li> -- takes `value` as its own function parameter (safe
+  // per-item closure for the Remove handler; same convention as
+  // _buildConnectorRow).
+  function _buildExternalSourceItem(value, writeEnabled) {
+    var li = document.createElement('li');
+    li.className = 'list-crud-list-item';
+
+    if (_RE_URL_CLIENT.test(value)) {
+      var a = document.createElement('a');
+      a.href = value;
+      a.rel = 'noopener noreferrer';
+      a.textContent = value;
+      li.appendChild(a);
+    } else {
+      var span = document.createElement('span');
+      span.textContent = value;
+      li.appendChild(span);
+    }
+
+    if (writeEnabled) {
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-ghost';
+      removeBtn.textContent = 'Remove';
+      // Disabled during any in-flight add/remove request (shared `saving`
+      // flag) -- prevents a double-submit race, mirrors the Add button.
+      removeBtn.disabled = externalSourcesUiState.saving;
+      removeBtn.addEventListener('click', function () { _submitExternalSourceRemove(value); });
+      li.appendChild(removeBtn);
+    }
+
+    return li;
+  }
+
+  // Add row: one text input + Add button (feature-010 UI Specs -- no separate
+  // open/close toggle, unlike the Connectors form's five fields).
+  function _buildExternalSourceAddRow() {
+    var wrap = document.createElement('div');
+    wrap.className = 'list-crud-add-row';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'interval-input';
+    input.placeholder = 'https://… or path/to/doc';
+    input.setAttribute('aria-label', 'External source URL or path');
+    input.value = externalSourcesUiState.value;
+    input.disabled = externalSourcesUiState.saving;
+    input.addEventListener('input', function () { externalSourcesUiState.value = input.value; });
+    wrap.appendChild(input);
+
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-ghost';
+    addBtn.textContent = externalSourcesUiState.saving ? 'Adding…' : 'Add';
+    addBtn.disabled = externalSourcesUiState.saving;
+    addBtn.addEventListener('click', function () { _submitExternalSourceAdd(); });
+    wrap.appendChild(addBtn);
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); if (!addBtn.disabled) _submitExternalSourceAdd(); }
+    });
+
+    return wrap;
+  }
+
+  // Client-side mirror of external-source.add/.remove's args.value shape
+  // (task-021 API Contracts): trim, then block empty and any-whitespace values
+  // before POST -- fast feedback only; the server + write-external-source.sh
+  // remain the authority.
+  function _validateExternalSourceValueClient(trimmed) {
+    if (!trimmed) return 'Enter a URL or a path with no spaces.';
+    if (/\s/.test(trimmed)) return 'Enter a URL or a path with no spaces.';
+    return null;
+  }
+
+  function _submitExternalSourceAdd() {
+    var trimmed = (externalSourcesUiState.value || '').trim();
+    var clientErr = _validateExternalSourceValueClient(trimmed);
+    if (clientErr) {
+      externalSourcesUiState.errorMessage = clientErr;
+      _externalSourcesExplicitRender = true;
+      _renderExternalSourcesCard(lastGoodModel.repo, lastGoodModel.write_enabled === true);
+      return;
+    }
+
+    externalSourcesUiState.saving = true;
+    externalSourcesUiState.errorMessage = null;
+    // Force this render: see the identical comment on _submitConnectorAdd, above.
+    _externalSourcesExplicitRender = true;
+    _renderExternalSourcesCard(lastGoodModel.repo, lastGoodModel.write_enabled === true);
+
+    postOp('external-source.add', {}, { value: trimmed }, function (result) {
+      externalSourcesUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        externalSourcesUiState.value = '';
+        externalSourcesUiState.errorMessage = null;
+      } else {
+        externalSourcesUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not add source.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitExternalSourceRemove(value) {
+    externalSourcesUiState.saving = true;
+    externalSourcesUiState.errorMessage = null;
+    _externalSourcesExplicitRender = true;
+    _renderExternalSourcesCard(lastGoodModel.repo, lastGoodModel.write_enabled === true);
+
+    postOp('external-source.remove', {}, { value: value }, function (result) {
+      externalSourcesUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        externalSourcesUiState.errorMessage = null;
+      } else {
+        externalSourcesUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not remove source.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
   // Build the FR18 step-by-step empty-state panel
   function _renderEmptyState() {
     var card = document.createElement('div');
@@ -1796,7 +3167,7 @@ footer {
     card.appendChild(kicker);
 
     var h3 = document.createElement('h3');
-    h3.textContent = 'This repo has no AID works in .aid/works/ yet.';
+    h3.textContent = 'This project has no AID works in .aid/works/ yet.';
     card.appendChild(h3);
 
     var intro = document.createElement('p');
@@ -1812,7 +3183,7 @@ footer {
 
     // Step 1: special — contains code element
     var li1 = document.createElement('li');
-    li1.appendChild(document.createTextNode('In this repo, run: '));
+    li1.appendChild(document.createTextNode('In this project, run: '));
     var codeEl = document.createElement('code');
     codeEl.textContent = '/aid-describe';
     li1.appendChild(codeEl);
@@ -1868,7 +3239,7 @@ footer {
     var callout = document.createElement('div');
     callout.className = 'callout warn';
     callout.innerHTML = '<h4>Pipeline not found</h4>' +
-      '<p>That pipeline (<code>' + escHtml(workId) + '</code>) is no longer in this repo.</p>';
+      '<p>That pipeline (<code>' + escHtml(workId) + '</code>) is no longer in this project.</p>';
     el.appendChild(callout);
     var backLink = document.createElement('p');
     backLink.style.marginTop = '0.75rem';
@@ -1896,9 +3267,182 @@ footer {
   }
 
   // ---------------------------------------------------------------------------
+  // Display rename (feature-005): pipeline.rename + task.rename op clients.
+  // Both reuse feature-001's POST ./api/op envelope (location-relative -- resolves
+  // to /r/<id>/api/op when this file is served per-repo) and the truthful
+  // re-fetch/re-render round-trip (_refetchModelForHeader, above). Rename controls
+  // are write-gated (model.write_enabled === true) and render only when so.
+  // ---------------------------------------------------------------------------
+
+  // Shared args.value client-side mirror of the server's _validate_rename_value
+  // (SPEC.md API Contracts): single-line, no reserved '|' separator. Defense-in-
+  // depth ahead of the server's own semantic_validate hook (belt-and-suspenders,
+  // mirrors _validateSettingValue's role for settings.set).
+  function _validateRenameValueClient(value) {
+    if (value.indexOf('\n') !== -1) return 'Value cannot contain a line break.';
+    if (value.indexOf('|') !== -1) return "Value cannot contain '|' (reserved column separator).";
+    return null;
+  }
+
+  // pipelineRenameState: transient UI-only edit state for pipeline.rename, mirroring
+  // projectHeaderState's skip-during-edit pattern -- while editing/saving,
+  // _renderPipelineTitleControl leaves the title-edit region alone so an
+  // in-progress edit survives the poll loop; the rest of renderWorkHeader keeps
+  // updating live (badges, stat strip, etc.) since only this sub-region is guarded.
+  var pipelineRenameState = { editing: false, saving: false, errorMessage: null };
+
+  // POST ./api/op {op:"pipeline.rename", target:{work_id}, args:{value}}; onDone
+  // receives {ok, body} -- mirrors _postSettingsSet's shape verbatim.
+  function _postPipelineRename(workId, value, onDone) {
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'pipeline.rename', target: { work_id: workId }, args: { value: value } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  function _setPipelineTitleStatus(text) {
+    var live = document.getElementById('overview-title-status');
+    if (live) live.textContent = text || '';
+  }
+
+  // Build the write-gated pencil (display mode) or the inline edit form (input +
+  // Save/Cancel) for the pipeline title, next to #overview-title. Called from
+  // renderWorkHeader on every render; guards itself while editing/saving so the
+  // poll loop never clobbers an in-progress edit (mirrors _renderProjectHeader).
+  function _renderPipelineTitleControl(work, writeEnabled) {
+    var btnSlot = document.getElementById('overview-title-edit-btn');
+    var editorSlot = document.getElementById('overview-title-editor');
+    var errSlot = document.getElementById('overview-title-error');
+    if (!btnSlot || !editorSlot) return;
+
+    if (pipelineRenameState.editing || pipelineRenameState.saving) return;
+
+    btnSlot.innerHTML = '';
+    editorSlot.innerHTML = '';
+    editorSlot.style.display = 'none';
+
+    if (errSlot) {
+      if (pipelineRenameState.errorMessage) {
+        errSlot.textContent = pipelineRenameState.errorMessage;
+        errSlot.style.display = '';
+      } else {
+        errSlot.style.display = 'none';
+      }
+    }
+
+    if (!writeEnabled) return;
+
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'btn-ghost';
+    editBtn.setAttribute('aria-label', 'Rename pipeline');
+    editBtn.title = 'Rename pipeline';
+    editBtn.textContent = '✎';
+    editBtn.addEventListener('click', function () {
+      pipelineRenameState.editing = true;
+      pipelineRenameState.errorMessage = null;
+      if (errSlot) errSlot.style.display = 'none';
+      _buildPipelineTitleEditor(work);
+    });
+    btnSlot.appendChild(editBtn);
+  }
+
+  // Build the inline text-input + Save/Cancel editor, prefilled with work.title
+  // (empty when unset -- FR-PL1). Cancel restores (no op posted); Save posts
+  // pipeline.rename with an empty args.value when the title is cleared (the
+  // server-side task-008 argv-builder substitutes the *(pending)* null sentinel).
+  function _buildPipelineTitleEditor(work) {
+    var btnSlot = document.getElementById('overview-title-edit-btn');
+    var editorSlot = document.getElementById('overview-title-editor');
+    if (!editorSlot) return;
+    if (btnSlot) btnSlot.innerHTML = '';
+
+    editorSlot.innerHTML = '';
+    editorSlot.style.display = '';
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'interval-input project-header-name-input';
+    input.value = work.title || '';
+    input.setAttribute('aria-label', 'Pipeline title');
+    editorSlot.appendChild(input);
+
+    var saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.className = 'btn-ghost';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', function () {
+      // Disable immediately -- guards against a double-submit while in flight.
+      saveBtn.disabled = true;
+      cancelBtn.disabled = true;
+      _savePipelineRename(work, input.value);
+    });
+    editorSlot.appendChild(saveBtn);
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-ghost';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', function () {
+      pipelineRenameState.editing = false;
+      pipelineRenameState.errorMessage = null;
+      _setPipelineTitleStatus('');
+      _renderPipelineTitleControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+    });
+    editorSlot.appendChild(cancelBtn);
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+      else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+    });
+
+    input.focus();
+  }
+
+  // Validate + dispatch a pipeline.rename save. On success: exit edit mode,
+  // re-fetch the model, re-render from disk (AC2 -- the existing title/de-slug
+  // fallback code then shows the new title). On failure: exit edit mode WITHOUT
+  // mutating the model, surface the error inline.
+  function _savePipelineRename(work, value) {
+    var clientErr = _validateRenameValueClient(value);
+    if (clientErr) {
+      pipelineRenameState.errorMessage = clientErr;
+      pipelineRenameState.editing = false;
+      _setPipelineTitleStatus('Error: ' + clientErr);
+      _renderPipelineTitleControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      return;
+    }
+    pipelineRenameState.saving = true;
+    pipelineRenameState.errorMessage = null;
+    _setPipelineTitleStatus('Saving…');
+    _postPipelineRename(work.work_id, value, function (result) {
+      pipelineRenameState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        pipelineRenameState.editing = false;
+        pipelineRenameState.errorMessage = null;
+        _setPipelineTitleStatus('Saved.');
+        _refetchModelForHeader();
+      } else {
+        var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+        pipelineRenameState.editing = false;
+        pipelineRenameState.errorMessage = detail;
+        _setPipelineTitleStatus('Error: ' + detail);
+        _renderPipelineTitleControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
   // Work overview header (prototype: delivery-002 work-overview header)
   // ---------------------------------------------------------------------------
-  function renderWorkHeader(work) {
+  function renderWorkHeader(work, model) {
     var panel = document.getElementById('work-overview-panel');
     if (!panel) return;
 
@@ -1937,6 +3481,11 @@ footer {
         titleEl.title = 'Name not yet recorded (' + (work.work_id || '') + ')';
       }
     }
+
+    // Pipeline rename (feature-005): write-gated pencil / inline editor next to
+    // #overview-title (AC1/AC2/AC8 UI half). Not rendered at all when write_enabled
+    // is false (defense-in-depth -- the server 403s the op even if forced).
+    _renderPipelineTitleControl(work, model && model.write_enabled === true);
 
     // Lifecycle + skill badges inline with identity
     var badgesEl = document.getElementById('overview-badges');
@@ -1983,6 +3532,20 @@ footer {
     // Features disclosure (full path only); Deliverables removed from work card
     var isFullPath = work.work_path === 'full';
     _renderFeaturesDisclosure(work.features, isFullPath);
+
+    // Pipeline Finish (feature-008-execution-control, task-030): a write-gated,
+    // terminal-but-non-destructive control, placed BEFORE the Danger zone
+    // (less severe than Delete). Same detail-route-only construction: this
+    // whole function is called only from renderWorkView (#/work/<work_id>),
+    // never from _renderWorkCard (the main-grid card) or index.html.
+    _renderFinishControl(work, model && model.write_enabled === true);
+
+    // Danger zone (feature-009-pipeline-delete, task-026): LAST step of the
+    // build (§UI Specs placement) -- write-gated Delete control + its
+    // type-to-confirm modal. Detail-route-only by construction: this whole
+    // function is called only from renderWorkView (#/work/<work_id>), never
+    // from _renderWorkCard (the main-grid card) or index.html.
+    _renderDangerZone(work, model && model.write_enabled === true);
   }
 
   // Apply uiState.workOpen to the panel DOM (idempotent; called each render)
@@ -2139,6 +3702,451 @@ footer {
         if (stateKey) uiState[stateKey] = true;
       }
     };
+  }
+
+  // ---------------------------------------------------------------------------
+  // Pipeline Finish (feature-008-execution-control, task-030): a write-gated,
+  // NON-destructive "Finish" action on the pipeline DETAIL route (same
+  // detail-route-only placement rationale as the Danger zone below --
+  // renderWorkHeader is never called from _renderWorkCard/index.html, so this
+  // control never reaches the main-grid card). Consumes feature-001's
+  // `pipeline.finish` OP_TABLE row (already functional --
+  // writeback-state.sh --pipeline --field Lifecycle --value Completed) via
+  // the shared postOp() helper. Unlike FR-PL3 Delete, Finish is guarded by a
+  // PLAIN window.confirm() (§UI Specs -- "a plain confirm, distinct from
+  // FR-PL3 Delete's strong destructive guard"), never a type-to-confirm modal.
+  // ---------------------------------------------------------------------------
+
+  // finishPipelineState: transient UI-only state for the in-flight Finish
+  // POST. workId scopes the guard below to the pipeline the request was
+  // issued for (mirrors deleteModalState.workId's identical role) so
+  // navigating to a DIFFERENT pipeline mid-flight never blocks that other
+  // pipeline's own render.
+  var finishPipelineState = { workId: null, saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender /
+  // _deleteModalExplicitRender (delivery-001 dogfood fix, commit 41ea5d28):
+  // window.confirm() is a blocking, synchronous native dialog (no re-render
+  // needed to SHOW it), but the POST-confirm `saving = true` transition (and
+  // any inline failure) still needs to force its OWN render immediately --
+  // else the guard below would see `saving === true` and skip the very
+  // render meant to draw the disabled "Finishing…" state. Only THAT render
+  // bypasses the guard; a later poll-loop tick still preserves it untouched.
+  var _finishExplicitRender = false;
+  function _consumeFinishExplicitRender() {
+    var v = _finishExplicitRender;
+    _finishExplicitRender = false;
+    return v;
+  }
+
+  // Build the write-gated "Finish" button. Rendered ONLY when
+  // work.lifecycle === 'Running' && writeEnabled (finishing a
+  // Completed/Canceled/Blocked/Paused-Awaiting-Input pipeline is meaningless);
+  // an empty container otherwise -- defense-in-depth, the server 403s the op
+  // even if forced. Guards itself while a Finish POST is in flight so the
+  // poll loop never clobbers the disabled button mid-request.
+  function _renderFinishControl(work, writeEnabled) {
+    var container = document.getElementById('overview-finish-zone');
+    if (!container) return;
+
+    // Route moved to a DIFFERENT work_id while a Finish request was in flight
+    // (e.g. browser back/forward) -- reset rather than leak state onto the
+    // new pipeline's page (mirrors _renderDangerZone's identical guard).
+    if (finishPipelineState.workId !== null && finishPipelineState.workId !== work.work_id) {
+      finishPipelineState.workId = null;
+      finishPipelineState.saving = false;
+      finishPipelineState.errorMessage = null;
+    }
+
+    if (!_consumeFinishExplicitRender() && finishPipelineState.saving &&
+        finishPipelineState.workId === work.work_id) {
+      return;
+    }
+
+    container.innerHTML = '';
+    if (!writeEnabled) return;                // read-only: no Finish affordance at all
+    if (work.lifecycle !== 'Running') return; // only a Running pipeline can be finished
+
+    var section = document.createElement('div');
+    section.className = 'work-overview finish-zone';
+
+    var desc = document.createElement('p');
+    desc.className = 'meta';
+    desc.textContent = 'Mark this pipeline Completed and stop any running work.';
+    section.appendChild(desc);
+
+    var finishBtn = document.createElement('button');
+    finishBtn.type = 'button';
+    finishBtn.id = 'overview-finish-btn';
+    finishBtn.className = 'btn-ghost';
+    var thisSaving = finishPipelineState.saving && finishPipelineState.workId === work.work_id;
+    finishBtn.disabled = thisSaving;
+    finishBtn.textContent = thisSaving ? 'Finishing…' : 'Finish';
+    finishBtn.addEventListener('click', function () {
+      if (finishBtn.disabled) return;
+      // Lightweight confirm() guard (§UI Specs) -- a plain confirm, NOT the
+      // type-to-confirm destructive pattern FR-PL3 Delete uses.
+      if (!window.confirm('Finish this pipeline? This marks it Completed and stops any running work.')) return;
+      _submitPipelineFinish(work);
+    });
+    section.appendChild(finishBtn);
+
+    if (finishPipelineState.errorMessage && finishPipelineState.workId === work.work_id) {
+      var err = document.createElement('p');
+      err.className = 'callout err';
+      err.style.marginTop = '0.5rem';
+      err.textContent = finishPipelineState.errorMessage;
+      section.appendChild(err);
+    }
+
+    container.appendChild(section);
+  }
+
+  // Confirm: POST pipeline.finish; on 200 re-fetch (AC2 -- the card then
+  // shows LIFECYCLE_MAP['Completed']); on 4xx/5xx keep the button visible and
+  // show the server's error/detail inline (mirrors _submitConnectorRemove's
+  // shape).
+  function _submitPipelineFinish(work) {
+    finishPipelineState.workId = work.work_id;
+    finishPipelineState.saving = true;
+    finishPipelineState.errorMessage = null;
+    // Force this render: the guard in _renderFinishControl would otherwise
+    // skip it right back, since finishPipelineState.saving is now true (see
+    // the explicit-render flag comment on its declaration, above).
+    _finishExplicitRender = true;
+    _renderFinishControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+
+    postOp('pipeline.finish', { work_id: work.work_id }, {}, function (result) {
+      finishPipelineState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        finishPipelineState.workId = null;
+        finishPipelineState.errorMessage = null;
+        // Truthful re-fetch + re-render from disk -- the card then shows
+        // LIFECYCLE_MAP['Completed'] (AC2, never optimistically flipped
+        // client-side).
+        _refetchModelForHeader();
+      } else {
+        finishPipelineState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not finish pipeline.';
+        _finishExplicitRender = true;
+        _renderFinishControl(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      }
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Danger zone (feature-009-pipeline-delete, task-026): a write-gated
+  // "Delete pipeline" control + type-to-confirm modal on the pipeline DETAIL
+  // route ONLY (#/work/<work_id> via renderWorkHeader) -- never index.html,
+  // never the main-grid card (_renderWorkCard never calls this). Consumes
+  // feature-001's `pipeline.delete` op (task-025) via the shared postOp()
+  // helper, then navigates to the main route and doFetch()s (AC2).
+  // ---------------------------------------------------------------------------
+
+  // deleteModalState: transient UI-only state for the confirm modal.
+  // `open` gates whether the modal is drawn at all; while true,
+  // _renderDangerZone's guard (below) leaves the WHOLE danger-zone region
+  // alone on a poll-triggered rebuild -- so the poll loop can never tear down
+  // (and thereby close / defocus / wipe the typed value of) an in-progress
+  // delete confirmation. `workId` records which pipeline the modal was opened
+  // for, so a route change to a DIFFERENT work_id (e.g. browser back/forward)
+  // is detected and resets the modal instead of leaking a stale confirmation
+  // onto the new pipeline's page. `typedValue` mirrors the confirm input's
+  // live DOM value into JS state -- a backstop for the one case where this
+  // region IS explicitly rebuilt while still open (a 4xx/5xx inline error),
+  // so the user's typed value survives that rebuild too. `saving` is true for
+  // the duration of the in-flight pipeline.delete POST; `errorMessage`
+  // surfaces the server's 4xx/5xx error/detail inline without closing the
+  // modal.
+  var deleteModalState = { open: false, workId: null, typedValue: '', saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag (mirrors _projectHeaderExplicitRender / the
+  // delivery-001 dogfood fix, commit 41ea5d28, and _connectorsExplicitRender /
+  // task-022): the Delete-button click sets deleteModalState.open = true and
+  // then calls the GUARDED _renderDangerZone to draw the modal -- without this
+  // flag the guard below would see open === true and skip the very render
+  // meant to draw it (the delivery-001 bug shape exactly, applied to a modal
+  // instead of an inline editor). The call site sets this flag right before
+  // that one render; _consumeDeleteModalExplicitRender() reads + clears it in
+  // the same call, so only that render bypasses the skip -- a later poll-loop
+  // re-render still sees the flag already cleared and so still preserves the
+  // open modal (and whatever the user has typed) untouched.
+  var _deleteModalExplicitRender = false;
+  function _consumeDeleteModalExplicitRender() {
+    var v = _deleteModalExplicitRender;
+    _deleteModalExplicitRender = false;
+    return v;
+  }
+
+  // Maps the server's `error` code (SPEC.md API Contracts failure table) to
+  // the exact inline copy the Feature Flow specifies for the two named cases;
+  // any other code (busy / invalid-value / write-failed / bad-request /
+  // bad-host / read-only) falls back to the server's own detail/error text.
+  function _friendlyDeleteError(body) {
+    var code = body && body.error;
+    if (code === 'pipeline-active') return 'This pipeline is Running — Finish it before deleting.';
+    if (code === 'not-found') return 'Pipeline not found — it may already be gone.';
+    return (body && (body.detail || body.error)) || 'Could not delete pipeline.';
+  }
+
+  // Build the "Delete pipeline" button and (in the resolved dialog case)
+  // showModal() the confirm dialog and focus its input. Called from
+  // renderWorkHeader on every render; guards itself while the modal is open so
+  // the poll loop never clobbers an in-progress confirmation.
+  function _renderDangerZone(work, writeEnabled) {
+    var container = document.getElementById('overview-danger-zone');
+    if (!container) return;
+
+    // Route moved to a DIFFERENT work_id while the modal was open (e.g.
+    // browser back/forward navigated #/work/<A> -> #/work/<B> without the
+    // user cancelling) -- reset rather than leak A's confirmation onto B's
+    // page.
+    if (deleteModalState.open && deleteModalState.workId !== work.work_id) {
+      deleteModalState.open = false;
+      deleteModalState.workId = null;
+      deleteModalState.typedValue = '';
+      deleteModalState.errorMessage = null;
+      deleteModalState.saving = false;
+    }
+
+    if (!_consumeDeleteModalExplicitRender() && deleteModalState.open) return;
+
+    container.innerHTML = '';
+    if (!writeEnabled) return; // read-only: no delete affordance at all (AC8)
+
+    var section = document.createElement('div');
+    section.className = 'work-overview border-err danger-zone';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'DANGER ZONE';
+    section.appendChild(kicker);
+
+    var desc = document.createElement('p');
+    desc.className = 'meta';
+    desc.textContent = 'Permanently delete this pipeline and its on-disk artifacts.';
+    section.appendChild(desc);
+
+    var deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.id = 'danger-zone-delete-btn';
+    deleteBtn.className = 'btn-danger';
+    deleteBtn.textContent = 'Delete pipeline';
+    deleteBtn.addEventListener('click', function () {
+      deleteModalState.open = true;
+      deleteModalState.workId = work.work_id;
+      deleteModalState.typedValue = '';
+      deleteModalState.saving = false;
+      deleteModalState.errorMessage = null;
+      // Force this render: the guard above would otherwise skip it right
+      // back, since deleteModalState.open is now true (see the explicit-
+      // render flag comment on its declaration, above).
+      _deleteModalExplicitRender = true;
+      _renderDangerZone(work, writeEnabled);
+    });
+    section.appendChild(deleteBtn);
+
+    container.appendChild(section);
+
+    if (deleteModalState.open) {
+      var modal = _buildDeleteModal(work);
+      container.appendChild(modal);
+      if (typeof modal.showModal === 'function') {
+        modal.showModal();
+      } else {
+        // Fallback for a runtime lacking <dialog>.showModal(): the element
+        // still carries role="dialog"/aria-modal="true" (set unconditionally
+        // in _buildDeleteModal below), just without the browser's own
+        // top-layer/inert focus-trap -- the manual Tab-trap keydown handler
+        // (also wired below) covers this path.
+        modal.setAttribute('open', '');
+      }
+      var input = document.getElementById('delete-confirm-input');
+      if (input) input.focus();
+    }
+  }
+
+  // Close the modal with NO side effect (Cancel / Esc / backdrop click) and
+  // return focus to the Delete button (Accessibility, §UI Specs).
+  function _closeDeleteModal(work) {
+    deleteModalState.open = false;
+    deleteModalState.workId = null;
+    deleteModalState.typedValue = '';
+    deleteModalState.errorMessage = null;
+    deleteModalState.saving = false;
+    var dlgEl = document.getElementById('delete-pipeline-modal');
+    if (dlgEl && typeof dlgEl.close === 'function' && dlgEl.open) dlgEl.close();
+    _renderDangerZone(work, lastGoodModel && lastGoodModel.write_enabled === true);
+    var delBtn = document.getElementById('danger-zone-delete-btn');
+    if (delBtn) delBtn.focus();
+  }
+
+  // Build the type-to-confirm <dialog> -- worktree-agnostic copy keyed ONLY
+  // on work.work_id (the DM-1 envelope carries no branch_label). Confirm
+  // stays disabled until the typed value === work_id (GitHub "type the name"
+  // pattern). Vanilla JS only; no library.
+  function _buildDeleteModal(work) {
+    var workId = work.work_id;
+
+    var dlg = document.createElement('dialog');
+    dlg.id = 'delete-pipeline-modal';
+    dlg.className = 'confirm-modal';
+    // Explicit role/aria-modal (belt-and-suspenders with the implicit
+    // semantics <dialog>.showModal() already carries) so the fallback
+    // open-attribute path (no showModal support) is still correctly exposed.
+    dlg.setAttribute('role', 'dialog');
+    dlg.setAttribute('aria-modal', 'true');
+    dlg.setAttribute('aria-label', 'Delete pipeline ' + workId);
+    dlg.setAttribute('aria-labelledby', 'delete-modal-heading');
+
+    var heading = document.createElement('h3');
+    heading.id = 'delete-modal-heading';
+    heading.textContent = 'Delete pipeline';
+    dlg.appendChild(heading);
+
+    // Worktree-agnostic conditional-outcome copy (verbatim, §UI Specs) --
+    // keyed only on work_id; never reads/hardcodes a worktree path.
+    var copyP = document.createElement('p');
+    copyP.textContent = 'This removes the work folder .aid/works/' + workId +
+      '. If this pipeline has its own worktree, that worktree is removed too; ' +
+      'a worktree shared with other pipelines is kept. The git branch is not deleted.';
+    dlg.appendChild(copyP);
+
+    // Irreversibility warning (verbatim, §UI Specs).
+    var warnP = document.createElement('p');
+    warnP.className = 'confirm-modal-warning';
+    warnP.textContent = 'This permanently deletes the pipeline. Any work not pushed ' +
+      'to git will be lost and cannot be recovered.';
+    dlg.appendChild(warnP);
+
+    var label = document.createElement('label');
+    label.setAttribute('for', 'delete-confirm-input');
+    label.textContent = 'Type "' + workId + '" to confirm:';
+    dlg.appendChild(label);
+
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.id = 'delete-confirm-input';
+    input.className = 'interval-input';
+    input.style.width = '100%';
+    input.autocomplete = 'off';
+    input.spellcheck = false;
+    input.setAttribute('aria-label', 'Type ' + workId + ' to confirm deletion');
+    input.value = deleteModalState.typedValue;
+    input.disabled = deleteModalState.saving;
+    dlg.appendChild(input);
+
+    if (deleteModalState.errorMessage) {
+      var errSlot = document.createElement('div');
+      errSlot.className = 'callout err';
+      errSlot.setAttribute('aria-live', 'polite');
+      errSlot.textContent = deleteModalState.errorMessage;
+      dlg.appendChild(errSlot);
+    }
+
+    var actions = document.createElement('div');
+    actions.className = 'confirm-modal-actions';
+
+    var cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'btn-ghost';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.disabled = deleteModalState.saving;
+    cancelBtn.addEventListener('click', function () { _closeDeleteModal(work); });
+    actions.appendChild(cancelBtn);
+
+    var confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.id = 'delete-confirm-btn';
+    confirmBtn.className = 'btn-danger';
+    confirmBtn.textContent = deleteModalState.saving ? 'Deleting…' : 'Delete ' + workId;
+    confirmBtn.disabled = (deleteModalState.typedValue !== workId) || deleteModalState.saving;
+    confirmBtn.addEventListener('click', function () {
+      if (confirmBtn.disabled) return;
+      _submitPipelineDelete(work);
+    });
+    actions.appendChild(confirmBtn);
+
+    dlg.appendChild(actions);
+
+    // Type-to-confirm gate: Confirm un-disables ONLY when the typed value is
+    // an EXACT match for work_id.
+    input.addEventListener('input', function () {
+      deleteModalState.typedValue = input.value;
+      confirmBtn.disabled = (input.value !== workId) || deleteModalState.saving;
+    });
+
+    // Native <dialog> Esc handling: the browser fires 'cancel' (then would
+    // auto-close) on Escape while this dialog is the topmost modal --
+    // preventDefault stops the auto-close so our own state reset + re-render
+    // + focus-return runs instead (no side effect, §UI Specs).
+    dlg.addEventListener('cancel', function (e) { e.preventDefault(); _closeDeleteModal(work); });
+
+    // Redundant Esc handling for the role="dialog" fallback path (no native
+    // 'cancel' event without showModal()); harmless no-op double-fire in the
+    // native path since _closeDeleteModal is idempotent against already-closed
+    // state.
+    dlg.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') { e.preventDefault(); _closeDeleteModal(work); return; }
+      if (e.key !== 'Tab') return;
+      // Manual Tab-trap (defense-in-depth alongside the browser's own
+      // inert/top-layer focus containment for a native showModal() dialog;
+      // the ONLY trap in the role="dialog" fallback path).
+      var focusables = dlg.querySelectorAll(
+        'button:not([disabled]), input:not([disabled]), [href], select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      var first = focusables[0];
+      var last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    });
+
+    // Backdrop click: a click whose target IS the <dialog> element itself
+    // (not a descendant) landed on the ::backdrop -- the standard vanilla-JS
+    // native-<dialog> backdrop-click-to-close idiom (::backdrop has no DOM
+    // node of its own to attach a listener to).
+    dlg.addEventListener('click', function (e) {
+      if (e.target === dlg) _closeDeleteModal(work);
+    });
+
+    return dlg;
+  }
+
+  // Confirm: POST pipeline.delete; on 200 close + navigate to main + re-fetch
+  // (AC2); on 4xx/5xx keep the modal open and show the server's error/detail
+  // inline (§Feature Flow).
+  function _submitPipelineDelete(work) {
+    deleteModalState.saving = true;
+    deleteModalState.errorMessage = null;
+    // Force this render: the guard in _renderDangerZone would otherwise skip
+    // it right back, since deleteModalState.open is still true (see the
+    // explicit-render flag comment on its declaration, above).
+    _deleteModalExplicitRender = true;
+    _renderDangerZone(work, lastGoodModel && lastGoodModel.write_enabled === true);
+
+    postOp('pipeline.delete', { work_id: work.work_id }, {}, function (result) {
+      if (result.ok && result.body && result.body.ok) {
+        deleteModalState.open = false;
+        deleteModalState.workId = null;
+        deleteModalState.saving = false;
+        deleteModalState.typedValue = '';
+        deleteModalState.errorMessage = null;
+        var dlgEl = document.getElementById('delete-pipeline-modal');
+        if (dlgEl && typeof dlgEl.close === 'function' && dlgEl.open) dlgEl.close();
+        location.hash = ''; // main route
+        doFetch();          // truthful re-fetch -- the deleted pipeline is gone (AC2)
+      } else {
+        deleteModalState.saving = false;
+        deleteModalState.errorMessage = _friendlyDeleteError(result.body);
+        _deleteModalExplicitRender = true;
+        _renderDangerZone(work, lastGoodModel && lastGoodModel.write_enabled === true);
+      }
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -2343,9 +4351,23 @@ footer {
     return badge;
   }
 
-  function renderTasks(work) {
+  function renderTasks(work, writeEnabled) {
     var section = document.getElementById('tasks-section');
     if (!section) return;
+
+    // Guard: an in-flight task.stop/task.resume POST for a task WITHIN this
+    // work must not have its disabled "Stopping…"/"Resuming…" chip button
+    // clobbered by a poll-triggered full rebuild (mirrors
+    // _renderConnectorsCard's/_renderDangerZone's identical `saving`-guard
+    // convention; delivery-001 dogfood fix, commit 41ea5d28). Scoped to the
+    // CURRENT work only (not a global freeze) via the work_id prefix of the
+    // shared detail key -- a click on a task belonging to a DIFFERENT work is
+    // never blocked by this.
+    if (!_consumeTaskControlExplicitRender() && taskControlState.saving &&
+        taskControlState.key && taskControlState.key.indexOf(work.work_id + '/') === 0) {
+      return;
+    }
+
     section.innerHTML = '';
 
     var tasks = work.tasks || [];
@@ -2357,14 +4379,14 @@ footer {
     var workPath = work.work_path || 'full';
 
     if (workPath === 'full') {
-      renderTasksFull(section, tasks, work.work_id);
+      renderTasksFull(section, tasks, work.work_id, writeEnabled);
     } else {
       // Lite: render lanes at top level (no delivery wrapper)
-      renderLanes(section, tasks, null, work.work_id);
+      renderLanes(section, tasks, null, work.work_id, writeEnabled);
     }
   }
 
-  function renderTasksFull(container, tasks, workId) {
+  function renderTasksFull(container, tasks, workId, writeEnabled) {
     // Group by task.delivery (real integer from reader; null -> "unsequenced" bucket)
     // Never uses parseWave() or the invented delivery-NNN-wave-M string.
     var deliveryOrder = [];   // integer delivery numbers, ascending (null last)
@@ -2430,7 +4452,7 @@ footer {
       body.className = 'delivery-panel-body' + (dOpen ? ' open' : '');
 
       // Render lanes inside the body (pass dNum2 for delivery-scoped uiState keys)
-      renderLanes(body, dTasks, dNum2, workId);
+      renderLanes(body, dTasks, dNum2, workId, writeEnabled);
 
       // Toggle handler (closure over dStateKey, summaryBtn, body)
       (function(sk, btn, bd) {
@@ -2456,7 +4478,7 @@ footer {
     }
   }
 
-  function renderLanes(container, tasks, deliveryNum, workId) {
+  function renderLanes(container, tasks, deliveryNum, workId, writeEnabled) {
     // Group by task.lane (integer from PLAN execution graph; null -> "unsequenced" lane)
     // deliveryNum: the integer delivery number (or null for the unsequenced delivery bucket)
     // uiState key is delivery-scoped: "d<D>-lane<L>" or "d<D>-unseq" — never collides across deliveries
@@ -2494,7 +4516,7 @@ footer {
         var unseqGrid = document.createElement('div');
         unseqGrid.className = 'grid g-lane';
         for (var uti = 0; uti < lTasks.length; uti++) {
-          unseqGrid.appendChild(makeTaskChip(lTasks[uti], workId));
+          unseqGrid.appendChild(makeTaskChip(lTasks[uti], workId, writeEnabled));
         }
         container.appendChild(unseqGrid);
         continue;
@@ -2543,7 +4565,7 @@ footer {
       var grid = document.createElement('div');
       grid.className = 'grid g-lane';
       for (var ti = 0; ti < lTasks.length; ti++) {
-        grid.appendChild(makeTaskChip(lTasks[ti], workId));
+        grid.appendChild(makeTaskChip(lTasks[ti], workId, writeEnabled));
       }
       lBody.appendChild(grid);
 
@@ -2571,7 +4593,127 @@ footer {
     }
   }
 
-  function makeTaskChip(task, workId) {
+  // Task label precedence (feature-005, task-009): display_name -> short_name ->
+  // task_id. display_name is the mutable rename override (task.rename); short_name
+  // is the immutable DETAIL.md-derived title (PF-3); task_id is the ultimate
+  // fallback (PF-7, always present). Shared by makeTaskChip (task card) and
+  // renderTaskView (task drill view) so both render sites stay in lockstep (AC3).
+  function _taskDisplayLabel(task) {
+    if (task.display_name != null && String(task.display_name).trim()) return task.display_name;
+    if (task.short_name != null && String(task.short_name).trim()) return task.short_name;
+    return task.task_id;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Task Stop/Resume (feature-008-execution-control, task-030): a single
+  // toggle control shared by makeTaskChip (task card) AND renderTaskView
+  // (task drill view), so both stay in lockstep (mirrors _taskDisplayLabel's
+  // identical shared-helper role). Consumes feature-001's shared postOp()
+  // helper against the task.stop/task.resume OP_TABLE rows task-029 added.
+  // ---------------------------------------------------------------------------
+
+  // taskControlState: transient UI-only state for an in-flight task.stop/
+  // task.resume POST. A SINGLE shared object (never a per-task map) --
+  // mirrors connectorsUiState's identical single-flight rationale: only one
+  // manual click can be in flight at a time in a single-threaded browser.
+  // `key` is the drill key ("<work_id>/<task_id>") whose toggle is currently
+  // mid-flight, so the guards (renderTasks' + renderTaskView's) only pause a
+  // rebuild while THAT task's own toggle is saving -- a click on a DIFFERENT
+  // task's toggle (or navigating away) is never blocked.
+  var taskControlState = { key: null, saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender /
+  // _deleteModalExplicitRender (delivery-001 dogfood fix, commit 41ea5d28):
+  // entering `saving` needs its OWN forced render (else the guards below
+  // would see saving===true and skip the very render meant to draw the
+  // disabled "Stopping…"/"Resuming…" state) -- only that one render bypasses
+  // the guard; a later poll-loop tick still preserves it untouched.
+  var _taskControlExplicitRender = false;
+  function _consumeTaskControlExplicitRender() {
+    var v = _taskControlExplicitRender;
+    _taskControlExplicitRender = false;
+    return v;
+  }
+
+  // Build the Stop/Resume toggle for a task. AC6 visibility gate: returns
+  // null (renders NOTHING) unless task.status === 'In Progress' &&
+  // writeEnabled -- Pending/Blocked/Done/Failed/Canceled/In Review all get no
+  // control (no rerun/start affordance anywhere); In Review is DELIBERATELY
+  // excluded even though the chip's own "active" CSS class (above) treats it
+  // like In Progress -- its executor has already finished (a reviewer
+  // sub-agent is what is running). Label/action flips on task.stop_requested
+  // (false -> "Stop"/task.stop; true -> "Resume"/task.resume, §UI Specs).
+  function _buildTaskStopResumeControl(workId, task, writeEnabled) {
+    if (task.status !== 'In Progress' || !writeEnabled) return null;
+
+    var detailKey = workId + '/' + task.task_id;
+    var isPaused = task.stop_requested === true;
+    var thisSaving = taskControlState.saving && taskControlState.key === detailKey;
+
+    // Wrapping <span> (mirrors _renderTaskRenameControl's identical shape) so
+    // a failed POST's inline error can sit alongside the button without the
+    // caller (makeTaskChip / renderTaskView) needing to know about it.
+    var wrap = document.createElement('span');
+    wrap.style.cssText = 'display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap';
+
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn-ghost';
+    btn.disabled = thisSaving;
+    btn.textContent = thisSaving ? (isPaused ? 'Resuming…' : 'Stopping…') : (isPaused ? 'Resume' : 'Stop');
+    btn.setAttribute('aria-label', (isPaused ? 'Resume' : 'Stop') + ' task ' + task.task_id);
+    btn.addEventListener('click', function (e) {
+      // The chip itself is a clickable SEAM-2 drill-nav surface
+      // (card.onclick, below) -- stop the click from bubbling so this toggle
+      // never ALSO navigates away.
+      if (e) e.stopPropagation();
+      if (btn.disabled) return;
+      _submitTaskStopResume(workId, task, detailKey, isPaused ? 'task.resume' : 'task.stop');
+    });
+    wrap.appendChild(btn);
+
+    if (taskControlState.errorMessage && taskControlState.key === detailKey) {
+      var err = document.createElement('span');
+      err.className = 'callout err';
+      err.style.cssText = 'display:block;width:100%;margin-top:0.2rem;font-size:0.72rem;';
+      err.textContent = taskControlState.errorMessage;
+      wrap.appendChild(err);
+    }
+
+    return wrap;
+  }
+
+  // Dispatch the toggle POST; on success re-fetch + re-render from disk (the
+  // re-derived task.stop_requested, AC2 -- never optimistically flipped
+  // client-side); on failure surface the error inline and re-render from the
+  // still-cached (unchanged) model.
+  function _submitTaskStopResume(workId, task, detailKey, op) {
+    taskControlState.key = detailKey;
+    taskControlState.saving = true;
+    taskControlState.errorMessage = null;
+    // Force this render: the guards in renderTasks/renderTaskView would
+    // otherwise skip it right back, since taskControlState.saving is now true
+    // (see the explicit-render flag comment on its declaration, above).
+    _taskControlExplicitRender = true;
+    _rerenderCurrentRoute();
+
+    var target = { work_id: workId, task_id: task.task_id };
+    if (task.delivery != null) target.delivery_id = task.delivery;
+    postOp(op, target, {}, function (result) {
+      taskControlState.saving = false;
+      taskControlState.key = null;
+      if (result.ok && result.body && result.body.ok) {
+        taskControlState.errorMessage = null;
+        _refetchModelForHeader();
+      } else {
+        taskControlState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not update task.';
+        _taskControlExplicitRender = true;
+        _rerenderCurrentRoute();
+      }
+    });
+  }
+
+  function makeTaskChip(task, workId, writeEnabled) {
     var card = document.createElement('div');
     card.className = 'task-chip';
 
@@ -2617,12 +4759,27 @@ footer {
     var statusBadge = makeTaskStatusBadge(task.status);
     card.appendChild(statusBadge);
 
-    // Line 2: short_name from task file header (PF-3); fallback to task_id when null (PF-7)
-    var shortName = (task.short_name != null && String(task.short_name).trim()) ? task.short_name : task.task_id;
+    // Line 2: display_name -> short_name -> task_id (feature-005 label precedence)
+    var displayLabel = _taskDisplayLabel(task);
     var nameEl = document.createElement('div');
     nameEl.className = 'chip-short-name';
-    nameEl.textContent = shortName || '';
+    nameEl.textContent = displayLabel || '';
     card.appendChild(nameEl);
+
+    // Line 3: Stop/Resume toggle (AC6 gate) + decorative "paused" pill
+    // (feature-008-execution-control, task-030). The pill is purely
+    // informational (reflects on-disk stop_requested state) and is shown
+    // independent of write_enabled; the toggle itself IS write-gated
+    // (defense-in-depth -- the server 403s the op even if forced).
+    var isPaused = task.status === 'In Progress' && task.stop_requested === true;
+    var stopResumeBtn = _buildTaskStopResumeControl(workId, task, writeEnabled === true);
+    if (isPaused || stopResumeBtn) {
+      var actionsRow = document.createElement('div');
+      actionsRow.className = 'chip-actions';
+      if (isPaused) actionsRow.appendChild(makeStopRequestedPill());
+      if (stopResumeBtn) actionsRow.appendChild(stopResumeBtn);
+      card.appendChild(actionsRow);
+    }
 
     return card;
   }
@@ -2677,6 +4834,20 @@ footer {
       badge.textContent = '? ' + (status || 'Unknown');
     }
     return badge;
+  }
+
+  // "Paused" pill (UI-3/UI-4 family, feature-008-execution-control task-030):
+  // a small DECORATIVE glyph badge -- never a substitute for
+  // makeTaskStatusBadge (the task State enum is untouched by a pause, per
+  // OQ-T2; a paused task stays 'In Progress' and its own status badge is
+  // rendered separately, unchanged). Shown ALONGSIDE the status badge, never
+  // instead of it.
+  function makeStopRequestedPill() {
+    var pill = document.createElement('span');
+    pill.className = 'badge badge-warn';
+    pill.title = 'A stop has been requested for this task';
+    pill.textContent = '❚❚ Paused';
+    return pill;
   }
 
   // ---------------------------------------------------------------------------
@@ -2858,14 +5029,376 @@ footer {
   // ---------------------------------------------------------------------------
   // renderTaskView: SEAM-2 drill view (task-071)
   // ---------------------------------------------------------------------------
+  // taskRenameState: transient UI-only edit state for task.rename (feature-005).
+  // key is the drill key ("<work_id>/<task_id>") currently being edited, so
+  // renderTaskView's poll-loop guard (below) only pauses the rebuild while THIS
+  // task is being edited -- navigating to a different task (or leaving the drill
+  // view) still renders fresh, unlike a single unscoped editing flag would.
+  var taskRenameState = { key: null, editing: false, saving: false, errorMessage: null };
+
+  // One-shot explicit-render flag: mirrors _projectHeaderExplicitRender's role,
+  // scoped to the task-rename edit-ENTRY transition specifically (rather than
+  // task notes) so opening the OTHER field's editor never has to bypass this
+  // one's guard. The Edit-button handler (below) sets this immediately before
+  // its _rerenderCurrentRoute() call; renderTaskView's guard reads + clears it
+  // via _consumeTaskRenameExplicitRender() so only that one render bypasses the
+  // poll-loop-preservation guard -- never a later poll-loop re-render.
+  var _taskRenameExplicitRender = false;
+  function _consumeTaskRenameExplicitRender() {
+    var v = _taskRenameExplicitRender;
+    _taskRenameExplicitRender = false;
+    return v;
+  }
+
+  // POST ./api/op {op:"task.rename", target:{work_id,delivery_id?,task_id}, args:{value}};
+  // onDone receives {ok, body} -- mirrors _postSettingsSet's shape verbatim.
+  // delivery_id is included only when the task's TaskModel.delivery is set (nested
+  // layout); omitted for flat, matching task-008's arg-schema.
+  function _postTaskRename(workId, deliveryId, taskId, value, onDone) {
+    var target = { work_id: workId, task_id: taskId };
+    if (deliveryId != null) target.delivery_id = deliveryId;
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: 'task.rename', target: target, args: { value: value } })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  // Re-render the current route from the last-known-good model (mirrors
+  // onHashChange) -- used to refresh the task view once an edit ends without
+  // waiting for the next poll tick.
+  function _rerenderCurrentRoute() {
+    if (lastGoodModel) render(lastGoodModel, parseRoute(location.hash));
+  }
+
+  // Validate + dispatch a task.rename save. On success: exit edit mode, re-fetch
+  // the model, re-render from disk (AC2 -- the display_name -> short_name ->
+  // task_id precedence then shows the new name). On failure: exit edit mode
+  // WITHOUT mutating the model, surface the error inline.
+  function _saveTaskRename(workId, task, detailKey, value) {
+    var clientErr = _validateRenameValueClient(value);
+    if (clientErr) {
+      taskRenameState.errorMessage = clientErr;
+      taskRenameState.editing = false;
+      taskRenameState.key = null;
+      _rerenderCurrentRoute();
+      return;
+    }
+    taskRenameState.saving = true;
+    taskRenameState.errorMessage = null;
+    _postTaskRename(workId, task.delivery, task.task_id, value, function (result) {
+      taskRenameState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        taskRenameState.editing = false;
+        taskRenameState.key = null;
+        taskRenameState.errorMessage = null;
+        _refetchModelForHeader();
+      } else {
+        var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+        taskRenameState.editing = false;
+        taskRenameState.key = null;
+        taskRenameState.errorMessage = detail;
+        _rerenderCurrentRoute();
+      }
+    });
+  }
+
+  // Build the write-gated pencil (display mode) or the inline edit form (input +
+  // Save/Cancel) for the task name, next to the task's at-a-glance header. Not
+  // rendered at all when write_enabled is false (AC8 UI half; the server 403s
+  // the op even if forced).
+  function _renderTaskRenameControl(workId, task, detailKey, writeEnabled) {
+    var wrap = document.createElement('span');
+    wrap.style.cssText = 'display:inline-flex;align-items:center;gap:0.4rem;flex-wrap:wrap';
+
+    if (taskRenameState.editing && taskRenameState.key === detailKey) {
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'interval-input project-header-name-input';
+      input.value = _taskDisplayLabel(task) || '';
+      input.setAttribute('aria-label', 'Task name');
+      wrap.appendChild(input);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      saveBtn.addEventListener('click', function () {
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        _saveTaskRename(workId, task, detailKey, input.value);
+      });
+      wrap.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      cancelBtn.addEventListener('click', function () {
+        taskRenameState.editing = false;
+        taskRenameState.key = null;
+        taskRenameState.errorMessage = null;
+        _rerenderCurrentRoute();
+      });
+      wrap.appendChild(cancelBtn);
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); saveBtn.click(); }
+        else if (e.key === 'Escape') { e.preventDefault(); cancelBtn.click(); }
+      });
+
+      if (taskRenameState.errorMessage) {
+        var err = document.createElement('span');
+        err.className = 'callout err';
+        err.style.cssText = 'display:block;width:100%;margin-top:0.3rem';
+        err.textContent = taskRenameState.errorMessage;
+        wrap.appendChild(err);
+      }
+    } else if (writeEnabled) {
+      var editBtn = document.createElement('button');
+      editBtn.type = 'button';
+      editBtn.className = 'btn-ghost';
+      editBtn.setAttribute('aria-label', 'Rename task');
+      editBtn.title = 'Rename task';
+      editBtn.textContent = '✎';
+      editBtn.addEventListener('click', function () {
+        taskRenameState.editing = true;
+        taskRenameState.key = detailKey;
+        taskRenameState.errorMessage = null;
+        // Force the very next renderTaskView call so the editor appears
+        // immediately (see _taskRenameExplicitRender's declaration above).
+        _taskRenameExplicitRender = true;
+        _rerenderCurrentRoute();
+      });
+      wrap.appendChild(editBtn);
+    }
+
+    return wrap;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Task Notes (feature-006-task-notes, task-010): write-gated "TASK NOTES" card
+  // + inline editor in the task drill view. Reuses feature-001's POST ./api/op
+  // envelope via the new thin postOp() helper (below), which generalizes the
+  // shape _postSettingsSet/_postTaskRename already established (task-006/009)
+  // into a single reusable function.
+  // ---------------------------------------------------------------------------
+
+  // Thin generic op-dispatch helper: POST ./api/op {op, target, args}; onDone
+  // receives {ok, body} where ok mirrors the HTTP status and body is the parsed
+  // JSON envelope (best-effort {} on a non-JSON/network failure). Modeled on
+  // doFetch (above).
+  function postOp(op, target, args, onDone) {
+    fetch('./api/op', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ op: op, target: target, args: args })
+    }).then(function (resp) {
+      return resp.json().catch(function () { return {}; }).then(function (body) {
+        onDone({ ok: resp.ok, body: body });
+      });
+    }).catch(function (err) {
+      onDone({ ok: false, body: { ok: false, error: 'network-error', detail: String(err) } });
+    });
+  }
+
+  // Shared args.value client-side mirror of the server's task.set-notes
+  // semantic_validate (SPEC.md API Contracts): <=1 KiB, no reserved '|'
+  // separator; newline is structurally prevented by the single-line <input>
+  // but checked defensively too (mirrors _validateRenameValueClient's role for
+  // task.rename).
+  var MAX_NOTES_VALUE_LEN = 1024;
+  function _validateNotesValueClient(value) {
+    if (value.indexOf('\n') !== -1) return 'Value cannot contain a line break.';
+    if (value.indexOf('|') !== -1) return "Value cannot contain '|' (reserved column separator).";
+    if (value.length > MAX_NOTES_VALUE_LEN) return 'Value exceeds max length (' + MAX_NOTES_VALUE_LEN + ' characters).';
+    return null;
+  }
+
+  // taskNotesState: transient UI-only edit state for task.set-notes. key is the
+  // drill key ("<work_id>/<task_id>") currently being edited -- while editing
+  // (or an edit's own save request is in flight), renderTaskView's guard
+  // (below) leaves this card's DOM alone entirely (never rebuilt), so a failed
+  // save's inline error and the user's typed value both survive any poll tick
+  // / route re-render until Cancel or a successful Save explicitly ends the
+  // edit (mirrors taskRenameState's identical skip-during-edit contract).
+  var taskNotesState = { key: null, editing: false, saving: false };
+
+  // One-shot explicit-render flag: mirrors _taskRenameExplicitRender's role
+  // (see its declaration above), scoped independently to the task-notes
+  // edit-ENTRY transition so the two fields' guards never cross-clobber each
+  // other's in-progress, unsaved edit when only one of them is being entered.
+  var _taskNotesExplicitRender = false;
+  function _consumeTaskNotesExplicitRender() {
+    var v = _taskNotesExplicitRender;
+    _taskNotesExplicitRender = false;
+    return v;
+  }
+
+  // Build the "TASK NOTES" card: read-only display (task.notes or a dimmed
+  // empty state) always renders; the write-gated Edit affordance (single-line
+  // input + Save/Cancel) appears only when writeEnabled. Built ONCE per edit
+  // session -- renderTaskView's guard prevents any rebuild while
+  // taskNotesState.editing is true for this detailKey, so Save/Cancel's own
+  // click handlers patch this same DOM directly on failure (never a full
+  // re-render), which is how the input keeps the user's text on a failed save.
+  function _renderTaskNotesPanel(workId, task, detailKey, writeEnabled) {
+    var card = document.createElement('div');
+    card.className = 'card';
+    card.style.marginBottom = '1rem';
+
+    var kicker = document.createElement('div');
+    kicker.className = 'kicker';
+    kicker.textContent = 'TASK NOTES';
+    card.appendChild(kicker);
+
+    var editing = taskNotesState.editing && taskNotesState.key === detailKey;
+
+    if (editing) {
+      var editWrap = document.createElement('div');
+      editWrap.style.cssText = 'display:flex;align-items:center;gap:0.4rem;flex-wrap:wrap;margin-top:0.5rem;';
+
+      var input = document.createElement('input');
+      input.type = 'text';
+      input.className = 'interval-input project-header-name-input';
+      input.style.flex = '1 1 auto';
+      input.value = task.notes || '';
+      input.setAttribute('aria-label', 'Task notes');
+      editWrap.appendChild(input);
+
+      var saveBtn = document.createElement('button');
+      saveBtn.type = 'button';
+      saveBtn.className = 'btn-ghost';
+      saveBtn.textContent = 'Save';
+      editWrap.appendChild(saveBtn);
+
+      var cancelBtn = document.createElement('button');
+      cancelBtn.type = 'button';
+      cancelBtn.className = 'btn-ghost';
+      cancelBtn.textContent = 'Cancel';
+      editWrap.appendChild(cancelBtn);
+
+      card.appendChild(editWrap);
+
+      var errSlot = document.createElement('p');
+      errSlot.className = 'callout warn';
+      errSlot.style.cssText = 'margin-top:0.5rem;display:none;';
+      card.appendChild(errSlot);
+
+      cancelBtn.addEventListener('click', function () {
+        taskNotesState.editing = false;
+        taskNotesState.key = null;
+        _rerenderCurrentRoute();
+      });
+
+      var attemptSave = function () {
+        var value = input.value;
+        var clientErr = _validateNotesValueClient(value);
+        if (clientErr) {
+          errSlot.textContent = clientErr;
+          errSlot.style.display = '';
+          return;
+        }
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        errSlot.style.display = 'none';
+        taskNotesState.saving = true;
+        var target = { work_id: workId, task_id: task.task_id };
+        if (task.delivery != null) target.delivery_id = task.delivery;
+        postOp('task.set-notes', target, { value: value }, function (result) {
+          taskNotesState.saving = false;
+          if (result.ok && result.body && result.body.ok) {
+            taskNotesState.editing = false;
+            taskNotesState.key = null;
+            doFetch();
+          } else {
+            var detail = (result.body && (result.body.detail || result.body.error)) || 'Save failed.';
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            errSlot.textContent = detail;
+            errSlot.style.display = '';
+          }
+        });
+      };
+
+      saveBtn.addEventListener('click', attemptSave);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); if (!saveBtn.disabled) attemptSave(); }
+        else if (e.key === 'Escape') { e.preventDefault(); if (!cancelBtn.disabled) cancelBtn.click(); }
+      });
+    } else {
+      var body = document.createElement('p');
+      body.className = 'meta';
+      body.style.marginTop = '0.5rem';
+      if (task.notes) {
+        body.textContent = task.notes;
+      } else {
+        body.style.color = 'var(--text-dim)';
+        body.textContent = 'No notes.';
+      }
+      card.appendChild(body);
+
+      if (writeEnabled) {
+        var editBtn = document.createElement('button');
+        editBtn.type = 'button';
+        editBtn.className = 'btn-ghost';
+        editBtn.style.marginTop = '0.5rem';
+        editBtn.setAttribute('aria-label', 'Edit task notes');
+        editBtn.textContent = 'Edit';
+        editBtn.addEventListener('click', function () {
+          taskNotesState.editing = true;
+          taskNotesState.key = detailKey;
+          // Force the very next renderTaskView call so the editor appears
+          // immediately (see _taskNotesExplicitRender's declaration above).
+          _taskNotesExplicitRender = true;
+          _rerenderCurrentRoute();
+        });
+        card.appendChild(editBtn);
+      }
+    }
+
+    return card;
+  }
+
   function renderTaskView(model, route) {
     var container = document.getElementById('task-view');
     if (!container) return;
-    container.innerHTML = '';
 
     var workId = route.workId;
     var taskId = route.taskId;
     var detailKey = workId + '/' + taskId;
+
+    // Preserve an in-progress task-rename edit / in-flight save across the poll
+    // loop's periodic re-render (mirrors _renderProjectHeader's identical guard),
+    // scoped to the task currently being edited so navigating away still renders
+    // fresh (unlike an unscoped flag would).
+    if (!_consumeTaskRenameExplicitRender()) {
+      if ((taskRenameState.editing || taskRenameState.saving) && taskRenameState.key === detailKey) {
+        return;
+      }
+    }
+    // Same guard for an in-progress task.set-notes edit (feature-006, task-010).
+    if (!_consumeTaskNotesExplicitRender()) {
+      if ((taskNotesState.editing || taskNotesState.saving) && taskNotesState.key === detailKey) {
+        return;
+      }
+    }
+    // Same guard for an in-flight task.stop/task.resume POST
+    // (feature-008-execution-control, task-030) -- prevents a poll tick from
+    // clobbering the disabled "Stopping…"/"Resuming…" button mid-request.
+    if (!_consumeTaskControlExplicitRender()) {
+      if (taskControlState.saving && taskControlState.key === detailKey) {
+        return;
+      }
+    }
+
+    container.innerHTML = '';
 
     // Find the work
     var work = findWorkById(model.works || [], workId);
@@ -2874,7 +5407,7 @@ footer {
       var callout = document.createElement('div');
       callout.className = 'callout warn';
       callout.innerHTML = '<h4>Work not found</h4>' +
-        '<p>The work <code>' + escHtml(workId) + '</code> is no longer in this repo.</p>';
+        '<p>The work <code>' + escHtml(workId) + '</code> is no longer in this project.</p>';
       container.appendChild(callout);
       var backP = document.createElement('p');
       backP.style.marginTop = '0.75rem';
@@ -2920,12 +5453,27 @@ footer {
         headerDiv.appendChild(typeEl);
       }
       headerDiv.appendChild(makeTaskStatusBadge(task.status));
-      if (task.short_name) {
+      // Task rename (feature-005): display_name -> short_name -> task_id label
+      // precedence, in lockstep with makeTaskChip's identical precedence (AC3).
+      var taskLabel = _taskDisplayLabel(task);
+      if (taskLabel) {
         var snEl = document.createElement('span');
         snEl.style.cssText = 'font-weight:500;font-size:0.95rem;';
-        snEl.textContent = task.short_name;
+        snEl.textContent = taskLabel;
         headerDiv.appendChild(snEl);
       }
+      // Write-gated rename pencil / inline editor, next to the task name (AC8 UI half).
+      var taskWriteEnabled = model.write_enabled === true;
+      headerDiv.appendChild(_renderTaskRenameControl(workId, task, detailKey, taskWriteEnabled));
+      // Task Stop/Resume mirror (feature-008-execution-control, task-030):
+      // the SAME shared builder as the chip (identical AC6 gate + label/action
+      // flip), for discoverability on the drill route. Paused pill shown
+      // alongside the status badge above, never replacing it.
+      if (task.status === 'In Progress' && task.stop_requested === true) {
+        headerDiv.appendChild(makeStopRequestedPill());
+      }
+      var stopResumeCtl = _buildTaskStopResumeControl(workId, task, taskWriteEnabled);
+      if (stopResumeCtl) headerDiv.appendChild(stopResumeCtl);
     } else {
       // Task not found — show notice, never blank (FC-3/UI-5)
       var noTaskCallout = document.createElement('div');
@@ -2938,6 +5486,12 @@ footer {
       return;
     }
     container.appendChild(headerDiv);
+
+    // TASK NOTES card (feature-006-task-notes, task-010): renders even before
+    // the forensic `detail` payload loads -- task.notes comes from the
+    // already-present model, not from `details` (placed before the
+    // `if (!detail)` first-tick early-return below).
+    container.appendChild(_renderTaskNotesPanel(workId, task, detailKey, taskWriteEnabled));
 
     // Get detail (may be absent on first tick — lazy load)
     var details = (model.details) ? model.details : {};

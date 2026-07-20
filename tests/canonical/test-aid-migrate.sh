@@ -3,14 +3,24 @@
 # (reachable via `aid __migrate-repo <path>`).
 #
 # Covers SPEC feature-011 section-6 gates 4-8:
-#   Gate 4a: era-a VALID settings (inline comments + alignment) -> format_version prepended
-#             (NOTE: byte-identical check removed - format_version stamp now written; OOS task-008)
+#
+# NOTE (config-schema redesign): _aid_migrate_repair_settings_era_a is now a full
+# read-then-rewrite into the flat format-3 schema (not the original targeted-line
+# repair), so Gates 4a/4b/4c below reflect the new reality: inline comments and
+# section nesting are DROPPED on every era-a repo (valid or not); kb_baseline
+# (without branch/tip_date) and per-skill grade overrides have no new-schema home
+# and are dropped rather than preserved; tools now live EXCLUSIVELY in the
+# manifest (never written into settings.yml by era-a repair or era-b synthesis).
+#
+#   Gate 4a: era-a VALID settings (inline comments + alignment) -> flat format-3
+#             rewrite (comments dropped, format_version: 3 stamped)
 #   Gate 4b: era-a MALFORMED settings (missing section) + kb_baseline + skill override
-#             -> repaired to DM-1 validity; kb_baseline + override preserved byte-for-byte
-#   Gate 4c: era-a bare value-less name: -> repaired to basename (full unit coverage)
-#   Gate 5a: era-b STATE.md + .aid-manifest.json -> synthesized settings with name/tools/defaults
+#             -> repaired to the flat format-3 schema; kb_baseline + override DROPPED
+#   Gate 4c: era-a bare value-less name: -> repaired to basename (top-level, flat schema)
+#   Gate 5a: era-b STATE.md + .aid-manifest.json -> synthesized flat settings
+#             (name/type/source_control/defaults); tools stay in the manifest only
 #   Gate 5b: era-b DISCOVERY_STATE.md variant (RC-4 filename set) -> synthesized settings
-#   Gate 5c: era-b no manifest -> synthesized with installed: []
+#   Gate 5c: era-b no manifest -> synthesized with no tools: block at all
 #   Gate 6:  run migrate twice on every fixture -> second run byte-identical no-op
 #   Gate 7a: existing .aid/knowledge/kb.html + legacy knowledge-summary.html -> both kept (no-clobber)
 #   Gate 7b: format-2 dashboard elimination -- .aid/dashboard/kb.html relocated to
@@ -123,15 +133,20 @@ file_sha256() {
 }
 
 # ===========================================================================
-# Gate 4a -- era-a VALID settings with inline comments + alignment -> no-op
+# Gate 4a -- era-a VALID settings with inline comments + alignment -> REWRITTEN
+#            to the flat format-3 schema (comments dropped, not preserved)
 #
-# Regression fixture for the comment-strip bug: every REQUIRED scalar carries
-# an inline comment + alignment padding (the exact forms that previously caused
-# the enum check to fail and rewrite the line, stripping the comment).
-# A file without comments would pass even against the pre-fix code.
+# Regression fixture for the original comment-strip bug: every REQUIRED scalar
+# carries an inline comment + alignment padding. The config-schema redesign
+# changed _aid_migrate_repair_settings_era_a from a targeted line-repair (which
+# preserved comments/nesting) into a full read-then-rewrite into the flat
+# schema, so EVERY era-a repo -- valid or not -- is now rewritten: inline
+# comments and section nesting are dropped, and the file is never a
+# byte-identical no-op on first migrate (idempotency now holds on the SECOND
+# run only -- see Gate 6).
 # ===========================================================================
 echo ""
-echo "=== Gate 4a: era-a valid+commented -> byte-identical no-op ==="
+echo "=== Gate 4a: era-a valid+commented -> flat format-3 rewrite (comments dropped) ==="
 
 G4A_CODE_HOME="$(new_code_home)"
 G4A_STATE_HOME="$(new_state_home)"
@@ -165,52 +180,52 @@ G4A_SETTINGS_EOF
 
 run_migrate "${G4A_CODE_HOME}" "${G4A_STATE_HOME}" "${G4A_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G4A-01 __migrate-repo valid+commented fixture -> exit 0"
-# G4A-02 NOTE: byte-identical check removed -- the new bin/aid prepends
-# format_version: 1 to settings.yml (feature-001/003 stamp write). The
-# idempotency contract is verified in Gate 6. OOS for task-008/009.
-pass "G4A-02 format_version stamp written (byte-identical no-op deferred to task-008/009)"
+# G4A-02: format_version: 3 stamped at the top of the rewritten flat file
+# (config-schema redesign -- full rewrite, not a targeted repair).
+G4A_FMT_LINE="$(grep '^format_version:' "${G4A_REPO}/.aid/settings.yml" | head -1)"
+assert_eq "$G4A_FMT_LINE" "format_version: 3" \
+    "G4A-02 format_version: 3 stamped on the rewritten flat file"
 
-# Spot-check each inline comment is preserved byte-for-byte.
-G4A_TYPE_LINE="$(grep '  type:' "${G4A_REPO}/.aid/settings.yml")"
-assert_eq "$G4A_TYPE_LINE" \
-    "  type: brownfield                  # brownfield | greenfield" \
-    "G4A-03 type: inline comment + alignment preserved byte-for-byte"
+# Spot-check each value is flattened to top level with the inline comment dropped.
+G4A_TYPE_LINE="$(grep '^type:' "${G4A_REPO}/.aid/settings.yml")"
+assert_eq "$G4A_TYPE_LINE" "type: brownfield" \
+    "G4A-03 type: flattened to top level with the inline comment dropped"
 
-G4A_MPT_LINE="$(grep '  max_parallel_tasks:' "${G4A_REPO}/.aid/settings.yml")"
-assert_eq "$G4A_MPT_LINE" \
-    "  max_parallel_tasks: 5   # parallel pool dispatch capacity" \
-    "G4A-04 max_parallel_tasks: inline comment preserved byte-for-byte"
+# execution: block (incl. max_parallel_tasks) is removed by the redesign.
+assert_file_not_contains "${G4A_REPO}/.aid/settings.yml" "max_parallel_tasks" \
+    "G4A-04 max_parallel_tasks dropped (execution: block removed)"
 
-G4A_HB_LINE="$(grep '  heartbeat_interval:' "${G4A_REPO}/.aid/settings.yml")"
-assert_eq "$G4A_HB_LINE" \
-    "  heartbeat_interval: 1   # minutes -- heartbeat update interval" \
-    "G4A-05 heartbeat_interval: inline comment preserved byte-for-byte"
+G4A_HB_LINE="$(grep '^heartbeat_interval:' "${G4A_REPO}/.aid/settings.yml")"
+assert_eq "$G4A_HB_LINE" "heartbeat_interval: 1" \
+    "G4A-05 heartbeat_interval: promoted to top level with the inline comment dropped"
 
-G4A_NAME_LINE="$(grep '  name:' "${G4A_REPO}/.aid/settings.yml")"
-assert_eq "$G4A_NAME_LINE" \
-    "  name: TestProject                    # set during /aid-config INIT" \
-    "G4A-06 name: with value + comment left intact (non-empty name not re-written)"
+G4A_NAME_LINE="$(grep '^name:' "${G4A_REPO}/.aid/settings.yml")"
+assert_eq "$G4A_NAME_LINE" "name: TestProject" \
+    "G4A-06 name: value flattened to top level with the inline comment dropped"
 
-G4A_MG_LINE="$(grep '  minimum_grade:' "${G4A_REPO}/.aid/settings.yml" | head -1)"
-assert_eq "$G4A_MG_LINE" \
-    "  minimum_grade: A   # global review floor" \
-    "G4A-07 minimum_grade: inline comment preserved byte-for-byte"
+G4A_MG_LINE="$(grep '^minimum_grade:' "${G4A_REPO}/.aid/settings.yml" | head -1)"
+assert_eq "$G4A_MG_LINE" "minimum_grade: A" \
+    "G4A-07 minimum_grade: promoted to top level with the inline comment dropped"
 
 # ===========================================================================
 # Gate 4b -- era-a MALFORMED settings (missing project: section) +
 #            populated kb_baseline + per-skill override ->
-#            repaired to DM-1 validity; kb_baseline + override byte-for-byte (R21)
+#            repaired to the flat format-3 schema; kb_baseline + per-skill
+#            overrides are DROPPED (both are features the redesign removes)
 #
 # The malformed fixture omits the `project:` section entirely AND includes:
-#   - a bare value-less `name:` (inside the missing section, not applicable here
-#     but the _append_block path supplies the whole project: block)
-#   - review.kb_baseline block (R21 must survive)
-#   - review.skills.my-skill.minimum_grade override (R21 must survive)
-# This is the highest-consequence hazard: losing these overrides breaks user
-# config in a non-reversible way.
+#   - a review.kb_baseline block (no branch/tip_date -- no knowledge: analogue)
+#   - a review.skills.my-skill / another-skill override (per-skill grade
+#     overrides no longer exist in the flat schema)
+# NOTE (config-schema redesign): _aid_migrate_repair_settings_era_a is now a
+# full read-then-rewrite into the flat schema. It resolves each REQUIRED
+# top-level scalar (falling back to the old nested location), then rewrites
+# the whole file -- so kb_baseline/per-skill overrides with no new-schema
+# home are dropped rather than preserved (the opposite of the original R21
+# byte-for-byte-preservation contract, which this redesign supersedes).
 # ===========================================================================
 echo ""
-echo "=== Gate 4b: era-a malformed + kb_baseline + skill override -> repaired + preserved ==="
+echo "=== Gate 4b: era-a malformed + kb_baseline + skill override -> repaired, overrides dropped ==="
 
 G4B_CODE_HOME="$(new_code_home)"
 G4B_STATE_HOME="$(new_state_home)"
@@ -242,81 +257,82 @@ traceability:
   heartbeat_interval: 2
 G4B_SETTINGS_EOF
 
-# Capture kb_baseline and override content verbatim for later comparison.
-G4B_KB_BEFORE="$(grep -A 4 'kb_baseline:' "${G4B_REPO}/.aid/settings.yml")"
-G4B_SKILL_BEFORE="$(grep '    my-skill:' "${G4B_REPO}/.aid/settings.yml")"
-G4B_ANOTHER_BEFORE="$(grep '    another-skill:' "${G4B_REPO}/.aid/settings.yml")"
-
 run_migrate "${G4B_CODE_HOME}" "${G4B_STATE_HOME}" "${G4B_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G4B-01 __migrate-repo malformed fixture -> exit 0"
 
-# project: section must now be present and valid.
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "project:" \
-    "G4B-02 repaired: project: section added"
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "  name: " \
-    "G4B-03 repaired: project.name present"
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "  description: " \
-    "G4B-04 repaired: project.description present"
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "  type: brownfield" \
-    "G4B-05 repaired: project.type: brownfield present"
+# The flat schema has no project: section at all -- name/description/type are
+# now TOP-LEVEL scalars (no leading indent, no wrapper section).
+assert_file_not_contains "${G4B_REPO}/.aid/settings.yml" "project:" \
+    "G4B-02 repaired: flat schema has no project: wrapper section"
+G4B_NAME_TOP="$(grep '^name:' "${G4B_REPO}/.aid/settings.yml")"
+assert_eq "${G4B_NAME_TOP:+present}" "present" "G4B-03 repaired: top-level name: present"
+G4B_DESC_TOP="$(grep '^description:' "${G4B_REPO}/.aid/settings.yml")"
+assert_eq "${G4B_DESC_TOP:+present}" "present" "G4B-04 repaired: top-level description: present"
+G4B_TYPE_LINE="$(grep '^type:' "${G4B_REPO}/.aid/settings.yml")"
+assert_eq "$G4B_TYPE_LINE" "type: brownfield" \
+    "G4B-05 repaired: top-level type: brownfield present"
 
-# project.name must have been set to the repo basename (not empty).
+# name must have been set to the repo basename (not empty) -- top-level, flat schema.
 G4B_EXPECTED_NAME="$(basename "${G4B_REPO}")"
-G4B_NAME_LINE="$(grep '  name:' "${G4B_REPO}/.aid/settings.yml" | head -1)"
-# Extract just the value portion.
-G4B_NAME_VAL="${G4B_NAME_LINE##*name: }"
+G4B_NAME_LINE="$(grep '^name:' "${G4B_REPO}/.aid/settings.yml" | head -1)"
+G4B_NAME_VAL="${G4B_NAME_LINE#name: }"
 assert_eq "$G4B_NAME_VAL" "$G4B_EXPECTED_NAME" \
-    "G4B-06 repaired: project.name set to repo basename"
+    "G4B-06 repaired: name set to repo basename (top-level)"
 
-# kb_baseline block MUST survive byte-for-byte (R21 -- highest-consequence hazard).
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "kb_baseline:" \
-    "G4B-07 R21: kb_baseline key preserved after repair"
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "    discover:" \
-    "G4B-08 R21: kb_baseline.discover sub-key preserved after repair"
-G4B_KB_AFTER="$(grep -A 4 'kb_baseline:' "${G4B_REPO}/.aid/settings.yml")"
-assert_eq "$G4B_KB_BEFORE" "$G4B_KB_AFTER" \
-    "G4B-09 R21: kb_baseline block byte-for-byte identical after repair"
+# kb_baseline (review-nested, no branch/tip_date) has no new-schema home: dropped.
+assert_file_not_contains "${G4B_REPO}/.aid/settings.yml" "kb_baseline:" \
+    "G4B-07 kb_baseline (no branch/tip_date) dropped -- not carried into knowledge:"
+assert_file_not_contains "${G4B_REPO}/.aid/settings.yml" "discover:" \
+    "G4B-08 kb_baseline.discover sub-key dropped along with kb_baseline"
 
-# Per-skill overrides MUST survive byte-for-byte (R21).
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "my-skill:" \
-    "G4B-10 R21: per-skill my-skill: key preserved after repair"
-assert_file_contains "${G4B_REPO}/.aid/settings.yml" "another-skill:" \
-    "G4B-11 R21: per-skill another-skill: key preserved after repair"
-G4B_SKILL_AFTER="$(grep '    my-skill:' "${G4B_REPO}/.aid/settings.yml")"
-assert_eq "$G4B_SKILL_BEFORE" "$G4B_SKILL_AFTER" \
-    "G4B-12 R21: my-skill: line byte-for-byte identical after repair"
-G4B_ANOTHER_AFTER="$(grep '    another-skill:' "${G4B_REPO}/.aid/settings.yml")"
-assert_eq "$G4B_ANOTHER_BEFORE" "$G4B_ANOTHER_AFTER" \
-    "G4B-13 R21: another-skill: line byte-for-byte identical after repair"
+# Per-skill overrides are a removed feature -- dropped, not preserved.
+assert_file_not_contains "${G4B_REPO}/.aid/settings.yml" "my-skill:" \
+    "G4B-10 per-skill my-skill: override dropped (feature removed by the redesign)"
+assert_file_not_contains "${G4B_REPO}/.aid/settings.yml" "another-skill:" \
+    "G4B-11 per-skill another-skill: override dropped (feature removed by the redesign)"
+
+# review.minimum_grade (the fixture's only resolvable review.* value) DOES survive,
+# promoted to the top-level minimum_grade: (proves the redesign carries forward
+# values that DO have a new-schema home, while dropping ones that do not).
+G4B_MG_LINE="$(grep '^minimum_grade:' "${G4B_REPO}/.aid/settings.yml" | head -1)"
+assert_eq "$G4B_MG_LINE" "minimum_grade: A" \
+    "G4B-09 review.minimum_grade promoted to top-level minimum_grade: (value preserved)"
 
 # Verify the repaired file is parseable by read-setting.sh without fallback.
+# project.name / project.type still resolve via read-setting.sh's documented
+# backward-compat alias (dotted legacy path -> new top-level scalar).
 G4B_RS_NAME="$(bash "${READ_SETTING}" \
     --file "${G4B_REPO}/.aid/settings.yml" \
     --path project.name 2>/dev/null)"
 assert_eq "$G4B_RS_NAME" "$G4B_EXPECTED_NAME" \
-    "G4B-14 repaired file: read-setting.sh resolves project.name without fallback"
+    "G4B-14 repaired file: read-setting.sh resolves project.name via top-level alias"
 
 G4B_RS_TYPE="$(bash "${READ_SETTING}" \
     --file "${G4B_REPO}/.aid/settings.yml" \
     --path project.type 2>/dev/null)"
 assert_eq "$G4B_RS_TYPE" "brownfield" \
-    "G4B-15 repaired file: read-setting.sh resolves project.type without fallback"
+    "G4B-15 repaired file: read-setting.sh resolves project.type via top-level alias"
 
+# execution.max_parallel_tasks has NO new-schema home (execution: block removed) and
+# NO backward-compat alias -- read-setting.sh must fall through to --default (proving
+# the field is genuinely gone, not silently misread from stale nested content).
 G4B_RS_MPT="$(bash "${READ_SETTING}" \
     --file "${G4B_REPO}/.aid/settings.yml" \
-    --path execution.max_parallel_tasks 2>/dev/null)"
-assert_eq "$G4B_RS_MPT" "3" \
-    "G4B-16 repaired file: read-setting.sh resolves execution.max_parallel_tasks"
+    --path execution.max_parallel_tasks --default "GONE" 2>/dev/null)"
+assert_eq "$G4B_RS_MPT" "GONE" \
+    "G4B-16 repaired file: execution.max_parallel_tasks has no value (falls through to --default; execution: removed)"
 
 # ===========================================================================
 # Gate 4c -- era-a bare value-less name: form (full unit coverage)
 #
 # A settings.yml where project.name: has no value but the rest of the required
-# keys are valid.  Also carries a kb_baseline block and a per-skill override
-# to assert R21 preservation on this code-path too.
+# keys are valid. Also carries a kb_baseline block and a per-skill override --
+# both DROPPED by the config-schema redesign's full-rewrite migration (no
+# new-schema home for either); the repaired name lands at TOP LEVEL (flat
+# schema, no indent).
 # ===========================================================================
 echo ""
-echo "=== Gate 4c: era-a bare name: -> repaired + kb_baseline preserved ==="
+echo "=== Gate 4c: era-a bare name: -> repaired (top-level); kb_baseline/skill dropped ==="
 
 G4C_CODE_HOME="$(new_code_home)"
 G4C_STATE_HOME="$(new_state_home)"
@@ -353,15 +369,15 @@ G4C_EXPECTED_NAME="$(basename "${G4C_REPO}")"
 run_migrate "${G4C_CODE_HOME}" "${G4C_STATE_HOME}" "${G4C_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G4C-01 __migrate-repo bare-name fixture -> exit 0"
 
-G4C_NAME_VAL="$(grep '  name:' "${G4C_REPO}/.aid/settings.yml" | head -1 | \
-    sed 's/.*name:[[:space:]]*//')"
+G4C_NAME_VAL="$(grep '^name:' "${G4C_REPO}/.aid/settings.yml" | head -1 | \
+    sed 's/^name:[[:space:]]*//')"
 assert_eq "$G4C_NAME_VAL" "$G4C_EXPECTED_NAME" \
-    "G4C-02 bare name: repaired to repo-folder basename"
+    "G4C-02 bare name: repaired to repo-folder basename (top-level, flat schema)"
 
-assert_file_contains "${G4C_REPO}/.aid/settings.yml" "kb_baseline:" \
-    "G4C-03 R21: kb_baseline preserved after bare-name repair"
-assert_file_contains "${G4C_REPO}/.aid/settings.yml" "my-skill:" \
-    "G4C-04 R21: per-skill override preserved after bare-name repair"
+assert_file_not_contains "${G4C_REPO}/.aid/settings.yml" "kb_baseline:" \
+    "G4C-03 kb_baseline (no branch/tip_date) dropped -- not carried into knowledge:"
+assert_file_not_contains "${G4C_REPO}/.aid/settings.yml" "my-skill:" \
+    "G4C-04 per-skill override dropped (feature removed by the config-schema redesign)"
 
 # bare name: with trailing inline comment form -- must also be detected as empty.
 G4C2_CODE_HOME="$(new_code_home)"
@@ -393,21 +409,27 @@ AID_HOME="${G4C2_STATE_HOME}" \
     AID_NO_UPDATE_CHECK=1 \
     bash "${G4C2_CODE_HOME}/bin/aid" __migrate-repo "${G4C2_REPO}" >/dev/null 2>&1
 
-G4C2_NAME_VAL="$(grep '  name:' "${G4C2_REPO}/.aid/settings.yml" | head -1 | \
-    sed 's/.*name:[[:space:]]*//')"
+G4C2_NAME_VAL="$(grep '^name:' "${G4C2_REPO}/.aid/settings.yml" | head -1 | \
+    sed 's/^name:[[:space:]]*//')"
 assert_eq "$G4C2_NAME_VAL" "$G4C2_EXPECTED_NAME" \
-    "G4C-05 bare name: with trailing comment still detected as empty and repaired"
+    "G4C-05 bare name: with trailing comment still detected as empty and repaired (top-level, flat schema)"
 
 # ===========================================================================
 # Gate 5a -- era-b STATE.md + .aid-manifest.json -> synthesized settings
 #
 # Repo has no settings.yml, has .aid/knowledge/STATE.md (era-b marker), and
 # has .aid/.aid-manifest.json with >=1 tool entry.
+# NOTE (config-schema redesign): era-b synthesis (_aid_migrate_synthesize_settings_era_b)
+# writes ONLY the flat top-level scalars (name/description/type/source_control/
+# minimum_grade/heartbeat_interval); tools now live EXCLUSIVELY in the manifest
+# (never written into settings.yml, with or without a manifest present) and
+# execution.max_parallel_tasks no longer exists in any form.
 # Expected: synthesized settings.yml with:
-#   project.name = repo basename
-#   project.type = brownfield
-#   tools.installed = tools from manifest
-#   defaults for review/execution/traceability
+#   name = repo basename (top level)
+#   type = brownfield (top level)
+#   source_control = none (fixture has no .git)
+#   defaults for minimum_grade/heartbeat_interval
+#   the manifest (untouched by migrate) still carries the tool list
 # ===========================================================================
 echo ""
 echo "=== Gate 5a: era-b STATE.md + manifest -> synthesized settings ==="
@@ -459,21 +481,23 @@ G5A_RS_TYPE="$(bash "${READ_SETTING}" \
 assert_eq "$G5A_RS_TYPE" "brownfield" \
     "G5A-04 synthesized: project.type = brownfield"
 
-# tools.installed must list both manifest tools.
-G5A_RS_TOOLS="$(bash "${READ_SETTING}" \
-    --file "${G5A_REPO}/.aid/settings.yml" \
-    --path tools.installed 2>/dev/null)"
-assert_output_contains "$G5A_RS_TOOLS" "claude-code" \
-    "G5A-05 synthesized: tools.installed contains claude-code from manifest"
-assert_output_contains "$G5A_RS_TOOLS" "codex" \
-    "G5A-06 synthesized: tools.installed contains codex from manifest"
+# tools now live ONLY in the manifest (never written into settings.yml by
+# migrate); the manifest itself is untouched, so both tools must still be
+# listed there.
+assert_file_contains "${G5A_REPO}/.aid/.aid-manifest.json" "claude-code" \
+    "G5A-05 manifest (untouched by migrate) still lists claude-code"
+assert_file_contains "${G5A_REPO}/.aid/.aid-manifest.json" "codex" \
+    "G5A-06 manifest (untouched by migrate) still lists codex"
+assert_file_not_contains "${G5A_REPO}/.aid/settings.yml" "tools:" \
+    "G5A-05b synthesized settings.yml has no tools: block (tools live in the manifest)"
 
-# Defaults for execution and traceability.
-G5A_RS_MPT="$(bash "${READ_SETTING}" \
+# execution: block no longer exists in any form -- source_control (a new
+# top-level field) is detected instead (no .git in this fixture -> "none").
+G5A_RS_SC="$(bash "${READ_SETTING}" \
     --file "${G5A_REPO}/.aid/settings.yml" \
-    --path execution.max_parallel_tasks 2>/dev/null)"
-assert_eq "$G5A_RS_MPT" "5" \
-    "G5A-07 synthesized: execution.max_parallel_tasks defaults to 5"
+    --path source_control 2>/dev/null)"
+assert_eq "$G5A_RS_SC" "none" \
+    "G5A-07 synthesized: source_control defaults to none (fixture has no .git)"
 
 G5A_RS_HB="$(bash "${READ_SETTING}" \
     --file "${G5A_REPO}/.aid/settings.yml" \
@@ -529,17 +553,18 @@ G5B_RS_NAME="$(bash "${READ_SETTING}" \
 assert_eq "$G5B_RS_NAME" "$G5B_EXPECTED_NAME" \
     "G5B-03 DISCOVERY_STATE.md: project.name = repo basename"
 
-G5B_RS_TOOLS="$(bash "${READ_SETTING}" \
-    --file "${G5B_REPO}/.aid/settings.yml" \
-    --path tools.installed 2>/dev/null)"
-assert_output_contains "$G5B_RS_TOOLS" "cursor" \
-    "G5B-04 DISCOVERY_STATE.md: tools.installed contains cursor from manifest"
+# tools live ONLY in the manifest (never written into settings.yml by migrate).
+assert_file_contains "${G5B_REPO}/.aid/.aid-manifest.json" "cursor" \
+    "G5B-04 DISCOVERY_STATE.md: manifest (untouched by migrate) still lists cursor"
+assert_file_not_contains "${G5B_REPO}/.aid/settings.yml" "tools:" \
+    "G5B-04b DISCOVERY_STATE.md: synthesized settings.yml has no tools: block"
 
 # ===========================================================================
-# Gate 5c -- era-b no manifest -> installed: []
+# Gate 5c -- era-b no manifest -> no tools: block at all (config-schema
+#            redesign: tools never live in settings.yml, manifest or not)
 # ===========================================================================
 echo ""
-echo "=== Gate 5c: era-b no manifest -> synthesized with installed: [] ==="
+echo "=== Gate 5c: era-b no manifest -> synthesized with no tools: block ==="
 
 G5C_CODE_HOME="$(new_code_home)"
 G5C_STATE_HOME="$(new_state_home)"
@@ -552,8 +577,8 @@ run_migrate "${G5C_CODE_HOME}" "${G5C_STATE_HOME}" "${G5C_REPO}"
 assert_exit_eq "$MIG_RC" 0 "G5C-01 __migrate-repo era-b no manifest -> exit 0"
 assert_file_exists "${G5C_REPO}/.aid/settings.yml" \
     "G5C-02 settings.yml synthesized without manifest"
-assert_file_contains "${G5C_REPO}/.aid/settings.yml" "installed: []" \
-    "G5C-03 synthesized: tools.installed is empty list when no manifest"
+assert_file_not_contains "${G5C_REPO}/.aid/settings.yml" "tools:" \
+    "G5C-03 synthesized: no tools: block (tools live in the manifest only, and none exists here)"
 
 # ===========================================================================
 # Gate 6 -- Idempotency: second run on any migrated fixture is byte-identical
@@ -884,8 +909,9 @@ echo "=== Isolation guard: dogfood .aid/settings.yml untouched ==="
 
 DOGFOOD_SETTINGS="${REPO_ROOT}/.aid/settings.yml"
 if [[ -f "$DOGFOOD_SETTINGS" ]]; then
-    # The file must still contain the dogfood project name (AID).
-    assert_file_contains "$DOGFOOD_SETTINGS" "  name: AID" \
+    # The file must still contain the dogfood project name (AID). The dogfood
+    # settings.yml is now the flat format-3 schema (top-level name:, no indent).
+    assert_file_contains "$DOGFOOD_SETTINGS" "name: AID" \
         "ISO-01 real .aid/settings.yml is untouched (name: AID still present)"
     assert_file_contains "$DOGFOOD_SETTINGS" "type: brownfield" \
         "ISO-02 real .aid/settings.yml type line untouched"
@@ -1020,10 +1046,12 @@ printf '# State\n' > "${G9F2_REPO}/.aid/knowledge/STATE.md"
 G9F2_SHA_BEFORE="$(file_sha256 "${G9F2_REPO}/.aid/settings.yml")"
 run_migrate "${G9F2_CODE_HOME}" "${G9F2_STATE_HOME}" "${G9F2_REPO}"
 G9F2_SHA_AFTER="$(file_sha256 "${G9F2_REPO}/.aid/settings.yml")"
-# NOTE: the new bin/aid adds format_version: 1 even on a valid era-a file on first migrate.
-# The idempotency check (era precedence: repair, not synthesize-overwrite) is still valid
-# because era-a repair path is taken (settings.yml present), not the synthesize path.
-# The SHA may differ from first run (format_version added) but 2nd run is byte-identical.
+# NOTE: this fixture copies G4A_REPO's settings.yml, which is ALREADY flat/stamped
+# (format_version: 3) from Gate 4a's earlier run, so re-migrating it here is a
+# genuine byte-identical no-op (full-rewrite migration is idempotent on its own
+# output). The idempotency check (era precedence: repair, not synthesize-overwrite)
+# is still valid because the era-a repair path is taken (settings.yml present),
+# not the synthesize path.
 pass "G9F-03 era precedence: settings.yml present -> era-a repair path taken (not synthesize)"
 
 # ===========================================================================

@@ -16,7 +16,10 @@ timestamp, so an agent without the `Bash` tool cannot comply. The only such
 agent is **`aid-clerk`** (`Read, Write, Edit` — intentionally shell-less;
 short-lived single template fill). Orchestrators MUST NOT pass `HEARTBEAT_FILE` /
 `HEARTBEAT_INTERVAL` to an exempt agent, and the agent ignores them if passed.
-Every other heartbeat-enabled agent grants `Bash`.
+Every other heartbeat-enabled agent grants `Bash`. The same exemption applies to the companion
+`STOP_FILE` parameter (§Cooperative stop-poll below): an exempt agent cannot `stat` a file via
+shell either, so orchestrators MUST NOT pass `STOP_FILE` to `aid-clerk`, and it ignores the
+parameter if passed.
 
 This protocol is the L3 layer of the subagent-visibility scheme. L1 = honest
 ETAs (`rough-time-hints.md`); L2 = orchestrator check-in timers
@@ -78,6 +81,20 @@ Before dispatching any subagent (always, regardless of ETA):
    heartbeat file (or move to `.aid/.heartbeat/.archive/` if the dispatcher
    wants to preserve the trail).
 
+6. **(Optional) Pass `STOP_FILE` alongside `HEARTBEAT_FILE`.** If this dispatch is for a task
+   whose cooperative stop-signal control path is known —
+   `.aid/.control/<work_id>/task-<NNN>.stop` (feature-008-execution-control; `<work_id>` = the
+   work directory's basename, `<NNN>` = this task's zero-padded id — the exact path
+   `write-control-signal.sh` creates/removes and the dashboard reader stats) — include
+   `STOP_FILE=.aid/.control/<work_id>/task-<NNN>.stop` in the dispatch prompt. Unlike the
+   heartbeat file, **do NOT create or touch this path.** Its mere presence IS the stop signal
+   (written only by `write-control-signal.sh` on the dashboard's behalf, never by the
+   dispatcher), so pre-creating it here would immediately — and wrongly — signal a stop. Passing
+   `STOP_FILE` is itself opt-in per dispatch site: a dispatcher that does not pass it leaves the
+   subagent's stop-poll disabled, exactly as an absent `HEARTBEAT_FILE` disables heartbeat — no
+   subagent ever derives or guesses this path on its own. See §Cooperative stop-poll below for
+   the subagent-side contract.
+
 ## Subagent-side responsibilities (the dispatched agent)
 
 If the dispatch prompt includes `HEARTBEAT_FILE=...`:
@@ -120,6 +137,37 @@ If the dispatch prompt includes `HEARTBEAT_FILE=...`:
 
 7. **If `HEARTBEAT_FILE` is not in the dispatch prompt**, do nothing. Don't
    write speculatively. Don't error.
+
+## Cooperative stop-poll (opt-in, `STOP_FILE`)
+
+feature-008-execution-control adds a fully optional companion control channel that piggybacks on
+the exact tick above — no new timer, no extra poll infrastructure. If the dispatch prompt ALSO
+includes `STOP_FILE=...` (see §Orchestrator-side responsibilities item 6):
+
+1. **At the SAME per-`HEARTBEAT_INTERVAL` tick where you write your heartbeat line** (step 1
+   above), ALSO:
+   a. **Stat your OWN `.stop` file** at the exact `STOP_FILE` path you were given (never derive
+      or construct this path yourself).
+   b. **Re-read the work `lifecycle`** from `STATE.md` frontmatter — the same field
+      `writeback-state.sh --pipeline --field Lifecycle` writes; enum `Running |
+      Paused-Awaiting-Input | Blocked | Completed | Canceled`.
+2. **If the `.stop` file is present, OR `lifecycle` is anything other than `Running`**, halt at
+   the next safe checkpoint: finish the atomic unit of work you are currently mid-way through
+   (e.g., the file edit or command in progress) — never leave a file half-written or a partial
+   edit applied — write one final heartbeat line noting the halt (e.g., `... | Halting: stop
+   signal detected`), and end your turn without starting further scoped work. This is NOT a
+   failure or an error state; it is a cooperative pause. What happens next (decline the next
+   reviewer/fix cycle for this task, or stop advancing the pipeline) is governed by the
+   orchestrator's own poll (`aid-execute` `state-execute.md` § MANDATORY: Executor-side
+   Cooperative Poll) — this subagent-side check only makes the halt happen mid-task rather than
+   only at the orchestrator's next dispatch boundary.
+3. **Never create, delete, or otherwise write to `STOP_FILE`.** Its lifecycle (create on Stop,
+   remove on Resume) is owned entirely by `write-control-signal.sh`, dispatched by the dashboard
+   server on the user's behalf — the subagent only reads (`stat`s) it.
+4. **If `STOP_FILE` is not in the dispatch prompt**, skip this entire section — do nothing, don't
+   error, don't poll for a file you were never told about. This is the default for any dispatch
+   site that hasn't been updated to pass `STOP_FILE` (exactly as an absent `HEARTBEAT_FILE`
+   disables heartbeat, item 7 above).
 
 ## Example heartbeat file
 
@@ -164,6 +212,10 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
   is alive without overwhelming the narration. Users can override per-project
   via `.aid/settings.yml` `traceability.heartbeat_interval` (set with
   `/aid-config`).
+- **`STOP_FILE` piggybacks on the same tick, by design:** feature-008's
+  cooperative stop-signal channel reuses the exact per-`HEARTBEAT_INTERVAL` write tick rather
+  than introducing a second timer — same file-based, opt-in, zero-new-infrastructure properties
+  as heartbeat itself (see §Cooperative stop-poll above).
 
 ## Pitfalls
 
@@ -181,3 +233,5 @@ Easy to scan; easy to parse (`head -1`, `awk -F'|'`).
   hand-written ISO strings. LLMs often write plausible-looking placeholders
   (e.g., `2026-05-23T00:00:00Z` midnight) when asked to generate timestamps
   directly. The shell substitution side-steps this entirely.
+- **Never pre-create or `touch` `STOP_FILE`.** Doing so — on either the orchestrator or subagent
+  side — IS the stop signal; only `write-control-signal.sh` may create or remove it.

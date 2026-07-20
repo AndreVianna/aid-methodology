@@ -149,7 +149,10 @@ function script:Test-AidIsProjectDir {
 # ---------------------------------------------------------------------------
 # format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
 # served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
-Set-Variable -Name AidSupportedFormat -Value 2 -Option Constant -Scope Script
+# format 3 (was 2): settings.yml flattened -- top-level name/description/type/
+# source_control/minimum_grade/heartbeat_interval + a knowledge: block; the installed
+# tools + AID version now live only in the manifest (.aid/.aid-manifest.json).
+Set-Variable -Name AidSupportedFormat -Value 3 -Option Constant -Scope Script
 
 # ---------------------------------------------------------------------------
 # Import the shared install core from AID_CODE_HOME\lib\.
@@ -212,8 +215,8 @@ function script:Show-AidUsage {
             Write-Host 'aid update [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
             Write-Host 'aid update self [-FromBundle <path>] [-DryRun]'
             Write-Host '  Update to latest.'
-            Write-Host '  Outside an AID repo: updates the CLI only (no-op if already latest).'
-            Write-Host '  Inside an AID repo: updates the CLI first, then ALL installed tools to one version.'
+            Write-Host '  Outside an AID project: updates the CLI only (no-op if already latest).'
+            Write-Host '  Inside an AID project: updates the CLI first, then ALL installed tools to one version.'
             Write-Host '  No per-tool selection -- any tool positional is an error (use "self" only).'
             Write-Host '  self: COMPLETELY update the aid CLI, channel-aware:'
             Write-Host '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.ps1.'
@@ -228,12 +231,15 @@ function script:Show-AidUsage {
             Write-Host '  Print the installed aid CLI version and exit 0.'
         }
         'dashboard' {
-            Write-Host 'aid dashboard start <node|python> [--remote] [--port <n>]'
+            Write-Host 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]'
             Write-Host 'aid dashboard stop'
             Write-Host '  Start or stop the machine-level pipeline dashboard (serves all registered projects).'
             Write-Host '  <node|python>  select the server runtime to launch.'
             Write-Host '  --remote       also expose it to authorized users over a private channel (never public);'
             Write-Host '                 fails clearly if that mechanism is unavailable -- never binds publicly.'
+            Write-Host '  --allow-writes opt in to interactive writes. On loopback writes are always enabled'
+            Write-Host '                 (this flag is then accepted but redundant, no error); under --remote the'
+            Write-Host '                 dashboard is read-only unless this flag is also given.'
             Write-Host '  --port <n>     listen port on 127.0.0.1 (default 8787).'
             Write-Host "  The dashboard binds to 127.0.0.1 only. 'stop' is idempotent and also tears down --remote."
             Write-Host '  Works from any directory (not tied to the current project).'
@@ -247,8 +253,9 @@ function script:Show-AidUsage {
             Write-Host '    tools, and tier.'
             Write-Host '    The current directory is marked with "*" in the leading marker column.'
             Write-Host '    Unregistered cwd with .aid/ present is shown as a footnote.'
-            Write-Host '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,'
-            Write-Host '    no tools are installed.  Idempotent.  Prints the tier written.'
+            Write-Host '  add [path=cwd]: register a project. If the folder is not yet an AID project,'
+            Write-Host '    it is initialized as a bare project (.aid/ with no tools installed).'
+            Write-Host '    Idempotent.  Prints the tier written.'
             Write-Host '  remove [path=cwd|<N>]: unregister a project from the registry; no files removed.'
             Write-Host "    <N> (all-digits) targets the Nth row from 'aid projects list'; N < 1 or"
             Write-Host '    N greater than the registered count errors to stderr with exit 2.  A <path>'
@@ -268,7 +275,7 @@ function script:Show-AidUsage {
             Write-Host '  aid version                      Print the CLI version'
             Write-Host '  aid status                       Show AID state of the current project'
             Write-Host '  aid add <tool>[,...]             Add tool(s) to the current project'
-            Write-Host '  aid update [self]                Update to latest; inside repo = all tools'
+            Write-Host '  aid update [self]                Update to latest; inside a project = all tools'
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
             Write-Host '  aid projects [list|add|remove]   List/register/unregister AID projects'
@@ -780,6 +787,7 @@ function script:Invoke-AidRemoteExpose {
     [Console]::Error.WriteLine('  https://login.tailscale.com/admin/acls/file')
     [Console]::Error.WriteLine("  {`"grants`":[{`"src`":[`"$srcPlaceholder`"],`"dst`":[`"$dstPlaceholder`"],`"ip`":[`"tcp:443`"]}]}")
     [Console]::Error.WriteLine("Note: granted identities see all registered project paths/names. See 'aid dashboard --help'.")
+    [Console]::Error.WriteLine("Note: with --allow-writes, any granted identity can also modify this project's state.")
     [Console]::Error.WriteLine('')
 
     # Step 6: Emit handle + URL on stdout, exit 0.
@@ -866,6 +874,7 @@ function script:Invoke-AidDashboardCtl {
     $dcVerbose = $false
     $dcPort    = 8787
     $dcRemote  = $false
+    $dcAllowWrites = $false
     $dcRuntime = ''
 
     $idx = 0
@@ -891,6 +900,13 @@ function script:Invoke-AidDashboardCtl {
                     script:Exit-Aid 2
                 }
                 $dcRemote = $true
+            }
+            { $_ -in @('-AllowWrites', '--allow-writes') } {
+                if ($verb -eq 'stop') {
+                    [Console]::Error.WriteLine("ERROR: aid: dashboard: unknown flag: $a")
+                    script:Exit-Aid 2
+                }
+                $dcAllowWrites = $true
             }
             { $_ -in @('-Port', '--port') } {
                 if ($verb -eq 'stop') {
@@ -923,7 +939,7 @@ function script:Invoke-AidDashboardCtl {
     }
 
     if ($verb -eq 'start') {
-        script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -Verbose $dcVerbose
+        script:Invoke-DcStart -Runtime $dcRuntime -Port $dcPort -Remote $dcRemote -AllowWrites $dcAllowWrites -Verbose $dcVerbose
     } else {
         script:Invoke-DcStop -Verbose $dcVerbose
     }
@@ -966,7 +982,7 @@ function script:Invoke-DcReapPort {
 }
 
 function script:Invoke-DcStart {
-    param([string]$Runtime, [int]$Port, [bool]$Remote, [bool]$Verbose)
+    param([string]$Runtime, [int]$Port, [bool]$Remote, [bool]$AllowWrites, [bool]$Verbose)
 
     # Step 1: validate runtime.
     if ([string]::IsNullOrEmpty($Runtime)) {
@@ -1039,6 +1055,14 @@ function script:Invoke-DcStart {
     $tempDir = Join-Path $HOME (Join-Path '.aid' '.temp')
     New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
 
+    # Fail-safe write gate (Q1/NFR2/C3/AC8, feature-001 task-001):
+    #   write_enabled = (loopback) OR (--remote AND --allow-writes).
+    # Loopback is always write-enabled; --remote alone is read-only; --remote
+    # --allow-writes is write-enabled; --allow-writes on loopback is accepted and
+    # redundant (no error). The server only learns write_enabled via the spawn argv
+    # below -- it is never read from request/config/env (SEC-1 posture unaffected).
+    $writeEnabled = (-not $Remote) -or ($Remote -and $AllowWrites)
+
     # Step 7: spawn the server child (detached daemon).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
     # WINDOWS/POWERSHELL: do NOT pass -RedirectStandardOutput/-RedirectStandardError here.
@@ -1056,6 +1080,7 @@ function script:Invoke-DcStart {
     # registry via its legacy AID_HOME env var (delivery-008 seam).
     $env:AID_HOME = $script:_AidStateHome
     $spawnArgs = @($entryPoint, '--host', '127.0.0.1', '--port', "$Port")
+    if ($writeEnabled) { $spawnArgs += '--allow-writes' }
     $proc = Start-Process -FilePath $interp `
         -ArgumentList $spawnArgs `
         -PassThru `
@@ -1505,7 +1530,8 @@ function script:Resolve-AidTier {
 #   "no-aid"    -- directory exists but has no .aid/ subdirectory
 #   "untracked" -- .aid/ exists but no .aid/.aid-manifest.json is present
 #   "vX.Y.Z"   -- tracked; semver version string from .aid/.aid-manifest.json
-#                  (key "aid_version"), falling back to .aid/.aid-version
+#                  (key "aid_version"). Every AID project has a manifest, so it
+#                  is the single version source; a malformed value -> untracked.
 # Never errors; always returns normally.
 # Mirror of bash _aid_project_state.
 function script:Get-AidProjectState {
@@ -1514,7 +1540,6 @@ function script:Get-AidProjectState {
     $aidDir = Join-Path $Path '.aid'
     if (-not (Test-Path $aidDir -PathType Container)) { return 'no-aid' }
     $manifest = Join-Path $aidDir '.aid-manifest.json'
-    $verFile   = Join-Path $aidDir '.aid-version'
     if (Test-Path $manifest -PathType Leaf) {
         $content = Get-Content -LiteralPath $manifest -Raw -Encoding utf8 -ErrorAction SilentlyContinue
         if ($content -and $content -match '"aid_version"\s*:\s*"([^"]*)"') {
@@ -1522,12 +1547,6 @@ function script:Get-AidProjectState {
             if ($raw -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
                 return $Matches[1]
             }
-        }
-    }
-    if (Test-Path $verFile -PathType Leaf) {
-        $vfContent = Get-Content -LiteralPath $verFile -Raw -Encoding utf8 -ErrorAction SilentlyContinue
-        if ($vfContent -and $vfContent -match '([0-9]+\.[0-9]+\.[0-9]+[^\s]*)') {
-            return $Matches[1]
         }
     }
     return 'untracked'
@@ -1663,8 +1682,67 @@ function script:Invoke-AidProjectsList {
     }
 }
 
+# Invoke-AidScaffoldBareProject <Canon>
+# Initialize a bare, tool-less AID project at <Canon> (mirror of bash
+# _aid_scaffold_bare_project): create the .aid/ tree and a minimal settings.yml
+# (format_version + aid_version + empty tools). Never clobbers an existing
+# settings.yml. Written LF-only, no BOM -- byte-identical to the bash writer.
+function script:Invoke-AidScaffoldBareProject {
+    param([string]$Canon)
+    $name = Split-Path $Canon -Leaf
+    $fmt  = $script:AidSupportedFormat
+    $ver  = ''
+    $verFile = Join-Path $script:_AidCodeHome 'VERSION'
+    if (Test-Path $verFile -PathType Leaf) {
+        $ver = ((Get-Content -LiteralPath $verFile -Raw -Encoding utf8 -ErrorAction SilentlyContinue) -replace '\s','')
+    }
+
+    $sc = if (Test-Path (Join-Path $Canon '.git')) { 'git' } else { 'none' }
+
+    $aidDir = Join-Path $Canon '.aid'
+    foreach ($sub in @('connectors','knowledge','works')) {
+        New-Item -ItemType Directory -Force -Path (Join-Path $aidDir $sub) -ErrorAction SilentlyContinue | Out-Null
+    }
+
+    # Flat, user-owned settings.yml (the AID version + installed tools live in
+    # the manifest, not here). format_version stamps the .aid/ layout.
+    $settings = Join-Path $aidDir 'settings.yml'
+    if (-not (Test-Path $settings -PathType Leaf)) {
+        $lines = [System.Collections.Generic.List[string]]::new()
+        [void]$lines.Add("format_version: $fmt")
+        [void]$lines.Add('# .aid/settings.yml - AID pipeline configuration (user-owned project settings).')
+        [void]$lines.Add('# Initialized by `aid projects add` for a tool-less project (no host tool yet).')
+        [void]$lines.Add('# Run /aid-config to configure, or `aid add <tool>` to install a host tool.')
+        [void]$lines.Add("name: $name")
+        [void]$lines.Add('description: ""')
+        [void]$lines.Add('type: brownfield')
+        [void]$lines.Add("source_control: $sc")
+        [void]$lines.Add('minimum_grade: A')
+        [void]$lines.Add('heartbeat_interval: 1')
+        $content = ($lines -join "`n") + "`n"
+        [System.IO.File]::WriteAllText($settings, $content, (New-Object System.Text.UTF8Encoding($false)))
+    }
+
+    # Minimal AID-owned manifest: the single version source of truth. tools:{}
+    # is populated when `aid add <tool>` installs a host tool.
+    $manifest = Join-Path $aidDir '.aid-manifest.json'
+    if (-not (Test-Path $manifest -PathType Leaf)) {
+        $now = [System.DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ssZ')
+        $mlines = [System.Collections.Generic.List[string]]::new()
+        [void]$mlines.Add('{')
+        [void]$mlines.Add('  "format_version": 2,')
+        if ($ver) { [void]$mlines.Add("  `"aid_version`": `"$ver`",") }
+        [void]$mlines.Add("  `"installed_at`": `"$now`",")
+        [void]$mlines.Add('  "tools": {}')
+        [void]$mlines.Add('}')
+        $mcontent = ($mlines -join "`n") + "`n"
+        [System.IO.File]::WriteAllText($manifest, $mcontent, (New-Object System.Text.UTF8Encoding($false)))
+    }
+}
+
 # Invoke-AidProjectsAdd [RawPath] [TierOverride] [Verbose]
-# Register a project path (default: cwd) in the deterministic tier.
+# Register a project path (default: cwd) in the deterministic tier. If the folder
+# is not yet an AID project, initialize a bare .aid/ (no tools) first.
 # Mirror of bash _cmd_projects_add.
 function script:Invoke-AidProjectsAdd {
     param(
@@ -1681,10 +1759,45 @@ function script:Invoke-AidProjectsAdd {
         script:Exit-Aid 2
     }
 
-    # Require a real AID project (.aid/ present AND not the CLI state home).
+    # If the folder is not yet an AID project, initialize a bare .aid/ (no tools)
+    # rather than refusing. Test-AidIsProjectDir is also false when .aid/ resolves
+    # to the CLI state home -- never scaffold/register that; distinguish it by the
+    # presence of an existing .aid/ dir.
     if (-not (script:Test-AidIsProjectDir -Dir $canon)) {
-        [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' is not an AID project; run 'aid add <tool>' first.")
-        script:Exit-Aid 2
+        # Test-AidIsProjectDir is ALSO false when <dir>\.aid IS the CLI state home.
+        # Refuse that explicitly (path compare, existence-agnostic -- mirrors the
+        # guard in Test-AidIsProjectDir) so we never initialize $HOME\.aid or the
+        # state home as a project. Otherwise the folder just has no .aid/ yet ->
+        # initialize a bare, tool-less project.
+        $caSub = Join-Path $canon '.aid'
+        $caN = try { (Resolve-Path -LiteralPath $caSub -ErrorAction Stop).Path } catch { $caSub }
+        $shN = try { (Resolve-Path -LiteralPath $script:_AidStateHome -ErrorAction Stop).Path } catch { $script:_AidStateHome }
+        $hdSub = Join-Path $HOME '.aid'
+        $hdN = try { (Resolve-Path -LiteralPath $hdSub -ErrorAction Stop).Path } catch { $hdSub }
+        if ([string]::Equals($caN, $shN, [System.StringComparison]::OrdinalIgnoreCase) -or
+            [string]::Equals($caN, $hdN, [System.StringComparison]::OrdinalIgnoreCase)) {
+            [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' is the AID state home, not a project.")
+            script:Exit-Aid 2
+        }
+        script:Invoke-AidScaffoldBareProject -Canon $canon
+        Write-Host ("aid projects: initialized a bare AID project at '$canon' (no tools; run 'aid add <tool>' to install a host tool).")
+    } else {
+        # Existing AID project: bring it current before registering. Refuse a
+        # newer format than this CLI supports; migrate an older one (settings
+        # flatten etc.), mirroring the format gate on other reaches.
+        $repoFmt = script:Get-AidRepoFormat -Repo $canon
+        if ($repoFmt -gt $script:AidSupportedFormat) {
+            [Console]::Error.WriteLine("ERROR: aid projects add: '$canon' uses a newer AID format (v$repoFmt) than this CLI supports (v$($script:AidSupportedFormat)). Upgrade the aid CLI: aid update self.")
+            script:Exit-Aid 1
+        }
+        # Migrate only a project that actually has a settings.yml (a bare .aid/
+        # has nothing to migrate -- just register it).
+        if ($repoFmt -lt $script:AidSupportedFormat -and (Test-Path (Join-Path (Join-Path $canon '.aid') 'settings.yml') -PathType Leaf)) {
+            Write-Host "aid projects: '$canon' uses an older AID format (v$repoFmt); migrating to v$($script:AidSupportedFormat)..."
+            try { $null = script:Invoke-AidMigrateRepo -Repo $canon 6>$null } catch {
+                [Console]::Error.WriteLine("WARN: aid projects add: migration reported an issue for '$canon' (continuing)")
+            }
+        }
     }
 
     # Resolve tier.
@@ -2354,6 +2467,12 @@ function script:Invoke-AidMigrateRepo {
     }
 
     # ------------------------------------------------------------------
+    # STEP 3b -- RETIRE the redundant .aid/.aid-version marker (version now lives
+    # in the manifest / settings.yml). Best-effort delete; idempotent.
+    # ------------------------------------------------------------------
+    Remove-Item -LiteralPath (Join-Path $aidDir '.aid-version') -Force -ErrorAction SilentlyContinue
+
+    # ------------------------------------------------------------------
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.
     # FR7 never-elevate: resolve tier deterministically; if shared but the shared
     # dir is not writable, degrade silently to user (mirrors bash _aid_migrate_repo).
@@ -2378,14 +2497,23 @@ function script:Invoke-AidMigrateRepo {
 }
 
 # script:Invoke-AidRepairSettingsEraA <SettingsFile> <RepoName>
-# Era-a: validate/repair REQUIRED keys via targeted edits only.
-# A valid file -> no write (idempotent).
+# Era-a: settings.yml already exists (either the OLD nested schema, or the
+# NEW flat schema from a prior run of this same function). Read every value
+# tolerantly -- NEW flat top-level location first, else the OLD nested
+# location, else the documented default -- then rewrite the file from
+# scratch in the NEW flat schema (format_version 3).
+# This is a full read-then-rewrite, not a targeted line-edit, so the
+# function is naturally idempotent (re-running it on its own output
+# reproduces byte-identical content) and flattens an old nested file in a
+# single pass. Crash-safe: same-directory temp + Move-Item -Force; skips the
+# write entirely when the rebuilt content equals the original (re-normalized
+# to LF) content.
 function script:Invoke-AidRepairSettingsEraA {
     param([string]$SettingsFile, [string]$RepoName)
     if (-not (Test-Path $SettingsFile -PathType Leaf)) { throw "settings file not found" }
 
-    $lines   = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $SettingsFile -Encoding utf8 -ErrorAction Stop)
-    $changed = $false
+    $lines = [System.Collections.Generic.List[string]](Get-Content -LiteralPath $SettingsFile -Encoding utf8 -ErrorAction Stop)
+    $origJoined = ($lines -join "`n") + "`n"
 
     # ---- locate section header index ("^<sect>:\s*$") ----
     $findSection = {
@@ -2407,152 +2535,218 @@ function script:Invoke-AidRepairSettingsEraA {
         return -1
     }
 
-    # ---- get scalar value from "  key: value" line ----
+    # ---- get scalar value from a "key: value" or "  key: value" line ----
+    # (\s* -- not \s+ -- so this also reads NEW-flat column-0 keys.)
     $getScalarValue = {
         param([string]$ln, [string]$key)
-        $v = ($ln -replace "^\s+${key}:\s*", '') -replace '\s*#.*$', ''
+        $v = ($ln -replace "^\s*${key}:\s*", '') -replace '\s*#.*$', ''
         $v = $v.Trim().Trim('"').Trim("'")
         return $v
     }
 
-    # ---- insert a line after index ----
-    $insertAfter = {
-        param([int]$idx, [string]$newLine)
-        $lines.Insert($idx + 1, $newLine)
-        $changed = $true
-    }
-
-    # ---- append a block at EOF ----
-    # Prepends a blank line so the new section is visually separated from the
-    # preceding content (matching the template's blank-line-between-sections style).
-    # Idempotency is preserved: on a 2nd run the section exists, so this path is skipped.
-    $appendBlock = {
-        param([string]$block)
-        $lines.Add("")
-        foreach ($bl in ($block -split "`n")) {
-            $lines.Add($bl)
-        }
-        $changed = $true
-    }
-
-    # ---- replace single line (IDIOM-A) ----
-    $replaceLine = {
-        param([int]$idx, [string]$newLine)
-        $lines[$idx] = $newLine
-        $changed = $true
-    }
-
-    # --- C3': format_version ensure-key step (top-of-file column-0 prepend) ---
-    # If a ^format_version: line is present, replace it in-place (IDIOM-A).
-    # If absent, prepend format_version: <sup> at index 0 above project:.
-    $fvIdx = -1
-    for ($fi = 0; $fi -lt $lines.Count; $fi++) {
-        if ($lines[$fi] -match '^format_version:') { $fvIdx = $fi; break }
-    }
-    if ($fvIdx -ge 0) {
-        # Key present: replace with canonical value (IDIOM-A).
-        & $replaceLine $fvIdx "format_version: $($script:AidSupportedFormat)"
-    } else {
-        # Key absent: prepend at index 0 (new top-of-file col-0 insert above project:).
-        $lines.Insert(0, "format_version: $($script:AidSupportedFormat)")
-        $changed = $true
-    }
-
-    # --- project section ---
-    $projIdx = & $findSection 'project'
-    if ($projIdx -eq -1) {
-        & $appendBlock "project:`n  name: ${RepoName}`n  description: <project-description>`n  type: brownfield"
-        $changed = $true
-    } else {
-        $nameIdx = & $findKeyInSection $projIdx 'name'
-        if ($nameIdx -eq -1) {
-            & $insertAfter $projIdx "  name: ${RepoName}"; $changed = $true
-        } else {
-            $nv = & $getScalarValue $lines[$nameIdx] 'name'
-            if ([string]::IsNullOrEmpty($nv)) { & $replaceLine $nameIdx "  name: ${RepoName}"; $changed = $true }
-        }
-
-        $descIdx = & $findKeyInSection $projIdx 'description'
-        if ($descIdx -eq -1) {
-            $nameIdx2 = & $findKeyInSection $projIdx 'name'
-            $insAfterDesc = if ($nameIdx2 -ne -1) { $nameIdx2 } else { $projIdx }
-            & $insertAfter $insAfterDesc '  description: <project-description>'; $changed = $true
-        }
-
-        $typeIdx = & $findKeyInSection $projIdx 'type'
-        if ($typeIdx -eq -1) {
-            $descIdx2 = & $findKeyInSection $projIdx 'description'
-            $nameIdx3 = & $findKeyInSection $projIdx 'name'
-            $insAfterType = if ($descIdx2 -ne -1) { $descIdx2 } elseif ($nameIdx3 -ne -1) { $nameIdx3 } else { $projIdx }
-            & $insertAfter $insAfterType '  type: brownfield'; $changed = $true
-        } else {
-            $tv = & $getScalarValue $lines[$typeIdx] 'type'
-            if ($tv -ne 'brownfield' -and $tv -ne 'greenfield') {
-                & $replaceLine $typeIdx '  type: brownfield'; $changed = $true
+    # ---- read a NEW-flat top-level "^key:<rest>" scalar. Sets $found.Value
+    # when the key line is present at column 0 (value may be empty). ----
+    $topScalar = {
+        param([string]$key, [ref]$found)
+        for ($i = 0; $i -lt $lines.Count; $i++) {
+            if ($lines[$i] -match "^${key}:") {
+                if ($found) { $found.Value = $true }
+                return (& $getScalarValue $lines[$i] $key)
             }
         }
+        if ($found) { $found.Value = $false }
+        return ''
     }
 
-    # --- tools section ---
-    $toolsIdx = & $findSection 'tools'
-    if ($toolsIdx -eq -1) {
-        & $appendBlock "tools:`n  installed: []"; $changed = $true
-    } else {
-        $instIdx = & $findKeyInSection $toolsIdx 'installed'
-        if ($instIdx -eq -1) { & $insertAfter $toolsIdx '  installed: []'; $changed = $true }
+    # ---- read an OLD-nested "<section>.<key>" scalar. Sets $found.Value
+    # when both the section and the key are present. ----
+    $nestedScalar = {
+        param([string]$sect, [string]$key, [ref]$found)
+        $sidx = & $findSection $sect
+        if ($sidx -eq -1) { if ($found) { $found.Value = $false }; return '' }
+        $kidx = & $findKeyInSection $sidx $key
+        if ($kidx -eq -1) { if ($found) { $found.Value = $false }; return '' }
+        if ($found) { $found.Value = $true }
+        return (& $getScalarValue $lines[$kidx] $key)
     }
 
-    # --- review section ---
-    $revIdx = & $findSection 'review'
-    if ($revIdx -eq -1) {
-        & $appendBlock "review:`n  minimum_grade: A"; $changed = $true
-    } else {
-        $mgIdx = & $findKeyInSection $revIdx 'minimum_grade'
-        if ($mgIdx -eq -1) {
-            & $insertAfter $revIdx '  minimum_grade: A'; $changed = $true
-        } else {
-            $mv = & $getScalarValue $lines[$mgIdx] 'minimum_grade'
-            if ($mv -notmatch '^[A-F][+-]?$') { & $replaceLine $mgIdx '  minimum_grade: A'; $changed = $true }
+    # ---- trim surrounding whitespace + one layer of matching quotes ----
+    $trimQuote = {
+        param([string]$s)
+        $s = $s.Trim()
+        if ($s.Length -ge 2 -and $s.StartsWith('"') -and $s.EndsWith('"')) {
+            $s = $s.Substring(1, $s.Length - 2)
+        } elseif ($s.Length -ge 2 -and $s.StartsWith("'") -and $s.EndsWith("'")) {
+            $s = $s.Substring(1, $s.Length - 2)
         }
+        return $s
     }
 
-    # --- execution section ---
-    $execIdx = & $findSection 'execution'
-    if ($execIdx -eq -1) {
-        & $appendBlock "execution:`n  max_parallel_tasks: 5"; $changed = $true
-    } else {
-        $mptIdx = & $findKeyInSection $execIdx 'max_parallel_tasks'
-        if ($mptIdx -eq -1) {
-            & $insertAfter $execIdx '  max_parallel_tasks: 5'; $changed = $true
-        } else {
-            $mv2 = & $getScalarValue $lines[$mptIdx] 'max_parallel_tasks'
-            if ($mv2 -notmatch '^\d+$' -or [int]$mv2 -le 0) {
-                & $replaceLine $mptIdx '  max_parallel_tasks: 5'; $changed = $true
+    # ---- list reader: given a section index + key, return an array of items
+    # (one per element). Supports inline "[a, b]" and block "- a" / "- b"
+    # forms. Returns an empty array when the key is absent / resolves empty. ----
+    $readListInSection = {
+        param([int]$sectIdx, [string]$key)
+        $kidx = & $findKeyInSection $sectIdx $key
+        if ($kidx -eq -1) { return @() }
+        $ln  = $lines[$kidx]
+        $val = ($ln -replace "^\s*${key}:\s*", '') -replace '\s*#.*$', ''
+        $val = $val.Trim()
+        $items = @()
+        if ($val -match '^\[.*\]$') {
+            $inner = $val.Substring(1, $val.Length - 2)
+            foreach ($it in ($inner -split ',')) {
+                $clean = & $trimQuote $it
+                if ($clean) { $items += $clean }
+            }
+        } elseif ([string]::IsNullOrEmpty($val)) {
+            $keyIndent = $ln.Length - $ln.TrimStart().Length
+            for ($i = $kidx + 1; $i -lt $lines.Count; $i++) {
+                $bl = $lines[$i]
+                if ($bl.Trim().Length -gt 0) {
+                    $blIndent = $bl.Length - $bl.TrimStart().Length
+                    if ($blIndent -le $keyIndent) { break }
+                }
+                if ($bl -match '^\s*-\s*(.+)$') {
+                    $item = & $trimQuote $Matches[1]
+                    if ($item) { $items += $item }
+                }
             }
         }
+        return $items
     }
 
-    # --- traceability section ---
-    $traceIdx = & $findSection 'traceability'
-    if ($traceIdx -eq -1) {
-        & $appendBlock "traceability:`n  heartbeat_interval: 1"; $changed = $true
-    } else {
-        $hbIdx = & $findKeyInSection $traceIdx 'heartbeat_interval'
-        if ($hbIdx -eq -1) {
-            & $insertAfter $traceIdx '  heartbeat_interval: 1'; $changed = $true
+    # ---- list resolver -- try (sectA,keyA) then (sectB,keyB); first
+    # non-empty list wins; returns an empty array when neither has one. ----
+    $resolveList = {
+        param([string]$sectA, [string]$keyA, [string]$sectB, [string]$keyB)
+        $sidx = & $findSection $sectA
+        if ($sidx -ne -1) {
+            $items = @(& $readListInSection $sidx $keyA)
+            if ($items.Count -gt 0) { return $items }
+        }
+        $sidx = & $findSection $sectB
+        if ($sidx -ne -1) {
+            $items = @(& $readListInSection $sidx $keyB)
+            if ($items.Count -gt 0) { return $items }
+        }
+        return @()
+    }
+
+    # ------------------------------------------------------------------
+    # Resolve each REQUIRED top-level scalar: NEW-flat top-level location
+    # wins, else the OLD-nested location, else the documented default.
+    # A found-but-invalid value is treated the same as absent (repair).
+    # ------------------------------------------------------------------
+
+    # name: blank is not a valid name -- fall through to the next source.
+    $name = & $topScalar 'name' ([ref]$null)
+    if ([string]::IsNullOrEmpty($name)) {
+        $name = & $nestedScalar 'project' 'name' ([ref]$null)
+        if ([string]::IsNullOrEmpty($name)) { $name = $RepoName }
+    }
+
+    # description: presence (not non-emptiness) decides -- an explicit empty
+    # description ("") is a valid final value, matching the target schema.
+    $descFoundTop = $false
+    $description = & $topScalar 'description' ([ref]$descFoundTop)
+    if (-not $descFoundTop) {
+        $descFoundNested = $false
+        $description = & $nestedScalar 'project' 'description' ([ref]$descFoundNested)
+        if (-not $descFoundNested) { $description = '' }
+    }
+
+    # type: must be brownfield|greenfield; else fall through / default.
+    $type = & $topScalar 'type' ([ref]$null)
+    if ($type -ne 'brownfield' -and $type -ne 'greenfield') {
+        $type = & $nestedScalar 'project' 'type' ([ref]$null)
+        if ($type -ne 'brownfield' -and $type -ne 'greenfield') { $type = 'brownfield' }
+    }
+
+    # source_control: top-level value if valid, else detect from .git presence.
+    # <repo> is two levels above <repo>\.aid\settings.yml.
+    $sourceControl = & $topScalar 'source_control' ([ref]$null)
+    if ($sourceControl -ne 'none' -and $sourceControl -ne 'git' `
+       -and $sourceControl -ne 'svn' -and $sourceControl -ne 'mercurial') {
+        $repoDir = Split-Path (Split-Path $SettingsFile -Parent) -Parent
+        if (Test-Path (Join-Path $repoDir '.git') -PathType Container) {
+            $sourceControl = 'git'
         } else {
-            $hv = & $getScalarValue $lines[$hbIdx] 'heartbeat_interval'
-            if ($hv -notmatch '^\d+$') { & $replaceLine $hbIdx '  heartbeat_interval: 1'; $changed = $true }
+            $sourceControl = 'none'
         }
     }
 
-    # Write only if changed (idempotent: no edit -> no write).
-    if (-not $changed) { return }
+    # minimum_grade: top-level, else review.minimum_grade, else default A.
+    $minimumGrade = & $topScalar 'minimum_grade' ([ref]$null)
+    if ($minimumGrade -notmatch '^[A-F][+-]?$') {
+        $minimumGrade = & $nestedScalar 'review' 'minimum_grade' ([ref]$null)
+        if ($minimumGrade -notmatch '^[A-F][+-]?$') { $minimumGrade = 'A' }
+    }
+
+    # heartbeat_interval: top-level, else traceability.heartbeat_interval, else 1.
+    $heartbeatInterval = & $topScalar 'heartbeat_interval' ([ref]$null)
+    if ($heartbeatInterval -notmatch '^\d+$') {
+        $heartbeatInterval = & $nestedScalar 'traceability' 'heartbeat_interval' ([ref]$null)
+        if ($heartbeatInterval -notmatch '^\d+$') { $heartbeatInterval = '1' }
+    }
+
+    # ------------------------------------------------------------------
+    # Resolve the OPTIONAL knowledge block. knowledge.source/last_update fall
+    # back to kb_baseline.branch/tip_date; doc_set/term_exclusions fall back
+    # to discovery.doc_set/discovery.term_exclusions. The whole block is
+    # omitted when none of the four sub-values are present.
+    # ------------------------------------------------------------------
+    $knSource = & $nestedScalar 'knowledge' 'source' ([ref]$null)
+    if ([string]::IsNullOrEmpty($knSource)) { $knSource = & $nestedScalar 'kb_baseline' 'branch' ([ref]$null) }
+
+    $knLastUpdate = & $nestedScalar 'knowledge' 'last_update' ([ref]$null)
+    if ([string]::IsNullOrEmpty($knLastUpdate)) { $knLastUpdate = & $nestedScalar 'kb_baseline' 'tip_date' ([ref]$null) }
+
+    $knDocSet = @(& $resolveList 'knowledge' 'doc_set' 'discovery' 'doc_set')
+    $knTermExclusions = @(& $resolveList 'knowledge' 'term_exclusions' 'discovery' 'term_exclusions')
+
+    $haveKnowledge = ((-not [string]::IsNullOrEmpty($knSource)) -or (-not [string]::IsNullOrEmpty($knLastUpdate)) `
+        -or ($knDocSet.Count -gt 0) -or ($knTermExclusions.Count -gt 0))
+
+    # ------------------------------------------------------------------
+    # Build the NEW flat output, then write only if it differs from the
+    # original (re-normalized) content.
+    # ------------------------------------------------------------------
+    $out = [System.Collections.Generic.List[string]]::new()
+    [void]$out.Add("format_version: $($script:AidSupportedFormat)")
+    [void]$out.Add("name: ${name}")
+    if ([string]::IsNullOrEmpty($description)) {
+        [void]$out.Add('description: ""')
+    } else {
+        [void]$out.Add("description: ${description}")
+    }
+    [void]$out.Add("type: ${type}")
+    [void]$out.Add("source_control: ${sourceControl}")
+    [void]$out.Add("minimum_grade: ${minimumGrade}")
+    [void]$out.Add("heartbeat_interval: ${heartbeatInterval}")
+
+    if ($haveKnowledge) {
+        [void]$out.Add('')
+        [void]$out.Add('knowledge:')
+        if (-not [string]::IsNullOrEmpty($knSource)) { [void]$out.Add("  source: ${knSource}") }
+        if (-not [string]::IsNullOrEmpty($knLastUpdate)) { [void]$out.Add("  last_update: ${knLastUpdate}") }
+        if ($knDocSet.Count -gt 0) {
+            [void]$out.Add('  doc_set:')
+            foreach ($dsi in $knDocSet) { [void]$out.Add("    - ${dsi}") }
+        }
+        if ($knTermExclusions.Count -gt 0) {
+            [void]$out.Add('  term_exclusions:')
+            foreach ($tei in $knTermExclusions) { [void]$out.Add("    - ${tei}") }
+        }
+    }
+
+    $newContent = (($out.ToArray()) -join "`n") + "`n"
+    if ($newContent -eq $origJoined) { return }
 
     $sfDir = Split-Path $SettingsFile -Parent
     $tmp   = Join-Path $sfDir ("settings.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
-        [System.IO.File]::WriteAllText($tmp, (($lines.ToArray()) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
+        [System.IO.File]::WriteAllText($tmp, $newContent, [System.Text.UTF8Encoding]::new($false))
         Move-Item -LiteralPath $tmp -Destination $SettingsFile -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
@@ -2561,36 +2755,27 @@ function script:Invoke-AidRepairSettingsEraA {
 }
 
 # script:Invoke-AidSynthesizeSettingsEraB <SettingsFile> <RepoName> <ManifestPath>
-# Era-b: write fresh template-derived settings.yml (crash-safe temp+mv).
+# Era-b: write a fresh settings.yml (NEW flat schema, format_version 3) when
+# none exists yet. name = <RepoName>; description = ""; type = brownfield;
+# source_control = detected (.git present -> git, else none); minimum_grade
+# = A; heartbeat_interval = 1. No knowledge block (nothing to carry forward).
+# <ManifestPath> is accepted for call-site parity (tools/AID-version now live
+# only in the manifest -- never written into settings) but is otherwise
+# unused here. Crash-safe: same-directory temp + Move-Item -Force.
 function script:Invoke-AidSynthesizeSettingsEraB {
     param([string]$SettingsFile, [string]$RepoName, [string]$ManifestPath)
 
-    $toolIds = @(Read-ManifestTools -ManifestPath $ManifestPath)
+    $repoDir = Split-Path (Split-Path $SettingsFile -Parent) -Parent
+    $sourceControl = if (Test-Path (Join-Path $repoDir '.git') -PathType Container) { 'git' } else { 'none' }
 
     $sb = [System.Text.StringBuilder]::new()
-    # C2': format_version stamp is the FIRST line (before project:).
     [void]$sb.Append("format_version: $($script:AidSupportedFormat)`n")
-    [void]$sb.Append("project:`n")
-    [void]$sb.Append("  name: ${RepoName}`n")
-    [void]$sb.Append("  description: <project-description>`n")
-    [void]$sb.Append("  type: brownfield`n")
-    [void]$sb.Append("`n")
-    [void]$sb.Append("tools:`n")
-    if ($toolIds.Count -eq 0) {
-        [void]$sb.Append("  installed: []`n")
-    } else {
-        [void]$sb.Append("  installed:`n")
-        foreach ($t in $toolIds) { [void]$sb.Append("    - ${t}`n") }
-    }
-    [void]$sb.Append("`n")
-    [void]$sb.Append("review:`n")
-    [void]$sb.Append("  minimum_grade: A`n")
-    [void]$sb.Append("`n")
-    [void]$sb.Append("execution:`n")
-    [void]$sb.Append("  max_parallel_tasks: 5`n")
-    [void]$sb.Append("`n")
-    [void]$sb.Append("traceability:`n")
-    [void]$sb.Append("  heartbeat_interval: 1`n")
+    [void]$sb.Append("name: ${RepoName}`n")
+    [void]$sb.Append("description: `"`"`n")
+    [void]$sb.Append("type: brownfield`n")
+    [void]$sb.Append("source_control: ${sourceControl}`n")
+    [void]$sb.Append("minimum_grade: A`n")
+    [void]$sb.Append("heartbeat_interval: 1`n")
 
     $sfDir   = Split-Path $SettingsFile -Parent
     if (-not (Test-Path $sfDir -PathType Container)) {
@@ -3240,10 +3425,10 @@ try {
                 if ($_AidVersionArg) {
                     # -Version on add: validate it won't create a mixed-version repo.
                     if ($_fr11ExistingVer -and $_AidVersionArg -ne $_fr11ExistingVer) {
-                        [Console]::Error.WriteLine("ERROR: aid add: -Version $_AidVersionArg would create a mixed-version repo.")
+                        [Console]::Error.WriteLine("ERROR: aid add: -Version $_AidVersionArg would create a mixed-version project.")
                         [Console]::Error.WriteLine("       Existing tools are at v$_fr11ExistingVer. Either:")
-                        [Console]::Error.WriteLine("         - Omit -Version to install at the repo version (v$_fr11ExistingVer), or")
-                        [Console]::Error.WriteLine("         - Run 'aid update -Version $_AidVersionArg' first to advance the whole repo.")
+                        [Console]::Error.WriteLine("         - Omit -Version to install at the project version (v$_fr11ExistingVer), or")
+                        [Console]::Error.WriteLine("         - Run 'aid update -Version $_AidVersionArg' first to advance the whole project.")
                         script:Exit-Aid 2
                     }
                     # -Version provided and no conflict: apply to all tools (passed through to staging).
@@ -3264,7 +3449,7 @@ try {
                             if ($fr11vA -gt $fr11vB) { break }
                         }
                         if ($fr11IsLt) {
-                            Write-Host "repo is at v$_fr11ExistingVer; new tool(s) installed at v$_fr11ExistingVer to keep the repo uniform. Run 'aid update' to advance all tools to v$_fr11CliVer."
+                            Write-Host "project is at v$_fr11ExistingVer; new tool(s) installed at v$_fr11ExistingVer to keep the project uniform. Run 'aid update' to advance all tools to v$_fr11CliVer."
                         }
                     }
                 } else {
@@ -3344,7 +3529,7 @@ try {
                 if ($rc -ne 0) {
                     Write-Host ""
                     [Console]::Error.WriteLine("ERROR: aid $SUBCMD failed mid-commit for tool '$t' (rc=$rc).")
-                    [Console]::Error.WriteLine("       The repo may be at mixed versions. Re-run 'aid update' to heal.")
+                    [Console]::Error.WriteLine("       The project may be at mixed versions. Re-run 'aid update' to heal.")
                     script:Exit-Aid $rc
                 }
             }

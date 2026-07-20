@@ -56,7 +56,10 @@ Body note: record that the connection is available via the **host tool's own MCP
 the agent must request it from the tool (the tool handles auth) — mirroring feature-001's worked
 `github.md` example.
 
-### `api` / `url` — aid-managed
+### `api` — aid-managed, credentialed
+
+`api` is the **only** type that is ever asked for `auth_method` and may end up carrying a
+`secret_reference` — it is the sole credentialed connector type.
 
 | Field | Ask? | Default / rule |
 |---|---|---|
@@ -65,23 +68,23 @@ the agent must request it from the tool (the tool handles auth) — mirroring fe
 | `auth_method` | yes | Choose from `none \| token \| pat \| oauth`. Default suggestion: prefill precedence above, else `token` |
 | `secret_reference` FORM | only if `auth_method != none` | Default `file:.aid/connectors/.secrets/$STEM`; `env:<VAR>` / `keychain:<key>` offered as alternatives — ask for the VAR/key name when chosen |
 
-### `ssh` — aid-managed
+### `ssh` — aid-managed, self-authenticating
 
 | Field | Ask? | Default / rule |
 |---|---|---|
 | `name` | yes | Prefill precedence above |
-| `endpoint` | yes | Host/target — this type's connect target is a host, not a URL |
-| `auth_method` | no | **Forced** `ssh-key` — an `ssh` connector is always credentialed by design; there is no `none` option for this type |
-| `secret_reference` FORM | always | Same default/alternatives as `api`/`url` above; the captured value is the key material itself |
+| `endpoint` | yes | Host/target (e.g. `user@host`) — this type's connect target is a host, not a URL |
+| `auth_method` | no | **Forced** `none` — an `ssh` connector authenticates externally via ssh keys/ssh-agent; AID registers no credential for it |
+| `secret_reference` | no | **No such field is written** — there is nothing to capture (see `secret-reconcile.md`) |
 
-### `cli` — aid-managed
+### `cli` — aid-managed, self-authenticating
 
 | Field | Ask? | Default / rule |
 |---|---|---|
 | `name` | yes | Prefill precedence above |
 | `endpoint` | yes | Command/target (e.g. `docker`) |
-| `auth_method` | yes | Choose from `none \| token \| pat \| oauth`. Default suggestion: `none` — most CLI targets need no stored credential (per feature-001, "usually none"), but the question is still asked so a credentialed CLI (e.g. one wrapping an authenticated API) is representable |
-| `secret_reference` FORM | only if `auth_method != none` | Same mechanics as `api`/`url` above |
+| `auth_method` | no | **Forced** `none` — a `cli` connector self-authenticates via the invoked tool's own login/config (e.g. docker socket, `gh auth`, `aws` config); AID registers no credential for it |
+| `secret_reference` | no | **No such field is written** — there is nothing to capture (see `secret-reconcile.md`) |
 
 ## Asking, per project convention
 

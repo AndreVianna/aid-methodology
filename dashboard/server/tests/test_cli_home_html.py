@@ -10,7 +10,10 @@ No browser required.  Tests inspect the HTML source and verify:
           theme-toggle, schema-mismatch-banner, machine-panel, repo-section,
           repo-grid, empty-registry, footer, noscript).
   S2  -- Structural: reads envelope.generated_by (not model.generated_by).
-  S3  -- Structural: fetch target is '/api/home' (same-origin absolute path, not /api/model).
+  S3  -- Structural: fetch targets are '/api/home' and, since feature-003/task-014
+          (project.add/project.remove), '/api/op' (both same-origin absolute paths,
+          never /api/model, never a per-repo '/r/<id>/api/op' route -- that moved
+          off the home page in work-017 post-dogfood).
   S4  -- Structural: no CDN script tags or external stylesheets / web-fonts.
   S5  -- Structural: meta robots noindex present.
   S6  -- Structural: CSS design tokens present; dark theme block; badge classes.
@@ -21,7 +24,8 @@ No browser required.  Tests inspect the HTML source and verify:
   B2  -- Behavioral: schema-mismatch banner hidden by default; showSchemaMismatch present.
   R1  -- Render: machine panel fields (version / install location / tool catalog).
   R2  -- Render: repo card display-name logic (name fallback / path/id never as title).
-  R3  -- Render: available card -> /r/<id>/home.html href; card-link CSS.
+  R3  -- Render: card is a non-clickable div; the sibling card-actions row
+          carries an always-on "View" link to /r/<id>/home.html.
   R4  -- Render: has_home=false -> non-clickable note.
   R5  -- Render: unavailable card -> badge-dim + prune guidance.
   R6  -- Render: empty repos -> empty-registry state.
@@ -117,13 +121,32 @@ class TestStructural(unittest.TestCase):
     def test_s2_does_not_read_model_dot_generated_by(self):
         self.assertNotIn('model.generated_by', self.src)
 
-    # S3 -- fetch target is /api/home (same-origin)
+    # S3 -- fetch targets are /api/home (read poll) and /api/op (feature-003
+    # task-014 write-dispatch: project.add/project.remove; feature-004 task-016:
+    # tools.update-self), both same-origin. The per-repo '/r/<id>/api/op' route
+    # (feature-004 task-016's tools.update, dispatched from THIS page) is gone
+    # (work-017 post-dogfood): per-repo tool management moved to the project
+    # page's Tools section, so the CLI home no longer fetches any '/r/' path.
     def test_s3_fetches_api_home(self):
         fetch_calls = re.findall(r"fetch\s*\(\s*['\"]([^'\"]+)['\"]", self.src)
         self.assertTrue(len(fetch_calls) > 0, "No fetch() call found")
+        allowed = ('/api/home', '/api/op')
         for url in fetch_calls:
-            self.assertEqual(url, '/api/home',
-                             f"Unexpected fetch target: {url!r} -- only /api/home allowed")
+            self.assertIn(url, allowed,
+                         f"Unexpected fetch target: {url!r} -- only {allowed} allowed")
+
+    def test_s3_fetches_api_op_present(self):
+        # feature-003 (task-014): project.add / project.remove both dispatch via
+        # POST /api/op -- confirm at least one such call exists (not just /api/home).
+        self.assertIn("fetch('/api/op'", self.src)
+
+    def test_s3_no_per_repo_api_op_fetch(self):
+        # feature-004's tools.update per-repo dispatch (fetch('/r/' + repo.id +
+        # '/api/op'...)) moved OFF the home page entirely (work-017 post-dogfood
+        # Tools section on the project page) -- the CLI home must never fetch a
+        # '/r/' path at all now (no Update Tools button here anymore).
+        self.assertNotIn("fetch('/r/' + repo.id + '/api/op'", self.src)
+        self.assertNotRegex(self.src, r"fetch\s*\(\s*['\"]/r/")
 
     def test_s3_no_http_fetch(self):
         self.assertNotRegex(self.src, r"fetch\s*\(\s*['\"]https?://")
@@ -240,15 +263,16 @@ class TestStructural(unittest.TestCase):
         # the single-shot fetch uses no recurring timer to re-call doFetch
         self.assertNotIn('setTimeout(function', self.src)
 
-    # S9 -- brand is static "AID . this machine" (no id="brand-name")
-    def test_s9_brand_contains_aid_this_machine(self):
-        self.assertIn('this machine', self.src)
-        # Check AID text is in the brand div
+    # S9 -- brand is the static "Home" breadcrumb root (no id="brand-name")
+    def test_s9_brand_present(self):
+        # The CLI-home (all-projects) brand deliberately reads "Home" (breadcrumb IA:
+        # Home > Project). The original "AID · this machine" header was retired in two
+        # steps: 628c9810 renamed it "AID CLI", then c6c24757 renamed "AID CLI" -> "Home"
+        # (breadcrumb-root consistency). Assert the brand div is present and labelled.
         idx = self.src.find('class="brand"')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 200]
-        self.assertIn('AID', snippet)
-        self.assertIn('this machine', snippet)
+        self.assertIn('Home', snippet)
 
     def test_s9_no_brand_name_id(self):
         # The CLI home brand is static -- no dynamic id="brand-name" injection needed
@@ -440,7 +464,9 @@ class TestRenderRepoCard(unittest.TestCase):
         self.assertIn('—', snippet)
 
     def test_r3_available_card_href_pattern(self):
-        # Available + has_home card: href = '/r/' + repo.id + '/home.html'
+        # Available + has_home: the sibling card-actions "View" link's
+        # href = '/r/' + repo.id + '/home.html' (the card itself is no longer
+        # the link -- see test_r3_card_is_non_clickable_div below).
         self.assertIn("'/r/' + repo.id + '/home.html'", self.src)
 
     def test_r3_uses_repo_id_opaque(self):
@@ -451,8 +477,18 @@ class TestRenderRepoCard(unittest.TestCase):
         snippet = self.src[max(0, idx - 50):idx + 80]
         self.assertNotIn('repo.path', snippet)
 
-    def test_r3_card_link_class_used(self):
-        self.assertIn('card card-link', self.src)
+    def test_r3_card_is_non_clickable_div(self):
+        # The card is a plain, non-clickable <div class="card"> -- navigation
+        # moved to the sibling card-actions "View" link (work-017 post-dogfood);
+        # _renderRepoCard must NOT create an <a class="card card-link"> anymore.
+        idx = self.src.find('function _renderRepoCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 2000]
+        self.assertIn("createElement('div')", snippet)
+        self.assertIn("card.className = 'card'", snippet)
+        self.assertNotIn('card card-link', snippet)
+        self.assertNotIn("createElement('a')", snippet)
+        self.assertNotIn('card.href', snippet)
 
     def test_r4_has_home_false_note(self):
         self.assertIn('dashboard not generated yet', self.src)
@@ -483,16 +519,25 @@ class TestRenderRepoCard(unittest.TestCase):
         self.assertIn('repo.path', snippet)
 
     def test_r5_unavailable_prune_guidance(self):
+        # OQ-P2 (feature-003/task-014): the guidance's cmdCode.textContent (the
+        # actual rendered command, not a doc comment) must read the untrack-only
+        # 'aid projects remove <path>' -- the stale tool-uninstall form is gone
+        # from that assignment.
         idx = self.src.find('function _renderUnavailableCard(')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 2000]
-        self.assertIn('aid remove --target', snippet)
+        self.assertIn('aid projects remove', snippet)
+        self.assertNotIn("cmdCode.textContent = 'aid remove --target", snippet)
 
     def test_r5_unavailable_no_write_button(self):
+        # UI-P2 (feature-003/task-014): the Remove control is built by the shared
+        # _buildCardActions/_renderRemoveIdle helpers into a SIBLING .card-actions
+        # row (KI-004 scaffold) -- never a <button> literally inside
+        # _renderUnavailableCard's own card body. This snippet window covers only
+        # the card body (status glyph / path / read-only prune guidance).
         idx = self.src.find('function _renderUnavailableCard(')
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 2000]
-        # Must NOT create a button that mutates anything
         self.assertNotIn("createElement('button')", snippet)
 
     def test_r5_unavailable_verify_step(self):
@@ -599,12 +644,28 @@ class TestInvariants(unittest.TestCase):
         self.assertNotRegex(self.src, r'fetch\s*\(\s*["\']//[^"\']')
 
     def test_inv_no_write_button(self):
-        # The page is read-only (NFR2): no submit/write buttons
-        # (unavailable card has no button; the prune guidance is text-only)
+        # The page has no native <form> submit path (NFR2/CSP form-action 'none'):
+        # every JS-created <button> is type="button" (feature-001 AC8's write
+        # controls -- Add/Remove Project since feature-003/task-014 -- are all
+        # fetch-driven, never a literal <button type="submit"> in static markup).
         self.assertNotRegex(self.src, r'<button[^>]+type=["\']submit["\']')
 
     def test_inv_footer_read_only_text(self):
         self.assertIn('read-only', self.src)
+
+    def test_inv_footer_mode_span_dynamic(self):
+        # The literal "read-only" text is now the INITIAL static content of a
+        # dedicated #footer-mode span, flipped to 'writable' by onSuccess from
+        # envelope.write_enabled (work-017 post-dogfood) -- no longer a static
+        # label that could mislabel a server started with --allow-writes.
+        self.assertIn('<span id="footer-mode">read-only</span>', self.src)
+        idx = self.src.find('function onSuccess(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1600]
+        self.assertIn("getElementById('footer-mode')", snippet)
+        self.assertIn(
+            "modeEl.textContent = currentWriteEnabled ? 'writable' : 'read-only';", snippet
+        )
 
     def test_inv_noscript_present(self):
         self.assertIn('<noscript>', self.src)
@@ -620,6 +681,452 @@ class TestInvariants(unittest.TestCase):
         self.assertNotEqual(idx, -1)
         snippet = self.src[idx:idx + 400]
         self.assertIn('lastGoodEnvelope', snippet)
+
+
+class TestFeature003RegistryUi(unittest.TestCase):
+    """
+    UI-P1/UI-P2/KI-004 (feature-003-project-registry, task-014): Add/Remove
+    Project controls + the shared card-actions sibling-row scaffold.
+
+    AP -- Add Project control (UI-P1).
+    RP -- Remove Project control (UI-P2).
+    CA -- Shared card-actions sibling-row scaffold (KI-004).
+    WE -- write_enabled gating (read once in onSuccess, threaded into render).
+    SAFE -- textContent/escHtml-only dynamic text; aria-live; button type.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = _CLI_HOME_HTML.read_text(encoding="utf-8")
+
+    # ---- WE: write_enabled read + threading ----
+
+    def test_we_read_once_in_onsuccess(self):
+        idx = self.src.find('function onSuccess(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn('envelope.machine && envelope.machine.write_enabled === true', snippet)
+        self.assertIn('currentWriteEnabled = ', snippet)
+
+    def test_we_threaded_into_render_calls(self):
+        # Window widened 1200 -> 1600 (work-017 post-dogfood): the new
+        # #footer-mode textContent assignment onSuccess now makes pushed both
+        # calls past the old 1200-char scan window.
+        idx = self.src.find('function onSuccess(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1600]
+        self.assertIn('renderRepoGrid(envelope.repos, currentWriteEnabled)', snippet)
+        self.assertIn('_renderAddProjectControls(currentWriteEnabled)', snippet)
+
+    def test_we_render_repo_grid_accepts_write_enabled_param(self):
+        self.assertIn('function renderRepoGrid(repos, writeEnabled)', self.src)
+
+    def test_we_render_repo_card_accepts_write_enabled_param(self):
+        self.assertIn('function _renderRepoCard(repo, writeEnabled)', self.src)
+
+    def test_we_render_unavailable_card_accepts_write_enabled_param(self):
+        self.assertIn('function _renderUnavailableCard(repo, writeEnabled)', self.src)
+
+    # ---- AP: Add Project control (UI-P1) ----
+
+    def test_ap_slot_anchors_present_in_markup(self):
+        self.assertIn('id="add-project-slot"', self.src)
+        self.assertIn('id="add-project-slot-empty"', self.src)
+
+    def test_ap_render_function_present(self):
+        self.assertIn('function _renderAddProjectControls(writeEnabled)', self.src)
+
+    def test_ap_render_gated_on_write_enabled(self):
+        idx = self.src.find('function _renderAddProjectControls(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 600]
+        self.assertIn('if (writeEnabled)', snippet)
+
+    def test_ap_no_native_form_element(self):
+        # CSP form-action 'none': no literal <form> anywhere in the page.
+        self.assertNotRegex(self.src, r'<form[\s>]')
+
+    def test_ap_submit_posts_project_add(self):
+        idx = self.src.find('function _submitAddProject(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn("op: 'project.add'", snippet)
+        self.assertIn("args: { path: trimmed }", snippet)
+        self.assertIn("fetch('/api/op'", snippet)
+
+    def test_ap_empty_input_no_request(self):
+        # Empty (trimmed) input must short-circuit BEFORE the fetch() call.
+        idx = self.src.find('function _submitAddProject(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn('if (!trimmed)', snippet)
+        self.assertIn('return;', snippet)
+        fetch_idx = self.src.find('fetch(', idx)
+        return_idx = self.src.find('return;', idx)
+        self.assertLess(return_idx, fetch_idx,
+                        "the empty-input early return must precede the fetch() call")
+
+    def test_ap_error_detail_rendered_via_textcontent(self):
+        idx = self.src.find('function _submitAddProject(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1600]
+        self.assertIn('body.detail || body.error', snippet)
+        # Rendered by re-invoking the builder (which sets err.textContent), never innerHTML.
+        self.assertNotIn('.innerHTML = addProjectState', snippet)
+
+    def test_ap_input_stays_populated_on_error(self):
+        idx = self.src.find('function _submitAddProject(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1600]
+        # addProjectState.path is set before dispatch and NOT cleared in the
+        # else (error) branch -- only the success branch resets it to ''.
+        else_idx = snippet.find('} else {')
+        self.assertNotEqual(else_idx, -1)
+        else_branch = snippet[else_idx:else_idx + 250]
+        self.assertNotIn("addProjectState.path = ''", else_branch)
+
+    def test_ap_error_live_region_polite(self):
+        idx = self.src.find('function _buildAddProjectControl(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 3000]
+        self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
+
+    def test_ap_hint_text_present(self):
+        # Hint copy updated (work-017 post-dogfood, alongside the project-page
+        # Tools section): Add still only REGISTERS the path -- if it is not yet
+        # an AID project it is initialized bare (no tools installed); installing
+        # a tool is now a separate, explicit step in the project page's Tools
+        # section (tools.add), not implied by "Add project" itself.
+        self.assertIn(
+            'Any folder — if it is not yet an AID project it is initialized '
+            '(a bare .aid/, no tools installed).',
+            self.src,
+        )
+
+    def test_ap_placeholder_absolute_path(self):
+        self.assertIn("input.placeholder = '/absolute/path/to/aid/project'", self.src)
+
+    def test_ap_buttons_are_type_button(self):
+        idx = self.src.find('function _buildAddProjectControl(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 3000]
+        # Every button created in this function is explicitly type='button'
+        btn_count = snippet.count("createElement('button')")
+        type_button_count = snippet.count("type = 'button'")
+        self.assertGreaterEqual(type_button_count, btn_count)
+
+    def test_ap_empty_registry_mirrors_add_control(self):
+        # Both slots share the SAME builder (not a second independently-invented one).
+        idx = self.src.find('function _renderAddProjectControls(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 700]
+        self.assertEqual(snippet.count('_buildAddProjectControl()'), 2)
+
+    # ---- CA: shared card-actions sibling-row scaffold (KI-004) ----
+
+    def test_ca_repo_tile_css_present(self):
+        self.assertIn('.repo-tile', self.src)
+
+    def test_ca_card_actions_css_present(self):
+        self.assertIn('.card-actions', self.src)
+
+    def test_ca_build_card_actions_function_present(self):
+        self.assertIn('function _buildCardActions(repo, writeEnabled)', self.src)
+
+    def test_ca_card_actions_gated_on_write_enabled(self):
+        # work-017 post-dogfood: _buildCardActions no longer early-returns null
+        # for the whole row on !writeEnabled -- "View" is now ALWAYS offered
+        # (available+has_home, in BOTH read and write mode); only "Remove" is
+        # write-gated. null is returned only when NEITHER item was added.
+        idx = self.src.find('function _buildCardActions(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1500]
+        self.assertNotIn('if (!writeEnabled) return null;', snippet,
+                         "must not early-return null on !writeEnabled -- View is unconditional")
+        self.assertIn('repo.available === true && repo.has_home === true', snippet,
+                      "View is gated on available+has_home, not on writeEnabled")
+        self.assertIn('if (writeEnabled) {', snippet,
+                      "Remove remains write-gated")
+        self.assertIn('if (!actions.hasChildNodes()) return null;', snippet,
+                      "null only when neither View nor Remove was added")
+
+    def test_ca_view_link_unconditional_on_write_mode(self):
+        # The "View" <a> is built BEFORE (i.e. outside) the `if (writeEnabled)`
+        # guard -- it must render identically in read-only and write mode.
+        idx = self.src.find('function _buildCardActions(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1500]
+        view_guard_idx = snippet.find('repo.available === true && repo.has_home === true')
+        write_guard_idx = snippet.find('if (writeEnabled) {')
+        self.assertNotEqual(view_guard_idx, -1)
+        self.assertNotEqual(write_guard_idx, -1)
+        self.assertLess(view_guard_idx, write_guard_idx,
+                        "the View gate must be evaluated before (outside) the write-mode gate")
+        self.assertIn("viewLink.className = 'btn-ghost'", snippet)
+        self.assertIn("viewLink.textContent = 'View'", snippet)
+
+    def test_ca_available_card_tile_wraps_card_plus_actions(self):
+        # The available-card tile appends the card THEN the actions row as a
+        # SIBLING (never nested inside the <a class="card card-link"> itself).
+        idx = self.src.find('function _renderRepoCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 5000]
+        tile_idx = snippet.find("tile.className = 'repo-tile'")
+        self.assertNotEqual(tile_idx, -1)
+        region = snippet[tile_idx:tile_idx + 300]
+        self.assertIn('tile.appendChild(card)', region)
+        self.assertIn('_buildCardActions(repo, writeEnabled)', region)
+
+    def test_ca_unavailable_card_tile_wraps_card_plus_actions(self):
+        idx = self.src.find('function _renderUnavailableCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 3000]
+        tile_idx = snippet.find("tile.className = 'repo-tile'")
+        self.assertNotEqual(tile_idx, -1)
+        region = snippet[tile_idx:tile_idx + 300]
+        self.assertIn('tile.appendChild(card)', region)
+        self.assertIn('_buildCardActions(repo, writeEnabled)', region)
+
+    def test_ca_grid_appends_renderrepocard_result_directly(self):
+        # renderRepoGrid appends whatever _renderRepoCard returns (the tile, not
+        # the bare card) -- no separate re-wrapping at the call site.
+        idx = self.src.find('function renderRepoGrid(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1500]
+        self.assertIn('grid.appendChild(_renderRepoCard(sorted[i], writeEnabled))', snippet)
+
+    # ---- RP: Remove Project control (UI-P2) ----
+
+    def test_rp_idle_confirm_functions_present(self):
+        self.assertIn('function _renderRemoveIdle(item, repo)', self.src)
+        self.assertIn('function _renderRemoveConfirm(item, repo)', self.src)
+        self.assertIn('function _submitRemoveProject(', self.src)
+
+    def test_rp_idle_button_labelled_remove(self):
+        idx = self.src.find('function _renderRemoveIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn("removeBtn.textContent = 'Remove'", snippet)
+
+    def test_rp_confirm_is_inline_flip_not_window_confirm(self):
+        # Decided design (feature-003 SPEC UI-P2): inline button-flip, NEVER
+        # window.confirm.
+        self.assertNotIn('window.confirm', self.src)
+        idx = self.src.find('function _renderRemoveConfirm(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 900]
+        self.assertIn("confirmBtn.textContent = 'Confirm untrack'", snippet)
+        self.assertIn("cancelBtn.textContent = 'Cancel'", snippet)
+
+    def test_rp_confirm_copy_text(self):
+        self.assertIn('Untracks this project from the dashboard. No files are removed.', self.src)
+
+    def test_rp_confirm_flip_is_dom_mutation_not_refetch(self):
+        # Clicking "Remove" calls _renderRemoveConfirm(item, repo) directly --
+        # it must NOT trigger doFetch() (that would be a whole-grid re-render,
+        # not an in-place flip).
+        idx = self.src.find('function _renderRemoveIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn('_renderRemoveConfirm(item, repo)', snippet)
+        self.assertNotIn('doFetch()', snippet)
+
+    def test_rp_submit_posts_project_remove_with_target_id(self):
+        idx = self.src.find('function _submitRemoveProject(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 700]
+        self.assertIn("op: 'project.remove'", snippet)
+        self.assertIn('target: { id: repo.id }', snippet)
+        self.assertIn("fetch('/api/op'", snippet)
+
+    def test_rp_success_triggers_dofetch(self):
+        idx = self.src.find('function _submitRemoveProject(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 900]
+        self.assertIn('doFetch();', snippet)
+
+    def test_rp_error_detail_via_textcontent_aria_live(self):
+        idx = self.src.find('function _renderRemoveConfirm(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
+        idx2 = self.src.find('function _submitRemoveProject(')
+        snippet2 = self.src[idx2:idx2 + 700]
+        self.assertIn('errEl.textContent', snippet2)
+
+    def test_rp_replaces_unavailable_prune_guidance_when_write_enabled(self):
+        # UI-P2: the prune-guidance <ol> is built ONLY inside the !writeEnabled
+        # branch -- it is REPLACED (not supplemented) by the card-actions Remove
+        # control when write_enabled is true.
+        idx = self.src.find('function _renderUnavailableCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 2000]
+        guard_idx = snippet.find('if (!writeEnabled) {')
+        self.assertNotEqual(guard_idx, -1)
+        ol_idx = snippet.find("createElement('ol')")
+        self.assertNotEqual(ol_idx, -1)
+        self.assertGreater(ol_idx, guard_idx,
+                           "the prune-guidance <ol> must be built inside the !writeEnabled guard")
+
+    # ---- SAFE: no innerHTML with dynamic/untrusted text ----
+
+    def test_safe_no_innerhtml_with_addprojectstate_value(self):
+        self.assertNotIn('.innerHTML = addProjectState', self.src)
+
+    def test_safe_no_innerhtml_with_repo_path_or_detail(self):
+        self.assertNotRegex(self.src, r"\.innerHTML\s*=\s*[^;]*\brepo\.(path|id)")
+        self.assertNotRegex(self.src, r"\.innerHTML\s*=\s*[^;]*\bdetail\b")
+
+
+class TestFeature004UpdateSelfUi(unittest.TestCase):
+    """
+    UI (feature-004-update-tools, task-016): the global "Update CLI"
+    (tools.update-self) control, the restart-advisory banner (KI-002/KI-006),
+    and the busy-state (KI-003).
+
+    UC -- global "Update CLI" (machine panel).
+    RA -- restart-advisory banner.
+    BS -- busy-state (disable + "Updating..." until the op resolves).
+
+    Renamed from TestFeature004UpdateToolsUi (work-017 post-dogfood): the
+    per-repo "Update Tools" control (tools.update, UT below) this class used to
+    also cover was REMOVED from the home page entirely -- per-repo tool
+    management (tools.add/tools.update/tools.remove) moved to the project
+    page's new Tools section (see test_cli_home_html.py's sibling suite for
+    home.html, or test_task015_tools_update_ops.{py,mjs} for the op-handler
+    coverage) -- so this class now covers ONLY the global self-update control,
+    which is unaffected and still lives on the home page's machine panel.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        cls.src = _CLI_HOME_HTML.read_text(encoding="utf-8")
+
+    # ---- UC: global "Update CLI" control (machine panel) ----
+
+    def test_uc_idle_function_present(self):
+        self.assertIn('function _renderUpdateSelfIdle(item)', self.src)
+
+    def test_uc_submit_function_present(self):
+        self.assertIn('function _submitUpdateSelf(btn, errEl)', self.src)
+
+    def test_uc_button_labelled_update_cli(self):
+        idx = self.src.find('function _renderUpdateSelfIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 500]
+        self.assertIn("btn.textContent = 'Update CLI'", snippet)
+
+    def test_uc_gated_on_machine_write_enabled(self):
+        # renderMachinePanel appends the action row only when
+        # machine.write_enabled === true (missing => false, fail-safe).
+        idx = self.src.find('function renderMachinePanel(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 3000]
+        self.assertIn('machine.write_enabled === true', snippet)
+        self.assertIn('_renderUpdateSelfIdle(updateItem)', snippet)
+
+    def test_uc_reuses_card_actions_class(self):
+        # The machine-panel action row reuses the SAME .card-actions /
+        # .card-action-item classes as the repo-card scaffold (KI-004) --
+        # not an independently-invented class.
+        idx = self.src.find('function renderMachinePanel(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 3000]
+        self.assertIn("updateActions.className = 'card-actions'", snippet)
+        self.assertIn("updateItem.className = 'card-action-item'", snippet)
+
+    def test_uc_submit_posts_tools_update_self(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn("op: 'tools.update-self'", snippet)
+        self.assertIn("fetch('/api/op'", snippet)
+
+    def test_uc_busy_state_disable_and_label(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 400]
+        self.assertIn('btn.disabled = true', snippet)
+        self.assertIn("btn.textContent = 'Updating...'", snippet)
+
+    def test_uc_ok_refetches_and_shows_restart_advisory(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        self.assertIn('doFetch(function () { showRestartAdvisory(); });', snippet)
+
+    def test_uc_failure_reenables_button_and_shows_error(self):
+        idx = self.src.find('function _submitUpdateSelf(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1200]
+        else_idx = snippet.find('} else {')
+        self.assertNotEqual(else_idx, -1)
+        else_branch = snippet[else_idx:else_idx + 300]
+        self.assertIn('btn.disabled = false', else_branch)
+        self.assertIn("btn.textContent = 'Update CLI'", else_branch)
+        self.assertIn('errEl.textContent', else_branch)
+
+    def test_uc_error_live_region_polite(self):
+        idx = self.src.find('function _renderUpdateSelfIdle(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 600]
+        self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
+
+    # ---- UT: per-repo "Update Tools" control -- REMOVED (work-017 post-dogfood) ----
+
+    def test_ut_no_per_repo_update_tools_control_on_home_page(self):
+        # The per-repo "Update Tools" control (tools.update, feature-004
+        # task-016) that used to live in the shared card-actions scaffold is
+        # gone from the CLI home entirely -- per-repo tool management moved to
+        # the project page's Tools section (_renderToolsCard/_submitToolsUpdate
+        # in home.html). Neither its builder/submit functions nor its per-repo
+        # fetch route may reappear here.
+        self.assertNotIn('_renderUpdateToolsIdle', self.src)
+        self.assertNotIn('_submitUpdateTools', self.src)
+        self.assertNotIn("btn.textContent = 'Update Tools'", self.src)
+        self.assertNotIn("op: 'tools.update'", self.src)
+        self.assertNotIn("fetch('/r/' + repo.id + '/api/op'", self.src)
+
+    # ---- RA: restart-advisory banner (KI-002/KI-006) ----
+
+    def test_ra_banner_markup_present(self):
+        self.assertIn('id="restart-advisory-banner"', self.src)
+        self.assertIn('id="restart-advisory-dismiss"', self.src)
+
+    def test_ra_banner_hidden_by_default(self):
+        idx = self.src.find('id="restart-advisory-banner"')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[max(0, idx - 50):idx + 200]
+        self.assertIn('display:none', snippet)
+
+    def test_ra_banner_copy_text(self):
+        self.assertIn(
+            'AID CLI updated &#8212; restart <code>aid dashboard</code> to load the new dashboard code.',
+            self.src,
+        )
+
+    def test_ra_show_hide_functions_present(self):
+        self.assertIn('function showRestartAdvisory()', self.src)
+        self.assertIn('function hideRestartAdvisory()', self.src)
+
+    def test_ra_dismiss_button_wired_to_hide(self):
+        idx = self.src.find("getElementById('restart-advisory-dismiss')")
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 200]
+        self.assertIn('hideRestartAdvisory', snippet)
+
+    def test_ra_not_a_native_alert_or_confirm(self):
+        # Dismissible in-page banner, never a blocking browser dialog.
+        self.assertNotIn('window.alert', self.src)
+        self.assertNotIn('window.confirm', self.src)
+
+    # ---- doFetch onLoaded callback plumbing ----
+
+    def test_dofetch_accepts_optional_onloaded_callback(self):
+        idx = self.src.find('function doFetch(onLoaded)')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 700]
+        self.assertIn("if (typeof onLoaded === 'function') onLoaded(envelope);", snippet)
 
 
 if __name__ == "__main__":

@@ -79,6 +79,71 @@ consumption protocol's seam recipe). When no `ticket_ref` resolves anywhere in t
 matching MCP connector is catalogued, skip the mirror silently -- the local `writeback-state.sh`
 write above still runs unconditionally either way.
 
+## MANDATORY: Executor-side Cooperative Poll (Pipeline Finish & Task Stop/Resume)
+
+Additive to the State-Write Protocol above -- rides ticks that already fire in this skill (the
+task-dispatch boundaries and the existing heartbeat-read tick below) and introduces **no new
+poll infrastructure**. This is the executor-side half of feature-008-execution-control's
+cooperative stop-signal channel -- the dashboard-side half (`pipeline.finish` / `task.stop` /
+`task.resume`, `write-control-signal.sh`) lives in `dashboard/server/`; this section is what
+makes a signal the dashboard raised actually bite on the running session.
+
+**(1) Pipeline Finish.** Re-read the work `lifecycle` from `STATE.md` frontmatter (the same
+field `writeback-state.sh --pipeline --field Lifecycle` writes; enum `Running |
+Paused-Awaiting-Input | Blocked | Completed | Canceled`). Any value **other than** `Running` ->
+STOP: dispatch no new task, dispatch no new reviewer/fix cycle for any task, and do NOT advance
+the pipeline to a new phase from this tick forward. Whatever sub-agent is already in flight is
+**not killed** -- let it reach its own next safe checkpoint; this check only withholds the NEXT
+dispatch, it never reaches into a running sub-agent.
+
+**(2) Task Stop/Resume.** For each **in-flight** task-NNN, `stat` its control file at
+`<work_dir>/../../.control/<work_id>/task-<NNN>.stop` -- worktree-relative (WT-1): `<work_dir>`
+is that task's own `.aid/works/{work}/`, `<work_id>` is its basename, and this is the exact same
+`.aid/.control/<work_id>/` directory `write-control-signal.sh` (task-028) creates/removes and
+the dashboard reader (task-029) stats. **Present** -> decline to dispatch the NEXT reviewer/fix
+cycle for that task -- its progression pauses wherever it currently sits. **Absent again** on a
+later tick -> resume normally, exactly as if the pause had never happened.
+
+**Poll interval -- read exactly as the heartbeat does, same call, same fallback:**
+```bash
+bash canonical/aid/scripts/config/read-setting.sh --path traceability.heartbeat_interval --default 1
+```
+
+**Where these checks fire (existing ticks -- nothing new is introduced):**
+
+| Tick | Check(s) run | Location in this file |
+|---|---|---|
+| Before dispatching the executor for a task not yet started | Pipeline Finish | Step 1 (EXECUTE), entry |
+| Before dispatching the reviewer that would immediately follow EXECUTE | Task Stop/Resume (this task only) | Step 1 (EXECUTE), just before "proceed to Step 2" |
+| Before growing the pool with a new task | Pipeline Finish | PD-2 (Fill Pool), entry |
+| The existing heartbeat-read tick | Pipeline Finish + Task Stop/Resume, for every in-flight task | PD-3 (Wait for One Completion), timer 1/2 |
+
+**Task `State` is NEVER written by a pause.** A stopped task stays at whatever `State` it
+already holds -- `In Progress` in the common case -- per the closed task `State` enum. There is
+no `Paused` member and none is introduced here (feature-008 SPEC §State Machines, OQ-T2). The
+pause is visible ONLY as the dashboard's derived `stop_requested` overlay (computed at read
+time from the control file's presence); this skill never writes that flag, and never writes
+`State` on account of a pause either direction (stop or resume).
+
+**Degradation when heartbeat is disabled (`traceability.heartbeat_interval: 0`).** PD-3's
+heartbeat-read tick does not fire in this mode (there are no heartbeat files to read), so the
+two checks above lose that specific tick -- they still run at the task-dispatch boundaries
+(Step 1 entry, Step 1's pre-Step-2 check, PD-2's pool-fill entry), so Pipeline Finish and Task
+Stop/Resume both still take effect -- just at the orchestrator's next task-dispatch **boundary**
+rather than mid-task. This is a documented cadence trade-off, not a failure -- the same one the
+heartbeat channel itself already accepts when disabled. The same fallback-to-boundary already
+applies structurally in the PD-6 sequential/degraded (`MaxConcurrent=1`, no `run_in_background`)
+mode, since PD-2's dispatch there blocks synchronously until the task finishes and PD-3 (where
+the heartbeat-read tick lives) is a no-op in that mode -- PD-2's own entry check is the only
+tick available, exactly as with heartbeat disabled.
+
+**Scope note.** This baseline is the orchestrator-side poll only. A currently in-flight pool
+task (`## EXECUTE-WAVE: Pool Dispatch` below) runs its own full per-task pipeline as a single
+opaque background dispatch (`PD-2a`); interrupting it **mid-task** (rather than at its next
+externally-visible boundary) requires the separate sub-agent-side Enhancement described in
+feature-008 SPEC §Feature Flow (an opt-in `STOP_FILE=...` dispatch parameter, analogous to
+`HEARTBEAT_FILE=...`) -- out of scope here.
+
 ## Task Types
 
 | Type | What the agent does | What the reviewer checks |
@@ -225,6 +290,13 @@ Wave ∞ (pool) · 0/{T} done
 
 ### PD-2: Fill Pool
 
+**MANDATORY, before filling the pool -- Pipeline Finish check (feature-008; full mandate:
+`§ MANDATORY: Executor-side Cooperative Poll` above):** re-read the work `lifecycle` from
+`STATE.md` frontmatter. If it is anything other than `Running`, STOP here -- do not dispatch
+any new task from the ready set on this pass. This is the pool's own "between tasks"
+task-dispatch boundary -- it re-fires every time PD-2 is (re-)entered, including on the
+loop-back from PD-4 step 7.
+
 While `|in-flight| < MaxConcurrent` and the ready set is non-empty:
 
 1. Pick the **lowest-numbered task** from the ready set (FIFO-by-task-number).
@@ -347,7 +419,12 @@ not a join — the pool reacts to each completion independently.
 
 While waiting, service L2 timers (per the Dispatch Protocol in `SKILL.md`):
 - Fire timer 1 at ETA/2 — read heartbeat files for each in-flight task and emit
-  `[from heartbeat] task-{NNN}: <state> · <progress> · <activity>`.
+  `[from heartbeat] task-{NNN}: <state> · <progress> · <activity>`. **Same tick, no separate
+  timer (feature-008; full mandate: `§ MANDATORY: Executor-side Cooperative Poll` above):**
+  re-read the work `lifecycle` (Pipeline Finish) and `stat` each in-flight task's `.stop`
+  control file (Task Stop/Resume) -- non-`Running` lifecycle -> stop dispatching new work/new
+  reviewer cycles from here on; a present `.stop` file -> decline that task's next reviewer/fix
+  cycle until it is removed again.
 - Fire timer 2 at ETA — same.
 - Fire timer 3 at 1.5×ETA — emit `⚠️ task-{NNN} EXCEEDED estimate`.
 
@@ -628,6 +705,16 @@ decision tree — lives in its own reference to keep this state file navigable:
 
 ## Step 1: EXECUTE (Do the Work)
 
+**MANDATORY, before any write below -- Pipeline Finish check (feature-008; full mandate:
+`§ MANDATORY: Executor-side Cooperative Poll` above):** re-read the work `lifecycle` from
+`STATE.md` frontmatter AS IT CURRENTLY STANDS ON DISK -- before this state's own writes below
+(which include an unconditional `Lifecycle: Running` write) have a chance to run, since those
+writes would otherwise silently clobber a dashboard-set `Completed`/`Blocked` value and make
+this check a no-op. If the re-read value is anything other than `Running`, STOP here -- do not
+write `In Progress`, do not dispatch the executor, do not advance this task. (No Task
+Stop/Resume check applies yet at this point -- no sub-agent is in flight for this task until
+the dispatch below happens.)
+
 **MANDATORY, first action, before any other work -- per the State-Write
 Protocol above:** update the task State to `In Progress` (silent state-write
 -- no output). This applies whether YOU (the main/orchestrator agent) are
@@ -675,6 +762,16 @@ dispatched, not batched together with a later write:
 bash canonical/aid/scripts/execute/writeback-state.sh \
     --delivery-id DDD --task-id NNN --field State --value "In Review"
 ```
+
+**MANDATORY, immediately after the write above, before dispatching the reviewer -- Task
+Stop/Resume check (feature-008; full mandate: `§ MANDATORY: Executor-side Cooperative Poll`
+above):** `stat` this task's own control file at
+`<work_dir>/../../.control/<work_id>/task-{NNN}.stop`. Present -> decline the next reviewer/fix
+cycle for THIS task -- do not dispatch the reviewer now; re-check on the next tick (this task's
+own next heartbeat-read tick, or the orchestrator's next task-dispatch boundary) and proceed to
+Step 2 only once the file is absent again. Task `State` stays `In Review` throughout the pause
+-- this check never mutates it. Absent -> proceed immediately, no pause.
+
 Then proceed to Step 2 (REVIEW).
 
 **If execution instead raises an unresolved IMPEDIMENT** (the agent cannot

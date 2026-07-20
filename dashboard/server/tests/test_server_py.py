@@ -57,19 +57,28 @@ def _make_aid_home(base: Path) -> Path:
     """Create a minimal AID_HOME tree: VERSION + registry.yml (empty) + dashboard/ dir."""
     base.mkdir(parents=True, exist_ok=True)
     (base / "VERSION").write_text("1.0.0-test\n", encoding="utf-8")
-    # Empty registry (repos: with no items -- NFR10 valid form)
+    # Empty registry (projects: with no items -- NFR10 valid form)
     _write_registry(base, [])
     (base / "dashboard").mkdir(exist_ok=True)
     return base
 
 
 def _write_registry(aid_home: Path, paths: list[str]) -> None:
-    """Write a registry.yml with the given absolute paths into aid_home."""
+    """Write a registry.yml with the given absolute paths into aid_home.
+
+    Uses the canonical `projects:` key -- the format `bin/aid projects add`
+    actually writes (bin/aid L1675/1707/1758) and feature-003 SPEC.md documents
+    ("a flat `projects:` list of base-folder paths"). The reader treats the
+    header key leniently (loadRegistry / load_registry collect `- <path>` items
+    regardless of the header, and additionally skip a legacy `repos:` header),
+    so the specific edge-case fixtures below that write a literal `repos:` block
+    still exercise that legacy-tolerance path on purpose.
+    """
     lines = [
         "# AID machine repo registry (managed by 'aid add' / 'aid remove' -- do not hand-edit).\n",
         "# Holds ONLY the base folders of repos this CLI install manages.\n",
         "schema: 1\n",
-        "repos:\n",
+        "projects:\n",
     ]
     for p in paths:
         lines.append(f"  - {p}\n")
@@ -132,6 +141,31 @@ def _repo_id8(path: str) -> str:
     return _repo_id(path)[:8]
 
 
+def _patch_run_aid_cli_force_unix(server_module) -> "callable":
+    """KI-009: `_run_aid_cli`'s default `is_windows` seam now resolves from
+    the REAL os.name (never a hardcoded value -- see KI-009 Part A), so a
+    fake/probe-CLI test class that redirects `_AID_CLI_PATH` to a
+    bash-shebang script must force the Unix/bash dispatch branch EXPLICITLY
+    when the suite happens to run on an actual Windows host (this repo's own
+    local dev sandbox) -- otherwise the default would spawn PowerShell
+    against a bash script and every such fake-CLI assertion would fail.
+    On real Linux CI this is a no-op in EFFECT (the default already resolves
+    to the Unix branch there), but forcing it explicitly keeps these
+    pre-KI-009 tests host-independent either way, matching their original
+    intent: proving the shared resolver's argv/env-threading CONTRACT, not
+    OS branch selection (that is KI-009's own test_ki009_windows_dispatch.py's
+    job). Returns the ORIGINAL `_run_aid_cli` for restoration by the caller
+    (mirrors this file's own save/restore convention for `_AID_CLI_PATH`).
+    """
+    orig = server_module._run_aid_cli
+
+    def _forced(argv, env_overrides, timeout=server_module._DEFAULT_AID_CLI_TIMEOUT):
+        return orig(argv, env_overrides, timeout, is_windows=False)
+
+    server_module._run_aid_cli = _forced
+    return orig
+
+
 # ---------------------------------------------------------------------------
 # Server thread context manager
 # ---------------------------------------------------------------------------
@@ -139,8 +173,9 @@ def _repo_id8(path: str) -> str:
 class _ServerThread:
     """Start the multi-repo server in a background thread against a tmp AID_HOME."""
 
-    def __init__(self, aid_home: str) -> None:
+    def __init__(self, aid_home: str, write_enabled: bool = False) -> None:
         self._aid_home = aid_home
+        self._write_enabled = write_enabled
         self._httpd = None
         self._thread = None
         self.port: int = 0
@@ -154,6 +189,9 @@ class _ServerThread:
             ("127.0.0.1", self.port), _server_module._DashboardHandler
         )
         self._httpd.aid_home = self._aid_home  # type: ignore[attr-defined]
+        # Fail-safe write gate (feature-001 task-001): mirrors main()'s
+        # server.write_enabled = args.allow_writes; defaults to False (read-only).
+        self._httpd.write_enabled = self._write_enabled  # type: ignore[attr-defined]
         self._thread = threading.Thread(target=self._httpd.serve_forever, daemon=True)
         self._thread.start()
         self._wait_ready()
@@ -190,6 +228,19 @@ class _ServerThread:
     def post(self, path: str) -> tuple[int, bytes]:
         url = f"http://127.0.0.1:{self.port}{path}"
         req = urllib.request.Request(url, data=b"", method="POST")
+        try:
+            with urllib.request.urlopen(req) as resp:
+                return resp.status, resp.read()
+        except urllib.error.HTTPError as exc:
+            return exc.code, exc.read()
+
+    def post_json(self, path: str, payload: dict) -> tuple[int, bytes]:
+        """POST a JSON-encoded op-request body (feature-001 task-004)."""
+        url = f"http://127.0.0.1:{self.port}{path}"
+        data = json.dumps(payload).encode("utf-8")
+        req = urllib.request.Request(
+            url, data=data, method="POST", headers={"Content-Type": "application/json"},
+        )
         try:
             with urllib.request.urlopen(req) as resp:
                 return resp.status, resp.read()
@@ -868,6 +919,18 @@ class TestApiHomeDm2Shape(unittest.TestCase):
         self.assertIn("cli_runtime", machine)
         self.assertEqual(machine["cli_runtime"], "python")
 
+    # write_enabled (additive, feature-001 task-001): fail-safe gate signal.
+    def test_machine_panel_has_write_enabled(self):
+        data = self._get_home()
+        machine = data["machine"]
+        self.assertIn("write_enabled", machine)
+        self.assertIsInstance(machine["write_enabled"], bool)
+
+    def test_machine_panel_write_enabled_false_by_default(self):
+        """A server started without the write gate is read-only (fail-safe default)."""
+        data = self._get_home()
+        self.assertFalse(data["machine"]["write_enabled"])
+
     # repos[] sorted by path ascending
     def test_repos_sorted_by_path(self):
         data = self._get_home()
@@ -931,6 +994,159 @@ class TestApiHomeDm2Shape(unittest.TestCase):
 
 
 # ===========================================================================
+# (5b) write_enabled gate propagation (feature-001 task-001)
+# ===========================================================================
+
+class TestWriteEnabledGatePropagation(unittest.TestCase):
+    """server.write_enabled (fail-safe default False) flows into both DM envelopes."""
+
+    def setUp(self) -> None:
+        self._base = Path(tempfile.mkdtemp())
+        self._aid_home = self._base / "aid_home"
+        _make_aid_home(self._aid_home)
+        self._repo_a = self._base / "repo-A"
+        _make_repo(self._repo_a)
+        _write_registry(self._aid_home, [str(self._repo_a)])
+        self._id_a = _repo_id8(str(self._repo_a))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(str(self._base), ignore_errors=True)
+
+    def test_api_home_write_enabled_true_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body, _ = srv.get("/api/home")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertTrue(data["machine"]["write_enabled"])
+
+    def test_api_home_write_enabled_false_when_gate_closed(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body, _ = srv.get("/api/home")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertFalse(data["machine"]["write_enabled"])
+
+    def test_api_model_write_enabled_true_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body, _ = srv.get(f"/r/{self._id_a}/api/model")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertTrue(data["write_enabled"])
+
+    def test_api_model_write_enabled_false_when_gate_closed(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body, _ = srv.get(f"/r/{self._id_a}/api/model")
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertFalse(data["write_enabled"])
+
+
+# ===========================================================================
+# (5c-op) POST /r/<id>/api/op + POST /api/op live-server smoke test
+# (feature-001 task-004)
+#
+# The dispatch/argv/status-map LOGIC (OP_TABLE, DEFAULT_MAP, _dispatch_op, the
+# 4 argv-builders, real writer subprocess round-trips) has its own dedicated,
+# non-server-binding unit suite in test_task004_op_dispatch.py. This class
+# covers the do_POST -> _serve_op/_serve_home_op ROUTING/WIRING over a real
+# socket -- the write gate across both states, and one representative op
+# round-trip through the actual HTTP path. The full per-op matrix (task.set-
+# notes/pipeline.finish/pipeline.rename fixtures, WT-1 worktree resolution,
+# status-map overrides) is task-011's "dispatch round-trip suite" mandate.
+# ===========================================================================
+
+class TestOpDispatchLive(unittest.TestCase):
+    """do_POST routing + write gate + one OP_TABLE round-trip, over a real socket."""
+
+    def setUp(self) -> None:
+        self._base = Path(tempfile.mkdtemp())
+        self._aid_home = self._base / "aid_home"
+        _make_aid_home(self._aid_home)
+        self._repo_a = self._base / "repo-A"
+        _make_repo(self._repo_a)
+        _write_registry(self._aid_home, [str(self._repo_a)])
+        self._id_a = _repo_id8(str(self._repo_a))
+
+    def tearDown(self) -> None:
+        shutil.rmtree(str(self._base), ignore_errors=True)
+
+    def test_write_disabled_op_403s_read_only(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "settings.set", "args": {"path": "project.name", "value": "x"}},
+            )
+        self.assertEqual(status, 403)
+        data = json.loads(body)
+        self.assertEqual(data, {"ok": False, "op": None, "error": "read-only",
+                                 "detail": "write endpoints disabled (server not spawned with --allow-writes)"})
+
+    def test_write_disabled_home_op_403s_read_only(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, _ = srv.post_json("/api/op", {"op": "project.add"})
+        self.assertEqual(status, 403)
+
+    def test_other_post_path_still_405_regardless_of_gate(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, _ = srv.post("/foo/bar")
+        self.assertEqual(status, 405)
+
+    def test_settings_set_round_trip_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "settings.set", "args": {"path": "project.name", "value": "renamed-by-op"}},
+            )
+        self.assertEqual(status, 200)
+        data = json.loads(body)
+        self.assertEqual(data, {"ok": True, "op": "settings.set"})
+        settings_after = (self._repo_a / ".aid" / "settings.yml").read_text(encoding="utf-8")
+        self.assertIn("renamed-by-op", settings_after)
+
+    def test_unknown_op_400_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(f"/r/{self._id_a}/api/op", {"op": "not-a-real-op"})
+        self.assertEqual(status, 400)
+        self.assertEqual(json.loads(body)["error"], "bad-request")
+
+    def test_unresolvable_work_id_404_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "pipeline.rename", "target": {"work_id": "work-999-nonexistent"}, "args": {"value": "x"}},
+            )
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"], "not-found")
+
+    # feature-009-pipeline-delete (task-027): the write_enabled 403 gate and
+    # WT-1 404 wiring for pipeline.delete, over the real HTTP path -- mirrors
+    # this class's own pipeline.rename cases immediately above. The full
+    # guard/topology/containment/post-delete matrix (real git worktree
+    # fixtures, real delete-pipeline.sh spawns, twin byte-parity) lives in
+    # test_task027_pipeline_delete_round_trips.py's own _dispatch_op-layer
+    # suite (no _ServerThread needed there).
+    def test_pipeline_delete_403s_read_only(self):
+        with _ServerThread(str(self._aid_home), write_enabled=False) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "pipeline.delete", "target": {"work_id": "work-999-does-not-matter"}},
+            )
+        self.assertEqual(status, 403)
+        data = json.loads(body)
+        self.assertEqual(data, {"ok": False, "op": None, "error": "read-only",
+                                 "detail": "write endpoints disabled (server not spawned with --allow-writes)"})
+
+    def test_pipeline_delete_unresolvable_work_id_404_when_gate_open(self):
+        with _ServerThread(str(self._aid_home), write_enabled=True) as srv:
+            status, body = srv.post_json(
+                f"/r/{self._id_a}/api/op",
+                {"op": "pipeline.delete", "target": {"work_id": "work-999-nonexistent"}},
+            )
+        self.assertEqual(status, 404)
+        self.assertEqual(json.loads(body)["error"], "not-found")
+
+
+# ===========================================================================
 # (6) Serialization (DM-3)
 # ===========================================================================
 
@@ -964,9 +1180,15 @@ class TestSerializationDm3(unittest.TestCase):
 
     # Key order for /r/<id>/api/model (DM-1 envelope)
     def test_envelope_key_order(self):
+        # tools_catalog is an additive key (work-017 post-dogfood Tools section)
+        # inserted AFTER write_enabled and BEFORE model (schema_version stays 3).
         data = self._get_model()
         keys = list(data.keys())
-        self.assertEqual(keys, ["schema_version", "generated_by", "model"])
+        self.assertEqual(keys, ["schema_version", "generated_by", "write_enabled", "tools_catalog", "model"])
+
+    def test_envelope_tools_catalog_is_array(self):
+        data = self._get_model()
+        self.assertIsInstance(data["tools_catalog"], list)
 
     def test_repo_model_key_order(self):
         data = self._get_model()
@@ -980,9 +1202,21 @@ class TestSerializationDm3(unittest.TestCase):
                          ["manifest_present", "aid_version", "installed_at", "tools_installed"])
 
     def test_repo_info_key_order(self):
+        # feature-002 (work-017 task-005): project_description + minimum_grade are
+        # additive keys inserted after project_name (schema_version stays 3).
+        # feature-007 (work-017 task-019): connectors is an additive key inserted
+        # after kb_state (schema_version stays 3).
+        # feature-010 (work-017 task-021): external_sources is an additive key
+        # inserted after connectors (schema_version stays 3).
         data = self._get_model()
         repo = data["model"]["repo"]
-        self.assertEqual(list(repo.keys()), ["project_name", "aid_dir", "kb_state"])
+        self.assertEqual(
+            list(repo.keys()),
+            ["project_name", "project_description", "minimum_grade", "aid_dir", "kb_state",
+             "connectors", "external_sources"],
+        )
+        self.assertEqual(repo["connectors"], [])
+        self.assertEqual(repo["external_sources"], [])
 
     def test_read_meta_key_order(self):
         data = self._get_model()
@@ -1154,6 +1388,18 @@ class TestArgValidation(unittest.TestCase):
         self.assertEqual(args.host, "127.0.0.1")
         self.assertEqual(args.port, 8787)
 
+    # --allow-writes (feature-001 task-001): fail-safe write gate flag.
+    def test_allow_writes_absent_defaults_false(self):
+        """Bare invocation (no --allow-writes) parses as read-only (fail-safe default)."""
+        args = _server_module._parse_args(["--host", "127.0.0.1", "--port", "8787"])
+        self.assertFalse(args.allow_writes)
+
+    def test_allow_writes_flag_sets_true(self):
+        args = _server_module._parse_args(
+            ["--host", "127.0.0.1", "--port", "8787", "--allow-writes"]
+        )
+        self.assertTrue(args.allow_writes)
+
     def test_accepts_loopback_ipv6(self):
         args = _server_module._parse_args(["--host", "::1", "--port", "8787"])
         self.assertEqual(args.host, "::1")
@@ -1245,6 +1491,117 @@ class TestAidHomeResolution(unittest.TestCase):
         finally:
             import shutil as _shutil
             _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_subprocess_bare_invocation_is_read_only(self):
+        """A bare 'server.py --host 127.0.0.1 --port N' (no --allow-writes) is
+        read-only (feature-001 task-001 AC: fail-safe default)."""
+        base = Path(tempfile.mkdtemp())
+        try:
+            aid_home = base / "aid_home"
+            _make_aid_home(aid_home)
+
+            with socket.socket() as s:
+                s.bind(("127.0.0.1", 0))
+                port = s.getsockname()[1]
+
+            proc = subprocess.Popen(
+                [sys.executable, str(_SERVER_SCRIPT), "--host", "127.0.0.1", "--port", str(port)],
+                env={**os.environ, "AID_HOME": str(aid_home)},
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            try:
+                deadline = time.monotonic() + 5.0
+                ready = False
+                while time.monotonic() < deadline:
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                            ready = True
+                            break
+                    except OSError:
+                        time.sleep(0.05)
+                self.assertTrue(ready, "Server did not become ready within 5s")
+
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/api/home")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    data = json.loads(resp.read())
+                self.assertFalse(data["machine"]["write_enabled"])
+            finally:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_subprocess_allow_writes_flag_opens_gate(self):
+        """'server.py ... --allow-writes' flips write_enabled true in both envelopes."""
+        base = Path(tempfile.mkdtemp())
+        try:
+            aid_home = base / "aid_home"
+            _make_aid_home(aid_home)
+            repo_a = base / "repo-a"
+            _make_repo(repo_a)
+            _write_registry(aid_home, [str(repo_a)])
+            id_a = _repo_id8(str(repo_a))
+
+            with socket.socket() as s:
+                s.bind(("127.0.0.1", 0))
+                port = s.getsockname()[1]
+
+            proc = subprocess.Popen(
+                [
+                    sys.executable, str(_SERVER_SCRIPT),
+                    "--host", "127.0.0.1", "--port", str(port), "--allow-writes",
+                ],
+                env={**os.environ, "AID_HOME": str(aid_home)},
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+            try:
+                deadline = time.monotonic() + 5.0
+                ready = False
+                while time.monotonic() < deadline:
+                    try:
+                        with socket.create_connection(("127.0.0.1", port), timeout=0.1):
+                            ready = True
+                            break
+                    except OSError:
+                        time.sleep(0.05)
+                self.assertTrue(ready, "Server did not become ready within 5s")
+
+                req = urllib.request.Request(f"http://127.0.0.1:{port}/api/home")
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    home_data = json.loads(resp.read())
+                self.assertTrue(home_data["machine"]["write_enabled"])
+
+                req2 = urllib.request.Request(f"http://127.0.0.1:{port}/r/{id_a}/api/model")
+                with urllib.request.urlopen(req2, timeout=5) as resp2:
+                    model_data = json.loads(resp2.read())
+                self.assertTrue(model_data["write_enabled"])
+            finally:
+                proc.terminate()
+                try:
+                    proc.wait(timeout=3)
+                except subprocess.TimeoutExpired:
+                    proc.kill()
+                    proc.wait()
+        finally:
+            import shutil as _shutil
+            _shutil.rmtree(str(base), ignore_errors=True)
+
+    def test_help_mentions_allow_writes_flag(self):
+        """--help output must mention --allow-writes (the new fail-safe write gate)."""
+        import subprocess as _sp
+        result = _sp.run(
+            [sys.executable, str(_SERVER_SCRIPT), "--help"],
+            capture_output=True,
+            text=True,
+        )
+        self.assertIn("--allow-writes", result.stdout)
 
     def test_help_no_longer_mentions_aid_home_flag(self):
         """--help output must NOT mention --aid-home (the flag is removed)."""

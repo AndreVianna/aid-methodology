@@ -26,9 +26,11 @@
 #   T06  V-D6  Determinism: two successive recon-classify runs over the same
 #              fixture copy produce byte-identical output (diff clean).
 #   T07  V-D7  Shipped-defaults parity: the fixture paths/settings.yml triage.*
-#              values are byte-identical to the shipped canonical/aid/templates/settings.yml
-#              triage.* block -- so V-D1..V-D5 pin the SHIPPED defaults, not a
-#              drifted fixture copy.
+#              values match the shipped read_threshold("triage.*", default) fallback
+#              arguments hardcoded in canonical/aid/scripts/kb/recon-classify.sh
+#              (the flat-schema settings.yml template no longer seeds a triage:
+#              block) -- so V-D1..V-D5 pin the SHIPPED defaults, not a drifted
+#              fixture copy.
 #   ISO-CANARY  Real HOME gained no .aid dirs during the suite run.
 #
 # f006 SPIKE-T1 floor values pinned (the oracle contract):
@@ -48,10 +50,12 @@
 # verdict is caught: removing the LOC branch from the classifier would fail T03 negative
 # assertions but T04/T05 would still pass -- the isolation catches which branch broke.
 #
-# These floors are NOT held in this file -- they live in canonical/aid/templates/settings.yml
-# (f006, delivery-004). V-D7 keeps the fixture settings.yml honest against the shipped values.
-# If a shipped default mis-bins a fixture, the default is changed in f006's shipped file; this
-# suite re-asserts. This task only PINS via assertions; it never holds or edits the default.
+# These floors are NOT held in this file -- they live as the read_threshold(...) fallback
+# defaults in canonical/aid/scripts/kb/recon-classify.sh (f006, delivery-004; the flat-schema
+# settings.yml template no longer seeds a triage: block). V-D7 keeps the fixture settings.yml
+# honest against those shipped values. If a shipped default mis-bins a fixture, the default is
+# changed in recon-classify.sh; this suite re-asserts. This task only PINS via assertions; it
+# never holds or edits the default.
 #
 # Isolation discipline (load-bearing):
 #   - HOME is pinned to a throwaway dir before any script invocation.
@@ -102,8 +106,12 @@ FX_DIRS_ONLY="${FX_PATHS}/brownfield-dirs-only/generated"
 FX_CONCEPTS_ONLY="${FX_PATHS}/brownfield-concepts-only/generated"
 FX_SETTINGS="${FX_PATHS}/settings.yml"
 
-# Shipped settings for V-D7 parity check.
-SHIPPED_SETTINGS="${REPO}/canonical/aid/templates/settings.yml"
+# Shipped defaults for V-D7 parity check. The triage.* block used to live in the
+# canonical settings.yml template; the flat-schema redesign removed it from there
+# entirely (no seeded triage: section). The shipped defaults now live solely as the
+# read_threshold(...) fallback arguments hardcoded in recon-classify.sh itself --
+# that is the new source of truth V-D7 pins the fixture against.
+SHIPPED_RECON="${REPO}/canonical/aid/scripts/kb/recon-classify.sh"
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
 
@@ -168,8 +176,8 @@ if [[ ! -f "$FX_SETTINGS" ]]; then
   echo "FATAL: fixture paths/settings.yml not found at $FX_SETTINGS" >&2
   exit 2
 fi
-if [[ ! -f "$SHIPPED_SETTINGS" ]]; then
-  echo "FATAL: shipped canonical/aid/templates/settings.yml not found at $SHIPPED_SETTINGS" >&2
+if [[ ! -f "$SHIPPED_RECON" ]]; then
+  echo "FATAL: shipped canonical/aid/scripts/kb/recon-classify.sh not found at $SHIPPED_RECON" >&2
   exit 2
 fi
 
@@ -578,52 +586,82 @@ fi
 # ============================================================
 # T07 -- V-D7: Shipped-defaults parity.
 #
-# The fixture paths/settings.yml triage.* values must be byte-identical to the
-# shipped canonical/aid/templates/settings.yml triage.* block.
-# This assertion keeps the fixture honest against the shipped defaults, ensuring
+# The fixture paths/settings.yml triage.* values must match the shipped defaults
+# recon-classify.sh falls back to when settings.yml carries no override. This
+# assertion keeps the fixture honest against the shipped defaults, ensuring
 # V-D1..V-D5 pin the SHIPPED defaults (not a drifted fixture copy).
 #
-# Extraction: grep all lines from "^triage:" to the last "large_min_concepts:"
-# line (the full triage block) from both files and compare.
+# The triage: block used to be seeded in canonical/aid/templates/settings.yml; the
+# flat-schema redesign dropped it from the template entirely (no seeded
+# per-project override). The shipped defaults now live only as the
+# read_threshold("triage.<key>", "<default>") fallback arguments hardcoded in
+# recon-classify.sh -- that is what this test extracts and compares against.
+#
+# Extraction: fixture triage.* key:value pairs (comments/alignment stripped,
+# colon-space normalized) vs. the "<key>" / "<default>" argument pairs pulled
+# out of each read_threshold(...) call in recon-classify.sh.
 # ============================================================
-log "T07: V-D7 -- fixture paths/settings.yml triage.* is byte-identical to shipped settings.yml triage.*"
+log "T07: V-D7 -- fixture paths/settings.yml triage.* matches recon-classify.sh's shipped fallback defaults"
 
-# Extract the triage block from both files.
-# Approach: print from "^triage:" until the next top-level key (^[a-z]) or EOF.
-# We then strip trailing comments (the # ... parts differ only in whitespace, but
-# the actual key: value pairs must match). To be precise: extract the full triage
-# block lines verbatim and compare byte-for-byte.
 extract_triage_block() {
   local file="$1"
   # Compare the triage key:value pairs only -- NOT comments. Tests must not assert
-  # comment text, and the shipped file's inline/standalone comments are free to
-  # change; V-D7 pins the shipped DEFAULT VALUES, so strip comments before diffing.
+  # comment text, and the fixture's inline comments are free to change; V-D7 pins
+  # the shipped DEFAULT VALUES, so strip comments before diffing. Colon-space
+  # spacing is normalized (single space) so alignment whitespace never causes a
+  # false mismatch against the recon-classify.sh side (which has no alignment).
   LC_ALL=C awk '
-    /^triage:/ { in_triage=1; print; next }
-    in_triage && /^[[:space:]]/ {
-      line=$0; sub(/[[:space:]]*#.*$/, "", line); sub(/[[:space:]]+$/, "", line)
-      if (line !~ /^[[:space:]]*$/) print line
+    /^triage:/ { in_triage=1; next }
+    in_triage && /^[[:space:]]+[a-zA-Z0-9_]+:/ {
+      line=$0
+      sub(/[[:space:]]*#.*$/, "", line)
+      sub(/^[[:space:]]+/, "", line)
+      sub(/[[:space:]]+$/, "", line)
+      sub(/:[[:space:]]+/, ": ", line)
+      print line
       next
     }
     in_triage { in_triage=0 }
   ' "$file"
 }
 
+extract_shipped_defaults() {
+  local file="$1"
+  # Pull the key ("triage.<key>") and its "<default>" fallback argument out of
+  # each read_threshold("triage.<key>", "<default>") call, e.g.:
+  #   GF_MAX_FILES=$(read_threshold "triage.greenfield_max_source_files" "5")
+  # -> "greenfield_max_source_files: 5"
+  LC_ALL=C awk '
+    /read_threshold[[:space:]]*"triage\.[a-zA-Z0-9_]+"/ {
+      line=$0
+      match(line, /"triage\.[a-zA-Z0-9_]+"/)
+      key = substr(line, RSTART, RLENGTH)
+      gsub(/"/, "", key)
+      sub(/^triage\./, "", key)
+      rest = substr(line, RSTART + RLENGTH)
+      match(rest, /"[^"]*"/)
+      val = substr(rest, RSTART, RLENGTH)
+      gsub(/"/, "", val)
+      print key ": " val
+    }
+  ' "$file"
+}
+
 TRIAGE_FIXTURE="$(extract_triage_block "$FX_SETTINGS")"
-TRIAGE_SHIPPED="$(extract_triage_block "$SHIPPED_SETTINGS")"
+TRIAGE_SHIPPED="$(extract_shipped_defaults "$SHIPPED_RECON")"
 
 if [[ -z "$TRIAGE_FIXTURE" ]]; then
   fail "T07 V-D7 -- no triage block found in fixture paths/settings.yml (extraction failed)"
 elif [[ -z "$TRIAGE_SHIPPED" ]]; then
-  fail "T07 V-D7 -- no triage block found in shipped canonical/aid/templates/settings.yml (extraction failed)"
+  fail "T07 V-D7 -- no read_threshold(\"triage.*\", ...) defaults found in shipped recon-classify.sh (extraction failed)"
 elif [[ "$TRIAGE_FIXTURE" == "$TRIAGE_SHIPPED" ]]; then
-  pass "T07 V-D7 -- fixture triage.* is byte-identical to shipped triage.* (V-D1..V-D5 pin shipped defaults; no drift)"
+  pass "T07 V-D7 -- fixture triage.* matches recon-classify.sh's shipped fallback defaults (V-D1..V-D5 pin shipped defaults; no drift)"
 else
-  fail "T07 V-D7 -- fixture triage.* differs from shipped triage.* (fixture has drifted from shipped defaults -- update fixture or shipped file)"
+  fail "T07 V-D7 -- fixture triage.* differs from recon-classify.sh's shipped fallback defaults (fixture has drifted -- update fixture or shipped script)"
   if [[ "$VERBOSE" -eq 1 ]]; then
     echo "--- fixture triage block ---"
     echo "$TRIAGE_FIXTURE"
-    echo "--- shipped triage block ---"
+    echo "--- shipped recon-classify.sh defaults ---"
     echo "$TRIAGE_SHIPPED"
     echo "---"
   fi

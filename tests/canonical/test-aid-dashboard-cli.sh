@@ -29,6 +29,13 @@
 #   T-14  --remote SUCCESS integration: record.remote=true + teardown-on-stop
 #   T-15  Non-project dir regression: start from bare $HOME succeeds (exit 0),
 #         prints URL, writes pid to $HOME/.aid/.temp/; and does NOT register cwd.
+#   T-16  Code/state home split regression: GET / resolves index.html from the
+#         code home, not the state home.
+#   T-17  --allow-writes CLI flag: accepted for start, rejected for stop
+#         (parity with --remote; feature-001 task-001).
+#   T-18  write_enabled policy propagation to GET /api/home: loopback=true,
+#         --remote alone=false, --remote --allow-writes=true, --allow-writes on
+#         loopback=true/no-error (feature-001 task-001).
 #
 # Usage:
 #   bash test-aid-dashboard-cli.sh [--verbose]
@@ -1048,6 +1055,134 @@ else
     HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
         bash "${H16}/bin/aid" dashboard stop >/dev/null 2>&1
 fi
+
+# ---------------------------------------------------------------------------
+# T-17: --allow-writes CLI flag -- accepted for start, rejected for stop
+# (parity with --remote's stop-rejection; feature-001 task-001).
+# ---------------------------------------------------------------------------
+echo "--- T-17: --allow-writes CLI flag ---"
+H17="$(new_aid_home)"
+PORT17="$(pick_free_port)"
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+
+# T-17a: start --allow-writes accepted.
+run_dc "$H17" dashboard start python --port "$PORT17" --allow-writes
+assert_exit_eq "$RC_DC" 0 "T-17a: start --allow-writes exit 0"
+assert_output_contains "$OUT_DC" "Dashboard (python) running at http://127.0.0.1:${PORT17}" \
+    "T-17a: URL printed with --allow-writes"
+
+_T17_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+[[ -n "$_T17_PID" ]] && SPAWNED_PIDS+=("$_T17_PID")
+
+run_dc "$H17" dashboard stop
+assert_exit_eq "$RC_DC" 0 "T-17a: stop after --allow-writes start exit 0"
+
+# T-17b: stop --allow-writes rejected (parity with --remote's stop-rejection).
+run_dc "$H17" dashboard stop --allow-writes
+assert_exit_eq "$RC_DC" 2 "T-17b: stop --allow-writes exit 2"
+assert_output_contains "$OUT_DC" "unknown flag: --allow-writes" \
+    "T-17b: stop --allow-writes rejected message"
+
+# ---------------------------------------------------------------------------
+# T-18: write_enabled policy propagation to GET /api/home (feature-001 task-001).
+#   loopback              -> write_enabled=true
+#   --remote alone        -> write_enabled=false
+#   --remote --allow-writes -> write_enabled=true
+#   --allow-writes on loopback -> accepted, redundant, write_enabled=true
+# Reuses http_get_body/wait_port_ready (defined above, T-16) and the tailscale
+# stub helper (defined above, T-14).
+# ---------------------------------------------------------------------------
+echo "--- T-18: write_enabled policy (loopback / --remote / --remote --allow-writes) ---"
+
+_read_write_enabled() {
+    # $1 = JSON body of GET /api/home; prints "True"/"False"/"" via python3 stdlib.
+    printf '%s' "$1" | python3 -c \
+        'import json,sys
+try:
+    d = json.load(sys.stdin)
+    print(d.get("machine", {}).get("write_enabled"))
+except Exception:
+    print("")' 2>/dev/null
+}
+
+# T-18a: loopback, no flags -> write_enabled=true.
+H18a="$(new_aid_home)"
+PORT18a="$(pick_free_port)"
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+run_dc "$H18a" dashboard start python --port "$PORT18a"
+assert_exit_eq "$RC_DC" 0 "T-18a: loopback start exit 0"
+_T18A_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+[[ -n "$_T18A_PID" ]] && SPAWNED_PIDS+=("$_T18A_PID")
+if wait_port_ready "$PORT18a"; then
+    _T18A_BODY="$(http_get_body "http://127.0.0.1:${PORT18a}/api/home")"
+    assert_eq "$(_read_write_enabled "$_T18A_BODY")" "True" \
+        "T-18a: loopback write_enabled=true"
+else
+    fail "T-18a: server did not become ready on port ${PORT18a}"
+fi
+run_dc "$H18a" dashboard stop
+
+# T-18b: --remote alone (logged-in stub, no --allow-writes) -> write_enabled=false.
+H18b="$(new_aid_home)"
+PORT18b="$(pick_free_port)"
+STUB18B="$(mktemp -d "${TMP}/stub18b.XXXXXX")"
+make_tailscale_stub "$STUB18B" "logged-in" "srv18b.tail00000.ts.net"
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+HOME="${PINNED_HOME}" PATH="${STUB18B}:${PATH}" AID_HOME="$H18b" AID_NO_UPDATE_CHECK=1 \
+    bash "${H18b}/bin/aid" dashboard start python --port "$PORT18b" --remote >/dev/null 2>&1
+RC_DC=$?
+assert_exit_eq "$RC_DC" 0 "T-18b: --remote start exit 0"
+_T18B_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+[[ -n "$_T18B_PID" ]] && SPAWNED_PIDS+=("$_T18B_PID")
+if wait_port_ready "$PORT18b"; then
+    _T18B_BODY="$(http_get_body "http://127.0.0.1:${PORT18b}/api/home")"
+    assert_eq "$(_read_write_enabled "$_T18B_BODY")" "False" \
+        "T-18b: --remote alone write_enabled=false"
+else
+    fail "T-18b: server did not become ready on port ${PORT18b}"
+fi
+HOME="${PINNED_HOME}" PATH="${STUB18B}:${PATH}" AID_HOME="$H18b" AID_NO_UPDATE_CHECK=1 \
+    bash "${H18b}/bin/aid" dashboard stop >/dev/null 2>&1
+
+# T-18c: --remote --allow-writes -> write_enabled=true.
+H18c="$(new_aid_home)"
+PORT18c="$(pick_free_port)"
+STUB18C="$(mktemp -d "${TMP}/stub18c.XXXXXX")"
+make_tailscale_stub "$STUB18C" "logged-in" "srv18c.tail00000.ts.net"
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+HOME="${PINNED_HOME}" PATH="${STUB18C}:${PATH}" AID_HOME="$H18c" AID_NO_UPDATE_CHECK=1 \
+    bash "${H18c}/bin/aid" dashboard start python --port "$PORT18c" --remote --allow-writes \
+    >/dev/null 2>&1
+RC_DC=$?
+assert_exit_eq "$RC_DC" 0 "T-18c: --remote --allow-writes start exit 0"
+_T18C_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+[[ -n "$_T18C_PID" ]] && SPAWNED_PIDS+=("$_T18C_PID")
+if wait_port_ready "$PORT18c"; then
+    _T18C_BODY="$(http_get_body "http://127.0.0.1:${PORT18c}/api/home")"
+    assert_eq "$(_read_write_enabled "$_T18C_BODY")" "True" \
+        "T-18c: --remote --allow-writes write_enabled=true"
+else
+    fail "T-18c: server did not become ready on port ${PORT18c}"
+fi
+HOME="${PINNED_HOME}" PATH="${STUB18C}:${PATH}" AID_HOME="$H18c" AID_NO_UPDATE_CHECK=1 \
+    bash "${H18c}/bin/aid" dashboard stop >/dev/null 2>&1
+
+# T-18d: --allow-writes on loopback -- accepted, redundant, no error, write_enabled=true.
+H18d="$(new_aid_home)"
+PORT18d="$(pick_free_port)"
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+run_dc "$H18d" dashboard start python --port "$PORT18d" --allow-writes
+assert_exit_eq "$RC_DC" 0 "T-18d: --allow-writes on loopback exit 0 (redundant, no error)"
+_T18D_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
+[[ -n "$_T18D_PID" ]] && SPAWNED_PIDS+=("$_T18D_PID")
+if wait_port_ready "$PORT18d"; then
+    _T18D_BODY="$(http_get_body "http://127.0.0.1:${PORT18d}/api/home")"
+    assert_eq "$(_read_write_enabled "$_T18D_BODY")" "True" \
+        "T-18d: --allow-writes on loopback write_enabled=true"
+else
+    fail "T-18d: server did not become ready on port ${PORT18d}"
+fi
+run_dc "$H18d" dashboard stop
 
 # ---------------------------------------------------------------------------
 # Summary

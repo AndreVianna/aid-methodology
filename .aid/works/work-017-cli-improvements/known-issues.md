@@ -1,0 +1,148 @@
+# Known Issues
+
+<!-- Scoped to this work. Only issues that affect features in this work. -->
+<!-- Created/updated by aid-specify during codebase exploration. -->
+<!-- Consumed by aid-plan for deliverable sequencing. -->
+
+## KI-001: settings.yml is parsed by four divergent ad-hoc readers with no shared schema
+
+- **Type:** Bug
+- **Severity:** Medium
+- **Affects:** feature-001-write-infrastructure, feature-002-project-header-edit, feature-005-display-rename, feature-006-task-notes (the settings.set output-charset guard — reject `"`/`\`/newline — was extended to the rename/notes validators during the delivery-001 gate)
+- **Source:** `dashboard/server/server.py:347` (`_read_settings`), `dashboard/server/server.mjs:380` (`readSettings`), `dashboard/reader/parsers.py` / `dashboard/server/reader.mjs:594` (`parseProjectName`), `.claude/aid/scripts/config/read-setting.sh:139` (`lookup`)
+- **Description:** `project.name` / `project.description` are read by at least four
+  independent, hand-rolled parsers, each with slightly different quote-handling
+  (`_read_settings` does a bare `.strip('"').strip("'")`; `read-setting.sh` strips a
+  single surrounding quote pair; none reverse single-quote doubling). This feature adds a
+  *writer* (`write-setting.sh`) for exactly these keys, and AC2 (truthful re-render)
+  requires the written value to round-trip back through the display readers unchanged. Any
+  divergence in quoting/escaping between the writer and any one reader shows a wrong value
+  on the dashboard after a successful write. The feature contains the blast radius by
+  constraining the writer's output alphabet to what every reader strips identically (bare
+  or double-quoted scalar; reject embedded `"`/`\`/newline), but the underlying divergent-parser
+  hazard remains and should be unified (single settings accessor) as follow-up.
+- **See also:** not yet catalogued in `tech-debt.md`.
+
+## KI-002: `aid update self` mutates the running dashboard server's own code (no hot reload)
+
+- **Type:** Limitation
+- **Severity:** Medium
+- **Affects:** feature-004-update-tools
+- **Source:** `bin/aid:1196` (`assets_dir="$AID_CODE_HOME/dashboard"` — server launch tree),
+  `bin/aid:2856` (`_cmd_update_self`); restart-advisory copy `dashboard/index.html:516–521`
+- **Description:** The `tools.update-self` op runs `aid update self`, which reinstalls the
+  channel package at `$AID_CODE_HOME` — the very tree the running dashboard server
+  (`server.py` / `reader.mjs`) was launched from. The process keeps executing the
+  already-loaded pre-update code until `aid dashboard stop && aid dashboard start`; there is
+  no in-process hot reload (out of scope). Mitigations shipped with the feature: the success
+  toast advises restarting `aid dashboard` (reusing the existing "Assets out of date …" copy),
+  and the op is idempotent + best-effort (a failed self-update leaves the old CLI intact).
+  Affects sequencing: the "Update CLI" control must not ship without the restart-advisory UI
+  notice.
+- **See also:** SPEC.md §Security Specs ("Known hazard"), AC1b; not yet catalogued in `tech-debt.md`.
+
+## KI-003: Node runtime blocks its single event loop for the whole `aid update` duration
+
+- **Type:** Limitation
+- **Severity:** Medium
+- **Affects:** feature-004-update-tools
+- **Source:** `dashboard/server/server.mjs:880` (`createServer`, single event loop) vs.
+  `dashboard/server/server.py:1150` (`ThreadingHTTPServer`); feature-001 synchronous dispatch
+  (`execFileSync` / `spawnSync`)
+- **Description:** feature-001's child dispatch is synchronous. On the Python runtime each
+  request runs on its own thread, so a long `aid update` does not stall polling; on the Node
+  runtime the synchronous child **blocks the whole server** for the update's duration
+  (potentially minutes) — all requests and polling freeze. Judged an acceptable UX freeze for a
+  single-user, infrequent, explicitly-triggered op (see SPEC §High-stakes assumptions A1),
+  mitigated by the UI busy-state + button disable and the 600 s ceiling only; no async job
+  machinery is introduced (would over-engineer it).
+- **See also:** SPEC.md §Security Specs ("Known limitation"), §High-stakes assumptions A1; not
+  yet catalogued in `tech-debt.md`.
+
+## KI-004: `aid`-CLI invocation + repo-card action row must be shared, not re-invented, across features 003/004
+
+- **Type:** Coordination (cross-feature dependency)
+- **Severity:** Medium
+- **Affects:** feature-004-update-tools, feature-003-project-registry, feature-001-write-infrastructure
+- **Source:** SPEC.md §Layers & Components + §Migration (shared CLI helper); §UI Specs
+  ("Cross-feature UI coordination"); feature-003 SPEC §Layers (`aid` self-location) + its
+  status_map integration requirement on feature-001
+- **Description:** Both feature-004 (`tools.update`, `tools.update-self`) and feature-003
+  (`project.add`, `project.remove`) shell out to the `aid` CLI via a deterministic resolver +
+  argv-array dispatch, and both add a per-repo-card action row to `index.html`. Three things
+  MUST be single-sourced rather than independently invented: (1) the `aid`-resolver + child
+  dispatch helper (server), (2) the `card-actions` sibling-row scaffold that carries "Update
+  Tools" and "Remove Project" (UI), and (3) an optional per-op `status_map` override on
+  feature-001's OP_TABLE row schema (needed because the `aid` CLI uses a different exit alphabet
+  than `writeback-state.sh` — feature-003 already flagged this against feature-001, which is
+  graded). Affects sequencing: whichever of 003/004 lands first must introduce the shared helper
+  + scaffold, and feature-001's OP_TABLE schema must carry the `status_map` hook.
+- **See also:** feature-003 SPEC.md §Layers / status_map note; not yet catalogued in `tech-debt.md`.
+
+## KI-005: dashboard becomes a second writer of `external-sources.md` frontmatter, contradicting Scout's documented single-writer invariant (silent-data-loss path)
+
+- **Type:** Coordination (cross-subsystem ownership conflict)
+- **Severity:** High
+- **Affects:** feature-010-external-sources-list, `aid-discover` ELICIT/GENERATE (Scout)
+- **Source:** `canonical/skills/aid-discover/references/state-elicit.md:119` ("Scout remains its
+  single writer"), same file line 115 (on an ELICIT E1 path-set change, "Scout fully rewrites the
+  doc (including frontmatter) on its next pass regardless"); feature-010 SPEC.md §Migration / New
+  Plumbing ("KB follow-up (REAL …)"); STATE.md Cross-phase Q&A Q6
+- **Description:** feature-010's OQ-P4 resolution makes the dashboard a **second writer** of
+  `.aid/knowledge/external-sources.md`'s frontmatter `sources:` list (via the new
+  `write-external-source.sh`), but `aid-discover`'s `state-elicit.md` documents Scout as that file's
+  **single** writer and says an ELICIT E1 reset wholesale-rewrites the frontmatter on the next pass.
+  This is a genuine silent-data-loss path: a dashboard-added `sources:` entry survives the immediate
+  dashboard round-trip (satisfying feature-010's AC1/AC2 *within* that round-trip) but can be
+  overwritten and dropped by a later discovery GENERATE pass that has no knowledge of it — so AC1's
+  persistence guarantee does not extend across a subsequent Scout run. Not resolvable by writer
+  plumbing alone; needs a human decision on the ownership model, e.g. (a) make Scout's rewrite
+  merge/preserve dashboard-managed `sources:` entries, (b) mark dashboard-added entries so Scout
+  retains them, or (c) accept the loss and re-document `external-sources.md` as discovery-owned with
+  dashboard edits declared explicitly transient (softening feature-010's AC1 wording). The "single
+  writer" language in `state-elicit.md` must be reconciled with feature-010's shared-ownership
+  reality. **RESOLVED (2026-07-17, STATE.md Q6):** external-sources.md is discovery-owned — Scout is
+  the AUTHORITATIVE writer (may overwrite/update, incl. wholesale rewrite, on any run); the dashboard
+  is a SUBORDINATE maintainer doing ATOMIC single-entry edits (never a whole-file rewrite), whose
+  entries Scout may drop on its next run (accepted). No `/aid-discover` behavior change; feature-010
+  is UNBLOCKED for EXECUTE. Residual follow-up (post-ship KB-DELTA, not blocking): reconcile
+  `state-elicit.md`'s "single writer" wording to "authoritative writer; dashboard makes subordinate
+  atomic edits."
+- **See also:** STATE.md Cross-phase Q&A Q6; feature-010 SPEC.md §Migration / New Plumbing; not yet
+  catalogued in `tech-debt.md`.
+
+## KI-006: per-project "Update Tools" (tools.update) silently reaches `aid`'s self-update-if-stale preamble (code-mutating, no TTY gate)
+
+- **Type:** Bug / hazard (undocumented code-mutating side effect)
+- **Severity:** Medium
+- **Affects:** feature-004-update-tools (per-project `tools.update` op)
+- **Source:** `bin/aid:3094-3099` (self-update-if-stale preamble runs for every non-`self` `aid update`), `bin/aid:475`/`:490-517` (`_cmd_update_self` mutates the installed CLI), `:2839-2917`; feature-004 SPEC.md §Security Specs "Known hazard"
+- **Description:** The per-project "Update Tools" control dispatches `aid update` (all installed tools). Before updating tools, `bin/aid`'s self-update-if-stale preamble runs unconditionally for every non-`self` `aid update` invocation and can silently self-update the installed CLI with no TTY gate — the same code-mutating hazard KI-002 documents for the explicit `aid update self` control, but reachable from the per-project button without the restart-advisory that the self-update control carries. feature-004's SPEC now documents this (Security Specs / Feature Flow / Data Model / UI Specs / AC1) with a conditional restart-advisory mitigation; registered here for plan/execute tracking. Related to KI-002 (same underlying self-mutation) and KI-003 (Node event-loop block during `aid update`).
+- **See also:** KI-002, KI-003; feature-004 SPEC.md §Security Specs; feature-001 write-gate (server stays LLM-free, argv-array child dispatch).
+
+## KI-007: reader `_reconcile_same_work` per-task union-merge can source a reconciled task field from a different work copy than the write targeted (duplicate work_id across worktrees)
+
+- **Type:** Latent correctness (pre-existing reconcile behavior; only manifests under duplicate work_id across worktrees)
+- **Severity:** Low
+- **Affects:** feature-008-execution-control (stop/resume signal read-back); latent for feature-001 `task.set-notes` and any per-task write today
+- **Source:** `dashboard/reader/reader.py:131` `_reconcile_same_work` (per-task union-merge, most-advanced SD2 rank per task_id) vs. the work-level "Pipeline State winner" that feature-001's `resolve_work_dir` mirrors for writes; feature-008 SPEC.md:157-164 (KI-008-D residual)
+- **Description:** Writes resolve to the work-level newest-`updated` winner (via `resolve_work_dir`), but the reader reconciles TASK rows by a per-task most-advanced union across all worktree copies — independent of the work-level winner. In the pathological case of the SAME `work_id` existing across multiple worktrees, a reconciled task field (e.g. a freshly-written `stop_requested`/`notes`) could be rendered from a different copy than the one just written, a same-render AC2 drift. Root cause is feature-001's pre-existing reconcile mechanism (applies to `task.set-notes` today), NOT introduced by feature-008. Confirmed NOT present in work-017's live topology (no duplicate work_id across worktrees today); flagged OOS by the feature-008 review. Track for plan/execute; a fix belongs in feature-001's reconcile/resolve alignment, not feature-008.
+- **See also:** feature-008 SPEC.md (KI-008-D); feature-001 SPEC.md `resolve_work_dir` / WT-1; KI-001 (reader divergence class).
+
+## KI-008: on Windows, a project registered via `bash bin/aid projects add` (MSYS `/c/...` path) renders without metadata in the dashboard (native-runtime reader cannot resolve the MSYS path)
+
+- **Type:** Bug (pre-existing cross-runtime path-form mismatch; Windows-only)
+- **Severity:** Medium (Windows-only; the registry write itself succeeds — only the rendered card is degraded)
+- **Affects:** feature-003-project-registry (dashboard "Add project" makes this one-click reachable); latent for any CLI-driven `aid projects add` + dashboard view since before work-017
+- **Source:** `bin/aid` `_cmd_projects_add` (normalizes an input `C:/…` to the MSYS `/c/…` form and stores THAT verbatim in `registry.yml`) vs. `dashboard/reader/*.py` / `dashboard/server/reader.mjs` `loadRegistry`/`load_registry` (CAN-1/DD-5: paths stored+consumed verbatim, no realpath/normalization) and the home-model builder's subsequent native-filesystem reads of `<path>/.aid/…`, which run under native Windows Python/Node and cannot resolve a `/c/…` MSYS path.
+- **Description:** The dashboard's Add/Remove/Update ops spawn `bash <bin/aid>` (KI-004 shared resolver, both twins). On Windows, `bash bin/aid projects add "C:/Projects/foo"` canonicalizes and stores `- /c/Projects/foo` in `registry.yml`. The dashboard reader then returns that path verbatim and the home builder reads `/c/Projects/foo/.aid/settings.yml` — but native-Windows Python/Node interpret `/c/…` as a drive-relative path, not `C:\…`, so the read fails and the card renders with `name/description/aid_version = None` (empty union-member `available:false`-style card). Verified by browser dogfood on 2026-07-18: a `C:/…` registry entry rendered fully ("AID", v2.2.0, pipelines); the equivalent CLI-written `/c/…` entry rendered `name:None`. The Add OP ITSELF is correct (registry persists — AC1 met) and the control wiring is correct (dogfood confirmed the form opens, the op dispatches, and stderr surfaces); only the post-add DISPLAY is degraded, and only on Windows (POSIX hosts have no `C:\` vs `/c/` divergence). Invisible to the test suite (CI runs on Linux with native `/` paths). NOT introduced by delivery-002 — the read-only dashboard had the same limitation for CLI-added projects before work-017; feature-003 made it reachable in one click. **RESOLVED in delivery-002 (2026-07-18):** a `_native_fs_path()` / `nativeFsPath()` normalizer was added to BOTH reader twins (`server.py`, `server.mjs`) that maps an MSYS `/<drive>/rest` path to the native `<drive>:/rest` form, applied ONLY at the reader's filesystem boundary (the three read sites: `build_home_model`/`buildHomeModel` loop, the static-leaf/kb.html route, the `api/model` route). The id-hash, the displayed/echoed `path`, and the bash-backed write ops (which already accept `/c/…`) stay verbatim — so the CAN-1/DD-5 "no realpathSync / verbatim stored path" invariant holds (the transform is syntactic: no disk access, no symlink/realpath resolution). NO-OP off Windows (on POSIX `/c/foo` is a real path) and on an already-native `C:/…` input; an injectable `is_windows`/`isWin` seam lets the Linux CI suite exercise the Windows branch. Guarded by `TestNativeFsPathUnit` (Python) + `TestNativeFsPathParity` (byte-identical Python↔Node, both branches). Re-dogfooded on both twins at runtime: the same `/c/…` registry that rendered `name:None` now resolves `name:'AID'`, `aid_version:'2.2.0'`, with `path`/`id` still the verbatim `/c/…` form.
+- **See also:** KI-004 (shared `aid`-CLI resolver via `bash`); KI-001 (reader divergence class); feature-003 SPEC.md §Data Model (CAN-1/DD-5 verbatim paths).
+
+## KI-009: dashboard write ops fail on a native-Windows (PowerShell) launch — the server dispatches `bash bin/aid` and the bare-PATH bash resolver returns the WSL `System32\bash.exe` stub
+
+- **Type:** Bug (Windows-only; blocks all dashboard write ops from a non-Git-Bash launch)
+- **Severity:** High
+- **Affects:** feature-003-project-registry, feature-004-update-tools (aid-CLI ops), and feature-001/002/005/006/007/010 writer-backed ops (all dashboard writes)
+- **Source:** `dashboard/server/server.py` `_resolve_bash_exe` (L1037) / `dashboard/server/server.mjs` `resolveBashExe`, `runAidCli` (`bash <_CODE_HOME>/bin/aid …`, KI-004), and `runWriter` (`bash <writer>.sh`); `bin/aid.ps1` is the native Windows CLI twin (implements `projects add/remove`, `update`, `update self`).
+- **Description:** `aid dashboard start` runs in the USER's shell — on Windows that is typically PowerShell/cmd, NOT Git Bash. The server dispatches the aid CLI as `bash <bin/aid>` and its co-vendored writers as `bash <writer>.sh`. `_resolve_bash_exe`/`resolveBashExe` only walk `PATH` for `bash.exe`; from a PowerShell launch, Git's real `bash.exe` (`C:\Program Files\Git\bin` / `\usr\bin`) is NOT on PATH (only `Git\cmd`, which has `git.exe`), so the walk returns the Windows-shipped **WSL launcher stub** `C:\WINDOWS\system32\bash.exe`, which cannot open a `C:/…` host path → `"/bin/bash: <…>/bin/aid: No such file or directory"` and EVERY dashboard write op fails. Reproduced 2026-07-18: server PID launched `python dashboard\server\server.py … --allow-writes` from PowerShell; the earlier dogfood only passed because it was launched from Git Bash (where Git's bash IS on PATH). Requiring a Git-Bash launch is NOT acceptable — the dashboard must work from the user's native shell. **Fix decided by the user (2026-07-18): run the CLI the way the user's platform natively runs it.** (a) aid-CLI ops (`projects add/remove`, `update`, `update self`) — dispatch the **native launcher per OS**: on Windows run the bundled `bin/aid.ps1` via a resolved PowerShell exe (`pwsh`, else the real `powershell.exe`), argv-array safe; on Unix keep `bash bin/aid`. Verify `aid.ps1`'s exit-code alphabet matches `bin/aid` so the OP_TABLE `status_map` maps identically. (b) writer-backed ops (bash-only `.sh` scripts, no `.ps1` twins by design) — harden the bash resolver to **auto-discover an installed Git Bash regardless of launch shell**: probe Git's install dirs + derive from `git.exe`, SKIP the `System32` WSL stub, honor an `AID_BASH_EXE` override. Both server twins; twin-parity + CI-exercisable tests. Making the writers *fully* bash-free (PowerShell twins of every writer) is a larger separate effort, deferred. **RESOLVED (2026-07-18):** implemented in both twins. (a) `_run_aid_cli`/`runAidCli` now branch SOLELY on the SERVER PROCESS's own OS (`os.name`/`process.platform` — never a client/request signal, so `--remote` stays correct): Windows dispatches `<pwsh|powershell.exe> -NoProfile -NonInteractive -File <bin/aid.ps1> <argv...>` (argv ARRAY; headless-safe); Unix is byte-for-byte unchanged (`bash <bin/aid> <argv...>`). `_resolve_pwsh_exe`/`resolvePwshExe` added (prefers `pwsh`, falls back to the real `powershell.exe`; System32 is NOT skipped — no WSL-stub hazard exists for PowerShell). Exit-alphabet parity verified EMPIRICALLY against the real `bin/aid.ps1` (never a stub): `projects add`/`remove` exit 2 on validation failure (matches `bin/aid`, both map through `_PROJECT_OP_STATUS_MAP`'s 422); `update`/`update self` collapse any non-zero to the shared `update-failed` class either way — no `aid.ps1` edit was needed, parity already held (also covered by the pre-existing `tests/canonical/test-aid-cli-parity.sh` PAR002-X/PAR018-Y cases). (b) `_resolve_bash_exe`/`resolveBashExe` hardened: honors `AID_BASH_EXE` override; walks PATH skipping the System32 WSL-stub dir; falls back to probing Git's own install locations (`<ProgramFiles>/Git/{bin,usr/bin}`, the `(x86)` equivalent, and a location derived from `git.exe`'s own PATH entry); falls back to bare `"bash"`. Both twins use injectable seams (`is_windows`/`isWin`, `env`, `exists_fn`/`existsFn`) mirroring KI-008's `is_windows` convention, so the Linux CI runner exercises every Windows-only branch; `ntpath`/`path.win32` (not the host-dependent `os.path`/bare `path`) model the Windows semantics so the seam is host-independent. New suite `test_ki009_windows_dispatch.py` (27 cases, incl. a REAL end-to-end dispatch through `bin/aid.ps1` + Python↔Node byte-parity for both resolvers); 3 existing fake-CLI test classes across `test_task013`/`test_task015`/`test_task017` (Python + the Node slice) updated to force the Unix/bash branch explicitly (`_patch_run_aid_cli_force_unix` / a slice-time `isWin` override) since their fixtures are bash-shebang scripts — `TestToolsUpdateTimeoutParity`/`TestToolsUpdateLargeOutputParity` still pass unmodified in behavior. `--allow-writes`/`write_enabled` gate untouched (dispatch-mechanism-only change, strictly downstream of it).
+- **See also:** KI-004 (the `bash bin/aid` dispatch decision this revisits); KI-008 (Windows `/c/…` reader path fix, same dogfood session); `bin/aid.ps1`; `reference_local-shell-rg-and-fork` (Windows-class shell behavior).

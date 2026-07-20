@@ -625,8 +625,11 @@ After every `aid add` or `aid update`, AID records what it installed at
 ### Manifest location
 
 `.aid/.aid-manifest.json` — one JSON file per repo, shared across all tools installed
-into that repo. A human-readable convenience file is also written: `.aid/.aid-version`
-(one line: the installed version string).
+into that repo. The installed AID release version is recorded in the manifest's
+top-level `aid_version` key — there is no separate marker file (the standalone
+`.aid/.aid-version` file is retired). A bare, tool-less project (no manifest — a future
+`aid projects add` on a folder with no tool installed) instead records the version as a
+top-level `aid_version:` line in `.aid/settings.yml`.
 
 ### Manifest structure (abbreviated)
 

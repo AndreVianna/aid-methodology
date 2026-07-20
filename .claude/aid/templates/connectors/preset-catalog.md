@@ -16,9 +16,12 @@
 > `connection_type` is `mcp` is **tool-managed**: the host tool provides its own MCP server/plugin
 > for the target, so `auth_method` is always `none` and `secret_reference-form` is always `—` —
 > AID registers no credential for it, and `endpoint-template` is **informational only** (never a
-> launch/wire command). A preset row whose `connection_type` is `api \| ssh \| url \| cli` is
-> **aid-managed**: `auth_method` and `secret_reference-form` are the credential AID records
-> locally, and `endpoint-template` is the concrete connect target.
+> launch/wire command). A preset row whose `connection_type` is `api \| ssh \| cli` is
+> **aid-managed**: `endpoint-template` is the concrete connect target. Within aid-managed, `api`
+> is the **only** type that carries a credential (`auth_method` and `secret_reference-form` are
+> populated); `ssh` and `cli` self-authenticate externally (ssh keys/ssh-agent; the CLI's own
+> login/config), so their `auth_method` is always `none` and `secret_reference-form` is always
+> `—`, same as `mcp`.
 >
 > This is a `canonical/` artifact: it ships and installs byte-identically into every profile's
 > `.claude/aid/templates/connectors/` (or equivalent per-tool) install tree, alongside
@@ -32,10 +35,10 @@
 |--------|---------|
 | `preset-id` | Stable id written into the descriptor's `preset` field (e.g. `github`) |
 | `name` | Default human name |
-| `connection_type` | Default transport — closed enum `mcp \| api \| ssh \| url \| cli` (feature-001 Data Model) |
-| `endpoint-template` | Endpoint skeleton; instance specifics (host, org, domain) are completed at elicitation. For a **tool-managed** (`mcp`) preset this is **informational only** (e.g. "via the host tool's own GitHub MCP server") — never a launch/wire command (AID does not launch or wire it — Q10); for an **aid-managed** preset it is the concrete connect target |
-| `auth_method` | Default auth axis — closed enum `none \| token \| pat \| oauth \| ssh-key` (feature-001 Data Model); orthogonal to `connection_type`. **Always `none` for a tool-managed (`mcp`) preset** — the host tool authenticates the target, so AID registers no credential (Q10) |
-| `secret_reference-form` | Default reference FORM only — `env:<VAR>` or `file:` — never a value, for **aid-managed** presets only. **Always `—` for a tool-managed (`mcp`) preset** — AID stores no credential for it (Q10) |
+| `connection_type` | Default transport — closed enum `mcp \| api \| ssh \| cli` (feature-001 Data Model) |
+| `endpoint-template` | Endpoint skeleton; instance specifics (host, org, domain) are completed at elicitation. For a **tool-managed** (`mcp`) preset this is **informational only** (e.g. "via the host tool's own GitHub MCP server") — never a launch/wire command (AID does not launch or wire it — Q10); for an **aid-managed** preset (`api`/`ssh`/`cli`) it is the concrete connect target |
+| `auth_method` | Default auth axis — closed enum `none \| token \| pat \| oauth` (feature-001 Data Model); orthogonal to `connection_type`. **Always `none` for a tool-managed (`mcp`) preset** — the host tool authenticates the target, so AID registers no credential (Q10). Also always `none` for `ssh`/`cli` presets — both self-authenticate externally (ssh keys/ssh-agent; the CLI's own login/config), so **`api` is the only type that ever carries a non-`none` value** |
+| `secret_reference-form` | Default reference FORM only — `env:<VAR>` or `file:` — never a value, populated **only for `api` presets with a non-`none` `auth_method`**. **Always `—` for `mcp`, `ssh`, and `cli` presets** — none of them carries an AID-recorded credential (Q10) |
 | `notes` | One-line human guidance; seeds the descriptor's `objective`/`summary` |
 | `tags` | Preset-declared tag override, appended to `ELICIT`'s auto-derived `[connector, <connection_type>]` default |
 

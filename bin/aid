@@ -108,7 +108,10 @@ _aid_is_project_dir() {
 # ---------------------------------------------------------------------------
 # format 2 (was 1): eliminated the per-repo .aid/dashboard/ folder -- home.html is now
 # served from the CLI, and kb.html moved to .aid/knowledge/kb.html (aid migrate relocates).
-readonly AID_SUPPORTED_FORMAT=2
+# format 3 (was 2): settings.yml flattened -- top-level name/description/type/
+# source_control/minimum_grade/heartbeat_interval + a knowledge: block; the installed
+# tools + AID version now live only in the manifest (.aid/.aid-manifest.json).
+readonly AID_SUPPORTED_FORMAT=3
 
 # ---------------------------------------------------------------------------
 # Source the shared install core from AID_CODE_HOME/lib/.
@@ -159,8 +162,8 @@ _aid_usage() {
             printf 'aid update [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
             printf 'aid update self [--from-bundle <path>] [--dry-run]\n'
             printf '  Update to latest.\n'
-            printf '  Outside an AID repo: updates the CLI only (no-op if already latest).\n'
-            printf '  Inside an AID repo: updates the CLI first, then ALL installed tools to one version.\n'
+            printf '  Outside an AID project: updates the CLI only (no-op if already latest).\n'
+            printf '  Inside an AID project: updates the CLI first, then ALL installed tools to one version.\n'
             printf '  No per-tool selection -- any tool positional is an error (use "self" only).\n'
             printf '  self: COMPLETELY update the aid CLI, channel-aware:\n'
             printf '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.sh.\n'
@@ -175,12 +178,15 @@ _aid_usage() {
             printf '  Print the installed aid CLI version and exit 0.\n'
             ;;
         dashboard)
-            printf 'aid dashboard start <node|python> [--remote] [--port <n>]\n'
+            printf 'aid dashboard start <node|python> [--remote] [--allow-writes] [--port <n>]\n'
             printf 'aid dashboard stop\n'
             printf '  Start or stop the machine-level pipeline dashboard (serves all registered projects).\n'
             printf '  <node|python>  select the server runtime to launch.\n'
             printf '  --remote       also expose it to authorized users over a private channel (never public);\n'
             printf '                 fails clearly if that mechanism is unavailable -- never binds publicly.\n'
+            printf '  --allow-writes opt in to interactive writes. On loopback writes are always enabled\n'
+            printf '                 (this flag is then accepted but redundant, no error); under --remote the\n'
+            printf '                 dashboard is read-only unless this flag is also given.\n'
             printf '  --port <n>     listen port on 127.0.0.1 (default 8787).\n'
             printf '  The dashboard binds to 127.0.0.1 only. '"'"'stop'"'"' is idempotent and also tears down --remote.\n'
             printf '  Works from any directory (not tied to the current project).\n'
@@ -194,8 +200,9 @@ _aid_usage() {
             printf '    tools, and tier.\n'
             printf '    The current directory is marked with "*" in the leading marker column.\n'
             printf '    Unregistered cwd with .aid/ present is shown as a footnote.\n'
-            printf '  add [path=cwd]: register a project (requires .aid/ to exist); tracking only,\n'
-            printf '    no tools are installed.  Idempotent.  Prints the tier written.\n'
+            printf '  add [path=cwd]: register a project. If the folder is not yet an AID project,\n'
+            printf '    it is initialized as a bare project (.aid/ with no tools installed).\n'
+            printf '    Idempotent.  Prints the tier written.\n'
             printf '  remove [path=cwd|<N>]: unregister a project from the registry; no files removed.\n'
             printf '    <N> (all-digits) targets the Nth row from '"'"'aid projects list'"'"'; N < 1 or\n'
             printf '    N greater than the registered count errors to stderr with exit 2.  A <path>\n'
@@ -215,7 +222,7 @@ _aid_usage() {
             printf '  aid version                      Print the CLI version\n'
             printf '  aid status                       Show AID state of the current project\n'
             printf '  aid add <tool>[,...]             Add tool(s) to the current project\n'
-            printf '  aid update [self]                Update to latest; inside repo = all tools\n'
+            printf '  aid update [self]                Update to latest; inside a project = all tools\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
             printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
@@ -955,6 +962,7 @@ To restrict access to only you, add a deny-by-default ACL grant in the tailnet p
   https://login.tailscale.com/admin/acls/file
   {"grants":[{"src":["${src_placeholder}"],"dst":["${dst_placeholder}"],"ip":["tcp:443"]}]}
 Note: granted identities see all registered project paths/names. See 'aid dashboard --help'.
+Note: with --allow-writes, any granted identity can also modify this project's state.
 
 GUIDANCE_EOF
 
@@ -1036,6 +1044,7 @@ _cmd_dashboard_ctl() {
     local _dc_verbose=0
     local _dc_port=8787
     local _dc_remote=0
+    local _dc_allow_writes=0
     local _dc_runtime=""
 
     if [[ "$verb" == "start" ]]; then
@@ -1058,6 +1067,11 @@ _cmd_dashboard_ctl() {
                     echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
                 fi
                 _dc_remote=1; shift ;;
+            --allow-writes)
+                if [[ "$verb" == "stop" ]]; then
+                    echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
+                fi
+                _dc_allow_writes=1; shift ;;
             --port)
                 if [[ "$verb" == "stop" ]]; then
                     echo "ERROR: aid: dashboard: unknown flag: $1" >&2; exit 2
@@ -1082,7 +1096,7 @@ _cmd_dashboard_ctl() {
     done
 
     if [[ "$verb" == "start" ]]; then
-        _dc_start "$_dc_runtime" "$_dc_port" "$_dc_remote" "$_dc_verbose"
+        _dc_start "$_dc_runtime" "$_dc_port" "$_dc_remote" "$_dc_verbose" "$_dc_allow_writes"
     else
         _dc_stop "$_dc_verbose"
     fi
@@ -1143,6 +1157,7 @@ _dc_start() {
     local port="$2"
     local remote="$3"
     local verbose="$4"
+    local allow_writes="${5:-0}"
 
     # Step 1: validate runtime.
     if [[ -z "$runtime" ]]; then
@@ -1208,12 +1223,25 @@ _dc_start() {
     # Ensure log dir exists (per-user state home, always writable).
     mkdir -p "${HOME}/.aid/.temp"
 
+    # Fail-safe write gate (Q1/NFR2/C3/AC8, feature-001 task-001):
+    #   write_enabled = (loopback) OR (--remote AND --allow-writes).
+    # Loopback is always write-enabled; --remote alone is read-only; --remote
+    # --allow-writes is write-enabled; --allow-writes on loopback is accepted and
+    # redundant (no error). The server only learns write_enabled via the spawn argv
+    # below -- it is never read from request/config/env (SEC-1 posture unaffected).
+    local write_enabled=0
+    if [[ "$remote" -eq 0 || ( "$remote" -eq 1 && "$allow_writes" -eq 1 ) ]]; then
+        write_enabled=1
+    fi
+
     # Step 7: spawn the server child in a new session (clean process-group kill on stop).
     # SEC-1: literal 127.0.0.1 -- never read from input/config/env.
     # The multi-repo server (feature-010) serves every registered repo from the
     # registry under AID_STATE_HOME; export AID_HOME=AID_STATE_HOME so the server
     # resolves the registry via its legacy AID_HOME env var (delivery-008 seam).
-    AID_HOME="$AID_STATE_HOME" setsid "$interp" "$entry_point" --host 127.0.0.1 --port "$port" \
+    local -a _dc_spawn_argv=(--host 127.0.0.1 --port "$port")
+    [[ "$write_enabled" -eq 1 ]] && _dc_spawn_argv+=(--allow-writes)
+    AID_HOME="$AID_STATE_HOME" setsid "$interp" "$entry_point" "${_dc_spawn_argv[@]}" \
         >"$log_file" 2>&1 &
     local child_pid=$!
 
@@ -1531,9 +1559,10 @@ _aid_resolve_tier() {
 #   "no-aid"      -- directory exists but has no .aid/ subdirectory
 #   "untracked"   -- .aid/ exists but no .aid/.aid-manifest.json is present
 #   "vX.Y.Z"      -- tracked; semver version string from .aid/.aid-manifest.json
-#                    (key "aid_version"), falling back to .aid/.aid-version
-# The version is extracted by the same semver regex on both paths -- a malformed
-# aid_version value in the manifest falls through to untracked (not returned raw).
+#                    (key "aid_version"). Every AID project (tool install or
+#                    tool-less scaffold) has a manifest, so it is the single
+#                    version source; a malformed value falls through to untracked
+#                    (never returned raw).
 # Never errors; always returns 0.
 _aid_project_state() {
     local _path="$1"
@@ -1546,25 +1575,15 @@ _aid_project_state() {
         return 0
     fi
     local _manifest="${_path}/.aid/.aid-manifest.json"
-    local _ver_file="${_path}/.aid/.aid-version"
     if [[ -f "$_manifest" ]]; then
         local _ver
-        # Extract aid_version value; then validate as semver (same guard as .aid-version branch).
+        # Extract aid_version value; then validate as semver.
         _ver="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "$_manifest" 2>/dev/null \
             | sed -E 's/.*"([^"]+)"[[:space:]]*$/\1/' \
             | grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' \
             | head -1)"
         if [[ -n "$_ver" ]]; then
             printf '%s\n' "$_ver"
-            return 0
-        fi
-    fi
-    # Fallback: .aid/.aid-version plain-text file.
-    if [[ -f "$_ver_file" ]]; then
-        local _vf_ver
-        _vf_ver="$(grep -Eo '[0-9]+\.[0-9]+\.[0-9]+[^[:space:]]*' "$_ver_file" 2>/dev/null | head -1)"
-        if [[ -n "$_vf_ver" ]]; then
-            printf '%s\n' "$_vf_ver"
             return 0
         fi
     fi
@@ -2051,6 +2070,14 @@ _aid_migrate_repo() {
     fi
 
     # ------------------------------------------------------------------
+    # STEP 3b -- RETIRE the redundant .aid/.aid-version marker. The AID version
+    # is recorded in the manifest (.aid-manifest.json aid_version) for tool
+    # installs and in settings.yml (aid_version) for tool-less projects, so the
+    # standalone marker is pure duplication. Best-effort delete; idempotent.
+    # ------------------------------------------------------------------
+    rm -f "${repo}/.aid/.aid-version" 2>/dev/null || true
+
+    # ------------------------------------------------------------------
     # STEP 4 -- REGISTER (DM-2 / FR28) -- existing idempotent writer.
     # Canonicalize path (same rule as bin/aid:1366).
     # FR7: deterministic tier via _aid_resolve_tier; never-elevate: if shared would
@@ -2069,9 +2096,16 @@ _aid_migrate_repo() {
 }
 
 # _aid_migrate_repair_settings_era_a <settings_file> <repo_name>
-# Era-a: validate/repair REQUIRED keys via targeted edits only.
-# A valid file -> no write (idempotent).
-# Batch all edits in memory, then write a single temp+mv -f (crash-safe).
+# Era-a: settings.yml already exists (either the OLD nested schema, or the
+# NEW flat schema from a prior run of this same function). Read every value
+# tolerantly -- NEW flat top-level location first, else the OLD nested
+# location, else the documented default -- then rewrite the file from
+# scratch in the NEW flat schema (format_version 3).
+# This is a full read-then-rewrite, not a targeted line-edit, so the
+# function is naturally idempotent (re-running it on its own output
+# reproduces byte-identical content) and flattens an old nested file in a
+# single pass. Crash-safe: same-directory temp + mv -f; skips the write
+# entirely when the rebuilt content is byte-identical to the original.
 _aid_migrate_repair_settings_era_a() {
     local _sf="$1" _rname="$2"
     [[ -f "${_sf}" ]] || return 1
@@ -2081,8 +2115,6 @@ _aid_migrate_repair_settings_era_a() {
     while IFS= read -r _l || [[ -n "${_l}" ]]; do
         _lines+=("${_l}")
     done < "${_sf}"
-
-    local _changed=0
 
     # ---- Helper: locate a section header line index (col-0 "^<sect>:$") ----
     _find_section() {
@@ -2141,260 +2173,266 @@ _aid_migrate_repair_settings_era_a() {
         echo "${_val}"
     }
 
-    # ---- Insert an indented line after a given index in _lines ----
-    _insert_after() {
-        local _idx="$1" _new_line="$2"
-        local -a _new_lines=()
-        local _i
-        for (( _i=0; _i<${#_lines[@]}; _i++ )); do
-            _new_lines+=("${_lines[$_i]}")
-            if [[ "$_i" -eq "$_idx" ]]; then
-                _new_lines+=("${_new_line}")
+    # ---- Helper: read a NEW-flat top-level "^key:<rest>" scalar. Returns 0 +
+    # the value (possibly empty) when the key line is present at column 0;
+    # returns 1 (no output) when absent. ----
+    _top_scalar() {
+        local _key="$1" _i
+        for _i in "${!_lines[@]}"; do
+            if [[ "${_lines[$_i]}" =~ ^${_key}: ]]; then
+                _get_scalar_value "${_lines[$_i]}" "${_key}"
+                return 0
             fi
         done
-        _lines=("${_new_lines[@]}")
-        _changed=1
+        return 1
     }
 
-    # ---- Append a block at EOF (IDIOM-B for whole-section missing) ----
-    # Always prepends a blank line so the new section is visually separated from
-    # the preceding content (matching the template's blank-line-between-sections style).
-    # Idempotency is preserved: on a 2nd run the section now exists, so _find_section
-    # finds it and this path never executes again.
-    _append_block() {
-        local _block="$1"
-        local -a _block_lines=()
-        _block_lines+=("")
-        while IFS= read -r _bl; do
-            _block_lines+=("${_bl}")
-        done <<< "${_block}"
-        _lines+=("${_block_lines[@]}")
-        _changed=1
+    # ---- Helper: read an OLD-nested "<section>.<key>" scalar. Returns 0 +
+    # the value when both the section and the key are present; 1 otherwise. ----
+    _nested_scalar() {
+        local _sect="$1" _key="$2" _sidx _kidx
+        _sidx="$(_find_section "${_sect}")"
+        [[ "${_sidx}" -eq -1 ]] && return 1
+        _kidx="$(_find_key_in_section "${_sidx}" "${_key}")"
+        [[ "${_kidx}" -eq -1 ]] && return 1
+        _get_scalar_value "${_lines[$_kidx]}" "${_key}"
+        return 0
     }
 
-    # ---- Replace a single line (IDIOM-A) ----
-    _replace_line() {
-        local _idx="$1" _new="$2"
-        _lines[$_idx]="${_new}"
-        _changed=1
+    # ---- Helper: count leading whitespace of a raw line (indent depth) ----
+    _leading_spaces() {
+        local _s="$1" _stripped
+        _stripped="${_s#"${_s%%[![:space:]]*}"}"
+        echo $(( ${#_s} - ${#_stripped} ))
     }
 
-    # ------------------------------------------------------------------
-    # Validate / repair each REQUIRED key.
-    # ------------------------------------------------------------------
+    # ---- Helper: trim surrounding whitespace + one layer of matching quotes ----
+    _trim_quote() {
+        local _s="$1"
+        local _rstrip="${_s##*[![:space:]]}"; _s="${_s%"${_rstrip}"}"
+        local _lstrip="${_s%%[![:space:]]*}"; _s="${_s#"${_lstrip}"}"
+        if [[ "${_s}" == \"*\" && "${_s}" == *\" ]]; then _s="${_s#\"}"; _s="${_s%\"}"; fi
+        if [[ "${_s}" == \'*\' && "${_s}" == *\' ]]; then _s="${_s#\'}"; _s="${_s%\'}"; fi
+        echo "${_s}"
+    }
 
-    # C3: format_version ensure-key step (top-of-file column-0 prepend).
-    # If a ^format_version: line is present anywhere, replace it in-place
-    # with the canonical stamp value (IDIOM-A single-line replace).
-    # If absent, prepend format_version: <sup> at index 0 of _lines so it
-    # sits above project: at column 0 (existing _append_block is EOF-only;
-    # _insert_after places indented lines after a header -- neither works
-    # here; we prepend directly).
-    local _fv_idx=-1 _fi
-    for _fi in "${!_lines[@]}"; do
-        if [[ "${_lines[$_fi]}" =~ ^format_version: ]]; then
-            _fv_idx="$_fi"
-            break
-        fi
-    done
-    if [[ "${_fv_idx}" -ge 0 ]]; then
-        # Key present: replace with canonical value (IDIOM-A).
-        _replace_line "${_fv_idx}" "format_version: ${AID_SUPPORTED_FORMAT}"
-    else
-        # Key absent: prepend at index 0 (new top-of-file col-0 insert).
-        local -a _fv_new_lines=()
-        _fv_new_lines+=("format_version: ${AID_SUPPORTED_FORMAT}")
-        local _fv_i
-        for _fv_i in "${!_lines[@]}"; do
-            _fv_new_lines+=("${_lines[$_fv_i]}")
-        done
-        _lines=("${_fv_new_lines[@]}")
-        _changed=1
-    fi
-
-    # project section
-    local _proj_idx; _proj_idx="$(_find_section "project")"
-    if [[ "$_proj_idx" -eq -1 ]]; then
-        # Whole project: section missing -> IDIOM-B append.
-        _append_block "project:
-  name: ${_rname}
-  description: <project-description>
-  type: brownfield"
-    else
-        # project.name
-        local _name_idx; _name_idx="$(_find_key_in_section "$_proj_idx" "name")"
-        if [[ "$_name_idx" -eq -1 ]]; then
-            _insert_after "$_proj_idx" "  name: ${_rname}"
-        else
-            local _name_val; _name_val="$(_get_scalar_value "${_lines[$_name_idx]}" "name")"
-            if [[ -z "${_name_val}" ]]; then
-                _replace_line "$_name_idx" "  name: ${_rname}"
-            fi
-        fi
-
-        # project.description (key must exist; value may be placeholder)
-        local _desc_idx; _desc_idx="$(_find_key_in_section "$_proj_idx" "description")"
-        if [[ "$_desc_idx" -eq -1 ]]; then
-            # Find name line to insert after it, else insert after section header.
-            local _name_idx2; _name_idx2="$(_find_key_in_section "$_proj_idx" "name")"
-            if [[ "$_name_idx2" -ne -1 ]]; then
-                _insert_after "$_name_idx2" "  description: <project-description>"
-            else
-                _insert_after "$_proj_idx" "  description: <project-description>"
-            fi
-        fi
-
-        # project.type
-        local _type_idx; _type_idx="$(_find_key_in_section "$_proj_idx" "type")"
-        if [[ "$_type_idx" -eq -1 ]]; then
-            # Insert after description (or name, or section header).
-            local _desc_idx2; _desc_idx2="$(_find_key_in_section "$_proj_idx" "description")"
-            local _ins_after_type
-            if [[ "$_desc_idx2" -ne -1 ]]; then
-                _ins_after_type="$_desc_idx2"
-            else
-                local _name_idx3; _name_idx3="$(_find_key_in_section "$_proj_idx" "name")"
-                if [[ "$_name_idx3" -ne -1 ]]; then
-                    _ins_after_type="$_name_idx3"
-                else
-                    _ins_after_type="$_proj_idx"
+    # ---- Helper: list reader. Given a section index + key, print one item
+    # per line. Supports inline "[a, b]" and block "- a" / "- b" forms.
+    # Returns 1 (no output) when the key is absent or resolves to an empty list. ----
+    _read_list_in_section() {
+        local _sect_idx="$1" _key="$2" _kidx
+        _kidx="$(_find_key_in_section "${_sect_idx}" "${_key}")"
+        [[ "${_kidx}" -eq -1 ]] && return 1
+        local _ln="${_lines[$_kidx]}"
+        local _val="${_ln#*${_key}:}"
+        _val="${_val# }"
+        _val="${_val%% #*}"
+        local _rstrip="${_val##*[![:space:]]}"; _val="${_val%"${_rstrip}"}"
+        local _lstrip="${_val%%[![:space:]]*}"; _val="${_val#"${_lstrip}"}"
+        local _found=0
+        if [[ "${_val}" == \[*\] ]]; then
+            # Inline list: "[a, b, c]".
+            _val="${_val#\[}"; _val="${_val%\]}"
+            local -a _items=()
+            IFS=',' read -ra _items <<< "${_val}"
+            local _it _clean
+            for _it in "${_items[@]}"; do
+                _clean="$(_trim_quote "${_it}")"
+                if [[ -n "${_clean}" ]]; then printf '%s\n' "${_clean}"; _found=1; fi
+            done
+        elif [[ -z "${_val}" ]]; then
+            # Block list: subsequent "- item" lines indented deeper than the key.
+            local _key_indent; _key_indent="$(_leading_spaces "${_ln}")"
+            local _n="${#_lines[@]}" _i
+            for (( _i=_kidx+1; _i<_n; _i++ )); do
+                local _bl="${_lines[$_i]}"
+                if [[ -n "${_bl//[[:space:]]/}" ]]; then
+                    local _bl_indent; _bl_indent="$(_leading_spaces "${_bl}")"
+                    if [[ "${_bl_indent}" -le "${_key_indent}" ]]; then
+                        break
+                    fi
                 fi
-            fi
-            _insert_after "$_ins_after_type" "  type: brownfield"
-        else
-            local _type_val; _type_val="$(_get_scalar_value "${_lines[$_type_idx]}" "type")"
-            if [[ "$_type_val" != "brownfield" && "$_type_val" != "greenfield" ]]; then
-                _replace_line "$_type_idx" "  type: brownfield"
-            fi
+                if [[ "${_bl}" =~ ^[[:space:]]*-[[:space:]]*(.+)$ ]]; then
+                    local _item; _item="$(_trim_quote "${BASH_REMATCH[1]}")"
+                    if [[ -n "${_item}" ]]; then printf '%s\n' "${_item}"; _found=1; fi
+                fi
+            done
+        fi
+        [[ "${_found}" -eq 1 ]] && return 0 || return 1
+    }
+
+    # ---- Helper: list resolver -- try (sectA,keyA) then (sectB,keyB); first
+    # non-empty list wins; returns 1 when neither source has one. ----
+    _resolve_list() {
+        local _sectA="$1" _keyA="$2" _sectB="$3" _keyB="$4" _sidx
+        _sidx="$(_find_section "${_sectA}")"
+        if [[ "${_sidx}" -ne -1 ]] && _read_list_in_section "${_sidx}" "${_keyA}"; then
+            return 0
+        fi
+        _sidx="$(_find_section "${_sectB}")"
+        if [[ "${_sidx}" -ne -1 ]] && _read_list_in_section "${_sidx}" "${_keyB}"; then
+            return 0
+        fi
+        return 1
+    }
+
+    # ------------------------------------------------------------------
+    # Resolve each REQUIRED top-level scalar: NEW-flat top-level location
+    # wins, else the OLD-nested location, else the documented default.
+    # A found-but-invalid value is treated the same as absent (repair).
+    # ------------------------------------------------------------------
+
+    # name: blank is not a valid name -- fall through to the next source.
+    local _name; _name="$(_top_scalar name)"
+    if [[ -z "${_name}" ]]; then
+        _name="$(_nested_scalar project name)"
+        [[ -z "${_name}" ]] && _name="${_rname}"
+    fi
+
+    # description: presence (not non-emptiness) decides -- an explicit empty
+    # description ("") is a valid final value, matching the target schema.
+    local _description
+    if ! _description="$(_top_scalar description)"; then
+        if ! _description="$(_nested_scalar project description)"; then
+            _description=""
         fi
     fi
 
-    # tools section
-    local _tools_idx; _tools_idx="$(_find_section "tools")"
-    if [[ "$_tools_idx" -eq -1 ]]; then
-        _append_block "tools:
-  installed: []"
-    else
-        local _inst_idx; _inst_idx="$(_find_key_in_section "$_tools_idx" "installed")"
-        if [[ "$_inst_idx" -eq -1 ]]; then
-            _insert_after "$_tools_idx" "  installed: []"
-        fi
-        # If installed key exists (any value, even empty list) -> valid; no touch.
-    fi
-
-    # review section
-    local _rev_idx; _rev_idx="$(_find_section "review")"
-    if [[ "$_rev_idx" -eq -1 ]]; then
-        _append_block "review:
-  minimum_grade: A"
-    else
-        local _mg_idx; _mg_idx="$(_find_key_in_section "$_rev_idx" "minimum_grade")"
-        if [[ "$_mg_idx" -eq -1 ]]; then
-            _insert_after "$_rev_idx" "  minimum_grade: A"
-        else
-            local _mg_val; _mg_val="$(_get_scalar_value "${_lines[$_mg_idx]}" "minimum_grade")"
-            if ! [[ "$_mg_val" =~ ^[A-F][+-]?$ ]]; then
-                _replace_line "$_mg_idx" "  minimum_grade: A"
-            fi
+    # type: must be brownfield|greenfield; else fall through / default.
+    local _type; _type="$(_top_scalar type)"
+    if [[ "${_type}" != "brownfield" && "${_type}" != "greenfield" ]]; then
+        _type="$(_nested_scalar project type)"
+        if [[ "${_type}" != "brownfield" && "${_type}" != "greenfield" ]]; then
+            _type="brownfield"
         fi
     fi
 
-    # execution section
-    local _exec_idx; _exec_idx="$(_find_section "execution")"
-    if [[ "$_exec_idx" -eq -1 ]]; then
-        _append_block "execution:
-  max_parallel_tasks: 5"
-    else
-        local _mpt_idx; _mpt_idx="$(_find_key_in_section "$_exec_idx" "max_parallel_tasks")"
-        if [[ "$_mpt_idx" -eq -1 ]]; then
-            _insert_after "$_exec_idx" "  max_parallel_tasks: 5"
+    # source_control: top-level value if valid, else detect from .git presence.
+    # <repo> is two levels above <repo>/.aid/settings.yml.
+    local _source_control; _source_control="$(_top_scalar source_control)"
+    if [[ "${_source_control}" != "none" && "${_source_control}" != "git" \
+       && "${_source_control}" != "svn" && "${_source_control}" != "mercurial" ]]; then
+        local _repo_dir; _repo_dir="$(dirname "$(dirname "${_sf}")")"
+        if [[ -e "${_repo_dir}/.git" ]]; then
+            _source_control="git"
         else
-            local _mpt_val; _mpt_val="$(_get_scalar_value "${_lines[$_mpt_idx]}" "max_parallel_tasks")"
-            if ! [[ "$_mpt_val" =~ ^[0-9]+$ ]] || [[ "$_mpt_val" -le 0 ]]; then
-                _replace_line "$_mpt_idx" "  max_parallel_tasks: 5"
-            fi
+            _source_control="none"
         fi
     fi
 
-    # traceability section
-    local _trace_idx; _trace_idx="$(_find_section "traceability")"
-    if [[ "$_trace_idx" -eq -1 ]]; then
-        _append_block "traceability:
-  heartbeat_interval: 1"
-    else
-        local _hb_idx; _hb_idx="$(_find_key_in_section "$_trace_idx" "heartbeat_interval")"
-        if [[ "$_hb_idx" -eq -1 ]]; then
-            _insert_after "$_trace_idx" "  heartbeat_interval: 1"
-        else
-            local _hb_val; _hb_val="$(_get_scalar_value "${_lines[$_hb_idx]}" "heartbeat_interval")"
-            if ! [[ "$_hb_val" =~ ^[0-9]+$ ]]; then
-                _replace_line "$_hb_idx" "  heartbeat_interval: 1"
-            fi
+    # minimum_grade: top-level, else review.minimum_grade, else default A.
+    local _minimum_grade; _minimum_grade="$(_top_scalar minimum_grade)"
+    if ! [[ "${_minimum_grade}" =~ ^[A-F][+-]?$ ]]; then
+        _minimum_grade="$(_nested_scalar review minimum_grade)"
+        if ! [[ "${_minimum_grade}" =~ ^[A-F][+-]?$ ]]; then
+            _minimum_grade="A"
+        fi
+    fi
+
+    # heartbeat_interval: top-level, else traceability.heartbeat_interval, else 1.
+    local _heartbeat_interval; _heartbeat_interval="$(_top_scalar heartbeat_interval)"
+    if ! [[ "${_heartbeat_interval}" =~ ^[0-9]+$ ]]; then
+        _heartbeat_interval="$(_nested_scalar traceability heartbeat_interval)"
+        if ! [[ "${_heartbeat_interval}" =~ ^[0-9]+$ ]]; then
+            _heartbeat_interval="1"
         fi
     fi
 
     # ------------------------------------------------------------------
-    # Write only if any edit was made (idempotent: no edit -> no write).
+    # Resolve the OPTIONAL knowledge block. knowledge.source/last_update fall
+    # back to kb_baseline.branch/tip_date; doc_set/term_exclusions fall back
+    # to discovery.doc_set/discovery.term_exclusions. The whole block is
+    # omitted when none of the four sub-values are present.
     # ------------------------------------------------------------------
-    if [[ "$_changed" -eq 0 ]]; then
+    local _kn_source; _kn_source="$(_nested_scalar knowledge source)"
+    [[ -z "${_kn_source}" ]] && _kn_source="$(_nested_scalar kb_baseline branch)"
+
+    local _kn_last_update; _kn_last_update="$(_nested_scalar knowledge last_update)"
+    [[ -z "${_kn_last_update}" ]] && _kn_last_update="$(_nested_scalar kb_baseline tip_date)"
+
+    local _kn_doc_set; _kn_doc_set="$(_resolve_list knowledge doc_set discovery doc_set)" || _kn_doc_set=""
+    local _kn_term_exclusions; _kn_term_exclusions="$(_resolve_list knowledge term_exclusions discovery term_exclusions)" || _kn_term_exclusions=""
+
+    local _have_knowledge=0
+    [[ -n "${_kn_source}" || -n "${_kn_last_update}" || -n "${_kn_doc_set}" || -n "${_kn_term_exclusions}" ]] && _have_knowledge=1
+
+    # ------------------------------------------------------------------
+    # Build the NEW flat output, then write only if it differs from the
+    # original file content (idempotent: no change -> no write).
+    # ------------------------------------------------------------------
+    local -a _out=()
+    _out+=("format_version: ${AID_SUPPORTED_FORMAT}")
+    _out+=("name: ${_name}")
+    if [[ -z "${_description}" ]]; then
+        _out+=('description: ""')
+    else
+        _out+=("description: ${_description}")
+    fi
+    _out+=("type: ${_type}")
+    _out+=("source_control: ${_source_control}")
+    _out+=("minimum_grade: ${_minimum_grade}")
+    _out+=("heartbeat_interval: ${_heartbeat_interval}")
+
+    if [[ "${_have_knowledge}" -eq 1 ]]; then
+        _out+=("")
+        _out+=("knowledge:")
+        [[ -n "${_kn_source}" ]] && _out+=("  source: ${_kn_source}")
+        [[ -n "${_kn_last_update}" ]] && _out+=("  last_update: ${_kn_last_update}")
+        if [[ -n "${_kn_doc_set}" ]]; then
+            _out+=("  doc_set:")
+            local _dsi
+            while IFS= read -r _dsi; do
+                [[ -n "${_dsi}" ]] && _out+=("    - ${_dsi}")
+            done <<< "${_kn_doc_set}"
+        fi
+        if [[ -n "${_kn_term_exclusions}" ]]; then
+            _out+=("  term_exclusions:")
+            local _tei
+            while IFS= read -r _tei; do
+                [[ -n "${_tei}" ]] && _out+=("    - ${_tei}")
+            done <<< "${_kn_term_exclusions}"
+        fi
+    fi
+
+    local _new_content; _new_content="$(printf '%s\n' "${_out[@]}")"
+    local _orig_content; _orig_content="$(cat "${_sf}")"
+    if [[ "${_new_content}" == "${_orig_content}" ]]; then
         return 0
     fi
 
     local _tmp
     _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
-    {
-        local _wi
-        for _wi in "${!_lines[@]}"; do
-            printf '%s\n' "${_lines[$_wi]}"
-        done
-    } > "${_tmp}" || { rm -f "${_tmp}"; return 1; }
+    { printf '%s\n' "${_out[@]}"; } > "${_tmp}" || { rm -f "${_tmp}"; return 1; }
     mv -f "${_tmp}" "${_sf}" || { rm -f "${_tmp}" 2>/dev/null; return 1; }
     return 0
 }
 
 # _aid_migrate_synthesize_settings_era_b <settings_file> <repo_name> <manifest>
-# Era-b: write a fresh template-derived settings.yml when none exists.
-# tools.installed from manifest_list_tools (bash) or empty list if no manifest.
-# Crash-safe: same-directory temp + mv -f.
+# Era-b: write a fresh settings.yml (NEW flat schema, format_version 3) when
+# none exists yet. name = <repo_name>; description = ""; type = brownfield;
+# source_control = detected (.git present -> git, else none); minimum_grade
+# = A; heartbeat_interval = 1. No knowledge block (nothing to carry forward).
+# <manifest> is accepted for call-site parity (tools/AID-version now live
+# only in the manifest -- never written into settings) but is otherwise
+# unused here. Crash-safe: same-directory temp + mv -f.
 _aid_migrate_synthesize_settings_era_b() {
     local _sf="$1" _rname="$2" _manifest="$3"
 
-    # Collect installed tools from manifest (exits 0, prints nothing when absent).
-    local -a _tools=()
-    while IFS= read -r _tid; do
-        [[ -n "${_tid}" ]] && _tools+=("${_tid}")
-    done < <(manifest_list_tools "${_manifest}" 2>/dev/null)
+    local _repo_dir; _repo_dir="$(dirname "$(dirname "${_sf}")")"
+    local _source_control="none"
+    [[ -e "${_repo_dir}/.git" ]] && _source_control="git"
 
     local _tmp
     _tmp="$(mktemp "${_sf}.aid-tmp.XXXXXX")" || return 1
 
     {
-        # C2: format_version stamp is the FIRST line (before project:).
         printf 'format_version: %s\n' "${AID_SUPPORTED_FORMAT}"
-        printf 'project:\n'
-        printf '  name: %s\n' "${_rname}"
-        printf '  description: <project-description>\n'
-        printf '  type: brownfield\n'
-        printf '\n'
-        printf 'tools:\n'
-        if [[ "${#_tools[@]}" -eq 0 ]]; then
-            printf '  installed: []\n'
-        else
-            printf '  installed:\n'
-            local _t
-            for _t in "${_tools[@]}"; do
-                printf '    - %s\n' "${_t}"
-            done
-        fi
-        printf '\n'
-        printf 'review:\n'
-        printf '  minimum_grade: A\n'
-        printf '\n'
-        printf 'execution:\n'
-        printf '  max_parallel_tasks: 5\n'
-        printf '\n'
-        printf 'traceability:\n'
-        printf '  heartbeat_interval: 1\n'
+        printf 'name: %s\n' "${_rname}"
+        printf 'description: ""\n'
+        printf 'type: brownfield\n'
+        printf 'source_control: %s\n' "${_source_control}"
+        printf 'minimum_grade: A\n'
+        printf 'heartbeat_interval: 1\n'
     } > "${_tmp}" || { rm -f "${_tmp}"; return 1; }
 
     mv -f "${_tmp}" "${_sf}" || { rm -f "${_tmp}" 2>/dev/null; return 1; }
@@ -2587,8 +2625,63 @@ _which_tier_holds() {
     _aid_resolve_tier "$_p"
 }
 
+# _aid_scaffold_bare_project <canon>
+# Initialize a bare, tool-less AID project at <canon>: create the .aid/ tree and
+# a minimal settings.yml (format_version + aid_version + empty tools). Used by
+# `aid projects add` when the target folder is not yet an AID project, so any
+# folder can be onboarded (e.g. from the dashboard) without first installing a
+# host tool. Never clobbers an existing settings.yml. The AID release version is
+# recorded in settings.yml (no manifest exists for a tool-less project).
+_aid_scaffold_bare_project() {
+    local _canon="$1"
+    local _name _fmt _ver _sc _now
+    _name="$(basename "$_canon")"
+    _fmt="${AID_SUPPORTED_FORMAT:-3}"
+    _ver=""
+    [[ -f "${AID_CODE_HOME}/VERSION" ]] && \
+        _ver="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION" 2>/dev/null)"
+    # -e (not -d): a git worktree / submodule has .git as a FILE, not a dir.
+    if [[ -e "${_canon}/.git" ]]; then _sc="git"; else _sc="none"; fi
+
+    mkdir -p "${_canon}/.aid/connectors" "${_canon}/.aid/knowledge" "${_canon}/.aid/works"
+
+    # Flat, user-owned settings.yml (the AID version + installed tools live in
+    # the manifest, not here). format_version stamps the .aid/ layout.
+    local _settings="${_canon}/.aid/settings.yml"
+    if [[ ! -f "$_settings" ]]; then
+        {
+            printf 'format_version: %s\n' "$_fmt"
+            printf '# .aid/settings.yml - AID pipeline configuration (user-owned project settings).\n'
+            printf '# Initialized by `aid projects add` for a tool-less project (no host tool yet).\n'
+            printf '# Run /aid-config to configure, or `aid add <tool>` to install a host tool.\n'
+            printf 'name: %s\n' "$_name"
+            printf 'description: ""\n'
+            printf 'type: brownfield\n'
+            printf 'source_control: %s\n' "$_sc"
+            printf 'minimum_grade: A\n'
+            printf 'heartbeat_interval: 1\n'
+        } > "$_settings"
+    fi
+
+    # Minimal AID-owned manifest: the single version source of truth. tools:{}
+    # is populated when `aid add <tool>` installs a host tool.
+    local _manifest="${_canon}/.aid/.aid-manifest.json"
+    if [[ ! -f "$_manifest" ]]; then
+        _now="$(date -u +%Y-%m-%dT%H:%M:%SZ 2>/dev/null)"
+        {
+            printf '{\n'
+            printf '  "format_version": 2,\n'
+            [[ -n "$_ver" ]] && printf '  "aid_version": "%s",\n' "$_ver"
+            printf '  "installed_at": "%s",\n' "$_now"
+            printf '  "tools": {}\n'
+            printf '}\n'
+        } > "$_manifest"
+    fi
+}
+
 # _cmd_projects_add [path] [verbose]
-# Register a project path (default: cwd) in the deterministic tier.
+# Register a project path (default: cwd) in the deterministic tier. If the folder
+# is not yet an AID project, initialize a bare .aid/ (no tools) first.
 _cmd_projects_add() {
     local _raw_path="${1:-.}"
     local _verbose="${2:-0}"
@@ -2600,10 +2693,50 @@ _cmd_projects_add() {
         exit 2
     fi
 
-    # Require a real AID project (.aid/ present AND not the CLI state home).
+    # If the folder is not yet an AID project, initialize a bare .aid/ (no tools)
+    # rather than refusing. _aid_is_project_dir is also false when .aid/ resolves
+    # to the CLI state home -- never scaffold/register that, so distinguish it by
+    # the presence of an existing .aid/ dir.
     if ! _aid_is_project_dir "${_canon}"; then
-        echo "ERROR: aid projects add: '${_canon}' is not an AID project; run 'aid add <tool>' first." >&2
-        exit 2
+        # _aid_is_project_dir is ALSO false when <dir>/.aid IS the CLI state home.
+        # Refuse that explicitly (path compare, existence-agnostic -- mirrors the
+        # guard in _aid_is_project_dir) so we never initialize $HOME/.aid or
+        # $AID_STATE_HOME as a project. Otherwise the folder just has no .aid/ yet
+        # -> initialize a bare, tool-less project.
+        local _ca_n _sh_n _hd_n
+        _ca_n="$(cd "${_canon}/.aid" 2>/dev/null && pwd -P)" || _ca_n="${_canon}/.aid"
+        _sh_n="$(cd "${AID_STATE_HOME}" 2>/dev/null && pwd -P)" || _sh_n="${AID_STATE_HOME}"
+        _hd_n="$(cd "${HOME}/.aid" 2>/dev/null && pwd -P)" || _hd_n="${HOME}/.aid"
+        if [[ "${_ca_n}" == "${_sh_n}" || "${_ca_n}" == "${_hd_n}" ]]; then
+            echo "ERROR: aid projects add: '${_canon}' is the AID state home, not a project." >&2
+            exit 2
+        fi
+        _aid_scaffold_bare_project "${_canon}"
+        echo "aid projects: initialized a bare AID project at '${_canon}' (no tools; run 'aid add <tool>' to install a host tool)."
+    else
+        # Existing AID project: bring it current before registering. Refuse a
+        # newer format than this CLI supports; migrate an older one (settings
+        # flatten etc.) -- so adding an already-AID folder also updates it,
+        # mirroring the format gate on other reaches. Guarded: only when the
+        # format-gate/migration helpers are in scope (they live outside the
+        # registry unit-test harness's extract range) AND the project actually
+        # has a settings.yml to migrate (a bare .aid/ has nothing to migrate);
+        # AID_SUPPORTED_FORMAT defaults so the harness never hits an unbound var.
+        local _sup="${AID_SUPPORTED_FORMAT:-3}"
+        if declare -F _aid_repo_format >/dev/null 2>&1; then
+            local _repo_fmt
+            _repo_fmt="$(_aid_repo_format "${_canon}")"
+            if [[ "${_repo_fmt}" =~ ^[0-9]+$ && "${_repo_fmt}" -gt "${_sup}" ]]; then
+                echo "ERROR: aid projects add: '${_canon}' uses a newer AID format (v${_repo_fmt}) than this CLI supports (v${_sup}). Upgrade the aid CLI: aid update self." >&2
+                exit 1
+            fi
+            if [[ -f "${_canon}/.aid/settings.yml" && "${_repo_fmt}" =~ ^[0-9]+$ && "${_repo_fmt}" -lt "${_sup}" ]] \
+               && declare -F _aid_migrate_repo >/dev/null 2>&1; then
+                echo "aid projects: '${_canon}' uses an older AID format (v${_repo_fmt}); migrating to v${_sup}..."
+                _aid_migrate_repo "${_canon}" >/dev/null || \
+                    echo "WARN: aid projects add: migration reported an issue for '${_canon}' (continuing)" >&2
+            fi
+        fi
     fi
 
     # Resolve tier.
@@ -3319,10 +3452,10 @@ case "$SUBCMD" in
             if [[ -n "$_AID_VERSION_ARG" ]]; then
                 # --version on add: validate it won't create a mixed-version repo.
                 if [[ -n "$_FR11_EXISTING_VER" && "$_AID_VERSION_ARG" != "$_FR11_EXISTING_VER" ]]; then
-                    echo "ERROR: aid add: --version ${_AID_VERSION_ARG} would create a mixed-version repo." >&2
+                    echo "ERROR: aid add: --version ${_AID_VERSION_ARG} would create a mixed-version project." >&2
                     echo "       Existing tools are at v${_FR11_EXISTING_VER}. Either:" >&2
-                    echo "         - Omit --version to install at the repo version (v${_FR11_EXISTING_VER}), or" >&2
-                    echo "         - Run 'aid update --version ${_AID_VERSION_ARG}' first to advance the whole repo." >&2
+                    echo "         - Omit --version to install at the project version (v${_FR11_EXISTING_VER}), or" >&2
+                    echo "         - Run 'aid update --version ${_AID_VERSION_ARG}' first to advance the whole project." >&2
                     rm -rf "$_AID_STAGING_BASE"
                     exit 2
                 fi
@@ -3332,7 +3465,7 @@ case "$SUBCMD" in
                 _AID_VERSION_ARG="$_FR11_EXISTING_VER"
                 # Skew notice when CLI is ahead of the repo version.
                 if [[ -n "$_FR11_CLI_VER" ]] && _semver_lt "$_FR11_EXISTING_VER" "$_FR11_CLI_VER"; then
-                    echo "repo is at v${_FR11_EXISTING_VER}; new tool(s) installed at v${_FR11_EXISTING_VER} to keep the repo uniform. Run 'aid update' to advance all tools to v${_FR11_CLI_VER}."
+                    echo "project is at v${_FR11_EXISTING_VER}; new tool(s) installed at v${_FR11_EXISTING_VER} to keep the project uniform. Run 'aid update' to advance all tools to v${_FR11_CLI_VER}."
                 fi
             else
                 # First-tool: pin to CLI version (bundle supplies its own version; skip if so).
@@ -3412,7 +3545,7 @@ case "$SUBCMD" in
                 _COMMIT_RC=$?
                 echo "" >&2
                 echo "ERROR: aid ${SUBCMD} failed mid-commit for tool '${_tool}' (rc=${_COMMIT_RC})." >&2
-                echo "       The repo may be at mixed versions. Re-run 'aid update' to heal." >&2
+                echo "       The project may be at mixed versions. Re-run 'aid update' to heal." >&2
                 rm -rf "$_AID_STAGING_BASE"
                 exit "${_COMMIT_RC}"
             }

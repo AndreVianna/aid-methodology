@@ -15,6 +15,16 @@
  *   (7) <id> derivation: sha256(CAN-1(path))[:8] for a known path -- Node side of cross-runtime parity.
  *   (8) reader.mjs malformed-input regression (delivery-006 fixes).
  *   (9) PF-8 parseSpecMd + Lite fixture (HT-2).
+ *   (2c) POST /r/<id>/api/op + POST /api/op write gate (feature-001 task-004): every op
+ *        403s "read-only" on a write-disabled spawn (incl. pipeline.delete, task-027);
+ *        other POST paths still 405.
+ *   (5c-op) OP_TABLE dispatch smoke test (feature-001 task-004, write-enabled spawn):
+ *        settings.set 200 round-trip (writer actually mutates settings.yml on disk),
+ *        unknown op -> 400, unresolvable work_id -> 404 (WT-1, incl. pipeline.delete,
+ *        task-027). The full per-op matrix (task.set-notes/pipeline.finish/pipeline.rename
+ *        fixtures, status-map overrides) is task-011's "dispatch round-trip suite" mandate;
+ *        pipeline.delete's own real-writer guard/topology/containment/post-delete matrix +
+ *        twin byte-parity is test_task027_pipeline_delete_round_trips.py's mandate.
  *
  * ASCII-only source. Node built-in modules only.
  */
@@ -158,37 +168,49 @@ function waitForPort(port, maxMs) {
   });
 }
 
-function makeRequest(port, path, method, headers) {
+function makeRequest(port, path, method, headers, requestBody) {
+  // requestBody (feature-001 task-004, optional): a Buffer/string request body
+  // (e.g. a JSON op-request payload). Content-Length is set automatically.
   return new Promise((resolve, reject) => {
+    const bodyBuf = requestBody === undefined ? null : Buffer.from(requestBody);
     const options = {
       hostname: "127.0.0.1",
       port: port,
       path: path,
       method: method || "GET",
     };
-    if (headers) options.headers = headers;
+    options.headers = Object.assign({}, headers || {});
+    if (bodyBuf !== null && options.headers["Content-Length"] === undefined) {
+      options.headers["Content-Length"] = bodyBuf.length;
+    }
     const req = http.request(options, (res) => {
-      let bodyBuf = Buffer.alloc(0);
-      res.on("data", (chunk) => { bodyBuf = Buffer.concat([bodyBuf, chunk]); });
+      let respBuf = Buffer.alloc(0);
+      res.on("data", (chunk) => { respBuf = Buffer.concat([respBuf, chunk]); });
       res.on("end", () => resolve({
         status: res.statusCode,
-        body: bodyBuf.toString("utf-8"),
-        bodyBuf: bodyBuf,
+        body: respBuf.toString("utf-8"),
+        bodyBuf: respBuf,
         headers: res.headers,
       }));
     });
     req.on("error", reject);
-    req.end();
+    req.end(bodyBuf === null ? undefined : bodyBuf);
   });
+}
+
+function postJson(port, path, payload, headers) {
+  // Convenience wrapper: POST a JSON-encoded op-request body (feature-001 task-004).
+  return makeRequest(port, path, "POST", Object.assign({ "Content-Type": "application/json" }, headers || {}), JSON.stringify(payload));
 }
 
 // Spawn the server against an aidHome, return {proc, port}.
 // AID_HOME is passed via environment (delivery-008 refinement: no --aid-home flag).
-async function spawnServer(aidHome) {
+// extraArgs (feature-001 task-001): optional additional argv tokens, e.g. ["--allow-writes"].
+async function spawnServer(aidHome, extraArgs) {
   const port = await getFreePort();
   const proc = spawn(
     process.execPath,
-    [SERVER_MJS, "--host", "127.0.0.1", "--port", String(port)],
+    [SERVER_MJS, "--host", "127.0.0.1", "--port", String(port), ...(extraArgs || [])],
     {
       stdio: ["ignore", "ignore", "pipe"],
       env: Object.assign({}, process.env, { AID_HOME: aidHome }),
@@ -727,6 +749,83 @@ process.stdout.write("\n[10] task-064 KB status extension (reader.mjs)\n");
 }
 
 // ---------------------------------------------------------------------------
+// (10b) feature-002 (work-017 task-005): DM-1 reader exposure of
+//       project.description + global review.minimum_grade
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[10b] task-005 project_description + minimum_grade (reader.mjs)\n");
+
+{
+  // --- repo key order: project_name, project_description, minimum_grade,
+  //     aid_dir, kb_state (additive keys inserted after project_name),
+  //     connectors (feature-007, task-019: additive key inserted after
+  //     kb_state), external_sources (feature-010, task-021: additive key
+  //     inserted after connectors) ---
+  const tmp8 = join(tmpdir(), "aid-task005-" + Date.now());
+  mkdirSync(join(tmp8, ".aid"), { recursive: true });
+  try {
+    const m8 = readRepo(tmp8);
+    const keys8 = Object.keys(m8.repo);
+    assert(keys8[0] === "project_name", "10b.1: first key is project_name");
+    assert(keys8[1] === "project_description", "10b.2: second key is project_description (new)");
+    assert(keys8[2] === "minimum_grade", "10b.3: third key is minimum_grade (new)");
+    assert(keys8[3] === "aid_dir", "10b.4: fourth key is aid_dir");
+    assert(keys8[4] === "kb_state", "10b.5: fifth key is kb_state");
+    assert(keys8[5] === "connectors", "10b.5b: sixth key is connectors (task-019, new)");
+    assert(keys8[6] === "external_sources", "10b.5c: seventh key is external_sources (task-021, new)");
+    assert(m8.repo.project_description === null, "10b.6: project_description=null when absent");
+    assert(m8.repo.minimum_grade === null, "10b.7: minimum_grade=null when absent");
+    assert(Array.isArray(m8.repo.connectors) && m8.repo.connectors.length === 0,
+           "10b.8: connectors=[] when .aid/connectors/ absent");
+    assert(Array.isArray(m8.repo.external_sources) && m8.repo.external_sources.length === 0,
+           "10b.9: external_sources=[] when external-sources.md absent");
+  } finally {
+    try { rmSync(tmp8, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- real settings.yml layout: tools: sits between project: and review: ---
+  const tmp9 = join(tmpdir(), "aid-task005-" + Date.now());
+  mkdirSync(join(tmp9, ".aid"), { recursive: true });
+  writeFileSync(
+    join(tmp9, ".aid", "settings.yml"),
+    "project:\n" +
+    "  name: AID                          # set during /aid-config INIT\n" +
+    "  description: AI Integrated Development\n" +
+    "  type: brownfield\n" +
+    "tools:\n" +
+    "  installed:\n" +
+    "    - claude-code\n" +
+    "review:\n" +
+    "  minimum_grade: A+   # owner directive 2026-06-27\n",
+    "utf-8"
+  );
+  try {
+    const m9 = readRepo(tmp9);
+    assert(m9.repo.project_name === "AID", "10b.8: project_name parsed");
+    assert(m9.repo.project_description === "AI Integrated Development",
+      "10b.9: project_description parsed from the same project: block");
+    assert(m9.repo.minimum_grade === "A+",
+      "10b.10: minimum_grade parsed from the SEPARATE review: block " +
+      "(tools: sits in between in a real settings.yml)");
+  } finally {
+    try { rmSync(tmp9, { recursive: true, force: true }); } catch (_) {}
+  }
+
+  // --- no .aid/ -> empty model leaves both fields null (no crash) ---
+  const tmp10 = join(tmpdir(), "aid-task005-noaid-" + Date.now());
+  mkdirSync(tmp10, { recursive: true });
+  try {
+    const m10 = readRepo(tmp10);
+    assert(m10.repo.project_description === null,
+      "10b.11: no-.aid/ empty model: project_description=null");
+    assert(m10.repo.minimum_grade === null,
+      "10b.12: no-.aid/ empty model: minimum_grade=null");
+  } finally {
+    try { rmSync(tmp10, { recursive: true, force: true }); } catch (_) {}
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Live server tests: (2) route table, (3) SEC-2, (4) registry tolerance,
 //                   (5) /api/home DM-2 shape, (6) serialization DM-3
 // ---------------------------------------------------------------------------
@@ -845,6 +944,18 @@ async function runLiveTests() {
       assert(data !== null, "GET /r/<id>/api/model body is valid JSON");
       assert(!!(data && data.schema_version === 3), "schema_version===3");
       assert(!!(data && data.generated_by === "node"), 'generated_by==="node"');
+      // write_enabled (additive, feature-001 task-001): fail-safe gate signal, false
+      // by default (server spawned here with no --allow-writes).
+      assert(!!(data && data.write_enabled === false), "write_enabled===false by default");
+      // tools_catalog (additive, work-017 post-dogfood Tools section): present at
+      // the DM-1 envelope top level, an array, positioned AFTER write_enabled and
+      // BEFORE model (schema_version stays 3, no bump -- RC-2 precedent).
+      assert(Array.isArray(data && data.tools_catalog), "DM-1: tools_catalog is array");
+      assert(
+        JSON.stringify(data ? Object.keys(data) : null) ===
+          JSON.stringify(["schema_version", "generated_by", "write_enabled", "tools_catalog", "model"]),
+        "DM-1 envelope key order: schema_version, generated_by, write_enabled, tools_catalog, model"
+      );
       assert(!!(data && data.model && typeof data.model === "object"), "has model object");
       const model = data && data.model;
       assert(Array.isArray(model && model.works), "model.works is array");
@@ -908,6 +1019,49 @@ async function runLiveTests() {
       assert(r1.status === 405, "HEAD / -> 405 (got " + r1.status + ")");
       const r2 = await makeRequest(port, "/r/deadbeef0/home.html", "HEAD");
       assert(r2.status === 405, "HEAD /r/<id>/home.html -> 405 (got " + r2.status + ")");
+    }
+
+    // -----------------------------------------------------------------------
+    // (2c) POST /r/<id>/api/op + POST /api/op write gate (feature-001 task-004)
+    // This server instance was spawned with NO --allow-writes (write-disabled,
+    // the fail-safe default) -- every op must 403 regardless of op/target shape.
+    // The full OP_TABLE dispatch matrix (success round-trips, 400/404/422 paths,
+    // WT-1 worktree resolution) is task-011's "dispatch round-trip suite"
+    // mandate; this group covers the gate + routing wiring task-004 introduces.
+    // -----------------------------------------------------------------------
+
+    process.stdout.write("\n[2c] POST /api/op write gate (write-disabled)\n");
+
+    {
+      const r = await postJson(port, "/r/" + idA + "/api/op", { op: "settings.set", args: { path: "project.name", value: "x" } });
+      assert(r.status === 403, "POST /r/<id>/api/op (write-disabled) -> 403 (got " + r.status + ")");
+      let data = null;
+      try { data = JSON.parse(r.body); } catch (_) {}
+      assert(!!(data && data.ok === false && data.error === "read-only"), "write-disabled op -> {ok:false, error:'read-only'}");
+    }
+    {
+      const r = await postJson(port, "/api/op", { op: "project.add" });
+      assert(r.status === 403, "POST /api/op (write-disabled) -> 403 (got " + r.status + ")");
+    }
+    {
+      // Other POST paths (not /api/op or /r/<id>/api/op) still 405, unaffected by the gate.
+      const r = await makeRequest(port, "/foo/bar", "POST");
+      assert(r.status === 405, "POST /foo/bar (non-op path) -> 405 (got " + r.status + ")");
+    }
+    {
+      // feature-009-pipeline-delete (task-027): pipeline.delete is subject to
+      // the SAME write gate as every other op -- mirrors this group's own
+      // settings.set/project.add cases immediately above. The full guard/
+      // topology/containment/post-delete matrix (real git worktree fixtures,
+      // real delete-pipeline.sh spawns, twin byte-parity) lives in
+      // test_task027_pipeline_delete_round_trips.py's own sliced-dispatchOp
+      // parity suite (no live socket needed there).
+      const r = await postJson(port, "/r/" + idA + "/api/op",
+        { op: "pipeline.delete", target: { work_id: "work-999-does-not-matter" } });
+      assert(r.status === 403, "pipeline.delete (write-disabled) -> 403 (got " + r.status + ")");
+      let data = null;
+      try { data = JSON.parse(r.body); } catch (_) {}
+      assert(!!(data && data.ok === false && data.error === "read-only"), "write-disabled pipeline.delete -> {ok:false, error:'read-only'}");
     }
 
     // -----------------------------------------------------------------------
@@ -1190,7 +1344,8 @@ async function runLiveTests() {
       // Machine panel keys
       const machine = data && data.machine;
       assert(machine !== null && machine !== undefined, "DM-2: machine panel present");
-      for (const k of ["aid_version", "aid_home", "tools_catalog", "registry_path", "cli_runtime"]) {
+      for (const k of ["aid_version", "aid_home", "tools_catalog", "registry_path", "cli_runtime",
+                        "write_enabled"]) {
         assert(!!(machine && machine[k] !== undefined), "DM-2: machine has key " + k);
       }
       assert(!!(machine && machine.cli_runtime === "node"), 'DM-2: machine.cli_runtime==="node"');
@@ -1200,6 +1355,8 @@ async function runLiveTests() {
         !!(machine && machine.registry_path && machine.registry_path.includes("registry.yml")),
         "DM-2: registry_path includes registry.yml"
       );
+      // write_enabled (additive, feature-001 task-001): false by default (no --allow-writes).
+      assert(!!(machine && machine.write_enabled === false), "DM-2: write_enabled===false by default");
 
       // repos[] sorted by path ascending
       const repos = data && data.repos;
@@ -1239,6 +1396,162 @@ async function runLiveTests() {
         assert(!!(read && read[k] !== undefined), "DM-2: read has key " + k);
       }
       assert(!!(read && read.repo_count === 2), "DM-2: repo_count===2");
+    }
+
+    // -----------------------------------------------------------------------
+    // (5c) --allow-writes write gate (feature-001 task-001)
+    // A bare spawn (no flag, exercised above in [5]) is read-only; spawning with
+    // --allow-writes flips write_enabled true in BOTH DM envelopes.
+    // -----------------------------------------------------------------------
+
+    process.stdout.write("\n[5c] --allow-writes write gate\n");
+
+    {
+      await killServer(proc);
+      const s5c = await spawnServer(aidHome, ["--allow-writes"]);
+      proc = s5c.proc;
+      port = s5c.port;
+      if (!s5c.ready) {
+        assert(false, "server spawned with --allow-writes");
+      } else {
+        assert(true, "server spawned with --allow-writes");
+
+        const rHome = await makeRequest(port, "/api/home", "GET");
+        let homeData = null;
+        try { homeData = JSON.parse(rHome.body); } catch (_) {}
+        assert(
+          !!(homeData && homeData.machine && homeData.machine.write_enabled === true),
+          "--allow-writes: /api/home machine.write_enabled===true"
+        );
+
+        const rModel = await makeRequest(port, "/r/" + idA + "/api/model", "GET");
+        let modelData = null;
+        try { modelData = JSON.parse(rModel.body); } catch (_) {}
+        assert(
+          !!(modelData && modelData.write_enabled === true),
+          "--allow-writes: /r/<id>/api/model write_enabled===true"
+        );
+
+        // -------------------------------------------------------------------
+        // (5c-op) OP_TABLE dispatch smoke test (feature-001 task-004) -- the
+        // gate is open now, so a real op should reach its writer. settings.set
+        // is the simplest round-trip: repoA already has .aid/settings.yml
+        // (makeRepo(repoA, true)), no work-dir fixture needed. The full
+        // per-op matrix (task.set-notes/pipeline.finish/pipeline.rename
+        // against real flat/nested work-dir fixtures, WT-1 worktree
+        // resolution, status-map overrides) is task-011's mandate.
+        // -------------------------------------------------------------------
+
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.name", value: "renamed-by-op" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 200, "settings.set (write-enabled) -> 200 (got " + r.status + ")");
+          assert(!!(data && data.ok === true && data.op === "settings.set"), "settings.set success envelope {ok:true, op}");
+          const settingsAfter = readFileSync(join(repoA, ".aid", "settings.yml"), "utf8");
+          assert(settingsAfter.includes("renamed-by-op"), "settings.set writer round-trip updated settings.yml on disk");
+        }
+
+        // -------------------------------------------------------------------
+        // (5c-op-006) settings.set semantic arg-schema finalization (task-006,
+        // feature-002-project-header-edit): the server's OWN pre-validation hook
+        // (validateSettingsSetArgs) 422s an invalid request BEFORE the writer spawn --
+        // closed args.path allowlist, review.minimum_grade ^[A-F][+-]?$, and the
+        // KI-001 name/description charset guard (reject \n/"/\), empty name required.
+        // -------------------------------------------------------------------
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "not.allowed", value: "x" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set out-of-allowlist path -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "out-of-allowlist path -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "review.minimum_grade", value: "Z" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set invalid grade -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "invalid grade -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.name", value: "" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set empty project.name -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "empty project.name -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.description", value: 'has "quote"' },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 422, "settings.set embedded double-quote value -> 422 (got " + r.status + ")");
+          assert(!!(data && data.error === "invalid-value"), "embedded double-quote -> error:'invalid-value'");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "settings.set", args: { path: "project.description", value: "" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 200, "settings.set empty project.description (clears) -> 200 (got " + r.status + ")");
+          assert(!!(data && data.ok === true), "empty project.description -> {ok:true} (clearing is allowed)");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", { op: "not-a-real-op" });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 400, "unknown op (write-enabled) -> 400 (got " + r.status + ")");
+          assert(!!(data && data.ok === false && data.error === "bad-request"), "unknown op -> {ok:false, error:'bad-request'}");
+        }
+        {
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "pipeline.rename", target: { work_id: "work-999-nonexistent" }, args: { value: "x" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 404, "pipeline.rename unresolvable work_id -> 404 (got " + r.status + ")");
+          assert(!!(data && data.error === "not-found"), "unresolvable work_id -> error:'not-found' (WT-1)");
+        }
+        {
+          // feature-009-pipeline-delete (task-027): pipeline.delete's WT-1
+          // 404 wiring, over the real HTTP path -- mirrors the pipeline.rename
+          // case immediately above. Real writer round-trips (200 happy across
+          // all 3 removal topologies, 409 guards, containment, post-delete
+          // truthfulness, twin byte-parity) are covered at the _dispatch_op/
+          // dispatchOp layer by test_task027_pipeline_delete_round_trips.py
+          // (no live socket needed there).
+          const r = await postJson(port, "/r/" + idA + "/api/op", {
+            op: "pipeline.delete", target: { work_id: "work-999-nonexistent" },
+          });
+          let data = null;
+          try { data = JSON.parse(r.body); } catch (_) {}
+          assert(r.status === 404, "pipeline.delete unresolvable work_id -> 404 (got " + r.status + ")");
+          assert(!!(data && data.error === "not-found"), "pipeline.delete unresolvable work_id -> error:'not-found' (WT-1)");
+        }
+      }
+    }
+
+    // Restart WITHOUT --allow-writes for the remaining (DM-3) tests.
+    {
+      await killServer(proc);
+      const s5d = await spawnServer(aidHome);
+      proc = s5d.proc;
+      port = s5d.port;
+      if (!s5d.ready) {
+        assert(false, "server re-spawned (no --allow-writes) for DM-3 tests");
+        return;
+      }
+      assert(true, "server re-spawned (no --allow-writes) for DM-3 tests");
     }
 
     // -----------------------------------------------------------------------

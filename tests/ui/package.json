@@ -1,0 +1,16 @@
+{
+  "name": "aid-dashboard-ui-tests",
+  "version": "0.0.0",
+  "private": true,
+  "description": "On-demand Playwright UI tests for the AID dashboard. NOT part of the required test suite or CI — run manually. See README.md.",
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "serve": "node serve.mjs",
+    "install:browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.0"
+  }
+}

@@ -216,11 +216,77 @@ class KbStateRef:
 
 
 @dataclass
+class ConnectorRef:
+    """A single `.aid/connectors/<stem>.md` descriptor (feature-007 DM, task-019).
+
+    Read-only, never persisted (NFR2) -- populated by parse_connectors() /
+    parseConnectors() from the descriptor's flat-YAML frontmatter: the SAME six
+    scalars build-connectors-index.sh's INDEX.md builder (`ef()`) and
+    connector-registry.sh's `read` (`read_field`) address. The reader adds no
+    enum/derivation here -- a connector has no lifecycle.
+
+    Fields (declared order -- also the serializer's field order):
+        stem              -- descriptor filename stem (<stem>.md); the
+                             connector.remove op's row key.
+        name              -- human name; the raw `name:` frontmatter scalar,
+                             falling back to `stem` when absent (Data Model
+                             "human name; defaults to <stem>").
+        connection_type   -- raw scalar (mcp | api | ssh | url | cli); no enum.
+        endpoint          -- informational for `mcp`; the concrete connect
+                             target for an aid-managed type. None if absent.
+        auth_method       -- none | token | pat | oauth | ssh-key. None if absent.
+        secret_reference  -- a REFERENCE literal (env:/file:/keychain: form),
+                             never a credential value. None if absent (mcp /
+                             auth_method: none).
+        summary           -- one-line human guidance. None if absent.
+
+    Never reads/serializes the secret VALUE or the `.secrets/` directory
+    contents -- descriptor frontmatter only.
+    """
+    stem: str
+    name: str
+    connection_type: str
+    endpoint: Optional[str] = None
+    auth_method: Optional[str] = None
+    secret_reference: Optional[str] = None
+    summary: Optional[str] = None
+
+
+@dataclass
 class RepoInfo:
     """Level-1 project / .aid/ state."""
     project_name: str           # from .aid/settings.yml project.name; fallback: dir basename
     aid_dir: str                # resolved .aid/ root path (as string)
     kb_state: Optional[KbStateRef] = None
+    # feature-002 (work-017 task-005): DM-1 exposure of the two settings scalars the
+    # redesigned project-header panel displays. Declared here (after aid_dir/kb_state,
+    # since dataclass fields with a default must follow those without one) but
+    # SERIALIZED before aid_dir/kb_state -- declared field order project_name,
+    # project_description, minimum_grade, aid_dir, kb_state (see
+    # server.py _ser_repo_info / reader.mjs _buildRepoInfo).
+    project_description: Optional[str] = None  # .aid/settings.yml project.description;
+                                                 # None if absent/unreadable
+    minimum_grade: Optional[str] = None  # GLOBAL .aid/settings.yml review.minimum_grade,
+                                          # read literally (no resolution); deliberately
+                                          # distinct from WorkModel.minimum_grade (per-work
+                                          # value). None if absent/unreadable.
+    # feature-007 (work-017 task-019): DM-1 exposure of the project-level connectors
+    # registry (.aid/connectors/*.md) -- connectors are project-level `.aid/` state,
+    # so they sit beside kb_state (the other project-level `.aid/` reference).
+    # Additive; no schema_version bump (DM-A3/RC-2 precedent). Sorted by stem (the
+    # same order connector-registry.sh list / build-connectors-index.sh use).
+    # Surfaced ONLY in the DM-1 RepoModel (GET /r/<id>/api/model) -- never the DM-2
+    # home model (/api/home).
+    connectors: list[ConnectorRef] = field(default_factory=list)
+    # feature-010-external-sources-list (work-017 task-021): DM-1 exposure of the
+    # project-level external-sources registry (.aid/knowledge/external-sources.md
+    # frontmatter `sources:` list). Additive; no schema_version bump (DM-A3/RC-2
+    # precedent). Deduped, order-preserved, discovery placeholder `(none)` filtered
+    # out (populated by parse_external_sources()/parseExternalSources() -- a thin
+    # wrapper over the existing parse_doc_frontmatter(), NOT a new parser).
+    # Surfaced ONLY in the DM-1 RepoModel (GET /r/<id>/api/model) -- never the DM-2
+    # home model (/api/home).
+    external_sources: list[str] = field(default_factory=list)
 
 
 # ---------------------------------------------------------------------------
@@ -239,6 +305,23 @@ class TaskModel:
         short_name -- parsed from tasks/task-NNN.md first line "# task-NNN: <title>"
         delivery   -- integer parsed from STATE Wave "delivery-NNN" (PF-5c; STATE wins)
         lane       -- integer derived from PLAN.md wave-map or prose fallback (PF-5a/5b)
+
+    feature-005 (display-rename, work-017 task-008):
+        display_name -- mutable override of short_name, written via `writeback-state.sh
+            --field Name` (task.rename op). Read from the per-task STATE frontmatter
+            `display_name` key (nested layout) or the ### Tasks lifecycle table's
+            trailing Name column (flat layout). None when unset (fallback to
+            short_name -> task_id, home.html label precedence).
+
+    feature-008 (execution-control, work-017 task-029):
+        stop_requested -- DERIVED (never parsed from / written to STATE.md) boolean:
+            True iff a cooperative stop signal is present for this task, i.e. a
+            filesystem `stat` of `<walked-work-dir>/../../.control/<work_id>/
+            <task_id>.stop` (the `.aid/.control/` sibling of the SAME worktree copy
+            the reader is walking, WT-1) finds the file `write-control-signal.sh`
+            (task-028) creates on `task.stop` / removes on `task.resume`. A missing
+            `.control/` directory or signal file -> False (fail-safe, never throws).
+            No schema_version bump (additive, same precedent as display_name).
     """
     task_id: str
     type: str
@@ -251,6 +334,10 @@ class TaskModel:
     short_name: Optional[str] = None
     delivery: Optional[int] = None
     lane: Optional[int] = None
+    # feature-005 (no schema_version bump; additive optional field)
+    display_name: Optional[str] = None
+    # feature-008 (no schema_version bump; additive derived field)
+    stop_requested: bool = False
 
 
 # ---------------------------------------------------------------------------

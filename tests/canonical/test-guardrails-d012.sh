@@ -248,10 +248,12 @@ assert_file_contains "$STATE_GENERATE_MD" "**User Approved:**" \
 # ===========================================================================
 
 echo ""
-echo "=== C6a: canonical settings.yml template preserves kb_baseline shape ==="
+echo "=== C6a: canonical settings.yml template preserves knowledge: baseline shape ==="
+# kb_baseline: was superseded by the flat schema's knowledge: block (source/last_update/
+# doc_set/term_exclusions) -- assert the replacement shape instead.
 if [[ -f "$SETTINGS_TEMPLATE" ]]; then
-    assert_file_contains "$SETTINGS_TEMPLATE" "kb_baseline" \
-        "C6a canonical settings.yml template has kb_baseline key"
+    assert_file_contains "$SETTINGS_TEMPLATE" "knowledge:" \
+        "C6a canonical settings.yml template has knowledge: key"
 else
     echo "  SKIP: canonical settings.yml template not found at $SETTINGS_TEMPLATE"
     pass "C6a canonical settings.yml template not present (skip)"

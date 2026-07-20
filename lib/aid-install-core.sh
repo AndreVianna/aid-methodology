@@ -39,8 +39,6 @@
 #   manifest_exists <manifest>  -> exit 0 when manifest exists and is parseable, else exit 6
 #   uninstall_tool <manifest> <tool> <target>
 #                               -> manifest-driven removal of one tool's files
-#   write_version_marker <target> <version>
-#                               -> writes <target>/.aid/.aid-version
 #
 # Verbose mode:
 #   Set AID_VERBOSE=1 (or pass --verbose to install.sh) to print per-file
@@ -617,7 +615,7 @@ _copy_root_agent_file() {
 #
 # The manifest has this shape (2-space indent, \n newlines):
 # {
-#   "manifest_version": 1,
+#   "format_version": 2,
 #   "aid_version": "0.7.0",
 #   "installed_at": "...",
 #   "tools": {
@@ -885,7 +883,7 @@ data["tools"][tool] = {
 # Build output with canonical key order.
 top_installed_at = data.get("installed_at", now)
 output = {
-    "manifest_version": 1,
+    "format_version": 2,
     "aid_version": version,
     "installed_at": top_installed_at,
     "tools": data["tools"],
@@ -1051,7 +1049,7 @@ _manifest_write_bash() {
         while IFS= read -r tid; do
             [[ -n "$tid" && "$tid" != "$tool" ]] && all_tool_ids+=("$tid")
         done < <(grep -o '"[a-z][a-zA-Z-]*"[[:space:]]*:' "$manifest" | \
-                 grep -v 'manifest_version\|aid_version\|installed_at\|version\|paths\|root_agent_files\|sha256\|status\|path\|tools' | \
+                 grep -v 'manifest_version\|format_version\|aid_version\|installed_at\|version\|paths\|root_agent_files\|sha256\|status\|path\|tools' | \
                  sed 's/"//g' | sed 's/[[:space:]]*://g')
     fi
 
@@ -1061,7 +1059,7 @@ _manifest_write_bash() {
 
     {
         printf '{\n'
-        printf '  "manifest_version": 1,\n'
+        printf '  "format_version": 2,\n'
         printf '  "aid_version": "%s",\n' "$version"
         printf '  "installed_at": "%s",\n' "$top_installed_at"
         printf '  "tools": {\n'
@@ -1217,7 +1215,7 @@ PY
         tmp_file="$(mktemp "$(dirname "$manifest")/.manifest.tmp.XXXXXX")"
         {
             printf '{\n'
-            printf '  "manifest_version": 1,\n'
+            printf '  "format_version": 2,\n'
             printf '  "aid_version": "%s",\n' "$last_ver"
             printf '  "installed_at": "%s",\n' "$top_iat"
             printf '  "tools": {\n'
@@ -1488,7 +1486,7 @@ aid_status_body() {
     local cwd_display
     cwd_display="$(cd "$target" && pwd)"
 
-    if [[ ! -f "$manifest" ]] || ! grep -q '"manifest_version"' "$manifest" 2>/dev/null; then
+    if [[ ! -f "$manifest" ]] || ! grep -qE '"(manifest_version|format_version)"' "$manifest" 2>/dev/null; then
         printf "No AID tools installed in %s yet - run 'aid add <tool>'.\n" "$cwd_display"
         return 0
     fi
@@ -1505,7 +1503,7 @@ aid_status_body() {
 
 # aid_status <target>
 # Renders the "aid status" output for the AID project rooted at <target>.
-# Reads <target>/.aid/.aid-manifest.json (and .aid/.aid-version).
+# Reads <target>/.aid/.aid-manifest.json.
 # Returns:
 #   0 - manifest found; status printed to stdout.
 #   7 - no manifest in <target>; "not an AID project here" message printed to stdout.
@@ -1515,7 +1513,7 @@ aid_status() {
     local cwd_display
     cwd_display="$(cd "$target" && pwd)"
 
-    if [[ ! -f "$manifest" ]] || ! grep -q '"manifest_version"' "$manifest" 2>/dev/null; then
+    if [[ ! -f "$manifest" ]] || ! grep -qE '"(manifest_version|format_version)"' "$manifest" 2>/dev/null; then
         printf "No AID install found in %s. Run 'aid add <tool>' to install.\n" "$cwd_display"
         return 7
     fi
@@ -1557,7 +1555,7 @@ manifest_exists() {
         return 6
     fi
     # Must have at least one key.
-    if grep -q '"manifest_version"' "$manifest" 2>/dev/null; then
+    if grep -qE '"(manifest_version|format_version)"' "$manifest" 2>/dev/null; then
         return 0
     fi
     return 6
@@ -1992,17 +1990,6 @@ _migrate_term_exclusions() {
 }
 
 # ---------------------------------------------------------------------------
-# Version marker
-# ---------------------------------------------------------------------------
-
-# write_version_marker <target> <version>
-write_version_marker() {
-    local target="$1" version="$2"
-    mkdir -p "${target}/.aid"
-    printf '%s\n' "$version" > "${target}/.aid/.aid-version"
-}
-
-# ---------------------------------------------------------------------------
 # Project-level provisioning (work-007): required runtime file + VCS hygiene.
 # Both are idempotent and safe to run once per tool during a multi-tool add.
 # ---------------------------------------------------------------------------
@@ -2033,9 +2020,9 @@ seed_settings_yml() {
     # Seed from the template, but STAMP the format_version as the first line so
     # the settings-format gate does not warn on every subsequent command (the raw
     # template ships unstamped; era-b synthesis stamps -- we match it here). The
-    # value mirrors bin/aid's AID_SUPPORTED_FORMAT (fallback 2 for install.sh).
+    # value mirrors bin/aid's AID_SUPPORTED_FORMAT (fallback 3 for install.sh).
     local _fmt _seed_tmp
-    _fmt="${AID_SUPPORTED_FORMAT:-2}"
+    _fmt="${AID_SUPPORTED_FORMAT:-3}"
     _seed_tmp="$(mktemp "${dst}.aid-tmp.XXXXXX")" || {
         echo "WARN: aid-install-core: could not create temp file to seed .aid/settings.yml for '${tool}'." >&2
         return 0
@@ -2069,6 +2056,7 @@ _aid_gitignore_block() {
         ".aid/.temp/" \
         ".aid/.trash/" \
         ".aid/.heartbeat/" \
+        ".aid/.control/" \
         ".aid/generated/" \
         ".aid/knowledge/.cache/"
     printf '%s' "$_AID_GI_END"
@@ -2136,7 +2124,7 @@ update_gitignore() {
 # Returns:
 #   0 - success (all files installed or up-to-date)
 #
-# Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
+# Side effects: writes <target>/.aid/.aid-manifest.json.
 install_tool() {
     local staging="$1" tool="$2" target="$3" version="$4" force="${5:-0}"
     local manifest="${target}/.aid/.aid-manifest.json"
@@ -2281,9 +2269,6 @@ install_tool() {
     _prune_tool_dirs "$target" "$tool" "_prune_manifest_set"
     unset _prune_manifest_set
 
-    # Write version marker.
-    write_version_marker "$target" "$version"
-
     # Project-level provisioning (work-007): seed the required settings.yml and
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     seed_settings_yml "$target" "$tool"
@@ -2420,7 +2405,6 @@ uninstall_tool() {
     if [[ ! -f "$manifest" ]]; then
         local aid_meta_dir
         aid_meta_dir="$(dirname "$manifest")"
-        rm -f "${aid_meta_dir}/.aid-version"
         # Remove the install-time-seeded settings.yml (symmetric with seed_settings_yml).
         # Only fires when NO tools remain -- a partial uninstall keeps settings.yml
         # for the remaining tools.

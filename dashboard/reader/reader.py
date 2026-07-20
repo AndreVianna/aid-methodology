@@ -3,7 +3,7 @@
 #
 # Feature-002 Feature Flow (step numbers match the SPEC.md):
 #   1. RESOLVE    verify aid_root/.aid exists; absent -> empty RepoModel + parse_warning
-#   2. LEVEL-0    parse .aid/.aid-manifest.json (+ .aid/.aid-version)    -> ToolInfo
+#   2. LEVEL-0    parse .aid/.aid-manifest.json    -> ToolInfo
 #   3. LEVEL-1    parse .aid/settings.yml + stat .aid/knowledge/          -> RepoInfo
 #   4. ENUMERATE  list .aid/works/* (all direct subdirs; name not a filter) -> work_id list
 #   5. PER WORK   read STATE.md once; parse normalized block + tasks + Q&A -> WorkModel list
@@ -60,14 +60,17 @@ from .models import (
 from .parsers import (
     ParsedTaskState,
     ParsedWork,
+    parse_connectors,
     parse_deferred_issues,
     parse_delivery_gate,
     parse_delivery_state_md,
     parse_execution_graph,
+    parse_external_sources,
     parse_kb_baseline,
     parse_kb_state,
     parse_log_availability,
-    parse_project_name,
+    parse_minimum_grade,
+    parse_project_settings,
     parse_quick_check_findings,
     parse_requirements_md,
     parse_spec_md,
@@ -127,6 +130,40 @@ def _sd2_rank(state: "TaskStatus") -> int:
 # ---------------------------------------------------------------------------
 # work-004 Pillar 5: Same-work reconcile (no winner) -- task-011
 # ---------------------------------------------------------------------------
+
+def _pipeline_winner_sort_key(
+    updated: Optional[str], branch_label: Optional[str]
+) -> tuple:
+    """Shared Pipeline-State winner-rule sort key (SD-2 / Pillar 5 step 2).
+
+    Newest `updated` wins; tie -> `branch_label` lexical sort, "main" first.
+
+    This is the SINGLE encoding of the winner rule -- used by BOTH
+    `_reconcile_same_work` (ranking WorkModel copies when the reader merges
+    same-work_id roots) and `resolve_work_dir` (task-002, WT-1: ranking raw
+    worktree candidates so a write hits the very copy the reader would
+    render). Factoring it out means the "SAME winner rule" invariant holds by
+    construction rather than by two independently-maintained copies.
+
+    Sort ascending by a key where "better" (newer timestamp, main branch)
+    maps to a SMALLER value, so sorted()[0] is the winner.
+
+    Key structure: (tier, inv_updated, secondary)
+      tier=0 if timestamp is present, tier=1 if absent (present wins over absent).
+      inv_updated: char-complement of the ISO-8601 string so that a LARGER
+        (newer) timestamp maps to a SMALLER key (ascending sort picks newest first).
+        ISO-8601 characters are ASCII (digits, 'T', 'Z', '-', ':'); guard against
+        corrupt non-ASCII by clamping ord(c) to [0, 0x7F] before complement.
+      secondary: (0, "") for "main", else (1, label) for lexical sort.
+    """
+    updated = updated or ""
+    label = branch_label or ""
+    secondary = (0, "") if label == "main" else (1, label)
+    if updated:
+        inv_updated = "".join(chr(0x7F - min(ord(c), 0x7F)) for c in updated)
+        return (0, inv_updated, secondary)
+    return (1, "", secondary)
+
 
 def _reconcile_same_work(
     copies: list[tuple["WorkModel", str, str]],
@@ -195,30 +232,12 @@ def _reconcile_same_work(
     # ------------------------------------------------------------------
     # Step 2: pick the Pipeline-State winner by newest `updated` timestamp.
     # Tie-break: branch_label lexical sort, "main" sorting first.
-    #
-    # Sort ascending by a key where "better" (newer timestamp, main branch) maps
-    # to a SMALLER value, so sorted()[0] is the winner.
-    #
-    # Key structure: (tier, inv_updated, secondary)
-    #   tier=0 if timestamp is present, tier=1 if absent (present wins over absent).
-    #   inv_updated: char-complement of the ISO-8601 string so that a LARGER
-    #     (newer) timestamp maps to a SMALLER key (ascending sort picks newest first).
-    #     ISO-8601 characters are ASCII (digits, 'T', 'Z', '-', ':'); guard against
-    #     corrupt non-ASCII by clamping ord(c) to [0, 0x7F] before complement.
-    #   secondary: (0, "") for "main", else (1, label) for lexical sort.
+    # The sort key itself is the shared _pipeline_winner_sort_key (see its
+    # docstring above) -- reused verbatim by resolve_work_dir (task-002).
     # ------------------------------------------------------------------
     def _pipeline_winner_key(entry: tuple[WorkModel, str, str]) -> tuple:
         wm = entry[0]
-        updated = wm.updated or ""
-        label = wm.branch_label or ""
-        secondary = (0, "") if label == "main" else (1, label)
-        if updated:
-            inv_updated = "".join(
-                chr(0x7F - min(ord(c), 0x7F)) for c in updated
-            )
-            return (0, inv_updated, secondary)
-        else:
-            return (1, "", secondary)
+        return _pipeline_winner_sort_key(wm.updated, wm.branch_label)
 
     sorted_copies = sorted(copies, key=_pipeline_winner_key)
     winner_wm, winner_text, winner_label = sorted_copies[0]
@@ -315,6 +334,86 @@ def _reconcile_same_work(
     return reconciled, winner_text, winner_label
 
 
+# ---------------------------------------------------------------------------
+# Worktree-aware work-directory resolver (WT-1) -- task-002
+# ---------------------------------------------------------------------------
+
+def resolve_work_dir(served_root: Union[str, Path], work_id: str) -> Optional[Path]:
+    """Resolve work_id to the REAL on-disk work directory (worktree-aware; WT-1).
+
+    Reuses `enumerate_worktree_roots` (locator.py) to walk the served repo's git
+    worktrees, selects every worktree whose `<wt>/.aid/works/<work_id>` exists, and
+    applies the SAME winner rule as `_reconcile_same_work` step 2 (the shared
+    `_pipeline_winner_sort_key`: newest `updated` wins; tie -> `branch_label`
+    lexical, "main" first) -- so the directory returned is the very copy the
+    reader would render for this work_id (a write hits exactly what the reader
+    rendered).
+
+    Returns None when no worktree of the served repo holds work_id (the caller
+    maps this to 404 -- the reader would not have rendered this work either).
+    Inherits the reader's SD-3 degradation (git absent / non-git -> main-root-
+    only) via `enumerate_worktree_roots`, so this resolver can only ever be asked
+    to target a work the reader itself surfaced -- consistency by construction.
+
+    `served_root` may be the repo root or a path ending in ".aid" (same convention
+    as `read_repo`). The caller is responsible for validating `work_id`'s shape
+    (`^work-[0-9]+`) before calling -- this function only resolves an
+    already-validated id to a directory; it never reconstructs a served-tree
+    path itself (each candidate directory comes verbatim from
+    `enumerate_worktree_roots`'s real on-disk `.aid` dir).
+
+    Read-only. Never throws.
+    """
+    root = Path(served_root).resolve()
+    if root.name == ".aid":
+        root = root.parent
+
+    worktree_roots = enumerate_worktree_roots(root)
+
+    # (updated, branch_label, work_dir) for every worktree that actually holds work_id.
+    candidates: list[tuple[Optional[str], Optional[str], Path]] = []
+    for branch_label, wt_aid_dir in worktree_roots:
+        work_dir = wt_aid_dir / "works" / work_id
+        if not work_dir.is_dir():
+            continue
+        candidates.append((_peek_work_updated(work_dir, work_id), branch_label, work_dir))
+
+    if not candidates:
+        return None
+
+    candidates.sort(key=lambda c: _pipeline_winner_sort_key(c[0], c[1]))
+    return candidates[0][2]
+
+
+def _peek_work_updated(work_dir: Path, work_id: str) -> Optional[str]:
+    """Best-effort read of a work directory's Pipeline State `updated` field.
+
+    Used only by `resolve_work_dir` to break ties between worktree copies of the
+    same work_id (the winner rule needs `updated`, not a full WorkModel). Reads
+    `work_dir/STATE.md` -- present regardless of monolithic/flat/hierarchical
+    layout, since all three read the work-root STATE.md for Pipeline State -- and
+    parses it with the SAME `parse_state_md()` the always-on read path uses (so a
+    legacy/fallback-format STATE.md derives `updated` identically to a full
+    `read_repo` pass).
+
+    Returns None on a missing STATE.md or any read/parse failure; never throws.
+    A None result only affects tie-break ordering, never candidate inclusion --
+    the work_id directory's presence is the sole inclusion test (WT-1).
+    """
+    state_path = work_dir / "STATE.md"
+    if not state_path.is_file():
+        return None
+    try:
+        raw = read_bytes_bounded(state_path)
+        text = raw.decode("utf-8", errors="replace")
+    except OSError:
+        return None
+    try:
+        return parse_state_md(text, work_id=work_id, work_dir=work_dir).updated
+    except Exception:  # noqa: BLE001 -- never throws
+        return None
+
+
 def read_repo(aid_root: Union[str, Path]) -> RepoModel:
     """Read AID state for the repo at aid_root and return a normalized RepoModel.
 
@@ -385,14 +484,20 @@ def _read_repo_full(
         return empty_model, {}
 
     # Step 2: LEVEL-0 -- ToolInfo (LC-2)
-    tool_info, br = parse_tool_info(loc.manifest_path, loc.version_path)
+    tool_info, br = parse_tool_info(loc.manifest_path)
     bytes_read += br
 
     # Step 3: LEVEL-1 -- RepoInfo + KbStateRef (LC-2)
-    project_name, br = parse_project_name(loc.settings_path)
+    project_name, project_description, br = parse_project_settings(loc.settings_path)
     bytes_read += br
     if not project_name:
         project_name = root.name  # fallback: folder basename (SPEC DM-7 note)
+
+    # feature-002 (work-017 task-005): GLOBAL review.minimum_grade -- its own
+    # 'review:'-section scan (a real settings.yml has 'tools:' between 'project:'
+    # and 'review:', so the project-section scan above cannot reach it).
+    minimum_grade, br = parse_minimum_grade(loc.settings_path)
+    bytes_read += br
 
     # task-064: parse kb_baseline from settings.yml (DM-A4)
     kb_baseline, br = parse_kb_baseline(loc.settings_path)
@@ -420,10 +525,24 @@ def _read_repo_full(
         kb_state.doc_freshness = doc_freshness
         kb_state.suspect_count = sum(1 for d in doc_freshness if d.verdict == "suspect")
 
+    # feature-007 (work-017 task-019): parse the project-level connectors registry
+    # (.aid/connectors/*.md), sorted by stem. Missing dir -> [] (non-error).
+    connectors, br = parse_connectors(loc.aid_dir / "connectors")
+    bytes_read += br
+
+    # feature-010 (work-017 task-021): parse the project-level external-sources
+    # registry (.aid/knowledge/external-sources.md sources: list). A thin wrapper
+    # over parse_doc_frontmatter (no new parser); absent file -> [] (non-error).
+    external_sources = parse_external_sources(loc.kb_dir)
+
     repo_info = RepoInfo(
         project_name=project_name,
         aid_dir=str(loc.aid_dir),
         kb_state=kb_state,
+        project_description=project_description,
+        minimum_grade=minimum_grade,
+        connectors=connectors,
+        external_sources=external_sources,
     )
 
     # Step 4: ENUMERATE -- worktrees + work folders (work-004 Pillar 4 / SD-3)
@@ -653,6 +772,35 @@ def read_repo_detail(
     return repo_model, sorted_details
 
 
+def _task_stop_requested(work_dir: Path, work_id: str, task_id: str) -> bool:
+    """Derive TaskModel.stop_requested (feature-008-execution-control, work-017
+    task-029): a filesystem `stat` of the cooperative stop-signal file
+    `write-control-signal.sh` (task-028) creates on `task.stop` / removes on
+    `task.resume`.
+
+    Computed RELATIVE to work_dir -- the walked worktree copy of
+    `.aid/works/<work_id>` this read pass is currently processing (WT-1) --
+    NEVER a reconstructed `<served-root>/.aid/.control/<work_id>/` path.
+    `work_dir/../../.control/<work_id>/` is the `.aid/.control/<work_id>/`
+    sibling of work_dir's own `.aid/works/`, exactly mirroring
+    `write-control-signal.sh`'s own path derivation (`dashboard/scripts/
+    write-control-signal.sh`: `WORK_DIR/../../.control/WORK_ID`) so the reader
+    stats the identical tree the writer and the `aid-execute` poll act on.
+
+    Never parsed from / written to STATE.md (the control file is a new
+    control-artifact class, outside STATE.md's C1 single-writer scope -- see
+    feature-008 SPEC.md "C1 scope note"). Fail-safe: a missing `.control/`
+    directory, a missing signal file, or any OSError all yield False -- never
+    a parse_warning, never a raised exception (mirrors the reader's
+    forward-compat posture for every other derived field).
+    """
+    try:
+        control_file = work_dir.parent.parent / ".control" / work_id / f"{task_id}.stop"
+        return control_file.is_file()
+    except OSError:
+        return False
+
+
 def _read_work(
     work_dir: Path, work_id: str
 ) -> "tuple[WorkModel, list[str], int, str, str]":
@@ -776,6 +924,7 @@ def _read_work(
             short_name=short_name,
             delivery=delivery,
             lane=lane,
+            stop_requested=_task_stop_requested(work_dir, work_id, task.task_id),
         ))
 
     # Step 5e: set source_mode; step 5f: lifecycle already set by parsers
@@ -1040,6 +1189,8 @@ def _read_work_flat(
             short_name=short_name,
             delivery=1,
             lane=lane,
+            display_name=pts.display_name,
+            stop_requested=_task_stop_requested(work_dir, work_id, task_id_str),
         ))
 
     # ---- Synthesize the single DeliverableRef for delivery-001 ----
@@ -1293,6 +1444,8 @@ def _read_work_hierarchical(
                 short_name=short_name,
                 delivery=delivery_number,
                 lane=lane,
+                display_name=pts.display_name,
+                stop_requested=_task_stop_requested(work_dir, work_id, task_id_str),
             ))
 
         # ---- Build DeliverableRef for this delivery ----

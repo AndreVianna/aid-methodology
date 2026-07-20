@@ -207,12 +207,13 @@ registry at all this cycle.
   found in the catalog is **not** guessed as a near match — treat it as `custom`, or raise a Q&A
   entry if the resulting attribute set is unclear.
 - **Custom (`custom`):** capture `name`, `connection_type` (validated against the closed enum
-  `mcp | api | ssh | url | cli` — a value outside the set is **refused, not coerced**; `db` is
-  not a value), `endpoint`/target, and, for an **aid-managed** `connection_type`
-  (`api | ssh | url | cli`), `auth_method` (from `none | token | pat | oauth | ssh-key`) and, when
+  `mcp | api | ssh | cli` — a value outside the set is **refused, not coerced**; `db` is
+  not a value), `endpoint`/target, and, for an **aid-managed, credentialed** `connection_type`
+  (`api` only), `auth_method` (from `none | token | pat | oauth`) and, when
   `auth_method != none`, the `secret_reference` form (default
-  `file:.aid/connectors/.secrets/<connector>`). Set `preset: custom`. (A `mcp` custom declaration
-  captures no `auth_method` / `secret_reference` here — see the management-mode branch below.)
+  `file:.aid/connectors/.secrets/<connector>`). Set `preset: custom`. (A `mcp` custom declaration,
+  or an aid-managed **self-authenticating** (`ssh`/`cli`) one, captures no `auth_method` /
+  `secret_reference` here — see the management-mode branch below.)
 
 **`tags` / `audience` — auto-derived, never prompted.** When the preset row declares a `tags`
 column value, use it verbatim (it already encodes `connector` + the connection type + any
@@ -238,8 +239,15 @@ After `connection_type` is set (preset or custom), branch on the **derived manag
   the host tool's own MCP/plugin** and that the agent must **request it from the tool** (the tool
   handles auth). There is **no** wiring step — AID neither writes nor triggers any host MCP
   configuration.
-- **Aid-managed (`connection_type: api | ssh | url | cli`):** proceed with the `auth_method` /
-  `secret_reference` form already captured above (preset or custom); unchanged from today.
+- **Aid-managed, credentialed (`connection_type: api`):** proceed with the `auth_method` /
+  `secret_reference` form already captured above (preset or custom) — `api` is the **only** type
+  that may resolve to a non-`none` `auth_method` and carry a `secret_reference`.
+- **Aid-managed, self-authenticating (`connection_type: ssh | cli`):** force `auth_method: none`
+  and write **no** `secret_reference` — same as `mcp` on this axis — but `endpoint` is still the
+  **real, concrete** connect target (never informational): an `ssh` connector authenticates via
+  ssh keys/ssh-agent, a `cli` connector via the invoked tool's own login/config (docker socket,
+  `gh auth`, `aws` config), both externally, outside AID. Do **NOT** prompt for a secret and do
+  **NOT** invoke feature-003's `connector-secret` twin.
 
 ### Reconcile the registry (Steps R0-R5; feature-006 orchestration)
 

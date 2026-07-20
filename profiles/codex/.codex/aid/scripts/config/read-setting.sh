@@ -208,7 +208,28 @@ lookup_list() {
 }
 
 # ---------------------------------------------------------------------------
-# Skill mode: try per-skill override; fall back to review.<key>; fall back to --default
+# Top-level scalar lookup — reads a column-0 `key: value`. The flat settings
+# schema keeps name/description/type/minimum_grade at the top level (no longer
+# nested under project:/review:). Returns empty if absent, or if the value is an
+# inline list / block marker.
+# ---------------------------------------------------------------------------
+lookup_toplevel() {
+    local file="$1" key="$2"
+    awk -v key="$key" '
+        $0 ~ "^"key":([[:space:]]|$)" {
+            sub("^"key":[[:space:]]*", "")
+            sub("[[:space:]]+#.*$", "")
+            if ($0 ~ /^\[.*\]$/ || $0 == "") { exit }
+            gsub("^[\"\047]|[\"\047]$", "")
+            print
+            exit
+        }
+    ' "$file" || true
+}
+
+# ---------------------------------------------------------------------------
+# Skill mode: per-skill override; then global (flat top-level <key>, legacy
+# review.<key> fallback); then --default
 # ---------------------------------------------------------------------------
 if [[ "$MODE" == "skill" ]]; then
     # 1. Per-skill override
@@ -217,8 +238,12 @@ if [[ "$MODE" == "skill" ]]; then
         echo "$val"
         exit 0
     fi
-    # 2. Global category default (review.<key> for grade-related lookups)
-    val=$(lookup "$SETTINGS_FILE" "review" "$KEY")
+    # 2. Global default: flat top-level <key> (e.g. minimum_grade), with a
+    #    legacy nested fallback to review.<key> for not-yet-migrated projects.
+    val=$(lookup_toplevel "$SETTINGS_FILE" "$KEY")
+    if [[ -z "$val" ]]; then
+        val=$(lookup "$SETTINGS_FILE" "review" "$KEY")
+    fi
     if [[ -n "$val" ]]; then
         echo "$val"
         exit 0
@@ -237,20 +262,52 @@ fi
 # Tries scalar lookup first; falls back to list lookup (inline or block form).
 # ---------------------------------------------------------------------------
 if [[ "$MODE" == "path" ]]; then
-    # Split A.B into section + key
+    if [[ "$DPATH" != *.* ]]; then
+        # Dotless path -> flat top-level scalar (name/description/type/
+        # minimum_grade), with a legacy nested fallback for the four keys that
+        # used to live under project:/review: (backward compat for un-migrated
+        # projects).
+        val=$(lookup_toplevel "$SETTINGS_FILE" "$DPATH")
+        if [[ -z "$val" ]]; then
+            case "$DPATH" in
+                name|description|type) val=$(lookup "$SETTINGS_FILE" "project" "$DPATH") ;;
+                minimum_grade)         val=$(lookup "$SETTINGS_FILE" "review" "$DPATH") ;;
+            esac
+        fi
+        if [[ -n "$val" ]]; then
+            echo "$val"
+            exit 0
+        fi
+        if [[ $HAS_DEFAULT -eq 1 ]]; then
+            echo "$DEFAULT"
+            exit 0
+        fi
+        echo "read-setting.sh: no value for $DPATH in $(abs_path "$SETTINGS_FILE") and no --default" >&2
+        exit 1
+    fi
+    # Dotted path A.B -> nested section.key lookup (scalar, then list).
     section="${DPATH%%.*}"
     key="${DPATH#*.}"
-    if [[ "$section" == "$DPATH" || -z "$key" ]]; then
-        echo "read-setting.sh: --path must be dotted (A.B), got: $DPATH" >&2
-        exit 2
-    fi
     val=$(lookup "$SETTINGS_FILE" "$section" "$key")
-    if [[ -n "$val" ]]; then
-        echo "$val"
-        exit 0
+    if [[ -z "$val" ]]; then
+        val=$(lookup_list "$SETTINGS_FILE" "$section" "$key")
     fi
-    # Fall back to list lookup (handles tools.installed and similar)
-    val=$(lookup_list "$SETTINGS_FILE" "$section" "$key")
+    # Legacy compatibility: a caller may still pass the pre-flatten dotted path
+    # (project.name / review.minimum_grade) against a now-flat file -> fall back
+    # to the top-level scalar.
+    if [[ -z "$val" ]]; then
+        case "$DPATH" in
+            project.name)         val=$(lookup_toplevel "$SETTINGS_FILE" "name") ;;
+            project.description)  val=$(lookup_toplevel "$SETTINGS_FILE" "description") ;;
+            project.type)         val=$(lookup_toplevel "$SETTINGS_FILE" "type") ;;
+            review.minimum_grade) val=$(lookup_toplevel "$SETTINGS_FILE" "minimum_grade") ;;
+            # heartbeat_interval promoted to top level (traceability: wrapper removed)
+            traceability.heartbeat_interval) val=$(lookup_toplevel "$SETTINGS_FILE" "heartbeat_interval") ;;
+            # doc_set / term_exclusions moved from discovery: into knowledge:
+            discovery.doc_set)         val=$(lookup_list "$SETTINGS_FILE" "knowledge" "doc_set") ;;
+            discovery.term_exclusions) val=$(lookup_list "$SETTINGS_FILE" "knowledge" "term_exclusions") ;;
+        esac
+    fi
     if [[ -n "$val" ]]; then
         echo "$val"
         exit 0

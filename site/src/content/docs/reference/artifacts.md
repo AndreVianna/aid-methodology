@@ -79,8 +79,8 @@ These files are written by the `aid add` command into the target project.
 
 | Artifact | Path | Produced by | Description |
 |----------|------|-------------|-------------|
-| AID manifest | `.aid/.aid-manifest.json` | `aid add` | Records every file installed by `aid add`, the tool version, and checksum-based ownership records for root agent files. Drives `aid update` and `aid remove`. |
-| Version file | `.aid/.aid-version` | `aid add` | Human-readable one-line version string — convenience companion to the manifest. |
+| AID manifest | `.aid/.aid-manifest.json` | `aid add` | Records every file installed by `aid add`, the tool version, the top-level `aid_version` (the installed AID release), and checksum-based ownership records for root agent files. Drives `aid update` and `aid remove`. |
+| Settings version (tool-less) | `.aid/settings.yml` (`aid_version:` key) | `aid projects add` | Records the installed AID release version for a bare, tool-less project (no manifest). The standalone `.aid/.aid-version` marker file is retired. |
 | `CLAUDE.md` | `CLAUDE.md` (project root) | `aid add claude-code` | Claude Code project-context file. AID's root agent file for the Claude Code host tool. Protected from silent overwrites by the protect-on-diff mechanism. |
 | `AGENTS.md` | `AGENTS.md` (project root) | `aid add {codex,cursor,copilot-cli,antigravity}` | Root agent file for Codex, Cursor, Copilot CLI, and Antigravity host tools. |
 

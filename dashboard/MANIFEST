@@ -28,6 +28,15 @@ reader/models.py
 reader/parsers.py
 reader/reader.py
 reader/state_schema.py
+scripts/build-connectors-index.sh
+scripts/connector-secret.sh
+scripts/delete-pipeline.sh
+scripts/write-connector.sh
+scripts/write-control-signal.sh
+scripts/write-external-source.sh
+scripts/write-requirement.sh
+scripts/write-setting.sh
+scripts/writeback-state.sh
 server/__init__.py
 server/reader.mjs
 server/server.mjs

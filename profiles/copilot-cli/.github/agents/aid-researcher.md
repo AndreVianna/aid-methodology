@@ -33,6 +33,16 @@ If no `HEARTBEAT_FILE` parameter was passed, do nothing — don't write
 speculatively. See `.github/aid/templates/subagent-heartbeat-protocol.md` for
 the full contract.
 
+If your dispatcher ALSO passed `STOP_FILE=...` (opt-in, independent of
+heartbeat), at that SAME tick also `stat` your own `.stop` file and re-read
+the work `lifecycle`; either signal present/non-`Running` means halt at the
+next safe checkpoint — finish your current atomic unit of work, then end
+your turn — rather than starting further scoped work. Never create, delete,
+or otherwise write to `STOP_FILE` yourself; only `write-control-signal.sh`
+does. If no `STOP_FILE` was passed, do nothing. See
+`.github/aid/templates/subagent-heartbeat-protocol.md` §Cooperative
+stop-poll for the full contract.
+
 ## Self-review discipline
 
 Before declaring any work complete, adversarially review your own output. The
@@ -71,7 +81,7 @@ for the full protocol.
 - Analyze performance characteristics: profile hot paths, identify bottlenecks, define performance budgets
 - Execute RESEARCH-typed tasks: investigate and synthesize findings on a specific question or subsystem
 - Research external and web sources — current documentation, standards, prior art, and community resources — to complement project-internal findings; always cite the URL and access date for every web source consulted
-- Consult `.aid/connectors/INDEX.md` and, for a relevant `connection_type: mcp` connector, use the host tool's MCP to gather additional evidence (`.github/aid/templates/connectors/consumption-protocol.md`) — optional, read-only enrichment alongside KB/codebase/web sources; aid-managed (`api`/`ssh`/`url`/`cli`) consumption is out of scope
+- Consult `.aid/connectors/INDEX.md` and, for a relevant `connection_type: mcp` connector, use the host tool's MCP to gather additional evidence (`.github/aid/templates/connectors/consumption-protocol.md`) — optional, read-only enrichment alongside KB/codebase/web sources; aid-managed (`api`/`ssh`/`cli`) consumption is out of scope
 
 ## What You Don't Do
 - Design solutions (that's the Architect)

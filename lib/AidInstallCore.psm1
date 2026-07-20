@@ -30,7 +30,6 @@
 #   Remove-ManifestTool <manifest> <tool>        - removes a tool section from manifest
 #   Test-ManifestExists <manifest>               - returns $true when manifest exists/parseable
 #   Uninstall-AidTool <manifest> <tool> <target> [aidVerbose] - manifest-driven removal
-#   Write-VersionMarker <target> <version>       - writes <target>/.aid/.aid-version
 #
 # Verbose mode:
 #   Pass -AidVerbose $true to Install-AidTool / Uninstall-AidTool / Copy-AidFile /
@@ -72,7 +71,7 @@ $script:_SeededSettings  = $false
 $script:_GitignoreAction = 'unchanged'
 # Settings format stamp. MUST equal bin/aid AID_SUPPORTED_FORMAT / bin/aid.ps1
 # AidSupportedFormat. Used to stamp a seeded settings.yml so the format gate is quiet.
-$script:_AidSupportedFormat = 2  # format 2: .aid/dashboard/ eliminated (home from CLI, kb.html in .aid/knowledge/)
+$script:_AidSupportedFormat = 3  # format 2: .aid/dashboard/ eliminated (home from CLI, kb.html in .aid/knowledge/)
 
 # ---------------------------------------------------------------------------
 # Constants
@@ -847,7 +846,7 @@ function script:Build-ManifestJson {
 
     $sb = [System.Text.StringBuilder]::new()
     [void]$sb.Append("{`n")
-    [void]$sb.Append("  `"manifest_version`": 1,`n")
+    [void]$sb.Append("  `"format_version`": 2,`n")
     [void]$sb.Append("  `"aid_version`": `"$(script:Escape-JsonString $TopVersion)`",`n")
     [void]$sb.Append("  `"installed_at`": `"$(script:Escape-JsonString $TopInstalledAt)`",`n")
     [void]$sb.Append("  `"tools`": {`n")
@@ -914,7 +913,7 @@ function script:Build-ManifestJson {
 #
 # Reads the existing manifest (if any), merges the tool entry, writes back atomically
 # (via a temp file).  Creates <target>/.aid/ as needed.
-# Key order contract: manifest_version, aid_version, installed_at, tools;
+# Key order contract: format_version, aid_version, installed_at, tools;
 #   per-tool: version, installed_at, paths, root_agent_files;
 #   root_agent_files entry: path, sha256, status.
 # 2-space indent, LF newlines, trailing newline.
@@ -1129,7 +1128,7 @@ function Test-ManifestExists {
     if (-not (Test-Path $ManifestPath -PathType Leaf)) { return $false }
     try {
         $data = Get-Content -LiteralPath $ManifestPath -Raw | ConvertFrom-Json
-        return $null -ne $data.manifest_version
+        return ($null -ne $data.format_version) -or ($null -ne $data.manifest_version)
     } catch {
         return $false
     }
@@ -1490,23 +1489,6 @@ function Invoke-MigrateRetiredLayout {
 }
 
 # ---------------------------------------------------------------------------
-# Version marker
-# ---------------------------------------------------------------------------
-
-# Write-VersionMarker <target> <version>
-function Write-VersionMarker {
-    param([string]$Target, [string]$Version)
-    $aidDir = Join-Path $Target '.aid'
-    if (-not (Test-Path $aidDir -PathType Container)) {
-        New-Item -ItemType Directory -Path $aidDir -Force | Out-Null
-    }
-    $markerPath = Join-Path $aidDir '.aid-version'
-    # Write with LF newline.
-    $bytes = [System.Text.Encoding]::UTF8.GetBytes("$Version`n")
-    [System.IO.File]::WriteAllBytes($markerPath, $bytes)
-}
-
-# ---------------------------------------------------------------------------
 # Project-level provisioning (work-007): required runtime file + VCS hygiene.
 # Parity with bash seed_settings_yml / update_gitignore. Both idempotent.
 # ---------------------------------------------------------------------------
@@ -1523,6 +1505,7 @@ function script:Get-AidGitignoreBlock {
         ".aid/.temp/",
         ".aid/.trash/",
         ".aid/.heartbeat/",
+        ".aid/.control/",
         ".aid/generated/",
         ".aid/knowledge/.cache/",
         $script:_AidGiEnd
@@ -1691,7 +1674,7 @@ function script:Invoke-MigrateTermExclusions {
 # Returns:
 #   0 - success (all files installed or up-to-date)
 #
-# Side effects: writes <target>/.aid/.aid-manifest.json and .aid/.aid-version.
+# Side effects: writes <target>/.aid/.aid-manifest.json.
 function Install-AidTool {
     param(
         [string]$StagingDir,
@@ -1828,9 +1811,6 @@ function Install-AidTool {
     foreach ($p in $installPaths) { $pruneSet.Add($p) | Out-Null }
     Invoke-PruneToolDirs -Target $Target -Tool $Tool -ManifestPathSet $pruneSet -AidVerbose $AidVerbose
 
-    # Write version marker.
-    Write-VersionMarker -Target $Target -Version $Version
-
     # Project-level provisioning (work-007): seed required settings.yml and
     # maintain the .gitignore AID region. Both idempotent; safe per-tool.
     script:Initialize-AidSettingsFile -Target $Target -Tool $Tool
@@ -1957,10 +1937,6 @@ function Uninstall-AidTool {
     # project files so a full uninstall leaves .aid/ clean (work-007).
     if (-not (Test-Path $ManifestPath -PathType Leaf)) {
         $aidMetaDir = [System.IO.Path]::GetDirectoryName($ManifestPath)
-        $versionMarker = Join-Path $aidMetaDir '.aid-version'
-        if (Test-Path $versionMarker -PathType Leaf) {
-            Remove-Item -LiteralPath $versionMarker -Force
-        }
         # Remove the install-time-seeded settings.yml (symmetric with the seed).
         # Only fires when NO tools remain; a partial uninstall keeps it.
         $seededSettings = Join-Path $aidMetaDir 'settings.yml'
@@ -2151,7 +2127,7 @@ function Get-AidStatusBody {
     if (Test-Path $manifest -PathType Leaf) {
         try {
             $raw = Get-Content -LiteralPath $manifest -Raw
-            if ($raw -match '"manifest_version"') {
+            if ($raw -match '"(manifest_version|format_version)"') {
                 $manifestOk = $true
             }
         } catch {}
@@ -2196,12 +2172,12 @@ function Get-AidStatus {
 
     $manifest = Join-Path $targetPath (Join-Path '.aid' '.aid-manifest.json')
 
-    # Check if manifest exists and has manifest_version key.
+    # Check if manifest exists and has a manifest_version or format_version key.
     $manifestOk = $false
     if (Test-Path $manifest -PathType Leaf) {
         try {
             $raw = Get-Content -LiteralPath $manifest -Raw
-            if ($raw -match '"manifest_version"') {
+            if ($raw -match '"(manifest_version|format_version)"') {
                 $manifestOk = $true
             }
         } catch {}
@@ -2260,7 +2236,6 @@ Export-ModuleMember -Function @(
     'Remove-ManifestTool',
     'Test-ManifestExists',
     'Uninstall-AidTool',
-    'Write-VersionMarker',
     'Get-ManifestToolList',
     'Get-AidStatusBody',
     'Get-AidStatus',
