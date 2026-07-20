@@ -853,6 +853,15 @@ footer {
 }
 .project-header-textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .project-header-grade-label { font-size: 0.82rem; color: var(--text-muted); margin-right: 0.5rem; }
+/* Read-only project path row: muted monospace, wraps on long paths, user-selectable
+   so it can be copied. Sits directly under the name; no edit affordance. */
+.project-header-path {
+  font-family: "SF Mono", Monaco, Consolas, "Roboto Mono", monospace;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  word-break: break-all;
+  user-select: text;
+}
 
 /* Danger zone (feature-009-pipeline-delete, task-026): a single-button
    destructive-action section appended to #work-overview-body by
@@ -1828,6 +1837,32 @@ footer {
     return row;
   }
 
+  // Derive the project root from repo.aid_dir (an absolute path ending in the ".aid"
+  // segment, OS-native separators). Strips a trailing "/.aid" or "\.aid". Falls back to
+  // the value as-is if it doesn't end in .aid (defensive -- caller still shows something).
+  function _projectRootFromAidDir(aidDir) {
+    if (!aidDir) return '';
+    var s = String(aidDir).replace(/[\/\\]+$/, '');
+    var m = s.match(/^(.*)[\/\\]\.aid$/);
+    return m ? m[1] : s;
+  }
+
+  // Read-only row: the project's full root path. No edit affordance -- the path is
+  // determined by where `aid dashboard` is served, not an editable setting.
+  function _renderProjectHeaderPathRow(repo) {
+    var rootPath = _projectRootFromAidDir(repo.aid_dir);
+    if (!rootPath) return null;
+    var row = document.createElement('div');
+    row.className = 'project-header-row';
+    var path = document.createElement('span');
+    path.className = 'project-header-path';
+    path.id = 'project-header-path';
+    path.textContent = rootPath;
+    path.title = rootPath;
+    row.appendChild(path);
+    return row;
+  }
+
   function _renderProjectHeader(model) {
     var container = document.getElementById('project-header');
     if (!container) return;
@@ -1851,6 +1886,10 @@ footer {
     identity.className = 'work-overview-identity';
     identity.appendChild(_renderProjectHeaderNameRow(repo, writeEnabled));
     panel.appendChild(identity);
+
+    // Read-only project root path, directly under the name.
+    var pathRow = _renderProjectHeaderPathRow(repo);
+    if (pathRow) panel.appendChild(pathRow);
 
     panel.appendChild(_renderProjectHeaderDescriptionRow(repo, writeEnabled));
     panel.appendChild(_renderProjectHeaderGradeRow(repo, writeEnabled));
