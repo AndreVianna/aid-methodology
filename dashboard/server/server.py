@@ -1169,14 +1169,30 @@ def _resolve_bash_exe(
     sys_root = e.get("SystemRoot") or e.get("windir") or ""
     system32 = ntpath.normpath(ntpath.join(sys_root, "System32")).casefold() if sys_root else None
 
-    def _is_system32(directory: str) -> bool:
-        if not system32 or not directory:
+    def _is_launcher_stub_dir(directory: str) -> bool:
+        # Skip directories that hold a WSL/Store *launcher stub* named bash.exe
+        # (never a real Git-Bash), so the PATH walk can never return one:
+        #   - <SystemRoot>\System32                 -- the classic WSL bash.exe stub.
+        #   - <LocalAppData>\Microsoft\WindowsApps   -- the Store "App Execution
+        #     Alias" stub: a reparse point that launches the default WSL distro,
+        #     whose internal shell is /bin/bash and cannot open a "C:/..." host
+        #     path. It is on PATH by default, and -- UNLIKE System32 -- Python's
+        #     os.path.isfile() returns True for the alias (Node's existsSync()
+        #     returns False), so without this skip the Python twin returns the
+        #     alias and EVERY writer op fails with
+        #     "/bin/bash: C:/...: No such file or directory" (KI-011). Match by
+        #     the fixed trailing segment so it holds regardless of the LocalAppData
+        #     root or whether it is on PATH via that env var.
+        if not directory:
             return False
-        return ntpath.normpath(directory).casefold() == system32
+        norm = ntpath.normpath(directory).casefold()
+        if system32 and norm == system32:
+            return True
+        return norm.endswith(r"\microsoft\windowsapps")
 
-    # 2. PATH walk, skipping the System32 WSL-stub dir.
+    # 2. PATH walk, skipping the WSL/Store launcher-stub dirs.
     for directory in path_env.split(";"):
-        if not directory or _is_system32(directory):
+        if not directory or _is_launcher_stub_dir(directory):
             continue
         for exe_name in exe_names:
             candidate = ntpath.join(directory, exe_name)
@@ -1218,24 +1234,36 @@ def _resolve_pwsh_exe(
     prefer 'pwsh' (PowerShell 7+), else the real 'powershell.exe' (Windows
     PowerShell 5.1). UNLIKE _resolve_bash_exe, this does NOT skip System32 --
     System32\\WindowsPowerShell\\v1.0\\powershell.exe IS the genuine Windows
-    PowerShell (no WSL-launcher-stub hazard exists for PowerShell). PATH is
-    split on ';' explicitly (not os.pathsep, which follows the HOST's own OS)
-    so this stays exercisable from the Linux CI runner. `env`/`exists_fn` are
-    injectable seams. Mirrors resolvePwshExe() in server.mjs exactly.
+    PowerShell (no WSL-launcher-stub hazard exists for PowerShell). It DOES skip
+    the <LocalAppData>\\Microsoft\\WindowsApps dir (KI-011): a pwsh.exe there is a
+    Store App-Execution-Alias reparse point, not a real install, and spawning it
+    via subprocess (no shell) can fail (EACCES) -- the same alias hazard that broke
+    bash resolution. Dropping it is safe: an MSI pwsh 7 (found elsewhere on PATH)
+    passes through unchanged, and a Store-only pwsh falls through to the genuine
+    5.1 powershell.exe (aid.ps1 declares `#Requires -Version 5.1`). PATH is split
+    on ';' explicitly (not os.pathsep, which follows the HOST's own OS) so this
+    stays exercisable from the Linux CI runner. `env`/`exists_fn` are injectable
+    seams. Mirrors resolvePwshExe() in server.mjs exactly.
     """
     e = os.environ if env is None else env
     exists = os.path.isfile if exists_fn is None else exists_fn
     path_env = e.get("PATH", "") or e.get("Path", "")
+
+    def _is_windowsapps_dir(directory: str) -> bool:
+        return bool(directory) and ntpath.normpath(directory).casefold().endswith(
+            r"\microsoft\windowsapps"
+        )
+
     for exe_name in ("pwsh.exe", "pwsh"):
         for directory in path_env.split(";"):
-            if not directory:
+            if not directory or _is_windowsapps_dir(directory):
                 continue
             candidate = ntpath.join(directory, exe_name)
             if exists(candidate):
                 return candidate
     for exe_name in ("powershell.exe", "powershell"):
         for directory in path_env.split(";"):
-            if not directory:
+            if not directory or _is_windowsapps_dir(directory):
                 continue
             candidate = ntpath.join(directory, exe_name)
             if exists(candidate):

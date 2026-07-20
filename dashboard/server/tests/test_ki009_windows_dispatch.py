@@ -160,6 +160,41 @@ class TestResolveBashExeWindowsHardening(unittest.TestCase):
         exists = lambda p: p == r"C:\Windows\System32\bash.exe"  # noqa: E731
         self.assertEqual(srv._resolve_bash_exe(True, env, exists), "bash")
 
+    def test_windowsapps_alias_is_skipped_even_when_present_earlier_than_git(self):
+        # KI-011: the exact reported failure. Git\cmd is on PATH (git.exe, but NO
+        # bash.exe there); Git\bin is NOT on PATH; the WindowsApps App-Execution-
+        # Alias bash.exe IS on PATH. Python's os.path.isfile() returns True for
+        # that alias, so without the WindowsApps skip the PATH walk returns it (a
+        # WSL launcher that fails every write op). It must be skipped, and the
+        # git.exe-derived Git\bin probe must win.
+        env = {
+            "PATH": (
+                r"C:\Windows\System32;C:\Program Files\Git\cmd;"
+                r"C:\Users\u\AppData\Local\Microsoft\WindowsApps"
+            ),
+            "SystemRoot": r"C:\Windows",
+        }
+        files = {
+            r"C:\Windows\System32\bash.exe",                               # WSL stub (skipped: System32)
+            r"C:\Users\u\AppData\Local\Microsoft\WindowsApps\bash.exe",    # WSL alias (skipped: WindowsApps)
+            r"C:\Program Files\Git\cmd\git.exe",                           # derivation source
+            r"C:\Program Files\Git\bin\bash.exe",                          # the real Git-Bash (expected)
+        }
+        exists = lambda p: p in files  # noqa: E731
+        self.assertEqual(
+            srv._resolve_bash_exe(True, env, exists), r"C:\Program Files\Git\bin\bash.exe"
+        )
+
+    def test_windowsapps_alias_only_candidate_falls_back_to_bare_bash_not_the_alias(self):
+        # WindowsApps alias is the ONLY bash.exe and no Git anywhere -> fall back
+        # to the bare "bash" name (never return the alias itself).
+        env = {
+            "PATH": r"C:\Users\u\AppData\Local\Microsoft\WindowsApps",
+            "SystemRoot": r"C:\Windows",
+        }
+        exists = lambda p: p == r"C:\Users\u\AppData\Local\Microsoft\WindowsApps\bash.exe"  # noqa: E731
+        self.assertEqual(srv._resolve_bash_exe(True, env, exists), "bash")
+
     def test_git_install_dir_probe_program_files(self):
         env = {"PATH": r"C:\Windows\System32", "SystemRoot": r"C:\Windows", "ProgramFiles": r"C:\Program Files"}
         exists = lambda p: p == r"C:\Program Files\Git\bin\bash.exe"  # noqa: E731
@@ -251,6 +286,38 @@ class TestResolvePwshExe(unittest.TestCase):
     def test_no_candidate_falls_back_to_bare_pwsh(self):
         env = {"PATH": r"C:\Windows\System32"}
         self.assertEqual(srv._resolve_pwsh_exe(env, lambda p: False), "pwsh")
+
+    def test_windowsapps_pwsh_alias_is_skipped_prefers_real_pwsh(self):
+        # KI-011 (pwsh side): the WindowsApps pwsh.exe App-Execution-Alias is a
+        # Store reparse-point stub. It must be skipped so a real MSI pwsh 7 wins,
+        # even when WindowsApps precedes it on PATH.
+        env = {"PATH": r"C:\Users\u\AppData\Local\Microsoft\WindowsApps;C:\Program Files\PowerShell\7"}
+        files = {
+            r"C:\Users\u\AppData\Local\Microsoft\WindowsApps\pwsh.exe",  # Store alias (skipped)
+            r"C:\Program Files\PowerShell\7\pwsh.exe",                    # real pwsh 7 (expected)
+        }
+        exists = lambda p: p in files  # noqa: E731
+        self.assertEqual(srv._resolve_pwsh_exe(env, exists), r"C:\Program Files\PowerShell\7\pwsh.exe")
+
+    def test_windowsapps_pwsh_alias_only_falls_through_to_powershell_51(self):
+        # WindowsApps is the ONLY pwsh.exe (Store-only pwsh, no MSI install). The
+        # alias is skipped and resolution falls through to the genuine 5.1
+        # powershell.exe (aid.ps1 is #Requires -Version 5.1). NOT the alias.
+        env = {
+            "PATH": (
+                r"C:\Users\u\AppData\Local\Microsoft\WindowsApps;"
+                r"C:\Windows\System32\WindowsPowerShell\v1.0"
+            ),
+        }
+        files = {
+            r"C:\Users\u\AppData\Local\Microsoft\WindowsApps\pwsh.exe",
+            r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+        }
+        exists = lambda p: p in files  # noqa: E731
+        self.assertEqual(
+            srv._resolve_pwsh_exe(env, exists),
+            r"C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe",
+        )
 
 
 # ===========================================================================
