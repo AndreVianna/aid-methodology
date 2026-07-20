@@ -125,15 +125,18 @@ class TestOpTableTaskRenameRow(unittest.TestCase):
         # external-source.add/external-source.remove; task-025
         # (feature-009-pipeline-delete) registers an 11th, pipeline.delete;
         # task-029 (feature-008-execution-control) registers a 12th/13th,
-        # task.stop/task.resume -- on top of the 5 rows this test originally
-        # pinned -- see test_task015_tools_update_ops.py /
-        # test_task019_connector_ops.py / test_task021_external_source_ops.py /
+        # task.stop/task.resume; a work-017 post-dogfood fix (per-project
+        # host-tool management moved onto the project page's Tools section)
+        # registers a 14th/15th, tools.add/tools.remove -- on top of the 5
+        # rows this test originally pinned -- see
+        # test_task015_tools_update_ops.py / test_task019_connector_ops.py /
+        # test_task021_external_source_ops.py /
         # test_task025_pipeline_delete_ops.py /
         # test_task029_task_stop_resume_ops.py for their dedicated coverage.
         self.assertEqual(
             set(srv.OP_TABLE.keys()),
             {"task.set-notes", "pipeline.finish", "settings.set", "pipeline.rename", "task.rename",
-             "tools.update", "connector.set", "connector.remove",
+             "tools.update", "tools.add", "tools.remove", "connector.set", "connector.remove",
              "external-source.add", "external-source.remove", "pipeline.delete",
              "task.stop", "task.resume"},
         )

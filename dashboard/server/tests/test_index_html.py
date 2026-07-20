@@ -934,9 +934,13 @@ class TestFeature006Router(unittest.TestCase):
     def test_f6e_empty_state_kb_still_renders(self):
         # When works==[], KB card still renders.
         # Level-0 panel removed (task-054 R-2) -- only KB card remains in kt-section.
+        # Window widened 1500 -> 3000 (work-017 post-dogfood): the new Tools-section
+        # call (_renderToolsCard) renderMainPage now makes right after
+        # _renderProjectHeader pushed _renderKbCard's own call past the old 1500-char
+        # scan window; 3000 comfortably covers the whole function body (~2629 chars).
         idx = self.src.find('function renderMainPage(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1500]
+        snippet = self.src[idx:idx + 3000]
         self.assertIn('_renderKbCard', snippet,
                       "renderMainPage must always render KB card (even when works=[])")
         self.assertNotIn('_renderLevel0Card', snippet,

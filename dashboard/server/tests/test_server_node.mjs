@@ -947,6 +947,15 @@ async function runLiveTests() {
       // write_enabled (additive, feature-001 task-001): fail-safe gate signal, false
       // by default (server spawned here with no --allow-writes).
       assert(!!(data && data.write_enabled === false), "write_enabled===false by default");
+      // tools_catalog (additive, work-017 post-dogfood Tools section): present at
+      // the DM-1 envelope top level, an array, positioned AFTER write_enabled and
+      // BEFORE model (schema_version stays 3, no bump -- RC-2 precedent).
+      assert(Array.isArray(data && data.tools_catalog), "DM-1: tools_catalog is array");
+      assert(
+        JSON.stringify(data ? Object.keys(data) : null) ===
+          JSON.stringify(["schema_version", "generated_by", "write_enabled", "tools_catalog", "model"]),
+        "DM-1 envelope key order: schema_version, generated_by, write_enabled, tools_catalog, model"
+      );
       assert(!!(data && data.model && typeof data.model === "object"), "has model object");
       const model = data && data.model;
       assert(Array.isArray(model && model.works), "model.works is array");

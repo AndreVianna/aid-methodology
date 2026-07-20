@@ -164,8 +164,9 @@ hr { border: 0; border-top: 1px solid var(--border); margin: 2em 0; }
   align-items: center;
   gap: 0.35rem;
   font-family: inherit;
+  text-decoration: none; /* also used as an <a> (e.g. the card "View" link) */
 }
-.btn-ghost:hover { background: var(--bg-sunken); }
+.btn-ghost:hover { background: var(--bg-sunken); text-decoration: none; }
 
 /* ---------- Layout ---------- */
 main {
@@ -538,11 +539,11 @@ footer {
   </div>
 
   <!-- Restart-advisory banner (feature-004, KI-002/KI-006): hidden by default;
-       shown after a successful "Update CLI" (tools.update-self, unconditionally)
-       or "Update Tools" (tools.update, when the re-fetched machine.aid_version
-       differs from the pre-op value -- aid update's stale-CLI self-update
-       preamble ran). The running server keeps executing pre-update code until
-       `aid dashboard` is restarted. Dismissible (not auto-hidden). -->
+       shown after a successful "Update CLI" (tools.update-self) -- aid update's
+       stale-CLI self-update preamble may rewrite the running server's code. It
+       keeps executing pre-update code until `aid dashboard` is restarted.
+       Dismissible (not auto-hidden). (Per-project tool ops moved to the project
+       page's Tools section; the home card no longer triggers this banner.) -->
   <div class="callout warn" id="restart-advisory-banner" style="display:none" role="alert">
     <h4>AID CLI updated</h4>
     <p>AID CLI updated &#8212; restart <code>aid dashboard</code> to load the new dashboard code.</p>
@@ -578,7 +579,7 @@ footer {
 </main>
 
 <footer id="page-footer">
-  <p>served locally by <code>aid dashboard</code> &middot; read-only &middot;
+  <p>served locally by <code>aid dashboard</code> &middot; <span id="footer-mode">read-only</span> &middot;
   refresh to update &middot;
   <span id="footer-generated-by"></span></p>
 </footer>
@@ -689,6 +690,11 @@ footer {
     if (genByEl && envelope.generated_by) {
       genByEl.textContent = 'via ' + envelope.generated_by;
     }
+
+    // Footer mode label reflects the server's actual write gate (previously a
+    // static "read-only" that mislabelled a server spawned with --allow-writes).
+    var modeEl = document.getElementById('footer-mode');
+    if (modeEl) modeEl.textContent = currentWriteEnabled ? 'writable' : 'read-only';
 
     renderMachinePanel(envelope.machine);
     renderRepoGrid(envelope.repos, currentWriteEnabled);
@@ -1100,16 +1106,11 @@ footer {
       return _renderUnavailableCard(repo, writeEnabled);
     }
 
-    // Available card: whole-card click if has_home, non-clickable div otherwise
-    var card;
-    if (hasHome) {
-      card = document.createElement('a');
-      card.className = 'card card-link';
-      card.href = '/r/' + repo.id + '/home.html';
-    } else {
-      card = document.createElement('div');
-      card.className = 'card';
-    }
+    // The card is a non-clickable summary region: navigation is now an explicit
+    // "View" action in the sibling .card-actions row (see _buildCardActions),
+    // never a whole-card link. (hasHome still gates whether "View" is offered.)
+    var card = document.createElement('div');
+    card.className = 'card';
 
     // Title (h3)
     var titleEl = document.createElement('h3');
@@ -1252,84 +1253,44 @@ footer {
 
   // ---------------------------------------------------------------------------
   // UI-P2 -- Remove Project control + shared card-actions scaffold (KI-004).
-  // The card-actions <div> is a sibling of the card <a>/<div> (never nested
-  // inside it, so its <button>s never live inside a card-link anchor) --
-  // feature-004 (task-016) reuses this SAME row for its "Update Tools" button
-  // (below), not a second independently-invented action row.
+  // The card-actions <div> is a sibling of the card <div> (never nested inside
+  // it). It now carries the always-on "View" link (navigation, read + write)
+  // and the write-gated "Remove" control; per-project tool management moved to
+  // the project page's Tools section.
   // ---------------------------------------------------------------------------
   function _buildCardActions(repo, writeEnabled) {
-    if (!writeEnabled) return null;
     var actions = document.createElement('div');
     actions.className = 'card-actions';
 
-    // feature-004 (task-016): "Update Tools" (tools.update) -- available repos
-    // ONLY (repo.available === true); an unavailable repo has no .aid/manifest
-    // to update, so _renderUnavailableCard's call here gets no button. Reuses
-    // this SAME shared row (KI-004), not a second independently-invented one.
-    if (repo.available === true) {
-      var updateItem = document.createElement('span');
-      updateItem.className = 'card-action-item';
-      actions.appendChild(updateItem);
-      _renderUpdateToolsIdle(updateItem, repo);
+    // "View" -- ALWAYS available (read AND write mode): navigation is a read
+    // action and must not be gated behind write_enabled (it replaces the old
+    // whole-card link). Offered only for an available repo whose dashboard
+    // exists (has_home); an unavailable or not-yet-generated repo has nothing
+    // to view. Tool management no longer lives on the card -- it moved to the
+    // project page's Tools section (reached via View).
+    if (repo.available === true && repo.has_home === true) {
+      var viewItem = document.createElement('span');
+      viewItem.className = 'card-action-item';
+      var viewLink = document.createElement('a');
+      viewLink.className = 'btn-ghost';
+      viewLink.href = '/r/' + repo.id + '/home.html';
+      viewLink.textContent = 'View';
+      viewItem.appendChild(viewLink);
+      actions.appendChild(viewItem);
     }
 
-    var item = document.createElement('span');
-    item.className = 'card-action-item';
-    actions.appendChild(item);
-    _renderRemoveIdle(item, repo);
+    // "Remove" -- write-mode only (untracks the project from the registry).
+    if (writeEnabled) {
+      var item = document.createElement('span');
+      item.className = 'card-action-item';
+      actions.appendChild(item);
+      _renderRemoveIdle(item, repo);
+    }
+
+    // No actions at all (e.g. an unavailable repo in read-only mode) -> null,
+    // so _renderUnavailableCard falls back to its inline prune guidance.
+    if (!actions.hasChildNodes()) return null;
     return actions;
-  }
-
-  // Idle state: a single "Update Tools" .btn-ghost + its inline error slot.
-  function _renderUpdateToolsIdle(item, repo) {
-    item.innerHTML = '';
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'btn-ghost';
-    btn.textContent = 'Update Tools';
-    var err = document.createElement('p');
-    err.className = 'card-action-error';
-    err.setAttribute('aria-live', 'polite');
-    btn.addEventListener('click', function () { _submitUpdateTools(repo, btn, err); });
-    item.appendChild(btn);
-    item.appendChild(err);
-  }
-
-  // POST tools.update for this repo.id. Busy-state (KI-003): disable +
-  // "Updating..." until the op resolves. On ok: re-fetch /api/home (the
-  // card's repo.aid_version chips refresh, AC2/NFR3); if the re-fetched
-  // machine.aid_version differs from the value captured just before firing
-  // this op, `aid update`'s stale-CLI self-update preamble ran (KI-006) --
-  // show the same restart-advisory notice as "Update CLI" (KI-002), because
-  // the running server's code was mutated as a side effect. On failure:
-  // re-enable the button and surface error/detail inline via textContent.
-  function _submitUpdateTools(repo, btn, errEl) {
-    btn.disabled = true;
-    btn.textContent = 'Updating...';
-    errEl.textContent = '';
-    var preVersion = (lastGoodEnvelope && lastGoodEnvelope.machine) ? lastGoodEnvelope.machine.aid_version : undefined;
-    fetch('/r/' + repo.id + '/api/op', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ op: 'tools.update' })
-    }).then(function (resp) {
-      return resp.json().catch(function () { return {}; }).then(function (body) {
-        if (resp.ok && body && body.ok) {
-          doFetch(function (envelope) {
-            var postVersion = envelope.machine && envelope.machine.aid_version;
-            if (postVersion !== preVersion) showRestartAdvisory();
-          });
-        } else {
-          btn.disabled = false;
-          btn.textContent = 'Update Tools';
-          errEl.textContent = (body && (body.detail || body.error)) || 'Could not update tools.';
-        }
-      });
-    }).catch(function (err) {
-      btn.disabled = false;
-      btn.textContent = 'Update Tools';
-      errEl.textContent = 'Network error: ' + String(err);
-    });
   }
 
   // Idle state: a single "Remove" .btn-ghost. Click flips (in place, via direct

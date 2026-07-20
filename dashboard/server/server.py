@@ -914,17 +914,25 @@ def _dm3_post_process(raw: str) -> bytes:
 def serialize_model(model, write_enabled: bool = False) -> bytes:
     """Serialize a RepoModel to the DM-1 envelope bytes (feature-003 compatible).
 
-    NFR4: bare /r/<id>/api/model call (no ?detail=) is byte-for-byte unchanged --
-    the 'details' key is OMITTED entirely (not present) when details is None/not supplied.
+    NFR4: on a bare /r/<id>/api/model call (no ?detail=) the 'details' key is
+    OMITTED entirely (not present) -- it appears only when details is supplied.
+    The base envelope keys are schema_version, generated_by, write_enabled,
+    tools_catalog, model (the last two additive since the original NFR4 spec --
+    write_enabled by feature-001 task-001, tools_catalog by the work-017 Tools
+    section; both unconditional, so the response is NOT byte-identical to the
+    pre-feature-001 shape, but its keys are deterministic and stable).
 
     write_enabled (additive, feature-001 task-001): echoes the server's fail-safe
-    write gate at the envelope top level (beside 'generated_by'). Defaults to False
-    (fail-safe) when the caller does not pass the server's actual state.
+    write gate at the envelope top level. Defaults to False (fail-safe) when the
+    caller does not pass the server's actual state.
+    tools_catalog (additive, work-017): the installable host-tool catalog, so the
+    project page's Tools section can offer an Add picker.
     """
     envelope = {
         "schema_version": 3,
         "generated_by":   "python",
         "write_enabled":  write_enabled,
+        "tools_catalog":  _tools_catalog(),
         "model":          _ser_repo_model(model),
     }
     raw = json.dumps(envelope, separators=(",", ":"), ensure_ascii=False)
@@ -946,6 +954,7 @@ def serialize_model_with_details(model, details: dict, write_enabled: bool = Fal
         "schema_version": 3,
         "generated_by":   "python",
         "write_enabled":  write_enabled,
+        "tools_catalog":  _tools_catalog(),
         "model":          _ser_repo_model(model),
         "details":        sorted_details,
     }
@@ -2117,6 +2126,76 @@ _TOOLS_UPDATE_STATUS_DEFAULT: tuple[int, str] = (500, "update-failed")
 _TOOLS_UPDATE_TIMEOUT = 600
 
 
+# ---------------------------------------------------------------------------
+# tools.add / tools.remove (project-scoped per-tool management, project page).
+# Mirror tools.update's shared-aid-CLI shape (KI-004 resolver, _spawn_aid_cli,
+# _aid_home smuggling, _TOOLS_UPDATE_TIMEOUT) but take a single validated `tool`
+# id and drive `aid add <tool> --target` / `aid remove <tool> --target`. Moved
+# OFF the home card (the tool-less "no manifest; nothing to update" dead end) to
+# the project page, where a tool-less project can gain its first tool.
+# ---------------------------------------------------------------------------
+
+# Tool ids are lowercase-kebab (antigravity, claude-code, codex, copilot-cli,
+# cursor) -- the charset the `aid` CLI's normalize_tool accepts. <=64 chars.
+_RE_TOOL_ID = re.compile(r"^[a-z0-9][a-z0-9-]{0,63}$")
+
+
+def _validate_tool_arg(args: dict) -> "str | None":
+    """tools.add/tools.remove PRE-dispatch (shape/charset) validation: args.tool
+    must be a non-empty lowercase-kebab tool id (_RE_TOOL_ID). This is
+    malformed-REQUEST shape validation (400 'bad-request'), NOT a claim the tool
+    EXISTS -- the `aid` CLI stays the sole authority on whether the id names a
+    real, installable tool (an unknown id -> its own exit 2 -> 422
+    'invalid-value', _TOOLS_OP_STATUS_MAP). Mirrors _validate_project_add_args
+    (feature-003 CLI-is-authority pattern)."""
+    value = args.get("tool")
+    if not isinstance(value, str) or value == "":
+        return "'tool' is required (a non-empty tool id)"
+    # 'self' is the `aid` CLI's RESERVED keyword: `aid remove self` is a full
+    # CLI self-uninstall (bin/aid _cmd_remove_self), `aid update self` a CLI
+    # self-update -- neither is a host tool. Reject it here explicitly rather
+    # than relying on the CLI's --target flag-parser tripping by coincidence.
+    if value == "self":
+        return "'self' is a reserved CLI keyword, not a host tool"
+    if not _RE_TOOL_ID.match(value):
+        return "'tool' must be a lowercase tool id (letters, digits, hyphens)"
+    return None
+
+
+def _op_tools_add_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """tools.add (per-repo, PROJECT-scoped) -> bash $AID_CODE_HOME/bin/aid add
+    <tool> --target <served-root> (KI-004 shared resolver, _spawn_aid_cli).
+    served_root IS the repo canon_path (SEC-2 from <id>); env AID_HOME is the
+    server's own state home smuggled via target['_aid_home'] (mirrors
+    tools.update) so the child's registry reads / self-update-if-stale preamble
+    resolve the SAME home the dashboard uses. The tool id is _validate_tool_arg
+    charset-checked; the CLI re-validates existence."""
+    argv = ["add", args["tool"], "--target", _posix_argv_path(served_root)]
+    env = {"AID_HOME": target["_aid_home"]}
+    return argv, env
+
+
+def _op_tools_remove_argv(work_dir: "Path | None", served_root: str, target: dict, args: dict) -> tuple[list[str], dict[str, str]]:
+    """tools.remove (per-repo, PROJECT-scoped) -> bash $AID_CODE_HOME/bin/aid
+    remove <tool> --target <served-root>. Same shared-resolver / AID_HOME shape
+    as _op_tools_add_argv; uninstalls one host tool, leaving the project's
+    .aid/ (bare/tool-less) intact when it was the last one."""
+    argv = ["remove", args["tool"], "--target", _posix_argv_path(served_root)]
+    env = {"AID_HOME": target["_aid_home"]}
+    return argv, env
+
+
+# tools.add / tools.remove share one status_map: the `aid`-CLI usage/validation
+# exit 2 (e.g. an unknown tool id that slipped past _validate_tool_arg) -> 422
+# 'invalid-value' (as project.add/remove do), the timeout sentinel -> 504, and
+# every other non-zero -> the row's 'tools-op-failed' default.
+_TOOLS_OP_STATUS_MAP: dict[int, tuple[int, str]] = {
+    2: (422, "invalid-value"),
+    _AID_CLI_TIMEOUT_EXIT: (504, "timed-out"),
+}
+_TOOLS_OP_STATUS_DEFAULT: tuple[int, str] = (500, "tools-op-failed")
+
+
 # OP_TABLE: closed static dict seeded by feature-001 (the 4 feature-001-owned rows).
 # 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
 # "project" (no work_id -- settings.set targets the served root directly) |
@@ -2174,6 +2253,26 @@ OP_TABLE: dict[str, dict] = {
         "aid_cli_timeout": _TOOLS_UPDATE_TIMEOUT,
         "status_map": _TOOLS_UPDATE_STATUS_MAP,
         "status_map_default": _TOOLS_UPDATE_STATUS_DEFAULT,
+    },
+    "tools.add": {
+        "scope": "project",
+        "arg_schema": {"tool": {"required": True}},
+        "build_argv": _op_tools_add_argv,
+        "pre_validate": _validate_tool_arg,
+        "spawn": _spawn_aid_cli,
+        "aid_cli_timeout": _TOOLS_UPDATE_TIMEOUT,
+        "status_map": _TOOLS_OP_STATUS_MAP,
+        "status_map_default": _TOOLS_OP_STATUS_DEFAULT,
+    },
+    "tools.remove": {
+        "scope": "project",
+        "arg_schema": {"tool": {"required": True}},
+        "build_argv": _op_tools_remove_argv,
+        "pre_validate": _validate_tool_arg,
+        "spawn": _spawn_aid_cli,
+        "aid_cli_timeout": _TOOLS_UPDATE_TIMEOUT,
+        "status_map": _TOOLS_OP_STATUS_MAP,
+        "status_map_default": _TOOLS_OP_STATUS_DEFAULT,
     },
     "connector.set": {
         "scope": "project",

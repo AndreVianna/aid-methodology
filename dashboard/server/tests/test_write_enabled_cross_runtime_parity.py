@@ -42,6 +42,11 @@ Covers (per task-011 DETAIL, AC1):
     serializeHome): write_enabled is present inside the `machine` block
     (never at the DM-2 envelope top level), identical boolean value, both
     runtimes, both flag states.
+  - DM-1 tools_catalog (additive, work-017 post-dogfood Tools section):
+    present at the envelope top level (AFTER write_enabled, BEFORE model),
+    an array, byte-identical across runtimes -- exercised as a byproduct of
+    the SAME fixture this file already drives for write_enabled, since both
+    keys are serialized by the identical serialize_model/serializeModel call.
 
 Deliberately NOT named test_task011_*.py: dashboard/server/tests/ already has
 test_task011_dispatch_round_trip.py (an UNRELATED task-011 leg -- OP dispatch,
@@ -211,6 +216,28 @@ class TestWriteEnabledCrossRuntimeParity(unittest.TestCase):
         )
         self.assertNotIn("write_enabled", py_dm1.get("model") or {})
         self.assertNotIn("write_enabled", node_dm1.get("model") or {})
+
+        # -- DM-1 tools_catalog (additive, work-017 post-dogfood Tools section):
+        # present at the envelope top level, an array, positioned AFTER
+        # write_enabled and BEFORE model in BOTH runtimes (schema_version
+        # stays 3 -- RC-2 no-bump precedent, same as write_enabled itself).
+        self.assertIn("tools_catalog", py_dm1, "Python DM-1 envelope must carry tools_catalog")
+        self.assertIn("tools_catalog", node_dm1, "Node DM-1 envelope must carry tools_catalog")
+        self.assertIsInstance(py_dm1["tools_catalog"], list)
+        self.assertIsInstance(node_dm1["tools_catalog"], list)
+        self.assertEqual(
+            list(py_dm1.keys()), ["schema_version", "generated_by", "write_enabled", "tools_catalog", "model"],
+            "Python DM-1 envelope key order",
+        )
+        self.assertEqual(
+            list(node_dm1.keys()), ["schema_version", "generated_by", "write_enabled", "tools_catalog", "model"],
+            "Node DM-1 envelope key order",
+        )
+        self.assertEqual(
+            py_dm1["tools_catalog"], node_dm1["tools_catalog"],
+            "DM-1 tools_catalog must be byte-identical across runtimes (both read the same "
+            "install-tree lib/tools-catalog.txt / static fallback list)",
+        )
 
         # -- DM-2: inside `machine`, never at the envelope top level -- byte-identical.
         self.assertIn(expected_fragment, py_dm2_raw, "Python DM-2 raw bytes must carry write_enabled")

@@ -1180,9 +1180,15 @@ class TestSerializationDm3(unittest.TestCase):
 
     # Key order for /r/<id>/api/model (DM-1 envelope)
     def test_envelope_key_order(self):
+        # tools_catalog is an additive key (work-017 post-dogfood Tools section)
+        # inserted AFTER write_enabled and BEFORE model (schema_version stays 3).
         data = self._get_model()
         keys = list(data.keys())
-        self.assertEqual(keys, ["schema_version", "generated_by", "write_enabled", "model"])
+        self.assertEqual(keys, ["schema_version", "generated_by", "write_enabled", "tools_catalog", "model"])
+
+    def test_envelope_tools_catalog_is_array(self):
+        data = self._get_model()
+        self.assertIsInstance(data["tools_catalog"], list)
 
     def test_repo_model_key_order(self):
         data = self._get_model()

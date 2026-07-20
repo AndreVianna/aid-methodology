@@ -12,7 +12,8 @@ No browser required.  Tests inspect the HTML source and verify:
   S2  -- Structural: reads envelope.generated_by (not model.generated_by).
   S3  -- Structural: fetch targets are '/api/home' and, since feature-003/task-014
           (project.add/project.remove), '/api/op' (both same-origin absolute paths,
-          never /api/model).
+          never /api/model, never a per-repo '/r/<id>/api/op' route -- that moved
+          off the home page in work-017 post-dogfood).
   S4  -- Structural: no CDN script tags or external stylesheets / web-fonts.
   S5  -- Structural: meta robots noindex present.
   S6  -- Structural: CSS design tokens present; dark theme block; badge classes.
@@ -23,7 +24,8 @@ No browser required.  Tests inspect the HTML source and verify:
   B2  -- Behavioral: schema-mismatch banner hidden by default; showSchemaMismatch present.
   R1  -- Render: machine panel fields (version / install location / tool catalog).
   R2  -- Render: repo card display-name logic (name fallback / path/id never as title).
-  R3  -- Render: available card -> /r/<id>/home.html href; card-link CSS.
+  R3  -- Render: card is a non-clickable div; the sibling card-actions row
+          carries an always-on "View" link to /r/<id>/home.html.
   R4  -- Render: has_home=false -> non-clickable note.
   R5  -- Render: unavailable card -> badge-dim + prune guidance.
   R6  -- Render: empty repos -> empty-registry state.
@@ -119,16 +121,16 @@ class TestStructural(unittest.TestCase):
     def test_s2_does_not_read_model_dot_generated_by(self):
         self.assertNotIn('model.generated_by', self.src)
 
-    # S3 -- fetch targets are /api/home (read poll), /api/op (feature-003
+    # S3 -- fetch targets are /api/home (read poll) and /api/op (feature-003
     # task-014 write-dispatch: project.add/project.remove; feature-004 task-016:
-    # tools.update-self), both same-origin, plus the per-repo '/r/<id>/api/op'
-    # route (feature-004 task-016: tools.update) built via string concatenation
-    # ('/r/' + repo.id + '/api/op') -- the regex below only captures the literal
-    # quoted prefix immediately after fetch(, i.e. '/r/' for that call.
+    # tools.update-self), both same-origin. The per-repo '/r/<id>/api/op' route
+    # (feature-004 task-016's tools.update, dispatched from THIS page) is gone
+    # (work-017 post-dogfood): per-repo tool management moved to the project
+    # page's Tools section, so the CLI home no longer fetches any '/r/' path.
     def test_s3_fetches_api_home(self):
         fetch_calls = re.findall(r"fetch\s*\(\s*['\"]([^'\"]+)['\"]", self.src)
         self.assertTrue(len(fetch_calls) > 0, "No fetch() call found")
-        allowed = ('/api/home', '/api/op', '/r/')
+        allowed = ('/api/home', '/api/op')
         for url in fetch_calls:
             self.assertIn(url, allowed,
                          f"Unexpected fetch target: {url!r} -- only {allowed} allowed")
@@ -138,10 +140,13 @@ class TestStructural(unittest.TestCase):
         # POST /api/op -- confirm at least one such call exists (not just /api/home).
         self.assertIn("fetch('/api/op'", self.src)
 
-    def test_s3_fetches_per_repo_api_op_present(self):
-        # feature-004 (task-016): tools.update dispatches to the per-repo route,
-        # with repo.id interpolated (never hard-coded, never derived from path).
-        self.assertIn("fetch('/r/' + repo.id + '/api/op'", self.src)
+    def test_s3_no_per_repo_api_op_fetch(self):
+        # feature-004's tools.update per-repo dispatch (fetch('/r/' + repo.id +
+        # '/api/op'...)) moved OFF the home page entirely (work-017 post-dogfood
+        # Tools section on the project page) -- the CLI home must never fetch a
+        # '/r/' path at all now (no Update Tools button here anymore).
+        self.assertNotIn("fetch('/r/' + repo.id + '/api/op'", self.src)
+        self.assertNotRegex(self.src, r"fetch\s*\(\s*['\"]/r/")
 
     def test_s3_no_http_fetch(self):
         self.assertNotRegex(self.src, r"fetch\s*\(\s*['\"]https?://")
@@ -459,7 +464,9 @@ class TestRenderRepoCard(unittest.TestCase):
         self.assertIn('—', snippet)
 
     def test_r3_available_card_href_pattern(self):
-        # Available + has_home card: href = '/r/' + repo.id + '/home.html'
+        # Available + has_home: the sibling card-actions "View" link's
+        # href = '/r/' + repo.id + '/home.html' (the card itself is no longer
+        # the link -- see test_r3_card_is_non_clickable_div below).
         self.assertIn("'/r/' + repo.id + '/home.html'", self.src)
 
     def test_r3_uses_repo_id_opaque(self):
@@ -470,8 +477,18 @@ class TestRenderRepoCard(unittest.TestCase):
         snippet = self.src[max(0, idx - 50):idx + 80]
         self.assertNotIn('repo.path', snippet)
 
-    def test_r3_card_link_class_used(self):
-        self.assertIn('card card-link', self.src)
+    def test_r3_card_is_non_clickable_div(self):
+        # The card is a plain, non-clickable <div class="card"> -- navigation
+        # moved to the sibling card-actions "View" link (work-017 post-dogfood);
+        # _renderRepoCard must NOT create an <a class="card card-link"> anymore.
+        idx = self.src.find('function _renderRepoCard(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 2000]
+        self.assertIn("createElement('div')", snippet)
+        self.assertIn("card.className = 'card'", snippet)
+        self.assertNotIn('card card-link', snippet)
+        self.assertNotIn("createElement('a')", snippet)
+        self.assertNotIn('card.href', snippet)
 
     def test_r4_has_home_false_note(self):
         self.assertIn('dashboard not generated yet', self.src)
@@ -636,6 +653,20 @@ class TestInvariants(unittest.TestCase):
     def test_inv_footer_read_only_text(self):
         self.assertIn('read-only', self.src)
 
+    def test_inv_footer_mode_span_dynamic(self):
+        # The literal "read-only" text is now the INITIAL static content of a
+        # dedicated #footer-mode span, flipped to 'writable' by onSuccess from
+        # envelope.write_enabled (work-017 post-dogfood) -- no longer a static
+        # label that could mislabel a server started with --allow-writes.
+        self.assertIn('<span id="footer-mode">read-only</span>', self.src)
+        idx = self.src.find('function onSuccess(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1600]
+        self.assertIn("getElementById('footer-mode')", snippet)
+        self.assertIn(
+            "modeEl.textContent = currentWriteEnabled ? 'writable' : 'read-only';", snippet
+        )
+
     def test_inv_noscript_present(self):
         self.assertIn('<noscript>', self.src)
 
@@ -678,9 +709,12 @@ class TestFeature003RegistryUi(unittest.TestCase):
         self.assertIn('currentWriteEnabled = ', snippet)
 
     def test_we_threaded_into_render_calls(self):
+        # Window widened 1200 -> 1600 (work-017 post-dogfood): the new
+        # #footer-mode textContent assignment onSuccess now makes pushed both
+        # calls past the old 1200-char scan window.
         idx = self.src.find('function onSuccess(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1200]
+        snippet = self.src[idx:idx + 1600]
         self.assertIn('renderRepoGrid(envelope.repos, currentWriteEnabled)', snippet)
         self.assertIn('_renderAddProjectControls(currentWriteEnabled)', snippet)
 
@@ -758,7 +792,16 @@ class TestFeature003RegistryUi(unittest.TestCase):
         self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
 
     def test_ap_hint_text_present(self):
-        self.assertIn('Add only registers it, it installs nothing', self.src)
+        # Hint copy updated (work-017 post-dogfood, alongside the project-page
+        # Tools section): Add still only REGISTERS the path -- if it is not yet
+        # an AID project it is initialized bare (no tools installed); installing
+        # a tool is now a separate, explicit step in the project page's Tools
+        # section (tools.add), not implied by "Add project" itself.
+        self.assertIn(
+            'Any folder — if it is not yet an AID project it is initialized '
+            '(a bare .aid/, no tools installed).',
+            self.src,
+        )
 
     def test_ap_placeholder_absolute_path(self):
         self.assertIn("input.placeholder = '/absolute/path/to/aid/project'", self.src)
@@ -791,10 +834,36 @@ class TestFeature003RegistryUi(unittest.TestCase):
         self.assertIn('function _buildCardActions(repo, writeEnabled)', self.src)
 
     def test_ca_card_actions_gated_on_write_enabled(self):
+        # work-017 post-dogfood: _buildCardActions no longer early-returns null
+        # for the whole row on !writeEnabled -- "View" is now ALWAYS offered
+        # (available+has_home, in BOTH read and write mode); only "Remove" is
+        # write-gated. null is returned only when NEITHER item was added.
         idx = self.src.find('function _buildCardActions(')
         self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 200]
-        self.assertIn('if (!writeEnabled) return null;', snippet)
+        snippet = self.src[idx:idx + 1500]
+        self.assertNotIn('if (!writeEnabled) return null;', snippet,
+                         "must not early-return null on !writeEnabled -- View is unconditional")
+        self.assertIn('repo.available === true && repo.has_home === true', snippet,
+                      "View is gated on available+has_home, not on writeEnabled")
+        self.assertIn('if (writeEnabled) {', snippet,
+                      "Remove remains write-gated")
+        self.assertIn('if (!actions.hasChildNodes()) return null;', snippet,
+                      "null only when neither View nor Remove was added")
+
+    def test_ca_view_link_unconditional_on_write_mode(self):
+        # The "View" <a> is built BEFORE (i.e. outside) the `if (writeEnabled)`
+        # guard -- it must render identically in read-only and write mode.
+        idx = self.src.find('function _buildCardActions(')
+        self.assertNotEqual(idx, -1)
+        snippet = self.src[idx:idx + 1500]
+        view_guard_idx = snippet.find('repo.available === true && repo.has_home === true')
+        write_guard_idx = snippet.find('if (writeEnabled) {')
+        self.assertNotEqual(view_guard_idx, -1)
+        self.assertNotEqual(write_guard_idx, -1)
+        self.assertLess(view_guard_idx, write_guard_idx,
+                        "the View gate must be evaluated before (outside) the write-mode gate")
+        self.assertIn("viewLink.className = 'btn-ghost'", snippet)
+        self.assertIn("viewLink.textContent = 'View'", snippet)
 
     def test_ca_available_card_tile_wraps_card_plus_actions(self):
         # The available-card tile appends the card THEN the actions row as a
@@ -909,16 +978,24 @@ class TestFeature003RegistryUi(unittest.TestCase):
         self.assertNotRegex(self.src, r"\.innerHTML\s*=\s*[^;]*\bdetail\b")
 
 
-class TestFeature004UpdateToolsUi(unittest.TestCase):
+class TestFeature004UpdateSelfUi(unittest.TestCase):
     """
     UI (feature-004-update-tools, task-016): the global "Update CLI"
-    (tools.update-self) and per-repo "Update Tools" (tools.update) controls,
-    the restart-advisory banner (KI-002/KI-006), and the busy-state (KI-003).
+    (tools.update-self) control, the restart-advisory banner (KI-002/KI-006),
+    and the busy-state (KI-003).
 
     UC -- global "Update CLI" (machine panel).
-    UT -- per-repo "Update Tools" (shared card-actions scaffold, KI-004 reuse).
     RA -- restart-advisory banner.
     BS -- busy-state (disable + "Updating..." until the op resolves).
+
+    Renamed from TestFeature004UpdateToolsUi (work-017 post-dogfood): the
+    per-repo "Update Tools" control (tools.update, UT below) this class used to
+    also cover was REMOVED from the home page entirely -- per-repo tool
+    management (tools.add/tools.update/tools.remove) moved to the project
+    page's new Tools section (see test_cli_home_html.py's sibling suite for
+    home.html, or test_task015_tools_update_ops.{py,mjs} for the op-handler
+    coverage) -- so this class now covers ONLY the global self-update control,
+    which is unaffected and still lives on the home page's machine panel.
     """
 
     @classmethod
@@ -995,101 +1072,20 @@ class TestFeature004UpdateToolsUi(unittest.TestCase):
         snippet = self.src[idx:idx + 600]
         self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
 
-    # ---- UT: per-repo "Update Tools" control (shared card-actions scaffold) ----
+    # ---- UT: per-repo "Update Tools" control -- REMOVED (work-017 post-dogfood) ----
 
-    def test_ut_idle_function_present(self):
-        self.assertIn('function _renderUpdateToolsIdle(item, repo)', self.src)
-
-    def test_ut_submit_function_present(self):
-        self.assertIn('function _submitUpdateTools(repo, btn, errEl)', self.src)
-
-    def test_ut_button_labelled_update_tools(self):
-        idx = self.src.find('function _renderUpdateToolsIdle(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 500]
-        self.assertIn("btn.textContent = 'Update Tools'", snippet)
-
-    def test_ut_gated_on_repo_available_inside_shared_scaffold(self):
-        # _buildCardActions (the SAME shared scaffold task-014 introduced,
-        # KI-004) gates the Update Tools item on repo.available === true, in
-        # addition to the write_enabled gate already applied by its caller.
-        idx = self.src.find('function _buildCardActions(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1200]
-        self.assertIn('if (!writeEnabled) return null;', snippet)
-        self.assertIn('repo.available === true', snippet)
-        self.assertIn('_renderUpdateToolsIdle(updateItem, repo)', snippet)
-        self.assertIn('_renderRemoveIdle(item, repo)', snippet)
-
-    def test_ut_submit_posts_tools_update_to_per_repo_route(self):
-        idx = self.src.find('function _submitUpdateTools(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1600]
-        self.assertIn("op: 'tools.update'", snippet)
-        self.assertIn("fetch('/r/' + repo.id + '/api/op'", snippet)
-
-    def test_ut_busy_state_disable_and_label(self):
-        idx = self.src.find('function _submitUpdateTools(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 400]
-        self.assertIn('btn.disabled = true', snippet)
-        self.assertIn("btn.textContent = 'Updating...'", snippet)
-
-    def test_ut_captures_pre_op_version_before_fetch(self):
-        # The pre-op machine.aid_version must be captured BEFORE the fetch()
-        # call fires (so it reflects the value prior to this op's side effect).
-        idx = self.src.find('function _submitUpdateTools(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1600]
-        pre_idx = snippet.find('var preVersion =')
-        fetch_idx = snippet.find("fetch('/r/'")
-        self.assertNotEqual(pre_idx, -1)
-        self.assertNotEqual(fetch_idx, -1)
-        self.assertLess(pre_idx, fetch_idx,
-                        "preVersion must be captured before the fetch() call")
-
-    def test_ut_ok_refetches_and_conditionally_shows_restart_advisory(self):
-        # On ok, re-fetch /api/home; show the restart advisory ONLY when the
-        # re-fetched machine.aid_version differs from the captured pre-op
-        # value (KI-002/KI-006 -- aid update's stale-CLI self-update preamble).
-        idx = self.src.find('function _submitUpdateTools(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1800]
-        self.assertIn('doFetch(function (envelope) {', snippet)
-        self.assertIn('postVersion !== preVersion', snippet)
-        self.assertIn('showRestartAdvisory();', snippet)
-
-    def test_ut_failure_reenables_button_and_shows_error(self):
-        idx = self.src.find('function _submitUpdateTools(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1800]
-        else_idx = snippet.find('} else {')
-        self.assertNotEqual(else_idx, -1)
-        else_branch = snippet[else_idx:else_idx + 300]
-        self.assertIn('btn.disabled = false', else_branch)
-        self.assertIn("btn.textContent = 'Update Tools'", else_branch)
-        self.assertIn('errEl.textContent', else_branch)
-
-    def test_ut_error_live_region_polite(self):
-        idx = self.src.find('function _renderUpdateToolsIdle(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 600]
-        self.assertIn("err.setAttribute('aria-live', 'polite')", snippet)
-
-    def test_ut_unavailable_card_gets_no_update_tools_button(self):
-        # _buildCardActions is called from BOTH _renderRepoCard (available)
-        # and _renderUnavailableCard (stale); the Update Tools item must only
-        # render when repo.available === true, so an unavailable card never
-        # gets the button (it has no .aid/manifest to update).
-        idx = self.src.find('function _buildCardActions(')
-        self.assertNotEqual(idx, -1)
-        snippet = self.src[idx:idx + 1200]
-        avail_guard_idx = snippet.find('if (repo.available === true) {')
-        update_idx = snippet.find('_renderUpdateToolsIdle(')
-        self.assertNotEqual(avail_guard_idx, -1)
-        self.assertNotEqual(update_idx, -1)
-        self.assertLess(avail_guard_idx, update_idx,
-                        "_renderUpdateToolsIdle must be called inside the repo.available guard")
+    def test_ut_no_per_repo_update_tools_control_on_home_page(self):
+        # The per-repo "Update Tools" control (tools.update, feature-004
+        # task-016) that used to live in the shared card-actions scaffold is
+        # gone from the CLI home entirely -- per-repo tool management moved to
+        # the project page's Tools section (_renderToolsCard/_submitToolsUpdate
+        # in home.html). Neither its builder/submit functions nor its per-repo
+        # fetch route may reappear here.
+        self.assertNotIn('_renderUpdateToolsIdle', self.src)
+        self.assertNotIn('_submitUpdateTools', self.src)
+        self.assertNotIn("btn.textContent = 'Update Tools'", self.src)
+        self.assertNotIn("op: 'tools.update'", self.src)
+        self.assertNotIn("fetch('/r/' + repo.id + '/api/op'", self.src)
 
     # ---- RA: restart-advisory banner (KI-002/KI-006) ----
 

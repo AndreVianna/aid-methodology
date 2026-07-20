@@ -22,6 +22,17 @@
  *       opToolsUpdateSelfArgv, and mapExitCode's 'defaultStatus' parameter
  *       (task-015's extension to the shared OP-SM hook) -- in-process, no
  *       spawn, kept in lockstep with server.mjs by inspection.
+ *   [C] tools.add / tools.remove (work-017 post-dogfood -- per-project
+ *       host-tool management, moved off the home card onto the project
+ *       page's Tools section): structural source-presence checks, scoped
+ *       regex extraction of the new OP_TABLE["tools.add"] / OP_TABLE["tools.
+ *       remove"] row literals -- proves both reuse spawnAidCli (KI-004,
+ *       never re-invented), carry preValidate: validateToolArg, TOOLS_OP_
+ *       STATUS_MAP / TOOLS_OP_STATUS_DEFAULT / TOOLS_UPDATE_TIMEOUT, and the
+ *       "project" scope.
+ *   [D] Mirrored pure-function unit tests: validateToolArg, opToolsAddArgv,
+ *       opToolsRemoveArgv -- in-process, no spawn, kept in lockstep with
+ *       server.mjs by inspection (same convention as [B]).
  *
  * Deliberately NOT covered here (out of this task's scope / a task-017
  * target, and NOT mirrored in the Python twin either -- see that file's own
@@ -225,6 +236,186 @@ function mirroredMapExitCode(exitCode, statusMap, defaultStatus) {
   const [status3, err3] = mirroredMapExitCode(9, { 2: [422, "invalid-value"] }, undefined);
   assertEquals(status3, 500, "B.10: no statusMapDefault -> shared DEFAULT_FALLBACK status (500)");
   assertEquals(err3, "write-failed", "B.10b: no statusMapDefault -> shared DEFAULT_FALLBACK error class 'write-failed'");
+}
+
+// ---------------------------------------------------------------------------
+// [C] tools.add / tools.remove row wiring (source-presence, scoped regex) --
+// work-017 post-dogfood: per-project host-tool management, moved off the
+// home card onto the project page's Tools section.
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[C] tools.add / tools.remove row wiring (source-presence, scoped regex)\n");
+
+{
+  const addRowMatch = serverSrc.match(/"tools\.add":\s*\{([\s\S]*?)\n {2}\},/);
+  assert(!!addRowMatch, "C.1: OP_TABLE carries a \"tools.add\" row");
+  const addRow = addRowMatch ? addRowMatch[1] : "";
+
+  assert(/scope:\s*"project"/.test(addRow), "C.2: tools.add row scope is \"project\"");
+  assert(/argSchema:\s*\{\s*tool:\s*\{\s*required:\s*true\s*\}\s*\}/.test(addRow),
+    "C.3: tools.add row argSchema is { tool: { required: true } }");
+  assert(/buildArgv:\s*opToolsAddArgv/.test(addRow), "C.4: tools.add row buildArgv is opToolsAddArgv");
+  assert(/preValidate:\s*validateToolArg/.test(addRow), "C.5: tools.add row preValidate is validateToolArg");
+  assert(/spawn:\s*spawnAidCli/.test(addRow),
+    "C.6: tools.add row spawn is spawnAidCli (KI-004: the SAME shared resolver, not re-invented)");
+  assert(/aidCliTimeout:\s*TOOLS_UPDATE_TIMEOUT/.test(addRow), "C.7: tools.add row aidCliTimeout is TOOLS_UPDATE_TIMEOUT");
+  assert(/statusMap:\s*TOOLS_OP_STATUS_MAP/.test(addRow), "C.8: tools.add row statusMap is TOOLS_OP_STATUS_MAP");
+  assert(/statusMapDefault:\s*TOOLS_OP_STATUS_DEFAULT/.test(addRow),
+    "C.9: tools.add row statusMapDefault is TOOLS_OP_STATUS_DEFAULT");
+  assert(!/semanticValidate/.test(addRow), "C.10: tools.add row has no semanticValidate (preValidate covers it)");
+  assert(!/resolveTarget/.test(addRow), "C.11: tools.add row has no resolveTarget");
+  assert(!/postVerify/.test(addRow), "C.12: tools.add row has no postVerify");
+}
+
+{
+  const removeRowMatch = serverSrc.match(/"tools\.remove":\s*\{([\s\S]*?)\n {2}\},/);
+  assert(!!removeRowMatch, "C.13: OP_TABLE carries a \"tools.remove\" row");
+  const removeRow = removeRowMatch ? removeRowMatch[1] : "";
+
+  assert(/scope:\s*"project"/.test(removeRow), "C.14: tools.remove row scope is \"project\"");
+  assert(/argSchema:\s*\{\s*tool:\s*\{\s*required:\s*true\s*\}\s*\}/.test(removeRow),
+    "C.15: tools.remove row argSchema is { tool: { required: true } }");
+  assert(/buildArgv:\s*opToolsRemoveArgv/.test(removeRow), "C.16: tools.remove row buildArgv is opToolsRemoveArgv");
+  assert(/preValidate:\s*validateToolArg/.test(removeRow), "C.17: tools.remove row preValidate is validateToolArg");
+  assert(/spawn:\s*spawnAidCli/.test(removeRow),
+    "C.18: tools.remove row spawn is spawnAidCli (KI-004: the SAME shared resolver, not re-invented)");
+  assert(/aidCliTimeout:\s*TOOLS_UPDATE_TIMEOUT/.test(removeRow), "C.19: tools.remove row aidCliTimeout is TOOLS_UPDATE_TIMEOUT");
+  assert(/statusMap:\s*TOOLS_OP_STATUS_MAP/.test(removeRow), "C.20: tools.remove row statusMap is TOOLS_OP_STATUS_MAP");
+  assert(/statusMapDefault:\s*TOOLS_OP_STATUS_DEFAULT/.test(removeRow),
+    "C.21: tools.remove row statusMapDefault is TOOLS_OP_STATUS_DEFAULT");
+}
+
+{
+  // TOOLS_OP_STATUS_MAP maps the CLI's own exit 2 -> 422 'invalid-value' --
+  // UNLIKE TOOLS_UPDATE_STATUS_MAP, which has no such row (tools.update's
+  // exit 2 collapses to the generic statusMapDefault, 500 'update-failed').
+  // The two constants must be genuinely DISTINCT objects.
+  assert(/const TOOLS_OP_STATUS_MAP = \{[^}]*2:\s*\[422,\s*"invalid-value"\]/.test(serverSrc),
+    "C.22: TOOLS_OP_STATUS_MAP maps exit 2 -> [422, \"invalid-value\"]");
+  assert(/const TOOLS_OP_STATUS_DEFAULT = \[500, "tools-op-failed"\];/.test(serverSrc),
+    "C.23: TOOLS_OP_STATUS_DEFAULT is [500, \"tools-op-failed\"]");
+}
+
+{
+  // tools.update itself is UNCHANGED by this addition (still exists, still
+  // project scope, still argument-free, still uses semanticValidate not
+  // preValidate).
+  const opRowMatch = serverSrc.match(/"tools\.update":\s*\{([\s\S]*?)\n {2}\},/);
+  assert(!!opRowMatch, "C.24: OP_TABLE still carries a \"tools.update\" row (unchanged)");
+  const opRow = opRowMatch ? opRowMatch[1] : "";
+  assert(/argSchema:\s*\{\s*\}/.test(opRow), "C.25: tools.update row argSchema is still {} (argument-free)");
+  assert(/semanticValidate:\s*validateNoArgs/.test(opRow), "C.26: tools.update row still uses semanticValidate: validateNoArgs");
+  assert(!/preValidate/.test(opRow), "C.27: tools.update row has no preValidate (unlike tools.add/remove)");
+}
+
+// ---------------------------------------------------------------------------
+// [D] Mirrored pure-function unit tests (server.mjs self-executes on import --
+// see module docstring), in-process, no spawn. Mirrors server.mjs's real
+// validateToolArg / opToolsAddArgv / opToolsRemoveArgv verbatim -- kept in
+// lockstep by inspection, same convention as group [B].
+// ---------------------------------------------------------------------------
+
+process.stdout.write("\n[D] Mirrored pure-function unit tests for tools.add/tools.remove (kept in lockstep with server.mjs)\n");
+
+const MIRRORED_RE_TOOL_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
+
+function mirroredValidateToolArg(args) {
+  const value = args ? args.tool : undefined;
+  if (typeof value !== "string" || value === "") {
+    return "'tool' is required (a non-empty tool id)";
+  }
+  if (value === "self") {
+    return "'self' is a reserved CLI keyword, not a host tool";
+  }
+  if (!MIRRORED_RE_TOOL_ID.test(value)) {
+    return "'tool' must be a lowercase tool id (letters, digits, hyphens)";
+  }
+  return null;
+}
+
+function mirroredOpToolsAddArgv(workDir, servedRoot, target, args) {
+  const argv = ["add", args.tool, "--target", mirroredToPosixArg(servedRoot)];
+  const env = { AID_HOME: target._aidHome };
+  return [argv, env];
+}
+
+function mirroredOpToolsRemoveArgv(workDir, servedRoot, target, args) {
+  const argv = ["remove", args.tool, "--target", mirroredToPosixArg(servedRoot)];
+  const env = { AID_HOME: target._aidHome };
+  return [argv, env];
+}
+
+{
+  assertEquals(mirroredValidateToolArg({ tool: "claude-code" }), null, "D.1: valid lowercase-kebab id -> null (accepted)");
+  assertEquals(mirroredValidateToolArg({ tool: "cursor" }), null, "D.1b: another valid id -> null");
+  assertEquals(mirroredValidateToolArg({ tool: "a".repeat(64) }), null, "D.1c: 64-char id (the length cap) -> null");
+  assert(mirroredValidateToolArg({}) !== null, "D.2: missing tool key -> rejected");
+  assert(mirroredValidateToolArg({ tool: "" }) !== null, "D.3: empty string -> rejected");
+  assert(mirroredValidateToolArg({ tool: 123 }) !== null, "D.4: non-string -> rejected");
+  assert(mirroredValidateToolArg({ tool: "Claude-Code" }) !== null, "D.5: uppercase -> rejected");
+  assert(mirroredValidateToolArg({ tool: "claude code" }) !== null, "D.6: space -> rejected");
+  assert(mirroredValidateToolArg({ tool: "-claude-code" }) !== null, "D.7: leading hyphen -> rejected");
+  assert(mirroredValidateToolArg({ tool: "a".repeat(65) }) !== null, "D.8: over-length (65 chars) -> rejected");
+  assert(mirroredValidateToolArg({ tool: "self" }) !== null, "D.8b: reserved 'self' keyword -> rejected (aid remove self = full CLI self-uninstall)");
+}
+
+// [C-extra] source-presence: the REAL server.mjs validateToolArg rejects 'self'
+// (guards the mirror above from drifting away from production).
+{
+  assert(/validateToolArg[\s\S]*?value === "self"/.test(serverSrc),
+    "C.21: server.mjs validateToolArg explicitly rejects the reserved 'self' keyword");
+}
+
+{
+  const target = { _aidHome: "/state/home" };
+  const [argv, env] = mirroredOpToolsAddArgv(null, "/repo/path", target, { tool: "cursor" });
+  assert(JSON.stringify(argv) === JSON.stringify(["add", "cursor", "--target", "/repo/path"]),
+    "D.9: opToolsAddArgv builds [\"add\", <tool>, \"--target\", <repo>]");
+  assertEquals(env.AID_HOME, "/state/home", "D.10: opToolsAddArgv env.AID_HOME comes from target._aidHome");
+}
+
+{
+  const target = { _aidHome: "C:\\state\\home" };
+  const [argv] = mirroredOpToolsAddArgv(null, "C:\\repo\\path", target, { tool: "cursor" });
+  assert(JSON.stringify(argv) === JSON.stringify(["add", "cursor", "--target", "C:/repo/path"]),
+    "D.11: opToolsAddArgv posix-ifies the ARGV path element (Windows backslash form)");
+}
+
+{
+  const target = { _aidHome: "/state/home" };
+  const [argv, env] = mirroredOpToolsRemoveArgv(null, "/repo/path", target, { tool: "cursor" });
+  assert(JSON.stringify(argv) === JSON.stringify(["remove", "cursor", "--target", "/repo/path"]),
+    "D.12: opToolsRemoveArgv builds [\"remove\", <tool>, \"--target\", <repo>]");
+  assertEquals(env.AID_HOME, "/state/home", "D.13: opToolsRemoveArgv env.AID_HOME comes from target._aidHome");
+}
+
+{
+  const target = { _aidHome: "C:\\state\\home" };
+  const [argv] = mirroredOpToolsRemoveArgv(null, "C:\\repo\\path", target, { tool: "cursor" });
+  assert(JSON.stringify(argv) === JSON.stringify(["remove", "cursor", "--target", "C:/repo/path"]),
+    "D.14: opToolsRemoveArgv posix-ifies the ARGV path element (Windows backslash form)");
+}
+
+{
+  // tools.add/remove's own statusMap maps exit 2 -> 422, genuinely DIFFERENT
+  // from tools.update's exit 2 (which collapses to statusMapDefault, 500).
+  const MIRRORED_TOOLS_OP_STATUS_MAP = {
+    2: [422, "invalid-value"],
+    [MIRRORED_AID_CLI_TIMEOUT_EXIT]: [504, "timed-out"],
+  };
+  const MIRRORED_TOOLS_OP_STATUS_DEFAULT = [500, "tools-op-failed"];
+
+  const [status1, err1] = mirroredMapExitCode(2, MIRRORED_TOOLS_OP_STATUS_MAP, MIRRORED_TOOLS_OP_STATUS_DEFAULT);
+  assertEquals(status1, 422, "D.15: tools.add/remove exit 2 -> 422 (enumerated row)");
+  assertEquals(err1, "invalid-value", "D.15b: tools.add/remove exit 2 error class 'invalid-value'");
+
+  const [status2, err2] = mirroredMapExitCode(9, MIRRORED_TOOLS_OP_STATUS_MAP, MIRRORED_TOOLS_OP_STATUS_DEFAULT);
+  assertEquals(status2, 500, "D.16: unenumerated exit -> statusMapDefault status (500)");
+  assertEquals(err2, "tools-op-failed", "D.16b: unenumerated exit -> statusMapDefault error class 'tools-op-failed'");
+
+  const [status3, err3] = mirroredMapExitCode(2, MIRRORED_TOOLS_UPDATE_STATUS_MAP, MIRRORED_TOOLS_UPDATE_STATUS_DEFAULT);
+  assertEquals(status3, 500, "D.17: the SAME exit 2 under tools.update's OWN map collapses to 500 (distinct alphabets)");
+  assertEquals(err3, "update-failed", "D.17b: tools.update exit 2 error class 'update-failed', not 'invalid-value'");
 }
 
 // ---------------------------------------------------------------------------

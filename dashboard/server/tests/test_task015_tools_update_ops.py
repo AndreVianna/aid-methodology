@@ -26,6 +26,16 @@ Covers, all in-process (no socket bind -- see LOCAL TEST NOTE below):
      in-process) -- both rows reuse _spawn_aid_cli (KI-004: the SAME shared
      resolver task-013 introduced, not re-invented) and carry a 600s
      aid_cli_timeout (vs. the 30s default sized for the fast registry ops).
+  6. tools.add / tools.remove (work-017 post-dogfood -- per-project host-tool
+     management, moved off the home card onto the project page's Tools
+     section): _validate_tool_arg (pre-dispatch charset/shape validation,
+     NOT existence -- the CLI stays authority); _op_tools_add_argv /
+     _op_tools_remove_argv (argv shape + the SAME target['_aid_home']
+     smuggling convention tools.update established); full OP_TABLE dispatch
+     via a fake CLI (200 happy path, 400 'bad-request' on an invalid tool id
+     BEFORE any spawn, 422 'invalid-value' on the CLI's own exit 2 -- UNLIKE
+     tools.update's exit 2, which collapses to 500 'update-failed' -- 500
+     'tools-op-failed' default, 504 'timed-out'); OP_TABLE row-shape checks.
 
 Deliberately NOT covered here (out of this task's scope / a task-017 target):
   - A genuine end-to-end round trip through the REAL bin/aid CLI: unlike
@@ -356,6 +366,308 @@ class TestOpTableRegistration(unittest.TestCase):
     def test_timeout_longer_than_registry_ops_default(self):
         self.assertGreater(srv.OP_TABLE["tools.update"]["aid_cli_timeout"], srv._DEFAULT_AID_CLI_TIMEOUT)
         self.assertGreater(srv.HOME_OP_TABLE["tools.update-self"]["aid_cli_timeout"], srv._DEFAULT_AID_CLI_TIMEOUT)
+
+
+# ===========================================================================
+# (6) tools.add / tools.remove (work-017 post-dogfood): per-project host-tool
+# management, moved off the home card onto the project page's Tools section.
+# Mirrors tools.update's shared-aid-CLI shape (KI-004 resolver, _spawn_aid_cli,
+# target['_aid_home'] smuggling) but take a single validated `tool` id.
+# ===========================================================================
+
+class TestValidateToolArg(unittest.TestCase):
+    """_validate_tool_arg: pre-dispatch shape/charset validation ONLY -- NOT a
+    claim the tool exists (the CLI stays sole authority; an unknown but
+    well-formed id reaches the fake/real CLI and gets its own exit 2 -> 422)."""
+
+    def test_valid_lowercase_kebab_id_is_none(self):
+        self.assertIsNone(srv._validate_tool_arg({"tool": "claude-code"}))
+        self.assertIsNone(srv._validate_tool_arg({"tool": "cursor"}))
+        self.assertIsNone(srv._validate_tool_arg({"tool": "a"}))
+        self.assertIsNone(srv._validate_tool_arg({"tool": "a" * 64}))
+
+    def test_missing_tool_key_is_rejected(self):
+        err = srv._validate_tool_arg({})
+        self.assertIsNotNone(err)
+        self.assertIn("required", err)
+
+    def test_empty_string_is_rejected(self):
+        err = srv._validate_tool_arg({"tool": ""})
+        self.assertIsNotNone(err)
+        self.assertIn("required", err)
+
+    def test_non_string_is_rejected(self):
+        for bad in (None, 123, ["claude-code"], {"x": 1}, True):
+            with self.subTest(value=bad):
+                err = srv._validate_tool_arg({"tool": bad})
+                self.assertIsNotNone(err)
+
+    def test_uppercase_is_rejected(self):
+        err = srv._validate_tool_arg({"tool": "Claude-Code"})
+        self.assertIsNotNone(err)
+        self.assertIn("lowercase", err)
+
+    def test_leading_hyphen_is_rejected(self):
+        # _RE_TOOL_ID requires the FIRST char to be [a-z0-9] -- a leading
+        # hyphen (or any non-alnum first char) is rejected.
+        err = srv._validate_tool_arg({"tool": "-claude-code"})
+        self.assertIsNotNone(err)
+
+    def test_space_is_rejected(self):
+        err = srv._validate_tool_arg({"tool": "claude code"})
+        self.assertIsNotNone(err)
+
+    def test_control_char_is_rejected(self):
+        err = srv._validate_tool_arg({"tool": "claude\x1bcode"})
+        self.assertIsNotNone(err)
+
+    def test_over_length_is_rejected(self):
+        # _RE_TOOL_ID caps at 64 chars total.
+        err = srv._validate_tool_arg({"tool": "a" * 65})
+        self.assertIsNotNone(err)
+
+    def test_reserved_self_keyword_is_rejected(self):
+        # 'self' matches the lowercase-kebab charset but is the CLI's RESERVED
+        # keyword (`aid remove self` = full CLI self-uninstall). Must be rejected
+        # explicitly, not left to the CLI's --target flag-parser coincidence.
+        err = srv._validate_tool_arg({"tool": "self"})
+        self.assertIsNotNone(err)
+        self.assertIn("reserved", err.lower())
+
+
+class TestOpToolsAddArgv(unittest.TestCase):
+    def test_argv_and_env_from_stashed_aid_home(self):
+        target = {"_aid_home": "/state/home"}
+        argv, env = srv._op_tools_add_argv(None, "/repo/path", target, {"tool": "cursor"})
+        self.assertEqual(argv, ["add", "cursor", "--target", "/repo/path"])
+        self.assertEqual(env, {"AID_HOME": "/state/home"})
+
+    def test_windows_path_posix_ified_in_argv_not_env(self):
+        target = {"_aid_home": "C:\\state\\home"}
+        argv, env = srv._op_tools_add_argv(None, "C:\\repo\\path", target, {"tool": "cursor"})
+        self.assertEqual(argv, ["add", "cursor", "--target", "C:/repo/path"])
+        self.assertEqual(env, {"AID_HOME": "C:\\state\\home"})
+
+
+class TestOpToolsRemoveArgv(unittest.TestCase):
+    def test_argv_and_env_from_stashed_aid_home(self):
+        target = {"_aid_home": "/state/home"}
+        argv, env = srv._op_tools_remove_argv(None, "/repo/path", target, {"tool": "cursor"})
+        self.assertEqual(argv, ["remove", "cursor", "--target", "/repo/path"])
+        self.assertEqual(env, {"AID_HOME": "/state/home"})
+
+    def test_windows_path_posix_ified_in_argv_not_env(self):
+        target = {"_aid_home": "C:\\state\\home"}
+        argv, env = srv._op_tools_remove_argv(None, "C:\\repo\\path", target, {"tool": "cursor"})
+        self.assertEqual(argv, ["remove", "cursor", "--target", "C:/repo/path"])
+        self.assertEqual(env, {"AID_HOME": "C:\\state\\home"})
+
+
+class TestToolsAddRemoveDispatchFakeCli(unittest.TestCase):
+    """Fake aid CLI (same convention as TestToolsUpdateDispatchFakeCli above):
+    reads FAKE_MODE to control its exit code, echoes argv/env it received.
+    srv._AID_CLI_PATH is redirected for the duration of this test class."""
+
+    def setUp(self) -> None:
+        self._tmp = Path(tempfile.mkdtemp())
+        self._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
+        self._fake = self._tmp / "fake-aid.sh"
+        self._fake.write_text(
+            "#!/usr/bin/env bash\n"
+            'mode="${FAKE_MODE:-ok}"\n'
+            'printf "ARGV:%s\\n" "$*" >&2\n'
+            'printf "AID_HOME:%s\\n" "${AID_HOME:-<unset>}" >&2\n'
+            "case \"$mode\" in\n"
+            "  ok) exit 0 ;;\n"
+            '  fail) echo "some transient failure" >&2; exit 9 ;;\n'
+            '  usage2) echo "unknown tool id" >&2; exit 2 ;;\n'
+            "esac\n",
+            encoding="utf-8",
+        )
+        self._orig_path = srv._AID_CLI_PATH
+        srv._AID_CLI_PATH = self._fake
+
+    def tearDown(self) -> None:
+        srv._AID_CLI_PATH = self._orig_path
+        srv._run_aid_cli = self._orig_run_aid_cli
+        shutil.rmtree(str(self._tmp), ignore_errors=True)
+
+    def _dispatch(self, op: str, parsed: dict):
+        return srv._dispatch_op(srv.OP_TABLE, parsed, "/repo/path", aid_home="/state/home")
+
+    # -- tools.add ------------------------------------------------------------
+
+    def test_add_happy_path_is_200(self):
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "ok"}):
+            status, body = self._dispatch("tools.add", {"op": "tools.add", "args": {"tool": "cursor"}})
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"ok": True, "op": "tools.add"})
+
+    def test_add_invalid_tool_is_400_before_any_spawn(self):
+        """An uppercase/invalid tool id is rejected by _validate_tool_arg
+        (pre_validate) BEFORE any spawn -- the fake CLI would exit 0 by
+        default, so a 400 here proves the pre-dispatch hook fired first."""
+        status, body = self._dispatch("tools.add", {"op": "tools.add", "args": {"tool": "Claude-Code"}})
+        self.assertEqual(status, 400)
+        self.assertEqual(json.loads(body)["error"], "bad-request")
+
+    def test_add_missing_tool_is_400(self):
+        status, body = self._dispatch("tools.add", {"op": "tools.add", "args": {}})
+        self.assertEqual(status, 400)
+        self.assertEqual(json.loads(body)["error"], "bad-request")
+
+    def test_add_cli_exit_2_is_422_invalid_value(self):
+        """Unlike tools.update (whose exit 2 collapses to 500 'update-failed'),
+        tools.add/remove's own status_map maps the CLI's exit 2 (an unknown
+        tool id that slipped past the charset pre-check) to 422 -- the SAME
+        semantics project.add/remove use for their own exit 2."""
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "usage2"}):
+            status, body = self._dispatch("tools.add", {"op": "tools.add", "args": {"tool": "unknown-tool"}})
+        self.assertEqual(status, 422)
+        self.assertEqual(json.loads(body)["error"], "invalid-value")
+
+    def test_add_other_nonzero_exit_collapses_to_500_tools_op_failed(self):
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "fail"}):
+            status, body = self._dispatch("tools.add", {"op": "tools.add", "args": {"tool": "cursor"}})
+        self.assertEqual(status, 500)
+        data = json.loads(body)
+        self.assertEqual(data["error"], "tools-op-failed")
+        self.assertIn("some transient failure", data["detail"])
+
+    def test_add_env_threading_argv_and_aid_home_from_target(self):
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "fail"}):
+            status, body = self._dispatch("tools.add", {"op": "tools.add", "args": {"tool": "cursor"}})
+        detail = json.loads(body)["detail"]
+        self.assertIn("ARGV:add cursor --target /repo/path", detail)
+        self.assertIn("AID_HOME:/state/home", detail)
+
+    # -- tools.remove -----------------------------------------------------
+
+    def test_remove_happy_path_is_200(self):
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "ok"}):
+            status, body = self._dispatch("tools.remove", {"op": "tools.remove", "args": {"tool": "cursor"}})
+        self.assertEqual(status, 200)
+        self.assertEqual(json.loads(body), {"ok": True, "op": "tools.remove"})
+
+    def test_remove_invalid_tool_is_400_before_any_spawn(self):
+        status, body = self._dispatch("tools.remove", {"op": "tools.remove", "args": {"tool": "has space"}})
+        self.assertEqual(status, 400)
+        self.assertEqual(json.loads(body)["error"], "bad-request")
+
+    def test_remove_cli_exit_2_is_422_invalid_value(self):
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "usage2"}):
+            status, body = self._dispatch("tools.remove", {"op": "tools.remove", "args": {"tool": "cursor"}})
+        self.assertEqual(status, 422)
+        self.assertEqual(json.loads(body)["error"], "invalid-value")
+
+    def test_remove_other_nonzero_exit_collapses_to_500_tools_op_failed(self):
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "fail"}):
+            status, body = self._dispatch("tools.remove", {"op": "tools.remove", "args": {"tool": "cursor"}})
+        self.assertEqual(status, 500)
+        self.assertEqual(json.loads(body)["error"], "tools-op-failed")
+
+    def test_remove_env_threading_argv_and_aid_home_from_target(self):
+        with mock.patch.dict("os.environ", {"FAKE_MODE": "fail"}):
+            status, body = self._dispatch("tools.remove", {"op": "tools.remove", "args": {"tool": "cursor"}})
+        detail = json.loads(body)["detail"]
+        self.assertIn("ARGV:remove cursor --target /repo/path", detail)
+        self.assertIn("AID_HOME:/state/home", detail)
+
+
+class TestToolsAddRemoveTimeout(unittest.TestCase):
+    """Timeout sentinel -> 504 'timed-out', mirroring TestToolsUpdateTimeout's
+    own bounded-sleep convention (never the real 600s production ceiling)."""
+
+    def setUp(self) -> None:
+        self._tmp = Path(tempfile.mkdtemp())
+        self._orig_run_aid_cli = _patch_run_aid_cli_force_unix(srv)
+        self._slow = self._tmp / "slow-aid.sh"
+        self._slow.write_text("#!/usr/bin/env bash\nsleep 3\n", encoding="utf-8")
+        self._orig_path = srv._AID_CLI_PATH
+        srv._AID_CLI_PATH = self._slow
+        self._orig_add_row = dict(srv.OP_TABLE["tools.add"])
+        self._orig_remove_row = dict(srv.OP_TABLE["tools.remove"])
+        srv.OP_TABLE["tools.add"] = dict(self._orig_add_row, aid_cli_timeout=1)
+        srv.OP_TABLE["tools.remove"] = dict(self._orig_remove_row, aid_cli_timeout=1)
+
+    def tearDown(self) -> None:
+        srv._AID_CLI_PATH = self._orig_path
+        srv._run_aid_cli = self._orig_run_aid_cli
+        srv.OP_TABLE["tools.add"] = self._orig_add_row
+        srv.OP_TABLE["tools.remove"] = self._orig_remove_row
+        shutil.rmtree(str(self._tmp), ignore_errors=True)
+
+    def test_tools_add_timeout_is_504(self):
+        status, body = srv._dispatch_op(
+            srv.OP_TABLE, {"op": "tools.add", "args": {"tool": "cursor"}}, "/repo/path", aid_home="/state/home"
+        )
+        self.assertEqual(status, 504)
+        self.assertEqual(json.loads(body)["error"], "timed-out")
+
+    def test_tools_remove_timeout_is_504(self):
+        status, body = srv._dispatch_op(
+            srv.OP_TABLE, {"op": "tools.remove", "args": {"tool": "cursor"}}, "/repo/path", aid_home="/state/home"
+        )
+        self.assertEqual(status, 504)
+        self.assertEqual(json.loads(body)["error"], "timed-out")
+
+
+class TestOpTableRegistrationToolsAddRemove(unittest.TestCase):
+    def test_tools_add_row_shape(self):
+        row = srv.OP_TABLE["tools.add"]
+        self.assertEqual(row["scope"], "project")
+        self.assertEqual(row["arg_schema"], {"tool": {"required": True}})
+        self.assertIs(row["build_argv"], srv._op_tools_add_argv)
+        self.assertIs(row["pre_validate"], srv._validate_tool_arg)
+        self.assertIs(row["spawn"], srv._spawn_aid_cli)
+        self.assertEqual(row["aid_cli_timeout"], srv._TOOLS_UPDATE_TIMEOUT)
+        self.assertIs(row["status_map"], srv._TOOLS_OP_STATUS_MAP)
+        self.assertEqual(row["status_map_default"], (500, "tools-op-failed"))
+        self.assertNotIn("semantic_validate", row)
+        self.assertNotIn("resolve_target", row)
+        self.assertNotIn("post_verify", row)
+
+    def test_tools_remove_row_shape(self):
+        row = srv.OP_TABLE["tools.remove"]
+        self.assertEqual(row["scope"], "project")
+        self.assertEqual(row["arg_schema"], {"tool": {"required": True}})
+        self.assertIs(row["build_argv"], srv._op_tools_remove_argv)
+        self.assertIs(row["pre_validate"], srv._validate_tool_arg)
+        self.assertIs(row["spawn"], srv._spawn_aid_cli)
+        self.assertEqual(row["aid_cli_timeout"], srv._TOOLS_UPDATE_TIMEOUT)
+        self.assertIs(row["status_map"], srv._TOOLS_OP_STATUS_MAP)
+        self.assertEqual(row["status_map_default"], (500, "tools-op-failed"))
+        self.assertNotIn("semantic_validate", row)
+        self.assertNotIn("resolve_target", row)
+        self.assertNotIn("post_verify", row)
+
+    def test_add_and_remove_share_the_same_pre_validate_and_status_map(self):
+        self.assertIs(srv.OP_TABLE["tools.add"]["pre_validate"], srv.OP_TABLE["tools.remove"]["pre_validate"])
+        self.assertIs(srv.OP_TABLE["tools.add"]["status_map"], srv.OP_TABLE["tools.remove"]["status_map"])
+
+    def test_reuses_the_same_shared_aid_cli_spawn_as_tools_update(self):
+        """KI-004: the SAME shared resolver, never re-invented."""
+        self.assertIs(srv.OP_TABLE["tools.add"]["spawn"], srv.OP_TABLE["tools.update"]["spawn"])
+        self.assertIs(srv.OP_TABLE["tools.remove"]["spawn"], srv.OP_TABLE["tools.update"]["spawn"])
+
+    def test_status_map_distinct_from_tools_update_own_map(self):
+        """tools.add/remove's exit-2 -> 422 semantics are genuinely DIFFERENT
+        from tools.update's exit-2 -> 500 'update-failed' collapse -- not a
+        shared/aliased map that happens to look right for only one op."""
+        self.assertIsNot(srv._TOOLS_OP_STATUS_MAP, srv._TOOLS_UPDATE_STATUS_MAP)
+        self.assertEqual(srv._map_exit_code(2, srv._TOOLS_OP_STATUS_MAP, srv._TOOLS_OP_STATUS_DEFAULT),
+                         (422, "invalid-value"))
+        self.assertEqual(srv._map_exit_code(2, srv._TOOLS_UPDATE_STATUS_MAP, srv._TOOLS_UPDATE_STATUS_DEFAULT),
+                         (500, "update-failed"))
+
+    def test_tools_update_row_unchanged(self):
+        """tools.update itself is UNCHANGED by this addition (still exists,
+        still project scope, still argument-free)."""
+        row = srv.OP_TABLE["tools.update"]
+        self.assertEqual(row["scope"], "project")
+        self.assertEqual(row["arg_schema"], {})
+        self.assertIs(row["semantic_validate"], srv._validate_no_args)
+        self.assertNotIn("pre_validate", row)
 
 
 if __name__ == "__main__":

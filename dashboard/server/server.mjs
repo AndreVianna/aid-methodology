@@ -643,6 +643,7 @@ function serializeModel(model, writeEnabled) {
     schema_version: 3,
     generated_by:   "node",
     write_enabled:  !!writeEnabled,
+    tools_catalog:  toolsCatalog(),
     model:          model,
   };
 
@@ -706,6 +707,7 @@ function serializeModelWithDetails(model, details, writeEnabled) {
     schema_version: 3,
     generated_by:   "node",
     write_enabled:  !!writeEnabled,
+    tools_catalog:  toolsCatalog(),
     model:          model,
     details:        sortedDetails,
   };
@@ -1859,6 +1861,76 @@ const TOOLS_UPDATE_STATUS_DEFAULT = [500, "update-failed"];
 // ops above.
 const TOOLS_UPDATE_TIMEOUT = 600000;
 
+// ---------------------------------------------------------------------------
+// tools.add / tools.remove (project-scoped per-tool management, project page).
+// Mirror tools.update's shared-aid-CLI shape (KI-004 resolver, spawnAidCli,
+// _aidHome smuggling, TOOLS_UPDATE_TIMEOUT) but take a single validated `tool`
+// id and drive `aid add <tool> --target` / `aid remove <tool> --target`. Moved
+// OFF the home card (the tool-less "no manifest; nothing to update" dead end)
+// to the project page, where a tool-less project can gain its first tool.
+// ---------------------------------------------------------------------------
+
+// Tool ids are lowercase-kebab (antigravity, claude-code, codex, copilot-cli,
+// cursor) -- the charset the `aid` CLI's normalize_tool accepts. <=64 chars.
+const RE_TOOL_ID = /^[a-z0-9][a-z0-9-]{0,63}$/;
+
+function validateToolArg(args) {
+  // tools.add/tools.remove PRE-dispatch (shape/charset) validation: args.tool
+  // must be a non-empty lowercase-kebab tool id (RE_TOOL_ID). This is
+  // malformed-REQUEST shape validation (400 'bad-request'), NOT a claim the
+  // tool EXISTS -- the `aid` CLI stays the sole authority on whether the id
+  // names a real, installable tool (an unknown id -> its own exit 2 -> 422
+  // 'invalid-value', TOOLS_OP_STATUS_MAP). Mirrors validateProjectAddArgs.
+  const value = args ? args.tool : undefined;
+  if (typeof value !== "string" || value === "") {
+    return "'tool' is required (a non-empty tool id)";
+  }
+  // 'self' is the `aid` CLI's RESERVED keyword: `aid remove self` is a full CLI
+  // self-uninstall (bin/aid _cmd_remove_self), `aid update self` a CLI self-
+  // update -- neither is a host tool. Reject it explicitly rather than relying
+  // on the CLI's --target flag-parser tripping by coincidence.
+  if (value === "self") {
+    return "'self' is a reserved CLI keyword, not a host tool";
+  }
+  if (!RE_TOOL_ID.test(value)) {
+    return "'tool' must be a lowercase tool id (letters, digits, hyphens)";
+  }
+  return null;
+}
+
+function opToolsAddArgv(workDir, servedRoot, target, args) {
+  // tools.add (per-repo, PROJECT-scoped) -> bash $AID_CODE_HOME/bin/aid add
+  // <tool> --target <servedRoot> (KI-004 shared resolver, spawnAidCli).
+  // servedRoot IS the repo canonPath (SEC-2 from <id>); env AID_HOME is the
+  // server's own state home smuggled via target._aidHome (mirrors tools.update)
+  // so the child's registry reads / self-update-if-stale preamble resolve the
+  // SAME home the dashboard uses. The tool id is validateToolArg charset-
+  // checked; the CLI re-validates existence.
+  const argv = ["add", args.tool, "--target", toPosixArg(servedRoot)];
+  const env = { AID_HOME: target._aidHome };
+  return [argv, env];
+}
+
+function opToolsRemoveArgv(workDir, servedRoot, target, args) {
+  // tools.remove (per-repo, PROJECT-scoped) -> bash $AID_CODE_HOME/bin/aid
+  // remove <tool> --target <servedRoot>. Same shared-resolver / AID_HOME shape
+  // as opToolsAddArgv; uninstalls one host tool, leaving the project's .aid/
+  // (bare/tool-less) intact when it was the last one.
+  const argv = ["remove", args.tool, "--target", toPosixArg(servedRoot)];
+  const env = { AID_HOME: target._aidHome };
+  return [argv, env];
+}
+
+// tools.add / tools.remove share one statusMap: the `aid`-CLI usage/validation
+// exit 2 (e.g. an unknown tool id that slipped past validateToolArg) -> 422
+// 'invalid-value' (as project.add/remove do), the timeout sentinel -> 504, and
+// every other non-zero -> the row's 'tools-op-failed' default.
+const TOOLS_OP_STATUS_MAP = {
+  2: [422, "invalid-value"],
+  [AID_CLI_TIMEOUT_EXIT]: [504, "timed-out"],
+};
+const TOOLS_OP_STATUS_DEFAULT = [500, "tools-op-failed"];
+
 // OP_TABLE: closed static object seeded by feature-001 (the 4 feature-001-owned rows).
 // 'scope': "task" (work_id + task_id required) | "pipeline" (work_id required) |
 // "project" (no work_id -- settings.set targets the served root directly) |
@@ -1916,6 +1988,26 @@ const OP_TABLE = {
     aidCliTimeout: TOOLS_UPDATE_TIMEOUT,
     statusMap: TOOLS_UPDATE_STATUS_MAP,
     statusMapDefault: TOOLS_UPDATE_STATUS_DEFAULT,
+  },
+  "tools.add": {
+    scope: "project",
+    argSchema: { tool: { required: true } },
+    buildArgv: opToolsAddArgv,
+    preValidate: validateToolArg,
+    spawn: spawnAidCli,
+    aidCliTimeout: TOOLS_UPDATE_TIMEOUT,
+    statusMap: TOOLS_OP_STATUS_MAP,
+    statusMapDefault: TOOLS_OP_STATUS_DEFAULT,
+  },
+  "tools.remove": {
+    scope: "project",
+    argSchema: { tool: { required: true } },
+    buildArgv: opToolsRemoveArgv,
+    preValidate: validateToolArg,
+    spawn: spawnAidCli,
+    aidCliTimeout: TOOLS_UPDATE_TIMEOUT,
+    statusMap: TOOLS_OP_STATUS_MAP,
+    statusMapDefault: TOOLS_OP_STATUS_DEFAULT,
   },
   "connector.set": {
     scope: "project",

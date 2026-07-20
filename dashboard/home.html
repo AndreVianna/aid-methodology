@@ -1036,6 +1036,12 @@ footer {
          so a text update on it is a DOM mutation an AT can reliably announce. -->
     <div id="project-header-status" class="sr-only" aria-live="polite"></div>
 
+    <!-- Tools section (work-017 post-dogfood): per-project host-tool management
+         (Add / Update / Remove). Moved off the home card so a tool-less project
+         can gain its first tool from the dashboard. -->
+    <h2 class="main-section-head" style="margin-top:2rem">Tools</h2>
+    <div id="tools-section"></div>
+
     <!-- Knowledge Base section — fixed-size header band, rendered first -->
     <h2 class="main-section-head kt-head">Knowledge Base</h2>
     <div class="grid g2 kt-section" id="knowledge-tool-section"></div>
@@ -1076,7 +1082,7 @@ footer {
 </main>
 
 <footer id="page-footer">
-  <p>served locally by <code>aid dashboard</code> &middot; read-only &middot;
+  <p>served locally by <code>aid dashboard</code> &middot; <span id="footer-mode">read-only</span> &middot;
   refreshes every <span id="footer-interval">5</span>s &middot;
   <span id="footer-generated-by"></span></p>
 </footer>
@@ -1259,11 +1265,21 @@ footer {
     // features 005/006 reuse the same graft. Missing -> false (fail-safe).
     if (lastGoodModel) { lastGoodModel.write_enabled = (envelope.write_enabled === true); }
 
+    // Graft the envelope-level `tools_catalog` (the installable host-tool catalog,
+    // added for the Tools section) onto the model so _renderToolsCard reads it via
+    // model.tools_catalog. Missing/non-array -> [] (fail-safe: Add offers nothing).
+    if (lastGoodModel) { lastGoodModel.tools_catalog = Array.isArray(envelope.tools_catalog) ? envelope.tools_catalog : []; }
+
     // Update footer generated_by (envelope-level field, NOT the model subtree)
     var genByEl = document.getElementById('footer-generated-by');
     if (genByEl && envelope.generated_by) {
       genByEl.textContent = 'via ' + envelope.generated_by;
     }
+
+    // Footer mode label reflects the server's actual write gate (previously a
+    // static "read-only" that mislabelled a server spawned with --allow-writes).
+    var footerModeEl = document.getElementById('footer-mode');
+    if (footerModeEl) footerModeEl.textContent = (envelope.write_enabled === true) ? 'writable' : 'read-only';
 
     renderModel(lastGoodModel);
     updateFreshnessBadge('live');
@@ -1890,6 +1906,11 @@ footer {
   // ---------------------------------------------------------------------------
   function renderMainPage(model) {
     _renderProjectHeader(model);
+
+    // Render Tools section (work-017 post-dogfood) -- manages its own container
+    // directly (mirrors _renderProjectHeader/_renderConnectorsCard); write_enabled
+    // comes from the same envelope graft onSuccess performs.
+    _renderToolsCard(model, model.write_enabled === true);
 
     var works = model.works || [];
 
@@ -2695,6 +2716,246 @@ footer {
         connectorsUiState.errorMessage = null;
       } else {
         connectorsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not remove connector.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tools section (work-017 post-dogfood): per-project host-tool management.
+  // Lists the tools installed in this project's .aid/ manifest and, when
+  // write_enabled, lets the user Add a tool from the installable catalog
+  // (tools.add -> `aid add <tool> --target`), Update all installed tools
+  // (tools.update), or Remove one (tools.remove). REPLACES the home card's
+  // former "Update Tools" button, whose all-tools `aid update` produced a
+  // misleading "no manifest; nothing to update" dead end on a tool-less project.
+  // Mirrors the connectors/external-sources list-CRUD scaffold: a poll-safe
+  // `saving` guard + one-shot explicit-render flag so a background poll never
+  // clobbers an in-flight op.
+  // ---------------------------------------------------------------------------
+
+  // toolsUiState: transient UI-only state. `selected` is the Add-picker's chosen
+  // catalog tool (survives a poll-triggered rebuild); `saving` guards the busy
+  // window (shared by Add/Update/Remove -- one tool op in flight at a time);
+  // `errorMessage` is the inline failure text.
+  // `restartFromVersion`: the project's aid_version captured just before a
+  // tools.update. `aid update` inside a repo runs bin/aid's self-update-if-stale
+  // preamble (FF-3), which can rewrite the RUNNING server's own code (KI-002/
+  // KI-006); if the post-update version differs, the server is serving stale
+  // code until `aid dashboard` is restarted, and we surface a restart advisory.
+  // (tools.add does NOT run that preamble, so only Update sets this.)
+  var toolsUiState = { saving: false, errorMessage: null, selected: '', restartFromVersion: null };
+
+  // One-shot explicit-render flag -- same role as _connectorsExplicitRender /
+  // _externalSourcesExplicitRender, scoped independently.
+  var _toolsExplicitRender = false;
+  function _consumeToolsExplicitRender() {
+    var v = _toolsExplicitRender;
+    _toolsExplicitRender = false;
+    return v;
+  }
+
+  function _renderToolsCard(model, writeEnabled) {
+    var container = document.getElementById('tools-section');
+    if (!container) return;
+    // Poll-safe: skip a background rebuild while an op is in flight, unless this
+    // render was explicitly forced (mirrors connectors/external-sources).
+    if (!_consumeToolsExplicitRender() && toolsUiState.saving) return;
+
+    container.innerHTML = '';
+    var panel = document.createElement('div');
+    panel.className = 'work-overview';
+
+    var tool = (model && model.tool) || {};
+    var installed = Array.isArray(tool.tools_installed) ? tool.tools_installed : [];
+    var version = tool.aid_version || '';
+    var catalog = (model && Array.isArray(model.tools_catalog)) ? model.tools_catalog : [];
+
+    // Installed list (always shown) -- per-tool Remove when write_enabled.
+    if (installed.length === 0) {
+      var empty = document.createElement('p');
+      empty.className = 'meta list-crud-empty';
+      empty.textContent = 'No tools installed yet.';
+      panel.appendChild(empty);
+    } else {
+      var ul = document.createElement('ul');
+      ul.className = 'list-crud-list';
+      for (var i = 0; i < installed.length; i++) {
+        ul.appendChild(_buildToolRow(installed[i], version, writeEnabled));
+      }
+      panel.appendChild(ul);
+    }
+
+    // Inline error (either outcome may set it).
+    if (toolsUiState.errorMessage) {
+      var err = document.createElement('div');
+      err.className = 'callout err';
+      err.setAttribute('aria-live', 'polite');
+      err.textContent = toolsUiState.errorMessage;
+      panel.appendChild(err);
+    }
+
+    // Restart advisory: a successful tools.update that changed aid_version means
+    // `aid update`'s self-update-if-stale preamble bumped the CLI (KI-002/KI-006),
+    // so the running server is executing pre-update code until restarted. Persists
+    // across polls (version stays changed) until the next Update or a page reload.
+    if (toolsUiState.restartFromVersion !== null && toolsUiState.restartFromVersion !== version) {
+      var advisory = document.createElement('div');
+      advisory.className = 'callout warn';
+      advisory.setAttribute('aria-live', 'polite');
+      advisory.textContent = 'AID CLI updated (v' + toolsUiState.restartFromVersion +
+        ' → v' + version + ') — restart `aid dashboard` to load the new dashboard code.';
+      panel.appendChild(advisory);
+    }
+
+    if (writeEnabled) {
+      // "Update tools" -- re-sync installed tools to the CLI version. Shown only
+      // when >=1 tool is installed (an empty manifest has nothing to update --
+      // exactly the dead end this redesign removes from the home card).
+      if (installed.length > 0) {
+        var updateRow = document.createElement('div');
+        updateRow.className = 'list-crud-add-row';
+        var updateBtn = document.createElement('button');
+        updateBtn.type = 'button';
+        updateBtn.className = 'btn-ghost';
+        updateBtn.textContent = toolsUiState.saving ? 'Working…' : 'Update tools';
+        updateBtn.disabled = toolsUiState.saving;
+        updateBtn.addEventListener('click', function () { _submitToolsUpdate(); });
+        updateRow.appendChild(updateBtn);
+        panel.appendChild(updateRow);
+      }
+
+      // "Add tool" -- pick a catalog tool not already installed.
+      var available = catalog.filter(function (t) { return installed.indexOf(t) === -1; });
+      if (available.length > 0) {
+        panel.appendChild(_buildToolAddRow(available));
+      } else if (catalog.length > 0) {
+        var allNote = document.createElement('p');
+        allNote.className = 'meta';
+        allNote.textContent = 'All available tools are installed.';
+        panel.appendChild(allNote);
+      }
+    }
+
+    container.appendChild(panel);
+  }
+
+  // One installed tool's row: "<tool> v<version>" + a write-gated Remove.
+  function _buildToolRow(toolName, version, writeEnabled) {
+    var li = document.createElement('li');
+    li.className = 'list-crud-list-item';
+
+    var label = document.createElement('span');
+    label.textContent = version ? (toolName + ' v' + version) : toolName;
+    li.appendChild(label);
+
+    if (writeEnabled) {
+      var removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.className = 'btn-ghost';
+      removeBtn.textContent = 'Remove';
+      // Disabled during any in-flight tool op (shared `saving` flag) -- prevents
+      // a double-submit race, mirrors connectors/external-sources.
+      removeBtn.disabled = toolsUiState.saving;
+      removeBtn.addEventListener('click', function () {
+        // confirm() guard (mirrors the connectors Remove UX). A stale/already-
+        // removed tool surfaces the CLI's own failure inline.
+        if (!window.confirm('Remove tool "' + toolName + '" from this project?')) return;
+        _submitToolsRemove(toolName);
+      });
+      li.appendChild(removeBtn);
+    }
+    return li;
+  }
+
+  // Add row: a <select> of installable catalog tools not yet installed + Add.
+  function _buildToolAddRow(available) {
+    var wrap = document.createElement('div');
+    wrap.className = 'list-crud-add-row';
+
+    var select = document.createElement('select');
+    select.className = 'interval-input';
+    select.setAttribute('aria-label', 'Tool to add');
+    // Keep the prior selection if still available; else default to the first.
+    if (available.indexOf(toolsUiState.selected) === -1) toolsUiState.selected = available[0];
+    for (var i = 0; i < available.length; i++) {
+      var opt = document.createElement('option');
+      opt.value = available[i];
+      opt.textContent = available[i];
+      select.appendChild(opt);
+    }
+    select.value = toolsUiState.selected;
+    select.disabled = toolsUiState.saving;
+    select.addEventListener('change', function () { toolsUiState.selected = select.value; });
+    wrap.appendChild(select);
+
+    var addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.className = 'btn-ghost';
+    addBtn.textContent = toolsUiState.saving ? 'Working…' : 'Add tool';
+    addBtn.disabled = toolsUiState.saving;
+    addBtn.addEventListener('click', function () { _submitToolsAdd(toolsUiState.selected); });
+    wrap.appendChild(addBtn);
+
+    return wrap;
+  }
+
+  // Force a Tools re-render past the saving-guard (busy-state paint).
+  function _forceToolsRender() {
+    _toolsExplicitRender = true;
+    _renderToolsCard(lastGoodModel, lastGoodModel && lastGoodModel.write_enabled === true);
+  }
+
+  function _submitToolsAdd(toolName) {
+    if (!toolName) return;
+    toolsUiState.saving = true;
+    toolsUiState.errorMessage = null;
+    _forceToolsRender();
+    postOp('tools.add', {}, { tool: toolName }, function (result) {
+      toolsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        toolsUiState.errorMessage = null;
+        toolsUiState.selected = '';
+      } else {
+        toolsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not add the tool.';
+      }
+      // Re-fetch on EITHER outcome: the on-disk manifest may have changed.
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitToolsUpdate() {
+    // Capture the pre-update version so the post-refetch render can detect a
+    // CLI self-update (see toolsUiState.restartFromVersion). Reset the advisory
+    // at the start of each attempt so a prior one doesn't linger.
+    var preVersion = (lastGoodModel && lastGoodModel.tool) ? lastGoodModel.tool.aid_version : null;
+    toolsUiState.saving = true;
+    toolsUiState.errorMessage = null;
+    toolsUiState.restartFromVersion = null;
+    _forceToolsRender();
+    postOp('tools.update', {}, {}, function (result) {
+      toolsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        toolsUiState.errorMessage = null;
+        // Arm the advisory; the re-render compares this to the fresh aid_version.
+        toolsUiState.restartFromVersion = (preVersion === undefined ? null : preVersion);
+      } else {
+        toolsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not update tools.';
+      }
+      _refetchModelForHeader();
+    });
+  }
+
+  function _submitToolsRemove(toolName) {
+    toolsUiState.saving = true;
+    toolsUiState.errorMessage = null;
+    _forceToolsRender();
+    postOp('tools.remove', {}, { tool: toolName }, function (result) {
+      toolsUiState.saving = false;
+      if (result.ok && result.body && result.body.ok) {
+        toolsUiState.errorMessage = null;
+      } else {
+        toolsUiState.errorMessage = (result.body && (result.body.detail || result.body.error)) || 'Could not remove the tool.';
       }
       _refetchModelForHeader();
     });
