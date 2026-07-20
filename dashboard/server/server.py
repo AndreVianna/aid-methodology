@@ -1287,6 +1287,24 @@ def _posix_argv_path(path_str: str) -> str:
     return path_str.replace(os.sep, "/") if os.sep != "/" else path_str
 
 
+def _aid_cli_path_arg(path_str: str, is_windows: "bool | None" = None) -> str:
+    """Path-like ARGV element for the spawned aid CLI, in the form the twin
+    _run_aid_cli chooses (same os.name signal) will accept.
+
+    On Windows _run_aid_cli spawns the NATIVE aid.ps1 (KI-009 Part A), and native
+    PowerShell cannot resolve an MSYS '/c/...' path -- which is exactly what
+    `bash bin/aid` canonicalises INTO registry.yml (_native_fs_path's docstring).
+    So a project registered in that form made every project-scoped aid-CLI op
+    (tools.update/add/remove, projects add/remove) fail on Windows with
+    "target directory does not exist". Map it to the native drive form first
+    (_native_fs_path), then forward-slash it (_posix_argv_path) for a uniform
+    'C:/...' argv element. Both steps are no-ops off Windows (bash branch: paths
+    are already POSIX) and no-ops on an already-native 'C:/...' input, so the
+    prior bash-branch behaviour and the C:\\...->C:/... argv-mangling mitigation
+    are preserved verbatim."""
+    return _posix_argv_path(_native_fs_path(path_str, is_windows=is_windows))
+
+
 _DEFAULT_AID_CLI_TIMEOUT = 30   # seconds; fast registry ops (project.add/remove,
 # feature-003). A row's optional 'aid_cli_timeout' overrides this (feature-004's
 # tools.update/tools.update-self need a much longer ceiling).
@@ -1969,7 +1987,7 @@ def _op_project_add_argv(work_dir: "Path | None", served_root: str, target: dict
     AID_CODE_HOME is NOT exported (bin/aid self-locates it, bin/aid L45-52). No
     --local/--shared/--verbose (tier selection is the CLI's own
     _aid_resolve_tier)."""
-    argv = ["projects", "add", _posix_argv_path(args["path"])]
+    argv = ["projects", "add", _aid_cli_path_arg(args["path"])]
     env = {"AID_HOME": served_root}
     return argv, env
 
@@ -1992,7 +2010,7 @@ def _op_project_remove_argv(work_dir: "Path | None", served_root: str, target: d
     <id_map-resolved-path> (never a body-supplied path -- target['_resolved_path']
     is set by _resolve_project_remove_target, SEC-2). env
     AID_HOME=<server aid_home>."""
-    argv = ["projects", "remove", _posix_argv_path(target["_resolved_path"])]
+    argv = ["projects", "remove", _aid_cli_path_arg(target["_resolved_path"])]
     env = {"AID_HOME": served_root}
     return argv, env
 
@@ -2088,7 +2106,7 @@ def _op_tools_update_argv(work_dir: "Path | None", served_root: str, target: dic
     available) so `aid update`'s self-update-if-stale preamble / registry
     reads resolve the SAME state home the dashboard itself uses; AID_CODE_HOME
     is NOT exported (bin/aid self-locates it, bin/aid L45-52)."""
-    argv = ["update", "--target", _posix_argv_path(served_root)]
+    argv = ["update", "--target", _aid_cli_path_arg(served_root)]
     env = {"AID_HOME": target["_aid_home"]}
     return argv, env
 
@@ -2170,7 +2188,7 @@ def _op_tools_add_argv(work_dir: "Path | None", served_root: str, target: dict, 
     tools.update) so the child's registry reads / self-update-if-stale preamble
     resolve the SAME home the dashboard uses. The tool id is _validate_tool_arg
     charset-checked; the CLI re-validates existence."""
-    argv = ["add", args["tool"], "--target", _posix_argv_path(served_root)]
+    argv = ["add", args["tool"], "--target", _aid_cli_path_arg(served_root)]
     env = {"AID_HOME": target["_aid_home"]}
     return argv, env
 
@@ -2180,7 +2198,7 @@ def _op_tools_remove_argv(work_dir: "Path | None", served_root: str, target: dic
     remove <tool> --target <served-root>. Same shared-resolver / AID_HOME shape
     as _op_tools_add_argv; uninstalls one host tool, leaving the project's
     .aid/ (bare/tool-less) intact when it was the last one."""
-    argv = ["remove", args["tool"], "--target", _posix_argv_path(served_root)]
+    argv = ["remove", args["tool"], "--target", _aid_cli_path_arg(served_root)]
     env = {"AID_HOME": target["_aid_home"]}
     return argv, env
 

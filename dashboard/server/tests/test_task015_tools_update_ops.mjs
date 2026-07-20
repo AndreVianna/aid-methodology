@@ -363,7 +363,46 @@ function mirroredOpToolsRemoveArgv(workDir, servedRoot, target, args) {
 // (guards the mirror above from drifting away from production).
 {
   assert(/validateToolArg[\s\S]*?value === "self"/.test(serverSrc),
-    "C.21: server.mjs validateToolArg explicitly rejects the reserved 'self' keyword");
+    "C.23: server.mjs validateToolArg explicitly rejects the reserved 'self' keyword");
+}
+
+// [C-extra] source-presence: the KI-009 '/c/...'-path fix. aidCliPathArg composes
+// nativeFsPath (MSYS /c/... -> native C:/...) + toPosixArg, and every project-scoped
+// aid-CLI builder passes the path through it (not bare toPosixArg) so native aid.ps1
+// can resolve the --target on Windows.
+{
+  assert(/function aidCliPathArg\([^)]*\)\s*\{[\s\S]*?toPosixArg\(nativeFsPath\(/.test(serverSrc),
+    "C.24: aidCliPathArg composes toPosixArg(nativeFsPath(...))");
+  assert(/\["update",\s*"--target",\s*aidCliPathArg\(servedRoot\)\]/.test(serverSrc),
+    "C.25: opToolsUpdateArgv --target uses aidCliPathArg(servedRoot)");
+  assert(/\["add",\s*args\.tool,\s*"--target",\s*aidCliPathArg\(servedRoot\)\]/.test(serverSrc),
+    "C.26: opToolsAddArgv --target uses aidCliPathArg(servedRoot)");
+  assert(/\["remove",\s*args\.tool,\s*"--target",\s*aidCliPathArg\(servedRoot\)\]/.test(serverSrc),
+    "C.27: opToolsRemoveArgv --target uses aidCliPathArg(servedRoot)");
+  assert(/\["projects",\s*"add",\s*aidCliPathArg\(args\.path\)\]/.test(serverSrc),
+    "C.28: opProjectAddArgv path uses aidCliPathArg(args.path)");
+  assert(/\["projects",\s*"remove",\s*aidCliPathArg\(target\._resolvedPath\)\]/.test(serverSrc),
+    "C.29: opProjectRemoveArgv path uses aidCliPathArg(target._resolvedPath)");
+}
+
+// [D-extra] behavioural mirror of the '/c/...' fix (cross-platform via the isWin seam).
+{
+  const mirroredAidCliPathArg = (p, isWin) => {
+    // toPosixArg splits on the REAL path.sep; for the /c/... case nativeFsPath
+    // already yields forward slashes, so this is stable on any host.
+    const native = (() => {
+      if (!isWin) return p;
+      const m = /^\/([a-zA-Z])(\/.*)?$/.exec(p);
+      return m ? m[1].toUpperCase() + ":" + (m[2] || "/") : p;
+    })();
+    return native.split(/[\\/]/).join("/");
+  };
+  assertEquals(mirroredAidCliPathArg("/c/Users/x/proj", true), "C:/Users/x/proj",
+    "D.20: /c/... -> C:/... on the Windows (aid.ps1) branch [THE FIX]");
+  assertEquals(mirroredAidCliPathArg("C:/Users/x", true), "C:/Users/x",
+    "D.21: already-native C:/... unchanged on Windows");
+  assertEquals(mirroredAidCliPathArg("/home/u/proj", false), "/home/u/proj",
+    "D.22: POSIX path untouched off Windows (bash branch)");
 }
 
 {

@@ -134,6 +134,29 @@ class TestOpToolsUpdateSelfArgv(unittest.TestCase):
         self.assertEqual(env, {"AID_HOME": "/state/home"})
 
 
+class TestAidCliPathArg(unittest.TestCase):
+    """_aid_cli_path_arg: the --target/path argv form for the spawned aid CLI.
+    On Windows the dashboard spawns native aid.ps1 (KI-009), which cannot resolve
+    an MSYS '/c/...' path -- the source of the "target directory does not exist"
+    failure for a bash-canonicalised (`/c/...`) registry entry. is_windows is the
+    injectable seam so these run host-independently."""
+
+    def test_msys_path_nativeified_on_windows(self):
+        # /c/... -> C:/... (THE FIX): the form native PowerShell can resolve.
+        self.assertEqual(
+            srv._aid_cli_path_arg("/c/Users/x/proj", is_windows=True), "C:/Users/x/proj")
+
+    def test_already_native_forward_slash_unchanged_on_windows(self):
+        self.assertEqual(
+            srv._aid_cli_path_arg("C:/Users/x", is_windows=True), "C:/Users/x")
+
+    def test_noop_off_windows(self):
+        # bash branch: POSIX paths (incl. a literal '/c/...' that is a real path
+        # on POSIX) pass through untouched.
+        self.assertEqual(srv._aid_cli_path_arg("/home/u/proj", is_windows=False), "/home/u/proj")
+        self.assertEqual(srv._aid_cli_path_arg("/c/Users/x", is_windows=False), "/c/Users/x")
+
+
 # ===========================================================================
 # (3) Full dispatch via a controllable FAKE aid CLI (never the real bin/aid).
 # ===========================================================================

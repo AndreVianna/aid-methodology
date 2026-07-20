@@ -946,6 +946,21 @@ function toPosixArg(p) {
   return p.split(sep).join("/");
 }
 
+function aidCliPathArg(p, isWin) {
+  // Path-like ARGV element for the spawned aid CLI, in the form runAidCli's
+  // chosen twin accepts (same platform signal). On Windows runAidCli spawns the
+  // NATIVE aid.ps1 (KI-009 Part A), which cannot resolve an MSYS '/c/...' path --
+  // exactly what `bash bin/aid` canonicalises INTO registry.yml -- so a project
+  // registered in that form made every project-scoped aid-CLI op fail on Windows
+  // with "target directory does not exist". Map it to the native drive form
+  // first (nativeFsPath), then forward-slash it (toPosixArg) for a uniform
+  // 'C:/...' argv element. Both steps are no-ops off Windows (bash branch) and on
+  // an already-native 'C:/...' input, preserving the prior bash-branch behaviour
+  // + the C:\\...->C:/... argv-mangling mitigation. Twin of server.py's
+  // _aid_cli_path_arg().
+  return toPosixArg(nativeFsPath(p, isWin));
+}
+
 function mapExitCode(exitCode, statusMap, defaultStatus) {
   // Resolve the op's effective status map (`op.status_map or DEFAULT_MAP`, OP-SM)
   // and map exitCode -> [httpStatus, errorClass]. An exit code absent from the
@@ -1705,7 +1720,7 @@ function opProjectAddArgv(workDir, servedRoot, target, args) {
   // AID_CODE_HOME is NOT exported (bin/aid self-locates it, bin/aid L45-52).
   // No --local/--shared/--verbose (tier selection is the CLI's own
   // _aid_resolve_tier).
-  const argv = ["projects", "add", toPosixArg(args.path)];
+  const argv = ["projects", "add", aidCliPathArg(args.path)];
   const env = { AID_HOME: servedRoot };
   return [argv, env];
 }
@@ -1729,7 +1744,7 @@ function opProjectRemoveArgv(workDir, servedRoot, target, args) {
   // <id_map-resolved-path> (never a body-supplied path -- target._resolvedPath
   // is set by resolveProjectRemoveTarget, SEC-2). env
   // AID_HOME=<server aid_home>.
-  const argv = ["projects", "remove", toPosixArg(target._resolvedPath)];
+  const argv = ["projects", "remove", aidCliPathArg(target._resolvedPath)];
   const env = { AID_HOME: servedRoot };
   return [argv, env];
 }
@@ -1823,7 +1838,7 @@ function opToolsUpdateArgv(workDir, servedRoot, target, args) {
   // available) so `aid update`'s self-update-if-stale preamble / registry
   // reads resolve the SAME state home the dashboard itself uses;
   // AID_CODE_HOME is NOT exported (bin/aid self-locates it, bin/aid L45-52).
-  const argv = ["update", "--target", toPosixArg(servedRoot)];
+  const argv = ["update", "--target", aidCliPathArg(servedRoot)];
   const env = { AID_HOME: target._aidHome };
   return [argv, env];
 }
@@ -1906,7 +1921,7 @@ function opToolsAddArgv(workDir, servedRoot, target, args) {
   // so the child's registry reads / self-update-if-stale preamble resolve the
   // SAME home the dashboard uses. The tool id is validateToolArg charset-
   // checked; the CLI re-validates existence.
-  const argv = ["add", args.tool, "--target", toPosixArg(servedRoot)];
+  const argv = ["add", args.tool, "--target", aidCliPathArg(servedRoot)];
   const env = { AID_HOME: target._aidHome };
   return [argv, env];
 }
@@ -1916,7 +1931,7 @@ function opToolsRemoveArgv(workDir, servedRoot, target, args) {
   // remove <tool> --target <servedRoot>. Same shared-resolver / AID_HOME shape
   // as opToolsAddArgv; uninstalls one host tool, leaving the project's .aid/
   // (bare/tool-less) intact when it was the last one.
-  const argv = ["remove", args.tool, "--target", toPosixArg(servedRoot)];
+  const argv = ["remove", args.tool, "--target", aidCliPathArg(servedRoot)];
   const env = { AID_HOME: target._aidHome };
   return [argv, env];
 }
