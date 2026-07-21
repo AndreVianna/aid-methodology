@@ -270,7 +270,16 @@ fi
 echo "=== NM09: version parity (package.json == repo VERSION == vendored VERSION) ==="
 
 _pkg_version="$(node -e "process.stdout.write(require('${PKG_DIR}/package.json').version)")"
-assert_eq "$_pkg_version" "$VERSION" "NM09-01 package.json version == repo VERSION"
+# A pre-release VERSION (e.g. 2.2.3-beta.1) is a PyPI-only beta: npm ships no
+# pre-release, so packages/npm/package.json legitimately stays on the last stable
+# and is EXEMPT here -- mirrors the npm-carrier exemption in
+# canonical/aid/scripts/release/check-version-sync.sh. Only enforce
+# package.json == VERSION for a stable VERSION.
+if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([._-]?(alpha|beta|preview|pre|rc|a|b|c)[0-9]*|-[0-9A-Za-z.-]+)$ ]]; then
+    pass "NM09-01 package.json version exempt (VERSION '${VERSION}' is a pre-release; npm stays on last stable, package.json='${_pkg_version}')"
+else
+    assert_eq "$_pkg_version" "$VERSION" "NM09-01 package.json version == repo VERSION"
+fi
 
 if [[ -f "${PKG_DIR}/VERSION" ]]; then
     _vendored_version="$(tr -d '[:space:]' < "${PKG_DIR}/VERSION")"
