@@ -3909,8 +3909,15 @@ if [[ -n "$PWSH" ]]; then
         "PAR100-C09 AC3: PS1 bare project 2 recorded failed"
     assert_output_contains "$OUT_PS1" "0 updated, 1 skipped, 2 failed" "PAR100-C10 AC5: PS1 summary counts"
     assert_eq "$RC_SH" "$RC_PS1" "PAR100-C11 AC8: Bash<->PS1 exit code parity (continue-on-error + skip)"
+    # Regression (beta bug): the 2 bare children DO reach the child-spawn seam, so
+    # a leak of the child's stdout into Invoke-AidUpdateAll's (captured) return makes
+    # it an Object[]; 'Exit-Aid $uaRc' then throws "Cannot convert System.Object[] ...
+    # to ... Int32". The exit code (1) coincides with the binding-error exit, so the
+    # assertions above cannot see it -- assert the error signature is absent instead.
+    assert_output_not_contains "$OUT_PS1" "Cannot convert" \
+        "PAR100-C12 regression: no Object[]->Int32 binding error at 'Exit-Aid \$uaRc' -- child stdout must not leak into Invoke-AidUpdateAll's scalar-int return"
 else
-    for _n in 06 07 08 09 10 11; do pass "PAR100-C${_n} [SKIPPED: pwsh absent]"; done
+    for _n in 06 07 08 09 10 11 12; do pass "PAR100-C${_n} [SKIPPED: pwsh absent]"; done
 fi
 
 # ---------------------------------------------------------------------------
@@ -4204,6 +4211,24 @@ _ua_k_real_v="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_K
 assert_eq "$_ua_k_real_v" "$UA_VERSION" \
     "PAR100-K10 Bash: pinned version genuinely applied under '--force'"
 
+# ---------------------------------------------------------------------------
+# PAR100-L: regression guard -- Invoke-AidUpdateAll must return a SCALAR int,
+# never an Object[] (source-level, deterministic, cross-platform; runs even when
+# pwsh is absent). The per-project child is spawned INSIDE a function whose return
+# value the caller captures ('$uaRc = script:Invoke-AidUpdateAll ...'), so a BARE
+# '& $uaHostExe @uaChildArgs' leaks the child's stdout into the success stream --
+# the function then returns @(<child stdout...>, <int>) and 'script:Exit-Aid $uaRc'
+# fails to bind [int]$Code ("Cannot convert System.Object[] ... to ... Int32").
+# This bit a real beta tester on a 12/12-success run. The behavioral PS1 cases
+# (C/K) could not catch it: a bare-project FAILURE exits 1 and the binding error
+# ALSO exits 1, so the codes coincide (see PAR100-C12). Guard the fix at the
+# source: the child invocation must route its output to the host, not into this
+# function's pipeline.
+# ---------------------------------------------------------------------------
+_ua_l_child_line="$(grep -nF -- '& $uaHostExe @uaChildArgs' "${BIN_AID_PS1}" || true)"
+assert_output_contains "$_ua_l_child_line" "| Out-Host" \
+    "PAR100-L01 regression: Invoke-AidUpdateAll routes the per-project child's stdout to the host (| Out-Host) so it cannot leak into the captured scalar-int return (guards the 'Cannot convert System.Object[] to Int32' beta bug)"
+
 # ===========================================================================
 # PAR101: CLI-version-aware 'resolve_version'/'Resolve-AidVersion' + twin
 # parity (release-v2.2.3b1). 'aid update' / 'aid update all' with NO explicit
@@ -4472,6 +4497,74 @@ if [[ -n "$PWSH" ]]; then
         "PAR101-E03 PS1: total fetch failure -> the pre-existing hard error is preserved"
 else
     pass "PAR101-E03 [SKIPPED: pwsh absent]"
+fi
+
+# ---------------------------------------------------------------------------
+# PAR102: 'aid projects list' column alignment with a long (pre-release) version,
+# Bash<->PS1 twin parity. Regression (beta bug): the STATE column was a fixed
+# %-10s / {3,-10}; a version longer than 10 chars (e.g. a pre-release
+# "X.Y.Z-beta.N") overflowed the field and pushed the TOOLS/TIER data right of
+# their headers. Both twins now size the STATE column to the widest value
+# (floor 10) so header and data stay aligned. The assertion is PATH-width-
+# INDEPENDENT: it compares the STATE->TOOLS gap in the header against the
+# version->tools gap in the data row -- a gap measured WITHIN each row, so a long
+# PATH that overflows its own column cannot confound it. (aid_version parsing
+# accepts the "-beta.N" suffix via _aid_project_state's [^space]* tail.)
+# ---------------------------------------------------------------------------
+_UA_PL_SH_HOME=$(newhome); setup_sh_home "${_UA_PL_SH_HOME}"
+_UA_PL_PS_HOME=$(newhome); setup_ps1_home "${_UA_PL_PS_HOME}"
+_UA_PL_PROJ="$(mktemp -d "${TMP}/pl_proj.XXXXXX")"
+
+# Register the (bare) project in each home; 'projects add' does not write a
+# manifest, so no clobber concern with the long-version manifest written below.
+run_sh  "${_UA_PL_SH_HOME}" projects add "${_UA_PL_PROJ}"
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${_UA_PL_PS_HOME}" projects add "${_UA_PL_PROJ}"
+fi
+
+# Long-version manifest (13-char version + one tool "codex"), read by both twins.
+mkdir -p "${_UA_PL_PROJ}/.aid"
+cat > "${_UA_PL_PROJ}/.aid/.aid-manifest.json" <<'EOF'
+{
+  "aid_version": "9.9.9-beta.99",
+  "tools": {
+    "codex": {}
+  }
+}
+EOF
+
+run_sh "${_UA_PL_SH_HOME}" projects list
+assert_exit_eq "$RC_SH" 0 "PAR102-01 Bash: 'projects list' with a 13-char version -> exit 0"
+assert_output_contains "$OUT_SH" "9.9.9-beta.99" "PAR102-02 Bash: long version rendered in the STATE column"
+_pl_hdr_sh="$(printf '%s\n' "$OUT_SH"  | grep -F 'TOOLS' | head -1)"
+_pl_data_sh="$(printf '%s\n' "$OUT_SH" | grep -F '9.9.9-beta.99' | head -1)"
+_t="${_pl_hdr_sh%%STATE*}";           _pl_state_off_sh=${#_t}
+_t="${_pl_hdr_sh%%TOOLS*}";           _pl_tools_off_sh=${#_t}
+_t="${_pl_data_sh%%9.9.9-beta.99*}";  _pl_ver_off_sh=${#_t}
+_t="${_pl_data_sh%%codex*}";          _pl_toolsval_off_sh=${#_t}
+_pl_hgap_sh=$(( _pl_tools_off_sh - _pl_state_off_sh ))
+_pl_dgap_sh=$(( _pl_toolsval_off_sh - _pl_ver_off_sh ))
+assert_eq "$_pl_hgap_sh" "$_pl_dgap_sh" \
+    "PAR102-03 Bash: STATE column widened so the TOOLS header aligns with the tools value (header gap ${_pl_hgap_sh} == data gap ${_pl_dgap_sh})"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1 "${_UA_PL_PS_HOME}" projects list
+    assert_exit_eq "$RC_PS1" 0 "PAR102-04 PS1: 'projects list' with a 13-char version -> exit 0"
+    assert_output_contains "$OUT_PS1" "9.9.9-beta.99" "PAR102-05 PS1: long version rendered in the STATE column"
+    _pl_hdr_ps="$(printf '%s\n' "$OUT_PS1"  | grep -F 'TOOLS' | head -1)"
+    _pl_data_ps="$(printf '%s\n' "$OUT_PS1" | grep -F '9.9.9-beta.99' | head -1)"
+    _t="${_pl_hdr_ps%%STATE*}";           _pl_state_off_ps=${#_t}
+    _t="${_pl_hdr_ps%%TOOLS*}";           _pl_tools_off_ps=${#_t}
+    _t="${_pl_data_ps%%9.9.9-beta.99*}";  _pl_ver_off_ps=${#_t}
+    _t="${_pl_data_ps%%codex*}";          _pl_toolsval_off_ps=${#_t}
+    _pl_hgap_ps=$(( _pl_tools_off_ps - _pl_state_off_ps ))
+    _pl_dgap_ps=$(( _pl_toolsval_off_ps - _pl_ver_off_ps ))
+    assert_eq "$_pl_hgap_ps" "$_pl_dgap_ps" \
+        "PAR102-06 PS1: STATE column widened so the TOOLS header aligns with the tools value (header gap ${_pl_hgap_ps} == data gap ${_pl_dgap_ps})"
+    assert_eq "$_pl_hgap_sh" "$_pl_hgap_ps" "PAR102-07 AC: Bash<->PS1 STATE-column header gap byte-identical"
+    assert_eq "$_pl_dgap_sh" "$_pl_dgap_ps" "PAR102-08 AC: Bash<->PS1 version->tools data gap byte-identical"
+else
+    for _n in 04 05 06 07 08; do pass "PAR102-${_n} [SKIPPED: pwsh absent]"; done
 fi
 
 # ===========================================================================

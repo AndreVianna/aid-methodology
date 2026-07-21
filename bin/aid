@@ -2555,9 +2555,22 @@ _cmd_projects_list() {
         [[ -n "$_p" ]] && _paths+=("$_p")
     done < <(_registry_read_raw_union)
 
+    # Pre-compute each project's state (version string) and size the STATE column to
+    # the widest value (floor: the historical width of 10) so a long version -- e.g.
+    # a pre-release "X.Y.Z-beta.N" -- never overflows a fixed field and shifts the
+    # TOOLS/TIER columns out of alignment with the header. Mirror in bin/aid.ps1.
+    local -a _states=()
+    local _state_w=10
+    local _pp _pp_state
+    for _pp in "${_paths[@]+"${_paths[@]}"}"; do
+        _pp_state="$(_aid_project_state "$_pp")"
+        _states+=("$_pp_state")
+        [[ "${#_pp_state}" -gt "$_state_w" ]] && _state_w="${#_pp_state}"
+    done
+
     # Column header.
-    printf '%3s  %-2s  %-45s  %-10s  %-20s  %s\n' "#" " " "PATH" "STATE" "TOOLS" "TIER"
-    printf '%3s  %-2s  %-45s  %-10s  %-20s  %s\n' "---" "--" "----" "-----" "-----" "----"
+    printf "%3s  %-2s  %-45s  %-${_state_w}s  %-20s  %s\n" "#" " " "PATH" "STATE" "TOOLS" "TIER"
+    printf "%3s  %-2s  %-45s  %-${_state_w}s  %-20s  %s\n" "---" "--" "----" "-----" "-----" "----"
 
     local _cwd_registered=0
     local _entry
@@ -2565,7 +2578,7 @@ _cmd_projects_list() {
     for _entry in "${_paths[@]+"${_paths[@]}"}"; do
         local _state _tools _tier _marker
         _num=$((_num + 1))
-        _state="$(_aid_project_state "$_entry")"
+        _state="${_states[$((_num - 1))]}"
         _tools="$(_aid_project_tools "$_entry")"
         _tier="$(_which_tier_holds "$_entry")"
         _marker="  "
@@ -2575,7 +2588,7 @@ _cmd_projects_list() {
         fi
         # Truncate long tools string for display.
         local _tools_display="${_tools:--}"
-        printf '%3d  %-2s  %-45s  %-10s  %-20s  %s\n' \
+        printf "%3d  %-2s  %-45s  %-${_state_w}s  %-20s  %s\n" \
             "$_num" "$_marker" "$_entry" "$_state" "$_tools_display" "$_tier"
         if [[ "$_verbose" -eq 1 ]]; then
             local _reg_src
