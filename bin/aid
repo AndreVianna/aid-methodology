@@ -2906,7 +2906,7 @@ _cmd_update_all() {
 
     # Per-run transient cache (mirrors the single-project _AID_STAGING_BASE pattern).
     local _ua_cache
-    _ua_cache="$(mktemp -d /tmp/aid-update-all-XXXXXX)"
+    _ua_cache="$(mktemp -d "${TMPDIR:-${TMP:-/tmp}}/aid-update-all-XXXXXX")"
     trap 'rm -rf "$_ua_cache"' EXIT
 
     # Enumerate every registered project -- the exact source 'aid projects list' reads
