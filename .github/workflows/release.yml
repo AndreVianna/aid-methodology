@@ -71,6 +71,7 @@ jobs:
     runs-on: ubuntu-24.04
     outputs:
       version: ${{ steps.ver.outputs.version }}    # bare semver, e.g. '0.7.5'
+      is_prerelease: ${{ steps.ver.outputs.is_prerelease }}   # 'true' for a PyPI-only pre-release (2.2.3b1 / 2.2.3-beta.1)
 
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -100,6 +101,19 @@ jobs:
           esac
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          # Pre-release detection (PyPI-only beta channel): a PEP 440 (2.2.3b1 /
+          # 2.2.3rc1 / 2.2.3a1) or SemVer (2.2.3-beta.1) pre-release marker after
+          # the X.Y.Z triple. Betas publish to PyPI ONLY -- github-release and
+          # npm-publish are skipped for them (a beta bumps only VERSION +
+          # pyproject.toml + the tag; npm stays on the last stable). Regex mirrors
+          # canonical/aid/scripts/release/check-version-sync.sh _is_prerelease().
+          if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([._-]?(alpha|beta|preview|pre|rc|a|b|c)[0-9]*|-[0-9A-Za-z.-]+)$ ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "VERSION=${VERSION} -> PRE-RELEASE (PyPI-only)"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "VERSION=${VERSION} -> stable (all channels)"
+          fi
 
       # FR10 version-sync: all four carriers must equal the tag version.
       # Runs before any packaging or publish to fail fast on drift.
@@ -169,6 +183,8 @@ jobs:
   github-release:
     name: github-release (tarballs + SHA256SUMS)
     needs: [gate]
+    # Skipped for a PyPI-only pre-release (beta) -- betas ship to PyPI only.
+    if: ${{ needs.gate.outputs.is_prerelease != 'true' }}
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ needs.gate.outputs.version }}
@@ -210,7 +226,9 @@ jobs:
   npm-publish:
     name: npm-publish (aid-installer)
     needs: [gate, github-release]
-    if: vars.NPM_ENABLED == 'true'
+    # Stable only: npm ships no pre-releases (github-release also skips on a
+    # pre-release, so this would auto-skip anyway; the explicit guard documents it).
+    if: ${{ vars.NPM_ENABLED == 'true' && needs.gate.outputs.is_prerelease != 'true' }}
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ needs.gate.outputs.version }}
@@ -280,7 +298,11 @@ jobs:
   pypi-publish:
     name: pypi-publish (aid-installer)
     needs: [gate, github-release]
-    if: vars.PYPI_ENABLED == 'true'
+    # Runs for BOTH stable and pre-release. On a pre-release github-release is
+    # skipped, so a plain `needs` would auto-skip pypi-publish too; `!cancelled()`
+    # lets this job evaluate its own condition instead. Guards: gate must have
+    # passed, and github-release must not have FAILED (skipped is fine = beta).
+    if: ${{ !cancelled() && needs.gate.result == 'success' && needs.github-release.result != 'failure' && vars.PYPI_ENABLED == 'true' }}
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ needs.gate.outputs.version }}

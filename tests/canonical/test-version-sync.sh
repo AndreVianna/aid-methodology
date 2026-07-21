@@ -276,4 +276,49 @@ else
 ${VS09_HITS}"
 fi
 
+# ---------------------------------------------------------------------------
+# VS10  Pre-release (PyPI-only beta): npm carrier is EXEMPT.
+#   A beta bumps only VERSION + pyproject.toml + the tag; package.json legitimately
+#   stays on the last stable. check-version-sync must PASS: VERSION == pyproject ==
+#   expect, npm exempt (not required to equal expect). Betas publish to PyPI only.
+# ---------------------------------------------------------------------------
+FIXTURE="${TMP}/vs10"
+make_fixture_root "${FIXTURE}" "1.2.2" "1.2.3b1" "1.2.3b1"   # npm=stale stable, pypi=VERSION=1.2.3b1
+OUT=""; RC=0
+run_check "${FIXTURE}" --expect "1.2.3b1" || RC=$?
+assert_exit_zero "$RC" "VS10 pre-release 1.2.3b1: PASS with stale npm (npm carrier exempt)"
+assert_output_contains "$OUT" "PRE-RELEASE" "VS10 output flags the pre-release"
+assert_output_contains "$OUT" "exempt" "VS10 output notes npm carrier exempt"
+
+# ---------------------------------------------------------------------------
+# VS11  Pre-release still ENFORCES the PyPI (pyproject) carrier — betas DO ship to
+#   PyPI, so a stale pyproject must FAIL even though npm is exempt.
+# ---------------------------------------------------------------------------
+FIXTURE="${TMP}/vs11"
+make_fixture_root "${FIXTURE}" "1.2.2" "1.2.2" "1.2.3b1"   # VERSION=1.2.3b1 but pyproject stale 1.2.2
+OUT=""; RC=0
+run_check "${FIXTURE}" --expect "1.2.3b1" || RC=$?
+assert_exit_nonzero "$RC" "VS11 pre-release with stale pyproject → FAIL (PyPI carrier still enforced)"
+assert_output_contains "$OUT" "pyproject.toml" "VS11 error names the pyproject carrier"
+
+# ---------------------------------------------------------------------------
+# VS12  SemVer-form pre-release (2.2.3-beta.1) is also detected as a pre-release.
+# ---------------------------------------------------------------------------
+FIXTURE="${TMP}/vs12"
+make_fixture_root "${FIXTURE}" "" "1.2.3-beta.1" "1.2.3-beta.1"   # no npm manifest; pypi=VERSION
+OUT=""; RC=0
+NPM_ENABLED=false run_check "${FIXTURE}" --expect "1.2.3-beta.1" || RC=$?
+assert_exit_zero "$RC" "VS12 SemVer-form pre-release 1.2.3-beta.1 → PASS"
+assert_output_contains "$OUT" "PRE-RELEASE" "VS12 SemVer-form flagged as pre-release"
+
+# ---------------------------------------------------------------------------
+# WF06  release.yml wires the PyPI-only pre-release path:
+#   - the gate job exposes an `is_prerelease` output,
+#   - github-release skips on a pre-release,
+#   - pypi-publish uses `!cancelled()` so it still runs when github-release is skipped.
+# ---------------------------------------------------------------------------
+assert_output_contains "$WF_CONTENT" "is_prerelease:" "WF06a release.yml gate exposes is_prerelease output"
+assert_output_contains "$WF_CONTENT" "needs.gate.outputs.is_prerelease != 'true'" "WF06b github-release/npm skip on pre-release"
+assert_output_contains "$WF_CONTENT" "!cancelled()" "WF06c pypi-publish runs even when github-release is skipped"
+
 test_summary
