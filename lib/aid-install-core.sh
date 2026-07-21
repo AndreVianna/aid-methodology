@@ -825,17 +825,39 @@ _manifest_write_python() {
         fi
     done
 
-    python3 - "$manifest" "$tool" "$version" "$now" \
-        "$(printf '%s\n' "${paths_arr[@]+"${paths_arr[@]}"}")" \
-        "$(printf '%s\n' "${root_arr[@]+"${root_arr[@]}"}")" <<'PY'
+    # Large tool profiles (~350 paths) can push these lists past the OS
+    # command-line length limit (notably Windows' ~32K CreateProcess limit)
+    # when passed as argv to the python3 subprocess.  Write each list to its
+    # own temp file instead, and pass only the (small) temp-file paths as
+    # argv; clean up the temp files regardless of how this function exits.
+    local paths_file roots_file
+    paths_file="$(mktemp "${TMPDIR:-${TMP:-/tmp}}/aid-manifest-paths.XXXXXX")" || {
+        echo "ERROR: aid-install-core: mktemp failed for manifest paths file" >&2
+        return 1
+    }
+    roots_file="$(mktemp "${TMPDIR:-${TMP:-/tmp}}/aid-manifest-roots.XXXXXX")" || {
+        rm -f "$paths_file"
+        echo "ERROR: aid-install-core: mktemp failed for manifest roots file" >&2
+        return 1
+    }
+
+    printf '%s\n' "${paths_arr[@]+"${paths_arr[@]}"}" > "$paths_file"
+    printf '%s\n' "${root_arr[@]+"${root_arr[@]}"}" > "$roots_file"
+
+    python3 - "$manifest" "$tool" "$version" "$now" "$paths_file" "$roots_file" <<'PY'
 import json, sys, os, tempfile
 
 manifest_path = sys.argv[1]
 tool          = sys.argv[2]
 version       = sys.argv[3]
 now           = sys.argv[4]
-paths_raw     = sys.argv[5]
-roots_raw     = sys.argv[6]
+paths_file    = sys.argv[5]
+roots_file    = sys.argv[6]
+
+with open(paths_file, encoding="utf-8") as f:
+    paths_raw = f.read()
+with open(roots_file, encoding="utf-8") as f:
+    roots_raw = f.read()
 
 paths = [p for p in paths_raw.splitlines() if p]
 roots = []
@@ -903,6 +925,9 @@ except Exception as e:
     print(f"ERROR: aid-install-core: manifest write failed: {e}", file=sys.stderr)
     sys.exit(1)
 PY
+    local py_rc=$?
+    rm -f "$paths_file" "$roots_file"
+    return "$py_rc"
 }
 
 # _manifest_write_bash - pure-Bash fallback manifest writer.
