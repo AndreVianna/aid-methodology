@@ -156,6 +156,7 @@ different places.
 | 2026-07-21 | Scan-behavior rules (user) -- subtree prune, exclusion list, eval order, dedupe, depth cap; NFR-9/NFR-10 + AC-14/15/16 | -- | /aid-update-cli |
 | 2026-07-21 | GATE re-review -- 4 findings (1 CRIT / 1 HIGH / 2 MED-LOW); fixed | -- | /aid-update-cli GATE |
 | 2026-07-21 | GATE cleared (revised plan) -- verified clean + SPEC Source-range fix (grade.sh) | A+ | /aid-update-cli GATE |
+| 2026-07-21 | Command name confirmed by user: `aid projects scan` (working name adopted as final) | -- | orchestrator |
 
 ---
 
