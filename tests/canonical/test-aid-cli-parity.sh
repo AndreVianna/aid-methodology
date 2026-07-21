@@ -4205,6 +4205,276 @@ assert_eq "$_ua_k_real_v" "$UA_VERSION" \
     "PAR100-K10 Bash: pinned version genuinely applied under '--force'"
 
 # ===========================================================================
+# PAR101: CLI-version-aware 'resolve_version'/'Resolve-AidVersion' + twin
+# parity (release-v2.2.3b1). 'aid update' / 'aid update all' with NO explicit
+# --version must resolve differently depending on the RUNNING CLI's own
+# ${AID_CODE_HOME}/VERSION:
+#   - pre-release CLI + a pre-release GitHub release exists -> resolves to the
+#     NEWEST pre-release (the /releases LIST, first entry with
+#     "prerelease": true -- GitHub returns newest-first).
+#   - pre-release CLI + NO pre-release release exists (or the list fetch
+#     itself fails) -> falls back to the latest stable (/releases/latest),
+#     fail-safe (never hard-errors the update over the beta lookup).
+#   - stable CLI -> unchanged: always /releases/latest, list never consulted.
+#
+# FIXTURE-ABILITY NOTE (mirrors the PAR100 header's documented gap): GitHub's
+# real API serves both '.../releases' (the list) and '.../releases/latest'
+# under the SAME base path -- a single flat-file fixture root cannot represent
+# both simultaneously (a plain file "releases" cannot also be a directory
+# containing "releases/latest"), so this cannot be fixtured via the existing
+# AID_ALLOW_ENDPOINT_OVERRIDE + file:// mechanism (that mechanism also only
+# covers Fetch-Tarball/fetch_tarball on the Bash twin, per PAR100 -- it has no
+# PS1-side hook at all). Instead, this section uses a "shimmed resolve":
+#   - Bash:  a fake `curl` executable (matching resolve_version's exact
+#     invocation shape: `curl "${curl_args[@]}" "$url"`, last arg = URL) is
+#     prepended onto PATH for these cases only; it serves canned JSON bodies
+#     for '*/releases/latest' and '*/releases' and can simulate a fetch
+#     failure via PAR101_FAIL_MODE.
+#   - PS1:   a global `Invoke-RestMethod` function override (defined BEFORE
+#     dot-sourcing AidInstallCore.psm1's content into the driver's own scope,
+#     exactly as bin/aid.ps1 itself dot-sources the lib -- so $script:_AidCodeHome
+#     set by the driver is visible to Resolve-AidVersion) serves the same
+#     canned bodies (deserialized) or throws to simulate a failure.
+# Both twins exercise the REAL production resolve_version()/Resolve-AidVersion
+# functions (sourced from lib/aid-install-core.sh / lib/AidInstallCore.psm1
+# directly -- not reimplemented), driven at the function level rather than
+# through the full 'aid update' dispatcher (which also does registry/
+# migration work unrelated to version resolution and is already covered,
+# for the resolution call site itself, by every other PAR100 case that omits
+# --version).
+# ===========================================================================
+echo ""
+echo "=== PAR101: CLI-version-aware resolve_version + Bash<->PS1 twin parity ==="
+
+_PAR101_DIR="${TMP}/par101"
+mkdir -p "${_PAR101_DIR}/fakebin" "${_PAR101_DIR}/clihome"
+
+# Canned GitHub API bodies (pretty-printed / one key per line, matching the
+# real API's shape that the existing tag_name grep+sed already relies on).
+cat > "${_PAR101_DIR}/latest-stable.json" <<'EOF'
+{
+  "tag_name": "v2.2.2",
+  "prerelease": false
+}
+EOF
+
+# Newest-first list with TWO pre-releases -- proves "newest" selection (must
+# pick v2.2.4b2, NOT the older v2.2.3b1), plus a trailing stable entry.
+# One key per line (matches the real GitHub API's pretty-printed shape, which
+# _aid_first_prerelease_tag's line-by-line scan -- like the existing tag_name
+# grep+sed for /releases/latest -- assumes; a compact single-line-per-object
+# fixture would put "tag_name" and "prerelease" on the SAME line and silently
+# never match).
+cat > "${_PAR101_DIR}/list-with-prerelease.json" <<'EOF'
+[
+  {
+    "tag_name": "v2.2.4b2",
+    "prerelease": true
+  },
+  {
+    "tag_name": "v2.2.3b1",
+    "prerelease": true
+  },
+  {
+    "tag_name": "v2.2.2",
+    "prerelease": false
+  }
+]
+EOF
+
+cat > "${_PAR101_DIR}/list-no-prerelease.json" <<'EOF'
+[
+  {
+    "tag_name": "v2.2.2",
+    "prerelease": false
+  },
+  {
+    "tag_name": "v2.2.1",
+    "prerelease": false
+  }
+]
+EOF
+
+# Fake curl: last arg is always the URL (resolve_version's exact invocation
+# shape). PAR101_FAIL_MODE selectively simulates a fetch failure so the
+# fail-safe fallback (and the total-failure error path) can be exercised
+# without touching the network.
+cat > "${_PAR101_DIR}/fakebin/curl" <<'EOF'
+#!/usr/bin/env bash
+url="${@: -1}"
+case "$url" in
+    */releases/latest)
+        [[ "${PAR101_FAIL_MODE:-}" == "all" ]] && exit 6
+        cat "$PAR101_LATEST_FILE" ;;
+    */releases)
+        if [[ "${PAR101_FAIL_MODE:-}" == "all" || "${PAR101_FAIL_MODE:-}" == "list-only" ]]; then
+            exit 6
+        fi
+        cat "$PAR101_LIST_FILE" ;;
+    *)
+        exit 6 ;;
+esac
+EOF
+chmod +x "${_PAR101_DIR}/fakebin/curl"
+
+# Bash driver: sources the REAL lib/aid-install-core.sh and calls
+# resolve_version() directly -- driven entirely via env (avoids quoting a
+# CLI-version positional arg through a nested `bash -c` string).
+cat > "${_PAR101_DIR}/resolve.sh" <<'EOF'
+#!/usr/bin/env bash
+set -uo pipefail
+printf '%s' "$PAR101_CLI_VERSION" > "${AID_CODE_HOME}/VERSION"
+source "$PAR101_LIB_SH"
+resolve_version
+EOF
+chmod +x "${_PAR101_DIR}/resolve.sh"
+
+# PS1 driver: dot-sources AidInstallCore.psm1's content into ITS OWN script
+# scope -- the same technique bin/aid.ps1 itself uses -- so $script:_AidCodeHome
+# (set here, mirroring what bin/aid.ps1 would have already set) is visible to
+# Resolve-AidVersion exactly as it is in production.
+cat > "${_PAR101_DIR}/resolve.ps1" <<'EOF'
+Set-Content -LiteralPath (Join-Path $env:AID_CODE_HOME 'VERSION') -Value $env:PAR101_CLI_VERSION -NoNewline
+
+function global:Invoke-RestMethod {
+    param([string]$Uri, [hashtable]$Headers, [string]$Method)
+    if ($Uri -like '*/releases/latest') {
+        if ($env:PAR101_FAIL_MODE -eq 'all') { throw 'PAR101 simulated latest failure' }
+        return (Get-Content -Raw -LiteralPath $env:PAR101_LATEST_FILE | ConvertFrom-Json)
+    } elseif ($Uri -like '*/releases') {
+        if ($env:PAR101_FAIL_MODE -eq 'all' -or $env:PAR101_FAIL_MODE -eq 'list-only') {
+            throw 'PAR101 simulated list failure'
+        }
+        return (Get-Content -Raw -LiteralPath $env:PAR101_LIST_FILE | ConvertFrom-Json)
+    } else {
+        throw "PAR101 fake Invoke-RestMethod: unexpected URI: $Uri"
+    }
+}
+
+$script:_AidCodeHome = $env:AID_CODE_HOME
+$libRaw = Get-Content -LiteralPath $env:PAR101_LIB_PS1 -Raw -Encoding utf8
+function Export-ModuleMember { param([Parameter(ValueFromRemainingArguments=$true)]$args) }
+. ([scriptblock]::Create($libRaw))
+
+Write-Output (Resolve-AidVersion)
+EOF
+
+# run_sh_resolve_version <cli_version> <list_file> [fail_mode]
+run_sh_resolve_version() {
+    local cli_version="$1" list_file="$2" fail_mode="${3:-}"
+    OUT_SH=$(AID_CODE_HOME="${_PAR101_DIR}/clihome" \
+             PATH="${_PAR101_DIR}/fakebin:${PATH}" \
+             PAR101_LATEST_FILE="${_PAR101_DIR}/latest-stable.json" \
+             PAR101_LIST_FILE="${list_file}" \
+             PAR101_CLI_VERSION="${cli_version}" \
+             PAR101_LIB_SH="${LIB_SH}" \
+             PAR101_FAIL_MODE="${fail_mode}" \
+             bash "${_PAR101_DIR}/resolve.sh" 2>&1); RC_SH=$?
+}
+
+# run_ps1_resolve_version <cli_version> <list_file> [fail_mode]
+run_ps1_resolve_version() {
+    local cli_version="$1" list_file="$2" fail_mode="${3:-}"
+    OUT_PS1=$(AID_CODE_HOME="${_PAR101_DIR}/clihome" \
+              PAR101_LATEST_FILE="${_PAR101_DIR}/latest-stable.json" \
+              PAR101_LIST_FILE="${list_file}" \
+              PAR101_CLI_VERSION="${cli_version}" \
+              PAR101_LIB_PS1="${LIB_PS1}" \
+              PAR101_FAIL_MODE="${fail_mode}" \
+              "$PWSH" -NoProfile -File "${_PAR101_DIR}/resolve.ps1" 2>&1 | \
+              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+}
+
+# ---------------------------------------------------------------------------
+# PAR101-A: pre-release CLI + a pre-release release exists -> resolves to the
+# NEWEST pre-release (not the older one also present in the list).
+# ---------------------------------------------------------------------------
+run_sh_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-with-prerelease.json"
+assert_eq "$OUT_SH" "2.2.4b2" "PAR101-A01 Bash: pre-release CLI + pre-release available -> resolves to the NEWEST pre-release"
+assert_exit_eq "$RC_SH" 0 "PAR101-A02 Bash: exit 0"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-with-prerelease.json"
+    assert_eq "$OUT_PS1" "2.2.4b2" "PAR101-A03 PS1: pre-release CLI + pre-release available -> resolves to the NEWEST pre-release"
+    assert_exit_eq "$RC_PS1" 0 "PAR101-A04 PS1: exit 0"
+    assert_eq "$OUT_SH" "$OUT_PS1" "PAR101-A05 AC: Bash<->PS1 twin parity (resolved version)"
+else
+    for _n in 03 04 05; do pass "PAR101-A${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR101-B: pre-release CLI + NO pre-release release exists -> falls back to
+# the latest stable (fail-safe; no error, no beta stamped).
+# ---------------------------------------------------------------------------
+run_sh_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-no-prerelease.json"
+assert_eq "$OUT_SH" "2.2.2" "PAR101-B01 Bash: pre-release CLI + NO pre-release available -> falls back to latest stable"
+assert_exit_eq "$RC_SH" 0 "PAR101-B02 Bash: exit 0 (fail-safe, not an error)"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-no-prerelease.json"
+    assert_eq "$OUT_PS1" "2.2.2" "PAR101-B03 PS1: pre-release CLI + NO pre-release available -> falls back to latest stable"
+    assert_exit_eq "$RC_PS1" 0 "PAR101-B04 PS1: exit 0 (fail-safe, not an error)"
+    assert_eq "$OUT_SH" "$OUT_PS1" "PAR101-B05 AC: Bash<->PS1 twin parity (resolved version)"
+else
+    for _n in 03 04 05; do pass "PAR101-B${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR101-C: stable CLI -> UNCHANGED regression -- always the latest stable;
+# the /releases list is never even consulted (list-with-prerelease.json is
+# deliberately passed here as "poison": if the stable-CLI path ever started
+# reading the list, it would wrongly resolve to the pre-release v2.2.4b2).
+# ---------------------------------------------------------------------------
+run_sh_resolve_version "2.2.2" "${_PAR101_DIR}/list-with-prerelease.json"
+assert_eq "$OUT_SH" "2.2.2" "PAR101-C01 Bash: stable CLI -> always latest stable, unchanged (list ignored)"
+assert_exit_eq "$RC_SH" 0 "PAR101-C02 Bash: exit 0"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_resolve_version "2.2.2" "${_PAR101_DIR}/list-with-prerelease.json"
+    assert_eq "$OUT_PS1" "2.2.2" "PAR101-C03 PS1: stable CLI -> always latest stable, unchanged (list ignored)"
+    assert_exit_eq "$RC_PS1" 0 "PAR101-C04 PS1: exit 0"
+    assert_eq "$OUT_SH" "$OUT_PS1" "PAR101-C05 AC: Bash<->PS1 twin parity (resolved version)"
+else
+    for _n in 03 04 05; do pass "PAR101-C${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR101-D: pre-release CLI + the LIST fetch itself fails (transient network
+# hiccup on the beta lookup only) -> fail-safe fallback to the latest stable
+# still succeeds (never hard-errors the update over the beta lookup).
+# ---------------------------------------------------------------------------
+run_sh_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-no-prerelease.json" "list-only"
+assert_eq "$OUT_SH" "2.2.2" "PAR101-D01 Bash: list-fetch failure -> fail-safe fallback to latest stable still succeeds"
+assert_exit_eq "$RC_SH" 0 "PAR101-D02 Bash: exit 0"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-no-prerelease.json" "list-only"
+    assert_eq "$OUT_PS1" "2.2.2" "PAR101-D03 PS1: list-fetch failure -> fail-safe fallback to latest stable still succeeds"
+    assert_exit_eq "$RC_PS1" 0 "PAR101-D04 PS1: exit 0"
+    assert_eq "$OUT_SH" "$OUT_PS1" "PAR101-D05 AC: Bash<->PS1 twin parity (resolved version)"
+else
+    for _n in 03 04 05; do pass "PAR101-D${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR101-E: total fetch failure (both endpoints unreachable) -- regression:
+# the pre-existing hard-failure behavior is preserved (no beta-lookup
+# regression turns a real outage into a silent/garbage resolution).
+# ---------------------------------------------------------------------------
+run_sh_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-no-prerelease.json" "all"
+assert_eq "$OUT_SH" "ERROR: aid-install-core: failed to fetch https://api.github.com/repos/AndreVianna/aid-methodology/releases/latest" \
+    "PAR101-E01 Bash: total fetch failure -> the pre-existing hard error is preserved"
+assert_exit_eq "$RC_SH" 3 "PAR101-E02 Bash: exit 3 (unchanged failure contract)"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_resolve_version "2.2.3b1" "${_PAR101_DIR}/list-no-prerelease.json" "all"
+    assert_output_contains "$OUT_PS1" "ERROR: AidInstallCore: failed to fetch" \
+        "PAR101-E03 PS1: total fetch failure -> the pre-existing hard error is preserved"
+else
+    pass "PAR101-E03 [SKIPPED: pwsh absent]"
+fi
+
+# ===========================================================================
 # End-of-suite: REAL_HOME blast-surface canary
 #
 # Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before

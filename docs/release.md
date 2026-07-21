@@ -9,7 +9,7 @@ How to cut a release of AID. The primary path is the tag-triggered CI workflow
 
 - [How releases work](#how-releases-work)
 - [Primary path — tag-triggered CI](#primary-path--tag-triggered-ci)
-- [Pre-release (beta) channel — PyPI only](#pre-release-beta-channel--pypi-only)
+- [Pre-release (beta) channel — CLI + skills](#pre-release-beta-channel--cli--skills)
 - [Manual path — release.sh](#manual-path--releasesh)
 - [What a release produces](#what-a-release-produces)
 - [Prerequisites](#prerequisites)
@@ -95,19 +95,23 @@ failure, see [Recovery](#recovery-and-idempotency).
 
 ---
 
-## Pre-release (beta) channel — PyPI only
+## Pre-release (beta) channel — CLI + skills
 
 To get a build in front of specific testers without touching the stable channels,
-cut a **pre-release**. A pre-release publishes to **PyPI only** — npm and the GitHub
-Release are skipped — because `pip`/`pipx` hide pre-releases from a plain
-install/upgrade, so stable users are never affected; only someone who asks for the
-exact version gets it.
+cut a **pre-release**. It ships to **two** channels:
+
+- **CLI → PyPI** as a PEP 440 pre-release (`2.2.3b1`). `pip`/`pipx` hide pre-releases
+  from a plain install/upgrade, so a tester opts in explicitly.
+- **Skills → a GitHub Release marked `--prerelease`** (the `v2.2.3b1` profile tarballs).
+  GitHub excludes pre-releases from `/releases/latest`, so a normal `aid update` (which
+  resolves latest) still gets the **stable** skills — untouched.
+
+**npm is not involved** in betas (it ships no pre-releases).
 
 ### Versioning
 
-Use a PEP 440 pre-release version, e.g. `2.2.3b1` (beta 1), `2.2.3rc1` (release
-candidate 1). Bump **only** the PyPI-side carriers — leave `packages/npm/package.json`
-on the last stable (npm ships no pre-releases; `2.2.3b1` isn't valid SemVer anyway):
+Bump **only** the PyPI-side carriers — leave `packages/npm/package.json` on the last
+stable (`2.2.3b1` isn't valid npm SemVer, and npm doesn't publish for a beta):
 
 ```bash
 # beta of the upcoming 2.2.3
@@ -122,27 +126,31 @@ enforces only `VERSION == pyproject.toml == tag`.
 ### Cut it
 
 ```bash
-git commit -am "chore(release): 2.2.3b1 (PyPI-only beta)"
+git commit -am "chore(release): 2.2.3b1 (beta)"
 git tag "v2.2.3b1"
 git push origin "v2.2.3b1"        # triggers release.yml
 ```
 
-`release.yml` detects the pre-release and runs the gate → **pypi-publish only**
-(github-release and npm-publish are skipped). Confirm on the workflow run that those
-two jobs show *skipped* and pypi-publish is green.
+On a pre-release tag `release.yml` runs: gate → **github-release** (Release marked
+`--prerelease`, carries the skill tarballs) + **pypi-publish** (the CLI beta);
+**npm-publish is skipped**. Confirm on the run that npm-publish shows *skipped*,
+github-release created a **pre-release**, and pypi-publish is green.
 
-### Testers install it
-
-PyPI normalizes `2.2.3b1` (both forms resolve):
+### Testers use it
 
 ```bash
-pipx install "aid-installer==2.2.3b1"      # exact pin — works without --pre
-# or, to grab the newest pre-release:
-pipx install --pip-args=--pre aid-installer
+pipx install "aid-installer==2.2.3b1"     # the beta CLI
 ```
 
-A plain `pipx install aid-installer` / `pipx upgrade aid-installer` stays on the
-latest **stable** — the beta is opt-in.
+Then, inside a project, a plain **`aid update`** — no flags — automatically installs
+the **beta skills**: because the running CLI is itself a pre-release, version
+resolution first looks for the newest **pre-release** skills Release and uses it,
+**falling back to the latest stable** if none exists. (An explicit `aid update
+--version 2.2.3b1` also works.)
+
+For everyone else, nothing changes: a **stable** CLI's `aid update` always resolves
+`/releases/latest` (stable), and a plain `pipx install`/`upgrade aid-installer` never
+picks up the beta.
 
 > A pre-release does **not** bump `VERSION`/`pyproject.toml` toward the eventual
 > stable in a way that blocks it: when ready, set the carriers to the stable `2.2.3`

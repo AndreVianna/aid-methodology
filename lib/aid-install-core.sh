@@ -10,7 +10,11 @@
 #   sha256_file <path>          -> hex sha256 of file content (stdout)
 #   normalize_tool <id>         -> canonical lower-case-hyphen tool id (stdout)
 #   detect_tool <target>        -> detected tool id (stdout); exit 2 on 0 or >1 matches
-#   resolve_version             -> latest GitHub release version (stdout); exit 3 on fail
+#   resolve_version             -> release version to install (stdout); exit 3 on fail.
+#                                 CLI-version-aware: a pre-release running CLI
+#                                 prefers the newest pre-release release, else
+#                                 falls back to the latest stable; a stable CLI
+#                                 always resolves the latest stable (unchanged).
 #   fetch_tarball <tool> <ver> <dest_dir>
 #                               -> downloads aid-<tool>-v<ver>.tar.gz + SHA256SUMS into
 #                                 dest_dir; verifies sha256; exit 3 on fetch, 4 on mismatch
@@ -181,8 +185,50 @@ detect_tool() {
 # Version resolution (online)
 # ---------------------------------------------------------------------------
 
-# resolve_version - fetch the latest release tag from GitHub API.
+# _aid_is_prerelease <version>
+# Mirrors canonical/aid/scripts/release/check-version-sync.sh's _is_prerelease()
+# (same pattern in .github/workflows/release.yml) -- kept in sync deliberately,
+# do not invent a divergent regex here. True (exit 0) when <version> (bare
+# semver, no leading 'v') matches a pre-release shape: an alpha/beta/preview/
+# pre/rc/a/b/c suffix (e.g. '2.2.3b1'), or a SemVer '-' pre-release tag.
+_aid_is_prerelease() {
+    local v="$1"
+    local re='^[0-9]+\.[0-9]+\.[0-9]+([._-]?(alpha|beta|preview|pre|rc|a|b|c)[0-9]*|-[0-9A-Za-z.-]+)$'
+    [[ "$v" =~ $re ]]
+}
+
+# _aid_first_prerelease_tag
+# Reads a GitHub /releases list JSON body on stdin (pretty-printed, one key per
+# line -- same assumption the existing tag_name grep+sed already relies on;
+# GitHub returns the list newest-first, and within each release object
+# "tag_name" is emitted before "prerelease"). Prints the tag_name of the FIRST
+# entry whose "prerelease" field is true (the newest pre-release) and returns
+# 0; prints nothing and returns 1 when no pre-release entry is found.
+_aid_first_prerelease_tag() {
+    local cur_tag="" line
+    while IFS= read -r line; do
+        if [[ "$line" == *'"tag_name"'* ]]; then
+            cur_tag="$(printf '%s' "$line" | sed 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/')"
+        elif [[ "$line" == *'"prerelease"'* && "$line" == *'true'* ]]; then
+            if [[ -n "$cur_tag" ]]; then
+                printf '%s\n' "$cur_tag"
+                return 0
+            fi
+        fi
+    done
+    return 1
+}
+
+# resolve_version - fetch the release tag to install from the GitHub API.
 # Prints the version without leading 'v'.  Exits 3 on failure.
+#
+# CLI-version-aware (release-v2.2.3b1): when the RUNNING CLI itself is a
+# pre-release (its own ${AID_CODE_HOME}/VERSION matches _aid_is_prerelease),
+# prefer the newest pre-release release from the GitHub releases LIST; fall
+# back to the latest stable (/releases/latest) when no pre-release exists, or
+# when the list fetch itself fails (fail-safe -- never hard-error the update
+# because of the beta lookup). A stable-CLI install is unaffected: always
+# /releases/latest, unchanged.
 resolve_version() {
     local url="${AID_API_BASE}/releases/latest"
     local curl_args=(-fsSL)
@@ -190,6 +236,30 @@ resolve_version() {
     local token="${GITHUB_TOKEN:-${GH_TOKEN:-}}"
     if [[ -n "$token" ]]; then
         curl_args+=(-H "Authorization: Bearer ${token}")
+    fi
+
+    local cli_version=""
+    if [[ -n "${AID_CODE_HOME:-}" && -f "${AID_CODE_HOME}/VERSION" ]]; then
+        cli_version="$(tr -d '[:space:]' < "${AID_CODE_HOME}/VERSION")"
+    fi
+
+    if [[ -n "$cli_version" ]] && _aid_is_prerelease "$cli_version"; then
+        local list_url="${AID_API_BASE}/releases"
+        local list_response=""
+        # Test the command substitution's exit status directly in the `if`
+        # condition (not via a separate `$?` read) so a failing fetch is
+        # tolerated even under a caller's `set -e` (defensive; bin/aid itself
+        # runs with `set -uo pipefail`, no -e, but the lib is sourced and must
+        # not assume that).
+        if list_response="$(curl "${curl_args[@]}" "$list_url" 2>/dev/null)" && [[ -n "$list_response" ]]; then
+            local pre_tag=""
+            if pre_tag="$(printf '%s\n' "$list_response" | _aid_first_prerelease_tag)" && [[ -n "$pre_tag" ]]; then
+                echo "${pre_tag#v}"
+                return 0
+            fi
+        fi
+        # No pre-release found (or the list fetch failed) -- fall through to
+        # the stable /releases/latest lookup below.
     fi
 
     local response

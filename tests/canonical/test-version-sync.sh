@@ -312,13 +312,16 @@ assert_exit_zero "$RC" "VS12 SemVer-form pre-release 1.2.3-beta.1 → PASS"
 assert_output_contains "$OUT" "PRE-RELEASE" "VS12 SemVer-form flagged as pre-release"
 
 # ---------------------------------------------------------------------------
-# WF06  release.yml wires the PyPI-only pre-release path:
+# WF06  release.yml wires the CLI+skills pre-release (beta) path:
 #   - the gate job exposes an `is_prerelease` output,
-#   - github-release skips on a pre-release,
-#   - pypi-publish uses `!cancelled()` so it still runs when github-release is skipped.
+#   - github-release RUNS on a pre-release, marking the Release --prerelease
+#     (it carries the beta skill tarballs; excluded from /releases/latest),
+#   - npm-publish is skipped on a pre-release (npm ships no betas),
+#   - pypi-publish runs (the CLI beta).
 # ---------------------------------------------------------------------------
 assert_output_contains "$WF_CONTENT" "is_prerelease:" "WF06a release.yml gate exposes is_prerelease output"
-assert_output_contains "$WF_CONTENT" "needs.gate.outputs.is_prerelease != 'true'" "WF06b github-release/npm skip on pre-release"
-assert_output_contains "$WF_CONTENT" "!cancelled()" "WF06c pypi-publish runs even when github-release is skipped"
+assert_output_contains "$WF_CONTENT" "--prerelease" "WF06b github-release marks the Release --prerelease on a pre-release (beta skills)"
+assert_output_contains "$WF_CONTENT" "needs.gate.outputs.is_prerelease != 'true'" "WF06c npm-publish skips on a pre-release"
+assert_output_contains "$WF_CONTENT" "!cancelled()" "WF06d pypi-publish runs (CLI beta) regardless of github-release skip state"
 
 test_summary
