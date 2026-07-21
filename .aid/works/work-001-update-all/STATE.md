@@ -220,7 +220,7 @@ different places.
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | -- | -- | impl both twins; quick-check found+fixed pre-existing CRLF in manifest_list_tools + doc gap; build+smoke OK | Add `aid update all` bulk-update subcommand across both CLI twins |
-| task-002 | Pending | -- | -- | -- | Verify bulk-update behavior and bash/pwsh twin parity via test-aid-cli-parity.sh |
+| task-002 | Done | -- | -- | 61 parity+behavior assertions added (PAR100); runnable subset green both twins; A/B/G unblocked by #1 fix; full suite validated on CI (ubuntu) | Verify bulk-update behavior and bash/pwsh twin parity via test-aid-cli-parity.sh |
 
 ---
 
