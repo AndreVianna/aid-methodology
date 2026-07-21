@@ -10,7 +10,7 @@
 #   never commits a render.
 #
 # Usage:
-#   bash release.sh [--version X.Y.Z] [--sign] [--draft] [--dry-run]
+#   bash release.sh [--version X.Y.Z] [--sign] [--draft] [--prerelease] [--dry-run]
 #                   [--notes-file FILE] [-h|--help]
 #
 #   --version X.Y.Z   Release version (default: content of VERSION file). Must
@@ -19,6 +19,9 @@
 #                     to feature-005; exits non-zero if --sign is passed until
 #                     the signing approach is settled).
 #   --draft           Create the GitHub Release as a draft (default: published).
+#   --prerelease      Mark the GitHub Release as a pre-release (beta): it carries
+#                     the beta skill tarballs but is excluded from /releases/latest,
+#                     so a normal `aid update` still resolves the stable release.
 #   --dry-run         Assemble tarballs + SHA256SUMS then stop before
 #                     `gh release create`. No network I/O.
 #   --notes-file FILE Release notes body for `gh release create`.
@@ -70,6 +73,7 @@ VERSION_ARG=""
 SIGN=0
 DRAFT=0
 DRY_RUN=0
+PRERELEASE=0
 NOTES_FILE=""
 
 while [[ $# -gt 0 ]]; do
@@ -77,6 +81,7 @@ while [[ $# -gt 0 ]]; do
         --version)    VERSION_ARG="$2"; shift 2 ;;
         --sign)       SIGN=1; shift ;;
         --draft)      DRAFT=1; shift ;;
+        --prerelease) PRERELEASE=1; shift ;;
         --dry-run)    DRY_RUN=1; shift ;;
         --notes-file) NOTES_FILE="$2"; shift 2 ;;
         -h|--help)    usage; exit 0 ;;
@@ -428,6 +433,14 @@ GH_ARGS=("${TAG}" --title "AID v${VERSION}")
 
 if [[ "$DRAFT" -eq 1 ]]; then
     GH_ARGS+=(--draft)
+fi
+
+# --prerelease marks the GitHub Release as a pre-release: it carries the beta
+# skill tarballs for testers but is EXCLUDED from `/releases/latest`, so a normal
+# `aid update` (which resolves latest) still gets the stable release. Testers opt
+# in with `aid update --version <X.Y.Zb1>` or `aid update --pre`.
+if [[ "$PRERELEASE" -eq 1 ]]; then
+    GH_ARGS+=(--prerelease)
 fi
 
 if [[ -n "$NOTES_FILE" ]]; then

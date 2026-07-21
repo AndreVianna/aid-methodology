@@ -183,8 +183,10 @@ jobs:
   github-release:
     name: github-release (tarballs + SHA256SUMS)
     needs: [gate]
-    # Skipped for a PyPI-only pre-release (beta) -- betas ship to PyPI only.
-    if: ${{ needs.gate.outputs.is_prerelease != 'true' }}
+    # Runs for BOTH stable and pre-release. On a pre-release the Release is marked
+    # --prerelease (see the release.sh step below): it carries the beta skill
+    # tarballs for testers but is excluded from /releases/latest, so a normal
+    # `aid update` still resolves the stable release.
     runs-on: ubuntu-24.04
     env:
       VERSION: ${{ needs.gate.outputs.version }}
@@ -204,11 +206,15 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          # On a pre-release, mark the GitHub Release --prerelease: it carries the
+          # beta skill tarballs but stays out of /releases/latest.
+          PRE=""
+          [ "${{ needs.gate.outputs.is_prerelease }}" = "true" ] && PRE="--prerelease"
           if [ "${{ inputs.dry_run }}" = "true" ]; then
             # dry_run: build + checksums only; no gh release create, no network I/O.
-            bash release.sh --version "${VERSION}" --dry-run
+            bash release.sh --version "${VERSION}" ${PRE} --dry-run
           else
-            bash release.sh --version "${VERSION}"
+            bash release.sh --version "${VERSION}" ${PRE}
           fi
 
   # --------------------------------------------------------------------------

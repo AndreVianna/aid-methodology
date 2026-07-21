@@ -10,7 +10,12 @@
 #   Get-Sha256File <path>                        - hex sha256 of file (returns string)
 #   Normalize-Tool <id>                          - canonical lower-case-hyphen tool id
 #   Detect-Tool <target>                         - detected tool id; throws on 0 or >1
-#   Resolve-AidVersion                           - latest GitHub release version; throws on fail
+#   Resolve-AidVersion                           - release version to install; throws on fail.
+#                                                   CLI-version-aware: a pre-release running CLI
+#                                                   prefers the newest pre-release release, else
+#                                                   falls back to the latest stable; a stable CLI
+#                                                   always resolves the latest stable (unchanged).
+#   Test-AidPrerelease <version>                 - true when <version> matches a pre-release shape
 #   Fetch-Tarball <tool> <ver> <destDir>         - download + verify tarball; throws on error
 #   Extract-Tarball <tarball> <destDir>          - extract (flat root); throws on fail
 #   Verify-BundleChecksum <tarball>              - verify sibling SHA256SUMS if present
@@ -191,14 +196,78 @@ function Detect-Tool {
 # Version resolution (online)
 # ---------------------------------------------------------------------------
 
-# Resolve-AidVersion - fetch the latest release tag from GitHub API.
+# Test-AidPrerelease <Version> - mirror of the bash twin's _aid_is_prerelease
+# (itself mirroring canonical/aid/scripts/release/check-version-sync.sh's
+# _is_prerelease() / .github/workflows/release.yml -- kept in sync
+# deliberately, do not invent a divergent regex here). True when <Version>
+# (bare semver, no leading 'v') matches a pre-release shape: an alpha/beta/
+# preview/pre/rc/a/b/c suffix (e.g. '2.2.3b1'), or a SemVer '-' pre-release tag.
+function Test-AidPrerelease {
+    param([string]$Version)
+    $re = '^[0-9]+\.[0-9]+\.[0-9]+([._-]?(alpha|beta|preview|pre|rc|a|b|c)[0-9]*|-[0-9A-Za-z.-]+)$'
+    return [bool]([regex]::IsMatch($Version, $re))
+}
+
+# Get-AidFirstPrereleaseTag <ListResponse> - given a deserialized GitHub
+# /releases list (array of release objects, newest first), returns the
+# tag_name of the FIRST entry whose .prerelease is $true (the newest
+# pre-release). Returns $null when none is found.
+function script:Get-AidFirstPrereleaseTag {
+    param($ListResponse)
+    foreach ($rel in @($ListResponse)) {
+        if ($rel.prerelease -eq $true -and $rel.tag_name) {
+            return $rel.tag_name
+        }
+    }
+    return $null
+}
+
+# Resolve-AidVersion - fetch the release tag to install from the GitHub API.
 # Returns the version without leading 'v'.  Returns $null on failure.
+#
+# CLI-version-aware (release-v2.2.3b1): when the RUNNING CLI itself is a
+# pre-release (its own $AID_CODE_HOME/VERSION matches Test-AidPrerelease),
+# prefer the newest pre-release release from the GitHub releases LIST; fall
+# back to the latest stable (/releases/latest) when no pre-release exists, or
+# when the list fetch itself fails (fail-safe -- never hard-error the update
+# because of the beta lookup). A stable-CLI install is unaffected: always
+# /releases/latest, unchanged.
+#
+# $script:_AidCodeHome is set by the CALLING script (bin/aid.ps1); this module
+# is dot-sourced into that script's own scope for the update reach (never
+# Import-Module'd there), so the variable is visible here. Guarded via
+# Get-Variable (rather than a bare reference) so a hypothetical standalone
+# Import-Module caller -- which would NOT share that scope -- degrades safely
+# to "CLI version unknown" (treated the same as stable: unchanged /latest).
 function Resolve-AidVersion {
     $url = "$($script:AID_API_BASE)/releases/latest"
     $headers = @{}
     $token = if ($env:GITHUB_TOKEN) { $env:GITHUB_TOKEN } elseif ($env:GH_TOKEN) { $env:GH_TOKEN } else { '' }
     if ($token) {
         $headers['Authorization'] = "Bearer $token"
+    }
+
+    $cliVersion = ''
+    $codeHomeVar = Get-Variable -Name '_AidCodeHome' -Scope Script -ErrorAction SilentlyContinue
+    if ($codeHomeVar -and $codeHomeVar.Value) {
+        $verFile = Join-Path $codeHomeVar.Value 'VERSION'
+        if (Test-Path $verFile -PathType Leaf) {
+            $cliVersion = (Get-Content -LiteralPath $verFile -Raw -ErrorAction SilentlyContinue).Trim()
+        }
+    }
+
+    if ($cliVersion -and (Test-AidPrerelease $cliVersion)) {
+        $listUrl = "$($script:AID_API_BASE)/releases"
+        try {
+            $listResponse = Invoke-RestMethod -Uri $listUrl -Headers $headers -Method Get -ErrorAction Stop
+            $preTag = script:Get-AidFirstPrereleaseTag -ListResponse $listResponse
+            if ($preTag) {
+                return $preTag -replace '^v', ''
+            }
+        } catch {
+            # No pre-release found / list fetch failed -- fall through to the
+            # stable /releases/latest lookup below (fail-safe).
+        }
     }
 
     try {
@@ -2221,6 +2290,7 @@ Export-ModuleMember -Function @(
     'Normalize-Tool',
     'Detect-Tool',
     'Resolve-AidVersion',
+    'Test-AidPrerelease',
     'Fetch-Tarball',
     'Extract-Tarball',
     'Verify-BundleChecksum',
