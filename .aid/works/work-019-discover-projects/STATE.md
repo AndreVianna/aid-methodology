@@ -8,8 +8,8 @@ user_approved: no
 lifecycle: Paused-Awaiting-Input
 phase: Detail
 active_skill: aid-update-cli
-updated: '2026-07-21T20:32:37Z'
-pause_reason: 'GATE cleared; awaiting user approval before /aid-execute'
+updated: '2026-07-21T22:19:41Z'
+pause_reason: 'GATE cleared (revised plan A+); awaiting user approval before /aid-execute'
 block_reason: --
 block_artifact: --
 ticket_ref: --
@@ -152,6 +152,10 @@ different places.
 | 2026-07-21 | Renumbered work-002 -> work-019 (work-002 collided with a shipped, pruned work; PR #133) | -- | orchestrator |
 | 2026-07-21 | GATE cycle 1 -- reviewer found 10 findings (1 CRIT / 4 HIGH / 4 MED / 1 LOW); architect fixed all | -- | /aid-update-cli GATE |
 | 2026-07-21 | GATE cleared -- 8 artifacts re-reviewed clean (grade.sh) | A+ | /aid-update-cli GATE |
+| 2026-07-21 | Scope redesign (user) -- default=home, --path <folder>, --all; revising + re-gating | -- | /aid-update-cli |
+| 2026-07-21 | Scan-behavior rules (user) -- subtree prune, exclusion list, eval order, dedupe, depth cap; NFR-9/NFR-10 + AC-14/15/16 | -- | /aid-update-cli |
+| 2026-07-21 | GATE re-review -- 4 findings (1 CRIT / 1 HIGH / 2 MED-LOW); fixed | -- | /aid-update-cli GATE |
+| 2026-07-21 | GATE cleared (revised plan) -- verified clean + SPEC Source-range fix (grade.sh) | A+ | /aid-update-cli GATE |
 
 ---
 

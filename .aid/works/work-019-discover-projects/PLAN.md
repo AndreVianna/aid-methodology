@@ -16,9 +16,10 @@ headings by design.
 
 - **Delivery:** delivery-001 -- Machine Scan to Discover and Register AID Projects
 - **What it delivers:** A new `aid` CLI subcommand (working name `aid projects scan`) that
-  crawls the machine, registers every `.aid/` project it finds (register-only, idempotent,
-  guardrailed), and reports each project's version — implemented in both CLI twins with parity
-  and guardrail test coverage and updated help text.
+  crawls a chosen scope — the user's home directory by default, a specific folder with
+  `--path`, or the whole machine with `--all` — registers every `.aid/` project it finds
+  (register-only, idempotent, guardrailed), and reports each project's version — implemented in
+  both CLI twins with parity and guardrail test coverage and updated help text.
 - **Features:** feature-001-discover-projects   (the single feature; no `features/` folder)
 - **Depends on:** -- (none -- single delivery)
 - **Priority:** Must
