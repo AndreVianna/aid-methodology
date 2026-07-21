@@ -100,23 +100,26 @@ failure, see [Recovery](#recovery-and-idempotency).
 To get a build in front of specific testers without touching the stable channels,
 cut a **pre-release**. It ships to **two** channels:
 
-- **CLI → PyPI** as a PEP 440 pre-release (`2.2.3b1`). `pip`/`pipx` hide pre-releases
-  from a plain install/upgrade, so a tester opts in explicitly.
-- **Skills → a GitHub Release marked `--prerelease`** (the `v2.2.3b1` profile tarballs).
-  GitHub excludes pre-releases from `/releases/latest`, so a normal `aid update` (which
-  resolves latest) still gets the **stable** skills — untouched.
+- **CLI → PyPI.** Use the **SemVer** pre-release form (`2.2.3-beta.1`) for the version
+  and tag — the CLI's tool-bundle naming requires a separator before the pre-release,
+  so PEP 440 `2.2.3b1` (no separator) would be rejected by `aid add`/`update`. PyPI
+  **normalizes** `2.2.3-beta.1` → `2.2.3b1` on publish, and `pip`/`pipx` hide
+  pre-releases from a plain install/upgrade, so a tester opts in explicitly.
+- **Skills → a GitHub Release marked `--prerelease`** (the `v2.2.3-beta.1` profile
+  tarballs). GitHub excludes pre-releases from `/releases/latest`, so a normal
+  `aid update` (which resolves latest) still gets the **stable** skills — untouched.
 
 **npm is not involved** in betas (it ships no pre-releases).
 
 ### Versioning
 
-Bump **only** the PyPI-side carriers — leave `packages/npm/package.json` on the last
-stable (`2.2.3b1` isn't valid npm SemVer, and npm doesn't publish for a beta):
+Bump **only** the PyPI-side carriers to the SemVer pre-release — leave
+`packages/npm/package.json` on the last stable (npm publishes no beta):
 
 ```bash
 # beta of the upcoming 2.2.3
-printf '2.2.3b1\n' > VERSION
-# packages/pypi/pyproject.toml: version = "2.2.3b1"
+printf '2.2.3-beta.1\n' > VERSION
+# packages/pypi/pyproject.toml: version = "2.2.3-beta.1"
 # packages/npm/package.json:    LEAVE at the last stable (e.g. 2.2.2)
 ```
 
@@ -126,9 +129,9 @@ enforces only `VERSION == pyproject.toml == tag`.
 ### Cut it
 
 ```bash
-git commit -am "chore(release): 2.2.3b1 (beta)"
-git tag "v2.2.3b1"
-git push origin "v2.2.3b1"        # triggers release.yml
+git commit -am "chore(release): 2.2.3-beta.1 (beta)"
+git tag "v2.2.3-beta.1"
+git push origin "v2.2.3-beta.1"        # triggers release.yml
 ```
 
 On a pre-release tag `release.yml` runs: gate → **github-release** (Release marked
@@ -139,14 +142,14 @@ github-release created a **pre-release**, and pypi-publish is green.
 ### Testers use it
 
 ```bash
-pipx install "aid-installer==2.2.3b1"     # the beta CLI
+pipx install "aid-installer==2.2.3b1"     # the beta CLI (PyPI's normalized form of 2.2.3-beta.1)
 ```
 
 Then, inside a project, a plain **`aid update`** — no flags — automatically installs
 the **beta skills**: because the running CLI is itself a pre-release, version
 resolution first looks for the newest **pre-release** skills Release and uses it,
 **falling back to the latest stable** if none exists. (An explicit `aid update
---version 2.2.3b1` also works.)
+--version 2.2.3-beta.1` also works.)
 
 For everyone else, nothing changes: a **stable** CLI's `aid update` always resolves
 `/releases/latest` (stable), and a plain `pipx install`/`upgrade aid-installer` never
