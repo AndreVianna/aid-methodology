@@ -98,6 +98,27 @@ fi
 echo "check-version-sync: expected version = '${EXPECT}'"
 
 # ---------------------------------------------------------------------------
+# Pre-release detection (PyPI-only beta channel).
+# A pre-release version (PEP 440 '2.2.3b1'/'2.2.3rc1'/'2.2.3a1', or the SemVer
+# form '2.2.3-beta.1') is published to PyPI ONLY -- betas exist so specific
+# testers can opt in via `pipx install "aid-installer==X.Y.Zb1"` (pip hides
+# pre-releases from a plain install/upgrade, so stable users are untouched).
+# npm ships NO pre-releases: packages/npm/package.json stays at the last stable
+# and is therefore EXEMPT from the sync check when EXPECT is a pre-release (a
+# beta bumps only VERSION + pyproject.toml + the tag). See the npm carrier below.
+# ---------------------------------------------------------------------------
+_is_prerelease() {
+    local v="$1"
+    local re='^[0-9]+\.[0-9]+\.[0-9]+([._-]?(alpha|beta|preview|pre|rc|a|b|c)[0-9]*|-[0-9A-Za-z.-]+)$'
+    [[ "$v" =~ $re ]]
+}
+PRERELEASE=false
+if _is_prerelease "${EXPECT}"; then
+    PRERELEASE=true
+    echo "check-version-sync: '${EXPECT}' is a PRE-RELEASE -> PyPI-only (npm carrier exempt)"
+fi
+
+# ---------------------------------------------------------------------------
 # Assertion counter
 # ---------------------------------------------------------------------------
 fail=0
@@ -130,7 +151,11 @@ check_carrier "VERSION" "${VERSION_FILE_VAL}"
 NPM_JSON="${REPO_ROOT}/packages/npm/package.json"
 NPM_ENABLED="${NPM_ENABLED:-false}"
 
-if [[ -f "${NPM_JSON}" ]]; then
+if [[ "${PRERELEASE}" == "true" ]]; then
+    # Pre-release (PyPI-only): npm ships no betas, so package.json legitimately
+    # stays at the last stable and must NOT be required to equal EXPECT.
+    echo "  SKIP: packages/npm/package.json exempt -- '${EXPECT}' is a pre-release (PyPI-only; npm stays on the last stable)"
+elif [[ -f "${NPM_JSON}" ]]; then
     # File present: always check, regardless of NPM_ENABLED.
     if command -v node >/dev/null 2>&1; then
         NPM_VER="$(node -p "require('${NPM_JSON}').version" 2>/dev/null)"

@@ -41,7 +41,7 @@
 {"dst": ".codex/aid/scripts/migrate/migrate-kb-frontmatter.sh", "profile": "codex", "sha256": "7238f968c46e65fff488f107ff20eeda3daa2bb331c36d8f486a326b8d41e028", "src": "canonical/scripts/migrate/migrate-kb-frontmatter.sh"}
 {"dst": ".codex/aid/scripts/migrate/migrate-work-hierarchy.ps1", "profile": "codex", "sha256": "f74d98d633602378e22f840da8ad9868ddcb1a64595afdf85ca46ccebd7c201b", "src": "canonical/scripts/migrate/migrate-work-hierarchy.ps1"}
 {"dst": ".codex/aid/scripts/migrate/migrate-work-hierarchy.sh", "profile": "codex", "sha256": "258d2d97fa4f05c03c493dbe331799501b8bf707f8eec67e0b1f6f405a9b6bdb", "src": "canonical/scripts/migrate/migrate-work-hierarchy.sh"}
-{"dst": ".codex/aid/scripts/release/check-version-sync.sh", "profile": "codex", "sha256": "6b67e90e37e6da1ca7f720cdf426ff1a63bbe86a0d5baa3921e7467cbf56dc21", "src": "canonical/scripts/release/check-version-sync.sh"}
+{"dst": ".codex/aid/scripts/release/check-version-sync.sh", "profile": "codex", "sha256": "9756b3aafedd2e3f0aa9694ea8efe7ac6a2deacb132e1cdb5f78139510dc75da", "src": "canonical/scripts/release/check-version-sync.sh"}
 {"dst": ".codex/aid/scripts/summarize/assemble-3part.ps1", "profile": "codex", "sha256": "8e331e683afbb10e31f908095c1ded778167871b230e5345c0269cf98a79cc10", "src": "canonical/scripts/summarize/assemble-3part.ps1"}
 {"dst": ".codex/aid/scripts/summarize/assemble-3part.sh", "profile": "codex", "sha256": "f1636405ad7f7419217b41924ab72e3e98a0140aa54d78b5e9d5f34c4f6406cc", "src": "canonical/scripts/summarize/assemble-3part.sh"}
 {"dst": ".codex/aid/scripts/summarize/assemble.sh", "profile": "codex", "sha256": "ddcb0ec5a1cdb852770953bce3600f053af32602bc9d39da483985b204dcd9b9", "src": "canonical/scripts/summarize/assemble.sh"}

@@ -9,6 +9,7 @@ How to cut a release of AID. The primary path is the tag-triggered CI workflow
 
 - [How releases work](#how-releases-work)
 - [Primary path — tag-triggered CI](#primary-path--tag-triggered-ci)
+- [Pre-release (beta) channel — PyPI only](#pre-release-beta-channel--pypi-only)
 - [Manual path — release.sh](#manual-path--releasesh)
 - [What a release produces](#what-a-release-produces)
 - [Prerequisites](#prerequisites)
@@ -91,6 +92,61 @@ gh run watch
 
 On success, the GitHub Release is live and the package registries are updated. On any
 failure, see [Recovery](#recovery-and-idempotency).
+
+---
+
+## Pre-release (beta) channel — PyPI only
+
+To get a build in front of specific testers without touching the stable channels,
+cut a **pre-release**. A pre-release publishes to **PyPI only** — npm and the GitHub
+Release are skipped — because `pip`/`pipx` hide pre-releases from a plain
+install/upgrade, so stable users are never affected; only someone who asks for the
+exact version gets it.
+
+### Versioning
+
+Use a PEP 440 pre-release version, e.g. `2.2.3b1` (beta 1), `2.2.3rc1` (release
+candidate 1). Bump **only** the PyPI-side carriers — leave `packages/npm/package.json`
+on the last stable (npm ships no pre-releases; `2.2.3b1` isn't valid SemVer anyway):
+
+```bash
+# beta of the upcoming 2.2.3
+printf '2.2.3b1\n' > VERSION
+# packages/pypi/pyproject.toml: version = "2.2.3b1"
+# packages/npm/package.json:    LEAVE at the last stable (e.g. 2.2.2)
+```
+
+The version-sync gate detects the pre-release and **exempts the npm carrier** — it
+enforces only `VERSION == pyproject.toml == tag`.
+
+### Cut it
+
+```bash
+git commit -am "chore(release): 2.2.3b1 (PyPI-only beta)"
+git tag "v2.2.3b1"
+git push origin "v2.2.3b1"        # triggers release.yml
+```
+
+`release.yml` detects the pre-release and runs the gate → **pypi-publish only**
+(github-release and npm-publish are skipped). Confirm on the workflow run that those
+two jobs show *skipped* and pypi-publish is green.
+
+### Testers install it
+
+PyPI normalizes `2.2.3b1` (both forms resolve):
+
+```bash
+pipx install "aid-installer==2.2.3b1"      # exact pin — works without --pre
+# or, to grab the newest pre-release:
+pipx install --pip-args=--pre aid-installer
+```
+
+A plain `pipx install aid-installer` / `pipx upgrade aid-installer` stays on the
+latest **stable** — the beta is opt-in.
+
+> A pre-release does **not** bump `VERSION`/`pyproject.toml` toward the eventual
+> stable in a way that blocks it: when ready, set the carriers to the stable `2.2.3`
+> (all four in sync) and cut it normally — the stable release then supersedes the beta.
 
 ---
 
