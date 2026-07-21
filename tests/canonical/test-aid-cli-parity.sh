@@ -3657,6 +3657,554 @@ else
 fi
 
 # ===========================================================================
+# PAR100: 'aid update all' bulk-update behavior + Bash<->PS1 twin parity
+# (work-001-update-all / task-002; SPEC AC1-AC10, AC8 twin parity).
+#
+# DISCOVERED GAP (documented here, not silently dropped -- see task-002 report):
+# lib/aid-install-core.sh's fetch_tarball/resolve_version honor a real,
+# existing production env-var override (AID_ALLOW_ENDPOINT_OVERRIDE=1 +
+# AID_API_BASE/AID_DOWNLOAD_BASE) that lets the BASH twin's downloads be
+# redirected to a local file:// fixture -- no network, no port, no server.
+# lib/AidInstallCore.psm1's Fetch-Tarball/Resolve-AidVersion have NO such
+# hook: $script:AID_DOWNLOAD_BASE / $script:AID_API_BASE are hardcoded module
+# constants with zero environment-variable override, and Invoke-WebRequest
+# does not support the file:// scheme (empirically confirmed against this
+# host's pwsh: "The 'file' scheme is not supported."). This is a pre-existing
+# asymmetry in the shared install core (not introduced by task-001, which
+# reuses Fetch-Tarball unmodified) -- it means the PS1 twin's Fetch-Tarball
+# call cannot be exercised against a local fixture without either hitting
+# real GitHub (explicitly disallowed for this suite) or editing lib/* (out of
+# scope for a TEST-only task). Consequently:
+#   - AC1 (download-once, observed via the "Fetching ..." log line) and the
+#     "every project actually applied the pinned version" half of AC6 are
+#     verified DEEPLY on the BASH twin only (PAR100-A/PAR100-B/PAR100-G).
+#   - Every other AC (AC2 enumeration, AC3 continue-on-error, AC4 dry-run
+#     safety, AC5 summary format, AC7 skip, AC9 invocation surface, AC10
+#     self-update-at-most-once, and the header-line half of AC6) is verified
+#     on BOTH twins with genuine Bash<->PS1 parity, using two real,
+#     network-free production code paths that never reach Fetch-Tarball:
+#       (a) a "bare" project (`aid projects add <dir-without-.aid>` ->
+#           manifest tools: {}) -- its child 'aid update' legitimately exits
+#           6 ("no manifest ... nothing to update"), giving a REAL,
+#           deterministic per-project FAILURE with no network involved;
+#       (b) a registered project whose .aid/ is deleted after registration
+#           (AC7's own scenario) -- SKIPPED, never reaches the fetch step.
+# ===========================================================================
+echo ""
+echo "=== PAR100: 'aid update all' bulk-update + Bash<->PS1 twin parity ==="
+
+UA_VERSION="9.9.9"
+
+# ua_file_url <posix_path>
+# Builds a file:// URL usable by BOTH the native mingw64 curl on a Windows
+# host (which requires a real Windows path -- confirmed empirically: MSYS
+# /tmp/... virtual paths are NOT understood by curl's file:// handler) and by
+# curl on Linux CI (where cygpath is absent and the POSIX path is used as-is).
+ua_file_url() {
+    local p="$1"
+    if command -v cygpath >/dev/null 2>&1; then
+        local winp
+        winp="$(cygpath -m "$p")"   # -m: mixed form -- drive letter, forward slashes
+        printf 'file:///%s' "$winp"
+    else
+        printf 'file://%s' "$p"
+    fi
+}
+
+# build_ua_tarball <tool> <version> <out_tarball>
+# Parameterized twin of build_fixture_tarball (arbitrary <version> stamp, arbitrary
+# output path) -- same content/exclusions, for the 'aid update all' download fixture.
+build_ua_tarball() {
+    local tool="$1" version="$2" tarball="$3"
+    local profile_dir="${PROFILES_DIR}/${tool}"
+    [[ -d "$profile_dir" ]] || { echo "ERROR: profile dir not found: $profile_dir" >&2; return 1; }
+    local filelist
+    filelist="$(mktemp "${TMP}/ua-filelist-${tool}.XXXXXX")"
+    while IFS= read -r f; do
+        local fname; fname="$(basename "$f")"
+        [[ "$fname" == "README.md" ]] && continue
+        [[ "$fname" == "emission-manifest.jsonl" ]] && continue
+        local rel="${f#${profile_dir}/}"
+        printf './%s\n' "$rel"
+    done < <(find "${profile_dir}" -type f | sort) > "$filelist"
+    (cd "${profile_dir}" && tar -czf "${tarball}" --no-recursion -T "${filelist}") || {
+        echo "ERROR: failed to build UA fixture tarball for ${tool}" >&2
+        rm -f "$filelist"
+        return 1
+    }
+    rm -f "$filelist"
+}
+
+# build_ua_download_fixture <dl_base_dir> <version> <tool...>
+# Populates <dl_base_dir>/v<version>/aid-<tool>-v<version>.tar.gz per tool plus a
+# sibling SHA256SUMS -- the exact shape fetch_tarball expects at
+# AID_DOWNLOAD_BASE/v<version>/... (lib/aid-install-core.sh:222-223).
+build_ua_download_fixture() {
+    local dl_base="$1" version="$2"; shift 2
+    local vdir="${dl_base}/v${version}"
+    mkdir -p "$vdir"
+    local tool
+    for tool in "$@"; do
+        build_ua_tarball "$tool" "$version" "${vdir}/aid-${tool}-v${version}.tar.gz" || return 1
+    done
+    # --text: force the ' filename' (no '*' binary-mode marker) line shape that
+    # _verify_checksum's grep "[[:space:]]${filename}$" expects. Without it, this
+    # host's mingw64 sha256sum defaults to binary mode ('*filename'), which that
+    # grep does NOT match (the '*' sits between the space and the filename) --
+    # confirmed empirically on this Windows host; --text is a harmless no-op on
+    # Linux (GNU coreutils: "no difference between binary mode and text mode").
+    (cd "$vdir" && sha256sum --text aid-*.tar.gz > SHA256SUMS)
+}
+
+# Bash 'aid update all' runner: run_sh's base env + the REAL AID_ALLOW_ENDPOINT_OVERRIDE
+# production hook, redirecting fetch_tarball at a local file:// fixture (no network, no
+# port). AID_SKIP_SELF_INSTALL=1 keeps the (unrelated) self-update preamble side-effect-
+# free everywhere it might fire (see PAR100-F for the one group that deliberately
+# exercises it).
+run_sh_ua() {
+    local home_dir="$1" dl_base="$2"; shift 2
+    local dl_url; dl_url="$(ua_file_url "${dl_base}")"
+    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" \
+             AID_NO_UPDATE_CHECK=1 AID_SKIP_SELF_INSTALL=1 \
+             AID_ALLOW_ENDPOINT_OVERRIDE=1 AID_DOWNLOAD_BASE="${dl_url}" \
+             bash "${home_dir}/bin/aid" "$@" 2>&1); RC_SH=$?
+}
+
+# Network-free runners for scenarios that never reach fetch_tarball/Fetch-Tarball
+# (bare projects, missing-.aid/ projects, zero registered projects, usage errors).
+run_sh_ua_nf() {
+    local home_dir="$1"; shift
+    OUT_SH=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/aid-install-core.sh" \
+             AID_NO_UPDATE_CHECK=1 AID_SKIP_SELF_INSTALL=1 \
+             bash "${home_dir}/bin/aid" "$@" 2>&1); RC_SH=$?
+}
+run_ps1_ua_nf() {
+    local home_dir="$1"; shift
+    OUT_PS1=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/AidInstallCore.psm1" \
+              AID_NO_UPDATE_CHECK=1 AID_SKIP_SELF_INSTALL=1 \
+              "$PWSH" -NoProfile -File "${home_dir}/bin/aid.ps1" "$@" 2>&1 | \
+              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+}
+
+# ---------------------------------------------------------------------------
+# PAR100-A: AC1 download-once + AC2 enumeration exactness + AC5 summary +
+# AC6 version-pin (deep verification, BASH twin -- real successful fetch via
+# a file:// fixture). 3 registered projects need the SAME (tool, version); a
+# 4th UNREGISTERED project (real .aid/, same tool) proves AC2 exactness.
+# ---------------------------------------------------------------------------
+_UA_A_HOME=$(newhome); setup_sh_home "${_UA_A_HOME}"
+_UA_A_DL="${TMP}/ua-a-dlbase"
+build_ua_download_fixture "${_UA_A_DL}" "${UA_VERSION}" codex
+
+_UA_A_P1="$(mktemp -d "${TMP}/ua_a_p1.XXXXXX")"
+_UA_A_P2="$(mktemp -d "${TMP}/ua_a_p2.XXXXXX")"
+_UA_A_P3="$(mktemp -d "${TMP}/ua_a_p3.XXXXXX")"
+_UA_A_UNREG="$(mktemp -d "${TMP}/ua_a_unreg.XXXXXX")"
+
+run_sh "${_UA_A_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_A_P1}"
+assert_exit_eq "$RC_SH" 0 "PAR100-A00a Bash: seed P1 at v${VERSION} -> exit 0"
+run_sh "${_UA_A_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_A_P2}"
+assert_exit_eq "$RC_SH" 0 "PAR100-A00b Bash: seed P2 at v${VERSION} -> exit 0"
+run_sh "${_UA_A_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_A_P3}"
+assert_exit_eq "$RC_SH" 0 "PAR100-A00c Bash: seed P3 at v${VERSION} -> exit 0"
+run_sh "${_UA_A_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_A_UNREG}"
+assert_exit_eq "$RC_SH" 0 "PAR100-A00d Bash: seed the unregistered-control project -> exit 0"
+# Unregister it (register-on-encounter registered it above) -- AC2 exactness control.
+run_sh "${_UA_A_HOME}" projects remove "${_UA_A_UNREG}"
+
+run_sh_ua "${_UA_A_HOME}" "${_UA_A_DL}" update all --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 0 "PAR100-A01 Bash 'update all' (3 registered projects, 1 shared tool) -> exit 0"
+assert_output_contains "$OUT_SH" \
+    "aid update all: 3 registered project(s), target version ${UA_VERSION}" \
+    "PAR100-A02 AC2/AC6: enumeration count + pinned version in the header line"
+_ua_a_fetch_count=$(printf '%s\n' "$OUT_SH" | grep -cF -- "Fetching aid-codex-v${UA_VERSION}.tar.gz ..." || true)
+assert_eq "$_ua_a_fetch_count" "1" \
+    "PAR100-A03 AC1: fetch_tarball invoked exactly once for 3 projects needing the same (tool,version)"
+assert_output_contains "$OUT_SH" "3 updated, 0 skipped, 0 failed" "PAR100-A04 AC5: summary counts"
+
+_ua_a_v1=$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_A_P1}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')
+_ua_a_v2=$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_A_P2}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')
+_ua_a_v3=$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_A_P3}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')
+assert_eq "$_ua_a_v1" "$UA_VERSION" "PAR100-A05a AC6: P1 manifest updated to the pinned version"
+assert_eq "$_ua_a_v2" "$UA_VERSION" "PAR100-A05b AC6: P2 manifest updated to the pinned version"
+assert_eq "$_ua_a_v3" "$UA_VERSION" "PAR100-A05c AC6: P3 manifest updated to the pinned version"
+_ua_a_vunreg=$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_A_UNREG}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')
+assert_eq "$_ua_a_vunreg" "$VERSION" "PAR100-A06 AC2: unregistered project untouched by the bulk run (still at v${VERSION})"
+pass "PAR100-A07 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball in lib/AidInstallCore.psm1 -- see PAR100 header comment / task-002 report]"
+
+# ---------------------------------------------------------------------------
+# PAR100-B: AC3 mixed success/failure (deep, BASH twin) -- P2's tool download
+# genuinely fails (its v9.9.9 tarball is deliberately absent from the fixture
+# download-base); P1/P3 (a different, present tool) still succeed.
+# ---------------------------------------------------------------------------
+_UA_B_HOME=$(newhome); setup_sh_home "${_UA_B_HOME}"
+_UA_B_DL="${TMP}/ua-b-dlbase"
+build_ua_download_fixture "${_UA_B_DL}" "${UA_VERSION}" codex   # NOTE: no 'antigravity' fixture built for v9.9.9
+
+_UA_B_P1="$(mktemp -d "${TMP}/ua_b_p1.XXXXXX")"
+_UA_B_P2="$(mktemp -d "${TMP}/ua_b_p2.XXXXXX")"
+_UA_B_P3="$(mktemp -d "${TMP}/ua_b_p3.XXXXXX")"
+run_sh "${_UA_B_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_B_P1}"
+run_sh "${_UA_B_HOME}" add antigravity --from-bundle "${FIXTURE_DIR}/aid-antigravity-v${VERSION}.tar.gz" --target "${_UA_B_P2}"
+run_sh "${_UA_B_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_B_P3}"
+
+run_sh_ua "${_UA_B_HOME}" "${_UA_B_DL}" update all --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 1 "PAR100-B01 AC3: run with one failing project -> exit 1 (non-zero)"
+assert_output_contains "$OUT_SH" \
+    "ERROR: aid update all: failed to download antigravity v${UA_VERSION} (continuing)" \
+    "PAR100-B02 AC3: P2's tool download failure reported; run continues"
+assert_output_contains "$OUT_SH" "2 updated, 0 skipped, 1 failed" "PAR100-B03 AC5: summary counts reflect isolated failure"
+_ua_b_v1=$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_B_P1}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')
+_ua_b_v3=$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_B_P3}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')
+assert_eq "$_ua_b_v1" "$UA_VERSION" "PAR100-B04a AC3: unaffected P1 still updated to ${UA_VERSION}"
+assert_eq "$_ua_b_v3" "$UA_VERSION" "PAR100-B04b AC3: unaffected P3 still updated to ${UA_VERSION}"
+_ua_b_v2=$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_B_P2}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')
+assert_eq "$_ua_b_v2" "$VERSION" "PAR100-B05 AC3: failed P2 left at its pre-run version (no partial apply)"
+pass "PAR100-B06 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+
+# ---------------------------------------------------------------------------
+# PAR100-C: AC3 continue-on-error + AC5 summary + AC7 skip, Bash<->PS1 twin
+# parity -- fully network-free (bare projects genuinely FAIL via the child's
+# real exit-6 "nothing to update"; a missing-.aid/ project is genuinely
+# SKIPPED). See PAR100 header for why this is the twin-parity-safe substitute
+# for a full download-and-succeed scenario on the PS1 twin.
+# ---------------------------------------------------------------------------
+_UA_C_SH_HOME=$(newhome); setup_sh_home "${_UA_C_SH_HOME}"
+_UA_C_PS_HOME=$(newhome); setup_ps1_home "${_UA_C_PS_HOME}"
+
+_UA_C_SH_BARE1="$(mktemp -d "${TMP}/ua_c_sh_bare1.XXXXXX")"
+_UA_C_SH_BARE2="$(mktemp -d "${TMP}/ua_c_sh_bare2.XXXXXX")"
+_UA_C_SH_MISSING="$(mktemp -d "${TMP}/ua_c_sh_missing.XXXXXX")"
+run_sh "${_UA_C_SH_HOME}" projects add "${_UA_C_SH_BARE1}"
+run_sh "${_UA_C_SH_HOME}" projects add "${_UA_C_SH_BARE2}"
+run_sh "${_UA_C_SH_HOME}" projects add "${_UA_C_SH_MISSING}"
+rm -rf "${_UA_C_SH_MISSING}/.aid"
+
+run_sh_ua_nf "${_UA_C_SH_HOME}" update all --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 1 "PAR100-C01 Bash: 2 bare (fail) + 1 missing-.aid (skip) -> exit 1"
+assert_output_contains "$OUT_SH" "SKIP: ${_UA_C_SH_MISSING} (.aid/ not found)" \
+    "PAR100-C02 AC7: Bash missing-.aid project skipped (non-fatal)"
+assert_output_contains "$OUT_SH" "FAILED: ${_UA_C_SH_BARE1} (exit 6)" \
+    "PAR100-C03 AC3: Bash bare project 1 recorded failed (real, no-network child exit)"
+assert_output_contains "$OUT_SH" "FAILED: ${_UA_C_SH_BARE2} (exit 6)" \
+    "PAR100-C04 AC3: Bash bare project 2 recorded failed"
+assert_output_contains "$OUT_SH" "0 updated, 1 skipped, 2 failed" "PAR100-C05 AC5: Bash summary counts"
+
+if [[ -n "$PWSH" ]]; then
+    _UA_C_PS_BARE1="$(mktemp -d "${TMP}/ua_c_ps_bare1.XXXXXX")"
+    _UA_C_PS_BARE2="$(mktemp -d "${TMP}/ua_c_ps_bare2.XXXXXX")"
+    _UA_C_PS_MISSING="$(mktemp -d "${TMP}/ua_c_ps_missing.XXXXXX")"
+    run_ps1 "${_UA_C_PS_HOME}" projects add "${_UA_C_PS_BARE1}"
+    run_ps1 "${_UA_C_PS_HOME}" projects add "${_UA_C_PS_BARE2}"
+    run_ps1 "${_UA_C_PS_HOME}" projects add "${_UA_C_PS_MISSING}"
+    rm -rf "${_UA_C_PS_MISSING}/.aid"
+
+    run_ps1_ua_nf "${_UA_C_PS_HOME}" update all -Version "${UA_VERSION}"
+    assert_exit_eq "$RC_PS1" 1 "PAR100-C06 PS1: 2 bare (fail) + 1 missing-.aid (skip) -> exit 1"
+    assert_output_contains "$OUT_PS1" "SKIP: ${_UA_C_PS_MISSING} (.aid/ not found)" \
+        "PAR100-C07 AC7: PS1 missing-.aid project skipped (non-fatal)"
+    assert_output_contains "$OUT_PS1" "FAILED: ${_UA_C_PS_BARE1} (exit 6)" \
+        "PAR100-C08 AC3: PS1 bare project 1 recorded failed (real, no-network child exit)"
+    assert_output_contains "$OUT_PS1" "FAILED: ${_UA_C_PS_BARE2} (exit 6)" \
+        "PAR100-C09 AC3: PS1 bare project 2 recorded failed"
+    assert_output_contains "$OUT_PS1" "0 updated, 1 skipped, 2 failed" "PAR100-C10 AC5: PS1 summary counts"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR100-C11 AC8: Bash<->PS1 exit code parity (continue-on-error + skip)"
+else
+    for _n in 06 07 08 09 10 11; do pass "PAR100-C${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR100-D: AC9 -- '--target'/'-Target' combined with 'all' is a usage error
+# (exit 2), Bash<->PS1 parity. Never reaches enumeration/fetch.
+# ---------------------------------------------------------------------------
+_UA_D_SH_HOME=$(newhome); setup_sh_home "${_UA_D_SH_HOME}"
+_UA_D_PS_HOME=$(newhome); setup_ps1_home "${_UA_D_PS_HOME}"
+_UA_D_TARGET="$(mktemp -d "${TMP}/ua_d_target.XXXXXX")"
+
+run_sh_ua_nf "${_UA_D_SH_HOME}" update all --target "${_UA_D_TARGET}"
+assert_exit_eq "$RC_SH" 2 "PAR100-D01 Bash: 'update all --target <dir>' -> exit 2 (usage error)"
+assert_output_contains "$OUT_SH" "does not accept" "PAR100-D02 Bash: usage-error message present"
+assert_output_contains "$OUT_SH" "it updates every registered project" \
+    "PAR100-D03 Bash: usage-error explains why (registry supplies the targets)"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_ua_nf "${_UA_D_PS_HOME}" update all -Target "${_UA_D_TARGET}"
+    assert_exit_eq "$RC_PS1" 2 "PAR100-D04 PS1: 'update all -Target <dir>' -> exit 2 (usage error)"
+    assert_output_contains "$OUT_PS1" "does not accept" "PAR100-D05 PS1: usage-error message present"
+    assert_output_contains "$OUT_PS1" "it updates every registered project" \
+        "PAR100-D06 PS1: usage-error explains why (registry supplies the targets)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR100-D07 AC8: Bash<->PS1 exit code parity ('--target'/'-Target' + 'all' usage error)"
+else
+    for _n in 04 05 06 07; do pass "PAR100-D${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR100-E: AC4 dry-run safety + AC9 subcommand consumption + AC2/AC6 header
+# parity, Bash<->PS1 -- ZERO registered projects (fully network-free: the
+# per-project loop never iterates, so fetch_tarball/Fetch-Tarball is never
+# reached on EITHER twin). Proves 'all'+'--dry-run'/'-DryRun' is consumed as
+# the bulk subcommand (not rejected as an unknown positional/usage error) and
+# that the pinned version + registered-project count are echoed identically.
+# ---------------------------------------------------------------------------
+_UA_E_SH_HOME=$(newhome); setup_sh_home "${_UA_E_SH_HOME}"
+_UA_E_PS_HOME=$(newhome); setup_ps1_home "${_UA_E_PS_HOME}"
+
+run_sh_ua_nf "${_UA_E_SH_HOME}" update all --dry-run --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 0 "PAR100-E01 AC4/AC9: Bash 'update all --dry-run' (0 projects) -> exit 0"
+assert_output_contains "$OUT_SH" \
+    "aid update all: 0 registered project(s), target version ${UA_VERSION}" \
+    "PAR100-E02 AC2/AC6: Bash header -- enumeration count + pinned version"
+assert_output_contains "$OUT_SH" "0 updated, 0 skipped, 0 failed" "PAR100-E03 AC5: Bash summary (0/0/0)"
+assert_output_not_contains "$OUT_SH" "unknown flag" "PAR100-E04 AC9: Bash 'all' not rejected as an unknown flag"
+assert_output_not_contains "$OUT_SH" "unexpected argument" \
+    "PAR100-E05 AC9: Bash 'all' not rejected as an unexpected/unknown positional"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_ua_nf "${_UA_E_PS_HOME}" update all -DryRun -Version "${UA_VERSION}"
+    assert_exit_eq "$RC_PS1" 0 "PAR100-E06 AC4/AC9: PS1 'update all -DryRun' (0 projects) -> exit 0"
+    assert_output_contains "$OUT_PS1" \
+        "aid update all: 0 registered project(s), target version ${UA_VERSION}" \
+        "PAR100-E07 AC2/AC6: PS1 header -- enumeration count + pinned version"
+    assert_output_contains "$OUT_PS1" "0 updated, 0 skipped, 0 failed" "PAR100-E08 AC5: PS1 summary (0/0/0)"
+    assert_output_not_contains "$OUT_PS1" "unknown flag" "PAR100-E09 AC9: PS1 'all' not rejected as an unknown flag"
+    assert_output_not_contains "$OUT_PS1" "unexpected argument" \
+        "PAR100-E10 AC9: PS1 'all' not rejected as an unexpected/unknown positional"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR100-E11 AC8: Bash<->PS1 exit code parity (dry-run, 0 projects)"
+    _ua_e_sh_header="$(printf '%s\n' "$OUT_SH"  | grep -F 'aid update all:')"
+    _ua_e_ps_header="$(printf '%s\n' "$OUT_PS1" | grep -F 'aid update all:')"
+    assert_eq "$_ua_e_sh_header" "$_ua_e_ps_header" "PAR100-E12 AC8: Bash<->PS1 header line byte-identical"
+else
+    for _n in 06 07 08 09 10 11 12; do pass "PAR100-E${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR100-F: AC10 self-update-at-most-once, Bash<->PS1 -- fully network-free
+# (0 registered projects; the preamble decision reads only the per-user
+# .update-check cache + $AID_CODE_HOME/VERSION, never fetch_tarball).
+# ---------------------------------------------------------------------------
+_UA_F_SH_HOME=$(newhome); setup_sh_home "${_UA_F_SH_HOME}"
+_UA_F_PS_HOME=$(newhome); setup_ps1_home "${_UA_F_PS_HOME}"
+
+# Seed the per-user .update-check cache (line1=timestamp, line2=cached "latest") so the
+# installed VERSION (v0.7.0, written by setup_*_home) reads as stale against it.
+mkdir -p "${HOME}/.aid"
+printf '%s\n%s\n' "$(date +%s)" "${UA_VERSION}" > "${HOME}/.aid/.update-check"
+
+run_sh_ua_nf "${_UA_F_SH_HOME}" update all --version "${UA_VERSION}"
+_ua_f_sh_real=$(printf '%s\n' "$OUT_SH" | grep -cF -- "self-updating before tool install" || true)
+assert_eq "$_ua_f_sh_real" "1" "PAR100-F01 AC10: Bash self-update preamble runs exactly once on a real bulk run"
+
+run_sh_ua_nf "${_UA_F_SH_HOME}" update all --dry-run --version "${UA_VERSION}"
+_ua_f_sh_dry=$(printf '%s\n' "$OUT_SH" | grep -cF -- "self-updating before tool install" || true)
+assert_eq "$_ua_f_sh_dry" "0" "PAR100-F02 AC10: Bash self-update preamble runs zero times under --dry-run"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_ua_nf "${_UA_F_PS_HOME}" update all -Version "${UA_VERSION}"
+    _ua_f_ps_real=$(printf '%s\n' "$OUT_PS1" | grep -cF -- "self-updating before tool install" || true)
+    assert_eq "$_ua_f_ps_real" "1" "PAR100-F03 AC10: PS1 self-update preamble runs exactly once on a real bulk run"
+
+    run_ps1_ua_nf "${_UA_F_PS_HOME}" update all -DryRun -Version "${UA_VERSION}"
+    _ua_f_ps_dry=$(printf '%s\n' "$OUT_PS1" | grep -cF -- "self-updating before tool install" || true)
+    assert_eq "$_ua_f_ps_dry" "0" "PAR100-F04 AC10: PS1 self-update preamble runs zero times under --dry-run"
+    assert_eq "$_ua_f_sh_real" "$_ua_f_ps_real" "PAR100-F05 AC8: Bash<->PS1 parity -- self-update-preamble count on a real run"
+else
+    for _n in 03 04 05; do pass "PAR100-F${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR100-G: AC4 dry-run richer nuance (deep, BASH twin) -- a real registered
+# project (nonzero manifest tools): the shared cache IS still populated once
+# under --dry-run (SPEC: "so the per-project plan is accurate"), the child
+# prints its per-project plan, and NO destination write occurs.
+# ---------------------------------------------------------------------------
+_UA_G_HOME=$(newhome); setup_sh_home "${_UA_G_HOME}"
+_UA_G_DL="${TMP}/ua-g-dlbase"
+build_ua_download_fixture "${_UA_G_DL}" "${UA_VERSION}" codex
+
+_UA_G_P1="$(mktemp -d "${TMP}/ua_g_p1.XXXXXX")"
+run_sh "${_UA_G_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_G_P1}"
+_UA_G_MANIFEST_BEFORE="$(cat "${_UA_G_P1}/.aid/.aid-manifest.json")"
+
+run_sh_ua "${_UA_G_HOME}" "${_UA_G_DL}" update all --dry-run --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 0 "PAR100-G01 AC4: Bash 'update all --dry-run' (1 real project) -> exit 0"
+_ua_g_fetch_count=$(printf '%s\n' "$OUT_SH" | grep -cF -- "Fetching aid-codex-v${UA_VERSION}.tar.gz ..." || true)
+assert_eq "$_ua_g_fetch_count" "1" \
+    "PAR100-G02 AC4/AC1: Bash dry-run still populates the shared cache once (accurate plan)"
+assert_output_contains "$OUT_SH" "--- aid update --dry-run plan (no writes) ---" \
+    "PAR100-G03 AC4: Bash per-project child dry-run plan printed"
+assert_output_contains "$OUT_SH" "1 updated, 0 skipped, 0 failed" \
+    "PAR100-G04 AC5: Bash dry-run summary counts a dry-run child success as 'updated'"
+_UA_G_MANIFEST_AFTER="$(cat "${_UA_G_P1}/.aid/.aid-manifest.json")"
+assert_eq "$_UA_G_MANIFEST_BEFORE" "$_UA_G_MANIFEST_AFTER" \
+    "PAR100-G05 AC4: Bash dry-run makes no destination write (manifest byte-identical)"
+pass "PAR100-G06 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+
+# ---------------------------------------------------------------------------
+# PAR100-H: AC9 -- N>1 REAL registered projects + '--dry-run' (deep, BASH
+# twin): a per-project dry-run plan line printed for EVERY registered project
+# (closes DELIVERY-GATE ledger finding #2). PAR100-E used 0 registered
+# projects, PAR100-G used exactly 1 -- neither covers the literal AC9
+# combination of N>1 real projects AND --dry-run.
+# ---------------------------------------------------------------------------
+_UA_H_HOME=$(newhome); setup_sh_home "${_UA_H_HOME}"
+_UA_H_DL="${TMP}/ua-h-dlbase"
+build_ua_download_fixture "${_UA_H_DL}" "${UA_VERSION}" codex
+
+_UA_H_P1="$(mktemp -d "${TMP}/ua_h_p1.XXXXXX")"
+_UA_H_P2="$(mktemp -d "${TMP}/ua_h_p2.XXXXXX")"
+run_sh "${_UA_H_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_H_P1}"
+run_sh "${_UA_H_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_H_P2}"
+
+run_sh_ua "${_UA_H_HOME}" "${_UA_H_DL}" update all --dry-run --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 0 "PAR100-H01 AC9: Bash 'update all --dry-run' (2 real registered projects) -> exit 0"
+assert_output_contains "$OUT_SH" \
+    "aid update all: 2 registered project(s), target version ${UA_VERSION}" \
+    "PAR100-H02 AC2/AC6: Bash header enumerates both projects under dry-run"
+_ua_h_plan_count=$(printf '%s\n' "$OUT_SH" | grep -cF -- "--- aid update --dry-run plan (no writes) ---" || true)
+assert_eq "$_ua_h_plan_count" "2" \
+    "PAR100-H03 AC9: per-project dry-run plan line printed for EVERY registered project (2/2)"
+assert_output_contains "$OUT_SH" "2 updated, 0 skipped, 0 failed" \
+    "PAR100-H04 AC5: Bash dry-run summary counts both dry-run child successes as 'updated'"
+pass "PAR100-H05 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+
+# ---------------------------------------------------------------------------
+# PAR100-I: AC7 -- a missing-.aid/ project genuinely SKIPPED (non-fatal) in
+# the SAME run as at least one project that genuinely UPDATES (real fetch +
+# apply, deep BASH twin) (closes DELIVERY-GATE ledger finding #3). PAR100-C's
+# non-skipped projects are bare (manifest tools: {}) and all FAIL via the
+# child's real exit-6 "nothing to update" -- it never proves "the remaining
+# projects still update" in AC7's literal sense.
+# ---------------------------------------------------------------------------
+_UA_I_HOME=$(newhome); setup_sh_home "${_UA_I_HOME}"
+_UA_I_DL="${TMP}/ua-i-dlbase"
+build_ua_download_fixture "${_UA_I_DL}" "${UA_VERSION}" codex
+
+_UA_I_UPDATING="$(mktemp -d "${TMP}/ua_i_updating.XXXXXX")"
+_UA_I_MISSING="$(mktemp -d "${TMP}/ua_i_missing.XXXXXX")"
+run_sh "${_UA_I_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_I_UPDATING}"
+run_sh "${_UA_I_HOME}" projects add "${_UA_I_MISSING}"
+rm -rf "${_UA_I_MISSING}/.aid"
+
+run_sh_ua "${_UA_I_HOME}" "${_UA_I_DL}" update all --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 0 "PAR100-I01 AC7: Bash 'update all' (1 skip + 1 genuinely-updating project) -> exit 0"
+assert_output_contains "$OUT_SH" "SKIP: ${_UA_I_MISSING} (.aid/ not found)" \
+    "PAR100-I02 AC7: missing-.aid project skipped (non-fatal)"
+assert_output_contains "$OUT_SH" "1 updated, 1 skipped, 0 failed" \
+    "PAR100-I03 AC5/AC7: summary shows updated >= 1 AND skipped = 1 in the same run"
+_ua_i_v="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_I_UPDATING}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')"
+assert_eq "$_ua_i_v" "$UA_VERSION" \
+    "PAR100-I04 AC7: the remaining (non-skipped) project genuinely updated to the pinned version"
+pass "PAR100-I05 [SKIPPED (PS1): no local-fixture hook for Fetch-Tarball -- see PAR100 header comment / task-002 report]"
+
+# ---------------------------------------------------------------------------
+# PAR100-J: AC10 self-update-at-most-once with N>1 REAL children, Bash<->PS1
+# twin parity (closes DELIVERY-GATE ledger finding #4). Seeds a stale CLI
+# (.update-check) so the preamble WOULD fire for every process that reaches
+# _aid_update_self_if_stale/Invoke-AidUpdateSelfIfStale, then confirms the
+# total count across the WHOLE bulk run (parent + N real, network-free bare
+# children) stays at exactly 1 -- i.e. each child's own
+# --from-bundle/-FromBundle guard genuinely self-skips. PAR100-F used 0
+# registered projects, so no child was ever spawned there -- it only proved
+# the PARENT's own preamble call fires once.
+# ---------------------------------------------------------------------------
+_UA_J_SH_HOME=$(newhome); setup_sh_home "${_UA_J_SH_HOME}"
+_UA_J_PS_HOME=$(newhome); setup_ps1_home "${_UA_J_PS_HOME}"
+
+# Seed the per-user .update-check cache (line1=timestamp, line2=cached "latest")
+# -- same file/mechanism as PAR100-F -- so the installed VERSION (v0.7.0,
+# written by setup_*_home) reads as stale against it.
+mkdir -p "${HOME}/.aid"
+printf '%s\n%s\n' "$(date +%s)" "${UA_VERSION}" > "${HOME}/.aid/.update-check"
+
+_UA_J_SH_P1="$(mktemp -d "${TMP}/ua_j_sh_p1.XXXXXX")"
+_UA_J_SH_P2="$(mktemp -d "${TMP}/ua_j_sh_p2.XXXXXX")"
+run_sh "${_UA_J_SH_HOME}" projects add "${_UA_J_SH_P1}"
+run_sh "${_UA_J_SH_HOME}" projects add "${_UA_J_SH_P2}"
+
+run_sh_ua_nf "${_UA_J_SH_HOME}" update all --version "${UA_VERSION}"
+_ua_j_sh_selfupdate_count=$(printf '%s\n' "$OUT_SH" | grep -cF -- "self-updating before tool install" || true)
+assert_eq "$_ua_j_sh_selfupdate_count" "1" \
+    "PAR100-J01 AC10: Bash self-update preamble fires EXACTLY ONCE total across parent + 2 real children"
+_ua_j_sh_children_ran=$(printf '%s\n' "$OUT_SH" | grep -cF -- "=== " || true)
+assert_eq "$_ua_j_sh_children_ran" "2" \
+    "PAR100-J02 sanity: both real children actually ran (child guard genuinely exercised, unlike PAR100-F's 0-project run)"
+
+if [[ -n "$PWSH" ]]; then
+    _UA_J_PS_P1="$(mktemp -d "${TMP}/ua_j_ps_p1.XXXXXX")"
+    _UA_J_PS_P2="$(mktemp -d "${TMP}/ua_j_ps_p2.XXXXXX")"
+    run_ps1 "${_UA_J_PS_HOME}" projects add "${_UA_J_PS_P1}"
+    run_ps1 "${_UA_J_PS_HOME}" projects add "${_UA_J_PS_P2}"
+
+    run_ps1_ua_nf "${_UA_J_PS_HOME}" update all -Version "${UA_VERSION}"
+    _ua_j_ps_selfupdate_count=$(printf '%s\n' "$OUT_PS1" | grep -cF -- "self-updating before tool install" || true)
+    assert_eq "$_ua_j_ps_selfupdate_count" "1" \
+        "PAR100-J03 AC10: PS1 self-update preamble fires EXACTLY ONCE total across parent + 2 real children"
+    _ua_j_ps_children_ran=$(printf '%s\n' "$OUT_PS1" | grep -cF -- "=== " || true)
+    assert_eq "$_ua_j_ps_children_ran" "2" \
+        "PAR100-J04 sanity: both real children actually ran (PS1)"
+    assert_eq "$_ua_j_sh_selfupdate_count" "$_ua_j_ps_selfupdate_count" \
+        "PAR100-J05 AC8: Bash<->PS1 parity -- self-update-preamble count stays at 1 with N>1 real children"
+else
+    for _n in 03 04 05; do pass "PAR100-J${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR100-K: '--force'/'-Force' pass-through for 'aid update all' (closes
+# DELIVERY-GATE ledger finding #5; task-001's documented Scope: "aid update
+# all [--version <v>] [--dry-run] [--force]" had zero coverage). Two parts:
+#   (1) Bash<->PS1, fully network-free (bare project, mirrors PAR100-C): the
+#       flag is accepted by the parent's own parser (not "unknown flag") AND
+#       is threaded through to the per-project CHILD 'aid update' invocation
+#       -- proven because the child reaches its OWN real exit-6 "nothing to
+#       update" rather than erroring earlier on flag parsing (a malformed/
+#       dropped forward would surface as a child-side usage error instead).
+#   (2) Bash-only (deep, real fetch+apply fixture, mirrors PAR100-A/G): a
+#       real registered project genuinely updates to the pinned version with
+#       '--force' in effect, end-to-end.
+# ---------------------------------------------------------------------------
+_UA_K_SH_HOME=$(newhome); setup_sh_home "${_UA_K_SH_HOME}"
+_UA_K_PS_HOME=$(newhome); setup_ps1_home "${_UA_K_PS_HOME}"
+
+_UA_K_SH_BARE="$(mktemp -d "${TMP}/ua_k_sh_bare.XXXXXX")"
+run_sh "${_UA_K_SH_HOME}" projects add "${_UA_K_SH_BARE}"
+
+run_sh_ua_nf "${_UA_K_SH_HOME}" update all --force --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 1 "PAR100-K01 Bash: 'update all --force' (1 bare project) -> exit 1 (child's own real failure)"
+assert_output_not_contains "$OUT_SH" "unknown flag" \
+    "PAR100-K02 Bash: '--force' not rejected as an unknown flag (parent parser)"
+assert_output_contains "$OUT_SH" "FAILED: ${_UA_K_SH_BARE} (exit 6)" \
+    "PAR100-K03 Bash: '--force' forwarded through to the child parser without breaking it (child reaches its own real exit-6)"
+
+if [[ -n "$PWSH" ]]; then
+    _UA_K_PS_BARE="$(mktemp -d "${TMP}/ua_k_ps_bare.XXXXXX")"
+    run_ps1 "${_UA_K_PS_HOME}" projects add "${_UA_K_PS_BARE}"
+
+    run_ps1_ua_nf "${_UA_K_PS_HOME}" update all -Force -Version "${UA_VERSION}"
+    assert_exit_eq "$RC_PS1" 1 "PAR100-K04 PS1: 'update all -Force' (1 bare project) -> exit 1 (child's own real failure)"
+    assert_output_not_contains "$OUT_PS1" "unknown flag" \
+        "PAR100-K05 PS1: '-Force' not rejected as an unknown flag (parent parser)"
+    assert_output_contains "$OUT_PS1" "FAILED: ${_UA_K_PS_BARE} (exit 6)" \
+        "PAR100-K06 PS1: '-Force' forwarded through to the child parser without breaking it (child reaches its own real exit-6)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR100-K07 AC8: Bash<->PS1 exit code parity ('--force'/'-Force' pass-through, bare project)"
+else
+    for _n in 04 05 06 07; do pass "PAR100-K${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+_UA_K_REAL_HOME=$(newhome); setup_sh_home "${_UA_K_REAL_HOME}"
+_UA_K_DL="${TMP}/ua-k-dlbase"
+build_ua_download_fixture "${_UA_K_DL}" "${UA_VERSION}" codex
+_UA_K_SH_REAL="$(mktemp -d "${TMP}/ua_k_sh_real.XXXXXX")"
+run_sh "${_UA_K_REAL_HOME}" add codex --from-bundle "${FIXTURE_DIR}/aid-codex-v${VERSION}.tar.gz" --target "${_UA_K_SH_REAL}"
+
+run_sh_ua "${_UA_K_REAL_HOME}" "${_UA_K_DL}" update all --force --version "${UA_VERSION}"
+assert_exit_eq "$RC_SH" 0 "PAR100-K08 Bash: 'update all --force' (1 real registered project) -> exit 0"
+assert_output_contains "$OUT_SH" "1 updated, 0 skipped, 0 failed" \
+    "PAR100-K09 Bash: real project genuinely updates end-to-end with '--force' in effect"
+_ua_k_real_v="$(grep -o '"aid_version"[[:space:]]*:[[:space:]]*"[^"]*"' "${_UA_K_SH_REAL}/.aid/.aid-manifest.json" | sed 's/.*"\([^"]*\)"$/\1/')"
+assert_eq "$_ua_k_real_v" "$UA_VERSION" \
+    "PAR100-K10 Bash: pinned version genuinely applied under '--force'"
+
+# ===========================================================================
 # End-of-suite: REAL_HOME blast-surface canary
 #
 # Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before

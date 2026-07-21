@@ -42,7 +42,12 @@ assert_output_contains() {
     # `--` marks end-of-options so a pattern that itself starts with `-`
     # (e.g. a markdown bullet "- **Field:**") is never reparsed by grep as an
     # option flag (task-004 FIX review, finding 3).
-    if echo "$output" | grep -qF -- "$pattern"; then
+    # Here-string (not `echo | grep`): with `grep -q` exiting on the first match,
+    # a piped `echo` of a LARGE output gets SIGPIPE mid-write, which under the CI
+    # shell's `set -o pipefail` flips the pipeline to non-zero -> a false
+    # "pattern not found" (work-001 PAR100-H02 caught this on Linux CI). A
+    # here-string has no pipe, so no SIGPIPE and no pipefail interaction.
+    if grep -qF -- "$pattern" <<< "$output"; then
         pass "$label"
     else
         fail "$label — pattern not found: '$pattern'"
@@ -52,7 +57,7 @@ assert_output_contains() {
 
 assert_output_not_contains() {
     local output="$1" pattern="$2" label="$3"
-    if ! echo "$output" | grep -qF -- "$pattern"; then
+    if ! grep -qF -- "$pattern" <<< "$output"; then
         pass "$label"
     else
         fail "$label — unexpected pattern found: '$pattern'"

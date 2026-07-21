@@ -14,7 +14,8 @@
 #   aid version                      Print the CLI version
 #   aid status                       Show AID state of the current project
 #   aid add <tool>[,...]             Add tool(s) to the current project
-#   aid update [self]                Update to latest; inside repo = CLI + all tools; 'self' = CLI only
+#   aid update [self|all]            Update to latest; inside repo = CLI + all tools; 'self' = CLI only;
+#                                    'all' = bulk-update every registered project (see 'aid update -h')
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
 #   aid projects [list|add|remove|help] [path|N] [--local|--shared] [--verbose]
 #                                    List (numbered from 1), register, or unregister;
@@ -161,13 +162,19 @@ _aid_usage() {
         update)
             printf 'aid update [--version <v>] [--from-bundle <path>] [--force] [--dry-run] [--target <dir>]\n'
             printf 'aid update self [--from-bundle <path>] [--dry-run]\n'
+            printf 'aid update all [--version <v>] [--dry-run] [--force]\n'
             printf '  Update to latest.\n'
             printf '  Outside an AID project: updates the CLI only (no-op if already latest).\n'
             printf '  Inside an AID project: updates the CLI first, then ALL installed tools to one version.\n'
-            printf '  No per-tool selection -- any tool positional is an error (use "self" only).\n'
+            printf '  No per-tool selection -- any tool positional is an error (use "self" or "all" only).\n'
             printf '  self: COMPLETELY update the aid CLI, channel-aware:\n'
             printf '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.sh.\n'
             printf '        Auto-elevates with sudo only when the install location needs root.\n'
+            printf '  all: bulk-update EVERY registered project (see "aid projects list") to one\n'
+            printf '        version -- downloads the tool package(s) once and applies the shared\n'
+            printf '        cache to each project via the existing --from-bundle path; continues past\n'
+            printf '        a per-project failure and prints an end-of-run summary. Does not accept\n'
+            printf '        --target (the registry supplies the targets).\n'
             printf '  --version <v>:       pin ALL tools (and CLI) to version v.\n'
             printf '  --from-bundle <path>: install from a local artifact instead of @latest\n'
             printf '        (npm .tgz | pypi .whl | curl release-staging dir with install.sh).\n'
@@ -222,7 +229,8 @@ _aid_usage() {
             printf '  aid version                      Print the CLI version\n'
             printf '  aid status                       Show AID state of the current project\n'
             printf '  aid add <tool>[,...]             Add tool(s) to the current project\n'
-            printf '  aid update [self]                Update to latest; inside a project = all tools\n'
+            printf '  aid update [self|all]            Update to latest; inside a project = all tools;\n'
+            printf '                                    "all" bulk-updates every registered project\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
             printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
@@ -2842,6 +2850,167 @@ _cmd_projects_remove() {
 }
 
 # ---------------------------------------------------------------------------
+# _cmd_update_all  (work-001-update-all / task-001)
+# Bulk-update every registered AID project to one version from a single shared
+# download.  Parent driver: resolves one version, downloads once per distinct
+# tool into a transient cache, and applies it to each registered project via a
+# per-project CHILD 'aid update --target <repo> --from-bundle <cache>' process
+# invocation (continue-on-error).  Reuses, does not reimplement:
+# _registry_read_raw_union, manifest_list_tools, resolve_version/fetch_tarball,
+# _aid_update_self_if_stale, and the entire single-project apply path (its
+# --from-bundle branch).  See SPEC.md Feature Flow.
+#
+# Args: the tokens following the 'all' reserved word (--version/--dry-run/--force).
+# Returns: 0 all-success or --dry-run; 1 if any project failed; 2 usage error;
+# 3 version-resolution failure.
+# ---------------------------------------------------------------------------
+_cmd_update_all() {
+    local _ua_version_arg=""
+    local _ua_dry_run=0
+    local _ua_force=0
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --version)
+                [[ $# -lt 2 ]] && _aid_die "--version requires a value" 2
+                _ua_version_arg="$2"; shift 2 ;;
+            --dry-run) _ua_dry_run=1; shift ;;
+            --force|-y) _ua_force=1; shift ;;
+            --target)
+                _aid_die "'aid update all' does not accept --target; it updates every registered project (see 'aid projects list')" 2 ;;
+            -h|--help)
+                _aid_usage update
+                return 0 ;;
+            -*)
+                _aid_die "unknown flag for 'update all': $1" 2 ;;
+            *)
+                _aid_die "unexpected argument for 'update all': $1" 2 ;;
+        esac
+    done
+
+    # Resolve the single run version once (decision D7 / FR7 version) -- governs
+    # the whole run.  Strip a leading 'v' from an explicit pin, same as the
+    # single-project path (bin/aid:3235).
+    local _ua_run_version="${_ua_version_arg#v}"
+    if [[ -z "$_ua_run_version" ]]; then
+        _ua_run_version="$(resolve_version)"
+        local _ua_resolve_rc=$?
+        [[ "$_ua_resolve_rc" -ne 0 ]] && return "$_ua_resolve_rc"
+    fi
+
+    # Self-update preamble EXACTLY once, before enumeration (decision/FR8).
+    # Skipped entirely under --dry-run (a self-update is a write; dry-run makes none).
+    if [[ "$_ua_dry_run" -eq 0 ]]; then
+        _aid_update_self_if_stale
+    fi
+
+    # Per-run transient cache (mirrors the single-project _AID_STAGING_BASE pattern).
+    local _ua_cache
+    _ua_cache="$(mktemp -d "${TMPDIR:-${TMP:-/tmp}}/aid-update-all-XXXXXX")"
+    trap 'rm -rf "$_ua_cache"' EXIT
+
+    # Enumerate every registered project -- the exact source 'aid projects list' reads
+    # (decision D3 / FR2 / AC2).
+    local -a _ua_repos=()
+    while IFS= read -r _ua_r; do
+        [[ -n "$_ua_r" ]] && _ua_repos+=("$_ua_r")
+    done < <(_registry_read_raw_union)
+
+    printf 'aid update all: %d registered project(s), target version %s\n' \
+        "${#_ua_repos[@]}" "$_ua_run_version"
+
+    local -A _ua_fetch_failed=()   # tool -> 1 once its download has failed this run
+    local -a _ua_updated=()
+    local -a _ua_skipped=()
+    local -a _ua_failed=()
+
+    if [[ "${#_ua_repos[@]}" -gt 0 ]]; then
+        for _ua_repo in "${_ua_repos[@]}"; do
+            [[ -n "$_ua_repo" ]] || continue
+
+            # Availability check (AC7): skip (non-fatal) a project whose .aid/ is absent.
+            if [[ ! -d "${_ua_repo}/.aid" ]]; then
+                _ua_skipped+=("$_ua_repo")
+                echo "SKIP: ${_ua_repo} (.aid/ not found)"
+                continue
+            fi
+
+            local _ua_manifest="${_ua_repo}/.aid/.aid-manifest.json"
+            local -a _ua_tools=()
+            while IFS= read -r _ua_t; do
+                [[ -n "$_ua_t" ]] && _ua_tools+=("$_ua_t")
+            done < <(manifest_list_tools "$_ua_manifest")
+
+            # Populate the shared cache download-once per distinct tool (AC1).
+            local _ua_repo_fetch_failed=0
+            if [[ "${#_ua_tools[@]}" -gt 0 ]]; then
+                for _ua_tool in "${_ua_tools[@]}"; do
+                    if [[ -n "${_ua_fetch_failed[$_ua_tool]:-}" ]]; then
+                        _ua_repo_fetch_failed=1
+                        continue
+                    fi
+                    local _ua_tarball="${_ua_cache}/aid-${_ua_tool}-v${_ua_run_version}.tar.gz"
+                    if [[ ! -f "$_ua_tarball" ]]; then
+                        if ! fetch_tarball "$_ua_tool" "$_ua_run_version" "$_ua_cache"; then
+                            echo "ERROR: aid update all: failed to download ${_ua_tool} v${_ua_run_version} (continuing)" >&2
+                            _ua_fetch_failed["$_ua_tool"]=1
+                            _ua_repo_fetch_failed=1
+                        fi
+                    fi
+                done
+            fi
+
+            if [[ "$_ua_repo_fetch_failed" -eq 1 ]]; then
+                _ua_failed+=("$_ua_repo")
+                echo "FAILED: ${_ua_repo} (tool download failed)"
+                continue
+            fi
+
+            # Apply via the existing --from-bundle branch, through a CHILD 'aid update'
+            # process (FR4) -- no new fetch/install mechanism.
+            local -a _ua_child_args=(update --target "$_ua_repo" --from-bundle "$_ua_cache")
+            [[ "$_ua_force" -eq 1 ]] && _ua_child_args+=(--force)
+            [[ "$_ua_dry_run" -eq 1 ]] && _ua_child_args+=(--dry-run)
+
+            echo ""
+            echo "=== ${_ua_repo} ==="
+            bash "$_AID_SELF_REAL" "${_ua_child_args[@]}"
+            local _ua_child_rc=$?
+
+            # Record outcome (FR5/FR6): 0 -> updated; non-zero -> failed. Continue
+            # regardless (decision D4 -- continue-on-error).
+            if [[ "$_ua_child_rc" -eq 0 ]]; then
+                _ua_updated+=("$_ua_repo")
+            else
+                _ua_failed+=("$_ua_repo")
+                echo "FAILED: ${_ua_repo} (exit ${_ua_child_rc})"
+            fi
+        done
+    fi
+
+    # End-of-run summary (decision D4 / AC3, AC5).
+    echo ""
+    echo "--- aid update all summary (version ${_ua_run_version}) ---"
+    for _ua_r in "${_ua_updated[@]+"${_ua_updated[@]}"}"; do
+        [[ -n "$_ua_r" ]] && echo "  updated: ${_ua_r}"
+    done
+    for _ua_r in "${_ua_skipped[@]+"${_ua_skipped[@]}"}"; do
+        [[ -n "$_ua_r" ]] && echo "  skipped: ${_ua_r} (.aid/ not found)"
+    done
+    for _ua_r in "${_ua_failed[@]+"${_ua_failed[@]}"}"; do
+        [[ -n "$_ua_r" ]] && echo "  failed: ${_ua_r}"
+    done
+    printf '%d updated, %d skipped, %d failed\n' \
+        "${#_ua_updated[@]}" "${#_ua_skipped[@]}" "${#_ua_failed[@]}"
+
+    rm -rf "$_ua_cache"
+    trap - EXIT
+
+    [[ "${#_ua_failed[@]}" -gt 0 ]] && return 1
+    return 0
+}
+
+# ---------------------------------------------------------------------------
 # Parse subcommand and dispatch.
 # ---------------------------------------------------------------------------
 
@@ -3047,6 +3216,15 @@ if [[ "$SUBCMD" == "update" ]]; then
             fi
         fi
         exit 0
+    fi
+    # Check for 'update all' as first positional arg (work-001-update-all / task-001).
+    # Consumed here -- alongside 'self' -- BEFORE the generic add/remove/update flag
+    # loop and BEFORE the non-'self' positional rejection (FR10, below), so 'all' is
+    # never treated as an unknown positional (SPEC AC9).
+    if [[ $# -gt 0 && "$1" == "all" ]]; then
+        shift
+        _cmd_update_all "$@"
+        exit $?
     fi
     # Fall through to the shared add/update handler below.
 fi
