@@ -14,7 +14,8 @@
 #   aid version                      Print the CLI version
 #   aid status                       Show AID state of the current project
 #   aid add <tool>[,...]             Add tool(s) to the current project
-#   aid update [self]                Update to latest; inside repo = CLI + all tools; 'self' = CLI only
+#   aid update [self|all]            Update to latest; inside repo = CLI + all tools; 'self' = CLI only;
+#                                    'all' = bulk-update every registered project (see 'aid update -h')
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
 #   aid projects [list|add|remove|help] [path|N] [--local|--shared] [--verbose]
 #                                    List (numbered from 1), register, or unregister;
@@ -214,13 +215,19 @@ function script:Show-AidUsage {
         'update' {
             Write-Host 'aid update [-Version <v>] [-FromBundle <path>] [-Force] [-DryRun] [-Target <dir>]'
             Write-Host 'aid update self [-FromBundle <path>] [-DryRun]'
+            Write-Host 'aid update all [-Version <v>] [-DryRun] [-Force]'
             Write-Host '  Update to latest.'
             Write-Host '  Outside an AID project: updates the CLI only (no-op if already latest).'
             Write-Host '  Inside an AID project: updates the CLI first, then ALL installed tools to one version.'
-            Write-Host '  No per-tool selection -- any tool positional is an error (use "self" only).'
+            Write-Host '  No per-tool selection -- any tool positional is an error (use "self" or "all" only).'
             Write-Host '  self: COMPLETELY update the aid CLI, channel-aware:'
             Write-Host '        npm -> npm i -g | pypi -> pipx upgrade | curl -> re-bootstrap install.ps1.'
             Write-Host '        On Windows, elevation is the caller''s responsibility (no sudo).'
+            Write-Host '  all: bulk-update EVERY registered project (see "aid projects list") to one'
+            Write-Host '        version -- downloads the tool package(s) once and applies the shared'
+            Write-Host '        cache to each project via the existing -FromBundle path; continues past'
+            Write-Host '        a per-project failure and prints an end-of-run summary. Does not accept'
+            Write-Host '        -Target (the registry supplies the targets).'
             Write-Host '  -Version <v>:        pin ALL tools (and CLI) to version v.'
             Write-Host '  -FromBundle <path>:  install from a local artifact instead of @latest'
             Write-Host '        (npm .tgz | pypi .whl | curl release-staging dir with install.ps1).'
@@ -275,7 +282,8 @@ function script:Show-AidUsage {
             Write-Host '  aid version                      Print the CLI version'
             Write-Host '  aid status                       Show AID state of the current project'
             Write-Host '  aid add <tool>[,...]             Add tool(s) to the current project'
-            Write-Host '  aid update [self]                Update to latest; inside a project = all tools'
+            Write-Host '  aid update [self|all]            Update to latest; inside a project = all tools;'
+            Write-Host '                                    "all" bulk-updates every registered project'
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
             Write-Host '  aid projects [list|add|remove]   List/register/unregister AID projects'
@@ -575,6 +583,165 @@ function script:Invoke-AidUpdateSelfIfStale {
         $null = script:Invoke-AidUpdateSelf
     } catch {
         [Console]::Error.WriteLine("WARN: aid: self-update failed (continuing with tool install)")
+    }
+}
+
+# ---------------------------------------------------------------------------
+# Invoke-AidUpdateAll  (work-001-update-all / task-001)
+# Bulk-update every registered AID project to one version from a single shared
+# download.  Parent driver: resolves one version, downloads once per distinct
+# tool into a transient cache, and applies it to each registered project via a
+# per-project CHILD 'aid update -Target <repo> -FromBundle <cache>' process
+# invocation (continue-on-error).  Reuses, does not reimplement:
+# Get-RegistryRawUnion, Get-ManifestToolList, Resolve-AidVersion/Fetch-Tarball,
+# Invoke-AidUpdateSelfIfStale, and the entire single-project apply path (its
+# -FromBundle branch).  Mirror of bash _cmd_update_all.  See SPEC.md Feature Flow.
+#
+# -RemArgs: the tokens following the 'all' reserved word (-Version/-DryRun/-Force).
+# Returns: 0 all-success or -DryRun; 1 if any project failed; 2 usage error;
+# 3 version-resolution failure.
+# ---------------------------------------------------------------------------
+function script:Invoke-AidUpdateAll {
+    param([string[]]$RemArgs = @())
+
+    $uaVersionArg = ''
+    $uaDryRun     = $false
+    $uaForce      = $false
+
+    $i = 0
+    while ($i -lt $RemArgs.Count) {
+        $a = $RemArgs[$i]
+        switch -Regex ($a) {
+            '^(-Version|--version)$' {
+                $i++
+                if ($i -ge $RemArgs.Count) { script:Fail-Aid "-Version requires a value" 2 }
+                $uaVersionArg = $RemArgs[$i]
+                break
+            }
+            '^(-DryRun|--dry-run)$' { $uaDryRun = $true; break }
+            '^(-Force|--force|-y)$' { $uaForce  = $true; break }
+            '^(-Target|--target)$' {
+                script:Fail-Aid "'aid update all' does not accept -Target; it updates every registered project (see 'aid projects list')" 2
+            }
+            '^(-h|--help|-Help)$' {
+                script:Show-AidUsage 'update'
+                return 0
+            }
+            '^-' {
+                script:Fail-Aid "unknown flag for 'update all': $a" 2
+            }
+            default {
+                script:Fail-Aid "unexpected argument for 'update all': $a" 2
+            }
+        }
+        $i++
+    }
+
+    # Resolve the single run version once (decision D7 / FR7 version) -- governs
+    # the whole run.  Strip a leading 'v' from an explicit pin, same as the
+    # single-project path.
+    $uaRunVersion = if ($uaVersionArg) { $uaVersionArg -replace '^v', '' } else { '' }
+    if (-not $uaRunVersion) {
+        $uaRunVersion = Resolve-AidVersion
+        if (-not $uaRunVersion) { return 3 }
+    }
+
+    # Self-update preamble EXACTLY once, before enumeration (decision/FR8).
+    # Skipped entirely under -DryRun (a self-update is a write; dry-run makes none).
+    if (-not $uaDryRun) {
+        script:Invoke-AidUpdateSelfIfStale -FromBundle ''
+    }
+
+    # Per-run transient cache (mirrors the single-project $_AidStagingBase pattern).
+    $uaCache = Join-Path ([System.IO.Path]::GetTempPath()) ('aid-update-all-' + [System.IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Path $uaCache -Force | Out-Null
+
+    try {
+        # Enumerate every registered project -- the exact source 'aid projects list'
+        # reads (decision D3 / FR2 / AC2).
+        $uaRepos = @(script:Get-RegistryRawUnion)
+
+        Write-Host "aid update all: $($uaRepos.Count) registered project(s), target version $uaRunVersion"
+
+        $uaFetchFailed = @{}   # tool -> $true once its download has failed this run
+        $uaUpdated = [System.Collections.Generic.List[string]]::new()
+        $uaSkipped = [System.Collections.Generic.List[string]]::new()
+        $uaFailed  = [System.Collections.Generic.List[string]]::new()
+
+        $uaHostExe = (Get-Process -Id $PID).Path
+
+        foreach ($uaRepo in $uaRepos) {
+            if (-not $uaRepo) { continue }
+
+            # Availability check (AC7): skip (non-fatal) a project whose .aid/ is absent.
+            $uaAidDir = Join-Path $uaRepo '.aid'
+            if (-not (Test-Path $uaAidDir -PathType Container)) {
+                $uaSkipped.Add($uaRepo)
+                Write-Host "SKIP: $uaRepo (.aid/ not found)"
+                continue
+            }
+
+            $uaManifest = Join-Path $uaAidDir '.aid-manifest.json'
+            $uaTools = @(Get-ManifestToolList -ManifestPath $uaManifest | ForEach-Object { $_.Id })
+
+            # Populate the shared cache download-once per distinct tool (AC1).
+            $uaRepoFetchFailed = $false
+            foreach ($uaTool in $uaTools) {
+                if ($uaFetchFailed.ContainsKey($uaTool)) {
+                    $uaRepoFetchFailed = $true
+                    continue
+                }
+                $uaTarball = Join-Path $uaCache "aid-$uaTool-v$uaRunVersion.tar.gz"
+                if (-not (Test-Path $uaTarball -PathType Leaf)) {
+                    if (-not (Fetch-Tarball -Tool $uaTool -Version $uaRunVersion -DestDir $uaCache)) {
+                        [Console]::Error.WriteLine("ERROR: aid update all: failed to download $uaTool v$uaRunVersion (continuing)")
+                        $uaFetchFailed[$uaTool] = $true
+                        $uaRepoFetchFailed = $true
+                    }
+                }
+            }
+
+            if ($uaRepoFetchFailed) {
+                $uaFailed.Add($uaRepo)
+                Write-Host "FAILED: $uaRepo (tool download failed)"
+                continue
+            }
+
+            # Apply via the existing -FromBundle branch, through a CHILD 'aid update'
+            # process (FR4) -- no new fetch/install mechanism.
+            $uaChildArgs = @('-NoProfile', '-File', $script:_AidSelfPath, 'update', '-Target', $uaRepo, '-FromBundle', $uaCache)
+            if ($uaForce)  { $uaChildArgs += '-Force' }
+            if ($uaDryRun) { $uaChildArgs += '-DryRun' }
+
+            Write-Host ""
+            Write-Host "=== $uaRepo ==="
+            & $uaHostExe @uaChildArgs
+            $uaChildRc = $LASTEXITCODE
+
+            # Record outcome (FR5/FR6): 0 -> updated; non-zero -> failed. Continue
+            # regardless (decision D4 -- continue-on-error).
+            if ($uaChildRc -eq 0) {
+                $uaUpdated.Add($uaRepo)
+            } else {
+                $uaFailed.Add($uaRepo)
+                Write-Host "FAILED: $uaRepo (exit $uaChildRc)"
+            }
+        }
+
+        # End-of-run summary (decision D4 / AC3, AC5).
+        Write-Host ""
+        Write-Host "--- aid update all summary (version $uaRunVersion) ---"
+        foreach ($r in $uaUpdated) { Write-Host "  updated: $r" }
+        foreach ($r in $uaSkipped) { Write-Host "  skipped: $r (.aid/ not found)" }
+        foreach ($r in $uaFailed)  { Write-Host "  failed: $r" }
+        Write-Host "$($uaUpdated.Count) updated, $($uaSkipped.Count) skipped, $($uaFailed.Count) failed"
+
+        if ($uaFailed.Count -gt 0) { return 1 }
+        return 0
+    } finally {
+        if (Test-Path $uaCache -PathType Container) {
+            Remove-Item -LiteralPath $uaCache -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
 }
 
@@ -2878,6 +3045,14 @@ if ($SUBCMD -eq 'update') {
             }
         }
         script:Exit-Aid 0
+    }
+    # Check for 'update all' as first positional arg (work-001-update-all / task-001).
+    # Consumed here -- alongside 'self' -- BEFORE the generic add/remove/update flag
+    # loop and BEFORE the non-'self' positional rejection (FR10, below), so 'all' is
+    # never treated as an unknown positional (SPEC AC9).
+    if ($script:_RemArgs.Count -gt 0 -and $script:_RemArgs[0] -eq 'all') {
+        $uaRc = script:Invoke-AidUpdateAll -RemArgs @($script:_RemArgs | Select-Object -Skip 1)
+        script:Exit-Aid $uaRc
     }
     # Fall through to shared add/update handler below.
 }

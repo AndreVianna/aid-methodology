@@ -1299,7 +1299,10 @@ manifest_list_tools() {
     local manifest="$1"
     [[ -f "$manifest" ]] || return 0
     if command -v python3 >/dev/null 2>&1; then
-        python3 - "$manifest" <<'PY'
+        # tr strips any stray CR from Python's text-mode stdout translation
+        # on Windows (print() emits \r\n there); on Linux/macOS this is a
+        # no-op, so the output stays byte-identical to before.
+        python3 - "$manifest" <<'PY' | tr -d '\r'
 import json, sys
 try:
     data = json.load(open(sys.argv[1]))
@@ -1312,6 +1315,7 @@ PY
     fi
     # Pure-Bash fallback: extract tool keys from the "tools" section.
     # Each tool entry looks like:    "tool-name": {  at 4-space indent.
+    # (awk emits bare \n natively; tr -d '\r' is a no-op safety net here too.)
     awk '
     BEGIN { in_tools=0; depth=0 }
     /"tools"[[:space:]]*:/ { in_tools=1; depth=0; next }
@@ -1321,7 +1325,7 @@ PY
         s=$0; gsub(/^[[:space:]]*"/, "", s); gsub(/".*/, "", s)
         if (s != "") print s
     }
-    ' "$manifest"
+    ' "$manifest" | tr -d '\r'
 }
 
 # ---------------------------------------------------------------------------
