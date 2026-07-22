@@ -2998,10 +2998,16 @@ readonly _AID_SCAN_MAX_DEPTH=40
 
 # FR-3/FR-8: primary user-level scan-config.yml, living beside registry.yml at
 # the CLI state home (honors the AID_HOME override via the startup scope
-# derivation, ~:65-71, already resolved by the time this line executes).  The
+# derivation, ~:65-71). Resolved as a `local` INSIDE each consuming function
+# (_aid_scan_read_prune_dirs / _aid_scan_seed_config below) -- NEVER as a
+# top-level readonly here -- mirroring the _registry_read_union /
+# registry_register precedent (~:1486, ~:1751-1756): a top-level reference to
+# $AID_STATE_HOME would be evaluated at SOURCE time, and some test harnesses
+# (tests/canonical/test-aid-remote.sh's _make_fn_src) eval a slice of this
+# file that starts above the startup derivation (~:65-71) under `set -u`
+# without $AID_STATE_HOME set, which would abort the eval. The
 # $HOME/.aid/scan-config.yml fallback tier (read-side only, mirroring
 # _registry_read_union) is computed ad hoc in _aid_scan_read_prune_dirs below.
-readonly _AID_SCAN_CONFIG="${AID_STATE_HOME}/scan-config.yml"
 
 # _aid_scan_name_in_set <name> <set-item>...
 # Case-insensitive exact-match membership test against the remaining args.
@@ -3046,21 +3052,24 @@ _aid_scan_config_prune_dirs() {
 
 # _aid_scan_read_prune_dirs
 # Return the prune_dirs: entries from the primary scan-config.yml tier
-# ($_AID_SCAN_CONFIG) plus, when $AID_STATE_HOME differs from $HOME/.aid, the
-# $HOME/.aid/scan-config.yml fallback tier too -- mirroring
-# _registry_read_union's primary/fallback + per-user-collapse resolution
-# (~:1485-1502; FR-8). No dedup here: the case-insensitive dedup against the
-# built-in set happens once, in _aid_scan_merge_prune_dirs. Empty when no
-# config/prune_dirs: key is found in either tier (FR-5).
+# ($AID_STATE_HOME/scan-config.yml, resolved as a `local` here -- never a
+# top-level constant, see the comment above _aid_scan_name_in_set) plus, when
+# $AID_STATE_HOME differs from $HOME/.aid, the $HOME/.aid/scan-config.yml
+# fallback tier too -- mirroring _registry_read_union's primary/fallback +
+# per-user-collapse resolution (~:1485-1502; FR-8). No dedup here: the
+# case-insensitive dedup against the built-in set happens once, in
+# _aid_scan_merge_prune_dirs. Empty when no config/prune_dirs: key is found in
+# either tier (FR-5).
 _aid_scan_read_prune_dirs() {
+    local _primary_cfg="${AID_STATE_HOME}/scan-config.yml"
     if [[ "$AID_STATE_HOME" == "${HOME}/.aid" ]]; then
         # Per-user collapse: single-tier; primary == fallback, no double-read.
-        _aid_scan_config_prune_dirs "$_AID_SCAN_CONFIG"
+        _aid_scan_config_prune_dirs "$_primary_cfg"
     else
         # Distinct paths: read both the primary ($AID_STATE_HOME) and the
         # fallback ($HOME/.aid) tiers.
         local _fallback_cfg="${HOME}/.aid/scan-config.yml"
-        { _aid_scan_config_prune_dirs "$_AID_SCAN_CONFIG"; _aid_scan_config_prune_dirs "$_fallback_cfg"; } \
+        { _aid_scan_config_prune_dirs "$_primary_cfg"; _aid_scan_config_prune_dirs "$_fallback_cfg"; } \
             | sed '/^$/d'
     fi
 }
@@ -3093,11 +3102,13 @@ _aid_scan_merge_prune_dirs() {
 
 # _aid_scan_seed_config
 # First-run seed (FR-3/NFR-3): if the primary scan-config.yml
-# ($_AID_SCAN_CONFIG) is absent, write it with a header + `schema: 1` + a
-# `prune_dirs:` block of the built-in expanded Tier-A defaults, via the SAME
-# atomic temp-file+move idiom registry_register uses (~:1751-1799: mkdir -p
-# the target dir, mktemp in that same dir so the mv is atomic same-
-# filesystem, write, then never-elevate `_aid_priv_run "" mv -f`).
+# ($AID_STATE_HOME/scan-config.yml, resolved as a `local` here -- never a
+# top-level constant, see the comment above _aid_scan_name_in_set) is absent,
+# write it with a header + `schema: 1` + a `prune_dirs:` block of the
+# built-in expanded Tier-A defaults, via the SAME atomic temp-file+move idiom
+# registry_register uses (~:1751-1799: mkdir -p the target dir, mktemp in
+# that same dir so the mv is atomic same-filesystem, write, then
+# never-elevate `_aid_priv_run "" mv -f`).
 # Same primary/fallback DEGRADE too (~:1754-1766): if $AID_STATE_HOME (the
 # primary's directory) is absent/not writable -- e.g. a global/shared install
 # such as /var/lib/aid or $ProgramData\aid where the primary tier is not
@@ -3112,12 +3123,13 @@ _aid_scan_merge_prune_dirs() {
 # resolves to, so a user's edits always survive. The caller MUST NOT invoke
 # this under --dry-run (a dry-run scan makes no writes at all).
 _aid_scan_seed_config() {
-    [[ -f "$_AID_SCAN_CONFIG" ]] && return 0
+    local _primary_cfg="${AID_STATE_HOME}/scan-config.yml"
+    [[ -f "$_primary_cfg" ]] && return 0
     local _dir _tmp _target
-    _dir="$(dirname "$_AID_SCAN_CONFIG")"
+    _dir="$(dirname "$_primary_cfg")"
     _aid_priv_run "" mkdir -p "$_dir" 2>/dev/null || true
     if [[ -w "$_dir" ]]; then
-        _target="$_AID_SCAN_CONFIG"
+        _target="$_primary_cfg"
     else
         # Primary not writable (global/shared install); degrade to $HOME/.aid,
         # mirroring registry_register's user-tier degrade (~:1754-1766).
