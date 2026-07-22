@@ -7,12 +7,13 @@
 | 2026-07-21 | SPEC drafted (redesign analysis) | direct session |
 | 2026-07-21 | Reshaped to feature-001 SPEC template; folded design into Technical Specification | direct session |
 | 2026-07-22 | GATE Pass 1 FIX: scope-diff guard derives edited set from disk; added re-scope revert; AC-8 (HL-3); robust citations; corrected settings floor note; migration rename rows | GATE FIX |
+| 2026-07-22 | Cycle-4: reinforce start-of-run worktree isolation (mirror /aid-fix); add HL-8 (conversation not a source) + AC-9/AC-10; clarify hunk-level traceability. `approved_at_commit:` left unchanged per owner | owner directive |
 
 ## Source
 
-- REQUIREMENTS.md §5 Functional Requirements (FR-1..FR-10)
-- REQUIREMENTS.md §9 Acceptance Criteria (AC-1..AC-8)
-- Owner-confirmed hard limits HL-1..HL-7 (§2 below)
+- REQUIREMENTS.md §5 Functional Requirements (FR-1..FR-11)
+- REQUIREMENTS.md §9 Acceptance Criteria (AC-1..AC-10)
+- Owner-confirmed hard limits HL-1..HL-8 (§ Governing hard limits below)
 
 ## Description
 
@@ -42,6 +43,8 @@ Must.
 - [ ] AC-6 A new file is created only after appearing as `new-file` kind at CONFIRM (HL-6).
 - [ ] AC-7 f005 quality gate, human-commit invariant, and FR-33/34 boundary intact; generated copies byte/path-parity clean.
 - [ ] AC-8 An item ANALYZE cannot ground as CONFIRMED-from-instruction (a LIKELY/UNCERTAIN inference) is surfaced as a CONFIRM question, never applied silently (HL-3).
+- [ ] AC-9 Content present in the session conversation but absent from the instruction and unsupported by KB/code evidence has no valid `Traces-to` and never enters the Scope Plan; the scope-deciding agents run in clean contexts that never receive the session transcript (HL-8).
+- [ ] AC-10 The skill creates and enters its own worktree based on `master` before any analysis or edit; all run-state, edits, branch, and commits live in that worktree, isolated from the caller's working tree/branch.
 
 ---
 
@@ -58,8 +61,25 @@ Every state below cites the limits it enforces.
 - **HL-5 No opportunistic edits.** Docs that merely share a domain/tag, or are `suspect` per freshness but unnamed by the instruction, are out of scope (→ `aid-housekeep`).
 - **HL-6 New files require explicit confirmation.** Allowed, never a silent side effect.
 - **HL-7 Grade-chasing may not expand scope.** The REVIEW FIX loop and DONE closure re-check may only edit within confirmed scope; out-of-scope needs escalate to the user.
+- **HL-8 The instruction is the only scope seed; the conversation is not a source.** Scope and content are grounded solely in the verbatim `/aid-update-kb` instruction plus KB/codebase evidence. Anything discussed earlier in the session is never a source of scope or content. Enforced by: (a) the skill runs in its own isolated worktree (Pre-flight) and ANALYZE/SCOPE run in **clean-context** sub-agents that never receive the session transcript; (b) the orchestrator passes the instruction **verbatim** and must not enrich it with session-derived context; (c) every Scope Plan item's `Traces-to` cites the instruction text or a KB/code location — never "the session" or prior discussion.
 
 ### Feature Flow (state machine)
+
+**Pre-flight (before any state) — ISOLATE.** After confirming the prompt, the skill creates
+and enters **its own worktree on an `aid/update-kb-<ts>` branch based on `master`** — plain git
+worktree mechanics (`git worktree add <path> -b aid/update-kb-<ts> master`), entered via the
+host-native switch (claude-code: the `EnterWorktree` tool; other profiles: operate with the
+resolved path as cwd and surface it), reusing only the **generic enter contract** of
+`.claude/aid/templates/worktree-lifecycle.md § Step 2`. It does **not** use
+`worktree-lifecycle.sh`'s `create` path or `work-initiation-gate.md` — those are keyed on a
+`work-NNN` id (hard-validated `^work-[0-9]+$`), which this off-pipeline maintenance skill does
+not allocate: its run-state stays the timestamp-keyed `.aid/.temp/UPDATEKB_STATE_<ts>.md`
+(FR-9), and its branch follows the existing `aid/update-kb-*` convention. This mirrors the
+*isolation* `/aid-fix` gets at INTAKE, adapted to a non-work-NNN maintenance skill (the
+`aid/housekeep-*` branch-per-run precedent, taken one step further to a full worktree). The
+entire state machine, run-state, edits, the `aid/update-kb-<ts>` branch, and all commits then
+live **inside that worktree**, isolated from whatever pipeline the caller was in. HL-8 covers
+the companion context plane.
 
 ```
 ANALYZE ──▶ SCOPE ──▶ CONFIRM ──▶ APPLY ──▶ REVIEW ──▶ APPROVAL ──▶ DONE
@@ -84,13 +104,14 @@ scope/understanding before work; **APPROVAL** guards the specific edits before c
 
 #### Per-state behavior
 
-- **ANALYZE** (`aid-researcher`, sonnet; read-only). Locate the docs the instruction *actually concerns* via `INDEX.md` — not every tag-overlap candidate (removes today's `state-analyze.md §1` candidate net — the "Every doc whose Objective or Tags overlaps the prompt's domain is a candidate" sentence; HL-5). Record current KB statement + relation + confidence per location. Freshness verdicts are advisory only: `suspect` inside scope is noted; `suspect` outside scope goes to Not-Changing. Ungroundable items become Contradiction/Open-question entries (HL-3/HL-4). CHAIN → SCOPE (or existing un-groundable PAUSE escalation).
-- **SCOPE** (`aid-architect`, opus). Build the minimal Scope Plan; include an item only if it traces to an explicit instruction clause or a closure need; mark `closure`/`new-file` kinds; fill the Not-Changing list; draft confirmation questions. HL-2/HL-5/HL-6. CHAIN → CONFIRM (empty plan → existing "no update needed" HALT).
+- **Pre-flight / ISOLATE** (inline). Confirm the prompt, then create + enter the skill's own worktree on an `aid/update-kb-<ts>` branch off `master` — plain `git worktree add -b`, entered per `worktree-lifecycle.md § Step 2` (NOT the work-NNN-keyed `worktree-lifecycle.sh`; see Feature Flow note). Fail-closed: if the worktree can't be created, STOP — never fall back to the caller's tree. All subsequent states, run-state, and the `aid/update-kb-<ts>` branch live inside the worktree. CHAIN → ANALYZE.
+- **ANALYZE** (`aid-researcher`, sonnet; read-only; **clean-context dispatch** — the agent receives only the verbatim instruction + KB/code, never the session transcript, HL-8). Locate the docs the instruction *actually concerns* via `INDEX.md` — not every tag-overlap candidate (removes today's `state-analyze.md §1` candidate net — the "Every doc whose Objective or Tags overlaps the prompt's domain is a candidate" sentence; HL-5). Record current KB statement + relation + confidence per location. Freshness verdicts are advisory only: `suspect` inside scope is noted; `suspect` outside scope goes to Not-Changing. Ungroundable items become Contradiction/Open-question entries (HL-3/HL-4). CHAIN → SCOPE (or existing un-groundable PAUSE escalation).
+- **SCOPE** (`aid-architect`, opus; **clean-context dispatch**, HL-8). Build the minimal Scope Plan; include an item only if it traces to an explicit instruction clause or a closure need; mark `closure`/`new-file` kinds; fill the Not-Changing list; draft confirmation questions. HL-2/HL-5/HL-6/HL-8. CHAIN → CONFIRM (empty plan → existing "no update needed" HALT).
 - **CONFIRM** (NEW; inline human gate). Present understanding + will-change + will-NOT-change + open questions. `[1] Confirm` → freeze `Confirmed Scope` + capture the pre-APPLY baseline (see Data Model), CHAIN → APPLY. `[2] Adjust: ___` → loop to SCOPE (or ANALYZE if understanding itself changes), PAUSE. `[3] Cancel` → HALT, clean. HL-1/HL-4. PAUSE-FOR-USER-ACTION.
 - **APPLY** (inline `Edit`, or architect/researcher for deep docs). Apply only confirmed items; targeted in-place edits; the "not a rewrite" guard is repeated in the sub-agent dispatch prompt; cross-references only if they are confirmed items (removes the `state-apply.md §2b` open cascade — the "add cross-references as needed" clause). Retain calibration/altitude discipline, native-spine invariant, `approved_at_commit:` no-restamp rule. HL-2/HL-5. CHAIN → REVIEW.
-- **REVIEW** (`aid-reviewer`, sonnet). **Scope-diff guard first (mechanical):** derive the *actually-edited* KB file set **from disk** — `git status --porcelain .aid/knowledge/` (or `git diff --name-only` against the pre-APPLY baseline recorded in run-state) — **never** from APPLY's self-reported `Edited Docs`; that disk-derived set MUST equal `Confirmed Scope`. A file changed on disk but absent from `Confirmed Scope` → **hard fail** (not gradable away); a `Confirmed Scope` doc not changed on disk → flag for reconciliation. **Traceability mandate:** each edit maps to a confirmed item. Then the unchanged f005 four-mandate panel via `aid-discover/state-review.md`. **FIX-loop constraint (HL-7):** fixes only within `Confirmed Scope`; an out-of-scope-only fix routes to a user escalation (back to CONFIRM) instead of expanding. CHAIN → APPROVAL when scope-diff PASS AND grade ≥ min AND teach/act-back PASS.
+- **REVIEW** (`aid-reviewer`, sonnet). **Scope-diff guard first (mechanical):** derive the *actually-edited* KB file set **from disk** — `git status --porcelain .aid/knowledge/` (or `git diff --name-only` against the pre-APPLY baseline recorded in run-state) — **never** from APPLY's self-reported `Edited Docs`; that disk-derived set MUST equal `Confirmed Scope`. A file changed on disk but absent from `Confirmed Scope` → **hard fail** (not gradable away); a `Confirmed Scope` doc not changed on disk → flag for reconciliation. **Traceability mandate (per edit / hunk-level):** each individual edit — down to the hunk — maps to a confirmed Scope Plan item; this catches over-editing *within* an in-scope doc that the file-level scope-diff guard cannot see (e.g. a whole new section added to a doc that legitimately received one small in-scope edit). Then the unchanged f005 four-mandate panel via `aid-discover/state-review.md`. **FIX-loop constraint (HL-7):** fixes only within `Confirmed Scope`; an out-of-scope-only fix routes to a user escalation (back to CONFIRM) instead of expanding. CHAIN → APPROVAL when scope-diff PASS AND grade ≥ min AND teach/act-back PASS.
 - **APPROVAL** (inline human gate). Summary shows the disk-derived scope-fidelity result + a real diff pointer. `[1] Approved` → DONE. `[2] Additional consideration` → re-scope back to CONFIRM/SCOPE (fixes today's `state-approval.md:96-98` gap where it looped blindly to APPLY); the re-scope revert below runs before APPLY re-runs. PAUSE-FOR-USER-ACTION.
-- **DONE** (inline). Restamp `approved_at_commit:`, commit on `aid/update-kb-*`, clean run-state. **Change (HL-7):** a closure re-check shortfall that needs an out-of-scope addition **escalates to the user** rather than auto-pushing to APPLY. HALT.
+- **DONE** (inline). Restamp `approved_at_commit:`, commit on the **Pre-flight worktree's `aid/update-kb-<ts>` branch** (already created at Pre-flight — DONE creates **no** new branch, and **never pushes `master`**; the human merges after CI is green), clean run-state. **Change (HL-7):** a closure re-check shortfall that needs an out-of-scope addition **escalates to the user** rather than auto-pushing to APPLY. HALT.
 
 **Re-scope revert (post-APPLY, HL-7 / AC-5).** When APPROVAL `[2]` or a REVIEW HL-7
 escalation loops back to CONFIRM/SCOPE *after* APPLY has already written edits, any
@@ -148,6 +169,8 @@ Verification controls:
 
 | Control | Where | Type | Guards |
 |---|---|---|---|
+| Worktree isolation | Pre-flight (before any state) | mechanical | own worktree off master; no caller working-tree/branch bleed (AC-10) |
+| Clean-context dispatch | ANALYZE + SCOPE | mechanical | scope-deciding agents never see the session transcript (HL-8/AC-9) |
 | CONFIRM gate | before APPLY | human | HL-1 (root fix) |
 | Scope-diff guard (disk-derived) | REVIEW (first) | mechanical | `git status`-derived edited-set == Confirmed Scope |
 | Traceability mandate | REVIEW | reviewer | every edit → confirmed item |
@@ -171,14 +194,14 @@ the profile path-prefix rewrite.
 
 | File | Change |
 |---|---|
-| `SKILL.md` | 7-state diagram + banners + resume table + Dispatch table; updated `description:`; new Hard-Limits section (HL-1..HL-7); fix the pre-existing `five-mandate`→`four-mandate` frontmatter wording (aligns with `state-review.md`) |
+| `SKILL.md` | New **Pre-flight ISOLATE** step: create + enter own worktree on an `aid/update-kb-<ts>` branch off `master` via plain `git worktree add -b` + the generic enter step (`worktree-lifecycle.md § Step 2`) — **NOT** the work-NNN-keyed `worktree-lifecycle.sh`/`work-initiation-gate.md` — fail-closed, before any state; 7-state diagram + banners + resume table + Dispatch table; updated `description:`; new Hard-Limits section (HL-1..HL-8); update the "DONE (commit convention)" note to reflect the Pre-flight worktree branch (no separate branch at DONE; never push `master`); fix **all** `five-mandate`→`four-mandate` occurrences (frontmatter `:8` + REVIEW banner body + the "REVIEW reuse (f005)" blockquote), aligning with `state-review.md` |
 | `references/state-analyze.md` | Rewrite: researcher Impact Map; remove tag-overlap net; freshness advisory only; contradiction/gap capture; no silent inference; **rename `Change Plan`→`Scope Plan`** in any residual reference |
 | `references/state-scope.md` | **NEW**: architect minimal Scope Plan + Not-Changing + confirmation-question drafting |
 | `references/state-confirm.md` | **NEW**: human gate `[1]/[2]/[3]`, freeze Confirmed Scope, capture Pre-APPLY baseline, PAUSE |
-| `references/state-apply.md` | Bounded to confirmed plan; sub-agent inherits no-rewrite guard; remove open-ended cross-ref cascade |
+| `references/state-apply.md` | Bounded to confirmed plan; sub-agent inherits no-rewrite guard; remove open-ended cross-ref cascade; **rename the `Change Plan` read in APPLY Step 1 (`:30-33`)→`Scope Plan`** |
 | `references/state-review.md` | Add disk-derived scope-diff guard + traceability mandate; FIX-loop scope bound (HL-7); **rename the `Change Plan` fallback reference (`:30`)→`Scope Plan`** |
 | `references/state-approval.md` | Show scope-fidelity; `[2]` re-scopes to CONFIRM/SCOPE with re-scope revert |
-| `references/state-done.md` | Closure shortfall → user escalation, not auto-expand (HL-7); **rename the `Change Plan` commit-template reference (`:111`)→`Scope Plan`** |
+| `references/state-done.md` | **Remove the existing Step 2 "Ensure branch" (`git checkout -b aid/update-kb-<date>`)** — the branch is the Pre-flight worktree's `aid/update-kb-<ts>` branch; DONE only commits on it (no new branch), commits/pushes are transparent, and it **never pushes `master`** (the human merges after CI is green). Closure shortfall → user escalation, not auto-expand (HL-7); **rename the `Change Plan` commit-template reference (`:111`)→`Scope Plan`**. (`approved_at_commit:` behavior unchanged.) |
 | generated copies | Re-emit via generator → `profiles/*`; resync dogfood `.claude/` |
 
 Post-change sweep (task-004): sweep **all source docs** (not only tests/fixtures) for

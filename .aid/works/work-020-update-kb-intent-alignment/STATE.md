@@ -3,20 +3,20 @@ pipeline:
   path: lite
   initiator: aid-describe
 started: "2026-07-21"
-minimum_grade: "A"
+minimum_grade: "A+"
 user_approved: no
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Detail
 active_skill: none
-updated: "2026-07-22T03:38:15Z"
-pause_reason: "--"
+updated: "2026-07-22T06:03:28Z"
+pause_reason: "Definition set GATE-cleared (both passes A+, incl. worktree isolation); awaiting owner approval before /aid-execute"
 block_reason: "--"
 block_artifact: "--"
 ticket_ref: "--"
 delivery_state: Specified
 gate_tier: Medium
-gate_grade: "Pending"
-gate_timestamp: "--"
+gate_grade: "A+"
+gate_timestamp: "2026-07-22T06:03:28Z"
 ---
 
 # Work State -- work-020-update-kb-intent-alignment
@@ -100,6 +100,20 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | GATE started | -- | Two aid-reviewer passes dispatched (Pass 1 = definition docs, Pass 2 = task set); floor A+ |
 | 2026-07-22 | GATE cycle 1 graded | Pass1 D+ / Pass2 C+ | Pass1: 1 HIGH (scope-diff guard self-reported not disk-derived) + 3 MED + 2 LOW + 2 MINOR; Pass2: 1 MED + 1 LOW; 1 OOS (canonical five/four-mandate) |
 | 2026-07-22 | GATE cycle 1 FIX applied | -- | 10 in-scope findings fixed across SPEC/REQUIREMENTS/BLUEPRINT/task-001/002/004; OOS mandate-wording routed into task-001; re-review dispatched |
+| 2026-07-22 | GATE cycle 2 re-review | Pass1: all 8 Fixed / Pass2: both Fixed | 4 new findings: Pass1 2 (FR-9 missing Pre-APPLY baseline [MED]; stale SPEC§ citations [LOW]; task-004 title AC overclaim [LOW]) + Pass2 1 (state-apply.md Change Plan rename unowned [MED]) |
+| 2026-07-22 | Committed + isolated in worktree | -- | Committed 7c65b12a; main tree → master; work-020 branch checked out in `.claude/worktrees/work-020-update-kb-intent-alignment` (concurrent work-021 agent in its own worktree). minimum_grade corrected A→A+ (matches resolved floor) |
+| 2026-07-22 | GATE cycle 2 FIX applied | -- | 4 findings fixed (REQUIREMENTS FR-9 + citations; BLUEPRINT title; task-002/SPEC/task-004 state-apply rename); re-verify pending |
+| 2026-07-22 | Real-world repro received | -- | PaneFrame/simple_msg.h pinpoint prompt caused 4 unrelated edits (OS-support rewrite, Bus-Map, new LicenseType section, testing paragraph). Redesign covers all 4 (HL-1/2/5 + scope-diff + freshness-advisory). New open item D3: user questions `approved_at_commit:` two-commit dance — proposes date + MR header. Subtle gap to tighten: within-file over-edit of an in-scope doc (per-edit traceability mandate covers it; make hunk-level explicit in SPEC) |
+| 2026-07-22 | GATE cycle 3 re-verify + fix | -- | 4 cycle-2 findings confirmed Fixed; 1 new MINOR (citation truncation) fixed + mechanically verified (verbatim heading match) |
+| 2026-07-22 | GATE CLEARED | A+ / A+ | Both passes A+ (0 open findings). Definition set gated. Lifecycle → Paused-Awaiting-Input. Pending before execute: owner decision on D3 (approved_at_commit) + within-file traceability clarification (cycle-4) |
+| 2026-07-22 | Root cause sharpened (owner) | -- | Extra items were lifted from SESSION CONVERSATION (topics discussed during the user's work), not hallucinated/tag-overlap. In-context ≠ in-scope. Proposed HL-8: instruction is the only scope seed, conversation is NOT a source — enforced by clean-context analyst/architect dispatch + verbatim instruction pass-through + Traces-to must cite instruction/KB, never "the session". Pending owner confirm; batch into cycle-4 with D3 |
+| 2026-07-22 | Isolation model directive (owner) | -- | ARCHITECTURAL: /aid-update-kb is a self-contained work → MUST self-isolate in its own branch/worktree off master at invocation (not the caller's pipeline). Isolation = the root fix; HL-8 is a consequence. Commit/push to work branch = transparent (no per-commit gate); NEVER push master; final human approval → notify user → USER merges after CI green; fully reversible until merge |
+| 2026-07-22 | Scope narrowed (owner) | -- | Owner: FORGET approved_at_commit (leave unchanged); focus on the defined analysis + reinforce worktree isolation (an existing pattern — /aid-fix gets it from shortcut-engine INTAKE; /aid-update-kb lacks it). Cross-cutting-principle tangent dropped |
+| 2026-07-22 | Cycle-4 FIX applied | -- | Added FR-11 + Pre-flight ISOLATE (own worktree off master, mirrors /aid-fix via worktree-lifecycle.sh/.md) + HL-8/clean-context dispatch (AC-9) + worktree AC-10 + hunk-level traceability. Updated SPEC/REQUIREMENTS/BLUEPRINT/task-001/002/004. approved_at_commit untouched. Re-gate dispatched (cycle-4) |
+| 2026-07-22 | Cycle-4 graded | defn E / tasks D+ | Prior rows all still Fixed (no regressions). 2 CRIT (worktree mechanism cited work-NNN-keyed worktree-lifecycle.sh but update-kb allocates no work-NNN; DONE "commit on aid/update-kb-*" contradicted Migration Plan) + 1 HIGH (DONE branch change unowned) + 2 MED (stale HL-1..HL-7 in BLUEPRINT/PLAN) + 1 MINOR (FR-9 Confirmed At) + Pass2 1 HIGH/1 LOW |
+| 2026-07-22 | Cycle-5 FIX applied | -- | CRITICALs fixed: isolation = plain `git worktree add -b aid/update-kb-<ts> master` + generic enter (NOT worktree-lifecycle.sh); DONE branch created at Pre-flight, committed at DONE, never pushes master. Ownership: task-002 owns DONE branch change, task-001 owns SKILL.md DONE-convention note + all-3 five→four-mandate. Stale HL counts + FR-9 Confirmed At + task-004 AC-9/10 title fixed. Re-gate dispatched (cycle-5) |
+| 2026-07-22 | Cycle-5 graded | Pass2 A+ / Pass1 1 CRIT | Pass2 clean; Pass1 rows 15-19 Fixed but row 14 CRIT re-opened: BLUEPRINT.md:21 Scope bullet missed the worktree-mechanism fix (fix-everywhere miss) |
+| 2026-07-22 | Row 14 fixed + GATE RE-CLEARED | A+ / A+ | BLUEPRINT:21 reconciled to plain-git-worktree design; grep confirms no positive worktree-lifecycle.sh reference remains (all negate it); row 14 marked Fixed (mechanical self-verify). Both ledgers grade A+. Definition set gated; lifecycle → Paused-Awaiting-Input, awaiting owner approval before /aid-execute |
 
 ---
 

@@ -8,6 +8,7 @@
 | Date | Change | Source |
 |------|--------|--------|
 | 2026-07-21 | Initial capture from AID DEBUG session (owner-confirmed HL-1..HL-7) | direct session |
+| 2026-07-22 | Cycle-4: added FR-11 isolation (own worktree off master, mirrors /aid-fix) + HL-8 (conversation not a source) + AC-9/AC-10; `approved_at_commit:` left unchanged per owner | owner directive |
 
 ## 1. Objective
 
@@ -45,8 +46,9 @@ is absent from the flow; those agents appear only as authors in APPLY.
 - Redesign the `aid-update-kb` state machine to: `ANALYZE → SCOPE → CONFIRM → APPLY → REVIEW → APPROVAL → DONE`.
 - Introduce an analyst step (Impact Map) and a minimal Scope Plan with an explicit *Not-Changing* list.
 - Introduce a **pre-apply human CONFIRM gate** (the root fix).
+- **Self-isolate at invocation** in the skill's own worktree based on `master` (FR-11), mirroring `/aid-fix`.
 - Add scope-fidelity verification (scope-diff guard + traceability mandate) and bound the FIX/closure loops to confirmed scope.
-- Encode the seven owner-confirmed hard limits (HL-1..HL-7).
+- Encode the eight owner-confirmed hard limits (HL-1..HL-8), incl. HL-8 (conversation is not a source).
 - Author changes in `canonical/skills/aid-update-kb/` and re-emit to every `profiles/*` copy + dogfood `.claude/`.
 
 ### Out of Scope
@@ -66,8 +68,9 @@ is absent from the flow; those agents appear only as authors in APPLY.
 - **FR-6 — Bounded correction.** The REVIEW FIX loop and the DONE closure re-check may only edit within confirmed scope; anything requiring an out-of-scope addition escalates to the user rather than auto-expanding. A post-APPLY re-scope that shrinks the confirmed set reverts (`git restore`) the now-out-of-scope edits before re-applying.
 - **FR-7 — APPROVAL.** Show the scope-fidelity result; `[2] Additional consideration` re-scopes (routes back to CONFIRM/SCOPE), not blindly back to APPLY.
 - **FR-8 — De-scope the net.** Remove the tag-overlap candidate net in ANALYZE; treat freshness verdicts as advisory context only; a `suspect`-but-uninstructed doc stays out of scope (→ `aid-housekeep`).
-- **FR-9 — Schema + wiring.** Run-state gains `Impact Map`, `Scope Plan` (replaces `Change Plan`), `Confirmed`/`Confirmed Scope`/`Adjustments`; `SKILL.md` state diagram, banners, resume table, and dispatch table updated to 7 states; `description:` frontmatter updated; a Hard-Limits section added.
+- **FR-9 — Schema + wiring.** Run-state gains `Impact Map`, `Scope Plan` (replaces `Change Plan`), `Confirmed`/`Confirmed At`/`Confirmed Scope`/`Pre-APPLY baseline`/`Adjustments`; `SKILL.md` state diagram, banners, resume table, and dispatch table updated to 7 states; `description:` frontmatter updated; a Hard-Limits section added.
 - **FR-10 — Propagation.** Edits authored in `canonical/`, then re-emitted via the generator to all `profiles/*` and the dogfood `.claude/` copy.
+- **FR-11 — Isolation.** At invocation the skill creates and enters **its own worktree on an `aid/update-kb-<ts>` branch based on `master`** — plain `git worktree add -b`, entered per `worktree-lifecycle.md § Step 2` (**not** the work-NNN-keyed `worktree-lifecycle.sh`/`work-initiation-gate.md`, since this off-pipeline skill allocates no `work-NNN`; the same *isolation* `/aid-fix` gets at INTAKE, adapted, on the `aid/update-kb-*` branch convention) — so the KB update runs as a self-contained pipeline isolated from the caller's working tree and branch. Combined with clean-context ANALYZE/SCOPE dispatch (HL-8), this isolates the filesystem/branch plane and the conversation plane. Commits/pushes to the work branch are transparent; the skill never pushes to `master` — the human merges after CI/CD is green, and the work is reversible until then.
 
 ## 6. Non-Functional Requirements
 
@@ -80,14 +83,14 @@ is absent from the flow; those agents appear only as authors in APPLY.
 
 - Edits land ONLY in `canonical/skills/aid-update-kb/`; generated copies are never hand-edited.
 - The skill stays a markdown state-machine driven by reference docs; no new runtime scripts unless a hard limit cannot be enforced without one.
-- The seven owner-confirmed hard limits HL-1..HL-7 govern the design (see SPEC §2).
+- The owner-confirmed hard limits HL-1..HL-8 govern the design — see the SPEC's "Governing hard limits (owner-confirmed)" section.
 
 ## 8. Assumptions & Dependencies
 
 - The generator (`canonical/EMISSION-MANIFEST.md`) renders `canonical/` → `profiles/<tool>/…`; `setup.sh` syncs dogfood `.claude/` from `profiles/claude-code/`.
 - `aid-researcher` (sonnet), `aid-architect` (opus), `aid-reviewer` (sonnet) are available with pinned models.
 - REVIEW reuses `aid-discover`'s `state-review.md` / `state-fix.md` machinery (f005), as today.
-- **D1 resolved:** two human gates (CONFIRM for scope, APPROVAL for edits) — owner may collapse to one later (SPEC §9 D1).
+- **D1 resolved:** two human gates (CONFIRM for scope, APPROVAL for edits) — owner may collapse to one later (SPEC § Design decisions (resolved)).
 
 ## 9. Acceptance Criteria
 
@@ -99,6 +102,8 @@ is absent from the flow; those agents appear only as authors in APPLY.
 - **AC-6** A new file is created only after appearing as `new-file` kind at CONFIRM (HL-6).
 - **AC-7** f005 quality gate, human-commit invariant, and the FR-33/34 boundary remain intact; generated copies stay byte/path-parity clean.
 - **AC-8** An item ANALYZE cannot ground as CONFIRMED-from-instruction (a LIKELY/UNCERTAIN inference) is surfaced as a CONFIRM question, never applied silently (HL-3).
+- **AC-9** Content present in the session conversation but absent from the instruction and unsupported by KB/code evidence has no valid `Traces-to` and never enters the Scope Plan; ANALYZE/SCOPE run in clean contexts that never receive the session transcript (HL-8).
+- **AC-10** The skill creates and enters its own worktree based on `master` before any analysis or edit; all run-state, edits, branch, and commits live in that worktree, isolated from the caller's tree/branch (FR-11).
 
 ## 10. Priority
 

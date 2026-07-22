@@ -8,7 +8,7 @@
 ## Deliverables
 
 - **Delivery:** delivery-001 -- aid-update-kb Scope-Fidelity Redesign
-- **What it delivers:** `/aid-update-kb` that analyzes and confirms scope with the user before any edit and never changes more than the instruction requests (HL-1..HL-7).
+- **What it delivers:** `/aid-update-kb` that self-isolates in its own worktree, analyzes and confirms scope with the user before any edit, and never changes more than the instruction requests (HL-1..HL-8).
 - **Features:** feature-001-update-kb-intent-alignment   (the single feature; no `features/` folder)
 - **Depends on:** -- (none -- single delivery)
 - **Priority:** Must
