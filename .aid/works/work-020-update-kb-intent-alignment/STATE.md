@@ -120,6 +120,8 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | task-002 EXECUTE → In Review | -- | aid-developer implemented (commit 37be7547): guardrails across state-apply/review/approval/done — disk-derived scope-diff guard, hunk-level traceability, re-scope revert, bounded FIX/closure, state-done branch behavior, Change Plan→Scope Plan |
 | 2026-07-22 | task-002 2 HIGH fixed on-spot → Done | -- | quick-check found 2 HIGH (SKILL.md REVIEW-summary drift vs state-review.md); aid-developer reconciled SKILL.md (commit e62ce624): disk-derived {{ARTIFACTS}} + 4-outcome routing; verified by orchestrator grep |
 | 2026-07-22 | task-003 → Done | -- | aid-developer re-emitted canonical → all 5 profiles + resynced dogfood .claude/ (run_generator.py exit 0; deterministic VERIFY PASS; commit a2b09918). Mechanical CONFIGURE task verified by generator VERIFY + orchestrator spot-check (state-scope+state-confirm present 2/2 in every profile + dogfood; diff confined to aid-update-kb + manifests) — no separate reviewer quick-check needed for a deterministic re-emit |
+| 2026-07-22 | task-004 EXECUTE → Done | -- | aid-developer added tests/canonical/test-update-kb-scope-fidelity.sh (92 assertions, all pass; commit 07119e3e); aid-reviewer quick-check: 0 CRITICAL/0 HIGH — assertions non-vacuous, AC-1..AC-10 covered, no hang risk |
+| 2026-07-22 | All 4 tasks Done | -- | delivery-001 tasks complete (001/002/003/004). Next: per-delivery A+ gate (full reviewer + FIX loop) |
 
 ---
 
@@ -144,7 +146,7 @@ don't act") are the load-bearing fixes.
 | task-001 | Done | quick-check → HIGH fixed on-spot | ~21m | HIGH (resume-by-branch) fixed commit 90940908; delivery-001-issues row Fixed | Analyst + Confirm front-end |
 | task-002 | Done | quick-check → 2 HIGH fixed on-spot | ~16m | 2 HIGH (SKILL.md REVIEW-summary drift vs state-review.md) fixed commit e62ce624 | Scope-fidelity guardrails |
 | task-003 | Done | -- | -- | -- | Re-emit to profiles + resync dogfood |
-| task-004 | In Review | -- | -- | -- | Hard-limit invariant tests |
+| task-004 | Done | -- | -- | -- | Hard-limit invariant tests |
 
 ---
 
@@ -166,6 +168,10 @@ don't act") are the load-bearing fixes.
 - **Findings:**
   - [HIGH] SKILL.md "REVIEW reuse (f005)" blockquote scoped `{{ARTIFACTS}}` from APPLY's self-reported `Edited Docs` — contradicted state-review.md's disk-derived scope-diff — **Fixed on-spot (commit e62ce624)**: SKILL.md now says disk-derived, NEVER self-reported.
   - [HIGH] SKILL.md Dispatch table + FIX-loop blockquote routed scope-diff failures to FIX — contradicted state-review.md's 4-outcome design — **Fixed on-spot (commit e62ce624)**: now incomplete→APPLY / out-of-scope→PAUSE→CONFIRM / grade-teach-act-TRACE→FIX / READY→APPROVAL.
+
+### task-004
+- **Reviewer Tier:** Small
+- **Findings:** none — 92/92 assertions pass (commit 07119e3e); quick-check verified assertions are non-vacuous (mechanical bash-block extraction, verbatim canonical strings) and cover AC-1..AC-10 + DONE-branch + `Change Plan` sweep + settings-floor + 7-state structural + four-mandate.
 
 ---
 
