@@ -1,33 +1,129 @@
 # State: REVIEW
 
-REVIEW grades the changed KB docs through f005's four-mandate review panel
-(Correctness / Anatomy-incl-altitude / Teach-back / Act-back). It is selected when
-the run-state file records `**State:** REVIEW` or `**State:** FIX`.
+REVIEW first runs two mechanical, `aid-update-kb`-specific checks -- a
+**scope-diff guard** (disk-derived) and a **hunk-level traceability
+mandate** -- and only then grades the changed KB docs through f005's
+four-mandate review panel (Correctness / Anatomy-incl-altitude / Teach-back /
+Act-back). It is selected when the run-state file records `**State:** REVIEW`
+or `**State:** FIX`.
 
 **Cross-delivery reuse (task-014 / f005 seam).** This state does NOT redefine
-the review gate. It invokes `aid-discover`'s REVIEW state machine
+the review gate. Once the scope-diff guard (Step 0) passes, it invokes
+`aid-discover`'s REVIEW state machine
 (`canonical/skills/aid-discover/references/state-review.md`) with the f005
 injectable parameters set to the `aid-update-kb` scope:
 
 - `{{SCOPE}}` = `update-kb`
-- `{{ARTIFACTS}}` = the changed-doc set (read from `**Edited Docs:**` in the
-  run-state file)
-- `{{CONTEXT}}` = "aid-update-kb targeted KB update review"
+- `{{ARTIFACTS}}` = the **disk-derived** edited-doc set from Step 0 below --
+  NEVER APPLY's self-reported `**Edited Docs:**`
+- `{{CONTEXT}}` = "aid-update-kb targeted KB update review" plus the
+  hunk-level traceability mandate instructions (Step 0c)
 
 All ledger paths, mandate dispatch instructions, merge logic, grade.sh
 invocation, teach-back gate derivation, act-back gate derivation, and scratch
 ledger cleanup are defined in f005's `state-review.md` and followed WITHOUT
-modification. This section supplies only the `aid-update-kb`-specific wiring.
+modification (AC-7 -- the f005 panel itself is unchanged). This section
+supplies only the `aid-update-kb`-specific wiring, plus the two
+update-kb-specific checks that gate entry into it.
 
 Print the `[State: REVIEW]` banner from `SKILL.md § State Detection`.
 
 ---
 
-## Step 0: Read the changed-doc set
+## Step 0: Scope-diff guard (mechanical, runs FIRST, HL-7/AC-4)
 
-Read `**Edited Docs:**` from `<STATE_FILE>` to get the list of docs that APPLY
-edited. This is the `{{ARTIFACTS}}` value passed to f005's panel. If
-`**Edited Docs:**` is absent, read it from `**Change Plan:**` as the fallback.
+**This guard is authoritative and MUST run before the f005 panel is even
+dispatched.** It never trusts APPLY's self-report; it derives the actually-
+edited doc set from disk.
+
+### 0a. Derive the edited-doc set from disk
+
+Read `**Pre-APPLY baseline:**` and `**Confirmed Scope:**` from `<STATE_FILE>`.
+
+```bash
+BASELINE=$(grep -m1 "^\*\*Pre-APPLY baseline:\*\*" "$STATE_FILE" | sed 's/^\*\*Pre-APPLY baseline:\*\* *//')
+if [ -z "$BASELINE" ] || [ "$BASELINE" = "clean" ]; then
+  DISK_CHANGED=$(git status --porcelain -- .aid/knowledge/ | awk '{print $2}')
+else
+  DISK_CHANGED=$(git diff --name-only "$BASELINE" -- .aid/knowledge/)
+fi
+```
+
+`DISK_CHANGED` is ground truth -- the set of `.aid/knowledge/` paths that
+actually differ on disk right now. This is compared against
+`**Confirmed Scope:**` (the frozen doc list CONFIRM wrote), **never** against
+APPLY's `**Edited Docs:**` self-report (that field is read only for
+descriptive context in Step 0c, below -- it is not the guard's input).
+
+### 0b. Compare against Confirmed Scope
+
+- **A disk-changed doc NOT in Confirmed Scope** -> **HARD FAIL**,
+  unconditionally (never gradable away by grade/teach-back/act-back -- this
+  is a live HL-7 scope violation, not a quality defect). Whether the edit is
+  an accidental slip or a genuinely-needed addition is a judgment call this
+  mechanical guard cannot make on its own -- it never silently reverts and
+  never silently lets it through. Print:
+
+  ```
+  [REVIEW] Scope-diff guard: HARD FAIL -- <doc> was edited but is not in
+  Confirmed Scope. Escalating to the user (Step 4(b) below) -- this guard
+  never decides for itself whether an out-of-scope edit is accidental or
+  genuinely needed.
+  ```
+
+- **A Confirmed Scope doc NOT changed on disk** -> not an automatic hard
+  fail; check that Scope Plan row's `Change-type`:
+  - `No change needed` -- expected; that item PASSES.
+  - Any other change-type -- the confirmed edit was never made. Flag as an
+    incomplete APPLY -- unambiguous, no scope judgment needed (Step 4(a)
+    below): completing an already-confirmed item stays inside scope, it is
+    not an expansion.
+
+- **Disk-changed set == Confirmed Scope** (after the `No change needed`
+  carve-out above) -> scope-diff guard **PASSES**.
+
+Print:
+
+```
+[REVIEW] Scope-diff guard: {PASS|HARD FAIL}. Disk-derived edited set:
+{list}. Confirmed Scope: {list}.
+```
+
+If the guard is not a clean PASS, do **NOT** proceed to Step 0c/Step 1 this
+pass -- go directly to Step 4(a) (incomplete-APPLY) or Step 4(b) (HARD FAIL)
+below; the f005 panel is never dispatched over a scope-diff violation that
+hasn't cleared first (there would be no ledger to fix it against either --
+see Step 4(a)/4(b)).
+
+---
+
+## Step 0c: Traceability mandate (hunk-level, AC-4)
+
+Beyond the file-level scope-diff guard above, every individual edit -- down
+to the hunk -- must map to a specific confirmed Scope Plan item. The
+file-level guard cannot see over-editing *within* an in-scope doc (e.g. a
+whole new section grafted onto a doc whose only confirmed item was one small
+fact correction). This is **not** a fifth f005 dispatch -- it is folded into
+the `{{CONTEXT}}` handed to the existing four-mandate panel in Step 1, so the
+already-dispatched reviewers check it as part of their normal pass:
+
+```
+Traceability mandate (aid-update-kb specific, in addition to your normal
+mandate): for each doc in {{ARTIFACTS}}, diff it against the Pre-APPLY
+baseline (`git diff <baseline> -- <doc>`) hunk by hunk. Every hunk must
+correspond to exactly one Scope Plan row (matched by doc + change-type/
+description -- read **Scope Plan:** from the run-state file for the row
+descriptions). A hunk with no corresponding Scope Plan row is an
+out-of-scope edit inside an otherwise in-scope doc. Flag it:
+[TRACE-1] Untraceable hunk -- <file>:<hunk> has no corresponding Scope Plan
+item (nearest item: <#>, if any)
+```
+
+`[TRACE-1]` findings are graded via the normal `grade.sh` mechanism (Step 2
+below) alongside Correctness / Anatomy / Teach-back / Act-back findings --
+they are not a separate pass/fail gate on their own, but they count against
+the merged grade, so an over-edited hunk cannot pass review purely because
+the four base mandates are individually satisfied.
 
 ---
 
@@ -38,12 +134,13 @@ substituting:
 
 ```
 {{SCOPE}}     = update-kb
-{{ARTIFACTS}} = <list of .aid/knowledge/<doc>.md paths from the edited-doc set>
+{{ARTIFACTS}} = <DISK_CHANGED from Step 0a -- the disk-derived .aid/knowledge/<doc>.md paths>
 {{CONTEXT}}   = "aid-update-kb targeted KB update: review the changed docs for
                  accuracy, anatomy/coverage (incl. altitude: hollow vs
                  transcription), teach-back, and act-back. The docs were edited
                  by aid-update-kb APPLY from this prompt: <prompt from
-                 **Prompt:** in run-state>"
+                 **Prompt:** in run-state>" + the Step 0c traceability
+                 mandate text (verbatim)
 ```
 
 The four mandate sub-agents (or 3 dispatches, per `panel:` setting) run against the
@@ -99,10 +196,13 @@ bash canonical/aid/scripts/config/read-setting.sh \
   --skill update-kb --key minimum_grade --default A
 ```
 
-Exit rule (identical to f005):
+Exit rule (f005's rule, plus the scope-diff verdict -- already guaranteed
+PASS at this point, since Step 0 would have routed away before Step 1 if it
+were not):
 
 ```
-READY iff grade(update-kb.md) >= minimum_grade
+READY iff scope_diff_verdict == PASS
+     AND grade(update-kb.md) >= minimum_grade
      AND teach_back_verdict == PASS
      AND act_back_verdict == PASS
 ```
@@ -110,7 +210,7 @@ READY iff grade(update-kb.md) >= minimum_grade
 Print:
 
 ```
-Grade: {grade} | Teach-back: {PASS|FAIL} | Act-back: {PASS|FAIL} -> {Ready|NOT Ready}
+Scope-diff: PASS | Grade: {grade} | Teach-back: {PASS|FAIL} | Act-back: {PASS|FAIL} -> {Ready|NOT Ready}
 [Review 3/3] Grade: {grade}. Minimum: {min}.
 ```
 
@@ -118,10 +218,108 @@ Grade: {grade} | Teach-back: {PASS|FAIL} | Act-back: {PASS|FAIL} -> {Ready|NOT R
 
 ## Step 4: Advance
 
-**If READY:** Update `<STATE_FILE>`:
+Four distinct outcomes reach this step -- two are a pre-panel block straight
+out of Step 0 (4a/4b, no ledger exists yet), two are the f005 panel's own
+result once Step 0 has fully passed (4c/4d).
+
+### 4(a) Incomplete APPLY (Step 0b's second bullet) -- loop back to APPLY, no escalation
+
+Unambiguous: a doc already in `Confirmed Scope` simply has not been edited
+yet (and its `Change-type` is not `No change needed`). No scope judgment is
+needed -- APPLY just has to finish already-confirmed work. There is no
+ledger for this (the panel never ran this pass), so this does **not** go
+through `aid-discover`'s FIX-loop machinery -- it is a direct loop back to
+APPLY:
+
+Update `<STATE_FILE>`:
+
+```
+**State:** APPLY
+**Scope-diff:** incomplete-APPLY -- <doc> confirmed but unedited
+```
+
+Print: `[REVIEW] Scope-diff guard: incomplete APPLY -- <doc> is confirmed but was never edited. Returning to APPLY.`
+
+**Advance:** CHAIN -> APPLY (continue inline; `state-apply.md § Step 1` picks
+the doc back up -- it is still in `Confirmed Scope`).
+
+### 4(b) Out-of-scope edit found on disk (Step 0b's first bullet) -- user escalation, never auto-decided (HL-7)
+
+Grade-chasing may not expand scope, and this mechanical guard cannot itself
+tell an accidental edit from a genuinely-needed one -- so it never silently
+reverts and never silently lets a fix loop absorb it either. Append a Q&A
+entry to `.aid/knowledge/STATE.md ## Q&A (Pending)`:
+
+```
+### Q{N}
+- **Category:** Update-KB / Scope Expansion Needed
+- **Impact:** High
+- **Status:** Pending
+- **Context:** /aid-update-kb REVIEW found <doc> edited on disk but outside
+  Confirmed Scope. This may be an accidental out-of-scope edit, or a
+  genuinely needed addition the instruction implies but SCOPE/CONFIRM did
+  not originally capture.
+- **Suggested:** If <doc> should be in scope, re-run /aid-update-kb to
+  re-enter CONFIRM/SCOPE with the expanded need. If it should NOT be in
+  scope, simply re-run /aid-update-kb without expanding it -- the next
+  APPLY pass reverts the out-of-scope edit automatically
+  (`state-apply.md § Step 0`), no manual `git restore` required.
+```
+
+Update the run-state file:
+
+```
+**State:** CONFIRM
+**Scope-diff:** HARD FAIL -- escalated Q{N}
+```
+
+Print:
+
+```
+[REVIEW] Scope-diff guard: HARD FAIL -- <doc> is outside Confirmed Scope.
+Escalated as Q{N} in .aid/knowledge/STATE.md -- grade-chasing may not
+expand scope (HL-7). Run /aid-update-kb again to resolve at CONFIRM.
+```
+
+**Advance:** PAUSE-FOR-USER-ACTION -- return to CONFIRM on the next
+invocation. CONFIRM (`state-confirm.md § Step 2`) presents its ordinary
+`[1]/[2]/[3]` prompt; Q{N} is the open item the user resolves through it --
+the two answers are NOT symmetric, and only one of them is a plain `[1]`:
+
+- **Decline** -- answer `[1] Confirm`. This re-freezes the existing
+  `Confirmed Scope` verbatim, unchanged -- `<doc>` stays out of scope.
+  `state-apply.md § Step 0`'s **disk-derived** re-scope revert then strips
+  the out-of-scope edit automatically the next time APPLY runs, whether or
+  not `<doc>` was ever present in a prior `**Edited Docs:**` self-report (it
+  was not, here -- see `state-apply.md § Step 0` for why a self-report-keyed
+  revert cannot do this, and why the revert is disk-derived instead).
+- **Accept** -- answer `[2] Adjust: <the reason to include <doc>>`, not
+  `[1]`. This is a genuine re-plan (the Scope Plan gains a row it did not
+  have before), so it routes through CONFIRM's own existing `[2] Adjust`
+  mechanism (`state-confirm.md § Step 3 [2]`) to `**State:** SCOPE` first --
+  SCOPE re-dispatches `aid-architect` to add `<doc>` as a new Scope Plan item
+  (`kind: in-scope` or `closure`, per Q{N}'s context), then auto-chains back
+  to CONFIRM (`state-scope.md § Step 5`) to re-freeze the now-expanded
+  `Confirmed Scope`. This matches the other two re-plan paths in this
+  redesign -- CONFIRM's own `[2] Adjust` and APPROVAL's `[2]` -- both of
+  which also go through SCOPE, never straight to a CONFIRM re-freeze. (A
+  plain `[1] Confirm` can only re-freeze the Scope Plan it already has
+  verbatim -- it has no mechanism to append `<doc>` as a new row, which is
+  why "accept" is answered as `[2] Adjust`, not `[1]`.) The recorded
+  `**Adjustments:**` field this `[2] Adjust` write produces is not just a
+  state-transition marker -- SCOPE's dispatch (`state-scope.md § Step 1`)
+  actually reads it (plus its `Q{N}` entry, naming `<doc>`) and folds it into
+  the Scope Plan (HL-8's authorized-input carve-out); this is the real
+  mechanism `<doc>` gets added by, not merely a re-run of the original SCOPE
+  pass with the same inputs.
+
+### 4(c) READY (scope-diff PASS and grade/teach-back/act-back all clear) -> APPROVAL
+
+Update `<STATE_FILE>`:
 
 ```
 **State:** APPROVAL
+**Scope-diff:** PASS
 **Review Grade:** <grade>
 **Review Teach-back:** PASS
 **Review Act-back:** PASS
@@ -132,21 +330,26 @@ Print: `[State: REVIEW] complete. Advancing to APPROVAL.`
 
 **Advance:** CHAIN -> APPROVAL (continue inline).
 
----
+### 4(d) NOT READY (grade / teach-back / act-back / `[TRACE-1]` findings) -- self-contained FIX loop, bounded to Confirmed Scope (HL-7)
 
-**If NOT READY:** Route below-gate findings to the FIX loop.
-
-The FIX loop reuses `aid-discover`'s existing `state-fix.md` over `update-kb.md`
-(NO new loop is invented). Invoke
-`canonical/skills/aid-discover/references/state-fix.md` with the ledger path
-set to `.aid/.temp/review-pending/update-kb.md`. After FIX completes its edits
-and regenerates, return to Step 1 of this state (re-dispatch the panel).
-Repeat until READY.
+The scope-diff guard already passed to reach the panel at all -- these
+findings are quality/traceability defects within already-in-scope docs, not
+a scope-expansion question. **This FIX loop is self-contained in Step 5
+below -- it does NOT delegate to `aid-discover`'s `state-fix.md`.**
+`state-fix.md` has no ledger-path parameter of any kind (its Step 0
+unconditionally hardcodes `Read .aid/.temp/review-pending/discovery.md`,
+with no `{{SCOPE}}`/`{{LEDGER}}` token anywhere in the file); invoking it
+here would either silently no-op (if no stray `discovery.md` happens to
+exist) or apply fixes against an unrelated aid-discover ledger (if one does)
+-- neither reads `update-kb.md`. Step 5 is wired directly to
+`.aid/.temp/review-pending/update-kb.md` instead, so it can never drift onto
+the wrong ledger.
 
 Update `<STATE_FILE>`:
 
 ```
 **State:** FIX
+**Scope-diff:** PASS
 **Review Grade:** <grade>
 **Review Teach-back:** <PASS|FAIL>
 **Review Act-back:** <PASS|FAIL>
@@ -154,5 +357,57 @@ Update `<STATE_FILE>`:
 
 Print: `[State: REVIEW] below gate -- entering FIX loop.`
 
-**Advance:** CHAIN -> FIX (aid-discover state-fix.md over update-kb.md), then
-re-enter REVIEW (Step 1) on return.
+**Advance:** CHAIN -> FIX (Step 5, below -- inline in this same document),
+then re-enter REVIEW (Step 0) on return.
+
+---
+
+## Step 5: FIX (self-contained, bounded to Confirmed Scope, HL-7)
+
+Selected when `<STATE_FILE>` records `**State:** FIX`. This loop is specific
+to `aid-update-kb` -- it reads and fixes against `update-kb.md` directly,
+rather than delegating to `aid-discover`'s generic `state-fix.md` (see 4(d)
+above for why that doc cannot be redirected to this ledger).
+
+### 5a. Load the below-gate findings from the ledger
+
+Read `.aid/.temp/review-pending/update-kb.md`. Filter rows where `Status` ∈
+{`Pending`, `Recurred`} -- the `[TRACE-1]` traceability findings plus any
+Correctness / Anatomy / Teach-back / Act-back findings the Step 1/2 panel
+raised. **Do NOT modify the ledger during FIX** -- the fixer addresses
+issues; the next REVIEW pass's panel confirms resolution and updates
+`Status` (the same reviewer-ledger separation `aid-discover`'s FIX enforces).
+
+If the file does not exist, or has no `Pending`/`Recurred` rows, there is
+nothing to fix -- skip straight to 5c (return to Step 0; the panel will
+confirm READY on re-entry).
+
+### 5b. Apply fixes, bounded to Confirmed Scope
+
+**FIX-loop constraint (HL-7).** Every fix edit MUST stay within
+`**Confirmed Scope:**` -- it may correct/complete an already-confirmed doc,
+or trim a `[TRACE-1]`-flagged hunk back to what its Scope Plan item actually
+describes. It may NEVER add a new doc, or a new hunk of substance, with no
+confirmed Scope Plan item behind it -- that is scope expansion, not a fix,
+and has no legitimate path through this loop (a fix that tries it
+re-triggers Step 0's scope-diff HARD FAIL on the next pass, which routes to
+4(b) above, not back through FIX again).
+
+For each Pending/Recurred row, apply the fix to the row's `Doc` using the
+`Edit` tool -- a targeted, in-place correction, not a rewrite (the same
+"not a rewrite" discipline `state-apply.md § Step 2b` uses). A `[TRACE-1]`
+finding is fixed by trimming the untraceable hunk back to (or removing it
+down to) what its nearest Scope Plan item's `Description` actually
+describes -- never by retroactively inventing a Scope Plan item to justify
+keeping it.
+
+### 5c. Return to REVIEW Step 0
+
+After applying all fixes for this pass (or immediately, if 5a found nothing
+to fix), return to Step 0 of this state -- re-run the scope-diff guard
+(0a/0b) before re-dispatching the panel (Step 1). This closes the loop: FIX
+-> REVIEW Step 0 -> (guard PASS) -> panel -> 4(c) READY, or 4(d) FIX again.
+
+Print: `[FIX] {N} finding(s) addressed, bounded to Confirmed Scope. Returning to REVIEW Step 0.`
+
+**Advance:** CHAIN -> REVIEW (Step 0, continue inline).
