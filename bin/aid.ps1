@@ -2114,7 +2114,38 @@ function script:Invoke-AidProjectsRemove {
 # the Test-AidIsProjectDir check (order step b) precedes this check (step c).
 Set-Variable -Name AidScanPruneDirs -Option Constant -Scope Script -Value @(
     'node_modules', '.git', '.hg', '.svn', 'obj', 'bin', 'logs', 'target', 'dist', 'build',
-    '.venv', 'venv', '__pycache__', '.gradle', '.m2', '.cargo', '.npm', '.cache', 'vendor', 'Pods'
+    '.venv', 'venv', '__pycache__', '.gradle', '.m2', '.cargo', '.npm', '.cache', 'vendor', 'Pods',
+    # VCS
+    '.bzr', '_darcs', 'CVS',
+    # Package caches
+    '.nuget', '.pnpm-store', '.yarn', 'bower_components', 'npm-cache',
+    '.mypy_cache', '.pytest_cache', '.tox', '.eggs', '.ruff_cache', '.ipynb_checkpoints',
+    '.ivy2', '.bundle',
+    # Build outputs
+    '.next', '.nuxt', '.output', '.svelte-kit', '.parcel-cache', '.turbo', '.angular',
+    'coverage', '.nyc_output', 'htmlcov',
+    # Editors
+    '.vscode', '.vs', '.idea', '.zed',
+    # AI tools
+    '.cursor', '.claude', '.codex', '.windsurf', '.antigravity',
+    # Eclipse
+    '.metadata', '.settings', '.p2', '.eclipse',
+    # Version managers
+    '.pyenv', '.rbenv', '.nvm', '.rustup', '.dotnet', '.sdkman', '.jenv', '.asdf', '.volta',
+    'mise', '.goenv', '.phpenv',
+    # Generic cache
+    'cache', 'caches', 'CacheStorage',
+    # Temp
+    'tmp', 'temp', '.tmp', '.temp',
+    # OS profile roots (promoted to Tier A)
+    'AppData', 'Library',
+    # macOS volume junk
+    '.Trash', '.Trashes', '.Spotlight-V100', '.fseventsd', '.DocumentRevisions-V100',
+    # Browser/webview caches
+    'User Data', 'EBWebView', 'WebView2Cache', 'GPUCache', 'Code Cache', 'Service Worker',
+    'IndexedDB', 'DawnCache', 'Crashpad', 'GrShaderCache', 'ShaderCache', 'D3DSCache',
+    # Also
+    'log'
 )
 
 # NFR-3: OS/system directories, applied ONLY under --all and ONLY as an
@@ -2122,7 +2153,12 @@ Set-Variable -Name AidScanPruneDirs -Option Constant -Scope Script -Value @(
 # --path, and never deeper than one level below an --all scan root).
 Set-Variable -Name AidScanSystemDirs -Option Constant -Scope Script -Value @(
     'proc', 'sys', 'dev', 'run',
-    'Windows', 'Program Files', 'Program Files (x86)', '$Recycle.Bin', 'System Volume Information'
+    'Windows', 'Program Files', 'Program Files (x86)', '$Recycle.Bin', 'System Volume Information',
+    # Windows
+    'ProgramData', '$WinREAgent', '$WINDOWS.~BT', '$WINDOWS.~WS', 'Recovery', 'PerfLogs',
+    'Windows.old', 'MSOCache', 'Temporary Internet Files', 'Recycled', 'RECYCLER',
+    # Linux
+    'Trash'
 )
 
 # NFR-4: hard recursion-depth ceiling, DISTINCT from and INDEPENDENT of the
@@ -2139,6 +2175,129 @@ function script:Test-AidScanNameInSet {
         if ([string]::Equals($Name, $item, [System.StringComparison]::OrdinalIgnoreCase)) { return $true }
     }
     return $false
+}
+
+# Get-AidScanConfigPath
+# Resolve the user-level scan-config.yml primary + fallback tier paths
+# (FR-8), mirroring Get-RegistryUnion's primary/fallback + per-user-collapse
+# pattern (~:1596-1626): primary = $script:_AidStateHome\scan-config.yml
+# (honors the AID_HOME override via the startup scope derivation); fallback =
+# $HOME\.aid\scan-config.yml. PerUser is $true when the two normalize to the
+# same path (single-tier install -- no double-read).
+# Mirror of bash's $_AID_SCAN_CONFIG constant + the primary/fallback pattern
+# reused from _registry_read_union.
+function script:Get-AidScanConfigPath {
+    $userDotAid = Join-Path $HOME '.aid'
+    $primary    = Join-Path $script:_AidStateHome 'scan-config.yml'
+    $fallback   = Join-Path $userDotAid 'scan-config.yml'
+    $primaryNorm  = [System.IO.Path]::GetFullPath($script:_AidStateHome)
+    $fallbackNorm = [System.IO.Path]::GetFullPath($userDotAid)
+    [PSCustomObject]@{
+        Primary  = $primary
+        Fallback = $fallback
+        PerUser  = ($primaryNorm -eq $fallbackNorm)
+    }
+}
+
+# Get-AidScanPruneDirFromConfig -ConfigPath <path>
+# Single-file line-scan of the `prune_dirs:` block list out of ONE
+# scan-config.yml, reusing the exact Get-RegistryRepos list-item regex
+# ('^\s*-\s+(.+\S)\s*$', ~:1579) -- but scoped to the prune_dirs: block only:
+# entered on the bare "prune_dirs:" line, left at the next non-indented line,
+# so a sibling top-level key never leaks into the list scan. Only the
+# leading "- " marker and trailing whitespace are stripped -- internal spaces
+# survive, so "Code Cache" reads back intact. Returns [string[]], empty when
+# the file is absent or has no prune_dirs: key (FR-5/FR-6/NFR-5).
+# Mirror of bash _aid_scan_config_prune_dirs.
+function script:Get-AidScanPruneDirFromConfig {
+    param([string]$ConfigPath)
+    if (-not (Test-Path $ConfigPath -PathType Leaf)) { return @() }
+    $results = [System.Collections.Generic.List[string]]::new()
+    $inBlock = $false
+    foreach ($line in (Get-Content -LiteralPath $ConfigPath -Encoding utf8 -ErrorAction SilentlyContinue)) {
+        if (-not $inBlock) {
+            if ($line -match '^prune_dirs:\s*$') { $inBlock = $true }
+            continue
+        }
+        if ($line -match '^\S') { $inBlock = $false; continue }
+        if ($line -match '^\s*-\s+(.+\S)\s*$') {
+            $results.Add($Matches[1])
+        }
+    }
+    return $results.ToArray()
+}
+
+# Get-AidScanMergedPruneDirs
+# Effective Tier-A prune set (FR-4): the case-insensitive deduped union of
+# $script:AidScanPruneDirs and the user-level scan-config.yml prune_dirs:
+# entries (primary tier, plus the fallback tier too when Get-AidScanConfigPath
+# reports the two paths differ -- FR-8). Extend-only -- a config entry can
+# never remove a built-in default; a repeated built-in is deduped harmlessly
+# (AC-8). Built-ins are emitted first (their documented order), then any
+# non-duplicate config entries in read order. Returns [string[]]; called ONCE
+# by Invoke-AidProjectsScan (NFR-1) -- never re-read per directory.
+# Mirror of bash _aid_scan_merge_prune_dirs.
+function script:Get-AidScanMergedPruneDirs {
+    $cfgPaths = script:Get-AidScanConfigPath
+    $configEntries = [System.Collections.Generic.List[string]]::new()
+    # @(...) forces array context (an empty-array `return` from a PS function
+    # collapses to $null when captured bare), then [string[]] gives AddRange()
+    # the concrete element type it needs (a bare object[] does not convert).
+    $configEntries.AddRange([string[]]@(script:Get-AidScanPruneDirFromConfig -ConfigPath $cfgPaths.Primary))
+    if (-not $cfgPaths.PerUser) {
+        $configEntries.AddRange([string[]]@(script:Get-AidScanPruneDirFromConfig -ConfigPath $cfgPaths.Fallback))
+    }
+
+    $seen   = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+    $merged = [System.Collections.Generic.List[string]]::new()
+    foreach ($item in $script:AidScanPruneDirs) {
+        if ($seen.Add($item)) { $merged.Add($item) }
+    }
+    foreach ($item in $configEntries) {
+        if ([string]::IsNullOrEmpty($item)) { continue }
+        if ($seen.Add($item)) { $merged.Add($item) }
+    }
+    return $merged.ToArray()
+}
+
+# Set-AidScanConfigSeed
+# First-run seed (FR-3/NFR-3): if the primary scan-config.yml is absent,
+# write it with a header + `schema: 1` + a `prune_dirs:` block of the
+# built-in expanded Tier-A defaults, via the SAME Move-Item -Force atomic-
+# write idiom Registry-Register uses (~:2620-2643: write to a temp file in
+# the same directory, then Move-Item -Force). Best-effort: a mkdir/write/move
+# failure prints one WARN to stderr and returns -- it never fails the scan.
+# Idempotent -- never overwrites an existing file, so a user's edits always
+# survive. The caller MUST NOT invoke this under -DryRun (a dry-run scan
+# makes no writes at all).
+# Mirror of bash _aid_scan_seed_config.
+function script:Set-AidScanConfigSeed {
+    $cfgPaths = script:Get-AidScanConfigPath
+    $primary  = $cfgPaths.Primary
+    if (Test-Path -LiteralPath $primary -PathType Leaf) { return }
+    $dir = Split-Path $primary -Parent
+    if (-not (Test-Path $dir -PathType Container)) {
+        try { New-Item -ItemType Directory -Path $dir -Force -ErrorAction Stop | Out-Null } catch {
+            [Console]::Error.WriteLine("WARN: aid: could not create $dir for scan-config.yml: mkdir failed")
+            return
+        }
+    }
+    $tmp = Join-Path $dir ("scan-config.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    try {
+        $lns = [System.Collections.Generic.List[string]]::new()
+        $lns.Add('# scan-config.yml -- user-level directory-prune list for "aid projects scan".')
+        $lns.Add('# Names here are ADDED to the built-in exclusion set (case-insensitive, EXACT')
+        $lns.Add('# basename, matched at any depth). Extend-only: a built-in default cannot be')
+        $lns.Add('# removed here. One "- <name>" per line. Names with spaces need no quotes.')
+        $lns.Add('schema: 1')
+        $lns.Add('prune_dirs:')
+        foreach ($n in $script:AidScanPruneDirs) { $lns.Add("  - $n") }
+        [System.IO.File]::WriteAllText($tmp, (($lns.ToArray()) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
+        Move-Item -LiteralPath $tmp -Destination $primary -Force -ErrorAction Stop
+    } catch {
+        Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+        [Console]::Error.WriteLine("WARN: aid: could not seed the scan exclusions config ($primary): write failed")
+    }
 }
 
 # Get-AidScanRoot -All <bool> -ScanPath <string> -IncludeNetwork <bool> -IncludeRemovable <bool>
@@ -2230,7 +2389,8 @@ function script:Invoke-AidScanWalkNode {
         [long]$UserDepth,
         [System.Collections.Generic.List[string]]$Candidates,
         [string]$StateHomeCanon,
-        [string]$HomeAidCanon
+        [string]$HomeAidCanon,
+        [string[]]$PruneDirs
     )
 
     $script:_AidScanDirCount++
@@ -2275,7 +2435,11 @@ function script:Invoke-AidScanWalkNode {
     if ([string]::IsNullOrEmpty($base)) { $base = $Dir }   # a filesystem root itself, e.g. "C:\" or "/"
 
     # (c) Heavy/cache/build basename match -- any depth, all modes (NFR-2).
-    if (script:Test-AidScanNameInSet -Name $base -Set $script:AidScanPruneDirs) {
+    # Tests the run-scoped MERGED set (built-in $script:AidScanPruneDirs
+    # unioned with any user-level scan-config.yml prune_dirs: entries, FR-4)
+    # computed ONCE by Invoke-AidProjectsScan and threaded down as -PruneDirs
+    # -- NOT the built-in constant directly.
+    if (script:Test-AidScanNameInSet -Name $base -Set $PruneDirs) {
         return
     }
 
@@ -2300,11 +2464,11 @@ function script:Invoke-AidScanWalkNode {
         try { $attr = [System.IO.File]::GetAttributes($child) } catch { continue }
         if (($attr -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { continue }
         script:Invoke-AidScanWalkNode -Dir $child -Depth $nextDepth -IsAll $IsAll -UserDepth $UserDepth `
-            -Candidates $Candidates -StateHomeCanon $StateHomeCanon -HomeAidCanon $HomeAidCanon
+            -Candidates $Candidates -StateHomeCanon $StateHomeCanon -HomeAidCanon $HomeAidCanon -PruneDirs $PruneDirs
     }
 }
 
-# Invoke-AidScanWalk -Root <root> -IsAll <bool> -UserDepth <long> -StateHomeCanon <string> -HomeAidCanon <string>
+# Invoke-AidScanWalk -Root <root> -IsAll <bool> -UserDepth <long> -StateHomeCanon <string> -HomeAidCanon <string> -PruneDirs <string[]>
 # Entry point: walks <Root> (depth 0) and returns an array of CANONICAL
 # discovered .aid/ project paths.
 # Mirror of bash _aid_scan_walk.
@@ -2314,11 +2478,12 @@ function script:Invoke-AidScanWalk {
         [bool]$IsAll,
         [long]$UserDepth,
         [string]$StateHomeCanon,
-        [string]$HomeAidCanon
+        [string]$HomeAidCanon,
+        [string[]]$PruneDirs
     )
     $candidates = [System.Collections.Generic.List[string]]::new()
     script:Invoke-AidScanWalkNode -Dir $Root -Depth 0 -IsAll $IsAll -UserDepth $UserDepth `
-        -Candidates $candidates -StateHomeCanon $StateHomeCanon -HomeAidCanon $HomeAidCanon
+        -Candidates $candidates -StateHomeCanon $StateHomeCanon -HomeAidCanon $HomeAidCanon -PruneDirs $PruneDirs
     return $candidates
 }
 
@@ -2372,6 +2537,16 @@ function script:Invoke-AidProjectsScan {
         if ($rp) { $regSeen[$rp] = $true }
     }
 
+    # FR-3/NFR-3: seed scan-config.yml with the built-in Tier-A defaults on
+    # the first real (non-dry-run) scan when it is absent -- best-effort,
+    # idempotent, and never invoked under -DryRun (a dry-run scan makes no
+    # writes at all). Then resolve the effective Tier-A set ONCE (FR-4/NFR-1):
+    # the case-insensitive deduped union of the built-in set and any
+    # scan-config.yml prune_dirs: entries; a missing/unreadable/prune_dirs-
+    # less config falls back to exactly the built-in set (FR-5).
+    if (-not $DryRun) { script:Set-AidScanConfigSeed }
+    $mergedPruneDirs = script:Get-AidScanMergedPruneDirs
+
     # FR-9: force the user tier before registering, unless the caller already
     # forced -Shared explicitly; never leave the auto-rule to choose.
     $tierOverride = if ($Shared) { '--shared' } else { '--local' }
@@ -2393,7 +2568,7 @@ function script:Invoke-AidProjectsScan {
     foreach ($root in $roots) {
         [Console]::Error.WriteLine("aid projects scan: scanning $root ...")
         $candidates = script:Invoke-AidScanWalk -Root $root -IsAll $All -UserDepth $userDepth `
-            -StateHomeCanon $scanStateHomeCanon -HomeAidCanon $scanHomeAidCanon
+            -StateHomeCanon $scanStateHomeCanon -HomeAidCanon $scanHomeAidCanon -PruneDirs $mergedPruneDirs
         foreach ($cand in $candidates) {
             if (-not $cand) { continue }
             # Dedupe within the run: the same real project reached more than
