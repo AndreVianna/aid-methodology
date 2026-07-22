@@ -305,7 +305,13 @@ the two answers are NOT symmetric, and only one of them is a plain `[1]`:
   which also go through SCOPE, never straight to a CONFIRM re-freeze. (A
   plain `[1] Confirm` can only re-freeze the Scope Plan it already has
   verbatim -- it has no mechanism to append `<doc>` as a new row, which is
-  why "accept" is answered as `[2] Adjust`, not `[1]`.)
+  why "accept" is answered as `[2] Adjust`, not `[1]`.) The recorded
+  `**Adjustments:**` field this `[2] Adjust` write produces is not just a
+  state-transition marker -- SCOPE's dispatch (`state-scope.md § Step 1`)
+  actually reads it (plus its `Q{N}` entry, naming `<doc>`) and folds it into
+  the Scope Plan (HL-8's authorized-input carve-out); this is the real
+  mechanism `<doc>` gets added by, not merely a re-run of the original SCOPE
+  pass with the same inputs.
 
 ### 4(c) READY (scope-diff PASS and grade/teach-back/act-back all clear) -> APPROVAL
 

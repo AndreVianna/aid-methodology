@@ -8,10 +8,23 @@ is selected when the run-state file records `**State:** SCOPE`.
 **Clean-context dispatch (HL-8/AC-9).** SCOPE runs as a dispatch to
 `aid-architect` (large tier / medium effort per
 `.github/aid/templates/agent-dispatch-tiering.md`). The sub-agent receives
-ONLY the verbatim instruction + the Impact Map + KB/codebase read access --
-**never** the session transcript, and never anything discussed earlier in
-this conversation that is absent from the instruction/Impact Map. Read-only
-over the KB; SCOPE never edits a file (that is APPLY's job, after CONFIRM).
+ONLY the verbatim instruction + the Impact Map + (on a re-plan loop-back)
+the recorded `**Adjustments:**`/`**Consideration:**` field + KB/codebase
+read access -- **never** the ambient session transcript, and never anything
+discussed earlier in this conversation that is absent from the
+instruction/Impact Map/recorded field. Read-only over the KB; SCOPE never
+edits a file (that is APPLY's job, after CONFIRM).
+
+**Authorized input vs. forbidden input (HL-8).** The user's explicit
+gate-time `**Adjustments:**` (written by `state-confirm.md`'s `[2] Adjust`)
+or `**Consideration:**` (written by `state-approval.md`'s `[2]`) is part of
+the instruction dialogue -- given directly AT a gate, recorded to disk, and
+read back here verbatim. It is **authorized, first-class scoping input**,
+not the ambient session transcript / prior-work conversation HL-8 actually
+forbids. Conflating the two would defeat the very re-plan mechanisms
+(`state-confirm.md § Step 3 [2]`, `state-approval.md § Step 3 [2]`,
+`state-review.md § 4(b)` "accept") that route back here expecting the
+adjustment to change the Scope Plan.
 
 ---
 
@@ -24,27 +37,57 @@ The dispatch prompt contains ONLY:
 - The verbatim instruction (`**Prompt:**` from run-state).
 - The full Impact Map from `<STATE_FILE>` (`**Understanding:**`,
   `**Impact Findings:**`, `**Contradictions & open questions:**`).
+- **On a re-plan loop-back** (this SCOPE entry follows `state-confirm.md`'s
+  `[2] Adjust`, `state-approval.md`'s `[2]`, or `state-review.md`'s 4(b)
+  "accept" -- detectable by a `**Adjustments:**` or `**Consideration:**`
+  field already present in `<STATE_FILE>` with a `Q{N}` value, not the bare
+  `--` that CONFIRM's `[1]` writes): that field verbatim, PLUS its full
+  `Q{N}` entry read from `.aid/knowledge/STATE.md ## Q&A (Pending)` (already
+  covered by the read access below -- no new grant needed) for complete
+  context, including the disputed doc's identity when the loop-back
+  originated from REVIEW 4(b)'s escalation (the `<doc>` named in that Q{N}
+  entry's `Context`). This is authorized, first-class scoping input (see
+  above), not the ambient session transcript.
 - Read access to `.aid/knowledge/` and the project codebase (to verify a
   closure need, e.g. confirm a coined term truly has no existing glossary
   entry).
 - This state's task: produce the minimal Scope Plan + Not-Changing list +
-  CONFIRM's draft questions (Steps 2-4 below).
+  CONFIRM's draft questions (Steps 2-4 below) -- on a re-plan loop-back,
+  **fold in** the recorded Adjustments/Consideration field (and its Q{N}
+  context) to actually change the Scope Plan (add, drop, or modify the row
+  the user asked for); never reproduce the prior pass's Scope Plan
+  byte-for-byte when a loop-back field is present (Step 2 below).
 
-It NEVER receives the session transcript or anything discussed earlier in
-this conversation that is absent from the instruction/Impact Map (HL-8/AC-9).
+It NEVER receives the ambient session transcript or anything discussed
+earlier in this conversation that is absent from the instruction/Impact
+Map/recorded Adjustments-Consideration field (HL-8/AC-9).
 
 ---
 
 ## Step 2: Build the minimal Scope Plan
 
+**On a re-plan loop-back (Step 1's Adjustments/Consideration field is
+present), fold it in -- do not silently reproduce the prior pass's Scope
+Plan.** The recorded field (plus its Q{N} context) is what actually changes
+this pass's outcome versus the original SCOPE pass: add the row it asks for
+(e.g. the REVIEW 4(b)-accept disputed doc, `kind: in-scope` or `closure` per
+Q{N}'s context), drop/narrow a row it asks to remove, or re-derive
+`Traces-to`/`Description` for a row whose understanding it corrects. A
+loop-back that produces the byte-identical Scope Plan as the pass before it
+is a bug -- the whole point of routing back through SCOPE is that the
+recorded field changes at least one row, Not-Changing entry, or Confirm
+Question versus the prior pass.
+
 For each Impact Finding, decide whether it becomes a Scope Plan item:
 
 - **Include** only if it traces to an **explicit instruction clause**
-  (something the instruction actually asks for), or a **closure need** (e.g.
+  (something the instruction actually asks for), a **closure need** (e.g.
   a coined term the instruction introduces needs a `domain-glossary.md`
-  entry to stay groundable -- HL-2). Every included item's `Traces-to` cites
-  either the instruction text (a quoted clause) or the KB/code location that
-  makes the closure necessary -- never "the session" or prior discussion
+  entry to stay groundable -- HL-2), or -- on a re-plan loop-back only -- a
+  **recorded Adjustment/Consideration** (Step 1). Every included item's
+  `Traces-to` cites the instruction text (a quoted clause), the KB/code
+  location that makes the closure necessary, or the `Q{N}` Adjustment/
+  Consideration entry that added it -- never "the session" or prior discussion
   (HL-8/AC-9).
 - **Exclude** (-> Not-Changing, Step 3) a doc that is merely domain-adjacent,
   or `suspect` per the freshness advisory, but not itself named or implied
