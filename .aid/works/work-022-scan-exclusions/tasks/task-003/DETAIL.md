@@ -1,8 +1,9 @@
 # task-003: Document scan exclusions + scan-config.yml in the CLI reference, install help, and release ledger
 
 [!NOTE]
-This is the TASK-LEVEL DETAIL.md template. It is the IMMUTABLE DEFINITION for this task.
-Written once by aid-detail; not a state file. State lives in task-NNN/STATE.md.
+This is the TASK-LEVEL DETAIL.md — the IMMUTABLE DEFINITION for this task in a flattened (Lite)
+work. Written once; not a state file. This flattened work has NO per-task `STATE.md`; each task's
+mutable cells live in the work-root `STATE.md § ## Delivery Lifecycle → ### Tasks lifecycle`.
 Shape: 6 sections matching .claude/aid/templates/delivery-plans/task-template.md.
 
 > **Execution protocol (binding on whoever executes this task -- no

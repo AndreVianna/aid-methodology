@@ -151,7 +151,8 @@ prune_dirs:
   per-user collapse (when the two paths are equal, single-tier read, no double-read).
   `$AID_STATE_HOME` is derived once at startup (`bin/aid` ~:65-71:
   `AID_STATE_HOME="${AID_HOME:-${HOME}/.aid}"` user / `/var/lib/aid` global; `bin/aid.ps1`
-  ~:100-103: `$script:_AidStateHome`).
+  ~:100-107: `$script:_AidStateHome` = `$HOME/.aid` user / `Join-Path $env:ProgramData 'aid'`
+  (i.e. `$ProgramData\aid`) global — the pwsh twin's global default is NOT `/var/lib/aid`).
 - **Schema field:** `schema: 1` (mirrors `registry.yml` DM-1). `prune_dirs:` is a block
   list of directory basenames.
 - **Merge (FR-4, extend-only):** effective Tier-A set = built-in `_AID_SCAN_PRUNE_DIRS` ∪
@@ -250,7 +251,7 @@ install-core libs, the profile `read-setting.sh`, and `settings.yml` need NO cha
 | `_aid_scan_merge_prune_dirs()` | new helper | Emits the case-insensitive deduped union of `_AID_SCAN_PRUNE_DIRS` and `_aid_scan_read_prune_dirs`. Called ONCE by `_cmd_projects_scan`; result stored in a run-scoped `local -a _scan_prune_dirs`. |
 | `_aid_scan_seed_config()` | new helper | If the primary `scan-config.yml` is absent, writes the header + `schema: 1` + `prune_dirs:` block of the built-in defaults via the atomic-write idiom `registry_register` uses (temp file + move; `bin/aid` ~:1751-1799). Best-effort: WARN-and-continue on failure. Never called under `--dry-run`. |
 | `_cmd_projects_scan()` (~:3186) | edit | After the once-read registry (step 3): call `_aid_scan_seed_config` unless `_dry_run -eq 1`; then set `local -a _scan_prune_dirs; readarray -t _scan_prune_dirs < <(_aid_scan_merge_prune_dirs)`. No other change to its orchestration. |
-| `_aid_scan_walk_node()` (~:3131) | edit | Step (c) tests `_aid_scan_name_in_set "$_base" "${_scan_prune_dirs[@]}"` (the merged run-scoped array) instead of the built-in `_AID_SCAN_PRUNE_DIRS` constant. `_scan_prune_dirs` reaches the walk via the same dynamic-scoping/subshell-inheritance path as `_scan_dir_count` / `_scan_state_home_canon`. Steps (a), (b), (c2), (d) are unchanged; step (b) still precedes (c) so AC-5 holds. |
+| `_aid_scan_walk_node()` (def ~:3081; step (c) body ~:3131) | edit | Step (c) tests `_aid_scan_name_in_set "$_base" "${_scan_prune_dirs[@]}"` (the merged run-scoped array) instead of the built-in `_AID_SCAN_PRUNE_DIRS` constant. `_scan_prune_dirs` reaches the walk via the same dynamic-scoping/subshell-inheritance path as `_scan_dir_count` / `_scan_state_home_canon`. Steps (a), (b), (c2), (d) are unchanged; step (b) still precedes (c) so AC-5 holds. |
 | Reused unchanged | — | `_aid_scan_name_in_set` (fork-free membership), `_aid_scan_roots`, `_aid_scan_walk`, `_aid_is_project_dir`, `_registry_read_raw_union`, `_aid_resolve_tier`, `registry_register`, `_aid_project_state`. |
 
 **PowerShell — `bin/aid.ps1` (mirror):**
@@ -281,8 +282,8 @@ CLI-twin CI gate) and `quality-gates.md`.
 ### Configuration
 
 - **File:** `scan-config.yml` at the CLI state home (`$AID_STATE_HOME`, i.e. `~/.aid` on a
-  per-user install; `/var/lib/aid` or the `AID_HOME` override on a global install) —
-  beside `registry.yml`. Machine-level, NOT per-project (`aid projects scan` is
+  per-user install; on a global install `/var/lib/aid` for the bash twin and `$ProgramData\aid`
+  for the pwsh twin, or the `AID_HOME` override) — beside `registry.yml`. Machine-level, NOT per-project (`aid projects scan` is
   machine-wide; there is no project cwd for it to key on) — this is the SPEC decision that
   resolves the REQUIREMENTS §4/§7 constraint.
 - **Format:** YAML with a `schema: 1` marker and a `prune_dirs:` block list of directory

@@ -5,17 +5,17 @@ pipeline:
 started: "2026-07-22"
 minimum_grade: "A+"
 user_approved: no
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Detail
 active_skill: aid-change-cli
-updated: "2026-07-22T19:00:52Z"
-pause_reason: --
+updated: "2026-07-22T19:20:58Z"
+pause_reason: "GATE cleared A+; awaiting user approval before /aid-execute"
 block_reason: --
 block_artifact: --
 delivery_state: Specified
 gate_tier: Large
-gate_grade: "Pending"
-gate_timestamp: "--"
+gate_grade: "A+"
+gate_timestamp: "2026-07-22T19:20:58Z"
 ---
 
 # Work State -- work-022-scan-exclusions
@@ -48,6 +48,9 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 | 2026-07-22 | SPEC complete -- SPEC.md written | -- | /aid-change-cli SPEC |
 | 2026-07-22 | PLAN complete -- PLAN.md + BLUEPRINT.md written | -- | /aid-change-cli PLAN |
 | 2026-07-22 | DETAIL complete -- 3 tasks written (IMPLEMENT/TEST/DOCUMENT) | -- | /aid-change-cli DETAIL. Authoring collapsed into one aid-architect dispatch (design pre-specified); writer != reviewer preserved for GATE. |
+| 2026-07-22 | Reconciled onto master @ b45d501a (PR #164 work-020) | -- | Disjoint footprint; no conflicts. DETAIL artifacts committed. |
+| 2026-07-22 | GATE cleared -- all 7 definition artifacts | A+ | /aid-change-cli GATE (aid-reviewer opus). Cycle 1: 3 MEDIUM + 2 MINOR (grade C); cycle 2: all 5 Fixed, 0 regressions (A+). 1 OOS routed to delivery-blueprint-template.md maintenance. |
+| 2026-07-22 | APPROVAL-HALT -- flattened work ready; nothing executed | A+ | /aid-change-cli. Awaiting user approval before /aid-execute work-022. |
 
 ---
 

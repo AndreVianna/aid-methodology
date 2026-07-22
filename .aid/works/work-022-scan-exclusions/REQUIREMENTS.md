@@ -69,6 +69,13 @@ a user who knows their own machine has no way to add a name without editing the 
   Accepted un-fixable gaps (documented, not addressed): `cmake-build-*` and `*.egg-info`
   (varying prefix/suffix, no exact basename); the Go module cache `~/go/pkg/mod` (sits
   outside `.cache`/`AppData`, and `go`/`pkg` are too collision-prone to add).
+- **Directory names deliberately excluded from the built-in defaults** (considered, rejected —
+  recorded here so a later maintainer does not re-add them): `packages` (collides with the
+  JS/TS monorepo `packages/<name>` convention — excluding it would hide real sibling projects);
+  `site-packages` (always nested inside an already-pruned `.venv`/`venv`, so redundant); and
+  `go` / `pkg` (too collision-prone with real Go project and top-level directory names — the
+  reason the `~/go/pkg/mod` gap above stays accepted rather than closed). Adding any of these
+  to a built-in default is a regression, not an enhancement.
 - **No change to scan flags, scope model, tier forcing, dedupe, symlink/max-depth guards,
   or the register-only contract** from work-019 — this change only grows the prune sets
   and adds the config merge.

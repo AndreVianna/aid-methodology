@@ -1,8 +1,10 @@
 # Delivery BLUEPRINT -- delivery-001: Expanded scan prune sets + user-configurable exclusions
 
 [!NOTE]
-This is the DELIVERY-LEVEL BLUEPRINT.md template. It is the IMMUTABLE DEFINITION for this delivery.
-Written once by aid-plan / aid-specify; not a state file. State lives in delivery-NNN/STATE.md.
+This is the DELIVERY-LEVEL BLUEPRINT.md — the IMMUTABLE DEFINITION for this delivery of a
+flattened single-delivery (Lite) work. It is not a state file; the delivery's mutable
+lifecycle/gate state lives in the work-root `STATE.md` (`## Delivery Lifecycle` / `## Delivery
+Gate`), not here.
 
 > **Delivery:** delivery-001
 > **Work:** work-022-scan-exclusions
