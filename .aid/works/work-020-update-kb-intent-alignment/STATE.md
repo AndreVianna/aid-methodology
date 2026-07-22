@@ -13,7 +13,7 @@ pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: "--"
-delivery_state: Executing
+delivery_state: Gated
 gate_tier: Medium
 gate_grade: "A+"
 gate_timestamp: "2026-07-22T06:03:28Z"
@@ -122,6 +122,8 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | task-003 → Done | -- | aid-developer re-emitted canonical → all 5 profiles + resynced dogfood .claude/ (run_generator.py exit 0; deterministic VERIFY PASS; commit a2b09918). Mechanical CONFIGURE task verified by generator VERIFY + orchestrator spot-check (state-scope+state-confirm present 2/2 in every profile + dogfood; diff confined to aid-update-kb + manifests) — no separate reviewer quick-check needed for a deterministic re-emit |
 | 2026-07-22 | task-004 EXECUTE → Done | -- | aid-developer added tests/canonical/test-update-kb-scope-fidelity.sh (92 assertions, all pass; commit 07119e3e); aid-reviewer quick-check: 0 CRITICAL/0 HIGH — assertions non-vacuous, AC-1..AC-10 covered, no hang risk |
 | 2026-07-22 | All 4 tasks Done | -- | delivery-001 tasks complete (001/002/003/004). Next: per-delivery A+ gate (full reviewer + FIX loop) |
+| 2026-07-22 | DELIVERY-GATE cycle 1 graded | E | Medium-tier gate reviewer found 2 CRIT + 4 HIGH + 1 MED (semantic gaps the grep-tests can't see): C1 REVIEW FIX-loop invokes aid-discover/state-fix.md with an unsupported ledger-path (hardcoded discovery.md); C2 re-scope revert keyed on self-reported Edited Docs can't strip a stray out-of-scope edit; H3 4(b)-accept routes to CONFIRM skipping SCOPE; H4 Rung-A resume missing prompt-match; H5 APPLY reprocesses all rows on re-entry (no idempotency); H6 APPLY has no new-file Kind execution; M7 SKILL.md banner mislabels CONFIRM/APPROVAL as PAUSE vs CHAIN-on-[1]. Entering FIX (fix all) |
+| 2026-07-22 | Reconciled with master | -- | origin/master advanced (PR #161 work-021 release-aid; PR #162 prune work-021 lifecycle) — both disjoint from aid-update-kb; merged clean into work-020, no re-emit needed (master untouched the skill/generator). C1 fix must NOT touch aid-discover/state-fix.md (SPEC non-goal) — make aid-update-kb's FIX self-contained |
 
 ---
 
@@ -152,7 +154,7 @@ don't act") are the load-bearing fixes.
 
 ## Delivery Gate
 
-- **Issue List:** none open (task-001 HIGH fixed on-spot, commit 90940908; delivery-001-issues.md row marked Fixed)
+- **Issue List:** DELIVERY-GATE cycle 1 = E — 2 CRITICAL + 4 HIGH + 1 MEDIUM open (ledger `.aid/.temp/review-pending/execute-delivery-001.md`); in FIX cycle (fix-all per owner directive)
 
 ---
 
