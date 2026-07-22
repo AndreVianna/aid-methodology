@@ -282,10 +282,30 @@ expand scope (HL-7). Run /aid-update-kb again to resolve at CONFIRM.
 ```
 
 **Advance:** PAUSE-FOR-USER-ACTION -- return to CONFIRM on the next
-invocation. Either answer resolves cleanly with no extra step here: accept
-the expansion and CONFIRM's next freeze simply includes `<doc>`; decline it
-and `state-apply.md § Step 0`'s re-scope revert strips the edit the next
-time APPLY runs.
+invocation. CONFIRM (`state-confirm.md § Step 2`) presents its ordinary
+`[1]/[2]/[3]` prompt; Q{N} is the open item the user resolves through it --
+the two answers are NOT symmetric, and only one of them is a plain `[1]`:
+
+- **Decline** -- answer `[1] Confirm`. This re-freezes the existing
+  `Confirmed Scope` verbatim, unchanged -- `<doc>` stays out of scope.
+  `state-apply.md § Step 0`'s **disk-derived** re-scope revert then strips
+  the out-of-scope edit automatically the next time APPLY runs, whether or
+  not `<doc>` was ever present in a prior `**Edited Docs:**` self-report (it
+  was not, here -- see `state-apply.md § Step 0` for why a self-report-keyed
+  revert cannot do this, and why the revert is disk-derived instead).
+- **Accept** -- answer `[2] Adjust: <the reason to include <doc>>`, not
+  `[1]`. This is a genuine re-plan (the Scope Plan gains a row it did not
+  have before), so it routes through CONFIRM's own existing `[2] Adjust`
+  mechanism (`state-confirm.md § Step 3 [2]`) to `**State:** SCOPE` first --
+  SCOPE re-dispatches `aid-architect` to add `<doc>` as a new Scope Plan item
+  (`kind: in-scope` or `closure`, per Q{N}'s context), then auto-chains back
+  to CONFIRM (`state-scope.md § Step 5`) to re-freeze the now-expanded
+  `Confirmed Scope`. This matches the other two re-plan paths in this
+  redesign -- CONFIRM's own `[2] Adjust` and APPROVAL's `[2]` -- both of
+  which also go through SCOPE, never straight to a CONFIRM re-freeze. (A
+  plain `[1] Confirm` can only re-freeze the Scope Plan it already has
+  verbatim -- it has no mechanism to append `<doc>` as a new row, which is
+  why "accept" is answered as `[2] Adjust`, not `[1]`.)
 
 ### 4(c) READY (scope-diff PASS and grade/teach-back/act-back all clear) -> APPROVAL
 
@@ -304,26 +324,20 @@ Print: `[State: REVIEW] complete. Advancing to APPROVAL.`
 
 **Advance:** CHAIN -> APPROVAL (continue inline).
 
-### 4(d) NOT READY (grade / teach-back / act-back / `[TRACE-1]` findings) -- ordinary FIX loop, bounded to Confirmed Scope (HL-7)
+### 4(d) NOT READY (grade / teach-back / act-back / `[TRACE-1]` findings) -- self-contained FIX loop, bounded to Confirmed Scope (HL-7)
 
 The scope-diff guard already passed to reach the panel at all -- these
 findings are quality/traceability defects within already-in-scope docs, not
-a scope-expansion question. The FIX loop reuses `aid-discover`'s existing
-`state-fix.md` over `update-kb.md` (NO new loop is invented). Invoke
-`canonical/skills/aid-discover/references/state-fix.md` with the ledger path
-set to `.aid/.temp/review-pending/update-kb.md`.
-
-**FIX-loop constraint (HL-7).** Every fix edit MUST stay within
-`**Confirmed Scope:**` -- it may correct/complete an already-confirmed doc,
-or trim a `[TRACE-1]`-flagged hunk back to what its Scope Plan item actually
-describes. It may NEVER add a new doc, or a new hunk of substance, with no
-confirmed Scope Plan item behind it -- that is scope expansion, not a fix,
-and has no legitimate path through this loop (a fixer that tries it
-re-triggers Step 0's scope-diff HARD FAIL on the next pass, which routes to
-4(b) above, not back through FIX again).
-
-After FIX completes its edits, return to Step 0 of this state (re-run the
-scope-diff guard before re-dispatching the panel).
+a scope-expansion question. **This FIX loop is self-contained in Step 5
+below -- it does NOT delegate to `aid-discover`'s `state-fix.md`.**
+`state-fix.md` has no ledger-path parameter of any kind (its Step 0
+unconditionally hardcodes `Read .aid/.temp/review-pending/discovery.md`,
+with no `{{SCOPE}}`/`{{LEDGER}}` token anywhere in the file); invoking it
+here would either silently no-op (if no stray `discovery.md` happens to
+exist) or apply fixes against an unrelated aid-discover ledger (if one does)
+-- neither reads `update-kb.md`. Step 5 is wired directly to
+`.aid/.temp/review-pending/update-kb.md` instead, so it can never drift onto
+the wrong ledger.
 
 Update `<STATE_FILE>`:
 
@@ -337,5 +351,57 @@ Update `<STATE_FILE>`:
 
 Print: `[State: REVIEW] below gate -- entering FIX loop.`
 
-**Advance:** CHAIN -> FIX (aid-discover state-fix.md over update-kb.md), then
-re-enter REVIEW (Step 0) on return.
+**Advance:** CHAIN -> FIX (Step 5, below -- inline in this same document),
+then re-enter REVIEW (Step 0) on return.
+
+---
+
+## Step 5: FIX (self-contained, bounded to Confirmed Scope, HL-7)
+
+Selected when `<STATE_FILE>` records `**State:** FIX`. This loop is specific
+to `aid-update-kb` -- it reads and fixes against `update-kb.md` directly,
+rather than delegating to `aid-discover`'s generic `state-fix.md` (see 4(d)
+above for why that doc cannot be redirected to this ledger).
+
+### 5a. Load the below-gate findings from the ledger
+
+Read `.aid/.temp/review-pending/update-kb.md`. Filter rows where `Status` ∈
+{`Pending`, `Recurred`} -- the `[TRACE-1]` traceability findings plus any
+Correctness / Anatomy / Teach-back / Act-back findings the Step 1/2 panel
+raised. **Do NOT modify the ledger during FIX** -- the fixer addresses
+issues; the next REVIEW pass's panel confirms resolution and updates
+`Status` (the same reviewer-ledger separation `aid-discover`'s FIX enforces).
+
+If the file does not exist, or has no `Pending`/`Recurred` rows, there is
+nothing to fix -- skip straight to 5c (return to Step 0; the panel will
+confirm READY on re-entry).
+
+### 5b. Apply fixes, bounded to Confirmed Scope
+
+**FIX-loop constraint (HL-7).** Every fix edit MUST stay within
+`**Confirmed Scope:**` -- it may correct/complete an already-confirmed doc,
+or trim a `[TRACE-1]`-flagged hunk back to what its Scope Plan item actually
+describes. It may NEVER add a new doc, or a new hunk of substance, with no
+confirmed Scope Plan item behind it -- that is scope expansion, not a fix,
+and has no legitimate path through this loop (a fix that tries it
+re-triggers Step 0's scope-diff HARD FAIL on the next pass, which routes to
+4(b) above, not back through FIX again).
+
+For each Pending/Recurred row, apply the fix to the row's `Doc` using the
+`Edit` tool -- a targeted, in-place correction, not a rewrite (the same
+"not a rewrite" discipline `state-apply.md § Step 2b` uses). A `[TRACE-1]`
+finding is fixed by trimming the untraceable hunk back to (or removing it
+down to) what its nearest Scope Plan item's `Description` actually
+describes -- never by retroactively inventing a Scope Plan item to justify
+keeping it.
+
+### 5c. Return to REVIEW Step 0
+
+After applying all fixes for this pass (or immediately, if 5a found nothing
+to fix), return to Step 0 of this state -- re-run the scope-diff guard
+(0a/0b) before re-dispatching the panel (Step 1). This closes the loop: FIX
+-> REVIEW Step 0 -> (guard PASS) -> panel -> 4(c) READY, or 4(d) FIX again.
+
+Print: `[FIX] {N} finding(s) addressed, bounded to Confirmed Scope. Returning to REVIEW Step 0.`
+
+**Advance:** CHAIN -> REVIEW (Step 0, continue inline).

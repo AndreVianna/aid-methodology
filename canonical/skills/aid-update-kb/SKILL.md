@@ -53,20 +53,32 @@ until it hits a natural pause point per
 `canonical/aid/templates/state-machine-chaining.md`.
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the
 run. Two human gates by design: CONFIRM guards scope/understanding BEFORE
-any edit; APPROVAL guards the specific edits before commit.**
+any edit; APPROVAL guards the specific edits before commit -- but a gate
+answered `[1]` inline is itself a CHAIN, not a pause (below).**
 
 > ```
-> aid-update-kb  > one step per run (Pre-flight ISOLATE runs first, every invocation)
+> aid-update-kb  > Pre-flight ISOLATE runs first, every invocation
 >   [ ANALYZE ] -> [ SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
->                                 ^ pause                                  ^ pause
+>                                 ^ human gate                             ^ human gate
+>                                 [1] chains inline; [2]/[3] pause/halt
 > ```
 
-CONFIRM and APPROVAL are the two human gates (PAUSE-FOR-USER-ACTION). CONFIRM
+CONFIRM and APPROVAL are the two human gates -- **inline decision points,
+not out-of-chat pauses.** Per `state-machine-chaining.md`, a pause is only
+legitimate when the user has to do work outside the chat; answering an
+inline question is not that. Answering `[1]` (CONFIRM's `Confirm` / APPROVAL's
+`Approved`) is a CHAIN: the run continues straight through to APPLY / DONE
+within the same invocation (`state-confirm.md`'s and `state-approval.md`'s
+own `[1]` Advance lines say so explicitly, and the Dispatch table below
+agrees). Only the re-plan/cancel branches actually pause or halt: CONFIRM
 `[2] Adjust` loops back to SCOPE (or ANALYZE if the understanding itself
-changes). APPROVAL `[2] Additional consideration` re-scopes back to
-CONFIRM/SCOPE (never blindly back to APPLY). REVIEW's FIX loop (REVIEW ->
-fix edits -> REVIEW) repeats until `grade >= minimum_grade AND teach-back
-PASS AND act-back PASS`, bounded to Confirmed Scope only (HL-7).
+changes) and PAUSES (a genuine re-plan needs a fresh clean-context SCOPE
+dispatch, which is real out-of-chat-equivalent work, not just an answer);
+CONFIRM `[3] Cancel` HALTs. APPROVAL `[2] Additional consideration`
+re-scopes back to CONFIRM/SCOPE (never blindly back to APPLY) and PAUSES for
+the same reason. REVIEW's FIX loop (REVIEW -> fix edits -> REVIEW) repeats
+until `grade >= minimum_grade AND teach-back PASS AND act-back PASS`, bounded
+to Confirmed Scope only (HL-7).
 
 ---
 
@@ -102,12 +114,15 @@ UPDATEKB_WT=""
 
 # Rung A -- already inside a live update-kb worktree (same-session resume:
 # a prior invocation's EnterWorktree already switched this session here).
+# This rung only DETECTS the candidate + its stored Prompt -- it does NOT
+# resolve UPDATEKB_WT by itself; the prompt-match rule right below decides.
+RUNG_A_PROMPT=""
 CUR_BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
 case "$CUR_BRANCH" in
   aid/update-kb-*)
     SF=$(ls -1 .aid/.temp/UPDATEKB_STATE_*.md 2>/dev/null | sort | tail -1)
     if [ -n "$SF" ] && ! grep -q "^\*\*State:\*\* DONE" "$SF" 2>/dev/null; then
-      UPDATEKB_WT="$(pwd -P)"
+      RUNG_A_PROMPT="$(grep -m1 "^\*\*Prompt:\*\*" "$SF" 2>/dev/null | sed 's/^\*\*Prompt:\*\* *//')"
     fi
     ;;
 esac
@@ -135,9 +150,49 @@ if [ -z "$UPDATEKB_WT" ]; then
 fi
 ```
 
-**Prompt-matched resume (HIGH finding fix -- no silent stale-run hijack).**
-The block above only lists candidates; resuming one is a match decision, not
-a first-match/last-match default. Compare each candidate's stored
+**Rung A prompt-match (HIGH finding fix -- no silent stale-run hijack, same
+class the fix below already closes for Rung B).** Being physically inside a
+live `aid/update-kb-*` worktree is not itself a resume decision -- it is
+resolved the same way as every Rung B candidate: by comparing the stored
+`**Prompt:**` against the *current* invocation's instruction.
+
+- If `$RUNG_A_PROMPT` is empty (Rung A found no live run at all -- the
+  current branch doesn't match `aid/update-kb-*`, or its state file is
+  `DONE`/absent), there is nothing to match here -- proceed to Rung B below;
+  this is the ordinary case of a caller invoking the skill from their own
+  tree.
+- If `$RUNG_A_PROMPT` is set, compare it against the current invocation's
+  instruction using the exact same normalized-exact-match rule the
+  "Prompt-matched resume" section below defines (trim + collapse whitespace;
+  never semantic/fuzzy):
+  - **Match** -- this worktree IS this invocation's resume target. Set
+    `UPDATEKB_WT="$(pwd -P)"` and skip Rung B, 2b, and the rest of this
+    section entirely -- go straight to 2c.
+  - **Mismatch** -- do NOT silently resume the session's current worktree
+    for a different instruction. This is a harder stop than Rung B's
+    "leave it untouched, start fresh elsewhere" -- the session is bodily
+    *inside* the stale run right now, so silently starting a fresh worktree
+    elsewhere while cwd stays here would be its own source of confusion.
+    Print and STOP:
+
+    ```
+    [Pre-flight] ISOLATE: this session is already inside a paused
+    /aid-update-kb run for a DIFFERENT instruction --
+      Stored prompt:   <RUNG_A_PROMPT>
+      This invocation: <the current invocation's instruction>
+    Finish or cancel the paused run from inside this worktree (answer its
+    pending gate, or run /aid-update-kb with the SAME instruction to
+    resume it), or start this new instruction from a clean tree (a fresh
+    terminal/session outside this worktree). STOP.
+    ```
+
+    Do not continue to Rung B, 2b, or 2c -- exit without entering the state
+    machine.
+
+**Prompt-matched resume (HIGH finding fix -- no silent stale-run hijack;
+Rung B).** The block above only lists Rung B candidates (Rung A, if any, was
+already resolved above); resuming one is a match decision, not a
+first-match/last-match default. Compare each candidate's stored
 `**Prompt:**` against the current invocation's instruction (exact match;
 trimming leading/trailing whitespace and collapsing internal whitespace runs
 is fine -- this is a text-equality check, never a semantic/fuzzy one):
@@ -474,7 +529,10 @@ violates one of these.
   scope (-> `aid-housekeep`). Enforced by: ANALYZE (no tag-overlap candidate
   net; freshness advisory only); SCOPE's Not-Changing list.
 - **HL-6 New files require explicit confirmation.** Allowed, never a silent
-  side effect. Enforced by: SCOPE's `new-file` Kind tag; CONFIRM.
+  side effect. Enforced by: SCOPE's `new-file` Kind tag; CONFIRM; APPLY
+  (the actual creation mechanics -- `state-apply.md § Step 2b`'s "New file"
+  branch, the only place a `Kind: new-file` row's doc is ever created, via
+  `Write`, following the f001 schema).
 - **HL-7 Grade-chasing may not expand scope.** The REVIEW FIX loop and
   DONE's closure re-check may only edit within Confirmed Scope; out-of-scope
   needs escalate to the user. Enforced by: REVIEW's FIX-loop constraint;
