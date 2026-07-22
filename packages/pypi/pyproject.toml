@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "aid-installer"
-version = "2.2.3-beta.2"
+version = "2.2.3-beta.3"
 description = "AID (AI Integrated Development) CLI installer - puts the persistent aid command on PATH via pipx or pip"
 readme = "README.md"
 requires-python = ">=3.8"
