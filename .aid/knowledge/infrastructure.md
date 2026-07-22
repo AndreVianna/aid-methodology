@@ -170,10 +170,13 @@ Three channels, all from the same tag:
 | npm (`aid-installer`) | npm package vendoring the aid-cli payload | `packages/npm/scripts/vendor.js` runs at `prepack`; `npm publish --provenance` | OIDC Trusted Publishing (token-less; optional classic `NPM_TOKEN` fallback) |
 | PyPI (`aid-installer`) | sdist + wheel vendoring the aid-cli payload | hatchling build hook `packages/pypi/scripts/vendor.py`; `python -m build` | OIDC Trusted Publishing via `pypa/gh-action-pypi-publish` (PEP 740 attestations) |
 
-The npm and PyPI channels are correct but currently **blocked on external account setup**
-(scope/org not yet provisioned; `NPM_ENABLED` / `PYPI_ENABLED` = false) — see `tech-debt.md`
-M1. Until enabled, releases publish to GitHub Releases only. CONFIRMED in `release.yml`
-header.
+All three channels are live. Stable releases (v2.1.0 onward) publish to GitHub Releases, npm,
+and PyPI; a beta pre-release publishes to PyPI + a GitHub pre-release and **skips npm** (the
+`npm-publish` job carries an `is_prerelease` guard). Publishing is gated by the `NPM_ENABLED` /
+`PYPI_ENABLED` repo variables — both set to `true` — which the job `if:` conditions check
+(`vars.NPM_ENABLED == 'true'`, `vars.PYPI_ENABLED == 'true'`); the workflow still defaults them
+to `'false'` when unset, as a safety fallback. CONFIRMED against the live registries (npm and
+PyPI both carry `aid-installer`) and `release.yml`.
 
 ---
 
