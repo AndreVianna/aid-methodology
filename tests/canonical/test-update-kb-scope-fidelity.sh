@@ -87,12 +87,23 @@ REVIEW_MD="${REFS}/state-review.md"
 APPROVAL_MD="${REFS}/state-approval.md"
 DONE_MD="${REFS}/state-done.md"
 
+WORK_DIR="${REPO_ROOT}/.aid/works/work-020-update-kb-intent-alignment"
+WORK_SPEC_MD="${WORK_DIR}/SPEC.md"
+WORK_REQUIREMENTS_MD="${WORK_DIR}/REQUIREMENTS.md"
+
 SETTINGS_YML="${REPO_ROOT}/.aid/settings.yml"
 READ_SETTING="${CANONICAL}/aid/scripts/config/read-setting.sh"
 
 for f in "$SKILL_MD" "$ANALYZE_MD" "$SCOPE_MD" "$CONFIRM_MD" "$APPLY_MD" "$REVIEW_MD" "$APPROVAL_MD" "$DONE_MD"; do
   if [[ ! -f "$f" ]]; then
     echo "FATAL: expected canonical file not found: $f" >&2
+    exit 2
+  fi
+done
+
+for f in "$WORK_SPEC_MD" "$WORK_REQUIREMENTS_MD"; do
+  if [[ ! -f "$f" ]]; then
+    echo "FATAL: expected work-020 doc not found: $f" >&2
     exit 2
   fi
 done
@@ -442,6 +453,66 @@ assert_file_contains "$SKILL_MD" 'ambient session transcript' \
 
 assert_file_contains "$REVIEW_MD" 'actually reads it' \
   "UK98 state-review.md's 4(b) accept branch confirms SCOPE's dispatch actually reads the Adjustments field it routes through CONFIRM to produce"
+
+# =============================================================================
+# UK99-UK109 -- delivery-gate FIX cycle-3 (row 9, owner-ruled): AC-9/HL-8
+# own-dialogue-vs-prior-context distinction consistent across REQUIREMENTS.md,
+# SPEC.md, and SKILL.md (the row-9 finding was that SPEC.md's AC-9/HL-8 never
+# caught up with SKILL.md/state-scope.md/state-analyze.md's cycle-2 carve-out)
+# =============================================================================
+
+SHARED_PHRASE='previous or unrelated conversation or instruction'
+
+assert_file_contains "$WORK_SPEC_MD" "$SHARED_PHRASE" \
+  "UK99 SPEC.md's AC-9 states the owner-ruled banned source: previous/unrelated conversation or instruction"
+
+assert_file_contains "$WORK_REQUIREMENTS_MD" "$SHARED_PHRASE" \
+  "UK100 REQUIREMENTS.md's AC-9 states the same owner-ruled banned source"
+
+assert_file_contains "$WORK_SPEC_MD" 'HL-8 The instruction plus this run'"'"'s own confirmation dialogue' \
+  "UK101 SPEC.md's HL-8 heading itself states the in-scope/banned distinction (no longer the old narrower wording)"
+
+assert_file_contains "$WORK_SPEC_MD" "$SHARED_PHRASE" \
+  "UK102 SPEC.md's HL-8 body also states the owner-ruled banned source (cross-doc consistency with AC-9)"
+
+assert_file_contains "$SKILL_MD" "$SHARED_PHRASE" \
+  "UK103 SKILL.md's HL-8 states the identical owner-ruled banned source as SPEC.md/REQUIREMENTS.md (row 9's cross-doc contradiction is closed)"
+
+OLD_AC9_PHRASE='Content present in the session conversation but absent from the instruction'
+assert_file_not_contains "$WORK_SPEC_MD" "$OLD_AC9_PHRASE" \
+  "UK104 regression guard: SPEC.md's AC-9 no longer uses the pre-fix wording that omitted the own-dialogue carve-out"
+
+assert_file_not_contains "$WORK_REQUIREMENTS_MD" "$OLD_AC9_PHRASE" \
+  "UK105 regression guard: REQUIREMENTS.md's AC-9 no longer uses the pre-fix wording that omitted the own-dialogue carve-out"
+
+assert_file_contains "$WORK_SPEC_MD" 'authorized first-class scoping input' \
+  "UK106 SPEC.md's HL-8 names the recorded Adjustments/Consideration field 'authorized first-class scoping input', matching SKILL.md's own phrase (UK96) -- SPEC.md and SKILL.md now say the SAME thing"
+
+assert_file_contains "$WORK_SPEC_MD" 'that ban is unweakened' \
+  "UK107 SPEC.md's HL-8 states the prior/unrelated-conversation ban stays unweakened by the own-dialogue carve-out"
+
+assert_file_contains "$WORK_SPEC_MD" "skill-run's own instruction + confirmation dialogue = in-scope; anything from outside it = banned" \
+  "UK108 SPEC.md's HL-8 states the owner's exact clean line (in-scope vs banned)"
+
+assert_file_contains "$SKILL_MD" "skill-run's own instruction + confirmation dialogue = in-scope; anything from outside it = banned" \
+  "UK109 SKILL.md's HL-8 states the identical clean line as SPEC.md (UK108) -- no contradiction between the two"
+
+# =============================================================================
+# UK110-UK113 -- delivery-gate FIX cycle-3 (row 10): Run-state schema table
+# gains the two real, previously-undocumented fields
+# =============================================================================
+
+assert_file_contains "$SKILL_MD" '`**Consideration:**` | APPROVAL' \
+  "UK110 SKILL.md's Run-state schema table now has a **Consideration:** row"
+
+assert_file_contains "$SKILL_MD" '`**Consideration:**` | APPROVAL (`[2]`, Step 3)' \
+  "UK111 SKILL.md's **Consideration:** schema row correctly names APPROVAL's [2] (Step 3) as the writer"
+
+assert_file_contains "$SKILL_MD" '`**Scope-diff:**` | REVIEW' \
+  "UK112 SKILL.md's Run-state schema table now has a **Scope-diff:** row"
+
+assert_file_contains "$SKILL_MD" 'read back by APPROVAL Step 1 for its summary banner' \
+  "UK113 SKILL.md's **Scope-diff:** schema row documents that APPROVAL Step 1 reads it back for its summary banner"
 
 # ---------------------------------------------------------------------------
 echo

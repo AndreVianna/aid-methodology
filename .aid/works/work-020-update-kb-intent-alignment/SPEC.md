@@ -9,6 +9,7 @@
 | 2026-07-22 | GATE Pass 1 FIX: scope-diff guard derives edited set from disk; added re-scope revert; AC-8 (HL-3); robust citations; corrected settings floor note; migration rename rows | GATE FIX |
 | 2026-07-22 | Cycle-4: reinforce start-of-run worktree isolation (mirror /aid-fix); add HL-8 (conversation not a source) + AC-9/AC-10; clarify hunk-level traceability. `approved_at_commit:` left unchanged per owner | owner directive |
 | 2026-07-22 | delivery-gate FIX (7 findings): REVIEW's FIX loop is now self-contained (no longer delegates to aid-discover's unparameterized state-fix.md); APPLY's re-scope revert is disk-derived (strips stray never-self-reported out-of-scope edits, not just prior Edited Docs); REVIEW 4(b) "accept" routes through SCOPE (via CONFIRM's own [2] Adjust) instead of a bare CONFIRM re-freeze; Pre-flight Rung A now prompt-matches (STOP on mismatch) like Rung B; APPLY Step 2 is check-before-write (idempotent on re-entry) and gains the new-file (`Kind: new-file`) creation branch (Write + f001 schema); SKILL.md/SPEC.md corrected so CONFIRM/APPROVAL CHAIN inline on `[1]` and only pause/halt on `[2]`/`[3]` | delivery-gate FIX |
+| 2026-07-22 | delivery-gate FIX cycle-3 (owner-ruled): AC-9/HL-8 reworded to the owner's clean in-scope/banned line -- the user's response inside THIS run's own CONFIRM/APPROVAL/REVIEW-4(b) confirmation dialogue (recorded `**Adjustments:**`/`**Consideration:**`) is authorized, first-class scoping input; content from a previous or unrelated conversation or instruction outside that dialogue stays banned, unweakened. Brings SPEC.md in line with the already-fixed SKILL.md/state-scope.md/state-analyze.md wording | owner-ruled FIX |
 
 ## Source
 
@@ -44,7 +45,7 @@ Must.
 - [ ] AC-6 A new file is created only after appearing as `new-file` kind at CONFIRM (HL-6).
 - [ ] AC-7 f005 quality gate, human-commit invariant, and FR-33/34 boundary intact; generated copies byte/path-parity clean.
 - [ ] AC-8 An item ANALYZE cannot ground as CONFIRMED-from-instruction (a LIKELY/UNCERTAIN inference) is surfaced as a CONFIRM question, never applied silently (HL-3).
-- [ ] AC-9 Content present in the session conversation but absent from the instruction and unsupported by KB/code evidence has no valid `Traces-to` and never enters the Scope Plan; the scope-deciding agents run in clean contexts that never receive the session transcript (HL-8).
+- [ ] AC-9 Content originating from a previous or unrelated conversation or instruction -- anything outside this run's own instruction+confirmation dialogue -- has no valid `Traces-to` and never enters the Scope Plan; a valid `Traces-to` is the verbatim instruction, or the user's own gate-time confirmation/adjustment response recorded within this run's CONFIRM/APPROVAL/REVIEW-4(b) dialogue; the scope-deciding agents run in clean contexts that never receive the ambient session transcript or any previous/unrelated conversation (HL-8).
 - [ ] AC-10 The skill creates and enters its own worktree based on `master` before any analysis or edit; all run-state, edits, branch, and commits live in that worktree, isolated from the caller's working tree/branch.
 
 ---
@@ -62,7 +63,7 @@ Every state below cites the limits it enforces.
 - **HL-5 No opportunistic edits.** Docs that merely share a domain/tag, or are `suspect` per freshness but unnamed by the instruction, are out of scope (→ `aid-housekeep`).
 - **HL-6 New files require explicit confirmation.** Allowed, never a silent side effect.
 - **HL-7 Grade-chasing may not expand scope.** The REVIEW FIX loop and DONE closure re-check may only edit within confirmed scope; out-of-scope needs escalate to the user.
-- **HL-8 The instruction is the only scope seed; the conversation is not a source.** Scope and content are grounded solely in the verbatim `/aid-update-kb` instruction plus KB/codebase evidence. Anything discussed earlier in the session is never a source of scope or content. Enforced by: (a) the skill runs in its own isolated worktree (Pre-flight) and ANALYZE/SCOPE run in **clean-context** sub-agents that never receive the session transcript; (b) the orchestrator passes the instruction **verbatim** and must not enrich it with session-derived context; (c) every Scope Plan item's `Traces-to` cites the instruction text or a KB/code location — never "the session" or prior discussion.
+- **HL-8 The instruction plus this run's own confirmation dialogue are the only scope seeds; prior or unrelated conversation is not a source.** Scope and content are grounded solely in: the verbatim `/aid-update-kb` instruction; the user's own gate-time responses recorded within this run's CONFIRM/APPROVAL/REVIEW-4(b) confirmation dialogue (the run-state's `**Adjustments:**`/`**Consideration:**` field — the skill's OWN instruction+confirmation work-dialogue, **authorized first-class scoping input**, not the forbidden source below); and KB/codebase evidence. Content originating from a previous or unrelated conversation or instruction — anything NOT part of this KB-update's own dialogue — is never a source of scope or content; that ban is unweakened and exactly as strict as before this carve-out. **The clean line:** inside this skill-run's own instruction + confirmation dialogue = in-scope; anything from outside it = banned. Enforced by: (a) the skill runs in its own isolated worktree (Pre-flight) and ANALYZE/SCOPE run in **clean-context** sub-agents that never receive the ambient session transcript or any previous/unrelated conversation; (b) the orchestrator passes the instruction **verbatim**, plus the recorded Adjustments/Consideration field on a re-plan loop-back only, and must not enrich either with anything from outside this run's own dialogue; (c) every Scope Plan item's `Traces-to` cites the instruction text, the recorded Adjustments/Consideration entry, or a KB/code location — never "the session" or prior/unrelated discussion.
 
 ### Feature Flow (state machine)
 
@@ -179,7 +180,7 @@ Verification controls:
 | Control | Where | Type | Guards |
 |---|---|---|---|
 | Worktree isolation | Pre-flight (before any state) | mechanical | own worktree off master; no caller working-tree/branch bleed (AC-10) |
-| Clean-context dispatch | ANALYZE + SCOPE | mechanical | scope-deciding agents never see the session transcript (HL-8/AC-9) |
+| Clean-context dispatch | ANALYZE + SCOPE | mechanical | scope-deciding agents never see the ambient session transcript or prior/unrelated conversation; the run's own recorded Adjustments/Consideration field is the one authorized carve-out (HL-8/AC-9) |
 | CONFIRM gate | before APPLY | human | HL-1 (root fix) |
 | Scope-diff guard (disk-derived) | REVIEW (first) | mechanical | `git status`-derived edited-set == Confirmed Scope |
 | Traceability mandate | REVIEW | reviewer | every edit → confirmed item |

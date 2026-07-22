@@ -9,6 +9,7 @@
 |------|--------|--------|
 | 2026-07-21 | Initial capture from AID DEBUG session (owner-confirmed HL-1..HL-7) | direct session |
 | 2026-07-22 | Cycle-4: added FR-11 isolation (own worktree off master, mirrors /aid-fix) + HL-8 (conversation not a source) + AC-9/AC-10; `approved_at_commit:` left unchanged per owner | owner directive |
+| 2026-07-22 | delivery-gate FIX cycle-3 (owner-ruled): AC-9 reworded to the owner's clean in-scope/banned line -- the user's response inside THIS run's own CONFIRM/APPROVAL/REVIEW-4(b) confirmation dialogue is authorized scoping input; content from a previous or unrelated conversation or instruction stays banned, unweakened. Matches SPEC.md/SKILL.md's already-fixed wording | owner-ruled FIX |
 
 ## 1. Objective
 
@@ -102,7 +103,7 @@ is absent from the flow; those agents appear only as authors in APPLY.
 - **AC-6** A new file is created only after appearing as `new-file` kind at CONFIRM (HL-6).
 - **AC-7** f005 quality gate, human-commit invariant, and the FR-33/34 boundary remain intact; generated copies stay byte/path-parity clean.
 - **AC-8** An item ANALYZE cannot ground as CONFIRMED-from-instruction (a LIKELY/UNCERTAIN inference) is surfaced as a CONFIRM question, never applied silently (HL-3).
-- **AC-9** Content present in the session conversation but absent from the instruction and unsupported by KB/code evidence has no valid `Traces-to` and never enters the Scope Plan; ANALYZE/SCOPE run in clean contexts that never receive the session transcript (HL-8).
+- **AC-9** Content originating from a previous or unrelated conversation or instruction -- anything outside this run's own instruction+confirmation dialogue -- has no valid `Traces-to` and never enters the Scope Plan; a valid `Traces-to` is the verbatim instruction, or the user's own gate-time confirmation/adjustment response recorded within this run's CONFIRM/APPROVAL/REVIEW-4(b) dialogue; ANALYZE/SCOPE run in clean contexts that never receive the ambient session transcript or any previous/unrelated conversation (HL-8).
 - **AC-10** The skill creates and enters its own worktree based on `master` before any analysis or edit; all run-state, edits, branch, and commits live in that worktree, isolated from the caller's tree/branch (FR-11).
 
 ## 10. Priority
