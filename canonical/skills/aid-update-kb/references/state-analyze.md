@@ -10,10 +10,22 @@ on a fresh run (no run-state file yet) or when the run-state file records
 **Clean-context dispatch (HL-8/AC-9).** ANALYZE runs as a dispatch to
 `aid-researcher` (medium tier / low effort per
 `canonical/aid/templates/agent-dispatch-tiering.md` -- Retrieval-heavy work).
-The sub-agent receives ONLY the verbatim instruction plus KB/codebase read
-access -- **never** the session transcript, and never anything discussed
-earlier in this conversation that is absent from the instruction itself.
-Read-only; ANALYZE never edits a file.
+The sub-agent receives ONLY the verbatim instruction + (on a re-plan
+loop-back) the recorded `**Adjustments:**` field + KB/codebase read access
+-- **never** the ambient session transcript, and never anything discussed
+earlier in this conversation that is absent from the instruction/recorded
+field. Read-only; ANALYZE never edits a file.
+
+**Re-plan re-entry vs. same-pass resume.** ANALYZE is re-entered two
+distinct ways, and they are NOT the same thing: (1) the ungroundable-concept
+PAUSE (Step 4) resumes the *same* pass after the user supplies a definition
+-- Step 0 below keeps the existing `**Prompt:**` and proceeds; (2) `[2]
+Adjust` at CONFIRM, when the adjustment corrects the **Understanding**
+itself, sets `**State:** ANALYZE` for a genuine **re-plan** pass -- this is
+the loop-back HL-8's authorized-input carve-out (below) is for. Either way,
+ANALYZE runs Steps 1-5 again; the re-plan case additionally receives the
+recorded `**Adjustments:**` field (Step 1) and REPLACES the existing Impact
+Map rather than leaving it stale (Step 5).
 
 **Cross-delivery dependency (task-014/f005):** ANALYZE loads
 `.aid/knowledge/INDEX.md` (f002 routing table) -- the same navigation table
@@ -84,15 +96,26 @@ The dispatch prompt contains ONLY:
 - The verbatim instruction (`**Prompt:**` from run-state) -- word for word,
   never paraphrased, never supplemented with anything discussed earlier in
   this conversation (HL-8/AC-9).
+- **On a re-plan re-entry only** (this ANALYZE entry follows CONFIRM's `[2]
+  Adjust` where the adjustment corrects the Understanding itself -- see
+  above): the recorded `**Adjustments:**` field verbatim, plus its full
+  `Q{N}` entry read from `.aid/knowledge/STATE.md ## Q&A (Pending)` (already
+  covered by the read access below). This is the user's explicit gate-time
+  correction -- part of the instruction dialogue, authorized first-class
+  input, not the ambient session transcript HL-8 forbids.
 - Read access to `.aid/knowledge/` (including `INDEX.md`) and the project
   codebase.
-- This state's task: produce the Impact Map (Step 2 below defines its shape).
+- This state's task: produce the Impact Map (Step 2 below defines its
+  shape) -- on a re-plan re-entry, fold in the recorded `**Adjustments:**`
+  field so the Understanding/Impact Map actually reflects the correction,
+  never re-deriving the same stale Impact Map the prior pass produced.
 - The freshness advisory (Step 1a) if available.
 
-It NEVER receives the session transcript, prior chat turns, or any
+It NEVER receives the ambient session transcript, prior chat turns, or any
 paraphrase of them. If the orchestrator is tempted to add "context" from
 earlier in the conversation that is not itself present in the verbatim
-instruction, that is exactly what HL-8 forbids -- don't.
+instruction or the recorded Adjustments field, that is exactly what HL-8
+forbids -- don't.
 
 ### Step 1a: Freshness advisory (optional, f007)
 
@@ -219,7 +242,13 @@ coined term that cannot be grounded from `.aid/knowledge/` or the
 ## Step 5: Emit the Impact Map and advance
 
 Write `**Understanding:**`, `**Impact Findings:**`, and `**Contradictions &
-open questions:**` into `<STATE_FILE>` (Step 2/3's shape).
+open questions:**` into `<STATE_FILE>` (Step 2/3's shape). **On a re-plan
+re-entry (Step 1's recorded `**Adjustments:**` field was present), this
+REPLACES the existing `**Understanding:**`/`**Impact Findings:**`/
+`**Contradictions & open questions:**` blocks entirely -- they are not
+appended to, and the prior pass's stale Impact Map is not left in place.**
+This is what makes the correction real: a re-plan re-entry that reproduces
+the same Impact Map the prior pass wrote is a bug, not a no-op.
 
 If the Impact Map has at least one Impact Finding row and no un-groundable
 escalation was triggered:

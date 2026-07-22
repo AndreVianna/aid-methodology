@@ -417,6 +417,32 @@ RESOLVED_FLOOR=$(bash "$READ_SETTING" --skill update-kb --key minimum_grade --de
 assert_eq "$RESOLVED_FLOOR" "A+" \
   "UK91 aid-update-kb's floor resolves (via read-setting.sh) to the project's global minimum_grade (A+)"
 
+# =============================================================================
+# UK92-UK98 -- delivery-gate FIX cycle-2 (rows 7/8): APPROVAL row CHAIN-on-[1];
+# re-plan Adjustments/Consideration channel wired to SCOPE/ANALYZE
+# =============================================================================
+
+assert_file_contains "$SKILL_MD" '`[1] Approved` -> CHAIN -> DONE' \
+  "UK92 SKILL.md Dispatch table's APPROVAL row is CHAIN-on-[1] (matches state-approval.md's own Advance: CHAIN -> DONE)"
+
+assert_file_not_contains "$SKILL_MD" 'PAUSE-FOR-USER-ACTION -> DONE on approval' \
+  "UK93 regression guard: SKILL.md no longer mislabels APPROVAL's [1] as PAUSE-FOR-USER-ACTION"
+
+assert_file_contains "$SCOPE_MD" 'the recorded `**Adjustments:**`/`**Consideration:**` field' \
+  "UK94 state-scope.md's clean-context dispatch admits the recorded Adjustments/Consideration field on a re-plan loop-back"
+
+assert_file_contains "$ANALYZE_MD" 'the recorded `**Adjustments:**` field' \
+  "UK95 state-analyze.md's clean-context dispatch admits the recorded Adjustments field on a re-plan re-entry"
+
+assert_file_contains "$SKILL_MD" 'authorized first-class scoping input' \
+  "UK96 SKILL.md's HL-8 distinguishes the gate-recorded Adjustments/Consideration field as authorized scoping input"
+
+assert_file_contains "$SKILL_MD" 'ambient session transcript' \
+  "UK97 SKILL.md's HL-8 still names the ambient session transcript (not the gate-recorded field) as the forbidden source"
+
+assert_file_contains "$REVIEW_MD" 'actually reads it' \
+  "UK98 state-review.md's 4(b) accept branch confirms SCOPE's dispatch actually reads the Adjustments field it routes through CONFIRM to produce"
+
 # ---------------------------------------------------------------------------
 echo
 test_summary
