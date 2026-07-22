@@ -386,15 +386,19 @@ aid-update-kb  > you are here
 | SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN -> CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
 | CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` CHAIN -> APPLY; `[2]` PAUSE-FOR-USER-ACTION -> SCOPE/ANALYZE; `[3]` HALT |
 | APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN -> REVIEW |
-| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | CHAIN -> FIX if below gate (scope-diff, grade, teach-back, or act-back); CHAIN -> APPROVAL if scope-diff PASS AND grade>=min AND teach-back PASS AND act-back PASS |
+| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 4 outcomes (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> PAUSE-FOR-USER-ACTION -> CONFIRM; grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) -> CHAIN -> FIX; READY -> CHAIN -> APPROVAL |
 | APPROVAL | `references/state-approval.md` | inline | `[1]` PAUSE-FOR-USER-ACTION -> DONE on approval; `[2]` re-scopes -> CONFIRM/SCOPE |
 | DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state) |
 
-> **FIX loop.** Below-gate REVIEW findings (scope-diff, grade, teach-back, or
-> act-back) route to the FIX cycle (REVIEW -> fix edits -> REVIEW) until
-> `grade >= minimum_grade AND teach-back PASS AND act-back PASS` -- FIX edits
-> stay within Confirmed Scope (HL-7); an out-of-scope-only fix escalates to
-> the user (back to CONFIRM) instead of expanding scope.
+> **FIX loop.** Once the scope-diff guard has already PASSED, only grade /
+> teach-back / act-back / `[TRACE-1]` findings route to the FIX cycle
+> (REVIEW -> fix edits -> REVIEW) until `grade >= minimum_grade AND
+> teach-back PASS AND act-back PASS` -- FIX edits stay within Confirmed Scope
+> (HL-7). Scope-diff outcomes never reach this loop: an incomplete APPLY (a
+> Confirmed-Scope doc not yet edited) chains straight back to APPLY, and an
+> out-of-scope disk edit escalates to the user
+> (PAUSE-FOR-USER-ACTION -> CONFIRM) instead of expanding scope -- see
+> `references/state-review.md § Step 4` for the full 4-outcome routing.
 > The minimum grade resolves via:
 > `bash canonical/aid/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`
 
@@ -411,10 +415,12 @@ aid-update-kb  > you are here
 > **REVIEW reuse (f005).** The REVIEW state does not redefine the review gate
 > -- it invokes f005's four-mandate panel (`aid-reviewer` Correctness,
 > Anatomy-incl-altitude, Teach-back, Act-back) with `{{ARTIFACTS}}` scoped to
-> the changed-doc set (the `**Edited Docs:**` list from APPLY) and `<scope>`
-> = `update-kb`. The merged ledger is written to
-> `.aid/.temp/review-pending/update-kb.md`. Grade and teach-back are evaluated
-> via the unchanged `grade.sh`.
+> the **disk-derived** edited-doc set from `references/state-review.md`'s
+> Step 0a scope-diff guard (`git status --porcelain` / `git diff` against the
+> `**Pre-APPLY baseline:**`) -- NEVER APPLY's self-reported
+> `**Edited Docs:**` -- and `<scope>` = `update-kb`. The merged ledger is
+> written to `.aid/.temp/review-pending/update-kb.md`. Grade and teach-back
+> are evaluated via the unchanged `grade.sh`.
 
 > **DONE (commit convention).** Work happens on the `aid/update-kb-<ts>`
 > branch the Pre-flight ISOLATE step already created and entered -- DONE
