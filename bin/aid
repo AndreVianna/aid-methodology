@@ -17,9 +17,10 @@
 #   aid update [self|all]            Update to latest; inside repo = CLI + all tools; 'self' = CLI only;
 #                                    'all' = bulk-update every registered project (see 'aid update -h')
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
-#   aid projects [list|add|remove|help] [path|N] [--local|--shared] [--verbose]
-#                                    List (numbered from 1), register, or unregister;
+#   aid projects [list|add|remove|scan|help] [path|N] [--local|--shared] [--verbose]
+#                                    List (numbered from 1), register, unregister, or scan;
 #                                    remove accepts a list number (<N>) or a <path>
+#                                    scan: 'aid projects scan -h' for its own flags
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -202,7 +203,9 @@ _aid_usage() {
             printf 'aid projects [list] [--local|--shared] [--verbose]\n'
             printf 'aid projects add  [<path>] [--local|--shared]\n'
             printf 'aid projects remove [<path>|<N>]\n'
-            printf '  List, register, or unregister AID projects in the registry.\n'
+            printf 'aid projects scan [--path <folder>|--all] [--dry-run] [--depth <n>]\n'
+            printf '                  [--include-network] [--include-removable] [--local|--shared] [--verbose]\n'
+            printf '  List, register, unregister, or scan for AID projects in the registry.\n'
             printf '  list (default): show all registered projects, numbered from 1, with state,\n'
             printf '    tools, and tier.\n'
             printf '    The current directory is marked with "*" in the leading marker column.\n'
@@ -215,8 +218,27 @@ _aid_usage() {
             printf '    N greater than the registered count errors to stderr with exit 2.  A <path>\n'
             printf '    that does not resolve to a currently-registered project now errors (exit 2)\n'
             printf '    instead of the prior idempotent no-op.\n'
-            printf '  --local   force user tier for add\n'
-            printf '  --shared  force shared tier for add\n'
+            printf '  scan: crawl the filesystem for folders containing a .aid/ and register each\n'
+            printf '    (register-only -- never installs/updates/migrates; never writes inside a\n'
+            printf '    discovered project'"'"'s .aid/). Reports each discovered project'"'"'s version.\n'
+            printf '    Scope (default: home; the ONLY mode that enumerates drives is --all):\n'
+            printf '      (no flag)         scan the user HOME directory ($HOME / %%USERPROFILE%%)\n'
+            printf '      --path <folder>   scan only that folder'"'"'s subtree (not a directory: exit 2)\n'
+            printf '      --all             scan the whole machine: Windows local FIXED drives\n'
+            printf '                        (network/removable excluded by default); Unix from /\n'
+            printf '    --path and --all are mutually exclusive (exit 2).\n'
+            printf '    --dry-run          preview; write nothing; exit 0\n'
+            printf '    --depth <n>        cap recursion at <n> levels below each root; <n> must be a\n'
+            printf '                       non-negative integer (non-integer or negative: exit 2)\n'
+            printf '    --include-network    (--all only) include network drives (Windows); Unix:\n'
+            printf '                          accepted but inert (drive-type filtering is Windows-only)\n'
+            printf '    --include-removable  (--all only) include removable drives (Windows); Unix:\n'
+            printf '                          accepted but inert (drive-type filtering is Windows-only)\n'
+            printf '    --include-network/--include-removable without --all: exit 2\n'
+            printf '    --local/--shared force the tier exactly as in '"'"'aid projects add'"'"'; scan\n'
+            printf '      FORCES the user tier by default so a bulk scan never elevates privileges.\n'
+            printf '  --local   force user tier for add/scan\n'
+            printf '  --shared  force shared tier for add/scan\n'
             printf '  --verbose print extra detail\n'
             ;;
         *)
@@ -233,7 +255,7 @@ _aid_usage() {
             printf '                                    "all" bulk-updates every registered project\n'
             printf '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project\n'
             printf '  aid dashboard start|stop ...     Start/stop the local dashboard\n'
-            printf '  aid projects [list|add|remove]   List/register/unregister AID projects\n'
+            printf '  aid projects [list|add|remove|scan]  List/register/unregister/scan AID projects\n'
             printf '  aid <command> -h | --help        Per-command help\n'
             printf '\n'
             printf 'Flags: --from-bundle, --version <v> (add/remove/update only -- pins a release), --force, --dry-run, --target, --verbose\n'
@@ -2505,6 +2527,12 @@ _cmd_projects() {
     local _action="${1:-list}"
     local _path_arg=""
     local _verbose=0
+    # Scan-specific flags (work-019-discover-projects task-001): gated to the
+    # 'scan' action below -- passing any of these to list/add/remove is a
+    # usage error (exit 2).
+    local _scan_path="" _scan_all=0 _scan_depth="" _scan_dry_run=0
+    local _scan_include_network=0 _scan_include_removable=0
+    local _scan_flag_seen=0
     shift || true
 
     # Parse remaining args: sub-action already consumed above.
@@ -2514,6 +2542,26 @@ _cmd_projects() {
             --local)   _AID_TIER_OVERRIDE="--local"; shift ;;
             --shared)  _AID_TIER_OVERRIDE="--shared"; shift ;;
             --verbose) _verbose=1; _AID_VERBOSE=1; shift ;;
+            --path)
+                if [[ $# -lt 2 ]]; then
+                    echo "ERROR: aid projects: --path requires a value" >&2
+                    exit 2
+                fi
+                _scan_path="$2"; _scan_flag_seen=1; shift 2 ;;
+            --all)
+                _scan_all=1; _scan_flag_seen=1; shift ;;
+            --depth)
+                if [[ $# -lt 2 ]]; then
+                    echo "ERROR: aid projects: --depth requires a value" >&2
+                    exit 2
+                fi
+                _scan_depth="$2"; _scan_flag_seen=1; shift 2 ;;
+            --dry-run)
+                _scan_dry_run=1; _scan_flag_seen=1; shift ;;
+            --include-network)
+                _scan_include_network=1; _scan_flag_seen=1; shift ;;
+            --include-removable)
+                _scan_include_removable=1; _scan_flag_seen=1; shift ;;
             -*)
                 echo "ERROR: aid projects: unknown flag: $1 (see 'aid projects -h')" >&2
                 exit 2
@@ -2526,13 +2574,32 @@ _cmd_projects() {
         esac
     done
 
+    # Gate scan-specific flags to the 'scan' action -- a scan-only flag passed
+    # to list/add/remove is a usage error (Command Surface & CLI Contract).
+    # Excludes "help": -h/--help (anywhere in the arg list) already overwrote
+    # _action to "help" above, and help must take precedence over this gate --
+    # otherwise e.g. 'aid projects scan --dry-run -h' would hit this error
+    # (exit 2) instead of showing usage (exit 0).
+    if [[ "$_scan_flag_seen" -eq 1 && "$_action" != "scan" && "$_action" != "help" ]]; then
+        echo "ERROR: aid projects: --path/--all/--depth/--dry-run/--include-network/--include-removable are scan-only flags (see 'aid projects scan -h')" >&2
+        exit 2
+    fi
+    # 'scan' has no positional <root> form (--path replaces it, FR-3); a
+    # stray positional is a usage error rather than a silently-ignored value.
+    if [[ "$_action" == "scan" && -n "$_path_arg" ]]; then
+        echo "ERROR: aid projects scan: unexpected argument: '${_path_arg}' (there is no positional <root> -- use --path <folder>)" >&2
+        exit 2
+    fi
+
     case "$_action" in
         list)    _cmd_projects_list "$_verbose" ;;
         add)     _cmd_projects_add  "$_path_arg" "$_verbose" ;;
         remove)  _cmd_projects_remove "$_path_arg" "$_verbose" ;;
+        scan)    _cmd_projects_scan "$_scan_path" "$_scan_all" "$_scan_depth" "$_scan_dry_run" \
+                     "$_scan_include_network" "$_scan_include_removable" "$_verbose" ;;
         help)    _aid_usage projects; exit 0 ;;
         *)
-            echo "ERROR: aid projects: unknown action: ${_action} (expected: list, add, remove, help)" >&2
+            echo "ERROR: aid projects: unknown action: ${_action} (expected: list, add, remove, scan, help)" >&2
             exit 2
             ;;
     esac
@@ -2859,6 +2926,393 @@ _cmd_projects_remove() {
     if [[ "$_verbose" -eq 1 ]]; then
         printf "aid projects: removed '%s' from registry.\n" "$_canon"
     fi
+    return 0
+}
+
+# ---------------------------------------------------------------------------
+# 'aid projects scan'  (work-019-discover-projects / task-001)
+# Crawls the filesystem for folders containing a .aid/ and registers each in
+# the machine project registry -- register-only (never scaffolds, updates,
+# installs, or migrates; never writes inside a discovered project's .aid/).
+# See SPEC.md (work-019-discover-projects) Data Model / Feature Flow / Layers.
+#
+# Byte-identical name sets (case-insensitive) are mirrored in bin/aid.ps1
+# (task-002) as $script:AidScanPruneDirs / $script:AidScanSystemDirs /
+# $script:AidScanMaxDepth -- do not let the two twins diverge.
+# ---------------------------------------------------------------------------
+
+# NFR-2: heavy/cache/build directories, matched by BASENAME at ANY depth,
+# CASE-INSENSITIVELY, in ALL scan modes (home default, --path, --all). A
+# project whose OWN folder name is one of these is still discovered because
+# the _aid_is_project_dir check (order step b) precedes this check (step c).
+readonly -a _AID_SCAN_PRUNE_DIRS=(
+    node_modules .git .hg .svn obj bin logs target dist build
+    .venv venv __pycache__ .gradle .m2 .cargo .npm .cache vendor Pods
+)
+# NFR-3: OS/system directories, applied ONLY under --all and ONLY as an
+# immediate child of a filesystem/drive root (never under the HOME default or
+# --path, and never deeper than one level below an --all scan root).
+readonly -a _AID_SCAN_SYSTEM_DIRS=(
+    proc sys dev run
+    Windows "Program Files" "Program Files (x86)" '$Recycle.Bin' "System Volume Information"
+)
+# NFR-4: hard recursion-depth ceiling, DISTINCT from and INDEPENDENT of the
+# user-facing --depth cap -- guarantees termination on a pathological tree.
+readonly _AID_SCAN_MAX_DEPTH=40
+
+# _aid_scan_name_in_set <name> <set-item>...
+# Case-insensitive exact-match membership test against the remaining args.
+# Uses the bash 4+ builtin lowercase expansion (${var,,}) -- NOT an external
+# `printf | tr` subprocess pair -- because this runs for essentially every
+# non-project directory in the walk; a fork-per-comparison here measured
+# ~5.9s PER CALL (~41s on a 10-dir fixture), making a $HOME/--all scan
+# unusably slow. bin/aid already requires bash 4+ (see `declare -A` usage
+# elsewhere), so ${var,,} is safe.
+_aid_scan_name_in_set() {
+    local _name_lc="${1,,}" _item
+    shift
+    for _item in "$@"; do
+        [[ "$_name_lc" == "${_item,,}" ]] && return 0
+    done
+    return 1
+}
+
+# _aid_scan_windows_drives <include-network 0/1> <include-removable 0/1>
+# Emits one MSYS-style drive root per line (e.g. "/c") for local FIXED drives
+# (plus Network/Removable when opted in), via the SAME classifier the
+# PowerShell twin uses natively: [System.IO.DriveInfo]::GetDrives() filtered
+# on DriveType, shelled out to powershell.exe -- so drive classification is
+# identical-by-construction (AC-2). Follows the repo's existing
+# bash-to-Windows-tool shell-out pattern (MSYS_NO_PATHCONV=1, ~:1151-1159).
+# wmic logicaldisk is NOT used (deprecated / absent on current Windows 11).
+_aid_scan_windows_drives() {
+    local _inc_net="$1" _inc_rem="$2"
+    local _types="'Fixed'"
+    [[ "$_inc_net" -eq 1 ]] && _types="${_types},'Network'"
+    [[ "$_inc_rem" -eq 1 ]] && _types="${_types},'Removable'"
+
+    local _ps_cmd
+    _ps_cmd='$t=@('"${_types}"'); [System.IO.DriveInfo]::GetDrives() | Where-Object { $t -contains $_.DriveType.ToString() } | ForEach-Object { $_.Name }'
+
+    local _drives
+    _drives="$(MSYS_NO_PATHCONV=1 powershell.exe -NoProfile -Command "$_ps_cmd" 2>/dev/null | tr -d '\r')"
+
+    local _line _letter
+    while IFS= read -r _line; do
+        [[ -n "$_line" ]] || continue
+        # DriveInfo.Name is like "C:\" -- take the drive letter, map to /c.
+        _letter="${_line:0:1}"
+        [[ "$_letter" =~ [A-Za-z] ]] || continue
+        _letter="$(printf '%s' "$_letter" | tr '[:upper:]' '[:lower:]')"
+        printf '/%s\n' "$_letter"
+    done <<< "$_drives"
+}
+
+# _aid_scan_roots <all 0/1> <path-or-empty> <include-network 0/1> <include-removable 0/1>
+# Resolves the scan roots by scope (FR-2/FR-3) and validates the scope/drive
+# flags, exiting 2 on any usage error:
+#   default (no scope flag)  -> the user HOME directory; NO drive enumeration
+#   --path <folder>          -> that canonical folder; NO drive enumeration
+#   --all                    -> whole machine; the ONLY mode that enumerates
+#                                drives (Windows: local FIXED drives, network/
+#                                removable excluded by default; Unix: "/")
+# Emits one canonical root path per line to stdout.
+_aid_scan_roots() {
+    local _all="$1" _path="$2" _inc_net="$3" _inc_rem="$4"
+
+    if [[ "$_all" -eq 1 && -n "$_path" ]]; then
+        echo "ERROR: aid projects scan: --path and --all are mutually exclusive" >&2
+        exit 2
+    fi
+    if [[ "$_all" -ne 1 && ( "$_inc_net" -eq 1 || "$_inc_rem" -eq 1 ) ]]; then
+        echo "ERROR: aid projects scan: --include-network / --include-removable require --all" >&2
+        exit 2
+    fi
+
+    if [[ -n "$_path" ]]; then
+        if [[ ! -d "$_path" ]]; then
+            echo "ERROR: aid projects scan: --path is not a directory: ${_path}" >&2
+            exit 2
+        fi
+        local _canon
+        _canon="$(cd "$_path" 2>/dev/null && pwd -P)" || _canon="$_path"
+        printf '%s\n' "$_canon"
+        return 0
+    fi
+
+    if [[ "$_all" -eq 1 ]]; then
+        if _dc_is_windows; then
+            local _any=0 _d
+            while IFS= read -r _d; do
+                [[ -n "$_d" ]] || continue
+                _any=1
+                printf '%s\n' "$_d"
+            done < <(_aid_scan_windows_drives "$_inc_net" "$_inc_rem")
+            if [[ "$_any" -eq 0 ]]; then
+                echo "WARN: aid projects scan: no fixed drives detected via powershell.exe; nothing to scan under --all" >&2
+            fi
+        else
+            # NFR-5: no drive-letter model on Unix -- the single root is "/",
+            # and network/removable mounts are not auto-classified (documented
+            # limitation); the two flags are accepted-but-inert here.
+            if [[ "$_inc_net" -eq 1 || "$_inc_rem" -eq 1 ]]; then
+                echo "aid projects scan: --include-network/--include-removable are Windows-only-effective (drive-type filtering is a Windows concept); on Unix --all already walks every mount under /." >&2
+            fi
+            printf '/\n'
+        fi
+        return 0
+    fi
+
+    # Default scope: the user HOME directory, no drive enumeration.
+    local _home_canon
+    _home_canon="$(cd "${HOME}" 2>/dev/null && pwd -P)" || _home_canon="${HOME}"
+    printf '%s\n' "$_home_canon"
+}
+
+# _aid_scan_walk_node <dir> <depth-from-root> <all 0/1> <user-depth-or-empty>
+# Internal recursive worker for _aid_scan_walk. Applies the FIXED per-folder
+# order (NFR-9) to <dir>: (a) unreadable -> skip; (b) a valid .aid/ project ->
+# emit the CANONICAL candidate and prune the whole subtree; (c) basename in
+# the heavy/cache set (any depth, all modes) -> prune; (c2) under --all only,
+# an immediate child of the scan root (depth 1) whose basename is in the
+# OS/system set -> prune; (d) else recurse into children, skipping directory
+# symlinks (NFR-4) and stopping at the user --depth cap and the hard
+# _AID_SCAN_MAX_DEPTH ceiling. Emits one canonical candidate path per line.
+_aid_scan_walk_node() {
+    local _dir="$1" _depth="$2" _is_all="$3" _user_depth="$4"
+
+    # _scan_dir_count / _scan_progress_stride are `local`s of the calling
+    # _cmd_projects_scan, visible here via bash's normal dynamic scoping (and
+    # inherited into the process-substitution subshell each root's walk runs
+    # in) -- not globals; see _cmd_projects_scan.
+    _scan_dir_count=$((_scan_dir_count + 1))
+    if (( _scan_dir_count % _scan_progress_stride == 0 )); then
+        printf 'aid projects scan: ...%d folder(s) examined so far (current: %s)\n' \
+            "$_scan_dir_count" "$_dir" >&2
+    fi
+
+    # (a) Not a directory, or unreadable -- skip and continue (NFR-1).
+    [[ -d "$_dir" ]] || return 0
+    if [[ ! -r "$_dir" || ! -x "$_dir" ]]; then
+        return 0
+    fi
+
+    # (b) A valid AID project -- emit the canonical candidate and PRUNE the
+    # whole subtree (do not recurse into ANY child, incl. .aid/) (NFR-9).
+    if _aid_is_project_dir "$_dir"; then
+        local _canon
+        _canon="$(cd "$_dir" 2>/dev/null && pwd -P)" || _canon="$_dir"
+        printf '%s\n' "$_canon"
+        return 0
+    fi
+
+    # Never descend into the CLI's own state-home subtree (fixes the review
+    # finding: classification alone excluded it as a PROJECT via step (b)
+    # above, but the walk still recursed INTO it, so a project nested inside
+    # $HOME/.aid / $AID_STATE_HOME could still be discovered). Compared as a
+    # plain string against _scan_state_home_canon/_scan_home_aid_canon --
+    # two `local`s of _cmd_projects_scan, canonicalized ONCE (via the
+    # `cd ... && pwd -P` idiom, ~:92-93) before the walk starts, NOT re-forked
+    # here per directory: $_dir is already canonical by construction (built
+    # from an already-canonical root plus real, non-symlink child names only
+    # -- symlinked children are never descended into, see (d) below), so a
+    # plain string compare is correct without re-canonicalizing $_dir.
+    if [[ "$_dir" == "$_scan_state_home_canon" || "$_dir" == "$_scan_home_aid_canon" ]]; then
+        return 0
+    fi
+
+    # basename via pure parameter expansion (NOT an external `basename` fork
+    # -- this runs for essentially every directory in the walk).
+    local _base="${_dir%/}"
+    _base="${_base##*/}"
+    [[ -n "$_base" ]] || _base="$_dir"   # "/" itself: no trailing component
+
+    # (c) Heavy/cache/build basename match -- any depth, all modes (NFR-2).
+    if _aid_scan_name_in_set "$_base" "${_AID_SCAN_PRUNE_DIRS[@]}"; then
+        return 0
+    fi
+
+    # (c2) --all only, root-only: an immediate child of the scan root whose
+    # basename is an OS/system name (NFR-3). Never applied under the HOME
+    # default or --path (any depth), so a top-level ~/dev / <--path>/dev is
+    # descended normally.
+    if [[ "$_is_all" -eq 1 && "$_depth" -eq 1 ]]; then
+        if _aid_scan_name_in_set "$_base" "${_AID_SCAN_SYSTEM_DIRS[@]}"; then
+            return 0
+        fi
+    fi
+
+    # (d) Recurse into children -- skipping directory symlinks (NFR-4) and
+    # stopping at the user --depth cap and the hard _AID_SCAN_MAX_DEPTH cap.
+    local _next_depth=$((_depth + 1))
+    if [[ -n "$_user_depth" && "$_next_depth" -gt "$_user_depth" ]]; then
+        return 0
+    fi
+    if [[ "$_next_depth" -gt "$_AID_SCAN_MAX_DEPTH" ]]; then
+        return 0
+    fi
+
+    # dotglob/nullglob (so "$_dir"/* also matches dot-directories, and matches
+    # nothing rather than the literal "*" on an empty dir) are set ONCE by
+    # the caller (_cmd_projects_scan), NOT here: capturing/restoring shopt
+    # state via `$(shopt -p ...)` is a command substitution -- i.e. a fork --
+    # and this function runs once per directory in the walk, so doing it here
+    # would reintroduce a per-directory fork pair (the same class of bug as
+    # finding #1). See _cmd_projects_scan for the one-time set/restore.
+    local _child
+    for _child in "$_dir"/*; do
+        [[ -e "$_child" ]] || continue
+        [[ -L "$_child" ]] && continue
+        [[ -d "$_child" ]] || continue
+        _aid_scan_walk_node "$_child" "$_next_depth" "$_is_all" "$_user_depth"
+    done
+}
+
+# _aid_scan_walk <root> <all 0/1> <user-depth-or-empty>
+# Entry point: walks <root> (depth 0) and emits one CANONICAL discovered
+# .aid/ project path per line to stdout.
+_aid_scan_walk() {
+    local _root="$1" _is_all="$2" _user_depth="$3"
+    _aid_scan_walk_node "$_root" 0 "$_is_all" "$_user_depth"
+}
+
+# _cmd_projects_scan <path> <all> <depth> <dry-run> <include-network> <include-removable> <verbose>
+# Orchestrates parse -> roots -> pruned walk -> canonical-dedupe -> register
+# -> report (SPEC.md Feature Flow). Register-only: the only write is
+# registry_register on a genuinely NEW candidate; an already-registered
+# candidate is left byte-unchanged (FR-5). --dry-run replaces the write with
+# recording "would-register" (FR-4). Tier is FORCED to the user tier before
+# registering, unless --shared was explicitly given (FR-9).
+_cmd_projects_scan() {
+    local _path="$1" _all="$2" _depth="$3" _dry_run="$4"
+    local _inc_net="$5" _inc_rem="$6" _verbose="$7"
+
+    # --depth must be a non-negative integer (AC-3); normalize via base-10 so
+    # a leading-zero value (e.g. "008") never trips bash's octal-literal
+    # parse error in the arithmetic comparisons below (see the identical
+    # precedent at _cmd_projects_remove's index parsing).
+    if [[ -n "$_depth" ]]; then
+        if [[ ! "$_depth" =~ ^[0-9]+$ ]]; then
+            echo "ERROR: aid projects scan: --depth must be a non-negative integer: ${_depth}" >&2
+            exit 2
+        fi
+        _depth=$((10#$_depth))
+    fi
+
+    # Resolve roots (validates --path/--all mutual exclusion, non-dir --path,
+    # and include-flags-without-all; exits 2 on any usage error). Uses PLAIN
+    # command substitution (not process substitution) and explicitly
+    # propagates the exit status: _aid_scan_roots may call `exit 2` on a
+    # validation failure, and that only terminates a `<(...)` process
+    # substitution's subshell silently -- it would NOT reach the CLI's own
+    # exit code. `$(...)` assigned to a pre-declared local correctly sets $?
+    # to the substituted command's real exit status (avoid the `local
+    # var=$(cmd)` combined form, which masks $? with `local`'s own status).
+    local _roots_raw _roots_rc
+    _roots_raw="$(_aid_scan_roots "$_all" "$_path" "$_inc_net" "$_inc_rem")"
+    _roots_rc=$?
+    if [[ "$_roots_rc" -ne 0 ]]; then
+        exit "$_roots_rc"
+    fi
+    local -a _roots=()
+    local _r
+    while IFS= read -r _r; do
+        [[ -n "$_r" ]] && _roots+=("$_r")
+    done <<< "$_roots_raw"
+
+    if [[ "$_verbose" -eq 1 ]]; then
+        printf 'aid projects scan: roots: %s\n' "${_roots[*]}" >&2
+    fi
+
+    # Read the registry ONCE (Feature Flow step 3) for O(1) already-registered
+    # lookups; never re-read mid-walk.
+    declare -A _reg_seen=()
+    local _rp
+    while IFS= read -r _rp; do
+        [[ -n "$_rp" ]] && _reg_seen["$_rp"]=1
+    done < <(_registry_read_raw_union)
+
+    # FR-9: force the user tier before registering, unless the caller already
+    # forced --shared explicitly; never leave the auto-rule to choose.
+    if [[ -z "${_AID_TIER_OVERRIDE:-}" ]]; then
+        _AID_TIER_OVERRIDE="--local"
+    fi
+
+    # State-home canonical paths, computed ONCE here (two forks total for the
+    # whole run, not per-directory) so _aid_scan_walk_node can prune the state
+    # home's subtree with a plain string compare -- never registered as a
+    # project itself, and never DESCENDED INTO either (fixes the review
+    # finding: a project nested inside $HOME/.aid / $AID_STATE_HOME was
+    # previously still reachable and got registered).
+    local _scan_state_home_canon _scan_home_aid_canon
+    _scan_state_home_canon="$(cd "${AID_STATE_HOME}" 2>/dev/null && pwd -P)" || _scan_state_home_canon="${AID_STATE_HOME}"
+    _scan_home_aid_canon="$(cd "${HOME}/.aid" 2>/dev/null && pwd -P)" || _scan_home_aid_canon="${HOME}/.aid"
+
+    declare -A _scan_seen=()   # run-scoped canonical-key dedupe (NFR-10)
+    local -a _report_lines=()
+    local _n_new=0 _n_existing=0
+    # `local`s (not globals -- coding-standards.md "UPPER_SNAKE = globals,
+    # lower = locals"), visible to _aid_scan_walk_node via bash's normal
+    # dynamic scoping (and inherited into each root's process-substitution
+    # subshell at fork time).
+    local _scan_dir_count=0
+    local _scan_progress_stride=200
+
+    # dotglob (so "$dir"/* also matches dot-directories) + nullglob (so a glob
+    # with no match expands to nothing, not the literal "*") are set ONCE
+    # here for the whole walk -- NOT per-directory inside
+    # _aid_scan_walk_node, where capturing/restoring shopt state via
+    # `$(shopt -p ...)` would fork a subshell on every directory visited (the
+    # same class of hot-path-fork bug as finding #1). `shopt -q` is a plain
+    # builtin exit-status test -- no fork -- so save/restore here is free.
+    local _had_dotglob=0 _had_nullglob=0
+    shopt -q dotglob && _had_dotglob=1
+    shopt -q nullglob && _had_nullglob=1
+    shopt -s dotglob nullglob
+
+    local _root _cand _ver _action _tier
+    for _root in "${_roots[@]+"${_roots[@]}"}"; do
+        printf 'aid projects scan: scanning %s ...\n' "$_root" >&2
+        while IFS= read -r _cand; do
+            [[ -n "$_cand" ]] || continue
+            # Dedupe within the run: the same real project reached more than
+            # once (overlap, symlink, '.'/'..') is considered exactly once.
+            [[ -n "${_scan_seen[$_cand]:-}" ]] && continue
+            _scan_seen["$_cand"]=1
+
+            _ver="$(_aid_project_state "$_cand")"
+            _tier="$(_aid_resolve_tier "$_cand")"
+
+            if [[ -n "${_reg_seen[$_cand]:-}" ]]; then
+                _action="already-registered"
+                _n_existing=$((_n_existing + 1))
+            elif [[ "$_dry_run" -eq 1 ]]; then
+                _action="would-register"
+                _n_new=$((_n_new + 1))
+            else
+                registry_register "$_cand" "$_tier" >/dev/null
+                _action="registered"
+                _n_new=$((_n_new + 1))
+            fi
+            if [[ "$_verbose" -eq 1 ]]; then
+                printf 'aid projects scan: %s  tier=%s  version=%s  action=%s\n' \
+                    "$_cand" "$_tier" "$_ver" "$_action" >&2
+            fi
+            _report_lines+=("$(printf '%s  %s  %s' "$_cand" "$_ver" "$_action")")
+        done < <(_aid_scan_walk "$_root" "$_all" "$_depth")
+    done
+
+    [[ "$_had_dotglob" -eq 1 ]] || shopt -u dotglob
+    [[ "$_had_nullglob" -eq 1 ]] || shopt -u nullglob
+
+    # Final summary (FR-7): counts to stdout, then one path/version/action
+    # line per discovered project.
+    printf 'aid projects scan: %d newly-registered, %d already-registered.\n' "$_n_new" "$_n_existing"
+    local _line
+    for _line in "${_report_lines[@]+"${_report_lines[@]}"}"; do
+        printf '%s\n' "$_line"
+    done
+
     return 0
 }
 
@@ -3275,7 +3729,7 @@ if [[ "$SUBCMD" == "projects" ]]; then
     _PROJ_ARGS=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            list|add|remove|help)
+            list|add|remove|scan|help)
                 _PROJ_ACTION="$1"; shift
                 _PROJ_ARGS+=("$@")
                 set --
@@ -3288,7 +3742,7 @@ if [[ "$SUBCMD" == "projects" ]]; then
                 # Unknown flag: pass through to _cmd_projects for rejection.
                 _PROJ_ARGS+=("$1"); shift ;;
             *)
-                echo "ERROR: aid projects: unknown action: ${1} (expected: list, add, remove, help)" >&2
+                echo "ERROR: aid projects: unknown action: ${1} (expected: list, add, remove, scan, help)" >&2
                 exit 2
                 ;;
         esac

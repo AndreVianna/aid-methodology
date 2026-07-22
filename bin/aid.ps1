@@ -17,9 +17,10 @@
 #   aid update [self|all]            Update to latest; inside repo = CLI + all tools; 'self' = CLI only;
 #                                    'all' = bulk-update every registered project (see 'aid update -h')
 #   aid remove [<tool>... | self]    Remove; no arg = ALL AID from project; 'self' = the aid CLI
-#   aid projects [list|add|remove|help] [path|N] [--local|--shared] [--verbose]
-#                                    List (numbered from 1), register, or unregister;
+#   aid projects [list|add|remove|scan|help] [path|N] [--local|--shared] [--verbose]
+#                                    List (numbered from 1), register, unregister, or scan;
 #                                    remove accepts a list number (<N>) or a <path>
+#                                    scan: 'aid projects scan -h' for its own flags
 #   aid <command> -h | --help        Per-command help
 #
 # Flags (shared across subcommands where applicable):
@@ -255,7 +256,9 @@ function script:Show-AidUsage {
             Write-Host 'aid projects [list] [--local|--shared] [--verbose]'
             Write-Host 'aid projects add  [<path>] [--local|--shared]'
             Write-Host 'aid projects remove [<path>|<N>]'
-            Write-Host '  List, register, or unregister AID projects in the registry.'
+            Write-Host 'aid projects scan [--path <folder>|--all] [--dry-run] [--depth <n>]'
+            Write-Host '                  [--include-network] [--include-removable] [--local|--shared] [--verbose]'
+            Write-Host '  List, register, unregister, or scan for AID projects in the registry.'
             Write-Host '  list (default): show all registered projects, numbered from 1, with state,'
             Write-Host '    tools, and tier.'
             Write-Host '    The current directory is marked with "*" in the leading marker column.'
@@ -268,8 +271,27 @@ function script:Show-AidUsage {
             Write-Host '    N greater than the registered count errors to stderr with exit 2.  A <path>'
             Write-Host '    that does not resolve to a currently-registered project now errors (exit 2)'
             Write-Host '    instead of the prior idempotent no-op.'
-            Write-Host '  --local   force user tier for add'
-            Write-Host '  --shared  force shared tier for add'
+            Write-Host '  scan: crawl the filesystem for folders containing a .aid/ and register each'
+            Write-Host '    (register-only -- never installs/updates/migrates; never writes inside a'
+            Write-Host "    discovered project's .aid/). Reports each discovered project's version."
+            Write-Host '    Scope (default: home; the ONLY mode that enumerates drives is --all):'
+            Write-Host '      (no flag)         scan the user HOME directory ($HOME / %USERPROFILE%)'
+            Write-Host "      --path <folder>   scan only that folder's subtree (not a directory: exit 2)"
+            Write-Host '      --all             scan the whole machine: Windows local FIXED drives'
+            Write-Host '                        (network/removable excluded by default); Unix from /'
+            Write-Host '    --path and --all are mutually exclusive (exit 2).'
+            Write-Host '    --dry-run          preview; write nothing; exit 0'
+            Write-Host '    --depth <n>        cap recursion at <n> levels below each root; <n> must be a'
+            Write-Host '                       non-negative integer (non-integer or negative: exit 2)'
+            Write-Host '    --include-network    (--all only) include network drives (Windows); Unix:'
+            Write-Host '                          accepted but inert (drive-type filtering is Windows-only)'
+            Write-Host '    --include-removable  (--all only) include removable drives (Windows); Unix:'
+            Write-Host '                          accepted but inert (drive-type filtering is Windows-only)'
+            Write-Host '    --include-network/--include-removable without --all: exit 2'
+            Write-Host "    --local/--shared force the tier exactly as in 'aid projects add'; scan"
+            Write-Host '      FORCES the user tier by default so a bulk scan never elevates privileges.'
+            Write-Host '  --local   force user tier for add/scan'
+            Write-Host '  --shared  force shared tier for add/scan'
             Write-Host '  --verbose print extra detail'
         }
         default {
@@ -286,7 +308,7 @@ function script:Show-AidUsage {
             Write-Host '                                    "all" bulk-updates every registered project'
             Write-Host '  aid remove [<tool>... | self]    Remove; no arg = ALL AID from project'
             Write-Host '  aid dashboard start|stop ...     Start/stop the local dashboard'
-            Write-Host '  aid projects [list|add|remove]   List/register/unregister AID projects'
+            Write-Host '  aid projects [list|add|remove|scan]  List/register/unregister/scan AID projects'
             Write-Host "  aid <command> -h | --help        Per-command help"
             Write-Host ''
             Write-Host 'Flags: -FromBundle, -Version <v> (add/remove/update only -- pins a release), -Force, -DryRun, -Target, -Verbose'
@@ -2074,6 +2096,342 @@ function script:Invoke-AidProjectsRemove {
     }
 }
 
+# ---------------------------------------------------------------------------
+# 'aid projects scan'  (work-019-discover-projects / task-002)
+# Crawls the filesystem for folders containing a .aid/ and registers each in
+# the machine project registry -- register-only (never scaffolds, updates,
+# installs, or migrates; never writes inside a discovered project's .aid/).
+# See SPEC.md (work-019-discover-projects) Data Model / Feature Flow / Layers.
+#
+# Byte-identical name sets (case-insensitive) mirror bin/aid's
+# _AID_SCAN_PRUNE_DIRS / _AID_SCAN_SYSTEM_DIRS / _AID_SCAN_MAX_DEPTH (task-001)
+# -- do not let the two twins diverge.
+# ---------------------------------------------------------------------------
+
+# NFR-2: heavy/cache/build directories, matched by BASENAME at ANY depth,
+# CASE-INSENSITIVELY, in ALL scan modes (home default, --path, --all). A
+# project whose OWN folder name is one of these is still discovered because
+# the Test-AidIsProjectDir check (order step b) precedes this check (step c).
+Set-Variable -Name AidScanPruneDirs -Option Constant -Scope Script -Value @(
+    'node_modules', '.git', '.hg', '.svn', 'obj', 'bin', 'logs', 'target', 'dist', 'build',
+    '.venv', 'venv', '__pycache__', '.gradle', '.m2', '.cargo', '.npm', '.cache', 'vendor', 'Pods'
+)
+
+# NFR-3: OS/system directories, applied ONLY under --all and ONLY as an
+# immediate child of a filesystem/drive root (never under the HOME default or
+# --path, and never deeper than one level below an --all scan root).
+Set-Variable -Name AidScanSystemDirs -Option Constant -Scope Script -Value @(
+    'proc', 'sys', 'dev', 'run',
+    'Windows', 'Program Files', 'Program Files (x86)', '$Recycle.Bin', 'System Volume Information'
+)
+
+# NFR-4: hard recursion-depth ceiling, DISTINCT from and INDEPENDENT of the
+# user-facing --depth cap -- guarantees termination on a pathological tree.
+Set-Variable -Name AidScanMaxDepth -Option Constant -Scope Script -Value 40
+
+# Test-AidScanNameInSet <Name> <Set>
+# Case-insensitive exact-match membership test (OrdinalIgnoreCase, matching
+# this file's other path/name comparisons -- see Test-AidIsProjectDir).
+# Mirror of bash _aid_scan_name_in_set.
+function script:Test-AidScanNameInSet {
+    param([string]$Name, [string[]]$Set)
+    foreach ($item in $Set) {
+        if ([string]::Equals($Name, $item, [System.StringComparison]::OrdinalIgnoreCase)) { return $true }
+    }
+    return $false
+}
+
+# Get-AidScanRoot -All <bool> -ScanPath <string> -IncludeNetwork <bool> -IncludeRemovable <bool>
+# Resolves the scan roots by scope (FR-2/FR-3) and validates the scope/drive
+# flags, exiting 2 on any usage error:
+#   default (no scope flag)  -> the user HOME directory; NO drive enumeration
+#   -ScanPath <folder>       -> that canonical folder; NO drive enumeration
+#   -All                     -> whole machine; the ONLY mode that enumerates
+#                                drives (Windows: local FIXED drives, network/
+#                                removable excluded by default; Unix: "/")
+# Returns an array of one canonical root path per element.
+# Mirror of bash _aid_scan_roots.
+function script:Get-AidScanRoot {
+    param(
+        [bool]$All = $false,
+        [string]$ScanPath = '',
+        [bool]$IncludeNetwork = $false,
+        [bool]$IncludeRemovable = $false
+    )
+
+    if ($All -and $ScanPath) {
+        [Console]::Error.WriteLine("ERROR: aid projects scan: --path and --all are mutually exclusive")
+        script:Exit-Aid 2
+    }
+    if (-not $All -and ($IncludeNetwork -or $IncludeRemovable)) {
+        [Console]::Error.WriteLine("ERROR: aid projects scan: --include-network / --include-removable require --all")
+        script:Exit-Aid 2
+    }
+
+    if ($ScanPath) {
+        if (-not (Test-Path -LiteralPath $ScanPath -PathType Container)) {
+            [Console]::Error.WriteLine("ERROR: aid projects scan: --path is not a directory: $ScanPath")
+            script:Exit-Aid 2
+        }
+        $canon = try { (Resolve-Path -LiteralPath $ScanPath -ErrorAction Stop).Path } catch { $ScanPath }
+        return @($canon)
+    }
+
+    if ($All) {
+        if (script:Test-AidWindows) {
+            # Same classifier the bash twin shells out to powershell.exe for
+            # ([System.IO.DriveInfo]::GetDrives() filtered on DriveType) -- run
+            # natively here, so drive classification is identical-by-construction.
+            $types = [System.Collections.Generic.List[string]]::new()
+            [void]$types.Add('Fixed')
+            if ($IncludeNetwork)   { [void]$types.Add('Network') }
+            if ($IncludeRemovable) { [void]$types.Add('Removable') }
+            $drives = @()
+            try {
+                $drives = @([System.IO.DriveInfo]::GetDrives() | Where-Object { $types -contains $_.DriveType.ToString() } | ForEach-Object { $_.Name })
+            } catch { $drives = @() }
+            if ($drives.Count -eq 0) {
+                [Console]::Error.WriteLine("WARN: aid projects scan: no fixed drives detected; nothing to scan under --all")
+            }
+            return $drives
+        } else {
+            # NFR-5: no drive-letter model on Unix -- the single root is "/",
+            # and network/removable mounts are not auto-classified (documented
+            # limitation); the two flags are accepted-but-inert here.
+            if ($IncludeNetwork -or $IncludeRemovable) {
+                [Console]::Error.WriteLine("aid projects scan: --include-network/--include-removable are Windows-only-effective (drive-type filtering is a Windows concept); on Unix --all already walks every mount under /.")
+            }
+            return @('/')
+        }
+    }
+
+    # Default scope: the user HOME directory, no drive enumeration.
+    $homeCanon = try { (Resolve-Path -LiteralPath $HOME -ErrorAction Stop).Path } catch { $HOME }
+    return @($homeCanon)
+}
+
+# Invoke-AidScanWalkNode -Dir <dir> -Depth <depth-from-root> -IsAll <bool> -UserDepth <long>
+# Internal recursive worker for Invoke-AidScanWalk. Applies the FIXED
+# per-folder order (NFR-9) to <Dir>: (a) unreadable -> skip; (b) a valid
+# .aid/ project -> emit the CANONICAL candidate and prune the whole subtree;
+# (c) basename in the heavy/cache set (any depth, all modes) -> prune; (c2)
+# under -All only, an immediate child of the scan root (depth 1) whose
+# basename is in the OS/system set -> prune; (d) else recurse into children,
+# skipping directory symlinks (NFR-4) and stopping at the user -Depth cap and
+# the hard $script:AidScanMaxDepth ceiling. Appends one canonical candidate
+# path per discovered project to the shared $Candidates list (avoids the
+# pipeline-object overhead of Write-Output on a hot recursive path).
+# Mirror of bash _aid_scan_walk_node.
+function script:Invoke-AidScanWalkNode {
+    param(
+        [string]$Dir,
+        [int]$Depth,
+        [bool]$IsAll,
+        [long]$UserDepth,
+        [System.Collections.Generic.List[string]]$Candidates,
+        [string]$StateHomeCanon,
+        [string]$HomeAidCanon
+    )
+
+    $script:_AidScanDirCount++
+    if (($script:_AidScanDirCount % $script:_AidScanProgressStride) -eq 0) {
+        [Console]::Error.WriteLine("aid projects scan: ...$($script:_AidScanDirCount) folder(s) examined so far (current: $Dir)")
+    }
+
+    # (a) Not a directory, or unreadable -- skip and continue (NFR-1). The
+    # child-directory enumeration doubles as the readability probe: a denied
+    # or vanished directory throws here and is treated as unreadable.
+    if (-not (Test-Path -LiteralPath $Dir -PathType Container)) { return }
+    $childNames = $null
+    try {
+        $childNames = [System.IO.Directory]::GetDirectories($Dir)
+    } catch {
+        return
+    }
+
+    # (b) A valid AID project -- emit the canonical candidate and PRUNE the
+    # whole subtree (do not recurse into ANY child, incl. .aid/) (NFR-9).
+    if (script:Test-AidIsProjectDir -Dir $Dir) {
+        $canon = try { (Resolve-Path -LiteralPath $Dir -ErrorAction Stop).Path } catch { $Dir }
+        $Candidates.Add($canon)
+        return
+    }
+
+    # Never descend into the CLI's own state-home subtree: classification
+    # alone excludes it as a PROJECT via step (b) above, but without this the
+    # walk would still recurse INTO it, so a project nested inside
+    # $HOME/.aid / $AID_STATE_HOME could still be discovered. Plain string
+    # compare against the two canonical state-home paths computed ONCE by the
+    # caller (Invoke-AidProjectsScan) -- $Dir is already canonical by
+    # construction (built from an already-canonical root plus real,
+    # non-symlink child names only -- symlinked children are never descended
+    # into, see (d) below).
+    if ([string]::Equals($Dir, $StateHomeCanon, [System.StringComparison]::OrdinalIgnoreCase) -or
+        [string]::Equals($Dir, $HomeAidCanon, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return
+    }
+
+    $base = Split-Path -Path $Dir -Leaf
+    if ([string]::IsNullOrEmpty($base)) { $base = $Dir }   # a filesystem root itself, e.g. "C:\" or "/"
+
+    # (c) Heavy/cache/build basename match -- any depth, all modes (NFR-2).
+    if (script:Test-AidScanNameInSet -Name $base -Set $script:AidScanPruneDirs) {
+        return
+    }
+
+    # (c2) -All only, root-only: an immediate child of the scan root whose
+    # basename is an OS/system name (NFR-3). Never applied under the HOME
+    # default or -ScanPath (any depth), so a top-level ~/dev or
+    # <-ScanPath>/dev is descended normally.
+    if ($IsAll -and $Depth -eq 1) {
+        if (script:Test-AidScanNameInSet -Name $base -Set $script:AidScanSystemDirs) {
+            return
+        }
+    }
+
+    # (d) Recurse into children -- skipping directory symlinks (NFR-4) and
+    # stopping at the user -Depth cap and the hard $script:AidScanMaxDepth cap.
+    $nextDepth = $Depth + 1
+    if ($UserDepth -ge 0 -and $nextDepth -gt $UserDepth) { return }
+    if ($nextDepth -gt $script:AidScanMaxDepth) { return }
+
+    foreach ($child in $childNames) {
+        $attr = $null
+        try { $attr = [System.IO.File]::GetAttributes($child) } catch { continue }
+        if (($attr -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) { continue }
+        script:Invoke-AidScanWalkNode -Dir $child -Depth $nextDepth -IsAll $IsAll -UserDepth $UserDepth `
+            -Candidates $Candidates -StateHomeCanon $StateHomeCanon -HomeAidCanon $HomeAidCanon
+    }
+}
+
+# Invoke-AidScanWalk -Root <root> -IsAll <bool> -UserDepth <long> -StateHomeCanon <string> -HomeAidCanon <string>
+# Entry point: walks <Root> (depth 0) and returns an array of CANONICAL
+# discovered .aid/ project paths.
+# Mirror of bash _aid_scan_walk.
+function script:Invoke-AidScanWalk {
+    param(
+        [string]$Root,
+        [bool]$IsAll,
+        [long]$UserDepth,
+        [string]$StateHomeCanon,
+        [string]$HomeAidCanon
+    )
+    $candidates = [System.Collections.Generic.List[string]]::new()
+    script:Invoke-AidScanWalkNode -Dir $Root -Depth 0 -IsAll $IsAll -UserDepth $UserDepth `
+        -Candidates $candidates -StateHomeCanon $StateHomeCanon -HomeAidCanon $HomeAidCanon
+    return $candidates
+}
+
+# Invoke-AidProjectsScan
+# Orchestrates parse -> roots -> pruned walk -> canonical-dedupe -> register
+# -> report (SPEC.md Feature Flow). Register-only: the only write is
+# Registry-Register on a genuinely NEW candidate; an already-registered
+# candidate is left byte-unchanged (FR-5). -DryRun replaces the write with
+# recording "would-register" (FR-4). Tier is FORCED to the user tier before
+# registering, unless -Shared was explicitly given (FR-9).
+# Mirror of bash _cmd_projects_scan.
+function script:Invoke-AidProjectsScan {
+    param(
+        [string]$ScanPath          = '',
+        [bool]  $All               = $false,
+        [string]$Depth             = '',
+        [bool]  $DryRun            = $false,
+        [bool]  $IncludeNetwork    = $false,
+        [bool]  $IncludeRemovable  = $false,
+        [bool]  $Shared            = $false,
+        [bool]  $Verbose           = $false
+    )
+
+    # -Depth must be a non-negative integer (AC-3).
+    [long]$userDepth = -1
+    if ($Depth -ne '') {
+        if ($Depth -notmatch '^[0-9]+$') {
+            [Console]::Error.WriteLine("ERROR: aid projects scan: --depth must be a non-negative integer: $Depth")
+            script:Exit-Aid 2
+        }
+        [long]$parsedDepth = 0
+        if (-not [long]::TryParse($Depth, [ref]$parsedDepth)) {
+            [Console]::Error.WriteLine("ERROR: aid projects scan: --depth must be a non-negative integer: $Depth")
+            script:Exit-Aid 2
+        }
+        $userDepth = $parsedDepth
+    }
+
+    # Resolve roots (validates -ScanPath/-All mutual exclusion, non-dir
+    # -ScanPath, and include-flags-without-all; exits 2 on any usage error).
+    $roots = @(script:Get-AidScanRoot -All $All -ScanPath $ScanPath -IncludeNetwork $IncludeNetwork -IncludeRemovable $IncludeRemovable)
+
+    if ($Verbose) {
+        [Console]::Error.WriteLine("aid projects scan: roots: $($roots -join ' ')")
+    }
+
+    # Read the registry ONCE (Feature Flow step 3) for O(1) already-registered
+    # lookups; never re-read mid-walk.
+    $regSeen = @{}
+    foreach ($rp in (script:Get-RegistryRawUnion)) {
+        if ($rp) { $regSeen[$rp] = $true }
+    }
+
+    # FR-9: force the user tier before registering, unless the caller already
+    # forced -Shared explicitly; never leave the auto-rule to choose.
+    $tierOverride = if ($Shared) { '--shared' } else { '--local' }
+
+    # State-home canonical paths, computed ONCE here so Invoke-AidScanWalkNode
+    # can prune the state home's subtree with a plain string compare -- never
+    # registered as a project itself, and never DESCENDED INTO either.
+    $scanStateHomeCanon = try { (Resolve-Path -LiteralPath $script:_AidStateHome -ErrorAction Stop).Path } catch { $script:_AidStateHome }
+    $scanHomeAidCanon   = try { (Resolve-Path -LiteralPath (Join-Path $HOME '.aid') -ErrorAction Stop).Path } catch { Join-Path $HOME '.aid' }
+
+    $scanSeen    = @{}   # run-scoped canonical-key dedupe (NFR-10)
+    $reportLines = [System.Collections.Generic.List[string]]::new()
+    $nNew        = 0
+    $nExisting   = 0
+
+    $script:_AidScanDirCount       = 0
+    $script:_AidScanProgressStride = 200
+
+    foreach ($root in $roots) {
+        [Console]::Error.WriteLine("aid projects scan: scanning $root ...")
+        $candidates = script:Invoke-AidScanWalk -Root $root -IsAll $All -UserDepth $userDepth `
+            -StateHomeCanon $scanStateHomeCanon -HomeAidCanon $scanHomeAidCanon
+        foreach ($cand in $candidates) {
+            if (-not $cand) { continue }
+            # Dedupe within the run: the same real project reached more than
+            # once (overlap, symlink, '.'/'..') is considered exactly once.
+            if ($scanSeen.ContainsKey($cand)) { continue }
+            $scanSeen[$cand] = $true
+
+            $ver  = script:Get-AidProjectState -Path $cand
+            $tier = script:Resolve-AidTier -CanonPath $cand -TierOverride $tierOverride
+
+            if ($regSeen.ContainsKey($cand)) {
+                $action = 'already-registered'
+                $nExisting++
+            } elseif ($DryRun) {
+                $action = 'would-register'
+                $nNew++
+            } else {
+                script:Registry-Register -Repo $cand -Tier $tier 6>$null
+                $action = 'registered'
+                $nNew++
+            }
+            if ($Verbose) {
+                [Console]::Error.WriteLine("aid projects scan: $cand  tier=$tier  version=$ver  action=$action")
+            }
+            $reportLines.Add("$cand  $ver  $action")
+        }
+    }
+
+    # Final summary (FR-7): counts to stdout, then one path/version/action
+    # line per discovered project.
+    Write-Host "aid projects scan: $nNew newly-registered, $nExisting already-registered."
+    foreach ($line in $reportLines) {
+        Write-Host $line
+    }
+
+    return 0
+}
+
 # Invoke-AidProjects [Action] [RemArgs]
 # Orchestrates list/add/remove/help for the project registry.
 # Mirror of bash _cmd_projects.
@@ -2086,6 +2444,16 @@ function script:Invoke-AidProjects {
     $pathArg      = ''
     $tierOverride = ''
     $verbose      = $false
+    # Scan-specific flags (work-019-discover-projects task-002): gated to the
+    # 'scan' action below -- passing any of these to list/add/remove is a
+    # usage error (exit 2).
+    $scanPath             = ''
+    $scanAll              = $false
+    $scanDepth            = ''
+    $scanDryRun           = $false
+    $scanIncludeNetwork   = $false
+    $scanIncludeRemovable = $false
+    $scanFlagSeen         = $false
 
     # Parse remaining args.
     $i = 0
@@ -2096,6 +2464,28 @@ function script:Invoke-AidProjects {
             '--local'   { $tierOverride = '--local'; break }
             '--shared'  { $tierOverride = '--shared'; break }
             '--verbose' { $verbose = $true; $script:_AidVerbose = $true; break }
+            '--path' {
+                $i++
+                if ($i -ge $RemArgs.Count) {
+                    [Console]::Error.WriteLine("ERROR: aid projects: --path requires a value")
+                    script:Exit-Aid 2
+                }
+                $scanPath = $RemArgs[$i]; $scanFlagSeen = $true
+                break
+            }
+            '--all' { $scanAll = $true; $scanFlagSeen = $true; break }
+            '--depth' {
+                $i++
+                if ($i -ge $RemArgs.Count) {
+                    [Console]::Error.WriteLine("ERROR: aid projects: --depth requires a value")
+                    script:Exit-Aid 2
+                }
+                $scanDepth = $RemArgs[$i]; $scanFlagSeen = $true
+                break
+            }
+            '--dry-run'            { $scanDryRun = $true; $scanFlagSeen = $true; break }
+            '--include-network'    { $scanIncludeNetwork = $true; $scanFlagSeen = $true; break }
+            '--include-removable'  { $scanIncludeRemovable = $true; $scanFlagSeen = $true; break }
             { $_ -match '^-' } {
                 [Console]::Error.WriteLine("ERROR: aid projects: unknown flag: $a (see 'aid projects -h')")
                 script:Exit-Aid 2
@@ -2108,15 +2498,37 @@ function script:Invoke-AidProjects {
         $i++
     }
 
+    # Gate scan-specific flags to the 'scan' action -- a scan-only flag passed
+    # to list/add/remove is a usage error (Command Surface & CLI Contract).
+    # Excludes "help": -h/--help (anywhere in the arg list) already overwrote
+    # $Action to "help" above, and help must take precedence over this gate --
+    # otherwise e.g. 'aid projects scan --dry-run -h' would hit this error
+    # (exit 2) instead of showing usage (exit 0).
+    if ($scanFlagSeen -and $Action -ne 'scan' -and $Action -ne 'help') {
+        [Console]::Error.WriteLine("ERROR: aid projects: --path/--all/--depth/--dry-run/--include-network/--include-removable are scan-only flags (see 'aid projects scan -h')")
+        script:Exit-Aid 2
+    }
+    # 'scan' has no positional <root> form (--path replaces it, FR-3); a
+    # stray positional is a usage error rather than a silently-ignored value.
+    if ($Action -eq 'scan' -and $pathArg) {
+        [Console]::Error.WriteLine("ERROR: aid projects scan: unexpected argument: '$pathArg' (there is no positional <root> -- use --path <folder>)")
+        script:Exit-Aid 2
+    }
+
     $resolvedPath = if ($pathArg) { $pathArg } else { '.' }
 
     switch ($Action) {
         'list'   { script:Invoke-AidProjectsList   -Verbose $verbose }
         'add'    { script:Invoke-AidProjectsAdd    -RawPath $resolvedPath -TierOverride $tierOverride -Verbose $verbose }
         'remove' { script:Invoke-AidProjectsRemove -RawPath $resolvedPath -Verbose $verbose }
+        'scan'   {
+            $scanShared = ($tierOverride -eq '--shared')
+            script:Invoke-AidProjectsScan -ScanPath $scanPath -All $scanAll -Depth $scanDepth -DryRun $scanDryRun `
+                -IncludeNetwork $scanIncludeNetwork -IncludeRemovable $scanIncludeRemovable -Shared $scanShared -Verbose $verbose
+        }
         'help'   { script:Show-AidUsage 'projects'; script:Exit-Aid 0 }
         default  {
-            [Console]::Error.WriteLine("ERROR: aid projects: unknown action: $Action (expected: list, add, remove, help)")
+            [Console]::Error.WriteLine("ERROR: aid projects: unknown action: $Action (expected: list, add, remove, scan, help)")
             script:Exit-Aid 2
         }
     }
@@ -3251,7 +3663,7 @@ if ($SUBCMD -eq 'projects') {
     while ($remIdx -lt $script:_RemArgs.Count) {
         $a = $script:_RemArgs[$remIdx]
         switch ($a) {
-            { $_ -in @('list', 'add', 'remove', 'help') } {
+            { $_ -in @('list', 'add', 'remove', 'scan', 'help') } {
                 $_ProjAction = $a
                 $remIdx++
                 while ($remIdx -lt $script:_RemArgs.Count) {
@@ -3270,12 +3682,14 @@ if ($SUBCMD -eq 'projects') {
                 break
             }
             { $_ -match '^-' } {
-                # Unknown flag: pass through to Invoke-AidProjects for rejection.
+                # Unknown flag (incl. scan-specific --path/--all/--dry-run/
+                # --depth/--include-network/--include-removable): pass through
+                # to Invoke-AidProjects for parsing/rejection.
                 $_ProjArgs.Add($a)
                 break
             }
             default {
-                [Console]::Error.WriteLine("ERROR: aid projects: unknown action: $a (expected: list, add, remove, help)")
+                [Console]::Error.WriteLine("ERROR: aid projects: unknown action: $a (expected: list, add, remove, scan, help)")
                 script:Exit-Aid 2
             }
         }

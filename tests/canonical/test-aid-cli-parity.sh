@@ -4568,6 +4568,597 @@ else
 fi
 
 # ===========================================================================
+# PAR019: 'aid projects scan' bash<->PS1 parity + guardrail coverage
+# (work-019-discover-projects / task-003)
+#
+# Exercises the scan subcommand on BOTH twins over ONE shared fixture tree,
+# via the zero-arg HOME default (achieved hermetically by pinning $HOME /
+# %USERPROFILE% at the fixture root) AND the --path <folder> fast path (same
+# tree). Never touches the real machine or the real $HOME. See SPEC.md
+# (work-019-discover-projects) AC-1..AC-16 and its task-003 DETAIL.md.
+#
+# PS half: skipped when pwsh absent (same posture as the rest of this suite);
+# the Bash-side assertions still run so the block is never a vacuous pass.
+# ===========================================================================
+
+echo ""
+echo "=== PAR019: aid projects scan bash<->PS1 parity + guardrails ==="
+
+# ---------------------------------------------------------------------------
+# _par019_build_fixture <fx-root>
+#
+# Builds ONE shared fixture tree covering every scan guardrail (SPEC.md
+# Feature Flow / task-003 DETAIL.md):
+#   - a real tracked project (aid_version) + an untracked one (AC-1/AC-6)
+#   - heavy/cache decoys (classic + new bin/obj/logs + mixed-case Build/OBJ)
+#     each holding a NESTED project one level below the decoy itself -- never
+#     discovered (NFR-2)
+#   - a folder literally named bin/obj/logs that IS itself a valid project --
+#     still discovered (project-check precedes name-pruning) (NFR-9/AC-14)
+#   - a project nested inside another project's subtree -- not separately
+#     discovered (subtree pruned) (NFR-9/AC-14)
+#   - a top-level dev/ (system-dir name) holding a project -- descended and
+#     found (system-dir prune is --all-only) (NFR-3/AC-8), plus a deeper
+#     same-named dev/ not inside a project (also descended normally)
+#   - the CLI's own state home ($HOME/.aid) with a nested project inside it --
+#     neither the state home nor its subtree is ever registered (FR-5/AC-16)
+#   - a permission-denied directory (skip + continue) (NFR-1)
+#   - a real project + a directory-symlink alias to it -- registered once
+#     (NFR-10/AC-15)
+#   - a directory-symlink cycle -- must terminate (NFR-4)
+#   - a pathologically deep chain (45 levels, past the hard 40-level cap) --
+#     must terminate (NFR-4)
+# ---------------------------------------------------------------------------
+_par019_mkproj() {
+    # $1 = .aid dir path, $2 = aid_version (empty -> untracked, no manifest)
+    local aiddir="$1" ver="$2"
+    mkdir -p "$aiddir"
+    if [[ -n "$ver" ]]; then
+        cat > "${aiddir}/.aid-manifest.json" << EOF
+{
+  "aid_version": "${ver}",
+  "tools": {}
+}
+EOF
+    fi
+}
+
+_par019_build_fixture() {
+    local fx="$1"
+    rm -rf "$fx"
+    mkdir -p "$fx"
+
+    # State home marker ($HOME/.aid, R6/FR-5/AC-16): a nested project under it
+    # must never be reached (whole subtree pruned, not just the .aid/ itself).
+    mkdir -p "${fx}/.aid"
+    printf 'schema: 1\nprojects:\n' > "${fx}/.aid/registry.yml"
+    _par019_mkproj "${fx}/.aid/nested-in-state-home/.aid" "9.9.9"
+
+    # AC-1 / AC-6: tracked + untracked.
+    _par019_mkproj "${fx}/proj-tracked/.aid" "1.4.2"
+    mkdir -p "${fx}/proj-untracked/.aid"
+
+    # NFR-2: heavy/cache decoys (classic + new names + mixed-case), nested
+    # project ONE level below the decoy itself (never reached -- decoy pruned).
+    _par019_mkproj "${fx}/decoys/node_modules/inner-pkg/.aid" "0.1.1"
+    _par019_mkproj "${fx}/decoys/dotgit_decoy/.git/inner/.aid" "0.1.2"
+    _par019_mkproj "${fx}/decoys/Build/inner/.aid" "0.1.3"
+    _par019_mkproj "${fx}/decoys/OBJ/inner/.aid" "0.1.4"
+    _par019_mkproj "${fx}/decoys/logs/inner/.aid" "0.1.5"
+    _par019_mkproj "${fx}/decoys/.cache/inner/.aid" "0.1.6"
+
+    # NFR-9 / AC-14: exclusion-named folders that ARE valid projects.
+    _par019_mkproj "${fx}/exclusion-named-projects/bin/.aid" "2.0.0"
+    _par019_mkproj "${fx}/exclusion-named-projects/obj/.aid" "2.0.1"
+    _par019_mkproj "${fx}/exclusion-named-projects/logs/.aid" "2.0.2"
+
+    # NFR-9 / AC-14: project nested inside another project -- subtree pruned.
+    _par019_mkproj "${fx}/nested-in-project/outer-proj/.aid" "3.0.0"
+    _par019_mkproj "${fx}/nested-in-project/outer-proj/subdir/inner-proj/.aid" "3.0.1"
+
+    # NFR-3 (--all-only exemption): top-level dev/ under the scan root, plus a
+    # deeper same-named dev/ not inside a project -- both descended normally.
+    _par019_mkproj "${fx}/dev/proj-in-dev/.aid" "4.0.0"
+    _par019_mkproj "${fx}/misc/dev/proj-deep-dev/.aid" "4.0.1"
+
+    # NFR-1: permission-denied directory (no project inside -- a
+    # host-independent assertion: proves scan continues past it regardless of
+    # whether this host's chmod actually enforces the block, e.g. Windows).
+    mkdir -p "${fx}/denied"
+    printf 'x\n' > "${fx}/denied/placeholder.txt"
+    chmod 000 "${fx}/denied" 2>/dev/null || true
+
+    # NFR-10 / AC-15: a real project + a directory-symlink alias to it.
+    # MSYS=winsymlinks:nativestrict forces a GENUINE (non-junction) symlink on
+    # Windows Git-Bash (test-delete-pipeline.sh precedent); a no-op elsewhere.
+    _par019_mkproj "${fx}/dedupe/realproj/.aid" "5.0.0"
+    MSYS=winsymlinks:nativestrict ln -s "${fx}/dedupe/realproj" "${fx}/dedupe/linkproj" 2>/dev/null || true
+
+    # NFR-4: directory-symlink cycle (must terminate).
+    mkdir -p "${fx}/symcycle/a"
+    MSYS=winsymlinks:nativestrict ln -s "${fx}/symcycle/a" "${fx}/symcycle/a/loop" 2>/dev/null || true
+
+    # NFR-4: pathologically deep chain, past the hard _AID_SCAN_MAX_DEPTH=40
+    # cap (no .aid/ anywhere -- proves termination, not discovery).
+    local deep="${fx}/deep" i
+    for i in $(seq 1 45); do deep="${deep}/n"; done
+    mkdir -p "$deep"
+}
+
+# _par019_extract_registered <output> <fx-root-basename>
+# Prints one path-relative-to-the-fixture-root per discovered candidate line
+# ("<path>  <version>  <action>", action in registered|already-registered),
+# sorted. Both twins print the identical "<path>  <version>  <action>" report
+# line shape (bin/aid _cmd_projects_scan / bin/aid.ps1 Invoke-AidProjectsScan).
+#
+# Path-format-agnostic (task-003 GATE finding): a native Windows pwsh renders
+# "C:\Users\...\par019fx.XXXXXX\proj" while bash/MSYS renders
+# "/c/Users/.../par019fx.XXXXXX/proj" for the IDENTICAL directory -- and
+# ancestor segments may ALSO differ (Windows 8.3 short-name aliasing of a
+# pre-existing folder is host-dependent, e.g. a real username directory, and
+# outside this test's control -- confirmed empirically NOT to affect anything
+# this fixture itself creates). run_sh_scan/run_ps1_scan already normalize
+# backslash -> forward-slash at capture time (below), so this only needs to
+# anchor on the fixture root's OWN generated basename -- unique per run,
+# created fresh by this block, never 8.3-shortened or case-folded -- and keep
+# the suffix AFTER "/<basename>/": the fixture-relative path both twins must
+# agree on, regardless of how each renders everything ABOVE the fixture root.
+_par019_extract_registered() {
+    printf '%s\n' "$1" | grep -E '  (registered|already-registered)$' \
+        | awk '{print $1}' | sed -E "s#.*/${2}/##" | sort
+}
+
+# run_sh_scan <aid-home> <home-pin> <args...>
+# Like run_sh, but ALSO pins the OS-level $HOME (distinct from AID_HOME, the
+# CLI's own state home) so the zero-arg default scope resolves to <home-pin>.
+# Normalizes backslash -> forward-slash at capture (no-op on bash/MSYS, which
+# never emits backslashes here; kept for symmetry with run_ps1_scan below so
+# both twins' captured output is comparable the same way).
+run_sh_scan() {
+    local aid_home="$1" home_pin="$2"; shift 2
+    OUT_SH=$(HOME="$home_pin" AID_HOME="$aid_home" \
+             AID_LIB_PATH="${aid_home}/lib/aid-install-core.sh" AID_NO_UPDATE_CHECK=1 \
+             bash "${aid_home}/bin/aid" "$@" 2>&1 | sed 's/\\/\//g'); RC_SH=$?
+}
+
+# run_ps1_scan <aid-home> <home-pin> <args...>
+# Like run_ps1, but ALSO pins USERPROFILE/HOMEDRIVE/HOMEPATH (native Windows
+# pwsh derives $HOME from USERPROFILE, never from a bash-exported $HOME --
+# same rationale as the suite's global HOME pin at the top of this file).
+# cygpath-absent (Linux) -> no-op passthrough, matching that same convention.
+#
+# Also normalizes backslash -> forward-slash (task-003 GATE finding): a native
+# Windows pwsh renders discovered paths as "C:\Users\...\proj" while bash/MSYS
+# renders "/c/Users/.../proj" for the SAME directory -- without this, EVERY
+# multi-segment relative-path assertion against $OUT_PS1 (and the
+# _par019_extract_registered helper above) would structurally fail on a
+# native-Windows run regardless of actual twin behavior. A no-op on Linux CI
+# (PowerShell Core there already emits POSIX-style forward-slash paths).
+run_ps1_scan() {
+    local aid_home="$1" home_pin="$2"; shift 2
+    local win_home_pin="$home_pin"
+    command -v cygpath >/dev/null 2>&1 && win_home_pin="$(cygpath -w "$home_pin")"
+    OUT_PS1=$(HOME="$home_pin" USERPROFILE="$win_home_pin" \
+              HOMEDRIVE="${win_home_pin:0:2}" HOMEPATH="${win_home_pin:2}" \
+              AID_HOME="$aid_home" AID_LIB_PATH="${aid_home}/lib/AidInstallCore.psm1" \
+              AID_NO_UPDATE_CHECK=1 \
+              "$PWSH" -NoProfile -File "${aid_home}/bin/aid.ps1" "$@" 2>&1 | \
+              sed 's/\x1b\[[0-9;]*m//g' | sed 's/\\/\//g'); RC_PS1=$?
+}
+
+FX_019=$(mktemp -d "${TMP}/par019fx.XXXXXX")
+_par019_build_fixture "$FX_019"
+FX_019C="$(cd "$FX_019" && pwd -P)"
+FX_019_BASE="$(basename "$FX_019")"
+
+# NFR-7 baseline: checksum every file living under any .aid/ anywhere in the
+# fixture, BEFORE any scan runs. Re-checked at the end of the block (PAR019-I)
+# -- scan is register-only and must never create/modify a file in there.
+_par019_snapshot() {
+    find "$FX_019" -path '*/.aid/*' -type f -print0 2>/dev/null | sort -z | xargs -0 sha256sum 2>/dev/null
+}
+_PAR019_SNAP_BEFORE="$(_par019_snapshot)"
+
+_PAR019_EXPECTED=$(cat << 'EXPECTEOF'
+dedupe/realproj
+dev/proj-in-dev
+exclusion-named-projects/bin
+exclusion-named-projects/logs
+exclusion-named-projects/obj
+misc/dev/proj-deep-dev
+nested-in-project/outer-proj
+proj-tracked
+proj-untracked
+EXPECTEOF
+)
+
+# ---------------------------------------------------------------------------
+# PAR019-A: zero-arg HOME-default scan discovers exactly the expected set,
+# honors every guardrail, and matches between twins (AC-1, AC-2, AC-6, AC-7,
+# AC-8, AC-10, AC-14, AC-15, AC-16).
+# ---------------------------------------------------------------------------
+SH_HOME_019A=$(newhome); setup_sh_home "${SH_HOME_019A}"
+run_sh_scan "${SH_HOME_019A}" "$FX_019" projects scan --verbose
+assert_exit_eq "$RC_SH" 0 "PAR019-A01 Bash home-default scan -> exit 0"
+
+SH_GOT_A="$(_par019_extract_registered "$OUT_SH" "$FX_019_BASE")"
+assert_eq "$SH_GOT_A" "$_PAR019_EXPECTED" \
+    "PAR019-A02 Bash home-default: discovered set is exactly the expected 9 projects"
+
+assert_output_contains "$OUT_SH" "aid projects scan: roots: ${FX_019C}" \
+    "PAR019-A03 Bash home-default: roots resolve to the pinned HOME (AC-2, no drive enum)"
+assert_output_contains "$OUT_SH" "scanning ${FX_019C} ..." \
+    "PAR019-A04 Bash: progress line to stderr present (AC-7/NFR-6)"
+assert_output_contains "$OUT_SH" "9 newly-registered, 0 already-registered" \
+    "PAR019-A05 Bash: summary counts (AC-7)"
+assert_output_contains "$OUT_SH" "proj-tracked  1.4.2  registered" \
+    "PAR019-A06 Bash: tracked project reports its aid_version (AC-6)"
+assert_output_contains "$OUT_SH" "proj-untracked  untracked  registered" \
+    "PAR019-A07 Bash: .aid/ with no manifest reports untracked (AC-6)"
+
+# NFR-2: heavy/cache decoys (classic + new + mixed-case) never discovered.
+for _dec in "decoys/node_modules/inner-pkg" "decoys/dotgit_decoy/.git/inner" \
+            "decoys/Build/inner" "decoys/OBJ/inner" "decoys/logs/inner" "decoys/.cache/inner"; do
+    assert_output_not_contains "$OUT_SH" "${FX_019C}/${_dec}  " \
+        "PAR019-A08 Bash: heavy/cache decoy NOT discovered: ${_dec} (NFR-2)"
+done
+
+# NFR-9/AC-14: exclusion-named projects (bin/obj/logs) ARE discovered.
+assert_output_contains "$OUT_SH" "exclusion-named-projects/bin  2.0.0  registered" \
+    "PAR019-A09 Bash: folder literally named 'bin' IS discovered (project-check precedes name-prune, AC-14)"
+assert_output_contains "$OUT_SH" "exclusion-named-projects/obj  2.0.1  registered" \
+    "PAR019-A10 Bash: folder literally named 'obj' IS discovered (AC-14)"
+assert_output_contains "$OUT_SH" "exclusion-named-projects/logs  2.0.2  registered" \
+    "PAR019-A11 Bash: folder literally named 'logs' IS discovered (AC-14)"
+
+# NFR-9/AC-14: nested-in-project subtree pruned.
+assert_output_contains "$OUT_SH" "nested-in-project/outer-proj  3.0.0  registered" \
+    "PAR019-A12 Bash: outer project IS discovered"
+assert_output_not_contains "$OUT_SH" "inner-proj" \
+    "PAR019-A13 Bash: project nested INSIDE another project's subtree is NOT separately discovered (AC-14)"
+
+# NFR-3 (--all-only exemption): top-level dev/ descended + deeper dev/ descended.
+assert_output_contains "$OUT_SH" "dev/proj-in-dev  4.0.0  registered" \
+    "PAR019-A14 Bash: top-level dev/ under HOME default is DESCENDED, project found (system-dir prune is --all-only, AC-8)"
+assert_output_contains "$OUT_SH" "misc/dev/proj-deep-dev  4.0.1  registered" \
+    "PAR019-A15 Bash: a deeper (non-top-level) dev/ not inside a project is also descended normally (AC-8)"
+
+# NFR-10/AC-15: dedupe (symlink alias never separately registered).
+assert_output_not_contains "$OUT_SH" "linkproj" \
+    "PAR019-A16 Bash: the directory-symlink alias is NOT separately registered (AC-15)"
+_PAR019_A_DEDUPE_COUNT=$(printf '%s\n' "$OUT_SH" | grep -c "dedupe/realproj  5.0.0  registered" || true)
+assert_eq "$_PAR019_A_DEDUPE_COUNT" "1" \
+    "PAR019-A17 Bash: the real project reachable via a symlink alias is registered EXACTLY once (AC-15)"
+
+# FR-5/AC-16: state home + its subtree never registered.
+assert_output_not_contains "$OUT_SH" "nested-in-state-home" \
+    "PAR019-A18 Bash: a project nested inside \$HOME/.aid (state home) is NEVER registered (AC-16)"
+assert_output_not_contains "$OUT_SH" "${FX_019C}  " \
+    "PAR019-A19 Bash: the fixture root itself (whose .aid/ IS the state home) is NOT registered (AC-16)"
+
+# NFR-1/NFR-4: unreadable dir skipped + termination (symlink cycle + deep
+# chain) proven by the block simply completing with the exact expected set
+# above -- a hang or crash would have failed A01/A02 instead.
+pass "PAR019-A20 Bash: permission-denied dir skipped + scan continued (NFR-1) -- proven by A02's exact-set match"
+pass "PAR019-A21 Bash: symlink-cycle + deep-chain (past the hard 40-level cap) both TERMINATE (NFR-4) -- proven by A01/A02 completing"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_019A=$(newhome); setup_ps1_home "${PS_HOME_019A}"
+    run_ps1_scan "${PS_HOME_019A}" "$FX_019" projects scan --verbose
+    assert_exit_eq "$RC_PS1" 0 "PAR019-A22 PS1 home-default scan -> exit 0"
+
+    PS_GOT_A="$(_par019_extract_registered "$OUT_PS1" "$FX_019_BASE")"
+    assert_eq "$PS_GOT_A" "$_PAR019_EXPECTED" \
+        "PAR019-A23 PS1 home-default: discovered set is exactly the expected 9 projects"
+    assert_output_contains "$OUT_PS1" "proj-tracked  1.4.2  registered" \
+        "PAR019-A24 PS1: tracked project reports its aid_version (AC-6)"
+    assert_output_contains "$OUT_PS1" "proj-untracked  untracked  registered" \
+        "PAR019-A25 PS1: .aid/ with no manifest reports untracked (AC-6)"
+    assert_output_contains "$OUT_PS1" "exclusion-named-projects/bin  2.0.0  registered" \
+        "PAR019-A26 PS1: folder literally named 'bin' IS discovered (AC-14)"
+    assert_output_not_contains "$OUT_PS1" "inner-proj" \
+        "PAR019-A27 PS1: nested-in-project subtree NOT separately discovered (AC-14)"
+    assert_output_not_contains "$OUT_PS1" "linkproj" \
+        "PAR019-A28 PS1: directory-symlink alias NOT separately registered (AC-15)"
+    assert_output_not_contains "$OUT_PS1" "nested-in-state-home" \
+        "PAR019-A29 PS1: project nested inside the state home NEVER registered (AC-16)"
+
+    # AC-10: identical discovery + identical exit codes across twins, same fixture.
+    assert_eq "$RC_SH" "$RC_PS1" "PAR019-A30 Bash<->PS1 exit code parity (home-default scan, AC-10)"
+    assert_eq "$SH_GOT_A" "$PS_GOT_A" "PAR019-A31 Bash<->PS1 discovered-set parity (home-default scan, AC-10)"
+else
+    for _n in 22 23 24 25 26 27 28 29 30 31; do
+        pass "PAR019-A${_n} [SKIPPED: pwsh absent]"
+    done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-B: re-scan does not duplicate; an already-registered project's
+# record is left UNCHANGED (no re-tier/rewrite/reorder); a no-.aid/ folder is
+# never registered (AC-5).
+# ---------------------------------------------------------------------------
+_PAR019_REG_BEFORE="$(cat "${SH_HOME_019A}/registry.yml")"
+run_sh_scan "${SH_HOME_019A}" "$FX_019" projects scan
+assert_exit_eq "$RC_SH" 0 "PAR019-B01 Bash re-scan -> exit 0"
+assert_output_contains "$OUT_SH" "0 newly-registered, 9 already-registered" \
+    "PAR019-B02 Bash re-scan: 0 newly-registered, all 9 already-registered (AC-5)"
+_PAR019_REG_AFTER="$(cat "${SH_HOME_019A}/registry.yml")"
+assert_eq "$_PAR019_REG_AFTER" "$_PAR019_REG_BEFORE" \
+    "PAR019-B03 Bash re-scan: registry.yml byte-unchanged (no re-tier/rewrite/reorder, AC-5)"
+assert_output_not_contains "$OUT_SH" "${FX_019C}/denied  " \
+    "PAR019-B04 Bash: the no-.aid/ 'denied' folder is never registered (AC-5)"
+
+if [[ -n "$PWSH" ]]; then
+    run_ps1_scan "${PS_HOME_019A}" "$FX_019" projects scan
+    assert_exit_eq "$RC_PS1" 0 "PAR019-B05 PS1 re-scan -> exit 0"
+    assert_output_contains "$OUT_PS1" "0 newly-registered, 9 already-registered" \
+        "PAR019-B06 PS1 re-scan: 0 newly-registered, all 9 already-registered (AC-5)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR019-B07 Bash<->PS1 exit code parity (re-scan, AC-10)"
+else
+    for _n in 05 06 07; do pass "PAR019-B${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-C: --path <folder> fast path narrows the scan to exactly that
+# subtree and matches the home-default discovery over the SAME fixture (AC-1,
+# AC-3 narrowing).
+# ---------------------------------------------------------------------------
+SH_HOME_019C=$(newhome); setup_sh_home "${SH_HOME_019C}"
+run_sh_scan "${SH_HOME_019C}" "$FX_019" projects scan --path "$FX_019"
+assert_exit_eq "$RC_SH" 0 "PAR019-C01 Bash --path fast-path scan -> exit 0"
+SH_GOT_C="$(_par019_extract_registered "$OUT_SH" "$FX_019_BASE")"
+assert_eq "$SH_GOT_C" "$_PAR019_EXPECTED" \
+    "PAR019-C02 Bash --path fast-path: discovered set matches the home-default set (AC-1/AC-3)"
+
+# register-then-list (AC-1): the newly-registered projects appear in 'projects list'.
+run_sh "${SH_HOME_019C}" projects list
+assert_exit_eq "$RC_SH" 0 "PAR019-C03 Bash 'projects list' after scan -> exit 0"
+assert_output_contains "$OUT_SH" "proj-tracked" \
+    "PAR019-C04 Bash: a scan-registered project appears in 'projects list' (AC-1)"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_019C=$(newhome); setup_ps1_home "${PS_HOME_019C}"
+    run_ps1_scan "${PS_HOME_019C}" "$FX_019" projects scan --path "$FX_019"
+    assert_exit_eq "$RC_PS1" 0 "PAR019-C05 PS1 --path fast-path scan -> exit 0"
+    PS_GOT_C="$(_par019_extract_registered "$OUT_PS1" "$FX_019_BASE")"
+    assert_eq "$PS_GOT_C" "$_PAR019_EXPECTED" \
+        "PAR019-C06 PS1 --path fast-path: discovered set matches the home-default set (AC-1/AC-3)"
+    assert_eq "$SH_GOT_C" "$PS_GOT_C" "PAR019-C07 Bash<->PS1 discovered-set parity (--path fast path, AC-10)"
+else
+    for _n in 05 06 07; do pass "PAR019-C${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-D: --dry-run previews without writing -- registry.yml stays ABSENT
+# (a fresh AID_HOME never had one), exit 0 (AC-4).
+# ---------------------------------------------------------------------------
+SH_HOME_019D=$(newhome); setup_sh_home "${SH_HOME_019D}"
+run_sh_scan "${SH_HOME_019D}" "$FX_019" projects scan --dry-run
+assert_exit_eq "$RC_SH" 0 "PAR019-D01 Bash --dry-run -> exit 0"
+assert_output_contains "$OUT_SH" "9 newly-registered, 0 already-registered" \
+    "PAR019-D02 Bash --dry-run: reports what it WOULD register (AC-4)"
+if [[ -f "${SH_HOME_019D}/registry.yml" ]]; then
+    fail "PAR019-D03 Bash --dry-run: registry.yml must stay absent (no write)"
+else
+    pass "PAR019-D03 Bash --dry-run: registry.yml stays absent (no write, AC-4)"
+fi
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_019D=$(newhome); setup_ps1_home "${PS_HOME_019D}"
+    run_ps1_scan "${PS_HOME_019D}" "$FX_019" projects scan --dry-run
+    assert_exit_eq "$RC_PS1" 0 "PAR019-D04 PS1 --dry-run -> exit 0"
+    assert_output_contains "$OUT_PS1" "9 newly-registered, 0 already-registered" \
+        "PAR019-D05 PS1 --dry-run: reports what it WOULD register (AC-4)"
+    if [[ -f "${PS_HOME_019D}/registry.yml" ]]; then
+        fail "PAR019-D06 PS1 --dry-run: registry.yml must stay absent (no write)"
+    else
+        pass "PAR019-D06 PS1 --dry-run: registry.yml stays absent (no write, AC-4)"
+    fi
+    assert_eq "$RC_SH" "$RC_PS1" "PAR019-D07 Bash<->PS1 exit code parity (--dry-run, AC-10)"
+else
+    for _n in 04 05 06 07; do pass "PAR019-D${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-E: usage-error matrix -- non-dir --path, --path+--all mutual
+# exclusion, --include-network/--include-removable without --all, non-integer
+# AND negative --depth, and a scan-only flag on list/add -- all exit 2 (AC-3,
+# AC-9), identically on both twins.
+# ---------------------------------------------------------------------------
+SH_HOME_019E=$(newhome); setup_sh_home "${SH_HOME_019E}"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --path "${FX_019}/does-not-exist-xyz"
+assert_exit_eq "$RC_SH" 2 "PAR019-E01 Bash: non-directory --path -> exit 2 (AC-3)"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --path "$FX_019" --all
+assert_exit_eq "$RC_SH" 2 "PAR019-E02 Bash: --path + --all together -> exit 2 (mutually exclusive, AC-3)"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --include-network
+assert_exit_eq "$RC_SH" 2 "PAR019-E03 Bash: --include-network without --all -> exit 2 (AC-9)"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --include-removable
+assert_exit_eq "$RC_SH" 2 "PAR019-E04 Bash: --include-removable without --all -> exit 2 (AC-9)"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --depth abc
+assert_exit_eq "$RC_SH" 2 "PAR019-E05 Bash: non-integer --depth -> exit 2 (AC-3)"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --depth -1
+assert_exit_eq "$RC_SH" 2 "PAR019-E06 Bash: negative --depth -> exit 2 (AC-3)"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects list --all
+assert_exit_eq "$RC_SH" 2 "PAR019-E07 Bash: scan-only flag (--all) on 'list' -> exit 2"
+
+run_sh_scan "${SH_HOME_019E}" "$FX_019" projects add --dry-run "${FX_019}/proj-tracked"
+assert_exit_eq "$RC_SH" 2 "PAR019-E08 Bash: scan-only flag (--dry-run) on 'add' -> exit 2"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_019E=$(newhome); setup_ps1_home "${PS_HOME_019E}"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --path "${FX_019}/does-not-exist-xyz"
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E09 PS1: non-directory --path -> exit 2 (AC-3)"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --path "$FX_019" --all
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E10 PS1: --path + --all together -> exit 2 (AC-3)"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --include-network
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E11 PS1: --include-network without --all -> exit 2 (AC-9)"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --include-removable
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E12 PS1: --include-removable without --all -> exit 2 (AC-9)"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --depth abc
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E13 PS1: non-integer --depth -> exit 2 (AC-3)"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --depth -1
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E14 PS1: negative --depth -> exit 2 (AC-3)"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects list --all
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E15 PS1: scan-only flag (--all) on 'list' -> exit 2"
+
+    run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects add --dry-run "${FX_019}/proj-tracked"
+    assert_exit_eq "$RC_PS1" 2 "PAR019-E16 PS1: scan-only flag (--dry-run) on 'add' -> exit 2"
+else
+    for _n in 09 10 11 12 13 14 15 16; do pass "PAR019-E${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-F: --depth <n> bounds recursion to n levels below the scan root --
+# depth-1 projects are found, deeper ones are not (AC-3), identically on both
+# twins.
+# ---------------------------------------------------------------------------
+SH_HOME_019F=$(newhome); setup_sh_home "${SH_HOME_019F}"
+run_sh_scan "${SH_HOME_019F}" "$FX_019" projects scan --depth 1
+SH_GOT_F="$(_par019_extract_registered "$OUT_SH" "$FX_019_BASE")"
+assert_eq "$SH_GOT_F" "$(printf 'proj-tracked\nproj-untracked')" \
+    "PAR019-F01 Bash --depth 1: only the two depth-1 projects are found (deeper ones excluded, AC-3)"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_019F=$(newhome); setup_ps1_home "${PS_HOME_019F}"
+    run_ps1_scan "${PS_HOME_019F}" "$FX_019" projects scan --depth 1
+    PS_GOT_F="$(_par019_extract_registered "$OUT_PS1" "$FX_019_BASE")"
+    assert_eq "$PS_GOT_F" "$(printf 'proj-tracked\nproj-untracked')" \
+        "PAR019-F02 PS1 --depth 1: only the two depth-1 projects are found (AC-3)"
+    assert_eq "$SH_GOT_F" "$PS_GOT_F" "PAR019-F03 Bash<->PS1 --depth 1 parity (AC-10)"
+else
+    for _n in 02 03; do pass "PAR019-F${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-G: AC-13 tier forcing -- a project OUTSIDE the pinned HOME is
+# auto-registered in the USER tier by default (no elevation probe), and
+# --shared selects the shared path, identically on both twins.
+# ---------------------------------------------------------------------------
+OUTSIDE_019=$(mktemp -d "${TMP}/par019outside.XXXXXX")
+mkdir -p "${OUTSIDE_019}/.aid"
+cat > "${OUTSIDE_019}/.aid/.aid-manifest.json" << 'EOF'
+{
+  "aid_version": "6.0.0",
+  "tools": {}
+}
+EOF
+UNRELATED_HOME_019=$(mktemp -d "${TMP}/par019unrelated.XXXXXX")
+
+SH_HOME_019G=$(newhome); setup_sh_home "${SH_HOME_019G}"
+run_sh_scan "${SH_HOME_019G}" "$UNRELATED_HOME_019" projects scan --path "$OUTSIDE_019" --verbose
+assert_exit_eq "$RC_SH" 0 "PAR019-G01 Bash: scan of an outside-HOME project -> exit 0 (no elevation hang)"
+assert_output_contains "$OUT_SH" "tier=user" \
+    "PAR019-G02 Bash: default scan registers an outside-HOME project in the USER tier (AC-13)"
+
+SH_HOME_019G2=$(newhome); setup_sh_home "${SH_HOME_019G2}"
+run_sh_scan "${SH_HOME_019G2}" "$UNRELATED_HOME_019" projects scan --path "$OUTSIDE_019" --shared --verbose
+assert_exit_eq "$RC_SH" 0 "PAR019-G03 Bash: --shared scan of an outside-HOME project -> exit 0"
+assert_output_contains "$OUT_SH" "tier=shared" \
+    "PAR019-G04 Bash: --shared scan selects the shared tier (AC-13)"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_019G=$(newhome); setup_ps1_home "${PS_HOME_019G}"
+    run_ps1_scan "${PS_HOME_019G}" "$UNRELATED_HOME_019" projects scan --path "$OUTSIDE_019" --verbose
+    assert_exit_eq "$RC_PS1" 0 "PAR019-G05 PS1: scan of an outside-HOME project -> exit 0 (no elevation hang)"
+    assert_output_contains "$OUT_PS1" "tier=user" \
+        "PAR019-G06 PS1: default scan registers an outside-HOME project in the USER tier (AC-13)"
+
+    PS_HOME_019G2=$(newhome); setup_ps1_home "${PS_HOME_019G2}"
+    run_ps1_scan "${PS_HOME_019G2}" "$UNRELATED_HOME_019" projects scan --path "$OUTSIDE_019" --shared --verbose
+    assert_exit_eq "$RC_PS1" 0 "PAR019-G07 PS1: --shared scan of an outside-HOME project -> exit 0"
+    assert_output_contains "$OUT_PS1" "tier=shared" \
+        "PAR019-G08 PS1: --shared scan selects the shared tier (AC-13)"
+else
+    for _n in 05 06 07 08; do pass "PAR019-G${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-H: --all root/drive classifier -- asserted via the roots-enumeration
+# helper itself (--depth 0 --dry-run: enumerates roots and checks each root's
+# OWN classification, but never recurses into its content) -- never a real
+# whole-disk crawl. On Unix (this suite's CI host, and any Unix box), --all
+# walks from "/" with network/removable NOT auto-excluded and the two opt-in
+# flags accepted-but-inert with a one-line stderr note (AC-9 documented
+# limitation). On a Windows host (bash Git-Bash + native pwsh -- exercised
+# only when this suite happens to run there, e.g. local dev; this suite's CI
+# matrix runs ubuntu-latest only -- see installer-tests.yml), the SAME
+# bounded probe additionally confirms the real machine's fixed-drive set is
+# returned with network/removable excluded by default (AC-2/AC-9).
+# ---------------------------------------------------------------------------
+SH_HOME_019H=$(newhome); setup_sh_home "${SH_HOME_019H}"
+run_sh_scan "${SH_HOME_019H}" "$FX_019" projects scan --all --depth 0 --dry-run --verbose
+assert_exit_eq "$RC_SH" 0 "PAR019-H01 Bash --all --depth 0 --dry-run -> exit 0 (bounded root probe, no real crawl)"
+
+case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*) _PAR019_SH_IS_WIN=1 ;;
+    *) _PAR019_SH_IS_WIN=0 ;;
+esac
+if [[ "$_PAR019_SH_IS_WIN" -eq 0 ]]; then
+    assert_output_contains "$OUT_SH" "aid projects scan: roots: /" \
+        "PAR019-H02 Bash (Unix): --all resolves to the single '/' root, no drive enumeration (AC-2)"
+    run_sh_scan "${SH_HOME_019H}" "$FX_019" projects scan --all --include-network --depth 0 --dry-run
+    assert_output_contains "$OUT_SH" "Windows-only-effective" \
+        "PAR019-H03 Bash (Unix): --include-network is accepted-but-inert with a one-line note (AC-9 documented limitation)"
+else
+    pass "PAR019-H02 [SKIPPED: Windows host -- Unix-branch assertion not applicable]"
+    _PAR019_SH_ROOTS=$(printf '%s\n' "$OUT_SH" | grep -oE 'roots: .*' || true)
+    if printf '%s\n' "$OUT_SH" | grep -qiE 'no fixed drives detected'; then
+        pass "PAR019-H03 [SKIPPED: this host's Git-Bash cannot shell out to powershell.exe -- WARN-degrade observed, not a crash]"
+    else
+        printf '%s\n' "$_PAR019_SH_ROOTS" | grep -qi 'network\|removable' \
+            && fail "PAR019-H03 Bash (Windows): a network/removable drive leaked into the default --all root set (AC-2/AC-9)" \
+            || pass "PAR019-H03 Bash (Windows): default --all root set excludes network/removable drives (AC-2/AC-9)"
+    fi
+fi
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_019H=$(newhome); setup_ps1_home "${PS_HOME_019H}"
+    run_ps1_scan "${PS_HOME_019H}" "$FX_019" projects scan --all --depth 0 --dry-run --verbose
+    assert_exit_eq "$RC_PS1" 0 "PAR019-H04 PS1 --all --depth 0 --dry-run -> exit 0 (bounded root probe, no real crawl)"
+
+    if printf '%s\n' "$OUT_PS1" | grep -q 'roots: /$'; then
+        assert_output_contains "$OUT_PS1" "aid projects scan: roots: /" \
+            "PAR019-H05 PS1 (Unix): --all resolves to the single '/' root (AC-2)"
+        run_ps1_scan "${PS_HOME_019H}" "$FX_019" projects scan --all --include-removable --depth 0 --dry-run
+        assert_output_contains "$OUT_PS1" "Windows-only-effective" \
+            "PAR019-H06 PS1 (Unix): --include-removable is accepted-but-inert with a one-line note (AC-9)"
+    else
+        printf '%s\n' "$OUT_PS1" | grep -qi 'network\|removable' \
+            && fail "PAR019-H06 PS1 (Windows): a network/removable drive leaked into the default --all root set (AC-2/AC-9)" \
+            || pass "PAR019-H06 PS1 (Windows): default --all root set excludes network/removable drives (AC-2/AC-9)"
+    fi
+    assert_eq "$RC_SH" "$RC_PS1" "PAR019-H07 Bash<->PS1 exit code parity (--all --depth 0 --dry-run, AC-10)"
+else
+    for _n in 04 05 06 07; do pass "PAR019-H${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR019-I: NFR-7 -- across EVERY scan run in this block (both twins, every
+# mode), no file under any discovered project's .aid/ (or the state home's
+# .aid/) was ever created or modified. Also restores the denied dir's mode so
+# the suite's own end-of-run cleanup trap can remove it.
+# ---------------------------------------------------------------------------
+_PAR019_SNAP_AFTER="$(_par019_snapshot)"
+assert_eq "$_PAR019_SNAP_AFTER" "$_PAR019_SNAP_BEFORE" \
+    "PAR019-I01 no file under any discovered project's .aid/ was created or modified across all PAR019 scans, either twin (NFR-7)"
+
+chmod 755 "${FX_019}/denied" 2>/dev/null || true
+
+# ===========================================================================
 # End-of-suite: REAL_HOME blast-surface canary
 #
 # Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before

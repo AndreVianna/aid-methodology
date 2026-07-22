@@ -21,7 +21,8 @@ aid add <tool>[,...]             Add tool(s): claude-code, codex, cursor, copilo
 aid update [<tool>... | self]    Update to latest; no arg = all installed tools; 'self' = the aid CLI
 aid remove [<tool>... | self]    Remove; no arg = ALL AID from the project (asks to confirm); 'self' = the aid CLI
 aid dashboard start|stop ...     Start/stop the local web dashboard
-aid projects [list|add|remove]   List, register, or unregister AID projects
+aid projects [list|add|remove|scan]
+                                 List, register, unregister, or scan for AID projects
 aid <command> -h | --help        Per-command help
 ```
 
@@ -159,6 +160,10 @@ aid projects add --local              # force user tier
 aid projects add --shared             # force shared tier (global install only)
 aid projects remove                   # unregister cwd
 aid projects remove /path/to/project  # unregister a specific path
+aid projects scan                     # crawl $HOME and register every discovered .aid/ project
+aid projects scan --path /path/to/dir # scan only that folder's subtree
+aid projects scan --all               # scan the whole machine (Windows fixed drives; Unix from /)
+aid projects scan --dry-run           # preview what scan would register; write nothing
 ```
 
 **Syntax:**
@@ -166,6 +171,8 @@ aid projects remove /path/to/project  # unregister a specific path
 aid projects [list] [--local|--shared] [--verbose]
 aid projects add  [<path>] [--local|--shared]
 aid projects remove [<path>]
+aid projects scan [--path <folder>|--all] [--dry-run] [--depth <n>]
+                  [--include-network] [--include-removable] [--local|--shared] [--verbose]
 ```
 
 `list` output columns:
@@ -193,6 +200,29 @@ longer exists (stale entry cleanup).
 `aid add <tool>` and `aid remove` automatically register and unregister the project in the
 registry; you only need `aid projects add` to manually register a project that was set up
 outside the normal `aid add` flow.
+
+`scan` crawls the filesystem for folders containing a `.aid/` and registers each one. It is
+**register-only**: it never installs, updates, or migrates a project, and never writes inside
+a discovered project's `.aid/`. Each discovered project's version is read from its manifest
+and reported (`untracked` if the `.aid/` has no valid manifest). A project already registered
+is reported as already-registered and skipped — its existing registry record is left
+unchanged. A project nested inside another discovered project is not separately found: once a
+project is discovered, its whole subtree (including any nested `.aid/`) is pruned from the
+scan.
+
+`scan` flags:
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| (no scope flag) | — | Scan the user's HOME directory (`$HOME` / `%USERPROFILE%`); no drive enumeration. |
+| `--path <folder>` | — | Scan only `<folder>`'s subtree instead of home. Mutually exclusive with `--all`. A non-directory `<folder>` is a usage error (exit 2). |
+| `--all` | off | Scan the whole machine — the only mode that enumerates drives: Windows local **fixed** drives (network/removable excluded by default); Unix from `/`. Mutually exclusive with `--path`. |
+| `--dry-run` | off | Preview what would be registered; write nothing. |
+| `--depth <n>` | built-in safety cap | Cap recursion at `<n>` levels below each scan root. `<n>` must be a non-negative integer; a non-integer or negative value is a usage error (exit 2). |
+| `--include-network` | off | Windows `--all` only: include network drives (excluded by default). Requires `--all` — a usage error (exit 2) without it. On Unix, accepted but inert (drive-type filtering is Windows-only) and emits a one-line stderr note. |
+| `--include-removable` | off | Windows `--all` only: include removable drives (excluded by default). Requires `--all` — a usage error (exit 2) without it. On Unix, accepted but inert and emits a one-line stderr note. |
+| `--local` / `--shared` | `--local` (forced) | Tier override, identical semantics to `aid projects add`. `scan` always forces the user tier unless `--shared` is given, so a bulk scan never elevates privileges. |
+| `--verbose` | off | Print extra per-project / per-root detail. |
 
 ---
 

@@ -2,26 +2,26 @@
 pipeline:
   path: lite
   initiator: aid-update-cli
-started: "2026-07-20"
+started: "2026-07-21"
 minimum_grade: "A+"
-user_approved: no
+user_approved: yes
 lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: aid-update-cli
-updated: '2026-07-20T18:45:01Z'
-pause_reason: 'GATE cleared; awaiting user approval before /aid-execute'
+phase: Execute
+active_skill: aid-execute
+updated: '2026-07-22T02:52:51Z'
+pause_reason: 'Delivery gate A+; awaiting user merge (reconcile PR #159 first)'
 block_reason: --
 block_artifact: --
 ticket_ref: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
 delivery_state: Done
-gate_tier: Small
+gate_tier: Large
 gate_grade: A+
-gate_timestamp: '2026-07-21T06:55:13Z'
+gate_timestamp: '2026-07-21T23:30:00Z'
 ---
 
-# Work State -- work-NNN-{name}
+# Work State -- work-019-discover-projects
 
 [!NOTE]
 This is the WORK-LEVEL STATE.md template. It is divided into three zones:
@@ -144,15 +144,26 @@ different places.
 
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
-| 2026-07-20 | Work created | -- | Initial scaffold by /aid-update-cli (Lite shortcut, INTAKE) |
-| 2026-07-20 | CAPTURE complete -- REQUIREMENTS.md written | -- | /aid-update-cli CAPTURE |
-| 2026-07-20 | SPEC complete -- SPEC.md written | -- | /aid-update-cli SPEC |
-| 2026-07-20 | PLAN complete -- PLAN.md + BLUEPRINT.md written | -- | /aid-update-cli PLAN |
-| 2026-07-20 | DETAIL complete -- 2 task(s) written | -- | /aid-update-cli DETAIL |
-| 2026-07-20 | GATE Pass 1 (definition docs) cleared | A+ | /aid-update-cli GATE defn |
-| 2026-07-20 | GATE Pass 2 (task set) cleared | A+ | /aid-update-cli GATE tasks |
-| 2026-07-21 | EXECUTE task-001 (IMPLEMENT) + task-002 (TEST) Done | -- | /aid-execute |
-| 2026-07-21 | Delivery gate PASS (delivery-001, Small tier, 2 cycles) | A+ | /aid-execute DELIVERY-GATE |
+| 2026-07-21 | Work created | -- | Initial scaffold by aid-update-cli (shortcut: change/cli) |
+| 2026-07-21 | CAPTURE complete -- REQUIREMENTS.md written | -- | /aid-update-cli CAPTURE |
+| 2026-07-21 | SPEC complete -- SPEC.md written | -- | /aid-update-cli SPEC |
+| 2026-07-21 | PLAN complete -- PLAN.md + BLUEPRINT.md written | -- | /aid-update-cli PLAN |
+| 2026-07-21 | DETAIL complete -- 4 task(s) written | -- | /aid-update-cli DETAIL |
+| 2026-07-21 | Renumbered work-002 -> work-019 (work-002 collided with a shipped, pruned work; PR #133) | -- | orchestrator |
+| 2026-07-21 | GATE cycle 1 -- reviewer found 10 findings (1 CRIT / 4 HIGH / 4 MED / 1 LOW); architect fixed all | -- | /aid-update-cli GATE |
+| 2026-07-21 | GATE cleared -- 8 artifacts re-reviewed clean (grade.sh) | A+ | /aid-update-cli GATE |
+| 2026-07-21 | Scope redesign (user) -- default=home, --path <folder>, --all; revising + re-gating | -- | /aid-update-cli |
+| 2026-07-21 | Scan-behavior rules (user) -- subtree prune, exclusion list, eval order, dedupe, depth cap; NFR-9/NFR-10 + AC-14/15/16 | -- | /aid-update-cli |
+| 2026-07-21 | GATE re-review -- 4 findings (1 CRIT / 1 HIGH / 2 MED-LOW); fixed | -- | /aid-update-cli GATE |
+| 2026-07-21 | GATE cleared (revised plan) -- verified clean + SPEC Source-range fix (grade.sh) | A+ | /aid-update-cli GATE |
+| 2026-07-21 | Command name confirmed by user: `aid projects scan` (working name adopted as final) | -- | orchestrator |
+| 2026-07-21 | EXECUTE started (/aid-execute) -- user-approved | -- | /aid-execute |
+| 2026-07-21 | task-001 bash impl Done (review: perf 40s->3s + 4 more, fixed) | -- | /aid-execute |
+| 2026-07-21 | task-002 pwsh mirror Done (parse/ps51/ASCII clean; parity verified) | -- | /aid-execute |
+| 2026-07-21 | task-003 parity tests Done (PAR019; twin parity confirmed) | -- | /aid-execute |
+| 2026-07-21 | task-004 docs Done (help byte-identical; install.md + site + release-tracking) | -- | /aid-execute |
+| 2026-07-21 | DELIVERY GATE cleared -- 2 findings (1 HIGH test-robustness fixed, 1 MED README invalid) | A+ | /aid-execute DELIVERY-GATE |
+| 2026-07-22 | Reconciled onto master (merged origin/master post-#159; auto-merged clean; scan + beta fixes both verified coexisting) | -- | orchestrator |
 
 ---
 
@@ -188,7 +199,7 @@ different places.
      Updated/Block Reason/Block Artifact stay here as markdown body (not relocated by
      work-003-state-schema task-001; see the task's schema note). -->
 
-- **Updated:** 2026-07-20T18:06:30Z
+- **Updated:** 2026-07-21T19:40:19Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -221,8 +232,10 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Done | -- | -- | impl both twins; quick-check found+fixed pre-existing CRLF in manifest_list_tools + doc gap; build+smoke OK | Add `aid update all` bulk-update subcommand across both CLI twins |
-| task-002 | Done | -- | -- | parity+behavior assertions across PAR100-A..K (AC1-AC10 + twin parity); runnable subset green both twins; full suite deferred to CI (ubuntu) on push | Verify bulk-update behavior and bash/pwsh twin parity via test-aid-cli-parity.sh |
+| task-001 | Done | -- | -- | bash scan impl; 5 review findings fixed (perf 40s->3s, state-home prune, verbose, -h, local) | Implement the scan subcommand in the Bash twin (bin/aid) |
+| task-002 | Done | -- | -- | pwsh mirror; parse+ps51+ASCII clean, 41-assertion smoke pass, prune/system/maxdepth byte-identical to bash | Mirror the scan subcommand in the PowerShell twin (bin/aid.ps1) |
+| task-003 | Done | -- | -- | GATE fixed: _par019_extract_registered was path-format-fragile (backslash vs POSIX + literal sed backslash-count bug); normalized capture in run_sh_scan/run_ps1_scan + anchored extraction on the fixture's own basename. Bounded harness now 91/0 (pwsh present, up from 84/7) and 92/0 (pwsh absent); no real bash/pwsh divergence. | Parity + guardrail coverage in test-aid-cli-parity.sh |
+| task-004 | Done | -- | -- | release-tracking [NEW] + install.md + site cli.mdx; help byte-identical across twins (empty diff); no code touched | Help text, user docs, and release-tracking entry |
 
 ---
 
@@ -245,9 +258,7 @@ different places.
      single-delivery works only" group. Issue List stays here as markdown body (a
      variable-length inline list doesn't fit a flat frontmatter scalar). -->
 
-- **Complexity Score:** 5 (tasks=2, depth=1, risk=2, consults=0)
-- **Cycles:** 2
-- **Issue List:** none (A+; cycle-1 found 1 CRITICAL + 3 MEDIUM + 2 LOW, all Fixed by cycle 2)
+- **Issue List:** A+ (0 open). 2 gate findings resolved: [HIGH] PAR019 path-format test-robustness (fixed); [MEDIUM] README:178 (Invalid -- it is a frozen `## What's New in v1.1.0` changelog, not a current enumeration; AC-12 satisfied by docs/install.md + site cli.mdx).
 
 ---
 
