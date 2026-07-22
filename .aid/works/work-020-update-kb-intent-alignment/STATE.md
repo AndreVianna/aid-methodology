@@ -5,15 +5,15 @@ pipeline:
 started: "2026-07-21"
 minimum_grade: "A+"
 user_approved: no
-lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: none
-updated: "2026-07-22T06:03:28Z"
-pause_reason: "Definition set GATE-cleared (both passes A+, incl. worktree isolation); awaiting owner approval before /aid-execute"
-block_reason: "--"
-block_artifact: "--"
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-07-22T13:56:54Z'
+pause_reason: --
+block_reason: --
+block_artifact: --
 ticket_ref: "--"
-delivery_state: Specified
+delivery_state: Executing
 gate_tier: Medium
 gate_grade: "A+"
 gate_timestamp: "2026-07-22T06:03:28Z"
@@ -135,7 +135,7 @@ don't act") are the load-bearing fixes.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Pending | -- | -- | -- | Analyst + Confirm front-end |
+| task-001 | In Review | -- | -- | -- | Analyst + Confirm front-end |
 | task-002 | Pending | -- | -- | -- | Scope-fidelity guardrails |
 | task-003 | Pending | -- | -- | -- | Re-emit to profiles + resync dogfood |
 | task-004 | Pending | -- | -- | -- | Hard-limit invariant tests |
