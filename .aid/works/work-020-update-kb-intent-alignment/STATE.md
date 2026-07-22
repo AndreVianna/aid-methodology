@@ -5,24 +5,24 @@ pipeline:
 started: "2026-07-21"
 minimum_grade: "A+"
 user_approved: no
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Execute
-active_skill: aid-execute
-updated: '2026-07-22T17:58:43Z'
-pause_reason: --
+active_skill: none
+updated: '2026-07-22T18:28:22Z'
+pause_reason: 'delivery-001 gate PASS A+; work complete on branch, ready for PR/merge to master (human merges after CI)'
 block_reason: --
 block_artifact: --
 ticket_ref: "--"
-delivery_state: Gated
+delivery_state: Done
 gate_tier: Medium
-gate_grade: "A+"
-gate_timestamp: "2026-07-22T06:03:28Z"
+gate_grade: A+
+gate_timestamp: '2026-07-22T18:26:28Z'
 ---
 
 # Work State -- work-020-update-kb-intent-alignment
 
-> **State:** Detailing
-> **Phase:** Detail
+> **State:** Executing (delivery gate PASS A+; delivery-001 Done)
+> **Phase:** Execute
 
 Redesign the `/aid-update-kb` skill so its behavior matches the intended
 design: the change applied to the KB must be strictly bounded to the scope of
@@ -129,6 +129,7 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | DELIVERY-GATE cycle-2 FIX applied | -- | Both open findings fixed. Row 7: SKILL.md's APPROVAL Dispatch-table row corrected to `[1] Approved` -> CHAIN -> DONE (was PAUSE-FOR-USER-ACTION, contradicting the already-fixed banner + state-approval.md's own Advance line); grepped the whole skill for any other `[1]`-transition mislabeled PAUSE — none found. Row 8: HL-8 (SKILL.md) reworded to distinguish the user's gate-time `**Adjustments:**`/`**Consideration:**` (authorized, first-class scoping input, part of the instruction dialogue) from the FORBIDDEN ambient session transcript; state-scope.md's and state-analyze.md's clean-context dispatch contracts (Step 1) now admit that recorded field (+ its Q{N} entry, incl. the REVIEW-4(b) disputed doc's identity) on a re-plan loop-back/re-entry and instruct folding it in (SCOPE Step 2 adds/drops/modifies a row; ANALYZE Step 5 REPLACES the stale Impact Map instead of leaving it stale); state-review.md's 4(b) "accept" branch cross-references the now-real mechanism. tests/canonical/test-update-kb-scope-fidelity.sh: 92 → 99 (7 new regression assertions UK92-UK98 covering both rows), all passing. Re-emit to profiles/dogfood pending (orchestrator) before re-gate. |
 | 2026-07-22 | DELIVERY-GATE cycle-3 graded | E+ | Rows 1-8 all Fixed (no regressions); tests 99/99; re-emitted (918675d9). 2 NEW: row 10 [MED] SKILL.md run-state schema table omits `Consideration` + `Scope-diff` fields (trivial; will bundle); row 9 [CRIT] the row-8 fix authorized the gate-time `Adjustments` as a Traces-to source in SKILL.md's HL-8, but SPEC.md's confirmed AC-9 (declared source-of-truth) still forbids non-instruction session content → live SKILL.md-vs-SPEC.md contradiction on the central hard limit. OWNER DECISION surfaced (amend AC-9/HL-8 vs pull impl back); PAUSED for owner |
 | 2026-07-22 | Row 9 — OWNER RULING (option a) | -- | Owner: info the user adds when THE SKILL asks its OWN confirmation question is IN-SCOPE (part of this skill-run's work-dialogue). HL-8/AC-9's ban applies ONLY to context from PREVIOUS or UNRELATED conversation/instructions outside this KB-update's own dialogue. Clean line: inside this skill's instruction+confirmation dialogue = in-scope; outside it = banned. Amend AC-9/HL-8 (REQUIREMENTS+SPEC+SKILL.md) to this framing + fix row 10; re-emit; re-gate. Un-paused |
+| 2026-07-22 | DELIVERY-GATE cycle-4 PASS → delivery-001 DONE | A+ | Gate cleared A+ (Medium tier, 4 cycles): rows 9+10 Fixed (commits 97b110a6/050509a9); 10/10 gate findings resolved; tests 114/114; full coherence sweep clean. delivery_state → Done. Work executionally complete on branch; ready for PR/merge to master (human merges after CI). approved_at_commit unchanged; HL-1..HL-8 encoded |
 
 ---
 
@@ -159,7 +160,9 @@ don't act") are the load-bearing fixes.
 
 ## Delivery Gate
 
-- **Issue List:** DELIVERY-GATE cycle 1 = E — 2 CRITICAL + 4 HIGH + 1 MEDIUM open (ledger `.aid/.temp/review-pending/execute-delivery-001.md`); in FIX cycle (fix-all per owner directive)
+- **Complexity Score:** 10 (tasks 4, depth 3, risk 3, consults 0) → Medium tier
+- **Cycles:** 4 (E → E+ → E+ → A+)
+- **Issue List:** none (A+). 10 gate findings surfaced across cycles (2 CRITICAL + 6 HIGH + 2 MEDIUM, incl. row 9 owner-ruled on HL-8/AC-9) — all Fixed.
 
 ---
 
