@@ -23,6 +23,8 @@ audience: [developer, devops, product]
 
 ## Unreleased
 
+- [CHANGE] `aid projects scan`'s built-in directory-prune sets are expanded across both CLI twins (kept byte-identical): Tier A (heavy/cache/build/IDE/AI-tool directories, pruned by exact basename, case-insensitively, at any depth in every scan mode) and Tier B (OS/system directories, pruned only as an immediate child of an `--all` drive/filesystem root) each gain many new entries. A new user-level `scan-config.yml`, seeded on first non-`--dry-run` run beside `registry.yml` at the CLI state home, lets a user add machine-specific directory names to Tier A via a `prune_dirs:` block list; entries are unioned with the built-in defaults (case-insensitive, extend-only — a built-in default can never be disabled). Tier B stays fixed and is not user-configurable. (work-022)
+
 ## v2.2.3-beta.3 - 2026-07-22
 
 > **Third beta (pre-release) of the `2.2.3` line.** Rebuilds the on-demand `/aid-update-kb` skill for scope fidelity. Published to PyPI (normalized to `2.2.3b3`) and as a GitHub **pre-release** carrying the per-profile skill tarballs; npm is skipped for betas.

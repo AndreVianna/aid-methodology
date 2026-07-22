@@ -709,7 +709,10 @@ aid projects [list|add|remove|scan]
                                  Manage the projects this AID install tracks; list shows state, tools,
                                  tier, and current-directory marker; scan crawls the filesystem (the
                                  user's home directory by default, --path <dir>, or --all for the whole
-                                 machine) and registers every discovered project (register-only)
+                                 machine) and registers every discovered project (register-only); scan
+                                 skips a built-in set of heavy/cache/build/IDE/AI-tool/OS directories by
+                                 exact basename (case-insensitive), extendable via a user-editable
+                                 scan-config.yml seeded beside registry.yml
 aid <command> -h | --help        Per-command help
 ```
 
