@@ -8,7 +8,7 @@ user_approved: yes
 lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: "2026-07-22T21:05:11Z"
+updated: "2026-07-22T21:51:36Z"
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -69,8 +69,8 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | In Progress | quick-check: 0 HIGH, 1 LOW (fixed) | -- | Quick-check clean (98 Tier-A / 21 Tier-B byte-identical; AC-5/6/7/8/9/11/12 verified). LOW fixed: both twins' seeders now degrade to $HOME/.aid when the primary state home is absent/not writable (mirrors registry_register / Registry-Register's degrade), avoiding a repeat-WARN-forever on global installs; verified via ps51-compat-check (0 findings), AST ParseFile, and disposable-fixture smoke tests (both twins: degrade lands the seed in $HOME/.aid silently, --verbose shows the notice, repeat runs are silent/idempotent; normal per-user case unchanged -- seeds primary once, idempotent). | Expand both twins' prune sets + user-level config read/merge/seed |
-| task-002 | Pending | -- | -- | -- | Parity + guardrail tests |
+| task-001 | Done | quick-check: 0 HIGH, 1 LOW (fixed) | -- | Quick-check clean (98 Tier-A / 21 Tier-B byte-identical; AC-5/6/7/8/9/11/12 verified). LOW fixed: both twins' seeders now degrade to $HOME/.aid when the primary state home is absent/not writable (mirrors registry_register / Registry-Register's degrade), avoiding a repeat-WARN-forever on global installs; verified via ps51-compat-check (0 findings), AST ParseFile, and disposable-fixture smoke tests (both twins: degrade lands the seed in $HOME/.aid silently, --verbose shows the notice, repeat runs are silent/idempotent; normal per-user case unchanged -- seeds primary once, idempotent). | Expand both twins' prune sets + user-level config read/merge/seed |
+| task-002 | In Review | -- | -- | PAR022 block added to test-aid-cli-parity.sh (66 assertions, AC-3..AC-10); bash -n clean; hand-verified locally via a throwaway driver against the real bin/aid + bin/aid.ps1 -- 66/66 passed on both twins (deleted after verification); full canonical suite deferred to CI. Awaiting reviewer dispatch. | Parity + guardrail tests |
 | task-003 | Pending | -- | -- | -- | Docs: cli.mdx + install help + release ledger |
 
 ---
