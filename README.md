@@ -157,39 +157,13 @@ Open your AI coding tool in your project and run the skills as slash commands:
 
 ---
 
-## What's New in v1.1.0
+## What's New
 
-### AID dashboard
+AID ships frequently — rather than freeze a snapshot here that goes stale, the release history lives where it stays current:
 
-`aid dashboard start node` or `aid dashboard start python` opens a local, read-only web view of every project this install manages. Each project shows its current pipeline status, installed tools, and a 5-state Knowledge-Base freshness card (including "Outdated" detection). Click through to a task drill-down forensic panel. A 4-level breadcrumb keeps you oriented. The server binds to 127.0.0.1; pass `--remote` to expose the machine-level dashboard over your private tailnet.
+- **[GitHub Releases](https://github.com/AndreVianna/aid-methodology/releases)** — every version newest-first, with per-release notes and downloadable install bundles.
 
-### Self-cleaning install and update
-
-Installing or updating AID now prunes stale AID files — files that were renamed, moved, or dropped between versions. Only AID-managed entries are pruned; your files are never touched. Combined with content isolation (see below), updates are clean by default: no orphaned files accumulate across upgrades.
-
-### Content isolation
-
-AID's own folders now install under an `aid/` subtree (`.claude/aid/{scripts,templates}`) and every AID file in tool-native folders (`agents/`, `skills/`, `rules/`) carries an `aid-` prefix. AID content and your content cannot collide, and `aid update` can prune AID's own stale files in place without any risk of touching yours.
-
-Root-agent files (`CLAUDE.md` / `AGENTS.md`) are now updated in-place and losslessly: AID rewrites only the region between its own `<!-- AID:BEGIN -->` / `<!-- AID:END -->` markers; everything you wrote outside those markers is preserved exactly. The old `.aid-new` sidecar file is gone.
-
-### `aid projects` and the project registry
-
-`aid projects [list|add|remove|help]` manages the projects AID tracks. `list` shows each project's version, installed tools, tier, and a `*` marker for the current directory. The CLI keeps a lightweight registry (`$AID_STATE_HOME/registry.yml`) so the dashboard and `aid update self` always know which projects to display and migrate.
-
-### Upgrade migration
-
-`aid update self` walks every tracked project and offers to migrate it to the current layout — validating and repairing `.aid/settings.yml`, installing any missing files, and registering the project. Choose All / Yes / No / Cancel per project. Migration is idempotent and additive: it preserves your settings and comments. pip/pipx installs (no postinstall hook) are covered by lazy migration on the next `aid` command.
-
-### Worktree-aware dashboard tracking
-
-Work that lives only on a git worktree branch is surfaced under its project (labeled by branch) instead of being invisible. Same-work pipelines across branches are merged into a single view — the most-advanced state wins. The dashboard degrades gracefully to the main checkout when git is unavailable.
-
-### `/aid-query-kb` and `/aid-update-kb`
-
-`/aid-query-kb` is an on-demand skill that answers free-form questions about your project from the Knowledge Base, the codebase, and in-flight works, with source citations. When the context cannot answer, it captures the gap as a Query-Gap entry in the KB's Q&A backlog so it feeds the KB-improvement loop. Write scope is restricted to the gap-capture path — no KB doc or code file is ever written.
-
-`/aid-update-kb` is an on-demand targeted KB update skill. Give it a free-form prompt describing what changed and it applies the delta to the affected KB docs through the same review/calibration gate as `/aid-discover`. Human-gated — it commits only after your explicit approval.
+The **Version** badge at the top always points at the latest published release. Upgrade any time with `aid update self`.
 
 ---
 
