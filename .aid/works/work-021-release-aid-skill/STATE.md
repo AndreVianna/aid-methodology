@@ -8,15 +8,15 @@ user_approved: no
 lifecycle: Running
 phase: Execute
 active_skill: none
-updated: '2026-07-22T06:02:34Z'
+updated: '2026-07-22T14:12:50Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: --
-delivery_state: Executing
+delivery_state: Done
 gate_tier: Standard
 gate_grade: "A+"
-gate_timestamp: '2026-07-22T05:11:26Z'
+gate_timestamp: '2026-07-22T14:12:50Z'
 ---
 
 # Work State -- work-021-release-aid-skill
@@ -150,6 +150,8 @@ different places.
 | 2026-07-22 | Plan → Execute: task-003 started | -- | Owner-driven standalone DOCUMENT task (DETAIL deferred); backlog reconciliation of release-tracking.md + README.md + infrastructure.md |
 | 2026-07-22 | task-003 Done | A+ | Backlog reconciled: release-tracking.md backfilled v2.1.0–v2.2.3-beta.1 (grounded in gh releases + git log) + drained Unreleased to 2 genuine items; README → pointer (OD-2); infrastructure.md npm/PyPI claim corrected. aid-reviewer 2 cycles (cycle-1 CRITICAL: PR #150 conflation → fixed by splitting into 2 truthful entries); grade.sh A+ |
 | 2026-07-22 | task-001 Done | A+ | Skill artifact (SKILL.md) authored + adversarially verified by the A+ plan gate; marked Done (formalization of the settled artifact) |
+| 2026-07-22 | task-002 Done | Pass | release.yml dry-run (run 29926146545) fully green: gate/github-release/pypi-publish success, npm-publish skipped (beta) — validates the skill's Step 5 mechanics + beta channel matrix |
+| 2026-07-22 | Delivery-001 complete | A+ | All 3 tasks Done; every BLUEPRINT gate criterion satisfied — GC-1..13 via the A+ plan gate, GC-8/GC-STD-1 closed by the green dry-run (all tasks Done), GC-STD-2 via the plan-gate + task-003 (A+) ledgers + the green dry-run. delivery_state → Done. PR worktree → master pending (user's call) |
 
 ---
 
@@ -185,7 +187,7 @@ different places.
      Updated/Block Reason/Block Artifact stay here as markdown body (not relocated by
      work-003-state-schema task-001; see the task's schema note). -->
 
-- **Updated:** 2026-07-22T06:02:34Z
+- **Updated:** 2026-07-22T14:12:50Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -219,7 +221,7 @@ different places.
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | A+ | -- | IMPLEMENT — skill artifact authored + adversarially verified by the A+ plan gate (SKILL.md reviewed against the AC) | Author the release-aid skill |
-| task-002 | Pending | -- | -- | TEST — deferred: needs a live release.yml dry-run (`-f ref=master -f dry_run=true`); release is on HOLD | Dry-run validation |
+| task-002 | Done | Pass | -- | TEST — release.yml dry-run (run 29926146545, `-f ref=master -f dry_run=true`): gate success / github-release success / pypi-publish success (dry) / npm-publish skipped (beta) — each job inspected individually | Dry-run validation |
 | task-003 | Done | A+ | -- | DOCUMENT — release-tracking.md (5 sections backfilled + Unreleased drained to 2 items), README pointer (OD-2), infrastructure.md npm/PyPI fix; A+ across 2 review cycles (1 CRITICAL PR-conflation fixed) | Backlog reconciliation |
 
 ---
