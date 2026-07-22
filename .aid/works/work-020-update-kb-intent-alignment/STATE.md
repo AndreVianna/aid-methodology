@@ -115,7 +115,8 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | Cycle-5 graded | Pass2 A+ / Pass1 1 CRIT | Pass2 clean; Pass1 rows 15-19 Fixed but row 14 CRIT re-opened: BLUEPRINT.md:21 Scope bullet missed the worktree-mechanism fix (fix-everywhere miss) |
 | 2026-07-22 | Row 14 fixed + GATE RE-CLEARED | A+ / A+ | BLUEPRINT:21 reconciled to plain-git-worktree design; grep confirms no positive worktree-lifecycle.sh reference remains (all negate it); row 14 marked Fixed (mechanical self-verify). Both ledgers grade A+. Definition set gated; lifecycle → Paused-Awaiting-Input, awaiting owner approval before /aid-execute |
 | 2026-07-22 | User approved → /aid-execute task-001 | -- | Lifecycle resumed Running; phase Execute; delivery Executing |
-| 2026-07-22 | task-001 EXECUTE → Done | -- | aid-developer implemented (commit f3b347fc): Pre-flight ISOLATE (own worktree off master) + state-analyze rewrite + new state-scope/state-confirm + SKILL.md wiring + run-state schema. aid-reviewer quick-check: 0 CRITICAL; 1 HIGH deferred to gate (Rung-B cross-session resume matches by branch pattern, not by prompt → could silently continue a stale run) |
+| 2026-07-22 | task-001 EXECUTE → Done | -- | aid-developer implemented (commit f3b347fc): Pre-flight ISOLATE (own worktree off master) + state-analyze rewrite + new state-scope/state-confirm + SKILL.md wiring + run-state schema. aid-reviewer quick-check: 0 CRITICAL; 1 HIGH (Rung-B cross-session resume matches by branch pattern, not by prompt → could silently continue a stale run) |
+| 2026-07-22 | task-001 HIGH fixed on-spot → Done | -- | Owner directive: fix issues found (not defer). aid-developer fixed the resume HIGH (commit 90940908): prompt-matched Rung-B resume + state-analyze guard + CONFIRM shows current Instruction. delivery-001-issues row → Fixed; verified by orchestrator read |
 
 ---
 
@@ -137,7 +138,7 @@ don't act") are the load-bearing fixes.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Done | quick-check (0 CRIT, 1 HIGH deferred) | ~21m | 1 HIGH deferred to delivery gate (delivery-001-issues.md) | Analyst + Confirm front-end |
+| task-001 | Done | quick-check → HIGH fixed on-spot | ~21m | HIGH (resume-by-branch) fixed commit 90940908; delivery-001-issues row Fixed | Analyst + Confirm front-end |
 | task-002 | Pending | -- | -- | -- | Scope-fidelity guardrails |
 | task-003 | Pending | -- | -- | -- | Re-emit to profiles + resync dogfood |
 | task-004 | Pending | -- | -- | -- | Hard-limit invariant tests |
@@ -146,7 +147,7 @@ don't act") are the load-bearing fixes.
 
 ## Delivery Gate
 
-- **Issue List:** 1 HIGH deferred from task-001 (see delivery-001-issues.md) — to be resolved at the per-delivery gate
+- **Issue List:** none open (task-001 HIGH fixed on-spot, commit 90940908; delivery-001-issues.md row marked Fixed)
 
 ---
 
@@ -155,7 +156,7 @@ don't act") are the load-bearing fixes.
 ### task-001
 - **Reviewer Tier:** Small
 - **Findings:**
-  - [HIGH] Pre-flight ISOLATE Rung-B cross-session resume matches by `aid/update-kb-*` branch pattern, not by stored `Prompt:` vs the current instruction — a new run while an older one is paused elsewhere silently re-enters the stale run and discards the new instruction (SKILL.md:115-130; state-analyze.md:49-52; state-confirm.md:23-38) — Deferred-to-gate. Fix direction: match stored Prompt to the current instruction (else start fresh / ask), add a first-match/dedupe guard, and surface the current prompt at CONFIRM.
+  - [HIGH] Pre-flight ISOLATE Rung-B cross-session resume matched by `aid/update-kb-*` branch pattern, not by stored `Prompt:` vs the current instruction — a new run while an older one is paused elsewhere would silently re-enter the stale run and discard the new instruction (SKILL.md; state-analyze.md; state-confirm.md) — **Fixed on-spot (commit 90940908)**: Rung-B now enumerates candidates and resumes only the one whose stored `Prompt:` equals the current instruction (different instruction → fresh worktree; ambiguous → STOP+ask); state-analyze Step 0 adds a prompt-match guard; CONFIRM now prints the current `Instruction:` line.
 
 ---
 
