@@ -3098,20 +3098,39 @@ _aid_scan_merge_prune_dirs() {
 # atomic temp-file+move idiom registry_register uses (~:1751-1799: mkdir -p
 # the target dir, mktemp in that same dir so the mv is atomic same-
 # filesystem, write, then never-elevate `_aid_priv_run "" mv -f`).
-# Best-effort: a mkdir/mktemp/write/mv failure prints one WARN to stderr and
-# returns 0 -- it never fails the scan. Idempotent -- never overwrites an
-# existing file, so a user's edits always survive. The caller MUST NOT invoke
+# Same primary/fallback DEGRADE too (~:1754-1766): if $AID_STATE_HOME (the
+# primary's directory) is absent/not writable -- e.g. a global/shared install
+# such as /var/lib/aid or $ProgramData\aid where the primary tier is not
+# user-writable -- the seed degrades to $HOME/.aid/scan-config.yml instead of
+# WARNing forever on every non-dry-run scan. This is silent by default
+# (visible under --verbose), matching registry_register. The READ side
+# already unions the primary + $HOME/.aid fallback tiers (_aid_scan_read_
+# prune_dirs), so a seed landing in the fallback is read back correctly.
+# Best-effort: a mkdir/mktemp/write/mv failure at whichever tier is resolved
+# prints one WARN to stderr and returns 0 -- it never fails the scan.
+# Idempotent -- never overwrites an existing file at whichever tier it
+# resolves to, so a user's edits always survive. The caller MUST NOT invoke
 # this under --dry-run (a dry-run scan makes no writes at all).
 _aid_scan_seed_config() {
     [[ -f "$_AID_SCAN_CONFIG" ]] && return 0
-    local _dir _tmp
+    local _dir _tmp _target
     _dir="$(dirname "$_AID_SCAN_CONFIG")"
-    _aid_priv_run "" mkdir -p "$_dir" 2>/dev/null || {
-        echo "WARN: aid: could not create ${_dir} for scan-config.yml: mkdir failed" >&2
-        return 0
-    }
-    _tmp="$(mktemp "${_AID_SCAN_CONFIG}.aid-tmp.XXXXXX" 2>/dev/null)" || {
-        echo "WARN: aid: could not seed the scan exclusions config (${_AID_SCAN_CONFIG}): mktemp failed" >&2
+    _aid_priv_run "" mkdir -p "$_dir" 2>/dev/null || true
+    if [[ -w "$_dir" ]]; then
+        _target="$_AID_SCAN_CONFIG"
+    else
+        # Primary not writable (global/shared install); degrade to $HOME/.aid,
+        # mirroring registry_register's user-tier degrade (~:1754-1766).
+        local _fb_dir="${HOME}/.aid"
+        mkdir -p "$_fb_dir" 2>/dev/null || true
+        [[ "${_AID_VERBOSE:-0}" == "1" ]] && \
+            echo "WARN: aid: could not write to ${_dir}; seeding ${_fb_dir}/scan-config.yml instead" >&2
+        _target="${_fb_dir}/scan-config.yml"
+    fi
+    # Idempotent at whichever tier resolved to -- never overwrite an existing file.
+    [[ -f "$_target" ]] && return 0
+    _tmp="$(mktemp "${_target}.aid-tmp.XXXXXX" 2>/dev/null)" || {
+        echo "WARN: aid: could not seed the scan exclusions config (${_target}): mktemp failed" >&2
         return 0
     }
     {
@@ -3127,12 +3146,12 @@ _aid_scan_seed_config() {
         done
     } > "$_tmp" || {
         rm -f "$_tmp" 2>/dev/null
-        echo "WARN: aid: could not seed the scan exclusions config (${_AID_SCAN_CONFIG}): write failed" >&2
+        echo "WARN: aid: could not seed the scan exclusions config (${_target}): write failed" >&2
         return 0
     }
-    _aid_priv_run "" mv -f "$_tmp" "$_AID_SCAN_CONFIG" || {
+    _aid_priv_run "" mv -f "$_tmp" "$_target" || {
         rm -f "$_tmp" 2>/dev/null
-        echo "WARN: aid: could not seed the scan exclusions config (${_AID_SCAN_CONFIG}): mv failed" >&2
+        echo "WARN: aid: could not seed the scan exclusions config (${_target}): mv failed" >&2
         return 0
     }
     return 0

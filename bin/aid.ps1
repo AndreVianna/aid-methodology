@@ -2265,24 +2265,60 @@ function script:Get-AidScanMergedPruneDirs {
 # write it with a header + `schema: 1` + a `prune_dirs:` block of the
 # built-in expanded Tier-A defaults, via the SAME Move-Item -Force atomic-
 # write idiom Registry-Register uses (~:2620-2643: write to a temp file in
-# the same directory, then Move-Item -Force). Best-effort: a mkdir/write/move
-# failure prints one WARN to stderr and returns -- it never fails the scan.
-# Idempotent -- never overwrites an existing file, so a user's edits always
-# survive. The caller MUST NOT invoke this under -DryRun (a dry-run scan
-# makes no writes at all).
+# the same directory, then Move-Item -Force). Same primary/fallback DEGRADE
+# too (~:2854-2867): if the primary's directory ($script:_AidStateHome) is
+# absent/not writable -- e.g. a global/shared install such as $ProgramData
+# \aid where the primary tier is not user-writable -- the seed degrades to
+# $HOME\.aid\scan-config.yml instead of WARNing forever on every non--DryRun
+# scan. Silent by default (visible under $script:_AidVerbose), matching
+# Registry-Register. The READ side already unions the primary + $HOME\.aid
+# fallback tiers (Get-AidScanMergedPruneDirs / Get-AidScanConfigPath), so a
+# seed landing in the fallback is read back correctly.
+# Best-effort: a mkdir/write/move failure at whichever tier is resolved
+# prints one WARN to stderr and returns -- it never fails the scan.
+# Idempotent -- never overwrites an existing file at whichever tier it
+# resolves to, so a user's edits always survive. The caller MUST NOT invoke
+# this under -DryRun (a dry-run scan makes no writes at all).
 # Mirror of bash _aid_scan_seed_config.
 function script:Set-AidScanConfigSeed {
     $cfgPaths = script:Get-AidScanConfigPath
     $primary  = $cfgPaths.Primary
     if (Test-Path -LiteralPath $primary -PathType Leaf) { return }
+
+    # Helper: test writability of a directory (mirrors Registry-Register ~:2788-2793).
+    $testWritable = {
+        param([string]$dir)
+        if (-not (Test-Path $dir -PathType Container)) { return $false }
+        $probe = Join-Path $dir ('.aid-write-probe.' + [System.IO.Path]::GetRandomFileName())
+        try { [System.IO.File]::WriteAllText($probe, ''); Remove-Item -LiteralPath $probe -Force -ErrorAction SilentlyContinue; return $true } catch { return $false }
+    }
+
     $dir = Split-Path $primary -Parent
     if (-not (Test-Path $dir -PathType Container)) {
-        try { New-Item -ItemType Directory -Path $dir -Force -ErrorAction Stop | Out-Null } catch {
-            [Console]::Error.WriteLine("WARN: aid: could not create $dir for scan-config.yml: mkdir failed")
-            return
-        }
+        try { New-Item -ItemType Directory -Path $dir -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
     }
-    $tmp = Join-Path $dir ("scan-config.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
+    $target = $null
+    if (& $testWritable $dir) {
+        $target = $primary
+    } else {
+        # Primary not writable (global/shared install); degrade to $HOME\.aid,
+        # mirroring Registry-Register's user-tier degrade (~:2854-2867).
+        $fallback = $cfgPaths.Fallback
+        $fbDir = Split-Path $fallback -Parent
+        if (-not (Test-Path $fbDir -PathType Container)) {
+            try { New-Item -ItemType Directory -Path $fbDir -Force -ErrorAction SilentlyContinue | Out-Null } catch {}
+        }
+        if ($script:_AidVerbose) {
+            [Console]::Error.WriteLine("WARN: aid: could not write to $dir; seeding $fallback instead")
+        }
+        $target = $fallback
+    }
+
+    # Idempotent at whichever tier resolved to -- never overwrite an existing file.
+    if (Test-Path -LiteralPath $target -PathType Leaf) { return }
+
+    $targetDir = Split-Path $target -Parent
+    $tmp = Join-Path $targetDir ("scan-config.yml.aid-tmp." + [System.IO.Path]::GetRandomFileName())
     try {
         $lns = [System.Collections.Generic.List[string]]::new()
         $lns.Add('# scan-config.yml -- user-level directory-prune list for "aid projects scan".')
@@ -2293,10 +2329,10 @@ function script:Set-AidScanConfigSeed {
         $lns.Add('prune_dirs:')
         foreach ($n in $script:AidScanPruneDirs) { $lns.Add("  - $n") }
         [System.IO.File]::WriteAllText($tmp, (($lns.ToArray()) -join "`n") + "`n", [System.Text.UTF8Encoding]::new($false))
-        Move-Item -LiteralPath $tmp -Destination $primary -Force -ErrorAction Stop
+        Move-Item -LiteralPath $tmp -Destination $target -Force -ErrorAction Stop
     } catch {
         Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
-        [Console]::Error.WriteLine("WARN: aid: could not seed the scan exclusions config ($primary): write failed")
+        [Console]::Error.WriteLine("WARN: aid: could not seed the scan exclusions config ($target): write failed")
     }
 }
 

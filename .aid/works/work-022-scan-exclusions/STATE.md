@@ -4,15 +4,15 @@ pipeline:
   initiator: aid-change-cli
 started: "2026-07-22"
 minimum_grade: "A+"
-user_approved: no
-lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: aid-change-cli
-updated: "2026-07-22T19:20:58Z"
-pause_reason: "GATE cleared A+; awaiting user approval before /aid-execute"
+user_approved: yes
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: "2026-07-22T21:05:11Z"
+pause_reason: --
 block_reason: --
 block_artifact: --
-delivery_state: Specified
+delivery_state: Executing
 gate_tier: Large
 gate_grade: "A+"
 gate_timestamp: "2026-07-22T19:20:58Z"
@@ -69,7 +69,7 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Pending | -- | -- | -- | Expand both twins' prune sets + user-level config read/merge/seed |
+| task-001 | In Progress | quick-check: 0 HIGH, 1 LOW (fixed) | -- | Quick-check clean (98 Tier-A / 21 Tier-B byte-identical; AC-5/6/7/8/9/11/12 verified). LOW fixed: both twins' seeders now degrade to $HOME/.aid when the primary state home is absent/not writable (mirrors registry_register / Registry-Register's degrade), avoiding a repeat-WARN-forever on global installs; verified via ps51-compat-check (0 findings), AST ParseFile, and disposable-fixture smoke tests (both twins: degrade lands the seed in $HOME/.aid silently, --verbose shows the notice, repeat runs are silent/idempotent; normal per-user case unchanged -- seeds primary once, idempotent). | Expand both twins' prune sets + user-level config read/merge/seed |
 | task-002 | Pending | -- | -- | -- | Parity + guardrail tests |
 | task-003 | Pending | -- | -- | -- | Docs: cli.mdx + install help + release ledger |
 
