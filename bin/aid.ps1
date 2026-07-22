@@ -715,7 +715,15 @@ function script:Invoke-AidUpdateAll {
 
             Write-Host ""
             Write-Host "=== $uaRepo ==="
-            & $uaHostExe @uaChildArgs
+            # Route the child's stdout to the host (visible) rather than leaving it in
+            # THIS function's success stream. The caller captures our return value
+            # ($uaRc = Invoke-AidUpdateAll ...), so any success-stream output -- including
+            # the child process's stdout -- is collected into $uaRc, making the function
+            # return an Object[] instead of the intended scalar int exit code. Exit-Aid
+            # then fails to bind [int]$Code ("Cannot convert System.Object[] to Int32").
+            # Mirrors the bash twin, where the child inherits stdout and only the exit
+            # status ($?) is the "return". Write-Host output is unaffected either way.
+            & $uaHostExe @uaChildArgs | Out-Host
             $uaChildRc = $LASTEXITCODE
 
             # Record outcome (FR5/FR6): 0 -> updated; non-zero -> failed. Continue
@@ -1803,15 +1811,26 @@ function script:Invoke-AidProjectsList {
 
     $paths = @(script:Get-RegistryRawUnion)
 
+    # Pre-compute each project's state (version string) and size the STATE column to
+    # the widest value (floor: the historical width of 10) so a long version -- e.g.
+    # a pre-release "X.Y.Z-beta.N" -- never overflows a fixed field and shifts the
+    # TOOLS/TIER columns out of alignment with the header. Mirror of bash _cmd_projects_list.
+    $states = @($paths | ForEach-Object { script:Get-AidProjectState -Path $_ })
+    $stateW = 10
+    foreach ($s in $states) { if ($s.Length -gt $stateW) { $stateW = $s.Length } }
+    $fmt = '{0,3}  {1,-2}  {2,-45}  {3,-' + $stateW + '}  {4,-20}  {5}'
+
     # Column header.
-    Write-Host ('{0,3}  {1,-2}  {2,-45}  {3,-10}  {4,-20}  {5}' -f '#', ' ', 'PATH', 'STATE', 'TOOLS', 'TIER')
-    Write-Host ('{0,3}  {1,-2}  {2,-45}  {3,-10}  {4,-20}  {5}' -f '---', '--', '----', '-----', '-----', '----')
+    Write-Host ($fmt -f '#', ' ', 'PATH', 'STATE', 'TOOLS', 'TIER')
+    Write-Host ($fmt -f '---', '--', '----', '-----', '-----', '----')
 
     $cwdRegistered = $false
     $num = 0
+    $idx = 0
     foreach ($entry in $paths) {
         $num++
-        $state  = script:Get-AidProjectState  -Path $entry
+        $state  = $states[$idx]
+        $idx++
         $tools  = script:Get-AidProjectTools  -Path $entry
         $tier   = script:Get-WhichTierHolds   -Path $entry
         $marker = '  '
@@ -1820,7 +1839,7 @@ function script:Invoke-AidProjectsList {
             $cwdRegistered = $true
         }
         $toolsDisplay = if ($tools) { $tools } else { '-' }
-        Write-Host ('{0,3}  {1,-2}  {2,-45}  {3,-10}  {4,-20}  {5}' -f $num, $marker, $entry, $state, $toolsDisplay, $tier)
+        Write-Host ($fmt -f $num, $marker, $entry, $state, $toolsDisplay, $tier)
         if ($Verbose) {
             $regSrc = if ($tier -eq 'shared' -and
                 ([System.IO.Path]::GetFullPath($script:_AidStateHome) -ne [System.IO.Path]::GetFullPath((Join-Path $HOME '.aid')))) {
