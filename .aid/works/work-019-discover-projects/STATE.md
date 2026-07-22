@@ -227,7 +227,7 @@ different places.
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | -- | -- | bash scan impl; 5 review findings fixed (perf 40s->3s, state-home prune, verbose, -h, local) | Implement the scan subcommand in the Bash twin (bin/aid) |
 | task-002 | Done | -- | -- | pwsh mirror; parse+ps51+ASCII clean, 41-assertion smoke pass, prune/system/maxdepth byte-identical to bash | Mirror the scan subcommand in the PowerShell twin (bin/aid.ps1) |
-| task-003 | Pending | -- | -- | -- | Parity + guardrail coverage in test-aid-cli-parity.sh |
+| task-003 | Done | -- | -- | PAR019 block (566 lines); bash-side 92/0; twin parity independently confirmed (identical discovered set); 7 local PS fails = known Win path-format artifact, pass on ubuntu CI | Parity + guardrail coverage in test-aid-cli-parity.sh |
 | task-004 | Pending | -- | -- | -- | Help text, user docs, and release-tracking entry |
 
 ---
