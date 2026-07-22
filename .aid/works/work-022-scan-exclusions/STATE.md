@@ -8,8 +8,8 @@ user_approved: yes
 lifecycle: Paused-Awaiting-Input
 phase: Execute
 active_skill: aid-execute
-updated: "2026-07-22T22:40:05Z"
-pause_reason: "delivery-001 gated A+; execution complete, awaiting PR/merge to master"
+updated: "2026-07-22T23:34:31Z"
+pause_reason: "PR #166 open; CI-caught regression fixed (f447f6ab), re-running CI; awaiting merge"
 block_reason: --
 block_artifact: --
 delivery_state: Done
@@ -53,6 +53,8 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 | 2026-07-22 | APPROVAL-HALT -- flattened work ready; nothing executed | A+ | /aid-change-cli. Awaiting user approval before /aid-execute work-022. |
 | 2026-07-22 | EXECUTE (/aid-execute work-022) -- 3 tasks Done | -- | Reconciled onto master 60a3c70f (beta.3). task-001 IMPLEMENT (e1ed9b86 + 81a1b862 LOW fix), task-002 TEST (654e94fa, PAR022 66/66), task-003 DOCUMENT (d453d6ce). |
 | 2026-07-22 | DELIVERY GATE (delivery-001) PASS | A+ | aid-reviewer (opus): 0 in-scope findings, all 15 gate criteria PASS. Execution complete; awaiting PR/merge to master. |
+| 2026-07-22 | PR #166 opened -> master | -- | CI caught a regression the A+ gate missed (gate ran bash -n + ps51-compat + logic review, NOT test-aid-remote.sh). |
+| 2026-07-22 | CI regression FIXED (f447f6ab) | -- | test-aid-remote.sh failed: its `_make_fn_src` extracts + evals a bin/aid slice under `set -u` (AID_STATE_HOME unset), and task-001's top-level `readonly _AID_SCAN_CONFIG="${AID_STATE_HOME}/..."` (line 3004) hit unbound-var -> subshell exit 1 -> all expose T-1..T-8 failed. Fix: resolve the path at runtime inside the functions (registry precedent); audited window = no other top-level runtime-var refs. Reproduction proved before(exit1)/after(exit0). Re-pushing to re-run CI. |
 
 ---
 
