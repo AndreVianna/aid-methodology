@@ -5,17 +5,17 @@ pipeline:
 started: "2026-07-22"
 minimum_grade: "A+"
 user_approved: yes
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Execute
 active_skill: aid-execute
-updated: "2026-07-22T21:51:36Z"
-pause_reason: --
+updated: "2026-07-22T22:40:05Z"
+pause_reason: "delivery-001 gated A+; execution complete, awaiting PR/merge to master"
 block_reason: --
 block_artifact: --
-delivery_state: Executing
+delivery_state: Done
 gate_tier: Large
 gate_grade: "A+"
-gate_timestamp: "2026-07-22T19:20:58Z"
+gate_timestamp: "2026-07-22T22:40:05Z"
 ---
 
 # Work State -- work-022-scan-exclusions
@@ -51,6 +51,8 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 | 2026-07-22 | Reconciled onto master @ b45d501a (PR #164 work-020) | -- | Disjoint footprint; no conflicts. DETAIL artifacts committed. |
 | 2026-07-22 | GATE cleared -- all 7 definition artifacts | A+ | /aid-change-cli GATE (aid-reviewer opus). Cycle 1: 3 MEDIUM + 2 MINOR (grade C); cycle 2: all 5 Fixed, 0 regressions (A+). 1 OOS routed to delivery-blueprint-template.md maintenance. |
 | 2026-07-22 | APPROVAL-HALT -- flattened work ready; nothing executed | A+ | /aid-change-cli. Awaiting user approval before /aid-execute work-022. |
+| 2026-07-22 | EXECUTE (/aid-execute work-022) -- 3 tasks Done | -- | Reconciled onto master 60a3c70f (beta.3). task-001 IMPLEMENT (e1ed9b86 + 81a1b862 LOW fix), task-002 TEST (654e94fa, PAR022 66/66), task-003 DOCUMENT (d453d6ce). |
+| 2026-07-22 | DELIVERY GATE (delivery-001) PASS | A+ | aid-reviewer (opus): 0 in-scope findings, all 15 gate criteria PASS. Execution complete; awaiting PR/merge to master. |
 
 ---
 
@@ -58,7 +60,7 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 
 <!-- AUTHORED — single-delivery flattened work. State scalar = frontmatter `delivery_state`. -->
 
-- **Updated:** 2026-07-22T19:00:52Z
+- **Updated:** 2026-07-22T22:40:05Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -70,8 +72,8 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | quick-check: 0 HIGH, 1 LOW (fixed) | -- | Quick-check clean (98 Tier-A / 21 Tier-B byte-identical; AC-5/6/7/8/9/11/12 verified). LOW fixed: both twins' seeders now degrade to $HOME/.aid when the primary state home is absent/not writable (mirrors registry_register / Registry-Register's degrade), avoiding a repeat-WARN-forever on global installs; verified via ps51-compat-check (0 findings), AST ParseFile, and disposable-fixture smoke tests (both twins: degrade lands the seed in $HOME/.aid silently, --verbose shows the notice, repeat runs are silent/idempotent; normal per-user case unchanged -- seeds primary once, idempotent). | Expand both twins' prune sets + user-level config read/merge/seed |
-| task-002 | In Review | -- | -- | PAR022 block added to test-aid-cli-parity.sh (66 assertions, AC-3..AC-10); bash -n clean; hand-verified locally via a throwaway driver against the real bin/aid + bin/aid.ps1 -- 66/66 passed on both twins (deleted after verification); full canonical suite deferred to CI. Awaiting reviewer dispatch. | Parity + guardrail tests |
-| task-003 | Pending | -- | -- | -- | Docs: cli.mdx + install help + release ledger |
+| task-002 | Done | 66/66 (hand-verified) | -- | PAR022 block added to test-aid-cli-parity.sh (66 assertions, AC-3..AC-10); bash -n clean; hand-verified locally via a throwaway driver against the real bin/aid + bin/aid.ps1 -- 66/66 passed on both twins; full canonical suite deferred to CI. Independent review deferred to the delivery GATE (covers tests + docs + code together). Commit 654e94fa. | Parity + guardrail tests |
+| task-003 | Done | -- | -- | cli.mdx + install.md + release-tracking Unreleased [CHANGE]; astro-build render-verified; commit d453d6ce. Flagged pre-existing OOS: .mdx pipe-tables render as literal text (site GFM-plugin gap). | Docs: cli.mdx + install help + release ledger |
 
 ---
 
@@ -79,7 +81,7 @@ Values live in the YAML frontmatter block above (written by `writeback-state.sh 
 
 <!-- AUTHORED — gate criteria read from BLUEPRINT.md § Gate Criteria; grade in frontmatter. -->
 
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Issue List:** none (delivery gate A+, 0 in-scope findings; 2 OOS not counted — pre-existing pwsh stray-`0` + `.mdx` pipe-table render gap, both routed as follow-ups).
 
 ---
 
