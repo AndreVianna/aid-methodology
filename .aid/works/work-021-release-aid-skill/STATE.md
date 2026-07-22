@@ -6,14 +6,14 @@ started: "2026-07-22"
 minimum_grade: "A+"
 user_approved: no
 lifecycle: Running
-phase: Plan
+phase: Execute
 active_skill: none
-updated: '2026-07-22T05:33:27Z'
+updated: '2026-07-22T06:02:34Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: --
-delivery_state: Pending-Spec
+delivery_state: Executing
 gate_tier: Standard
 gate_grade: "A+"
 gate_timestamp: '2026-07-22T05:11:26Z'
@@ -147,6 +147,9 @@ different places.
 | 2026-07-22 | Plan gate -- review dispatched | Pending | aid-reviewer (clean context) over the 4 Lite docs + SKILL.md against the A+ floor |
 | 2026-07-22 | Plan gate -- PASSED | A+ | 5 findings (1 HIGH / 2 MEDIUM / 1 LOW + 1 fix-induced MEDIUM) all Fixed across 2 review cycles; grade.sh = A+ over the ledger (0 open) |
 | 2026-07-22 | Open decisions resolved (w/ user) | -- | OD-1 = separate one-time cleanup (task-003, run now, release on hold); OD-2 = README pointer only (no per-version "What's New" block). Recorded in REQUIREMENTS/SPEC/BLUEPRINT + SKILL.md made definitive |
+| 2026-07-22 | Plan → Execute: task-003 started | -- | Owner-driven standalone DOCUMENT task (DETAIL deferred); backlog reconciliation of release-tracking.md + README.md + infrastructure.md |
+| 2026-07-22 | task-003 Done | A+ | Backlog reconciled: release-tracking.md backfilled v2.1.0–v2.2.3-beta.1 (grounded in gh releases + git log) + drained Unreleased to 2 genuine items; README → pointer (OD-2); infrastructure.md npm/PyPI claim corrected. aid-reviewer 2 cycles (cycle-1 CRITICAL: PR #150 conflation → fixed by splitting into 2 truthful entries); grade.sh A+ |
+| 2026-07-22 | task-001 Done | A+ | Skill artifact (SKILL.md) authored + adversarially verified by the A+ plan gate; marked Done (formalization of the settled artifact) |
 
 ---
 
@@ -182,7 +185,7 @@ different places.
      Updated/Block Reason/Block Artifact stay here as markdown body (not relocated by
      work-003-state-schema task-001; see the task's schema note). -->
 
-- **Updated:** 2026-07-22T04:47:09Z
+- **Updated:** 2026-07-22T06:02:34Z
 - **Block Reason:** --
 - **Block Artifact:** --
 
@@ -215,9 +218,9 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Pending | -- | -- | IMPLEMENT — skill artifact already authored/settled; this task formalizes it | Author the release-aid skill |
-| task-002 | Pending | -- | -- | TEST — validate via a real release.yml dry-run (no publish) | Dry-run validation |
-| task-003 | Pending | -- | -- | DOCUMENT — one-time reconciliation of the pre-existing ledger/README/infrastructure backlog (disposition = OD-1) | Backlog reconciliation |
+| task-001 | Done | A+ | -- | IMPLEMENT — skill artifact authored + adversarially verified by the A+ plan gate (SKILL.md reviewed against the AC) | Author the release-aid skill |
+| task-002 | Pending | -- | -- | TEST — deferred: needs a live release.yml dry-run (`-f ref=master -f dry_run=true`); release is on HOLD | Dry-run validation |
+| task-003 | Done | A+ | -- | DOCUMENT — release-tracking.md (5 sections backfilled + Unreleased drained to 2 items), README pointer (OD-2), infrastructure.md npm/PyPI fix; A+ across 2 review cycles (1 CRITICAL PR-conflation fixed) | Backlog reconciliation |
 
 ---
 
