@@ -117,6 +117,8 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | User approved → /aid-execute task-001 | -- | Lifecycle resumed Running; phase Execute; delivery Executing |
 | 2026-07-22 | task-001 EXECUTE → Done | -- | aid-developer implemented (commit f3b347fc): Pre-flight ISOLATE (own worktree off master) + state-analyze rewrite + new state-scope/state-confirm + SKILL.md wiring + run-state schema. aid-reviewer quick-check: 0 CRITICAL; 1 HIGH (Rung-B cross-session resume matches by branch pattern, not by prompt → could silently continue a stale run) |
 | 2026-07-22 | task-001 HIGH fixed on-spot → Done | -- | Owner directive: fix issues found (not defer). aid-developer fixed the resume HIGH (commit 90940908): prompt-matched Rung-B resume + state-analyze guard + CONFIRM shows current Instruction. delivery-001-issues row → Fixed; verified by orchestrator read |
+| 2026-07-22 | task-002 EXECUTE → In Review | -- | aid-developer implemented (commit 37be7547): guardrails across state-apply/review/approval/done — disk-derived scope-diff guard, hunk-level traceability, re-scope revert, bounded FIX/closure, state-done branch behavior, Change Plan→Scope Plan |
+| 2026-07-22 | task-002 2 HIGH fixed on-spot → Done | -- | quick-check found 2 HIGH (SKILL.md REVIEW-summary drift vs state-review.md); aid-developer reconciled SKILL.md (commit e62ce624): disk-derived {{ARTIFACTS}} + 4-outcome routing; verified by orchestrator grep |
 
 ---
 
@@ -139,7 +141,7 @@ don't act") are the load-bearing fixes.
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | quick-check → HIGH fixed on-spot | ~21m | HIGH (resume-by-branch) fixed commit 90940908; delivery-001-issues row Fixed | Analyst + Confirm front-end |
-| task-002 | In Review | -- | -- | -- | Scope-fidelity guardrails |
+| task-002 | Done | quick-check → 2 HIGH fixed on-spot | ~16m | 2 HIGH (SKILL.md REVIEW-summary drift vs state-review.md) fixed commit e62ce624 | Scope-fidelity guardrails |
 | task-003 | Pending | -- | -- | -- | Re-emit to profiles + resync dogfood |
 | task-004 | Pending | -- | -- | -- | Hard-limit invariant tests |
 
@@ -157,6 +159,12 @@ don't act") are the load-bearing fixes.
 - **Reviewer Tier:** Small
 - **Findings:**
   - [HIGH] Pre-flight ISOLATE Rung-B cross-session resume matched by `aid/update-kb-*` branch pattern, not by stored `Prompt:` vs the current instruction — a new run while an older one is paused elsewhere would silently re-enter the stale run and discard the new instruction (SKILL.md; state-analyze.md; state-confirm.md) — **Fixed on-spot (commit 90940908)**: Rung-B now enumerates candidates and resumes only the one whose stored `Prompt:` equals the current instruction (different instruction → fresh worktree; ambiguous → STOP+ask); state-analyze Step 0 adds a prompt-match guard; CONFIRM now prints the current `Instruction:` line.
+
+### task-002
+- **Reviewer Tier:** Small
+- **Findings:**
+  - [HIGH] SKILL.md "REVIEW reuse (f005)" blockquote scoped `{{ARTIFACTS}}` from APPLY's self-reported `Edited Docs` — contradicted state-review.md's disk-derived scope-diff — **Fixed on-spot (commit e62ce624)**: SKILL.md now says disk-derived, NEVER self-reported.
+  - [HIGH] SKILL.md Dispatch table + FIX-loop blockquote routed scope-diff failures to FIX — contradicted state-review.md's 4-outcome design — **Fixed on-spot (commit e62ce624)**: now incomplete→APPLY / out-of-scope→PAUSE→CONFIRM / grade-teach-act-TRACE→FIX / READY→APPROVAL.
 
 ---
 
