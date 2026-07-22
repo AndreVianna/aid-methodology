@@ -119,6 +119,7 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | task-001 HIGH fixed on-spot → Done | -- | Owner directive: fix issues found (not defer). aid-developer fixed the resume HIGH (commit 90940908): prompt-matched Rung-B resume + state-analyze guard + CONFIRM shows current Instruction. delivery-001-issues row → Fixed; verified by orchestrator read |
 | 2026-07-22 | task-002 EXECUTE → In Review | -- | aid-developer implemented (commit 37be7547): guardrails across state-apply/review/approval/done — disk-derived scope-diff guard, hunk-level traceability, re-scope revert, bounded FIX/closure, state-done branch behavior, Change Plan→Scope Plan |
 | 2026-07-22 | task-002 2 HIGH fixed on-spot → Done | -- | quick-check found 2 HIGH (SKILL.md REVIEW-summary drift vs state-review.md); aid-developer reconciled SKILL.md (commit e62ce624): disk-derived {{ARTIFACTS}} + 4-outcome routing; verified by orchestrator grep |
+| 2026-07-22 | task-003 → Done | -- | aid-developer re-emitted canonical → all 5 profiles + resynced dogfood .claude/ (run_generator.py exit 0; deterministic VERIFY PASS; commit a2b09918). Mechanical CONFIGURE task verified by generator VERIFY + orchestrator spot-check (state-scope+state-confirm present 2/2 in every profile + dogfood; diff confined to aid-update-kb + manifests) — no separate reviewer quick-check needed for a deterministic re-emit |
 
 ---
 
@@ -142,8 +143,8 @@ don't act") are the load-bearing fixes.
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | quick-check → HIGH fixed on-spot | ~21m | HIGH (resume-by-branch) fixed commit 90940908; delivery-001-issues row Fixed | Analyst + Confirm front-end |
 | task-002 | Done | quick-check → 2 HIGH fixed on-spot | ~16m | 2 HIGH (SKILL.md REVIEW-summary drift vs state-review.md) fixed commit e62ce624 | Scope-fidelity guardrails |
-| task-003 | Pending | -- | -- | -- | Re-emit to profiles + resync dogfood |
-| task-004 | Pending | -- | -- | -- | Hard-limit invariant tests |
+| task-003 | Done | -- | -- | -- | Re-emit to profiles + resync dogfood |
+| task-004 | In Progress | -- | -- | -- | Hard-limit invariant tests |
 
 ---
 
