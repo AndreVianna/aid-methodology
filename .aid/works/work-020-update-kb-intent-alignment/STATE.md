@@ -144,7 +144,7 @@ don't act") are the load-bearing fixes.
 | task-001 | Done | quick-check → HIGH fixed on-spot | ~21m | HIGH (resume-by-branch) fixed commit 90940908; delivery-001-issues row Fixed | Analyst + Confirm front-end |
 | task-002 | Done | quick-check → 2 HIGH fixed on-spot | ~16m | 2 HIGH (SKILL.md REVIEW-summary drift vs state-review.md) fixed commit e62ce624 | Scope-fidelity guardrails |
 | task-003 | Done | -- | -- | -- | Re-emit to profiles + resync dogfood |
-| task-004 | In Progress | -- | -- | -- | Hard-limit invariant tests |
+| task-004 | In Review | -- | -- | -- | Hard-limit invariant tests |
 
 ---
 
