@@ -18,8 +18,8 @@
 > user**; this work *formalizes* it, so task-001 (author the skill) is effectively
 > complete on arrival. The remaining tasks are validation (task-002) and the one-time
 > reconciliation of the pre-existing broken ledger/doc backlog this work surfaced
-> (task-003 — whose disposition is open decision OD-1). Per-task `DETAIL.md` files are a
-> later step (`/aid-detail`), not authored now.
+> (task-003 — OD-1 resolved: run standalone, now, since the release is on hold). Per-task
+> `DETAIL.md` files are a later step (`/aid-detail`), not authored now.
 
 ---
 

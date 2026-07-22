@@ -70,7 +70,8 @@ docs. A static spec and a partial runbook cannot enforce "update the notes every
   carrier exemption for betas.
 - The three human-gated pauses and otherwise-autonomous execution.
 - A one-time reconciliation of the pre-existing broken ledger + docs backlog
-  (`v2.1.0`–`v2.2.3-beta.1`) — surfaced by this work (see §8 OD-1 for its disposition).
+  (`v2.1.0`–`v2.2.3-beta.1`) — surfaced by this work; handled as the separate one-time
+  task-003, run now (OD-1 resolved — see §8).
 
 ### Out of Scope
 
@@ -117,8 +118,9 @@ docs. A static spec and a partial runbook cannot enforce "update the notes every
   renaming.
 - **FR-6 — Documentation sweep (Step 3.2).** Derive "what changed" from this version's
   `release-tracking.md` items + `git log <last-tag>..HEAD`, then audit and update every
-  affected surface: `README.md` (version/highlights; prefer a short "recent releases →
-  changelog / Releases" pointer over a per-version block that re-freezes); the KB under
+  affected surface: `README.md` (a short "recent releases → changelog / GitHub Releases"
+  pointer — **no** per-version "What's New" block, per OD-2; plus any command/feature
+  enumeration the release changed); the KB under
   `.aid/knowledge/` (`capability-inventory.md`, `module-map.md`, `infrastructure.md`,
   `technology-stack.md`, and any other affected doc); `docs/`; the docs site under
   `site/src/content/docs/` (leave the release changelog page — a sibling tree at
@@ -207,16 +209,17 @@ docs. A static spec and a partial runbook cannot enforce "update the notes every
   accounts, and on branch protection requiring a PR into `master`.
 - Assumes `.aid/knowledge/release-tracking.md` is the release-history ledger and its
   `## Unreleased` block is the accumulator for the next version.
-- **OD-1 (OPEN — do not resolve here).** Whether `release-aid` should **auto-reconcile
-  the pre-existing broken ledger backlog** (`v2.1.0`–`v2.2.3-beta.1` sections + the
-  stale Unreleased items) on its first run, or whether that backlog is handled as a
-  **separate one-time cleanup** (this work's task-003) and the skill only maintains the
-  ledger going forward. Flagged for a human decision.
-- **OD-2 (OPEN — do not resolve here).** The README shape the 3.2 sweep should adopt: a
-  **"recent releases → changelog / Releases" pointer** (self-maintaining, never
-  re-freezes) vs. a **maintained highlights block** (richer, but must be updated every
-  release). The SKILL.md prefers the pointer but leaves the choice open. Flagged for a
-  human decision.
+- **OD-1 (RESOLVED 2026-07-22 — separate one-time cleanup).** The pre-existing broken
+  ledger backlog (`v2.1.0`–`v2.2.3-beta.1` sections + the stale Unreleased items, the
+  frozen README, and `infrastructure.md`'s stale npm/PyPI claim) is handled as a
+  **separate one-time cleanup** — this work's **task-003**, run now while the release is
+  on hold — **not** auto-reconciled by the skill's first run. The skill's Step 3.1
+  "reconcile if behind" guard remains only as a safety net; the skill maintains the
+  ledger going forward.
+- **OD-2 (RESOLVED 2026-07-22 — pointer only).** The 3.2 sweep keeps `README.md` as a
+  short **"recent releases → changelog / GitHub Releases" pointer** with **no**
+  version-specific "What's New" block (the shape that froze at v1.1.0). Self-maintaining;
+  nothing version-specific to go stale. SKILL.md Step 3.2 and FR-6 state this definitively.
 
 ## 9. Acceptance Criteria
 

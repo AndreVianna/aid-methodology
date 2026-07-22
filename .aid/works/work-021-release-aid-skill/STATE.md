@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Plan
 active_skill: none
-updated: '2026-07-22T05:11:26Z'
+updated: '2026-07-22T05:33:27Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -146,6 +146,7 @@ different places.
 | 2026-07-22 | Describe -> Plan (docs authored) | -- | REQUIREMENTS/SPEC/PLAN/BLUEPRINT + SKILL.md authored & committed (2d220b8e) |
 | 2026-07-22 | Plan gate -- review dispatched | Pending | aid-reviewer (clean context) over the 4 Lite docs + SKILL.md against the A+ floor |
 | 2026-07-22 | Plan gate -- PASSED | A+ | 5 findings (1 HIGH / 2 MEDIUM / 1 LOW + 1 fix-induced MEDIUM) all Fixed across 2 review cycles; grade.sh = A+ over the ledger (0 open) |
+| 2026-07-22 | Open decisions resolved (w/ user) | -- | OD-1 = separate one-time cleanup (task-003, run now, release on hold); OD-2 = README pointer only (no per-version "What's New" block). Recorded in REQUIREMENTS/SPEC/BLUEPRINT + SKILL.md made definitive |
 
 ---
 

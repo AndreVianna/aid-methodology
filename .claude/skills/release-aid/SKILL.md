@@ -116,9 +116,10 @@ feature's work missed or that the release makes stale. Derive "what changed" fro
 `release-tracking.md` items + `git log <last-tag>..HEAD` (new/changed commands, behaviors,
 capabilities, and the version bump itself), then audit and update each surface it affects:
 
-- **`README.md`** — version/highlights + any command/feature enumeration. Refresh the "what's new"
-  so a repo visitor never sees a version two releases stale; prefer a short "recent releases ->
-  see the changelog / Releases" pointer over a per-version "What's New in vX" block that re-freezes.
+- **`README.md`** — keep a short "recent releases -> see the changelog / GitHub Releases" pointer
+  (**no** per-version "What's New in vX" block — that is the shape that froze at v1.1.0; OD-2 resolved
+  = pointer only). The pointer carries no version-specific text, so it never goes stale. Also update
+  any command/feature enumeration the release changed.
 - **KB — `.aid/knowledge/`** — any doc describing a capability/command/behavior/channel that
   changed: `capability-inventory.md` + `module-map.md` (a new/changed command or module),
   `infrastructure.md` (release/channel/version facts — e.g. which distribution channels are

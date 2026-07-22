@@ -145,7 +145,7 @@ tarballs + `aid-cli-v<target>.tar.gz` + `aid-install-core.sh` + `AidInstallCore.
 
 | Surface | Path | Notes |
 |---------|------|-------|
-| README | `README.md` | Version/highlights + any command/feature enumeration. Prefer a short "recent releases → changelog / Releases" pointer over a per-version "What's New in vX" block (OD-2). |
+| README | `README.md` | A short "recent releases → changelog / GitHub Releases" pointer — **no** per-version "What's New in vX" block (OD-2 resolved: pointer only; that block is what froze at v1.1.0) — plus any command/feature enumeration the release changed. |
 | Knowledge Base | `.aid/knowledge/` | `capability-inventory.md` + `module-map.md` (new/changed command or module), `infrastructure.md` (release/channel/version facts — e.g. which channels are enabled), `technology-stack.md`, and any other affected doc. |
 | Repo docs | `docs/` | `install.md` (command surface), `release.md`, any versioned reference. |
 | Docs site | `site/src/content/docs/` (+ `site/src/pages/releases/`) | `reference/cli.mdx`, guides, reference pages. **Leave the release changelog page** (`site/src/pages/releases/changelog.astro`, a sibling tree — not under `content/docs/`) — it is auto-sourced from GitHub Releases. |
@@ -168,12 +168,12 @@ authors *adopter-project* changelogs; the AID-repo ledger rename (3.1) and this 
 - Never bump/commit `.aid/.aid-manifest.json` as part of a release (not a gate carrier).
 - Always dry-run (`-f ref=master -f dry_run=true`) before the tag.
 
-### Open points (recorded, not resolved — see REQUIREMENTS §8)
+### Resolved decisions (2026-07-22 — see REQUIREMENTS §8)
 
-- **OD-1** — Whether `release-aid` auto-reconciles the pre-existing broken ledger
-  backlog (`v2.1.0`–`v2.2.3-beta.1` sections + the stale `## Unreleased` items) on its
-  first run, or whether that backlog is a separate one-time cleanup (task-003) with the
-  skill only maintaining the ledger going forward. Human decision pending.
-- **OD-2** — README shape: a self-maintaining "recent releases → changelog" pointer vs.
-  a maintained per-release highlights block. SKILL.md prefers the pointer; human
-  decision pending.
+- **OD-1 (RESOLVED — separate one-time cleanup).** The pre-existing broken ledger + doc
+  backlog (`v2.1.0`–`v2.2.3-beta.1` sections + the stale `## Unreleased` items) is handled
+  by this work's **task-003** (run now, release on hold), **not** by the skill's first run.
+  The skill maintains the ledger going forward (Step 3.1 reconcile is a safety net only).
+- **OD-2 (RESOLVED — pointer only).** `README.md` keeps a "recent releases → changelog /
+  GitHub Releases" pointer with **no** version-specific "What's New" block. SKILL.md
+  Step 3.2 + FR-6 state it definitively.

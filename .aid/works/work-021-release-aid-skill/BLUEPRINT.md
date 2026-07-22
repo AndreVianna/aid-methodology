@@ -30,7 +30,7 @@ drifted.
 - The one-time reconciliation of the pre-existing broken ledger + doc backlog
   (`v2.1.0`–`v2.2.3-beta.1` sections, the stale `## Unreleased` items, the frozen README,
   and `infrastructure.md`'s stale npm/PyPI-disabled claim) — the debt the skill's Step 3
-  prevents going forward (disposition governed by OD-1).
+  prevents going forward (OD-1 resolved: the separate one-time task-003, run now).
 
 **Out of scope:** modifying the release CI (`release.yml`), `release.sh`,
 `check-version-sync.sh`, or any release infrastructure (the skill *drives* it, does not
@@ -102,7 +102,7 @@ against the AC, plus the task-002 dry-run exercising the mechanical steps.
 |------|------|-------|
 | task-001 | IMPLEMENT | Author the `release-aid` skill (`.claude/skills/release-aid/SKILL.md`) — the Step 0–9 sequence, version-math table, four carriers + beta npm exemption, channel matrix, three human-gated pauses, and gotchas. **Already authored/settled with the user; this task formalizes the existing artifact.** |
 | task-002 | TEST | Validate the skill via a real dry-run of `release.yml` (`-f ref=master -f dry_run=true`, no publish) — exercises the preconditions, version-sync, render-drift, and per-channel packaging without releasing. Acceptance = a fully green dry-run run (each job inspected). |
-| task-003 | DOCUMENT | One-time reconciliation of the pre-existing backlog: add the missing `v2.1.0`–`v2.2.3-beta.1` ledger sections + drain the stale `## Unreleased` items in `release-tracking.md`; unfreeze the README; correct `infrastructure.md`'s npm/PyPI-disabled claim. Disposition governed by OD-1 (run standalone vs. folded into the first live release). |
+| task-003 | DOCUMENT | One-time reconciliation of the pre-existing backlog (OD-1 resolved: run standalone, now — release on hold): add the missing `v2.1.0`–`v2.2.3-beta.1` ledger sections + drain the stale `## Unreleased` items in `release-tracking.md`; unfreeze the README to a "recent releases → changelog / GitHub Releases" pointer (OD-2 resolved: pointer only); correct `infrastructure.md`'s npm/PyPI-disabled claim. |
 
 ## Dependencies
 
@@ -119,15 +119,14 @@ against the AC, plus the task-002 dry-run exercising the mechanical steps.
   `profiles/*` tree, carries no `aid-` prefix, and is never in a release tarball. It is
   edited directly (no canonical source to render from). This is a deliberate exception to
   the canonical-source pattern, not an oversight (NFR-1 / AC-13 / GC-13).
-- **OD-1 (OPEN — do not resolve).** Whether `release-aid` should **auto-reconcile the
-  pre-existing broken ledger backlog** (`v2.1.0`–`v2.2.3-beta.1` + the stale `## Unreleased`
-  items) on its first run, or whether that backlog is handled as the separate one-time
-  task-003 with the skill only maintaining the ledger going forward. Governs task-003's
-  disposition. Human decision pending.
-- **OD-2 (OPEN — do not resolve).** The README shape the 3.2 sweep should adopt: a
-  self-maintaining **"recent releases → changelog / Releases" pointer** vs. a **maintained
-  per-release highlights block**. `SKILL.md` prefers the pointer but leaves it open. Human
-  decision pending.
+- **OD-1 (RESOLVED 2026-07-22 — separate one-time cleanup).** The pre-existing broken
+  ledger backlog (`v2.1.0`–`v2.2.3-beta.1` + the stale `## Unreleased` items) is handled
+  as the separate one-time **task-003**, run standalone **now** (release on hold); the
+  skill does not auto-reconcile it on first run and only maintains the ledger going
+  forward. task-003 is confirmed (no longer conditional).
+- **OD-2 (RESOLVED 2026-07-22 — pointer only).** The 3.2 sweep keeps the README as a
+  "recent releases → changelog / GitHub Releases" pointer with **no** version-specific
+  "What's New" block. `SKILL.md` Step 3.2 + FR-6 state it definitively.
 - Direct-authored flattened Lite work (fast path, owner-driven). The authoritative design
   is `.claude/skills/release-aid/SKILL.md`; detailed design is mirrored in
   SPEC.md § Technical Specification. Per-task `DETAIL.md` files are authored later
