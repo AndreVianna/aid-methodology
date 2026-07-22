@@ -26,8 +26,18 @@ bash .cursor/aid/scripts/kb/closure-check.sh \
   --output-b .aid/.temp/closure-verify-b.md
 ```
 
-Read `closure-verify-a.md` (the ungrounded/undefined-terms oracle). If it contains any
-undefined native terms that were introduced by the APPLY edits:
+Read `closure-verify-a.md` (the ungrounded/undefined-terms oracle). If it
+contains any undefined native terms introduced by the APPLY edits, determine
+whether the fix stays within `**Confirmed Scope:**` or needs an addition
+outside it (HL-7 -- a closure shortfall may not silently expand scope any
+more than a REVIEW fix may):
+
+### 1a. Fixable within Confirmed Scope
+
+The gap can be closed by editing/cross-referencing a doc already in
+`**Confirmed Scope:**` (e.g. a cross-reference the confirmed edit itself
+should have included). Route back to APPLY -- still bounded to Confirmed
+Scope, nothing new to confirm:
 
 1. Do NOT commit.
 2. Print:
@@ -41,10 +51,53 @@ undefined native terms that were introduced by the APPLY edits:
 
    ```
    **State:** APPLY
-   **Closure Failure:** <terms> undefined after APPLY
+   **Closure Failure:** <terms> undefined after APPLY (fixable within Confirmed Scope)
    ```
 
-4. HALT (the user re-enters via `/aid-update-kb`; APPLY will address the gap).
+4. HALT (the user re-enters via `/aid-update-kb`; APPLY will address the gap,
+   still bounded to `Confirmed Scope` per `state-apply.md § Step 1`).
+
+### 1b. Needs an out-of-scope addition (HL-7)
+
+The gap can only be closed by a doc, or a Scope Plan item, that was never
+confirmed (e.g. a brand-new `domain-glossary.md` entry no Scope Plan row
+named). Do **NOT** auto-push this to APPLY -- that would let APPLY improvise
+an edit outside the confirmed contract. Escalate to the user instead:
+
+1. Append a Q&A entry to `.aid/knowledge/STATE.md ## Q&A (Pending)`:
+
+   ```
+   ### Q{N}
+   - **Category:** Update-KB / Closure Shortfall
+   - **Impact:** Required
+   - **Status:** Pending
+   - **Context:** /aid-update-kb DONE's closure re-check found undefined
+     term(s) <terms> that require an edit outside Confirmed Scope to fix
+     (e.g. a new domain-glossary.md entry that was never a confirmed Scope
+     Plan item).
+   - **Suggested:** Confirm whether <terms>/<doc> should be added to scope.
+     If yes, re-run /aid-update-kb to re-enter CONFIRM/SCOPE with the
+     expanded need.
+   ```
+
+2. Update the run-state file:
+
+   ```
+   **State:** CONFIRM
+   **Closure Failure:** <terms> require out-of-scope addition -- escalated Q{N}
+   ```
+
+3. Print:
+
+   ```
+   [DONE] Closure re-verification found undefined term(s) needing an
+   out-of-scope addition -- escalated as Q{N} in .aid/knowledge/STATE.md.
+   Closure-chasing may not expand scope (HL-7). Run /aid-update-kb again to
+   resolve at CONFIRM.
+   ```
+
+4. Do NOT commit. **Advance:** PAUSE-FOR-USER-ACTION -- return to CONFIRM on
+   the next invocation (do not HALT-and-auto-resume at APPLY as in 1a).
 
 If closure passes (no new undefined terms), proceed.
 
@@ -57,22 +110,26 @@ rm -f .aid/.temp/closure-verify-a.md \
 
 ---
 
-## Step 2: Ensure branch
+## Step 2: Confirm the working branch (no new branch created)
 
-Ensure the `aid/update-kb-*` branch exists (create if absent; use the existing
-one if this is a resumed run):
+The Pre-flight ISOLATE step already created and entered this run's
+`aid/update-kb-<ts>` branch, before any state ran -- recorded as
+`**Branch:**` in the run-state file. **DONE creates no separate branch of
+its own** (there is no "ensure branch" / `git checkout -b` step here); it
+only ever commits on the one branch the whole run has been living on since
+Pre-flight.
+
+Belt-and-suspenders sanity check (should be unreachable -- the worktree
+never leaves this branch):
 
 ```bash
-BRANCH="aid/update-kb-$(date +%Y-%m-%d)"
-git rev-parse --verify "$BRANCH" >/dev/null 2>&1 || \
-  git checkout -b "$BRANCH"
-git checkout "$BRANCH"
-```
-
-Record the branch in the run-state file:
-
-```
-**Branch:** aid/update-kb-<date>
+BRANCH=$(grep -m1 "^\*\*Branch:\*\*" "$STATE_FILE" | sed 's/^\*\*Branch:\*\* *//')
+CUR="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
+if [ -n "$BRANCH" ] && [ "$CUR" != "$BRANCH" ]; then
+  echo "[DONE] Current branch ($CUR) does not match this run's recorded"
+  echo "branch ($BRANCH) -- refusing to commit on the wrong branch. STOP."
+  exit 1
+fi
 ```
 
 ---
@@ -101,20 +158,25 @@ permitted moment.
 
 ### Step 4a: Stage and commit
 
-Stage the approved docs and commit on the `aid/update-kb-*` branch:
+Stage the approved docs and commit on the `aid/update-kb-<ts>` branch
+recorded in `**Branch:**` (the branch Pre-flight already created and entered
+-- this step never creates or switches branches):
 
 ```bash
 git add .aid/knowledge/<doc1>.md .aid/knowledge/<doc2>.md ...
 git commit -m "kb(update): <one-line summary from **Prompt:**>
 
 Changes applied by /aid-update-kb:
-<list of doc | change-type pairs from **Change Plan:**>
+<list of doc | change-type pairs from **Scope Plan:**>
 
 Grade: <grade> | Teach-back: PASS | Act-back: PASS
 Approved by user at <ISO-8601 from **Approved At:**>"
 ```
 
-The skill NEVER pushes. The human pushes / opens the PR.
+**The skill NEVER pushes -- to this branch or to `master`.** This includes
+`master` specifically: the skill never merges or pushes to `master` under
+any circumstance. The human pushes `<Branch>` / opens the PR, and merges
+into `master` only after CI is green.
 
 ### Step 4b: Restamp approved_at_commit: to the real commit SHA
 
@@ -160,7 +222,7 @@ find .aid/.temp -maxdepth 1 -name 'UPDATEKB_STATE_*.md' -delete 2>/dev/null || t
 ```
 [State: DONE] complete.
 
-KB update committed on branch: aid/update-kb-<date>
+KB update committed on branch: <Branch>
 Commit: <COMMIT_SHA>
 Docs updated ({N}):
   <list of doc | change-type>
@@ -168,8 +230,9 @@ Grade: <grade> | Teach-back: PASS | Act-back: PASS
 Closure re-verification: PASS
 
 To publish the update:
-  git push origin aid/update-kb-<date>
-  # then open a PR to merge into the main branch
+  git push origin <Branch>
+  # then open a PR to merge into master (the skill never pushes master itself
+  # -- the human merges only after CI is green)
 ```
 
 **Advance:** HALT.

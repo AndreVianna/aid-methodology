@@ -1,22 +1,26 @@
 ---
 name: aid-update-kb
 description: >
-  Optional on-demand targeted KB update skill. Takes a free-form prompt
-  describing what changed and applies the delta through the same
-  review/calibration gate as aid-discover. Analyzes which KB docs the
-  prompt implies, applies targeted summary+pointer edits, reviews them
-  through f005's five-mandate panel (scoped to the changed docs), and
-  commits only after explicit human approval. State-machine:
-  ANALYZE -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
+  Optional on-demand targeted KB update skill. Isolates itself in its own
+  worktree, analyzes how a free-form instruction lands in the Knowledge Base
+  (an aid-researcher Impact Map), turns that into a minimal aid-architect
+  Scope Plan traced to the instruction (+ an explicit Not-Changing list), and
+  pauses for an explicit human CONFIRM before any edit. Applies only the
+  confirmed scope, reviews it through f005's four-mandate panel (scoped to
+  the changed docs), and commits only after a second explicit human approval.
+  State-machine: ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL ->
+  DONE (FIX loop inside REVIEW).
 allowed-tools: Read, Glob, Grep, Terminal, Write, Edit, Agent
 argument-hint: "<what changed / what to update in the KB>"
 ---
 
 # Targeted KB Update
 
-Applies a prompt-driven, targeted delta to the Knowledge Base through the
-same review/calibration gate as `/aid-discover`. One pass per run --
-each invocation drives the state machine to the next natural pause point.
+Analyzes how a prompt-driven instruction lands in the Knowledge Base,
+confirms the correct understanding and the exact scope with the user BEFORE
+any edit, then applies only that confirmed delta through the same
+review/calibration gate as `/aid-discover`. One pass per run -- each
+invocation drives the state machine to the next natural pause point.
 
 **Optional, off-pipeline.** `/aid-update-kb` is NOT in the numbered
 phase-to-skill pipeline; no phase gate references it. It is an on-demand
@@ -24,37 +28,51 @@ maintenance skill (like `/aid-housekeep` / `/aid-query-kb`).
 
 **Run-state is transient.** Its run-state lives in a project-level file
 under `.aid/.temp/` (`.aid/.temp/UPDATEKB_STATE_<ts>.md`, gitignored per
-`.gitignore`, removed at DONE). It does NOT write to any work `STATE.md`
-for its own run-state. The KB it edits has its own `.aid/knowledge/STATE.md`
-for review/approval history.
+`.gitignore`, removed at DONE) -- inside the skill's own Pre-flight-created
+worktree (AC-10), not the caller's tree. It does NOT write to any work
+`STATE.md` for its own run-state. The KB it edits has its own
+`.aid/knowledge/STATE.md` for review/approval history.
 
 **Boundary: prompt-driven-targeted vs source-driven-global.** This skill
 is the prompt-driven-targeted half of the KB freshness loop -- the user
-supplies the scoping seed (what changed) and ANALYZE turns it into a
-(doc, change) plan. The source-driven-global sweep is `aid-housekeep`'s
-KB-DELTA job. The non-overlap contract between the two (FR-33/FR-34) is
-drawn in f010; this skill references that boundary but does not own it.
+supplies the scoping seed (the instruction) and ANALYZE + SCOPE turn it into
+a minimal Scope Plan. The source-driven-global sweep is `aid-housekeep`'s
+KB-DELTA job. Docs that are domain-adjacent but not named by the instruction
+stay out of scope here (HL-5) and route to that sweep instead. The
+non-overlap contract between the two (FR-33/FR-34) is drawn in f010; this
+skill references that boundary but does not own it.
 
-**Human-gated (NFR-6/C4/AC13).** Detection and grading are automatic; the
-change to KB content cannot proceed to DONE without an explicit human
-`[1] Approved` at APPROVAL. No auto-apply path exists.
+**Human-gated, twice (NFR-6/C4/AC13, HL-1).** Analysis and scope-planning
+are automatic; the change to KB content cannot proceed to APPLY without an
+explicit human `[1] Confirm` at CONFIRM (the root fix -- scope is vetoed
+BEFORE any edit exists), and cannot proceed to DONE without a second explicit
+human `[1] Approved` at APPROVAL. No auto-apply path exists at either gate.
 
 **State machine -- each `/aid-update-kb` invocation drives the state machine
 until it hits a natural pause point per
 `.cursor/aid/templates/state-machine-chaining.md`.
 Mechanical states auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the
-run.**
+run. Two human gates by design: CONFIRM guards scope/understanding BEFORE
+any edit; APPROVAL guards the specific edits before commit.**
 
 > ```
-> aid-update-kb  > one step per run
->   [ ANALYZE ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
->                                 ^     |
->                                 +-FIX-+   (REVIEW->FIX->REVIEW until grade>=min AND teach-back PASS)
+> aid-update-kb  > one step per run (Pre-flight ISOLATE runs first, every invocation)
+>   [ ANALYZE ] -> [ SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
+>                                 ^ pause                                  ^ pause
 > ```
+
+CONFIRM and APPROVAL are the two human gates (PAUSE-FOR-USER-ACTION). CONFIRM
+`[2] Adjust` loops back to SCOPE (or ANALYZE if the understanding itself
+changes). APPROVAL `[2] Additional consideration` re-scopes back to
+CONFIRM/SCOPE (never blindly back to APPLY). REVIEW's FIX loop (REVIEW ->
+fix edits -> REVIEW) repeats until `grade >= minimum_grade AND teach-back
+PASS AND act-back PASS`, bounded to Confirmed Scope only (HL-7).
 
 ---
 
 ## Pre-flight
+
+### Step 1: Confirm the prompt
 
 Confirm a prompt was supplied. If `/aid-update-kb` is invoked with no
 argument, print:
@@ -65,6 +83,139 @@ Example: /aid-update-kb "work-003 added the content-isolation cornerstone (AID:B
 ```
 
 Then exit without entering the state machine.
+
+### Step 2: ISOLATE -- create and enter the skill's own worktree (FR-11, AC-10)
+
+Before any state runs, self-isolate in the skill's OWN worktree -- mirroring
+the isolation `/aid-fix` gets at its INTAKE, adapted to this off-pipeline
+skill's timestamp-keyed identity. It allocates no `work-NNN`, so it does
+**not** use `.cursor/aid/scripts/works/worktree-lifecycle.sh` or
+`.cursor/aid/templates/work-initiation-gate.md` -- both hard-validate a
+`^work-[0-9]+$` id and would reject an `aid/update-kb-<ts>` branch. This is
+**plain git worktree mechanics**, entered via the **generic enter contract**
+of `.cursor/aid/templates/worktree-lifecycle.md § Step 2` only.
+
+**2a. Detect an already-live run (resume), before creating anything new:**
+
+```bash
+UPDATEKB_WT=""
+
+# Rung A -- already inside a live update-kb worktree (same-session resume:
+# a prior invocation's EnterWorktree already switched this session here).
+CUR_BRANCH="$(git symbolic-ref --short HEAD 2>/dev/null || true)"
+case "$CUR_BRANCH" in
+  aid/update-kb-*)
+    SF=$(ls -1 .aid/.temp/UPDATEKB_STATE_*.md 2>/dev/null | sort | tail -1)
+    if [ -n "$SF" ] && ! grep -q "^\*\*State:\*\* DONE" "$SF" 2>/dev/null; then
+      UPDATEKB_WT="$(pwd -P)"
+    fi
+    ;;
+esac
+
+# Rung B -- live update-kb worktree(s) registered elsewhere (cross-session
+# resume: a NEW chat/terminal, cwd back at the caller's own tree). This
+# block only ENUMERATES live candidates -- it never picks one itself. Each
+# `CANDIDATE:` line is a live (non-DONE) aid/update-kb-* worktree; the
+# `**Prompt:**` line beneath it is that run's stored instruction, read
+# verbatim from disk.
+if [ -z "$UPDATEKB_WT" ]; then
+  CUR_WT=""
+  while IFS= read -r line; do
+    case "$line" in
+      "worktree "*) CUR_WT="${line#worktree }" ;;
+      "branch refs/heads/aid/update-kb-"*)
+        SF=$(ls -1 "$CUR_WT"/.aid/.temp/UPDATEKB_STATE_*.md 2>/dev/null | sort | tail -1)
+        if [ -n "$SF" ] && ! grep -q "^\*\*State:\*\* DONE" "$SF" 2>/dev/null; then
+          echo "CANDIDATE: $CUR_WT"
+          grep -m1 "^\*\*Prompt:\*\*" "$SF" 2>/dev/null
+        fi
+        ;;
+    esac
+  done < <(git worktree list --porcelain 2>/dev/null)
+fi
+```
+
+**Prompt-matched resume (HIGH finding fix -- no silent stale-run hijack).**
+The block above only lists candidates; resuming one is a match decision, not
+a first-match/last-match default. Compare each candidate's stored
+`**Prompt:**` against the current invocation's instruction (exact match;
+trimming leading/trailing whitespace and collapsing internal whitespace runs
+is fine -- this is a text-equality check, never a semantic/fuzzy one):
+
+- **Exactly one candidate matches** -- that run IS this invocation's resume
+  target. Set `UPDATEKB_WT` to that candidate's worktree path.
+- **No candidate matches** (including zero candidates found) -- this is a
+  NEW run for a new instruction. Leave `UPDATEKB_WT` unset and continue to
+  2b (fresh worktree). A live run for a *different* instruction is left
+  completely untouched -- each distinct instruction gets its own isolated
+  run; never repurpose someone else's paused run just because it is the
+  only (or the most recent) one found.
+- **More than one candidate matches the same instruction** (ambiguous --
+  e.g. two duplicate invocations raced) -- do NOT silently pick one (no
+  first-match/last-match default). Print the matching worktree paths and
+  STOP:
+
+  ```
+  [Pre-flight] ISOLATE found more than one live run for this exact
+  instruction -- ambiguous, cannot silently pick one:
+    <matching worktree path 1>
+    <matching worktree path 2> ...
+  Resume one explicitly (cd into its worktree and re-run /aid-update-kb
+  "<same instruction>" from there), or rephrase to a distinct instruction to
+  start a fresh run. STOP.
+  ```
+
+  Do not continue to 2b or 2c until the user responds -- exit without
+  entering the state machine.
+
+If `$UPDATEKB_WT` resolved (either rung), that path IS the worktree to enter
+-- skip 2b and go straight to 2c.
+
+**2b. No live run found -- create a fresh worktree off `master`:**
+
+```bash
+TS="$(date +%Y%m%d%H%M)"
+BRANCH="aid/update-kb-${TS}"
+GCD="$(git rev-parse --git-common-dir 2>/dev/null)" || GCD=""
+if [ -z "$GCD" ]; then
+  echo "[Pre-flight] ISOLATE failed -- not a git repository. STOP."
+  exit 1   # never fall back to the caller's own tree
+fi
+MAIN_ROOT="$(cd "$(dirname "$GCD")" && pwd -P)"
+WT_ROOT="${MAIN_ROOT}/.cursor/worktrees"
+mkdir -p "$WT_ROOT"
+UPDATEKB_WT="${WT_ROOT}/update-kb-${TS}"
+
+if ! git worktree add "$UPDATEKB_WT" -b "$BRANCH" master >/dev/null 2>&1; then
+  echo "[Pre-flight] ISOLATE failed -- 'git worktree add' could not create"
+  echo "$UPDATEKB_WT on branch $BRANCH off master. STOP."
+  exit 1   # fail-closed -- never run in the caller's tree/branch
+fi
+```
+
+**Fail-closed (FR-11 / AC-10).** A worktree that cannot be created or
+resolved is a hard STOP, not a degrade. `/aid-update-kb` never proceeds to
+ANALYZE (or any other state) in the caller's own working tree or branch.
+**Advance (on either failure above):** HALT -- print the diagnostic already
+echoed by the failing block and exit; do not enter the state machine.
+
+**2c. Enter it (agent action, per `worktree-lifecycle.md § Step 2`):**
+
+- **claude-code:** invoke the **`EnterWorktree`** tool with `$UPDATEKB_WT`.
+- **Any other profile:** operate with `$UPDATEKB_WT` as the working
+  directory for every subsequent file operation in this run, and print
+  `Working in worktree: $UPDATEKB_WT`.
+
+From this point on, every state, the run-state file, the `aid/update-kb-<ts>`
+branch, and every commit this run makes live **inside `$UPDATEKB_WT`** --
+isolated from whatever the caller's own tree/branch was (HL-8's filesystem/
+branch half; clean-context dispatch at ANALYZE/SCOPE, below, is the
+conversation half). This worktree's branch is what ANALYZE's Step 0 records
+as `**Branch:**` in the run-state file -- DONE never creates a separate
+branch, it only ever commits on this one.
+
+**Advance:** CHAIN -> ANALYZE (State Detection, below, resolves the state to
+resume inside the entered worktree).
 
 ---
 
@@ -103,9 +254,10 @@ protocol lives in two reference docs; this section is a checklist citing them.
 Do NOT rely on memory from previous runs. ALWAYS read actual files on disk.
 
 Resolve `<STATE_FILE>` to the project-level update-kb run-state file under
-`.aid/.temp/`. The file is transient (gitignored, never committed/pushed) and
-is named `UPDATEKB_STATE_<YYYYMMDDHHMM>.md`; the DONE state removes it (and
-any stale siblings) at the end of a run.
+`.aid/.temp/` (inside the worktree Pre-flight entered). The file is
+transient (gitignored, never committed/pushed) and is named
+`UPDATEKB_STATE_<YYYYMMDDHHMM>.md`; the DONE state removes it (and any stale
+siblings) at the end of a run.
 
 ```bash
 mkdir -p .aid/.temp
@@ -122,14 +274,16 @@ fi
 
 | # | Disk condition (read run-state file) | Resume target |
 |---|--------------------------------------|---------------|
-| 1 | No run-state file (fresh run) | ANALYZE |
+| 1 | No run-state file (fresh run, just isolated by Pre-flight) | ANALYZE |
 | 2 | `**State:** ANALYZE` present | ANALYZE |
-| 3 | `**State:** APPLY` present | APPLY |
-| 4 | `**State:** REVIEW` or `**State:** FIX` present | REVIEW |
-| 5 | `**State:** APPROVAL` present | APPROVAL |
-| 6 | `**State:** DONE` present | report "nothing to resume" -- HALT |
+| 3 | `**State:** SCOPE` present | SCOPE |
+| 4 | `**State:** CONFIRM` present | CONFIRM |
+| 5 | `**State:** APPLY` present | APPLY |
+| 6 | `**State:** REVIEW` or `**State:** FIX` present | REVIEW |
+| 7 | `**State:** APPROVAL` present | APPROVAL |
+| 8 | `**State:** DONE` present | report "nothing to resume" -- HALT |
 
-If row 6 is reached, print:
+If row 8 is reached, print:
 
 ```
 /aid-update-kb: nothing to resume -- the last run completed (DONE) and the
@@ -139,41 +293,87 @@ run-state file was removed. To start a new update, run:
 
 Then HALT.
 
+### Run-state schema
+
+The run-state file accumulates these fields as the run progresses (all
+`**Field:**` markdown, read/written by exact-string match -- never
+reformatted between states):
+
+| Field | Written by | Meaning |
+|---|---|---|
+| `**State:**` | every state | current state name (drives resume, table above) |
+| `**Prompt:**` | ANALYZE (Step 0, first entry only) | the user's instruction, verbatim |
+| `**Started:**` | ANALYZE (Step 0) | ISO-8601 run-start timestamp |
+| `**Branch:**` | ANALYZE (Step 0, recording Pre-flight's worktree branch) | the `aid/update-kb-<ts>` branch this run's worktree lives on |
+| `**Understanding:**` | ANALYZE | plain restatement of what the instruction asks |
+| `**Impact Findings:**` | ANALYZE | per-location table: KB location, current statement, Relation, Confidence |
+| `**Contradictions & open questions:**` | ANALYZE | HL-3/HL-4 items CONFIRM must ask, never silently resolved |
+| `**Escalation:**` | ANALYZE (ungroundable-concept PAUSE only) | the term + Q&A pointer when ANALYZE cannot ground a concept |
+| `**Scope Plan:**` | SCOPE (replaces the legacy `Change Plan`) | the minimal (doc, change-type, description, Traces-to, Kind) table |
+| `**Not-Changing:**` | SCOPE | docs considered but excluded, with reasons (HL-5) |
+| `**Confirm Questions:**` | SCOPE | the questions CONFIRM presents |
+| `**Confirmed:**` | CONFIRM (`[1]` only) | `yes` -- the HL-1 gate; APPLY is unreachable without it |
+| `**Confirmed At:**` | CONFIRM (`[1]`) | ISO-8601 confirmation timestamp |
+| `**Confirmed Scope:**` | CONFIRM (`[1]`) | the frozen doc set -- the scope contract for APPLY/REVIEW |
+| `**Pre-APPLY baseline:**` | CONFIRM (`[1]`) | git HEAD (or `clean`) captured before APPLY's first edit -- REVIEW's scope-diff guard and any re-scope revert both diff against this |
+| `**Adjustments:**` | CONFIRM (`[1]`/`[2]`) | free text, or the user's answers folded in, or `--` |
+| `**Edited Docs:**` | APPLY | the docs actually edited (unchanged field name from today) |
+| `**APPLY Completed:**` | APPLY | ISO-8601 timestamp |
+| `**Review Grade:**` / `**Review Teach-back:**` / `**Review Act-back:**` / `**Review Completed:**` | REVIEW | unchanged from today |
+| `**User Approved:**` / `**Approved At:**` | APPROVAL | unchanged from today |
+
+`**Change Plan:**` no longer exists anywhere in this schema -- SCOPE's
+`**Scope Plan:**` replaces it.
+
 **State-entry banners.** At the start of each state, print the matching banner:
 
 **ANALYZE:**
 ```
-[State: ANALYZE] -- Mapping prompt to KB docs and building a (doc, change) plan.
+[State: ANALYZE] -- Building the Impact Map: how and where the instruction lands in the KB.
 aid-update-kb  > you are here
-  [* ANALYZE ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
+  [* ANALYZE ] -> [ SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
+```
+
+**SCOPE:**
+```
+[State: SCOPE] -- Turning the Impact Map into the minimal Scope Plan + Not-Changing list.
+aid-update-kb  > you are here
+  [+ ANALYZE ] -> [* SCOPE ] -> [ CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
+```
+
+**CONFIRM:**
+```
+[State: CONFIRM] -- Human gate: confirm understanding + scope before any edit.
+aid-update-kb  > you are here
+  [+ ANALYZE ] -> [+ SCOPE ] -> [* CONFIRM ] -> [ APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
 ```
 
 **APPLY:**
 ```
-[State: APPLY] -- Applying targeted summary+pointer edits to the KB docs.
+[State: APPLY] -- Applying only the Confirmed Scope's targeted summary+pointer edits.
 aid-update-kb  > you are here
-  [+ ANALYZE ] -> [* APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
+  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [* APPLY ] -> [ REVIEW ] -> [ APPROVAL ] -> [ DONE ]
 ```
 
 **REVIEW:**
 ```
-[State: REVIEW] -- Grading the changed KB docs through f005's five-mandate panel.
+[State: REVIEW] -- Scope-diff guard, then grading the changed KB docs through f005's four-mandate panel.
 aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ APPLY ] -> [* REVIEW ] -> [ APPROVAL ] -> [ DONE ]
+  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [* REVIEW ] -> [ APPROVAL ] -> [ DONE ]
 ```
 
 **APPROVAL:**
 ```
 [State: APPROVAL] -- Human gate: confirm the approved changes before committing.
 aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ APPLY ] -> [+ REVIEW ] -> [* APPROVAL ] -> [ DONE ]
+  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [+ REVIEW ] -> [* APPROVAL ] -> [ DONE ]
 ```
 
 **DONE:**
 ```
 [State: DONE] -- Restamp approved_at_commit:, commit, and clean run-state.
 aid-update-kb  > you are here
-  [+ ANALYZE ] -> [+ APPLY ] -> [+ REVIEW ] -> [+ APPROVAL ] -> [* DONE ]
+  [+ ANALYZE ] -> [+ SCOPE ] -> [+ CONFIRM ] -> [+ APPLY ] -> [+ REVIEW ] -> [+ APPROVAL ] -> [* DONE ]
 ```
 
 ---
@@ -182,30 +382,55 @@ aid-update-kb  > you are here
 
 | State | Detail | Worker | Advance |
 |-------|--------|--------|---------|
-| ANALYZE | `references/state-analyze.md` | inline (Read/Glob/Grep + `kb-freshness-check.sh`) | CHAIN -> APPLY (or PAUSE-FOR-USER-ACTION if the prompt is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |
+| ANALYZE | `references/state-analyze.md` | `aid-researcher` (clean-context dispatch, HL-8/AC-9) | CHAIN -> SCOPE (or PAUSE-FOR-USER-ACTION if a concept is un-groundable -- Q&A escalation to `.aid/knowledge/STATE.md`) |
+| SCOPE | `references/state-scope.md` | `aid-architect` (clean-context dispatch, HL-8/AC-9) | CHAIN -> CONFIRM (or HALT if the Scope Plan is empty -- "no update needed") |
+| CONFIRM | `references/state-confirm.md` | inline (human gate) | `[1]` CHAIN -> APPLY; `[2]` PAUSE-FOR-USER-ACTION -> SCOPE/ANALYZE; `[3]` HALT |
 | APPLY | `references/state-apply.md` | inline (Edit) or `aid-architect`/`aid-researcher` for the owning doc-set | CHAIN -> REVIEW |
-| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs) | `aid-reviewer` panel (f005) | CHAIN -> FIX if below gate; CHAIN -> APPROVAL if grade>=min AND teach-back PASS |
-| APPROVAL | `references/state-approval.md` | inline | PAUSE-FOR-USER-ACTION (human gate) -> DONE on approval |
-| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on `aid/update-kb-*` branch, clean run-state) |
+| REVIEW | `references/state-review.md` (REUSES f005's panel scoped to the changed docs; scope-diff guard runs first) | `aid-reviewer` panel (f005) | 4 outcomes (`state-review.md § Step 4`): incomplete APPLY -> CHAIN -> APPLY; out-of-scope disk edit -> PAUSE-FOR-USER-ACTION -> CONFIRM; grade/teach-back/act-back/TRACE-1 below gate (scope-diff already PASS) -> CHAIN -> FIX; READY -> CHAIN -> APPROVAL |
+| APPROVAL | `references/state-approval.md` | inline | `[1]` PAUSE-FOR-USER-ACTION -> DONE on approval; `[2]` re-scopes -> CONFIRM/SCOPE |
+| DONE | `references/state-done.md` | inline | HALT (restamp `approved_at_commit:`, commit on the Pre-flight worktree's `aid/update-kb-<ts>` branch, clean run-state) |
 
-> **FIX loop.** Below-gate REVIEW findings route to the FIX cycle (REVIEW ->
-> fix edits -> REVIEW) until `grade >= minimum_grade AND teach-back PASS`.
+> **FIX loop.** Once the scope-diff guard has already PASSED, only grade /
+> teach-back / act-back / `[TRACE-1]` findings route to the FIX cycle
+> (REVIEW -> fix edits -> REVIEW) until `grade >= minimum_grade AND
+> teach-back PASS AND act-back PASS` -- FIX edits stay within Confirmed Scope
+> (HL-7). Scope-diff outcomes never reach this loop: an incomplete APPLY (a
+> Confirmed-Scope doc not yet edited) chains straight back to APPLY, and an
+> out-of-scope disk edit escalates to the user
+> (PAUSE-FOR-USER-ACTION -> CONFIRM) instead of expanding scope -- see
+> `references/state-review.md § Step 4` for the full 4-outcome routing.
 > The minimum grade resolves via:
 > `bash .cursor/aid/scripts/config/read-setting.sh --skill update-kb --key minimum_grade --default A`
 
-> **REVIEW reuse (f005).** The REVIEW state does not redefine the review gate
-> -- it invokes f005's five-mandate panel (`aid-reviewer` Correctness,
-> Anatomy/Coverage, Concept-closure, Teach-back, Calibration) with
-> `{{ARTIFACTS}}` scoped to the changed-doc set (the (doc, change) list from
-> APPLY) and `<scope>` = `update-kb`. The merged ledger is written to
-> `.aid/.temp/review-pending/update-kb.md`. Grade and teach-back are evaluated
-> via the unchanged `grade.sh`.
+> **Clean-context dispatch (ANALYZE/SCOPE, HL-8/AC-9).** Both dispatches
+> receive ONLY the verbatim `/aid-update-kb` instruction (the `**Prompt:**`
+> field from run-state) plus KB/codebase read access (`.aid/knowledge/`,
+> `INDEX.md`, the repo) -- never the session transcript, never anything
+> discussed earlier in this conversation that is absent from the instruction
+> itself. The orchestrator MUST NOT enrich either dispatch prompt with
+> session-derived context. Content that lives only in the conversation and
+> not in the instruction or in groundable KB/code evidence has no valid
+> `Traces-to` and can never enter the Scope Plan (AC-9).
 
-> **DONE (commit convention).** Work happens on an `aid/update-kb-*` branch
-> (the `aid-housekeep` branch-per-run precedent). The skill never pushes;
-> the human pushes / opens the PR. `approved_at_commit:` is restamped in DONE
-> (after the human gate), never in APPLY -- so a doc that is edited-but-not-yet-
-> approved is correctly suspect to f007, never falsely current.
+> **REVIEW reuse (f005).** The REVIEW state does not redefine the review gate
+> -- it invokes f005's four-mandate panel (`aid-reviewer` Correctness,
+> Anatomy-incl-altitude, Teach-back, Act-back) with `{{ARTIFACTS}}` scoped to
+> the **disk-derived** edited-doc set from `references/state-review.md`'s
+> Step 0a scope-diff guard (`git status --porcelain` / `git diff` against the
+> `**Pre-APPLY baseline:**`) -- NEVER APPLY's self-reported
+> `**Edited Docs:**` -- and `<scope>` = `update-kb`. The merged ledger is
+> written to `.aid/.temp/review-pending/update-kb.md`. Grade and teach-back
+> are evaluated via the unchanged `grade.sh`.
+
+> **DONE (commit convention).** Work happens on the `aid/update-kb-<ts>`
+> branch the Pre-flight ISOLATE step already created and entered -- DONE
+> creates **no** separate branch of its own (there is no "ensure branch"
+> step); it only commits on the one the whole run has been living on since
+> Pre-flight. The skill never pushes -- and never to `master` -- the human
+> pushes / opens the PR after CI is green. `approved_at_commit:` is
+> restamped in DONE (after the human gate), never in APPLY -- so a doc that
+> is edited-but-not-yet-approved is correctly `suspect` to f007, never
+> falsely current.
 
 On state entry, print `[State: NAME]` + the "you are here" banner from State
 Detection above. When a state completes, route by its `**Advance:**` type per
@@ -219,3 +444,48 @@ Detection above. When a state completes, route by its `**Advance:**` type per
 > machine until it hits a natural pause point per
 > `.cursor/aid/templates/state-machine-chaining.md`. Mechanical states
 > auto-chain; only PAUSE-FOR-USER-ACTION and HALT stop the run.
+
+---
+
+## Hard limits (HL-1..HL-8)
+
+Owner-confirmed limits every state above cites; SPEC.md § Governing hard
+limits is the source of truth. `/aid-update-kb` never ships a change that
+violates one of these.
+
+- **HL-1 No apply without confirmation.** No KB edit before the user
+  confirms scope + understanding at CONFIRM. Enforced by: CONFIRM is a PAUSE
+  gate; APPLY is unreachable without `**Confirmed:** yes` in run-state.
+- **HL-2 Limit to the scope of the instruction.** The Scope Plan is a subset
+  of what the instruction explicitly requests plus *necessary closure* (e.g.
+  a coined term's glossary entry) -- and closure is surfaced at CONFIRM,
+  never silent. Enforced by: SCOPE's `Traces-to` + `Kind` columns; CONFIRM's
+  presentation of closure items.
+- **HL-3 No assumptions -- surface, don't act.** ANALYZE may form hypotheses
+  (`LIKELY`/`UNCERTAIN`) but anything not `CONFIRMED`-from-instruction is
+  routed to CONFIRM as a question; never applied silently. Enforced by:
+  ANALYZE's Confidence column + Contradictions/open-questions; CONFIRM's
+  question list.
+- **HL-4 Flag, don't resolve, contradictions.** Instruction-vs-KB conflicts
+  are raised to the user; the skill never silently "corrects" either side.
+  Enforced by: ANALYZE's Relation column (`CONTRADICTS`/`MISMATCH`); CONFIRM.
+- **HL-5 No opportunistic edits.** Docs that merely share a domain/tag, or
+  are `suspect` per freshness but unnamed by the instruction, are out of
+  scope (-> `aid-housekeep`). Enforced by: ANALYZE (no tag-overlap candidate
+  net; freshness advisory only); SCOPE's Not-Changing list.
+- **HL-6 New files require explicit confirmation.** Allowed, never a silent
+  side effect. Enforced by: SCOPE's `new-file` Kind tag; CONFIRM.
+- **HL-7 Grade-chasing may not expand scope.** The REVIEW FIX loop and
+  DONE's closure re-check may only edit within Confirmed Scope; out-of-scope
+  needs escalate to the user. Enforced by: REVIEW's FIX-loop constraint;
+  DONE's closure-shortfall escalation.
+- **HL-8 The instruction is the only scope seed; the conversation is not a
+  source.** Scope and content are grounded solely in the verbatim
+  `/aid-update-kb` instruction plus KB/codebase evidence -- never the
+  session conversation. Enforced by: (a) Pre-flight's worktree isolation
+  (the filesystem/branch plane); (b) clean-context dispatch at ANALYZE/SCOPE
+  (the sub-agent receives only the verbatim instruction + KB/code pointers,
+  never the session transcript -- the orchestrator must not enrich the
+  dispatch with session-derived context; the conversation plane); (c) every
+  Scope Plan item's `Traces-to` cites the instruction text or a KB/code
+  location, never "the session" or prior discussion.
