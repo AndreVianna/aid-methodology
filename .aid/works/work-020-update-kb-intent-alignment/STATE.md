@@ -139,7 +139,7 @@ don't act") are the load-bearing fixes.
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | quick-check → HIGH fixed on-spot | ~21m | HIGH (resume-by-branch) fixed commit 90940908; delivery-001-issues row Fixed | Analyst + Confirm front-end |
-| task-002 | Pending | -- | -- | -- | Scope-fidelity guardrails |
+| task-002 | In Review | -- | -- | -- | Scope-fidelity guardrails |
 | task-003 | Pending | -- | -- | -- | Re-emit to profiles + resync dogfood |
 | task-004 | Pending | -- | -- | -- | Hard-limit invariant tests |
 
