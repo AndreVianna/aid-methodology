@@ -705,7 +705,11 @@ aid remove [<tool>... | self]    Remove; no arg = ALL AID from the project (asks
 aid dashboard start node|python [--port N] [--remote]
                                  Start the local web dashboard (pipeline status, KB freshness, task drill-down); --remote exposes the machine-level dashboard over your private tailnet
 aid dashboard stop               Stop the running dashboard (and any tailnet exposure)
-aid projects [list|add|remove]   Manage the projects this AID install tracks; list shows state, tools, tier, and current-directory marker
+aid projects [list|add|remove|scan]
+                                 Manage the projects this AID install tracks; list shows state, tools,
+                                 tier, and current-directory marker; scan crawls the filesystem (the
+                                 user's home directory by default, --path <dir>, or --all for the whole
+                                 machine) and registers every discovered project (register-only)
 aid <command> -h | --help        Per-command help
 ```
 
