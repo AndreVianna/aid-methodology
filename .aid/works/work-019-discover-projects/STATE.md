@@ -163,6 +163,7 @@ different places.
 | 2026-07-21 | task-003 parity tests Done (PAR019; twin parity confirmed) | -- | /aid-execute |
 | 2026-07-21 | task-004 docs Done (help byte-identical; install.md + site + release-tracking) | -- | /aid-execute |
 | 2026-07-21 | DELIVERY GATE cleared -- 2 findings (1 HIGH test-robustness fixed, 1 MED README invalid) | A+ | /aid-execute DELIVERY-GATE |
+| 2026-07-22 | Reconciled onto master (merged origin/master post-#159; auto-merged clean; scan + beta fixes both verified coexisting) | -- | orchestrator |
 
 ---
 
