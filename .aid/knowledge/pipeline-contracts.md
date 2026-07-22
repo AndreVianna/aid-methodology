@@ -258,7 +258,7 @@ machine … One invocation per state. No auto-advance").
 | `aid-deploy` | package selection → final verification → package record → packaging → doc routing → status update |
 | `aid-monitor` | Observe → Classify → Analyze → Propose → Act |
 | `aid-housekeep` | PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE |
-| `aid-update-kb` | ANALYZE → APPLY → REVIEW → APPROVAL → DONE |
+| `aid-update-kb` | ANALYZE → SCOPE → CONFIRM → APPLY → REVIEW → APPROVAL → DONE (Pre-flight worktree isolation; CONFIRM gate before any edit; FIX loop inside REVIEW) |
 
 CONFIRMED: per-skill `SKILL.md` files under `canonical/skills/` (`aid-describe/SKILL.md`
 frontmatter `State machine:` + Dispatch table; `aid-define/SKILL.md`; `aid-triage/SKILL.md`);

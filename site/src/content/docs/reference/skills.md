@@ -16,7 +16,7 @@ Set up the workspace and manage connectors.
 
 **bootstrap · run once**
 
-View or update AID pipeline settings. Bare invocation shows all values in a table; first run auto-creates .aid/settings.yml from the template. Pass a dotted key (e.g., /aid-config project.name) to view + update one setting interactively.
+View or update AID pipeline settings. Bare invocation shows all values in a table; first run auto-creates .aid/settings.yml from the template. Pass a key (e.g., /aid-config name) to view + update one setting interactively.
 
 [Definition: `canonical/skills/aid-config/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-config/SKILL.md)
 
@@ -24,7 +24,7 @@ View or update AID pipeline settings. Bare invocation shows all values in a tabl
 
 **on demand · upsert a connector into the catalog**
 
-On-demand, off-pipeline upsert into the connector catalog. `aid-set-connector <tool> <type>` creates `.aid/connectors/<stem>.md` when the stem is absent, or updates that SAME descriptor in place when present (including an in-place connection_type transition) -- never invokes /aid-discover. Branches on <type> (mcp|api|ssh|url|cli) to ask the matching config question-set, prefilled from canonical/aid/templates/connectors/preset-catalog.md when <tool> matches a preset; the user confirms or edits. Reconciles the secret (connector-secret write/purge) per set-skill logic and runs reconcile.md's single-stem mode, so every OTHER catalogued connector is left byte-for-byte untouched.
+On-demand, off-pipeline upsert into the connector catalog. `aid-set-connector <tool> <type>` creates `.aid/connectors/<stem>.md` when the stem is absent, or updates that SAME descriptor in place when present (including an in-place connection_type transition) -- never invokes /aid-discover. Branches on <type> (mcp|api|ssh|cli) to ask the matching config question-set, prefilled from canonical/aid/templates/connectors/preset-catalog.md when <tool> matches a preset; the user confirms or edits. Reconciles the secret (connector-secret write/purge) per set-skill logic and runs reconcile.md's single-stem mode, so every OTHER catalogued connector is left byte-for-byte untouched.
 
 [Definition: `canonical/skills/aid-set-connector/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md)
 
@@ -68,7 +68,7 @@ Optional on-demand housekeeping skill. Runs three gated jobs in strict order: KB
 
 **on demand · targeted KB update**
 
-Optional on-demand targeted KB update skill. Takes a free-form prompt describing what changed and applies the delta through the same review/calibration gate as aid-discover. Analyzes which KB docs the prompt implies, applies targeted summary+pointer edits, reviews them through f005's five-mandate panel (scoped to the changed docs), and commits only after explicit human approval. State-machine: ANALYZE -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
+Optional on-demand targeted KB update skill. Isolates itself in its own worktree, analyzes how a free-form instruction lands in the Knowledge Base (an aid-researcher Impact Map), turns that into a minimal aid-architect Scope Plan traced to the instruction (+ an explicit Not-Changing list), and pauses for an explicit human CONFIRM before any edit. Applies only the confirmed scope, reviews it through f005's four-mandate panel (scoped to the changed docs), and commits only after a second explicit human approval. State-machine: ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL -> DONE (FIX loop inside REVIEW).
 
 [Definition: `canonical/skills/aid-update-kb/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-kb/SKILL.md)
 
