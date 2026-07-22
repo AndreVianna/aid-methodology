@@ -5,20 +5,20 @@ pipeline:
 started: "2026-07-21"
 minimum_grade: "A+"
 user_approved: yes
-lifecycle: Running
+lifecycle: Paused-Awaiting-Input
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-21T22:38:18Z'
-pause_reason: --
+updated: '2026-07-22T02:52:51Z'
+pause_reason: 'Delivery gate A+; awaiting user merge (reconcile PR #159 first)'
 block_reason: --
 block_artifact: --
 ticket_ref: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
-delivery_state: Executing
-gate_tier: Pending
-gate_grade: Pending
-gate_timestamp: --
+delivery_state: Done
+gate_tier: Large
+gate_grade: A+
+gate_timestamp: '2026-07-21T23:30:00Z'
 ---
 
 # Work State -- work-019-discover-projects
@@ -157,6 +157,12 @@ different places.
 | 2026-07-21 | GATE re-review -- 4 findings (1 CRIT / 1 HIGH / 2 MED-LOW); fixed | -- | /aid-update-cli GATE |
 | 2026-07-21 | GATE cleared (revised plan) -- verified clean + SPEC Source-range fix (grade.sh) | A+ | /aid-update-cli GATE |
 | 2026-07-21 | Command name confirmed by user: `aid projects scan` (working name adopted as final) | -- | orchestrator |
+| 2026-07-21 | EXECUTE started (/aid-execute) -- user-approved | -- | /aid-execute |
+| 2026-07-21 | task-001 bash impl Done (review: perf 40s->3s + 4 more, fixed) | -- | /aid-execute |
+| 2026-07-21 | task-002 pwsh mirror Done (parse/ps51/ASCII clean; parity verified) | -- | /aid-execute |
+| 2026-07-21 | task-003 parity tests Done (PAR019; twin parity confirmed) | -- | /aid-execute |
+| 2026-07-21 | task-004 docs Done (help byte-identical; install.md + site + release-tracking) | -- | /aid-execute |
+| 2026-07-21 | DELIVERY GATE cleared -- 2 findings (1 HIGH test-robustness fixed, 1 MED README invalid) | A+ | /aid-execute DELIVERY-GATE |
 
 ---
 
@@ -227,7 +233,7 @@ different places.
 |------|-------|--------|---------|-------|------|
 | task-001 | Done | -- | -- | bash scan impl; 5 review findings fixed (perf 40s->3s, state-home prune, verbose, -h, local) | Implement the scan subcommand in the Bash twin (bin/aid) |
 | task-002 | Done | -- | -- | pwsh mirror; parse+ps51+ASCII clean, 41-assertion smoke pass, prune/system/maxdepth byte-identical to bash | Mirror the scan subcommand in the PowerShell twin (bin/aid.ps1) |
-| task-003 | Done | -- | -- | PAR019 block (566 lines); bash-side 92/0; twin parity independently confirmed (identical discovered set); 7 local PS fails = known Win path-format artifact, pass on ubuntu CI | Parity + guardrail coverage in test-aid-cli-parity.sh |
+| task-003 | Done | -- | -- | GATE fixed: _par019_extract_registered was path-format-fragile (backslash vs POSIX + literal sed backslash-count bug); normalized capture in run_sh_scan/run_ps1_scan + anchored extraction on the fixture's own basename. Bounded harness now 91/0 (pwsh present, up from 84/7) and 92/0 (pwsh absent); no real bash/pwsh divergence. | Parity + guardrail coverage in test-aid-cli-parity.sh |
 | task-004 | Done | -- | -- | release-tracking [NEW] + install.md + site cli.mdx; help byte-identical across twins (empty diff); no code touched | Help text, user docs, and release-tracking entry |
 
 ---
@@ -251,7 +257,7 @@ different places.
      single-delivery works only" group. Issue List stays here as markdown body (a
      variable-length inline list doesn't fit a flat frontmatter scalar). -->
 
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Issue List:** A+ (0 open). 2 gate findings resolved: [HIGH] PAR019 path-format test-robustness (fixed); [MEDIUM] README:178 (Invalid -- it is a frozen `## What's New in v1.1.0` changelog, not a current enumeration; AC-12 satisfied by docs/install.md + site cli.mdx).
 
 ---
 

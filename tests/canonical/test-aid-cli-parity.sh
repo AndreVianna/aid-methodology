@@ -4592,24 +4592,40 @@ _par019_build_fixture() {
     mkdir -p "$deep"
 }
 
-# _par019_extract_registered <output> <fx-canonical-root>
-# Prints one path-relative-to-<fx-canonical-root> per discovered candidate
-# line ("<path>  <version>  <action>", action in registered|already-registered),
+# _par019_extract_registered <output> <fx-root-basename>
+# Prints one path-relative-to-the-fixture-root per discovered candidate line
+# ("<path>  <version>  <action>", action in registered|already-registered),
 # sorted. Both twins print the identical "<path>  <version>  <action>" report
 # line shape (bin/aid _cmd_projects_scan / bin/aid.ps1 Invoke-AidProjectsScan).
+#
+# Path-format-agnostic (task-003 GATE finding): a native Windows pwsh renders
+# "C:\Users\...\par019fx.XXXXXX\proj" while bash/MSYS renders
+# "/c/Users/.../par019fx.XXXXXX/proj" for the IDENTICAL directory -- and
+# ancestor segments may ALSO differ (Windows 8.3 short-name aliasing of a
+# pre-existing folder is host-dependent, e.g. a real username directory, and
+# outside this test's control -- confirmed empirically NOT to affect anything
+# this fixture itself creates). run_sh_scan/run_ps1_scan already normalize
+# backslash -> forward-slash at capture time (below), so this only needs to
+# anchor on the fixture root's OWN generated basename -- unique per run,
+# created fresh by this block, never 8.3-shortened or case-folded -- and keep
+# the suffix AFTER "/<basename>/": the fixture-relative path both twins must
+# agree on, regardless of how each renders everything ABOVE the fixture root.
 _par019_extract_registered() {
-    printf '%s\n' "$1" | grep -E '^/.*  (registered|already-registered)$' \
-        | awk '{print $1}' | sed "s#^${2}/##" | sort
+    printf '%s\n' "$1" | grep -E '  (registered|already-registered)$' \
+        | awk '{print $1}' | sed -E "s#.*/${2}/##" | sort
 }
 
 # run_sh_scan <aid-home> <home-pin> <args...>
 # Like run_sh, but ALSO pins the OS-level $HOME (distinct from AID_HOME, the
 # CLI's own state home) so the zero-arg default scope resolves to <home-pin>.
+# Normalizes backslash -> forward-slash at capture (no-op on bash/MSYS, which
+# never emits backslashes here; kept for symmetry with run_ps1_scan below so
+# both twins' captured output is comparable the same way).
 run_sh_scan() {
     local aid_home="$1" home_pin="$2"; shift 2
     OUT_SH=$(HOME="$home_pin" AID_HOME="$aid_home" \
              AID_LIB_PATH="${aid_home}/lib/aid-install-core.sh" AID_NO_UPDATE_CHECK=1 \
-             bash "${aid_home}/bin/aid" "$@" 2>&1); RC_SH=$?
+             bash "${aid_home}/bin/aid" "$@" 2>&1 | sed 's/\\/\//g'); RC_SH=$?
 }
 
 # run_ps1_scan <aid-home> <home-pin> <args...>
@@ -4617,6 +4633,14 @@ run_sh_scan() {
 # pwsh derives $HOME from USERPROFILE, never from a bash-exported $HOME --
 # same rationale as the suite's global HOME pin at the top of this file).
 # cygpath-absent (Linux) -> no-op passthrough, matching that same convention.
+#
+# Also normalizes backslash -> forward-slash (task-003 GATE finding): a native
+# Windows pwsh renders discovered paths as "C:\Users\...\proj" while bash/MSYS
+# renders "/c/Users/.../proj" for the SAME directory -- without this, EVERY
+# multi-segment relative-path assertion against $OUT_PS1 (and the
+# _par019_extract_registered helper above) would structurally fail on a
+# native-Windows run regardless of actual twin behavior. A no-op on Linux CI
+# (PowerShell Core there already emits POSIX-style forward-slash paths).
 run_ps1_scan() {
     local aid_home="$1" home_pin="$2"; shift 2
     local win_home_pin="$home_pin"
@@ -4626,12 +4650,13 @@ run_ps1_scan() {
               AID_HOME="$aid_home" AID_LIB_PATH="${aid_home}/lib/AidInstallCore.psm1" \
               AID_NO_UPDATE_CHECK=1 \
               "$PWSH" -NoProfile -File "${aid_home}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+              sed 's/\x1b\[[0-9;]*m//g' | sed 's/\\/\//g'); RC_PS1=$?
 }
 
 FX_019=$(mktemp -d "${TMP}/par019fx.XXXXXX")
 _par019_build_fixture "$FX_019"
 FX_019C="$(cd "$FX_019" && pwd -P)"
+FX_019_BASE="$(basename "$FX_019")"
 
 # NFR-7 baseline: checksum every file living under any .aid/ anywhere in the
 # fixture, BEFORE any scan runs. Re-checked at the end of the block (PAR019-I)
@@ -4663,7 +4688,7 @@ SH_HOME_019A=$(newhome); setup_sh_home "${SH_HOME_019A}"
 run_sh_scan "${SH_HOME_019A}" "$FX_019" projects scan --verbose
 assert_exit_eq "$RC_SH" 0 "PAR019-A01 Bash home-default scan -> exit 0"
 
-SH_GOT_A="$(_par019_extract_registered "$OUT_SH" "$FX_019C")"
+SH_GOT_A="$(_par019_extract_registered "$OUT_SH" "$FX_019_BASE")"
 assert_eq "$SH_GOT_A" "$_PAR019_EXPECTED" \
     "PAR019-A02 Bash home-default: discovered set is exactly the expected 9 projects"
 
@@ -4729,7 +4754,7 @@ if [[ -n "$PWSH" ]]; then
     run_ps1_scan "${PS_HOME_019A}" "$FX_019" projects scan --verbose
     assert_exit_eq "$RC_PS1" 0 "PAR019-A22 PS1 home-default scan -> exit 0"
 
-    PS_GOT_A="$(_par019_extract_registered "$OUT_PS1" "$FX_019C")"
+    PS_GOT_A="$(_par019_extract_registered "$OUT_PS1" "$FX_019_BASE")"
     assert_eq "$PS_GOT_A" "$_PAR019_EXPECTED" \
         "PAR019-A23 PS1 home-default: discovered set is exactly the expected 9 projects"
     assert_output_contains "$OUT_PS1" "proj-tracked  1.4.2  registered" \
@@ -4788,7 +4813,7 @@ fi
 SH_HOME_019C=$(newhome); setup_sh_home "${SH_HOME_019C}"
 run_sh_scan "${SH_HOME_019C}" "$FX_019" projects scan --path "$FX_019"
 assert_exit_eq "$RC_SH" 0 "PAR019-C01 Bash --path fast-path scan -> exit 0"
-SH_GOT_C="$(_par019_extract_registered "$OUT_SH" "$FX_019C")"
+SH_GOT_C="$(_par019_extract_registered "$OUT_SH" "$FX_019_BASE")"
 assert_eq "$SH_GOT_C" "$_PAR019_EXPECTED" \
     "PAR019-C02 Bash --path fast-path: discovered set matches the home-default set (AC-1/AC-3)"
 
@@ -4802,7 +4827,7 @@ if [[ -n "$PWSH" ]]; then
     PS_HOME_019C=$(newhome); setup_ps1_home "${PS_HOME_019C}"
     run_ps1_scan "${PS_HOME_019C}" "$FX_019" projects scan --path "$FX_019"
     assert_exit_eq "$RC_PS1" 0 "PAR019-C05 PS1 --path fast-path scan -> exit 0"
-    PS_GOT_C="$(_par019_extract_registered "$OUT_PS1" "$FX_019C")"
+    PS_GOT_C="$(_par019_extract_registered "$OUT_PS1" "$FX_019_BASE")"
     assert_eq "$PS_GOT_C" "$_PAR019_EXPECTED" \
         "PAR019-C06 PS1 --path fast-path: discovered set matches the home-default set (AC-1/AC-3)"
     assert_eq "$SH_GOT_C" "$PS_GOT_C" "PAR019-C07 Bash<->PS1 discovered-set parity (--path fast path, AC-10)"
@@ -4910,14 +4935,14 @@ fi
 # ---------------------------------------------------------------------------
 SH_HOME_019F=$(newhome); setup_sh_home "${SH_HOME_019F}"
 run_sh_scan "${SH_HOME_019F}" "$FX_019" projects scan --depth 1
-SH_GOT_F="$(_par019_extract_registered "$OUT_SH" "$FX_019C")"
+SH_GOT_F="$(_par019_extract_registered "$OUT_SH" "$FX_019_BASE")"
 assert_eq "$SH_GOT_F" "$(printf 'proj-tracked\nproj-untracked')" \
     "PAR019-F01 Bash --depth 1: only the two depth-1 projects are found (deeper ones excluded, AC-3)"
 
 if [[ -n "$PWSH" ]]; then
     PS_HOME_019F=$(newhome); setup_ps1_home "${PS_HOME_019F}"
     run_ps1_scan "${PS_HOME_019F}" "$FX_019" projects scan --depth 1
-    PS_GOT_F="$(_par019_extract_registered "$OUT_PS1" "$FX_019C")"
+    PS_GOT_F="$(_par019_extract_registered "$OUT_PS1" "$FX_019_BASE")"
     assert_eq "$PS_GOT_F" "$(printf 'proj-tracked\nproj-untracked')" \
         "PAR019-F02 PS1 --depth 1: only the two depth-1 projects are found (AC-3)"
     assert_eq "$SH_GOT_F" "$PS_GOT_F" "PAR019-F03 Bash<->PS1 --depth 1 parity (AC-10)"
