@@ -22,9 +22,9 @@
 #
 # The manifest is the authoritative comparison set.  The non-generator files
 # that legitimately live in the dogfood .claude/ (Claude Code settings +
-# session/memory state, and the maintainer-only generate-profile toolchain +
-# its README) are DOCUMENTED in the Direction-3 allowlist rather than blindly
-# skipped.
+# session/memory state, the maintainer-only generate-profile toolchain and the
+# release-aid ops skill, and the skills README) are DOCUMENTED in the
+# Direction-3 allowlist rather than blindly skipped.
 #
 # On any mismatch the suite fails loudly, naming the first divergent path.
 #
@@ -187,6 +187,7 @@ log "Direction 3: repo .claude/ -> manifest-or-allowlist (orphan sweep)"
 #   worktrees/**                         : git worktree metadata
 #   skills/README.md                     : maintainer index of skills (AID doc, not profile-emitted)
 #   skills/generate-profile/**           : the generate-profile toolchain itself (render.py et al + caches)
+#   skills/release-aid/**                : the maintainer-only release-aid ops skill (repo-local, never shipped)
 dbi_allowlisted() {
     local rel="$1"
     case "$rel" in
@@ -195,6 +196,7 @@ dbi_allowlisted() {
         worktrees/*)               return 0 ;;
         skills/README.md)          return 0 ;;
         skills/generate-profile/*) return 0 ;;
+        skills/release-aid/*)      return 0 ;;
         *) return 1 ;;
     esac
 }

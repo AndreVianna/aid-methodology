@@ -8,7 +8,7 @@ user_approved: no
 lifecycle: Running
 phase: Execute
 active_skill: none
-updated: '2026-07-22T14:12:50Z'
+updated: '2026-07-22T15:29:41Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
@@ -152,6 +152,7 @@ different places.
 | 2026-07-22 | task-001 Done | A+ | Skill artifact (SKILL.md) authored + adversarially verified by the A+ plan gate; marked Done (formalization of the settled artifact) |
 | 2026-07-22 | task-002 Done | Pass | release.yml dry-run (run 29926146545) fully green: gate/github-release/pypi-publish success, npm-publish skipped (beta) — validates the skill's Step 5 mechanics + beta channel matrix |
 | 2026-07-22 | Delivery-001 complete | A+ | All 3 tasks Done; every BLUEPRINT gate criterion satisfied — GC-1..13 via the A+ plan gate, GC-8/GC-STD-1 closed by the green dry-run (all tasks Done), GC-STD-2 via the plan-gate + task-003 (A+) ledgers + the green dry-run. delivery_state → Done. PR worktree → master pending (user's call) |
+| 2026-07-22 | PR #161 opened + CI fix | -- | PR #161 (worktree → master). CI: 7/8 green; test-dogfood-byte-identity.sh failed (DBI-ORPHAN: the repo-local `.claude/skills/release-aid/` had no allowlist entry). Fixed by adding `skills/release-aid/*` to the byte-identity allowlist (mirroring generate-profile); pushed to re-run checks |
 
 ---
 
