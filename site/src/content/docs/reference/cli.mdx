@@ -210,6 +210,43 @@ unchanged. A project nested inside another discovered project is not separately 
 project is discovered, its whole subtree (including any nested `.aid/`) is pruned from the
 scan.
 
+**Directory exclusions.** Before recursing into a folder, `scan` first checks whether it is
+itself a project (a valid `.aid/` inside it) — that check always runs first, so a folder whose
+own name happens to match a pruned name (a project literally named `build`, `bin`, or
+`.vscode`, for example) is still discovered. Only after that check does `scan` test the
+folder's **basename**, exact match, case-insensitively, against two built-in prune sets:
+
+- **Tier A** — heavy/cache/build/IDE/AI-tool directories (`node_modules`, `.git`, `dist`,
+  `build`, `.venv`, `__pycache__`, `.cache`, `.vscode`, `.idea`, `.cursor`, `.claude`,
+  `AppData`, `tmp`, and many more). Pruned **at any depth, in every scan mode** — the HOME
+  default, `--path`, and `--all` alike.
+- **Tier B** — OS/system directories (`Windows`, `Program Files`, `ProgramData`, `proc`,
+  `sys`, `dev`, `$Recycle.Bin`, `System Volume Information`, and similar). Pruned **only
+  under `--all`, and only as an immediate child of a scanned drive/filesystem root** — never
+  under the HOME default or `--path`, and never deeper than one level below an `--all` root.
+  Tier B is fixed and not user-configurable.
+
+**`scan-config.yml`.** Tier A's built-in defaults can be extended with your own directory
+names via a user-level `scan-config.yml`, read once per run alongside `registry.yml` at the
+CLI state home (`$AID_STATE_HOME`, i.e. `~/.aid` on a per-user install). The file holds a
+`schema: 1` marker and a `prune_dirs:` block list:
+
+```yaml
+schema: 1
+prune_dirs:
+  - node_modules
+  - .git
+  - my-local-cache
+```
+
+Entries are **unioned** with the built-in Tier-A set (case-insensitive, deduplicated) — the
+file can only add names, never remove or disable a built-in default, and it has no effect on
+Tier B. A missing, unreadable, or `prune_dirs`-less file is not an error: `scan` falls back to
+exactly the built-in set. On the first non-`--dry-run` scan, if no `scan-config.yml` exists
+yet, one is seeded with the current built-in Tier-A defaults so there is something
+discoverable to edit; `--dry-run` never creates it, and an existing file is never overwritten
+— your edits always survive later scans.
+
 `scan` flags:
 
 | Flag | Default | Description |

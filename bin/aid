@@ -2948,6 +2948,37 @@ _cmd_projects_remove() {
 readonly -a _AID_SCAN_PRUNE_DIRS=(
     node_modules .git .hg .svn obj bin logs target dist build
     .venv venv __pycache__ .gradle .m2 .cargo .npm .cache vendor Pods
+    # VCS
+    .bzr _darcs CVS
+    # Package caches
+    .nuget .pnpm-store .yarn bower_components npm-cache
+    .mypy_cache .pytest_cache .tox .eggs .ruff_cache .ipynb_checkpoints
+    .ivy2 .bundle
+    # Build outputs
+    .next .nuxt .output .svelte-kit .parcel-cache .turbo .angular
+    coverage .nyc_output htmlcov
+    # Editors
+    .vscode .vs .idea .zed
+    # AI tools
+    .cursor .claude .codex .windsurf .antigravity
+    # Eclipse
+    .metadata .settings .p2 .eclipse
+    # Version managers
+    .pyenv .rbenv .nvm .rustup .dotnet .sdkman .jenv .asdf .volta
+    mise .goenv .phpenv
+    # Generic cache
+    cache caches CacheStorage
+    # Temp
+    tmp temp .tmp .temp
+    # OS profile roots (promoted to Tier A)
+    AppData Library
+    # macOS volume junk
+    .Trash .Trashes .Spotlight-V100 .fseventsd .DocumentRevisions-V100
+    # Browser/webview caches (spaced entries quoted)
+    "User Data" EBWebView WebView2Cache GPUCache "Code Cache" "Service Worker"
+    IndexedDB DawnCache Crashpad GrShaderCache ShaderCache D3DSCache
+    # Also
+    log
 )
 # NFR-3: OS/system directories, applied ONLY under --all and ONLY as an
 # immediate child of a filesystem/drive root (never under the HOME default or
@@ -2955,10 +2986,28 @@ readonly -a _AID_SCAN_PRUNE_DIRS=(
 readonly -a _AID_SCAN_SYSTEM_DIRS=(
     proc sys dev run
     Windows "Program Files" "Program Files (x86)" '$Recycle.Bin' "System Volume Information"
+    # Windows
+    ProgramData '$WinREAgent' '$WINDOWS.~BT' '$WINDOWS.~WS' Recovery PerfLogs
+    Windows.old MSOCache "Temporary Internet Files" Recycled RECYCLER
+    # Linux
+    Trash
 )
 # NFR-4: hard recursion-depth ceiling, DISTINCT from and INDEPENDENT of the
 # user-facing --depth cap -- guarantees termination on a pathological tree.
 readonly _AID_SCAN_MAX_DEPTH=40
+
+# FR-3/FR-8: primary user-level scan-config.yml, living beside registry.yml at
+# the CLI state home (honors the AID_HOME override via the startup scope
+# derivation, ~:65-71). Resolved as a `local` INSIDE each consuming function
+# (_aid_scan_read_prune_dirs / _aid_scan_seed_config below) -- NEVER as a
+# top-level readonly here -- mirroring the _registry_read_union /
+# registry_register precedent (~:1486, ~:1751-1756): a top-level reference to
+# $AID_STATE_HOME would be evaluated at SOURCE time, and some test harnesses
+# (tests/canonical/test-aid-remote.sh's _make_fn_src) eval a slice of this
+# file that starts above the startup derivation (~:65-71) under `set -u`
+# without $AID_STATE_HOME set, which would abort the eval. The
+# $HOME/.aid/scan-config.yml fallback tier (read-side only, mirroring
+# _registry_read_union) is computed ad hoc in _aid_scan_read_prune_dirs below.
 
 # _aid_scan_name_in_set <name> <set-item>...
 # Case-insensitive exact-match membership test against the remaining args.
@@ -2975,6 +3024,149 @@ _aid_scan_name_in_set() {
         [[ "$_name_lc" == "${_item,,}" ]] && return 0
     done
     return 1
+}
+
+# _aid_scan_config_prune_dirs <config-path>
+# Single-file line-scan of the `prune_dirs:` block list out of ONE
+# scan-config.yml, reusing the exact registry.yml idiom (grep -E
+# '^[[:space:]]*-[[:space:]]+' + sed trim, cf. _registry_read_repos
+# ~:1466-1472) -- but scoped to the prune_dirs: block only: a sed range
+# address enters on the bare "prune_dirs:" line and leaves at the next
+# column-0 (non-indented) line, so a sibling top-level key never leaks into
+# the list scan. Only the leading "- " marker and TRAILING whitespace are
+# stripped -- internal spaces survive, so "Code Cache" reads back intact.
+# Returns one name per line; empty when the file is absent or has no
+# prune_dirs: key (FR-5/FR-6/NFR-5).
+_aid_scan_config_prune_dirs() {
+    local _cfg="$1"
+    [[ -f "$_cfg" ]] || return 0
+    sed -n '/^prune_dirs:[[:space:]]*$/,/^[^[:space:]]/{
+        /^prune_dirs:[[:space:]]*$/d
+        /^[^[:space:]]/d
+        p
+    }' "$_cfg" 2>/dev/null \
+        | grep -E '^[[:space:]]*-[[:space:]]+' \
+        | sed -E 's/^[[:space:]]*-[[:space:]]+//' \
+        | sed -E 's/[[:space:]]+$//'
+}
+
+# _aid_scan_read_prune_dirs
+# Return the prune_dirs: entries from the primary scan-config.yml tier
+# ($AID_STATE_HOME/scan-config.yml, resolved as a `local` here -- never a
+# top-level constant, see the comment above _aid_scan_name_in_set) plus, when
+# $AID_STATE_HOME differs from $HOME/.aid, the $HOME/.aid/scan-config.yml
+# fallback tier too -- mirroring _registry_read_union's primary/fallback +
+# per-user-collapse resolution (~:1485-1502; FR-8). No dedup here: the
+# case-insensitive dedup against the built-in set happens once, in
+# _aid_scan_merge_prune_dirs. Empty when no config/prune_dirs: key is found in
+# either tier (FR-5).
+_aid_scan_read_prune_dirs() {
+    local _primary_cfg="${AID_STATE_HOME}/scan-config.yml"
+    if [[ "$AID_STATE_HOME" == "${HOME}/.aid" ]]; then
+        # Per-user collapse: single-tier; primary == fallback, no double-read.
+        _aid_scan_config_prune_dirs "$_primary_cfg"
+    else
+        # Distinct paths: read both the primary ($AID_STATE_HOME) and the
+        # fallback ($HOME/.aid) tiers.
+        local _fallback_cfg="${HOME}/.aid/scan-config.yml"
+        { _aid_scan_config_prune_dirs "$_primary_cfg"; _aid_scan_config_prune_dirs "$_fallback_cfg"; } \
+            | sed '/^$/d'
+    fi
+}
+
+# _aid_scan_merge_prune_dirs
+# Effective Tier-A prune set (FR-4): the case-insensitive deduped union of the
+# built-in _AID_SCAN_PRUNE_DIRS and the user-level scan-config.yml
+# prune_dirs: entries (_aid_scan_read_prune_dirs). Extend-only -- a config
+# entry can never remove a built-in default; a repeated built-in is deduped
+# harmlessly (AC-8). Built-ins are emitted first (their documented order),
+# then any non-duplicate config entries in read order. Called ONCE by
+# _cmd_projects_scan (NFR-1) -- never re-read per directory.
+_aid_scan_merge_prune_dirs() {
+    local -A _seen=()
+    local _item _item_lc
+    for _item in "${_AID_SCAN_PRUNE_DIRS[@]}"; do
+        _item_lc="${_item,,}"
+        [[ -n "${_seen[$_item_lc]:-}" ]] && continue
+        _seen["$_item_lc"]=1
+        printf '%s\n' "$_item"
+    done
+    while IFS= read -r _item; do
+        [[ -n "$_item" ]] || continue
+        _item_lc="${_item,,}"
+        [[ -n "${_seen[$_item_lc]:-}" ]] && continue
+        _seen["$_item_lc"]=1
+        printf '%s\n' "$_item"
+    done < <(_aid_scan_read_prune_dirs)
+}
+
+# _aid_scan_seed_config
+# First-run seed (FR-3/NFR-3): if the primary scan-config.yml
+# ($AID_STATE_HOME/scan-config.yml, resolved as a `local` here -- never a
+# top-level constant, see the comment above _aid_scan_name_in_set) is absent,
+# write it with a header + `schema: 1` + a `prune_dirs:` block of the
+# built-in expanded Tier-A defaults, via the SAME atomic temp-file+move idiom
+# registry_register uses (~:1751-1799: mkdir -p the target dir, mktemp in
+# that same dir so the mv is atomic same-filesystem, write, then
+# never-elevate `_aid_priv_run "" mv -f`).
+# Same primary/fallback DEGRADE too (~:1754-1766): if $AID_STATE_HOME (the
+# primary's directory) is absent/not writable -- e.g. a global/shared install
+# such as /var/lib/aid or $ProgramData\aid where the primary tier is not
+# user-writable -- the seed degrades to $HOME/.aid/scan-config.yml instead of
+# WARNing forever on every non-dry-run scan. This is silent by default
+# (visible under --verbose), matching registry_register. The READ side
+# already unions the primary + $HOME/.aid fallback tiers (_aid_scan_read_
+# prune_dirs), so a seed landing in the fallback is read back correctly.
+# Best-effort: a mkdir/mktemp/write/mv failure at whichever tier is resolved
+# prints one WARN to stderr and returns 0 -- it never fails the scan.
+# Idempotent -- never overwrites an existing file at whichever tier it
+# resolves to, so a user's edits always survive. The caller MUST NOT invoke
+# this under --dry-run (a dry-run scan makes no writes at all).
+_aid_scan_seed_config() {
+    local _primary_cfg="${AID_STATE_HOME}/scan-config.yml"
+    [[ -f "$_primary_cfg" ]] && return 0
+    local _dir _tmp _target
+    _dir="$(dirname "$_primary_cfg")"
+    _aid_priv_run "" mkdir -p "$_dir" 2>/dev/null || true
+    if [[ -w "$_dir" ]]; then
+        _target="$_primary_cfg"
+    else
+        # Primary not writable (global/shared install); degrade to $HOME/.aid,
+        # mirroring registry_register's user-tier degrade (~:1754-1766).
+        local _fb_dir="${HOME}/.aid"
+        mkdir -p "$_fb_dir" 2>/dev/null || true
+        [[ "${_AID_VERBOSE:-0}" == "1" ]] && \
+            echo "WARN: aid: could not write to ${_dir}; seeding ${_fb_dir}/scan-config.yml instead" >&2
+        _target="${_fb_dir}/scan-config.yml"
+    fi
+    # Idempotent at whichever tier resolved to -- never overwrite an existing file.
+    [[ -f "$_target" ]] && return 0
+    _tmp="$(mktemp "${_target}.aid-tmp.XXXXXX" 2>/dev/null)" || {
+        echo "WARN: aid: could not seed the scan exclusions config (${_target}): mktemp failed" >&2
+        return 0
+    }
+    {
+        printf '%s\n' '# scan-config.yml -- user-level directory-prune list for "aid projects scan".'
+        printf '%s\n' '# Names here are ADDED to the built-in exclusion set (case-insensitive, EXACT'
+        printf '%s\n' '# basename, matched at any depth). Extend-only: a built-in default cannot be'
+        printf '%s\n' '# removed here. One "- <name>" per line. Names with spaces need no quotes.'
+        printf '%s\n' "schema: 1"
+        printf '%s\n' "prune_dirs:"
+        local _n
+        for _n in "${_AID_SCAN_PRUNE_DIRS[@]}"; do
+            printf '  - %s\n' "$_n"
+        done
+    } > "$_tmp" || {
+        rm -f "$_tmp" 2>/dev/null
+        echo "WARN: aid: could not seed the scan exclusions config (${_target}): write failed" >&2
+        return 0
+    }
+    _aid_priv_run "" mv -f "$_tmp" "$_target" || {
+        rm -f "$_tmp" 2>/dev/null
+        echo "WARN: aid: could not seed the scan exclusions config (${_target}): mv failed" >&2
+        return 0
+    }
+    return 0
 }
 
 # _aid_scan_windows_drives <include-network 0/1> <include-removable 0/1>
@@ -3128,7 +3320,14 @@ _aid_scan_walk_node() {
     [[ -n "$_base" ]] || _base="$_dir"   # "/" itself: no trailing component
 
     # (c) Heavy/cache/build basename match -- any depth, all modes (NFR-2).
-    if _aid_scan_name_in_set "$_base" "${_AID_SCAN_PRUNE_DIRS[@]}"; then
+    # Tests the run-scoped MERGED set (built-in _AID_SCAN_PRUNE_DIRS unioned
+    # with any user-level scan-config.yml prune_dirs: entries, FR-4) computed
+    # ONCE by _cmd_projects_scan -- NOT the built-in constant directly.
+    # _scan_prune_dirs is a `local -a` of the calling _cmd_projects_scan,
+    # visible here via bash's normal dynamic scoping (and inherited into the
+    # process-substitution subshell each root's walk runs in), the same
+    # mechanism already used for _scan_dir_count / _scan_state_home_canon.
+    if _aid_scan_name_in_set "$_base" "${_scan_prune_dirs[@]}"; then
         return 0
     fi
 
@@ -3231,6 +3430,17 @@ _cmd_projects_scan() {
     while IFS= read -r _rp; do
         [[ -n "$_rp" ]] && _reg_seen["$_rp"]=1
     done < <(_registry_read_raw_union)
+
+    # FR-3/NFR-3: seed scan-config.yml with the built-in Tier-A defaults on
+    # the first real (non-dry-run) scan when it is absent -- best-effort,
+    # idempotent, and never invoked under --dry-run (a dry-run scan makes no
+    # writes at all). Then resolve the effective Tier-A set ONCE (FR-4/NFR-1):
+    # the case-insensitive deduped union of the built-in set and any
+    # scan-config.yml prune_dirs: entries; a missing/unreadable/prune_dirs-
+    # less config falls back to exactly the built-in set (FR-5).
+    [[ "$_dry_run" -eq 1 ]] || _aid_scan_seed_config
+    local -a _scan_prune_dirs=()
+    readarray -t _scan_prune_dirs < <(_aid_scan_merge_prune_dirs)
 
     # FR-9: force the user tier before registering, unless the caller already
     # forced --shared explicitly; never leave the auto-rule to choose.

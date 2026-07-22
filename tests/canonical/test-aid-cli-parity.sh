@@ -5159,6 +5159,409 @@ assert_eq "$_PAR019_SNAP_AFTER" "$_PAR019_SNAP_BEFORE" \
 chmod 755 "${FX_019}/denied" 2>/dev/null || true
 
 # ===========================================================================
+# PAR022: 'aid projects scan' Tier-A/Tier-B exclusion expansion + the
+# user-level scan-config.yml merge -- bash<->PS1 parity + guardrail coverage
+# (work-022-scan-exclusions / task-002)
+#
+# Exercises the EXPANDED prune sets and the new scan-config.yml merge/seed on
+# BOTH twins over ONE shared fixture tree, via the same HOME-default and
+# --path modes PAR019 already pins hermetically. See SPEC.md
+# (work-022-scan-exclusions) AC-3..AC-10 and its task-002 DETAIL.md.
+#
+# Design note (AC-4 Tier-B positive direction): --all cannot be redirected
+# off the real filesystem root -- there is no test seam in _aid_scan_roots /
+# Get-AidScanRoot to inject a fixture path under --all (confirmed by reading
+# bin/aid ~:3200-3250 / bin/aid.ps1's Get-AidScanRoot). So the RIGOROUS,
+# hermetic proof here is the NEGATIVE direction (a Tier-B name is NEVER
+# pruned outside --all, at any depth -- PAR022-A/B below), plus a light,
+# best-effort real-machine sanity probe (PAR022-G) that the --all root
+# resolution itself is unaffected by the Tier-B expansion. Since the c2 gate
+# is ONE generic membership test against the whole (now-expanded)
+# _AID_SCAN_SYSTEM_DIRS / $script:AidScanSystemDirs array with no per-name
+# branching, the negative-direction proof + a read of the source is the
+# strongest hermetic evidence available for this criterion.
+#
+# PS half: skipped when pwsh absent (same posture as PAR019); the Bash-side
+# assertions still run so the block is never a vacuous pass.
+# ===========================================================================
+
+echo ""
+echo "=== PAR022: scan exclusions + scan-config.yml merge bash<->PS1 parity ==="
+
+_par022_build_fixture() {
+    local fx="$1"
+    rm -rf "$fx"
+    mkdir -p "$fx"
+
+    # Control: a real tracked project so the exact-set assertions below are
+    # meaningful (a scan finding NOTHING would trivially "pass" every
+    # not-discovered assertion).
+    _par019_mkproj "${fx}/proj-real/.aid" "8.0.0"
+
+    # AC-3: representative NEW Tier-A names, each a SHALLOW (depth-1) decoy
+    # holding a nested stray .aid/ one level below the decoy itself. Must be
+    # pruned (never registered) regardless of mode (Tier-A's membership test,
+    # step (c), does not branch on --all vs default).
+    local _tA
+    for _tA in node_modules .pnpm-store .pytest_cache .next .vscode .cursor \
+               .pyenv cache tmp AppData "User Data"; do
+        _par019_mkproj "${fx}/tierA-shallow/${_tA}/inner/.aid" "0.9.0"
+    done
+
+    # AC-3: the SAME any-depth guarantee, DEEP placement (3 levels below the
+    # scan root) for a representative subset -- proves the prune fires at any
+    # depth, not just immediate children.
+    local _tAd
+    for _tAd in node_modules "User Data" .pytest_cache; do
+        _par019_mkproj "${fx}/deep-decoys/level1/level2/${_tAd}/inner/.aid" "0.9.1"
+    done
+
+    # AC-5: build/bin/.vscode directories that ARE THEMSELVES valid projects
+    # -- the is-project check (step b) precedes the name-prune check (step
+    # c), so these must still be discovered despite matching a Tier-A name.
+    _par019_mkproj "${fx}/named-projects/build/.aid" "9.0.1"
+    _par019_mkproj "${fx}/named-projects/bin/.aid" "9.0.2"
+    _par019_mkproj "${fx}/named-projects/.vscode/.aid" "9.0.3"
+
+    # AC-4 (negative direction): NEW Tier-B names, SHALLOW and DEEP, each
+    # holding a NESTED project one level below. Tier-B pruning is --all AND
+    # depth-1-only, so under the HOME-default/--path modes exercised here
+    # these must be DESCENDED (the nested project found), at any depth.
+    _par019_mkproj "${fx}/tierb-shallow/ProgramData/inner-proj/.aid" "9.2.0"
+    _par019_mkproj "${fx}/tierb-deep/a/b/PerfLogs/inner-proj/.aid" "9.2.1"
+
+    # AC-7/AC-8: two non-built-in names, each a decoy with a nested stray
+    # .aid/. custom-cache-dir is used by the single-twin config-merge block
+    # (PAR022-C); my-par022-custom-dir is reserved for the twin-parity block
+    # (PAR022-F) so the two blocks' config edits stay independent.
+    _par019_mkproj "${fx}/custom-cache-dir/inner/.aid" "9.3.0"
+    _par019_mkproj "${fx}/my-par022-custom-dir/inner/.aid" "9.4.0"
+
+    # PAR022-F guardrail: a directory named exactly "Code" (NOT "Code
+    # Cache") -- proves neither twin's prune_dirs: line-scan mis-splits the
+    # spaced entry "Code Cache" into a bogus standalone "Code" prune entry
+    # (which would wrongly prune this directory).
+    _par019_mkproj "${fx}/Code/inner/.aid" "9.4.1"
+}
+
+FX_022=$(mktemp -d "${TMP}/par022fx.XXXXXX")
+_par022_build_fixture "$FX_022"
+FX_022C="$(cd "$FX_022" && pwd -P)"
+FX_022_BASE="$(basename "$FX_022")"
+
+_PAR022_EXPECTED=$(cat << 'EXPECTEOF'
+Code/inner
+custom-cache-dir/inner
+my-par022-custom-dir/inner
+named-projects/.vscode
+named-projects/bin
+named-projects/build
+proj-real
+tierb-deep/a/b/PerfLogs/inner-proj
+tierb-shallow/ProgramData/inner-proj
+EXPECTEOF
+)
+
+# ---------------------------------------------------------------------------
+# PAR022-A: baseline (no scan-config.yml) HOME-default scan -- proves the
+# expanded Tier-A set prunes at any depth (AC-3), the expanded Tier-B set
+# does NOT prune outside --all at any depth (AC-4 negative direction), a
+# build/bin/.vscode project is still discovered (AC-5), and a missing config
+# yields exactly the built-in set with exit 0 (AC-9 "missing").
+# ---------------------------------------------------------------------------
+SH_HOME_022A=$(newhome); setup_sh_home "${SH_HOME_022A}"
+run_sh_scan "${SH_HOME_022A}" "$FX_022" projects scan --verbose
+assert_exit_eq "$RC_SH" 0 "PAR022-A01 Bash baseline (no config) scan -> exit 0 (AC-9 missing-config)"
+
+SH_GOT_022A="$(_par019_extract_registered "$OUT_SH" "$FX_022_BASE")"
+assert_eq "$SH_GOT_022A" "$_PAR022_EXPECTED" \
+    "PAR022-A02 Bash baseline: discovered set is exactly the expected 9 projects (AC-3/AC-4/AC-5/AC-9)"
+
+# AC-3: every representative new Tier-A name prunes its SHALLOW decoy.
+for _tA in node_modules .pnpm-store .pytest_cache .next .vscode .cursor \
+           .pyenv cache tmp AppData "User Data"; do
+    assert_output_not_contains "$OUT_SH" "${FX_022C}/tierA-shallow/${_tA}/inner  " \
+        "PAR022-A03 Bash: new Tier-A name NOT discovered (shallow): ${_tA} (AC-3)"
+done
+
+# AC-3: the same names prune at a DEEPER placement too (any depth).
+for _tAd in node_modules "User Data" .pytest_cache; do
+    assert_output_not_contains "$OUT_SH" "${FX_022C}/deep-decoys/level1/level2/${_tAd}/inner  " \
+        "PAR022-A04 Bash: new Tier-A name NOT discovered (deep, 3 levels): ${_tAd} (AC-3)"
+done
+
+# AC-5: build/bin/.vscode ARE discovered when they are themselves projects.
+assert_output_contains "$OUT_SH" "named-projects/build  9.0.1  registered" \
+    "PAR022-A05 Bash: a directory literally named 'build' holding a valid .aid/ IS discovered (AC-5)"
+assert_output_contains "$OUT_SH" "named-projects/bin  9.0.2  registered" \
+    "PAR022-A06 Bash: a directory literally named 'bin' holding a valid .aid/ IS discovered (AC-5)"
+assert_output_contains "$OUT_SH" "named-projects/.vscode  9.0.3  registered" \
+    "PAR022-A07 Bash: a directory literally named '.vscode' holding a valid .aid/ IS discovered (AC-5)"
+
+# AC-4 (negative direction): new Tier-B names are NOT pruned outside --all,
+# at either depth -- the nested project inside each is found.
+assert_output_contains "$OUT_SH" "tierb-shallow/ProgramData/inner-proj  9.2.0  registered" \
+    "PAR022-A08 Bash: new Tier-B name 'ProgramData' NOT pruned under HOME-default (shallow, AC-4)"
+assert_output_contains "$OUT_SH" "tierb-deep/a/b/PerfLogs/inner-proj  9.2.1  registered" \
+    "PAR022-A09 Bash: new Tier-B name 'PerfLogs' NOT pruned under HOME-default (deep, AC-4)"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_022A=$(newhome); setup_ps1_home "${PS_HOME_022A}"
+    run_ps1_scan "${PS_HOME_022A}" "$FX_022" projects scan --verbose
+    assert_exit_eq "$RC_PS1" 0 "PAR022-A10 PS1 baseline (no config) scan -> exit 0"
+    PS_GOT_022A="$(_par019_extract_registered "$OUT_PS1" "$FX_022_BASE")"
+    assert_eq "$PS_GOT_022A" "$_PAR022_EXPECTED" \
+        "PAR022-A11 PS1 baseline: discovered set is exactly the expected 9 projects"
+    assert_output_contains "$OUT_PS1" "named-projects/build  9.0.1  registered" \
+        "PAR022-A12 PS1: a directory literally named 'build' holding a valid .aid/ IS discovered (AC-5)"
+    assert_output_contains "$OUT_PS1" "tierb-shallow/ProgramData/inner-proj  9.2.0  registered" \
+        "PAR022-A13 PS1: new Tier-B name 'ProgramData' NOT pruned under HOME-default (AC-4)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR022-A14 Bash<->PS1 exit code parity (baseline scan, AC-10)"
+    assert_eq "$SH_GOT_022A" "$PS_GOT_022A" "PAR022-A15 Bash<->PS1 discovered-set parity (baseline scan, AC-10)"
+else
+    for _n in 10 11 12 13 14 15; do pass "PAR022-A${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR022-B: --path fast-path over the SAME fixture, still config-less --
+# proves the Tier-A/Tier-B behavior above is mode-independent (AC-3 "all
+# modes" / AC-4), matching PAR019-C's fast-path-parity convention.
+# ---------------------------------------------------------------------------
+SH_HOME_022B=$(newhome); setup_sh_home "${SH_HOME_022B}"
+run_sh_scan "${SH_HOME_022B}" "$FX_022" projects scan --path "$FX_022"
+assert_exit_eq "$RC_SH" 0 "PAR022-B01 Bash --path fast-path scan -> exit 0"
+SH_GOT_022B="$(_par019_extract_registered "$OUT_SH" "$FX_022_BASE")"
+assert_eq "$SH_GOT_022B" "$_PAR022_EXPECTED" \
+    "PAR022-B02 Bash --path fast-path: discovered set matches the HOME-default set (AC-3/AC-4 mode-independence)"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_022B=$(newhome); setup_ps1_home "${PS_HOME_022B}"
+    run_ps1_scan "${PS_HOME_022B}" "$FX_022" projects scan --path "$FX_022"
+    assert_exit_eq "$RC_PS1" 0 "PAR022-B03 PS1 --path fast-path scan -> exit 0"
+    PS_GOT_022B="$(_par019_extract_registered "$OUT_PS1" "$FX_022_BASE")"
+    assert_eq "$PS_GOT_022B" "$_PAR022_EXPECTED" \
+        "PAR022-B04 PS1 --path fast-path: discovered set matches the HOME-default set"
+    assert_eq "$SH_GOT_022B" "$PS_GOT_022B" "PAR022-B05 Bash<->PS1 discovered-set parity (--path fast path, AC-10)"
+else
+    for _n in 03 04 05; do pass "PAR022-B${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR022-C: a scan-config.yml adding a non-built-in name extends the prune
+# set (AC-7); repeating a built-in name in the SAME config changes nothing
+# (AC-8, deduped, no error).
+# ---------------------------------------------------------------------------
+_PAR022_EXPECTED_C=$(cat << 'EXPECTEOF'
+Code/inner
+my-par022-custom-dir/inner
+named-projects/.vscode
+named-projects/bin
+named-projects/build
+proj-real
+tierb-deep/a/b/PerfLogs/inner-proj
+tierb-shallow/ProgramData/inner-proj
+EXPECTEOF
+)
+
+SH_HOME_022C=$(newhome); setup_sh_home "${SH_HOME_022C}"
+cat > "${SH_HOME_022C}/scan-config.yml" << 'CFGEOF'
+schema: 1
+prune_dirs:
+  - custom-cache-dir
+  - node_modules
+CFGEOF
+run_sh_scan "${SH_HOME_022C}" "$FX_022" projects scan
+assert_exit_eq "$RC_SH" 0 "PAR022-C01 Bash scan with a config-added custom name -> exit 0"
+SH_GOT_022C="$(_par019_extract_registered "$OUT_SH" "$FX_022_BASE")"
+assert_eq "$SH_GOT_022C" "$_PAR022_EXPECTED_C" \
+    "PAR022-C02 Bash: config-added 'custom-cache-dir' now prunes; built-ins still prune (AC-7)"
+assert_output_not_contains "$OUT_SH" "${FX_022C}/custom-cache-dir/inner  " \
+    "PAR022-C03 Bash: the config-added custom name is not discovered (AC-7)"
+assert_output_not_contains "$OUT_SH" "${FX_022C}/tierA-shallow/node_modules/inner  " \
+    "PAR022-C04 Bash: a built-in name repeated in config still prunes (deduped, no error, AC-8)"
+
+# ---------------------------------------------------------------------------
+# PAR022-D: config guardrails (AC-9) -- a prune_dirs:-less config, and a
+# best-effort unreadable config, both yield exit 0 with no error. (The
+# "missing config" case is PAR022-A itself: A01/A02 already prove exit 0
+# with exactly the built-in set when no scan-config.yml exists at all.)
+# ---------------------------------------------------------------------------
+SH_HOME_022D1=$(newhome); setup_sh_home "${SH_HOME_022D1}"
+cat > "${SH_HOME_022D1}/scan-config.yml" << 'CFGEOF'
+schema: 1
+CFGEOF
+run_sh_scan "${SH_HOME_022D1}" "$FX_022" projects scan
+assert_exit_eq "$RC_SH" 0 "PAR022-D01 Bash: config present but no prune_dirs: key -> exit 0 (AC-9)"
+SH_GOT_022D1="$(_par019_extract_registered "$OUT_SH" "$FX_022_BASE")"
+assert_eq "$SH_GOT_022D1" "$_PAR022_EXPECTED" \
+    "PAR022-D02 Bash: prune_dirs:-less config yields exactly the built-in set (AC-9)"
+
+SH_HOME_022D2=$(newhome); setup_sh_home "${SH_HOME_022D2}"
+cat > "${SH_HOME_022D2}/scan-config.yml" << 'CFGEOF'
+schema: 1
+prune_dirs:
+  - custom-cache-dir
+CFGEOF
+chmod 000 "${SH_HOME_022D2}/scan-config.yml" 2>/dev/null || true
+run_sh_scan "${SH_HOME_022D2}" "$FX_022" projects scan
+assert_exit_eq "$RC_SH" 0 \
+    "PAR022-D03 Bash: unreadable config -> exit 0, no error (host-independent -- chmod 000 may not enforce on every host, AC-9)"
+chmod 644 "${SH_HOME_022D2}/scan-config.yml" 2>/dev/null || true
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_022D1=$(newhome); setup_ps1_home "${PS_HOME_022D1}"
+    cat > "${PS_HOME_022D1}/scan-config.yml" << 'CFGEOF'
+schema: 1
+CFGEOF
+    run_ps1_scan "${PS_HOME_022D1}" "$FX_022" projects scan
+    assert_exit_eq "$RC_PS1" 0 "PAR022-D04 PS1: config present but no prune_dirs: key -> exit 0 (AC-9)"
+    PS_GOT_022D1="$(_par019_extract_registered "$OUT_PS1" "$FX_022_BASE")"
+    assert_eq "$PS_GOT_022D1" "$_PAR022_EXPECTED" \
+        "PAR022-D05 PS1: prune_dirs:-less config yields exactly the built-in set (AC-9)"
+else
+    for _n in 04 05; do pass "PAR022-D${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR022-E: first-run seeding -- a non-dry-run scan seeds scan-config.yml
+# beside registry.yml with the built-in Tier-A defaults; a --dry-run scan
+# makes no such write (AC-6).
+# ---------------------------------------------------------------------------
+SH_HOME_022E1=$(newhome); setup_sh_home "${SH_HOME_022E1}"
+run_sh_scan "${SH_HOME_022E1}" "$FX_022" projects scan --dry-run
+assert_exit_eq "$RC_SH" 0 "PAR022-E01 Bash --dry-run scan -> exit 0"
+if [[ -f "${SH_HOME_022E1}/scan-config.yml" ]]; then
+    fail "PAR022-E02 Bash --dry-run: scan-config.yml must stay absent (no write, AC-6)"
+else
+    pass "PAR022-E02 Bash --dry-run: scan-config.yml stays absent (no write, AC-6)"
+fi
+
+SH_HOME_022E2=$(newhome); setup_sh_home "${SH_HOME_022E2}"
+run_sh_scan "${SH_HOME_022E2}" "$FX_022" projects scan
+assert_exit_eq "$RC_SH" 0 "PAR022-E03 Bash non-dry-run scan -> exit 0"
+assert_file_exists "${SH_HOME_022E2}/scan-config.yml" \
+    "PAR022-E04 Bash non-dry-run scan: scan-config.yml IS seeded beside registry.yml (AC-6)"
+assert_file_contains "${SH_HOME_022E2}/scan-config.yml" "schema: 1" \
+    "PAR022-E05 Bash: seeded scan-config.yml carries schema: 1 (AC-6)"
+assert_file_contains "${SH_HOME_022E2}/scan-config.yml" "prune_dirs:" \
+    "PAR022-E06 Bash: seeded scan-config.yml carries a prune_dirs: block (AC-6)"
+assert_file_contains "${SH_HOME_022E2}/scan-config.yml" "  - node_modules" \
+    "PAR022-E07 Bash: seeded scan-config.yml lists a built-in default (node_modules, AC-6)"
+assert_file_contains "${SH_HOME_022E2}/scan-config.yml" "  - User Data" \
+    "PAR022-E08 Bash: seeded scan-config.yml preserves a spaced built-in default (User Data, AC-6)"
+assert_file_contains "${SH_HOME_022E2}/scan-config.yml" "  - log" \
+    "PAR022-E09 Bash: seeded scan-config.yml lists the last built-in default (log, AC-6)"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_022E1=$(newhome); setup_ps1_home "${PS_HOME_022E1}"
+    run_ps1_scan "${PS_HOME_022E1}" "$FX_022" projects scan --dry-run
+    assert_exit_eq "$RC_PS1" 0 "PAR022-E10 PS1 --dry-run scan -> exit 0"
+    if [[ -f "${PS_HOME_022E1}/scan-config.yml" ]]; then
+        fail "PAR022-E11 PS1 --dry-run: scan-config.yml must stay absent (no write, AC-6)"
+    else
+        pass "PAR022-E11 PS1 --dry-run: scan-config.yml stays absent (no write, AC-6)"
+    fi
+
+    PS_HOME_022E2=$(newhome); setup_ps1_home "${PS_HOME_022E2}"
+    run_ps1_scan "${PS_HOME_022E2}" "$FX_022" projects scan
+    assert_exit_eq "$RC_PS1" 0 "PAR022-E12 PS1 non-dry-run scan -> exit 0"
+    assert_file_exists "${PS_HOME_022E2}/scan-config.yml" \
+        "PAR022-E13 PS1 non-dry-run scan: scan-config.yml IS seeded beside registry.yml (AC-6)"
+    assert_file_contains "${PS_HOME_022E2}/scan-config.yml" "  - node_modules" \
+        "PAR022-E14 PS1: seeded scan-config.yml lists a built-in default (node_modules, AC-6)"
+else
+    for _n in 10 11 12 13 14; do pass "PAR022-E${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR022-F: both twins, given a BYTE-IDENTICAL config (a built-in dup
+# 'node_modules', a NEW custom name 'my-par022-custom-dir', and a spaced
+# built-in dup '- Code Cache'), read it identically and produce the
+# identical discovered set + identical exit codes over the SAME fixture
+# (AC-10). The literal 'Code' fixture entry also proves neither twin's
+# line-scan mis-splits the spaced 'Code Cache' entry into a bogus standalone
+# 'Code' prune name.
+# ---------------------------------------------------------------------------
+_PAR022_CFG_F=$(cat << 'CFGEOF'
+schema: 1
+prune_dirs:
+  - node_modules
+  - my-par022-custom-dir
+  - Code Cache
+CFGEOF
+)
+_PAR022_EXPECTED_F=$(cat << 'EXPECTEOF'
+Code/inner
+custom-cache-dir/inner
+named-projects/.vscode
+named-projects/bin
+named-projects/build
+proj-real
+tierb-deep/a/b/PerfLogs/inner-proj
+tierb-shallow/ProgramData/inner-proj
+EXPECTEOF
+)
+
+SH_HOME_022F=$(newhome); setup_sh_home "${SH_HOME_022F}"
+printf '%s\n' "$_PAR022_CFG_F" > "${SH_HOME_022F}/scan-config.yml"
+run_sh_scan "${SH_HOME_022F}" "$FX_022" projects scan
+assert_exit_eq "$RC_SH" 0 "PAR022-F01 Bash scan with the identical AC-10 config -> exit 0"
+SH_GOT_022F="$(_par019_extract_registered "$OUT_SH" "$FX_022_BASE")"
+assert_eq "$SH_GOT_022F" "$_PAR022_EXPECTED_F" \
+    "PAR022-F02 Bash: identical config -> custom name pruned, 'Code' (not 'Code Cache') still discovered (AC-10)"
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_022F=$(newhome); setup_ps1_home "${PS_HOME_022F}"
+    printf '%s\n' "$_PAR022_CFG_F" > "${PS_HOME_022F}/scan-config.yml"
+    run_ps1_scan "${PS_HOME_022F}" "$FX_022" projects scan
+    assert_exit_eq "$RC_PS1" 0 "PAR022-F03 PS1 scan with the identical AC-10 config -> exit 0"
+    PS_GOT_022F="$(_par019_extract_registered "$OUT_PS1" "$FX_022_BASE")"
+    assert_eq "$PS_GOT_022F" "$_PAR022_EXPECTED_F" \
+        "PAR022-F04 PS1: identical config -> custom name pruned, 'Code' still discovered (AC-10)"
+    assert_eq "$RC_SH" "$RC_PS1" "PAR022-F05 Bash<->PS1 exit code parity (identical config, AC-10)"
+    assert_eq "$SH_GOT_022F" "$PS_GOT_022F" "PAR022-F06 Bash<->PS1 discovered-set parity (identical config, AC-10)"
+else
+    for _n in 03 04 05 06; do pass "PAR022-F${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ---------------------------------------------------------------------------
+# PAR022-G: a light, best-effort real-machine sanity check that --all root
+# resolution is unaffected by the Tier-B expansion (see the block header
+# comment for why a rigorous, hermetic POSITIVE root-only-prune proof is not
+# possible: --all cannot be redirected off the real filesystem root). Mirrors
+# PAR019-H's bounded, --dry-run, uname-branched probe style.
+# ---------------------------------------------------------------------------
+SH_HOME_022G=$(newhome); setup_sh_home "${SH_HOME_022G}"
+run_sh_scan "${SH_HOME_022G}" "$FX_022" projects scan --all --depth 1 --dry-run --verbose
+assert_exit_eq "$RC_SH" 0 "PAR022-G01 Bash --all --depth 1 --dry-run -> exit 0 (bounded one-level probe, no real crawl)"
+
+case "$(uname -s 2>/dev/null)" in
+    MINGW*|MSYS*|CYGWIN*) _PAR022_SH_IS_WIN=1 ;;
+    *) _PAR022_SH_IS_WIN=0 ;;
+esac
+if [[ "$_PAR022_SH_IS_WIN" -eq 0 ]]; then
+    assert_output_contains "$OUT_SH" "aid projects scan: roots: /" \
+        "PAR022-G02 Bash (Unix): --all still resolves to the single '/' root after the Tier-B expansion (AC-2 regression guard)"
+else
+    pass "PAR022-G02 [SKIPPED: Windows host -- Unix-branch assertion not applicable]"
+fi
+
+if [[ -n "$PWSH" ]]; then
+    PS_HOME_022G=$(newhome); setup_ps1_home "${PS_HOME_022G}"
+    run_ps1_scan "${PS_HOME_022G}" "$FX_022" projects scan --all --depth 1 --dry-run --verbose
+    assert_exit_eq "$RC_PS1" 0 "PAR022-G03 PS1 --all --depth 1 --dry-run -> exit 0 (bounded one-level probe, no real crawl)"
+    if [[ "$_PAR022_SH_IS_WIN" -eq 0 ]]; then
+        assert_output_contains "$OUT_PS1" "aid projects scan: roots: /" \
+            "PAR022-G04 PS1 (Unix): --all still resolves to the single '/' root after the Tier-B expansion (AC-2 regression guard)"
+    else
+        pass "PAR022-G04 [SKIPPED: Windows host -- Unix-branch assertion not applicable]"
+    fi
+    assert_eq "$RC_SH" "$RC_PS1" "PAR022-G05 Bash<->PS1 exit code parity (--all --depth 1 --dry-run, AC-10)"
+else
+    for _n in 03 04 05; do pass "PAR022-G${_n} [SKIPPED: pwsh absent]"; done
+fi
+
+# ===========================================================================
 # End-of-suite: REAL_HOME blast-surface canary
 #
 # Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before
