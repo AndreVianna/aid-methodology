@@ -135,9 +135,12 @@ broader than the currently confirmed scope. **Nothing is reverted here at
 APPROVAL time** -- the revised `Confirmed Scope` is not known until CONFIRM
 re-freezes it. The revert is enforced mechanically the next time APPLY runs:
 `state-apply.md § Step 0` reverts (`git restore -- <doc>` against
-`**Pre-APPLY baseline:**`) any doc present in the prior `**Edited Docs:**`
-that the revised `Confirmed Scope` no longer includes, before making any new
-edit.
+`**Pre-APPLY baseline:**`) every doc still changed on disk that the revised
+`Confirmed Scope` no longer includes -- **disk-derived**, not limited to the
+prior `**Edited Docs:**` self-report (the same mechanism also strips a stray
+out-of-scope edit REVIEW's Step 0 scope-diff guard catches, which was never
+in `Edited Docs` in the first place -- see `state-review.md § 4(b)`) --
+before making any new edit.
 
 Print:
 

@@ -54,15 +54,17 @@ values and proceed.
 **Belt-and-suspenders guard (HIGH finding follow-up).** Before proceeding on
 a resumed run, verify the existing `**Prompt:**` matches the current
 invocation's instruction (same trimmed/whitespace-normalized exact-match
-rule as Pre-flight's Rung B). This should be unreachable once Pre-flight
-only ever resumes a prompt-matched worktree -- but if it is ever reached, do
-NOT silently proceed on the stale `**Prompt:**`:
+rule as Pre-flight's Rung A and Rung B). This should now be unreachable --
+Pre-flight prompt-matches on **both** rungs before ever resuming a worktree
+(Rung A's own match/STOP, and Rung B's "Prompt-matched resume" section) --
+but if it is ever reached, do NOT silently proceed on the stale
+`**Prompt:**`:
 
 ```
 [ANALYZE] Resumed run-state Prompt does not match the current invocation's
 instruction -- refusing to silently continue a different request. This
-should be unreachable via Pre-flight ISOLATE; STOP and report to the
-Orchestrator/user.
+should be unreachable via Pre-flight ISOLATE (both rungs prompt-match before
+resuming); STOP and report to the Orchestrator/user.
 ```
 
 If they do not match, HALT -- do not proceed to Step 1 with a mismatched
