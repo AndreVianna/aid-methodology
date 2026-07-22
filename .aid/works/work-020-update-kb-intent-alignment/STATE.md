@@ -5,11 +5,11 @@ pipeline:
 started: "2026-07-21"
 minimum_grade: "A+"
 user_approved: no
-lifecycle: Paused-Awaiting-Input
+lifecycle: Running
 phase: Execute
 active_skill: aid-execute
-updated: '2026-07-22T17:49:54Z'
-pause_reason: 'DELIVERY-GATE cycle-3: owner decision on Row 9 (HL-8/AC-9 SKILL.md-vs-SPEC.md contradiction)'
+updated: '2026-07-22T17:58:43Z'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: "--"
@@ -128,6 +128,7 @@ don't act") are the load-bearing fixes.
 | 2026-07-22 | DELIVERY-GATE cycle-2 graded | E+ | 6/7 cycle-1 findings Fixed. 2 open: row 7 [MED] M7 fix missed the APPROVAL Dispatch-table row (still PAUSE, contradicts fixed banner); row 8 [CRIT, NEW] H3 fix exposed a data-flow gap — clean-context SCOPE/ANALYZE dispatch has no channel for the user's `Adjustments`, so re-plan loop-backs reproduce the same plan. FIX cycle-2 dispatched (both) |
 | 2026-07-22 | DELIVERY-GATE cycle-2 FIX applied | -- | Both open findings fixed. Row 7: SKILL.md's APPROVAL Dispatch-table row corrected to `[1] Approved` -> CHAIN -> DONE (was PAUSE-FOR-USER-ACTION, contradicting the already-fixed banner + state-approval.md's own Advance line); grepped the whole skill for any other `[1]`-transition mislabeled PAUSE — none found. Row 8: HL-8 (SKILL.md) reworded to distinguish the user's gate-time `**Adjustments:**`/`**Consideration:**` (authorized, first-class scoping input, part of the instruction dialogue) from the FORBIDDEN ambient session transcript; state-scope.md's and state-analyze.md's clean-context dispatch contracts (Step 1) now admit that recorded field (+ its Q{N} entry, incl. the REVIEW-4(b) disputed doc's identity) on a re-plan loop-back/re-entry and instruct folding it in (SCOPE Step 2 adds/drops/modifies a row; ANALYZE Step 5 REPLACES the stale Impact Map instead of leaving it stale); state-review.md's 4(b) "accept" branch cross-references the now-real mechanism. tests/canonical/test-update-kb-scope-fidelity.sh: 92 → 99 (7 new regression assertions UK92-UK98 covering both rows), all passing. Re-emit to profiles/dogfood pending (orchestrator) before re-gate. |
 | 2026-07-22 | DELIVERY-GATE cycle-3 graded | E+ | Rows 1-8 all Fixed (no regressions); tests 99/99; re-emitted (918675d9). 2 NEW: row 10 [MED] SKILL.md run-state schema table omits `Consideration` + `Scope-diff` fields (trivial; will bundle); row 9 [CRIT] the row-8 fix authorized the gate-time `Adjustments` as a Traces-to source in SKILL.md's HL-8, but SPEC.md's confirmed AC-9 (declared source-of-truth) still forbids non-instruction session content → live SKILL.md-vs-SPEC.md contradiction on the central hard limit. OWNER DECISION surfaced (amend AC-9/HL-8 vs pull impl back); PAUSED for owner |
+| 2026-07-22 | Row 9 — OWNER RULING (option a) | -- | Owner: info the user adds when THE SKILL asks its OWN confirmation question is IN-SCOPE (part of this skill-run's work-dialogue). HL-8/AC-9's ban applies ONLY to context from PREVIOUS or UNRELATED conversation/instructions outside this KB-update's own dialogue. Clean line: inside this skill's instruction+confirmation dialogue = in-scope; outside it = banned. Amend AC-9/HL-8 (REQUIREMENTS+SPEC+SKILL.md) to this framing + fix row 10; re-emit; re-gate. Un-paused |
 
 ---
 

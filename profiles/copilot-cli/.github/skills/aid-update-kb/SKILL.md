@@ -371,11 +371,13 @@ reformatted between states):
 | `**Confirmed At:**` | CONFIRM (`[1]`) | ISO-8601 confirmation timestamp |
 | `**Confirmed Scope:**` | CONFIRM (`[1]`) | the frozen doc set -- the scope contract for APPLY/REVIEW |
 | `**Pre-APPLY baseline:**` | CONFIRM (`[1]`) | git HEAD (or `clean`) captured before APPLY's first edit -- REVIEW's scope-diff guard and any re-scope revert both diff against this |
-| `**Adjustments:**` | CONFIRM (`[1]`/`[2]`) | free text, or the user's answers folded in, or `--` |
+| `**Adjustments:**` | CONFIRM (`[1]`/`[2]`) | free text, or the user's answers folded in, or `--`; read by SCOPE/ANALYZE Step 1 as the authorized re-plan input on a loop-back (HL-8/AC-9) |
 | `**Edited Docs:**` | APPLY | the docs actually edited (unchanged field name from today) |
 | `**APPLY Completed:**` | APPLY | ISO-8601 timestamp |
+| `**Scope-diff:**` | REVIEW (Step 4, every outcome -- 4(a) incomplete-APPLY, 4(b) HARD FAIL, 4(c) PASS, 4(d) below-gate) | this pass's disk-derived scope-fidelity verdict; read back by APPROVAL Step 1 for its summary banner |
 | `**Review Grade:**` / `**Review Teach-back:**` / `**Review Act-back:**` / `**Review Completed:**` | REVIEW | unchanged from today |
 | `**User Approved:**` / `**Approved At:**` | APPROVAL | unchanged from today |
+| `**Consideration:**` | APPROVAL (`[2]`, Step 3) | free-text summary of the user's re-scope consideration (`Q{N} -- <one-line summary>`); read by SCOPE Step 1 as an authorized re-plan input, the same way `**Adjustments:**` is (HL-8/AC-9) |
 
 `**Change Plan:**` no longer exists anywhere in this schema -- SCOPE's
 `**Scope Plan:**` replaces it.
@@ -463,14 +465,16 @@ aid-update-kb  > you are here
 > `[2] Adjust`, APPROVAL `[2]`, or REVIEW 4(b) "accept") -- the run-state's
 > recorded `**Adjustments:**`/`**Consideration:**` field: the user's
 > explicit gate-time re-plan guidance, given AT the gate as part of the
-> instruction dialogue. This is **authorized, first-class scoping input**,
-> distinct from the FORBIDDEN source below. Both dispatches also get
-> KB/codebase read access (`.aid/knowledge/`, `INDEX.md`, the repo) --
-> never the ambient session transcript, never anything discussed earlier
-> in this conversation that is absent from the instruction/recorded field.
-> The orchestrator MUST NOT enrich either dispatch prompt with anything
-> beyond those. Content that lives only in the ambient conversation and not
-> in the instruction, a recorded Adjustments/Consideration field, or
+> instruction dialogue -- part of THIS run's own instruction+confirmation
+> dialogue. This is **authorized, first-class scoping input**, distinct
+> from the FORBIDDEN source below. Both dispatches also get KB/codebase
+> read access (`.aid/knowledge/`, `INDEX.md`, the repo) -- never the
+> ambient session transcript, never anything from a previous or unrelated
+> conversation or instruction that is absent from the instruction/recorded
+> field. The orchestrator MUST NOT enrich either dispatch prompt with
+> anything beyond those. Content that lives only in a previous or
+> unrelated conversation -- anything outside this run's own dialogue -- and
+> not in the instruction, a recorded Adjustments/Consideration field, or
 > groundable KB/code evidence has no valid `Traces-to` and can never enter
 > the Scope Plan (AC-9). See `state-scope.md § Step 1` / `state-analyze.md
 > § Step 1` for how the recorded field is actually wired into the dispatch
@@ -546,21 +550,28 @@ violates one of these.
   DONE's closure re-check may only edit within Confirmed Scope; out-of-scope
   needs escalate to the user. Enforced by: REVIEW's FIX-loop constraint;
   DONE's closure-shortfall escalation.
-- **HL-8 The instruction is the only scope seed; the conversation is not a
-  source.** Scope and content are grounded solely in the verbatim
-  `/aid-update-kb` instruction, the run-state's recorded gate-time
-  `**Adjustments:**`/`**Consideration:**` field (the user's explicit
-  re-plan guidance given AT CONFIRM/APPROVAL/REVIEW-4(b) -- part of the
-  instruction dialogue, **authorized first-class scoping input, not the
-  forbidden source below**), plus KB/codebase evidence -- never the
-  **ambient session transcript** / prior-work conversation (that, not the
-  gate's own recorded answer, is what this limit forbids). Enforced by:
-  (a) Pre-flight's worktree isolation (the filesystem/branch plane);
-  (b) clean-context dispatch at ANALYZE/SCOPE (the sub-agent receives only
-  the verbatim instruction + the recorded Adjustments/Consideration field,
-  if any + KB/code pointers, never the ambient session transcript -- the
-  orchestrator must not enrich the dispatch with anything beyond those; the
-  conversation plane; see `state-scope.md § Step 1` / `state-analyze.md
-  § Step 1` for the wired channel); (c) every Scope Plan item's `Traces-to`
-  cites the instruction text, a recorded Adjustment/Consideration, or a
-  KB/code location, never "the session" or prior discussion.
+- **HL-8 The instruction plus this run's own confirmation dialogue are the
+  only scope seeds; prior or unrelated conversation is not a source.**
+  Scope and content are grounded solely in: the verbatim `/aid-update-kb`
+  instruction; the user's own gate-time responses recorded within this
+  run's CONFIRM/APPROVAL/REVIEW-4(b) confirmation dialogue (the run-state's
+  `**Adjustments:**`/`**Consideration:**` field -- the skill's OWN
+  instruction+confirmation work-dialogue, **authorized first-class scoping input**,
+  not the forbidden source below); and KB/codebase evidence. Content
+  originating from a previous or unrelated conversation or instruction --
+  anything NOT part of this KB-update's own dialogue -- is never a source
+  of scope or content; that ban is unweakened and exactly as strict as
+  before this carve-out (that, not the gate's own recorded answer, is what
+  this limit forbids). **The clean line:** inside this
+  skill-run's own instruction + confirmation dialogue = in-scope; anything from outside it = banned.
+  Enforced by: (a) Pre-flight's worktree
+  isolation (the filesystem/branch plane); (b) clean-context dispatch at
+  ANALYZE/SCOPE (the sub-agent receives only the verbatim instruction + the
+  recorded Adjustments/Consideration field, if any + KB/code pointers,
+  never the ambient session transcript or any previous/unrelated
+  conversation -- the orchestrator must not enrich the dispatch with
+  anything beyond those; the conversation plane; see `state-scope.md
+  § Step 1` / `state-analyze.md § Step 1` for the wired channel); (c) every
+  Scope Plan item's `Traces-to` cites the instruction text, a recorded
+  Adjustment/Consideration, or a KB/code location, never "the session" or
+  prior/unrelated discussion.

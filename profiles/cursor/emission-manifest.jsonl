@@ -335,7 +335,7 @@
 {"dst": ".cursor/skills/aid-update-infra/SKILL.md", "profile": "cursor", "sha256": "26fb99b25daf6021f395f5b25d2326bc72bdc9220b231aa78a0e6bfc702c8a1a", "src": "canonical/skills/aid-update-infra/SKILL.md"}
 {"dst": ".cursor/skills/aid-update-integration/SKILL.md", "profile": "cursor", "sha256": "a6e1c059a10f8e7502c0ba56de0093f973ab530f6a836d77c69ff399978c9b91", "src": "canonical/skills/aid-update-integration/SKILL.md"}
 {"dst": ".cursor/skills/aid-update-job/SKILL.md", "profile": "cursor", "sha256": "6cacf68538c200143ef390b1ce8fb5f31a44b4ecc97e88c269f92d1a543843d5", "src": "canonical/skills/aid-update-job/SKILL.md"}
-{"dst": ".cursor/skills/aid-update-kb/SKILL.md", "profile": "cursor", "sha256": "67d5494248ed3e70949944dad66eaa98fca57d76f6d404ade25ae435d6feba9c", "src": "canonical/skills/aid-update-kb/SKILL.md"}
+{"dst": ".cursor/skills/aid-update-kb/SKILL.md", "profile": "cursor", "sha256": "c6e389ecfeffcb4f2e65ca4eac9eebaacf5ac8d36204a8bd4f5785538984a259", "src": "canonical/skills/aid-update-kb/SKILL.md"}
 {"dst": ".cursor/skills/aid-update-kb/references/state-analyze.md", "profile": "cursor", "sha256": "fd1d6e30b00b6013233bc8bcf95feb79643f859b0a213fdf95949ccc4a2f55e6", "src": "canonical/skills/aid-update-kb/references/state-analyze.md"}
 {"dst": ".cursor/skills/aid-update-kb/references/state-apply.md", "profile": "cursor", "sha256": "cc17d52f48c06a0c556f98d89ede23ae4df9ac9f07b28fc3fdb1e195b63d5cf0", "src": "canonical/skills/aid-update-kb/references/state-apply.md"}
 {"dst": ".cursor/skills/aid-update-kb/references/state-approval.md", "profile": "cursor", "sha256": "4a3653822cc34aca550e5709b05cda05c411281034d4aeefa282f2837135d3af", "src": "canonical/skills/aid-update-kb/references/state-approval.md"}

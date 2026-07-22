@@ -335,7 +335,7 @@
 {"dst": ".github/skills/aid-update-infra/SKILL.md", "profile": "copilot-cli", "sha256": "90670d006d7df6dcccbe5a41023354972d82855b3f0e0ff480c5851e0485d146", "src": "canonical/skills/aid-update-infra/SKILL.md"}
 {"dst": ".github/skills/aid-update-integration/SKILL.md", "profile": "copilot-cli", "sha256": "c395836e00baa0c0ef9c43b2c1948ca2d48ce383b3f81a5f2a79a931c9d1795b", "src": "canonical/skills/aid-update-integration/SKILL.md"}
 {"dst": ".github/skills/aid-update-job/SKILL.md", "profile": "copilot-cli", "sha256": "ed5f7ee441ebf10763c9f0917fefffacd0623c720e304d4f04dacfb56168e22f", "src": "canonical/skills/aid-update-job/SKILL.md"}
-{"dst": ".github/skills/aid-update-kb/SKILL.md", "profile": "copilot-cli", "sha256": "414cef8338f017404b9c9f43896aa83164e27e6e575f1c871c0f22e52e74f937", "src": "canonical/skills/aid-update-kb/SKILL.md"}
+{"dst": ".github/skills/aid-update-kb/SKILL.md", "profile": "copilot-cli", "sha256": "e6859540e81a63385d9220e83f76f5ecc08302ccb544490fb65fb2954bf82bde", "src": "canonical/skills/aid-update-kb/SKILL.md"}
 {"dst": ".github/skills/aid-update-kb/references/state-analyze.md", "profile": "copilot-cli", "sha256": "f8325d971fd4c21b215d6bbf2306e457656c8b6e7cece57bff183d420d104b87", "src": "canonical/skills/aid-update-kb/references/state-analyze.md"}
 {"dst": ".github/skills/aid-update-kb/references/state-apply.md", "profile": "copilot-cli", "sha256": "0c4fb80aeac185d13721d7db812a95f16b5545f1efd55fb5d393dd3c0f386a15", "src": "canonical/skills/aid-update-kb/references/state-apply.md"}
 {"dst": ".github/skills/aid-update-kb/references/state-approval.md", "profile": "copilot-cli", "sha256": "eef510664ae2973f446b4b6b80270308a88249d173d0a021240dd4819257d449", "src": "canonical/skills/aid-update-kb/references/state-approval.md"}
