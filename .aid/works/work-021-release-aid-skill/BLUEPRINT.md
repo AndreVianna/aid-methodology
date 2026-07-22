@@ -63,7 +63,9 @@ against the AC, plus the task-002 dry-run exercising the mechanical steps.
   before stamping — verified by reading Step 3.1.
 - [ ] **GC-6 (AC-6 / FR-6, NFR-4)** — Step 3.2 audits + updates README, the affected KB
   docs (`capability-inventory`, `module-map`, `infrastructure`, `technology-stack`, …),
-  `docs/`, and `site/src/content/docs/` (excluding the auto-sourced changelog page), routes
+  `docs/`, and `site/src/content/docs/` (leaving the release changelog page — a sibling tree
+  at `site/src/pages/releases/changelog.astro`, not under `content/docs/` — which is
+  auto-sourced from GitHub Releases), routes
   methodology changes through `canonical/` + `generate-profile` (never `profiles/`), and
   carries the truthfulness guard — verified by reading Step 3.2 and confirming every listed
   surface + the guard is present.

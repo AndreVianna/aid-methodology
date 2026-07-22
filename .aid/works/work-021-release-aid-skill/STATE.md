@@ -8,15 +8,15 @@ user_approved: no
 lifecycle: Running
 phase: Plan
 active_skill: none
-updated: '2026-07-22T04:39:00Z'
+updated: '2026-07-22T05:11:26Z'
 pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: --
 delivery_state: Pending-Spec
-gate_tier: Pending
-gate_grade: Pending
-gate_timestamp: --
+gate_tier: Standard
+gate_grade: "A+"
+gate_timestamp: '2026-07-22T05:11:26Z'
 ---
 
 # Work State -- work-021-release-aid-skill
@@ -142,7 +142,10 @@ different places.
 
 | Date | Phase Transition / Gate | Grade | Notes |
 |------|------------------------|-------|-------|
-| {YYYY-MM-DD} | Work created | -- | Initial scaffold by aid-config |
+| 2026-07-22 | Work created (scaffold) | -- | Direct-authored flattened Lite work (initiator: direct) |
+| 2026-07-22 | Describe -> Plan (docs authored) | -- | REQUIREMENTS/SPEC/PLAN/BLUEPRINT + SKILL.md authored & committed (2d220b8e) |
+| 2026-07-22 | Plan gate -- review dispatched | Pending | aid-reviewer (clean context) over the 4 Lite docs + SKILL.md against the A+ floor |
+| 2026-07-22 | Plan gate -- PASSED | A+ | 5 findings (1 HIGH / 2 MEDIUM / 1 LOW + 1 fix-induced MEDIUM) all Fixed across 2 review cycles; grade.sh = A+ over the ledger (0 open) |
 
 ---
 
@@ -178,9 +181,9 @@ different places.
      Updated/Block Reason/Block Artifact stay here as markdown body (not relocated by
      work-003-state-schema task-001; see the task's schema note). -->
 
-- **Updated:** {YYYY-MM-DDTHH:MM:SSZ}
-- **Block Reason:** {short text} | --     (present only when State = Blocked)
-- **Block Artifact:** {relative path} | --
+- **Updated:** 2026-07-22T04:47:09Z
+- **Block Reason:** --
+- **Block Artifact:** --
 
 ### Tasks lifecycle
 
@@ -211,7 +214,9 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| _none yet_ | | | | | |
+| task-001 | Pending | -- | -- | IMPLEMENT — skill artifact already authored/settled; this task formalizes it | Author the release-aid skill |
+| task-002 | Pending | -- | -- | TEST — validate via a real release.yml dry-run (no publish) | Dry-run validation |
+| task-003 | Pending | -- | -- | DOCUMENT — one-time reconciliation of the pre-existing ledger/README/infrastructure backlog (disposition = OD-1) | Backlog reconciliation |
 
 ---
 
@@ -234,7 +239,10 @@ different places.
      single-delivery works only" group. Issue List stays here as markdown body (a
      variable-length inline list doesn't fit a flat frontmatter scalar). -->
 
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
+- **Issue List:** none open — the Plan gate passed at **A+**. Review ledger
+  `.aid/.temp/review-pending/work-021-release-aid.md` carried 5 findings across 2 cycles
+  (1 [HIGH], 2 [MEDIUM], 1 [LOW] in cycle 1; +1 [MEDIUM] fix-induced, caught in cycle 2),
+  all now Status=Fixed; `grade.sh` over the ledger returns A+ (0 Pending/Recurred).
 
 ---
 

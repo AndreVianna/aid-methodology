@@ -8,7 +8,7 @@
 ## Deliverables
 
 - **Delivery:** delivery-001 -- release-aid Maintainer Release Skill
-- **What it delivers:** A repo-local, maintainer-only `/release-aid <level>` skill that executes the AID repo's own release end-to-end (RESOLVE → PRECHECK → BUMP → DOCS+NOTES → PR → DRY-RUN → TAG → VERIFY → CONFIRM), pausing only at the three irreversible human-gated points, and making the release-notes + documentation sweep a mandatory step of every release.
+- **What it delivers:** A repo-local, maintainer-only `/release-aid <level>` skill that executes the AID repo's own release end-to-end (RESOLVE → PRECHECK → BUMP → DOCS+NOTES → PR → DRY-RUN → TAG → VERIFY → CONFIRM → close-out), pausing only at the three irreversible human-gated points, and making the release-notes + documentation sweep a mandatory step of every release.
 - **Features:** feature-001-release-aid-skill   (the single feature; no `features/` folder)
 - **Depends on:** -- (none -- single delivery)
 - **Priority:** Must

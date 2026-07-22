@@ -45,12 +45,12 @@ Must.
 - [ ] AC-3 (FR-3, NFR-2) — Any failed precondition (not on `master`, dirty tree beyond `.aid/.aid-manifest.json`, tag collision, red `test.yml`, render drift) STOPs the release; only `.aid/.aid-manifest.json` is auto-cleaned.
 - [ ] AC-4 (FR-4, NFR-5) — Stable sets all three files to `<target>`; beta sets only `VERSION` + `pyproject.toml` (SemVer `X.Y.Z-beta.N`) and leaves `package.json` at the last stable; a PEP-440 `X.Y.ZbN` form is never written.
 - [ ] AC-5 (FR-5) — `## Unreleased` is renamed to `## v<target> - <UTC-date>`, a fresh empty `## Unreleased` opened above, a `## Change Log` row added, and only this-version items appear (reconcile if the ledger is behind).
-- [ ] AC-6 (FR-6, NFR-4) — README, affected `.aid/knowledge/` docs, `docs/`, and `site/src/content/docs/` (minus the auto-sourced changelog page) are audited and updated; methodology changes go through `canonical/` + `generate-profile`, never hand-edited `profiles/`; no backfill into a version-frozen section.
+- [ ] AC-6 (FR-6, NFR-4) — README, affected `.aid/knowledge/` docs, `docs/`, and `site/src/content/docs/` are audited and updated (the release changelog page — a sibling tree at `site/src/pages/releases/changelog.astro`, not under `content/docs/` — is auto-sourced from GitHub Releases and left alone); methodology changes go through `canonical/` + `generate-profile`, never hand-edited `profiles/`; no backfill into a version-frozen section.
 - [ ] AC-7 (FR-7, NFR-3) — Steps 2–3 are committed on a `release-<target>` branch (never `.aid/.aid-manifest.json`); each PR check is verified individually; the skill PAUSEs and hands `gh pr merge` to the human; `AndreVianna-Ross` is restored after.
 - [ ] AC-8 (FR-8) — DRY-RUN dispatches `release.yml` with `-f ref=master -f dry_run=true` (no publish) and each job is verified green before tagging.
 - [ ] AC-9 (FR-9) — TAG PAUSEs for explicit human confirmation before pushing the irreversible `v<target>` tag.
 - [ ] AC-10 (FR-10) — Each release-workflow job is inspected individually; stable = gate/github-release(latest)/pypi/npm all pass; beta = gate/github-release(prerelease + tarballs)/pypi pass, npm-publish **skipped**.
-- [ ] AC-11 (FR-11, NFR-3) — PyPI checked via `/simple/` (beta→`bN`); GitHub Release verified (beta prerelease + not latest; stable latest; 5 tarballs + aid-cli + 2 libs + SHA256SUMS); npm for stable only; report names version/channels/URL + notes-and-README update; `gh` restored to `AndreVianna-Ross`.
+- [ ] AC-11 (FR-11, NFR-3) — PyPI checked via `/simple/` (beta→`bN`); GitHub Release verified (beta prerelease + not latest; stable latest; 5 tarballs + aid-cli + 2 libs + SHA256SUMS); npm for stable only; the skill then PAUSEs to present the confirmed-publish report and awaits human acknowledgment before close-out (third human-gated point); at close-out the report names version/channels/URL + notes-and-README update and `gh` is restored to `AndreVianna-Ross`.
 - [ ] AC-12 (FR-12) — Steps 0–9 run autonomously with exactly three human-gated pauses (PR merge, tag push, publish confirmation).
 - [ ] AC-13 (NFR-1) — The skill lives only at `.claude/skills/release-aid/`, has no `aid-` prefix, is absent from `canonical/skills/` and every `profiles/*/`, and is never in a release tarball.
 
@@ -148,7 +148,7 @@ tarballs + `aid-cli-v<target>.tar.gz` + `aid-install-core.sh` + `AidInstallCore.
 | README | `README.md` | Version/highlights + any command/feature enumeration. Prefer a short "recent releases → changelog / Releases" pointer over a per-version "What's New in vX" block (OD-2). |
 | Knowledge Base | `.aid/knowledge/` | `capability-inventory.md` + `module-map.md` (new/changed command or module), `infrastructure.md` (release/channel/version facts — e.g. which channels are enabled), `technology-stack.md`, and any other affected doc. |
 | Repo docs | `docs/` | `install.md` (command surface), `release.md`, any versioned reference. |
-| Docs site | `site/src/content/docs/` | `reference/cli.mdx`, guides, reference pages. **Leave the changelog page** — it is auto-sourced from GitHub Releases. |
+| Docs site | `site/src/content/docs/` (+ `site/src/pages/releases/`) | `reference/cli.mdx`, guides, reference pages. **Leave the release changelog page** (`site/src/pages/releases/changelog.astro`, a sibling tree — not under `content/docs/`) — it is auto-sourced from GitHub Releases. |
 | Methodology content | `canonical/` → `profiles/` | Edit the SOURCE in `canonical/` and re-render via the `generate-profile` skill; **never hand-edit `profiles/`**. The render-drift gate (Step 1 + the release gate) catches a missed re-render. |
 
 **Truthfulness guard (NFR-4):** never add an unreleased/newer feature to a historical,

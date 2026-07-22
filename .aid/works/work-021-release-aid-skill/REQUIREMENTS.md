@@ -121,8 +121,9 @@ docs. A static spec and a partial runbook cannot enforce "update the notes every
   changelog / Releases" pointer over a per-version block that re-freezes); the KB under
   `.aid/knowledge/` (`capability-inventory.md`, `module-map.md`, `infrastructure.md`,
   `technology-stack.md`, and any other affected doc); `docs/`; the docs site under
-  `site/src/content/docs/` (leave the changelog page — it is auto-sourced from GitHub
-  Releases); and methodology content (edit `canonical/` and re-render via
+  `site/src/content/docs/` (leave the release changelog page — a sibling tree at
+  `site/src/pages/releases/changelog.astro`, not under `content/docs/` — auto-sourced
+  from GitHub Releases); and methodology content (edit `canonical/` and re-render via
   `generate-profile` — never hand-edit `profiles/`). Every edit stays truthful: never
   backfill a newer feature into a historical, version-frozen section.
 - **FR-7 — PR the bump + notes (Step 4, human-gated merge).** Branch off `master`,
@@ -145,14 +146,16 @@ docs. A static spec and a partial runbook cannot enforce "update the notes every
   pass (release marked **prerelease**, carries skill tarballs), `pypi-publish` pass,
   `npm-publish` **skipped**. A failing `NM08` npm-pack on a stable is a known flake —
   `gh run rerun --failed`.
-- **FR-11 — Confirm artifacts + close out (Steps 8–9, human-gated publish).** Confirm
-  the artifacts landed — PyPI via `/simple/` (beta normalizes `-beta.N`→`bN`); the
-  GitHub Release (beta = `Pre-release: true` and NOT `/releases/latest`; stable =
-  latest; assets = 5 profile tarballs + `aid-cli-v<target>.tar.gz` + the 2 install-core
-  libs + `SHA256SUMS`); npm for stable only. Restore the `gh` account to
-  `AndreVianna-Ross`. Report the version, the channels, the release URL, and that
-  `release-tracking.md` + README were updated (so the next run starts from a clean
-  Unreleased).
+- **FR-11 — Confirm artifacts + close out (Steps 8–9, human-gated publish confirmation).**
+  (Step 8) Confirm the artifacts landed — PyPI via `/simple/` (beta normalizes
+  `-beta.N`→`bN`); the GitHub Release (beta = `Pre-release: true` and NOT
+  `/releases/latest`; stable = latest; assets = 5 profile tarballs +
+  `aid-cli-v<target>.tar.gz` + the 2 install-core libs + `SHA256SUMS`); npm for stable
+  only — then PAUSE and present the confirmed-publish report to the human, awaiting
+  acknowledgment before close-out (the third human-gated point; the version is now live
+  and can never be reused). (Step 9) Restore the `gh` account to `AndreVianna-Ross` and
+  report the version, the channels, the release URL, and that `release-tracking.md` +
+  README were updated (so the next run starts from a clean Unreleased).
 - **FR-12 — Autonomy + pause contract.** Run Steps 0–9 straight through without
   per-step check-ins EXCEPT the three ⏸ human-gated points: the PR merge (Step 4), the
   tag push (Step 6), and confirming the publish (Step 8). Surface any precondition
@@ -243,8 +246,10 @@ docs. A static spec and a partial runbook cannot enforce "update the notes every
 - **AC-6 (FR-6, NFR-4)** — Given the release, when the 3.2 sweep runs, then `README.md`,
   every affected `.aid/knowledge/` doc (`capability-inventory`, `module-map`,
   `infrastructure`, `technology-stack`, …), `docs/`, and the docs site under
-  `site/src/content/docs/` (excluding the auto-sourced changelog page) are audited and
-  updated for every changed command/behavior/version; methodology-surface changes are
+  `site/src/content/docs/` are audited and updated for every changed
+  command/behavior/version (the release changelog page — a sibling tree at
+  `site/src/pages/releases/changelog.astro`, not under `content/docs/` — is auto-sourced
+  from GitHub Releases and left alone); methodology-surface changes are
   made in `canonical/` and re-rendered via `generate-profile` (never hand-edited in
   `profiles/`); and no newer feature is backfilled into a version-frozen section.
 - **AC-7 (FR-7, NFR-3)** — Given Steps 2–3 are committed on a `release-<target>` branch
@@ -266,9 +271,11 @@ docs. A static spec and a partial runbook cannot enforce "update the notes every
   is checked via `/simple/` (beta normalized to `bN`); the GitHub Release is verified
   (beta = `Pre-release: true` and not latest; stable = latest; assets = 5 profile
   tarballs + `aid-cli-v<target>.tar.gz` + the 2 install-core libs + `SHA256SUMS`); npm
-  is checked for stable only; the report names the version, channels, and release URL
-  and notes that `release-tracking.md` + README were updated; and the `gh` account is
-  restored to `AndreVianna-Ross`.
+  is checked for stable only; the skill then PAUSEs to present the confirmed-publish
+  report and awaits human acknowledgment before close-out (the third human-gated point);
+  and at close-out the report names the version, channels, and release URL, notes that
+  `release-tracking.md` + README were updated, and the `gh` account is restored to
+  `AndreVianna-Ross`.
 - **AC-12 (FR-12)** — Given a valid level and passing preconditions, when the skill
   runs, then Steps 0–9 proceed autonomously with exactly three human-gated pauses (PR
   merge, tag push, publish confirmation) and no other per-step check-ins.

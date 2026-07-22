@@ -5,7 +5,7 @@ description: >
   the release notes, gate, tag, publish to every channel, and verify all checks green. One
   level argument decides the bump: major | minor | patch | beta. Maintainer-only ops tooling —
   NOT an AID methodology skill, never rendered to profiles/, never shipped to adopters.
-  Sequence: RESOLVE -> PRECHECK -> BUMP -> DOCS+NOTES -> PR(merge=human) -> DRY-RUN -> TAG -> VERIFY.
+  Sequence: RESOLVE -> PRECHECK -> BUMP -> DOCS+NOTES -> PR(merge=human) -> DRY-RUN -> TAG -> VERIFY -> CONFIRM -> close-out.
 allowed-tools: Read, Glob, Grep, Bash, Write, Edit
 argument-hint: "<level>  REQUIRED: major | minor | patch | beta  (bump that level, zero the levels below)"
 ---
@@ -125,7 +125,8 @@ capabilities, and the version bump itself), then audit and update each surface i
   enabled), `technology-stack.md`, and any other affected doc.
 - **`docs/`** — `install.md` (command surface), `release.md`, and any versioned reference.
 - **Docs site — `site/src/content/docs/`** — `reference/cli.mdx` (command reference), guides,
-  reference pages. (The site's *changelog* page is auto-sourced from GitHub Releases — leave it.)
+  reference pages. (The site's release *changelog* page lives separately at
+  `site/src/pages/releases/changelog.astro` — it is auto-sourced from GitHub Releases, so leave it.)
 - **Methodology content** — if the release changes a methodology skill/template/agent surface, the
   SOURCE is `canonical/` (rendered to `profiles/`); edit `canonical/` and re-render via the
   `generate-profile` skill — never hand-edit `profiles/`. The render-drift gate (Step 1 + the
@@ -219,7 +220,9 @@ it is a known flake — `gh run rerun --failed` (a version-only bump cannot drop
 
 ---
 
-## Step 8 — Confirm the artifacts landed
+## Step 8 — Confirm the artifacts landed  ⏸ (publish confirmation — third human-gated point)
+
+Confirm every channel published what it should:
 
 - **PyPI:** `curl -s https://pypi.org/simple/aid-installer/ | grep <target-normalized>` — use
   `/simple/` (the `/pypi/<pkg>/json` `info.version` lags a minute+ after upload). Beta normalizes
@@ -228,6 +231,12 @@ it is a known flake — `gh run rerun --failed` (a version-only bump cannot drop
   `/releases/latest`; stable must be latest. Assets = 5 profile tarballs + `aid-cli-v<target>.tar.gz`
   + the 2 install-core libs + `SHA256SUMS`.
 - **npm (stable only):** `npm view aid-installer@<target> version`.
+
+**⏸ PAUSE — present the confirmed-publish report to the user and await acknowledgment** before
+close-out. This is the third and final human-gated point: the version is now live and can never be
+reused, so the skill STOPs here with the per-channel confirmation (version shipped, channels, release
+URL) instead of silently finishing. Proceed to Step 9 only after the human acknowledges — and if any
+channel failed to publish, surface it here rather than closing out.
 
 ---
 
@@ -246,8 +255,9 @@ Report: the version shipped, the channels it went to, the release URL, and a one
 
 Run Steps 0-9 straight through **without** per-step check-ins, EXCEPT the three ⏸ points:
 (1) the PR merge — hand the `gh pr merge` to the human; (2) the tag push (Step 6) — confirm before
-the irreversible publish; (3) reporting the confirmed publish (Step 8). Everything else (version
-math, carrier bumps, notes rewrite, branch/PR, dry-run, verification) proceeds autonomously. Stop
+the irreversible publish; (3) the publish confirmation (Step 8) — present the confirmed-publish
+report and await the human's acknowledgment before close-out. Everything else (version math,
+carrier bumps, notes rewrite, branch/PR, dry-run, verification) proceeds autonomously. Stop
 and surface any precondition failure, red check, or version-math ambiguity rather than working
 around it.
 
