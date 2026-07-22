@@ -23,6 +23,12 @@ audience: [developer, devops, product]
 
 ## Unreleased
 
+## v2.2.3-beta.3 - 2026-07-22
+
+> **Third beta (pre-release) of the `2.2.3` line.** Rebuilds the on-demand `/aid-update-kb` skill for scope fidelity. Published to PyPI (normalized to `2.2.3b3`) and as a GitHub **pre-release** carrying the per-profile skill tarballs; npm is skipped for betas.
+
+- [CHANGE] **`/aid-update-kb` scope-fidelity redesign** — the on-demand targeted KB-update skill is rebuilt around a 7-state machine (ANALYZE -> SCOPE -> CONFIRM -> APPLY -> REVIEW -> APPROVAL -> DONE) so a described KB edit stays bounded to the instruction and never lifts extra content from the surrounding session conversation. It isolates itself in its own git worktree (Pre-flight), produces an aid-researcher Impact Map plus a minimal aid-architect Scope Plan traced to the instruction (with an explicit Not-Changing list), and pauses for an explicit human CONFIRM before any edit; it applies only the confirmed scope, reviews the changed docs through the scoped four-mandate review panel, and commits only after a second explicit human approval. Adds the `test-update-kb-scope-fidelity.sh` canonical suite. (work-020, PR #164)
+
 ## v2.2.3-beta.2 - 2026-07-22
 
 > **Second beta (pre-release) of the `2.2.3` line.** Ships `aid projects scan` (machine-wide project discovery) plus the `aid update all` / `aid projects list` fixes. Published to PyPI (normalized to `2.2.3b2`) and as a GitHub **pre-release** carrying the per-profile skill tarballs; npm is skipped for betas.
@@ -192,3 +198,4 @@ audience: [developer, devops, product]
 | 1.3 | 2026-07-09 | Added two Unreleased entries (post-v2.0.6, merged to master): the work-002 connectors subsystem / connector catalog (PR #133) and the delivery-folder layout relocation (PR #132). Recorded by /aid-housekeep KB-DELTA. |
 | 1.4 | 2026-07-22 | One-time backlog reconciliation (work-021 task-003): backfilled the v2.1.0-v2.2.3-beta.1 sections (the ledger had stalled at v2.0.6) and drained the stale `## Unreleased` items into their shipped versions (connectors #133 + delivery-folder #132 -> v2.1.0; `aid projects` numbering #147 -> v2.2.0), leaving only genuinely-unreleased master items (`aid projects scan` #160; the `aid update all` / `projects list` fix #159). The release-aid skill's Step 3 prevents this drift going forward. |
 | 1.5 | 2026-07-22 | Renamed `## Unreleased` -> `## v2.2.3-beta.2` (drained `aid projects scan` #160 + the `aid update all` / `projects list` fix #159 into the shipped beta.2) and opened a fresh empty Unreleased. First release cut by the `/release-aid` skill. |
+| 1.6 | 2026-07-22 | Authored + renamed `## v2.2.3-beta.3` for the `/aid-update-kb` scope-fidelity redesign (work-020, PR #164) — Unreleased was empty (work-020 merged without a ledger entry), so reconciled from `git log v2.2.3-beta.2..HEAD`. Opened a fresh empty Unreleased. |

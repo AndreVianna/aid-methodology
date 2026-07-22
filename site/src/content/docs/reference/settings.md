@@ -10,24 +10,14 @@ generatedFrom: '.aid/settings.yml'
 
 | Key Path | Value | Description |
 |----------|-------|-------------|
-| `format_version` | `1` |  |
-| `project.name` | `AID` | set during /aid-config INIT |
-| `project.description` | `AI Integrated Development` |  |
-| `project.type` | `brownfield` | brownfield | greenfield |
-| `tools.installed` | `claude-code` | Installed AI host tools |
-| `review.minimum_grade` | `A+` | owner directive 2026-06-27: always use an A+ gate across all phases |
-| `summary.minimum_grade` | `A+` |  |
-| `execution.max_parallel_tasks` | `5` | parallel pool dispatch capacity (work-001 feature-009) |
-| `traceability.heartbeat_interval` | `1` | minutes — interval at which long-running sub-agents update their heartbeat file |
-| `discovery.closure.max_clean_passes` | `2` | CLOSED after this many consecutive zero-ungrounded DETECT passes (default 2) |
-| `discovery.closure.max_rounds` | `4` | hard ceiling on EXPLAIN->DETECT->INVESTIGATE rounds (wall-clock guard) |
-| `discovery.closure.token_budget` | `0` | optional alternative cap: 0 = use pass/round caps; >0 = stop when cumulative loop tokens exceed budget |
-| `discovery.doc_set` | `project-structure.md|aid-researcher-scout|required, external-sources.md|aid-researcher-scout|required, architecture.md|aid-researcher-architecture|required, technology-stack.md|aid-researcher-architecture|required, module-map.md|aid-researcher-analyst|required, coding-standards.md|aid-researcher-analyst|required, authoring-conventions.md|aid-researcher-analyst|required, artifact-schemas.md|aid-researcher-analyst|required, pipeline-contracts.md|aid-researcher-integrator|required, integration-map.md|aid-researcher-integrator|required, domain-glossary.md|aid-researcher-integrator|required, test-landscape.md|aid-researcher-quality|required, quality-gates.md|aid-researcher-quality|required, tech-debt.md|aid-researcher-quality|required, infrastructure.md|aid-researcher-quality|required, release-tracking.md|skill-self|required, capability-inventory.md|skill-self|required, decisions.md|aid-researcher-architecture|required, README.md|skill-self|required` | Installed AI host tools |
-| `discovery.term_exclusions` | `In Progress, User Approved, aid-execute, aid-specify, AndreVianna, GitHub, codex, TypeScript, RepoModel, Repo Info, WorkById, Work By Id, TargetDirectory, NoPath, No Profile, AidStatusBody, AidVersion, AidSupportedFormat, Aid Update Self If Stale, CardGrid, Card Grid, LifecycleBadge, Lifecycle Badge, VersionBadge, PipelineDiagram, RuleEntry, ExtrasConfig, Window Style, IsWindows, ProgramData, Script Analyzer, Claude Opus, File Not Found Error, task_id, work_id, PaymentEngine, PaymentHandler, Settlement Batch, ReconciliationCycle, FluxMatrix, SpineAnchor, SingleSource, Crunch Factor, State Detection, Single Source, File Hash, File System, echo, exit, grep, line, must, same, split, strip, none, home, docs, project, branch, target, title, summary, works, knowledge, node_modules, sha256, dry-run, a-z0-9, Change Log, Term, Term Name, Unique Term, Power Shell, Windows Power, Java Script, Program Data, File Sync, Hub Release, Hub Releases` | Installed AI host tools |
-| `triage.greenfield_max_source_files` | `5` | RM1 <= this AND RM2 <= loc => greenfield (little/no source) |
-| `triage.greenfield_max_source_loc` | `500` | RM2 ceiling for greenfield |
-| `triage.large_min_source_loc` | `20000` | RM2 >= this => brownfield-large (size) |
-| `triage.large_min_dirs` | `25` | RM3 >= this => brownfield-large (breadth / fan-out) |
-| `triage.large_min_concepts` | `40` | RM4 >= this => brownfield-large (concept density) |
-| `kb_baseline.branch` | `master` |  |
-| `kb_baseline.tip_date` | `2026-07-09T00:44:01-04:00` |  |
+| `format_version` | `3` |  |
+| `name` | `AID` |  |
+| `description` | `AI Integrated Development` |  |
+| `type` | `brownfield` |  |
+| `source_control` | `git` |  |
+| `minimum_grade` | `A+` |  |
+| `heartbeat_interval` | `1` |  |
+| `knowledge.source` | `master` |  |
+| `knowledge.last_update` | `2026-07-09T00:44:01-04:00` |  |
+| `knowledge.doc_set` | `project-structure.md|aid-researcher-scout|required, external-sources.md|aid-researcher-scout|required, architecture.md|aid-researcher-architecture|required, technology-stack.md|aid-researcher-architecture|required, module-map.md|aid-researcher-analyst|required, coding-standards.md|aid-researcher-analyst|required, authoring-conventions.md|aid-researcher-analyst|required, artifact-schemas.md|aid-researcher-analyst|required, pipeline-contracts.md|aid-researcher-integrator|required, integration-map.md|aid-researcher-integrator|required, domain-glossary.md|aid-researcher-integrator|required, test-landscape.md|aid-researcher-quality|required, quality-gates.md|aid-researcher-quality|required, tech-debt.md|aid-researcher-quality|required, infrastructure.md|aid-researcher-quality|required, release-tracking.md|skill-self|required, capability-inventory.md|skill-self|required, decisions.md|aid-researcher-architecture|required, README.md|skill-self|required` | Installed AI host tools |
+| `knowledge.term_exclusions` | `In Progress, User Approved, aid-execute, aid-specify, AndreVianna, GitHub, codex, TypeScript, RepoModel, Repo Info, WorkById, Work By Id, TargetDirectory, NoPath, No Profile, AidStatusBody, AidVersion, AidSupportedFormat, Aid Update Self If Stale, CardGrid, Card Grid, LifecycleBadge, Lifecycle Badge, VersionBadge, PipelineDiagram, RuleEntry, ExtrasConfig, Window Style, IsWindows, ProgramData, Script Analyzer, Claude Opus, File Not Found Error, task_id, work_id, PaymentEngine, PaymentHandler, Settlement Batch, ReconciliationCycle, FluxMatrix, SpineAnchor, SingleSource, Crunch Factor, State Detection, Single Source, File Hash, File System, echo, exit, grep, line, must, same, split, strip, none, home, docs, project, branch, target, title, summary, works, knowledge, node_modules, sha256, dry-run, a-z0-9, Change Log, Term, Term Name, Unique Term, Power Shell, Windows Power, Java Script, Program Data, File Sync, Hub Release, Hub Releases` | Installed AI host tools |
