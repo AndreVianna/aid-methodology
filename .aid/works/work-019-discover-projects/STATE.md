@@ -4,18 +4,18 @@ pipeline:
   initiator: aid-update-cli
 started: "2026-07-21"
 minimum_grade: "A+"
-user_approved: no
-lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: aid-update-cli
-updated: '2026-07-21T22:19:41Z'
-pause_reason: 'GATE cleared (revised plan A+); awaiting user approval before /aid-execute'
+user_approved: yes
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-07-21T22:38:18Z'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ticket_ref: --
 # --- Flattened single-delivery works only (see `## Delivery Lifecycle` below);
 #     omit these 4 keys entirely for full multi-delivery works. ---
-delivery_state: Specified
+delivery_state: Executing
 gate_tier: Pending
 gate_grade: Pending
 gate_timestamp: --
@@ -225,8 +225,8 @@ different places.
 
 | Task | State | Review | Elapsed | Notes | Name |
 |------|-------|--------|---------|-------|------|
-| task-001 | Pending | -- | -- | -- | Implement the scan subcommand in the Bash twin (bin/aid) |
-| task-002 | Pending | -- | -- | -- | Mirror the scan subcommand in the PowerShell twin (bin/aid.ps1) |
+| task-001 | Done | -- | -- | bash scan impl; 5 review findings fixed (perf 40s->3s, state-home prune, verbose, -h, local) | Implement the scan subcommand in the Bash twin (bin/aid) |
+| task-002 | Done | -- | -- | pwsh mirror; parse+ps51+ASCII clean, 41-assertion smoke pass, prune/system/maxdepth byte-identical to bash | Mirror the scan subcommand in the PowerShell twin (bin/aid.ps1) |
 | task-003 | Pending | -- | -- | -- | Parity + guardrail coverage in test-aid-cli-parity.sh |
 | task-004 | Pending | -- | -- | -- | Help text, user docs, and release-tracking entry |
 
