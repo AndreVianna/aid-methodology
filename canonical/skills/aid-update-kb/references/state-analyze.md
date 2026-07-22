@@ -51,6 +51,23 @@ returning from the ungroundable-concept PAUSE in Step 4 below), do NOT
 re-initialize; keep the existing `**Prompt:**`/`**Started:**`/`**Branch:**`
 values and proceed.
 
+**Belt-and-suspenders guard (HIGH finding follow-up).** Before proceeding on
+a resumed run, verify the existing `**Prompt:**` matches the current
+invocation's instruction (same trimmed/whitespace-normalized exact-match
+rule as Pre-flight's Rung B). This should be unreachable once Pre-flight
+only ever resumes a prompt-matched worktree -- but if it is ever reached, do
+NOT silently proceed on the stale `**Prompt:**`:
+
+```
+[ANALYZE] Resumed run-state Prompt does not match the current invocation's
+instruction -- refusing to silently continue a different request. This
+should be unreachable via Pre-flight ISOLATE; STOP and report to the
+Orchestrator/user.
+```
+
+If they do not match, HALT -- do not proceed to Step 1 with a mismatched
+Prompt.
+
 Print the `[State: ANALYZE]` banner from `SKILL.md § State Detection`.
 
 ---

@@ -112,8 +112,12 @@ case "$CUR_BRANCH" in
     ;;
 esac
 
-# Rung B -- a live update-kb worktree is registered elsewhere (cross-session
-# resume: a NEW chat/terminal, cwd back at the caller's own tree).
+# Rung B -- live update-kb worktree(s) registered elsewhere (cross-session
+# resume: a NEW chat/terminal, cwd back at the caller's own tree). This
+# block only ENUMERATES live candidates -- it never picks one itself. Each
+# `CANDIDATE:` line is a live (non-DONE) aid/update-kb-* worktree; the
+# `**Prompt:**` line beneath it is that run's stored instruction, read
+# verbatim from disk.
 if [ -z "$UPDATEKB_WT" ]; then
   CUR_WT=""
   while IFS= read -r line; do
@@ -122,13 +126,47 @@ if [ -z "$UPDATEKB_WT" ]; then
       "branch refs/heads/aid/update-kb-"*)
         SF=$(ls -1 "$CUR_WT"/.aid/.temp/UPDATEKB_STATE_*.md 2>/dev/null | sort | tail -1)
         if [ -n "$SF" ] && ! grep -q "^\*\*State:\*\* DONE" "$SF" 2>/dev/null; then
-          UPDATEKB_WT="$CUR_WT"
+          echo "CANDIDATE: $CUR_WT"
+          grep -m1 "^\*\*Prompt:\*\*" "$SF" 2>/dev/null
         fi
         ;;
     esac
   done < <(git worktree list --porcelain 2>/dev/null)
 fi
 ```
+
+**Prompt-matched resume (HIGH finding fix -- no silent stale-run hijack).**
+The block above only lists candidates; resuming one is a match decision, not
+a first-match/last-match default. Compare each candidate's stored
+`**Prompt:**` against the current invocation's instruction (exact match;
+trimming leading/trailing whitespace and collapsing internal whitespace runs
+is fine -- this is a text-equality check, never a semantic/fuzzy one):
+
+- **Exactly one candidate matches** -- that run IS this invocation's resume
+  target. Set `UPDATEKB_WT` to that candidate's worktree path.
+- **No candidate matches** (including zero candidates found) -- this is a
+  NEW run for a new instruction. Leave `UPDATEKB_WT` unset and continue to
+  2b (fresh worktree). A live run for a *different* instruction is left
+  completely untouched -- each distinct instruction gets its own isolated
+  run; never repurpose someone else's paused run just because it is the
+  only (or the most recent) one found.
+- **More than one candidate matches the same instruction** (ambiguous --
+  e.g. two duplicate invocations raced) -- do NOT silently pick one (no
+  first-match/last-match default). Print the matching worktree paths and
+  STOP:
+
+  ```
+  [Pre-flight] ISOLATE found more than one live run for this exact
+  instruction -- ambiguous, cannot silently pick one:
+    <matching worktree path 1>
+    <matching worktree path 2> ...
+  Resume one explicitly (cd into its worktree and re-run /aid-update-kb
+  "<same instruction>" from there), or rephrase to a distinct instruction to
+  start a fresh run. STOP.
+  ```
+
+  Do not continue to 2b or 2c until the user responds -- exit without
+  entering the state machine.
 
 If `$UPDATEKB_WT` resolved (either rung), that path IS the worktree to enter
 -- skip 2b and go straight to 2c.

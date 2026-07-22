@@ -16,14 +16,20 @@ Print the `[State: CONFIRM]` banner from `SKILL.md § State Detection`.
 ## Step 1: Present understanding + scope + questions
 
 Read from `<STATE_FILE>`:
+- `**Prompt:**` (ANALYZE Step 0 -- the exact instruction this run is confirming)
 - `**Understanding:**` (ANALYZE)
 - `**Scope Plan:**` and `**Not-Changing:**` (SCOPE)
 - `**Confirm Questions:**` (SCOPE)
 
-Print:
+**Always show the instruction being confirmed, not only its derived
+understanding (HIGH finding fix).** So the user can immediately tell if
+CONFIRM is presenting a stale/different run, print the stored `**Prompt:**`
+verbatim as its own line, before the Understanding:
 
 ```
 [CONFIRM] KB update scope
+
+Instruction: <the **Prompt:** field, verbatim -- the exact request this run is confirming>
 
 Understanding: <the Understanding restatement>
 
