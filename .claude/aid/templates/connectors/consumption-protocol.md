@@ -6,8 +6,10 @@
 > `.aid/connectors/`): reconcile owns the catalog's lifecycle, this protocol owns what a seam does
 > with a catalogued entry once it exists. Every seam listed in "Wired seams" below implements this
 > protocol by a **short, additive pointer** to this file — none of them re-describe the recipe
-> inline, and none of them are restructured to adopt it (existing behavior is preserved; this is
-> new, optional behavior layered on top).
+> inline, and none of them are restructured to adopt it. A wired seam consumes a catalogued
+> connector for **reads only**, delegating the read to `/aid-read-ticket`, and **never** files,
+> comments on, or transitions a ticket — every outward write flows through the dedicated
+> `/aid-create-ticket` / `/aid-update-ticket` skills.
 >
 > **MCP-first, by design (OD-Q1).** Consumption here is scoped to **tool-managed (`connection_type:
 > mcp`) connectors only**. A seam requests the connection from the **host tool's own MCP/plugin** —
@@ -33,7 +35,7 @@ a seam blocks on.
 1. **Scan the catalog.** Read `.aid/connectors/INDEX.md` (the same `@.aid/connectors/INDEX.md`
    context-file pointer every profile's root context file carries). Look for a row whose **Type**
    column is `mcp` and whose purpose matches what the seam needs (e.g. an issue-tracker connector
-   when the seam is reading or filing a ticket; `preset-catalog.md`'s `tags` column — e.g.
+   when the seam is reading a ticket; `preset-catalog.md`'s `tags` column — e.g.
    `issue-tracker` — is the same purpose-matching signal ELICIT already uses).
 2. **Confirm via the descriptor.** Open the matched `.aid/connectors/<stem>.md` and confirm
    `connection_type: mcp`. No match, or a match whose `connection_type` is anything else
@@ -44,10 +46,11 @@ a seam blocks on.
    contract), never a launch/wire command. The agent asks the host tool's own MCP/plugin for the
    named target (e.g. "the Jira MCP") and uses whatever tool surface that connection exposes.
    AID resolves no credential and stores none for this call.
-4. **Act, then stop.** Read or write through the host MCP only for the one operation the seam
-   needs (read a ticket's fields; file a new ticket; post a status/comment). Never persist
-   anything host-MCP-specific back into `.aid/connectors/` — the descriptor and `INDEX.md` are
-   catalog metadata, not a cache of live tool state.
+4. **Read, then stop.** Read through the host MCP only, delegating that read to
+   `/aid-read-ticket` rather than re-implementing a fetch; the seam never files, comments on, or
+   transitions a ticket — every outward write flows through `/aid-create-ticket` /
+   `/aid-update-ticket`. Never persist anything host-MCP-specific back into `.aid/connectors/` —
+   the descriptor and `INDEX.md` are catalog metadata, not a cache of live tool state.
 
 ## Multi-level `ticket_ref` linkage
 
@@ -85,10 +88,10 @@ conventions — these are the same frontmatter blocks that work touches):
 
 ## Nearest-ancestor resolution
 
-A target seam (one that **acts** on a unit, e.g. `aid-execute` acting on a task) resolves the
-**nearest** `ticket_ref` by AID containment (`work ⊃ delivery ⊃ task`, `work ⊃ feature`; a delivery
-groups ≥1 feature). A unit uses its **own** `ticket_ref` when present; otherwise it inherits, per
-unit type:
+Nearest-ancestor resolution is the **inheritance/traceability semantics** of the link — a
+lifecycle unit without its own `ticket_ref` inherits the **nearest** ancestor's effective ref by
+AID containment (`work ⊃ delivery ⊃ task`, `work ⊃ feature`; a delivery groups ≥1 feature). A unit
+uses its **own** `ticket_ref` when present; otherwise it inherits, per unit type:
 
 | Resolving for... | Chain (own → ancestor → ... → work) |
 |---|---|
@@ -127,44 +130,41 @@ identically to before this protocol existed.
 
 | Seam | Role | What it does |
 |---|---|---|
-| `aid-describe` | Ingest | When the interview's originating context names a source ticket (e.g. a Monitor-routed finding, or the human names one), read it via a catalogued issue-tracker MCP connector and record `ticket_ref` at the **work** level it just created. |
-| `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it via a catalogued MCP connector and record `ticket_ref` at the **feature** level (the `SPEC.md` it is authoring). |
+| `aid-describe` | Ingest | When the interview's originating context names a source ticket (e.g. a Monitor-routed finding, or the human names one), read it **via `/aid-read-ticket`** and record `ticket_ref` at the **work** level it just created. |
+| `aid-specify` | Ingest | When specifying a feature whose requirements trace to a source ticket, read it **via `/aid-read-ticket`** and record `ticket_ref` at the **feature** level (the `SPEC.md` it is authoring). |
 | `aid-plan` | Ingest | When a deliverable being written corresponds to (or the user names) an external tracker item, record its `ticket_ref` at the **delivery** level (the `delivery-NNN/STATE.md`, or the work-root `STATE.md` for a flattened work, it is creating). |
 | `aid-fix` (and the shared shortcut engine every other shortcut delegates to) | Ingest | When the description this run captures names, or clearly originates from, a filed ticket, record its `ticket_ref` at the **work** level `INTAKE` just allocated. |
-| `aid-execute` | Target | Resolves the **nearest** `ticket_ref` for the unit it acts on (a task) per the resolution rule above, and **mirrors this task's `STATE.md`/`### Tasks lifecycle` State transitions** (`In Progress` / `In Review` / `Done` / `Failed`) to that ticket via the host MCP, alongside — never instead of — the writeback-state.sh write the State-Write Protocol already mandates. |
-| `aid-query-kb` | Enrich | May consult a catalogued MCP connector to enrich an answer (e.g. pull a ticket's current status/fields into the reply) when the question concerns a linked tracker item; purely additive to its existing KB/codebase/in-flight-work context sources. |
-| `aid-researcher` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, use the host tool's MCP to gather additional evidence for a RESEARCH task or a broad `aid-query-kb` dispatch — the same read-heavy, evidence-cited discipline it already applies to KB/codebase sources. |
-| `aid-developer` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, use the host tool's MCP to pull additional context for an IMPLEMENT/TEST/REFACTOR/CONFIGURE/MIGRATE task (e.g. re-reading the linked ticket's latest description/comments before implementing) — read-only enrichment; never a substitute for the TASK file's own Scope/Acceptance Criteria. |
+| `aid-query-kb` | Enrich | May enrich an answer by reading a linked ticket's status/fields **via `/aid-read-ticket`** when the question concerns a linked tracker item; purely additive to its existing KB/codebase/in-flight-work context sources. |
+| `aid-researcher` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, gather additional evidence for a RESEARCH task or a broad `aid-query-kb` dispatch by reading the linked ticket **via `/aid-read-ticket`** — the same read-heavy, evidence-cited discipline it already applies to KB/codebase sources. |
+| `aid-developer` (agent) | Enrich | May consult `.aid/connectors/INDEX.md` and, for a relevant `mcp` connector, pull additional context for an IMPLEMENT/TEST/REFACTOR/CONFIGURE/MIGRATE task by reading the linked ticket's latest description/comments **via `/aid-read-ticket`** before implementing — read-only enrichment; never a substitute for the TASK file's own Scope/Acceptance Criteria. |
 
-**Ingest vs. target, restated.** An **ingest** seam runs early in the pipeline (Describe/Define/Specify/
+**Ingest vs. enrich, restated.** An **ingest** seam runs early in the pipeline (Describe/Define/Specify/
 Plan/the shortcut engine's INTAKE) and *records* a `ticket_ref` at the level it is creating, sourced
-from a ticket that already exists externally. A **target** seam (`aid-execute`) runs later and
-*resolves + acts on* whatever `ticket_ref` is nearest, mirroring state it is producing back out to
-that ticket. `aid-query-kb`/`aid-researcher`/`aid-developer` are neither — they *enrich* an answer
-or an investigation from a connector's live data without recording or resolving a `ticket_ref`
-themselves.
+from a **user-supplied ref** to a ticket that already exists externally, delegating any read to
+`/aid-read-ticket`. `aid-query-kb`/`aid-researcher`/`aid-developer` *enrich* an answer or an
+investigation from a connector's live data **via `/aid-read-ticket`**, without recording or
+resolving a `ticket_ref` of their own. **No seam performs an outward write** — filing, commenting,
+and status transitions are the dedicated skills' job.
 
-## Worked example (AC9)
+## Worked example (nearest-ancestor resolution)
 
 A task carries no `ticket_ref` of its own, but its owning feature does:
 `ticket_ref: jira:PROJ-45`. A `jira` connector is catalogued with `connection_type: mcp`.
 
-1. `aid-execute` begins the task's `EXECUTE` state and, per the State-Write Protocol, writes
-   `State: In Progress` to the task's `STATE.md` (full path -- this example has a real owning
-   feature, so it is not a flattened Lite work).
-2. Per this protocol's resolution rule: task's own `ticket_ref` is absent → its owning
-   (SPEC-traced) feature has `jira:PROJ-45` → resolution stops there (nearest ancestor found).
-3. The seam recipe runs: scan `INDEX.md` → `jira` row, Type `mcp` → confirm
-   `.aid/connectors/jira.md` carries `connection_type: mcp` → request the Jira connection from the
-   host tool's own MCP.
-4. The host MCP posts the equivalent status update to `PROJ-45` — the same transition
-   (`In Progress`) just written to `STATE.md`, mirrored outward.
-5. The same mirror repeats at `In Review` and at the terminal `Done`/`Failed` write — every
-   State-Write Protocol transition for this task mirrors to `PROJ-45`, because the nearest
-   `ticket_ref` resolves to it at every one of those points (nothing about the task's or its
-   feature's `ticket_ref` changes mid-execution).
+1. Per this protocol's resolution rule: the task's own `ticket_ref` is absent → its owning
+   (SPEC-traced) feature has `jira:PROJ-45` → resolution stops there (nearest ancestor found). By
+   nearest-ancestor, the task's **effective** `ticket_ref` resolves to `jira:PROJ-45` — the
+   traceability link a reader/dashboard shows for the task.
+2. **No automated caller acts on this resolution** — there is no seam that resolves
+   nearest-ancestor and then writes anything outward.
+3. When someone wants that ticket's live fields, they run the **id-based**
+   `/aid-read-ticket jira:PROJ-45` (feature-001's locked grammar `[<connector>:]<ticket-id>` —
+   there is **no** unit-scoped invocation mode), which scans `INDEX.md` → `jira` row, Type `mcp` →
+   confirms `.aid/connectors/jira.md` carries `connection_type: mcp` → requests the Jira
+   connection from the host tool's own MCP → fetches and displays the ticket's fields.
+4. **No outward write occurs** — no status transition and no comment are posted to `PROJ-45`; a
+   change there would be a user-initiated `/aid-update-ticket`.
 
 If the task's feature instead carried no `ticket_ref`, resolution would continue to the task's
-delivery, then to the work; if none of those carried one either, `aid-execute` would skip the
-mirror silently — the State-Write Protocol's own writeback-state.sh call still runs unconditionally
-either way (ticket mirroring is additive, never a precondition for the mandatory local write).
+delivery, then to the work; if none of those carried one either, resolution yields **no effective
+ticket** (terminal case) — there is nothing to read.

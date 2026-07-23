@@ -94,12 +94,12 @@ bash .claude/aid/scripts/execute/writeback-state.sh --pipeline --field Updated -
 ### Step 3b: Connector awareness — record this feature's `ticket_ref` (optional)
 
 If this feature's requirements trace to, or the user names, an already-filed ticket in a
-catalogued issue-tracker connector, read it via that connector per
-`.claude/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`; for
-a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID resolves
-nothing and stores no credential) and record a `**Ticket:** <stem>:<external-id>` line in this
-feature's `SPEC.md` (per `specs/spec-template.md`). Skip silently when no such ticket applies or
-no matching connector is catalogued.
+catalogued issue-tracker connector, fetch it by invoking `/aid-read-ticket
+[<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there (feature-001);
+no direct-fetch recipe is re-implemented here — and record a `**Ticket:** <stem>:<external-id>`
+line in this feature's `SPEC.md` (per `specs/spec-template.md`). Skip silently when no such ticket
+applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
+confirm is added.
 
 ### Step 4: Present and Start
 

@@ -204,12 +204,11 @@ all 5 auth edge cases per SPEC").
 - **→ Specify:** SPEC missing detail for scope → write Q&A to `.aid/works/{work}/STATE.md` `## Cross-phase Q&A`
 - **→ Discovery:** KB gap → write Q&A to `.aid/knowledge/STATE.md` `## Q&A (Pending)`
 
-## Project Management Sync (conditional)
+## Ticket Suggestion (conditional)
 
-If `infrastructure.md § Project Management` defines a tool:
-- When tasks are approved → create Tickets/Work Items in the PM tool
-- Link each ticket to the corresponding Sprint (delivery) and Epic (work)
-
-If no PM tool → skip.
+If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → when tasks are approved,
+print a suggestion: consider filing a ticket per task via `/aid-create-ticket`. Optional,
+user-initiated, never auto-invoked; silent (no output) if no issue-tracker connector is
+catalogued.
 
 **Advance:** **CHAIN** → continue with the parent state's flow.

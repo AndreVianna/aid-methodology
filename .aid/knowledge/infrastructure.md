@@ -27,6 +27,7 @@ contracts:
   - "All four version carriers (VERSION, package.json, pyproject.toml, tag) must agree or the release gate fails"
   - "github-release runs before npm/PyPI so the authoritative artifact channel exists first"
 changelog:
+  - 2026-07-23: work-023 -- Project Management Tooling now documents the connectors + dedicated-skills model (three /aid-*-ticket skills; no automated pipeline ticket writes).
   - 2026-07-16: work-016 .aid/works/ container relocation -- updated the dashboard-reader and project-management-tooling STATE.md paths to `.aid/works/work-NNN-*/`.
   - 2026-06-25: Initial discovery (aid-discover quality deep-dive)
 ---
@@ -240,11 +241,30 @@ The dashboard reader (`dashboard/reader/*.py`) parses `.aid/works/work-NNN/STATE
 
 ## Project Management Tooling
 
-**No external project-management tool** (Jira/Azure Boards/etc.). All work, tasks, and
-deliverables are tracked **in-repo** in `.aid/works/work-NNN-*/STATE.md` files (the tracking spine),
-plus `.aid/knowledge/STATE.md` for cross-phase process state. GitHub Issue templates exist
-(`.github/ISSUE_TEMPLATE/feedback.yml`) for user feedback, and `.github/dependabot.yml` tracks
-dependency updates. CONFIRMED via `.aid/settings.yml` + the `.github/` listing.
+**AID itself uses no external project-management tool** (Jira/Azure Boards/etc.). All work,
+tasks, and deliverables are tracked **in-repo** in `.aid/works/work-NNN-*/STATE.md` files (the
+tracking spine), plus `.aid/knowledge/STATE.md` for cross-phase process state. GitHub Issue
+templates exist (`.github/ISSUE_TEMPLATE/feedback.yml`) for user feedback, and
+`.github/dependabot.yml` tracks dependency updates. CONFIRMED via `.aid/settings.yml` + the
+`.github/` listing.
+
+**How an adopting project that HAS a tracker interacts with it.** When a project integrates an
+issue tracker, that integration is catalogued as a connector in `.aid/connectors/` — an
+`issue-tracker`-tagged descriptor, MCP-first (`connection_type: mcp`: the host tool provides its
+own MCP and AID stores no credential) — see [integration-map.md](integration-map.md)
+`## Connectors` for the catalog model and the two management modes. Outward ticket interaction
+happens **only** through three dedicated, user-invoked skills — `/aid-read-ticket`
+(non-destructive fetch), `/aid-create-ticket` (`--level` / `--parent`; preview + confirm), and
+`/aid-update-ticket` (description / comment / status; preview + confirm) — which resolve the
+connector via the shared connector-resolution ladder and fetch/write through the host tool's own
+MCP. There is **no automated ticket write embedded in any pipeline skill**: the pipeline never
+creates, mirrors, or comments on a tracker item on its own; where a skill mentions a tracker it
+prints an optional, user-initiated suggestion, gated on a catalogued `issue-tracker` connector and
+silent when none exists — so a project with no such connector is unaffected. Internal `ticket_ref`
+traceability is recorded in STATE frontmatter only from a user-supplied ref, never auto-created.
+CONFIRMED: `canonical/skills/aid-read-ticket/`, `canonical/skills/aid-create-ticket/`,
+`canonical/skills/aid-update-ticket/`, and the shared ladder
+`canonical/aid/templates/connectors/ticket-resolution.md`.
 
 ---
 
@@ -298,3 +318,4 @@ aid dashboard stop
 |-----|------|--------|-------------|
 | 1.0 | 2026-06-25 | aid-discover | Initial infrastructure mapping (quality deep-dive) |
 | 1.1 | 2026-07-09 | aid-housekeep | connectors subsystem + release-drift refresh (housekeep KB-DELTA) |
+| 1.2 | 2026-07-23 | work-023 | Project Management Tooling: documented the connectors + dedicated-skills model (outward ticket interaction via `/aid-read-ticket` / `/aid-create-ticket` / `/aid-update-ticket`; no automated pipeline ticket writes) |

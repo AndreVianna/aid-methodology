@@ -108,7 +108,8 @@ conflicts with reasons, and gaps. Assert no resolution.
 
 Printed suggestions the user may act on: make it recurring (`/aid-create-dashboard`), record
 a decision (`/aid-document-decision`), act on a conclusion (`/aid-create*` / `/aid-change*`),
-or comment on a source ticket. Never auto-invoked; never a resolution.
+or comment on a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`).
+Never auto-invoked; never a resolution.
 
 **Advance:** DONE.
 

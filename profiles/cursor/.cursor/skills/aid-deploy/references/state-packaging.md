@@ -75,14 +75,12 @@ For each KB update needed:
 - Work `STATE.md` `## Deploy State` → Status: Done, Active Package: —
 - Work `STATE.md` `## Deploy State` History → add entry with package name, date, delivery count
 
-### Step 8: Project Management Sync (conditional)
+### Step 8: Ticket Suggestion (conditional)
 
-If `infrastructure.md § Project Management` defines a tool:
-- Create a Release in the PM tool corresponding to this package
-- Update tickets for shipped tasks → mark as Done/Closed
-- Link the release to the corresponding Epic (work)
-
-If no PM tool → skip this step.
+If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:
+consider updating tickets for shipped tasks via `/aid-update-ticket status` (mark Done/Closed).
+Optional, user-initiated, never auto-invoked; silent (no output) if no issue-tracker connector
+is catalogued.
 
 ### Step 9: Summary
 

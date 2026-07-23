@@ -136,8 +136,8 @@ gaps are first-class, never buried under positives.
 Offer the natural next steps as **printed suggestions**, each requiring the user to act:
 record an ADR (`/aid-document-decision` -> once landed, `/aid-create-document`), update the
 KB (`/aid-update-kb`), act on a conclusion (`/aid-create*` / `/aid-change*`), or comment on
-a source ticket (MCP connector, `connectors/consumption-protocol.md`). Never auto-invoked;
-never a resolution.
+a source ticket (`/aid-update-ticket comment [<connector>:]<ticket-id> <text>`). Never
+auto-invoked; never a resolution.
 
 **Advance:** DONE.
 

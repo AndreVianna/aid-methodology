@@ -99,13 +99,12 @@ which sections have been filled.
 
 If this interview's originating context names, or clearly traces to, an already-filed ticket in a
 catalogued issue-tracker connector (e.g. the Monitor-routed finding in Step 1d cites one, or the
-requester names one directly), read it via that connector per
-`.codex/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`; for
-a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID resolves
-nothing and stores no credential) and record `ticket_ref: <stem>:<external-id>` in this work's
-`STATE.md` frontmatter (the same block seeded at Step 1b-ii). Skip silently when no such ticket is
-named or no matching connector is catalogued — purely additive; never blocks or alters the
-interview flow.
+requester names one directly), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>`
+— the connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is
+re-implemented here — and record `ticket_ref: <stem>:<external-id>` in this work's `STATE.md`
+frontmatter (the same block seeded at Step 1b-ii). Skip silently when no such ticket is named or
+no matching connector is catalogued — purely additive; never blocks or alters the interview flow;
+the delegated read is non-destructive, so no extra confirm is added.
 
 ---
 
