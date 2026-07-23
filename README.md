@@ -10,7 +10,7 @@
 
 **A full-lifecycle methodology for building software with AI agents** — from understanding an existing codebase to monitoring it in production.
 
-108 skills — 14 pipeline / on-demand / router skills + a 94-row shortcut catalog (64 verb-first shortcuts + 30 hand-authored repurpose skills) · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
+111 skills — 17 pipeline / on-demand / router skills + a 94-row shortcut catalog (64 verb-first shortcuts + 30 hand-authored repurpose skills) · 9 specialized agents · 5 AI tools · Knowledge Base that every phase reads and any phase can revise.
 
 **Choosing your entry:** know your change → run the matching shortcut. Know it's big or new → `/aid-describe`. Not sure which? → `/aid-triage`. Just have a question? → `/aid-ask`.
 
@@ -42,7 +42,7 @@ flowchart TD
     MON -. "change request → /aid-triage" .-> TR
 ```
 
-*108 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
+*111 skills · 3 entry points (shortcut, `/aid-triage`, `/aid-describe`) plus `/aid-ask` for a plain question. Full methodology: [docs/aid-methodology.md](docs/aid-methodology.md).*
 
 > [!TIP]
 > New to AID? Install takes 2 minutes. Run slash commands directly in your AI coding tool — no plugins required. Jump to [Install](#install) to get started.

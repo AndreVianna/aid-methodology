@@ -59,6 +59,11 @@ desktop.ini
 .playwright-mcp/
 /*.png
 
+# Transient pipeline work folder -- kept LOCAL only, never committed. The work's
+# deliverables (skills, render, KB) ship; its .aid/works bookkeeping does not
+# (work folders are transient per the tracking-discipline rule).
+.aid/works/work-023-ticket-integration/
+
 # >>> AID managed -- do not edit (aid add/update maintains this block) >>>
 .aid/.temp/
 .aid/.trash/

@@ -10,7 +10,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Core Concepts
 
-**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by the curated classic pipeline / on-demand skills across 4 groups (Support, Knowledge Base Maintenance, Definition, Execution), plus a 94-row shortcut catalog — 64 shortcut skills (engine-generated verb-first doorways) plus 30 hand-authored `repurpose` skills — and the standalone `/aid-triage` router: 108 skills total (14 curated + 94 catalog). Delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A/KB-update/connector skills are optional. Human and AI co-execute every phase.
+**AID (AI Integrated Development):** A structured methodology for building and maintaining software with AI agents. 6 numbered pipeline phases delivered by the curated classic pipeline / on-demand skills across 4 groups (Support, Knowledge Base Maintenance, Definition, Execution), plus a 94-row shortcut catalog — 64 shortcut skills (engine-generated verb-first doorways) plus 30 hand-authored `repurpose` skills — and the standalone `/aid-triage` router: 111 skills total (17 curated + 94 catalog). Delivery (Deploy, Monitor), the summary skill, and the on-demand Q&A/KB-update/connector/ticket skills are optional. Human and AI co-execute every phase.
 
 **Knowledge Base (KB):** 14 standard markdown documents (plus 3 meta-documents: INDEX, README, STATE) that capture the living understanding of a project. The gravitational center of AID — not the spec, not the code. Updated continuously across phases. The default set of 14 is configurable via `discovery.doc_set` in `.aid/settings.yml`. Note: "3 meta-documents" is a *role* distinction (generated/process ledgers, review-exempt) — it is orthogonal to the *concern* axis. A standard document (among the 14) may carry an *orientation* concern (cross-cutting, not mapped to a single spine dimension); `external-sources.md` is exactly this: it is a standard, authored, review-eligible KB document whose concern is orientation — orientation on the concern axis does not make a document a meta-document on the role axis.
 
@@ -55,7 +55,7 @@ Terms and concepts used throughout the AID methodology.
 
 ## Off-Pipeline Skills
 
-**aid-housekeep:** One of AID's off-pipeline, on-demand skills (alongside `aid-update-kb`, `aid-summarize`, `aid-set-connector`, `aid-unset-connector`) within the 14 curated pipeline / on-demand / router skills — distinct from the 94-row shortcut catalog's skills (64 verb-first shortcut doorways + 30 `repurpose` skills). Run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
+**aid-housekeep:** One of AID's off-pipeline, on-demand skills (alongside `aid-update-kb`, `aid-summarize`, `aid-set-connector`, `aid-unset-connector`, `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`) within the 17 curated pipeline / on-demand / router skills — distinct from the 94-row shortcut catalog's skills (64 verb-first shortcut doorways + 30 `repurpose` skills). Run it whenever the Knowledge Base needs freshening. State machine: PREFLIGHT → KB-DELTA → SUMMARY-DELTA → CLEANUP → DONE, on an `aid/housekeep-*` branch. Not a numbered development phase.
 
 **aid-query-kb:** Off-pipeline, on-demand Q&A skill — answers free-form questions about the project from the Knowledge Base, codebase, and in-flight works, with source citations. When context is insufficient, captures the gap as a Query-Gap entry in the KB's Q&A backlog (STATE.md) to feed the KB-improvement loop. Write scope is restricted to the gap-capture path — no KB doc, settings file, or code file is ever written. Run from any directory at any phase.
 
@@ -97,7 +97,7 @@ Terms and concepts used throughout the AID methodology.
 
 | Group | Phases / Skills | Focus |
 |-------|-----------------|-------|
-| **Support** | aid-config (+ set/unset-connector) | Bootstrap and configuration |
+| **Support** | aid-config (+ set/unset-connector, read/create/update-ticket) | Bootstrap and configuration |
 | **Knowledge Base Maintenance** | Discover (+ Summarize, Housekeep, Update-KB, Query-KB/Ask) | Build and maintain the Knowledge Base |
 | **Definition** | Describe → Define, Specify, Plan, Detail (+ Triage, shortcuts, Deploy/Monitor) | Define the problem, plan it, and detail the work |
 | **Execution** | Execute | Build, review, and test |

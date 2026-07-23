@@ -93,7 +93,10 @@ assert_file_contains "$PROTOCOL" "task → its delivery → work" \
 assert_file_contains "$PROTOCOL" "## Wired seams" \
     "CL08 consumption-protocol.md documents the Wired seams table"
 
-for seam in "aid-describe" "aid-specify" "aid-plan" "aid-execute" "aid-query-kb" "aid-researcher" "aid-developer"; do
+# The aid-execute status-mirror write seam has been retired -- consumption-protocol no longer
+# carries an aid-execute row; the aid-fix / shortcut-engine INTAKE ingest seam is the 7th wired
+# seam. Every seam below is a READ/ingest seam that delegates to /aid-read-ticket.
+for seam in "aid-describe" "aid-specify" "aid-plan" "aid-fix" "aid-query-kb" "aid-researcher" "aid-developer"; do
     assert_file_contains "$PROTOCOL" "$seam" \
         "CL08b Wired seams table references $seam"
 done

@@ -273,12 +273,13 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 
 ## Open items
 
-- **Skill count.** AID ships **108 skill directories** under `canonical/skills/`: **14 curated
+- **Skill count.** AID ships **111 skill directories** under `canonical/skills/`: **17 curated
   skills** (the pipeline-phase, on-demand, and `/aid-triage` router skills that are *not* in the
-  shortcut catalog) plus the **94-row shortcut catalog**'s skills (58 canonical names + 36
-  aliases) — **64** engine-generated verb-first direct-entry shortcut doorways plus **30**
-  hand-authored `repurpose` skills, each of the 94 owning its own directory. `README.md` states
-  this taxonomy; the prior 12-/13-/14-skill drift is superseded.
+  shortcut catalog — including the three ticket skills `aid-read-ticket`, `aid-create-ticket`,
+  `aid-update-ticket` added by work-023) plus the **94-row shortcut catalog**'s skills (58
+  canonical names + 36 aliases) — **64** engine-generated verb-first direct-entry shortcut
+  doorways plus **30** hand-authored `repurpose` skills, each of the 94 owning its own directory.
+  `README.md` states this taxonomy; the prior 12-/13-/14-skill drift is superseded.
 
 ## Change Log
 
@@ -290,3 +291,4 @@ Each capability maps to the parts that implement it (full anatomy in `module-map
 | 1.3 | 2026-07-09 | work-002 connectors subsystem (PR #133): added the "External connections & tool integrations (connector catalog)" capability, the `connectors/` script area, the connector-catalog capability-lives row, and the `/aid-discover` ELICIT external-source/tool-integration capture. Refreshed by /aid-housekeep KB-DELTA. |
 | 1.4 | 2026-07-09 | work-001 lite-skills refresh — added the "Direct-entry shortcuts & the Lite fast path" capability group (67 shortcuts, shortcut engine, families, `shortcut-catalog.yml`) and the `/aid-triage` router; corrected `/aid-describe` to full-path-only (routing moved to `/aid-triage`); re-pointed `/aid-monitor` routing (bug → `/aid-fix`, change request → `/aid-triage`); updated skill count 14 → 82; completed the section index. |
 | 1.5 | 2026-07-09 | v2.1.0 coverage-gap follow-on — added the `remove`/`deprecate`/`migrate` (G5, + `aid-delete` alias) and `review`/`research` (G11, + `aid-audit`/`aid-investigate`/`aid-spike` aliases) shortcut families to the families table; restored `/aid-ask` as `/aid-query-kb`'s friendly-named alias; updated counts throughout: skill count 82 → 92 (15 classic incl. `aid-ask` + `/aid-triage` + 76 shortcuts), catalog 69-row (45 canonical + 24 aliases) → 80-row (51 canonical + 29 aliases), repurpose rows 2 → 4 (`aid-deploy`/`aid-monitor`/`aid-query-kb`/`aid-ask`). |
+| 1.6 | 2026-07-23 | work-023 doc-count reconciliation — added the ticket-tracker skills (`aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`) and retired the PM-TOOL automated ticket-write generation; skill count 108 → 111 (14 curated → 17 curated); catalog (94-row) unchanged. |

@@ -1,12 +1,12 @@
 ---
 title: 'Skills'
-description: 'All AID skills — 16 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
+description: 'All AID skills — 19 classic pipeline skills, the aid-triage router, the aid-ask Q&A alias, and the catalog-driven direct-entry shortcuts — grouped by skill group/family, with what each does and where it comes from.'
 generatedFrom: 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml'
 ---
 
 <!-- generated — do not edit; source: canonical/skills/*/SKILL.md -->
 
-AID ships **108 skill directories** under `canonical/skills/`: **16 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **64 engine-driven direct-entry shortcut skills** generated from a 94-row catalog (58 canonical names + 36 aliases); 30 of the rows (24 canonical + 6 alias) are `repurpose: true` — the 4 classic re-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
+AID ships **111 skill directories** under `canonical/skills/`: **19 classic pipeline skills** across four skill groups (Support, Knowledge Base Maintenance, Definition, Execution), the suggest-only router **`/aid-triage`**, the friendly **`/aid-ask`** Q&A alias (of `/aid-query-kb`), and **64 engine-driven direct-entry shortcut skills** generated from a 94-row catalog (58 canonical names + 36 aliases); 30 of the rows (24 canonical + 6 alias) are `repurpose: true` — the 4 classic re-registered skills plus the work-005 hand-authored single-shot "collapse" skills, all hand-authored with their own directories). The six numbered phases — Discover through Execute — form the mandatory sequential full path; every skill runs as a slash command (e.g. `/aid-config`) inside your AI host tool. Classic and router skills below are generated from each skill's own definition in `canonical/skills/`; shortcuts are summarized by family from the catalog (see "Direct-entry shortcuts" below, nested inside the Definition group).
 
 ## Support
 
@@ -35,6 +35,30 @@ On-demand, off-pipeline upsert into the connector catalog. `aid-set-connector <t
 On-demand, off-pipeline removal from the connector catalog. `aid-unset-connector <tool>` deletes `.aid/connectors/<stem>.md` and purges its secret via connector-secret purge -- never invokes /aid-discover. Runs reconcile.md's single-stem REMOVE (purge-then-delete) so every OTHER catalogued connector is left byte-for-byte untouched, then rebuilds INDEX.md from whatever descriptors remain on disk. Idempotent: an already-absent stem is a clean no-op.
 
 [Definition: `canonical/skills/aid-unset-connector/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-unset-connector/SKILL.md)
+
+### `aid-read-ticket`
+
+**on demand · non-destructive ticket fetch and display**
+
+On-demand, non-destructive ticket read. `aid-read-ticket [<connector>:]<ticket-id>` parses the ref (an optional `<stem>:` prefix plus the tracker's own id), resolves which issue-tracker connector answers it via the shared connector-resolution ladder (explicit override; a single catalogued issue-tracker connector used silently; a choice asked when two or more are catalogued; the host tool's own tracker MCP as fallback; a "no issue-tracker connector found." notice otherwise), fetches the ticket through the host tool's own MCP -- AID resolves no credential and stores none -- and displays its fields. Never writes, locally or to the tracker, and never shows a confirmation prompt; a failed, not-found, unauthorized, or unavailable fetch surfaces the tracker's error verbatim and exits without side effects.
+
+[Definition: `canonical/skills/aid-read-ticket/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-read-ticket/SKILL.md)
+
+### `aid-create-ticket`
+
+**on demand · preview + confirm before filing a ticket**
+
+On-demand utility skill that files one new ticket via whatever issue-tracker connector the project has registered, or the host tool's own tracker MCP when none is catalogued. Parses `--connector <stem>`, `--level epic|story|task`, and `--parent <ref>` flags in any order ahead of a free-text `<description>` (create has no leading-token connector heuristic), resolves the connector via the shared ladder, composes the new-ticket payload (fixing level and parent by precedence, defaulting neither silently), resolves the canonical tier to the tracker's concrete issue-type at runtime via a non-destructive read (graceful degradation when the tracker has no matching type), previews the exact payload, and gates on one in-run AskUserQuestion confirm -- which also carries the epic|story|task pick when the level is neither explicit nor inferable -- before filing. Returns the new `<connector-stem>:<external-id>` only after the user confirms; nothing is filed, and no local file is ever written, before that.
+
+[Definition: `canonical/skills/aid-create-ticket/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-create-ticket/SKILL.md)
+
+### `aid-update-ticket`
+
+**on demand · preview + confirm before mutating a ticket**
+
+On-demand write skill that mutates exactly ONE named part of an existing ticket in whatever issue-tracker connector resolves for it: `aid-update-ticket <part> [<connector>:]<ticket-id> <content>` where `part` is the closed enum `description | comment | status`. `description` REPLACES the field, `comment` APPENDS a new comment, `status` SETS the ticket's state. Resolves the connector via the shared ticket-resolution ladder, loads whatever context the named part needs (status: the ticket's available transitions; description: its current value for a before/after preview; comment: nothing), composes the exact mutation, and shows it in an in-invocation `AskUserQuestion` confirm before the single host-MCP write. A `status` target is validated against the tracker's available transitions when the MCP can enumerate them (a mismatch lists the valid options and stops before the confirm gate); when transitions cannot be enumerated, the transition is attempted and the tracker's own error is surfaced verbatim on rejection. Never writes silently, and an MCP failure never leaves a partial write.
+
+[Definition: `canonical/skills/aid-update-ticket/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-update-ticket/SKILL.md)
 
 ## Knowledge Base Maintenance
 

@@ -94,7 +94,7 @@ AID/
 ├── release.sh                # maintainer release-packaging runbook script
 ├── VERSION                   # single-line canonical version string
 ├── canonical/                # SOURCE OF TRUTH for the AID toolkit
-│   ├── skills/               # 108 skill definitions (14 curated + 94 catalog skills)
+│   ├── skills/               # 111 skill definitions (17 curated + 94 catalog skills)
 │   ├── agents/               # agent role definitions (AGENT.md + README.md each)
 │   ├── aid/                  # toolkit payload installed under the tool's aid/ subtree
 │   │   ├── scripts/          # helper scripts grouped by phase (kb, execute, ...)
@@ -322,3 +322,4 @@ These are intentional or notable layout traits a newcomer will trip over:
 | 1.2 | 2026-07-09 | aid-housekeep | De-hardcoded the version in prose/tree (point at `VERSION`, kb-authoring P1); de-pinned the machine-specific root path; paraphrased the stale "12-skill" README quote; added `.aid/connectors/` to the `.aid/` tree. Connectors + release-drift refresh (housekeep KB-DELTA). |
 | 1.3 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh — removed the `recipes/` tree line and the canonical `aid/{...,recipes}` reference (recipes deleted); dropped the stale "12-skill / 51-recipe / `canonical/recipes/`" drift note (repository-structure.md now says 82 skills); annotated the skills tree/canonical row with the 82-skill taxonomy (14 classic + aid-triage + 67 shortcuts); added the shortcut catalog/engine/scaffolding and `delivery-blueprint-template.md` / `task-detail-template.md` to Key Files. |
 | 1.4 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Updated the skills-tree annotation and the shortcut-catalog Key Files row: skill count 82 -> 92 (15 classic incl. restored `aid-ask` + aid-triage + 76 shortcuts, up from 67); catalog 69-row (45 canonical + 24 aliases) -> 80-row (51 canonical + 29 aliases). |
+| 1.5 | 2026-07-23 | work-023 doc-count reconciliation | Corrected the skills-tree annotation: skill count 108 -> 111, curated sub-count 14 -> 17 (added `aid-read-ticket`, `aid-create-ticket`, `aid-update-ticket`); catalog row count (94) unchanged. |

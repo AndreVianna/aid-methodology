@@ -188,8 +188,8 @@ assert_eq "$script_files" "build-connectors-index.ps1 build-connectors-index.sh 
     "ST26 canonical/aid/scripts/connectors/ contains exactly the 6 pre-existing files (3 scripts x 2 twins) plus the one documented exception (write-connector.sh, feature-007/task-018) -- no OTHER new script file"
 
 template_files="$(cd "$TEMPLATES_DIR" && ls -1 | sort | tr '\n' ' ')"
-assert_eq "$template_files" "consumption-protocol.md preset-catalog.md reconcile.md " \
-    "ST27 canonical/aid/templates/connectors/ contains exactly the 3 expected reference docs, no stray file"
+assert_eq "$template_files" "consumption-protocol.md preset-catalog.md reconcile.md ticket-resolution.md " \
+    "ST27 canonical/aid/templates/connectors/ contains exactly the 4 expected reference docs (incl. the shared ticket-resolution.md), no stray file"
 
 assert_file_contains "$SET_SKILL" "No new script is introduced by this skill" \
     "ST28 aid-set-connector/SKILL.md's Reused scripts section states no new script is introduced"

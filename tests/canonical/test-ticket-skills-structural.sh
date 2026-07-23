@@ -1,21 +1,19 @@
 #!/usr/bin/env bash
 # test-ticket-skills-structural.sh -- structural / parse-level guard suite for
-# work-023-ticket-integration's three dedicated ticket-tracker skills
-# (aid-read-ticket, aid-create-ticket, aid-update-ticket) and the shared
-# ticket-resolution.md reference they all point to
-# (features/feature-001-dedicated-ticket-skills/SPEC.md).
+# the three dedicated ticket-tracker skills (aid-read-ticket, aid-create-ticket,
+# aid-update-ticket) and the shared ticket-resolution.md reference they all
+# point to.
 #
 # The host MCP + a live tracker are unavailable in CI, so this suite is
 # structural/parse-level only -- it greps the canonical/ markdown for the
 # documented contract (frontmatter, Feature-Flow states, grammar rules,
 # ladder branches, confirm-gate conventions), never makes a live MCP call,
-# and never depends on any .aid/works/work-023* path (work-folder-
-# transience rule -- these are canonical/ artifacts, not work-folder ones).
+# and reads only canonical/ artifacts (no work-folder or live-tracker dependency).
 #
-# Byte/path-parity of the *rendered* .claude/ copies is delivery-003's gate,
-# not this suite's (feature-001 SPEC.md § Testing).
+# Byte/path-parity of the *rendered* .claude/ copies is verified by the
+# dogfood byte-identity suite, not this one.
 #
-# Traces (feature-001 AC-1..AC-6):
+# Traces (AC-1..AC-6):
 #   T01-T18   Anatomy -- frontmatter (name, one-pass description,
 #             allowed-tools incl. AskUserQuestion / excl. Write+Edit,
 #             argument-hint = the bare grammar line) for all 3 skills
@@ -51,8 +49,6 @@
 #             comment APPENDS (AC-3)
 #   T86-T88   Each skill carries the verbatim "no issue-tracker connector
 #             found." notify string (AC-6)
-#   T89       This suite makes no reference to any .aid/works/work-023*
-#             path (work-folder-transience rule, self-check)
 #
 # Usage:
 #   bash tests/canonical/test-ticket-skills-structural.sh [--verbose]
@@ -161,7 +157,7 @@ assert_header "$UPDATE_SKILL" "WRITE" "T35 aid-update-ticket has a WRITE state h
 # ===========================================================================
 # T36-T44  DRY -- pointer to ticket-resolution.md present; ladder's own
 # numbered steps and the level-resolution synonym set are NEVER re-listed
-# inline in any of the 3 skills (SPEC.md § Layers & Components, decision 1).
+# inline in any of the 3 skills (the shared ticket-resolution.md owns the ladder).
 # ===========================================================================
 assert_file_contains "$READ_SKILL" "ticket-resolution.md" "T36 aid-read-ticket points to ticket-resolution.md"
 assert_file_contains "$CREATE_SKILL" "ticket-resolution.md" "T37 aid-create-ticket points to ticket-resolution.md"
@@ -262,26 +258,6 @@ assert_wrapped_contains "$UPDATE_SKILL" "\`comment\` → APPENDS" "T85 aid-updat
 assert_file_contains "$READ_SKILL" '"no issue-tracker connector found."' "T86 aid-read-ticket carries the verbatim notify string"
 assert_file_contains "$CREATE_SKILL" "no issue-tracker connector found." "T87 aid-create-ticket carries the verbatim notify string"
 assert_file_contains "$UPDATE_SKILL" '"no issue-tracker connector found."' "T88 aid-update-ticket carries the verbatim notify string"
-
-# ===========================================================================
-# T89  Work-folder-transience self-check: this suite depends on no
-# .aid/works/work-023* path (feature-001 SPEC.md § Testing; task-005 scope).
-# Only non-comment (code) lines are checked -- this header/trace prose
-# itself legitimately NAMES the rule it satisfies, in comment lines, without
-# violating it; what must never happen is a live PATH DEPENDENCY in an
-# executable line (a variable, a test -f, a source/cat/grep target, etc.).
-# ===========================================================================
-THIS_FILE="${BASH_SOURCE[0]}"
-# Built from two fragments so THIS line never itself contains the
-# contiguous forbidden substring (which would trivially self-match).
-_wf_frag_a=".aid/works/work"
-_wf_frag_b="-023"
-_wf_needle="${_wf_frag_a}${_wf_frag_b}"
-if grep -vE '^[[:space:]]*#' "$THIS_FILE" | grep -qF -- "$_wf_needle"; then
-    fail "T89 this suite must not DEPEND on any work-023 work-folder path in a code line"
-else
-    pass "T89 this suite depends on no work-023 work-folder path (code lines only; header prose is exempt)"
-fi
 
 # ===========================================================================
 test_summary

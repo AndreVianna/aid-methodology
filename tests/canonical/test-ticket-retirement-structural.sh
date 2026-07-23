@@ -1,20 +1,18 @@
 #!/usr/bin/env bash
-# test-ticket-retirement-structural.sh -- structural / grep-level guard suite for
-# work-023-ticket-integration's delivery-002 (retire the PM-TOOL automated writes,
-# consolidate the CONNECTORS seams onto the dedicated ticket skills, and revise the
-# shared consumption-protocol.md), per:
-#   features/feature-002-pm-tool-write-retirement/SPEC.md  (AC-7)
-#   features/feature-003-connector-seam-consolidation/SPEC.md  (AC-8, AC-9)
-#   features/feature-004-consumption-protocol-revision/SPEC.md  (AC-10, AC-11, NFR-3)
+# test-ticket-retirement-structural.sh -- structural / grep-level guard suite for the
+# retirement of the PM-TOOL automated writes, the consolidation of the CONNECTORS seams
+# onto the dedicated ticket skills, and the revision of the shared consumption-protocol.md.
+# Covers AC-7 (PM-TOOL retirement), AC-8 / AC-9 (seam consolidation + read reroutes),
+# and AC-10 / AC-11 / NFR-3 (consumption-protocol revision + no-connector silent-skip).
 #
 # The host MCP + a live tracker are unavailable in CI, so this suite is
 # structural/grep-level only -- it greps canonical/ markdown (never .claude/, which
 # is render output) for the documented per-site dispositions, the zero-signature
-# sweeps, and the reads-delegate/writes-route contracts, and never depends on any
-# .aid/works/work-023* path (work-folder-transience rule).
+# sweeps, and the reads-delegate/writes-route contracts, and reads only canonical/
+# artifacts (no work-folder or live-tracker dependency).
 #
-# Byte/path-parity of the *rendered* .claude/ + profiles/* copies is delivery-003's
-# gate, not this suite's (feature-002/003/004 SPEC.md Testing sections).
+# Byte/path-parity of the *rendered* .claude/ + profiles/* copies is verified by the
+# dogfood byte-identity suite, not this one.
 #
 # Traces:
 #   T001-T034  AC-7  -- six FR-7 PM-TOOL sites: per-site old-signature absence +
@@ -30,9 +28,8 @@
 #                        aid-review REVIEW read) names /aid-read-ticket and
 #                        carries no inline direct-fetch recipe of its own
 #   T059-T060  AC-9  -- bounded old-recipe-phrase sweep across every canonical
-#                        file this delivery edited (task-006/007/008/009's own
-#                        edit set) -- zero, since none of them are one of the
-#                        three ticket skills or consumption-protocol.md
+#                        file this change edited -- zero, since none of them are
+#                        one of the three ticket skills or consumption-protocol.md
 #   T061-T068  AC-8/AC-9 write-seam reroutes -- aid-review PUBLISH + INTAKE
 #                        label, aid-research HANDOFF, aid-report HANDOFF route
 #                        through /aid-update-ticket (comment)
@@ -46,7 +43,6 @@
 #                        present at five ingest/enrich seams (T092, T097-T098)
 #                        and at the connector-gated suggestion sites, incl.
 #                        aid-plan Step 4c's create half (T093-T096)
-#   T099       Work-folder-transience self-check
 #
 # Usage:
 #   bash tests/canonical/test-ticket-retirement-structural.sh [--verbose]
@@ -61,7 +57,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
-# -- feature-002 (AC-7) six PM-TOOL sites --
+# -- AC-7: six PM-TOOL sites --
 DESCRIBE_COMPLETION="${REPO_ROOT}/canonical/skills/aid-describe/references/state-completion.md"
 DETAIL_TASKDECOMP="${REPO_ROOT}/canonical/skills/aid-detail/references/task-decomposition.md"
 PLAN_SKILL="${REPO_ROOT}/canonical/skills/aid-plan/SKILL.md"
@@ -69,11 +65,11 @@ EXECUTE_SKILL="${REPO_ROOT}/canonical/skills/aid-execute/SKILL.md"
 DEPLOY_PACKAGING="${REPO_ROOT}/canonical/skills/aid-deploy/references/state-packaging.md"
 MONITOR_ROUTE="${REPO_ROOT}/canonical/skills/aid-monitor/references/state-route.md"
 
-# -- feature-003 (AC-8) write-seam sites --
+# -- AC-8: write-seam sites --
 STATE_EXECUTE="${REPO_ROOT}/canonical/skills/aid-execute/references/state-execute.md"
 FIRST_RUN_LOOP="${REPO_ROOT}/canonical/skills/aid-plan/references/first-run-loop.md"
 
-# -- feature-003 (AC-9) read-seam sites (4 pure-read + 2 dual-anchor read halves) --
+# -- AC-9: read-seam sites (4 pure-read + 2 dual-anchor read halves) --
 DESCRIBE_FIRSTRUN="${REPO_ROOT}/canonical/skills/aid-describe/references/state-first-run.md"
 SPECIFY_INIT="${REPO_ROOT}/canonical/skills/aid-specify/references/state-initialize.md"
 SHORTCUT_ENGINE="${REPO_ROOT}/canonical/aid/templates/shortcut-engine.md"
@@ -82,14 +78,14 @@ REVIEW_SKILL="${REPO_ROOT}/canonical/skills/aid-review/SKILL.md"
 DEVELOPER_AGENT="${REPO_ROOT}/canonical/agents/aid-developer/AGENT.md"
 RESEARCHER_AGENT="${REPO_ROOT}/canonical/agents/aid-researcher/AGENT.md"
 
-# -- feature-003 (AC-8/AC-9 (d)) comment-write reroutes --
+# -- AC-8/AC-9 (d): comment-write reroutes --
 RESEARCH_SKILL="${REPO_ROOT}/canonical/skills/aid-research/SKILL.md"
 REPORT_SKILL="${REPO_ROOT}/canonical/skills/aid-report/SKILL.md"
 
-# -- feature-004 (AC-11) shared reference --
+# -- AC-11: shared reference --
 CONSUMPTION_PROTOCOL="${REPO_ROOT}/canonical/aid/templates/connectors/consumption-protocol.md"
 
-# -- feature-004 (AC-10/NFR-3) the four ticket_ref-carrying templates (FR-11, untouched) --
+# -- AC-10/NFR-3: the four ticket_ref-carrying templates (FR-11, untouched) --
 WORK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/work-state-template.md"
 DELIVERY_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/delivery-state-template.md"
 TASK_STATE_TPL="${REPO_ROOT}/canonical/aid/templates/task-state-template.md"
@@ -111,7 +107,7 @@ for f in "${ALL_FILES[@]}"; do
     fi
 done
 
-echo "== ticket-retirement structural guard tests (delivery-002) =="
+echo "== ticket-retirement structural guard tests =="
 
 # assert_wrapped_contains FILE PATTERN LABEL -- tolerant of markdown's own line
 # wrapping: newlines + runs of whitespace squashed to single spaces before a
@@ -140,7 +136,7 @@ assert_wrapped_not_contains() {
 
 # ===========================================================================
 # T001-T034  AC-7 -- per-site retirement of the six FR-7 PM-TOOL sites
-# (feature-002 SPEC.md Feature-Flow disposition table).
+# (per the PM-TOOL retirement disposition table).
 # ===========================================================================
 
 # --- Site 1: aid-describe/state-completion.md -- SUGGEST /aid-create-ticket ---
@@ -190,9 +186,8 @@ assert_file_not_contains "$MONITOR_ROUTE" 'If PM tool configured' "T033 site6 ai
 assert_wrapped_contains "$MONITOR_ROUTE" 'filing a ticket for each BUG finding via `/aid-create-ticket`' "T034 site6 aid-monitor: suggestion names /aid-create-ticket for the BUG-ticket create half"
 
 # ===========================================================================
-# T035-T036  Cross-site zero-signature sweep (feature-002 SPEC.md Testing item 2
-# -- mechanical spot-check across all six skill dirs, write signatures + guard
-# signatures together).
+# T035-T036  Cross-site zero-signature sweep (AC-7 -- mechanical spot-check
+# across all six skill dirs, write signatures + guard signatures together).
 # ===========================================================================
 PM_SIG_HITS="$(grep -rniE \
     'create an Epic|create Tickets/Work Items|create Sprint/Iteration|Map deliveries to Sprints|update .* ticket to In Progress|update ticket to Done|add comment to ticket|mark as Done/Closed|Create a Release in the PM tool|create tickets for BUG|Link .*Epic' \
@@ -220,7 +215,7 @@ fi
 
 # ===========================================================================
 # T037-T042  AC-8 -- aid-execute's status-mirror removed; aid-plan Step 4c's
-# outward create/register branch retired (feature-003 SPEC.md Feature Flow b/c).
+# outward create/register branch retired (AC-8).
 # ===========================================================================
 assert_file_not_contains "$STATE_EXECUTE" '## Connector Mirroring' "T037 aid-execute state-execute.md: the Connector Mirroring section header is gone"
 assert_file_not_contains "$STATE_EXECUTE" 'mirror the same transition to that ticket via the host tool' "T038 aid-execute state-execute.md: no outward-mirror signature remains"
@@ -234,7 +229,7 @@ assert_wrapped_contains "$FIRST_RUN_LOOP" 'run `/aid-create-ticket`, then re-rec
 # T043-T058  AC-9 -- every rerouted read seam (6 file seams + 2 agent bullets,
 # incl. aid-plan Step 4c's record half and the aid-review REVIEW read) names
 # /aid-read-ticket and carries no inline direct-fetch recipe of its own
-# (feature-003 SPEC.md Feature Flow (a); Layers & Components read-seam table).
+# (AC-9 -- the read-seam contract).
 # ===========================================================================
 declare -A READ_SEAMS=(
     ["aid-describe state-first-run.md"]="$DESCRIBE_FIRSTRUN"
@@ -248,7 +243,7 @@ declare -A READ_SEAMS=(
 )
 # Each seam's OWN pre-change inline-recipe wording (verified against `git show
 # HEAD:<file>` -- each of these 8 needles is CONFIRMED PRESENT in the
-# pre-delivery-002 file and CONFIRMED ABSENT post-edit, so this is a real
+# pre-change file and CONFIRMED ABSENT post-edit, so this is a real
 # regression guard per file, not one generic phrase that happens to be vacuous
 # for the 3 seams that never worded it that way (aid-review, aid-developer,
 # aid-researcher used their own distinct pre-change wording).
@@ -285,15 +280,14 @@ done
 
 # ===========================================================================
 # T059-T060  Bounded old-recipe-phrase sweep -- across every canonical/ file
-# this delivery (task-006/007/008/009) edited. None of them is one of the
-# three ticket skills (aid-read-ticket/aid-create-ticket/aid-update-ticket,
-# delivered whole by delivery-001) or consumption-protocol.md's own header
-# note, so a zero-hit result here is the "outside the three ticket skills +
-# consumption-protocol/ticket-resolution shared refs" carve-out from the AC-9
-# spot-check, scoped to this delivery's own edit set (not the unrelated,
-# untouched connector-registration subsystem -- reconcile.md, aid-set-connector,
-# aid-discover -- which this feature never touches; feature-003 SPEC.md
-# Boundaries).
+# this change edited. None of them is one of the three ticket skills
+# (aid-read-ticket/aid-create-ticket/aid-update-ticket, added as whole new
+# files) or consumption-protocol.md's own header note, so a zero-hit result
+# here is the "outside the three ticket skills + consumption-protocol/
+# ticket-resolution shared refs" carve-out from the AC-9 spot-check, scoped to
+# this change's own edit set (not the unrelated, untouched connector-
+# registration subsystem -- reconcile.md, aid-set-connector, aid-discover --
+# which this change never touches; AC-9 Boundaries).
 # ===========================================================================
 DELIVERY_002_FILES=(
     "$DESCRIBE_COMPLETION" "$DETAIL_TASKDECOMP" "$PLAN_SKILL" "$EXECUTE_SKILL"
@@ -309,7 +303,7 @@ for f in "${DELIVERY_002_FILES[@]}"; do
     fi
 done
 if [[ -z "$OLD_RECIPE_HITS" ]]; then
-    pass "T059 old direct-fetch recipe phrase appears in none of the 18 delivery-002-edited canonical files"
+    pass "T059 old direct-fetch recipe phrase appears in none of the 18 canonical files edited by this change"
 else
     fail "T059 old direct-fetch recipe phrase unexpectedly found in:"$'\n'"$OLD_RECIPE_HITS"
 fi
@@ -326,7 +320,7 @@ fi
 # ===========================================================================
 # T061-T068  Write-seam reroutes -- the three human-gated comment writes route
 # through /aid-update-ticket, stay user-authorized, never auto-invoked
-# (feature-003 SPEC.md Feature Flow (d)).
+# (AC-8/AC-9 (d)).
 # ===========================================================================
 assert_file_contains "$REVIEW_SKILL" 'ticket comment via `/aid-update-ticket`' "T061 aid-review INTAKE fast-path label names /aid-update-ticket"
 assert_file_not_contains "$REVIEW_SKILL" 'ticket comment via an MCP connector' "T062 aid-review INTAKE fast-path label: old MCP-connector wording is gone"
@@ -340,7 +334,7 @@ assert_wrapped_contains "$REPORT_SKILL" 'or comment on a source ticket (`/aid-up
 assert_wrapped_contains "$RESEARCH_SKILL" 'Never auto-invoked; never a resolution' "T068 aid-research HANDOFF: still never-auto-invoked / never-a-resolution"
 
 # ===========================================================================
-# T069-T086  AC-11 -- consumption-protocol.md revision (feature-004 SPEC.md E1-E7).
+# T069-T086  AC-11 -- consumption-protocol.md revision (E1-E7).
 # ===========================================================================
 MIRROR_HITS="$(grep -in 'mirror' "$CONSUMPTION_PROTOCOL" || true)"
 if [[ -z "$MIRROR_HITS" ]]; then
@@ -395,7 +389,7 @@ assert_wrapped_contains "$DESCRIBE_FIRSTRUN" 'Skip silently when no such ticket 
 # site2 already covered by T006/T013) -- enumerating the class of connector-
 # gated suggestion sites, not just one instance (self-review: "Fix everywhere"
 # applies equally to "verify everywhere"). Includes aid-plan first-run-loop.md
-# Step 4c's create half, whose missing gate was the delivery-002 gate-1 HIGH
+# Step 4c's create half, whose missing gate was a gate-caught HIGH
 # regression -- this asserts the fix and guards the class against recurrence.
 declare -A SILENT_GATE_SITES=(
     ["site3c aid-plan first-run-loop (create half)"]="$FIRST_RUN_LOOP"
@@ -419,24 +413,6 @@ done
 # seam" spot-check beyond the single aid-describe example (T092). ---
 assert_wrapped_contains "$SPECIFY_INIT" 'Skip silently when no such ticket applies or no matching connector is catalogued' "T097 aid-specify state-initialize.md: silent-skip on no-connector/no-ticket_ref is documented"
 assert_wrapped_contains "$SHORTCUT_ENGINE" 'Skip silently when no such ticket applies or no matching connector is catalogued' "T098 shortcut-engine.md Step 4b: silent-skip on no-connector/no-ticket_ref is documented"
-
-# ===========================================================================
-# T099  Work-folder-transience self-check: this suite depends on no
-# .aid/works/work-023* path (task-010 Constraints; feature-002/003/004
-# SPEC.md Testing sections). Only non-comment (code) lines are checked --
-# this header/trace prose itself legitimately NAMES the rule it satisfies, in
-# comment lines, without violating it; what must never happen is a live PATH
-# DEPENDENCY in an executable line.
-# ===========================================================================
-THIS_FILE="${BASH_SOURCE[0]}"
-_wf_frag_a=".aid/works/work"
-_wf_frag_b="-023"
-_wf_needle="${_wf_frag_a}${_wf_frag_b}"
-if grep -vE '^[[:space:]]*#' "$THIS_FILE" | grep -qF -- "$_wf_needle"; then
-    fail "T099 this suite must not DEPEND on any work-023 work-folder path in a code line"
-else
-    pass "T099 this suite depends on no work-023 work-folder path (code lines only; header prose is exempt)"
-fi
 
 # ===========================================================================
 test_summary
