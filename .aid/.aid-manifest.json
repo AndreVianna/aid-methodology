@@ -1,10 +1,10 @@
 {
-  "manifest_version": 1,
-  "aid_version": "2.2.0",
+  "format_version": 2,
+  "aid_version": "2.3.0",
   "installed_at": "06/06/2026 20:01:03",
   "tools": {
     "claude-code": {
-      "version": "2.2.0",
+      "version": "2.3.0",
       "installed_at": "06/06/2026 20:01:03",
       "paths": [
         ".claude/agents/aid-architect.md",
@@ -552,12 +552,26 @@
         ".claude/skills/aid-design/SKILL.md",
         ".claude/skills/aid-update-dashboard/SKILL.md",
         ".claude/skills/aid-update-document/SKILL.md",
-        ".claude/skills/aid-update-test/SKILL.md"
+        ".claude/skills/aid-update-test/SKILL.md",
+        ".claude/aid/scripts/connectors/write-connector.sh",
+        ".claude/aid/scripts/execute/write-control-signal.sh",
+        ".claude/aid/scripts/works/enumerate-works.sh",
+        ".claude/aid/scripts/works/worktree-lifecycle.sh",
+        ".claude/aid/templates/agent-dispatch-tiering.md",
+        ".claude/aid/templates/connectors/ticket-resolution.md",
+        ".claude/aid/templates/downstream-worktree-entry.md",
+        ".claude/aid/templates/work-initiation-gate.md",
+        ".claude/aid/templates/worktree-lifecycle.md",
+        ".claude/skills/aid-create-ticket/SKILL.md",
+        ".claude/skills/aid-read-ticket/SKILL.md",
+        ".claude/skills/aid-update-kb/references/state-confirm.md",
+        ".claude/skills/aid-update-kb/references/state-scope.md",
+        ".claude/skills/aid-update-ticket/SKILL.md"
       ],
       "root_agent_files": [
         {
           "path": "CLAUDE.md",
-          "sha256": "5c58eeac8b17e5b12af9269a40e7dacd10b7c4d3f8a61b87de3fc7746bffea73",
+          "sha256": "14bb816e6813feb9ecfc802f3a7f3276b60b391832e8358142a76fcf18dffa30",
           "status": "owned"
         }
       ]
