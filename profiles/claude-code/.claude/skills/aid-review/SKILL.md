@@ -56,7 +56,7 @@ is unambiguous. Record the target, method, and tentative delivery; go straight t
 | Signal | Method | Tentative delivery |
 |---|---|---|
 | PR link / `#123` | diff review | PR comment(s) via `gh` |
-| ticket id (`PROJ-45`) | assess ticket content | ticket comment via an MCP connector |
+| ticket id (`PROJ-45`) | assess ticket content | ticket comment via `/aid-update-ticket` |
 | file / dir path | static review vs KB + coding-standards | findings report |
 | "my changes" / working tree / staged | working-diff review | findings report |
 | commit SHA / range / branch | diff review | findings report or PR comment |
@@ -125,8 +125,10 @@ Purpose: gather evidence and produce the grounded findings ledger.
 
 1. **Gather evidence** the confirmed method needs, using whatever tools/MCP the plan
    calls for -- `git diff` for a PR/commit/working-tree, `Read`/`Grep` for a file/dir,
-   the browser MCP to capture a UI, an issue-tracker MCP to fetch a ticket
-   (`connectors/consumption-protocol.md`, MCP-first; skip silently if none catalogued).
+   the browser MCP to capture a UI, or -- for a ticket target -- fetch it by invoking
+   `/aid-read-ticket [<connector>:]<ticket-id>` (the connector resolution and host-MCP fetch
+   live there, feature-001; no direct-fetch recipe is re-implemented here; skip silently if no
+   matching connector is catalogued).
 2. **Dispatch `aid-reviewer` once, in a clean context** (model+effort from INTAKE Step
    4), with the standard one-off five-section brief per
    `.claude/aid/templates/reviewer-dispatch.md` One-off reviews:
@@ -186,11 +188,13 @@ delivery / do not publish). Nothing is posted to any external target until they 
 ## State: PUBLISH  (only on approval)
 
 Deliver by the method appropriate to the target, chosen by judgment (not a hardcoded
-enum): a PR comment via `gh`; a ticket comment via the MCP connector
-(`connectors/consumption-protocol.md`, MCP-first); a findings report in the work folder
-(+ optional inline-comment suggestions) for code; inline notes for a document. **Graceful
-fallback:** no PR / no catalogued connector / unknown target -> present the exact text for
-the human to paste. Publishing is optional and never blocks DONE.
+enum): a PR comment via `gh`; a ticket comment via `/aid-update-ticket comment
+[<connector>:]<ticket-id> <text>` (still user-authorized -- the approval just given at
+PRESENT-FINDINGS is what authorizes this call, and the skill previews the exact payload again
+at its own CONFIRM before posting); a findings report in the work folder (+ optional
+inline-comment suggestions) for code; inline notes for a document. **Graceful fallback:** no PR /
+no catalogued connector / unknown target -> present the exact text for the human to paste.
+Publishing is optional and never blocks DONE.
 
 **Advance:** DONE.
 

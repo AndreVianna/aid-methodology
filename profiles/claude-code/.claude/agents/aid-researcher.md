@@ -81,7 +81,7 @@ for the full protocol.
 - Analyze performance characteristics: profile hot paths, identify bottlenecks, define performance budgets
 - Execute RESEARCH-typed tasks: investigate and synthesize findings on a specific question or subsystem
 - Research external and web sources — current documentation, standards, prior art, and community resources — to complement project-internal findings; always cite the URL and access date for every web source consulted
-- Consult `.aid/connectors/INDEX.md` and, for a relevant `connection_type: mcp` connector, use the host tool's MCP to gather additional evidence (`.claude/aid/templates/connectors/consumption-protocol.md`) — optional, read-only enrichment alongside KB/codebase/web sources; aid-managed (`api`/`ssh`/`cli`) consumption is out of scope
+- Consult `.aid/connectors/INDEX.md` and, for a relevant `connection_type: mcp` connector, use the host tool's MCP to gather additional evidence, following the same connector-resolution ladder + MCP-first read recipe `/aid-read-ticket` embodies (`.claude/aid/templates/connectors/ticket-resolution.md` § Connector-Resolution Ladder) rather than a divergent inline re-implementation — a dispatched agent cannot itself issue that host slash command, so this references the one shared recipe instead; optional, read-only enrichment alongside KB/codebase/web sources; aid-managed (`api`/`ssh`/`cli`) consumption is out of scope
 
 ## What You Don't Do
 - Design solutions (that's the Architect)

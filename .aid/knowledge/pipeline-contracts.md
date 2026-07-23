@@ -388,8 +388,9 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   the nested full-path `deliveries/delivery-NNN/tasks/task-NNN/DETAIL.md` shape and the flattened
   Lite `tasks/task-NNN/DETAIL.md` (no per-task `STATE.md`) shape, matching the live skills and
   templates.
-- The skill taxonomy is now **108 skill directories** under `canonical/skills/`: 14 curated
-  pipeline/on-demand/router skills + the 94-row shortcut catalog's skills (58 canonical + 36
+- The skill taxonomy is now **111 skill directories** under `canonical/skills/`: 17 curated
+  pipeline/on-demand/router skills (added `aid-read-ticket`, `aid-create-ticket`,
+  `aid-update-ticket`, work-023) + the 94-row shortcut catalog's skills (58 canonical + 36
   aliases) — 64 verb-first direct-entry shortcut doorways (generated from the 94-row
   `shortcut-catalog.yml`) plus 30 hand-authored `repurpose` skills — up from
   82 dirs / 67 shortcuts / a 69-row catalog before the v2.1.0 coverage-gap follow-on added the
@@ -486,3 +487,4 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 | 1.4 | 2026-07-09 | work-001 lite-skills refresh | Rewrote the entry model (three doors: verb-first shortcut / `/aid-triage` / `/aid-describe`) and the flattened Lite path: the shared shortcut engine (`INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT`) authors work-root `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md` + `tasks/task-NNN/DETAIL.md` with **no per-task `STATE.md`** (cells live in `STATE.md § ### Tasks lifecycle`). Renamed the delivery definition to `BLUEPRINT.md` and the task definition to `DETAIL.md` across the phase table, artifact contracts, hierarchy trees, and state-machine table (fixing the deleted `delivery-spec-template.md` citation → `delivery-blueprint-template.md`); added a `BLUEPRINT.md` artifact-contract row. Removed `aid-describe`'s TRIAGE/lite states; added `/aid-triage` and the shortcut-engine state machines. Bound L9 → `/aid-fix` and L10 → `/aid-triage`. Retired the recipe system and the stale "14 skills / 51-52 recipes / methodology flat-layout" Known Issues; recorded the 82-directory taxonomy. |
 | 1.5 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill taxonomy 82 -> 92 directories (15 classic incl. restored `/aid-ask` + `/aid-triage` + 76 verb-first shortcuts, up from 67; catalog 69-row -> 80-row) for the new `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families; updated the Phase Input/Output Contracts off-pipeline skill list and the Known Issues skill-count entry. |
 | 1.6 | 2026-07-22 | chore/prune-shipped-work-folders | Added the "work folders are transient" invariant to `## Invariants`: `.aid/works/work-NNN-*/` is disposable per-work pipeline state and no permanent artifact may depend on a specific one's contents; pipeline skills/scripts operating on work folders as live runtime state are exempt. |
+| 1.7 | 2026-07-23 | work-023 doc-count reconciliation | Skill taxonomy 108 -> 111 directories (17 curated, up from 14, adding `aid-read-ticket`/`aid-create-ticket`/`aid-update-ticket`); catalog (94-row) and agent/KB-doc counts unchanged; updated the Known Issues skill-count entry. |

@@ -118,7 +118,10 @@ Is there anything else we should consider, or are the requirements ready?
   - Add Review History entry in STATE.md `## Interview State`
   - Update `.aid/knowledge/INDEX.md` and `.aid/knowledge/README.md`
     if they exist
-  - If `infrastructure.md § Project Management` defines a tool → create an Epic for this work
+  - If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:
+    "Consider filing an epic-type ticket for this work — run `/aid-create-ticket --level epic
+    <description>`." Optional, user-initiated, never auto-invoked; silent (no output) if no
+    issue-tracker connector is catalogued.
   - Print: `✅ Requirements approved.`
   - Emit pipeline pause signal (silent state-write — no output, no gate):
     ```

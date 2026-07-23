@@ -155,6 +155,9 @@ const SKILL_GROUPS = [
       { name: 'aid-config', phase: 'bootstrap · run once' },
       { name: 'aid-set-connector', phase: 'on demand · upsert a connector into the catalog' },
       { name: 'aid-unset-connector', phase: 'on demand · remove a connector from the catalog' },
+      { name: 'aid-read-ticket', phase: 'on demand · non-destructive ticket fetch and display' },
+      { name: 'aid-create-ticket', phase: 'on demand · preview + confirm before filing a ticket' },
+      { name: 'aid-update-ticket', phase: 'on demand · preview + confirm before mutating a ticket' },
     ],
   },
   {

@@ -382,14 +382,13 @@ into EXECUTE, not a continuation that can skip it); retry from Step 1.
   (flat path: the work-root `STATE.md § ## Delivery Lifecycle`)
 - IMPEDIMENT-task-NNN.md if blocked
 
-## Project Management Sync (conditional)
+## Ticket Suggestion (conditional)
 
-If `infrastructure.md § Project Management` defines a tool:
-- When starting a task → update corresponding ticket to In Progress
-- When task passes review → update ticket to Done
-- If loopback needed → add comment to ticket with context
-
-If no PM tool → skip.
+If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:
+consider updating the corresponding ticket's status via `/aid-update-ticket status` (e.g. In
+Progress → Done) and, if a loopback occurred, recording context via `/aid-update-ticket
+comment`. Optional, user-initiated, never auto-invoked; silent (no output) if no issue-tracker
+connector is catalogued.
 
 ## Quality Checklist
 

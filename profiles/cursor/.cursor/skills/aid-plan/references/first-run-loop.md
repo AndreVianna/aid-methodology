@@ -124,13 +124,16 @@ Fill in:
 > deliveries/delivery-NNN/STATE.md files. `aid-plan` does NOT write any rows into the work STATE.md.
 
 **4c. Connector awareness — record this delivery's `ticket_ref` (optional).** If this deliverable
-corresponds to (or the user names) an external tracker item, or the team wants one filed for it,
-create/register it via a catalogued issue-tracker connector per
-`.cursor/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`; for
-a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID resolves
-nothing and stores no credential) and record `ticket_ref: <stem>:<external-id>` in the delivery's
-`STATE.md` frontmatter just written above (4b). Skip silently when no such ticket applies or no
-matching connector is catalogued.
+corresponds to (or the user names) an external tracker item, fetch it by invoking `/aid-read-ticket
+[<connector>:]<ticket-id>` — the connector resolution and host-MCP fetch live there (feature-001);
+no direct-fetch recipe is re-implemented here — and record `ticket_ref: <stem>:<external-id>` in
+the delivery's `STATE.md` frontmatter just written above (4b). Skip silently when no such ticket
+applies or no matching connector is catalogued; the delegated read is non-destructive, so no extra
+confirm is added. If instead the team wants a new tracker item filed for this deliverable, aid-plan
+does not file one itself. If a catalogued `issue-tracker` connector exists in `.aid/connectors/` →
+print a suggestion: "to file a tracker item for this deliverable, run `/aid-create-ticket`, then
+re-record its ref," and continue without one. Optional, user-initiated, never auto-invoked;
+silent (no output) if no issue-tracker connector is catalogued.
 
 **Agent:** Dispatch with `subagent_type: aid-reviewer` (overriding the default `aid-architect`) **at Large tier** — the executor is the Large `aid-architect`, so reviewer tier >= executor tier (`.cursor/aid/templates/agent-dispatch-tiering.md`). The aid-reviewer must run with clean context — it grades against KB/codebase reality without seeing the aid-architect's working notes.
 

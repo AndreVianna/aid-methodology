@@ -52,10 +52,8 @@ For each approved finding:
 
 Print monitor run summary: date, window, finding count, routing summary.
 
-▶ PM tool ticket creation starting (~10–30 s per ticket per `.claude/aid/templates/rough-time-hints.md`; skip block entirely if no PM tool)
-If PM tool configured (infrastructure.md § Project Management):
-- Create tickets for BUG tasks
-- Link to existing Sprint/Epic
-✓ PM tool ticket creation done (record actual time, N tickets created) — or ✗ PM tool ticket creation failed: {reason — usually auth/network}
+If a catalogued `issue-tracker` connector exists in `.aid/connectors/` → print a suggestion:
+consider filing a ticket for each BUG finding via `/aid-create-ticket`. Optional, user-initiated,
+never auto-invoked; silent (no output) if no issue-tracker connector is catalogued.
 
 **Advance:** **CHAIN** → [State: DONE] (continue inline).

@@ -449,7 +449,7 @@ deployment, say so explicitly. Also: what project management tool is used (or sa
 *(Investigate: Source Control section -- VCS type, hosting, branch/commit commands; CI/CD
 pipeline details; container config; Deployment section -- build output type, packaging,
 publishing target, versioning scheme, release process; Project Management section -- tool
-or "none", access method, entity mapping if applicable; artifact repos, runtime config,
+or "none", access method; artifact repos, runtime config,
 monitoring, environments.)*
 **Red flags:** Lists tools without explaining how they are configured or connected.
 Missing Source Control section or assuming Git without verifying. Missing Deployment

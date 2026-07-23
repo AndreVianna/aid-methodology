@@ -240,14 +240,6 @@ task rollup table in STATE.md shows `_none yet_` -- that is correct and expected
 The work `STATE.md` `## Plan / Deliveries` section is DERIVED (read-only at read time);
 `aid-plan` does NOT write delivery rows there.
 
-## Project Management Sync (conditional)
-
-If `infrastructure.md § Project Management` defines a tool:
-- When PLAN.md is approved → create Sprint/Iteration entries for each delivery
-- Map deliveries to Sprints in the PM tool
-
-If no PM tool → skip.
-
 ## Quality Checklist
 
 - [ ] Every Ready feature assigned to a deliverable or explicitly deferred

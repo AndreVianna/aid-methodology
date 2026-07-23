@@ -105,12 +105,12 @@ body for Step 3.
 ### Step 2c — Connector enrichment (optional)
 
 When the question concerns a specific item tracked in a catalogued connector (e.g. "what's the
-status of PROJ-45?"), consult it per
-`.codex/aid/templates/connectors/consumption-protocol.md` (scan `.aid/connectors/INDEX.md`;
-for a `connection_type: mcp` match, request the connection from the host tool's own MCP — AID
-resolves nothing and stores no credential) and fold what it returns into the answer, cited the
-same way as any other source (Step 3). Skip silently when no matching connector is catalogued —
-this never blocks or replaces the KB/codebase/in-flight-work answer path above.
+status of PROJ-45?"), fetch it by invoking `/aid-read-ticket [<connector>:]<ticket-id>` — the
+connector resolution and host-MCP fetch live there (feature-001); no direct-fetch recipe is
+re-implemented here — and fold what it returns into the answer, cited the same way as any other
+source (Step 3). Skip silently when no matching connector is catalogued — this never blocks or
+replaces the KB/codebase/in-flight-work answer path above; the delegated read is non-destructive,
+so no extra confirm is added.
 
 ### Step 3 — Compose and emit the reply
 
