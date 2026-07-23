@@ -432,15 +432,16 @@ CONFIRMED in `project-structure.md` "Entry Points" and file headers:
 
 Documented as reality + flagged; NOT silently reconciled (see `.scout-questions.tmp`):
 
-1. **Skill count (reconciled).** `canonical/skills/` has **92** directories — 15 classic
-   pipeline / on-demand skills, the standalone `/aid-triage` router, and 76 verb-first
-   direct-entry shortcut skills (82/67 added by work-001-lite-aid-skills; extended to
-   92/76 by the v2.1.0 coverage-gap follow-on's `remove`/`deprecate`/`migrate` +
-   `review`/`research` families and the restored `/aid-ask` alias). `README.md`,
-   `docs/aid-methodology.md`, and `docs/repository-structure.md` said "82 skills" as of
-   work-001; CONFIRMED refreshed to "92 skills" / "76 shortcuts" by the v2.1.0
-   skill-count sync (2026-07-09) — the doc-vs-code gap this item tracked is now closed;
-   the prior 12-/13-/14-skill drift is resolved.
+1. **Skill count (reconciled).** `canonical/skills/` has **111** directories — 17 curated
+   pipeline / on-demand / router skills plus the 94-row shortcut catalog's skills (64 verb-first
+   direct-entry shortcut doorways + 30 hand-authored `repurpose` skills). History: 82/67 added by
+   work-001-lite-aid-skills; extended to 92/76 by the v2.1.0 coverage-gap follow-on's
+   `remove`/`deprecate`/`migrate` + `review`/`research` families and the restored `/aid-ask` alias;
+   then grown to 111 by `aid-design` (work-005) and the 3 ticket skills
+   `aid-read-ticket` / `aid-create-ticket` / `aid-update-ticket` (work-023). `README.md`,
+   `docs/aid-methodology.md`, `docs/repository-structure.md`, and the glossary / methodology
+   surfaces all state "111 skills"; the doc-vs-code gap this item tracked stays closed (last
+   reconciled by the v2.3.0 release sweep, 2026-07-23). The prior 12-/13-/14-skill drift is resolved.
 2. **EMISSION-MANIFEST.md lists 3 profiles, reality is 5.** `canonical/EMISSION-MANIFEST.md`
    tables enumerate only claude-code/codex/cursor; the live generator globs all five
    `profiles/*.toml` (copilot-cli and antigravity were added later). The doc predates two
