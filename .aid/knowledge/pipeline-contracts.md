@@ -23,6 +23,7 @@ intent: |
   an artifact template, or any phase boundary.
 contracts: []
 changelog:
+  - 2026-07-22: chore/prune-shipped-work-folders -- added the "work folders are transient" invariant (`.aid/works/work-NNN-*/` is disposable; no permanent artifact depends on a specific one's contents; pipeline skills/scripts operating on them at runtime are exempt).
   - 2026-07-16: work-016 .aid/works/ container relocation -- updated the on-disk work hierarchy (full + flattened Lite diagrams) and the two `.aid/{work}/` artifact-location references to the `.aid/works/work-NNN-{slug}/` container tree.
   - 2026-07-09: work-001 lite-skills refresh -- rewrote the entry model (three doors -- verb-first shortcut / /aid-triage / /aid-describe) and the flattened Lite path (shared shortcut engine INTAKE->CAPTURE->SPEC->PLAN->DETAIL->GATE->APPROVAL-HALT producing work-root REQUIREMENTS.md/SPEC.md/PLAN.md/BLUEPRINT.md + tasks/task-NNN/DETAIL.md, no per-task STATE.md); renamed delivery def to BLUEPRINT.md and task def to DETAIL.md; bound L9 -> /aid-fix and L10 -> /aid-triage; removed the recipe system and aid-describe's TRIAGE/lite states; skill taxonomy now 82 directories.
   - 2026-06-28: Relabeled Phase 2 from "Interview" to "Describe → Define" throughout (Phase 2 label now "Describe → Define" in all prose).
@@ -461,6 +462,16 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
   explicitly evolves the design (see the Feedback Loop Contracts conformance subsection).
 - **Contract fields evolve additively** -- removing or renaming a load-bearing field is a
   lockstep break (see the `## Contracts` Compatibility rule).
+- **Work folders are transient; no permanent artifact depends on a specific one.**
+  `.aid/works/work-NNN-*/` holds disposable per-work pipeline state and may be pruned once
+  the work ships (see the On-Disk Work Hierarchy above). No permanent artifact -- product
+  code, `canonical/` content (or its `profiles/` render), tests, docs/site, the Knowledge
+  Base, settings/schemas, or the agent-context files -- may reference, assert against, embed,
+  or otherwise depend on the contents of a specific work folder: tests build their own
+  fixtures, and the KB never cites a work folder as a source. Pipeline skills and scripts
+  that create, read, or update work folders as their live runtime state (Execute, Deploy,
+  Monitor, the dashboard reader) are the intended operators of that state, not a dependency,
+  and are exempt.
 
 ---
 
@@ -474,3 +485,4 @@ Load-bearing keys: `project.{name,description,type}`, `tools.installed`,
 | 1.3 | 2026-07-09 | housekeep KB-DELTA | Added ELICIT's outputs (E1 `## External Documentation` / E2 `.aid/connectors/` registry) to the Discover Phase-I/O row and the Typed Artifact Contracts table; corrected the 1.2 provenance to PR #132. |
 | 1.4 | 2026-07-09 | work-001 lite-skills refresh | Rewrote the entry model (three doors: verb-first shortcut / `/aid-triage` / `/aid-describe`) and the flattened Lite path: the shared shortcut engine (`INTAKE→CAPTURE→SPEC→PLAN→DETAIL→GATE→APPROVAL-HALT`) authors work-root `REQUIREMENTS.md`/`SPEC.md`/`PLAN.md`/`BLUEPRINT.md` + `tasks/task-NNN/DETAIL.md` with **no per-task `STATE.md`** (cells live in `STATE.md § ### Tasks lifecycle`). Renamed the delivery definition to `BLUEPRINT.md` and the task definition to `DETAIL.md` across the phase table, artifact contracts, hierarchy trees, and state-machine table (fixing the deleted `delivery-spec-template.md` citation → `delivery-blueprint-template.md`); added a `BLUEPRINT.md` artifact-contract row. Removed `aid-describe`'s TRIAGE/lite states; added `/aid-triage` and the shortcut-engine state machines. Bound L9 → `/aid-fix` and L10 → `/aid-triage`. Retired the recipe system and the stale "14 skills / 51-52 recipes / methodology flat-layout" Known Issues; recorded the 82-directory taxonomy. |
 | 1.5 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill taxonomy 82 -> 92 directories (15 classic incl. restored `/aid-ask` + `/aid-triage` + 76 verb-first shortcuts, up from 67; catalog 69-row -> 80-row) for the new `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families; updated the Phase Input/Output Contracts off-pipeline skill list and the Known Issues skill-count entry. |
+| 1.6 | 2026-07-22 | chore/prune-shipped-work-folders | Added the "work folders are transient" invariant to `## Invariants`: `.aid/works/work-NNN-*/` is disposable per-work pipeline state and no permanent artifact may depend on a specific one's contents; pipeline skills/scripts operating on work folders as live runtime state are exempt. |
