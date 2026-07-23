@@ -30,6 +30,13 @@ cross-phase process state). Keeping it current is **not optional**:
   at the same points, with **no exception and no bypass**. A task that sits
   at `Pending` in the dashboard for its entire execution and then jumps
   straight to `Done` is exactly the failure mode this rule exists to prevent.
+- **Work folders are transient.** `.aid/works/work-NNN-*/` holds disposable
+  per-work pipeline state and may be pruned once the work ships. No permanent
+  artifact — product code, `canonical/` content (or its `profiles/` render),
+  tests, docs, the Knowledge Base, or these context files — may depend on the
+  contents of a specific work folder: tests build their own fixtures, and the
+  KB never cites a work folder as a source. Pipeline skills/scripts that
+  create, read, or update work folders as live runtime state are exempt.
 
 ## Knowledge Base
 
