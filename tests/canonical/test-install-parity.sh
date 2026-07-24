@@ -27,6 +27,7 @@ set -uo pipefail
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -39,12 +40,7 @@ SUT_PS1="${REPO_ROOT}/install.ps1"
 # ---------------------------------------------------------------------------
 # Gate: skip when pwsh is absent (CI asserts it IS present so this never fires).
 # ---------------------------------------------------------------------------
-PWSH=""
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-fi
+PWSH="$(detect_pwsh || true)"
 
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping install parity suite (needs PowerShell)."

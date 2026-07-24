@@ -21,6 +21,8 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -41,12 +43,7 @@ PROFILES_DIR="${REPO_ROOT}/profiles"
 # ---------------------------------------------------------------------------
 # Gate: skip when pwsh is absent.
 # ---------------------------------------------------------------------------
-PWSH=""
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-fi
+PWSH="$(detect_pwsh || true)"
 
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping cross-platform parity suite (needs PowerShell)."
@@ -65,42 +62,11 @@ trap 'rm -rf "$TMP"' EXIT
 # WITHOUT an explicit scan-root argument (e.g. PAR080-S07) will therefore
 # scan whatever $HOME is at subprocess time.
 #
-# Without this pin, running the suite standalone (as `tests/run-all.sh` and
-# CI do) would scan the real $HOME and create stray .aid/dashboard/ dirs in
-# unrelated repos on the machine (observed: /home/andre.vianna/projects/
-# casuloailabs/.aid/dashboard/home.html).
-#
-# Mechanism: export HOME to a throwaway subdirectory of $TMP so the WHOLE
-# test process and every spawned subprocess (aid, pwsh, harness scripts)
-# inherits the throwaway and can never reach the real $HOME.
-# REAL_HOME is saved before the override for the end-of-suite canary check.
-#
-# Windows twin: native (non-WSL) pwsh derives its automatic $HOME variable
-# from $env:USERPROFILE (falling back to $env:HOMEDRIVE + $env:HOMEPATH), and
-# NEVER from a bash-exported $HOME -- confirmed empirically: with USERPROFILE
-# left at its real value, a child pwsh sees $HOME == the REAL user profile
-# even though bash's own $HOME was just overridden above. bin/aid.ps1's user-
-# tier registry path is `Join-Path $HOME '.aid'`, so leaving USERPROFILE
-# untouched would let this suite's PS-side `projects remove <N>` cases
-# (PAR018-Y) index/delete over the REAL developer registry on a local Windows
-# run. Pin USERPROFILE/HOMEDRIVE/HOMEPATH to the SAME fake-HOME dir (Windows-
-# path form via cygpath) so bin/aid.ps1 resolves the sandbox too. Harmless/
-# no-op on Linux CI: cygpath is absent there, so the block below is skipped,
-# and pwsh on non-Windows derives $HOME from $env:HOME (already pinned above).
+# Mechanism + Windows-twin rationale: shared in tests/lib/sandbox.sh's header
+# (sandbox_pin_home). SANDBOX_REAL_HOME is saved before the override for the
+# end-of-suite canary check (sandbox_assert_aid_untouched).
 # ---------------------------------------------------------------------------
-REAL_HOME="${HOME}"
-# Snapshot .aid/dashboard/ dirs in the real HOME before the suite runs.
-# The canary assertion at end-of-suite compares against this baseline.
-_CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 \
-    -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
-export HOME="${TMP}/fakehome"
-mkdir -p "${HOME}"
-if command -v cygpath >/dev/null 2>&1; then
-    _WIN_FAKEHOME="$(cygpath -w "${HOME}")"
-    export USERPROFILE="${_WIN_FAKEHOME}"
-    export HOMEDRIVE="${_WIN_FAKEHOME:0:2}"
-    export HOMEPATH="${_WIN_FAKEHOME:2}"
-fi
+sandbox_pin_home "${TMP}/fakehome"
 
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
@@ -5562,23 +5528,14 @@ else
 fi
 
 # ===========================================================================
-# End-of-suite: REAL_HOME blast-surface canary
+# End-of-suite: real-HOME blast-surface canary
 #
-# Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before
-# the global HOME pin against one taken after the full suite completes.
-# Any new directory = an escape from the throwaway HOME that reached a real
-# repo.  This assertion would have caught the casuloailabs/.aid/dashboard
-# leak (delivery-011 bisection confirmed bug).
+# Compare the .aid-subtree snapshot taken before the global HOME pin against
+# one taken after the full suite completes (sandbox.sh, superset check).
+# Any change = an escape from the throwaway HOME that reached a real repo.
+# This assertion would have caught the casuloailabs/.aid/dashboard leak
+# (delivery-011 bisection confirmed bug).
 # ===========================================================================
-_CANARY_AFTER="$(find "${REAL_HOME}" -maxdepth 6 \
-    -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
-if [[ "${_CANARY_BEFORE}" == "${_CANARY_AFTER}" ]]; then
-    pass "CANARY-PAR01 real-HOME blast surface: no new .aid/dashboard/ dirs created under ${REAL_HOME}"
-else
-    _CANARY_NEW="$(comm -13 \
-        <(echo "${_CANARY_BEFORE}") \
-        <(echo "${_CANARY_AFTER}"))"
-    fail "CANARY-PAR01 real-HOME blast surface: NEW .aid/dashboard/ dirs appeared under ${REAL_HOME} (escape detected!): ${_CANARY_NEW}"
-fi
+sandbox_assert_aid_untouched "CANARY-PAR01 real-HOME blast surface: no new .aid/dashboard/ dirs created under ${SANDBOX_REAL_HOME}"
 
 test_summary

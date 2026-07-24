@@ -43,6 +43,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
+source "${SCRIPT_DIR}/../lib/net.sh"
 
 # ---------------------------------------------------------------------------
 # Runtime availability
@@ -104,44 +105,7 @@ cleanup() {
 trap cleanup EXIT
 
 # ---------------------------------------------------------------------------
-# Port helpers
-# ---------------------------------------------------------------------------
-
-# Find a free port on 127.0.0.1 by binding to port 0.
-find_free_port() {
-    python3 -c "
-import socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('127.0.0.1', 0))
-print(s.getsockname()[1])
-s.close()
-"
-}
-
-# Wait until 127.0.0.1:PORT serves /api/home, with timeout.
-# Uses urllib (not raw socket) to avoid sandbox restrictions on socket.create_connection.
-# Args: PORT TIMEOUT_SECS
-# Returns 0 if endpoint becomes available within timeout, 1 otherwise.
-#
-# NOTE: python3 invocation is a standalone command (not inside 'if' or pipeline)
-# to avoid interactions between bash pipefail and python's urllib internals.
-wait_for_port() {
-    local port="$1"
-    local timeout="${2:-12}"
-    local attempts=$(( timeout * 3 + 1 ))
-    local i=0 rc
-    while [[ $i -lt $attempts ]]; do
-        python3 "${SCRIPT_DIR}/../lib/pt1h_probe.py" "$port"
-        rc=$?
-        if [[ $rc -eq 0 ]]; then
-            return 0
-        fi
-        sleep 0.3
-        i=$(( i + 1 ))
-    done
-    return 1
-}
-
+# Port helpers: find_free_port / wait_for_port -- see tests/lib/net.sh.
 # ---------------------------------------------------------------------------
 # Build a temporary aid-home wrapping a single fixture repo.
 # The registry.yml points to the fixture directory as the single repo entry.

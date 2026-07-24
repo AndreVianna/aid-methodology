@@ -49,6 +49,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "${SCRIPT_DIR}/../lib/assert.sh"
+source "${SCRIPT_DIR}/../lib/net.sh"
 
 # ---------------------------------------------------------------------------
 # Runtime availability
@@ -160,38 +161,7 @@ log "registry.yml:"
 [[ "$VERBOSE" -eq 1 ]] && cat "${AID_HOME}/registry.yml"
 
 # ---------------------------------------------------------------------------
-# Port helpers
-# ---------------------------------------------------------------------------
-
-find_free_port() {
-    python3 -c "
-import socket
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.bind(('127.0.0.1', 0))
-print(s.getsockname()[1])
-s.close()
-"
-}
-
-# Wait until 127.0.0.1:PORT serves /api/home, with timeout.
-# Args: PORT TIMEOUT_SECS
-wait_for_port_h() {
-    local port="$1"
-    local timeout="${2:-12}"
-    local attempts=$(( timeout * 3 + 1 ))
-    local i=0 rc
-    while [[ $i -lt $attempts ]]; do
-        python3 "${SCRIPT_DIR}/../lib/pt1h_probe.py" "$port"
-        rc=$?
-        if [[ $rc -eq 0 ]]; then
-            return 0
-        fi
-        sleep 0.3
-        i=$(( i + 1 ))
-    done
-    return 1
-}
-
+# Port helpers: find_free_port / wait_for_port -- see tests/lib/net.sh.
 # ---------------------------------------------------------------------------
 # Server start helpers
 # ---------------------------------------------------------------------------
@@ -353,7 +323,7 @@ start_servers() {
     fi
 
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if ! wait_for_port_h "$PY_PORT" 12; then
+        if ! wait_for_port "$PY_PORT" 12; then
             fail "[PT-1-H] python server did not start within 12s on port $PY_PORT"
             return 1
         fi
@@ -361,7 +331,7 @@ start_servers() {
     fi
 
     if [[ $HAS_NODE -eq 1 ]]; then
-        if ! wait_for_port_h "$NODE_PORT" 12; then
+        if ! wait_for_port "$NODE_PORT" 12; then
             fail "[PT-1-H] node server did not start within 12s on port $NODE_PORT"
             return 1
         fi
@@ -469,7 +439,7 @@ if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $PY_HOME_OK -eq 1 && $NODE_HOME_OK
         _sl_py_port="$(find_free_port)"; _sl_node_port="$(find_free_port)"
         start_python_server_h "$_sl_py_port" "$_sl_home"
         start_node_server_h "$_sl_node_port" "$_sl_home"
-        if wait_for_port_h "$_sl_py_port" 12 && wait_for_port_h "$_sl_node_port" 12 \
+        if wait_for_port "$_sl_py_port" 12 && wait_for_port "$_sl_node_port" 12 \
            && fetch_url "$_sl_py_port" "/api/home" "/tmp/pt1h_sl_py.json" \
            && fetch_url "$_sl_node_port" "/api/home" "/tmp/pt1h_sl_node.json"; then
             normalize_home_json /tmp/pt1h_sl_py.json /tmp/pt1h_sl_py_norm.json
@@ -868,11 +838,11 @@ SYMEOF
 
     SYMLINK_READY=0
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if wait_for_port_h "$SPYPORT" 10; then
+        if wait_for_port "$SPYPORT" 10; then
             SYMLINK_READY=1
         fi
     elif [[ $HAS_NODE -eq 1 ]]; then
-        if wait_for_port_h "$SNODEPORT" 10; then
+        if wait_for_port "$SNODEPORT" 10; then
             SYMLINK_READY=1
         fi
     fi
@@ -1203,14 +1173,14 @@ REOF
     # Wait for servers
     local kb_py_ok=0 kb_node_ok=0
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if wait_for_port_h "$kb_py_port" 12; then
+        if wait_for_port "$kb_py_port" 12; then
             kb_py_ok=1
         else
             fail "[kb-variant:$name] python server did not start on port $kb_py_port"
         fi
     fi
     if [[ $HAS_NODE -eq 1 ]]; then
-        if wait_for_port_h "$kb_node_port" 12; then
+        if wait_for_port "$kb_node_port" 12; then
             kb_node_ok=1
         else
             fail "[kb-variant:$name] node server did not start on port $kb_node_port"
@@ -1582,7 +1552,7 @@ DEOF
 
     D_PY_OK=0 D_NODE_OK=0
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if wait_for_port_h "$D_PY_PORT" 12; then
+        if wait_for_port "$D_PY_PORT" 12; then
             D_PY_OK=1
             pass "[detail] python detail-server started on port $D_PY_PORT"
         else
@@ -1590,7 +1560,7 @@ DEOF
         fi
     fi
     if [[ $HAS_NODE -eq 1 ]]; then
-        if wait_for_port_h "$D_NODE_PORT" 12; then
+        if wait_for_port "$D_NODE_PORT" 12; then
             D_NODE_OK=1
             pass "[detail] node detail-server started on port $D_NODE_PORT"
         else
@@ -2000,7 +1970,7 @@ fi
 
 S7A_PY_OK=0 S7A_NODE_OK=0
 if [[ $HAS_PYTHON -eq 1 ]]; then
-    if wait_for_port_h "$S7A_PY_PORT" 12; then
+    if wait_for_port "$S7A_PY_PORT" 12; then
         S7A_PY_OK=1
         pass "[s7a] python split-tier server started"
     else
@@ -2008,7 +1978,7 @@ if [[ $HAS_PYTHON -eq 1 ]]; then
     fi
 fi
 if [[ $HAS_NODE -eq 1 ]]; then
-    if wait_for_port_h "$S7A_NODE_PORT" 12; then
+    if wait_for_port "$S7A_NODE_PORT" 12; then
         S7A_NODE_OK=1
         pass "[s7a] node split-tier server started"
     else
@@ -2157,7 +2127,7 @@ fi
 
 S7B_PY_OK=0 S7B_NODE_OK=0
 if [[ $HAS_PYTHON -eq 1 ]]; then
-    if wait_for_port_h "$S7B_PY_PORT" 12; then
+    if wait_for_port "$S7B_PY_PORT" 12; then
         S7B_PY_OK=1
         pass "[s7b] python per-user-collapse server started"
     else
@@ -2165,7 +2135,7 @@ if [[ $HAS_PYTHON -eq 1 ]]; then
     fi
 fi
 if [[ $HAS_NODE -eq 1 ]]; then
-    if wait_for_port_h "$S7B_NODE_PORT" 12; then
+    if wait_for_port "$S7B_NODE_PORT" 12; then
         S7B_NODE_OK=1
         pass "[s7b] node per-user-collapse server started"
     else
