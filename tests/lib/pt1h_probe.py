@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # pt1h_probe.py -- probe /api/home on 127.0.0.1:PORT and exit 0 on success.
-# Called by test-dashboard-parity-h.sh wait_for_port_h() to avoid bash pipefail
+# Called by test-dashboard-parity-h.sh wait_for_port() to avoid bash pipefail
 # interactions with urllib's internal pipes.
 #
 # Usage: python3 pt1h_probe.py PORT

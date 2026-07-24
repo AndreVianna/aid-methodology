@@ -30,6 +30,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -59,13 +60,7 @@ mkdir -p "${HOME}"
 # ---------------------------------------------------------------------------
 # pwsh detection (skip PS parity gate if absent)
 # ---------------------------------------------------------------------------
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-else
-    PWSH=""
-fi
+PWSH="$(detect_pwsh || true)"
 
 # ---------------------------------------------------------------------------
 # Helper: file_contains FILE PATTERN LABEL

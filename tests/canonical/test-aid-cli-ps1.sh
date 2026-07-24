@@ -21,6 +21,8 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -39,12 +41,7 @@ PROFILES_DIR="${REPO_ROOT}/profiles"
 # ---------------------------------------------------------------------------
 # Gate: skip when pwsh is absent.
 # ---------------------------------------------------------------------------
-PWSH=""
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-fi
+PWSH="$(detect_pwsh || true)"
 
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping aid CLI PowerShell suite (needs PowerShell)."
@@ -58,10 +55,10 @@ trap 'rm -rf "$TMP"' EXIT
 # update-check cache ($HOME/.aid/.update-check, written by the PS029-* tests that set
 # AID_NO_UPDATE_CHECK=0 with a fake 9.9.9 release) lands in a throwaway, never the developer's
 # real $HOME. Per-invocation HOME overrides still win. Crash-safe (HOME redirected for the whole
-# process). End-of-suite canary asserts the real $HOME cache was untouched.
-REAL_HOME="${HOME}"
-_CANARY_UPDCHK_BEFORE="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
-export HOME="${TMP}/home"
+# process). End-of-suite canary (sandbox_assert_aid_untouched) asserts the real HOME's .aid
+# subtree was untouched. sandbox_pin_home also pins the Windows USERPROFILE/HOMEDRIVE/HOMEPATH
+# twin (a safe upgrade for this pwsh-spawning suite; no-op on Linux CI).
+sandbox_pin_home
 mkdir -p "${HOME}/.aid"
 
 FIXTURE_DIR="${TMP}/fixtures"
@@ -1060,12 +1057,8 @@ PS1_RM_H=$(AID_HOME="${PS029J_HOME_PS}" AID_LIB_PATH="${PS029J_HOME_PS}/lib/AidI
 assert_output_contains "$SH_RM_H"  "self" "PS029-J07 Bash remove -h: mentions 'self'"
 assert_output_contains "$PS1_RM_H" "self" "PS029-J08 PS1 remove -h: mentions 'self'"
 
-# ISOLATION CANARY: the real $HOME's update-check cache must be byte-unchanged by this suite.
-_CANARY_UPDCHK_AFTER="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
-if [[ "${_CANARY_UPDCHK_BEFORE}" == "${_CANARY_UPDCHK_AFTER}" ]]; then
-    pass "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"
-else
-    fail "ISOL-HOME real \$HOME/.aid/.update-check MODIFIED by suite (isolation escape: '${_CANARY_UPDCHK_BEFORE}' -> '${_CANARY_UPDCHK_AFTER}')"
-fi
+# ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite
+# (superset check via sandbox.sh, still asserted under the suite's original label).
+sandbox_assert_aid_untouched "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"
 
 test_summary

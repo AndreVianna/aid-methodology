@@ -3,10 +3,9 @@
 #
 # Tests the aid dashboard start/stop handlers in bin/aid (Bash).
 # PowerShell parity for T-1/T-3/T-4/T-5/T-7 is in test-aid-cli-parity.sh.
-# T-13 ASCII-only guard delegates to test-ascii-only.sh.
 #
 # Feature-005 expose/teardown unit tests (function-level, stub-based) live in
-# test-aid-remote.sh (T-1..T-9).  This file retains only the feature-004
+# test-aid-remote.sh (T-1..T-8).  This file retains only the feature-004
 # integration assertions for the --remote SUCCESS path (T-14h/T-14i): when
 # tailscale IS available, start --remote must set record.remote=true and stop
 # must invoke teardown.  Those integration assertions are NOT duplicated in
@@ -25,7 +24,6 @@
 #   T-10  bare aid / aid version / aid status regression (C4 guard)
 #   T-11  --remote with no mechanism -> exit 10, server stays local, remote=false
 #   T-12  Bash-side parity messages (exact CLI-3 format); PS twin in test-aid-cli-parity.sh
-#   T-13  ASCII-only guard for bin/aid + bin/aid.ps1
 #   T-14  --remote SUCCESS integration: record.remote=true + teardown-on-stop
 #   T-15  Non-project dir regression: start from bare $HOME succeeds (exit 0),
 #         prints URL, writes pid to $HOME/.aid/.temp/; and does NOT register cwd.
@@ -47,6 +45,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/net.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -139,10 +138,11 @@ new_nonproject_dir() {
     echo "$d"
 }
 
-# Pick a free port by letting the OS assign an ephemeral one, then release it.
-pick_free_port() {
-    python3 -c "import socket; s=socket.socket(); s.bind(('',0)); p=s.getsockname()[1]; s.close(); print(p)"
-}
+# Ephemeral ports come from tests/lib/net.sh find_free_port (FR-7: no local
+# port-helper redefinition). Happy-path `aid dashboard start` sites (which bind a
+# real socket) wrap pick->start->verify in run_dc_start_retry / an inline retry
+# (SETUP only, never an assertion -- AC-3); intentional-failure sites (T-7 usage,
+# T-8 missing-runtime, T-9 port-in-use sim) are NOT wrapped.
 
 # run aid in an isolated home/fixture env with a pinned HOME.
 # The dashboard pid/log go to PINNED_HOME/.aid/.temp/ (never the real ~/.aid).
@@ -152,6 +152,33 @@ run_dc() {
     OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$home_dir" AID_NO_UPDATE_CHECK=1 \
               bash "${home_dir}/bin/aid" "$@" 2>&1)"
     RC_DC=$?
+}
+
+# _dc_start_ok
+#   True if the last dashboard-start attempt (OUT_DC/RC_DC) succeeded OR failed
+#   for a NON-transient reason -- so the caller stops retrying and lets the
+#   existing assertions run. A transient "Address already in use" (lost the
+#   ephemeral-port race under the parallel runner) returns false -> re-pick.
+_dc_start_ok() { [[ "$RC_DC" -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_DC"; }
+
+# run_dc_start_retry PORTVAR HOME_DIR START_ARGS...
+#   Dedicated ephemeral-port retry wrapper for a HAPPY-PATH `aid dashboard start`
+#   via run_dc (SETUP only, never an assertion -- AC-3). PORTVAR already holds the
+#   first port to try; run_dc is invoked as `run_dc HOME_DIR START_ARGS... --port
+#   <PORTVAR>` (the dashboard flag parser is order-independent), and on a transient
+#   lost-port race PORTVAR is re-picked (net.sh find_free_port) and the start
+#   retried up to 3x, then it gives up leaving OUT_DC/RC_DC/PORTVAR at the final
+#   attempt for the caller's existing assertions.
+run_dc_start_retry() {
+    local _pv="$1" _home="$2"; shift 2
+    local _i
+    for _i in 1 2 3; do
+        run_dc "$_home" "$@" --port "${!_pv}"
+        _dc_start_ok && return 0
+        rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
+        printf -v "$_pv" '%s' "$(find_free_port)"
+    done
+    return 0
 }
 
 # run from a specific cwd (non-project dir), still pinning HOME.
@@ -266,11 +293,11 @@ PINNED_LOG_FILE="${PINNED_HOME}/.aid/.temp/dashboard.log"
 # ---------------------------------------------------------------------------
 echo "--- T-1: start python ---"
 H1="$(new_aid_home)"
-PORT1="$(pick_free_port)"
+PORT1="$(find_free_port)"
 # Ensure no stale pid from a prior run.
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
-run_dc "$H1" dashboard start python --port "$PORT1"
+run_dc_start_retry PORT1 "$H1" dashboard start python
 assert_exit_eq "$RC_DC" 0 "T-1: exit 0 on start python"
 assert_output_contains "$OUT_DC" "Dashboard (python) running at http://127.0.0.1:${PORT1}" \
     "T-1: URL printed to stdout"
@@ -308,10 +335,10 @@ run_dc "$H1" dashboard stop
 # ---------------------------------------------------------------------------
 echo "--- T-2: start node ---"
 H2="$(new_aid_home)"
-PORT2="$(pick_free_port)"
+PORT2="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
-run_dc "$H2" dashboard start node --port "$PORT2"
+run_dc_start_retry PORT2 "$H2" dashboard start node
 assert_exit_eq "$RC_DC" 0 "T-2: exit 0 on start node"
 assert_output_contains "$OUT_DC" "Dashboard (node) running at http://127.0.0.1:${PORT2}" \
     "T-2: URL printed (node)"
@@ -341,11 +368,11 @@ run_dc "$H2" dashboard stop
 # ---------------------------------------------------------------------------
 echo "--- T-3: already running ---"
 H3="$(new_aid_home)"
-PORT3="$(pick_free_port)"
+PORT3="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # First start.
-run_dc "$H3" dashboard start python --port "$PORT3"
+run_dc_start_retry PORT3 "$H3" dashboard start python
 assert_exit_eq "$RC_DC" 0 "T-3: first start exits 0"
 
 _T3_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
@@ -370,10 +397,10 @@ run_dc "$H3" dashboard stop
 # ---------------------------------------------------------------------------
 echo "--- T-4: stop after start ---"
 H4="$(new_aid_home)"
-PORT4="$(pick_free_port)"
+PORT4="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
-run_dc "$H4" dashboard start python --port "$PORT4"
+run_dc_start_retry PORT4 "$H4" dashboard start python
 assert_exit_eq "$RC_DC" 0 "T-4: start exits 0 before stop"
 
 _T4_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
@@ -427,11 +454,11 @@ assert_output_contains "$OUT_DC" "not running (nothing to stop)" \
 # ---------------------------------------------------------------------------
 echo "--- T-6: crash sim / stale reclaim ---"
 H6="$(new_aid_home)"
-PORT6="$(pick_free_port)"
+PORT6="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # Start the dashboard.
-run_dc "$H6" dashboard start python --port "$PORT6"
+run_dc_start_retry PORT6 "$H6" dashboard start python
 assert_exit_eq "$RC_DC" 0 "T-6: initial start exits 0"
 
 _T6_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
@@ -446,8 +473,8 @@ assert_file_exists "$PINNED_PID_FILE" \
     "T-6: stale record still present after crash"
 
 # Start again -- must reclaim stale record and succeed.
-PORT6B="$(pick_free_port)"
-run_dc "$H6" dashboard start python --port "$PORT6B"
+PORT6B="$(find_free_port)"
+run_dc_start_retry PORT6B "$H6" dashboard start python
 assert_exit_eq "$RC_DC" 0 "T-6: restart after crash exits 0"
 assert_output_contains "$OUT_DC" "Dashboard (python) running at http://127.0.0.1:${PORT6B}" \
     "T-6: URL printed after stale reclaim"
@@ -467,7 +494,7 @@ run_dc "$H6" dashboard stop
 # ---------------------------------------------------------------------------
 echo "--- T-7: usage errors ---"
 H7="$(new_aid_home)"
-PORT7="$(pick_free_port)"
+PORT7="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # T-7a: bad runtime.
@@ -524,7 +551,7 @@ assert_eq "$(test -f "$PINNED_PID_FILE" && echo exists || echo gone)" "gone" \
 # ---------------------------------------------------------------------------
 echo "--- T-8: runtime absent (PATH stub via command override) ---"
 H8="$(new_aid_home)"
-PORT8="$(pick_free_port)"
+PORT8="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # Use a bash heredoc subshell that overrides 'command -v python3' to return 127,
@@ -552,7 +579,7 @@ assert_eq "$(test -f "$PINNED_PID_FILE" && echo exists || echo gone)" "gone" \
 
 # T-8 node variant.
 H8b="$(new_aid_home)"
-PORT8b="$(pick_free_port)"
+PORT8b="$(find_free_port)"
 
 OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$H8b" AID_NO_UPDATE_CHECK=1 bash << INNEREOF
 command() {
@@ -584,7 +611,7 @@ assert_output_contains "$OUT_DC" "install it, or try: aid dashboard start python
 echo "--- T-9: server crash / port-in-use simulation ---"
 # T-9 uses a custom AID_HOME with a fake server that exits immediately.
 H9="$(new_aid_home)"
-PORT9="$(pick_free_port)"
+PORT9="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # Override the real server.py in the AID_HOME with a fake that exits 1 immediately
@@ -656,11 +683,14 @@ assert_output_not_contains "$OUT_DC" "already running" \
 # ---------------------------------------------------------------------------
 echo "--- T-11: --remote no mechanism (tailscale absent via command override) ---"
 H11="$(new_aid_home)"
-PORT11="$(pick_free_port)"
+PORT11="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # Override 'command -v tailscale' to return failure (simulate tailscale not on PATH).
 # Uses the same heredoc subshell technique as T-8 for runtime-absent testing.
+# Bounded pick->start->verify retry (SETUP only): the local server DOES start
+# here (only --remote fails -> exit 10); re-pick PORT11 on a transient bind race.
+for _t11_try in 1 2 3; do
 OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$H11" AID_NO_UPDATE_CHECK=1 bash << INNEREOF11
 command() {
     if [[ "\$1" == "-v" && "\$2" == "tailscale" ]]; then
@@ -674,6 +704,9 @@ HOME="${PINNED_HOME}" AID_HOME="${H11}" AID_NO_UPDATE_CHECK=1 bash "${H11}/bin/a
 INNEREOF11
 )"
 RC_DC=$?
+_dc_start_ok && break
+rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"; PORT11="$(find_free_port)"
+done
 assert_exit_eq "$RC_DC" 10 "T-11: --remote unavailable exit 10"
 # Pattern avoids leading '--' for grep safety (assert uses grep -F).
 assert_output_contains "$OUT_DC" \
@@ -706,11 +739,11 @@ run_dc "$H11" dashboard stop
 # ---------------------------------------------------------------------------
 echo "--- T-12 (Bash side): exact CLI-3 message format ---"
 H12="$(new_aid_home)"
-PORT12="$(pick_free_port)"
+PORT12="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # T-12a: start success -- exact message.
-run_dc "$H12" dashboard start python --port "$PORT12"
+run_dc_start_retry PORT12 "$H12" dashboard start python
 assert_exit_eq "$RC_DC" 0 "T-12a: start exit 0"
 assert_output_contains "$OUT_DC" \
     "Dashboard (python) running at http://127.0.0.1:${PORT12} -- stop with: aid dashboard stop" \
@@ -751,20 +784,6 @@ assert_output_contains "$OUT_DC" \
     "T-12f: missing runtime exact message"
 
 # ---------------------------------------------------------------------------
-# T-13: ASCII-only guard (delegate to test-ascii-only.sh)
-# ---------------------------------------------------------------------------
-echo "--- T-13: ASCII-only guard ---"
-ASCII_SUITE="${SCRIPT_DIR}/test-ascii-only.sh"
-if [[ -f "$ASCII_SUITE" ]]; then
-    # Run and capture exit code; ignore output (the suite prints its own results).
-    bash "$ASCII_SUITE" > /dev/null 2>&1
-    ASCII_RC=$?
-    assert_exit_eq "$ASCII_RC" 0 "T-13: bin/aid + bin/aid.ps1 pass ASCII-only gate"
-else
-    fail "T-13: test-ascii-only.sh not found at ${ASCII_SUITE}"
-fi
-
-# ---------------------------------------------------------------------------
 # T-14: --remote SUCCESS integration (feature-004/005).
 # T-14h: start --remote with logged-in tailscale stub -> exit 0, record.remote=true,
 #         remote_handle written, local URL + "Remote (private):" printed.
@@ -776,7 +795,7 @@ fi
 # ---------------------------------------------------------------------------
 echo "--- T-14: --remote SUCCESS integration ---"
 H14h="$(new_aid_home)"
-PORT14h="$(pick_free_port)"
+PORT14h="$(find_free_port)"
 STUB14H="$(mktemp -d "${TMP}/stub14h.XXXXXX")"
 make_tailscale_stub "$STUB14H" "logged-in" "srvtest01.tail99999.ts.net"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
@@ -785,10 +804,16 @@ rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 echo "--- T-14h: start --remote with logged-in stub ---"
 _T14H_OUT="$(mktemp "${TMP}/t14h_out.XXXXXX")"
 _T14H_ERR="$(mktemp "${TMP}/t14h_err.XXXXXX")"
-HOME="${PINNED_HOME}" PATH="${STUB14H}:${PATH}" AID_HOME="$H14h" AID_NO_UPDATE_CHECK=1 \
-    bash "${H14h}/bin/aid" dashboard start python --port "$PORT14h" --remote \
-    >"$_T14H_OUT" 2>"$_T14H_ERR"
-RC_DC=$?
+# Bounded pick->start->verify retry (SETUP only): re-pick PORT14h on a transient
+# bind race; the expected --remote SUCCESS (exit 0) breaks on the first attempt.
+for _t14h_try in 1 2 3; do
+    HOME="${PINNED_HOME}" PATH="${STUB14H}:${PATH}" AID_HOME="$H14h" AID_NO_UPDATE_CHECK=1 \
+        bash "${H14h}/bin/aid" dashboard start python --port "$PORT14h" --remote \
+        >"$_T14H_OUT" 2>"$_T14H_ERR"
+    RC_DC=$?
+    { [[ $RC_DC -eq 0 ]] || ! grep -qiF "Address already in use" "$_T14H_ERR"; } && break
+    rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"; PORT14h="$(find_free_port)"
+done
 OUT_DC="$(cat "$_T14H_OUT")"
 ERR_DC="$(cat "$_T14H_ERR")"
 rm -f "$_T14H_OUT" "$_T14H_ERR"
@@ -824,12 +849,16 @@ fi
 # ---------------------------------------------------------------------------
 echo "--- T-15: non-project dir regression ---"
 H15="$(new_aid_home)"
-PORT15="$(pick_free_port)"
+PORT15="$(find_free_port)"
 NONPROJ15="$(new_nonproject_dir)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # T-15a: start from a non-project dir must succeed.
-run_dc_from "$NONPROJ15" "$H15" dashboard start python --port "$PORT15"
+for _t15_try in 1 2 3; do
+    run_dc_from "$NONPROJ15" "$H15" dashboard start python --port "$PORT15"
+    _dc_start_ok && break
+    rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"; PORT15="$(find_free_port)"
+done
 assert_exit_eq "$RC_DC" 0 "T-15a: start from non-project dir exits 0"
 assert_output_not_contains "$OUT_DC" "no AID install found" \
     "T-15a: no 'no AID install found' error"
@@ -949,14 +978,18 @@ assert_eq "$(test -f "${S16}/dashboard/index.html" && echo exists || echo absent
 
 # T-16a: python server GET / must return 200 (code asset in code home).
 echo "--- T-16a: python server GET / from code home ---"
-PORT16a="$(pick_free_port)"
+PORT16a="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # Run bin/aid from code home (H16), but with AID_HOME pointing to state home (S16).
 # bin/aid will set AID_CODE_HOME=H16 and AID_STATE_HOME=S16.
-OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
-          bash "${H16}/bin/aid" dashboard start python --port "$PORT16a" 2>&1)"
-RC_DC=$?
+for _t16a_try in 1 2 3; do
+    OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
+              bash "${H16}/bin/aid" dashboard start python --port "$PORT16a" 2>&1)"
+    RC_DC=$?
+    _dc_start_ok && break
+    rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"; PORT16a="$(find_free_port)"
+done
 assert_exit_eq "$RC_DC" 0 "T-16a: start python with split homes exits 0"
 
 _T16A_PID="$(grep '"pid"' "$PINNED_PID_FILE" 2>/dev/null | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
@@ -1003,15 +1036,19 @@ HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
 
 # T-16b: node server GET / must return 200 (code asset in code home).
 echo "--- T-16b: node server GET / from code home ---"
-PORT16b="$(pick_free_port)"
+PORT16b="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 if ! command -v node >/dev/null 2>&1; then
     pass "T-16b: node not present; skipping node split-home GET / check"
 else
-    OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
-              bash "${H16}/bin/aid" dashboard start node --port "$PORT16b" 2>&1)"
-    RC_DC=$?
+    for _t16b_try in 1 2 3; do
+        OUT_DC="$(HOME="${PINNED_HOME}" AID_HOME="$S16" AID_NO_UPDATE_CHECK=1 \
+                  bash "${H16}/bin/aid" dashboard start node --port "$PORT16b" 2>&1)"
+        RC_DC=$?
+        _dc_start_ok && break
+        rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"; PORT16b="$(find_free_port)"
+    done
     assert_exit_eq "$RC_DC" 0 "T-16b: start node with split homes exits 0"
 
     _T16B_PID="$(grep '"pid"' "$PINNED_PID_FILE" 2>/dev/null | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
@@ -1062,11 +1099,11 @@ fi
 # ---------------------------------------------------------------------------
 echo "--- T-17: --allow-writes CLI flag ---"
 H17="$(new_aid_home)"
-PORT17="$(pick_free_port)"
+PORT17="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
 
 # T-17a: start --allow-writes accepted.
-run_dc "$H17" dashboard start python --port "$PORT17" --allow-writes
+run_dc_start_retry PORT17 "$H17" dashboard start python --allow-writes
 assert_exit_eq "$RC_DC" 0 "T-17a: start --allow-writes exit 0"
 assert_output_contains "$OUT_DC" "Dashboard (python) running at http://127.0.0.1:${PORT17}" \
     "T-17a: URL printed with --allow-writes"
@@ -1107,9 +1144,9 @@ except Exception:
 
 # T-18a: loopback, no flags -> write_enabled=true.
 H18a="$(new_aid_home)"
-PORT18a="$(pick_free_port)"
+PORT18a="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
-run_dc "$H18a" dashboard start python --port "$PORT18a"
+run_dc_start_retry PORT18a "$H18a" dashboard start python
 assert_exit_eq "$RC_DC" 0 "T-18a: loopback start exit 0"
 _T18A_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
 [[ -n "$_T18A_PID" ]] && SPAWNED_PIDS+=("$_T18A_PID")
@@ -1124,13 +1161,19 @@ run_dc "$H18a" dashboard stop
 
 # T-18b: --remote alone (logged-in stub, no --allow-writes) -> write_enabled=false.
 H18b="$(new_aid_home)"
-PORT18b="$(pick_free_port)"
+PORT18b="$(find_free_port)"
 STUB18B="$(mktemp -d "${TMP}/stub18b.XXXXXX")"
 make_tailscale_stub "$STUB18B" "logged-in" "srv18b.tail00000.ts.net"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
-HOME="${PINNED_HOME}" PATH="${STUB18B}:${PATH}" AID_HOME="$H18b" AID_NO_UPDATE_CHECK=1 \
-    bash "${H18b}/bin/aid" dashboard start python --port "$PORT18b" --remote >/dev/null 2>&1
-RC_DC=$?
+_t18b_err="$(mktemp "${TMP}/t18b_err.XXXXXX")"
+for _t18b_try in 1 2 3; do
+    HOME="${PINNED_HOME}" PATH="${STUB18B}:${PATH}" AID_HOME="$H18b" AID_NO_UPDATE_CHECK=1 \
+        bash "${H18b}/bin/aid" dashboard start python --port "$PORT18b" --remote >/dev/null 2>"$_t18b_err"
+    RC_DC=$?
+    { [[ $RC_DC -eq 0 ]] || ! grep -qiF "Address already in use" "$_t18b_err"; } && break
+    rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"; PORT18b="$(find_free_port)"
+done
+rm -f "$_t18b_err"
 assert_exit_eq "$RC_DC" 0 "T-18b: --remote start exit 0"
 _T18B_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
 [[ -n "$_T18B_PID" ]] && SPAWNED_PIDS+=("$_T18B_PID")
@@ -1146,14 +1189,20 @@ HOME="${PINNED_HOME}" PATH="${STUB18B}:${PATH}" AID_HOME="$H18b" AID_NO_UPDATE_C
 
 # T-18c: --remote --allow-writes -> write_enabled=true.
 H18c="$(new_aid_home)"
-PORT18c="$(pick_free_port)"
+PORT18c="$(find_free_port)"
 STUB18C="$(mktemp -d "${TMP}/stub18c.XXXXXX")"
 make_tailscale_stub "$STUB18C" "logged-in" "srv18c.tail00000.ts.net"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
-HOME="${PINNED_HOME}" PATH="${STUB18C}:${PATH}" AID_HOME="$H18c" AID_NO_UPDATE_CHECK=1 \
-    bash "${H18c}/bin/aid" dashboard start python --port "$PORT18c" --remote --allow-writes \
-    >/dev/null 2>&1
-RC_DC=$?
+_t18c_err="$(mktemp "${TMP}/t18c_err.XXXXXX")"
+for _t18c_try in 1 2 3; do
+    HOME="${PINNED_HOME}" PATH="${STUB18C}:${PATH}" AID_HOME="$H18c" AID_NO_UPDATE_CHECK=1 \
+        bash "${H18c}/bin/aid" dashboard start python --port "$PORT18c" --remote --allow-writes \
+        >/dev/null 2>"$_t18c_err"
+    RC_DC=$?
+    { [[ $RC_DC -eq 0 ]] || ! grep -qiF "Address already in use" "$_t18c_err"; } && break
+    rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"; PORT18c="$(find_free_port)"
+done
+rm -f "$_t18c_err"
 assert_exit_eq "$RC_DC" 0 "T-18c: --remote --allow-writes start exit 0"
 _T18C_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
 [[ -n "$_T18C_PID" ]] && SPAWNED_PIDS+=("$_T18C_PID")
@@ -1169,9 +1218,9 @@ HOME="${PINNED_HOME}" PATH="${STUB18C}:${PATH}" AID_HOME="$H18c" AID_NO_UPDATE_C
 
 # T-18d: --allow-writes on loopback -- accepted, redundant, no error, write_enabled=true.
 H18d="$(new_aid_home)"
-PORT18d="$(pick_free_port)"
+PORT18d="$(find_free_port)"
 rm -f "$PINNED_PID_FILE" "$PINNED_LOG_FILE"
-run_dc "$H18d" dashboard start python --port "$PORT18d" --allow-writes
+run_dc_start_retry PORT18d "$H18d" dashboard start python --allow-writes
 assert_exit_eq "$RC_DC" 0 "T-18d: --allow-writes on loopback exit 0 (redundant, no error)"
 _T18D_PID="$(grep '"pid"' "$PINNED_PID_FILE" | sed 's/[^0-9]*\([0-9]*\).*/\1/')"
 [[ -n "$_T18D_PID" ]] && SPAWNED_PIDS+=("$_T18D_PID")

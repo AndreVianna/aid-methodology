@@ -21,6 +21,10 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/net.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh-batch.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -41,12 +45,7 @@ PROFILES_DIR="${REPO_ROOT}/profiles"
 # ---------------------------------------------------------------------------
 # Gate: skip when pwsh is absent.
 # ---------------------------------------------------------------------------
-PWSH=""
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-fi
+PWSH="$(detect_pwsh || true)"
 
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping cross-platform parity suite (needs PowerShell)."
@@ -54,7 +53,7 @@ if [[ -z "$PWSH" ]]; then
 fi
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+trap 'pwsh_session_stop; rm -rf "$TMP"' EXIT
 
 # ---------------------------------------------------------------------------
 # GLOBAL HOME PIN (isolation bulletproof fix, task-082 parity)
@@ -65,42 +64,22 @@ trap 'rm -rf "$TMP"' EXIT
 # WITHOUT an explicit scan-root argument (e.g. PAR080-S07) will therefore
 # scan whatever $HOME is at subprocess time.
 #
-# Without this pin, running the suite standalone (as `tests/run-all.sh` and
-# CI do) would scan the real $HOME and create stray .aid/dashboard/ dirs in
-# unrelated repos on the machine (observed: /home/andre.vianna/projects/
-# casuloailabs/.aid/dashboard/home.html).
-#
-# Mechanism: export HOME to a throwaway subdirectory of $TMP so the WHOLE
-# test process and every spawned subprocess (aid, pwsh, harness scripts)
-# inherits the throwaway and can never reach the real $HOME.
-# REAL_HOME is saved before the override for the end-of-suite canary check.
-#
-# Windows twin: native (non-WSL) pwsh derives its automatic $HOME variable
-# from $env:USERPROFILE (falling back to $env:HOMEDRIVE + $env:HOMEPATH), and
-# NEVER from a bash-exported $HOME -- confirmed empirically: with USERPROFILE
-# left at its real value, a child pwsh sees $HOME == the REAL user profile
-# even though bash's own $HOME was just overridden above. bin/aid.ps1's user-
-# tier registry path is `Join-Path $HOME '.aid'`, so leaving USERPROFILE
-# untouched would let this suite's PS-side `projects remove <N>` cases
-# (PAR018-Y) index/delete over the REAL developer registry on a local Windows
-# run. Pin USERPROFILE/HOMEDRIVE/HOMEPATH to the SAME fake-HOME dir (Windows-
-# path form via cygpath) so bin/aid.ps1 resolves the sandbox too. Harmless/
-# no-op on Linux CI: cygpath is absent there, so the block below is skipped,
-# and pwsh on non-Windows derives $HOME from $env:HOME (already pinned above).
+# Mechanism + Windows-twin rationale: shared in tests/lib/sandbox.sh's header
+# (sandbox_pin_home). SANDBOX_REAL_HOME is saved before the override for the
+# end-of-suite canary check (sandbox_assert_aid_untouched).
 # ---------------------------------------------------------------------------
-REAL_HOME="${HOME}"
-# Snapshot .aid/dashboard/ dirs in the real HOME before the suite runs.
-# The canary assertion at end-of-suite compares against this baseline.
-_CANARY_BEFORE="$(find "${REAL_HOME}" -maxdepth 6 \
-    -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
-export HOME="${TMP}/fakehome"
-mkdir -p "${HOME}"
-if command -v cygpath >/dev/null 2>&1; then
-    _WIN_FAKEHOME="$(cygpath -w "${HOME}")"
-    export USERPROFILE="${_WIN_FAKEHOME}"
-    export HOMEDRIVE="${_WIN_FAKEHOME:0:2}"
-    export HOMEPATH="${_WIN_FAKEHOME:2}"
-fi
+sandbox_pin_home "${TMP}/fakehome"
+
+# ---------------------------------------------------------------------------
+# pwsh session batching (feature-004 / FR-4): spawn ONE warm responder AFTER
+# the HOME pin, so it inherits the SAME pinned env a cold `-File` start would
+# (a non-scan wrapper resolves the identical $HOME warm vs cold). Every
+# run_ps1* wrapper round-trips through this one process instead of paying a
+# fresh `pwsh -File` cold start; it degrades transparently to the cold `-File`
+# path if the responder cannot start (see tests/lib/pwsh-batch.sh). The EXIT
+# trap above tears it down. AID_PWSH_NO_SESSION=1 forces the cold path.
+# ---------------------------------------------------------------------------
+pwsh_session_start
 
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
@@ -201,9 +180,10 @@ run_sh() {
 # PS1 aid runner.
 run_ps1() {
     local home_dir="$1"; shift
-    OUT_PS1=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/AidInstallCore.psm1" \
-              "$PWSH" -NoProfile -File "${home_dir}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+    pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 # ---------------------------------------------------------------------------
@@ -581,9 +561,9 @@ new_dash_repo() {
     echo "$r"
 }
 
-pick_dash_port() {
-    python3 -c "import socket; s=socket.socket(); s.bind(('',0)); p=s.getsockname()[1]; s.close(); print(p)"
-}
+# Ephemeral ports come from tests/lib/net.sh find_free_port (FR-7: no local
+# port-helper redefinition). The `aid dashboard start` sites that bind a real
+# socket wrap pick->start->verify in a bounded retry (SETUP only) below.
 
 SH_HOME_M=$(newhome); setup_sh_home "${SH_HOME_M}"
 PS_HOME_M=$(newhome); setup_ps1_home "${PS_HOME_M}"
@@ -615,9 +595,13 @@ fi
 # ---------------------------------------------------------------------------
 # PAR023-M01/M02: T-1 parity — start python (Bash always; PS skip on absent/linux)
 # ---------------------------------------------------------------------------
-PORT_M1="$(pick_dash_port)"
+PORT_M1="$(find_free_port)"
 # dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
-run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+for _m1_try in 1 2 3; do
+    run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+    { [[ $RC_SH -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_SH"; } && break
+    PORT_M1="$(find_free_port)"
+done
 SH_OUT_M1="$OUT_SH"; SH_RC_M1=$RC_SH
 
 assert_exit_eq "$SH_RC_M1" 0 "PAR023-M01 Bash dashboard start python -> exit 0"
@@ -628,8 +612,12 @@ if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
     # PS side: stop Bash server first (ONE dashboard per user -- shared HOME).
     run_sh "${SH_HOME_M}" dashboard stop
     PS_HOME_M1="$(newhome)"; setup_ps1_home "${PS_HOME_M1}"
-    PORT_M1PS="$(pick_dash_port)"
-    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS"
+    PORT_M1PS="$(find_free_port)"
+    for _m1ps_try in 1 2 3; do
+        run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS"
+        { [[ $RC_PS1 -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_PS1"; } && break
+        PORT_M1PS="$(find_free_port)"
+    done
     PS_OUT_M1="$OUT_PS1"; PS_RC_M1=$RC_PS1
     assert_exit_eq "$PS_RC_M1" 0 "PAR023-M03 PS1 dashboard start python -> exit 0"
     assert_output_contains "$PS_OUT_M1" "Dashboard (python) running at http://127.0.0.1:${PORT_M1PS}" \
@@ -652,7 +640,11 @@ fi
 if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
     # Restart Bash server (PS side stopped it; PS server may still be running -- stop it first).
     run_ps1 "${PS_HOME_M1}" dashboard stop 2>/dev/null || true
-    run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+    for _m6r_try in 1 2 3; do
+        run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+        { [[ $RC_SH -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_SH"; } && break
+        PORT_M1="$(find_free_port)"
+    done
 fi
 run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
 SH_OUT_M6="$OUT_SH"; SH_RC_M6=$RC_SH
@@ -871,16 +863,20 @@ fi
 # (Bash always runs; PS skip on absent or Linux PS WindowStyle limitation)
 # ---------------------------------------------------------------------------
 SH_HOME_N01="$(new_dash_home_par005)"
-PORT_N01="$(pick_dash_port)"
+PORT_N01="$(find_free_port)"
 
 _o_n01sh="$(mktemp "${TMP}/on01sh.XXXXXX")"
 _e_n01sh="$(mktemp "${TMP}/en01sh.XXXXXX")"
 # dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
-PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_N01}/bin/aid" dashboard start python \
-    --port "$PORT_N01" --remote \
-    >"$_o_n01sh" 2>"$_e_n01sh"
-SH_RC_N01=$?
+for _n01_try in 1 2 3; do
+    PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+        bash "${SH_HOME_N01}/bin/aid" dashboard start python \
+        --port "$PORT_N01" --remote \
+        >"$_o_n01sh" 2>"$_e_n01sh"
+    SH_RC_N01=$?
+    { [[ $SH_RC_N01 -eq 0 ]] || ! grep -qiF "Address already in use" "$_e_n01sh"; } && break
+    PORT_N01="$(find_free_port)"
+done
 SH_ERR_N01="$(cat "$_e_n01sh")"
 rm -f "$_o_n01sh" "$_e_n01sh"
 
@@ -906,15 +902,19 @@ elif [[ "$PS_WIN_STYLE_PAR005" -eq 0 ]]; then
     pass "PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism [SKIPPED: Linux PS WindowStyle unsupported]"
 else
     PS_HOME_N01="$(new_dash_home_par005)"
-    PORT_N01_PS="$(pick_dash_port)"
+    PORT_N01_PS="$(find_free_port)"
     _o_n01ps="$(mktemp "${TMP}/on01ps.XXXXXX")"
     _e_n01ps="$(mktemp "${TMP}/en01ps.XXXXXX")"
-    PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
-        "$PWSH" -NoProfile -File "${PS_HOME_N01}/bin/aid.ps1" \
-        dashboard start python \
-        --port "$PORT_N01_PS" --remote \
-        >"$_o_n01ps" 2>"$_e_n01ps"
-    PS_RC_N01=$?
+    for _n01ps_try in 1 2 3; do
+        PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+            "$PWSH" -NoProfile -File "${PS_HOME_N01}/bin/aid.ps1" \
+            dashboard start python \
+            --port "$PORT_N01_PS" --remote \
+            >"$_o_n01ps" 2>"$_e_n01ps"
+        PS_RC_N01=$?
+        { [[ $PS_RC_N01 -eq 0 ]] || ! grep -qiF "Address already in use" "$_e_n01ps"; } && break
+        PORT_N01_PS="$(find_free_port)"
+    done
     PS_ERR_N01="$(cat "$_e_n01ps")"
     rm -f "$_o_n01ps" "$_e_n01ps"
 
@@ -1328,12 +1328,16 @@ fi
 # ===========================================================================
 
 SH_HOME_R="$(new_dash_home_par005)"
-PORT_R="$(pick_dash_port)"
+PORT_R="$(find_free_port)"
 _absent_ts_dir_r="${_absent_ts_dir_par005}"
 
 # Start the local server first (Bash, no --remote).
 # dashboard is now machine-level: no --target flag
-run_sh "${SH_HOME_R}" dashboard start python --port "$PORT_R"
+for _r01_try in 1 2 3; do
+    run_sh "${SH_HOME_R}" dashboard start python --port "$PORT_R"
+    { [[ $RC_SH -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_SH"; } && break
+    PORT_R="$(find_free_port)"
+done
 SH_RC_R_START=$RC_SH
 assert_exit_eq "$SH_RC_R_START" 0 "PAR057-R01 Bash dashboard start python (before --remote test) -> exit 0"
 
@@ -1343,15 +1347,19 @@ AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
     >/dev/null 2>&1 || true
 
 # Now start fresh with --remote and absent tailscale.
-PORT_R2="$(pick_dash_port)"
+PORT_R2="$(find_free_port)"
 
 _o_r2sh="$(mktemp "${TMP}/or2sh.XXXXXX")"
 _e_r2sh="$(mktemp "${TMP}/er2sh.XXXXXX")"
-PATH="${_absent_ts_dir_r}:${PATH}" AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_R}/bin/aid" dashboard start python \
-    --port "$PORT_R2" --remote \
-    >"$_o_r2sh" 2>"$_e_r2sh"
-SH_RC_R2=$?
+for _r2_try in 1 2 3; do
+    PATH="${_absent_ts_dir_r}:${PATH}" AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
+        bash "${SH_HOME_R}/bin/aid" dashboard start python \
+        --port "$PORT_R2" --remote \
+        >"$_o_r2sh" 2>"$_e_r2sh"
+    SH_RC_R2=$?
+    { [[ $SH_RC_R2 -eq 0 ]] || ! grep -qiF "Address already in use" "$_e_r2sh"; } && break
+    PORT_R2="$(find_free_port)"
+done
 SH_ERR_R2="$(cat "$_e_r2sh")"
 rm -f "$_o_r2sh" "$_e_r2sh"
 
@@ -1453,10 +1461,10 @@ chmod +x "${CONC_HARNESS}"
 
 # Launch 8 concurrent register calls for 4 distinct paths (2 concurrent per path).
 _PATHS_S=(
-    "/tmp/conc-repo-alpha"
-    "/tmp/conc-repo-beta"
-    "/tmp/conc-repo-gamma"
-    "/tmp/conc-repo-delta"
+    "${TMP}/conc-repo-alpha"
+    "${TMP}/conc-repo-beta"
+    "${TMP}/conc-repo-gamma"
+    "${TMP}/conc-repo-delta"
 )
 _PIDS_S=()
 for _path_s in "${_PATHS_S[@]}" "${_PATHS_S[@]}"; do
@@ -1497,7 +1505,7 @@ else
 fi
 
 # S06: every entry line in the registry has the correct DM-1 two-space-indent format.
-_malformed=$(grep '^  - ' "${REG_HOME_S}/registry.yml" | grep -v '^  - /tmp/' || true)
+_malformed=$(grep '^  - ' "${REG_HOME_S}/registry.yml" | grep -v "^  - ${TMP}/" || true)
 if [[ -z "$_malformed" ]]; then
     pass "PAR057-S06 concurrent-add: all entry lines have correct DM-1 indent format"
 else
@@ -1555,7 +1563,7 @@ cat > "$_div_right_schema" << 'RIGHTSCHEMA_EOF'
 # description come from .aid/settings.yml; version/tools from the manifest, at render time.
 schema: 1
 projects:
-  - /tmp/test-repo
+  - /base/test-repo
 RIGHTSCHEMA_EOF
 # Identical to the above except schema: 99.
 sed 's/^schema: 1$/schema: 99/' "$_div_right_schema" > "$_div_wrong_schema"
@@ -2616,9 +2624,10 @@ run_sh_global() {
 
 run_ps1_global() {
     local code_dir="$1" state_dir="$2"; shift 2
-    OUT_PS1=$(AID_HOME="$state_dir" AID_LIB_PATH="${code_dir}/lib/AidInstallCore.psm1" \
-              "$PWSH" -NoProfile -File "${code_dir}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+    pwsh_session_call "${code_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${state_dir}" "AID_LIB_PATH=${code_dir}/lib/AidInstallCore.psm1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 # ---------------------------------------------------------------------------
@@ -3698,7 +3707,7 @@ UA_VERSION="9.9.9"
 # ua_file_url <posix_path>
 # Builds a file:// URL usable by BOTH the native mingw64 curl on a Windows
 # host (which requires a real Windows path -- confirmed empirically: MSYS
-# /tmp/... virtual paths are NOT understood by curl's file:// handler) and by
+# POSIX temp-dir paths are NOT understood by curl's file:// handler) and by
 # curl on Linux CI (where cygpath is absent and the POSIX path is used as-is).
 ua_file_url() {
     local p="$1"
@@ -3780,10 +3789,11 @@ run_sh_ua_nf() {
 }
 run_ps1_ua_nf() {
     local home_dir="$1"; shift
-    OUT_PS1=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/AidInstallCore.psm1" \
-              AID_NO_UPDATE_CHECK=1 AID_SKIP_SELF_INSTALL=1 \
-              "$PWSH" -NoProfile -File "${home_dir}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+    pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        "AID_NO_UPDATE_CHECK=1" "AID_SKIP_SELF_INSTALL=1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 # ---------------------------------------------------------------------------
@@ -4738,12 +4748,13 @@ run_ps1_scan() {
     local aid_home="$1" home_pin="$2"; shift 2
     local win_home_pin="$home_pin"
     command -v cygpath >/dev/null 2>&1 && win_home_pin="$(cygpath -w "$home_pin")"
-    OUT_PS1=$(HOME="$home_pin" USERPROFILE="$win_home_pin" \
-              HOMEDRIVE="${win_home_pin:0:2}" HOMEPATH="${win_home_pin:2}" \
-              AID_HOME="$aid_home" AID_LIB_PATH="${aid_home}/lib/AidInstallCore.psm1" \
-              AID_NO_UPDATE_CHECK=1 \
-              "$PWSH" -NoProfile -File "${aid_home}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g' | sed 's/\\/\//g'); RC_PS1=$?
+    pwsh_session_call "${aid_home}/bin/aid.ps1" "$PWD" \
+        "HOME=${home_pin}" "USERPROFILE=${win_home_pin}" \
+        "HOMEDRIVE=${win_home_pin:0:2}" "HOMEPATH=${win_home_pin:2}" \
+        "AID_HOME=${aid_home}" "AID_LIB_PATH=${aid_home}/lib/AidInstallCore.psm1" \
+        "AID_NO_UPDATE_CHECK=1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/\\/\//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 FX_019=$(mktemp -d "${TMP}/par019fx.XXXXXX")
@@ -4969,54 +4980,86 @@ SH_HOME_019E=$(newhome); setup_sh_home "${SH_HOME_019E}"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --path "${FX_019}/does-not-exist-xyz"
 assert_exit_eq "$RC_SH" 2 "PAR019-E01 Bash: non-directory --path -> exit 2 (AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --path is not a directory:" \
+    "PAR019-E01 Bash: non-directory --path -> error names the not-a-directory reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --path "$FX_019" --all
 assert_exit_eq "$RC_SH" 2 "PAR019-E02 Bash: --path + --all together -> exit 2 (mutually exclusive, AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --path and --all are mutually exclusive" \
+    "PAR019-E02 Bash: --path + --all -> error names the mutually-exclusive reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --include-network
 assert_exit_eq "$RC_SH" 2 "PAR019-E03 Bash: --include-network without --all -> exit 2 (AC-9)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+    "PAR019-E03 Bash: --include-network without --all -> error names the require---all reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --include-removable
 assert_exit_eq "$RC_SH" 2 "PAR019-E04 Bash: --include-removable without --all -> exit 2 (AC-9)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+    "PAR019-E04 Bash: --include-removable without --all -> error names the require---all reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --depth abc
 assert_exit_eq "$RC_SH" 2 "PAR019-E05 Bash: non-integer --depth -> exit 2 (AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --depth must be a non-negative integer: abc" \
+    "PAR019-E05 Bash: non-integer --depth -> error echoes the offending value 'abc' (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --depth -1
 assert_exit_eq "$RC_SH" 2 "PAR019-E06 Bash: negative --depth -> exit 2 (AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --depth must be a non-negative integer: -1" \
+    "PAR019-E06 Bash: negative --depth -> error echoes the offending value '-1' (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects list --all
 assert_exit_eq "$RC_SH" 2 "PAR019-E07 Bash: scan-only flag (--all) on 'list' -> exit 2"
+assert_output_contains "$OUT_SH" "are scan-only flags (see 'aid projects scan -h')" \
+    "PAR019-E07 Bash: scan-only flag on 'list' -> error names the scan-only-flags reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects add --dry-run "${FX_019}/proj-tracked"
 assert_exit_eq "$RC_SH" 2 "PAR019-E08 Bash: scan-only flag (--dry-run) on 'add' -> exit 2"
+assert_output_contains "$OUT_SH" "are scan-only flags (see 'aid projects scan -h')" \
+    "PAR019-E08 Bash: scan-only flag on 'add' -> error names the scan-only-flags reason (FR-8/AC-9)"
 
 if [[ -n "$PWSH" ]]; then
     PS_HOME_019E=$(newhome); setup_ps1_home "${PS_HOME_019E}"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --path "${FX_019}/does-not-exist-xyz"
     assert_exit_eq "$RC_PS1" 2 "PAR019-E09 PS1: non-directory --path -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --path is not a directory:" \
+        "PAR019-E09 PS1: non-directory --path -> error names the not-a-directory reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --path "$FX_019" --all
     assert_exit_eq "$RC_PS1" 2 "PAR019-E10 PS1: --path + --all together -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --path and --all are mutually exclusive" \
+        "PAR019-E10 PS1: --path + --all -> error names the mutually-exclusive reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --include-network
     assert_exit_eq "$RC_PS1" 2 "PAR019-E11 PS1: --include-network without --all -> exit 2 (AC-9)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+        "PAR019-E11 PS1: --include-network without --all -> error names the require---all reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --include-removable
     assert_exit_eq "$RC_PS1" 2 "PAR019-E12 PS1: --include-removable without --all -> exit 2 (AC-9)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+        "PAR019-E12 PS1: --include-removable without --all -> error names the require---all reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --depth abc
     assert_exit_eq "$RC_PS1" 2 "PAR019-E13 PS1: non-integer --depth -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --depth must be a non-negative integer: abc" \
+        "PAR019-E13 PS1: non-integer --depth -> error echoes the offending value 'abc' (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --depth -1
     assert_exit_eq "$RC_PS1" 2 "PAR019-E14 PS1: negative --depth -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --depth must be a non-negative integer: -1" \
+        "PAR019-E14 PS1: negative --depth -> error echoes the offending value '-1' (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects list --all
     assert_exit_eq "$RC_PS1" 2 "PAR019-E15 PS1: scan-only flag (--all) on 'list' -> exit 2"
+    assert_output_contains "$OUT_PS1" "are scan-only flags (see 'aid projects scan -h')" \
+        "PAR019-E15 PS1: scan-only flag on 'list' -> error names the scan-only-flags reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects add --dry-run "${FX_019}/proj-tracked"
     assert_exit_eq "$RC_PS1" 2 "PAR019-E16 PS1: scan-only flag (--dry-run) on 'add' -> exit 2"
+    assert_output_contains "$OUT_PS1" "are scan-only flags (see 'aid projects scan -h')" \
+        "PAR019-E16 PS1: scan-only flag on 'add' -> error names the scan-only-flags reason (FR-8/AC-9)"
 else
     for _n in 09 10 11 12 13 14 15 16; do pass "PAR019-E${_n} [SKIPPED: pwsh absent]"; done
 fi
@@ -5562,23 +5605,14 @@ else
 fi
 
 # ===========================================================================
-# End-of-suite: REAL_HOME blast-surface canary
+# End-of-suite: real-HOME blast-surface canary
 #
-# Compare the snapshot of .aid/dashboard/ dirs under REAL_HOME taken before
-# the global HOME pin against one taken after the full suite completes.
-# Any new directory = an escape from the throwaway HOME that reached a real
-# repo.  This assertion would have caught the casuloailabs/.aid/dashboard
-# leak (delivery-011 bisection confirmed bug).
+# Compare the .aid-subtree snapshot taken before the global HOME pin against
+# one taken after the full suite completes (sandbox.sh, superset check).
+# Any change = an escape from the throwaway HOME that reached a real repo.
+# This assertion would have caught the casuloailabs/.aid/dashboard leak
+# (delivery-011 bisection confirmed bug).
 # ===========================================================================
-_CANARY_AFTER="$(find "${REAL_HOME}" -maxdepth 6 \
-    -name dashboard -path '*/.aid/*' -type d 2>/dev/null | sort || true)"
-if [[ "${_CANARY_BEFORE}" == "${_CANARY_AFTER}" ]]; then
-    pass "CANARY-PAR01 real-HOME blast surface: no new .aid/dashboard/ dirs created under ${REAL_HOME}"
-else
-    _CANARY_NEW="$(comm -13 \
-        <(echo "${_CANARY_BEFORE}") \
-        <(echo "${_CANARY_AFTER}"))"
-    fail "CANARY-PAR01 real-HOME blast surface: NEW .aid/dashboard/ dirs appeared under ${REAL_HOME} (escape detected!): ${_CANARY_NEW}"
-fi
+sandbox_assert_aid_untouched "CANARY-PAR01 real-HOME blast surface: no new .aid/dashboard/ dirs created under ${SANDBOX_REAL_HOME}"
 
 test_summary

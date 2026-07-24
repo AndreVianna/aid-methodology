@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# test-aid-migrate-trigger.sh -- rewritten for feature-001 lazy-stamp model + gate 1/2/3 wrapper
+# test-aid-migrate-trigger.sh -- rewritten for feature-001 lazy-stamp model + gate 3 wrapper
 #
-# Covers delivery-001 SPEC (feature-001) lazy-stamp encounter semantics + gates 1-3 + 9:
+# Covers delivery-001 SPEC (feature-001) lazy-stamp encounter semantics + gate 3 + 9:
 #
 #   Gate 9 (lazy-stamp encounter model / C2/C3 migration):
 #     TRG-A  Encounter stamp-less repo: 'aid status' prints WARN + offer 'aid update'
@@ -16,8 +16,6 @@
 #     TRG-H  npm postinstall AID_MIGRATE_YES=1 opt-in: spawns aid update self, exit 0.
 #     TRG-I  npm postinstall error path: any thrown error still exits 0 (NFR12 / RC-3).
 #
-#   Gate 1 (ASCII-only): invoke tests/canonical/test-ascii-only.sh and assert pass.
-#   Gate 2 (Bash/PS1 parity): invoke tests/canonical/test-aid-cli-parity.sh and assert pass.
 #   Gate 3 (vendor-refresh):
 #     VND-A  dashboard/home.html present in npm vendor manifest comment header.
 #     VND-B  dashboard/home.html present in pypi vendor manifest comment header.
@@ -86,7 +84,7 @@ trap 'rm -rf "$TMP"' EXIT
 # GLOBAL HOME PIN (isolation -- feature-001 lazy-stamp model, task-007)
 #
 # We pin HOME for the ENTIRE test process -- including every sub-invocation
-# of aid, node, and any delegated sub-test (Gate 2: test-aid-cli-parity.sh).
+# of aid and node.
 # The new model has no HOME-walking scan, but home-relative writes
 # (~/.aid/.update-check) must still land in a throwaway.
 #
@@ -894,36 +892,6 @@ if [[ -z "${_NPM_SCRATCH}" ]]; then
     pass "ISOL-01 packages/npm/ clean: no scratch from TRG-G/H/I node runs"
 else
     fail "ISOL-01 packages/npm/ dirty after TRG-G/H/I: ${_NPM_SCRATCH}"
-fi
-
-# ===========================================================================
-# Section: Gate 1 — ASCII-only (delegate to existing test)
-# ===========================================================================
-echo ""
-echo "=== Gate 1: ASCII-only (invoking test-ascii-only.sh) ==="
-
-_ASCII_OUT="$(bash "${SCRIPT_DIR}/test-ascii-only.sh" 2>&1)"
-_ASCII_RC=$?
-if [[ "${_ASCII_RC}" -eq 0 ]]; then
-    pass "GATE1-01 test-ascii-only.sh passes (all shipped scripts ASCII-only incl. postinstall.js)"
-else
-    fail "GATE1-01 test-ascii-only.sh FAILED (rc=${_ASCII_RC})"
-    [[ "${VERBOSE}" -eq 1 ]] && echo "--- ascii-only output ---" && echo "${_ASCII_OUT}" && echo "---"
-fi
-
-# ===========================================================================
-# Section: Gate 2 — Bash/PS1 parity (delegate to existing test)
-# ===========================================================================
-echo ""
-echo "=== Gate 2: Bash/PS1 parity (invoking test-aid-cli-parity.sh) ==="
-
-_PARITY_OUT="$(bash "${SCRIPT_DIR}/test-aid-cli-parity.sh" 2>&1)"
-_PARITY_RC=$?
-if [[ "${_PARITY_RC}" -eq 0 ]]; then
-    pass "GATE2-01 test-aid-cli-parity.sh passes (Bash/PS1 parity incl. PAR080 sentinel tests)"
-else
-    fail "GATE2-01 test-aid-cli-parity.sh FAILED (rc=${_PARITY_RC})"
-    [[ "${VERBOSE}" -eq 1 ]] && echo "--- parity output ---" && echo "${_PARITY_OUT}" && echo "---"
 fi
 
 # ===========================================================================
