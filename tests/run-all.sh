@@ -54,6 +54,42 @@ if [[ "${1:-}" == "--__run-one" ]]; then
   __suite="${1:-}"
   [[ -z "$__suite" ]] && exit 0
   __base="$(basename "$__suite")"
+
+  # --- Per-suite private HOME (parallel-safe canary isolation) ---------------
+  # Each suite runs with its OWN empty HOME under the run's results dir, so no
+  # concurrent sibling can see or contaminate another suite's home -- nor the
+  # machine's real HOME (/home/runner on CI). This makes each suite's
+  # SANDBOX_REAL_HOME (captured at its sandbox_pin_home, tests/lib/sandbox.sh)
+  # resolve to a private, empty dir, so its "real HOME untouched" escape-canary
+  # measures ONLY that suite's own behavior. Without it, every suite's canary
+  # observes the SHARED real HOME, and any concurrent sibling that touches
+  # <real-home>/.aid during another suite's canary window trips that other
+  # suite's canary -- a non-deterministic cross-attribution false-fail that the
+  # canary never saw under the legacy serial run (CANARY-PAR01, PR #170).
+  #
+  # Windows twin: native (non-WSL) pwsh derives its automatic $HOME from
+  # $env:USERPROFILE (falling back to $env:HOMEDRIVE + $env:HOMEPATH), NEVER
+  # from a bash-exported $HOME -- so pin those to the same dir's Windows-path
+  # form when cygpath is present (no-op on Linux CI, where cygpath is absent).
+  # This mirrors sandbox_pin_home's own env set, one level up.
+  #
+  # Applied in BOTH lanes: the parallel `xargs -P` dispatch AND the
+  # AID_TEST_JOBS=1 serial lane both funnel through this single --__run-one
+  # child, so behavior stays uniform (harmless under serial). The per-suite
+  # home dirs live under the results dir and are removed with it on the
+  # parent's EXIT trap (no temp leak). The always-exit-0 contract, .log/.rc
+  # capture, and single-threaded replay are unchanged -- this is env isolation
+  # only.
+  __suite_home="${__results}/home/${__base}"
+  mkdir -p "$__suite_home"
+  export HOME="$__suite_home"
+  if command -v cygpath >/dev/null 2>&1; then
+    __win_home="$(cygpath -w "$__suite_home")"
+    export USERPROFILE="$__win_home"
+    export HOMEDRIVE="${__win_home:0:2}"
+    export HOMEPATH="${__win_home:2}"
+  fi
+
   timeout 300 bash "$__suite" "${__run_one_args[@]}" >"${__results}/${__base}.log" 2>&1
   echo "$?" >"${__results}/${__base}.rc"
   exit 0                              # ALWAYS 0 — the real status lives in the .rc file.
