@@ -1,0 +1,104 @@
+name: coverage-parity
+
+# Executed-assertion inventory parity gate (work-024 feature-001).
+#
+# WHY A SEPARATE LANE (not a step in test.yml's canonical-tests job):
+#   test.yml's canonical suites run in parallel and are budgeted to finish in
+#   ~3 min. coverage-parity.sh `collect` re-runs the ENTIRE canonical corpus
+#   SERIALLY under --verbose (one suite at a time, so every executed PASS/FAIL
+#   assertion can be attributed to its suite), which takes ~6-7 min. Folding
+#   that into the canonical-tests job would roughly triple its wall-clock, so
+#   it gets its own path-filtered lane that only fires when tests/** change.
+#
+# ADVISORY UNTIL BOOTSTRAPPED:
+#   The gate diffs the live corpus against a committed baseline inventory
+#   (tests/coverage-baseline.tsv). That baseline can only be captured in a
+#   runtime-complete Linux env (pwsh + node + python3); the corpus hangs under
+#   the local Windows/cygwin shell, so it is NOT committed from an authoring
+#   worktree. Until a maintainer bootstraps it, the diff step exits 0 with a
+#   ::warning:: (no spurious red on the wiring PR). Once the baseline lands the
+#   lane self-activates and enforces parity.
+#
+# BOOTSTRAP RUNBOOK (one-time, by a maintainer):
+#   1. Actions -> coverage-parity -> "Run workflow" on master with
+#      bootstrap = true. This runs `coverage-parity.sh collect` and uploads a
+#      `coverage-baseline` artifact holding coverage-baseline.{tsv,meta}.
+#   2. Download that artifact and commit BOTH files to tests/ on master.
+#   3. Re-run the lane (or push a tests/** change): with the baseline present
+#      the diff step now enforces parity, and on master it should self-diff
+#      clean (exit 0).
+#
+# EXIT-CODE CONTRACT (from tests/coverage-parity.sh):
+#   0 clean | 1 parity violation | 2 usage (incl. baseline-not-found)
+#   | 3 required runtime absent. Once bootstrapped, the diff step lets 1/2/3
+#   surface as a job failure -- which is the point of the gate.
+
+on:
+  pull_request:
+    branches: [master]
+    paths:
+      - 'tests/**'
+      - '.github/workflows/coverage-parity.yml'
+  push:
+    branches: [master]
+    paths:
+      - 'tests/**'
+      - '.github/workflows/coverage-parity.yml'
+  workflow_dispatch:
+    inputs:
+      bootstrap:
+        description: 'Capture a fresh baseline (upload as artifact to download + commit) instead of diffing'
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  coverage-parity:
+    name: coverage-parity (executed-assertion inventory diff)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '20'
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: '3.11'
+      - name: Make helper + test scripts executable
+        run: find canonical/aid/scripts tests/canonical -name '*.sh' -exec chmod +x {} +
+      - name: Assert test runtimes present (node + pwsh + python3)
+        shell: bash
+        run: |
+          command -v node    >/dev/null || { echo "::error::node missing";    exit 1; }
+          command -v pwsh    >/dev/null || { echo "::error::pwsh missing";    exit 1; }
+          command -v python3 >/dev/null || { echo "::error::python3 missing"; exit 1; }
+          echo "node $(node --version) | $(pwsh --version) | $(python3 --version)"
+      # Bootstrap: workflow_dispatch with bootstrap=true -> capture + upload for a maintainer to commit.
+      - name: Bootstrap - capture baseline
+        if: github.event_name == 'workflow_dispatch' && inputs.bootstrap
+        shell: bash
+        run: bash tests/coverage-parity.sh collect --out tests/coverage-baseline.tsv
+      - name: Upload baseline artifact
+        if: github.event_name == 'workflow_dispatch' && inputs.bootstrap
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: coverage-baseline
+          path: |
+            tests/coverage-baseline.tsv
+            tests/coverage-baseline.meta
+      # Gate: PR / push. ADVISORY until a baseline is committed: self-activates once tests/coverage-baseline.tsv exists.
+      - name: Coverage-parity diff (advisory until baseline bootstrapped)
+        if: '!(github.event_name == ''workflow_dispatch'' && inputs.bootstrap)'
+        shell: bash
+        run: |
+          if [[ ! -f tests/coverage-baseline.tsv ]]; then
+            echo "::warning::coverage baseline not yet bootstrapped (run this workflow via workflow_dispatch with bootstrap=true, download the artifact, and commit tests/coverage-baseline.{tsv,meta}). Gate is advisory until then."
+            exit 0
+          fi
+          bash tests/coverage-parity.sh diff \
+            --baseline tests/coverage-baseline.tsv \
+            --allow    tests/coverage-rehome-allowlist.tsv \
+            --accept   tests/coverage-accepted-removals.tsv \
+            --collect

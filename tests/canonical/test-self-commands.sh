@@ -22,6 +22,7 @@ VERBOSE=0
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh-batch.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -47,7 +48,7 @@ HAS_PWSH=0
 # Isolated temp environment
 # ---------------------------------------------------------------------------
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+trap 'pwsh_session_stop; rm -rf "$TMP"' EXIT
 
 # Pin HOME so migration scan never touches real repos.
 export HOME="${TMP}/fakehome"
@@ -87,14 +88,20 @@ run_sh() {
           bash "${home_dir}/bin/aid" "$@" 2>&1); RC=$?
 }
 
+# Body routes through the warm pwsh responder (pwsh_session_call); transparently
+# falls back to the cold `-File` path if no session. Byte-identical to the
+# previous cold `env AID_HOME=... pwsh -NoProfile -File aid.ps1 ... 2>&1 | sed`.
+# (Currently unused -- every PS case below inlines its own round-trip -- kept in
+# sync so a future caller inherits the warm path.)
 run_ps1() {
     local home_dir="$1"; shift
-    OUT=$( AID_HOME="$home_dir" \
-           AID_LIB_PATH="${home_dir}/lib/AidInstallCore.psm1" \
-           AID_NO_UPDATE_CHECK=1 \
-           AID_NO_MIGRATE=1 \
-           "$PWSH" -NoProfile -File "${home_dir}/bin/aid.ps1" "$@" 2>&1 | \
-           sed 's/\x1b\[[0-9;]*m//g' ); RC=$?
+    pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${home_dir}" \
+        "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        "AID_NO_UPDATE_CHECK=1" \
+        "AID_NO_MIGRATE=1" \
+        -- "$@"
+    OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 }
 
 echo "=== test-self-commands: channel-routing dry-run parity ==="
@@ -281,17 +288,27 @@ if [[ "$HAS_PWSH" -eq 0 ]]; then
     echo "SKIP (pwsh absent): SELF-PS1 suite -- static ps1 verified; full run on CI Windows runner."
 else
 
+# pwsh session batching (feature-004 / FR-4, work-024 follow-up): spawn ONE warm
+# responder now that pwsh is confirmed present and HOME is already pinned (above).
+# Each PS case's aid.ps1 round-trip reuses this one process instead of a fresh
+# `pwsh -File` cold start; it degrades transparently to the cold `-File` path if
+# the responder cannot start (see tests/lib/pwsh-batch.sh). The EXIT trap tears
+# it down. All PS cases here are `... --dry-run` / `-h` (non-destructive, no
+# nested spawn / stdin read), so all are warm-batched -- no residual cold sites.
+pwsh_session_start
+
 # SELF011 -- npm channel: update self --dry-run (ps1)
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" \
-      AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 \
-      AID_NO_MIGRATE=1 \
-      AID_INSTALL_CHANNEL=npm \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" update self --dry-run 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" \
+      "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" \
+      "AID_NO_MIGRATE=1" \
+      "AID_INSTALL_CHANNEL=npm" \
+      -- update self --dry-run
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 
 assert_exit_eq "$RC" 0 "SELF011-PS01 ps1: npm update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ npm install -g aid-installer@latest" \
@@ -307,13 +324,14 @@ fi
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" \
-      AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 \
-      AID_NO_MIGRATE=1 \
-      AID_INSTALL_CHANNEL=npm \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" remove self --dry-run 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" \
+      "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" \
+      "AID_NO_MIGRATE=1" \
+      "AID_INSTALL_CHANNEL=npm" \
+      -- remove self --dry-run
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 
 assert_exit_eq "$RC" 0 "SELF012-PS01 ps1: npm remove self --dry-run exits 0"
 assert_output_contains "$OUT" "+ npm uninstall -g aid-installer" \
@@ -323,13 +341,14 @@ assert_output_contains "$OUT" "+ npm uninstall -g aid-installer" \
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" \
-      AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 \
-      AID_NO_MIGRATE=1 \
-      AID_INSTALL_CHANNEL=pypi \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" update self --dry-run 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" \
+      "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" \
+      "AID_NO_MIGRATE=1" \
+      "AID_INSTALL_CHANNEL=pypi" \
+      -- update self --dry-run
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 
 assert_exit_eq "$RC" 0 "SELF013-PS01 ps1: pypi update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ pipx upgrade aid-installer" \
@@ -345,13 +364,14 @@ fi
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" \
-      AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 \
-      AID_NO_MIGRATE=1 \
-      AID_INSTALL_CHANNEL=pypi \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" remove self --dry-run 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" \
+      "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" \
+      "AID_NO_MIGRATE=1" \
+      "AID_INSTALL_CHANNEL=pypi" \
+      -- remove self --dry-run
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 
 assert_exit_eq "$RC" 0 "SELF014-PS01 ps1: pypi remove self --dry-run exits 0"
 assert_output_contains "$OUT" "+ pipx uninstall aid-installer" \
@@ -361,14 +381,15 @@ assert_output_contains "$OUT" "+ pipx uninstall aid-installer" \
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" \
-      AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 \
-      AID_NO_MIGRATE=1 \
-      AID_INSTALL_CHANNEL="" \
-      AID_INSTALL_URL="https://example.com/install.ps1" \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" update self --dry-run 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" \
+      "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" \
+      "AID_NO_MIGRATE=1" \
+      "AID_INSTALL_CHANNEL=" \
+      "AID_INSTALL_URL=https://example.com/install.ps1" \
+      -- update self --dry-run
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 
 assert_exit_eq "$RC" 0 "SELF015-PS01 ps1: curl update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ irm" \
@@ -384,13 +405,14 @@ fi
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" \
-      AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 \
-      AID_NO_MIGRATE=1 \
-      AID_INSTALL_CHANNEL="" \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" remove self --dry-run 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" \
+      "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" \
+      "AID_NO_MIGRATE=1" \
+      "AID_INSTALL_CHANNEL=" \
+      -- remove self --dry-run
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 
 assert_exit_eq "$RC" 0 "SELF016-PS01 ps1: curl remove self --dry-run exits 0"
 assert_output_contains "$OUT" "+ Remove-Item" \
@@ -400,10 +422,11 @@ assert_output_contains "$OUT" "+ Remove-Item" \
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 AID_NO_MIGRATE=1 \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" update -h 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" "AID_NO_MIGRATE=1" \
+      -- update -h
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "SELF017-PS01 ps1: update -h exits 0"
 assert_output_contains "$OUT" "DryRun" \
     "SELF017-PS02 ps1: update -h mentions DryRun"
@@ -414,10 +437,11 @@ assert_output_contains "$OUT" "FromBundle" \
 H=$(mktemp -d "${TMP}/home.XXXXXX")
 setup_ps1_home "$H"
 
-OUT=$(AID_HOME="$H" AID_LIB_PATH="${H}/lib/AidInstallCore.psm1" \
-      AID_NO_UPDATE_CHECK=1 AID_NO_MIGRATE=1 \
-      "$PWSH" -NoProfile -File "${H}/bin/aid.ps1" remove -h 2>&1 | \
-      sed 's/\x1b\[[0-9;]*m//g'); RC=$?
+pwsh_session_call "${H}/bin/aid.ps1" "$PWD" \
+      "AID_HOME=${H}" "AID_LIB_PATH=${H}/lib/AidInstallCore.psm1" \
+      "AID_NO_UPDATE_CHECK=1" "AID_NO_MIGRATE=1" \
+      -- remove -h
+OUT=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC=$PWSH_CALL_RC
 assert_exit_eq "$RC" 0 "SELF018-PS01 ps1: remove -h exits 0"
 assert_output_contains "$OUT" "DryRun" \
     "SELF018-PS02 ps1: remove -h mentions DryRun"

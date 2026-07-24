@@ -44,6 +44,17 @@ out to other runtimes — the two `.mjs` validator suites need `node`, and the t
 `*-ps1.sh` suites need `pwsh` — and each skips (exit 0 with a `SKIP:` notice) if
 its runtime is absent, so a host missing one still runs the rest. CI provides both.
 
+## Coverage-parity gate
+
+`tests/coverage-parity.sh` proves a test-suite change removes no executed assertion.
+Its `.github/workflows/coverage-parity.yml` lane is separate from CI's canonical suites
+because a serial re-run of the whole corpus is ~6-7 min. It diffs the live corpus against
+a committed baseline, excusing documented moves via `tests/coverage-rehome-allowlist.tsv`
+(re-homes) and `tests/coverage-accepted-removals.tsv` (justified deletions). The gate is
+advisory until a maintainer bootstraps the baseline: Actions -> coverage-parity -> Run
+workflow with `bootstrap=true`, download the `coverage-baseline` artifact, and commit
+`tests/coverage-baseline.{tsv,meta}`. It then self-activates and should self-diff clean.
+
 ## What's NOT tested
 
 - The orchestration skills themselves (`/aid-discover`, `/aid-execute`, etc.) are prompt-driven and hard to test without an AI host; the `aid-reviewer` sub-agent (dispatched by `/aid-discover REVIEW`) provides the closest thing to integration verification by adversarially grading KB output each cycle.
