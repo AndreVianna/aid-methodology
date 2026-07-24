@@ -189,7 +189,7 @@ fi
 #        written, not a deletion, not a hard failure.
 # ===========================================================================
 OUT07="${TMPDIR_BASE}/INDEX07.md"
-bash "$SCRIPT" --root "${TMPDIR_BASE}/does-not-exist" --output "$OUT07" >/tmp/bci07-out.$$ 2>&1
+bash "$SCRIPT" --root "${TMPDIR_BASE}/does-not-exist" --output "$OUT07" >${TMPDIR_BASE}/bci07-out.$$ 2>&1
 ec07=$?
 assert_exit_zero "$ec07" "BCI07 non-existent root exits 0"
 assert_file_exists "$OUT07" "BCI07 header-only INDEX.md is written (never deleted)"
@@ -197,7 +197,7 @@ assert_file_contains "$OUT07" "| Connector | Type | Endpoint | Auth | Secret Ref
     "BCI07 header-only INDEX.md carries the table header"
 data_rows_07=$(grep -c '^| \[' "$OUT07" || true)
 assert_eq "$data_rows_07" "0" "BCI07 header-only INDEX.md has zero data rows"
-rm -f /tmp/bci07-out.$$
+rm -f ${TMPDIR_BASE}/bci07-out.$$
 
 # ===========================================================================
 # BCI08  Zero descriptors (existing, empty --root) -- byte-identical to BCI07.
@@ -318,11 +318,11 @@ secret_reference: "env:BARE_TOKEN"
 body'
 
 OUT12="${TMPDIR_BASE}/INDEX12.md"
-bash "$SCRIPT" --root "$FIX12" --output "$OUT12" >/tmp/bci12-out.$$ 2>&1
+bash "$SCRIPT" --root "$FIX12" --output "$OUT12" >${TMPDIR_BASE}/bci12-out.$$ 2>&1
 ec12=$?
 assert_exit_zero "$ec12" "BCI12 malformed descriptor (missing name/summary) does not fail the build"
 assert_file_contains "$OUT12" "[bare](bare.md)" "BCI12 missing name: falls back to the filename stem"
-rm -f /tmp/bci12-out.$$
+rm -f ${TMPDIR_BASE}/bci12-out.$$
 
 # ===========================================================================
 # BCI13  Default --root/--output apply when flags are omitted (fixture cwd
@@ -339,13 +339,13 @@ summary: The only connector.
 ---
 body'
 
-( cd "$FIX13_HOME" && bash "$SCRIPT" >/tmp/bci13-out.$$ 2>&1 )
+( cd "$FIX13_HOME" && bash "$SCRIPT" >${TMPDIR_BASE}/bci13-out.$$ 2>&1 )
 ec13=$?
 assert_exit_zero "$ec13" "BCI13 default args -- exits 0"
 assert_file_exists "${FIX13_HOME}/.aid/connectors/INDEX.md" "BCI13 default output path used (.aid/connectors/INDEX.md)"
 assert_file_contains "${FIX13_HOME}/.aid/connectors/INDEX.md" "[Only One](onlyone.md)" \
     "BCI13 default root path used (.aid/connectors)"
-rm -f /tmp/bci13-out.$$
+rm -f ${TMPDIR_BASE}/bci13-out.$$
 
 # ===========================================================================
 # BCI14  -h/--help exits 0 and prints usage.
@@ -358,10 +358,10 @@ assert_output_contains "$help_out" "Usage:" "BCI14 --help prints a Usage section
 # ===========================================================================
 # BCI15  Unknown flag exits 1 (argument error).
 # ===========================================================================
-bash "$SCRIPT" --bogus-flag >/tmp/bci15-out.$$ 2>&1
+bash "$SCRIPT" --bogus-flag >${TMPDIR_BASE}/bci15-out.$$ 2>&1
 ec15=$?
 assert_exit_eq "$ec15" "1" "BCI15 unknown flag exits 1"
-rm -f /tmp/bci15-out.$$
+rm -f ${TMPDIR_BASE}/bci15-out.$$
 
 # ===========================================================================
 test_summary

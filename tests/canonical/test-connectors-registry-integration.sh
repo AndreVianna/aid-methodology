@@ -146,9 +146,9 @@ summary: Generic API connector for integration testing.
 # Custom API'
 
 OUT="${TMPDIR_BASE}/INDEX.md"
-bash "$BUILDER" --root "$FIXTURE" --output "$OUT" >/tmp/cri01-out.$$ 2>&1
+bash "$BUILDER" --root "$FIXTURE" --output "$OUT" >"${TMPDIR_BASE}/cri01-out.$$" 2>&1
 ec01=$?
-rm -f /tmp/cri01-out.$$
+rm -f "${TMPDIR_BASE}/cri01-out.$$"
 assert_exit_zero "$ec01" "CRI01 builder run over the shared 3-descriptor fixture"
 assert_file_exists "$OUT" "CRI01 INDEX.md written"
 

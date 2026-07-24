@@ -93,7 +93,7 @@ SERVER_MJS="${REPO_ROOT}/dashboard/server/server.mjs"
 # Temp dir: holds the runtime-built aid-home (registry.yml + temp dirs)
 # ---------------------------------------------------------------------------
 
-PT1H_TMP="$(mktemp -d /tmp/pt1h_XXXXXX)"
+PT1H_TMP="$(mktemp -d)"
 
 # ---------------------------------------------------------------------------
 # Cleanup: kill background servers, remove temp files
@@ -114,12 +114,12 @@ cleanup() {
     done
     _BGPIDS=()
     rm -rf "$PT1H_TMP"
-    rm -f /tmp/pt1h_py_home.json /tmp/pt1h_node_home.json \
-          /tmp/pt1h_py_home_norm.json /tmp/pt1h_node_home_norm.json \
-          /tmp/pt1h_py_model_a.json /tmp/pt1h_node_model_a.json \
-          /tmp/pt1h_py_model_b.json /tmp/pt1h_node_model_b.json \
-          /tmp/pt1h_py_model_a_norm.json /tmp/pt1h_node_model_a_norm.json \
-          /tmp/pt1h_py_model_b_norm.json /tmp/pt1h_node_model_b_norm.json
+    rm -f ${PT1H_TMP}/pt1h_py_home.json ${PT1H_TMP}/pt1h_node_home.json \
+          ${PT1H_TMP}/pt1h_py_home_norm.json ${PT1H_TMP}/pt1h_node_home_norm.json \
+          ${PT1H_TMP}/pt1h_py_model_a.json ${PT1H_TMP}/pt1h_node_model_a.json \
+          ${PT1H_TMP}/pt1h_py_model_b.json ${PT1H_TMP}/pt1h_node_model_b.json \
+          ${PT1H_TMP}/pt1h_py_model_a_norm.json ${PT1H_TMP}/pt1h_node_model_a_norm.json \
+          ${PT1H_TMP}/pt1h_py_model_b_norm.json ${PT1H_TMP}/pt1h_node_model_b_norm.json
 }
 
 trap cleanup EXIT
@@ -185,6 +185,43 @@ start_node_server_h() {
         --host 127.0.0.1 --port "$port" \
         >/dev/null 2>&1 &
     _BGPIDS+=($!)
+}
+
+# ---------------------------------------------------------------------------
+# start_server_with_retry SERVER_FN AID_HOME
+#   Bounded pick->start->verify retry so the suite is safe in the
+#   bounded-parallel runner (feature-003 Port Isolation, FR-3/NFR-3): pick an
+#   ephemeral port (net.sh find_free_port), start SERVER_FN on it, and confirm
+#   bring-up with wait_for_port. On a lost-port TOCTOU race (the server never
+#   comes up because another process grabbed the port in the pick->bind gap) it
+#   kills the stray child, re-picks a fresh port, and retries up to a small
+#   bound -- turning a rare concurrency race into a deterministic re-pick.
+#   Wraps SETUP only (never an assertion -- AC-3). On success sets _RETRY_PORT /
+#   _RETRY_PID and returns 0; after the bound is exhausted returns 1 with
+#   _RETRY_PORT / _RETRY_PID set to the last attempt.
+# ---------------------------------------------------------------------------
+_RETRY_PORT=""
+_RETRY_PID=""
+start_server_with_retry() {
+    local server_fn="$1"
+    local aid_home="$2"
+    local attempts=3
+    local i port pid
+    for (( i=1; i<=attempts; i++ )); do
+        port=$(find_free_port)
+        "$server_fn" "$port" "$aid_home"
+        pid="${_BGPIDS[-1]}"
+        if wait_for_port "$port" 12; then
+            _RETRY_PORT="$port"
+            _RETRY_PID="$pid"
+            return 0
+        fi
+        kill "$pid" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$pid}")
+    done
+    _RETRY_PORT="$port"
+    _RETRY_PID="$pid"
+    return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -307,35 +344,29 @@ PY_PID=""
 NODE_PID=""
 
 start_servers() {
+    # Each server is brought up through the bounded pick->start->verify retry
+    # (ephemeral port + re-pick on a lost-port race); they start sequentially,
+    # and the OS will not hand out a still-bound port, so PY_PORT != NODE_PORT.
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        PY_PORT=$(find_free_port)
-        start_python_server_h "$PY_PORT" "$AID_HOME"
-        PY_PID="${_BGPIDS[-1]}"
-    fi
-
-    if [[ $HAS_NODE -eq 1 ]]; then
-        NODE_PORT=$(find_free_port)
-        while [[ $HAS_PYTHON -eq 1 && "$NODE_PORT" == "$PY_PORT" ]]; do
-            NODE_PORT=$(find_free_port)
-        done
-        start_node_server_h "$NODE_PORT" "$AID_HOME"
-        NODE_PID="${_BGPIDS[-1]}"
-    fi
-
-    if [[ $HAS_PYTHON -eq 1 ]]; then
-        if ! wait_for_port "$PY_PORT" 12; then
+        if start_server_with_retry start_python_server_h "$AID_HOME"; then
+            PY_PORT="$_RETRY_PORT"; PY_PID="$_RETRY_PID"
+            pass "[PT-1-H] python server started on port $PY_PORT"
+        else
+            PY_PORT="$_RETRY_PORT"; PY_PID="$_RETRY_PID"
             fail "[PT-1-H] python server did not start within 12s on port $PY_PORT"
             return 1
         fi
-        pass "[PT-1-H] python server started on port $PY_PORT"
     fi
 
     if [[ $HAS_NODE -eq 1 ]]; then
-        if ! wait_for_port "$NODE_PORT" 12; then
+        if start_server_with_retry start_node_server_h "$AID_HOME"; then
+            NODE_PORT="$_RETRY_PORT"; NODE_PID="$_RETRY_PID"
+            pass "[PT-1-H] node server started on port $NODE_PORT"
+        else
+            NODE_PORT="$_RETRY_PORT"; NODE_PID="$_RETRY_PID"
             fail "[PT-1-H] node server did not start within 12s on port $NODE_PORT"
             return 1
         fi
-        pass "[PT-1-H] node server started on port $NODE_PORT"
     fi
 
     return 0
@@ -377,13 +408,13 @@ PY_HOME_ID_B=""
 NODE_HOME_ID_B=""
 
 if [[ $HAS_PYTHON -eq 1 ]]; then
-    if fetch_url "$PY_PORT" "/api/home" "/tmp/pt1h_py_home.json"; then
+    if fetch_url "$PY_PORT" "/api/home" "${PT1H_TMP}/pt1h_py_home.json"; then
         pass "[home] python /api/home responds"
-        if python3 -c "import json; json.load(open('/tmp/pt1h_py_home.json'))" 2>/dev/null; then
+        if python3 -c "import json; json.load(open('${PT1H_TMP}/pt1h_py_home.json'))" 2>/dev/null; then
             pass "[home] python /api/home is valid JSON"
             PY_HOME_OK=1
-            PY_HOME_ID_A=$(extract_repo_id /tmp/pt1h_py_home.json "pt1h-repo-a") || true
-            PY_HOME_ID_B=$(extract_repo_id /tmp/pt1h_py_home.json "pt1h-repo-b") || true
+            PY_HOME_ID_A=$(extract_repo_id ${PT1H_TMP}/pt1h_py_home.json "pt1h-repo-a") || true
+            PY_HOME_ID_B=$(extract_repo_id ${PT1H_TMP}/pt1h_py_home.json "pt1h-repo-b") || true
             log "python repo-a id: $PY_HOME_ID_A"
             log "python repo-b id: $PY_HOME_ID_B"
         else
@@ -395,13 +426,13 @@ if [[ $HAS_PYTHON -eq 1 ]]; then
 fi
 
 if [[ $HAS_NODE -eq 1 ]]; then
-    if fetch_url "$NODE_PORT" "/api/home" "/tmp/pt1h_node_home.json"; then
+    if fetch_url "$NODE_PORT" "/api/home" "${PT1H_TMP}/pt1h_node_home.json"; then
         pass "[home] node /api/home responds"
-        if python3 -c "import json; json.load(open('/tmp/pt1h_node_home.json'))" 2>/dev/null; then
+        if python3 -c "import json; json.load(open('${PT1H_TMP}/pt1h_node_home.json'))" 2>/dev/null; then
             pass "[home] node /api/home is valid JSON"
             NODE_HOME_OK=1
-            NODE_HOME_ID_A=$(extract_repo_id /tmp/pt1h_node_home.json "pt1h-repo-a") || true
-            NODE_HOME_ID_B=$(extract_repo_id /tmp/pt1h_node_home.json "pt1h-repo-b") || true
+            NODE_HOME_ID_A=$(extract_repo_id ${PT1H_TMP}/pt1h_node_home.json "pt1h-repo-a") || true
+            NODE_HOME_ID_B=$(extract_repo_id ${PT1H_TMP}/pt1h_node_home.json "pt1h-repo-b") || true
             log "node repo-a id: $NODE_HOME_ID_A"
             log "node repo-b id: $NODE_HOME_ID_B"
         else
@@ -414,16 +445,16 @@ fi
 
 # Parity check: /api/home byte-identical after normalization
 if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $PY_HOME_OK -eq 1 && $NODE_HOME_OK -eq 1 ]]; then
-    normalize_home_json /tmp/pt1h_py_home.json /tmp/pt1h_py_home_norm.json
-    normalize_home_json /tmp/pt1h_node_home.json /tmp/pt1h_node_home_norm.json
+    normalize_home_json ${PT1H_TMP}/pt1h_py_home.json ${PT1H_TMP}/pt1h_py_home_norm.json
+    normalize_home_json ${PT1H_TMP}/pt1h_node_home.json ${PT1H_TMP}/pt1h_node_home_norm.json
 
-    if cmp -s /tmp/pt1h_py_home_norm.json /tmp/pt1h_node_home_norm.json; then
+    if cmp -s ${PT1H_TMP}/pt1h_py_home_norm.json ${PT1H_TMP}/pt1h_node_home_norm.json; then
         pass "[home] python == node (byte-identical after strip+normalize)"
     else
         fail "[home] python != node (NOT byte-identical after strip+normalize)"
         if [[ "$VERBOSE" -eq 1 ]]; then
             echo "  --- diff (python vs node) ---"
-            diff /tmp/pt1h_py_home_norm.json /tmp/pt1h_node_home_norm.json || true
+            diff ${PT1H_TMP}/pt1h_py_home_norm.json ${PT1H_TMP}/pt1h_node_home_norm.json || true
         fi
     fi
 
@@ -436,19 +467,23 @@ if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $PY_HOME_OK -eq 1 && $NODE_HOME_OK
     # the filesystem has no symlink support.
     _sl_home="${PT1H_TMP}/aid-home-symlink"
     if ln -s "$AID_HOME" "$_sl_home" 2>/dev/null; then
-        _sl_py_port="$(find_free_port)"; _sl_node_port="$(find_free_port)"
-        start_python_server_h "$_sl_py_port" "$_sl_home"
-        start_node_server_h "$_sl_node_port" "$_sl_home"
-        if wait_for_port "$_sl_py_port" 12 && wait_for_port "$_sl_node_port" 12 \
-           && fetch_url "$_sl_py_port" "/api/home" "/tmp/pt1h_sl_py.json" \
-           && fetch_url "$_sl_node_port" "/api/home" "/tmp/pt1h_sl_node.json"; then
-            normalize_home_json /tmp/pt1h_sl_py.json /tmp/pt1h_sl_py_norm.json
-            normalize_home_json /tmp/pt1h_sl_node.json /tmp/pt1h_sl_node_norm.json
-            if cmp -s /tmp/pt1h_sl_py_norm.json /tmp/pt1h_sl_node_norm.json; then
+        _sl_py_port=""; _sl_node_port=""; _sl_py_up=0; _sl_node_up=0
+        if start_server_with_retry start_python_server_h "$_sl_home"; then
+            _sl_py_port="$_RETRY_PORT"; _sl_py_up=1
+        fi
+        if start_server_with_retry start_node_server_h "$_sl_home"; then
+            _sl_node_port="$_RETRY_PORT"; _sl_node_up=1
+        fi
+        if [[ $_sl_py_up -eq 1 && $_sl_node_up -eq 1 ]] \
+           && fetch_url "$_sl_py_port" "/api/home" "${PT1H_TMP}/pt1h_sl_py.json" \
+           && fetch_url "$_sl_node_port" "/api/home" "${PT1H_TMP}/pt1h_sl_node.json"; then
+            normalize_home_json ${PT1H_TMP}/pt1h_sl_py.json ${PT1H_TMP}/pt1h_sl_py_norm.json
+            normalize_home_json ${PT1H_TMP}/pt1h_sl_node.json ${PT1H_TMP}/pt1h_sl_node_norm.json
+            if cmp -s ${PT1H_TMP}/pt1h_sl_py_norm.json ${PT1H_TMP}/pt1h_sl_node_norm.json; then
                 pass "[home] symlinked AID_HOME: python == node (no realpath divergence on aid_home/registry_path)"
             else
                 fail "[home] symlinked AID_HOME: python != node (realpath divergence on aid_home/registry_path)"
-                [[ "$VERBOSE" -eq 1 ]] && diff /tmp/pt1h_sl_py_norm.json /tmp/pt1h_sl_node_norm.json || true
+                [[ "$VERBOSE" -eq 1 ]] && diff ${PT1H_TMP}/pt1h_sl_py_norm.json ${PT1H_TMP}/pt1h_sl_node_norm.json || true
             fi
         else
             fail "[home] symlinked AID_HOME: servers did not both come up / fetch failed"
@@ -460,7 +495,7 @@ if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $PY_HOME_OK -eq 1 && $NODE_HOME_OK
     # repo_count assertion: must have 3 entries (2 available + 1 unavailable)
     py_count=$(python3 -c "
 import json
-d = json.load(open('/tmp/pt1h_py_home.json'))
+d = json.load(open('${PT1H_TMP}/pt1h_py_home.json'))
 print(len(d.get('repos', [])))
 ")
     assert_eq "$py_count" "3" "[home] /api/home repos array has 3 entries (2 repos + 1 unavailable)"
@@ -468,7 +503,7 @@ print(len(d.get('repos', [])))
     # available_count: repo-a and repo-b are available; entry-c is not
     unavail=$(python3 -c "
 import json
-d = json.load(open('/tmp/pt1h_py_home.json'))
+d = json.load(open('${PT1H_TMP}/pt1h_py_home.json'))
 print(d.get('read', {}).get('unavailable_count', -1))
 ")
     assert_eq "$unavail" "1" "[home] unavailable_count == 1 (entry-c nonexistent)"
@@ -476,7 +511,7 @@ print(d.get('read', {}).get('unavailable_count', -1))
     # repo-a has_home=true, has_kb=true
     repo_a_flags=$(python3 -c "
 import json
-d = json.load(open('/tmp/pt1h_py_home.json'))
+d = json.load(open('${PT1H_TMP}/pt1h_py_home.json'))
 for r in d.get('repos', []):
     if r['path'].endswith('pt1h-repo-a'):
         print(r['has_home'], r['has_kb'], r['available'])
@@ -488,7 +523,7 @@ for r in d.get('repos', []):
     # (home.html is CLI-served; the has_home signal is simply "repo is AID-initialized".)
     repo_b_flags=$(python3 -c "
 import json
-d = json.load(open('/tmp/pt1h_py_home.json'))
+d = json.load(open('${PT1H_TMP}/pt1h_py_home.json'))
 for r in d.get('repos', []):
     if r['path'].endswith('pt1h-repo-b'):
         print(r['has_home'], r['has_kb'], r['available'])
@@ -499,7 +534,7 @@ for r in d.get('repos', []):
     # entry-c (nonexistent) is available=false
     repo_c_avail=$(python3 -c "
 import json
-d = json.load(open('/tmp/pt1h_py_home.json'))
+d = json.load(open('${PT1H_TMP}/pt1h_py_home.json'))
 for r in d.get('repos', []):
     if 'nonexistent' in r['path']:
         print(r['available'])
@@ -550,9 +585,9 @@ else
     NODE_MODEL_A_OK=0
 
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if fetch_url "$PY_PORT" "/r/${MODEL_ID_A}/api/model" "/tmp/pt1h_py_model_a.json"; then
+        if fetch_url "$PY_PORT" "/r/${MODEL_ID_A}/api/model" "${PT1H_TMP}/pt1h_py_model_a.json"; then
             pass "[model-a] python /r/${MODEL_ID_A}/api/model responds"
-            if python3 -c "import json; json.load(open('/tmp/pt1h_py_model_a.json'))" 2>/dev/null; then
+            if python3 -c "import json; json.load(open('${PT1H_TMP}/pt1h_py_model_a.json'))" 2>/dev/null; then
                 pass "[model-a] python /r/${MODEL_ID_A}/api/model is valid JSON"
                 PY_MODEL_A_OK=1
             else
@@ -564,9 +599,9 @@ else
     fi
 
     if [[ $HAS_NODE -eq 1 ]]; then
-        if fetch_url "$NODE_PORT" "/r/${MODEL_ID_A}/api/model" "/tmp/pt1h_node_model_a.json"; then
+        if fetch_url "$NODE_PORT" "/r/${MODEL_ID_A}/api/model" "${PT1H_TMP}/pt1h_node_model_a.json"; then
             pass "[model-a] node /r/${MODEL_ID_A}/api/model responds"
-            if python3 -c "import json; json.load(open('/tmp/pt1h_node_model_a.json'))" 2>/dev/null; then
+            if python3 -c "import json; json.load(open('${PT1H_TMP}/pt1h_node_model_a.json'))" 2>/dev/null; then
                 pass "[model-a] node /r/${MODEL_ID_A}/api/model is valid JSON"
                 NODE_MODEL_A_OK=1
             else
@@ -579,22 +614,22 @@ else
 
     # Parity + R7 for repo-a
     if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $PY_MODEL_A_OK -eq 1 && $NODE_MODEL_A_OK -eq 1 ]]; then
-        normalize_model_json /tmp/pt1h_py_model_a.json /tmp/pt1h_py_model_a_norm.json
-        normalize_model_json /tmp/pt1h_node_model_a.json /tmp/pt1h_node_model_a_norm.json
+        normalize_model_json ${PT1H_TMP}/pt1h_py_model_a.json ${PT1H_TMP}/pt1h_py_model_a_norm.json
+        normalize_model_json ${PT1H_TMP}/pt1h_node_model_a.json ${PT1H_TMP}/pt1h_node_model_a_norm.json
 
-        if cmp -s /tmp/pt1h_py_model_a_norm.json /tmp/pt1h_node_model_a_norm.json; then
+        if cmp -s ${PT1H_TMP}/pt1h_py_model_a_norm.json ${PT1H_TMP}/pt1h_node_model_a_norm.json; then
             pass "[model-a] python == node (byte-identical after strip+normalize)"
         else
             fail "[model-a] python != node (NOT byte-identical after strip+normalize)"
             if [[ "$VERBOSE" -eq 1 ]]; then
                 echo "  --- diff (python vs node) ---"
-                diff /tmp/pt1h_py_model_a_norm.json /tmp/pt1h_node_model_a_norm.json || true
+                diff ${PT1H_TMP}/pt1h_py_model_a_norm.json ${PT1H_TMP}/pt1h_node_model_a_norm.json || true
             fi
         fi
 
         # R7: U+2028/U+2029 escaped in /r/<id>/api/model for repo-a (manifest has them)
         python3 "${SCRIPT_DIR}/../lib/pt1h_r7_check.py" \
-            /tmp/pt1h_py_model_a.json /tmp/pt1h_node_model_a.json
+            ${PT1H_TMP}/pt1h_py_model_a.json ${PT1H_TMP}/pt1h_node_model_a.json
         r7_rc=$?
         if [[ $r7_rc -eq 0 ]]; then
             pass "[model-a] R7: U+2028/U+2029 escaped (not raw) in both runtimes"
@@ -610,9 +645,9 @@ else
     NODE_MODEL_B_OK=0
 
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if fetch_url "$PY_PORT" "/r/${MODEL_ID_B}/api/model" "/tmp/pt1h_py_model_b.json"; then
+        if fetch_url "$PY_PORT" "/r/${MODEL_ID_B}/api/model" "${PT1H_TMP}/pt1h_py_model_b.json"; then
             pass "[model-b] python /r/${MODEL_ID_B}/api/model responds"
-            if python3 -c "import json; json.load(open('/tmp/pt1h_py_model_b.json'))" 2>/dev/null; then
+            if python3 -c "import json; json.load(open('${PT1H_TMP}/pt1h_py_model_b.json'))" 2>/dev/null; then
                 pass "[model-b] python /r/${MODEL_ID_B}/api/model is valid JSON"
                 PY_MODEL_B_OK=1
             else
@@ -624,9 +659,9 @@ else
     fi
 
     if [[ $HAS_NODE -eq 1 ]]; then
-        if fetch_url "$NODE_PORT" "/r/${MODEL_ID_B}/api/model" "/tmp/pt1h_node_model_b.json"; then
+        if fetch_url "$NODE_PORT" "/r/${MODEL_ID_B}/api/model" "${PT1H_TMP}/pt1h_node_model_b.json"; then
             pass "[model-b] node /r/${MODEL_ID_B}/api/model responds"
-            if python3 -c "import json; json.load(open('/tmp/pt1h_node_model_b.json'))" 2>/dev/null; then
+            if python3 -c "import json; json.load(open('${PT1H_TMP}/pt1h_node_model_b.json'))" 2>/dev/null; then
                 pass "[model-b] node /r/${MODEL_ID_B}/api/model is valid JSON"
                 NODE_MODEL_B_OK=1
             else
@@ -639,16 +674,16 @@ else
 
     # Parity for repo-b
     if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 && $PY_MODEL_B_OK -eq 1 && $NODE_MODEL_B_OK -eq 1 ]]; then
-        normalize_model_json /tmp/pt1h_py_model_b.json /tmp/pt1h_py_model_b_norm.json
-        normalize_model_json /tmp/pt1h_node_model_b.json /tmp/pt1h_node_model_b_norm.json
+        normalize_model_json ${PT1H_TMP}/pt1h_py_model_b.json ${PT1H_TMP}/pt1h_py_model_b_norm.json
+        normalize_model_json ${PT1H_TMP}/pt1h_node_model_b.json ${PT1H_TMP}/pt1h_node_model_b_norm.json
 
-        if cmp -s /tmp/pt1h_py_model_b_norm.json /tmp/pt1h_node_model_b_norm.json; then
+        if cmp -s ${PT1H_TMP}/pt1h_py_model_b_norm.json ${PT1H_TMP}/pt1h_node_model_b_norm.json; then
             pass "[model-b] python == node (byte-identical after strip+normalize)"
         else
             fail "[model-b] python != node (NOT byte-identical after strip+normalize)"
             if [[ "$VERBOSE" -eq 1 ]]; then
                 echo "  --- diff (python vs node) ---"
-                diff /tmp/pt1h_py_model_b_norm.json /tmp/pt1h_node_model_b_norm.json || true
+                diff ${PT1H_TMP}/pt1h_py_model_b_norm.json ${PT1H_TMP}/pt1h_node_model_b_norm.json || true
             fi
         fi
     else
@@ -814,37 +849,28 @@ repos:
   - ${PT1H_TMP}/nonexistent-repo-c
 SYMEOF
 
-    # Start fresh servers against the symlink registry.
-    SPYPORT=$(find_free_port)
-    SNODEPORT=$(find_free_port)
-    while [[ "$SNODEPORT" == "$SPYPORT" ]]; do SNODEPORT=$(find_free_port); done
-
+    # Start fresh servers against the symlink registry, each through the bounded
+    # ephemeral-port pick->start->verify retry (concurrency-safe re-pick on a
+    # lost-port race; wait_for_port bring-up confirmation is inside the helper).
     SYM_PY_PID="" SYM_NODE_PID=""
+    SPYPORT="" SNODEPORT=""
 
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        HOME="${PT1H_PINNED_HOME}" AID_HOME="$SYMLINK_AID_HOME" python3 "${SERVER_PY}" \
-            --host 127.0.0.1 --port "$SPYPORT" \
-            >/dev/null 2>&1 &
-        SYM_PY_PID=$!
-        _BGPIDS+=($SYM_PY_PID)
+        if start_server_with_retry start_python_server_h "$SYMLINK_AID_HOME"; then
+            SPYPORT="$_RETRY_PORT"; SYM_PY_PID="$_RETRY_PID"
+        fi
     fi
     if [[ $HAS_NODE -eq 1 ]]; then
-        HOME="${PT1H_PINNED_HOME}" AID_HOME="$SYMLINK_AID_HOME" node "${SERVER_MJS}" \
-            --host 127.0.0.1 --port "$SNODEPORT" \
-            >/dev/null 2>&1 &
-        SYM_NODE_PID=$!
-        _BGPIDS+=($SYM_NODE_PID)
+        if start_server_with_retry start_node_server_h "$SYMLINK_AID_HOME"; then
+            SNODEPORT="$_RETRY_PORT"; SYM_NODE_PID="$_RETRY_PID"
+        fi
     fi
 
     SYMLINK_READY=0
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if wait_for_port "$SPYPORT" 10; then
-            SYMLINK_READY=1
-        fi
+        [[ -n "$SYM_PY_PID" ]] && SYMLINK_READY=1
     elif [[ $HAS_NODE -eq 1 ]]; then
-        if wait_for_port "$SNODEPORT" 10; then
-            SYMLINK_READY=1
-        fi
+        [[ -n "$SYM_NODE_PID" ]] && SYMLINK_READY=1
     fi
 
     if [[ $SYMLINK_READY -eq 1 ]]; then
@@ -1150,39 +1176,24 @@ repos:
   - ${repo_path}
 REOF
 
-    if [[ $HAS_PYTHON -eq 1 ]]; then
-        kb_py_port=$(find_free_port)
-        HOME="${PT1H_PINNED_HOME}" AID_HOME="$kb_aid_home" python3 "${SERVER_PY}" \
-            --host 127.0.0.1 --port "$kb_py_port" \
-            >/dev/null 2>&1 &
-        kb_py_pid=$!
-        _BGPIDS+=($kb_py_pid)
-    fi
-    if [[ $HAS_NODE -eq 1 ]]; then
-        kb_node_port=$(find_free_port)
-        while [[ $HAS_PYTHON -eq 1 && "$kb_node_port" == "$kb_py_port" ]]; do
-            kb_node_port=$(find_free_port)
-        done
-        HOME="${PT1H_PINNED_HOME}" AID_HOME="$kb_aid_home" node "${SERVER_MJS}" \
-            --host 127.0.0.1 --port "$kb_node_port" \
-            >/dev/null 2>&1 &
-        kb_node_pid=$!
-        _BGPIDS+=($kb_node_pid)
-    fi
-
-    # Wait for servers
+    # Bring up fresh servers for this variant through the bounded ephemeral-port
+    # pick->start->verify retry (concurrency-safe re-pick on a lost-port race;
+    # wait_for_port bring-up confirmation is inside the helper). SETUP only --
+    # the server-did-not-start fail assertions (on retry exhaustion) are preserved.
     local kb_py_ok=0 kb_node_ok=0
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if wait_for_port "$kb_py_port" 12; then
-            kb_py_ok=1
+        if start_server_with_retry start_python_server_h "$kb_aid_home"; then
+            kb_py_port="$_RETRY_PORT"; kb_py_pid="$_RETRY_PID"; kb_py_ok=1
         else
+            kb_py_port="$_RETRY_PORT"; kb_py_pid="$_RETRY_PID"
             fail "[kb-variant:$name] python server did not start on port $kb_py_port"
         fi
     fi
     if [[ $HAS_NODE -eq 1 ]]; then
-        if wait_for_port "$kb_node_port" 12; then
-            kb_node_ok=1
+        if start_server_with_retry start_node_server_h "$kb_aid_home"; then
+            kb_node_port="$_RETRY_PORT"; kb_node_pid="$_RETRY_PID"; kb_node_ok=1
         else
+            kb_node_port="$_RETRY_PORT"; kb_node_pid="$_RETRY_PID"
             fail "[kb-variant:$name] node server did not start on port $kb_node_port"
         fi
     fi
@@ -1527,43 +1538,28 @@ repos:
   - ${DETAIL_FIXTURE_REPO}
 DEOF
 
-    # Start fresh servers for the detail fixture.
+    # Start fresh servers for the detail fixture through the bounded
+    # ephemeral-port pick->start->verify retry (concurrency-safe re-pick on a
+    # lost-port race; wait_for_port bring-up confirmation is inside the helper).
+    # SETUP only -- the started/did-not-start pass/fail assertions are preserved.
     D_PY_PORT="" D_NODE_PORT="" D_PY_PID="" D_NODE_PID=""
-
-    if [[ $HAS_PYTHON -eq 1 ]]; then
-        D_PY_PORT=$(find_free_port)
-        HOME="${PT1H_PINNED_HOME}" AID_HOME="$DETAIL_AID_HOME" python3 "${SERVER_PY}" \
-            --host 127.0.0.1 --port "$D_PY_PORT" \
-            >/dev/null 2>&1 &
-        D_PY_PID=$!
-        _BGPIDS+=($D_PY_PID)
-    fi
-    if [[ $HAS_NODE -eq 1 ]]; then
-        D_NODE_PORT=$(find_free_port)
-        while [[ $HAS_PYTHON -eq 1 && "$D_NODE_PORT" == "$D_PY_PORT" ]]; do
-            D_NODE_PORT=$(find_free_port)
-        done
-        HOME="${PT1H_PINNED_HOME}" AID_HOME="$DETAIL_AID_HOME" node "${SERVER_MJS}" \
-            --host 127.0.0.1 --port "$D_NODE_PORT" \
-            >/dev/null 2>&1 &
-        D_NODE_PID=$!
-        _BGPIDS+=($D_NODE_PID)
-    fi
 
     D_PY_OK=0 D_NODE_OK=0
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        if wait_for_port "$D_PY_PORT" 12; then
-            D_PY_OK=1
+        if start_server_with_retry start_python_server_h "$DETAIL_AID_HOME"; then
+            D_PY_PORT="$_RETRY_PORT"; D_PY_PID="$_RETRY_PID"; D_PY_OK=1
             pass "[detail] python detail-server started on port $D_PY_PORT"
         else
+            D_PY_PORT="$_RETRY_PORT"; D_PY_PID="$_RETRY_PID"
             fail "[detail] python detail-server did not start on port $D_PY_PORT"
         fi
     fi
     if [[ $HAS_NODE -eq 1 ]]; then
-        if wait_for_port "$D_NODE_PORT" 12; then
-            D_NODE_OK=1
+        if start_server_with_retry start_node_server_h "$DETAIL_AID_HOME"; then
+            D_NODE_PORT="$_RETRY_PORT"; D_NODE_PID="$_RETRY_PID"; D_NODE_OK=1
             pass "[detail] node detail-server started on port $D_NODE_PORT"
         else
+            D_NODE_PORT="$_RETRY_PORT"; D_NODE_PID="$_RETRY_PID"
             fail "[detail] node detail-server did not start on port $D_NODE_PORT"
         fi
     fi
@@ -1946,40 +1942,43 @@ print(' '.join(ids))
 echo "  --- 7a: split-tier union (state lists A, user lists B -> both visible) ---"
 
 S7A_PY_PORT="" S7A_NODE_PORT="" S7A_PY_PID="" S7A_NODE_PID=""
-
-if [[ $HAS_PYTHON -eq 1 ]]; then
-    S7A_PY_PORT=$(find_free_port)
-    HOME="${S7_HOME}" AID_HOME="${S7_STATE_HOME}" \
-        python3 "${SERVER_PY}" --host 127.0.0.1 --port "$S7A_PY_PORT" \
-        >/dev/null 2>&1 &
-    S7A_PY_PID=$!
-    _BGPIDS+=($S7A_PY_PID)
-fi
-
-if [[ $HAS_NODE -eq 1 ]]; then
-    S7A_NODE_PORT=$(find_free_port)
-    while [[ $HAS_PYTHON -eq 1 && "$S7A_NODE_PORT" == "$S7A_PY_PORT" ]]; do
-        S7A_NODE_PORT=$(find_free_port)
-    done
-    HOME="${S7_HOME}" AID_HOME="${S7_STATE_HOME}" \
-        node "${SERVER_MJS}" --host 127.0.0.1 --port "$S7A_NODE_PORT" \
-        >/dev/null 2>&1 &
-    S7A_NODE_PID=$!
-    _BGPIDS+=($S7A_NODE_PID)
-fi
-
 S7A_PY_OK=0 S7A_NODE_OK=0
+
+# Bring up each split-tier server through a bounded ephemeral-port
+# pick->start->verify retry (concurrency-safe re-pick on a lost-port race).
+# SETUP only -- the started/did-not-start pass/fail assertions are preserved.
 if [[ $HAS_PYTHON -eq 1 ]]; then
-    if wait_for_port "$S7A_PY_PORT" 12; then
-        S7A_PY_OK=1
+    for _s7a_try in 1 2 3; do
+        S7A_PY_PORT=$(find_free_port)
+        HOME="${S7_HOME}" AID_HOME="${S7_STATE_HOME}" \
+            python3 "${SERVER_PY}" --host 127.0.0.1 --port "$S7A_PY_PORT" \
+            >/dev/null 2>&1 &
+        S7A_PY_PID=$!
+        _BGPIDS+=($S7A_PY_PID)
+        if wait_for_port "$S7A_PY_PORT" 12; then S7A_PY_OK=1; break; fi
+        kill "$S7A_PY_PID" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$S7A_PY_PID}")
+    done
+    if [[ $S7A_PY_OK -eq 1 ]]; then
         pass "[s7a] python split-tier server started"
     else
         fail "[s7a] python split-tier server did not start"
     fi
 fi
+
 if [[ $HAS_NODE -eq 1 ]]; then
-    if wait_for_port "$S7A_NODE_PORT" 12; then
-        S7A_NODE_OK=1
+    for _s7a_try in 1 2 3; do
+        S7A_NODE_PORT=$(find_free_port)
+        HOME="${S7_HOME}" AID_HOME="${S7_STATE_HOME}" \
+            node "${SERVER_MJS}" --host 127.0.0.1 --port "$S7A_NODE_PORT" \
+            >/dev/null 2>&1 &
+        S7A_NODE_PID=$!
+        _BGPIDS+=($S7A_NODE_PID)
+        if wait_for_port "$S7A_NODE_PORT" 12; then S7A_NODE_OK=1; break; fi
+        kill "$S7A_NODE_PID" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$S7A_NODE_PID}")
+    done
+    if [[ $S7A_NODE_OK -eq 1 ]]; then
         pass "[s7a] node split-tier server started"
     else
         fail "[s7a] node split-tier server did not start"
@@ -2103,40 +2102,43 @@ mkdir -p "${S7B_AID_HOME}"
 printf 'schema: 1\nrepos:\n  - %s\n' "${S7_REPO_A}" > "${S7B_AID_HOME}/registry.yml"
 
 S7B_PY_PORT="" S7B_NODE_PORT="" S7B_PY_PID="" S7B_NODE_PID=""
-
-if [[ $HAS_PYTHON -eq 1 ]]; then
-    S7B_PY_PORT=$(find_free_port)
-    HOME="${S7_HOME}" AID_HOME="${S7B_AID_HOME}" \
-        python3 "${SERVER_PY}" --host 127.0.0.1 --port "$S7B_PY_PORT" \
-        >/dev/null 2>&1 &
-    S7B_PY_PID=$!
-    _BGPIDS+=($S7B_PY_PID)
-fi
-
-if [[ $HAS_NODE -eq 1 ]]; then
-    S7B_NODE_PORT=$(find_free_port)
-    while [[ $HAS_PYTHON -eq 1 && "$S7B_NODE_PORT" == "$S7B_PY_PORT" ]]; do
-        S7B_NODE_PORT=$(find_free_port)
-    done
-    HOME="${S7_HOME}" AID_HOME="${S7B_AID_HOME}" \
-        node "${SERVER_MJS}" --host 127.0.0.1 --port "$S7B_NODE_PORT" \
-        >/dev/null 2>&1 &
-    S7B_NODE_PID=$!
-    _BGPIDS+=($S7B_NODE_PID)
-fi
-
 S7B_PY_OK=0 S7B_NODE_OK=0
+
+# Bring up each per-user-collapse server through a bounded ephemeral-port
+# pick->start->verify retry (concurrency-safe re-pick on a lost-port race).
+# SETUP only -- the started/did-not-start pass/fail assertions are preserved.
 if [[ $HAS_PYTHON -eq 1 ]]; then
-    if wait_for_port "$S7B_PY_PORT" 12; then
-        S7B_PY_OK=1
+    for _s7b_try in 1 2 3; do
+        S7B_PY_PORT=$(find_free_port)
+        HOME="${S7_HOME}" AID_HOME="${S7B_AID_HOME}" \
+            python3 "${SERVER_PY}" --host 127.0.0.1 --port "$S7B_PY_PORT" \
+            >/dev/null 2>&1 &
+        S7B_PY_PID=$!
+        _BGPIDS+=($S7B_PY_PID)
+        if wait_for_port "$S7B_PY_PORT" 12; then S7B_PY_OK=1; break; fi
+        kill "$S7B_PY_PID" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$S7B_PY_PID}")
+    done
+    if [[ $S7B_PY_OK -eq 1 ]]; then
         pass "[s7b] python per-user-collapse server started"
     else
         fail "[s7b] python per-user-collapse server did not start"
     fi
 fi
+
 if [[ $HAS_NODE -eq 1 ]]; then
-    if wait_for_port "$S7B_NODE_PORT" 12; then
-        S7B_NODE_OK=1
+    for _s7b_try in 1 2 3; do
+        S7B_NODE_PORT=$(find_free_port)
+        HOME="${S7_HOME}" AID_HOME="${S7B_AID_HOME}" \
+            node "${SERVER_MJS}" --host 127.0.0.1 --port "$S7B_NODE_PORT" \
+            >/dev/null 2>&1 &
+        S7B_NODE_PID=$!
+        _BGPIDS+=($S7B_NODE_PID)
+        if wait_for_port "$S7B_NODE_PORT" 12; then S7B_NODE_OK=1; break; fi
+        kill "$S7B_NODE_PID" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$S7B_NODE_PID}")
+    done
+    if [[ $S7B_NODE_OK -eq 1 ]]; then
         pass "[s7b] node per-user-collapse server started"
     else
         fail "[s7b] node per-user-collapse server did not start"

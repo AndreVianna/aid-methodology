@@ -21,6 +21,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/net.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
 
@@ -547,9 +548,9 @@ new_dash_repo() {
     echo "$r"
 }
 
-pick_dash_port() {
-    python3 -c "import socket; s=socket.socket(); s.bind(('',0)); p=s.getsockname()[1]; s.close(); print(p)"
-}
+# Ephemeral ports come from tests/lib/net.sh find_free_port (FR-7: no local
+# port-helper redefinition). The `aid dashboard start` sites that bind a real
+# socket wrap pick->start->verify in a bounded retry (SETUP only) below.
 
 SH_HOME_M=$(newhome); setup_sh_home "${SH_HOME_M}"
 PS_HOME_M=$(newhome); setup_ps1_home "${PS_HOME_M}"
@@ -581,9 +582,13 @@ fi
 # ---------------------------------------------------------------------------
 # PAR023-M01/M02: T-1 parity — start python (Bash always; PS skip on absent/linux)
 # ---------------------------------------------------------------------------
-PORT_M1="$(pick_dash_port)"
+PORT_M1="$(find_free_port)"
 # dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
-run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+for _m1_try in 1 2 3; do
+    run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+    { [[ $RC_SH -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_SH"; } && break
+    PORT_M1="$(find_free_port)"
+done
 SH_OUT_M1="$OUT_SH"; SH_RC_M1=$RC_SH
 
 assert_exit_eq "$SH_RC_M1" 0 "PAR023-M01 Bash dashboard start python -> exit 0"
@@ -594,8 +599,12 @@ if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
     # PS side: stop Bash server first (ONE dashboard per user -- shared HOME).
     run_sh "${SH_HOME_M}" dashboard stop
     PS_HOME_M1="$(newhome)"; setup_ps1_home "${PS_HOME_M1}"
-    PORT_M1PS="$(pick_dash_port)"
-    run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS"
+    PORT_M1PS="$(find_free_port)"
+    for _m1ps_try in 1 2 3; do
+        run_ps1 "${PS_HOME_M1}" dashboard start python --port "$PORT_M1PS"
+        { [[ $RC_PS1 -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_PS1"; } && break
+        PORT_M1PS="$(find_free_port)"
+    done
     PS_OUT_M1="$OUT_PS1"; PS_RC_M1=$RC_PS1
     assert_exit_eq "$PS_RC_M1" 0 "PAR023-M03 PS1 dashboard start python -> exit 0"
     assert_output_contains "$PS_OUT_M1" "Dashboard (python) running at http://127.0.0.1:${PORT_M1PS}" \
@@ -618,7 +627,11 @@ fi
 if [[ "$PS_ABSENT_M" -eq 0 && "$PS_LINUX_M" -eq 0 ]]; then
     # Restart Bash server (PS side stopped it; PS server may still be running -- stop it first).
     run_ps1 "${PS_HOME_M1}" dashboard stop 2>/dev/null || true
-    run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+    for _m6r_try in 1 2 3; do
+        run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
+        { [[ $RC_SH -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_SH"; } && break
+        PORT_M1="$(find_free_port)"
+    done
 fi
 run_sh "${SH_HOME_M}" dashboard start python --port "$PORT_M1"
 SH_OUT_M6="$OUT_SH"; SH_RC_M6=$RC_SH
@@ -837,16 +850,20 @@ fi
 # (Bash always runs; PS skip on absent or Linux PS WindowStyle limitation)
 # ---------------------------------------------------------------------------
 SH_HOME_N01="$(new_dash_home_par005)"
-PORT_N01="$(pick_dash_port)"
+PORT_N01="$(find_free_port)"
 
 _o_n01sh="$(mktemp "${TMP}/on01sh.XXXXXX")"
 _e_n01sh="$(mktemp "${TMP}/en01sh.XXXXXX")"
 # dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
-PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_N01}/bin/aid" dashboard start python \
-    --port "$PORT_N01" --remote \
-    >"$_o_n01sh" 2>"$_e_n01sh"
-SH_RC_N01=$?
+for _n01_try in 1 2 3; do
+    PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${SH_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+        bash "${SH_HOME_N01}/bin/aid" dashboard start python \
+        --port "$PORT_N01" --remote \
+        >"$_o_n01sh" 2>"$_e_n01sh"
+    SH_RC_N01=$?
+    { [[ $SH_RC_N01 -eq 0 ]] || ! grep -qiF "Address already in use" "$_e_n01sh"; } && break
+    PORT_N01="$(find_free_port)"
+done
 SH_ERR_N01="$(cat "$_e_n01sh")"
 rm -f "$_o_n01sh" "$_e_n01sh"
 
@@ -872,15 +889,19 @@ elif [[ "$PS_WIN_STYLE_PAR005" -eq 0 ]]; then
     pass "PAR005-N05 Bash<->PS1 exit code parity: --remote no mechanism [SKIPPED: Linux PS WindowStyle unsupported]"
 else
     PS_HOME_N01="$(new_dash_home_par005)"
-    PORT_N01_PS="$(pick_dash_port)"
+    PORT_N01_PS="$(find_free_port)"
     _o_n01ps="$(mktemp "${TMP}/on01ps.XXXXXX")"
     _e_n01ps="$(mktemp "${TMP}/en01ps.XXXXXX")"
-    PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
-        "$PWSH" -NoProfile -File "${PS_HOME_N01}/bin/aid.ps1" \
-        dashboard start python \
-        --port "$PORT_N01_PS" --remote \
-        >"$_o_n01ps" 2>"$_e_n01ps"
-    PS_RC_N01=$?
+    for _n01ps_try in 1 2 3; do
+        PATH="${_absent_ts_dir_par005}:${PATH}" AID_HOME="${PS_HOME_N01}" AID_NO_UPDATE_CHECK=1 \
+            "$PWSH" -NoProfile -File "${PS_HOME_N01}/bin/aid.ps1" \
+            dashboard start python \
+            --port "$PORT_N01_PS" --remote \
+            >"$_o_n01ps" 2>"$_e_n01ps"
+        PS_RC_N01=$?
+        { [[ $PS_RC_N01 -eq 0 ]] || ! grep -qiF "Address already in use" "$_e_n01ps"; } && break
+        PORT_N01_PS="$(find_free_port)"
+    done
     PS_ERR_N01="$(cat "$_e_n01ps")"
     rm -f "$_o_n01ps" "$_e_n01ps"
 
@@ -1294,12 +1315,16 @@ fi
 # ===========================================================================
 
 SH_HOME_R="$(new_dash_home_par005)"
-PORT_R="$(pick_dash_port)"
+PORT_R="$(find_free_port)"
 _absent_ts_dir_r="${_absent_ts_dir_par005}"
 
 # Start the local server first (Bash, no --remote).
 # dashboard is now machine-level: no --target flag
-run_sh "${SH_HOME_R}" dashboard start python --port "$PORT_R"
+for _r01_try in 1 2 3; do
+    run_sh "${SH_HOME_R}" dashboard start python --port "$PORT_R"
+    { [[ $RC_SH -eq 0 ]] || ! grep -qiF "Address already in use" <<<"$OUT_SH"; } && break
+    PORT_R="$(find_free_port)"
+done
 SH_RC_R_START=$RC_SH
 assert_exit_eq "$SH_RC_R_START" 0 "PAR057-R01 Bash dashboard start python (before --remote test) -> exit 0"
 
@@ -1309,15 +1334,19 @@ AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
     >/dev/null 2>&1 || true
 
 # Now start fresh with --remote and absent tailscale.
-PORT_R2="$(pick_dash_port)"
+PORT_R2="$(find_free_port)"
 
 _o_r2sh="$(mktemp "${TMP}/or2sh.XXXXXX")"
 _e_r2sh="$(mktemp "${TMP}/er2sh.XXXXXX")"
-PATH="${_absent_ts_dir_r}:${PATH}" AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
-    bash "${SH_HOME_R}/bin/aid" dashboard start python \
-    --port "$PORT_R2" --remote \
-    >"$_o_r2sh" 2>"$_e_r2sh"
-SH_RC_R2=$?
+for _r2_try in 1 2 3; do
+    PATH="${_absent_ts_dir_r}:${PATH}" AID_HOME="${SH_HOME_R}" AID_NO_UPDATE_CHECK=1 \
+        bash "${SH_HOME_R}/bin/aid" dashboard start python \
+        --port "$PORT_R2" --remote \
+        >"$_o_r2sh" 2>"$_e_r2sh"
+    SH_RC_R2=$?
+    { [[ $SH_RC_R2 -eq 0 ]] || ! grep -qiF "Address already in use" "$_e_r2sh"; } && break
+    PORT_R2="$(find_free_port)"
+done
 SH_ERR_R2="$(cat "$_e_r2sh")"
 rm -f "$_o_r2sh" "$_e_r2sh"
 
@@ -1419,10 +1448,10 @@ chmod +x "${CONC_HARNESS}"
 
 # Launch 8 concurrent register calls for 4 distinct paths (2 concurrent per path).
 _PATHS_S=(
-    "/tmp/conc-repo-alpha"
-    "/tmp/conc-repo-beta"
-    "/tmp/conc-repo-gamma"
-    "/tmp/conc-repo-delta"
+    "${TMP}/conc-repo-alpha"
+    "${TMP}/conc-repo-beta"
+    "${TMP}/conc-repo-gamma"
+    "${TMP}/conc-repo-delta"
 )
 _PIDS_S=()
 for _path_s in "${_PATHS_S[@]}" "${_PATHS_S[@]}"; do
@@ -1463,7 +1492,7 @@ else
 fi
 
 # S06: every entry line in the registry has the correct DM-1 two-space-indent format.
-_malformed=$(grep '^  - ' "${REG_HOME_S}/registry.yml" | grep -v '^  - /tmp/' || true)
+_malformed=$(grep '^  - ' "${REG_HOME_S}/registry.yml" | grep -v "^  - ${TMP}/" || true)
 if [[ -z "$_malformed" ]]; then
     pass "PAR057-S06 concurrent-add: all entry lines have correct DM-1 indent format"
 else
@@ -1521,7 +1550,7 @@ cat > "$_div_right_schema" << 'RIGHTSCHEMA_EOF'
 # description come from .aid/settings.yml; version/tools from the manifest, at render time.
 schema: 1
 projects:
-  - /tmp/test-repo
+  - /base/test-repo
 RIGHTSCHEMA_EOF
 # Identical to the above except schema: 99.
 sed 's/^schema: 1$/schema: 99/' "$_div_right_schema" > "$_div_wrong_schema"
@@ -3664,7 +3693,7 @@ UA_VERSION="9.9.9"
 # ua_file_url <posix_path>
 # Builds a file:// URL usable by BOTH the native mingw64 curl on a Windows
 # host (which requires a real Windows path -- confirmed empirically: MSYS
-# /tmp/... virtual paths are NOT understood by curl's file:// handler) and by
+# POSIX temp-dir paths are NOT understood by curl's file:// handler) and by
 # curl on Linux CI (where cygpath is absent and the POSIX path is used as-is).
 ua_file_url() {
     local p="$1"

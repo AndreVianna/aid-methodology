@@ -85,7 +85,11 @@ FIXTURE_EMPTY="${REPO_ROOT}/dashboard/server/tests/fixtures/pt1-no-aid"
 # ---------------------------------------------------------------------------
 
 declare -a _BGPIDS=()
-PT1_TMP="$(mktemp -d /tmp/pt1_XXXXXX)"
+PT1_TMP="$(mktemp -d)"
+PT1_PY_RAW="${PT1_TMP}/pt1_py_raw.json"
+PT1_NODE_RAW="${PT1_TMP}/pt1_node_raw.json"
+PT1_PY_NORM="${PT1_TMP}/pt1_py_norm.json"
+PT1_NODE_NORM="${PT1_TMP}/pt1_node_norm.json"
 
 # Pinned HOME for server processes: no .aid/registry.yml -> server sees only AID_HOME tier.
 # This prevents the developer's real ~/.aid/registry.yml from bleeding into the union read,
@@ -99,7 +103,7 @@ cleanup() {
     done
     _BGPIDS=()
     rm -rf "$PT1_TMP"
-    rm -f /tmp/pt1_py_raw.json /tmp/pt1_node_raw.json /tmp/pt1_py_norm.json /tmp/pt1_node_norm.json
+    rm -f ${PT1_PY_RAW} ${PT1_NODE_RAW} ${PT1_PY_NORM} ${PT1_NODE_NORM}
 }
 
 trap cleanup EXIT
@@ -148,6 +152,44 @@ start_node_server() {
         --host 127.0.0.1 --port "$port" \
         >/dev/null 2>&1 &
     _BGPIDS+=($!)
+}
+
+# ---------------------------------------------------------------------------
+# start_server_with_retry SERVER_FN AID_HOME
+#   Bounded pick->start->verify retry so the suite is safe in the
+#   bounded-parallel runner (feature-003 Port Isolation, FR-3/NFR-3): pick an
+#   ephemeral port (net.sh find_free_port), start SERVER_FN on it, and confirm
+#   bring-up with wait_for_port. On a lost-port TOCTOU race (the server never
+#   comes up because another process grabbed the port in the pick->bind gap) it
+#   kills the stray child, re-picks a fresh port, and retries up to a small
+#   bound -- turning a rare concurrency race into a deterministic re-pick.
+#   Wraps SETUP only (never an assertion -- AC-3). On success sets _RETRY_PORT /
+#   _RETRY_PID and returns 0; after the bound is exhausted returns 1 with
+#   _RETRY_PORT / _RETRY_PID set to the last attempt (for the caller's fail
+#   message + cleanup).
+# ---------------------------------------------------------------------------
+_RETRY_PORT=""
+_RETRY_PID=""
+start_server_with_retry() {
+    local server_fn="$1"
+    local aid_home="$2"
+    local attempts=3
+    local i port pid
+    for (( i=1; i<=attempts; i++ )); do
+        port=$(find_free_port)
+        "$server_fn" "$port" "$aid_home"
+        pid="${_BGPIDS[-1]}"
+        if wait_for_port "$port" 12; then
+            _RETRY_PORT="$port"
+            _RETRY_PID="$pid"
+            return 0
+        fi
+        kill "$pid" 2>/dev/null || true
+        _BGPIDS=("${_BGPIDS[@]/$pid}")
+    done
+    _RETRY_PORT="$port"
+    _RETRY_PID="$pid"
+    return 1
 }
 
 # ---------------------------------------------------------------------------
@@ -216,16 +258,13 @@ check_fixture_parity() {
     local label="$2"
     local check_r7="${3:-0}"
 
-    local py_port node_port
-    py_port=$(find_free_port)
-    node_port=$(find_free_port)
+    # Ports are picked inside start_server_with_retry (per-server ephemeral
+    # allocation + bounded re-pick); the py/node servers run sequentially here
+    # (each is killed before the next starts), so no cross-port coordination is
+    # needed. The OS will not hand out a still-bound port, so the two are distinct.
+    local py_port="" node_port=""
 
-    # Ensure the two ports differ (vanishingly rare collision)
-    while [[ "$node_port" == "$py_port" ]]; do
-        node_port=$(find_free_port)
-    done
-
-    log "Fixture: $label  py=$py_port node=$node_port"
+    log "Fixture: $label"
 
     # Build temporary aid-home with a single-entry registry for this fixture.
     local aid_home
@@ -233,13 +272,12 @@ check_fixture_parity() {
 
     # --- Python half ---
     if [[ $HAS_PYTHON -eq 1 ]]; then
-        start_python_server "$py_port" "$aid_home"
-        local py_pid="${_BGPIDS[-1]}"
-
-        if wait_for_port "$py_port" 12; then
-            if fetch_api_model "$py_port" "/tmp/pt1_py_raw.json"; then
+        local py_pid
+        if start_server_with_retry start_python_server "$aid_home"; then
+            py_port="$_RETRY_PORT"; py_pid="$_RETRY_PID"
+            if fetch_api_model "$py_port" "${PT1_PY_RAW}"; then
                 pass "[$label] python server responds on /r/<id>/api/model"
-                if python3 -c "import json; json.load(open('/tmp/pt1_py_raw.json'))" 2>/dev/null; then
+                if python3 -c "import json; json.load(open('${PT1_PY_RAW}'))" 2>/dev/null; then
                     pass "[$label] python /r/<id>/api/model is valid JSON"
                 else
                     fail "[$label] python /r/<id>/api/model is not valid JSON"
@@ -248,6 +286,7 @@ check_fixture_parity() {
                 fail "[$label] python server /r/<id>/api/model fetch failed"
             fi
         else
+            py_port="$_RETRY_PORT"; py_pid="$_RETRY_PID"
             fail "[$label] python server did not start within 12s on port $py_port"
         fi
 
@@ -257,13 +296,12 @@ check_fixture_parity() {
 
     # --- Node half ---
     if [[ $HAS_NODE -eq 1 ]]; then
-        start_node_server "$node_port" "$aid_home"
-        local node_pid="${_BGPIDS[-1]}"
-
-        if wait_for_port "$node_port" 12; then
-            if fetch_api_model "$node_port" "/tmp/pt1_node_raw.json"; then
+        local node_pid
+        if start_server_with_retry start_node_server "$aid_home"; then
+            node_port="$_RETRY_PORT"; node_pid="$_RETRY_PID"
+            if fetch_api_model "$node_port" "${PT1_NODE_RAW}"; then
                 pass "[$label] node server responds on /r/<id>/api/model"
-                if python3 -c "import json; json.load(open('/tmp/pt1_node_raw.json'))" 2>/dev/null; then
+                if python3 -c "import json; json.load(open('${PT1_NODE_RAW}'))" 2>/dev/null; then
                     pass "[$label] node /r/<id>/api/model is valid JSON"
                 else
                     fail "[$label] node /r/<id>/api/model is not valid JSON"
@@ -272,6 +310,7 @@ check_fixture_parity() {
                 fail "[$label] node server /r/<id>/api/model fetch failed"
             fi
         else
+            node_port="$_RETRY_PORT"; node_pid="$_RETRY_PID"
             fail "[$label] node server did not start within 12s on port $node_port"
         fi
 
@@ -281,18 +320,18 @@ check_fixture_parity() {
 
     # --- Parity check (only when BOTH runtimes are present and both fetches succeeded) ---
     if [[ $HAS_PYTHON -eq 1 && $HAS_NODE -eq 1 ]]; then
-        if [[ -f /tmp/pt1_py_raw.json && -f /tmp/pt1_node_raw.json ]]; then
-            normalize_json /tmp/pt1_py_raw.json /tmp/pt1_py_norm.json
-            normalize_json /tmp/pt1_node_raw.json /tmp/pt1_node_norm.json
+        if [[ -f ${PT1_PY_RAW} && -f ${PT1_NODE_RAW} ]]; then
+            normalize_json ${PT1_PY_RAW} ${PT1_PY_NORM}
+            normalize_json ${PT1_NODE_RAW} ${PT1_NODE_NORM}
 
             # Byte-identical comparison (PT-1 core assertion)
-            if cmp -s /tmp/pt1_py_norm.json /tmp/pt1_node_norm.json; then
+            if cmp -s ${PT1_PY_NORM} ${PT1_NODE_NORM}; then
                 pass "[$label] python == node (byte-identical after strip+normalize)"
             else
                 fail "[$label] python != node (NOT byte-identical after strip+normalize)"
                 if [[ "$VERBOSE" -eq 1 ]]; then
                     echo "  --- diff (python vs node) ---"
-                    diff /tmp/pt1_py_norm.json /tmp/pt1_node_norm.json || true
+                    diff ${PT1_PY_NORM} ${PT1_NODE_NORM} || true
                 fi
             fi
 
@@ -302,7 +341,7 @@ check_fixture_parity() {
             # Both servers MUST escape them (\\u2028/\\u2029) -- no raw bytes in output.
             if [[ "$check_r7" == "1" ]]; then
                 python3 "${SCRIPT_DIR}/../lib/pt1_r7_check.py" \
-                    /tmp/pt1_py_raw.json /tmp/pt1_node_raw.json
+                    ${PT1_PY_RAW} ${PT1_NODE_RAW}
                 local r7_rc=$?
                 if [[ $r7_rc -eq 0 ]]; then
                     pass "[$label] R7: U+2028/U+2029 escaped (not raw) in both servers"
@@ -317,7 +356,7 @@ check_fixture_parity() {
         log "[$label] skipping parity check: only one runtime present"
     fi
 
-    rm -f /tmp/pt1_py_raw.json /tmp/pt1_node_raw.json /tmp/pt1_py_norm.json /tmp/pt1_node_norm.json
+    rm -f ${PT1_PY_RAW} ${PT1_NODE_RAW} ${PT1_PY_NORM} ${PT1_NODE_NORM}
 }
 
 # ---------------------------------------------------------------------------
@@ -336,20 +375,17 @@ check_fixture_parity "$FIXTURE_EMPTY" "no-aid" "0"
 FULL_AID_HOME=$(build_single_repo_aid_home "$FIXTURE_FULL" "full-check")
 
 if [[ $HAS_PYTHON -eq 1 ]]; then
-    local_py_port=$(find_free_port)
-    start_python_server "$local_py_port" "$FULL_AID_HOME"
-    local_py_pid="${_BGPIDS[-1]}"
+    if start_server_with_retry start_python_server "$FULL_AID_HOME"; then
+        local_py_port="$_RETRY_PORT"
+        fetch_api_model "$local_py_port" "${PT1_PY_RAW}"
 
-    if wait_for_port "$local_py_port" 12; then
-        fetch_api_model "$local_py_port" "/tmp/pt1_py_raw.json"
-
-        schema_ver=$(python3 -c "import json; d = json.load(open('/tmp/pt1_py_raw.json')); print(d.get('schema_version', 'MISSING'))")
+        schema_ver=$(python3 -c "import json; d = json.load(open('${PT1_PY_RAW}')); print(d.get('schema_version', 'MISSING'))")
         assert_eq "$schema_ver" "3" "[full-fixture] python schema_version == 3"
 
-        gen_by=$(python3 -c "import json; d = json.load(open('/tmp/pt1_py_raw.json')); print(d.get('generated_by', 'MISSING'))")
+        gen_by=$(python3 -c "import json; d = json.load(open('${PT1_PY_RAW}')); print(d.get('generated_by', 'MISSING'))")
         assert_eq "$gen_by" "python" "[full-fixture] python generated_by == 'python'"
 
-        read_at=$(python3 -c "import json; d = json.load(open('/tmp/pt1_py_raw.json')); print(d['model']['read']['read_at'])")
+        read_at=$(python3 -c "import json; d = json.load(open('${PT1_PY_RAW}')); print(d['model']['read']['read_at'])")
         if [[ -n "$read_at" && "$read_at" != "None" ]]; then
             pass "[full-fixture] python model.read.read_at is non-empty"
         else
@@ -357,26 +393,25 @@ if [[ $HAS_PYTHON -eq 1 ]]; then
         fi
     fi
 
+    local_py_pid="$_RETRY_PID"
     kill "$local_py_pid" 2>/dev/null || true
     _BGPIDS=("${_BGPIDS[@]/$local_py_pid}")
-    rm -f /tmp/pt1_py_raw.json
+    rm -f ${PT1_PY_RAW}
 fi
 
 if [[ $HAS_NODE -eq 1 && $HAS_PYTHON -eq 1 ]]; then
-    local_node_port=$(find_free_port)
-    start_node_server "$local_node_port" "$FULL_AID_HOME"
-    local_node_pid="${_BGPIDS[-1]}"
+    if start_server_with_retry start_node_server "$FULL_AID_HOME"; then
+        local_node_port="$_RETRY_PORT"
+        fetch_api_model "$local_node_port" "${PT1_NODE_RAW}"
 
-    if wait_for_port "$local_node_port" 12; then
-        fetch_api_model "$local_node_port" "/tmp/pt1_node_raw.json"
-
-        gen_by=$(python3 -c "import json; d = json.load(open('/tmp/pt1_node_raw.json')); print(d.get('generated_by', 'MISSING'))")
+        gen_by=$(python3 -c "import json; d = json.load(open('${PT1_NODE_RAW}')); print(d.get('generated_by', 'MISSING'))")
         assert_eq "$gen_by" "node" "[full-fixture] node generated_by == 'node'"
     fi
 
+    local_node_pid="$_RETRY_PID"
     kill "$local_node_pid" 2>/dev/null || true
     _BGPIDS=("${_BGPIDS[@]/$local_node_pid}")
-    rm -f /tmp/pt1_node_raw.json
+    rm -f ${PT1_NODE_RAW}
 fi
 
 # ---------------------------------------------------------------------------

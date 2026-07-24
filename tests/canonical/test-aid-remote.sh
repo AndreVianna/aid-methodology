@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-aid-remote.sh - Feature-005 test scenarios T-1..T-9: secure remote exposure.
+# test-aid-remote.sh - Feature-005 test scenarios T-1..T-8: secure remote exposure.
 #
 # Verifies the _aid_remote_expose / _aid_remote_teardown helpers in bin/aid (Bash)
 # and their PowerShell twins in bin/aid.ps1 using a PATH-shim tailscale STUB so
@@ -23,7 +23,6 @@
 #        called (stub argv shows '--https=443 off'); never public.
 #   T-8  Bash vs PowerShell parity for T-1/T-3/T-5 clear-fail paths.
 #        PS half SKIP-IF-ABSENT (clear notice, Bash half always runs).
-#   T-9  ASCII-only guard: bin/aid + bin/aid.ps1 pass test-ascii-only.sh.
 #
 # Usage:
 #   bash test-aid-remote.sh [--verbose]
@@ -35,6 +34,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/net.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -114,9 +114,9 @@ new_fixture_repo() {
     echo "$r"
 }
 
-pick_free_port() {
-    python3 -c "import socket; s=socket.socket(); s.bind(('',0)); p=s.getsockname()[1]; s.close(); print(p)"
-}
+# Ephemeral ports come from tests/lib/net.sh find_free_port (FR-7: no local
+# port-helper redefinition). The two `aid dashboard start` sites that bind a
+# real socket (T-3, T-8) wrap pick->start->verify in a bounded retry below.
 
 # ---------------------------------------------------------------------------
 # tailscale stub factory.
@@ -281,7 +281,7 @@ run_fn_with_stub() {
 #      Funnel NEVER called (SEC-1 runtime guard).
 # ---------------------------------------------------------------------------
 echo "--- T-1: expose with logged-in stub ---"
-PORT1="$(pick_free_port)"
+PORT1="$(find_free_port)"
 STUB1="$(mktemp -d "${TMP}/stub1.XXXXXX")"
 make_tailscale_stub "$STUB1" "logged-in" "srvtest01.tail99999.ts.net"
 
@@ -334,7 +334,7 @@ fi
 #      NOT a blind 'reset' when other mappings exist; exit 0.
 # ---------------------------------------------------------------------------
 echo "--- T-2: expose then teardown ---"
-PORT2="$(pick_free_port)"
+PORT2="$(find_free_port)"
 STUB2="$(mktemp -d "${TMP}/stub2.XXXXXX")"
 make_tailscale_stub "$STUB2" "logged-in" "srvtest01.tail99999.ts.net"
 
@@ -372,7 +372,7 @@ fi
 #      dashboard.pid.remote=false.
 # ---------------------------------------------------------------------------
 echo "--- T-3: --remote with no tailscale on PATH ---"
-PORT3="$(pick_free_port)"
+PORT3="$(find_free_port)"
 STUB3_ABSENT="$(mktemp -d "${TMP}/stub3a.XXXXXX")"
 make_tailscale_stub "$STUB3_ABSENT" "absent"
 
@@ -415,7 +415,7 @@ assert_exit_eq "$RC_DC" 10 "T-3: expose with not-logged-in stub -> exit 10"
 echo "--- T-3 (feature-004 integration: start --remote no mechanism) ---"
 H3="$(new_aid_home)"
 R3="$(new_fixture_repo)"
-PORT3I="$(pick_free_port)"
+PORT3I="$(find_free_port)"
 STUB3I_ABSENT="$(mktemp -d "${TMP}/stub3i.XXXXXX")"
 make_tailscale_stub "$STUB3I_ABSENT" "absent"
 
@@ -440,10 +440,18 @@ chmod +x "${_absent_wrapper}/tailscale"
 # dashboard is now machine-level: no --target flag; pid goes to $HOME/.aid/.temp/
 # Ensure no stale pid before this test.
 rm -f "$PINNED_PID_FILE"
-PATH="${_absent_wrapper}:${PATH}" AID_HOME="$H3" AID_NO_UPDATE_CHECK=1 \
-    bash "${H3}/bin/aid" dashboard start python --port "$PORT3I" --remote \
-    >"$_o3i" 2>"$_e3i"
-_rc3i=$?
+# Bounded pick->start->verify retry (SETUP only, never an assertion): on a
+# transient lost-port race (nonzero exit whose stderr shows "Address already in
+# use") re-pick PORT3I and retry. A normal T-3 run (exit 10, remote unavailable)
+# is NOT a bind race, so it breaks on the first attempt with assertions intact.
+for _t3i_try in 1 2 3; do
+    PATH="${_absent_wrapper}:${PATH}" AID_HOME="$H3" AID_NO_UPDATE_CHECK=1 \
+        bash "${H3}/bin/aid" dashboard start python --port "$PORT3I" --remote \
+        >"$_o3i" 2>"$_e3i"
+    _rc3i=$?
+    { [[ $_rc3i -eq 0 ]] || ! grep -qiF "Address already in use" "$_e3i"; } && break
+    PORT3I="$(find_free_port)"; rm -f "$PINNED_PID_FILE"
+done
 _out3i="$(cat "$_o3i")"; _err3i="$(cat "$_e3i")"
 rm -f "$_o3i" "$_e3i"
 
@@ -513,7 +521,7 @@ run_fn_with_stub "$STUB5" _aid_remote_teardown ""
 assert_exit_eq "$RC_DC" 0 "T-5b: empty handle -> exit 0 (idempotent)"
 
 # T-5c: double teardown (expose once, teardown twice).
-PORT5="$(pick_free_port)"
+PORT5="$(find_free_port)"
 STUB5D="$(mktemp -d "${TMP}/stub5d.XXXXXX")"
 make_tailscale_stub "$STUB5D" "logged-in" "srvtest01.tail99999.ts.net"
 run_fn_with_stub "$STUB5D" _aid_remote_expose "$PORT5"
@@ -554,7 +562,7 @@ fi
 #      revert called (stub argv shows '--https=443 off'); never public.
 # ---------------------------------------------------------------------------
 echo "--- T-7: serve fails -> exit 12, revert called ---"
-PORT7="$(pick_free_port)"
+PORT7="$(find_free_port)"
 STUB7="$(mktemp -d "${TMP}/stub7.XXXXXX")"
 make_tailscale_stub "$STUB7" "serve-fail" "srvtest01.tail99999.ts.net"
 
@@ -611,7 +619,7 @@ else
     echo "  T-8 (PS T-3 parity): --remote no mechanism -> exit 10"
     H8_PS="$(new_aid_home)"
     R8_PS="$(new_fixture_repo)"
-    PORT8="$(pick_free_port)"
+    PORT8="$(find_free_port)"
 
     # The absent-wrapper shadows tailscale for the PS invocation.
     _absent8="$(mktemp -d "${TMP}/absent8.XXXXXX")"
@@ -635,11 +643,18 @@ ABS8EOF
         # dashboard is now machine-level: no --target flag
         # Ensure no stale pid before PS test.
         rm -f "$PINNED_PID_FILE"
-        PATH="${_absent8}:${PATH}" AID_HOME="$H8_PS" AID_NO_UPDATE_CHECK=1 \
-            "$PWSH" -NoProfile -File "${H8_PS}/bin/aid.ps1" \
-            dashboard start python --port "$PORT8" --remote \
-            >"$_o8" 2>"$_e8"
-        _rc8_ps=$?
+        # Bounded pick->start->verify retry (SETUP only): re-pick PORT8 on a
+        # transient bind race ("Address already in use"); a normal exit-10 run
+        # breaks on the first attempt.
+        for _t8_try in 1 2 3; do
+            PATH="${_absent8}:${PATH}" AID_HOME="$H8_PS" AID_NO_UPDATE_CHECK=1 \
+                "$PWSH" -NoProfile -File "${H8_PS}/bin/aid.ps1" \
+                dashboard start python --port "$PORT8" --remote \
+                >"$_o8" 2>"$_e8"
+            _rc8_ps=$?
+            { [[ $_rc8_ps -eq 0 ]] || ! grep -qiF "Address already in use" "$_e8"; } && break
+            PORT8="$(find_free_port)"; rm -f "$PINNED_PID_FILE"
+        done
         _err8_ps="$(cat "$_e8")"
         assert_exit_eq "$_rc8_ps" 10 "T-8: PS start --remote no mechanism -> exit 10 (T-3 parity)"
         assert_output_contains "$_err8_ps" "NOT exposed" \
@@ -681,7 +696,7 @@ assert_exit_eq "$_rc3_absent" 10 "T-8: Bash expose no-mechanism -> exit 10 (T-3 
 #       the FQDN. The dnsname-absent stub exercises this branch.
 # ---------------------------------------------------------------------------
 echo "--- T-1b: serve-status fallback resolves FQDN when DNSName absent from status --json ---"
-PORT1B="$(pick_free_port)"
+PORT1B="$(find_free_port)"
 STUB1B="$(mktemp -d "${TMP}/stub1b.XXXXXX")"
 make_tailscale_stub "$STUB1B" "dnsname-absent" "fallback01.tail12345.ts.net"
 
@@ -706,20 +721,6 @@ if grep -q "funnel" "${STUB1B}/ts_calls.log" 2>/dev/null; then
     fail "T-1b: SEC-1 VIOLATED -- funnel was called!"
 else
     pass "T-1b: SEC-1 confirmed -- funnel never called in serve-status fallback path"
-fi
-
-# ---------------------------------------------------------------------------
-# T-9: ASCII-only guard -- bin/aid + bin/aid.ps1 (including the new helpers +
-#      the FR18/SEC-2 reminder string) pass test-ascii-only.sh.
-# ---------------------------------------------------------------------------
-echo "--- T-9: ASCII-only guard ---"
-ASCII_SUITE="${SCRIPT_DIR}/test-ascii-only.sh"
-if [[ -f "$ASCII_SUITE" ]]; then
-    bash "$ASCII_SUITE" >/dev/null 2>&1
-    _ascii_rc=$?
-    assert_exit_eq "$_ascii_rc" 0 "T-9: bin/aid + bin/aid.ps1 pass ASCII-only gate (test-ascii-only.sh)"
-else
-    fail "T-9: test-ascii-only.sh not found at ${ASCII_SUITE}"
 fi
 
 # ---------------------------------------------------------------------------
