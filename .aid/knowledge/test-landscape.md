@@ -13,6 +13,7 @@ sources:
   - .github/workflows/installer-tests.yml
   - .github/workflows/release.yml
   - .github/workflows/docs.yml
+  - .github/workflows/coverage-parity.yml
   - dashboard/reader/tests/
   - dashboard/server/tests/
   - .claude/skills/generate-profile/scripts
@@ -159,7 +160,7 @@ discovered by `tests/run-all.sh`. A green local `run-all.sh` does not exercise i
 
 ## CI Lanes and Where They Run
 
-AID has four GitHub Actions workflows. Critically, the heavy correctness gates run on
+AID has five GitHub Actions workflows. Critically, the heavy correctness gates run on
 **master and release tags only** — feature branches get the installer matrix instead.
 
 | Workflow | Trigger | Jobs / gates | Runs on feature branches? |
@@ -168,6 +169,7 @@ AID has four GitHub Actions workflows. Critically, the heavy correctness gates r
 | `.github/workflows/installer-tests.yml` (Installer CI) | push to any branch **except** master (`branches-ignore: [master]`); `workflow_dispatch` | cross-platform installer/CLI/release matrix (ubuntu + windows) | Yes — feature branches only |
 | `.github/workflows/release.yml` (Release) | push of a `v*` tag; `workflow_dispatch` | `gate` (re-runs render-drift + version-sync + full `run-all.sh` + generator self-tests on the tagged commit), then `github-release`, `npm-publish`, `pypi-publish` | No — tag only |
 | `.github/workflows/docs.yml` (Docs) | push to `master` touching `site/**`, `docs/**`, `VERSION`, or the workflow; `release: published`; `workflow_dispatch` | Astro Starlight build → GitHub Pages deploy | No — master only (+ path filter) |
+| `.github/workflows/coverage-parity.yml` (Coverage Parity) | push + PR to `master`, path-filtered to `tests/**`; `workflow_dispatch` | Separate lane from `canonical-tests`: serially re-collects the executed-assertion inventory (~6-7 min) and diffs it against a committed baseline — advisory (warns, exits 0) until the baseline is bootstrapped, then enforces | No — master only (+ path filter) |
 
 CONFIRMED by the `on:` blocks of each workflow.
 

@@ -9,6 +9,7 @@ sources:
   - .github/workflows/docs.yml
   - .github/workflows/test.yml
   - .github/workflows/installer-tests.yml
+  - .github/workflows/coverage-parity.yml
   - install.sh
   - install.ps1
   - .claude/aid/scripts/release/check-version-sync.sh
@@ -101,7 +102,7 @@ CONFIRMED in `.claude/skills/generate-profile/SKILL.md` + `.github/workflows/tes
 
 ## CI/CD Pipeline
 
-Four GitHub Actions workflows. See `test-landscape.md` for the test detail; the
+Five GitHub Actions workflows. See `test-landscape.md` for the test detail; the
 release/deploy view:
 
 | Workflow | Trigger | Role |
@@ -110,6 +111,7 @@ release/deploy view:
 | `.github/workflows/installer-tests.yml` | push to any non-`master` branch | Cross-platform installer/CLI/release validation (ubuntu bash-harness + windows native-ps1) so feature branches are validated remotely |
 | `.github/workflows/release.yml` | push of a `v*` tag (or `workflow_dispatch`) | Gate → build → publish all channels |
 | `.github/workflows/docs.yml` | push to `master` (site/docs/VERSION paths) + `release: published` | Build the Astro site and deploy to GitHub Pages |
+| `.github/workflows/coverage-parity.yml` | PR + push to `master`, path-filtered to `tests/**` | Advisory coverage-regression gate: diffs the executed-assertion inventory against a committed baseline (enforces once bootstrapped) |
 
 CONFIRMED by each workflow's `on:` block.
 

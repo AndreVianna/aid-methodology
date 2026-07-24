@@ -93,7 +93,7 @@ dual installer set and the Windows-only test lane (`tests/windows/`).
 | **marked** | **16.4.2** | Markdown parsing in site scripts. CONFIRMED `site/package.json`. |
 | **sanitize-html** | **2.17.0** | HTML sanitization in site. CONFIRMED `site/package.json`. |
 | **Playwright** | (npm `latest` via `npx playwright install chromium`) | Headless visual-fidelity gate for the summarize KB viewer. CONFIRMED `.github/workflows/test.yml` (search: "npx playwright install chromium") and `canonical/aid/scripts/summarize/validate-visuals.mjs`. |
-| **GitHub Actions** | n/a | CI/CD — four workflows. CONFIRMED `.github/workflows/*.yml`. |
+| **GitHub Actions** | n/a | CI/CD — five workflows. CONFIRMED `.github/workflows/*.yml`. |
 
 There is **no application framework** (no React/Django/Spring) — AID is content + scripts.
 The only web framework (Astro) is confined to the marketing/docs site, which is an

@@ -805,7 +805,7 @@ lives).
 | SDD | Spec-Driven Development | the methodology AID extends |
 | MCP | Model Context Protocol | Playwright MCP for visual validation; also the `mcp` connector `connection_type` — a tool-managed connection the host tool provides and authenticates (Lexicon — Connectors) |
 | CLI | Command-Line Interface | the persistent `aid` command |
-| CI/CD | Continuous Integration / Delivery | the four GitHub Actions workflows |
+| CI/CD | Continuous Integration / Delivery | the five GitHub Actions workflows |
 | MVP | Minimum Viable Product | each Delivery is an MVP |
 | PD | Parallel Dispatch | Execute's continuous parallel-pool model |
 | BFS | Breadth-First Search | computes a failed task's transitive block radius |
