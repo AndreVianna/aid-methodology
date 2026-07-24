@@ -1265,7 +1265,7 @@ test-aid-dashboard-cli.sh	T-3: stop-first hint	1
 test-aid-dashboard-cli.sh	T-4: child dead after stop	1
 test-aid-dashboard-cli.sh	T-4: dashboard.pid removed after stop	1
 test-aid-dashboard-cli.sh	T-4: logfile removed after stop	1
-test-aid-dashboard-cli.sh	T-4: port 38333 freed after stop	1
+test-aid-dashboard-cli.sh	T-4: port <PORT> freed after stop	1
 test-aid-dashboard-cli.sh	T-4: start exits 0 before stop	1
 test-aid-dashboard-cli.sh	T-4: stop exits 0	1
 test-aid-dashboard-cli.sh	T-4: stopped message	1
@@ -2825,8 +2825,8 @@ test-dashboard-manifest.sh	DM02	1
 test-dashboard-manifest.sh	DM03	1
 test-dashboard-manifest.sh	DM04	1
 test-dashboard-manifest.sh	DM05	5
-test-dashboard-parity-h.sh	[PT-1-H] node server started on port 36143	1
-test-dashboard-parity-h.sh	[PT-1-H] python server started on port 37897	1
+test-dashboard-parity-h.sh	[PT-1-H] node server started on port <PORT>	1
+test-dashboard-parity-h.sh	[PT-1-H] python server started on port <PORT>	1
 test-dashboard-parity-h.sh	[detail-6a] details map content: 3 tasks, CRITICAL<PATH> findings, delivery_id null, deferred-issue filter correct	1
 test-dashboard-parity-h.sh	[detail-6a] node ?detail= (scrambled) responds with valid JSON	1
 test-dashboard-parity-h.sh	[detail-6a] python == node (byte-identical after strip+normalize, including details+raw_state)	1
@@ -2843,8 +2843,8 @@ test-dashboard-parity-h.sh	[detail-6c] RC-2 python bare poll: 'details' key abse
 test-dashboard-parity-h.sh	[detail-6c] RC-2 python bare poll: schema_version=3	1
 test-dashboard-parity-h.sh	[detail-6c] RC-2<PATH> bare poll body byte-identical across runtimes (always-on path unchanged)	1
 test-dashboard-parity-h.sh	[detail-6d] R7: raw_state.text U+2028<PATH> escaped in both runtimes	1
-test-dashboard-parity-h.sh	[detail] node detail-server started on port 44961	1
-test-dashboard-parity-h.sh	[detail] python detail-server started on port 46767	1
+test-dashboard-parity-h.sh	[detail] node detail-server started on port <PORT>	1
+test-dashboard-parity-h.sh	[detail] python detail-server started on port <PORT>	1
 test-dashboard-parity-h.sh	[home] <PATH> repos array has 3 entries (2 repos + 1 unavailable)	1
 test-dashboard-parity-h.sh	[home] entry-c available=False (NFR10)	1
 test-dashboard-parity-h.sh	[home] node <PATH> is valid JSON	1
@@ -2937,7 +2937,7 @@ test-dashboard-parity-h.sh	[sec4] server.mjs: no agent<PATH> import	1
 test-dashboard-parity-h.sh	[sec4] server.py: no agent<PATH> import	1
 test-dashboard-parity-h.sh	[sec4] server<PATH> no agent<PATH> import	1
 test-dashboard-parity-h.sh	[sec5b] repo-a: kb_state byte-identical across runtimes (all new fields)	1
-test-dashboard-parity-h.sh	[sec5b] repo-a: python kb_state.status='outdated' == node 'outdated'	1
+test-dashboard-parity-h.sh	[sec5b] repo-a: kb_state.status parity (python == node)	1
 test-dashboard-parity-h.sh	[sec5c] frozen-commit outdated: reproducible across two runs (deterministic git tip)	1
 test-dashboard-parity.sh	[full-fixture] R7: U+2028<PATH> escaped (not raw) in both servers	1
 test-dashboard-parity.sh	[full-fixture] node <PATH> is valid JSON	1
