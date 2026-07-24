@@ -141,11 +141,26 @@ normalize_key() {
     # Step 3 -- mask volatile classes, then squeeze whitespace. Masking is
     # applied identically to the baseline and the after side, so any residual
     # over-masking is deterministic and cannot create a false diff.
+    #
+    #   Ephemeral ports: suites bind a test server on an OS-assigned port
+    #   (tests/lib/net.sh find_free_port -> python bind(:0)); the dynamic-range
+    #   port (Linux 32768-60999, Windows 49152-65535 -- always 5 digits, and
+    #   4-5 digits defensively for a lowered ip_local_port_range) then appears
+    #   verbatim in the assertion LABEL (e.g. "... started on port 36143",
+    #   "T-4: port 38333 freed after stop"), so an unmasked label re-keys on
+    #   every run. Mask the digits that FOLLOW the literal `port ` keyword
+    #   (\b guards against a "transport"/"report" prefix) and, defensively, a
+    #   host:port `:NNNN` tail. This is deliberately narrower than a blanket
+    #   4-5-digit mask so a stable count/ID (e.g. "3 files", "exit 2") is left
+    #   intact -- a bare number is only masked when the `port `/`:` context
+    #   marks it as a port.
     printf '%s' "$label" | sed -E '
         s#[A-Za-z]:[\\/][^[:space:]]*#<PATH>#g
         s#/[^[:space:]]*#<PATH>#g
         s#v?[0-9]+(\.[0-9]+)+([-+.][A-Za-z0-9]+)*#<VER>#g
         s#[0-9a-fA-F]{7,}#<HEX>#g
+        s#\bport [0-9]+#port <PORT>#g
+        s#:[0-9]{4,5}\b#:<PORT>#g
         s/[[:space:]]+/ /g
         s/^[[:space:]]+//
         s/[[:space:]]+$//

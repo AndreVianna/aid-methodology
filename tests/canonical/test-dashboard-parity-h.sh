@@ -1401,9 +1401,14 @@ if [[ -n "$MODEL_ID_A" || -n "$NODE_HOME_ID_A" ]]; then
           -f "$KB_PY_REPOA" && -f "$KB_NODE_REPOA" ]]; then
         # Verify statuses match
         if [[ "$py_kb_status" == "$node_kb_status" ]]; then
-            pass "[sec5b] repo-a: python kb_state.status='$py_kb_status' == node '$node_kb_status'"
+            # Value-free label: the freshness verdict ($py_kb_status) is a live
+            # git-derived value (derivation.py git_freshness_check on the ambient
+            # AID tree) that legitimately varies run-to-run, so embedding it here
+            # re-keyed the coverage-parity inventory on every run. The actual
+            # values are emitted for diagnostics via `log` above (sec5b lines).
+            pass "[sec5b] repo-a: kb_state.status parity (python == node)"
         else
-            fail "[sec5b] repo-a: kb_state.status differs: python='$py_kb_status' node='$node_kb_status'"
+            fail "[sec5b] repo-a: kb_state.status differs (python != node)"
         fi
         # Normalize and compare bytes
         normalize_kb_model_json "$KB_PY_REPOA" "${PT1H_TMP}/kb_py_repoa_norm.json"
