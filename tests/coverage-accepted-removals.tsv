@@ -1,0 +1,19 @@
+# coverage-accepted-removals.tsv -- justified outright deletions with NO re-home target,
+# for the coverage-parity gate (consumed via 'coverage-parity.sh diff --accept').
+#
+# Distinct from a re-home: this records keyed assertions DELETED outright because what
+# they asserted is already covered elsewhere by construction (e.g. a redundant nested
+# peer-suite exit-code check whose peer already runs standalone via the run-all.sh
+# glob, so there is no new key to name as a re-home target).
+#
+# A net-removed/reduced key is EXCUSED as an accepted removal iff it is listed below
+# with a NON-EMPTY justification. This does not weaken the gate: the diff still flags
+# every removal; the only pass route is an explicit, justified, human-reviewed entry
+# (analogous to a reviewer-ledger 'Accepted' row).
+#
+# Schema (TAB-separated, 4 fields); '#'-comment and blank lines are ignored:
+#   <suite>	<key>	<delivery>	<justification>
+#
+# This forward-going list starts EMPTY. The 7 work-024 delivery-002 rows were relative
+# to the pre-work-024 merge-base and are already absorbed into master, so they are NOT
+# seeded here. Append one reviewed row per future accepted removal.
