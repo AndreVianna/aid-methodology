@@ -221,7 +221,7 @@ assert_output_contains "$WF_CONTENT" "needs: [gate]" "WF03a github-release needs
 assert_output_contains "$WF_CONTENT" "needs: [gate, github-release]" "WF03b npm-publish needs gate"
 # pypi-publish needs gate (and github-release)
 # pypi-publish uses the same needs, tested via structural check below
-if grep -q "pypi-publish:" "${RELEASE_YML}" && grep -A5 "pypi-publish:" "${RELEASE_YML}" | grep -q "needs:"; then
+if grep -q "pypi-publish:" "${RELEASE_YML}" && grep -q "needs:" < <(grep -A5 "pypi-publish:" "${RELEASE_YML}"); then
     pass "WF03c pypi-publish has a needs: block"
 else
     fail "WF03c pypi-publish does not declare needs:"

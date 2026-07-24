@@ -418,7 +418,7 @@ run_aid "$REG_F01_HOME" add codex \
 assert_exit_eq "$RC" 0 "REG-F01a add for format test -> exit 0"
 # Check the header lines + schema + projects: are ASCII-only.
 _header_lines=$(head -6 "${REG_F01_HOME}/registry.yml")
-if printf '%s' "$_header_lines" | grep -qP '[^\x00-\x7F]'; then
+if grep -qP '[^\x00-\x7F]' <<<"$_header_lines"; then
     fail "REG-F01b registry.yml header lines contain non-ASCII bytes"
 else
     pass "REG-F01b registry.yml header lines are ASCII-only"

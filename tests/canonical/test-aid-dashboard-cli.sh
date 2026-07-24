@@ -835,7 +835,7 @@ HOME="${PINNED_HOME}" PATH="${STUB14H}:${PATH}" AID_HOME="$H14h" AID_NO_UPDATE_C
     bash "${H14h}/bin/aid" dashboard stop >/dev/null 2>&1
 assert_exit_eq "$?" 0 "T-14i: stop after remote start exit 0"
 _t14i_calls="$(cat "${STUB14H}/ts_calls.log" 2>/dev/null || echo "")"
-if echo "$_t14i_calls" | grep -qF -- "--https=443 off"; then
+if grep -qF -- "--https=443 off" <<<"$_t14i_calls"; then
     pass "T-14i: teardown called --https=443 off on stop"
 else
     fail "T-14i: teardown called --https=443 off on stop -- calls were: ${_t14i_calls}"
@@ -1002,7 +1002,7 @@ if wait_port_ready "$PORT16a"; then
 
     # Verify the body is actually HTML (not the 503 error string).
     _T16A_BODY="$(http_get_body "http://127.0.0.1:${PORT16a}/")"
-    if echo "$_T16A_BODY" | grep -qiF "task-053"; then
+    if grep -qiF "task-053" <<<"$_T16A_BODY"; then
         fail "T-16a: python GET / body contains stale 503 task-053 wording (old code path hit)"
     else
         pass "T-16a: python GET / body does not contain stale task-053 wording"
@@ -1060,7 +1060,7 @@ else
             "T-16b: node GET / returns 200 (index.html resolved from code home, NOT state home)"
 
         _T16B_BODY="$(http_get_body "http://127.0.0.1:${PORT16b}/")"
-        if echo "$_T16B_BODY" | grep -qiF "task-053"; then
+        if grep -qiF "task-053" <<<"$_T16B_BODY"; then
             fail "T-16b: node GET / body contains stale 503 task-053 wording (old code path hit)"
         else
             pass "T-16b: node GET / body does not contain stale task-053 wording"

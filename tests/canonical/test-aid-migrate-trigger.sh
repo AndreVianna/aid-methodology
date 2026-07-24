@@ -210,7 +210,7 @@ else
     # Some bash versions set BASH_SOURCE[0] even in piped mode; this is acceptable.
     pass "TRG-Q1-01 piped bash (empty BASH_SOURCE): exit 0 (bash may set BASH_SOURCE in piped mode -- non-fatal)"
 fi
-if echo "${_Q1_OUT}" | grep -qi "AID_CODE_HOME\|cannot locate\|unresolved\|bootstrap"; then
+if grep -qi "AID_CODE_HOME\|cannot locate\|unresolved\|bootstrap" <<<"${_Q1_OUT}"; then
     pass "TRG-Q1-02 piped bash: clear error message about code home printed"
 else
     # If bash provided BASH_SOURCE (some versions do), error may not be printed.
@@ -335,7 +335,7 @@ if [[ -f "${_T2_FALLBACK_REG}" ]]; then
     pass "TRG-T2-01 read-only CODE_HOME: global scope + fallback to ~/.aid/registry.yml"
 else
     # Accept the WARN alone (registry may land in a different user-tier path).
-    if echo "${_T2_OUT}" | grep -qi "WARN.*state home\|WARN.*shared\|WARN.*registry"; then
+    if grep -qi "WARN.*state home\|WARN.*shared\|WARN.*registry" <<<"${_T2_OUT}"; then
         pass "TRG-T2-01 read-only CODE_HOME: global scope triggered + WARN about non-writable shared state"
     else
         fail "TRG-T2-01 read-only CODE_HOME: global scope -- no fallback registry and no WARN (out: $(echo "${_T2_OUT}" | head -3))"
@@ -365,7 +365,7 @@ _OUT_A="$(cd "${_A_REPO}" && env \
 _RC_A=$?
 
 assert_exit_eq "${_RC_A}" 0 "TRG-A01 stamp-less repo encounter: exit 0"
-if echo "${_OUT_A}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_A}"; then
     pass "TRG-A02 stamp-less repo encounter: WARN + 'aid update' offer printed"
 else
     fail "TRG-A02 stamp-less repo encounter: expected WARN+offer; got: $(echo "${_OUT_A}" | head -3)"
@@ -394,7 +394,7 @@ _OUT_B="$(cd "${_A_REPO}" && env \
 _RC_B=$?
 
 assert_exit_eq "${_RC_B}" 0 "TRG-B01 AID_NO_MIGRATE=1: exit 0"
-if echo "${_OUT_B}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_B}"; then
     fail "TRG-B02 AID_NO_MIGRATE=1: WARN must be suppressed (found offer text)"
 else
     pass "TRG-B02 AID_NO_MIGRATE=1: WARN suppressed (no offer text in output)"
@@ -413,7 +413,7 @@ _OUT_C="$(cd "${_A_REPO}" && env \
 _RC_C=$?
 
 assert_exit_eq "${_RC_C}" 0 "TRG-C01 second stamp-less encounter: exit 0"
-if echo "${_OUT_C}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_C}"; then
     pass "TRG-C02 second stamp-less encounter: WARN still printed (stateless lazy)"
 else
     fail "TRG-C02 second stamp-less encounter: expected WARN; got: $(echo "${_OUT_C}" | head -3)"
@@ -451,7 +451,7 @@ _OUT_D2="$(cd "${_D_REPO}" && env \
 _RC_D2=$?
 
 assert_exit_eq "${_RC_D2}" 0 "TRG-D02 post-stamp status: exit 0"
-if echo "${_OUT_D2}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_OUT_D2}"; then
     fail "TRG-D03 post-stamp status: WARN still fires (stamp not current or not read)"
 else
     pass "TRG-D03 post-stamp status: no WARN (stamp current, lazy model working)"
@@ -495,7 +495,7 @@ assert_eq "${_MO_FV}" "3" "TRG-MO02 manifest-only: format_version: 3 stamped"
 # Idempotent: 'aid status' must NOT warn now (stamp current) -- the recurrence is gone.
 _MO_OUT2="$(cd "${_MO_REPO}" && env AID_HOME="${_MO_STATE}" AID_NO_UPDATE_CHECK=1 \
     bash "${_MO_CODE}/bin/aid" status 2>&1 </dev/null)" || true
-if echo "${_MO_OUT2}" | grep -qE "older format"; then
+if grep -qE "older format" <<<"${_MO_OUT2}"; then
     fail "TRG-MO03 manifest-only: gate STILL warns after migrate (recurrence not fixed)"
 else
     pass "TRG-MO03 manifest-only: gate silent after migrate (no recurring WARN)"
@@ -712,7 +712,7 @@ _J_STATUS_OUT="$(cd "${_F_REPO}" && env \
     AID_NO_UPDATE_CHECK=1 \
     bash "${_F_CODE}/bin/aid" status \
     2>&1 </dev/null)" || true
-if echo "${_J_STATUS_OUT}" | grep -qE "older format|aid update"; then
+if grep -qE "older format|aid update" <<<"${_J_STATUS_OUT}"; then
     fail "TRG-J03 carry-forward: 'aid status' still emits WARN after second encounter (stamp not current?)"
 else
     pass "TRG-J03 carry-forward: 'aid status' silent (stamp current -- no re-prompt)"

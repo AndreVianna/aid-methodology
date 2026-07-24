@@ -585,7 +585,7 @@ else
     _PS_WS_TEST="$("$PWSH" -NoProfile -Command \
         'try { Start-Process -FilePath "echo" -ArgumentList "x" -WindowStyle Hidden -Wait -ErrorAction Stop; Write-Host "ok" } catch { Write-Host "fail" }' \
         2>&1)"
-    if echo "$_PS_WS_TEST" | grep -q "fail\|not supported\|WindowStyle"; then
+    if grep -q "fail\|not supported\|WindowStyle" <<<"$_PS_WS_TEST"; then
         PS_LINUX_M=1
         echo "SKIP (PS server-spawn): Start-Process -WindowStyle Hidden not supported on this platform (Linux PS)."
         echo "  T-1/T-3/T-4 PS server-spawn parity skipped; T-5/T-7 usage/error parity still runs."
@@ -853,7 +853,7 @@ if [[ -n "$PWSH" ]]; then
     _PS_WS_TEST2="$("$PWSH" -NoProfile -Command \
         'try { Start-Process -FilePath "echo" -ArgumentList "x" -WindowStyle Hidden -Wait -ErrorAction Stop; Write-Host "ok" } catch { Write-Host "fail" }' \
         2>&1)"
-    if ! echo "$_PS_WS_TEST2" | grep -q "fail\|not supported\|WindowStyle"; then
+    if ! grep -q "fail\|not supported\|WindowStyle" <<<"$_PS_WS_TEST2"; then
         PS_WIN_STYLE_PAR005=1
     fi
 fi
@@ -1235,7 +1235,7 @@ fi
 # Q01: bin/aid spawn line must NOT contain --aid-home.
 # Grep the spawn line context (setsid call) and assert --aid-home is absent.
 _spawn_context_sh=$(grep -n 'setsid' "${BIN_AID_SH}" || true)
-if echo "$_spawn_context_sh" | grep -q -- '--aid-home'; then
+if grep -q -- '--aid-home' <<<"$_spawn_context_sh"; then
     fail "PAR057-Q01 bin/aid spawn: --aid-home flag present (must NOT be)"
 else
     pass "PAR057-Q01 bin/aid spawn: --aid-home flag absent (correct)"
@@ -1262,7 +1262,7 @@ fi
 # Q04: bin/aid.ps1 must NOT contain --aid-home in its spawn args.
 # Check the $spawnArgs definition line.
 _spawn_args_ps1=$(grep 'spawnArgs' "${BIN_AID_PS1}" || true)
-if echo "$_spawn_args_ps1" | grep -q -- '--aid-home'; then
+if grep -q -- '--aid-home' <<<"$_spawn_args_ps1"; then
     fail "PAR057-Q04 bin/aid.ps1 spawn: --aid-home flag present in spawnArgs (must NOT be)"
 else
     pass "PAR057-Q04 bin/aid.ps1 spawn: --aid-home flag absent from spawnArgs (correct)"
@@ -1290,9 +1290,9 @@ fi
 _sh_spawn_args=$(grep -E 'setsid.*entry_point|entry_point.*--host' "${BIN_AID_SH}" 2>/dev/null | head -3 || true)
 _ps1_spawn_args=$(grep 'spawnArgs' "${BIN_AID_PS1}" | head -3 || true)
 _combined_spawn="$_sh_spawn_args$_ps1_spawn_args"
-if echo "$_combined_spawn" | grep -q -- '--aid-home'; then
+if grep -q -- '--aid-home' <<<"$_combined_spawn"; then
     fail "PAR057-Q07 Bash<->PS1 spawn args: --aid-home found (must not be passed to server)"
-elif echo "$_combined_spawn" | grep -q -- '--root'; then
+elif grep -q -- '--root' <<<"$_combined_spawn"; then
     fail "PAR057-Q07 Bash<->PS1 spawn args: --root found (must not be passed to server)"
 else
     pass "PAR057-Q07 Bash<->PS1 spawn args: neither --aid-home nor --root passed to server"
@@ -2060,7 +2060,7 @@ _S_PS_CODE_HOME=$(newhome); setup_ps1_home "${_S_PS_CODE_HOME}"
 _S01_OUT=$(cd "${_S_REPO_STAMPLESS}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_MIGRATE=1 AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S01_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
+if grep -q "WARN: aid: this project uses an older format" <<<"${_S01_OUT}"; then
     fail "PAR080-S01 Bash AID_NO_MIGRATE=1: WARN must be suppressed in stamp-less repo"
 else
     pass "PAR080-S01 Bash AID_NO_MIGRATE=1: WARN suppressed (opt-out)"
@@ -2072,7 +2072,7 @@ if [[ -n "$PWSH" ]]; then
         AID_HOME="${_S_STATE_HOME}" AID_NO_MIGRATE=1 AID_NO_UPDATE_CHECK=1 \
         "$PWSH" -NoLogo -NonInteractive -File "${_S_PS_CODE_HOME}/bin/aid.ps1" \
         status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' || true)
-    if echo "${_S02_OUT}" | grep -qi "older format\|aid update"; then
+    if grep -qi "older format\|aid update" <<<"${_S02_OUT}"; then
         fail "PAR080-S02 PS1 AID_NO_MIGRATE=1: WARN must be suppressed in stamp-less repo"
     else
         pass "PAR080-S02 PS1 AID_NO_MIGRATE=1: WARN suppressed (opt-out)"
@@ -2085,7 +2085,7 @@ fi
 _S03_OUT=$(cd "${_S_REPO_STAMPED}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S03_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
+if grep -q "WARN: aid: this project uses an older format" <<<"${_S03_OUT}"; then
     fail "PAR080-S03 Bash format-current repo: must NOT warn (format_version=3 == supported)"
 else
     pass "PAR080-S03 Bash format-current repo: no WARN (steady-state, SEC-6 no-loop)"
@@ -2097,7 +2097,7 @@ if [[ -n "$PWSH" ]]; then
         AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
         "$PWSH" -NoLogo -NonInteractive -File "${_S_PS_CODE_HOME}/bin/aid.ps1" \
         status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' || true)
-    if echo "${_S04_OUT}" | grep -qi "older format\|aid update"; then
+    if grep -qi "older format\|aid update" <<<"${_S04_OUT}"; then
         fail "PAR080-S04 PS1 format-current repo: must NOT warn (format_version=3 == supported)"
     else
         pass "PAR080-S04 PS1 format-current repo: no WARN (steady-state)"
@@ -2110,7 +2110,7 @@ fi
 _S05_OUT=$(cd "${_S_REPO_STAMPLESS}" && \
     AID_HOME="${_S_STATE_HOME}" AID_NO_UPDATE_CHECK=1 \
     bash "${_S_CODE_HOME}/bin/aid" status 2>&1 || true)
-if echo "${_S05_OUT}" | grep -q "WARN: aid: this project uses an older format"; then
+if grep -q "WARN: aid: this project uses an older format" <<<"${_S05_OUT}"; then
     pass "PAR080-S05 Bash stamp-less repo: WARN printed on encounter (lazy-stamp model)"
 else
     fail "PAR080-S05 Bash stamp-less repo: expected WARN 'older format'; got: '${_S05_OUT}'"
@@ -2128,7 +2128,7 @@ if [[ -n "$PWSH" ]]; then
         status 2>&1 | sed 's/\x1b\[[0-9;]*m//g' || true)
     # PS1 does not implement format gate yet: accept either WARN (if implemented)
     # or no WARN (if not yet ported). Fail only if PS1 crashes (ERROR in output).
-    if echo "${_S06_OUT}" | grep -qi "^ERROR:.*format\|Terminating error"; then
+    if grep -qi "^ERROR:.*format\|Terminating error" <<<"${_S06_OUT}"; then
         fail "PAR080-S06 PS1 stamp-less repo: unexpected fatal error: '${_S06_OUT}'"
     else
         pass "PAR080-S06 PS1 stamp-less repo: status completes without fatal error (format-gate PS1 parity deferred)"
@@ -2288,7 +2288,7 @@ assert_eq "${_V02_MTIME_BEFORE}" "${_V02_MTIME_AFTER}" \
     "PAR009-V04 Bash refuse-on-newer: settings.yml mtime unchanged after refuse"
 
 # Also assert the refuse message is present (ERROR, not WARN).
-if echo "${_V02_OUT}" | grep -qi "newer than this CLI supports\|Upgrade the aid CLI"; then
+if grep -qi "newer than this CLI supports\|Upgrade the aid CLI" <<<"${_V02_OUT}"; then
     pass "PAR009-V04b Bash refuse-on-newer: ERROR message printed (correct refusal message)"
 else
     fail "PAR009-V04b Bash refuse-on-newer: expected refuse ERROR message; got: '${_V02_OUT}'"
@@ -2384,9 +2384,9 @@ else
 fi
 
 # V08: WARN printed (offer path), not ERROR refuse message.
-if echo "${_V07_OUT}" | grep -qi "WARN.*older format\|older format.*WARN"; then
+if grep -qi "WARN.*older format\|older format.*WARN" <<<"${_V07_OUT}"; then
     pass "PAR009-V08 Bash malformed format_version: WARN printed (warn+offer path, not refuse)"
-elif echo "${_V07_OUT}" | grep -qi "ERROR.*newer.*CLI\|Upgrade the aid CLI"; then
+elif grep -qi "ERROR.*newer.*CLI\|Upgrade the aid CLI" <<<"${_V07_OUT}"; then
     fail "PAR009-V08 Bash malformed format_version: ERROR refuse message printed (must not refuse; malformed collapses to 0)"
 else
     fail "PAR009-V08 Bash malformed format_version: expected WARN; got: '${_V07_OUT}'"
@@ -2745,7 +2745,7 @@ _X_LIST_SH_MARKER="$(cd "${_X_TRACKED}" && \
     AID_HOME="${SH_HOME_X}" AID_LIB_PATH="${SH_HOME_X}/lib/aid-install-core.sh" \
     bash "${SH_HOME_X}/bin/aid" projects list 2>&1)"
 _X_SH_MARKER_LINE="$(printf '%s\n' "$_X_LIST_SH_MARKER" | grep "${_X_TRACKED}" || true)"
-if echo "$_X_SH_MARKER_LINE" | grep -qF '* '; then
+if grep -qF '* ' <<<"$_X_SH_MARKER_LINE"; then
     pass "PAR002-X20 Bash list: '*' marker on cwd-matching entry"
 else
     fail "PAR002-X20 Bash list: '*' marker missing on cwd-matching entry (line: '${_X_SH_MARKER_LINE}')"
@@ -2757,7 +2757,7 @@ if [[ -n "$PWSH" ]]; then
         "$PWSH" -NoProfile -File "${PS_HOME_X}/bin/aid.ps1" \
         projects list 2>&1 | sed 's/\x1b\[[0-9;]*m//g')"
     _X_PS_MARKER_LINE="$(printf '%s\n' "$_X_LIST_PS_MARKER" | grep "${_X_TRACKED}" || true)"
-    if echo "$_X_PS_MARKER_LINE" | grep -qF '* '; then
+    if grep -qF '* ' <<<"$_X_PS_MARKER_LINE"; then
         pass "PAR002-X21 PS1 list: '*' marker on cwd-matching entry"
     else
         fail "PAR002-X21 PS1 list: '*' marker missing on cwd-matching entry (line: '${_X_PS_MARKER_LINE}')"
@@ -5159,10 +5159,10 @@ if [[ "$_PAR019_SH_IS_WIN" -eq 0 ]]; then
 else
     pass "PAR019-H02 [SKIPPED: Windows host -- Unix-branch assertion not applicable]"
     _PAR019_SH_ROOTS=$(printf '%s\n' "$OUT_SH" | grep -oE 'roots: .*' || true)
-    if printf '%s\n' "$OUT_SH" | grep -qiE 'no fixed drives detected'; then
+    if grep -qiE 'no fixed drives detected' <<<"$OUT_SH"; then
         pass "PAR019-H03 [SKIPPED: this host's Git-Bash cannot shell out to powershell.exe -- WARN-degrade observed, not a crash]"
     else
-        printf '%s\n' "$_PAR019_SH_ROOTS" | grep -qi 'network\|removable' \
+        grep -qi 'network\|removable' <<<"$_PAR019_SH_ROOTS" \
             && fail "PAR019-H03 Bash (Windows): a network/removable drive leaked into the default --all root set (AC-2/AC-9)" \
             || pass "PAR019-H03 Bash (Windows): default --all root set excludes network/removable drives (AC-2/AC-9)"
     fi
@@ -5173,14 +5173,14 @@ if [[ -n "$PWSH" ]]; then
     run_ps1_scan "${PS_HOME_019H}" "$FX_019" projects scan --all --depth 0 --dry-run --verbose
     assert_exit_eq "$RC_PS1" 0 "PAR019-H04 PS1 --all --depth 0 --dry-run -> exit 0 (bounded root probe, no real crawl)"
 
-    if printf '%s\n' "$OUT_PS1" | grep -q 'roots: /$'; then
+    if grep -q 'roots: /$' <<<"$OUT_PS1"; then
         assert_output_contains "$OUT_PS1" "aid projects scan: roots: /" \
             "PAR019-H05 PS1 (Unix): --all resolves to the single '/' root (AC-2)"
         run_ps1_scan "${PS_HOME_019H}" "$FX_019" projects scan --all --include-removable --depth 0 --dry-run
         assert_output_contains "$OUT_PS1" "Windows-only-effective" \
             "PAR019-H06 PS1 (Unix): --include-removable is accepted-but-inert with a one-line note (AC-9)"
     else
-        printf '%s\n' "$OUT_PS1" | grep -qi 'network\|removable' \
+        grep -qi 'network\|removable' <<<"$OUT_PS1" \
             && fail "PAR019-H06 PS1 (Windows): a network/removable drive leaked into the default --all root set (AC-2/AC-9)" \
             || pass "PAR019-H06 PS1 (Windows): default --all root set excludes network/removable drives (AC-2/AC-9)"
     fi

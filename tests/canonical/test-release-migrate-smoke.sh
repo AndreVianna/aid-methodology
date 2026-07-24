@@ -66,7 +66,7 @@ assert_migrated() {  # $1 = repo path  $2 = label  $3 = aid binary  $4 = aid_hom
     local _warn_out
     _warn_out="$(cd "${repo}" && AID_HOME="${aid_home}" AID_NO_UPDATE_CHECK=1 \
         bash "${aid_bin}" status 2>&1 || true)"
-    if echo "${_warn_out}" | grep -q "older format"; then
+    if grep -q "older format" <<<"${_warn_out}"; then
         pass "${label}-A -- stamp-less repo encounter: WARN 'older format' printed (lazy-stamp model)"
     else
         fail "${label}-A -- stamp-less repo encounter: expected WARN 'older format'; got: $(echo "${_warn_out}" | head -3)"

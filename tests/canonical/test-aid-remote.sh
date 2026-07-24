@@ -352,7 +352,7 @@ assert_exit_eq "$RC_DC" 0 "T-2: teardown exit 0"
 
 # Stub argv must show '--https=443 off' (not a blind 'reset').
 _t2_calls="$(cat "${STUB2}/ts_calls.log" 2>/dev/null || echo "")"
-if echo "$_t2_calls" | grep -qF -- "--https=443 off"; then
+if grep -qF -- "--https=443 off" <<<"$_t2_calls"; then
     pass "T-2: teardown called 'serve --bg --https=443 off' (targeted, not blind reset)"
 else
     fail "T-2: teardown did not call '--https=443 off' -- recorded calls: ${_t2_calls}"
@@ -544,7 +544,7 @@ assert_exit_eq "$RC_DC" 11 "T-6: non-loopback target -> exit 11"
 
 # No tailscale serve was called (expose must have aborted before step 3).
 _t6_calls="$(cat "${STUB6}/ts_calls.log" 2>/dev/null || echo "")"
-if echo "$_t6_calls" | grep -q "serve --bg "; then
+if grep -q "serve --bg " <<<"$_t6_calls"; then
     fail "T-6: serve was called despite non-loopback target (bind widened!)"
 else
     pass "T-6: serve NOT called for non-loopback target (never widened)"
@@ -571,7 +571,7 @@ assert_exit_eq "$RC_DC" 12 "T-7: serve failure -> expose exit 12"
 
 # Revert must have been called: stub argv shows '--https=443 off'.
 _t7_calls="$(cat "${STUB7}/ts_calls.log" 2>/dev/null || echo "")"
-if echo "$_t7_calls" | grep -qF -- "--https=443 off"; then
+if grep -qF -- "--https=443 off" <<<"$_t7_calls"; then
     pass "T-7: serve-fail triggered revert ('serve --bg --https=443 off' called)"
 else
     fail "T-7: serve-fail did NOT trigger revert -- recorded calls: ${_t7_calls}"
@@ -601,7 +601,7 @@ if [[ -n "$PWSH" ]]; then
     _PS_WS_TEST="$("$PWSH" -NoProfile -Command \
         'try { Start-Process -FilePath "echo" -ArgumentList "x" -WindowStyle Hidden -Wait -ErrorAction Stop; Write-Host "ok" } catch { Write-Host "fail" }' \
         2>&1)"
-    if ! echo "$_PS_WS_TEST" | grep -q "fail\|not supported\|WindowStyle"; then
+    if ! grep -q "fail\|not supported\|WindowStyle" <<<"$_PS_WS_TEST"; then
         PS_WIN_STYLE_OK=1
     fi
 fi
@@ -710,7 +710,7 @@ assert_output_contains "$OUT_DC" "https://fallback01.tail12345.ts.net/" \
 
 # Confirm the serve-status fallback was actually invoked (stub recorded 'serve status --json').
 _t1b_calls="$(cat "${STUB1B}/ts_calls.log" 2>/dev/null || echo "")"
-if echo "$_t1b_calls" | grep -q "serve status --json"; then
+if grep -q "serve status --json" <<<"$_t1b_calls"; then
     pass "T-1b: stub recorded 'tailscale serve status --json' (fallback branch exercised)"
 else
     fail "T-1b: 'tailscale serve status --json' not in stub log -- fallback not exercised. Calls: ${_t1b_calls}"

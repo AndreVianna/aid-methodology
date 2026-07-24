@@ -624,9 +624,9 @@ assert_exit_eq "$RC" 0 "PS028-S01 scriptblock invocation: pwsh session survives"
 # and aid exits with error code 1 (not 7). The exit-code propagation (7) requires
 # the production code to handle piped-mode AID_CODE_HOME fallback -- tracked for
 # a future task. For now, assert the session survives (S01) and note the limitation.
-if echo "${OUT}" | grep -q "Exit code: 7"; then
+if grep -q "Exit code: 7" <<<"${OUT}"; then
     pass "PS028-S02 scriptblock: aid status exit 7 propagated via LASTEXITCODE"
-elif echo "${OUT}" | grep -q "AID_CODE_HOME unresolved"; then
+elif grep -q "AID_CODE_HOME unresolved" <<<"${OUT}"; then
     pass "PS028-S02 scriptblock: piped mode / CODE_HOME fallback not yet implemented (feature-001 limitation -- deferred)"
 else
     pass "PS028-S02 scriptblock: session survived (exit-code propagation deferred to PS1 piped-mode fix)"

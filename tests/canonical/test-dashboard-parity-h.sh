@@ -1005,13 +1005,13 @@ SERVER_MJS_PATH="${REPO_ROOT}/dashboard/server/server.mjs"
 
 # SEC-1: no 0.0.0.0 or wildcard bind (exclude comment lines).
 # Only flag non-comment lines containing 0.0.0.0 (actual code, not documentation).
-if grep -v "^\s*#\|^\s*//" "${SERVER_PY_PATH}" | grep -q "0\.0\.0\.0"; then
+if grep -q "0\.0\.0\.0" < <(grep -v "^\s*#\|^\s*//" "${SERVER_PY_PATH}"); then
     fail "[sec1] server.py contains '0.0.0.0' in non-comment code (wildcard bind)"
 else
     pass "[sec1] server.py: no '0.0.0.0' bind in non-comment code"
 fi
 
-if grep -v "^\s*//\|^\s*\*" "${SERVER_MJS_PATH}" | grep -q "0\.0\.0\.0"; then
+if grep -q "0\.0\.0\.0" < <(grep -v "^\s*//\|^\s*\*" "${SERVER_MJS_PATH}"); then
     fail "[sec1] server.mjs contains '0.0.0.0' in non-comment code (wildcard bind)"
 else
     pass "[sec1] server.mjs: no '0.0.0.0' bind in non-comment code"
@@ -1033,7 +1033,7 @@ fi
 # SEC-3: no write/append/remove/unlink primitives in server source
 # Python server: no open(... 'w'), no .write( on file objects opened for write,
 # no os.remove, os.unlink, shutil calls (note: socket.wfile.write is OK -- that's HTTP response)
-if grep -Eo "open\([^)]*['\"][wa]['\"]" "${SERVER_PY_PATH}" | grep -vq "^$"; then
+if grep -vq "^$" < <(grep -Eo "open\([^)]*['\"][wa]['\"]" "${SERVER_PY_PATH}"); then
     fail "[sec3] server.py: open() with write/append mode found"
 else
     pass "[sec3] server.py: no open() with write/append mode"

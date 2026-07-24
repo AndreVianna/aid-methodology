@@ -118,7 +118,7 @@ assert_exit_eq "$RC" 0 "SELF001-SH01 bash: npm update self --dry-run exits 0"
 assert_output_contains "$OUT" "npm install -g aid-installer@latest" \
     "SELF001-SH02 bash: npm update self --dry-run prints npm install command"
 # feature-001 C3: machine scan removed; --dry-run no longer prints migration scan notice.
-if echo "${OUT}" | grep -q "(then) migration scan"; then
+if grep -q "(then) migration scan" <<<"${OUT}"; then
     fail "SELF001-SH03 bash: npm update self --dry-run must NOT mention migration scan (C3 retired)"
 else
     pass "SELF001-SH03 bash: npm update self --dry-run: no migration scan notice (C3 retired)"
@@ -160,7 +160,7 @@ assert_exit_eq "$RC" 0 "SELF003-SH01 bash: pypi update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ pipx upgrade aid-installer" \
     "SELF003-SH02 bash: pypi update self --dry-run prints pipx upgrade command"
 # feature-001 C3: machine scan removed; --dry-run no longer prints migration scan notice.
-if echo "${OUT}" | grep -q "(then) migration scan"; then
+if grep -q "(then) migration scan" <<<"${OUT}"; then
     fail "SELF003-SH03 bash: pypi update self --dry-run must NOT mention migration scan (C3 retired)"
 else
     pass "SELF003-SH03 bash: pypi update self --dry-run: no migration scan notice (C3 retired)"
@@ -201,7 +201,7 @@ assert_exit_eq "$RC" 0 "SELF005-SH01 bash: curl update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ curl -fsSL" \
     "SELF005-SH02 bash: curl update self --dry-run prints curl bootstrap command"
 # feature-001 C3: machine scan removed; --dry-run no longer prints migration scan notice.
-if echo "${OUT}" | grep -q "(then) migration scan"; then
+if grep -q "(then) migration scan" <<<"${OUT}"; then
     fail "SELF005-SH03 bash: curl update self --dry-run must NOT mention migration scan (C3 retired)"
 else
     pass "SELF005-SH03 bash: curl update self --dry-run: no migration scan notice (C3 retired)"
@@ -297,7 +297,7 @@ assert_exit_eq "$RC" 0 "SELF011-PS01 ps1: npm update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ npm install -g aid-installer@latest" \
     "SELF011-PS02 ps1: npm update self --dry-run prints npm install command"
 # feature-001 C3: machine scan removed; --dry-run no longer prints migration scan notice.
-if echo "${OUT}" | grep -q "(then) migration scan"; then
+if grep -q "(then) migration scan" <<<"${OUT}"; then
     fail "SELF011-PS03 ps1: npm update self --dry-run must NOT mention migration scan (C3 retired)"
 else
     pass "SELF011-PS03 ps1: npm update self --dry-run: no migration scan notice (C3 retired)"
@@ -335,7 +335,7 @@ assert_exit_eq "$RC" 0 "SELF013-PS01 ps1: pypi update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ pipx upgrade aid-installer" \
     "SELF013-PS02 ps1: pypi update self --dry-run prints pipx upgrade command"
 # feature-001 C3: machine scan removed; --dry-run no longer prints migration scan notice.
-if echo "${OUT}" | grep -q "(then) migration scan"; then
+if grep -q "(then) migration scan" <<<"${OUT}"; then
     fail "SELF013-PS03 ps1: pypi update self --dry-run must NOT mention migration scan (C3 retired)"
 else
     pass "SELF013-PS03 ps1: pypi update self --dry-run: no migration scan notice (C3 retired)"
@@ -374,7 +374,7 @@ assert_exit_eq "$RC" 0 "SELF015-PS01 ps1: curl update self --dry-run exits 0"
 assert_output_contains "$OUT" "+ irm" \
     "SELF015-PS02 ps1: curl update self --dry-run prints irm bootstrap command"
 # feature-001 C3: machine scan removed; --dry-run no longer prints migration scan notice.
-if echo "${OUT}" | grep -q "(then) migration scan"; then
+if grep -q "(then) migration scan" <<<"${OUT}"; then
     fail "SELF015-PS03 ps1: curl update self --dry-run must NOT mention migration scan (C3 retired)"
 else
     pass "SELF015-PS03 ps1: curl update self --dry-run: no migration scan notice (C3 retired)"
