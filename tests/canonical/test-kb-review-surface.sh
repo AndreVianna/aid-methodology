@@ -56,7 +56,7 @@ printf -- 'no frontmatter here at all\n'                                    > "$
 
 OUT="$(list_reviewable "$KB")"
 [[ "$VERBOSE" -eq 1 ]] && { echo "--- list_reviewable output ---"; printf '%s\n' "$OUT"; }
-has() { printf '%s\n' "$OUT" | grep -q "/$1$"; }
+has() { grep -q "/$1$" <<<"$OUT"; }
 
 has architecture.md && pass "RS01 keeps primary+hand-authored (architecture.md)" \
                     || fail "RS01 dropped primary doc architecture.md"

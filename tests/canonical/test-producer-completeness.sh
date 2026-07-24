@@ -421,7 +421,7 @@ print('COMPLETENESS-OK: all conforming works have non-degraded fields')
         fi
         # Prove the lane/delivery branch fires
         if [[ "$expect_lane_null" == "1" ]]; then
-            if echo "$out" | grep -q 'lane is null\|delivery is null'; then
+            if grep -q 'lane is null\|delivery is null' <<<"$out"; then
                 pass "[$label] python: lane/delivery-null COMPLETENESS-FAIL line present (branch proven)"
             else
                 fail "[$label] python: expected lane/delivery-null COMPLETENESS-FAIL but not found -- output: ${out}"
@@ -528,7 +528,7 @@ MJSEOF
         fi
         # Prove the lane/delivery branch fires
         if [[ "$expect_lane_null" == "1" ]]; then
-            if echo "$out" | grep -q 'lane is null\|delivery is null'; then
+            if grep -q 'lane is null\|delivery is null' <<<"$out"; then
                 pass "[$label] node: lane/delivery-null COMPLETENESS-FAIL line present (branch proven)"
             else
                 fail "[$label] node: expected lane/delivery-null COMPLETENESS-FAIL but not found -- output: ${out}"

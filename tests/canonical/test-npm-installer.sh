@@ -252,7 +252,7 @@ while IFS= read -r _mrel; do
 done < "${REPO_ROOT}/dashboard/MANIFEST"
 
 for _expect in "${_nm08_expect[@]}"; do
-    if echo "$NM08_PACK_OUT" | grep -qF "$_expect"; then
+    if grep -qF "$_expect" <<<"$NM08_PACK_OUT"; then
         pass "NM08 pack --dry-run includes $_expect"
     else
         fail "NM08 pack --dry-run missing: $_expect"
@@ -261,7 +261,7 @@ for _expect in "${_nm08_expect[@]}"; do
 done
 
 # Verify tests/ and .aid/ are excluded.
-if echo "$NM08_PACK_OUT" | grep -qF "tests/"; then
+if grep -qF "tests/" <<<"$NM08_PACK_OUT"; then
     fail "NM08 pack --dry-run should NOT include tests/ entries"
 else
     pass "NM08 pack --dry-run excludes tests/"

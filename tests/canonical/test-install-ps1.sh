@@ -19,6 +19,7 @@ set -uo pipefail
 VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -26,13 +27,8 @@ SUT="${REPO_ROOT}/install.ps1"
 
 [[ -f "$SUT" ]] || { echo "ERROR: install.ps1 not found at $SUT" >&2; exit 1; }
 
-# Resolve pwsh the same way as test-install-parity.sh and test-release-install-e2e.sh.
-PWSH=""
-if command -v pwsh >/dev/null 2>&1; then
-    PWSH="pwsh"
-elif [[ -x "/home/andre.vianna/.local/pwsh/pwsh" ]]; then
-    PWSH="/home/andre.vianna/.local/pwsh/pwsh"
-fi
+# Resolve pwsh via the shared helper (tests/lib/pwsh.sh), same as every other pwsh suite.
+PWSH="$(detect_pwsh || true)"
 
 if [[ -z "$PWSH" ]]; then
     echo "SKIP: pwsh not found on PATH — skipping install.ps1 suite (needs PowerShell)."

@@ -19,6 +19,7 @@ VERBOSE=0
 [[ "${1:-}" =~ ^(-v|--verbose)$ ]] && VERBOSE=1
 
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/../.." && pwd)"
@@ -41,10 +42,9 @@ trap 'rm -rf "$TMP"' EXIT
 # PATH-wiring rc files (~/.zshrc, ~/.bashrc, ~/.profile in the CLI027-S/T/U bootstrap tests).
 # Per-invocation HOME overrides (e.g. CLI028-F, CLI027-S) still win for their own cases.
 # A crash mid-suite can't leak because HOME is redirected for the entire process, not cleaned
-# up after. An end-of-suite canary asserts the real $HOME's cache was untouched.
-REAL_HOME="${HOME}"
-_CANARY_UPDCHK_BEFORE="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
-export HOME="${TMP}/home"
+# up after. An end-of-suite canary (sandbox_assert_aid_untouched) asserts the real HOME's
+# .aid subtree was untouched.
+sandbox_pin_home
 mkdir -p "${HOME}/.aid"
 
 FIXTURE_DIR="${TMP}/fixtures"
@@ -1177,14 +1177,10 @@ OUT=$(cd "${TMP_TARGET_D}" && \
 assert_exit_eq "$RC" 0 "CLI029-D02 bare aid after re-bootstrap → exit 0 (no stale-core error)"
 assert_output_contains "$OUT" "AID v" "CLI029-D03 dashboard header present after re-bootstrap"
 
-# ISOLATION CANARY: the real $HOME's update-check cache must be byte-unchanged by this
-# suite. A mismatch means an invocation wrote ~/.aid/.update-check to the real HOME (the
-# 9.9.9-into-dev-box-cache escape). Guards against the suite ever polluting a developer's box.
-_CANARY_UPDCHK_AFTER="$(cat "${REAL_HOME}/.aid/.update-check" 2>/dev/null || echo '<absent>')"
-if [[ "${_CANARY_UPDCHK_BEFORE}" == "${_CANARY_UPDCHK_AFTER}" ]]; then
-    pass "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"
-else
-    fail "ISOL-HOME real \$HOME/.aid/.update-check MODIFIED by suite (isolation escape: '${_CANARY_UPDCHK_BEFORE}' -> '${_CANARY_UPDCHK_AFTER}')"
-fi
+# ISOLATION CANARY: the real HOME's .aid subtree must be byte-unchanged by this suite
+# (superset check via sandbox.sh, still asserted under the suite's original label). A
+# mismatch means an invocation escaped the throwaway HOME and wrote to the real one.
+# Guards against the suite ever polluting a developer's box.
+sandbox_assert_aid_untouched "ISOL-HOME real \$HOME/.aid/.update-check untouched by suite (no isolation escape)"
 
 test_summary

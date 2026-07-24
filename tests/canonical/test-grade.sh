@@ -226,8 +226,8 @@ cat > "$EXPLAIN_FILE" << 'EOF'
 | 2 | [MEDIUM] | Pending | foo.md | 2 | another medium | evidence |
 | 3 | [MINOR] | Pending | foo.md | 3 | nit | evidence |
 EOF
-GRADE_OUT=$(bash "$GRADE_SH" --explain "$EXPLAIN_FILE" 2>/tmp/grade-stderr.txt)
-STDERR_OUT=$(cat /tmp/grade-stderr.txt)
+GRADE_OUT=$(bash "$GRADE_SH" --explain "$EXPLAIN_FILE" 2>"${TMPDIR}/grade-stderr.txt")
+STDERR_OUT=$(cat "${TMPDIR}/grade-stderr.txt")
 
 if [[ "$GRADE_OUT" == "C" ]]; then
   pass "T12a --explain: grade output is C"

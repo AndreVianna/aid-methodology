@@ -65,30 +65,30 @@ if [[ $FAIL -gt 0 ]]; then
 fi
 
 # ---------------------------------------------------------------------------
-# Build the comparison set from the manifest: every dst under .claude/.
-# We parse with awk to stay pure-bash-toolchain (no python3 dependency).
-#
-# awk extracts the value of "dst" from each JSON object line that contains
-# a "dst" field starting with ".claude/".  The manifest is simple one-record-
-# per-line JSONL so a targeted regex is safe.
+# Build the comparison set from the manifest: every dst under .claude/, plus
+# its sha256, in a SINGLE awk pass (no python3 dependency, no per-entry
+# re-scan). awk extracts "dst"/"sha256" from each JSON object line that
+# contains a "dst" field starting with ".claude/" and emits "dst<TAB>sha256";
+# the single sort keys on the unique dst, giving the same deterministic
+# iteration order as before. A dst with no matched sha256 is still emitted
+# (with an empty sha field) so it is never silently dropped from
+# MANIFEST_DSTS -- its DBI-FWD check falls through to the MISMATCH branch
+# below instead of vanishing from the comparison set.
 # ---------------------------------------------------------------------------
-mapfile -t MANIFEST_DSTS < <(
+declare -A MANIFEST_SHA
+MANIFEST_DSTS=()
+while IFS=$'\t' read -r dst sha; do
+    [[ -z "$dst" ]] && continue
+    MANIFEST_DSTS+=("$dst")
+    MANIFEST_SHA["$dst"]="$sha"
+done < <(
     awk '/"dst"[[:space:]]*:[[:space:]]*"\.claude\// {
-        match($0, /"dst"[[:space:]]*:[[:space:]]*"([^"]+)"/, arr)
-        if (arr[1] != "") print arr[1]
+        d=""; s=""
+        if (match($0, /"dst"[[:space:]]*:[[:space:]]*"([^"]+)"/, da))         d=da[1]
+        if (match($0, /"sha256"[[:space:]]*:[[:space:]]*"([a-f0-9]{64})"/, sa)) s=sa[1]
+        if (d != "") print d "\t" s
     }' "$MANIFEST" | sort
 )
-
-MANIFEST_SHA_OF() {
-    # Extract sha256 for a given dst from the manifest.
-    local dst="$1"
-    # Escape for use as a fixed string in awk.
-    awk -v target="$dst" '
-    index($0, "\"dst\"") && index($0, target) {
-        match($0, /"sha256"[[:space:]]*:[[:space:]]*"([a-f0-9]{64})"/, arr)
-        if (arr[1] != "") { print arr[1]; exit }
-    }' "$MANIFEST"
-}
 
 TOTAL_MANIFEST=${#MANIFEST_DSTS[@]}
 
@@ -103,8 +103,39 @@ pass "DBI01 manifest loaded -- ${TOTAL_MANIFEST} generator-owned .claude/ entrie
 # ---------------------------------------------------------------------------
 # Direction 1 (forward): every manifest entry must exist in the dogfood tree
 # AND its sha256 must match the manifest record.
+#
+# Setup (outside the loop, no fork-in-loop): collect the existing dogfood +
+# profile paths via the builtin [[ -f ]] test (no forks), then batch-hash
+# each list ONCE via a single `sha256sum` invocation over all paths (piped
+# through `xargs -0` so an arbitrarily long list never overflows argv), into
+# DOGFOOD_SHA / PROFILE_SHA maps keyed by absolute path. This replaces the
+# previous 2 sha256sum forks PER manifest entry with 2 forks total.
 # ---------------------------------------------------------------------------
 log "Direction 1: manifest -> dogfood .claude/"
+
+declare -a dogfood_list profile_list
+for dst in "${MANIFEST_DSTS[@]}"; do
+    rel="${dst#.claude/}"
+    [[ -f "${DOGFOOD_CLAUDE}/${rel}" ]] && dogfood_list+=("${DOGFOOD_CLAUDE}/${rel}")
+    [[ -f "${PROFILE_CLAUDE}/${rel}" ]] && profile_list+=("${PROFILE_CLAUDE}/${rel}")
+done
+
+declare -A DOGFOOD_SHA PROFILE_SHA
+hash_into() {
+    # $1 = target map name (DOGFOOD_SHA / PROFILE_SHA), rest = file list.
+    local -n _map="$1"; shift
+    [[ $# -eq 0 ]] && return 0
+    local line
+    while IFS= read -r line; do
+        # sha256sum emits "<64-hex><SEP><SEP>path" where SEP SEP is "  " in
+        # text mode or " *" in cygwin binary mode -- always exactly 2 chars
+        # after the fixed 64-hex hash. The fixed-offset parse is mode-
+        # agnostic and needs no per-line awk fork.
+        _map["${line:66}"]="${line:0:64}"
+    done < <(printf '%s\0' "$@" | xargs -0 -r sha256sum)
+}
+hash_into DOGFOOD_SHA "${dogfood_list[@]}"
+hash_into PROFILE_SHA "${profile_list[@]}"
 
 for dst in "${MANIFEST_DSTS[@]}"; do
     # Strip the leading ".claude/" to get the relative path inside .claude/.
@@ -112,7 +143,7 @@ for dst in "${MANIFEST_DSTS[@]}"; do
 
     profile_file="${PROFILE_CLAUDE}/${rel}"
     dogfood_file="${DOGFOOD_CLAUDE}/${rel}"
-    expected_sha="$(MANIFEST_SHA_OF "$dst")"
+    expected_sha="${MANIFEST_SHA[$dst]}"
 
     # a) The file must exist in the dogfood tree.
     if [[ ! -f "$dogfood_file" ]]; then
@@ -121,7 +152,7 @@ for dst in "${MANIFEST_DSTS[@]}"; do
     fi
 
     # b) The dogfood file sha256 must match the manifest record.
-    actual_sha="$(sha256sum "$dogfood_file" | awk '{print $1}')"
+    actual_sha="${DOGFOOD_SHA[$dogfood_file]:-}"
     if [[ "$actual_sha" != "$expected_sha" ]]; then
         fail "DBI-FWD ${dst} -- sha256 MISMATCH: manifest=${expected_sha} dogfood=${actual_sha}"
         continue
@@ -134,7 +165,7 @@ for dst in "${MANIFEST_DSTS[@]}"; do
         fail "DBI-FWD ${dst} -- MISSING in profile .claude/ (${profile_file})"
         continue
     fi
-    profile_sha="$(sha256sum "$profile_file" | awk '{print $1}')"
+    profile_sha="${PROFILE_SHA[$profile_file]:-}"
     if [[ "$profile_sha" != "$expected_sha" ]]; then
         fail "DBI-FWD ${dst} -- sha256 MISMATCH: manifest=${expected_sha} profile=${profile_sha}"
         continue
