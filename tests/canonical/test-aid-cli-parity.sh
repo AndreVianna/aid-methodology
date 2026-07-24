@@ -23,6 +23,7 @@ VERBOSE=0
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/assert.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/net.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/../lib/pwsh-batch.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/../lib/sandbox.sh"
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -52,7 +53,7 @@ if [[ -z "$PWSH" ]]; then
 fi
 
 TMP=$(mktemp -d)
-trap 'rm -rf "$TMP"' EXIT
+trap 'pwsh_session_stop; rm -rf "$TMP"' EXIT
 
 # ---------------------------------------------------------------------------
 # GLOBAL HOME PIN (isolation bulletproof fix, task-082 parity)
@@ -68,6 +69,17 @@ trap 'rm -rf "$TMP"' EXIT
 # end-of-suite canary check (sandbox_assert_aid_untouched).
 # ---------------------------------------------------------------------------
 sandbox_pin_home "${TMP}/fakehome"
+
+# ---------------------------------------------------------------------------
+# pwsh session batching (feature-004 / FR-4): spawn ONE warm responder AFTER
+# the HOME pin, so it inherits the SAME pinned env a cold `-File` start would
+# (a non-scan wrapper resolves the identical $HOME warm vs cold). Every
+# run_ps1* wrapper round-trips through this one process instead of paying a
+# fresh `pwsh -File` cold start; it degrades transparently to the cold `-File`
+# path if the responder cannot start (see tests/lib/pwsh-batch.sh). The EXIT
+# trap above tears it down. AID_PWSH_NO_SESSION=1 forces the cold path.
+# ---------------------------------------------------------------------------
+pwsh_session_start
 
 FIXTURE_DIR="${TMP}/fixtures"
 mkdir -p "${FIXTURE_DIR}"
@@ -168,9 +180,10 @@ run_sh() {
 # PS1 aid runner.
 run_ps1() {
     local home_dir="$1"; shift
-    OUT_PS1=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/AidInstallCore.psm1" \
-              "$PWSH" -NoProfile -File "${home_dir}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+    pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 # ---------------------------------------------------------------------------
@@ -2611,9 +2624,10 @@ run_sh_global() {
 
 run_ps1_global() {
     local code_dir="$1" state_dir="$2"; shift 2
-    OUT_PS1=$(AID_HOME="$state_dir" AID_LIB_PATH="${code_dir}/lib/AidInstallCore.psm1" \
-              "$PWSH" -NoProfile -File "${code_dir}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+    pwsh_session_call "${code_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${state_dir}" "AID_LIB_PATH=${code_dir}/lib/AidInstallCore.psm1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 # ---------------------------------------------------------------------------
@@ -3775,10 +3789,11 @@ run_sh_ua_nf() {
 }
 run_ps1_ua_nf() {
     local home_dir="$1"; shift
-    OUT_PS1=$(AID_HOME="$home_dir" AID_LIB_PATH="${home_dir}/lib/AidInstallCore.psm1" \
-              AID_NO_UPDATE_CHECK=1 AID_SKIP_SELF_INSTALL=1 \
-              "$PWSH" -NoProfile -File "${home_dir}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$?
+    pwsh_session_call "${home_dir}/bin/aid.ps1" "$PWD" \
+        "AID_HOME=${home_dir}" "AID_LIB_PATH=${home_dir}/lib/AidInstallCore.psm1" \
+        "AID_NO_UPDATE_CHECK=1" "AID_SKIP_SELF_INSTALL=1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 # ---------------------------------------------------------------------------
@@ -4733,12 +4748,13 @@ run_ps1_scan() {
     local aid_home="$1" home_pin="$2"; shift 2
     local win_home_pin="$home_pin"
     command -v cygpath >/dev/null 2>&1 && win_home_pin="$(cygpath -w "$home_pin")"
-    OUT_PS1=$(HOME="$home_pin" USERPROFILE="$win_home_pin" \
-              HOMEDRIVE="${win_home_pin:0:2}" HOMEPATH="${win_home_pin:2}" \
-              AID_HOME="$aid_home" AID_LIB_PATH="${aid_home}/lib/AidInstallCore.psm1" \
-              AID_NO_UPDATE_CHECK=1 \
-              "$PWSH" -NoProfile -File "${aid_home}/bin/aid.ps1" "$@" 2>&1 | \
-              sed 's/\x1b\[[0-9;]*m//g' | sed 's/\\/\//g'); RC_PS1=$?
+    pwsh_session_call "${aid_home}/bin/aid.ps1" "$PWD" \
+        "HOME=${home_pin}" "USERPROFILE=${win_home_pin}" \
+        "HOMEDRIVE=${win_home_pin:0:2}" "HOMEPATH=${win_home_pin:2}" \
+        "AID_HOME=${aid_home}" "AID_LIB_PATH=${aid_home}/lib/AidInstallCore.psm1" \
+        "AID_NO_UPDATE_CHECK=1" \
+        -- "$@"
+    OUT_PS1=$(printf '%s' "$PWSH_CALL_OUT" | sed 's/\x1b\[[0-9;]*m//g' | sed 's/\\/\//g'); RC_PS1=$PWSH_CALL_RC
 }
 
 FX_019=$(mktemp -d "${TMP}/par019fx.XXXXXX")
@@ -4964,54 +4980,86 @@ SH_HOME_019E=$(newhome); setup_sh_home "${SH_HOME_019E}"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --path "${FX_019}/does-not-exist-xyz"
 assert_exit_eq "$RC_SH" 2 "PAR019-E01 Bash: non-directory --path -> exit 2 (AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --path is not a directory:" \
+    "PAR019-E01 Bash: non-directory --path -> error names the not-a-directory reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --path "$FX_019" --all
 assert_exit_eq "$RC_SH" 2 "PAR019-E02 Bash: --path + --all together -> exit 2 (mutually exclusive, AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --path and --all are mutually exclusive" \
+    "PAR019-E02 Bash: --path + --all -> error names the mutually-exclusive reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --include-network
 assert_exit_eq "$RC_SH" 2 "PAR019-E03 Bash: --include-network without --all -> exit 2 (AC-9)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+    "PAR019-E03 Bash: --include-network without --all -> error names the require---all reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --include-removable
 assert_exit_eq "$RC_SH" 2 "PAR019-E04 Bash: --include-removable without --all -> exit 2 (AC-9)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+    "PAR019-E04 Bash: --include-removable without --all -> error names the require---all reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --depth abc
 assert_exit_eq "$RC_SH" 2 "PAR019-E05 Bash: non-integer --depth -> exit 2 (AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --depth must be a non-negative integer: abc" \
+    "PAR019-E05 Bash: non-integer --depth -> error echoes the offending value 'abc' (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects scan --depth -1
 assert_exit_eq "$RC_SH" 2 "PAR019-E06 Bash: negative --depth -> exit 2 (AC-3)"
+assert_output_contains "$OUT_SH" "ERROR: aid projects scan: --depth must be a non-negative integer: -1" \
+    "PAR019-E06 Bash: negative --depth -> error echoes the offending value '-1' (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects list --all
 assert_exit_eq "$RC_SH" 2 "PAR019-E07 Bash: scan-only flag (--all) on 'list' -> exit 2"
+assert_output_contains "$OUT_SH" "are scan-only flags (see 'aid projects scan -h')" \
+    "PAR019-E07 Bash: scan-only flag on 'list' -> error names the scan-only-flags reason (FR-8/AC-9)"
 
 run_sh_scan "${SH_HOME_019E}" "$FX_019" projects add --dry-run "${FX_019}/proj-tracked"
 assert_exit_eq "$RC_SH" 2 "PAR019-E08 Bash: scan-only flag (--dry-run) on 'add' -> exit 2"
+assert_output_contains "$OUT_SH" "are scan-only flags (see 'aid projects scan -h')" \
+    "PAR019-E08 Bash: scan-only flag on 'add' -> error names the scan-only-flags reason (FR-8/AC-9)"
 
 if [[ -n "$PWSH" ]]; then
     PS_HOME_019E=$(newhome); setup_ps1_home "${PS_HOME_019E}"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --path "${FX_019}/does-not-exist-xyz"
     assert_exit_eq "$RC_PS1" 2 "PAR019-E09 PS1: non-directory --path -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --path is not a directory:" \
+        "PAR019-E09 PS1: non-directory --path -> error names the not-a-directory reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --path "$FX_019" --all
     assert_exit_eq "$RC_PS1" 2 "PAR019-E10 PS1: --path + --all together -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --path and --all are mutually exclusive" \
+        "PAR019-E10 PS1: --path + --all -> error names the mutually-exclusive reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --include-network
     assert_exit_eq "$RC_PS1" 2 "PAR019-E11 PS1: --include-network without --all -> exit 2 (AC-9)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+        "PAR019-E11 PS1: --include-network without --all -> error names the require---all reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --include-removable
     assert_exit_eq "$RC_PS1" 2 "PAR019-E12 PS1: --include-removable without --all -> exit 2 (AC-9)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --include-network / --include-removable require --all" \
+        "PAR019-E12 PS1: --include-removable without --all -> error names the require---all reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --depth abc
     assert_exit_eq "$RC_PS1" 2 "PAR019-E13 PS1: non-integer --depth -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --depth must be a non-negative integer: abc" \
+        "PAR019-E13 PS1: non-integer --depth -> error echoes the offending value 'abc' (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects scan --depth -1
     assert_exit_eq "$RC_PS1" 2 "PAR019-E14 PS1: negative --depth -> exit 2 (AC-3)"
+    assert_output_contains "$OUT_PS1" "ERROR: aid projects scan: --depth must be a non-negative integer: -1" \
+        "PAR019-E14 PS1: negative --depth -> error echoes the offending value '-1' (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects list --all
     assert_exit_eq "$RC_PS1" 2 "PAR019-E15 PS1: scan-only flag (--all) on 'list' -> exit 2"
+    assert_output_contains "$OUT_PS1" "are scan-only flags (see 'aid projects scan -h')" \
+        "PAR019-E15 PS1: scan-only flag on 'list' -> error names the scan-only-flags reason (FR-8/AC-9)"
 
     run_ps1_scan "${PS_HOME_019E}" "$FX_019" projects add --dry-run "${FX_019}/proj-tracked"
     assert_exit_eq "$RC_PS1" 2 "PAR019-E16 PS1: scan-only flag (--dry-run) on 'add' -> exit 2"
+    assert_output_contains "$OUT_PS1" "are scan-only flags (see 'aid projects scan -h')" \
+        "PAR019-E16 PS1: scan-only flag on 'add' -> error names the scan-only-flags reason (FR-8/AC-9)"
 else
     for _n in 09 10 11 12 13 14 15 16; do pass "PAR019-E${_n} [SKIPPED: pwsh absent]"; done
 fi
