@@ -11,6 +11,7 @@
 //   Corpus sweep: all canonical description values with < or & render correctly
 
 import { describe, it, expect } from 'vitest';
+// (trailing-whitespace cases live in the "single-line contract" describe below)
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -318,5 +319,61 @@ describe('corpus sweep', () => {
         `${dir}: unescaped < in text run after rendering`,
       ).toBe(false);
     }
+  });
+});
+
+// ── Single-line contract ──────────────────────────────────────────────────────
+//
+// The output goes into a bullet-list item. A YAML folded/literal block with clip
+// chomping (`>` / `|`) legitimately ends in one newline, and the parser is right
+// to keep it — but emitted raw into a bullet it inserts a blank line and breaks
+// the list. Every one of the 111 skill descriptions is a folded block, so this
+// broke every generated page until the trim landed here.
+
+describe('renderFrontmatterValue — single-line contract', () => {
+  it('strips the trailing newline a clip-chomped folded block carries', () => {
+    expect(
+      renderFrontmatterValue({ key: 'description', kind: 'scalar', value: 'One sentence.\n', line: 2 })
+    ).toBe('One sentence.');
+  });
+
+  it('strips multiple trailing newlines and trailing spaces', () => {
+    expect(
+      renderFrontmatterValue({ key: 'k', kind: 'scalar', value: 'text  \n\n', line: 2 })
+    ).toBe('text');
+  });
+
+  it('output never contains a newline, for every field of every real skill', async () => {
+    // Driven through the real parser rather than a regex, so this exercises the
+    // actual pipeline: parseSkillFrontmatter -> renderFrontmatterValue.
+    const { parseSkillFrontmatter } = await import('../skills/frontmatter.mjs');
+    const dirs = readdirSync(SKILLS_DIR)
+      .filter((d) => {
+        try { return statSync(resolve(SKILLS_DIR, d)).isDirectory(); } catch { return false; }
+      })
+      .sort();
+
+    let checked = 0;
+    for (const dir of dirs) {
+      const file = resolve(SKILLS_DIR, dir, 'SKILL.md');
+      let text;
+      try { text = readFileSync(file, 'utf8'); } catch { continue; }
+      for (const field of parseSkillFrontmatter(text, `canonical/skills/${dir}/SKILL.md`)) {
+        const rendered = renderFrontmatterValue(field);
+        expect(
+          rendered.includes('\n'),
+          `${dir}: rendered \`${field.key}\` contains a newline, which breaks the bullet list`
+        ).toBe(false);
+        checked++;
+      }
+    }
+    // Guard against a vacuous pass if discovery or parsing silently yields nothing.
+    expect(checked).toBeGreaterThan(dirs.length);
+  });
+
+  it('preserves interior whitespace — only the trailing edge is trimmed', () => {
+    expect(
+      renderFrontmatterValue({ key: 'k', kind: 'scalar', value: 'a  b\tc.\n', line: 2 })
+    ).toBe('a  b\tc.');
   });
 });

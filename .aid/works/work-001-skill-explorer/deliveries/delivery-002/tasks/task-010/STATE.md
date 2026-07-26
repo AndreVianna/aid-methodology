@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-2 quick check (Small): PASS + 1 HIGH (no page-level test would have caught the trailing-newline list break) Fixed, mutation-proven'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

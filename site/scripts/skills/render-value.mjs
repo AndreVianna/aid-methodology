@@ -67,6 +67,20 @@ function tokenize(text) {
  *                    pass through byte-identical; `|` is never escaped in either
  *                    run type.
  *
+ * The result is a SINGLE-LINE inline rendering, suitable for a bullet-list item
+ * or a card. Trailing newlines are stripped: a YAML folded or literal block with
+ * clip chomping (`>` / `|`) legitimately ends in one newline, which the parser is
+ * right to preserve — but emitted raw into a bullet it inserts a blank line and
+ * breaks the list. Every one of the 111 skill descriptions is a folded block, so
+ * this affected every page before it was stripped here rather than at one call
+ * site: the trim belongs with the inline-rendering contract, not with a consumer.
+ *
+ * A value with an INTERNAL newline (a `>` block containing a paragraph break, or
+ * any `|` literal block) would still not fit on one line. There are none in the
+ * corpus today — measured, not assumed — and collapsing them silently would
+ * misrepresent a literal block, so that case is deliberately left to whoever
+ * first needs it.
+ *
  * @param {{ key: string, kind: 'scalar'|'list', value: string|string[], line: number }} field
  * @returns {string}
  */
@@ -75,7 +89,7 @@ export function renderFrontmatterValue(field) {
     return /** @type {string[]} */ (field.value).map(item => `\`${item}\``).join(', ');
   }
   // kind === 'scalar'
-  return tokenize(String(field.value))
+  return tokenize(String(field.value).replace(/\s+$/, ''))
     .map(tok =>
       tok.type === 'code'
         ? tok.content

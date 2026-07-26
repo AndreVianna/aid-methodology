@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-2 quick check (Small): 1 HIGH (toCard reimplemented the intent rule raw+uncapped with the Q3-rejected fallback) Fixed by importing skillSummary; duplicate-assignment guard made reachable and mutation-proven'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
