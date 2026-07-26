@@ -1,0 +1,22 @@
+# .aid/settings.yml - AID pipeline configuration (user-owned project settings).
+# Read by AID skills at invocation. Managed by /aid-config; manual edits allowed.
+# The AID version + installed tools are recorded in the manifest
+# (.aid/.aid-manifest.json), not here.
+
+name: <project-name>               # set during /aid-config INIT
+description: <project-description>  # sole source of truth (not in CLAUDE.md/AGENTS.md)
+type: brownfield                   # brownfield | greenfield
+source_control: git                # none | git | svn | mercurial
+minimum_grade: A                   # global quality bar: every REVIEW-state skill
+                                   # exits only when its grade is >= this
+heartbeat_interval: 1              # minutes between long-running sub-agent heartbeat updates
+
+# knowledge: KB baseline + discovery inputs. `source` is the branch the KB is
+# compared against for freshness (ties to source_control); `last_update` is the
+# ISO-8601 timestamp of the last KB build; doc_set + term_exclusions are written
+# by aid-discover at runtime (not seeded here).
+knowledge:
+  source: master                   # branch compared for KB freshness (set to your main branch)
+  # last_update:                   # ISO-8601 datetime of the last KB build vs source
+  # doc_set: []                    # runtime-written by aid-discover
+  # term_exclusions: []            # runtime-written by aid-discover

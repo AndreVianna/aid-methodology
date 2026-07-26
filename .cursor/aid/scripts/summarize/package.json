@@ -1,0 +1,16 @@
+{
+  "name": "aid-summarize-validators",
+  "version": "0.0.1",
+  "description": "Dev/validator tooling for the aid-summarize visual-fidelity gate (task-073/task-074). Not shipped to adopters.",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "install-browsers": "playwright install chromium"
+  },
+  "devDependencies": {
+    "playwright": "1.61.1"
+  }
+}
