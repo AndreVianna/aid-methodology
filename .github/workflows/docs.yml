@@ -13,6 +13,9 @@ on:
     paths:                      # only rebuild when site inputs change
       - 'site/**'
       - 'docs/**'               # migrated content source (feature-005)
+      - 'canonical/**'          # generator input: reference pages and skill-page
+                                # deep-link anchors are derived from it, so a
+                                # canonical-only commit must still rebuild
       - 'VERSION'               # version injection input (feature-008)
       - '.github/workflows/docs.yml'
   pull_request:                 # M2: gate PRs to master — build-validate site inputs before merge
@@ -20,6 +23,7 @@ on:
     paths:
       - 'site/**'
       - 'docs/**'
+      - 'canonical/**'
       - 'VERSION'
       - '.github/workflows/docs.yml'
   workflow_dispatch:            # manual re-deploy (also refreshes release-bound content after a release)
@@ -65,6 +69,23 @@ jobs:
       - name: Install deps (reproducible)
         working-directory: site
         run: npm ci
+
+      # Gate the pull request on the site suite. After `npm ci` because vitest is
+      # a devDependency; before `npm run build` to fail fast, so a red suite never
+      # produces a Pages artifact.
+      #
+      # Deliberately NO `env:` block. Note what that does and does not achieve:
+      # the "Fetch build-time release data" step above writes AID_VERSION /
+      # AID_LATEST_RELEASE_JSON / AID_RELEASES_JSON into $GITHUB_ENV, so they are
+      # in this step's environment regardless — omitting `env:` does not hide
+      # them. It simply avoids re-declaring them here. Determinism comes from the
+      # suite itself: every test that reads one of those keys saves it, sets the
+      # value it needs, and restores it (see the saveEnv/restoreEnv pairs in
+      # src/data/__tests__/, src/lib/__tests__/). Verified by running the whole
+      # suite with all three set — 248 tests, all green, same as with none set.
+      - name: Test (site vitest suite)
+        working-directory: site
+        run: npm test
 
       - name: Build Astro Starlight site
         working-directory: site
