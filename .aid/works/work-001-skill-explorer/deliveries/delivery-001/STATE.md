@@ -1,8 +1,8 @@
 ---
-delivery_state: Gated
+delivery_state: Done
 gate_tier: Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+gate_grade: A+
+gate_timestamp: '2026-07-26T21:05:30Z'
 ticket_ref: "--"
 ---
 
@@ -47,12 +47,35 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 
 ## Delivery Gate
 
-<!-- AUTHORED -- single writer: the delivery-gate closing step of `aid-execute` on this
-     delivery's branch. Reviewer Tier / Grade / Timestamp live in the YAML frontmatter block
-     at the top of this file (`gate_tier`, `gate_grade`, `gate_timestamp`). -->
-
-- **Issue List:** {inline severity-tagged list, or "none" if gate passed clean}
-
+- **Complexity Score:** Large tier (owner-directed for every delivery gate in this work, ahead of the score)
+- **Cycles:** 7 review cycles. Grades: **E+ -> C -> C+ -> C+ -> B -> B+ -> A+.**
+- **Issue List:** 25 rows, all closed -- 23 Fixed, 2 Accepted, **0 Pending**.
+  - [CRITICAL] 354 unspecified paths (`.cursor/` + root `AGENTS.md`) committed inside task-001,
+    making the gate review surface 99.4% content no task declared -- **Fixed**. Owner confirmed
+    the content belongs on the branch, so the fix was structural: the four task commits were
+    rewritten to 2-3 declared paths each and the tree landed as its own commit. Recorded as E-3.
+  - [HIGH] x2 -- the AC5 pipeline guard (a) covered only two Mermaid link forms, silently
+    dropping every other, and (b) ran one fixed checklist against each diagram rather than
+    deriving index.mdx s expectations from README. Both **Fixed**.
+  - [MEDIUM] x7 -- four further lexical holes in the same parser (bidirectional/double-ended
+    heads, `%%` comments, `;` separators, the `{rhombus}`/`>asymmetric]` shapes), two
+    overclaiming comments, and KI-005/KI-006 still reading "Scheduled for fix". All **Fixed**.
+    The parser was then rewritten to **fail closed** -- an unmodelled construct throws naming
+    the text it could not read -- which closed the class rather than the fourth instance of it.
+  - [LOW] x5, [MINOR] x1 -- placeholder findings blocks, empty dispatch logs, an unfilled
+    BLUEPRINT task table, a global containment escape, keyword prefixes without word
+    boundaries, and two wrong figures in a commit message. All **Fixed** (the last via
+    `## Record Corrections`, since a commit message cannot be amended after the fact).
+  - **Accepted (2, not blocking):** E-2, the same hard-coded-count class knowingly left in the
+    `agents.md`/`kb.md` assertions rather than absorbed mid-delivery; and one residual parser
+    limitation -- a node id exactly equal to a Mermaid statement keyword at line-leading
+    position -- left open deliberately, because closing it would risk fabricating an edge,
+    which is a worse failure than dropping one.
+- **All eight gate criteria PASS**, each verified by execution rather than by reading.
+- **Headline outcome:** `npm test` in `site/` exits 0 for the whole suite -- 8 files, 305 tests
+  -- and `docs.yml` now runs it on every pull request, between `npm ci` and `npm run build`.
+  **218 of those 305 tests live in the five TypeScript suites that had never executed anywhere**
+  -- not locally, not in CI, not once. KI-005 and KI-006 are both closed.
 ---
 
 ## Cross-phase Q&A
