@@ -125,23 +125,6 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
   criteria and no review of its 353 files. That is an owner decision, not a delivery-001
   deliverable, and it should be visible as such at the gate rather than inferred from a diff.
 
----
-
-## Record Corrections
-
-<!-- AUTHORED -- corrections to statements already committed to this delivery's history.
-     Commit messages are immutable once written; a correction lives here instead. -->
-
-- **`cd06848b`'s closing line is wrong twice.** It reads *"110 AC5 fixtures; suite at 302."*
-  Both figures are wrong as stated: the whole `site/` suite stood at **293** tests at that
-  commit, not 302, and **110** was the total test count of `ac13-version-injection.test.ts`
-  as a whole — the tests under AC5-titled `describe` blocks numbered **68**. Raised by the
-  delivery-001 gate reviewer as [MINOR]; recorded rather than amended, since rewriting a
-  commit purely to correct prose is not worth the history churn. The delivery's authoritative
-  metrics are the ones in this file and in the gate block below.
-
----
-
 ### E-2 — the same hard-coded-count defect class survives in the `agents.md` / `kb.md` assertions
 
 - **Raised by:** the delivery-001 Large-tier gate reviewer, 2026-07-26
@@ -165,6 +148,26 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 - **Recommendation:** a one-task follow-up alongside the eventual `gen-reference.mjs` unfreeze
   (which already owns KI-003, KI-009 and KI-010), or a two-line ride-along on the next edit to
   this test file.
+
+_(End of gate escalations — E-1, E-2, E-3. Anything added below is not an escalation.)_
+
+---
+
+## Record Corrections
+
+<!-- AUTHORED -- corrections to statements already committed to this delivery's history.
+     Commit messages are immutable once written; a correction lives here instead.
+     Deliberately placed BELOW the last gate escalation: an earlier revision put this
+     heading between E-3 and E-2, which filed an escalation outside the section an
+     owner reads at the gate. -->
+
+- **`cd06848b`'s closing line is wrong twice.** It reads *"110 AC5 fixtures; suite at 302."*
+  Both figures are wrong as stated: the whole `site/` suite stood at **293** tests at that
+  commit, not 302, and **110** was the total test count of `ac13-version-injection.test.ts`
+  as a whole — the tests under AC5-titled `describe` blocks numbered **68**. Raised by the
+  delivery-001 gate reviewer as [MINOR]; recorded rather than amended, since rewriting a
+  commit purely to correct prose is not worth the history churn. The delivery's authoritative
+  metrics are the ones in this file and in the gate block above.
 
 ---
 
