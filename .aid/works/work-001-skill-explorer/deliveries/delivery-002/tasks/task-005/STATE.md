@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-1 quick check (Small): CONDITIONAL PASS -> 2 HIGH (throw tests asserted no line number) Fixed; re-verified'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

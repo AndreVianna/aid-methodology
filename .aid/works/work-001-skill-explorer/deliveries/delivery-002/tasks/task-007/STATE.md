@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-1 quick check (Small): PASS, 0 findings; cross-SPEC fallback contradiction resolved as delivery-002 Q3'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

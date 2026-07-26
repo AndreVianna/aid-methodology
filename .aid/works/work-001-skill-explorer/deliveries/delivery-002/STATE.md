@@ -1,6 +1,6 @@
 ---
-delivery_state: Pending-Spec
-gate_tier: Small | Medium | Large
+delivery_state: Executing
+gate_tier: Large
 gate_grade: "{grade or Pending}"
 gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
 ticket_ref: "--"
@@ -61,15 +61,99 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
      The work-level ## Cross-phase Q&A is a DERIVED union of all delivery Q&A sections plus any
      work-owner-authored work-level entries. -->
 
-### Q{N}
+### Q1 — the KI-012 / KI-013 ride-alongs on `site/astro.config.mjs`
 
-- **Category:** {category, e.g., Architecture, Requirements, Security}
-- **Impact:** High | Medium | Low | Required
-- **State:** Pending | Answered | Skipped
-- **Context:** {why this matters; what the downstream phase observed}
-- **Suggested:** {answer if inferrable, or --}
-- **Answer:** {filled when State is Answered}
-- **Applied to:** {artifact(s) the answer was applied to}
+- **Category:** Scope / known-issue ride-alongs (BLUEPRINT Notes; cross-cutting risk R1)
+- **Impact:** Medium — neither is in this delivery's gate criteria
+- **State:** **Answered** (2026-07-26, work owner)
+- **Context:** delivery-002 is the **first** delivery to open `site/astro.config.mjs` (task-016 adds
+  the `Skills` sidebar group). Two one-line defects live in that file, and R1 notes that
+  ride-alongs belong with whichever edit lands first:
+  - **KI-012** — `astro-mermaid`'s `enableLog` option defaults to `true` and the config never sets
+    it, so the injected page script logs `[astro-mermaid] …` to **every visitor's console on every
+    page**, including pages with no diagram. This work multiplies that by 111 new pages, and it
+    sits against feature-006's Telemetry contract, which specifies a silent console on success.
+  - **KI-013** — two comment blocks claim the `components:` map is "EMPTY" / "intentionally empty"
+    when it already holds four keys, and their "reserved slots" lists name a **previous** work's
+    `feature-NNN` numbers, so a reader of this work can reasonably conclude a slot is reserved for
+    a feature of *this* work. The one instruction still correct and load-bearing — "do not rewrite
+    this map, only add" — is buried among the stale text.
+- **Answer:** **Take both.** Two one-line changes in a file this delivery already opens; KI-012
+  also clears the console ahead of delivery-005's telemetry contract, and KI-013 corrects comments
+  that this work's own later tasks will read before adding a key.
+- **Applied to:** task-016, in the same edit that adds the `Skills` sidebar group.
+
+### Q2 — KI-016 routing: two suites re-run the generator with no `vitest.config.*`
+
+- **Category:** Test isolation (KI-016)
+- **Impact:** Required — must be settled **before task-017 and task-018 land**
+- **State:** **Answered** (2026-07-26, orchestrator decision — not an owner preference)
+- **Context:** Vitest runs test **files** in parallel workers by default, and `site/` has **no
+  `vitest.config.*`** (verified absent; `astro.config.mjs` is the only `*.config.*` in the
+  directory). Two suites this delivery adds each prove idempotence by **re-running the generator
+  and comparing bytes**: `gen-skills.test.mjs` (AC-6, task-017) and `gen-skills-index.test.mjs`
+  (task-018). Two workers re-running `gen-skills.mjs` against the same
+  `src/content/docs/skills/` tree concurrently is a real flake source — one worker's write lands
+  between the other's read and compare. The hazard **grows**: delivery-003 adds sidecar and
+  cross-page byte-identity assertions (task-031, 032, 038, 039) and delivery-004 adds a
+  whole-corpus provenance sweep (task-044), all reading the same generated tree. Surfaced by
+  `/aid-detail` as a hazard neither feature-001's nor feature-002's SPEC addresses.
+- **Options considered:** (a) a shared serial-file annotation on the affected suites;
+  (b) `--no-file-parallelism`, or the equivalent `fileParallelism: false` in a `vitest.config.*`;
+  (c) per-suite output isolation, each suite generating into its own temp tree.
+- **Answer: option (b)** — add a minimal `site/vitest.config.mjs` setting
+  `test.fileParallelism: false`, landing with the task-017/018 wave.
+  - **Why not (a):** vitest has no per-file opt-out of *file* parallelism. `describe.sequential`
+    orders tests within a file, not files against each other. The knob is global either way, so
+    the annotation approach cannot actually express what is needed.
+  - **Why not (c):** it is the strongest isolation and it would survive any future parallelism,
+    but it requires `gen-skills.mjs` to accept an output-root override purely for tests — a
+    production API shaped by a test constraint, coupling task-017/018 back into task-012/015 while
+    both are still being written. Recorded as the fallback if serial execution ever becomes a
+    measurable cost.
+  - **Why (b) is right here:** it is one new file with zero coupling to the generator's design, it
+    closes the whole class including the delivery-003/004 growth without further thought, and the
+    cost is negligible — the suite is 305 tests in ~2.6s, so serialising file execution is a
+    couple of seconds on a job whose `npm ci` alone takes 26s.
+  - **Verified compatible with feature-006:** its SPEC (§ its test-runner discussion) relies on
+    the absence of a config only to establish that vitest runs in the default `node` environment,
+    and it opts one file in with a `// @vitest-environment jsdom` docblock. A config that sets
+    **only** `fileParallelism` leaves the default environment `node`, so that per-file opt-in
+    still works unchanged. The config must therefore **not** set `environment`.
+- **Applied to:** task-017 / task-018 (the wave that creates `site/vitest.config.mjs`); recorded
+  here because KI-016 states the decision is a routing choice, not a task-boundary change.
+
+### Q3 — the two SPECs contradict each other on `skillSummary`'s no-`description` fallback
+
+- **Category:** Contract seam between feature-001 and feature-002
+- **Impact:** Low in practice, but it is a genuine contradiction between two `Ready` SPECs
+- **State:** **Answered** (2026-07-26, orchestrator — resolved by reading, no owner judgement needed)
+- **Raised by:** the delivery-002 wave-1 reviewer, as **[CRITICAL]**
+- **Context:** the two SPECs specify different fallbacks for a skill whose `SKILL.md` carries no
+  frontmatter `description`:
+  - **feature-001** (`SPEC.md`:435) — the sentinel
+    `AID skill <dir> — declared frontmatter contract, generated from canonical/.`
+  - **feature-002** (`SPEC.md` § *The card's intent text*) — "falling back to **the skill's own
+    name**".
+- **Answer: feature-001's sentinel is correct.** Three independent reasons, all from the documents
+  themselves rather than from preference:
+  1. **feature-002 explicitly defers.** The bullet immediately below its own fallback phrase says
+     the rule is "feature-001's page-`description` rule, **deliberately reused
+     parameter-for-parameter**". A different fallback is not parameter-for-parameter reuse, so the
+     phrase contradicts its own governing sentence.
+  2. **feature-002's own acceptance would fail otherwise.** It requires a card's text and its
+     target page's `<meta name="description">` to be "the same string", and states that
+     `gen-skills-index.test.mjs` (task-018) "asserts that equality for every skill". Two different
+     fallbacks make that assertion unsatisfiable for any skill that lacks a `description`.
+  3. **task-007's `DETAIL.md` — the binding task definition — names feature-001's string** and its
+     acceptance criterion requires it "byte-for-byte, with the directory name interpolated".
+- **Reachability, measured:** **all 111** skills under `canonical/skills/` carry a frontmatter
+  `description`, so the fallback is an unreachable defensive branch today. That is why this is
+  recorded as a reconciliation rather than escalated: nothing renders differently either way, and
+  the ambiguity is resolved before it can.
+- **Applied to:** `site/scripts/skills/summary.mjs`, which already emits feature-001's sentinel —
+  no code change was required. **feature-002's SPEC sentence should be corrected to match when that
+  document is next opened** (the same disposition work Q3 gave feature-003's V9 text).
 
 ---
 

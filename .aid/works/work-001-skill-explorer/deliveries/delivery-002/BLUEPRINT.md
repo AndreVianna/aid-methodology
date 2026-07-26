@@ -73,11 +73,22 @@ so KI-003, KI-009 and KI-010 remain open and the grouping divergence between `/s
 
 ## Tasks
 
-_none yet_ — `aid-detail` fills this table.
-
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-005 | IMPLEMENT | Skills-cluster path primitives and the strict frontmatter parser |
+| task-006 | IMPLEMENT | Code-span-aware frontmatter value renderer |
+| task-007 | IMPLEMENT | First-sentence skill summary rule |
+| task-008 | IMPLEMENT | One-way shortcut-catalog reader |
+| task-009 | IMPLEMENT | Skill discovery and the `SkillRecord` |
+| task-010 | IMPLEMENT | Detail-page renderer and the empty body-slot registries |
+| task-011 | IMPLEMENT | Curated taxonomy, group assignment and its four guards |
+| task-012 | IMPLEMENT | `gen-skills.mjs` entrypoint: pipeline, manifest and drift guard |
+| task-013 | CONFIGURE | `gen:skills` threaded into the `prebuild`/`predev` chains |
+| task-014 | IMPLEMENT | Index page renderer |
+| task-015 | IMPLEMENT | Index generation steps and the manifest index row in `gen-skills.mjs` |
+| task-016 | CONFIGURE | `Skills` sidebar group in `site/astro.config.mjs` |
+| task-017 | TEST | `gen-skills.test.mjs` — the AC-1 / AC-2 / AC-6 suite |
+| task-018 | TEST | `gen-skills-index.test.mjs` — the 15-assertion AC-8 suite |
 
 ## Dependencies
 

@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-1 quick check (Small): PASS, 0 findings'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

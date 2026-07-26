@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-1 quick check (Small): CONDITIONAL PASS -> 1 HIGH (throws tested against an inline copy, not the module) Fixed; mutation-proven'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
