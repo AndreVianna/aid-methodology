@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick check (Small): 0 CRITICAL, 0 HIGH -- clean; F-1 stale-vs-regression judgement independently confirmed'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
@@ -64,17 +64,11 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Findings:** none -- no [CRITICAL] and no [HIGH] finding was raised. The reviewer
+  independently re-derived F-1's stale-assertion-vs-product-regression judgement and
+  agreed. One LOW imprecision in the record's git-status characterisation was corrected
+  on the spot. Ledger: `.aid/.temp/review-pending/task-002-quick-check.md`.
 ---
 
 ## Dispatch Log
@@ -86,3 +80,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | orchestrator (inline, RESEARCH) | 15-30 min | ~18 min | Executed directly -- measurement work; clean npm ci, full suite, full prebuild |
+| 2026-07-26 | aid-reviewer (Small) | 5-10 min | ~9 min | Quick check clean -- 0 CRITICAL, 0 HIGH; F-1 judgement independently re-derived |
