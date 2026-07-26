@@ -73,6 +73,16 @@ here — see Notes.
       `validate.mjs` over a `FlowChart`, V9 in `advance.mjs` where the residue exists.
 - [ ] Delivery-002's guarantees still hold: AC-1, AC-2 and AC-8 pass unchanged, and
       `gen-reference.mjs` remains byte-unmodified.
+- [ ] **UI review checkpoint — NON-BLOCKING.** After **task-029**, the site is built and browsed,
+      and a verdict is recorded in `deliveries/delivery-003/STATE.md`. This is the **first point at
+      which real charts render**, and deliberately on a partial corpus: the authored-flow provider
+      claims exactly `{dispatch-table, inline-states, residual}`, so roughly 27 skills are charted
+      while the delegating majority keeps the placeholder comment until task-037. The subset is the
+      interesting one — `aid-describe` (a fat Dispatch chart with loops and branches), `aid-review`
+      (inline states), `aid-test` (the ` then ` branch), `aid-config` (a residual approximation).
+      Judge node shapes, the 60-code-point label truncation, dark-theme legibility, and chart
+      sizing on a long flow — against real content, at roughly 55% of the work rather than 100%.
+      A Fail files a ticket; it does **not** block this gate.
 - [ ] All section-6 quality gates pass
 
 ## Tasks

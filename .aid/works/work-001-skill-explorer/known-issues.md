@@ -462,3 +462,65 @@
 - **See also:** raised independently by the delivery-001, delivery-003 and delivery-004 task
   reviewers; delivery-001's reviewer subsequently marked its own row **Invalid** on discovering it
   had cited the non-authoritative template.
+
+## KI-016: two vitest suites re-run the same generator concurrently, with no config to stop them
+
+- **Type:** Bug
+- **Severity:** Medium
+- **Affects:** task-017 and task-018 (delivery-002); grows in delivery-003 (task-031, task-032,
+  task-038, task-039) and delivery-004 (task-044)
+- **Source:** `site/` has **no `vitest.config.*`** — verified absent; `site/scripts/__tests__/`
+- **Description:** Vitest runs test **files** in parallel workers by default. Two suites this work
+  adds each prove idempotence by **re-running the generator and comparing bytes**:
+  `gen-skills.test.mjs` (AC-6, task-017) and `gen-skills-index.test.mjs` (the index must be
+  byte-identical across runs, task-018). Two workers re-running `gen-skills.mjs` against the same
+  `src/content/docs/skills/` tree at the same time is a real flake source — one worker's write
+  lands between the other's read and compare. Neither feature-001's nor feature-002's SPEC mentions
+  it, and feature-006's SPEC notes the missing config file for an unrelated reason.
+
+  It **grows** with the work: delivery-003 adds sidecar and cross-page byte-identity assertions,
+  and delivery-004 adds a whole-corpus provenance sweep — all reading the same generated tree.
+
+  **Not a task-boundary problem** — no task list changes. It needs one routing decision before
+  task-017 and task-018 land. Three known options: a shared serial-file annotation on the affected
+  suites, `--no-file-parallelism` (or a `vitest.config.*` setting) for them, or per-suite output
+  isolation so each writes to its own temp tree.
+- **Surfaced by:** `/aid-detail` task decomposition, as item G of the architect's "what I had to
+  decide" report — a hazard neither SPEC addresses, recorded rather than silently resolved.
+
+## KI-017: worktrees must be created by Windows git, not WSL git
+
+- **Type:** Bug
+- **Severity:** High
+- **Affects:** `/aid-execute` for every delivery — it provisions **ephemeral per-task worktrees**
+  at `.aid/.worktrees/task-NNN/` on the shared delivery branch
+- **Source:** `.claude/aid/scripts/works/worktree-lifecycle.sh`; the two git installations
+  (WSL git 2.43.0, Windows git 2.54.0 at `C:\Program Files\Git`)
+- **Description:** This machine has **two git installations addressing the same repository by
+  different names** — `C:\Projects\Personal\AID` for Windows git, `/mnt/c/Projects/Personal/AID`
+  for WSL git. Ordinary repository work is unaffected, because git locates `.git` by walking up
+  relative paths. **Worktrees are not**: a worktree's `.git` file and its admin directory point at
+  each other by **absolute path**, written in the dialect of whichever git created it.
+
+  A WSL-created worktree therefore records `gitdir: /mnt/c/...`, which Windows git cannot resolve.
+  Windows git concludes the worktree is abandoned and **prunes its registration during routine
+  housekeeping** — which is exactly what happened once in this work: the `work-001` worktree was
+  created by WSL git, a Windows `git push` pruned it, and the worktree had to be rebuilt.
+
+  **Standing rule for this repository: use Windows git.** The worktree at
+  `.claude/worktrees/work-001` has been recreated with Windows git and now records
+  `gitdir: C:/Projects/Personal/AID/.git/worktrees/work-001`.
+  - Run AID's shell scripts under **Git Bash** (`C:\Program Files\Git\bin\bash.exe`), which
+    provides `grep`, `sed`, `awk`, `find`, `sort`, `uniq`, `xargs` and `python` (pyenv shims) —
+    verified — while using Windows git underneath.
+  - Do **not** invoke the scripts through WSL bash; a bare `bash` on this machine resolves to WSL.
+  - Windows git also already has credentials via the Git Credential Manager, so pushes work;
+    WSL git has no credential helper and hangs silently on an invisible prompt.
+  - Watch for MSYS path translation under Git Bash: it rewrites POSIX-looking arguments into
+    Windows paths when calling native binaries. Relative paths are fine; an absolute path passed
+    as an argument can be mangled. Escape hatch: `MSYS2_ARG_CONV_EXCL`.
+  - Secondary evidence for the same choice: Windows git is markedly faster here, because the repo
+    is on NTFS and WSL reaches it over `/mnt/c`. Measured in this session — 51s vs 5–9s for the
+    same read-only git commands, and 95s for a checkout plus worktree create.
+- **See also:** KI-005, which records the resulting `git diff`-based idempotency failures as
+  "environmental" — this entry is the operational cause and the rule that prevents them.

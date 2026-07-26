@@ -59,6 +59,16 @@ so KI-003, KI-009 and KI-010 remain open and the grouping divergence between `/s
       passes, and its four generated reference pages are byte-unchanged after a full `prebuild`.
 - [ ] Every card links to a page that exists — no dead cards — and the section is reachable from
       the sidebar and highlights in the header tab bar.
+- [ ] **UI review checkpoint — NON-BLOCKING.** After **task-016**, the site is built and browsed
+      in a real browser, and a verdict is recorded in `deliveries/delivery-002/STATE.md`. This is
+      the first point at which the interface exists: the `/skills/` index with one card per skill
+      under the curated four groups, `Definition` subdivided by verb family, the sidebar group,
+      the header tab highlighting on a detail page, and a detail page's complete frontmatter
+      header. **Chart slots are deliberately empty here** — task-010 emits a
+      `<!-- body slot: ... -->` comment rather than an empty heading, so an unfilled page reads as
+      unfilled rather than broken. Judge navigation, grouping, card density and whether 111 cards
+      under one taxonomy reads well — the concrete form of risk R7. A Fail files a ticket; it does
+      **not** block this gate.
 - [ ] All section-6 quality gates pass
 
 ## Tasks
