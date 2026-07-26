@@ -25,6 +25,7 @@ contracts:
   - "111 skill directories under canonical/skills/; 9 agent directories under canonical/agents/"
   - "5 render profiles (profiles/*.toml)"
 changelog:
+  - 2026-07-25: work-001-skill-explorer describe-phase hydration -- added the Skill Structural Shapes section (four body shapes vs. the ownership taxonomy; `repurpose` is an ownership flag not a structural signal; the two doorway shapes carry no flow of their own; no single reliable state-machine parse marker). Additive only; no discovery content changed.
   - 2026-07-23: v2.3.0 release sweep -- skill count 92 -> 111 (added `aid-design` [work-005] + the 3 ticket skills `aid-read-ticket`/`aid-create-ticket`/`aid-update-ticket` [work-023]); the skill-count taxonomy is restated to the current model used across the other docs (111 = 17 curated pipeline / on-demand / router skills + the 94-row shortcut catalog's skills: 64 verb-first shortcut doorways + 30 hand-authored `repurpose` skills).
   - 2026-07-09: work-001 lite-skills refresh -- skill count 14 -> 82 (14 classic + `/aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/` module row, the `interview/`/`parse-recipe.sh` script-area row + dependency-graph edge + gotcha, and the "how a new recipe goes" convention; added the shortcut catalog/engine/scaffolding wiring (`build-shortcut-skills.py`), the "how a new shortcut goes" convention, and the shortcut-engine dependency edges.
   - 2026-07-09: housekeep KB-DELTA connectors subsystem refresh -- added the `connectors/` script area (registry accessor, INDEX builder, secret handler) + its test suites, the ELICIT-to-`.aid/connectors/`/`external-sources.md` wiring line, and `connectors` to the scripts-by-area enumeration.
@@ -54,6 +55,7 @@ it produces. The modules fall into four planes:
 - [Dependency Graph](#dependency-graph)
 - [Script Modules by Area](#script-modules-by-area)
 - [Notable Skill Reference Modules](#notable-skill-reference-modules)
+- [Skill Structural Shapes](#skill-structural-shapes)
 - [Entry Points](#entry-points)
 - [High-Churn Modules](#high-churn-modules)
 - [Oversized Modules](#oversized-modules)
@@ -180,6 +182,48 @@ their own right.
 | aid-describe elicitation engine | `aid-describe` | The seasoned-analyst interview driver: a fixed D1 opener plus a deterministic five-step next-move selector, ten elicitation moves with a gap-type firing table, expertise calibration, the NFR-7 advisory envelope, and a final coherence check. | `canonical/skills/aid-describe/references/`: `elicitation-engine.md` ("D1 Fixed Opener", "Engine Overview"), `move-playbook.md` ("Gap-Type to Move Firing Table"), `calibration.md`, `advisor-stance.md` ("NFR-7 Question-Envelope Contract"), `coherence-check.md`. |
 | Greenfield KB-seed authoring | `aid-describe` | Forward-authors a five-element KB seed (concept-spine + architecture + conventions + tech-stack + decisions) from intent, stamped `source: forward-authored` -- the docs-are-truth, code-conforms inversion. | `canonical/skills/aid-describe/references/state-describe-seed.md`; the `forward-authored` marker is defined in `canonical/aid/templates/kb-authoring/frontmatter-schema.md` (the `forward-authored` source row). |
 | aid-housekeep Conformance Lane | `aid-housekeep` | Sub-module of the KB-DELTA state: checks as-built code against `source: forward-authored` design docs in the code -> design direction and flags divergence for human reconciliation; never auto-overwrites the design (NFR-5 carve). Runs a shadow extraction via aid-discover's `output_root` parameter. | `canonical/skills/aid-housekeep/references/state-kb-delta.md` ("Conformance Lane -- forward-authored docs"); the shadow-extract parameter lives in `canonical/skills/aid-discover/references/agent-prompts.md` ("Dispatch Parameter: output_root"). |
+
+---
+
+## Skill Structural Shapes
+
+The 111 skill directories share one **ownership** taxonomy (17 curated + 64 generated doorways
++ 30 hand-authored `repurpose`, per the contracts above) but four distinct **structural**
+shapes. The two taxonomies do not line up, and tooling that reads skill bodies must key off
+the shape, not the ownership flag.
+
+| Shape | Body structure | Typical size | Exemplars |
+|-------|----------------|--------------|-----------|
+| Fat pipeline skill | `## Dispatch` table mapping states to `references/state-*.md` workers + `Advance` targets; no inline `## State:` sections | 300+ lines | `aid-describe` (308) |
+| Hand-authored collapse skill | Six inline `## State:` sections in `SKILL.md` itself; self-contained, no delegation | 120--220 lines | Eight skills: `aid-review` (221), `aid-research` (181), `aid-test` (131), `aid-prototype` (129), `aid-design` (120), plus `aid-change-document`, `aid-create-document`, `aid-report` |
+| Generated shortcut doorway | Binds `{verb, artifact}` and delegates to `canonical/aid/templates/shortcut-engine.md` | ~18 lines | `aid-create-api`, `aid-fix` |
+| Kind-sibling doorway | Delegates to a **sibling skill**, not to the engine | ~24 lines | `aid-test-security` -> `aid-test`; the `test-*` and `create-diagram`/`create-document` clusters |
+
+- **`repurpose: true` is a generator-ownership flag, not a structural signal.** It marks rows
+  whose directories `build-shortcut-skills.py` must never generate or overwrite. `aid-review`
+  (fat, 221 lines) and `aid-test-security` (thin, 24 lines) both carry it. Classify by
+  inspecting the body.
+- **The two doorway shapes carry no control flow of their own.** Their real flow is the shared
+  engine's `INTAKE -> CAPTURE -> SPEC -> PLAN -> DETAIL -> GATE -> APPROVAL-HALT`, so any
+  per-skill flow extraction must resolve the delegation before it has anything to show.
+  **Measured 2026-07-25: 83--84 of the 111** (64 engine doorways plus 19--20 kind-siblings; the
+  exact split moves with the classifier's discriminators). The earlier "roughly 94" figure in
+  this section was an estimate and was wrong -- prefer a measurement, and do not hard-code the
+  number in tooling.
+- **There is no single reliable parse marker for a skill's state machine.** Skills variously use
+  frontmatter `State machine:`, `## Dispatch` tables, inline `## State:` sections, a literal
+  `## State Machine` heading, or ASCII state maps. Branch conditions are prose in parentheses
+  inside `Advance` cells, so edge labels are a best-effort extraction rather than a parse.
+- **`aid-triage` is a Dispatch-shape skill.** It carries a `## State Machine` heading (line 58)
+  *and* a `## Dispatch` table with `State`/`Advance` columns (line 73), plus two inline
+  `## State:` sections. An earlier revision of this section cited it as the marker-less
+  exception; that was wrong. The genuinely residual skills are curated on-demand ones --
+  `aid-config`, the three ticket skills, and the two connector skills (membership varies with
+  the classifier's discriminators).
+
+CONFIRMED: line counts and inline-`## State:` counts measured directly against
+`canonical/skills/*/SKILL.md`; delegation confirmed by `shortcut-engine` references in the
+body; ownership counts per this document's own contracts and `project-structure.md`.
 
 ---
 
@@ -343,6 +387,8 @@ their own right.
 
 | Rev | Date | Source | Description |
 |-----|------|--------|-------------|
+| 1.6 | 2026-07-25 | work-001-skill-explorer (aid-specify measurement) | Corrected the Skill Structural Shapes section against a direct scan of all 111 directories: the hand-authored collapse shape is **eight** skills, not five (adds `aid-change-document`, `aid-create-document`, `aid-report`); the delegating population is **83--84**, not "roughly 94"; and `aid-triage` is a **Dispatch-shape** skill (it carries both a `## State Machine` heading and a `## Dispatch` table), not the marker-less exception the rev-1.5 text made it. Residual population identified as curated on-demand skills (`aid-config`, ticket, connector). |
+| 1.5 | 2026-07-25 | work-001-skill-explorer (aid-describe hydration) | Added the Skill Structural Shapes section: the four body shapes (fat pipeline / hand-authored collapse / generated doorway / kind-sibling doorway) and how they cut across the 17+64+30 ownership taxonomy; `repurpose: true` clarified as a generator-ownership flag rather than a structural signal; recorded that the two doorway shapes carry no flow of their own (~94 of 111 skills) and that no single state-machine parse marker exists. Additive; no existing content changed. |
 | 1.4 | 2026-07-09 | v2.1.0 coverage-gap follow-on | Skill count 82 -> 92 (15 classic incl. restored `/aid-ask` + `aid-triage` + 76 verb-first shortcuts, up from 67); updated the `canonical/skills/*` module row, the "how a new skill goes" / "shortcut doorways are generated" gotchas, and the frontmatter contract count (82 -> 92) for the new `remove`/`deprecate`/`migrate` (G5) and `review`/`research` (G11) shortcut families. |
 | 1.3 | 2026-07-09 | work-001 refresh | work-001 lite-skills refresh: skill count 14 -> 82 (14 classic + `aid-triage` + 67 verb-first shortcuts); removed the `canonical/aid/recipes/*` module row, the `interview/`/`parse-recipe.sh` script-area row + its dependency-graph edge + its gotcha, and the "how a new recipe goes" convention; updated the templates row (recipe template -> shortcut catalog + engine + scaffolding); added the shortcut-engine/scaffolding dependency edges + the `build-shortcut-skills.py` wiring, the "how a new shortcut goes" convention, and a "shortcut doorways are generated" gotcha; frontmatter contract 14 -> 82. General-staleness sweep also added two `summarize/` scripts (`build-md-export.sh`, `validate-diagram-content.mjs`) that were missing from the Script Modules table. |
 | 1.2 | 2026-07-09 | housekeep KB-DELTA | Connectors subsystem refresh: added the `connectors/` row to Script Modules by Area (registry accessor, INDEX builder, secret handler, Bash+PowerShell twins) + its test-suite list; added `connectors` to the scripts-by-area enumeration in Module Inventory; added the ELICIT `.aid/connectors/`/`external-sources.md` write-target line to the Dependency Graph. |
