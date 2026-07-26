@@ -1,0 +1,136 @@
+---
+kb-category: primary
+notes: "Retired as project-type profile selector (feature-015/Change 1). Content recast
+        as rendering hints for data-pipeline-domain KB docs, keyed by kb-category tier and
+        doc identity — not by project-type. The section set is derived from the resolved
+        doc-set + frontmatter, not from this template."
+---
+
+# Rendering Hints — Data Pipeline Domain Docs
+
+> **Status:** Retired as a project-type profile selector (feature-015, Change 1).
+> Profile-as-project-type auto-detection is replaced by the doc-set/domain-driven
+> section derivation in `state-profile.md`. This file is now a **rendering hint
+> reference** for GENERATE when the domain facets include `data-pipeline` or `etl`
+> and the resolved doc-set contains the listed docs.
+
+---
+
+## Original section structure (preserved as rendering reference)
+
+The following layout was the data-pipeline profile's fixed section order. It is **not
+selected as a template**; it is kept as domain-specific rendering guidance. The resolved
+doc-set order (from `state-profile.md` §4) is authoritative.
+
+For ETL / streaming / data-pipeline projects. Stage transforms, lineage, and
+sources/sinks are central.
+
+## Sections
+
+| # | Title | Featured? | KB Sources |
+|---|-------|-----------|------------|
+| 1 | At a Glance | | STATE.md, project-structure.md |
+| 2 | Architecture | ★ | architecture.md |
+| 3 | Pipeline DAG | ★ | module-map.md, integration-map.md |
+| 4 | Data Schemas | ★ | schemas.md |
+| 5 | Sources & Sinks | | integration-map.md |
+| 6 | Transforms / Stages | | feature-inventory.md |
+| 7 | Schedules & Triggers | | infrastructure.md |
+| 8 | Data Quality & Validation | | test-landscape.md, tech-debt.md |
+| 9 | Operational Concerns | | tech-debt.md |
+| 10 | Build & Deployment | | infrastructure.md |
+| 11 | Concept Spine | | domain-glossary.md |
+| 12 | Knowledge Base Index | | INDEX.md |
+
+## Diagrams
+
+| Fig | Type | Subject |
+|-----|------|---------|
+| 1 | flowchart TB | Stack: sources → ingestion → processing → storage → consumers |
+| 2 | flowchart LR (or graph LR) | Pipeline DAG — every transform stage as a node, edges = data flow |
+| 3 | erDiagram | Schema lineage (input → intermediate → output schemas) |
+| 4 | flowchart LR | Per-stage data flow: input table → transform → output table |
+| 5 | sequenceDiagram | Trigger flow (cron / event / webhook → orchestrator → workers) |
+
+## Section content guidance
+
+### §3 Pipeline DAG (FEATURED)
+The single most important diagram. Every stage is a node, edges show data
+flow. Annotate edges with cardinality (1:1, 1:N), schedule (hourly, on event),
+and SLA.
+
+### §4 Data Schemas (FEATURED)
+Schemas at each stage:
+- **Input schemas:** raw data shapes from sources.
+- **Intermediate schemas:** how data is normalized at each stage.
+- **Output schemas:** final tables/topics consumers depend on.
+
+Use per-stage ER mini-diagrams or a single comprehensive lineage diagram.
+
+### §5 Sources & Sinks
+Two separate tables:
+- **Sources:** name, type (S3, Kafka, RDS, etc.), schema, frequency, owner.
+- **Sinks:** name, type, downstream consumer, retention, SLA.
+
+### §6 Transforms / Stages
+For each transform:
+- Stage ID
+- Input schema(s)
+- Output schema(s)
+- Logic summary (one paragraph)
+- Idempotency notes
+- Error handling (retry policy, DLQ)
+- Ownership
+
+### §7 Schedules & Triggers
+Cron schedules, event triggers, manual operations. Include a calendar visual
+if multiple schedules interleave.
+
+### §8 Data Quality & Validation
+Checks performed at each stage. Failure modes. Reconciliation queries. SLAs.
+
+### §9 Operational Concerns
+- Backfill procedures
+- Replay capabilities
+- Audit trail
+- PII handling
+- Compliance (GDPR, CCPA, SOX) if applicable
+
+### §11 Concept Spine
+
+The project's native vocabulary — coined and domain-specific terms a new data engineer must
+understand to work with this pipeline. Drawn from `domain-glossary.md` (the C4 term map).
+
+For a data pipeline, include: the names of stages/transforms if they are project-coined
+(not just "Stage 1"), the terms for entity types in the domain (e.g. "event", "fact", "dim"),
+pipeline-specific SLA abbreviations, and any non-standard orchestration or scheduling terms.
+Render as a scannable definition list:
+
+- **{term}** — {one-line definition in this project's context, not the general data-engineering meaning}
+
+If `domain-glossary.md` is absent or empty, render a minimal placeholder noting the spine
+is not yet authored; do not omit the section.
+
+## Differences from web-app
+
+- Pipeline DAG (§3) replaces module/plugin DAG.
+- Schemas section (§4) is more about "lineage" than "entities".
+- "Features" framing → "Transforms" or "Stages".
+- Operational concerns get their own section (§9).
+- No frontend section.
+
+## Common visuals content
+
+For Figure 2 (Pipeline DAG), author an inline SVG using the flow-diagram pattern from
+`.cursor/aid/templates/knowledge-summary/authored-visual-catalog.md` (Pattern 1 --
+left-to-right flow). Use `var(--bg-elev)` fills and `var(--accent)` borders for source/
+transform nodes; `var(--bg-sunken)` for sink nodes. Typical node layout:
+
+```
+[Source 1] --> [Stage 1: clean] --> [Stage 2: enrich] --> [Stage 3: aggregate] --> [Sink]
+[Source 2] --/
+```
+
+Author this as a `<div class="diagram-box">` wrapping an `<svg viewBox="...">` with
+one `<rect>` per node and `<line>` arrows. See Pattern 1 in authored-visual-catalog.md
+for the exact HTML/SVG template.
