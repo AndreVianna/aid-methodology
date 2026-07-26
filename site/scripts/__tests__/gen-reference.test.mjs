@@ -19,6 +19,37 @@ const MANIFEST_PATH = join(SITE_ROOT, 'scripts', '.reference-manifest.json');
 const SKILLS_DIR = join(REPO_ROOT, 'canonical', 'skills');
 const AGENTS_DIR = join(REPO_ROOT, 'canonical', 'agents');
 const KB_DIR = join(REPO_ROOT, 'canonical', 'aid', 'templates', 'knowledge-base');
+const SHORTCUT_CATALOG_FILE = join(REPO_ROOT, 'canonical', 'aid', 'templates', 'shortcut-catalog.yml');
+
+// Local catalog reader mirroring gen-reference.mjs's row opener, field line and
+// scalar strip. Re-implemented, NOT imported: gen-reference.mjs calls main() at
+// module scope, so importing from it would regenerate that generator's pages.
+function stripCatalogScalar(raw) {
+  let val = raw.trim();
+  const commentIdx = val.indexOf(' #');
+  if (commentIdx !== -1) val = val.slice(0, commentIdx).trim();
+  return val.replace(/^['"]|['"]$/g, '');
+}
+
+function parseCatalogRows(raw) {
+  const rows = [];
+  let current = null;
+  for (const line of raw.split('\n')) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+    const rowStart = line.match(/^ {2}- name:\s*(.+)$/);
+    if (rowStart) {
+      if (current) rows.push(current);
+      current = { name: stripCatalogScalar(rowStart[1]) };
+      continue;
+    }
+    if (!current) continue;
+    const field = line.match(/^ {4}([a-zA-Z_]+):\s*(.*)$/);
+    if (field) current[field[1]] = stripCatalogScalar(field[2]);
+  }
+  if (current) rows.push(current);
+  return rows;
+}
 
 // Generated reference pages
 const GENERATED_PAGES = [
@@ -98,12 +129,15 @@ describe('gen-reference: generatedFrom frontmatter', () => {
 
 // ── Roster counts match source ────────────────────────────────────────────────
 
-// The curated (non-shortcut) skill roster: the 16 classic pipeline/on-demand
-// skills (11 pipeline + 5 off-pipeline on-demand) plus the standalone
-// aid-triage router. Mirrors gen-reference.mjs's SKILL_GROUPS — these render
-// as individual `### \`aid-...\`` sections. The remaining on-disk skill
-// directories are the 76 catalog-driven shortcuts, summarized by family in
-// the "Direct-entry shortcuts" table, not as individual sections.
+// The curated (non-shortcut) skill roster — the skills gen-reference.mjs's
+// SKILL_GROUPS renders as individual `### \`aid-...\`` sections. Which skills
+// get their own section is a curatorial choice living in SKILL_GROUPS, not a
+// filesystem fact, so this list stays hand-maintained rather than derived —
+// deriving it would only make the test tautological with the generator. It is
+// kept honest by the clamp assertion below, which fails BY NAME for any on-disk
+// skill directory that is neither a catalog row nor listed here. Every other
+// on-disk directory is a catalog-driven shortcut, summarized by family in the
+// "Direct-entry shortcuts" table rather than as an individual section.
 const CURATED_SKILL_NAMES = [
   'aid-config', 'aid-discover', 'aid-summarize',
   'aid-triage',
@@ -113,31 +147,56 @@ const CURATED_SKILL_NAMES = [
   'aid-deploy', 'aid-monitor',
   'aid-housekeep', 'aid-query-kb', 'aid-ask', 'aid-update-kb',
   'aid-set-connector', 'aid-unset-connector',
+  'aid-read-ticket', 'aid-create-ticket', 'aid-update-ticket',
 ].sort();
 
+const catalogRows = parseCatalogRows(readFileSync(SHORTCUT_CATALOG_FILE, 'utf8'));
+const catalogNames = catalogRows.map((r) => r.name);
+const emittingNames = catalogRows.filter((r) => r.repurpose !== 'true').map((r) => r.name);
+
 describe('gen-reference: roster counts', () => {
-  it('skills.md: 94 on-disk skill dirs = 18 curated sections + 76 catalog shortcuts', () => {
+  it('skills.md: on-disk skill dirs reconcile with the catalog and the curated roster', () => {
     const skillDirs = readdirSync(SKILLS_DIR, { withFileTypes: true })
       .filter((d) => d.isDirectory())
       .map((d) => d.name);
-    expect(skillDirs).toHaveLength(94);
 
+    // Every catalog row has a directory on disk.
+    expect(catalogNames.filter((n) => !skillDirs.includes(n))).toEqual([]);
+
+    // The clamp: no on-disk skill exists that the roster does not know about.
+    // Adding a hand-authored skill without listing it here fails HERE, by name.
+    // Ordered ahead of the set-equality check below deliberately: both catch an
+    // unknown directory, but the clamp names it, where set equality reports a
+    // whole-corpus array diff.
+    expect(
+      skillDirs.filter((d) => !catalogNames.includes(d) && !CURATED_SKILL_NAMES.includes(d))
+    ).toEqual([]);
+
+    // Non-curated directories and non-curated catalog names are the same set,
+    // in both directions — no count.
     const shortcutDirs = skillDirs.filter((d) => !CURATED_SKILL_NAMES.includes(d));
-    expect(shortcutDirs).toHaveLength(76);
+    expect(shortcutDirs.slice().sort()).toEqual(
+      catalogNames.filter((n) => !CURATED_SKILL_NAMES.includes(n)).slice().sort()
+    );
+
+    // No curated name has lost its directory.
+    expect(CURATED_SKILL_NAMES.filter((n) => !skillDirs.includes(n))).toEqual([]);
 
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    // Per-skill sections render as `### \`aid-...\`` headings — one per curated
-    // (classic + aid-triage) skill.
+    // Per-skill sections render as `### \`aid-...\`` headings — one per curated skill.
     const sections = skillsContent.split('\n').filter((l) => /^### `aid-/.test(l));
     expect(sections).toHaveLength(CURATED_SKILL_NAMES.length);
   });
 
-  it('skills.md: has a "Direct-entry shortcuts" section totalling all 76 shortcuts', () => {
+  it('skills.md: the family table total matches the catalog\'s emitting rows', () => {
     const skillsContent = readFileSync(join(CONTENT_DOCS, 'reference', 'skills.md'), 'utf8');
-    expect(skillsContent).toContain('## Direct-entry shortcuts');
-    // The family table's total row sums to the 76 catalog rows that emit a
-    // skill directory (80-row catalog minus 4 `repurpose: true` rows).
-    expect(skillsContent).toMatch(/\*\*Total\*\*\s*\|\s*\*\*76\*\*/);
+    expect(skillsContent).toContain('### Direct-entry shortcuts');
+    // The family table's total row sums to the catalog rows that emit a skill
+    // directory — every row except the `repurpose: true` ones.
+    const totalRow = skillsContent.split('\n').find((l) => l.includes('**Total**'));
+    expect(totalRow).toMatch(
+      new RegExp(String.raw`\*\*Total\*\*\s*\|\s*\*\*${emittingNames.length}\*\*`)
+    );
   });
 
   it('agents.md: exactly 9 agent sections matching canonical/agents/', () => {

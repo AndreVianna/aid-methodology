@@ -5,11 +5,11 @@ pipeline:
 started: "2026-07-25"
 minimum_grade: "A+"
 user_approved: no
-lifecycle: Paused-Awaiting-Input
-phase: Detail
-active_skill: none
-updated: '2026-07-26T17:20:49Z'
-pause_reason: '53 tasks detailed at A+ with execution graphs; all tasks Pending -- run /aid-execute work-001-skill-explorer to begin delivery-001'
+lifecycle: Running
+phase: Execute
+active_skill: aid-execute
+updated: '2026-07-26T18:24:02Z'
+pause_reason: --
 block_reason: --
 block_artifact: --
 ---
