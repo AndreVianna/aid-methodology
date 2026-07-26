@@ -122,6 +122,13 @@ function stripLabels(line: string, labels: Map<string, string>): string {
       }
       all += ch;
     }
+    // The scan must have closed. Running off the end of the line means an
+    // unbalanced quote or an unclosed bracket, and the remainder would otherwise
+    // be bound as this node's label and the statement reduced to a lone
+    // declaration — dropping the edge. That was the last fail-open path.
+    if (depth > 0 || inQuote) {
+      unparsed(line.slice(i), `unterminated ${inQuote ? 'quote' : 'shape'} in node ${m[1]}`);
+    }
     // When the label is quoted, the label IS the quoted text — otherwise the
     // shape's own delimiters leak in (`A[/"one"/]` would bind `/one/`).
     labels.set(m[1], sawQuote ? quoted : all);
@@ -217,16 +224,38 @@ function readStatement(statement: string, into: Flow['edges']): void {
   }
 }
 
+// Statements that carry no edge and so contribute nothing to the graph. They are
+// skipped rather than rejected: failing closed must not mean failing on valid
+// Mermaid a maintainer has every reason to add. `accTitle` / `accDescr` are an
+// accessibility improvement this diagram should welcome, and `click` is adjacent
+// to this project's own node-interaction work.
+//
+// Known NOT supported, and deliberately loud rather than silent: Mermaid 11's
+// edge-id form (`A e1@--> B`). It throws with the offending text named, which is
+// the intended behaviour for an unmodelled construct — teach the parser then,
+// rather than pre-emptively guessing at syntax the diagrams do not use.
+const NO_EDGE_STATEMENT = /^(classDef|class |style |linkStyle|direction |accTitle|accDescr|click |flowchart|graph |end$)/;
+
 function parseFlow(block: string): Flow {
   const labels = new Map<string, string>();
   const edges: Flow['edges'] = [];
   const subgraphs = new Set<string>();
+  let inAccBlock = false;
 
   for (const raw of block.split('\n')) {
     const line = stripComment(raw).trim();
-    if (!line || /^(classDef|class |style |linkStyle|direction |flowchart|graph |end$)/.test(line)) {
+    // `accDescr { … }` spans lines; its body is free text.
+    if (inAccBlock) {
+      if (line.includes('}')) inAccBlock = false;
       continue;
     }
+    if (/^accDescr\s*\{/.test(line)) {
+      inAccBlock = !line.includes('}');
+      continue;
+    }
+    if (!line || NO_EDGE_STATEMENT.test(line)) continue;
+    // Mermaid 11 node metadata: `A@{ shape: rect }` declares a shape, no edge.
+    if (/^[A-Za-z_]\w*@\{/.test(line)) continue;
     // Record subgraph ids so an edge touching one can be rejected below rather
     // than quietly contributing nothing.
     const sub = /^subgraph\s+([A-Za-z_]\w*)/.exec(line);
@@ -766,6 +795,42 @@ describe('AC5 — parseFlow: link grammar', () => {
     const flow = parseFlow(block);
     expect(flow.edges).toEqual([{ from: 'Spec', to: 'B', dotted: false }]);
     expect(flow.labels.get('Spec')).toBe('specify');
+  });
+
+  // Malformed input must throw too. Before this, an unterminated delimiter made
+  // the scan run off the end of the line, bind the remainder as the node's label
+  // and reduce the statement to a lone declaration — dropping the edge silently.
+  it.each([
+    ['unbalanced quote', 'A["oops] --> B'],
+    ['unclosed bracket', 'A[oops --> B'],
+    ['%% inside an unquoted label', 'A[100%% done] --> B'],
+  ])('throws on %s rather than dropping the edge: `%s`', (_case, line) => {
+    expect(() => edgeOf(line)).toThrow(/cannot account for/);
+  });
+
+  // Failing closed must not mean failing on valid Mermaid a maintainer would
+  // reasonably add. These carry no edge and must be skipped, not rejected.
+  it.each([
+    ['accTitle', 'accTitle: The AID pipeline'],
+    ['accDescr, inline', 'accDescr: Entry points and the two paths'],
+    ['click handler', 'click A "https://example.com" _blank'],
+    ['node metadata (Mermaid 11)', 'A@{ shape: rect }'],
+  ])('skips the no-edge statement %s and still reads surrounding edges', (_case, stmt) => {
+    const flow = parseFlow(`flowchart TD\n    ${stmt}\n    A --> B`);
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+  });
+
+  it('skips a multi-line accDescr block', () => {
+    const flow = parseFlow(
+      ['flowchart TD', '    accDescr {', '      Free text --> not an edge', '    }', '    A --> B'].join('\n')
+    );
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+  });
+
+  it('tolerates CRLF line endings', () => {
+    expect(parseFlow('flowchart TD\r\n    A --> B\r\n').edges).toEqual([
+      { from: 'A', to: 'B', dotted: false },
+    ]);
   });
 });
 
