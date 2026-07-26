@@ -123,51 +123,68 @@ const CONNECTOR = new RegExp(
   'g'
 );
 
+/** Drop a `%%` comment, ignoring one that sits inside a quoted label. A comment
+ *  is not always on its own line — `A --> B %% temporary` is an ordinary edit,
+ *  and leaving the comment glued to `B` would delete the edge from the graph. */
+function stripComment(line: string): string {
+  let inQuote = false;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '"') inQuote = !inQuote;
+    else if (!inQuote && line[i] === '%' && line[i + 1] === '%') return line.slice(0, i);
+  }
+  return line;
+}
+
+/** Node tokens and connectors of one statement, in order. */
+function readStatement(statement: string, into: Flow['edges']): void {
+  const tokens: string[] = [];
+  const ops: string[] = [];
+  let cursor = 0;
+  CONNECTOR.lastIndex = 0;
+  let m: RegExpExecArray | null;
+  while ((m = CONNECTOR.exec(statement)) !== null) {
+    tokens.push(statement.slice(cursor, m.index));
+    ops.push(m[0]);
+    cursor = m.index + m[0].length;
+    const pipe = /^\s*\|[^|]*\|/.exec(statement.slice(cursor)); // -->|text|
+    if (pipe) cursor += pipe[0].length;
+    CONNECTOR.lastIndex = cursor;
+  }
+  if (ops.length === 0) return;
+  tokens.push(statement.slice(cursor));
+
+  // `A & B --> C & D` fans out on both sides.
+  const ids = (token: string) =>
+    token
+      .replace(/[\]})]/g, '')
+      .split('&')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  // A chain `A --> B --> C` yields A->B and B->C.
+  for (let i = 0; i < ops.length; i++) {
+    for (const from of ids(tokens[i])) {
+      for (const to of ids(tokens[i + 1])) {
+        into.push({ from, to, dotted: ops[i].includes('-.') });
+      }
+    }
+  }
+}
+
 function parseFlow(block: string): Flow {
   const labels = new Map<string, string>();
   const edges: Flow['edges'] = [];
   for (const raw of block.split('\n')) {
-    const line = raw.trim().replace(/;+$/, '');
-    if (
-      !line ||
-      line.startsWith('%%') ||
-      /^(classDef|class |style |linkStyle|subgraph|flowchart|graph |end$)/.test(line)
-    ) {
+    const line = stripComment(raw).trim();
+    if (!line || /^(classDef|class |style |linkStyle|subgraph|flowchart|graph |end$)/.test(line)) {
       continue;
     }
+    // Labels come out first, so the remaining skeleton carries no quoted text —
+    // which is what makes splitting on `;` safe. Splitting the raw line would
+    // corrupt any label holding an HTML entity, and every entity ends in `;`
+    // (the shortcut entry's label is `/aid-&lt;verb&gt;[-&lt;artifact&gt;]…`).
     const skeleton = stripLabels(line, labels).replace(/:::\w+/g, '');
-
-    // Split the line into node tokens separated by connectors, consuming any
-    // `|text|` edge label that follows a connector.
-    const tokens: string[] = [];
-    const ops: string[] = [];
-    let cursor = 0;
-    CONNECTOR.lastIndex = 0;
-    let m: RegExpExecArray | null;
-    while ((m = CONNECTOR.exec(skeleton)) !== null) {
-      tokens.push(skeleton.slice(cursor, m.index));
-      ops.push(m[0]);
-      cursor = m.index + m[0].length;
-      const pipe = /^\s*\|[^|]*\|/.exec(skeleton.slice(cursor));
-      if (pipe) cursor += pipe[0].length;
-      CONNECTOR.lastIndex = cursor;
-    }
-    if (ops.length === 0) continue;
-    tokens.push(skeleton.slice(cursor));
-
-    // A chain `A --> B --> C` yields A->B and B->C; `A & B --> C` fans out.
-    const ids = (token: string) =>
-      token
-        .replace(/[\]})]/g, '')
-        .split('&')
-        .map((s) => s.trim())
-        .filter(Boolean);
-    for (let i = 0; i < ops.length; i++) {
-      for (const from of ids(tokens[i])) {
-        for (const to of ids(tokens[i + 1])) {
-          edges.push({ from, to, dotted: ops[i].includes('-.') });
-        }
-      }
+    for (const statement of skeleton.split(';')) {
+      readStatement(statement, edges);
     }
   }
   return { labels, edges };
@@ -510,6 +527,55 @@ describe('AC5 — parseFlow: link grammar', () => {
   it('does not mistake a trailing o or x in a node id for an arrowhead', () => {
     expect(edgeOf('Fox --> Box')).toEqual([{ from: 'Fox', to: 'Box', dotted: false }]);
     expect(edgeOf('Fox-->Box')).toEqual([{ from: 'Fox', to: 'Box', dotted: false }]);
+  });
+
+  // Whitespace is what disambiguates a circle/cross head from a node id that
+  // begins with `o` or `x` — the same rule Mermaid's own lexer applies.
+  it('splits an o/x head from an o/x-initial node id on whitespace, as Mermaid does', () => {
+    expect(edgeOf('A --- oB')).toEqual([{ from: 'A', to: 'oB', dotted: false }]);
+    expect(edgeOf('A---oB')).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+  });
+
+  it('sees an edge that carries a trailing `%%` comment', () => {
+    expect(edgeOf('A --> B %% temporary')).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+  });
+
+  it('ignores a comment-only line', () => {
+    expect(parseFlow('flowchart TD\n    %% A --> B').edges).toEqual([]);
+  });
+
+  it('keeps a `%%` that sits inside a quoted label', () => {
+    const flow = parseFlow('flowchart TD\n    A["100%% done"] --> B');
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+    expect(flow.labels.get('A')).toBe('100%% done');
+  });
+
+  it('treats `;` as a statement separator, not just a line terminator', () => {
+    expect(edgeOf('A --> B; C --> D')).toEqual([
+      { from: 'A', to: 'B', dotted: false },
+      { from: 'C', to: 'D', dotted: false },
+    ]);
+  });
+
+  it('does not split on the `;` of an HTML entity inside a label', () => {
+    const flow = parseFlow('flowchart TD\n    A["/aid-&lt;verb&gt;"] --> B');
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+    expect(flow.labels.get('A')).toBe('/aid-&lt;verb&gt;');
+  });
+
+  it('fans out an `&` target list', () => {
+    expect(edgeOf('A --> B & C')).toEqual([
+      { from: 'A', to: 'B', dotted: false },
+      { from: 'A', to: 'C', dotted: false },
+    ]);
+  });
+
+  it('reads a chain that mixes link styles', () => {
+    expect(edgeOf('A --> B -.-> C ==> D')).toEqual([
+      { from: 'A', to: 'B', dotted: false },
+      { from: 'B', to: 'C', dotted: true },
+      { from: 'C', to: 'D', dotted: false },
+    ]);
   });
 
   it('expands a chain into one edge per hop', () => {

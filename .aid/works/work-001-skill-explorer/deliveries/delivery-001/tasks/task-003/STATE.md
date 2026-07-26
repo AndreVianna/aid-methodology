@@ -65,18 +65,32 @@ in-flight `work-003-state-schema` frontmatter conventions.
 ## Quick Check Findings
 
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
+- **Findings (per-task quick check):**
   - [HIGH] The rewritten AC5 guard measured the lite path from the shortcut ENGINE, so a
     phase inserted UPSTREAM of it (`SC --> Spec --> Eng --> Exe`) was invisible -- the
     phase-exclusion assertion was vacuously true for that mutation --
     site/src/data/__tests__/ac13-version-injection.test.ts (lite-path block) -- **Fixed-on-spot**:
-    the traversal now starts at the shortcut entry, and the mutation fails the guard.
-    Re-review returned 0 CRITICAL / 0 HIGH.
-- **Later, at the delivery-001 gate**, the same guard drew two further [HIGH] rows from the
-  Large-tier reviewer -- an incomplete Mermaid link grammar that silently dropped edges, and a
-  guard that checked each diagram against a fixed checklist rather than deriving index.mdx's
-  expectations from README. Both fixed at the gate; see the delivery gate block.
-- Ledger: `.aid/.temp/review-pending/task-003-quick-check.md`.
+    the traversal now starts at the shortcut entry. Re-review returned 0 CRITICAL / 0 HIGH.
+- **Subsequently at the delivery-001 gate**, this same guard drew four more rows across three
+  Large-tier passes, all **Fixed**. They share one root cause worth recording: a guard that
+  proves a NEGATIVE ("the lite path does not reach Specify/Plan/Detail") is silently satisfied by
+  any parser gap, so every dropped edge is a false pass.
+  - [HIGH] The Mermaid link grammar covered only `-->` and `-. text .->`. Pipe labels, inline
+    text, thick, bare/long dotted, arrowless and `--x`/`--o` links were all dropped.
+  - [HIGH] The guard ran one fixed checklist against each diagram independently rather than
+    deriving index.mdx s expectations from README, so dropping a suggests edge from index.mdx
+    alone passed. It now has two halves: an absolute anchor per diagram, plus a derived
+    comparison by skill name.
+  - [MEDIUM] The bidirectional and double-ended family (`<-->`, `<==>`, `<-.->`, `o--o`,
+    `x--x`, `o==o`, `~~~`) was still missed. `TR x--x Plan` gave triage a non-dotted link into
+    the pipeline unnoticed.
+  - [MEDIUM] A trailing `%%` comment on an edge line deleted the edge -- only comment-only
+    lines were skipped. `SC --> Spec %% temporary` passed.
+- **Now pinned by 30 link-grammar fixtures** and verified against nine mutations of the live
+  diagrams, each of which the guard must catch, plus one (a layout-only `~~~` between unrelated
+  nodes) which it must NOT flag.
+- Ledger: `.aid/.temp/review-pending/task-003-quick-check.md`; gate rows in
+  `.aid/.temp/review-pending/delivery-001-gate.md`.
 ---
 
 ## Dispatch Log
