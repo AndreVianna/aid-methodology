@@ -72,11 +72,12 @@ KI-009 and KI-010 stay open; `site/astro.config.mjs`, untouched here.
 
 ## Tasks
 
-_none yet_ — `aid-detail` fills this table.
-
 | Task | Type | Title |
 |------|------|-------|
-| _none yet_ | | |
+| task-001 | TEST | Source-derived roster checks and the drift clamp in `gen-reference.test.mjs` |
+| task-002 | RESEARCH | Clean-install triage record for the whole `site/` vitest suite |
+| task-003 | TEST | Absorbed stale-assertion corrections in the five TypeScript suites |
+| task-004 | CONFIGURE | `npm test` gate step in `docs.yml`'s build job |
 
 ## Dependencies
 

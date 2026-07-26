@@ -96,10 +96,15 @@
 
 - **Type:** Bug
 - **Severity:** High
-- **Status:** **Scheduled for fix by feature-001** (owner decision at the Specify review,
-  2026-07-25; REQUIREMENTS.md §7 amended). No longer a standing observation — see
-  feature-001's SPEC § Build-integration scope, Part A, which carries the full corrected-assertion
-  design, and its fourth acceptance criterion clause (b).
+- **Status:** **CLOSED by delivery-001 (task-001), 2026-07-26.** All eight stale items were
+  replaced with checks re-derived from `canonical/skills/` and `shortcut-catalog.yml`, and a
+  **clamp** was added that fails by name for any on-disk skill directory that is neither a
+  catalog row nor in the curated roster — demonstrated against the three ticket skills, the
+  very drift that produced this entry. No corpus count literal survives in the roster region.
+  `gen-reference.mjs` stayed byte-unmodified throughout, per §7.
+  _(Was: "Scheduled for fix by feature-001" — owner decision at the Specify review, 2026-07-25;
+  REQUIREMENTS.md §7 amended. The design is at feature-001's SPEC § Build-integration scope,
+  Part A; the acceptance is its fourth criterion clause (b).)_
 - **Affects:** feature-001-skill-detail-pages (owner of the fix), and transitively every feature in
   this work whose acceptance depends on a green site suite
 - **Source:** `site/scripts/__tests__/gen-reference.test.mjs`:101-141
@@ -146,10 +151,16 @@
 
 - **Type:** Bug
 - **Severity:** Medium
-- **Status:** **Scheduled for fix by feature-001** (owner decision at the Specify review,
-  2026-07-25; REQUIREMENTS.md §7 amended). Was recorded as "outside this feature's declared
-  scope"; the owner brought it in. See feature-001's SPEC § Build-integration scope, Part B, and
-  its fourth acceptance criterion clause (d).
+- **Status:** **CLOSED by delivery-001 (task-004), 2026-07-26.** `docs.yml`'s `build` job now
+  runs `npm test` in `site/` between `npm ci` and `npm run build`, so a red suite fails the pull
+  request before any Pages artifact can be produced. The sequencing constraint this entry sets
+  was honoured: task-002 measured the whole suite on a clean `npm ci` first (8 files, 228 tests,
+  one genuine stale assertion), task-003 corrected it, and only then did the CI step land — so
+  the wiring never turned an invisible problem into a permanently red pipeline. The five
+  TypeScript suites that had never executed in CI ran here for the first time and are green.
+  _(Was: "Scheduled for fix by feature-001" — owner decision at the Specify review, 2026-07-25;
+  REQUIREMENTS.md §7 amended. Design at feature-001's SPEC § Build-integration scope, Part B;
+  acceptance is its fourth criterion clause (d).)_
 - **Affects:** feature-001-skill-detail-pages (owner of the fix), feature-003-authored-flow-charts,
   feature-004-doorway-engine-charts, feature-005-verbatim-source-provenance
 - **Source:** `.github/workflows/docs.yml`:40-76 (the only workflow with a `site/**` path filter)
