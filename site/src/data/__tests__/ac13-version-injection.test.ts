@@ -50,31 +50,65 @@ interface Flow {
   edges: { from: string; to: string; dotted: boolean }[];
 }
 
+/** A bare Mermaid node id, once its shape and label have been stripped. */
+const NODE_ID = /^[A-Za-z_]\w*$/;
+
+/** `parseFlow` FAILS CLOSED. Anything it cannot account for throws here rather
+ *  than being dropped.
+ *
+ *  This is the load-bearing design decision in this file, and it exists because
+ *  the alternative was tried and failed four times. The guard below proves a
+ *  NEGATIVE — that the lite path does not reach Specify/Plan/Detail — and a
+ *  negative is satisfied by an absent edge. So a parser that silently ignores an
+ *  unfamiliar construct does not merely lose coverage, it manufactures a PASS.
+ *  Four separate Mermaid forms (`-->|x|`, `-- x -->`, the `<-->`/`o--o`/`x--x`
+ *  family, `%%` comments, `;` separators, and the `{…}`/`>…]` shapes) each got
+ *  past an earlier version of this parser exactly that way.
+ *
+ *  Failing closed converts an open-ended "did we enumerate every Mermaid form?"
+ *  problem into a closed one: an unmodelled construct is a loud error naming the
+ *  text it could not read, so the next unfamiliar form is caught on sight rather
+ *  than at the next review. */
+function unparsed(text: string, context: string): never {
+  throw new Error(
+    `parseFlow: cannot account for ${JSON.stringify(text)} in ${JSON.stringify(context)}. ` +
+      `This Mermaid construct is not modelled. Teach parseFlow about it rather than ignoring ` +
+      `it -- an unmodelled construct silently drops an edge, and a dropped edge makes the ` +
+      `lite-path exclusion assertions vacuously true.`
+  );
+}
+
 function mermaidBlock(src: string): string {
   const m = src.match(/```mermaid\n([\s\S]*?)\n```/);
   if (!m) throw new Error('no mermaid block found');
   return m[1];
 }
 
-// Replace each `ID[label]` / `ID{{label}}` / `ID(label)` declaration with a bare
-// `ID`, recording the label. Quote-aware because labels legitimately contain
-// brackets — the shortcut entry node's label is `/aid-&lt;verb&gt;[-&lt;artifact&gt;]…`.
+// Replace each shaped node declaration with a bare `ID`, recording the label.
+// Covers every Mermaid shape opener: `[rect]`, `(round)`, `([stadium])`,
+// `[[subroutine]]`, `[(cylinder)]`, `((circle))`, `{rhombus}`, `{{hexagon}}`,
+// `[/parallelogram/]`, `[\trapezoid\]` and `>asymmetric]`. Quote-aware, because
+// labels legitimately contain brackets — the shortcut entry node's label is
+// `/aid-&lt;verb&gt;[-&lt;artifact&gt;]…`.
 function stripLabels(line: string, labels: Map<string, string>): string {
   let out = '';
   for (let i = 0; i < line.length; ) {
-    const m = /^([A-Za-z_]\w*)(\{\{|\[|\()/.exec(line.slice(i));
+    const m = /^([A-Za-z_]\w*)(\{\{|\{|\[|\(|>)/.exec(line.slice(i));
     if (!m) {
       out += line[i++];
       continue;
     }
     let depth = 1;
     let inQuote = false;
-    let label = '';
+    let sawQuote = false;
+    let all = '';
+    let quoted = '';
     let j = i + m[0].length;
     for (; j < line.length && depth > 0; j++) {
       const ch = line[j];
       if (ch === '"') {
         inQuote = !inQuote;
+        sawQuote = true;
         continue;
       }
       if (!inQuote) {
@@ -83,10 +117,14 @@ function stripLabels(line: string, labels: Map<string, string>): string {
           depth--;
           if (depth === 0) break;
         }
+      } else {
+        quoted += ch;
       }
-      label += ch;
+      all += ch;
     }
-    labels.set(m[1], label);
+    // When the label is quoted, the label IS the quoted text — otherwise the
+    // shape's own delimiters leak in (`A[/"one"/]` would bind `/one/`).
+    labels.set(m[1], sawQuote ? quoted : all);
     out += m[1];
     i = j + 1;
   }
@@ -135,7 +173,8 @@ function stripComment(line: string): string {
   return line;
 }
 
-/** Node tokens and connectors of one statement, in order. */
+/** Node tokens and connectors of one statement, in order. Throws on anything it
+ *  cannot read as a node id — see `unparsed`. */
 function readStatement(statement: string, into: Flow['edges']): void {
   const tokens: string[] = [];
   const ops: string[] = [];
@@ -150,16 +189,24 @@ function readStatement(statement: string, into: Flow['edges']): void {
     if (pipe) cursor += pipe[0].length;
     CONNECTOR.lastIndex = cursor;
   }
-  if (ops.length === 0) return;
   tokens.push(statement.slice(cursor));
 
-  // `A & B --> C & D` fans out on both sides.
-  const ids = (token: string) =>
-    token
+  // `A & B --> C & D` fans out on both sides. Every token must be a bare id by
+  // this point; if one is not, some shape or operator went unrecognised.
+  const ids = (token: string) => {
+    const parts = token
       .replace(/[\]})]/g, '')
       .split('&')
       .map((s) => s.trim())
       .filter(Boolean);
+    for (const part of parts) if (!NODE_ID.test(part)) unparsed(part, statement);
+    return parts;
+  };
+
+  if (ops.length === 0) {
+    ids(tokens[0]); // a bare node declaration — validated, contributes no edge
+    return;
+  }
   // A chain `A --> B --> C` yields A->B and B->C.
   for (let i = 0; i < ops.length; i++) {
     for (const from of ids(tokens[i])) {
@@ -173,11 +220,23 @@ function readStatement(statement: string, into: Flow['edges']): void {
 function parseFlow(block: string): Flow {
   const labels = new Map<string, string>();
   const edges: Flow['edges'] = [];
+  const subgraphs = new Set<string>();
+
   for (const raw of block.split('\n')) {
     const line = stripComment(raw).trim();
-    if (!line || /^(classDef|class |style |linkStyle|subgraph|flowchart|graph |end$)/.test(line)) {
+    if (!line || /^(classDef|class |style |linkStyle|direction |flowchart|graph |end$)/.test(line)) {
       continue;
     }
+    // Record subgraph ids so an edge touching one can be rejected below rather
+    // than quietly contributing nothing.
+    const sub = /^subgraph\s+([A-Za-z_]\w*)/.exec(line);
+    if (sub) {
+      subgraphs.add(sub[1]);
+      stripLabels(line.slice(sub[0].length), labels);
+      continue;
+    }
+    if (line.startsWith('subgraph')) continue; // anonymous subgraph — no id to bind
+
     // Labels come out first, so the remaining skeleton carries no quoted text —
     // which is what makes splitting on `;` safe. Splitting the raw line would
     // corrupt any label holding an HTML entity, and every entity ends in `;`
@@ -185,6 +244,22 @@ function parseFlow(block: string): Flow {
     const skeleton = stripLabels(line, labels).replace(/:::\w+/g, '');
     for (const statement of skeleton.split(';')) {
       readStatement(statement, edges);
+    }
+  }
+
+  // Subgraph containment is deliberately NOT modelled — reachability here is over
+  // nodes only. So rather than let an edge into a subgraph box contribute
+  // nothing (a reader sees the lite path entering Definition; the graph does
+  // not), reject it. Same fail-closed rule as `unparsed`.
+  for (const e of edges) {
+    for (const end of [e.from, e.to]) {
+      if (subgraphs.has(end)) {
+        throw new Error(
+          `parseFlow: edge ${e.from}->${e.to} touches subgraph id ${JSON.stringify(end)}. ` +
+            `Subgraph containment is not modelled, so this edge's meaning cannot be checked. ` +
+            `Point the edge at a node inside the subgraph instead.`
+        );
+      }
     }
   }
   return { labels, edges };
@@ -618,6 +693,79 @@ describe('AC5 — parseFlow: link grammar', () => {
       ].join('\n')
     );
     expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+  });
+
+  // Every Mermaid node shape, because an unrecognised opener leaves the shape
+  // text glued to the id — which turns one node written two ways into TWO ids
+  // and severs the graph at exactly the point being asserted about.
+  it.each([
+    ['rectangle', 'A["one"]'],
+    ['round', 'A("one")'],
+    ['stadium', 'A(["one"])'],
+    ['subroutine', 'A[["one"]]'],
+    ['cylinder', 'A[("one")]'],
+    ['circle', 'A(("one"))'],
+    ['rhombus', 'A{"one"}'],
+    ['hexagon', 'A{{"one"}}'],
+    ['parallelogram', 'A[/"one"/]'],
+    ['trapezoid', 'A[\\"one"\\]'],
+    ['asymmetric', 'A>"one"]'],
+  ])('binds the id and label of a %s node: `%s`', (_shape, decl) => {
+    const flow = parseFlow(`flowchart TD\n    ${decl} --> B`);
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+    expect(flow.labels.get('A')).toBe('one');
+  });
+
+  // The pattern that made the shape gap dangerous: a node declared with its
+  // shape on one line and referenced bare on the next must remain ONE node.
+  it.each([
+    ['rhombus', 'Q{lite?}'],
+    ['asymmetric', 'Q>flag]'],
+    ['rectangle', 'Q[plain]'],
+  ])('keeps a %s node declared inline and referenced bare as one id', (_shape, decl) => {
+    const flow = parseFlow(`flowchart TD\n    A --> ${decl}\n    Q --> B`);
+    expect(flow.edges).toEqual([
+      { from: 'A', to: 'Q', dotted: false },
+      { from: 'Q', to: 'B', dotted: false },
+    ]);
+  });
+
+  it('ignores an init directive', () => {
+    expect(parseFlow("flowchart TD\n    %%{init: {'theme':'dark'}}%%\n    A --> B").edges).toEqual([
+      { from: 'A', to: 'B', dotted: false },
+    ]);
+  });
+
+  // ── Fail-closed ────────────────────────────────────────────────────────────
+  // The guard proves a NEGATIVE, so a silently-dropped edge is a false PASS.
+  // parseFlow must refuse what it cannot model, loudly, rather than ignore it.
+
+  it('throws on a construct it cannot model, naming the offending text', () => {
+    expect(() => parseFlow('flowchart TD\n    A =!=> B')).toThrow(/cannot account for/);
+  });
+
+  it('throws rather than silently ignoring an edge into a subgraph id', () => {
+    const block = [
+      'flowchart TD',
+      '    subgraph G2[" Definition "]',
+      '        Spec["specify"]',
+      '    end',
+      '    A --> G2',
+    ].join('\n');
+    expect(() => parseFlow(block)).toThrow(/touches subgraph id/);
+  });
+
+  it('still binds the labels of nodes declared inside a subgraph', () => {
+    const block = [
+      'flowchart TD',
+      '    subgraph G2[" Definition "]',
+      '        Spec["specify"]',
+      '    end',
+      '    Spec --> B',
+    ].join('\n');
+    const flow = parseFlow(block);
+    expect(flow.edges).toEqual([{ from: 'Spec', to: 'B', dotted: false }]);
+    expect(flow.labels.get('Spec')).toBe('specify');
   });
 });
 
