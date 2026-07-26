@@ -234,7 +234,13 @@ function readStatement(statement: string, into: Flow['edges']): void {
 // edge-id form (`A e1@--> B`). It throws with the offending text named, which is
 // the intended behaviour for an unmodelled construct — teach the parser then,
 // rather than pre-emptively guessing at syntax the diagrams do not use.
-const NO_EDGE_STATEMENT = /^(classDef|class |style |linkStyle|direction |accTitle|accDescr|click |flowchart|graph |end$)/;
+// Every keyword needs a boundary after it. Without one the prefix shadows any
+// node id that starts with it — `classDefault --> B` matches `classDef`, yields
+// no edge and throws nothing, which is the silent drop this parser exists to
+// forbid. The boundary is a single shared lookahead rather than a trailing space
+// per alternative, so no alternative can be added later without one.
+const NO_EDGE_STATEMENT =
+  /^(classDef|class|style|linkStyle|direction|accTitle|accDescr|click|flowchart|graph|end)(?=$|[\s:{])/;
 
 function parseFlow(block: string): Flow {
   const labels = new Map<string, string>();
@@ -275,6 +281,11 @@ function parseFlow(block: string): Flow {
       readStatement(statement, edges);
     }
   }
+
+  // An unterminated `accDescr {` would skip every remaining line — a blast radius
+  // of the whole diagram, not one edge. Throw, exactly as an unterminated shape
+  // does; the two are the same defect and must not behave differently.
+  if (inAccBlock) unparsed('accDescr {', 'unterminated accDescr block');
 
   // Subgraph containment is deliberately NOT modelled — reachability here is over
   // nodes only. So rather than let an edge into a subgraph box contribute
@@ -825,6 +836,31 @@ describe('AC5 — parseFlow: link grammar', () => {
       ['flowchart TD', '    accDescr {', '      Free text --> not an edge', '    }', '    A --> B'].join('\n')
     );
     expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+  });
+
+  it('throws on an unterminated accDescr block rather than skipping the rest of the diagram', () => {
+    expect(() =>
+      parseFlow(['flowchart TD', '    accDescr {', '      no closing brace', '    A --> B'].join('\n'))
+    ).toThrow(/cannot account for/);
+  });
+
+  // A keyword prefix must not shadow a node id that begins with it. Each of
+  // these ids starts with a no-edge-statement keyword and must still yield edges.
+  it.each([
+    'classDefault',
+    'classRoom',
+    'styleGuide',
+    'linkStyleGuide',
+    'directionSign',
+    'accTitleNode',
+    'accDescrNode',
+    'clickTarget',
+    'flowchartX',
+    'graphNode',
+    'endNode',
+  ])('does not let a keyword prefix swallow the node id `%s`', (id) => {
+    expect(edgeOf(`${id} --> B`)).toEqual([{ from: id, to: 'B', dotted: false }]);
+    expect(edgeOf(`B --> ${id}`)).toEqual([{ from: 'B', to: id, dotted: false }]);
   });
 
   it('tolerates CRLF line endings', () => {
