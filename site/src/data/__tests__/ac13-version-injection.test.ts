@@ -29,6 +29,199 @@ function readDoc(relPath: string): string {
   return readFileSync(resolve(docsRoot, relPath), 'utf8');
 }
 
+// ── Mermaid topology helpers (AC5's pipeline guard) ──────────────────────────
+//
+// AC5's guard compares the home page's pipeline against README.md's canonical
+// diagram. What broke it before was pinning NODE IDS and EDGE LABELS: commit
+// ca4aad21 restructured the pipeline and left the guard asserting the old shape,
+// the third time it had gone stale. So these helpers model edges and reachability
+// instead, and node ids are never referenced — they differ between the two files
+// (`Eng` vs `ENG`) and are not topology.
+//
+// SKILL NAMES and a few label phrases ARE pinned, deliberately: they are the
+// vocabulary AC5 is about, and they are what lets the two diagrams be compared to
+// each other at all. See the guard's own comment for how the two halves divide —
+// one absolute anchor per diagram, plus a comparison derived from README.
+
+const repoRoot = resolve(siteRoot, '..');
+
+interface Flow {
+  labels: Map<string, string>;
+  edges: { from: string; to: string; dotted: boolean }[];
+}
+
+function mermaidBlock(src: string): string {
+  const m = src.match(/```mermaid\n([\s\S]*?)\n```/);
+  if (!m) throw new Error('no mermaid block found');
+  return m[1];
+}
+
+// Replace each `ID[label]` / `ID{{label}}` / `ID(label)` declaration with a bare
+// `ID`, recording the label. Quote-aware because labels legitimately contain
+// brackets — the shortcut entry node's label is `/aid-&lt;verb&gt;[-&lt;artifact&gt;]…`.
+function stripLabels(line: string, labels: Map<string, string>): string {
+  let out = '';
+  for (let i = 0; i < line.length; ) {
+    const m = /^([A-Za-z_]\w*)(\{\{|\[|\()/.exec(line.slice(i));
+    if (!m) {
+      out += line[i++];
+      continue;
+    }
+    let depth = 1;
+    let inQuote = false;
+    let label = '';
+    let j = i + m[0].length;
+    for (; j < line.length && depth > 0; j++) {
+      const ch = line[j];
+      if (ch === '"') {
+        inQuote = !inQuote;
+        continue;
+      }
+      if (!inQuote) {
+        if (ch === '[' || ch === '{' || ch === '(') depth++;
+        else if (ch === ']' || ch === '}' || ch === ')') {
+          depth--;
+          if (depth === 0) break;
+        }
+      }
+      label += ch;
+    }
+    labels.set(m[1], label);
+    out += m[1];
+    i = j + 1;
+  }
+  return out;
+}
+
+// Mermaid's link grammar. An edge this misses is dropped SILENTLY, which makes
+// `solidReach` under-approximate and the phase-exclusion assertions below
+// vacuously true — the guard would then pass while the diagram regressed. So the
+// roster covers the whole grammar, not just the forms the two diagrams use
+// today, and `parseFlow: link grammar` below pins each one with its own case.
+//
+// Shape: an optional LEFT arrowhead, a body, an optional RIGHT arrowhead. The
+// left head needs a whitespace/line-start lookbehind so the `o` and `x` heads
+// (`A o--o B`, `A x--x B`) cannot be mistaken for the last letter of a node id.
+// Longest body first, so `-- text -->` is not read as a bare `--` followed by
+// stray words.
+//
+// `~~~`, Mermaid's invisible link, IS treated as a solid edge. It is a real edge
+// in the layout graph, and a guard that ignored it could be defeated by routing
+// a path through one.
+const HEAD_L = String.raw`(?:(?<=^|\s)[<ox])?`;
+const HEAD_R = String.raw`[>ox]?`;
+const CONNECTOR = new RegExp(
+  [
+    `${HEAD_L}-\\.[^\\n]*?\\.-+${HEAD_R}`, //          -. text .->  dotted, with text
+    `${HEAD_L}-\\.+-+${HEAD_R}`, //                    -.-> -..->   dotted, bare
+    `${HEAD_L}--+\\s[^-|>\\n]*?\\s--+${HEAD_R}`, //    -- text -->  solid, inline text
+    `${HEAD_L}==+\\s[^=|>\\n]*?\\s==+${HEAD_R}`, //    == text ==>  thick, inline text
+    `${HEAD_L}==+${HEAD_R}`, //                        ==> === ==o  thick
+    `${HEAD_L}--+${HEAD_R}`, //                        --> --- --x  solid
+    String.raw`~~~+`, //                               ~~~          invisible
+  ].join('|'),
+  'g'
+);
+
+function parseFlow(block: string): Flow {
+  const labels = new Map<string, string>();
+  const edges: Flow['edges'] = [];
+  for (const raw of block.split('\n')) {
+    const line = raw.trim().replace(/;+$/, '');
+    if (
+      !line ||
+      line.startsWith('%%') ||
+      /^(classDef|class |style |linkStyle|subgraph|flowchart|graph |end$)/.test(line)
+    ) {
+      continue;
+    }
+    const skeleton = stripLabels(line, labels).replace(/:::\w+/g, '');
+
+    // Split the line into node tokens separated by connectors, consuming any
+    // `|text|` edge label that follows a connector.
+    const tokens: string[] = [];
+    const ops: string[] = [];
+    let cursor = 0;
+    CONNECTOR.lastIndex = 0;
+    let m: RegExpExecArray | null;
+    while ((m = CONNECTOR.exec(skeleton)) !== null) {
+      tokens.push(skeleton.slice(cursor, m.index));
+      ops.push(m[0]);
+      cursor = m.index + m[0].length;
+      const pipe = /^\s*\|[^|]*\|/.exec(skeleton.slice(cursor));
+      if (pipe) cursor += pipe[0].length;
+      CONNECTOR.lastIndex = cursor;
+    }
+    if (ops.length === 0) continue;
+    tokens.push(skeleton.slice(cursor));
+
+    // A chain `A --> B --> C` yields A->B and B->C; `A & B --> C` fans out.
+    const ids = (token: string) =>
+      token
+        .replace(/[\]})]/g, '')
+        .split('&')
+        .map((s) => s.trim())
+        .filter(Boolean);
+    for (let i = 0; i < ops.length; i++) {
+      for (const from of ids(tokens[i])) {
+        for (const to of ids(tokens[i + 1])) {
+          edges.push({ from, to, dotted: ops[i].includes('-.') });
+        }
+      }
+    }
+  }
+  return { labels, edges };
+}
+
+/** The `aid-…` skill a node's label names, or null. Node ids differ between the
+ *  two diagrams (`Eng` vs `ENG`, `Exe` vs `EXE`); skill names do not, so they
+ *  are what the two can be compared on. */
+function skillOf(label: string): string | null {
+  return /aid-(?:&lt;verb&gt;|[a-z-]+)/.exec(label)?.[0] ?? null;
+}
+
+function idOfSkill(flow: Flow, skill: string): string {
+  const hits = [...flow.labels].filter(([, label]) => skillOf(label) === skill).map(([id]) => id);
+  if (hits.length !== 1) {
+    throw new Error(`expected exactly one node for ${skill}, found ${hits.length}`);
+  }
+  return hits[0];
+}
+
+/** The skills a node points at, by edge style. */
+function targetSkills(flow: Flow, from: string, dotted: boolean): Set<string> {
+  return new Set(
+    flow.edges
+      .filter((e) => e.from === from && e.dotted === dotted)
+      .map((e) => skillOf(flow.labels.get(e.to) ?? ''))
+      .filter((s): s is string => s !== null)
+  );
+}
+
+/** The single node whose label mentions `phrase`. Throws if absent or ambiguous. */
+function nodeMentioning(flow: Flow, phrase: string): string {
+  const hits = [...flow.labels].filter(([, label]) => label.includes(phrase)).map(([id]) => id);
+  if (hits.length !== 1) {
+    throw new Error(`expected exactly one node mentioning ${phrase}, found ${hits.length}`);
+  }
+  return hits[0];
+}
+
+/** Nodes reachable from `start` over solid edges only. */
+function solidReach(flow: Flow, start: string): Set<string> {
+  const seen = new Set<string>();
+  const queue = [start];
+  while (queue.length) {
+    const id = queue.shift()!;
+    for (const e of flow.edges) {
+      if (e.from !== id || e.dotted || seen.has(e.to)) continue;
+      seen.add(e.to);
+      queue.push(e.to);
+    }
+  }
+  return seen;
+}
+
 
 const savedEnv: Record<string, string | undefined> = {};
 
@@ -185,15 +378,180 @@ describe('AC5 — Home pipeline diagram', () => {
     }
   });
 
-  // Regression guard (this has been wrong three times): the pipeline diagram must
-  // include the TRIAGE node AND the lite-path branch that routes straight to Execute,
-  // skipping Specify/Plan/Detail — matching README.md's canonical diagram.
-  it('index.mdx pipeline shows the TRIAGE branch and the lite path', () => {
-    const src = readDoc('index.mdx');
-    expect(src).toContain('TRIAGE');
-    expect(src).toContain('lite path');
-    // The lite branch routes Triage --> Exe (skips Specify/Plan/Detail).
-    expect(src).toMatch(/Triage\s*--\s*"lite path[\s\S]*?-->\s*Exe/);
+  // Regression guard (this has been wrong three times, most recently when commit
+  // ca4aad21 restructured the diagram and left the guard pinning the old shape).
+  // It has two halves, and it needs both:
+  //
+  //   (1) an ABSOLUTE anchor, asserted of each diagram independently, so the two
+  //       cannot drift together into agreement on the wrong thing; and
+  //   (2) a DERIVED comparison, where what index.mdx must show is read out of
+  //       README.md at run time rather than written down here.
+  //
+  // Node ids are never referenced — they differ between the two files and are
+  // not topology. Label phrases are: renaming a node's skill or the shortcut
+  // engine turns this red even if both diagrams are renamed together, which is
+  // the deliberate trade — the vocabulary is part of what AC5 pins.
+  it('index.mdx pipeline is topologically the README pipeline: suggest-only triage, lite path skipping Specify/Plan/Detail', () => {
+    const readme = parseFlow(mermaidBlock(readFileSync(resolve(repoRoot, 'README.md'), 'utf8')));
+    const home = parseFlow(mermaidBlock(readDoc('index.mdx')));
+
+    // ── (1) the absolute anchor, of each diagram on its own ──────────────────
+    for (const flow of [readme, home]) {
+      // Triage is an entry point that only ever suggests. It never has a solid
+      // edge, so it cannot be read as a routing step.
+      const triage = idOfSkill(flow, 'aid-triage');
+      expect(flow.edges.filter((e) => e.from === triage && e.dotted).length).toBeGreaterThan(0);
+      expect(flow.edges.filter((e) => e.from === triage && !e.dotted)).toEqual([]);
+      expect(flow.labels.get(triage)).toContain('suggest-only');
+
+      // The shortcut engine's own label declares the Describe→Detail collapse.
+      const engine = nodeMentioning(flow, 'Shortcut engine');
+      const engineLabel = flow.labels.get(engine)!;
+      expect(engineLabel).toContain('Describe');
+      expect(engineLabel).toContain('Detail');
+      expect(engineLabel).toMatch(/collapsed/i);
+
+      // The lite path, measured from the shortcut ENTRY rather than from the
+      // engine, runs through the engine to Execute and never touches Specify,
+      // Plan or Detail. Starting at the engine would leave a phase inserted
+      // upstream of it — `SC --> Spec --> Eng` — undetected.
+      const liteReach = solidReach(flow, idOfSkill(flow, 'aid-&lt;verb&gt;'));
+      expect(liteReach.has(engine)).toBe(true);
+      expect(liteReach.has(idOfSkill(flow, 'aid-execute'))).toBe(true);
+      for (const phase of ['aid-specify', 'aid-plan', 'aid-detail']) {
+        expect(liteReach.has(idOfSkill(flow, phase))).toBe(false);
+      }
+
+      // The full path is still there, and it is the one that does traverse them.
+      // `aid-define` is named here as well as the three excluded phases, so that
+      // no phase can be deleted from a diagram without failing: `idOfSkill`
+      // throws on a missing node, and the derived comparison below cannot catch
+      // a phase that has vanished from BOTH sides of its own containment test.
+      const fullReach = solidReach(flow, idOfSkill(flow, 'aid-describe'));
+      for (const phase of ['aid-define', 'aid-specify', 'aid-plan', 'aid-detail', 'aid-execute']) {
+        expect(fullReach.has(idOfSkill(flow, phase))).toBe(true);
+      }
+    }
+
+    // ── (2) the derived comparison: index.mdx against README, not a checklist ─
+    // The home page draws a subset of README's graph — it has no /aid-ask node —
+    // so this is containment-shaped rather than equality: for every skill README
+    // shows triage suggesting, IF index.mdx declares that skill anywhere, then
+    // index.mdx must show triage suggesting it too.
+    //
+    // Be precise about the escape hatch, because it is wider than the /aid-ask
+    // case that motivates it: `homeSkills` is every skill index.mdx declares, so
+    // ANY skill index.mdx stops declaring drops out of both sides here and goes
+    // unnoticed by this half. That is what the absolute anchor above is for — it
+    // names the pipeline phases explicitly, so a phase cannot disappear quietly.
+    // This half's job is edges, not node inventory.
+    const homeSkills = new Set([...home.labels.values()].map(skillOf).filter(Boolean));
+    const readmeSuggests = targetSkills(readme, idOfSkill(readme, 'aid-triage'), true);
+    const expected = [...readmeSuggests].filter((s) => homeSkills.has(s)).sort();
+    expect(expected.length).toBeGreaterThan(0); // the oracle is not vacuously true
+    expect([...targetSkills(home, idOfSkill(home, 'aid-triage'), true)].sort()).toEqual(expected);
+
+    // Same shape for the lite path: every skill README's shortcut entry reaches
+    // over solid edges and that index.mdx also declares must be reachable there.
+    const reachedSkills = (flow: Flow) =>
+      new Set(
+        [...solidReach(flow, idOfSkill(flow, 'aid-&lt;verb&gt;'))]
+          .map((id) => skillOf(flow.labels.get(id) ?? ''))
+          .filter(Boolean)
+      );
+    const readmeLite = [...reachedSkills(readme)].filter((s) => homeSkills.has(s)).sort();
+    expect(readmeLite.length).toBeGreaterThan(0);
+    expect([...reachedSkills(home)].sort()).toEqual(readmeLite);
+  });
+});
+
+// ── AC5 — the guard's own parser ─────────────────────────────────────────────
+//
+// The guard above proves a NEGATIVE — that the lite path does not reach
+// Specify/Plan/Detail. A parser that silently drops an edge makes that negative
+// vacuously true, so the guard would pass while the diagram regressed. These
+// cases pin every link form Mermaid can produce, asserting each edge is SEEN.
+
+describe('AC5 — parseFlow: link grammar', () => {
+  const edgeOf = (line: string) => parseFlow(`flowchart TD\n    ${line}`).edges;
+
+  it.each([
+    ['solid', 'A --> B', false],
+    ['solid, long', 'A ----> B', false],
+    ['open, no arrowhead', 'A --- B', false],
+    ['circle head', 'A --o B', false],
+    ['cross head', 'A --x B', false],
+    ['solid, pipe label', 'A -->|also| B', false],
+    ['solid, inline text', 'A -- also --> B', false],
+    ['thick', 'A ==> B', false],
+    ['thick, inline text', 'A == also ==> B', false],
+    ['thick, pipe label', 'A ==>|also| B', false],
+    ['dotted, bare', 'A -.-> B', true],
+    ['dotted, long', 'A -..-> B', true],
+    ['dotted, text', 'A -. also .-> B', true],
+    ['dotted, text containing a period', 'A -. v1.2 ships .-> B', true],
+    ['trailing semicolon', 'A --> B;', false],
+    // Double-ended and bidirectional heads. These are the forms that can smuggle
+    // an edge past a naive grammar: `TR x--x Plan` gives triage a non-dotted link
+    // into the pipeline, which the suggest-only anchor must see.
+    ['bidirectional solid', 'A <--> B', false],
+    ['bidirectional, left head only', 'A <-- B', false],
+    ['bidirectional thick', 'A <==> B', false],
+    ['bidirectional dotted', 'A <-.-> B', true],
+    ['circle both ends', 'A o--o B', false],
+    ['cross both ends', 'A x--x B', false],
+    ['circle both ends, thick', 'A o==o B', false],
+    ['cross both ends, thick', 'A x==x B', false],
+    ['invisible link', 'A ~~~ B', false],
+  ])('sees the edge in %s: `%s`', (_form, line, dotted) => {
+    expect(edgeOf(line)).toEqual([{ from: 'A', to: 'B', dotted }]);
+  });
+
+  it('does not mistake a trailing o or x in a node id for an arrowhead', () => {
+    expect(edgeOf('Fox --> Box')).toEqual([{ from: 'Fox', to: 'Box', dotted: false }]);
+    expect(edgeOf('Fox-->Box')).toEqual([{ from: 'Fox', to: 'Box', dotted: false }]);
+  });
+
+  it('expands a chain into one edge per hop', () => {
+    expect(edgeOf('A --> B --> C')).toEqual([
+      { from: 'A', to: 'B', dotted: false },
+      { from: 'B', to: 'C', dotted: false },
+    ]);
+  });
+
+  it('fans out an `&` source list', () => {
+    expect(edgeOf('A & B --> C')).toEqual([
+      { from: 'A', to: 'C', dotted: false },
+      { from: 'B', to: 'C', dotted: false },
+    ]);
+  });
+
+  it('reads node declarations written inline on the edge line', () => {
+    const flow = parseFlow('flowchart TD\n    A["first"] --> B{{"second"}}');
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+    expect(flow.labels.get('A')).toBe('first');
+    expect(flow.labels.get('B')).toBe('second');
+  });
+
+  it('keeps brackets that are inside a quoted label', () => {
+    const flow = parseFlow('flowchart TD\n    A["/aid-&lt;verb&gt;[-&lt;artifact&gt;] here"] --> B');
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
+    expect(flow.labels.get('A')).toBe('/aid-&lt;verb&gt;[-&lt;artifact&gt;] here');
+  });
+
+  it('ignores declarations, styling and subgraph scaffolding', () => {
+    const flow = parseFlow(
+      [
+        'flowchart TD',
+        '    classDef entry fill:#B45309,stroke:#B45309',
+        '    subgraph G[" grouped "]',
+        '        A["one"]:::entry',
+        '    end',
+        '    linkStyle 0 stroke:#fff',
+        '    A --> B',
+      ].join('\n')
+    );
+    expect(flow.edges).toEqual([{ from: 'A', to: 'B', dotted: false }]);
   });
 });
 

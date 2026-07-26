@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick check (Small): 1 HIGH first pass (guard blind to a phase inserted upstream of the engine) -- Fixed; re-review 0 CRITICAL, 0 HIGH'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
@@ -64,17 +64,19 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+  - [HIGH] The rewritten AC5 guard measured the lite path from the shortcut ENGINE, so a
+    phase inserted UPSTREAM of it (`SC --> Spec --> Eng --> Exe`) was invisible -- the
+    phase-exclusion assertion was vacuously true for that mutation --
+    site/src/data/__tests__/ac13-version-injection.test.ts (lite-path block) -- **Fixed-on-spot**:
+    the traversal now starts at the shortcut entry, and the mutation fails the guard.
+    Re-review returned 0 CRITICAL / 0 HIGH.
+- **Later, at the delivery-001 gate**, the same guard drew two further [HIGH] rows from the
+  Large-tier reviewer -- an incomplete Mermaid link grammar that silently dropped edges, and a
+  guard that checked each diagram against a fixed checklist rather than deriving index.mdx's
+  expectations from README. Both fixed at the gate; see the delivery gate block.
+- Ledger: `.aid/.temp/review-pending/task-003-quick-check.md`.
 ---
 
 ## Dispatch Log
@@ -86,3 +88,6 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | orchestrator (inline, TEST) | 15-30 min | ~16 min | Executed directly -- single absorbed finding F-1 |
+| 2026-07-26 | aid-reviewer (Small) | 5-10 min | ~8 min | 1 HIGH -- guard blind to a phase inserted upstream of the engine |
+| 2026-07-26 | aid-reviewer (Small, resumed) | 5-10 min | ~6 min | Re-review after fix -- 0 CRITICAL, 0 HIGH |
