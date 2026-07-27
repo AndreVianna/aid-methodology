@@ -451,12 +451,66 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
   read "exactly one **distinct** target skill" — added to the correction list this delivery already
   owes for the V9 class, rather than filed separately.
 
+### Rule 8's acceptance criterion cannot be discharged in `advance.mjs` — it belongs to the extractors
+
+- **Category:** Coverage gap with a structural cause; routed, not fixed
+- **Impact:** Medium — an acceptance criterion currently has no owner
+- **State:** **Routed to tasks 025/026** (the extractors). No code change in `advance.mjs`.
+- **The finding (wave-4 reviewer, [HIGH]).** Neutralising the guard
+  `if (edge.kind === 're-entry') continue;` kills **zero** of 96 tests, so AC "Rule 8 takes
+  precedence over rule 7: an explicitly-headed re-entry is kind `re-entry`, not `loop-back`" is
+  undefended.
+- **The reviewer was right and I was wrong.** I had earlier reported that neutralising it killed a
+  test. It did — against the **original** 45-test suite, at 119 tests. My re-authored 22 tests lost
+  that coverage, and the reviewer measured the suite as it actually is. Recorded because the
+  discrepancy is instructive: a mutation result is only meaningful against a named suite.
+- **But a test here cannot fix it, because the guard is dead code in this module.** Verified:
+  `advance.mjs` **never assigns** `kind: 're-entry'` anywhere — the string appears only in comments
+  and in the guard's own condition. Every edge it produces is `sequence`, `branch` or `loop-back`
+  before rule 7 runs, so the condition is structurally always false and no input to
+  `parseAdvanceBlock` can reach it.
+- **Resolution.** Rule 8 emits re-entry edges from a *heading*, which is the extractor's job, so the
+  criterion is discharged by **task-025 / task-026**, where a re-entry edge can actually exist. The
+  guard stays as documented defensive code — it is correct, costs nothing, and would matter if an
+  extractor ever fed pre-kinded edges through this path. **No test is written claiming to cover it**,
+  for the same reason wave 2 declined to "cover" the unreachable `sectionEnd` bound: that test could
+  not fail, which is the defect this delivery keeps producing.
+- **Action owed:** whoever executes task-025/026 must carry this AC, and the reviewer of that wave
+  should check it was not silently dropped between the two tasks.
+
+### Rule 10's W-1 residual warning may be unreachable through the public API — open
+
+- **Category:** Possible dead path; unresolved
+- **Impact:** Low-Medium — if unreachable, an acceptance criterion is unverifiable as written
+- **State:** **Open — routed back to the reviewer.** Not fabricating a test for it.
+- The wave-4 reviewer raised ([MEDIUM]) that W-1's positive-case content has no test. Rule 6's
+  unmarked path **does** emit a W-1 and its content is now fully asserted — the `W-1` tag, both state
+  names, and `file:line`. What remains uncovered is the W-1 that **rule 10** derives from *residue*.
+- **Six candidate inputs were measured and none produced one**, including residue carrying an
+  advance-type keyword and residue carrying a `[State: …]` reference — the two things that, per the
+  DETAIL, make residue "not pure commentary". In every case the leftover text was absorbed into the
+  single clause's **condition**, leaving residue empty.
+- **The likely structural reason:** residue is `content` minus the accepted clause spans. For a
+  single-clause block the clause *is* the whole content, so residue is necessarily empty; and any
+  input with enough punctuation to leave a gap tends to be split into a second clause instead, or to
+  trip V9 rather than W-1.
+- **What is needed:** either an input that genuinely produces a rule-10 W-1 — in which case a
+  content test should be written — or a determination that the path is unreachable, in which case
+  the AC needs the same routing treatment as rule 8 above rather than a test that cannot fail.
+
 ### Rule 6 vs V9 precedence — the contract's warn-path is unreachable (found re-authoring task-023's tests)
 
 - **Category:** Contract deviation in `advance.mjs`; a semantic precedence question
 - **Impact:** Medium — **latent today, but it fails a page rather than degrading one**
-- **State:** **Open — routed to the delivery-003 reviewer.** Not an owner question unless the
-  reviewer disagrees with the reading below.
+- **State:** **FIXED (2026-07-27).** The wave-4 reviewer confirmed the reading — "the warn-path in
+  the `else` branch of rule 6 is structurally unreachable" — and ruled that **rule 6 should win per
+  the contract**, on the grounds the DETAIL and its acceptance criterion both say so and FR-2
+  requires approximate over malformed. Implemented as the reviewer prescribed: a `v9Exempt` set,
+  mirroring the existing pause-resume handoff exemption, so a state the parser *deliberately*
+  declines to draw an edge to is distinguishable from one it dropped. The unmarked form now emits one
+  `sequence` edge plus a W-1 warning and does not throw. **The exemption is deliberately narrow** and
+  a test proves it: a *different* unconsumed declared state in the same block still throws, so the
+  fix did not trade a false throw for a silent dropped edge.
 - **What the contract says.** task-023's DETAIL (Scope, rule 6) is explicit: "When `X` carries no
   marker, emit a single `sequence` edge to `X` plus a warning recording that the `then Y` tail was
   read as `X`'s onward flow — that case does not occur in the corpus today, so **a warning is the
@@ -483,7 +537,12 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
 
 - **Category:** Data defect in `advance.mjs`
 - **Impact:** Low — latent (zero corpus occurrences), but it would reach a reader if authored
-- **State:** **Open — routed to the delivery-003 reviewer** with the item above.
+- **State:** **FIXED (2026-07-27).** The reviewer ruled it a defect rather than
+  acceptable-and-documented, and diagnosed the cause precisely: `_extractHandoff` strips the keyword
+  but `*` is absent from its trailing-punctuation set, so the markdown emphasis survives. Fixed by
+  stripping emphasis markers explicitly. A companion test guards the fix from over-reaching — a
+  **bolded** state name must still be captured, or the fix would trade a junk handoff for a lost one,
+  which is worse: the pause target would vanish from the sidecar entirely.
 - The DETAIL describes rule 9 only for "a `PAUSE-FOR-USER-*` clause **naming** the state the user
   resumes into". With **no** state named there is nothing to record, so `terminal.handoff` should be
   `null`. The implementation instead returns the leftover markup after the keyword is stripped —

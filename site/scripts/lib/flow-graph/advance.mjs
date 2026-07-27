@@ -221,6 +221,11 @@ export function parseAdvanceBlock({
   //   fromNodeId, fromNodeName, file, blockStartLine — error-message context
   //   blockProvenance — provenance for new edges
 
+  // States that are legitimately named in the advance text but deliberately not
+  // edge targets from this node. V9 must skip them, or a rule that intentionally
+  // declines to emit an edge becomes indistinguishable from a dropped one.
+  const v9Exempt = new Set();
+
   // ── Rule 6: X then Y — optional side-trip ─────────────────────────────────
   // Runs before rules 5 and 9 (it changes edge count and kind).
   // For each consecutive clause pair separated by ` then ` in the content:
@@ -260,6 +265,14 @@ export function parseAdvanceBlock({
       if (yEdgeIdx !== -1) {
         edges.splice(yEdgeIdx, 1);
       }
+      // Y is deliberately NOT an edge target from this node — its edge belongs to
+      // X's own advance. Exempt it from V9, or this warn-path is unreachable: V9
+      // would find Y named in the text, absent from `edgeTargetIds`, and throw
+      // before the caller ever sees the warning. The DETAIL and its acceptance
+      // criterion both require "one sequence edge plus a warning" here, and FR-2
+      // requires a chart be approximate rather than malformed — a throw makes the
+      // page fail to build instead. Same shape as the pause-resume exemption below.
+      v9Exempt.add(yTarget.id);
       warnings.push(
         `[gen-skills] advance: W-1: '${fromNodeName}' in '${file}:${blockStartLine}': ` +
         `' then ${yClause.slice(0, 40)}' was read as '${xTarget.name}'\`s onward flow ` +
@@ -382,6 +395,7 @@ export function parseAdvanceBlock({
       if (!state) continue;                           // not a declared state
       if (edgeTargetIds.has(state.id)) continue;     // already an edge target
       if (handoffName && state.name.toLowerCase() === handoffName) continue; // pause handoff
+      if (v9Exempt.has(state.id)) continue;          // rule 6 unmarked `then` tail
 
       // Unconsumed declared state — precise KI-008 fingerprint.
       throw new Error(
@@ -774,6 +788,13 @@ function _extractHandoff(clauseText) {
   text = text.replace(/\bStop here\b/g, ' ');
   text = text.replace(/\bhalt\b/gi, ' ');
   text = text.replace(/`[^`]*`/g, ' ');
+  // Markdown emphasis markers are formatting, never part of a state name. Without
+  // this, a bare `**PAUSE-FOR-USER-ACTION**` — which names no resume state — has its
+  // keyword stripped and returns the literal `** **` instead of null, because `*` is
+  // absent from the trailing-punctuation set below. That string is not internal: it
+  // reaches the `.flow.json` sidecar and feature-005's provenance panel, so a reader
+  // would see it.
+  text = text.replace(/\*+/g, ' ');
   text = text.replace(/\s+/g, ' ').trim();
   text = text.replace(/^[[\]().,;:!?→>-]+|[[\]().,;:!?→>-]+$/g, '').trim();
   return text || null;

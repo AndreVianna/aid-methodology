@@ -20,17 +20,19 @@
 //   - No hard-coded corpus counts.
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import {
   extractAdvanceBlock,
   parseAdvanceBlock,
 } from '../lib/flow-graph/advance.mjs';
+import { findStateSections } from '../lib/flow-graph/source.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../../../');
 const ADVANCE_SRC_PATH = resolve(__dirname, '../lib/flow-graph/advance.mjs');
+const CANONICAL_SKILLS = resolve(REPO_ROOT, 'canonical/skills');
 
 // ── Fixture helpers ───────────────────────────────────────────────────────────
 
@@ -908,30 +910,60 @@ describe('Rule 6 — `X then Y`, the optional side-trip (KI-008)', () => {
     });
   }
 
-  it('[DEVIATION from DETAIL] the UNMARKED form throws V9 instead of warning', () => {
-    // task-023's DETAIL is explicit: "When X carries no marker, emit a single
-    // `sequence` edge to X plus a warning recording that the `then Y` tail was read
-    // as X's onward flow — that case does not occur in the corpus today, so a
-    // warning is the honest default rather than an invented edge." The matching
-    // acceptance criterion says "the unmarked form emits one sequence edge plus a
-    // warning."
+  it('the UNMARKED form emits one sequence edge to X plus a W-1 warning, and does NOT throw', () => {
+    // This was a [HIGH] finding, now fixed. The implementation used to throw V9
+    // here: the edge to Y is deliberately spliced (Y's edge belongs to X's own
+    // advance), which left Y named in the text but absent from the edge-target set,
+    // so V9 read an intentional omission as a dropped edge and fired — making
+    // rule 6's warn-path structurally unreachable.
     //
-    // The implementation THROWS instead: the sequence edge to HANDOFF is emitted,
-    // DONE is then left unconsumed in the residue, and V9 fires. So the contract's
-    // warn-path is unreachable.
+    // The contract is explicit both ways: the DETAIL says "a warning is the honest
+    // default rather than an invented edge", and FR-2 says a chart may be
+    // approximate but never malformed. A throw is worse than wrong here, because
+    // task-029's façade also throws — so the page would fail to build.
     //
-    // Recorded rather than corrected, for two reasons. It is unreachable on today's
-    // corpus — measured: of 5 blocks containing `then`, ZERO have an unmarked X —
-    // and changing which of rule 6 and V9 wins is a semantic decision belonging to
-    // the task that owns this module, not to a test. The cost if it is ever
-    // authored is not cosmetic: the façade at task-029 also throws, so that skill's
-    // page would fail to build rather than render an approximate chart with a
-    // warning, which is the opposite of FR-2's "approximate, never malformed".
-    //
-    // This test pins the behaviour so it cannot drift unnoticed in either direction.
-    expect(() => parse(advBlock('HANDOFF then DONE'), states('FROM', 'HANDOFF', 'DONE'), { fromNodeName: 'FROM' }))
-      .toThrow(/V9/);
+    // Fixed by exempting the `then`-tail target from V9, the same shape as the
+    // pause-resume handoff exemption.
+    const r = parse(advBlock('HANDOFF then DONE'), states('FROM', 'HANDOFF', 'DONE'), {
+      fromNodeName: 'FROM',
+    });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0]).toMatchObject({ to: 'n2', kind: 'sequence', condition: null });
+    expect(r.warnings).toHaveLength(1);
+    expect(r.warnings[0]).toContain('W-1');
+    expect(r.warnings[0]).toContain('HANDOFF');   // X, whose onward flow absorbed the tail
+    expect(r.warnings[0]).toContain('DONE');      // Y, the state no edge was drawn to
+    expect(r.warnings[0]).toContain('canonical/skills/aid-fixture/SKILL.md:10'); // file:line
   });
+
+  it('the unmarked form still fires V9 for a DIFFERENT unconsumed state — the exemption is narrow', () => {
+    // The exemption must cover only the `then` tail, not disarm V9 for the whole
+    // block. Here GAMMA is named but is neither an edge target nor the tail, so the
+    // guard must still fire — otherwise the fix above would have traded a false
+    // throw for a silent dropped edge, which is the defect V9 exists to catch.
+    //
+    // The trailing text matters and was chosen by measurement. `... DONE. See GAMMA.`
+    // does NOT throw, and correctly so: `. ` is a separator, so `See GAMMA` becomes
+    // its own clause, resolves, and GAMMA legitimately becomes an edge target. An
+    // em-dash aside keeps GAMMA inside the residue, which is the case under test.
+    expect(() => parse(advBlock('HANDOFF then DONE -- consult GAMMA when unsure'), states('FROM', 'HANDOFF', 'DONE', 'GAMMA'), { fromNodeName: 'FROM' }))
+      .toThrow(/GAMMA/);
+  });
+
+  it('rule 6 runs BEFORE rule 9 — a PAUSE clause in the pair is not double-counted', () => {
+    // The rules run 6 → 9 → 5 → 7 → 10, and each mutates what the next reads.
+    // 6→9 had no fixture: no rule-6 test involved a PAUSE-typed clause, so swapping
+    // that pair passed all 96 tests silently. This is the missing discriminator.
+    const r = parse(advBlock('HANDOFF (optional) then **PAUSE-FOR-USER-ACTION** -> REVIEW'), states('FROM', 'HANDOFF', 'REVIEW'), {
+      fromNodeName: 'FROM',
+    });
+    // Whatever rule 6 does with the pair, rule 9 must still claim the pause clause
+    // as metadata rather than leaving an edge to REVIEW behind.
+    expect(r.edges.some((e) => e.to === 'n3')).toBe(false);
+    expect(r.terminal).not.toBeNull();
+    expect(r.terminal.advanceType).toBe('PAUSE-FOR-USER-ACTION');
+  });
+
 });
 
 describe('Rule 7 — back-reference implies loop-back', () => {
@@ -982,23 +1014,32 @@ describe('Rule 9 — pause-resume targets are metadata, not edges', () => {
     });
   }
 
-  it('[DEVIATION] a bare pause with no resume target yields a junk handoff, not null', () => {
-    // The DETAIL describes rule 9 only for "a PAUSE-FOR-USER-* clause NAMING the
-    // state the user resumes into". With no state named there is nothing to record,
-    // so `handoff` should be null. The implementation instead returns the leftover
-    // markup after the keyword is stripped.
+  it('a bare pause with no resume target records handoff as null, not leftover markup', () => {
+    // Was a [MEDIUM] finding, now fixed. The DETAIL describes rule 9 only for "a
+    // PAUSE-FOR-USER-* clause NAMING the state the user resumes into", so with no
+    // state named there is nothing to record. The keyword strip used to leave the
+    // markdown emphasis behind and return the literal string `** **`, because `*`
+    // was absent from the trailing-punctuation set.
     //
-    // Also latent: measured ZERO bare pauses across all 111 skills. Pinned here
-    // rather than corrected, because it is a semantic fix in a module this test file
-    // does not own — but it is a real data defect, not cosmetics: `handoff` flows
-    // into the `.flow.json` sidecar and into feature-005's provenance panel, so a
-    // junk string would surface to a reader rather than staying internal.
+    // Not cosmetic: `handoff` reaches the `.flow.json` sidecar and feature-005's
+    // provenance panel, so a junk value surfaces to a reader rather than staying
+    // internal.
     const r = parse(advBlock('**PAUSE-FOR-USER-ACTION**'), states('FROM', 'REVIEW'), {
       fromNodeName: 'FROM',
     });
     expect(r.edges).toEqual([]);
     expect(r.terminal.advanceType).toBe('PAUSE-FOR-USER-ACTION');
-    expect(r.terminal.handoff).toBe('** **'); // contract would say: null
+    expect(r.terminal.handoff).toBeNull();
+  });
+
+  it('a named resume target is still captured — the emphasis strip did not eat the state', () => {
+    // Guards the fix from over-reaching: stripping `*` must remove formatting only.
+    // A bolded state name has to survive, or the fix would trade a junk handoff for
+    // a lost one, which is worse — the pause target would vanish from the sidecar.
+    const r = parse(advBlock('**PAUSE-FOR-USER-DECISION** -> **REVIEW**'), states('FROM', 'REVIEW'), {
+      fromNodeName: 'FROM',
+    });
+    expect(r.terminal.handoff).toBe('REVIEW');
   });
 });
 
@@ -1053,6 +1094,55 @@ describe('V9 — the residual guard throws, and stays narrow', () => {
       expect(r.edges.some((e) => e.to === 'n2')).toBe(true);
     });
   }
+
+  it('the five corpus `then` blocks leave NO residue at all', () => {
+    // AC: "Post-fix, the five ` then ` blocks (aid-test, aid-design, aid-prototype,
+    // aid-report, aid-research) leave no residue at all." That is a claim about the
+    // real corpus, so a fixture cannot discharge it — this reads the actual files.
+    //
+    // The count is DERIVED, not asserted as a literal (REQUIREMENTS §8): the test
+    // discovers which skills contain a `then` block rather than hard-coding five, so
+    // it keeps working if the corpus gains or loses one.
+    const dirs = readdirSync(CANONICAL_SKILLS, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name);
+
+    const withThen = [];
+    for (const dir of dirs) {
+      const file = join(CANONICAL_SKILLS, dir, 'SKILL.md');
+      if (!existsSync(file)) continue;
+      const lines = readFileSync(file, 'utf8').split(/\r?\n/);
+      for (let i = 0; i < lines.length; i++) {
+        if (!/\*\*Advance:\*\*/.test(lines[i])) continue;
+        if (!/\bthen\b/i.test(lines[i])) continue;
+        withThen.push({ dir, line: i + 1, lines, file: `canonical/skills/${dir}/SKILL.md` });
+      }
+    }
+
+    // Non-vacuity: the corpus really does contain `then` blocks, so a clean result
+    // means they were parsed rather than never found.
+    expect(withThen.length).toBeGreaterThan(0);
+
+    for (const { dir, line, lines, file } of withThen) {
+      const { blockText } = extractAdvanceBlock(lines, line - 1);
+      const declared = findStateSections(lines, file).map((s, i) => ({
+        name: s.name, order: i + 1, id: `n${i + 1}`,
+      }));
+      const r = parseAdvanceBlock({
+        block: blockText,
+        fromNodeId: 'n1',
+        fromNodeName: declared[0]?.name ?? 'UNKNOWN',
+        declaredStates: declared,
+        file,
+        blockStartLine: line,
+        sourceKind: 'skill',
+      });
+      // "No residue at all" means no W-1. Other warning kinds (rule 4's multiple
+      // terminals) are a separate, recorded question and are not asserted here.
+      const w1 = r.warnings.filter((w) => /W-1/.test(w));
+      expect(w1, `${dir}:${line} produced a W-1 residual warning`).toEqual([]);
+    }
+  });
 
   it('stays silent on rule 9 pause-resume targets, which are consumed as handoff', () => {
     // The resume state is named in the text but is deliberately NOT an edge target.
