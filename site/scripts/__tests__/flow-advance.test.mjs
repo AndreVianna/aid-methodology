@@ -832,3 +832,236 @@ describe('Corpus smoke test — real skill advance blocks do not throw', () => {
     }
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// task-023 — rules 5-10 and V9
+//
+// These were re-authored after the original suite was destroyed by an
+// orchestrator error (a `git checkout --` restore on uncommitted files). The
+// implementation survived and is committed; only its tests were lost.
+//
+// Because the implementation already existed when these were written, every
+// expectation below is derived from task-023's DETAIL acceptance criteria and
+// feature-003's SPEC rules 5-10, NOT from reading the code — a test written by
+// reading its subject encodes what the code does rather than what the contract
+// requires. Two places where the code and the contract actually disagree are
+// recorded as such, with the criterion each one contradicts named.
+// ════════════════════════════════════════════════════════════════════════════
+
+describe('Rule 5 — single-target conditional implies a self-loop', () => {
+  it('a lone conditional target adds a loop-back self-edge conditioned "otherwise"', () => {
+    const r = parse(advBlock('when approved -> BETA'), states('ALPHA', 'BETA'), {
+      fromNodeName: 'ALPHA',
+    });
+    expect(r.edges).toHaveLength(2);
+    expect(r.edges[0]).toMatchObject({ to: 'n2', kind: 'branch', condition: 'when approved' });
+    // The self-edge is what makes the guard's "otherwise" path visible in the chart.
+    expect(r.edges[1]).toMatchObject({ to: 'n1', kind: 'loop-back', condition: 'otherwise' });
+  });
+
+  it('does NOT fire for an unconditional single target', () => {
+    // The rule is about a guard that can fail. With no condition there is no
+    // otherwise-path to draw, so a self-edge here would be invented, not derived.
+    const r = parse(advBlock('-> BETA'), states('ALPHA', 'BETA'), { fromNodeName: 'ALPHA' });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0]).toMatchObject({ to: 'n2', kind: 'sequence', condition: null });
+  });
+
+  it('does NOT fire when the clause already names this node as its own target', () => {
+    // AC: "never when the node's own clauses already name that node as a target."
+    const r = parse(advBlock('when x -> ALPHA'), states('ALPHA', 'BETA'), { fromNodeName: 'ALPHA' });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0]).toMatchObject({ to: 'n1', kind: 'branch', condition: 'when x' });
+    expect(r.edges.filter((e) => e.condition === 'otherwise')).toEqual([]);
+  });
+
+  it('does NOT fire with two conditional targets — the branches already partition', () => {
+    const r = parse(advBlock('when a -> BETA; when b -> GAMMA'), states('ALPHA', 'BETA', 'GAMMA'), {
+      fromNodeName: 'ALPHA',
+    });
+    expect(r.edges).toHaveLength(2);
+    expect(r.edges.map((e) => e.to)).toEqual(['n2', 'n3']);
+    expect(r.edges.filter((e) => e.condition === 'otherwise')).toEqual([]);
+  });
+});
+
+describe('Rule 6 — `X then Y`, the optional side-trip (KI-008)', () => {
+  // AC: the marked form emits TWO branch edges — the marker verbatim on the first
+  // and null on the second, the skip path — so `kind === 'decision'` falls out of
+  // the existing kind rule instead of being special-cased.
+  const MARKED = [
+    ['parenthesised', 'HANDOFF (optional) then DONE', 'optional'],
+    ['bare word', 'HANDOFF optional then DONE', 'optional'],
+    ['trailing question mark', 'HANDOFF? then DONE', '?'],
+    ['if-qualifier', 'HANDOFF if needed then DONE', 'if needed'],
+  ];
+
+  for (const [label, text, marker] of MARKED) {
+    it(`${label} marker emits two branch edges, marker on the first and null on the skip`, () => {
+      const r = parse(advBlock(text), states('FROM', 'HANDOFF', 'DONE'), { fromNodeName: 'FROM' });
+      expect(r.edges).toHaveLength(2);
+      expect(r.edges[0]).toMatchObject({ to: 'n2', kind: 'branch', condition: marker });
+      // The skip path carries no condition: it is what happens when X is declined.
+      expect(r.edges[1]).toMatchObject({ to: 'n3', kind: 'branch', condition: null });
+      // Neither edge is X -> Y: that belongs to X's own advance, not to this node's.
+      expect(r.edges.some((e) => e.to === 'n3' && e.condition === marker)).toBe(false);
+    });
+  }
+
+  it('[DEVIATION from DETAIL] the UNMARKED form throws V9 instead of warning', () => {
+    // task-023's DETAIL is explicit: "When X carries no marker, emit a single
+    // `sequence` edge to X plus a warning recording that the `then Y` tail was read
+    // as X's onward flow — that case does not occur in the corpus today, so a
+    // warning is the honest default rather than an invented edge." The matching
+    // acceptance criterion says "the unmarked form emits one sequence edge plus a
+    // warning."
+    //
+    // The implementation THROWS instead: the sequence edge to HANDOFF is emitted,
+    // DONE is then left unconsumed in the residue, and V9 fires. So the contract's
+    // warn-path is unreachable.
+    //
+    // Recorded rather than corrected, for two reasons. It is unreachable on today's
+    // corpus — measured: of 5 blocks containing `then`, ZERO have an unmarked X —
+    // and changing which of rule 6 and V9 wins is a semantic decision belonging to
+    // the task that owns this module, not to a test. The cost if it is ever
+    // authored is not cosmetic: the façade at task-029 also throws, so that skill's
+    // page would fail to build rather than render an approximate chart with a
+    // warning, which is the opposite of FR-2's "approximate, never malformed".
+    //
+    // This test pins the behaviour so it cannot drift unnoticed in either direction.
+    expect(() => parse(advBlock('HANDOFF then DONE'), states('FROM', 'HANDOFF', 'DONE'), { fromNodeName: 'FROM' }))
+      .toThrow(/V9/);
+  });
+});
+
+describe('Rule 7 — back-reference implies loop-back', () => {
+  it('emits NOTHING for a phrasing naming no declared state (`Step 4`)', () => {
+    // AC: a step inside a state is not a chart node.
+    const r = parse(advBlock('loop back to Step 4'), states('ALPHA', 'BETA'), {
+      fromNodeId: 'n2',
+      fromNodeName: 'BETA',
+    });
+    expect(r.edges).toEqual([]);
+    expect(r.terminal).toBeNull();
+  });
+
+  it('`[State: X]` pointing backwards is loop-back, decided by SPINE POSITION', () => {
+    // AC: "kind is decided by position, not phrasing" — this phrasing carries no
+    // loop vocabulary at all, so only position can be producing `loop-back`.
+    const r = parse(advBlock('-> [State: ALPHA]'), states('ALPHA', 'BETA'), {
+      fromNodeId: 'n2',
+      fromNodeName: 'BETA',
+    });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0]).toMatchObject({ to: 'n1', kind: 'loop-back' });
+  });
+
+  it('the same arrow pointing FORWARD stays a sequence — the position half of the rule', () => {
+    // Companion to the case above: identical syntax, opposite direction. Without
+    // this pair, "kind by position" could not be distinguished from "this phrasing
+    // always yields loop-back".
+    const r = parse(advBlock('-> GAMMA'), states('ALPHA', 'BETA', 'GAMMA'), {
+      fromNodeId: 'n1',
+      fromNodeName: 'ALPHA',
+    });
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0]).toMatchObject({ to: 'n3', kind: 'sequence' });
+  });
+});
+
+describe('Rule 9 — pause-resume targets are metadata, not edges', () => {
+  for (const kind of ['PAUSE-FOR-USER-ACTION', 'PAUSE-FOR-USER-DECISION']) {
+    it(`${kind} records the resume state in terminal.handoff and emits NO edge`, () => {
+      // AC: "the transition does not happen within a run" — so an edge would assert
+      // something false about the run.
+      const r = parse(advBlock(`**${kind}** -> REVIEW`), states('FROM', 'REVIEW'), {
+        fromNodeName: 'FROM',
+      });
+      expect(r.edges).toEqual([]);
+      expect(r.terminal).toEqual({ advanceType: kind, handoff: 'REVIEW' });
+    });
+  }
+
+  it('[DEVIATION] a bare pause with no resume target yields a junk handoff, not null', () => {
+    // The DETAIL describes rule 9 only for "a PAUSE-FOR-USER-* clause NAMING the
+    // state the user resumes into". With no state named there is nothing to record,
+    // so `handoff` should be null. The implementation instead returns the leftover
+    // markup after the keyword is stripped.
+    //
+    // Also latent: measured ZERO bare pauses across all 111 skills. Pinned here
+    // rather than corrected, because it is a semantic fix in a module this test file
+    // does not own — but it is a real data defect, not cosmetics: `handoff` flows
+    // into the `.flow.json` sidecar and into feature-005's provenance panel, so a
+    // junk string would surface to a reader rather than staying internal.
+    const r = parse(advBlock('**PAUSE-FOR-USER-ACTION**'), states('FROM', 'REVIEW'), {
+      fromNodeName: 'FROM',
+    });
+    expect(r.edges).toEqual([]);
+    expect(r.terminal.advanceType).toBe('PAUSE-FOR-USER-ACTION');
+    expect(r.terminal.handoff).toBe('** **'); // contract would say: null
+  });
+});
+
+describe('V9 — the residual guard throws, and stays narrow', () => {
+  it('the KI-008 regression fails LOUDLY: an unconsumed declared state throws', () => {
+    // AC: "This is the regression that must never recur silently: pre-fix, DONE
+    // stayed reachable via HANDOFF -> DONE, so reachability was satisfied, no
+    // validator rule fired, and the chart was simply wrong." Uppercase THEN is not
+    // in the separator set, so DONE is left named in the residue and unconsumed.
+    expect(() => parse(advBlock('HANDOFF (optional) THEN DONE.'), states('FROM', 'HANDOFF', 'DONE'), { fromNodeName: 'FROM' }))
+      .toThrow(/V9/);
+  });
+
+  it('the throw names the guard, the node, file:line, the state, and the source text', () => {
+    // AC: V9 throws "with its stable guard name in the message, naming the skill,
+    // the state and the unconsumed declared state found in the residue." This is the
+    // delivery's most consequential error message: a maintainer must be able to find
+    // the exact line whose edge went missing.
+    let msg = '';
+    try {
+      parse(advBlock('HANDOFF (optional) THEN DONE.'), states('FROM', 'HANDOFF', 'DONE'), {
+        fromNodeName: 'FROM',
+        file: 'canonical/skills/aid-fixture/SKILL.md',
+        blockStartLine: 42,
+      });
+    } catch (e) {
+      msg = e.message;
+    }
+    expect(msg).toContain('[gen-skills] V9:');          // stable guard name
+    expect(msg).toContain("'FROM'");                      // the node
+    expect(msg).toContain('canonical/skills/aid-fixture/SKILL.md:42'); // file AND 1-based line
+    expect(msg).toContain("'DONE'");                      // the unconsumed state
+    expect(msg).toContain('HANDOFF (optional) THEN DONE'); // the offending text
+  });
+
+  // AC: "V9 is deliberately narrow, because a noisy guard is an ignored guard."
+  // A guard that always throws and one that never throws both pass a careless
+  // suite, so the silent cases matter as much as the throwing one.
+  const BENIGN = [
+    ['commentary carrying no state token', '-> BETA. See the notes for detail.'],
+    ['a step identifier, which is not a declared state', '-> BETA. Then Step E3 applies.'],
+    ['a skill reference, which is not a state', '-> BETA. Run /aid-define next.'],
+    ['a state that is already an edge target from this node', '-> BETA. BETA is handled above.'],
+  ];
+
+  for (const [label, text] of BENIGN) {
+    it(`stays silent on ${label}`, () => {
+      const r = parse(advBlock(text), states('ALPHA', 'BETA'), { fromNodeName: 'ALPHA' });
+      // Non-vacuity: the parse really happened and produced an edge, so silence is
+      // the guard declining to fire rather than the input never reaching it.
+      expect(r.edges.length).toBeGreaterThan(0);
+      expect(r.edges.some((e) => e.to === 'n2')).toBe(true);
+    });
+  }
+
+  it('stays silent on rule 9 pause-resume targets, which are consumed as handoff', () => {
+    // The resume state is named in the text but is deliberately NOT an edge target.
+    // Without the handoff exemption, rule 9 and V9 would contradict each other on
+    // every paused state in the corpus.
+    const r = parse(advBlock('**PAUSE-FOR-USER-ACTION** -> REVIEW'), states('FROM', 'REVIEW'), {
+      fromNodeName: 'FROM',
+    });
+    expect(r.terminal.handoff).toBe('REVIEW');
+    expect(r.edges).toEqual([]);
+  });
+});

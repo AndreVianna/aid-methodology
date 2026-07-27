@@ -451,6 +451,49 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
   read "exactly one **distinct** target skill" — added to the correction list this delivery already
   owes for the V9 class, rather than filed separately.
 
+### Rule 6 vs V9 precedence — the contract's warn-path is unreachable (found re-authoring task-023's tests)
+
+- **Category:** Contract deviation in `advance.mjs`; a semantic precedence question
+- **Impact:** Medium — **latent today, but it fails a page rather than degrading one**
+- **State:** **Open — routed to the delivery-003 reviewer.** Not an owner question unless the
+  reviewer disagrees with the reading below.
+- **What the contract says.** task-023's DETAIL (Scope, rule 6) is explicit: "When `X` carries no
+  marker, emit a single `sequence` edge to `X` plus a warning recording that the `then Y` tail was
+  read as `X`'s onward flow — that case does not occur in the corpus today, so **a warning is the
+  honest default rather than an invented edge**." Its acceptance criterion repeats it: "the unmarked
+  form emits one `sequence` edge plus a warning."
+- **What the implementation does.** It **throws V9**. The sequence edge to `X` is emitted, `Y` is
+  then left unconsumed in the residue, and V9 fires on it. So rule 6's warn-path cannot be reached:
+  V9 wins every time.
+- **Why it matters more than a latent contradiction usually would.** task-029's façade **also**
+  throws on failure. So the first time anyone authors `X then Y` without an optionality marker,
+  that skill's page **fails to build** rather than rendering an approximate chart with a warning —
+  the exact inversion of FR-2's "a chart may be *approximate*, never *malformed*".
+- **Measured, not assumed:** of the **5** corpus blocks containing `then`, **zero** have an unmarked
+  `X`. So nothing is broken today, and this is a latent trap rather than a live defect.
+- **Not corrected here, deliberately.** Deciding whether rule 6 or V9 wins is a semantic choice
+  belonging to whoever owns the module, not to a test file, and either fix changes behaviour that
+  V9's own narrowness criterion constrains. The behaviour is **pinned by a test** so it cannot drift
+  in either direction unnoticed, and that test names the criterion it contradicts.
+- **The two candidate resolutions**, for whoever rules on it: exempt the `then`-tail target from V9
+  when rule 6 has already emitted the unmarked-form warning; or accept the throw and correct the
+  DETAIL and its acceptance criterion to say so.
+
+### Rule 9 — a bare pause yields a junk `handoff` string instead of null (same origin)
+
+- **Category:** Data defect in `advance.mjs`
+- **Impact:** Low — latent (zero corpus occurrences), but it would reach a reader if authored
+- **State:** **Open — routed to the delivery-003 reviewer** with the item above.
+- The DETAIL describes rule 9 only for "a `PAUSE-FOR-USER-*` clause **naming** the state the user
+  resumes into". With **no** state named there is nothing to record, so `terminal.handoff` should be
+  `null`. The implementation instead returns the leftover markup after the keyword is stripped —
+  the literal string `** **`.
+- **Why it is not purely cosmetic:** `handoff` flows into the `<skill>.flow.json` sidecar and into
+  feature-005's provenance panel, so the junk string would surface **to a reader** rather than
+  staying internal.
+- Measured **zero** bare pauses across all 111 skills. Pinned by a test rather than corrected, for
+  the same ownership reason as above.
+
 ### BLUEPRINT verification — no correction owed by task-019
 
 Verified by reading `deliveries/delivery-003/BLUEPRINT.md` rather than by repeating the DETAIL's
