@@ -203,8 +203,25 @@ export function buildChart({
   // ── 2. Compute entries ────────────────────────────────────────────────────
   // entries = every in-degree-0 node + lowest-order node of any weakly-connected
   // component that has no in-degree-0 node (a pure cycle).
+  //
+  // SELF-EDGES ARE EXCLUDED from the in-degree count, and that exclusion is
+  // load-bearing rather than tidiness. An edge from a node to itself is not a way
+  // INTO that node: if its only incoming edge is its own loop, nothing else can
+  // reach it, so it is an entry in exactly the sense this rule means. Counting the
+  // self-edge left such a node with in-degree 1 — not an entry, and reachable from
+  // no entry — so V6 rejected the whole chart.
+  //
+  // Found via three real skills, all with the same shape: `DELIVERY-GATE` in
+  // aid-execute, and `SPIKE` and `BLOCKED` in aid-specify each had in-degree 1
+  // sourced entirely from themselves. Those charts failed validation, and since
+  // task-029's façade throws on a validator error, all three pages would have
+  // failed to build rather than rendering an imperfect chart.
+  //
+  // The pure-cycle fallback below already anticipated cycles with no entry; a
+  // one-node cycle is the degenerate case it did not cover.
   const inDegree = new Map(nodes.map((n) => [n.id, 0]));
   for (const e of rawEdges) {
+    if (e.from === e.to) continue;
     inDegree.set(e.to, (inDegree.get(e.to) ?? 0) + 1);
   }
 

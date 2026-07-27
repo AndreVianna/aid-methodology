@@ -521,30 +521,50 @@ describe('extractDispatch — all 13 D1 skills produce valid charts', () => {
     });
   }
 
-  it('aid-execute and aid-specify have V6 failures (genuinely unreachable nodes)', () => {
-    // FIX and DELIVERY-GATE in aid-execute; SPIKE and BLOCKED in aid-specify
-    // are unreachable because they are externally invoked, not reachable from
-    // any dispatch-table transition.  This is documented in delivery-003 STATE.md.
-    // Mutant: patch buildChart to make all nodes entries → ok would be true.
-    for (const skill of ['aid-execute', 'aid-specify']) {
-      const chart = extractDispatch(skill, null, REPO_ROOT);
-      const vr = validateChart(chart);
-      expect(vr.ok).toBe(false);
-      const v6errs = vr.errors.filter((e) => e.includes('V6'));
-      expect(v6errs.length).toBeGreaterThan(0);
+  it('EVERY one of the 13 validates cleanly — no exemptions', () => {
+    // This replaces two tests that between them asserted the OPPOSITE: one
+    // exempted `aid-execute` and `aid-specify` from validating, and another
+    // asserted their V6 failures were expected, described as "genuinely
+    // unreachable ... externally invoked". That is worse than leaving a defect
+    // untested, because it codifies it — a later fix fails the suite and looks
+    // like the regression.
+    //
+    // They were not externally-invoked-and-therefore-unreachable. Measuring the
+    // in-degrees showed all three offending nodes — DELIVERY-GATE, SPIKE, BLOCKED
+    // — had in-degree 1 sourced ENTIRELY FROM THEMSELVES. A self-edge is not a way
+    // into a node, so `buildChart`'s in-degree-0 entry rule skipped them while
+    // nothing else could reach them. The fix excludes self-edges from that count.
+    //
+    // The exemption also mattered practically: task-029's façade throws on any
+    // validator error, so those two skills would have rendered no page at all.
+    // The whole corpus is checked here rather than per-skill, because 1707 tests
+    // passed while two charts were invalid.
+    const failures = [];
+    for (const skill of D1_SKILLS) {
+      const vr = validateChart(extractDispatch(skill, null, REPO_ROOT));
+      if (!vr.ok) failures.push(`${skill}: ${vr.errors.join('; ')}`);
     }
+    expect(failures).toEqual([]);
+    // Non-vacuity: the loop really ran over the whole roster.
+    expect(D1_SKILLS.length).toBeGreaterThan(1);
   });
 
-  it('all other 11 skills validate cleanly (V1-V8 pass)', () => {
-    // Mutant: skip validate call → failures silently pass.
-    const validatingSkills = D1_SKILLS.filter(
-      (s) => s !== 'aid-execute' && s !== 'aid-specify'
-    );
-    for (const skill of validatingSkills) {
-      const chart = extractDispatch(skill, null, REPO_ROOT);
-      const vr = validateChart(chart);
-      expect(vr.ok, `${skill} failed validation: ${vr.errors.join(', ')}`).toBe(true);
-    }
+  it('a node whose only inbound edge is its own self-loop is an ENTRY', () => {
+    // The general rule behind the fix, pinned independently of any one skill so it
+    // survives the corpus changing. `aid-specify`'s SPIKE is the live instance:
+    // reachable from nothing, self-looping, and therefore a way into the chart.
+    const chart = extractDispatch('aid-specify', null, REPO_ROOT);
+    const spike = chart.nodes.find((n) => n.name === 'SPIKE');
+    expect(spike, 'aid-specify should declare a SPIKE state').toBeDefined();
+
+    const inbound = chart.edges.filter((e) => e.to === spike.id);
+    // The premise of the test — if the corpus ever gives SPIKE a real inbound
+    // edge, this stops being the self-loop case and the assertion below would be
+    // testing something else.
+    expect(inbound.length).toBeGreaterThan(0);
+    expect(inbound.every((e) => e.from === spike.id)).toBe(true);
+
+    expect(chart.entries).toContain(spike.id);
   });
 });
 
