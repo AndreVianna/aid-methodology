@@ -699,27 +699,67 @@ describe('no count literal in module source (AC-8)', () => {
     expect(src).not.toMatch(/\b157\b/);
   });
 
-  it('intro paragraph count interpolates from records.length, not a literal', () => {
-    // Verify that the skill count in the intro matches records.length.
-    const introLine = lines.find((l) =>
-      l.startsWith('AID ships **') && l.includes('skill directories')
-    );
-    expect(introLine).toBeDefined();
-    const m = /\*\*(\d+) skill directories\*\*/.exec(introLine ?? '');
-    expect(m).not.toBeNull();
-    // The interpolated count must equal the real records count.
-    expect(Number(m?.[1])).toBe(records.length);
+  // These two prove INTERPOLATION, not agreement.
+  //
+  // The obvious form — assert the rendered number equals `records.length` — is
+  // satisfied just as well by a hard-coded literal that happens to match today's
+  // corpus, so it cannot detect the defect its name promises. §8 forbids exactly
+  // that literal, and a hard-coded count is what produced KI-005. The check that
+  // actually bites is to render a corpus of a DIFFERENT size and require the
+  // output to move with it: a literal cannot track two sizes at once.
+
+  // A synthetic corpus, deliberately not built through `assignGroups` — its four
+  // guards would reject any subset of the real corpus, and what is under test
+  // here is the renderer's arithmetic, not the assigner's.
+  const tinyCorpus = () => {
+    const recs = [makeRecord('aid-alpha', 'Alpha.'), makeRecord('aid-beta', 'Beta.')];
+    const card = (r) => ({ name: r.dirName, route: r.route, intent: skillSummary(r) });
+    const secs = [
+      { group: 'Support', blurb: 'b', cards: [card(recs[0])], families: [] },
+      {
+        group: 'Definition',
+        blurb: 'b',
+        cards: [],
+        families: [{ verb: 'fix', cards: [card(recs[1])] }],
+      },
+    ];
+    return { recs, secs };
+  };
+
+  it('the intro skill count tracks the corpus size, so it cannot be a literal', () => {
+    const { recs, secs } = tinyCorpus();
+    const shrunk = /\*\*(\d+) skill directories\*\*/.exec(renderSkillIndex(recs, secs));
+    expect(shrunk).not.toBeNull();
+    expect(Number(shrunk?.[1])).toBe(recs.length);
+
+    const full = /\*\*(\d+) skill directories\*\*/.exec(page);
+    expect(Number(full?.[1])).toBe(records.length);
+    // Two corpora of different sizes yield different numbers — a literal could
+    // satisfy at most one of these two assertions.
+    expect(Number(full?.[1])).not.toBe(Number(shrunk?.[1]));
   });
 
-  it('family count in the intro interpolates from sections, not a literal', () => {
-    const introLine = lines.find((l) =>
-      l.startsWith('AID ships **') && l.includes('verb famil')
-    );
-    expect(introLine).toBeDefined();
-    const m = /\*\*(\d+) verb famil/.exec(introLine ?? '');
-    expect(m).not.toBeNull();
-    const derivedFamilyCount = sections.reduce((n, s) => n + s.families.length, 0);
-    expect(Number(m?.[1])).toBe(derivedFamilyCount);
+  it('the intro family count tracks the derived families, so it cannot be a literal', () => {
+    const derived = (s) => s.reduce((n, x) => n + x.families.length, 0);
+    const { recs, secs } = tinyCorpus();
+
+    const shrunk = /\*\*(\d+) verb famil/.exec(renderSkillIndex(recs, secs));
+    expect(shrunk).not.toBeNull();
+    expect(Number(shrunk?.[1])).toBe(derived(secs));
+
+    const full = /\*\*(\d+) verb famil/.exec(page);
+    expect(Number(full?.[1])).toBe(derived(sections));
+    expect(Number(full?.[1])).not.toBe(Number(shrunk?.[1]));
+  });
+
+  // Belt and braces, using the source-inspection idiom already used above for
+  // the 157 cap: no bare two-or-three-digit integer may appear in the module.
+  it('the module source carries no bare corpus-count literal', () => {
+    const src = readFileSync(RENDER_INDEX_SRC, 'utf8')
+      .split('\n')
+      .filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)) // ignore comments
+      .join('\n');
+    expect(src).not.toMatch(/\b\d{2,3}\b/);
   });
 });
 

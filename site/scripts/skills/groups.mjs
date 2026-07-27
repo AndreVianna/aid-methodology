@@ -100,7 +100,12 @@ export const CURATED_GROUPS = [
   },
   {
     group: 'Execution',
-    blurb: 'Skills for executing tasks and monitoring or deploying the results.',
+    // Deliberately does NOT mention deploying or monitoring. Per FR-5's
+    // owner-corrected Placement rules, `aid-deploy` and `aid-monitor` are
+    // ordinary shortcut skills filed under their own `deploy` / `monitor` verb
+    // families inside Definition — not members of this group. A blurb promising
+    // them here contradicts the very taxonomy the page exists to present.
+    blurb: 'Skills for executing detailed tasks, each through a graded adversarial review loop.',
     members: ['aid-execute'],
   },
 ];

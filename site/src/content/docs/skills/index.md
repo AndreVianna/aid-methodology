@@ -192,6 +192,6 @@ The full AID pipeline plus every shortcut skill, grouped by verb family.
 
 ## Execution
 
-Skills for executing tasks and monitoring or deploying the results.
+Skills for executing detailed tasks, each through a graded adversarial review loop.
 
 - [`aid-execute`](/skills/aid-execute/) — Execute a task based on its type: RESEARCH, DESIGN, IMPLEMENT, TEST, DOCUMENT, MIGRATE, REFACTOR, or CONFIGURE.

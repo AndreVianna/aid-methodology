@@ -75,11 +75,15 @@ function tokenize(text) {
  * this affected every page before it was stripped here rather than at one call
  * site: the trim belongs with the inline-rendering contract, not with a consumer.
  *
- * A value with an INTERNAL newline (a `>` block containing a paragraph break, or
- * any `|` literal block) would still not fit on one line. There are none in the
- * corpus today — measured, not assumed — and collapsing them silently would
- * misrepresent a literal block, so that case is deliberately left to whoever
- * first needs it.
+ * A value with an INTERNAL newline — a `>` block containing a paragraph break,
+ * or any `|` literal block — cannot be rendered on one line at all, and emitting
+ * it raw reproduces exactly the defect above: a blank line inside the bullet
+ * list, on every page carrying that key. There are none in the corpus today
+ * (measured, not assumed), so this THROWS rather than guessing. Collapsing would
+ * silently misrepresent a literal block; truncating would silently lose text.
+ * Whoever first writes a multi-paragraph frontmatter value should decide how it
+ * should look, and will get a message telling them so rather than a quietly
+ * malformed page.
  *
  * @param {{ key: string, kind: 'scalar'|'list', value: string|string[], line: number }} field
  * @returns {string}
@@ -89,7 +93,18 @@ export function renderFrontmatterValue(field) {
     return /** @type {string[]} */ (field.value).map(item => `\`${item}\``).join(', ');
   }
   // kind === 'scalar'
-  return tokenize(String(field.value).replace(/\s+$/, ''))
+  const scalar = String(field.value).replace(/\s+$/, '');
+  if (scalar.includes('\n')) {
+    throw new Error(
+      `[gen-skills] multi-line value: \`${field.key}\`` +
+        (field.line ? ` (line ${field.line})` : '') +
+        ' contains an internal newline, which cannot render inside a single ' +
+        'bullet-list item — it would insert a blank line and break the list. ' +
+        'Decide how a multi-paragraph frontmatter value should be presented, ' +
+        'then teach renderFrontmatterValue about it.'
+    );
+  }
+  return tokenize(scalar)
     .map(tok =>
       tok.type === 'code'
         ? tok.content

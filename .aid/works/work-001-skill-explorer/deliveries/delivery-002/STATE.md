@@ -120,8 +120,17 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
     and it opts one file in with a `// @vitest-environment jsdom` docblock. A config that sets
     **only** `fileParallelism` leaves the default environment `node`, so that per-file opt-in
     still works unchanged. The config must therefore **not** set `environment`.
-- **Applied to:** task-017 / task-018 (the wave that creates `site/vitest.config.mjs`); recorded
-  here because KI-016 states the decision is a routing choice, not a task-boundary change.
+- **Applied to:** `site/vitest.config.mjs`, which landed in the **wave-3 commit** (tasks 012/014),
+  two waves earlier than this entry originally recorded.
+  **Why it moved, and why the record was wrong until the checkpoint review caught it:** the
+  decision was written expecting the file to arrive with task-017/018, the tasks whose suites
+  KI-016 names. It was pulled forward because **KI-016 actually bit before then** — task-014 had
+  to snapshot the output directory at module-import time to stay stable while
+  `gen-skills.test.mjs` regenerated the same tree in a parallel worker. Landing the routed fix at
+  the moment the hazard materialised was right; leaving this field pointing at tasks that had not
+  run yet was not. No task `DETAIL.md` declares this file, which is expected: KI-016 states
+  explicitly that it "needs one routing decision" and is "not a task-boundary problem — no task
+  list changes."
 
 ### Q5 — task-012 and task-015 specify conflicting manifest sort orders
 

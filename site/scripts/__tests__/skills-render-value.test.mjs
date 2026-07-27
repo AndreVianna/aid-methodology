@@ -376,4 +376,63 @@ describe('renderFrontmatterValue — single-line contract', () => {
       renderFrontmatterValue({ key: 'k', kind: 'scalar', value: 'a  b\tc.\n', line: 2 })
     ).toBe('a  b\tc.');
   });
+
+  // ── The internal-newline guard ─────────────────────────────────────────────
+  //
+  // A trailing newline is trimmed; an INTERNAL one cannot be, because there is no
+  // correct single-line rendering of a paragraph break — collapsing would
+  // misrepresent a `|` literal block and truncating would lose text. So it
+  // throws. These cases exist because the guard is otherwise unreachable from any
+  // test: no value in the corpus has an internal newline, and CI runs only
+  // `npm ci && npm run build` (KI-006 is still open), which makes this throw the
+  // ONLY thing standing between a multi-paragraph frontmatter value and a broken
+  // page. An untested guard is indistinguishable from an absent one.
+
+  it('throws on a value with an internal newline, naming the key', () => {
+    let err;
+    try {
+      renderFrontmatterValue({ key: 'description', kind: 'scalar', value: 'para one.\n\npara two.', line: 4 });
+    } catch (e) {
+      err = e;
+    }
+    expect(err).toBeDefined();
+    expect(err.message).toMatch(/multi-line value/);
+    expect(err.message).toContain('`description`');
+  });
+
+  it.each([
+    ['a folded block with a paragraph break', 'one.\n\ntwo.'],
+    ['a two-line literal block', 'one.\ntwo.'],
+    ['a keep-chomped multi-line block', 'one.\ntwo.\n\n'],
+  ])('throws on %s', (_case, value) => {
+    expect(() => renderFrontmatterValue({ key: 'k', kind: 'scalar', value, line: 2 })).toThrow(
+      /multi-line value/
+    );
+  });
+
+  it('names the source line when known, and omits the clause when it is not', () => {
+    const raise = (line) => {
+      try {
+        renderFrontmatterValue({ key: 'k', kind: 'scalar', value: 'a\nb', line });
+        return '';
+      } catch (e) {
+        return e.message;
+      }
+    };
+    expect(raise(7)).toContain('(line 7)');
+    // A synthetic field carries no source line; the clause must be suppressed
+    // rather than emitting a misleading "line 0".
+    expect(raise(0)).not.toContain('line 0');
+  });
+
+  it('does NOT throw on a single-line value, however much trailing whitespace it has', () => {
+    // The negative case: it stops anyone "fixing" the guard into over-firing on
+    // the clip-chomped trailing newline that all 111 real descriptions carry.
+    expect(() =>
+      renderFrontmatterValue({ key: 'k', kind: 'scalar', value: 'just one line.   \n\n\n', line: 1 })
+    ).not.toThrow();
+    expect(
+      renderFrontmatterValue({ key: 'k', kind: 'scalar', value: 'just one line.   \n\n\n', line: 1 })
+    ).toBe('just one line.');
+  });
 });

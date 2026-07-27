@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Checkpoint review (Large, Opus 5): A -> A -> A+ over 3 cycles. 2 HIGH + 4 MEDIUM fixed; 1 LOW Accepted (blurb assertion, tested and rejected as structurally wrong for prose).'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
