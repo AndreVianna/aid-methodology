@@ -1,22 +1,42 @@
 // gen-skills.test.mjs — Unit and integration tests for feature-001-skill-detail-pages
-//                        and feature-002-grouped-skill-index (task-012 / task-015).
+//                        and feature-002-grouped-skill-index (task-012 / task-015 / task-017).
 //
 // Covers every acceptance criterion:
-//   AC-1  Drift guard — missing page and orphan page scenarios.
-//   AC-2  Header completeness — every frontmatter key appears on the page.
-//   AC-6  Idempotence — byte comparison of two consecutive runs.
+//   AC-1  Drift guard — missing page and orphan page scenarios; corpus coverage.
+//   AC-2  Header completeness — every frontmatter key appears on the page,
+//         tested both at fixture granularity (driven off the parser) and
+//         against the real generated corpus.
+//   AC-6  Idempotence — byte comparison of two consecutive runs, no `git` dependency.
+//   Parser — every row of feature-001's parser table as an inline fixture, and
+//            every parser guard (duplicate key, unclassifiable line, missing/
+//            unterminated fence, `name` mismatch) asserted to throw with the
+//            file and line in its message.
+//   Value rendering — `<`/`&` escaping outside code spans, byte-identical
+//            passthrough inside an authored code span.
 //   Manifest shape, marker, isolation, stdout discipline.
 //   feature-002: catalog load (3a), group assignment (4a), index write (5a),
 //                dead card guard (7a), assertNoDeadCards all branches.
 
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { readFileSync, existsSync, readdirSync, writeFileSync, rmSync } from 'node:fs';
+import {
+  readFileSync,
+  existsSync,
+  readdirSync,
+  writeFileSync,
+  rmSync,
+  mkdtempSync,
+  mkdirSync,
+} from 'node:fs';
 import { resolve, dirname, join } from 'node:path';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { execSync, spawnSync } from 'node:child_process';
-import { discoverSkills } from '../skills/discover.mjs';
+import { discoverSkills, buildRecord } from '../skills/discover.mjs';
 import { loadShortcutCatalog } from '../skills/catalog.mjs';
 import { assignGroups } from '../skills/groups.mjs';
+import { parseSkillFrontmatter } from '../skills/frontmatter.mjs';
+import { renderFrontmatterValue } from '../skills/render-value.mjs';
+import { renderSkillPage } from '../skills/render-page.mjs';
 // Importing the generator is safe — and is itself a check on the `main()` guard.
 // gen-reference.mjs calls main() at module scope, so importing it would
 // regenerate four pages as a side effect; gen-skills.mjs must not, and this
@@ -62,6 +82,403 @@ function getOnDiskPageNames() {
     .map((f) => f.slice(0, -3))
     .sort();
 }
+
+// ── Parser — fixtures ─────────────────────────────────────────────────────────
+// Every row of feature-001's parser table, each as a small inline fixture
+// string, asserted against the exact Field[] the row demands. This is AC-2's
+// real test: these are precisely the constructs the old gen-reference.mjs
+// parser mishandled (block sequences dropped, folded blocks truncated at a
+// blank line, only `>` handled, CRLF fences rejected, digit/dotted keys
+// dropped) — none of them present in today's corpus, so a corpus grep alone
+// cannot exercise them.
+
+describe('gen-skills: parser — fixtures', () => {
+  // The parser table's "Plain scalar" row states that a `#` inside a value is
+  // CONTENT, not a comment — only a `#` starting its own line is skipped. That
+  // clause had no fixture, which made it the one row of the table a regression
+  // could cross silently: adding naive comment-stripping would truncate a real
+  // description at the first `#` and nothing would object.
+  it('plain scalar: a `#` inside a value is content, not a comment', () => {
+    const text = [
+      '---',
+      'name: test-skill',
+      'description: Pass a key (e.g. #tag) to filter. See #notes for detail.',
+      '# a comment line of its own IS skipped',
+      'argument-hint: --flag=#value',
+      '---',
+      '',
+    ].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/hash-in-scalar.md');
+
+    // The `#` and everything after it survives, in both fields.
+    expect(fields.find((f) => f.key === 'description').value).toBe(
+      'Pass a key (e.g. #tag) to filter. See #notes for detail.'
+    );
+    expect(fields.find((f) => f.key === 'argument-hint').value).toBe('--flag=#value');
+    // …and the standalone comment line contributed no field.
+    expect(fields.map((f) => f.key)).toEqual(['name', 'description', 'argument-hint']);
+  });
+
+  it('block sequence: `key:` followed by indented `- item` lines yields kind "list"', () => {
+    const text = [
+      '---',
+      'name: test-skill',
+      'allowed-tools:',
+      '  - Read',
+      '  - Glob',
+      '  - Grep',
+      '---',
+      '',
+    ].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/block-seq.md');
+    const field = fields.find((f) => f.key === 'allowed-tools');
+    expect(field.kind).toBe('list');
+    expect(field.value).toEqual(['Read', 'Glob', 'Grep']);
+  });
+
+  it('flow sequence: `key: [a, b, c]` yields kind "list", split on commas', () => {
+    const text = ['---', 'name: test-skill', 'tags: [alpha, beta, gamma]', '---', ''].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/flow-seq.md');
+    const field = fields.find((f) => f.key === 'tags');
+    expect(field.kind).toBe('list');
+    expect(field.value).toEqual(['alpha', 'beta', 'gamma']);
+  });
+
+  it('`|` literal block preserves internal newlines verbatim (clip chomping)', () => {
+    const text = ['---', 'name: test-skill', 'notes: |', '  line one', '  line two', '---', ''].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/literal.md');
+    const field = fields.find((f) => f.key === 'notes');
+    expect(field.kind).toBe('scalar');
+    expect(field.value).toBe('line one\nline two\n');
+  });
+
+  it('`>-` strip chomping folds lines with a space and adds no trailing newline', () => {
+    const text = ['---', 'name: test-skill', 'desc: >-', '  hello', '  world', '---', ''].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/strip-chomp.md');
+    const field = fields.find((f) => f.key === 'desc');
+    expect(field.value).toBe('hello world');
+  });
+
+  it('`|+` keep chomping preserves every trailing blank line inside the block', () => {
+    const text = [
+      '---',
+      'name: test-skill',
+      'raw: |+',
+      '  keep me',
+      '',
+      '',
+      'next: after',
+      '---',
+      '',
+    ].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/keep-chomp.md');
+    const raw = fields.find((f) => f.key === 'raw');
+    const next = fields.find((f) => f.key === 'next');
+    expect(raw.value).toBe('keep me\n\n\n');
+    expect(next.value).toBe('after');
+  });
+
+  it('a blank line inside a folded (`>`) block becomes a paragraph break, not a truncation', () => {
+    // This is the exact failure mode of the existing gen-reference.mjs parser:
+    // `/^\s/.test('')` is false, so it stops collecting continuation lines at
+    // the first blank line and silently drops "para two".
+    const text = [
+      '---',
+      'name: test-skill',
+      'desc: >',
+      '  para one line a',
+      '  para one line b',
+      '',
+      '  para two',
+      '---',
+      '',
+    ].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/folded-blank.md');
+    const field = fields.find((f) => f.key === 'desc');
+    expect(field.value).toBe('para one line a para one line b\n\npara two\n');
+  });
+
+  it('CRLF fence and CRLF body lines parse identically to LF (fence tolerates \\r\\n)', () => {
+    const text = '---\r\nname: test-skill\r\ndesc: hello world\r\n---\r\nbody text\r\n';
+    const fields = parseSkillFrontmatter(text, 'fixtures/crlf.md');
+    expect(fields.find((f) => f.key === 'name').value).toBe('test-skill');
+    expect(fields.find((f) => f.key === 'desc').value).toBe('hello world');
+  });
+
+  it('dotted and digit keys are captured, not dropped by the key regex', () => {
+    const text = ['---', 'name: test-skill', 'schema.v2: enabled', 'field3: third', '---', ''].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/dotted-digit.md');
+    expect(fields.find((f) => f.key === 'schema.v2').value).toBe('enabled');
+    expect(fields.find((f) => f.key === 'field3').value).toBe('third');
+  });
+
+  it('an empty value (`key:` with nothing following) is kept as a field with value ""', () => {
+    const text = ['---', 'name: test-skill', 'extra:', '---', ''].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/empty-value.md');
+    const field = fields.find((f) => f.key === 'extra');
+    expect(field).toBeDefined();
+    expect(field.kind).toBe('scalar');
+    expect(field.value).toBe('');
+  });
+
+  it('single-quoted scalar: outer quotes removed, \'\'  -> \'', () => {
+    const text = ['---', 'name: test-skill', "single: 'it''s fine'", '---', ''].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/single-quoted.md');
+    expect(fields.find((f) => f.key === 'single').value).toBe("it's fine");
+  });
+
+  it('double-quoted scalar: outer quotes removed, \\n \\t \\" unescaped', () => {
+    const text = [
+      '---',
+      'name: test-skill',
+      'double: "line1\\nline2\\ttab \\"quoted\\""',
+      '---',
+      '',
+    ].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/double-quoted.md');
+    expect(fields.find((f) => f.key === 'double').value).toBe('line1\nline2\ttab "quoted"');
+  });
+
+  it('a blank line and a `#` comment between fields are skipped, not treated as fields', () => {
+    const text = [
+      '---',
+      'name: test-skill',
+      '',
+      '# a comment line',
+      'description: after comment',
+      '---',
+      '',
+    ].join('\n');
+    const fields = parseSkillFrontmatter(text, 'fixtures/blank-comment.md');
+    expect(fields.map((f) => f.key)).toEqual(['name', 'description']);
+  });
+});
+
+// ── Parser — guards ───────────────────────────────────────────────────────────
+// Each guard throws, naming the file and the 1-based line (except name
+// mismatch — see the note on that test below, which documents a decision).
+
+describe('gen-skills: parser — guards', () => {
+  it('duplicate key throws, naming the file and the 1-based line', () => {
+    const text = ['---', 'name: dup-test', 'name: dup-test-again', '---', ''].join('\n');
+    expect(() => parseSkillFrontmatter(text, 'fixtures/dup-key.md')).toThrow(
+      /duplicate key 'name'.*fixtures\/dup-key\.md:3/
+    );
+  });
+
+  it('an unclassifiable line at indent 0 throws, naming the file and the 1-based line', () => {
+    const text = ['---', 'name: test', 'this has no colon at all', '---', ''].join('\n');
+    expect(() => parseSkillFrontmatter(text, 'fixtures/unclassifiable.md')).toThrow(
+      /unclassifiable line.*fixtures\/unclassifiable\.md:3/
+    );
+  });
+
+  it('a missing opening fence throws, naming the file and line 1', () => {
+    const text = 'name: test\ndescription: test\n';
+    expect(() => parseSkillFrontmatter(text, 'fixtures/no-fence.md')).toThrow(
+      /missing opening fence.*fixtures\/no-fence\.md:1/
+    );
+  });
+
+  it('an unterminated fence throws, naming the file and line 1', () => {
+    const text = '---\nname: test\n';
+    expect(() => parseSkillFrontmatter(text, 'fixtures/unterminated.md')).toThrow(
+      /unterminated frontmatter fence.*fixtures\/unterminated\.md:1/
+    );
+  });
+
+  describe('name mismatch', () => {
+    // buildRecord() accepts an optional skillsDir precisely so this guard is
+    // testable against a disposable fixture rather than the real corpus
+    // (discover.mjs's own doc comment on the parameter).
+    let tmpRoot;
+
+    beforeAll(() => {
+      tmpRoot = mkdtempSync(join(tmpdir(), 'gen-skills-name-mismatch-'));
+      mkdirSync(join(tmpRoot, 'some-dir-name'));
+      writeFileSync(
+        join(tmpRoot, 'some-dir-name', 'SKILL.md'),
+        '---\nname: wrong-name\ndescription: test\n---\n\nbody\n',
+        'utf8'
+      );
+    });
+
+    afterAll(() => {
+      rmSync(tmpRoot, { recursive: true, force: true });
+    });
+
+    // task-017 originally asserted only the directory here, because the guard
+    // emitted no line number while the other three did — and recorded that gap
+    // rather than reaching into `discover.mjs`, which was the right call with a
+    // second agent live in the worktree. The guard has since been brought into
+    // line, so this now asserts what the acceptance criterion actually asks for:
+    // the file AND the 1-based line, like every other guard.
+    it('throws when frontmatter name does not match the directory, citing file and line', () => {
+      let err;
+      try {
+        buildRecord('some-dir-name', tmpRoot);
+      } catch (e) {
+        err = e;
+      }
+      expect(err).toBeDefined();
+      expect(err.message).toMatch(/name mismatch.*some-dir-name.*wrong-name/);
+      // `---` is line 1, so `name:` is line 2.
+      expect(err.message).toContain('canonical/skills/some-dir-name/SKILL.md:2');
+    });
+  });
+});
+
+// ── Value rendering ───────────────────────────────────────────────────────────
+// `<`/`&` escaped outside the author's own code spans; code-span content
+// passes through byte-identical; `|` needs no escaping in either run type.
+
+// This is the OVER-escaping half of the escaping contract, and it lives here
+// rather than in the index suite for a measured reason: a card's intent is only
+// the description's first sentence, and 0 of 111 card intents contain a code span,
+// so the construct cannot occur there. The detail pages render the FULL
+// description — 70 of 111 carry a code span, 579 in total — so this is where the
+// defect could actually appear.
+//
+// The property asserted is absolute, not derived. Comparing against a
+// re-rendered expectation would be tautological: a broken escaper on both sides
+// agrees with itself. And the premise is measured rather than assumed — no
+// `SKILL.md` frontmatter in the corpus contains an authored HTML entity, so an
+// entity inside a rendered code span can only have been put there by the escaper.
+describe('gen-skills: escaping — code spans pass through byte-identical', () => {
+  it('no rendered code span contains an HTML entity', () => {
+    // Renders IN MEMORY from the live corpus rather than reading the generated
+    // pages from disk. That is deliberate and it is the second version of this
+    // test: the first read `src/content/docs/skills/*.md`, and its freshness
+    // turned out to depend on an accidental cross-file ordering coincidence —
+    // this file's top-level `beforeAll` only regenerates when no pages exist, so
+    // it otherwise reads whatever is committed, and the check only failed under
+    // `npm test` because a sibling suite sorts earlier and regenerates
+    // unconditionally. Run this file alone and it passed with the defect live.
+    //
+    // Driving the escaper directly removes the dependency altogether: no disk
+    // read, no ordering assumption, no staleness, and it tests the code path
+    // rather than a snapshot of its past output.
+    const dirs = readdirSync(CANONICAL_SKILLS_DIR, { withFileTypes: true })
+      .filter((e) => e.isDirectory())
+      .map((e) => e.name);
+    let spansChecked = 0;
+
+    for (const dir of dirs) {
+      const source = join(CANONICAL_SKILLS_DIR, dir, 'SKILL.md');
+      if (!existsSync(source)) continue;
+      for (const field of parseSkillFrontmatter(readFileSync(source, 'utf8'), dir)) {
+        for (const [, inner] of renderFrontmatterValue(field).matchAll(/`+([^`]*)`+/g)) {
+          spansChecked++;
+          expect(
+            inner,
+            `${dir}: the escaper altered an authored code span in \`${field.key}\` — ` +
+              `entities are not decoded inside code spans, so a reader would see ` +
+              `this literally: \`${inner}\``
+          ).not.toMatch(/&(?:amp|lt|gt|quot|#\d+);/);
+        }
+      }
+    }
+
+    // Not vacuous, and compared against a derived quantity rather than a literal:
+    // the corpus carries authored code spans on more keys than it has skills.
+    expect(spansChecked).toBeGreaterThan(dirs.length);
+  });
+});
+
+describe('gen-skills: value rendering', () => {
+  it('escapes < and & outside code spans', () => {
+    const field = { key: 'test', kind: 'scalar', value: 'A < B & C', line: 1 };
+    expect(renderFrontmatterValue(field)).toBe('A &lt; B &amp; C');
+  });
+
+  it('passes < through unescaped inside an authored code span', () => {
+    const field = { key: 'test', kind: 'scalar', value: 'before `<inner>` after', line: 1 };
+    expect(renderFrontmatterValue(field)).toBe('before `<inner>` after');
+  });
+
+  it('escapes the text runs around a code span while leaving the span itself untouched', () => {
+    const field = { key: 'test', kind: 'scalar', value: 'A<b> `<code>` C&D', line: 1 };
+    expect(renderFrontmatterValue(field)).toBe('A&lt;b> `<code>` C&amp;D');
+  });
+
+  it('does not escape | in either a text run or a code span', () => {
+    const field = { key: 'test', kind: 'scalar', value: 'a | b `c|d`', line: 1 };
+    expect(renderFrontmatterValue(field)).toBe('a | b `c|d`');
+  });
+
+  it('renders a list field as comma-joined code spans', () => {
+    const field = { key: 'test', kind: 'list', value: ['Read', 'Glob', 'Grep'], line: 1 };
+    expect(renderFrontmatterValue(field)).toBe('`Read`, `Glob`, `Grep`');
+  });
+
+  it("real fixture: aid-read-ticket's description keeps its <connector>/<ticket-id> placeholders unescaped inside the authored code span", () => {
+    const raw = readFileSync(
+      join(resolve(dirname(fileURLToPath(import.meta.url)), '../../../'), 'canonical', 'skills', 'aid-read-ticket', 'SKILL.md'),
+      'utf8'
+    );
+    const fields = parseSkillFrontmatter(raw, 'canonical/skills/aid-read-ticket/SKILL.md');
+    const descField = fields.find((f) => f.key === 'description');
+    expect(descField).toBeDefined();
+
+    const rendered = renderFrontmatterValue(descField);
+
+    // Authored inside backticks in the real file — must survive rendering
+    // byte-identical, not become &lt;connector&gt;.
+    expect(rendered).toContain('`aid-read-ticket [<connector>:]<ticket-id>`');
+    expect(rendered).not.toContain('&lt;connector&gt;');
+    expect(rendered).not.toContain('&lt;ticket-id&gt;');
+  });
+});
+
+// ── AC-2 header completeness — fixture-driven (the real test) ────────────────
+// Driven off the parser, not by grepping the rendered corpus, so it stays true
+// as the corpus changes — today's corpus has no list-valued frontmatter key,
+// so a corpus grep alone cannot prove a list-valued key is rendered rather
+// than silently dropped.
+
+describe('gen-skills: AC-2 header completeness — fixture-driven', () => {
+  it('every key from a list-valued + multi-line-folded fixture appears on the rendered page', () => {
+    const fixtureText = [
+      '---',
+      'name: fixture-ac2-skill',
+      'description: >',
+      '  first line of the summary',
+      '  continued on a second physical line',
+      'allowed-tools:',
+      '  - Read',
+      '  - Glob',
+      '  - Grep',
+      'argument-hint: [description]',
+      '---',
+      '',
+      'body text',
+    ].join('\n');
+
+    const fields = parseSkillFrontmatter(fixtureText, 'fixtures/ac2.md');
+    const skill = {
+      dirName: 'fixture-ac2-skill',
+      fields,
+      field(k) {
+        return fields.find((f) => f.key === k);
+      },
+      body: 'body text\n',
+      bodyStartLine: 13,
+      lineCount: 13,
+      referencesDir: null,
+    };
+
+    const page = renderSkillPage(skill);
+
+    // AC-2: no key is silently dropped.
+    for (const field of fields) {
+      expect(page).toContain(`**\`${field.key}\`**`);
+    }
+
+    // The specific case the old parser mishandled: a list-valued key must
+    // render its items, not an empty string.
+    expect(page).toContain('`Read`, `Glob`, `Grep`');
+  });
+});
 
 // ── AC-1 / Corpus coverage: one page per skill directory ─────────────────────
 

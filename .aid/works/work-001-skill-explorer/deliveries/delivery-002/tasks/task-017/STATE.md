@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-5 quick check (Small, Sonnet 5): 1 HIGH (parser-table plain-scalar hash-is-content row had no fixture) Fixed; plus a HIGH found during confirmation (the escaping check depended on cross-file ordering) Fixed by driving the escaper in memory.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

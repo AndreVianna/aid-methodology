@@ -112,8 +112,14 @@ export function buildRecord(dirName, skillsDir = CANONICAL_SKILLS_DIR) {
   const nameField = fields.find((f) => f.key === 'name');
   const nameVal = nameField ? String(nameField.value) : '(missing)';
   if (!nameField || nameField.value !== dirName) {
+    // Cites file and 1-based line like the three frontmatter guards do, so a
+    // maintainer is pointed at the offending line rather than just the directory.
+    // When `name` is absent entirely there is no line to cite, so the location
+    // clause is suppressed rather than inventing one.
+    const where = nameField ? `${sourcePath}:${nameField.line}` : sourcePath;
     throw new Error(
-      `[gen-skills] name mismatch: directory '${dirName}' has frontmatter name '${nameVal}'`
+      `[gen-skills] name mismatch: directory '${dirName}' has frontmatter name ` +
+        `'${nameVal}' (${where})`
     );
   }
 

@@ -236,6 +236,41 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 - **Applied to:** `site/scripts/skills/summary.mjs`, which already emits feature-001's sentinel —
   no code change was required. **feature-002's SPEC sentence should be corrected to match when that
   document is next opened** (the same disposition work Q3 gave feature-003's V9 text).
+  **Deadline sharpened at the checkpoint review:** "when next opened" is unbounded, and **task-018
+  is inside this delivery** and will be authored against that uncorrected sentence — so the
+  correction is due **before task-018 executes**, not later.
+
+---
+
+## UI Review Checkpoint (non-blocking gate criterion)
+
+<!-- AUTHORED -- the owner's verdict on the BLUEPRINT's non-blocking UI checkpoint, recorded per
+     its gate criterion: "the site is built and browsed in a real browser, and a verdict is
+     recorded". A Fail files a ticket; it does not block the gate. -->
+
+- **When:** 2026-07-27, after task-016 and before task-017/018 — the point the BLUEPRINT specifies.
+- **How:** Astro dev server at `http://localhost:4321/`, browsed by the work owner.
+- **Preceded by:** the mandated Large-tier adversarial review, which reached **A+** after three
+  cycles (A → A → A+; 2 HIGH and 4 MEDIUM fixed, 1 LOW Accepted).
+- **Verdict:** **PASS.** The owner reviewed everything to this checkpoint and approved it. No
+  ticket filed, no change requested.
+
+**What was in front of them:** the `/skills/` index — one card per skill under the four curated
+groups, `Definition` subdivided into 17 verb families — the sidebar `Skills` group, the header tab
+highlighting on detail pages, and a detail page's complete frontmatter header. Chart slots
+deliberately empty, rendered as an HTML comment rather than an empty heading.
+
+**Observations put to the owner for judgement. All are accepted as-shipped by the approval except
+where noted:**
+
+| # | Observation | Disposition |
+|---|---|---|
+| 1 | **Card density — risk R7 made concrete.** `create` renders 32 cards in one flat run and `change` 30, against twelve families of 1–4. **22 of 111** intents hit the 157-character cap, several cutting mid-phrase. | **Accepted as-shipped.** No budget was ever gated on it; R7 recorded the increase as linear and ungated. |
+| 2 | **feature-002 OQ-1** — no `query` family section renders at all, because `aid-query-kb` and `aid-ask` are curated into Knowledge Base Maintenance. | **Default confirmed.** The BLUEPRINT said this was best judged against the rendered index; it now was, and it stands. Reversal remains two names deleted from one array. |
+| 3 | **The four group blurbs** — the only prose on the page no test protects. | **Accepted, deliberately.** Both candidate semantic assertions were implemented and tested at the checkpoint review: one returns empty against the actual defect (which lived in gerunds, not skill tokens), the other false-positives on two independently-written correct blurbs. Ledger row 16, Accepted. |
+| 4 | **111 sidebar anchors on every page of the site**, the group rendering `open` site-wide. | **Accepted as-shipped.** Whether it should be `collapsed: true` at top level was raised and left unchanged. |
+| 5 | **The unfilled body slot is invisible** — a detail page ends at the source link, reading as *finished* rather than *pending*. | **Accepted for this delivery.** delivery-003 fills the slot. |
+| 6 | **Q4 — `/reference/skills/<name>` still 404s** (KI-010's asymmetry). | **Still formally open.** Approving the checkpoint did not answer it; carried to the delivery-002 gate. |
 
 ---
 

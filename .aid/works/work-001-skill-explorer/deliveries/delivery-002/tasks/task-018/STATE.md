@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-5 quick check (Small, Sonnet 5): 1 HIGH (assertion 11 unescape-then-compare masked over-escaping) Fixed -- relocated to the detail pages after measuring that 0 of 111 card intents carry a code span, so the check was vacuous on the index.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

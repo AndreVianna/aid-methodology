@@ -371,8 +371,18 @@ repetition FR-5 asks the grouping to contain. AC-8 is checked against the nestin
 
 `skillSummary(record)` — the **first sentence** of the skill's frontmatter `description` (text up
 to and including the first `. `), hard-cut at the last word boundary ≤ 157 characters with a
-trailing `…` if longer, falling back to the skill's own name when the file carries no
-`description`.
+trailing `…` if longer, falling back to **feature-001's sentinel**
+`AID skill <dir> — declared frontmatter contract, generated from canonical/.` when the file
+carries no `description`.
+
+> **Corrected 2026-07-27 (delivery-002 Q3).** This sentence previously read "falling back to the
+> skill's own name", which contradicted feature-001 and contradicted the very next bullet's claim
+> that the rule is reused **parameter-for-parameter**. Two independent things force feature-001's
+> sentinel: that reuse claim, and this feature's own requirement that a card's text equal its
+> page's `<meta name="description">` — unsatisfiable for a description-less skill if the two
+> fallbacks differ. The fallback is unreachable in practice (all 111 skills carry a
+> `description`, measured), so nothing rendered differently; the contradiction was corrected
+> before task-018 was authored against it.
 
 - **This is feature-001's page-`description` rule, deliberately reused parameter-for-parameter**,
   so a card's text and its target page's `<meta name="description">` are the same string.
