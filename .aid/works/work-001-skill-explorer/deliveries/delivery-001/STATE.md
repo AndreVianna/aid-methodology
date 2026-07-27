@@ -127,7 +127,22 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
   home page promising 92 skills.
 - **Owner options:** (1) correct `index.mdx`'s two prose blocks as a ride-along, (2) file it as a
   ticket for a separate content pass, or (3) accept it. Delivery-001 touches it in no case.
-- **Status:** **Open — awaiting owner decision at the delivery-001 gate.**
+- **Status:** **Answered (2026-07-27, work owner) — option 2, sharpened: FOLDED into the new
+  post-delivery-005 unification delivery** (work `STATE.md` **Q4**), rather than filed as a
+  free-standing ticket.
+  - **Why there.** Q4's half 1 already corrects `reference/overview.md`, whose line 16 carries the
+    **identical** sentence — "All 92 AID skills — the 14 classic … and 76 verb-first shortcut
+    skills". `index.mdx`:76-77 and :91-92 are the same defect, in the same class of file
+    (hand-authored, outside the §7 freeze, editable today), and correcting them together is one
+    content pass rather than two touching the same claim.
+  - **This escalation therefore closes as a routing decision, not as a fix.** Nothing in
+    delivery-001, 002 or 003 corrects the counts; the home page keeps promising 92 skills while
+    `/skills/` ships 111 cards until that delivery lands. Recorded plainly so the gap is a known,
+    dated, owned state rather than something a later reader discovers and re-escalates.
+  - **Scope note for whoever plans it:** the three stale quantities are one derived triple —
+    111 directories, 21 curated, 64 emitting catalog rows — and the same triple is what KI-003
+    reports stale in `gen-reference.mjs`'s header. Deriving it once and correcting all sites
+    against that derivation is the way to avoid re-introducing the KI-005 class by hand.
 
 ### E-3 — the `.cursor/` install tree and root `AGENTS.md` on this branch
 

@@ -283,13 +283,26 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
   `APPROVAL-HALT`, `INTAKE` or `shortcut-engine` in `skills/index.md`). So the page is **hollowed
   out, not deleted**: it keeps the narrative and sheds the duplicated roster.
 - **The two halves, and why only one touches the freeze:**
-  1. **Repoint the inbound links — needs no §7 change.** Every link routing readers to the worse
-     page is in a **hand-authored** file: seven in `guides/pipeline.mdx` and one in
-     `reference/overview.md`, whose own sentence is stale in the same way ("All 92 AID skills …
-     76 verb-first shortcut skills"). Established by checking each reference page for its
-     generated marker: `skills.md`, `agents.md`, `kb.md`, `settings.md` and `glossary.md` are
-     generated; `overview.md`, `index.md`, `artifacts.md`, `repository-structure.md` and
-     `guides/pipeline.mdx` are hand-authored and editable today.
+  1. **Repoint the inbound links, and correct the stale roster prose — needs no §7 change.** Every
+     link routing readers to the worse page is in a **hand-authored** file: seven in
+     `guides/pipeline.mdx` and one in `reference/overview.md`, whose own sentence is stale in the
+     same way ("All 92 AID skills … 76 verb-first shortcut skills"). Established by checking each
+     reference page for its generated marker: `skills.md`, `agents.md`, `kb.md`, `settings.md` and
+     `glossary.md` are generated; `overview.md`, `index.md`, `artifacts.md`,
+     `repository-structure.md` and `guides/pipeline.mdx` are hand-authored and editable today.
+     - **Extended 2026-07-27 to absorb delivery-001's escalation E-1** (owner decision, same
+       sitting). `site/src/content/docs/index.mdx`:76-77 and :91-92 carry the **identical** claim —
+       "92 skills — 14 classic … 76 verb-first shortcut skills" — against a measured **111 / 21 /
+       64**. E-1 was raised at the delivery-001 gate and had stayed open because no task's Scope
+       covered a content page. It is the same defect, in the same class of file, as
+       `overview.md`'s line 16, so it is corrected in the same pass rather than as its own ticket.
+     - **Consequence until this delivery lands:** the home page promises 92 skills while `/skills/`
+       ships 111 cards. Known, dated and owned — not a discovery for a later reader.
+     - **Derive the triple once.** The three quantities are one derived fact (directories under
+       `canonical/skills/`, curated entries, emitting catalog rows), and **KI-003** reports the same
+       triple stale in `gen-reference.mjs`'s header. Correcting each site by hand against a
+       hand-counted number is how the KI-005 class gets reintroduced; derive it once and correct
+       every site against that derivation.
   2. **Hollow out `reference/skills.md` — amends §7.** §7 currently reads "`gen-reference.mjs`
      itself is frozen by this work" and "the existing `site/` build and its four generated
      reference pages must keep working unchanged". Precedent exists: **§7 was already amended once
