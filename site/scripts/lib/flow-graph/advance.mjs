@@ -59,6 +59,14 @@ const STATE_WRAPPER_RE = /\[State:\s+([^\]]+)\]/g;
  */
 const TOKEN_RE = /[A-Za-z][A-Za-z0-9-]*/g;
 
+/**
+ * Non-global variant of ADVANCE_KW_RE for `.test()` calls that must not
+ * advance lastIndex (rule-10 W-1 pure-commentary check).
+ */
+const ADVANCE_KW_PLAIN_RE = new RegExp(
+  `(?<![A-Za-z0-9-])(${ADVANCE_TYPES_IN_TEXT.join('|')})(?![A-Za-z0-9-])`
+);
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
@@ -196,8 +204,15 @@ export function parseAdvanceBlock({
 
   // ── SEAM FOR TASK-023 ─────────────────────────────────────────────────────
   // Rules 5–9 (self-loop, `then` optionality, back-reference, re-entry,
-  // pause-resume) and rule-10 / V9 (residual-text guard) are added by
-  // task-023 immediately here, with access to:
+  // pause-resume) and rule-10 / V9 (residual-text guard) added below.
+  //
+  // validate.mjs implements V1–V8 (pure FlowChart checks). V9 lives here
+  // because residue is leftover source text that exists only during parsing:
+  // a validator handed the finished FlowChart cannot distinguish "this state
+  // was never mentioned" from "this state was mentioned and its edge was
+  // silently dropped" — the KI-008 failure V9 exists to catch. Owner
+  // decision recorded as work STATE.md Q3 and delivery-003 seam S5.
+  //
   //   content       — normalized advance block text (single string)
   //   clauses       — accepted clause strings (phase-2 output)
   //   edges         — edge array produced above (may be mutated/extended)
@@ -205,6 +220,178 @@ export function parseAdvanceBlock({
   //   stateByName   — state index (for V9 / W-1 declared-state lookups)
   //   fromNodeId, fromNodeName, file, blockStartLine — error-message context
   //   blockProvenance — provenance for new edges
+
+  // ── Rule 6: X then Y — optional side-trip ─────────────────────────────────
+  // Runs before rules 5 and 9 (it changes edge count and kind).
+  // For each consecutive clause pair separated by ` then ` in the content:
+  //   - optionality marker on X → emit two branch edges (X with marker, Y null)
+  //   - no marker → keep → X as sequence, remove → Y, warn
+  for (let ci = 0; ci < clauses.length - 1; ci++) {
+    const xClause = clauses[ci];
+    const yClause = clauses[ci + 1];
+
+    // Detect ` then ` between this adjacent pair in the normalized content.
+    if (!content.includes(xClause + ' then ' + yClause)) continue;
+
+    const xTarget = _resolveTarget(xClause, stateByName);
+    const yTarget = _resolveTarget(yClause, stateByName);
+    // Skip if either resolves to a terminal rather than a declared state.
+    if (!xTarget || !yTarget) continue;
+
+    // Find the edges produced by rules 2–4 for X and Y.
+    const xEdgeIdx = edges.findIndex((e) => e.to === xTarget.id);
+    const yEdgeIdx = edges.findIndex((e) => e.to === yTarget.id);
+
+    const marker = _extractOptionalityMarker(xClause, xTarget.name);
+
+    if (marker !== null) {
+      // X is optional: both X and Y reachable from this node.
+      // → X: branch with marker text as condition (verbatim).
+      if (xEdgeIdx !== -1) {
+        edges[xEdgeIdx] = { ...edges[xEdgeIdx], kind: 'branch', condition: marker };
+      }
+      // → Y: branch with condition null (the skip path).
+      if (yEdgeIdx !== -1) {
+        edges[yEdgeIdx] = { ...edges[yEdgeIdx], kind: 'branch', condition: null };
+      }
+    } else {
+      // X is not optional: "X then Y" means "go to X, X advances to Y."
+      // Keep → X as a sequence edge; remove → Y; warn.
+      if (yEdgeIdx !== -1) {
+        edges.splice(yEdgeIdx, 1);
+      }
+      warnings.push(
+        `[gen-skills] advance: W-1: '${fromNodeName}' in '${file}:${blockStartLine}': ` +
+        `' then ${yClause.slice(0, 40)}' was read as '${xTarget.name}'\`s onward flow ` +
+        `via the ' then ' connector — if a branch edge to '${yTarget.name}' was intended, ` +
+        `add an optionality marker (e.g. '(optional)') to the first clause`
+      );
+    }
+  }
+
+  // ── Rule 9: Pause-resume targets are metadata, not edges ──────────────────
+  // Runs before rule 5 (cleans up PAUSE edges so rule 5 sees the final count).
+  // A PAUSE-FOR-USER-* edge to a declared state records that state in
+  // terminal.handoff and emits no edge — the transition is out-of-run.
+  {
+    const pauseIndices = [];
+    for (let i = 0; i < edges.length; i++) {
+      const e = edges[i];
+      if (
+        e.advanceType === 'PAUSE-FOR-USER-ACTION' ||
+        e.advanceType === 'PAUSE-FOR-USER-DECISION'
+      ) {
+        pauseIndices.push(i);
+      }
+    }
+    for (let j = pauseIndices.length - 1; j >= 0; j--) {
+      const i = pauseIndices[j];
+      const e = edges[i];
+      const targetState = [...stateByName.values()].find((s) => s.id === e.to);
+      edges.splice(i, 1);
+      if (terminal !== null) {
+        warnings.push(
+          `[gen-skills] advance: multiple terminal clauses in '${fromNodeName}'; ` +
+          `keeping last pause-resume (${file}:${blockStartLine})`
+        );
+      }
+      terminal = {
+        advanceType: e.advanceType,
+        handoff: targetState ? targetState.name : null,
+      };
+    }
+  }
+
+  // ── Rule 5: Single-target conditional ⇒ self-loop ─────────────────────────
+  // When the advance block produces exactly ONE conditional edge and the target
+  // is not the source node itself, the state stays put while the guard is
+  // unmet: emit a loop-back self-edge with condition 'otherwise'.
+  // Not suppressed by dispatch-row branches (merged later by the extractor).
+  if (
+    edges.length === 1 &&
+    edges[0].condition !== null &&
+    edges[0].to !== fromNodeId
+  ) {
+    edges.push({
+      to: fromNodeId,
+      kind: 'loop-back',
+      condition: 'otherwise',
+      advanceType: 'UNSPECIFIED',
+      provenance: blockProvenance,
+    });
+  }
+
+  // ── Rule 7: Position-based kind assignment (back-reference ⇒ loop-back) ────
+  // Any edge whose target sits earlier in the declared spine (lower order)
+  // than its source is kind 'loop-back', whichever rule produced it.
+  // Rule 8 (re-entry heading, applied by the extractor) takes precedence:
+  // re-entry-typed edges are not downgraded here (defensive guard).
+  {
+    const fromOrder =
+      [...stateByName.values()].find((s) => s.id === fromNodeId)?.order ?? 0;
+    for (const edge of edges) {
+      if (edge.kind === 're-entry') continue; // Rule 8: extractor owns re-entry
+      const targetState = [...stateByName.values()].find((s) => s.id === edge.to);
+      if (targetState && targetState.order < fromOrder) {
+        edge.kind = 'loop-back';
+      }
+    }
+  }
+
+  // ── Rule 10 / V9: Residual-text guard ─────────────────────────────────────
+  // W-1 (warning, never throw): non-commentary residue after clause extraction.
+  // V9 (error, always throw): declared state in advance text that is not an
+  // edge target or pause-resume handoff — the fingerprint of a dropped edge.
+  {
+    // Compute strict residue: the advance text not covered by accepted clause spans.
+    const residue = _computeResidue(content, clauses);
+
+    if (residue) {
+      // "Pure commentary" test is mechanical: no declared-state token,
+      // no advance-type keyword, no [State:…] reference.
+      const isPureCommentary =
+        !/\[State:\s+[^\]]+\]/.test(residue) &&
+        !ADVANCE_KW_PLAIN_RE.test(residue) &&
+        !_residueHasDeclaredState(residue, stateByName);
+
+      if (!isPureCommentary) {
+        warnings.push(
+          `[gen-skills] advance: W-1: '${fromNodeName}' in '${file}:${blockStartLine}': ` +
+          `non-commentary residue after clause extraction: '${truncate(residue, 60)}'`
+        );
+      }
+    }
+
+    // V9: scan the full advance text for declared state references that are
+    // neither edge targets nor pause-resume handoffs. The full-text scan (not
+    // just strict residue) catches states inside a clause's condition text —
+    // the KI-008 scenario: DONE named in "HANDOFF … THEN DONE." where THEN is
+    // not in the separator set, leaving DONE consumed by the condition but
+    // unreachable as an edge.
+    const edgeTargetIds = new Set(edges.map((e) => e.to));
+    const handoffName = terminal?.handoff?.toLowerCase() ?? null;
+
+    const contentForV9 = content
+      .replace(STATE_WRAPPER_RE, '$1') // unwrap [State: X] → X
+      .replace(ARROW_RE, ' ');          // strip arrows
+
+    TOKEN_RE.lastIndex = 0;
+    let vm;
+    while ((vm = TOKEN_RE.exec(contentForV9)) !== null) {
+      const state = stateByName.get(vm[0].toLowerCase());
+      if (!state) continue;                           // not a declared state
+      if (edgeTargetIds.has(state.id)) continue;     // already an edge target
+      if (handoffName && state.name.toLowerCase() === handoffName) continue; // pause handoff
+
+      // Unconsumed declared state — precise KI-008 fingerprint.
+      throw new Error(
+        `[gen-skills] V9: '${fromNodeName}' (${file}:${blockStartLine}): declared state ` +
+        `'${state.name}' is referenced in the advance text but is not an edge target or ` +
+        `pause-resume handoff — possible dropped edge. ` +
+        `Advance: '${truncate(content, 60)}'`
+      );
+    }
+  }
 
   return { edges, terminal, warnings };
 }
@@ -590,4 +777,83 @@ function _extractHandoff(clauseText) {
   text = text.replace(/\s+/g, ' ').trim();
   text = text.replace(/^[[\]().,;:!?→>-]+|[[\]().,;:!?→>-]+$/g, '').trim();
   return text || null;
+}
+
+/**
+ * Detect an optionality marker in a clause and return its verbatim text,
+ * or null when no marker is present.
+ *
+ * Markers (feature-003 SPEC rule 6):
+ *   `(optional)` / bare `optional`  → `'optional'`
+ *   trailing `?` on the clause      → `'?'`
+ *   `if <cond>` qualifier           → the full `if …` text
+ *
+ * @param {string} clauseText   Raw clause text.
+ * @param {string} targetName   Resolved state name (stripped before scanning).
+ * @returns {string|null}
+ */
+function _extractOptionalityMarker(clauseText, targetName) {
+  let remaining = clauseText;
+  const escaped = targetName.replace(/[-]/g, '\\-');
+  remaining = remaining.replace(
+    new RegExp(`(?<![A-Za-z0-9-])${escaped}(?![A-Za-z0-9-])`, 'gi'), ' '
+  );
+  remaining = remaining.replace(ARROW_RE, ' ');
+  remaining = remaining.replace(ADVANCE_KW_RE, ' ');
+  remaining = remaining.replace(/\s+/g, ' ').trim();
+
+  // `(optional)` or bare `optional`
+  if (/\boptional\b/i.test(remaining)) return 'optional';
+
+  // Trailing `?` on the whole clause (before state-name stripping)
+  if (clauseText.trim().endsWith('?')) return '?';
+
+  // `if <cond>` qualifier (any `if …` remaining after other stripping)
+  const ifMatch = remaining.match(/\bif\b\s+\S.*/i);
+  if (ifMatch) return ifMatch[0].trim();
+
+  return null;
+}
+
+/**
+ * Compute the residue: the portion of `content` not covered by any accepted
+ * clause span.  Each clause is located in the content left-to-right and its
+ * character positions are marked; the unmarked characters form the residue.
+ *
+ * @param {string}   content
+ * @param {string[]} clauses  Accepted clause strings (phase-2 output).
+ * @returns {string}          Residue text, whitespace-collapsed and trimmed.
+ */
+function _computeResidue(content, clauses) {
+  const covered = new Uint8Array(content.length);
+  let searchFrom = 0;
+  for (const clause of clauses) {
+    const idx = content.indexOf(clause, searchFrom);
+    if (idx !== -1) {
+      covered.fill(1, idx, idx + clause.length);
+      searchFrom = idx + clause.length;
+    }
+  }
+  let residue = '';
+  for (let i = 0; i < content.length; i++) {
+    if (!covered[i]) residue += content[i];
+  }
+  return residue.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Return true if `text` contains a whole-token match for any declared state.
+ * Used by the rule-10 W-1 pure-commentary check.
+ *
+ * @param {string} text
+ * @param {Map}    stateByName
+ * @returns {boolean}
+ */
+function _residueHasDeclaredState(text, stateByName) {
+  TOKEN_RE.lastIndex = 0;
+  let m;
+  while ((m = TOKEN_RE.exec(text)) !== null) {
+    if (stateByName.has(m[0].toLowerCase())) return true;
+  }
+  return false;
 }
