@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-3 quick check (Small): PASS, 0 findings. Drift guard extracted to assertNoSkillsDrift so all four branches are test-reachable; mutation-proven.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

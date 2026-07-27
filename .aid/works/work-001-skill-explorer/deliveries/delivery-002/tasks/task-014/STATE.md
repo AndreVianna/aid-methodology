@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-3 quick check (Small): PASS, 0 findings. Grammar regexes proven exclusive; 17 families independently reconciled against the catalog.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

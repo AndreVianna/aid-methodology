@@ -123,6 +123,38 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 - **Applied to:** task-017 / task-018 (the wave that creates `site/vitest.config.mjs`); recorded
   here because KI-016 states the decision is a routing choice, not a task-boundary change.
 
+### Q4 — KI-010's discoverability gap, observed rather than predicted
+
+- **Category:** Navigation / KI-010 (the asymmetry of the divergence remedy)
+- **Impact:** Medium — not a gate criterion; affects whether readers find `/skills/` at all
+- **State:** **Pending** — for the owner at the delivery-002 gate
+- **What happened:** during the mid-delivery preview, the **work owner** — who knows this work
+  in detail — went looking for a skill's detail page at **`/reference/skills/aid-config`** and got
+  a 404. The correct route is `/skills/aid-config/`.
+- **Why it matters:** this is KI-010's predicted failure, observed in the wild on the first
+  contact with the running site. `reference/skills.md` is a **single flat page** emitted by the
+  frozen `gen-reference.mjs`; it has no child routes and cannot grow any while §7 holds. The new
+  detail pages are a separate top-level section. KI-010 already records that the remedy is
+  **one-directional**: `/skills/` can carry a divergence note (task-014 emits one, naming
+  `aid-triage`, `aid-deploy` and `aid-monitor` and declaring itself authoritative), but no
+  reciprocal note can be added to `reference/skills.md`, because every `prebuild` regenerates it
+  and would discard a hand edit. KI-010's own words: "a reader arriving at the reference page
+  first therefore gets no signal."
+- **Evidence strength:** this is not a reviewer's hypothesis. The person most likely in the world
+  to know that `/skills/` exists still guessed the wrong URL, which is about as strong a signal as
+  a one-person sample can give.
+- **Options for the owner:**
+  1. **Accept** — the sidebar entry (task-016) and the search index will carry discovery, and the
+     divergence note handles the readers who arrive from `/skills/`.
+  2. **Add a redirect** `/reference/skills/<name>/ → /skills/<name>/`. Astro supports static
+     redirects in `astro.config.mjs` — the same file task-016 already opens — but it would need a
+     wildcard or 111 entries, and `astro.config.mjs` already has three would-be editors (risk R1).
+  3. **File a ticket against the §7 freeze** so `gen-reference.mjs` can eventually emit a pointer
+     to `/skills/`. This is the only option that fixes the asymmetry at its cause, and it is
+     already grouped with KI-003/KI-009/KI-010 as work that unblocks when the freeze lifts.
+- **Recommendation:** option 1 now, option 3 filed as the follow-up. A redirect map is real scope
+  in a contended file, and the freeze is the actual cause.
+
 ### Q3 — the two SPECs contradict each other on `skillSummary`'s no-`description` fallback
 
 - **Category:** Contract seam between feature-001 and feature-002
