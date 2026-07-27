@@ -1,6 +1,6 @@
 ---
-state: 'In Review'
-review: "--"
+state: Done
+review: 'Wave-4 quick check (Small, Sonnet 5): CONDITIONAL PASS across 3 cycles, grade D -> PASS. 2 HIGH + 4 MEDIUM + 2 LOW; 6 fixed, 2 routed to tasks 025/026 as untestable in this module, 1 (keeping-last) escalated to the owner.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

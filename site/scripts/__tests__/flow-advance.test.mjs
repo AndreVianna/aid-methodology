@@ -946,8 +946,13 @@ describe('Rule 6 — `X then Y`, the optional side-trip (KI-008)', () => {
     // does NOT throw, and correctly so: `. ` is a separator, so `See GAMMA` becomes
     // its own clause, resolves, and GAMMA legitimately becomes an edge target. An
     // em-dash aside keeps GAMMA inside the residue, which is the case under test.
+    // The assertion must name WHICH state V9 reported, not merely that the string
+    // appears. A bare /GAMMA/ passes vacuously even with the exemption removed,
+    // because V9's message quotes the whole advance text — which contains "GAMMA"
+    // regardless of which state it actually fired on. Caught at review; the irony of
+    // a narrowness guard that could not discriminate is the point.
     expect(() => parse(advBlock('HANDOFF then DONE -- consult GAMMA when unsure'), states('FROM', 'HANDOFF', 'DONE', 'GAMMA'), { fromNodeName: 'FROM' }))
-      .toThrow(/GAMMA/);
+      .toThrow(/declared state 'GAMMA'/);
   });
 
   it('rule 6 runs BEFORE rule 9 — a PAUSE clause in the pair is not double-counted', () => {
