@@ -177,7 +177,16 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 
 - **Category:** Navigation / KI-010 (the asymmetry of the divergence remedy)
 - **Impact:** Medium — not a gate criterion; affects whether readers find `/skills/` at all
-- **State:** **Pending** — for the owner at the delivery-002 gate
+- **State:** **Answered (2026-07-27, work owner) — option 1, and SUBSUMED by work `STATE.md` Q4.**
+  Put to the owner at the gate, who reframed it: the 404 is a symptom, and the real question is
+  whether the site should carry **two sections about skills at all**. The answer is that they are
+  unified in a **new delivery after delivery-005**, which both repoints the inbound links and
+  hollows out `reference/skills.md` (amending §7). See work `STATE.md` Q4 for the full decision.
+  **Interim disposition here: option 1, accept** — and its premise is now measured rather than
+  predicted. Pagefind indexes all 111 detail pages (13 fragments mention `aid-config`) and the
+  sidebar `Skills` group shipped in task-016, so discovery is carried. `/reference/skills/` is
+  still a leaf holding only `index.html`, so child routes keep 404ing until that delivery lands.
+  Option 3 is not filed separately: the §7 amendment it asked for **is** half 2 of that delivery.
 - **What happened:** during the mid-delivery preview, the **work owner** — who knows this work
   in detail — went looking for a skill's detail page at **`/reference/skills/aid-config`** and got
   a 404. The correct route is `/skills/aid-config/`.

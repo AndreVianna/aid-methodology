@@ -248,6 +248,65 @@ _None yet. Each delivery-NNN/STATE.md carries its own gate block._
   instead reversed to stub pages, re-scope 005 and 006 to authored-flow charts only and decide
   AC-5's reach for doorway pages at the same time.
 
+### Q4 — the two skill sections should be unified, in a new delivery after delivery-005
+
+*(Work-level Q4. Distinct from delivery-002's own Q4, which asked the narrower question —
+"should `/reference/skills/<name>` stop 404ing?" — and is **subsumed by this answer**.)*
+
+- **Category:** Scope / Site information architecture; amends **§7**
+- **Impact:** High — adds a delivery, and reopens a constraint this work froze
+- **Status:** **Answered (2026-07-27, work owner)**
+- **What was asked:** the owner reframed delivery-002's Q4. The presenting symptom was a 404 at
+  `/reference/skills/aid-config`, but the underlying question is that **the site has two sections
+  about skills** — `/skills/` and `/reference/skills/` — with different navigation, different
+  content, and different presentation. Should they be unified?
+- **Answer: yes, both halves, as a NEW DELIVERY sequenced after delivery-005.** Not a
+  delivery-003 ride-along and not folded into delivery-004 — it is its own unit of work, planned
+  and gated on its own, because the second half amends a constraint rather than implementing one.
+- **Why unification is the right call, evidenced rather than asserted.** The two pages are not
+  complementary views of different things; they are the **same roster**, under the **same four
+  groups**, one derived and one hand-maintained:
+  - `/reference/skills/` names the 21 curated skills with a description and a source link, then
+    collapses the 64 shortcuts into a family summary table.
+  - `/skills/` gives all 111 skills a card and a detail page, derived from `canonical/`, with
+    `Definition` subdivided into 17 verb families.
+  - The reference copy is **provably wrong in three already-catalogued ways**, none fixable while
+    §7 holds: **KI-003** (header claims 94 directories / 16 classic / 76 shortcuts against a real
+    111 / 19 / 64); **KI-009** (six family rows render a count of `0` while listing forms that
+    exist; `Test + Experiment` renders "3 typed forms … **= 0**" and `Document` renders "**-1**
+    typed forms"; the `Show dashboard` family matches a verb that does not exist — and the drift
+    guard cannot catch any of it, because it only checks that the counts *sum*); **KI-010** (three
+    skills in the wrong group per FR-5).
+- **What must NOT be lost.** The **shortcut-engine narrative** — `INTAKE → CAPTURE → SPEC → PLAN →
+  DETAIL → GATE → APPROVAL-HALT` and its surrounding explanation — exists **only** on
+  `reference/skills.md` and appears nowhere on `/skills/` (verified: zero occurrences of
+  `APPROVAL-HALT`, `INTAKE` or `shortcut-engine` in `skills/index.md`). So the page is **hollowed
+  out, not deleted**: it keeps the narrative and sheds the duplicated roster.
+- **The two halves, and why only one touches the freeze:**
+  1. **Repoint the inbound links — needs no §7 change.** Every link routing readers to the worse
+     page is in a **hand-authored** file: seven in `guides/pipeline.mdx` and one in
+     `reference/overview.md`, whose own sentence is stale in the same way ("All 92 AID skills …
+     76 verb-first shortcut skills"). Established by checking each reference page for its
+     generated marker: `skills.md`, `agents.md`, `kb.md`, `settings.md` and `glossary.md` are
+     generated; `overview.md`, `index.md`, `artifacts.md`, `repository-structure.md` and
+     `guides/pipeline.mdx` are hand-authored and editable today.
+  2. **Hollow out `reference/skills.md` — amends §7.** §7 currently reads "`gen-reference.mjs`
+     itself is frozen by this work" and "the existing `site/` build and its four generated
+     reference pages must keep working unchanged". Precedent exists: **§7 was already amended once
+     by owner decision at the Specify review**, when its original "vitest suites must keep passing
+     unchanged" wording proved unsatisfiable. This is the second amendment, and unlike the first
+     it is a deliberate scope addition rather than a correction.
+- **Sequencing and why it is not urgent.** Nothing in deliveries 003–005 depends on it, and it
+  touches no file they touch — the chart and panel work lives under `site/scripts/` and
+  `site/src/data/`, while this is content and one frozen generator. Deferring it costs nothing;
+  doing it earlier would put a third editor on `astro.config.mjs` mid-flight (risk R1).
+- **Interim disposition of delivery-002's Q4:** **option 1 — accept.** Its premise is now measured
+  rather than predicted: Pagefind indexes all 111 detail pages (13 fragments mention `aid-config`),
+  and the sidebar `Skills` group shipped in task-016. `/reference/skills/` remains a leaf with only
+  an `index.html`, so child routes still 404 until half 1 lands.
+- **Still to do:** this delivery is **not yet planned**. `PLAN.md` is an `aid-plan` artifact and is
+  not edited here; the new delivery needs its own BLUEPRINT and task breakdown before execution.
+
 ## Calibration Log
 
 <!-- DERIVED -- read-only union of per-task ## Dispatch Log entries from
