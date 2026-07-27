@@ -64,17 +64,11 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Findings:** none -- no [CRITICAL] and no [HIGH] finding was raised. The AC-1 drift guard was extracted as
+  `assertNoSkillsDrift` so all four branches are test-reachable -- three of them cannot fire in
+  situ, because the write pass has just created a page for every discovered skill.
+- Ledger: `.aid/.temp/review-pending/delivery-002-wave-3.md`.
 ---
 
 ## Dispatch Log
@@ -86,3 +80,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | aid-developer (Sonnet, parallel wave dispatch) | 15-30 min | ~18 min | DONE -- gen-skills.mjs entrypoint, 111 pages, 20 tests |
+| 2026-07-26 | aid-reviewer (Small) | 5-15 min | ~25 min | wave-3 quick check, clean |

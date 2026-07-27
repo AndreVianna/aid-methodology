@@ -64,17 +64,24 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
+- **Reviewer Tier:** Large (the mandated pre-checkpoint review, not a Small quick check)
+- **Grade:** A -> A -> **A+** across three cycles.
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+  - [HIGH] Two tests titled "not a literal" COULD NOT DETECT A LITERAL -- hard-coding 111 and 17
+    into the index intro survived the whole suite, leaving the guard on this work own forbidden
+    defect class (section 8 / KI-005) inert -- **Fixed**: they now render a second synthetic corpus
+    of a different size so a literal can satisfy at most one assertion. The reviewer additionally
+    killed a literal built only from single digits, which the source scan cannot see.
+  - [HIGH] The internal-newline guard added to close a MEDIUM had NO TEST -- disabling it left the
+    suite green, and with KI-006 open CI runs only `npm ci && npm run build`, making that throw the
+    only protection in the shipping path -- **Fixed**: six cases, seven mutants, all killed.
+  - [MEDIUM] x4 -- the `Execution` group blurb claimed monitoring and deploying, which FR-5 files
+    elsewhere; an internal newline silently re-broke the 111-page bullet list; Q2 "Applied to"
+    named the wrong wave; blurb voice diverged from its three siblings. All **Fixed**.
+  - [LOW] Accepted x1 -- a semantic assertion over the group blurbs. Both candidates were
+    implemented and tested: one returns empty against the actual defect (which lived in gerunds,
+    not skill tokens), the other false-positives on two independently-written correct blurbs.
+- Ledger: `.aid/.temp/review-pending/delivery-002-checkpoint-task-016.md` (17 rows).
 ---
 
 ## Dispatch Log
@@ -86,3 +93,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-27 | aid-developer (Sonnet 5, CONFIGURE) | 15-30 min | ~18 min | DONE -- sidebar group + both KI ride-alongs |
+| 2026-07-27 | aid-reviewer (Large, Opus 5) | 30-60 min | 3 cycles | A -> A -> A+ |

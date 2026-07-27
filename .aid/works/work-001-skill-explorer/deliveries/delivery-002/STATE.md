@@ -1,8 +1,8 @@
 ---
-delivery_state: Executing
+delivery_state: Done
 gate_tier: Large
-gate_grade: "{grade or Pending}"
-gate_timestamp: "{YYYY-MM-DDTHH:MM:SSZ}"
+gate_grade: A+
+gate_timestamp: '2026-07-27T10:42:00-04:00'
 ticket_ref: "--"
 ---
 

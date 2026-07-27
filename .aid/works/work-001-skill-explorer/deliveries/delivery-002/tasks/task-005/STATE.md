@@ -64,17 +64,19 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
+- **Outcome:** CONDITIONAL PASS -> re-verified after fix.
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+  - [HIGH] AC-3 not fully verified: the test named `duplicate key error names the file, line, and
+    key` asserted only the file path -- the 1-based LINE NUMBER its own title claims was never
+    asserted. The implementation did emit it, so a regression dropping it would have gone
+    uncaught -- site/scripts/__tests__/skills-frontmatter.test.mjs:302 -- **Fixed**.
+  - [HIGH] AC-3 not fully verified, same shape: `unclassifiable error includes file, line number,
+    and offending text` asserted the file and the offending text but not the line number, which is
+    the one of the three AC-3 parts a reader most needs -- same file, :315 -- **Fixed**.
+  - Both were tests whose TITLE promised a check the body never made -- the recurring failure mode
+    of this delivery. Re-verified after the fix.
+- Ledger: `.aid/.temp/review-pending/delivery-002-wave-1.md` rows 2-3.
 ---
 
 ## Dispatch Log
@@ -86,3 +88,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | aid-developer (Sonnet, parallel wave dispatch) | 15-30 min | ~22 min | DONE -- paths.mjs + frontmatter.mjs, 186 tests |
+| 2026-07-26 | aid-reviewer (Small) | 5-15 min | ~20 min | wave-1 quick check, CONDITIONAL PASS -> 2 HIGH (AC-3 line number unasserted) |

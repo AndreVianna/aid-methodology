@@ -64,17 +64,11 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Findings:** none -- no [CRITICAL] and no [HIGH] finding was raised. A cross-SPEC contradiction on the
+  no-`description` fallback was surfaced here and resolved as delivery-002 **Q3** (feature-001's
+  sentinel is authoritative); no code change was required.
+- Ledger: `.aid/.temp/review-pending/delivery-002-wave-1.md`.
 ---
 
 ## Dispatch Log
@@ -86,3 +80,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | aid-developer (Sonnet, parallel wave dispatch) | 15-30 min | ~12 min | DONE -- summary.mjs, 18 tests |
+| 2026-07-26 | aid-reviewer (Small) | 5-15 min | ~20 min | wave-1 quick check, clean; surfaced Q3 |

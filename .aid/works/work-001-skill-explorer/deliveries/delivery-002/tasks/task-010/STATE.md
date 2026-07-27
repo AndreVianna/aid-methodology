@@ -64,17 +64,14 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+  - [HIGH] No page-level test would have caught the trailing-newline list break: the folded-scalar
+    fixture carried no trailing newline, so reverting the trim in `render-value.mjs` left this
+    suite green -- **Fixed** at the task-016 checkpoint with three page-level cases,
+    mutation-proven.
+- Ledger: the wave-2 file is no longer present in `.aid/.temp/review-pending/` (gitignored
+  scratch). The findings above are the tracked record.
 ---
 
 ## Dispatch Log
@@ -86,3 +83,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | aid-developer (Sonnet, parallel wave dispatch) | 15-30 min | ~24 min | DONE -- render-page.mjs + body.mjs, 56 tests |
+| 2026-07-26 | aid-reviewer (Small) | 5-15 min | ~18 min | wave-2 quick check, 1 HIGH (no page-level trailing-newline test) |

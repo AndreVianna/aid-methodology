@@ -64,17 +64,16 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+  - [HIGH] Assertion 11 unescape-then-compare MASKED an over-escaping defect: with the code-span
+    tokenizer broken, all 27 assertions stayed green -- **Fixed**, but by RELOCATION rather than by
+    strengthening in place. Measurement decided it: 0 of 111 card intents contain a code span
+    (`skillSummary` takes the first sentence, and every authored span falls after it), while 70 of
+    111 full descriptions do. The check was structurally vacuous on the index and now lives on the
+    detail pages, asserting an absolute property -- comparing against a re-rendered expectation is
+    tautological when both sides share the escaper.
+- Ledger: `.aid/.temp/review-pending/delivery-002-wave-5.md`.
 ---
 
 ## Dispatch Log
@@ -86,3 +85,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-27 | aid-developer (Sonnet 5, TEST) | 20-40 min | ~30 min | DONE -- 27 tests, fifteen AC-8 assertions |
+| 2026-07-27 | aid-reviewer (Small, Sonnet 5) | 15-30 min | ~18 min | wave-5 quick check, 1 HIGH (assertion 11 masking) |

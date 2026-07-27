@@ -64,17 +64,18 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+  - [HIGH] `toCard` REIMPLEMENTED the intent rule instead of importing `skillSummary`, losing the
+    first-sentence extraction and the length cap, carrying the folded block trailing newline into
+    every card, and falling back to `dirName` -- the exact fallback delivery-002 Q3 rejected.
+    **Fixed** by importing the single authority; all 111 card intents now equal their page meta
+    description, which is feature-002 central contract.
+  - [HIGH] The `duplicate assignment` guard was UNREACHABLE from any test: it reads the
+    `CURATED_GROUPS` module constant, so no input could trigger it without shipping a broken
+    table. **Fixed** by extracting `buildCuratedIndex(groups)`; six direct cases, mutation-proven.
+- Ledger: the wave-2 file is no longer present in `.aid/.temp/review-pending/` (gitignored
+  scratch). The findings above are the tracked record.
 ---
 
 ## Dispatch Log
@@ -86,3 +87,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | aid-developer (Sonnet, parallel wave dispatch) | 15-30 min | ~20 min | DONE -- groups.mjs, 30 tests |
+| 2026-07-26 | aid-reviewer (Small) | 5-15 min | ~18 min | wave-2 quick check, 1 HIGH (toCard reimplemented the intent rule) |

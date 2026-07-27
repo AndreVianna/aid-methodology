@@ -64,17 +64,17 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Findings:** none -- no [CRITICAL] and no [HIGH] finding was raised.
+- Ledger: the wave-2 file is no longer present in `.aid/.temp/review-pending/` (gitignored
+  scratch). The findings above are the tracked record; the gate ledger
+  `delivery-002-gate.md` re-derives and confirms them.
+- **Later, at the delivery gate:** a [HIGH] was raised against this task's suite --
+  `skills-discover.test.mjs` asserted the record order against a **sorted copy of itself**, a
+  tautology that held with `.sort()` deleted from `discoverSkills`. AC-6 byte-identity depends
+  on that sort, and `readdirSync` order is filesystem-dependent: NTFS hid it locally, CI's ext4
+  would not. **Fixed** with an explicit expected order plus a source-level assertion, both
+  mutation-proven.
 ---
 
 ## Dispatch Log
@@ -86,3 +86,5 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 | Date | Agent | ETA Band | Actual | Outcome |
 |------|-------|----------|--------|---------|
+| 2026-07-26 | aid-developer (Sonnet, parallel wave dispatch) | 15-30 min | ~26 min | DONE -- discover.mjs, 50 tests |
+| 2026-07-26 | aid-reviewer (Small) | 5-15 min | ~18 min | wave-2 quick check, clean |

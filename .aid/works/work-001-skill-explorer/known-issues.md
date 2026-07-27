@@ -359,6 +359,14 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **CLOSED by delivery-002 (task-016), 2026-07-27.** Landed as an owner-approved
+  ride-along (delivery-002 Q1) in the first edit this work makes to `site/astro.config.mjs`, which
+  is the sequencing risk R1 describes. The fix is the single property this entry names —
+  `enableLog: false` in the `mermaid({ … })` options. Verified at the **bundle** level rather than
+  by reading the config: in the built output the integration's logger compiles to a no-op, the
+  injected page script contains zero `console.log` calls, and the only surviving `[astro-mermaid]`
+  literal sits inside a `console.error`. The console is silent on success, which is what
+  feature-006's telemetry contract requires.
 - **Affects:** feature-006-interactive-node-panel (its browser-console contract),
   feature-002-grouped-skill-index (owner of `site/astro.config.mjs`),
   feature-003-authored-flow-charts, feature-004-doorway-engine-charts
@@ -386,6 +394,15 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **CLOSED by delivery-002 (task-016), 2026-07-27.** Owner-approved ride-along
+  (delivery-002 Q1), landed in the same edit as the sidebar group. Both comment blocks now state
+  that the map already holds four keys and that **no slot is reserved for a feature of this work**,
+  which removes the previous work's `feature-NNN` numbering this entry flags as the confusing part.
+  The one instruction that was still correct and load-bearing — "do not rewrite this map, only
+  add" — is preserved. Comment-only: the four map keys are byte-unchanged, verified by `git diff`.
+  Two secondary stale sub-comments inside the `components:` object (a "Reserved slots" line and a
+  commented-out `Hero:` placeholder) carried the identical defect over the same cited line range
+  and were corrected with it.
 - **Affects:** feature-006-interactive-node-panel (adds a key to this map),
   feature-002-grouped-skill-index (edits the same file)
 - **Source:** `site/astro.config.mjs`:12-17 and `:139-153`, against the live map at `:144-153`
@@ -478,6 +495,31 @@
 
 - **Type:** Bug
 - **Severity:** Medium
+- **Status:** **CLOSED by delivery-002, 2026-07-27.** Routed as delivery-002 **Q2** — an
+  orchestrator decision, since this entry states the fix is a routing choice and "not a
+  task-boundary problem". Option (b) of the three listed was taken: a minimal
+  `site/vitest.config.mjs` setting **only** `test.fileParallelism: false`.
+  - **Why not the other two.** Vitest has no per-file opt-out of *file* parallelism, so the
+    "shared serial-file annotation" option cannot express what is needed. Per-suite output
+    isolation is stronger and survives any future parallelism, but it would require
+    `gen-skills.mjs` to accept an output-root override purely for tests — a production API shaped
+    by a test constraint, coupling task-017/018 back into task-012/015 while both were still being
+    written. It is recorded as the fallback if serial execution ever becomes a measurable cost;
+    today the suite is ~870 tests in seconds against a 26s `npm ci`.
+  - **It bit before the tasks it was routed for.** The decision expected to land with
+    task-017/018, but task-014 had to snapshot the output directory at module-import time to stay
+    stable while `gen-skills.test.mjs` regenerated the same tree in a parallel worker — so the fix
+    was brought forward to the wave-3 commit. That snapshot is now redundant and deliberately
+    retained, as a documented defence rather than a silent fragility if the setting is ever relaxed.
+  - **Deliberately does not set `environment`.** feature-006 opts a single file into jsdom with a
+    `// @vitest-environment jsdom` docblock and depends on the default staying `node`; setting it
+    here would silently break that. Verified.
+  - **Residual hazard this does NOT remove:** serialising files stops concurrent *writers*, but a
+    suite that reads the generated tree can still be stale relative to the source. That surfaced
+    for real at the delivery-002 gate — an over-escaping check passed when its file ran alone
+    because it read committed pages and only a sibling suite regenerated them. The durable answer
+    is to drive the module in memory rather than read its past output, which is what that check
+    now does.
 - **Affects:** task-017 and task-018 (delivery-002); grows in delivery-003 (task-031, task-032,
   task-038, task-039) and delivery-004 (task-044)
 - **Source:** `site/` has **no `vitest.config.*`** — verified absent; `site/scripts/__tests__/`

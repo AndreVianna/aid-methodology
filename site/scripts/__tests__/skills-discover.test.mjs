@@ -13,13 +13,17 @@ import {
   writeFileSync,
   rmSync,
   readdirSync,
+  readFileSync,
   existsSync,
   statSync,
 } from 'node:fs';
-import { resolve, join } from 'node:path';
+import { dirname, resolve, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
 import { discoverSkills, buildRecord } from '../skills/discover.mjs';
 import { CANONICAL_SKILLS_DIR } from '../skills/paths.mjs';
+
+const DISCOVER_SRC = resolve(dirname(fileURLToPath(import.meta.url)), '../skills/discover.mjs');
 
 // ── Temp-directory helpers ───────────────────────────────────────────────────
 
@@ -345,14 +349,66 @@ describe('discoverSkills', () => {
   });
 
   it('records are in .sort() order (UTF-16 code-unit, deterministic)', () => {
+    // The fixture is created OUT of sorted order deliberately. The expectation is
+    // written out explicitly rather than as `names.slice().sort()` — comparing an
+    // array to a sorted copy of itself is a tautology that holds even with the
+    // `.sort()` deleted from `discoverSkills`, which is how that state shipped.
+    //
+    // This matters beyond hygiene. `readdirSync` order is filesystem-dependent:
+    // NTFS returns entries already ordered, so the defect is invisible on a
+    // Windows dev machine, while CI builds on ubuntu-24.04/ext4, which gives no
+    // ordering guarantee. AC-6 byte-identical idempotence depends on this sort,
+    // so an unsorted read there would produce a differently-ordered manifest on
+    // every run.
     const dir = makeTempSkillsDir([
       { dirName: 'aid-z', content: minimalSkillMd('aid-z') },
       { dirName: 'aid-a', content: minimalSkillMd('aid-a') },
       { dirName: 'aid-m', content: minimalSkillMd('aid-m') },
     ]);
     const records = discoverSkills(dir);
-    const names = records.map((r) => r.dirName);
-    expect(names).toEqual(names.slice().sort());
+    expect(records.map((r) => r.dirName)).toEqual(['aid-a', 'aid-m', 'aid-z']);
+  });
+
+  // The behavioural assertion above is correct but cannot carry this contract on
+  // its own, and it is worth being explicit about why. `readdirSync` order is
+  // filesystem-dependent: NTFS returns entries already sorted, so deleting the
+  // `.sort()` leaves the behavioural test green on a Windows dev machine —
+  // verified by mutation. It would fail on CI's ubuntu-24.04/ext4, but a defect
+  // that only surfaces in CI is one that ships from a developer's laptop.
+  //
+  // So the sort is also pinned at the source, using the same idiom the SPEC's
+  // `localeCompare` ban already relies on. This kills the mutant on every
+  // platform.
+  it('the directory scan applies .sort() and never localeCompare', () => {
+    const src = readFileSync(DISCOVER_SRC, 'utf8');
+    const enumeration = src.slice(src.indexOf('export function discoverSkills'));
+    const body = enumeration.slice(0, enumeration.indexOf('\n}'));
+
+    expect(body, 'discoverSkills must sort the directory listing').toMatch(/\.sort\(\)/);
+    // A locale-aware comparator would make output host-dependent and break AC-6.
+    expect(src).not.toMatch(/localeCompare/);
+    // …and the sort must be the bare default comparator, not a custom one.
+    expect(body).not.toMatch(/\.sort\(\s*\(/);
+  });
+
+  it('orders `-` before digits and letters, per the default comparator', () => {
+    // Pins default-comparator semantics: `-` (45) sorts before any digit (48+) and
+    // any letter (97+).
+    //
+    // The title deliberately does NOT claim this discriminates the default sort
+    // from `localeCompare`. I searched for an input within the slug charset
+    // `^[a-z0-9]+(-[a-z0-9]+)*$` where the two disagree and found none on this ICU
+    // build — they order every candidate identically, including this one. A test
+    // titled "not by locale" would therefore be claiming a check it cannot make,
+    // which is the exact failure mode this delivery kept producing. The
+    // `localeCompare` ban is enforced at the source instead, in the test above.
+    const dir = makeTempSkillsDir([
+      { dirName: 'aid-a1', content: minimalSkillMd('aid-a1') },
+      { dirName: 'aid-a-b', content: minimalSkillMd('aid-a-b') },
+      { dirName: 'aid-ab', content: minimalSkillMd('aid-ab') },
+    ]);
+    const records = discoverSkills(dir);
+    expect(records.map((r) => r.dirName)).toEqual(['aid-a-b', 'aid-a1', 'aid-ab']);
   });
 
   it('propagates a guard error from buildRecord (missing SKILL.md)', () => {
