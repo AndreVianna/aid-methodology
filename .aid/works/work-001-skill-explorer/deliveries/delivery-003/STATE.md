@@ -494,6 +494,37 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
 - Measured **zero** bare pauses across all 111 skills. Pinned by a test rather than corrected, for
   the same ownership reason as above.
 
+### Shape distribution measured before wave 5 — the UI checkpoint will show 34 charts, not "roughly 27"
+
+- **Category:** Measurement, recorded so the checkpoint expectation is accurate
+- **State:** **Informational** — no decision needed, no defect
+- Ran the real classifier over the whole corpus before dispatching the three extractors, both to
+  size their work and to check the BLUEPRINT's checkpoint estimate.
+
+| Shape | Count | Charted at |
+|-------|------:|------------|
+| `engine-doorway` | 64 | task-037 |
+| `dispatch-table` | 13 | **task-029** |
+| `residual` | 13 | **task-029** |
+| `sibling-doorway` | 13 | task-037 |
+| `inline-states` | 8 | **task-029** |
+
+- **All 111 skills classify — none falls through**, so FR-2's whole-corpus coverage is satisfiable
+  and the classifier is total in practice as well as by construction.
+- **Authored total is 34, against the BLUEPRINT's "roughly 27"** — a 26% underestimate. The
+  BLUEPRINT says "roughly", so this is not a defect; it is recorded because the checkpoint criterion
+  quotes the number, and a reviewer meeting 34 charts should not read it as scope creep.
+- **Every fixture the gate criteria name classifies as required**, verified rather than assumed:
+  `aid-describe` → `dispatch-table`, `aid-review` → `inline-states`, `aid-create-api` →
+  `engine-doorway`, `aid-test-security` → `sibling-doorway`, `aid-test` → `inline-states` (the
+  ` then ` form KI-008 exposed), and `aid-config` → `residual`. AC-4 is therefore reachable exactly
+  as written.
+- **A correlation that sharpens the "keeping last" question above:** all **10** skills that produce
+  a "multiple terminal clauses" warning are `dispatch-table` — so the discarded terminal affects
+  **10 of the 13** charts of that shape, 77% of them, and they are the most structurally interesting
+  charts in the corpus. Whatever is decided about first-versus-last is visible on most dispatch
+  charts at the checkpoint, not on an edge case.
+
 ### BLUEPRINT verification — no correction owed by task-019
 
 Verified by reading `deliveries/delivery-003/BLUEPRINT.md` rather than by repeating the DETAIL's
