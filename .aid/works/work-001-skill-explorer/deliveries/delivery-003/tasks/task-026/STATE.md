@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: 'In Review'
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,17 +64,58 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
+- **Orchestrator verification before review.** No defect found in the module. Two reporting gaps and
+  one genuinely valuable SPEC finding.
+- **The reported mutation evidence was weaker than it sounded, so I ran three for real.** The report
+  cites "~65 `// Mutant:` annotations, one per assertion" -- those are COMMENTS naming a hypothetical
+  change, not executed mutations, which is the same shape as the "mentally verified" claim that did
+  not survive re-running on task-020. Executed here, all three killed:
+  - removing the exact-case guard in the body scan -- **1 test**
+  - lowering the two-heading minimum that decides D2 shape from 2 to 1 -- **1 test**
+  - downgrading the `re-entry` kind to `loop-back` -- **4 tests**
+  To its credit the report is explicit that the exact-case fix was found by a real failing test
+  rather than by inspection, and that is borne out.
+- **RULE 8 IS DISCHARGED HERE, which closes half of a routed criterion.** The wave-4 reviewer found
+  that "rule 8 takes precedence over rule 7" was undefended anywhere, because `advance.mjs` never
+  assigns `kind: re-entry` -- dead code there. This task implements and tests it via `REENTRY_FIXTURE`,
+  and my mutation confirms the test bites: downgrading the kind fails 4 tests. It also states
+  explicitly, and tests, that **none of its 8 corpus skills carries a `Loopback`/`Re-entry` heading**
+  -- exactly the statement asked for, so the criterion cannot drop silently. **task-025 still owes the
+  same statement for its 13**, where `aid-describe` does have a `## Targeted Interview (Loopback
+  Re-entry)` heading.
+- **[LOW] The report table understates its own output.** Several cells read "measured live" rather
+  than a value, and `aid-change-document` is given as 5 nodes with no loop-back. Measured directly:
+  **6 nodes, 7 edges, 1 loop-back**. The narrower claim may be about body back-references
+  specifically rather than all loop-back edges -- a rule-5 self-edge is also `loop-back` -- but the
+  node count is simply wrong. Authoritative measurement of all 8, all extracting without throwing:
 
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
+  | skill | nodes | edges | loop-back | decision |
+  |---|---:|---:|---:|---:|
+  | aid-change-document | 6 | 7 | 1 | 1 |
+  | aid-create-document | 6 | 7 | 1 | 1 |
+  | aid-design | 6 | 9 | 3 | 1 |
+  | aid-prototype | 6 | 7 | 1 | 1 |
+  | aid-report | 6 | 7 | 1 | 1 |
+  | aid-research | 6 | 8 | 2 | 1 |
+  | aid-review | 6 | 9 | 3 | 1 |
+  | aid-test | 6 | 7 | 1 | 1 |
 
+  Every one lands on exactly one decision node and one exit -- a uniformity the owner should see at
+  the checkpoint as the shape of this extractor, not as a coincidence.
+- **[SPEC GAP, worth adopting] Body back-reference matching must be CASE-SENSITIVE.** Not in the
+  DETAIL, and discovered by a failing test rather than by reasoning: `aid-test`s `PRESENT` state came
+  out with 3 outgoing edges instead of 2, because the lowercase word "run" in the prose
+  ("run /aid-fix to address them") matched the declared state `RUN`. A case-insensitive body scan
+  invents edges out of ordinary English. This belongs in feature-003s SPEC alongside the other
+  corrections this delivery owes.
+- **The duplication risk from my concurrent dispatch did NOT materialise.** Verified directly:
+  neither `extract-inline.mjs` nor `extract-dispatch.mjs` reimplements ASCII state-map parsing, and
+  **all three extractors import the shared `truncate`** rather than slicing by length. Neither
+  imports `parseAsciiStateMap` either, so task-027 R1 export contract is unfulfilled -- but with
+  nothing duplicated and no ASCII state map among these skills, that is an unused export rather than
+  a defect.
+- **V9 throws on 0 of the 8**, and `aid-test`s KI-008 block resolves exactly as the criterion
+  requires: two branch edges from `PRESENT`, `optional` on the first and null on the skip path.
 ---
 
 ## Dispatch Log

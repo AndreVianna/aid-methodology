@@ -1,0 +1,961 @@
+// flow-extract-residual.test.mjs — Unit tests for extract-residual.mjs.
+//
+// Coverage:
+//   parseAsciiStateMap — R1 token parser (exported for corroborating-spine use)
+//   extractResidual    — all five rungs + confidence/shape invariants
+//
+// Discipline:
+//   - Every assertion drives the real module; no logic is re-implemented here.
+//   - Node and edge sets are asserted exactly (count + name + from/to), not loosely.
+//   - Each heuristic rung has a firing case AND a near-miss that genuinely reaches it.
+//   - Real SKILL.md files for the 13 corpus skills are loaded from disk; no inline
+//     count is hard-coded (§8 / KI-005).
+//   - Every test that fires a rung also asserts chart.confidence === 'approximate' and
+//     validateChart(chart).ok === true (V1–V8 pass).
+
+import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { parseAsciiStateMap, extractResidual } from '../lib/flow-graph/extract-residual.mjs';
+import { splitFrontmatter } from '../lib/flow-graph/source.mjs';
+import { validateChart } from '../lib/flow-graph/validate.mjs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(__dirname, '../../../');
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Parse a SKILL.md text string and return the params extractResidual expects.
+ * The `file` is set to `canonical/skills/test-fixture/SKILL.md` so V7 passes.
+ *
+ * @param {string} text        Full SKILL.md content (must start with ---\n).
+ * @param {string} [skillName] Optional skill directory name (default: 'test-fixture').
+ * @returns {object}  params object ready to pass to extractResidual.
+ */
+function parseSkill(text, skillName = 'test-fixture') {
+  const file = `canonical/skills/${skillName}/SKILL.md`;
+  const { allLines, bodyLines, bodyStartLine } = splitFrontmatter(text, file);
+  // Parse frontmatter fields naively for test purposes.
+  const fmLines = allLines.slice(0, bodyStartLine - 2); // exclude fences
+  const frontmatter = {};
+  for (const line of fmLines) {
+    const m = line.match(/^(\w[\w-]*):\s*(.*)/);
+    if (m) frontmatter[m[1]] = m[2];
+  }
+  return { skill: skillName, file, allLines, bodyLines, bodyStartLine, frontmatter };
+}
+
+/**
+ * Load a real SKILL.md from canonical/skills/<name>/SKILL.md.
+ *
+ * @param {string} name
+ * @returns {object}  params for extractResidual
+ */
+function loadSkill(name) {
+  const file = `canonical/skills/${name}/SKILL.md`;
+  const absPath = resolve(REPO_ROOT, file);
+  const text = readFileSync(absPath, 'utf8');
+  const { allLines, bodyLines, bodyStartLine } = splitFrontmatter(text, file);
+  // Parse frontmatter for description field.
+  const frontmatter = {};
+  for (let i = 1; i < bodyStartLine - 1 && i < allLines.length; i++) {
+    const m = allLines[i].match(/^(\w[\w-]*):\s*(.*)/);
+    if (m) frontmatter[m[1]] = m[2];
+  }
+  return { skill: name, file, allLines, bodyLines, bodyStartLine, frontmatter };
+}
+
+// ── parseAsciiStateMap ────────────────────────────────────────────────────────
+
+describe('parseAsciiStateMap — empty / trivial', () => {
+  it('returns empty arrays for empty string', () => {
+    const r = parseAsciiStateMap('');
+    expect(r.names).toEqual([]);
+    expect(r.conditions).toEqual([]);
+  });
+
+  it('returns empty arrays when no brackets are found', () => {
+    const r = parseAsciiStateMap('no brackets here -> still nothing');
+    expect(r.names).toEqual([]);
+    expect(r.conditions).toEqual([]);
+  });
+
+  it('returns one token for a single bracketed name', () => {
+    const r = parseAsciiStateMap('[ALPHA]');
+    expect(r.names).toEqual(['ALPHA']);
+    expect(r.conditions).toEqual([null]);
+  });
+});
+
+describe('parseAsciiStateMap — sequence', () => {
+  it('returns two tokens separated by ->', () => {
+    const r = parseAsciiStateMap('[A] -> [B]');
+    expect(r.names).toEqual(['A', 'B']);
+    expect(r.conditions).toEqual([null, null]);
+  });
+
+  it('returns two tokens separated by unicode arrow →', () => {
+    const r = parseAsciiStateMap('[A] \u2192 [B]');
+    expect(r.names).toEqual(['A', 'B']);
+    expect(r.conditions).toEqual([null, null]);
+  });
+
+  it('returns three tokens in order', () => {
+    const r = parseAsciiStateMap('[PARSE] -> [COMPOSE] -> [SEND]');
+    expect(r.names).toEqual(['PARSE', 'COMPOSE', 'SEND']);
+    expect(r.conditions).toEqual([null, null, null]);
+  });
+
+  it('uppercases lowercase names', () => {
+    const r = parseAsciiStateMap('[parse] -> [compose]');
+    expect(r.names).toEqual(['PARSE', 'COMPOSE']);
+  });
+});
+
+describe('parseAsciiStateMap — conditions', () => {
+  it('extracts condition from parenthesised suffix inside brackets', () => {
+    const r = parseAsciiStateMap('[A] -> [B(on success)]');
+    expect(r.names).toEqual(['A', 'B']);
+    expect(r.conditions).toEqual([null, 'on success']);
+  });
+
+  it('first token always has null condition even when suffix present in text', () => {
+    // The parseAsciiStateMap contract: conditions[0] is always null.
+    const r = parseAsciiStateMap('[A(init)] -> [B]');
+    expect(r.conditions[0]).toBeNull();
+    expect(r.names[0]).toBe('A');
+  });
+
+  it('middle-token condition does not affect the third token', () => {
+    const r = parseAsciiStateMap('[A] -> [B(branch)] -> [C]');
+    expect(r.names).toEqual(['A', 'B', 'C']);
+    expect(r.conditions).toEqual([null, 'branch', null]);
+  });
+});
+
+describe('parseAsciiStateMap — multi-line', () => {
+  it('parses tokens spread across lines when joined with \\n', () => {
+    const text = '[A] -> [B]\n[B] -> [C]';
+    const r = parseAsciiStateMap(text);
+    // A appears once before each ->, B appears twice (once as target, once as source)
+    expect(r.names.length).toBeGreaterThanOrEqual(2);
+    expect(r.names[0]).toBe('A');
+  });
+});
+
+// ── R1 firing: fenced code block ──────────────────────────────────────────────
+
+describe('R1 — fenced code block with arrows', () => {
+  const R1_FENCED = `---
+name: r1-fenced
+description: R1 fixture
+---
+
+Some prose here.
+
+\`\`\`
+[ALPHA] -> [BETA] -> [GAMMA]
+\`\`\`
+`;
+
+  it('R1 fires: 3 nodes extracted from the fenced block', () => {
+    const params = parseSkill(R1_FENCED, 'r1-fenced');
+    const chart = extractResidual(params);
+    expect(chart.nodes.length).toBe(3);
+    expect(chart.nodes.map((n) => n.name)).toEqual(['ALPHA', 'BETA', 'GAMMA']);
+  });
+
+  it('R1 fires: 2 sequence edges between consecutive tokens', () => {
+    const params = parseSkill(R1_FENCED, 'r1-fenced');
+    const chart = extractResidual(params);
+    expect(chart.edges.length).toBe(2);
+    expect(chart.edges[0].from).toBe('n1');
+    expect(chart.edges[0].to).toBe('n2');
+    expect(chart.edges[1].from).toBe('n2');
+    expect(chart.edges[1].to).toBe('n3');
+  });
+
+  it('R1 fires: confidence is approximate', () => {
+    const chart = extractResidual(parseSkill(R1_FENCED, 'r1-fenced'));
+    expect(chart.confidence).toBe('approximate');
+  });
+
+  it('R1 fires: chart passes V1-V8', () => {
+    const result = validateChart(extractResidual(parseSkill(R1_FENCED, 'r1-fenced')));
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it('R1 fires: last node is exit (has terminal)', () => {
+    const chart = extractResidual(parseSkill(R1_FENCED, 'r1-fenced'));
+    const last = chart.nodes[chart.nodes.length - 1];
+    expect(last.terminal).not.toBeNull();
+    expect(chart.exits).toContain(last.id);
+  });
+});
+
+// ── R1 firing: State machine: line ────────────────────────────────────────────
+
+describe('R1 — State machine: line', () => {
+  const R1_SM = `---
+name: r1-sm
+description: State machine line fixture
+---
+
+State machine: [INIT] -> [RUN] -> [DONE]
+`;
+
+  it('R1 fires via State machine: line — 3 nodes', () => {
+    const chart = extractResidual(parseSkill(R1_SM, 'r1-sm'));
+    expect(chart.nodes.length).toBe(3);
+    expect(chart.nodes[0].name).toBe('INIT');
+    expect(chart.nodes[2].name).toBe('DONE');
+  });
+
+  it('R1 fires via State machine: line — edges connect consecutive tokens', () => {
+    const chart = extractResidual(parseSkill(R1_SM, 'r1-sm'));
+    expect(chart.edges.length).toBe(2);
+    expect(chart.edges[0]).toMatchObject({ from: 'n1', to: 'n2' });
+    expect(chart.edges[1]).toMatchObject({ from: 'n2', to: 'n3' });
+  });
+
+  it('R1 State machine: line — chart passes V1-V8', () => {
+    const result = validateChart(extractResidual(parseSkill(R1_SM, 'r1-sm')));
+    expect(result.ok).toBe(true);
+  });
+});
+
+// ── R1 near-miss: fenced block without arrows → falls to R2 ──────────────────
+
+describe('R1 near-miss — fenced block has no arrows', () => {
+  // The fenced block has no ->/→ separators, so R1 finds no tokens.
+  // R2 heading is present so R2 fires instead.
+  const R1_MISS = `---
+name: r1-miss
+description: R1 miss fixture
+---
+
+\`\`\`
+just some code without arrows
+\`\`\`
+
+### State 1 — FIRST
+### State 2 — SECOND
+`;
+
+  it('R1 near-miss: R2 fires instead (2 nodes with state names)', () => {
+    const chart = extractResidual(parseSkill(R1_MISS, 'r1-miss'));
+    expect(chart.nodes.map((n) => n.name)).toEqual(['FIRST', 'SECOND']);
+  });
+
+  it('R1 near-miss: extractor is still residual', () => {
+    const chart = extractResidual(parseSkill(R1_MISS, 'r1-miss'));
+    expect(chart.extractor).toBe('residual');
+  });
+});
+
+// ── R1 near-miss: only 1 token → falls through ───────────────────────────────
+
+describe('R1 near-miss — single token in fenced block', () => {
+  const R1_ONE = `---
+name: r1-one
+description: one token
+---
+
+\`\`\`
+[LONELY]
+\`\`\`
+### State 1 — ONLY
+### State 2 — OTHER
+`;
+
+  it('R1 near-miss (1 token < 2): R2 fires with 2 state nodes', () => {
+    const chart = extractResidual(parseSkill(R1_ONE, 'r1-one'));
+    // R1 produces 1 node (fails ≥2 check), so R2 fires.
+    expect(chart.nodes.map((n) => n.name)).toContain('ONLY');
+    expect(chart.nodes.map((n) => n.name)).toContain('OTHER');
+  });
+});
+
+// ── R2 firing: ### State N — NAME ────────────────────────────────────────────
+
+describe('R2 — ### State N — NAME headings', () => {
+  const R2_TWO = `---
+name: r2-two
+description: R2 two states
+---
+
+### State 1 — ALPHA
+Some content here.
+
+### State 2 — BETA
+More content.
+`;
+
+  it('R2 fires: 2 nodes with correct names', () => {
+    const chart = extractResidual(parseSkill(R2_TWO, 'r2-two'));
+    expect(chart.nodes.length).toBe(2);
+    expect(chart.nodes[0].name).toBe('ALPHA');
+    expect(chart.nodes[1].name).toBe('BETA');
+  });
+
+  it('R2 fires: 1 sequence edge ALPHA → BETA', () => {
+    const chart = extractResidual(parseSkill(R2_TWO, 'r2-two'));
+    expect(chart.edges.length).toBe(1);
+    expect(chart.edges[0]).toMatchObject({ from: 'n1', to: 'n2', kind: 'sequence' });
+  });
+
+  it('R2 fires: entries = [n1], exits = [n2]', () => {
+    const chart = extractResidual(parseSkill(R2_TWO, 'r2-two'));
+    expect(chart.entries).toEqual(['n1']);
+    expect(chart.exits).toEqual(['n2']);
+  });
+
+  it('R2 fires: confidence = approximate', () => {
+    const chart = extractResidual(parseSkill(R2_TWO, 'r2-two'));
+    expect(chart.confidence).toBe('approximate');
+  });
+
+  it('R2 fires: chart passes V1-V8', () => {
+    const result = validateChart(extractResidual(parseSkill(R2_TWO, 'r2-two')));
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+});
+
+describe('R2 — hyphen separator variant', () => {
+  const R2_HYPHEN = `---
+name: r2-hyph
+description: R2 hyphen separator
+---
+
+### State 1 - FIRST
+### State 2 - SECOND
+`;
+
+  it('R2 handles plain-hyphen separator', () => {
+    const chart = extractResidual(parseSkill(R2_HYPHEN, 'r2-hyph'));
+    expect(chart.nodes.map((n) => n.name)).toEqual(['FIRST', 'SECOND']);
+  });
+});
+
+// ── R2 near-miss: only 1 heading → falls through to R3/R5 ────────────────────
+
+describe('R2 near-miss — single ### State heading', () => {
+  const R2_ONE = `---
+name: r2-one
+description: only one state
+---
+
+### State 1 — LONELY
+`;
+
+  it('R2 near-miss (1 node < 2): R5 fires with 3-node spine', () => {
+    const chart = extractResidual(parseSkill(R2_ONE, 'r2-one'));
+    // R2 produces 1 node, fails ≥2 check; R3/R4 also fail; R5 fires.
+    expect(chart.nodes.length).toBe(3);
+    expect(chart.nodes[0].name).toBe('ENTRY');
+    expect(chart.nodes[1].name).toBe('RUN');
+    expect(chart.nodes[2].name).toBe('EXIT');
+  });
+});
+
+// ── R2 real skills ────────────────────────────────────────────────────────────
+
+describe('R2 — aid-create-ticket (7 states)', () => {
+  const params = loadSkill('aid-create-ticket');
+  const chart = extractResidual(params);
+
+  it('produces the correct number of nodes', () => {
+    const stateCount = params.bodyLines.filter((l) => /^### State \d+/.test(l)).length;
+    expect(chart.nodes.length).toBe(stateCount);
+  });
+
+  it('first node is PARSE-ARGS', () => {
+    expect(chart.nodes[0].name).toBe('PARSE-ARGS');
+  });
+
+  it('last node is RETURN-REF (exit)', () => {
+    const last = chart.nodes[chart.nodes.length - 1];
+    expect(last.name).toBe('RETURN-REF');
+    expect(chart.exits).toContain(last.id);
+  });
+
+  it('sequential edges: count = nodes - 1', () => {
+    expect(chart.edges.length).toBe(chart.nodes.length - 1);
+  });
+
+  it('all edges are kind sequence', () => {
+    expect(chart.edges.every((e) => e.kind === 'sequence')).toBe(true);
+  });
+
+  it('passes V1-V8', () => {
+    expect(validateChart(chart).ok).toBe(true);
+  });
+
+  it('confidence is approximate', () => {
+    expect(chart.confidence).toBe('approximate');
+  });
+});
+
+describe('R2 — aid-read-ticket (4 states)', () => {
+  const params = loadSkill('aid-read-ticket');
+  const chart = extractResidual(params);
+
+  it('produces the correct number of nodes', () => {
+    const stateCount = params.bodyLines.filter((l) => /^### State \d+/.test(l)).length;
+    expect(chart.nodes.length).toBe(stateCount);
+  });
+
+  it('first node is PARSE-ARGS', () => {
+    expect(chart.nodes[0].name).toBe('PARSE-ARGS');
+  });
+
+  it('last node is DISPLAY (exit)', () => {
+    const last = chart.nodes[chart.nodes.length - 1];
+    expect(last.name).toBe('DISPLAY');
+    expect(chart.exits).toContain(last.id);
+  });
+
+  it('passes V1-V8', () => {
+    expect(validateChart(chart).ok).toBe(true);
+  });
+});
+
+describe('R2 — aid-update-ticket (6 states)', () => {
+  const params = loadSkill('aid-update-ticket');
+  const chart = extractResidual(params);
+
+  it('produces the correct number of nodes', () => {
+    const stateCount = params.bodyLines.filter((l) => /^### State \d+/.test(l)).length;
+    expect(chart.nodes.length).toBe(stateCount);
+  });
+
+  it('passes V1-V8', () => {
+    expect(validateChart(chart).ok).toBe(true);
+  });
+
+  it('confidence is approximate', () => {
+    expect(chart.confidence).toBe('approximate');
+  });
+});
+
+// ── R3 firing: single-lane (no modes) ────────────────────────────────────────
+
+describe('R3 — single-lane ### Step headings', () => {
+  const R3_SINGLE = `---
+name: r3-single
+description: R3 single lane
+---
+
+### Step 1 — Do the first thing
+Some content.
+
+### Step 2 — Do the second thing
+More content.
+`;
+
+  it('R3 fires: 2 nodes with step labels', () => {
+    const chart = extractResidual(parseSkill(R3_SINGLE, 'r3-single'));
+    expect(chart.nodes.length).toBe(2);
+    expect(chart.nodes[0].label).toBe('Do the first thing');
+    expect(chart.nodes[1].label).toBe('Do the second thing');
+  });
+
+  it('R3 fires: step names are STEP-1 and STEP-2', () => {
+    const chart = extractResidual(parseSkill(R3_SINGLE, 'r3-single'));
+    expect(chart.nodes[0].name).toBe('STEP-1');
+    expect(chart.nodes[1].name).toBe('STEP-2');
+  });
+
+  it('R3 fires: 1 sequence edge', () => {
+    const chart = extractResidual(parseSkill(R3_SINGLE, 'r3-single'));
+    expect(chart.edges.length).toBe(1);
+    expect(chart.edges[0]).toMatchObject({ from: 'n1', to: 'n2' });
+  });
+
+  it('R3 fires: entries=[n1], exits=[n2]', () => {
+    const chart = extractResidual(parseSkill(R3_SINGLE, 'r3-single'));
+    expect(chart.entries).toEqual(['n1']);
+    expect(chart.exits).toEqual(['n2']);
+  });
+
+  it('R3 fires: passes V1-V8', () => {
+    const result = validateChart(extractResidual(parseSkill(R3_SINGLE, 'r3-single')));
+    expect(result.ok).toBe(true);
+  });
+});
+
+// ── R3 firing: multi-lane (## Mode N ancestor) ───────────────────────────────
+
+describe('R3 — multi-lane with ## Mode N', () => {
+  const R3_MULTI = `---
+name: r3-multi
+description: R3 multi-lane
+---
+
+## Mode 1 — Query
+
+### Step 1: Read setting
+
+### Step 2: Display result
+
+## Mode 2 — Mutate
+
+### Step 1: Validate key
+
+### Step 2: Write value
+`;
+
+  it('R3 multi-lane: 6 nodes (2 mode entries + 2 + 2 steps)', () => {
+    const chart = extractResidual(parseSkill(R3_MULTI, 'r3-multi'));
+    expect(chart.nodes.length).toBe(6);
+  });
+
+  it('R3 multi-lane: 2 entries (one per mode)', () => {
+    const chart = extractResidual(parseSkill(R3_MULTI, 'r3-multi'));
+    expect(chart.entries.length).toBe(2);
+    expect(chart.entries).toContain('n1');
+    expect(chart.entries).toContain('n4');
+  });
+
+  it('R3 multi-lane: 2 exits (last step of each lane)', () => {
+    const chart = extractResidual(parseSkill(R3_MULTI, 'r3-multi'));
+    expect(chart.exits.length).toBe(2);
+  });
+
+  it('R3 multi-lane: edges connect within each lane only', () => {
+    const chart = extractResidual(parseSkill(R3_MULTI, 'r3-multi'));
+    // 4 edges: MODE-1→STEP-1, STEP-1→STEP-2, MODE-2→STEP-1, STEP-1→STEP-2
+    expect(chart.edges.length).toBe(4);
+    // No cross-lane edges
+    const edgePairs = chart.edges.map((e) => `${e.from}->${e.to}`);
+    expect(edgePairs).not.toContain('n3->n4'); // last Mode-1 step to Mode-2 entry
+  });
+
+  it('R3 multi-lane: passes V1-V8', () => {
+    const result = validateChart(extractResidual(parseSkill(R3_MULTI, 'r3-multi')));
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+
+  it('R3 multi-lane: confidence is approximate', () => {
+    const chart = extractResidual(parseSkill(R3_MULTI, 'r3-multi'));
+    expect(chart.confidence).toBe('approximate');
+  });
+});
+
+// ── R3 near-miss: only Step 0 → 1 node, falls to R4/R5 ──────────────────────
+
+describe('R3 near-miss — single ### Step 0 only', () => {
+  const R3_MISS = `---
+name: r3-miss
+description: only step zero
+---
+
+### Step 0: Validate arguments
+`;
+
+  it('R3 near-miss (1 node < 2): R5 fires with 3-node spine', () => {
+    const chart = extractResidual(parseSkill(R3_MISS, 'r3-miss'));
+    // R3 produces 1 node (Step 0 only), ≥2 check fails; R5 fires.
+    expect(chart.nodes.length).toBe(3);
+    expect(chart.nodes[0].name).toBe('ENTRY');
+  });
+});
+
+// ── R3 real skills ────────────────────────────────────────────────────────────
+
+describe('R3 — aid-config (2 modes, 3+7 steps)', () => {
+  const params = loadSkill('aid-config');
+  const chart = extractResidual(params);
+
+  it('produces correct node count (2 mode entries + 3 Mode-1 steps + 7 Mode-2 steps)', () => {
+    const modeCount = params.bodyLines.filter((l) => /^## Mode \d+/.test(l)).length;
+    const stepCount = params.bodyLines.filter((l) => /^### Step /.test(l)).length;
+    expect(chart.nodes.length).toBe(modeCount + stepCount);
+  });
+
+  it('has 2 entries (one per mode)', () => {
+    expect(chart.entries.length).toBe(2);
+  });
+
+  it('has 2 exits (last step per mode)', () => {
+    expect(chart.exits.length).toBe(2);
+  });
+
+  it('Mode-1 entry name is MODE-1', () => {
+    expect(chart.nodes[0].name).toBe('MODE-1');
+  });
+
+  it('passes V1-V8', () => {
+    expect(validateChart(chart).ok).toBe(true);
+  });
+
+  it('confidence is approximate', () => {
+    expect(chart.confidence).toBe('approximate');
+  });
+});
+
+describe('R3 — aid-query-kb (Steps 1, 2a, 2b, 2c, 3, 4)', () => {
+  const params = loadSkill('aid-query-kb');
+  const chart = extractResidual(params);
+
+  it('produces correct node count (all ### Step headings)', () => {
+    const stepCount = params.bodyLines.filter((l) => /^### Step /.test(l)).length;
+    expect(chart.nodes.length).toBe(stepCount);
+  });
+
+  it('first node is STEP-1', () => {
+    expect(chart.nodes[0].name).toBe('STEP-1');
+  });
+
+  it('second node name starts with STEP-2', () => {
+    expect(chart.nodes[1].name).toMatch(/^STEP-2/);
+  });
+
+  it('last node is STEP-4 (exit)', () => {
+    const last = chart.nodes[chart.nodes.length - 1];
+    expect(last.name).toBe('STEP-4');
+    expect(chart.exits).toContain(last.id);
+  });
+
+  it('single entry (no modes)', () => {
+    expect(chart.entries.length).toBe(1);
+    expect(chart.entries[0]).toBe('n1');
+  });
+
+  it('edges count = nodes - 1 (linear chain)', () => {
+    expect(chart.edges.length).toBe(chart.nodes.length - 1);
+  });
+
+  it('passes V1-V8', () => {
+    expect(validateChart(chart).ok).toBe(true);
+  });
+});
+
+// ── R4 firing: ordered list with verb-starting items ─────────────────────────
+
+describe('R4 — ordered list with verb-starting items', () => {
+  const R4_LIST = `---
+name: r4-list
+description: R4 list fixture
+---
+
+1. Parse the incoming arguments carefully
+2. Validate the parsed values against schema
+3. Emit the result to stdout
+`;
+
+  it('R4 fires: 3 nodes derived from list items', () => {
+    const chart = extractResidual(parseSkill(R4_LIST, 'r4-list'));
+    expect(chart.nodes.length).toBe(3);
+  });
+
+  it('R4 fires: node labels are truncated item texts', () => {
+    const chart = extractResidual(parseSkill(R4_LIST, 'r4-list'));
+    expect(chart.nodes[0].label).toBe('Parse the incoming arguments carefully');
+    expect(chart.nodes[1].label).toBe('Validate the parsed values against schema');
+    expect(chart.nodes[2].label).toBe('Emit the result to stdout');
+  });
+
+  it('R4 fires: 2 sequence edges', () => {
+    const chart = extractResidual(parseSkill(R4_LIST, 'r4-list'));
+    expect(chart.edges.length).toBe(2);
+  });
+
+  it('R4 fires: passes V1-V8', () => {
+    const result = validateChart(extractResidual(parseSkill(R4_LIST, 'r4-list')));
+    expect(result.ok).toBe(true);
+  });
+
+  it('R4 fires: confidence is approximate', () => {
+    const chart = extractResidual(parseSkill(R4_LIST, 'r4-list'));
+    expect(chart.confidence).toBe('approximate');
+  });
+});
+
+// ── R4 near-miss: non-verb starters → falls to R5 ────────────────────────────
+
+describe('R4 near-miss — list items start with articles/determiners', () => {
+  const R4_MISS = `---
+name: r4-miss
+description: R4 non-verb list
+---
+
+1. The first item starts with an article
+2. A second item also starts with an article
+3. The third item is another non-verb
+`;
+
+  it('R4 near-miss: R5 fires with 3-node spine', () => {
+    const chart = extractResidual(parseSkill(R4_MISS, 'r4-miss'));
+    expect(chart.nodes.length).toBe(3);
+    expect(chart.nodes[0].name).toBe('ENTRY');
+  });
+});
+
+describe('R4 near-miss — only 1 verb item', () => {
+  const R4_ONE = `---
+name: r4-one
+description: one verb item
+---
+
+1. Parse the input
+2. The output is returned
+`;
+
+  it('R4 near-miss (only 1 verb item < 2): R5 fires', () => {
+    // "Parse" is a verb, "The" is not — only 1 qualifying item.
+    const chart = extractResidual(parseSkill(R4_ONE, 'r4-one'));
+    expect(chart.nodes[0].name).toBe('ENTRY');
+    expect(chart.nodes.length).toBe(3);
+  });
+});
+
+// ── R5 — last resort, three-node spine ───────────────────────────────────────
+
+describe('R5 — empty body falls to three-node spine', () => {
+  const R5_EMPTY = `---
+name: r5-empty
+description: A skill with no body content at all.
+---
+`;
+
+  it('R5 fires: exactly 3 nodes', () => {
+    const chart = extractResidual(parseSkill(R5_EMPTY, 'r5-empty'));
+    expect(chart.nodes.length).toBe(3);
+  });
+
+  it('R5 fires: node names are ENTRY, RUN, EXIT', () => {
+    const chart = extractResidual(parseSkill(R5_EMPTY, 'r5-empty'));
+    expect(chart.nodes[0].name).toBe('ENTRY');
+    expect(chart.nodes[1].name).toBe('RUN');
+    expect(chart.nodes[2].name).toBe('EXIT');
+  });
+
+  it('R5 fires: RUN label starts with "Run "', () => {
+    const chart = extractResidual(parseSkill(R5_EMPTY, 'r5-empty'));
+    expect(chart.nodes[1].label).toMatch(/^Run /);
+  });
+
+  it('R5 fires: RUN label derived from description', () => {
+    const chart = extractResidual(parseSkill(R5_EMPTY, 'r5-empty'));
+    // description is "A skill with no body content at all."
+    expect(chart.nodes[1].label).toContain('A skill with');
+  });
+
+  it('R5 fires: 2 sequence edges ENTRY→RUN→EXIT', () => {
+    const chart = extractResidual(parseSkill(R5_EMPTY, 'r5-empty'));
+    expect(chart.edges.length).toBe(2);
+    expect(chart.edges[0]).toMatchObject({ from: 'n1', to: 'n2', kind: 'sequence' });
+    expect(chart.edges[1]).toMatchObject({ from: 'n2', to: 'n3', kind: 'sequence' });
+  });
+
+  it('R5 fires: entry=[n1], exit=[n3]', () => {
+    const chart = extractResidual(parseSkill(R5_EMPTY, 'r5-empty'));
+    expect(chart.entries).toEqual(['n1']);
+    expect(chart.exits).toEqual(['n3']);
+  });
+
+  it('R5 fires: confidence is approximate', () => {
+    const chart = extractResidual(parseSkill(R5_EMPTY, 'r5-empty'));
+    expect(chart.confidence).toBe('approximate');
+  });
+
+  it('R5 fires: passes V1-V8', () => {
+    const result = validateChart(extractResidual(parseSkill(R5_EMPTY, 'r5-empty')));
+    expect(result.ok).toBe(true);
+    expect(result.errors).toEqual([]);
+  });
+});
+
+describe('R5 — RUN label truncation', () => {
+  const LONG_DESC = 'X'.repeat(100);
+  const R5_LONG = `---
+name: r5-long
+description: ${LONG_DESC}
+---
+`;
+
+  it('R5 fires: RUN label is at most 60 code points', () => {
+    const chart = extractResidual(parseSkill(R5_LONG, 'r5-long'));
+    expect(Array.from(chart.nodes[1].label).length).toBeLessThanOrEqual(60);
+  });
+});
+
+// ── R5 real alias skills ──────────────────────────────────────────────────────
+
+describe.each([
+  'aid-ask',
+  'aid-audit',
+  'aid-add-document',
+  'aid-investigate',
+  'aid-spike',
+  'aid-update-document',
+  'aid-set-connector',
+  'aid-unset-connector',
+])('R5 — %s falls to 3-node spine', (skillName) => {
+  const params = loadSkill(skillName);
+  const chart = extractResidual(params);
+
+  it('produces exactly 3 nodes', () => {
+    expect(chart.nodes.length).toBe(3);
+  });
+
+  it('node names are ENTRY, RUN, EXIT', () => {
+    expect(chart.nodes[0].name).toBe('ENTRY');
+    expect(chart.nodes[1].name).toBe('RUN');
+    expect(chart.nodes[2].name).toBe('EXIT');
+  });
+
+  it('confidence is approximate', () => {
+    expect(chart.confidence).toBe('approximate');
+  });
+
+  it('passes V1-V8', () => {
+    const result = validateChart(chart);
+    expect(result.ok).toBe(true);
+  });
+});
+
+// ── Invariants across all 13 corpus skills ────────────────────────────────────
+
+describe('all 13 residual skills — invariants', () => {
+  const SKILLS = [
+    'aid-add-document', 'aid-ask', 'aid-audit', 'aid-config',
+    'aid-create-ticket', 'aid-investigate', 'aid-query-kb',
+    'aid-read-ticket', 'aid-set-connector', 'aid-spike',
+    'aid-unset-connector', 'aid-update-document', 'aid-update-ticket',
+  ];
+
+  for (const skillName of SKILLS) {
+    describe(skillName, () => {
+      const params = loadSkill(skillName);
+      const chart = extractResidual(params);
+
+      it('chart is not null and has nodes', () => {
+        expect(chart).not.toBeNull();
+        expect(chart.nodes.length).toBeGreaterThanOrEqual(2);
+      });
+
+      it('confidence is approximate', () => {
+        expect(chart.confidence).toBe('approximate');
+      });
+
+      it('shape is residual', () => {
+        expect(chart.shape).toBe('residual');
+      });
+
+      it('extractor is residual', () => {
+        expect(chart.extractor).toBe('residual');
+      });
+
+      it('passes V1-V8 (validateChart)', () => {
+        const result = validateChart(chart);
+        if (!result.ok) {
+          // Print errors for diagnosis
+          throw new Error(
+            `${skillName} failed validation:\n${result.errors.join('\n')}`
+          );
+        }
+        expect(result.ok).toBe(true);
+      });
+
+      it('has at least 1 entry and 1 exit', () => {
+        expect(chart.entries.length).toBeGreaterThanOrEqual(1);
+        expect(chart.exits.length).toBeGreaterThanOrEqual(1);
+      });
+
+      it('all edges reference valid node ids', () => {
+        const nodeIds = new Set(chart.nodes.map((n) => n.id));
+        for (const edge of chart.edges) {
+          expect(nodeIds.has(edge.from)).toBe(true);
+          expect(nodeIds.has(edge.to)).toBe(true);
+        }
+      });
+    });
+  }
+});
+
+// ── Provenance well-formedness (V7 spot-checks) ───────────────────────────────
+
+describe('provenance integrity', () => {
+  it('R2 nodes have provenance.file under canonical/', () => {
+    const chart = extractResidual(loadSkill('aid-create-ticket'));
+    for (const node of chart.nodes) {
+      expect(node.provenance.file).toMatch(/^canonical\//);
+    }
+  });
+
+  it('R2 nodes have 1-line provenance excerpt matching actual file line', () => {
+    const chart = extractResidual(loadSkill('aid-create-ticket'));
+    for (const node of chart.nodes) {
+      const p = node.provenance;
+      const lineCount = p.excerpt.split('\n').length;
+      expect(lineCount).toBe(p.endLine - p.startLine + 1);
+    }
+  });
+
+  it('R3 (aid-config) nodes have provenance.file under canonical/', () => {
+    const chart = extractResidual(loadSkill('aid-config'));
+    for (const node of chart.nodes) {
+      expect(node.provenance.file).toMatch(/^canonical\//);
+    }
+  });
+
+  it('R5 nodes have provenance.file under canonical/', () => {
+    const chart = extractResidual(loadSkill('aid-ask'));
+    for (const node of chart.nodes) {
+      expect(node.provenance.file).toMatch(/^canonical\//);
+    }
+  });
+});
+
+// ── Shape and extractor field ─────────────────────────────────────────────────
+
+describe('chart fields', () => {
+  it('shape is always residual', () => {
+    const chart = extractResidual(parseSkill(`---\nname: t\ndescription: T\n---\n`, 't'));
+    expect(chart.shape).toBe('residual');
+  });
+
+  it('extractor is always residual', () => {
+    const chart = extractResidual(parseSkill(`---\nname: t\ndescription: T\n---\n`, 't'));
+    expect(chart.extractor).toBe('residual');
+  });
+
+  it('title is "<skill> — state flow"', () => {
+    const chart = extractResidual(parseSkill(`---\nname: my-skill\ndescription: T\n---\n`, 'my-skill'));
+    expect(chart.title).toBe('my-skill \u2014 state flow');
+  });
+
+  it('sources contains the SKILL.md file', () => {
+    const params = loadSkill('aid-config');
+    const chart = extractResidual(params);
+    expect(chart.sources).toContain('canonical/skills/aid-config/SKILL.md');
+  });
+});
+
+// ── parseAsciiStateMap is the single shared token parser ─────────────────────
+
+describe('parseAsciiStateMap — export signature', () => {
+  it('is exported as a named function', () => {
+    expect(typeof parseAsciiStateMap).toBe('function');
+  });
+
+  it('accepts a string and returns { names, conditions }', () => {
+    const r = parseAsciiStateMap('[A] -> [B]');
+    expect(r).toHaveProperty('names');
+    expect(r).toHaveProperty('conditions');
+    expect(Array.isArray(r.names)).toBe(true);
+    expect(Array.isArray(r.conditions)).toBe(true);
+  });
+
+  it('names and conditions arrays are same length', () => {
+    const r = parseAsciiStateMap('[A] -> [B(cond)] -> [C]');
+    expect(r.names.length).toBe(r.conditions.length);
+  });
+});

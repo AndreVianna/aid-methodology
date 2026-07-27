@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: 'In Review'
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,17 +64,46 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Orchestrator verification before review.** This agent surfaced five DETAIL/SPEC findings rather
+  than resolving them silently, which is the behaviour asked for. One of them is understated and is
+  promoted here; two more are recorded because they land on OTHER tasks.
+- **[MEDIUM] R3 misses MIXED heading levels, and it costs two charts at the UI checkpoint.**
+  The agent reported that `aid-set-connector` and `aid-unset-connector` use `## Step N` (H2) rather
+  than `### Step N` (H3), so R3 does not fire and both fall to the R5 three-node spine. Verified, and
+  the real shape is sharper than that: **both skills MIX levels.** `aid-set-connector` has
+  `### Step 0` (H3) followed by `## Step 1` .. `## Step 6` (H2); `aid-unset-connector` has
+  `### Step 0` plus `## Step 1` .. `## Step 3`. R3 matches only `###`, therefore finds exactly ONE
+  heading, fails its own two-heading guard, and discards **7 and 4 authored steps** respectively.
+  - **Why it matters beyond these two skills:** `aid-config` is the residual fixture the UI
+    checkpoint names, and it renders 12 nodes because it happens to use `### Step N`. Two of its
+    siblings with comparable structure render 3 nodes for a purely typographic reason. A reader
+    cannot tell that apart from "this skill genuinely has no structure".
+  - **Not changed here.** Widening R3 to `#{2,3} Step \d+` is a one-line change with an obvious
+    reader benefit, but it is a deviation from the DETAIL (which specifies `###`) in a module this
+    orchestrator does not own, and it interacts with R3 multi-lane mode detection, which keys on
+    `## Mode N` at the same heading level. Routed to the wave reviewer with the measurement.
+- **[LOW] R4 never fires on any of the 13 skills** -- the agent says so plainly, which is the right
+  call. It is tested with synthetic fixtures only. Worth the reviewer confirming those fixtures
+  genuinely reach R4 rather than passing for another reason, since an unreachable rung tested only by
+  fixtures is the shape this work has shipped nine times.
+- **[LOW] The R1 export contract could not be honoured by the tasks it exists for, because of
+  parallel dispatch.** `extract-residual.mjs` exports `parseAsciiStateMap` specifically so the
+  AUTHORED extractors (tasks 025/026) import it rather than reimplementing the ASCII state-map
+  parser. But all three ran concurrently, so that module did not exist when 025 and 026 started.
+  **The wave reviewer must check whether either reimplemented it** -- a duplicated shared rule was a
+  HIGH finding in delivery-002. This is a dispatch-sequencing defect of mine, not of any task.
+- **Two deviations the agent made and disclosed, both judged correct here:** following the SPEC em-dash
+  over the DETAIL hyphen for the R2 separator (the corpus files settle it), and extending R3 to
+  `\d+[a-z]?` so `aid-query-kb` sub-steps `2a/2b/2c` match instead of silently falling to R5.
+- **The `aid-config` chart is defensible.** 12 nodes, 10 edges, two lanes showing the 3-step and
+  7-step modes and their asymmetry. What it declines to express -- the show-only versus
+  prompt-and-save sub-branch inside Mode 2 -- is prose rather than structure, and R3 refusing to
+  invent it is FR-2 working as intended.
+- **8 of 13 land on the R5 three-node spine**, so the residual set at the checkpoint will show eight
+  near-identical `ENTRY -> RUN -> EXIT` charts. Correct per the ladder, but the owner should see it
+  as the expected shape rather than as a bug.
+- **V9 throws on 0 of 13** -- and structurally so: none of these skills carries an `**Advance:**`
+  block, so `parseAdvanceBlock` is never reached.
 ---
 
 ## Dispatch Log

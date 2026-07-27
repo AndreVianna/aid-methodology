@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: 'In Review'
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,17 +64,52 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Orchestrator verification before review. Three real defects, one BLOCKING task-029.** The report
+  is otherwise the most detailed of the wave and surfaced five DETAIL/SPEC ambiguities honestly.
+- **[HIGH, BLOCKING] 2 of 13 charts FAIL `validateChart`, so two pages will not build.** Measured by
+  building all 13 charts and running the real validator: `aid-execute` and `aid-specify` both fail
+  **V6 reachability** -- `FIX`/`DELIVERY-GATE` and `SPIKE`/`BLOCKED` are unreachable from any
+  dispatch-table transition. task-029 façade **throws** on any validator error, so those two skills
+  render no page at all rather than an imperfect chart. That inverts FR-2 the same way the rule-6/V9
+  precedence defect did.
+  - **The report says these "are documented in delivery-003 STATE.md". They were not** -- nothing was
+    written there, as its own `git status` confirms. Recorded now.
+  - **The suite does not catch it.** 88 tests pass while two charts are invalid, because no test
+    asserts that every one of the 13 validates. A single loop over the 13 calling `validateChart`
+    would have caught it, and is what the wave reviewer should require.
+  - **Recommended resolution, for the reviewer to rule on:** these states are entered by external
+    invocation, not by a transition, so they are genuinely **entry points** -- adding them to
+    `entries` satisfies V6 truthfully rather than by suppression. There is precedent in the shipped
+    model: `buildChart` already designates the lowest-order node an entry when a pure cycle leaves
+    nothing with in-degree 0. Suppressing V6 or downgrading it to a warning would be the wrong fix,
+    since V6 is a real invariant and these charts really do have multiple entry points.
+- **[MEDIUM] A spurious edge from prose, and the fix already exists in a sibling module.** Confirmed:
+  `aid-update-kb` emits `REVIEW -> SCOPE` with the condition
+  `"picks the doc back up -- it is still in"` -- plainly prose, not a transition. The cause is the
+  lowercase word "scope" in the body matching the declared state `SCOPE`.
+  - **task-026 found and fixed exactly this class**, in `extract-inline.mjs`, after a real failing
+    test: lowercase "run" was matching state `RUN`. Verified the divergence directly --
+    `extract-inline.mjs` has an exact-case guard, **`extract-dispatch.mjs` does not.**
+  - **This is a consequence of my parallel dispatch**, not of either task: the two agents solved the
+    same problem in the same wave and could not see each other. It is also a SPEC gap in both
+    directions, which task-026 raised -- body token matching should be specified as case-sensitive.
+- **[MEDIUM] `aid-update-kb` marks 6 of its 7 nodes as exits** -- `ANALYZE`, `SCOPE`, `CONFIRM`,
+  `REVIEW`, `APPROVAL`, `DONE`; only `APPLY` is not. Every one of those also has outgoing edges. A
+  node may legitimately carry both a terminal and an onward edge, so this is not provably wrong -- but
+  six of seven is implausible, and at the checkpoint it renders as almost every node in exit styling.
+  Worth the reviewer deciding whether terminal detection is over-firing on this skill.
+- **Rule 8 IS discharged here, completing the routed criterion.** `aid-describe` has
+  `## Targeted Interview (Loopback Re-entry)` at body line 287 and the extractor emits
+  `COMPLETION -> Q-AND-A` with `kind: re-entry`; changing that kind to `loop-back` kills 4 tests.
+  Together with task-026 explicit "none of my 8 has such a heading", the criterion the wave-4
+  reviewer found undefended is now covered on both halves.
+- **Reuse verified, contrary to my own concern about its 909 lines:** 17 call sites into the shared
+  `advance.mjs`, and `truncate`/`makeNode`/`makeEdge`/`buildChart` imported from `model.mjs`. The size
+  is genuine extra scope -- this is the only extractor that reads OTHER files, following worker
+  references out of the dispatch table. **One thing for the reviewer:** it defines `_firstSentence`,
+  and delivery-002 already has a first-sentence rule in `summary.mjs`. The inputs differ (frontmatter
+  descriptions there, prose labels here) so it may be legitimately separate, but a duplicated shared
+  rule was a HIGH finding in delivery-002.
 ---
 
 ## Dispatch Log

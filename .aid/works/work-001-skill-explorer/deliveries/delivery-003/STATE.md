@@ -553,6 +553,28 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
 - Measured **zero** bare pauses across all 111 skills. Pinned by a test rather than corrected, for
   the same ownership reason as above.
 
+### Wave-5 dispatch sequencing error — the R1 shared-parser contract could not be honoured
+
+- **Category:** Orchestration defect (mine), not a task defect
+- **Impact:** Low-Medium — risks a duplicated shared rule, which was a HIGH finding in delivery-002
+- **State:** **Open — the wave-5 reviewer must check for duplication.**
+- **What happened.** task-027 exports `parseAsciiStateMap` from `extract-residual.mjs` deliberately,
+  so the **authored** extractors — tasks 025 and 026 — import the ASCII state-map parser rather than
+  writing their own. task-027's DETAIL states that contract; feature-003's SPEC does not, which
+  task-027 also surfaced.
+- **But I dispatched all three concurrently**, on the strength of their file scopes being disjoint.
+  Disjoint scopes are necessary but not sufficient: they say nothing about a **producer/consumer
+  dependency between the modules**. `extract-residual.mjs` did not exist when 025 and 026 started, so
+  neither could import from it even in principle.
+- **What the reviewer must check:** whether `extract-dispatch.mjs` or `extract-inline.mjs`
+  reimplements ASCII state-map parsing. If either does, it is a duplicated shared rule and should be
+  replaced by the import — the same defect class as the `toCard`/`skillSummary` duplication that was a
+  HIGH finding in delivery-002, and the reason `truncate` is guarded so carefully.
+- **The lesson for the remaining waves.** The execution graph's parallelism is derived from file
+  disjointness, so an export-consumption edge between two same-wave tasks is invisible to it. Waves
+  10 and 11 pair tasks the same way (033/034 and 035/036) and should be checked for the same shape
+  before dispatch, not after.
+
 ### Shape distribution measured before wave 5 — the UI checkpoint will show 34 charts, not "roughly 27"
 
 - **Category:** Measurement, recorded so the checkpoint expectation is accurate
