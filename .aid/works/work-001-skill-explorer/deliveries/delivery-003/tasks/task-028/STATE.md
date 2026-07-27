@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,17 +64,40 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Orchestrator verification before review. No defect found -- the notable thing is what the
+  verification could and could not establish.**
+- **The escaping is the risk this task carried**, because it is the family that produced
+  delivery-002 worst shipped defect: an over-escaper that put visible entities on 70 of 111 pages,
+  with a test structurally incapable of seeing it. A unit test asserting "the emitted source
+  contains &amp;" passes whether a reader sees an ampersand or the literal text.
+- **Settled empirically rather than by reasoning about defaults.** The site already SHIPS a
+  hand-authored diagram using both constructs in one quoted label --
+  `concepts/methodology.md`:43 renders `SC["aid-&lt;verb&gt;[-&lt;artifact&gt;]<br/>shortcut ..."]`.
+  So entities and `<br/>` are known to render on this site, with this integration, at this Mermaid
+  version (11.15.0). That matters because neither `htmlLabels` nor `mermaidConfig` is set in
+  `astro.config.mjs`, and per KI-001 `astro-mermaid` forwards almost nothing anyway -- so the
+  behaviour rests on a default, and the shipped precedent is better evidence than the default.
+- **Rendered a probe chart carrying every character class the corpus actually contains** -- `>=`
+  with `&` in one label, `ARTIFACT=""`, a backtick AND a pipe together, and the
+  `aid-<verb>[-<artifact>]` pattern -- then read the output as Mermaid rather than as assertions.
+  Clean: no raw ampersand outside an entity, no unbalanced quote on any line, no surviving
+  backtick, and byte-identical across two calls. The lossy backtick/pipe-to-space substitution is
+  contract, not improvisation -- the DETAIL specifies "any residual backtick or pipe becomes a
+  space".
+- **Spot-verified the mutation claim** (12 reported, 0 survivors) by removing the ampersand
+  replacement: 2 tests die. The escaping is genuinely guarded.
+- **Two items DEFERRED TO UI CHECKPOINT 2, neither a defect:**
+  1. **`entry` and `exit` render as the SAME shape** -- both stadium `(["..."])` -- and are
+     distinguished only by fill colour (green vs red). Legible in principle; worth a human eye on a
+     real chart, since shape is the stronger visual cue and colour alone can fail for a
+     colour-blind reader.
+  2. **`classDef aidNode color:inherit` interacts with the kind classes by CSS declaration order.**
+     Every node receives two class statements (`class n1 aidEntry` then `class n1 aidNode`), and
+     because both land on one element with equal specificity, the winner is whichever classDef is
+     declared LATER in the fence -- not the order in the class attribute. `aidNode` is emitted
+     first, so the kind colours win and text stays legible on the dark fills. The reasoning holds,
+     but it is exactly the kind of thing to confirm with eyes rather than with logic, and hook H3
+     means the class cannot simply be dropped -- feature-006 binds to it.
 ---
 
 ## Dispatch Log

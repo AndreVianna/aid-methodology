@@ -1,5 +1,5 @@
 ---
-state: Pending
+state: Done
 review: "--"
 elapsed: "--"
 notes: "--"
@@ -64,17 +64,40 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Orchestrator verification before review.**
+- **Verified: the shared truncator is genuinely shared.** Neutralising the `truncate(text, 80)`
+  call kills a test, and the module imports it from `model.mjs` rather than reimplementing it --
+  the duplicated-shared-rule HIGH from delivery-002 is not repeated here.
+- **Verified: the hyphen-aware token boundary is load-bearing AND covered.** Removing the
+  boundary from the halt matcher kills 3 tests. That matters because `-` is not a word character
+  in JavaScript, so a plain word boundary matches the `HALT` inside `APPROVAL-HALT` -- a real bug
+  this agent found and fixed during implementation, and the acceptance criterion names
+  `APPROVAL-HALT` specifically.
+- **LEAD FOR THE REVIEWER, not yet a finding.** The 3 tests that die are the or-parens and
+  multi-line cases. The test at `flow-advance.test.mjs`:245, literally named **"APPROVAL-HALT
+  resolves as one token"**, does **NOT** die -- and it should be the first to fail when the halt
+  matcher loses its hyphen guard. Either it is covering something narrower than its title claims,
+  or it passes for a reason unrelated to the boundary. Worth checking directly: this work has
+  shipped a test whose title promised a check its body never made in three separate waves.
+- **Reported mutations were described as "manual and via smoke script"** -- the same shape of claim
+  as the sibling task "mentally verified", which did not survive re-running. Two of my own
+  re-runs turned out to be INVALID mutants rather than survivors, and both failure modes are worth
+  recording because they will recur on this stack:
+  1. There is no `.every(` in the module at all, so a patch aimed at the "every clause must
+     resolve" rule silently hit the word "every" in a comment and mutated nothing.
+  2. `` inside a **template literal** is a BACKSPACE character (U+0008), not a regex word
+     boundary. Patching the keyword pattern that way injects a control character instead of the
+     intended bug, and the resulting no-match makes the suite look green for the wrong reason.
+     Only a real regex literal can be mutated this way.
+- **Ambiguity surfaced by the agent and worth recording**, since the corpus does not force it
+  today: the SPEC lists `(or X ...)` as a separator but does not say what happens to text AFTER the
+  closing paren. The implementation merges it into the first clause. No corpus example has trailing
+  text, so nothing renders differently now -- but the next authored skill that does would silently
+  get a different chart, so it belongs in the SPEC rather than in one module head.
+- **Also recorded: the agent that produced this work was briefly and wrongly presumed hung.** Its
+  transcript timestamp had gone stale, so a duplicate was dispatched. The duplicate wrote nothing
+  and was stopped, and this work is intact -- but a transcript mtime is NOT a liveness signal for a
+  sub-agent, which is the operational lesson.
 ---
 
 ## Dispatch Log
