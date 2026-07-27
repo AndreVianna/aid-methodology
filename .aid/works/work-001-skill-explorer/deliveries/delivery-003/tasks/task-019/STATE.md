@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Quick check (Small, Sonnet 5): CONDITIONAL PASS -> 1 MINOR (the record implied a CI failure at task-029 that will not happen) Fixed, and the correction turned out to matter: only 2 of the 10 assertions go red, the other 8 stay green against a fixture the provider never claims.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
@@ -64,17 +64,26 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
+- **Outcome:** CONDITIONAL PASS -> fixed and re-verified.
 - **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+  - [MINOR] The S3 record said the one-`##`-heading assertion "breaks by design" at task-029. It
+    does not: that test and seven others drive the synthetic `aid-test-skill` fixture, which has
+    no `.flow.json`, so the new provider never claims it and they all keep passing. Only the two
+    assertions that inspect `BODY_PROVIDERS` directly go red. A developer expecting CI red would
+    have been misled -- **Fixed**.
+  - **Worth more than its severity.** The correction inverts the finding: the eight still-green
+    assertions are the DANGEROUS half, not the harmless one. Left alone they would sit permanently
+    green against a fixture chosen so the body slot is never filled -- inert whatever task-029 and
+    task-037 do to it. The record now binds the implementer to re-point each at a fixture the
+    provider genuinely claims and to mutation-prove it, and the sequencing rationale inverts with
+    it: the work on those eight is TIGHTENING, which cannot be done before the behaviour exists.
+- **Reviewer verified independently, rather than accepting the record:** the disputed DETAIL
+  citation (CONFIRMED -- no such module table row exists in feature-003 § Layers & Components,
+  only a fenced listing and an ownership table, neither making a V1-V9 claim); S1 six manifest
+  assertions; S3 ten blocks; and all nine V9 locations -- three MORE than the DETAIL named. Two
+  near-miss locations spot-checked and agreed as not stale.
+- Ledger: `.aid/.temp/review-pending/delivery-003-task-019.md`.
 ---
 
 ## Dispatch Log
