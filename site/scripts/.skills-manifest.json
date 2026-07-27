@@ -2,8 +2,8 @@
   "generator": "site/scripts/gen-skills.mjs",
   "entries": [
     {
-      "src": "canonical/skills/aid-add/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-add.md"
+      "src": "canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml",
+      "dest": "site/src/content/docs/skills/index.md"
     },
     {
       "src": "canonical/skills/aid-add-api/SKILL.md",
@@ -62,16 +62,16 @@
       "dest": "site/src/content/docs/skills/aid-add-ui.md"
     },
     {
+      "src": "canonical/skills/aid-add/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-add.md"
+    },
+    {
       "src": "canonical/skills/aid-ask/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-ask.md"
     },
     {
       "src": "canonical/skills/aid-audit/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-audit.md"
-    },
-    {
-      "src": "canonical/skills/aid-change/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-change.md"
     },
     {
       "src": "canonical/skills/aid-change-api/SKILL.md",
@@ -130,12 +130,12 @@
       "dest": "site/src/content/docs/skills/aid-change-ui.md"
     },
     {
-      "src": "canonical/skills/aid-config/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-config.md"
+      "src": "canonical/skills/aid-change/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-change.md"
     },
     {
-      "src": "canonical/skills/aid-create/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-create.md"
+      "src": "canonical/skills/aid-config/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-config.md"
     },
     {
       "src": "canonical/skills/aid-create-api/SKILL.md",
@@ -202,6 +202,10 @@
       "dest": "site/src/content/docs/skills/aid-create-ui.md"
     },
     {
+      "src": "canonical/skills/aid-create/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-create.md"
+    },
+    {
       "src": "canonical/skills/aid-define/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-define.md"
     },
@@ -234,10 +238,6 @@
       "dest": "site/src/content/docs/skills/aid-discover.md"
     },
     {
-      "src": "canonical/skills/aid-document/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-document.md"
-    },
-    {
       "src": "canonical/skills/aid-document-architecture/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-document-architecture.md"
     },
@@ -264,6 +264,10 @@
     {
       "src": "canonical/skills/aid-document-tutorial/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-document-tutorial.md"
+    },
+    {
+      "src": "canonical/skills/aid-document/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-document.md"
     },
     {
       "src": "canonical/skills/aid-execute/SKILL.md",
@@ -298,12 +302,12 @@
       "dest": "site/src/content/docs/skills/aid-plan.md"
     },
     {
-      "src": "canonical/skills/aid-prototype/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-prototype.md"
-    },
-    {
       "src": "canonical/skills/aid-prototype-ui/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-prototype-ui.md"
+    },
+    {
+      "src": "canonical/skills/aid-prototype/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-prototype.md"
     },
     {
       "src": "canonical/skills/aid-query-kb/SKILL.md",
@@ -354,10 +358,6 @@
       "dest": "site/src/content/docs/skills/aid-summarize.md"
     },
     {
-      "src": "canonical/skills/aid-test/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-test.md"
-    },
-    {
       "src": "canonical/skills/aid-test-data-quality/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-test-data-quality.md"
     },
@@ -370,16 +370,16 @@
       "dest": "site/src/content/docs/skills/aid-test-security.md"
     },
     {
+      "src": "canonical/skills/aid-test/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-test.md"
+    },
+    {
       "src": "canonical/skills/aid-triage/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-triage.md"
     },
     {
       "src": "canonical/skills/aid-unset-connector/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-unset-connector.md"
-    },
-    {
-      "src": "canonical/skills/aid-update/SKILL.md",
-      "dest": "site/src/content/docs/skills/aid-update.md"
     },
     {
       "src": "canonical/skills/aid-update-api/SKILL.md",
@@ -444,10 +444,14 @@
     {
       "src": "canonical/skills/aid-update-ui/SKILL.md",
       "dest": "site/src/content/docs/skills/aid-update-ui.md"
+    },
+    {
+      "src": "canonical/skills/aid-update/SKILL.md",
+      "dest": "site/src/content/docs/skills/aid-update.md"
     }
   ],
   "generatedPaths": [
-    "site/src/content/docs/skills/aid-add.md",
+    "site/src/content/docs/skills/index.md",
     "site/src/content/docs/skills/aid-add-api.md",
     "site/src/content/docs/skills/aid-add-cli.md",
     "site/src/content/docs/skills/aid-add-config.md",
@@ -462,9 +466,9 @@
     "site/src/content/docs/skills/aid-add-test.md",
     "site/src/content/docs/skills/aid-add-theme.md",
     "site/src/content/docs/skills/aid-add-ui.md",
+    "site/src/content/docs/skills/aid-add.md",
     "site/src/content/docs/skills/aid-ask.md",
     "site/src/content/docs/skills/aid-audit.md",
-    "site/src/content/docs/skills/aid-change.md",
     "site/src/content/docs/skills/aid-change-api.md",
     "site/src/content/docs/skills/aid-change-cli.md",
     "site/src/content/docs/skills/aid-change-config.md",
@@ -479,8 +483,8 @@
     "site/src/content/docs/skills/aid-change-test.md",
     "site/src/content/docs/skills/aid-change-theme.md",
     "site/src/content/docs/skills/aid-change-ui.md",
+    "site/src/content/docs/skills/aid-change.md",
     "site/src/content/docs/skills/aid-config.md",
-    "site/src/content/docs/skills/aid-create.md",
     "site/src/content/docs/skills/aid-create-api.md",
     "site/src/content/docs/skills/aid-create-cli.md",
     "site/src/content/docs/skills/aid-create-config.md",
@@ -497,6 +501,7 @@
     "site/src/content/docs/skills/aid-create-theme.md",
     "site/src/content/docs/skills/aid-create-ticket.md",
     "site/src/content/docs/skills/aid-create-ui.md",
+    "site/src/content/docs/skills/aid-create.md",
     "site/src/content/docs/skills/aid-define.md",
     "site/src/content/docs/skills/aid-delete.md",
     "site/src/content/docs/skills/aid-deploy.md",
@@ -505,7 +510,6 @@
     "site/src/content/docs/skills/aid-design.md",
     "site/src/content/docs/skills/aid-detail.md",
     "site/src/content/docs/skills/aid-discover.md",
-    "site/src/content/docs/skills/aid-document.md",
     "site/src/content/docs/skills/aid-document-architecture.md",
     "site/src/content/docs/skills/aid-document-changelog.md",
     "site/src/content/docs/skills/aid-document-decision.md",
@@ -513,6 +517,7 @@
     "site/src/content/docs/skills/aid-document-runbook.md",
     "site/src/content/docs/skills/aid-document-standard.md",
     "site/src/content/docs/skills/aid-document-tutorial.md",
+    "site/src/content/docs/skills/aid-document.md",
     "site/src/content/docs/skills/aid-execute.md",
     "site/src/content/docs/skills/aid-experiment.md",
     "site/src/content/docs/skills/aid-fix.md",
@@ -521,8 +526,8 @@
     "site/src/content/docs/skills/aid-migrate.md",
     "site/src/content/docs/skills/aid-monitor.md",
     "site/src/content/docs/skills/aid-plan.md",
-    "site/src/content/docs/skills/aid-prototype.md",
     "site/src/content/docs/skills/aid-prototype-ui.md",
+    "site/src/content/docs/skills/aid-prototype.md",
     "site/src/content/docs/skills/aid-query-kb.md",
     "site/src/content/docs/skills/aid-read-ticket.md",
     "site/src/content/docs/skills/aid-refactor.md",
@@ -535,13 +540,12 @@
     "site/src/content/docs/skills/aid-specify.md",
     "site/src/content/docs/skills/aid-spike.md",
     "site/src/content/docs/skills/aid-summarize.md",
-    "site/src/content/docs/skills/aid-test.md",
     "site/src/content/docs/skills/aid-test-data-quality.md",
     "site/src/content/docs/skills/aid-test-performance.md",
     "site/src/content/docs/skills/aid-test-security.md",
+    "site/src/content/docs/skills/aid-test.md",
     "site/src/content/docs/skills/aid-triage.md",
     "site/src/content/docs/skills/aid-unset-connector.md",
-    "site/src/content/docs/skills/aid-update.md",
     "site/src/content/docs/skills/aid-update-api.md",
     "site/src/content/docs/skills/aid-update-cli.md",
     "site/src/content/docs/skills/aid-update-config.md",
@@ -557,6 +561,7 @@
     "site/src/content/docs/skills/aid-update-test.md",
     "site/src/content/docs/skills/aid-update-theme.md",
     "site/src/content/docs/skills/aid-update-ticket.md",
-    "site/src/content/docs/skills/aid-update-ui.md"
+    "site/src/content/docs/skills/aid-update-ui.md",
+    "site/src/content/docs/skills/aid-update.md"
   ]
 }

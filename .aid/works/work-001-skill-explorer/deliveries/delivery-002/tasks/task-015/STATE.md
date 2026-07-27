@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-4 quick check (Small, Sonnet 5): PASS, 0 findings. Q5 sort-order ruling independently re-derived and confirmed; dead-card guard proven test-reachable by message mutation.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"

@@ -3,7 +3,8 @@
 //
 // Purpose:
 //   Generates one markdown page per canonical/skills/ directory, placing each
-//   at site/src/content/docs/skills/<dir>.md, and writes a build manifest at
+//   at site/src/content/docs/skills/<dir>.md, writes the grouped index page
+//   at site/src/content/docs/skills/index.md, and writes a build manifest at
 //   site/scripts/.skills-manifest.json.
 //
 // Usage:
@@ -18,16 +19,32 @@
 //       no arguments, so there is no usage-error path.
 
 import { mkdirSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { discoverSkills } from './skills/discover.mjs';
 import { renderSkillPage } from './skills/render-page.mjs';
+import { loadShortcutCatalog } from './skills/catalog.mjs';
+import { assignGroups } from './skills/groups.mjs';
+import { renderSkillIndex } from './skills/render-index.mjs';
 import {
+  REPO_ROOT,
   SITE_SKILLS_DIR,
   SKILLS_MANIFEST_ABS,
   skillSourcePath,
   skillDestPath,
   skillDestAbs,
 } from './skills/paths.mjs';
+
+// ── Index-row constants ────────────────────────────────────────────────────────
+// Two-source src string — byte-identical to gen-reference.mjs:447's generatedFrom
+// and to the index page's own generatedFrom value (render-index.mjs's GENERATED_FROM
+// constant). One string, three places; an AC check confirms all three agree.
+//
+// '*' (code point 42) sorts before 'a' (code point 97), so this entry lands
+// first when entries are sorted by src ascending — confirmed by pure string
+// comparison, no localeCompare.
+const INDEX_SRC = 'canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml';
+const INDEX_DEST = 'site/src/content/docs/skills/index.md';
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
@@ -43,6 +60,12 @@ async function main() {
   // parsed Field[], body text, line anchors, and path strings.
   console.log(`[gen-skills] parsed ${skills.length} skills`);
 
+  // ── 3a. CATALOG ─────────────────────────────────────────────────────────────
+  // Read canonical/aid/templates/shortcut-catalog.yml through catalog.mjs.
+  // Placed after RECORD only because nothing earlier needs it; it depends on no
+  // step and is a pure file read.
+  const catalog = loadShortcutCatalog(REPO_ROOT);
+
   // ── 4. RENDER ───────────────────────────────────────────────────────────────
   // renderSkillPage() is a pure function: page frontmatter → marker →
   // Frontmatter section → body slot. LF line endings throughout.
@@ -50,6 +73,13 @@ async function main() {
     skill,
     content: renderSkillPage(skill),
   }));
+
+  // ── 4a. ASSIGN ──────────────────────────────────────────────────────────────
+  // assignGroups() must follow RECORD (it needs every record's route and
+  // description) and must precede 5a. Four assignment guards — unassignable
+  // skill, curated skill missing, duplicate assignment, full-path catalog row —
+  // all throw before any assignment if violated.
+  const sections = assignGroups(skills, catalog);
 
   // ── 5. WRITE ────────────────────────────────────────────────────────────────
   // mkdir -p the output directory, then write each page as utf8, LF endings.
@@ -67,19 +97,34 @@ async function main() {
 
   console.log(`[gen-skills] wrote ${writtenDirNames.length} pages -> src/content/docs/skills/`);
 
+  // ── 5a. INDEX ───────────────────────────────────────────────────────────────
+  // Render and write src/content/docs/skills/index.md.
+  const indexContent = renderSkillIndex(skills, sections).replace(/\r\n?/g, '\n');
+  const indexDestAbs = resolve(SITE_SKILLS_DIR, 'index.md');
+  writeFileSync(indexDestAbs, indexContent, 'utf8');
+
   // ── 6. MANIFEST ─────────────────────────────────────────────────────────────
   // Write scripts/.skills-manifest.json — sibling of .reference-manifest.json,
   // outside the content-collection root so docsLoader() never sees it.
-  // entries ordered by src ascending (same as sorted directory scan).
+  // Insert the index row then sort all entries by src ascending — pure string
+  // comparison, no localeCompare, so the sort is platform-identical.
+  // '*' (42) < 'a' (97), so the index row lands first among canonical/skills/…
+  // entries. Rebuild generatedPaths from entries in the same order.
   // No generatedAt and no wall-clock value anywhere (AC-6 determinism).
-  // All paths are POSIX strings built by concatenation (never by the platform-sensitive join helper).
+  // All paths are POSIX strings built by concatenation (never platform join).
+  const skillEntries = skills.map((skill) => ({
+    src: skillSourcePath(skill.dirName),
+    dest: skillDestPath(skill.dirName),
+  }));
+  const indexEntry = { src: INDEX_SRC, dest: INDEX_DEST };
+  const entries = [...skillEntries, indexEntry].sort(
+    (a, b) => (a.src < b.src ? -1 : a.src > b.src ? 1 : 0)
+  );
+
   const manifest = {
     generator: 'site/scripts/gen-skills.mjs',
-    entries: skills.map((skill) => ({
-      src: skillSourcePath(skill.dirName),
-      dest: skillDestPath(skill.dirName),
-    })),
-    generatedPaths: skills.map((skill) => skillDestPath(skill.dirName)),
+    entries,
+    generatedPaths: entries.map((e) => e.dest),
   };
 
   writeFileSync(SKILLS_MANIFEST_ABS, JSON.stringify(manifest, null, 2) + '\n', 'utf8');
@@ -106,6 +151,13 @@ async function main() {
   const onDisk = onDiskFiles.map((f) => f.slice(0, -3)).sort();
 
   assertNoSkillsDrift({ expected, written, onDisk });
+
+  // ── 7a. CARDS ───────────────────────────────────────────────────────────────
+  // Dead card guard: every card target must be among the pages just written.
+  // Runs inside the same guard phase as step 7, after both writes (detail pages
+  // + index.md), so it also catches an index referencing a page a later step
+  // failed to produce.
+  assertNoDeadCards(sections, writtenDirNames);
 }
 
 /**
@@ -158,6 +210,39 @@ export function assertNoSkillsDrift({ expected, written, onDisk }) {
       parts.push('orphan pages: ' + orphanPages.join(', ') + ' (remedy: ' + remedy + ')');
     }
     throw new Error('[gen-skills] skills drift: ' + parts.join('; '));
+  }
+}
+
+/**
+ * The 7a dead card guard. Throws `[gen-skills] dead card: <name>` when a card
+ * in the index references a skill page that was not written.
+ *
+ * Exported and taking its inputs as parameters so every branch is reachable
+ * from a test. Called from `main()` after both writes (detail pages + index.md),
+ * so it also catches an index that references a page a later step failed to
+ * produce. In practice all branches are unreachable in situ — assignGroups()
+ * only builds cards from SkillRecords that discoverSkills() produced, and every
+ * discovered skill is written unconditionally in step 5. Left inline, the guard
+ * would be indistinguishable from absent code.
+ *
+ * @param {Array<{ cards: Array<{ name: string, route: string }>, families: Array<{ cards: Array<{ name: string, route: string }> }> }>} sections
+ * @param {string[]} writtenDirNames  Dir names of skill detail pages written in step 5.
+ */
+export function assertNoDeadCards(sections, writtenDirNames) {
+  const writtenSet = new Set(writtenDirNames);
+  for (const section of sections) {
+    for (const card of section.cards) {
+      if (!writtenSet.has(card.name)) {
+        throw new Error('[gen-skills] dead card: "' + card.name + '" (route: ' + card.route + ')');
+      }
+    }
+    for (const family of section.families) {
+      for (const card of family.cards) {
+        if (!writtenSet.has(card.name)) {
+          throw new Error('[gen-skills] dead card: "' + card.name + '" (route: ' + card.route + ')');
+        }
+      }
+    }
   }
 }
 

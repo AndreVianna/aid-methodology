@@ -123,6 +123,47 @@ with ZERO tasks; the `_none yet_` rollup below is correct and expected for a new
 - **Applied to:** task-017 / task-018 (the wave that creates `site/vitest.config.mjs`); recorded
   here because KI-016 states the decision is a routing choice, not a task-boundary change.
 
+### Q5 — task-012 and task-015 specify conflicting manifest sort orders
+
+- **Category:** Contract conflict between two tasks in the same delivery
+- **Impact:** Medium — settles the byte content of `.skills-manifest.json`, an AC-6 artifact
+- **State:** **Answered** (2026-07-26, orchestrator — resolved by reading, no owner judgement needed)
+- **Context:** the two tasks' acceptance criteria disagree, and the disagreement is not cosmetic
+  because the manifest must be byte-identical across runs:
+  - **task-012:** "`entries` is ordered by `src` ascending, **matching the sorted directory scan**."
+  - **task-015:** "`entries` remains ascending by `src` **literally** after insertion … the ordering
+    is a **pure string comparison** that holds identically on every platform."
+  These produce different orders. `-` is 45 and `/` is 47, so a literal `src` comparison sorts
+  `canonical/skills/aid-add-api/SKILL.md` **before** `canonical/skills/aid-add/SKILL.md`, while a
+  directory-name sort puts `aid-add` first. task-012 shipped the directory-name order and the
+  **wave-3 reviewer explicitly validated it**; task-015 then changed the order and rewrote
+  task-012's test to match. Left unexamined this would be a silent reversal of a reviewed decision.
+- **Answer: literal `src` ascending is correct.** Four reasons, in descending weight:
+  1. **task-012's qualifier stops being definable once the index row exists.** That row's `src` is
+     `canonical/skills/*/SKILL.md, canonical/aid/templates/shortcut-catalog.yml`, which corresponds
+     to **no directory at all**. "Matching the sorted directory scan" was written for a manifest
+     that had one row per directory; task-015 is the task that adds a row that does not.
+  2. **task-015's own required outcome depends on it.** Its criterion that the index row lands
+     first holds only because `*` (42) sorts before any lowercase letter under a literal `src`
+     comparison. Under a directory-name sort the index row has no directory to compare and the
+     placement is undefined.
+  3. **Both criteria say "ascending by `src`".** task-015 does not introduce a new key — it
+     sharpens an ambiguous one. Directory-name ordering was an *interpretation* of task-012's
+     phrase, not its literal text.
+  4. **Platform-independence.** A pure string comparison is stable everywhere; "matching the
+     directory scan" inherits whatever `readdirSync().sort()` does.
+- **No precedent either way from the sibling.** `.reference-manifest.json` is **not sorted at
+  all** — its four entries are in generation order (skills, agents, kb, settings), verified. So
+  the established generator offers no counter-example, and this work's sort requirement comes from
+  feature-001's SPEC rather than from house style.
+- **Verified on the shipped artifact:** `entries` is literally ascending by `src` across all 112
+  rows; the index row is first; `generatedPaths` is rebuilt from `entries` in the same order and
+  leads with `site/src/content/docs/skills/index.md`; and the two-source `src` string is
+  byte-identical in all three required places plus the rendered page.
+- **Applied to:** `site/scripts/gen-skills.mjs` (already correct), and task-012's test, which
+  task-015 updated. **task-012's acceptance-criterion wording is the thing that was imprecise** —
+  recorded here rather than edited, since task `DETAIL.md` files are immutable definitions.
+
 ### Q4 — KI-010's discoverability gap, observed rather than predicted
 
 - **Category:** Navigation / KI-010 (the asymmetry of the divergence remedy)

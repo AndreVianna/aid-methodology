@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-4 quick check (Small, Sonnet 5): PASS, 0 findings. Build-integration clause (a) verified by hashing all six frozen artifacts across a full prebuild.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
