@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-2 quick check (Small, Sonnet 5): CONDITIONAL PASS -> no finding against classify.mjs; 61 tests held under 4 independent mutations. Surfaced the D3 distinct-target ambiguity, now decided and recorded.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
@@ -64,17 +64,25 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
 - **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Outcome:** CONDITIONAL PASS -> fixed and re-verified across two cycles.
+- **Findings against this task:** none of the wave findings landed in `classify.mjs`. Its 61 tests
+  survived every mutation put to them, including four the orchestrator ran independently because
+  the sibling task had reported its mutations as "mentally verified": `delegatesTo: null` ->
+  `undefined` kills 11 tests (so the contract is pinned to `null` specifically, not to any falsy
+  value, which is what downstream consumers need); omitting the key from D1 kills 3; D3 losing its
+  parent kills 6; and injecting `repurpose` / `shortcut-catalog.yml` as a COMMENT kills 2 -- proving
+  the AC-1 body-inspection-independence grep is not vacuous.
+- **Contract clarification surfaced by this task, not a defect:** feature-003 D3 fires on a body
+  that "references exactly one other skill SKILL.md", which is ambiguous between one OCCURRENCE and
+  one DISTINCT TARGET. `aid-test-security` carries three occurrences of the same link and is a
+  named acceptance fixture requiring `sibling-doorway`, so the occurrence reading makes the SPEC
+  own criterion unsatisfiable. Recorded as a decision in the delivery STATE (distinct targets) with
+  a SPEC correction owed; the reviewer independently confirmed the occurrence count and the
+  reasoning.
+- **[LOW] This section previously held unfilled template placeholders** -- raised as wave-2 ledger
+  row 4 and fixed by this write.
+- Ledger: `.aid/.temp/review-pending/delivery-003-wave-2.md`.
 ---
 
 ## Dispatch Log

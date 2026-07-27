@@ -426,6 +426,31 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
 - **Applies equally to task-037**, which fills the slot for the delegating majority and will move
   the same assertions a second time.
 
+### D3's "exactly one reference" — distinct TARGETS, not occurrences (found while implementing task-021)
+
+- **Category:** Contract clarification in feature-003's discriminator D3; a sixth seam in
+  substance, found by implementation rather than by design
+- **Impact:** Medium — decides which skills classify as `sibling-doorway` at all
+- **State:** **Decided (2026-07-27, orchestrator)** — resolved by reading, no owner judgement needed
+- **The ambiguity.** D3 fires when a body "references exactly one other skill's
+  `canonical/skills/<name>/SKILL.md`". That admits two readings: exactly one **occurrence** of such
+  a link, or exactly one **distinct target skill**.
+- **Decision: exactly one distinct target.** Multiple occurrences of the *same* target still fire D3.
+- **Why the SPEC cannot mean occurrences.** `aid-test-security`'s body contains **two** occurrences
+  of `canonical/skills/aid-test/SKILL.md`, and feature-003's own acceptance criterion requires
+  `aid-test-security → sibling-doorway` — it is one of the four named structural fixtures. Under the
+  occurrence reading that criterion is unsatisfiable. So the distinct-target reading is the only one
+  consistent with the document itself, exactly as delivery-002's Q3 was settled by feature-002's own
+  acceptance being unsatisfiable under its stated fallback.
+- **Consequence for `delegatesTo`:** the single distinct name is what S4 returns, so the two
+  decisions compose — a body may cite its parent many times and still yield one parent name.
+- **Verified, not assumed:** mutating the classifier so D3 stops reporting its parent fails six
+  tests, and mutating `delegatesTo: null` to `undefined` fails eleven — so the contract is pinned to
+  `null` specifically rather than to any falsy value, which is what downstream consumers need.
+- **Implemented by:** task-021 (shipped). **SPEC correction owed:** feature-003's D3 wording should
+  read "exactly one **distinct** target skill" — added to the correction list this delivery already
+  owes for the V9 class, rather than filed separately.
+
 ### BLUEPRINT verification — no correction owed by task-019
 
 Verified by reading `deliveries/delivery-003/BLUEPRINT.md` rather than by repeating the DETAIL's

@@ -560,6 +560,38 @@
   housekeeping** — which is exactly what happened once in this work: the `work-001` worktree was
   created by WSL git, a Windows `git push` pruned it, and the worktree had to be rebuilt.
 
+  **RECURRED 2026-07-27, during delivery-003 task-020 — with the mechanism now measured rather
+  than inferred, and a non-destructive recovery.** The registry directory
+  `.git/worktrees/work-001/` was **gone entirely** (only `work-003` remained), so every git
+  command inside the worktree answered `fatal: not a git repository: (NULL)`. It surfaced
+  indirectly and was nearly mis-filed: task-020 reported `gen-reference.test.mjs` and
+  `sync-docs.test.mjs` as *"pre-existing intermittent failures … unrelated to this task"*. They
+  were neither pre-existing nor unrelated — both call `git diff` to prove idempotence, and both
+  pass again now. **A test suite that shells out to git is this corruption's canary; treat two
+  git-dependent suites failing together as this bug until proven otherwise.**
+
+  **The precise trigger, confirmed by `git worktree prune --dry-run -v`:** the `gitdir` file's
+  **path dialect** is the whole mechanism. With MSYS-style `/c/Projects/…` git reports
+  *"gitdir file points to non-existent location"* and flags the entry **prunable**; with
+  Windows-style `C:/Projects/…` it does not. So the entry does not have to be written by WSL git to
+  be lost — **any** writer that puts a POSIX-style absolute path there arms the next prune, and
+  prunes fire during routine housekeeping.
+
+  **Recovery, non-destructive and preferred over recreating the worktree** (which matters when
+  another agent is mid-write inside it — task-021 was, and no working file was touched):
+  1. `git worktree repair` **does not help** when the registry directory is absent; it only fixes a
+     stale pointer. It fails with *"unable to locate repository"*.
+  2. Recreate `.git/worktrees/<name>/` by hand with four files, copying a healthy sibling entry's
+     shape: `HEAD` (`ref: refs/heads/<branch>`), `commondir` (`../..`), `gitdir` (the worktree's
+     `.git`, **Windows-style**), and an empty `logs/HEAD`.
+  3. `git reset` (mixed, no paths) in the worktree to rebuild the missing index — it does not touch
+     working files.
+  4. Verify with `git worktree prune --dry-run -v`: the entry must **not** be listed.
+
+  **Nothing is at risk but time.** Commits live in the main repository's object store and the
+  branch ref survives independently, so all three `aid/work-001-delivery-*` branches and every
+  commit were intact; only the administrative link was lost.
+
   **Standing rule for this repository: use Windows git.** The worktree at
   `.claude/worktrees/work-001` has been recreated with Windows git and now records
   `gitdir: C:/Projects/Personal/AID/.git/worktrees/work-001`.

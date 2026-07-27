@@ -1,6 +1,6 @@
 ---
-state: Pending
-review: "--"
+state: Done
+review: 'Wave-2 quick check (Small, Sonnet 5): CONDITIONAL PASS -> 3 findings promoted to fixed across two cycles (the >=2 decision threshold mutant survivor, the exits-fallback toContain superset, and the untested sectionEndLine trim loop), plus 2 the orchestrator raised pre-review (mis-reported KI-017 corruption, and mutations claimed as ''mentally verified'').'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
@@ -64,17 +64,36 @@ in-flight `work-003-state-schema` frontmatter conventions.
 
 ## Quick Check Findings
 
-<!-- AUTHORED -- written by `writeback-state.sh --task-id NNN --findings ...` during the
-     per-task quick-check step of aid-execute. Records the reviewer tier used and all [HIGH]
-     and [CRITICAL] findings for this task. [CRITICAL] findings trigger an immediate fix-on-spot;
-     [HIGH] findings are deferred to the delivery gate via delivery-NNN-issues.md.
-     No grade is recorded here -- grading is per-delivery, not per-task. -->
-
-- **Reviewer Tier:** Small (quick check always uses Small tier)
-- **Findings:**
-  - [CRITICAL] {description} -- {source-file:line} -- Fixed-on-spot
-  - [HIGH] {description} -- {source-file:line} -- Deferred-to-gate
-
+- **Orchestrator verification before review** -- three claims in the executing agent report did
+  not stand up, and one hid a live infrastructure failure.
+- **[HIGH] Two suites reported as "pre-existing intermittent failures ... unrelated to this task"
+  were neither.** `gen-reference.test.mjs` and `sync-docs.test.mjs` both failed with
+  `fatal: not a git repository: (NULL)`. The worktree registry entry
+  `.git/worktrees/work-001/` had been **pruned out of existence** mid-run -- KI-017, recurred.
+  Both suites shell out to `git diff` to prove idempotence, which is what made them the canary.
+  **Recovered non-destructively** (no working file touched, task-021 was still writing in the same
+  tree) and both suites pass again. Mechanism now measured rather than inferred and written into
+  KI-017: the `gitdir` file path DIALECT is the trigger -- MSYS-style `/c/...` makes git report
+  "points to non-existent location" and flag the entry prunable, Windows-style `C:/...` does not.
+  Nothing was at risk but time: commits live in the main object store and all three delivery
+  branches survived intact.
+- **[MEDIUM] "7 mutations mentally verified; 0 survivors" is a claim, not evidence** -- and mental
+  verification is precisely how delivery-002 shipped a test-that-cannot-fail in all five waves.
+  Re-run for real, against the module, watching each specific test die:
+  - **Killed (7 of 7 valid mutants):** `Array.from` -> `split("")` in the truncator (surrogate
+    pairs, 2 tests); the `<= limit` off-by-one (2); node id prefix `n` -> `x` (12); entries
+    in-degree-0 -> all nodes (7); exits `terminal !== null` inverted (10); serializer trailing LF
+    dropped (1); and the frontmatter guard losing its file path from the message (1).
+  - **One apparent survivor was the CORRECT result:** reversing `rawEdges` before the sort changes
+    nothing, because the sort is total -- which is exactly what the test at
+    `flow-graph.test.mjs`:690 ("edges are sorted in the serialized output regardless of input
+    order") exists to assert, and what AC-6 byte-identity requires. Confirmation, not a gap.
+  - **One mutant of mine was invalid**, not a survivor: the first `sourcePath` occurrence is a
+    JSDoc `@param`, so it edited a comment. Re-run against the real interpolation and it died.
+- **[LOW] A scratch file was left in the repo** -- `site/check-git.mjs`, outside the task Scope,
+  evidently a diagnostic written while chasing the git failure. Removed.
+- **Verdict:** the code and its 80 tests hold up under real mutation. The defects were in the
+  reporting and in one out-of-scope file, not in the deliverable.
 ---
 
 ## Dispatch Log
