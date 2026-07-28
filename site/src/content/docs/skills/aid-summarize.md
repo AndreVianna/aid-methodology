@@ -15,4 +15,56 @@ generatedFrom: 'canonical/skills/aid-summarize/SKILL.md'
 
 [Definition: `canonical/skills/aid-summarize/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-summarize/SKILL.md)
 
-<!-- body slot: features 003/004 (chart) and 005 (provenance) render here -->
+## Flow
+
+```mermaid
+flowchart TB
+  classDef aidNode color:inherit
+  classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
+  classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
+  classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
+  classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
+  classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
+  n1(["PREFLIGHT<br/>PREFLIGHT is the synchronous gate that verifies all…"])
+  n2(["STALE-CHECK<br/>STALE-CHECK compares the KB review date against the last…"])
+  n3["PROFILE<br/>PROFILE reads the doc-set and domain from feature-014…"]
+  n4["GENERATE<br/>GENERATE builds kb.html from KB content using the resolved…"]
+  n5{"VALIDATE<br/>VALIDATE runs the machine-verifiable quality checks…"}
+  n6{"MANUAL-CHECKLIST<br/>MANUAL-CHECKLIST elicits human-judgment answers for the…"}
+  n7["FIX<br/>FIX handles objective machine-pool failures autonomously…"]
+  n8(["APPROVAL<br/>APPROVAL presents the graded summary to the user for final…"])
+  n9["WRITEBACK<br/>WRITEBACK atomically records the approved summarization…"]
+  n10(["DONE<br/>DONE confirms the summarization is complete and the…"])
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 -->|"** ** if Machine Grade &gt;= minimum"| n6
+  n5 -->|"** ** otherwise. Both continue inline"| n7
+  n6 -->|"** ** otherwise. Both continue inline"| n7
+  n6 -->|"** ** if Overall Grade ≥ minimum"| n8
+  n7 --> n5
+  n8 -->|"no writeback). If user said &quot;changes needed&quot;: ** ** (continue inline"| n7
+  n8 -->|"If user approved: ** ** (continue inline"| n9
+  n9 --> n10
+  class n1 aidEntry
+  class n2 aidExit
+  class n3 aidStep
+  class n4 aidStep
+  class n5 aidDecision
+  class n6 aidDecision
+  class n7 aidStep
+  class n8 aidExit
+  class n9 aidStep
+  class n10 aidExit
+  class n1 aidNode
+  class n2 aidNode
+  class n3 aidNode
+  class n4 aidNode
+  class n5 aidNode
+  class n6 aidNode
+  class n7 aidNode
+  class n8 aidNode
+  class n9 aidNode
+  class n10 aidNode
+```

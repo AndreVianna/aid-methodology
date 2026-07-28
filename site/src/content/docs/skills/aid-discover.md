@@ -15,4 +15,45 @@ generatedFrom: 'canonical/skills/aid-discover/SKILL.md'
 
 [Definition: `canonical/skills/aid-discover/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-discover/SKILL.md)
 
-<!-- body slot: features 003/004 (chart) and 005 (provenance) render here -->
+## Flow
+
+```mermaid
+flowchart TB
+  classDef aidNode color:inherit
+  classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
+  classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
+  classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
+  classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
+  classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
+  n1(["ELICIT<br/>ELICIT captures the project's external sources and tool…"])
+  n2(["GENERATE<br/>GENERATE generates KB documents that are missing or still…"])
+  n3{"REVIEW<br/>REVIEW grades all declared KB documents for accuracy…"}
+  n4{"Q-AND-A<br/>Q-AND-A drives EVERY pending question to a terminal answer."}
+  n5{"FIX<br/>FIX applies Q&amp;A answers and reviewer feedback to bring KB…"}
+  n6(["APPROVAL<br/>APPROVAL presents the KB summary and asks the user to…"])
+  n7(["DONE<br/>DONE confirms discovery is complete and user-approved; it…"])
+  n1 --> n2
+  n2 --> n3
+  n3 -->|"** ** if Pending Q&amp;A entries with Impact: Required exist"| n4
+  n3 -->|"** ** otherwise. Both continue inline"| n5
+  n4 -->|"** ** when any answer implies a doc change"| n5
+  n4 -->|"otherwise chain toward once zero Pending and grade &gt;= minimum"| n6
+  n5 -->|"** ** if grade &lt; minimum (rerun"| n3
+  n5 -->|"** ** if grade ≥ minimum. Both continue inline"| n6
+  n6 -. "otherwise" .-> n6
+  n6 -->|"** ** (user approval is the natural pause — once user approves, ** **"| n7
+  class n1 aidExit
+  class n2 aidExit
+  class n3 aidDecision
+  class n4 aidDecision
+  class n5 aidDecision
+  class n6 aidExit
+  class n7 aidExit
+  class n1 aidNode
+  class n2 aidNode
+  class n3 aidNode
+  class n4 aidNode
+  class n5 aidNode
+  class n6 aidNode
+  class n7 aidNode
+```

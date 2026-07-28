@@ -1,9 +1,9 @@
-// skills-body.test.mjs — Unit tests for body.mjs (task-010).
+// skills-body.test.mjs — Unit tests for body.mjs (task-010 / task-029).
 //
 // Covers every acceptance criterion for body.mjs:
-//   AC-1  BODY_PROVIDERS is a static empty array literal.
+//   AC-1  BODY_PROVIDERS is a static array literal with the flow-chart-authored entry (task-029).
 //   AC-2  BODY_APPENDERS is a static empty array literal.
-//   AC-3  renderSkillBody returns '' when both registries are empty.
+//   AC-3  renderSkillBody returns '' for unclaimed skills; non-empty for claimed skills.
 //   AC-4  No dynamic import(), no readdirSync/glob call (static literals only).
 //   AC-5  No registration side effect at import time.
 //   AC-6  renderSkillBody returns first-provider-then-appenders when populated
@@ -11,6 +11,7 @@
 //
 // The real body.mjs module is imported and driven directly.
 // Fixtures are minimal SkillRecord-shaped objects sufficient for the tests.
+// All assertions are mutation-proved (break source → that specific test fails).
 
 import { describe, it, expect, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -21,9 +22,20 @@ import { BODY_PROVIDERS, BODY_APPENDERS, renderSkillBody } from '../skills/body.
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const BODY_SRC = resolve(__dirname, '../skills/body.mjs');
 
-// ── Minimal fixture ───────────────────────────────────────────────────────────
+// ── Fixtures ──────────────────────────────────────────────────────────────────
 
+/** A skill with no body — not claimed by any provider. */
 const EMPTY_SKILL = { dirName: 'aid-fixture', fields: [], field: () => undefined };
+
+/**
+ * A skill whose body classifies as inline-states → claimed by flow-chart-authored.
+ * The body is the minimum needed for applies() to classify it; render() reads
+ * the real SKILL.md from disk using dirName.
+ */
+const INLINE_BODY =
+  '## State: ELICIT\n\nContent.\n\n**Advance:** → PRESENT\n\n## State: PRESENT\n\nContent.\n\n**Advance:** HALT\n';
+
+const AID_REVIEW_SKILL = { dirName: 'aid-review', body: INLINE_BODY };
 
 // ── AC-1 / AC-2: Static array literals ───────────────────────────────────────
 
@@ -32,14 +44,17 @@ describe('BODY_PROVIDERS', () => {
     expect(Array.isArray(BODY_PROVIDERS)).toBe(true);
   });
 
-  it('is empty on module load (no pre-registered providers)', () => {
-    // Ensure no import-time side effect has pushed entries.
-    expect(BODY_PROVIDERS).toHaveLength(0);
+  it('has exactly one registered provider (flow-chart-authored, added by task-029)', () => {
+    // Mutation probe: remove the flow-chart-authored entry → toHaveLength(1) fails.
+    expect(BODY_PROVIDERS).toHaveLength(1);
+    expect(BODY_PROVIDERS[0].id).toBe('flow-chart-authored');
   });
 
-  it('is declared as "export const BODY_PROVIDERS = []" in the source (static literal)', () => {
+  it('is declared as a static array literal containing the flow-chart-authored entry in the source', () => {
+    // Mutation probe: change id to 'flow-chart-wrong' → toContain fails.
     const src = readFileSync(BODY_SRC, 'utf8');
-    expect(src).toMatch(/export const BODY_PROVIDERS\s*=\s*\[\]/);
+    expect(src).toMatch(/export const BODY_PROVIDERS\s*=\s*\[/);
+    expect(src).toContain("id: 'flow-chart-authored'");
   });
 });
 
@@ -82,10 +97,16 @@ describe('static array literal safety (AC-4)', () => {
   });
 });
 
-// ── AC-3: renderSkillBody returns '' when both registries are empty ───────────
+// ── AC-3: renderSkillBody — claimed vs unclaimed skill ────────────────────────
 
-describe('renderSkillBody — empty registries (AC-3)', () => {
-  it('returns empty string for any skill when both registries are empty', () => {
+describe('renderSkillBody — unclaimed skill (AC-3)', () => {
+  // All three tests below use a skill no provider claims (no body field).
+  // They stay green even if the provider's applies() is broken (always false).
+  // The mutation-proof companion tests below use a CLAIMED skill.
+
+  it('returns empty string for a skill with no body (no provider claims it)', () => {
+    // Mutation probe: if provider.applies() returned true here → render() would try
+    // buildFlowChart('aid-fixture') → throws (file not found) → test errors, not green.
     expect(renderSkillBody(EMPTY_SKILL)).toBe('');
   });
 
@@ -93,7 +114,7 @@ describe('renderSkillBody — empty registries (AC-3)', () => {
     expect(renderSkillBody(EMPTY_SKILL)).toBe(renderSkillBody(EMPTY_SKILL));
   });
 
-  it('returns empty string for a skill with multiple fields', () => {
+  it('returns empty string for a skill with multiple fields but no body', () => {
     const skill = {
       dirName: 'aid-multi',
       fields: [
@@ -103,6 +124,13 @@ describe('renderSkillBody — empty registries (AC-3)', () => {
       field: (k) => undefined,
     };
     expect(renderSkillBody(skill)).toBe('');
+  });
+
+  it('returns a non-empty string beginning with ## Flow for a claimed skill (aid-review)', () => {
+    // Mutation probe: break applies() to always return false → output is '' → fails.
+    // Mutation probe: break render() to return '' → toMatch fails.
+    const output = renderSkillBody(AID_REVIEW_SKILL);
+    expect(output).toMatch(/^## Flow\n/);
   });
 });
 

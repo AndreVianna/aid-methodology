@@ -15,4 +15,27 @@ generatedFrom: 'canonical/skills/aid-plan/SKILL.md'
 
 [Definition: `canonical/skills/aid-plan/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-plan/SKILL.md)
 
-<!-- body slot: features 003/004 (chart) and 005 (provenance) render here -->
+## Flow
+
+```mermaid
+flowchart TB
+  classDef aidNode color:inherit
+  classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
+  classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
+  classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
+  classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
+  classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
+  n1(["FIRST-RUN<br/>No PLAN.md found; begin dependency mapping and deliverable…"])
+  n2["REVIEW<br/>PLAN.md exists and was previously completed; re-review…"]
+  n3(["DONE<br/>Done"])
+  n1 -. "otherwise" .-> n1
+  n1 -->|"** ** when PLAN.md is written, delivery folders are created, and the final…"| n2
+  n2 -. "otherwise" .-> n2
+  n2 -->|"** ** when the grade meets minimum and all delivery folders are created…"| n3
+  class n1 aidEntry
+  class n2 aidLoopBack
+  class n3 aidExit
+  class n1 aidNode
+  class n2 aidNode
+  class n3 aidNode
+```

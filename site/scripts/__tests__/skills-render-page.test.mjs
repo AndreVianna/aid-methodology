@@ -63,6 +63,7 @@ function makeSkill(dirName, fields) {
 }
 
 // Baseline fixture: a minimal skill with the four standard corpus fields.
+// BASELINE is never claimed by any provider (body is '' → applies() returns false).
 const BASELINE_FIELDS = [
   makeField('name', 'scalar', 'aid-test-skill'),
   makeField('description', 'scalar', 'A test skill. Used for unit testing purposes.'),
@@ -71,6 +72,29 @@ const BASELINE_FIELDS = [
 ];
 
 const BASELINE = makeSkill('aid-test-skill', BASELINE_FIELDS);
+
+/**
+ * Claimed fixture: aid-review with an inline-states body.
+ * The body is the minimum needed for the provider's applies() to return true.
+ * The provider's render() reads the real canonical/skills/aid-review/SKILL.md
+ * from disk, so dirName must match a real skill.
+ *
+ * Mutation-proof companion to every BASELINE-driven test: if the provider's
+ * applies() or render() is broken, these tests detect it whereas the BASELINE
+ * tests (unclaimed) would stay silently green.
+ */
+const CLAIMED_BODY =
+  '## State: ELICIT\n\nContent.\n\n**Advance:** → PRESENT\n\n## State: PRESENT\n\nContent.\n\n**Advance:** HALT\n';
+
+const CLAIMED = Object.assign(
+  makeSkill('aid-review', [
+    makeField('name', 'scalar', 'aid-review'),
+    makeField('description', 'scalar', 'Review skill.'),
+    makeField('allowed-tools', 'scalar', 'Read, Grep, Write'),
+    makeField('argument-hint', 'scalar', '[scope]'),
+  ]),
+  { body: CLAIMED_BODY }
+);
 
 // ── AC-1: Page order ──────────────────────────────────────────────────────────
 
@@ -99,7 +123,8 @@ describe('page order (AC-1)', () => {
     expect(definitionIdx).toBeGreaterThan(sectionIdx);
   });
 
-  it('[Definition:] link comes before the body slot comment', () => {
+  it('[Definition:] link comes before the body slot comment (unclaimed skill)', () => {
+    // BASELINE is unclaimed → body slot comment appears.
     const page = renderSkillPage(BASELINE);
     const definitionIdx = page.indexOf('[Definition:');
     const bodySlotIdx = page.indexOf('<!-- body slot:');
@@ -107,11 +132,27 @@ describe('page order (AC-1)', () => {
     expect(bodySlotIdx).toBeGreaterThan(definitionIdx);
   });
 
-  it('body slot comment is the last substantive line in the page', () => {
+  it('[Definition:] link comes before ## Flow for a claimed skill (aid-review)', () => {
+    // Mutation probe: break render() so ## Flow is not emitted → indexOf('## Flow') === -1 → fails.
+    const page = renderSkillPage(CLAIMED);
+    const definitionIdx = page.indexOf('[Definition:');
+    const flowIdx = page.indexOf('## Flow');
+    expect(definitionIdx).toBeGreaterThan(-1);
+    expect(flowIdx).toBeGreaterThan(definitionIdx);
+  });
+
+  it('body slot comment is the last substantive line for an unclaimed skill', () => {
+    // BASELINE is unclaimed → body slot comment is last.
     const page = renderSkillPage(BASELINE);
     const bodySlotIdx = page.indexOf('<!-- body slot:');
     const afterSlot = page.slice(bodySlotIdx).trimEnd();
     expect(afterSlot).toBe('<!-- body slot: features 003/004 (chart) and 005 (provenance) render here -->');
+  });
+
+  it('mermaid closing fence is the last substantive line for a claimed skill (aid-review)', () => {
+    // Mutation probe: omit closing fence → trimEnd does not end with ``` → fails.
+    const page = renderSkillPage(CLAIMED);
+    expect(page.trimEnd()).toMatch(/```\s*$/);
   });
 });
 
@@ -313,11 +354,20 @@ describe('description comes from skillSummary (AC-6)', () => {
 // ── AC-7: Body slot comment (never an empty heading) ─────────────────────────
 
 describe('body slot comment — never an empty heading (AC-7)', () => {
-  it('emits the exact body slot comment when both registries are empty', () => {
+  it('emits the exact body slot comment for a skill no provider claims', () => {
+    // BASELINE has body:'' → provider does not claim it → slot comment emitted.
+    // Mutation probe: break applies() to always return true → render() fires →
+    // tries buildFlowChart('aid-test-skill') → throws (no such file) → test errors.
     const page = renderSkillPage(BASELINE);
     expect(page).toContain(
       '<!-- body slot: features 003/004 (chart) and 005 (provenance) render here -->'
     );
+  });
+
+  it('does not emit the body slot comment for a claimed skill (aid-review)', () => {
+    // Mutation probe: break applies() to always return false → slot comment appears → fails.
+    const page = renderSkillPage(CLAIMED);
+    expect(page).not.toContain('<!-- body slot:');
   });
 
   it('does not emit an empty heading instead of the slot comment', () => {
@@ -327,11 +377,21 @@ describe('body slot comment — never an empty heading (AC-7)', () => {
     expect(headingLines).toHaveLength(0);
   });
 
-  it('only one ## heading exists in the page (## Frontmatter)', () => {
+  it('unclaimed skill has exactly one ## heading (## Frontmatter)', () => {
+    // Mutation probe: emit an extra ## heading for unclaimed skill → toHaveLength(1) fails.
     const page = renderSkillPage(BASELINE);
     const h2Lines = page.split('\n').filter((l) => /^##\s/.test(l));
     expect(h2Lines).toHaveLength(1);
     expect(h2Lines[0]).toBe('## Frontmatter');
+  });
+
+  it('claimed skill has exactly two ## headings (## Frontmatter and ## Flow)', () => {
+    // Mutation probe: break render() so ## Flow is missing → toHaveLength(2) fails.
+    const page = renderSkillPage(CLAIMED);
+    const h2Lines = page.split('\n').filter((l) => /^##\s/.test(l));
+    expect(h2Lines).toHaveLength(2);
+    expect(h2Lines[0]).toBe('## Frontmatter');
+    expect(h2Lines[1]).toBe('## Flow');
   });
 });
 
@@ -362,12 +422,21 @@ describe('page structure — blank lines between sections (AC-8)', () => {
     expect(lines[defIdx - 1]).toBe('');
   });
 
-  it('body slot comment is preceded by a blank line', () => {
+  it('body slot comment is preceded by a blank line (unclaimed skill)', () => {
     const page = renderSkillPage(BASELINE);
     const lines = page.split('\n');
     const slotIdx = lines.findIndex((l) => l.startsWith('<!-- body slot:'));
     expect(slotIdx).toBeGreaterThan(0);
     expect(lines[slotIdx - 1]).toBe('');
+  });
+
+  it('## Flow heading is preceded by a blank line (claimed skill — aid-review)', () => {
+    // Mutation probe: remove blank line before ## Flow → lines[flowIdx - 1] !== '' → fails.
+    const page = renderSkillPage(CLAIMED);
+    const lines = page.split('\n');
+    const flowIdx = lines.findIndex((l) => l === '## Flow');
+    expect(flowIdx).toBeGreaterThan(0);
+    expect(lines[flowIdx - 1]).toBe('');
   });
 
   it('page ends with a newline', () => {

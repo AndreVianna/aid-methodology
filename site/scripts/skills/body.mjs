@@ -1,6 +1,6 @@
 // body.mjs — Body provider and appender registries.
 //
-// BODY_PROVIDERS and BODY_APPENDERS are static empty array literals.
+// BODY_PROVIDERS and BODY_APPENDERS are static array literals.
 // No directory globbing, no dynamic-import, no registration side effect.
 // Filesystem enumeration order is not guaranteed and would put AC-6 at the
 // mercy of the OS, so arrays are populated only by direct declaration here.
@@ -12,6 +12,15 @@
 //
 // Pure exports — no import-time side effect.
 
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+import { REPO_ROOT } from './paths.mjs';
+import { classifySkill, buildFlowChart, renderMermaid } from '../lib/flow-graph/index.mjs';
+
+// ── Authored-shape set (mirrors index.mjs; declared locally to avoid a cycle) ─
+
+const AUTHORED_SHAPES = new Set(['dispatch-table', 'inline-states', 'residual']);
+
 /**
  * First matching provider wins — the chart.
  * Each entry: { id: string, applies(skill): boolean, render(skill): string }
@@ -19,7 +28,56 @@
  *
  * @type {Array<{ id: string, applies(skill: object): boolean, render(skill: object): string }>}
  */
-export const BODY_PROVIDERS = [];
+export const BODY_PROVIDERS = [
+  {
+    id: 'flow-chart-authored',
+
+    /**
+     * Returns true when the skill body classifies as one of the three authored
+     * shapes (dispatch-table, inline-states, residual). Returns false for the
+     * two doorway shapes — task-037 provides those.
+     *
+     * @param {object} skill  SkillRecord (body may be '' or undefined for stubs).
+     * @returns {boolean}
+     */
+    applies(skill) {
+      if (!skill.body) return false;
+      // Guard against test fixtures whose dirName has no real SKILL.md on disk.
+      const skillFile = join(REPO_ROOT, 'canonical/skills', skill.dirName, 'SKILL.md');
+      if (!existsSync(skillFile)) return false;
+      const { shape } = classifySkill({
+        name: skill.dirName,
+        dir: REPO_ROOT,
+        frontmatter: {},
+        body: skill.body,
+      });
+      return AUTHORED_SHAPES.has(shape);
+    },
+
+    /**
+     * Render the ## Flow section for the skill page.
+     *
+     * Emits:
+     *   ## Flow\n\n
+     *   [approximate notice line + blank line — only when confidence === 'approximate']\n
+     *   ```mermaid\n<mermaid body>\n```\n
+     *
+     * @param {object} skill  SkillRecord (dirName must identify a real skill).
+     * @returns {string}  LF-terminated markdown.
+     */
+    render(skill) {
+      const chart = buildFlowChart({ name: skill.dirName, dir: REPO_ROOT });
+      const mermaid = renderMermaid(chart);
+
+      const notice =
+        chart.confidence === 'approximate'
+          ? '> **Approximate:** This chart is derived by heuristic; exact transitions may differ from runtime behaviour.\n\n'
+          : '';
+
+      return `## Flow\n\n${notice}\`\`\`mermaid\n${mermaid}\`\`\`\n`;
+    },
+  },
+];
 
 /**
  * All run, in array order, each appended below the provider's output.

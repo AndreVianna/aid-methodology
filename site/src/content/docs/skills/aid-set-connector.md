@@ -15,4 +15,43 @@ generatedFrom: 'canonical/skills/aid-set-connector/SKILL.md'
 
 [Definition: `canonical/skills/aid-set-connector/SKILL.md`](https://github.com/AndreVianna/aid-methodology/blob/master/canonical/skills/aid-set-connector/SKILL.md)
 
-<!-- body slot: features 003/004 (chart) and 005 (provenance) render here -->
+## Flow
+
+> **Approximate:** This chart is derived by heuristic; exact transitions may differ from runtime behaviour.
+
+```mermaid
+flowchart TB
+  classDef aidNode color:inherit
+  classDef aidEntry fill:#166534,stroke:#14532d,color:#fff
+  classDef aidExit fill:#991b1b,stroke:#7f1d1d,color:#fff
+  classDef aidDecision fill:#92400e,stroke:#78350f,color:#fff
+  classDef aidLoopBack fill:#1e3a8a,stroke:#1e3a8a,color:#fff
+  classDef aidStep fill:#1a2035,stroke:#d4a853,color:#f1f5f9
+  n1(["STEP-0<br/>Validate arguments"])
+  n2["STEP-1<br/>Resolve  &lt;tool&gt;  → descriptor stem; read the preset catalog"]
+  n3["STEP-2<br/>Branch on  &lt;type&gt;  — ask the config question-set"]
+  n4["STEP-3<br/>Classify — ADD vs UPDATE (single stem only)"]
+  n5["STEP-4<br/>Ensure the  .secrets/  gitignore precondition — BEFORE any…"]
+  n6["STEP-5<br/>Author the descriptor + reconcile the secret (set-skill…"]
+  n7(["STEP-6<br/>Single-stem reconcile → rebuild  INDEX.md "])
+  n1 --> n2
+  n2 --> n3
+  n3 --> n4
+  n4 --> n5
+  n5 --> n6
+  n6 --> n7
+  class n1 aidEntry
+  class n2 aidStep
+  class n3 aidStep
+  class n4 aidStep
+  class n5 aidStep
+  class n6 aidStep
+  class n7 aidExit
+  class n1 aidNode
+  class n2 aidNode
+  class n3 aidNode
+  class n4 aidNode
+  class n5 aidNode
+  class n6 aidNode
+  class n7 aidNode
+```
