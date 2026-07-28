@@ -15,11 +15,11 @@
 #   2  Invocation error.
 #
 # Two-grade model:
-#   Machine Grade  -- auto-verifiable checks (AUTO_POOL = COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2; 68 pts max)
+#   Machine Grade  -- auto-verifiable checks (AUTO_POOL = COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2 NM; 70 pts max)
 #   Human Grade    -- manual checklist only (MANUAL_POOL = K1 K2 V1; 30 pts max)
 #   Overall Grade  -- the lower of the two letter grades.
 #
-# A+ requires BOTH Machine Grade >= 98% of 68 pts AND Human Grade >= 98% of 30.
+# A+ requires BOTH Machine Grade >= 98% of 70 pts AND Human Grade >= 98% of 30.
 # Manual checks default to 0/30 if .manual-checklist.json has not been run.
 # V1 (human visual gate) is MANDATORY: V1=0 forces Human Grade = F.
 #
@@ -198,12 +198,17 @@ echo ""
 # Per-check result tracking
 # ---------------------------------------------------------------------------
 declare -A RESULTS
-for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2; do
+for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2 NM; do
     RESULTS[$k]=fail
 done
 RESULTS[COV]="$COV_RESULT"
 
-# AUTO_POOL weights (68 pts total -- summed dynamically into AUTO_MAX below)
+# AUTO_POOL weights (70 pts total -- summed dynamically into AUTO_MAX below)
+# NM (no-Mermaid-engine assertion, D-012 / FR-51) is worth 2 pts, same as S2
+# (offline render). Both are binary guardrails enforcing architectural
+# constraints; both map to [HIGH] severity per state-validate.md; neither
+# touches content quality (COV/H1/L1). Placing NM at 2 pts keeps the
+# denominator change minimal and consistent with the S2 precedent.
 declare -A WEIGHTS=(
     [COV]=15
     [D1]=5  [D2]=5
@@ -211,7 +216,7 @@ declare -A WEIGHTS=(
     [H1]=5
     [A1]=5  [A2]=3  [A3]=5  [A4]=2  [A5]=3
     [C1]=4  [C2]=4
-    [S2]=2
+    [S2]=2  [NM]=2
 )
 
 # Partial scoring for COV (0, 3, 8, or 15 -- not just 0/15)
@@ -234,6 +239,7 @@ declare -A CHECK_NAMES=(
     [C1]="Light theme contrast"
     [C2]="Dark theme contrast"
     [S2]="Offline render"
+    [NM]="No-Mermaid-engine (D-012)"
 )
 
 H1_MODE_NOTE=""  # captures "regex fallback" if that path was taken
@@ -264,6 +270,8 @@ if bash "$SCRIPT_DIR/validate-html-output.sh" "$HTML" > "$HTML_LOG" 2>&1; then
     RESULTS[A5]=pass
     # S2: validate-html-output.sh exited 0 means S2 passed (CDN-free)
     RESULTS[S2]=pass
+    # NM: validate-html-output.sh exited 0 means NM passed (no Mermaid engine)
+    RESULTS[NM]=pass
     RESULTS[L1]=pass
     RESULTS[L2]=pass
 else
@@ -306,6 +314,13 @@ else
     # S2: pass when validate-html-output.sh emits "S2. Offline render [PASS]"
     # (no external CDN script/link present).
     grep -qE "S2\..*\[PASS\]" "$HTML_LOG" && RESULTS[S2]=pass
+
+    # NM: pass when validate-html-output.sh emits "NM. No-Mermaid-engine [PASS]".
+    # NM is reported independently from S2 (validate-html-output.sh counts TOTAL
+    # and sets FAIL=1 on ANY sub-check failure). An NM-only failure can leave
+    # S2 passing; pattern-match the NM [PASS] line so an NM-only failure is
+    # distinguishable and reduces the Machine Grade on its own.
+    grep -qE "NM\..*\[PASS\]" "$HTML_LOG" && RESULTS[NM]=pass
 
     # L1/L2: pass lines contain unique "N/N ... resolve" text
     grep -qE "L1\..*resolve" "$HTML_LOG" && RESULTS[L1]=pass
@@ -383,10 +398,10 @@ MANUAL_MAX=30
 # Grade computation
 # ---------------------------------------------------------------------------
 
-# AUTO_POOL -- 68 pts max (summed below)
+# AUTO_POOL -- 70 pts max (summed below)
 AUTO_MAX=0
 AUTO_EARNED=0
-for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2; do
+for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2 NM; do
     w="${WEIGHTS[$k]}"
     AUTO_MAX=$((AUTO_MAX + w))
     if [ "$k" = "COV" ]; then
@@ -488,7 +503,7 @@ OVERALL_GRADE=$(grade_from_order "$OVERALL_ORDER")
 
 # A+ requires both pools near-perfect
 if [ "$OVERALL_GRADE" = "A+" ]; then
-    # Machine: all 68 pts; Human: all 30 pts
+    # Machine: all 70 pts; Human: all 30 pts
     if [ "$AUTO_EARNED" -lt "$AUTO_MAX" ] || [ "$MANUAL_EARNED" -lt "$MANUAL_MAX" ]; then
         OVERALL_GRADE="A"
     fi
@@ -504,7 +519,7 @@ echo ""
 echo "  [AUTO POOL -- Machine Grade]"
 printf "  %-4s  %-36s  %-8s  %s\n" "ID" "Check" "Status" "Pts"
 
-for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2; do
+for k in COV D1 D2 L1 L2 H1 A1 A2 A3 A4 A5 C1 C2 S2 NM; do
     w="${WEIGHTS[$k]}"
     name="${CHECK_NAMES[$k]}"
     # Append H1 mode note
