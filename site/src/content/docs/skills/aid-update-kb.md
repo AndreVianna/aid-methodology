@@ -18,7 +18,15 @@ generatedFrom: 'canonical/skills/aid-update-kb/SKILL.md'
 ## Flow
 
 ```mermaid
-%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%
+---
+config:
+  layout: elk
+  flowchart:
+    nodeSpacing: 55
+    rankSpacing: 65
+    padding: 12
+    useMaxWidth: true
+---
 flowchart TB
   classDef aidNode color:#fff
   classDef aidEntry fill:#166534,stroke:#14532d,color:#fff

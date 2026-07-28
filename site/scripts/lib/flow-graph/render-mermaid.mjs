@@ -244,9 +244,15 @@ export function renderMermaid(chart) {
   //     nodes, which is what reads as "bending strangely"; straight segments make
   //     a loop-back's destination obvious.
   //   padding — breathing room inside each shape.
-  lines.push(
-    "%%{init: {'flowchart': {'nodeSpacing': 55, 'rankSpacing': 65, 'curve': 'linear', 'padding': 12, 'useMaxWidth': true}}}%%"
-  );
+  lines.push('---');
+  lines.push('config:');
+  lines.push('  layout: elk');
+  lines.push('  flowchart:');
+  lines.push('    nodeSpacing: 55');
+  lines.push('    rankSpacing: 65');
+  lines.push('    padding: 12');
+  lines.push('    useMaxWidth: true');
+  lines.push('---');
   lines.push('flowchart TB');
   lines.push(`  ${CLASS_DEFS}`);
 
