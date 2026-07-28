@@ -541,6 +541,47 @@
 - **Surfaced by:** `/aid-detail` task decomposition, as item G of the architect's "what I had to
   decide" report — a hazard neither SPEC addresses, recorded rather than silently resolved.
 
+## KI-018: astro-mermaid re-renders from its own output on theme change, breaking every diagram
+
+- **Type:** Bug (third-party integration)
+- **Severity:** Medium — cosmetic but total: the diagram is replaced by "Syntax error in text"
+- **Affects:** **Every mermaid diagram on the site**, not only generated skill charts. Reproduced on
+  the hand-authored pipeline diagram at `/` (17 edges → 0), which no AID code emits.
+- **Source:** `site/node_modules/astro-mermaid/astro-mermaid-integration.js` (v11-era build), the
+  render loop at ~line 418 and the `data-theme` MutationObserver at ~line 465.
+- **Reproduce:** load any page with a diagram, then switch the theme with the Dark/Light selector.
+  The diagram renders correctly on load and fails after the switch. A page reload fixes it, so a
+  visitor who never toggles the theme never sees it.
+- **Mechanism, read from the source.** On first render the integration caches the diagram source:
+
+  ```js
+  if (!diagram.hasAttribute('data-diagram')) {
+    diagram.setAttribute('data-diagram', diagram.textContent || '');
+  }
+  ...
+  diagram.innerHTML = svg;              // the <pre> now contains the rendered SVG
+  ```
+
+  The guard is not atomic across the `await mermaid.render(...)` that follows, and `initMermaid()`
+  runs from more than one trigger — initial load, the theme observer, and `astro:after-swap` (Starlight
+  uses view transitions). A second pass that arrives after `innerHTML = svg` reads `textContent` from
+  the **rendered SVG** and caches that as the "source". Measured: `data-diagram` on a broken page holds
+  `#mermaid-1785268632684{font-family:"trebuchet ms",…}` — the SVG's stylesheet. The next theme change
+  feeds that to the parser, which is exactly the reported syntax error.
+- **Not caused by AID, and specifically not by the `config:` removal in delivery-003 wave 9.** The
+  hand-authored diagram at `/` has never carried a per-diagram config block and fails identically.
+- **Options, none applied yet — this is an owner scope call:**
+  1. Cache the source ourselves before the integration's script runs, from a small inline script that
+     copies each `pre.mermaid` textContent into `data-diagram`. Small and effective; relies on
+     ordering against a third-party script, which is fragile.
+  2. Drop `autoTheme` and accept one theme for diagrams. Loses per-theme legibility, which is the
+     thing KI-018's sibling fix just delivered.
+  3. Patch the dependency (`patch-package`) or upstream a fix: move the caching above the render and
+     make it unconditional.
+- **Interaction with the wave-9 CSS fix.** The per-theme edge colours in `casulo.css` are selected by
+  `[data-theme]`, so they re-colour correctly the instant the theme changes, with no re-render needed.
+  They are unaffected by this bug and would keep working under option 2 for one theme only.
+
 ## KI-017: worktrees must be created by Windows git, not WSL git
 
 - **Type:** Bug

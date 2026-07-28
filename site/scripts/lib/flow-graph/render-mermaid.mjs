@@ -270,26 +270,18 @@ export function renderMermaid(chart) {
   const lines = [];
 
   // ── 1. Dialect and classDef block ──────────────────────────────────────────
-  // Layout directive. Mermaid's defaults are tuned for small hand-drawn diagrams;
-  // these charts are derived, so nodes carry two lines of real text and grow well
-  // past the spacing dagre assumes. The result was shapes nearly touching and edges
-  // taking long curved detours around them.
+  // No per-diagram YAML `config:` block. An earlier version emitted one to carry the
+  // ELK layout and flowchart spacing, and it had a side effect that took a dark-mode
+  // bug report to notice: a per-diagram `config:` makes mermaid re-initialize for that
+  // diagram, discarding the site-level configuration from astro.config.mjs. Node fills
+  // survived because they are set below through explicit `classDef` statements, so the
+  // loss was invisible in the nodes and showed up only in edge strokes and edge-label
+  // backgrounds — which fell back to mermaid's stock light-theme greys and became
+  // near-invisible against the dark page.
   //
-  //   nodeSpacing / rankSpacing — room between siblings and between ranks, so a
-  //     wide rhombus stops crowding whatever sits beside and below it.
-  //   curve: linear — dagre's default basis spline bows edges outward around large
-  //     nodes, which is what reads as "bending strangely"; straight segments make
-  //     a loop-back's destination obvious.
-  //   padding — breathing room inside each shape.
-  lines.push('---');
-  lines.push('config:');
-  lines.push('  layout: elk');
-  lines.push('  flowchart:');
-  lines.push('    nodeSpacing: 55');
-  lines.push('    rankSpacing: 65');
-  lines.push('    padding: 12');
-  lines.push('    useMaxWidth: true');
-  lines.push('---');
+  // Layout and spacing now live once, in astro.config.mjs's `mermaidConfig`. This
+  // renderer emits chart structure and nothing about presentation except the class
+  // assignments, which is the division it should have had from the start.
   lines.push('flowchart TB');
   lines.push(`  ${CLASS_DEFS}`);
 

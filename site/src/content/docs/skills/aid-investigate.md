@@ -20,15 +20,6 @@ generatedFrom: 'canonical/skills/aid-investigate/SKILL.md'
 > **Approximate:** This chart is derived by heuristic; exact transitions may differ from runtime behaviour.
 
 ```mermaid
----
-config:
-  layout: elk
-  flowchart:
-    nodeSpacing: 55
-    rankSpacing: 65
-    padding: 12
-    useMaxWidth: true
----
 flowchart TB
   classDef aidNode color:#fff
   classDef aidEntry fill:#166534,stroke:#14532d,color:#fff

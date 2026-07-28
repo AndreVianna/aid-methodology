@@ -222,20 +222,24 @@ describe('AC-1 — output is fence body only', () => {
     expect(renderMermaid(chart)).not.toContain('Approximate');
   });
 
-  it('opens with a frontmatter config selecting the ELK layout', () => {
-    // Mermaid's default dagre layout assumes small hand-drawn diagrams. These
-    // charts carry two lines of derived text per node, so shapes crowded and edges
-    // took curved detours around them. ELK routes orthogonally and spaces ranks
-    // properly. It reaches Mermaid through `@mermaid-js/layout-elk`, which
-    // astro-mermaid registers as an optional peer dependency.
+  it('emits NO per-diagram config block — presentation is not this renderer\'s job', () => {
+    // The ELK layout and flowchart spacing were emitted here as a YAML `config:`
+    // block. That is now in astro.config.mjs's `mermaidConfig`, because a per-diagram
+    // `config:` makes mermaid re-initialize for that diagram and discard the
+    // site-level configuration. Node fills survived that (this renderer sets them via
+    // `classDef`), so the loss was invisible until edge strokes and edge-label
+    // backgrounds fell back to mermaid's stock light-theme greys — near-invisible
+    // against the dark page, which is how it was finally reported.
+    //
+    // Asserted as an absence rather than a presence, so re-introducing a config block
+    // here fails rather than silently re-breaking the site theme.
     const c = makeChart([node(1, 'A', 'Do A', halt())], []);
-    const lines = renderMermaid(c).trimStart().split('\n');
-    expect(lines[0]).toBe('---');
-    expect(lines).toContain('  layout: elk');
-    const close = lines.indexOf('---', 1);
-    expect(close).toBeGreaterThan(0);
-    // The graph declaration follows the closing fence immediately.
-    expect(lines[close + 1]).toMatch(/^flowchart TB\s*$/);
+    const out = renderMermaid(c);
+    const lines = out.trimStart().split('\n');
+    expect(lines[0]).toMatch(/^flowchart TB\s*$/);
+    expect(out).not.toContain('config:');
+    expect(out).not.toContain('layout:');
+    expect(out).not.toContain('---');
   });
 
   it('still declares flowchart TB, on the line after the directive', () => {

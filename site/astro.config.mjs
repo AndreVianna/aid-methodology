@@ -26,22 +26,41 @@ export default defineConfig({
   integrations: [
     // astro-mermaid BEFORE starlight (transforms ```mermaid fences)
     mermaid({
+      // Fallback only. `autoTheme` (on by default) re-initializes mermaid on every
+      // `data-theme` change, mapping light -> 'default' and dark -> 'dark', so this
+      // value is used only before a theme is resolved.
       theme: 'dark',
-      themeVariables: {
-        // casulo dark palette applied to Mermaid diagrams
-        background: '#0a0e1a',
-        mainBkg: '#1a2035',
-        nodeBorder: '#d4a853',
-        clusterBkg: '#111827',
-        titleColor: '#f1f5f9',
-        edgeLabelBackground: '#1a2035',
-        primaryColor: '#1a2035',
-        primaryTextColor: '#f1f5f9',
-        primaryBorderColor: '#d4a853',
-        lineColor: '#94a3b8',
-        secondaryColor: '#111827',
-        tertiaryColor: '#212b45',
+
+      // A previous version of this block set `themeVariables` HERE, one level too high.
+      // The integration builds its config as `{ theme, ...mermaidConfig }` and reads
+      // nothing else, so those thirteen colours were silently dropped and every diagram
+      // on the site has always rendered with mermaid's stock palette. They are not
+      // reinstated under `mermaidConfig`: a fixed palette would override BOTH of the
+      // themes `autoTheme` switches between, so the dark colours would be pinned into
+      // light mode. Per-theme colour belongs in CSS, where `[data-theme]` can select —
+      // see the mermaid block in src/styles/casulo.css.
+      mermaidConfig: {
+        // Layout, which is theme-independent and therefore safe to fix here.
+        //
+        // This lived in a per-diagram YAML `config:` block emitted by
+        // render-mermaid.mjs. That had a side effect worth recording: a per-diagram
+        // `config:` makes mermaid re-init for that diagram, which discarded the site
+        // config entirely. Node fills survived because our charts set them through
+        // explicit `classDef` statements, so the loss showed up only in edge strokes and
+        // edge-label backgrounds — visible as near-invisible lines in dark mode.
+        // Declaring it once here keeps a single authority and lets `autoTheme` work.
+        layout: 'elk',
+        flowchart: {
+          // Mermaid's defaults are tuned for small hand-drawn diagrams. These charts are
+          // derived, so nodes carry two lines of real text and grow well past the
+          // spacing dagre assumes — shapes nearly touched and edges took long detours.
+          nodeSpacing: 55,
+          rankSpacing: 65,
+          padding: 12,
+          useMaxWidth: true,
+        },
       },
+
       // KI-012: astro-mermaid defaults enableLog to true, which logs
       // "[astro-mermaid] ..." to every visitor's console on every page.
       enableLog: false,

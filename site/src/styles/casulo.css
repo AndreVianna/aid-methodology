@@ -146,6 +146,86 @@ pre {
   overflow-x: auto;
 }
 
+/* ── Mermaid edge legibility, per theme ──────────────────────────────────── */
+/*
+ * Edge strokes and edge-label backgrounds are the only chart colours mermaid picks
+ * itself; node fills come from `classDef` statements the generator emits. They live
+ * here rather than in astro.config.mjs's `mermaidConfig` because `autoTheme`
+ * re-initializes mermaid on every `data-theme` change, so a fixed `themeVariables`
+ * palette would apply the same colours to BOTH themes — pinning dark colours into
+ * light mode. `[data-theme]` selectors can do what a static config cannot.
+ *
+ * Reported as "the visibility of the lines is screwed in dark mode": mermaid's stock
+ * lineColor is a light grey at 1px, which all but disappears against the near-black
+ * page, and its edge-label background is a mid-grey box that reads as a light blob.
+ */
+/*
+ * `!important` is load-bearing here, not laziness. Mermaid injects a <style> block
+ * INSIDE each generated SVG whose rules are scoped by the diagram's id — e.g.
+ * `#mermaid-abc123 .flowchart-link { stroke: ...; }`. An id selector outranks any
+ * class selector we can write from a stylesheet, so without `!important` these
+ * declarations lose. Verified: the marker and label rules below landed on the first
+ * attempt, the stroke rules did not, because only the stroke has an id-scoped rule.
+ */
+.mermaid svg .flowchart-link,
+.mermaid svg .edgePath path {
+  /* 1px is too fine for these derived charts at page scale, in either theme. */
+  stroke-width: 1.6px !important;
+}
+
+/* Arrowheads take their colour from `fill`, not `stroke`, so both are set. */
+:root[data-theme='dark'] .mermaid svg .flowchart-link,
+:root[data-theme='dark'] .mermaid svg .edgePath path {
+  stroke: var(--casulo-text-secondary, #94a3b8) !important;
+}
+
+:root[data-theme='dark'] .mermaid svg marker path,
+:root[data-theme='dark'] .mermaid svg marker polygon {
+  fill: var(--casulo-text-secondary, #94a3b8);
+  stroke: var(--casulo-text-secondary, #94a3b8);
+}
+
+:root[data-theme='light'] .mermaid svg .flowchart-link,
+:root[data-theme='light'] .mermaid svg .edgePath path {
+  stroke: #475569 !important;
+}
+
+:root[data-theme='light'] .mermaid svg marker path,
+:root[data-theme='light'] .mermaid svg marker polygon {
+  fill: #475569;
+  stroke: #475569;
+}
+
+/*
+ * Edge labels are HTML inside a <foreignObject>, not SVG text, so what paints the box
+ * is `background-color` on three nested elements — `g.edgeLabel`, `div.labelBkg` and
+ * `span.edgeLabel` — and the text colour comes from `span.edgeLabel`. Mermaid sets all
+ * of them to a translucent light grey with near-black text, which is a readable chip on
+ * a white page and a light blob with invisible text on a dark one.
+ *
+ * Setting `fill` alone is not enough and was the first attempt: `fill` applies to SVG
+ * shapes, and these are HTML elements, so it computed correctly and painted nothing.
+ */
+:root[data-theme='dark'] .mermaid svg .edgeLabel,
+:root[data-theme='dark'] .mermaid svg .edgeLabel span,
+:root[data-theme='dark'] .mermaid svg .edgeLabel p,
+:root[data-theme='dark'] .mermaid svg .labelBkg {
+  /* The page colour rather than transparent: the box exists so the edge does not run
+     through the text, and transparency would give that back. */
+  background-color: #0a0e1a !important;
+  color: #f1f5f9 !important;
+  fill: #0a0e1a !important;
+}
+
+:root[data-theme='light'] .mermaid svg .edgeLabel,
+:root[data-theme='light'] .mermaid svg .edgeLabel span,
+:root[data-theme='light'] .mermaid svg .edgeLabel p,
+:root[data-theme='light'] .mermaid svg .labelBkg {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  fill: #ffffff !important;
+}
+
 /* ── Version badge (feature-008) ────────────────────────────────────────── */
 /* Uses only existing casulo accent tokens — no new color variables. */
 .version-badge {
