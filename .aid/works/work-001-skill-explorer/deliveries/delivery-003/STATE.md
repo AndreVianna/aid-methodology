@@ -690,7 +690,38 @@ resolves into the module split.
 
 ---
 
-## Wave 9 (task-032) — findings, pre-review
+## Wave 9 (task-032) — PASS, A+ floor met (1 cycle). **feature-003 complete.**
+
+Closed at `c4604268`. **One cycle** — the first wave to pass without a fix round, against eight cycles
+at the tasks-019–029 checkpoint and two each for waves 7 and 8. Zero mutation survivors, zero rows
+above [LOW]. The reviewer confirmed both judgements it was asked to challenge: that unwrapping backtick
+spans in `_extractHandoff` while still deleting them in `_extractCondition` is a real semantic
+distinction rather than a rule split in two, and that the orphan-bracket class belongs downstream.
+
+### Orchestrator acceptance of the deferral (closes the reviewer's one Pending row)
+
+The reviewer left the orphan-parenthetical row **Pending** for a procedural reason worth honouring: the
+delivery STATE noted the routing but no one with authority had *accepted* it, so "recorded" and
+"agreed" were indistinguishable. Accepting it now, explicitly:
+
+- **Status: Accepted — deferred, owner recorded.**
+- **Scope:** five handoffs cut mid-parenthetical or carrying an unbalanced bracket — `aid-discover`/ELICIT
+  (`"(below"`), `aid-execute`/DELIVERY-GATE (`"Step 1 (SCORE"`), `aid-summarize`/APPROVAL
+  (`"If user rejected: (exit"`), `aid-specify`/SPIKE and /BLOCKED, plus the orphan `)` opening
+  `aid-describe`/COMPLETION.
+- **Owner: delivery-004 (feature-005)** — specifically whichever task first renders handoff prose into a
+  page. Handoff text reaches only the `.flow.json` sidecar today, so nothing user-visible depends on it
+  until then.
+- **Why not here:** task-032 is a TEST task; the fix is a behaviour change to a function it does not own;
+  and `_extractCondition`'s existing guard is the model to copy, which is easier to do correctly next to
+  the rendering that motivates it than speculatively now.
+- **Binding on whoever executes it:** the guard must be separable-tested per arm, as `_extractCondition`'s
+  was — an unbalanced bracket, a trailing preposition, and a mid-parenthetical cut are three conditions,
+  not one.
+
+---
+
+## Wave 9 (task-032) — findings
 
 Completes feature-003. Contract tier 152 → **181 tests**: three AC-4 corpus fixtures, the whole-corpus
 sweep, and the unparsed-advance allow-list. Nine mutants, all killed.
