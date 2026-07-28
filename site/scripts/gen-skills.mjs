@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 // gen-skills.mjs — Skill detail page generator (feature-001-skill-detail-pages).
 //
 // Purpose:
@@ -49,7 +49,17 @@ const INDEX_DEST = 'site/src/content/docs/skills/index.md';
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 
-async function main() {
+/**
+ * Run the full generation pipeline.
+ *
+ * Exported so a test can invoke it twice in one process. That is the only way to
+ * observe the `resetFlowWarnings()` call below: deleting it changes nothing in a
+ * fresh process, so a subprocess test can never catch its removal, and the reset
+ * shipped un-undoable until this export existed.
+ *
+ * @returns {Promise<void>}
+ */
+export async function main() {
   // ── 1. DISCOVER ─────────────────────────────────────────────────────────────
   // discoverSkills() enumerates canonical/skills/, sorts directory names, and
   // builds a SkillRecord[] — throwing on any per-skill guard failure.

@@ -41,7 +41,7 @@ import { renderSkillPage } from '../skills/render-page.mjs';
 // gen-reference.mjs calls main() at module scope, so importing it would
 // regenerate four pages as a side effect; gen-skills.mjs must not, and this
 // import would run the whole generator on every test file load if it did.
-import { assertNoSkillsDrift, assertNoDeadCards, reportFlowWarnings } from '../gen-skills.mjs';
+import { assertNoSkillsDrift, assertNoDeadCards, reportFlowWarnings, main } from '../gen-skills.mjs';
 import {
   buildFlowChart,
   resetFlowWarnings,
@@ -1206,6 +1206,18 @@ describe('flow warnings reach a human', () => {
       total: 0, charts: 0, skills: [], messages: [],
     });
   });
+
+  it('main() resets, so a second run in one process reports its own total', async () => {
+    // The reset is invisible to any subprocess test: a fresh process starts empty
+    // either way. Only a second in-process run can observe it, which is why main()
+    // is exported. Without the reset, run 2 reports run 1's total plus its own.
+    await main();
+    const first = summarizeFlowWarnings().total;
+    expect(first).toBeGreaterThan(0); // non-vacuity — silence would prove nothing
+
+    await main();
+    expect(summarizeFlowWarnings().total).toBe(first);
+  }, 60_000);
 
   it('gen-skills wires the reader in — the summary appears on stdout, not stderr', () => {
     const run = spawnSync(process.execPath, [join(SITE_ROOT, 'scripts', 'gen-skills.mjs')], {

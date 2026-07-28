@@ -712,6 +712,29 @@ one line on one page. Census unchanged: 13 dispatch-table / 8 inline-states / 13
 charted, 0 failed; 64 engine-doorway + 13 sibling-doorway. AC-6 idempotence holds. Full suite 1781
 passing across 29 files. Five mutants of the fix, all killed.
 
+### Rows 22–25 — closing the pattern by testing separability, not the implementation
+
+Cycle 6 graded **B+** with zero Pending above [LOW] and four [LOW] survivors. The reviewer's diagnosis
+is the part worth keeping: **mutating an implementation cannot detect a test whose fixture never
+reaches the mutated line.** My own mutation pass missed row 21 for exactly that reason. The check that
+does work is *input separability* — for every narrowing property of a predicate, construct an input
+where that property is the **only** reason the predicate rejects it.
+
+| # | Sev | Status | Resolution |
+|---|-----|--------|------------|
+| 22 | LOW | Fixed | `resetFlowWarnings()` in `main()` is unobservable from a subprocess — a fresh process starts empty either way. Exported `main()` and added a two-run in-process test; deleting the reset now fails it. |
+| 23 | LOW | Fixed | `towards` is a separate alternation branch from `toward` and the corpus uses only the short form. Added the `towards` row to the preposition table. |
+| 24 | LOW | Fixed by deletion | The `\b` in `_isUnresolvableOutcome` is inert: the class that follows (`[^A-Za-z0-9]`) cannot match a word character, so the boundary is already implied. **Removed rather than pinned** — a test for an assertion that changes no input is a test that cannot fail, which is the defect this cycle keeps finding. Proof of inertness: generated tree and manifest byte-identical to `2922af8b`, suite green. |
+| 25 | LOW | Fixed | Relaxing the outer `+` to `*` let a half ending in a bare arrow match, silently discarding `escalate ->` as an outcome. Added a fixture with the arrow present and zero caps tokens, so the quantifier is the only thing that can reject it. |
+
+Six mutants re-run — rows 22, 23, 25 and the three row-19 properties (arrow, end-anchor, ALL-CAPS)
+re-confirmed after the `\b` removal. All died. Suite 1791 green; AC-6 idempotence holds.
+
+**The two newly surfaced warnings stay as observations.** The reviewer confirmed both are pre-existing
+content defects in the skill *sources* — `aid-housekeep`'s empty `(or )` alternative and three skills
+whose `DONE` state has no matching `## State:` section — not defects in the flow machinery. task-029's
+AC was to log warnings, not to fix the warned content. Surfacing them is the mechanism working.
+
 ### Row 21 — the same pattern, inside row 19's own fix
 
 `_isUnresolvableOutcome` has two narrowing properties. I added tests for both and both mutants died,

@@ -355,6 +355,20 @@ describe('an outcome routing to an undeclared state is dropped, not absorbed', (
     expect(r.edges[0].condition).toBe('when ready; otherwise hand back to the author');
   });
 
+  it('requires at least ONE caps token — a bare trailing arrow routes nowhere', () => {
+    // Separability for the outer `+` quantifier. Relaxing it to `*` lets a half that
+    // ends in a bare arrow match, so a dangling "escalate ->" would be silently
+    // discarded instead of kept as prose. The arrow is present here, so the arrow
+    // requirement cannot be the reason this is rejected — the caps count is.
+    const r = parse(
+      advBlock('-> APPROVAL when ready; escalate ->'),
+      states('APPROVAL'),
+      { fromNodeName: 'REVIEW' }
+    );
+    expect(r.edges).toHaveLength(1);
+    expect(r.edges[0].condition).toBe('when ready; escalate');
+  });
+
   it('requires an ARROW — an ALL-CAPS tail alone is prose naming a state, not a route', () => {
     // The discriminating case for the arrow requirement: no arrow in the failing half,
     // but it ends ALL-CAPS. The earlier prose test cannot pin this — its tail ends
@@ -396,6 +410,9 @@ describe('the dangling-preposition repair', () => {
   // weld the surrounding words together.
   const PAIRS = [
     ['toward … once', 'otherwise chain toward APPROVAL once zero Pending', 'otherwise chain once zero Pending'],
+    // `towards` is a separate alternation branch from `toward` and was droppable
+    // without failing anything — the corpus happens to use only the short form today.
+    ['towards … once', 'otherwise chain towards APPROVAL once zero Pending', 'otherwise chain once zero Pending'],
     ['to … when', 'otherwise hand to APPROVAL when ready', 'otherwise hand when ready'],
     ['into … after', 'otherwise fold into APPROVAL after review', 'otherwise fold after review'],
   ];

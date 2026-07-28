@@ -1,4 +1,4 @@
-// advance.mjs — Advance-clause parser (rules 1–4 only; rules 5–10 added by task-023).
+﻿// advance.mjs — Advance-clause parser (rules 1–4 only; rules 5–10 added by task-023).
 //
 // Shared by extract-dispatch.mjs (Dispatch Advance cells) and extract-inline.mjs
 // (## State: section **Advance:** blocks). Applied identically to both call sites.
@@ -618,7 +618,12 @@ function _clauseResolves(text, stateByName) {
  * @returns {boolean}
  */
 function _isUnresolvableOutcome(text) {
-  return /(->|→|=>)[^A-Za-z0-9]*(?:[A-Z][A-Z0-9-]{1,}\b[^A-Za-z0-9]*)+$/.test(text.trim());
+  // No `\b` after the token: it was there originally and is inert, because the class
+  // that follows (`[^A-Za-z0-9]`) cannot match a word character, so a boundary is
+  // already implied everywhere the assertion could apply. Removed rather than pinned
+  // with a test — a test for an assertion that changes no input is a test that cannot
+  // fail, which is the defect this review cycle keeps finding.
+  return /(->|→|=>)[^A-Za-z0-9]*(?:[A-Z][A-Z0-9-]{1,}[^A-Za-z0-9]*)+$/.test(text.trim());
 }
 
 /**

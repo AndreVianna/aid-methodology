@@ -592,6 +592,30 @@
   branch ref survives independently, so all three `aid/work-001-delivery-*` branches and every
   commit were intact; only the administrative link was lost.
 
+  **RECURRED TWICE MORE 2026-07-28, during the delivery-003 tasks-019–029 review checkpoint.** The
+  recovery above worked both times unchanged, so it is now the standing procedure rather than a
+  one-off. Two refinements worth recording:
+
+  - **The second occurrence presented differently: the registry directory was present and the
+    *index* was empty.** `git status` reported **3801 files staged as deletions** with the entire
+    tree untracked — alarming, and easily mistaken for catastrophic loss. It is the same bug at a
+    later stage: git had recreated the pruned entry without an index. `git reset --mixed HEAD`
+    restored it in one step and touched no working file. **Do not reach for `checkout`, `clean`, or
+    `stash` on seeing mass deletions in a worktree** — check the registry first.
+  - **Both recoveries were triggered by, and both were survivable because of, committing early.**
+    The uncommitted edits at the time of the second wipe were five files, all on disk and all
+    intact after the rebuild.
+
+  **New, related hazard — a BOM introduced by a PowerShell-mediated file write.** After the review
+  sub-agent ran mutation tests, `extract-residual.mjs` and `index.mjs` each differed from `HEAD` by
+  a single leading `\ufeff`. The agent had restored them byte-for-byte *as it understood it*; the
+  BOM came from the write path, not the content — Windows PowerShell's `Set-Content`/`Out-File`
+  emit UTF-8 **with** BOM by default. Node strips a leading BOM, so nothing failed and no test
+  caught it; only `git status` did. **Any agent instructed to mutate-and-restore a file must be told
+  to restore via a BOM-free write** (`python`'s `write_text(..., encoding="utf-8")`, or
+  `Set-Content -Encoding utf8NoBOM` on PowerShell 6+), and the orchestrator should diff the
+  supposedly-restored files rather than trusting the report.
+
   **Standing rule for this repository: use Windows git.** The worktree at
   `.claude/worktrees/work-001` has been recreated with Windows git and now records
   `gitdir: C:/Projects/Personal/AID/.git/worktrees/work-001`.
