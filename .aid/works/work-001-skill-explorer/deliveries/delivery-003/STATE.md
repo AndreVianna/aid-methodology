@@ -606,6 +606,47 @@ BLUEPRINT, and touches nothing under `site/` or `canonical/`.
   charts in the corpus. Whatever is decided about first-versus-last is visible on most dispatch
   charts at the checkpoint, not on an edge case.
 
+## UI Review Checkpoint (non-blocking gate criterion) — PASS
+
+- **When:** 2026-07-27, after task-029 — the point the BLUEPRINT specifies, and the first at which
+  real charts render.
+- **How:** Astro dev server at `http://localhost:4321/`, browsed by the work owner, with Playwright
+  used alongside for measurement and zoom.
+- **Verdict: PASS.** "The layout of the diagrams are good. I am approving the checkpoint."
+- **What was in front of them:** 34 charts — 13 `dispatch-table`, 8 `inline-states`, 13 `residual`
+  — against 77 pages still showing the placeholder until task-037.
+
+**Six defects were found AT the checkpoint and fixed before approval. Every one passed source
+review and the full suite; none was detectable without rendering the page.**
+
+| # | Defect | How it was found |
+|---|--------|------------------|
+| 1 | Node text dark-on-dark in **light mode** — the `aidNode` hook set `color:inherit`, which took the page's text colour. Dark mode masked it entirely. | Screenshot, then computed style: `rgb(53,56,65)` on a dark-green fill |
+| 2 | 45 of 181 nodes printed the name twice (`INTAKE / INTAKE`); three ticket skills were 100% duplicated | Corpus scan of the generated pages |
+| 3 | 23 of 44 edge labels carried `** **` markdown debris | Corpus scan |
+| 4 | …and beneath it, orphaned `(continue inline` — the punctuation stripper removed the closing paren of a **balanced** parenthetical, stranding the opener | Re-scan after fixing 3 |
+| 5 | Decision rhombus at **320×320px** — a quarter of chart height. Node sizing, not layout: no engine fixed it | Measured node boxes in the DOM |
+| 6 | **Self-loop arrowheads pointed away from the node.** ELK emits a self-loop as an ordinary edge whose final segment doubles back a fraction of a pixel; `marker-end` orients on that segment | **Owner spotted it visually.** My tangent measurement over 6px said it was correct, and was wrong |
+
+**Layout engine chosen by measurement and owner trial.** The owner tried all five registered
+layouts on the live site and confirmed **`elk` (layered)**. Measured on `aid-describe`:
+
+| | dagre | **elk** | elk LR | elk.mrtree |
+|---|---|---|---|---|
+| Node overlaps | 0 | **0** | 0 | 0 |
+| Node+label overlaps | — | **0** | — | **53** |
+| Width | 685px | **481px** | 685px | 412px |
+| Readable | yes | **yes** | **no** — scaled to 135px tall | yes |
+
+`Cose-Bilkent` was asked about and is **not available** for flowcharts — Mermaid uses it for
+mindmaps. The five registered options are `elk`, `elk.mrtree`, `elk.stress`, `elk.force`,
+`elk.sporeOverlap`; the last three are physics layouts that scatter a directed state machine.
+
+**The lesson worth carrying to the delivery-005 checkpoint.** Six defects, 1748 passing tests, and
+two of them — the light-mode contrast and the inverted arrowhead — had been reasoned about
+explicitly and pronounced correct before a rendered page disproved it. A unit test asserting that
+the emitted source contains `color:inherit` cannot know what colour a reader sees.
+
 ### BLUEPRINT verification — no correction owed by task-019
 
 Verified by reading `deliveries/delivery-003/BLUEPRINT.md` rather than by repeating the DETAIL's

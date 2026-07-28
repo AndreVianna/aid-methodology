@@ -1,6 +1,6 @@
 ---
-state: 'In Progress'
-review: "--"
+state: Done
+review: 'UI checkpoint PASS (owner, 2026-07-27). Six rendering defects found at the checkpoint and fixed before approval, none detectable without rendering: light-mode contrast, duplicated node labels, markdown debris in edge labels, orphaned parenthetical, oversized rhombus, and inverted self-loop arrowheads.'
 elapsed: "--"
 notes: "--"
 ticket_ref: "--"
