@@ -14,15 +14,17 @@
 //     validateChart(chart).ok === true (V1–V8 pass).
 
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { resolve, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseAsciiStateMap, extractResidual } from '../lib/flow-graph/extract-residual.mjs';
 import { splitFrontmatter } from '../lib/flow-graph/source.mjs';
 import { validateChart } from '../lib/flow-graph/validate.mjs';
+import { classifySkill } from '../lib/flow-graph/classify.mjs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(__dirname, '../../../');
+const CANONICAL_SKILLS = resolve(REPO_ROOT, 'canonical/skills');
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -788,6 +790,11 @@ description: ${LONG_DESC}
 
 // ── R5 real alias skills ──────────────────────────────────────────────────────
 
+// `aid-set-connector` and `aid-unset-connector` were in this list and no longer
+// belong: they DO have authored steps, and R3 now finds them. They were only
+// falling to R5 because R3 matched `###` alone while both skills mix levels —
+// `### Step 0` followed by `## Step 1` onward — so R3 saw one heading, failed its
+// two-heading minimum, and gave up, discarding 7 and 4 steps.
 describe.each([
   'aid-ask',
   'aid-audit',
@@ -795,8 +802,6 @@ describe.each([
   'aid-investigate',
   'aid-spike',
   'aid-update-document',
-  'aid-set-connector',
-  'aid-unset-connector',
 ])('R5 — %s falls to 3-node spine', (skillName) => {
   const params = loadSkill(skillName);
   const chart = extractResidual(params);
@@ -821,15 +826,59 @@ describe.each([
   });
 });
 
+// ── R3 across MIXED heading levels ────────────────────────────────────────────
+
+describe('R3 — mixed `##` and `###` Step headings are one sequence', () => {
+  // Both of these skills open with `### Step 0` and continue at `## Step 1`. R3
+  // used to match `###` only, find a single heading, fail its two-heading minimum,
+  // and fall to the R5 spine — so the chart lost every step. The counts below are
+  // asserted as ">= 2 nodes beyond a spine" rather than an exact number, because the
+  // exact count is a property of the skill's prose and would make this test a
+  // tripwire for ordinary authoring edits.
+  for (const [skill, minSteps] of [['aid-set-connector', 5], ['aid-unset-connector', 3]]) {
+    it(`${skill} charts its steps instead of collapsing to a 3-node spine`, () => {
+      const chart = extractResidual(loadSkill(skill));
+      expect(chart.nodes.length).toBeGreaterThan(3);
+      expect(chart.nodes.length).toBeGreaterThanOrEqual(minSteps);
+      // Not the R5 shape: R5 emits exactly ENTRY / RUN / EXIT.
+      expect(chart.nodes.map((n) => n.name)).not.toEqual(['ENTRY', 'RUN', 'EXIT']);
+      expect(validateChart(chart).ok).toBe(true);
+    });
+  }
+
+  it('a `## Mode N` heading is not mistaken for a step', () => {
+    // The reason widening to `#{2,3}` is safe: multi-lane detection keys on `Mode`,
+    // which is lexically distinct from `Step`, so aid-config keeps its two lanes.
+    const chart = extractResidual(loadSkill('aid-config'));
+    const modeNodes = chart.nodes.filter((n) => /^MODE-/.test(n.name));
+    expect(modeNodes.length).toBe(2);
+    expect(chart.nodes.length).toBeGreaterThan(modeNodes.length);
+  });
+});
+
 // ── Invariants across all 13 corpus skills ────────────────────────────────────
 
-describe('all 13 residual skills — invariants', () => {
-  const SKILLS = [
-    'aid-add-document', 'aid-ask', 'aid-audit', 'aid-config',
-    'aid-create-ticket', 'aid-investigate', 'aid-query-kb',
-    'aid-read-ticket', 'aid-set-connector', 'aid-spike',
-    'aid-unset-connector', 'aid-update-document', 'aid-update-ticket',
-  ];
+describe('every residual skill — invariants', () => {
+  // DERIVED from the classifier, not a hand-written list. The literal roster of 13
+  // names was a §8 violation (no hard-coded corpus counts — defect class KI-005),
+  // and it fails in the way §8 exists to prevent: a skill that changes shape, or a
+  // new residual skill, silently escapes these invariants while the suite stays
+  // green. Asking the classifier means the set can only be wrong if the classifier is.
+  const SKILLS = readdirSync(CANONICAL_SKILLS, { withFileTypes: true })
+    .filter((e) => e.isDirectory())
+    .map((e) => e.name)
+    .filter((dir) => {
+      const file = join(CANONICAL_SKILLS, dir, 'SKILL.md');
+      if (!existsSync(file)) return false;
+      const { fmLines, bodyLines } = splitFrontmatter(readFileSync(file, 'utf8'), `canonical/skills/${dir}/SKILL.md`);
+      return classifySkill({
+        name: dir, dir, frontmatter: fmLines.join('\n'), body: bodyLines.join('\n'),
+      }).shape === 'residual';
+    });
+
+  it('the derived roster is non-empty — these invariants are not vacuous', () => {
+    expect(SKILLS.length).toBeGreaterThan(1);
+  });
 
   for (const skillName of SKILLS) {
     describe(skillName, () => {

@@ -37,7 +37,16 @@ const R2_STATE_RE = /^###\s+State\s+(\d+)\s*[\u2014\-]+\s*(.+)/;
 const R3_MODE_RE = /^##\s+Mode\s+(\d+)\s*[\u2014\-:]*\s*(.*)/;
 
 // R3: ### Step N heading (matches Step N, Step Na, Step 2a, etc.)
-const R3_STEP_RE = /^###\s+Step\s+([\w.]+)\s*(.*)/;
+// `##` OR `###`. Two real skills mix the two levels — `aid-set-connector` has
+// `### Step 0` followed by `## Step 1`..`## Step 6`, and `aid-unset-connector`
+// `### Step 0` plus `## Step 1`..`## Step 3`. Matching only `###` found exactly one
+// heading in each, failed R3's two-heading minimum, and dropped both to the R5
+// three-node spine — discarding 7 and 4 authored steps. Meanwhile `aid-config`
+// charted 12 nodes purely because it happens to use `###`, so two structurally
+// comparable skills rendered very differently for a typographic reason a reader
+// cannot see. No conflict with multi-lane detection: `Mode` and `Step` are distinct
+// labels, so a `## Mode N` heading cannot be read as a step.
+const R3_STEP_RE = /^#{2,3}\s+Step\s+([\w.]+)\s*(.*)/;
 
 // R4: top-level ordered list item (column 0, not in a code block)
 const R4_ITEM_RE = /^(\d+)\.\s+(.+)/;
